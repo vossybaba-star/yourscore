@@ -88,6 +88,8 @@
   button:not(:disabled):hover { filter: brightness(1.12); }
   .btn-play { background: #2c303a; color: #e7e9ee; }
   .btn-record { background: #e5484d; color: #fff; }
+  .btn-fill { background: #2f6f4a; color: #fff; margin-top: 8px; }
+  .divider { border: none; border-top: 1px solid #2c303a; margin: 2px 0; }
   .actions { display: flex; gap: 8px; }
   .actions button { flex: 1; }
   .status { font-size: 12px; color: #8b909c; min-height: 16px; }
@@ -106,6 +108,14 @@
   <div class="panel">
     <h1>Quiz Overlay Generator</h1>
     <p class="sub">Renders to a 1080&times;1920 canvas with a transparent page bg (VP9&nbsp;+&nbsp;alpha). One clip: question &rarr; countdown &rarr; 1.5s gap &rarr; answer reveal.</p>
+
+    <div class="row">
+      <label for="f-paste">Paste full question &mdash; tick (&#10003;) the correct answer</label>
+      <textarea id="f-paste" placeholder="Arsenal beat Real Madrid in the Champions League quarter-finals. What was the aggregate score?&#10;A) 3-1 &#10003;&#10;B) 4-2&#10;C) 5-1&#10;D) 2-1"></textarea>
+      <button class="btn-fill" id="btn-prefill">&#8595; Prefill fields</button>
+    </div>
+
+    <hr class="divider" />
 
     <div class="row">
       <label for="f-question">Question</label>
@@ -258,6 +268,8 @@ const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d', { alpha: true });
 
 const els = {
+  paste: document.getElementById('f-paste'),
+  prefill: document.getElementById('btn-prefill'),
   question: document.getElementById('f-question'),
   opt: [0,1,2,3].map(i => document.getElementById('f-opt'+i)),
   correct: document.getElementById('f-correct'),
@@ -285,6 +297,62 @@ function readConfig() {
     outputName: (els.output.value.trim() || "overlay").replace(/\.webm$/i, ""),
     verticalPosition: els.pos.value
   };
+}
+
+/* ============================================================
+   PASTE PARSER  — split a pasted block into question/options/correct.
+   The correct option is whichever line is marked with a tick.
+   Works with or without A)/B). labels; question is the text before
+   the options (or the first line if there are no labels).
+   ============================================================ */
+const TICK_RE = /[✓✔✅☑⭐]/; // ✓ ✔ ✅ ☑ ⭐
+function hasTick(s) {
+  return TICK_RE.test(s) || /\(\s*correct\s*\)/i.test(s) || /\*\s*$/.test(s);
+}
+function stripMarkers(s) {
+  return s.replace(TICK_RE, '')
+          .replace(/\(\s*correct\s*\)/ig, '')
+          .replace(/\*+\s*$/, '')
+          .replace(/\s{2,}/g, ' ')
+          .trim();
+}
+// Remove an "A)", "A.", "A:", "A -" or "A " label, but only when the
+// leading letter matches the option's expected position (A,B,C,D).
+function stripLabel(line, idx) {
+  const L = "ABCD"[idx];
+  return line.replace(new RegExp('^\\(?\\s*' + L + '\\s*[\\)\\.\\:\\-]?\\s+', 'i'), '');
+}
+
+function parseBlock(text) {
+  const lines = text.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+  if (lines.length < 2) return null;
+
+  const strictLabel = /^\(?\s*([A-Da-d])\s*[\)\.\:\-]\s+(.+)$/;
+  let firstIdx = -1;
+  const labeled = [];
+  for (let i = 0; i < lines.length; i++) {
+    const m = lines[i].match(strictLabel);
+    if (m) { if (firstIdx < 0) firstIdx = i; labeled.push({ text: m[2], tick: hasTick(lines[i]) }); }
+  }
+
+  let question = '', options = [], correctIdx = -1;
+
+  if (labeled.length >= 2 && firstIdx > 0) {
+    question = lines.slice(0, firstIdx).map(stripMarkers).join(' ');
+    labeled.slice(0, 4).forEach((o, k) => { options.push(stripMarkers(o.text)); if (o.tick) correctIdx = k; });
+  } else {
+    question = stripMarkers(lines[0]);
+    for (let i = 1; i < lines.length && options.length < 4; i++) {
+      const k = options.length;
+      if (hasTick(lines[i])) correctIdx = k;
+      options.push(stripMarkers(stripLabel(lines[i], k)));
+    }
+  }
+
+  options = options.slice(0, 4);
+  while (options.length < 4) options.push('');
+  if (correctIdx < 0) correctIdx = 0;
+  return { question, options, correctIdx };
 }
 
 /* ============================================================
@@ -701,6 +769,19 @@ els.play.addEventListener('click', () => {
   runAnimation(() => { setBusy(false); setStatus('Preview done.'); drawIdle(); });
 });
 els.record.addEventListener('click', record);
+
+els.prefill.addEventListener('click', () => {
+  const parsed = parseBlock(els.paste.value);
+  if (!parsed) {
+    setStatus('Could not read that. Put the question first, then each option on its own line, with a ✓ on the correct one.', true);
+    return;
+  }
+  els.question.value = parsed.question;
+  parsed.options.forEach((o, i) => els.opt[i].value = o);
+  els.correct.value = "ABCD"[parsed.correctIdx];
+  if (!running) drawIdle();
+  setStatus('Prefilled. Correct answer: ' + "ABCD"[parsed.correctIdx] + ' (' + (parsed.options[parsed.correctIdx] || '—') + ').');
+});
 
 [els.question, ...els.opt, els.correct, els.pos].forEach(el =>
   el.addEventListener('input', () => { if (!running) drawIdle(); })
