@@ -246,10 +246,9 @@ const TIMING = {
   // Blank gap
   gap: 1500,               // nothing on screen
   // Answer phase
-  answerIn: 450,           // correct answer pops back in
-  flashPeriod: 300,        // one pulse cycle of the green flash
-  flashCount: 3,           // pulses before settling
-  answerHold: 1600         // hold the highlighted answer at the end
+  answerIn: 400,           // correct answer fades in
+  answerHold: 1500,        // fully visible
+  answerOut: 400           // correct answer fades out
 };
 
 /* ============================================================
@@ -303,6 +302,7 @@ function roundRect(x, y, w, h, r) {
 }
 
 const easeOut = t => 1 - Math.pow(1 - t, 3);
+const easeInOut = t => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
 const clamp01 = v => v < 0 ? 0 : v > 1 ? 1 : v;
 
 function qFont() { return `700 ${T.questionFont}px Inter, sans-serif`; }
@@ -541,11 +541,11 @@ function buildTimeline(cfg, L) {
   const sceneHoldEnd = countdownEnd + TIMING.postCountdownHold;   // hold on "1"
   const sceneFadeEnd = sceneHoldEnd + TIMING.sceneFade;           // scene cleared
   const answerStart = sceneFadeEnd + TIMING.gap;                  // after 1.5s of nothing
-  const flashDur = TIMING.flashCount * TIMING.flashPeriod;
-  const end = answerStart + Math.max(TIMING.answerIn, flashDur) + TIMING.answerHold;
+  const answerHoldEnd = answerStart + TIMING.answerIn + TIMING.answerHold;
+  const end = answerHoldEnd + TIMING.answerOut;
   return {
     qEnd, optionsStart, optionsEnd, countdownStart, countdownEnd,
-    sceneHoldEnd, sceneFadeEnd, answerStart, flashDur, end
+    sceneHoldEnd, sceneFadeEnd, answerStart, answerHoldEnd, end
   };
 }
 
@@ -578,26 +578,21 @@ function render(t, cfg, L, TL) {
     return;
   }
 
-  // ---- Answer reveal: question card + correct answer pop back in ----
+  // ---- Answer reveal: question card + correct answer fade in, hold, fade out ----
   const ap = t - TL.answerStart;
-  const appearE = easeOut(clamp01(ap / TIMING.answerIn));
-
-  drawCard(L, appearE);
-  drawQuestion(cfg, L, () => appearE);
-
-  let highlight = 1, pulse = 0;
-  if (ap < TL.flashDur) {
-    const w = 0.5 - 0.5 * Math.cos((ap / TIMING.flashPeriod) * Math.PI * 2);
-    highlight = 0.32 + 0.68 * w;
-    pulse = w;
+  let a;
+  if (ap < TIMING.answerIn) {
+    a = easeInOut(clamp01(ap / TIMING.answerIn));            // fade in
+  } else if (t < TL.answerHoldEnd) {
+    a = 1;                                                   // hold 1.5s
+  } else {
+    a = 1 - easeInOut(clamp01((t - TL.answerHoldEnd) / TIMING.answerOut)); // fade out
   }
+  if (a <= 0) return;
 
-  drawOption(cfg, L, cfg.correctIndex, {
-    alpha: appearE,
-    slideY: (1 - appearE) * 26,
-    scale: (0.92 + 0.08 * appearE) + 0.045 * pulse,
-    highlight
-  });
+  drawCard(L, a);
+  drawQuestion(cfg, L, () => a);
+  drawOption(cfg, L, cfg.correctIndex, { alpha: a, highlight: 1 });
 }
 
 // Static layout preview for the editor (no animation)
