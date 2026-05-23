@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Quiz Card Overlay Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #16181d;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    color: #e7e9ee;
+  }
+  .app {
+    display: flex;
+    gap: 24px;
+    height: 100vh;
+    padding: 20px;
+  }
+  /* Stage shows transparency via a checkerboard so you can confirm the page bg is clear */
+  .stage {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 16px;
+    overflow: hidden;
+    background-color: #2a2d34;
+    background-image:
+      linear-gradient(45deg, #20232a 25%, transparent 25%),
+      linear-gradient(-45deg, #20232a 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #20232a 75%),
+      linear-gradient(-45deg, transparent 75%, #20232a 75%);
+    background-size: 36px 36px;
+    background-position: 0 0, 0 18px, 18px -18px, -18px 0;
+  }
+  canvas {
+    height: calc(100vh - 40px);
+    width: auto;
+    max-width: 100%;
+    display: block;
+  }
+  .panel {
+    width: 320px;
+    flex-shrink: 0;
+    background: #1d2026;
+    border: 1px solid #2c303a;
+    border-radius: 16px;
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow-y: auto;
+  }
+  .panel h1 { font-size: 18px; margin: 0; font-weight: 700; }
+  .panel p.sub { margin: -6px 0 4px; font-size: 12px; color: #8b909c; line-height: 1.5; }
+  .row { display: flex; flex-direction: column; gap: 6px; }
+  .row label { font-size: 12px; font-weight: 600; color: #aab0bd; }
+  textarea, input, select {
+    background: #14161b;
+    border: 1px solid #2c303a;
+    color: #e7e9ee;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font: inherit;
+    font-size: 13px;
+    width: 100%;
+    resize: vertical;
+  }
+  textarea { min-height: 70px; }
+  button {
+    border: none;
+    border-radius: 10px;
+    padding: 12px 14px;
+    font: inherit;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition: filter .15s ease, opacity .15s ease;
+  }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  button:not(:disabled):hover { filter: brightness(1.12); }
+  .btn-play { background: #2c303a; color: #e7e9ee; }
+  .btn-record { background: #e5484d; color: #fff; }
+  .actions { display: flex; gap: 10px; }
+  .actions button { flex: 1; }
+  .status { font-size: 12px; color: #8b909c; min-height: 16px; }
+  .status.rec { color: #ff7a7e; font-weight: 600; }
+  .hint { font-size: 11px; color: #6b707c; line-height: 1.5; border-top: 1px solid #2c303a; padding-top: 12px; }
+  .opt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="stage">
+    <canvas id="canvas" width="1080" height="1920"></canvas>
+  </div>
+
+  <div class="panel">
+    <h1>Quiz Overlay Generator</h1>
+    <p class="sub">Renders to a 1080&times;1920 canvas. Page background is transparent; cards stay fully opaque. Export is WebM (VP9 + alpha).</p>
+
+    <div class="row">
+      <label for="f-question">Question</label>
+      <textarea id="f-question"></textarea>
+    </div>
+
+    <div class="row">
+      <label>Options (A&ndash;D)</label>
+      <div class="opt-grid">
+        <input id="f-opt0" placeholder="A" />
+        <input id="f-opt1" placeholder="B" />
+        <input id="f-opt2" placeholder="C" />
+        <input id="f-opt3" placeholder="D" />
+      </div>
+    </div>
+
+    <div class="row">
+      <label for="f-output">Output file name</label>
+      <input id="f-output" />
+    </div>
+
+    <div class="row">
+      <label for="f-pos">Vertical position</label>
+      <select id="f-pos">
+        <option value="center">center</option>
+        <option value="lower">lower</option>
+      </select>
+    </div>
+
+    <div class="actions">
+      <button class="btn-play" id="btn-play">&#9654; Preview</button>
+      <button class="btn-record" id="btn-record">&#9679; Record</button>
+    </div>
+
+    <div class="status" id="status">Ready.</div>
+
+    <div class="hint">
+      Preview plays the full animation without recording. Record captures the
+      sequence to <code>{name}.webm</code> and auto-downloads when done. Use
+      Chrome for VP9-alpha support, then drop the WebM over footage in CapCut.
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   CONFIG  — edit these to generate a different card
+   ============================================================ */
+const config = {
+  question: "Arsenal beat Real Madrid in the Champions League quarter-finals. What was the aggregate score?",
+  options: ["3-1", "4-2", "5-1", "2-1"],
+  outputName: "arsenal-real-madrid",
+  verticalPosition: "center" // "center" | "lower"
+};
+
+/* ============================================================
+   DESIGN TOKENS  (in canvas pixels @ 1080x1920)
+   ============================================================ */
+const CANVAS_W = 1080;
+const CANVAS_H = 1920;
+
+const T = {
+  margin: 60,                 // left/right page margin
+  cardRadius: 30,
+  cardPadX: 52,
+  cardPadY: 48,
+  questionFont: 50,           // px, weight 700
+  questionLineHeight: 70,
+  gapCardOptions: 46,
+  optionHeight: 150,
+  optionGap: 28,
+  optionRadius: 26,
+  optionPadL: 34,             // left padding to badge
+  badgeSize: 90,
+  badgeRadius: 18,
+  badgeGap: 36,               // gap between badge and option text
+  badgeLetterFont: 40,        // px, weight 700
+  optionTextFont: 46,         // px, weight 500
+  countdownDiameter: 132,     // small dial in top-right of overlay area
+  countdownFont: 64
+};
+
+const COLORS = {
+  cardFill:    "#1a1d2c",
+  cardBorder:  "rgba(255,255,255,0.085)",
+  optionFill:  "#0d0e13",
+  optionBorder:"rgba(255,255,255,0.07)",
+  textWhite:   "#ffffff",
+  countdownFill:   "#1a1d2c",
+  countdownBorder: "rgba(255,255,255,0.28)",
+  // [badgeBackground, letterColor] per option A,B,C,D
+  badges: [
+    ["#143744", "#6cc1e1"], // A blue
+    ["#272341", "#ab9ce8"], // B purple
+    ["#3b3318", "#e6b84d"], // C amber
+    ["#3a2517", "#ee8a48"]  // D orange
+  ]
+};
+
+/* ============================================================
+   TIMING  (ms)
+   ============================================================ */
+const TIMING = {
+  cardFadeIn: 300,
+  questionStart: 220,
+  wordStep: 150,
+  wordFade: 260,
+  pauseAfterQuestion: 400,
+  optionStep: 200,
+  optionFade: 360,
+  countdownGap: 140,     // delay after options before dial appears
+  countdownStep: 1000,   // 1s per number
+  numberPop: 190,
+  holdEnd: 500
+};
+
+/* ============================================================
+   SETUP
+   ============================================================ */
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d', { alpha: true });
+
+const els = {
+  question: document.getElementById('f-question'),
+  opt: [0,1,2,3].map(i => document.getElementById('f-opt'+i)),
+  output: document.getElementById('f-output'),
+  pos: document.getElementById('f-pos'),
+  play: document.getElementById('btn-play'),
+  record: document.getElementById('btn-record'),
+  status: document.getElementById('status')
+};
+
+// hydrate form from config
+els.question.value = config.question;
+config.options.forEach((o,i) => els.opt[i].value = o);
+els.output.value = config.outputName;
+els.pos.value = config.verticalPosition;
+
+function readConfig() {
+  return {
+    question: els.question.value.trim() || " ",
+    options: els.opt.map(e => e.value.trim()),
+    outputName: (els.output.value.trim() || "overlay").replace(/\.webm$/i, ""),
+    verticalPosition: els.pos.value
+  };
+}
+
+/* ============================================================
+   DRAW HELPERS
+   ============================================================ */
+function roundRect(x, y, w, h, r) {
+  const rr = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + rr, y);
+  ctx.arcTo(x + w, y,     x + w, y + h, rr);
+  ctx.arcTo(x + w, y + h, x,     y + h, rr);
+  ctx.arcTo(x,     y + h, x,     y,     rr);
+  ctx.arcTo(x,     y,     x + w, y,     rr);
+  ctx.closePath();
+}
+
+const easeOut = t => 1 - Math.pow(1 - t, 3);
+const clamp01 = v => v < 0 ? 0 : v > 1 ? 1 : v;
+
+function qFont() { return `700 ${T.questionFont}px Inter, sans-serif`; }
+
+// Wrap question into lines, assigning each word a global reveal index.
+function layoutQuestion(text, maxWidth) {
+  ctx.font = qFont();
+  const space = ctx.measureText(' ').width;
+  const words = text.split(/\s+/).filter(Boolean);
+  const lines = [];
+  let line = [], lineW = 0, gi = 0;
+  for (const w of words) {
+    const ww = ctx.measureText(w).width;
+    if (line.length && lineW + space + ww > maxWidth) {
+      lines.push(line);
+      line = []; lineW = 0;
+    }
+    line.push({ text: w, w: ww, gi: gi++ });
+    lineW += (line.length > 1 ? space : 0) + ww;
+  }
+  if (line.length) lines.push(line);
+  return { lines, count: gi, space };
+}
+
+/* ============================================================
+   LAYOUT  — compute geometry for the whole block
+   ============================================================ */
+function computeLayout(cfg) {
+  const contentX = T.margin;
+  const contentW = CANVAS_W - T.margin * 2;
+
+  const innerW = contentW - T.cardPadX * 2;
+  const q = layoutQuestion(cfg.question, innerW);
+
+  const cardH = T.cardPadY * 2 + q.lines.length * T.questionLineHeight;
+
+  const optionsH = 4 * T.optionHeight + 3 * T.optionGap;
+  const totalH = cardH + T.gapCardOptions + optionsH;
+
+  let top;
+  if (cfg.verticalPosition === "lower") {
+    top = (CANVAS_H - totalH) * 0.74;
+  } else {
+    top = (CANVAS_H - totalH) / 2;
+  }
+  top = Math.max(180, Math.min(top, CANVAS_H - totalH - 80));
+
+  return {
+    contentX, contentW, innerW, q,
+    cardX: contentX, cardY: top, cardW: contentW, cardH,
+    optionsTop: top + cardH + T.gapCardOptions,
+    totalH, top
+  };
+}
+
+/* ============================================================
+   FRAME RENDER  — pure function of (t in ms)
+   ============================================================ */
+function buildTimeline(cfg, L) {
+  const qEnd = TIMING.questionStart + (L.q.count - 1) * TIMING.wordStep + TIMING.wordFade;
+  const optionsStart = qEnd + TIMING.pauseAfterQuestion;
+  const optionsEnd = optionsStart + 3 * TIMING.optionStep + TIMING.optionFade;
+  const countdownStart = optionsEnd + TIMING.countdownGap;
+  const countdownEnd = countdownStart + 3 * TIMING.countdownStep;
+  const end = countdownEnd + TIMING.holdEnd;
+  return { qEnd, optionsStart, optionsEnd, countdownStart, countdownEnd, end };
+}
+
+function render(t, cfg, L, TL) {
+  ctx.clearRect(0, 0, CANVAS_W, CANVAS_H); // transparent page background
+
+  // ---- Question card ----
+  const cardAlpha = clamp01(t / TIMING.cardFadeIn);
+  ctx.globalAlpha = cardAlpha;
+  roundRect(L.cardX, L.cardY, L.cardW, L.cardH, T.cardRadius);
+  ctx.fillStyle = COLORS.cardFill;
+  ctx.fill();
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = COLORS.cardBorder;
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  // ---- Question text, word by word ----
+  ctx.font = qFont();
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillStyle = COLORS.textWhite;
+  const textX0 = L.cardX + T.cardPadX;
+  let lineY = L.cardY + T.cardPadY;
+  for (const line of L.q.lines) {
+    let x = textX0;
+    for (const word of line) {
+      const wt = TIMING.questionStart + word.gi * TIMING.wordStep;
+      const a = clamp01((t - wt) / TIMING.wordFade);
+      if (a > 0) {
+        const e = easeOut(a);
+        ctx.globalAlpha = e;
+        ctx.fillText(word.text, x, lineY + (1 - e) * 10);
+        ctx.globalAlpha = 1;
+      }
+      x += word.w + L.q.space;
+    }
+    lineY += T.questionLineHeight;
+  }
+
+  // ---- Options ----
+  for (let j = 0; j < 4; j++) {
+    const start = TL.optionsStart + j * TIMING.optionStep;
+    const a = clamp01((t - start) / TIMING.optionFade);
+    if (a <= 0) continue;
+    const e = easeOut(a);
+    const oy = L.optionsTop + j * (T.optionHeight + T.optionGap) + (1 - e) * 44;
+
+    ctx.globalAlpha = e;
+
+    // option container
+    roundRect(L.cardX, oy, L.cardW, T.optionHeight, T.optionRadius);
+    ctx.fillStyle = COLORS.optionFill;
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = COLORS.optionBorder;
+    ctx.stroke();
+
+    // badge
+    const [badgeBg, letterCol] = COLORS.badges[j];
+    const bx = L.cardX + T.optionPadL;
+    const by = oy + (T.optionHeight - T.badgeSize) / 2;
+    roundRect(bx, by, T.badgeSize, T.badgeSize, T.badgeRadius);
+    ctx.fillStyle = badgeBg;
+    ctx.fill();
+
+    // badge letter
+    ctx.fillStyle = letterCol;
+    ctx.font = `700 ${T.badgeLetterFont}px Inter, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText("ABCD"[j], bx + T.badgeSize / 2, by + T.badgeSize / 2 + 2);
+
+    // option text
+    ctx.fillStyle = COLORS.textWhite;
+    ctx.font = `500 ${T.optionTextFont}px Inter, sans-serif`;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(cfg.options[j] || "", bx + T.badgeSize + T.badgeGap, oy + T.optionHeight / 2 + 2);
+
+    ctx.globalAlpha = 1;
+  }
+
+  // ---- Countdown dial (top-right of overlay area) ----
+  if (t >= TL.countdownStart) {
+    const r = T.countdownDiameter / 2;
+    const cx = L.cardX + L.cardW - r;
+    const cy = L.cardY - 44 - r;
+    const circleAlpha = clamp01((t - TL.countdownStart) / 200);
+
+    ctx.globalAlpha = circleAlpha;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fillStyle = COLORS.countdownFill;
+    ctx.fill();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = COLORS.countdownBorder;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    // number 3 -> 2 -> 1, freeze on 1 during hold
+    const elapsed = t - TL.countdownStart;
+    let idx = Math.floor(elapsed / TIMING.countdownStep); // 0,1,2,(3 during hold)
+    if (idx > 2) idx = 2;
+    const number = 3 - idx;
+    const intoNum = elapsed - idx * TIMING.countdownStep;
+    const pop = clamp01(intoNum / TIMING.numberPop);
+    const scale = 0.6 + 0.4 * easeOut(pop);
+    const numAlpha = circleAlpha * clamp01(intoNum / 120 + 0.2);
+
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, numAlpha);
+    ctx.translate(cx, cy + 3);
+    ctx.scale(scale, scale);
+    ctx.fillStyle = COLORS.textWhite;
+    ctx.font = `800 ${T.countdownFont}px Inter, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String(number), 0, 0);
+    ctx.restore();
+  }
+}
+
+/* ============================================================
+   ANIMATION LOOP
+   ============================================================ */
+let running = false;
+let rafId = null;
+
+function runAnimation(onDone) {
+  if (running) return;
+  const cfg = readConfig();
+  const L = computeLayout(cfg);
+  const TL = buildTimeline(cfg, L);
+
+  running = true;
+  const startTime = performance.now();
+
+  function frame(now) {
+    const t = now - startTime;
+    render(Math.min(t, TL.end), cfg, L, TL);
+    if (t >= TL.end) {
+      running = false;
+      rafId = null;
+      if (onDone) onDone();
+      return;
+    }
+    rafId = requestAnimationFrame(frame);
+  }
+  rafId = requestAnimationFrame(frame);
+  return TL;
+}
+
+// draw a static idle frame (just the empty card outline) at load
+function drawIdle() {
+  const cfg = readConfig();
+  const L = computeLayout(cfg);
+  const TL = buildTimeline(cfg, L);
+  render(0, cfg, L, TL);
+}
+
+/* ============================================================
+   RECORDING  — MediaRecorder on the canvas stream (VP9 + alpha)
+   ============================================================ */
+function pickMime() {
+  const candidates = [
+    'video/webm;codecs=vp9',
+    'video/webm;codecs=vp8',
+    'video/webm'
+  ];
+  for (const c of candidates) {
+    if (window.MediaRecorder && MediaRecorder.isTypeSupported(c)) return c;
+  }
+  return '';
+}
+
+function record() {
+  if (running) return;
+  const cfg = readConfig();
+  const mime = pickMime();
+  if (!mime) {
+    setStatus('MediaRecorder/WebM not supported in this browser.', true);
+    return;
+  }
+
+  const stream = canvas.captureStream(60);
+  const chunks = [];
+  let recorder;
+  try {
+    recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 14_000_000 });
+  } catch (e) {
+    setStatus('Failed to start recorder: ' + e.message, true);
+    return;
+  }
+
+  recorder.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+  recorder.onstop = () => {
+    const blob = new Blob(chunks, { type: 'video/webm' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = cfg.outputName + '.webm';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    setStatus('Saved ' + cfg.outputName + '.webm (' + (mime.includes('vp9') ? 'VP9' : mime.includes('vp8') ? 'VP8' : 'webm') + ', ' + (blob.size/1048576).toFixed(1) + ' MB).');
+    setBusy(false);
+  };
+
+  setBusy(true);
+  setStatus('Recording…', true);
+  recorder.start();
+  runAnimation(() => {
+    // small tail so the last frame is flushed before stopping
+    setTimeout(() => recorder.state !== 'inactive' && recorder.stop(), 120);
+  });
+}
+
+/* ============================================================
+   UI WIRING
+   ============================================================ */
+function setStatus(msg, rec) {
+  els.status.textContent = msg;
+  els.status.classList.toggle('rec', !!rec);
+}
+function setBusy(b) {
+  els.play.disabled = b;
+  els.record.disabled = b;
+}
+
+els.play.addEventListener('click', () => {
+  if (running) return;
+  setBusy(true);
+  setStatus('Previewing…');
+  runAnimation(() => { setBusy(false); setStatus('Preview done.'); });
+});
+
+els.record.addEventListener('click', record);
+
+// re-draw idle frame when config fields change (if idle)
+[els.question, ...els.opt, els.pos].forEach(el =>
+  el.addEventListener('input', () => { if (!running) drawIdle(); })
+);
+
+/* ============================================================
+   BOOT  — wait for Inter to load so canvas text is correct
+   ============================================================ */
+async function boot() {
+  try {
+    await Promise.all([
+      document.fonts.load('700 50px Inter'),
+      document.fonts.load('800 64px Inter'),
+      document.fonts.load('500 46px Inter'),
+      document.fonts.ready
+    ]);
+  } catch (e) { /* fall back to system sans-serif */ }
+  drawIdle();
+}
+boot();
+</script>
+</body>
+</html>
