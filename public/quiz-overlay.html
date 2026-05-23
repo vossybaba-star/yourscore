@@ -88,8 +88,6 @@
   button:not(:disabled):hover { filter: brightness(1.12); }
   .btn-play { background: #2c303a; color: #e7e9ee; }
   .btn-record { background: #e5484d; color: #fff; }
-  .group { display: flex; flex-direction: column; gap: 8px; border: 1px solid #2c303a; border-radius: 12px; padding: 12px; }
-  .group .title { font-size: 12px; font-weight: 700; color: #c7ccd6; letter-spacing: .02em; }
   .actions { display: flex; gap: 8px; }
   .actions button { flex: 1; }
   .status { font-size: 12px; color: #8b909c; min-height: 16px; }
@@ -107,7 +105,7 @@
 
   <div class="panel">
     <h1>Quiz Overlay Generator</h1>
-    <p class="sub">Two-part export, both 1080&times;1920 with transparent page bg (VP9&nbsp;+&nbsp;alpha). Part&nbsp;1 = question + countdown. Part&nbsp;2 = answer reveal.</p>
+    <p class="sub">Renders to a 1080&times;1920 canvas with a transparent page bg (VP9&nbsp;+&nbsp;alpha). One clip: question &rarr; countdown &rarr; 1.5s gap &rarr; answer reveal.</p>
 
     <div class="row">
       <label for="f-question">Question</label>
@@ -148,28 +146,17 @@
       <input id="f-output" />
     </div>
 
-    <div class="group">
-      <span class="title">Part 1 &mdash; Question + countdown</span>
-      <div class="actions">
-        <button class="btn-play" id="btn-play-q">&#9654; Preview</button>
-        <button class="btn-record" id="btn-record-q">&#9679; Record</button>
-      </div>
-    </div>
-
-    <div class="group">
-      <span class="title">Part 2 &mdash; Answer reveal</span>
-      <div class="actions">
-        <button class="btn-play" id="btn-play-a">&#9654; Preview</button>
-        <button class="btn-record" id="btn-record-a">&#9679; Record</button>
-      </div>
+    <div class="actions">
+      <button class="btn-play" id="btn-play">&#9654; Preview</button>
+      <button class="btn-record" id="btn-record">&#9679; Record</button>
     </div>
 
     <div class="status" id="status">Ready.</div>
 
     <div class="hint">
-      Part&nbsp;1 saves as <code>{name}-question.webm</code>, Part&nbsp;2 as
-      <code>{name}-answer.webm</code>. Both use the same layout, so in CapCut
-      lay the answer clip on the same spot right after the question clip. Use
+      One continuous clip: question reveal &rarr; countdown 3&middot;2&middot;1
+      &rarr; 1.5s of nothing &rarr; the correct answer pops back in at its
+      original position. Saves as <code>{name}.webm</code> (VP9 + alpha). Use
       Chrome for VP9-alpha support.
     </div>
   </div>
@@ -243,7 +230,7 @@ const COLORS = {
    TIMING  (ms)
    ============================================================ */
 const TIMING = {
-  // Part 1 — question
+  // Question phase
   cardFadeIn: 300,
   questionStart: 220,
   wordStep: 150,
@@ -254,15 +241,15 @@ const TIMING = {
   countdownGap: 140,
   countdownStep: 1000,
   numberPop: 190,
-  holdEnd: 500,
-  // Part 2 — answer reveal
-  answer: {
-    hold0: 350,        // everything visible (matches end of part 1)
-    wrongFade: 480,    // wrong options fade + shrink away
-    flashPeriod: 300,  // one pulse cycle
-    flashCount: 3,     // number of flashes before settling
-    holdEnd: 1000      // hold the highlighted answer
-  }
+  postCountdownHold: 450,  // hold on "1" before the scene clears
+  sceneFade: 350,          // whole question scene fades out
+  // Blank gap
+  gap: 1500,               // nothing on screen
+  // Answer phase
+  answerIn: 450,           // correct answer pops back in
+  flashPeriod: 300,        // one pulse cycle of the green flash
+  flashCount: 3,           // pulses before settling
+  answerHold: 1600         // hold the highlighted answer at the end
 };
 
 /* ============================================================
@@ -277,10 +264,8 @@ const els = {
   correct: document.getElementById('f-correct'),
   output: document.getElementById('f-output'),
   pos: document.getElementById('f-pos'),
-  playQ: document.getElementById('btn-play-q'),
-  recordQ: document.getElementById('btn-record-q'),
-  playA: document.getElementById('btn-play-a'),
-  recordA: document.getElementById('btn-record-a'),
+  play: document.getElementById('btn-play'),
+  record: document.getElementById('btn-record'),
   status: document.getElementById('status')
 };
 
@@ -506,12 +491,12 @@ function drawOption(cfg, L, j, state) {
   ctx.restore();
 }
 
-function drawCountdown(L, t, countdownStart) {
-  if (t < countdownStart) return;
+function drawCountdown(L, t, countdownStart, mul = 1) {
+  if (t < countdownStart || mul <= 0) return;
   const r = T.countdownDiameter / 2;
   const cx = L.cardX + L.cardW - r;
   const cy = L.cardY - 44 - r;
-  const circleAlpha = clamp01((t - countdownStart) / 200);
+  const circleAlpha = clamp01((t - countdownStart) / 200) * mul;
 
   ctx.globalAlpha = circleAlpha;
   ctx.beginPath();
@@ -545,83 +530,82 @@ function drawCountdown(L, t, countdownStart) {
 }
 
 /* ============================================================
-   TIMELINES
+   TIMELINE  (one continuous clip)
    ============================================================ */
-function questionTimeline(cfg, L) {
+function buildTimeline(cfg, L) {
   const qEnd = TIMING.questionStart + (L.q.count - 1) * TIMING.wordStep + TIMING.wordFade;
   const optionsStart = qEnd + TIMING.pauseAfterQuestion;
   const optionsEnd = optionsStart + 3 * TIMING.optionStep + TIMING.optionFade;
   const countdownStart = optionsEnd + TIMING.countdownGap;
   const countdownEnd = countdownStart + 3 * TIMING.countdownStep;
-  const end = countdownEnd + TIMING.holdEnd;
-  return { qEnd, optionsStart, optionsEnd, countdownStart, countdownEnd, end };
-}
-
-function answerTimeline() {
-  const A = TIMING.answer;
-  const flashStart = A.hold0;
-  const flashDur = A.flashCount * A.flashPeriod;
-  const wrongFadeEnd = A.hold0 + A.wrongFade;
-  const end = Math.max(wrongFadeEnd, flashStart + flashDur) + A.holdEnd;
-  return { flashStart, flashDur, wrongFadeEnd, end };
+  const sceneHoldEnd = countdownEnd + TIMING.postCountdownHold;   // hold on "1"
+  const sceneFadeEnd = sceneHoldEnd + TIMING.sceneFade;           // scene cleared
+  const answerStart = sceneFadeEnd + TIMING.gap;                  // after 1.5s of nothing
+  const flashDur = TIMING.flashCount * TIMING.flashPeriod;
+  const end = answerStart + Math.max(TIMING.answerIn, flashDur) + TIMING.answerHold;
+  return {
+    qEnd, optionsStart, optionsEnd, countdownStart, countdownEnd,
+    sceneHoldEnd, sceneFadeEnd, answerStart, flashDur, end
+  };
 }
 
 /* ============================================================
-   PART RENDERERS  (pure functions of t)
+   RENDER  (pure function of t)
+   Phases: question reveal → countdown → blank gap → answer pop-in
    ============================================================ */
-function renderQuestion(t, cfg, L, TL) {
+function render(t, cfg, L, TL) {
   ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
 
-  drawCard(L, clamp01(t / TIMING.cardFadeIn));
-  drawQuestion(cfg, L, gi =>
-    clamp01((t - (TIMING.questionStart + gi * TIMING.wordStep)) / TIMING.wordFade)
-  );
+  if (t < TL.answerStart) {
+    // ---- Question scene (fades out as a whole after the countdown hold) ----
+    const mul = t <= TL.sceneHoldEnd
+      ? 1
+      : 1 - clamp01((t - TL.sceneHoldEnd) / TIMING.sceneFade);
+    if (mul <= 0) return; // fully cleared → blank gap
 
-  for (let j = 0; j < 4; j++) {
-    const start = TL.optionsStart + j * TIMING.optionStep;
-    const a = clamp01((t - start) / TIMING.optionFade);
-    if (a <= 0) continue;
-    const e = easeOut(a);
-    drawOption(cfg, L, j, { alpha: e, slideY: (1 - e) * 44 });
+    drawCard(L, clamp01(t / TIMING.cardFadeIn) * mul);
+    drawQuestion(cfg, L, gi =>
+      clamp01((t - (TIMING.questionStart + gi * TIMING.wordStep)) / TIMING.wordFade) * mul
+    );
+    for (let j = 0; j < 4; j++) {
+      const start = TL.optionsStart + j * TIMING.optionStep;
+      const a = clamp01((t - start) / TIMING.optionFade);
+      if (a <= 0) continue;
+      const e = easeOut(a);
+      drawOption(cfg, L, j, { alpha: e * mul, slideY: (1 - e) * 44 });
+    }
+    drawCountdown(L, t, TL.countdownStart, mul);
+    return;
   }
 
-  drawCountdown(L, t, TL.countdownStart);
+  // ---- Answer reveal: question card + correct answer pop back in ----
+  const ap = t - TL.answerStart;
+  const appearE = easeOut(clamp01(ap / TIMING.answerIn));
+
+  drawCard(L, appearE);
+  drawQuestion(cfg, L, () => appearE);
+
+  let highlight = 1, pulse = 0;
+  if (ap < TL.flashDur) {
+    const w = 0.5 - 0.5 * Math.cos((ap / TIMING.flashPeriod) * Math.PI * 2);
+    highlight = 0.32 + 0.68 * w;
+    pulse = w;
+  }
+
+  drawOption(cfg, L, cfg.correctIndex, {
+    alpha: appearE,
+    slideY: (1 - appearE) * 26,
+    scale: (0.92 + 0.08 * appearE) + 0.045 * pulse,
+    highlight
+  });
 }
 
-function renderAnswer(t, cfg, L, TL) {
+// Static layout preview for the editor (no animation)
+function renderStatic(cfg, L) {
   ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
-  const A = TIMING.answer;
-
   drawCard(L, 1);
   drawQuestion(cfg, L, () => 1);
-
-  // flash intensity for the correct answer, settling to full highlight
-  let highlight;
-  const fp = t - TL.flashStart;
-  if (fp < 0) highlight = 0;
-  else if (fp >= TL.flashDur) highlight = 1;
-  else {
-    const w = 0.5 - 0.5 * Math.cos((fp / A.flashPeriod) * Math.PI * 2);
-    highlight = 0.28 + 0.72 * w;
-  }
-  // pulse scale on the correct answer
-  let pulse = 0;
-  if (fp >= 0 && fp < TL.flashDur) {
-    pulse = 0.5 - 0.5 * Math.cos((fp / A.flashPeriod) * Math.PI * 2);
-  }
-
-  // wrong answers fade + shrink away
-  const wp = clamp01((t - A.hold0) / A.wrongFade);
-  const wrongAlpha = 1 - wp;
-  const wrongScale = 1 - 0.08 * easeOut(wp);
-
-  for (let j = 0; j < 4; j++) {
-    if (j === cfg.correctIndex) {
-      drawOption(cfg, L, j, { alpha: 1, highlight, scale: 1 + 0.045 * pulse });
-    } else {
-      drawOption(cfg, L, j, { alpha: wrongAlpha, scale: wrongScale });
-    }
-  }
+  for (let j = 0; j < 4; j++) drawOption(cfg, L, j, { alpha: 1 });
 }
 
 /* ============================================================
@@ -630,24 +614,18 @@ function renderAnswer(t, cfg, L, TL) {
 let running = false;
 let rafId = null;
 
-const PARTS = {
-  question: { timeline: questionTimeline, render: renderQuestion, suffix: '-question' },
-  answer:   { timeline: answerTimeline,   render: renderAnswer,   suffix: '-answer'   }
-};
-
-function runAnimation(partKey, onDone) {
+function runAnimation(onDone) {
   if (running) return;
-  const part = PARTS[partKey];
   const cfg = readConfig();
   const L = computeLayout(cfg);
-  const TL = part.timeline(cfg, L);
+  const TL = buildTimeline(cfg, L);
 
   running = true;
   const startTime = performance.now();
 
   function frame(now) {
     const t = now - startTime;
-    part.render(Math.min(t, TL.end), cfg, L, TL);
+    render(Math.min(t, TL.end), cfg, L, TL);
     if (t >= TL.end) {
       running = false; rafId = null;
       if (onDone) onDone();
@@ -661,8 +639,7 @@ function runAnimation(partKey, onDone) {
 function drawIdle() {
   const cfg = readConfig();
   const L = computeLayout(cfg);
-  const TL = questionTimeline(cfg, L);
-  renderQuestion(0, cfg, L, TL);
+  renderStatic(cfg, L);
 }
 
 /* ============================================================
@@ -675,9 +652,8 @@ function pickMime() {
   return '';
 }
 
-function record(partKey) {
+function record() {
   if (running) return;
-  const part = PARTS[partKey];
   const cfg = readConfig();
   const mime = pickMime();
   if (!mime) { setStatus('MediaRecorder/WebM not supported in this browser.', true); return; }
@@ -695,20 +671,20 @@ function record(partKey) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = cfg.outputName + part.suffix + '.webm';
+    a.download = cfg.outputName + '.webm';
     document.body.appendChild(a);
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 4000);
     const codec = mime.includes('vp9') ? 'VP9' : mime.includes('vp8') ? 'VP8' : 'webm';
-    setStatus('Saved ' + cfg.outputName + part.suffix + '.webm (' + codec + ', ' + (blob.size/1048576).toFixed(1) + ' MB).');
+    setStatus('Saved ' + cfg.outputName + '.webm (' + codec + ', ' + (blob.size/1048576).toFixed(1) + ' MB).');
     setBusy(false);
   };
 
   setBusy(true);
-  setStatus('Recording ' + partKey + '…', true);
+  setStatus('Recording…', true);
   recorder.start();
-  runAnimation(partKey, () => {
+  runAnimation(() => {
     setTimeout(() => recorder.state !== 'inactive' && recorder.stop(), 120);
   });
 }
@@ -721,21 +697,15 @@ function setStatus(msg, rec) {
   els.status.classList.toggle('rec', !!rec);
 }
 function setBusy(b) {
-  [els.playQ, els.recordQ, els.playA, els.recordA].forEach(btn => btn.disabled = b);
+  [els.play, els.record].forEach(btn => btn.disabled = b);
 }
 
-els.playQ.addEventListener('click', () => {
+els.play.addEventListener('click', () => {
   if (running) return;
-  setBusy(true); setStatus('Previewing question…');
-  runAnimation('question', () => { setBusy(false); setStatus('Question preview done.'); });
+  setBusy(true); setStatus('Previewing…');
+  runAnimation(() => { setBusy(false); setStatus('Preview done.'); drawIdle(); });
 });
-els.playA.addEventListener('click', () => {
-  if (running) return;
-  setBusy(true); setStatus('Previewing answer…');
-  runAnimation('answer', () => { setBusy(false); setStatus('Answer preview done.'); });
-});
-els.recordQ.addEventListener('click', () => record('question'));
-els.recordA.addEventListener('click', () => record('answer'));
+els.record.addEventListener('click', record);
 
 [els.question, ...els.opt, els.correct, els.pos].forEach(el =>
   el.addEventListener('input', () => { if (!running) drawIdle(); })
