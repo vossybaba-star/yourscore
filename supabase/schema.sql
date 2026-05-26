@@ -279,6 +279,15 @@ create policy "Admins update rooms" on rooms
   for update using (true);
 
 -- ============================================================
+-- QUIZ ATTEMPTS (leaderboard)
+-- ============================================================
+-- NOTE: quiz_attempts table is created via Supabase dashboard.
+-- Required RLS policies (run once in SQL editor):
+--   CREATE POLICY "Quiz attempts leaderboard readable" ON quiz_attempts FOR SELECT USING (true);
+--   CREATE POLICY "quiz_attempts_insert_own" ON quiz_attempts FOR INSERT WITH CHECK (auth.uid() = user_id);
+--   CREATE POLICY "quiz_attempts_select_own" ON quiz_attempts FOR SELECT USING (auth.uid() = user_id);
+
+-- ============================================================
 -- REALTIME — enable for leaderboard + question events + rooms
 -- ============================================================
 alter publication supabase_realtime add table room_scores;
