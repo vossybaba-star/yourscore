@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { Spinner } from "@/components/ui/Spinner";
 import { useState } from "react";
+import { isNative, NATIVE_AUTH_CALLBACK, openOAuthInBrowser } from "@/lib/native";
 
 type Provider = "google" | "apple" | "facebook";
 
@@ -23,6 +24,25 @@ function OAuthButton({ provider, label, icon, nextPath }: { provider: Provider; 
     }
     setLoading(true);
     const sb = createClient();
+
+    if (isNative()) {
+      const redirectTo = nextPath
+        ? `${NATIVE_AUTH_CALLBACK}?next=${encodeURIComponent(nextPath)}`
+        : NATIVE_AUTH_CALLBACK;
+      const { data, error } = await sb.auth.signInWithOAuth({
+        provider,
+        options: { redirectTo, skipBrowserRedirect: true },
+      });
+      if (error || !data?.url) {
+        setLoading(false);
+        alert(`Sign-in failed: ${error?.message ?? "unknown"}`);
+        return;
+      }
+      await openOAuthInBrowser(data.url);
+      setLoading(false);
+      return;
+    }
+
     const redirectTo = nextPath
       ? `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`
       : REDIRECT();
