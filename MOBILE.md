@@ -88,6 +88,30 @@ npx cap run ios             # build + run on simulator
 npx cap run android         # build + run on emulator
 ```
 
+## Push notifications
+
+Required for App Store Guideline 4.2 mitigation and the core "alert me when a question fires" loop.
+
+**Scaffold in place:**
+
+- `src/lib/push.ts` — client helper, no-op on web. Call `registerForPush(supabase, userId)` after sign-in.
+- `supabase/migrations/01_device_tokens.sql` — `device_tokens` table (paste into SQL editor once).
+- `supabase/functions/send-push/index.ts` — Edge Function skeleton. APNs and FCM senders are stubbed; fill in once we have credentials.
+
+**Pending work (needs external accounts):**
+
+1. **Apple Developer account approved** → generate APNs Auth Key (.p8) at developer.apple.com → Keys.
+2. **Firebase project for Android** → create project at firebase.google.com → Project settings → Cloud Messaging → grab server key → download `google-services.json` and drop it in `android/app/`.
+3. **Set Edge Function secrets:**
+   ```bash
+   supabase secrets set APNS_KEY_ID=... APNS_TEAM_ID=... APNS_BUNDLE_ID=app.yourscore.app
+   supabase secrets set APNS_PRIVATE_KEY="$(cat AuthKey_XXXX.p8)"
+   supabase secrets set FCM_SERVER_KEY=...
+   ```
+4. **Implement APNs + FCM sender bodies** (`sendAPNs` / `sendFCM` in the Edge Function).
+5. **Wire trigger:** call the Edge Function from `/admin/rooms` when an admin fires a question.
+6. **Wire client registration:** call `registerForPush()` from the auth provider after sign-in.
+
 ## App Store 4.2 mitigation
 
 Apple Guideline 4.2 rejects "thin webview wrappers." Mitigations baked in:
