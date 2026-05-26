@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1080">
+<title>YourScore – Debate Card</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:         #0B0B14;
+    --card:       #13131F;
+    --card-hover: #1C1C2E;
+    --green:      #00C853;
+    --green-dim:  rgba(0,200,83,0.1);
+    --purple:     #9B7FFF;
+    --purple-dim: rgba(155,127,255,0.12);
+    --white:      #FFFFFF;
+    --muted:      #6B6F8A;
+    --border:     rgba(255,255,255,0.06);
+    --border-active: rgba(155,127,255,0.35);
+  }
+
+  html {
+    background: #050509;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+  }
+
+  body {
+    width: 1080px;
+    height: 1350px;
+    transform-origin: top center;
+    background-color: var(--bg);
+    background-image:
+      linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 48px 48px;
+    font-family: 'Figtree', sans-serif;
+    color: var(--white);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+  }
+
+  body::after {
+    content: '';
+    position: absolute;
+    bottom: -100px;
+    right: -100px;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(0,200,83,0.06) 0%, transparent 65%);
+    pointer-events: none;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    padding: 56px 64px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .wordmark {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 28px;
+    letter-spacing: 0.06em;
+    color: var(--white);
+    text-transform: uppercase;
+  }
+
+  .chip-debate {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--purple-dim);
+    border: 1px solid rgba(155,127,255,0.3);
+    border-radius: 100px;
+    padding: 8px 20px;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--purple);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  /* ── QUESTION ── */
+  .question-block {
+    padding: 52px 64px 40px;
+  }
+
+  .question-eyebrow {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 20px;
+  }
+
+  .question-text {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: 86px;
+    line-height: 0.9;
+    text-transform: uppercase;
+    letter-spacing: -0.01em;
+    color: var(--white);
+  }
+
+  .question-text .highlight {
+    color: var(--purple);
+  }
+
+  /* ── OPTIONS ── */
+  .options {
+    flex: 1;
+    padding: 0 64px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .option {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 28px 32px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Active option (highlighted) */
+  .option.active {
+    background: var(--purple-dim);
+    border-color: var(--border-active);
+  }
+
+  .option.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: var(--purple);
+    border-radius: 4px 0 0 4px;
+  }
+
+  .option-letter {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 28px;
+    color: var(--muted);
+    width: 36px;
+    flex-shrink: 0;
+    text-transform: uppercase;
+  }
+
+  .option.active .option-letter {
+    color: var(--purple);
+  }
+
+  .option-info {
+    flex: 1;
+  }
+
+  .option-name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 34px;
+    text-transform: uppercase;
+    color: var(--white);
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .option-stats {
+    font-size: 17px;
+    font-weight: 500;
+    color: var(--muted);
+    display: flex;
+    gap: 16px;
+  }
+
+  .option-stats .stat-g {
+    color: var(--green);
+    font-weight: 600;
+  }
+
+  .option-stats .stat-a {
+    color: var(--purple);
+    font-weight: 600;
+  }
+
+  .option-club {
+    font-size: 15px;
+    color: var(--muted);
+    font-weight: 500;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  /* ── BOTTOM BAR ── */
+  .bottom-bar {
+    margin: 32px 64px 52px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .bottom-wordmark {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 24px;
+    letter-spacing: 0.06em;
+    color: var(--white);
+    text-transform: uppercase;
+  }
+
+  .bottom-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .comment-prompt {
+    font-size: 16px;
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  .comment-prompt strong {
+    color: var(--white);
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="wordmark">YOURSCORE</div>
+    <div class="chip-debate">⚡ Debate</div>
+  </div>
+
+  <!-- QUESTION -->
+  <div class="question-block">
+    <div class="question-eyebrow">2025/26 Premier League season</div>
+    <div class="question-text">
+      Best<br>
+      <span class="highlight">Midfielder</span><br>
+      This Season?
+    </div>
+  </div>
+
+  <!-- OPTIONS -->
+  <div class="options">
+
+    <div class="option active">
+      <div class="option-letter">A</div>
+      <div class="option-info">
+        <div class="option-name">Bruno Fernandes</div>
+        <div class="option-stats">
+          <span class="stat-g">8 Goals</span>
+          <span class="stat-a">20 Assists</span>
+          <span>= All-time PL assists record</span>
+        </div>
+      </div>
+      <div class="option-club">Man Utd</div>
+    </div>
+
+    <div class="option">
+      <div class="option-letter">B</div>
+      <div class="option-info">
+        <div class="option-name">Morgan Gibbs-White</div>
+        <div class="option-stats">
+          <span class="stat-g">14 Goals</span>
+          <span class="stat-a">4 Assists</span>
+        </div>
+      </div>
+      <div class="option-club">Nott'm Forest</div>
+    </div>
+
+    <div class="option">
+      <div class="option-letter">C</div>
+      <div class="option-info">
+        <div class="option-name">Morgan Rogers</div>
+        <div class="option-stats">
+          <span class="stat-g">10 Goals</span>
+          <span class="stat-a">8 Assists</span>
+        </div>
+      </div>
+      <div class="option-club">Aston Villa</div>
+    </div>
+
+    <div class="option">
+      <div class="option-letter">D</div>
+      <div class="option-info">
+        <div class="option-name">Harry Wilson</div>
+        <div class="option-stats">
+          <span class="stat-g">10 Goals</span>
+          <span class="stat-a">8 Assists</span>
+        </div>
+      </div>
+      <div class="option-club">Fulham</div>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM BAR -->
+  <div class="bottom-bar">
+    <div class="bottom-wordmark">YOURSCORE</div>
+    <div class="bottom-right">
+      <div class="comment-prompt">Your answer 👇 <strong>yourscore.app</strong></div>
+    </div>
+  </div>
+
+
+<script>
+  function fitToScreen() {
+    const W = 1080, H = 1350;
+    const s = Math.min((window.innerWidth - 24) / W, (window.innerHeight - 24) / H);
+    document.body.style.transform = `scale(${s})`;
+    document.body.style.marginTop = Math.max(0, (window.innerHeight - H * s) / 2 - 12) + 'px';
+  }
+  window.addEventListener('load', fitToScreen);
+  window.addEventListener('resize', fitToScreen);
+</script>
+</body>
+</html>

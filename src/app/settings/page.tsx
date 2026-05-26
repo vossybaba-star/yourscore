@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useEffect } from "react";
@@ -13,6 +14,9 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [profileLoading, setProfileLoading] = useState(true);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
 
   useEffect(() => {
     if (loading) return;
@@ -23,18 +27,43 @@ export default function SettingsPage() {
     import("@/lib/supabase/client").then(({ createClient }) => {
       createClient()
         .from("profiles")
-        .select("display_name, username")
+        .select("display_name, username, avatar_url")
         .eq("id", user.id)
         .single()
         .then(({ data }) => {
           if (data) {
-            setDisplayName(data.display_name ?? "");
-            setUsername(data.username ?? "");
+            setDisplayName((data as any).display_name ?? "");
+            setUsername((data as any).username ?? "");
+            setAvatarUrl((data as any).avatar_url ?? null);
           }
           setProfileLoading(false);
         });
     });
   }, [user, loading]);
+
+  async function handleAvatarUpload(file: File) {
+    if (!user || !process.env.NEXT_PUBLIC_SUPABASE_URL) return;
+    setUploading(true);
+    setUploadError("");
+    try {
+      const { createClient } = await import("@/lib/supabase/client");
+      const sb = createClient();
+      const ext = file.name.split(".").pop() ?? "jpg";
+      const path = `${user.id}.${ext}`;
+      const { error: uploadErr } = await (sb as any).storage
+        .from("avatars")
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (uploadErr) { setUploadError("Upload failed. Try again."); return; }
+      const { data: urlData } = (sb as any).storage.from("avatars").getPublicUrl(path);
+      const publicUrl = urlData?.publicUrl ?? null;
+      if (publicUrl) {
+        await sb.from("profiles").update({ avatar_url: publicUrl }).eq("id", user.id);
+        setAvatarUrl(publicUrl + "?t=" + Date.now()); // cache bust
+      }
+    } finally {
+      setUploading(false);
+    }
+  }
 
   async function handleSave() {
     if (!user || !process.env.NEXT_PUBLIC_SUPABASE_URL) return;
@@ -74,6 +103,10 @@ export default function SettingsPage() {
           <p className="font-body text-text-muted">Sign in to access settings.</p>
           <Link href="/" className="font-body text-sm font-semibold" style={{ color: "#00ff87" }}>
             ← Home
+          </Link>
+          <Link href="/auth/sign-in" className="inline-flex items-center justify-center px-6 py-3 rounded-xl font-body font-bold text-sm transition-all"
+            style={{ background: "rgba(0,255,135,0.1)", color: "#00ff87", border: "1px solid rgba(0,255,135,0.28)" }}>
+            Sign in →
           </Link>
         </div>
       </main>
@@ -125,17 +158,70 @@ export default function SettingsPage() {
 
         {/* Avatar */}
         <div className="flex items-center gap-4">
-          <div
-            className="w-16 h-16 rounded-full flex items-center justify-center font-body font-bold text-2xl flex-shrink-0"
-            style={{ background: "#1a2f4a", color: "#60a5fa", border: "2px solid rgba(255,255,255,0.1)" }}
-          >
-            {initials}
-          </div>
+          <label className="relative cursor-pointer flex-shrink-0 group">
+            <input
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              disabled={uploading}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleAvatarUpload(file);
+                e.target.value = "";
+              }}
+            />
+            {avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={avatarUrl}
+                alt="Avatar"
+                className="w-16 h-16 rounded-full object-cover"
+                style={{ border: "2px solid rgba(255,255,255,0.1)" }}
+              />
+            ) : (
+              <div
+                className="w-16 h-16 rounded-full flex items-center justify-center font-body font-bold text-2xl"
+                style={{ background: "#1a2f4a", color: "#60a5fa", border: "2px solid rgba(255,255,255,0.1)" }}
+              >
+                {initials}
+              </div>
+            )}
+            {/* Overlay */}
+            <div
+              className="absolute inset-0 rounded-full flex items-center justify-center transition-opacity"
+              style={{ background: "rgba(0,0,0,0.55)", opacity: uploading ? 1 : 0 }}
+            >
+              {uploading ? (
+                <svg className="animate-spin" width="20" height="20" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.3)" strokeWidth="3" />
+                  <path d="M12 2a10 10 0 0 1 10 10" stroke="white" strokeWidth="3" strokeLinecap="round" />
+                </svg>
+              ) : null}
+            </div>
+            <div
+              className="absolute inset-0 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+              style={{ background: "rgba(0,0,0,0.45)" }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" stroke="white" strokeWidth="1.8"/>
+                <path d="M3 9h1.5l2-3h9l2 3H20a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V10a1 1 0 0 1 1-1z" stroke="white" strokeWidth="1.8" strokeLinejoin="round"/>
+              </svg>
+            </div>
+          </label>
           <div>
             <p className="font-body text-base font-semibold text-white">
               {displayName || user.email?.split("@")[0]}
             </p>
             <p className="font-body text-xs text-text-muted mt-0.5">{user.email}</p>
+            {uploadError && <p className="font-body text-xs mt-1" style={{ color: "#ff4757" }}>{uploadError}</p>}
+            <button
+              type="button"
+              className="font-body text-xs mt-1 transition-colors"
+              style={{ color: "#00ff87" }}
+              onClick={() => (document.querySelector('input[type="file"]') as HTMLInputElement)?.click()}
+            >
+              {uploading ? "Uploading…" : "Change photo"}
+            </button>
           </div>
         </div>
 

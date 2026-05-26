@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1080">
+<title>YourScore – Quiz Story</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:         #0B0B14;
+    --card:       #13131F;
+    --card-2:     #1A1A2E;
+    --green:      #00C853;
+    --green-dim:  rgba(0,200,83,0.12);
+    --purple:     #9B7FFF;
+    --purple-dim: rgba(155,127,255,0.12);
+    --white:      #FFFFFF;
+    --muted:      #6B6F8A;
+    --border:     rgba(255,255,255,0.06);
+  }
+
+  html {
+    background: #050509;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+  }
+
+  body {
+    width: 1080px;
+    height: 1920px;
+    transform-origin: top center;
+    background-color: var(--bg);
+    background-image:
+      linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 48px 48px;
+    font-family: 'Figtree', sans-serif;
+    color: var(--white);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Glow top-right */
+  body::before {
+    content: '';
+    position: absolute;
+    top: -150px;
+    right: -150px;
+    width: 700px;
+    height: 700px;
+    background: radial-gradient(circle, rgba(155,127,255,0.09) 0%, transparent 65%);
+    pointer-events: none;
+  }
+
+  /* Glow bottom-left */
+  body::after {
+    content: '';
+    position: absolute;
+    bottom: -150px;
+    left: -150px;
+    width: 700px;
+    height: 700px;
+    background: radial-gradient(circle, rgba(0,200,83,0.07) 0%, transparent 65%);
+    pointer-events: none;
+  }
+
+  /* ── TOP NAV ── */
+  .top-nav {
+    padding: 72px 64px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .wordmark {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 32px;
+    letter-spacing: 0.06em;
+    color: var(--white);
+    text-transform: uppercase;
+  }
+
+  .chip-quiz {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--green-dim);
+    border: 1px solid rgba(0,200,83,0.25);
+    border-radius: 100px;
+    padding: 10px 22px;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--green);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  /* ── MIDDLE SECTION ── */
+  .middle {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 64px;
+    gap: 0;
+  }
+
+  .eyebrow {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 40px;
+  }
+
+  /* Question card */
+  .question-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 28px;
+    padding: 60px 56px;
+    margin-bottom: 32px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .question-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--purple), var(--green));
+    border-radius: 28px 28px 0 0;
+  }
+
+  .question-number {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 20px;
+    color: var(--purple);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 28px;
+  }
+
+  .question-text {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 72px;
+    line-height: 1.0;
+    text-transform: uppercase;
+    color: var(--white);
+    letter-spacing: -0.01em;
+  }
+
+  /* Stats context */
+  .question-context {
+    margin-top: 32px;
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .context-pill {
+    background: var(--card-2);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 10px 20px;
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--green);
+    letter-spacing: 0.02em;
+  }
+
+  .context-pill.purple {
+    color: var(--purple);
+  }
+
+  /* Reveal button */
+  .reveal-btn {
+    background: var(--green);
+    border-radius: 18px;
+    padding: 38px 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .reveal-btn-text {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 42px;
+    text-transform: uppercase;
+    color: #0B0B14;
+    letter-spacing: 0.04em;
+  }
+
+  .reveal-icon {
+    font-size: 36px;
+  }
+
+  /* World Cup chip */
+  .wc-chip {
+    background: var(--purple-dim);
+    border: 1px solid rgba(155,127,255,0.25);
+    border-radius: 18px;
+    padding: 28px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+
+  .wc-left {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .wc-label {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .wc-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 30px;
+    color: var(--purple);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+
+  .wc-right {
+    text-align: right;
+  }
+
+  .wc-days {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: 72px;
+    color: var(--white);
+    line-height: 1;
+  }
+
+  .wc-days-label {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  /* ── BOTTOM ── */
+  .bottom {
+    padding: 0 64px 72px;
+  }
+
+  .bottom-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 28px 36px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .bottom-left {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .bottom-wordmark {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 26px;
+    letter-spacing: 0.06em;
+    color: var(--white);
+    text-transform: uppercase;
+  }
+
+  .bottom-sub {
+    font-size: 16px;
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  .bottom-tag {
+    background: var(--green-dim);
+    border: 1px solid rgba(0,200,83,0.2);
+    border-radius: 100px;
+    padding: 10px 24px;
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--green);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+</style>
+</head>
+<body>
+
+  <!-- TOP NAV -->
+  <div class="top-nav">
+    <div class="wordmark">YOURSCORE</div>
+    <div class="chip-quiz">🧠 Quiz</div>
+  </div>
+
+  <!-- MIDDLE -->
+  <div class="middle">
+    <div class="eyebrow">2025/26 Premier League · Final Day</div>
+
+    <!-- Question card -->
+    <div class="question-card">
+      <div class="question-number">Question</div>
+      <div class="question-text">
+        Arsenal only conceded 26 goals this season. Who was their starting goalkeeper?
+      </div>
+      <div class="question-context">
+        <div class="context-pill">26 Goals Conceded</div>
+        <div class="context-pill purple">Best Defence in the League</div>
+        <div class="context-pill">Champions 🏆</div>
+      </div>
+    </div>
+
+    <!-- Reveal button -->
+    <div class="reveal-btn">
+      <span class="reveal-icon">👆</span>
+      <span class="reveal-btn-text">Tap to Reveal</span>
+    </div>
+
+    <!-- WC countdown -->
+    <div class="wc-chip">
+      <div class="wc-left">
+        <div class="wc-label">Countdown</div>
+        <div class="wc-title">World Cup 2026</div>
+      </div>
+      <div class="wc-right">
+        <div class="wc-days">20</div>
+        <div class="wc-days-label">Days to go</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM -->
+  <div class="bottom">
+    <div class="bottom-card">
+      <div class="bottom-left">
+        <div class="bottom-wordmark">YOURSCORE</div>
+        <div class="bottom-sub">Free · No app needed · yourscore.app</div>
+      </div>
+      <div class="bottom-tag">Start your league →</div>
+    </div>
+  </div>
+
+
+<script>
+  function fitToScreen() {
+    const W = 1080, H = 1920;
+    const s = Math.min((window.innerWidth - 24) / W, (window.innerHeight - 24) / H);
+    document.body.style.transform = `scale(${s})`;
+    document.body.style.marginTop = Math.max(0, (window.innerHeight - H * s) / 2 - 12) + 'px';
+  }
+  window.addEventListener('load', fitToScreen);
+  window.addEventListener('resize', fitToScreen);
+</script>
+</body>
+</html>

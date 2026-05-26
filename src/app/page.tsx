@@ -5,6 +5,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useUser } from "@/hooks/useUser";
 import { BottomNav } from "@/components/ui/BottomNav";
+import { FlagImage } from "@/components/ui/FlagImage";
+import { getPlayerCutoutUrl } from "@/lib/playerImages";
 
 const WORLD_CUP_START = new Date("2026-06-11T18:00:00Z");
 
@@ -331,16 +333,6 @@ function LeagueStandingsTile({ userId }: { userId: string }) {
 
 // ── Dashboard (logged-in) ────────────────────────────────────────────────────
 
-interface RoomCard {
-  id: string;
-  name: string;
-  code: string;
-  status: "lobby" | "live" | "completed";
-  match_label: string;
-  player_count: number;
-  is_host: boolean;
-}
-
 // ── Live matches strip ────────────────────────────────────────────────────────
 
 interface LiveMatch {
@@ -354,19 +346,6 @@ interface LiveMatch {
   away_score: number;
 }
 
-const FLAG_MAP_DASH: Record<string, string> = {
-  England: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", France: "🇫🇷", Brazil: "🇧🇷", Argentina: "🇦🇷",
-  Germany: "🇩🇪", Spain: "🇪🇸", Portugal: "🇵🇹", Netherlands: "🇳🇱",
-  USA: "🇺🇸", Mexico: "🇲🇽", Italy: "🇮🇹", Morocco: "🇲🇦",
-  Ecuador: "🇪🇨", Canada: "🇨🇦", Jamaica: "🇯🇲", Chile: "🇨🇱",
-  Bolivia: "🇧🇴", Honduras: "🇭🇳", Panama: "🇵🇦", Uruguay: "🇺🇾",
-  Colombia: "🇨🇴", Peru: "🇵🇪", Venezuela: "🇻🇪", Paraguay: "🇵🇾",
-  Senegal: "🇸🇳", Nigeria: "🇳🇬", Ghana: "🇬🇭", "South Africa": "🇿🇦",
-  Croatia: "🇭🇷", Serbia: "🇷🇸", Denmark: "🇩🇰", Switzerland: "🇨🇭",
-  Belgium: "🇧🇪", Poland: "🇵🇱", Ukraine: "🇺🇦", Turkey: "🇹🇷",
-  Japan: "🇯🇵", "South Korea": "🇰🇷", Iran: "🇮🇷", Australia: "🇦🇺",
-  Qatar: "🇶🇦", "Saudi Arabia": "🇸🇦", Wales: "🏴󠁧󠁢󠁷󠁬󠁳󠁿", Scotland: "🏴󠁧󠁢󠁳󠁣󠁴󠁿",
-};
 
 function useUpcomingMatches(limit = 5) {
   const [matches, setMatches] = useState<LiveMatch[]>([]);
@@ -412,15 +391,13 @@ const DASH_ANIM = `
 `;
 
 function Dashboard({ userId }: { userId: string }) {
-  const [rooms, setRooms] = useState<RoomCard[]>([]);
   const [displayName, setDisplayName] = useState("");
   const [totalScore, setTotalScore] = useState<number | null>(null);
   const [globalRank, setGlobalRank] = useState<number | null>(null);
-  const [loadingRooms, setLoadingRooms] = useState(true);
   const matches = useUpcomingMatches(8);
 
   useEffect(() => {
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) { setLoadingRooms(false); return; }
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) { return; }
     import("@/lib/supabase/client").then(({ createClient }) => {
       const sb = createClient();
       sb.from("profiles").select("display_name, total_score").eq("id", userId).single()
@@ -434,29 +411,10 @@ function Dashboard({ userId }: { userId: string }) {
               .then(({ count }: any) => setGlobalRank((count ?? 0) + 1));
           }
         });
-      sb.from("room_members")
-        .select("room_id, rooms(id, name, code, status, created_by, match_id, matches(home_team, away_team))")
-        .eq("user_id", userId)
-        .order("joined_at", { ascending: false })
-        .limit(20)
-        .then(async ({ data }) => {
-          if (!data) { setLoadingRooms(false); return; }
-          const cards: RoomCard[] = (data as any[]).map((row) => {
-            const r = row.rooms as any;
-            const m = r?.matches as any;
-            return { id: r?.id ?? "", name: r?.name ?? "", code: r?.code ?? "", status: r?.status ?? "lobby", match_label: m ? `${m.home_team} vs ${m.away_team}` : "Room", player_count: 0, is_host: r?.created_by === userId };
-          }).filter((r) => r.id);
-          setRooms(cards);
-          setLoadingRooms(false);
-        });
     });
   }, [userId]);
 
   const firstName = displayName ? displayName.split(" ")[0] : null;
-  const activeRooms = rooms.filter((r) => r.status !== "completed");
-  const pastRooms = rooms.filter((r) => r.status === "completed");
-  const STATUS_LABEL: Record<string, string> = { lobby: "Lobby", live: "LIVE", completed: "Ended" };
-  const STATUS_COLOR: Record<string, string> = { lobby: "#ffb800", live: "#00ff87", completed: "#8888aa" };
 
   return (
     <main className="min-h-dvh bg-bg pb-28 overflow-x-hidden">
@@ -508,6 +466,28 @@ function Dashboard({ userId }: { userId: string }) {
           </div>
         </div>
 
+        {/* ── Challenges promo strip ─────────────────────────────────────── */}
+        <div className="dash-slide-2">
+          <Link href="/challenges"
+            className="flex items-center justify-between px-4 py-3.5 rounded-2xl transition-all hover:opacity-90 active:scale-[0.99]"
+            style={{ background: "linear-gradient(135deg, rgba(255,184,0,0.1) 0%, rgba(255,71,87,0.06) 100%)", border: "1px solid rgba(255,184,0,0.18)" }}>
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 text-lg"
+                style={{ background: "rgba(255,184,0,0.15)", border: "1px solid rgba(255,184,0,0.25)" }}>
+                ⭐
+              </div>
+              <div>
+                <p className="font-body text-sm font-bold text-white">Football Challenges</p>
+                <p className="font-body text-xs text-text-muted">Solo games · Score big · Climb the ranks</p>
+              </div>
+            </div>
+            <span className="font-body text-xs font-bold px-3 py-1.5 rounded-lg flex-shrink-0"
+              style={{ background: "rgba(255,184,0,0.15)", color: "#ffb800", border: "1px solid rgba(255,184,0,0.25)" }}>
+              Play →
+            </span>
+          </Link>
+        </div>
+
         {/* ── League standings ───────────────────────────────────────────── */}
         <LeagueStandingsTile userId={userId} />
 
@@ -554,11 +534,11 @@ function Dashboard({ userId }: { userId: string }) {
                       className="flex flex-col gap-2 rounded-2xl p-4 flex-shrink-0 transition-opacity hover:opacity-80 active:scale-[0.98]"
                       style={{ background: isLive ? "rgba(0,255,135,0.07)" : "#12121e", border: isLive ? "1px solid rgba(0,255,135,0.2)" : "1px solid rgba(255,255,255,0.08)", width: 148 }}>
                       <div className="flex items-center justify-between">
-                        <span className="text-2xl">{FLAG_MAP_DASH[m.home_team] ?? "🏳️"}</span>
+                        <FlagImage team={m.home_team} size={28} />
                         {isLive
                           ? <span className="font-display text-sm text-white">{m.home_score}–{m.away_score}</span>
                           : <span className="font-body text-xs text-text-muted">vs</span>}
-                        <span className="text-2xl">{FLAG_MAP_DASH[m.away_team] ?? "🏳️"}</span>
+                        <FlagImage team={m.away_team} size={28} />
                       </div>
                       <p className="font-body text-xs font-semibold text-white leading-tight">{m.home_team} vs {m.away_team}</p>
                       <p className="font-body text-xs" style={{ color: isLive ? "#00ff87" : "#8888aa" }}>
@@ -572,79 +552,6 @@ function Dashboard({ userId }: { userId: string }) {
           </div>
         )}
 
-        {/* ── Create a room + active rooms ────────────────────────────────── */}
-        <div className="dash-slide-5">
-          <div className="flex items-center justify-between mb-3">
-            <p className="font-body text-xs text-text-muted uppercase tracking-widest">Your rooms</p>
-            <Link href="/room/new" className="font-body text-xs font-semibold" style={{ color: "#00ff87" }}>+ New room</Link>
-          </div>
-          {loadingRooms ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="w-5 h-5 rounded-full border-2 border-white/20 animate-spin" style={{ borderTopColor: "#00ff87" }} />
-            </div>
-          ) : activeRooms.length === 0 ? (
-            <Link href="/room/new"
-              className="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all hover:opacity-80"
-              style={{ background: "rgba(0,255,135,0.04)", border: "1px dashed rgba(0,255,135,0.2)" }}>
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                style={{ background: "rgba(0,255,135,0.1)" }}>
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                  <path d="M9 2v14M2 9h14" stroke="#00ff87" strokeWidth="2" strokeLinecap="round"/>
-                </svg>
-              </div>
-              <div>
-                <p className="font-body text-sm font-semibold text-white">Create a room</p>
-                <p className="font-body text-xs text-text-muted">Pick a match, invite your crew</p>
-              </div>
-            </Link>
-          ) : (
-            <div className="space-y-2">
-              {activeRooms.map((room) => (
-                <Link key={room.id} href={`/room/${room.id}`}
-                  className="flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-opacity hover:opacity-80"
-                  style={{ background: "#12121e", border: `1px solid ${room.status === "live" ? "rgba(0,255,135,0.15)" : "rgba(255,255,255,0.07)"}` }}>
-                  <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: STATUS_COLOR[room.status], boxShadow: room.status === "live" ? `0 0 6px ${STATUS_COLOR[room.status]}` : "none" }} />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-body text-sm font-semibold text-white truncate">{room.name}</p>
-                    <p className="font-body text-xs text-text-muted truncate">{room.match_label}</p>
-                  </div>
-                  <div className="flex items-center gap-3 flex-shrink-0">
-                    <span className="font-body text-xs font-semibold uppercase tracking-widest px-2 py-1 rounded-full"
-                      style={{ background: `${STATUS_COLOR[room.status]}15`, color: STATUS_COLOR[room.status], border: `1px solid ${STATUS_COLOR[room.status]}30` }}>
-                      {STATUS_LABEL[room.status]}
-                    </span>
-                    <span className="font-display text-base" style={{ color: "#00ff87" }}>{room.code}</span>
-                  </div>
-                </Link>
-              ))}
-              <Link href="/room/new"
-                className="flex items-center justify-center gap-2 py-3 rounded-xl font-body text-xs font-semibold transition-opacity hover:opacity-80"
-                style={{ border: "1px dashed rgba(0,255,135,0.2)", color: "#00ff87" }}>
-                + Create another room
-              </Link>
-            </div>
-          )}
-        </div>
-
-        {/* Past games */}
-        {pastRooms.length > 0 && (
-          <div>
-            <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-3">Past games</p>
-            <div className="space-y-2">
-              {pastRooms.map((room) => (
-                <Link key={room.id} href={`/room/${room.id}/results`}
-                  className="flex items-center gap-3 px-4 py-3 rounded-2xl transition-opacity hover:opacity-80"
-                  style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.06)" }}>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-body text-sm font-medium text-white truncate">{room.name}</p>
-                    <p className="font-body text-xs text-text-muted truncate">{room.match_label}</p>
-                  </div>
-                  <span className="font-body text-xs text-text-muted">Results →</span>
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
       <BottomNav />
     </main>
@@ -672,11 +579,11 @@ function UpcomingFixturesSection() {
                 className="flex flex-col gap-2 rounded-2xl p-4 hover:opacity-80 transition-opacity flex-shrink-0 group"
                 style={{ background: isLive ? "rgba(0,255,135,0.06)" : "#12121e", border: isLive ? "1px solid rgba(0,255,135,0.2)" : "1px solid rgba(255,255,255,0.08)", width: 160 }}>
                 <div className="flex items-center justify-between">
-                  <span className="text-2xl">{FLAG_MAP_DASH[m.home_team] ?? "🏳️"}</span>
+                  <FlagImage team={m.home_team} size={28} />
                   {isLive
                     ? <span className="font-display text-sm text-white">{m.home_score}–{m.away_score}</span>
                     : <span className="font-body text-xs text-text-muted">vs</span>}
-                  <span className="text-2xl">{FLAG_MAP_DASH[m.away_team] ?? "🏳️"}</span>
+                  <FlagImage team={m.away_team} size={28} />
                 </div>
                 <p className="font-body text-xs font-semibold text-white leading-tight">{m.home_team} vs {m.away_team}</p>
                 <div className="flex items-center justify-between">
@@ -696,6 +603,15 @@ function UpcomingFixturesSection() {
 
 function MarketingLanding() {
   const [timerValue, setTimerValue] = useState(45);
+  const [countdownLeftUrl, setCountdownLeftUrl] = useState<string | null>(null);
+  const [countdownRightUrl, setCountdownRightUrl] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  // Fetch player cutouts for countdown strip
+  useEffect(() => {
+    getPlayerCutoutUrl("Vinicius Junior").then(url => { if (url) setCountdownLeftUrl(url); });
+    getPlayerCutoutUrl("Jude Bellingham").then(url => { if (url) setCountdownRightUrl(url); });
+  }, []);
 
   useEffect(() => {
     const loop = () => {
@@ -728,21 +644,124 @@ function MarketingLanding() {
         <span className="font-display text-3xl text-white tracking-wider" style={{ textShadow: "0 0 30px rgba(0,255,135,0.35)" }}>YOURSCORE</span>
         <div className="flex items-center gap-2">
           <Link href="/how-it-works" className="hidden sm:block font-body text-sm text-text-muted hover:text-white transition-colors px-3 py-2">How it works</Link>
-          <Link href="/join" className="hidden sm:block font-body text-sm text-text-muted hover:text-white transition-colors px-3 py-2">Join room</Link>
-          <Link href="/auth/sign-in" className="font-body text-sm text-text-muted hover:text-white transition-colors px-3 py-2">Sign in</Link>
-          <Link href="/league/new" className="font-body font-bold text-sm px-5 py-2.5 rounded-xl hover:opacity-90 transition-all pulse-glow"
+          <Link href="/challenges" className="hidden sm:block font-body text-sm hover:opacity-80 transition-colors px-3 py-2" style={{ color: "#ffb800" }}>Challenges</Link>
+          <Link href="/league/join" className="hidden sm:block font-body text-sm text-text-muted hover:text-white transition-colors px-3 py-2">Join league</Link>
+          <Link href="/auth/sign-in" className="hidden sm:block font-body text-sm text-text-muted hover:text-white transition-colors px-3 py-2">Sign in</Link>
+          <Link href="/auth/sign-in" className="font-body font-bold text-sm px-5 py-2.5 rounded-xl hover:opacity-90 transition-all green-pulse"
+            style={{ background: "rgba(0,255,135,0.12)", color: "#00ff87", border: "1px solid rgba(0,255,135,0.35)" }}>
+            Sign Up
+          </Link>
+          <Link href="/league/new" className="hidden sm:block font-body font-bold text-sm px-5 py-2.5 rounded-xl hover:opacity-90 transition-all pulse-glow"
             style={{ background: "#a78bfa", color: "#0a0a0f" }}>
             Create a league
           </Link>
+          {/* Hamburger — mobile only */}
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            className="sm:hidden w-9 h-9 rounded-full flex items-center justify-center transition-all"
+            style={{
+              background: menuOpen ? "rgba(0,255,135,0.12)" : "rgba(255,255,255,0.06)",
+              border: `1.5px solid ${menuOpen ? "rgba(0,255,135,0.35)" : "rgba(255,255,255,0.1)"}`,
+            }}
+          >
+            {menuOpen ? (
+              <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+                <path d="M2 2l11 11M13 2L2 13" stroke="#00ff87" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
+            ) : (
+              <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+                <path d="M1.5 3.5h12M1.5 7.5h12M1.5 11.5h12" stroke="white" strokeWidth="1.7" strokeLinecap="round" />
+              </svg>
+            )}
+          </button>
         </div>
       </nav>
 
+      {/* ── Mobile menu shelf ────────────────────────────────────────────── */}
+      {menuOpen && (
+        <>
+          {/* Tap-outside-to-close dimmer — doesn't cover the shelf */}
+          <div
+            className="sm:hidden fixed inset-0 z-40"
+            style={{ background: "rgba(0,0,0,0.3)" }}
+            onClick={() => setMenuOpen(false)}
+          />
+          {/* Shelf panel — drops down from nav, z above dimmer */}
+          <div
+            className="sm:hidden fixed top-0 left-0 right-0 z-50"
+            style={{
+              background: "rgba(12,12,18,0.98)",
+              borderBottom: "1px solid rgba(255,255,255,0.1)",
+              boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
+            }}
+          >
+            {/* Shelf header */}
+            <div className="flex items-center justify-between px-6 py-5">
+              <span className="font-display text-2xl text-white tracking-wider" style={{ textShadow: "0 0 20px rgba(0,255,135,0.3)" }}>YOURSCORE</span>
+              <button
+                onClick={() => setMenuOpen(false)}
+                className="w-8 h-8 rounded-full flex items-center justify-center"
+                style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}
+              >
+                <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                  <path d="M1.5 1.5l10 10M11.5 1.5l-10 10" stroke="#8888aa" strokeWidth="1.7" strokeLinecap="round" />
+                </svg>
+              </button>
+            </div>
+            {/* Nav links */}
+            <nav className="px-4 pb-3">
+              {[
+                { href: "/challenges", label: "Challenges", color: "#ffb800" },
+                { href: "/league/join", label: "Join league", color: "#c0c0d8" },
+                { href: "/how-it-works", label: "How it works", color: "#c0c0d8" },
+                { href: "/auth/sign-in", label: "Sign in", color: "#8888aa" },
+              ].map(item => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center justify-between px-4 py-3 rounded-xl transition-all hover:opacity-80"
+                  style={{ color: item.color }}
+                >
+                  <span className="font-body text-base font-semibold">{item.label}</span>
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <path d="M4 2l6 5-6 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </Link>
+              ))}
+            </nav>
+            {/* CTAs */}
+            <div className="px-4 pb-5 pt-2 grid grid-cols-2 gap-2.5" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
+              <Link
+                href="/auth/sign-in"
+                onClick={() => setMenuOpen(false)}
+                className="flex items-center justify-center py-3 rounded-xl font-body font-bold text-sm green-pulse"
+                style={{ background: "rgba(0,255,135,0.1)", color: "#00ff87", border: "1px solid rgba(0,255,135,0.28)" }}
+              >
+                Sign Up Free
+              </Link>
+              <Link
+                href="/league/new"
+                onClick={() => setMenuOpen(false)}
+                className="flex items-center justify-center py-3 rounded-xl font-body font-bold text-sm pulse-glow"
+                style={{ background: "#a78bfa", color: "#0a0a0f" }}
+              >
+                Create a league
+              </Link>
+            </div>
+          </div>
+        </>
+      )}
+
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
-      <section className="relative z-10 max-w-6xl mx-auto px-6 pt-6 pb-16 lg:pt-12">
+      <section className="relative z-10 max-w-6xl mx-auto px-6 pt-6 pb-16 lg:pt-12" style={{ overflow: "hidden" }}>
+
         <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
 
           {/* Left: copy + CTAs */}
           <div>
+            <div style={{ position: "relative", zIndex: 1 }}>
             <div className="inline-flex items-center gap-2.5 rounded-full px-4 py-2 mb-7"
               style={{ background: "rgba(0,255,135,0.08)", border: "1px solid rgba(0,255,135,0.18)" }}>
               <span className="w-2 h-2 rounded-full animate-pulse flex-shrink-0" style={{ background: "#00ff87" }} />
@@ -751,7 +770,7 @@ function MarketingLanding() {
 
             <h1 className="font-display text-6xl sm:text-7xl lg:text-8xl text-white leading-none mb-6">
               YOUR<br />FOOTBALL<br />
-              <span style={{ color: "#00ff87", textShadow: "0 0 50px rgba(0,255,135,0.35)" }}>IQ.</span>{" "}
+              <span style={{ color: "#00ff87", textShadow: "0 0 50px rgba(0,255,135,0.35)" }}>KNOWLEDGE.</span>{" "}
               <span style={{ color: "#a78bfa", textShadow: "0 0 50px rgba(167,139,250,0.35)" }}>RANKED.</span>
             </h1>
 
@@ -773,19 +792,19 @@ function MarketingLanding() {
 
             {/* Secondary CTAs */}
             <div className="flex flex-col sm:flex-row gap-3 mb-4">
-              <Link href="/room/new"
-                className="flex-1 flex items-center justify-center gap-2 font-body font-semibold text-base px-6 py-4 rounded-xl transition-all hover:opacity-80 green-pulse"
-                style={{ background: "rgba(0,255,135,0.1)", color: "#00ff87", border: "1px solid rgba(0,255,135,0.25)" }}>
+              <Link href="/auth/sign-in"
+                className="flex-1 flex items-center justify-center gap-2 font-body font-semibold text-base px-6 py-4 rounded-xl transition-all hover:opacity-90 green-pulse"
+                style={{ background: "rgba(0,255,135,0.1)", color: "#00ff87", border: "1px solid rgba(0,255,135,0.3)" }}>
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1v14M1 8h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
-                Create a room
+                Sign Up — Free
               </Link>
-              <Link href="/join"
+              <Link href="/league/join"
                 className="flex-1 flex items-center justify-center gap-2 font-body font-semibold text-base px-6 py-4 rounded-xl transition-all hover:opacity-80 text-white"
                 style={{ border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.03)" }}>
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                   <path d="M13 3h3v3M16 3l-6 6M9 5H3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
-                Join a room
+                Join a league
               </Link>
             </div>
 
@@ -793,13 +812,15 @@ function MarketingLanding() {
               Free to play · No app needed ·{" "}
               <Link href="/how-it-works" className="underline hover:text-white transition-colors">How it works →</Link>
             </p>
+            </div>{/* end content wrapper */}
           </div>
 
           {/* Right: league card */}
           <div className="flex items-center justify-center lg:justify-end">
             <div className="relative">
               {/* Glow behind card */}
-              <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(circle at 50% 50%, rgba(167,139,250,0.15) 0%, transparent 70%)", transform: "scale(1.3)" }} />
+              <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(circle at 50% 50%, rgba(167,139,250,0.15) 0%, transparent 70%)", transform: "scale(1.3)", zIndex: 1 }} />
+              <div className="relative" style={{ zIndex: 2 }}>
               <LeagueHeroCard />
 
               {/* Floating badge: "Pound for Pound" */}
@@ -824,6 +845,32 @@ function MarketingLanding() {
             </div>
           </div>
         </div>
+        </div>
+      </section>
+
+      {/* ── Challenges promo strip ───────────────────────────────────────── */}
+      <section className="relative z-10 max-w-6xl mx-auto px-6 pb-10">
+        <Link href="/challenges"
+          className="flex items-center justify-between px-5 py-4 rounded-2xl transition-all hover:opacity-90"
+          style={{ background: "linear-gradient(135deg, rgba(255,184,0,0.1) 0%, rgba(255,71,87,0.06) 100%)", border: "1px solid rgba(255,184,0,0.2)" }}>
+          <div className="flex items-center gap-4">
+            <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 text-xl"
+              style={{ background: "rgba(255,184,0,0.15)", border: "1px solid rgba(255,184,0,0.25)" }}>
+              ⭐
+            </div>
+            <div>
+              <p className="font-body text-base font-bold text-white">Football Challenges</p>
+              <p className="font-body text-sm text-text-muted">Test your knowledge · Solo games · Climb the global ranks</p>
+            </div>
+          </div>
+          <span className="font-body text-sm font-bold px-4 py-2 rounded-xl flex-shrink-0 hidden sm:block"
+            style={{ background: "rgba(255,184,0,0.15)", color: "#ffb800", border: "1px solid rgba(255,184,0,0.25)" }}>
+            Play now →
+          </span>
+          <svg className="sm:hidden" width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ color: "#ffb800", flexShrink: 0 }}>
+            <path d="M5 3l8 6-8 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </Link>
       </section>
 
       {/* ── What a league gets you ────────────────────────────────────────── */}
@@ -839,14 +886,14 @@ function MarketingLanding() {
                 </div>
                 <h2 className="font-display text-4xl sm:text-5xl text-white mb-4">YOUR MATES.<br />ONE TABLE.</h2>
                 <p className="font-body text-text-muted text-base leading-relaxed mb-6">
-                  A league tracks your whole group across every game you each play — whether you watch together or separately. One permanent leaderboard. All season.
+                  Your whole group, one table. Every match any of you plays feeds the standings — live, automatically, all season.
                 </p>
                 <div className="space-y-3 mb-8">
                   {[
-                    { icon: "📈", text: "Points stack across World Cup, Euros, Champions League — all of it" },
-                    { icon: "👁", text: "See who's live right now and which match they're in" },
+                    { icon: "👁", text: "See who's live in a match right now — and who's pulling ahead" },
                     { icon: "👑", text: "Raw points vs Pound for Pound accuracy — real debates built in" },
-                    { icon: "🔥", text: "Streaks, badges, and P4P ranking for more ways to brag" },
+                    { icon: "🔥", text: "Streaks, badges and rankings across every competition" },
+                    { icon: "📊", text: "Your league standing updates the moment a game ends" },
                   ].map(f => (
                     <div key={f.text} className="flex items-start gap-3">
                       <span className="text-base mt-0.5 flex-shrink-0">{f.icon}</span>
@@ -895,21 +942,21 @@ function MarketingLanding() {
       <section className="relative z-10 max-w-6xl mx-auto px-6 pb-16">
         <div className="text-center mb-10">
           <h2 className="font-display text-5xl text-white mb-3">HOW IT WORKS</h2>
-          <p className="font-body text-text-muted">Four steps. No app. Drop the link in your group chat.</p>
+          <p className="font-body text-text-muted">No app. No setup. You&apos;re in by the time the match starts.</p>
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { num: "01", col: "#a78bfa", emoji: "🏆", title: "CREATE A LEAGUE", desc: "Start a private league. Invite your mates. Points track all season." },
-            { num: "02", col: "#00ff87", emoji: "⚽", title: "PICK A MATCH", desc: "Create a room for any game. Share the code. Friends join in seconds." },
-            { num: "03", col: "#ffb800", emoji: "⚡", title: "ANSWER LIVE", desc: "Questions fire during the match. 45 seconds. Faster = more points." },
-            { num: "04", col: "#ff4757", emoji: "📈", title: "POINTS STACK", desc: "Your league table updates after every game. Accuracy and streaks tracked." },
+            { num: "01", col: "#00ff87", emoji: "⚽", title: "PICK A MATCH", desc: "Choose any live or upcoming game — World Cup, Euros, club football. Open the match and you're in." },
+            { num: "02", col: "#ffb800", emoji: "⚡", title: "ANSWER LIVE", desc: "45 seconds to answer each question. Answer fast — more points." },
+            { num: "03", col: "#ff4757", emoji: "📈", title: "STACK YOUR SCORE", desc: "All points you earn add to your total. Every game, every competition." },
+            { num: "04", col: "#a78bfa", emoji: "🏆", title: "JOIN A LEAGUE", desc: "Invite your mates. One table, all season — and finally find out who actually knows football." },
           ].map((step) => (
             <div key={step.num} className="rounded-2xl p-6 relative overflow-hidden group" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}>
               <div className="font-display text-9xl absolute -top-4 -right-2 opacity-[0.06] group-hover:opacity-[0.1] transition-opacity select-none" style={{ color: step.col }}>{step.num}</div>
               <div className="relative z-10">
                 <div className="w-11 h-11 rounded-2xl flex items-center justify-center mb-5 text-2xl" style={{ background: `${step.col}15`, border: `1px solid ${step.col}25` }}>{step.emoji}</div>
-                <h3 className="font-display text-xl text-white mb-2">{step.title}</h3>
-                <p className="font-body text-text-muted text-sm leading-relaxed">{step.desc}</p>
+                <h3 className="font-display text-xl text-white mb-3">{step.title}</h3>
+                <p className="font-body text-text-muted text-base leading-relaxed">{step.desc}</p>
               </div>
             </div>
           ))}
@@ -928,7 +975,7 @@ function MarketingLanding() {
             <p className="font-body text-xs uppercase tracking-widest mb-3" style={{ color: "#ffb800" }}>Real-time</p>
             <h2 className="font-display text-4xl sm:text-5xl text-white mb-4">LIVE DURING<br />THE MATCH.</h2>
             <p className="font-body text-text-muted text-base leading-relaxed mb-6">
-              Questions are tied to match events — goals, penalties, key stats. They fire at the perfect moment and you have 45 seconds to answer. Faster answers score more points.
+              Every question is about the teams in front of you — their history, their players, their records. Questions land throughout the match at natural moments, not pinned to events on the pitch. At half-time, expect a few based on how the game&apos;s gone so far.
             </p>
             <div className="space-y-3">
               {[
@@ -988,6 +1035,29 @@ function MarketingLanding() {
       <section className="relative z-10 max-w-6xl mx-auto px-6 pb-16">
         <div className="rounded-3xl overflow-hidden relative" style={{ background: "linear-gradient(135deg, #0d1a0f 0%, #0a0a0f 50%, #0d0d1a 100%)", border: "1px solid rgba(0,255,135,0.12)" }}>
           <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.015) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.015) 1px,transparent 1px)", backgroundSize: "30px 30px" }} />
+
+          {/* Left flanking player (Vinicius) */}
+          {countdownLeftUrl && (
+            <div className="absolute hidden lg:block pointer-events-none"
+              style={{ left: -30, bottom: 0, width: 190, height: 290, zIndex: 1 }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={countdownLeftUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "contain", objectPosition: "bottom", opacity: 0.32 }} />
+              <div className="absolute inset-0" style={{ background: "linear-gradient(to right, transparent 30%, #0a0a0f 85%)" }} />
+              <div className="absolute inset-0" style={{ background: "linear-gradient(to top, #0d1a0f 0%, transparent 20%)" }} />
+            </div>
+          )}
+
+          {/* Right flanking player (Bellingham) */}
+          {countdownRightUrl && (
+            <div className="absolute hidden lg:block pointer-events-none"
+              style={{ right: -30, bottom: 0, width: 190, height: 290, zIndex: 1 }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={countdownRightUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "contain", objectPosition: "bottom", opacity: 0.32, transform: "scaleX(-1)" }} />
+              <div className="absolute inset-0" style={{ background: "linear-gradient(to left, transparent 30%, #0d0d1a 85%)" }} />
+              <div className="absolute inset-0" style={{ background: "linear-gradient(to top, #0a0a0f 0%, transparent 20%)" }} />
+            </div>
+          )}
+
           <div className="relative z-10 px-8 py-10 text-center">
             <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-5">World Cup 2026 · Opening match</p>
             <WorldCupCountdown />
@@ -997,9 +1067,9 @@ function MarketingLanding() {
                 style={{ background: "#a78bfa", color: "#0a0a0f" }}>
                 Create your league before Jun 11 →
               </Link>
-              <Link href="/room/new" className="inline-flex items-center gap-2 font-body font-semibold text-sm px-6 py-3 rounded-xl transition-all hover:opacity-80"
+              <Link href="/auth/sign-in" className="inline-flex items-center gap-2 font-body font-semibold text-sm px-6 py-3 rounded-xl transition-all hover:opacity-80 green-pulse"
                 style={{ background: "rgba(0,255,135,0.1)", color: "#00ff87", border: "1px solid rgba(0,255,135,0.2)" }}>
-                Quick room →
+                Sign Up Free →
               </Link>
             </div>
           </div>
@@ -1029,11 +1099,11 @@ function MarketingLanding() {
                 style={{ background: "#a78bfa", color: "#0a0a0f" }}>
                 Create a league →
               </Link>
-              <div className="flex items-center gap-3">
-                <Link href="/room/new" className="font-body text-sm font-semibold text-white hover:opacity-70 transition-opacity">Create a room</Link>
-                <span className="text-text-muted font-body text-sm">·</span>
-                <Link href="/join" className="font-body text-sm font-semibold text-white hover:opacity-70 transition-opacity">Join a room</Link>
-              </div>
+              <Link href="/auth/sign-in"
+                className="inline-flex items-center gap-2 font-body font-bold text-base px-8 py-4 rounded-2xl hover:opacity-90 transition-all green-pulse"
+                style={{ background: "rgba(0,255,135,0.1)", color: "#00ff87", border: "1px solid rgba(0,255,135,0.3)" }}>
+                Sign Up Free →
+              </Link>
             </div>
           </div>
         </div>
@@ -1045,7 +1115,8 @@ function MarketingLanding() {
           <span className="font-display text-xl text-text-muted tracking-wider">YOURSCORE</span>
           <div className="flex items-center gap-6 text-sm font-body text-text-muted">
             <Link href="/how-it-works" className="hover:text-white transition-colors">How it works</Link>
-            <Link href="/join" className="hover:text-white transition-colors">Join a room</Link>
+            <Link href="/challenges" className="hover:opacity-80 transition-colors" style={{ color: "#ffb800" }}>Challenges</Link>
+            <Link href="/league/join" className="hover:text-white transition-colors">Join a league</Link>
             <Link href="/league/new" className="hover:text-white transition-colors">Create a league</Link>
             <a href="mailto:hello@yourscore.app" className="hover:text-white transition-colors">Contact</a>
           </div>
@@ -1064,10 +1135,11 @@ export default function RootPage() {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     const code = params.get("code");
-    if (code) window.location.replace(`/auth/callback?code=${encodeURIComponent(code)}&next=/`);
+    const next = params.get("next") ?? "/";
+    if (code) window.location.replace(`/auth/callback?code=${encodeURIComponent(code)}&next=${encodeURIComponent(next)}`);
   }, []);
 
-  if (loading) return <MarketingLanding />;
+  if (loading) return <main className="min-h-dvh bg-bg" />;
   if (user) return <Dashboard userId={user.id} />;
   return <MarketingLanding />;
 }

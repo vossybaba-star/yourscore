@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1080">
+<title>YourScore – Bruno 20 Assists</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700;1,800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:         #0B0B14;
+    --card:       #13131F;
+    --card-2:     #1A1A2E;
+    --green:      #00C853;
+    --green-dim:  rgba(0,200,83,0.10);
+    --green-glow: rgba(0,200,83,0.18);
+    --purple:     #9B7FFF;
+    --purple-dim: rgba(155,127,255,0.12);
+    --white:      #FFFFFF;
+    --muted:      #6B6F8A;
+    --border:     rgba(255,255,255,0.06);
+    --border-g:   rgba(0,200,83,0.2);
+  }
+
+  html {
+    background: #050509;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+  }
+
+  body {
+    width: 1080px;
+    height: 1350px;
+    transform-origin: top center;
+    background-color: var(--bg);
+    background-image:
+      linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.022) 1px, transparent 1px);
+    background-size: 48px 48px;
+    font-family: 'Figtree', sans-serif;
+    color: var(--white);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Glow — top left, green */
+  body::before {
+    content: '';
+    position: absolute;
+    top: -180px;
+    left: -180px;
+    width: 800px;
+    height: 800px;
+    background: radial-gradient(circle, rgba(0,200,83,0.08) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  /* Glow — bottom right, purple */
+  body::after {
+    content: '';
+    position: absolute;
+    bottom: -200px;
+    right: -200px;
+    width: 700px;
+    height: 700px;
+    background: radial-gradient(circle, rgba(155,127,255,0.1) 0%, transparent 65%);
+    pointer-events: none;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    padding: 56px 64px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  .wordmark {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 30px;
+    letter-spacing: 0.08em;
+    color: var(--white);
+    text-transform: uppercase;
+  }
+
+  .season-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--green-dim);
+    border: 1px solid var(--border-g);
+    border-radius: 100px;
+    padding: 9px 20px;
+    font-family: 'Figtree', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--green);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .chip-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 6px var(--green);
+  }
+
+  /* ── MAIN ── */
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 64px;
+  }
+
+  /* Eyebrow */
+  .eyebrow {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    margin-bottom: 28px;
+  }
+
+  /* Hero stat */
+  .hero {
+    display: flex;
+    align-items: flex-end;
+    gap: 16px;
+    margin-bottom: 12px;
+    line-height: 1;
+  }
+
+  .hero-number {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: 300px;
+    color: var(--green);
+    line-height: 0.82;
+    letter-spacing: -0.02em;
+  }
+
+  .hero-label-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-bottom: 32px;
+  }
+
+  .hero-unit {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 52px;
+    color: var(--white);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    line-height: 1;
+  }
+
+  .hero-sub {
+    font-family: 'Figtree', sans-serif;
+    font-weight: 500;
+    font-size: 20px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  /* Divider */
+  .rule {
+    height: 1px;
+    background: var(--border);
+    margin: 32px 0;
+  }
+
+  /* Player card */
+  .player-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    padding: 36px 44px;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+
+  .player-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--green), var(--purple));
+    border-radius: 22px 22px 0 0;
+  }
+
+  .player-name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 58px;
+    color: var(--white);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    line-height: 1;
+    margin-bottom: 10px;
+  }
+
+  .player-meta {
+    font-family: 'Figtree', sans-serif;
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+
+  .player-meta strong {
+    color: var(--white);
+    font-weight: 600;
+  }
+
+  .record-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .record-tag {
+    background: var(--green-dim);
+    border: 1px solid var(--border-g);
+    border-radius: 100px;
+    padding: 6px 18px;
+    font-family: 'Figtree', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--green);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+  }
+
+  .record-holders {
+    font-family: 'Figtree', sans-serif;
+    font-size: 18px;
+    font-weight: 400;
+    color: var(--muted);
+  }
+
+  .record-holders strong {
+    color: var(--white);
+    font-weight: 600;
+  }
+
+  /* Hook line */
+  .hook {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 42px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    line-height: 1.1;
+    color: var(--white);
+  }
+
+  .hook .accent {
+    color: var(--green);
+  }
+
+  .hook .dim {
+    color: var(--muted);
+    font-weight: 600;
+  }
+
+  /* ── BOTTOM BAR ── */
+  .bottom-bar {
+    margin: 0 64px 56px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 22px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  .bottom-wordmark {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 24px;
+    letter-spacing: 0.08em;
+    color: var(--white);
+    text-transform: uppercase;
+  }
+
+  .bottom-cta {
+    font-family: 'Figtree', sans-serif;
+    font-weight: 500;
+    font-size: 16px;
+    color: var(--muted);
+  }
+
+  .bottom-cta strong {
+    color: var(--green);
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="wordmark">YOURSCORE</div>
+    <div class="season-chip">
+      <span class="chip-dot"></span>
+      2025/26 PL Season
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <div class="eyebrow">Premier League assists record</div>
+
+    <div class="hero">
+      <div class="hero-number">20</div>
+      <div class="hero-label-stack">
+        <div class="hero-unit">Assists</div>
+        <div class="hero-sub">This season</div>
+      </div>
+    </div>
+
+    <div class="rule"></div>
+
+    <div class="player-card">
+      <div class="player-name">Bruno Fernandes</div>
+      <div class="player-meta">
+        <strong>Man United</strong> · 34 appearances · 8 goals
+      </div>
+      <div class="record-row">
+        <div class="record-tag">= All-time record</div>
+        <div class="record-holders">Henry <strong>'03</strong> · De Bruyne <strong>'20</strong> · Fernandes <strong>'26</strong></div>
+      </div>
+    </div>
+
+    <div class="hook">
+      One game left.<br>
+      <span class="accent">Brighton away.</span><br>
+      <span class="dim">Can he make it 21?</span>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM BAR -->
+  <div class="bottom-bar">
+    <div class="bottom-wordmark">YOURSCORE</div>
+    <div class="bottom-cta">Test your football IQ → <strong>yourscore.app</strong></div>
+  </div>
+
+<script>
+  function fitToScreen() {
+    const W = 1080, H = 1350;
+    const s = Math.min((window.innerWidth - 24) / W, (window.innerHeight - 24) / H);
+    document.body.style.transform = `scale(${s})`;
+    document.body.style.marginTop = Math.max(0, (window.innerHeight - H * s) / 2 - 12) + 'px';
+  }
+  window.addEventListener('load', fitToScreen);
+  window.addEventListener('resize', fitToScreen);
+</script>
+</body>
+</html>

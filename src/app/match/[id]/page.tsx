@@ -8,6 +8,8 @@ import { Leaderboard, type LeaderboardEntry } from "@/components/game/Leaderboar
 import { useUser } from "@/hooks/useUser";
 import { AuthProviders } from "@/components/auth/AuthButton";
 import { BottomNav } from "@/components/ui/BottomNav";
+import { FlagImage } from "@/components/ui/FlagImage";
+import { getPlayerCutoutUrl, COUNTRY_STAR } from "@/lib/playerImages";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -20,24 +22,21 @@ interface MatchData {
   status: string;
   home_score: number;
   away_score: number;
-  flag_home: string;
-  flag_away: string;
-}
-
-const FLAG_MAP: Record<string, string> = {
-  England: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", France: "🇫🇷", Brazil: "🇧🇷", Argentina: "🇦🇷",
-  Germany: "🇩🇪", Spain: "🇪🇸", Portugal: "🇵🇹", Netherlands: "🇳🇱",
-  USA: "🇺🇸", Mexico: "🇲🇽", Italy: "🇮🇹", Morocco: "🇲🇦",
-};
-
-function flag(team: string) {
-  return FLAG_MAP[team] ?? "🏳️";
 }
 
 // ── Scoreboard ────────────────────────────────────────────────────────────────
 
 function MatchHeader({ match, playerCount }: { match: MatchData; playerCount: number }) {
   const [elapsed, setElapsed] = useState("LIVE");
+  const [homeCutout, setHomeCutout] = useState<string | null>(null);
+  const [awayCutout, setAwayCutout] = useState<string | null>(null);
+
+  useEffect(() => {
+    const hKey = COUNTRY_STAR[match.home_team];
+    const aKey = COUNTRY_STAR[match.away_team];
+    if (hKey) getPlayerCutoutUrl(hKey).then(url => { if (url) setHomeCutout(url); });
+    if (aKey) getPlayerCutoutUrl(aKey).then(url => { if (url) setAwayCutout(url); });
+  }, [match.home_team, match.away_team]);
 
   useEffect(() => {
     const tick = () => {
@@ -77,10 +76,28 @@ function MatchHeader({ match, playerCount }: { match: MatchData; playerCount: nu
         </div>
       </div>
 
-      <div className="px-5 py-5" style={{ background: "#12121e" }}>
-        <div className="flex items-center justify-between">
+      <div className="px-5 py-5" style={{ background: "#12121e", position: "relative" }}>
+        {/* Home player cutout */}
+        {homeCutout && (
+          <div style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: "clamp(80px, 22vw, 120px)", zIndex: 0, pointerEvents: "none", overflow: "hidden" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={homeCutout} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center", opacity: 0.42 }} />
+            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, transparent 30%, #12121e 85%)" }} />
+            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, #12121e 0%, transparent 25%)" }} />
+          </div>
+        )}
+        {/* Away player cutout */}
+        {awayCutout && (
+          <div style={{ position: "absolute", top: 0, bottom: 0, right: 0, width: "clamp(80px, 22vw, 120px)", zIndex: 0, pointerEvents: "none", overflow: "hidden" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={awayCutout} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center", opacity: 0.42, transform: "scaleX(-1)" }} />
+            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to left, transparent 30%, #12121e 85%)" }} />
+            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, #12121e 0%, transparent 25%)" }} />
+          </div>
+        )}
+        <div className="flex items-center justify-between" style={{ position: "relative", zIndex: 1 }}>
           <div className="flex flex-col items-center gap-2 flex-1">
-            <span className="text-4xl">{match.flag_home}</span>
+            <FlagImage team={match.home_team} size={48} />
             <p className="font-display text-sm text-white text-center">{match.home_team.toUpperCase()}</p>
           </div>
           <div className="flex items-center gap-4 px-4">
@@ -89,7 +106,7 @@ function MatchHeader({ match, playerCount }: { match: MatchData; playerCount: nu
             <span className="font-display text-5xl text-white tabular-nums">{match.away_score}</span>
           </div>
           <div className="flex flex-col items-center gap-2 flex-1">
-            <span className="text-4xl">{match.flag_away}</span>
+            <FlagImage team={match.away_team} size={48} />
             <p className="font-display text-sm text-white text-center">{match.away_team.toUpperCase()}</p>
           </div>
         </div>
@@ -197,12 +214,7 @@ export default function MatchPage({ params }: { params: { id: string } }) {
         .single()
         .then(({ data }) => {
           if (data) {
-            const d = data as any;
-            setMatch({
-              ...d,
-              flag_home: flag(d.home_team),
-              flag_away: flag(d.away_team),
-            });
+            setMatch(data as any);
           }
           setLoading(false);
         });

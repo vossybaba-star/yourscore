@@ -7,7 +7,6 @@ import { useUser } from "@/hooks/useUser";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { Spinner } from "@/components/ui/Spinner";
 import { createClient } from "@/lib/supabase/client";
-import { MOCK_MATCHES, formatMatchDate } from "@/lib/rooms";
 
 interface League {
   id: string;
@@ -27,8 +26,6 @@ interface LeagueMember {
   questions_correct: number;
   current_streak: number;
   best_streak: number;
-  live_room_id: string | null;
-  live_match_label: string | null;
 }
 
 function computeCurrentStreak(answers: { is_correct: boolean }[]): number {
@@ -79,15 +76,6 @@ function AvatarCircle({ name, size = 36 }: { name: string; size?: number }) {
   );
 }
 
-function LiveDot() {
-  return (
-    <span className="relative flex h-2 w-2 flex-shrink-0">
-      <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: "#00ff87" }} />
-      <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: "#00ff87" }} />
-    </span>
-  );
-}
-
 function Badge({ children, color }: { children: React.ReactNode; color: string }) {
   const configs: Record<string, { bg: string; border: string; text: string }> = {
     green:  { bg: "rgba(0,255,135,0.1)",    border: "rgba(0,255,135,0.25)",    text: "#00ff87" },
@@ -128,11 +116,17 @@ export default function LeaguePage({ params }: { params: { id: string } }) {
   const [members, setMembers] = useState<LeagueMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [showQR, setShowQR] = useState(false);
+  const [QRCode, setQRCode] = useState<React.ComponentType<{ value: string; size?: number }> | null>(null);
   const [tab, setTab] = useState<"standings" | "live" | "fixtures">("standings");
   const [sortBy, setSortBy] = useState<"points" | "form">("points");
   const [formScores, setFormScores] = useState<Record<string, number>>({});
   const [gamesPlayedByUser, setGamesPlayedByUser] = useState<Record<string, number>>({});
   const [totalGames, setTotalGames] = useState(0);
+
+  useEffect(() => {
+    import("react-qr-code").then(m => setQRCode(() => m.default));
+  }, []);
 
   useEffect(() => {
     const sb = createClient();
@@ -190,24 +184,6 @@ export default function LeaguePage({ params }: { params: { id: string } }) {
       setGamesPlayedByUser(gPlayed);
       setTotalGames(allGameKeys.size);
 
-      // Check live rooms
-      const { data: liveRooms } = await sb
-        .from("room_members")
-        .select("user_id, room_id, rooms(status, name, matches(home_team, away_team))")
-        .in("user_id", userIds)
-        .eq("rooms.status", "live");
-
-      const liveMap: Record<string, { room_id: string; label: string }> = {};
-      (liveRooms ?? []).forEach((row: any) => {
-        if (row.rooms?.status === "live") {
-          const m = row.rooms.matches;
-          liveMap[row.user_id] = {
-            room_id: row.room_id,
-            label: m ? `${m.home_team} vs ${m.away_team}` : row.rooms.name,
-          };
-        }
-      });
-
       setMembers(memberRows.map((row: any) => {
         const userAnswers = answersByUser[row.user_id] ?? [];
         const correct = userAnswers.filter((a) => a.is_correct).length;
@@ -221,8 +197,6 @@ export default function LeaguePage({ params }: { params: { id: string } }) {
           questions_correct: correct,
           current_streak: computeCurrentStreak(userAnswers),
           best_streak: computeBestStreak(userAnswers),
-          live_room_id: liveMap[row.user_id]?.room_id ?? null,
-          live_match_label: liveMap[row.user_id]?.label ?? null,
         };
       }));
       setLoading(false);
@@ -237,7 +211,6 @@ export default function LeaguePage({ params }: { params: { id: string } }) {
     setTimeout(() => setCopied(false), 2000);
   }
 
-  const liveMembers = members.filter(m => m.live_room_id);
   const isCreator = user?.id === league?.created_by;
 
   const sortedMembers = [...members].sort((a, b) => {
@@ -260,7 +233,7 @@ export default function LeaguePage({ params }: { params: { id: string } }) {
     <main className="min-h-dvh bg-bg flex items-center justify-center">
       <div className="text-center">
         <p className="font-display text-2xl text-white mb-2">League not found</p>
-        <Link href="/" className="font-body text-sm text-text-muted hover:text-white">← Home</Link>
+        <Link href="/leagues" className="font-body text-sm text-text-muted hover:text-white">← Leagues</Link>
       </div>
     </main>
   );
@@ -274,7 +247,7 @@ export default function LeaguePage({ params }: { params: { id: string } }) {
       <div className="sticky top-0 z-10" style={{ background: "rgba(10,10,15,0.92)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
         <div className="max-w-lg mx-auto px-5 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/" className="text-text-muted hover:text-white transition-colors">
+            <Link href="/leagues" className="text-text-muted hover:text-white transition-colors">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 12L6 8l4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </Link>
             <div>
@@ -283,12 +256,6 @@ export default function LeaguePage({ params }: { params: { id: string } }) {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {liveMembers.length > 0 && (
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full" style={{ background: "rgba(0,255,135,0.1)", border: "1px solid rgba(0,255,135,0.2)" }}>
-                <LiveDot />
-                <span className="font-body text-xs font-semibold" style={{ color: "#00ff87" }}>{liveMembers.length} live</span>
-              </div>
-            )}
             <button onClick={copyInvite}
               className="font-body text-xs font-semibold px-3 py-1.5 rounded-lg transition-all"
               style={{ background: copied ? "rgba(167,139,250,0.15)" : "rgba(255,255,255,0.06)", color: copied ? "#a78bfa" : "#8888aa", border: `1px solid ${copied ? "rgba(167,139,250,0.3)" : "rgba(255,255,255,0.08)"}` }}>
@@ -299,28 +266,6 @@ export default function LeaguePage({ params }: { params: { id: string } }) {
       </div>
 
       <div className="relative z-0 max-w-lg mx-auto px-5 pt-5 space-y-4">
-
-        {/* Live now banner */}
-        {liveMembers.length > 0 && (
-          <div className="rounded-2xl overflow-hidden" style={{ background: "rgba(0,255,135,0.04)", border: "1px solid rgba(0,255,135,0.15)" }}>
-            <div className="px-5 py-3 flex items-center gap-2" style={{ borderBottom: "1px solid rgba(0,255,135,0.08)" }}>
-              <LiveDot />
-              <p className="font-body text-xs font-semibold uppercase tracking-widest text-white">Live right now</p>
-            </div>
-            {liveMembers.map((m) => (
-              <Link key={m.user_id} href={`/room/${m.live_room_id}`}
-                className="flex items-center gap-3 px-5 py-3 hover:opacity-80 transition-opacity"
-                style={{ borderBottom: "1px solid rgba(0,255,135,0.06)" }}>
-                <AvatarCircle name={m.display_name} size={32} />
-                <div className="flex-1 min-w-0">
-                  <p className="font-body text-sm font-semibold text-white">{m.display_name}</p>
-                  <p className="font-body text-xs text-text-muted truncate">{m.live_match_label}</p>
-                </div>
-                <span className="font-body text-xs font-semibold" style={{ color: "#00ff87" }}>Watch →</span>
-              </Link>
-            ))}
-          </div>
-        )}
 
         {/* Tabs */}
         <div className="flex gap-1 p-1 rounded-xl" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.06)" }}>
@@ -386,7 +331,6 @@ export default function LeaguePage({ params }: { params: { id: string } }) {
                           <p className="font-body text-sm font-medium text-white">{m.display_name}</p>
                           {m.user_id === user?.id && <span className="font-body text-xs px-1 rounded" style={{ color: "#a78bfa" }}>you</span>}
                           {badges}
-                          {m.live_room_id && <LiveDot />}
                         </div>
                         <div className="flex items-center gap-3 mt-1">
                           {m.questions_attempted > 0 ? (
@@ -437,32 +381,20 @@ export default function LeaguePage({ params }: { params: { id: string } }) {
           <div className="space-y-3">
             {members.map((m) => (
               <div key={m.user_id} className="flex items-center gap-3 px-4 py-3.5 rounded-2xl"
-                style={{ background: "#12121e", border: `1px solid ${m.live_room_id ? "rgba(0,255,135,0.15)" : "rgba(255,255,255,0.07)"}` }}>
+                style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}>
                 <AvatarCircle name={m.display_name} size={40} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <p className="font-body text-sm font-semibold text-white">{m.display_name}</p>
                     {m.user_id === user?.id && <span className="font-body text-xs px-1.5 py-0.5 rounded" style={{ background: "rgba(167,139,250,0.1)", color: "#a78bfa" }}>you</span>}
                   </div>
-                  {m.live_room_id ? (
-                    <p className="font-body text-xs mt-0.5" style={{ color: "#00ff87" }}>⚡ {m.live_match_label}</p>
-                  ) : (
-                    <p className="font-body text-xs text-text-muted mt-0.5">
-                      {m.total_score > 0
-                        ? `${m.total_score.toLocaleString()} pts · ${accuracy(m.questions_correct, m.questions_attempted)}% accuracy`
-                        : "No games played yet"}
-                    </p>
-                  )}
+                  <p className="font-body text-xs text-text-muted mt-0.5">
+                    {m.total_score > 0
+                      ? `${m.total_score.toLocaleString()} pts · ${accuracy(m.questions_correct, m.questions_attempted)}% accuracy`
+                      : "No games played yet"}
+                  </p>
                 </div>
-                {m.live_room_id ? (
-                  <Link href={`/room/${m.live_room_id}`}
-                    className="font-body text-xs font-semibold px-3 py-1.5 rounded-lg flex-shrink-0"
-                    style={{ background: "rgba(0,255,135,0.1)", color: "#00ff87", border: "1px solid rgba(0,255,135,0.2)" }}>
-                    Watch
-                  </Link>
-                ) : (
-                  <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: "rgba(255,255,255,0.15)" }} />
-                )}
+                <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: "rgba(255,255,255,0.15)" }} />
               </div>
             ))}
 
@@ -479,40 +411,40 @@ export default function LeaguePage({ params }: { params: { id: string } }) {
 
         {/* Fixtures tab */}
         {tab === "fixtures" && (
-          <div className="space-y-3">
-            <p className="font-body text-xs text-text-muted uppercase tracking-widest">Upcoming matches — create a room for your group</p>
-            {MOCK_MATCHES.slice(0, 8).map((match) => (
-              <Link key={match.id} href={`/room/new?match=${match.id}`}
-                className="flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-opacity hover:opacity-80"
-                style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}>
-                <span className="text-xl">{match.flag_home}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="font-body text-sm font-medium text-white">
-                    {match.home_team} <span className="text-text-muted font-normal">vs</span> {match.away_team}
-                  </p>
-                  <p className="font-body text-xs text-text-muted">{formatMatchDate(match.match_date)}</p>
-                </div>
-                <span className="text-xl">{match.flag_away}</span>
-                <span className="font-body text-xs font-semibold px-2.5 py-1 rounded-lg flex-shrink-0"
-                  style={{ background: "rgba(0,255,135,0.08)", color: "#00ff87", border: "1px solid rgba(0,255,135,0.15)" }}>
-                  + Room
-                </span>
-              </Link>
-            ))}
+          <div className="rounded-2xl p-8 text-center" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}>
+            <p className="font-body text-sm text-text-muted">Fixtures coming soon.</p>
           </div>
         )}
 
         {/* Invite code card */}
-        <div className="rounded-2xl p-4 flex items-center justify-between" style={{ background: "rgba(167,139,250,0.04)", border: "1px solid rgba(167,139,250,0.12)" }}>
-          <div>
-            <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-0.5">Invite code</p>
-            <p className="font-display text-2xl tracking-widest" style={{ color: "#a78bfa" }}>{league.code}</p>
+        <div className="rounded-2xl overflow-hidden" style={{ background: "rgba(167,139,250,0.04)", border: "1px solid rgba(167,139,250,0.12)" }}>
+          <div className="p-4 flex items-center justify-between">
+            <div>
+              <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-0.5">Invite code</p>
+              <p className="font-display text-2xl tracking-widest" style={{ color: "#a78bfa" }}>{league.code}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setShowQR(v => !v)}
+                className="font-body text-sm font-semibold px-3 py-2 rounded-xl transition-all hover:opacity-80 flex items-center gap-1.5"
+                style={{ background: showQR ? "rgba(167,139,250,0.2)" : "rgba(255,255,255,0.05)", color: showQR ? "#a78bfa" : "#8888aa", border: `1px solid ${showQR ? "rgba(167,139,250,0.3)" : "rgba(255,255,255,0.08)"}` }}>
+                <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5" height="5" rx="0.5" stroke="currentColor" strokeWidth="1.3"/><rect x="8" y="1" width="5" height="5" rx="0.5" stroke="currentColor" strokeWidth="1.3"/><rect x="1" y="8" width="5" height="5" rx="0.5" stroke="currentColor" strokeWidth="1.3"/><rect x="3" y="3" width="1.5" height="1.5" fill="currentColor"/><rect x="10" y="3" width="1.5" height="1.5" fill="currentColor"/><rect x="3" y="10" width="1.5" height="1.5" fill="currentColor"/><path d="M8 8h1.5v1.5H8zM10.5 8H12v1.5h-1.5zM10.5 10.5H12V12h-1.5zM8 10.5h1.5V12H8z" fill="currentColor"/></svg>
+                QR
+              </button>
+              <button onClick={copyInvite}
+                className="font-body text-sm font-semibold px-4 py-2 rounded-xl transition-all hover:opacity-80"
+                style={{ background: copied ? "rgba(167,139,250,0.2)" : "rgba(167,139,250,0.1)", color: "#a78bfa", border: "1px solid rgba(167,139,250,0.2)" }}>
+                {copied ? "✓ Copied" : "Copy link"}
+              </button>
+            </div>
           </div>
-          <button onClick={copyInvite}
-            className="font-body text-sm font-semibold px-4 py-2 rounded-xl transition-all hover:opacity-80"
-            style={{ background: copied ? "rgba(167,139,250,0.2)" : "rgba(167,139,250,0.1)", color: "#a78bfa", border: "1px solid rgba(167,139,250,0.2)" }}>
-            {copied ? "✓ Copied" : "Copy invite link"}
-          </button>
+          {showQR && QRCode && (
+            <div className="px-4 pb-4">
+              <div className="flex flex-col items-center gap-2 p-4 rounded-2xl" style={{ background: "white" }}>
+                <QRCode value={`${typeof window !== "undefined" ? window.location.origin : ""}/league/join/${league.code}`} size={160} />
+                <p className="font-body text-xs text-black/50 mt-1">Scan to join <span className="font-semibold text-black/70">{league.name}</span></p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

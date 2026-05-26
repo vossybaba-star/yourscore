@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, Suspense, useEffect, useRef } from "react";
 import Link from "next/link";
 // useRouter reserved for future redirect
 import { useUser } from "@/hooks/useUser";
@@ -22,6 +22,19 @@ function CreateLeagueInner() {
   const [submitting, setSubmitting] = useState(false);
   const [created, setCreated] = useState<{ id: string; code: string } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [showQR, setShowQR] = useState(false);
+  const [profileName, setProfileName] = useState<string | null>(null);
+  const QRCode = useRef<React.ComponentType<{ value: string; size?: number }> | null>(null);
+
+  useEffect(() => {
+    import("react-qr-code").then(m => { QRCode.current = m.default; });
+  }, []);
+
+  useEffect(() => {
+    if (!user || !process.env.NEXT_PUBLIC_SUPABASE_URL) return;
+    createClient().from("profiles").select("display_name").eq("id", user.id).single()
+      .then(({ data }) => { if (data?.display_name) setProfileName(data.display_name); });
+  }, [user]);
 
   if (loading) return <div className="min-h-dvh bg-bg flex items-center justify-center"><Spinner size={32} /></div>;
 
@@ -68,11 +81,15 @@ function CreateLeagueInner() {
       <div className="fixed inset-0 pointer-events-none" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.025) 1px,transparent 1px)", backgroundSize: "40px 40px" }} />
 
       <nav className="relative z-10 flex items-center justify-between px-6 py-5 max-w-2xl mx-auto">
-        <Link href="/" className="font-display text-2xl text-white tracking-wider hover:opacity-80 transition-opacity">YOURSCORE</Link>
+        <div className="flex items-center gap-4">
+          <Link href="/leagues" className="font-body text-sm text-text-muted hover:text-white transition-colors">← Back</Link>
+          <Link href="/" className="font-display text-2xl text-white tracking-wider hover:opacity-80 transition-opacity">YOURSCORE</Link>
+        </div>
         {user && (
-          <div className="w-7 h-7 rounded-full bg-surface-2 flex items-center justify-center text-xs font-body font-semibold text-white" style={{ border: "1px solid rgba(255,255,255,0.12)" }}>
-            {user.email?.[0].toUpperCase()}
-          </div>
+          <Link href="/profile" className="w-8 h-8 rounded-full flex items-center justify-center font-body font-bold text-sm hover:opacity-80 transition-opacity"
+            style={{ background: "linear-gradient(135deg, #1a2f4a, #2a1a4a)", color: "#a78bfa", border: "1.5px solid rgba(167,139,250,0.25)" }}>
+            {(profileName || user.email || "?")[0].toUpperCase()}
+          </Link>
         )}
       </nav>
 
@@ -173,7 +190,7 @@ function CreateLeagueInner() {
                 <p className="font-body text-xs text-text-muted">Share this code with your group — they join your league instantly</p>
               </div>
               <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }} />
-              <div className="p-4 grid grid-cols-2 gap-2">
+              <div className="p-4 grid grid-cols-3 gap-2">
                 <button onClick={shareWhatsApp}
                   className="flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-body font-medium transition-all hover:opacity-80"
                   style={{ background: "rgba(37,211,102,0.1)", border: "1px solid rgba(37,211,102,0.2)", color: "#25d366" }}>
@@ -184,9 +201,23 @@ function CreateLeagueInner() {
                   className="flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-body font-medium transition-all hover:opacity-80"
                   style={{ background: "rgba(96,165,250,0.1)", border: "1px solid rgba(96,165,250,0.2)", color: "#60a5fa" }}>
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 2h10a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H4l-3 2V3a1 1 0 0 1 1-1z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/></svg>
-                  SMS / iMessage
+                  SMS
+                </button>
+                <button onClick={() => setShowQR(v => !v)}
+                  className="flex items-center justify-center gap-1.5 py-3 rounded-xl text-sm font-body font-medium transition-all hover:opacity-80"
+                  style={{ background: showQR ? "rgba(167,139,250,0.15)" : "rgba(255,255,255,0.05)", border: `1px solid ${showQR ? "rgba(167,139,250,0.3)" : "rgba(255,255,255,0.08)"}`, color: showQR ? "#a78bfa" : "#8888aa" }}>
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5" height="5" rx="0.5" stroke="currentColor" strokeWidth="1.3"/><rect x="8" y="1" width="5" height="5" rx="0.5" stroke="currentColor" strokeWidth="1.3"/><rect x="1" y="8" width="5" height="5" rx="0.5" stroke="currentColor" strokeWidth="1.3"/><rect x="3" y="3" width="1.5" height="1.5" fill="currentColor"/><rect x="10" y="3" width="1.5" height="1.5" fill="currentColor"/><rect x="3" y="10" width="1.5" height="1.5" fill="currentColor"/><path d="M8 8h1.5v1.5H8zM10.5 8H12v1.5h-1.5zM10.5 10.5H12V12h-1.5zM8 10.5h1.5V12H8z" fill="currentColor"/></svg>
+                  QR Code
                 </button>
               </div>
+              {showQR && QRCode.current && (
+                <div className="px-4 pb-4">
+                  <div className="flex flex-col items-center gap-2 p-4 rounded-2xl" style={{ background: "white" }}>
+                    <QRCode.current value={`${typeof window !== "undefined" ? window.location.origin : ""}/league/join/${created.code}`} size={160} />
+                    <p className="font-body text-xs text-black/50 mt-1">Scan to join <span className="font-semibold text-black/70">{name}</span></p>
+                  </div>
+                </div>
+              )}
             </div>
 
             <Link href={`/league/${created.id}`}

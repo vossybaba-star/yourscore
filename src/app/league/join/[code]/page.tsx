@@ -71,6 +71,7 @@ function JoinLeagueInner({ code }: { code: string }) {
             <h1 className="font-display text-3xl text-white mb-3">League not found</h1>
             <p className="font-body text-text-muted text-sm mb-6">The code <span className="text-white font-semibold">{code.toUpperCase()}</span> doesn&apos;t match any league.</p>
             <Link href="/" className="font-body text-sm text-text-muted hover:text-white transition-colors">← Back to home</Link>
+            <Link href="/league/join" className="font-body text-sm font-semibold" style={{ color: "#a78bfa" }}>Try a different code →</Link>
           </div>
         ) : alreadyMember ? (
           <div className="text-center">
@@ -120,11 +121,20 @@ function JoinLeagueInner({ code }: { code: string }) {
                 <SignInWithGoogle redirectTo={`/league/join/${code}`} />
               </div>
             ) : (
-              <button onClick={handleJoin} disabled={joining}
-                className="w-full py-4 rounded-xl font-body font-bold text-base flex items-center justify-center gap-2 transition-all hover:opacity-90"
-                style={{ background: "#a78bfa", color: "#0a0a0f", boxShadow: "0 0 20px rgba(167,139,250,0.25)" }}>
-                {joining ? <Spinner size={18} /> : `Join ${league.name} →`}
-              </button>
+              !joining ? (
+                <button
+                  onClick={handleJoin}
+                  className="w-full py-4 rounded-xl font-body font-bold text-base transition-all"
+                  style={{ background: "#a78bfa", color: "#0a0a0f", boxShadow: "0 0 20px rgba(167,139,250,0.25)" }}>
+                  Join {league.name} →
+                </button>
+              ) : (
+                <div className="w-full py-4 rounded-xl flex items-center justify-center gap-3"
+                  style={{ background: "rgba(167,139,250,0.08)", border: "1px solid rgba(167,139,250,0.2)" }}>
+                  <Spinner size={18} />
+                  <span className="font-body text-sm text-white/70">Joining {league.name}…</span>
+                </div>
+              )
             )}
           </>
         )}

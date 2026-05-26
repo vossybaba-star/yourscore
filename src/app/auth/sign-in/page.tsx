@@ -29,8 +29,8 @@ export default function SignInPage() {
       <div className="relative z-10 flex-1 flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-sm">
           <div className="text-center mb-8">
-            <h1 className="font-display text-4xl text-white mb-2">Sign in</h1>
-            <p className="font-body text-sm text-text-muted">Your score travels with you across every match.</p>
+            <h1 className="font-display text-4xl text-white mb-2">Sign in or sign up</h1>
+            <p className="font-body text-sm text-text-muted">New or returning — one tap gets you in. Free forever.</p>
           </div>
 
           <div className="rounded-2xl p-6" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.08)" }}>
