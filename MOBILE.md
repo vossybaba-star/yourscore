@@ -106,11 +106,16 @@ Required for App Store Guideline 4.2 mitigation and the core "alert me when a qu
    ```bash
    supabase secrets set APNS_KEY_ID=... APNS_TEAM_ID=... APNS_BUNDLE_ID=app.yourscore.app
    supabase secrets set APNS_PRIVATE_KEY="$(cat AuthKey_XXXX.p8)"
-   supabase secrets set FCM_SERVER_KEY=...
+   supabase secrets set APNS_ENV=production    # or sandbox for dev builds
+
+   # FCM HTTP v1 (legacy server key was deprecated mid-2024).
+   # Service account: Firebase Console → Project settings → Service accounts → Generate new private key
+   supabase secrets set FCM_PROJECT_ID=yourscore-...
+   supabase secrets set FCM_CLIENT_EMAIL="firebase-adminsdk-...@yourscore.iam.gserviceaccount.com"
+   supabase secrets set FCM_PRIVATE_KEY="$(jq -r .private_key serviceAccount.json)"
    ```
-4. **Implement APNs + FCM sender bodies** (`sendAPNs` / `sendFCM` in the Edge Function).
-5. **Wire trigger:** call the Edge Function from `/admin/rooms` when an admin fires a question.
-6. **Wire client registration:** call `registerForPush()` from the auth provider after sign-in.
+4. **Wire trigger:** call the Edge Function from `/admin/rooms` when an admin fires a question.
+5. **Client registration:** already wired in `NativeBootstrap` — fires `registerForPush()` on `SIGNED_IN`.
 
 ## App Store 4.2 mitigation
 
