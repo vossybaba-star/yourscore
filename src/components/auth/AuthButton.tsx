@@ -77,11 +77,13 @@ function OAuthButton({ provider, label, icon, nextPath }: { provider: Provider; 
 
 function EmailSignIn({ nextPath }: { nextPath?: string }) {
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [usePassword, setUsePassword] = useState(false);
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  async function send() {
+  async function sendMagicLink() {
     if (!email.trim() || loading) return;
     setLoading(true);
     setError("");
@@ -103,6 +105,25 @@ function EmailSignIn({ nextPath }: { nextPath?: string }) {
     }
   }
 
+  async function signInWithPasswordHandler() {
+    if (!email.trim() || !password || loading) return;
+    setLoading(true);
+    setError("");
+    try {
+      const sb = createClient();
+      const { error: err } = await sb.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password,
+      });
+      if (err) throw err;
+      // auth state listener in NativeBootstrap / useUser handles navigation
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Sign in failed");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   if (sent) {
     return (
       <div className="rounded-xl p-4 text-center" style={{ background: "rgba(0,255,135,0.06)", border: "1px solid rgba(0,255,135,0.2)" }}>
@@ -112,25 +133,42 @@ function EmailSignIn({ nextPath }: { nextPath?: string }) {
     );
   }
 
+  const canSubmit = email.trim() && (!usePassword || password);
+
   return (
     <div className="space-y-2">
       <input
         type="email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && send()}
+        onKeyDown={(e) => e.key === "Enter" && (usePassword ? signInWithPasswordHandler() : sendMagicLink())}
         placeholder="your@email.com"
+        autoComplete="email"
         className="w-full rounded-xl px-4 py-3.5 font-body text-white text-sm outline-none transition-all placeholder:text-white/25"
         style={{ background: "#12121e", border: `1px solid ${error ? "rgba(255,71,87,0.4)" : "rgba(255,255,255,0.1)"}` }}
       />
+      {usePassword && (
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && signInWithPasswordHandler()}
+          placeholder="Password"
+          autoComplete="current-password"
+          className="w-full rounded-xl px-4 py-3.5 font-body text-white text-sm outline-none transition-all placeholder:text-white/25"
+          style={{ background: "#12121e", border: `1px solid ${error ? "rgba(255,71,87,0.4)" : "rgba(255,255,255,0.1)"}` }}
+        />
+      )}
       {error && <p className="font-body text-xs text-red-400">{error}</p>}
       <button
-        onClick={send}
-        disabled={!email.trim() || loading}
+        onClick={usePassword ? signInWithPasswordHandler : sendMagicLink}
+        disabled={!canSubmit || loading}
         className="w-full py-3.5 rounded-xl font-body font-semibold text-sm transition-all hover:opacity-90 active:scale-[0.98] flex items-center justify-center gap-2"
-        style={{ background: email.trim() ? "#00ff87" : "rgba(255,255,255,0.06)", color: email.trim() ? "#0a0a0f" : "#8888aa" }}
+        style={{ background: canSubmit ? "#00ff87" : "rgba(255,255,255,0.06)", color: canSubmit ? "#0a0a0f" : "#8888aa" }}
       >
-        {loading ? <Spinner size={18} /> : (
+        {loading ? <Spinner size={18} /> : usePassword ? (
+          "Sign in"
+        ) : (
           <>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
               <path d="M1 3h12v9a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/>
@@ -139,6 +177,12 @@ function EmailSignIn({ nextPath }: { nextPath?: string }) {
             Send sign-in link
           </>
         )}
+      </button>
+      <button
+        onClick={() => { setUsePassword(!usePassword); setError(""); }}
+        className="w-full py-2 font-body text-xs text-text-muted hover:text-white transition-colors"
+      >
+        {usePassword ? "Use email link instead" : "I have a password"}
       </button>
     </div>
   );
