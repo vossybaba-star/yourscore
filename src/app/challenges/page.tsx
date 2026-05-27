@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { getTeamBadgeUrl } from "@/lib/teamImages";
@@ -297,6 +298,7 @@ export default function ChallengesPage() {
   const clubCount = packs.filter((p) => p.type === "club").length;
   const recordsCount = packs.filter((p) => p.type === "records" && p.parameter !== "2025/26 End of Season").length;
   const endOfSeasonCount = endOfSeasonPacks.length;
+  const router = useRouter();
 
   return (
     <div
@@ -428,8 +430,35 @@ export default function ChallengesPage() {
         </div>
       </div>
 
+      {/* Build a Quiz banner */}
+      <div className="max-w-lg mx-auto px-4 pt-4 pb-2">
+        <button
+          onClick={() => router.push("/quiz/create")}
+          className="w-full rounded-2xl overflow-hidden transition-all duration-150 active:scale-[0.98]"
+          style={{
+            background: "linear-gradient(135deg, rgba(0,255,135,0.12) 0%, rgba(0,200,100,0.06) 100%)",
+            border: "1px solid rgba(0,255,135,0.3)",
+            padding: "16px 20px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            boxShadow: "0 0 24px rgba(0,255,135,0.06)",
+          }}
+        >
+          <div style={{ textAlign: "left" }}>
+            <p className="font-display text-sm tracking-wide" style={{ color: "#00ff87" }}>
+              ✨ BUILD YOUR OWN QUIZ
+            </p>
+            <p className="font-body text-xs mt-0.5" style={{ color: "#8888aa" }}>
+              Pick a team or topic · choose your era · challenge a friend
+            </p>
+          </div>
+          <span className="font-display text-lg" style={{ color: "#00ff87" }}>→</span>
+        </button>
+      </div>
+
       {/* Cards grid */}
-      <div className="max-w-lg mx-auto px-4 pt-4">
+      <div className="max-w-lg mx-auto px-4 pt-2">
         {loading ? (
           <div className="grid grid-cols-2 gap-3">
             {Array.from({ length: 6 }).map((_, i) => (
