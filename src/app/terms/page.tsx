@@ -6,7 +6,10 @@ export default function TermsPage() {
   return (
     <main className="min-h-dvh" style={{ background: "#0a0a0f", color: "#e0e0f0" }}>
       <nav className="px-6 py-5 border-b" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
-        <Link href="/" className="font-display text-xl text-white tracking-wider">YOURSCORE</Link>
+        <Link href="/">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="YourScore" height={28} style={{ height: 28, width: "auto" }} />
+        </Link>
       </nav>
 
       <div className="max-w-2xl mx-auto px-6 py-12">
@@ -21,7 +24,7 @@ export default function TermsPage() {
 
           <section>
             <h2 className="font-display text-lg text-white mb-3">2. The Service</h2>
-            <p>YourScore is a free live football games platform. You can play solo challenges, create or join leagues, and compete with friends in live match rooms. No purchase is required to use the core product.</p>
+            <p>YourScore is a free live football quiz platform. You can play solo challenges, sign up for upcoming matches, answer live quiz questions during games, compete in head-to-head 1v1 quizzes, and track your scores across persistent leagues with friends. No purchase is required to use the core product.</p>
           </section>
 
           <section>

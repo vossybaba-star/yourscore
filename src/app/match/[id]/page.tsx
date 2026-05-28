@@ -329,7 +329,10 @@ export default function MatchPage({ params }: { params: { id: string } }) {
 
       {/* Nav */}
       <nav className="relative z-10 flex items-center justify-between px-5 py-4 max-w-lg mx-auto">
-        <Link href="/" className="font-display text-xl text-white tracking-wider hover:opacity-80">YOURSCORE</Link>
+        <Link href="/">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="YourScore" height={28} style={{ height: 28, width: "auto" }} />
+        </Link>
         <div className="flex items-center gap-2">
           {questionCount > 0 && (
             <span className="font-body text-xs text-text-muted">Q{questionCount}</span>
@@ -410,9 +413,6 @@ export default function MatchPage({ params }: { params: { id: string } }) {
 
         {/* Share */}
         <ShareStrip matchId={matchId} matchName={matchName} />
-
-        {/* Event rooms for this match */}
-        <EventRooms matchId={matchId} />
       </div>
 
       {/* Live question overlay */}
@@ -433,62 +433,6 @@ export default function MatchPage({ params }: { params: { id: string } }) {
   );
 }
 
-// ── Event rooms for this match ────────────────────────────────────────────────
-
-function EventRooms({ matchId }: { matchId: string }) {
-  const [rooms, setRooms] = useState<{ id: string; name: string; sponsor_name: string | null; prize_description: string | null; member_count: number }[]>([]);
-
-  useEffect(() => {
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return;
-    import("@/lib/supabase/client").then(async ({ createClient }) => {
-      const sb = createClient();
-      const { data } = await (sb as any).from("rooms")
-        .select("id, name, sponsor_name, prize_description")
-        .eq("match_id", matchId)
-        .neq("is_public", true)
-        .order("created_at", { ascending: false })
-        .limit(5);
-
-      if (!data?.length) return;
-
-      const withCounts = await Promise.all(
-        data.map(async (r: any) => {
-          const { count } = await (sb as any).from("room_members").select("*", { count: "exact", head: true }).eq("room_id", r.id);
-          return { ...r, member_count: count ?? 0 };
-        })
-      );
-      setRooms(withCounts);
-    });
-  }, [matchId]);
-
-  if (!rooms.length) return null;
-
-  return (
-    <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.06)" }}>
-      <div className="px-5 py-3" style={{ background: "#12121e", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-        <p className="font-body text-xs text-text-muted uppercase tracking-widest">Events for this match</p>
-      </div>
-      <div style={{ background: "#12121e" }}>
-        {rooms.map((r, i) => (
-          <Link key={r.id} href={`/room/${r.id}`}
-            className="flex items-center justify-between px-5 py-3.5 hover:bg-white/[0.02] transition-colors"
-            style={{ borderBottom: i < rooms.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
-            <div>
-              <p className="font-body text-sm font-medium text-white">{r.name}</p>
-              {r.prize_description && (
-                <p className="font-body text-xs mt-0.5" style={{ color: "#a78bfa" }}>🏆 {r.prize_description}</p>
-              )}
-              {r.sponsor_name && !r.prize_description && (
-                <p className="font-body text-xs text-text-muted mt-0.5">Sponsored by {r.sponsor_name}</p>
-              )}
-            </div>
-            <div className="text-right">
-              <p className="font-body text-xs text-text-muted">{r.member_count} players</p>
-              <p className="font-body text-xs mt-0.5" style={{ color: "#00ff87" }}>Join →</p>
-            </div>
-          </Link>
-        ))}
-      </div>
-    </div>
-  );
-}
+// Event rooms feature removed for v1. The rooms tables and routes are dormant
+// pending re-introduction with the live-match flow. Apple reviewer should not
+// see any "Join room" links that lead to deleted /room/[id] routes.

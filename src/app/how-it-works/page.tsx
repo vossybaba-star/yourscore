@@ -64,32 +64,27 @@ const STEPS = [
     num: "02",
     color: "#00ff87",
     emoji: "⚽",
-    title: "Create a room",
-    short: "For each match you watch",
-    body: "Pick a fixture and name your room. Takes 30 seconds. Share the 6-character code in your group chat — friends tap the link and join instantly. No app needed.",
+    title: "Sign up for a match",
+    short: "Tell us you're watching",
+    body: "Browse upcoming fixtures, tap the ones you're going to watch. We'll line up the questions tailored to that matchup — the players, the history, the rivalry — and ping your phone the moment kick-off lands.",
     visual: (
       <div className="space-y-2">
         <div className="rounded-2xl px-4 py-4" style={{ background: "#0d0d18", border: "1px solid rgba(0,255,135,0.15)" }}>
-          <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-3">Your room</p>
+          <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-3">Upcoming</p>
           <div className="flex items-center justify-between mb-3">
             <div>
-              <p className="font-body text-sm font-semibold text-white">The Lads · England vs France</p>
-              <p className="font-body text-xs text-text-muted">Jun 24 · World Cup · Lobby</p>
+              <p className="font-body text-sm font-semibold text-white">England vs France</p>
+              <p className="font-body text-xs text-text-muted">Jun 24 · World Cup · 20:00</p>
             </div>
-            <span className="font-display text-2xl tracking-widest" style={{ color: "#00ff87" }}>AB1234</span>
+            <span className="font-body text-xs px-3 py-1.5 rounded-lg font-semibold" style={{ background: "rgba(0,255,135,0.12)", color: "#00ff87", border: "1px solid rgba(0,255,135,0.3)" }}>I&apos;m playing</span>
           </div>
-          <div className="flex gap-2">
-            <div className="flex-1 py-2 rounded-xl text-center font-body text-xs font-semibold" style={{ background: "rgba(37,211,102,0.1)", color: "#25d366", border: "1px solid rgba(37,211,102,0.2)" }}>WhatsApp</div>
-            <div className="flex-1 py-2 rounded-xl text-center font-body text-xs font-semibold" style={{ background: "rgba(96,165,250,0.1)", color: "#60a5fa", border: "1px solid rgba(96,165,250,0.2)" }}>SMS / iMessage</div>
-            <div className="flex-1 py-2 rounded-xl text-center font-body text-xs font-semibold text-white" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>Copy link</div>
+          <div className="flex items-center gap-3 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: "#00ff87" }} />
+              <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: "#00ff87" }} />
+            </span>
+            <span className="font-body text-xs text-white">We&apos;ll send the first question at kick-off</span>
           </div>
-        </div>
-        <div className="flex items-center gap-3 px-4 py-3 rounded-xl" style={{ background: "#0d0d18", border: "1px solid rgba(255,255,255,0.06)" }}>
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: "#00ff87" }} />
-            <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: "#00ff87" }} />
-          </span>
-          <span className="font-body text-xs text-white">4 players in the lobby</span>
         </div>
       </div>
     ),
@@ -188,11 +183,11 @@ const STEPS = [
 
 const FAQS = [
   { q: "Do I need an account?", a: "Only to answer questions and earn points. Sign in with Google, Apple, Facebook, or email (magic link) — takes 10 seconds. Watching the leaderboard is free without signing in." },
-  { q: "What's the difference between a league and a room?", a: "A room is for one match — you create it, share the code, and play during that game. A league is permanent — it tracks your whole group's points across every room they each play in, all season long." },
-  { q: "Who fires the questions?", a: "YourScore fires questions automatically during the match, timed to key moments. You just need to be in your room with the tab open." },
-  { q: "Can I join mid-game?", a: "Yes. You can join at any point. You'll miss questions that already fired, but you'll be scored on all remaining ones." },
+  { q: "What's the difference between a league and a match?", a: "A match is one fixture — you sign up, answer the live quiz questions as it plays out, and your score from that game feeds into your leagues. A league is permanent — it tracks your whole group's points across every match and challenge each member plays, all season long." },
+  { q: "Who fires the questions?", a: "YourScore fires questions automatically during the match, timed to key moments. We push them straight to your phone — just have your notifications on." },
+  { q: "Can I join mid-game?", a: "Yes. You can sign up for a fixture at any point during it. You'll miss questions that already fired, but you'll be scored on all remaining ones." },
   { q: "How are points calculated?", a: "Correct answers score 100–200 points based on speed. Consecutive correct answers trigger a streak multiplier (up to 2×). Wrong answers or timeouts score 0." },
-  { q: "Is it free?", a: "Completely free. Unlimited rooms, unlimited leagues, every tournament." },
+  { q: "Is it free?", a: "Completely free. Unlimited matches, unlimited leagues, every tournament." },
 ];
 
 // ── Page ──────────────────────────────────────────────────────────────────────
@@ -214,7 +209,10 @@ export default function HowItWorksPage() {
 
       {/* Nav */}
       <nav className="relative z-10 flex items-center justify-between px-6 py-5 max-w-4xl mx-auto">
-        <Link href="/" className="font-display text-2xl text-white tracking-wider hover:opacity-80 transition-opacity">YOURSCORE</Link>
+        <Link href="/">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="YourScore" height={28} style={{ height: 28, width: "auto" }} />
+        </Link>
         <Link href="/league/new" className="font-body font-bold text-sm px-5 py-2.5 rounded-xl transition-all hover:opacity-90 pulse-glow"
           style={{ background: "#a78bfa", color: "#0a0a0f" }}>
           Create a league →
@@ -370,15 +368,15 @@ export default function HowItWorksPage() {
                 style={{ background: "#a78bfa", color: "#0a0a0f" }}>
                 Create a league →
               </Link>
-              <Link href="/room/new"
+              <Link href="/join"
                 className="flex items-center justify-center px-8 py-4 rounded-xl font-body font-semibold text-base transition-all hover:opacity-80"
                 style={{ background: "rgba(0,255,135,0.1)", color: "#00ff87", border: "1px solid rgba(0,255,135,0.2)" }}>
-                Create a room
+                Browse matches →
               </Link>
-              <Link href="/join"
+              <Link href="/challenges"
                 className="flex items-center justify-center px-8 py-4 rounded-xl font-body font-semibold text-base text-white transition-colors hover:opacity-70"
                 style={{ border: "1px solid rgba(255,255,255,0.12)" }}>
-                Join a room
+                Try a challenge
               </Link>
             </div>
           </div>

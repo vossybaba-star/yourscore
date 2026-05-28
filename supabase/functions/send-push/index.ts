@@ -29,6 +29,15 @@ interface Payload {
 Deno.serve(async (req) => {
   if (req.method !== 'POST') return new Response('Method not allowed', { status: 405 });
 
+  // Require the service-role key in the Authorization header. Anonymous callers
+  // shouldn't be able to fan out pushes or enumerate device tokens via roomId
+  // guessing. Only the admin server (Next.js API route) holds this key.
+  const authHeader = req.headers.get('authorization') ?? '';
+  const expected = `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''}`;
+  if (!expected.endsWith(' ') && authHeader !== expected) {
+    return new Response('Unauthorized', { status: 401 });
+  }
+
   const { roomId, title, body, url }: Payload = await req.json();
 
   const supabase = createClient(
@@ -80,9 +89,12 @@ async function apnsJwt(): Promise<string> {
   const pem = Deno.env.get('APNS_PRIVATE_KEY')!;
 
   const cryptoKey = await importPkcs8(pem, 'ECDSA', { name: 'ECDSA', namedCurve: 'P-256' });
+  // Apple enforces a 60-minute hard cap on APNs JWTs; rotate at 50 min to avoid
+  // exp drift. Include exp explicitly so the token isn't silently rejected by
+  // newer APNs server versions that require it.
   const token = await createJwt(
     { alg: 'ES256', typ: 'JWT', kid: keyId },
-    { iss: teamId, iat: now },
+    { iss: teamId, iat: now, exp: now + 55 * 60 },
     cryptoKey,
   );
   cachedApnsJwt = { token, expiresAt: now + 50 * 60 };
