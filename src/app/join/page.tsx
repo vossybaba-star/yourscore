@@ -195,11 +195,11 @@ export default function PlayPage() {
         style={{ background: "radial-gradient(circle at 0% 0%, rgba(0,255,135,0.06) 0%, transparent 60%)" }} />
 
       {/* Header */}
-      <div>
-        <div className="relative z-10 max-w-lg mx-auto px-5 pt-6 pb-4">
+      <div className="sticky top-0 z-30" style={{ background: "rgba(10,10,15,0.92)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+        <div className="max-w-lg mx-auto px-5 pt-4 pb-3">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h1 className="font-display text-3xl text-white tracking-wider">Play</h1>
+              <h1 className="font-display text-3xl text-white tracking-wider">Matches</h1>
               <p className="font-body text-xs mt-1" style={{ color: "#8888aa" }}>
                 {liveCount > 0
                   ? `${liveCount} match${liveCount > 1 ? "es" : ""} live now`
@@ -208,18 +208,24 @@ export default function PlayPage() {
                     : "Pick a match · answer questions · earn points"}
               </p>
             </div>
-            {liveCount > 0 && (
-              <div className="flex items-center gap-2 px-3 py-2 rounded-xl flex-shrink-0"
-                style={{ background: "rgba(0,255,135,0.1)", border: "1px solid rgba(0,255,135,0.25)" }}>
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: "#00ff87" }} />
-                  <span className="relative inline-flex h-2 w-2 rounded-full" style={{ background: "#00ff87" }} />
-                </span>
-                <span className="font-body text-xs font-bold" style={{ color: "#00ff87" }}>
-                  {activePlayers > 0 ? `${activePlayers} playing` : "LIVE"}
-                </span>
-              </div>
-            )}
+            <div className="flex items-center gap-2">
+              {liveCount > 0 && (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl flex-shrink-0"
+                  style={{ background: "rgba(0,255,135,0.1)", border: "1px solid rgba(0,255,135,0.25)" }}>
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: "#00ff87" }} />
+                    <span className="relative inline-flex h-2 w-2 rounded-full" style={{ background: "#00ff87" }} />
+                  </span>
+                  <span className="font-body text-xs font-bold" style={{ color: "#00ff87" }}>
+                    {activePlayers > 0 ? `${activePlayers} playing` : "LIVE"}
+                  </span>
+                </div>
+              )}
+              <Link href="/profile" className="w-9 h-9 rounded-full flex items-center justify-center font-body font-bold text-sm transition-opacity hover:opacity-80 flex-shrink-0"
+                style={{ background: "linear-gradient(135deg, #1a2f4a, #2a1a4a)", color: "#a78bfa", border: "1.5px solid rgba(167,139,250,0.25)" }}>
+                {(user?.email?.[0] ?? "?").toUpperCase()}
+              </Link>
+            </div>
           </div>
         </div>
       </div>

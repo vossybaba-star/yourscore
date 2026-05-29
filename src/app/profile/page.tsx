@@ -93,23 +93,28 @@ export default function ProfilePage() {
     <main className="min-h-dvh bg-bg pb-28">
       <div className="fixed inset-0 pointer-events-none" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.02) 1px,transparent 1px)", backgroundSize: "40px 40px" }} />
 
-      <div className="relative z-0 max-w-lg mx-auto px-5 pt-8 space-y-5">
-        {/* Avatar + name */}
-        <div className="flex items-center gap-4">
-          <AvatarCircle name={name} size={64} avatarUrl={stats?.avatar_url} />
-          <div className="flex-1 min-w-0">
-            <p className="font-display text-3xl text-white tracking-wide truncate">{name.toUpperCase()}</p>
-            <p className="font-body text-xs text-text-muted mt-0.5">{user.email}</p>
-            <p className="font-body text-xs text-text-muted">{stats?.games_played ?? 0} games played</p>
+      {/* Sticky profile header */}
+      <div className="sticky top-0 z-30" style={{ background: "rgba(10,10,15,0.92)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+        <div className="max-w-lg mx-auto px-5 py-4">
+          <div className="flex items-center gap-4">
+            <AvatarCircle name={name} size={56} avatarUrl={stats?.avatar_url} />
+            <div className="flex-1 min-w-0">
+              <p className="font-display text-2xl text-white tracking-wide truncate">{name.toUpperCase()}</p>
+              <p className="font-body text-xs text-text-muted mt-0.5 truncate">{user.email}</p>
+              <p className="font-body text-xs text-text-muted">{stats?.games_played ?? 0} games played</p>
+            </div>
+            <Link href="/settings" aria-label="Edit profile"
+              className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-all hover:opacity-80"
+              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#8888aa" }}>
+              <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+                <path d="M10.5 2.5l2 2L5 12H3v-2L10.5 2.5z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </Link>
           </div>
-          <Link href="/settings" aria-label="Edit profile"
-            className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-all hover:opacity-80"
-            style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#8888aa" }}>
-            <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-              <path d="M10.5 2.5l2 2L5 12H3v-2L10.5 2.5z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </Link>
         </div>
+      </div>
+
+      <div className="relative z-0 max-w-lg mx-auto px-5 pt-5 space-y-5">
 
         {/* Global rank */}
         {globalRank !== null && (

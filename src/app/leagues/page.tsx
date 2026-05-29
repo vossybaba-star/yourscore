@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import { AuthProviders } from "@/components/auth/AuthButton";
 import { BottomNav } from "@/components/ui/BottomNav";
@@ -48,12 +49,16 @@ function playerColor(name: string | null) {
 
 export default function LeaguesPage() {
   const { user, loading: userLoading } = useUser();
+  const router = useRouter();
   const [tab, setTab] = useState<"mine" | "global">("mine");
   const [leagues, setLeagues] = useState<LeagueCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [globalPlayers, setGlobalPlayers] = useState<GlobalPlayer[]>([]);
   const [globalLoading, setGlobalLoading] = useState(false);
   const [globalFetched, setGlobalFetched] = useState(false);
+  const [joinSheetOpen, setJoinSheetOpen] = useState(false);
+  const [joinCode, setJoinCode] = useState("");
+  const joinInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (userLoading) return;
@@ -119,6 +124,23 @@ export default function LeaguesPage() {
     });
   }, [tab, globalFetched]);
 
+  // Auto-focus input when join sheet opens
+  useEffect(() => {
+    if (joinSheetOpen) {
+      setTimeout(() => joinInputRef.current?.focus(), 120);
+    } else {
+      setJoinCode("");
+    }
+  }, [joinSheetOpen]);
+
+  function handleJoinSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const code = joinCode.trim().toUpperCase();
+    if (code.length < 4) return;
+    setJoinSheetOpen(false);
+    router.push(`/league/join/${code}`);
+  }
+
   const bestRank = leagues.reduce<number | null>((best, l) => {
     if (l.my_rank === null) return best;
     return best === null ? l.my_rank : Math.min(best, l.my_rank);
@@ -134,19 +156,32 @@ export default function LeaguesPage() {
         style={{ background: "radial-gradient(circle at 100% 0%, rgba(167,139,250,0.07) 0%, transparent 60%)" }} />
 
       {/* Nav */}
-      <nav className="relative z-10 flex items-center justify-between px-5 py-4 max-w-lg mx-auto">
-        <span className="font-display text-2xl text-white tracking-wider">Leagues</span>
-        {user && (
-          <Link href="/league/new"
-            className="flex items-center gap-1.5 font-body text-sm font-semibold px-4 py-2 rounded-xl transition-all hover:opacity-90"
-            style={{ background: "rgba(167,139,250,0.12)", color: "#a78bfa", border: "1px solid rgba(167,139,250,0.2)" }}>
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d="M7 1v12M1 7h12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-            </svg>
-            New league
-          </Link>
-        )}
-      </nav>
+      <div className="sticky top-0 z-30" style={{ background: "rgba(10,10,15,0.92)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+        <nav className="flex items-center justify-between px-5 py-4 max-w-lg mx-auto">
+          <span className="font-display text-2xl text-white tracking-wider">Leagues</span>
+          {user && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setJoinSheetOpen(true)}
+                className="flex items-center gap-1.5 font-body text-sm font-semibold px-4 py-2 rounded-xl transition-all hover:opacity-90"
+                style={{ background: "rgba(255,255,255,0.05)", color: "#aaaacc", border: "1px solid rgba(255,255,255,0.1)" }}>
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                Join
+              </button>
+              <Link href="/league/new"
+                className="flex items-center gap-1.5 font-body text-sm font-semibold px-4 py-2 rounded-xl transition-all hover:opacity-90"
+                style={{ background: "rgba(167,139,250,0.12)", color: "#a78bfa", border: "1px solid rgba(167,139,250,0.2)" }}>
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path d="M7 1v12M1 7h12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+                New
+              </Link>
+            </div>
+          )}
+        </nav>
+      </div>
 
       <div className="relative z-0 max-w-lg mx-auto px-5 space-y-4">
 
@@ -454,6 +489,76 @@ export default function LeaguesPage() {
       </div>
 
       <BottomNav />
+
+      {/* Join League Sheet */}
+      {joinSheetOpen && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 z-40"
+            style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}
+            onClick={() => setJoinSheetOpen(false)}
+          />
+          {/* Sheet */}
+          <div
+            className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl px-5 pt-5 pb-10"
+            style={{ background: "#12121e", border: "1px solid rgba(167,139,250,0.2)", borderBottom: "none" }}>
+            {/* Handle */}
+            <div className="w-10 h-1 rounded-full mx-auto mb-6" style={{ background: "rgba(255,255,255,0.12)" }} />
+            {/* Header */}
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <p className="font-display text-xl text-white tracking-wide">Join a league</p>
+                <p className="font-body text-xs mt-0.5" style={{ color: "#8888aa" }}>
+                  Enter the code your mate shared
+                </p>
+              </div>
+              <button
+                onClick={() => setJoinSheetOpen(false)}
+                className="w-8 h-8 rounded-full flex items-center justify-center transition-opacity hover:opacity-70"
+                style={{ background: "rgba(255,255,255,0.07)" }}>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path d="M1 1l10 10M11 1L1 11" stroke="#aaaacc" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+              </button>
+            </div>
+
+            <form onSubmit={handleJoinSubmit}>
+              <input
+                ref={joinInputRef}
+                type="text"
+                value={joinCode}
+                onChange={(e) => setJoinCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8))}
+                placeholder="ENTER CODE"
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="characters"
+                spellCheck={false}
+                className="w-full rounded-2xl px-5 font-display text-3xl text-center tracking-[0.25em] text-white placeholder-opacity-30 outline-none mb-4"
+                style={{
+                  height: 72,
+                  background: "rgba(167,139,250,0.06)",
+                  border: `1px solid ${joinCode.length >= 4 ? "rgba(167,139,250,0.5)" : "rgba(167,139,250,0.2)"}`,
+                  caretColor: "#a78bfa",
+                  letterSpacing: "0.25em",
+                  transition: "border-color 0.2s",
+                }}
+              />
+              <button
+                type="submit"
+                disabled={joinCode.trim().length < 4}
+                className="w-full py-4 rounded-2xl font-body font-bold text-base transition-all"
+                style={{
+                  background: joinCode.trim().length >= 4 ? "#a78bfa" : "rgba(167,139,250,0.15)",
+                  color: joinCode.trim().length >= 4 ? "#0a0a0f" : "#555577",
+                  cursor: joinCode.trim().length >= 4 ? "pointer" : "not-allowed",
+                }}>
+                Join league →
+              </button>
+            </form>
+          </div>
+        </>
+      )}
     </main>
   );
 }

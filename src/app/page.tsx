@@ -424,13 +424,16 @@ function Dashboard({ userId }: { userId: string }) {
       <div className="fixed bottom-0 left-0 w-[300px] h-[300px] pointer-events-none" style={{ background: "radial-gradient(circle at 0% 100%, rgba(0,255,135,0.05) 0%, transparent 60%)" }} />
 
       {/* Nav */}
-      <nav className="relative z-10 flex items-center justify-between px-5 py-4 max-w-lg mx-auto">
-        <span className="font-display text-2xl text-white tracking-wider" style={{ textShadow: "0 0 20px rgba(0,255,135,0.3)" }}>YOURSCORE</span>
-        <Link href="/profile" className="w-9 h-9 rounded-full flex items-center justify-center font-body font-bold text-sm transition-opacity hover:opacity-80"
-          style={{ background: "linear-gradient(135deg, #1a2f4a, #2a1a4a)", color: "#a78bfa", border: "1.5px solid rgba(167,139,250,0.25)" }}>
-          {(displayName || "?")[0].toUpperCase()}
-        </Link>
-      </nav>
+      <div className="sticky top-0 z-30" style={{ background: "rgba(10,10,15,0.92)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+        <nav className="flex items-center justify-between px-5 py-4 max-w-lg mx-auto">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="YourScore" height={28} style={{ height: 28, width: "auto" }} />
+          <Link href="/profile" className="w-9 h-9 rounded-full flex items-center justify-center font-body font-bold text-sm transition-opacity hover:opacity-80"
+            style={{ background: "linear-gradient(135deg, #1a2f4a, #2a1a4a)", color: "#a78bfa", border: "1.5px solid rgba(167,139,250,0.25)" }}>
+            {(displayName || "?")[0].toUpperCase()}
+          </Link>
+        </nav>
+      </div>
 
       <div className="relative z-0 max-w-lg mx-auto px-5 space-y-5">
 
@@ -641,7 +644,8 @@ function MarketingLanding() {
 
       {/* ── Nav ──────────────────────────────────────────────────────────── */}
       <nav className="relative z-10 flex items-center justify-between px-6 py-5 max-w-6xl mx-auto">
-        <span className="font-display text-3xl text-white tracking-wider" style={{ textShadow: "0 0 30px rgba(0,255,135,0.35)" }}>YOURSCORE</span>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo.png" alt="YourScore" height={36} style={{ height: 36, width: "auto" }} />
         <div className="flex items-center gap-2">
           <Link href="/how-it-works" className="hidden sm:block font-body text-sm text-text-muted hover:text-white transition-colors px-3 py-2">How it works</Link>
           <Link href="/challenges" className="hidden sm:block font-body text-sm hover:opacity-80 transition-colors px-3 py-2" style={{ color: "#ffb800" }}>Challenges</Link>
@@ -698,7 +702,8 @@ function MarketingLanding() {
           >
             {/* Shelf header */}
             <div className="flex items-center justify-between px-6 py-5">
-              <span className="font-display text-2xl text-white tracking-wider" style={{ textShadow: "0 0 20px rgba(0,255,135,0.3)" }}>YOURSCORE</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo.png" alt="YourScore" height={28} style={{ height: 28, width: "auto" }} />
               <button
                 onClick={() => setMenuOpen(false)}
                 className="w-8 h-8 rounded-full flex items-center justify-center"
@@ -1112,7 +1117,8 @@ function MarketingLanding() {
       {/* Footer */}
       <footer className="relative z-10" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
         <div className="max-w-6xl mx-auto px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <span className="font-display text-xl text-text-muted tracking-wider">YOURSCORE</span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="YourScore" height={22} style={{ height: 22, width: "auto", opacity: 0.5 }} />
           <div className="flex items-center gap-6 text-sm font-body text-text-muted">
             <Link href="/how-it-works" className="hover:text-white transition-colors">How it works</Link>
             <Link href="/challenges" className="hover:opacity-80 transition-colors" style={{ color: "#ffb800" }}>Challenges</Link>

@@ -329,9 +329,12 @@ export default function MatchPage({ params }: { params: { id: string } }) {
 
       {/* Nav */}
       <nav className="relative z-10 flex items-center justify-between px-5 py-4 max-w-lg mx-auto">
-        <Link href="/">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="YourScore" height={28} style={{ height: 28, width: "auto" }} />
+        <Link href="/join" aria-label="Back to matches"
+          className="flex items-center gap-2 -ml-1 px-2 py-1 rounded-lg transition-colors hover:bg-white/5">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M12.5 4.5L7 10l5.5 5.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#a78bfa" }} />
+          </svg>
+          <span className="font-body text-sm font-semibold" style={{ color: "#a78bfa" }}>Matches</span>
         </Link>
         <div className="flex items-center gap-2">
           {questionCount > 0 && (

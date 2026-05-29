@@ -314,7 +314,7 @@ export default function ChallengesPage() {
           borderBottom: "1px solid rgba(255,255,255,0.06)",
         }}
       >
-        <div className="max-w-lg mx-auto px-5 pt-12 pb-3">
+        <div className="max-w-lg mx-auto px-5 pt-4 pb-3">
           {/* Title row */}
           <div className="flex items-center justify-between mb-4">
             <div>
