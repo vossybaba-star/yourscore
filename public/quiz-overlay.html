@@ -132,6 +132,14 @@
       </div>
     </div>
 
+    <div class="row">
+      <label for="f-reveal">Reveal mode</label>
+      <select id="f-reveal">
+        <option value="yes">Answer revealed</option>
+        <option value="no">No answer revealed</option>
+      </select>
+    </div>
+
     <div class="two">
       <div class="row">
         <label for="f-correct">Correct answer</label>
@@ -164,10 +172,11 @@
     <div class="status" id="status">Ready.</div>
 
     <div class="hint">
-      One continuous clip: question reveal &rarr; countdown 3&middot;2&middot;1
-      &rarr; 1.5s of nothing &rarr; the correct answer pops back in at its
-      original position. Saves as <code>{name}.webm</code> (VP9 + alpha). Use
-      Chrome for VP9-alpha support.
+      <b>Answer revealed:</b> question &rarr; countdown 3&middot;2&middot;1
+      &rarr; 1.5s blank &rarr; correct answer fades in/out.
+      <b>No answer revealed:</b> question &rarr; options hold 4s &rarr; fade out
+      (no countdown, no reveal). Saves as <code>{name}.webm</code> (VP9 + alpha).
+      Use Chrome.
     </div>
   </div>
 </div>
@@ -180,6 +189,7 @@ const config = {
   question: "Arsenal beat Real Madrid in the Champions League quarter-finals. What was the aggregate score?",
   options: ["3-1", "4-2", "5-1", "2-1"],
   correctAnswer: "A",          // "A" | "B" | "C" | "D"
+  revealAnswer: true,          // true → countdown + answer reveal. false → hold the card for 4s, no countdown, no reveal
   outputName: "arsenal-real-madrid",
   verticalPosition: "center"   // "center" | "lower"
 };
@@ -258,7 +268,9 @@ const TIMING = {
   // Answer phase
   answerIn: 400,           // correct answer fades in
   answerHold: 1500,        // fully visible
-  answerOut: 400           // correct answer fades out
+  answerOut: 400,          // correct answer fades out
+  // No-reveal mode
+  noRevealHold: 4000       // hold the card + options for 4s, no countdown, no reveal
 };
 
 /* ============================================================
@@ -273,6 +285,7 @@ const els = {
   question: document.getElementById('f-question'),
   opt: [0,1,2,3].map(i => document.getElementById('f-opt'+i)),
   correct: document.getElementById('f-correct'),
+  reveal: document.getElementById('f-reveal'),
   output: document.getElementById('f-output'),
   pos: document.getElementById('f-pos'),
   play: document.getElementById('btn-play'),
@@ -284,6 +297,7 @@ const els = {
 els.question.value = config.question;
 config.options.forEach((o,i) => els.opt[i].value = o);
 els.correct.value = config.correctAnswer;
+els.reveal.value = config.revealAnswer ? 'yes' : 'no';
 els.output.value = config.outputName;
 els.pos.value = config.verticalPosition;
 
@@ -294,6 +308,7 @@ function readConfig() {
     question: els.question.value.trim() || " ",
     options: els.opt.map(e => e.value.trim()),
     correctIndex: ci,
+    revealAnswer: els.reveal.value !== 'no',
     outputName: (els.output.value.trim() || "overlay").replace(/\.webm$/i, ""),
     verticalPosition: els.pos.value
   };
@@ -604,16 +619,29 @@ function buildTimeline(cfg, L) {
   const qEnd = TIMING.questionStart + (L.q.count - 1) * TIMING.wordStep + TIMING.wordFade;
   const optionsStart = qEnd + TIMING.pauseAfterQuestion;
   const optionsEnd = optionsStart + 3 * TIMING.optionStep + TIMING.optionFade;
-  const countdownStart = optionsEnd + TIMING.countdownGap;
-  const countdownEnd = countdownStart + 3 * TIMING.countdownStep;
-  const sceneHoldEnd = countdownEnd + TIMING.postCountdownHold;   // hold on "1"
-  const sceneFadeEnd = sceneHoldEnd + TIMING.sceneFade;           // scene cleared
-  const answerStart = sceneFadeEnd + TIMING.gap;                  // after 1.5s of nothing
-  const answerHoldEnd = answerStart + TIMING.answerIn + TIMING.answerHold;
-  const end = answerHoldEnd + TIMING.answerOut;
+
+  if (cfg.revealAnswer) {
+    const countdownStart = optionsEnd + TIMING.countdownGap;
+    const countdownEnd = countdownStart + 3 * TIMING.countdownStep;
+    const sceneHoldEnd = countdownEnd + TIMING.postCountdownHold;
+    const sceneFadeEnd = sceneHoldEnd + TIMING.sceneFade;
+    const answerStart = sceneFadeEnd + TIMING.gap;
+    const answerHoldEnd = answerStart + TIMING.answerIn + TIMING.answerHold;
+    const end = answerHoldEnd + TIMING.answerOut;
+    return {
+      reveal: true,
+      qEnd, optionsStart, optionsEnd, countdownStart, countdownEnd,
+      sceneHoldEnd, sceneFadeEnd, answerStart, answerHoldEnd, end
+    };
+  }
+
+  // No-reveal mode: no countdown, hold options for 4s, fade out
+  const sceneHoldEnd = optionsEnd + TIMING.noRevealHold;
+  const sceneFadeEnd = sceneHoldEnd + TIMING.sceneFade;
   return {
-    qEnd, optionsStart, optionsEnd, countdownStart, countdownEnd,
-    sceneHoldEnd, sceneFadeEnd, answerStart, answerHoldEnd, end
+    reveal: false,
+    qEnd, optionsStart, optionsEnd,
+    sceneHoldEnd, sceneFadeEnd, end: sceneFadeEnd
   };
 }
 
@@ -624,12 +652,13 @@ function buildTimeline(cfg, L) {
 function render(t, cfg, L, TL) {
   ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
 
-  if (t < TL.answerStart) {
-    // ---- Question scene (fades out as a whole after the countdown hold) ----
+  const inScenePhase = TL.reveal ? (t < TL.answerStart) : true;
+  if (inScenePhase) {
+    // ---- Question scene (fades out as a whole after the hold) ----
     const mul = t <= TL.sceneHoldEnd
       ? 1
       : 1 - clamp01((t - TL.sceneHoldEnd) / TIMING.sceneFade);
-    if (mul <= 0) return; // fully cleared → blank gap
+    if (mul <= 0) return; // fully cleared → blank gap (reveal mode) or clip end
 
     drawCard(L, clamp01(t / TIMING.cardFadeIn) * mul);
     drawQuestion(cfg, L, gi =>
@@ -642,7 +671,7 @@ function render(t, cfg, L, TL) {
       const e = easeOut(a);
       drawOption(cfg, L, j, { alpha: e * mul, slideY: (1 - e) * 44 });
     }
-    drawCountdown(L, t, TL.countdownStart, mul);
+    if (TL.reveal) drawCountdown(L, t, TL.countdownStart, mul);
     return;
   }
 
@@ -783,7 +812,7 @@ els.prefill.addEventListener('click', () => {
   setStatus('Prefilled. Correct answer: ' + "ABCD"[parsed.correctIdx] + ' (' + (parsed.options[parsed.correctIdx] || '—') + ').');
 });
 
-[els.question, ...els.opt, els.correct, els.pos].forEach(el =>
+[els.question, ...els.opt, els.correct, els.reveal, els.pos].forEach(el =>
   el.addEventListener('input', () => { if (!running) drawIdle(); })
 );
 
