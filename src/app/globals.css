@@ -20,6 +20,9 @@
 
 html {
   background: var(--bg);
+  /* Disable iOS rubber-band bounce so sticky tab headers don't visually
+     unstick when the user overscrolls past the top. */
+  overscroll-behavior-y: none;
 }
 
 body {
@@ -31,6 +34,7 @@ body {
   min-height: 100dvh;
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
+  overscroll-behavior-y: none;
 }
 
 /* Add to any element that sits at the top of the viewport — pushes its

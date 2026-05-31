@@ -643,15 +643,19 @@ function MarketingLanding() {
       <div className="fixed bottom-0 right-0 w-[500px] h-[500px] pointer-events-none" style={{ background: "radial-gradient(circle at 100% 100%, rgba(0,255,135,0.05) 0%, transparent 60%)" }} />
 
       {/* ── Nav ──────────────────────────────────────────────────────────── */}
-      <nav className="relative z-10 flex items-center justify-between px-6 py-5 max-w-6xl mx-auto">
+      <div className="sticky top-0 z-30 pt-safe" style={{ background: "rgba(10,10,15,0.92)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+      <nav className="flex items-center justify-between px-6 py-4 max-w-6xl mx-auto">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/logo.png" alt="YourScore" height={36} style={{ height: 36, width: "auto" }} />
         <div className="flex items-center gap-2">
           <Link href="/how-it-works" className="hidden sm:block font-body text-sm text-text-muted hover:text-white transition-colors px-3 py-2">How it works</Link>
           <Link href="/challenges" className="hidden sm:block font-body text-sm hover:opacity-80 transition-colors px-3 py-2" style={{ color: "#ffb800" }}>Challenges</Link>
           <Link href="/league/join" className="hidden sm:block font-body text-sm text-text-muted hover:text-white transition-colors px-3 py-2">Join league</Link>
-          <Link href="/auth/sign-in" className="hidden sm:block font-body text-sm text-text-muted hover:text-white transition-colors px-3 py-2">Sign in</Link>
-          <Link href="/auth/sign-in" className="font-body font-bold text-sm px-5 py-2.5 rounded-xl hover:opacity-90 transition-all green-pulse"
+          <Link href="/auth/sign-in" className="font-body font-semibold text-sm px-4 py-2.5 rounded-xl hover:opacity-90 transition-all"
+            style={{ background: "rgba(255,255,255,0.06)", color: "#ffffff", border: "1px solid rgba(255,255,255,0.12)" }}>
+            Sign In
+          </Link>
+          <Link href="/auth/sign-in" className="font-body font-bold text-sm px-4 py-2.5 rounded-xl hover:opacity-90 transition-all green-pulse"
             style={{ background: "rgba(0,255,135,0.12)", color: "#00ff87", border: "1px solid rgba(0,255,135,0.35)" }}>
             Sign Up
           </Link>
@@ -681,6 +685,7 @@ function MarketingLanding() {
           </button>
         </div>
       </nav>
+      </div>
 
       {/* ── Mobile menu shelf ────────────────────────────────────────────── */}
       {menuOpen && (

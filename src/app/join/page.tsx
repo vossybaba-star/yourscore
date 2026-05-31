@@ -77,6 +77,17 @@ export default function PlayPage() {
   const [toggling, setToggling] = useState<string | null>(null);
   const [notifToggling, setNotifToggling] = useState<string | null>(null);
   const [teamImages, setTeamImages] = useState<Record<string, string>>({});
+  const [displayName, setDisplayName] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) { setDisplayName(null); return; }
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return;
+    import("@/lib/supabase/client").then(async ({ createClient }) => {
+      const sb = createClient();
+      const { data } = await sb.from("profiles").select("display_name").eq("id", user.id).single();
+      setDisplayName(data?.display_name ?? user.email?.split("@")[0] ?? null);
+    });
+  }, [user]);
 
   useEffect(() => {
     if (userLoading) return;
@@ -225,7 +236,7 @@ export default function PlayPage() {
               {user ? (
                 <Link href="/profile" className="w-9 h-9 rounded-full flex items-center justify-center font-body font-bold text-sm transition-opacity hover:opacity-80 flex-shrink-0"
                   style={{ background: "linear-gradient(135deg, #1a2f4a, #2a1a4a)", color: "#a78bfa", border: "1.5px solid rgba(167,139,250,0.25)" }}>
-                  {(user.email?.[0] ?? "?").toUpperCase()}
+                  {((displayName || user.email || "?")[0]).toUpperCase()}
                 </Link>
               ) : (
                 <Link href="/auth/sign-in"
