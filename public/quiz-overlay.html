@@ -132,12 +132,22 @@
       </div>
     </div>
 
-    <div class="row">
-      <label for="f-reveal">Reveal mode</label>
-      <select id="f-reveal">
-        <option value="yes">Answer revealed</option>
-        <option value="no">No answer revealed</option>
-      </select>
+    <div class="two">
+      <div class="row">
+        <label for="f-reveal">Reveal mode</label>
+        <select id="f-reveal">
+          <option value="yes">Answer revealed</option>
+          <option value="no">No answer revealed</option>
+        </select>
+      </div>
+      <div class="row">
+        <label for="f-difficulty">Difficulty</label>
+        <select id="f-difficulty">
+          <option value="easy">Easy</option>
+          <option value="medium">Medium</option>
+          <option value="hard">Hard</option>
+        </select>
+      </div>
     </div>
 
     <div class="two">
@@ -156,6 +166,17 @@
           <option value="center">center</option>
           <option value="lower">lower</option>
         </select>
+      </div>
+    </div>
+
+    <div class="two">
+      <div class="row">
+        <label for="f-correct-count">Got it right</label>
+        <input id="f-correct-count" type="number" min="0" />
+      </div>
+      <div class="row">
+        <label for="f-total-count">Out of</label>
+        <input id="f-total-count" type="number" min="0" />
       </div>
     </div>
 
@@ -189,6 +210,9 @@ const config = {
   question: "Arsenal beat Real Madrid in the Champions League quarter-finals. What was the aggregate score?",
   options: ["3-1", "4-2", "5-1", "2-1"],
   correctAnswer: "A",          // "A" | "B" | "C" | "D"
+  difficulty: "medium",        // "easy" | "medium" | "hard"
+  correctCount: 47,            // number of people who got it right
+  totalCount: 100,             // total number of people who answered
   revealAnswer: true,          // true → countdown + answer reveal. false → hold the card for 4s, no countdown, no reveal
   outputName: "arsenal-real-madrid",
   verticalPosition: "center"   // "center" | "lower"
@@ -218,7 +242,17 @@ const T = {
   badgeLetterFont: 40,
   optionTextFont: 46,
   countdownDiameter: 132,
-  countdownFont: 64
+  countdownFont: 64,
+  // Difficulty pill (above the card, top-left)
+  pillHeight: 64,
+  pillPadX: 32,
+  pillFont: 30,
+  pillGap: 44,                // gap between pill bottom and card top
+  // Stats bar ("X of Y got this right", below the options)
+  statsHeight: 110,
+  statsGap: 28,               // gap between last option and stats bar
+  statsFontMain: 44,          // weight 700, green
+  statsFontRest: 38           // weight 500, light grey
 };
 
 const COLORS = {
@@ -243,7 +277,18 @@ const COLORS = {
     badgeBg:  "#1c5536",
     letter:   "#7df2a8",
     check:    "#3fdc7a"
-  }
+  },
+  // Stats bar
+  statsHighlight: "#00ff87",
+  statsRest:      "#cfd2da"
+};
+
+// Difficulty pill colours mirror the yourscore app (QuestionCard.tsx).
+// Backgrounds are pre-blended onto a dark base so they stay opaque over footage.
+const DIFFICULTY = {
+  easy:   { label: "EASY",   color: "#00ff87", bg: "#0e2b1a", border: "rgba(0,255,135,0.32)" },
+  medium: { label: "MEDIUM", color: "#ffb800", bg: "#2a2010", border: "rgba(255,184,0,0.32)" },
+  hard:   { label: "HARD",   color: "#ff4757", bg: "#2a1518", border: "rgba(255,71,87,0.32)" }
 };
 
 /* ============================================================
@@ -258,6 +303,8 @@ const TIMING = {
   pauseAfterQuestion: 400,
   optionStep: 200,
   optionFade: 360,
+  statsDelay: 180,         // delay after final option appears before stats fade in
+  statsFade: 380,          // stats fade-in duration
   countdownGap: 140,
   countdownStep: 1000,
   numberPop: 190,
@@ -286,6 +333,9 @@ const els = {
   opt: [0,1,2,3].map(i => document.getElementById('f-opt'+i)),
   correct: document.getElementById('f-correct'),
   reveal: document.getElementById('f-reveal'),
+  difficulty: document.getElementById('f-difficulty'),
+  correctCount: document.getElementById('f-correct-count'),
+  totalCount: document.getElementById('f-total-count'),
   output: document.getElementById('f-output'),
   pos: document.getElementById('f-pos'),
   play: document.getElementById('btn-play'),
@@ -298,16 +348,23 @@ els.question.value = config.question;
 config.options.forEach((o,i) => els.opt[i].value = o);
 els.correct.value = config.correctAnswer;
 els.reveal.value = config.revealAnswer ? 'yes' : 'no';
+els.difficulty.value = config.difficulty;
+els.correctCount.value = config.correctCount;
+els.totalCount.value = config.totalCount;
 els.output.value = config.outputName;
 els.pos.value = config.verticalPosition;
 
 function readConfig() {
   let ci = "ABCD".indexOf((els.correct.value || "A").toUpperCase());
   if (ci < 0) ci = 0;
+  const diff = DIFFICULTY[els.difficulty.value] ? els.difficulty.value : "medium";
   return {
     question: els.question.value.trim() || " ",
     options: els.opt.map(e => e.value.trim()),
     correctIndex: ci,
+    difficulty: diff,
+    correctCount: Math.max(0, parseInt(els.correctCount.value, 10) || 0),
+    totalCount: Math.max(0, parseInt(els.totalCount.value, 10) || 0),
     revealAnswer: els.reveal.value !== 'no',
     outputName: (els.output.value.trim() || "overlay").replace(/\.webm$/i, ""),
     verticalPosition: els.pos.value
@@ -419,17 +476,20 @@ function computeLayout(cfg) {
   const q = layoutQuestion(cfg.question, innerW);
   const cardH = T.cardPadY * 2 + q.lines.length * T.questionLineHeight;
   const optionsH = 4 * T.optionHeight + 3 * T.optionGap;
-  const totalH = cardH + T.gapCardOptions + optionsH;
+  const totalH = cardH + T.gapCardOptions + optionsH + T.statsGap + T.statsHeight;
 
   let top;
   if (cfg.verticalPosition === "lower") top = (CANVAS_H - totalH) * 0.74;
   else top = (CANVAS_H - totalH) / 2;
-  top = Math.max(180, Math.min(top, CANVAS_H - totalH - 80));
+  top = Math.max(220, Math.min(top, CANVAS_H - totalH - 80));
+
+  const optionsTop = top + cardH + T.gapCardOptions;
+  const statsTop = optionsTop + 4 * T.optionHeight + 3 * T.optionGap + T.statsGap;
 
   return {
     contentX, contentW, innerW, q,
     cardX: contentX, cardY: top, cardW: contentW, cardH,
-    optionsTop: top + cardH + T.gapCardOptions,
+    optionsTop, statsTop,
     totalH, top
   };
 }
@@ -574,6 +634,84 @@ function drawOption(cfg, L, j, state) {
   ctx.restore();
 }
 
+// Pill (rounded with radius = h/2)
+function pillPath(x, y, w, h) {
+  const r = h / 2;
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y,     x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x,     y + h, r);
+  ctx.arcTo(x,     y + h, x,     y,     r);
+  ctx.arcTo(x,     y,     x + w, y,     r);
+  ctx.closePath();
+}
+
+function drawDifficultyPill(L, difficulty, alpha) {
+  if (alpha <= 0) return;
+  const d = DIFFICULTY[difficulty] || DIFFICULTY.medium;
+  ctx.save();
+  ctx.font = `700 ${T.pillFont}px Inter, sans-serif`;
+  const tw = ctx.measureText(d.label).width;
+  const w = Math.round(tw + T.pillPadX * 2);
+  const h = T.pillHeight;
+  const x = L.cardX;
+  const y = L.cardY - T.pillGap - h;
+  ctx.globalAlpha = alpha;
+  pillPath(x, y, w, h);
+  ctx.fillStyle = d.bg;
+  ctx.fill();
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = d.border;
+  ctx.stroke();
+  ctx.fillStyle = d.color;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(d.label, x + w / 2, y + h / 2 + 2);
+  ctx.restore();
+}
+
+function drawStats(L, cfg, alpha) {
+  if (alpha <= 0 || cfg.totalCount <= 0) return;
+  const x = L.cardX, y = L.statsTop, w = L.cardW, h = T.statsHeight;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+
+  // container
+  roundRect(x, y, w, h, T.optionRadius);
+  ctx.fillStyle = COLORS.optionFill;
+  ctx.fill();
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = COLORS.optionBorder;
+  ctx.stroke();
+
+  // "{correct} of {total} got this right" — correct in green bold, rest in muted white
+  const correct = String(cfg.correctCount);
+  const restText = ` of ${cfg.totalCount} got this right`;
+  const fontMain = `700 ${T.statsFontMain}px Inter, sans-serif`;
+  const fontRest = `500 ${T.statsFontRest}px Inter, sans-serif`;
+
+  ctx.font = fontMain;
+  const w1 = ctx.measureText(correct).width;
+  ctx.font = fontRest;
+  const w2 = ctx.measureText(restText).width;
+  const totalW = w1 + w2;
+
+  let cx = x + w / 2 - totalW / 2;
+  const cy = y + h / 2 + 2;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+
+  ctx.font = fontMain;
+  ctx.fillStyle = COLORS.statsHighlight;
+  ctx.fillText(correct, cx, cy);
+  cx += w1;
+  ctx.font = fontRest;
+  ctx.fillStyle = COLORS.statsRest;
+  ctx.fillText(restText, cx, cy);
+
+  ctx.restore();
+}
+
 function drawCountdown(L, t, countdownStart, mul = 1) {
   if (t < countdownStart || mul <= 0) return;
   const r = T.countdownDiameter / 2;
@@ -619,6 +757,7 @@ function buildTimeline(cfg, L) {
   const qEnd = TIMING.questionStart + (L.q.count - 1) * TIMING.wordStep + TIMING.wordFade;
   const optionsStart = qEnd + TIMING.pauseAfterQuestion;
   const optionsEnd = optionsStart + 3 * TIMING.optionStep + TIMING.optionFade;
+  const statsStart = optionsStart + 3 * TIMING.optionStep + TIMING.statsDelay;
 
   if (cfg.revealAnswer) {
     const countdownStart = optionsEnd + TIMING.countdownGap;
@@ -630,7 +769,7 @@ function buildTimeline(cfg, L) {
     const end = answerHoldEnd + TIMING.answerOut;
     return {
       reveal: true,
-      qEnd, optionsStart, optionsEnd, countdownStart, countdownEnd,
+      qEnd, optionsStart, optionsEnd, statsStart, countdownStart, countdownEnd,
       sceneHoldEnd, sceneFadeEnd, answerStart, answerHoldEnd, end
     };
   }
@@ -640,7 +779,7 @@ function buildTimeline(cfg, L) {
   const sceneFadeEnd = sceneHoldEnd + TIMING.sceneFade;
   return {
     reveal: false,
-    qEnd, optionsStart, optionsEnd,
+    qEnd, optionsStart, optionsEnd, statsStart,
     sceneHoldEnd, sceneFadeEnd, end: sceneFadeEnd
   };
 }
@@ -660,7 +799,9 @@ function render(t, cfg, L, TL) {
       : 1 - clamp01((t - TL.sceneHoldEnd) / TIMING.sceneFade);
     if (mul <= 0) return; // fully cleared → blank gap (reveal mode) or clip end
 
-    drawCard(L, clamp01(t / TIMING.cardFadeIn) * mul);
+    const cardA = clamp01(t / TIMING.cardFadeIn) * mul;
+    drawDifficultyPill(L, cfg.difficulty, cardA);
+    drawCard(L, cardA);
     drawQuestion(cfg, L, gi =>
       clamp01((t - (TIMING.questionStart + gi * TIMING.wordStep)) / TIMING.wordFade) * mul
     );
@@ -671,6 +812,8 @@ function render(t, cfg, L, TL) {
       const e = easeOut(a);
       drawOption(cfg, L, j, { alpha: e * mul, slideY: (1 - e) * 44 });
     }
+    const statsA = easeOut(clamp01((t - TL.statsStart) / TIMING.statsFade));
+    drawStats(L, cfg, statsA * mul);
     if (TL.reveal) drawCountdown(L, t, TL.countdownStart, mul);
     return;
   }
@@ -687,17 +830,21 @@ function render(t, cfg, L, TL) {
   }
   if (a <= 0) return;
 
+  drawDifficultyPill(L, cfg.difficulty, a);
   drawCard(L, a);
   drawQuestion(cfg, L, () => a);
   drawOption(cfg, L, cfg.correctIndex, { alpha: a, highlight: 1 });
+  drawStats(L, cfg, a);
 }
 
 // Static layout preview for the editor (no animation)
 function renderStatic(cfg, L) {
   ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+  drawDifficultyPill(L, cfg.difficulty, 1);
   drawCard(L, 1);
   drawQuestion(cfg, L, () => 1);
   for (let j = 0; j < 4; j++) drawOption(cfg, L, j, { alpha: 1 });
+  drawStats(L, cfg, 1);
 }
 
 /* ============================================================
@@ -812,7 +959,7 @@ els.prefill.addEventListener('click', () => {
   setStatus('Prefilled. Correct answer: ' + "ABCD"[parsed.correctIdx] + ' (' + (parsed.options[parsed.correctIdx] || '—') + ').');
 });
 
-[els.question, ...els.opt, els.correct, els.reveal, els.pos].forEach(el =>
+[els.question, ...els.opt, els.correct, els.reveal, els.difficulty, els.correctCount, els.totalCount, els.pos].forEach(el =>
   el.addEventListener('input', () => { if (!running) drawIdle(); })
 );
 
