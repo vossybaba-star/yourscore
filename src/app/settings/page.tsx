@@ -128,7 +128,7 @@ export default function SettingsPage() {
 
       {/* Header */}
       <div
-        className="sticky top-0 z-10"
+        className="sticky top-0 z-10 pt-safe"
         style={{
           background: "rgba(10,10,15,0.92)",
           backdropFilter: "blur(12px)",

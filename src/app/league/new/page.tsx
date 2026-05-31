@@ -80,10 +80,13 @@ function CreateLeagueInner() {
     <main className="min-h-dvh bg-bg">
       <div className="fixed inset-0 pointer-events-none" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.025) 1px,transparent 1px)", backgroundSize: "40px 40px" }} />
 
-      <nav className="relative z-10 flex items-center justify-between px-6 py-5 max-w-2xl mx-auto">
+      <nav className="relative z-10 pt-safe flex items-center justify-between px-6 py-5 max-w-2xl mx-auto">
         <div className="flex items-center gap-4">
           <Link href="/leagues" className="font-body text-sm text-text-muted hover:text-white transition-colors">← Back</Link>
-          <Link href="/" className="font-display text-2xl text-white tracking-wider hover:opacity-80 transition-opacity">YOURSCORE</Link>
+          <Link href="/">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="YourScore" height={28} style={{ height: 28, width: "auto" }} />
+          </Link>
         </div>
         {user && (
           <Link href="/profile" className="w-8 h-8 rounded-full flex items-center justify-center font-body font-bold text-sm hover:opacity-80 transition-opacity"

@@ -5,7 +5,7 @@ export const metadata = { title: "Terms of Service — YourScore" };
 export default function TermsPage() {
   return (
     <main className="min-h-dvh" style={{ background: "#0a0a0f", color: "#e0e0f0" }}>
-      <nav className="px-6 py-5 border-b" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+      <nav className="pt-safe px-6 py-5 border-b" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
         <Link href="/">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo.png" alt="YourScore" height={28} style={{ height: 28, width: "auto" }} />

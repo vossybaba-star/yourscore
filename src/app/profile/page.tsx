@@ -94,7 +94,7 @@ export default function ProfilePage() {
       <div className="fixed inset-0 pointer-events-none" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.02) 1px,transparent 1px)", backgroundSize: "40px 40px" }} />
 
       {/* Sticky profile header */}
-      <div className="sticky top-0 z-30" style={{ background: "rgba(10,10,15,0.92)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+      <div className="sticky top-0 z-30 pt-safe" style={{ background: "rgba(10,10,15,0.92)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
         <div className="max-w-lg mx-auto px-5 py-4">
           <div className="flex items-center gap-4">
             <AvatarCircle name={name} size={56} avatarUrl={stats?.avatar_url} />

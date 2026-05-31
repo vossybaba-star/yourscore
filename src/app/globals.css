@@ -29,9 +29,16 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100dvh;
-  padding-top: env(safe-area-inset-top);
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
+}
+
+/* Add to any element that sits at the top of the viewport — pushes its
+   content below the iPhone Dynamic Island / status bar. Use on top navs
+   (sticky or static). Background of the host element fills the safe-area
+   strip, mimicking a native iOS nav bar. */
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
 }
 
 /* Scrollbar */

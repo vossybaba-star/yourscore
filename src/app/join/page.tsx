@@ -67,6 +67,7 @@ function JerseyImg({ src, alt, size = 52 }: { src?: string; alt: string; size?: 
 export default function PlayPage() {
   const { user, loading: userLoading } = useUser();
   const router = useRouter();
+  const isGuest = !userLoading && !user;
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [participantCounts, setParticipantCounts] = useState<Record<string, number>>({});
@@ -195,7 +196,7 @@ export default function PlayPage() {
         style={{ background: "radial-gradient(circle at 0% 0%, rgba(0,255,135,0.06) 0%, transparent 60%)" }} />
 
       {/* Header */}
-      <div className="sticky top-0 z-30" style={{ background: "rgba(10,10,15,0.92)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+      <div className="sticky top-0 z-30 pt-safe" style={{ background: "rgba(10,10,15,0.92)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
         <div className="max-w-lg mx-auto px-5 pt-4 pb-3">
           <div className="flex items-start justify-between gap-3">
             <div>
@@ -221,10 +222,18 @@ export default function PlayPage() {
                   </span>
                 </div>
               )}
-              <Link href="/profile" className="w-9 h-9 rounded-full flex items-center justify-center font-body font-bold text-sm transition-opacity hover:opacity-80 flex-shrink-0"
-                style={{ background: "linear-gradient(135deg, #1a2f4a, #2a1a4a)", color: "#a78bfa", border: "1.5px solid rgba(167,139,250,0.25)" }}>
-                {(user?.email?.[0] ?? "?").toUpperCase()}
-              </Link>
+              {user ? (
+                <Link href="/profile" className="w-9 h-9 rounded-full flex items-center justify-center font-body font-bold text-sm transition-opacity hover:opacity-80 flex-shrink-0"
+                  style={{ background: "linear-gradient(135deg, #1a2f4a, #2a1a4a)", color: "#a78bfa", border: "1.5px solid rgba(167,139,250,0.25)" }}>
+                  {(user.email?.[0] ?? "?").toUpperCase()}
+                </Link>
+              ) : (
+                <Link href="/auth/sign-in"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl font-body text-sm font-bold flex-shrink-0 transition-opacity hover:opacity-90"
+                  style={{ background: "#00ff87", color: "#0a0a0f" }}>
+                  Sign in
+                </Link>
+              )}
             </div>
           </div>
         </div>
@@ -252,8 +261,31 @@ export default function PlayPage() {
           </div>
         )}
 
+        {/* ── Guest sign-in banner ─────────────────────────────────────────────── */}
+        {!loading && isGuest && (
+          <div className="rounded-2xl px-5 py-5 flex items-center gap-4"
+            style={{ background: "rgba(0,255,135,0.04)", border: "1px solid rgba(0,255,135,0.18)" }}>
+            <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+              style={{ background: "rgba(0,255,135,0.12)", border: "1px solid rgba(0,255,135,0.25)" }}>
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <path d="M3 9.5L9 4l6 5.5V15.5a.75.75 0 0 1-.75.75H3.75A.75.75 0 0 1 3 15.5z" stroke="#00ff87" strokeWidth="1.4" strokeLinejoin="round"/>
+                <path d="M6.5 16.25v-5.5h5v5.5" stroke="#00ff87" strokeWidth="1.4" strokeLinecap="round"/>
+              </svg>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-body text-sm font-bold text-white">Sign in to join live matches</p>
+              <p className="font-body text-xs mt-0.5" style={{ color: "#8888aa" }}>Answer questions · earn points · climb the league</p>
+            </div>
+            <Link href="/auth/sign-in"
+              className="flex-shrink-0 px-4 py-2 rounded-xl font-body text-sm font-bold transition-opacity hover:opacity-90"
+              style={{ background: "#00ff87", color: "#0a0a0f" }}>
+              Sign in
+            </Link>
+          </div>
+        )}
+
         {/* ── My Schedule ──────────────────────────────────────────────────────── */}
-        {!loading && mySchedule.length > 0 && (
+        {!loading && mySchedule.length > 0 && user && (
           <div>
             <div className="flex items-center gap-2 mb-3 px-1">
               <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
@@ -437,26 +469,36 @@ export default function PlayPage() {
 
                         {/* Action bar */}
                         <div className="flex gap-2 px-4 pb-4">
-                          <div className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-body font-bold text-sm"
-                            style={{ background: "#00ff87", color: "#0a0a0f" }}>
-                            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-                              <path d="M3 1.5l9 5-9 5z" fill="currentColor" />
-                            </svg>
-                            Join game now
-                          </div>
-                          <button
-                            onClick={(e) => toggleNotification(e, m.id)}
-                            disabled={notifToggling === m.id}
-                            className="flex items-center justify-center w-11 rounded-xl transition-all disabled:opacity-60"
-                            style={{
-                              background: notified ? "rgba(167,139,250,0.15)" : "rgba(255,255,255,0.06)",
-                              border: `1px solid ${notified ? "rgba(167,139,250,0.35)" : "rgba(255,255,255,0.1)"}`,
-                              color: notified ? "#a78bfa" : "#555577",
-                            }}>
-                            {notifToggling === m.id
-                              ? <div className="w-3.5 h-3.5 rounded-full border-2 animate-spin" style={{ borderColor: "rgba(255,255,255,0.15)", borderTopColor: "currentColor" }} />
-                              : <BellIcon active={notified} />}
-                          </button>
+                          {isGuest ? (
+                            <Link href="/auth/sign-in"
+                              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-body font-bold text-sm"
+                              style={{ background: "rgba(0,255,135,0.1)", color: "#00ff87", border: "1px solid rgba(0,255,135,0.25)" }}>
+                              Sign in to join →
+                            </Link>
+                          ) : (
+                            <>
+                              <div className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-body font-bold text-sm"
+                                style={{ background: "#00ff87", color: "#0a0a0f" }}>
+                                <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                                  <path d="M3 1.5l9 5-9 5z" fill="currentColor" />
+                                </svg>
+                                Join game now
+                              </div>
+                              <button
+                                onClick={(e) => toggleNotification(e, m.id)}
+                                disabled={notifToggling === m.id}
+                                className="flex items-center justify-center w-11 rounded-xl transition-all disabled:opacity-60"
+                                style={{
+                                  background: notified ? "rgba(167,139,250,0.15)" : "rgba(255,255,255,0.06)",
+                                  border: `1px solid ${notified ? "rgba(167,139,250,0.35)" : "rgba(255,255,255,0.1)"}`,
+                                  color: notified ? "#a78bfa" : "#555577",
+                                }}>
+                                {notifToggling === m.id
+                                  ? <div className="w-3.5 h-3.5 rounded-full border-2 animate-spin" style={{ borderColor: "rgba(255,255,255,0.15)", borderTopColor: "currentColor" }} />
+                                  : <BellIcon active={notified} />}
+                              </button>
+                            </>
+                          )}
                         </div>
                       </Link>
                     );
@@ -535,47 +577,57 @@ export default function PlayPage() {
 
                       {/* Action bar */}
                       <div className="flex gap-2 px-4 pb-4">
-                        <button
-                          onClick={(e) => toggleInterest(e, m.id)}
-                          disabled={toggling === m.id}
-                          className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-body text-sm font-bold transition-all disabled:opacity-60"
-                          style={{
-                            background: interested ? "rgba(0,255,135,0.12)" : "rgba(255,255,255,0.05)",
-                            color: interested ? "#00ff87" : "#aaaacc",
-                            border: `1px solid ${interested ? "rgba(0,255,135,0.3)" : "rgba(255,255,255,0.08)"}`,
-                          }}>
-                          {toggling === m.id ? (
-                            <div className="w-4 h-4 rounded-full border-2 animate-spin"
-                              style={{ borderColor: "rgba(255,255,255,0.2)", borderTopColor: "currentColor" }} />
-                          ) : interested ? (
-                            <>
-                              <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-                                <path d="M2 6.5l3.5 3.5 5.5-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                              </svg>
-                              I&apos;m playing
-                            </>
-                          ) : (
-                            <>
-                              <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-                                <path d="M6.5 1.5v10M1.5 6.5h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                              </svg>
-                              I&apos;m playing
-                            </>
-                          )}
-                        </button>
-                        <button
-                          onClick={(e) => toggleNotification(e, m.id)}
-                          disabled={notifToggling === m.id}
-                          className="flex items-center justify-center w-11 rounded-xl transition-all disabled:opacity-60"
-                          style={{
-                            background: notified ? "rgba(167,139,250,0.12)" : "rgba(255,255,255,0.04)",
-                            border: `1px solid ${notified ? "rgba(167,139,250,0.3)" : "rgba(255,255,255,0.07)"}`,
-                            color: notified ? "#a78bfa" : "#555577",
-                          }}>
-                          {notifToggling === m.id
-                            ? <div className="w-3.5 h-3.5 rounded-full border-2 animate-spin" style={{ borderColor: "rgba(255,255,255,0.15)", borderTopColor: "currentColor" }} />
-                            : <BellIcon active={notified} />}
-                        </button>
+                        {isGuest ? (
+                          <Link href="/auth/sign-in"
+                            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-body text-sm font-bold"
+                            style={{ background: "rgba(255,255,255,0.04)", color: "#8888aa", border: "1px solid rgba(255,255,255,0.08)" }}>
+                            Sign in to play →
+                          </Link>
+                        ) : (
+                          <>
+                            <button
+                              onClick={(e) => toggleInterest(e, m.id)}
+                              disabled={toggling === m.id}
+                              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-body text-sm font-bold transition-all disabled:opacity-60"
+                              style={{
+                                background: interested ? "rgba(0,255,135,0.12)" : "rgba(255,255,255,0.05)",
+                                color: interested ? "#00ff87" : "#aaaacc",
+                                border: `1px solid ${interested ? "rgba(0,255,135,0.3)" : "rgba(255,255,255,0.08)"}`,
+                              }}>
+                              {toggling === m.id ? (
+                                <div className="w-4 h-4 rounded-full border-2 animate-spin"
+                                  style={{ borderColor: "rgba(255,255,255,0.2)", borderTopColor: "currentColor" }} />
+                              ) : interested ? (
+                                <>
+                                  <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                                    <path d="M2 6.5l3.5 3.5 5.5-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                  </svg>
+                                  I&apos;m playing
+                                </>
+                              ) : (
+                                <>
+                                  <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                                    <path d="M6.5 1.5v10M1.5 6.5h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                                  </svg>
+                                  I&apos;m playing
+                                </>
+                              )}
+                            </button>
+                            <button
+                              onClick={(e) => toggleNotification(e, m.id)}
+                              disabled={notifToggling === m.id}
+                              className="flex items-center justify-center w-11 rounded-xl transition-all disabled:opacity-60"
+                              style={{
+                                background: notified ? "rgba(167,139,250,0.12)" : "rgba(255,255,255,0.04)",
+                                border: `1px solid ${notified ? "rgba(167,139,250,0.3)" : "rgba(255,255,255,0.07)"}`,
+                                color: notified ? "#a78bfa" : "#555577",
+                              }}>
+                              {notifToggling === m.id
+                                ? <div className="w-3.5 h-3.5 rounded-full border-2 animate-spin" style={{ borderColor: "rgba(255,255,255,0.15)", borderTopColor: "currentColor" }} />
+                                : <BellIcon active={notified} />}
+                            </button>
+                          </>
+                        )}
                       </div>
                     </Link>
                   );

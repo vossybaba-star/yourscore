@@ -328,7 +328,7 @@ export default function MatchPage({ params }: { params: { id: string } }) {
       }} />
 
       {/* Nav */}
-      <nav className="relative z-10 flex items-center justify-between px-5 py-4 max-w-lg mx-auto">
+      <nav className="relative z-10 pt-safe flex items-center justify-between px-5 py-4 max-w-lg mx-auto">
         <Link href="/join" aria-label="Back to matches"
           className="flex items-center gap-2 -ml-1 px-2 py-1 rounded-lg transition-colors hover:bg-white/5">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none">

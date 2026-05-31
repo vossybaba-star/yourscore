@@ -721,7 +721,7 @@ export default function ChallengePage() {
     return (
       <div className="min-h-screen flex flex-col" style={{ background: "#0a0a0f" }}>
         {/* Sticky header */}
-        <div className="sticky top-0 z-10"
+        <div className="sticky top-0 z-10 pt-safe"
           style={{ background: "rgba(10,10,15,0.98)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
           {/* Progress bar */}
           <div style={{ height: 3, background: "rgba(255,255,255,0.06)" }}>

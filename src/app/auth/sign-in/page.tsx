@@ -22,8 +22,11 @@ export default function SignInPage() {
       }} />
       <div className="fixed top-0 left-0 w-[500px] h-[500px] pointer-events-none" style={{ background: "radial-gradient(circle at 0% 0%, rgba(167,139,250,0.07) 0%, transparent 60%)" }} />
 
-      <nav className="relative z-10 px-6 py-5">
-        <Link href="/" className="font-display text-2xl text-white tracking-wider hover:opacity-80">YOURSCORE</Link>
+      <nav className="relative z-10 pt-safe px-6 py-5">
+        <Link href="/">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="YourScore" height={32} style={{ height: 32, width: "auto" }} />
+        </Link>
       </nav>
 
       <div className="relative z-10 flex-1 flex items-center justify-center px-6 py-12">

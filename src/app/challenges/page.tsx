@@ -307,14 +307,14 @@ export default function ChallengesPage() {
     >
       {/* Sticky header */}
       <div
-        className="sticky top-0 z-20"
+        className="sticky top-0 z-20 pt-safe"
         style={{
           background: "rgba(10,10,15,0.97)",
           backdropFilter: "blur(20px)",
           borderBottom: "1px solid rgba(255,255,255,0.06)",
         }}
       >
-        <div className="max-w-lg mx-auto px-5 pt-4 pb-3">
+        <div className="max-w-lg mx-auto px-5 pt-3 pb-3">
           {/* Title row */}
           <div className="flex items-center justify-between mb-4">
             <div>

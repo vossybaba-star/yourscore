@@ -208,7 +208,7 @@ export default function HowItWorksPage() {
       <div className="fixed top-0 left-0 w-[600px] h-[600px] pointer-events-none" style={{ background: "radial-gradient(circle at 0% 0%, rgba(167,139,250,0.06) 0%, transparent 60%)" }} />
 
       {/* Nav */}
-      <nav className="relative z-10 flex items-center justify-between px-6 py-5 max-w-4xl mx-auto">
+      <nav className="relative z-10 pt-safe flex items-center justify-between px-6 py-5 max-w-4xl mx-auto">
         <Link href="/">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo.png" alt="YourScore" height={28} style={{ height: 28, width: "auto" }} />

@@ -156,7 +156,7 @@ export default function LeaguesPage() {
         style={{ background: "radial-gradient(circle at 100% 0%, rgba(167,139,250,0.07) 0%, transparent 60%)" }} />
 
       {/* Nav */}
-      <div className="sticky top-0 z-30" style={{ background: "rgba(10,10,15,0.92)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+      <div className="sticky top-0 z-30 pt-safe" style={{ background: "rgba(10,10,15,0.92)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
         <nav className="flex items-center justify-between px-5 py-4 max-w-lg mx-auto">
           <span className="font-display text-2xl text-white tracking-wider">Leagues</span>
           {user && (
