@@ -23,6 +23,9 @@ export async function sendQuestionAlert(
   }
 
   const normalised = normaliseNumber(toNumber);
+  if (!isValidE164(normalised)) {
+    return { success: false, error: "Invalid phone number" };
+  }
 
   // DEV: hello_world template (no params, just confirms delivery pipeline).
   // PROD: replace "hello_world"/"en_US" with your approved template name/lang
@@ -50,12 +53,16 @@ export async function sendQuestionAlert(
     const data = await res.json();
 
     if (!res.ok) {
-      return { success: false, error: JSON.stringify(data), raw: data };
+      // Log the full Graph API error server-side; return a generic message so
+      // we don't leak Meta trace IDs / account context to the caller.
+      console.error("WhatsApp send failed", { status: res.status, data });
+      return { success: false, error: "Failed to send WhatsApp message" };
     }
 
-    return { success: true, raw: data };
+    return { success: true };
   } catch (err) {
-    return { success: false, error: String(err) };
+    console.error("WhatsApp send threw", err);
+    return { success: false, error: "Failed to send WhatsApp message" };
   }
 }
 
@@ -71,9 +78,12 @@ export async function sendQuestionAlertTemplate(
 
   if (!token || !phoneNumberId) return { success: false, error: "WhatsApp env vars not set" };
 
+  const normalised = normaliseNumber(toNumber);
+  if (!isValidE164(normalised)) return { success: false, error: "Invalid phone number" };
+
   const body = {
     messaging_product: "whatsapp",
-    to: normaliseNumber(toNumber),
+    to: normalised,
     type: "template",
     template: {
       name: templateName,
@@ -99,10 +109,14 @@ export async function sendQuestionAlertTemplate(
       body: JSON.stringify(body),
     });
     const data = await res.json();
-    if (!res.ok) return { success: false, error: JSON.stringify(data) };
+    if (!res.ok) {
+      console.error("WhatsApp template send failed", { status: res.status, data });
+      return { success: false, error: "Failed to send WhatsApp message" };
+    }
     return { success: true };
   } catch (err) {
-    return { success: false, error: String(err) };
+    console.error("WhatsApp template send threw", err);
+    return { success: false, error: "Failed to send WhatsApp message" };
   }
 }
 
@@ -110,4 +124,9 @@ function normaliseNumber(raw: string): string {
   let n = raw.replace(/[\s\-().+]/g, "");
   if (n.startsWith("07") && n.length === 11) n = "44" + n.slice(1);
   return n;
+}
+
+// E.164: country code (no leading zero) + subscriber number, 8–15 digits total.
+function isValidE164(n: string): boolean {
+  return /^[1-9]\d{7,14}$/.test(n);
 }

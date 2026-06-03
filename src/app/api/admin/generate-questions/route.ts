@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { requireAdmin } from "@/lib/auth/admin";
 import Anthropic from "@anthropic-ai/sdk";
 
 const client = new Anthropic();
 
 export async function POST(request: NextRequest) {
-  // Auth check via session client
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  // Admin-only — service client below bypasses RLS
+  const denied = await requireAdmin();
+  if (denied) return denied;
 
   // DB writes via service client (bypasses RLS)
   const db = createServiceClient();

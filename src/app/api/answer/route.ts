@@ -66,12 +66,12 @@ export async function POST(request: NextRequest) {
   // Fetch question
   const { data: questionData } = await supabase
     .from("questions")
-    .select("correct_answer, difficulty, explanation")
+    .select("answer, difficulty")
     .eq("id", event.question_id)
     .single();
 
   const question = questionData as any;
-  const isCorrect = selectedAnswer === question.correct_answer;
+  const isCorrect = selectedAnswer === question.answer.toLowerCase();
   const timeTakenMs = now.getTime() - new Date(event.fired_at).getTime();
   const basePoints = calculatePoints(isCorrect, timeTakenMs, question.difficulty);
 

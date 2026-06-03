@@ -4,6 +4,14 @@ import { useEffect } from "react";
 import { isNative, closeOAuthBrowser, exchangeCodeFromDeepLink } from "@/lib/native";
 import { createClient } from "@/lib/supabase/client";
 
+// Only allow same-origin relative redirects. Rejects absolute URLs
+// (https://evil.com), protocol-relative (//evil.com) and javascript: payloads
+// that a malicious deep link could put in ?next= to hijack the in-app webview.
+function safeNext(raw: string | null): string {
+  if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return "/";
+  return raw;
+}
+
 export function NativeBootstrap() {
   useEffect(() => {
     if (!isNative()) return;
@@ -23,8 +31,7 @@ export function NativeBootstrap() {
         const result = await exchangeCodeFromDeepLink(supabase, launch.url);
         await closeOAuthBrowser();
         if (result.ok) {
-          const next = new URL(launch.url).searchParams.get("next") ?? "/";
-          window.location.href = next;
+          window.location.href = safeNext(new URL(launch.url).searchParams.get("next"));
         } else {
           console.warn("[native-auth] cold launch", result.error);
         }
@@ -40,8 +47,7 @@ export function NativeBootstrap() {
           console.warn("[native-auth]", result.error);
           return;
         }
-        const next = new URL(event.url).searchParams.get("next") ?? "/";
-        window.location.href = next;
+        window.location.href = safeNext(new URL(event.url).searchParams.get("next"));
       });
 
       // Push registration intentionally NOT auto-triggered on sign-in. Apple

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 
 type Difficulty = "easy" | "medium" | "hard";
@@ -6,12 +7,14 @@ type EntityType = "club" | "records";
 type Era = "all-time" | "early-pl" | "2010s" | "2020s" | "2024-25";
 
 interface GenerateCustomBody {
-  userId: string;
   entity: string;
   entityType: EntityType;
   era?: Era | string;
   difficulty?: Difficulty;
 }
+
+const ENTITY_RE = /^[A-Za-z0-9 _'.&-]{1,60}$/;
+const ALLOWED_ERAS = ["all-time", "early-pl", "2010s", "2020s", "2024-25"];
 
 interface BankQuestion {
   id: string;
@@ -76,6 +79,7 @@ async function fetchByDifficulty(
     .select("id, entity, entity_type, question, options, answer, difficulty, category, era")
     .eq("entity", entity)
     .eq("status", "active")
+    .eq("source", "data-grounded")
     .eq("difficulty", difficulty)
     .limit(limit * 3);
 
@@ -98,13 +102,29 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { userId, entity, entityType, era, difficulty } = body;
+  const { entity, entityType, era, difficulty } = body;
 
-  if (!userId) {
-    return NextResponse.json({ error: "userId is required" }, { status: 400 });
+  // Authenticate: created_by is taken from the session, never the request body.
+  const auth = await createClient();
+  const {
+    data: { user },
+  } = await auth.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  if (!entity) {
-    return NextResponse.json({ error: "entity is required" }, { status: 400 });
+  const userId = user.id;
+
+  if (!entity || typeof entity !== "string" || !ENTITY_RE.test(entity)) {
+    return NextResponse.json({ error: "Invalid entity" }, { status: 400 });
+  }
+  if (entityType !== "club" && entityType !== "records") {
+    return NextResponse.json({ error: "Invalid entityType" }, { status: 400 });
+  }
+  if (era !== undefined && !ALLOWED_ERAS.includes(era)) {
+    return NextResponse.json({ error: "Invalid era" }, { status: 400 });
+  }
+  if (difficulty !== undefined && !["easy", "medium", "hard"].includes(difficulty)) {
+    return NextResponse.json({ error: "Invalid difficulty" }, { status: 400 });
   }
 
   const eraLabel = buildEraLabel(era);
@@ -134,10 +154,29 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  if (questions.length < 8) {
+  // If we don't have enough questions with difficulty filter, fall back to all difficulties
+  if (questions.length < 8 && difficulty) {
+    questions = await fetchByDifficulty(supabase, entity, era, difficulty, 15);
+  }
+
+  // Final fallback: fetch any verified questions for this entity
+  if (questions.length < 5) {
+    const { data: fallback } = await supabase
+      .from("questions")
+      .select("id, entity, entity_type, question, options, answer, difficulty, category, era")
+      .eq("entity", entity)
+      .eq("status", "active")
+      .eq("source", "data-grounded")
+      .limit(45);
+    if (fallback && fallback.length > 0) {
+      questions = shuffle(fallback as BankQuestion[]).slice(0, 15);
+    }
+  }
+
+  if (questions.length < 5) {
     return NextResponse.json(
-      { error: "Not enough questions found" },
-      { status: 500 }
+      { error: "Not enough verified questions available for this club yet" },
+      { status: 404 }
     );
   }
 

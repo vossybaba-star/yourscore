@@ -79,7 +79,7 @@ create policy "Matches managed by admins" on matches
     exists (
       select 1 from auth.users
       where id = auth.uid()
-      and raw_user_meta_data->>'is_admin' = 'true'
+      and raw_app_meta_data->>'is_admin' = 'true'
     )
   );
 
@@ -111,7 +111,8 @@ create policy "Authenticated users create rooms" on rooms
   for insert with check (auth.uid() = created_by);
 
 create policy "Room creator can update" on rooms
-  for update using (auth.uid() = created_by);
+  for update using (auth.uid() = created_by)
+  with check (auth.uid() = created_by);
 
 -- ============================================================
 -- ROOM MEMBERS
@@ -136,6 +137,13 @@ create policy "Users join rooms" on room_members
 
 create policy "Users update own membership" on room_members
   for update using (auth.uid() = user_id);
+
+-- whatsapp_number is PII and only read server-side (service role). Hide it from
+-- the public anon/authenticated roles via column-level privileges so it can't be
+-- harvested through the anon key. (See migration 03_security_hardening.sql.)
+revoke select on room_members from anon, authenticated;
+grant select (id, room_id, user_id, joined_at, notification_consent)
+  on room_members to anon, authenticated;
 
 -- ============================================================
 -- QUESTIONS
@@ -167,7 +175,7 @@ create policy "Approved questions readable" on questions
     or exists (
       select 1 from auth.users
       where id = auth.uid()
-      and raw_user_meta_data->>'is_admin' = 'true'
+      and raw_app_meta_data->>'is_admin' = 'true'
     )
   );
 
@@ -246,8 +254,9 @@ alter table room_scores enable row level security;
 create policy "Room scores readable by all" on room_scores
   for select using (true);
 
-create policy "System updates room scores" on room_scores
-  for all using (true);
+-- Writes are performed by the service-role client (bypasses RLS). No client
+-- write policy — a `for all using (true)` here would let any anon-key holder
+-- forge/wipe leaderboard scores. (See migration 03_security_hardening.sql.)
 
 -- ============================================================
 -- ADMIN WRITE POLICIES (handled via service role key in API routes,
@@ -260,7 +269,7 @@ create policy "Admins manage questions" on questions
     exists (
       select 1 from auth.users
       where id = auth.uid()
-      and raw_user_meta_data->>'is_admin' = 'true'
+      and raw_app_meta_data->>'is_admin' = 'true'
     )
   );
 
@@ -274,9 +283,9 @@ create policy "Room creators insert question events" on question_events
     )
   );
 
--- Rooms: anyone can update status (service role handles this in practice)
-create policy "Admins update rooms" on rooms
-  for update using (true);
+-- Rooms status changes are made by the service-role client (bypasses RLS).
+-- No permissive client UPDATE policy — see "Room creator can update" above and
+-- migration 03_security_hardening.sql.
 
 -- ============================================================
 -- QUIZ ATTEMPTS (leaderboard)

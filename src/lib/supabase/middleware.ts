@@ -35,10 +35,12 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Protect /admin routes
+  // Protect /admin routes — require an authenticated admin, not just any user.
+  // Uses app_metadata (service-role-only), NOT user-editable user_metadata.
+  // Mirrors the is_admin RLS rule (supabase/schema.sql).
   if (
     request.nextUrl.pathname.startsWith("/admin") &&
-    !user
+    user?.app_metadata?.is_admin !== true
   ) {
     const url = request.nextUrl.clone();
     url.pathname = "/";

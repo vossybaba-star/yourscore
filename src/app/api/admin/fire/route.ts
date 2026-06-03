@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { requireAdmin } from "@/lib/auth/admin";
 import { sendQuestionAlert } from "@/lib/whatsapp";
 
 export async function POST(request: NextRequest) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  // Admin-only — service client below bypasses RLS
+  const denied = await requireAdmin();
+  if (denied) return denied;
 
   const db = createServiceClient();
 
@@ -60,7 +60,7 @@ async function sendNotifications(
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3003";
 
   const [{ data: question }] = await Promise.all([
-    supabase.from("questions").select("question_text").eq("id", questionId).single(),
+    supabase.from("questions").select("question").eq("id", questionId).single(),
   ]);
 
   if (!question) return;
@@ -80,7 +80,7 @@ async function sendNotifications(
 
     const payload = {
       roomName: room.name,
-      questionText: question.question_text,
+      questionText: question.question,
       durationSeconds,
       roomUrl: `${appUrl}/room/${roomId}`,
     };
@@ -102,7 +102,7 @@ async function sendNotifications(
 
     const payload = {
       roomName: `${match.home_team} vs ${match.away_team}`,
-      questionText: question.question_text,
+      questionText: question.question,
       durationSeconds,
       roomUrl: `${appUrl}/match/${matchId}`,
     };

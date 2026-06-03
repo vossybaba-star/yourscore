@@ -322,30 +322,40 @@ export default function H2HPage({ params }: { params: { id: string } }) {
     setAdvancing(true);
     setTimeout(async () => {
       if (currentIdx + 1 >= questions.length) {
-        const finalScore = newLog.reduce((s, r) => s + r.points, 0);
-        const correctCount = newLog.filter((r) => r.correct).length;
+        // Local tally for immediate display; the server re-grades authoritatively.
+        let finalScore = newLog.reduce((s, r) => s + r.points, 0);
+        let correctCount = newLog.filter((r) => r.correct).length;
 
         if (userId) {
-          const supabase = createClient() as any;
-          await supabase
-            .from("h2h_challenges")
-            .update({
-              opponent_id: userId,
-              opponent_score: finalScore,
-              opponent_correct: correctCount,
-            })
-            .eq("id", challenge.id);
+          // Server grades the answers against the pack and writes the score.
+          // The client can no longer set opponent_score directly.
+          const res = await fetch("/api/h2h/play", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              challengeId: challenge.id,
+              answers: newLog.map((r) => ({
+                letter: r.selected,
+                elapsedMs: r.elapsed_ms,
+              })),
+            }),
+          });
 
-          setChallenge((prev) =>
-            prev
-              ? {
-                  ...prev,
-                  opponent_id: userId,
-                  opponent_score: finalScore,
-                  opponent_correct: correctCount,
-                }
-              : prev
-          );
+          if (res.ok) {
+            const data = await res.json();
+            finalScore = data.opponentScore;
+            correctCount = data.opponentCorrect;
+            setChallenge((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    opponent_id: userId,
+                    opponent_score: finalScore,
+                    opponent_correct: correctCount,
+                  }
+                : prev
+            );
+          }
         }
 
         setScore(finalScore);

@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 
 type Difficulty = "easy" | "medium" | "hard";
+
+// Allow-list for values that get concatenated into PostgREST filter strings.
+// Rejecting anything else closes the .or()/.not(...in...) filter-injection vector.
+const FILTER_TOKEN_RE = /^[A-Za-z0-9 _'.&-]{1,60}$/;
 
 interface BankQuestion {
   id: string;
@@ -25,7 +30,6 @@ interface StartBody {
   entity?: string;
   tags?: string[];
   difficulty?: Difficulty;
-  userId: string;
 }
 
 function shuffle<T>(arr: T[]): T[] {
@@ -81,6 +85,16 @@ async function fetchQuestions(
 }
 
 export async function POST(req: NextRequest) {
+  // Authenticate: derive the user from the session, never from the body.
+  const auth = await createClient();
+  const {
+    data: { user },
+  } = await auth.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const userId = user.id;
+
   let body: StartBody;
   try {
     body = await req.json();
@@ -88,10 +102,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { entity, tags, difficulty, userId } = body;
+  const { entity, tags, difficulty } = body;
 
-  if (!userId) {
-    return NextResponse.json({ error: "userId is required" }, { status: 400 });
+  // Validate filter inputs that get interpolated into PostgREST filter strings.
+  if (entity !== undefined && (typeof entity !== "string" || !FILTER_TOKEN_RE.test(entity))) {
+    return NextResponse.json({ error: "Invalid entity" }, { status: 400 });
+  }
+  if (tags !== undefined) {
+    if (!Array.isArray(tags) || tags.length > 20 || !tags.every((t) => typeof t === "string" && FILTER_TOKEN_RE.test(t))) {
+      return NextResponse.json({ error: "Invalid tags" }, { status: 400 });
+    }
+  }
+  if (difficulty !== undefined && !["easy", "medium", "hard"].includes(difficulty)) {
+    return NextResponse.json({ error: "Invalid difficulty" }, { status: 400 });
   }
 
   // entity key for history tracking

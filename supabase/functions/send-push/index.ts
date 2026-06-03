@@ -33,12 +33,23 @@ Deno.serve(async (req) => {
   // shouldn't be able to fan out pushes or enumerate device tokens via roomId
   // guessing. Only the admin server (Next.js API route) holds this key.
   const authHeader = req.headers.get('authorization') ?? '';
-  const expected = `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''}`;
-  if (!expected.endsWith(' ') && authHeader !== expected) {
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+  // Fail CLOSED: if the secret is unset, reject everything (never accept a
+  // bare "Bearer " token). Otherwise require an exact match.
+  if (!serviceKey || authHeader !== `Bearer ${serviceKey}`) {
     return new Response('Unauthorized', { status: 401 });
   }
 
-  const { roomId, title, body, url }: Payload = await req.json();
+  let payload: Payload;
+  try {
+    payload = await req.json();
+  } catch {
+    return new Response('Bad Request', { status: 400 });
+  }
+  const { roomId, title, body, url } = payload;
+  if (typeof roomId !== 'string' || typeof title !== 'string' || typeof body !== 'string') {
+    return new Response('Bad Request', { status: 400 });
+  }
 
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
