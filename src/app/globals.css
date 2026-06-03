@@ -23,6 +23,10 @@ html {
   /* Disable iOS rubber-band bounce so sticky tab headers don't visually
      unstick when the user overscrolls past the top. */
   overscroll-behavior-y: none;
+  /* Block any horizontal overflow from background glow overlays. Lives
+     here (not on main) so position: sticky descendants aren't broken
+     by WebKit's known sticky+overflow:hidden interaction. */
+  overflow-x: hidden;
 }
 
 body {
@@ -35,6 +39,7 @@ body {
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
   overscroll-behavior-y: none;
+  overflow-x: hidden;
 }
 
 /* Add to any element that sits at the top of the viewport — pushes its

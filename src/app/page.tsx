@@ -417,7 +417,7 @@ function Dashboard({ userId }: { userId: string }) {
   const firstName = displayName ? displayName.split(" ")[0] : null;
 
   return (
-    <main className="min-h-dvh bg-bg pb-28 overflow-x-hidden">
+    <main className="min-h-dvh bg-bg pb-28">
       <style>{DASH_ANIM}</style>
       <div className="fixed inset-0 pointer-events-none" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.025) 1px,transparent 1px)", backgroundSize: "40px 40px" }} />
       <div className="fixed top-0 right-0 w-[350px] h-[350px] pointer-events-none" style={{ background: "radial-gradient(circle at 100% 0%, rgba(167,139,250,0.08) 0%, transparent 60%)" }} />
@@ -634,7 +634,7 @@ function MarketingLanding() {
   const dashOffset = 282 * (1 - timerValue / 45);
 
   return (
-    <main className="min-h-dvh bg-bg overflow-x-hidden">
+    <main className="min-h-dvh bg-bg">
       <style>{ANIM_CSS}</style>
 
       {/* Grid + glow background */}
