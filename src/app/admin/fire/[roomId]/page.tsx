@@ -63,7 +63,7 @@ export default function FirePanel({ params }: { params: { roomId: string } }) {
 
   useEffect(() => {
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-      setRoomName("The Lads' Room");
+      setRoomName("The Lads' Lobby");
       return;
     }
     import("@/lib/supabase/client").then(({ createClient }) => {
@@ -75,8 +75,11 @@ export default function FirePanel({ params }: { params: { roomId: string } }) {
           if (data) {
             setRoomName(data.name);
             if (data.match_id) {
-              supabase.from("questions").select("*").eq("match_id", data.match_id).eq("approved", true)
-                .then(({ data: qs }) => { if (qs && qs.length > 0) setQuestions(qs as Question[]); });
+              // TODO(live-match): defunct match-question model (questions.match_id/approved);
+              // migrate to the question bank + question_events.
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (supabase as any).from("questions").select("*").eq("match_id", data.match_id).eq("approved", true)
+                .then(({ data: qs }: { data: Question[] | null }) => { if (qs && qs.length > 0) setQuestions(qs as Question[]); });
             }
           }
         });

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -8,6 +7,7 @@ import { useUser } from "@/hooks/useUser";
 import { AuthProviders } from "@/components/auth/AuthButton";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { Spinner } from "@/components/ui/Spinner";
+import { GridBackground } from "@/components/ui/GridBackground";
 
 interface LeagueCard {
   id: string;
@@ -68,39 +68,18 @@ export default function LeaguesPage() {
     import("@/lib/supabase/client").then(async ({ createClient }) => {
       const sb = createClient();
 
-      const { data: memberships } = await (sb as any)
-        .from("league_members")
-        .select("league_id, total_score, leagues(id, name, description, code)")
-        .eq("user_id", user.id)
-        .order("total_score", { ascending: false });
+      // Single round-trip (RPC) instead of 1 + 2N count queries per league.
+      const { data } = await sb.rpc("get_my_leagues", { p_user_id: user.id });
 
-      if (!memberships?.length) { setLoading(false); return; }
-
-      const cards: LeagueCard[] = await Promise.all(
-        memberships.map(async (row: any) => {
-          const league = row.leagues;
-          const { count } = await (sb as any)
-            .from("league_members")
-            .select("*", { count: "exact", head: true })
-            .eq("league_id", league.id);
-
-          const { count: above } = await (sb as any)
-            .from("league_members")
-            .select("*", { count: "exact", head: true })
-            .eq("league_id", league.id)
-            .gt("total_score", row.total_score ?? 0);
-
-          return {
-            id: league.id,
-            name: league.name,
-            description: league.description,
-            code: league.code,
-            member_count: count ?? 0,
-            my_score: row.total_score ?? 0,
-            my_rank: (above ?? 0) + 1,
-          };
-        })
-      );
+      const cards: LeagueCard[] = (data ?? []).map((row) => ({
+        id: row.id,
+        name: row.name,
+        description: row.description,
+        code: row.code,
+        member_count: Number(row.member_count ?? 0),
+        my_score: row.my_score ?? 0,
+        my_rank: Number(row.my_rank ?? 1),
+      }));
 
       setLeagues(cards);
       setLoading(false);
@@ -148,10 +127,7 @@ export default function LeaguesPage() {
 
   return (
     <main className="min-h-dvh bg-bg pb-28">
-      <div className="fixed inset-0 pointer-events-none" style={{
-        backgroundImage: "linear-gradient(rgba(255,255,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.025) 1px,transparent 1px)",
-        backgroundSize: "40px 40px",
-      }} />
+      <GridBackground opacity={0.025} />
       <div className="fixed top-0 right-0 w-[400px] h-[400px] pointer-events-none"
         style={{ background: "radial-gradient(circle at 100% 0%, rgba(167,139,250,0.07) 0%, transparent 60%)" }} />
 
@@ -191,7 +167,7 @@ export default function LeaguesPage() {
             <div className="rounded-2xl p-6 mb-4"
               style={{ background: "rgba(167,139,250,0.06)", border: "1px solid rgba(167,139,250,0.15)" }}>
               <p className="font-display text-2xl text-white mb-1">Your leagues live here</p>
-              <p className="font-body text-sm mb-5" style={{ color: "#8888aa" }}>
+              <p className="font-body text-sm mb-5 text-text-muted">
                 Sign in to create a league, invite your mates, and track your score all season.
               </p>
               <AuthProviders />
@@ -244,17 +220,17 @@ export default function LeaguesPage() {
                 }}>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-body text-xs uppercase tracking-widest mb-1.5" style={{ color: "#8888aa" }}>
+                    <p className="font-body text-xs uppercase tracking-widest mb-1.5 text-text-muted">
                       Your leagues
                     </p>
                     <p className="font-display text-5xl text-white leading-none">{leagues.length}</p>
-                    <p className="font-body text-xs mt-1" style={{ color: "#8888aa" }}>
+                    <p className="font-body text-xs mt-1 text-text-muted">
                       {leagues.length === 1 ? "league" : "leagues"} joined
                     </p>
                   </div>
                   {bestRank !== null && (
                     <div className="text-right">
-                      <p className="font-body text-xs uppercase tracking-widest mb-1.5" style={{ color: "#8888aa" }}>
+                      <p className="font-body text-xs uppercase tracking-widest mb-1.5 text-text-muted">
                         Best rank
                       </p>
                       <p className="font-display text-5xl leading-none"
@@ -282,8 +258,7 @@ export default function LeaguesPage() {
 
                   return (
                     <Link key={league.id} href={`/league/${league.id}`}
-                      className="block rounded-2xl overflow-hidden transition-opacity hover:opacity-90 active:scale-[0.99]"
-                      style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.08)" }}>
+                      className="block rounded-2xl overflow-hidden transition-opacity hover:opacity-90 active:scale-[0.99] bg-surface border border-border">
 
                       <div className="px-5 pt-5 pb-4">
                         {/* Header row */}
@@ -301,7 +276,7 @@ export default function LeaguesPage() {
                               {isLeading && <span className="text-sm flex-shrink-0">👑</span>}
                             </div>
                             {league.description && (
-                              <p className="font-body text-xs truncate mb-1" style={{ color: "#8888aa" }}>
+                              <p className="font-body text-xs truncate mb-1 text-text-muted">
                                 {league.description}
                               </p>
                             )}
@@ -350,10 +325,10 @@ export default function LeaguesPage() {
 
             {/* Empty state */}
             {!loading && user && leagues.length === 0 && (
-              <div className="rounded-2xl p-8 text-center" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}>
+              <div className="rounded-2xl p-8 text-center bg-surface" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
                 <p className="font-display text-4xl mb-3">🏆</p>
                 <p className="font-display text-2xl text-white mb-2">No leagues yet</p>
-                <p className="font-body text-sm mb-6" style={{ color: "#8888aa" }}>
+                <p className="font-body text-sm mb-6 text-text-muted">
                   Create a league and invite your mates — your points stack across every match all season.
                 </p>
                 <Link href="/league/new"
@@ -371,7 +346,7 @@ export default function LeaguesPage() {
                 style={{ background: "rgba(167,139,250,0.05)", border: "1px dashed rgba(167,139,250,0.2)" }}>
                 <div>
                   <p className="font-body text-sm font-semibold text-white">Start another league</p>
-                  <p className="font-body text-xs" style={{ color: "#8888aa" }}>Different crew? Create as many as you like</p>
+                  <p className="font-body text-xs text-text-muted">Different crew? Create as many as you like</p>
                 </div>
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ color: "#a78bfa", flexShrink: 0 }}>
                   <path d="M8 1v14M1 8h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
@@ -391,9 +366,9 @@ export default function LeaguesPage() {
             )}
 
             {!globalLoading && globalPlayers.length === 0 && (
-              <div className="rounded-2xl p-8 text-center" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}>
+              <div className="rounded-2xl p-8 text-center bg-surface" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
                 <p className="font-display text-3xl mb-3">🌍</p>
-                <p className="font-body text-sm" style={{ color: "#8888aa" }}>No players yet. Be the first to score.</p>
+                <p className="font-body text-sm text-text-muted">No players yet. Be the first to score.</p>
               </div>
             )}
 
@@ -411,13 +386,14 @@ export default function LeaguesPage() {
                         { medal: "#a78bfa", bg: "rgba(167,139,250,0.1)", border: "rgba(167,139,250,0.25)" },
                         { medal: "#e8945a", bg: "rgba(232,148,90,0.1)", border: "rgba(232,148,90,0.2)" },
                       ];
-                      // visual order: 2nd | 1st | 3rd
-                      const visualPos = [2, 1, 3][idx];
+                      // visual order: 2nd | 1st | 3rd (CSS order handles layout)
+                      // visualPos = actual rank (idx is already 0-based array index = rank-1)
+                      const visualPos = idx + 1;
                       const c = colors[visualPos - 1];
                       const pal = playerColor(p.display_name);
                       return (
-                        <div key={p.id}
-                          className="rounded-2xl px-3 py-4 flex flex-col items-center gap-2 text-center"
+                        <Link key={p.id} href={`/profile/${p.id}`}
+                          className="rounded-2xl px-3 py-4 flex flex-col items-center gap-2 text-center transition-opacity hover:opacity-80 active:scale-[0.98]"
                           style={{
                             background: isMe ? "rgba(0,255,135,0.07)" : c.bg,
                             border: `1px solid ${isMe ? "rgba(0,255,135,0.25)" : c.border}`,
@@ -430,11 +406,11 @@ export default function LeaguesPage() {
                           </div>
                           <p className="font-body text-xs font-semibold text-white truncate w-full">
                             {p.display_name ?? "Player"}
-                            {isMe && <span style={{ color: "#00ff87" }}> (you)</span>}
+                            {isMe && <span className="text-green"> (you)</span>}
                           </p>
                           <p className="font-display text-lg leading-none" style={{ color: c.medal }}>#{visualPos}</p>
-                          <p className="font-body text-xs" style={{ color: "#8888aa" }}>{p.total_score.toLocaleString()} pts</p>
-                        </div>
+                          <p className="font-body text-xs text-text-muted">{p.total_score.toLocaleString()} pts</p>
+                        </Link>
                       );
                     })}
                   </div>
@@ -447,8 +423,8 @@ export default function LeaguesPage() {
                     const isMe = user && p.id === user.id;
                     const rs = rankStyle(rank);
                     return (
-                      <div key={p.id}
-                        className="flex items-center gap-3 px-4 py-3 rounded-2xl"
+                      <Link key={p.id} href={`/profile/${p.id}`}
+                        className="flex items-center gap-3 px-4 py-3 rounded-2xl transition-opacity hover:opacity-80"
                         style={{
                           background: isMe ? "rgba(0,255,135,0.06)" : "#12121e",
                           border: `1px solid ${isMe ? "rgba(0,255,135,0.2)" : "rgba(255,255,255,0.06)"}`,
@@ -470,7 +446,7 @@ export default function LeaguesPage() {
                         <div className="flex-1 min-w-0">
                           <p className="font-body text-sm font-medium text-white truncate">
                             {p.display_name ?? "Player"}
-                            {isMe && <span className="font-normal ml-1.5" style={{ color: "#00ff87", fontSize: "0.7rem" }}>you</span>}
+                            {isMe && <span className="font-normal ml-1.5 text-green" style={{ fontSize: "0.7rem" }}>you</span>}
                           </p>
                           <p className="font-body text-xs" style={{ color: "#555577" }}>{p.games_played} games</p>
                         </div>
@@ -478,7 +454,7 @@ export default function LeaguesPage() {
                         <p className="font-display text-lg flex-shrink-0" style={{ color: isMe ? "#00ff87" : rank <= 3 ? rs.color : "#8888aa" }}>
                           {p.total_score.toLocaleString()}
                         </p>
-                      </div>
+                      </Link>
                     );
                   })}
                 </div>
@@ -501,15 +477,15 @@ export default function LeaguesPage() {
           />
           {/* Sheet */}
           <div
-            className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl px-5 pt-5 pb-10"
-            style={{ background: "#12121e", border: "1px solid rgba(167,139,250,0.2)", borderBottom: "none" }}>
+            className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl px-5 pt-5 pb-10 bg-surface"
+            style={{ border: "1px solid rgba(167,139,250,0.2)", borderBottom: "none" }}>
             {/* Handle */}
             <div className="w-10 h-1 rounded-full mx-auto mb-6" style={{ background: "rgba(255,255,255,0.12)" }} />
             {/* Header */}
             <div className="flex items-center justify-between mb-5">
               <div>
                 <p className="font-display text-xl text-white tracking-wide">Join a league</p>
-                <p className="font-body text-xs mt-0.5" style={{ color: "#8888aa" }}>
+                <p className="font-body text-xs mt-0.5 text-text-muted">
                   Enter the code your mate shared
                 </p>
               </div>

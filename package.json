@@ -16,17 +16,15 @@
     "@capacitor/core": "^8.3.4",
     "@capacitor/ios": "^8.3.4",
     "@capacitor/push-notifications": "^8.1.1",
-    "@supabase/auth-helpers-nextjs": "^0.15.0",
+    "@sentry/nextjs": "^10.56.0",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.106.1",
     "@vercel/analytics": "^2.0.1",
-    "clsx": "^2.1.1",
-    "framer-motion": "^12.39.0",
     "next": "14.2.35",
     "react": "^18",
     "react-dom": "^18",
     "react-qr-code": "^2.0.21",
-    "tailwind-merge": "^3.6.0"
+    "resend": "^6.12.4"
   },
   "devDependencies": {
     "@capacitor/assets": "^3.0.5",

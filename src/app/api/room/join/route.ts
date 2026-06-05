@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -22,7 +21,7 @@ export async function POST(req: NextRequest) {
   const sb = createServiceClient();
 
   // Find the room
-  const { data: room, error: roomErr } = await (sb as any)
+  const { data: room, error: roomErr } = await sb
     .from("rooms")
     .select("id, status, room_mode, max_players, current_question_idx")
     .eq("code", code)
@@ -30,7 +29,7 @@ export async function POST(req: NextRequest) {
     .maybeSingle();
 
   if (roomErr) return NextResponse.json({ error: roomErr.message }, { status: 500 });
-  if (!room) return NextResponse.json({ error: "Room not found" }, { status: 404 });
+  if (!room) return NextResponse.json({ error: "Lobby not found" }, { status: 404 });
   if (room.status !== "lobby")
     return NextResponse.json({ error: "Game already started" }, { status: 409 });
 
@@ -42,7 +41,7 @@ export async function POST(req: NextRequest) {
 
   const maxPlayers = room.max_players ?? MODE_LIMITS[room.room_mode ?? "group"] ?? 8;
   if ((count ?? 0) >= maxPlayers)
-    return NextResponse.json({ error: "Room is full" }, { status: 409 });
+    return NextResponse.json({ error: "Lobby is full" }, { status: 409 });
 
   // Upsert membership (idempotent)
   const { error: memberErr } = await sb
@@ -52,7 +51,7 @@ export async function POST(req: NextRequest) {
   if (memberErr) return NextResponse.json({ error: memberErr.message }, { status: 500 });
 
   // Return full room for redirect
-  const { data: fullRoom } = await (sb as any)
+  const { data: fullRoom } = await sb
     .from("rooms")
     .select("*")
     .eq("id", room.id)

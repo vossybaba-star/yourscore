@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useEffect } from "react";
@@ -9,6 +8,7 @@ import { BottomNav } from "@/components/ui/BottomNav";
 import { Spinner } from "@/components/ui/Spinner";
 import { FlagImage } from "@/components/ui/FlagImage";
 import { prefetchTeamImages } from "@/lib/teamImages";
+import { GridBackground } from "@/components/ui/GridBackground";
 
 interface Match {
   id: string;
@@ -96,14 +96,14 @@ export default function PlayPage() {
       const sb = createClient();
       const now = new Date().toISOString();
 
-      const { data } = await (sb as any)
+      const { data } = await sb
         .from("matches")
         .select("id, home_team, away_team, match_date, tournament, status, home_score, away_score")
         .or(`status.eq.live,and(status.eq.upcoming,match_date.gte.${now})`)
         .order("match_date", { ascending: true })
         .limit(30);
 
-      const matchList: Match[] = data ?? [];
+      const matchList: Match[] = (data ?? []) as unknown as Match[];
       setMatches(matchList);
 
       // Prefetch jersey images for all teams
@@ -113,14 +113,14 @@ export default function PlayPage() {
 
         const ids = matchList.map(m => m.id);
         const [iRes, sRes, myRes, myNotifRes] = await Promise.all([
-          (sb as any).from("match_interests").select("match_id").in("match_id", ids),
-          (sb as any).from("match_scores").select("match_id, user_id").in("match_id", ids),
+          sb.from("match_interests").select("match_id").in("match_id", ids),
+          sb.from("match_scores").select("match_id, user_id").in("match_id", ids),
           user
-            ? (sb as any).from("match_interests").select("match_id").eq("user_id", user.id).in("match_id", ids)
-            : Promise.resolve({ data: [] }),
+            ? sb.from("match_interests").select("match_id").eq("user_id", user.id).in("match_id", ids)
+            : Promise.resolve({ data: [] as { match_id: string }[] }),
           user
-            ? (sb as any).from("match_notifications").select("match_id").eq("user_id", user.id).in("match_id", ids)
-            : Promise.resolve({ data: [] }),
+            ? sb.from("match_notifications").select("match_id").eq("user_id", user.id).in("match_id", ids)
+            : Promise.resolve({ data: [] as { match_id: string }[] }),
         ]);
 
         const iMap: Record<string, number> = {};
@@ -136,10 +136,10 @@ export default function PlayPage() {
         for (const [k, v] of Object.entries(pMap)) pCounts[k] = (v as Set<string>).size;
         setActivePlayerCounts(pCounts);
 
-        const myIds: string[] = (myRes.data ?? []).map((i: any) => i.match_id as string);
+        const myIds: string[] = (myRes.data ?? []).map((i) => i.match_id);
         setMyInterests(new Set<string>(myIds));
 
-        const myNotifIds: string[] = (myNotifRes.data ?? []).map((i: any) => i.match_id as string);
+        const myNotifIds: string[] = (myNotifRes.data ?? []).map((i) => i.match_id);
         setMyNotifications(new Set<string>(myNotifIds));
       }
       setLoading(false);
@@ -154,7 +154,7 @@ export default function PlayPage() {
     if (toggling) return;
     setToggling(matchId);
     const { createClient } = await import("@/lib/supabase/client");
-    const sb = createClient() as any;
+    const sb = createClient();
     const was = myInterests.has(matchId);
     if (was) {
       await sb.from("match_interests").delete().eq("match_id", matchId).eq("user_id", user.id);
@@ -175,7 +175,7 @@ export default function PlayPage() {
     if (notifToggling) return;
     setNotifToggling(matchId);
     const { createClient } = await import("@/lib/supabase/client");
-    const sb = createClient() as any;
+    const sb = createClient();
     const was = myNotifications.has(matchId);
     if (was) {
       await sb.from("match_notifications").delete().eq("match_id", matchId).eq("user_id", user.id);
@@ -199,10 +199,7 @@ export default function PlayPage() {
 
   return (
     <main className="min-h-dvh bg-bg pb-28">
-      <div className="fixed inset-0 pointer-events-none" style={{
-        backgroundImage: "linear-gradient(rgba(255,255,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.025) 1px,transparent 1px)",
-        backgroundSize: "40px 40px",
-      }} />
+      <GridBackground opacity={0.025} />
       <div className="fixed top-0 left-0 w-[400px] h-[400px] pointer-events-none"
         style={{ background: "radial-gradient(circle at 0% 0%, rgba(0,255,135,0.06) 0%, transparent 60%)" }} />
 
@@ -212,7 +209,7 @@ export default function PlayPage() {
           <div className="flex items-start justify-between gap-3">
             <div>
               <h1 className="font-display text-3xl text-white tracking-wider">Matches</h1>
-              <p className="font-body text-xs mt-1" style={{ color: "#8888aa" }}>
+              <p className="font-body text-xs mt-1 text-text-muted">
                 {liveCount > 0
                   ? `${liveCount} match${liveCount > 1 ? "es" : ""} live now`
                   : totalInterested > 0
@@ -228,7 +225,7 @@ export default function PlayPage() {
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: "#00ff87" }} />
                     <span className="relative inline-flex h-2 w-2 rounded-full" style={{ background: "#00ff87" }} />
                   </span>
-                  <span className="font-body text-xs font-bold" style={{ color: "#00ff87" }}>
+                  <span className="font-body text-xs font-bold text-green">
                     {activePlayers > 0 ? `${activePlayers} playing` : "LIVE"}
                   </span>
                 </div>
@@ -257,11 +254,11 @@ export default function PlayPage() {
         )}
 
         {!loading && matches.length === 0 && (
-          <div className="rounded-2xl p-10 text-center"
-            style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}>
+          <div className="rounded-2xl p-10 text-center bg-surface"
+            style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
             <p className="font-display text-4xl mb-3">⚽</p>
             <p className="font-display text-2xl text-white mb-2">No live games right now</p>
-            <p className="font-body text-sm mb-6" style={{ color: "#8888aa" }}>
+            <p className="font-body text-sm mb-6 text-text-muted">
               Games go live on match day. World Cup kicks off June 11.
             </p>
             <Link href="/league/new"
@@ -285,7 +282,7 @@ export default function PlayPage() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-body text-sm font-bold text-white">Sign in to join live matches</p>
-              <p className="font-body text-xs mt-0.5" style={{ color: "#8888aa" }}>Answer questions · earn points · climb the league</p>
+              <p className="font-body text-xs mt-0.5 text-text-muted">Answer questions · earn points · climb the league</p>
             </div>
             <Link href="/auth/sign-in"
               className="flex-shrink-0 px-4 py-2 rounded-xl font-body text-sm font-bold transition-opacity hover:opacity-90"
@@ -362,12 +359,12 @@ export default function PlayPage() {
                       <p className="font-body text-xs font-bold text-white leading-tight truncate">
                         {m.home_team} <span style={{ color: "#555577" }}>vs</span> {m.away_team}
                       </p>
-                      <p className="font-body text-xs mt-0.5" style={{ color: "#8888aa" }}>
+                      <p className="font-body text-xs mt-0.5 text-text-muted">
                         {dayStr} · {timeStr}
                       </p>
                       <div className="flex items-center gap-1.5 mt-2">
                         <span className="flex h-1.5 w-1.5 rounded-full" style={{ background: "#00ff87" }} />
-                        <span className="font-body text-xs" style={{ color: "#00ff87" }}>Playing</span>
+                        <span className="font-body text-xs text-green">Playing</span>
                         {notified && (
                           <>
                             <span style={{ color: "#333355" }}>·</span>
@@ -400,8 +397,8 @@ export default function PlayPage() {
                   {label}
                 </p>
                 {isLiveSection && activePlayers > 0 && (
-                  <span className="font-body text-xs px-2 py-0.5 rounded-full"
-                    style={{ background: "rgba(0,255,135,0.08)", color: "#00ff87" }}>
+                  <span className="font-body text-xs px-2 py-0.5 rounded-full text-green"
+                    style={{ background: "rgba(0,255,135,0.08)" }}>
                     {activePlayers} active
                   </span>
                 )}
@@ -429,10 +426,10 @@ export default function PlayPage() {
                         }}>
                         {/* Top bar */}
                         <div className="flex items-center justify-between px-5 pt-4 pb-1">
-                          <span className="font-body text-xs" style={{ color: "#8888aa" }}>{m.tournament}</span>
+                          <span className="font-body text-xs text-text-muted">{m.tournament}</span>
                           <div className="flex items-center gap-2">
                             {activeCount > 0 && (
-                              <span className="font-body text-xs font-semibold" style={{ color: "#00ff87" }}>
+                              <span className="font-body text-xs font-semibold text-green">
                                 {activeCount} playing
                               </span>
                             )}
@@ -442,7 +439,7 @@ export default function PlayPage() {
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: "#00ff87" }} />
                                 <span className="relative inline-flex h-1.5 w-1.5 rounded-full" style={{ background: "#00ff87" }} />
                               </span>
-                              <span className="font-body text-xs font-bold" style={{ color: "#00ff87" }}>LIVE</span>
+                              <span className="font-body text-xs font-bold text-green">LIVE</span>
                             </div>
                           </div>
                         </div>
@@ -482,8 +479,8 @@ export default function PlayPage() {
                         <div className="flex gap-2 px-4 pb-4">
                           {isGuest ? (
                             <Link href="/auth/sign-in"
-                              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-body font-bold text-sm"
-                              style={{ background: "rgba(0,255,135,0.1)", color: "#00ff87", border: "1px solid rgba(0,255,135,0.25)" }}>
+                              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-body font-bold text-sm text-green"
+                              style={{ background: "rgba(0,255,135,0.1)", border: "1px solid rgba(0,255,135,0.25)" }}>
                               Sign in to join →
                             </Link>
                           ) : (
@@ -524,8 +521,8 @@ export default function PlayPage() {
                         border: `1px solid ${interested ? "rgba(0,255,135,0.22)" : "rgba(255,255,255,0.07)"}`,
                       }}>
 
-                      {/* Jersey strip — shown if images available */}
-                      {(homeJersey || awayJersey) && (
+                      {/* Header strip — jerseys if available, flags otherwise */}
+                      {(homeJersey || awayJersey) ? (
                         <div className="flex items-center justify-between px-4 pt-3 pb-1">
                           <div className="flex items-center gap-2">
                             {homeJersey && (
@@ -547,19 +544,21 @@ export default function PlayPage() {
                             <span className="font-body text-xs truncate max-w-[120px]" style={{ color: "#555577" }}>{m.tournament}</span>
                           </div>
                         </div>
+                      ) : (
+                        <div className="flex items-center justify-between px-5 pt-3 pb-1">
+                          <div className="flex items-center gap-3">
+                            <FlagImage team={m.home_team} size={44} />
+                            <FlagImage team={m.away_team} size={44} />
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-body text-xs font-bold" style={{ color: "#aaaacc" }}>{timeStr}</span>
+                            <span style={{ color: "rgba(255,255,255,0.12)" }}>·</span>
+                            <span className="font-body text-xs truncate max-w-[100px]" style={{ color: "#555577" }}>{m.tournament}</span>
+                          </div>
+                        </div>
                       )}
 
                       <div className="px-4 pt-3 pb-3">
-                        {/* Meta row — only if no jersey strip */}
-                        {!homeJersey && !awayJersey && (
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-2">
-                              <span className="font-body text-xs font-bold" style={{ color: "#aaaacc" }}>{timeStr}</span>
-                              <span style={{ color: "rgba(255,255,255,0.12)" }}>·</span>
-                              <span className="font-body text-xs truncate max-w-[150px]" style={{ color: "#555577" }}>{m.tournament}</span>
-                            </div>
-                          </div>
-                        )}
 
                         {/* Players count */}
                         {intCount > 0 && (
@@ -590,8 +589,8 @@ export default function PlayPage() {
                       <div className="flex gap-2 px-4 pb-4">
                         {isGuest ? (
                           <Link href="/auth/sign-in"
-                            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-body text-sm font-bold"
-                            style={{ background: "rgba(255,255,255,0.04)", color: "#8888aa", border: "1px solid rgba(255,255,255,0.08)" }}>
+                            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-body text-sm font-bold text-text-muted border border-border"
+                            style={{ background: "rgba(255,255,255,0.04)" }}>
                             Sign in to play →
                           </Link>
                         ) : (

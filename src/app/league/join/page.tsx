@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, Suspense } from "react";
+import { GridBackground } from "@/components/ui/GridBackground";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Spinner } from "@/components/ui/Spinner";
@@ -19,7 +20,7 @@ function JoinLeagueIndexInner() {
   return (
     <main className="min-h-dvh bg-bg">
       {/* Background grid */}
-      <div className="fixed inset-0 pointer-events-none" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.025) 1px,transparent 1px)", backgroundSize: "40px 40px" }} />
+      <GridBackground opacity={0.025} />
       <div className="fixed top-0 left-0 w-[500px] h-[500px] pointer-events-none" style={{ background: "radial-gradient(circle at 0% 0%, rgba(167,139,250,0.06) 0%, transparent 60%)" }} />
 
       {/* Nav */}
@@ -81,13 +82,13 @@ function JoinLeagueIndexInner() {
         </div>
 
         {/* No code card */}
-        <div className="rounded-2xl p-5" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.08)" }}>
+        <div className="rounded-2xl p-5 bg-surface border border-border">
           <p className="font-body text-sm font-semibold text-white mb-1">Don&apos;t have a code?</p>
           <p className="font-body text-xs text-text-muted mb-4">Sign up free and create your own league — then invite your mates.</p>
           <Link
             href="/auth/sign-in"
-            className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl font-body font-bold text-sm transition-all hover:opacity-90"
-            style={{ background: "rgba(0,255,135,0.1)", color: "#00ff87", border: "1px solid rgba(0,255,135,0.28)" }}
+            className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl font-body font-bold text-sm transition-all hover:opacity-90 text-green"
+            style={{ background: "rgba(0,255,135,0.1)", border: "1px solid rgba(0,255,135,0.28)" }}
           >
             Sign Up Free →
           </Link>

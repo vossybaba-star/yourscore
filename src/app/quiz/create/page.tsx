@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { getTeamBadgeUrl } from "@/lib/teamImages";
@@ -18,6 +19,40 @@ const CLUBS = [
   "QPR", "Reading", "Sheffield United", "Southampton", "Stoke City",
   "Sunderland", "Swansea City", "Tottenham Hotspur", "Watford", "West Bromwich Albion",
   "West Ham United", "Wigan Athletic", "Wolverhampton Wanderers",
+];
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const NATIONAL_TEAMS = [
+  { name: "Argentina",    flag: "🇦🇷", tier: 1 },
+  { name: "France",       flag: "🇫🇷", tier: 1 },
+  { name: "Germany",      flag: "🇩🇪", tier: 1 },
+  { name: "Brazil",       flag: "🇧🇷", tier: 1 },
+  { name: "Spain",        flag: "🇪🇸", tier: 1 },
+  { name: "England",      flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", tier: 1 },
+  { name: "Portugal",     flag: "🇵🇹", tier: 1 },
+  { name: "Netherlands",  flag: "🇳🇱", tier: 1 },
+  { name: "Italy",        flag: "🇮🇹", tier: 1 },
+  { name: "Croatia",      flag: "🇭🇷", tier: 1 },
+  { name: "Belgium",      flag: "🇧🇪", tier: 1 },
+  { name: "Morocco",      flag: "🇲🇦", tier: 1 },
+  { name: "Uruguay",      flag: "🇺🇾", tier: 1 },
+  { name: "Japan",        flag: "🇯🇵", tier: 2 },
+  { name: "Colombia",     flag: "🇨🇴", tier: 2 },
+  { name: "Mexico",       flag: "🇲🇽", tier: 2 },
+  { name: "Switzerland",  flag: "🇨🇭", tier: 2 },
+  { name: "USA",          flag: "🇺🇸", tier: 2 },
+  { name: "Senegal",      flag: "🇸🇳", tier: 2 },
+  { name: "South Korea",  flag: "🇰🇷", tier: 2 },
+  { name: "Australia",    flag: "🇦🇺", tier: 2 },
+  { name: "Denmark",      flag: "🇩🇰", tier: 2 },
+  { name: "Poland",       flag: "🇵🇱", tier: 3 },
+  { name: "Ghana",        flag: "🇬🇭", tier: 3 },
+  { name: "Ecuador",      flag: "🇪🇨", tier: 3 },
+  { name: "Iran",         flag: "🇮🇷", tier: 3 },
+  { name: "Saudi Arabia", flag: "🇸🇦", tier: 3 },
+  { name: "Nigeria",      flag: "🇳🇬", tier: 3 },
+  { name: "Costa Rica",   flag: "🇨🇷", tier: 3 },
+  { name: "Cameroon",     flag: "🇨🇲", tier: 3 },
 ];
 
 const RECORD_TOPICS = [
@@ -37,10 +72,12 @@ const ERA_OPTIONS = [
 ];
 
 const DIFF_OPTIONS = [
-  { value: "", label: "Mixed" },
-  { value: "easy", label: "Easy" },
-  { value: "medium", label: "Medium" },
-  { value: "hard", label: "Hard" },
+  { value: "",       label: "Mixed",  desc: "A blend of all levels" },
+  { value: "easy",   label: "Easy",   desc: "Casual fans" },
+  { value: "medium", label: "Medium", desc: "Regular followers" },
+  { value: "hard",   label: "Hard",   desc: "Dedicated fans" },
+  { value: "expert", label: "Expert", desc: "Stats nerds" },
+  { value: "master", label: "Master", desc: "Football obsessives" },
 ];
 
 const TOPIC_EMOJI: Record<string, string> = {
@@ -66,7 +103,7 @@ const TOPIC_EMOJI: Record<string, string> = {
 export default function CreateQuizPage() {
   const router = useRouter();
 
-  const [focusType, setFocusType] = useState<"club" | "records">("club");
+  const [focusType, setFocusType] = useState<"club" | "records" | "national">("club");
   const [selectedEntity, setSelectedEntity] = useState<string | null>(null);
   const [clubSearch, setClubSearch] = useState("");
   const [era, setEra] = useState("");
@@ -138,9 +175,9 @@ export default function CreateQuizPage() {
 
   return (
     <div
+      className="bg-bg"
       style={{
         minHeight: "100vh",
-        background: "#0a0a0f",
         paddingBottom: "calc(72px + env(safe-area-inset-bottom, 0px))",
       }}
     >
@@ -159,99 +196,65 @@ export default function CreateQuizPage() {
           style={{
             maxWidth: 512,
             margin: "0 auto",
-            padding: "48px 20px 16px",
+            padding: "16px 20px 16px",
           }}
         >
-          {/* Title row */}
-          <div style={{ marginBottom: 16 }}>
-            <h1
+          {/* Title row with back button */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+            <Link
+              href="/play"
               style={{
-                fontFamily: "var(--font-display, sans-serif)",
-                fontSize: 24,
-                fontWeight: 700,
-                letterSpacing: "-0.02em",
-                color: "#00ff87",
-                margin: 0,
-                lineHeight: 1.1,
+                width: 36, height: 36, borderRadius: 10,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                background: "rgba(255,255,255,0.06)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                textDecoration: "none", flexShrink: 0,
               }}
+              aria-label="Back to Play"
             >
-              BUILD A QUIZ
-            </h1>
-            <p
-              style={{
-                fontFamily: "var(--font-body, sans-serif)",
-                fontSize: 13,
-                color: "#8888aa",
-                marginTop: 4,
-                marginBottom: 0,
-              }}
-            >
-              Pick your focus and we&apos;ll generate a fresh quiz
-            </p>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M10 3L5 8l5 5" stroke="#aaaacc" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </Link>
+            <div>
+              <h1 className="text-green" style={{ fontFamily: "var(--font-display, sans-serif)", fontSize: 24, fontWeight: 700, letterSpacing: "-0.02em", margin: 0, lineHeight: 1.1 }}>
+                BUILD A QUIZ
+              </h1>
+              <p className="text-text-muted" style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: 13, marginTop: 4, marginBottom: 0 }}>
+                Pick your focus and we&apos;ll generate a fresh quiz
+              </p>
+            </div>
           </div>
 
           {/* Tab switcher */}
-          <div style={{ display: "flex", gap: 8 }}>
-            <button
-              onClick={() => setFocusType("club")}
-              style={{
-                flex: 1,
-                padding: "10px 12px",
-                borderRadius: 9999,
-                fontFamily: "var(--font-display, sans-serif)",
-                fontSize: 12,
-                fontWeight: 700,
-                letterSpacing: "0.05em",
-                cursor: "pointer",
-                transition: "all 0.15s ease",
-                background:
-                  focusType === "club"
-                    ? "rgba(255,184,0,0.15)"
-                    : "rgba(255,255,255,0.04)",
-                border: `1px solid ${
-                  focusType === "club"
-                    ? "rgba(255,184,0,0.5)"
-                    : "rgba(255,255,255,0.08)"
-                }`,
-                color: focusType === "club" ? "#ffb800" : "#8888aa",
-                boxShadow:
-                  focusType === "club"
-                    ? "0 0 16px rgba(255,184,0,0.12)"
-                    : "none",
-              }}
-            >
-              ⚽ CLUBS
-            </button>
-            <button
-              onClick={() => setFocusType("records")}
-              style={{
-                flex: 1,
-                padding: "10px 12px",
-                borderRadius: 9999,
-                fontFamily: "var(--font-display, sans-serif)",
-                fontSize: 12,
-                fontWeight: 700,
-                letterSpacing: "0.05em",
-                cursor: "pointer",
-                transition: "all 0.15s ease",
-                background:
-                  focusType === "records"
-                    ? "rgba(167,139,250,0.15)"
-                    : "rgba(255,255,255,0.04)",
-                border: `1px solid ${
-                  focusType === "records"
-                    ? "rgba(167,139,250,0.5)"
-                    : "rgba(255,255,255,0.08)"
-                }`,
-                color: focusType === "records" ? "#a78bfa" : "#8888aa",
-                boxShadow:
-                  focusType === "records"
-                    ? "0 0 16px rgba(167,139,250,0.12)"
-                    : "none",
-              }}
-            >
-              🏆 RECORDS
-            </button>
+          <div style={{ display: "flex", gap: 6 }}>
+            {([
+              { key: "club",     label: "⚽ CLUBS",   color: "#ffb800", rgba: "255,184,0" },
+              { key: "national", label: "🌍 NATIONS",  color: "#00c9ff", rgba: "0,201,255" },
+              { key: "records",  label: "🏆 RECORDS",  color: "#a78bfa", rgba: "167,139,250" },
+            ] as const).map(({ key, label, color, rgba }) => (
+              <button
+                key={key}
+                onClick={() => setFocusType(key)}
+                style={{
+                  flex: 1,
+                  padding: "10px 8px",
+                  borderRadius: 9999,
+                  fontFamily: "var(--font-display, sans-serif)",
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: "0.04em",
+                  cursor: "pointer",
+                  transition: "all 0.15s ease",
+                  background: focusType === key ? `rgba(${rgba},0.15)` : "rgba(255,255,255,0.04)",
+                  border: `1px solid ${focusType === key ? `rgba(${rgba},0.5)` : "rgba(255,255,255,0.08)"}`,
+                  color: focusType === key ? color : "#8888aa",
+                  boxShadow: focusType === key ? `0 0 16px rgba(${rgba},0.12)` : "none",
+                }}
+              >
+                {label}
+              </button>
+            ))}
           </div>
         </div>
       </div>
@@ -269,6 +272,7 @@ export default function CreateQuizPage() {
                 placeholder="Search clubs..."
                 value={clubSearch}
                 onChange={(e) => setClubSearch(e.target.value)}
+                className="text-white"
                 style={{
                   width: "100%",
                   boxSizing: "border-box",
@@ -276,7 +280,6 @@ export default function CreateQuizPage() {
                   borderRadius: 12,
                   background: "rgba(255,255,255,0.05)",
                   border: "1px solid rgba(255,255,255,0.1)",
-                  color: "#ffffff",
                   fontFamily: "var(--font-body, sans-serif)",
                   fontSize: 14,
                   outline: "none",
@@ -364,6 +367,7 @@ export default function CreateQuizPage() {
                         />
                       ) : (
                         <div
+                          className="text-text-muted"
                           style={{
                             width: 40,
                             height: 40,
@@ -374,7 +378,6 @@ export default function CreateQuizPage() {
                             justifyContent: "center",
                             fontFamily: "var(--font-display, sans-serif)",
                             fontSize: 16,
-                            color: "#8888aa",
                           }}
                         >
                           {club[0]}
@@ -403,11 +406,11 @@ export default function CreateQuizPage() {
 
                 {filteredClubs.length === 0 && (
                   <div
+                    className="text-text-muted"
                     style={{
                       gridColumn: "span 3",
                       textAlign: "center",
                       padding: "32px 0",
-                      color: "#8888aa",
                       fontFamily: "var(--font-body, sans-serif)",
                       fontSize: 14,
                     }}
@@ -417,6 +420,38 @@ export default function CreateQuizPage() {
                 )}
               </div>
             </>
+          ) : focusType === "national" ? (
+            /* Nations grid */
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+              {NATIONAL_TEAMS.map(({ name, flag }) => {
+                const isSelected = selectedEntity === name;
+                return (
+                  <button
+                    key={name}
+                    onClick={() => setSelectedEntity(isSelected ? null : name)}
+                    style={{
+                      display: "flex", flexDirection: "column", alignItems: "center",
+                      justifyContent: "center", gap: 6,
+                      padding: "12px 6px", borderRadius: 12, height: 76,
+                      cursor: "pointer", transition: "all 0.15s ease",
+                      background: isSelected ? "rgba(0,201,255,0.1)" : "rgba(255,255,255,0.03)",
+                      border: `1px solid ${isSelected ? "rgba(0,201,255,0.6)" : "rgba(255,255,255,0.07)"}`,
+                      boxShadow: isSelected ? "0 0 14px rgba(0,201,255,0.18)" : "none",
+                    }}
+                    onMouseDown={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(0.96)"; }}
+                    onMouseUp={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)"; }}
+                  >
+                    <span style={{ fontSize: 26, lineHeight: 1 }}>{flag}</span>
+                    <span style={{
+                      fontFamily: "var(--font-body, sans-serif)",
+                      fontSize: 10, fontWeight: 600, letterSpacing: "0.02em",
+                      color: isSelected ? "#00c9ff" : "#aaaacc",
+                      textAlign: "center", lineHeight: 1.2,
+                    }}>{name}</span>
+                  </button>
+                );
+              })}
+            </div>
           ) : (
             /* Records grid */
             <div
@@ -506,12 +541,12 @@ export default function CreateQuizPage() {
         {/* ── Section 2: Era ─────────────────────────────────────────── */}
         <div style={{ marginBottom: 20 }}>
           <p
+            className="text-text-muted"
             style={{
               fontFamily: "var(--font-body, sans-serif)",
               fontSize: 11,
               fontWeight: 700,
               letterSpacing: "0.1em",
-              color: "#8888aa",
               textTransform: "uppercase",
               marginBottom: 10,
             }}
@@ -557,12 +592,12 @@ export default function CreateQuizPage() {
         {/* ── Section 3: Difficulty ──────────────────────────────────── */}
         <div style={{ marginBottom: 32 }}>
           <p
+            className="text-text-muted"
             style={{
               fontFamily: "var(--font-body, sans-serif)",
               fontSize: 11,
               fontWeight: 700,
               letterSpacing: "0.1em",
-              color: "#8888aa",
               textTransform: "uppercase",
               marginBottom: 10,
             }}
@@ -629,10 +664,10 @@ export default function CreateQuizPage() {
             }}
           >
             <p
+              className="text-danger"
               style={{
                 fontFamily: "var(--font-body, sans-serif)",
                 fontSize: 13,
-                color: "#ff4757",
                 margin: 0,
               }}
             >

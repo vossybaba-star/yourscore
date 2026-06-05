@@ -1,8 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/types/database";
 import { QuestionCard, type ActiveQuestion } from "@/components/game/QuestionCard";
 import { Leaderboard, type LeaderboardEntry } from "@/components/game/Leaderboard";
 import { useUser } from "@/hooks/useUser";
@@ -10,6 +11,7 @@ import { AuthProviders } from "@/components/auth/AuthButton";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { FlagImage } from "@/components/ui/FlagImage";
 import { getPlayerCutoutUrl, COUNTRY_STAR } from "@/lib/playerImages";
+import { GridBackground } from "@/components/ui/GridBackground";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -22,6 +24,20 @@ interface MatchData {
   status: string;
   home_score: number;
   away_score: number;
+}
+
+// Shape of a match_scores row joined with profiles, as selected at runtime.
+// The match_scores↔profiles relation isn't expressed in the generated DB types,
+// so the joined select is coerced to this local type at the query boundary.
+interface LeaderboardRow {
+  user_id: string;
+  total_score: number;
+  correct_answers: number;
+  total_answers: number | null;
+  current_streak: number;
+  avg_answer_speed_ms: number | null;
+  fastest_answer_ms: number | null;
+  profiles: { display_name: string | null; avatar_url: string | null } | null;
 }
 
 // ── Scoreboard ────────────────────────────────────────────────────────────────
@@ -195,7 +211,7 @@ export default function MatchPage({ params }: { params: { id: string } }) {
   const [activeQuestion, setActiveQuestion] = useState<ActiveQuestion | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [questionCount, setQuestionCount] = useState(0);
-  const supabaseRef = useRef<any>(null);
+  const supabaseRef = useRef<SupabaseClient<Database> | null>(null);
 
   const matchId = params.id;
 
@@ -214,7 +230,13 @@ export default function MatchPage({ params }: { params: { id: string } }) {
         .single()
         .then(({ data }) => {
           if (data) {
-            setMatch(data as any);
+            setMatch({
+              ...data,
+              tournament: data.tournament ?? "",
+              status: data.status ?? "",
+              home_score: data.home_score ?? 0,
+              away_score: data.away_score ?? 0,
+            });
           }
           setLoading(false);
         });
@@ -228,15 +250,19 @@ export default function MatchPage({ params }: { params: { id: string } }) {
           .limit(20)
           .then(({ data }) => {
             if (data) {
+              const rows = data as unknown as LeaderboardRow[];
               setLeaderboard(
-                data.map((row: any, i: number) => ({
+                rows.map((row, i) => ({
                   user_id: row.user_id,
                   display_name: row.profiles?.display_name ?? "Player",
                   avatar_url: row.profiles?.avatar_url ?? null,
                   total_score: row.total_score,
                   correct_answers: row.correct_answers,
+                  total_answers: row.total_answers ?? 0,
                   current_streak: row.current_streak,
                   rank: i + 1,
+                  avg_answer_speed_ms: row.avg_answer_speed_ms ?? null,
+                  fastest_answer_ms: row.fastest_answer_ms ?? null,
                 }))
               );
             }
@@ -249,14 +275,18 @@ export default function MatchPage({ params }: { params: { id: string } }) {
           event: "INSERT", schema: "public", table: "question_events",
           filter: `match_id=eq.${matchId}`,
         }, async (payload) => {
-          const event = payload.new as any;
+          const event = payload.new;
           if (event.status !== "live") return;
           const { data: q } = await sb.from("questions").select("*").eq("id", event.question_id).single();
           if (!q) return;
+          // Bank questions store options as a jsonb {A,B,C,D} map and the answer
+          // as a letter — map them onto the QuestionCard's flat fields.
+          const opts = (q.options ?? {}) as Record<string, string>;
           setActiveQuestion({
-            eventId: event.id, questionId: q.id, questionText: q.question_text,
-            optionA: q.option_a, optionB: q.option_b, optionC: q.option_c, optionD: q.option_d,
-            difficulty: q.difficulty, category: q.category, explanation: q.explanation,
+            eventId: event.id, questionId: q.id, questionText: q.question,
+            optionA: opts.A, optionB: opts.B, optionC: opts.C, optionD: opts.D,
+            difficulty: (q.difficulty as "easy" | "medium" | "hard"), category: q.category,
+            explanation: q.verification_note ?? null,
             startTime: new Date(event.fired_at), totalSeconds: 45,
           });
           setQuestionCount((n) => n + 1);
@@ -269,7 +299,7 @@ export default function MatchPage({ params }: { params: { id: string } }) {
           event: "UPDATE", schema: "public", table: "matches",
           filter: `id=eq.${matchId}`,
         }, (payload) => {
-          const u = payload.new as any;
+          const u = payload.new;
           setMatch((prev) => prev ? {
             ...prev,
             status: u.status ?? prev.status,
@@ -322,10 +352,7 @@ export default function MatchPage({ params }: { params: { id: string } }) {
 
   return (
     <main className="min-h-dvh bg-bg pb-28">
-      <div className="fixed inset-0 pointer-events-none" style={{
-        backgroundImage: "linear-gradient(rgba(255,255,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.025) 1px,transparent 1px)",
-        backgroundSize: "40px 40px"
-      }} />
+      <GridBackground opacity={0.025} />
 
       {/* Nav */}
       <nav className="relative z-10 pt-safe flex items-center justify-between px-5 py-4 max-w-lg mx-auto">

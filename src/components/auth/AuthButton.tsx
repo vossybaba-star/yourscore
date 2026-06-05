@@ -31,7 +31,7 @@ function OAuthButton({ provider, label, icon, nextPath }: { provider: Provider; 
         : NATIVE_AUTH_CALLBACK;
       const { data, error } = await sb.auth.signInWithOAuth({
         provider,
-        options: { redirectTo, skipBrowserRedirect: true },
+        options: { redirectTo, skipBrowserRedirect: true, queryParams: { prompt: 'select_account' } },
       });
       if (error || !data?.url) {
         setLoading(false);
@@ -48,7 +48,7 @@ function OAuthButton({ provider, label, icon, nextPath }: { provider: Provider; 
       : REDIRECT();
     await sb.auth.signInWithOAuth({
       provider,
-      options: { redirectTo },
+      options: { redirectTo, queryParams: { prompt: 'select_account' } },
     });
   }
 
@@ -73,117 +73,163 @@ function OAuthButton({ provider, label, icon, nextPath }: { provider: Provider; 
   );
 }
 
-// ── Email magic link ──────────────────────────────────────────────────────────
+// ── Email sign-in (magic link OR password) ────────────────────────────────────
+
+type EmailMode = "magic" | "password" | "signup";
 
 function EmailSignIn({ nextPath }: { nextPath?: string }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [usePassword, setUsePassword] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [mode, setMode] = useState<EmailMode>("magic");
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [resetSent, setResetSent] = useState(false);
 
   async function sendMagicLink() {
     if (!email.trim() || loading) return;
-    setLoading(true);
-    setError("");
+    setLoading(true); setError("");
     try {
       const sb = createClient();
       const emailRedirectTo = nextPath
         ? `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`
         : REDIRECT();
-      const { error: err } = await sb.auth.signInWithOtp({
-        email: email.trim().toLowerCase(),
-        options: { emailRedirectTo },
-      });
+      const { error: err } = await sb.auth.signInWithOtp({ email: email.trim().toLowerCase(), options: { emailRedirectTo } });
       if (err) throw err;
       setSent(true);
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Something went wrong");
-    } finally {
-      setLoading(false);
-    }
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : "Something went wrong"); }
+    finally { setLoading(false); }
   }
 
-  async function signInWithPasswordHandler() {
+  async function signInWithPassword() {
     if (!email.trim() || !password || loading) return;
-    setLoading(true);
-    setError("");
+    setLoading(true); setError("");
     try {
       const sb = createClient();
-      const { error: err } = await sb.auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
-        password,
+      const { error: err } = await sb.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
+      if (err) throw err;
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : "Sign in failed"); }
+    finally { setLoading(false); }
+  }
+
+  async function signUp() {
+    if (!email.trim() || !password || loading) return;
+    if (password !== confirmPassword) { setError("Passwords don't match"); return; }
+    if (password.length < 6) { setError("Password must be at least 6 characters"); return; }
+    setLoading(true); setError("");
+    try {
+      const sb = createClient();
+      const { error: err } = await sb.auth.signUp({ email: email.trim().toLowerCase(), password });
+      if (err) throw err;
+      setSent(true);
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : "Sign up failed"); }
+    finally { setLoading(false); }
+  }
+
+  async function forgotPassword() {
+    if (!email.trim()) { setError("Enter your email above first"); return; }
+    setLoading(true); setError("");
+    try {
+      const sb = createClient();
+      const { error: err } = await sb.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+        redirectTo: `${window.location.origin}/auth/reset-password`,
       });
       if (err) throw err;
-      // auth state listener in NativeBootstrap / useUser handles navigation
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Sign in failed");
-    } finally {
-      setLoading(false);
-    }
+      setResetSent(true);
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : "Failed to send reset email"); }
+    finally { setLoading(false); }
   }
 
   if (sent) {
     return (
       <div className="rounded-xl p-4 text-center" style={{ background: "rgba(0,255,135,0.06)", border: "1px solid rgba(0,255,135,0.2)" }}>
         <p className="font-body text-sm font-semibold text-white mb-1">Check your email</p>
-        <p className="font-body text-xs text-text-muted">We sent a sign-in link to <span className="text-white">{email}</span>. Tap it to continue.</p>
+        <p className="font-body text-xs text-text-muted">
+          {mode === "signup"
+            ? `We sent a confirmation link to ${email}. Click it to activate your account.`
+            : `We sent a sign-in link to ${email}. Tap it to continue.`}
+        </p>
       </div>
     );
   }
 
-  const canSubmit = email.trim() && (!usePassword || password);
+  if (resetSent) {
+    return (
+      <div className="rounded-xl p-4 text-center" style={{ background: "rgba(167,139,250,0.06)", border: "1px solid rgba(167,139,250,0.2)" }}>
+        <p className="font-body text-sm font-semibold text-white mb-1">Reset email sent</p>
+        <p className="font-body text-xs text-text-muted">Check your inbox for a password reset link.</p>
+      </div>
+    );
+  }
+
+  const inputStyle = (hasError: boolean) => ({
+    background: "#12121e",
+    border: `1px solid ${hasError ? "rgba(255,71,87,0.4)" : "rgba(255,255,255,0.1)"}`,
+  });
 
   return (
     <div className="space-y-2">
-      <input
-        type="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && (usePassword ? signInWithPasswordHandler() : sendMagicLink())}
-        placeholder="your@email.com"
-        autoComplete="email"
-        className="w-full rounded-xl px-4 py-3.5 font-body text-white text-sm outline-none transition-all placeholder:text-white/25"
-        style={{ background: "#12121e", border: `1px solid ${error ? "rgba(255,71,87,0.4)" : "rgba(255,255,255,0.1)"}` }}
-      />
-      {usePassword && (
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && signInWithPasswordHandler()}
-          placeholder="Password"
-          autoComplete="current-password"
-          className="w-full rounded-xl px-4 py-3.5 font-body text-white text-sm outline-none transition-all placeholder:text-white/25"
-          style={{ background: "#12121e", border: `1px solid ${error ? "rgba(255,71,87,0.4)" : "rgba(255,255,255,0.1)"}` }}
-        />
+      {/* Mode tabs */}
+      <div className="flex gap-1 p-1 rounded-xl" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+        {(["magic", "password", "signup"] as EmailMode[]).map(m => (
+          <button key={m} onClick={() => { setMode(m); setError(""); }}
+            className="flex-1 py-1.5 rounded-lg font-body text-xs font-semibold transition-all"
+            style={mode === m
+              ? { background: "#00ff87", color: "#0a0a0f" }
+              : { background: "transparent", color: "#8888aa" }}>
+            {m === "magic" ? "Magic link" : m === "password" ? "Password" : "Sign up"}
+          </button>
+        ))}
+      </div>
+
+      {/* Email */}
+      <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+        onKeyDown={e => e.key === "Enter" && (mode === "magic" ? sendMagicLink() : mode === "signup" ? signUp() : signInWithPassword())}
+        placeholder="your@email.com" autoComplete="email"
+        className="w-full rounded-xl px-4 py-3.5 font-body text-white text-sm outline-none placeholder:text-white/25"
+        style={inputStyle(!!error)} />
+
+      {/* Password (password + signup modes) */}
+      {(mode === "password" || mode === "signup") && (
+        <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && (mode === "signup" ? signUp() : signInWithPassword())}
+          placeholder="Password" autoComplete={mode === "signup" ? "new-password" : "current-password"}
+          className="w-full rounded-xl px-4 py-3.5 font-body text-white text-sm outline-none placeholder:text-white/25"
+          style={inputStyle(!!error)} />
       )}
+
+      {/* Confirm password (signup only) */}
+      {mode === "signup" && (
+        <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && signUp()}
+          placeholder="Confirm password" autoComplete="new-password"
+          className="w-full rounded-xl px-4 py-3.5 font-body text-white text-sm outline-none placeholder:text-white/25"
+          style={inputStyle(!!error)} />
+      )}
+
       {error && <p className="font-body text-xs text-red-400">{error}</p>}
+
+      {/* Submit */}
       <button
-        onClick={usePassword ? signInWithPasswordHandler : sendMagicLink}
-        disabled={!canSubmit || loading}
+        onClick={mode === "magic" ? sendMagicLink : mode === "signup" ? signUp : signInWithPassword}
+        disabled={!email.trim() || ((mode !== "magic") && !password) || loading}
         className="w-full py-3.5 rounded-xl font-body font-semibold text-sm transition-all hover:opacity-90 active:scale-[0.98] flex items-center justify-center gap-2"
-        style={{ background: canSubmit ? "#00ff87" : "rgba(255,255,255,0.06)", color: canSubmit ? "#0a0a0f" : "#8888aa" }}
-      >
-        {loading ? <Spinner size={18} /> : usePassword ? (
-          "Sign in"
-        ) : (
-          <>
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d="M1 3h12v9a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/>
-              <path d="M1 3l6 5 6-5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
-            </svg>
-            Send sign-in link
-          </>
-        )}
+        style={{
+          background: email.trim() && (mode === "magic" || password) ? "#00ff87" : "rgba(255,255,255,0.06)",
+          color: email.trim() && (mode === "magic" || password) ? "#0a0a0f" : "#8888aa",
+        }}>
+        {loading ? <Spinner size={18} /> : mode === "magic" ? "Send sign-in link" : mode === "signup" ? "Create account" : "Sign in"}
       </button>
-      <button
-        onClick={() => { setUsePassword(!usePassword); setError(""); }}
-        className="w-full py-2 font-body text-xs text-text-muted hover:text-white transition-colors"
-      >
-        {usePassword ? "Use email link instead" : "I have a password"}
-      </button>
+
+      {/* Forgot password */}
+      {mode === "password" && (
+        <button onClick={forgotPassword} disabled={loading}
+          className="w-full py-1.5 font-body text-xs transition-colors hover:text-white"
+          style={{ color: "#8888aa" }}>
+          Forgot your password?
+        </button>
+      )}
     </div>
   );
 }

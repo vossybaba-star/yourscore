@@ -1,0 +1,66 @@
+<!--
+  Email 05 — Pre-match nudge
+  Trigger: ~60–90 min before kickoff of a fixture the user opted into
+  Subject:    {{home}} v {{away}} kicks off in 1 hour.
+  Preview:    {{league_name}} is ready. Tap once to confirm you're in.
+  Tokens: {{home}} {{away}} {{tournament}} {{kickoff}} {{league_name}} {{join_url}} {{skip_url}}
+-->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="x-apple-disable-message-reformatting"><meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark">
+  <title>Matchday</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>body,table,td{margin:0;padding:0}img{border:0;outline:none;text-decoration:none}table{border-collapse:collapse}a{color:#00ff87;text-decoration:none}
+    @media (max-width:600px){.container{width:100%!important}.px{padding-left:24px!important;padding-right:24px!important}.headline{font-size:32px!important;line-height:36px!important}.team{font-size:24px!important}}</style>
+</head>
+<body style="margin:0;padding:0;background:#0a0a0f;font-family:'DM Sans',Helvetica,Arial,sans-serif;color:#ffffff;">
+  <div style="display:none;max-height:0;overflow:hidden;font-size:1px;line-height:1px;color:#0a0a0f;">{{league_name}} is ready. Tap once to confirm you're in.</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0a0a0f;"><tr><td align="center" style="padding:32px 16px;">
+    <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
+
+      <tr><td class="px" style="padding:0 40px 24px;"><div style="font-family:'Bebas Neue',Impact,sans-serif;font-size:28px;letter-spacing:2px;color:#ffffff;">YOURSCORE</div></td></tr>
+
+      <tr><td class="px" style="padding:0 40px 16px;">
+        <h1 class="headline" style="margin:0;font-family:'Bebas Neue',Impact,sans-serif;font-size:44px;line-height:48px;letter-spacing:1px;color:#ffffff;">MATCHDAY.</h1>
+      </td></tr>
+
+      <tr><td class="px" style="padding:0 40px 32px;">
+        <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:16px;line-height:24px;color:#ffffff;">
+          Live questions fire on your phone during the match. {{league_name}} is locked in. Tap "I'm in" so we know you're playing.
+        </p>
+      </td></tr>
+
+      <tr><td class="px" style="padding:0 40px 32px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#12121e;border-radius:12px;border:1px solid rgba(255,255,255,0.08);"><tr><td align="center" style="padding:28px 24px;">
+          <p style="margin:0 0 12px;font-family:'Bebas Neue',Impact,sans-serif;font-size:13px;letter-spacing:1.5px;color:#ffb800;">{{tournament}} · KICKOFF {{kickoff}}</p>
+          <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+            <td align="center" style="width:45%;"><div class="team" style="font-family:'Bebas Neue',Impact,sans-serif;font-size:28px;color:#ffffff;line-height:1.1;">{{home}}</div></td>
+            <td align="center" style="width:10%;"><div style="font-family:'Bebas Neue',Impact,sans-serif;font-size:20px;color:#8888aa;">V</div></td>
+            <td align="center" style="width:45%;"><div class="team" style="font-family:'Bebas Neue',Impact,sans-serif;font-size:28px;color:#ffffff;line-height:1.1;">{{away}}</div></td>
+          </tr></table>
+          <p style="margin:16px 0 0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:13px;color:#8888aa;">PLAYING FOR · {{league_name}}</p>
+        </td></tr></table>
+      </td></tr>
+
+      <tr><td class="px" align="center" style="padding:0 40px 12px;">
+        <a href="{{join_url}}" style="display:inline-block;background:#00ff87;color:#0a0a0f;font-family:'Bebas Neue',Impact,sans-serif;font-size:18px;letter-spacing:2px;padding:16px 48px;border-radius:8px;">I'M IN →</a>
+      </td></tr>
+
+      <tr><td class="px" align="center" style="padding:0 40px 24px;">
+        <a href="{{skip_url}}" style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;color:#8888aa;text-decoration:underline;">Not joining this one — skip →</a>
+      </td></tr>
+
+      <tr><td class="px" style="padding:24px 40px 0;border-top:1px solid rgba(255,255,255,0.08);">
+        <p style="margin:0 0 4px;font-family:'Bebas Neue',Impact,sans-serif;font-size:14px;letter-spacing:1.5px;color:#8888aa;">HOW IT WORKS</p>
+        <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;line-height:20px;color:#ffffff;">Questions appear when something happens in the game. 30 seconds to answer. Faster = more points. Streaks earn bonus points.</p>
+      </td></tr>
+
+      <tr><td class="px" style="padding:48px 40px 24px;border-top:1px solid rgba(255,255,255,0.08);">
+        <p style="margin:0 0 8px;font-size:12px;line-height:18px;color:#8888aa;font-family:'DM Sans',Helvetica,Arial,sans-serif;"><a href="{{PAUSE_URL}}" style="color:#8888aa;text-decoration:underline;">Pause emails</a> · <a href="{{UNSUB_URL}}" style="color:#8888aa;text-decoration:underline;">Unsubscribe</a> · <a href="https://yourscore.app/support" style="color:#8888aa;text-decoration:underline;">Support</a></p>
+        <p style="margin:0;font-family:'Bebas Neue',Impact,sans-serif;font-size:14px;letter-spacing:1.5px;color:#8888aa;">YOURSCORE · YOUR FOOTBALL KNOWLEDGE. RANKED.</p>
+      </td></tr>
+    </table>
+  </td></tr></table>
+</body></html>

@@ -1,26 +1,17 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { rateLimit } from "@/lib/ratelimit";
+import { rateLimitDistributed } from "@/lib/ratelimit";
+import {
+  calculateBasePoints,
+  calculateStreakBonus,
+  calculateComebackBonus,
+  calculatePerfectRoundBonus,
+  H2H_QUESTION_WINDOW_MS,
+} from "@/lib/scoring";
 
-// Server-authoritative scoring for head-to-head challenges. The opponent's
-// answers are graded here against the quiz pack's stored answers and the score
-// is computed server-side — the client can no longer write an arbitrary
-// opponent_score. (RLS no longer permits client UPDATEs to h2h_challenges.)
-
-const MAX_PTS = 1000;
-const MIN_PTS = 100;
-const DECAY_MS = 20_000;
-
-// Mirrors the client's calcPoints, but clamps elapsedMs so a client can't claim
-// a negative/huge time to game the speed bonus.
-function calcPoints(elapsedMs: number): number {
-  const e = Math.min(Math.max(elapsedMs, 0), DECAY_MS);
-  if (e <= 0) return MAX_PTS;
-  const ratio = Math.min(e / DECAY_MS, 1);
-  return Math.max(MIN_PTS, Math.round(MAX_PTS - ratio * (MAX_PTS - MIN_PTS)));
-}
+// Server-authoritative scoring for head-to-head challenges (v2 formula).
+// Uses the unified scoring engine: Base × DifficultyMult × SpeedMult + bonuses.
 
 interface SubmittedAnswer {
   letter: "A" | "B" | "C" | "D";
@@ -36,7 +27,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { ok } = rateLimit(`h2h:${user.id}`, 20, 60_000);
+  const { ok } = await rateLimitDistributed(`h2h:${user.id}`, 20, 60_000);
   if (!ok) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
@@ -66,7 +57,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const db = createServiceClient() as any;
+  const db = createServiceClient();
 
   const { data: ch } = await db
     .from("h2h_challenges")
@@ -77,7 +68,7 @@ export async function POST(req: NextRequest) {
   if (!ch) {
     return NextResponse.json({ error: "Challenge not found" }, { status: 404 });
   }
-  if (new Date(ch.expires_at) < new Date()) {
+  if (new Date(ch.expires_at ?? 0) < new Date()) {
     return NextResponse.json({ error: "Challenge expired" }, { status: 410 });
   }
   if (ch.opponent_score !== null) {
@@ -94,24 +85,44 @@ export async function POST(req: NextRequest) {
     .eq("id", ch.quiz_pack_id)
     .single();
 
-  const questions = pack?.questions as
-    | Array<{ answer: string }>
+  // quiz_packs.questions is an untyped Json column; cast to read answer/difficulty
+  const questions = pack?.questions as unknown as
+    | Array<{ answer: string; difficulty?: string }>
     | undefined;
   if (!questions || questions.length === 0) {
     return NextResponse.json({ error: "Quiz pack not found" }, { status: 404 });
   }
 
-  // Grade server-side against the stored answers.
+  // Grade server-side — v2 formula with difficulty + speed multipliers + bonuses.
   const n = Math.min(answers.length, questions.length);
   let score = 0;
   let correct = 0;
+  let correctStreak = 0;
+  let wrongStreak = 0;
+
   for (let i = 0; i < n; i++) {
     const isCorrect = answers[i].letter === String(questions[i].answer).toUpperCase();
+    const elapsedMs = Math.min(Math.max(answers[i].elapsedMs, 0), 60_000); // clamp
+    const difficulty = questions[i].difficulty ?? "medium";
+
+    const base         = calculateBasePoints(isCorrect, elapsedMs, difficulty, H2H_QUESTION_WINDOW_MS);
+    const streakBonus  = calculateStreakBonus(correctStreak, isCorrect);
+    const comebackBonus = calculateComebackBonus(wrongStreak, isCorrect);
+    const pts = base + streakBonus + comebackBonus;
+
+    score += pts;
     if (isCorrect) {
       correct += 1;
-      score += calcPoints(answers[i].elapsedMs);
+      correctStreak += 1;
+      wrongStreak = 0;
+    } else {
+      correctStreak = 0;
+      wrongStreak += 1;
     }
   }
+
+  // Perfect round bonus
+  score += calculatePerfectRoundBonus(correct, n);
 
   const { data: profile } = await db
     .from("profiles")

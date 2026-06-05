@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -7,6 +6,26 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { getTeamBadgeUrl } from "@/lib/teamImages";
 import { getCompetitionBadgeUrl } from "@/lib/competitionImages";
+import { slugify } from "@/lib/utils";
+import type { Json } from "@/types/database";
+import {
+  LETTER_COLORS,
+  DIFFICULTY_COLOR as DIFF_COLOR,
+  DIFFICULTY_BG as DIFF_BG,
+  RECORDS_EMOJI,
+} from "@/lib/theme";
+import {
+  calculateBasePoints,
+  calculateStreakBonus,
+  calculateComebackBonus,
+  calculatePerfectRoundBonus,
+  maxPointsForDifficulty,
+  getSpeedLabel,
+} from "@/lib/scoring";
+
+// Solo challenge question window — the reference duration for speed band calculation.
+// Players can answer at any time; elapsed is capped at this value for scoring purposes.
+const CHALLENGE_WINDOW_MS = 30_000;
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -37,20 +56,6 @@ interface AnswerRecord {
 type Letter = "A" | "B" | "C" | "D";
 type Phase = "loading" | "intro" | "playing" | "results";
 
-// ── Scoring ───────────────────────────────────────────────────────────────
-// 1000 pts for instant answer, 100 pts minimum, linear decay over 20 s.
-// Wrong answer = 0. Max possible per question = 1000.
-
-const MAX_PTS = 1000;
-const MIN_PTS = 100;
-const DECAY_MS = 20_000; // full decay window
-
-function calcPoints(elapsedMs: number): number {
-  if (elapsedMs <= 0) return MAX_PTS;
-  const ratio = Math.min(elapsedMs / DECAY_MS, 1);
-  return Math.max(MIN_PTS, Math.round(MAX_PTS - ratio * (MAX_PTS - MIN_PTS)));
-}
-
 // ── Timer helpers ─────────────────────────────────────────────────────────
 
 function timerColor(ms: number): string {
@@ -65,39 +70,7 @@ function timerDisplay(ms: number): string {
 
 // ── Misc helpers ──────────────────────────────────────────────────────────
 
-function slugify(name: string) {
-  return name.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim().replace(/\s+/g, "-");
-}
-
-const DIFF_COLOR: Record<string, string> = {
-  easy: "#00ff87",
-  medium: "#ffb800",
-  hard: "#ff4757",
-};
-
-const DIFF_BG: Record<string, string> = {
-  easy: "rgba(0,255,135,0.12)",
-  medium: "rgba(255,184,0,0.12)",
-  hard: "rgba(255,71,87,0.12)",
-};
-
 const LETTERS: Letter[] = ["A", "B", "C", "D"];
-
-const LETTER_COLORS: Record<Letter, string> = {
-  A: "#4fc3f7",
-  B: "#a78bfa",
-  C: "#ffb800",
-  D: "#f97316",
-};
-
-const RECORDS_EMOJI: Record<string, string> = {
-  "Transfer Market Records": "💰",
-  "Penalty Shootout Lore": "⚽",
-  "Iconic Managers": "🎩",
-  "Legendary Club Seasons": "📖",
-  "Golden Boot & Individual Awards": "👟",
-  "The Derbies — By Numbers": "🔥",
-};
 
 function scoreData(score: number, max: number) {
   const p = score / max;
@@ -141,7 +114,7 @@ function ChallengeAFriendButton({
     if (status !== "idle") return;
     setStatus("creating");
     try {
-      const supabase = createClient() as any;
+      const supabase = createClient();
 
       const { data: profile } = await supabase
         .from("profiles")
@@ -196,11 +169,10 @@ function ChallengeAFriendButton({
     return (
       <button
         onClick={handleCreate}
-        className="w-full rounded-2xl py-4 font-display text-sm tracking-widest active:scale-[0.97] transition-transform"
+        className="w-full rounded-2xl py-4 font-display text-sm tracking-widest active:scale-[0.97] transition-transform text-green"
         style={{
           background: "transparent",
           border: "1.5px solid rgba(0,255,135,0.35)",
-          color: "#00ff87",
         }}
       >
         ⚔️ Challenge a friend
@@ -214,7 +186,7 @@ function ChallengeAFriendButton({
         style={{ background: "rgba(0,255,135,0.07)", border: "1px solid rgba(0,255,135,0.2)" }}>
         <div className="w-5 h-5 rounded-full border-2 border-t-transparent animate-spin"
           style={{ borderColor: "#00ff87", borderTopColor: "transparent" }} />
-        <span className="font-body text-sm" style={{ color: "#8888aa" }}>Creating challenge…</span>
+        <span className="font-body text-sm text-text-muted">Creating challenge…</span>
       </div>
     );
   }
@@ -226,13 +198,13 @@ function ChallengeAFriendButton({
       <div className="flex items-center gap-2">
         <span className="text-lg">⚔️</span>
         <div>
-          <p className="font-display text-sm tracking-wide" style={{ color: "#00ff87" }}>Challenge created!</p>
-          <p className="font-body text-xs" style={{ color: "#8888aa" }}>Share the link with a friend</p>
+          <p className="font-display text-sm tracking-wide text-green">Challenge created!</p>
+          <p className="font-body text-xs text-text-muted">Share the link with a friend</p>
         </div>
       </div>
 
-      <div className="rounded-xl px-3 py-2.5 font-body text-xs break-all"
-        style={{ background: "#0a0a0f", border: "1px solid rgba(255,255,255,0.08)", color: "#7777aa" }}>
+      <div className="rounded-xl px-3 py-2.5 font-body text-xs break-all bg-bg border border-border"
+        style={{ color: "#7777aa" }}>
         {link}
       </div>
 
@@ -266,10 +238,9 @@ function ChallengeAFriendButton({
 
       <a
         href="/challenges"
-        className="block w-full text-center rounded-xl py-3 font-display text-xs tracking-widest active:scale-[0.97] transition-transform"
+        className="block w-full text-center rounded-xl py-3 font-display text-xs tracking-widest active:scale-[0.97] transition-transform border border-border"
         style={{
           background: "transparent",
-          border: "1px solid rgba(255,255,255,0.08)",
           color: "#555577",
         }}
       >
@@ -288,6 +259,14 @@ interface LeaderEntry {
   display_name: string | null;
 }
 
+// Shape of a quiz_attempts row joined with profiles, as read at the query boundary.
+interface LeaderRow {
+  user_id: string;
+  score: number;
+  correct_count: number;
+  profiles: { display_name: string | null } | null;
+}
+
 function PackLeaderboard({ entries, userId, accent, loading }: {
   entries: LeaderEntry[];
   userId: string | null;
@@ -299,7 +278,7 @@ function PackLeaderboard({ entries, userId, accent, loading }: {
   const RANK_COLORS = ["#ffb800", "#aaaacc", "#cd7f32"];
 
   return (
-    <div className="rounded-2xl overflow-hidden" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}>
+    <div className="rounded-2xl overflow-hidden bg-surface" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
       <div className="px-5 pt-5 pb-3 flex items-center justify-between">
         <p className="font-display text-xs tracking-widest" style={{ color: "#555577" }}>LEADERBOARD</p>
         {userRank > 0 && (
@@ -379,8 +358,13 @@ export default function ChallengePage() {
   const [answerLog, setAnswerLog] = useState<AnswerRecord[]>([]);
   const [score, setScore] = useState(0);
   const [lastPoints, setLastPoints] = useState<number | null>(null);
+  const [lastSpeedLabel, setLastSpeedLabel] = useState<string | null>(null);
+  const [lastStreakBonus, setLastStreakBonus] = useState(0);
   const [advancing, setAdvancing] = useState(false);
   const [saved, setSaved] = useState(false);
+  // Streak tracking for bonuses
+  const [correctStreak, setCorrectStreak] = useState(0);
+  const [wrongStreak, setWrongStreak] = useState(0);
 
   // ── Timer ──────────────────────────────────────────────────────────────
   const [timerMs, setTimerMs] = useState(0);
@@ -412,16 +396,17 @@ export default function ChallengePage() {
   // Re-fetch leaderboard after score saved so the user sees their position
   useEffect(() => {
     if (!saved || !pack) return;
-    const sb = createClient() as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+    const sb = createClient();
     setLeaderLoading(true);
     sb.from("quiz_attempts")
       .select("user_id, score, correct_count, profiles(display_name)")
       .eq("pack_id", pack.id)
       .order("score", { ascending: false })
       .limit(25)
-      .then(({ data }: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+      .then(({ data }) => {
         if (data) {
-          setLeaderboard(data.map((r: any) => ({ // eslint-disable-line @typescript-eslint/no-explicit-any
+          const rows = data as unknown as LeaderRow[];
+          setLeaderboard(rows.map((r) => ({
             user_id: r.user_id,
             score: r.score,
             correct_count: r.correct_count,
@@ -440,16 +425,15 @@ export default function ChallengePage() {
     supabase.auth.getUser().then(async ({ data }) => {
       const uid = data.user?.id ?? null;
       setUserId(uid);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const sb = supabase as any;
+      const sb = supabase;
 
       const { data: packs } = await sb
         .from("quiz_packs")
         .select("id, name, type, parameter, question_count, questions")
         .eq("status", "published");
 
-      const match = (packs ?? []).find(
-        (p: QuizPack & { questions: RawQuestion[] }) => slugify(p.name) === slug
+      const match = ((packs ?? []) as unknown as (QuizPack & { questions: RawQuestion[] })[]).find(
+        (p) => slugify(p.name) === slug
       );
       if (!match) { router.replace("/challenges"); return; }
 
@@ -487,7 +471,7 @@ export default function ChallengePage() {
         .order("score", { ascending: false })
         .limit(25);
       if (lbRows) {
-        setLeaderboard(lbRows.map((r: any) => ({
+        setLeaderboard((lbRows as unknown as LeaderRow[]).map((r) => ({
           user_id: r.user_id,
           score: r.score,
           correct_count: r.correct_count,
@@ -501,7 +485,8 @@ export default function ChallengePage() {
   }, [slug, router]);
 
   const currentQ = questions[currentIdx];
-  const maxScore = questions.length * MAX_PTS;
+  // Max score: sum of Lightning-speed points per question by difficulty
+  const maxScore = questions.reduce((s, q) => s + maxPointsForDifficulty(q.difficulty ?? "medium"), 0);
 
   // ── Answer handler ─────────────────────────────────────────────────────
   async function handleAnswer(letter: Letter) {
@@ -510,11 +495,27 @@ export default function ChallengePage() {
     stopTimer();
     const elapsed = Date.now() - questionStartRef.current;
     const isCorrect = letter === (currentQ.answer as Letter);
-    const pts = isCorrect ? calcPoints(elapsed) : 0;
+    const difficulty = currentQ.difficulty ?? "medium";
+
+    const base         = calculateBasePoints(isCorrect, elapsed, difficulty, CHALLENGE_WINDOW_MS);
+    const streakBonus  = calculateStreakBonus(correctStreak, isCorrect);
+    const comebackBonus = calculateComebackBonus(wrongStreak, isCorrect);
+    const pts = base + streakBonus + comebackBonus;
+
+    // Update streaks
+    if (isCorrect) {
+      setCorrectStreak((s) => s + 1);
+      setWrongStreak(0);
+    } else {
+      setCorrectStreak(0);
+      setWrongStreak((s) => s + 1);
+    }
 
     setSelected(letter);
     setRevealed(true);
     setLastPoints(isCorrect ? pts : null);
+    setLastSpeedLabel(isCorrect ? getSpeedLabel(elapsed, CHALLENGE_WINDOW_MS) : null);
+    setLastStreakBonus(streakBonus + comebackBonus);
     if (isCorrect) setScore((s) => s + pts);
 
     const record: AnswerRecord = { idx: currentIdx, selected: letter, correct: isCorrect, points: pts, elapsed_ms: elapsed };
@@ -524,13 +525,13 @@ export default function ChallengePage() {
     setAdvancing(true);
     setTimeout(async () => {
       if (currentIdx + 1 >= questions.length) {
-        const finalScore = newLog.reduce((s, r) => s + r.points, 0);
         const correctCount = newLog.filter((r) => r.correct).length;
+        const perfectBonus = calculatePerfectRoundBonus(correctCount, questions.length);
+        const finalScore = newLog.reduce((s, r) => s + r.points, 0) + perfectBonus;
         if (userId && pack && !priorAttempt) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const { error } = await (createClient() as any)
+          const { error } = await createClient()
             .from("quiz_attempts")
-            .insert({ user_id: userId, pack_id: pack.id, score: finalScore, max_score: maxScore, correct_count: correctCount, answers: newLog });
+            .insert({ user_id: userId, pack_id: pack.id, score: finalScore, max_score: maxScore, correct_count: correctCount, answers: newLog as unknown as Json });
           if (!error) setSaved(true);
         }
         setScore(finalScore);
@@ -540,6 +541,8 @@ export default function ChallengePage() {
         setSelected(null);
         setRevealed(false);
         setLastPoints(null);
+        setLastSpeedLabel(null);
+        setLastStreakBonus(0);
       }
       setAdvancing(false);
     }, 1800);
@@ -548,11 +551,11 @@ export default function ChallengePage() {
   // ── Loading ───────────────────────────────────────────────────────────────
   if (phase === "loading") {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "#0a0a0f" }}>
+      <div className="min-h-screen flex items-center justify-center bg-bg">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 rounded-full border-2 border-t-transparent animate-spin"
             style={{ borderColor: "#ffb800", borderTopColor: "transparent" }} />
-          <p className="font-display text-xs tracking-widest" style={{ color: "#8888aa" }}>LOADING…</p>
+          <p className="font-display text-xs tracking-widest text-text-muted">LOADING…</p>
         </div>
       </div>
     );
@@ -574,7 +577,7 @@ export default function ChallengePage() {
     }, {} as Record<string, number>);
 
     return (
-      <div className="min-h-screen flex flex-col" style={{ background: "#0a0a0f" }}>
+      <div className="min-h-screen flex flex-col bg-bg">
         <div className="relative" style={{ background: gradientHero }}>
           <button
             onClick={() => router.back()}
@@ -622,8 +625,8 @@ export default function ChallengePage() {
               style={{ background: "rgba(0,255,135,0.07)", border: "1px solid rgba(0,255,135,0.2)" }}>
               <span className="text-lg">🏆</span>
               <div className="flex-1 min-w-0">
-                <p className="font-display text-xs tracking-widest mb-0.5" style={{ color: "#00ff87" }}>YOUR LEADERBOARD SCORE</p>
-                <p className="font-body text-xs" style={{ color: "#8888aa" }}>
+                <p className="font-display text-xs tracking-widest mb-0.5 text-green">YOUR LEADERBOARD SCORE</p>
+                <p className="font-body text-xs text-text-muted">
                   <span className="font-display text-base text-white">{priorAttempt.score.toLocaleString()}</span>
                   {" "}pts · {priorAttempt.correct_count}/{questions.length} correct
                 </p>
@@ -632,8 +635,8 @@ export default function ChallengePage() {
           )}
 
           <>
-            <div className="rounded-2xl p-4 flex items-center gap-0"
-                style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}>
+            <div className="rounded-2xl p-4 flex items-center gap-0 bg-surface"
+                style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
                 {(["easy", "medium", "hard"] as const).map((d, i) => (
                   <div key={d} className="flex flex-col items-center flex-1"
                     style={{ borderRight: i < 2 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
@@ -645,8 +648,8 @@ export default function ChallengePage() {
               </div>
 
               {/* Scoring explainer */}
-              <div className="rounded-2xl px-4 py-4"
-                style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}>
+              <div className="rounded-2xl px-4 py-4 bg-surface"
+                style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
                 <div className="flex items-center gap-2 mb-3">
                   <span className="text-base">⚡</span>
                   <p className="font-display text-sm text-white tracking-wide">Speed scoring</p>
@@ -673,7 +676,7 @@ export default function ChallengePage() {
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="flex-shrink-0 mt-0.5">
                   <path d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zM8 5v4M8 10.5v.5" stroke="#ff4757" strokeWidth="1.5" strokeLinecap="round"/>
                 </svg>
-                <p className="font-body text-sm font-semibold" style={{ color: "#ff4757" }}>
+                <p className="font-body text-sm font-semibold text-danger">
                   {priorAttempt
                     ? "Play again for practice — your leaderboard score is locked in."
                     : "Your first score goes on the leaderboard — it’s final once you start."}
@@ -682,12 +685,11 @@ export default function ChallengePage() {
 
               <button
                 onClick={() => setPhase("playing")}
-                className="w-full rounded-2xl py-4 font-display text-lg tracking-widest transition-transform active:scale-[0.97] mt-1"
+                className="w-full rounded-2xl py-4 font-display text-lg tracking-widest transition-transform active:scale-[0.97] mt-1 text-white"
                 style={{
                   background: isRecords
                     ? "linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%)"
                     : "linear-gradient(135deg, #e65c00 0%, #ffb800 100%)",
-                  color: "#ffffff",
                   boxShadow: isRecords ? "0 4px 24px rgba(124,58,237,0.4)" : "0 4px 24px rgba(255,140,0,0.35)",
                 }}
               >
@@ -719,7 +721,7 @@ export default function ChallengePage() {
     const tColor = timerColor(timerMs);
 
     return (
-      <div className="min-h-screen flex flex-col" style={{ background: "#0a0a0f" }}>
+      <div className="min-h-screen flex flex-col bg-bg">
         {/* Sticky header */}
         <div className="sticky top-0 z-10 pt-safe"
           style={{ background: "rgba(10,10,15,0.98)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
@@ -859,15 +861,20 @@ export default function ChallengePage() {
                   {selected === (currentQ.answer as Letter) ? "✓ CORRECT" : "✗ WRONG"}
                 </span>
                 {selected !== (currentQ.answer as Letter) && (
-                  <p className="font-body text-xs mt-0.5" style={{ color: "#8888aa" }}>
-                    Answer: <span style={{ color: "#ffffff" }}>{currentQ.options[currentQ.answer as Letter]}</span>
+                  <p className="font-body text-xs mt-0.5 text-text-muted">
+                    Answer: <span className="text-white">{currentQ.options[currentQ.answer as Letter]}</span>
                   </p>
                 )}
               </div>
               {lastPoints !== null && (
                 <div className="text-right">
-                  <div className="font-display text-2xl" style={{ color: "#ffb800" }}>+{lastPoints.toLocaleString()}</div>
-                  <div className="font-body text-xs" style={{ color: "#8888aa" }}>{timerDisplay(timerMs)}</div>
+                  <div className="font-display text-2xl text-amber">+{lastPoints.toLocaleString()}</div>
+                  {lastSpeedLabel && (
+                    <div className="font-body text-xs mt-0.5 text-text-muted">{lastSpeedLabel}</div>
+                  )}
+                  {lastStreakBonus > 0 && (
+                    <div className="font-body text-xs" style={{ color: "#a78bfa" }}>+{lastStreakBonus} bonus</div>
+                  )}
                 </div>
               )}
             </div>
@@ -880,7 +887,8 @@ export default function ChallengePage() {
   // ── Results ───────────────────────────────────────────────────────────────
   if (phase === "results" && pack) {
     const correctCount = answerLog.filter((r) => r.correct).length;
-    const pct = Math.round((score / maxScore) * 100);
+    const perfectBonus = calculatePerfectRoundBonus(correctCount, questions.length);
+    const pct = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
     const isRecords = pack.type === "records";
     const accent = isRecords ? "#a78bfa" : "#ffb800";
     const { emoji, label, color } = scoreData(score, maxScore);
@@ -896,7 +904,7 @@ export default function ChallengePage() {
     }).filter(({ total }) => total > 0);
 
     return (
-      <div className="min-h-screen flex flex-col" style={{ background: "#0a0a0f", paddingBottom: 40 }}>
+      <div className="min-h-screen flex flex-col bg-bg" style={{ paddingBottom: 40 }}>
         {/* Hero */}
         <div className="relative flex flex-col items-center pt-16 pb-10 px-6"
           style={{ background: isRecords
@@ -912,7 +920,7 @@ export default function ChallengePage() {
           <div className="font-display text-7xl mb-1" style={{ color: accent }}>
             {score.toLocaleString()}
           </div>
-          <p className="font-body text-sm mb-3" style={{ color: "#8888aa" }}>
+          <p className="font-body text-sm mb-3 text-text-muted">
             out of {maxScore.toLocaleString()} pts
           </p>
 
@@ -921,6 +929,16 @@ export default function ChallengePage() {
             <span className="text-xl">{emoji}</span>
             <span className="font-display text-base tracking-wide" style={{ color }}>{label}</span>
           </div>
+
+          {perfectBonus > 0 && (
+            <div className="flex items-center gap-2 mt-3 px-4 py-2 rounded-full"
+              style={{ background: "rgba(0,255,135,0.08)", border: "1px solid rgba(0,255,135,0.25)" }}>
+              <span className="text-base">🏆</span>
+              <span className="font-body text-xs font-semibold text-green">
+                Perfect round +{perfectBonus} pts
+              </span>
+            </div>
+          )}
 
           <div className="flex items-center gap-6 mt-5">
             <div className="text-center">
@@ -934,7 +952,7 @@ export default function ChallengePage() {
             </div>
             <div style={{ width: 1, height: 36, background: "rgba(255,255,255,0.08)" }} />
             <div className="text-center">
-              <div className="font-display text-2xl" style={{ color: "#00ff87" }}>{timerDisplay(fastestMs)}</div>
+              <div className="font-display text-2xl text-green">{timerDisplay(fastestMs)}</div>
               <div className="font-body text-xs mt-0.5" style={{ color: "#7777aa" }}>Fastest</div>
             </div>
           </div>
@@ -942,8 +960,8 @@ export default function ChallengePage() {
 
         <div className="px-5 flex flex-col gap-4 mt-2">
           {/* Timing stats */}
-          <div className="rounded-2xl p-5"
-            style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}>
+          <div className="rounded-2xl p-5 bg-surface"
+            style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
             <p className="font-display text-xs tracking-widest mb-4" style={{ color: "#555577" }}>YOUR TIMING</p>
             <div className="flex items-center justify-around">
               {[
@@ -963,8 +981,8 @@ export default function ChallengePage() {
           <PackLeaderboard entries={leaderboard} userId={userId} accent={accent} loading={leaderLoading} />
 
           {/* Difficulty breakdown */}
-          <div className="rounded-2xl p-5"
-            style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}>
+          <div className="rounded-2xl p-5 bg-surface"
+            style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
             <p className="font-display text-xs tracking-widest mb-4" style={{ color: "#555577" }}>BY DIFFICULTY</p>
             <div className="space-y-4">
               {byDiff.map(({ d, correct, total }) => (
@@ -974,7 +992,7 @@ export default function ChallengePage() {
                     <div className="absolute inset-y-0 left-0 rounded-full"
                       style={{ width: `${(correct / total) * 100}%`, background: DIFF_COLOR[d] }} />
                   </div>
-                  <span className="font-display text-xs w-10 text-right" style={{ color: "#8888aa" }}>{correct}/{total}</span>
+                  <span className="font-display text-xs w-10 text-right text-text-muted">{correct}/{total}</span>
                 </div>
               ))}
             </div>
@@ -987,8 +1005,8 @@ export default function ChallengePage() {
                 style={{ background: "rgba(255,184,0,0.07)", border: "1px solid rgba(255,184,0,0.2)" }}>
                 <span className="text-xl">🎯</span>
                 <div>
-                  <p className="font-display text-sm tracking-wide" style={{ color: "#ffb800" }}>Practice run</p>
-                  <p className="font-body text-xs" style={{ color: "#8888aa" }}>
+                  <p className="font-display text-sm tracking-wide text-amber">Practice run</p>
+                  <p className="font-body text-xs text-text-muted">
                     Your leaderboard score is still{" "}
                     <span className="text-white font-semibold">{priorAttempt.score.toLocaleString()}</span> pts
                   </p>
@@ -999,8 +1017,8 @@ export default function ChallengePage() {
                 style={{ background: "rgba(0,255,135,0.07)", border: "1px solid rgba(0,255,135,0.2)" }}>
                 <span className="text-xl">✓</span>
                 <div>
-                  <p className="font-display text-sm tracking-wide" style={{ color: "#00ff87" }}>Score saved ✓</p>
-                  <p className="font-body text-xs" style={{ color: "#8888aa" }}>You&apos;re on the leaderboard</p>
+                  <p className="font-display text-sm tracking-wide text-green">Score saved ✓</p>
+                  <p className="font-body text-xs text-text-muted">You&apos;re on the leaderboard</p>
                 </div>
               </div>
             ) : null
@@ -1014,12 +1032,12 @@ export default function ChallengePage() {
                 </div>
                 <div>
                   <p className="font-body text-sm font-semibold text-white">Save your score</p>
-                  <p className="font-body text-xs" style={{ color: "#8888aa" }}>See where you rank against everyone</p>
+                  <p className="font-body text-xs text-text-muted">See where you rank against everyone</p>
                 </div>
               </div>
               <Link href={`/auth/sign-in?next=/challenges/${slug}`}
-                className="block w-full rounded-xl py-3.5 text-center font-display text-sm tracking-widest active:scale-[0.97] transition-transform"
-                style={{ background: "linear-gradient(135deg, #7c3aed, #a78bfa)", color: "#ffffff" }}>
+                className="block w-full rounded-xl py-3.5 text-center font-display text-sm tracking-widest active:scale-[0.97] transition-transform text-white"
+                style={{ background: "linear-gradient(135deg, #7c3aed, #a78bfa)" }}>
                 SIGN UP &amp; SAVE SCORE
               </Link>
             </div>
@@ -1038,10 +1056,9 @@ export default function ChallengePage() {
           )}
 
           <button onClick={() => router.push("/challenges")}
-            className="w-full rounded-2xl py-4 font-display text-sm tracking-widest active:scale-[0.97] transition-transform"
+            className="w-full rounded-2xl py-4 font-display text-sm tracking-widest active:scale-[0.97] transition-transform text-white"
             style={{
               background: isRecords ? "linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%)" : "linear-gradient(135deg, #e65c00 0%, #ffb800 100%)",
-              color: "#ffffff",
               boxShadow: isRecords ? "0 4px 24px rgba(124,58,237,0.3)" : "0 4px 24px rgba(255,140,0,0.25)",
             }}>
             MORE CHALLENGES →

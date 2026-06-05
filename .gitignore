@@ -52,3 +52,6 @@ next-env.d.ts
 /ios/App/App/public/
 /ios/capacitor-cordova-ios-plugins/
 .capacitor/
+
+# Sentry Config File
+.env.sentry-build-plugin

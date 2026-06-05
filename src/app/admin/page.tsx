@@ -5,13 +5,13 @@ import Link from "next/link";
 const STATS = [
   { label: "Matches", value: "8", sub: "scheduled", color: "#00ff87", href: "/admin/matches" },
   { label: "Questions", value: "24", sub: "approved", color: "#ffb800", href: "/admin/matches" },
-  { label: "Active Rooms", value: "3", sub: "live now", color: "#ff4757", href: "/admin/rooms" },
+  { label: "Active Lobbies", value: "3", sub: "live now", color: "#ff4757", href: "/admin/rooms" },
   { label: "Players", value: "47", sub: "total", color: "#a78bfa", href: "/admin/rooms" },
 ];
 
 const QUICK_ACTIONS = [
   { label: "Generate questions", desc: "Use AI to create questions for a match", href: "/admin/matches", icon: "✨" },
-  { label: "Fire question", desc: "Send a question to a live room", href: "/admin/rooms", icon: "🔥" },
+  { label: "Fire question", desc: "Send a question to a live Lobby", href: "/admin/rooms", icon: "🔥" },
   { label: "Add match", desc: "Schedule a new fixture", href: "/admin/matches", icon: "🏟️" },
 ];
 

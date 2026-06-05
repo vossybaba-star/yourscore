@@ -1,15 +1,9 @@
+import { withSentryConfig } from "@sentry/nextjs";
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  typescript: {
-    // Admin quiz-builder routes (src/app/admin/*, src/app/api/admin/*) and
-    // match/[id] still reference the legacy questions schema (question_text,
-    // option_a..d, correct_answer, approved, match_id) while the current
-    // Supabase types use the new entity/options/answer shape. The mismatch
-    // doesn't crash at runtime — selects just return undefined columns — but
-    // blocks the production typecheck. Skip during build until the legacy
-    // routes are migrated. Local `npx tsc --noEmit` still flags them.
-    ignoreBuildErrors: true,
-  },
+  // Type errors now fail the build. DB types are generated from the live schema
+  // (src/types/database.ts via `supabase gen types typescript`). The few defunct
+  // admin match-question spots are explicitly cast with TODO(live-match) markers.
   images: {
     remotePatterns: [
       {
@@ -32,4 +26,40 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  // For all available options, see:
+  // https://www.npmjs.com/package/@sentry/webpack-plugin#options
+
+  org: "yourscore",
+
+  project: "javascript-nextjs",
+
+  // Only print logs for uploading source maps in CI
+  silent: !process.env.CI,
+
+  // For all available options, see:
+  // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
+
+  // Upload a larger set of source maps for prettier stack traces (increases build time)
+  widenClientFileUpload: true,
+
+  // Route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
+  // This can increase your server load as well as your hosting bill.
+  // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
+  // side errors will fail.
+  tunnelRoute: "/monitoring",
+
+  webpack: {
+    // Enables automatic instrumentation of Vercel Cron Monitors. (Does not yet work with App Router route handlers.)
+    // See the following for more information:
+    // https://docs.sentry.io/product/crons/
+    // https://vercel.com/docs/cron-jobs
+    automaticVercelMonitors: true,
+
+    // Tree-shaking options for reducing bundle size
+    treeshake: {
+      // Automatically tree-shake Sentry logger statements to reduce bundle size
+      removeDebugLogging: true,
+    },
+  },
+});

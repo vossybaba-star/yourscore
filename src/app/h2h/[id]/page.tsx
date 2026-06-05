@@ -1,10 +1,20 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { SignInWithGoogle } from "@/components/auth/AuthButton";
+import {
+  calculateBasePoints,
+  calculateStreakBonus,
+  calculateComebackBonus,
+  H2H_QUESTION_WINDOW_MS,
+} from "@/lib/scoring";
+import {
+  LETTER_COLORS,
+  DIFFICULTY_COLOR as DIFF_COLOR,
+  DIFFICULTY_BG as DIFF_BG,
+} from "@/lib/theme";
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -52,18 +62,6 @@ type PageState =
   | "sign_in_needed"
   | "playing";
 
-// ── Scoring constants ──────────────────────────────────────────────────────
-
-const MAX_PTS = 1000;
-const MIN_PTS = 100;
-const DECAY_MS = 20_000;
-
-function calcPoints(elapsedMs: number): number {
-  if (elapsedMs <= 0) return MAX_PTS;
-  const ratio = Math.min(elapsedMs / DECAY_MS, 1);
-  return Math.max(MIN_PTS, Math.round(MAX_PTS - ratio * (MAX_PTS - MIN_PTS)));
-}
-
 function timerColor(ms: number): string {
   if (ms < 5_000) return "#00ff87";
   if (ms < 10_000) return "#ffb800";
@@ -75,25 +73,6 @@ function timerDisplay(ms: number): string {
 }
 
 const LETTERS: Letter[] = ["A", "B", "C", "D"];
-
-const LETTER_COLORS: Record<Letter, string> = {
-  A: "#4fc3f7",
-  B: "#a78bfa",
-  C: "#ffb800",
-  D: "#f97316",
-};
-
-const DIFF_COLOR: Record<string, string> = {
-  easy: "#00ff87",
-  medium: "#ffb800",
-  hard: "#ff4757",
-};
-
-const DIFF_BG: Record<string, string> = {
-  easy: "rgba(0,255,135,0.12)",
-  medium: "rgba(255,184,0,0.12)",
-  hard: "rgba(255,71,87,0.12)",
-};
 
 // ── Share card helper ──────────────────────────────────────────────────────
 
@@ -221,7 +200,7 @@ export default function H2HPage({ params }: { params: { id: string } }) {
   useEffect(() => {
     if (!id) return;
 
-    const supabase = createClient() as any;
+    const supabase = createClient();
 
     async function load() {
       const { data: userData } = await supabase.auth.getUser();
@@ -237,16 +216,18 @@ export default function H2HPage({ params }: { params: { id: string } }) {
         setOpponentName(profile?.display_name ?? "You");
       }
 
-      const { data: ch } = await supabase
+      const { data: chRow } = await supabase
         .from("h2h_challenges")
         .select("*")
         .eq("id", id)
         .single();
 
-      if (!ch) {
+      if (!chRow) {
         setPageState("not_found");
         return;
       }
+
+      const ch = chRow as unknown as H2HChallenge;
 
       // Check expiry
       if (new Date(ch.expires_at) < new Date()) {
@@ -274,7 +255,7 @@ export default function H2HPage({ params }: { params: { id: string } }) {
   // ── Fetch questions when transitioning to playing ──────────────────────
   async function startPlaying() {
     if (!challenge) return;
-    const supabase = createClient() as any;
+    const supabase = createClient();
     const { data: pack } = await supabase
       .from("quiz_packs")
       .select("questions")
@@ -283,7 +264,7 @@ export default function H2HPage({ params }: { params: { id: string } }) {
 
     if (!pack?.questions) return;
 
-    setQuestions(pack.questions);
+    setQuestions(pack.questions as unknown as RawQuestion[]);
     setCurrentIdx(0);
     setSelected(null);
     setRevealed(false);
@@ -302,12 +283,25 @@ export default function H2HPage({ params }: { params: { id: string } }) {
     stopTimer();
     const elapsed = Date.now() - questionStartRef.current;
     const isCorrect = letter === (currentQ.answer as Letter);
-    const pts = isCorrect ? calcPoints(elapsed) : 0;
+
+    // Score with the shared engine so this live preview matches what
+    // /api/h2h/play computes server-side (base × difficulty × speed + bonuses).
+    // Derive streaks from prior answers for streak/comeback bonus parity.
+    let priorCorrectStreak = 0;
+    let priorWrongStreak = 0;
+    for (const r of answerLog) {
+      if (r.correct) { priorCorrectStreak++; priorWrongStreak = 0; }
+      else { priorWrongStreak++; priorCorrectStreak = 0; }
+    }
+    const pts =
+      calculateBasePoints(isCorrect, elapsed, currentQ.difficulty ?? "medium", H2H_QUESTION_WINDOW_MS) +
+      calculateStreakBonus(priorCorrectStreak, isCorrect) +
+      calculateComebackBonus(priorWrongStreak, isCorrect);
 
     setSelected(letter);
     setRevealed(true);
     setLastPoints(isCorrect ? pts : null);
-    if (isCorrect) setScore((s) => s + pts);
+    if (pts > 0) setScore((s) => s + pts);
 
     const record: AnswerRecord = {
       idx: currentIdx,
@@ -582,7 +576,7 @@ export default function H2HPage({ params }: { params: { id: string } }) {
               className="font-display text-xs tracking-widest mb-5"
               style={{ color: "#555577" }}
             >
-              HEAD-TO-HEAD
+              1V1
             </p>
             <div className="flex items-start gap-4">
               {/* Challenger */}
