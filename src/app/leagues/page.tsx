@@ -50,7 +50,12 @@ function playerColor(name: string | null) {
 export default function LeaguesPage() {
   const { user, loading: userLoading } = useUser();
   const router = useRouter();
-  const [tab, setTab] = useState<"mine" | "global">("mine");
+  const [tab, setTab] = useState<"mine" | "global">(() =>
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("tab") === "global"
+      ? "global"
+      : "mine"
+  );
   const [leagues, setLeagues] = useState<LeagueCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [globalPlayers, setGlobalPlayers] = useState<GlobalPlayer[]>([]);
@@ -59,6 +64,16 @@ export default function LeaguesPage() {
   const [joinSheetOpen, setJoinSheetOpen] = useState(false);
   const [joinCode, setJoinCode] = useState("");
   const joinInputRef = useRef<HTMLInputElement>(null);
+
+  // Persist the active tab in the URL so back-navigation (e.g. returning from a
+  // player profile) restores the same tab instead of resetting to "mine".
+  // replaceState updates history without a re-render/navigation flicker.
+  function selectTab(t: "mine" | "global") {
+    setTab(t);
+    if (typeof window !== "undefined") {
+      window.history.replaceState(null, "", t === "global" ? "/leagues?tab=global" : "/leagues");
+    }
+  }
 
   useEffect(() => {
     if (userLoading) return;
@@ -179,7 +194,7 @@ export default function LeaguesPage() {
         {user && !userLoading && (
           <div className="flex gap-2 p-1 rounded-2xl" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
             <button
-              onClick={() => setTab("mine")}
+              onClick={() => selectTab("mine")}
               className="flex-1 py-2.5 rounded-xl font-body text-sm font-semibold transition-all"
               style={tab === "mine"
                 ? { background: "#a78bfa", color: "#0a0a0f" }
@@ -189,7 +204,7 @@ export default function LeaguesPage() {
               My Leagues
             </button>
             <button
-              onClick={() => setTab("global")}
+              onClick={() => selectTab("global")}
               className="flex-1 py-2.5 rounded-xl font-body text-sm font-semibold transition-all"
               style={tab === "global"
                 ? { background: "#a78bfa", color: "#0a0a0f" }

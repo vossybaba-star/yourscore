@@ -358,7 +358,12 @@ export default function RoomPage() {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ roomId }),
     });
-    if (!res.ok) { setStarting(false); }
+    if (!res.ok) { setStarting(false); return; }
+    // Optimistically leave the lobby on first tap — don't wait for our own
+    // realtime echo. Other players transition via the rooms UPDATE event.
+    setRoom((r) => (r ? { ...r, status: "live", current_question_idx: 0 } : r));
+    const sb = supabaseRef.current;
+    if (sb) await fetchAndShowQuestion(sb, 1);
   }
 
   async function handleAnswer(letter: "a" | "b" | "c" | "d") {
