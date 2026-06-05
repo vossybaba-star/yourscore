@@ -11,69 +11,93 @@
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="x-apple-disable-message-reformatting"><meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark">
   <title>Your tournament</title>
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
-  <style>body,table,td{margin:0;padding:0}img{border:0;outline:none;text-decoration:none}table{border-collapse:collapse}a{color:#00ff87;text-decoration:none}
-    @media (max-width:600px){.container{width:100%!important}.px{padding-left:24px!important;padding-right:24px!important}.headline{font-size:32px!important;line-height:36px!important}.big{font-size:64px!important}.stat-num{font-size:28px!important}}</style>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>body,table,td{margin:0;padding:0}img{border:0;outline:none;text-decoration:none;display:block}table{border-collapse:collapse}a{text-decoration:none}
+    @media (max-width:600px){.container{width:100%!important}.px{padding-left:24px!important;padding-right:24px!important}.headline{font-size:42px!important;line-height:44px!important}.big{font-size:72px!important}.stat-num{font-size:30px!important}.stat-cell{display:block!important;width:100%!important;padding:14px 0!important;border-bottom:1px solid rgba(255,255,255,0.04)!important}}</style>
 </head>
 <body style="margin:0;padding:0;background:#0a0a0f;font-family:'DM Sans',Helvetica,Arial,sans-serif;color:#ffffff;">
   <div style="display:none;max-height:0;overflow:hidden;font-size:1px;line-height:1px;color:#0a0a0f;">{{total_score}} pts. {{p4p}}% accuracy. {{matches_played}} matches. Here's your year.</div>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0a0a0f;"><tr><td align="center" style="padding:32px 16px;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0a0a0f;background-image:linear-gradient(180deg,#0a0a0f 0%,#0e0e1a 100%);"><tr><td align="center" style="padding:40px 16px;">
     <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
 
-      <tr><td class="px" style="padding:0 40px 24px;"><div style="font-family:'Bebas Neue',Impact,sans-serif;font-size:28px;letter-spacing:2px;color:#ffffff;">YOURSCORE</div></td></tr>
-
-      <tr><td class="px" style="padding:0 40px 8px;">
-        <p style="margin:0;font-family:'Bebas Neue',Impact,sans-serif;font-size:14px;letter-spacing:2px;color:#ffb800;">YOUR TOURNAMENT</p>
+      <tr><td align="center" class="px" style="padding:0 40px 36px;">
+        <a href="https://yourscore.app"><img src="https://yourscore.app/logo.png" alt="YourScore" width="148" height="44" style="width:148px;height:44px;display:block;"></a>
       </td></tr>
 
-      <tr><td class="px" style="padding:0 40px 16px;">
-        <h1 class="headline" style="margin:0;font-family:'Bebas Neue',Impact,sans-serif;font-size:52px;line-height:54px;letter-spacing:1px;color:#ffffff;">{{tournament}}, RANKED.</h1>
+      <tr><td class="px" align="left" style="padding:0 40px 18px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+          <td bgcolor="#241e10" style="background:rgba(255,184,0,0.1);border:1px solid rgba(255,184,0,0.3);border-radius:999px;padding:6px 14px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:2px;color:#ffb800;font-weight:700;text-transform:uppercase;">&#127942; Your tournament</td>
+        </tr></table>
+      </td></tr>
+
+      <tr><td class="px" style="padding:0 40px 14px;">
+        <h1 class="headline" style="margin:0;font-family:'Bebas Neue',Impact,Arial,sans-serif;font-size:60px;line-height:56px;color:#ffffff;font-weight:400;">{{tournament}}, RANKED.</h1>
       </td></tr>
 
       <tr><td class="px" style="padding:0 40px 32px;">
-        <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:16px;line-height:24px;color:#ffffff;">
+        <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:17px;line-height:26px;color:#bbbbcc;">
           You watched. You played. You answered. Here is everything you actually did.
         </p>
       </td></tr>
 
       <tr><td class="px" style="padding:0 40px 16px;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#12121e;border-radius:12px;border:1px solid rgba(255,255,255,0.08);"><tr><td align="center" style="padding:32px 24px;">
-          <p style="margin:0 0 8px;font-family:'Bebas Neue',Impact,sans-serif;font-size:14px;letter-spacing:1.5px;color:#8888aa;">TOTAL POINTS</p>
-          <div class="big" style="font-family:'Bebas Neue',Impact,sans-serif;font-size:80px;line-height:1;color:#00ff87;">{{total_score}}</div>
-        </td></tr></table>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#12121e" style="background:linear-gradient(135deg,rgba(0,255,135,0.1) 0%,rgba(18,18,30,0.95) 50%,rgba(167,139,250,0.1) 100%);border-radius:16px;border:1px solid rgba(0,255,135,0.25);">
+          <tr><td align="center" style="padding:30px 24px 8px;">
+            <div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:2px;color:#8888aa;font-weight:700;text-transform:uppercase;">Total points</div>
+          </td></tr>
+          <tr><td align="center" style="padding:0 24px 28px;">
+            <div class="big" style="font-family:'Bebas Neue',Impact,sans-serif;font-size:88px;line-height:1;color:#00ff87;text-shadow:0 0 32px rgba(0,255,135,0.35);">{{total_score}}</div>
+          </td></tr>
+        </table>
       </td></tr>
 
       <tr><td class="px" style="padding:0 40px 16px;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#12121e;border-radius:12px;border:1px solid rgba(255,255,255,0.08);"><tr><td style="padding:24px;">
-          <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-            <td align="left" style="width:33%;"><div class="stat-num" style="font-family:'Bebas Neue',Impact,sans-serif;font-size:32px;color:#ffffff;line-height:1;">{{p4p}}%</div><div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:12px;color:#8888aa;margin-top:4px;">ACCURACY</div></td>
-            <td align="center" style="width:33%;"><div class="stat-num" style="font-family:'Bebas Neue',Impact,sans-serif;font-size:32px;color:#ffffff;line-height:1;">{{matches_played}}</div><div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:12px;color:#8888aa;margin-top:4px;">MATCHES</div></td>
-            <td align="right" style="width:33%;"><div class="stat-num" style="font-family:'Bebas Neue',Impact,sans-serif;font-size:32px;color:#ffb800;line-height:1;">⚡{{best_streak}}</div><div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:12px;color:#8888aa;margin-top:4px;">BEST STREAK</div></td>
-          </tr></table>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#12121e" style="background:linear-gradient(135deg,rgba(255,184,0,0.05) 0%,rgba(18,18,30,0.95) 100%);border-radius:16px;border:1px solid rgba(255,255,255,0.08);">
+          <tr><td style="padding:22px 22px;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+              <td class="stat-cell" align="left" style="padding:0;width:33%;"><div class="stat-num" style="font-family:'Bebas Neue',Impact,sans-serif;font-size:38px;line-height:1;color:#ffffff;">{{p4p}}%</div><div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;color:#8888aa;letter-spacing:1.5px;text-transform:uppercase;margin-top:6px;">Accuracy</div></td>
+              <td class="stat-cell" align="center" style="padding:0;width:33%;"><div class="stat-num" style="font-family:'Bebas Neue',Impact,sans-serif;font-size:38px;line-height:1;color:#ffffff;">{{matches_played}}</div><div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;color:#8888aa;letter-spacing:1.5px;text-transform:uppercase;margin-top:6px;">Matches</div></td>
+              <td class="stat-cell" align="right" style="padding:0;width:33%;"><div class="stat-num" style="font-family:'Bebas Neue',Impact,sans-serif;font-size:38px;line-height:1;color:#ffb800;">&#9889;{{best_streak}}</div><div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;color:#8888aa;letter-spacing:1.5px;text-transform:uppercase;margin-top:6px;">Best streak</div></td>
+            </tr></table>
+          </td></tr>
+        </table>
+      </td></tr>
+
+      <tr><td class="px" style="padding:0 40px 28px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#12121e" style="background:linear-gradient(135deg,rgba(167,139,250,0.07) 0%,rgba(18,18,30,0.95) 100%);border-radius:16px;border:1px solid rgba(167,139,250,0.2);">
+          <tr><td style="padding:20px 22px;">
+            <div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:2px;color:#8888aa;font-weight:600;text-transform:uppercase;margin-bottom:6px;">Your best match</div>
+            <div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:15px;color:#ffffff;font-weight:600;">{{best_match}}</div>
+          </td></tr>
+          <tr><td style="padding:0 22px 22px;">
+            <div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:14px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:2px;color:#8888aa;font-weight:600;text-transform:uppercase;margin-bottom:4px;">Final position &middot; {{league_name}}</div>
+            <div style="font-family:'Bebas Neue',Impact,sans-serif;font-size:36px;color:#a78bfa;line-height:1;">{{final_rank}}</div>
+          </td></tr>
+        </table>
+      </td></tr>
+
+      <tr><td class="px" align="center" style="padding:8px 40px 8px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="#00ff87" style="background:linear-gradient(135deg,#00ff87 0%,#00d970 100%);border-radius:12px;box-shadow:0 0 32px rgba(0,255,135,0.4);">
+          <a href="{{whatsapp_share_url}}" style="display:inline-block;color:#0a0a0f;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;letter-spacing:0.5px;padding:18px 40px;border-radius:12px;">Share your year &nbsp;&rarr;</a>
         </td></tr></table>
       </td></tr>
 
-      <tr><td class="px" style="padding:0 40px 32px;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#12121e;border-radius:12px;border:1px solid rgba(255,255,255,0.08);"><tr><td style="padding:20px 24px;">
-          <p style="margin:0 0 4px;font-family:'Bebas Neue',Impact,sans-serif;font-size:13px;letter-spacing:1.5px;color:#8888aa;">YOUR BEST MATCH</p>
-          <p style="margin:0 0 16px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:15px;color:#ffffff;">{{best_match}}</p>
-          <p style="margin:0 0 4px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.08);font-family:'Bebas Neue',Impact,sans-serif;font-size:13px;letter-spacing:1.5px;color:#8888aa;">FINAL POSITION · {{league_name}}</p>
-          <p style="margin:0;font-family:'Bebas Neue',Impact,sans-serif;font-size:32px;color:#00ff87;line-height:1;">{{final_rank}}</p>
+      <tr><td class="px" style="padding:24px 40px 0;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#12121e" style="background:linear-gradient(135deg,rgba(167,139,250,0.05) 0%,rgba(10,10,15,0.95) 100%);border-radius:14px;border:1px solid rgba(167,139,250,0.18);">
+          <tr><td style="padding:18px 20px;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+              <td valign="middle" width="54" style="padding-right:14px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td width="40" height="40" align="center" valign="middle" bgcolor="#1e1a36" style="background:rgba(167,139,250,0.15);border:1px solid rgba(167,139,250,0.25);border-radius:10px;font-size:18px;line-height:38px;">&#9917;</td></tr></table></td>
+              <td valign="middle"><div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:12px;letter-spacing:1.5px;color:#8888aa;font-weight:600;text-transform:uppercase;margin-bottom:3px;">What's next</div><div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:13px;color:#bbbbcc;line-height:18px;">Your league is already locked in for <strong style="color:#ffffff;">{{next_tournament}}</strong>. Points carry. The argument continues.</div></td>
+            </tr></table>
+          </td></tr>
+        </table>
+      </td></tr>
+
+      <tr><td class="px" style="padding:56px 40px 24px;">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="border-top:1px solid rgba(255,255,255,0.06);padding-top:24px;">
+          <p style="margin:0 0 10px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:12px;line-height:18px;color:#6b6b85;"><a href="{{PAUSE_URL}}" style="color:#8888aa;text-decoration:underline;">Pause emails</a> &nbsp;&middot;&nbsp; <a href="{{UNSUB_URL}}" style="color:#8888aa;text-decoration:underline;">Unsubscribe</a> &nbsp;&middot;&nbsp; <a href="https://yourscore.app/support" style="color:#8888aa;text-decoration:underline;">Support</a></p>
+          <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:1.5px;color:#6b6b85;text-transform:uppercase;font-weight:600;">YourScore &nbsp;&middot;&nbsp; Your football knowledge. Ranked.</p>
         </td></tr></table>
-      </td></tr>
-
-      <tr><td class="px" align="center" style="padding:0 40px 24px;">
-        <a href="{{whatsapp_share_url}}" style="display:inline-block;background:#00ff87;color:#0a0a0f;font-family:'Bebas Neue',Impact,sans-serif;font-size:18px;letter-spacing:2px;padding:16px 40px;border-radius:8px;">SHARE YOUR YEAR →</a>
-      </td></tr>
-
-      <tr><td class="px" style="padding:24px 40px 0;border-top:1px solid rgba(255,255,255,0.08);">
-        <p style="margin:0 0 4px;font-family:'Bebas Neue',Impact,sans-serif;font-size:14px;letter-spacing:1.5px;color:#8888aa;">WHAT'S NEXT</p>
-        <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;line-height:20px;color:#ffffff;">Your league is already locked in for <strong>{{next_tournament}}</strong>. Points carry. The argument continues.</p>
-      </td></tr>
-
-      <tr><td class="px" style="padding:48px 40px 24px;border-top:1px solid rgba(255,255,255,0.08);">
-        <p style="margin:0 0 8px;font-size:12px;line-height:18px;color:#8888aa;font-family:'DM Sans',Helvetica,Arial,sans-serif;"><a href="{{PAUSE_URL}}" style="color:#8888aa;text-decoration:underline;">Pause emails</a> · <a href="{{UNSUB_URL}}" style="color:#8888aa;text-decoration:underline;">Unsubscribe</a> · <a href="https://yourscore.app/support" style="color:#8888aa;text-decoration:underline;">Support</a></p>
-        <p style="margin:0;font-family:'Bebas Neue',Impact,sans-serif;font-size:14px;letter-spacing:1.5px;color:#8888aa;">YOURSCORE · YOUR FOOTBALL KNOWLEDGE. RANKED.</p>
       </td></tr>
     </table>
   </td></tr></table>

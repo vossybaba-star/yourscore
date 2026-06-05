@@ -1,8 +1,8 @@
 <!--
   Supabase Auth — Admin-initiated user invite
   Wired in supabase/config.toml under [auth.email.template.invite]
-  Supabase vars used: {{ .ConfirmationURL }}
-  Suggested subject:  You're invited to YourScore
+  Supabase vars: {{ .ConfirmationURL }}
+  Suggested subject: You're invited to YourScore
 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
@@ -10,40 +10,54 @@
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="x-apple-disable-message-reformatting"><meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark">
   <title>You're invited to YourScore</title>
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
-  <style>body,table,td{margin:0;padding:0}a{color:#00ff87;text-decoration:none}table{border-collapse:collapse}
-    @media (max-width:600px){.container{width:100%!important}.px{padding-left:24px!important;padding-right:24px!important}.headline{font-size:32px!important;line-height:36px!important}}</style>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>body,table,td{margin:0;padding:0}img{border:0;outline:none;text-decoration:none;display:block}table{border-collapse:collapse}a{text-decoration:none}
+    @media (max-width:600px){.container{width:100%!important}.px{padding-left:24px!important;padding-right:24px!important}.headline{font-size:40px!important;line-height:42px!important}}</style>
 </head>
 <body style="margin:0;padding:0;background:#0a0a0f;font-family:'DM Sans',Helvetica,Arial,sans-serif;color:#ffffff;">
   <div style="display:none;max-height:0;overflow:hidden;font-size:1px;line-height:1px;color:#0a0a0f;">Set up your account in 30 seconds.</div>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0a0a0f;"><tr><td align="center" style="padding:32px 16px;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0a0a0f;background-image:linear-gradient(180deg,#0a0a0f 0%,#0e0e1a 100%);"><tr><td align="center" style="padding:40px 16px;">
     <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
 
-      <tr><td class="px" style="padding:0 40px 24px;"><div style="font-family:'Bebas Neue',Impact,sans-serif;font-size:28px;letter-spacing:2px;color:#ffffff;">YOURSCORE</div></td></tr>
+      <tr><td align="center" class="px" style="padding:0 40px 36px;">
+        <a href="https://yourscore.app"><img src="https://yourscore.app/logo.png" alt="YourScore" width="148" height="44" style="width:148px;height:44px;display:block;"></a>
+      </td></tr>
 
-      <tr><td class="px" style="padding:0 40px 16px;">
-        <h1 class="headline" style="margin:0;font-family:'Bebas Neue',Impact,sans-serif;font-size:44px;line-height:48px;letter-spacing:1px;color:#ffffff;">YOU'RE INVITED.</h1>
+      <tr><td class="px" align="left" style="padding:0 40px 18px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+          <td bgcolor="#1e1a36" style="background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.28);border-radius:999px;padding:6px 14px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:2px;color:#a78bfa;font-weight:700;text-transform:uppercase;">&#10003; Invitation</td>
+        </tr></table>
+      </td></tr>
+
+      <tr><td class="px" style="padding:0 40px 14px;">
+        <h1 class="headline" style="margin:0;font-family:'Bebas Neue',Impact,Arial,sans-serif;font-size:54px;line-height:52px;color:#ffffff;font-weight:400;">YOU'RE INVITED.</h1>
       </td></tr>
 
       <tr><td class="px" style="padding:0 40px 32px;">
-        <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:16px;line-height:24px;color:#ffffff;">
-          You've been invited to YourScore — the live football quiz that ranks your group across every match, all season. Tap below to set up your account.
+        <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:17px;line-height:26px;color:#bbbbcc;">
+          You've been invited to <strong style="color:#ffffff;">YourScore</strong> &mdash; the football knowledge competition that ranks your group across every match, all season. Tap below to set up your account.
         </p>
       </td></tr>
 
-      <tr><td class="px" align="center" style="padding:0 40px 24px;">
-        <a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#00ff87;color:#0a0a0f;font-family:'Bebas Neue',Impact,sans-serif;font-size:18px;letter-spacing:2px;padding:16px 40px;border-radius:8px;">JOIN YOURSCORE →</a>
+      <tr><td class="px" align="center" style="padding:8px 40px 24px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="#a78bfa" style="background:linear-gradient(135deg,#a78bfa 0%,#7c3aed 100%);border-radius:12px;box-shadow:0 0 32px rgba(167,139,250,0.4);">
+          <a href="{{ .ConfirmationURL }}" style="display:inline-block;color:#ffffff;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;letter-spacing:0.5px;padding:18px 44px;border-radius:12px;">Join YourScore &nbsp;&rarr;</a>
+        </td></tr></table>
       </td></tr>
 
-      <tr><td class="px" style="padding:0 40px 24px;">
-        <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:13px;line-height:20px;color:#8888aa;">
-          Button not working? Paste this link into your browser:<br>
-          <span style="word-break:break-all;color:#8888aa;">{{ .ConfirmationURL }}</span>
-        </p>
+      <tr><td class="px" style="padding:0 40px 0;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#12121e" style="background:linear-gradient(135deg,rgba(255,255,255,0.03) 0%,rgba(10,10,15,0.95) 100%);border-radius:14px;border:1px solid rgba(255,255,255,0.06);">
+          <tr><td style="padding:16px 18px;">
+            <div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:1.5px;color:#8888aa;font-weight:600;text-transform:uppercase;margin-bottom:6px;">Button not working?</div>
+            <div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:12px;color:#8888aa;word-break:break-all;line-height:18px;">{{ .ConfirmationURL }}</div>
+          </td></tr>
+        </table>
       </td></tr>
 
-      <tr><td class="px" style="padding:48px 40px 24px;border-top:1px solid rgba(255,255,255,0.08);">
-        <p style="margin:0;font-family:'Bebas Neue',Impact,sans-serif;font-size:14px;letter-spacing:1.5px;color:#8888aa;">YOURSCORE · YOUR FOOTBALL KNOWLEDGE. RANKED.</p>
+      <tr><td class="px" style="padding:56px 40px 24px;">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="border-top:1px solid rgba(255,255,255,0.06);padding-top:24px;">
+          <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:1.5px;color:#6b6b85;text-transform:uppercase;font-weight:600;">YourScore &nbsp;&middot;&nbsp; Your football knowledge. Ranked.</p>
+        </td></tr></table>
       </td></tr>
     </table>
   </td></tr></table>
