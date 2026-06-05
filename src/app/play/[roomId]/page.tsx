@@ -295,6 +295,21 @@ export default function RoomPage() {
       const { data: { session } } = await sb.auth.getSession();
       if (session?.access_token) sb.realtime.setAuth(session.access_token);
 
+      // Remove any leftover channel for this room before (re)subscribing. The
+      // Supabase client is now a module-level singleton, so its channel registry
+      // survives remounts / React StrictMode's double-invoke. Re-creating a
+      // channel whose topic already exists returns the old, already-subscribed
+      // instance — and adding .on() handlers to it throws
+      // "cannot add postgres_changes callbacks ... after subscribe()", which
+      // silently kills ALL realtime for the lobby. Awaiting removal guarantees a
+      // fresh channel below.
+      await Promise.all(
+        sb.getChannels()
+          .filter((c) => c.topic === `realtime:room:${roomId}`)
+          .map((c) => sb.removeChannel(c))
+      );
+      if (cancelled) { setLoading(false); return; }
+
       const { data: roomData } = await sb
         .from("rooms").select("*").eq("id", roomId).single();
       if (cancelled || !roomData) { setLoading(false); return; }

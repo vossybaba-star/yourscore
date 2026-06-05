@@ -2,7 +2,7 @@
   Email 02 — First quiz completed
   Trigger: user finishes their first Challenge attempt
   Subject:    {{score}} pts. {{p4p}}% accuracy. Now beat your mates.
-  Preview:    Send the quiz to the group chat. See who actually knows their club.
+  Preview:    Send it to the group chat. See who actually knows their club.
   Tokens: {{score}} {{p4p}} {{streak}} {{club}}
 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -10,51 +10,76 @@
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="x-apple-disable-message-reformatting"><meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark">
-  <title>Your first quiz</title>
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
-  <style>body,table,td{margin:0;padding:0}img{border:0;outline:none;text-decoration:none}table{border-collapse:collapse}a{color:#00ff87;text-decoration:none}
-    @media (max-width:600px){.container{width:100%!important}.px{padding-left:24px!important;padding-right:24px!important}.headline{font-size:32px!important;line-height:36px!important}}</style>
+  <title>Your first challenge</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>body,table,td{margin:0;padding:0}img{border:0;outline:none;text-decoration:none;display:block}table{border-collapse:collapse}a{text-decoration:none}
+    @media (max-width:600px){.container{width:100%!important}.px{padding-left:24px!important;padding-right:24px!important}.headline{font-size:40px!important;line-height:42px!important}.stat-num{font-size:32px!important}.stat-cell{display:block!important;width:100%!important;padding:14px 0!important;border-bottom:1px solid rgba(255,255,255,0.04)!important}}</style>
 </head>
 <body style="margin:0;padding:0;background:#0a0a0f;font-family:'DM Sans',Helvetica,Arial,sans-serif;color:#ffffff;">
-  <div style="display:none;max-height:0;overflow:hidden;font-size:1px;line-height:1px;color:#0a0a0f;">Send the quiz to the group chat. See who actually knows their club.</div>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0a0a0f;"><tr><td align="center" style="padding:32px 16px;">
+  <div style="display:none;max-height:0;overflow:hidden;font-size:1px;line-height:1px;color:#0a0a0f;">Send it to the group chat. See who actually knows their club.</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0a0a0f;background-image:linear-gradient(180deg,#0a0a0f 0%,#0e0e1a 100%);"><tr><td align="center" style="padding:40px 16px;">
     <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
 
-      <tr><td class="px" style="padding:0 40px 24px;"><div style="font-family:'Bebas Neue',Impact,sans-serif;font-size:28px;letter-spacing:2px;color:#ffffff;">YOURSCORE</div></td></tr>
+      <tr><td align="center" class="px" style="padding:0 40px 36px;">
+        <a href="https://yourscore.app"><img src="https://yourscore.app/logo.png" alt="YourScore" width="148" height="44" style="width:148px;height:44px;display:block;"></a>
+      </td></tr>
 
-      <tr><td class="px" style="padding:0 40px 16px;">
-        <h1 class="headline" style="margin:0;font-family:'Bebas Neue',Impact,sans-serif;font-size:44px;line-height:48px;letter-spacing:1px;color:#ffffff;">NOT BAD.</h1>
+      <tr><td class="px" align="left" style="padding:0 40px 18px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+          <td bgcolor="#241e10" style="background:rgba(255,184,0,0.08);border:1px solid rgba(255,184,0,0.28);border-radius:999px;padding:6px 14px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:2px;color:#ffb800;font-weight:700;text-transform:uppercase;">&#9733; Challenge complete</td>
+        </tr></table>
+      </td></tr>
+
+      <tr><td class="px" style="padding:0 40px 14px;">
+        <h1 class="headline" style="margin:0;font-family:'Bebas Neue',Impact,Arial,sans-serif;font-size:56px;line-height:54px;color:#ffffff;font-weight:400;">NOT BAD.</h1>
       </td></tr>
 
       <tr><td class="px" style="padding:0 40px 32px;">
-        <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:16px;line-height:24px;color:#ffffff;">
-          You finished the {{club}} challenge with <strong style="color:#00ff87;">{{score}} points</strong>. That's an accuracy of <strong>{{p4p}}%</strong>. Most fans will not match that. Send it to the group chat and find out.
+        <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:17px;line-height:26px;color:#bbbbcc;">
+          You finished the <strong style="color:#ffffff;">{{club}}</strong> challenge with <strong style="color:#00ff87;">{{score}} points</strong>. That's an accuracy of <strong style="color:#ffffff;">{{p4p}}%</strong>. Most fans will not match that. Send it to the group chat and find out.
         </p>
       </td></tr>
 
-      <tr><td class="px" style="padding:0 40px 32px;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#12121e;border-radius:12px;border:1px solid rgba(255,255,255,0.08);"><tr><td style="padding:24px;">
-          <p style="margin:0 0 12px;font-family:'Bebas Neue',Impact,sans-serif;font-size:14px;letter-spacing:1.5px;color:#8888aa;">{{club}} · YOUR RESULT</p>
-          <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-            <td align="left"><div style="font-family:'Bebas Neue',Impact,sans-serif;font-size:36px;color:#00ff87;">{{score}}</div><div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:12px;color:#8888aa;">POINTS</div></td>
-            <td align="center"><div style="font-family:'Bebas Neue',Impact,sans-serif;font-size:36px;color:#ffffff;">{{p4p}}%</div><div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:12px;color:#8888aa;">ACCURACY</div></td>
-            <td align="right"><div style="font-family:'Bebas Neue',Impact,sans-serif;font-size:36px;color:#ffb800;">⚡{{streak}}</div><div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:12px;color:#8888aa;">BEST STREAK</div></td>
-          </tr></table>
+      <tr><td class="px" style="padding:0 40px 28px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#12121e" style="background:linear-gradient(135deg,rgba(255,184,0,0.06) 0%,rgba(18,18,30,0.95) 50%,rgba(0,255,135,0.06) 100%);border-radius:16px;border:1px solid rgba(255,184,0,0.2);">
+          <tr><td style="padding:24px 24px 22px;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+              <td style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:2px;color:#8888aa;font-weight:600;text-transform:uppercase;">{{club}} &middot; Your result</td>
+              <td align="right" style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:1px;color:#ffb800;font-weight:600;text-transform:uppercase;">First attempt</td>
+            </tr></table>
+          </td></tr>
+          <tr><td style="padding:0 24px 24px;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+              <td class="stat-cell" align="left" style="padding:0;width:33%;"><div class="stat-num" style="font-family:'Bebas Neue',Impact,sans-serif;font-size:44px;line-height:1;color:#00ff87;">{{score}}</div><div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;color:#8888aa;letter-spacing:1.5px;text-transform:uppercase;margin-top:6px;">Points</div></td>
+              <td class="stat-cell" align="center" style="padding:0;width:33%;"><div class="stat-num" style="font-family:'Bebas Neue',Impact,sans-serif;font-size:44px;line-height:1;color:#ffffff;">{{p4p}}%</div><div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;color:#8888aa;letter-spacing:1.5px;text-transform:uppercase;margin-top:6px;">Accuracy</div></td>
+              <td class="stat-cell" align="right" style="padding:0;width:33%;"><div class="stat-num" style="font-family:'Bebas Neue',Impact,sans-serif;font-size:44px;line-height:1;color:#ffb800;">&#9889;{{streak}}</div><div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;color:#8888aa;letter-spacing:1.5px;text-transform:uppercase;margin-top:6px;">Best streak</div></td>
+            </tr></table>
+          </td></tr>
+        </table>
+      </td></tr>
+
+      <tr><td class="px" align="center" style="padding:8px 40px 8px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="#a78bfa" style="background:linear-gradient(135deg,#a78bfa 0%,#7c3aed 100%);border-radius:12px;box-shadow:0 0 32px rgba(167,139,250,0.35);">
+          <a href="https://yourscore.app/league/new" style="display:inline-block;color:#ffffff;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;letter-spacing:0.5px;padding:18px 44px;border-radius:12px;">Start a league &nbsp;&rarr;</a>
         </td></tr></table>
       </td></tr>
 
-      <tr><td class="px" align="center" style="padding:0 40px 24px;">
-        <a href="https://yourscore.app/league/new" style="display:inline-block;background:#00ff87;color:#0a0a0f;font-family:'Bebas Neue',Impact,sans-serif;font-size:18px;letter-spacing:2px;padding:16px 40px;border-radius:8px;">START A LEAGUE →</a>
+      <tr><td class="px" style="padding:24px 40px 0;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#12121e" style="background:linear-gradient(135deg,rgba(255,184,0,0.05) 0%,rgba(10,10,15,0.95) 100%);border-radius:14px;border:1px solid rgba(255,184,0,0.18);">
+          <tr><td style="padding:18px 20px;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+              <td valign="middle" width="54" style="padding-right:14px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td width="40" height="40" align="center" valign="middle" bgcolor="#241e10" style="background:rgba(255,184,0,0.15);border:1px solid rgba(255,184,0,0.25);border-radius:10px;font-size:18px;line-height:38px;">&#9917;</td></tr></table></td>
+              <td valign="middle"><div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;color:#ffffff;font-weight:600;line-height:18px;">More clubs, more challenges</div><a href="https://yourscore.app/challenges" style="display:inline-block;margin-top:4px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:13px;color:#ffb800;font-weight:600;">Try another &nbsp;&rarr;</a></td>
+            </tr></table>
+          </td></tr>
+        </table>
       </td></tr>
 
-      <tr><td class="px" style="padding:24px 40px 0;border-top:1px solid rgba(255,255,255,0.08);">
-        <p style="margin:0 0 4px;font-family:'Bebas Neue',Impact,sans-serif;font-size:14px;letter-spacing:1.5px;color:#8888aa;">WHAT'S NEXT</p>
-        <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;line-height:20px;color:#ffffff;">More clubs, more challenges. <a href="https://yourscore.app/challenges" style="color:#00ff87;">Try another →</a></p>
-      </td></tr>
-
-      <tr><td class="px" style="padding:48px 40px 24px;border-top:1px solid rgba(255,255,255,0.08);">
-        <p style="margin:0 0 8px;font-size:12px;line-height:18px;color:#8888aa;font-family:'DM Sans',Helvetica,Arial,sans-serif;"><a href="{{PAUSE_URL}}" style="color:#8888aa;text-decoration:underline;">Pause emails</a> · <a href="{{UNSUB_URL}}" style="color:#8888aa;text-decoration:underline;">Unsubscribe</a> · <a href="https://yourscore.app/support" style="color:#8888aa;text-decoration:underline;">Support</a></p>
-        <p style="margin:0;font-family:'Bebas Neue',Impact,sans-serif;font-size:14px;letter-spacing:1.5px;color:#8888aa;">YOURSCORE · YOUR FOOTBALL KNOWLEDGE. RANKED.</p>
+      <tr><td class="px" style="padding:56px 40px 24px;">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="border-top:1px solid rgba(255,255,255,0.06);padding-top:24px;">
+          <p style="margin:0 0 10px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:12px;line-height:18px;color:#6b6b85;"><a href="{{PAUSE_URL}}" style="color:#8888aa;text-decoration:underline;">Pause emails</a> &nbsp;&middot;&nbsp; <a href="{{UNSUB_URL}}" style="color:#8888aa;text-decoration:underline;">Unsubscribe</a> &nbsp;&middot;&nbsp; <a href="https://yourscore.app/support" style="color:#8888aa;text-decoration:underline;">Support</a></p>
+          <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:1.5px;color:#6b6b85;text-transform:uppercase;font-weight:600;">YourScore &nbsp;&middot;&nbsp; Your football knowledge. Ranked.</p>
+        </td></tr></table>
       </td></tr>
     </table>
   </td></tr></table>
