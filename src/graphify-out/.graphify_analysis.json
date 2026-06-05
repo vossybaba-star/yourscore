@@ -1,0 +1,498 @@
+{
+  "communities": {
+    "0": [
+      "app_join_page_tsx_join_page",
+      "app_league_id_page_tsx_id_page",
+      "app_league_join_page_tsx_join_page",
+      "auth_authbutton_authproviders",
+      "code_page",
+      "code_page_joinleagueinner",
+      "code_page_joinleaguepage",
+      "code_page_leaguetablepreview",
+      "code_page_tablemember",
+      "hooks_useuser",
+      "hooks_useuser_useuser",
+      "how_it_works_page",
+      "how_it_works_page_faqs",
+      "how_it_works_page_howitworkspage",
+      "how_it_works_page_steps",
+      "id_page_accuracy",
+      "id_page_accuracybar",
+      "id_page_avatarcircle",
+      "id_page_badge",
+      "id_page_computebeststreak",
+      "id_page_computecurrentstreak",
+      "id_page_getmemberbadges",
+      "id_page_league",
+      "id_page_leaguemember",
+      "id_page_leaguepage",
+      "join_page_bellicon",
+      "join_page_groupbydate",
+      "join_page_jerseyimg",
+      "join_page_joinleagueindexpage",
+      "join_page_match",
+      "join_page_playpage",
+      "leagues_page",
+      "leagues_page_globalplayer",
+      "leagues_page_leaguecard",
+      "leagues_page_leaguespage",
+      "leagues_page_playercolor",
+      "leagues_page_playerinitial",
+      "leagues_page_rankstyle",
+      "profile_page",
+      "profile_page_avatarcircle",
+      "profile_page_profilepage",
+      "profile_page_profilestats",
+      "settings_page",
+      "settings_page_settingspage",
+      "sign_in_page",
+      "sign_in_page_signinpage",
+      "ui_bottomnav",
+      "ui_flagimage",
+      "ui_flagimage_flag_codes",
+      "ui_flagimage_flagimagelarge",
+      "ui_flagimage_flagimageprops",
+      "ui_spinner",
+      "ui_spinner_spinner"
+    ],
+    "1": [
+      "answer_route",
+      "answer_route_post",
+      "approve_question_route",
+      "approve_question_route_post",
+      "callback_route",
+      "callback_route_get",
+      "complete_route",
+      "complete_route_completebody",
+      "complete_route_post",
+      "complete_route_quizresult",
+      "fire_route",
+      "fire_route_post",
+      "fire_route_sendnotifications",
+      "generate_questions_route",
+      "generate_questions_route_client",
+      "generate_questions_route_post",
+      "lib_ratelimit",
+      "lib_ratelimit_entry",
+      "lib_ratelimit_store",
+      "lib_scoring",
+      "lib_scoring_applystreakmultiplier",
+      "lib_scoring_calculatepoints",
+      "reclassify_route",
+      "reclassify_route_difficulty",
+      "reclassify_route_get",
+      "start_route",
+      "start_route_bankquestion",
+      "start_route_difficulty",
+      "start_route_fetchquestions",
+      "start_route_post",
+      "start_route_shuffle",
+      "start_route_startbody",
+      "supabase_server",
+      "supabase_server_createclient",
+      "supabase_service",
+      "supabase_service_createserviceclient"
+    ],
+    "2": [
+      "app_layout",
+      "app_layout_bebasneue",
+      "app_layout_dmsans",
+      "app_layout_metadata",
+      "app_layout_rootlayout",
+      "app_layout_viewport",
+      "auth_authbutton",
+      "auth_authbutton_emailsignin",
+      "auth_authbutton_oauthbutton",
+      "auth_authbutton_provider",
+      "auth_authbutton_redirect",
+      "auth_authbutton_signinwithgoogle",
+      "auth_authbutton_signoutbutton",
+      "lib_native",
+      "lib_native_authcallbackurl",
+      "lib_native_closeoauthbrowser",
+      "lib_native_exchangecodefromdeeplink",
+      "lib_native_isnative",
+      "lib_native_openoauthinbrowser",
+      "lib_native_platform",
+      "lib_push",
+      "lib_push_registerforpush",
+      "middleware",
+      "middleware_config",
+      "native_nativebootstrap",
+      "new_page",
+      "new_page_createleagueinner",
+      "new_page_createleaguepage",
+      "new_page_generateleaguecode",
+      "supabase_client",
+      "supabase_client_createclient",
+      "supabase_middleware_updatesession",
+      "types_database",
+      "types_database_database",
+      "types_database_json"
+    ],
+    "3": [
+      "app_match_id_page_tsx_id_page",
+      "game_countdowntimer",
+      "game_countdowntimer_countdowntimerprops",
+      "game_leaderboard",
+      "game_leaderboard_avatarcircle",
+      "game_leaderboard_leaderboardentry",
+      "game_leaderboard_leaderboardprops",
+      "game_leaderboard_rankbadge",
+      "game_questioncard",
+      "game_questioncard_activequestion",
+      "game_questioncard_labels",
+      "game_questioncard_letters",
+      "game_questioncard_questioncardprops",
+      "game_questioncard_revealstate",
+      "id_page_matchdata",
+      "id_page_matchheader",
+      "id_page_matchpage",
+      "id_page_prematchbanner",
+      "id_page_sharestrip",
+      "id_page_signinprompt",
+      "lib_playerimages",
+      "lib_playerimages_cache",
+      "lib_playerimages_country_star",
+      "lib_playerimages_getplayercutouturl",
+      "lib_playerimages_inflight"
+    ],
+    "4": [
+      "lib_competitionimages",
+      "lib_competitionimages_cache",
+      "lib_competitionimages_comp_ids",
+      "lib_competitionimages_getcompetitionbadgeurl",
+      "lib_competitionimages_inflight",
+      "slug_page",
+      "slug_page_answerrecord",
+      "slug_page_calcpoints",
+      "slug_page_challengeafriendbutton",
+      "slug_page_challengepage",
+      "slug_page_diff_bg",
+      "slug_page_diff_color",
+      "slug_page_leaderentry",
+      "slug_page_letter",
+      "slug_page_letter_colors",
+      "slug_page_letters",
+      "slug_page_packleaderboard",
+      "slug_page_phase",
+      "slug_page_quizpack",
+      "slug_page_rawquestion",
+      "slug_page_records_emoji",
+      "slug_page_scoredata",
+      "slug_page_slugify",
+      "slug_page_timercolor",
+      "slug_page_timerdisplay"
+    ],
+    "5": [
+      "app_challenges_page_tsx_challenges_page",
+      "app_challenges_page_tsx_challenges_page_slugify",
+      "challenges_page_activetab",
+      "challenges_page_clubcard",
+      "challenges_page_end_of_season_emoji",
+      "challenges_page_endofseasoncard",
+      "challenges_page_quizpack",
+      "challenges_page_records_emoji",
+      "challenges_page_recordscard",
+      "create_page",
+      "create_page_clubs",
+      "create_page_createquizpage",
+      "create_page_diff_options",
+      "create_page_era_options",
+      "create_page_record_topics",
+      "create_page_topic_emoji",
+      "lib_teamimages",
+      "lib_teamimages_espn_ids",
+      "lib_teamimages_espnbadgeurl",
+      "lib_teamimages_getteambadgeurl",
+      "lib_teamimages_getteamjerseyurl",
+      "lib_teamimages_prefetchteamimages"
+    ],
+    "6": [
+      "app_h2h_id_page_tsx_id_page",
+      "id_page_answerrecord",
+      "id_page_avatar",
+      "id_page_calcpoints",
+      "id_page_diff_bg",
+      "id_page_diff_color",
+      "id_page_h2hchallenge",
+      "id_page_h2hpage",
+      "id_page_letter",
+      "id_page_letter_colors",
+      "id_page_letters",
+      "id_page_pagestate",
+      "id_page_rawquestion",
+      "id_page_sharecard",
+      "id_page_timercolor",
+      "id_page_timerdisplay"
+    ],
+    "7": [
+      "app_page",
+      "app_page_dashboard",
+      "app_page_league_players",
+      "app_page_leagueherocard",
+      "app_page_leaguestandingstile",
+      "app_page_leaguetab",
+      "app_page_livematch",
+      "app_page_marketinglanding",
+      "app_page_palettes",
+      "app_page_rootpage",
+      "app_page_standingrow",
+      "app_page_upcomingfixturessection",
+      "app_page_useupcomingmatches",
+      "app_page_world_cup_start",
+      "app_page_worldcupcountdown"
+    ],
+    "8": [
+      "generate_custom_route",
+      "generate_custom_route_bankquestion",
+      "generate_custom_route_builddifflabel",
+      "generate_custom_route_builderalabel",
+      "generate_custom_route_difficulty",
+      "generate_custom_route_entitytype",
+      "generate_custom_route_era",
+      "generate_custom_route_fetchbydifficulty",
+      "generate_custom_route_generatecustombody",
+      "generate_custom_route_packquestion",
+      "generate_custom_route_post",
+      "generate_custom_route_shuffle",
+      "generate_custom_route_slugify"
+    ],
+    "9": [
+      "roomid_page",
+      "roomid_page_diff_color",
+      "roomid_page_firepanel",
+      "roomid_page_labels",
+      "roomid_page_letters",
+      "roomid_page_livestats",
+      "roomid_page_mock_questions",
+      "roomid_page_question"
+    ],
+    "10": [
+      "app_admin_challenges_page_tsx_challenges_page",
+      "app_admin_challenges_page_tsx_challenges_page_slugify",
+      "challenges_page_adminchallengespage",
+      "challenges_page_challenge",
+      "challenges_page_parsedchallenge",
+      "challenges_page_parsedquestion",
+      "challenges_page_parsequiztext"
+    ],
+    "11": [
+      "lib_whatsapp",
+      "lib_whatsapp_normalisenumber",
+      "lib_whatsapp_questionnotificationpayload",
+      "lib_whatsapp_sendquestionalert",
+      "lib_whatsapp_sendquestionalerttemplate",
+      "test_whatsapp_route",
+      "test_whatsapp_route_post"
+    ],
+    "12": [
+      "matchid_page",
+      "matchid_page_adminquestions",
+      "matchid_page_diff_color",
+      "matchid_page_labels",
+      "matchid_page_letters",
+      "matchid_page_mock_questions",
+      "matchid_page_question"
+    ],
+    "13": [
+      "lib_rooms",
+      "lib_rooms_flag_map",
+      "lib_rooms_formatmatchdate",
+      "lib_rooms_generateroomcode",
+      "lib_rooms_match",
+      "lib_rooms_mock_matches"
+    ],
+    "14": [
+      "matches_page",
+      "matches_page_adminmatches",
+      "matches_page_match",
+      "matches_page_mock_matches",
+      "matches_page_status_color"
+    ],
+    "15": [
+      "rooms_page",
+      "rooms_page_adminrooms",
+      "rooms_page_mock_rooms",
+      "rooms_page_room",
+      "rooms_page_status_color"
+    ],
+    "16": [
+      "admin_page",
+      "admin_page_admindashboard",
+      "admin_page_quick_actions",
+      "admin_page_stats"
+    ],
+    "17": [
+      "support_page",
+      "support_page_faq",
+      "support_page_metadata",
+      "support_page_supportpage"
+    ],
+    "18": [
+      "admin_layout",
+      "admin_layout_adminlayout",
+      "admin_layout_nav"
+    ],
+    "19": [
+      "privacy_page",
+      "privacy_page_metadata",
+      "privacy_page_privacypage"
+    ],
+    "20": [
+      "terms_page",
+      "terms_page_metadata",
+      "terms_page_termspage"
+    ],
+    "21": [
+      "icon_192_png_route",
+      "icon_192_png_route_get"
+    ],
+    "22": [
+      "icon_512_png_route",
+      "icon_512_png_route_get"
+    ],
+    "23": [
+      "ui_mobilenav"
+    ]
+  },
+  "cohesion": {
+    "0": 0.06386066763425254,
+    "1": 0.10317460317460317,
+    "2": 0.0907563025210084,
+    "3": 0.09333333333333334,
+    "4": 0.09333333333333334,
+    "5": 0.12987012987012986,
+    "6": 0.14166666666666666,
+    "7": 0.1523809523809524,
+    "8": 0.23076923076923078,
+    "9": 0.25,
+    "10": 0.3333333333333333,
+    "11": 0.47619047619047616,
+    "12": 0.2857142857142857,
+    "13": 0.3333333333333333,
+    "14": 0.4,
+    "15": 0.4,
+    "16": 0.5,
+    "17": 0.5,
+    "18": 0.6666666666666666,
+    "19": 0.6666666666666666,
+    "20": 0.6666666666666666,
+    "21": 1.0,
+    "22": 1.0,
+    "23": 1.0
+  },
+  "gods": [
+    {
+      "id": "hooks_useuser_useuser",
+      "label": "useUser()",
+      "degree": 22
+    },
+    {
+      "id": "supabase_service_createserviceclient",
+      "label": "createServiceClient()",
+      "degree": 17
+    },
+    {
+      "id": "supabase_client_createclient",
+      "label": "createClient()",
+      "degree": 12
+    },
+    {
+      "id": "ui_spinner_spinner",
+      "label": "Spinner()",
+      "degree": 10
+    },
+    {
+      "id": "lib_teamimages_getteambadgeurl",
+      "label": "getTeamBadgeUrl()",
+      "degree": 8
+    },
+    {
+      "id": "generate_custom_route_post",
+      "label": "POST()",
+      "degree": 7
+    },
+    {
+      "id": "lib_native_isnative",
+      "label": "isNative()",
+      "degree": 7
+    },
+    {
+      "id": "supabase_server_createclient",
+      "label": "createClient()",
+      "degree": 6
+    },
+    {
+      "id": "lib_whatsapp_sendquestionalert",
+      "label": "sendQuestionAlert()",
+      "degree": 6
+    },
+    {
+      "id": "answer_route_post",
+      "label": "POST()",
+      "degree": 5
+    }
+  ],
+  "surprises": [
+    {
+      "source": "MatchPage()",
+      "target": "useUser()",
+      "source_files": [
+        "app/match/[id]/page.tsx",
+        "hooks/useUser.ts"
+      ],
+      "confidence": "INFERRED",
+      "relation": "calls",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories; bridges separate communities; peripheral node `MatchPage()` unexpectedly reaches hub `useUser()`"
+    },
+    {
+      "source": "LeaguePage()",
+      "target": "useUser()",
+      "source_files": [
+        "app/league/[id]/page.tsx",
+        "hooks/useUser.ts"
+      ],
+      "confidence": "INFERRED",
+      "relation": "calls",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories; peripheral node `LeaguePage()` unexpectedly reaches hub `useUser()`"
+    },
+    {
+      "source": "CreateLeagueInner()",
+      "target": "useUser()",
+      "source_files": [
+        "app/league/new/page.tsx",
+        "hooks/useUser.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; bridges separate communities; peripheral node `CreateLeagueInner()` unexpectedly reaches hub `useUser()`"
+    },
+    {
+      "source": "RootPage()",
+      "target": "useUser()",
+      "source_files": [
+        "app/page.tsx",
+        "hooks/useUser.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; bridges separate communities; peripheral node `RootPage()` unexpectedly reaches hub `useUser()`"
+    },
+    {
+      "source": "POST()",
+      "target": "createServiceClient()",
+      "source_files": [
+        "app/api/admin/approve-question/route.ts",
+        "lib/supabase/service.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; peripheral node `POST()` unexpectedly reaches hub `createServiceClient()`"
+    }
+  ],
+  "tokens": {
+    "input": 0,
+    "output": 0
+  }
+}

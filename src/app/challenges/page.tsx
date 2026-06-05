@@ -7,6 +7,8 @@ import { createClient } from "@/lib/supabase/client";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { getTeamBadgeUrl } from "@/lib/teamImages";
 import { getCompetitionBadgeUrl } from "@/lib/competitionImages";
+import { slugify } from "@/lib/utils";
+import { RECORDS_EMOJI } from "@/lib/theme";
 
 interface QuizPack {
   id: string;
@@ -16,19 +18,6 @@ interface QuizPack {
   question_count: number;
   status: string;
 }
-
-function slugify(name: string) {
-  return name.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim().replace(/\s+/g, "-");
-}
-
-const RECORDS_EMOJI: Record<string, string> = {
-  "Transfer Market Records": "💰",
-  "Penalty Shootout Lore": "⚽",
-  "Iconic Managers": "🎩",
-  "Legendary Club Seasons": "📖",
-  "Golden Boot & Individual Awards": "👟",
-  "The Derbies — By Numbers": "🔥",
-};
 
 const END_OF_SEASON_EMOJI: Record<string, string> = {
   "The Farewell Tour": "👋",
@@ -84,8 +73,8 @@ function ClubCard({ pack }: { pack: QuizPack }) {
         )}
         {/* Q count chip */}
         <div
-          className="absolute top-3 right-3 font-display text-xs px-2 py-0.5 rounded-lg"
-          style={{ background: "rgba(0,0,0,0.5)", color: "#ffb800", border: "1px solid rgba(255,184,0,0.3)" }}
+          className="absolute top-3 right-3 font-display text-xs px-2 py-0.5 rounded-lg text-amber"
+          style={{ background: "rgba(0,0,0,0.5)", border: "1px solid rgba(255,184,0,0.3)" }}
         >
           {pack.question_count}Q
         </div>
@@ -102,7 +91,7 @@ function ClubCard({ pack }: { pack: QuizPack }) {
             border: "1px solid rgba(255,184,0,0.3)",
           }}
         >
-          <span className="font-display text-xs tracking-widest" style={{ color: "#ffb800" }}>
+          <span className="font-display text-xs tracking-widest text-amber">
             PLAY NOW →
           </span>
         </div>
@@ -275,14 +264,13 @@ export default function ChallengesPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (createClient() as any)
+    createClient()
       .from("quiz_packs")
       .select("id, name, type, parameter, question_count, status")
       .eq("status", "published")
       .order("name")
-      .then(({ data }: { data: QuizPack[] | null }) => {
-        setPacks(data ?? []);
+      .then(({ data }) => {
+        setPacks((data ?? []) as QuizPack[]);
         setLoading(false);
       });
   }, []);
@@ -302,8 +290,8 @@ export default function ChallengesPage() {
 
   return (
     <div
-      className="min-h-screen"
-      style={{ background: "#0a0a0f", paddingBottom: "calc(72px + env(safe-area-inset-bottom, 0px))" }}
+      className="min-h-screen bg-bg"
+      style={{ paddingBottom: "calc(72px + env(safe-area-inset-bottom, 0px))" }}
     >
       {/* Sticky header */}
       <div
@@ -318,10 +306,10 @@ export default function ChallengesPage() {
           {/* Title row */}
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="font-display text-2xl tracking-tight" style={{ color: "#ffb800" }}>
+              <h1 className="font-display text-2xl tracking-tight text-amber">
                 CHALLENGES
               </h1>
-              <p className="font-body text-xs mt-0.5" style={{ color: "#8888aa" }}>
+              <p className="font-body text-xs mt-0.5 text-text-muted">
                 Test your football knowledge
               </p>
             </div>
@@ -330,7 +318,7 @@ export default function ChallengesPage() {
               style={{ background: "rgba(255,184,0,0.08)", border: "1px solid rgba(255,184,0,0.2)" }}
             >
               <span className="text-xs">⚡</span>
-              <span className="font-display text-xs" style={{ color: "#ffb800" }}>
+              <span className="font-display text-xs text-amber">
                 {packs.length} GAMES
               </span>
             </div>
@@ -407,10 +395,10 @@ export default function ChallengesPage() {
           {activeType === "club" && (
             <div className="flex items-center gap-2">
               <div
-                className="flex items-center gap-2 px-3 py-1.5 rounded-full font-body text-xs font-semibold"
-                style={{ background: "rgba(0,255,135,0.1)", border: "1px solid rgba(0,255,135,0.3)", color: "#00ff87" }}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full font-body text-xs font-semibold text-green"
+                style={{ background: "rgba(0,255,135,0.1)", border: "1px solid rgba(0,255,135,0.3)" }}
               >
-                <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#00ff87", display: "inline-block", boxShadow: "0 0 6px #00ff87" }} />
+                <span className="bg-green" style={{ width: 7, height: 7, borderRadius: "50%", display: "inline-block", boxShadow: "0 0 6px #00ff87" }} />
                 Premier League
               </div>
             </div>
@@ -446,14 +434,14 @@ export default function ChallengesPage() {
           }}
         >
           <div style={{ textAlign: "left" }}>
-            <p className="font-display text-sm tracking-wide" style={{ color: "#00ff87" }}>
+            <p className="font-display text-sm tracking-wide text-green">
               ✨ BUILD YOUR OWN QUIZ
             </p>
-            <p className="font-body text-xs mt-0.5" style={{ color: "#8888aa" }}>
+            <p className="font-body text-xs mt-0.5 text-text-muted">
               Pick a team or topic · choose your era · challenge a friend
             </p>
           </div>
-          <span className="font-display text-lg" style={{ color: "#00ff87" }}>→</span>
+          <span className="font-display text-lg text-green">→</span>
         </button>
       </div>
 
@@ -464,9 +452,8 @@ export default function ChallengesPage() {
             {Array.from({ length: 6 }).map((_, i) => (
               <div
                 key={i}
-                className="rounded-3xl"
+                className="rounded-3xl bg-surface"
                 style={{
-                  background: "#12121e",
                   border: "1px solid rgba(255,255,255,0.06)",
                   height: 200,
                   opacity: 0.3,
@@ -477,7 +464,7 @@ export default function ChallengesPage() {
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <p className="text-4xl mb-4">🏟️</p>
-            <p className="font-body text-sm" style={{ color: "#8888aa" }}>No games here yet</p>
+            <p className="font-body text-sm text-text-muted">No games here yet</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-3">

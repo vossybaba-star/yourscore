@@ -14,7 +14,7 @@ interface Room {
 }
 
 const MOCK_ROOMS: Room[] = [
-  { id: "mock-room-id", name: "The Lads' Room", code: "ENG123", status: "live", match_id: "m1", created_at: new Date().toISOString(), _playerCount: 5 },
+  { id: "mock-room-id", name: "The Lads' Lobby", code: "ENG123", status: "live", match_id: "m1", created_at: new Date().toISOString(), _playerCount: 5 },
   { id: "r2", name: "Brazil Crew", code: "BRA456", status: "lobby", match_id: "m2", created_at: new Date().toISOString(), _playerCount: 3 },
 ];
 
@@ -40,8 +40,8 @@ export default function AdminRooms() {
   return (
     <main className="p-8 max-w-4xl">
       <div className="mb-8">
-        <h1 className="font-display text-4xl text-white tracking-wide">ROOMS</h1>
-        <p className="font-body text-sm text-text-muted mt-1">{rooms.length} rooms total</p>
+        <h1 className="font-display text-4xl text-white tracking-wide">LOBBIES</h1>
+        <p className="font-body text-sm text-text-muted mt-1">{rooms.length} lobbies total</p>
       </div>
 
       <div className="space-y-2">

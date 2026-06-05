@@ -78,7 +78,11 @@ Return ONLY a JSON array with this exact structure, no markdown:
     approved: false,
   }));
 
-  const { data, error } = await db.from("questions").insert(rows).select("id");
+  // TODO(live-match): `rows` use the removed match-question shape
+  // (question_text/option_a..d/correct_answer/match_id/approved). Migrate this
+  // generator to the question bank shape (entity/options/answer) + question_events.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (db as any).from("questions").insert(rows).select("id");
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   return NextResponse.json({ inserted: data?.length ?? 0, questions: rows });

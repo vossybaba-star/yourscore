@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { slugify } from "@/lib/utils";
 
 // ── Parser (mirrors seed-challenges.mjs logic, runs in-browser) ───────────
 
@@ -25,9 +26,6 @@ interface ParsedChallenge {
   questions: ParsedQuestion[];
 }
 
-function slugify(name: string) {
-  return name.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim().replace(/\s+/g, "-");
-}
 
 function parseQuizText(text: string, league: string): ParsedChallenge[] {
   const lines = text.split("\n");
@@ -118,14 +116,13 @@ export default function AdminChallengesPage() {
 
   function loadChallenges() {
     setLoadingList(true);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (supabase as any)
+    supabase
       .from("challenges")
       .select("id, slug, title, team_name, league, question_count, is_active, created_at")
       .order("league")
       .order("team_name")
-      .then(({ data }: { data: Challenge[] | null }) => {
-        setChallenges(data ?? []);
+      .then(({ data }) => {
+        setChallenges((data ?? []) as Challenge[]);
         setLoadingList(false);
       });
   }
@@ -152,8 +149,7 @@ export default function AdminChallengesPage() {
     setUploadResult(null);
     let ok = 0, failed = 0;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const sb = supabase as any;
+    const sb = supabase;
     for (const challenge of preview) {
       const { data: row, error: cErr } = await sb
         .from("challenges")
@@ -181,15 +177,13 @@ export default function AdminChallengesPage() {
 
   async function handleDelete(id: string) {
     setDeletingId(id);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase as any).from("challenges").delete().eq("id", id);
+    await supabase.from("challenges").delete().eq("id", id);
     setDeletingId(null);
     loadChallenges();
   }
 
   async function handleToggle(id: string, current: boolean) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase as any).from("challenges").update({ is_active: !current }).eq("id", id);
+    await supabase.from("challenges").update({ is_active: !current }).eq("id", id);
     loadChallenges();
   }
 

@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { rateLimitDistributed } from "@/lib/ratelimit";
+import { slugify, shuffle } from "@/lib/utils";
+import type { Json } from "@/types/database";
 
-type Difficulty = "easy" | "medium" | "hard";
-type EntityType = "club" | "records";
+type Difficulty = "easy" | "medium" | "hard" | "expert" | "master";
+type EntityType = "club" | "records" | "national";
 type Era = "all-time" | "early-pl" | "2010s" | "2020s" | "2024-25";
 
 interface GenerateCustomBody {
@@ -36,22 +39,6 @@ interface PackQuestion {
   category: string;
 }
 
-function slugify(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, "")
-    .trim()
-    .replace(/\s+/g, "-");
-}
-
-function shuffle<T>(arr: T[]): T[] {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
 
 function buildEraLabel(era?: string): string {
   if (!era || era === "all-time") return "All Time";
@@ -114,6 +101,12 @@ export async function POST(req: NextRequest) {
   }
   const userId = user.id;
 
+  // Custom-pack generation is the most expensive write — limit it tightly.
+  const { ok } = await rateLimitDistributed(`quiz-generate:${userId}`, 10, 60_000);
+  if (!ok) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   if (!entity || typeof entity !== "string" || !ENTITY_RE.test(entity)) {
     return NextResponse.json({ error: "Invalid entity" }, { status: 400 });
   }
@@ -140,12 +133,16 @@ export async function POST(req: NextRequest) {
     if (difficulty) {
       questions = await fetchByDifficulty(supabase, entity, era, difficulty, 15);
     } else {
-      const [easy, medium, hard] = await Promise.all([
-        fetchByDifficulty(supabase, entity, era, "easy", 6),
-        fetchByDifficulty(supabase, entity, era, "medium", 6),
-        fetchByDifficulty(supabase, entity, era, "hard", 3),
+      // Mixed: weighted to actual distribution (mostly hard/expert with some medium)
+      // 1 easy + 3 medium + 5 hard + 5 expert + 1 master = 15
+      const [easy, medium, hard, expert, master] = await Promise.all([
+        fetchByDifficulty(supabase, entity, era, "easy",   2),
+        fetchByDifficulty(supabase, entity, era, "medium", 3),
+        fetchByDifficulty(supabase, entity, era, "hard",   5),
+        fetchByDifficulty(supabase, entity, era, "expert", 4),
+        fetchByDifficulty(supabase, entity, era, "master", 1),
       ]);
-      questions = [...easy, ...medium, ...hard];
+      questions = [...easy, ...medium, ...hard, ...expert, ...master];
     }
   } catch (e) {
     return NextResponse.json(
@@ -154,20 +151,15 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // If we don't have enough questions with difficulty filter, fall back to all difficulties
-  if (questions.length < 8 && difficulty) {
-    questions = await fetchByDifficulty(supabase, entity, era, difficulty, 15);
-  }
-
-  // Final fallback: fetch any verified questions for this entity
-  if (questions.length < 5) {
+  // If we don't have enough questions, fall back without difficulty filter
+  if (questions.length < 8) {
     const { data: fallback } = await supabase
       .from("questions")
       .select("id, entity, entity_type, question, options, answer, difficulty, category, era")
       .eq("entity", entity)
       .eq("status", "active")
       .eq("source", "data-grounded")
-      .limit(45);
+      .limit(60);
     if (fallback && fallback.length > 0) {
       questions = shuffle(fallback as BankQuestion[]).slice(0, 15);
     }
@@ -190,14 +182,13 @@ export async function POST(req: NextRequest) {
   }));
 
   // Insert into quiz_packs
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: pack, error: insertError } = await (supabase as any)
+  const { data: pack, error: insertError } = await supabase
     .from("quiz_packs")
     .insert({
       name: packName,
       type: entityType === "club" ? "team" : "records",
       parameter: entity,
-      questions: convertedQuestions,
+      questions: convertedQuestions as unknown as Json,
       question_count: convertedQuestions.length,
       status: "published",
       created_by: userId,

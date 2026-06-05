@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { rateLimitDistributed } from "@/lib/ratelimit";
+import { shuffle } from "@/lib/utils";
 
 type Difficulty = "easy" | "medium" | "hard";
 
@@ -30,15 +32,6 @@ interface StartBody {
   entity?: string;
   tags?: string[];
   difficulty?: Difficulty;
-}
-
-function shuffle<T>(arr: T[]): T[] {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
 }
 
 async function fetchQuestions(
@@ -81,7 +74,8 @@ async function fetchQuestions(
   if (error) throw new Error(error.message);
   if (!data) return [];
 
-  return shuffle(data as BankQuestion[]).slice(0, limit);
+  // options is a jsonb column (untyped), so cast at the DB boundary.
+  return shuffle(data as unknown as BankQuestion[]).slice(0, limit);
 }
 
 export async function POST(req: NextRequest) {
@@ -94,6 +88,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const userId = user.id;
+
+  const { ok } = await rateLimitDistributed(`quiz-start:${userId}`, 30, 60_000);
+  if (!ok) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
 
   let body: StartBody;
   try {
@@ -164,7 +163,7 @@ export async function POST(req: NextRequest) {
   // If fewer than 8 questions, reset oldest 50% and retry
   if (questions.length < 8 && historyRows && historyRows.length > 0) {
     const sorted = [...historyRows].sort(
-      (a, b) => new Date(a.played_at).getTime() - new Date(b.played_at).getTime()
+      (a, b) => new Date(a.played_at ?? 0).getTime() - new Date(b.played_at ?? 0).getTime()
     );
     const deleteCount = Math.ceil(sorted.length / 2);
     const toDelete = sorted.slice(0, deleteCount).map((r) => r.question_id);

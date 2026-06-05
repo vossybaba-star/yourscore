@@ -1,3 +1,8 @@
+> ⚠️ **SUPERSEDED — historical snapshot (May 2026).** The canonical definition of
+> YourScore is **[`YOURSCORE.md`](./YOURSCORE.md)**. Where this file conflicts with it
+> (scoring, "rooms" vs "Play", sponsored rooms, WhatsApp notifications, the 45s timer,
+> "no app download"), `YOURSCORE.md` wins. Read this only for legacy detail.
+
 # YourScore — Product Overview
 
 ## What It Is

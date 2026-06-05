@@ -13,7 +13,10 @@ export async function POST(request: NextRequest) {
   }
 
   const db = createServiceClient();
-  const { error } = await db
+  // TODO(live-match): `approved` is part of the removed match-question model;
+  // migrate this admin tool to the question bank + question_events.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (db as any)
     .from("questions")
     .update({ approved })
     .eq("id", questionId);

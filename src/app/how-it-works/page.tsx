@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { GridBackground } from "@/components/ui/GridBackground";
 import { useState, useEffect } from "react";
 import { BottomNav } from "@/components/ui/BottomNav";
 
@@ -76,7 +77,7 @@ const STEPS = [
               <p className="font-body text-sm font-semibold text-white">England vs France</p>
               <p className="font-body text-xs text-text-muted">Jun 24 · World Cup · 20:00</p>
             </div>
-            <span className="font-body text-xs px-3 py-1.5 rounded-lg font-semibold" style={{ background: "rgba(0,255,135,0.12)", color: "#00ff87", border: "1px solid rgba(0,255,135,0.3)" }}>I&apos;m playing</span>
+            <span className="font-body text-xs px-3 py-1.5 rounded-lg font-semibold text-green" style={{ background: "rgba(0,255,135,0.12)", border: "1px solid rgba(0,255,135,0.3)" }}>I&apos;m playing</span>
           </div>
           <div className="flex items-center gap-3 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
             <span className="relative flex h-2 w-2">
@@ -108,7 +109,7 @@ const STEPS = [
               <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="8" />
               <circle cx="50" cy="50" r="45" fill="none" stroke="#ffb800" strokeWidth="8" strokeLinecap="round" strokeDasharray="282" strokeDashoffset="100" />
             </svg>
-            <span className="absolute inset-0 flex items-center justify-center font-display text-lg" style={{ color: "#ffb800" }}>24</span>
+            <span className="absolute inset-0 flex items-center justify-center font-display text-lg text-amber">24</span>
           </div>
         </div>
         <div className="p-3 space-y-2">
@@ -125,7 +126,7 @@ const STEPS = [
                 {opt.l.toUpperCase()}
               </span>
               <span className="font-body text-sm text-white">{opt.t}</span>
-              {opt.sel && <span className="ml-auto font-body text-xs" style={{ color: "#ffb800" }}>selected</span>}
+              {opt.sel && <span className="ml-auto font-body text-xs text-amber">selected</span>}
             </div>
           ))}
         </div>
@@ -159,7 +160,7 @@ const STEPS = [
               <span className="font-display text-xs w-5" style={{ color: i === 0 ? "#a78bfa" : "#555577" }}>#{i+1}</span>
               <span className="font-body text-sm font-medium text-white flex-1">{p.n}</span>
               {p.streak >= 2 && <span className="font-body text-xs" style={{ color: "#fb923c" }}>🔥{p.streak}</span>}
-              <span className="font-body text-xs" style={{ color: "#00ff87" }}>{p.gain}</span>
+              <span className="font-body text-xs text-green">{p.gain}</span>
               <span className="font-display text-sm" style={{ color: i === 0 ? "#a78bfa" : "white" }}>{p.pts.toLocaleString()}</span>
             </div>
           ))}
@@ -204,7 +205,7 @@ export default function HowItWorksPage() {
   return (
     <main className="min-h-dvh bg-bg pb-28">
       <style>{ANIM_CSS}</style>
-      <div className="fixed inset-0 pointer-events-none" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.022) 1px,transparent 1px)", backgroundSize: "40px 40px" }} />
+      <GridBackground opacity={0.022} />
       <div className="fixed top-0 left-0 w-[600px] h-[600px] pointer-events-none" style={{ background: "radial-gradient(circle at 0% 0%, rgba(167,139,250,0.06) 0%, transparent 60%)" }} />
 
       {/* Nav */}
@@ -223,13 +224,13 @@ export default function HowItWorksPage() {
 
         {/* Hero */}
         <div className="text-center pt-6 pb-12">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6 font-body text-xs uppercase tracking-widest"
-            style={{ background: "rgba(0,255,135,0.08)", border: "1px solid rgba(0,255,135,0.15)", color: "#00ff87" }}>
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6 font-body text-xs uppercase tracking-widest text-green"
+            style={{ background: "rgba(0,255,135,0.08)", border: "1px solid rgba(0,255,135,0.15)" }}>
             <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "#00ff87" }} />
             World Cup · Euros · Champions League
           </div>
           <h1 className="font-display text-6xl sm:text-7xl text-white leading-none mb-5">
-            HOW IT<br /><span style={{ color: "#00ff87" }}>WORKS</span>
+            HOW IT<br /><span className="text-green">WORKS</span>
           </h1>
           <p className="font-body text-text-muted text-lg max-w-xl mx-auto leading-relaxed">
             Four steps from zero to bragging rights. Start a league with your mates, answer questions live, and build your score all season.
@@ -295,10 +296,10 @@ export default function HowItWorksPage() {
 
         {/* Scoring breakdown */}
         <div className="rounded-2xl overflow-hidden mb-14" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
-          <div className="px-6 py-4" style={{ background: "#12121e", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="px-6 py-4 bg-surface" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
             <h3 className="font-display text-2xl text-white">SCORING</h3>
           </div>
-          <div style={{ background: "#12121e" }}>
+          <div className="bg-surface">
             {[
               { label: "Answer in 0–15s",        pts: "+200 pts", col: "#00ff87" },
               { label: "Answer in 15–30s",        pts: "+150 pts", col: "#ffb800" },
@@ -322,7 +323,7 @@ export default function HowItWorksPage() {
             { n: "45s",  label: "to answer each question" },
             { n: "∞",   label: "points you can earn" },
           ].map((s) => (
-            <div key={s.label} className="rounded-2xl p-4 text-center" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}>
+            <div key={s.label} className="rounded-2xl p-4 text-center bg-surface" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
               <p className="font-display text-3xl sm:text-4xl text-white">{s.n}</p>
               <p className="font-body text-xs text-text-muted mt-1">{s.label}</p>
             </div>
@@ -369,8 +370,8 @@ export default function HowItWorksPage() {
                 Create a league →
               </Link>
               <Link href="/join"
-                className="flex items-center justify-center px-8 py-4 rounded-xl font-body font-semibold text-base transition-all hover:opacity-80"
-                style={{ background: "rgba(0,255,135,0.1)", color: "#00ff87", border: "1px solid rgba(0,255,135,0.2)" }}>
+                className="flex items-center justify-center px-8 py-4 rounded-xl font-body font-semibold text-base transition-all hover:opacity-80 text-green"
+                style={{ background: "rgba(0,255,135,0.1)", border: "1px solid rgba(0,255,135,0.2)" }}>
                 Browse matches →
               </Link>
               <Link href="/challenges"

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { rateLimitDistributed } from "@/lib/ratelimit";
 
 interface QuizResult {
   questionId: string;
@@ -24,6 +25,11 @@ export async function POST(req: NextRequest) {
   } = await auth.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { ok } = await rateLimitDistributed(`quiz-complete:${user.id}`, 30, 60_000);
+  if (!ok) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
 
   let body: CompleteBody;
@@ -83,8 +89,7 @@ export async function POST(req: NextRequest) {
   const allIds = results.map((r) => r.questionId);
   const correctIds = results.filter((r) => r.correct).map((r) => r.questionId);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error: rpcError } = await (supabase as any).rpc("increment_question_stats", {
+  const { error: rpcError } = await supabase.rpc("increment_question_stats", {
     question_ids: allIds,
     correct_ids: correctIds,
   });

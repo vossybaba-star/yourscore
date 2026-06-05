@@ -1,18 +1,10 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { shuffle } from "@/lib/utils";
+import type { Json } from "@/types/database";
 
 type Difficulty = "easy" | "medium" | "hard";
-
-function shuffle<T>(arr: T[]): T[] {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
 
 const QUESTION_DURATION_MS = 20_000;
 
@@ -32,15 +24,15 @@ export async function POST(req: NextRequest) {
   const sb = createServiceClient();
 
   // Fetch room and verify ownership
-  const { data: room, error: roomErr } = await (sb as any)
+  const { data: room, error: roomErr } = await sb
     .from("rooms")
     .select("id, status, created_by, question_count, pack_id, category_filter, difficulty_filter, room_mode")
     .eq("id", roomId)
     .single();
 
-  if (roomErr || !room) return NextResponse.json({ error: "Room not found" }, { status: 404 });
+  if (roomErr || !room) return NextResponse.json({ error: "Lobby not found" }, { status: 404 });
   if (room.created_by !== user.id) return NextResponse.json({ error: "Only host can start" }, { status: 403 });
-  if (room.status !== "lobby") return NextResponse.json({ error: "Room already started" }, { status: 409 });
+  if (room.status !== "lobby") return NextResponse.json({ error: "Lobby already started" }, { status: 409 });
 
   // ── Fetch questions ────────────────────────────────────────────────────────
 
@@ -48,7 +40,7 @@ export async function POST(req: NextRequest) {
 
   if (room.pack_id) {
     // Pull from quiz_packs.questions JSON array
-    const { data: pack, error: packErr } = await (sb as any)
+    const { data: pack, error: packErr } = await sb
       .from("quiz_packs")
       .select("questions")
       .eq("id", room.pack_id)
@@ -90,7 +82,7 @@ export async function POST(req: NextRequest) {
     if (questions.length < 3)
       return NextResponse.json({ error: "Not enough questions for this filter. Try a broader category or difficulty." }, { status: 422 });
   } else {
-    return NextResponse.json({ error: "Room has no question source configured" }, { status: 400 });
+    return NextResponse.json({ error: "Lobby has no question source configured" }, { status: 400 });
   }
 
   // ── Persist question list + set room live ──────────────────────────────────
@@ -99,10 +91,10 @@ export async function POST(req: NextRequest) {
   const closesAt = new Date(now.getTime() + QUESTION_DURATION_MS);
 
   // Update room: store questions, mark live, set first question pointer
-  const { error: updateErr } = await (sb as any)
+  const { error: updateErr } = await sb
     .from("rooms")
     .update({
-      questions_json: questions,
+      questions_json: questions as unknown as Json,
       status: "live",
       current_question_idx: 0,
       question_started_at: now.toISOString(),
@@ -113,7 +105,7 @@ export async function POST(req: NextRequest) {
 
   // Fire first question_event
   const firstQ = questions[0] as Record<string, unknown>;
-  const { data: event, error: eventErr } = await (sb as any)
+  const { data: event, error: eventErr } = await sb
     .from("question_events")
     .insert({
       room_id: roomId,

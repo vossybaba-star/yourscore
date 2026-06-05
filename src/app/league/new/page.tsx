@@ -1,7 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, Suspense, useEffect, useRef } from "react";
+import { GridBackground } from "@/components/ui/GridBackground";
 import Link from "next/link";
 // useRouter reserved for future redirect
 import { useUser } from "@/hooks/useUser";
@@ -44,15 +44,13 @@ function CreateLeagueInner() {
     const code = generateLeagueCode(name);
     try {
       const sb = createClient();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (sb as any)
+      const { data, error } = await sb
         .from("leagues")
         .insert({ name: name.trim(), description: description.trim() || null, code, created_by: user.id })
         .select("id, code")
         .single();
       if (error) throw error;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (sb as any).from("league_members").insert({ league_id: data.id, user_id: user.id });
+      await sb.from("league_members").insert({ league_id: data.id, user_id: user.id });
       setCreated({ id: data.id, code: data.code });
     } catch (e) {
       console.error(e);
@@ -78,7 +76,7 @@ function CreateLeagueInner() {
 
   return (
     <main className="min-h-dvh bg-bg">
-      <div className="fixed inset-0 pointer-events-none" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.025) 1px,transparent 1px)", backgroundSize: "40px 40px" }} />
+      <GridBackground opacity={0.025} />
 
       <nav className="relative z-10 pt-safe flex items-center justify-between px-6 py-5 max-w-2xl mx-auto">
         <div className="flex items-center gap-4">
@@ -127,8 +125,8 @@ function CreateLeagueInner() {
                 <input
                   type="text" value={description} onChange={(e) => setDescription(e.target.value.slice(0, 80))}
                   placeholder="The lads from uni, every game this summer"
-                  className="w-full rounded-xl px-4 py-4 font-body text-white text-base outline-none transition-all placeholder:text-white/20"
-                  style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.1)" }}
+                  className="w-full rounded-xl px-4 py-4 font-body text-white text-base outline-none transition-all placeholder:text-white/20 bg-surface"
+                  style={{ border: "1px solid rgba(255,255,255,0.1)" }}
                 />
               </div>
             </div>
@@ -152,7 +150,7 @@ function CreateLeagueInner() {
             </div>
 
             {!user ? (
-              <div className="rounded-2xl p-5" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <div className="rounded-2xl p-5 bg-surface border border-border">
                 <p className="font-body text-sm text-white font-medium mb-1">Sign in to create a league</p>
                 <p className="font-body text-xs text-text-muted mb-4">Free. Takes 10 seconds.</p>
                 <SignInWithGoogle redirectTo="/league/new" />
@@ -177,7 +175,7 @@ function CreateLeagueInner() {
               </div>
             </div>
 
-            <div className="rounded-2xl overflow-hidden mb-5" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <div className="rounded-2xl overflow-hidden mb-5 bg-surface border border-border">
               <div className="px-5 pt-5 pb-4">
                 <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-3">League code</p>
                 <div className="flex items-center gap-3 mb-1">

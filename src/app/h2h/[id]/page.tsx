@@ -1,10 +1,20 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { SignInWithGoogle } from "@/components/auth/AuthButton";
+import { AnswerButtons } from "@/components/game/AnswerButtons";
+import {
+  calculateBasePoints,
+  calculateStreakBonus,
+  calculateComebackBonus,
+  H2H_QUESTION_WINDOW_MS,
+} from "@/lib/scoring";
+import {
+  DIFFICULTY_COLOR as DIFF_COLOR,
+  DIFFICULTY_BG as DIFF_BG,
+} from "@/lib/theme";
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -52,18 +62,6 @@ type PageState =
   | "sign_in_needed"
   | "playing";
 
-// ── Scoring constants ──────────────────────────────────────────────────────
-
-const MAX_PTS = 1000;
-const MIN_PTS = 100;
-const DECAY_MS = 20_000;
-
-function calcPoints(elapsedMs: number): number {
-  if (elapsedMs <= 0) return MAX_PTS;
-  const ratio = Math.min(elapsedMs / DECAY_MS, 1);
-  return Math.max(MIN_PTS, Math.round(MAX_PTS - ratio * (MAX_PTS - MIN_PTS)));
-}
-
 function timerColor(ms: number): string {
   if (ms < 5_000) return "#00ff87";
   if (ms < 10_000) return "#ffb800";
@@ -74,26 +72,6 @@ function timerDisplay(ms: number): string {
   return (ms / 1000).toFixed(2) + "s";
 }
 
-const LETTERS: Letter[] = ["A", "B", "C", "D"];
-
-const LETTER_COLORS: Record<Letter, string> = {
-  A: "#4fc3f7",
-  B: "#a78bfa",
-  C: "#ffb800",
-  D: "#f97316",
-};
-
-const DIFF_COLOR: Record<string, string> = {
-  easy: "#00ff87",
-  medium: "#ffb800",
-  hard: "#ff4757",
-};
-
-const DIFF_BG: Record<string, string> = {
-  easy: "rgba(0,255,135,0.12)",
-  medium: "rgba(255,184,0,0.12)",
-  hard: "rgba(255,71,87,0.12)",
-};
 
 // ── Share card helper ──────────────────────────────────────────────────────
 
@@ -221,7 +199,7 @@ export default function H2HPage({ params }: { params: { id: string } }) {
   useEffect(() => {
     if (!id) return;
 
-    const supabase = createClient() as any;
+    const supabase = createClient();
 
     async function load() {
       const { data: userData } = await supabase.auth.getUser();
@@ -237,16 +215,18 @@ export default function H2HPage({ params }: { params: { id: string } }) {
         setOpponentName(profile?.display_name ?? "You");
       }
 
-      const { data: ch } = await supabase
+      const { data: chRow } = await supabase
         .from("h2h_challenges")
         .select("*")
         .eq("id", id)
         .single();
 
-      if (!ch) {
+      if (!chRow) {
         setPageState("not_found");
         return;
       }
+
+      const ch = chRow as unknown as H2HChallenge;
 
       // Check expiry
       if (new Date(ch.expires_at) < new Date()) {
@@ -274,7 +254,7 @@ export default function H2HPage({ params }: { params: { id: string } }) {
   // ── Fetch questions when transitioning to playing ──────────────────────
   async function startPlaying() {
     if (!challenge) return;
-    const supabase = createClient() as any;
+    const supabase = createClient();
     const { data: pack } = await supabase
       .from("quiz_packs")
       .select("questions")
@@ -283,7 +263,7 @@ export default function H2HPage({ params }: { params: { id: string } }) {
 
     if (!pack?.questions) return;
 
-    setQuestions(pack.questions);
+    setQuestions(pack.questions as unknown as RawQuestion[]);
     setCurrentIdx(0);
     setSelected(null);
     setRevealed(false);
@@ -302,12 +282,25 @@ export default function H2HPage({ params }: { params: { id: string } }) {
     stopTimer();
     const elapsed = Date.now() - questionStartRef.current;
     const isCorrect = letter === (currentQ.answer as Letter);
-    const pts = isCorrect ? calcPoints(elapsed) : 0;
+
+    // Score with the shared engine so this live preview matches what
+    // /api/h2h/play computes server-side (base × difficulty × speed + bonuses).
+    // Derive streaks from prior answers for streak/comeback bonus parity.
+    let priorCorrectStreak = 0;
+    let priorWrongStreak = 0;
+    for (const r of answerLog) {
+      if (r.correct) { priorCorrectStreak++; priorWrongStreak = 0; }
+      else { priorWrongStreak++; priorCorrectStreak = 0; }
+    }
+    const pts =
+      calculateBasePoints(isCorrect, elapsed, currentQ.difficulty ?? "medium", H2H_QUESTION_WINDOW_MS) +
+      calculateStreakBonus(priorCorrectStreak, isCorrect) +
+      calculateComebackBonus(priorWrongStreak, isCorrect);
 
     setSelected(letter);
     setRevealed(true);
     setLastPoints(isCorrect ? pts : null);
-    if (isCorrect) setScore((s) => s + pts);
+    if (pts > 0) setScore((s) => s + pts);
 
     const record: AnswerRecord = {
       idx: currentIdx,
@@ -582,7 +575,7 @@ export default function H2HPage({ params }: { params: { id: string } }) {
               className="font-display text-xs tracking-widest mb-5"
               style={{ color: "#555577" }}
             >
-              HEAD-TO-HEAD
+              1V1
             </p>
             <div className="flex items-start gap-4">
               {/* Challenger */}
@@ -1030,76 +1023,14 @@ export default function H2HPage({ params }: { params: { id: string } }) {
           </div>
 
           {/* Answer buttons */}
-          <div className="space-y-3">
-            {LETTERS.map((letter) => {
-              const optionText = currentQ.options[letter];
-              const isSelected = selected === letter;
-              const isCorrectAnswer =
-                revealed && letter === (currentQ.answer as Letter);
-              const isWrong =
-                revealed && isSelected && !isCorrectAnswer;
-              const isDimmed =
-                revealed && !isCorrectAnswer && letter !== selected;
-              const lColor = LETTER_COLORS[letter];
-
-              let cardBg = "rgba(255,255,255,0.03)";
-              let cardBorder = "rgba(255,255,255,0.09)";
-              let textColor = "#e0e0f0";
-              let chipBg = `${lColor}18`;
-              let chipColor = lColor;
-
-              if (isCorrectAnswer) {
-                cardBg = "rgba(0,255,135,0.1)";
-                cardBorder = "#00ff87";
-                textColor = "#00ff87";
-                chipBg = "#00ff87";
-                chipColor = "#0a0a0f";
-              } else if (isWrong) {
-                cardBg = "rgba(255,71,87,0.08)";
-                cardBorder = "rgba(255,71,87,0.5)";
-                textColor = "#ff4757";
-                chipBg = "rgba(255,71,87,0.2)";
-                chipColor = "#ff4757";
-              } else if (isDimmed) {
-                cardBg = "transparent";
-                cardBorder = "rgba(255,255,255,0.04)";
-                textColor = "#444466";
-                chipBg = "rgba(255,255,255,0.03)";
-                chipColor = "#444466";
-              } else if (isSelected && !revealed) {
-                cardBg = `${accent}10`;
-                cardBorder = `${accent}50`;
-                textColor = accent;
-                chipBg = `${accent}25`;
-                chipColor = accent;
-              }
-
-              return (
-                <button
-                  key={letter}
-                  onClick={() => handleAnswer(letter)}
-                  disabled={!!selected}
-                  className="w-full flex items-center gap-3 rounded-2xl px-4 py-4 text-left transition-all active:scale-[0.98]"
-                  style={{
-                    background: cardBg,
-                    border: `1.5px solid ${cardBorder}`,
-                    color: textColor,
-                    minHeight: 58,
-                  }}
-                >
-                  <span
-                    className="w-9 h-9 rounded-xl flex items-center justify-center font-display text-sm flex-shrink-0 transition-all"
-                    style={{ background: chipBg, color: chipColor }}
-                  >
-                    {isCorrectAnswer ? "✓" : isWrong ? "✗" : letter}
-                  </span>
-                  <span className="font-body text-sm font-medium leading-snug">
-                    {optionText}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+          <AnswerButtons
+            options={currentQ.options}
+            answer={currentQ.answer}
+            selected={selected}
+            revealed={revealed}
+            accent={accent}
+            onAnswer={handleAnswer}
+          />
 
           {/* Reveal banner */}
           {revealed && (

@@ -1,7 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useEffect } from "react";
+import { GridBackground } from "@/components/ui/GridBackground";
 import Link from "next/link";
 import { useUser } from "@/hooks/useUser";
 import { BottomNav } from "@/components/ui/BottomNav";
@@ -56,7 +56,7 @@ function WorldCupCountdown() {
   }, []);
 
   if (diff === null) return null;
-  if (diff <= 0) return <span className="font-display text-3xl" style={{ color: "#00ff87" }}>THE CUP IS LIVE</span>;
+  if (diff <= 0) return <span className="font-display text-3xl text-green">THE CUP IS LIVE</span>;
 
   const days = Math.floor(diff / 86400000);
   const hours = Math.floor((diff % 86400000) / 3600000);
@@ -101,8 +101,8 @@ function LeagueHeroCard() {
   const highlighted = tick % 4;
 
   return (
-    <div className="float-card w-full max-w-[340px]"
-      style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 24, overflow: "hidden", boxShadow: "0 32px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(167,139,250,0.08)" }}>
+    <div className="float-card w-full max-w-[340px] bg-surface"
+      style={{ border: "1px solid rgba(255,255,255,0.1)", borderRadius: 24, overflow: "hidden", boxShadow: "0 32px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(167,139,250,0.08)" }}>
       {/* Header */}
       <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(167,139,250,0.04)" }}>
         <div className="flex items-center gap-2.5">
@@ -122,7 +122,7 @@ function LeagueHeroCard() {
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: "#00ff87" }} />
             <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: "#00ff87" }} />
           </span>
-          <span className="font-body text-xs font-semibold" style={{ color: "#00ff87" }}>Live</span>
+          <span className="font-body text-xs font-semibold text-green">Live</span>
         </div>
       </div>
 
@@ -144,8 +144,8 @@ function LeagueHeroCard() {
               borderBottom: i < LEAGUE_PLAYERS.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
             }}>
             <span className="font-display text-sm w-5 flex-shrink-0" style={{ color: i === 0 ? "#a78bfa" : "#555577" }}>#{i + 1}</span>
-            <div className="w-8 h-8 rounded-full flex items-center justify-center font-body font-bold text-xs flex-shrink-0"
-              style={{ background: pal.bg, color: pal.text, border: "1px solid rgba(255,255,255,0.08)" }}>
+            <div className="w-8 h-8 rounded-full flex items-center justify-center font-body font-bold text-xs flex-shrink-0 border border-border"
+              style={{ background: pal.bg, color: pal.text }}>
               {p.name[0]}
             </div>
             <div className="flex-1 min-w-0">
@@ -206,49 +206,26 @@ function LeagueStandingsTile({ userId }: { userId: string }) {
     import("@/lib/supabase/client").then(async ({ createClient }) => {
       const sb = createClient();
 
-      const { data: memberships } = await (sb as any)
-        .from("league_members")
-        .select("league_id, leagues(id, name)")
-        .eq("user_id", userId)
-        .limit(10);
+      // Single round-trip (RPC) returns top-N members per league with names,
+      // replacing the previous 1 + 2N (memberRows + profiles) fetches.
+      const { data: rows } = await sb.rpc("get_my_league_standings", { p_user_id: userId, p_limit: 20 });
 
-      if (!memberships?.length) { setLoading(false); return; }
+      const byLeague = new Map<string, LeagueTab>();
+      for (const r of rows ?? []) {
+        let tab = byLeague.get(r.league_id);
+        if (!tab) {
+          tab = { id: r.league_id, name: r.league_name, members: [] };
+          byLeague.set(r.league_id, tab);
+        }
+        tab.members.push({
+          user_id: r.user_id ?? "",
+          display_name: r.display_name ?? "Player",
+          total_score: r.total_score ?? 0,
+          is_me: r.user_id === userId,
+        });
+      }
 
-      const result: LeagueTab[] = await Promise.all(
-        memberships.map(async (m: any) => {
-          const league = m.leagues;
-          const { data: memberRows } = await (sb as any)
-            .from("league_members")
-            .select("user_id, total_score")
-            .eq("league_id", league.id)
-            .order("total_score", { ascending: false })
-            .limit(20);
-
-          if (!memberRows?.length) return { id: league.id, name: league.name, members: [] };
-
-          const userIds = memberRows.map((r: any) => r.user_id);
-          const { data: profiles } = await (sb as any)
-            .from("profiles")
-            .select("id, display_name")
-            .in("id", userIds);
-
-          const pm: Record<string, string> = {};
-          if (profiles) for (const p of profiles) pm[p.id] = p.display_name ?? "Player";
-
-          return {
-            id: league.id,
-            name: league.name,
-            members: memberRows.map((r: any) => ({
-              user_id: r.user_id,
-              display_name: pm[r.user_id] ?? "Player",
-              total_score: r.total_score ?? 0,
-              is_me: r.user_id === userId,
-            })),
-          };
-        })
-      );
-
-      setLeagues(result.filter((l) => l.members.length > 0));
+      setLeagues(Array.from(byLeague.values()).filter((l) => l.members.length > 0));
       setLoading(false);
     });
   }, [userId]);
@@ -259,8 +236,7 @@ function LeagueStandingsTile({ userId }: { userId: string }) {
   const MEDALS = ["🥇", "🥈", "🥉"];
 
   return (
-    <div className="dash-slide-2 rounded-2xl overflow-hidden"
-      style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.08)" }}>
+    <div className="dash-slide-2 rounded-2xl overflow-hidden bg-surface border border-border">
       <div className="px-5 pt-4 pb-3 flex items-center justify-between"
         style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
         <div className="flex items-center gap-2">
@@ -354,14 +330,14 @@ function useUpcomingMatches(limit = 5) {
     import("@/lib/supabase/client").then(({ createClient }) => {
       const sb = createClient();
       const now = new Date().toISOString();
-      (sb as any)
+      sb
         .from("matches")
         .select("id, home_team, away_team, match_date, tournament, status, home_score, away_score")
         .or(`status.eq.live,and(status.eq.upcoming,match_date.gte.${now})`)
         .order("match_date", { ascending: true })
         .limit(limit)
-        .then(({ data }: { data: LiveMatch[] | null }) => {
-          if (data?.length) setMatches(data);
+        .then(({ data }) => {
+          if (data?.length) setMatches(data as unknown as LiveMatch[]);
         });
     });
   }, [limit]);
@@ -403,12 +379,12 @@ function Dashboard({ userId }: { userId: string }) {
       sb.from("profiles").select("display_name, total_score").eq("id", userId).single()
         .then(({ data }) => {
           if (data) {
-            setDisplayName((data as any).display_name ?? "");
-            const score = (data as any).total_score ?? 0;
+            setDisplayName(data.display_name ?? "");
+            const score = data.total_score ?? 0;
             setTotalScore(score);
-            (sb as any).from("profiles").select("*", { count: "exact", head: true })
+            sb.from("profiles").select("*", { count: "exact", head: true })
               .gt("total_score", score)
-              .then(({ count }: any) => setGlobalRank((count ?? 0) + 1));
+              .then(({ count }) => setGlobalRank((count ?? 0) + 1));
           }
         });
     });
@@ -419,7 +395,7 @@ function Dashboard({ userId }: { userId: string }) {
   return (
     <main className="min-h-dvh bg-bg pb-28">
       <style>{DASH_ANIM}</style>
-      <div className="fixed inset-0 pointer-events-none" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.025) 1px,transparent 1px)", backgroundSize: "40px 40px" }} />
+      <GridBackground opacity={0.025} />
       <div className="fixed top-0 right-0 w-[350px] h-[350px] pointer-events-none" style={{ background: "radial-gradient(circle at 100% 0%, rgba(167,139,250,0.08) 0%, transparent 60%)" }} />
       <div className="fixed bottom-0 left-0 w-[300px] h-[300px] pointer-events-none" style={{ background: "radial-gradient(circle at 0% 100%, rgba(0,255,135,0.05) 0%, transparent 60%)" }} />
 
@@ -451,8 +427,8 @@ function Dashboard({ userId }: { userId: string }) {
                 </p>
                 <p className="font-body text-xs text-text-muted mt-1">Total points</p>
                 {globalRank !== null && (
-                  <span className="inline-flex items-center gap-1 font-body text-xs font-bold px-2.5 py-1 rounded-full mt-2"
-                    style={{ background: "rgba(0,255,135,0.1)", color: "#00ff87", border: "1px solid rgba(0,255,135,0.2)" }}>
+                  <span className="inline-flex items-center gap-1 font-body text-xs font-bold px-2.5 py-1 rounded-full mt-2 text-green"
+                    style={{ background: "rgba(0,255,135,0.1)", border: "1px solid rgba(0,255,135,0.2)" }}>
                     #{globalRank} globally
                   </span>
                 )}
@@ -484,8 +460,8 @@ function Dashboard({ userId }: { userId: string }) {
                 <p className="font-body text-xs text-text-muted">Solo games · Score big · Climb the ranks</p>
               </div>
             </div>
-            <span className="font-body text-xs font-bold px-3 py-1.5 rounded-lg flex-shrink-0"
-              style={{ background: "rgba(255,184,0,0.15)", color: "#ffb800", border: "1px solid rgba(255,184,0,0.25)" }}>
+            <span className="font-body text-xs font-bold px-3 py-1.5 rounded-lg flex-shrink-0 text-amber"
+              style={{ background: "rgba(255,184,0,0.15)", border: "1px solid rgba(255,184,0,0.25)" }}>
               Play →
             </span>
           </Link>
@@ -525,7 +501,7 @@ function Dashboard({ userId }: { userId: string }) {
               <p className="font-body text-xs text-text-muted uppercase tracking-widest">
                 {matches.some(m => m.status === "live") ? "🔴 Live now" : "Upcoming fixtures"}
               </p>
-              <Link href="/join" className="font-body text-xs font-semibold" style={{ color: "#00ff87" }}>See all →</Link>
+              <Link href="/join" className="font-body text-xs font-semibold text-green">See all →</Link>
             </div>
             <div className="overflow-x-auto pb-2 -mx-5 px-5">
               <div className="flex gap-3" style={{ minWidth: "max-content" }}>
@@ -638,7 +614,7 @@ function MarketingLanding() {
       <style>{ANIM_CSS}</style>
 
       {/* Grid + glow background */}
-      <div className="fixed inset-0 pointer-events-none" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.022) 1px,transparent 1px)", backgroundSize: "40px 40px" }} />
+      <GridBackground opacity={0.022} />
       <div className="fixed top-0 left-0 w-[700px] h-[700px] pointer-events-none" style={{ background: "radial-gradient(circle at 0% 0%, rgba(167,139,250,0.07) 0%, transparent 60%)" }} />
       <div className="fixed bottom-0 right-0 w-[500px] h-[500px] pointer-events-none" style={{ background: "radial-gradient(circle at 100% 100%, rgba(0,255,135,0.05) 0%, transparent 60%)" }} />
 
@@ -649,14 +625,14 @@ function MarketingLanding() {
         <img src="/logo.png" alt="YourScore" height={36} style={{ height: 36, width: "auto" }} />
         <div className="flex items-center gap-2">
           <Link href="/how-it-works" className="hidden sm:block font-body text-sm text-text-muted hover:text-white transition-colors px-3 py-2">How it works</Link>
-          <Link href="/challenges" className="hidden sm:block font-body text-sm hover:opacity-80 transition-colors px-3 py-2" style={{ color: "#ffb800" }}>Challenges</Link>
+          <Link href="/challenges" className="hidden sm:block font-body text-sm hover:opacity-80 transition-colors px-3 py-2 text-amber">Challenges</Link>
           <Link href="/league/join" className="hidden sm:block font-body text-sm text-text-muted hover:text-white transition-colors px-3 py-2">Join league</Link>
-          <Link href="/auth/sign-in" className="font-body font-semibold text-sm px-4 py-2.5 rounded-xl hover:opacity-90 transition-all"
-            style={{ background: "rgba(255,255,255,0.06)", color: "#ffffff", border: "1px solid rgba(255,255,255,0.12)" }}>
+          <Link href="/auth/sign-in" className="font-body font-semibold text-sm px-4 py-2.5 rounded-xl hover:opacity-90 transition-all text-white"
+            style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)" }}>
             Sign In
           </Link>
-          <Link href="/auth/sign-in" className="font-body font-bold text-sm px-4 py-2.5 rounded-xl hover:opacity-90 transition-all green-pulse"
-            style={{ background: "rgba(0,255,135,0.12)", color: "#00ff87", border: "1px solid rgba(0,255,135,0.35)" }}>
+          <Link href="/auth/sign-in" className="font-body font-bold text-sm px-4 py-2.5 rounded-xl hover:opacity-90 transition-all green-pulse text-green"
+            style={{ background: "rgba(0,255,135,0.12)", border: "1px solid rgba(0,255,135,0.35)" }}>
             Sign Up
           </Link>
           <Link href="/league/new" className="hidden sm:block font-body font-bold text-sm px-5 py-2.5 rounded-xl hover:opacity-90 transition-all pulse-glow"
@@ -747,8 +723,8 @@ function MarketingLanding() {
               <Link
                 href="/auth/sign-in"
                 onClick={() => setMenuOpen(false)}
-                className="flex items-center justify-center py-3 rounded-xl font-body font-bold text-sm green-pulse"
-                style={{ background: "rgba(0,255,135,0.1)", color: "#00ff87", border: "1px solid rgba(0,255,135,0.28)" }}
+                className="flex items-center justify-center py-3 rounded-xl font-body font-bold text-sm green-pulse text-green"
+                style={{ background: "rgba(0,255,135,0.1)", border: "1px solid rgba(0,255,135,0.28)" }}
               >
                 Sign Up Free
               </Link>
@@ -781,7 +757,7 @@ function MarketingLanding() {
 
             <h1 className="font-display text-6xl sm:text-7xl lg:text-8xl text-white leading-none mb-6">
               YOUR<br />FOOTBALL<br />
-              <span style={{ color: "#00ff87", textShadow: "0 0 50px rgba(0,255,135,0.35)" }}>KNOWLEDGE.</span>{" "}
+              <span className="text-green" style={{ textShadow: "0 0 50px rgba(0,255,135,0.35)" }}>KNOWLEDGE.</span>{" "}
               <span style={{ color: "#a78bfa", textShadow: "0 0 50px rgba(167,139,250,0.35)" }}>RANKED.</span>
             </h1>
 
@@ -804,8 +780,8 @@ function MarketingLanding() {
             {/* Secondary CTAs */}
             <div className="flex flex-col sm:flex-row gap-3 mb-4">
               <Link href="/auth/sign-in"
-                className="flex-1 flex items-center justify-center gap-2 font-body font-semibold text-base px-6 py-4 rounded-xl transition-all hover:opacity-90 green-pulse"
-                style={{ background: "rgba(0,255,135,0.1)", color: "#00ff87", border: "1px solid rgba(0,255,135,0.3)" }}>
+                className="flex-1 flex items-center justify-center gap-2 font-body font-semibold text-base px-6 py-4 rounded-xl transition-all hover:opacity-90 green-pulse text-green"
+                style={{ background: "rgba(0,255,135,0.1)", border: "1px solid rgba(0,255,135,0.3)" }}>
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1v14M1 8h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
                 Sign Up — Free
               </Link>
@@ -835,8 +811,8 @@ function MarketingLanding() {
               <LeagueHeroCard />
 
               {/* Floating badge: "Pound for Pound" */}
-              <div className="float-card-2 absolute -bottom-4 -left-4 flex items-center gap-2 px-3.5 py-2.5 rounded-xl"
-                style={{ background: "#12121e", border: "1px solid rgba(167,139,250,0.25)", boxShadow: "0 8px 24px rgba(0,0,0,0.4)" }}>
+              <div className="float-card-2 absolute -bottom-4 -left-4 flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-surface"
+                style={{ border: "1px solid rgba(167,139,250,0.25)", boxShadow: "0 8px 24px rgba(0,0,0,0.4)" }}>
                 <span className="font-body text-base">👑</span>
                 <div>
                   <p className="font-body text-xs font-bold text-white">P4P #1</p>
@@ -845,8 +821,8 @@ function MarketingLanding() {
               </div>
 
               {/* Floating badge: streak */}
-              <div className="float-card absolute -top-4 -right-4 flex items-center gap-2 px-3.5 py-2.5 rounded-xl"
-                style={{ background: "#12121e", border: "1px solid rgba(251,146,60,0.3)", boxShadow: "0 8px 24px rgba(0,0,0,0.4)" }}>
+              <div className="float-card absolute -top-4 -right-4 flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-surface"
+                style={{ border: "1px solid rgba(251,146,60,0.3)", boxShadow: "0 8px 24px rgba(0,0,0,0.4)" }}>
                 <span className="font-body text-base">🔥</span>
                 <div>
                   <p className="font-body text-xs font-bold text-white">4 in a row</p>
@@ -874,11 +850,11 @@ function MarketingLanding() {
               <p className="font-body text-sm text-text-muted">Test your knowledge · Solo games · Climb the global ranks</p>
             </div>
           </div>
-          <span className="font-body text-sm font-bold px-4 py-2 rounded-xl flex-shrink-0 hidden sm:block"
-            style={{ background: "rgba(255,184,0,0.15)", color: "#ffb800", border: "1px solid rgba(255,184,0,0.25)" }}>
+          <span className="font-body text-sm font-bold px-4 py-2 rounded-xl flex-shrink-0 hidden sm:block text-amber"
+            style={{ background: "rgba(255,184,0,0.15)", border: "1px solid rgba(255,184,0,0.25)" }}>
             Play now →
           </span>
-          <svg className="sm:hidden" width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ color: "#ffb800", flexShrink: 0 }}>
+          <svg className="sm:hidden text-amber" width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ flexShrink: 0 }}>
             <path d="M5 3l8 6-8 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </Link>
@@ -903,11 +879,11 @@ function MarketingLanding() {
               <p className="font-body text-sm text-text-muted">See which games are coming · Sign in to play live</p>
             </div>
           </div>
-          <span className="font-body text-sm font-bold px-4 py-2 rounded-xl flex-shrink-0 hidden sm:block"
-            style={{ background: "rgba(0,255,135,0.1)", color: "#00ff87", border: "1px solid rgba(0,255,135,0.2)" }}>
+          <span className="font-body text-sm font-bold px-4 py-2 rounded-xl flex-shrink-0 hidden sm:block text-green"
+            style={{ background: "rgba(0,255,135,0.1)", border: "1px solid rgba(0,255,135,0.2)" }}>
             View matches →
           </span>
-          <svg className="sm:hidden" width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ color: "#00ff87", flexShrink: 0 }}>
+          <svg className="sm:hidden text-green" width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ flexShrink: 0 }}>
             <path d="M5 3l8 6-8 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </Link>
@@ -955,8 +931,8 @@ function MarketingLanding() {
                   { fh: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", fa: "🇫🇷", home: "England", away: "France", date: "Jun 24", pts: "+280" },
                   { fh: "🇩🇪", fa: "🇪🇸", home: "Germany", away: "Spain", date: "Jun 27", pts: "+210" },
                 ].map((m, i) => (
-                  <div key={i} className="flex items-center gap-4 px-5 py-4 rounded-2xl"
-                    style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}>
+                  <div key={i} className="flex items-center gap-4 px-5 py-4 rounded-2xl bg-surface"
+                    style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
                     <span className="text-2xl">{m.fh}</span>
                     <div className="flex-1">
                       <p className="font-body text-sm font-semibold text-white">{m.home} vs {m.away}</p>
@@ -964,7 +940,7 @@ function MarketingLanding() {
                     </div>
                     <span className="text-2xl">{m.fa}</span>
                     <div className="text-right">
-                      <p className="font-display text-base" style={{ color: "#00ff87" }}>{m.pts}</p>
+                      <p className="font-display text-base text-green">{m.pts}</p>
                       <p className="font-body text-xs text-text-muted">pts earned</p>
                     </div>
                   </div>
@@ -991,7 +967,7 @@ function MarketingLanding() {
             { num: "03", col: "#ff4757", emoji: "📈", title: "STACK YOUR SCORE", desc: "All points you earn add to your total. Every game, every competition." },
             { num: "04", col: "#a78bfa", emoji: "🏆", title: "JOIN A LEAGUE", desc: "Invite your mates. One table, all season — and finally find out who actually knows football." },
           ].map((step) => (
-            <div key={step.num} className="rounded-2xl p-6 relative overflow-hidden group" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}>
+            <div key={step.num} className="rounded-2xl p-6 relative overflow-hidden group bg-surface" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
               <div className="font-display text-9xl absolute -top-4 -right-2 opacity-[0.06] group-hover:opacity-[0.1] transition-opacity select-none" style={{ color: step.col }}>{step.num}</div>
               <div className="relative z-10">
                 <div className="w-11 h-11 rounded-2xl flex items-center justify-center mb-5 text-2xl" style={{ background: `${step.col}15`, border: `1px solid ${step.col}25` }}>{step.emoji}</div>
@@ -1002,7 +978,7 @@ function MarketingLanding() {
           ))}
         </div>
         <div className="text-center mt-6">
-          <Link href="/how-it-works" className="font-body text-sm font-semibold transition-colors hover:opacity-80" style={{ color: "#00ff87" }}>
+          <Link href="/how-it-works" className="font-body text-sm font-semibold transition-colors hover:opacity-80 text-green">
             Full breakdown → scoring, streaks, FAQs
           </Link>
         </div>
@@ -1012,7 +988,7 @@ function MarketingLanding() {
       <section className="relative z-10 max-w-6xl mx-auto px-6 pb-16">
         <div className="grid lg:grid-cols-2 gap-10 items-center">
           <div>
-            <p className="font-body text-xs uppercase tracking-widest mb-3" style={{ color: "#ffb800" }}>Real-time</p>
+            <p className="font-body text-xs uppercase tracking-widest mb-3 text-amber">Real-time</p>
             <h2 className="font-display text-4xl sm:text-5xl text-white mb-4">LIVE DURING<br />THE MATCH.</h2>
             <p className="font-body text-text-muted text-base leading-relaxed mb-6">
               Every question is about the teams in front of you — their history, their players, their records. Questions land throughout the match at natural moments, not pinned to events on the pitch. At half-time, expect a few based on how the game&apos;s gone so far.
@@ -1035,8 +1011,8 @@ function MarketingLanding() {
 
           {/* Animated question card */}
           <div className="flex items-center justify-center">
-            <div className="float-card-2 w-full max-w-sm rounded-3xl overflow-hidden"
-              style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.08)", boxShadow: "0 0 0 1px rgba(0,255,135,0.08), 0 32px 64px rgba(0,0,0,0.6)" }}>
+            <div className="float-card-2 w-full max-w-sm rounded-3xl overflow-hidden bg-surface border border-border"
+              style={{ boxShadow: "0 0 0 1px rgba(0,255,135,0.08), 0 32px 64px rgba(0,0,0,0.6)" }}>
               <div className="flex items-center justify-between px-6 pt-6 pb-4">
                 <div>
                   <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-1">Question 3 of 8</p>
@@ -1107,8 +1083,8 @@ function MarketingLanding() {
                 style={{ background: "#a78bfa", color: "#0a0a0f" }}>
                 Create your league before Jun 11 →
               </Link>
-              <Link href="/auth/sign-in" className="inline-flex items-center gap-2 font-body font-semibold text-sm px-6 py-3 rounded-xl transition-all hover:opacity-80 green-pulse"
-                style={{ background: "rgba(0,255,135,0.1)", color: "#00ff87", border: "1px solid rgba(0,255,135,0.2)" }}>
+              <Link href="/auth/sign-in" className="inline-flex items-center gap-2 font-body font-semibold text-sm px-6 py-3 rounded-xl transition-all hover:opacity-80 green-pulse text-green"
+                style={{ background: "rgba(0,255,135,0.1)", border: "1px solid rgba(0,255,135,0.2)" }}>
                 Sign Up Free →
               </Link>
             </div>
@@ -1140,8 +1116,8 @@ function MarketingLanding() {
                 Create a league →
               </Link>
               <Link href="/auth/sign-in"
-                className="inline-flex items-center gap-2 font-body font-bold text-base px-8 py-4 rounded-2xl hover:opacity-90 transition-all green-pulse"
-                style={{ background: "rgba(0,255,135,0.1)", color: "#00ff87", border: "1px solid rgba(0,255,135,0.3)" }}>
+                className="inline-flex items-center gap-2 font-body font-bold text-base px-8 py-4 rounded-2xl hover:opacity-90 transition-all green-pulse text-green"
+                style={{ background: "rgba(0,255,135,0.1)", border: "1px solid rgba(0,255,135,0.3)" }}>
                 Sign Up Free →
               </Link>
             </div>
@@ -1156,7 +1132,7 @@ function MarketingLanding() {
           <img src="/logo.png" alt="YourScore" height={22} style={{ height: 22, width: "auto", opacity: 0.5 }} />
           <div className="flex items-center gap-6 text-sm font-body text-text-muted">
             <Link href="/how-it-works" className="hover:text-white transition-colors">How it works</Link>
-            <Link href="/challenges" className="hover:opacity-80 transition-colors" style={{ color: "#ffb800" }}>Challenges</Link>
+            <Link href="/challenges" className="hover:opacity-80 transition-colors text-amber">Challenges</Link>
             <Link href="/league/join" className="hover:text-white transition-colors">Join a league</Link>
             <Link href="/league/new" className="hover:text-white transition-colors">Create a league</Link>
             <a href="mailto:hello@yourscore.app" className="hover:text-white transition-colors">Contact</a>

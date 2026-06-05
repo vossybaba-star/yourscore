@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { GridBackground } from "@/components/ui/GridBackground";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import { createClient } from "@/lib/supabase/client";
@@ -16,9 +17,9 @@ type QuestionSource = "pack" | "filter";
 type Difficulty = "easy" | "medium" | "hard" | "mixed";
 
 const MODES: { key: RoomMode; label: string; desc: string; icon: string; max: string }[] = [
-  { key: "h2h",   label: "Head-to-Head",    desc: "Just you vs one opponent",    icon: "⚔️",  max: "2 players" },
-  { key: "group", label: "Private Group",   desc: "Invite your crew, up to 8",   icon: "👥",  max: "Up to 8" },
-  { key: "open",  label: "Open Lobby",      desc: "Anyone with the link can join", icon: "🌍",  max: "Up to 20" },
+  { key: "h2h",   label: "1v1",     desc: "Just you vs one opponent",    icon: "⚔️",  max: "2 players" },
+  { key: "group", label: "Private", desc: "Invite your crew, up to 8",   icon: "👥",  max: "Up to 8" },
+  { key: "open",  label: "Public",  desc: "Anyone with the link can join", icon: "🌍",  max: "Up to 20" },
 ];
 
 const COUNTS = [5, 10, 20];
@@ -67,11 +68,11 @@ export default function NewGamePage() {
   useEffect(() => {
     if (source !== "pack" || packs.length > 0) return;
     setPacksLoading(true);
-    (createClient() as any)
+    createClient()
       .from("quiz_packs").select("id, name, type, parameter, question_count")
       .eq("status", "published").order("name")
-      .then(({ data }: { data: QuizPack[] | null }) => {
-        setPacks(data ?? []);
+      .then(({ data }) => {
+        setPacks((data ?? []) as QuizPack[]);
         setPacksLoading(false);
       });
   }, [source, packs.length]);
@@ -111,13 +112,13 @@ export default function NewGamePage() {
   if (userLoading) return <main className="min-h-dvh bg-bg flex items-center justify-center"><Spinner size={28} /></main>;
 
   return (
-    <main className="min-h-dvh bg-bg pb-10" style={{ background: "#0a0a0f" }}>
-      <div className="fixed inset-0 pointer-events-none" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.02) 1px,transparent 1px)", backgroundSize: "40px 40px" }} />
+    <main className="min-h-dvh bg-bg pb-10">
+      <GridBackground opacity={0.02} />
 
       {/* Nav */}
       <nav className="relative z-10 flex items-center justify-between px-5 py-4 max-w-lg mx-auto">
         <button onClick={() => step > 1 ? setStep(s => s - 1) : router.push("/play")}
-          className="flex items-center gap-2 font-body text-sm transition-opacity hover:opacity-70" style={{ color: "#8888aa" }}>
+          className="flex items-center gap-2 font-body text-sm transition-opacity hover:opacity-70 text-text-muted">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
@@ -139,7 +140,7 @@ export default function NewGamePage() {
           <>
             <div>
               <h2 className="font-display text-3xl text-white tracking-wide mb-1">Game mode</h2>
-              <p className="font-body text-sm" style={{ color: "#8888aa" }}>Who are you playing with?</p>
+              <p className="font-body text-sm text-text-muted">Who are you playing with?</p>
             </div>
 
             <div className="space-y-3">
@@ -154,7 +155,7 @@ export default function NewGamePage() {
                   <span className="text-3xl flex-shrink-0">{m.icon}</span>
                   <div className="flex-1 text-left">
                     <p className="font-body text-base font-bold text-white">{m.label}</p>
-                    <p className="font-body text-sm" style={{ color: "#8888aa" }}>{m.desc}</p>
+                    <p className="font-body text-sm text-text-muted">{m.desc}</p>
                   </div>
                   <div className="flex-shrink-0">
                     <span className="font-body text-xs px-2 py-1 rounded-full"
@@ -167,8 +168,8 @@ export default function NewGamePage() {
             </div>
 
             <button onClick={() => setStep(2)}
-              className="w-full py-4 rounded-2xl font-body font-bold text-base transition-all hover:opacity-90"
-              style={{ background: "#ffb800", color: "#0a0a0f" }}>
+              className="w-full py-4 rounded-2xl font-body font-bold text-base transition-all hover:opacity-90 bg-amber"
+              style={{ color: "#0a0a0f" }}>
               Next →
             </button>
           </>
@@ -179,7 +180,7 @@ export default function NewGamePage() {
           <>
             <div>
               <h2 className="font-display text-3xl text-white tracking-wide mb-1">Questions</h2>
-              <p className="font-body text-sm" style={{ color: "#8888aa" }}>Pick a pack or choose a topic</p>
+              <p className="font-body text-sm text-text-muted">Pick a pack or choose a topic</p>
             </div>
 
             {/* Source toggle */}
@@ -209,7 +210,7 @@ export default function NewGamePage() {
                         }}>
                         <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
                           style={{ background: "rgba(255,184,0,0.08)", border: "1px solid rgba(255,184,0,0.18)" }}>
-                          <span className="font-display text-sm" style={{ color: "#ffb800" }}>{pack.name[0]}</span>
+                          <span className="font-display text-sm text-amber">{pack.name[0]}</span>
                         </div>
                         <div className="flex-1 min-w-0 text-left">
                           <p className="font-body text-sm font-semibold text-white truncate">{pack.name}</p>
@@ -231,7 +232,7 @@ export default function NewGamePage() {
             {source === "filter" && (
               <div className="space-y-4">
                 <div>
-                  <p className="font-body text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "#8888aa" }}>Team or Topic</p>
+                  <p className="font-body text-xs font-semibold uppercase tracking-wider mb-2 text-text-muted">Team or Topic</p>
                   <input type="text" value={entity} onChange={e => setEntity(e.target.value)}
                     placeholder="e.g. Arsenal, World Cup, Premier League…"
                     className="w-full rounded-2xl px-4 py-3 font-body text-base text-white outline-none"
@@ -248,7 +249,7 @@ export default function NewGamePage() {
                 </div>
 
                 <div>
-                  <p className="font-body text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "#8888aa" }}>Difficulty</p>
+                  <p className="font-body text-xs font-semibold uppercase tracking-wider mb-2 text-text-muted">Difficulty</p>
                   <div className="flex gap-2">
                     {DIFFICULTIES.map(d => (
                       <button key={d.key} onClick={() => setDifficulty(d.key)}
@@ -279,11 +280,11 @@ export default function NewGamePage() {
           <>
             <div>
               <h2 className="font-display text-3xl text-white tracking-wide mb-1">Settings</h2>
-              <p className="font-body text-sm" style={{ color: "#8888aa" }}>Almost ready</p>
+              <p className="font-body text-sm text-text-muted">Almost ready</p>
             </div>
 
             {/* Summary card */}
-            <div className="rounded-2xl px-5 py-4 space-y-2" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <div className="rounded-2xl px-5 py-4 space-y-2 bg-surface border border-border">
               <div className="flex items-center justify-between">
                 <span className="font-body text-xs uppercase tracking-wider" style={{ color: "#555577" }}>Mode</span>
                 <span className="font-body text-sm font-semibold text-white">
@@ -300,7 +301,7 @@ export default function NewGamePage() {
 
             {/* Question count */}
             <div>
-              <p className="font-body text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "#8888aa" }}>How many questions?</p>
+              <p className="font-body text-xs font-semibold uppercase tracking-wider mb-2 text-text-muted">How many questions?</p>
               <div className="flex gap-3">
                 {COUNTS.map(c => (
                   <button key={c} onClick={() => setQuestionCount(c)}
@@ -319,9 +320,9 @@ export default function NewGamePage() {
               </div>
             </div>
 
-            {/* Room name */}
+            {/* Lobby name */}
             <div>
-              <p className="font-body text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "#8888aa" }}>Room name (optional)</p>
+              <p className="font-body text-xs font-semibold uppercase tracking-wider mb-2 text-text-muted">Lobby name (optional)</p>
               <input type="text" value={roomName} onChange={e => setRoomName(e.target.value.slice(0, 40))}
                 placeholder="e.g. The Lads · Friday Night"
                 className="w-full rounded-2xl px-4 py-3 font-body text-base text-white outline-none"

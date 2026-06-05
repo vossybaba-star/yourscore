@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -9,6 +8,8 @@ import { createClient } from "@/lib/supabase/client";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { getTeamBadgeUrl } from "@/lib/teamImages";
 import { getCompetitionBadgeUrl } from "@/lib/competitionImages";
+import { slugify } from "@/lib/utils";
+import { RECORDS_EMOJI } from "@/lib/theme";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -25,15 +26,6 @@ interface OpenRoom {
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
 
-function slugify(name: string) {
-  return name.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim().replace(/\s+/g, "-");
-}
-
-const RECORDS_EMOJI: Record<string, string> = {
-  "Transfer Market Records": "💰", "Penalty Shootout Lore": "⚽",
-  "Iconic Managers": "🎩", "Legendary Club Seasons": "📖",
-  "Golden Boot & Individual Awards": "👟", "The Derbies — By Numbers": "🔥",
-};
 const END_OF_SEASON_EMOJI: Record<string, string> = { "The Farewell Tour": "👋" };
 
 function SmallCard({ pack, type }: { pack: QuizPack; type: "club" | "records" | "end_of_season" }) {
@@ -77,12 +69,12 @@ function SmallCard({ pack, type }: { pack: QuizPack; type: "club" | "records" | 
 // ── Open room card ─────────────────────────────────────────────────────────────
 
 function OpenRoomCard({ room, onJoin }: { room: OpenRoom; onJoin: () => void }) {
-  const modeLabel = room.room_mode === "h2h" ? "1v1" : room.room_mode === "open" ? "Open" : "Group";
+  const modeLabel = room.room_mode === "h2h" ? "1v1" : room.room_mode === "open" ? "Public" : "Private";
   const modeColor = room.room_mode === "h2h" ? "#f87171" : room.room_mode === "open" ? "#00ff87" : "#a78bfa";
 
   return (
-    <div className="rounded-2xl px-4 py-3 flex items-center gap-3"
-      style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}>
+    <div className="rounded-2xl px-4 py-3 flex items-center gap-3 bg-surface"
+      style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
       <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
         style={{ background: "rgba(255,184,0,0.08)", border: "1px solid rgba(255,184,0,0.18)" }}>
         <span className="text-lg">⚡</span>
@@ -100,8 +92,8 @@ function OpenRoomCard({ room, onJoin }: { room: OpenRoom; onJoin: () => void }) 
         </div>
       </div>
       <button onClick={onJoin}
-        className="flex-shrink-0 px-3 py-2 rounded-xl font-body text-xs font-bold transition-all hover:opacity-90"
-        style={{ background: "rgba(255,184,0,0.12)", color: "#ffb800", border: "1px solid rgba(255,184,0,0.25)" }}>
+        className="flex-shrink-0 px-3 py-2 rounded-xl font-body text-xs font-bold transition-all hover:opacity-90 text-amber"
+        style={{ background: "rgba(255,184,0,0.12)", border: "1px solid rgba(255,184,0,0.25)" }}>
         Join
       </button>
     </div>
@@ -131,11 +123,11 @@ export default function PlayPage() {
 
   // Load quiz packs
   useEffect(() => {
-    (createClient() as any)
+    createClient()
       .from("quiz_packs").select("id, name, type, parameter, question_count, status")
       .eq("status", "published").order("name")
-      .then(({ data }: { data: QuizPack[] | null }) => {
-        setPacks(data ?? []);
+      .then(({ data }) => {
+        setPacks((data ?? []) as QuizPack[]);
         setPacksLoading(false);
       });
   }, []);
@@ -145,7 +137,7 @@ export default function PlayPage() {
     if (mainTab !== "multiplayer" || roomsFetched || !process.env.NEXT_PUBLIC_SUPABASE_URL) return;
     setRoomsLoading(true);
     import("@/lib/supabase/client").then(async ({ createClient: cc }) => {
-      const sb = cc() as any;
+      const sb = cc();
       const { data: rooms } = await sb
         .from("rooms")
         .select("id, name, code, room_mode, question_count, category_filter, difficulty_filter, created_at")
@@ -153,11 +145,11 @@ export default function PlayPage() {
         .order("created_at", { ascending: false }).limit(20);
 
       if (rooms?.length) {
-        const withCounts = await Promise.all(rooms.map(async (r: OpenRoom) => {
+        const withCounts = await Promise.all(rooms.map(async (r) => {
           const { count } = await sb.from("room_members").select("*", { count: "exact", head: true }).eq("room_id", r.id);
           return { ...r, _member_count: count ?? 0 };
         }));
-        setOpenRooms(withCounts);
+        setOpenRooms(withCounts as unknown as OpenRoom[]);
       }
       setRoomsFetched(true);
       setRoomsLoading(false);
@@ -212,7 +204,7 @@ export default function PlayPage() {
     : packs.filter(p => p.type === "club");
 
   return (
-    <div className="min-h-screen" style={{ background: "#0a0a0f", paddingBottom: "calc(72px + env(safe-area-inset-bottom, 0px))" }}>
+    <div className="min-h-screen bg-bg" style={{ paddingBottom: "calc(72px + env(safe-area-inset-bottom, 0px))" }}>
 
       {/* Sticky header */}
       <div className="sticky top-0 z-20"
@@ -220,15 +212,15 @@ export default function PlayPage() {
         <div className="max-w-lg mx-auto px-5 pt-3 pb-3">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="font-display text-2xl tracking-tight" style={{ color: "#ffb800" }}>PLAY</h1>
-              <p className="font-body text-xs mt-0.5" style={{ color: "#8888aa" }}>
+              <h1 className="font-display text-2xl tracking-tight text-amber">PLAY</h1>
+              <p className="font-body text-xs mt-0.5 text-text-muted">
                 {mainTab === "solo" ? "Solo challenges · Test your knowledge" : "Real-time multiplayer · Play with mates"}
               </p>
             </div>
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl"
               style={{ background: "rgba(255,184,0,0.08)", border: "1px solid rgba(255,184,0,0.2)" }}>
               <span className="text-xs">⚡</span>
-              <span className="font-display text-xs" style={{ color: "#ffb800" }}>
+              <span className="font-display text-xs text-amber">
                 {packsLoading ? "…" : `${packs.length} GAMES`}
               </span>
             </div>
@@ -278,22 +270,22 @@ export default function PlayPage() {
             className="w-full rounded-2xl mb-4 active:scale-[0.98] transition-all"
             style={{ background: "linear-gradient(135deg, rgba(0,255,135,0.12) 0%, rgba(0,200,100,0.06) 100%)", border: "1px solid rgba(0,255,135,0.3)", padding: "14px 18px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ textAlign: "left" }}>
-              <p className="font-display text-sm tracking-wide" style={{ color: "#00ff87" }}>✨ BUILD YOUR OWN</p>
-              <p className="font-body text-xs mt-0.5" style={{ color: "#8888aa" }}>Pick a team · choose your era · challenge a friend</p>
+              <p className="font-display text-sm tracking-wide text-green">✨ BUILD YOUR OWN</p>
+              <p className="font-body text-xs mt-0.5 text-text-muted">Pick a team · choose your era · challenge a friend</p>
             </div>
-            <span className="font-display text-lg" style={{ color: "#00ff87" }}>→</span>
+            <span className="font-display text-lg text-green">→</span>
           </button>
 
           {packsLoading ? (
             <div className="grid grid-cols-2 gap-3">
               {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="rounded-3xl" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.06)", height: 180, opacity: 0.3 }} />
+                <div key={i} className="rounded-3xl bg-surface" style={{ border: "1px solid rgba(255,255,255,0.06)", height: 180, opacity: 0.3 }} />
               ))}
             </div>
           ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <p className="text-4xl mb-4">🏟️</p>
-              <p className="font-body text-sm" style={{ color: "#8888aa" }}>No games here yet</p>
+              <p className="font-body text-sm text-text-muted">No games here yet</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-3">
@@ -321,8 +313,8 @@ export default function PlayPage() {
                   <path d="M10 2v16M2 10h16" stroke="#ffb800" strokeWidth="2.2" strokeLinecap="round" />
                 </svg>
               </div>
-              <p className="font-body text-sm font-bold" style={{ color: "#ffb800" }}>Create Game</p>
-              <p className="font-body text-xs text-center" style={{ color: "#8888aa" }}>Set mode, questions &amp; invite mates</p>
+              <p className="font-body text-sm font-bold text-amber">Create Game</p>
+              <p className="font-body text-xs text-center text-text-muted">Set mode, questions &amp; invite mates</p>
             </Link>
 
             <button onClick={() => setJoinSheetOpen(true)}
@@ -335,7 +327,7 @@ export default function PlayPage() {
                 </svg>
               </div>
               <p className="font-body text-sm font-bold text-white">Join with Code</p>
-              <p className="font-body text-xs" style={{ color: "#8888aa" }}>Enter invite code from a mate</p>
+              <p className="font-body text-xs text-text-muted">Enter invite code from a mate</p>
             </button>
           </div>
 
@@ -353,10 +345,10 @@ export default function PlayPage() {
             )}
 
             {!roomsLoading && openRooms.length === 0 && (
-              <div className="rounded-2xl p-6 text-center" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}>
+              <div className="rounded-2xl p-6 text-center bg-surface" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
                 <p className="text-3xl mb-2">🎮</p>
                 <p className="font-body text-sm text-white mb-1">No open lobbies right now</p>
-                <p className="font-body text-xs" style={{ color: "#8888aa" }}>Create one and let anyone join</p>
+                <p className="font-body text-xs text-text-muted">Create one and let anyone join</p>
               </div>
             )}
 
@@ -378,13 +370,13 @@ export default function PlayPage() {
         <>
           <div className="fixed inset-0 z-40" style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)" }}
             onClick={() => setJoinSheetOpen(false)} />
-          <div className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl px-5 pt-5 pb-10"
-            style={{ background: "#12121e", border: "1px solid rgba(255,184,0,0.2)", borderBottom: "none" }}>
+          <div className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl px-5 pt-5 pb-10 bg-surface"
+            style={{ border: "1px solid rgba(255,184,0,0.2)", borderBottom: "none" }}>
             <div className="w-10 h-1 rounded-full mx-auto mb-6" style={{ background: "rgba(255,255,255,0.12)" }} />
             <div className="flex items-center justify-between mb-5">
               <div>
                 <p className="font-display text-xl text-white tracking-wide">Join a game</p>
-                <p className="font-body text-xs mt-0.5" style={{ color: "#8888aa" }}>Enter the code your mate shared</p>
+                <p className="font-body text-xs mt-0.5 text-text-muted">Enter the code your mate shared</p>
               </div>
               <button onClick={() => setJoinSheetOpen(false)}
                 className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "rgba(255,255,255,0.07)" }}>

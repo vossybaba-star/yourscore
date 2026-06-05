@@ -1,5 +1,8 @@
-// In-memory rate limiter. Resets on server restart (fine for Edge/serverless per-instance).
-// Replace with Redis (Upstash) for distributed rate limiting in production.
+// In-memory rate limiter — per-instance only (bypassable across serverless
+// instances). Kept for non-critical/local use. For real protection use
+// rateLimitDistributed() below, which shares a counter across all instances.
+
+import { createServiceClient } from "@/lib/supabase/service";
 
 interface Entry { count: number; resetAt: number; }
 const store = new Map<string, Entry>();
@@ -28,3 +31,25 @@ setInterval(() => {
     if (now > v.resetAt) store.delete(k);
   });
 }, 5 * 60 * 1000);
+
+// Distributed rate limiter backed by Postgres (shared across all serverless
+// instances). Returns { ok }. Fails OPEN on infrastructure error so a limiter
+// outage never blocks legitimate users.
+export async function rateLimitDistributed(
+  key: string,
+  max: number,
+  windowMs: number
+): Promise<{ ok: boolean }> {
+  try {
+    const db = createServiceClient();
+    const { data, error } = await db.rpc("check_rate_limit", {
+      p_key: key,
+      p_max: max,
+      p_window_seconds: Math.max(1, Math.ceil(windowMs / 1000)),
+    });
+    if (error) return { ok: true };
+    return { ok: data === true };
+  } catch {
+    return { ok: true };
+  }
+}

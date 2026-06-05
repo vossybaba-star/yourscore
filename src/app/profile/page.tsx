@@ -1,7 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useEffect } from "react";
+import { GridBackground } from "@/components/ui/GridBackground";
 import Link from "next/link";
 import { useUser } from "@/hooks/useUser";
 import { BottomNav } from "@/components/ui/BottomNav";
@@ -53,11 +53,16 @@ export default function ProfilePage() {
       supabase.from("profiles").select("display_name, total_score, games_played, avatar_url").eq("id", user.id).single()
         .then(({ data: p }) => {
           if (p) {
-            setStats(p as ProfileStats);
-            (supabase as any).from("profiles")
+            setStats({
+              display_name: p.display_name ?? "",
+              total_score: p.total_score ?? 0,
+              games_played: p.games_played ?? 0,
+              avatar_url: p.avatar_url,
+            });
+            supabase.from("profiles")
               .select("*", { count: "exact", head: true })
-              .gt("total_score", (p as any).total_score ?? 0)
-              .then(({ count }: any) => setGlobalRank((count ?? 0) + 1));
+              .gt("total_score", p.total_score ?? 0)
+              .then(({ count }) => setGlobalRank((count ?? 0) + 1));
           }
           setDataLoading(false);
         });
@@ -77,9 +82,9 @@ export default function ProfilePage() {
       <main className="min-h-dvh bg-bg flex items-center justify-center px-6">
         <div className="text-center space-y-4">
           <p className="font-body text-text-muted">Sign in to see your profile.</p>
-          <Link href="/" className="font-body text-sm font-semibold" style={{ color: "#00ff87" }}>← Home</Link>
-          <Link href="/auth/sign-in" className="inline-flex items-center justify-center px-6 py-3 rounded-xl font-body font-bold text-sm transition-all"
-            style={{ background: "rgba(0,255,135,0.1)", color: "#00ff87", border: "1px solid rgba(0,255,135,0.28)" }}>
+          <Link href="/" className="font-body text-sm font-semibold text-green">← Home</Link>
+          <Link href="/auth/sign-in" className="inline-flex items-center justify-center px-6 py-3 rounded-xl font-body font-bold text-sm transition-all text-green"
+            style={{ background: "rgba(0,255,135,0.1)", border: "1px solid rgba(0,255,135,0.28)" }}>
             Sign in →
           </Link>
         </div>
@@ -91,7 +96,7 @@ export default function ProfilePage() {
 
   return (
     <main className="min-h-dvh bg-bg pb-28">
-      <div className="fixed inset-0 pointer-events-none" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.02) 1px,transparent 1px)", backgroundSize: "40px 40px" }} />
+      <GridBackground opacity={0.02} />
 
       {/* Sticky profile header */}
       <div className="sticky top-0 z-30 pt-safe" style={{ background: "rgba(10,10,15,0.92)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
@@ -104,8 +109,8 @@ export default function ProfilePage() {
               <p className="font-body text-xs text-text-muted">{stats?.games_played ?? 0} games played</p>
             </div>
             <Link href="/settings" aria-label="Edit profile"
-              className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-all hover:opacity-80"
-              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#8888aa" }}>
+              className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-all hover:opacity-80 text-text-muted"
+              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }}>
               <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
                 <path d="M10.5 2.5l2 2L5 12H3v-2L10.5 2.5z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
@@ -136,7 +141,7 @@ export default function ProfilePage() {
             { label: "Accuracy", value: "—", color: "#ffffff" },
             { label: "Best streak", value: "—", color: "#ffb800" },
           ].map((s) => (
-            <div key={s.label} className="rounded-2xl px-5 py-4" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}>
+            <div key={s.label} className="rounded-2xl px-5 py-4 bg-surface" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
               <p className="font-display text-3xl leading-none" style={{ color: s.color }}>{s.value}</p>
               <p className="font-body text-xs text-text-muted mt-1.5">{s.label}</p>
             </div>
@@ -146,17 +151,17 @@ export default function ProfilePage() {
         {/* Recent games placeholder */}
         <div>
           <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-3">Recent games</p>
-          <div className="rounded-2xl p-6 text-center" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}>
+          <div className="rounded-2xl p-6 text-center bg-surface" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
             <p className="font-body text-sm text-text-muted mb-3">No recent games.</p>
-            <Link href="/league/join" className="font-body text-sm font-semibold" style={{ color: "#00ff87" }}>
+            <Link href="/league/join" className="font-body text-sm font-semibold text-green">
               Join a league →
             </Link>
           </div>
         </div>
 
         {/* Settings link */}
-        <Link href="/settings" className="flex items-center justify-between px-5 py-4 rounded-2xl transition-opacity hover:opacity-80"
-          style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}>
+        <Link href="/settings" className="flex items-center justify-between px-5 py-4 rounded-2xl transition-opacity hover:opacity-80 bg-surface"
+          style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
           <span className="font-body text-sm text-white">Settings</span>
           <span className="font-body text-xs text-text-muted">Edit name, sign out →</span>
         </Link>

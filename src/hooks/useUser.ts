@@ -12,16 +12,21 @@ export function useUser() {
     if (!supabaseUrl) { setLoading(false); return; }
 
     let mounted = true;
-    setLoading(true);
 
     import("@/lib/supabase/client").then(({ createClient }) => {
       const supabase = createClient();
 
-      supabase.auth.getUser().then(({ data }) => {
+      // Fast path: read session from local storage immediately (no network).
+      // This eliminates the brief null-user flicker when switching tabs.
+      supabase.auth.getSession().then(({ data: sessionData }) => {
         if (mounted) {
-          setUser(data.user);
+          setUser(sessionData.session?.user ?? null);
           setLoading(false);
         }
+        // Background verification with server (silently updates if token changed)
+        supabase.auth.getUser().then(({ data }) => {
+          if (mounted) setUser(data.user ?? null);
+        });
       });
 
       const { data: listener } = supabase.auth.onAuthStateChange((_e, session) => {

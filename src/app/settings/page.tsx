@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useEffect } from "react";
@@ -17,6 +16,13 @@ export default function SettingsPage() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
+  // Password section
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [passwordSaved, setPasswordSaved] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+  const [resetEmailSent, setResetEmailSent] = useState(false);
 
   useEffect(() => {
     if (loading) return;
@@ -32,9 +38,9 @@ export default function SettingsPage() {
         .single()
         .then(({ data }) => {
           if (data) {
-            setDisplayName((data as any).display_name ?? "");
-            setUsername((data as any).username ?? "");
-            setAvatarUrl((data as any).avatar_url ?? null);
+            setDisplayName(data.display_name ?? "");
+            setUsername(data.username ?? "");
+            setAvatarUrl(data.avatar_url ?? null);
           }
           setProfileLoading(false);
         });
@@ -50,11 +56,11 @@ export default function SettingsPage() {
       const sb = createClient();
       const ext = file.name.split(".").pop() ?? "jpg";
       const path = `${user.id}.${ext}`;
-      const { error: uploadErr } = await (sb as any).storage
+      const { error: uploadErr } = await sb.storage
         .from("avatars")
         .upload(path, file, { upsert: true, contentType: file.type });
       if (uploadErr) { setUploadError("Upload failed. Try again."); return; }
-      const { data: urlData } = (sb as any).storage.from("avatars").getPublicUrl(path);
+      const { data: urlData } = sb.storage.from("avatars").getPublicUrl(path);
       const publicUrl = urlData?.publicUrl ?? null;
       if (publicUrl) {
         await sb.from("profiles").update({ avatar_url: publicUrl }).eq("id", user.id);
@@ -81,6 +87,36 @@ export default function SettingsPage() {
     setTimeout(() => setSaved(false), 2500);
   }
 
+  async function handleSetPassword() {
+    if (!user || !newPassword) return;
+    if (newPassword !== confirmPassword) { setPasswordError("Passwords don't match"); return; }
+    if (newPassword.length < 6) { setPasswordError("Password must be at least 6 characters"); return; }
+    setPasswordSaving(true); setPasswordError("");
+    try {
+      const { createClient } = await import("@/lib/supabase/client");
+      const { error } = await createClient().auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      setPasswordSaved(true);
+      setNewPassword(""); setConfirmPassword("");
+      setTimeout(() => setPasswordSaved(false), 3000);
+    } catch (e: unknown) {
+      setPasswordError(e instanceof Error ? e.message : "Failed to update password");
+    } finally {
+      setPasswordSaving(false);
+    }
+  }
+
+  async function handleForgotPassword() {
+    if (!user?.email) return;
+    try {
+      const { createClient } = await import("@/lib/supabase/client");
+      await createClient().auth.resetPasswordForEmail(user.email, {
+        redirectTo: `${window.location.origin}/auth/reset-password`,
+      });
+      setResetEmailSent(true);
+    } catch { /* silent */ }
+  }
+
   async function handleSignOut() {
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return;
     const { createClient } = await import("@/lib/supabase/client");
@@ -101,11 +137,11 @@ export default function SettingsPage() {
       <main className="min-h-dvh bg-bg flex items-center justify-center px-6">
         <div className="text-center space-y-4">
           <p className="font-body text-text-muted">Sign in to access settings.</p>
-          <Link href="/" className="font-body text-sm font-semibold" style={{ color: "#00ff87" }}>
+          <Link href="/" className="font-body text-sm font-semibold text-green">
             ← Home
           </Link>
-          <Link href="/auth/sign-in" className="inline-flex items-center justify-center px-6 py-3 rounded-xl font-body font-bold text-sm transition-all"
-            style={{ background: "rgba(0,255,135,0.1)", color: "#00ff87", border: "1px solid rgba(0,255,135,0.28)" }}>
+          <Link href="/auth/sign-in" className="inline-flex items-center justify-center px-6 py-3 rounded-xl font-body font-bold text-sm transition-all text-green"
+            style={{ background: "rgba(0,255,135,0.1)", border: "1px solid rgba(0,255,135,0.28)" }}>
             Sign in →
           </Link>
         </div>
@@ -146,8 +182,7 @@ export default function SettingsPage() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="font-body text-xs font-semibold transition-colors"
-            style={{ color: "#00ff87" }}
+            className="font-body text-xs font-semibold transition-colors text-green"
           >
             {saving ? "Saving…" : saved ? "Saved ✓" : "Save"}
           </button>
@@ -213,11 +248,10 @@ export default function SettingsPage() {
               {displayName || user.email?.split("@")[0]}
             </p>
             <p className="font-body text-xs text-text-muted mt-0.5">{user.email}</p>
-            {uploadError && <p className="font-body text-xs mt-1" style={{ color: "#ff4757" }}>{uploadError}</p>}
+            {uploadError && <p className="font-body text-xs mt-1 text-danger">{uploadError}</p>}
             <button
               type="button"
-              className="font-body text-xs mt-1 transition-colors"
-              style={{ color: "#00ff87" }}
+              className="font-body text-xs mt-1 transition-colors text-green"
               onClick={() => (document.querySelector('input[type="file"]') as HTMLInputElement)?.click()}
             >
               {uploading ? "Uploading…" : "Change photo"}
@@ -229,8 +263,8 @@ export default function SettingsPage() {
         <div>
           <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-3">Profile</p>
           <div
-            className="rounded-2xl overflow-hidden"
-            style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}
+            className="rounded-2xl overflow-hidden bg-surface"
+            style={{ border: "1px solid rgba(255,255,255,0.07)" }}
           >
             <div className="px-5 py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
               <label className="font-body text-xs text-text-muted block mb-2">Display name</label>
@@ -273,8 +307,8 @@ export default function SettingsPage() {
         <div>
           <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-3">Account</p>
           <div
-            className="rounded-2xl overflow-hidden"
-            style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}
+            className="rounded-2xl overflow-hidden bg-surface"
+            style={{ border: "1px solid rgba(255,255,255,0.07)" }}
           >
             <div
               className="px-5 py-4 flex items-center justify-between"
@@ -307,13 +341,57 @@ export default function SettingsPage() {
           {saving ? "Saving…" : saved ? "Saved ✓" : "Save changes"}
         </button>
 
+        {/* Password section */}
+        <div className="rounded-2xl overflow-hidden border border-border">
+          <div className="px-5 py-4 bg-surface" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+            <p className="font-body text-sm font-semibold text-white">Password</p>
+            <p className="font-body text-xs mt-0.5 text-text-muted">
+              {user?.app_metadata?.providers?.includes("email")
+                ? "Change your password or send a reset link"
+                : "Set a password to sign in without a magic link"}
+            </p>
+          </div>
+          <div className="p-4 space-y-2.5" style={{ background: "#0d0d18" }}>
+            {resetEmailSent ? (
+              <p className="font-body text-xs text-center py-2 text-green">
+                ✓ Reset link sent to {user?.email}
+              </p>
+            ) : (
+              <>
+                <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)}
+                  placeholder="New password" autoComplete="new-password"
+                  className="w-full rounded-xl px-4 py-3 font-body text-white text-sm outline-none placeholder:text-white/25 bg-surface"
+                  style={{ border: `1px solid ${passwordError ? "rgba(255,71,87,0.4)" : "rgba(255,255,255,0.1)"}` }} />
+                <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
+                  placeholder="Confirm new password" autoComplete="new-password"
+                  className="w-full rounded-xl px-4 py-3 font-body text-white text-sm outline-none placeholder:text-white/25 bg-surface"
+                  style={{ border: `1px solid ${passwordError ? "rgba(255,71,87,0.4)" : "rgba(255,255,255,0.1)"}` }} />
+                {passwordError && <p className="font-body text-xs" style={{ color: "#f87171" }}>{passwordError}</p>}
+                <button onClick={handleSetPassword} disabled={!newPassword || !confirmPassword || passwordSaving}
+                  className="w-full py-3 rounded-xl font-body text-sm font-semibold transition-all hover:opacity-90"
+                  style={{
+                    background: newPassword && confirmPassword ? "rgba(0,255,135,0.12)" : "rgba(255,255,255,0.04)",
+                    color: newPassword && confirmPassword ? "#00ff87" : "#555577",
+                    border: `1px solid ${newPassword && confirmPassword ? "rgba(0,255,135,0.25)" : "rgba(255,255,255,0.07)"}`,
+                  }}>
+                  {passwordSaving ? "Saving…" : passwordSaved ? "Password updated ✓" : user?.app_metadata?.providers?.includes("email") ? "Update password" : "Set password"}
+                </button>
+                <button onClick={handleForgotPassword}
+                  className="w-full py-1.5 font-body text-xs transition-colors hover:text-white text-center"
+                  style={{ color: "#555577" }}>
+                  Forgot current password? Send reset link
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
         {/* Sign out */}
         <button
           onClick={handleSignOut}
-          className="w-full py-3.5 rounded-2xl font-body text-sm font-semibold transition-all hover:opacity-80"
+          className="w-full py-3.5 rounded-2xl font-body text-sm font-semibold transition-all hover:opacity-80 text-danger"
           style={{
             background: "rgba(255,71,87,0.07)",
-            color: "#ff4757",
             border: "1px solid rgba(255,71,87,0.15)",
           }}
         >

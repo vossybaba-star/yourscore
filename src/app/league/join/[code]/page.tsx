@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
@@ -8,6 +7,7 @@ import { useUser } from "@/hooks/useUser";
 import { SignInWithGoogle } from "@/components/auth/AuthButton";
 import { Spinner } from "@/components/ui/Spinner";
 import { createClient } from "@/lib/supabase/client";
+import { GridBackground } from "@/components/ui/GridBackground";
 
 const ANIM = `
   @keyframes fadeUp {
@@ -111,22 +111,27 @@ function JoinLeagueInner({ code }: { code: string }) {
 
   useEffect(() => {
     const sb = createClient();
-    (sb as any).from("leagues").select("id, name, description, created_by").eq("code", code.toUpperCase()).single()
-      .then(async ({ data }: { data: any }) => {
+    sb.from("leagues").select("id, name, description, created_by").eq("code", code.toUpperCase()).single()
+      .then(async ({ data }) => {
         if (!data) { setFetching(false); return; }
-        const { count } = await (sb as any).from("league_members")
+        const { count } = await sb.from("league_members")
           .select("*", { count: "exact", head: true }).eq("league_id", data.id);
-        setLeague({ ...data, member_count: count ?? 0 });
+        setLeague({
+          id: data.id,
+          name: data.name,
+          description: data.description,
+          member_count: count ?? 0,
+        });
 
         // Creator name for invite pill
         if (data.created_by) {
-          const { data: creator } = await (sb as any)
+          const { data: creator } = await sb
             .from("profiles").select("display_name").eq("id", data.created_by).single();
           if (creator?.display_name) setInviterName(creator.display_name);
         }
 
         // Top 5 members — two-step (no FK join between league_members and profiles)
-        const { data: members } = await (sb as any)
+        const { data: members } = await sb
           .from("league_members")
           .select("user_id, total_score, joined_at")
           .eq("league_id", data.id)
@@ -134,14 +139,14 @@ function JoinLeagueInner({ code }: { code: string }) {
           .order("joined_at", { ascending: true })
           .limit(5);
         if (members && members.length > 0) {
-          const uids = members.map((m: any) => m.user_id);
-          const { data: profileRows } = await (sb as any)
+          const uids = members.map((m) => m.user_id);
+          const { data: profileRows } = await sb
             .from("profiles")
             .select("id, display_name")
             .in("id", uids);
           const nameMap: Record<string, string> = {};
-          (profileRows ?? []).forEach((p: any) => { nameMap[p.id] = p.display_name ?? "Player"; });
-          setTableMembers(members.map((m: any) => ({
+          (profileRows ?? []).forEach((p) => { nameMap[p.id] = p.display_name ?? "Player"; });
+          setTableMembers(members.map((m) => ({
             user_id: m.user_id,
             display_name: nameMap[m.user_id] ?? "Player",
             total_score: m.total_score ?? 0,
@@ -149,7 +154,7 @@ function JoinLeagueInner({ code }: { code: string }) {
         }
 
         if (user) {
-          const { data: mem } = await (sb as any).from("league_members")
+          const { data: mem } = await sb.from("league_members")
             .select("user_id").eq("league_id", data.id).eq("user_id", user.id).single();
           if (mem) setAlreadyMember(true);
         }
@@ -169,7 +174,7 @@ function JoinLeagueInner({ code }: { code: string }) {
     setJoining(true);
     try {
       const sb = createClient();
-      await (sb as any).from("league_members")
+      await sb.from("league_members")
         .upsert({ league_id: league.id, user_id: user.id }, { onConflict: "league_id,user_id", ignoreDuplicates: true });
       router.push(`/league/${league.id}`);
     } catch (e) {
@@ -179,32 +184,32 @@ function JoinLeagueInner({ code }: { code: string }) {
   }
 
   if (loading || fetching) return (
-    <div className="min-h-dvh flex items-center justify-center" style={{ background: "#0a0a0f" }}>
+    <div className="min-h-dvh flex items-center justify-center bg-bg">
       <Spinner size={32} />
     </div>
   );
 
   if (alreadyMember && league) {
     router.push(`/league/${league.id}`);
-    return <div className="min-h-dvh flex items-center justify-center" style={{ background: "#0a0a0f" }}><Spinner size={32} /></div>;
+    return <div className="min-h-dvh flex items-center justify-center bg-bg"><Spinner size={32} /></div>;
   }
 
   if (joining && league) return (
-    <div className="min-h-dvh flex flex-col items-center justify-center gap-4" style={{ background: "#0a0a0f" }}>
+    <div className="min-h-dvh flex flex-col items-center justify-center gap-4 bg-bg">
       <Spinner size={36} />
-      <p className="font-body text-sm" style={{ color: "#8888aa" }}>Joining {league.name}…</p>
+      <p className="font-body text-sm text-text-muted">Joining {league.name}…</p>
     </div>
   );
 
   if (!league) return (
-    <div className="min-h-dvh flex flex-col items-center justify-center px-6 text-center" style={{ background: "#0a0a0f" }}>
+    <div className="min-h-dvh flex flex-col items-center justify-center px-6 text-center bg-bg">
       <p className="font-display text-6xl mb-4">🤔</p>
       <h1 className="font-display text-3xl text-white mb-3">League not found</h1>
-      <p className="font-body text-sm mb-6" style={{ color: "#8888aa" }}>
+      <p className="font-body text-sm mb-6 text-text-muted">
         The code <span className="text-white font-semibold">{code.toUpperCase()}</span> doesn&apos;t match any league.
       </p>
       <div className="flex gap-4">
-        <Link href="/" className="font-body text-sm" style={{ color: "#8888aa" }}>← Home</Link>
+        <Link href="/" className="font-body text-sm text-text-muted">← Home</Link>
         <Link href="/league/join" className="font-body text-sm font-semibold" style={{ color: "#a78bfa" }}>Try a different code →</Link>
       </div>
     </div>
@@ -215,7 +220,7 @@ function JoinLeagueInner({ code }: { code: string }) {
     <div className="rounded-2xl p-6 pulse-glow w-full"
       style={{ background: "linear-gradient(135deg, rgba(167,139,250,0.12) 0%, rgba(10,10,15,0.95) 100%)", border: "1px solid rgba(167,139,250,0.28)" }}>
       <p className="font-display text-xl text-white mb-1">ACCEPT YOUR INVITE</p>
-      <p className="font-body text-sm mb-5" style={{ color: "#8888aa" }}>Free forever — takes 10 seconds.</p>
+      <p className="font-body text-sm mb-5 text-text-muted">Free forever — takes 10 seconds.</p>
       <SignInWithGoogle redirectTo={`/league/join/${code}`} />
       <p className="font-body text-xs text-center mt-3" style={{ color: "#444466" }}>No credit card. No spam. Just football.</p>
     </div>
@@ -227,14 +232,11 @@ function JoinLeagueInner({ code }: { code: string }) {
   );
 
   return (
-    <main className="min-h-dvh" style={{ background: "#0a0a0f" }}>
+    <main className="min-h-dvh bg-bg">
       <style>{ANIM}</style>
 
       {/* Background */}
-      <div className="fixed inset-0 pointer-events-none" style={{
-        backgroundImage: "linear-gradient(rgba(255,255,255,0.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.022) 1px,transparent 1px)",
-        backgroundSize: "40px 40px",
-      }} />
+      <GridBackground opacity={0.022} />
       <div className="fixed top-0 left-0 w-[700px] h-[700px] pointer-events-none"
         style={{ background: "radial-gradient(circle at 0% 0%, rgba(167,139,250,0.09) 0%, transparent 60%)" }} />
       <div className="fixed top-0 right-0 w-[500px] h-[500px] pointer-events-none"
@@ -249,8 +251,7 @@ function JoinLeagueInner({ code }: { code: string }) {
           <img src="/logo.png" alt="YourScore" height={28} style={{ height: 28, width: "auto" }} />
         </Link>
         <Link href="/auth/sign-in"
-          className="font-body text-sm px-4 py-2 rounded-lg transition-opacity hover:opacity-80"
-          style={{ color: "#8888aa", border: "1px solid rgba(255,255,255,0.08)" }}>
+          className="font-body text-sm px-4 py-2 rounded-lg transition-opacity hover:opacity-80 text-text-muted border border-border">
           Sign in
         </Link>
       </nav>
@@ -279,7 +280,7 @@ function JoinLeagueInner({ code }: { code: string }) {
 
             {/* Description */}
             {league.description && (
-              <p className="fade-3 font-body text-base mb-5 max-w-sm" style={{ color: "#8888aa" }}>
+              <p className="fade-3 font-body text-base mb-5 max-w-sm text-text-muted">
                 {league.description}
               </p>
             )}
@@ -317,7 +318,7 @@ function JoinLeagueInner({ code }: { code: string }) {
       <section className="relative z-10 max-w-6xl mx-auto px-6 py-16"
         style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
         <div className="text-center mb-12">
-          <p className="font-body text-xs uppercase tracking-widest mb-3" style={{ color: "#00ff87" }}>Simple as that</p>
+          <p className="font-body text-xs uppercase tracking-widest mb-3 text-green">Simple as that</p>
           <h2 className="font-display text-white" style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)", lineHeight: 1.05 }}>
             HOW IT WORKS
           </h2>
@@ -330,14 +331,14 @@ function JoinLeagueInner({ code }: { code: string }) {
             { num: "03", col: "#ffb800", emoji: "⚡", title: "ANSWER LIVE",    desc: "Questions fire as the game happens. Answer fast — points decay every second." },
             { num: "04", col: "#ff4757", emoji: "📊", title: "CLIMB THE TABLE", desc: "Points stack in the league table. Every match moves the rankings." },
           ].map((step) => (
-            <div key={step.num} className="rounded-2xl p-6 relative overflow-hidden group"
-              style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}>
+            <div key={step.num} className="rounded-2xl p-6 relative overflow-hidden group bg-surface"
+              style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
               <div className="font-display text-8xl absolute -top-3 -right-1 opacity-[0.06] group-hover:opacity-[0.1] transition-opacity select-none"
                 style={{ color: step.col }}>{step.num}</div>
               <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4 text-xl"
                 style={{ background: `${step.col}15`, border: `1px solid ${step.col}25` }}>{step.emoji}</div>
               <h3 className="font-display text-lg text-white mb-2">{step.title}</h3>
-              <p className="font-body text-sm leading-relaxed" style={{ color: "#8888aa" }}>{step.desc}</p>
+              <p className="font-body text-sm leading-relaxed text-text-muted">{step.desc}</p>
             </div>
           ))}
         </div>
@@ -350,16 +351,16 @@ function JoinLeagueInner({ code }: { code: string }) {
           style={{ background: "linear-gradient(135deg, rgba(255,184,0,0.08) 0%, rgba(10,10,15,1) 60%)", border: "1px solid rgba(255,184,0,0.15)" }}>
           <div className="absolute top-0 right-0 w-[300px] h-[300px] pointer-events-none"
             style={{ background: "radial-gradient(circle at 100% 0%, rgba(255,184,0,0.1) 0%, transparent 60%)" }} />
-          <p className="font-body text-xs uppercase tracking-widest mb-2" style={{ color: "#ffb800" }}>Also included</p>
+          <p className="font-body text-xs uppercase tracking-widest mb-2 text-amber">Also included</p>
           <h3 className="font-display text-white mb-3" style={{ fontSize: "clamp(2rem, 4vw, 3rem)" }}>SOLO CHALLENGES</h3>
-          <p className="font-body text-sm sm:text-base leading-relaxed max-w-lg mb-6" style={{ color: "#8888aa" }}>
+          <p className="font-body text-sm sm:text-base leading-relaxed max-w-lg mb-6 text-text-muted">
             100+ football knowledge challenges, playable anytime. Club histories, tournament records, player stats.
             Your scores count toward the league table too.
           </p>
           <div className="flex flex-wrap gap-2">
             {["Arsenal 25/26", "PL Records", "World Cup", "Champions League", "Euro History", "Iconic Managers"].map(tag => (
-              <span key={tag} className="font-body text-xs px-3 py-1.5 rounded-full"
-                style={{ background: "rgba(255,184,0,0.1)", border: "1px solid rgba(255,184,0,0.2)", color: "#ffb800" }}>
+              <span key={tag} className="font-body text-xs px-3 py-1.5 rounded-full text-amber"
+                style={{ background: "rgba(255,184,0,0.1)", border: "1px solid rgba(255,184,0,0.2)" }}>
                 {tag}
               </span>
             ))}
@@ -374,7 +375,7 @@ function JoinLeagueInner({ code }: { code: string }) {
           <h2 className="font-display text-white mb-3" style={{ fontSize: "clamp(2.4rem, 6vw, 4rem)", lineHeight: 1.0 }}>
             YOUR MATES ARE<br />WAITING.
           </h2>
-          <p className="font-body text-base mb-8" style={{ color: "#8888aa" }}>
+          <p className="font-body text-base mb-8 text-text-muted">
             Join <span className="text-white font-semibold">{league.name}</span> now.
             Free forever — no subscription, no catch.
           </p>
@@ -401,7 +402,7 @@ function JoinLeagueInner({ code }: { code: string }) {
 export default function JoinLeaguePage({ params }: { params: { code: string } }) {
   return (
     <Suspense fallback={
-      <div className="min-h-dvh flex items-center justify-center" style={{ background: "#0a0a0f" }}>
+      <div className="min-h-dvh flex items-center justify-center bg-bg">
         <Spinner size={32} />
       </div>
     }>

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -60,7 +59,7 @@ export async function POST(req: NextRequest) {
     .single();
 
   const roomName = name?.trim() ||
-    (profile?.display_name ? `${profile.display_name}'s Game` : "Game Room");
+    (profile?.display_name ? `${profile.display_name}'s Game` : "Game Lobby");
 
   // Generate a unique code (retry up to 5x)
   let code = "";
@@ -76,7 +75,7 @@ export async function POST(req: NextRequest) {
   if (!code) return NextResponse.json({ error: "Could not generate unique code" }, { status: 500 });
 
   // Create the room
-  const { data: room, error: roomErr } = await (sb as any)
+  const { data: room, error: roomErr } = await sb
     .from("rooms")
     .insert({
       code,

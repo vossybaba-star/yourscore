@@ -1,3 +1,9 @@
+> ⚠️ **SUPERSEDED for product facts — historical snapshot (May 2026).** The canonical
+> definition of YourScore is **[`YOURSCORE.md`](./YOURSCORE.md)**. This brief predates
+> the native apps, H2H, and the custom quiz builder, and its "completely free / no app
+> download" and consumer-only framing are out of date. For audience/positioning,
+> platform, and feature scope, defer to `YOURSCORE.md`.
+
 # YourScore — Marketing Brief
 
 **For:** Marketing lead  

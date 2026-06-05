@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useEffect } from "react";
@@ -133,7 +132,7 @@ export default function AdminMatches() {
                   <input
                     type="text"
                     placeholder={placeholder}
-                    value={(form as any)[key]}
+                    value={form[key as keyof typeof form]}
                     onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
                     className="w-full px-4 py-3 rounded-xl font-body text-sm text-white placeholder:text-text-muted outline-none"
                     style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }}
