@@ -288,6 +288,13 @@ export default function RoomPage() {
       const sb = createClient();
       supabaseRef.current = sb;
 
+      // Ensure the Realtime socket carries the user's JWT, so RLS-gated tables
+      // (question_events is room-member-scoped) deliver events. Without this the
+      // socket can stay on the anon token after a cookie-hydrated session and
+      // questions never appear for players.
+      const { data: { session } } = await sb.auth.getSession();
+      if (session?.access_token) sb.realtime.setAuth(session.access_token);
+
       const { data: roomData } = await sb
         .from("rooms").select("*").eq("id", roomId).single();
       if (cancelled || !roomData) { setLoading(false); return; }

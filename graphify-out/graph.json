@@ -1422,7 +1422,7 @@
       "source_file": "src/app/admin/challenges/page.tsx",
       "source_location": "L1",
       "id": "src_app_admin_challenges_page_tsx_challenges_page",
-      "community": 81,
+      "community": 48,
       "norm_label": "page.tsx"
     },
     {
@@ -1431,7 +1431,7 @@
       "source_file": "src/app/admin/challenges/page.tsx",
       "source_location": "L9",
       "id": "challenges_page_parsedquestion",
-      "community": 81,
+      "community": 48,
       "norm_label": "parsedquestion"
     },
     {
@@ -1440,7 +1440,7 @@
       "source_file": "src/app/admin/challenges/page.tsx",
       "source_location": "L21",
       "id": "challenges_page_parsedchallenge",
-      "community": 81,
+      "community": 48,
       "norm_label": "parsedchallenge"
     },
     {
@@ -1449,7 +1449,7 @@
       "source_file": "src/app/admin/challenges/page.tsx",
       "source_location": "L30",
       "id": "challenges_page_parsequiztext",
-      "community": 81,
+      "community": 48,
       "norm_label": "parsequiztext()"
     },
     {
@@ -1458,7 +1458,7 @@
       "source_file": "src/app/admin/challenges/page.tsx",
       "source_location": "L90",
       "id": "challenges_page_challenge",
-      "community": 81,
+      "community": 48,
       "norm_label": "challenge"
     },
     {
@@ -1467,7 +1467,7 @@
       "source_file": "src/app/admin/challenges/page.tsx",
       "source_location": "L103",
       "id": "challenges_page_adminchallengespage",
-      "community": 81,
+      "community": 48,
       "norm_label": "adminchallengespage()"
     },
     {
@@ -1865,6 +1865,33 @@
       "id": "reclassify_route_get",
       "community": 25,
       "norm_label": "get()"
+    },
+    {
+      "label": "route.ts",
+      "file_type": "code",
+      "source_file": "src/app/api/email/lifecycle/route.ts",
+      "source_location": "L1",
+      "id": "lifecycle_route",
+      "community": 20,
+      "norm_label": "route.ts"
+    },
+    {
+      "label": "EventBody",
+      "file_type": "code",
+      "source_file": "src/app/api/email/lifecycle/route.ts",
+      "source_location": "L23",
+      "id": "lifecycle_route_eventbody",
+      "community": 20,
+      "norm_label": "eventbody"
+    },
+    {
+      "label": "POST()",
+      "file_type": "code",
+      "source_file": "src/app/api/email/lifecycle/route.ts",
+      "source_location": "L28",
+      "id": "lifecycle_route_post",
+      "community": 20,
+      "norm_label": "post()"
     },
     {
       "label": "route.ts",
@@ -2277,7 +2304,7 @@
       "source_file": "src/app/auth/reset-password/page.tsx",
       "source_location": "L1",
       "id": "reset_password_page",
-      "community": 21,
+      "community": 10,
       "norm_label": "page.tsx"
     },
     {
@@ -2286,7 +2313,7 @@
       "source_file": "src/app/auth/reset-password/page.tsx",
       "source_location": "L9",
       "id": "reset_password_page_resetpasswordpage",
-      "community": 21,
+      "community": 10,
       "norm_label": "resetpasswordpage()"
     },
     {
@@ -2448,7 +2475,7 @@
       "source_file": "src/app/challenges/page.tsx",
       "source_location": "L1",
       "id": "src_app_challenges_page_tsx_challenges_page",
-      "community": 83,
+      "community": 48,
       "norm_label": "page.tsx"
     },
     {
@@ -2457,7 +2484,7 @@
       "source_file": "src/app/challenges/page.tsx",
       "source_location": "L13",
       "id": "challenges_page_quizpack",
-      "community": 83,
+      "community": 48,
       "norm_label": "quizpack"
     },
     {
@@ -2466,7 +2493,7 @@
       "source_file": "src/app/challenges/page.tsx",
       "source_location": "L22",
       "id": "challenges_page_end_of_season_emoji",
-      "community": 83,
+      "community": 48,
       "norm_label": "end_of_season_emoji"
     },
     {
@@ -2475,7 +2502,7 @@
       "source_file": "src/app/challenges/page.tsx",
       "source_location": "L26",
       "id": "challenges_page_clubcard",
-      "community": 84,
+      "community": 48,
       "norm_label": "clubcard()"
     },
     {
@@ -2484,7 +2511,7 @@
       "source_file": "src/app/challenges/page.tsx",
       "source_location": "L103",
       "id": "challenges_page_recordscard",
-      "community": 83,
+      "community": 48,
       "norm_label": "recordscard()"
     },
     {
@@ -2493,7 +2520,7 @@
       "source_file": "src/app/challenges/page.tsx",
       "source_location": "L176",
       "id": "challenges_page_endofseasoncard",
-      "community": 83,
+      "community": 48,
       "norm_label": "endofseasoncard()"
     },
     {
@@ -2502,7 +2529,7 @@
       "source_file": "src/app/challenges/page.tsx",
       "source_location": "L259",
       "id": "challenges_page_activetab",
-      "community": 83,
+      "community": 48,
       "norm_label": "activetab"
     },
     {
@@ -2511,7 +2538,7 @@
       "source_file": "src/app/challenges/page.tsx",
       "source_location": "L261",
       "id": "challenges_page_challengespage",
-      "community": 83,
+      "community": 48,
       "norm_label": "challengespage()"
     },
     {
@@ -2538,7 +2565,7 @@
       "source_file": "src/app/h2h/[id]/page.tsx",
       "source_location": "L1",
       "id": "src_app_h2h_id_page_tsx_id_page",
-      "community": 18,
+      "community": 2,
       "norm_label": "page.tsx"
     },
     {
@@ -2547,7 +2574,7 @@
       "source_file": "src/app/h2h/[id]/page.tsx",
       "source_location": "L21",
       "id": "id_page_h2hchallenge",
-      "community": 18,
+      "community": 2,
       "norm_label": "h2hchallenge"
     },
     {
@@ -2556,7 +2583,7 @@
       "source_file": "src/app/h2h/[id]/page.tsx",
       "source_location": "L38",
       "id": "id_page_rawquestion",
-      "community": 18,
+      "community": 2,
       "norm_label": "rawquestion"
     },
     {
@@ -2565,7 +2592,7 @@
       "source_file": "src/app/h2h/[id]/page.tsx",
       "source_location": "L46",
       "id": "id_page_answerrecord",
-      "community": 18,
+      "community": 2,
       "norm_label": "answerrecord"
     },
     {
@@ -2574,7 +2601,7 @@
       "source_file": "src/app/h2h/[id]/page.tsx",
       "source_location": "L54",
       "id": "id_page_letter",
-      "community": 18,
+      "community": 2,
       "norm_label": "letter"
     },
     {
@@ -2583,7 +2610,7 @@
       "source_file": "src/app/h2h/[id]/page.tsx",
       "source_location": "L56",
       "id": "id_page_pagestate",
-      "community": 18,
+      "community": 2,
       "norm_label": "pagestate"
     },
     {
@@ -2592,7 +2619,7 @@
       "source_file": "src/app/h2h/[id]/page.tsx",
       "source_location": "L65",
       "id": "id_page_timercolor",
-      "community": 18,
+      "community": 2,
       "norm_label": "timercolor()"
     },
     {
@@ -2601,7 +2628,7 @@
       "source_file": "src/app/h2h/[id]/page.tsx",
       "source_location": "L71",
       "id": "id_page_timerdisplay",
-      "community": 18,
+      "community": 2,
       "norm_label": "timerdisplay()"
     },
     {
@@ -2610,7 +2637,7 @@
       "source_file": "src/app/h2h/[id]/page.tsx",
       "source_location": "L78",
       "id": "id_page_sharecard",
-      "community": 18,
+      "community": 2,
       "norm_label": "sharecard()"
     },
     {
@@ -2619,7 +2646,7 @@
       "source_file": "src/app/h2h/[id]/page.tsx",
       "source_location": "L135",
       "id": "id_page_avatar",
-      "community": 18,
+      "community": 2,
       "norm_label": "avatar()"
     },
     {
@@ -2628,7 +2655,7 @@
       "source_file": "src/app/h2h/[id]/page.tsx",
       "source_location": "L154",
       "id": "id_page_h2hpage",
-      "community": 18,
+      "community": 2,
       "norm_label": "h2hpage()"
     },
     {
@@ -2637,7 +2664,7 @@
       "source_file": "src/app/how-it-works/page.tsx",
       "source_location": "L1",
       "id": "how_it_works_page",
-      "community": 86,
+      "community": 10,
       "norm_label": "page.tsx"
     },
     {
@@ -2646,7 +2673,7 @@
       "source_file": "src/app/how-it-works/page.tsx",
       "source_location": "L23",
       "id": "how_it_works_page_steps",
-      "community": 86,
+      "community": 10,
       "norm_label": "steps"
     },
     {
@@ -2655,7 +2682,7 @@
       "source_file": "src/app/how-it-works/page.tsx",
       "source_location": "L185",
       "id": "how_it_works_page_faqs",
-      "community": 86,
+      "community": 10,
       "norm_label": "faqs"
     },
     {
@@ -2664,7 +2691,7 @@
       "source_file": "src/app/how-it-works/page.tsx",
       "source_location": "L196",
       "id": "how_it_works_page_howitworkspage",
-      "community": 86,
+      "community": 10,
       "norm_label": "howitworkspage()"
     },
     {
@@ -2709,7 +2736,7 @@
       "source_file": "src/app/join/page.tsx",
       "source_location": "L1",
       "id": "src_app_join_page_tsx_join_page",
-      "community": 91,
+      "community": 10,
       "norm_label": "page.tsx"
     },
     {
@@ -2718,7 +2745,7 @@
       "source_file": "src/app/join/page.tsx",
       "source_location": "L13",
       "id": "join_page_match",
-      "community": 91,
+      "community": 10,
       "norm_label": "match"
     },
     {
@@ -2727,7 +2754,7 @@
       "source_file": "src/app/join/page.tsx",
       "source_location": "L24",
       "id": "join_page_groupbydate",
-      "community": 91,
+      "community": 10,
       "norm_label": "groupbydate()"
     },
     {
@@ -2736,7 +2763,7 @@
       "source_file": "src/app/join/page.tsx",
       "source_location": "L43",
       "id": "join_page_bellicon",
-      "community": 91,
+      "community": 10,
       "norm_label": "bellicon()"
     },
     {
@@ -2745,7 +2772,7 @@
       "source_file": "src/app/join/page.tsx",
       "source_location": "L54",
       "id": "join_page_jerseyimg",
-      "community": 91,
+      "community": 10,
       "norm_label": "jerseyimg()"
     },
     {
@@ -2754,7 +2781,7 @@
       "source_file": "src/app/join/page.tsx",
       "source_location": "L67",
       "id": "join_page_playpage",
-      "community": 91,
+      "community": 10,
       "norm_label": "playpage()"
     },
     {
@@ -2817,7 +2844,7 @@
       "source_file": "src/app/league/[id]/page.tsx",
       "source_location": "L1",
       "id": "src_app_league_id_page_tsx_id_page",
-      "community": 36,
+      "community": 10,
       "norm_label": "page.tsx"
     },
     {
@@ -2826,7 +2853,7 @@
       "source_file": "src/app/league/[id]/page.tsx",
       "source_location": "L11",
       "id": "id_page_league",
-      "community": 36,
+      "community": 10,
       "norm_label": "league"
     },
     {
@@ -2835,7 +2862,7 @@
       "source_file": "src/app/league/[id]/page.tsx",
       "source_location": "L21",
       "id": "id_page_memberrow",
-      "community": 36,
+      "community": 10,
       "norm_label": "memberrow"
     },
     {
@@ -2844,7 +2871,7 @@
       "source_file": "src/app/league/[id]/page.tsx",
       "source_location": "L32",
       "id": "id_page_leaguemember",
-      "community": 36,
+      "community": 10,
       "norm_label": "leaguemember"
     },
     {
@@ -2853,7 +2880,7 @@
       "source_file": "src/app/league/[id]/page.tsx",
       "source_location": "L44",
       "id": "id_page_accuracy",
-      "community": 36,
+      "community": 10,
       "norm_label": "accuracy()"
     },
     {
@@ -2862,7 +2889,7 @@
       "source_file": "src/app/league/[id]/page.tsx",
       "source_location": "L50",
       "id": "id_page_accuracybar",
-      "community": 36,
+      "community": 10,
       "norm_label": "accuracybar()"
     },
     {
@@ -2871,7 +2898,7 @@
       "source_file": "src/app/league/[id]/page.tsx",
       "source_location": "L59",
       "id": "id_page_avatarcircle",
-      "community": 36,
+      "community": 10,
       "norm_label": "avatarcircle()"
     },
     {
@@ -2880,7 +2907,7 @@
       "source_file": "src/app/league/[id]/page.tsx",
       "source_location": "L74",
       "id": "id_page_badge",
-      "community": 36,
+      "community": 10,
       "norm_label": "badge()"
     },
     {
@@ -2889,7 +2916,7 @@
       "source_file": "src/app/league/[id]/page.tsx",
       "source_location": "L90",
       "id": "id_page_getmemberbadges",
-      "community": 36,
+      "community": 10,
       "norm_label": "getmemberbadges()"
     },
     {
@@ -2898,7 +2925,7 @@
       "source_file": "src/app/league/[id]/page.tsx",
       "source_location": "L108",
       "id": "id_page_leaguepage",
-      "community": 36,
+      "community": 10,
       "norm_label": "leaguepage()"
     },
     {
@@ -2907,7 +2934,7 @@
       "source_file": "src/app/league/join/[code]/page.tsx",
       "source_location": "L1",
       "id": "code_page",
-      "community": 21,
+      "community": 10,
       "norm_label": "page.tsx"
     },
     {
@@ -2916,7 +2943,7 @@
       "source_file": "src/app/league/join/[code]/page.tsx",
       "source_location": "L35",
       "id": "code_page_tablemember",
-      "community": 21,
+      "community": 10,
       "norm_label": "tablemember"
     },
     {
@@ -2925,7 +2952,7 @@
       "source_file": "src/app/league/join/[code]/page.tsx",
       "source_location": "L37",
       "id": "code_page_leaguetablepreview",
-      "community": 21,
+      "community": 10,
       "norm_label": "leaguetablepreview()"
     },
     {
@@ -2941,9 +2968,9 @@
       "label": "JoinLeaguePage()",
       "file_type": "code",
       "source_file": "src/app/league/join/[code]/page.tsx",
-      "source_location": "L402",
+      "source_location": "L408",
       "id": "code_page_joinleaguepage",
-      "community": 21,
+      "community": 10,
       "norm_label": "joinleaguepage()"
     },
     {
@@ -2952,7 +2979,7 @@
       "source_file": "src/app/league/join/page.tsx",
       "source_location": "L1",
       "id": "src_app_league_join_page_tsx_join_page",
-      "community": 86,
+      "community": 10,
       "norm_label": "page.tsx"
     },
     {
@@ -2961,7 +2988,7 @@
       "source_file": "src/app/league/join/page.tsx",
       "source_location": "L9",
       "id": "join_page_joinleagueindexinner",
-      "community": 86,
+      "community": 10,
       "norm_label": "joinleagueindexinner()"
     },
     {
@@ -2970,7 +2997,7 @@
       "source_file": "src/app/league/join/page.tsx",
       "source_location": "L105",
       "id": "join_page_joinleagueindexpage",
-      "community": 86,
+      "community": 10,
       "norm_label": "joinleagueindexpage()"
     },
     {
@@ -2979,7 +3006,7 @@
       "source_file": "src/app/league/new/page.tsx",
       "source_location": "L1",
       "id": "src_app_league_new_page_tsx_new_page",
-      "community": 21,
+      "community": 10,
       "norm_label": "page.tsx"
     },
     {
@@ -2988,7 +3015,7 @@
       "source_file": "src/app/league/new/page.tsx",
       "source_location": "L12",
       "id": "new_page_generateleaguecode",
-      "community": 21,
+      "community": 10,
       "norm_label": "generateleaguecode()"
     },
     {
@@ -2997,16 +3024,16 @@
       "source_file": "src/app/league/new/page.tsx",
       "source_location": "L18",
       "id": "new_page_createleagueinner",
-      "community": 21,
+      "community": 10,
       "norm_label": "createleagueinner()"
     },
     {
       "label": "CreateLeaguePage()",
       "file_type": "code",
       "source_file": "src/app/league/new/page.tsx",
-      "source_location": "L236",
+      "source_location": "L242",
       "id": "new_page_createleaguepage",
-      "community": 21,
+      "community": 10,
       "norm_label": "createleaguepage()"
     },
     {
@@ -3384,7 +3411,7 @@
       "source_file": "src/app/play/new/page.tsx",
       "source_location": "L1",
       "id": "src_app_play_new_page_tsx_new_page",
-      "community": 85,
+      "community": 10,
       "norm_label": "page.tsx"
     },
     {
@@ -3393,7 +3420,7 @@
       "source_file": "src/app/play/new/page.tsx",
       "source_location": "L11",
       "id": "new_page_quizpack",
-      "community": 85,
+      "community": 10,
       "norm_label": "quizpack"
     },
     {
@@ -3402,7 +3429,7 @@
       "source_file": "src/app/play/new/page.tsx",
       "source_location": "L15",
       "id": "new_page_roommode",
-      "community": 85,
+      "community": 10,
       "norm_label": "roommode"
     },
     {
@@ -3411,7 +3438,7 @@
       "source_file": "src/app/play/new/page.tsx",
       "source_location": "L16",
       "id": "new_page_questionsource",
-      "community": 85,
+      "community": 10,
       "norm_label": "questionsource"
     },
     {
@@ -3420,7 +3447,7 @@
       "source_file": "src/app/play/new/page.tsx",
       "source_location": "L17",
       "id": "new_page_difficulty",
-      "community": 85,
+      "community": 10,
       "norm_label": "difficulty"
     },
     {
@@ -3429,7 +3456,7 @@
       "source_file": "src/app/play/new/page.tsx",
       "source_location": "L19",
       "id": "new_page_modes",
-      "community": 85,
+      "community": 10,
       "norm_label": "modes"
     },
     {
@@ -3438,7 +3465,7 @@
       "source_file": "src/app/play/new/page.tsx",
       "source_location": "L25",
       "id": "new_page_counts",
-      "community": 85,
+      "community": 10,
       "norm_label": "counts"
     },
     {
@@ -3447,7 +3474,7 @@
       "source_file": "src/app/play/new/page.tsx",
       "source_location": "L27",
       "id": "new_page_difficulties",
-      "community": 85,
+      "community": 10,
       "norm_label": "difficulties"
     },
     {
@@ -3456,7 +3483,7 @@
       "source_file": "src/app/play/new/page.tsx",
       "source_location": "L34",
       "id": "new_page_popular_entities",
-      "community": 85,
+      "community": 10,
       "norm_label": "popular_entities"
     },
     {
@@ -3465,7 +3492,7 @@
       "source_file": "src/app/play/new/page.tsx",
       "source_location": "L40",
       "id": "new_page_newgamepage",
-      "community": 85,
+      "community": 10,
       "norm_label": "newgamepage()"
     },
     {
@@ -3582,7 +3609,7 @@
       "source_file": "src/app/profile/[userId]/page.tsx",
       "source_location": "L1",
       "id": "userid_page",
-      "community": 87,
+      "community": 10,
       "norm_label": "page.tsx"
     },
     {
@@ -3591,7 +3618,7 @@
       "source_file": "src/app/profile/[userId]/page.tsx",
       "source_location": "L8",
       "id": "userid_page_recentattempt",
-      "community": 87,
+      "community": 10,
       "norm_label": "recentattempt"
     },
     {
@@ -3600,7 +3627,7 @@
       "source_file": "src/app/profile/[userId]/page.tsx",
       "source_location": "L16",
       "id": "userid_page_avatarcircle",
-      "community": 87,
+      "community": 10,
       "norm_label": "avatarcircle()"
     },
     {
@@ -3609,7 +3636,7 @@
       "source_file": "src/app/profile/[userId]/page.tsx",
       "source_location": "L38",
       "id": "userid_page_publicprofilepage",
-      "community": 87,
+      "community": 10,
       "norm_label": "publicprofilepage()"
     },
     {
@@ -3654,7 +3681,7 @@
       "source_file": "src/app/quiz/create/page.tsx",
       "source_location": "L1",
       "id": "create_page",
-      "community": 82,
+      "community": 48,
       "norm_label": "page.tsx"
     },
     {
@@ -3663,7 +3690,7 @@
       "source_file": "src/app/quiz/create/page.tsx",
       "source_location": "L12",
       "id": "create_page_clubs",
-      "community": 82,
+      "community": 48,
       "norm_label": "clubs"
     },
     {
@@ -3672,7 +3699,7 @@
       "source_file": "src/app/quiz/create/page.tsx",
       "source_location": "L25",
       "id": "create_page_national_teams",
-      "community": 82,
+      "community": 48,
       "norm_label": "national_teams"
     },
     {
@@ -3681,7 +3708,7 @@
       "source_file": "src/app/quiz/create/page.tsx",
       "source_location": "L58",
       "id": "create_page_record_topics",
-      "community": 82,
+      "community": 48,
       "norm_label": "record_topics"
     },
     {
@@ -3690,7 +3717,7 @@
       "source_file": "src/app/quiz/create/page.tsx",
       "source_location": "L66",
       "id": "create_page_era_options",
-      "community": 82,
+      "community": 48,
       "norm_label": "era_options"
     },
     {
@@ -3699,7 +3726,7 @@
       "source_file": "src/app/quiz/create/page.tsx",
       "source_location": "L74",
       "id": "create_page_diff_options",
-      "community": 82,
+      "community": 48,
       "norm_label": "diff_options"
     },
     {
@@ -3708,7 +3735,7 @@
       "source_file": "src/app/quiz/create/page.tsx",
       "source_location": "L83",
       "id": "create_page_topic_emoji",
-      "community": 82,
+      "community": 48,
       "norm_label": "topic_emoji"
     },
     {
@@ -3717,7 +3744,7 @@
       "source_file": "src/app/quiz/create/page.tsx",
       "source_location": "L103",
       "id": "create_page_createquizpage",
-      "community": 82,
+      "community": 48,
       "norm_label": "createquizpage()"
     },
     {
@@ -3807,7 +3834,7 @@
       "source_file": "src/components/auth/AuthButton.tsx",
       "source_location": "L1",
       "id": "auth_authbutton",
-      "community": 21,
+      "community": 10,
       "norm_label": "authbutton.tsx"
     },
     {
@@ -3816,7 +3843,7 @@
       "source_file": "src/components/auth/AuthButton.tsx",
       "source_location": "L8",
       "id": "auth_authbutton_provider",
-      "community": 21,
+      "community": 10,
       "norm_label": "provider"
     },
     {
@@ -3825,7 +3852,7 @@
       "source_file": "src/components/auth/AuthButton.tsx",
       "source_location": "L10",
       "id": "auth_authbutton_redirect",
-      "community": 87,
+      "community": 10,
       "norm_label": "redirect()"
     },
     {
@@ -3843,7 +3870,7 @@
       "source_file": "src/components/auth/AuthButton.tsx",
       "source_location": "L78",
       "id": "auth_authbutton_emailmode",
-      "community": 21,
+      "community": 10,
       "norm_label": "emailmode"
     },
     {
@@ -3852,7 +3879,7 @@
       "source_file": "src/components/auth/AuthButton.tsx",
       "source_location": "L80",
       "id": "auth_authbutton_emailsignin",
-      "community": 21,
+      "community": 10,
       "norm_label": "emailsignin()"
     },
     {
@@ -3861,7 +3888,7 @@
       "source_file": "src/components/auth/AuthButton.tsx",
       "source_location": "L239",
       "id": "auth_authbutton_signinwithgoogle",
-      "community": 21,
+      "community": 10,
       "norm_label": "signinwithgoogle()"
     },
     {
@@ -3879,7 +3906,7 @@
       "source_file": "src/components/auth/AuthButton.tsx",
       "source_location": "L283",
       "id": "auth_authbutton_signoutbutton",
-      "community": 21,
+      "community": 10,
       "norm_label": "signoutbutton()"
     },
     {
@@ -3888,7 +3915,7 @@
       "source_file": "src/components/game/AnswerButtons.tsx",
       "source_location": "L1",
       "id": "game_answerbuttons",
-      "community": 28,
+      "community": 2,
       "norm_label": "answerbuttons.tsx"
     },
     {
@@ -3897,7 +3924,7 @@
       "source_file": "src/components/game/AnswerButtons.tsx",
       "source_location": "L3",
       "id": "game_answerbuttons_letters",
-      "community": 28,
+      "community": 2,
       "norm_label": "letters"
     },
     {
@@ -3906,7 +3933,7 @@
       "source_file": "src/components/game/AnswerButtons.tsx",
       "source_location": "L5",
       "id": "game_answerbuttons_answerbuttonsprops",
-      "community": 28,
+      "community": 2,
       "norm_label": "answerbuttonsprops"
     },
     {
@@ -3915,7 +3942,7 @@
       "source_file": "src/components/game/AnswerButtons.tsx",
       "source_location": "L24",
       "id": "game_answerbuttons_answerbuttons",
-      "community": 28,
+      "community": 2,
       "norm_label": "answerbuttons()"
     },
     {
@@ -4140,7 +4167,7 @@
       "source_file": "src/components/ui/BackButton.tsx",
       "source_location": "L1",
       "id": "ui_backbutton",
-      "community": 87,
+      "community": 10,
       "norm_label": "backbutton.tsx"
     },
     {
@@ -4149,7 +4176,7 @@
       "source_file": "src/components/ui/BackButton.tsx",
       "source_location": "L6",
       "id": "ui_backbutton_backbutton",
-      "community": 87,
+      "community": 10,
       "norm_label": "backbutton()"
     },
     {
@@ -4221,7 +4248,7 @@
       "source_file": "src/components/ui/GridBackground.tsx",
       "source_location": "L1",
       "id": "ui_gridbackground",
-      "community": 86,
+      "community": 10,
       "norm_label": "gridbackground.tsx"
     },
     {
@@ -4230,7 +4257,7 @@
       "source_file": "src/components/ui/GridBackground.tsx",
       "source_location": "L3",
       "id": "ui_gridbackground_gridbackground",
-      "community": 86,
+      "community": 10,
       "norm_label": "gridbackground()"
     },
     {
@@ -4239,7 +4266,7 @@
       "source_file": "src/components/ui/Spinner.tsx",
       "source_location": "L1",
       "id": "ui_spinner",
-      "community": 21,
+      "community": 10,
       "norm_label": "spinner.tsx"
     },
     {
@@ -4248,7 +4275,7 @@
       "source_file": "src/components/ui/Spinner.tsx",
       "source_location": "L1",
       "id": "ui_spinner_spinner",
-      "community": 21,
+      "community": 10,
       "norm_label": "spinner()"
     },
     {
@@ -4414,13 +4441,58 @@
       "norm_label": "senders.ts"
     },
     {
+      "label": "sendOrLog()",
+      "file_type": "code",
+      "source_file": "src/lib/email/senders.ts",
+      "source_location": "L5",
+      "id": "email_senders_sendorlog",
+      "community": 20,
+      "norm_label": "sendorlog()"
+    },
+    {
       "label": "sendWelcomeEmail()",
       "file_type": "code",
       "source_file": "src/lib/email/senders.ts",
-      "source_location": "L8",
+      "source_location": "L19",
       "id": "email_senders_sendwelcomeemail",
       "community": 20,
       "norm_label": "sendwelcomeemail()"
+    },
+    {
+      "label": "sendFirstQuizEmail()",
+      "file_type": "code",
+      "source_file": "src/lib/email/senders.ts",
+      "source_location": "L41",
+      "id": "email_senders_sendfirstquizemail",
+      "community": 20,
+      "norm_label": "sendfirstquizemail()"
+    },
+    {
+      "label": "sendFirstLeagueCreatedEmail()",
+      "file_type": "code",
+      "source_file": "src/lib/email/senders.ts",
+      "source_location": "L73",
+      "id": "email_senders_sendfirstleaguecreatedemail",
+      "community": 20,
+      "norm_label": "sendfirstleaguecreatedemail()"
+    },
+    {
+      "label": "sendLeagueInviteEmail()",
+      "file_type": "code",
+      "source_file": "src/lib/email/senders.ts",
+      "source_location": "L111",
+      "id": "email_senders_sendleagueinviteemail",
+      "community": 20,
+      "norm_label": "sendleagueinviteemail()"
+    },
+    {
+      "label": "sendFirstMemberJoinsEmail()",
+      "file_type": "code",
+      "source_file": "src/lib/email/senders.ts",
+      "source_location": "L154",
+      "id": "email_senders_sendfirstmemberjoinsemail",
+      "community": 20,
+      "norm_label": "sendfirstmemberjoinsemail()"
     },
     {
       "label": "native.ts",
@@ -4590,7 +4662,7 @@
       "source_file": "src/lib/ratelimit.ts",
       "source_location": "L38",
       "id": "lib_ratelimit_ratelimitdistributed",
-      "community": 1,
+      "community": 88,
       "norm_label": "ratelimitdistributed()"
     },
     {
@@ -4644,7 +4716,7 @@
       "source_file": "src/lib/scoring.ts",
       "source_location": "L88",
       "id": "lib_scoring_getspeedlabel",
-      "community": 2,
+      "community": 1,
       "norm_label": "getspeedlabel()"
     },
     {
@@ -4725,7 +4797,7 @@
       "source_file": "src/lib/supabase/client.ts",
       "source_location": "L1",
       "id": "supabase_client",
-      "community": 21,
+      "community": 10,
       "norm_label": "client.ts"
     },
     {
@@ -4734,7 +4806,7 @@
       "source_file": "src/lib/supabase/client.ts",
       "source_location": "L12",
       "id": "supabase_client_createclient",
-      "community": 21,
+      "community": 10,
       "norm_label": "createclient()"
     },
     {
@@ -4797,7 +4869,7 @@
       "source_file": "src/lib/teamImages.ts",
       "source_location": "L1",
       "id": "lib_teamimages",
-      "community": 84,
+      "community": 48,
       "norm_label": "teamimages.ts"
     },
     {
@@ -4806,7 +4878,7 @@
       "source_file": "src/lib/teamImages.ts",
       "source_location": "L11",
       "id": "lib_teamimages_espn_ids",
-      "community": 84,
+      "community": 48,
       "norm_label": "espn_ids"
     },
     {
@@ -4815,7 +4887,7 @@
       "source_file": "src/lib/teamImages.ts",
       "source_location": "L44",
       "id": "lib_teamimages_espnbadgeurl",
-      "community": 84,
+      "community": 48,
       "norm_label": "espnbadgeurl()"
     },
     {
@@ -4824,7 +4896,7 @@
       "source_file": "src/lib/teamImages.ts",
       "source_location": "L50",
       "id": "lib_teamimages_getteambadgeurlsync",
-      "community": 84,
+      "community": 48,
       "norm_label": "getteambadgeurlsync()"
     },
     {
@@ -4833,7 +4905,7 @@
       "source_file": "src/lib/teamImages.ts",
       "source_location": "L57",
       "id": "lib_teamimages_getteambadgeurl",
-      "community": 84,
+      "community": 48,
       "norm_label": "getteambadgeurl()"
     },
     {
@@ -4842,7 +4914,7 @@
       "source_file": "src/lib/teamImages.ts",
       "source_location": "L63",
       "id": "lib_teamimages_getteamjerseyurl",
-      "community": 84,
+      "community": 48,
       "norm_label": "getteamjerseyurl()"
     },
     {
@@ -4851,7 +4923,7 @@
       "source_file": "src/lib/teamImages.ts",
       "source_location": "L68",
       "id": "lib_teamimages_prefetchteamimages",
-      "community": 84,
+      "community": 48,
       "norm_label": "prefetchteamimages()"
     },
     {
@@ -4860,7 +4932,7 @@
       "source_file": "src/lib/theme.ts",
       "source_location": "L1",
       "id": "lib_theme",
-      "community": 28,
+      "community": 2,
       "norm_label": "theme.ts"
     },
     {
@@ -4869,7 +4941,7 @@
       "source_file": "src/lib/theme.ts",
       "source_location": "L8",
       "id": "lib_theme_letter",
-      "community": 28,
+      "community": 2,
       "norm_label": "letter"
     },
     {
@@ -4878,7 +4950,7 @@
       "source_file": "src/lib/theme.ts",
       "source_location": "L11",
       "id": "lib_theme_letter_colors",
-      "community": 28,
+      "community": 2,
       "norm_label": "letter_colors"
     },
     {
@@ -4887,7 +4959,7 @@
       "source_file": "src/lib/theme.ts",
       "source_location": "L19",
       "id": "lib_theme_difficulty_color",
-      "community": 28,
+      "community": 2,
       "norm_label": "difficulty_color"
     },
     {
@@ -4896,7 +4968,7 @@
       "source_file": "src/lib/theme.ts",
       "source_location": "L28",
       "id": "lib_theme_difficulty_bg",
-      "community": 28,
+      "community": 2,
       "norm_label": "difficulty_bg"
     },
     {
@@ -4905,7 +4977,7 @@
       "source_file": "src/lib/theme.ts",
       "source_location": "L37",
       "id": "lib_theme_difficultycolor",
-      "community": 28,
+      "community": 2,
       "norm_label": "difficultycolor()"
     },
     {
@@ -4914,7 +4986,7 @@
       "source_file": "src/lib/theme.ts",
       "source_location": "L39",
       "id": "lib_theme_difficultybg",
-      "community": 28,
+      "community": 2,
       "norm_label": "difficultybg()"
     },
     {
@@ -4923,7 +4995,7 @@
       "source_file": "src/lib/theme.ts",
       "source_location": "L43",
       "id": "lib_theme_records_emoji",
-      "community": 28,
+      "community": 2,
       "norm_label": "records_emoji"
     },
     {
@@ -4932,7 +5004,7 @@
       "source_file": "src/lib/utils.ts",
       "source_location": "L1",
       "id": "lib_utils",
-      "community": 81,
+      "community": 90,
       "norm_label": "utils.ts"
     },
     {
@@ -4941,7 +5013,7 @@
       "source_file": "src/lib/utils.ts",
       "source_location": "L4",
       "id": "lib_utils_slugify",
-      "community": 81,
+      "community": 48,
       "norm_label": "slugify()"
     },
     {
@@ -7253,7 +7325,7 @@
       "file_type": "code",
       "source_file": "src/app/h2h/[id]/page.tsx",
       "source_location": "L75",
-      "community": 18,
+      "community": 2,
       "norm_label": "letters",
       "id": "id_page_letters"
     },
@@ -7262,7 +7334,7 @@
       "file_type": "code",
       "source_file": "src/app/profile/[userId]/page.tsx",
       "source_location": "L11",
-      "community": 87,
+      "community": 10,
       "norm_label": "publicprofile",
       "id": "userid_page_publicprofile"
     },
@@ -7271,7 +7343,7 @@
       "file_type": "code",
       "source_file": "src/app/league/[id]/page.tsx",
       "source_location": "L39",
-      "community": 36,
+      "community": 10,
       "norm_label": "computecurrentstreak()",
       "id": "id_page_computecurrentstreak"
     },
@@ -7280,7 +7352,7 @@
       "file_type": "code",
       "source_file": "src/app/league/[id]/page.tsx",
       "source_location": "L48",
-      "community": 36,
+      "community": 10,
       "norm_label": "computebeststreak()",
       "id": "id_page_computebeststreak"
     }
@@ -9545,6 +9617,180 @@
       "relation": "imports_from",
       "context": "import",
       "confidence": "EXTRACTED",
+      "source_file": "src/app/api/email/lifecycle/route.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "lifecycle_route",
+      "target": "email_senders",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/api/email/lifecycle/route.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "lifecycle_route",
+      "target": "email_senders_sendfirstleaguecreatedemail",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/api/email/lifecycle/route.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "lifecycle_route",
+      "target": "email_senders_sendfirstmemberjoinsemail",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/api/email/lifecycle/route.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "lifecycle_route",
+      "target": "email_senders_sendfirstquizemail",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/api/email/lifecycle/route.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "lifecycle_route",
+      "target": "email_senders_sendleagueinviteemail",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/api/email/lifecycle/route.ts",
+      "source_location": "L23",
+      "weight": 1.0,
+      "source": "lifecycle_route",
+      "target": "lifecycle_route_eventbody",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/api/email/lifecycle/route.ts",
+      "source_location": "L28",
+      "weight": 1.0,
+      "source": "lifecycle_route",
+      "target": "lifecycle_route_post",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/api/email/lifecycle/route.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "lifecycle_route",
+      "target": "supabase_server",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/api/email/lifecycle/route.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "lifecycle_route",
+      "target": "supabase_server_createclient",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/api/email/lifecycle/route.ts",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "lifecycle_route",
+      "target": "supabase_service",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/api/email/lifecycle/route.ts",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "lifecycle_route",
+      "target": "supabase_service_createserviceclient",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/api/email/lifecycle/route.ts",
+      "source_location": "L92",
+      "weight": 1.0,
+      "source": "lifecycle_route_post",
+      "target": "email_senders_sendfirstleaguecreatedemail"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/api/email/lifecycle/route.ts",
+      "source_location": "L184",
+      "weight": 1.0,
+      "source": "lifecycle_route_post",
+      "target": "email_senders_sendfirstmemberjoinsemail"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/api/email/lifecycle/route.ts",
+      "source_location": "L60",
+      "weight": 1.0,
+      "source": "lifecycle_route_post",
+      "target": "email_senders_sendfirstquizemail"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/api/email/lifecycle/route.ts",
+      "source_location": "L156",
+      "weight": 1.0,
+      "source": "lifecycle_route_post",
+      "target": "email_senders_sendleagueinviteemail"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/api/email/lifecycle/route.ts",
+      "source_location": "L171",
+      "weight": 1.0,
+      "source": "lifecycle_route_post",
+      "target": "supabase_service_createserviceclient"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
       "source_file": "src/app/api/email/test/route.ts",
       "source_location": "L1",
       "weight": 1.0,
@@ -11062,9 +11308,9 @@
       "source_file": "src/app/challenges/[slug]/page.tsx",
       "source_location": "L9",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "slug_page",
-      "target": "game_answerbuttons",
-      "confidence_score": 1.0
+      "target": "game_answerbuttons"
     },
     {
       "relation": "imports",
@@ -11073,9 +11319,9 @@
       "source_file": "src/app/challenges/[slug]/page.tsx",
       "source_location": "L9",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "slug_page",
-      "target": "game_answerbuttons_answerbuttons",
-      "confidence_score": 1.0
+      "target": "game_answerbuttons_answerbuttons"
     },
     {
       "relation": "imports_from",
@@ -11776,9 +12022,9 @@
       "source_file": "src/app/h2h/[id]/page.tsx",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_h2h_id_page_tsx_id_page",
-      "target": "game_answerbuttons",
-      "confidence_score": 1.0
+      "target": "game_answerbuttons"
     },
     {
       "relation": "imports",
@@ -11787,9 +12033,9 @@
       "source_file": "src/app/h2h/[id]/page.tsx",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_h2h_id_page_tsx_id_page",
-      "target": "game_answerbuttons_answerbuttons",
-      "confidence_score": 1.0
+      "target": "game_answerbuttons_answerbuttons"
     },
     {
       "relation": "contains",
@@ -14578,9 +14824,9 @@
       "source_file": "src/app/profile/[userId]/page.tsx",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "userid_page",
-      "target": "supabase_server",
-      "confidence_score": 1.0
+      "target": "supabase_server"
     },
     {
       "relation": "imports",
@@ -14589,9 +14835,9 @@
       "source_file": "src/app/profile/[userId]/page.tsx",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "userid_page",
-      "target": "supabase_server_createclient",
-      "confidence_score": 1.0
+      "target": "supabase_server_createclient"
     },
     {
       "relation": "imports_from",
@@ -14600,9 +14846,9 @@
       "source_file": "src/app/profile/[userId]/page.tsx",
       "source_location": "L6",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "userid_page",
-      "target": "ui_backbutton",
-      "confidence_score": 1.0
+      "target": "ui_backbutton"
     },
     {
       "relation": "imports",
@@ -14611,9 +14857,9 @@
       "source_file": "src/app/profile/[userId]/page.tsx",
       "source_location": "L6",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "userid_page",
-      "target": "ui_backbutton_backbutton",
-      "confidence_score": 1.0
+      "target": "ui_backbutton_backbutton"
     },
     {
       "relation": "imports_from",
@@ -15341,9 +15587,9 @@
       "source_file": "src/components/game/AnswerButtons.tsx",
       "source_location": "L24",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "game_answerbuttons",
-      "target": "game_answerbuttons_answerbuttons",
-      "confidence_score": 1.0
+      "target": "game_answerbuttons_answerbuttons"
     },
     {
       "relation": "contains",
@@ -15351,9 +15597,9 @@
       "source_file": "src/components/game/AnswerButtons.tsx",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "game_answerbuttons",
-      "target": "game_answerbuttons_answerbuttonsprops",
-      "confidence_score": 1.0
+      "target": "game_answerbuttons_answerbuttonsprops"
     },
     {
       "relation": "contains",
@@ -15361,9 +15607,9 @@
       "source_file": "src/components/game/AnswerButtons.tsx",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "game_answerbuttons",
-      "target": "game_answerbuttons_letters",
-      "confidence_score": 1.0
+      "target": "game_answerbuttons_letters"
     },
     {
       "relation": "imports_from",
@@ -15372,9 +15618,9 @@
       "source_file": "src/components/game/AnswerButtons.tsx",
       "source_location": "L1",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "game_answerbuttons",
-      "target": "lib_theme",
-      "confidence_score": 1.0
+      "target": "lib_theme"
     },
     {
       "relation": "imports",
@@ -15383,9 +15629,9 @@
       "source_file": "src/components/game/AnswerButtons.tsx",
       "source_location": "L1",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "game_answerbuttons",
-      "target": "lib_theme_letter",
-      "confidence_score": 1.0
+      "target": "lib_theme_letter"
     },
     {
       "relation": "imports",
@@ -15394,9 +15640,9 @@
       "source_file": "src/components/game/AnswerButtons.tsx",
       "source_location": "L1",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "game_answerbuttons",
-      "target": "lib_theme_letter_colors",
-      "confidence_score": 1.0
+      "target": "lib_theme_letter_colors"
     },
     {
       "relation": "references",
@@ -15405,9 +15651,9 @@
       "source_file": "src/components/game/AnswerButtons.tsx",
       "source_location": "L11",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "game_answerbuttons_answerbuttonsprops",
-      "target": "lib_theme_letter",
-      "confidence_score": 1.0
+      "target": "lib_theme_letter"
     },
     {
       "relation": "contains",
@@ -15747,9 +15993,9 @@
       "source_file": "src/components/ui/BackButton.tsx",
       "source_location": "L6",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "ui_backbutton",
-      "target": "ui_backbutton_backbutton",
-      "confidence_score": 1.0
+      "target": "ui_backbutton_backbutton"
     },
     {
       "relation": "imports_from",
@@ -15982,6 +16228,17 @@
       "relation": "calls",
       "context": "call",
       "confidence": "EXTRACTED",
+      "source_file": "src/lib/email/senders.ts",
+      "source_location": "L10",
+      "weight": 1.0,
+      "source": "email_senders_sendorlog",
+      "target": "email_client_getresend",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/lib/email/senders.ts",
       "source_location": "L14",
@@ -16037,6 +16294,50 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/lib/email/senders.ts",
+      "source_location": "L86",
+      "weight": 1.0,
+      "source": "email_senders_sendfirstleaguecreatedemail",
+      "target": "email_render_renderemail"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/email/senders.ts",
+      "source_location": "L168",
+      "weight": 1.0,
+      "source": "email_senders_sendfirstmemberjoinsemail",
+      "target": "email_render_renderemail"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/email/senders.ts",
+      "source_location": "L49",
+      "weight": 1.0,
+      "source": "email_senders_sendfirstquizemail",
+      "target": "email_render_renderemail"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/email/senders.ts",
+      "source_location": "L123",
+      "weight": 1.0,
+      "source": "email_senders_sendleagueinviteemail",
+      "target": "email_render_renderemail"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/email/senders.ts",
       "source_location": "L10",
       "weight": 1.0,
       "source": "email_senders_sendwelcomeemail",
@@ -16059,10 +16360,104 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/lib/email/senders.ts",
+      "source_location": "L91",
+      "weight": 1.0,
+      "source": "email_senders_sendfirstleaguecreatedemail",
+      "target": "email_render_buildfooterurls"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/email/senders.ts",
+      "source_location": "L174",
+      "weight": 1.0,
+      "source": "email_senders_sendfirstmemberjoinsemail",
+      "target": "email_render_buildfooterurls"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/email/senders.ts",
+      "source_location": "L54",
+      "weight": 1.0,
+      "source": "email_senders_sendfirstquizemail",
+      "target": "email_render_buildfooterurls"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/email/senders.ts",
+      "source_location": "L134",
+      "weight": 1.0,
+      "source": "email_senders_sendleagueinviteemail",
+      "target": "email_render_buildfooterurls"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/email/senders.ts",
       "source_location": "L11",
       "weight": 1.0,
       "source": "email_senders_sendwelcomeemail",
       "target": "email_render_buildfooterurls"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/email/senders.ts",
+      "source_location": "L73",
+      "weight": 1.0,
+      "source": "email_senders",
+      "target": "email_senders_sendfirstleaguecreatedemail",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/email/senders.ts",
+      "source_location": "L154",
+      "weight": 1.0,
+      "source": "email_senders",
+      "target": "email_senders_sendfirstmemberjoinsemail",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/email/senders.ts",
+      "source_location": "L41",
+      "weight": 1.0,
+      "source": "email_senders",
+      "target": "email_senders_sendfirstquizemail",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/email/senders.ts",
+      "source_location": "L111",
+      "weight": 1.0,
+      "source": "email_senders",
+      "target": "email_senders_sendleagueinviteemail",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/email/senders.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "email_senders",
+      "target": "email_senders_sendorlog",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -16073,6 +16468,61 @@
       "confidence_score": 1.0,
       "source": "email_senders",
       "target": "email_senders_sendwelcomeemail"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/email/senders.ts",
+      "source_location": "L93",
+      "weight": 1.0,
+      "source": "email_senders_sendfirstleaguecreatedemail",
+      "target": "email_senders_sendorlog",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/email/senders.ts",
+      "source_location": "L176",
+      "weight": 1.0,
+      "source": "email_senders_sendfirstmemberjoinsemail",
+      "target": "email_senders_sendorlog",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/email/senders.ts",
+      "source_location": "L56",
+      "weight": 1.0,
+      "source": "email_senders_sendfirstquizemail",
+      "target": "email_senders_sendorlog",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/email/senders.ts",
+      "source_location": "L136",
+      "weight": 1.0,
+      "source": "email_senders_sendleagueinviteemail",
+      "target": "email_senders_sendorlog",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/email/senders.ts",
+      "source_location": "L23",
+      "weight": 1.0,
+      "source": "email_senders_sendwelcomeemail",
+      "target": "email_senders_sendorlog",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -19267,5 +19717,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "09a4fd65473f0928736de0ba719243a23cadb20c"
+  "built_at_commit": "14b29891ed75af9805bf53c1d5724e551e301d81"
 }
