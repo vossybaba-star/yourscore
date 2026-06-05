@@ -51,6 +51,12 @@ function CreateLeagueInner() {
         .single();
       if (error) throw error;
       await sb.from("league_members").insert({ league_id: data.id, user_id: user.id });
+      // Fire-and-forget: lifecycle email if this is the user's first league.
+      void fetch("/api/email/lifecycle", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ event: "league_created", data: { leagueId: data.id } }),
+      }).catch(() => {});
       setCreated({ id: data.id, code: data.code });
     } catch (e) {
       console.error(e);

@@ -531,7 +531,32 @@ export default function ChallengePage() {
           const { error } = await createClient()
             .from("quiz_attempts")
             .insert({ user_id: userId, pack_id: pack.id, score: finalScore, max_score: maxScore, correct_count: correctCount, answers: newLog as unknown as Json });
-          if (!error) setSaved(true);
+          if (!error) {
+            setSaved(true);
+            // Fire-and-forget: lifecycle email if this was the user's first attempt.
+            // Server checks `is it actually the first?` so this is safe to call every time.
+            const accuracy = Math.round((correctCount / questions.length) * 100);
+            const bestStreak = newLog.reduce(
+              (acc, r) => {
+                const cur = r.correct ? acc.cur + 1 : 0;
+                return { cur, max: Math.max(acc.max, cur) };
+              },
+              { cur: 0, max: 0 },
+            ).max;
+            void fetch("/api/email/lifecycle", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                event: "first_challenge",
+                data: {
+                  club: pack.name ?? "Football",
+                  score: finalScore,
+                  accuracy,
+                  streak: bestStreak,
+                },
+              }),
+            }).catch(() => {});
+          }
         }
         setScore(finalScore);
         setPhase("results");

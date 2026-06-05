@@ -176,6 +176,12 @@ function JoinLeagueInner({ code }: { code: string }) {
       const sb = createClient();
       await sb.from("league_members")
         .upsert({ league_id: league.id, user_id: user.id }, { onConflict: "league_id,user_id", ignoreDuplicates: true });
+      // Fire-and-forget: lifecycle email — server handles invite + first-member-joins logic.
+      void fetch("/api/email/lifecycle", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ event: "league_joined", data: { leagueId: league.id } }),
+      }).catch(() => {});
       router.push(`/league/${league.id}`);
     } catch (e) {
       console.error(e);
