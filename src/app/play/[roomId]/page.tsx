@@ -122,6 +122,9 @@ export default function RoomPage() {
   const playersCountRef   = useRef(0);
   const isHostRef         = useRef(false);
   const supabaseRef       = useRef<DB | null>(null);
+  // Realtime channel — kept so handleAnswer can broadcast an "answered" signal
+  // (answers RLS is owner-only, so postgres_changes can't power the counter).
+  const channelRef        = useRef<ReturnType<DB["channel"]> | null>(null);
 
   const isHost = user && room ? user.id === room.created_by : false;
 
@@ -299,7 +302,7 @@ export default function RoomPage() {
 
       setLoading(false);
 
-      const channel = sb.channel(`room:${roomId}`)
+      const channel = sb.channel(`room:${roomId}`, { config: { broadcast: { self: true } } })
         // Question events: show new questions to all clients
         .on("postgres_changes", { event: "INSERT", schema: "public", table: "question_events", filter: `room_id=eq.${roomId}` },
           (payload) => handleNewQuestion(sb, { new: payload.new as unknown as QuestionEvent }))
@@ -320,24 +323,25 @@ export default function RoomPage() {
         // New players joining
         .on("postgres_changes", { event: "INSERT", schema: "public", table: "room_members", filter: `room_id=eq.${roomId}` },
           () => fetchPlayers(sb, roomId))
-        // Answer tracking: live progress counter + early advance (Fixes #3, #7)
-        .on("postgres_changes", { event: "INSERT", schema: "public", table: "answers", filter: `room_id=eq.${roomId}` },
-          (payload) => {
-            if (cancelled) return;
-            const ans = payload.new;
-            // Only track answers for the current question event
-            if (ans.question_event_id !== activeEventIdRef.current) return;
-            answeredUidsRef.current.add(ans.user_id as string);
-            const count = answeredUidsRef.current.size;
-            setAnsweredCount(count);
-            // Host: trigger early advance when everyone has answered (Fix #3)
-            if (isHostRef.current && playersCountRef.current > 0 && count >= playersCountRef.current) {
-              triggerEarlyAdvance();
-            }
-          })
+        // Answer tracking: live progress counter + early advance (Fixes #3, #7).
+        // Uses a broadcast (not postgres_changes) because answers RLS is
+        // owner-only, so the host can't see other players' answer rows.
+        .on("broadcast", { event: "answered" }, ({ payload }) => {
+          if (cancelled) return;
+          const p = payload as { userId?: string; eventId?: string };
+          if (!p.userId || p.eventId !== activeEventIdRef.current) return;
+          answeredUidsRef.current.add(p.userId);
+          const count = answeredUidsRef.current.size;
+          setAnsweredCount(count);
+          // Host: trigger early advance when everyone has answered (Fix #3)
+          if (isHostRef.current && playersCountRef.current > 0 && count >= playersCountRef.current) {
+            triggerEarlyAdvance();
+          }
+        })
         .subscribe();
 
-      return () => { cancelled = true; sb.removeChannel(channel); };
+      channelRef.current = channel;
+      return () => { cancelled = true; channelRef.current = null; sb.removeChannel(channel); };
     });
 
     return () => { cancelled = true; };
@@ -373,6 +377,15 @@ export default function RoomPage() {
       body: JSON.stringify({ questionEventId: activeQuestion.eventId, selectedAnswer: letter }),
     });
     if (!res.ok) { const e = await res.json(); throw new Error(e.error); }
+    // Tell the room this player answered (powers the live counter + early
+    // advance) — broadcast avoids the owner-only RLS on the answers table.
+    if (user) {
+      channelRef.current?.send({
+        type: "broadcast",
+        event: "answered",
+        payload: { userId: user.id, eventId: activeQuestion.eventId },
+      });
+    }
     return res.json();
   }
 
