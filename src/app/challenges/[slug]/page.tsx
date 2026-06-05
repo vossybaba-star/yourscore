@@ -6,10 +6,10 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { getTeamBadgeUrl } from "@/lib/teamImages";
 import { getCompetitionBadgeUrl } from "@/lib/competitionImages";
+import { AnswerButtons } from "@/components/game/AnswerButtons";
 import { slugify } from "@/lib/utils";
 import type { Json } from "@/types/database";
 import {
-  LETTER_COLORS,
   DIFFICULTY_COLOR as DIFF_COLOR,
   DIFFICULTY_BG as DIFF_BG,
   RECORDS_EMOJI,
@@ -70,7 +70,6 @@ function timerDisplay(ms: number): string {
 
 // ── Misc helpers ──────────────────────────────────────────────────────────
 
-const LETTERS: Letter[] = ["A", "B", "C", "D"];
 
 function scoreData(score: number, max: number) {
   const p = score / max;
@@ -805,48 +804,14 @@ export default function ChallengePage() {
           </div>
 
           {/* Answer buttons */}
-          <div className="space-y-3">
-            {LETTERS.map((letter) => {
-              const optionText = currentQ.options[letter];
-              const isSelected = selected === letter;
-              const isCorrectAnswer = revealed && letter === (currentQ.answer as Letter);
-              const isWrong = revealed && isSelected && !isCorrectAnswer;
-              const isDimmed = revealed && !isCorrectAnswer && letter !== selected;
-              const lColor = LETTER_COLORS[letter];
-
-              let cardBg = "rgba(255,255,255,0.03)";
-              let cardBorder = "rgba(255,255,255,0.09)";
-              let textColor = "#e0e0f0";
-              let chipBg = `${lColor}18`;
-              let chipColor = lColor;
-
-              if (isCorrectAnswer) {
-                cardBg = "rgba(0,255,135,0.1)"; cardBorder = "#00ff87"; textColor = "#00ff87";
-                chipBg = "#00ff87"; chipColor = "#0a0a0f";
-              } else if (isWrong) {
-                cardBg = "rgba(255,71,87,0.08)"; cardBorder = "rgba(255,71,87,0.5)"; textColor = "#ff4757";
-                chipBg = "rgba(255,71,87,0.2)"; chipColor = "#ff4757";
-              } else if (isDimmed) {
-                cardBg = "transparent"; cardBorder = "rgba(255,255,255,0.04)"; textColor = "#444466";
-                chipBg = "rgba(255,255,255,0.03)"; chipColor = "#444466";
-              } else if (isSelected && !revealed) {
-                cardBg = `${accent}10`; cardBorder = `${accent}50`; textColor = accent;
-                chipBg = `${accent}25`; chipColor = accent;
-              }
-
-              return (
-                <button key={letter} onClick={() => handleAnswer(letter)} disabled={!!selected}
-                  className="w-full flex items-center gap-3 rounded-2xl px-4 py-4 text-left transition-all active:scale-[0.98]"
-                  style={{ background: cardBg, border: `1.5px solid ${cardBorder}`, color: textColor, minHeight: 58 }}>
-                  <span className="w-9 h-9 rounded-xl flex items-center justify-center font-display text-sm flex-shrink-0 transition-all"
-                    style={{ background: chipBg, color: chipColor }}>
-                    {isCorrectAnswer ? "✓" : isWrong ? "✗" : letter}
-                  </span>
-                  <span className="font-body text-sm font-medium leading-snug">{optionText}</span>
-                </button>
-              );
-            })}
-          </div>
+          <AnswerButtons
+            options={currentQ.options}
+            answer={currentQ.answer}
+            selected={selected}
+            revealed={revealed}
+            accent={accent}
+            onAnswer={handleAnswer}
+          />
 
           {/* Reveal banner */}
           {revealed && (

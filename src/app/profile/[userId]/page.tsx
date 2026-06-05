@@ -1,20 +1,9 @@
-"use client";
-
-import { useState, useEffect } from "react";
-import { GridBackground } from "@/components/ui/GridBackground";
-import { useParams, useRouter } from "next/navigation";
+import { redirect } from "next/navigation";
 import Link from "next/link";
-import { useUser } from "@/hooks/useUser";
+import { createClient } from "@/lib/supabase/server";
+import { GridBackground } from "@/components/ui/GridBackground";
 import { BottomNav } from "@/components/ui/BottomNav";
-import { Spinner } from "@/components/ui/Spinner";
-
-interface PublicProfile {
-  id: string;
-  display_name: string | null;
-  total_score: number;
-  games_played: number;
-  avatar_url: string | null;
-}
+import { BackButton } from "@/components/ui/BackButton";
 
 interface RecentAttempt {
   id: string;
@@ -44,92 +33,21 @@ function AvatarCircle({ name, size = 72, avatarUrl }: { name: string; size?: num
   );
 }
 
-export default function PublicProfilePage() {
-  const params = useParams();
-  const router = useRouter();
-  const { user } = useUser();
-  const userId = params.userId as string;
+// Server Component: data is fetched on the server before render (no client
+// waterfall / loading spinner). Only the Back button is a client island.
+export default async function PublicProfilePage({ params }: { params: { userId: string } }) {
+  const userId = params.userId;
+  const supabase = await createClient();
 
-  const [profile, setProfile] = useState<PublicProfile | null>(null);
-  const [globalRank, setGlobalRank] = useState<number | null>(null);
-  const [leagueCount, setLeagueCount] = useState(0);
-  const [attempts, setAttempts] = useState<RecentAttempt[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Viewing your own profile → redirect to the personal page (server-side).
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user?.id === userId) redirect("/profile");
 
-  // Redirect own profile to the personal profile page
-  useEffect(() => {
-    if (user && user.id === userId) {
-      router.replace("/profile");
-    }
-  }, [user, userId, router]);
-
-  useEffect(() => {
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) { setLoading(false); return; }
-    import("@/lib/supabase/client").then(async ({ createClient }) => {
-      const sb = createClient();
-
-      // Fetch profile
-      const { data: p } = await sb
-        .from("profiles")
-        .select("id, display_name, total_score, games_played, avatar_url")
-        .eq("id", userId)
-        .single();
-
-      if (!p) { setLoading(false); return; }
-      setProfile({
-        id: p.id,
-        display_name: p.display_name,
-        total_score: p.total_score ?? 0,
-        games_played: p.games_played ?? 0,
-        avatar_url: p.avatar_url,
-      });
-
-      // Global rank
-      const { count: above } = await sb
-        .from("profiles")
-        .select("*", { count: "exact", head: true })
-        .gt("total_score", p.total_score ?? 0);
-      setGlobalRank((above ?? 0) + 1);
-
-      // League count
-      const { count: leagues } = await sb
-        .from("league_members")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", userId);
-      setLeagueCount(leagues ?? 0);
-
-      // Recent quiz attempts with pack name
-      const { data: att } = await sb
-        .from("quiz_attempts")
-        .select("id, score, max_score, completed_at, pack_id")
-        .eq("user_id", userId)
-        .order("completed_at", { ascending: false })
-        .limit(10);
-
-      if (att?.length) {
-        const packIdSet = new Set<string>(att.map((a) => a.pack_id).filter(Boolean));
-        const packIds = Array.from(packIdSet);
-        const packNames: Record<string, string> = {};
-        if (packIds.length > 0) {
-          const { data: packs } = await sb.from("quiz_packs").select("id, name").in("id", packIds);
-          (packs ?? []).forEach((pk) => { packNames[pk.id] = pk.name; });
-        }
-        setAttempts(att.map((a) => ({
-          id: a.id,
-          score: a.score,
-          max_score: a.max_score,
-          completed_at: a.completed_at,
-          pack_name: packNames[a.pack_id] ?? null,
-        })));
-      }
-
-      setLoading(false);
-    });
-  }, [userId]);
-
-  if (loading) {
-    return <main className="min-h-dvh bg-bg flex items-center justify-center"><Spinner size={32} /></main>;
-  }
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("id, display_name, total_score, games_played, avatar_url")
+    .eq("id", userId)
+    .single();
 
   if (!profile) {
     return (
@@ -139,6 +57,40 @@ export default function PublicProfilePage() {
         <Link href="/leagues" className="font-body text-sm" style={{ color: "#a78bfa" }}>← Leaderboard</Link>
       </main>
     );
+  }
+
+  const totalScore = profile.total_score ?? 0;
+
+  // Independent queries run in parallel.
+  const [{ count: above }, { count: leagues }, { data: att }] = await Promise.all([
+    supabase.from("profiles").select("*", { count: "exact", head: true }).gt("total_score", totalScore),
+    supabase.from("league_members").select("*", { count: "exact", head: true }).eq("user_id", userId),
+    supabase
+      .from("quiz_attempts")
+      .select("id, score, max_score, completed_at, pack_id")
+      .eq("user_id", userId)
+      .order("completed_at", { ascending: false })
+      .limit(10),
+  ]);
+
+  const globalRank = (above ?? 0) + 1;
+  const leagueCount = leagues ?? 0;
+
+  let attempts: RecentAttempt[] = [];
+  if (att?.length) {
+    const packIds = Array.from(new Set(att.map((a) => a.pack_id).filter(Boolean)));
+    const packNames: Record<string, string> = {};
+    if (packIds.length > 0) {
+      const { data: packs } = await supabase.from("quiz_packs").select("id, name").in("id", packIds);
+      (packs ?? []).forEach((pk) => { packNames[pk.id] = pk.name; });
+    }
+    attempts = att.map((a) => ({
+      id: a.id,
+      score: a.score,
+      max_score: a.max_score,
+      completed_at: a.completed_at,
+      pack_name: packNames[a.pack_id] ?? null,
+    }));
   }
 
   const name = profile.display_name ?? "Player";
@@ -152,13 +104,7 @@ export default function PublicProfilePage() {
 
       {/* Nav */}
       <nav className="relative z-10 flex items-center justify-between px-5 py-4 max-w-lg mx-auto">
-        <button onClick={() => router.back()}
-          className="flex items-center gap-2 font-body text-sm transition-opacity hover:opacity-70 text-text-muted">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          Back
-        </button>
+        <BackButton />
         <span className="font-body text-xs px-3 py-1 rounded-full"
           style={{ background: "rgba(167,139,250,0.1)", color: "#a78bfa", border: "1px solid rgba(167,139,250,0.2)" }}>
           Player Profile
@@ -172,14 +118,12 @@ export default function PublicProfilePage() {
           <AvatarCircle name={name} size={72} avatarUrl={profile.avatar_url} />
           <div className="flex-1 min-w-0">
             <p className="font-display text-3xl text-white tracking-wide truncate">{name.toUpperCase()}</p>
-            {globalRank !== null && (
-              <div className="flex items-center gap-2 mt-1">
-                <span className="font-body text-xs px-2 py-0.5 rounded-full"
-                  style={{ background: "rgba(167,139,250,0.12)", color: "#a78bfa", border: "1px solid rgba(167,139,250,0.2)" }}>
-                  #{globalRank} global
-                </span>
-              </div>
-            )}
+            <div className="flex items-center gap-2 mt-1">
+              <span className="font-body text-xs px-2 py-0.5 rounded-full"
+                style={{ background: "rgba(167,139,250,0.12)", color: "#a78bfa", border: "1px solid rgba(167,139,250,0.2)" }}>
+                #{globalRank} global
+              </span>
+            </div>
           </div>
         </div>
 
