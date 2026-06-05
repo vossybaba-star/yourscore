@@ -69,6 +69,24 @@ export default function RootLayout({
         <NativeBootstrap />
         {children}
         <Analytics />
+        {/* Google Analytics 4 */}
+        <Script
+          src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}`}
+          strategy="afterInteractive"
+        />
+        <Script
+          id="google-analytics"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', '${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}');
+            `,
+          }}
+        />
+        {/* Meta Pixel */}
         <Script
           id="meta-pixel"
           strategy="afterInteractive"
