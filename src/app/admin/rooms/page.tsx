@@ -13,15 +13,10 @@ interface Room {
   _playerCount?: number;
 }
 
-const MOCK_ROOMS: Room[] = [
-  { id: "mock-room-id", name: "The Lads' Lobby", code: "ENG123", status: "live", match_id: "m1", created_at: new Date().toISOString(), _playerCount: 5 },
-  { id: "r2", name: "Brazil Crew", code: "BRA456", status: "lobby", match_id: "m2", created_at: new Date().toISOString(), _playerCount: 3 },
-];
-
 const STATUS_COLOR = { lobby: "#ffb800", live: "#00ff87", completed: "#555566" };
 
 export default function AdminRooms() {
-  const [rooms, setRooms] = useState<Room[]>(MOCK_ROOMS);
+  const [rooms, setRooms] = useState<Room[]>([]);
 
   useEffect(() => {
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return;
@@ -31,8 +26,9 @@ export default function AdminRooms() {
         .from("rooms")
         .select("id, name, code, status, match_id, created_at")
         .order("created_at", { ascending: false })
+        .limit(100)
         .then(({ data }) => {
-          if (data && data.length > 0) setRooms(data as Room[]);
+          if (data) setRooms(data as Room[]);
         });
     });
   }, []);

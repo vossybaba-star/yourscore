@@ -1,12 +1,15 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 
-const STATS = [
-  { label: "Matches", value: "8", sub: "scheduled", color: "#00ff87", href: "/admin/matches" },
-  { label: "Questions", value: "24", sub: "approved", color: "#ffb800", href: "/admin/matches" },
-  { label: "Active Lobbies", value: "3", sub: "live now", color: "#ff4757", href: "/admin/rooms" },
-  { label: "Players", value: "47", sub: "total", color: "#a78bfa", href: "/admin/rooms" },
+type StatKey = "matches" | "questions" | "lobbies" | "players";
+
+const STAT_CARDS: { key: StatKey; label: string; sub: string; color: string; href: string }[] = [
+  { key: "matches", label: "Matches", sub: "scheduled", color: "#00ff87", href: "/admin/matches" },
+  { key: "questions", label: "Quiz Packs", sub: "published", color: "#ffb800", href: "/admin/matches" },
+  { key: "lobbies", label: "Lobbies", sub: "total", color: "#ff4757", href: "/admin/rooms" },
+  { key: "players", label: "Players", sub: "total", color: "#a78bfa", href: "/admin/rooms" },
 ];
 
 const QUICK_ACTIONS = [
@@ -16,6 +19,26 @@ const QUICK_ACTIONS = [
 ];
 
 export default function AdminDashboard() {
+  const [counts, setCounts] = useState<Record<StatKey, number> | null>(null);
+
+  useEffect(() => {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return;
+    import("@/lib/supabase/client").then(async ({ createClient }) => {
+      const supabase = createClient();
+      const countOf = async (table: "matches" | "quiz_packs" | "rooms" | "profiles") => {
+        const { count } = await supabase.from(table).select("*", { count: "exact", head: true });
+        return count ?? 0;
+      };
+      const [matches, questions, lobbies, players] = await Promise.all([
+        countOf("matches"),
+        countOf("quiz_packs"),
+        countOf("rooms"),
+        countOf("profiles"),
+      ]);
+      setCounts({ matches, questions, lobbies, players });
+    });
+  }, []);
+
   return (
     <main className="p-8 max-w-4xl">
       <div className="mb-8">
@@ -25,14 +48,14 @@ export default function AdminDashboard() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-3 mb-8 lg:grid-cols-4">
-        {STATS.map((s) => (
+        {STAT_CARDS.map((s) => (
           <Link
-            key={s.label}
+            key={s.key}
             href={s.href}
             className="rounded-2xl p-5 hover:opacity-90 transition-opacity"
             style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}
           >
-            <p className="font-display text-3xl leading-none" style={{ color: s.color }}>{s.value}</p>
+            <p className="font-display text-3xl leading-none" style={{ color: s.color }}>{counts ? counts[s.key] : "…"}</p>
             <p className="font-body text-sm font-semibold text-white mt-2">{s.label}</p>
             <p className="font-body text-xs text-text-muted">{s.sub}</p>
           </Link>

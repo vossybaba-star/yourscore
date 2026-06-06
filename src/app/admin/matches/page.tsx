@@ -11,13 +11,6 @@ interface Match {
   status: string;
 }
 
-const MOCK_MATCHES: Match[] = [
-  { id: "m1", home_team: "England", away_team: "France", match_date: "2026-06-15T19:00:00Z", status: "upcoming" },
-  { id: "m2", home_team: "Brazil", away_team: "Argentina", match_date: "2026-06-18T20:00:00Z", status: "upcoming" },
-  { id: "m3", home_team: "Germany", away_team: "Spain", match_date: "2026-06-21T17:00:00Z", status: "upcoming" },
-  { id: "m4", home_team: "Portugal", away_team: "Netherlands", match_date: "2026-06-24T19:00:00Z", status: "upcoming" },
-];
-
 const STATUS_COLOR: Record<string, string> = {
   upcoming: "#8888aa",
   live: "#00ff87",
@@ -26,7 +19,7 @@ const STATUS_COLOR: Record<string, string> = {
 };
 
 export default function AdminMatches() {
-  const [matches, setMatches] = useState<Match[]>(MOCK_MATCHES);
+  const [matches, setMatches] = useState<Match[]>([]);
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ home_team: "", away_team: "", match_date: "", match_time: "19:00" });
   const [saving, setSaving] = useState(false);
@@ -40,7 +33,7 @@ export default function AdminMatches() {
         .select("id, home_team, away_team, match_date, status")
         .order("match_date", { ascending: true })
         .then(({ data }) => {
-          if (data && data.length > 0) setMatches(data as Match[]);
+          if (data) setMatches(data as Match[]);
         });
     });
   }, []);

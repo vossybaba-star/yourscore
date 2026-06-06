@@ -3,9 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { rateLimitDistributed } from "@/lib/ratelimit";
 import {
-  calculateBasePoints,
-  calculateStreakBonus,
-  calculateComebackBonus,
+  scoreAnswer,
   calculatePerfectRoundBonus,
   H2H_QUESTION_WINDOW_MS,
 } from "@/lib/scoring";
@@ -105,20 +103,19 @@ export async function POST(req: NextRequest) {
     const elapsedMs = Math.min(Math.max(answers[i].elapsedMs, 0), 60_000); // clamp
     const difficulty = questions[i].difficulty ?? "medium";
 
-    const base         = calculateBasePoints(isCorrect, elapsedMs, difficulty, H2H_QUESTION_WINDOW_MS);
-    const streakBonus  = calculateStreakBonus(correctStreak, isCorrect);
-    const comebackBonus = calculateComebackBonus(wrongStreak, isCorrect);
-    const pts = base + streakBonus + comebackBonus;
+    const result = scoreAnswer({
+      isCorrect,
+      elapsedMs,
+      difficulty,
+      correctStreak,
+      wrongStreak,
+      windowMs: H2H_QUESTION_WINDOW_MS,
+    });
 
-    score += pts;
-    if (isCorrect) {
-      correct += 1;
-      correctStreak += 1;
-      wrongStreak = 0;
-    } else {
-      correctStreak = 0;
-      wrongStreak += 1;
-    }
+    score += result.points;
+    if (isCorrect) correct += 1;
+    correctStreak = result.nextCorrectStreak;
+    wrongStreak = result.nextWrongStreak;
   }
 
   // Perfect round bonus

@@ -1,18 +1,7 @@
-"use client";
-
-import { useState, useEffect } from "react";
-import { GridBackground } from "@/components/ui/GridBackground";
 import Link from "next/link";
-import { useUser } from "@/hooks/useUser";
+import { createClient } from "@/lib/supabase/server";
+import { GridBackground } from "@/components/ui/GridBackground";
 import { BottomNav } from "@/components/ui/BottomNav";
-import { Spinner } from "@/components/ui/Spinner";
-
-interface ProfileStats {
-  display_name: string;
-  total_score: number;
-  games_played: number;
-  avatar_url?: string | null;
-}
 
 function AvatarCircle({ name, size = 64, avatarUrl }: { name: string; size?: number; avatarUrl?: string | null }) {
   if (avatarUrl) {
@@ -27,56 +16,23 @@ function AvatarCircle({ name, size = 64, avatarUrl }: { name: string; size?: num
     { bg: "#1a4a2a", text: "#4ade80" }, { bg: "#4a2a1a", text: "#fb923c" },
     { bg: "#4a1a2a", text: "#f87171" },
   ];
-  const c = palettes[name.charCodeAt(0) % palettes.length];
+  const c = palettes[(name.charCodeAt(0) || 0) % palettes.length];
   return (
     <div className="rounded-full flex items-center justify-center font-body font-bold flex-shrink-0"
       style={{ width: size, height: size, background: c.bg, color: c.text, fontSize: size * 0.38, border: "2px solid rgba(255,255,255,0.1)" }}>
-      {name[0].toUpperCase()}
+      {(name[0] ?? "?").toUpperCase()}
     </div>
   );
 }
 
-export default function ProfilePage() {
-  const { user, loading } = useUser();
-  const [stats, setStats] = useState<ProfileStats | null>(null);
-  const [globalRank, setGlobalRank] = useState<number | null>(null);
-  const [dataLoading, setDataLoading] = useState(true);
+// Server Component: own profile. Reads the session from cookies and fetches the
+// profile + global rank server-side (mirrors profile/[userId]/page.tsx). All
+// controls are plain links, so no client island is needed.
+export default async function ProfilePage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  useEffect(() => {
-    if (loading) return;
-    if (!user || !process.env.NEXT_PUBLIC_SUPABASE_URL) {
-      setDataLoading(false);
-      return;
-    }
-    import("@/lib/supabase/client").then(({ createClient }) => {
-      const supabase = createClient();
-      supabase.from("profiles").select("display_name, total_score, games_played, avatar_url").eq("id", user.id).single()
-        .then(({ data: p }) => {
-          if (p) {
-            setStats({
-              display_name: p.display_name ?? "",
-              total_score: p.total_score ?? 0,
-              games_played: p.games_played ?? 0,
-              avatar_url: p.avatar_url,
-            });
-            supabase.from("profiles")
-              .select("*", { count: "exact", head: true })
-              .gt("total_score", p.total_score ?? 0)
-              .then(({ count }) => setGlobalRank((count ?? 0) + 1));
-          }
-          setDataLoading(false);
-        });
-    });
-  }, [user, loading]);
-
-  if (loading || dataLoading) {
-    return (
-      <main className="min-h-dvh bg-bg flex items-center justify-center">
-        <Spinner size={32} />
-      </main>
-    );
-  }
-
+  // Logged-out state — preserve the existing sign-in prompt.
   if (!user) {
     return (
       <main className="min-h-dvh bg-bg flex items-center justify-center px-6">
@@ -92,7 +48,21 @@ export default function ProfilePage() {
     );
   }
 
-  const name = stats?.display_name || user.email?.split("@")[0] || "Player";
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("display_name, total_score, games_played, avatar_url")
+    .eq("id", user.id)
+    .single();
+
+  const totalScore = profile?.total_score ?? 0;
+
+  const { count } = await supabase
+    .from("profiles")
+    .select("*", { count: "exact", head: true })
+    .gt("total_score", totalScore);
+  const globalRank = profile ? (count ?? 0) + 1 : null;
+
+  const name = profile?.display_name || user.email?.split("@")[0] || "Player";
 
   return (
     <main className="min-h-dvh bg-bg pb-28">
@@ -102,11 +72,11 @@ export default function ProfilePage() {
       <div className="sticky top-0 z-30 pt-safe" style={{ background: "rgba(10,10,15,0.92)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
         <div className="max-w-lg mx-auto px-5 py-4">
           <div className="flex items-center gap-4">
-            <AvatarCircle name={name} size={56} avatarUrl={stats?.avatar_url} />
+            <AvatarCircle name={name} size={56} avatarUrl={profile?.avatar_url} />
             <div className="flex-1 min-w-0">
               <p className="font-display text-2xl text-white tracking-wide truncate">{name.toUpperCase()}</p>
               <p className="font-body text-xs text-text-muted mt-0.5 truncate">{user.email}</p>
-              <p className="font-body text-xs text-text-muted">{stats?.games_played ?? 0} games played</p>
+              <p className="font-body text-xs text-text-muted">{profile?.games_played ?? 0} games played</p>
             </div>
             <Link href="/settings" aria-label="Edit profile"
               className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-all hover:opacity-80 text-text-muted"
@@ -136,7 +106,7 @@ export default function ProfilePage() {
         {/* Stats grid */}
         <div className="grid grid-cols-2 gap-2.5">
           {[
-            { label: "Total score", value: (stats?.total_score ?? 0).toLocaleString(), color: "#00ff87" },
+            { label: "Total score", value: (profile?.total_score ?? 0).toLocaleString(), color: "#00ff87" },
             { label: "Avg rank", value: "—", color: "#ffffff" },
             { label: "Accuracy", value: "—", color: "#ffffff" },
             { label: "Best streak", value: "—", color: "#ffb800" },

@@ -2,9 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import {
-  calculateBasePoints,
-  calculateStreakBonus,
-  calculateComebackBonus,
+  scoreAnswer,
   TIMEOUT_PENALTY,
 } from "@/lib/scoring";
 import { rateLimitDistributed } from "@/lib/ratelimit";
@@ -142,13 +140,22 @@ export async function POST(request: NextRequest) {
     wrongStreak   = scoreRow?.wrong_streak   ?? 0;
   }
 
-  const basePoints = calculateBasePoints(isCorrect, timeTakenMs, question.difficulty ?? "medium", questionWindowMs);
-  const streakBonus   = calculateStreakBonus(currentStreak, isCorrect);
-  const comebackBonus = calculateComebackBonus(wrongStreak, isCorrect);
-  const pointsAwarded = basePoints + streakBonus + comebackBonus;
+  const {
+    points: pointsAwarded,
+    base: basePoints,
+    streakBonus,
+    comebackBonus,
+    nextCorrectStreak: newStreak,
+    nextWrongStreak: newWrongStreak,
+  } = scoreAnswer({
+    isCorrect,
+    elapsedMs: timeTakenMs,
+    difficulty: question.difficulty ?? "medium",
+    correctStreak: currentStreak,
+    wrongStreak,
+    windowMs: questionWindowMs,
+  });
 
-  const newStreak      = isCorrect ? currentStreak + 1 : 0;
-  const newWrongStreak = isCorrect ? 0 : wrongStreak + 1;
   const bestStreak     = Math.max(scoreRow?.best_streak ?? 0, newStreak);
 
   // Rolling avg and fastest answer speed

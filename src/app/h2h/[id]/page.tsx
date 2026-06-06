@@ -1,14 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { SignInWithGoogle } from "@/components/auth/AuthButton";
 import { AnswerButtons } from "@/components/game/AnswerButtons";
+import { useGameLoop } from "@/lib/useGameLoop";
 import {
-  calculateBasePoints,
-  calculateStreakBonus,
-  calculateComebackBonus,
+  scoreAnswer,
   H2H_QUESTION_WINDOW_MS,
 } from "@/lib/scoring";
 import {
@@ -169,31 +168,11 @@ export default function H2HPage({ params }: { params: { id: string } }) {
   const [lastPoints, setLastPoints] = useState<number | null>(null);
   const [advancing, setAdvancing] = useState(false);
 
-  // Timer
-  const [timerMs, setTimerMs] = useState(0);
-  const questionStartRef = useRef<number>(0);
-  const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const stopTimer = useCallback(() => {
-    if (timerIntervalRef.current !== null) {
-      clearInterval(timerIntervalRef.current);
-      timerIntervalRef.current = null;
-    }
-  }, []);
-
-  const startTimer = useCallback(() => {
-    stopTimer();
-    questionStartRef.current = Date.now();
-    setTimerMs(0);
-    timerIntervalRef.current = setInterval(() => {
-      setTimerMs(Date.now() - questionStartRef.current);
-    }, 30);
-  }, [stopTimer]);
-
-  useEffect(() => {
-    if (pageState === "playing") startTimer();
-    return stopTimer;
-  }, [currentIdx, pageState, startTimer, stopTimer]);
+  // Timer — count-up question timer shared with the solo loop (see useGameLoop).
+  const { timerMs, setTimerMs, questionStartRef, stopTimer } = useGameLoop(
+    pageState === "playing",
+    currentIdx,
+  );
 
   // ── Initial load ───────────────────────────────────────────────────────
   useEffect(() => {
@@ -292,10 +271,14 @@ export default function H2HPage({ params }: { params: { id: string } }) {
       if (r.correct) { priorCorrectStreak++; priorWrongStreak = 0; }
       else { priorWrongStreak++; priorCorrectStreak = 0; }
     }
-    const pts =
-      calculateBasePoints(isCorrect, elapsed, currentQ.difficulty ?? "medium", H2H_QUESTION_WINDOW_MS) +
-      calculateStreakBonus(priorCorrectStreak, isCorrect) +
-      calculateComebackBonus(priorWrongStreak, isCorrect);
+    const { points: pts } = scoreAnswer({
+      isCorrect,
+      elapsedMs: elapsed,
+      difficulty: currentQ.difficulty ?? "medium",
+      correctStreak: priorCorrectStreak,
+      wrongStreak: priorWrongStreak,
+      windowMs: H2H_QUESTION_WINDOW_MS,
+    });
 
     setSelected(letter);
     setRevealed(true);

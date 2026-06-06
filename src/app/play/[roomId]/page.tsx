@@ -125,6 +125,9 @@ export default function RoomPage() {
   // Realtime channel — kept so handleAnswer can broadcast an "answered" signal
   // (answers RLS is owner-only, so postgres_changes can't power the counter).
   const channelRef        = useRef<ReturnType<DB["channel"]> | null>(null);
+  // Trailing debounce for leaderboard refetches: a burst of room_scores events
+  // (one per player per answer) should trigger a single refetch, not many.
+  const leaderboardRefetchRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isHost = user && room ? user.id === room.created_by : false;
 
@@ -328,9 +331,16 @@ export default function RoomPage() {
         // Question events: show new questions to all clients
         .on("postgres_changes", { event: "INSERT", schema: "public", table: "question_events", filter: `room_id=eq.${roomId}` },
           (payload) => handleNewQuestion(sb, { new: payload.new as unknown as QuestionEvent }))
-        // Leaderboard updates
+        // Leaderboard updates — debounced (trailing) so a burst of per-answer
+        // score events collapses into a single refetch instead of one per event.
         .on("postgres_changes", { event: "*", schema: "public", table: "room_scores", filter: `room_id=eq.${roomId}` },
-          () => fetchLeaderboard(sb, roomId))
+          () => {
+            if (leaderboardRefetchRef.current) clearTimeout(leaderboardRefetchRef.current);
+            leaderboardRefetchRef.current = setTimeout(() => {
+              leaderboardRefetchRef.current = null;
+              if (!cancelled) fetchLeaderboard(sb, roomId);
+            }, 450);
+          })
         // Room status changes (also used as recovery path for missed question INSERT)
         .on("postgres_changes", { event: "UPDATE", schema: "public", table: "rooms", filter: `id=eq.${roomId}` },
           async (payload) => {
@@ -363,10 +373,18 @@ export default function RoomPage() {
         .subscribe();
 
       channelRef.current = channel;
-      return () => { cancelled = true; channelRef.current = null; sb.removeChannel(channel); };
+      return () => {
+        cancelled = true;
+        channelRef.current = null;
+        if (leaderboardRefetchRef.current) { clearTimeout(leaderboardRefetchRef.current); leaderboardRefetchRef.current = null; }
+        sb.removeChannel(channel);
+      };
     });
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      if (leaderboardRefetchRef.current) { clearTimeout(leaderboardRefetchRef.current); leaderboardRefetchRef.current = null; }
+    };
   }, [user, userLoading, roomId, fetchPlayers, fetchLeaderboard, handleNewQuestion, fetchAndShowQuestion, triggerEarlyAdvance]);
 
   // Schedule host advance when a new question's closesAt is set.

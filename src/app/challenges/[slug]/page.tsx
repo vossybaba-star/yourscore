@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -8,15 +8,14 @@ import { getTeamBadgeUrl } from "@/lib/teamImages";
 import { getCompetitionBadgeUrl } from "@/lib/competitionImages";
 import { AnswerButtons } from "@/components/game/AnswerButtons";
 import { slugify } from "@/lib/utils";
+import { useGameLoop } from "@/lib/useGameLoop";
 import {
   DIFFICULTY_COLOR as DIFF_COLOR,
   DIFFICULTY_BG as DIFF_BG,
   RECORDS_EMOJI,
 } from "@/lib/theme";
 import {
-  calculateBasePoints,
-  calculateStreakBonus,
-  calculateComebackBonus,
+  scoreAnswer,
   calculatePerfectRoundBonus,
   maxPointsForDifficulty,
   getSpeedLabel,
@@ -365,31 +364,11 @@ export default function ChallengePage() {
   const [wrongStreak, setWrongStreak] = useState(0);
 
   // ── Timer ──────────────────────────────────────────────────────────────
-  const [timerMs, setTimerMs] = useState(0);
-  const questionStartRef = useRef<number>(0);
-  const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const stopTimer = useCallback(() => {
-    if (timerIntervalRef.current !== null) {
-      clearInterval(timerIntervalRef.current);
-      timerIntervalRef.current = null;
-    }
-  }, []);
-
-  const startTimer = useCallback(() => {
-    stopTimer();
-    questionStartRef.current = Date.now();
-    setTimerMs(0);
-    timerIntervalRef.current = setInterval(() => {
-      setTimerMs(Date.now() - questionStartRef.current);
-    }, 30); // ~33fps — smooth enough for two decimal places
-  }, [stopTimer]);
-
-  // Start/reset timer whenever the question index changes (or phase enters playing)
-  useEffect(() => {
-    if (phase === "playing") startTimer();
-    return stopTimer;
-  }, [currentIdx, phase, startTimer, stopTimer]);
+  // Count-up question timer shared with the H2H loop (see useGameLoop).
+  const { timerMs, setTimerMs, questionStartRef, stopTimer } = useGameLoop(
+    phase === "playing",
+    currentIdx,
+  );
 
   // Re-fetch leaderboard after score saved so the user sees their position
   useEffect(() => {
@@ -495,19 +474,19 @@ export default function ChallengePage() {
     const isCorrect = letter === (currentQ.answer as Letter);
     const difficulty = currentQ.difficulty ?? "medium";
 
-    const base         = calculateBasePoints(isCorrect, elapsed, difficulty, CHALLENGE_WINDOW_MS);
-    const streakBonus  = calculateStreakBonus(correctStreak, isCorrect);
-    const comebackBonus = calculateComebackBonus(wrongStreak, isCorrect);
-    const pts = base + streakBonus + comebackBonus;
+    const { points: pts, streakBonus, comebackBonus, nextCorrectStreak, nextWrongStreak } =
+      scoreAnswer({
+        isCorrect,
+        elapsedMs: elapsed,
+        difficulty,
+        correctStreak,
+        wrongStreak,
+        windowMs: CHALLENGE_WINDOW_MS,
+      });
 
     // Update streaks
-    if (isCorrect) {
-      setCorrectStreak((s) => s + 1);
-      setWrongStreak(0);
-    } else {
-      setCorrectStreak(0);
-      setWrongStreak((s) => s + 1);
-    }
+    setCorrectStreak(nextCorrectStreak);
+    setWrongStreak(nextWrongStreak);
 
     setSelected(letter);
     setRevealed(true);

@@ -134,6 +134,63 @@ export function calculateComebackBonus(wrongStreak: number, isCorrect: boolean):
   return 50;
 }
 
+// ─── Per-answer orchestrator ───────────────────────────────────────────────
+
+/**
+ * Inputs for scoring a single answer.
+ * @property windowMs  Question window for speed bands. Defaults to
+ *                     DEFAULT_QUESTION_WINDOW_MS (matches calculateBasePoints).
+ */
+export interface ScoreAnswerInput {
+  isCorrect: boolean;
+  elapsedMs: number;
+  difficulty: string;
+  correctStreak: number;
+  wrongStreak: number;
+  windowMs?: number;
+}
+
+export interface ScoreAnswerResult {
+  points: number;
+  base: number;
+  streakBonus: number;
+  comebackBonus: number;
+  nextCorrectStreak: number;
+  nextWrongStreak: number;
+}
+
+/**
+ * Pure per-answer scoring orchestrator. Computes base + streak + comeback
+ * points and the streak transitions for one answer. Mirrors the exact math
+ * previously inlined in the gameplay pages and server routes:
+ *   points = calculateBasePoints + calculateStreakBonus + calculateComebackBonus
+ *   on correct → nextCorrectStreak = correctStreak + 1, nextWrongStreak = 0
+ *   on wrong   → nextCorrectStreak = 0,                  nextWrongStreak = wrongStreak + 1
+ *
+ * Streak/comeback bonuses are evaluated against the PRIOR streak values passed in
+ * (correctStreak / wrongStreak), not the post-answer ones.
+ *
+ * Note: caller is responsible for any elapsedMs clamping it needs (e.g. server
+ * routes clamp to [0, 60_000]) before calling.
+ */
+export function scoreAnswer(input: ScoreAnswerInput): ScoreAnswerResult {
+  const { isCorrect, elapsedMs, difficulty, correctStreak, wrongStreak, windowMs } = input;
+
+  const base = calculateBasePoints(isCorrect, elapsedMs, difficulty, windowMs);
+  const streakBonus = calculateStreakBonus(correctStreak, isCorrect);
+  const comebackBonus = calculateComebackBonus(wrongStreak, isCorrect);
+  const points = base + streakBonus + comebackBonus;
+
+  return {
+    points,
+    base,
+    streakBonus,
+    comebackBonus,
+    nextCorrectStreak: isCorrect ? correctStreak + 1 : 0,
+    nextWrongStreak: isCorrect ? 0 : wrongStreak + 1,
+  };
+}
+
 // ─── Round-end bonuses ─────────────────────────────────────────────────────
 
 /** +500 if every question in the round was answered correctly. */
