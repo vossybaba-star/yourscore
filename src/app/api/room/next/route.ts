@@ -65,24 +65,14 @@ export async function POST(req: NextRequest) {
       .filter((uid: string) => !answeredIds.has(uid));
 
     if (unanswered.length > 0) {
-      // Fetch their current scores, then deduct penalty (floor at 0)
-      const { data: scoreRows } = await sb
-        .from("room_scores")
-        .select("user_id, total_score")
-        .eq("room_id", roomId)
-        .in("user_id", unanswered);
-
-      const scoreMap: Record<string, number> = {};
-      (scoreRows ?? []).forEach((s) => { scoreMap[s.user_id as string] = s.total_score ?? 0; });
-
-      for (const uid of unanswered) {
-        const cur = scoreMap[uid] ?? 0;
-        const newScore = Math.max(0, cur + TIMEOUT_PENALTY);
-        await sb.from("room_scores").upsert(
-          { room_id: roomId, user_id: uid, total_score: newScore },
-          { onConflict: "room_id,user_id" }
-        );
-      }
+      // Set-based: one UPDATE for every unanswered player in a single round-trip
+      // (was one upsert per player — up to max_players sequential round-trips
+      // while the next question was blocked). GREATEST(0, …) floors at zero.
+      await sb.rpc("apply_timeout_penalty", {
+        p_room_id: roomId,
+        p_user_ids: unanswered,
+        p_penalty: TIMEOUT_PENALTY,
+      });
     }
   }
 
@@ -96,19 +86,26 @@ export async function POST(req: NextRequest) {
       .select("user_id, total_score, correct_answers")
       .eq("room_id", roomId);
 
-    for (const s of (scores ?? [])) {
-      const bonus = calculatePerfectRoundBonus(s.correct_answers ?? 0, room.question_count);
-      if (bonus > 0) {
-        await sb
-          .from("room_scores")
-          .update({ total_score: (s.total_score ?? 0) + bonus })
-          .eq("room_id", roomId)
-          .eq("user_id", s.user_id as string);
-        // Propagate to global profile
-        await sb.rpc("increment_profile_score", { p_user_id: s.user_id as string, p_points: bonus });
-        await sb.rpc("update_league_member_stats", { p_user_id: s.user_id as string, p_points: bonus, p_is_correct: false });
-      }
-    }
+    // Award perfect-round bonuses concurrently (was sequential: 3 round-trips
+    // per player, one player at a time). Each player's three writes are
+    // independent, so fan them all out with Promise.all.
+    await Promise.all(
+      (scores ?? []).map(async (s) => {
+        const bonus = calculatePerfectRoundBonus(s.correct_answers ?? 0, room.question_count);
+        if (bonus <= 0) return;
+        const uid = s.user_id as string;
+        await Promise.all([
+          sb
+            .from("room_scores")
+            .update({ total_score: (s.total_score ?? 0) + bonus })
+            .eq("room_id", roomId)
+            .eq("user_id", uid),
+          // Propagate to global profile + league standings.
+          sb.rpc("increment_profile_score", { p_user_id: uid, p_points: bonus }),
+          sb.rpc("update_league_member_stats", { p_user_id: uid, p_points: bonus, p_is_correct: false }),
+        ]);
+      })
+    );
 
     // Mark room completed
     await sb

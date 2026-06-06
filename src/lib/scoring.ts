@@ -157,20 +157,3 @@ export const HINT_PENALTY = -50;
 
 /** -100 for abandoning a round mid-game. */
 export const RAGEQUIT_PENALTY = -100;
-
-// ─── Legacy shims (kept so existing callers compile) ──────────────────────
-
-/** @deprecated — use calculateBasePoints instead. */
-export function calculatePoints(
-  isCorrect: boolean,
-  timeMs: number,
-  difficulty: string
-): number {
-  return calculateBasePoints(isCorrect, timeMs, difficulty);
-}
-
-/** @deprecated — streak bonus is now additive; use calculateStreakBonus separately. */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function applyStreakMultiplier(points: number, _streak: number): number {
-  return points; // no-op; route now calls calculateStreakBonus explicitly
-}

@@ -8,7 +8,6 @@ import { getTeamBadgeUrl } from "@/lib/teamImages";
 import { getCompetitionBadgeUrl } from "@/lib/competitionImages";
 import { AnswerButtons } from "@/components/game/AnswerButtons";
 import { slugify } from "@/lib/utils";
-import type { Json } from "@/types/database";
 import {
   DIFFICULTY_COLOR as DIFF_COLOR,
   DIFFICULTY_BG as DIFF_BG,
@@ -526,36 +525,52 @@ export default function ChallengePage() {
       if (currentIdx + 1 >= questions.length) {
         const correctCount = newLog.filter((r) => r.correct).length;
         const perfectBonus = calculatePerfectRoundBonus(correctCount, questions.length);
-        const finalScore = newLog.reduce((s, r) => s + r.points, 0) + perfectBonus;
+        // Optimistic local total for instant display; the SAVED score is graded
+        // server-side and overrides this if the request succeeds.
+        let finalScore = newLog.reduce((s, r) => s + r.points, 0) + perfectBonus;
         if (userId && pack && !priorAttempt) {
-          const { error } = await createClient()
-            .from("quiz_attempts")
-            .insert({ user_id: userId, pack_id: pack.id, score: finalScore, max_score: maxScore, correct_count: correctCount, answers: newLog as unknown as Json });
-          if (!error) {
-            setSaved(true);
-            // Fire-and-forget: lifecycle email if this was the user's first attempt.
-            // Server checks `is it actually the first?` so this is safe to call every time.
-            const accuracy = Math.round((correctCount / questions.length) * 100);
-            const bestStreak = newLog.reduce(
-              (acc, r) => {
-                const cur = r.correct ? acc.cur + 1 : 0;
-                return { cur, max: Math.max(acc.max, cur) };
-              },
-              { cur: 0, max: 0 },
-            ).max;
-            void fetch("/api/email/lifecycle", {
+          // Server-authoritative grade + save. The client can no longer write its
+          // own quiz_attempts row (insert RLS policy dropped in migration 12).
+          try {
+            const res = await fetch("/api/quiz/solo-complete", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
-                event: "first_challenge",
-                data: {
-                  club: pack.name ?? "Football",
-                  score: finalScore,
-                  accuracy,
-                  streak: bestStreak,
-                },
+                packId: pack.id,
+                answers: newLog.map((r) => ({ letter: r.selected, elapsedMs: r.elapsed_ms })),
               }),
-            }).catch(() => {});
+            });
+            if (res.ok) {
+              const result = await res.json();
+              if (typeof result.score === "number") finalScore = result.score;
+              if (result.saved) {
+                setSaved(true);
+                // Fire-and-forget: lifecycle email on the user's first attempt.
+                const accuracy = Math.round((correctCount / questions.length) * 100);
+                const bestStreak = newLog.reduce(
+                  (acc, r) => {
+                    const cur = r.correct ? acc.cur + 1 : 0;
+                    return { cur, max: Math.max(acc.max, cur) };
+                  },
+                  { cur: 0, max: 0 },
+                ).max;
+                void fetch("/api/email/lifecycle", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    event: "first_challenge",
+                    data: {
+                      club: pack.name ?? "Football",
+                      score: finalScore,
+                      accuracy,
+                      streak: bestStreak,
+                    },
+                  }),
+                }).catch(() => {});
+              }
+            }
+          } catch {
+            /* network error — keep the optimistic local score on screen */
           }
         }
         setScore(finalScore);

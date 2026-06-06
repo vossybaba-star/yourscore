@@ -1764,7 +1764,7 @@
       "source_file": "src/app/api/admin/approve-question/route.ts",
       "source_location": "L1",
       "id": "approve_question_route",
-      "community": 25,
+      "community": 1,
       "norm_label": "route.ts"
     },
     {
@@ -1773,7 +1773,7 @@
       "source_file": "src/app/api/admin/approve-question/route.ts",
       "source_location": "L5",
       "id": "approve_question_route_post",
-      "community": 25,
+      "community": 1,
       "norm_label": "post()"
     },
     {
@@ -1782,7 +1782,7 @@
       "source_file": "src/app/api/admin/fire/route.ts",
       "source_location": "L1",
       "id": "fire_route",
-      "community": 25,
+      "community": 1,
       "norm_label": "route.ts"
     },
     {
@@ -1791,7 +1791,7 @@
       "source_file": "src/app/api/admin/fire/route.ts",
       "source_location": "L5",
       "id": "fire_route_post",
-      "community": 25,
+      "community": 1,
       "norm_label": "post()"
     },
     {
@@ -1800,7 +1800,7 @@
       "source_file": "src/app/api/admin/generate-questions/route.ts",
       "source_location": "L1",
       "id": "generate_questions_route",
-      "community": 25,
+      "community": 1,
       "norm_label": "route.ts"
     },
     {
@@ -1809,7 +1809,7 @@
       "source_file": "src/app/api/admin/generate-questions/route.ts",
       "source_location": "L6",
       "id": "generate_questions_route_client",
-      "community": 25,
+      "community": 1,
       "norm_label": "client"
     },
     {
@@ -1818,7 +1818,7 @@
       "source_file": "src/app/api/admin/generate-questions/route.ts",
       "source_location": "L8",
       "id": "generate_questions_route_post",
-      "community": 25,
+      "community": 1,
       "norm_label": "post()"
     },
     {
@@ -1845,7 +1845,7 @@
       "source_file": "src/app/api/cron/reclassify/route.ts",
       "source_location": "L1",
       "id": "reclassify_route",
-      "community": 25,
+      "community": 1,
       "norm_label": "route.ts"
     },
     {
@@ -1854,7 +1854,7 @@
       "source_file": "src/app/api/cron/reclassify/route.ts",
       "source_location": "L4",
       "id": "reclassify_route_difficulty",
-      "community": 25,
+      "community": 1,
       "norm_label": "difficulty"
     },
     {
@@ -1863,7 +1863,7 @@
       "source_file": "src/app/api/cron/reclassify/route.ts",
       "source_location": "L6",
       "id": "reclassify_route_get",
-      "community": 25,
+      "community": 1,
       "norm_label": "get()"
     },
     {
@@ -1944,7 +1944,7 @@
       "source_file": "src/app/api/quiz/complete/route.ts",
       "source_location": "L1",
       "id": "complete_route",
-      "community": 88,
+      "community": 1,
       "norm_label": "route.ts"
     },
     {
@@ -1953,7 +1953,7 @@
       "source_file": "src/app/api/quiz/complete/route.ts",
       "source_location": "L6",
       "id": "complete_route_quizresult",
-      "community": 88,
+      "community": 1,
       "norm_label": "quizresult"
     },
     {
@@ -1962,7 +1962,7 @@
       "source_file": "src/app/api/quiz/complete/route.ts",
       "source_location": "L11",
       "id": "complete_route_completebody",
-      "community": 88,
+      "community": 1,
       "norm_label": "completebody"
     },
     {
@@ -1971,7 +1971,7 @@
       "source_file": "src/app/api/quiz/complete/route.ts",
       "source_location": "L20",
       "id": "complete_route_post",
-      "community": 88,
+      "community": 1,
       "norm_label": "post()"
     },
     {
@@ -1980,7 +1980,7 @@
       "source_file": "src/app/api/quiz/generate-custom/route.ts",
       "source_location": "L1",
       "id": "generate_custom_route",
-      "community": 26,
+      "community": 1,
       "norm_label": "route.ts"
     },
     {
@@ -1989,7 +1989,7 @@
       "source_file": "src/app/api/quiz/generate-custom/route.ts",
       "source_location": "L8",
       "id": "generate_custom_route_difficulty",
-      "community": 26,
+      "community": 1,
       "norm_label": "difficulty"
     },
     {
@@ -1998,7 +1998,7 @@
       "source_file": "src/app/api/quiz/generate-custom/route.ts",
       "source_location": "L9",
       "id": "generate_custom_route_entitytype",
-      "community": 26,
+      "community": 1,
       "norm_label": "entitytype"
     },
     {
@@ -2007,7 +2007,7 @@
       "source_file": "src/app/api/quiz/generate-custom/route.ts",
       "source_location": "L10",
       "id": "generate_custom_route_era",
-      "community": 26,
+      "community": 1,
       "norm_label": "era"
     },
     {
@@ -2016,7 +2016,7 @@
       "source_file": "src/app/api/quiz/generate-custom/route.ts",
       "source_location": "L12",
       "id": "generate_custom_route_generatecustombody",
-      "community": 26,
+      "community": 1,
       "norm_label": "generatecustombody"
     },
     {
@@ -2025,7 +2025,7 @@
       "source_file": "src/app/api/quiz/generate-custom/route.ts",
       "source_location": "L20",
       "id": "generate_custom_route_allowed_eras",
-      "community": 26,
+      "community": 1,
       "norm_label": "allowed_eras"
     },
     {
@@ -2034,7 +2034,7 @@
       "source_file": "src/app/api/quiz/generate-custom/route.ts",
       "source_location": "L22",
       "id": "generate_custom_route_bankquestion",
-      "community": 26,
+      "community": 1,
       "norm_label": "bankquestion"
     },
     {
@@ -2043,7 +2043,7 @@
       "source_file": "src/app/api/quiz/generate-custom/route.ts",
       "source_location": "L34",
       "id": "generate_custom_route_packquestion",
-      "community": 26,
+      "community": 1,
       "norm_label": "packquestion"
     },
     {
@@ -2052,7 +2052,7 @@
       "source_file": "src/app/api/quiz/generate-custom/route.ts",
       "source_location": "L43",
       "id": "generate_custom_route_builderalabel",
-      "community": 26,
+      "community": 1,
       "norm_label": "builderalabel()"
     },
     {
@@ -2061,7 +2061,7 @@
       "source_file": "src/app/api/quiz/generate-custom/route.ts",
       "source_location": "L52",
       "id": "generate_custom_route_builddifflabel",
-      "community": 26,
+      "community": 1,
       "norm_label": "builddifflabel()"
     },
     {
@@ -2070,7 +2070,7 @@
       "source_file": "src/app/api/quiz/generate-custom/route.ts",
       "source_location": "L57",
       "id": "generate_custom_route_fetchbydifficulty",
-      "community": 26,
+      "community": 1,
       "norm_label": "fetchbydifficulty()"
     },
     {
@@ -2079,7 +2079,34 @@
       "source_file": "src/app/api/quiz/generate-custom/route.ts",
       "source_location": "L84",
       "id": "generate_custom_route_post",
-      "community": 26,
+      "community": 1,
+      "norm_label": "post()"
+    },
+    {
+      "label": "route.ts",
+      "file_type": "code",
+      "source_file": "src/app/api/quiz/solo-complete/route.ts",
+      "source_location": "L1",
+      "id": "solo_complete_route",
+      "community": 1,
+      "norm_label": "route.ts"
+    },
+    {
+      "label": "SubmittedAnswer",
+      "file_type": "code",
+      "source_file": "src/app/api/quiz/solo-complete/route.ts",
+      "source_location": "L22",
+      "id": "solo_complete_route_submittedanswer",
+      "community": 1,
+      "norm_label": "submittedanswer"
+    },
+    {
+      "label": "POST()",
+      "file_type": "code",
+      "source_file": "src/app/api/quiz/solo-complete/route.ts",
+      "source_location": "L27",
+      "id": "solo_complete_route_post",
+      "community": 1,
       "norm_label": "post()"
     },
     {
@@ -2088,7 +2115,7 @@
       "source_file": "src/app/api/quiz/start/route.ts",
       "source_location": "L1",
       "id": "src_app_api_quiz_start_route_ts_start_route",
-      "community": 90,
+      "community": 1,
       "norm_label": "route.ts"
     },
     {
@@ -2097,7 +2124,7 @@
       "source_file": "src/app/api/quiz/start/route.ts",
       "source_location": "L7",
       "id": "src_app_api_quiz_start_route_ts_start_route_difficulty",
-      "community": 90,
+      "community": 1,
       "norm_label": "difficulty"
     },
     {
@@ -2106,7 +2133,7 @@
       "source_file": "src/app/api/quiz/start/route.ts",
       "source_location": "L13",
       "id": "start_route_bankquestion",
-      "community": 90,
+      "community": 1,
       "norm_label": "bankquestion"
     },
     {
@@ -2115,7 +2142,7 @@
       "source_file": "src/app/api/quiz/start/route.ts",
       "source_location": "L31",
       "id": "start_route_startbody",
-      "community": 90,
+      "community": 1,
       "norm_label": "startbody"
     },
     {
@@ -2124,7 +2151,7 @@
       "source_file": "src/app/api/quiz/start/route.ts",
       "source_location": "L37",
       "id": "start_route_fetchquestions",
-      "community": 90,
+      "community": 1,
       "norm_label": "fetchquestions()"
     },
     {
@@ -2133,7 +2160,7 @@
       "source_file": "src/app/api/quiz/start/route.ts",
       "source_location": "L81",
       "id": "src_app_api_quiz_start_route_ts_start_route_post",
-      "community": 90,
+      "community": 1,
       "norm_label": "post()"
     },
     {
@@ -2142,7 +2169,7 @@
       "source_file": "src/app/api/room/create/route.ts",
       "source_location": "L1",
       "id": "create_route",
-      "community": 89,
+      "community": 1,
       "norm_label": "route.ts"
     },
     {
@@ -2151,7 +2178,7 @@
       "source_file": "src/app/api/room/create/route.ts",
       "source_location": "L5",
       "id": "create_route_mode_limits",
-      "community": 89,
+      "community": 1,
       "norm_label": "mode_limits"
     },
     {
@@ -2160,7 +2187,7 @@
       "source_file": "src/app/api/room/create/route.ts",
       "source_location": "L6",
       "id": "create_route_valid_modes",
-      "community": 89,
+      "community": 1,
       "norm_label": "valid_modes"
     },
     {
@@ -2169,7 +2196,7 @@
       "source_file": "src/app/api/room/create/route.ts",
       "source_location": "L7",
       "id": "create_route_valid_counts",
-      "community": 89,
+      "community": 1,
       "norm_label": "valid_counts"
     },
     {
@@ -2178,7 +2205,7 @@
       "source_file": "src/app/api/room/create/route.ts",
       "source_location": "L8",
       "id": "create_route_valid_difficulties",
-      "community": 89,
+      "community": 1,
       "norm_label": "valid_difficulties"
     },
     {
@@ -2187,7 +2214,7 @@
       "source_file": "src/app/api/room/create/route.ts",
       "source_location": "L10",
       "id": "create_route_generatecode",
-      "community": 89,
+      "community": 1,
       "norm_label": "generatecode()"
     },
     {
@@ -2196,7 +2223,7 @@
       "source_file": "src/app/api/room/create/route.ts",
       "source_location": "L17",
       "id": "create_route_post",
-      "community": 89,
+      "community": 1,
       "norm_label": "post()"
     },
     {
@@ -2205,7 +2232,7 @@
       "source_file": "src/app/api/room/join/route.ts",
       "source_location": "L1",
       "id": "join_route",
-      "community": 13,
+      "community": 1,
       "norm_label": "route.ts"
     },
     {
@@ -2214,7 +2241,7 @@
       "source_file": "src/app/api/room/join/route.ts",
       "source_location": "L5",
       "id": "join_route_mode_limits",
-      "community": 13,
+      "community": 1,
       "norm_label": "mode_limits"
     },
     {
@@ -2223,7 +2250,7 @@
       "source_file": "src/app/api/room/join/route.ts",
       "source_location": "L7",
       "id": "join_route_post",
-      "community": 13,
+      "community": 1,
       "norm_label": "post()"
     },
     {
@@ -2250,7 +2277,7 @@
       "source_file": "src/app/api/room/start/route.ts",
       "source_location": "L1",
       "id": "src_app_api_room_start_route_ts_start_route",
-      "community": 13,
+      "community": 1,
       "norm_label": "route.ts"
     },
     {
@@ -2259,7 +2286,7 @@
       "source_file": "src/app/api/room/start/route.ts",
       "source_location": "L7",
       "id": "src_app_api_room_start_route_ts_start_route_difficulty",
-      "community": 13,
+      "community": 1,
       "norm_label": "difficulty"
     },
     {
@@ -2268,7 +2295,7 @@
       "source_file": "src/app/api/room/start/route.ts",
       "source_location": "L11",
       "id": "src_app_api_room_start_route_ts_start_route_post",
-      "community": 26,
+      "community": 1,
       "norm_label": "post()"
     },
     {
@@ -2347,7 +2374,7 @@
       "label": "QuizPack",
       "file_type": "code",
       "source_file": "src/app/challenges/[slug]/page.tsx",
-      "source_location": "L32",
+      "source_location": "L31",
       "id": "slug_page_quizpack",
       "community": 2,
       "norm_label": "quizpack"
@@ -2356,7 +2383,7 @@
       "label": "RawQuestion",
       "file_type": "code",
       "source_file": "src/app/challenges/[slug]/page.tsx",
-      "source_location": "L40",
+      "source_location": "L39",
       "id": "slug_page_rawquestion",
       "community": 2,
       "norm_label": "rawquestion"
@@ -2365,7 +2392,7 @@
       "label": "AnswerRecord",
       "file_type": "code",
       "source_file": "src/app/challenges/[slug]/page.tsx",
-      "source_location": "L48",
+      "source_location": "L47",
       "id": "slug_page_answerrecord",
       "community": 2,
       "norm_label": "answerrecord"
@@ -2374,7 +2401,7 @@
       "label": "Letter",
       "file_type": "code",
       "source_file": "src/app/challenges/[slug]/page.tsx",
-      "source_location": "L56",
+      "source_location": "L55",
       "id": "slug_page_letter",
       "community": 2,
       "norm_label": "letter"
@@ -2383,7 +2410,7 @@
       "label": "Phase",
       "file_type": "code",
       "source_file": "src/app/challenges/[slug]/page.tsx",
-      "source_location": "L57",
+      "source_location": "L56",
       "id": "slug_page_phase",
       "community": 2,
       "norm_label": "phase"
@@ -2392,7 +2419,7 @@
       "label": "timerColor()",
       "file_type": "code",
       "source_file": "src/app/challenges/[slug]/page.tsx",
-      "source_location": "L61",
+      "source_location": "L60",
       "id": "slug_page_timercolor",
       "community": 2,
       "norm_label": "timercolor()"
@@ -2401,7 +2428,7 @@
       "label": "timerDisplay()",
       "file_type": "code",
       "source_file": "src/app/challenges/[slug]/page.tsx",
-      "source_location": "L67",
+      "source_location": "L66",
       "id": "slug_page_timerdisplay",
       "community": 2,
       "norm_label": "timerdisplay()"
@@ -2410,7 +2437,7 @@
       "label": "scoreData()",
       "file_type": "code",
       "source_file": "src/app/challenges/[slug]/page.tsx",
-      "source_location": "L74",
+      "source_location": "L73",
       "id": "slug_page_scoredata",
       "community": 2,
       "norm_label": "scoredata()"
@@ -2419,7 +2446,7 @@
       "label": "ChallengeAFriendButtonProps",
       "file_type": "code",
       "source_file": "src/app/challenges/[slug]/page.tsx",
-      "source_location": "L85",
+      "source_location": "L84",
       "id": "slug_page_challengeafriendbuttonprops",
       "community": 2,
       "norm_label": "challengeafriendbuttonprops"
@@ -2428,7 +2455,7 @@
       "label": "ChallengeAFriendButton()",
       "file_type": "code",
       "source_file": "src/app/challenges/[slug]/page.tsx",
-      "source_location": "L95",
+      "source_location": "L94",
       "id": "slug_page_challengeafriendbutton",
       "community": 2,
       "norm_label": "challengeafriendbutton()"
@@ -2437,7 +2464,7 @@
       "label": "LeaderEntry",
       "file_type": "code",
       "source_file": "src/app/challenges/[slug]/page.tsx",
-      "source_location": "L254",
+      "source_location": "L253",
       "id": "slug_page_leaderentry",
       "community": 2,
       "norm_label": "leaderentry"
@@ -2446,7 +2473,7 @@
       "label": "LeaderRow",
       "file_type": "code",
       "source_file": "src/app/challenges/[slug]/page.tsx",
-      "source_location": "L262",
+      "source_location": "L261",
       "id": "slug_page_leaderrow",
       "community": 2,
       "norm_label": "leaderrow"
@@ -2455,7 +2482,7 @@
       "label": "PackLeaderboard()",
       "file_type": "code",
       "source_file": "src/app/challenges/[slug]/page.tsx",
-      "source_location": "L269",
+      "source_location": "L268",
       "id": "slug_page_packleaderboard",
       "community": 2,
       "norm_label": "packleaderboard()"
@@ -2464,7 +2491,7 @@
       "label": "ChallengePage()",
       "file_type": "code",
       "source_file": "src/app/challenges/[slug]/page.tsx",
-      "source_location": "L340",
+      "source_location": "L339",
       "id": "slug_page_challengepage",
       "community": 2,
       "norm_label": "challengepage()"
@@ -4329,7 +4356,7 @@
       "source_file": "src/lib/auth/admin.ts",
       "source_location": "L1",
       "id": "auth_admin",
-      "community": 25,
+      "community": 1,
       "norm_label": "admin.ts"
     },
     {
@@ -4338,7 +4365,7 @@
       "source_file": "src/lib/auth/admin.ts",
       "source_location": "L13",
       "id": "auth_admin_requireadmin",
-      "community": 25,
+      "community": 1,
       "norm_label": "requireadmin()"
     },
     {
@@ -4626,7 +4653,7 @@
       "source_file": "src/lib/ratelimit.ts",
       "source_location": "L1",
       "id": "lib_ratelimit",
-      "community": 88,
+      "community": 1,
       "norm_label": "ratelimit.ts"
     },
     {
@@ -4635,7 +4662,7 @@
       "source_file": "src/lib/ratelimit.ts",
       "source_location": "L7",
       "id": "lib_ratelimit_entry",
-      "community": 88,
+      "community": 1,
       "norm_label": "entry"
     },
     {
@@ -4644,7 +4671,7 @@
       "source_file": "src/lib/ratelimit.ts",
       "source_location": "L8",
       "id": "lib_ratelimit_store",
-      "community": 88,
+      "community": 1,
       "norm_label": "store"
     },
     {
@@ -4653,7 +4680,7 @@
       "source_file": "src/lib/ratelimit.ts",
       "source_location": "L10",
       "id": "lib_ratelimit_ratelimit",
-      "community": 88,
+      "community": 1,
       "norm_label": "ratelimit()"
     },
     {
@@ -4662,7 +4689,7 @@
       "source_file": "src/lib/ratelimit.ts",
       "source_location": "L38",
       "id": "lib_ratelimit_ratelimitdistributed",
-      "community": 88,
+      "community": 1,
       "norm_label": "ratelimitdistributed()"
     },
     {
@@ -4716,7 +4743,7 @@
       "source_file": "src/lib/scoring.ts",
       "source_location": "L88",
       "id": "lib_scoring_getspeedlabel",
-      "community": 1,
+      "community": 2,
       "norm_label": "getspeedlabel()"
     },
     {
@@ -4774,24 +4801,6 @@
       "norm_label": "calculatenohintsbonus()"
     },
     {
-      "label": "calculatePoints()",
-      "file_type": "code",
-      "source_file": "src/lib/scoring.ts",
-      "source_location": "L164",
-      "id": "lib_scoring_calculatepoints",
-      "community": 1,
-      "norm_label": "calculatepoints()"
-    },
-    {
-      "label": "applyStreakMultiplier()",
-      "file_type": "code",
-      "source_file": "src/lib/scoring.ts",
-      "source_location": "L174",
-      "id": "lib_scoring_applystreakmultiplier",
-      "community": 1,
-      "norm_label": "applystreakmultiplier()"
-    },
-    {
       "label": "client.ts",
       "file_type": "code",
       "source_file": "src/lib/supabase/client.ts",
@@ -4833,7 +4842,7 @@
       "source_file": "src/lib/supabase/server.ts",
       "source_location": "L1",
       "id": "supabase_server",
-      "community": 13,
+      "community": 1,
       "norm_label": "server.ts"
     },
     {
@@ -4842,7 +4851,7 @@
       "source_file": "src/lib/supabase/server.ts",
       "source_location": "L5",
       "id": "supabase_server_createclient",
-      "community": 13,
+      "community": 1,
       "norm_label": "createclient()"
     },
     {
@@ -4851,7 +4860,7 @@
       "source_file": "src/lib/supabase/service.ts",
       "source_location": "L1",
       "id": "supabase_service",
-      "community": 25,
+      "community": 1,
       "norm_label": "service.ts"
     },
     {
@@ -4860,7 +4869,7 @@
       "source_file": "src/lib/supabase/service.ts",
       "source_location": "L6",
       "id": "supabase_service_createserviceclient",
-      "community": 25,
+      "community": 1,
       "norm_label": "createserviceclient()"
     },
     {
@@ -5004,7 +5013,7 @@
       "source_file": "src/lib/utils.ts",
       "source_location": "L1",
       "id": "lib_utils",
-      "community": 90,
+      "community": 1,
       "norm_label": "utils.ts"
     },
     {
@@ -5022,7 +5031,7 @@
       "source_file": "src/lib/utils.ts",
       "source_location": "L13",
       "id": "lib_utils_shuffle",
-      "community": 90,
+      "community": 1,
       "norm_label": "shuffle()"
     },
     {
@@ -5058,7 +5067,7 @@
       "source_file": "src/types/database.ts",
       "source_location": "L1",
       "id": "types_database",
-      "community": 13,
+      "community": 1,
       "norm_label": "database.ts"
     },
     {
@@ -5067,7 +5076,7 @@
       "source_file": "src/types/database.ts",
       "source_location": "L1",
       "id": "types_database_json",
-      "community": 13,
+      "community": 1,
       "norm_label": "json"
     },
     {
@@ -5076,79 +5085,79 @@
       "source_file": "src/types/database.ts",
       "source_location": "L9",
       "id": "types_database_database",
-      "community": 13,
+      "community": 1,
       "norm_label": "database"
     },
     {
       "label": "DatabaseWithoutInternals",
       "file_type": "code",
       "source_file": "src/types/database.ts",
-      "source_location": "L1142",
+      "source_location": "L1171",
       "id": "types_database_databasewithoutinternals",
-      "community": 13,
+      "community": 1,
       "norm_label": "databasewithoutinternals"
     },
     {
       "label": "DefaultSchema",
       "file_type": "code",
       "source_file": "src/types/database.ts",
-      "source_location": "L1144",
+      "source_location": "L1173",
       "id": "types_database_defaultschema",
-      "community": 13,
+      "community": 1,
       "norm_label": "defaultschema"
     },
     {
       "label": "Tables",
       "file_type": "code",
       "source_file": "src/types/database.ts",
-      "source_location": "L1146",
+      "source_location": "L1175",
       "id": "types_database_tables",
-      "community": 13,
+      "community": 1,
       "norm_label": "tables"
     },
     {
       "label": "TablesInsert",
       "file_type": "code",
       "source_file": "src/types/database.ts",
-      "source_location": "L1175",
+      "source_location": "L1204",
       "id": "types_database_tablesinsert",
-      "community": 13,
+      "community": 1,
       "norm_label": "tablesinsert"
     },
     {
       "label": "TablesUpdate",
       "file_type": "code",
       "source_file": "src/types/database.ts",
-      "source_location": "L1200",
+      "source_location": "L1229",
       "id": "types_database_tablesupdate",
-      "community": 13,
+      "community": 1,
       "norm_label": "tablesupdate"
     },
     {
       "label": "Enums",
       "file_type": "code",
       "source_file": "src/types/database.ts",
-      "source_location": "L1225",
+      "source_location": "L1254",
       "id": "types_database_enums",
-      "community": 13,
+      "community": 1,
       "norm_label": "enums"
     },
     {
       "label": "CompositeTypes",
       "file_type": "code",
       "source_file": "src/types/database.ts",
-      "source_location": "L1242",
+      "source_location": "L1271",
       "id": "types_database_compositetypes",
-      "community": 13,
+      "community": 1,
       "norm_label": "compositetypes"
     },
     {
       "label": "Constants",
       "file_type": "code",
       "source_file": "src/types/database.ts",
-      "source_location": "L1259",
+      "source_location": "L1288",
       "id": "types_database_constants",
-      "community": 13,
+      "community": 1,
       "norm_label": "constants"
     },
     {
@@ -7310,6 +7319,24 @@
       "id": "social_media_content_brief_gemini_prompt_template",
       "community": 45,
       "norm_label": "gemini prompt template"
+    },
+    {
+      "label": "calculatePoints()",
+      "file_type": "code",
+      "source_file": "src/lib/scoring.ts",
+      "source_location": "L164",
+      "community": 1,
+      "norm_label": "calculatepoints()",
+      "id": "lib_scoring_calculatepoints"
+    },
+    {
+      "label": "applyStreakMultiplier()",
+      "file_type": "code",
+      "source_file": "src/lib/scoring.ts",
+      "source_location": "L174",
+      "community": 1,
+      "norm_label": "applystreakmultiplier()",
+      "id": "lib_scoring_applystreakmultiplier"
     },
     {
       "label": "LETTERS",
@@ -9620,9 +9647,9 @@
       "source_file": "src/app/api/email/lifecycle/route.ts",
       "source_location": "L1",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "lifecycle_route",
-      "target": "email_senders",
-      "confidence_score": 1.0
+      "target": "email_senders"
     },
     {
       "relation": "imports",
@@ -9631,9 +9658,9 @@
       "source_file": "src/app/api/email/lifecycle/route.ts",
       "source_location": "L1",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "lifecycle_route",
-      "target": "email_senders_sendfirstleaguecreatedemail",
-      "confidence_score": 1.0
+      "target": "email_senders_sendfirstleaguecreatedemail"
     },
     {
       "relation": "imports",
@@ -9642,9 +9669,9 @@
       "source_file": "src/app/api/email/lifecycle/route.ts",
       "source_location": "L1",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "lifecycle_route",
-      "target": "email_senders_sendfirstmemberjoinsemail",
-      "confidence_score": 1.0
+      "target": "email_senders_sendfirstmemberjoinsemail"
     },
     {
       "relation": "imports",
@@ -9653,9 +9680,9 @@
       "source_file": "src/app/api/email/lifecycle/route.ts",
       "source_location": "L1",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "lifecycle_route",
-      "target": "email_senders_sendfirstquizemail",
-      "confidence_score": 1.0
+      "target": "email_senders_sendfirstquizemail"
     },
     {
       "relation": "imports",
@@ -9664,9 +9691,9 @@
       "source_file": "src/app/api/email/lifecycle/route.ts",
       "source_location": "L1",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "lifecycle_route",
-      "target": "email_senders_sendleagueinviteemail",
-      "confidence_score": 1.0
+      "target": "email_senders_sendleagueinviteemail"
     },
     {
       "relation": "contains",
@@ -9674,9 +9701,9 @@
       "source_file": "src/app/api/email/lifecycle/route.ts",
       "source_location": "L23",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "lifecycle_route",
-      "target": "lifecycle_route_eventbody",
-      "confidence_score": 1.0
+      "target": "lifecycle_route_eventbody"
     },
     {
       "relation": "contains",
@@ -9684,9 +9711,9 @@
       "source_file": "src/app/api/email/lifecycle/route.ts",
       "source_location": "L28",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "lifecycle_route",
-      "target": "lifecycle_route_post",
-      "confidence_score": 1.0
+      "target": "lifecycle_route_post"
     },
     {
       "relation": "imports_from",
@@ -9695,9 +9722,9 @@
       "source_file": "src/app/api/email/lifecycle/route.ts",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "lifecycle_route",
-      "target": "supabase_server",
-      "confidence_score": 1.0
+      "target": "supabase_server"
     },
     {
       "relation": "imports",
@@ -9706,9 +9733,9 @@
       "source_file": "src/app/api/email/lifecycle/route.ts",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "lifecycle_route",
-      "target": "supabase_server_createclient",
-      "confidence_score": 1.0
+      "target": "supabase_server_createclient"
     },
     {
       "relation": "imports_from",
@@ -9717,9 +9744,9 @@
       "source_file": "src/app/api/email/lifecycle/route.ts",
       "source_location": "L8",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "lifecycle_route",
-      "target": "supabase_service",
-      "confidence_score": 1.0
+      "target": "supabase_service"
     },
     {
       "relation": "imports",
@@ -9728,9 +9755,9 @@
       "source_file": "src/app/api/email/lifecycle/route.ts",
       "source_location": "L8",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "lifecycle_route",
-      "target": "supabase_service_createserviceclient",
-      "confidence_score": 1.0
+      "target": "supabase_service_createserviceclient"
     },
     {
       "relation": "calls",
@@ -10483,6 +10510,246 @@
       "source_location": "L126",
       "weight": 1.0,
       "source": "generate_custom_route_post",
+      "target": "supabase_service_createserviceclient"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/api/quiz/solo-complete/route.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "solo_complete_route",
+      "target": "lib_ratelimit",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/api/quiz/solo-complete/route.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "solo_complete_route",
+      "target": "lib_ratelimit_ratelimitdistributed",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/api/quiz/solo-complete/route.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "solo_complete_route",
+      "target": "lib_scoring",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/api/quiz/solo-complete/route.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "solo_complete_route",
+      "target": "lib_scoring_calculatebasepoints",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/api/quiz/solo-complete/route.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "solo_complete_route",
+      "target": "lib_scoring_calculatecomebackbonus",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/api/quiz/solo-complete/route.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "solo_complete_route",
+      "target": "lib_scoring_calculateperfectroundbonus",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/api/quiz/solo-complete/route.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "solo_complete_route",
+      "target": "lib_scoring_calculatestreakbonus",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/api/quiz/solo-complete/route.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "solo_complete_route",
+      "target": "lib_scoring_maxpointsfordifficulty",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/api/quiz/solo-complete/route.ts",
+      "source_location": "L27",
+      "weight": 1.0,
+      "source": "solo_complete_route",
+      "target": "solo_complete_route_post",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/api/quiz/solo-complete/route.ts",
+      "source_location": "L22",
+      "weight": 1.0,
+      "source": "solo_complete_route",
+      "target": "solo_complete_route_submittedanswer",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/api/quiz/solo-complete/route.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "solo_complete_route",
+      "target": "supabase_server",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/api/quiz/solo-complete/route.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "solo_complete_route",
+      "target": "supabase_server_createclient",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/api/quiz/solo-complete/route.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "solo_complete_route",
+      "target": "supabase_service",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/api/quiz/solo-complete/route.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "solo_complete_route",
+      "target": "supabase_service_createserviceclient",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/api/quiz/solo-complete/route.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "solo_complete_route",
+      "target": "types_database",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/api/quiz/solo-complete/route.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "solo_complete_route",
+      "target": "types_database_json",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/api/quiz/solo-complete/route.ts",
+      "source_location": "L36",
+      "weight": 1.0,
+      "source": "solo_complete_route_post",
+      "target": "lib_ratelimit_ratelimitdistributed"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/api/quiz/solo-complete/route.ts",
+      "source_location": "L119",
+      "weight": 1.0,
+      "source": "solo_complete_route_post",
+      "target": "lib_scoring_calculatebasepoints"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/api/quiz/solo-complete/route.ts",
+      "source_location": "L121",
+      "weight": 1.0,
+      "source": "solo_complete_route_post",
+      "target": "lib_scoring_calculatecomebackbonus"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/api/quiz/solo-complete/route.ts",
+      "source_location": "L136",
+      "weight": 1.0,
+      "source": "solo_complete_route_post",
+      "target": "lib_scoring_calculateperfectroundbonus"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/api/quiz/solo-complete/route.ts",
+      "source_location": "L120",
+      "weight": 1.0,
+      "source": "solo_complete_route_post",
+      "target": "lib_scoring_calculatestreakbonus"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/api/quiz/solo-complete/route.ts",
+      "source_location": "L66",
+      "weight": 1.0,
+      "source": "solo_complete_route_post",
       "target": "supabase_service_createserviceclient"
     },
     {
@@ -16231,9 +16498,9 @@
       "source_file": "src/lib/email/senders.ts",
       "source_location": "L10",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "email_senders_sendorlog",
-      "target": "email_client_getresend",
-      "confidence_score": 1.0
+      "target": "email_client_getresend"
     },
     {
       "relation": "calls",
@@ -16415,9 +16682,9 @@
       "source_file": "src/lib/email/senders.ts",
       "source_location": "L73",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "email_senders",
-      "target": "email_senders_sendfirstleaguecreatedemail",
-      "confidence_score": 1.0
+      "target": "email_senders_sendfirstleaguecreatedemail"
     },
     {
       "relation": "contains",
@@ -16425,9 +16692,9 @@
       "source_file": "src/lib/email/senders.ts",
       "source_location": "L154",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "email_senders",
-      "target": "email_senders_sendfirstmemberjoinsemail",
-      "confidence_score": 1.0
+      "target": "email_senders_sendfirstmemberjoinsemail"
     },
     {
       "relation": "contains",
@@ -16435,9 +16702,9 @@
       "source_file": "src/lib/email/senders.ts",
       "source_location": "L41",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "email_senders",
-      "target": "email_senders_sendfirstquizemail",
-      "confidence_score": 1.0
+      "target": "email_senders_sendfirstquizemail"
     },
     {
       "relation": "contains",
@@ -16445,9 +16712,9 @@
       "source_file": "src/lib/email/senders.ts",
       "source_location": "L111",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "email_senders",
-      "target": "email_senders_sendleagueinviteemail",
-      "confidence_score": 1.0
+      "target": "email_senders_sendleagueinviteemail"
     },
     {
       "relation": "contains",
@@ -16455,9 +16722,9 @@
       "source_file": "src/lib/email/senders.ts",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "email_senders",
-      "target": "email_senders_sendorlog",
-      "confidence_score": 1.0
+      "target": "email_senders_sendorlog"
     },
     {
       "relation": "contains",
@@ -16476,9 +16743,9 @@
       "source_file": "src/lib/email/senders.ts",
       "source_location": "L93",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "email_senders_sendfirstleaguecreatedemail",
-      "target": "email_senders_sendorlog",
-      "confidence_score": 1.0
+      "target": "email_senders_sendorlog"
     },
     {
       "relation": "calls",
@@ -16487,9 +16754,9 @@
       "source_file": "src/lib/email/senders.ts",
       "source_location": "L176",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "email_senders_sendfirstmemberjoinsemail",
-      "target": "email_senders_sendorlog",
-      "confidence_score": 1.0
+      "target": "email_senders_sendorlog"
     },
     {
       "relation": "calls",
@@ -16498,9 +16765,9 @@
       "source_file": "src/lib/email/senders.ts",
       "source_location": "L56",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "email_senders_sendfirstquizemail",
-      "target": "email_senders_sendorlog",
-      "confidence_score": 1.0
+      "target": "email_senders_sendorlog"
     },
     {
       "relation": "calls",
@@ -16509,9 +16776,9 @@
       "source_file": "src/lib/email/senders.ts",
       "source_location": "L136",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "email_senders_sendleagueinviteemail",
-      "target": "email_senders_sendorlog",
-      "confidence_score": 1.0
+      "target": "email_senders_sendorlog"
     },
     {
       "relation": "calls",
@@ -16520,9 +16787,9 @@
       "source_file": "src/lib/email/senders.ts",
       "source_location": "L23",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "email_senders_sendwelcomeemail",
-      "target": "email_senders_sendorlog",
-      "confidence_score": 1.0
+      "target": "email_senders_sendorlog"
     },
     {
       "relation": "contains",
@@ -19717,5 +19984,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "14b29891ed75af9805bf53c1d5724e551e301d81"
+  "built_at_commit": "a022591c145ff3493b27b07cafef61130b13a543"
 }

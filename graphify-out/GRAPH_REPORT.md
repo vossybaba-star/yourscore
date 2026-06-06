@@ -1,16 +1,16 @@
-# Graph Report - yourscore  (2026-06-05)
+# Graph Report - yourscore  (2026-06-06)
 
 ## Corpus Check
-- 141 files · ~713,717 words
+- 143 files · ~716,547 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 817 nodes · 1185 edges · 81 communities (65 shown, 16 thin omitted)
+- 820 nodes · 1207 edges · 75 communities (59 shown, 16 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 11 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `14b29891`
+- Built from commit: `a022591c`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -28,7 +28,6 @@
 - [[_COMMUNITY_Community 10|Community 10]]
 - [[_COMMUNITY_Community 11|Community 11]]
 - [[_COMMUNITY_Community 12|Community 12]]
-- [[_COMMUNITY_Community 13|Community 13]]
 - [[_COMMUNITY_Community 14|Community 14]]
 - [[_COMMUNITY_Community 15|Community 15]]
 - [[_COMMUNITY_Community 16|Community 16]]
@@ -38,8 +37,6 @@
 - [[_COMMUNITY_Community 22|Community 22]]
 - [[_COMMUNITY_Community 23|Community 23]]
 - [[_COMMUNITY_Community 24|Community 24]]
-- [[_COMMUNITY_Community 25|Community 25]]
-- [[_COMMUNITY_Community 26|Community 26]]
 - [[_COMMUNITY_Community 27|Community 27]]
 - [[_COMMUNITY_Community 29|Community 29]]
 - [[_COMMUNITY_Community 30|Community 30]]
@@ -78,51 +75,48 @@
 - [[_COMMUNITY_Community 67|Community 67]]
 - [[_COMMUNITY_Community 68|Community 68]]
 - [[_COMMUNITY_Community 69|Community 69]]
-- [[_COMMUNITY_Community 88|Community 88]]
-- [[_COMMUNITY_Community 89|Community 89]]
-- [[_COMMUNITY_Community 90|Community 90]]
 - [[_COMMUNITY_Community 92|Community 92]]
 
 ## God Nodes (most connected - your core abstractions)
-1. `useUser()` - 31 edges
-2. `createServiceClient()` - 31 edges
-3. `YourScore — Master Definition (Single Source of Truth)` - 16 edges
-4. `GridBackground()` - 15 edges
-5. `createClient()` - 15 edges
+1. `createServiceClient()` - 33 edges
+2. `useUser()` - 31 edges
+3. `createClient()` - 16 edges
+4. `YourScore — Master Definition (Single Source of Truth)` - 16 edges
+5. `GridBackground()` - 15 edges
 6. `createClient()` - 15 edges
 7. `compilerOptions` - 15 edges
 8. `BottomNav()` - 14 edges
 9. `Spinner()` - 14 edges
-10. `App Store Connect` - 14 edges
+10. `rateLimitDistributed()` - 14 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `MatchPage()` --calls--> `useUser()`  [INFERRED]
   src/app/match/[id]/page.tsx → src/hooks/useUser.ts
 - `RoomPage()` --calls--> `useUser()`  [INFERRED]
   src/app/play/[roomId]/page.tsx → src/hooks/useUser.ts
-- `POST()` --calls--> `rateLimitDistributed()`  [INFERRED]
-  src/app/api/quiz/start/route.ts → src/lib/ratelimit.ts
-- `POST()` --calls--> `createServiceClient()`  [INFERRED]
-  src/app/api/quiz/start/route.ts → src/lib/supabase/service.ts
-- `POST()` --calls--> `createServiceClient()`  [EXTRACTED]
-  src/app/api/room/join/route.ts → src/lib/supabase/service.ts
+- `LeaguePage()` --calls--> `useUser()`  [INFERRED]
+  src/app/league/[id]/page.tsx → src/hooks/useUser.ts
+- `CreateLeagueInner()` --calls--> `useUser()`  [INFERRED]
+  src/app/league/new/page.tsx → src/hooks/useUser.ts
+- `RootPage()` --calls--> `useUser()`  [EXTRACTED]
+  src/app/page.tsx → src/hooks/useUser.ts
 
 ## Import Cycles
 - None detected.
 
-## Communities (81 total, 16 thin omitted)
+## Communities (75 total, 16 thin omitted)
 
 ### Community 0 - "Community 0"
 Cohesion: 0.17
 Nodes (9): LeaderboardEntry, DB, MODE_COLOR, MODE_LABEL, Player, QRCode, QuestionEvent, Room (+1 more)
 
 ### Community 1 - "Community 1"
-Cohesion: 0.19
-Nodes (15): POST(), calculateBasePoints(), calculateComebackBonus(), calculatePerfectRoundBonus(), calculatePoints(), calculateStreakBonus(), DIFFICULTY_MULT, getDifficultyMultiplier() (+7 more)
+Cohesion: 0.05
+Nodes (68): POST(), POST(), requireAdmin(), CompleteBody, POST(), QuizResult, generateCode(), MODE_LIMITS (+60 more)
 
 ### Community 2 - "Community 2"
 Cohesion: 0.07
-Nodes (30): AnswerButtons(), AnswerButtonsProps, LETTERS, AnswerRecord, H2HChallenge, H2HPage(), Letter, LETTERS (+22 more)
+Nodes (31): AnswerButtons(), AnswerButtonsProps, LETTERS, AnswerRecord, H2HChallenge, H2HPage(), Letter, LETTERS (+23 more)
 
 ### Community 3 - "Community 3"
 Cohesion: 0.05
@@ -164,10 +158,6 @@ Nodes (8): CountdownTimer(), CountdownTimerProps, ActiveQuestion, LABELS, LETTER
 Cohesion: 0.11
 Nodes (18): compilerOptions, allowJs, esModuleInterop, incremental, isolatedModules, jsx, lib, module (+10 more)
 
-### Community 13 - "Community 13"
-Cohesion: 0.14
-Nodes (14): MODE_LIMITS, POST(), Difficulty, createClient(), CompositeTypes, Constants, Database, DatabaseWithoutInternals (+6 more)
-
 ### Community 14 - "Community 14"
 Cohesion: 0.13
 Nodes (14): android, backgroundColor, appId, appName, ios, backgroundColor, contentInset, packageClassList (+6 more)
@@ -203,14 +193,6 @@ Nodes (10): App Store 4.2 mitigation, Apple Developer Program, Architecture, Bun
 ### Community 24 - "Community 24"
 Cohesion: 0.16
 Nodes (8): Leaderboard(), LeaderboardRow, MatchData, MatchPage(), cache, COUNTRY_STAR, getPlayerCutoutUrl(), inFlight
-
-### Community 25 - "Community 25"
-Cohesion: 0.32
-Nodes (8): POST(), requireAdmin(), POST(), client, POST(), Difficulty, GET(), createServiceClient()
-
-### Community 26 - "Community 26"
-Cohesion: 0.19
-Nodes (12): ALLOWED_ERAS, BankQuestion, buildDiffLabel(), buildEraLabel(), Difficulty, EntityType, Era, fetchByDifficulty() (+4 more)
 
 ### Community 27 - "Community 27"
 Cohesion: 0.22
@@ -300,24 +282,12 @@ Nodes (3): info, author, version
 Cohesion: 0.50
 Nodes (3): Deploy on Vercel, Getting Started, Learn More
 
-### Community 88 - "Community 88"
-Cohesion: 0.28
-Nodes (6): CompleteBody, POST(), QuizResult, Entry, rateLimitDistributed(), store
-
-### Community 89 - "Community 89"
-Cohesion: 0.33
-Nodes (6): generateCode(), MODE_LIMITS, POST(), VALID_COUNTS, VALID_DIFFICULTIES, VALID_MODES
-
-### Community 90 - "Community 90"
-Cohesion: 0.32
-Nodes (6): shuffle(), Difficulty, POST(), BankQuestion, fetchQuestions(), StartBody
-
 ### Community 92 - "Community 92"
 Cohesion: 0.60
 Nodes (3): config, middleware(), updateSession()
 
 ## Knowledge Gaps
-- **424 isolated node(s):** `version`, `configurations`, `extends`, `project_number`, `project_id` (+419 more)
+- **425 isolated node(s):** `version`, `configurations`, `extends`, `project_number`, `project_id` (+420 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **16 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -328,13 +298,13 @@ _Questions this graph is uniquely positioned to answer:_
   _High betweenness centrality (0.018) - this node is a cross-community bridge._
 - **Why does `createClient()` connect `Community 10` to `Community 48`, `Community 2`, `Community 22`?**
   _High betweenness centrality (0.014) - this node is a cross-community bridge._
-- **Why does `Database` connect `Community 13` to `Community 0`, `Community 10`, `Community 24`, `Community 25`, `Community 92`?**
+- **Why does `createServiceClient()` connect `Community 1` to `Community 20`?**
   _High betweenness centrality (0.011) - this node is a cross-community bridge._
-- **Are the 6 inferred relationships involving `useUser()` (e.g. with `LeaguePage()` and `MatchPage()`) actually correct?**
-  _`useUser()` has 6 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 2 inferred relationships involving `createServiceClient()` (e.g. with `POST()` and `POST()`) actually correct?**
   _`createServiceClient()` has 2 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 6 inferred relationships involving `useUser()` (e.g. with `LeaguePage()` and `MatchPage()`) actually correct?**
+  _`useUser()` has 6 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `version`, `configurations`, `extends` to the rest of the system?**
-  _424 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `Community 2` be split into smaller, more focused modules?**
-  _Cohesion score 0.07435897435897436 - nodes in this community are weakly interconnected._
+  _425 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Should `Community 1` be split into smaller, more focused modules?**
+  _Cohesion score 0.052795031055900624 - nodes in this community are weakly interconnected._
