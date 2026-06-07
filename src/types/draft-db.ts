@@ -62,6 +62,20 @@ export type DraftLeagueMemberRow = {
   joined_at: Ts;
 };
 
+export type DraftChallengeRow = {
+  id: string;
+  code: string;
+  challenger_id: string | null;
+  challenger_name: string;
+  challenger_team: Json;
+  challenger_strength: number;
+  league_id: string | null;
+  status: string;
+  match_id: string | null;
+  created_at: Ts;
+  expires_at: Ts;
+};
+
 type Tbl<Row, Insert = Partial<Row>, Update = Partial<Row>> = {
   Row: Row;
   Insert: Insert;
@@ -77,6 +91,7 @@ export type DraftDatabase = Omit<Database, "public"> & {
       draft_standings: Tbl<DraftStandingRow>;
       draft_leagues: Tbl<DraftLeagueRow>;
       draft_league_members: Tbl<DraftLeagueMemberRow>;
+      draft_challenges: Tbl<DraftChallengeRow>;
     };
     Functions: Database["public"]["Functions"] & {
       draft_leaderboard: {

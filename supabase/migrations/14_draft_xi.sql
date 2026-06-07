@@ -116,6 +116,31 @@ drop policy if exists "draft_league_members member rw" on draft_league_members;
 create policy "draft_league_members member rw" on draft_league_members
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
+-- Friend challenges (async share-a-link): the challenger's XI is snapshotted at
+-- creation; a friend opens the code and resolves it with their own XI whenever. --
+create table if not exists draft_challenges (
+  id uuid primary key default gen_random_uuid(),
+  code text unique not null,
+  challenger_id uuid references auth.users(id) on delete cascade,
+  challenger_name text not null,
+  challenger_team jsonb not null,        -- TeamSide snapshot (name/formation/squad/strength/projected)
+  challenger_strength numeric not null,
+  league_id uuid,
+  status text not null default 'open',   -- 'open' | 'accepted'
+  match_id uuid,
+  created_at timestamptz default now(),
+  expires_at timestamptz default now() + interval '7 days'
+);
+alter table draft_challenges enable row level security;
+-- Public read by code (the accept page must show it to a friend who isn't the
+-- challenger); only the challenger inserts; resolution updates run via service role.
+drop policy if exists "draft_challenges public read" on draft_challenges;
+create policy "draft_challenges public read" on draft_challenges for select using (true);
+drop policy if exists "draft_challenges challenger insert" on draft_challenges;
+create policy "draft_challenges challenger insert" on draft_challenges
+  for insert with check (auth.uid() = challenger_id);
+create index if not exists draft_challenges_code_idx on draft_challenges (code);
+
 -- Daily reset: zero wins_today for rows whose last win was before today (UTC).
 -- Call from a scheduled job (pg_cron / the existing /api/cron pattern) at 00:00 UTC.
 create or replace function draft_reset_daily()

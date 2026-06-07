@@ -36,6 +36,34 @@ export function genJoinCode(len = 6): string {
   return s;
 }
 
+/** A side of an H2H, snapshotted into draft_matches / draft_challenges. */
+export type TeamSnapshot = {
+  name: string;
+  formation: import("./types").Formation;
+  squad: import("./types").PlacedPlayer[];
+  strength: number;
+  projected: import("./types").Projected | null;
+};
+
+/** Apply the win/loss loop to a user's live team: win → streak up, stays active;
+ *  loss → stale (rebuild required). No-op if they have no saved team. */
+export async function applyTeamResult(
+  db: SupabaseClient<DraftDatabase>,
+  userId: string,
+  won: boolean
+): Promise<void> {
+  const { data: t } = await db.from("draft_teams").select("win_streak").eq("user_id", userId).maybeSingle();
+  if (!t) return;
+  await db
+    .from("draft_teams")
+    .update({
+      win_streak: won ? (t.win_streak ?? 0) + 1 : 0,
+      status: won ? "active" : "stale",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("user_id", userId);
+}
+
 /**
  * Credit one H2H win to a player's standings (daily + all-time) for a board.
  * Read-modify-write upsert: resets wins_today when the last win was on a prior

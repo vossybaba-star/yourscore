@@ -90,11 +90,34 @@ member from the board (stale teams aren't challengeable), or play a random leagu
 match. Wins credit both the global and the league board. Linked from the
 leaderboard ("My Leagues").
 
-## Still to build — next session
-- **Friend challenge by code** (async accept) — random + targeted matchmaking are
-  done; this is the share-a-link-to-a-pending-challenge variant.
-- Server-rendered `/draft/match/[id]` with `og:image` → `/api/draft/og` for
-  unfurling shared results (the OG route + local share already work).
+## Friend challenges + shareable results — BUILT (dormant until migration)
+
+| Piece | File |
+|---|---|
+| Create challenge (snapshots your XI → share code) | `POST /api/draft/challenge` |
+| Challenge info / accept-and-resolve | `GET` + `POST /api/draft/challenge/[code]` |
+| Friend accept page | `/draft/challenge/[code]` |
+| Public, server-rendered result with `og:image` → `/api/draft/og` | `/draft/match/[id]` |
+| `draft_challenges` table (added to the migration) | `14_draft_xi.sql` |
+
+Team screen has **🔗 Challenge a friend** (creates a code + shares the link). The
+friend opens `/draft/challenge/<code>`, sees the challenger's snapshotted XI, and
+resolves it with their own — both teams get win/loss applied and the winner is
+credited. Shared `/draft/match/[id]` links unfurl as the broadcast graphic.
+
+## Spec status — complete
+Every locked feature in `DRAFT-XI-BUILD.md` is now built: data, scoring engine,
+draft loop, Classic/Expert, team/record/tier, win-swap / loss-rebuild, share image
++ crest reveal, own nav tab, cloud save, ranked matchmaking + standings, global
+Daily/All-time leaderboards, custom leagues, friend challenges, and server-rendered
+shareable results. Everything past the anonymous core is dormant until the migration
+is applied (see activation steps above) and fails soft until then.
+
+### Possible polish (optional, next)
+- A "my challenges / match history" view for the challenger to see results of
+  challenges friends accepted while they were away.
+- Regenerate `database.ts` post-migration and retire `src/types/draft-db.ts`.
+- Club crests on the final-XI pitch tokens.
 
 The Quick Match loop and Ranked Match share the exact same engine, so the remaining
 work is plumbing, not redesign.
