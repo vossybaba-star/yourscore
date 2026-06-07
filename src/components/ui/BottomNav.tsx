@@ -62,7 +62,7 @@ const isChallenges =
 
           <Link href="/draft" className="flex flex-col items-center gap-1 px-5 py-1 transition-colors" style={{ color: isDraft ? "#00ff87" : "#8888aa" }}>
             <JerseyIcon active={isDraft} />
-            <span className="font-body text-xs">Draft XI</span>
+            <span className="font-body text-xs">38-0</span>
           </Link>
         </div>
       </div>
@@ -110,7 +110,7 @@ const isChallenges =
         {/* Draft XI */}
         <Link href="/draft" className="flex flex-col items-center gap-1 px-2 py-1 transition-colors" style={{ color: isDraft ? "#00ff87" : "#8888aa" }}>
           <JerseyIcon active={isDraft} />
-          <span className="font-body text-xs">Draft</span>
+          <span className="font-body text-xs">38-0</span>
         </Link>
 
         {/* Profile */}
