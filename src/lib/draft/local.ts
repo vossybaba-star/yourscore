@@ -192,6 +192,9 @@ export function loadTeam(): LocalTeam | null {
     const t = JSON.parse(raw) as LocalTeam;
     if (!t.formation || !Array.isArray(t.squad)) return null;
     if (t.mode !== "expert") t.mode = "classic";
+    // "stale" is retired — teams stay playable after a loss. Clear any lingering
+    // stale status saved by an older version so it can never block play.
+    if (t.status === "stale") t.status = "active";
     // Drop any players whose id no longer exists in the current player database
     // (e.g. a team saved before a data update). This keeps us from ever sending
     // unknown ids to the server — the XI just becomes incomplete and the player

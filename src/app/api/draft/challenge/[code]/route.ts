@@ -69,7 +69,6 @@ export async function POST(req: NextRequest, { params }: { params: { code: strin
     .eq("user_id", user.id)
     .maybeSingle();
   if (!mine) return NextResponse.json({ error: "Save your team first" }, { status: 400 });
-  if (mine.status === "stale") return NextResponse.json({ error: "Your team is stale — rebuild first" }, { status: 409 });
 
   const challengerSnap = ch.challenger_team as unknown as TeamSnapshot;
   const mySide: TeamSnapshot = {

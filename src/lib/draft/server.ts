@@ -45,8 +45,9 @@ export type TeamSnapshot = {
   projected: import("./types").Projected | null;
 };
 
-/** Apply the win/loss loop to a user's live team: win → streak up, stays active;
- *  loss → stale (rebuild required). No-op if they have no saved team. */
+/** Apply the win/loss loop to a user's live team: win → streak up; loss → reset
+ *  streak. The team always stays active (no rebuild penalty — "stale" is retired).
+ *  No-op if they have no saved team. */
 export async function applyTeamResult(
   db: SupabaseClient<DraftDatabase>,
   userId: string,

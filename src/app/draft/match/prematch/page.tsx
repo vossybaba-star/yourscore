@@ -21,6 +21,7 @@ import { tierColor } from "@/lib/draft/ui";
 import type { PlayerSeason } from "@/lib/draft/types";
 
 const MAX_SWAPS = 3;
+const MAX_SPINS = 2; // a player can re-spin at most twice before they must pick
 const LINE_LABEL: Record<string, string> = { gk: "goalkeeper", def: "defender", mid: "midfielder", att: "striker" };
 
 export default function PreMatch() {
@@ -30,6 +31,7 @@ export default function PreMatch() {
   const [swapsUsed, setSwapsUsed] = useState(0);
   const [swapSlot, setSwapSlot] = useState<string | null>(null);
   const [current, setCurrent] = useState<Spin | null>(null);
+  const [spinCount, setSpinCount] = useState(0); // spins used on the current slot (max MAX_SPINS)
   const [spinning, setSpinning] = useState(false);
   const [reel, setReel] = useState<{ club: string; season: string } | null>(null);
   const [playing, setPlaying] = useState(false);
@@ -53,11 +55,11 @@ export default function PreMatch() {
 
   function beginSwap(slotId: string) {
     if (swapsUsed >= MAX_SWAPS || playing) return;
-    setSwapSlot(slotId); setCurrent(null); setReel(null);
+    setSwapSlot(slotId); setCurrent(null); setReel(null); setSpinCount(0);
   }
 
   function doSpin() {
-    if (!team || !slot || spinning) return;
+    if (!team || !slot || spinning || spinCount >= MAX_SPINS) return;
     setSpinning(true); setCurrent(null);
     const buckets = allBuckets();
     let ticks = 0;
@@ -68,7 +70,7 @@ export default function PreMatch() {
         if (reelTimer.current) clearInterval(reelTimer.current);
         const result = spin([slot.pos], usedPlayerIds(team), usedPlayerNames(team));
         setReel({ club: result.club, season: result.season });
-        setCurrent(result); setSpinning(false);
+        setCurrent(result); setSpinning(false); setSpinCount((n) => n + 1);
       }
     }, 65);
   }
@@ -144,7 +146,9 @@ export default function PreMatch() {
               </div>
             )}
             <div className="grid grid-cols-2 gap-2">
-              <button onClick={doSpin} disabled={spinning} className="rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-60" style={{ background: spinning ? "#1a1a2e" : "#ffb800", color: spinning ? "#ffb800" : "#1a1300", fontSize: 20 }}>{spinning ? "SPINNING…" : current ? "SPIN AGAIN ↻" : "SPIN 🎰"}</button>
+              <button onClick={doSpin} disabled={spinning || spinCount >= MAX_SPINS} className="rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-50" style={{ background: spinning ? "#1a1a2e" : "#ffb800", color: spinning ? "#ffb800" : "#1a1300", fontSize: 20 }}>
+                {spinning ? "SPINNING…" : spinCount >= MAX_SPINS ? "NO SPINS LEFT" : current ? `SPIN AGAIN ↻ (${MAX_SPINS - spinCount} left)` : "SPIN 🎰"}
+              </button>
               <button onClick={() => { setSwapSlot(null); setCurrent(null); setReel(null); }} className="rounded-2xl py-4 font-body active:scale-[0.98] transition-transform" style={{ background: "#12121e", color: "#cfcfe6", fontSize: 15, border: "1px solid rgba(255,255,255,0.1)" }}>← Back</button>
             </div>
           </div>

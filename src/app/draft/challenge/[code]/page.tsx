@@ -45,7 +45,6 @@ export default function AcceptChallenge() {
     if (!user) { router.push("/auth/sign-in"); return; }
     const team = loadTeam();
     if (!team || !isComplete(team)) { router.push("/draft"); return; }
-    if (team.status === "stale") { setErr("Your team is stale — rebuild first"); return; }
     setBusy(true); setErr(null);
     try {
       const squad = team.squad.map((p) => ({ slot: p.slot, player_season_id: p.player_season_id }));

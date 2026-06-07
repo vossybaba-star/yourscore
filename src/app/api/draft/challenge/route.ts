@@ -28,7 +28,6 @@ export async function POST(req: NextRequest) {
     .maybeSingle();
   if (meErr) return NextResponse.json({ error: "Challenges not live yet" }, { status: 503 });
   if (!me) return NextResponse.json({ error: "Save a team first" }, { status: 400 });
-  if (me.status === "stale") return NextResponse.json({ error: "Your team is stale — rebuild first" }, { status: 409 });
 
   const snapshot: TeamSnapshot = {
     name: me.display_name ?? "A challenger",
