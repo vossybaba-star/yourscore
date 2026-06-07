@@ -173,6 +173,11 @@ const DASH_ANIM = `
   .dash-slide-5 { animation: slideIn 0.4s ease-out 0.45s both; }
   .dash-slide-6 { animation: slideIn 0.4s ease-out 0.55s both; }
   .league-cta-pulse { animation: countPulse 2.5s ease-in-out infinite; }
+  @keyframes greenPulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(0,255,135,0.3); }
+    50% { box-shadow: 0 0 35px rgba(0,255,135,0.55); }
+  }
+  .green-pulse { animation: greenPulse 2.5s ease-in-out infinite; }
 `;
 
 // Featured pack type → emoji/color mapping
@@ -280,7 +285,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
         {/* ── 38-0 tile ──────────────────────────────────────────────────── */}
         <div className="dash-slide-2">
           <Link href="/draft"
-            className="flex items-center justify-between px-4 py-3.5 rounded-2xl transition-all hover:opacity-90 active:scale-[0.99]"
+            className="flex items-center justify-between px-4 py-3.5 rounded-2xl transition-all hover:opacity-90 active:scale-[0.99] green-pulse"
             style={{ background: "linear-gradient(135deg, rgba(0,255,135,0.08) 0%, rgba(167,139,250,0.06) 100%)", border: "1px solid rgba(0,255,135,0.18)" }}>
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 text-lg"
@@ -294,7 +299,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
             </div>
             <span className="font-body text-xs font-bold px-3 py-1.5 rounded-lg flex-shrink-0 text-green"
               style={{ background: "rgba(0,255,135,0.12)", border: "1px solid rgba(0,255,135,0.22)" }}>
-              Play →
+              Play now
             </span>
           </Link>
         </div>
