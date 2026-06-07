@@ -10,6 +10,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { loadTeam, isComplete, type LocalTeam } from "@/lib/draft/local";
+import { leagueOpponents } from "@/lib/draft/pool";
 import { simulateSeason, seasonNarrative, type SeasonResult } from "@/lib/draft/season";
 
 function ordinal(n: number): string {
@@ -31,7 +32,7 @@ export default function SeasonSim() {
   }, [router]);
 
   const result: SeasonResult | null = useMemo(
-    () => (team ? simulateSeason(team.squad, team.formation, team.strength, String(team.updatedAt)) : null),
+    () => (team ? simulateSeason(team.squad, team.formation, team.strength, String(team.updatedAt), leagueOpponents()) : null),
     [team]
   );
 

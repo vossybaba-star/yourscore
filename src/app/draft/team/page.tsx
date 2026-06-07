@@ -20,6 +20,7 @@ import { makeOpponent } from "@/lib/draft/opponent";
 import { resolveH2H, seededRng } from "@/lib/draft/score";
 import { tierColor, TIER_TAGLINE, strengthPct } from "@/lib/draft/ui";
 import { preSeasonOdds } from "@/lib/draft/season";
+import { leagueOpponents } from "@/lib/draft/pool";
 import { useUser } from "@/hooks/useUser";
 
 export default function TeamScreen() {
@@ -203,7 +204,7 @@ export default function TeamScreen() {
 
         {/* Bookies' pre-season odds — the prediction before you simulate the season */}
         {!stale && (() => {
-          const odds = preSeasonOdds(team.strength);
+          const odds = preSeasonOdds(team.squad, team.strength, leagueOpponents());
           const bands: [string, number, string][] = [
             ["Win the league", odds.winLeague, "#ffb800"],
             ["Top 4", odds.top4, "#00ff87"],

@@ -13,12 +13,15 @@ import { canPlay } from "./score";
 
 type Bucket = { club: string; clubSlug: string; season: string; playerIds: string[] };
 
+type Club = { name: string; clubSlug: string; season: string; strength: number };
+
 const DATA = raw as unknown as {
   generatedAt: string;
   source: string;
   counts: { players: number; buckets: number; csvAdded: number };
   players: PlayerSeason[];
   buckets: Bucket[];
+  clubs: Club[];
 };
 
 const byId = new Map<string, PlayerSeason>(DATA.players.map((p) => [p.id, p]));
@@ -80,4 +83,14 @@ export function spin(
 /** All spinnable buckets (for previews / the slot-machine reel). */
 export function allBuckets(): Bucket[] {
   return DATA.buckets;
+}
+
+/** The 19 real FC26 PL clubs the season simulator plays against (the player joins
+ *  as the 20th team, displacing the weakest). Strengths are FIFA-derived. */
+export function leagueOpponents(): { name: string; strength: number }[] {
+  return (DATA.clubs ?? [])
+    .slice()
+    .sort((a, b) => b.strength - a.strength)
+    .slice(0, 19)
+    .map((c) => ({ name: c.name, strength: c.strength }));
 }

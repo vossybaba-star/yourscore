@@ -67,6 +67,16 @@ for (const p of players) {
 const MIN_BUCKET = 4; // never deal a club-season too thin to draft from
 const buckets = [...bucketMap.values()].filter((b) => b.playerIds.length >= MIN_BUCKET);
 
+// Club strength = mean overall of each club's best XI — the real rivals the season
+// simulator plays against, derived from FIFA data (no hand-made numbers).
+const clubStrength = (playerIds) => {
+  const ovrs = playerIds.map((id) => byId.get(id).overall).sort((a, b) => b - a).slice(0, 11);
+  return Math.round(ovrs.reduce((a, b) => a + b, 0) / ovrs.length);
+};
+const clubs = buckets
+  .map((b) => ({ name: b.club, clubSlug: b.clubSlug, season: b.season, strength: clubStrength(b.playerIds) }))
+  .sort((a, b) => b.strength - a.strength);
+
 mkdirSync(dirname(OUT), { recursive: true });
 writeFileSync(OUT, JSON.stringify({
   generatedAt: new Date().toISOString(),
@@ -74,6 +84,7 @@ writeFileSync(OUT, JSON.stringify({
   counts: { players: players.length, buckets: buckets.length, csvAdded: players.length },
   players,
   buckets,
+  clubs,
 }, null, 0) + "\n");
 
 console.log(`Draft XI dataset: ${players.length} player-seasons, ${buckets.length} spinnable buckets (FIFA only).`);
