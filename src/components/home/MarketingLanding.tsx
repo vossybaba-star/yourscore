@@ -489,6 +489,28 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
         </div>
       </section>
 
+      {/* ── 38-0 tile ────────────────────────────────────────────────────── */}
+      <section className="relative z-10 max-w-6xl mx-auto px-6 pb-6">
+        <Link href="/draft"
+          className="flex items-center justify-between px-5 py-4 rounded-2xl transition-all hover:opacity-90"
+          style={{ background: "linear-gradient(135deg, rgba(0,255,135,0.08) 0%, rgba(167,139,250,0.06) 100%)", border: "1px solid rgba(0,255,135,0.18)" }}>
+          <div className="flex items-center gap-4">
+            <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 text-xl"
+              style={{ background: "rgba(0,255,135,0.12)", border: "1px solid rgba(0,255,135,0.22)" }}>
+              👕
+            </div>
+            <div>
+              <p className="font-body text-base font-bold text-white">38-0</p>
+              <p className="font-body text-xs text-text-muted">Pick your XI · Play friends · Go unbeaten</p>
+            </div>
+          </div>
+          <span className="font-body text-xs font-bold px-3 py-1.5 rounded-lg flex-shrink-0 text-green"
+            style={{ background: "rgba(0,255,135,0.12)", border: "1px solid rgba(0,255,135,0.22)" }}>
+            Play →
+          </span>
+        </Link>
+      </section>
+
       {/* ── Challenges promo strip ───────────────────────────────────────── */}
       <section className="relative z-10 max-w-6xl mx-auto px-6 pb-10">
         <Link href="/challenges"
