@@ -110,13 +110,13 @@ export async function POST(req: NextRequest) {
   if (!entity || typeof entity !== "string" || !ENTITY_RE.test(entity)) {
     return NextResponse.json({ error: "Invalid entity" }, { status: 400 });
   }
-  if (entityType !== "club" && entityType !== "records") {
+  if (entityType !== "club" && entityType !== "records" && entityType !== "national") {
     return NextResponse.json({ error: "Invalid entityType" }, { status: 400 });
   }
   if (era !== undefined && !ALLOWED_ERAS.includes(era)) {
     return NextResponse.json({ error: "Invalid era" }, { status: 400 });
   }
-  if (difficulty !== undefined && !["easy", "medium", "hard"].includes(difficulty)) {
+  if (difficulty !== undefined && !["easy", "medium", "hard", "expert", "master"].includes(difficulty)) {
     return NextResponse.json({ error: "Invalid difficulty" }, { status: 400 });
   }
 
@@ -167,7 +167,7 @@ export async function POST(req: NextRequest) {
 
   if (questions.length < 5) {
     return NextResponse.json(
-      { error: "Not enough verified questions available for this club yet" },
+      { error: "Not enough verified questions available for this selection yet — try a different era or difficulty" },
       { status: 404 }
     );
   }
@@ -186,10 +186,10 @@ export async function POST(req: NextRequest) {
     .from("quiz_packs")
     .insert({
       name: packName,
-      type: entityType === "club" ? "team" : "records",
+      type: entityType === "club" ? "club" : entityType === "national" ? "national" : "records",
       parameter: entity,
       questions: convertedQuestions as unknown as Json,
-      question_count: convertedQuestions.length,
+      // question_count is GENERATED ALWAYS AS jsonb_array_length(questions) — must not be inserted
       status: "published",
       created_by: userId,
       is_custom: true,

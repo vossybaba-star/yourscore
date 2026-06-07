@@ -23,6 +23,14 @@ export interface LeagueTab {
   members: StandingRow[];
 }
 
+export interface FeaturedPack {
+  id: string;
+  name: string;
+  type: string;
+  parameter: string;
+  question_count: number;
+}
+
 export interface DashboardData {
   userId: string;
   displayName: string;
@@ -30,6 +38,7 @@ export interface DashboardData {
   globalRank: number | null;
   leagues: LeagueTab[];
   matches: LiveMatch[];
+  featuredPacks: FeaturedPack[];
 }
 
 // ── World Cup countdown ───────────────────────────────────────────────────────
@@ -161,12 +170,59 @@ const DASH_ANIM = `
   .dash-slide-2 { animation: slideIn 0.4s ease-out 0.15s both; }
   .dash-slide-3 { animation: slideIn 0.4s ease-out 0.25s both; }
   .dash-slide-4 { animation: slideIn 0.4s ease-out 0.35s both; }
-  .league-cta-pulse { animation: countPulse 2.5s ease-in-out infinite; }
   .dash-slide-5 { animation: slideIn 0.4s ease-out 0.45s both; }
+  .dash-slide-6 { animation: slideIn 0.4s ease-out 0.55s both; }
+  .league-cta-pulse { animation: countPulse 2.5s ease-in-out infinite; }
 `;
 
+// Featured pack type → emoji/color mapping
+const PACK_TYPE_CONFIG: Record<string, { color: string; rgba: string; emoji: string }> = {
+  team:     { color: "#ffb800", rgba: "255,184,0",   emoji: "⚽" },
+  national: { color: "#00c9ff", rgba: "0,201,255",   emoji: "🌍" },
+  records:  { color: "#a78bfa", rgba: "167,139,250", emoji: "🏆" },
+};
+
+function FeaturedPacksRow({ packs }: { packs: FeaturedPack[] }) {
+  if (packs.length === 0) return null;
+  return (
+    <div className="dash-slide-3">
+      <div className="flex items-center justify-between mb-3">
+        <p className="font-body text-xs text-text-muted uppercase tracking-widest">⭐ Featured This Week</p>
+        <Link href="/challenges" className="font-body text-xs font-semibold text-amber">All →</Link>
+      </div>
+      <div className="overflow-x-auto pb-2 -mx-5 px-5">
+        <div className="flex gap-3" style={{ minWidth: "max-content" }}>
+          {packs.map((pack) => {
+            const cfg = PACK_TYPE_CONFIG[pack.type] ?? PACK_TYPE_CONFIG.records;
+            return (
+              <Link
+                key={pack.id}
+                href={`/challenges/${encodeURIComponent(pack.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""))}`}
+                className="flex-shrink-0 rounded-2xl p-4 transition-opacity hover:opacity-80 active:scale-[0.98]"
+                style={{
+                  width: 160,
+                  background: `rgba(${cfg.rgba},0.07)`,
+                  border: `1px solid rgba(${cfg.rgba},0.2)`,
+                  textDecoration: "none",
+                }}
+              >
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg mb-3 flex-shrink-0"
+                  style={{ background: `rgba(${cfg.rgba},0.14)` }}>
+                  {cfg.emoji}
+                </div>
+                <p className="font-body text-xs font-bold text-white leading-tight mb-1 line-clamp-2">{pack.name}</p>
+                <p className="font-body text-xs" style={{ color: cfg.color }}>{pack.question_count} questions</p>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function Dashboard({ data }: { data: DashboardData }) {
-  const { displayName, totalScore, globalRank, leagues, matches } = data;
+  const { displayName, totalScore, globalRank, leagues, matches, featuredPacks } = data;
   const firstName = displayName ? displayName.split(" ")[0] : null;
 
   return (
@@ -243,11 +299,14 @@ export function Dashboard({ data }: { data: DashboardData }) {
           </Link>
         </div>
 
+        {/* ── Featured quiz packs ───────────────────────────────────────── */}
+        <FeaturedPacksRow packs={featuredPacks} />
+
         {/* ── League standings ───────────────────────────────────────────── */}
         <LeagueStandingsTile leagues={leagues} />
 
         {/* ── Create a league — big purple CTA ───────────────────────────── */}
-        <div className="dash-slide-3">
+        <div className="dash-slide-4">
           <Link href="/league/new"
             className="flex items-center justify-between px-5 py-5 rounded-2xl transition-all hover:opacity-90 active:scale-[0.99] league-cta-pulse"
             style={{ background: "linear-gradient(135deg, rgba(167,139,250,0.18) 0%, rgba(167,139,250,0.08) 100%)", border: "1px solid rgba(167,139,250,0.3)" }}>
@@ -272,7 +331,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
 
         {/* ── Upcoming fixtures horizontal scroller ───────────────────────── */}
         {matches.length > 0 && (
-          <div className="dash-slide-4">
+          <div className="dash-slide-5">
             <div className="flex items-center justify-between mb-3">
               <p className="font-body text-xs text-text-muted uppercase tracking-widest">
                 {matches.some(m => m.status === "live") ? "🔴 Live now" : "Upcoming fixtures"}

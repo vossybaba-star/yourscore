@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { getTeamBadgeUrl } from "@/lib/teamImages";
@@ -338,6 +338,8 @@ function PackLeaderboard({ entries, userId, accent, loading }: {
 export default function ChallengePage() {
   const { slug } = useParams<{ slug: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const pid = searchParams.get("pid"); // custom pack direct-by-ID shortcut
 
   const [phase, setPhase] = useState<Phase>("loading");
   const [pack, setPack] = useState<QuizPack | null>(null);
@@ -404,21 +406,37 @@ export default function ChallengePage() {
       setUserId(uid);
       const sb = supabase;
 
-      const { data: packs } = await sb
-        .from("quiz_packs")
-        .select("id, name, type, parameter, question_count, questions")
-        .eq("status", "published");
+      let match: (QuizPack & { questions: RawQuestion[] }) | undefined;
 
-      const match = ((packs ?? []) as unknown as (QuizPack & { questions: RawQuestion[] })[]).find(
-        (p) => slugify(p.name) === slug
-      );
-      if (!match) { router.replace("/challenges"); return; }
+      if (pid) {
+        // Custom pack — load directly by ID, no need to scan all packs
+        const { data: single } = await sb
+          .from("quiz_packs")
+          .select("id, name, type, parameter, question_count, questions")
+          .eq("id", pid)
+          .eq("status", "published")
+          .single();
+        if (!single) { router.replace("/challenges"); return; }
+        match = single as unknown as (QuizPack & { questions: RawQuestion[] });
+      } else {
+        // System pack — slug-match across all published packs
+        const { data: packs } = await sb
+          .from("quiz_packs")
+          .select("id, name, type, parameter, question_count, questions")
+          .eq("status", "published");
+        match = ((packs ?? []) as unknown as (QuizPack & { questions: RawQuestion[] })[]).find(
+          (p) => slugify(p.name) === slug
+        );
+        if (!match) { router.replace("/challenges"); return; }
+      }
 
       setPack(match);
       setQuestions(match.questions ?? []);
 
-      if (match.type === "club") {
-        getTeamBadgeUrl(match.name).then((u: string | null) => { if (u) setBadgeUrl(u); });
+      if (match.type === "club" || match.type === "national") {
+        // Custom packs store the entity name in `parameter` (e.g. "Arsenal", "France").
+        // Pre-built club packs have no parameter so fall back to the pack name itself.
+        getTeamBadgeUrl(match.parameter || match.name).then((u: string | null) => { if (u) setBadgeUrl(u); });
       } else if (match.type === "end_of_season" && match.parameter) {
         // End-of-season packs (e.g. "Arsenal Are Champions") store the team name in `parameter`
         getTeamBadgeUrl(match.parameter).then((u: string | null) => {
@@ -459,7 +477,7 @@ export default function ChallengePage() {
 
       setPhase("intro");
     });
-  }, [slug, router]);
+  }, [slug, pid, router]);
 
   const currentQ = questions[currentIdx];
   // Max score: sum of Lightning-speed points per question by difficulty

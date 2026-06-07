@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { FlagImage } from "@/components/ui/FlagImage";
 import { getPlayerCutoutUrl } from "@/lib/playerImages";
+import { BottomNav } from "@/components/ui/BottomNav";
 
 export interface LiveMatch {
   id: string;
@@ -265,7 +266,7 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
   const dashOffset = 282 * (1 - timerValue / 45);
 
   return (
-    <main className="min-h-dvh bg-bg">
+    <main className="min-h-dvh bg-bg" style={{ paddingBottom: "calc(60px + env(safe-area-inset-bottom, 0px))" }}>
       <style>{ANIM_CSS}</style>
 
       {/* Grid + glow background */}
@@ -777,6 +778,8 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
           </div>
         </div>
       </section>
+
+      <BottomNav />
 
       {/* Footer */}
       <footer className="relative z-10" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>

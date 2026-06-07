@@ -118,7 +118,7 @@ function CreateLeagueInner() {
                 <label className="font-body text-xs text-text-muted uppercase tracking-widest block mb-3">League name</label>
                 <input
                   type="text" value={name} onChange={(e) => setName(e.target.value.slice(0, 40))}
-                  placeholder="The Usual Suspects" maxLength={40} autoFocus
+                  placeholder="The Usual Suspects" maxLength={40}
                   className="w-full rounded-xl px-4 py-4 font-body text-white text-base outline-none transition-all placeholder:text-white/20"
                   style={{ background: "#12121e", border: `1px solid ${name ? "rgba(167,139,250,0.4)" : "rgba(255,255,255,0.1)"}` }}
                   onKeyDown={(e) => e.key === "Enter" && name.trim() && user && handleCreate()}

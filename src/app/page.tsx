@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { MarketingLanding, type LiveMatch } from "@/components/home/MarketingLanding";
-import { Dashboard, type DashboardData, type LeagueTab } from "@/components/home/Dashboard";
+import { Dashboard, type DashboardData, type LeagueTab, type FeaturedPack } from "@/components/home/Dashboard";
 
 export const metadata: Metadata = {
   title: "YourScore — Your football knowledge. Ranked.",
@@ -71,11 +71,30 @@ export default async function RootPage({
   // ── Logged-in: dashboard ───────────────────────────────────────────────────
   const userId = user.id;
 
-  const [{ data: profile }, matches, { data: standingRows }] = await Promise.all([
+  const [{ data: profile }, matches, { data: standingRows }, { data: featuredRaw }] = await Promise.all([
     supabase.from("profiles").select("display_name, total_score").eq("id", userId).single(),
     fetchUpcomingMatches(supabase, 8),
     supabase.rpc("get_my_league_standings", { p_user_id: userId, p_limit: 20 }),
+    // featured/featured_order added via migration — bypass stale generated types
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (supabase as any)
+      .from("quiz_packs")
+      .select("id, name, type, parameter, question_count, featured_order")
+      .eq("featured", true)
+      .eq("status", "published")
+      .order("featured_order", { ascending: true })
+      .limit(8),
   ]);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const featuredPacks: FeaturedPack[] = ((featuredRaw as any) ?? []).map((p: any) => ({
+    id: String(p.id),
+    name: String(p.name),
+    type: String(p.type),
+    parameter: String(p.parameter ?? ""),
+    question_count: Number(p.question_count ?? 10),
+  }));
 
   const totalScore = profile?.total_score ?? null;
 
@@ -113,6 +132,7 @@ export default async function RootPage({
     globalRank,
     leagues,
     matches,
+    featuredPacks,
   };
 
   return <Dashboard data={data} />;

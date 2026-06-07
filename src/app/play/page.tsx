@@ -46,11 +46,17 @@ function SmallCard({ pack, type }: { pack: QuizPack; type: "club" | "records" | 
       className="block rounded-3xl overflow-hidden transition-all duration-150 active:scale-[0.96]"
       style={{ background: `linear-gradient(160deg, #161624 0%, #1c1a2e 100%)`, border: `1px solid ${border}` }}>
       <div className="relative flex items-center justify-center" style={{ height: 90, background: `radial-gradient(ellipse at 50% 80%, ${bg} 0%, transparent 70%)` }}>
-        {imgUrl
+        {imgUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          ? <img src={imgUrl} alt={pack.name} width={56} height={56} style={{ objectFit: "contain", filter: `drop-shadow(0 4px 12px ${accent}55)`, position: "relative", zIndex: 1 }} />
-          : <span className="text-4xl" style={{ filter: `drop-shadow(0 4px 12px ${accent}55)` }}>{RECORDS_EMOJI[pack.name] ?? END_OF_SEASON_EMOJI[pack.name] ?? pack.name[0]}</span>
-        }
+          <img src={imgUrl} alt={pack.name} width={56} height={56} style={{ objectFit: "contain", filter: `drop-shadow(0 4px 12px ${accent}55)`, position: "relative", zIndex: 1 }} />
+        ) : type === "records" ? (
+          <span className="text-4xl" style={{ filter: `drop-shadow(0 4px 12px ${accent}55)` }}>{RECORDS_EMOJI[pack.name] ?? "📊"}</span>
+        ) : type === "end_of_season" ? (
+          <span className="text-4xl" style={{ filter: `drop-shadow(0 4px 12px ${accent}55)` }}>{END_OF_SEASON_EMOJI[pack.name] ?? "🏁"}</span>
+        ) : (
+          // Skeleton shimmer while club badge loads — avoids flashing a raw letter
+          <div className="animate-pulse rounded-xl" style={{ width: 56, height: 56, background: "rgba(255,255,255,0.07)" }} />
+        )}
         <div className="absolute top-2 right-2 font-display text-xs px-1.5 py-0.5 rounded"
           style={{ background: "rgba(0,0,0,0.5)", color: accent, border: `1px solid ${border}` }}>
           {pack.question_count}Q
@@ -207,7 +213,7 @@ export default function PlayPage() {
     <div className="min-h-screen bg-bg" style={{ paddingBottom: "calc(72px + env(safe-area-inset-bottom, 0px))" }}>
 
       {/* Sticky header */}
-      <div className="sticky top-0 z-20"
+      <div className="sticky top-0 z-20 pt-safe"
         style={{ background: "rgba(10,10,15,0.97)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
         <div className="max-w-lg mx-auto px-5 pt-3 pb-3">
           <div className="flex items-center justify-between mb-4">

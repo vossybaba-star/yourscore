@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { GridBackground } from "@/components/ui/GridBackground";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import { createClient } from "@/lib/supabase/client";
 import { Spinner } from "@/components/ui/Spinner";
@@ -37,8 +37,10 @@ const POPULAR_ENTITIES = [
   "Premier League", "Champions League", "World Cup", "La Liga",
 ];
 
-export default function NewGamePage() {
+function NewGameContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const preselectedPackId = searchParams.get("packId");
   const { user, loading: userLoading } = useUser();
   const [step, setStep] = useState(1);
 
@@ -64,7 +66,27 @@ export default function NewGamePage() {
     if (!userLoading && !user) router.push("/auth/sign-in");
   }, [user, userLoading, router]);
 
-  // Load packs when pack source selected
+  // If packId in URL (coming from quiz builder), pre-fetch and pre-select it
+  useEffect(() => {
+    if (!preselectedPackId) return;
+    setSource("pack");
+    setPacksLoading(true);
+    createClient()
+      .from("quiz_packs")
+      .select("id, name, type, parameter, question_count")
+      .eq("id", preselectedPackId)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          setSelectedPack(data as QuizPack);
+          setPacks([data as QuizPack]); // seed list so step 2 renders it immediately
+          setStep(2); // skip straight to pack confirmation
+        }
+        setPacksLoading(false);
+      });
+  }, [preselectedPackId]);
+
+  // Load all packs when pack source selected (skip if already seeded by preselect)
   useEffect(() => {
     if (source !== "pack" || packs.length > 0) return;
     setPacksLoading(true);
@@ -342,5 +364,13 @@ export default function NewGamePage() {
         )}
       </div>
     </main>
+  );
+}
+
+export default function NewGamePage() {
+  return (
+    <Suspense fallback={<main className="min-h-dvh bg-bg flex items-center justify-center"><Spinner size={28} /></main>}>
+      <NewGameContent />
+    </Suspense>
   );
 }

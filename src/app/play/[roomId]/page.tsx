@@ -111,6 +111,13 @@ export default function RoomPage() {
   const [joinUrl, setJoinUrl] = useState("");
   // Live answer progress counter (Fix #7)
   const [answeredCount, setAnsweredCount] = useState(0);
+  // Play-again voting
+  const [playAgainVotes, setPlayAgainVotes] = useState<Set<string>>(new Set());
+  const [myVote, setMyVote] = useState<"yes" | "no" | null>(null);
+  const [newRoomId, setNewRoomId] = useState<string | null>(null);
+  // Lobby persistence: timestamp when game completed (for 5-min countdown)
+  const [completedAt, setCompletedAt] = useState<number | null>(null);
+  const [lobbyTimeLeft, setLobbyTimeLeft] = useState<number>(300); // seconds
 
   const advanceTimerRef   = useRef<ReturnType<typeof setTimeout> | null>(null);
   const expireTimerRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -317,6 +324,7 @@ export default function RoomPage() {
         .from("rooms").select("*").eq("id", roomId).single();
       if (cancelled || !roomData) { setLoading(false); return; }
       setRoom(roomData as unknown as Room);
+      if (roomData.status === "completed") setCompletedAt(Date.now());
 
       await fetchPlayers(sb, roomId);
       if (roomData.status === "live" || roomData.status === "completed") {
@@ -351,6 +359,9 @@ export default function RoomPage() {
               const expectedSeq = updated.current_question_idx + 1;
               await fetchAndShowQuestion(sb, expectedSeq);
             }
+            if (updated.status === "completed") {
+              setCompletedAt(Date.now());
+            }
           })
         // New players joining
         .on("postgres_changes", { event: "INSERT", schema: "public", table: "room_members", filter: `room_id=eq.${roomId}` },
@@ -369,6 +380,24 @@ export default function RoomPage() {
           if (isHostRef.current && playersCountRef.current > 0 && count >= playersCountRef.current) {
             triggerEarlyAdvance();
           }
+        })
+        // Play-again voting broadcast
+        .on("broadcast", { event: "play_again_vote" }, ({ payload }) => {
+          if (cancelled) return;
+          const p = payload as { userId?: string; vote?: "yes" | "no" };
+          if (!p.userId) return;
+          setPlayAgainVotes((prev) => {
+            const next = new Set(prev);
+            if (p.vote === "yes") next.add(p.userId!);
+            else next.delete(p.userId!);
+            return next;
+          });
+        })
+        // Host broadcasts new room after play-again — redirect everyone
+        .on("broadcast", { event: "play_again_redirect" }, ({ payload }) => {
+          if (cancelled) return;
+          const p = payload as { roomId?: string };
+          if (p.roomId) setNewRoomId(p.roomId);
         })
         .subscribe();
 
@@ -393,6 +422,28 @@ export default function RoomPage() {
     scheduleAdvance(closesAt);
     return () => { if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current); };
   }, [isHost, closesAt, scheduleAdvance]);
+
+  // 5-minute lobby countdown after game completes
+  useEffect(() => {
+    if (!completedAt) return;
+    const LOBBY_HOLD_MS = 5 * 60 * 1000;
+    const iv = setInterval(() => {
+      const elapsed = Date.now() - completedAt;
+      const left = Math.max(0, Math.floor((LOBBY_HOLD_MS - elapsed) / 1000));
+      setLobbyTimeLeft(left);
+    }, 1000);
+    return () => clearInterval(iv);
+  }, [completedAt]);
+
+  // Auto-redirect when host creates a new room
+  useEffect(() => {
+    if (newRoomId) {
+      const t = setTimeout(() => {
+        window.location.href = `/play/${newRoomId}`;
+      }, 1500);
+      return () => clearTimeout(t);
+    }
+  }, [newRoomId]);
 
   // ── Actions ───────────────────────────────────────────────────────────────
 
@@ -448,6 +499,59 @@ export default function RoomPage() {
     if (!room) return;
     navigator.clipboard.writeText(joinUrl || `${window.location.origin}/play?join=${room.code}`)
       .then(() => { setCopyDone(true); setTimeout(() => setCopyDone(false), 2000); });
+  }
+
+  function castPlayAgainVote(vote: "yes" | "no") {
+    if (!user) return;
+    setMyVote(vote);
+    setPlayAgainVotes((prev) => {
+      const next = new Set(prev);
+      if (vote === "yes") next.add(user.id);
+      else next.delete(user.id);
+      return next;
+    });
+    channelRef.current?.send({
+      type: "broadcast",
+      event: "play_again_vote",
+      payload: { userId: user.id, vote },
+    });
+  }
+
+  async function handlePlayAgain() {
+    if (!isHost || !room) return;
+    // Normalize values to what the API accepts
+    const validCounts = [5, 10, 20];
+    const validDiffs = ["easy", "medium", "hard", "mixed"];
+    const qCount = validCounts.includes(room.question_count) ? room.question_count : 10;
+    const diff = validDiffs.includes(room.difficulty_filter) ? room.difficulty_filter : "mixed";
+    const res = await fetch("/api/room/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: room.name,
+        room_mode: room.room_mode,
+        pack_id: room.pack_id,
+        category_filter: room.category_filter,
+        difficulty_filter: diff,
+        question_count: qCount,
+      }),
+    });
+    if (!res.ok) return;
+    const { room: newRoom } = await res.json();
+    const newId: string = newRoom.id;
+    // Broadcast to all players so everyone gets redirected
+    channelRef.current?.send({
+      type: "broadcast",
+      event: "play_again_redirect",
+      payload: { roomId: newId },
+    });
+    setNewRoomId(newId);
+  }
+
+  function formatLobbyTime(secs: number) {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m}:${String(s).padStart(2, "0")}`;
   }
 
   // ── Loading ───────────────────────────────────────────────────────────────
@@ -587,15 +691,39 @@ export default function RoomPage() {
   if (room.status === "completed") {
     const winner = leaderboard[0];
     const me = leaderboard.find(e => e.user_id === user?.id);
+    const yesVotes = playAgainVotes.size;
+    const totalPlayers = players.length || leaderboard.length;
+    const lobbyExpired = lobbyTimeLeft === 0;
+
+    // Redirecting everyone to new room
+    if (newRoomId) {
+      return (
+        <main className="min-h-dvh bg-bg flex flex-col items-center justify-center gap-4 px-5">
+          <p className="text-5xl">🎮</p>
+          <p className="font-display text-2xl text-white">New game starting…</p>
+          <p className="font-body text-sm text-text-muted">Taking you to the new lobby</p>
+        </main>
+      );
+    }
 
     return (
-      <main className="min-h-dvh pb-10 bg-bg">
+      <main className="min-h-dvh pb-20 bg-bg">
         <nav className="flex items-center justify-between px-5 py-4 max-w-lg mx-auto">
           <Link href="/play" className="font-body text-sm text-text-muted">← Play</Link>
-          <span className="font-body text-xs" style={{ color: "#555577" }}>Game Over</span>
+          <div className="flex items-center gap-2">
+            <span className="font-body text-xs" style={{ color: "#555577" }}>Game Over</span>
+            {completedAt && !lobbyExpired && (
+              <span className="font-body text-xs px-2 py-0.5 rounded-full"
+                style={{ background: "rgba(255,255,255,0.06)", color: lobbyTimeLeft < 60 ? "#f87171" : "#555577" }}>
+                lobby {formatLobbyTime(lobbyTimeLeft)}
+              </span>
+            )}
+          </div>
         </nav>
 
         <div className="max-w-lg mx-auto px-5 space-y-4">
+
+          {/* Winner tile */}
           {winner && (
             <div className="rounded-2xl px-5 py-6 text-center" style={{ background: "linear-gradient(135deg, rgba(255,215,0,0.1) 0%, rgba(255,184,0,0.05) 100%)", border: "1px solid rgba(255,215,0,0.25)" }}>
               <p className="text-4xl mb-2">🏆</p>
@@ -606,6 +734,7 @@ export default function RoomPage() {
             </div>
           )}
 
+          {/* Your result */}
           {me && me.user_id !== winner?.user_id && (
             <div className="rounded-2xl px-5 py-4 flex items-center justify-between" style={{ background: "rgba(0,255,135,0.04)", border: "1px solid rgba(0,255,135,0.15)" }}>
               <div>
@@ -616,6 +745,80 @@ export default function RoomPage() {
             </div>
           )}
 
+          {/* ── Play Again voting panel ──────────────────────────────────── */}
+          {!lobbyExpired && (
+            <div className="rounded-2xl overflow-hidden" style={{ background: "rgba(255,184,0,0.06)", border: "1px solid rgba(255,184,0,0.2)" }}>
+              <div className="px-5 py-3 flex items-center justify-between" style={{ borderBottom: "1px solid rgba(255,184,0,0.12)" }}>
+                <p className="font-body text-xs font-bold uppercase tracking-widest text-amber">Play Again?</p>
+                <p className="font-body text-xs" style={{ color: "#555577" }}>
+                  {yesVotes > 0 ? `${yesVotes}/${totalPlayers} want to play` : "Vote below"}
+                </p>
+              </div>
+              <div className="px-5 py-4">
+                {/* Vote bar */}
+                {totalPlayers > 0 && (
+                  <div className="h-1.5 rounded-full mb-4 overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
+                    <div className="h-full rounded-full transition-all duration-500"
+                      style={{ width: `${(yesVotes / totalPlayers) * 100}%`, background: "#ffb800" }} />
+                  </div>
+                )}
+
+                {!isHost ? (
+                  /* Non-host: just vote */
+                  <div className="flex gap-3">
+                    <button onClick={() => castPlayAgainVote("yes")}
+                      className="flex-1 py-3 rounded-xl font-body font-bold text-sm transition-all"
+                      style={{
+                        background: myVote === "yes" ? "#ffb800" : "rgba(255,184,0,0.1)",
+                        color: myVote === "yes" ? "#0a0a0f" : "#ffb800",
+                        border: `1px solid ${myVote === "yes" ? "#ffb800" : "rgba(255,184,0,0.3)"}`,
+                      }}>
+                      {myVote === "yes" ? "✓ I'm in!" : "Play Again 🎮"}
+                    </button>
+                    <button onClick={() => castPlayAgainVote("no")}
+                      className="flex-1 py-3 rounded-xl font-body font-bold text-sm transition-all"
+                      style={{
+                        background: myVote === "no" ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.04)",
+                        color: myVote === "no" ? "#ffffff" : "#555577",
+                        border: "1px solid rgba(255,255,255,0.08)",
+                      }}>
+                      Leave
+                    </button>
+                  </div>
+                ) : (
+                  /* Host: vote + launch */
+                  <div className="space-y-3">
+                    <div className="flex gap-3">
+                      <button onClick={() => castPlayAgainVote("yes")}
+                        className="flex-1 py-3 rounded-xl font-body font-bold text-sm transition-all"
+                        style={{
+                          background: myVote === "yes" ? "rgba(255,184,0,0.15)" : "rgba(255,255,255,0.04)",
+                          color: myVote === "yes" ? "#ffb800" : "#8888aa",
+                          border: `1px solid ${myVote === "yes" ? "rgba(255,184,0,0.4)" : "rgba(255,255,255,0.08)"}`,
+                        }}>
+                        {myVote === "yes" ? "✓ You're in" : "I'm in"}
+                      </button>
+                      <button onClick={() => castPlayAgainVote("no")}
+                        className="flex-1 py-3 rounded-xl font-body font-bold text-sm transition-all"
+                        style={{
+                          background: "rgba(255,255,255,0.04)", color: "#555577",
+                          border: "1px solid rgba(255,255,255,0.06)",
+                        }}>
+                        Skip
+                      </button>
+                    </div>
+                    <button onClick={handlePlayAgain}
+                      className="w-full py-3.5 rounded-xl font-body font-bold text-sm transition-all"
+                      style={{ background: "#ffb800", color: "#0a0a0f" }}>
+                      🎮 Start New Game ({yesVotes} ready)
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Final Standings */}
           <div className="rounded-2xl overflow-hidden bg-surface border border-border">
             <div className="px-5 py-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
               <p className="font-body text-xs uppercase tracking-widest text-text-muted">Final Standings</p>
@@ -626,12 +829,13 @@ export default function RoomPage() {
             </div>
           </div>
 
+          {/* Bottom actions */}
           <div className="flex gap-3">
-            {isHost && (
+            {isHost && lobbyExpired && (
               <Link href="/play/new"
                 className="flex-1 py-3.5 rounded-2xl font-body font-bold text-sm text-center transition-all hover:opacity-90 bg-amber"
                 style={{ color: "#0a0a0f" }}>
-                Play Again 🎮
+                New Lobby 🎮
               </Link>
             )}
             <Link href="/play"

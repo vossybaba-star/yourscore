@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { BottomNav } from "@/components/ui/BottomNav";
-import { getTeamBadgeUrl } from "@/lib/teamImages";
+import { getTeamBadgeUrlSync } from "@/lib/teamImages";
 
-// ── Constants ─────────────────────────────────────────────────────────────────
+// ── Constants ──────────────────────────────────────────────────────────────────
 
 const CLUBS = [
   "Arsenal", "Aston Villa", "Birmingham City", "Blackburn Rovers", "Blackpool",
@@ -21,135 +20,133 @@ const CLUBS = [
   "West Ham United", "Wigan Athletic", "Wolverhampton Wanderers",
 ];
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const NATIONAL_TEAMS = [
-  { name: "Argentina",    flag: "🇦🇷", tier: 1 },
-  { name: "France",       flag: "🇫🇷", tier: 1 },
-  { name: "Germany",      flag: "🇩🇪", tier: 1 },
-  { name: "Brazil",       flag: "🇧🇷", tier: 1 },
-  { name: "Spain",        flag: "🇪🇸", tier: 1 },
-  { name: "England",      flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", tier: 1 },
-  { name: "Portugal",     flag: "🇵🇹", tier: 1 },
-  { name: "Netherlands",  flag: "🇳🇱", tier: 1 },
-  { name: "Italy",        flag: "🇮🇹", tier: 1 },
-  { name: "Croatia",      flag: "🇭🇷", tier: 1 },
-  { name: "Belgium",      flag: "🇧🇪", tier: 1 },
-  { name: "Morocco",      flag: "🇲🇦", tier: 1 },
-  { name: "Uruguay",      flag: "🇺🇾", tier: 1 },
-  { name: "Japan",        flag: "🇯🇵", tier: 2 },
-  { name: "Colombia",     flag: "🇨🇴", tier: 2 },
-  { name: "Mexico",       flag: "🇲🇽", tier: 2 },
-  { name: "Switzerland",  flag: "🇨🇭", tier: 2 },
-  { name: "USA",          flag: "🇺🇸", tier: 2 },
-  { name: "Senegal",      flag: "🇸🇳", tier: 2 },
-  { name: "South Korea",  flag: "🇰🇷", tier: 2 },
-  { name: "Australia",    flag: "🇦🇺", tier: 2 },
-  { name: "Denmark",      flag: "🇩🇰", tier: 2 },
-  { name: "Poland",       flag: "🇵🇱", tier: 3 },
-  { name: "Ghana",        flag: "🇬🇭", tier: 3 },
-  { name: "Ecuador",      flag: "🇪🇨", tier: 3 },
-  { name: "Iran",         flag: "🇮🇷", tier: 3 },
-  { name: "Saudi Arabia", flag: "🇸🇦", tier: 3 },
-  { name: "Nigeria",      flag: "🇳🇬", tier: 3 },
-  { name: "Costa Rica",   flag: "🇨🇷", tier: 3 },
-  { name: "Cameroon",     flag: "🇨🇲", tier: 3 },
+  { name: "Argentina",    flag: "🇦🇷" },
+  { name: "France",       flag: "🇫🇷" },
+  { name: "Germany",      flag: "🇩🇪" },
+  { name: "Brazil",       flag: "🇧🇷" },
+  { name: "Spain",        flag: "🇪🇸" },
+  { name: "England",      flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿" },
+  { name: "Portugal",     flag: "🇵🇹" },
+  { name: "Netherlands",  flag: "🇳🇱" },
+  { name: "Italy",        flag: "🇮🇹" },
+  { name: "Croatia",      flag: "🇭🇷" },
+  { name: "Belgium",      flag: "🇧🇪" },
+  { name: "Morocco",      flag: "🇲🇦" },
+  { name: "Uruguay",      flag: "🇺🇾" },
+  { name: "Japan",        flag: "🇯🇵" },
+  { name: "Colombia",     flag: "🇨🇴" },
+  { name: "Mexico",       flag: "🇲🇽" },
+  { name: "Switzerland",  flag: "🇨🇭" },
+  { name: "USA",          flag: "🇺🇸" },
+  { name: "Senegal",      flag: "🇸🇳" },
+  { name: "South Korea",  flag: "🇰🇷" },
+  { name: "Australia",    flag: "🇦🇺" },
+  { name: "Denmark",      flag: "🇩🇰" },
+  { name: "Poland",       flag: "🇵🇱" },
+  { name: "Ghana",        flag: "🇬🇭" },
+  { name: "Nigeria",      flag: "🇳🇬" },
 ];
 
 const RECORD_TOPICS = [
-  "Premier League Records", "Champions League Records", "World Cup Records",
-  "Euro Championship Records", "Transfer Market Records", "Legendary Club Seasons",
-  "Iconic Managers", "Penalty Shootout Lore", "Golden Boot & Individual Awards",
-  "The Derbies — By Numbers", "FA Cup Records", "League Cup Records",
-  "English Football Firsts", "Greatest Premier League Players", "Stadium & Ground History",
+  { label: "Premier League Records",          emoji: "🏆" },
+  { label: "Champions League Records",        emoji: "⭐" },
+  { label: "World Cup Records",               emoji: "🌍" },
+  { label: "Euro Championship Records",       emoji: "🇪🇺" },
+  { label: "Transfer Market Records",         emoji: "💰" },
+  { label: "Legendary Club Seasons",          emoji: "📖" },
+  { label: "Iconic Managers",                 emoji: "🎩" },
+  { label: "Penalty Shootout Lore",           emoji: "⚽" },
+  { label: "Golden Boot & Individual Awards", emoji: "👟" },
+  { label: "The Derbies — By Numbers",        emoji: "🔥" },
+  { label: "FA Cup Records",                  emoji: "🏅" },
+  { label: "Greatest Premier League Players", emoji: "⚡" },
 ];
 
 const ERA_OPTIONS = [
-  { value: "", label: "All Time" },
-  { value: "early-pl", label: "Classic (90s–00s)" },
-  { value: "2010s", label: "2010s" },
-  { value: "2020s", label: "Modern (2020s)" },
-  { value: "2024-25", label: "This Season" },
+  { value: "",          label: "All Time",       short: "All" },
+  { value: "early-pl",  label: "Classic 90s–00s", short: "90s" },
+  { value: "2010s",     label: "2010s",           short: "10s" },
+  { value: "2020s",     label: "Modern 2020s",    short: "20s" },
+  { value: "2024-25",   label: "This Season",     short: "Now" },
 ];
 
 const DIFF_OPTIONS = [
-  { value: "",       label: "Mixed",  desc: "A blend of all levels" },
-  { value: "easy",   label: "Easy",   desc: "Casual fans" },
-  { value: "medium", label: "Medium", desc: "Regular followers" },
-  { value: "hard",   label: "Hard",   desc: "Dedicated fans" },
-  { value: "expert", label: "Expert", desc: "Stats nerds" },
-  { value: "master", label: "Master", desc: "Football obsessives" },
+  { value: "",       label: "Mixed",  dot: "#aaaacc" },
+  { value: "easy",   label: "Easy",   dot: "#4ade80" },
+  { value: "medium", label: "Medium", dot: "#ffb800" },
+  { value: "hard",   label: "Hard",   dot: "#f87171" },
+  { value: "expert", label: "Expert", dot: "#a78bfa" },
+  { value: "master", label: "Master", dot: "#00c9ff" },
 ];
 
-const TOPIC_EMOJI: Record<string, string> = {
-  "Premier League Records": "🏆",
-  "Champions League Records": "⭐",
-  "World Cup Records": "🌍",
-  "Euro Championship Records": "🇪🇺",
-  "Transfer Market Records": "💰",
-  "Legendary Club Seasons": "📖",
-  "Iconic Managers": "🎩",
-  "Penalty Shootout Lore": "⚽",
-  "Golden Boot & Individual Awards": "👟",
-  "The Derbies — By Numbers": "🔥",
-  "FA Cup Records": "🏅",
-  "League Cup Records": "🥈",
-  "English Football Firsts": "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
-  "Greatest Premier League Players": "⚡",
-  "Stadium & Ground History": "🏟️",
-};
+// ── Step definitions ───────────────────────────────────────────────────────────
 
-// ── Component ─────────────────────────────────────────────────────────────────
+type FocusType = "club" | "national" | "records";
+
+const CATEGORIES: { key: FocusType; label: string; icon: string; color: string; rgba: string; desc: string; comingSoon?: boolean }[] = [
+  { key: "club",     label: "Club",          icon: "⚽", color: "#ffb800", rgba: "255,184,0",   desc: "Pick a Premier League side" },
+  { key: "national", label: "National Team", icon: "🌍", color: "#00c9ff", rgba: "0,201,255",   desc: "International football" },
+  { key: "records",  label: "Records",       icon: "🏆", color: "#a78bfa", rgba: "167,139,250", desc: "Coming soon", comingSoon: true },
+];
+
+// ── Quiz Builder ───────────────────────────────────────────────────────────────
 
 export default function CreateQuizPage() {
   const router = useRouter();
 
-  const [focusType, setFocusType] = useState<"club" | "records" | "national">("club");
+  // Wizard state
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [focusType, setFocusType] = useState<FocusType | null>(null);
   const [selectedEntity, setSelectedEntity] = useState<string | null>(null);
-  const [clubSearch, setClubSearch] = useState("");
   const [era, setEra] = useState("");
   const [difficulty, setDifficulty] = useState("");
+  const [clubSearch, setClubSearch] = useState("");
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [badgeUrls, setBadgeUrls] = useState<Record<string, string>>({});
 
-  // Pre-load all club badge URLs
-  useEffect(() => {
-    const load = async () => {
-      const map: Record<string, string> = {};
-      await Promise.all(
-        CLUBS.map(async (club) => {
-          const url = await getTeamBadgeUrl(club);
-          if (url) map[club] = url;
-        })
-      );
-      setBadgeUrls(map);
-    };
-    load();
-  }, []);
+  const step2Ref = useRef<HTMLDivElement>(null);
+  const step3Ref = useRef<HTMLDivElement>(null);
 
-  // Reset selection when tab changes
+  // Reset on category change
   useEffect(() => {
     setSelectedEntity(null);
     setClubSearch("");
+    setEra("");
+    setDifficulty("");
   }, [focusType]);
+
+  // Auto-scroll to next step
+  useEffect(() => {
+    if (step === 2) {
+      setTimeout(() => step2Ref.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+    }
+    if (step === 3) {
+      setTimeout(() => step3Ref.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+    }
+  }, [step]);
 
   const filteredClubs = CLUBS.filter((c) =>
     c.toLowerCase().includes(clubSearch.toLowerCase())
   );
 
+  function handleCategorySelect(key: FocusType) {
+    setFocusType(key);
+    setStep(2);
+  }
+
+  function handleEntitySelect(name: string) {
+    setSelectedEntity(name === selectedEntity ? null : name);
+    if (step < 3) setStep(3);
+  }
+
   async function handleGenerate() {
-    if (!selectedEntity || generating) return;
+    if (!selectedEntity || !focusType || generating) return;
     setGenerating(true);
     setError(null);
     try {
-      const {
-        data: { user },
-      } = await createClient().auth.getUser();
-      if (!user) {
-        setError("Sign in to create a quiz");
-        setGenerating(false);
-        return;
-      }
+      const { data: { user } } = await createClient().auth.getUser();
+      if (!user) { setError("Sign in to create a quiz"); setGenerating(false); return; }
 
       const res = await fetch("/api/quiz/generate-custom", {
         method: "POST",
@@ -164,597 +161,427 @@ export default function CreateQuizPage() {
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Failed to generate quiz");
-      router.push(`/challenges/${json.slug}`);
+      // Redirect to the quiz ready page
+      router.push(`/quiz/ready?packId=${json.packId}&slug=${encodeURIComponent(json.slug)}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
       setGenerating(false);
     }
   }
 
-  const canGenerate = !!selectedEntity && !generating;
+  const activeCategory = CATEGORIES.find((c) => c.key === focusType);
+  const canGenerate = !!selectedEntity && !!focusType && !generating;
 
   return (
-    <div
-      className="bg-bg"
-      style={{
-        minHeight: "100vh",
-        paddingBottom: "calc(72px + env(safe-area-inset-bottom, 0px))",
-      }}
-    >
-      {/* ── Sticky Header ──────────────────────────────────────────────── */}
-      <div
-        style={{
-          position: "sticky",
-          top: 0,
-          zIndex: 20,
-          background: "rgba(10,10,15,0.97)",
-          backdropFilter: "blur(20px)",
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
-        }}
-      >
-        <div
-          style={{
-            maxWidth: 512,
-            margin: "0 auto",
-            padding: "16px 20px 16px",
-          }}
-        >
-          {/* Title row with back button */}
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-            <Link
-              href="/play"
-              style={{
-                width: 36, height: 36, borderRadius: 10,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                background: "rgba(255,255,255,0.06)",
-                border: "1px solid rgba(255,255,255,0.1)",
-                textDecoration: "none", flexShrink: 0,
-              }}
-              aria-label="Back to Play"
-            >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+    <div className="bg-bg min-h-screen" style={{ paddingBottom: 120 }}>
+      <style>{`
+        @keyframes stepIn {
+          from { opacity: 0; transform: translateY(16px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .step-in { animation: stepIn 0.3s ease-out both; }
+        @keyframes shimmer {
+          0% { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
+        }
+        .generating-shimmer {
+          background: linear-gradient(90deg, #00ff87 0%, #00cc6a 40%, #00ff87 60%, #00cc6a 100%);
+          background-size: 200% 100%;
+          animation: shimmer 1.5s infinite;
+        }
+      `}</style>
+
+      {/* ── Header ─────────────────────────────────────────────────────── */}
+      <div style={{
+        position: "sticky", top: 0, zIndex: 20,
+        paddingTop: "env(safe-area-inset-top, 0px)",
+        background: "rgba(10,10,15,0.97)",
+        backdropFilter: "blur(20px)",
+        borderBottom: "1px solid rgba(255,255,255,0.06)",
+      }}>
+        <div style={{ maxWidth: 512, margin: "0 auto", padding: "14px 20px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <Link href="/play" style={{
+              width: 34, height: 34, borderRadius: 10, flexShrink: 0,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
+              textDecoration: "none",
+            }}>
+              <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
                 <path d="M10 3L5 8l5 5" stroke="#aaaacc" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </Link>
-            <div>
-              <h1 className="text-green" style={{ fontFamily: "var(--font-display, sans-serif)", fontSize: 24, fontWeight: 700, letterSpacing: "-0.02em", margin: 0, lineHeight: 1.1 }}>
-                BUILD A QUIZ
+
+            <div style={{ flex: 1 }}>
+              <h1 style={{
+                fontFamily: "var(--font-display, sans-serif)", fontSize: 20, fontWeight: 700,
+                letterSpacing: "-0.01em", margin: 0, lineHeight: 1.1, color: "#ffffff",
+              }}>
+                Build a Quiz
               </h1>
-              <p className="text-text-muted" style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: 13, marginTop: 4, marginBottom: 0 }}>
-                Pick your focus and we&apos;ll generate a fresh quiz
-              </p>
+            </div>
+
+            {/* Step pill */}
+            <div style={{
+              padding: "4px 10px", borderRadius: 999,
+              background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
+              fontFamily: "var(--font-body, sans-serif)", fontSize: 11, fontWeight: 700,
+              color: "#8888aa", letterSpacing: "0.04em",
+            }}>
+              {step === 1 ? "Pick category" : step === 2 ? "Pick team" : "Fine-tune"}
             </div>
           </div>
 
-          {/* Tab switcher */}
-          <div style={{ display: "flex", gap: 6 }}>
-            {([
-              { key: "club",     label: "⚽ CLUBS",   color: "#ffb800", rgba: "255,184,0" },
-              { key: "national", label: "🌍 NATIONS",  color: "#00c9ff", rgba: "0,201,255" },
-              { key: "records",  label: "🏆 RECORDS",  color: "#a78bfa", rgba: "167,139,250" },
-            ] as const).map(({ key, label, color, rgba }) => (
-              <button
-                key={key}
-                onClick={() => setFocusType(key)}
-                style={{
-                  flex: 1,
-                  padding: "10px 8px",
-                  borderRadius: 9999,
-                  fontFamily: "var(--font-display, sans-serif)",
-                  fontSize: 11,
-                  fontWeight: 700,
-                  letterSpacing: "0.04em",
-                  cursor: "pointer",
-                  transition: "all 0.15s ease",
-                  background: focusType === key ? `rgba(${rgba},0.15)` : "rgba(255,255,255,0.04)",
-                  border: `1px solid ${focusType === key ? `rgba(${rgba},0.5)` : "rgba(255,255,255,0.08)"}`,
-                  color: focusType === key ? color : "#8888aa",
-                  boxShadow: focusType === key ? `0 0 16px rgba(${rgba},0.12)` : "none",
-                }}
-              >
-                {label}
-              </button>
-            ))}
+          {/* Progress bar */}
+          <div style={{ marginTop: 10, height: 2, background: "rgba(255,255,255,0.06)", borderRadius: 2, overflow: "hidden" }}>
+            <div style={{
+              height: "100%", borderRadius: 2,
+              width: step === 1 ? "33%" : step === 2 ? "66%" : "100%",
+              background: activeCategory ? `rgba(${activeCategory.rgba}, 0.8)` : "rgba(0,255,135,0.5)",
+              transition: "width 0.4s ease, background 0.3s ease",
+            }} />
           </div>
         </div>
       </div>
 
-      {/* ── Main Content ──────────────────────────────────────────────── */}
-      <div style={{ maxWidth: 512, margin: "0 auto", padding: "20px 16px 0" }}>
+      <div style={{ maxWidth: 512, margin: "0 auto", padding: "24px 16px 0" }}>
 
-        {/* ── Section 1: Pick entity ─────────────────────────────────── */}
-        <div style={{ marginBottom: 24 }}>
-          {focusType === "club" ? (
-            <>
-              {/* Search */}
-              <input
-                type="text"
-                placeholder="Search clubs..."
-                value={clubSearch}
-                onChange={(e) => setClubSearch(e.target.value)}
-                className="text-white"
-                style={{
-                  width: "100%",
-                  boxSizing: "border-box",
-                  padding: "10px 14px",
-                  borderRadius: 12,
-                  background: "rgba(255,255,255,0.05)",
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  fontFamily: "var(--font-body, sans-serif)",
-                  fontSize: 14,
-                  outline: "none",
-                  marginBottom: 12,
-                  transition: "border-color 0.15s ease",
-                }}
-                onFocus={(e) => {
-                  e.currentTarget.style.borderColor = "rgba(0,255,135,0.4)";
-                }}
-                onBlur={(e) => {
-                  e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)";
-                }}
-              />
+        {/* ── STEP 1: Category ──────────────────────────────────────────── */}
+        <div>
+          <p style={{
+            fontFamily: "var(--font-body, sans-serif)", fontSize: 11, fontWeight: 700,
+            letterSpacing: "0.1em", textTransform: "uppercase", color: "#8888aa",
+            marginBottom: 12,
+          }}>
+            {step === 1 ? "What kind of quiz?" : "Category"}
+          </p>
 
-              {/* Club grid */}
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(3, 1fr)",
-                  gap: 8,
-                }}
-              >
-                {filteredClubs.map((club) => {
-                  const isSelected = selectedEntity === club;
-                  const badge = badgeUrls[club];
-                  return (
-                    <button
-                      key={club}
-                      onClick={() =>
-                        setSelectedEntity(isSelected ? null : club)
-                      }
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: 6,
-                        padding: "10px 6px",
-                        borderRadius: 12,
-                        height: 80,
-                        cursor: "pointer",
-                        transition: "all 0.15s ease",
-                        background: isSelected
-                          ? "rgba(0,255,135,0.1)"
-                          : "rgba(255,255,255,0.03)",
-                        border: `1px solid ${
-                          isSelected
-                            ? "rgba(0,255,135,0.6)"
-                            : "rgba(255,255,255,0.07)"
-                        }`,
-                        boxShadow: isSelected
-                          ? "0 0 12px rgba(0,255,135,0.15)"
-                          : "none",
-                      }}
-                      onMouseDown={(e) => {
-                        (e.currentTarget as HTMLButtonElement).style.transform =
-                          "scale(0.96)";
-                      }}
-                      onMouseUp={(e) => {
-                        (e.currentTarget as HTMLButtonElement).style.transform =
-                          "scale(1)";
-                      }}
-                      onTouchStart={(e) => {
-                        (e.currentTarget as HTMLButtonElement).style.transform =
-                          "scale(0.96)";
-                      }}
-                      onTouchEnd={(e) => {
-                        (e.currentTarget as HTMLButtonElement).style.transform =
-                          "scale(1)";
-                      }}
-                    >
-                      {badge ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={badge}
-                          alt={club}
-                          width={40}
-                          height={40}
-                          style={{
-                            objectFit: "contain",
-                            filter: isSelected
-                              ? "drop-shadow(0 2px 8px rgba(0,255,135,0.35))"
-                              : "none",
-                          }}
-                        />
-                      ) : (
-                        <div
-                          className="text-text-muted"
-                          style={{
-                            width: 40,
-                            height: 40,
-                            borderRadius: 8,
-                            background: "rgba(255,255,255,0.07)",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontFamily: "var(--font-display, sans-serif)",
-                            fontSize: 16,
-                          }}
-                        >
-                          {club[0]}
-                        </div>
-                      )}
-                      <span
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+            {CATEGORIES.map(({ key, label, icon, color, rgba, desc, comingSoon }) => {
+              const active = focusType === key;
+              return (
+                <button
+                  key={key}
+                  onClick={() => !comingSoon && handleCategorySelect(key)}
+                  disabled={comingSoon}
+                  style={{
+                    display: "flex", flexDirection: "column", alignItems: "center",
+                    justifyContent: "center", gap: 8,
+                    padding: "16px 8px",
+                    borderRadius: 16, cursor: comingSoon ? "default" : "pointer",
+                    transition: "all 0.18s ease",
+                    opacity: comingSoon ? 0.45 : 1,
+                    background: active ? `rgba(${rgba},0.14)` : "rgba(255,255,255,0.04)",
+                    border: `1px solid ${active ? `rgba(${rgba},0.5)` : "rgba(255,255,255,0.08)"}`,
+                    boxShadow: active ? `0 0 20px rgba(${rgba},0.15)` : "none",
+                    transform: active ? "scale(1.02)" : "scale(1)",
+                  }}
+                >
+                  <span style={{ fontSize: 26, lineHeight: 1 }}>{icon}</span>
+                  <div>
+                    <p style={{
+                      fontFamily: "var(--font-display, sans-serif)", fontSize: 12, fontWeight: 700,
+                      color: active ? color : "#ffffff", textAlign: "center", margin: 0,
+                    }}>{label}</p>
+                    <p style={{
+                      fontFamily: "var(--font-body, sans-serif)", fontSize: 10,
+                      color: comingSoon ? "#555566" : active ? `rgba(${rgba},0.7)` : "#666688",
+                      textAlign: "center", marginTop: 2, lineHeight: 1.3,
+                    }}>{desc}</p>
+                  </div>
+                  {active && (
+                    <div style={{
+                      width: 6, height: 6, borderRadius: "50%",
+                      background: color, boxShadow: `0 0 6px ${color}`,
+                    }} />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ── STEP 2: Team / Topic ──────────────────────────────────────── */}
+        {focusType && (
+          <div
+            ref={step2Ref}
+            className="step-in"
+            style={{ marginTop: 28 }}
+          >
+            <p style={{
+              fontFamily: "var(--font-body, sans-serif)", fontSize: 11, fontWeight: 700,
+              letterSpacing: "0.1em", textTransform: "uppercase", color: "#8888aa",
+              marginBottom: 12,
+            }}>
+              {focusType === "club" ? "Pick a club" : focusType === "national" ? "Pick a nation" : "Pick a topic"}
+            </p>
+
+            {focusType === "club" && (
+              <>
+                <input
+                  type="text"
+                  placeholder="Search clubs..."
+                  value={clubSearch}
+                  onChange={(e) => setClubSearch(e.target.value)}
+                  className="text-white"
+                  style={{
+                    width: "100%", boxSizing: "border-box",
+                    padding: "10px 14px", borderRadius: 12, marginBottom: 10,
+                    background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
+                    fontFamily: "var(--font-body, sans-serif)", fontSize: 14, outline: "none",
+                    transition: "border-color 0.15s ease",
+                  }}
+                  onFocus={(e) => { e.currentTarget.style.borderColor = "rgba(255,184,0,0.4)"; }}
+                  onBlur={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; }}
+                />
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6 }}>
+                  {filteredClubs.map((club) => {
+                    const isSelected = selectedEntity === club;
+                    const badge = getTeamBadgeUrlSync(club);
+                    return (
+                      <button
+                        key={club}
+                        onClick={() => handleEntitySelect(club)}
                         style={{
-                          fontFamily: "var(--font-body, sans-serif)",
-                          fontSize: 10,
-                          color: isSelected ? "#00ff87" : "#aaaacc",
-                          fontWeight: 600,
-                          textAlign: "center",
-                          lineHeight: 1.2,
-                          overflow: "hidden",
-                          display: "-webkit-box",
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: "vertical",
-                          width: "100%",
+                          display: "flex", flexDirection: "column", alignItems: "center",
+                          justifyContent: "center", gap: 5,
+                          padding: "10px 4px", borderRadius: 12, height: 76,
+                          cursor: "pointer", transition: "all 0.15s ease",
+                          background: isSelected ? "rgba(255,184,0,0.12)" : "rgba(255,255,255,0.03)",
+                          border: `1px solid ${isSelected ? "rgba(255,184,0,0.55)" : "rgba(255,255,255,0.07)"}`,
+                          boxShadow: isSelected ? "0 0 14px rgba(255,184,0,0.18)" : "none",
                         }}
                       >
-                        {club}
-                      </span>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        {badge && <img src={badge} alt={club} width={34} height={34}
+                          style={{ objectFit: "contain", filter: isSelected ? "drop-shadow(0 1px 6px rgba(255,184,0,0.4))" : "none" }} />}
+                        <span style={{
+                          fontFamily: "var(--font-body, sans-serif)", fontSize: 9,
+                          color: isSelected ? "#ffb800" : "#aaaacc", fontWeight: 600,
+                          textAlign: "center", lineHeight: 1.2,
+                          overflow: "hidden", display: "-webkit-box",
+                          WebkitLineClamp: 2, WebkitBoxOrient: "vertical", width: "100%",
+                        }}>
+                          {club}
+                        </span>
+                      </button>
+                    );
+                  })}
+                  {filteredClubs.length === 0 && (
+                    <p style={{ gridColumn: "span 4", textAlign: "center", padding: "24px 0", color: "#555577", fontFamily: "var(--font-body, sans-serif)", fontSize: 13 }}>
+                      No clubs found
+                    </p>
+                  )}
+                </div>
+              </>
+            )}
+
+            {focusType === "national" && (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6 }}>
+                {NATIONAL_TEAMS.map(({ name }) => {
+                  const isSelected = selectedEntity === name;
+                  const badge = getTeamBadgeUrlSync(name);
+                  return (
+                    <button
+                      key={name}
+                      onClick={() => handleEntitySelect(name)}
+                      style={{
+                        display: "flex", flexDirection: "column", alignItems: "center",
+                        justifyContent: "center", gap: 5,
+                        padding: "12px 4px", borderRadius: 12, height: 76,
+                        cursor: "pointer", transition: "all 0.15s ease",
+                        background: isSelected ? "rgba(0,201,255,0.12)" : "rgba(255,255,255,0.03)",
+                        border: `1px solid ${isSelected ? "rgba(0,201,255,0.55)" : "rgba(255,255,255,0.07)"}`,
+                        boxShadow: isSelected ? "0 0 14px rgba(0,201,255,0.18)" : "none",
+                      }}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      {badge && <img src={badge} alt={name} width={34} height={34}
+                        style={{ objectFit: "contain", filter: isSelected ? "drop-shadow(0 1px 6px rgba(0,201,255,0.4))" : "none" }} />}
+                      <span style={{
+                        fontFamily: "var(--font-body, sans-serif)", fontSize: 9, fontWeight: 600,
+                        color: isSelected ? "#00c9ff" : "#aaaacc",
+                        textAlign: "center", lineHeight: 1.2,
+                      }}>{name}</span>
                     </button>
                   );
                 })}
-
-                {filteredClubs.length === 0 && (
-                  <div
-                    className="text-text-muted"
-                    style={{
-                      gridColumn: "span 3",
-                      textAlign: "center",
-                      padding: "32px 0",
-                      fontFamily: "var(--font-body, sans-serif)",
-                      fontSize: 14,
-                    }}
-                  >
-                    No clubs found
-                  </div>
-                )}
               </div>
-            </>
-          ) : focusType === "national" ? (
-            /* Nations grid */
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
-              {NATIONAL_TEAMS.map(({ name, flag }) => {
-                const isSelected = selectedEntity === name;
-                return (
+            )}
+
+            {focusType === "records" && (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
+                {RECORD_TOPICS.map(({ label, emoji }) => {
+                  const isSelected = selectedEntity === label;
+                  return (
+                    <button
+                      key={label}
+                      onClick={() => handleEntitySelect(label)}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 10,
+                        padding: "14px 12px", borderRadius: 14,
+                        cursor: "pointer", transition: "all 0.15s ease",
+                        background: isSelected ? "rgba(167,139,250,0.12)" : "rgba(255,255,255,0.03)",
+                        border: `1px solid ${isSelected ? "rgba(167,139,250,0.55)" : "rgba(255,255,255,0.07)"}`,
+                        boxShadow: isSelected ? "0 0 14px rgba(167,139,250,0.18)" : "none",
+                      }}
+                    >
+                      <span style={{ fontSize: 22, flexShrink: 0, filter: isSelected ? "drop-shadow(0 1px 6px rgba(167,139,250,0.5))" : "none" }}>{emoji}</span>
+                      <span style={{
+                        fontFamily: "var(--font-body, sans-serif)", fontSize: 11, fontWeight: 600,
+                        color: isSelected ? "#a78bfa" : "#aaaacc", lineHeight: 1.3, textAlign: "left",
+                      }}>{label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── STEP 3: Settings ──────────────────────────────────────────── */}
+        {selectedEntity && (
+          <div ref={step3Ref} className="step-in" style={{ marginTop: 28 }}>
+
+            {/* Selected entity banner */}
+            <div style={{
+              display: "flex", alignItems: "center", gap: 10,
+              padding: "10px 14px", borderRadius: 12, marginBottom: 20,
+              background: activeCategory ? `rgba(${activeCategory.rgba},0.08)` : "rgba(0,255,135,0.08)",
+              border: `1px solid ${activeCategory ? `rgba(${activeCategory.rgba},0.25)` : "rgba(0,255,135,0.2)"}`,
+            }}>
+              {(focusType === "club" || focusType === "national") && selectedEntity && getTeamBadgeUrlSync(selectedEntity) ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={getTeamBadgeUrlSync(selectedEntity)!} alt={selectedEntity} width={22} height={22}
+                  style={{ objectFit: "contain", flexShrink: 0 }} />
+              ) : (
+                <span style={{ fontSize: 16 }}>
+                  {focusType === "records"
+                    ? (RECORD_TOPICS.find(r => r.label === selectedEntity)?.emoji ?? "🏆")
+                    : "⚽"}
+                </span>
+              )}
+              <p style={{
+                fontFamily: "var(--font-body, sans-serif)", fontSize: 13, fontWeight: 700,
+                color: "#ffffff", margin: 0, flex: 1,
+              }}>{selectedEntity}</p>
+              <button
+                onClick={() => { setSelectedEntity(null); setStep(2); }}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "#555577", fontSize: 16 }}
+              >×</button>
+            </div>
+
+            {/* Era */}
+            <div style={{ marginBottom: 16 }}>
+              <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8888aa", marginBottom: 8 }}>Era</p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {ERA_OPTIONS.map((opt) => (
                   <button
-                    key={name}
-                    onClick={() => setSelectedEntity(isSelected ? null : name)}
+                    key={opt.value}
+                    onClick={() => setEra(opt.value)}
                     style={{
-                      display: "flex", flexDirection: "column", alignItems: "center",
-                      justifyContent: "center", gap: 6,
-                      padding: "12px 6px", borderRadius: 12, height: 76,
+                      padding: "6px 13px", borderRadius: 999,
+                      fontFamily: "var(--font-body, sans-serif)", fontSize: 12, fontWeight: 600,
                       cursor: "pointer", transition: "all 0.15s ease",
-                      background: isSelected ? "rgba(0,201,255,0.1)" : "rgba(255,255,255,0.03)",
-                      border: `1px solid ${isSelected ? "rgba(0,201,255,0.6)" : "rgba(255,255,255,0.07)"}`,
-                      boxShadow: isSelected ? "0 0 14px rgba(0,201,255,0.18)" : "none",
+                      background: era === opt.value ? "rgba(0,255,135,0.14)" : "rgba(255,255,255,0.04)",
+                      border: `1px solid ${era === opt.value ? "rgba(0,255,135,0.45)" : "rgba(255,255,255,0.08)"}`,
+                      color: era === opt.value ? "#00ff87" : "#8888aa",
                     }}
-                    onMouseDown={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(0.96)"; }}
-                    onMouseUp={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)"; }}
                   >
-                    <span style={{ fontSize: 26, lineHeight: 1 }}>{flag}</span>
-                    <span style={{
-                      fontFamily: "var(--font-body, sans-serif)",
-                      fontSize: 10, fontWeight: 600, letterSpacing: "0.02em",
-                      color: isSelected ? "#00c9ff" : "#aaaacc",
-                      textAlign: "center", lineHeight: 1.2,
-                    }}>{name}</span>
+                    {opt.label}
                   </button>
-                );
-              })}
+                ))}
+              </div>
             </div>
-          ) : (
-            /* Records grid */
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(2, 1fr)",
-                gap: 8,
-              }}
-            >
-              {RECORD_TOPICS.map((topic) => {
-                const isSelected = selectedEntity === topic;
-                const emoji = TOPIC_EMOJI[topic] ?? "📊";
-                return (
+
+            {/* Difficulty */}
+            <div style={{ marginBottom: 20 }}>
+              <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8888aa", marginBottom: 8 }}>Difficulty</p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {DIFF_OPTIONS.map((opt) => (
                   <button
-                    key={topic}
-                    onClick={() =>
-                      setSelectedEntity(isSelected ? null : topic)
-                    }
+                    key={opt.value}
+                    onClick={() => setDifficulty(opt.value)}
                     style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: 8,
-                      padding: "14px 10px",
-                      borderRadius: 14,
-                      cursor: "pointer",
-                      transition: "all 0.15s ease",
-                      background: isSelected
-                        ? "rgba(167,139,250,0.12)"
-                        : "rgba(255,255,255,0.03)",
-                      border: `1px solid ${
-                        isSelected
-                          ? "rgba(167,139,250,0.6)"
-                          : "rgba(255,255,255,0.07)"
-                      }`,
-                      boxShadow: isSelected
-                        ? "0 0 14px rgba(167,139,250,0.18)"
-                        : "none",
-                    }}
-                    onMouseDown={(e) => {
-                      (e.currentTarget as HTMLButtonElement).style.transform =
-                        "scale(0.96)";
-                    }}
-                    onMouseUp={(e) => {
-                      (e.currentTarget as HTMLButtonElement).style.transform =
-                        "scale(1)";
-                    }}
-                    onTouchStart={(e) => {
-                      (e.currentTarget as HTMLButtonElement).style.transform =
-                        "scale(0.96)";
-                    }}
-                    onTouchEnd={(e) => {
-                      (e.currentTarget as HTMLButtonElement).style.transform =
-                        "scale(1)";
+                      display: "flex", alignItems: "center", gap: 5,
+                      padding: "6px 13px", borderRadius: 999,
+                      fontFamily: "var(--font-body, sans-serif)", fontSize: 12, fontWeight: 600,
+                      cursor: "pointer", transition: "all 0.15s ease",
+                      background: difficulty === opt.value ? "rgba(0,255,135,0.14)" : "rgba(255,255,255,0.04)",
+                      border: `1px solid ${difficulty === opt.value ? "rgba(0,255,135,0.45)" : "rgba(255,255,255,0.08)"}`,
+                      color: difficulty === opt.value ? "#00ff87" : "#8888aa",
                     }}
                   >
-                    <span
-                      style={{
-                        fontSize: 28,
-                        filter: isSelected
-                          ? "drop-shadow(0 2px 8px rgba(167,139,250,0.5))"
-                          : "none",
-                      }}
-                    >
-                      {emoji}
-                    </span>
-                    <span
-                      style={{
-                        fontFamily: "var(--font-body, sans-serif)",
-                        fontSize: 11,
-                        fontWeight: 600,
-                        color: isSelected ? "#a78bfa" : "#aaaacc",
-                        textAlign: "center",
-                        lineHeight: 1.3,
-                      }}
-                    >
-                      {topic}
-                    </span>
+                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: opt.dot, flexShrink: 0 }} />
+                    {opt.label}
                   </button>
-                );
-              })}
+                ))}
+              </div>
+              {difficulty === "" && (
+                <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: 11, color: "#444466", marginTop: 6 }}>
+                  ✓ Mixed balances all difficulty levels
+                </p>
+              )}
             </div>
-          )}
-        </div>
 
-        {/* ── Section 2: Era ─────────────────────────────────────────── */}
-        <div style={{ marginBottom: 20 }}>
-          <p
-            className="text-text-muted"
-            style={{
-              fontFamily: "var(--font-body, sans-serif)",
-              fontSize: 11,
-              fontWeight: 700,
-              letterSpacing: "0.1em",
-              textTransform: "uppercase",
-              marginBottom: 10,
-            }}
-          >
-            ERA
-          </p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-            {ERA_OPTIONS.map((opt) => {
-              const isActive = era === opt.value;
-              return (
-                <button
-                  key={opt.value}
-                  onClick={() => setEra(opt.value)}
-                  style={{
-                    padding: "7px 14px",
-                    borderRadius: 9999,
-                    fontFamily: "var(--font-body, sans-serif)",
-                    fontSize: 13,
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    transition: "all 0.15s ease",
-                    background: isActive
-                      ? "rgba(0,255,135,0.15)"
-                      : "rgba(255,255,255,0.04)",
-                    border: `1px solid ${
-                      isActive
-                        ? "rgba(0,255,135,0.5)"
-                        : "rgba(255,255,255,0.08)"
-                    }`,
-                    color: isActive ? "#00ff87" : "#8888aa",
-                    boxShadow: isActive
-                      ? "0 0 10px rgba(0,255,135,0.12)"
-                      : "none",
-                  }}
-                >
-                  {opt.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* ── Section 3: Difficulty ──────────────────────────────────── */}
-        <div style={{ marginBottom: 32 }}>
-          <p
-            className="text-text-muted"
-            style={{
-              fontFamily: "var(--font-body, sans-serif)",
-              fontSize: 11,
-              fontWeight: 700,
-              letterSpacing: "0.1em",
-              textTransform: "uppercase",
-              marginBottom: 10,
-            }}
-          >
-            DIFFICULTY
-          </p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-            {DIFF_OPTIONS.map((opt) => {
-              const isActive = difficulty === opt.value;
-              return (
-                <button
-                  key={opt.value}
-                  onClick={() => setDifficulty(opt.value)}
-                  style={{
-                    padding: "7px 14px",
-                    borderRadius: 9999,
-                    fontFamily: "var(--font-body, sans-serif)",
-                    fontSize: 13,
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    transition: "all 0.15s ease",
-                    background: isActive
-                      ? "rgba(0,255,135,0.15)"
-                      : "rgba(255,255,255,0.04)",
-                    border: `1px solid ${
-                      isActive
-                        ? "rgba(0,255,135,0.5)"
-                        : "rgba(255,255,255,0.08)"
-                    }`,
-                    color: isActive ? "#00ff87" : "#8888aa",
-                    boxShadow: isActive
-                      ? "0 0 10px rgba(0,255,135,0.12)"
-                      : "none",
-                  }}
-                >
-                  {opt.label}
-                </button>
-              );
-            })}
-          </div>
-          {difficulty === "" && (
-            <p
-              style={{
-                fontFamily: "var(--font-body, sans-serif)",
-                fontSize: 11,
-                color: "#555577",
-                marginTop: 6,
-              }}
-            >
-              ✓ Recommended — balances easy, medium &amp; hard questions
-            </p>
-          )}
-        </div>
-
-        {/* ── Error message ──────────────────────────────────────────── */}
-        {error && (
-          <div
-            style={{
-              marginBottom: 16,
-              padding: "12px 14px",
-              borderRadius: 12,
-              background: "rgba(255,71,87,0.1)",
-              border: "1px solid rgba(255,71,87,0.3)",
-            }}
-          >
-            <p
-              className="text-danger"
-              style={{
-                fontFamily: "var(--font-body, sans-serif)",
-                fontSize: 13,
-                margin: 0,
-              }}
-            >
-              {error}
-            </p>
+            {/* Error */}
+            {error && (
+              <div style={{
+                marginBottom: 14, padding: "12px 14px", borderRadius: 12,
+                background: "rgba(255,71,87,0.1)", border: "1px solid rgba(255,71,87,0.3)",
+              }}>
+                <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: 13, margin: 0, color: "#ff4757" }}>
+                  {error}
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      {/* ── Sticky Generate Button ──────────────────────────────────── */}
-      <div
-        style={{
-          position: "fixed",
-          bottom: "calc(72px + env(safe-area-inset-bottom, 0px))",
-          left: 0,
-          right: 0,
-          zIndex: 19,
-          padding: "12px 16px",
-          background:
-            "linear-gradient(to top, rgba(10,10,15,1) 60%, rgba(10,10,15,0))",
-          pointerEvents: "none",
-        }}
-      >
-        <div
-          style={{
-            maxWidth: 512,
-            margin: "0 auto",
-            pointerEvents: "all",
-          }}
-        >
+      {/* ── Floating Generate CTA ───────────────────────────────────────── */}
+      <div style={{
+        position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 30,
+        padding: "12px 16px 28px",
+        background: "linear-gradient(to top, rgba(10,10,15,1) 65%, rgba(10,10,15,0))",
+        pointerEvents: "none",
+      }}>
+        <div style={{ maxWidth: 512, margin: "0 auto", pointerEvents: "all" }}>
+          {!canGenerate && !selectedEntity && (
+            <p style={{
+              textAlign: "center", fontFamily: "var(--font-body, sans-serif)",
+              fontSize: 12, color: "#444466", marginBottom: 8,
+            }}>
+              {!focusType ? "Choose a category to start" : "Pick a team or topic"}
+            </p>
+          )}
           <button
             onClick={handleGenerate}
             disabled={!canGenerate}
             style={{
-              width: "100%",
-              padding: "16px",
-              borderRadius: 16,
-              fontFamily: "var(--font-display, sans-serif)",
-              fontSize: 15,
-              fontWeight: 700,
-              letterSpacing: "0.08em",
+              width: "100%", padding: "16px", borderRadius: 16,
+              fontFamily: "var(--font-display, sans-serif)", fontSize: 15,
+              fontWeight: 700, letterSpacing: "0.06em",
               cursor: canGenerate ? "pointer" : "not-allowed",
-              transition: "all 0.15s ease",
-              border: "none",
-              background: canGenerate
+              transition: "all 0.2s ease", border: "none",
+              background: generating
+                ? undefined
+                : canGenerate
                 ? "linear-gradient(135deg, #00ff87, #00cc6a)"
-                : "rgba(255,255,255,0.07)",
-              color: canGenerate ? "#000000" : "#444466",
-              boxShadow: canGenerate
-                ? "0 4px 24px rgba(0,255,135,0.3)"
-                : "none",
-              opacity: generating ? 0.8 : 1,
-              animation: generating ? "pulse 1.4s ease-in-out infinite" : "none",
+                : "rgba(255,255,255,0.06)",
+              color: canGenerate ? "#000000" : "#333355",
+              boxShadow: canGenerate && !generating ? "0 4px 28px rgba(0,255,135,0.32)" : "none",
             }}
-            onMouseDown={(e) => {
-              if (canGenerate)
-                (e.currentTarget as HTMLButtonElement).style.transform =
-                  "scale(0.97)";
-            }}
-            onMouseUp={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.transform =
-                "scale(1)";
-            }}
-            onTouchStart={(e) => {
-              if (canGenerate)
-                (e.currentTarget as HTMLButtonElement).style.transform =
-                  "scale(0.97)";
-            }}
-            onTouchEnd={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.transform =
-                "scale(1)";
-            }}
+            className={generating ? "generating-shimmer" : ""}
           >
-            {generating ? "GENERATING..." : selectedEntity ? `BUILD "${selectedEntity.toUpperCase()}" QUIZ →` : "SELECT A TEAM OR TOPIC FIRST"}
+            {generating
+              ? "Building your quiz…"
+              : canGenerate
+              ? `Generate ${selectedEntity} Quiz →`
+              : "Select a team or topic first"}
           </button>
         </div>
       </div>
-
-      {/* Pulse keyframe for generating state */}
-      <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 0.8; }
-          50% { opacity: 1; }
-        }
-      `}</style>
-
-      <BottomNav />
     </div>
   );
 }

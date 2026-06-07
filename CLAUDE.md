@@ -22,6 +22,28 @@ features. Do not treat them as current scope.
 - **Not built yet:** Friends, public profiles, hints system, Apple sign-in (Google + email/password + magic link are live).
 - **Note:** `rooms*` tables = Lobbies (rename pending).
 
+## Debugging errors — CHECK SENTRY FIRST
+Before reading any source files or querying the DB to investigate a bug, always hit
+the Sentry API for live error events. The read token is in `.env.local` as
+`SENTRY_READ_TOKEN`. Org slug: `yourscore-qx`, project slug: `javascript-nextjs`.
+
+```bash
+# Recent issues (last 24h)
+SENTRY_READ_TOKEN=$(grep SENTRY_READ_TOKEN .env.local | cut -d= -f2) && \
+curl -s "https://de.sentry.io/api/0/projects/yourscore/javascript-nextjs/issues/?limit=10&statsPeriod=24h" \
+  -H "Authorization: Bearer $SENTRY_READ_TOKEN" | \
+  jq '[.[] | {id, title, culprit, count: .count, lastSeen, firstSeen}]'
+
+# Events for a specific issue (get stack trace + context)
+SENTRY_READ_TOKEN=$(grep SENTRY_READ_TOKEN .env.local | cut -d= -f2) && \
+curl -s "https://de.sentry.io/api/0/issues/<ISSUE_ID>/events/?limit=3&full=true" \
+  -H "Authorization: Bearer $SENTRY_READ_TOKEN" | \
+  jq '[.[] | {message, datetime, exception: .exception.values[0].stacktrace.frames[-3:]}]'
+```
+
+This gives stack traces, request context, and user info in ~5 seconds — far faster
+than file-reading + DB queries. Do this before anything else when investigating an error.
+
 ## After changing the product
 Update `YOURSCORE.md` in the same session, bump its "Confirmed" date, then run
 `graphify update .` to keep the knowledge graph current.
