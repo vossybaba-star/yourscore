@@ -8,14 +8,13 @@
 
 import type { Formation, PlacedPlayer } from "@/lib/draft/types";
 import { slotsFor } from "@/lib/draft/formations";
-import { fitMultiplier, FIT_EXACT, FIT_ADJACENT } from "@/lib/draft/score";
+import { fitMultiplier, FIT_EXACT, FIT_SAME } from "@/lib/draft/score";
 
 function fitColor(player: PlacedPlayer): string {
   const f = fitMultiplier(player.position, player.slotPos);
-  if (f >= FIT_EXACT) return "#00ff87";
-  if (f >= FIT_ADJACENT) return "#ffb800";
-  if (f > 0.55) return "#ff8a3d";
-  return "#ff4757";
+  if (f >= FIT_EXACT) return "#00ff87";   // natural position
+  if (f >= FIT_SAME) return "#ffb800";    // same-line cover (legal)
+  return "#ff4757";                       // out of line (shouldn't occur)
 }
 
 export function Pitch({

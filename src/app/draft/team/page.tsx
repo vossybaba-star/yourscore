@@ -14,10 +14,11 @@ import { Pitch } from "@/components/draft/Pitch";
 import { BottomNav } from "@/components/ui/BottomNav";
 import {
   loadTeam, saveTeam, isComplete, recordWin, recordLoss, saveLastMatch,
-  type LocalTeam,
+  compatibleFormations, reslot, type LocalTeam,
 } from "@/lib/draft/local";
+import type { Formation } from "@/lib/draft/types";
 import { makeOpponent } from "@/lib/draft/opponent";
-import { resolveH2H, seededRng } from "@/lib/draft/score";
+import { resolveH2H, seededRng, tierFor } from "@/lib/draft/score";
 import { tierColor, TIER_TAGLINE, strengthPct } from "@/lib/draft/ui";
 import { preSeasonOdds } from "@/lib/draft/season";
 import { leagueOpponents } from "@/lib/draft/pool";
@@ -138,12 +139,23 @@ export default function TeamScreen() {
     } catch { setErr("Network error"); setCreatingChallenge(false); }
   }
 
+  // Re-shape the same XI into a compatible formation before playing others.
+  function switchFormation(f: Formation) {
+    if (!team || f === team.formation) return;
+    const next = reslot(team, f);
+    saveTeam(next);
+    setTeam(next);
+  }
+
   if (!team || !team.projected) {
     return <div className="min-h-[100dvh] grid place-items-center" style={{ background: "#0a0a0f", color: "#8888aa" }}>Loading…</div>;
   }
 
-  const p = team.projected;
-  const tc = tierColor(p.tier);
+  // One FIFA-league-relative projection drives the banner, the odds card and the
+  // simulation (they used to disagree).
+  const odds = preSeasonOdds(team.squad, team.strength, leagueOpponents());
+  const tier = tierFor(odds.expectedPoints);
+  const tc = tierColor(tier);
   const stale = team.status === "stale";
 
   return (
@@ -171,17 +183,17 @@ export default function TeamScreen() {
 
         {/* tier banner */}
         <div className="rounded-3xl p-5 mb-4" style={{ background: `linear-gradient(135deg, ${tc}22, #0f0f17)`, border: `1px solid ${tc}55` }}>
-          <div className="font-display tracking-wide leading-none" style={{ fontSize: 40, color: tc }}>{p.tier}</div>
-          <div className="font-body mt-1" style={{ fontSize: 13, color: "#cfcfe6" }}>{TIER_TAGLINE[p.tier]}</div>
+          <div className="font-display tracking-wide leading-none" style={{ fontSize: 40, color: tc }}>{tier}</div>
+          <div className="font-body mt-1" style={{ fontSize: 13, color: "#cfcfe6" }}>{TIER_TAGLINE[tier]}</div>
 
           <div className="flex items-end justify-between mt-4">
             <div>
-              <div className="font-body" style={{ fontSize: 11, color: "#8888aa" }}>PROJECTED SEASON</div>
+              <div className="font-body" style={{ fontSize: 11, color: "#8888aa" }}>PROJECTED FINISH</div>
               <div className="font-display tracking-wide" style={{ fontSize: 30, color: "#fff" }}>
-                {p.wins}-{p.draws}-{p.losses}
+                {ordinal(odds.projectedFinish)}
               </div>
               <div className="font-body" style={{ fontSize: 12, color: "#8888aa" }}>
-                {p.points} pts · {ordinal(p.position)} place
+                {odds.expectedPoints} pts expected
               </div>
             </div>
             <div className="text-right">
@@ -200,11 +212,31 @@ export default function TeamScreen() {
           </div>
         )}
 
+        {/* Formation switcher — reshape your XI before facing others (same lines) */}
+        {!stale && (() => {
+          const compat = compatibleFormations(team.formation);
+          if (compat.length < 2) return null;
+          return (
+            <div className="flex items-center gap-2 mb-3">
+              <span className="font-body" style={{ fontSize: 11, color: "#8888aa", letterSpacing: 1 }}>SHAPE</span>
+              {compat.map((f) => {
+                const on = f === team.formation;
+                return (
+                  <button key={f} onClick={() => switchFormation(f)}
+                    className="rounded-lg px-3 py-1.5 font-display tracking-wide active:scale-95 transition-all"
+                    style={{ fontSize: 15, color: on ? "#062013" : "#cfcfe6", background: on ? "#00ff87" : "#12121e", border: `1px solid ${on ? "#00ff87" : "rgba(255,255,255,0.1)"}` }}>
+                    {f}
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })()}
+
         <Pitch formation={team.formation} squad={team.squad} compact />
 
-        {/* Bookies' pre-season odds — the prediction before you simulate the season */}
+        {/* Bookies' pre-season odds — same projection as the banner + the sim */}
         {!stale && (() => {
-          const odds = preSeasonOdds(team.squad, team.strength, leagueOpponents());
           const bands: [string, number, string][] = [
             ["Win the league", odds.winLeague, "#ffb800"],
             ["Top 4", odds.top4, "#00ff87"],
@@ -255,6 +287,12 @@ export default function TeamScreen() {
 
         {/* secondary actions */}
         <div className="mt-3 space-y-3">
+          {err && (
+            <div className="rounded-xl px-4 py-2 font-body text-center" style={{ fontSize: 13, color: "#ff4757", background: "rgba(255,71,87,0.1)" }}>
+              {err}
+            </div>
+          )}
+
           {stale ? (
             <>
               <div className="rounded-2xl p-4 text-center" style={{ background: "rgba(255,71,87,0.08)", border: "1px solid rgba(255,71,87,0.3)" }}>
@@ -263,46 +301,18 @@ export default function TeamScreen() {
                   You lost — no swaps. Rebuild a full new XI to challenge again.
                 </div>
               </div>
-              <button onClick={() => { router.push("/draft"); }}
-                className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform"
-                style={{ background: "#ff4757", color: "#fff", fontSize: 24 }}>
-                REBUILD XI →
-              </button>
+              <div className="grid grid-cols-2 gap-3">
+                <button onClick={() => router.push("/draft")} className="rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "#ff4757", color: "#fff", fontSize: 20 }}>REBUILD XI</button>
+                <Link href="/draft/leaderboard" className="rounded-2xl py-4 text-center font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "rgba(0,255,135,0.08)", color: "#00ff87", fontSize: 18, border: "1px solid rgba(0,255,135,0.25)" }}>🏆 LEADERBOARD</Link>
+              </div>
             </>
           ) : (
             <>
-              {err && (
-                <div className="rounded-xl px-4 py-2 font-body text-center" style={{ fontSize: 13, color: "#ff4757", background: "rgba(255,71,87,0.1)" }}>
-                  {err}
-                </div>
-              )}
-
-              {/* Save the XI — guests get sent to sign up for YourScore. */}
+              {/* Save (guests → sign up). Swap reward when earned. */}
               <button onClick={saveToCloud} disabled={saving || saved}
                 className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-70"
                 style={{ background: "#a78bfa", color: "#15082b", fontSize: 22 }}>
                 {saving ? "SAVING…" : saved ? "SAVED ✓" : user ? "💾 SAVE TEAM" : "💾 SAVE TEAM — SIGN UP"}
-              </button>
-
-              {/* Signed in → ranked (feeds the leaderboard). Guest → local Quick Match. */}
-              <button onClick={user ? rankedMatch : quickMatch} disabled={matching}
-                className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-60"
-                style={{ background: "#00ff87", color: "#062013", fontSize: 24 }}>
-                {matching ? "FINDING OPPONENT…" : user ? "RANKED MATCH ⚔️" : "QUICK MATCH ⚔️"}
-              </button>
-
-              {user && (
-                <button onClick={quickMatch} disabled={matching}
-                  className="w-full rounded-2xl py-3 font-body active:scale-[0.98] transition-transform disabled:opacity-60"
-                  style={{ background: "#12121e", color: "#8888aa", fontSize: 14, border: "1px solid rgba(255,255,255,0.08)" }}>
-                  Practice (unranked Quick Match)
-                </button>
-              )}
-
-              <button onClick={challengeFriend} disabled={creatingChallenge}
-                className="w-full rounded-2xl py-3 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-60"
-                style={{ background: "rgba(34,211,238,0.1)", color: "#22d3ee", fontSize: 18, border: "1px solid rgba(34,211,238,0.35)" }}>
-                {creatingChallenge ? "CREATING…" : challengeCode ? `🔗 LINK SHARED · CODE ${challengeCode}` : "🔗 CHALLENGE A FRIEND"}
               </button>
 
               {team.swapAvailable && (
@@ -313,20 +323,47 @@ export default function TeamScreen() {
                 </Link>
               )}
 
-              <button onClick={() => router.push("/draft")}
-                className="w-full rounded-2xl py-3 font-body active:scale-[0.98] transition-transform"
-                style={{ background: "#12121e", color: "#8888aa", fontSize: 15, border: "1px solid rgba(255,255,255,0.08)" }}>
-                Start a fresh team
-              </button>
+              <div className="font-body pt-1" style={{ fontSize: 11, color: "#8888aa", letterSpacing: 1 }}>PLAY WITH YOUR XI</div>
+              <div className="grid grid-cols-2 gap-3">
+                <button onClick={user ? rankedMatch : quickMatch} disabled={matching}
+                  className="rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-60"
+                  style={{ background: "#00ff87", color: "#062013", fontSize: 18 }}>
+                  {matching ? "…" : user ? "RANKED ⚔️" : "QUICK MATCH ⚔️"}
+                </button>
+                <button onClick={challengeFriend} disabled={creatingChallenge}
+                  className="rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-60"
+                  style={{ background: "rgba(34,211,238,0.1)", color: "#22d3ee", fontSize: 16, border: "1px solid rgba(34,211,238,0.35)" }}>
+                  {creatingChallenge ? "…" : challengeCode ? `CODE ${challengeCode}` : "🔗 CHALLENGE"}
+                </button>
+                <Link href="/draft/leaderboard"
+                  className="rounded-2xl py-4 text-center font-display tracking-wide active:scale-[0.98] transition-transform"
+                  style={{ background: "rgba(0,255,135,0.08)", color: "#00ff87", fontSize: 17, border: "1px solid rgba(0,255,135,0.25)" }}>
+                  🏆 LEADERBOARD
+                </Link>
+                {user ? (
+                  <button onClick={quickMatch} disabled={matching}
+                    className="rounded-2xl py-4 font-body active:scale-[0.98] transition-transform disabled:opacity-60"
+                    style={{ background: "#12121e", color: "#8888aa", fontSize: 14, border: "1px solid rgba(255,255,255,0.08)" }}>
+                    Practice
+                  </button>
+                ) : (
+                  <button onClick={() => router.push("/draft")}
+                    className="rounded-2xl py-4 font-body active:scale-[0.98] transition-transform"
+                    style={{ background: "#12121e", color: "#8888aa", fontSize: 14, border: "1px solid rgba(255,255,255,0.08)" }}>
+                    Fresh team
+                  </button>
+                )}
+              </div>
+
+              {user && (
+                <button onClick={() => router.push("/draft")}
+                  className="w-full rounded-2xl py-3 font-body active:scale-[0.98] transition-transform"
+                  style={{ background: "transparent", color: "#8888aa", fontSize: 14 }}>
+                  Start a fresh team
+                </button>
+              )}
             </>
           )}
-
-          {/* Leaderboard is always reachable. */}
-          <Link href="/draft/leaderboard"
-            className="block w-full rounded-2xl py-3 text-center font-display tracking-wide active:scale-[0.98] transition-transform"
-            style={{ background: "rgba(0,255,135,0.08)", color: "#00ff87", fontSize: 18, border: "1px solid rgba(0,255,135,0.25)" }}>
-            🏆 LEADERBOARD
-          </Link>
         </div>
 
         <p className="font-body text-center mt-5" style={{ color: "#8888aa", fontSize: 12 }}>

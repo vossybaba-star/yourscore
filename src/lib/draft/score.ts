@@ -20,45 +20,37 @@ import { slotsFor } from "./formations";
 
 // ─── Positional fit ──────────────────────────────────────────────────────────
 
-/** Fit multipliers by tier (locked design decision). */
+/** Fit multipliers by tier. Exact position is best; a same-line cover is strong
+ *  (FIT_ADJACENT) or workable (FIT_SAME); a different line is illegal (FIT_WRONG,
+ *  never actually placeable — canPlay blocks it). */
 export const FIT_EXACT = 1.0;
 export const FIT_ADJACENT = 0.92;
+export const FIT_SAME = 0.82;
 export const FIT_LOOSE = 0.8;
 export const FIT_WRONG = 0.55;
 
-/**
- * For each slot position, which player positions cover it at each tier.
- * Anything not listed is "wrong" (0.55). GK is intentionally strict: only a GK
- * fits a GK slot, and a GK in any outfield slot is wrong.
- */
-const COVER: Record<Position, { adjacent: Position[]; loose: Position[] }> = {
-  GK:  { adjacent: [],            loose: [] },
-  RB:  { adjacent: ["RWB"],       loose: ["CB", "RW", "CM"] },
-  LB:  { adjacent: ["LWB"],       loose: ["CB", "LW", "CM"] },
-  CB:  { adjacent: ["CDM"],       loose: ["RB", "LB"] },
-  RWB: { adjacent: ["RB", "RW"],  loose: ["LWB", "CM"] },
-  LWB: { adjacent: ["LB", "LW"],  loose: ["RWB", "CM"] },
-  CDM: { adjacent: ["CM"],        loose: ["CB", "CAM"] },
-  CM:  { adjacent: ["CDM", "CAM"],loose: ["RW", "LW"] },
-  CAM: { adjacent: ["CM"],        loose: ["CDM", "RW", "LW", "ST"] },
-  RW:  { adjacent: ["LW", "CAM"], loose: ["RWB", "RB", "ST", "CM"] },
-  LW:  { adjacent: ["RW", "CAM"], loose: ["LWB", "LB", "ST", "CM"] },
-  ST:  { adjacent: ["CAM"],       loose: ["RW", "LW"] },
+/** A player can only fill a slot in their OWN line. Strictly:
+ *  goalkeepers → GK, defenders → defence, midfielders → midfield, attackers →
+ *  attack. No cross-line placement (a forward cannot be a defender, etc.).
+ *  Within a line, a player can cover a related slot but is rated below their
+ *  natural position. */
+const SAME_LINE_STRONG: Partial<Record<Position, Position[]>> = {
+  RB: ["RWB"], RWB: ["RB"], LB: ["LWB"], LWB: ["LB"], // full-back ↔ wing-back
+  CDM: ["CM"], CM: ["CDM", "CAM"], CAM: ["CM"],        // central-mid spine
+  RW: ["LW", "ST"], LW: ["RW", "ST"], ST: ["RW", "LW"], // interchangeable front line
 };
 
 export function fitMultiplier(playerPos: Position, slotPos: Position): number {
   if (playerPos === slotPos) return FIT_EXACT;
-  // A GK is useless anywhere but in goal; a non-GK is useless in goal.
-  if (playerPos === "GK" || slotPos === "GK") return FIT_WRONG;
-  const cover = COVER[slotPos];
-  if (cover.adjacent.includes(playerPos)) return FIT_ADJACENT;
-  if (cover.loose.includes(playerPos)) return FIT_LOOSE;
-  return FIT_WRONG;
+  // Different line → cannot play here at all (gates placement via canPlay).
+  if (posCategory(playerPos) !== posCategory(slotPos)) return FIT_WRONG;
+  // Same line, different position: a strong cover, else a workable one.
+  return SAME_LINE_STRONG[playerPos]?.includes(slotPos) ? FIT_ADJACENT : FIT_SAME;
 }
 
-/** Whether a player can legally be drafted into a slot (anything but "wrong"). */
+/** Whether a player can LEGALLY be drafted into a slot — same line only. */
 export function canPlay(playerPos: Position, slotPos: Position): boolean {
-  return fitMultiplier(playerPos, slotPos) > FIT_WRONG;
+  return posCategory(playerPos) === posCategory(slotPos);
 }
 
 // ─── Position categories, colours & line ratings ─────────────────────────────

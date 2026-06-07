@@ -7,9 +7,9 @@
  * from the squad and ignores these client values.
  */
 
-import type { Formation, PlacedPlayer, PlayerSeason, Projected, Slot, TeamStatus } from "./types";
+import { FORMATIONS, type Formation, type PlacedPlayer, type PlayerSeason, type Projected, type Slot, type TeamStatus } from "./types";
 import { slotsFor } from "./formations";
-import { fitMultiplier, scoreTeam, projectSeason, spineWeight } from "./score";
+import { fitMultiplier, canPlay, posCategory, scoreTeam, projectSeason, spineWeight, type PosCategory } from "./score";
 
 const STORAGE_KEY = "draftxi:team:v1";
 
@@ -84,8 +84,8 @@ export function bestOpenSlot(team: LocalTeam, player: PlayerSeason): Slot | null
   let best: Slot | null = null;
   let bestScore = -1;
   for (const s of openSlots(team)) {
+    if (!canPlay(player.position, s.pos)) continue; // must be the same line
     const fit = fitMultiplier(player.position, s.pos);
-    if (fit <= 0.55) continue; // not a legal fit (canPlay === false)
     const score = fit * 100 + spineWeight(s.pos);
     if (score > bestScore) {
       bestScore = score;
@@ -97,7 +97,7 @@ export function bestOpenSlot(team: LocalTeam, player: PlayerSeason): Slot | null
 
 /** All open slots a player could legally fill (for "choose a slot" UIs). */
 export function fittingOpenSlots(team: LocalTeam, player: PlayerSeason): Slot[] {
-  return openSlots(team).filter((s) => fitMultiplier(player.position, s.pos) > 0.55);
+  return openSlots(team).filter((s) => canPlay(player.position, s.pos));
 }
 
 /** Place a player into a slot, recompute, and return a new team. */
@@ -121,6 +121,48 @@ export function placePlayer(team: LocalTeam, player: PlayerSeason, slot: Slot): 
 /** Remove a player from a slot (used by swap). */
 export function clearSlot(team: LocalTeam, slotId: string): LocalTeam {
   return recompute({ ...team, squad: team.squad.filter((p) => p.slot !== slotId) });
+}
+
+// ── Formation switching ──────────────────────────────────────────────────────
+
+/** A formation's line breakdown, e.g. "4-3-3" → "4-3-3" (def-mid-att; GK is always 1). */
+function breakdown(f: Formation): string {
+  const b: Record<PosCategory, number> = { gk: 0, def: 0, mid: 0, att: 0 };
+  for (const s of slotsFor(f)) b[posCategory(s.pos)]++;
+  return `${b.def}-${b.mid}-${b.att}`;
+}
+
+/** Formations you can switch a built XI into without re-drafting — same number of
+ *  defenders, midfielders and attackers, so every player keeps to their own line. */
+export function compatibleFormations(f: Formation): Formation[] {
+  const key = breakdown(f);
+  return FORMATIONS.filter((x) => breakdown(x) === key);
+}
+
+/** Re-slot the same 11 players into a new (compatible) formation — each player into
+ *  a slot in their own line, natural position first. Strength is recomputed. */
+export function reslot(team: LocalTeam, newFormation: Formation): LocalTeam {
+  const cats: PosCategory[] = ["gk", "def", "mid", "att"];
+  const playersByCat: Record<PosCategory, PlacedPlayer[]> = { gk: [], def: [], mid: [], att: [] };
+  for (const p of team.squad) playersByCat[posCategory(p.position)].push(p);
+  const slotsByCat: Record<PosCategory, Slot[]> = { gk: [], def: [], mid: [], att: [] };
+  for (const s of slotsFor(newFormation)) slotsByCat[posCategory(s.pos)].push(s);
+
+  const squad: PlacedPlayer[] = [];
+  for (const cat of cats) {
+    const pool = [...playersByCat[cat]];
+    for (const s of slotsByCat[cat]) {
+      let idx = pool.findIndex((p) => p.position === s.pos); // natural fit first
+      if (idx < 0) idx = 0;                                   // else any same-line player
+      const p = pool.splice(idx, 1)[0];
+      if (!p) continue;
+      squad.push({
+        slot: s.id, slotPos: s.pos, player_season_id: p.player_season_id,
+        name: p.name, club: p.club, season: p.season, overall: p.overall, position: p.position,
+      });
+    }
+  }
+  return recompute({ ...team, formation: newFormation, squad });
 }
 
 /** Recompute Strength + projection from the current squad. */

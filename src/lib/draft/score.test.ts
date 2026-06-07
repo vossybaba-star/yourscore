@@ -38,13 +38,18 @@ function buildXI(
 
 test("fit tiers", () => {
   assert.equal(fitMultiplier("ST", "ST"), 1.0);
-  assert.equal(fitMultiplier("RWB", "RB"), 0.92);
-  assert.equal(fitMultiplier("CB", "RB"), 0.8);
-  assert.equal(fitMultiplier("RW", "CB"), 0.55, "winger cannot fill CB");
+  assert.equal(fitMultiplier("RWB", "RB"), 0.92, "wing-back covers full-back");
+  assert.equal(fitMultiplier("CB", "RB"), 0.82, "same line, workable cover");
+  assert.equal(fitMultiplier("RW", "CB"), 0.55, "winger cannot fill CB (diff line)");
+  assert.equal(fitMultiplier("CM", "ST"), 0.55, "midfielder cannot be a striker");
   assert.equal(fitMultiplier("GK", "ST"), 0.55, "GK useless outfield");
   assert.equal(fitMultiplier("ST", "GK"), 0.55, "striker useless in goal");
-  assert.equal(canPlay("RW", "CB"), false);
-  assert.equal(canPlay("RWB", "RB"), true);
+  // strict lines: only same-category placements are legal
+  assert.equal(canPlay("RW", "CB"), false, "attacker can't defend");
+  assert.equal(canPlay("CM", "ST"), false, "midfielder can't be a striker");
+  assert.equal(canPlay("ST", "LW"), true, "forward can play left wing");
+  assert.equal(canPlay("RWB", "RB"), true, "defender lines interchange");
+  assert.equal(canPlay("CDM", "CAM"), true, "midfielders interchange");
 });
 
 test("strength scales with overall, perfect-fit XI", () => {
