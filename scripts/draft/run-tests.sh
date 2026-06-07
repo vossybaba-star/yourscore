@@ -11,11 +11,13 @@ npx tsc \
   src/lib/draft/formations.ts \
   src/lib/draft/score.ts \
   src/lib/draft/score.test.ts \
+  src/lib/draft/season.ts \
+  src/lib/draft/season.test.ts \
   --outDir .tmp-draft-test \
   --module commonjs --moduleResolution node --target es2022 \
   --esModuleInterop --skipLibCheck --types node >/dev/null 2>&1 || true
 
-node --test .tmp-draft-test/score.test.js
+node --test .tmp-draft-test/score.test.js .tmp-draft-test/season.test.js
 status=$?
 rm -rf .tmp-draft-test
 exit $status

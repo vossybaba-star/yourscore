@@ -19,6 +19,7 @@ import {
 import { makeOpponent } from "@/lib/draft/opponent";
 import { resolveH2H, seededRng } from "@/lib/draft/score";
 import { tierColor, TIER_TAGLINE, strengthPct } from "@/lib/draft/ui";
+import { preSeasonOdds } from "@/lib/draft/season";
 import { useUser } from "@/hooks/useUser";
 
 export default function TeamScreen() {
@@ -200,8 +201,59 @@ export default function TeamScreen() {
 
         <Pitch formation={team.formation} squad={team.squad} compact />
 
-        {/* actions */}
-        <div className="mt-5 space-y-3">
+        {/* Bookies' pre-season odds — the prediction before you simulate the season */}
+        {!stale && (() => {
+          const odds = preSeasonOdds(team.strength);
+          const bands: [string, number, string][] = [
+            ["Win the league", odds.winLeague, "#ffb800"],
+            ["Top 4", odds.top4, "#00ff87"],
+            ["Top 6", odds.top6, "#22d3ee"],
+            ["Top 10", odds.top10, "#a78bfa"],
+            ["Relegation", odds.relegation, "#ff4757"],
+          ];
+          return (
+            <div className="mt-5 rounded-3xl p-5" style={{ background: "#0d0d14", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <div className="flex items-center justify-between mb-3">
+                <span className="font-body" style={{ fontSize: 11, color: "#8888aa", letterSpacing: 1 }}>PRE-SEASON ODDS</span>
+                <span className="font-body" style={{ fontSize: 11, color: "#8888aa" }}>What the bookies make of your XI</span>
+              </div>
+              <div className="flex items-end justify-between mb-4">
+                <div>
+                  <div className="font-body" style={{ fontSize: 11, color: "#8888aa" }}>PROJECTED FINISH</div>
+                  <div className="font-display tracking-wide" style={{ fontSize: 40, color: "#fff", lineHeight: 1 }}>{ordinal(odds.projectedFinish)}</div>
+                </div>
+                <div className="text-right">
+                  <div className="font-body" style={{ fontSize: 11, color: "#8888aa" }}>EXPECTED POINTS</div>
+                  <div className="font-display" style={{ fontSize: 40, color: "#00ff87", lineHeight: 1 }}>{odds.expectedPoints}</div>
+                </div>
+              </div>
+              <div className="space-y-2">
+                {bands.map(([label, val, color]) => (
+                  <div key={label}>
+                    <div className="flex items-center justify-between mb-0.5">
+                      <span className="font-body" style={{ fontSize: 12, color: "#cfcfe6" }}>{label}</span>
+                      <span className="font-body" style={{ fontSize: 12, color: "#fff" }}>{val}%</span>
+                    </div>
+                    <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.07)" }}>
+                      <div className="h-full rounded-full" style={{ width: `${val}%`, background: color }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+
+        {!stale && (
+          <button onClick={() => router.push("/draft/season")}
+            className="w-full mt-4 rounded-2xl py-5 font-display tracking-wide active:scale-[0.98] transition-transform"
+            style={{ background: "#00ff87", color: "#062013", fontSize: 28 }}>
+            ⚽ SIMULATE SEASON →
+          </button>
+        )}
+
+        {/* secondary actions */}
+        <div className="mt-3 space-y-3">
           {stale ? (
             <>
               <div className="rounded-2xl p-4 text-center" style={{ background: "rgba(255,71,87,0.08)", border: "1px solid rgba(255,71,87,0.3)" }}>

@@ -149,8 +149,9 @@ export default function DraftPlay() {
               ) : <div style={{ width: 46, height: 46 }} />}
               <div className="flex-1 min-w-0">
                 <div className="font-body" style={{ fontSize: 9, color: "#8888aa", letterSpacing: 1 }}>CLUB × SEASON</div>
-                <div className="font-display tracking-wide leading-none truncate" style={{ fontSize: 24, color: spinning ? "#ffb800" : "#fff" }}>{reel?.club ?? "—"}</div>
-                <div className="font-body" style={{ fontSize: 12, color: "#8888aa" }}>{reel?.season ?? ""}</div>
+                <div className="font-display tracking-wide leading-none truncate" style={{ fontSize: 24, color: spinning ? "#ffb800" : "#fff" }}>
+                  {reel?.club ?? "—"} {reel?.season && <span style={{ color: "#8888aa", fontSize: 18 }}>{reel.season}</span>}
+                </div>
               </div>
             </div>
           )}
@@ -208,8 +209,9 @@ export default function DraftPlay() {
                       {expert ? p.position : p.overall}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="font-body truncate" style={{ fontSize: 14, color: "#fff" }}>{p.name}</div>
-                      <div className="font-body" style={{ fontSize: 11, color: "#8888aa" }}>{p.season}</div>
+                      <div className="font-body truncate" style={{ fontSize: 14, color: "#fff" }}>
+                        {p.name} <span style={{ color: "#8888aa", fontSize: 12 }}>{p.club} {p.season}</span>
+                      </div>
                     </div>
                     <div className="flex gap-1 flex-shrink-0">
                       {elig.slice(0, 3).map((pos) => (
