@@ -13,7 +13,7 @@ import { useRouter } from "next/navigation";
 import { Pitch } from "@/components/draft/Pitch";
 import { spin, allBuckets, type Spin } from "@/lib/draft/pool";
 import {
-  loadTeam, saveTeam, openSlots, isComplete, usedPlayerIds, placePlayer,
+  loadTeam, saveTeam, openSlots, isComplete, usedPlayerIds, usedPlayerNames, placePlayer,
   type LocalTeam,
 } from "@/lib/draft/local";
 import { slotsFor } from "@/lib/draft/formations";
@@ -62,7 +62,7 @@ export default function DraftPlay() {
       if (++ticks > 13) {
         if (reelTimer.current) clearInterval(reelTimer.current);
         const open = openSlots(team).map((s) => s.pos);
-        const result = spin(open, usedPlayerIds(team));
+        const result = spin(open, usedPlayerIds(team), usedPlayerNames(team));
         setReel({ club: result.club, season: result.season });
         setCurrent(result);
         setSpinning(false);
@@ -222,13 +222,19 @@ export default function DraftPlay() {
             </div>
           )}
 
-          {/* spin button */}
+          {/* spin button — once you've spun you must draft from that squad (no re-spin) */}
           {remaining > 0 ? (
-            <button onClick={doSpin} disabled={spinning}
-              className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-60"
-              style={{ background: spinning ? "#1a1a2e" : "#00ff87", color: spinning ? "#ffb800" : "#062013", fontSize: 24 }}>
-              {spinning ? "SPINNING…" : current ? "SPIN AGAIN ↻" : "🎰 SPIN THE WHEEL"}
-            </button>
+            !current || spinning ? (
+              <button onClick={doSpin} disabled={spinning}
+                className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-60"
+                style={{ background: spinning ? "#1a1a2e" : "#00ff87", color: spinning ? "#ffb800" : "#062013", fontSize: 24 }}>
+                {spinning ? "SPINNING…" : "🎰 SPIN THE WHEEL"}
+              </button>
+            ) : (
+              <div className="text-center font-body py-2" style={{ fontSize: 13, color: "#8888aa" }}>
+                Draft a player from this squad to continue
+              </div>
+            )
           ) : (
             <button onClick={() => router.push("/draft/team")}
               className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform"

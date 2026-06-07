@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation";
 import { Pitch } from "@/components/draft/Pitch";
 import { spin, allBuckets, type Spin } from "@/lib/draft/pool";
 import {
-  loadTeam, saveTeam, isComplete, usedPlayerIds, clearSlot, placePlayer, fittingOpenSlots,
+  loadTeam, saveTeam, isComplete, usedPlayerIds, usedPlayerNames, clearSlot, placePlayer, fittingOpenSlots,
   type LocalTeam,
 } from "@/lib/draft/local";
 import { slotsFor } from "@/lib/draft/formations";
@@ -56,7 +56,7 @@ export default function SwapScreen() {
       setReel({ club: b.club, season: b.season });
       if (++ticks > 12) {
         if (reelTimer.current) clearInterval(reelTimer.current);
-        const result = spin([slot.pos], usedPlayerIds(team));
+        const result = spin([slot.pos], usedPlayerIds(team), usedPlayerNames(team));
         setReel({ club: result.club, season: result.season });
         setCurrent(result);
         setSpinning(false);
@@ -144,11 +144,17 @@ export default function SwapScreen() {
                 )}
               </div>
             )}
-            <button onClick={doSpin} disabled={spinning}
-              className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-60"
-              style={{ background: spinning ? "#1a1a2e" : "#ffb800", color: spinning ? "#ffb800" : "#1a1300", fontSize: 24 }}>
-              {spinning ? "SPINNING…" : current ? "SPIN AGAIN ↻" : "SPIN 🎰"}
-            </button>
+            {!current || spinning ? (
+              <button onClick={doSpin} disabled={spinning}
+                className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-60"
+                style={{ background: spinning ? "#1a1a2e" : "#ffb800", color: spinning ? "#ffb800" : "#1a1300", fontSize: 24 }}>
+                {spinning ? "SPINNING…" : "SPIN 🎰"}
+              </button>
+            ) : (
+              <div className="text-center font-body py-2" style={{ fontSize: 13, color: "#8888aa" }}>
+                Draft a replacement from this squad
+              </div>
+            )}
           </div>
         </div>
       )}

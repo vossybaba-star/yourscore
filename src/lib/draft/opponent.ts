@@ -6,7 +6,7 @@
 
 import type { Formation, PlacedPlayer } from "./types";
 import { spin } from "./pool";
-import { emptyTeam, openSlots, bestOpenSlot, placePlayer, isComplete, usedPlayerIds, type LocalTeam } from "./local";
+import { emptyTeam, openSlots, bestOpenSlot, placePlayer, isComplete, usedPlayerIds, usedPlayerNames, type LocalTeam } from "./local";
 
 const OPPONENT_NAMES = [
   "The Gaffer", "Pub Team FC", "Sunday League XI", "Wenger's Ghost", "Group Chat United",
@@ -22,7 +22,7 @@ export function autoDraft(formation: Formation, rng: () => number = Math.random)
   let guard = 0;
   while (!isComplete(team) && guard++ < 200) {
     const open = openSlots(team).map((s) => s.pos);
-    const s = spin(open, usedPlayerIds(team), rng);
+    const s = spin(open, usedPlayerIds(team), usedPlayerNames(team), rng);
     // pick the player that fills the heaviest-need slot best (greedy by overall x fit)
     let bestPlayer = null as null | (typeof s.players)[number];
     let bestSlotId = null as null | string;

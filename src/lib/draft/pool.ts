@@ -53,21 +53,28 @@ export type Spin = {
 export function spin(
   openSlotPositions: Position[],
   usedPlayerIds: Set<string>,
+  usedNames: Set<string> = new Set(),
   rng: () => number = Math.random
 ): Spin {
   const buckets = DATA.buckets;
-  for (let attempt = 0; attempt < 40; attempt++) {
-    const b = buckets[Math.floor(rng() * buckets.length)];
-    const players = getBucketPlayers(b).filter(
-      (p) => !usedPlayerIds.has(p.id) && openSlotPositions.some((slotPos) => canPlay(p.position, slotPos))
+  const draftable = (b: Bucket) =>
+    getBucketPlayers(b).filter(
+      (p) =>
+        !usedPlayerIds.has(p.id) &&
+        !usedNames.has(p.name) && // no player twice, even from a different club/season
+        openSlotPositions.some((slotPos) => canPlay(p.position, slotPos))
     );
+  for (let attempt = 0; attempt < 60; attempt++) {
+    const b = buckets[Math.floor(rng() * buckets.length)];
+    const players = draftable(b);
     if (players.length > 0) {
       return { club: b.club, clubSlug: b.clubSlug, season: b.season, players };
     }
   }
-  // Extremely unlikely fallback: return any bucket's full list.
+  // Extremely unlikely fallback: any bucket, still excluding already-used players.
   const b = buckets[Math.floor(rng() * buckets.length)];
-  return { club: b.club, clubSlug: b.clubSlug, season: b.season, players: getBucketPlayers(b) };
+  const players = getBucketPlayers(b).filter((p) => !usedPlayerIds.has(p.id) && !usedNames.has(p.name));
+  return { club: b.club, clubSlug: b.clubSlug, season: b.season, players };
 }
 
 /** All spinnable buckets (for previews / the slot-machine reel). */

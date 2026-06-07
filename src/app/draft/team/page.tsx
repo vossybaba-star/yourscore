@@ -29,6 +29,8 @@ export default function TeamScreen() {
   const [err, setErr] = useState<string | null>(null);
   const [challengeCode, setChallengeCode] = useState<string | null>(null);
   const [creatingChallenge, setCreatingChallenge] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     const t = loadTeam();
@@ -97,6 +99,20 @@ export default function TeamScreen() {
       setErr("Network error — try again");
       setMatching(false);
     }
+  }
+
+  // Save to the cloud. Guests are sent to sign up (which unlocks the full
+  // signed-in app — including the Draft XI tab — and cloud-saved teams).
+  async function saveToCloud() {
+    if (!team || saving) return;
+    if (!user) { router.push("/auth/sign-in"); return; }
+    setSaving(true); setErr(null);
+    try {
+      const squad = team.squad.map((p) => ({ slot: p.slot, player_season_id: p.player_season_id }));
+      const r = await fetch("/api/draft/team", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ formation: team.formation, squad }) });
+      if (!r.ok) { setErr((await r.json().catch(() => ({}))).error ?? "Could not save"); setSaving(false); return; }
+      setSaved(true); setSaving(false);
+    } catch { setErr("Network error"); setSaving(false); }
   }
 
   // Friend challenge: snapshot the XI to a share code/link for async H2H.
@@ -207,6 +223,13 @@ export default function TeamScreen() {
                   {err}
                 </div>
               )}
+
+              {/* Save the XI — guests get sent to sign up for YourScore. */}
+              <button onClick={saveToCloud} disabled={saving || saved}
+                className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-70"
+                style={{ background: "#a78bfa", color: "#15082b", fontSize: 22 }}>
+                {saving ? "SAVING…" : saved ? "SAVED ✓" : user ? "💾 SAVE TEAM" : "💾 SAVE TEAM — SIGN UP"}
+              </button>
 
               {/* Signed in → ranked (feeds the leaderboard). Guest → local Quick Match. */}
               <button onClick={user ? rankedMatch : quickMatch} disabled={matching}

@@ -12,31 +12,9 @@ import { BottomNav } from "@/components/ui/BottomNav";
 import { Pitch } from "@/components/draft/Pitch";
 import { FORMATIONS } from "@/lib/draft/types";
 import type { Formation } from "@/lib/draft/types";
-import { slotsFor, FORMATION_NOTE } from "@/lib/draft/formations";
+import { FORMATION_NOTE } from "@/lib/draft/formations";
 import { emptyTeam, loadTeam, saveTeam, isComplete, type LocalTeam, type DraftMode } from "@/lib/draft/local";
 import { POOL_META } from "@/lib/draft/pool";
-
-function FormationGlyph({ formation, active }: { formation: Formation; active: boolean }) {
-  const slots = slotsFor(formation);
-  return (
-    <div className="relative w-full" style={{ aspectRatio: "3 / 4" }}>
-      {slots.map((s) => (
-        <span
-          key={s.id}
-          className="absolute rounded-full -translate-x-1/2 -translate-y-1/2"
-          style={{
-            left: `${s.x}%`,
-            top: `${100 - s.y}%`,
-            width: 7,
-            height: 7,
-            background: active ? "#00ff87" : "#8888aa",
-            boxShadow: active ? "0 0 6px #00ff87" : "none",
-          }}
-        />
-      ))}
-    </div>
-  );
-}
 
 export default function DraftHome() {
   const router = useRouter();
@@ -105,31 +83,30 @@ export default function DraftHome() {
           PICK YOUR SHAPE
         </h2>
 
-        <div className="grid grid-cols-3 gap-3">
+        <div className="flex flex-wrap gap-2">
           {FORMATIONS.map((f) => {
             const active = selected === f;
             return (
               <button
                 key={f}
                 onClick={() => setSelected(f)}
-                className="rounded-2xl p-3 transition-all active:scale-95"
+                className="rounded-xl px-4 py-2.5 font-display tracking-wide transition-all active:scale-95"
                 style={{
-                  background: active ? "rgba(0,255,135,0.08)" : "#12121e",
+                  background: active ? "rgba(0,255,135,0.12)" : "#12121e",
                   border: `1px solid ${active ? "rgba(0,255,135,0.5)" : "rgba(255,255,255,0.08)"}`,
+                  color: active ? "#00ff87" : "#fff",
+                  fontSize: 18,
                 }}
               >
-                <FormationGlyph formation={f} active={active} />
-                <div className="font-display tracking-wide mt-2" style={{ fontSize: 20, color: active ? "#00ff87" : "#fff" }}>
-                  {f}
-                </div>
+                {f}
               </button>
             );
           })}
         </div>
 
-        {/* Live formation preview */}
+        {/* The pitch image updates as you pick a shape. */}
         <div className="mt-4 rounded-2xl p-3" style={{ background: "#0d0d14", border: "1px solid rgba(255,255,255,0.07)" }}>
-          <div className="max-w-[240px] mx-auto">
+          <div className="max-w-[260px] mx-auto">
             <Pitch formation={selected} squad={[]} compact />
           </div>
           <p className="font-body text-center mt-3" style={{ fontSize: 12, color: "#8888aa" }}>

@@ -69,6 +69,12 @@ export function usedPlayerIds(team: LocalTeam): Set<string> {
   return new Set(team.squad.map((p) => p.player_season_id));
 }
 
+/** Names already in the XI — used to stop the same player being drafted twice,
+ *  even from a different club/season. */
+export function usedPlayerNames(team: LocalTeam): Set<string> {
+  return new Set(team.squad.map((p) => p.name));
+}
+
 /**
  * Best open slot a player can legally fill: highest positional fit, then heaviest
  * spine weight (so a CB goes to a CB slot before covering full-back). null if the
