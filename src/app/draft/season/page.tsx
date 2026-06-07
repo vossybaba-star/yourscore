@@ -24,6 +24,7 @@ export default function SeasonSim() {
   const [shown, setShown] = useState(0); // matches revealed
   const [done, setDone] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [downloaded, setDownloaded] = useState(false);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -135,15 +136,31 @@ export default function SeasonSim() {
       ? `38-0. INVINCIBLE. My Draft XI went unbeaten — ${r.points} points. Beat that:`
       : `My Draft XI finished ${ordinal(r.position)} on ${r.points} pts (${r.wins}W ${r.draws}D ${r.losses}L). Build yours:`;
     try {
-      // Share the broadcast graphic itself on mobile; fall back to text + unfurling link.
+      // Always generate the broadcast graphic. Share the image file itself where
+      // supported (mobile); otherwise download the PNG so there's a real image to
+      // share, and copy the unfurling link too.
+      let file: File | null = null;
       try {
         const res = await fetch(`/api/draft/season-og?${params.toString()}`);
-        const file = new File([await res.blob()], "draft-xi-season.png", { type: "image/png" });
-        if (navigator.canShare?.({ files: [file] })) {
-          await navigator.share({ files: [file], title: "Draft XI — Season", text, url });
-          return;
-        }
-      } catch { /* fall through */ }
+        if (res.ok) file = new File([await res.blob()], "draft-xi-season.png", { type: "image/png" });
+      } catch { /* network — fall through to link */ }
+
+      if (file && navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: "Draft XI — Season", text, url });
+        return;
+      }
+      if (file) {
+        // Download the image so the user has a shareable graphic on desktop/unsupported.
+        const href = URL.createObjectURL(file);
+        const a = document.createElement("a");
+        a.href = href; a.download = "draft-xi-season.png";
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(href), 4000);
+        try { await navigator.clipboard.writeText(`${text} ${url}`); } catch { /* clipboard blocked */ }
+        setDownloaded(true); setTimeout(() => setDownloaded(false), 2500);
+        return;
+      }
+      // No image (network) — last resort: native share / copy the link.
       if (navigator.share) await navigator.share({ title: "Draft XI — Season", text, url });
       else { await navigator.clipboard.writeText(`${text} ${url}`); setCopied(true); setTimeout(() => setCopied(false), 1800); }
     } catch { /* cancelled */ }
@@ -200,7 +217,7 @@ export default function SeasonSim() {
 
         <button onClick={share} className="w-full mt-5 rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform"
           style={{ background: "#ffb800", color: "#1a1300", fontSize: 24 }}>
-          {copied ? "LINK COPIED ✓" : "📸 SHARE YOUR SEASON"}
+          {downloaded ? "IMAGE SAVED ✓ (link copied)" : copied ? "LINK COPIED ✓" : "📸 SHARE YOUR SEASON"}
         </button>
 
         {/* awards */}

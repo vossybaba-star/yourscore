@@ -145,7 +145,7 @@ export default function PreMatch() {
             )}
             <div className="grid grid-cols-2 gap-2">
               <button onClick={doSpin} disabled={spinning} className="rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-60" style={{ background: spinning ? "#1a1a2e" : "#ffb800", color: spinning ? "#ffb800" : "#1a1300", fontSize: 20 }}>{spinning ? "SPINNING…" : current ? "SPIN AGAIN ↻" : "SPIN 🎰"}</button>
-              <button onClick={() => { setSwapSlot(null); setCurrent(null); setReel(null); }} className="rounded-2xl py-4 font-body active:scale-[0.98] transition-transform" style={{ background: "#12121e", color: "#cfcfe6", fontSize: 15, border: "1px solid rgba(255,255,255,0.1)" }}>Keep {dropping?.name.split(" ").slice(-1)[0]}</button>
+              <button onClick={() => { setSwapSlot(null); setCurrent(null); setReel(null); }} className="rounded-2xl py-4 font-body active:scale-[0.98] transition-transform" style={{ background: "#12121e", color: "#cfcfe6", fontSize: 15, border: "1px solid rgba(255,255,255,0.1)" }}>← Back</button>
             </div>
           </div>
         </div>

@@ -65,7 +65,7 @@ export default function DraftHome() {
             <div className="flex items-center justify-between">
               <div>
                 <div className="font-display tracking-wide" style={{ fontSize: 22, color: "#fff" }}>
-                  CONTINUE
+                  {isComplete(existing) ? "CONTINUE WITH YOUR TEAM" : "KEEP BUILDING"}
                 </div>
                 <div className="font-body" style={{ fontSize: 13, color: "#8888aa" }}>
                   {existing.formation} · {existing.squad.length}/11 drafted

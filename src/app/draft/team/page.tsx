@@ -177,30 +177,53 @@ export default function TeamScreen() {
           </div>
         </div>
 
-        {/* tier banner */}
-        <div className="rounded-3xl p-5 mb-4" style={{ background: `linear-gradient(135deg, ${tc}22, #0f0f17)`, border: `1px solid ${tc}55` }}>
-          <div className="font-display tracking-wide leading-none" style={{ fontSize: 40, color: tc }}>{tier}</div>
-          <div className="font-body mt-1" style={{ fontSize: 13, color: "#cfcfe6" }}>{TIER_TAGLINE[tier]}</div>
+        {/* tier banner — shows the ACTUAL season result once simulated, else the projection */}
+        {(() => {
+          const sr = hasLastSeason && lastSeason ? lastSeason.result : null;
+          const verdictColor = sr
+            ? sr.verdict === "OVERPERFORMED" ? "#00ff87" : sr.verdict === "UNDERPERFORMED" ? "#ff4757" : "#8888aa"
+            : "#8888aa";
+          return (
+            <div className="rounded-3xl p-5 mb-4" style={{ background: `linear-gradient(135deg, ${tc}22, #0f0f17)`, border: `1px solid ${tc}55` }}>
+              <div className="flex items-center justify-between">
+                <div className="font-display tracking-wide leading-none" style={{ fontSize: 40, color: tc }}>{tier}</div>
+                {sr && <span className="font-body px-2.5 py-1 rounded-full" style={{ fontSize: 11, color: verdictColor, background: `${verdictColor}1f`, letterSpacing: 1 }}>SEASON DONE · {sr.verdict}</span>}
+              </div>
+              <div className="font-body mt-1" style={{ fontSize: 13, color: "#cfcfe6" }}>{TIER_TAGLINE[tier]}</div>
 
-          <div className="flex items-end justify-between mt-4">
-            <div>
-              <div className="font-body" style={{ fontSize: 11, color: "#8888aa" }}>PROJECTED FINISH</div>
-              <div className="font-display tracking-wide" style={{ fontSize: 30, color: "#fff" }}>
-                {ordinal(odds.projectedFinish)}
+              <div className="flex items-end justify-between mt-4">
+                <div>
+                  <div className="font-body" style={{ fontSize: 11, color: "#8888aa" }}>{sr ? "FINISHED" : "PROJECTED FINISH"}</div>
+                  <div className="font-display tracking-wide" style={{ fontSize: 30, color: "#fff" }}>
+                    {ordinal(sr ? sr.position : odds.projectedFinish)}
+                  </div>
+                  <div className="font-body" style={{ fontSize: 12, color: "#8888aa" }}>
+                    {sr ? `${sr.points} pts · ${sr.wins}W ${sr.draws}D ${sr.losses}L` : `${odds.expectedPoints} pts expected`}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="font-body" style={{ fontSize: 11, color: "#8888aa" }}>STRENGTH</div>
+                  <div className="font-display" style={{ fontSize: 48, color: tc, lineHeight: 1 }}>{team.strength}</div>
+                </div>
               </div>
-              <div className="font-body" style={{ fontSize: 12, color: "#8888aa" }}>
-                {odds.expectedPoints} pts expected
-              </div>
+
+              {sr ? (
+                <div className="grid grid-cols-4 gap-2 mt-4">
+                  {([["PTS", sr.points, "#fff"], ["W", sr.wins, "#00ff87"], ["GF", sr.gf, "#22d3ee"], ["GA", sr.ga, "#ff4757"]] as [string, number, string][]).map(([k, v, c]) => (
+                    <div key={k} className="rounded-xl py-2 text-center" style={{ background: "rgba(0,0,0,0.25)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                      <div className="font-display" style={{ fontSize: 22, color: c }}>{v}</div>
+                      <div className="font-body" style={{ fontSize: 10, color: "#8888aa" }}>{k}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="h-1.5 rounded-full overflow-hidden mt-3" style={{ background: "rgba(255,255,255,0.1)" }}>
+                  <div className="h-full rounded-full" style={{ width: `${strengthPct(team.strength)}%`, background: tc }} />
+                </div>
+              )}
             </div>
-            <div className="text-right">
-              <div className="font-body" style={{ fontSize: 11, color: "#8888aa" }}>STRENGTH</div>
-              <div className="font-display" style={{ fontSize: 48, color: tc, lineHeight: 1 }}>{team.strength}</div>
-            </div>
-          </div>
-          <div className="h-1.5 rounded-full overflow-hidden mt-3" style={{ background: "rgba(255,255,255,0.1)" }}>
-            <div className="h-full rounded-full" style={{ width: `${strengthPct(team.strength)}%`, background: tc }} />
-          </div>
-        </div>
+          );
+        })()}
 
         {team.winStreak > 0 && (
           <div className="text-center mb-4 font-display tracking-wide" style={{ fontSize: 18, color: "#ffb800" }}>
@@ -273,25 +296,6 @@ export default function TeamScreen() {
           );
         })()}
 
-        {/* Last simulated season for this XI (shown on return) */}
-        {hasLastSeason && lastSeason && (
-          <Link href="/draft/season" className="block w-full mt-4 rounded-2xl p-4 active:scale-[0.98] transition-transform"
-            style={{ background: "#0d0d14", border: "1px solid rgba(255,255,255,0.08)" }}>
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="font-body" style={{ fontSize: 11, color: "#8888aa", letterSpacing: 1 }}>LAST SEASON</div>
-                <div className="font-display tracking-wide" style={{ fontSize: 22, color: tierColor(tier) }}>
-                  Finished {ordinal(lastSeason.result.position)} · {lastSeason.result.points} pts
-                </div>
-                <div className="font-body" style={{ fontSize: 12, color: "#8888aa" }}>
-                  {lastSeason.result.wins}W {lastSeason.result.draws}D {lastSeason.result.losses}L · {lastSeason.result.verdict}
-                </div>
-              </div>
-              <span className="font-display" style={{ fontSize: 22, color: "#8888aa" }}>→</span>
-            </div>
-          </Link>
-        )}
-
         <button onClick={() => router.push("/draft/season")}
           className="w-full mt-4 rounded-2xl py-5 font-display tracking-wide active:scale-[0.98] transition-transform"
           style={{ background: hasLastSeason ? "rgba(0,255,135,0.12)" : "#00ff87", color: hasLastSeason ? "#00ff87" : "#062013", fontSize: hasLastSeason ? 22 : 28, border: hasLastSeason ? "1px solid rgba(0,255,135,0.4)" : "none" }}>
@@ -323,32 +327,65 @@ export default function TeamScreen() {
                 </Link>
               )}
 
-              <div className="font-body pt-1" style={{ fontSize: 11, color: "#8888aa", letterSpacing: 1 }}>PLAY WITH YOUR XI</div>
-              <div className="grid grid-cols-2 gap-3">
-                <button onClick={user ? rankedMatch : quickMatch} disabled={matching}
-                  className="rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-60"
-                  style={{ background: "#00ff87", color: "#062013", fontSize: 18 }}>
-                  {matching ? "…" : user ? "RANKED ⚔️" : "QUICK MATCH ⚔️"}
-                </button>
-                <button onClick={challengeFriend} disabled={creatingChallenge}
-                  className="rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-60"
-                  style={{ background: "rgba(34,211,238,0.1)", color: "#22d3ee", fontSize: 16, border: "1px solid rgba(34,211,238,0.35)" }}>
-                  {creatingChallenge ? "…" : challengeCode ? `CODE ${challengeCode}` : "🔗 CHALLENGE"}
-                </button>
+              {/* Multiplayer — the "after journey": take your built XI online */}
+              <div className="pt-2">
+                <div className="font-display tracking-wide" style={{ fontSize: 22, color: "#fff" }}>
+                  MULTIPLAYER
+                </div>
+                <div className="font-body" style={{ fontSize: 12, color: "#8888aa" }}>
+                  Your XI is built — now take it online and beat other managers.
+                </div>
+              </div>
+
+              {/* 1 — Ranked vs other players */}
+              <button onClick={user ? rankedMatch : quickMatch} disabled={matching}
+                className="w-full rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.98] transition-transform disabled:opacity-60"
+                style={{ background: "#00ff87", color: "#062013" }}>
+                <span className="text-left">
+                  <span className="block font-display tracking-wide" style={{ fontSize: 20 }}>{user ? "RANKED MATCH ⚔️" : "QUICK MATCH ⚔️"}</span>
+                  <span className="block font-body" style={{ fontSize: 12, opacity: 0.75 }}>{user ? "Go head-to-head vs another player's XI · climbs the leaderboard" : "Practice match against a CPU XI"}</span>
+                </span>
+                <span className="font-display" style={{ fontSize: 24 }}>{matching ? "…" : "→"}</span>
+              </button>
+
+              {/* 2 — Challenge a friend 1v1 */}
+              <button onClick={challengeFriend} disabled={creatingChallenge}
+                className="w-full rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.98] transition-transform disabled:opacity-60"
+                style={{ background: "rgba(34,211,238,0.1)", color: "#22d3ee", border: "1px solid rgba(34,211,238,0.35)" }}>
+                <span className="text-left">
+                  <span className="block font-display tracking-wide" style={{ fontSize: 20 }}>{challengeCode ? `CODE ${challengeCode}` : "CHALLENGE A FRIEND 🔗"}</span>
+                  <span className="block font-body" style={{ fontSize: 12, opacity: 0.8 }}>Send a 1v1 link — can they beat your XI?</span>
+                </span>
+                <span className="font-display" style={{ fontSize: 24 }}>{creatingChallenge ? "…" : "→"}</span>
+              </button>
+
+              {/* 3 — Build a private league */}
+              <button onClick={() => router.push(user ? "/draft/leagues" : "/auth/sign-in")}
+                className="w-full rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.98] transition-transform"
+                style={{ background: "rgba(167,139,250,0.1)", color: "#a78bfa", border: "1px solid rgba(167,139,250,0.35)" }}>
+                <span className="text-left">
+                  <span className="block font-display tracking-wide" style={{ fontSize: 20 }}>BUILD A LEAGUE 🏆</span>
+                  <span className="block font-body" style={{ fontSize: 12, opacity: 0.8 }}>Private league with a code & QR — invite your group, climb the table</span>
+                </span>
+                <span className="font-display" style={{ fontSize: 24 }}>→</span>
+              </button>
+
+              {/* Secondary — global leaderboard + practice/fresh */}
+              <div className="grid grid-cols-2 gap-3 pt-1">
                 <Link href="/draft/leaderboard"
-                  className="rounded-2xl py-4 text-center font-display tracking-wide active:scale-[0.98] transition-transform"
-                  style={{ background: "rgba(0,255,135,0.08)", color: "#00ff87", fontSize: 17, border: "1px solid rgba(0,255,135,0.25)" }}>
+                  className="rounded-2xl py-3 text-center font-display tracking-wide active:scale-[0.98] transition-transform"
+                  style={{ background: "rgba(0,255,135,0.08)", color: "#00ff87", fontSize: 16, border: "1px solid rgba(0,255,135,0.25)" }}>
                   🏆 LEADERBOARD
                 </Link>
                 {user ? (
                   <button onClick={quickMatch} disabled={matching}
-                    className="rounded-2xl py-4 font-body active:scale-[0.98] transition-transform disabled:opacity-60"
+                    className="rounded-2xl py-3 font-body active:scale-[0.98] transition-transform disabled:opacity-60"
                     style={{ background: "#12121e", color: "#8888aa", fontSize: 14, border: "1px solid rgba(255,255,255,0.08)" }}>
-                    Practice
+                    Practice vs CPU
                   </button>
                 ) : (
                   <button onClick={() => router.push("/draft")}
-                    className="rounded-2xl py-4 font-body active:scale-[0.98] transition-transform"
+                    className="rounded-2xl py-3 font-body active:scale-[0.98] transition-transform"
                     style={{ background: "#12121e", color: "#8888aa", fontSize: 14, border: "1px solid rgba(255,255,255,0.08)" }}>
                     Fresh team
                   </button>
