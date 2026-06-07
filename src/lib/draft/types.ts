@@ -1,0 +1,93 @@
+/**
+ * Draft XI — shared types.
+ *
+ * This module is the competitive H2H team-builder game ("Draft XI"), a standalone
+ * game inside YourScore separate from the quiz modes. It is ADDITIVE — it does not
+ * touch existing YourScore schema, scoring, or routes.
+ *
+ * Authored to be type-strippable (no enums / namespaces / param-properties) so the
+ * scoring engine can run under `node --test` with Node's native type stripping.
+ */
+
+/** Canonical playing positions. Dataset + slots both normalise to these. */
+export type Position =
+  | "GK"
+  | "RB" | "CB" | "LB"
+  | "RWB" | "LWB"
+  | "CDM" | "CM" | "CAM"
+  | "RW" | "LW"
+  | "ST";
+
+export const POSITIONS: Position[] = [
+  "GK", "RB", "CB", "LB", "RWB", "LWB", "CDM", "CM", "CAM", "RW", "LW", "ST",
+];
+
+/** The seven supported formations (locked design decision). */
+export type Formation =
+  | "4-3-3"
+  | "4-4-2"
+  | "4-2-4"
+  | "3-4-3"
+  | "3-5-2"
+  | "5-3-2"
+  | "5-4-1";
+
+export const FORMATIONS: Formation[] = [
+  "4-3-3", "4-4-2", "4-2-4", "3-4-3", "3-5-2", "5-3-2", "5-4-1",
+];
+
+/** One player-season from the pool (the "card" a spin can deal). */
+export type PlayerSeason = {
+  id: string;        // `${slug}-${clubSlug}-${seasonSlug}`
+  name: string;
+  club: string;      // "Liverpool"
+  clubSlug: string;  // "liverpool"
+  season: string;    // "2016/17"
+  position: Position; // canonical
+  overall: number;   // 0-99
+  curated: boolean;
+};
+
+/** A slot in a formation. `pos` is the canonical position used for fit scoring;
+ *  `label` is what we show on the pitch (e.g. an "RM" label backed by an RW pos). */
+export type Slot = {
+  id: string;     // e.g. "lcb", "st1" — unique within a formation
+  pos: Position;  // canonical position for fit
+  label: string;  // display label
+  x: number;      // 0-100 pitch coord, 50 = centre
+  y: number;      // 0-100, 5 = own goal (GK), 95 = opponent goal
+};
+
+/** A player placed into a specific slot. */
+export type PlacedPlayer = {
+  slot: string;          // Slot.id
+  slotPos: Position;     // the slot's canonical position
+  player_season_id: string;
+  name: string;
+  club: string;
+  season: string;
+  overall: number;
+  position: Position;    // the player's own position
+};
+
+/** Projected 38-game season, derived from Strength Rating. */
+export type Projected = {
+  wins: number;
+  draws: number;
+  losses: number;
+  points: number;
+  position: number; // projected league finish 1-20
+  tier: Tier;
+};
+
+export type Tier =
+  | "INVINCIBLE"
+  | "Centurions"
+  | "Champions"
+  | "Title Challengers"
+  | "Europe"
+  | "Mid-table"
+  | "Relegation Battle"
+  | "Relegated";
+
+export type TeamStatus = "active" | "stale";
