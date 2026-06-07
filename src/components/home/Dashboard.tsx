@@ -284,7 +284,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
 
         {/* ── 38-0 tile ──────────────────────────────────────────────────── */}
         <div className="dash-slide-2">
-          <Link href="/draft"
+          <Link href="/38-0"
             className="flex items-center justify-between px-4 py-3.5 rounded-2xl transition-all hover:opacity-90 active:scale-[0.99] green-pulse"
             style={{ background: "linear-gradient(135deg, rgba(0,255,135,0.08) 0%, rgba(167,139,250,0.06) 100%)", border: "1px solid rgba(0,255,135,0.18)" }}>
             <div className="flex items-center gap-3">

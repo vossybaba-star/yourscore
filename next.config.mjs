@@ -24,6 +24,12 @@ const nextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      { source: "/draft", destination: "/38-0", permanent: true },
+      { source: "/draft/:path*", destination: "/38-0/:path*", permanent: true },
+    ];
+  },
   async headers() {
     // Baseline security headers for all routes. The CSP is intentionally
     // permissive on script-src/connect-src (https:) so the analytics pixels
