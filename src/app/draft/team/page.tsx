@@ -340,17 +340,14 @@ export default function TeamScreen() {
               {/* How it works — 3 steps, left to right */}
               <div className="grid grid-cols-3 gap-2">
                 {([
-                  ["⚔️", "GET MATCHED", "Drawn against another manager's XI"],
-                  ["🔁", "PREVIEW & SWAP", "See their team — swap up to 3 players"],
-                  ["🏆", "STRONGEST WINS", "Your XI rating decides it · climb the board"],
-                ] as [string, string, string][]).map(([icon, title, desc], i) => (
+                  ["GET MATCHED", "Drawn against another manager's XI"],
+                  ["PREVIEW & SWAP", "See their team — swap up to 3 players"],
+                  ["STRONGEST WINS", "Your XI rating decides it · climb the board"],
+                ] as [string, string][]).map(([title, desc], i) => (
                   <div key={title} className="rounded-2xl p-3" style={{ background: "#0d0d14", border: "1px solid rgba(255,255,255,0.08)" }}>
-                    <div className="flex items-center gap-1.5">
-                      <span style={{ fontSize: 16 }}>{icon}</span>
-                      <span className="font-display tracking-wide" style={{ fontSize: 13, color: "#00ff87" }}>{i + 1}</span>
-                    </div>
-                    <div className="font-display tracking-wide mt-1.5" style={{ fontSize: 13, color: "#fff", lineHeight: 1.1 }}>{title}</div>
-                    <div className="font-body mt-1" style={{ fontSize: 10.5, color: "#8888aa", lineHeight: 1.25 }}>{desc}</div>
+                    <span className="font-display tracking-wide" style={{ fontSize: 16, color: "#00ff87" }}>{i + 1}</span>
+                    <div className="font-display tracking-wide mt-1.5" style={{ fontSize: 16, color: "#fff", lineHeight: 1.1 }}>{title}</div>
+                    <div className="font-body mt-1" style={{ fontSize: 12.5, color: "#8888aa", lineHeight: 1.3 }}>{desc}</div>
                   </div>
                 ))}
               </div>
