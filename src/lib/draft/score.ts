@@ -61,6 +61,41 @@ export function canPlay(playerPos: Position, slotPos: Position): boolean {
   return fitMultiplier(playerPos, slotPos) > FIT_WRONG;
 }
 
+// ─── Position categories, colours & line ratings ─────────────────────────────
+
+export type PosCategory = "gk" | "def" | "mid" | "att";
+
+/** Broad category for a position — drives badge colour and the line breakdown. */
+export function posCategory(p: Position): PosCategory {
+  if (p === "GK") return "gk";
+  if (p === "RB" || p === "CB" || p === "LB" || p === "RWB" || p === "LWB") return "def";
+  if (p === "CDM" || p === "CM" || p === "CAM") return "mid";
+  return "att"; // RW, LW, ST
+}
+
+export const CATEGORY_COLOR: Record<PosCategory, string> = {
+  gk: "#ffb800",
+  def: "#4fc3f7",
+  mid: "#00ff87",
+  att: "#ff4757",
+};
+
+export type LineRatings = { attack: number; midfield: number; defence: number; gk: number };
+
+/** Average overall per line (by each player's SLOT position), 0 if a line is empty.
+ *  Powers the live Attack/Midfield/Defence/GK breakdown while drafting. */
+export function lineRatings(squad: PlacedPlayer[]): LineRatings {
+  const sum: Record<PosCategory, number> = { gk: 0, def: 0, mid: 0, att: 0 };
+  const n: Record<PosCategory, number> = { gk: 0, def: 0, mid: 0, att: 0 };
+  for (const p of squad) {
+    const c = posCategory(p.slotPos);
+    sum[c] += p.overall;
+    n[c] += 1;
+  }
+  const avg = (c: PosCategory) => (n[c] ? Math.round(sum[c] / n[c]) : 0);
+  return { attack: avg("att"), midfield: avg("mid"), defence: avg("def"), gk: avg("gk") };
+}
+
 // ─── Spine weighting ─────────────────────────────────────────────────────────
 
 /** Central spine (GK, CBs, central mids, ST) matters more than wide slots. */

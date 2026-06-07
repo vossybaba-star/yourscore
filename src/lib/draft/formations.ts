@@ -109,3 +109,14 @@ export const FORMATION_SLOTS: Record<Formation, Slot[]> = {
 export function slotsFor(formation: Formation): Slot[] {
   return FORMATION_SLOTS[formation];
 }
+
+/** One-line tactical flavour shown under the formation picker (onboarding). */
+export const FORMATION_NOTE: Record<Formation, string> = {
+  "4-3-3": "Attacking width. Three forwards apply constant pressure.",
+  "4-4-2": "Classic and balanced. Two banks of four, a strike partnership.",
+  "4-2-4": "All-out attack. Four forwards, a daring two-man midfield.",
+  "3-4-3": "Front-foot football. Wing-backs bomb on, a front three.",
+  "3-5-2": "Midfield control. Wing-backs supply two strikers.",
+  "5-3-2": "Solid and compact. Five at the back, two up top to break.",
+  "5-4-1": "Backs to the wall. Defend deep, hit hard on the counter.",
+};

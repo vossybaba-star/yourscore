@@ -9,9 +9,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BottomNav } from "@/components/ui/BottomNav";
+import { Pitch } from "@/components/draft/Pitch";
 import { FORMATIONS } from "@/lib/draft/types";
 import type { Formation } from "@/lib/draft/types";
-import { slotsFor } from "@/lib/draft/formations";
+import { slotsFor, FORMATION_NOTE } from "@/lib/draft/formations";
 import { emptyTeam, loadTeam, saveTeam, isComplete, type LocalTeam, type DraftMode } from "@/lib/draft/local";
 import { POOL_META } from "@/lib/draft/pool";
 
@@ -124,6 +125,16 @@ export default function DraftHome() {
               </button>
             );
           })}
+        </div>
+
+        {/* Live formation preview */}
+        <div className="mt-4 rounded-2xl p-3" style={{ background: "#0d0d14", border: "1px solid rgba(255,255,255,0.07)" }}>
+          <div className="max-w-[240px] mx-auto">
+            <Pitch formation={selected} squad={[]} compact />
+          </div>
+          <p className="font-body text-center mt-3" style={{ fontSize: 12, color: "#8888aa" }}>
+            {FORMATION_NOTE[selected]}
+          </p>
         </div>
 
         {/* Classic vs Expert */}
