@@ -23,6 +23,7 @@ export default function SeasonSim() {
   const [team, setTeam] = useState<LocalTeam | null>(null);
   const [shown, setShown] = useState(0); // matches revealed
   const [done, setDone] = useState(false);
+  const [copied, setCopied] = useState(false);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -107,14 +108,33 @@ export default function SeasonSim() {
   const accent = r.invincible ? "#ffd700" : r.position === 1 ? "#00ff87" : r.position <= 4 ? "#22d3ee" : r.position <= 12 ? "#ffb800" : "#ff4757";
   const verdictColor = r.verdict === "OVERPERFORMED" ? "#00ff87" : r.verdict === "UNDERPERFORMED" ? "#ff4757" : "#8888aa";
 
+  function shareParams(): URLSearchParams {
+    return new URLSearchParams({
+      pos: String(r.position), pts: String(r.points), w: String(r.wins), d: String(r.draws), l: String(r.losses),
+      gf: String(r.gf), ga: String(r.ga), head: narr.headline, verdict: r.verdict,
+      boot: r.goldenBoot ? `${r.goldenBoot.name} ${r.goldenBoot.goals}` : "",
+      inv: r.invincible ? "1" : "", formation: team!.formation,
+    });
+  }
+
   async function share() {
+    const params = shareParams();
+    const url = `${window.location.origin}/draft/season/share?${params.toString()}`;
     const text = r.invincible
       ? `38-0. INVINCIBLE. My Draft XI went unbeaten — ${r.points} points. Beat that:`
       : `My Draft XI finished ${ordinal(r.position)} on ${r.points} pts (${r.wins}W ${r.draws}D ${r.losses}L). Build yours:`;
-    const url = "https://yourscore.app/draft";
     try {
+      // Share the broadcast graphic itself on mobile; fall back to text + unfurling link.
+      try {
+        const res = await fetch(`/api/draft/season-og?${params.toString()}`);
+        const file = new File([await res.blob()], "draft-xi-season.png", { type: "image/png" });
+        if (navigator.canShare?.({ files: [file] })) {
+          await navigator.share({ files: [file], title: "Draft XI — Season", text, url });
+          return;
+        }
+      } catch { /* fall through */ }
       if (navigator.share) await navigator.share({ title: "Draft XI — Season", text, url });
-      else await navigator.clipboard.writeText(`${text} ${url}`);
+      else { await navigator.clipboard.writeText(`${text} ${url}`); setCopied(true); setTimeout(() => setCopied(false), 1800); }
     } catch { /* cancelled */ }
   }
 
@@ -169,7 +189,7 @@ export default function SeasonSim() {
 
         <button onClick={share} className="w-full mt-5 rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform"
           style={{ background: "#ffb800", color: "#1a1300", fontSize: 24 }}>
-          📸 SHARE YOUR SEASON
+          {copied ? "LINK COPIED ✓" : "📸 SHARE YOUR SEASON"}
         </button>
 
         {/* awards */}
