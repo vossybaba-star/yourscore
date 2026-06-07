@@ -50,20 +50,39 @@ SoFIFA-derived CSV at `scripts/draft/data/players.csv`
 (`name,club,season,position,overall`) and re-run to add breadth — curated overalls win
 on conflict.
 
-## Not yet wired (needs the migration applied + sign-in) — next session
+## Cloud layer — BUILT, dormant until the migration is applied
 
-`14_draft_xi.sql` is written but **not applied** (CLAUDE.md: never change Supabase schema
-without explicit instruction). Once applied:
+All written and typechecking; it fails soft (e.g. the leaderboard shows "coming
+soon") until the tables exist, so nothing crashes today.
 
-1. API routes (server-authoritative, mirror `src/app/api/h2h/play`): save team +
-   recompute strength; create/accept challenge (friend code + random matchmaking);
-   resolve match → snapshot both XIs → update `draft_standings`; stale-team guard;
-   per-user rate limit.
-2. Real H2H + server-rendered `/draft/match/[id]` with `og:image` → `/api/draft/og`.
-3. Leaderboards: `/draft/leaderboard` (Daily / All-time via `draft_leaderboard`),
-   custom leagues (`/draft/league/[code]`, create + join code + Available badges).
-4. Daily reset: call `draft_reset_daily()` at 00:00 UTC (pg_cron or the existing
-   `/api/cron` pattern + `CRON_SECRET`).
+| Piece | File |
+|---|---|
+| Typed table access (shim until `database.ts` is regenerated) | `src/types/draft-db.ts` |
+| Server helpers: authoritative validate+score, standings credit | `src/lib/draft/server.ts` |
+| Cloud save (recomputes Strength server-side) | `POST /api/draft/team` |
+| Ranked H2H: random matchmaking + bot fallback, snapshot, standings, stale-on-loss | `POST /api/draft/match` |
+| Leaderboard read (fails soft) | `GET /api/draft/leaderboard` |
+| Daily reset (CRON_SECRET bearer) | `GET /api/draft/cron/reset` |
+| Leaderboard UI (Daily / All-time) | `/draft/leaderboard` |
 
-The Quick Match loop already exercises the exact engine real matchmaking will use, so
-wiring the DB is plumbing, not redesign.
+Team screen now shows **Ranked Match** (signed-in, feeds the leaderboard) vs
+**Quick Match** (guest/practice, local), plus a Leaderboard link.
+
+### To activate (your steps — schema changes need your say-so)
+1. Apply `supabase/migrations/14_draft_xi.sql` to the Supabase project.
+2. (Optional but recommended) regenerate `src/types/database.ts` from the live DB,
+   then delete `src/types/draft-db.ts` and point imports at `database.ts`.
+3. Schedule `GET /api/draft/cron/reset` at 00:00 UTC (Vercel cron / pg_cron) with
+   the `CRON_SECRET` bearer — same pattern as `/api/cron/reclassify`.
+
+## Still to build — next session
+- **Custom leagues**: create + join-code + member board (`/draft/league/[code]`) and
+  an "Available" badge; ranked matches already accept a `leagueId` and credit the
+  league board — only the league CRUD + pages remain.
+- **Friend challenge by code** (async accept) — random matchmaking is done; this is
+  the share-code variant.
+- Server-rendered `/draft/match/[id]` with `og:image` → `/api/draft/og` for
+  unfurling shared results (the OG route + local share already work).
+
+The Quick Match loop and Ranked Match share the exact same engine, so the remaining
+work is plumbing, not redesign.

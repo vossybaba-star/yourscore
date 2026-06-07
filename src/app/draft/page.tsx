@@ -61,9 +61,9 @@ export default function DraftHome() {
           <Link href="/" className="font-body text-sm" style={{ color: "#8888aa" }}>
             ← YourScore
           </Link>
-          <span className="font-body text-xs px-2 py-1 rounded-full" style={{ color: "#00ff87", background: "rgba(0,255,135,0.1)" }}>
-            NEW GAME
-          </span>
+          <Link href="/draft/leaderboard" className="font-body text-xs px-3 py-1 rounded-full" style={{ color: "#00ff87", background: "rgba(0,255,135,0.1)" }}>
+            🏆 Leaderboard
+          </Link>
         </div>
 
         <h1 className="font-display tracking-wide leading-none" style={{ fontSize: 64, color: "#fff" }}>

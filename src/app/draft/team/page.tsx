@@ -19,11 +19,14 @@ import {
 import { makeOpponent } from "@/lib/draft/opponent";
 import { resolveH2H, seededRng } from "@/lib/draft/score";
 import { tierColor, TIER_TAGLINE, strengthPct } from "@/lib/draft/ui";
+import { useUser } from "@/hooks/useUser";
 
 export default function TeamScreen() {
   const router = useRouter();
+  const { user } = useUser();
   const [team, setTeam] = useState<LocalTeam | null>(null);
   const [matching, setMatching] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
     const t = loadTeam();
@@ -54,6 +57,44 @@ export default function TeamScreen() {
     const next = youWon ? recordWin(team) : recordLoss(team);
     saveTeam(next);
     setTimeout(() => router.push("/draft/match/result"), 450);
+  }
+
+  // Ranked: save the XI to the cloud (server recomputes Strength), resolve a real
+  // H2H against a random active opponent (bot fallback), and feed the leaderboard.
+  async function rankedMatch() {
+    if (!team || matching || team.status === "stale") return;
+    if (!user) { router.push("/auth/sign-in"); return; }
+    setMatching(true);
+    setErr(null);
+    try {
+      const squad = team.squad.map((p) => ({ slot: p.slot, player_season_id: p.player_season_id }));
+      const saveRes = await fetch("/api/draft/team", {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ formation: team.formation, squad }),
+      });
+      if (!saveRes.ok) { setErr((await saveRes.json().catch(() => ({}))).error ?? "Could not save team"); setMatching(false); return; }
+
+      const res = await fetch("/api/draft/match", {
+        method: "POST", headers: { "content-type": "application/json" }, body: "{}",
+      });
+      if (!res.ok) { setErr((await res.json().catch(() => ({}))).error ?? "Match failed"); setMatching(false); return; }
+      const m = await res.json();
+
+      saveLastMatch({
+        id: m.matchId,
+        you: { name: "You", formation: m.you.formation, squad: m.you.squad, strength: m.you.strength, projected: m.you.projected },
+        opp: { name: m.opp.name, formation: m.opp.formation, squad: m.opp.squad, strength: m.opp.strength, projected: m.opp.projected },
+        winner: m.youWon ? "you" : "opp",
+        margin: m.margin,
+        playedAt: Date.now(),
+      });
+      const next = m.youWon ? recordWin(team) : recordLoss(team);
+      saveTeam(next);
+      router.push("/draft/match/result");
+    } catch {
+      setErr("Network error — try again");
+      setMatching(false);
+    }
   }
 
   if (!team || !team.projected) {
@@ -138,11 +179,26 @@ export default function TeamScreen() {
             </>
           ) : (
             <>
-              <button onClick={quickMatch} disabled={matching}
+              {err && (
+                <div className="rounded-xl px-4 py-2 font-body text-center" style={{ fontSize: 13, color: "#ff4757", background: "rgba(255,71,87,0.1)" }}>
+                  {err}
+                </div>
+              )}
+
+              {/* Signed in → ranked (feeds the leaderboard). Guest → local Quick Match. */}
+              <button onClick={user ? rankedMatch : quickMatch} disabled={matching}
                 className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-60"
                 style={{ background: "#00ff87", color: "#062013", fontSize: 24 }}>
-                {matching ? "FINDING OPPONENT…" : "QUICK MATCH ⚔️"}
+                {matching ? "FINDING OPPONENT…" : user ? "RANKED MATCH ⚔️" : "QUICK MATCH ⚔️"}
               </button>
+
+              {user && (
+                <button onClick={quickMatch} disabled={matching}
+                  className="w-full rounded-2xl py-3 font-body active:scale-[0.98] transition-transform disabled:opacity-60"
+                  style={{ background: "#12121e", color: "#8888aa", fontSize: 14, border: "1px solid rgba(255,255,255,0.08)" }}>
+                  Practice (unranked Quick Match)
+                </button>
+              )}
 
               {team.swapAvailable && (
                 <Link href="/draft/swap"
@@ -159,10 +215,19 @@ export default function TeamScreen() {
               </button>
             </>
           )}
+
+          {/* Leaderboard is always reachable. */}
+          <Link href="/draft/leaderboard"
+            className="block w-full rounded-2xl py-3 text-center font-display tracking-wide active:scale-[0.98] transition-transform"
+            style={{ background: "rgba(0,255,135,0.08)", color: "#00ff87", fontSize: 18, border: "1px solid rgba(0,255,135,0.25)" }}>
+            🏆 LEADERBOARD
+          </Link>
         </div>
 
         <p className="font-body text-center mt-5" style={{ color: "#8888aa", fontSize: 12 }}>
-          Friend challenges, random matchmaking & global leaderboards unlock when you sign in.
+          {user
+            ? "Ranked wins climb the global leaderboard. Lose and your team goes stale — rebuild to play on."
+            : "Sign in to play ranked matchmaking & climb the global leaderboard."}
         </p>
       </div>
       <BottomNav />

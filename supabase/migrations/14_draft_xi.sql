@@ -60,10 +60,12 @@ create index if not exists draft_matches_challenger_idx on draft_matches (challe
 create index if not exists draft_matches_league_idx on draft_matches (league_id, played_at desc);
 
 -- Win tallies (denormalised for fast leaderboards) ----------------------------
+-- league_id is part of the primary key, so it cannot be NULL. The all-zeros
+-- sentinel uuid means "global" (no real league will ever use that id).
 create table if not exists draft_standings (
   user_id uuid references auth.users(id) on delete cascade,
   display_name text not null,
-  league_id uuid,                          -- null = global
+  league_id uuid not null default '00000000-0000-0000-0000-000000000000'::uuid,
   wins_today int not null default 0,
   wins_all_time int not null default 0,
   last_win_date date,
@@ -78,10 +80,8 @@ create policy "draft_standings owner upsert" on draft_standings
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 -- league_id is part of the PK; coalesce NULL -> all-zeros so the global row (null
 -- league) and per-league rows both index cleanly for "top N by wins".
-create index if not exists draft_standings_daily_idx
-  on draft_standings (coalesce(league_id, '00000000-0000-0000-0000-000000000000'::uuid), wins_today desc);
-create index if not exists draft_standings_alltime_idx
-  on draft_standings (coalesce(league_id, '00000000-0000-0000-0000-000000000000'::uuid), wins_all_time desc);
+create index if not exists draft_standings_daily_idx on draft_standings (league_id, wins_today desc);
+create index if not exists draft_standings_alltime_idx on draft_standings (league_id, wins_all_time desc);
 
 -- Custom (private) leagues ----------------------------------------------------
 create table if not exists draft_leagues (
@@ -128,7 +128,8 @@ as $$
      and (last_win_date is null or last_win_date < current_date);
 $$;
 
--- Leaderboard read: top N by daily or all-time wins for a league (null = global).
+-- Leaderboard read: top N by daily or all-time wins for a league. Pass the
+-- all-zeros sentinel (or NULL, which is coalesced to it) for the global board.
 create or replace function draft_leaderboard(p_league_id uuid, p_metric text, p_limit int default 50)
 returns table (user_id uuid, display_name text, wins_today int, wins_all_time int, rank bigint)
 language sql
@@ -139,7 +140,8 @@ as $$
            order by case when p_metric = 'today' then s.wins_today else s.wins_all_time end desc
          ) as rank
   from draft_standings s
-  where s.league_id is not distinct from p_league_id
+  where s.league_id = coalesce(p_league_id, '00000000-0000-0000-0000-000000000000'::uuid)
+    and (case when p_metric = 'today' then s.wins_today else s.wins_all_time end) > 0
   order by case when p_metric = 'today' then s.wins_today else s.wins_all_time end desc
   limit p_limit;
 $$;
