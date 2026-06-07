@@ -79,7 +79,7 @@ export default async function RootPage({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (supabase as any)
       .from("quiz_packs")
-      .select("id, name, type, parameter, question_count, featured_order")
+      .select("id, name, type, parameter, question_count, featured_order, metadata")
       .eq("featured", true)
       .eq("status", "published")
       .order("featured_order", { ascending: true })
@@ -94,6 +94,7 @@ export default async function RootPage({
     type: String(p.type),
     parameter: String(p.parameter ?? ""),
     question_count: Number(p.question_count ?? 10),
+    coverImageUrl: p.metadata?.cover_image_url ? String(p.metadata.cover_image_url) : undefined,
   }));
 
   const totalScore = profile?.total_score ?? null;

@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { FlagImage } from "@/components/ui/FlagImage";
+import { slugify } from "@/lib/utils";
 import type { LiveMatch } from "./MarketingLanding";
 
 const WORLD_CUP_START = new Date("2026-06-11T18:00:00Z");
@@ -29,6 +30,7 @@ export interface FeaturedPack {
   type: string;
   parameter: string;
   question_count: number;
+  coverImageUrl?: string;
 }
 
 export interface DashboardData {
@@ -202,8 +204,8 @@ function FeaturedPacksRow({ packs }: { packs: FeaturedPack[] }) {
             return (
               <Link
                 key={pack.id}
-                href={`/challenges/${encodeURIComponent(pack.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""))}`}
-                className="flex-shrink-0 rounded-2xl p-4 transition-opacity hover:opacity-80 active:scale-[0.98]"
+                href={`/challenges/${slugify(pack.name)}`}
+                className="flex-shrink-0 rounded-2xl overflow-hidden transition-opacity hover:opacity-80 active:scale-[0.98]"
                 style={{
                   width: 160,
                   background: `rgba(${cfg.rgba},0.07)`,
@@ -211,12 +213,24 @@ function FeaturedPacksRow({ packs }: { packs: FeaturedPack[] }) {
                   textDecoration: "none",
                 }}
               >
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg mb-3 flex-shrink-0"
-                  style={{ background: `rgba(${cfg.rgba},0.14)` }}>
-                  {cfg.emoji}
+                {pack.coverImageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={pack.coverImageUrl}
+                    alt={pack.name}
+                    className="w-full block"
+                    style={{ height: 90, objectFit: "cover" }}
+                  />
+                ) : (
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg mt-4 ml-4 mb-1 flex-shrink-0"
+                    style={{ background: `rgba(${cfg.rgba},0.14)` }}>
+                    {cfg.emoji}
+                  </div>
+                )}
+                <div className="p-4 pt-3">
+                  <p className="font-body text-xs font-bold text-white leading-tight mb-1 line-clamp-2">{pack.name}</p>
+                  <p className="font-body text-xs" style={{ color: cfg.color }}>{pack.question_count} questions</p>
                 </div>
-                <p className="font-body text-xs font-bold text-white leading-tight mb-1 line-clamp-2">{pack.name}</p>
-                <p className="font-body text-xs" style={{ color: cfg.color }}>{pack.question_count} questions</p>
               </Link>
             );
           })}
