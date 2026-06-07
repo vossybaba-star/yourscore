@@ -48,19 +48,16 @@ const NATIONAL_TEAMS = [
   { name: "Nigeria",      flag: "🇳🇬" },
 ];
 
-const RECORD_TOPICS = [
+const RECORD_TOPICS: { label: string; emoji: string; comingSoon?: boolean }[] = [
   { label: "Premier League Records",          emoji: "🏆" },
   { label: "Champions League Records",        emoji: "⭐" },
-  { label: "World Cup Records",               emoji: "🌍" },
-  { label: "Euro Championship Records",       emoji: "🇪🇺" },
-  { label: "Transfer Market Records",         emoji: "💰" },
-  { label: "Legendary Club Seasons",          emoji: "📖" },
-  { label: "Iconic Managers",                 emoji: "🎩" },
-  { label: "Penalty Shootout Lore",           emoji: "⚽" },
-  { label: "Golden Boot & Individual Awards", emoji: "👟" },
-  { label: "The Derbies — By Numbers",        emoji: "🔥" },
-  { label: "FA Cup Records",                  emoji: "🏅" },
-  { label: "Greatest Premier League Players", emoji: "⚡" },
+  { label: "World Cup Records",               emoji: "🌍",  comingSoon: true },
+  { label: "Euro Championship Records",       emoji: "🇪🇺", comingSoon: true },
+  { label: "Transfer Market Records",         emoji: "💰",  comingSoon: true },
+  { label: "Legendary Club Seasons",          emoji: "📖",  comingSoon: true },
+  { label: "Iconic Managers",                 emoji: "🎩",  comingSoon: true },
+  { label: "Golden Boot & Individual Awards", emoji: "👟",  comingSoon: true },
+  { label: "FA Cup Records",                  emoji: "🏅",  comingSoon: true },
 ];
 
 const ERA_OPTIONS = [
@@ -87,7 +84,7 @@ type FocusType = "club" | "national" | "records";
 const CATEGORIES: { key: FocusType; label: string; icon: string; color: string; rgba: string; desc: string; comingSoon?: boolean }[] = [
   { key: "club",     label: "Club",          icon: "⚽", color: "#ffb800", rgba: "255,184,0",   desc: "Pick a Premier League side" },
   { key: "national", label: "National Team", icon: "🌍", color: "#00c9ff", rgba: "0,201,255",   desc: "International football" },
-  { key: "records",  label: "Records",       icon: "🏆", color: "#a78bfa", rgba: "167,139,250", desc: "Coming soon", comingSoon: true },
+  { key: "records",  label: "Records",       icon: "🏆", color: "#a78bfa", rgba: "167,139,250", desc: "PL history, UCL, World Cup" },
 ];
 
 // ── Quiz Builder ───────────────────────────────────────────────────────────────
@@ -411,16 +408,19 @@ export default function CreateQuizPage() {
 
             {focusType === "records" && (
               <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
-                {RECORD_TOPICS.map(({ label, emoji }) => {
+                {RECORD_TOPICS.map(({ label, emoji, comingSoon }) => {
                   const isSelected = selectedEntity === label;
                   return (
                     <button
                       key={label}
-                      onClick={() => handleEntitySelect(label)}
+                      onClick={() => !comingSoon && handleEntitySelect(label)}
+                      disabled={comingSoon}
                       style={{
                         display: "flex", alignItems: "center", gap: 10,
                         padding: "14px 12px", borderRadius: 14,
-                        cursor: "pointer", transition: "all 0.15s ease",
+                        cursor: comingSoon ? "default" : "pointer",
+                        transition: "all 0.15s ease",
+                        opacity: comingSoon ? 0.4 : 1,
                         background: isSelected ? "rgba(167,139,250,0.12)" : "rgba(255,255,255,0.03)",
                         border: `1px solid ${isSelected ? "rgba(167,139,250,0.55)" : "rgba(255,255,255,0.07)"}`,
                         boxShadow: isSelected ? "0 0 14px rgba(167,139,250,0.18)" : "none",
@@ -429,8 +429,9 @@ export default function CreateQuizPage() {
                       <span style={{ fontSize: 22, flexShrink: 0, filter: isSelected ? "drop-shadow(0 1px 6px rgba(167,139,250,0.5))" : "none" }}>{emoji}</span>
                       <span style={{
                         fontFamily: "var(--font-body, sans-serif)", fontSize: 11, fontWeight: 600,
-                        color: isSelected ? "#a78bfa" : "#aaaacc", lineHeight: 1.3, textAlign: "left",
-                      }}>{label}</span>
+                        color: isSelected ? "#a78bfa" : comingSoon ? "#555566" : "#aaaacc",
+                        lineHeight: 1.3, textAlign: "left",
+                      }}>{label}{comingSoon ? " (soon)" : ""}</span>
                     </button>
                   );
                 })}
