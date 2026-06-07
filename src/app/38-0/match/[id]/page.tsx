@@ -1,15 +1,15 @@
 /**
  * /38-0/match/[id] — public, server-rendered H2H result. Reads the snapshotted
- * match from draft_matches and sets og:image → /api/38-0/og so pasted links
+ * match from draft_matches and sets og:image → /api/draft/og so pasted links
  * unfurl as a broadcast graphic (the growth loop). Framed from the challenger's
  * perspective (the sharer). Fails soft if the match isn't found / DB not live.
  */
 
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Pitch } from "@/components/38-0/Pitch";
-import { createDraftDb, type TeamSnapshot } from "@/lib/38-0/server";
-import { tierColor } from "@/lib/38-0/ui";
+import { Pitch } from "@/components/draft/Pitch";
+import { createDraftDb, type TeamSnapshot } from "@/lib/draft/server";
+import { tierColor } from "@/lib/draft/ui";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://yourscore.app";
 
@@ -59,7 +59,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     opp: m.opponent_team.name,
     oppStr: String(m.opponent_strength),
   });
-  const image = `${BASE}/api/38-0/og?${og.toString()}`;
+  const image = `${BASE}/api/draft/og?${og.toString()}`;
   const title = `${m.challenger_team.name} ${challengerWon ? "beat" : "lost to"} ${m.opponent_team.name} — Draft XI`;
   const description = `${m.challenger_strength} vs ${m.opponent_strength}. Build your all-time Premier League XI and take them on.`;
   return {

@@ -9,9 +9,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { loadTeam, isComplete, seasonSeed, saveLastSeason, loadLastSeason, type LocalTeam } from "@/lib/38-0/local";
-import { leagueOpponents } from "@/lib/38-0/pool";
-import { simulateSeason, seasonNarrative, type SeasonResult } from "@/lib/38-0/season";
+import { loadTeam, isComplete, seasonSeed, saveLastSeason, loadLastSeason, type LocalTeam } from "@/lib/draft/local";
+import { leagueOpponents } from "@/lib/draft/pool";
+import { simulateSeason, seasonNarrative, type SeasonResult } from "@/lib/draft/season";
 
 function ordinal(n: number): string {
   const s = ["th", "st", "nd", "rd"], v = n % 100;
@@ -141,7 +141,7 @@ export default function SeasonSim() {
       // share, and copy the unfurling link too.
       let file: File | null = null;
       try {
-        const res = await fetch(`/api/38-0/season-og?${params.toString()}`);
+        const res = await fetch(`/api/draft/season-og?${params.toString()}`);
         if (res.ok) file = new File([await res.blob()], "draft-xi-season.png", { type: "image/png" });
       } catch { /* network — fall through to link */ }
 
@@ -176,10 +176,20 @@ export default function SeasonSim() {
     <div className="min-h-[100dvh] pb-16" style={{ background: "#0a0a0f" }}>
       <div className="max-w-lg mx-auto px-5 pt-safe">
         <div className="pt-8 text-center">
-          <div className="font-display tracking-wide leading-none" style={{ fontSize: r.invincible ? 64 : 26, color: accent }}>
+          {/* The season record is the headline scoreline */}
+          <div className="font-body" style={{ fontSize: 12, color: "#8888aa", letterSpacing: 1.5 }}>SEASON RECORD</div>
+          <div className="flex items-stretch justify-center gap-2 mt-2">
+            {([["WINS", r.wins, "#00ff87"], ["DRAWS", r.draws, "#ffb800"], ["LOSSES", r.losses, "#ff4757"]] as [string, number, string][]).map(([k, v, c]) => (
+              <div key={k} className="flex-1 rounded-2xl py-4" style={{ background: "#12121e", border: `1px solid ${c}40` }}>
+                <div className="font-display" style={{ fontSize: 60, lineHeight: 1, color: c }}>{v}</div>
+                <div className="font-body mt-1.5" style={{ fontSize: 12, color: "#8888aa", letterSpacing: 1 }}>{k}</div>
+              </div>
+            ))}
+          </div>
+          <div className="font-display tracking-wide leading-none mt-5" style={{ fontSize: r.invincible ? 48 : 24, color: accent }}>
             {r.invincible ? "INVINCIBLE" : narr.headline}
           </div>
-          <p className="font-body mt-3" style={{ fontSize: 14, color: "#cfcfe6" }}>{narr.body}</p>
+          <p className="font-body mt-2" style={{ fontSize: 14, color: "#cfcfe6" }}>{narr.body}</p>
         </div>
 
         {/* finished vs projected */}
@@ -197,15 +207,7 @@ export default function SeasonSim() {
           </div>
         </div>
 
-        {/* record */}
-        <div className="grid grid-cols-3 gap-3 mt-3">
-          {[["WINS", r.wins, "#00ff87"], ["DRAWS", r.draws, "#ffb800"], ["LOSSES", r.losses, "#ff4757"]].map(([k, v, c]) => (
-            <div key={k as string} className="rounded-2xl py-3 text-center" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}>
-              <div className="font-display" style={{ fontSize: 28, color: c as string }}>{v as number}</div>
-              <div className="font-body" style={{ fontSize: 10, color: "#8888aa" }}>{k as string}</div>
-            </div>
-          ))}
-        </div>
+        {/* points / goals */}
         <div className="grid grid-cols-3 gap-3 mt-3">
           {[["POINTS", r.points, "#fff"], ["GOALS FOR", r.gf, "#00ff87"], ["GOALS AGAINST", r.ga, "#ff4757"]].map(([k, v, c]) => (
             <div key={k as string} className="rounded-2xl py-3 text-center" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}>

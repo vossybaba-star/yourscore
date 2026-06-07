@@ -8,17 +8,17 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Pitch } from "@/components/38-0/Pitch";
-import { spin, allBuckets, type Spin } from "@/lib/38-0/pool";
+import { Pitch } from "@/components/draft/Pitch";
+import { spin, allBuckets, type Spin } from "@/lib/draft/pool";
 import {
   loadTeam, saveTeam, usedPlayerIds, usedPlayerNames, placePlayer,
   recordWin, recordLoss, saveLastMatch, loadMatchup, clearMatchup,
   type LocalTeam, type Matchup,
-} from "@/lib/38-0/local";
-import { slotsFor } from "@/lib/38-0/formations";
-import { posCategory } from "@/lib/38-0/score";
-import { tierColor } from "@/lib/38-0/ui";
-import type { PlayerSeason } from "@/lib/38-0/types";
+} from "@/lib/draft/local";
+import { slotsFor } from "@/lib/draft/formations";
+import { posCategory } from "@/lib/draft/score";
+import { tierColor } from "@/lib/draft/ui";
+import type { PlayerSeason } from "@/lib/draft/types";
 
 const MAX_SWAPS = 3;
 const MAX_SPINS = 2; // a player can re-spin at most twice before they must pick
@@ -88,10 +88,10 @@ export default function PreMatch() {
     setPlaying(true); setErr(null);
     try {
       const squad = team.squad.map((p) => ({ slot: p.slot, player_season_id: p.player_season_id }));
-      const saveRes = await fetch("/api/38-0/team", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ formation: team.formation, squad }) });
+      const saveRes = await fetch("/api/draft/team", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ formation: team.formation, squad }) });
       if (!saveRes.ok) { setErr((await saveRes.json().catch(() => ({}))).error ?? "Could not save team"); setPlaying(false); return; }
 
-      const r = await fetch("/api/38-0/match", {
+      const r = await fetch("/api/draft/match", {
         method: "POST", headers: { "content-type": "application/json" },
         body: JSON.stringify({ stage: "resolve", opponentId: matchup.opponentId, findId: matchup.findId, botFormation: matchup.botFormation, leagueId: matchup.leagueId ?? undefined }),
       });

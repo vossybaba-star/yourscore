@@ -9,9 +9,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Pitch } from "@/components/38-0/Pitch";
-import { loadLastMatch, type LocalMatch } from "@/lib/38-0/local";
-import { tierColor } from "@/lib/38-0/ui";
+import { Pitch } from "@/components/draft/Pitch";
+import { loadLastMatch, type LocalMatch } from "@/lib/draft/local";
+import { tierColor } from "@/lib/draft/ui";
 
 export default function MatchResult() {
   const router = useRouter();
@@ -25,7 +25,7 @@ export default function MatchResult() {
   }, [router]);
 
   function ogUrl(): string {
-    if (!m) return "/api/38-0/og";
+    if (!m) return "/api/draft/og";
     const won = m.winner === "you";
     const params = new URLSearchParams({
       result: won ? "win" : "loss",
@@ -36,7 +36,7 @@ export default function MatchResult() {
       opp: m.opp.name,
       oppStr: String(m.opp.strength),
     });
-    return `/api/38-0/og?${params.toString()}`;
+    return `/api/draft/og?${params.toString()}`;
   }
 
   async function share() {

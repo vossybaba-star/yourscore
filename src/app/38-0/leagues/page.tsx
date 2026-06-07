@@ -24,14 +24,14 @@ export default function Leagues() {
 
   useEffect(() => {
     if (!user) return;
-    fetch("/api/38-0/league").then((r) => r.json()).then((d) => setLeagues(d.leagues ?? [])).catch(() => {});
+    fetch("/api/draft/league").then((r) => r.json()).then((d) => setLeagues(d.leagues ?? [])).catch(() => {});
   }, [user]);
 
   async function create() {
     if (!name.trim() || busy) return;
     setBusy(true); setErr(null);
     try {
-      const r = await fetch("/api/38-0/league", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name }) });
+      const r = await fetch("/api/draft/league", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name }) });
       const d = await r.json();
       if (!r.ok) { setErr(d.error ?? "Could not create"); setBusy(false); return; }
       router.push(`/38-0/league/${d.code}`);
@@ -42,7 +42,7 @@ export default function Leagues() {
     if (!code.trim() || busy) return;
     setBusy(true); setErr(null);
     try {
-      const r = await fetch("/api/38-0/league/join", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ code }) });
+      const r = await fetch("/api/draft/league/join", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ code }) });
       const d = await r.json();
       if (!r.ok) { setErr(d.error ?? "Could not join"); setBusy(false); return; }
       router.push(`/38-0/league/${d.code}`);

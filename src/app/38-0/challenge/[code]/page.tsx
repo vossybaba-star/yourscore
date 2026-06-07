@@ -8,10 +8,10 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { Pitch } from "@/components/38-0/Pitch";
+import { Pitch } from "@/components/draft/Pitch";
 import { useUser } from "@/hooks/useUser";
-import { loadTeam, saveTeam, isComplete, recordWin, recordLoss, saveLastMatch } from "@/lib/38-0/local";
-import type { Formation, PlacedPlayer, Projected } from "@/lib/38-0/types";
+import { loadTeam, saveTeam, isComplete, recordWin, recordLoss, saveLastMatch } from "@/lib/draft/local";
+import type { Formation, PlacedPlayer, Projected } from "@/lib/draft/types";
 
 type Info = {
   ready?: boolean;
@@ -36,7 +36,7 @@ export default function AcceptChallenge() {
   const [err, setErr] = useState<string | null>(null);
 
   const load = useCallback(() => {
-    fetch(`/api/38-0/challenge/${code}`).then((r) => { setStatus(r.status); return r.json(); }).then(setInfo).catch(() => setInfo({ ready: false }));
+    fetch(`/api/draft/challenge/${code}`).then((r) => { setStatus(r.status); return r.json(); }).then(setInfo).catch(() => setInfo({ ready: false }));
   }, [code]);
   useEffect(() => { load(); }, [load]);
 
@@ -48,10 +48,10 @@ export default function AcceptChallenge() {
     setBusy(true); setErr(null);
     try {
       const squad = team.squad.map((p) => ({ slot: p.slot, player_season_id: p.player_season_id }));
-      const saveRes = await fetch("/api/38-0/team", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ formation: team.formation, squad }) });
+      const saveRes = await fetch("/api/draft/team", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ formation: team.formation, squad }) });
       if (!saveRes.ok) { setErr((await saveRes.json().catch(() => ({}))).error ?? "Could not save team"); setBusy(false); return; }
 
-      const r = await fetch(`/api/38-0/challenge/${code}`, { method: "POST", headers: { "content-type": "application/json" }, body: "{}" });
+      const r = await fetch(`/api/draft/challenge/${code}`, { method: "POST", headers: { "content-type": "application/json" }, body: "{}" });
       const m = await r.json();
       if (!r.ok) { setErr(m.error ?? "Could not accept"); setBusy(false); return; }
 

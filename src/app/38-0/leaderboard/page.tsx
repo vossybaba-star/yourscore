@@ -29,7 +29,7 @@ export default function Leaderboard() {
   useEffect(() => {
     let alive = true;
     setLoading(true);
-    fetch(`/api/38-0/leaderboard?metric=${metric}`)
+    fetch(`/api/draft/leaderboard?metric=${metric}`)
       .then((r) => r.json())
       .then((d) => { if (alive) { setRows(d.rows ?? []); setReady(d.ready !== false); } })
       .catch(() => { if (alive) { setRows([]); setReady(false); } })

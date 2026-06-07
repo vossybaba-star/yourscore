@@ -1,7 +1,7 @@
 /**
  * /38-0/season/share — public, server-rendered landing for a shared season result.
  * Stateless: the result is encoded in the query string (computed client-side), so
- * generateMetadata sets og:image → /api/38-0/season-og and pasted links unfurl as
+ * generateMetadata sets og:image → /api/draft/season-og and pasted links unfurl as
  * the broadcast graphic. A clean CTA invites the viewer to build their own XI.
  */
 
@@ -24,7 +24,7 @@ function ogUrl(sp: SP): string {
   const keys = ["pos", "pts", "w", "d", "l", "gf", "ga", "head", "verdict", "boot", "inv", "formation"];
   const params = new URLSearchParams();
   for (const k of keys) { const v = one(sp[k]); if (v) params.set(k, v); }
-  return `${BASE}/api/38-0/season-og?${params.toString()}`;
+  return `${BASE}/api/draft/season-og?${params.toString()}`;
 }
 
 export function generateMetadata({ searchParams }: { searchParams: SP }): Metadata {

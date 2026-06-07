@@ -11,16 +11,16 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Pitch } from "@/components/38-0/Pitch";
-import { spin, allBuckets, type Spin } from "@/lib/38-0/pool";
+import { Pitch } from "@/components/draft/Pitch";
+import { spin, allBuckets, type Spin } from "@/lib/draft/pool";
 import {
   loadTeam, saveTeam, openSlots, isComplete, usedPlayerIds, usedPlayerNames, placePlayer,
   type LocalTeam,
-} from "@/lib/38-0/local";
-import { slotsFor } from "@/lib/38-0/formations";
-import { canPlay, fitMultiplier, lineRatings, posCategory, CATEGORY_COLOR } from "@/lib/38-0/score";
+} from "@/lib/draft/local";
+import { slotsFor } from "@/lib/draft/formations";
+import { canPlay, fitMultiplier, lineRatings, posCategory, CATEGORY_COLOR } from "@/lib/draft/score";
 import { getTeamBadgeUrlSync } from "@/lib/teamImages";
-import type { PlayerSeason, Position, Slot } from "@/lib/38-0/types";
+import type { PlayerSeason, Position, Slot } from "@/lib/draft/types";
 
 // Distinct slot-positions in this formation a player can legally fill, best fit first.
 function eligiblePositions(player: PlayerSeason, formation: LocalTeam["formation"]): Position[] {

@@ -10,18 +10,18 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Pitch } from "@/components/38-0/Pitch";
+import { Pitch } from "@/components/draft/Pitch";
 import { BottomNav } from "@/components/ui/BottomNav";
 import {
   loadTeam, saveTeam, isComplete, recordWin, recordLoss, saveLastMatch,
   compatibleFormations, reslot, seasonSeed, loadLastSeason, saveMatchup, type LocalTeam,
-} from "@/lib/38-0/local";
-import type { Formation } from "@/lib/38-0/types";
-import { makeOpponent } from "@/lib/38-0/opponent";
-import { resolveH2H, seededRng, tierFor } from "@/lib/38-0/score";
-import { tierColor, TIER_TAGLINE, strengthPct } from "@/lib/38-0/ui";
-import { preSeasonOdds } from "@/lib/38-0/season";
-import { leagueOpponents } from "@/lib/38-0/pool";
+} from "@/lib/draft/local";
+import type { Formation } from "@/lib/draft/types";
+import { makeOpponent } from "@/lib/draft/opponent";
+import { resolveH2H, seededRng, tierFor } from "@/lib/draft/score";
+import { tierColor, TIER_TAGLINE, strengthPct } from "@/lib/draft/ui";
+import { preSeasonOdds } from "@/lib/draft/season";
+import { leagueOpponents } from "@/lib/draft/pool";
 import { useUser } from "@/hooks/useUser";
 
 export default function TeamScreen() {
@@ -76,13 +76,13 @@ export default function TeamScreen() {
     setErr(null);
     try {
       const squad = team.squad.map((p) => ({ slot: p.slot, player_season_id: p.player_season_id }));
-      const saveRes = await fetch("/api/38-0/team", {
+      const saveRes = await fetch("/api/draft/team", {
         method: "POST", headers: { "content-type": "application/json" },
         body: JSON.stringify({ formation: team.formation, squad }),
       });
       if (!saveRes.ok) { setErr((await saveRes.json().catch(() => ({}))).error ?? "Could not save team"); setMatching(false); return; }
 
-      const res = await fetch("/api/38-0/match", {
+      const res = await fetch("/api/draft/match", {
         method: "POST", headers: { "content-type": "application/json" },
         body: JSON.stringify({ stage: "find" }),
       });
@@ -105,7 +105,7 @@ export default function TeamScreen() {
     setSaving(true); setErr(null);
     try {
       const squad = team.squad.map((p) => ({ slot: p.slot, player_season_id: p.player_season_id }));
-      const r = await fetch("/api/38-0/team", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ formation: team.formation, squad }) });
+      const r = await fetch("/api/draft/team", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ formation: team.formation, squad }) });
       if (!r.ok) { setErr((await r.json().catch(() => ({}))).error ?? "Could not save"); setSaving(false); return; }
       setSaved(true); setSaving(false);
     } catch { setErr("Network error"); setSaving(false); }
@@ -118,9 +118,9 @@ export default function TeamScreen() {
     setCreatingChallenge(true); setErr(null);
     try {
       const squad = team.squad.map((p) => ({ slot: p.slot, player_season_id: p.player_season_id }));
-      const saveRes = await fetch("/api/38-0/team", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ formation: team.formation, squad }) });
+      const saveRes = await fetch("/api/draft/team", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ formation: team.formation, squad }) });
       if (!saveRes.ok) { setErr((await saveRes.json().catch(() => ({}))).error ?? "Could not save team"); setCreatingChallenge(false); return; }
-      const r = await fetch("/api/38-0/challenge", { method: "POST", headers: { "content-type": "application/json" }, body: "{}" });
+      const r = await fetch("/api/draft/challenge", { method: "POST", headers: { "content-type": "application/json" }, body: "{}" });
       const d = await r.json();
       if (!r.ok) { setErr(d.error ?? "Could not create challenge"); setCreatingChallenge(false); return; }
       setChallengeCode(d.code);

@@ -9,12 +9,12 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BottomNav } from "@/components/ui/BottomNav";
-import { Pitch } from "@/components/38-0/Pitch";
-import { FORMATIONS } from "@/lib/38-0/types";
-import type { Formation } from "@/lib/38-0/types";
-import { FORMATION_NOTE } from "@/lib/38-0/formations";
-import { emptyTeam, loadTeam, saveTeam, isComplete, type LocalTeam, type DraftMode } from "@/lib/38-0/local";
-import { POOL_META } from "@/lib/38-0/pool";
+import { Pitch } from "@/components/draft/Pitch";
+import { FORMATIONS } from "@/lib/draft/types";
+import type { Formation } from "@/lib/draft/types";
+import { FORMATION_NOTE } from "@/lib/draft/formations";
+import { emptyTeam, loadTeam, saveTeam, isComplete, type LocalTeam, type DraftMode } from "@/lib/draft/local";
+import { POOL_META } from "@/lib/draft/pool";
 
 export default function DraftHome() {
   const router = useRouter();

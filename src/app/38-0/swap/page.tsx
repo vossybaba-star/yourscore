@@ -8,15 +8,15 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Pitch } from "@/components/38-0/Pitch";
-import { spin, allBuckets, type Spin } from "@/lib/38-0/pool";
+import { Pitch } from "@/components/draft/Pitch";
+import { spin, allBuckets, type Spin } from "@/lib/draft/pool";
 import {
   loadTeam, saveTeam, isComplete, usedPlayerIds, usedPlayerNames, clearSlot, placePlayer, fittingOpenSlots,
   type LocalTeam,
-} from "@/lib/38-0/local";
-import { slotsFor } from "@/lib/38-0/formations";
+} from "@/lib/draft/local";
+import { slotsFor } from "@/lib/draft/formations";
 import { getTeamBadgeUrlSync } from "@/lib/teamImages";
-import type { PlayerSeason } from "@/lib/38-0/types";
+import type { PlayerSeason } from "@/lib/draft/types";
 
 export default function SwapScreen() {
   const router = useRouter();
