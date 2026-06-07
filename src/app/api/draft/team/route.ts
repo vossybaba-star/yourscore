@@ -27,7 +27,13 @@ export async function POST(req: NextRequest) {
   try {
     validated = validateAndScore(body.formation, body.squad);
   } catch (e) {
-    return NextResponse.json({ error: e instanceof Error ? e.message : "Invalid team" }, { status: 400 });
+    const msg = e instanceof Error ? e.message : "Invalid team";
+    // A team referencing players that no longer exist was built on an older
+    // player database — give a clear "rebuild" message instead of internals.
+    const friendly = /^Unknown player/.test(msg)
+      ? "Your team is out of date — rebuild it to play."
+      : msg;
+    return NextResponse.json({ error: friendly, stale: /^Unknown player/.test(msg) }, { status: 400 });
   }
 
   const db = createDraftDb();

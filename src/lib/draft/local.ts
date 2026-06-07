@@ -10,6 +10,7 @@
 import { FORMATIONS, type Formation, type PlacedPlayer, type PlayerSeason, type Projected, type Slot, type TeamStatus } from "./types";
 import { slotsFor } from "./formations";
 import { fitMultiplier, canPlay, posCategory, scoreTeam, projectSeason, spineWeight, type PosCategory } from "./score";
+import { getPlayer } from "./pool";
 import type { SeasonResult } from "./season";
 
 const STORAGE_KEY = "draftxi:team:v1";
@@ -191,7 +192,14 @@ export function loadTeam(): LocalTeam | null {
     const t = JSON.parse(raw) as LocalTeam;
     if (!t.formation || !Array.isArray(t.squad)) return null;
     if (t.mode !== "expert") t.mode = "classic";
-    return recompute(t);
+    // Drop any players whose id no longer exists in the current player database
+    // (e.g. a team saved before a data update). This keeps us from ever sending
+    // unknown ids to the server — the XI just becomes incomplete and the player
+    // is prompted to re-draft the empty slots instead of hitting a cryptic error.
+    const known = t.squad.filter((p) => getPlayer(p.player_season_id));
+    const cleaned = recompute({ ...t, squad: known });
+    if (known.length !== t.squad.length) saveTeam(cleaned); // persist the migration
+    return cleaned;
   } catch {
     return null;
   }
