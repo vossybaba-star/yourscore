@@ -210,7 +210,7 @@ export default function PlayPage() {
     : packs.filter(p => p.type === "club");
 
   return (
-    <div className="bg-bg" style={{ height: "100dvh", overflowY: "auto", overscrollBehavior: "none", paddingBottom: "calc(72px + env(safe-area-inset-bottom, 0px))" }}>
+    <div className="min-h-screen bg-bg" style={{ paddingBottom: "calc(72px + env(safe-area-inset-bottom, 0px))" }}>
 
       {/* Sticky header */}
       <div className="sticky top-0 z-20 pt-safe"

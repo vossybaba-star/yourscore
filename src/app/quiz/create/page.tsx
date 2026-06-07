@@ -173,7 +173,7 @@ export default function CreateQuizPage() {
   const canGenerate = !!selectedEntity && !!focusType && !generating;
 
   return (
-    <div className="bg-bg" style={{ height: "100dvh", overflowY: "auto", overscrollBehavior: "none", paddingBottom: 120 }}>
+    <div className="bg-bg min-h-screen" style={{ paddingBottom: 120 }}>
       <style>{`
         @keyframes stepIn {
           from { opacity: 0; transform: translateY(16px); }

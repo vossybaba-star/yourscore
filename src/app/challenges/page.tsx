@@ -290,8 +290,8 @@ export default function ChallengesPage() {
 
   return (
     <div
-      className="bg-bg"
-      style={{ height: "100dvh", overflowY: "auto", overscrollBehavior: "none", paddingBottom: "calc(72px + env(safe-area-inset-bottom, 0px))" }}
+      className="min-h-screen bg-bg"
+      style={{ paddingBottom: "calc(72px + env(safe-area-inset-bottom, 0px))" }}
     >
       {/* Sticky header */}
       <div
