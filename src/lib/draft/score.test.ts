@@ -10,7 +10,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  fitMultiplier, canPlay, scoreTeam, projectSeason, tierFor,
+  fitMultiplier, canPlay, scoreTeam, projectSeason,
   winProbability, resolveH2H, seededRng, chemistry,
 } from "./score";
 import { slotsFor } from "./formations";
