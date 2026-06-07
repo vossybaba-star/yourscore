@@ -9,7 +9,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { loadTeam, isComplete, type LocalTeam } from "@/lib/draft/local";
+import { loadTeam, isComplete, seasonSeed, saveLastSeason, loadLastSeason, type LocalTeam } from "@/lib/draft/local";
 import { leagueOpponents } from "@/lib/draft/pool";
 import { simulateSeason, seasonNarrative, type SeasonResult } from "@/lib/draft/season";
 
@@ -32,26 +32,37 @@ export default function SeasonSim() {
     setTeam(t);
   }, [router]);
 
+  // Seed by the squad so the season is stable: same XI → same result every view.
+  const seed = team ? seasonSeed(team) : "";
   const result: SeasonResult | null = useMemo(
-    () => (team ? simulateSeason(team.squad, team.formation, team.strength, String(team.updatedAt), leagueOpponents()) : null),
-    [team]
+    () => (team ? simulateSeason(team.squad, team.formation, team.strength, seed, leagueOpponents()) : null),
+    [team, seed]
   );
+  // If we've already simulated this exact XI, skip straight to the result.
+  const cached = !!team && loadLastSeason()?.seed === seed;
 
   useEffect(() => {
     if (!result) return;
+    if (cached) { setShown(38); setDone(true); return; }
     timer.current = setInterval(() => {
       setShown((n) => {
-        if (n >= 38) { if (timer.current) clearInterval(timer.current); setDone(true); return 38; }
+        if (n >= 38) {
+          if (timer.current) clearInterval(timer.current);
+          setDone(true);
+          saveLastSeason(seed, result);
+          return 38;
+        }
         return n + 1;
       });
     }, 90);
     return () => { if (timer.current) clearInterval(timer.current); };
-  }, [result]);
+  }, [result, cached, seed]);
 
   function skip() {
     if (timer.current) clearInterval(timer.current);
     setShown(38);
     setDone(true);
+    if (result) saveLastSeason(seed, result);
   }
 
   if (!team || !result) {

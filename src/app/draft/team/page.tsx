@@ -14,7 +14,7 @@ import { Pitch } from "@/components/draft/Pitch";
 import { BottomNav } from "@/components/ui/BottomNav";
 import {
   loadTeam, saveTeam, isComplete, recordWin, recordLoss, saveLastMatch,
-  compatibleFormations, reslot, type LocalTeam,
+  compatibleFormations, reslot, seasonSeed, loadLastSeason, saveMatchup, type LocalTeam,
 } from "@/lib/draft/local";
 import type { Formation } from "@/lib/draft/types";
 import { makeOpponent } from "@/lib/draft/opponent";
@@ -43,7 +43,7 @@ export default function TeamScreen() {
   }, [router]);
 
   function quickMatch() {
-    if (!team || matching || team.status === "stale") return;
+    if (!team || matching) return;
     setMatching(true);
     const matchId = `local-${team.updatedAt}-${Math.floor(Math.random() * 1e6)}`;
     const opp = makeOpponent(team.formation, team.strength);
@@ -66,10 +66,11 @@ export default function TeamScreen() {
     setTimeout(() => router.push("/draft/match/result"), 450);
   }
 
-  // Ranked: save the XI to the cloud (server recomputes Strength), resolve a real
-  // H2H against a random active opponent (bot fallback), and feed the leaderboard.
+  // Ranked: save the XI to the cloud (server recomputes Strength), matchmake against
+  // a real active opponent (bot fallback), then go to the pre-match preview where you
+  // see their XI and can swap up to 3 before kick-off. Resolution happens there.
   async function rankedMatch() {
-    if (!team || matching || team.status === "stale") return;
+    if (!team || matching) return;
     if (!user) { router.push("/auth/sign-in"); return; }
     setMatching(true);
     setErr(null);
@@ -82,22 +83,14 @@ export default function TeamScreen() {
       if (!saveRes.ok) { setErr((await saveRes.json().catch(() => ({}))).error ?? "Could not save team"); setMatching(false); return; }
 
       const res = await fetch("/api/draft/match", {
-        method: "POST", headers: { "content-type": "application/json" }, body: "{}",
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ stage: "find" }),
       });
       if (!res.ok) { setErr((await res.json().catch(() => ({}))).error ?? "Match failed"); setMatching(false); return; }
       const m = await res.json();
 
-      saveLastMatch({
-        id: m.matchId,
-        you: { name: "You", formation: m.you.formation, squad: m.you.squad, strength: m.you.strength, projected: m.you.projected },
-        opp: { name: m.opp.name, formation: m.opp.formation, squad: m.opp.squad, strength: m.opp.strength, projected: m.opp.projected },
-        winner: m.youWon ? "you" : "opp",
-        margin: m.margin,
-        playedAt: Date.now(),
-      });
-      const next = m.youWon ? recordWin(team) : recordLoss(team);
-      saveTeam(next);
-      router.push("/draft/match/result");
+      saveMatchup({ opponentId: m.opponentId, findId: m.findId, botFormation: m.botFormation, opp: m.opp });
+      router.push("/draft/match/prematch");
     } catch {
       setErr("Network error — try again");
       setMatching(false);
@@ -156,7 +149,10 @@ export default function TeamScreen() {
   const odds = preSeasonOdds(team.squad, team.strength, leagueOpponents());
   const tier = tierFor(odds.expectedPoints);
   const tc = tierColor(tier);
-  const stale = team.status === "stale";
+  // The last simulated season for THIS exact XI (so returning shows the result).
+  const lastSeason = loadLastSeason();
+  const hasLastSeason = !!lastSeason && lastSeason.seed === seasonSeed(team);
+  const stale = team.status === "stale"; // legacy flag only — teams stay playable now
 
   return (
     <div className="min-h-[100dvh] pb-28" style={{ background: "#0a0a0f" }}>
@@ -213,7 +209,7 @@ export default function TeamScreen() {
         )}
 
         {/* Formation switcher — reshape your XI before facing others (same lines) */}
-        {!stale && (() => {
+        {(() => {
           const compat = compatibleFormations(team.formation);
           if (compat.length < 2) return null;
           return (
@@ -236,7 +232,7 @@ export default function TeamScreen() {
         <Pitch formation={team.formation} squad={team.squad} compact />
 
         {/* Bookies' pre-season odds — same projection as the banner + the sim */}
-        {!stale && (() => {
+        {(() => {
           const bands: [string, number, string][] = [
             ["Win the league", odds.winLeague, "#ffb800"],
             ["Top 4", odds.top4, "#00ff87"],
@@ -277,15 +273,32 @@ export default function TeamScreen() {
           );
         })()}
 
-        {!stale && (
-          <button onClick={() => router.push("/draft/season")}
-            className="w-full mt-4 rounded-2xl py-5 font-display tracking-wide active:scale-[0.98] transition-transform"
-            style={{ background: "#00ff87", color: "#062013", fontSize: 28 }}>
-            ⚽ SIMULATE SEASON →
-          </button>
+        {/* Last simulated season for this XI (shown on return) */}
+        {hasLastSeason && lastSeason && (
+          <Link href="/draft/season" className="block w-full mt-4 rounded-2xl p-4 active:scale-[0.98] transition-transform"
+            style={{ background: "#0d0d14", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="font-body" style={{ fontSize: 11, color: "#8888aa", letterSpacing: 1 }}>LAST SEASON</div>
+                <div className="font-display tracking-wide" style={{ fontSize: 22, color: tierColor(tier) }}>
+                  Finished {ordinal(lastSeason.result.position)} · {lastSeason.result.points} pts
+                </div>
+                <div className="font-body" style={{ fontSize: 12, color: "#8888aa" }}>
+                  {lastSeason.result.wins}W {lastSeason.result.draws}D {lastSeason.result.losses}L · {lastSeason.result.verdict}
+                </div>
+              </div>
+              <span className="font-display" style={{ fontSize: 22, color: "#8888aa" }}>→</span>
+            </div>
+          </Link>
         )}
 
-        {/* secondary actions */}
+        <button onClick={() => router.push("/draft/season")}
+          className="w-full mt-4 rounded-2xl py-5 font-display tracking-wide active:scale-[0.98] transition-transform"
+          style={{ background: hasLastSeason ? "rgba(0,255,135,0.12)" : "#00ff87", color: hasLastSeason ? "#00ff87" : "#062013", fontSize: hasLastSeason ? 22 : 28, border: hasLastSeason ? "1px solid rgba(0,255,135,0.4)" : "none" }}>
+          {hasLastSeason ? "📊 VIEW SEASON RESULT →" : "⚽ SIMULATE SEASON →"}
+        </button>
+
+        {/* play actions — always available */}
         <div className="mt-3 space-y-3">
           {err && (
             <div className="rounded-xl px-4 py-2 font-body text-center" style={{ fontSize: 13, color: "#ff4757", background: "rgba(255,71,87,0.1)" }}>
@@ -293,20 +306,7 @@ export default function TeamScreen() {
             </div>
           )}
 
-          {stale ? (
-            <>
-              <div className="rounded-2xl p-4 text-center" style={{ background: "rgba(255,71,87,0.08)", border: "1px solid rgba(255,71,87,0.3)" }}>
-                <div className="font-display tracking-wide" style={{ fontSize: 20, color: "#ff4757" }}>TEAM IS STALE</div>
-                <div className="font-body mt-1" style={{ fontSize: 13, color: "#cfcfe6" }}>
-                  You lost — no swaps. Rebuild a full new XI to challenge again.
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <button onClick={() => router.push("/draft")} className="rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "#ff4757", color: "#fff", fontSize: 20 }}>REBUILD XI</button>
-                <Link href="/draft/leaderboard" className="rounded-2xl py-4 text-center font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "rgba(0,255,135,0.08)", color: "#00ff87", fontSize: 18, border: "1px solid rgba(0,255,135,0.25)" }}>🏆 LEADERBOARD</Link>
-              </div>
-            </>
-          ) : (
+          {(
             <>
               {/* Save (guests → sign up). Swap reward when earned. */}
               <button onClick={saveToCloud} disabled={saving || saved}
@@ -368,7 +368,7 @@ export default function TeamScreen() {
 
         <p className="font-body text-center mt-5" style={{ color: "#8888aa", fontSize: 12 }}>
           {user
-            ? "Ranked wins climb the global leaderboard. Lose and your team goes stale — rebuild to play on."
+            ? "Ranked wins climb the global leaderboard. Keep playing — tweak your XI before each match."
             : "Sign in to play ranked matchmaking & climb the global leaderboard."}
         </p>
       </div>

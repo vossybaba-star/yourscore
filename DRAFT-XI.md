@@ -76,12 +76,13 @@ soon") until the tables exist, so nothing crashes today.
 Team screen now shows **Ranked Match** (signed-in, feeds the leaderboard) vs
 **Quick Match** (guest/practice, local), plus a Leaderboard link.
 
-### To activate (your steps — schema changes need your say-so)
-1. Apply `supabase/migrations/14_draft_xi.sql` to the Supabase project.
-2. (Optional but recommended) regenerate `src/types/database.ts` from the live DB,
-   then delete `src/types/draft-db.ts` and point imports at `database.ts`.
-3. Schedule `GET /api/draft/cron/reset` at 00:00 UTC (Vercel cron / pg_cron) with
-   the `CRON_SECRET` bearer — same pattern as `/api/cron/reclassify`.
+### Activation — DONE (applied to the live Supabase project)
+1. ✅ `supabase/migrations/14_draft_xi.sql` applied — 6 tables + RLS + functions.
+2. ✅ Daily leaderboard reset scheduled in Postgres via **pg_cron**
+   (`cron.schedule('draft-daily-reset','0 0 * * *', select public.draft_reset_daily())`)
+   — no Vercel `CRON_SECRET` needed; `/api/draft/cron/reset` remains as a manual trigger.
+3. (Optional) regenerate `src/types/database.ts` from the live DB, then delete
+   `src/types/draft-db.ts` and point imports at `database.ts`.
 
 ## Custom leagues — BUILT (dormant until migration), fails soft
 

@@ -58,7 +58,7 @@ export async function applyTeamResult(
     .from("draft_teams")
     .update({
       win_streak: won ? (t.win_streak ?? 0) + 1 : 0,
-      status: won ? "active" : "stale",
+      status: "active", // teams stay playable (no rebuild-on-loss penalty)
       updated_at: new Date().toISOString(),
     })
     .eq("user_id", userId);

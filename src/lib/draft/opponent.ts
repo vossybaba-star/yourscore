@@ -6,6 +6,7 @@
 
 import type { Formation, PlacedPlayer } from "./types";
 import { spin } from "./pool";
+import { seededRng } from "./score";
 import { emptyTeam, openSlots, bestOpenSlot, placePlayer, isComplete, usedPlayerIds, usedPlayerNames, type LocalTeam } from "./local";
 
 const OPPONENT_NAMES = [
@@ -51,6 +52,15 @@ export function makeOpponent(formation: Formation, targetStrength: number, rng: 
   }
   const name = OPPONENT_NAMES[Math.floor(rng() * OPPONENT_NAMES.length)];
   return { name, team: best! };
+}
+
+/** A fully deterministic bot from a string seed — so the opponent previewed before
+ *  a match is exactly the one resolved against (the seed is fixed at matchmaking). */
+export function seededBot(formation: Formation, seed: string): Opponent {
+  const rng = seededRng(seed);
+  const team = autoDraft(formation, rng);
+  const name = OPPONENT_NAMES[Math.floor(rng() * OPPONENT_NAMES.length)];
+  return { name, team };
 }
 
 export type { PlacedPlayer };

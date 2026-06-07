@@ -10,6 +10,7 @@
 import { FORMATIONS, type Formation, type PlacedPlayer, type PlayerSeason, type Projected, type Slot, type TeamStatus } from "./types";
 import { slotsFor } from "./formations";
 import { fitMultiplier, canPlay, posCategory, scoreTeam, projectSeason, spineWeight, type PosCategory } from "./score";
+import type { SeasonResult } from "./season";
 
 const STORAGE_KEY = "draftxi:team:v1";
 
@@ -45,14 +46,15 @@ export function emptyTeam(formation: Formation, mode: DraftMode = "classic"): Lo
   };
 }
 
-/** Post-win: streak up, one swap unlocked, stays active & challengeable. */
+/** Post-win: streak up. The team stays active and keeps playing (no rebuild
+ *  penalty — players tweak their XI via the pre-match swap instead). */
 export function recordWin(team: LocalTeam): LocalTeam {
-  return { ...team, winStreak: team.winStreak + 1, swapAvailable: true, status: "active", updatedAt: Date.now() };
+  return { ...team, winStreak: team.winStreak + 1, status: "active", updatedAt: Date.now() };
 }
 
-/** Post-loss: team goes stale (must rebuild a full XI before it can play again). */
+/** Post-loss: reset the streak, but the team stays active and challengeable. */
 export function recordLoss(team: LocalTeam): LocalTeam {
-  return { ...team, winStreak: 0, swapAvailable: false, status: "stale", updatedAt: Date.now() };
+  return { ...team, winStreak: 0, status: "active", updatedAt: Date.now() };
 }
 
 /** Slots in this formation not yet filled. */
@@ -232,6 +234,53 @@ export function loadLastMatch(): LocalMatch | null {
   try {
     const raw = localStorage.getItem(MATCH_KEY);
     return raw ? (JSON.parse(raw) as LocalMatch) : null;
+  } catch {
+    return null;
+  }
+}
+
+// ── Pending matchup (between "find" and "resolve" — for the pre-match screen) ─
+
+const MATCHUP_KEY = "draftxi:matchup:v1";
+
+export type Matchup = {
+  opponentId: string | null;
+  findId?: string;
+  botFormation?: Formation;
+  leagueId?: string | null;
+  opp: MatchSide;
+};
+
+export function saveMatchup(m: Matchup): void {
+  try { localStorage.setItem(MATCHUP_KEY, JSON.stringify(m)); } catch { /* ignore */ }
+}
+export function loadMatchup(): Matchup | null {
+  try { const raw = localStorage.getItem(MATCHUP_KEY); return raw ? (JSON.parse(raw) as Matchup) : null; } catch { return null; }
+}
+export function clearMatchup(): void {
+  try { localStorage.removeItem(MATCHUP_KEY); } catch { /* ignore */ }
+}
+
+// ── Last simulated season (so returning to a team shows its last result) ─────
+
+const SEASON_KEY = "draftxi:lastseason:v1";
+
+/** Stable seed for the season sim — the squad itself, so the result is the same
+ *  every time you view it (and only changes when you change the XI). */
+export function seasonSeed(team: LocalTeam): string {
+  return team.squad.map((p) => p.player_season_id).sort().join("|");
+}
+
+export type StoredSeason = { seed: string; result: SeasonResult; at: number };
+
+export function saveLastSeason(seed: string, result: SeasonResult): void {
+  try { localStorage.setItem(SEASON_KEY, JSON.stringify({ seed, result, at: Date.now() })); } catch { /* ignore */ }
+}
+
+export function loadLastSeason(): StoredSeason | null {
+  try {
+    const raw = localStorage.getItem(SEASON_KEY);
+    return raw ? (JSON.parse(raw) as StoredSeason) : null;
   } catch {
     return null;
   }

@@ -11,7 +11,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { useUser } from "@/hooks/useUser";
-import { loadTeam, saveTeam, isComplete, recordWin, recordLoss, saveLastMatch } from "@/lib/draft/local";
+import { loadTeam, isComplete, saveMatchup } from "@/lib/draft/local";
 
 type Member = {
   user_id: string;
@@ -58,7 +58,6 @@ export default function LeagueBoard() {
     if (!user) { router.push("/auth/sign-in"); return; }
     const team = loadTeam();
     if (!team || !isComplete(team)) { router.push("/draft"); return; }
-    if (team.status === "stale") { setErr("Your team is stale — rebuild first"); return; }
     setBusy(true); setErr(null);
     try {
       // Ensure the cloud has the current XI (server reads it as the challenger).
@@ -66,20 +65,13 @@ export default function LeagueBoard() {
       const saveRes = await fetch("/api/draft/team", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ formation: team.formation, squad }) });
       if (!saveRes.ok) { setErr((await saveRes.json().catch(() => ({}))).error ?? "Could not save team"); setBusy(false); return; }
 
-      const r = await fetch("/api/draft/match", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ leagueId: board.league.id, opponentId }) });
+      // Matchmake (no resolution) → preview the opponent's XI and swap before kick-off.
+      const r = await fetch("/api/draft/match", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ stage: "find", leagueId: board.league.id, opponentId }) });
       const m = await r.json();
       if (!r.ok) { setErr(m.error ?? "Match failed"); setBusy(false); return; }
 
-      saveLastMatch({
-        id: m.matchId,
-        you: { name: "You", formation: m.you.formation, squad: m.you.squad, strength: m.you.strength, projected: m.you.projected },
-        opp: { name: m.opp.name, formation: m.opp.formation, squad: m.opp.squad, strength: m.opp.strength, projected: m.opp.projected },
-        winner: m.youWon ? "you" : "opp",
-        margin: m.margin,
-        playedAt: Date.now(),
-      });
-      saveTeam(m.youWon ? recordWin(team) : recordLoss(team));
-      router.push("/draft/match/result");
+      saveMatchup({ opponentId: m.opponentId, findId: m.findId, botFormation: m.botFormation, leagueId: board.league.id, opp: m.opp });
+      router.push("/draft/match/prematch");
     } catch { setErr("Network error"); setBusy(false); }
   }
 
