@@ -75,12 +75,24 @@ Team screen now shows **Ranked Match** (signed-in, feeds the leaderboard) vs
 3. Schedule `GET /api/draft/cron/reset` at 00:00 UTC (Vercel cron / pg_cron) with
    the `CRON_SECRET` bearer — same pattern as `/api/cron/reclassify`.
 
+## Custom leagues — BUILT (dormant until migration), fails soft
+
+| Piece | File |
+|---|---|
+| Create / list my leagues | `POST` + `GET /api/draft/league` |
+| Join by code | `POST /api/draft/league/join` |
+| League board (members, in-league wins, Available badge) | `GET /api/draft/league/[code]` |
+| Leagues hub (create / join / list) | `/draft/leagues` |
+| League board + targeted challenge + share code | `/draft/league/[code]` |
+
+Ranked matches accept `{ leagueId, opponentId }`: challenge a *specific* available
+member from the board (stale teams aren't challengeable), or play a random league
+match. Wins credit both the global and the league board. Linked from the
+leaderboard ("My Leagues").
+
 ## Still to build — next session
-- **Custom leagues**: create + join-code + member board (`/draft/league/[code]`) and
-  an "Available" badge; ranked matches already accept a `leagueId` and credit the
-  league board — only the league CRUD + pages remain.
-- **Friend challenge by code** (async accept) — random matchmaking is done; this is
-  the share-code variant.
+- **Friend challenge by code** (async accept) — random + targeted matchmaking are
+  done; this is the share-a-link-to-a-pending-challenge variant.
 - Server-rendered `/draft/match/[id]` with `og:image` → `/api/draft/og` for
   unfurling shared results (the OG route + local share already work).
 

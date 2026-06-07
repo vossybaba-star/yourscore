@@ -26,6 +26,16 @@ export function createDraftDb(): SupabaseClient<DraftDatabase> {
  *  the standings PK, so it can't be NULL). Real leagues never use this id. */
 export const GLOBAL_LEAGUE = "00000000-0000-0000-0000-000000000000";
 
+// Join-code alphabet excludes ambiguous chars (0/O/1/I). Uniqueness is enforced by
+// the unique constraint on draft_leagues.join_code; callers retry on collision.
+const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
+export function genJoinCode(len = 6): string {
+  let s = "";
+  for (let i = 0; i < len; i++) s += CODE_ALPHABET[Math.floor(Math.random() * CODE_ALPHABET.length)];
+  return s;
+}
+
 /**
  * Credit one H2H win to a player's standings (daily + all-time) for a board.
  * Read-modify-write upsert: resets wins_today when the last win was on a prior

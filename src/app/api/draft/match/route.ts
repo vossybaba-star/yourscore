@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
   const { ok } = await rateLimitDistributed(`draft-match:${user.id}`, 30, 60_000);
   if (!ok) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
 
-  let body: { leagueId?: string } = {};
+  let body: { leagueId?: string; opponentId?: string } = {};
   try {
     body = await req.json();
   } catch {
@@ -50,53 +50,87 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Your team is stale — rebuild to play" }, { status: 409 });
   }
 
-  // Candidate opponents: active teams that aren't the challenger's. Within a league,
-  // restrict to its members. Pick one at random from a capped sample.
-  let memberIds: string[] | null = null;
-  if (leagueId) {
-    const { data: members } = await db
-      .from("draft_league_members")
-      .select("user_id")
-      .eq("league_id", leagueId);
-    memberIds = (members ?? []).map((m) => m.user_id).filter((id) => id !== user.id);
-    if (memberIds.length === 0) memberIds = ["__none__"]; // force bot fallback below
-  }
-
-  let q = db
-    .from("draft_teams")
-    .select("user_id, display_name, formation, squad, strength_rating, projected")
-    .eq("status", "active")
-    .neq("user_id", user.id)
-    .limit(50);
-  if (memberIds) q = q.in("user_id", memberIds);
-  const { data: candidates } = await q;
-
+  const targetId = typeof body.opponentId === "string" ? body.opponentId : null;
   const myStrength = Number(me.strength_rating);
   const matchId = crypto.randomUUID();
 
-  // Build the opponent side — a real active team if available, else a bot.
   let opp: TeamSide;
   let opponentId: string | null;
-  if (candidates && candidates.length > 0) {
-    const pick = candidates[Math.floor(Math.random() * candidates.length)];
-    opponentId = pick.user_id;
+
+  if (targetId) {
+    // Targeted challenge (league board "Challenge" button): a specific member.
+    // The stale-team rule applies — you can only challenge an active team.
+    if (targetId === user.id) {
+      return NextResponse.json({ error: "Can't challenge yourself" }, { status: 400 });
+    }
+    if (leagueId) {
+      const { data: mem } = await db
+        .from("draft_league_members")
+        .select("user_id")
+        .eq("league_id", leagueId)
+        .eq("user_id", targetId)
+        .maybeSingle();
+      if (!mem) return NextResponse.json({ error: "Not a league member" }, { status: 400 });
+    }
+    const { data: target } = await db
+      .from("draft_teams")
+      .select("user_id, display_name, formation, squad, strength_rating, projected")
+      .eq("user_id", targetId)
+      .eq("status", "active")
+      .maybeSingle();
+    if (!target) {
+      return NextResponse.json({ error: "Opponent is stale or unavailable" }, { status: 409 });
+    }
+    opponentId = target.user_id;
     opp = {
-      name: pick.display_name ?? "Player",
-      formation: pick.formation as Formation,
-      squad: pick.squad as unknown as PlacedPlayer[],
-      strength: Number(pick.strength_rating),
-      projected: pick.projected as unknown as Projected,
+      name: target.display_name ?? "Player",
+      formation: target.formation as Formation,
+      squad: target.squad as unknown as PlacedPlayer[],
+      strength: Number(target.strength_rating),
+      projected: target.projected as unknown as Projected,
     };
   } else {
-    const bot = makeOpponent(me.formation as Formation, myStrength);
-    opponentId = null;
-    opp = {
-      name: bot.name,
-      formation: bot.team.formation,
-      squad: bot.team.squad,
-      strength: bot.team.strength,
-      projected: bot.team.projected,
-    };
+    // Random matchmaking: active teams that aren't the challenger's; within a league,
+    // restrict to its members. Bot fallback if none available.
+    let memberIds: string[] | null = null;
+    if (leagueId) {
+      const { data: members } = await db
+        .from("draft_league_members")
+        .select("user_id")
+        .eq("league_id", leagueId);
+      memberIds = (members ?? []).map((m) => m.user_id).filter((id) => id !== user.id);
+      if (memberIds.length === 0) memberIds = ["__none__"]; // force bot fallback
+    }
+    let q = db
+      .from("draft_teams")
+      .select("user_id, display_name, formation, squad, strength_rating, projected")
+      .eq("status", "active")
+      .neq("user_id", user.id)
+      .limit(50);
+    if (memberIds) q = q.in("user_id", memberIds);
+    const { data: candidates } = await q;
+
+    if (candidates && candidates.length > 0) {
+      const pick = candidates[Math.floor(Math.random() * candidates.length)];
+      opponentId = pick.user_id;
+      opp = {
+        name: pick.display_name ?? "Player",
+        formation: pick.formation as Formation,
+        squad: pick.squad as unknown as PlacedPlayer[],
+        strength: Number(pick.strength_rating),
+        projected: pick.projected as unknown as Projected,
+      };
+    } else {
+      const bot = makeOpponent(me.formation as Formation, myStrength);
+      opponentId = null;
+      opp = {
+        name: bot.name,
+        formation: bot.team.formation,
+        squad: bot.team.squad,
+        strength: bot.team.strength,
+        projected: bot.team.projected,
+      };
+    }
   }
 
   const youWon = resolveH2H(myStrength, opp.strength, seededRng(matchId)) === "A";

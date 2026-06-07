@@ -52,7 +52,7 @@ export default function Leaderboard() {
         </p>
 
         {/* tabs */}
-        <div className="flex gap-1 p-1 rounded-2xl mb-4" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+        <div className="flex gap-1 p-1 rounded-2xl mb-3" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
           {([["today", "Daily"], ["all", "All-time"]] as const).map(([key, label]) => (
             <button key={key} onClick={() => setMetric(key)}
               className="flex-1 py-2 rounded-xl font-body text-sm font-semibold transition-all"
@@ -61,6 +61,12 @@ export default function Leaderboard() {
             </button>
           ))}
         </div>
+
+        <Link href="/draft/leagues" className="flex items-center justify-between rounded-xl px-4 py-3 mb-4 active:scale-[0.98] transition-transform"
+          style={{ background: "rgba(167,139,250,0.1)", border: "1px solid rgba(167,139,250,0.3)" }}>
+          <span className="font-display tracking-wide" style={{ fontSize: 16, color: "#a78bfa" }}>🏟️ MY LEAGUES</span>
+          <span className="font-body" style={{ fontSize: 12, color: "#8888aa" }}>create or join a private board →</span>
+        </Link>
 
         {loading ? (
           <div className="text-center py-10 font-body" style={{ color: "#8888aa" }}>Loading…</div>
