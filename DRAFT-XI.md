@@ -44,11 +44,15 @@ edge. Run tests: `bash scripts/draft/run-tests.sh` (10/10 passing).
 
 ## Data
 
-`node scripts/draft/build-dataset.mjs` → 217 curated player-seasons across 20 iconic PL
-team-seasons (each spin deals a real, recognisable squad). **Hybrid-ready:** drop a
-SoFIFA-derived CSV at `scripts/draft/data/players.csv`
-(`name,club,season,position,overall`) and re-run to add breadth — curated overalls win
-on conflict.
+**Real FIFA ratings only — no hand-made estimates.** The pool is the latest EA Sports
+FC ratings: **FC26 / 2025-26 Premier League**, all 20 clubs (546 player-seasons).
+
+Pipeline: `scripts/draft/import-fifa.mjs <fifa_csv> <season>` normalises a FIFA
+"complete player dataset" CSV (English PL only, canonical positions) into
+`scripts/draft/data/players.csv`; `node scripts/draft/build-dataset.mjs` then builds
+`src/data/draft/player-seasons.json`. The FC26 ratings were pulled from fifaindex.com
+via the browser (it Cloudflare-blocks server-side fetch). To refresh/extend, re-run the
+importer for the latest edition and rebuild.
 
 ## Cloud layer — BUILT, dormant until the migration is applied
 
