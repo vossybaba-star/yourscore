@@ -9,6 +9,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Pitch } from "@/components/draft/Pitch";
 import { spin, allBuckets, type Spin } from "@/lib/draft/pool";
@@ -99,8 +100,11 @@ export default function DraftPlay() {
   return (
     <div className="min-h-[100dvh] pb-44" style={{ background: "#0a0a0f" }}>
       <div className="max-w-lg mx-auto px-4 pt-safe">
+        <div className="pt-4">
+          <Link href="/draft" className="font-body text-sm" style={{ color: "#8888aa" }}>← Back</Link>
+        </div>
         {/* header: formation + overall */}
-        <div className="flex items-center justify-between pt-4">
+        <div className="flex items-center justify-between pt-2">
           <div>
             <div className="font-body" style={{ fontSize: 11, color: "#8888aa", letterSpacing: 1 }}>FORMATION</div>
             <div className="font-display tracking-wide" style={{ fontSize: 26, color: "#fff" }}>{team.formation}</div>

@@ -44,15 +44,19 @@ edge. Run tests: `bash scripts/draft/run-tests.sh` (10/10 passing).
 
 ## Data
 
-**Real FIFA ratings only — no hand-made estimates.** The pool is the latest EA Sports
-FC ratings: **FC26 / 2025-26 Premier League**, all 20 clubs (546 player-seasons).
+**Real FIFA ratings only — no hand-made estimates.** The pool spans **8 FIFA editions
+over ~20 years**: 2006/07, 2009/10, 2012/13, 2015/16, 2018/19, 2021/22, 2024/25,
+2025/26 — every Premier League club for each (≈4,900 player-seasons, 160 club-seasons),
+so spins deal teams from different eras.
 
-Pipeline: `scripts/draft/import-fifa.mjs <fifa_csv> <season>` normalises a FIFA
-"complete player dataset" CSV (English PL only, canonical positions) into
-`scripts/draft/data/players.csv`; `node scripts/draft/build-dataset.mjs` then builds
-`src/data/draft/player-seasons.json`. The FC26 ratings were pulled from fifaindex.com
-via the browser (it Cloudflare-blocks server-side fetch). To refresh/extend, re-run the
-importer for the latest edition and rebuild.
+Source: **SoFIFA** (FIFA's own ratings DB), pulled per edition via the browser
+(SoFIFA/fifaindex Cloudflare-block server-side `fetch`). Each edition's English-PL
+players → `scripts/draft/data/players.csv` (`name,club,season,position,overall`;
+positions mapped to our canonical set, names ASCII-folded). `node
+scripts/draft/build-dataset.mjs` builds `src/data/draft/player-seasons.json` and
+derives each club's strength (mean of its best XI) for the season simulator.
+To extend: scrape another SoFIFA roster edition (set the `r=<roster>` param) and
+rebuild. `scripts/draft/import-fifa.mjs` ingests a Kaggle-style FIFA CSV the same way.
 
 ## Cloud layer — BUILT, dormant until the migration is applied
 

@@ -85,11 +85,14 @@ export function allBuckets(): Bucket[] {
   return DATA.buckets;
 }
 
-/** The 19 real FC26 PL clubs the season simulator plays against (the player joins
- *  as the 20th team, displacing the weakest). Strengths are FIFA-derived. */
+/** The 19 real clubs the season simulator plays against — the most recent FIFA
+ *  season's Premier League (a coherent modern league, whatever era you drafted
+ *  from). Strengths are FIFA-derived. The player joins as the 20th team. */
 export function leagueOpponents(): { name: string; strength: number }[] {
-  return (DATA.clubs ?? [])
-    .slice()
+  const clubs = DATA.clubs ?? [];
+  const latest = clubs.reduce((m, c) => (c.season > m ? c.season : m), "");
+  return clubs
+    .filter((c) => c.season === latest)
     .sort((a, b) => b.strength - a.strength)
     .slice(0, 19)
     .map((c) => ({ name: c.name, strength: c.strength }));
