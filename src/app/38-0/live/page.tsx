@@ -26,6 +26,7 @@ export default function LiveEntry() {
   const [matchId, setMatchId] = useState<string | null>(null);
   const [joinCode, setJoinCode] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [oppJoined, setOppJoined] = useState<string | null>(null); // friend lobby: opponent has joined
   const queueStartRef = useRef<number>(0);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const findGenRef = useRef(0); // generation token: a cancel/restart invalidates in-flight ticks
@@ -33,6 +34,27 @@ export default function LiveEntry() {
 
   const stopPolling = () => { if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; } };
   useEffect(() => () => stopPolling(), []);
+
+  // Host's friend lobby: while showing the code, poll for the opponent joining.
+  // The moment they do, notify the host and drop them into the match lobby —
+  // otherwise they'd sit on the code screen with no idea their mate has arrived.
+  useEffect(() => {
+    if (mode !== "friend" || !matchId || oppJoined) return;
+    let alive = true;
+    const iv = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/draft/live/${matchId}`);
+        if (!res.ok) return;
+        const { match } = await res.json();
+        if (alive && match?.p2_id) {
+          clearInterval(iv);
+          setOppJoined(match.p2_name ?? "Your opponent");
+          setTimeout(() => { if (alive) router.push(`/38-0/live/match/${matchId}`); }, 1800);
+        }
+      } catch { /* transient — keep polling */ }
+    }, 2000);
+    return () => { alive = false; clearInterval(iv); };
+  }, [mode, matchId, oppJoined, router]);
 
   async function api(body: Record<string, unknown>): Promise<QueueResp> {
     const res = await fetch("/api/draft/live", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
@@ -125,18 +147,38 @@ export default function LiveEntry() {
 
         {mode === "friend" && (
           <div className="mt-7 text-center">
-            <p className="text-sm" style={{ color: "#9a9ab0" }}>Share this code with your mate</p>
-            <div className="mt-3 font-mono tracking-[0.4em] font-bold" style={{ fontSize: 44, color: "#00ff87" }}>{code}</div>
-            <button
-              onClick={() => navigator.share?.({ title: "38-0 H2H", text: `Play me on 38-0 — code ${code}`, url: `${location.origin}/38-0/live/${code}` }).catch(() => {})}
-              className="mt-4 w-full rounded-2xl py-3 font-semibold" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "#e8e8f0" }}
-            >
-              Share link
-            </button>
-            <button onClick={() => matchId && router.push(`/38-0/live/match/${matchId}`)} className="mt-3 w-full rounded-2xl py-4 font-semibold" style={{ background: "#00ff87", color: "#04130a" }}>
-              Enter lobby →
-            </button>
-            <p className="mt-3 text-xs" style={{ color: "#7a7a92" }}>You&apos;ll wait in the lobby until they join.</p>
+            {oppJoined ? (
+              <div className="rounded-2xl p-5" style={{ background: "rgba(0,255,135,0.1)", border: "1px solid rgba(0,255,135,0.45)" }}>
+                <div className="text-3xl">🟢</div>
+                <p className="mt-2 font-display tracking-wide" style={{ fontSize: 22, color: "#00ff87" }}>{oppJoined} JOINED!</p>
+                <p className="mt-1 text-sm" style={{ color: "#9a9ab0" }}>Taking you into the lobby…</p>
+                <button onClick={() => matchId && router.push(`/38-0/live/match/${matchId}`)} className="mt-4 w-full rounded-2xl py-4 font-semibold" style={{ background: "#00ff87", color: "#04130a" }}>
+                  Enter now →
+                </button>
+              </div>
+            ) : (
+              <>
+                <p className="text-sm" style={{ color: "#9a9ab0" }}>Share this code with your mate</p>
+                <div className="mt-3 font-mono tracking-[0.4em] font-bold" style={{ fontSize: 44, color: "#00ff87" }}>{code}</div>
+
+                {/* Always-on status so the host knows the lobby is live and listening. */}
+                <div className="mt-4 inline-flex items-center gap-2 rounded-full px-3 py-1.5" style={{ background: "rgba(255,184,0,0.1)", border: "1px solid rgba(255,184,0,0.25)" }}>
+                  <span className="h-2 w-2 rounded-full animate-pulse" style={{ background: "#ffb800" }} />
+                  <span className="text-xs" style={{ color: "#cfcfe6" }}>Waiting for your mate to join…</span>
+                </div>
+
+                <button
+                  onClick={() => navigator.share?.({ title: "38-0 H2H", text: `Play me on 38-0 — code ${code}`, url: `${location.origin}/38-0/live/${code}` }).catch(() => {})}
+                  className="mt-4 w-full rounded-2xl py-3 font-semibold" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "#e8e8f0" }}
+                >
+                  Share link
+                </button>
+                <button onClick={() => matchId && router.push(`/38-0/live/match/${matchId}`)} className="mt-3 w-full rounded-2xl py-4 font-semibold" style={{ background: "#00ff87", color: "#04130a" }}>
+                  Enter lobby →
+                </button>
+                <p className="mt-3 text-xs" style={{ color: "#7a7a92" }}>We&apos;ll pull you in automatically the moment they join.</p>
+              </>
+            )}
           </div>
         )}
 

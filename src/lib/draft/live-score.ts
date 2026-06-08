@@ -14,7 +14,7 @@
 export const LIVE_CONFIG = {
   /** Seconds per phase. lobby waits on both-ready (no deadline). */
   timers: {
-    reveal: 5,
+    reveal: 15,
     pregame_swap: 25,
     half1: 7,
     halftime_swap: 35,

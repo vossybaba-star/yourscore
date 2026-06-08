@@ -86,7 +86,7 @@ export default function LiveMatchScreen() {
         )}
 
         {m.phase === "reveal" && (
-          <TwoXI view={view} caption="Opponents revealed — kick-off in" />
+          <TwoXI view={view} caption="Opponents revealed — size up both XIs" countdown={secondsLeft} />
         )}
 
         {inSwap && (
@@ -172,7 +172,9 @@ function Header({ view, phase, secondsLeft, opponentOnline }: { view: View; phas
     <div>
       <div className="flex items-center justify-between text-sm">
         <Link href="/38-0/live" style={{ color: "#8888aa" }}>← Live</Link>
-        {secondsLeft != null && <span className="font-mono" style={{ color: secondsLeft <= 5 ? "#ff7a88" : "#ffb800" }}>{secondsLeft}s</span>}
+        {secondsLeft != null
+          ? <span className="font-mono rounded-full px-2.5 py-1" style={{ fontSize: 14, fontWeight: 700, color: secondsLeft <= 5 ? "#ff7a88" : "#ffb800", background: secondsLeft <= 5 ? "rgba(255,71,87,0.14)" : "rgba(255,184,0,0.12)" }}>⏱ {secondsLeft}s</span>
+          : phase === "lobby" && <span className="inline-flex items-center gap-1.5 text-xs" style={{ color: "#9a9ab0" }}><span className="h-2 w-2 rounded-full animate-pulse" style={{ background: "#ffb800" }} />waiting</span>}
       </div>
       <div className="mt-4 flex items-center justify-between">
         <Team name={view.myName} str={view.myStr} you online />
@@ -196,10 +198,15 @@ function Team({ name, str, you, online, alignRight }: { name: string; str: numbe
   );
 }
 
-function TwoXI({ view, caption }: { view: View; caption: string }) {
+function TwoXI({ view, caption, countdown }: { view: View; caption: string; countdown?: number | null }) {
   return (
     <Panel>
       <p className="text-center text-sm" style={{ color: "#9a9ab0" }}>{caption}</p>
+      {countdown != null && (
+        <p className="text-center font-display tracking-wide mt-1" style={{ fontSize: 30, lineHeight: 1.1, color: countdown <= 5 ? "#ff7a88" : "#00ff87" }}>
+          Kick-off in {countdown}s
+        </p>
+      )}
       <div className="mt-3 grid grid-cols-2 gap-2">
         <Pitch formation={view.myFormation} squad={view.mySquad} compact />
         <Pitch formation={view.oppFormation} squad={view.oppSquad} compact />
