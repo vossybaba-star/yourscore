@@ -162,8 +162,8 @@ export default function SeasonSim() {
   function openShare() { setShareOpen(true); void ensureShortUrl(); }
   // Auto-blurb so posts (esp. X) carry context + the image (via the unfurling link).
   const blurb = () => r.invincible
-    ? `This was my result from YourScore 38-0 ⚽ — INVINCIBLE, ${r.wins}-${r.draws}-${r.losses}, ${r.points} pts. Think you can beat it?`
-    : `This was my result from YourScore 38-0 ⚽ — ${r.wins}-${r.draws}-${r.losses}, finished ${ordinal(r.position)} on ${r.points} pts. Think you can beat it?`;
+    ? `This was my result from YourScore ⚽ — INVINCIBLE, ${r.wins}-${r.draws}-${r.losses}, ${r.points} pts. Think you can beat it?`
+    : `This was my result from YourScore ⚽ — ${r.wins}-${r.draws}-${r.losses}, finished ${ordinal(r.position)} on ${r.points} pts. Think you can beat it?`;
 
   // Native share sheet — attaches the image file itself where supported (mobile).
   async function nativeShare() {
@@ -171,9 +171,9 @@ export default function SeasonSim() {
     const url = shareUrl(), text = blurb();
     try {
       let file: File | null = null;
-      try { const res = await fetch(ogUrl()); if (res.ok) file = new File([await res.blob()], "yourscore-38-0.png", { type: "image/png" }); } catch { /* fall through */ }
-      if (file && navigator.canShare?.({ files: [file] })) { await navigator.share({ files: [file], title: "YourScore 38-0", text, url }); return; }
-      if (navigator.share) { await navigator.share({ title: "YourScore 38-0", text, url }); return; }
+      try { const res = await fetch(ogUrl()); if (res.ok) file = new File([await res.blob()], "yourscore.png", { type: "image/png" }); } catch { /* fall through */ }
+      if (file && navigator.canShare?.({ files: [file] })) { await navigator.share({ files: [file], title: "YourScore", text, url }); return; }
+      if (navigator.share) { await navigator.share({ title: "YourScore", text, url }); return; }
       await navigator.clipboard.writeText(`${text} ${url}`); setCopied(true); setTimeout(() => setCopied(false), 1800);
     } catch { /* cancelled */ }
   }
@@ -184,7 +184,7 @@ export default function SeasonSim() {
     try {
       const res = await fetch(ogUrl()); if (!res.ok) return;
       const href = URL.createObjectURL(await res.blob());
-      const a = document.createElement("a"); a.href = href; a.download = "yourscore-38-0.png";
+      const a = document.createElement("a"); a.href = href; a.download = "yourscore.png";
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(() => URL.revokeObjectURL(href), 4000);
       setDownloaded(true); setTimeout(() => setDownloaded(false), 2500);
@@ -304,7 +304,7 @@ export default function SeasonSim() {
             {/* card preview */}
             <div className="rounded-2xl overflow-hidden mx-auto" style={{ maxWidth: 300, border: "1px solid rgba(255,255,255,0.08)" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={ogUrl()} alt="Your 38-0 season result" style={{ width: "100%", display: "block" }} />
+              <img src={ogUrl()} alt="Your season result" style={{ width: "100%", display: "block" }} />
             </div>
 
             <button onClick={nativeShare} className="w-full mt-4 rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform"

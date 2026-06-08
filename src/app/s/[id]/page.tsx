@@ -36,6 +36,9 @@ async function loadPayload(id: string): Promise<Record<string, string> | null> {
 function ogUrl(p: Record<string, string>): string {
   const params = new URLSearchParams();
   for (const k of KEYS) { const v = p[k]; if (v) params.set(k, v); }
+  // Landscape variant: socials show summary_large_image at ~1.91:1, which would
+  // crop a portrait card's hero record. The wide card keeps the W-D-L visible.
+  params.set("wide", "1");
   return `${BASE}/api/draft/season-og?${params.toString()}`;
 }
 
@@ -51,7 +54,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   const image = ogUrl(p);
   return {
     title, description,
-    openGraph: { title, description, images: [{ url: image, width: 1080, height: 1500 }], type: "website" },
+    openGraph: { title, description, images: [{ url: image, width: 1200, height: 630 }], type: "website" },
     twitter: { card: "summary_large_image", title, description, images: [image] },
   };
 }
