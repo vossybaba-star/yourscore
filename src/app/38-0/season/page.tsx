@@ -26,6 +26,7 @@ export default function SeasonSim() {
   const [copied, setCopied] = useState(false);
   const [downloaded, setDownloaded] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [shortUrl, setShortUrl] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -135,7 +136,30 @@ export default function SeasonSim() {
   }
   // The shareable card image, and a public link that unfurls to it on socials.
   const ogUrl = () => `/api/draft/season-og?${shareParams().toString()}`;
-  const shareUrl = () => `${window.location.origin}/38-0/season/share?${shareParams().toString()}`;
+  // Long fallback link (carries the whole result in the query string). Used only
+  // if the short-link service is unavailable.
+  const longShareUrl = () => `${window.location.origin}/38-0/season/share?${shareParams().toString()}`;
+  // Resolved short link, once minted — what we actually share.
+  const shareUrl = () => shortUrl ?? longShareUrl();
+
+  // Mint a compact …/38-0/s/<id> link by storing the payload server-side. Called
+  // when the share sheet opens so the link is ready before the user taps a target
+  // (avoids popup-blockers on the window.open share paths). Falls back silently.
+  async function ensureShortUrl(): Promise<void> {
+    if (shortUrl) return;
+    try {
+      const payload = Object.fromEntries(shareParams().entries());
+      const res = await fetch("/api/draft/share", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ payload }),
+      });
+      if (!res.ok) return;
+      const { id } = await res.json();
+      if (id) setShortUrl(`${window.location.origin}/38-0/s/${id}`);
+    } catch { /* keep the long fallback */ }
+  }
+  function openShare() { setShareOpen(true); void ensureShortUrl(); }
   // Auto-blurb so posts (esp. X) carry context + the image (via the unfurling link).
   const blurb = () => r.invincible
     ? `This was my result from YourScore 38-0 ⚽ — INVINCIBLE, ${r.wins}-${r.draws}-${r.losses}, ${r.points} pts. Think you can beat it?`
@@ -143,6 +167,7 @@ export default function SeasonSim() {
 
   // Native share sheet — attaches the image file itself where supported (mobile).
   async function nativeShare() {
+    await ensureShortUrl();
     const url = shareUrl(), text = blurb();
     try {
       let file: File | null = null;
@@ -154,7 +179,7 @@ export default function SeasonSim() {
   }
   function shareWhatsApp() { window.open(`https://wa.me/?text=${encodeURIComponent(`${blurb()} ${shareUrl()}`)}`, "_blank", "noopener"); }
   function shareX() { window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(blurb())}&url=${encodeURIComponent(shareUrl())}`, "_blank", "noopener"); }
-  async function copyLink() { try { await navigator.clipboard.writeText(`${blurb()} ${shareUrl()}`); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* blocked */ } }
+  async function copyLink() { try { await ensureShortUrl(); await navigator.clipboard.writeText(`${blurb()} ${shareUrl()}`); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* blocked */ } }
   async function saveImage() {
     try {
       const res = await fetch(ogUrl()); if (!res.ok) return;
@@ -217,7 +242,7 @@ export default function SeasonSim() {
           ))}
         </div>
 
-        <button onClick={() => setShareOpen(true)} className="w-full mt-5 rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform"
+        <button onClick={openShare} className="w-full mt-5 rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform"
           style={{ background: "#00ff87", color: "#062013", fontSize: 24 }}>
           📸 SHARE YOUR RESULT
         </button>

@@ -88,6 +88,12 @@ export type DraftSavedTeamRow = {
   updated_at: Ts;
 };
 
+export type DraftShareRow = {
+  id: string;
+  payload: Json;
+  created_at: Ts;
+};
+
 type Tbl<Row, Insert = Partial<Row>, Update = Partial<Row>> = {
   Row: Row;
   Insert: Insert;
@@ -100,6 +106,7 @@ export type DraftDatabase = Omit<Database, "public"> & {
     Tables: Database["public"]["Tables"] & {
       draft_teams: Tbl<DraftTeamRow>;
       draft_saved_teams: Tbl<DraftSavedTeamRow>;
+      draft_shares: Tbl<DraftShareRow>;
       draft_matches: Tbl<DraftMatchRow>;
       draft_standings: Tbl<DraftStandingRow>;
       draft_leagues: Tbl<DraftLeagueRow>;
