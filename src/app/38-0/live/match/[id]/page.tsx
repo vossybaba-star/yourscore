@@ -67,6 +67,9 @@ export default function LiveMatchScreen() {
         {/* Scoreline header */}
         <Header view={view} phase={m.phase} secondsLeft={secondsLeft} opponentOnline={opponentOnline} />
 
+        {/* What to do now + the rule — fills the space under the scoreline */}
+        <Guide phase={m.phase} view={view} />
+
         {/* Phase body */}
         {m.phase === "lobby" && (
           <Panel>
@@ -275,6 +278,34 @@ function SpinSheet({ formation, squad, slotId, onPick, onClose }: { formation: F
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function scoreline(v: View): string {
+  const d = v.myGoals - v.oppGoals;
+  return d > 0 ? `You're ${v.myGoals}–${v.oppGoals} up` : d < 0 ? `You're ${v.myGoals}–${v.oppGoals} down` : `Level at ${v.myGoals}–${v.oppGoals}`;
+}
+
+// What the player should be doing right now + the rule behind it, per phase.
+const PHASE_GUIDE: Record<string, { tag: string; text: (v: View) => string }> = {
+  lobby:         { tag: "LOBBY",             text: () => "Tap I'm ready — kick-off the moment both managers are ready." },
+  reveal:        { tag: "KICK-OFF",          text: () => "Your XI (left) vs your opponent's (right). Size them up — you'll get to react in a moment." },
+  pregame_swap:  { tag: "PRE-MATCH",         text: (v) => `Tap any of your players to spin a replacement for that position — or keep your XI. Stronger team = more goals. ${v.swapsLeft} change${v.swapsLeft === 1 ? "" : "s"} left, then tap Done.` },
+  half1:         { tag: "FIRST HALF",        text: () => "Goals are simulated live from each team's Strength — sit tight." },
+  halftime_swap: { tag: "HALFTIME",          text: (v) => `${scoreline(v)}. Make up to 2 changes to swing the second half, then tap Done.` },
+  half2:         { tag: "SECOND HALF",       text: () => "Last 45 — your halftime changes are now in play." },
+  draw_decision: { tag: "FULL TIME · LEVEL", text: () => "It's level. Both managers must choose Penalties to settle it — or take the draw." },
+  penalties:     { tag: "PENALTIES",         text: () => "Spot-kicks decide it — a near coin-flip." },
+};
+
+function Guide({ phase, view }: { phase: string; view: View }) {
+  const g = PHASE_GUIDE[phase];
+  if (!g) return null;
+  return (
+    <div className="mt-4 rounded-xl px-4 py-3" style={{ background: "rgba(0,255,135,0.06)", border: "1px solid rgba(0,255,135,0.18)" }}>
+      <div className="font-display tracking-wide" style={{ fontSize: 11, letterSpacing: 1, color: "#00ff87" }}>{g.tag}</div>
+      <div className="mt-1" style={{ fontSize: 13.5, color: "#cfcfe6", lineHeight: 1.4 }}>{g.text(view)}</div>
     </div>
   );
 }

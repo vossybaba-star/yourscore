@@ -15,22 +15,52 @@ const OPPONENT_NAMES = [
   "Route One Rovers", "xG Merchants", "Bottlejob FC", "Vibes Only", "The Treble Seekers",
 ];
 
-// Realistic-looking handles for *ranked live* bot opponents, which must read as
+// Believable gamer-handles for *ranked live* bot opponents — they must read as
 // real users (the jokey OPPONENT_NAMES above stay for explicit practice/Quick
-// Match). Kept here so the disguise lives next to the bot it dresses.
-const REAL_FIRST = [
+// Match). Deliberately "messy" like real handles: mixed case, numbers, separators,
+// football refs — so they don't look auto-generated. Seeded → stable per match.
+const HANDLE_FIRST = [
   "jack", "leah", "danny", "tom", "aisha", "marco", "liam", "sofia", "kai", "noah",
   "ella", "reece", "yusuf", "owen", "maya", "harry", "amara", "finn", "zara", "luca",
   "callum", "nina", "raheem", "beth", "ade", "sam", "priya", "george", "mia", "josh",
+  "deano", "kez", "bilal", "tyrone", "shay", "rico", "macca", "jonjo", "dec", "kemi",
 ];
-const REAL_SUFFIX = ["", "", "7", "07", "_", "x", "10", "98", "fc", "99", "_afc", "23", "88"];
+const HANDLE_WORD = [
+  "fc", "utd", "afc", "cfc", "ynwa", "coys", "ldn", "xi", "baller", "gooner",
+  "toon", "hammer", "ftbl", "10", "ultra", "og", "tekkers", "boro", "saint",
+];
+const HANDLE_TAG = [
+  "Gegenpress", "TikiTaka", "RouteOne", "FalseNine", "LowBlock", "xGmerchant",
+  "TackleKing", "NutmegGod", "ParkTheBus", "WingPlay", "BoxToBox", "OffsideTrap",
+  "ScreamerFC", "TopBins", "ThirdRound",
+];
+const HANDLE_NUM = ["7", "07", "9", "10", "99", "21", "98", "00", "11", "23", "45", "04", "88", "17", "06", "92"];
 
-/** A believable username from a seed (e.g. a match id) — for disguised ranked bots. */
+const pickFrom = <T,>(rng: () => number, arr: T[]): T => arr[Math.floor(rng() * arr.length)];
+const cap = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1);
+
+/** A believable, deliberately-irregular username from a seed (e.g. a match id) —
+ *  for disguised ranked bots. ~12 handle shapes so two bots rarely look alike. */
 export function realisticOpponentName(seed: string): string {
   const rng = seededRng(seed);
-  const first = REAL_FIRST[Math.floor(rng() * REAL_FIRST.length)];
-  const suffix = REAL_SUFFIX[Math.floor(rng() * REAL_SUFFIX.length)];
-  return first + suffix;
+  const f = pickFrom(rng, HANDLE_FIRST);
+  const w = pickFrom(rng, HANDLE_WORD);
+  const n = pickFrom(rng, HANDLE_NUM);
+  const tag = pickFrom(rng, HANDLE_TAG);
+  switch (Math.floor(rng() * 12)) {
+    case 0:  return `${f}${n}`;               // jack07
+    case 1:  return `${f}_${w}`;              // leah_fc
+    case 2:  return `${f}${w}${n}`;           // harryutd21
+    case 3:  return `x_${f}_x`;               // x_kai_x
+    case 4:  return `${cap(f)}${n}`;          // Mason99
+    case 5:  return `the${cap(f)}`;           // theOwen
+    case 6:  return `${f}.${w}`;              // zara.afc
+    case 7:  return `${cap(f)}_${cap(w)}`;    // Reece_Utd
+    case 8:  return `${tag}${n}`;             // Gegenpress10
+    case 9:  return `${tag}_${cap(f)}`;       // TopBins_Sam
+    case 10: return `${f}__${n}`;             // danny__23
+    default: return `${cap(tag)}`;            // RouteOne
+  }
 }
 
 export type Opponent = { name: string; team: LocalTeam };
