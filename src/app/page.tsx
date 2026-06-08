@@ -14,12 +14,14 @@ export const metadata: Metadata = {
       "Start a league with your mates and answer live questions during every match. Points stack across every game, all season long.",
     type: "website",
     siteName: "YourScore",
+    images: [{ url: "https://yourscore.app/api/og/home", width: 1200, height: 630, alt: "YourScore · 38-0" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "YourScore — Your football knowledge. Ranked.",
     description:
       "Start a league with your mates and answer live questions during every match. Points stack across every game, all season long.",
+    images: ["https://yourscore.app/api/og/home"],
   },
 };
 

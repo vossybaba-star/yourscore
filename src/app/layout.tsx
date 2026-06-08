@@ -21,6 +21,7 @@ const dmSans = DM_Sans({
 
 export function generateMetadata(): Metadata {
   return {
+    metadataBase: new URL("https://yourscore.app"),
     title: "YourScore — Live Football Games",
     description:
       "Answer live questions during the 2026 World Cup. Score points, climb the leaderboard, and compete in leagues with your mates.",
@@ -35,11 +36,13 @@ export function generateMetadata(): Metadata {
       description: "Answer live questions. Score points. Compete with your mates all tournament long.",
       type: "website",
       siteName: "YourScore",
+      images: [{ url: "https://yourscore.app/api/og/home", width: 1200, height: 630, alt: "YourScore · 38-0" }],
     },
     twitter: {
       card: "summary_large_image",
       title: "YourScore — Live Football Games",
       description: "Answer live questions. Score points. Compete with your mates all tournament long.",
+      images: ["https://yourscore.app/api/og/home"],
     },
     icons: {
       apple: "/icon-192.png",
