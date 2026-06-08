@@ -126,6 +126,7 @@ export function validateAndScore(formationRaw: unknown, squadRaw: unknown): Vali
   const slotById = new Map(slots.map((s) => [s.id, s]));
   const usedSlots = new Set<string>();
   const usedPlayers = new Set<string>();
+  const usedNames = new Set<string>();
   const squad: PlacedPlayer[] = [];
 
   for (const entry of squadRaw as SquadInput[]) {
@@ -139,12 +140,18 @@ export function validateAndScore(formationRaw: unknown, squadRaw: unknown): Vali
 
     const player = getPlayer(entry.player_season_id);
     if (!player) throw new Error(`Unknown player ${entry.player_season_id}`);
+    // The same player exists across FIFA editions under different player_season_ids
+    // but the SAME name — reject by name so an XI can never field two of one player
+    // (e.g. Ronaldo 06/07 + Ronaldo 09/10). This is the authoritative gate for every
+    // write path: team save, live swap, and match.
+    if (usedNames.has(player.name)) throw new Error(`Can't pick two of ${player.name}`);
     if (!canPlay(player.position, slot.pos)) {
       throw new Error(`${player.name} cannot play ${slot.pos}`);
     }
 
     usedSlots.add(slot.id);
     usedPlayers.add(player.id);
+    usedNames.add(player.name);
     squad.push({
       slot: slot.id,
       slotPos: slot.pos,
