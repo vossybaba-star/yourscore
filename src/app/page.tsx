@@ -94,7 +94,7 @@ export default async function RootPage({
     type: String(p.type),
     parameter: String(p.parameter ?? ""),
     question_count: Number(p.question_count ?? 10),
-    coverImageUrl: p.metadata?.cover_image_url ? String(p.metadata.cover_image_url) : undefined,
+    icon: p.metadata?.icon ? String(p.metadata.icon) : undefined,
   }));
 
   const totalScore = profile?.total_score ?? null;

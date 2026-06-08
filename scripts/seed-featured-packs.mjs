@@ -8,8 +8,8 @@
  * Question shape MUST match RawQuestion in that player:
  *   { question, options: {A,B,C,D}, answer: "A|B|C|D", difficulty, category }
  *
- * Cover image is stored in the existing quiz_packs.metadata jsonb
- * (metadata.cover_image_url) — no schema migration required.
+ * Each pack's card icon (emoji) is stored in the existing quiz_packs.metadata
+ * jsonb (metadata.icon) — no schema migration required.
  *
  * Usage:
  *   node scripts/seed-featured-packs.mjs            # DRY RUN — prints, writes nothing
@@ -43,7 +43,7 @@ const PACKS = [
     type: "records",
     parameter: "Messi vs Ronaldo",
     featured_order: 1,
-    cover_image_url: "/featured/messi-vs-ronaldo.svg",
+    icon: "🐐",
     questions: [
       { difficulty: "easy",   category: "head_to_head", question: "Which of these two has actually won a World Cup?", options: { A: "Lionel Messi", B: "Cristiano Ronaldo", C: "Both of them", D: "Neither of them" }, answer: "A" },
       { difficulty: "easy",   category: "messi",        question: "In which year did Messi win the World Cup with Argentina?", options: { A: "2010", B: "2014", C: "2018", D: "2022" }, answer: "D" },
@@ -62,7 +62,7 @@ const PACKS = [
     type: "records",
     parameter: "World Cup 2026",
     featured_order: 2,
-    cover_image_url: "/featured/world-cup-2026.svg",
+    icon: "🌎",
     questions: [
       { difficulty: "easy",   category: "format",  question: "How many teams are at the 2026 World Cup, a tournament record?", options: { A: "32", B: "40", C: "48", D: "64" }, answer: "C" },
       { difficulty: "easy",   category: "hosts",   question: "Which trio of nations is co-hosting the 2026 World Cup?", options: { A: "USA, Canada and Mexico", B: "USA, Mexico and Brazil", C: "USA and Canada", D: "Canada, Mexico and Costa Rica" }, answer: "A" },
@@ -81,7 +81,7 @@ const PACKS = [
     type: "records",
     parameter: "World Cup History",
     featured_order: 3,
-    cover_image_url: "/featured/world-cup-immortals.svg",
+    icon: "🏆",
     questions: [
       { difficulty: "easy",   category: "titles",  question: "Which nation has won the most World Cups, with 5 titles?", options: { A: "Brazil", B: "Germany", C: "Italy", D: "Argentina" }, answer: "A" },
       { difficulty: "medium", category: "titles",  question: "Germany and Italy are tied on how many World Cup titles each?", options: { A: "3", B: "4", C: "5", D: "2" }, answer: "B" },
@@ -126,7 +126,7 @@ async function upsertPack(pack) {
     source: "system",
     featured: true,
     featured_order: pack.featured_order,
-    metadata: { cover_image_url: pack.cover_image_url },
+    metadata: { icon: pack.icon },
     updated_at: new Date().toISOString(),
   };
 
@@ -151,7 +151,7 @@ async function main() {
   for (const pack of PACKS) {
     const errs = validate(pack);
     console.log(`\n• ${pack.name}`);
-    console.log(`  type=${pack.type}  order=${pack.featured_order}  questions=${pack.questions.length}  cover=${pack.cover_image_url}`);
+    console.log(`  type=${pack.type}  order=${pack.featured_order}  questions=${pack.questions.length}  icon=${pack.icon}`);
     if (errs.length) { bad = true; errs.forEach((e) => console.log(`  ✗ ${e}`)); }
     else console.log(`  ✓ valid`);
   }

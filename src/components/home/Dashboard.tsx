@@ -30,7 +30,7 @@ export interface FeaturedPack {
   type: string;
   parameter: string;
   question_count: number;
-  coverImageUrl?: string;
+  icon?: string;
 }
 
 export interface DashboardData {
@@ -205,7 +205,7 @@ function FeaturedPacksRow({ packs }: { packs: FeaturedPack[] }) {
               <Link
                 key={pack.id}
                 href={`/challenges/${slugify(pack.name)}`}
-                className="flex-shrink-0 rounded-2xl overflow-hidden transition-opacity hover:opacity-80 active:scale-[0.98]"
+                className="flex-shrink-0 rounded-2xl p-4 transition-opacity hover:opacity-80 active:scale-[0.98]"
                 style={{
                   width: 160,
                   background: `rgba(${cfg.rgba},0.07)`,
@@ -213,24 +213,12 @@ function FeaturedPacksRow({ packs }: { packs: FeaturedPack[] }) {
                   textDecoration: "none",
                 }}
               >
-                {pack.coverImageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={pack.coverImageUrl}
-                    alt={pack.name}
-                    className="w-full block"
-                    style={{ height: 90, objectFit: "cover" }}
-                  />
-                ) : (
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg mt-4 ml-4 mb-1 flex-shrink-0"
-                    style={{ background: `rgba(${cfg.rgba},0.14)` }}>
-                    {cfg.emoji}
-                  </div>
-                )}
-                <div className="p-4 pt-3">
-                  <p className="font-body text-xs font-bold text-white leading-tight mb-1 line-clamp-2">{pack.name}</p>
-                  <p className="font-body text-xs" style={{ color: cfg.color }}>{pack.question_count} questions</p>
+                <div className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl mb-3 flex-shrink-0"
+                  style={{ background: `rgba(${cfg.rgba},0.14)` }}>
+                  {pack.icon ?? cfg.emoji}
                 </div>
+                <p className="font-body text-xs font-bold text-white leading-tight mb-1 line-clamp-2">{pack.name}</p>
+                <p className="font-body text-xs" style={{ color: cfg.color }}>{pack.question_count} questions</p>
               </Link>
             );
           })}
