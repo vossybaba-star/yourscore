@@ -10,8 +10,13 @@ import Link from "next/link";
 import { Pitch } from "@/components/draft/Pitch";
 import { createDraftDb, type TeamSnapshot } from "@/lib/draft/server";
 import { tierColor } from "@/lib/draft/ui";
+import { liveOgQuery } from "@/lib/draft/share";
+import type { MatchReport } from "@/lib/draft/live-score";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://yourscore.app";
+
+// A live two-half match stores a per-half breakdown + report in `detail`.
+type MatchDetail = { pens?: { a: number; b: number } | null; report?: MatchReport };
 
 type Match = {
   challenger_team: TeamSnapshot;
@@ -20,6 +25,9 @@ type Match = {
   opponent_strength: number;
   challenger_id: string | null;
   winner_id: string | null; // null = draw (live two-half matches can draw)
+  challenger_goals: number | null;
+  opponent_goals: number | null;
+  detail: MatchDetail | null;
 };
 
 async function getMatch(id: string): Promise<Match | null> {
@@ -27,7 +35,7 @@ async function getMatch(id: string): Promise<Match | null> {
     const db = createDraftDb();
     const { data, error } = await db
       .from("draft_matches")
-      .select("challenger_team, opponent_team, challenger_strength, opponent_strength, challenger_id, winner_id")
+      .select("challenger_team, opponent_team, challenger_strength, opponent_strength, challenger_id, winner_id, challenger_goals, opponent_goals, detail")
       .eq("id", id)
       .maybeSingle();
     if (error || !data) return null;
@@ -38,6 +46,9 @@ async function getMatch(id: string): Promise<Match | null> {
       opponent_strength: Number(data.opponent_strength),
       challenger_id: data.challenger_id,
       winner_id: data.winner_id,
+      challenger_goals: data.challenger_goals,
+      opponent_goals: data.opponent_goals,
+      detail: (data.detail ?? null) as MatchDetail | null,
     };
   } catch {
     return null;
@@ -49,25 +60,48 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   if (!m) {
     return { title: "Draft XI — YourScore" };
   }
-  const challengerWon = m.winner_id === m.challenger_id;
-  const og = new URLSearchParams({
-    result: challengerWon ? "win" : "loss",
-    tier: m.challenger_team.projected?.tier ?? "Champions",
-    formation: m.challenger_team.formation,
-    you: m.challenger_team.name,
-    youStr: String(m.challenger_strength),
-    opp: m.opponent_team.name,
-    oppStr: String(m.opponent_strength),
-  });
-  const image = `${BASE}/api/draft/og?${og.toString()}`;
-  const title = `${m.challenger_team.name} ${challengerWon ? "beat" : "lost to"} ${m.opponent_team.name} — Draft XI`;
-  const description = `${m.challenger_strength} vs ${m.opponent_strength}. Build your all-time Premier League XI and take them on.`;
+  const live = isLive(m);
+
+  let image: string;
+  let title: string;
+  let description: string;
+  if (live) {
+    const s1 = m.challenger_goals ?? 0, s2 = m.opponent_goals ?? 0;
+    image = `${BASE}/api/draft/live-og?${liveOgQuery({
+      p1: m.challenger_team.name, p2: m.opponent_team.name, s1, s2,
+      str1: m.challenger_strength, str2: m.opponent_strength,
+      pens: m.detail?.pens ?? null, report: m.detail!.report!,
+    })}`;
+    const pens = m.detail?.pens ? ` (pens ${m.detail.pens.a}-${m.detail.pens.b})` : "";
+    title = `${m.challenger_team.name} ${s1}–${s2} ${m.opponent_team.name}${pens} — 38-0 Live`;
+    description = m.detail!.report!.potm
+      ? `MOTM ${m.detail!.report!.potm.name} (${m.detail!.report!.potm.rating.toFixed(1)}). Build your XI and go live, head-to-head.`
+      : "Build your all-time Premier League XI and go live, head-to-head.";
+  } else {
+    const challengerWon = m.winner_id === m.challenger_id;
+    const og = new URLSearchParams({
+      result: challengerWon ? "win" : "loss",
+      tier: m.challenger_team.projected?.tier ?? "Champions",
+      formation: m.challenger_team.formation,
+      you: m.challenger_team.name, youStr: String(m.challenger_strength),
+      opp: m.opponent_team.name, oppStr: String(m.opponent_strength),
+    });
+    image = `${BASE}/api/draft/og?${og.toString()}`;
+    title = `${m.challenger_team.name} ${challengerWon ? "beat" : "lost to"} ${m.opponent_team.name} — Draft XI`;
+    description = `${m.challenger_strength} vs ${m.opponent_strength}. Build your all-time Premier League XI and take them on.`;
+  }
+
   return {
     title,
     description,
     openGraph: { title, description, images: [{ url: image, width: 1200, height: 630 }], type: "website" },
     twitter: { card: "summary_large_image", title, description, images: [image] },
   };
+}
+
+/** A live two-half result carries goals + a report; an async match doesn't. */
+function isLive(m: Match): m is Match & { detail: { report: MatchReport } } {
+  return m.challenger_goals != null && !!m.detail?.report;
 }
 
 export default async function MatchPage({ params }: { params: { id: string } }) {
@@ -87,21 +121,54 @@ export default async function MatchPage({ params }: { params: { id: string } }) 
   const challengerWon = m.winner_id === m.challenger_id;
   const c = m.challenger_team;
   const o = m.opponent_team;
+  const live = isLive(m);
+  const rep = m.detail?.report;
+  const s1 = m.challenger_goals ?? 0, s2 = m.opponent_goals ?? 0;
+  const cWon = live ? (m.detail?.pens ? m.detail.pens.a > m.detail.pens.b : s1 > s2) : challengerWon;
 
   return (
     <div className="min-h-[100dvh] pb-16" style={{ background: "#0a0a0f" }}>
       <div className="max-w-lg mx-auto px-5 pt-safe">
-        <div className="pt-8 text-center">
-          <div className="font-display tracking-wide" style={{ fontSize: 13, color: "#8888aa" }}>DRAFT XI · HEAD TO HEAD</div>
-          <div className="font-display tracking-wide leading-none mt-2" style={{ fontSize: 30, color: "#fff" }}>
-            <span style={{ color: challengerWon ? "#00ff87" : "#fff" }}>{c.name}</span>
-            <span style={{ color: "#8888aa", fontSize: 20 }}> {challengerWon ? "beat" : "lost to"} </span>
-            <span style={{ color: !challengerWon ? "#00ff87" : "#fff" }}>{o.name}</span>
+        {live ? (
+          <div className="pt-8 text-center">
+            <div className="font-display tracking-wide" style={{ fontSize: 13, color: "#8888aa" }}>38-0 LIVE · FULL TIME</div>
+            <div className="flex items-center justify-center gap-3 mt-3">
+              <span className="font-display tracking-wide truncate text-right" style={{ fontSize: 18, color: cWon ? "#00ff87" : "#cfcfe6", maxWidth: 130 }}>{c.name}</span>
+              <span className="font-display tabular-nums" style={{ fontSize: 46, fontWeight: 900, color: cWon ? "#00ff87" : "#cfcfe6" }}>{s1}</span>
+              <span style={{ color: "#555", fontSize: 28 }}>–</span>
+              <span className="font-display tabular-nums" style={{ fontSize: 46, fontWeight: 900, color: !cWon && (s1 !== s2 || m.detail?.pens) ? "#00ff87" : "#cfcfe6" }}>{s2}</span>
+              <span className="font-display tracking-wide truncate text-left" style={{ fontSize: 18, color: !cWon && (s1 !== s2 || m.detail?.pens) ? "#00ff87" : "#cfcfe6", maxWidth: 130 }}>{o.name}</span>
+            </div>
+            {m.detail?.pens && <div className="font-body mt-1" style={{ fontSize: 13, color: "#ffb800" }}>penalties {m.detail.pens.a}–{m.detail.pens.b}</div>}
+            {rep?.potm && (
+              <div className="inline-flex items-center gap-2 rounded-full mt-3 px-4 py-1.5" style={{ background: "rgba(255,184,0,0.12)", border: "1px solid rgba(255,184,0,0.35)" }}>
+                <span className="font-body" style={{ fontSize: 12, color: "#ffb800", letterSpacing: 1 }}>⭐ MOTM</span>
+                <span className="font-body" style={{ fontSize: 14, color: "#fff" }}>{rep.potm.name} <b style={{ color: "#ffb800" }}>{rep.potm.rating.toFixed(1)}</b></span>
+              </div>
+            )}
+            {rep && (
+              <div className="flex items-center justify-center gap-5 mt-3 font-body" style={{ fontSize: 12, color: "#8888aa" }}>
+                <span>Corners <b style={{ color: "#cfcfe6" }}>{rep.a.corners}–{rep.b.corners}</b></span>
+                <span>Throw-ins <b style={{ color: "#cfcfe6" }}>{rep.a.throwins}–{rep.b.throwins}</b></span>
+              </div>
+            )}
+            {rep && rep.events.length > 0 && (
+              <div className="font-body mt-2 truncate" style={{ fontSize: 12, color: "#cfcfe6" }}>⚽ {rep.events.map((e) => e.scorerName).join(", ")}</div>
+            )}
           </div>
-          <div className="font-body mt-2" style={{ fontSize: 14, color: "#cfcfe6" }}>
-            {m.challenger_strength} vs {m.opponent_strength}
+        ) : (
+          <div className="pt-8 text-center">
+            <div className="font-display tracking-wide" style={{ fontSize: 13, color: "#8888aa" }}>DRAFT XI · HEAD TO HEAD</div>
+            <div className="font-display tracking-wide leading-none mt-2" style={{ fontSize: 30, color: "#fff" }}>
+              <span style={{ color: challengerWon ? "#00ff87" : "#fff" }}>{c.name}</span>
+              <span style={{ color: "#8888aa", fontSize: 20 }}> {challengerWon ? "beat" : "lost to"} </span>
+              <span style={{ color: !challengerWon ? "#00ff87" : "#fff" }}>{o.name}</span>
+            </div>
+            <div className="font-body mt-2" style={{ fontSize: 14, color: "#cfcfe6" }}>
+              {m.challenger_strength} vs {m.opponent_strength}
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="grid grid-cols-2 gap-3 mt-6">
           <div>

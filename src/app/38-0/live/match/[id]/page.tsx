@@ -16,7 +16,9 @@ import { spin, allBuckets, type Spin } from "@/lib/draft/pool";
 import { playerIdentity, seededRng } from "@/lib/draft/score";
 import { slotsFor } from "@/lib/draft/formations";
 import { buildReport, type MatchSim, type HalfSim, type PlayerRating, type GoalEvent } from "@/lib/draft/live-score";
+import { liveOgQuery } from "@/lib/draft/share";
 import type { Formation, PlacedPlayer, PlayerSeason } from "@/lib/draft/types";
+import type { DraftLiveMatchRow } from "@/types/draft-db";
 
 const BG = "#0a0a0f";
 
@@ -164,7 +166,7 @@ export default function LiveMatchScreen() {
           </Panel>
         )}
 
-        {m.phase === "result" && <ResultPanel view={view} sim={sim} />}
+        {m.phase === "result" && <ResultPanel view={view} sim={sim} m={m} />}
         {m.phase === "abandoned" && <Panel><p className="text-center" style={{ color: "#9a9ab0" }}>Match abandoned.</p><Link href="/38-0/live" className="underline block text-center mt-3" style={{ color: "#00ff87" }}>Play again →</Link></Panel>}
       </div>
 
@@ -248,16 +250,45 @@ function TwoXI({ view, caption, countdown }: { view: View; caption: string; coun
   );
 }
 
-function ResultPanel({ view, sim }: { view: View; sim: MatchSim | null }) {
+function ResultPanel({ view, sim, m }: { view: View; sim: MatchSim | null; m: DraftLiveMatchRow }) {
   const drew = view.myGoals === view.oppGoals && (view.pens[0] == null);
   const won = view.pens[0] != null ? view.pens[0]! > view.pens[1]! : view.myGoals > view.oppGoals;
   const label = drew ? "Draw" : won ? "You win!" : "You lost";
   const color = drew ? "#ffb800" : won ? "#00ff87" : "#ff7a88";
   const rv = sim ? fulltimeView(sim, view.meP1) : null;
+  const [sharing, setSharing] = useState(false);
+  const [shareNote, setShareNote] = useState<string | null>(null);
 
-  function share() {
-    const text = `${view.myName} ${view.myGoals}–${view.oppGoals} ${view.oppName} on 38-0 Live${rv?.potm ? ` · ⭐ ${rv.potm.name} (${rv.potm.rating.toFixed(1)})` : ""}`;
-    navigator.share?.({ title: "38-0 Live result", text, url: `${location.origin}/38-0/live` }).catch(() => {});
+  // Canonical (p1/p2) report → the share card matches the public unfurl page, so
+  // both managers share the same image regardless of which side they're on.
+  const report = sim ? buildReport(sim) : null;
+  const pens = m.pens_p1 != null && m.pens_p2 != null ? { a: m.pens_p1, b: m.pens_p2 } : null;
+  const link = typeof window !== "undefined" ? `${location.origin}/38-0/match/${m.id}` : "";
+  const ogUrl = report && typeof window !== "undefined"
+    ? `${location.origin}/api/draft/live-og?${liveOgQuery({ p1: m.p1_name ?? "Home", p2: m.p2_name ?? "Away", s1: report.a.goals, s2: report.b.goals, str1: m.p1_strength, str2: m.p2_strength, pens, report })}`
+    : null;
+
+  async function share() {
+    if (sharing) return;
+    setSharing(true); setShareNote(null);
+    const text = `${m.p1_name} ${report?.a.goals ?? view.myGoals}–${report?.b.goals ?? view.oppGoals} ${m.p2_name} on 38-0 Live${report?.potm ? ` · ⭐ ${report.potm.name} (${report.potm.rating.toFixed(1)})` : ""}`;
+    // Best for X / socials: share the actual image as a media file.
+    try {
+      if (ogUrl && typeof navigator.canShare === "function") {
+        const blob = await (await fetch(ogUrl)).blob();
+        const file = new File([blob], "38-0-result.png", { type: "image/png" });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], text, title: "38-0 Live result" });
+          setSharing(false); return;
+        }
+      }
+    } catch { /* fall through to link */ }
+    // Fallback: share / copy the unfurling link.
+    try {
+      if (navigator.share) await navigator.share({ title: "38-0 Live result", text, url: link });
+      else { await navigator.clipboard.writeText(`${text} ${link}`); setShareNote("Link copied"); }
+    } catch { /* user cancelled */ }
+    setSharing(false);
   }
 
   return (
@@ -272,8 +303,16 @@ function ResultPanel({ view, sim }: { view: View; sim: MatchSim | null }) {
           <MatchReportCard rv={rv} meP1={view.meP1} myName={view.myName} oppName={view.oppName} showPotm />
         </div>
       )}
-      <button onClick={share} className="mt-5 w-full rounded-2xl py-3 font-semibold" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "#e8e8f0" }}>Share result</button>
-      <Link href="/38-0/live" className="mt-3 block text-center rounded-2xl py-4 font-semibold" style={{ background: "#00ff87", color: "#04130a" }}>Play again</Link>
+      <button onClick={share} disabled={sharing} className="mt-5 w-full rounded-2xl py-4 font-semibold disabled:opacity-60" style={{ background: "#00ff87", color: "#04130a" }}>
+        {sharing ? "Preparing image…" : "📤 Share result"}
+      </button>
+      {ogUrl && (
+        <a href={ogUrl} target="_blank" rel="noopener noreferrer" download="38-0-result.png" className="mt-3 block text-center rounded-2xl py-3 font-semibold" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "#e8e8f0" }}>
+          Save image
+        </a>
+      )}
+      {shareNote && <p className="text-center mt-2 text-xs" style={{ color: "#00ff87" }}>{shareNote}</p>}
+      <Link href="/38-0/live" className="mt-3 block text-center rounded-2xl py-3 font-semibold" style={{ background: "rgba(0,255,135,0.1)", color: "#00ff87", border: "1px solid rgba(0,255,135,0.3)" }}>Play again</Link>
       <Link href="/38-0/leaderboard" className="mt-3 block text-center underline text-sm" style={{ color: "#8888aa" }}>View leaderboard</Link>
     </Panel>
   );
