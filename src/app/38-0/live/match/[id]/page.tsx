@@ -277,7 +277,7 @@ function ResultPanel({ view, sim, m }: { view: View; sim: MatchSim | null; m: Dr
       if (ogUrl && typeof navigator.canShare === "function") {
         const blob = await (await fetch(ogUrl)).blob();
         const file = new File([blob], "38-0-result.png", { type: "image/png" });
-        if (navigator.canShare({ files: [file] })) {
+        if (blob.size > 0 && navigator.canShare({ files: [file] })) {
           await navigator.share({ files: [file], text, title: "38-0 Live result" });
           setSharing(false); return;
         }

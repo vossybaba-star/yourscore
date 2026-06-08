@@ -64,7 +64,7 @@ export async function GET(req: NextRequest) {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginTop: 54 }}>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", width: 380 }}>
             <div style={{ fontSize: 46, fontWeight: 800, color: c1, textAlign: "right", lineHeight: 1.05 }}>{p1}</div>
-            {str1 ? <div style={{ fontSize: 24, color: "#8888aa", marginTop: 6 }}>STR {str1}</div> : <div />}
+            {str1 ? <div style={{ fontSize: 24, color: "#8888aa", marginTop: 6 }}>{`STR ${str1}`}</div> : <div />}
           </div>
           <div style={{ display: "flex", alignItems: "center", margin: "0 36px" }}>
             <span style={{ fontSize: 120, fontWeight: 900, color: c1 }}>{s1}</span>
@@ -73,12 +73,12 @@ export async function GET(req: NextRequest) {
           </div>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", width: 380 }}>
             <div style={{ fontSize: 46, fontWeight: 800, color: c2, lineHeight: 1.05 }}>{p2}</div>
-            {str2 ? <div style={{ fontSize: 24, color: "#8888aa", marginTop: 6 }}>STR {str2}</div> : <div />}
+            {str2 ? <div style={{ fontSize: 24, color: "#8888aa", marginTop: 6 }}>{`STR ${str2}`}</div> : <div />}
           </div>
         </div>
 
         {pens ? (
-          <div style={{ display: "flex", justifyContent: "center", marginTop: 14, fontSize: 28, color: AMBER }}>Penalties {pens}</div>
+          <div style={{ display: "flex", justifyContent: "center", marginTop: 14, fontSize: 28, color: AMBER }}>{`Penalties ${pens}`}</div>
         ) : <div />}
 
         {potm ? (
