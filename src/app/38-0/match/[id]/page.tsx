@@ -19,7 +19,7 @@ type Match = {
   challenger_strength: number;
   opponent_strength: number;
   challenger_id: string | null;
-  winner_id: string;
+  winner_id: string | null; // null = draw (live two-half matches can draw)
 };
 
 async function getMatch(id: string): Promise<Match | null> {

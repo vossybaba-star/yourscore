@@ -33,9 +33,12 @@ export type DraftMatchRow = {
   opponent_team: Json;
   challenger_strength: number;
   opponent_strength: number;
-  winner_id: string;
+  winner_id: string | null;          // null = draw (15_draft_live.sql)
   league_id: string | null;
   played_at: Ts;
+  challenger_goals: number | null;   // two-half record
+  opponent_goals: number | null;
+  detail: Json | null;               // per-half + penalties breakdown
 };
 
 export type DraftStandingRow = {
@@ -46,6 +49,57 @@ export type DraftStandingRow = {
   wins_all_time: number;
   last_win_date: Ts;
   updated_at: Ts;
+  draws_today: number;               // points ladder (15_draft_live.sql)
+  draws_all_time: number;
+  losses_today: number;
+  losses_all_time: number;
+  last_played_date: Ts;
+};
+
+// Live, simultaneous two-half H2H working state (15_draft_live.sql).
+export type DraftLiveMatchRow = {
+  id: string;
+  phase: string;
+  phase_deadline: Ts;
+  join_code: string | null;
+  ranked: boolean;
+  league_id: string | null;
+  is_bot: boolean;
+  p1_id: string | null;
+  p2_id: string | null;
+  p1_ready: boolean;
+  p2_ready: boolean;
+  p1_squad: Json | null;
+  p1_formation: string | null;
+  p1_strength: number | null;
+  p2_squad: Json | null;
+  p2_formation: string | null;
+  p2_strength: number | null;
+  p1_name: string | null;
+  p2_name: string | null;
+  p1_pregame_left: number;
+  p1_half_left: number;
+  p2_pregame_left: number;
+  p2_half_left: number;
+  p1_wants_pens: boolean | null;
+  p2_wants_pens: boolean | null;
+  h1_p1: number | null;
+  h1_p2: number | null;
+  h2_p1: number | null;
+  h2_p2: number | null;
+  pens_p1: number | null;
+  pens_p2: number | null;
+  winner_id: string | null;
+  created_at: Ts;
+  updated_at: Ts;
+  resolved_at: Ts;
+};
+
+export type DraftLiveQueueRow = {
+  user_id: string;
+  enqueued_at: Ts;
+  ranked: boolean;
+  league_id: string | null;
 };
 
 export type DraftLeagueRow = {
@@ -112,6 +166,8 @@ export type DraftDatabase = Omit<Database, "public"> & {
       draft_leagues: Tbl<DraftLeagueRow>;
       draft_league_members: Tbl<DraftLeagueMemberRow>;
       draft_challenges: Tbl<DraftChallengeRow>;
+      draft_live_matches: Tbl<DraftLiveMatchRow>;
+      draft_live_queue: Tbl<DraftLiveQueueRow>;
     };
     Functions: Database["public"]["Functions"] & {
       draft_leaderboard: {
@@ -124,6 +180,23 @@ export type DraftDatabase = Omit<Database, "public"> & {
           rank: number;
         }[];
       };
+      draft_leaderboard_points: {
+        Args: { p_league_id: string | null; p_metric: string; p_limit?: number };
+        Returns: {
+          user_id: string;
+          display_name: string;
+          wins: number;
+          draws: number;
+          losses: number;
+          points: number;
+          rank: number;
+        }[];
+      };
+      draft_live_pair: {
+        Args: { p_user: string; p_ranked: boolean; p_league: string | null };
+        Returns: string | null;
+      };
+      draft_live_reap: { Args: Record<string, never>; Returns: undefined };
       draft_reset_daily: { Args: Record<string, never>; Returns: undefined };
     };
   };
