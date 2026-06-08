@@ -497,3 +497,115 @@ export async function createBotMatch(db: SupabaseClient<DraftDatabase>, userId: 
 export async function leaveQueue(db: SupabaseClient<DraftDatabase>, userId: string): Promise<void> {
   await db.from("draft_live_queue").delete().eq("user_id", userId);
 }
+
+// ─── League directed challenges (Live-only leagues) ───────────────────────────
+// A league match is a live invite aimed at one opponent: the challenger opens a
+// lobby with invited_id set (no shareable code), the opponent accepts and claims
+// the p2 seat, and both drop into the same live engine — which already credits the
+// league board on finalize. Both players are expected online (the board only lets
+// you challenge an online manager); an unaccepted challenge auto-expires.
+
+/** How long a sent challenge stays open before it lapses (lobby deadline → the
+ *  phase machine abandons it on the next advance). Short, because it's live. */
+export const CHALLENGE_TTL_SECONDS = 150;
+
+/** Open a directed league challenge against one opponent. Both must be league
+ *  members; the challenger may only have one live match in flight (a second
+ *  create resumes the existing one). */
+export async function createLeagueChallenge(
+  db: SupabaseClient<DraftDatabase>, challengerId: string, leagueId: string, opponentId: string
+): Promise<DraftLiveMatchRow> {
+  if (challengerId === opponentId) throw new Error("You can't challenge yourself");
+
+  const { data: members } = await db
+    .from("draft_league_members").select("user_id")
+    .eq("league_id", leagueId).in("user_id", [challengerId, opponentId]);
+  const memberIds = new Set((members ?? []).map((m) => m.user_id));
+  if (!memberIds.has(challengerId) || !memberIds.has(opponentId)) {
+    throw new Error("Both players must be in this league");
+  }
+
+  // One live match per challenger — resume rather than spawn a duplicate.
+  const existing = await findActiveMatch(db, challengerId);
+  if (existing) return existing;
+
+  const side = await loadUserSide(db, challengerId);
+  if (!side) throw new Error("Save a team first");
+
+  const id = crypto.randomUUID();
+  const { data: match } = await db.from("draft_live_matches").insert({
+    id, phase: "lobby", phase_deadline: isoIn(CHALLENGE_TTL_SECONDS), join_code: null,
+    ranked: true, league_id: leagueId, invited_id: opponentId, is_bot: false,
+    p1_id: challengerId, p1_name: side.name, p1_squad: side.squad as unknown as never,
+    p1_formation: side.formation, p1_strength: side.strength,
+  }).select("*").maybeSingle();
+  if (!match) throw new Error("Could not send the challenge — try again");
+  return match;
+}
+
+/** Accept a directed challenge: claim the p2 seat (invited player only) and start
+ *  the lobby ready-clock. Refuses if the accepter is mid-match elsewhere. */
+export async function acceptChallenge(
+  db: SupabaseClient<DraftDatabase>, userId: string, matchId: string
+): Promise<DraftLiveMatchRow> {
+  const { data: row } = await db.from("draft_live_matches").select("*").eq("id", matchId).maybeSingle();
+  if (!row) throw new Error("Challenge not found");
+  if (row.invited_id !== userId) throw new Error("This challenge isn't for you");
+  if (row.phase !== "lobby") throw new Error("That challenge has expired");
+  if (row.p2_id) throw new Error("Already accepted");
+
+  const existing = await findActiveMatch(db, userId);
+  if (existing && existing.id !== matchId) throw new Error("Finish your current match first");
+
+  const side = await loadUserSide(db, userId);
+  if (!side) throw new Error("Save a team first");
+
+  // The challenger (p1) was here first; the accepter takes p2. Both present now →
+  // start the ready clock (guarded so a double-accept can't reopen a claimed seat).
+  const { data: updated } = await db.from("draft_live_matches").update({
+    p2_id: userId, p2_name: side.name, p2_squad: side.squad as unknown as never,
+    p2_formation: side.formation, p2_strength: side.strength,
+    phase_deadline: isoIn(LOBBY_SECONDS), updated_at: new Date().toISOString(),
+  }).eq("id", matchId).eq("phase", "lobby").is("p2_id", null).select("*").maybeSingle();
+  if (!updated) throw new Error("That challenge has expired");
+  return updated;
+}
+
+/** Decline (invited) or cancel (challenger) an unaccepted challenge. */
+export async function dismissChallenge(
+  db: SupabaseClient<DraftDatabase>, userId: string, matchId: string
+): Promise<void> {
+  const { data: row } = await db.from("draft_live_matches")
+    .select("id, p1_id, invited_id, phase, p2_id").eq("id", matchId).maybeSingle();
+  if (!row) return;
+  if (row.p1_id !== userId && row.invited_id !== userId) throw new Error("Not your challenge");
+  if (row.p2_id) throw new Error("That challenge was already accepted");
+  await db.from("draft_live_matches")
+    .update({ phase: "abandoned", resolved_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+    .eq("id", matchId).eq("phase", "lobby").is("p2_id", null);
+}
+
+/** Pending + in-progress live matches relevant to a user inside one league, for
+ *  the board: challenges they've been sent, and any match they're currently in. */
+export async function leagueLiveStateFor(
+  db: SupabaseClient<DraftDatabase>, leagueId: string, userId: string
+): Promise<{
+  incoming: { matchId: string; fromId: string; fromName: string; fromStrength: number }[];
+  activeMatchId: string | null;
+}> {
+  const { data: rows } = await db.from("draft_live_matches")
+    .select("id, p1_id, p2_id, invited_id, p1_name, p1_strength, phase")
+    .eq("league_id", leagueId)
+    .not("phase", "in", "(result,abandoned)");
+  const incoming: { matchId: string; fromId: string; fromName: string; fromStrength: number }[] = [];
+  let activeMatchId: string | null = null;
+  for (const r of rows ?? []) {
+    if ((r.p1_id === userId || r.p2_id === userId) && r.phase !== "lobby") activeMatchId = r.id;
+    if (r.phase === "lobby" && r.invited_id === userId && !r.p2_id) {
+      incoming.push({ matchId: r.id, fromId: r.p1_id ?? "", fromName: r.p1_name ?? "A manager", fromStrength: Number(r.p1_strength ?? 0) });
+    }
+    // A challenger waiting on their own sent challenge should also be able to resume it.
+    if (r.phase === "lobby" && r.p1_id === userId && !r.p2_id) activeMatchId = activeMatchId ?? r.id;
+  }
+  return { incoming, activeMatchId };
+}

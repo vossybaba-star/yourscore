@@ -31,10 +31,11 @@ export async function POST(req: NextRequest) {
   const { ok } = await rateLimitDistributed(`draft-match:${user.id}`, 40, 60_000);
   if (!ok) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
 
-  let body: { stage?: string; leagueId?: string; opponentId?: string; findId?: string; botFormation?: string } = {};
+  // NOTE: league play is Live-H2H-only (see /api/draft/live + the league board).
+  // This async path is global/quick H2H only and deliberately ignores any leagueId.
+  let body: { stage?: string; opponentId?: string; findId?: string; botFormation?: string } = {};
   try { body = await req.json(); } catch { /* optional */ }
   const stage = body.stage === "resolve" ? "resolve" : "find";
-  const leagueId = typeof body.leagueId === "string" ? body.leagueId : null;
   const targetId = typeof body.opponentId === "string" ? body.opponentId : null;
 
   const db = createDraftDb();
@@ -59,25 +60,15 @@ export async function POST(req: NextRequest) {
   if (stage === "find") {
     if (targetId) {
       if (targetId === user.id) return NextResponse.json({ error: "Can't challenge yourself" }, { status: 400 });
-      if (leagueId) {
-        const { data: mem } = await db.from("draft_league_members").select("user_id").eq("league_id", leagueId).eq("user_id", targetId).maybeSingle();
-        if (!mem) return NextResponse.json({ error: "Not a league member" }, { status: 400 });
-      }
       const opp = await fetchActive(targetId);
       if (!opp) return NextResponse.json({ error: "Opponent unavailable" }, { status: 409 });
       return NextResponse.json({ opponentId: targetId, opp, you: meSide });
     }
 
-    // Random: an active team that isn't ours (within a league if given), else a bot.
-    let memberIds: string[] | null = null;
-    if (leagueId) {
-      const { data: members } = await db.from("draft_league_members").select("user_id").eq("league_id", leagueId);
-      memberIds = (members ?? []).map((m) => m.user_id).filter((id) => id !== user.id);
-      if (memberIds.length === 0) memberIds = ["__none__"];
-    }
-    let q = db.from("draft_teams").select("user_id, display_name, formation, squad, strength_rating, projected").eq("status", "active").neq("user_id", user.id).limit(50);
-    if (memberIds) q = q.in("user_id", memberIds);
-    const { data: candidates } = await q;
+    // Random: any active team that isn't ours, else a bot.
+    const { data: candidates } = await db
+      .from("draft_teams").select("user_id, display_name, formation, squad, strength_rating, projected")
+      .eq("status", "active").neq("user_id", user.id).limit(50);
 
     if (candidates && candidates.length > 0) {
       const pick = candidates[Math.floor(Math.random() * candidates.length)];
@@ -114,15 +105,13 @@ export async function POST(req: NextRequest) {
     id: matchId, challenger_id: user.id, opponent_id: opponentId,
     challenger_team: meSide as unknown as never, opponent_team: opp as unknown as never,
     challenger_strength: myStrength, opponent_strength: opp.strength,
-    winner_id: winnerId, league_id: leagueId, played_at: new Date().toISOString(),
+    winner_id: winnerId, league_id: null, played_at: new Date().toISOString(),
   });
 
   if (youWon) {
     await creditWin(db, user.id, meSide.name);
-    if (leagueId) await creditWin(db, user.id, meSide.name, leagueId);
   } else if (opponentId) {
     await creditWin(db, opponentId, opp.name);
-    if (leagueId) await creditWin(db, opponentId, opp.name, leagueId);
   }
   await applyTeamResult(db, user.id, youWon);
 

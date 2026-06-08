@@ -158,7 +158,6 @@ export default function TeamScreen() {
   // The last simulated season for THIS exact XI (so returning shows the result).
   const lastSeason = loadLastSeason();
   const hasLastSeason = !!lastSeason && lastSeason.seed === seasonSeed(team);
-  const stale = team.status === "stale"; // legacy flag only — teams stay playable now
 
   return (
     <div className="min-h-[100dvh] pb-28" style={{ background: "#0a0a0f" }}>
@@ -173,12 +172,9 @@ export default function TeamScreen() {
             )}
             <span
               className="font-body text-xs px-2.5 py-1 rounded-full"
-              style={{
-                color: stale ? "#ff4757" : "#00ff87",
-                background: stale ? "rgba(255,71,87,0.12)" : "rgba(0,255,135,0.12)",
-              }}
+              style={{ color: "#00ff87", background: "rgba(0,255,135,0.12)" }}
             >
-              {stale ? "STALE" : "● AVAILABLE"}
+              ● AVAILABLE
             </span>
           </div>
         </div>
@@ -373,12 +369,12 @@ export default function TeamScreen() {
                 </div>
               </div>
 
-              {/* How it works — 3 steps, left to right */}
+              {/* How it works — 3 steps, left to right (live two-half H2H) */}
               <div className="grid grid-cols-3 gap-2">
                 {([
-                  ["GET MATCHED", "Drawn against another manager's XI"],
-                  ["PREVIEW & SWAP", "See their team — swap up to 3 players"],
-                  ["STRONGEST WINS", "Your XI rating decides it · climb the board"],
+                  ["KICK OFF LIVE", "Matched with a live manager — see their XI"],
+                  ["TWO HALVES", "Swap before kick-off & at the break to outscore them"],
+                  ["AGGREGATE WINS", "Goals over 90 decide it · climb the board"],
                 ] as [string, string][]).map(([title, desc], i) => (
                   <div key={title} className="rounded-2xl p-3" style={{ background: "#0d0d14", border: "1px solid rgba(255,255,255,0.08)" }}>
                     <span className="font-display tracking-wide" style={{ fontSize: 16, color: "#00ff87" }}>{i + 1}</span>
@@ -444,13 +440,6 @@ export default function TeamScreen() {
                 )}
               </div>
 
-              {user && (
-                <button onClick={() => router.push("/38-0")}
-                  className="w-full rounded-2xl py-3 font-body active:scale-[0.98] transition-transform"
-                  style={{ background: "transparent", color: "#8888aa", fontSize: 14 }}>
-                  Start a fresh team
-                </button>
-              )}
             </>
           )}
         </div>

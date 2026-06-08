@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BottomNav } from "@/components/ui/BottomNav";
+import { DraftHeader } from "@/components/draft/DraftHeader";
 import { useUser } from "@/hooks/useUser";
 
 type League = { id: string; name: string; code: string; member_count: number };
@@ -52,9 +53,7 @@ export default function Leagues() {
   return (
     <div className="min-h-[100dvh] pb-28" style={{ background: "#0a0a0f" }}>
       <div className="max-w-lg mx-auto px-5 pt-safe">
-        <div className="flex items-center justify-between pt-4 pb-2">
-          <Link href="/38-0/leaderboard" className="font-body text-sm" style={{ color: "#8888aa" }}>← Leaderboard</Link>
-        </div>
+        <DraftHeader />
         <h1 className="font-display tracking-wide leading-none" style={{ fontSize: 44, color: "#fff" }}>
           MY <span style={{ color: "#a78bfa" }}>LEAGUES</span>
         </h1>

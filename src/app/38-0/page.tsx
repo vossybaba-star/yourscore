@@ -77,7 +77,6 @@ export default function DraftHome() {
                 </div>
                 <div className="font-body" style={{ fontSize: 13, color: "#8888aa" }}>
                   {existing.formation} · {existing.squad.length}/11 drafted
-                  {existing.status === "stale" && " · STALE — rebuild"}
                 </div>
               </div>
               <div className="font-display" style={{ fontSize: 34, color: "#00ff87" }}>

@@ -64,6 +64,7 @@ export type DraftLiveMatchRow = {
   join_code: string | null;
   ranked: boolean;
   league_id: string | null;
+  invited_id: string | null;       // directed league challenge (20_draft_league_live.sql)
   is_bot: boolean;
   p1_id: string | null;
   p2_id: string | null;
@@ -114,6 +115,7 @@ export type DraftLeagueMemberRow = {
   league_id: string;
   user_id: string;
   joined_at: Ts;
+  last_seen_at: Ts;                 // presence heartbeat (20_draft_league_live.sql)
 };
 
 export type DraftChallengeRow = {

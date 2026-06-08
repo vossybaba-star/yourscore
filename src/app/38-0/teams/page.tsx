@@ -10,6 +10,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BottomNav } from "@/components/ui/BottomNav";
+import { DraftHeader } from "@/components/draft/DraftHeader";
 import { useUser } from "@/hooks/useUser";
 import { hydrateSavedTeam, saveTeam } from "@/lib/draft/local";
 import type { Formation, PlacedPlayer } from "@/lib/draft/types";
@@ -60,9 +61,7 @@ export default function MyTeams() {
   return (
     <div className="min-h-[100dvh] pb-28" style={{ background: "#0a0a0f" }}>
       <div className="max-w-lg mx-auto px-5 pt-safe">
-        <div className="flex items-center justify-between pt-4 pb-2">
-          <Link href="/38-0" className="font-body text-sm" style={{ color: "#8888aa" }}>← 38-0</Link>
-        </div>
+        <DraftHeader />
         <h1 className="font-display tracking-wide leading-none" style={{ fontSize: 44, color: "#fff" }}>
           MY <span style={{ color: "#00ff87" }}>TEAMS</span>
         </h1>

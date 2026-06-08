@@ -90,8 +90,8 @@ const isChallenges =
           <span className="font-body text-xs">Home</span>
         </Link>
 
-        {/* Leagues */}
-        <Link href="/leagues" className="flex flex-col items-center gap-1 px-2 py-1 transition-colors" style={{ color: isLeague ? "#a78bfa" : "#8888aa" }}>
+        {/* Leagues — stay inside Draft XI's league area when the user is in 38-0. */}
+        <Link href={isDraft ? "/38-0/leagues" : "/leagues"} className="flex flex-col items-center gap-1 px-2 py-1 transition-colors" style={{ color: isLeague ? "#a78bfa" : "#8888aa" }}>
           <svg width="21" height="21" viewBox="0 0 22 22" fill="none">
             <path d="M6 2h10v5l-5 4-5-4z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" fill={isLeague ? "currentColor" : "none"} fillOpacity={isLeague ? 0.15 : 0} />
             <path d="M8 7v9a3 3 0 0 0 6 0V7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />

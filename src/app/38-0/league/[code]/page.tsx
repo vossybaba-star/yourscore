@@ -1,17 +1,20 @@
 "use client";
 
 /**
- * /38-0/league/[code] — a private league board. Members ranked by in-league wins,
- * each with an "Available" badge; challenge any available member (self-organising,
- * no fixtures). Share the code to invite. Fails soft pre-migration.
+ * /38-0/league/[code] — a private league board. Live-H2H-only: members ranked by
+ * points (live W/D/L), each with an honest online dot. Challenge an online manager
+ * → it sends a live invite; they accept and both drop into the two-half match,
+ * which credits this league's table. Owner can rename/delete; members can leave.
+ * Polls every few seconds so presence + incoming challenges stay fresh.
  */
 
-import { useCallback, useEffect, useState, type ComponentType } from "react";
+import { useCallback, useEffect, useRef, useState, type ComponentType } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { BottomNav } from "@/components/ui/BottomNav";
+import { DraftHeader } from "@/components/draft/DraftHeader";
 import { useUser } from "@/hooks/useUser";
-import { loadTeam, isComplete, saveMatchup } from "@/lib/draft/local";
+import { loadTeam, isComplete } from "@/lib/draft/local";
 
 type Member = {
   user_id: string;
@@ -22,10 +25,21 @@ type Member = {
   lost: number;
   points: number;
   strength: number | null;
+  hasTeam: boolean;
+  online: boolean;
   available: boolean;
   is_me: boolean;
 };
-type Board = { league: { id: string; name: string; code: string }; members: Member[]; isMember: boolean; ready?: boolean };
+type Incoming = { matchId: string; fromId: string; fromName: string; fromStrength: number };
+type Board = {
+  league: { id: string; name: string; code: string };
+  members: Member[];
+  isMember: boolean;
+  isOwner: boolean;
+  incoming: Incoming[];
+  activeMatchId: string | null;
+  ready?: boolean;
+};
 
 export default function LeagueBoard() {
   const router = useRouter();
@@ -38,6 +52,10 @@ export default function LeagueBoard() {
   const [copied, setCopied] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const [QRCode, setQRCode] = useState<ComponentType<{ value: string; size?: number }> | null>(null);
+  const [renaming, setRenaming] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => { import("react-qr-code").then((m) => setQRCode(() => m.default)); }, []);
 
@@ -48,7 +66,12 @@ export default function LeagueBoard() {
       .catch(() => setNotFound(true));
   }, [code]);
 
-  useEffect(() => { load(); }, [load]);
+  // Initial load + light polling (keeps me "online", surfaces incoming challenges).
+  useEffect(() => {
+    load();
+    pollRef.current = setInterval(load, 4000);
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  }, [load]);
 
   async function join() {
     setBusy(true); setErr(null);
@@ -60,25 +83,61 @@ export default function LeagueBoard() {
     setBusy(false);
   }
 
-  async function challenge(opponentId?: string) {
+  // Live challenge: requires a complete team locally + the opponent online. Sends a
+  // directed invite, then drops me into the live lobby to wait for them to accept.
+  async function challenge(opponentId: string) {
     if (!board || busy) return;
     if (!user) { router.push("/auth/sign-in"); return; }
     const team = loadTeam();
-    if (!team || !isComplete(team)) { router.push("/38-0"); return; }
+    if (!team || !isComplete(team)) { router.push("/38-0/team"); return; }
     setBusy(true); setErr(null);
     try {
-      // Ensure the cloud has the current XI (server reads it as the challenger).
+      // Make sure the cloud has my current XI before matchmaking reads it.
       const squad = team.squad.map((p) => ({ slot: p.slot, player_season_id: p.player_season_id }));
       const saveRes = await fetch("/api/draft/team", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ formation: team.formation, squad }) });
-      if (!saveRes.ok) { setErr((await saveRes.json().catch(() => ({}))).error ?? "Could not save team"); setBusy(false); return; }
+      if (!saveRes.ok) { setErr((await saveRes.json().catch(() => ({}))).error ?? "Could not save your team"); setBusy(false); return; }
 
-      // Matchmake (no resolution) → preview the opponent's XI and swap before kick-off.
-      const r = await fetch("/api/draft/match", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ stage: "find", leagueId: board.league.id, opponentId }) });
+      const r = await fetch("/api/draft/live", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "challenge", leagueId: board.league.id, opponentId }) });
       const m = await r.json();
-      if (!r.ok) { setErr(m.error ?? "Match failed"); setBusy(false); return; }
+      if (!r.ok || !m.match) { setErr(m.error ?? "Could not send challenge"); setBusy(false); return; }
+      router.push(`/38-0/live/match/${m.match.id}`);
+    } catch { setErr("Network error"); setBusy(false); }
+  }
 
-      saveMatchup({ opponentId: m.opponentId, findId: m.findId, botFormation: m.botFormation, leagueId: board.league.id, opp: m.opp });
-      router.push("/38-0/match/prematch");
+  async function accept(matchId: string) {
+    if (busy) return;
+    setBusy(true); setErr(null);
+    try {
+      const r = await fetch("/api/draft/live", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "accept", matchId }) });
+      const m = await r.json();
+      if (!r.ok || !m.match) { setErr(m.error ?? "Could not accept"); setBusy(false); return; }
+      router.push(`/38-0/live/match/${m.match.id}`);
+    } catch { setErr("Network error"); setBusy(false); }
+  }
+
+  async function decline(matchId: string) {
+    setErr(null);
+    await fetch("/api/draft/live", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "decline", matchId }) }).catch(() => {});
+    load();
+  }
+
+  async function rename() {
+    if (!board || !newName.trim() || busy) return;
+    setBusy(true); setErr(null);
+    try {
+      const r = await fetch(`/api/draft/league/${code}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ name: newName.trim() }) });
+      if (!r.ok) { setErr((await r.json().catch(() => ({}))).error ?? "Could not rename"); setBusy(false); return; }
+      setRenaming(false); setBusy(false); load();
+    } catch { setErr("Network error"); setBusy(false); }
+  }
+
+  async function leaveOrDelete(mode: "leave" | "delete") {
+    if (busy) return;
+    setBusy(true); setErr(null);
+    try {
+      const r = await fetch(`/api/draft/league/${code}?mode=${mode}`, { method: "DELETE" });
+      if (!r.ok) { setErr((await r.json().catch(() => ({}))).error ?? "Failed"); setBusy(false); return; }
+      router.push("/38-0/leagues");
     } catch { setErr("Network error"); setBusy(false); }
   }
 
@@ -114,14 +173,32 @@ export default function LeagueBoard() {
     );
   }
 
+  const onlineOpponents = board.members.filter((m) => !m.is_me && m.available);
+  const alone = board.members.length <= 1;
+
   return (
     <div className="min-h-[100dvh] pb-28" style={{ background: "#0a0a0f" }}>
-      <div className="max-w-lg mx-auto px-5 pt-safe">
-        <div className="flex items-center justify-between pt-4 pb-2">
-          <Link href="/38-0/leagues" className="font-body text-sm" style={{ color: "#8888aa" }}>← Leagues</Link>
+      <div className="max-w-lg mx-auto px-5">
+        <DraftHeader />
+
+        <div className="flex items-start justify-between gap-3">
+          {renaming ? (
+            <div className="flex-1">
+              <input value={newName} onChange={(e) => setNewName(e.target.value)} maxLength={40} autoFocus
+                className="w-full rounded-xl px-3 py-2 font-display tracking-wide" style={{ background: "#12121e", color: "#fff", border: "1px solid rgba(167,139,250,0.4)", fontSize: 24 }} />
+              <div className="flex gap-2 mt-2">
+                <button onClick={rename} disabled={busy || !newName.trim()} className="rounded-lg px-4 py-2 font-display tracking-wide disabled:opacity-50" style={{ background: "#a78bfa", color: "#15082b", fontSize: 14 }}>SAVE</button>
+                <button onClick={() => setRenaming(false)} className="rounded-lg px-4 py-2 font-body" style={{ color: "#8888aa", fontSize: 14 }}>Cancel</button>
+              </div>
+            </div>
+          ) : (
+            <h1 className="font-display tracking-wide leading-none flex-1" style={{ fontSize: 36, color: "#fff" }}>{board.league.name}</h1>
+          )}
+          {board.isOwner && !renaming && (
+            <button onClick={() => { setNewName(board.league.name); setRenaming(true); }} className="font-body text-xs px-2.5 py-1 rounded-full shrink-0 mt-1" style={{ color: "#a78bfa", background: "rgba(167,139,250,0.12)" }}>✏️ Rename</button>
+          )}
         </div>
 
-        <h1 className="font-display tracking-wide leading-none" style={{ fontSize: 38, color: "#fff" }}>{board.league.name}</h1>
         <div className="flex items-center gap-2 mt-2">
           <button onClick={shareCode} className="inline-flex items-center gap-2 rounded-full px-3 py-1.5" style={{ background: "rgba(167,139,250,0.12)", border: "1px solid rgba(167,139,250,0.35)" }}>
             <span className="font-display tracking-widest" style={{ fontSize: 18, color: "#a78bfa" }}>{board.league.code}</span>
@@ -146,13 +223,39 @@ export default function LeagueBoard() {
           <button onClick={join} disabled={busy} className="w-full mt-4 rounded-2xl py-3 font-display tracking-wide disabled:opacity-50" style={{ background: "#00ff87", color: "#062013", fontSize: 20 }}>JOIN THIS LEAGUE</button>
         )}
 
-        {board.isMember && (
-          <button onClick={() => challenge(undefined)} disabled={busy} className="w-full mt-4 rounded-2xl py-3 font-display tracking-wide disabled:opacity-50" style={{ background: "rgba(0,255,135,0.1)", color: "#00ff87", fontSize: 18, border: "1px solid rgba(0,255,135,0.3)" }}>
-            {busy ? "…" : "⚡ PLAY A RANDOM LEAGUE MATCH"}
-          </button>
+        {/* Resume an in-progress match */}
+        {board.activeMatchId && (
+          <Link href={`/38-0/live/match/${board.activeMatchId}`} className="block w-full mt-4 rounded-2xl py-3 text-center font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "#00ff87", color: "#062013", fontSize: 18 }}>
+            ▶ RESUME YOUR MATCH
+          </Link>
         )}
 
-        {/* League table — Premier League style: Played, Won, Lost, Points */}
+        {/* Incoming live challenges */}
+        {board.incoming?.length > 0 && (
+          <div className="mt-4 space-y-2">
+            {board.incoming.map((c) => (
+              <div key={c.matchId} className="rounded-2xl p-4" style={{ background: "rgba(0,255,135,0.08)", border: "1px solid rgba(0,255,135,0.4)" }}>
+                <div className="font-display tracking-wide" style={{ fontSize: 16, color: "#fff" }}>⚔️ {c.fromName} challenged you</div>
+                <div className="font-body" style={{ fontSize: 12, color: "#8888aa" }}>Strength {c.fromStrength} · live two-half match</div>
+                <div className="grid grid-cols-2 gap-2 mt-3">
+                  <button onClick={() => accept(c.matchId)} disabled={busy} className="rounded-xl py-3 font-display tracking-wide disabled:opacity-50" style={{ background: "#00ff87", color: "#062013", fontSize: 16 }}>ACCEPT →</button>
+                  <button onClick={() => decline(c.matchId)} disabled={busy} className="rounded-xl py-3 font-body disabled:opacity-50" style={{ background: "transparent", color: "#8888aa", fontSize: 14, border: "1px solid rgba(255,255,255,0.12)" }}>Decline</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* First-member invite moment */}
+        {board.isMember && alone && (
+          <div className="mt-5 rounded-2xl p-5 text-center" style={{ background: "linear-gradient(135deg,#1a1230,#0f0f17)", border: "1px solid rgba(167,139,250,0.35)" }}>
+            <div className="font-display tracking-wide" style={{ fontSize: 22, color: "#fff" }}>INVITE YOUR MATES</div>
+            <p className="font-body mt-1 mb-3" style={{ fontSize: 13, color: "#cfcfe6" }}>A league needs at least two managers. Share the code or QR — matches are live head-to-head.</p>
+            <button onClick={shareCode} className="w-full rounded-xl py-3 font-display tracking-wide" style={{ background: "#a78bfa", color: "#15082b", fontSize: 18 }}>SHARE INVITE →</button>
+          </div>
+        )}
+
+        {/* League table */}
         <div className="font-body mt-6 mb-2 flex items-center justify-between" style={{ fontSize: 11, color: "#8888aa", letterSpacing: 1 }}>
           <span>LEAGUE TABLE</span>
           <span>{board.members.length} {board.members.length === 1 ? "MANAGER" : "MANAGERS"}</span>
@@ -164,7 +267,6 @@ export default function LeagueBoard() {
           </div>
         ) : (
           <div className="rounded-2xl overflow-hidden" style={{ background: "#0d0d14", border: "1px solid rgba(255,255,255,0.08)" }}>
-            {/* header */}
             <div className="flex items-center px-3 py-2 font-body" style={{ fontSize: 11, color: "#8888aa", letterSpacing: 0.5, background: "rgba(255,255,255,0.03)" }}>
               <span style={{ width: 24, textAlign: "center" }}>#</span>
               <span className="flex-1 pl-2">TEAM</span>
@@ -182,8 +284,8 @@ export default function LeagueBoard() {
                   <div className="font-body truncate" style={{ fontSize: 14, color: "#fff" }}>
                     {m.display_name}{m.is_me ? " (you)" : ""}
                   </div>
-                  <div className="font-body flex items-center gap-1.5" style={{ fontSize: 10, color: m.available ? "#00ff87" : "#8888aa" }}>
-                    <span>{m.available ? "● Available" : "○ Away"}</span>
+                  <div className="font-body flex items-center gap-1.5" style={{ fontSize: 10, color: m.online ? "#00ff87" : "#8888aa" }}>
+                    <span>{m.online ? "● Online" : "○ Offline"}</span>
                     {m.strength != null && <span style={{ color: "#8888aa" }}>· {m.strength}</span>}
                   </div>
                 </div>
@@ -197,21 +299,51 @@ export default function LeagueBoard() {
           </div>
         )}
 
-        {/* Challenge an available manager (self-organising — no fixtures) */}
-        {board.isMember && board.members.some((m) => !m.is_me && m.available) && (
+        {/* Challenge an online manager (live H2H) */}
+        {board.isMember && !board.activeMatchId && (
           <>
-            <div className="font-body mt-5 mb-2" style={{ fontSize: 11, color: "#8888aa", letterSpacing: 1 }}>CHALLENGE A MANAGER</div>
-            <div className="flex flex-wrap gap-2">
-              {board.members.filter((m) => !m.is_me && m.available).map((m) => (
-                <button key={m.user_id} onClick={() => challenge(m.user_id)} disabled={busy}
-                  className="inline-flex items-center gap-2 rounded-full pl-3 pr-2 py-1.5 disabled:opacity-50 active:scale-95 transition-transform"
-                  style={{ background: "#12121e", border: "1px solid rgba(0,255,135,0.3)" }}>
-                  <span className="font-body truncate" style={{ fontSize: 13, color: "#fff", maxWidth: 130 }}>{m.display_name}</span>
-                  <span className="font-display tracking-wide rounded-full px-2" style={{ fontSize: 12, color: "#062013", background: "#00ff87" }}>⚔️ PLAY</span>
-                </button>
-              ))}
-            </div>
+            <div className="font-body mt-5 mb-2" style={{ fontSize: 11, color: "#8888aa", letterSpacing: 1 }}>CHALLENGE A MANAGER · LIVE</div>
+            {onlineOpponents.length === 0 ? (
+              <div className="font-body text-center py-5 rounded-2xl" style={{ color: "#8888aa", fontSize: 13, background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}>
+                {board.members.length <= 1 ? "Invite mates to play." : "Nobody else online right now. League matches are live — challenge a manager when their dot is green."}
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {onlineOpponents.map((m) => (
+                  <button key={m.user_id} onClick={() => challenge(m.user_id)} disabled={busy}
+                    className="inline-flex items-center gap-2 rounded-full pl-3 pr-2 py-1.5 disabled:opacity-50 active:scale-95 transition-transform"
+                    style={{ background: "#12121e", border: "1px solid rgba(0,255,135,0.3)" }}>
+                    <span className="h-2 w-2 rounded-full" style={{ background: "#00ff87" }} />
+                    <span className="font-body truncate" style={{ fontSize: 13, color: "#fff", maxWidth: 120 }}>{m.display_name}</span>
+                    <span className="font-display tracking-wide rounded-full px-2" style={{ fontSize: 12, color: "#062013", background: "#00ff87" }}>⚔️ PLAY</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </>
+        )}
+
+        {/* Manage: leave (member) / delete (owner) */}
+        {board.isMember && (
+          <div className="mt-8 pt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
+            {confirmDelete ? (
+              <div className="rounded-2xl p-4" style={{ background: "rgba(255,71,87,0.08)", border: "1px solid rgba(255,71,87,0.3)" }}>
+                <div className="font-body" style={{ fontSize: 13, color: "#ff7a88" }}>
+                  {board.isOwner ? "Delete this league for everyone? This can't be undone." : "Leave this league?"}
+                </div>
+                <div className="flex gap-2 mt-3">
+                  <button onClick={() => leaveOrDelete(board.isOwner ? "delete" : "leave")} disabled={busy} className="rounded-lg px-4 py-2 font-display tracking-wide disabled:opacity-50" style={{ background: "#ff4757", color: "#fff", fontSize: 14 }}>
+                    {board.isOwner ? "DELETE LEAGUE" : "LEAVE"}
+                  </button>
+                  <button onClick={() => setConfirmDelete(false)} className="rounded-lg px-4 py-2 font-body" style={{ color: "#8888aa", fontSize: 14 }}>Cancel</button>
+                </div>
+              </div>
+            ) : (
+              <button onClick={() => setConfirmDelete(true)} className="font-body text-sm" style={{ color: "#8888aa" }}>
+                {board.isOwner ? "🗑 Delete league" : "← Leave league"}
+              </button>
+            )}
+          </div>
         )}
       </div>
       <BottomNav />
