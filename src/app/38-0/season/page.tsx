@@ -247,6 +247,19 @@ export default function SeasonSim() {
           📸 SHARE YOUR RESULT
         </button>
 
+        <div className="grid grid-cols-2 gap-2 mt-2">
+          <Link href="/auth/sign-in"
+            className="flex items-center justify-center gap-2 rounded-2xl py-4 font-body font-semibold active:scale-[0.98] transition-transform text-center"
+            style={{ background: "rgba(0,255,135,0.08)", border: "1px solid rgba(0,255,135,0.25)", color: "#00ff87", fontSize: 14 }}>
+            💾 Save Team, Sign Up
+          </Link>
+          <Link href="/auth/sign-in"
+            className="flex items-center justify-center gap-2 rounded-2xl py-4 font-body font-semibold active:scale-[0.98] transition-transform text-center"
+            style={{ background: "rgba(167,139,250,0.08)", border: "1px solid rgba(167,139,250,0.25)", color: "#a78bfa", fontSize: 14 }}>
+            ⚔️ Go Head to Head
+          </Link>
+        </div>
+
         {/* awards */}
         {awards.length > 0 && (
           <>
