@@ -123,7 +123,7 @@ export default function LiveMatchScreen() {
           </Panel>
         )}
 
-        {m.phase === "result" && <ResultPanel view={view} m={m} />}
+        {m.phase === "result" && <ResultPanel view={view} />}
         {m.phase === "abandoned" && <Panel><p className="text-center" style={{ color: "#9a9ab0" }}>Match abandoned.</p><Link href="/38-0/live" className="underline block text-center mt-3" style={{ color: "#00ff87" }}>Play again →</Link></Panel>}
       </div>
 
@@ -192,7 +192,7 @@ function TwoXI({ view, caption }: { view: View; caption: string }) {
   );
 }
 
-function ResultPanel({ view, m }: { view: View; m: { winner_id: string | null; is_bot: boolean; p1_id: string | null } }) {
+function ResultPanel({ view }: { view: View }) {
   const drew = view.myGoals === view.oppGoals && (view.pens[0] == null);
   const won = view.pens[0] != null ? view.pens[0]! > view.pens[1]! : view.myGoals > view.oppGoals;
   const label = drew ? "Draw" : won ? "You win!" : "You lost";
