@@ -7,6 +7,7 @@
 
 import type { Metadata } from "next";
 import Link from "next/link";
+import { SaveTeamButton } from "./SaveTeamButton";
 
 export const runtime = "edge";
 
@@ -57,9 +58,12 @@ export default function SeasonSharePage({ searchParams }: { searchParams: SP }) 
         <div className="font-body mt-3" style={{ fontSize: 18, color: "#fff" }}>
           Finished <b style={{ color: accent }}>{ordinal(pos)}</b> on <b>{pts}</b> pts
         </div>
-        <Link href="/38-0" className="inline-block mt-6 rounded-2xl px-6 py-4 font-display tracking-wide" style={{ background: "#00ff87", color: "#062013", fontSize: 24 }}>
-          BUILD YOUR OWN XI →
-        </Link>
+        <div className="mt-6 flex flex-col gap-3 w-full max-w-xs mx-auto">
+          <SaveTeamButton ogUrl={ogUrl(searchParams)} />
+          <Link href="/38-0" className="inline-block rounded-2xl px-6 py-4 font-display tracking-wide text-center" style={{ background: "#00ff87", color: "#062013", fontSize: 24 }}>
+            BUILD YOUR OWN XI →
+          </Link>
+        </div>
       </div>
     </div>
   );
