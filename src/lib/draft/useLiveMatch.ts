@@ -25,7 +25,11 @@ export type UseLiveMatch = {
   opponentOnline: boolean;
   secondsLeft: number | null;
   loading: boolean;
+  /** Fatal — the match couldn't be loaded. Render a dead-end for this only. */
   error: string | null;
+  /** Transient — a rejected action (e.g. a swap just after the deadline). Show as
+   *  a toast; the match keeps running. Auto-clears. */
+  actionError: string | null;
   ready: () => Promise<void>;
   swap: (slotId: string, newPlayer: string) => Promise<void>;
   drawChoice: (wantsPens: boolean) => Promise<void>;
@@ -45,6 +49,7 @@ export function useLiveMatch(matchId: string | null): UseLiveMatch {
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const matchRef = useRef<DraftLiveMatchRow | null>(null);
   const advancedForPhaseRef = useRef<string | null>(null);
@@ -116,7 +121,10 @@ export function useLiveMatch(matchId: string | null): UseLiveMatch {
       const next = await post(path, { matchId, ...body });
       if (next) setMatch(next);
     } catch (e) {
-      setError((e as Error).message);
+      // A rejected action (usually a swap landing just after the deadline) must
+      // NOT tear down the match view — surface it as a transient, self-clearing toast.
+      setActionError((e as Error).message);
+      setTimeout(() => setActionError(null), 3500);
     }
   }, [matchId]);
 
@@ -127,6 +135,7 @@ export function useLiveMatch(matchId: string | null): UseLiveMatch {
     secondsLeft,
     loading,
     error,
+    actionError,
     ready: () => act("/api/draft/live/ready", {}),
     swap: (slotId, newPlayer) => act("/api/draft/live/swap", { slotId, newPlayer }),
     drawChoice: (wantsPens) => act("/api/draft/live/swap", { wantsPens }),

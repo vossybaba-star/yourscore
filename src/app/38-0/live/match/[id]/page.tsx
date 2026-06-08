@@ -7,7 +7,7 @@
  * result. Swaps go through a spin-and-choose sheet; the server validates them.
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Pitch } from "@/components/draft/Pitch";
@@ -21,7 +21,7 @@ const BG = "#0a0a0f";
 export default function LiveMatchScreen() {
   const { id } = useParams<{ id: string }>();
   const live = useLiveMatch(id ?? null);
-  const { match: m, side, secondsLeft, opponentOnline, loading, error } = live;
+  const { match: m, side, secondsLeft, opponentOnline, loading, error, actionError } = live;
 
   const view = useMemo(() => {
     if (!m || !side) return null;
@@ -51,6 +51,8 @@ export default function LiveMatchScreen() {
   }, [m, side]);
 
   const [spinSlot, setSpinSlot] = useState<string | null>(null);
+  // The swap window belongs to one phase — close the sheet whenever the phase moves.
+  useEffect(() => { setSpinSlot(null); }, [m?.phase]);
 
   if (loading) return <Centered>Loading match…</Centered>;
   if (error) return <Centered tone="error">{error} <Link href="/38-0/live" className="underline block mt-3">← Back</Link></Centered>;
@@ -133,6 +135,13 @@ export default function LiveMatchScreen() {
           onClose={() => setSpinSlot(null)}
           onPick={(playerId) => { live.swap(spinSlot, playerId); setSpinSlot(null); }}
         />
+      )}
+
+      {actionError && (
+        <div className="fixed left-1/2 -translate-x-1/2 bottom-24 z-[60] rounded-xl px-4 py-3 text-sm text-center max-w-xs"
+          style={{ background: "rgba(255,71,87,0.15)", color: "#ff9aa6", border: "1px solid rgba(255,71,87,0.4)" }}>
+          {actionError}
+        </div>
       )}
     </div>
   );
