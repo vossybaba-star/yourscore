@@ -9,7 +9,7 @@
 
 import raw from "@/data/draft/player-seasons.json";
 import type { PlayerSeason, Position } from "./types";
-import { canPlay } from "./score";
+import { canPlay, playerIdentity } from "./score";
 
 type Bucket = { club: string; clubSlug: string; season: string; playerIds: string[] };
 
@@ -56,7 +56,9 @@ export type Spin = {
 export function spin(
   openSlotPositions: Position[],
   usedPlayerIds: Set<string>,
-  usedNames: Set<string> = new Set(),
+  /** Canonical player identities already in the XI (see playerIdentity) — excludes
+   *  the same player even under a different edition's name string. */
+  usedIdentities: Set<string> = new Set(),
   rng: () => number = Math.random
 ): Spin {
   const buckets = DATA.buckets;
@@ -64,7 +66,7 @@ export function spin(
     getBucketPlayers(b).filter(
       (p) =>
         !usedPlayerIds.has(p.id) &&
-        !usedNames.has(p.name) && // no player twice, even from a different club/season
+        !usedIdentities.has(playerIdentity(p.name)) && // no player twice, even across editions
         openSlotPositions.some((slotPos) => canPlay(p.position, slotPos))
     );
   for (let attempt = 0; attempt < 60; attempt++) {
@@ -76,7 +78,7 @@ export function spin(
   }
   // Extremely unlikely fallback: any bucket, still excluding already-used players.
   const b = buckets[Math.floor(rng() * buckets.length)];
-  const players = getBucketPlayers(b).filter((p) => !usedPlayerIds.has(p.id) && !usedNames.has(p.name));
+  const players = getBucketPlayers(b).filter((p) => !usedPlayerIds.has(p.id) && !usedIdentities.has(playerIdentity(p.name)));
   return { club: b.club, clubSlug: b.clubSlug, season: b.season, players };
 }
 

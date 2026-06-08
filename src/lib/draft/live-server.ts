@@ -13,7 +13,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { DraftDatabase, DraftLiveMatchRow } from "@/types/draft-db";
 import { GLOBAL_LEAGUE, genJoinCode, validateAndScore, type TeamSnapshot } from "./server";
-import { seededRng, scoreTeam, canPlay } from "./score";
+import { seededRng, scoreTeam, canPlay, playerIdentity } from "./score";
 import { slotsFor } from "./formations";
 import { spin } from "./pool";
 import { seededBot, realisticOpponentName } from "./opponent";
@@ -103,7 +103,7 @@ function applyBotSwaps(squad: PlacedPlayer[], formation: Formation, count: numbe
     const slot = slots.find((s) => s.id === target.slot);
     if (!slot) continue;
     const usedIds = new Set(next.filter((p) => p.slot !== target.slot).map((p) => p.player_season_id));
-    const usedNames = new Set(next.filter((p) => p.slot !== target.slot).map((p) => p.name));
+    const usedNames = new Set(next.filter((p) => p.slot !== target.slot).map((p) => playerIdentity(p.name)));
     const legal = spin([slot.pos], usedIds, usedNames, rng).players.filter((p) => canPlay(p.position, slot.pos));
     if (legal.length === 0) continue;
     const c = legal[Math.floor(rng() * legal.length)];

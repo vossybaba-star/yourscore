@@ -18,6 +18,26 @@
 import type { Formation, PlacedPlayer, Position, Projected, Tier } from "./types";
 import { slotsFor } from "./formations";
 
+// ─── Player identity (de-dupe the same player across editions) ────────────────
+
+/**
+ * Canonical identity for a player, used so the SAME player can't be fielded twice.
+ * The dataset names a player inconsistently across FIFA editions — "Cristiano
+ * Ronaldo" in one, "C. Ronaldo" in another — so an exact-name check misses dupes.
+ * Key on first-initial + surname, which collapses those forms.
+ *
+ * Trade-off: a few genuinely-different players who share an initial+surname
+ * (David vs Douglas Luiz; Manuel vs Mateus Fernandes; Alex vs Alberto Moreno;
+ * Andres vs Aleix Garcia) also collapse and can't both be fielded — an acceptable
+ * cost vs. ever letting a duplicate through.
+ */
+export function playerIdentity(name: string): string {
+  const t = name.trim().toLowerCase().replace(/\./g, "").split(/\s+/).filter(Boolean);
+  if (t.length === 0) return name.trim().toLowerCase();
+  if (t.length === 1) return t[0];
+  return `${t[0][0]}|${t[t.length - 1]}`;
+}
+
 // ─── Positional fit ──────────────────────────────────────────────────────────
 
 /** Fit multipliers by tier. Exact position is best; a same-line cover is strong

@@ -9,7 +9,7 @@
 
 import { FORMATIONS, type Formation, type PlacedPlayer, type PlayerSeason, type Projected, type Slot, type TeamStatus } from "./types";
 import { slotsFor } from "./formations";
-import { fitMultiplier, canPlay, posCategory, scoreTeam, projectSeason, spineWeight, type PosCategory } from "./score";
+import { fitMultiplier, canPlay, posCategory, scoreTeam, projectSeason, spineWeight, playerIdentity, type PosCategory } from "./score";
 import { getPlayer } from "./pool";
 import type { SeasonResult } from "./season";
 
@@ -72,10 +72,10 @@ export function usedPlayerIds(team: LocalTeam): Set<string> {
   return new Set(team.squad.map((p) => p.player_season_id));
 }
 
-/** Names already in the XI — used to stop the same player being drafted twice,
- *  even from a different club/season. */
+/** Canonical identities already in the XI — used to stop the same player being
+ *  drafted twice, even from a different edition (where the name string differs). */
 export function usedPlayerNames(team: LocalTeam): Set<string> {
-  return new Set(team.squad.map((p) => p.name));
+  return new Set(team.squad.map((p) => playerIdentity(p.name)));
 }
 
 /**

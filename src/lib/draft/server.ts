@@ -13,7 +13,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { DraftDatabase } from "@/types/draft-db";
 import { slotsFor } from "./formations";
 import { getPlayer } from "./pool";
-import { scoreTeam, projectSeason, canPlay } from "./score";
+import { scoreTeam, projectSeason, canPlay, playerIdentity } from "./score";
 import type { Formation, PlacedPlayer, Projected } from "./types";
 import { FORMATIONS } from "./types";
 
@@ -140,18 +140,19 @@ export function validateAndScore(formationRaw: unknown, squadRaw: unknown): Vali
 
     const player = getPlayer(entry.player_season_id);
     if (!player) throw new Error(`Unknown player ${entry.player_season_id}`);
-    // The same player exists across FIFA editions under different player_season_ids
-    // but the SAME name — reject by name so an XI can never field two of one player
-    // (e.g. Ronaldo 06/07 + Ronaldo 09/10). This is the authoritative gate for every
-    // write path: team save, live swap, and match.
-    if (usedNames.has(player.name)) throw new Error(`Can't pick two of ${player.name}`);
+    // The same player appears across FIFA editions under different ids AND different
+    // name strings ("Cristiano Ronaldo" vs "C. Ronaldo"), so de-dupe by canonical
+    // identity, not exact name. Authoritative gate for every write path: team save,
+    // live swap, and match.
+    const identity = playerIdentity(player.name);
+    if (usedNames.has(identity)) throw new Error(`Can't pick two of ${player.name}`);
     if (!canPlay(player.position, slot.pos)) {
       throw new Error(`${player.name} cannot play ${slot.pos}`);
     }
 
     usedSlots.add(slot.id);
     usedPlayers.add(player.id);
-    usedNames.add(player.name);
+    usedNames.add(identity);
     squad.push({
       slot: slot.id,
       slotPos: slot.pos,

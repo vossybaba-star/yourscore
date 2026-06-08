@@ -11,10 +11,21 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   fitMultiplier, canPlay, scoreTeam, projectSeason,
-  winProbability, resolveH2H, seededRng, chemistry,
+  winProbability, resolveH2H, seededRng, chemistry, playerIdentity,
 } from "./score";
 import { slotsFor } from "./formations";
 import type { Formation, PlacedPlayer, Position } from "./types";
+
+test("playerIdentity collapses one player's edition name-forms, keeps distinct players apart", () => {
+  // The bug: same player, different edition name strings → must be ONE identity.
+  assert.equal(playerIdentity("Cristiano Ronaldo"), playerIdentity("C. Ronaldo"));
+  assert.equal(playerIdentity("Wayne Rooney"), playerIdentity("W. Rooney"));
+  assert.equal(playerIdentity("Trent Alexander-Arnold"), playerIdentity("T. Alexander-Arnold"));
+  // Genuinely different people stay distinct.
+  assert.notEqual(playerIdentity("Gary Neville"), playerIdentity("Phil Neville"));
+  assert.notEqual(playerIdentity("Cristiano Ronaldo"), playerIdentity("Ronaldo")); // CR7 vs the Brazilian
+  assert.equal(playerIdentity("Ronaldinho"), "ronaldinho"); // single-name player
+});
 
 // Build an XI by assigning each slot a player of a given overall. `posMap`/`overallMap`
 // override per-slot player position/overall; defaults: player plays the slot exactly.

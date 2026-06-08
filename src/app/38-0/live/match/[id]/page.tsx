@@ -13,6 +13,7 @@ import Link from "next/link";
 import { Pitch } from "@/components/draft/Pitch";
 import { useLiveMatch } from "@/lib/draft/useLiveMatch";
 import { spin, allBuckets, type Spin } from "@/lib/draft/pool";
+import { playerIdentity } from "@/lib/draft/score";
 import { slotsFor } from "@/lib/draft/formations";
 import type { Formation, PlacedPlayer, PlayerSeason } from "@/lib/draft/types";
 
@@ -230,7 +231,7 @@ function SpinSheet({ formation, squad, slotId, onPick, onClose }: { formation: F
   function doSpin() {
     setSpinning(true); setResult(null);
     const usedIds = new Set(squad.filter((p) => p.slot !== slotId).map((p) => p.player_season_id));
-    const usedNames = new Set(squad.filter((p) => p.slot !== slotId).map((p) => p.name));
+    const usedNames = new Set(squad.filter((p) => p.slot !== slotId).map((p) => playerIdentity(p.name)));
     const buckets = allBuckets();
     let ticks = 0;
     const t = setInterval(() => {
