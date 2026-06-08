@@ -41,6 +41,9 @@ export default function DraftHome() {
             ← YourScore
           </Link>
           <div className="flex items-center gap-2">
+            <Link href="/38-0/live" className="font-body text-xs px-3 py-1 rounded-full" style={{ color: "#04130a", background: "#00ff87" }}>
+              ⚡ Live H2H
+            </Link>
             <Link href="/38-0/teams" className="font-body text-xs px-3 py-1 rounded-full" style={{ color: "#a78bfa", background: "rgba(167,139,250,0.1)" }}>
               📁 My Teams
             </Link>
