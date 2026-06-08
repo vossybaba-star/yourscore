@@ -169,4 +169,19 @@ begin
 end;
 $$;
 
+-- 9. Realtime: stream draft_live_matches row changes to both participants (the
+--    live match UI subscribes via postgres_changes). Idempotent add to the
+--    supabase_realtime publication; replica identity full so updates carry the
+--    whole row in the payload.
+alter table draft_live_matches replica identity full;
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+     where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'draft_live_matches'
+  ) then
+    alter publication supabase_realtime add table draft_live_matches;
+  end if;
+end $$;
+
 commit;
