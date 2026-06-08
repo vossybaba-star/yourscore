@@ -40,6 +40,7 @@ export async function GET(req: NextRequest) {
   const inv = q.get("inv") === "1";
   const mode = q.get("mode") || "Normal";
   const wide = q.get("wide") === "1"; // landscape card for social unfurls
+  const logo = `${req.nextUrl.origin}/logo-mark.png`; // transparent YourScore wordmark
 
   const accent = inv ? "#ffd700" : pos === 1 ? "#00ff87" : pos <= 4 ? "#22d3ee" : pos <= 7 ? "#a78bfa" : pos <= 12 ? "#ffb800" : "#ff4757";
   const tier = inv ? "INVINCIBLE" : pos === 1 ? "CHAMPIONS" : pos <= 4 ? "TOP FOUR" : pos <= 6 ? "EUROPE" : pos <= 17 ? "MID-TABLE" : "RELEGATED";
@@ -93,7 +94,8 @@ export async function GET(req: NextRequest) {
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ display: "flex", alignItems: "center" }}>
               <span style={{ display: "flex", fontSize: 40, fontWeight: 900, color: "#fff", letterSpacing: 1 }}>38-0</span>
-              <span style={{ display: "flex", fontSize: 20, color: "#8b8ba6", fontWeight: 700, marginLeft: 12, letterSpacing: 1 }}>YOURSCORE</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={logo} width={97} height={26} alt="YourScore" style={{ display: "flex", marginLeft: 16 }} />
             </div>
             <div style={{ display: "flex", alignItems: "center" }}>
               <Pill text={mode} color="#8b8ba6" />
@@ -148,7 +150,8 @@ export async function GET(req: NextRequest) {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center" }}>
             <span style={{ display: "flex", fontSize: 52, fontWeight: 900, color: "#fff", letterSpacing: 1 }}>38-0</span>
-            <span style={{ display: "flex", fontSize: 22, color: "#8b8ba6", fontWeight: 700, marginLeft: 14, letterSpacing: 1 }}>YOURSCORE</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={logo} width={119} height={32} alt="YourScore" style={{ display: "flex", marginLeft: 18 }} />
           </div>
           <div style={{ display: "flex", alignItems: "center" }}>
             <Pill text={mode} color="#8b8ba6" />
