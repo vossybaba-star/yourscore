@@ -156,7 +156,7 @@ export default function SeasonSim() {
       });
       if (!res.ok) return;
       const { id } = await res.json();
-      if (id) setShortUrl(`${window.location.origin}/38-0/s/${id}`);
+      if (id) setShortUrl(`${window.location.origin}/s/${id}`);
     } catch { /* keep the long fallback */ }
   }
   function openShare() { setShareOpen(true); void ensureShortUrl(); }

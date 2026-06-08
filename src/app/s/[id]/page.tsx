@@ -1,10 +1,11 @@
 /**
- * /38-0/s/[id] — public landing for a SHORT-linked season result.
+ * /s/[id] — public landing for a SHORT-linked season result.
  *
  * The result payload is stored server-side (draft_shares) under a short id, so the
  * shared URL stays compact instead of carrying the whole XI in the query string.
  * We resolve the id → payload, set og:image → /api/draft/season-og so pasted links
- * unfurl as the broadcast card, and show a clean CTA to build your own XI.
+ * unfurl as the broadcast card, and show a clean CTA to build your own XI. Lives at
+ * the root (not under the game's route prefix) so the shared link stays neutral.
  */
 
 import type { Metadata } from "next";
