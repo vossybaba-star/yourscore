@@ -14,7 +14,7 @@ import { Pitch } from "@/components/draft/Pitch";
 import { BottomNav } from "@/components/ui/BottomNav";
 import {
   loadTeam, saveTeam, isComplete, recordWin, recordLoss, saveLastMatch,
-  compatibleFormations, reslot, seasonSeed, loadLastSeason, saveMatchup, type LocalTeam,
+  compatibleFormations, reslot, seasonSeed, loadLastSeason, type LocalTeam,
 } from "@/lib/draft/local";
 import type { Formation } from "@/lib/draft/types";
 import { makeOpponent } from "@/lib/draft/opponent";
@@ -71,7 +71,9 @@ export default function TeamScreen() {
   // Ranked: save the XI to the cloud (server recomputes Strength), matchmake against
   // a real active opponent (bot fallback), then go to the pre-match preview where you
   // see their XI and can swap up to 3 before kick-off. Resolution happens there.
-  async function rankedMatch() {
+  // Go live: persist the XI to the cloud (matchmaking reads the saved draft_teams
+  // row), then hand off to the live H2H entry to find/queue an opponent.
+  async function goLive() {
     if (!team || matching) return;
     if (!user) { router.push("/auth/sign-in"); return; }
     setMatching(true);
@@ -83,16 +85,7 @@ export default function TeamScreen() {
         body: JSON.stringify({ formation: team.formation, squad }),
       });
       if (!saveRes.ok) { setErr((await saveRes.json().catch(() => ({}))).error ?? "Could not save team"); setMatching(false); return; }
-
-      const res = await fetch("/api/draft/match", {
-        method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ stage: "find" }),
-      });
-      if (!res.ok) { setErr((await res.json().catch(() => ({}))).error ?? "Match failed"); setMatching(false); return; }
-      const m = await res.json();
-
-      saveMatchup({ opponentId: m.opponentId, findId: m.findId, botFormation: m.botFormation, opp: m.opp });
-      router.push("/38-0/match/prematch");
+      router.push("/38-0/live");
     } catch {
       setErr("Network error — try again");
       setMatching(false);
@@ -395,13 +388,14 @@ export default function TeamScreen() {
                 ))}
               </div>
 
-              {/* 1 — Ranked vs other players */}
-              <button onClick={user ? rankedMatch : quickMatch} disabled={matching}
+              {/* 1 — Live head-to-head vs another player (replaces the old ranked
+                     async match now that the player has a team) */}
+              <button onClick={user ? goLive : quickMatch} disabled={matching}
                 className="w-full rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.98] transition-transform disabled:opacity-60"
                 style={{ background: "#00ff87", color: "#062013" }}>
                 <span className="text-left">
-                  <span className="block font-display tracking-wide" style={{ fontSize: 20 }}>{user ? "RANKED MATCH ⚔️" : "QUICK MATCH ⚔️"}</span>
-                  <span className="block font-body" style={{ fontSize: 12, opacity: 0.75 }}>{user ? "Go head-to-head vs another player's XI · climbs the leaderboard" : "Practice match against a CPU XI"}</span>
+                  <span className="block font-display tracking-wide" style={{ fontSize: 20 }}>{user ? "GO LIVE — HEAD-TO-HEAD ⚡" : "QUICK MATCH ⚔️"}</span>
+                  <span className="block font-body" style={{ fontSize: 12, opacity: 0.75 }}>{user ? "Two halves vs a live player · swap at the break · climbs the leaderboard" : "Practice match against a CPU XI"}</span>
                 </span>
                 <span className="font-display" style={{ fontSize: 24 }}>{matching ? "…" : "→"}</span>
               </button>
@@ -463,8 +457,8 @@ export default function TeamScreen() {
 
         <p className="font-body text-center mt-5" style={{ color: "#8888aa", fontSize: 12 }}>
           {user
-            ? "Ranked wins climb the global leaderboard. Keep playing — tweak your XI before each match."
-            : "Sign in to play ranked matchmaking & climb the global leaderboard."}
+            ? "Live H2H wins climb the global leaderboard. Tweak your XI, then go again."
+            : "Sign in to play live head-to-head & climb the global leaderboard."}
         </p>
       </div>
       <BottomNav />
