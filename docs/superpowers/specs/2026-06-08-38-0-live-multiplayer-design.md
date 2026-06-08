@@ -125,7 +125,7 @@ invented.
 ## 5. Data model
 
 New working-state tables; the permanent record and standings reuse the existing
-`draft_matches` / `draft_standings` rails. **Migration: `supabase/migrations/15_draft_live.sql`.**
+`draft_matches` / `draft_standings` rails. **Migration: `supabase/migrations/18_draft_live.sql`.**
 
 ### `draft_live_matches` (ephemeral match state)
 - `id uuid pk`, `phase text`, `phase_deadline timestamptz`, `created_at`, `updated_at`,

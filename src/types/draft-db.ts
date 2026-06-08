@@ -33,7 +33,7 @@ export type DraftMatchRow = {
   opponent_team: Json;
   challenger_strength: number;
   opponent_strength: number;
-  winner_id: string | null;          // null = draw (15_draft_live.sql)
+  winner_id: string | null;          // null = draw (18_draft_live.sql)
   league_id: string | null;
   played_at: Ts;
   challenger_goals: number | null;   // two-half record
@@ -49,14 +49,14 @@ export type DraftStandingRow = {
   wins_all_time: number;
   last_win_date: Ts;
   updated_at: Ts;
-  draws_today: number;               // points ladder (15_draft_live.sql)
+  draws_today: number;               // points ladder (18_draft_live.sql)
   draws_all_time: number;
   losses_today: number;
   losses_all_time: number;
   last_played_date: Ts;
 };
 
-// Live, simultaneous two-half H2H working state (15_draft_live.sql).
+// Live, simultaneous two-half H2H working state (18_draft_live.sql).
 export type DraftLiveMatchRow = {
   id: string;
   phase: string;

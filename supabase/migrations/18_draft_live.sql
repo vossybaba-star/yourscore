@@ -1,4 +1,4 @@
--- 15_draft_live.sql
+-- 18_draft_live.sql
 -- 38-0 Live Multiplayer — live, simultaneous two-half H2H.
 -- Spec: docs/superpowers/specs/2026-06-08-38-0-live-multiplayer-design.md
 --

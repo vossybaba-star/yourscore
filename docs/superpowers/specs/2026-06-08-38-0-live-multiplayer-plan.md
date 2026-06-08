@@ -14,7 +14,7 @@ only — no existing 38-0 schema, routes, or scoring behaviour changes (except t
 
 ## Phase 0 — Migration & types
 
-1. `supabase/migrations/15_draft_live.sql`:
+1. `supabase/migrations/18_draft_live.sql`:
    - `draft_live_matches`, `draft_live_queue` (schema per spec §5) + RLS (participants-only
      SELECT/UPDATE).
    - Atomic pairing function `draft_live_pair(p_user uuid, p_ranked bool, p_league uuid)`
