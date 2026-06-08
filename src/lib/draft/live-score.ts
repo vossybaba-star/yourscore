@@ -9,6 +9,9 @@
  * Type-strippable (no enums) so it runs under `node --test`, like score.ts.
  */
 
+import type { PlacedPlayer, Position } from "./types";
+import { posCategory, seededRng } from "./score";
+
 // ─── Tunables (one place — adjust after playtesting) ──────────────────────────
 
 export const LIVE_CONFIG = {
@@ -155,4 +158,173 @@ export function nextPhase(s: PhaseInput): LivePhase {
     case "penalties":     return advance ? "result" : "penalties";
     default:              return s.phase; // result / abandoned are terminal
   }
+}
+
+// ─── Match simulation — scorers, assists, ratings, corners, throw-ins ──────────
+// Layered on top of the goal model (resolveHalfGoals stays the source of truth for
+// the scoreline). Pure + seeded, so the server resolves it once and stores it.
+
+export type GoalEvent = {
+  side: "a" | "b";              // a = p1, b = p2 (matches h1_p1 / h1_p2)
+  minute: number;
+  scorerId: string; scorerName: string;
+  assistId?: string; assistName?: string;
+};
+
+export type PlayerRating = {
+  id: string; name: string; pos: Position;
+  goals: number; assists: number;
+  rating: number;               // 4.5–9.8
+};
+
+export type HalfSim = {
+  goals: { a: number; b: number };
+  corners: { a: number; b: number };
+  throwins: { a: number; b: number };
+  events: GoalEvent[];
+  ratingsA: PlayerRating[];
+  ratingsB: PlayerRating[];
+};
+
+/** Accumulated across the match (written half-by-half on the live row). */
+export type MatchSim = { h1?: HalfSim; h2?: HalfSim };
+
+// Goal/assist propensity by position × quality (mirrors season.ts:173–174).
+const goalWeight = (p: PlacedPlayer): number =>
+  ({ att: 1, mid: 0.4, def: 0.1, gk: 0 } as Record<string, number>)[posCategory(p.slotPos)] * (0.6 + p.overall / 100);
+const assistWeight = (p: PlacedPlayer): number =>
+  ({ att: 0.7, mid: 1, def: 0.35, gk: 0.02 } as Record<string, number>)[posCategory(p.slotPos)] * (0.6 + p.overall / 100);
+
+/** Weighted random pick from a squad (optionally excluding one player). */
+function weightedPick(squad: PlacedPlayer[], weight: (p: PlacedPlayer) => number, rng: () => number, excludeId?: string): PlacedPlayer | null {
+  const pool = excludeId ? squad.filter((p) => p.player_season_id !== excludeId) : squad;
+  const total = pool.reduce((s, p) => s + weight(p), 0);
+  if (pool.length === 0) return null;
+  if (total <= 0) return pool[0];
+  let r = rng() * total;
+  for (const p of pool) { r -= weight(p); if (r <= 0) return p; }
+  return pool[pool.length - 1];
+}
+
+/** Split an integer total into two sides by a share in [0,1] (per-unit Bernoulli). */
+function splitTotal(total: number, shareA: number, rng: () => number): { a: number; b: number } {
+  let a = 0;
+  for (let i = 0; i < total; i++) if (rng() < shareA) a++;
+  return { a, b: total - a };
+}
+
+/** Per-player ratings for one side this half: base 6.0 + quality tilt + noise +
+ *  goal/assist bonuses + clean-sheet / heavy-concession swing for GK & DEF. */
+function rateSide(
+  squad: PlacedPlayer[], goalsFor: number, goalsAgainst: number,
+  scorers: Map<string, number>, assisters: Map<string, number>, rng: () => number
+): PlayerRating[] {
+  return squad.map((p) => {
+    const g = scorers.get(p.player_season_id) ?? 0;
+    const a = assisters.get(p.player_season_id) ?? 0;
+    let r = 6.0 + (p.overall - 75) / 40 + (rng() - 0.5) * 1.2;
+    r += g * 1.0 + a * 0.6;
+    const cat = posCategory(p.slotPos);
+    if (cat === "gk" || cat === "def") {
+      if (goalsAgainst === 0) r += 0.7;
+      else if (goalsAgainst >= 2) r -= 0.5 * (goalsAgainst - 1);
+    } else if (cat === "att" && goalsFor === 0) {
+      r -= 0.3;
+    }
+    return { id: p.player_season_id, name: p.name, pos: p.slotPos, goals: g, assists: a, rating: Math.max(4.5, Math.min(9.8, Math.round(r * 10) / 10)) };
+  });
+}
+
+/** Simulate one half: the scoreline (resolveHalfGoals) plus corners, throw-ins,
+ *  goal events (scorer/assist/minute) and per-player ratings. Deterministic by seed. */
+export function simulateHalf(
+  strA: number, strB: number, squadA: PlacedPlayer[], squadB: PlacedPlayer[], half: 1 | 2, seed: string
+): HalfSim {
+  const rng = seededRng(seed);
+  const goals = resolveHalfGoals(strA, strB, rng);
+  const shareA = shareFor(strA, strB);
+  // Corners lean to the stronger side and a bit of variance reads fine at low counts.
+  const corners = splitTotal(poisson(5, rng), shareA, rng);
+  // Throw-ins are roughly even — split near-proportionally (±1) so it never lands
+  // at something silly like 16–2.
+  const throwTotal = poisson(18, rng);
+  const throwA = Math.max(0, Math.min(throwTotal, Math.round(throwTotal * (0.5 + (shareA - 0.5) * 0.25) + (rng() - 0.5) * 2)));
+  const throwins = { a: throwA, b: throwTotal - throwA };
+
+  const base = half === 1 ? 0 : 45;
+  const events: GoalEvent[] = [];
+  const scA = new Map<string, number>(), asA = new Map<string, number>();
+  const scB = new Map<string, number>(), asB = new Map<string, number>();
+
+  const addGoals = (side: "a" | "b", n: number, squad: PlacedPlayer[], sc: Map<string, number>, as: Map<string, number>) => {
+    for (let i = 0; i < n; i++) {
+      const scorer = weightedPick(squad, goalWeight, rng);
+      if (!scorer) continue;
+      sc.set(scorer.player_season_id, (sc.get(scorer.player_season_id) ?? 0) + 1);
+      let assistId: string | undefined, assistName: string | undefined;
+      if (rng() < 0.75) {
+        const assister = weightedPick(squad, assistWeight, rng, scorer.player_season_id);
+        if (assister) { assistId = assister.player_season_id; assistName = assister.name; as.set(assistId, (as.get(assistId) ?? 0) + 1); }
+      }
+      events.push({ side, minute: base + 1 + Math.floor(rng() * 45), scorerId: scorer.player_season_id, scorerName: scorer.name, assistId, assistName });
+    }
+  };
+  addGoals("a", goals.a, squadA, scA, asA);
+  addGoals("b", goals.b, squadB, scB, asB);
+  events.sort((x, y) => x.minute - y.minute);
+
+  return {
+    goals, corners, throwins, events,
+    ratingsA: rateSide(squadA, goals.a, goals.b, scA, asA, rng),
+    ratingsB: rateSide(squadB, goals.b, goals.a, scB, asB, rng),
+  };
+}
+
+// ─── Full-time report (merge both halves) ─────────────────────────────────────
+
+export type SideTotals = { goals: number; corners: number; throwins: number };
+export type MatchReport = {
+  a: SideTotals; b: SideTotals;
+  events: GoalEvent[];
+  ratingsA: PlayerRating[]; ratingsB: PlayerRating[];   // combined across halves
+  potm: (PlayerRating & { side: "a" | "b" }) | null;
+  bestA: PlayerRating | null; worstA: PlayerRating | null;
+  bestB: PlayerRating | null; worstB: PlayerRating | null;
+};
+
+/** Combine a player's per-half ratings (average of the halves they appeared in —
+ *  a half-time sub gets a rating for the half they played). */
+function mergeRatings(h1?: PlayerRating[], h2?: PlayerRating[]): PlayerRating[] {
+  const acc = new Map<string, { pr: PlayerRating; n: number; sum: number; g: number; a: number }>();
+  for (const list of [h1, h2]) {
+    if (!list) continue;
+    for (const pr of list) {
+      const e = acc.get(pr.id);
+      if (e) { e.n++; e.sum += pr.rating; e.g += pr.goals; e.a += pr.assists; }
+      else acc.set(pr.id, { pr, n: 1, sum: pr.rating, g: pr.goals, a: pr.assists });
+    }
+  }
+  return Array.from(acc.values()).map(({ pr, n, sum, g, a }) => ({
+    id: pr.id, name: pr.name, pos: pr.pos, goals: g, assists: a, rating: Math.round((sum / n) * 10) / 10,
+  }));
+}
+
+const topOf = (rs: PlayerRating[]): PlayerRating | null => rs.length ? rs.reduce((m, p) => (p.rating > m.rating ? p : m)) : null;
+const botOf = (rs: PlayerRating[]): PlayerRating | null => rs.length ? rs.reduce((m, p) => (p.rating < m.rating ? p : m)) : null;
+
+/** Merge h1+h2 into the full-time view: totals, all events, combined ratings,
+ *  Player of the Match and each side's best & worst performer. */
+export function buildReport(sim: MatchSim): MatchReport {
+  const { h1, h2 } = sim;
+  const sum = (sel: (h: HalfSim) => number) => (h1 ? sel(h1) : 0) + (h2 ? sel(h2) : 0);
+  const a: SideTotals = { goals: sum((h) => h.goals.a), corners: sum((h) => h.corners.a), throwins: sum((h) => h.throwins.a) };
+  const b: SideTotals = { goals: sum((h) => h.goals.b), corners: sum((h) => h.corners.b), throwins: sum((h) => h.throwins.b) };
+  const events = [...(h1?.events ?? []), ...(h2?.events ?? [])].sort((x, y) => x.minute - y.minute);
+  const ratingsA = mergeRatings(h1?.ratingsA, h2?.ratingsA);
+  const ratingsB = mergeRatings(h1?.ratingsB, h2?.ratingsB);
+  const bestA = topOf(ratingsA), bestB = topOf(ratingsB);
+  let potm: MatchReport["potm"] = null;
+  if (bestA && (!bestB || bestA.rating >= bestB.rating)) potm = { ...bestA, side: "a" };
+  else if (bestB) potm = { ...bestB, side: "b" };
+  return { a, b, events, ratingsA, ratingsB, potm, bestA, worstA: botOf(ratingsA), bestB, worstB: botOf(ratingsB) };
 }

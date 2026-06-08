@@ -13,8 +13,9 @@ import Link from "next/link";
 import { Pitch } from "@/components/draft/Pitch";
 import { useLiveMatch } from "@/lib/draft/useLiveMatch";
 import { spin, allBuckets, type Spin } from "@/lib/draft/pool";
-import { playerIdentity } from "@/lib/draft/score";
+import { playerIdentity, seededRng } from "@/lib/draft/score";
 import { slotsFor } from "@/lib/draft/formations";
+import { buildReport, type MatchSim, type HalfSim, type PlayerRating, type GoalEvent } from "@/lib/draft/live-score";
 import type { Formation, PlacedPlayer, PlayerSeason } from "@/lib/draft/types";
 
 const BG = "#0a0a0f";
@@ -59,7 +60,7 @@ export default function LiveMatchScreen() {
   if (error) return <Centered tone="error">{error} <Link href="/38-0/live" className="underline block mt-3">← Back</Link></Centered>;
   if (!m || !view) return <Centered tone="error">Not part of this match. <Link href="/38-0/live" className="underline">← Back</Link></Centered>;
 
-  const inSwap = m.phase === "pregame_swap" || m.phase === "halftime_swap";
+  const sim = (m.sim ?? null) as MatchSim | null;
 
   return (
     <div className="min-h-[100dvh] pb-32" style={{ background: BG, color: "#e8e8f0" }}>
@@ -89,11 +90,10 @@ export default function LiveMatchScreen() {
           <TwoXI view={view} caption="Opponents revealed — size up both XIs" countdown={secondsLeft} />
         )}
 
-        {inSwap && (
+        {m.phase === "pregame_swap" && (
           <Panel>
             <p className="text-center text-sm" style={{ color: "#9a9ab0" }}>
-              {m.phase === "pregame_swap" ? "Pre-match: change 1 player after seeing their XI." : "Halftime: make up to 2 changes."}
-              {" "}<b style={{ color: "#ffb800" }}>{view.swapsLeft} left</b>
+              Pre-match: change 1 player after seeing their XI. <b style={{ color: "#ffb800" }}>{view.swapsLeft} left</b>
             </p>
             <div className="mt-3">
               <Pitch formation={view.myFormation} squad={view.mySquad}
@@ -101,6 +101,38 @@ export default function LiveMatchScreen() {
             </div>
             <Action onClick={live.ready} disabled={view.myReady}>{view.myReady ? "Done ✓ — waiting…" : "Done"}</Action>
           </Panel>
+        )}
+
+        {m.phase === "halftime_swap" && (
+          <>
+            {/* Half-time report + both squads, then your changes (one combined screen). */}
+            {sim?.h1 && (
+              <Panel>
+                <p className="text-center text-xs" style={{ color: "#ffb800", letterSpacing: 1 }}>HALF-TIME REPORT</p>
+                <p className="text-center font-display" style={{ fontSize: 34, fontWeight: 800 }}>{view.myGoals} – {view.oppGoals}</p>
+                <div className="mt-3">
+                  <MatchReportCard rv={halftimeView(sim.h1, view.meP1)} meP1={view.meP1} myName={view.myName} oppName={view.oppName} showPotm={false} />
+                </div>
+                <div className="mt-4">
+                  <div className="text-xs mb-1" style={{ color: "#7a7a92", letterSpacing: 1 }}>BOTH SQUADS</div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Pitch formation={view.myFormation} squad={view.mySquad} compact />
+                    <Pitch formation={view.oppFormation} squad={view.oppSquad} compact />
+                  </div>
+                </div>
+              </Panel>
+            )}
+            <Panel>
+              <p className="text-center text-sm" style={{ color: "#9a9ab0" }}>
+                Make up to 2 changes for the second half. <b style={{ color: "#ffb800" }}>{view.swapsLeft} left</b>
+              </p>
+              <div className="mt-3">
+                <Pitch formation={view.myFormation} squad={view.mySquad}
+                  onSlotClick={view.swapsLeft > 0 ? (s) => setSpinSlot(s) : undefined} />
+              </div>
+              <Action onClick={live.ready} disabled={view.myReady}>{view.myReady ? "Done ✓ — waiting…" : "Done"}</Action>
+            </Panel>
+          </>
         )}
 
         {(m.phase === "half1" || m.phase === "half2") && (
@@ -132,13 +164,14 @@ export default function LiveMatchScreen() {
           </Panel>
         )}
 
-        {m.phase === "result" && <ResultPanel view={view} />}
+        {m.phase === "result" && <ResultPanel view={view} sim={sim} />}
         {m.phase === "abandoned" && <Panel><p className="text-center" style={{ color: "#9a9ab0" }}>Match abandoned.</p><Link href="/38-0/live" className="underline block text-center mt-3" style={{ color: "#00ff87" }}>Play again →</Link></Panel>}
       </div>
 
       {spinSlot && (
         <SpinSheet
           formation={view.myFormation} squad={view.mySquad} slotId={spinSlot}
+          seedKey={`${m.id}:${side}:${m.phase}:${spinSlot}`}
           onClose={() => setSpinSlot(null)}
           onPick={(playerId) => { live.swap(spinSlot, playerId); setSpinSlot(null); }}
         />
@@ -215,29 +248,174 @@ function TwoXI({ view, caption, countdown }: { view: View; caption: string; coun
   );
 }
 
-function ResultPanel({ view }: { view: View }) {
+function ResultPanel({ view, sim }: { view: View; sim: MatchSim | null }) {
   const drew = view.myGoals === view.oppGoals && (view.pens[0] == null);
   const won = view.pens[0] != null ? view.pens[0]! > view.pens[1]! : view.myGoals > view.oppGoals;
   const label = drew ? "Draw" : won ? "You win!" : "You lost";
   const color = drew ? "#ffb800" : won ? "#00ff87" : "#ff7a88";
+  const rv = sim ? fulltimeView(sim, view.meP1) : null;
+
+  function share() {
+    const text = `${view.myName} ${view.myGoals}–${view.oppGoals} ${view.oppName} on 38-0 Live${rv?.potm ? ` · ⭐ ${rv.potm.name} (${rv.potm.rating.toFixed(1)})` : ""}`;
+    navigator.share?.({ title: "38-0 Live result", text, url: `${location.origin}/38-0/live` }).catch(() => {});
+  }
+
   return (
     <Panel>
       <p className="text-center font-display tracking-wide" style={{ fontSize: 34, color }}>{label}</p>
       <p className="text-center mt-1" style={{ fontSize: 40, fontWeight: 800 }}>
         {view.myGoals} – {view.oppGoals}{view.pens[0] != null && <span className="block text-sm" style={{ color: "#9a9ab0" }}>pens {view.pens[0]}–{view.pens[1]}</span>}
       </p>
-      <Link href="/38-0/live" className="mt-6 block text-center rounded-2xl py-4 font-semibold" style={{ background: "#00ff87", color: "#04130a" }}>Play again</Link>
+      {rv && (
+        <div className="mt-4">
+          <div className="text-xs mb-2" style={{ color: "#ffb800", letterSpacing: 1 }}>FULL-TIME REPORT</div>
+          <MatchReportCard rv={rv} meP1={view.meP1} myName={view.myName} oppName={view.oppName} showPotm />
+        </div>
+      )}
+      <button onClick={share} className="mt-5 w-full rounded-2xl py-3 font-semibold" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "#e8e8f0" }}>Share result</button>
+      <Link href="/38-0/live" className="mt-3 block text-center rounded-2xl py-4 font-semibold" style={{ background: "#00ff87", color: "#04130a" }}>Play again</Link>
       <Link href="/38-0/leaderboard" className="mt-3 block text-center underline text-sm" style={{ color: "#8888aa" }}>View leaderboard</Link>
     </Panel>
   );
 }
 
-function SpinSheet({ formation, squad, slotId, onPick, onClose }: { formation: Formation; squad: PlacedPlayer[]; slotId: string; onPick: (playerId: string) => void; onClose: () => void }) {
+// ── Match report (half-time + full-time) ──────────────────────────────────────
+
+type StatLine = { goals: number; corners: number; throwins: number };
+type ReportView = {
+  mine: StatLine; opp: StatLine;
+  events: GoalEvent[];
+  myRatings: PlayerRating[]; oppRatings: PlayerRating[];
+  myBest: PlayerRating | null; myWorst: PlayerRating | null;
+  oppBest: PlayerRating | null; oppWorst: PlayerRating | null;
+  potm: { name: string; rating: number; mine: boolean } | null;
+};
+
+const bestOf = (rs: PlayerRating[]): PlayerRating | null => rs.length ? rs.reduce((m, p) => (p.rating > m.rating ? p : m)) : null;
+const worstOf = (rs: PlayerRating[]): PlayerRating | null => rs.length ? rs.reduce((m, p) => (p.rating < m.rating ? p : m)) : null;
+const ratingColor = (r: number): string => (r >= 8 ? "#00ff87" : r >= 7 ? "#cfcfe6" : r >= 6 ? "#ffb800" : "#ff7a88");
+
+/** Map one half's sim onto me/opp (no PotM at the break). */
+function halftimeView(h: HalfSim, meP1: boolean): ReportView {
+  const sa = { goals: h.goals.a, corners: h.corners.a, throwins: h.throwins.a };
+  const sb = { goals: h.goals.b, corners: h.corners.b, throwins: h.throwins.b };
+  const myR = meP1 ? h.ratingsA : h.ratingsB;
+  const oppR = meP1 ? h.ratingsB : h.ratingsA;
+  return {
+    mine: meP1 ? sa : sb, opp: meP1 ? sb : sa, events: h.events,
+    myRatings: myR, oppRatings: oppR,
+    myBest: bestOf(myR), myWorst: worstOf(myR), oppBest: bestOf(oppR), oppWorst: worstOf(oppR), potm: null,
+  };
+}
+
+/** Map the full-time report (both halves) onto me/opp, with Player of the Match. */
+function fulltimeView(sim: MatchSim, meP1: boolean): ReportView {
+  const r = buildReport(sim);
+  return {
+    mine: meP1 ? r.a : r.b, opp: meP1 ? r.b : r.a, events: r.events,
+    myRatings: meP1 ? r.ratingsA : r.ratingsB, oppRatings: meP1 ? r.ratingsB : r.ratingsA,
+    myBest: meP1 ? r.bestA : r.bestB, myWorst: meP1 ? r.worstA : r.worstB,
+    oppBest: meP1 ? r.bestB : r.bestA, oppWorst: meP1 ? r.worstB : r.worstA,
+    potm: r.potm ? { name: r.potm.name, rating: r.potm.rating, mine: (r.potm.side === "a") === meP1 } : null,
+  };
+}
+
+function MatchReportCard({ rv, meP1, myName, oppName, showPotm }: { rv: ReportView; meP1: boolean; myName: string; oppName: string; showPotm?: boolean }) {
+  const rows: [string, number, number][] = [
+    ["Goals", rv.mine.goals, rv.opp.goals],
+    ["Corners", rv.mine.corners, rv.opp.corners],
+    ["Throw-ins", rv.mine.throwins, rv.opp.throwins],
+  ];
+  return (
+    <>
+      {/* Stat table — You / stat / Opp */}
+      <div className="rounded-xl overflow-hidden" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
+        <div className="flex items-center px-3 py-1.5 text-xs" style={{ color: "#9a9ab0", background: "rgba(255,255,255,0.03)" }}>
+          <span className="flex-1 text-left truncate" style={{ color: "#00ff87" }}>{myName}</span>
+          <span style={{ width: 84, textAlign: "center" }} />
+          <span className="flex-1 text-right truncate">{oppName}</span>
+        </div>
+        {rows.map(([label, a, b]) => (
+          <div key={label} className="flex items-center px-3 py-2" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+            <span className="flex-1 text-left tabular-nums font-bold" style={{ fontSize: 18, color: a >= b ? "#fff" : "#9a9ab0" }}>{a}</span>
+            <span style={{ width: 84, textAlign: "center", fontSize: 10, letterSpacing: 1, color: "#7a7a92" }}>{label.toUpperCase()}</span>
+            <span className="flex-1 text-right tabular-nums font-bold" style={{ fontSize: 18, color: b >= a ? "#fff" : "#9a9ab0" }}>{b}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Goal feed */}
+      {rv.events.length > 0 && (
+        <div className="mt-3">
+          <div className="text-xs mb-1" style={{ color: "#7a7a92", letterSpacing: 1 }}>GOALS</div>
+          <div className="space-y-1">
+            {rv.events.map((e, i) => {
+              const mine = (e.side === "a") === meP1;
+              return (
+                <div key={i} className="flex items-center gap-2 text-sm">
+                  <span className="font-mono" style={{ width: 30, color: "#7a7a92" }}>{e.minute}&apos;</span>
+                  <span style={{ color: mine ? "#00ff87" : "#e8e8f0" }}>⚽ {e.scorerName}</span>
+                  {e.assistName && <span className="text-xs truncate" style={{ color: "#9a9ab0" }}>↳ {e.assistName}</span>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* PotM + best/worst per side */}
+      {showPotm && rv.potm && (
+        <div className="mt-3 rounded-xl px-4 py-3 text-center" style={{ background: "rgba(255,184,0,0.1)", border: "1px solid rgba(255,184,0,0.35)" }}>
+          <div className="text-xs" style={{ color: "#ffb800", letterSpacing: 1 }}>⭐ PLAYER OF THE MATCH</div>
+          <div className="font-display tracking-wide mt-0.5" style={{ fontSize: 20 }}>{rv.potm.name} <span style={{ color: "#ffb800" }}>{rv.potm.rating.toFixed(1)}</span></div>
+        </div>
+      )}
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <PerfPill label={`${myName} — best`} p={rv.myBest} color="#00ff87" />
+        <PerfPill label={`${myName} — worst`} p={rv.myWorst} color="#ff7a88" />
+        <PerfPill label={`${oppName} — best`} p={rv.oppBest} color="#cfcfe6" />
+        <PerfPill label={`${oppName} — worst`} p={rv.oppWorst} color="#9a9ab0" />
+      </div>
+
+      {/* Your XI ratings */}
+      {rv.myRatings.length > 0 && (
+        <div className="mt-3">
+          <div className="text-xs mb-1" style={{ color: "#7a7a92", letterSpacing: 1 }}>YOUR XI RATINGS</div>
+          <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+            {[...rv.myRatings].sort((a, b) => b.rating - a.rating).map((p) => (
+              <div key={p.id} className="flex items-center justify-between text-sm gap-2">
+                <span className="truncate" style={{ color: "#cfcfe6" }}><span style={{ color: "#7a7a92" }}>{p.pos}</span> {p.name}{p.goals > 0 ? " ⚽".repeat(Math.min(p.goals, 3)) : ""}</span>
+                <span className="tabular-nums font-bold" style={{ color: ratingColor(p.rating) }}>{p.rating.toFixed(1)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function PerfPill({ label, p, color }: { label: string; p: PlayerRating | null; color: string }) {
+  if (!p) return null;
+  return (
+    <div className="rounded-xl px-3 py-2 min-w-0" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
+      <div className="text-xs truncate" style={{ color: "#7a7a92" }}>{label}</div>
+      <div className="flex items-center justify-between gap-2">
+        <span className="truncate" style={{ fontSize: 13 }}>{p.name}</span>
+        <span className="tabular-nums font-bold" style={{ color }}>{p.rating.toFixed(1)}</span>
+      </div>
+    </div>
+  );
+}
+
+function SpinSheet({ formation, squad, slotId, seedKey, onPick, onClose }: { formation: Formation; squad: PlacedPlayer[]; slotId: string; seedKey: string; onPick: (playerId: string) => void; onClose: () => void }) {
   const slot = slotsFor(formation).find((s) => s.id === slotId)!;
   const [result, setResult] = useState<Spin | null>(null);
   const [spinning, setSpinning] = useState(false);
   const [reel, setReel] = useState<{ club: string; season: string } | null>(null);
 
+  // ONE spin per position: the bucket is seeded by (match, side, phase, slot), so
+  // closing and re-opening shows the SAME options — no re-rolling until you like it.
   function doSpin() {
     setSpinning(true); setResult(null);
     const usedIds = new Set(squad.filter((p) => p.slot !== slotId).map((p) => p.player_season_id));
@@ -246,10 +424,10 @@ function SpinSheet({ formation, squad, slotId, onPick, onClose }: { formation: F
     let ticks = 0;
     const t = setInterval(() => {
       const b = buckets[Math.floor(Math.random() * buckets.length)];
-      setReel({ club: b.club, season: b.season });
+      setReel({ club: b.club, season: b.season }); // cosmetic flicker only
       if (++ticks > 11) {
         clearInterval(t);
-        const r = spin([slot.pos], usedIds, usedNames);
+        const r = spin([slot.pos], usedIds, usedNames, seededRng(seedKey)); // seeded → fixed
         setReel({ club: r.club, season: r.season });
         setResult(r); setSpinning(false);
       }
@@ -265,14 +443,17 @@ function SpinSheet({ formation, squad, slotId, onPick, onClose }: { formation: F
         </div>
 
         {!result && (
-          <button onClick={doSpin} disabled={spinning} className="mt-5 w-full rounded-2xl py-4 font-semibold" style={{ background: "#ffb800", color: "#1a1300", opacity: spinning ? 0.7 : 1 }}>
-            {spinning ? `${reel?.club ?? ""} ${reel?.season ?? ""}…` : "Spin"}
-          </button>
+          <>
+            <button onClick={doSpin} disabled={spinning} className="mt-5 w-full rounded-2xl py-4 font-semibold" style={{ background: "#ffb800", color: "#1a1300", opacity: spinning ? 0.7 : 1 }}>
+              {spinning ? `${reel?.club ?? ""} ${reel?.season ?? ""}…` : "Spin"}
+            </button>
+            <p className="mt-2 text-center text-xs" style={{ color: "#7a7a92" }}>One spin per position — pick from what you&apos;re dealt, or keep your player.</p>
+          </>
         )}
 
         {result && (
           <div className="mt-4">
-            <p className="text-xs uppercase tracking-wide" style={{ color: "#7a7a92" }}>{result.club} · {result.season}</p>
+            <p className="text-xs uppercase tracking-wide" style={{ color: "#7a7a92" }}>{result.club} · {result.season} — pick one or cancel to keep your player</p>
             <div className="mt-2 space-y-2 max-h-[40vh] overflow-y-auto">
               {result.players.map((p: PlayerSeason) => (
                 <button key={p.id} onClick={() => onPick(p.id)} className="w-full flex items-center justify-between rounded-xl px-4 py-3" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }}>
@@ -281,7 +462,6 @@ function SpinSheet({ formation, squad, slotId, onPick, onClose }: { formation: F
                 </button>
               ))}
             </div>
-            <button onClick={doSpin} className="mt-3 w-full rounded-xl py-3 text-sm" style={{ background: "rgba(255,255,255,0.06)", color: "#9a9ab0" }}>Re-spin (keeps your change)</button>
           </div>
         )}
       </div>

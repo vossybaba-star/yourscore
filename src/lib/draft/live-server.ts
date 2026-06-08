@@ -19,8 +19,8 @@ import { spin } from "./pool";
 import { seededBot, realisticOpponentName } from "./opponent";
 import type { Formation } from "./types";
 import {
-  LIVE_CONFIG, nextPhase, resolveHalfGoals, resolveShootout, aggregate,
-  type LivePhase,
+  LIVE_CONFIG, nextPhase, resolveShootout, aggregate, simulateHalf, buildReport,
+  type LivePhase, type MatchSim,
 } from "./live-score";
 import type { PlacedPlayer } from "./types";
 
@@ -152,12 +152,16 @@ function resolutionForEntering(target: LivePhase, row: DraftLiveMatchRow): Parti
       // Bot makes 1–2 changes at the break (human-like variation).
       return botSwapPatch(row, seededRng(`${row.id}:botn`)() < 0.5 ? 1 : 2, `${row.id}:bothalf`);
     case "half1": {
-      const g = resolveHalfGoals(a, b, seededRng(`${row.id}:h1`));
-      return { h1_p1: g.a, h1_p2: g.b };
+      // Full sim (goals + corners/throw-ins/scorers/assists/ratings) over the XIs
+      // as they stand entering H1. side a = p1, b = p2.
+      const s = simulateHalf(a, b, (row.p1_squad ?? []) as PlacedPlayer[], (row.p2_squad ?? []) as PlacedPlayer[], 1, `${row.id}:h1`);
+      return { h1_p1: s.goals.a, h1_p2: s.goals.b, sim: { h1: s } as unknown as never };
     }
     case "half2": {
-      const g = resolveHalfGoals(a, b, seededRng(`${row.id}:h2`));
-      return { h2_p1: g.a, h2_p2: g.b };
+      // Uses the post-halftime-swap squads/strengths; merge onto the stored H1.
+      const s = simulateHalf(a, b, (row.p1_squad ?? []) as PlacedPlayer[], (row.p2_squad ?? []) as PlacedPlayer[], 2, `${row.id}:h2`);
+      const prev = (row.sim ?? {}) as MatchSim;
+      return { h2_p1: s.goals.a, h2_p2: s.goals.b, sim: { ...prev, h2: s } as unknown as never };
     }
     case "draw_decision": {
       // A disguised bot decides immediately (deterministic; Phase 6 adds delay).
@@ -265,7 +269,7 @@ async function finalize(db: SupabaseClient<DraftDatabase>, row: DraftLiveMatchRo
     league_id: league,
     challenger_goals: agg.a,
     opponent_goals: agg.b,
-    detail: { outcome, h1: { a: row.h1_p1, b: row.h1_p2 }, h2: { a: row.h2_p1, b: row.h2_p2 }, pens: row.pens_p1 !== null ? { a: row.pens_p1, b: row.pens_p2 } : null } as unknown as never,
+    detail: { outcome, h1: { a: row.h1_p1, b: row.h1_p2 }, h2: { a: row.h2_p1, b: row.h2_p2 }, pens: row.pens_p1 !== null ? { a: row.pens_p1, b: row.pens_p2 } : null, report: buildReport((row.sim ?? {}) as MatchSim) } as unknown as never,
     played_at: new Date().toISOString(),
   }, { onConflict: "id", ignoreDuplicates: true });
 

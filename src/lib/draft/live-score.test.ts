@@ -12,9 +12,23 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   poisson, resolveHalfGoals, aggregate, resolveShootout, nextPhase, LIVE_CONFIG,
+  simulateHalf, buildReport,
   type LivePhase, type PhaseInput,
 } from "./live-score";
 import { seededRng } from "./score";
+import type { PlacedPlayer, Position } from "./types";
+
+// A plausible 4-3-3 XI for sim tests (GK, 4 def, 3 mid, 3 att), varied overalls.
+function mkSquad(prefix: string): PlacedPlayer[] {
+  const spec: [string, Position, number][] = [
+    ["gk", "GK", 84], ["rb", "RB", 80], ["rcb", "CB", 83], ["lcb", "CB", 82], ["lb", "LB", 79],
+    ["rcm", "CM", 85], ["cm", "CDM", 81], ["lcm", "CAM", 86], ["rw", "RW", 88], ["st", "ST", 90], ["lw", "LW", 87],
+  ];
+  return spec.map(([slot, pos, overall], i) => ({
+    slot, slotPos: pos, position: pos, overall,
+    player_season_id: `${prefix}-${slot}-${i}`, name: `${prefix} ${slot}`, club: "Test FC", season: "2020/21",
+  }));
+}
 
 // Run a resolver many times over independent seeds and collect a sample.
 function sample<T>(n: number, fn: (rng: () => number) => T): T[] {
@@ -146,4 +160,70 @@ test("nextPhase is deterministic (same input → same output)", () => {
 test("terminal phases never move", () => {
   assert.equal(nextPhase({ ...base, phase: "result", expired: true, bothReady: true }), "result");
   assert.equal(nextPhase({ ...base, phase: "abandoned", expired: true, bothReady: true }), "abandoned");
+});
+
+// ─── Match simulation (scorers, assists, ratings, corners, throw-ins) ──────────
+
+const sqA = mkSquad("A");
+const sqB = mkSquad("B");
+
+test("simulateHalf: events match the scoreline and ratings cover every player", () => {
+  for (let i = 0; i < 200; i++) {
+    const h = simulateHalf(86, 78, sqA, sqB, 1, `sim-${i}`);
+    const eventsA = h.events.filter((e) => e.side === "a").length;
+    const eventsB = h.events.filter((e) => e.side === "b").length;
+    assert.equal(eventsA, h.goals.a, "side-a goal events == goals.a");
+    assert.equal(eventsB, h.goals.b, "side-b goal events == goals.b");
+    assert.equal(h.ratingsA.length, sqA.length, "a player rated for every slot");
+    assert.equal(h.ratingsB.length, sqB.length);
+    assert.ok(h.corners.a >= 0 && h.corners.b >= 0 && h.throwins.a >= 0 && h.throwins.b >= 0, "no negative stats");
+    for (const r of [...h.ratingsA, ...h.ratingsB]) assert.ok(r.rating >= 4.5 && r.rating <= 9.8, `rating ${r.rating} in range`);
+    // First-half goals land in the first 45 minutes.
+    for (const e of h.events) assert.ok(e.minute >= 1 && e.minute <= 45, `h1 minute ${e.minute}`);
+  }
+});
+
+test("simulateHalf: an assist is a different player than the scorer", () => {
+  for (let i = 0; i < 300; i++) {
+    const h = simulateHalf(90, 60, sqA, sqB, 2, `asst-${i}`);
+    for (const e of h.events) {
+      if (e.assistId) assert.notEqual(e.assistId, e.scorerId, "no self-assist");
+      assert.ok(e.minute >= 46 && e.minute <= 90, `h2 minute ${e.minute}`);
+    }
+  }
+});
+
+test("simulateHalf is deterministic for a seed", () => {
+  assert.deepEqual(
+    simulateHalf(86, 78, sqA, sqB, 1, "fixed"),
+    simulateHalf(86, 78, sqA, sqB, 1, "fixed"),
+  );
+});
+
+test("buildReport: totals add the halves and PotM is the global top rating", () => {
+  const sim = {
+    h1: simulateHalf(88, 74, sqA, sqB, 1, "rep-h1"),
+    h2: simulateHalf(88, 74, sqA, sqB, 2, "rep-h2"),
+  };
+  const rep = buildReport(sim);
+  assert.equal(rep.a.goals, sim.h1.goals.a + sim.h2.goals.a);
+  assert.equal(rep.b.corners, sim.h1.corners.b + sim.h2.corners.b);
+  assert.equal(rep.events.length, sim.h1.events.length + sim.h2.events.length);
+  // PotM rating is >= every player on both sides.
+  const all = [...rep.ratingsA, ...rep.ratingsB];
+  assert.ok(rep.potm, "a PotM exists when players played");
+  for (const r of all) assert.ok(rep.potm!.rating >= r.rating - 1e-9, "PotM is the max rating");
+  assert.ok(rep.bestA!.rating >= rep.worstA!.rating, "best >= worst (A)");
+});
+
+test("buildReport: a half-time sub is rated for the half they played", () => {
+  const subbed = mkSquad("A").map((p, i) => (i === 9 ? { ...p, player_season_id: "A-sub-9", name: "A sub" } : p));
+  const sim = {
+    h1: simulateHalf(86, 80, sqA, sqB, 1, "sub-h1"),
+    h2: simulateHalf(86, 80, subbed, sqB, 2, "sub-h2"),
+  };
+  const rep = buildReport(sim);
+  const ids = new Set(rep.ratingsA.map((r) => r.id));
+  assert.ok(ids.has("A-st-9"), "the player who started H1 is still rated");
+  assert.ok(ids.has("A-sub-9"), "the half-time sub is rated too");
 });

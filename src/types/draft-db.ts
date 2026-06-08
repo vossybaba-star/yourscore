@@ -90,6 +90,7 @@ export type DraftLiveMatchRow = {
   h2_p2: number | null;
   pens_p1: number | null;
   pens_p2: number | null;
+  sim: Json | null;                  // per-half scorers/assists/ratings/corners/throw-ins (21)
   winner_id: string | null;
   created_at: Ts;
   updated_at: Ts;
