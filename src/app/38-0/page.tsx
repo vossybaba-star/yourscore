@@ -40,9 +40,14 @@ export default function DraftHome() {
           <Link href="/" className="font-body text-sm" style={{ color: "#8888aa" }}>
             ← YourScore
           </Link>
-          <Link href="/38-0/leaderboard" className="font-body text-xs px-3 py-1 rounded-full" style={{ color: "#00ff87", background: "rgba(0,255,135,0.1)" }}>
-            🏆 Leaderboard
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link href="/38-0/teams" className="font-body text-xs px-3 py-1 rounded-full" style={{ color: "#a78bfa", background: "rgba(167,139,250,0.1)" }}>
+              📁 My Teams
+            </Link>
+            <Link href="/38-0/leaderboard" className="font-body text-xs px-3 py-1 rounded-full" style={{ color: "#00ff87", background: "rgba(0,255,135,0.1)" }}>
+              🏆 Leaderboard
+            </Link>
+          </div>
         </div>
 
         <h1 className="font-display tracking-wide leading-none" style={{ fontSize: 64, color: "#fff" }}>

@@ -34,6 +34,8 @@ export default function TeamScreen() {
   const [creatingChallenge, setCreatingChallenge] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [naming, setNaming] = useState(false);
+  const [teamName, setTeamName] = useState("");
 
   useEffect(() => {
     const t = loadTeam();
@@ -97,17 +99,28 @@ export default function TeamScreen() {
     }
   }
 
-  // Save to the cloud. Guests are sent to sign up (which unlocks the full
-  // signed-in app — including the Draft XI tab — and cloud-saved teams).
-  async function saveToCloud() {
-    if (!team || saving) return;
+  // Save the XI to your library (My Teams) under a name. Guests are sent to sign up
+  // first. Tapping Save reveals a name field; confirming saves to the library AND
+  // sets it as your active team so it's immediately playable.
+  function beginSave() {
+    if (!team) return;
     if (!user) { router.push("/auth/sign-in"); return; }
+    setTeamName(`${team.formation} · ${team.strength}`);
+    setNaming(true);
+  }
+
+  async function saveToLibrary() {
+    if (!team || saving) return;
     setSaving(true); setErr(null);
     try {
       const squad = team.squad.map((p) => ({ slot: p.slot, player_season_id: p.player_season_id }));
-      const r = await fetch("/api/draft/team", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ formation: team.formation, squad }) });
+      const name = teamName.trim() || `${team.formation} · ${team.strength}`;
+      // Save the named snapshot to the library…
+      const r = await fetch("/api/draft/teams", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name, formation: team.formation, squad }) });
       if (!r.ok) { setErr((await r.json().catch(() => ({}))).error ?? "Could not save"); setSaving(false); return; }
-      setSaved(true); setSaving(false);
+      // …and set it as the active team so it's immediately playable.
+      await fetch("/api/draft/team", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ formation: team.formation, squad }) }).catch(() => {});
+      setSaved(true); setSaving(false); setNaming(false);
     } catch { setErr("Network error"); setSaving(false); }
   }
 
@@ -312,12 +325,42 @@ export default function TeamScreen() {
 
           {(
             <>
-              {/* Save (guests → sign up). Swap reward when earned. */}
-              <button onClick={saveToCloud} disabled={saving || saved}
-                className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-70"
-                style={{ background: "#a78bfa", color: "#15082b", fontSize: 22 }}>
-                {saving ? "SAVING…" : saved ? "SAVED ✓" : user ? "💾 SAVE TEAM" : "💾 SAVE TEAM — SIGN UP"}
-              </button>
+              {/* Save to My Teams (guests → sign up). Tapping reveals a name field. */}
+              {naming ? (
+                <div className="rounded-2xl p-3" style={{ background: "#12121e", border: "1px solid rgba(167,139,250,0.35)" }}>
+                  <div className="font-body mb-2" style={{ fontSize: 11, color: "#a78bfa", letterSpacing: 1 }}>NAME THIS TEAM</div>
+                  <input value={teamName} onChange={(e) => setTeamName(e.target.value)} maxLength={40} autoFocus
+                    placeholder="e.g. My dream XI"
+                    className="w-full rounded-xl px-3 py-3 font-body mb-2" style={{ background: "#0a0a0f", color: "#fff", border: "1px solid rgba(255,255,255,0.1)" }} />
+                  <div className="grid grid-cols-2 gap-2">
+                    <button onClick={saveToLibrary} disabled={saving}
+                      className="rounded-xl py-3 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-70"
+                      style={{ background: "#a78bfa", color: "#15082b", fontSize: 17 }}>
+                      {saving ? "SAVING…" : "SAVE TO MY TEAMS"}
+                    </button>
+                    <button onClick={() => setNaming(false)} disabled={saving}
+                      className="rounded-xl py-3 font-body active:scale-[0.98] transition-transform" style={{ background: "transparent", color: "#8888aa", fontSize: 14, border: "1px solid rgba(255,255,255,0.1)" }}>
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button onClick={beginSave} disabled={saving}
+                  className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-70"
+                  style={{ background: "#a78bfa", color: "#15082b", fontSize: 22 }}>
+                  {saved ? "💾 SAVE ANOTHER COPY" : user ? "💾 SAVE TEAM" : "💾 SAVE TEAM — SIGN UP"}
+                </button>
+              )}
+
+              {/* My Teams library entry */}
+              {user && (
+                <Link href="/38-0/teams"
+                  className="flex items-center justify-between w-full rounded-2xl px-4 py-3 active:scale-[0.98] transition-transform"
+                  style={{ background: "rgba(167,139,250,0.08)", color: "#a78bfa", border: "1px solid rgba(167,139,250,0.25)" }}>
+                  <span className="font-display tracking-wide" style={{ fontSize: 16 }}>{saved ? "📁 MY TEAMS ✓ saved" : "📁 MY TEAMS"}</span>
+                  <span className="font-display" style={{ fontSize: 18 }}>→</span>
+                </Link>
+              )}
 
               {team.swapAvailable && (
                 <Link href="/38-0/swap"

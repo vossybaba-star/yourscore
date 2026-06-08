@@ -168,6 +168,15 @@ export function reslot(team: LocalTeam, newFormation: Formation): LocalTeam {
   return recompute({ ...team, formation: newFormation, squad });
 }
 
+/** Build a playable LocalTeam from a saved library team (formation + squad), so a
+ *  user can load one of their saved teams and play with it. */
+export function hydrateSavedTeam(formation: Formation, squad: PlacedPlayer[]): LocalTeam {
+  return recompute({
+    formation, mode: "classic", squad, status: "active", winStreak: 0,
+    swapAvailable: false, strength: 0, projected: null, updatedAt: Date.now(),
+  });
+}
+
 /** Recompute Strength + projection from the current squad. */
 export function recompute(team: LocalTeam): LocalTeam {
   const strength = scoreTeam(team.squad, team.formation);

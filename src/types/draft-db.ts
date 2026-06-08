@@ -76,6 +76,18 @@ export type DraftChallengeRow = {
   expires_at: Ts;
 };
 
+export type DraftSavedTeamRow = {
+  id: string;
+  user_id: string;
+  name: string;
+  formation: string;
+  squad: Json;
+  strength_rating: number;
+  projected: Json | null;
+  created_at: Ts;
+  updated_at: Ts;
+};
+
 type Tbl<Row, Insert = Partial<Row>, Update = Partial<Row>> = {
   Row: Row;
   Insert: Insert;
@@ -87,6 +99,7 @@ export type DraftDatabase = Omit<Database, "public"> & {
   public: Omit<Database["public"], "Tables" | "Functions"> & {
     Tables: Database["public"]["Tables"] & {
       draft_teams: Tbl<DraftTeamRow>;
+      draft_saved_teams: Tbl<DraftSavedTeamRow>;
       draft_matches: Tbl<DraftMatchRow>;
       draft_standings: Tbl<DraftStandingRow>;
       draft_leagues: Tbl<DraftLeagueRow>;
