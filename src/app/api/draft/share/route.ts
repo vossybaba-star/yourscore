@@ -6,7 +6,7 @@ import { rateLimitDistributed } from "@/lib/ratelimit";
 //
 // The card payload (record, XI, awards…) used to live entirely in the URL query
 // string, producing very long links. We now store it under a short id so the
-// shared URL stays compact (…/38-0/s/<id>).
+// shared URL stays compact (…/s/<id>).
 //   POST { payload } → { id }
 //   GET  ?id=        → { payload }
 //

@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * /38-0/match/prematch — after matchmaking you see your opponent's XI before
+ * /xi/match/prematch — after matchmaking you see your opponent's XI before
  * kick-off and may swap up to THREE of your players (each replaced by a same-line
  * player: defender, midfielder or striker), or stick with your team, then play.
  */
@@ -41,7 +41,7 @@ export default function PreMatch() {
   useEffect(() => {
     const t = loadTeam();
     const m = loadMatchup();
-    if (!t || !m) { router.replace("/38-0/team"); return; }
+    if (!t || !m) { router.replace("/xi/team"); return; }
     setTeam(t); setMatchup(m);
   }, [router]);
   useEffect(() => () => { if (reelTimer.current) clearInterval(reelTimer.current); }, []);
@@ -106,7 +106,7 @@ export default function PreMatch() {
       });
       saveTeam(m.youWon ? recordWin(team) : recordLoss(team));
       clearMatchup();
-      router.push("/38-0/match/result");
+      router.push("/xi/match/result");
     } catch { setErr("Network error"); setPlaying(false); }
   }
 
@@ -201,7 +201,7 @@ export default function PreMatch() {
           style={{ background: "#00ff87", color: "#062013", fontSize: 26 }}>
           {playing ? "PLAYING…" : "PLAY MATCH ⚔️"}
         </button>
-        <button onClick={() => { clearMatchup(); router.push("/38-0/team"); }}
+        <button onClick={() => { clearMatchup(); router.push("/xi/team"); }}
           className="w-full mt-2 rounded-2xl py-3 font-body active:scale-[0.98] transition-transform"
           style={{ background: "transparent", color: "#8888aa", fontSize: 14 }}>
           Back to my team

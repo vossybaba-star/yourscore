@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * /38-0/teams — your saved-team library. Save many XIs, then load one back to play
+ * /xi/teams — your saved-team library. Save many XIs, then load one back to play
  * (USE writes it to local play state and opens the team screen). Separate from the
  * single active team that matchmaking uses. Fails soft before the migration.
  */
@@ -44,7 +44,7 @@ export default function MyTeams() {
   function use(t: SavedTeam) {
     // Load this saved XI into local play state, then open the team screen.
     saveTeam(hydrateSavedTeam(t.formation, t.squad));
-    router.push("/38-0/team");
+    router.push("/xi/team");
   }
 
   async function remove(id: string) {
@@ -61,7 +61,7 @@ export default function MyTeams() {
     <div className="min-h-[100dvh] pb-28" style={{ background: "#0a0a0f" }}>
       <div className="max-w-lg mx-auto px-5 pt-safe">
         <div className="flex items-center justify-between pt-4 pb-2">
-          <Link href="/38-0" className="font-body text-sm" style={{ color: "#8888aa" }}>← 38-0</Link>
+          <Link href="/xi" className="font-body text-sm" style={{ color: "#8888aa" }}>← Draft XI</Link>
         </div>
         <h1 className="font-display tracking-wide leading-none" style={{ fontSize: 44, color: "#fff" }}>
           MY <span style={{ color: "#00ff87" }}>TEAMS</span>
@@ -84,7 +84,7 @@ export default function MyTeams() {
           <div className="rounded-2xl p-6 text-center" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.08)" }}>
             <div className="font-display tracking-wide" style={{ fontSize: 20, color: "#fff" }}>NO SAVED TEAMS YET</div>
             <p className="font-body mt-2" style={{ fontSize: 13, color: "#8888aa" }}>Build an XI, then tap Save to add it here.</p>
-            <Link href="/38-0" className="inline-block mt-4 rounded-xl px-5 py-3 font-display tracking-wide" style={{ background: "#00ff87", color: "#062013", fontSize: 18 }}>BUILD AN XI →</Link>
+            <Link href="/xi" className="inline-block mt-4 rounded-xl px-5 py-3 font-display tracking-wide" style={{ background: "#00ff87", color: "#062013", fontSize: 18 }}>BUILD AN XI →</Link>
           </div>
         ) : (
           <div className="space-y-2">

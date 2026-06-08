@@ -1,9 +1,9 @@
 "use client";
 
 /**
- * /38-0/match/result — H2H result for the most recent local Quick Match: both
+ * /xi/match/result — H2H result for the most recent local Quick Match: both
  * XIs, the winner, the deciding margin, and a one-tap share. (Cloud matches will
- * use /38-0/match/[id] with a server-rendered OG image; this is the local view.)
+ * use /xi/match/[id] with a server-rendered OG image; this is the local view.)
  */
 
 import { useEffect, useState } from "react";
@@ -20,7 +20,7 @@ export default function MatchResult() {
 
   useEffect(() => {
     const lm = loadLastMatch();
-    if (!lm) { router.replace("/38-0"); return; }
+    if (!lm) { router.replace("/xi"); return; }
     setM(lm);
   }, [router]);
 
@@ -45,7 +45,7 @@ export default function MatchResult() {
     const text = won
       ? `My Draft XI (${m.you.strength}) beat ${m.opp.name} (${m.opp.strength}) head-to-head ⚽🔥 Build yours:`
       : `${m.opp.name} (${m.opp.strength}) knocked out my Draft XI (${m.you.strength}). Rebuilding… Take me on:`;
-    const url = "https://yourscore.app/38-0";
+    const url = "https://yourscore.app/xi";
     try {
       // Try sharing the broadcast graphic itself (mobile), falling back to text+link.
       try {
@@ -116,20 +116,20 @@ export default function MatchResult() {
           </button>
 
           {won ? (
-            <Link href="/38-0/swap"
+            <Link href="/xi/swap"
               className="block w-full rounded-2xl py-4 text-center font-display tracking-wide active:scale-[0.98] transition-transform"
               style={{ background: "#00ff87", color: "#062013", fontSize: 22 }}>
               SWAP ONE PLAYER →
             </Link>
           ) : (
-            <Link href="/38-0"
+            <Link href="/xi"
               className="block w-full rounded-2xl py-4 text-center font-display tracking-wide active:scale-[0.98] transition-transform"
               style={{ background: "#ff4757", color: "#fff", fontSize: 22 }}>
               REBUILD XI →
             </Link>
           )}
 
-          <Link href="/38-0/team"
+          <Link href="/xi/team"
             className="block w-full rounded-2xl py-3 text-center font-body active:scale-[0.98] transition-transform"
             style={{ background: "#12121e", color: "#8888aa", fontSize: 15, border: "1px solid rgba(255,255,255,0.08)" }}>
             Back to my team

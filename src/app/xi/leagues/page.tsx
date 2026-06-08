@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * /38-0/leagues — your private leagues: create one (get a join code), join by
+ * /xi/leagues — your private leagues: create one (get a join code), join by
  * code, or open a board. Self-organising, no fixtures (spec §4.3).
  */
 
@@ -34,7 +34,7 @@ export default function Leagues() {
       const r = await fetch("/api/draft/league", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name }) });
       const d = await r.json();
       if (!r.ok) { setErr(d.error ?? "Could not create"); setBusy(false); return; }
-      router.push(`/38-0/league/${d.code}`);
+      router.push(`/xi/league/${d.code}`);
     } catch { setErr("Network error"); setBusy(false); }
   }
 
@@ -45,7 +45,7 @@ export default function Leagues() {
       const r = await fetch("/api/draft/league/join", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ code }) });
       const d = await r.json();
       if (!r.ok) { setErr(d.error ?? "Could not join"); setBusy(false); return; }
-      router.push(`/38-0/league/${d.code}`);
+      router.push(`/xi/league/${d.code}`);
     } catch { setErr("Network error"); setBusy(false); }
   }
 
@@ -53,7 +53,7 @@ export default function Leagues() {
     <div className="min-h-[100dvh] pb-28" style={{ background: "#0a0a0f" }}>
       <div className="max-w-lg mx-auto px-5 pt-safe">
         <div className="flex items-center justify-between pt-4 pb-2">
-          <Link href="/38-0/leaderboard" className="font-body text-sm" style={{ color: "#8888aa" }}>← Leaderboard</Link>
+          <Link href="/xi/leaderboard" className="font-body text-sm" style={{ color: "#8888aa" }}>← Leaderboard</Link>
         </div>
         <h1 className="font-display tracking-wide leading-none" style={{ fontSize: 44, color: "#fff" }}>
           MY <span style={{ color: "#a78bfa" }}>LEAGUES</span>
@@ -96,7 +96,7 @@ export default function Leagues() {
             {leagues.length > 0 && (
               <div className="space-y-2">
                 {leagues.map((l) => (
-                  <Link key={l.id} href={`/38-0/league/${l.code}`} className="flex items-center justify-between rounded-xl px-4 py-3 active:scale-[0.98] transition-transform"
+                  <Link key={l.id} href={`/xi/league/${l.code}`} className="flex items-center justify-between rounded-xl px-4 py-3 active:scale-[0.98] transition-transform"
                     style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.08)" }}>
                     <div>
                       <div className="font-body" style={{ fontSize: 16, color: "#fff" }}>{l.name}</div>

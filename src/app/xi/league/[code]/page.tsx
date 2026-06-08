@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * /38-0/league/[code] — a private league board. Members ranked by in-league wins,
+ * /xi/league/[code] — a private league board. Members ranked by in-league wins,
  * each with an "Available" badge; challenge any available member (self-organising,
  * no fixtures). Share the code to invite. Fails soft pre-migration.
  */
@@ -65,7 +65,7 @@ export default function LeagueBoard() {
     if (!board || busy) return;
     if (!user) { router.push("/auth/sign-in"); return; }
     const team = loadTeam();
-    if (!team || !isComplete(team)) { router.push("/38-0"); return; }
+    if (!team || !isComplete(team)) { router.push("/xi"); return; }
     setBusy(true); setErr(null);
     try {
       // Ensure the cloud has the current XI (server reads it as the challenger).
@@ -79,12 +79,12 @@ export default function LeagueBoard() {
       if (!r.ok) { setErr(m.error ?? "Match failed"); setBusy(false); return; }
 
       saveMatchup({ opponentId: m.opponentId, findId: m.findId, botFormation: m.botFormation, leagueId: board.league.id, opp: m.opp });
-      router.push("/38-0/match/prematch");
+      router.push("/xi/match/prematch");
     } catch { setErr("Network error"); setBusy(false); }
   }
 
   function shareCode() {
-    const url = `${window.location.origin}/38-0/league/${code}`;
+    const url = `${window.location.origin}/xi/league/${code}`;
     const text = `Join my Draft XI league "${board?.league.name ?? ""}" — code ${code}`;
     if (navigator.share) navigator.share({ title: "Draft XI League", text, url }).catch(() => {});
     else { navigator.clipboard.writeText(`${text} ${url}`).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1800); }); }
@@ -95,7 +95,7 @@ export default function LeagueBoard() {
       <div className="min-h-[100dvh] grid place-items-center px-6 text-center" style={{ background: "#0a0a0f" }}>
         <div>
           <div className="font-display tracking-wide" style={{ fontSize: 28, color: "#fff" }}>LEAGUE NOT FOUND</div>
-          <Link href="/38-0/leagues" className="inline-block mt-4 font-body" style={{ color: "#00ff87" }}>← Back to my leagues</Link>
+          <Link href="/xi/leagues" className="inline-block mt-4 font-body" style={{ color: "#00ff87" }}>← Back to my leagues</Link>
         </div>
       </div>
     );
@@ -109,7 +109,7 @@ export default function LeagueBoard() {
         <div>
           <div className="font-display tracking-wide" style={{ fontSize: 24, color: "#fff" }}>LEAGUES COMING SOON</div>
           <p className="font-body mt-2" style={{ fontSize: 13, color: "#8888aa" }}>Cloud leagues activate once the season is live.</p>
-          <Link href="/38-0" className="inline-block mt-4 font-body" style={{ color: "#00ff87" }}>← Build your XI</Link>
+          <Link href="/xi" className="inline-block mt-4 font-body" style={{ color: "#00ff87" }}>← Build your XI</Link>
         </div>
       </div>
     );
@@ -119,7 +119,7 @@ export default function LeagueBoard() {
     <div className="min-h-[100dvh] pb-28" style={{ background: "#0a0a0f" }}>
       <div className="max-w-lg mx-auto px-5 pt-safe">
         <div className="flex items-center justify-between pt-4 pb-2">
-          <Link href="/38-0/leagues" className="font-body text-sm" style={{ color: "#8888aa" }}>← Leagues</Link>
+          <Link href="/xi/leagues" className="font-body text-sm" style={{ color: "#8888aa" }}>← Leagues</Link>
         </div>
 
         <h1 className="font-display tracking-wide leading-none" style={{ fontSize: 38, color: "#fff" }}>{board.league.name}</h1>
@@ -136,7 +136,7 @@ export default function LeagueBoard() {
 
         {showQR && QRCode && (
           <div className="mt-3 flex flex-col items-center gap-2 p-4 rounded-2xl mx-auto" style={{ background: "white", maxWidth: 220 }}>
-            <QRCode value={`${typeof window !== "undefined" ? window.location.origin : ""}/38-0/league/${board.league.code}`} size={160} />
+            <QRCode value={`${typeof window !== "undefined" ? window.location.origin : ""}/xi/league/${board.league.code}`} size={160} />
             <p className="font-body text-xs text-black/50 mt-1">Scan to join <span className="font-semibold text-black/70">{board.league.name}</span></p>
           </div>
         )}

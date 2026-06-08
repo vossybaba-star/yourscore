@@ -25,9 +25,14 @@ const nextConfig = {
     ],
   },
   async redirects() {
+    // The build-your-XI game lives at /xi. Earlier working names (/draft, /38-0)
+    // permanently redirect there so old links, bookmarks and any lingering
+    // internal hrefs keep working.
     return [
-      { source: "/draft", destination: "/38-0", permanent: true },
-      { source: "/draft/:path*", destination: "/38-0/:path*", permanent: true },
+      { source: "/draft", destination: "/xi", permanent: true },
+      { source: "/draft/:path*", destination: "/xi/:path*", permanent: true },
+      { source: "/38-0", destination: "/xi", permanent: true },
+      { source: "/38-0/:path*", destination: "/xi/:path*", permanent: true },
     ];
   },
   async headers() {

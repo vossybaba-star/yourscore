@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * /38-0/season — simulate the 38-game season and show how the XI performed.
+ * /xi/season — simulate the 38-game season and show how the XI performed.
  * Plays the matches out (with a Skip), then the end-of-season stats: finish vs
  * projection + verdict, narrative, record, GF/GA, and season awards.
  */
@@ -31,7 +31,7 @@ export default function SeasonSim() {
 
   useEffect(() => {
     const t = loadTeam();
-    if (!t || !isComplete(t)) { router.replace("/38-0"); return; }
+    if (!t || !isComplete(t)) { router.replace("/xi"); return; }
     setTeam(t);
   }, [router]);
 
@@ -138,11 +138,11 @@ export default function SeasonSim() {
   const ogUrl = () => `/api/draft/season-og?${shareParams().toString()}`;
   // Long fallback link (carries the whole result in the query string). Used only
   // if the short-link service is unavailable.
-  const longShareUrl = () => `${window.location.origin}/38-0/season/share?${shareParams().toString()}`;
+  const longShareUrl = () => `${window.location.origin}/xi/season/share?${shareParams().toString()}`;
   // Resolved short link, once minted — what we actually share.
   const shareUrl = () => shortUrl ?? longShareUrl();
 
-  // Mint a compact …/38-0/s/<id> link by storing the payload server-side. Called
+  // Mint a compact …/s/<id> link by storing the payload server-side. Called
   // when the share sheet opens so the link is ready before the user taps a target
   // (avoids popup-blockers on the window.open share paths). Falls back silently.
   async function ensureShortUrl(): Promise<void> {
@@ -286,10 +286,10 @@ export default function SeasonSim() {
         })()}
 
         <div className="mt-6 space-y-2">
-          <Link href="/38-0/team" className="block w-full rounded-2xl py-3 text-center font-body" style={{ background: "#12121e", color: "#cfcfe6", fontSize: 15, border: "1px solid rgba(255,255,255,0.08)" }}>
+          <Link href="/xi/team" className="block w-full rounded-2xl py-3 text-center font-body" style={{ background: "#12121e", color: "#cfcfe6", fontSize: 15, border: "1px solid rgba(255,255,255,0.08)" }}>
             Back to my team
           </Link>
-          <Link href="/38-0" className="block w-full rounded-2xl py-3 text-center font-display tracking-wide" style={{ background: "#00ff87", color: "#062013", fontSize: 20 }}>
+          <Link href="/xi" className="block w-full rounded-2xl py-3 text-center font-display tracking-wide" style={{ background: "#00ff87", color: "#062013", fontSize: 20 }}>
             BUILD A NEW XI →
           </Link>
         </div>

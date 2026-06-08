@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * /38-0/team — your current XI: Strength, projected 38-game record, tier, status,
+ * /xi/team — your current XI: Strength, projected 38-game record, tier, status,
  * and the loop actions. Quick Match runs a local single-game H2H (the same engine
  * the server uses for real matchmaking) so the win→swap / lose→rebuild loop works
  * end-to-end before cloud matchmaking is wired up.
@@ -39,8 +39,8 @@ export default function TeamScreen() {
 
   useEffect(() => {
     const t = loadTeam();
-    if (!t) { router.replace("/38-0"); return; }
-    if (!isComplete(t)) { router.replace("/38-0/play"); return; }
+    if (!t) { router.replace("/xi"); return; }
+    if (!isComplete(t)) { router.replace("/xi/play"); return; }
     setTeam(t);
   }, [router]);
 
@@ -65,7 +65,7 @@ export default function TeamScreen() {
 
     const next = youWon ? recordWin(team) : recordLoss(team);
     saveTeam(next);
-    setTimeout(() => router.push("/38-0/match/result"), 450);
+    setTimeout(() => router.push("/xi/match/result"), 450);
   }
 
   // Ranked: save the XI to the cloud (server recomputes Strength), matchmake against
@@ -92,7 +92,7 @@ export default function TeamScreen() {
       const m = await res.json();
 
       saveMatchup({ opponentId: m.opponentId, findId: m.findId, botFormation: m.botFormation, opp: m.opp });
-      router.push("/38-0/match/prematch");
+      router.push("/xi/match/prematch");
     } catch {
       setErr("Network error — try again");
       setMatching(false);
@@ -137,7 +137,7 @@ export default function TeamScreen() {
       const d = await r.json();
       if (!r.ok) { setErr(d.error ?? "Could not create challenge"); setCreatingChallenge(false); return; }
       setChallengeCode(d.code);
-      const url = `${window.location.origin}/38-0/challenge/${d.code}`;
+      const url = `${window.location.origin}/xi/challenge/${d.code}`;
       const text = `I built a Draft XI (${team.strength}) — can you beat it? `;
       if (navigator.share) navigator.share({ title: "Draft XI Challenge", text, url }).catch(() => {});
       else navigator.clipboard.writeText(`${text}${url}`).catch(() => {});
@@ -171,7 +171,7 @@ export default function TeamScreen() {
     <div className="min-h-[100dvh] pb-28" style={{ background: "#0a0a0f" }}>
       <div className="max-w-lg mx-auto px-5 pt-safe">
         <div className="flex items-center justify-between pt-4 pb-2">
-          <Link href="/38-0" className="font-body text-sm" style={{ color: "#8888aa" }}>← Draft XI</Link>
+          <Link href="/xi" className="font-body text-sm" style={{ color: "#8888aa" }}>← Draft XI</Link>
           <div className="flex items-center gap-2">
             {team.mode === "expert" && (
               <span className="font-body text-xs px-2.5 py-1 rounded-full" style={{ color: "#ffb800", background: "rgba(255,184,0,0.12)" }}>
@@ -309,7 +309,7 @@ export default function TeamScreen() {
           );
         })()}
 
-        <button onClick={() => router.push("/38-0/season")}
+        <button onClick={() => router.push("/xi/season")}
           className="w-full mt-4 rounded-2xl py-5 font-display tracking-wide active:scale-[0.98] transition-transform"
           style={{ background: hasLastSeason ? "rgba(0,255,135,0.12)" : "#00ff87", color: hasLastSeason ? "#00ff87" : "#062013", fontSize: hasLastSeason ? 22 : 28, border: hasLastSeason ? "1px solid rgba(0,255,135,0.4)" : "none" }}>
           {hasLastSeason ? "📊 VIEW SEASON RESULT →" : "⚽ SIMULATE SEASON →"}
@@ -354,7 +354,7 @@ export default function TeamScreen() {
 
               {/* My Teams library entry */}
               {user && (
-                <Link href="/38-0/teams"
+                <Link href="/xi/teams"
                   className="flex items-center justify-between w-full rounded-2xl px-4 py-3 active:scale-[0.98] transition-transform"
                   style={{ background: "rgba(167,139,250,0.08)", color: "#a78bfa", border: "1px solid rgba(167,139,250,0.25)" }}>
                   <span className="font-display tracking-wide" style={{ fontSize: 16 }}>{saved ? "📁 MY TEAMS ✓ saved" : "📁 MY TEAMS"}</span>
@@ -363,7 +363,7 @@ export default function TeamScreen() {
               )}
 
               {team.swapAvailable && (
-                <Link href="/38-0/swap"
+                <Link href="/xi/swap"
                   className="block w-full rounded-2xl py-4 text-center font-display tracking-wide active:scale-[0.98] transition-transform"
                   style={{ background: "rgba(255,184,0,0.12)", color: "#ffb800", fontSize: 22, border: "1px solid rgba(255,184,0,0.4)" }}>
                   ⬆ SWAP ONE PLAYER (you earned it)
@@ -418,7 +418,7 @@ export default function TeamScreen() {
               </button>
 
               {/* 3 — Build a private league */}
-              <button onClick={() => router.push(user ? "/38-0/leagues" : "/auth/sign-in")}
+              <button onClick={() => router.push(user ? "/xi/leagues" : "/auth/sign-in")}
                 className="w-full rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.98] transition-transform"
                 style={{ background: "rgba(167,139,250,0.1)", color: "#a78bfa", border: "1px solid rgba(167,139,250,0.35)" }}>
                 <span className="text-left">
@@ -430,7 +430,7 @@ export default function TeamScreen() {
 
               {/* Secondary — global leaderboard + practice/fresh */}
               <div className="grid grid-cols-2 gap-3 pt-1">
-                <Link href="/38-0/leaderboard"
+                <Link href="/xi/leaderboard"
                   className="rounded-2xl py-3 text-center font-display tracking-wide active:scale-[0.98] transition-transform"
                   style={{ background: "rgba(0,255,135,0.08)", color: "#00ff87", fontSize: 16, border: "1px solid rgba(0,255,135,0.25)" }}>
                   🏆 LEADERBOARD
@@ -442,7 +442,7 @@ export default function TeamScreen() {
                     Practice vs CPU
                   </button>
                 ) : (
-                  <button onClick={() => router.push("/38-0")}
+                  <button onClick={() => router.push("/xi")}
                     className="rounded-2xl py-3 font-body active:scale-[0.98] transition-transform"
                     style={{ background: "#12121e", color: "#8888aa", fontSize: 14, border: "1px solid rgba(255,255,255,0.08)" }}>
                     Fresh team
@@ -451,7 +451,7 @@ export default function TeamScreen() {
               </div>
 
               {user && (
-                <button onClick={() => router.push("/38-0")}
+                <button onClick={() => router.push("/xi")}
                   className="w-full rounded-2xl py-3 font-body active:scale-[0.98] transition-transform"
                   style={{ background: "transparent", color: "#8888aa", fontSize: 14 }}>
                   Start a fresh team

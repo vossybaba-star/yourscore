@@ -68,7 +68,7 @@ export default async function SeasonShortSharePage({ params }: { params: { id: s
         <div>
           <div className="font-body" style={{ fontSize: 13, color: "#8888aa", letterSpacing: 1 }}>YOURSCORE</div>
           <div className="font-display tracking-wide mt-3" style={{ fontSize: 28, color: "#fff" }}>This link has expired</div>
-          <Link href="/38-0" className="inline-block mt-6 rounded-2xl px-6 py-4 font-display tracking-wide" style={{ background: "#00ff87", color: "#062013", fontSize: 24 }}>
+          <Link href="/xi" className="inline-block mt-6 rounded-2xl px-6 py-4 font-display tracking-wide" style={{ background: "#00ff87", color: "#062013", fontSize: 24 }}>
             BUILD YOUR OWN XI →
           </Link>
         </div>
@@ -90,7 +90,7 @@ export default async function SeasonShortSharePage({ params }: { params: { id: s
         <div className="font-body mt-3" style={{ fontSize: 18, color: "#fff" }}>
           Finished <b style={{ color: accent }}>{ordinal(pos)}</b> on <b>{pts}</b> pts
         </div>
-        <Link href="/38-0" className="inline-block mt-6 rounded-2xl px-6 py-4 font-display tracking-wide" style={{ background: "#00ff87", color: "#062013", fontSize: 24 }}>
+        <Link href="/xi" className="inline-block mt-6 rounded-2xl px-6 py-4 font-display tracking-wide" style={{ background: "#00ff87", color: "#062013", fontSize: 24 }}>
           BUILD YOUR OWN XI →
         </Link>
       </div>
