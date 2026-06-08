@@ -87,31 +87,37 @@ export default function Leaderboard() {
             </Link>
           </div>
         ) : (
-          <div className="space-y-2">
+          /* Premier League–style table: Played, Won, Drawn, Lost, Points columns. */
+          <div className="rounded-2xl overflow-hidden" style={{ background: "#0d0d14", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <div className="flex items-center px-3 py-2 font-body" style={{ fontSize: 11, color: "#8888aa", letterSpacing: 0.5, background: "rgba(255,255,255,0.03)" }}>
+              <span style={{ width: 30, textAlign: "center" }}>#</span>
+              <span className="flex-1 pl-2">TEAM</span>
+              <span style={{ width: 26, textAlign: "center" }}>P</span>
+              <span style={{ width: 26, textAlign: "center" }}>W</span>
+              <span style={{ width: 26, textAlign: "center" }}>D</span>
+              <span style={{ width: 26, textAlign: "center" }}>L</span>
+              <span style={{ width: 38, textAlign: "center", color: "#cfcfe6" }}>PTS</span>
+            </div>
             {rows.map((r) => {
               const isMe = user && r.user_id === user.id;
               const medal = r.rank === 1 ? "🥇" : r.rank === 2 ? "🥈" : r.rank === 3 ? "🥉" : null;
+              const played = r.wins + r.draws + r.losses;
               return (
-                <div key={r.user_id} className="flex items-center gap-3 rounded-xl px-4 py-3"
-                  style={{
-                    background: isMe ? "rgba(0,255,135,0.08)" : "#12121e",
-                    border: `1px solid ${isMe ? "rgba(0,255,135,0.4)" : "rgba(255,255,255,0.07)"}`,
-                  }}>
-                  <div className="font-display tabular-nums" style={{ fontSize: 20, color: r.rank <= 3 ? "#ffb800" : "#8888aa", width: 34 }}>
+                <div key={r.user_id} className="flex items-center px-3 py-2.5"
+                  style={{ borderTop: "1px solid rgba(255,255,255,0.05)", background: isMe ? "rgba(0,255,135,0.08)" : "transparent" }}>
+                  <span className="font-display tabular-nums" style={{ width: 30, textAlign: "center", fontSize: medal ? 16 : 15, color: r.rank === 1 ? "#ffb800" : r.rank <= 3 ? "#cfcfe6" : "#8888aa" }}>
                     {medal ?? r.rank}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-body truncate" style={{ fontSize: 15, color: "#fff" }}>
+                  </span>
+                  <div className="flex-1 min-w-0 pl-2">
+                    <div className="font-body truncate" style={{ fontSize: 14, color: "#fff" }}>
                       {r.display_name}{isMe ? " (you)" : ""}
                     </div>
-                    <div className="font-body tabular-nums" style={{ fontSize: 11, color: "#8888aa" }}>
-                      {r.wins}W · {r.draws}D · {r.losses}L
-                    </div>
                   </div>
-                  <div className="text-right">
-                    <div className="font-display" style={{ fontSize: 22, color: "#00ff87" }}>{r.points}</div>
-                    <div className="font-body" style={{ fontSize: 10, color: "#8888aa" }}>PTS</div>
-                  </div>
+                  <span className="font-body tabular-nums" style={{ width: 26, textAlign: "center", fontSize: 14, color: "#cfcfe6" }}>{played}</span>
+                  <span className="font-body tabular-nums" style={{ width: 26, textAlign: "center", fontSize: 14, color: "#00ff87" }}>{r.wins}</span>
+                  <span className="font-body tabular-nums" style={{ width: 26, textAlign: "center", fontSize: 14, color: "#ffb800" }}>{r.draws}</span>
+                  <span className="font-body tabular-nums" style={{ width: 26, textAlign: "center", fontSize: 14, color: "#ff4757" }}>{r.losses}</span>
+                  <span className="font-display tabular-nums" style={{ width: 38, textAlign: "center", fontSize: 16, color: "#fff" }}>{r.points}</span>
                 </div>
               );
             })}
