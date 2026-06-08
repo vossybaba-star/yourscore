@@ -14,8 +14,10 @@ import { useUser } from "@/hooks/useUser";
 type Row = {
   user_id: string;
   display_name: string;
-  wins_today: number;
-  wins_all_time: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  points: number;
   rank: number;
 };
 
@@ -48,7 +50,7 @@ export default function Leaderboard() {
           LEADER<span style={{ color: "#00ff87" }}>BOARD</span>
         </h1>
         <p className="font-body mt-1 mb-4" style={{ fontSize: 13, color: "#8888aa" }}>
-          Ranked by head-to-head wins. Daily resets at midnight UTC.
+          Ranked by points — Win 3, Draw 1. Daily resets at midnight UTC.
         </p>
 
         {/* tabs */}
@@ -89,7 +91,6 @@ export default function Leaderboard() {
           <div className="space-y-2">
             {rows.map((r) => {
               const isMe = user && r.user_id === user.id;
-              const wins = metric === "today" ? r.wins_today : r.wins_all_time;
               const medal = r.rank === 1 ? "🥇" : r.rank === 2 ? "🥈" : r.rank === 3 ? "🥉" : null;
               return (
                 <div key={r.user_id} className="flex items-center gap-3 rounded-xl px-4 py-3"
@@ -100,10 +101,18 @@ export default function Leaderboard() {
                   <div className="font-display tabular-nums" style={{ fontSize: 20, color: r.rank <= 3 ? "#ffb800" : "#8888aa", width: 34 }}>
                     {medal ?? r.rank}
                   </div>
-                  <div className="flex-1 font-body truncate" style={{ fontSize: 15, color: "#fff" }}>
-                    {r.display_name}{isMe ? " (you)" : ""}
+                  <div className="flex-1 min-w-0">
+                    <div className="font-body truncate" style={{ fontSize: 15, color: "#fff" }}>
+                      {r.display_name}{isMe ? " (you)" : ""}
+                    </div>
+                    <div className="font-body tabular-nums" style={{ fontSize: 11, color: "#8888aa" }}>
+                      {r.wins}W · {r.draws}D · {r.losses}L
+                    </div>
                   </div>
-                  <div className="font-display" style={{ fontSize: 22, color: "#00ff87" }}>{wins}</div>
+                  <div className="text-right">
+                    <div className="font-display" style={{ fontSize: 22, color: "#00ff87" }}>{r.points}</div>
+                    <div className="font-body" style={{ fontSize: 10, color: "#8888aa" }}>PTS</div>
+                  </div>
                 </div>
               );
             })}
