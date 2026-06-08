@@ -145,7 +145,7 @@ export interface PhaseInput {
 export function nextPhase(s: PhaseInput): LivePhase {
   const advance = s.bothReady || s.expired;
   switch (s.phase) {
-    case "lobby":         return s.bothReady ? "reveal" : "lobby";
+    case "lobby":         return s.bothReady ? "reveal" : (s.expired ? "abandoned" : "lobby");
     case "reveal":        return advance ? "pregame_swap" : "reveal";
     case "pregame_swap":  return advance ? "half1" : "pregame_swap";
     case "half1":         return advance ? "halftime_swap" : "half1";

@@ -62,9 +62,21 @@ export function useLiveMatch(matchId: string | null): UseLiveMatch {
     return () => { live = false; };
   }, []);
 
-  // Initial state + realtime subscription, re-created per matchId.
-  useEffect(() => {
+  // Best-effort state refresh (reconnect / tab refocus) — never a fatal error.
+  const refetch = useCallback(async () => {
     if (!matchId) return;
+    try {
+      const res = await fetch(`/api/draft/live/${matchId}`);
+      if (!res.ok) return;
+      const json = await res.json();
+      if (json.match) setMatch(json.match as DraftLiveMatchRow);
+    } catch { /* ignore — realtime / the deadline poll will recover */ }
+  }, [matchId]);
+
+  // Initial state + realtime subscription. Gated on userId so we subscribe ONCE with
+  // the real presence key (not a placeholder), instead of subscribe-teardown-resub.
+  useEffect(() => {
+    if (!matchId || !userId) return;
     const sb = createClient();
     let channel: RealtimeChannel | null = null;
     let cancelled = false;
@@ -82,22 +94,42 @@ export function useLiveMatch(matchId: string | null): UseLiveMatch {
       }
     })();
 
-    channel = sb
-      .channel(`draft:match:${matchId}`, { config: { presence: { key: "self" } } })
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "draft_live_matches", filter: `id=eq.${matchId}` },
-        (payload) => setMatch(payload.new as DraftLiveMatchRow))
-      .on("presence", { event: "sync" }, () => {
-        const state = channel?.presenceState() ?? {};
-        const mine = userId;
-        const others = Object.values(state).flat().filter((p) => (p as { uid?: string }).uid && (p as { uid?: string }).uid !== mine);
-        setOpponentOnline(others.length > 0);
-      })
-      .subscribe((status) => {
-        if (status === "SUBSCRIBED" && userId) channel?.track({ uid: userId });
-      });
+    (async () => {
+      // Re-assert the cookie session on the realtime socket — without this it can stay
+      // on the anon token and postgres_changes events silently never arrive (RLS).
+      const { data: { session } } = await sb.auth.getSession();
+      if (session?.access_token) sb.realtime.setAuth(session.access_token);
+      if (cancelled) return;
+
+      // Drop any leftover channel for this topic before re-subscribing.
+      sb.getChannels().filter((c) => c.topic.includes(`draft:match:${matchId}`)).forEach((c) => sb.removeChannel(c));
+
+      channel = sb
+        .channel(`draft:match:${matchId}`, { config: { presence: { key: userId } } })
+        .on("postgres_changes", { event: "UPDATE", schema: "public", table: "draft_live_matches", filter: `id=eq.${matchId}` },
+          (payload) => setMatch(payload.new as DraftLiveMatchRow))
+        .on("presence", { event: "sync" }, () => {
+          const state = channel?.presenceState() ?? {};
+          // presence is keyed by user id, so any key that isn't ours is the opponent.
+          setOpponentOnline(Object.keys(state).some((k) => k !== userId));
+        })
+        .subscribe((status) => { if (status === "SUBSCRIBED") channel?.track({ uid: userId }); });
+    })();
 
     return () => { cancelled = true; if (channel) sb.removeChannel(channel); };
   }, [matchId, userId]);
+
+  // Recover stale state after the tab was backgrounded (mobile throttles timers and
+  // can drop the socket) — refetch on refocus.
+  useEffect(() => {
+    const onVisible = () => { if (document.visibilityState === "visible") refetch(); };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+    };
+  }, [refetch]);
 
   // Local countdown → ping /advance once when the deadline passes.
   useEffect(() => {
@@ -108,7 +140,11 @@ export function useLiveMatch(matchId: string | null): UseLiveMatch {
       setSecondsLeft(Math.max(0, Math.ceil(ms / 1000)));
       if (ms <= 0 && advancedForPhaseRef.current !== m.phase) {
         advancedForPhaseRef.current = m.phase;
-        post("/api/draft/live/advance", { matchId: m.id }).then((next) => { if (next) setMatch(next); }).catch(() => {});
+        post("/api/draft/live/advance", { matchId: m.id })
+          .then((next) => { if (next) setMatch(next); })
+          // On a transient failure (offline, 429, 500) clear the guard so the next
+          // tick retries — otherwise the countdown stalls at 0 forever.
+          .catch(() => { if (advancedForPhaseRef.current === m.phase) advancedForPhaseRef.current = null; });
       }
     }, 250);
     return () => clearInterval(t);

@@ -107,9 +107,12 @@ test("penalties lean slightly to the stronger side", () => {
 
 const base: PhaseInput = { phase: "lobby", bothReady: false, expired: false, level: false, bothWantPens: false };
 
-test("lobby only advances when both are ready (no deadline)", () => {
-  assert.equal(nextPhase({ ...base, phase: "lobby", expired: true }), "lobby");
+test("lobby: ready → reveal; no-show past the deadline → abandoned; else holds", () => {
   assert.equal(nextPhase({ ...base, phase: "lobby", bothReady: true }), "reveal");
+  // Both present but nobody readied before the lobby deadline → abandon (don't hang).
+  assert.equal(nextPhase({ ...base, phase: "lobby", expired: true }), "abandoned");
+  // No deadline yet (e.g. friend lobby awaiting a joiner) → just wait.
+  assert.equal(nextPhase({ ...base, phase: "lobby" }), "lobby");
 });
 
 test("timed phases advance on both-ready OR deadline", () => {

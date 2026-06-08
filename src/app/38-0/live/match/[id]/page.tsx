@@ -73,8 +73,11 @@ export default function LiveMatchScreen() {
               {m.p2_id || m.is_bot ? `${view.oppName} is here.` : "Waiting for your opponent to join…"}
             </p>
             {(m.p2_id || m.is_bot) && (
-              <Action onClick={live.ready} disabled={view.myReady}>{view.myReady ? "Ready ✓ — waiting…" : "I'm ready"}</Action>
+              <Action onClick={live.ready} disabled={view.myReady}>
+                {view.myReady ? (secondsLeft != null ? `Ready ✓ — waiting for ${view.oppName}…` : "Ready ✓ — waiting…") : "I'm ready"}
+              </Action>
             )}
+            <Link href="/38-0/live" className="block text-center mt-3 text-sm underline" style={{ color: "#8888aa" }}>Leave</Link>
           </Panel>
         )}
 

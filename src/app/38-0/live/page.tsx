@@ -14,6 +14,7 @@ import Link from "next/link";
 type QueueResp = { status?: "matched" | "waiting"; match?: { id: string }; error?: string };
 
 const BOT_FALLBACK_MS = 18_000; // start a bot if no human pairs within ~18s
+const HARD_TIMEOUT_MS = 45_000; // give up (instead of spinning forever) if nothing resolves
 
 export default function LiveEntry() {
   const router = useRouter();
@@ -24,6 +25,7 @@ export default function LiveEntry() {
   const [error, setError] = useState<string | null>(null);
   const queueStartRef = useRef<number>(0);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const findGenRef = useRef(0); // generation token: a cancel/restart invalidates in-flight ticks
 
   const stopPolling = () => { if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; } };
   useEffect(() => () => stopPolling(), []);
@@ -52,21 +54,26 @@ export default function LiveEntry() {
   const findMatch = useCallback(async () => {
     setError(null);
     setMode("finding");
+    const gen = ++findGenRef.current; // a later cancel/restart bumps this and invalidates us
     queueStartRef.current = Date.now();
     const tick = async () => {
+      if (findGenRef.current !== gen) { stopPolling(); return; }
       const elapsed = Date.now() - queueStartRef.current;
       const r = await api(elapsed > BOT_FALLBACK_MS ? { action: "bot" } : { action: "queue" });
+      if (findGenRef.current !== gen) return; // cancelled during the request — don't navigate
       if (r.error) { stopPolling(); setError(r.error); setMode("idle"); return; }
-      if (r.status === "matched" && r.match) { stopPolling(); router.push(`/38-0/live/match/${r.match.id}`); return; }
-      if (r.match) { stopPolling(); router.push(`/38-0/live/match/${r.match.id}`); return; } // bot
+      if (r.match) { stopPolling(); router.push(`/38-0/live/match/${r.match.id}`); return; }
+      // Backstop: never spin forever if pairing/bot never resolves.
+      if (elapsed > HARD_TIMEOUT_MS) { stopPolling(); setError("Couldn't find a match — try again."); setMode("idle"); }
     };
     await tick();
-    pollRef.current = setInterval(tick, 2000);
+    if (findGenRef.current === gen && !pollRef.current) pollRef.current = setInterval(tick, 2000);
   }, [router]);
 
   function cancelFind() {
+    findGenRef.current++; // invalidate any in-flight tick so it can't navigate
     stopPolling();
-    api({ action: "cancelQueue" });
+    api({ action: "cancelQueue" }).catch(() => {});
     setMode("idle");
   }
 

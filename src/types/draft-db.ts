@@ -197,6 +197,10 @@ export type DraftDatabase = Omit<Database, "public"> & {
         Returns: string | null;
       };
       draft_live_reap: { Args: Record<string, never>; Returns: undefined };
+      draft_credit_result: {
+        Args: { p_user: string; p_name: string; p_result: string; p_league?: string };
+        Returns: undefined;
+      };
       draft_reset_daily: { Args: Record<string, never>; Returns: undefined };
     };
   };
