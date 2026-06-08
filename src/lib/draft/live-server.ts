@@ -12,8 +12,10 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { DraftDatabase, DraftLiveMatchRow } from "@/types/draft-db";
-import { GLOBAL_LEAGUE, validateAndScore, type TeamSnapshot } from "./server";
+import { GLOBAL_LEAGUE, genJoinCode, validateAndScore, type TeamSnapshot } from "./server";
 import { seededRng } from "./score";
+import { seededBot, realisticOpponentName } from "./opponent";
+import type { Formation } from "./types";
 import {
   LIVE_CONFIG, nextPhase, resolveHalfGoals, resolveShootout, aggregate,
   type LivePhase,
@@ -342,4 +344,107 @@ export async function applyLiveSwap(
     .maybeSingle();
   if (!updated) throw new Error("Swap window closed");
   return updated;
+}
+
+// ─── Matchmaking ──────────────────────────────────────────────────────────────
+
+type Side = { squad: PlacedPlayer[]; formation: string; strength: number; name: string };
+export type MatchmakeOpts = { ranked: boolean; leagueId: string | null };
+
+/** A user's active saved XI as a match side, or null if they have no team yet. */
+async function loadUserSide(db: SupabaseClient<DraftDatabase>, userId: string): Promise<Side | null> {
+  const { data } = await db
+    .from("draft_teams")
+    .select("display_name, formation, squad, strength_rating")
+    .eq("user_id", userId)
+    .eq("status", "active")
+    .maybeSingle();
+  if (!data) return null;
+  return {
+    squad: (data.squad ?? []) as PlacedPlayer[],
+    formation: data.formation,
+    strength: Number(data.strength_rating),
+    name: data.display_name ?? "Player",
+  };
+}
+
+/** Friend lobby: create an open match with a shareable code (retries on collision). */
+export async function createFriendMatch(db: SupabaseClient<DraftDatabase>, userId: string, opts: MatchmakeOpts): Promise<DraftLiveMatchRow> {
+  const side = await loadUserSide(db, userId);
+  if (!side) throw new Error("Save a team first");
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const { data, error } = await db.from("draft_live_matches").insert({
+      phase: "lobby", join_code: genJoinCode(), ranked: opts.ranked, league_id: opts.leagueId, is_bot: false,
+      p1_id: userId, p1_name: side.name, p1_squad: side.squad as unknown as never, p1_formation: side.formation, p1_strength: side.strength,
+    }).select("*").maybeSingle();
+    if (data) return data;
+    if (error && !`${error.message}`.toLowerCase().includes("duplicate")) throw new Error(error.message);
+  }
+  throw new Error("Could not create a lobby — try again");
+}
+
+/** Friend join by code: claim the open p2 seat. */
+export async function joinByCode(db: SupabaseClient<DraftDatabase>, userId: string, code: string): Promise<DraftLiveMatchRow> {
+  const { data: row } = await db.from("draft_live_matches").select("*").eq("join_code", code.toUpperCase()).maybeSingle();
+  if (!row) throw new Error("Lobby not found");
+  if (row.phase !== "lobby") throw new Error("That game has already started");
+  if (row.p1_id === userId) throw new Error("You're already in this lobby");
+  if (row.p2_id) throw new Error("Lobby is full");
+  const side = await loadUserSide(db, userId);
+  if (!side) throw new Error("Save a team first");
+  const { data: updated } = await db.from("draft_live_matches").update({
+    p2_id: userId, p2_name: side.name, p2_squad: side.squad as unknown as never, p2_formation: side.formation, p2_strength: side.strength,
+  }).eq("id", row.id).eq("phase", "lobby").is("p2_id", null).select("*").maybeSingle();
+  if (!updated) throw new Error("Lobby is full");
+  return updated;
+}
+
+/** Random queue: discover an existing pairing, claim a waiter, or report waiting. */
+export async function queueOrPair(
+  db: SupabaseClient<DraftDatabase>, userId: string, opts: MatchmakeOpts
+): Promise<{ status: "matched"; match: DraftLiveMatchRow } | { status: "waiting" }> {
+  // 1. Already paired into a queue match? (a claimed waiter discovers it here)
+  const { data: existing } = await db.from("draft_live_matches").select("*")
+    .is("join_code", null).eq("is_bot", false)
+    .or(`p1_id.eq.${userId},p2_id.eq.${userId}`)
+    .not("phase", "in", "(result,abandoned)")
+    .order("created_at", { ascending: false }).limit(1).maybeSingle();
+  if (existing) return { status: "matched", match: existing };
+
+  // 2. Claim the oldest compatible waiter, or enqueue self.
+  const { data: oppId } = await db.rpc("draft_live_pair", { p_user: userId, p_ranked: opts.ranked, p_league: opts.leagueId });
+  if (!oppId) return { status: "waiting" };
+
+  const me = await loadUserSide(db, userId);
+  const opp = await loadUserSide(db, oppId as string);
+  if (!me || !opp) throw new Error("Save a team first");
+  // The waiter (opp) was here first → becomes p1; the caller is p2.
+  const { data: match } = await db.from("draft_live_matches").insert({
+    phase: "lobby", join_code: null, ranked: opts.ranked, league_id: opts.leagueId, is_bot: false,
+    p1_id: oppId as string, p1_name: opp.name, p1_squad: opp.squad as unknown as never, p1_formation: opp.formation, p1_strength: opp.strength,
+    p2_id: userId, p2_name: me.name, p2_squad: me.squad as unknown as never, p2_formation: me.formation, p2_strength: me.strength,
+  }).select("*").maybeSingle();
+  if (!match) throw new Error("Matchmaking failed — try again");
+  return { status: "matched", match };
+}
+
+/** Bot fallback: leave the queue and start a disguised ranked bot match now. */
+export async function createBotMatch(db: SupabaseClient<DraftDatabase>, userId: string, opts: MatchmakeOpts): Promise<DraftLiveMatchRow> {
+  const me = await loadUserSide(db, userId);
+  if (!me) throw new Error("Save a team first");
+  await db.from("draft_live_queue").delete().eq("user_id", userId);
+  const id = crypto.randomUUID();
+  const bot = seededBot(me.formation as Formation, id);
+  const { data: match } = await db.from("draft_live_matches").insert({
+    id, phase: "lobby", join_code: null, ranked: opts.ranked, league_id: opts.leagueId, is_bot: true,
+    p1_id: userId, p1_name: me.name, p1_squad: me.squad as unknown as never, p1_formation: me.formation, p1_strength: me.strength,
+    p2_id: null, p2_name: realisticOpponentName(id),
+    p2_squad: bot.team.squad as unknown as never, p2_formation: bot.team.formation, p2_strength: bot.team.strength,
+  }).select("*").maybeSingle();
+  if (!match) throw new Error("Could not start a match");
+  return match;
+}
+
+export async function leaveQueue(db: SupabaseClient<DraftDatabase>, userId: string): Promise<void> {
+  await db.from("draft_live_queue").delete().eq("user_id", userId);
 }

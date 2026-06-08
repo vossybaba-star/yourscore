@@ -15,6 +15,24 @@ const OPPONENT_NAMES = [
   "Route One Rovers", "xG Merchants", "Bottlejob FC", "Vibes Only", "The Treble Seekers",
 ];
 
+// Realistic-looking handles for *ranked live* bot opponents, which must read as
+// real users (the jokey OPPONENT_NAMES above stay for explicit practice/Quick
+// Match). Kept here so the disguise lives next to the bot it dresses.
+const REAL_FIRST = [
+  "jack", "leah", "danny", "tom", "aisha", "marco", "liam", "sofia", "kai", "noah",
+  "ella", "reece", "yusuf", "owen", "maya", "harry", "amara", "finn", "zara", "luca",
+  "callum", "nina", "raheem", "beth", "ade", "sam", "priya", "george", "mia", "josh",
+];
+const REAL_SUFFIX = ["", "", "7", "07", "_", "x", "10", "98", "fc", "99", "_afc", "23", "88"];
+
+/** A believable username from a seed (e.g. a match id) — for disguised ranked bots. */
+export function realisticOpponentName(seed: string): string {
+  const rng = seededRng(seed);
+  const first = REAL_FIRST[Math.floor(rng() * REAL_FIRST.length)];
+  const suffix = REAL_SUFFIX[Math.floor(rng() * REAL_SUFFIX.length)];
+  return first + suffix;
+}
+
 export type Opponent = { name: string; team: LocalTeam };
 
 /** Auto-draft a full XI in the given formation. */
