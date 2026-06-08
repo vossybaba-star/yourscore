@@ -27,48 +27,32 @@ export async function GET(_req: NextRequest, { params }: { params: { code: strin
       .eq("league_id", league.id);
     const ids = (members ?? []).map((m) => m.user_id);
 
-    const [{ data: standings }, { data: teams }, { data: matches }] = await Promise.all([
-      db.from("draft_standings").select("user_id, display_name, wins_today, wins_all_time").eq("league_id", league.id),
+    // Read W/D/L straight from the per-league standings (live finalize +
+    // creditResult keep these correct, incl. draws; async wins land here too).
+    const [{ data: standings }, { data: teams }] = await Promise.all([
+      db.from("draft_standings").select("user_id, display_name, wins_all_time, draws_all_time, losses_all_time").eq("league_id", league.id),
       ids.length
         ? db.from("draft_teams").select("user_id, display_name, status, strength_rating").in("user_id", ids)
         : Promise.resolve({ data: [] as { user_id: string; display_name: string | null; status: string; strength_rating: number }[] }),
-      // Every league match feeds the table (P/W/L). H2H has no draws, so L = P − W.
-      db.from("draft_matches").select("challenger_id, opponent_id, winner_id").eq("league_id", league.id),
     ]);
 
     const standMap = new Map((standings ?? []).map((s) => [s.user_id, s]));
     const teamMap = new Map((teams ?? []).map((t) => [t.user_id, t]));
 
-    // Tally played/won per member from match history (a member can be either side).
-    const memberSet = new Set(ids);
-    const tally = new Map<string, { played: number; won: number }>();
-    const bump = (uid: string | null, won: boolean) => {
-      if (!uid || !memberSet.has(uid)) return;
-      const t = tally.get(uid) ?? { played: 0, won: 0 };
-      t.played += 1; if (won) t.won += 1;
-      tally.set(uid, t);
-    };
-    for (const m of matches ?? []) {
-      bump(m.challenger_id, m.winner_id === m.challenger_id);
-      bump(m.opponent_id, m.winner_id === m.opponent_id);
-    }
-
     const rows = ids.map((uid) => {
       const s = standMap.get(uid);
       const t = teamMap.get(uid);
-      const tl = tally.get(uid) ?? { played: 0, won: 0 };
-      const played = tl.played;
-      const won = tl.won;
-      const lost = played - won;
+      const won = s?.wins_all_time ?? 0;
+      const drawn = s?.draws_all_time ?? 0;
+      const lost = s?.losses_all_time ?? 0;
       return {
         user_id: uid,
         display_name: t?.display_name ?? s?.display_name ?? "Player",
-        played,
+        played: won + drawn + lost,
         won,
+        drawn,
         lost,
-        points: won * 3,
-        wins_today: s?.wins_today ?? 0,
-        wins_all_time: s?.wins_all_time ?? 0,
+        points: won * 3 + drawn,
         strength: t ? Number(t.strength_rating) : null,
         available: !!t && t.status === "active",
         is_me: !!user && uid === user.id,

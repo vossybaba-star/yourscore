@@ -18,10 +18,9 @@ type Member = {
   display_name: string;
   played: number;
   won: number;
+  drawn: number;
   lost: number;
   points: number;
-  wins_today: number;
-  wins_all_time: number;
   strength: number | null;
   available: boolean;
   is_me: boolean;
@@ -169,10 +168,11 @@ export default function LeagueBoard() {
             <div className="flex items-center px-3 py-2 font-body" style={{ fontSize: 11, color: "#8888aa", letterSpacing: 0.5, background: "rgba(255,255,255,0.03)" }}>
               <span style={{ width: 24, textAlign: "center" }}>#</span>
               <span className="flex-1 pl-2">TEAM</span>
-              <span style={{ width: 30, textAlign: "center" }}>P</span>
-              <span style={{ width: 30, textAlign: "center" }}>W</span>
-              <span style={{ width: 30, textAlign: "center" }}>L</span>
-              <span style={{ width: 38, textAlign: "center", color: "#cfcfe6" }}>PTS</span>
+              <span style={{ width: 26, textAlign: "center" }}>P</span>
+              <span style={{ width: 26, textAlign: "center" }}>W</span>
+              <span style={{ width: 26, textAlign: "center" }}>D</span>
+              <span style={{ width: 26, textAlign: "center" }}>L</span>
+              <span style={{ width: 36, textAlign: "center", color: "#cfcfe6" }}>PTS</span>
             </div>
             {board.members.map((m, i) => (
               <div key={m.user_id} className="flex items-center px-3 py-2.5"
@@ -187,10 +187,11 @@ export default function LeagueBoard() {
                     {m.strength != null && <span style={{ color: "#8888aa" }}>· {m.strength}</span>}
                   </div>
                 </div>
-                <span className="font-body tabular-nums" style={{ width: 30, textAlign: "center", fontSize: 14, color: "#cfcfe6" }}>{m.played}</span>
-                <span className="font-body tabular-nums" style={{ width: 30, textAlign: "center", fontSize: 14, color: "#00ff87" }}>{m.won}</span>
-                <span className="font-body tabular-nums" style={{ width: 30, textAlign: "center", fontSize: 14, color: "#ff4757" }}>{m.lost}</span>
-                <span className="font-display tabular-nums" style={{ width: 38, textAlign: "center", fontSize: 16, color: "#fff" }}>{m.points}</span>
+                <span className="font-body tabular-nums" style={{ width: 26, textAlign: "center", fontSize: 14, color: "#cfcfe6" }}>{m.played}</span>
+                <span className="font-body tabular-nums" style={{ width: 26, textAlign: "center", fontSize: 14, color: "#00ff87" }}>{m.won}</span>
+                <span className="font-body tabular-nums" style={{ width: 26, textAlign: "center", fontSize: 14, color: "#ffb800" }}>{m.drawn}</span>
+                <span className="font-body tabular-nums" style={{ width: 26, textAlign: "center", fontSize: 14, color: "#ff4757" }}>{m.lost}</span>
+                <span className="font-display tabular-nums" style={{ width: 36, textAlign: "center", fontSize: 16, color: "#fff" }}>{m.points}</span>
               </div>
             ))}
           </div>
