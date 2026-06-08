@@ -33,7 +33,7 @@ export async function GET() {
           <div style={{ display: "flex", alignItems: "baseline" }}>
             <span style={{ color: "#fff", fontSize: 46, fontWeight: 900, letterSpacing: 1 }}>YOUR</span>
             <span style={{ color: GREEN, fontSize: 46, fontWeight: 900, letterSpacing: 1 }}>SCORE</span>
-            <span style={{ color: "#8b8ba6", fontSize: 30, fontWeight: 700, marginLeft: 18 }}>· 38-0</span>
+            <span style={{ color: "#8b8ba6", fontSize: 30, fontWeight: 700, marginLeft: 18 }}>· THE XI GAME</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", padding: "10px 24px", borderRadius: 999, background: "rgba(0,255,135,0.12)", border: `1px solid ${GREEN}66` }}>
             <div style={{ display: "flex", width: 14, height: 14, borderRadius: 999, background: GREEN, marginRight: 12 }} />
