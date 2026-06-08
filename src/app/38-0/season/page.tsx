@@ -318,10 +318,12 @@ export default function SeasonSim() {
               <button onClick={copyLink} className="rounded-2xl py-3 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "#1a1a2e", color: "#cfcfe6", fontSize: 15, border: "1px solid rgba(255,255,255,0.15)" }}>{copied ? "Copied ✓" : "Copy"}</button>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 mt-2">
-              <button onClick={saveImage} className="rounded-2xl py-3 font-body active:scale-[0.98] transition-transform" style={{ background: "#12121e", color: "#cfcfe6", fontSize: 15, border: "1px solid rgba(255,255,255,0.1)" }}>{downloaded ? "Saved ✓" : "⬇ Save image"}</button>
-              <button onClick={() => setShareOpen(false)} className="rounded-2xl py-3 font-body active:scale-[0.98] transition-transform" style={{ background: "#12121e", color: "#8888aa", fontSize: 15, border: "1px solid rgba(255,255,255,0.1)" }}>Close</button>
-            </div>
+            <button onClick={saveImage} className="w-full mt-2 rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform"
+              style={{ background: downloaded ? "rgba(0,255,135,0.15)" : "#12121e", color: downloaded ? "#00ff87" : "#cfcfe6", fontSize: 18, border: downloaded ? "1px solid rgba(0,255,135,0.3)" : "1px solid rgba(255,255,255,0.1)" }}>
+              {downloaded ? "✓ Saved!" : "💾 Save My Team"}
+            </button>
+
+            <button onClick={() => setShareOpen(false)} className="w-full mt-2 rounded-2xl py-3 font-body active:scale-[0.98] transition-transform" style={{ background: "transparent", color: "#8888aa", fontSize: 15 }}>Close</button>
           </div>
         </div>
       )}
