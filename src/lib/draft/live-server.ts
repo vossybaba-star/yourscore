@@ -13,7 +13,9 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { DraftDatabase, DraftLiveMatchRow } from "@/types/draft-db";
 import { GLOBAL_LEAGUE, genJoinCode, validateAndScore, type TeamSnapshot } from "./server";
-import { seededRng } from "./score";
+import { seededRng, scoreTeam, canPlay } from "./score";
+import { slotsFor } from "./formations";
+import { spin } from "./pool";
 import { seededBot, realisticOpponentName } from "./opponent";
 import type { Formation } from "./types";
 import {
@@ -103,12 +105,44 @@ function deadlineFor(phase: LivePhase, now: number): string | null {
 /** A bot opponent has no client, so it is always "ready" to start (lobby). For
  *  timed phases the deadline drives advancement; Phase 6 adds human-like timing. */
 function bothReadyFor(row: DraftLiveMatchRow): boolean {
-  const p2Ready = row.is_bot ? true : row.p2_ready;
   if (row.phase === "draw_decision") {
     const p2Decided = row.is_bot ? true : row.p2_wants_pens !== null;
     return row.p1_wants_pens !== null && p2Decided;
   }
+  // A bot only short-circuits the lobby (so the match can start). Everywhere else
+  // it "takes its time" — the phase runs to its deadline, like a real opponent
+  // thinking — instead of letting the human's early Done skip the clock.
+  const p2Ready = row.is_bot ? row.phase === "lobby" : row.p2_ready;
   return row.p1_ready && p2Ready;
+}
+
+/** A disguised bot makes its own changes server-side: re-spin `count` random
+ *  slots (seeded, reproducible) and re-score — so its XI evolves between halves
+ *  like a human's, and its second-half Strength shifts accordingly. */
+function applyBotSwaps(squad: PlacedPlayer[], formation: Formation, count: number, seed: string): { squad: PlacedPlayer[]; strength: number } {
+  const rng = seededRng(seed);
+  const slots = slotsFor(formation);
+  let next = squad.slice();
+  for (let i = 0; i < count && next.length > 0; i++) {
+    const target = next[Math.floor(rng() * next.length)];
+    const slot = slots.find((s) => s.id === target.slot);
+    if (!slot) continue;
+    const usedIds = new Set(next.filter((p) => p.slot !== target.slot).map((p) => p.player_season_id));
+    const usedNames = new Set(next.filter((p) => p.slot !== target.slot).map((p) => p.name));
+    const legal = spin([slot.pos], usedIds, usedNames, rng).players.filter((p) => canPlay(p.position, slot.pos));
+    if (legal.length === 0) continue;
+    const c = legal[Math.floor(rng() * legal.length)];
+    next = next.map((p) => p.slot === target.slot
+      ? { slot: slot.id, slotPos: slot.pos, player_season_id: c.id, name: c.name, club: c.club, season: c.season, overall: c.overall, position: c.position }
+      : p);
+  }
+  return { squad: next, strength: scoreTeam(next, formation) };
+}
+
+function botSwapPatch(row: DraftLiveMatchRow, count: number, seed: string): Partial<DraftLiveMatchRow> {
+  if (!row.is_bot || !row.p2_squad) return {};
+  const r = applyBotSwaps(row.p2_squad as PlacedPlayer[], (row.p2_formation ?? "4-3-3") as Formation, count, seed);
+  return { p2_squad: r.squad as unknown as never, p2_strength: r.strength };
 }
 
 function expired(row: DraftLiveMatchRow, now: number): boolean {
@@ -136,6 +170,12 @@ function resolutionForEntering(target: LivePhase, row: DraftLiveMatchRow): Parti
   const a = Number(row.p1_strength ?? 0);
   const b = Number(row.p2_strength ?? 0);
   switch (target) {
+    case "pregame_swap":
+      // Bot makes its 1 pre-match change as the window opens.
+      return botSwapPatch(row, 1, `${row.id}:botpre`);
+    case "halftime_swap":
+      // Bot makes 1–2 changes at the break (human-like variation).
+      return botSwapPatch(row, seededRng(`${row.id}:botn`)() < 0.5 ? 1 : 2, `${row.id}:bothalf`);
     case "half1": {
       const g = resolveHalfGoals(a, b, seededRng(`${row.id}:h1`));
       return { h1_p1: g.a, h1_p2: g.b };
