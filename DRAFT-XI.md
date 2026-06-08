@@ -130,3 +130,35 @@ is applied (see activation steps above) and fails soft until then.
 
 The Quick Match loop and Ranked Match share the exact same engine, so the remaining
 work is plumbing, not redesign.
+
+## Live H2H multiplayer — BUILT (live, simultaneous two-half match)
+
+A live, simultaneous head-to-head that runs alongside the async match/challenge
+flow (which is untouched). Spec + plan: `docs/superpowers/specs/2026-06-08-38-0-live-multiplayer-*.md`.
+
+**The match:** reveal → **pre-game (1 spin-and-choose change)** → half 1 (goals) →
+**halftime (2 changes)** → half 2 → result. A level aggregate offers **opt-in
+penalties** (both must agree, else it stands as a draw — ranked matches can draw).
+
+**How it works:** one `draft_live_matches` row is the authoritative state, advanced
+through a phase machine by an **idempotent, deadline-driven** transition endpoint
+(serverless-friendly — both clients ping `/advance`, the conditional UPDATE makes it
+fire once). Half goals come from each side's Strength via a seeded Poisson split;
+penalties via a seeded shootout. Clients sync over Supabase Realtime
+(`draft:match:<id>`, postgres_changes + presence). Matchmaking: friend **6-char code**
+or a **random queue** (atomic `draft_live_pair`, `FOR UPDATE SKIP LOCKED`) with a
+**disguised ranking bot** fallback (realistic name, no "bot" label, paces on the clock
+and makes its own swaps). Standings move to a **points ladder (Win 3, Draw 1)**.
+
+| Area | Files |
+|---|---|
+| Pure engine (goals/penalties/state machine) + tests | `src/lib/draft/live-score.ts` (+ `live-score.test.ts`) |
+| Authoritative lifecycle, swap validation, finalize, matchmaking | `src/lib/draft/live-server.ts` |
+| Realtime client hook | `src/lib/draft/useLiveMatch.ts` |
+| API | `src/app/api/draft/live/` (route, `[id]`, ready, swap, advance) |
+| UI | `/38-0/live`, `/38-0/live/[code]`, `/38-0/live/match/[id]` |
+| Standings (points) | `draft_leaderboard_points` + `/38-0/leaderboard` (W–D–L + Pts) |
+| DB | `supabase/migrations/18_draft_live.sql` — **applied to prod** |
+
+Tests: `bash scripts/draft/run-tests.sh` (live engine included). The disguised-bot
+path means the ladder always feels populated even at low concurrency.

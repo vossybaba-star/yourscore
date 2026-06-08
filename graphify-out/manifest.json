@@ -75,8 +75,8 @@
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/capacitor.config.ts": {
-    "mtime": 1779888314.3773808,
-    "ast_hash": "08e0149d455925e09137773a1d68245d",
+    "mtime": 1780854018.9853854,
+    "ast_hash": "c29dc2a5f963a6fa8233406d8335bca6",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/ios/App/App/AppDelegate.swift": {
@@ -100,13 +100,13 @@
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/ios/App/App/capacitor.config.json": {
-    "mtime": 1779885776.717465,
-    "ast_hash": "486344121d7b6246cd606472a24b5e17",
+    "mtime": 1780833620.7026947,
+    "ast_hash": "6e56df06b33a8377b051980674198bb4",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/ios/App/CapApp-SPM/Package.swift": {
-    "mtime": 1779888314.3886774,
-    "ast_hash": "8dc63c893373a31a63bf859ce4223afd",
+    "mtime": 1780833620.696433,
+    "ast_hash": "bfeef9c422671e9ebaabccb2da07f7c8",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/ios/App/CapApp-SPM/Sources/CapApp-SPM/CapApp-SPM.swift": {
@@ -115,12 +115,12 @@
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/next.config.mjs": {
-    "mtime": 1780748076.4368627,
-    "ast_hash": "e6ccee64c8d6f4a49ce9e17f843e1e10",
+    "mtime": 1780899312.8809483,
+    "ast_hash": "a5483095c76eb9c04ff84fdb38d800dd",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/package.json": {
-    "mtime": 1780691680.944581,
+    "mtime": 1780854018.995282,
     "ast_hash": "77bbb493d0ec4d2a91e260cf346d4a4e",
     "semantic_hash": ""
   },
@@ -150,67 +150,67 @@
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/sentry.edge.config.ts": {
-    "mtime": 1780691637.6538591,
+    "mtime": 1780854019.0208218,
     "ast_hash": "ae8e7ea70af78bf75d0dc3778121a916",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/sentry.server.config.ts": {
-    "mtime": 1780691637.6540034,
+    "mtime": 1780854019.0213425,
     "ast_hash": "a6c11153e2a13f5822391756c9a62907",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/admin/challenges/page.tsx": {
-    "mtime": 1780691637.6700613,
+    "mtime": 1780854019.0314457,
     "ast_hash": "624eca9407f314aad53709c0e30378f6",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/admin/fire/[roomId]/page.tsx": {
-    "mtime": 1780691637.6708977,
+    "mtime": 1780854019.0322042,
     "ast_hash": "b3f9427e0fb227089bffa06019ad4a7b",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/admin/layout.tsx": {
-    "mtime": 1780691637.6711664,
+    "mtime": 1780854019.032394,
     "ast_hash": "fc9cee6500e976a440100cba9d98c4ea",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/admin/matches/page.tsx": {
-    "mtime": 1780747978.498273,
+    "mtime": 1780854019.032605,
     "ast_hash": "067d78e27b73edfa58111b138e0c4fb9",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/admin/page.tsx": {
-    "mtime": 1780748287.116546,
+    "mtime": 1780854019.0331988,
     "ast_hash": "2cd8fd9e3abedd4f787cb17eacc8bb47",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/admin/questions/[matchId]/page.tsx": {
-    "mtime": 1780691637.6721861,
+    "mtime": 1780854019.0334063,
     "ast_hash": "2532e8c1858f0b3e6429b127b64d0b79",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/admin/rooms/page.tsx": {
-    "mtime": 1780747961.6991374,
+    "mtime": 1780854019.0335624,
     "ast_hash": "1badd009799cbaec3a60f19ab4769a43",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/api/admin/approve-question/route.ts": {
-    "mtime": 1780691637.6727076,
+    "mtime": 1780854019.0337183,
     "ast_hash": "a2085920ce83cd4b38374b7fc56f9986",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/api/admin/fire/route.ts": {
-    "mtime": 1780691637.6730144,
+    "mtime": 1780854019.033868,
     "ast_hash": "983f9700502a15afe80834ae0404fb8e",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/api/admin/generate-questions/route.ts": {
-    "mtime": 1780691637.6736677,
+    "mtime": 1780854019.0340304,
     "ast_hash": "ba179fdb5f2213e70d878da1ea7eea81",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/api/answer/route.ts": {
-    "mtime": 1780748026.4754763,
+    "mtime": 1780854019.034224,
     "ast_hash": "40902a4f4e4686033f09a36f8f4eca92",
     "semantic_hash": ""
   },
@@ -220,82 +220,82 @@
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/api/h2h/play/route.ts": {
-    "mtime": 1780748039.193796,
+    "mtime": 1780854019.042718,
     "ast_hash": "9a450aad14445fec166bd5e61fe4beca",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/api/quiz/complete/route.ts": {
-    "mtime": 1780691637.674364,
+    "mtime": 1780854019.0428784,
     "ast_hash": "775231f65be5dde898039b1075033281",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/api/quiz/generate-custom/route.ts": {
-    "mtime": 1780691637.6745913,
-    "ast_hash": "d2e7034fa762f668214d153bfd7482fb",
+    "mtime": 1780854019.043052,
+    "ast_hash": "70dbac6db09f7b5ae6e61330c45c7f94",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/api/quiz/start/route.ts": {
-    "mtime": 1780691637.6747916,
+    "mtime": 1780854019.043463,
     "ast_hash": "ce90f418359673d6aef41da6bc859dd2",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/api/room/create/route.ts": {
-    "mtime": 1780691637.674965,
+    "mtime": 1780854019.0436604,
     "ast_hash": "bdec5579ef10ac115d99ecb37b254781",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/api/room/join/route.ts": {
-    "mtime": 1780691637.6752148,
+    "mtime": 1780854019.0438154,
     "ast_hash": "7126830b97a30112199cd92b56ae22aa",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/api/room/next/route.ts": {
-    "mtime": 1780745219.4402883,
+    "mtime": 1780854019.0439913,
     "ast_hash": "1092a6c2d23fa5518689f7050aa66764",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/api/room/start/route.ts": {
-    "mtime": 1780691637.6757975,
+    "mtime": 1780854019.0441647,
     "ast_hash": "7e22d76984d27b7f10aff38a0f53de8d",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/auth/callback/route.ts": {
-    "mtime": 1780690524.728106,
+    "mtime": 1780854019.0443416,
     "ast_hash": "277a91ea7a84daf38b12e28070b4b387",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/auth/reset-password/page.tsx": {
-    "mtime": 1780691637.6760743,
+    "mtime": 1780854019.0445042,
     "ast_hash": "be45571f4e5d77775daf420470382af9",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/auth/sign-in/page.tsx": {
-    "mtime": 1780691637.6763353,
+    "mtime": 1780854019.046108,
     "ast_hash": "cd140b6b32a61e929741a5db482a8d69",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/challenges/[slug]/page.tsx": {
-    "mtime": 1780748180.7578084,
-    "ast_hash": "a98ed957efbd11e17feb2aea67d3efbe",
+    "mtime": 1780854019.0466077,
+    "ast_hash": "0abe50b4a17fc6eb6333988f32ef683d",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/challenges/page.tsx": {
-    "mtime": 1780691637.6769617,
+    "mtime": 1780854019.0471153,
     "ast_hash": "50310d025bbaf90468dd658039146ca4",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/global-error.tsx": {
-    "mtime": 1780691637.6771617,
+    "mtime": 1780854019.0507011,
     "ast_hash": "4c37831085c8a6bddee26fbcd9912368",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/h2h/[id]/page.tsx": {
-    "mtime": 1780748177.2261677,
+    "mtime": 1780854019.0515683,
     "ast_hash": "511cb94f87dea5ad02a1c0b7baba24d2",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/how-it-works/page.tsx": {
-    "mtime": 1780691637.6778963,
+    "mtime": 1780854019.0520394,
     "ast_hash": "8fd5560d44fb431db7023b3394a5887d",
     "semantic_hash": ""
   },
@@ -310,63 +310,63 @@
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/join/page.tsx": {
-    "mtime": 1780691637.6781852,
+    "mtime": 1780854019.0530837,
     "ast_hash": "838f7ff71ef1475cc56904542a9cfc14",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/layout.tsx": {
-    "mtime": 1780696335.4441533,
-    "ast_hash": "9eb07cfadc21a4f4b8c95d23ebeb162a",
+    "mtime": 1780904169.7695932,
+    "ast_hash": "9e33bdb7bc90c805b3839fa9782a180b",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/league/[id]/page.tsx": {
-    "mtime": 1780691637.6788273,
+    "mtime": 1780854019.0540955,
     "ast_hash": "6de41dde33123f010365053e1078657c",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/league/join/[code]/page.tsx": {
-    "mtime": 1780692629.273196,
+    "mtime": 1780854019.0547817,
     "ast_hash": "4054763a0c77045dafcef8b41ed9173e",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/league/join/page.tsx": {
-    "mtime": 1780691637.6794162,
+    "mtime": 1780854019.0552025,
     "ast_hash": "2ba029b070ae34913bcfdd9664dba604",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/league/new/page.tsx": {
-    "mtime": 1780692625.8236976,
-    "ast_hash": "e71330771e00a9aeb092f501a5f65fbd",
+    "mtime": 1780854019.056291,
+    "ast_hash": "d1fc83b4554bec057f414ff01f865d6f",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/leagues/page.tsx": {
-    "mtime": 1780692067.1366718,
+    "mtime": 1780854019.0577908,
     "ast_hash": "7ac781dfc08a773418a3243426913f56",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/match/[id]/page.tsx": {
-    "mtime": 1780691637.680131,
+    "mtime": 1780854019.0582495,
     "ast_hash": "bb9d86e33b981281541c80adbae2c818",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/page.tsx": {
-    "mtime": 1780748284.95234,
-    "ast_hash": "93c9f1024f6aa8947c12d1fef9cafaa6",
+    "mtime": 1780904169.7698746,
+    "ast_hash": "cc3c6926ac77f434ceb4efbdc3d70c10",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/play/[roomId]/page.tsx": {
-    "mtime": 1780748218.30008,
-    "ast_hash": "33a72d1a1a1f84793f7e18a49b9f5969",
+    "mtime": 1780854019.0594656,
+    "ast_hash": "0ba7018d09553d2ecc7aa143d231c1e3",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/play/new/page.tsx": {
-    "mtime": 1780691637.6811295,
-    "ast_hash": "64a1f9e88ed43cd746d2cac095df2af4",
+    "mtime": 1780854019.0597832,
+    "ast_hash": "c657d7839dcf3e4efcda5e3ebadb4f89",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/play/page.tsx": {
-    "mtime": 1780691637.681333,
-    "ast_hash": "e6e2eac449c23b48ffe5c08b2632791f",
+    "mtime": 1780854019.0602145,
+    "ast_hash": "3eaf5e2f23cc51a2a56686eb74d6e222",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/privacy/page.tsx": {
@@ -375,22 +375,22 @@
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/profile/[userId]/page.tsx": {
-    "mtime": 1780691637.6816156,
+    "mtime": 1780854019.0605175,
     "ast_hash": "c0795ba8cc7a439e32f840b7e538f1ba",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/profile/page.tsx": {
-    "mtime": 1780748316.1921883,
-    "ast_hash": "bcf6de5f29d72c8a3b222fa3121e6572",
+    "mtime": 1780854019.060883,
+    "ast_hash": "ee109ffbbc18ad3ba359b6d71d541e69",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/quiz/create/page.tsx": {
-    "mtime": 1780691637.6821265,
-    "ast_hash": "719168ec9681941eb73baa82a1298957",
+    "mtime": 1780854019.061666,
+    "ast_hash": "c5cc46131a371f226263d33455a311fb",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/settings/page.tsx": {
-    "mtime": 1780691637.6824288,
+    "mtime": 1780854019.0620701,
     "ast_hash": "d3212289e03ca88a89236d26ada36135",
     "semantic_hash": ""
   },
@@ -405,7 +405,7 @@
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/components/auth/AuthButton.tsx": {
-    "mtime": 1780691637.682754,
+    "mtime": 1780854019.063459,
     "ast_hash": "ab11aef1d2abc5cf7a2fce599392cfe2",
     "semantic_hash": ""
   },
@@ -415,7 +415,7 @@
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/components/game/Leaderboard.tsx": {
-    "mtime": 1780691637.6832566,
+    "mtime": 1780854019.0646849,
     "ast_hash": "486ce7aaa30299988f905aace2a4598b",
     "semantic_hash": ""
   },
@@ -430,8 +430,8 @@
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/components/ui/BottomNav.tsx": {
-    "mtime": 1780524676.4978557,
-    "ast_hash": "c4bb769da71c4a6b800150dd9f963210",
+    "mtime": 1780899149.7491894,
+    "ast_hash": "b1a27633456a888ae8fb5da082c014fb",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/components/ui/FlagImage.tsx": {
@@ -445,17 +445,17 @@
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/hooks/useUser.ts": {
-    "mtime": 1780691637.6857154,
+    "mtime": 1780854019.0690641,
     "ast_hash": "60a059348853d863d0d1f8f94eafb62d",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/instrumentation-client.ts": {
-    "mtime": 1780691637.6859233,
+    "mtime": 1780854019.069617,
     "ast_hash": "653a11df03e2fdc22a3fa4da676011f2",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/instrumentation.ts": {
-    "mtime": 1780691637.6861355,
+    "mtime": 1780854019.0702333,
     "ast_hash": "f1a88b2d0309631d0c8c1987cd43c0bc",
     "semantic_hash": ""
   },
@@ -470,17 +470,17 @@
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/lib/email/client.ts": {
-    "mtime": 1780690497.8689518,
+    "mtime": 1780854019.0717044,
     "ast_hash": "346354df1fd6d1791422c38607a35f75",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/lib/email/render.ts": {
-    "mtime": 1780690497.869167,
+    "mtime": 1780854019.0718153,
     "ast_hash": "8594bccf7bdd2b3ccb5e7466ef7d9232",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/lib/email/senders.ts": {
-    "mtime": 1780692519.5219996,
+    "mtime": 1780854019.0719318,
     "ast_hash": "fd27014a02d5991ed8ea2102cc694bf5",
     "semantic_hash": ""
   },
@@ -500,17 +500,17 @@
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/lib/ratelimit.ts": {
-    "mtime": 1780691637.6863701,
+    "mtime": 1780854019.0724635,
     "ast_hash": "20ed55fc88d7a8bbd08160eabe0ac017",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/lib/scoring.ts": {
-    "mtime": 1780748005.5325038,
+    "mtime": 1780854019.0728476,
     "ast_hash": "fbeb053bc557160dbd2d4c0fd4b69141",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/lib/supabase/client.ts": {
-    "mtime": 1780691637.6868336,
+    "mtime": 1780854019.073161,
     "ast_hash": "200d5a26f87072ad7d111d1f12d0fdba",
     "semantic_hash": ""
   },
@@ -530,17 +530,17 @@
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/lib/teamImages.ts": {
-    "mtime": 1779471745.6881034,
-    "ast_hash": "1433f8e3a10ab84886ff5793a63b4835",
+    "mtime": 1780854019.073466,
+    "ast_hash": "24aaad1a766b5fa1a7d485c527f8b2f4",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/lib/theme.ts": {
-    "mtime": 1780691637.6869547,
+    "mtime": 1780854019.0738761,
     "ast_hash": "65f31a97f4cff5b91f6884a0d0584375",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/lib/utils.ts": {
-    "mtime": 1780691637.6870897,
+    "mtime": 1780854019.0741625,
     "ast_hash": "8c8fced832c1960a17103089b3c426e7",
     "semantic_hash": ""
   },
@@ -550,12 +550,12 @@
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/types/database.ts": {
-    "mtime": 1780745273.1996577,
+    "mtime": 1780854019.0745213,
     "ast_hash": "319d5e6350c40e006144518118eac8d0",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/supabase/.temp/linked-project.json": {
-    "mtime": 1780691637.6878233,
+    "mtime": 1780854019.075013,
     "ast_hash": "6a3c92e68d8d67f4711e3c2429ff8b1c",
     "semantic_hash": ""
   },
@@ -590,22 +590,22 @@
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/supabase/migrations/07_rate_limit.sql": {
-    "mtime": 1780691637.6887145,
+    "mtime": 1780854019.0784278,
     "ast_hash": "5634b9407f644c489f6841c26a5363f2",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/supabase/migrations/08_scoring_v2.sql": {
-    "mtime": 1780691637.6888485,
+    "mtime": 1780854019.0785708,
     "ast_hash": "127a63081cb1fe1bd51df7de6f1803eb",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/supabase/migrations/09_room_scores_speed.sql": {
-    "mtime": 1780691637.6890035,
+    "mtime": 1780854019.0786748,
     "ast_hash": "caa58251a3c3586f4e8ff5ed1c1f9729",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/supabase/schema.sql": {
-    "mtime": 1780691637.6894643,
+    "mtime": 1780854019.0795705,
     "ast_hash": "044e3ff264855a1852787e311c320733",
     "semantic_hash": ""
   },
@@ -620,12 +620,12 @@
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/CLAUDE.md": {
-    "mtime": 1780691637.6419275,
-    "ast_hash": "bf972b074d0881f2c05355e2dc6d99ac",
+    "mtime": 1780854018.9844854,
+    "ast_hash": "594312984bfa756e447556f1f81d891d",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/MARKETING_BRIEF.md": {
-    "mtime": 1780691637.642266,
+    "mtime": 1780854018.9848013,
     "ast_hash": "e220c7ae488b5e13ce305f44ecf7ce69",
     "semantic_hash": ""
   },
@@ -635,7 +635,7 @@
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/PRODUCT.md": {
-    "mtime": 1780691637.6425924,
+    "mtime": 1780854018.9849615,
     "ast_hash": "2e2ad04473b724ac79e199cc8d344404",
     "semantic_hash": ""
   },
@@ -650,67 +650,67 @@
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/YOURSCORE.md": {
-    "mtime": 1780691637.642888,
+    "mtime": 1780854018.9851046,
     "ast_hash": "19f56326704bfc118c0130e345a8f007",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/emails/README.md": {
-    "mtime": 1780690506.1371193,
+    "mtime": 1780854018.985575,
     "ast_hash": "4ce89ed11d7202b8f686fb72ac3c6e92",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/emails/_skeleton.html": {
-    "mtime": 1780690506.134121,
+    "mtime": 1780854018.9856987,
     "ast_hash": "28d672d9ce5d235afb0bd0210a924000",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/emails/lifecycle/01-welcome.html": {
-    "mtime": 1780694935.9485233,
+    "mtime": 1780854018.9858553,
     "ast_hash": "941a46ecafe3fce0d44109fe8e1e3572",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/emails/lifecycle/02-first-quiz.html": {
-    "mtime": 1780695043.7096062,
+    "mtime": 1780854018.985983,
     "ast_hash": "e0e54188a0e383ecb6011fdfd3323484",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/emails/lifecycle/03-first-league-created.html": {
-    "mtime": 1780695073.956098,
+    "mtime": 1780854018.9861102,
     "ast_hash": "a0fdac3be380fe5ef521e66caab2aa91",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/emails/lifecycle/04-league-invite.html": {
-    "mtime": 1780695110.6233041,
+    "mtime": 1780854018.986232,
     "ast_hash": "95181671f37356711f4f9a9a8d50b67c",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/emails/lifecycle/05-pre-match-nudge.html": {
-    "mtime": 1780695153.4190748,
+    "mtime": 1780854018.986371,
     "ast_hash": "75e6997b8a42d1d775c2518abfc7346a",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/emails/lifecycle/06-post-match-recap.html": {
-    "mtime": 1780695197.209503,
+    "mtime": 1780854018.9865057,
     "ast_hash": "47f912a189120e4335e5a55acab5259f",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/emails/lifecycle/07-weekly-digest.html": {
-    "mtime": 1780695237.586435,
+    "mtime": 1780854018.9866362,
     "ast_hash": "59650f8982c9760ea336abe01e38ff4a",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/emails/lifecycle/08-top-of-league.html": {
-    "mtime": 1780695280.6597917,
+    "mtime": 1780854018.9867558,
     "ast_hash": "a487165e0934506f258bfb7c7e09a5ff",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/emails/lifecycle/09-first-member-joins.html": {
-    "mtime": 1780695310.460412,
+    "mtime": 1780854018.9868848,
     "ast_hash": "fd563227268cb978a21cffe51e1c9f45",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/emails/lifecycle/10-tournament-wrap.html": {
-    "mtime": 1780695350.3247237,
+    "mtime": 1780854018.987019,
     "ast_hash": "3ea0790ff1521f5d59430486f63843e7",
     "semantic_hash": ""
   },
@@ -720,8 +720,8 @@
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/pnpm-workspace.yaml": {
-    "mtime": 1780691637.6536705,
-    "ast_hash": "b20bcdc408eb02cfa826e72b23b52c33",
+    "mtime": 1780854018.9977512,
+    "ast_hash": "a55feea8043a69bf646382124ee3aef0",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/social-media/content-brief.md": {
@@ -755,32 +755,32 @@
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/supabase/templates/confirmation.html": {
-    "mtime": 1780695390.6572027,
+    "mtime": 1780854019.0797422,
     "ast_hash": "a45f278123cae4b18dffb03ddf02d8da",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/supabase/templates/email_change.html": {
-    "mtime": 1780695455.5301173,
+    "mtime": 1780854019.0800097,
     "ast_hash": "7c85fe9a015d65c3831669361e08c0ca",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/supabase/templates/invite.html": {
-    "mtime": 1780695496.012057,
+    "mtime": 1780854019.0801265,
     "ast_hash": "99d7dfeb148ebb39347cdcae75542ba0",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/supabase/templates/magic_link.html": {
-    "mtime": 1780695410.7522562,
+    "mtime": 1780854019.080277,
     "ast_hash": "110465b31c5e5f2f99ec580fe3b76ea0",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/supabase/templates/reauthentication.html": {
-    "mtime": 1780695476.1432903,
+    "mtime": 1780854019.0804179,
     "ast_hash": "63c311b31da71247769bf03be9efb727",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/supabase/templates/recovery.html": {
-    "mtime": 1780695433.3698485,
+    "mtime": 1780854019.0806835,
     "ast_hash": "8d9791c1a543997d94a3c5641f91bfe5",
     "semantic_hash": ""
   },
@@ -1140,7 +1140,7 @@
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/public/logo.png": {
-    "mtime": 1780748057.2270443,
+    "mtime": 1780854019.0198002,
     "ast_hash": "8d51e9bca025c10f06f808fd814833aa",
     "semantic_hash": ""
   },
@@ -1170,22 +1170,22 @@
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/social-media/store/screenshots/resized/01-hero.png": {
-    "mtime": 1780691637.6562073,
+    "mtime": 1780854019.0227246,
     "ast_hash": "29b1c033e9dcb4d2a65c19e275bb4e57",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/social-media/store/screenshots/resized/02-challenges.png": {
-    "mtime": 1780691637.661045,
+    "mtime": 1780854019.0251427,
     "ast_hash": "21b0c3534093ac19b16716bca9dea7f2",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/social-media/store/screenshots/resized/03-challenge.png": {
-    "mtime": 1780691637.6664946,
+    "mtime": 1780854019.0285914,
     "ast_hash": "13ec702a7e747e36f5e881913445d80f",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/social-media/store/screenshots/resized/04-how-it-works.png": {
-    "mtime": 1780691637.6692786,
+    "mtime": 1780854019.0308547,
     "ast_hash": "5cc6c8464a40264fd01ce07edb3b12ad",
     "semantic_hash": ""
   },
@@ -1205,63 +1205,773 @@
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/supabase/migrations/10_league_standings_rpcs.sql": {
-    "mtime": 1780691637.6891744,
+    "mtime": 1780854019.078798,
     "ast_hash": "adb6930aedea84e57ac2e97fc67cf08e",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/components/ui/GridBackground.tsx": {
-    "mtime": 1780691637.6836782,
+    "mtime": 1780854019.0661497,
     "ast_hash": "5ea51c9c90f02f2457c8c29f4e1eaddb",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/components/game/AnswerButtons.tsx": {
-    "mtime": 1780691637.682923,
+    "mtime": 1780854019.0644023,
     "ast_hash": "29599304793422dc8c2866cba882d2ab",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/components/ui/BackButton.tsx": {
-    "mtime": 1780691637.6834638,
+    "mtime": 1780854019.0656762,
     "ast_hash": "3069bd673a1096db43e0a5f318052bdd",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/supabase/migrations/11_realtime_replica_identity.sql": {
-    "mtime": 1780691934.4259293,
+    "mtime": 1780854019.0789106,
     "ast_hash": "0d361741b96d694526569c078ce2f3d5",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/api/email/lifecycle/route.ts": {
-    "mtime": 1780692616.1958003,
+    "mtime": 1780854019.0424962,
     "ast_hash": "a9a79516f4811f9a40d0f626aa253a64",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/api/quiz/solo-complete/route.ts": {
-    "mtime": 1780745150.4403734,
+    "mtime": 1780854019.0432587,
     "ast_hash": "0d6a582a4b86b3c91359a11f25b4e97d",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/supabase/migrations/12_perf_and_solo_security.sql": {
-    "mtime": 1780745126.0351386,
+    "mtime": 1780854019.079024,
     "ast_hash": "18a3e5b12c8685846d8502bcded3e628",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/components/home/Dashboard.tsx": {
-    "mtime": 1780748255.1277144,
-    "ast_hash": "af42b17b8dd68e32a25412fbce1c02bd",
+    "mtime": 1780899149.753864,
+    "ast_hash": "be16788448e21cf5f7b90ad901eb8612",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/components/home/MarketingLanding.tsx": {
-    "mtime": 1780748197.3584278,
-    "ast_hash": "cca52201771a0d32bcf8194897acebbf",
+    "mtime": 1780899149.754306,
+    "ast_hash": "8dd4d0dc0e553f12df2796bc6dde5de1",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/lib/useGameLoop.ts": {
-    "mtime": 1780748133.3033876,
+    "mtime": 1780854019.0740597,
     "ast_hash": "7337039af66de5019ccb95555847fc2e",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/supabase/migrations/13_league_members_insert_guard.sql": {
-    "mtime": 1780748085.5339625,
+    "mtime": 1780854019.0791247,
     "ast_hash": "e2f32af8e85fba40aa516e53afcd7934",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/ios/App/App/ViewController.swift": {
+    "mtime": 1780854018.9948525,
+    "ast_hash": "9e4571d4442ecb07a0b9d622feacef94",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/scripts/draft/build-dataset.mjs": {
+    "mtime": 1780857855.906698,
+    "ast_hash": "0167085c04a1d6ad647c4a50fea46ac1",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/scripts/draft/import-fifa.mjs": {
+    "mtime": 1780856667.753744,
+    "ast_hash": "cb54fe910579aed7f2068f261464a192",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/scripts/draft/run-tests.sh": {
+    "mtime": 1780908405.5382469,
+    "ast_hash": "09a2da87c91f5f5b585c922a98d45bba",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/scripts/seed-featured-packs.mjs": {
+    "mtime": 1780879024.5742981,
+    "ast_hash": "5c8d5f0e5e1489d8a7491b81e323631f",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/app/38-0/challenge/[code]/page.tsx": {
+    "mtime": 1780899121.629487,
+    "ast_hash": "8c023b038073d8bade59a8bece750f34",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/app/38-0/leaderboard/page.tsx": {
+    "mtime": 1780911739.6831024,
+    "ast_hash": "45f1529511d28b2393d409fea07fe3e7",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/app/38-0/league/[code]/page.tsx": {
+    "mtime": 1780899121.6277208,
+    "ast_hash": "fc7ca85257e5804d4aa318a24be33c91",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/app/38-0/leagues/page.tsx": {
+    "mtime": 1780899121.6271265,
+    "ast_hash": "698de7e69f9000ecdf6c2ab9310fb9cd",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/app/38-0/live/[code]/page.tsx": {
+    "mtime": 1780911369.537028,
+    "ast_hash": "bb41cc9d307183882854ea4aa8066923",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/app/38-0/live/match/[id]/page.tsx": {
+    "mtime": 1780911468.8304236,
+    "ast_hash": "4f32206bc680eed1ab82c528a607e7d2",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/app/38-0/live/page.tsx": {
+    "mtime": 1780911356.7001014,
+    "ast_hash": "b8b94b6ffc631a7707fc8f2c4200856b",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/app/38-0/match/[id]/page.tsx": {
+    "mtime": 1780908543.5194802,
+    "ast_hash": "349a38b8b1a46eb3d4e263ba474e0a76",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/app/38-0/match/prematch/page.tsx": {
+    "mtime": 1780899121.6260855,
+    "ast_hash": "2a8e31b0bc93cad1a6f18957db0e9dd8",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/app/38-0/match/result/page.tsx": {
+    "mtime": 1780899121.6257966,
+    "ast_hash": "bee135ab40cee93aeebd608150f4411d",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/app/38-0/page.tsx": {
+    "mtime": 1780911628.4384508,
+    "ast_hash": "1847280299dd3db96bf965163e27145f",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/app/38-0/play/page.tsx": {
+    "mtime": 1780899121.6297479,
+    "ast_hash": "2dea8ed190a61e4e69f2d2f9fba2cf69",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/app/38-0/season/page.tsx": {
+    "mtime": 1780907867.4530451,
+    "ast_hash": "ead2d470b78b28d9c288bb2e3cc81ad8",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/app/38-0/season/share/SaveTeamButton.tsx": {
+    "mtime": 1780906866.7244327,
+    "ast_hash": "472de40ceceb991031d79bd5111a7612",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/app/38-0/season/share/page.tsx": {
+    "mtime": 1780906880.1604424,
+    "ast_hash": "d147230fe4946a147feb96a42f5ce0ca",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/app/38-0/swap/page.tsx": {
+    "mtime": 1780899121.626768,
+    "ast_hash": "0bedf7dd132f9757376c831592a9fa90",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/app/38-0/team/page.tsx": {
+    "mtime": 1780899121.6280856,
+    "ast_hash": "aab962b43f26a6823cead8954368bb19",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/app/38-0/teams/page.tsx": {
+    "mtime": 1780899149.758183,
+    "ast_hash": "e61f8b959f103f9caa0fa6149250e4d0",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/app/api/draft/challenge/[code]/route.ts": {
+    "mtime": 1780871506.0215008,
+    "ast_hash": "ba8011acfd136f3bb51281a5a06e9838",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/app/api/draft/challenge/route.ts": {
+    "mtime": 1780871520.8743148,
+    "ast_hash": "bcac49648ef340dd3cb953fae521bf9f",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/app/api/draft/cron/reset/route.ts": {
+    "mtime": 1780854019.0388606,
+    "ast_hash": "4c848455478cb33ae80976d33b3fec48",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/app/api/draft/leaderboard/route.ts": {
+    "mtime": 1780911712.097684,
+    "ast_hash": "8614afa95f5782d8f673764b612813f2",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/app/api/draft/league/[code]/route.ts": {
+    "mtime": 1780869659.9824119,
+    "ast_hash": "5ade3c385996bbf2f8d35e575bf3d4b5",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/app/api/draft/league/join/route.ts": {
+    "mtime": 1780854019.0416083,
+    "ast_hash": "3febef1a309503f0770bc61e07a488e3",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/app/api/draft/league/route.ts": {
+    "mtime": 1780854019.0417495,
+    "ast_hash": "04b958df6d45d9142dad35f0362b7985",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/app/api/draft/live/[id]/route.ts": {
+    "mtime": 1780909333.171754,
+    "ast_hash": "06216a22e3092249af6ef8cb75297502",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/app/api/draft/live/advance/route.ts": {
+    "mtime": 1780909358.8858573,
+    "ast_hash": "c1aba730d2545010eadff1df4b623ed9",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/app/api/draft/live/ready/route.ts": {
+    "mtime": 1780909340.9113007,
+    "ast_hash": "03ec1613019d90b2bcd469e1ee2c6ee3",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/app/api/draft/live/route.ts": {
+    "mtime": 1780909579.533453,
+    "ast_hash": "324849eeedd37e3ec681d8d01193d158",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/app/api/draft/live/swap/route.ts": {
+    "mtime": 1780909350.3603122,
+    "ast_hash": "5270a4aaa575ead9512b81667a68ab0d",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/app/api/draft/match/route.ts": {
+    "mtime": 1780868040.238927,
+    "ast_hash": "e462e41ebf2fc03fa303ea179a59057a",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/app/api/draft/og/route.tsx": {
+    "mtime": 1780854019.0421422,
+    "ast_hash": "bad8b10b53241c47f53c98dc54fd010d",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/app/api/draft/promo-og/route.tsx": {
+    "mtime": 1780899300.781793,
+    "ast_hash": "b2d9d5cd5c616a252e462db48284ded6",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/app/api/draft/season-og/route.tsx": {
+    "mtime": 1780902497.5244274,
+    "ast_hash": "086bc364321757c5b05e3c3bcbe8acd3",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/app/api/draft/share/route.ts": {
+    "mtime": 1780880653.5743818,
+    "ast_hash": "ef58536714cb263c0401d7b485d92c27",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/app/api/draft/team/route.ts": {
+    "mtime": 1780870767.9030142,
+    "ast_hash": "dbb7327dfbf2cd6cf3e3bcd0ef42da1b",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/app/api/draft/teams/route.ts": {
+    "mtime": 1780876721.5640552,
+    "ast_hash": "2708bde656f94e1ec43ebacd2fe69c0a",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/app/api/og/home/route.tsx": {
+    "mtime": 1780904217.2513864,
+    "ast_hash": "472c6259a22b9e324d39a010bf2b7884",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/app/friends/page.tsx": {
+    "mtime": 1780784345.0231788,
+    "ast_hash": "a356671449d3efa6fb7c3a2f4eb7cfd1",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/app/messages/[userId]/page.tsx": {
+    "mtime": 1780784350.8100765,
+    "ast_hash": "4e2f6cccf3213e01d5e448d57bb62356",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/app/quiz/ready/page.tsx": {
+    "mtime": 1780823476.8178127,
+    "ast_hash": "0bf3659a575166fb59a8d90796114143",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/app/s/[id]/page.tsx": {
+    "mtime": 1780899266.1675649,
+    "ast_hash": "c0f5e21b4a9f6f57340180c0e087026f",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/components/draft/Pitch.tsx": {
+    "mtime": 1780865179.9061618,
+    "ast_hash": "7cf480faa28e42d0127494523a3e99ee",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/data/draft/player-seasons.json": {
+    "mtime": 1780859466.8756912,
+    "ast_hash": "86b07da88155a4fa7425ed11b1902baa",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/lib/draft/formations.ts": {
+    "mtime": 1780854019.0705154,
+    "ast_hash": "93571c77e4cad0fb22c9a1e055d23439",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/lib/draft/live-score.test.ts": {
+    "mtime": 1780908384.7586656,
+    "ast_hash": "8d244fcfd6137388c826bcf8d0ebac0b",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/lib/draft/live-score.ts": {
+    "mtime": 1780908467.2875056,
+    "ast_hash": "4a647d31d315150a3b5d8d841444d3db",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/lib/draft/live-server.ts": {
+    "mtime": 1780911912.096358,
+    "ast_hash": "6ea282ca6a568cc1c59ed64600f0d231",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/lib/draft/local.ts": {
+    "mtime": 1780876721.5505378,
+    "ast_hash": "836b52336279751b4c1f00044ae8f576",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/lib/draft/opponent.ts": {
+    "mtime": 1780909490.3788648,
+    "ast_hash": "825224e562ddf59dab3f8b5706ecf794",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/lib/draft/pool.ts": {
+    "mtime": 1780859116.7743127,
+    "ast_hash": "b939727cff14da256635edc3a0a2b4d1",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/lib/draft/score.test.ts": {
+    "mtime": 1780865150.8206558,
+    "ast_hash": "5bb7e6c906839865e042fa1f4cb3ec35",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/lib/draft/score.ts": {
+    "mtime": 1780865071.7604659,
+    "ast_hash": "f2417bf4a39a94c2cc8b1f83959b6193",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/lib/draft/season.test.ts": {
+    "mtime": 1780858147.8406563,
+    "ast_hash": "da7045f84f741a124f266039da29c11e",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/lib/draft/season.ts": {
+    "mtime": 1780858068.7520227,
+    "ast_hash": "47dca11f0c3670f4505ba66dbcd910d3",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/lib/draft/server.ts": {
+    "mtime": 1780871546.4794104,
+    "ast_hash": "21e8bb57f30dc77b4a0cbde35bc0c258",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/lib/draft/types.ts": {
+    "mtime": 1780854019.0714476,
+    "ast_hash": "5ab9c5841427f2e5617e8e1764a44f5d",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/lib/draft/ui.ts": {
+    "mtime": 1780854019.0715678,
+    "ast_hash": "c17e93a7b14720603e11b4e218331827",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/lib/draft/useLiveMatch.ts": {
+    "mtime": 1780910567.4751406,
+    "ast_hash": "67f2e8a8477fc545d73bca2f11c856f1",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/lib/og/logoDataUri.ts": {
+    "mtime": 1780904060.1579137,
+    "ast_hash": "9534f3149be79ed56baf81a9cbf6f3d3",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/types/draft-db.ts": {
+    "mtime": 1780910324.2821195,
+    "ast_hash": "fcb829d35329a873542dba52cc92b562",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/supabase/migrations/14_draft_xi.sql": {
+    "mtime": 1780854019.0792532,
+    "ast_hash": "257e8226a9a41cef479a86e2062f1787",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/supabase/migrations/16_draft_saved_teams.sql": {
+    "mtime": 1780876721.5641832,
+    "ast_hash": "d22f7a946893305a740a83ecaa54c172",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/supabase/migrations/17_draft_shares.sql": {
+    "mtime": 1780879572.2876475,
+    "ast_hash": "586c9e42a99c2ba62a82ab45ac14ad64",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/supabase/migrations/18_draft_live.sql": {
+    "mtime": 1780911224.7059784,
+    "ast_hash": "d6bd454b804f9c6ec5a3cfeacd93baac",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/DRAFT-XI.md": {
+    "mtime": 1780911958.7513554,
+    "ast_hash": "ac6d25913e0b3aeec5267cbd6e01b79f",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/docs/superpowers/specs/2026-06-08-38-0-live-multiplayer-design.md": {
+    "mtime": 1780910324.286107,
+    "ast_hash": "62f3b494f6effed19cd70731369b802b",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/docs/superpowers/specs/2026-06-08-38-0-live-multiplayer-plan.md": {
+    "mtime": 1780910324.289477,
+    "ast_hash": "df369f674775d071eb4aa3b9093882fe",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/argentina.png": {
+    "mtime": 1780854018.9980707,
+    "ast_hash": "28d1d6dab82f2c5abb1f281b85d94462",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/arsenal.png": {
+    "mtime": 1780854018.9983065,
+    "ast_hash": "e66164c8d796a539de37d13152a569c2",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/aston-villa.png": {
+    "mtime": 1780854018.9986413,
+    "ast_hash": "86d4678819d95cea276d605ccad4d2bc",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/australia.png": {
+    "mtime": 1780854018.9988413,
+    "ast_hash": "79bc6171733a220c70835aa9829882a1",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/belgium.png": {
+    "mtime": 1780854018.999079,
+    "ast_hash": "a9cf4c63b7da1174addf1e5ee474a44c",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/birmingham-city.png": {
+    "mtime": 1780854018.9993598,
+    "ast_hash": "148692bc15192806a4e4c26c0834947a",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/blackburn-rovers.png": {
+    "mtime": 1780854018.9995751,
+    "ast_hash": "2560d63cc210b09ea890a3501b583dd4",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/blackpool.png": {
+    "mtime": 1780854018.9997728,
+    "ast_hash": "134ab85d8db824381d9178d3123e4c12",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/bolton-wanderers.png": {
+    "mtime": 1780854019.0000129,
+    "ast_hash": "27f73f32c099d0d483a4a0bf2a995a0b",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/bournemouth.png": {
+    "mtime": 1780854019.0003016,
+    "ast_hash": "4dfd03546f2bc2e1ab8487ccac482c5e",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/brazil.png": {
+    "mtime": 1780854019.0006232,
+    "ast_hash": "d460a62d49cd1e9049c8f2bde348af33",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/brentford.png": {
+    "mtime": 1780854019.0008614,
+    "ast_hash": "95efaa1aef2a676891aec663e7561bfb",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/brighton.png": {
+    "mtime": 1780854019.0011542,
+    "ast_hash": "085c325543de0ed069ee61368c5e24ca",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/burnley.png": {
+    "mtime": 1780854019.0013852,
+    "ast_hash": "4b8da2ee997255ca7e177357ca60a6ac",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/cardiff-city.png": {
+    "mtime": 1780854019.001602,
+    "ast_hash": "70ad96b9b71d62e9518ade2520df6590",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/charlton-athletic.png": {
+    "mtime": 1780854019.0018325,
+    "ast_hash": "06bcb7c8bc96c1dfa67402f784baeac9",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/chelsea.png": {
+    "mtime": 1780854019.0020297,
+    "ast_hash": "69c02980cb165a219eb751c863c8f286",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/colombia.png": {
+    "mtime": 1780854019.0022545,
+    "ast_hash": "b09453cfea39deecae80b319a475718b",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/croatia.png": {
+    "mtime": 1780854019.0024564,
+    "ast_hash": "50be2626dac3f0b778c5bdc3724bf82e",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/crystal-palace.png": {
+    "mtime": 1780854019.0027626,
+    "ast_hash": "17bf94cca90a57a01591daf67d61e907",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/denmark.png": {
+    "mtime": 1780854019.0030913,
+    "ast_hash": "16d7109a82f5c952233b7f7ce5016076",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/derby-county.png": {
+    "mtime": 1780854019.0036285,
+    "ast_hash": "a2aed6218596ea84874ea6e78cf88e37",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/england.png": {
+    "mtime": 1780854019.0040083,
+    "ast_hash": "0671588a2561f181914e37b419c1fd08",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/everton.png": {
+    "mtime": 1780854019.0044012,
+    "ast_hash": "7f5280ea8ce1f3e9d7fb44f7d7e06e0b",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/france.png": {
+    "mtime": 1780854019.0047584,
+    "ast_hash": "675cd86f5949a5cec829c9565cadf67f",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/fulham.png": {
+    "mtime": 1780854019.004967,
+    "ast_hash": "5681aa0d1bdf9fd4d23aa25646639863",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/germany.png": {
+    "mtime": 1780854019.0052552,
+    "ast_hash": "a03b49b480df208f5c0e53ad12bc52ba",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/ghana.png": {
+    "mtime": 1780854019.0055234,
+    "ast_hash": "c443206e183de8987c2448acb9be8ea9",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/hull-city.png": {
+    "mtime": 1780854019.0057254,
+    "ast_hash": "36904f0588ad1707a09a4a35cb5939d2",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/ipswich-town.png": {
+    "mtime": 1780854019.0060515,
+    "ast_hash": "bfe2cbc5413f7d6040c67588c59c6086",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/italy.png": {
+    "mtime": 1780854019.0062478,
+    "ast_hash": "225a1407ac4164c1579f2ae53c1bd466",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/japan.png": {
+    "mtime": 1780854019.0064485,
+    "ast_hash": "cb23d3ad3d3eafaf7986fdc64aa61c25",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/leeds-united.png": {
+    "mtime": 1780854019.006777,
+    "ast_hash": "c6c4d9216be3d7c2fce9f5851e7cc735",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/leicester-city.png": {
+    "mtime": 1780854019.0071018,
+    "ast_hash": "a4307fbc0d304dd3b08f531660b33ee8",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/liverpool.png": {
+    "mtime": 1780854019.0074081,
+    "ast_hash": "50af0805dda3cfedb9282c68a80528ef",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/luton-town.png": {
+    "mtime": 1780854019.0078938,
+    "ast_hash": "4d3eecdc52e7208ed89f1a43c4136cd6",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/manchester-city.png": {
+    "mtime": 1780854019.0082722,
+    "ast_hash": "496445509570c097678f221f3176183b",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/manchester-united.png": {
+    "mtime": 1780854019.0085685,
+    "ast_hash": "6941879ab449edff0298b4bf32c6e0f0",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/mexico.png": {
+    "mtime": 1780854019.0088305,
+    "ast_hash": "702030bf985f7bc217cd15327a8467e3",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/middlesbrough.png": {
+    "mtime": 1780854019.0092506,
+    "ast_hash": "ba2ab03b432136b78cfc5dbe8728be29",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/morocco.png": {
+    "mtime": 1780854019.0094986,
+    "ast_hash": "a984ee6444d2a4a64d31e02a5b14d3fe",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/netherlands.png": {
+    "mtime": 1780854019.0098546,
+    "ast_hash": "fe1f154fa8605c3a6124d6de88902587",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/newcastle-united.png": {
+    "mtime": 1780854019.0103793,
+    "ast_hash": "08275ea959ef8159b5c28663fa6116fa",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/nigeria.png": {
+    "mtime": 1780854019.0107565,
+    "ast_hash": "3be3e1fb5f58698550c673bddf876187",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/norwich-city.png": {
+    "mtime": 1780854019.011097,
+    "ast_hash": "b73861864cdbf1a48634a35cb1a19b10",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/nottingham-forest.png": {
+    "mtime": 1780854019.0113304,
+    "ast_hash": "02306a8f8b5c26971254e9a16b401724",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/poland.png": {
+    "mtime": 1780854019.0117,
+    "ast_hash": "041d1b411adece9c9490d31c3ec84b19",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/portsmouth.png": {
+    "mtime": 1780854019.0119286,
+    "ast_hash": "749bd885351d86ebb9f9048bb78575a5",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/portugal.png": {
+    "mtime": 1780854019.0121748,
+    "ast_hash": "8830b4fc022b0ecbc8dc231ead32154a",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/qpr.png": {
+    "mtime": 1780854019.0125167,
+    "ast_hash": "1d79a504cc75c3b3b3dc45876f5925c4",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/reading.png": {
+    "mtime": 1780854019.0128322,
+    "ast_hash": "4bb5221a0167ffcd025d1b7480698131",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/senegal.png": {
+    "mtime": 1780854019.0131514,
+    "ast_hash": "fb4b6839908a598204b43240e917bba4",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/sheffield-united.png": {
+    "mtime": 1780854019.0135343,
+    "ast_hash": "6c683bd772045e209cee318699a29806",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/south-korea.png": {
+    "mtime": 1780854019.0137389,
+    "ast_hash": "757122ee6956efe32b939b620ecc23b0",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/southampton.png": {
+    "mtime": 1780854019.0139205,
+    "ast_hash": "d0efd52788c61de5838b0b938bdd5ec6",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/spain.png": {
+    "mtime": 1780854019.01412,
+    "ast_hash": "a52fd0d2aaac0e507b8725f0f52719cd",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/stoke-city.png": {
+    "mtime": 1780854019.014994,
+    "ast_hash": "eae4587d3c3b2da4b5b6e297f8d0a855",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/sunderland.png": {
+    "mtime": 1780854019.0152452,
+    "ast_hash": "f4f78494a48c02a03a656cc011f09671",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/swansea-city.png": {
+    "mtime": 1780854019.0155468,
+    "ast_hash": "7319de05209e1a7b8bb6ccdb2277b0b8",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/switzerland.png": {
+    "mtime": 1780854019.0161662,
+    "ast_hash": "2a472343e30c5573c52b9ce3a411f575",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/tottenham-hotspur.png": {
+    "mtime": 1780854019.0167353,
+    "ast_hash": "fa155688dd1b2404a6c1be4cd58f283b",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/uruguay.png": {
+    "mtime": 1780854019.016948,
+    "ast_hash": "fb598072b016ff4757fe659be5e88384",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/usa.png": {
+    "mtime": 1780854019.0171402,
+    "ast_hash": "1cb0b4177fa16bc7e7f6dd282b4535d5",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/watford.png": {
+    "mtime": 1780854019.0173485,
+    "ast_hash": "3698e66f07c7f7bc53a1d1bb8c1666c8",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/west-bromwich-albion.png": {
+    "mtime": 1780854019.0175464,
+    "ast_hash": "1a40dc855169b00926e317bb361e4dcb",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/west-ham-united.png": {
+    "mtime": 1780854019.0178776,
+    "ast_hash": "bc388d9154db065bbf17b0a057fa77c3",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/wigan-athletic.png": {
+    "mtime": 1780854019.0182037,
+    "ast_hash": "71d6a6736258e425783b1d2bafec61e5",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/badges/wolverhampton-wanderers.png": {
+    "mtime": 1780854019.0191898,
+    "ast_hash": "42657e3f9ce8901c81e29bf4183a7520",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/logo-mark.png": {
+    "mtime": 1780902437.4514017,
+    "ast_hash": "926f55b4198261eff47048f7acf88e55",
     "semantic_hash": ""
   }
 }
