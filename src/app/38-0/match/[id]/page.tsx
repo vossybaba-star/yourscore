@@ -146,17 +146,31 @@ export default async function MatchPage({ params }: { params: { id: string } }) 
                 <span className="font-body" style={{ fontSize: 14, color: "#fff" }}>{rep.potm.name} <b style={{ color: "#ffb800" }}>{rep.potm.rating.toFixed(1)}</b></span>
               </div>
             )}
-            {rep && (
-              <div className="flex items-center justify-center gap-5 mt-3 font-body" style={{ fontSize: 12, color: "#8888aa" }}>
-                <span>Corners <b style={{ color: "#cfcfe6" }}>{rep.a.corners}–{rep.b.corners}</b></span>
-                <span>Throw-ins <b style={{ color: "#cfcfe6" }}>{rep.a.throwins}–{rep.b.throwins}</b></span>
+            {rep && rep.events.length > 0 && (
+              <div className="font-body mt-2 truncate" style={{ fontSize: 12, color: "#cfcfe6" }}>⚽ {rep.events.map((e) => `${e.scorerName} ${e.minute}'`).join(" · ")}</div>
+            )}
+            {rep && typeof rep.a.shots === "number" && (
+              <div className="rounded-xl overflow-hidden mt-4" style={{ background: "#0d0d14", border: "1px solid rgba(255,255,255,0.08)" }}>
+                {([
+                  ["Possession", `${rep.a.possession}%`, `${rep.b.possession}%`, rep.a.possession, rep.b.possession],
+                  ["Shots", rep.a.shots, rep.b.shots, rep.a.shots, rep.b.shots],
+                  ["On target", rep.a.shotsOnTarget, rep.b.shotsOnTarget, rep.a.shotsOnTarget, rep.b.shotsOnTarget],
+                  ["Corners", rep.a.corners, rep.b.corners, rep.a.corners, rep.b.corners],
+                  ["Fouls", rep.a.fouls, rep.b.fouls, rep.a.fouls, rep.b.fouls],
+                  ["Offsides", rep.a.offsides, rep.b.offsides, rep.a.offsides, rep.b.offsides],
+                  ["Throw-ins", rep.a.throwins, rep.b.throwins, rep.a.throwins, rep.b.throwins],
+                ] as [string, string | number, string | number, number, number][]).map(([label, av, bv, an, bn]) => (
+                  <div key={label} className="flex items-center px-3 py-1.5" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                    <span className="flex-1 text-left font-body tabular-nums font-bold" style={{ fontSize: 15, color: an >= bn ? "#fff" : "#8888aa" }}>{av}</span>
+                    <span className="text-center font-body" style={{ width: 110, fontSize: 10, letterSpacing: 1, color: "#7a7a92" }}>{label.toUpperCase()}</span>
+                    <span className="flex-1 text-right font-body tabular-nums font-bold" style={{ fontSize: 15, color: bn >= an ? "#fff" : "#8888aa" }}>{bv}</span>
+                  </div>
+                ))}
               </div>
             )}
-            {rep && rep.events.length > 0 && (
-              <div className="font-body mt-2 truncate" style={{ fontSize: 12, color: "#cfcfe6" }}>⚽ {rep.events.map((e) => e.scorerName).join(", ")}</div>
-            )}
           </div>
-        ) : (
+        ) : null}
+        {!live && (
           <div className="pt-8 text-center">
             <div className="font-display tracking-wide" style={{ fontSize: 13, color: "#8888aa" }}>DRAFT XI · HEAD TO HEAD</div>
             <div className="font-display tracking-wide leading-none mt-2" style={{ fontSize: 30, color: "#fff" }}>
@@ -187,10 +201,15 @@ export default async function MatchPage({ params }: { params: { id: string } }) 
           </div>
         </div>
 
-        <Link href="/38-0" className="block w-full rounded-2xl py-4 mt-7 text-center font-display tracking-wide active:scale-[0.98] transition-transform"
-          style={{ background: "#00ff87", color: "#062013", fontSize: 24 }}>
-          BUILD YOUR OWN XI →
-        </Link>
+        <div className="mt-7">
+          <Link href="/38-0" className="block w-full rounded-2xl py-4 text-center font-display tracking-wide active:scale-[0.98] transition-transform"
+            style={{ background: "#00ff87", color: "#062013", fontSize: 26 }}>
+            {live ? "▶ PLAY 38-0 — FREE" : "BUILD YOUR OWN XI →"}
+          </Link>
+          <p className="text-center font-body mt-2" style={{ fontSize: 12, color: "#8888aa" }}>
+            Build your all-time Premier League XI and go live, head-to-head. No sign-up to play.
+          </p>
+        </div>
       </div>
     </div>
   );

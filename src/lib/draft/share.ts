@@ -34,8 +34,14 @@ export function liveOgQuery(i: LiveShareInput): string {
   if (i.str2 != null) q.set("str2", String(Math.round(Number(i.str2))));
   if (i.pens) q.set("pens", `${i.pens.a}-${i.pens.b}`);
   if (i.report.potm) { q.set("potm", i.report.potm.name); q.set("potmR", i.report.potm.rating.toFixed(1)); }
-  q.set("cor", `${i.report.a.corners}-${i.report.b.corners}`);
-  q.set("thr", `${i.report.a.throwins}-${i.report.b.throwins}`);
+  const a = i.report.a, b = i.report.b;
+  q.set("pos", `${a.possession}-${b.possession}`);
+  q.set("sh", `${a.shots}-${b.shots}`);
+  q.set("sot", `${a.shotsOnTarget}-${b.shotsOnTarget}`);
+  q.set("cor", `${a.corners}-${b.corners}`);
+  q.set("fo", `${a.fouls}-${b.fouls}`);
+  q.set("off", `${a.offsides}-${b.offsides}`);
+  q.set("thr", `${a.throwins}-${b.throwins}`);
   const sc = scorerSummary(i.report.events);
   if (sc) q.set("sc", sc);
   return q.toString();

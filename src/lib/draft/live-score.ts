@@ -177,10 +177,16 @@ export type PlayerRating = {
   rating: number;               // 4.5–9.8
 };
 
+type Pair = { a: number; b: number };
 export type HalfSim = {
-  goals: { a: number; b: number };
-  corners: { a: number; b: number };
-  throwins: { a: number; b: number };
+  goals: Pair;
+  possession: Pair;       // % (a + b = 100)
+  shots: Pair;
+  shotsOnTarget: Pair;
+  corners: Pair;
+  fouls: Pair;
+  offsides: Pair;
+  throwins: Pair;
   events: GoalEvent[];
   ratingsA: PlayerRating[];
   ratingsB: PlayerRating[];
@@ -251,6 +257,21 @@ export function simulateHalf(
   const throwA = Math.max(0, Math.min(throwTotal, Math.round(throwTotal * (0.5 + (shareA - 0.5) * 0.25) + (rng() - 0.5) * 2)));
   const throwins = { a: throwA, b: throwTotal - throwA };
 
+  // Possession follows the strength share with a little noise (clamped sane).
+  const posA = Math.max(28, Math.min(72, Math.round(shareA * 100 + (rng() - 0.5) * 8)));
+  const possession = { a: posA, b: 100 - posA };
+  // Shots scale with the chance share; on-target is a subset but never < goals.
+  const shots = {
+    a: goals.a + poisson(2 + 6 * shareA, rng),
+    b: goals.b + poisson(2 + 6 * (1 - shareA), rng),
+  };
+  const shotsOnTarget = {
+    a: Math.max(goals.a, Math.round(shots.a * (0.35 + rng() * 0.15))),
+    b: Math.max(goals.b, Math.round(shots.b * (0.35 + rng() * 0.15))),
+  };
+  const fouls = splitTotal(poisson(11, rng), 0.5, rng);
+  const offsides = splitTotal(poisson(3, rng), 0.5 + (shareA - 0.5) * 0.4, rng);
+
   const base = half === 1 ? 0 : 45;
   const events: GoalEvent[] = [];
   const scA = new Map<string, number>(), asA = new Map<string, number>();
@@ -274,7 +295,7 @@ export function simulateHalf(
   events.sort((x, y) => x.minute - y.minute);
 
   return {
-    goals, corners, throwins, events,
+    goals, possession, shots, shotsOnTarget, corners, fouls, offsides, throwins, events,
     ratingsA: rateSide(squadA, goals.a, goals.b, scA, asA, rng),
     ratingsB: rateSide(squadB, goals.b, goals.a, scB, asB, rng),
   };
@@ -282,7 +303,10 @@ export function simulateHalf(
 
 // ─── Full-time report (merge both halves) ─────────────────────────────────────
 
-export type SideTotals = { goals: number; corners: number; throwins: number };
+export type SideTotals = {
+  goals: number; possession: number; shots: number; shotsOnTarget: number;
+  corners: number; fouls: number; offsides: number; throwins: number;
+};
 export type MatchReport = {
   a: SideTotals; b: SideTotals;
   events: GoalEvent[];
@@ -316,9 +340,23 @@ const botOf = (rs: PlayerRating[]): PlayerRating | null => rs.length ? rs.reduce
  *  Player of the Match and each side's best & worst performer. */
 export function buildReport(sim: MatchSim): MatchReport {
   const { h1, h2 } = sim;
-  const sum = (sel: (h: HalfSim) => number) => (h1 ? sel(h1) : 0) + (h2 ? sel(h2) : 0);
-  const a: SideTotals = { goals: sum((h) => h.goals.a), corners: sum((h) => h.corners.a), throwins: sum((h) => h.throwins.a) };
-  const b: SideTotals = { goals: sum((h) => h.goals.b), corners: sum((h) => h.corners.b), throwins: sum((h) => h.throwins.b) };
+  const halves = [h1, h2].filter(Boolean) as HalfSim[];
+  const sum = (sel: (h: HalfSim) => number) => halves.reduce((s, h) => s + sel(h), 0);
+  // Possession is a % — average across the halves played, not a sum.
+  const avgPoss = (side: "a" | "b") => halves.length ? Math.round(halves.reduce((s, h) => s + h.possession[side], 0) / halves.length) : 50;
+  const possA = avgPoss("a");
+  const a: SideTotals = {
+    goals: sum((h) => h.goals.a), possession: possA,
+    shots: sum((h) => h.shots.a), shotsOnTarget: sum((h) => h.shotsOnTarget.a),
+    corners: sum((h) => h.corners.a), fouls: sum((h) => h.fouls.a),
+    offsides: sum((h) => h.offsides.a), throwins: sum((h) => h.throwins.a),
+  };
+  const b: SideTotals = {
+    goals: sum((h) => h.goals.b), possession: 100 - possA,
+    shots: sum((h) => h.shots.b), shotsOnTarget: sum((h) => h.shotsOnTarget.b),
+    corners: sum((h) => h.corners.b), fouls: sum((h) => h.fouls.b),
+    offsides: sum((h) => h.offsides.b), throwins: sum((h) => h.throwins.b),
+  };
   const events = [...(h1?.events ?? []), ...(h2?.events ?? [])].sort((x, y) => x.minute - y.minute);
   const ratingsA = mergeRatings(h1?.ratingsA, h2?.ratingsA);
   const ratingsB = mergeRatings(h1?.ratingsB, h2?.ratingsB);

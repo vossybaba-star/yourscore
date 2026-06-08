@@ -320,7 +320,7 @@ function ResultPanel({ view, sim, m }: { view: View; sim: MatchSim | null; m: Dr
 
 // ── Match report (half-time + full-time) ──────────────────────────────────────
 
-type StatLine = { goals: number; corners: number; throwins: number };
+type StatLine = { goals: number; possession: number; shots: number; shotsOnTarget: number; corners: number; fouls: number; offsides: number; throwins: number };
 type ReportView = {
   mine: StatLine; opp: StatLine;
   events: GoalEvent[];
@@ -336,8 +336,11 @@ const ratingColor = (r: number): string => (r >= 8 ? "#00ff87" : r >= 7 ? "#cfcf
 
 /** Map one half's sim onto me/opp (no PotM at the break). */
 function halftimeView(h: HalfSim, meP1: boolean): ReportView {
-  const sa = { goals: h.goals.a, corners: h.corners.a, throwins: h.throwins.a };
-  const sb = { goals: h.goals.b, corners: h.corners.b, throwins: h.throwins.b };
+  const side = (k: "a" | "b"): StatLine => ({
+    goals: h.goals[k], possession: h.possession[k], shots: h.shots[k], shotsOnTarget: h.shotsOnTarget[k],
+    corners: h.corners[k], fouls: h.fouls[k], offsides: h.offsides[k], throwins: h.throwins[k],
+  });
+  const sa = side("a"), sb = side("b");
   const myR = meP1 ? h.ratingsA : h.ratingsB;
   const oppR = meP1 ? h.ratingsB : h.ratingsA;
   return {
@@ -360,9 +363,14 @@ function fulltimeView(sim: MatchSim, meP1: boolean): ReportView {
 }
 
 function MatchReportCard({ rv, meP1, myName, oppName, showPotm }: { rv: ReportView; meP1: boolean; myName: string; oppName: string; showPotm?: boolean }) {
-  const rows: [string, number, number][] = [
+  const rows: [string, number, number, boolean?][] = [
     ["Goals", rv.mine.goals, rv.opp.goals],
+    ["Possession", rv.mine.possession, rv.opp.possession, true],
+    ["Shots", rv.mine.shots, rv.opp.shots],
+    ["On target", rv.mine.shotsOnTarget, rv.opp.shotsOnTarget],
     ["Corners", rv.mine.corners, rv.opp.corners],
+    ["Fouls", rv.mine.fouls, rv.opp.fouls],
+    ["Offsides", rv.mine.offsides, rv.opp.offsides],
     ["Throw-ins", rv.mine.throwins, rv.opp.throwins],
   ];
   return (
@@ -371,14 +379,14 @@ function MatchReportCard({ rv, meP1, myName, oppName, showPotm }: { rv: ReportVi
       <div className="rounded-xl overflow-hidden" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
         <div className="flex items-center px-3 py-1.5 text-xs" style={{ color: "#9a9ab0", background: "rgba(255,255,255,0.03)" }}>
           <span className="flex-1 text-left truncate" style={{ color: "#00ff87" }}>{myName}</span>
-          <span style={{ width: 84, textAlign: "center" }} />
+          <span style={{ width: 90, textAlign: "center" }} />
           <span className="flex-1 text-right truncate">{oppName}</span>
         </div>
-        {rows.map(([label, a, b]) => (
-          <div key={label} className="flex items-center px-3 py-2" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-            <span className="flex-1 text-left tabular-nums font-bold" style={{ fontSize: 18, color: a >= b ? "#fff" : "#9a9ab0" }}>{a}</span>
-            <span style={{ width: 84, textAlign: "center", fontSize: 10, letterSpacing: 1, color: "#7a7a92" }}>{label.toUpperCase()}</span>
-            <span className="flex-1 text-right tabular-nums font-bold" style={{ fontSize: 18, color: b >= a ? "#fff" : "#9a9ab0" }}>{b}</span>
+        {rows.map(([label, a, b, pct]) => (
+          <div key={label} className="flex items-center px-3 py-1.5" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+            <span className="flex-1 text-left tabular-nums font-bold" style={{ fontSize: 16, color: a >= b ? "#fff" : "#9a9ab0" }}>{a}{pct ? "%" : ""}</span>
+            <span style={{ width: 90, textAlign: "center", fontSize: 10, letterSpacing: 1, color: "#7a7a92" }}>{label.toUpperCase()}</span>
+            <span className="flex-1 text-right tabular-nums font-bold" style={{ fontSize: 16, color: b >= a ? "#fff" : "#9a9ab0" }}>{b}{pct ? "%" : ""}</span>
           </div>
         ))}
       </div>

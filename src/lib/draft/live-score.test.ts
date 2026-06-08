@@ -177,6 +177,11 @@ test("simulateHalf: events match the scoreline and ratings cover every player", 
     assert.equal(h.ratingsA.length, sqA.length, "a player rated for every slot");
     assert.equal(h.ratingsB.length, sqB.length);
     assert.ok(h.corners.a >= 0 && h.corners.b >= 0 && h.throwins.a >= 0 && h.throwins.b >= 0, "no negative stats");
+    // Richer broadcast stats are coherent.
+    assert.equal(h.possession.a + h.possession.b, 100, "possession sums to 100%");
+    assert.ok(h.shots.a >= h.goals.a && h.shots.b >= h.goals.b, "shots >= goals");
+    assert.ok(h.shotsOnTarget.a <= h.shots.a && h.shotsOnTarget.a >= h.goals.a, "SOT between goals and shots");
+    assert.ok(h.fouls.a >= 0 && h.offsides.a >= 0, "fouls/offsides non-negative");
     for (const r of [...h.ratingsA, ...h.ratingsB]) assert.ok(r.rating >= 4.5 && r.rating <= 9.8, `rating ${r.rating} in range`);
     // First-half goals land in the first 45 minutes.
     for (const e of h.events) assert.ok(e.minute >= 1 && e.minute <= 45, `h1 minute ${e.minute}`);
@@ -208,6 +213,8 @@ test("buildReport: totals add the halves and PotM is the global top rating", () 
   const rep = buildReport(sim);
   assert.equal(rep.a.goals, sim.h1.goals.a + sim.h2.goals.a);
   assert.equal(rep.b.corners, sim.h1.corners.b + sim.h2.corners.b);
+  assert.equal(rep.a.shots, sim.h1.shots.a + sim.h2.shots.a, "shots are summed");
+  assert.equal(rep.a.possession + rep.b.possession, 100, "match possession sums to 100%");
   assert.equal(rep.events.length, sim.h1.events.length + sim.h2.events.length);
   // PotM rating is >= every player on both sides.
   const all = [...rep.ratingsA, ...rep.ratingsB];
