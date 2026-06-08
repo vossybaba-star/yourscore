@@ -30,8 +30,6 @@ export default function TeamScreen() {
   const [team, setTeam] = useState<LocalTeam | null>(null);
   const [matching, setMatching] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const [challengeCode, setChallengeCode] = useState<string | null>(null);
-  const [creatingChallenge, setCreatingChallenge] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [naming, setNaming] = useState(false);
@@ -115,27 +113,6 @@ export default function TeamScreen() {
       await fetch("/api/draft/team", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ formation: team.formation, squad }) }).catch(() => {});
       setSaved(true); setSaving(false); setNaming(false);
     } catch { setErr("Network error"); setSaving(false); }
-  }
-
-  // Friend challenge: snapshot the XI to a share code/link for async H2H.
-  async function challengeFriend() {
-    if (!team || creatingChallenge) return;
-    if (!user) { router.push("/auth/sign-in"); return; }
-    setCreatingChallenge(true); setErr(null);
-    try {
-      const squad = team.squad.map((p) => ({ slot: p.slot, player_season_id: p.player_season_id }));
-      const saveRes = await fetch("/api/draft/team", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ formation: team.formation, squad }) });
-      if (!saveRes.ok) { setErr((await saveRes.json().catch(() => ({}))).error ?? "Could not save team"); setCreatingChallenge(false); return; }
-      const r = await fetch("/api/draft/challenge", { method: "POST", headers: { "content-type": "application/json" }, body: "{}" });
-      const d = await r.json();
-      if (!r.ok) { setErr(d.error ?? "Could not create challenge"); setCreatingChallenge(false); return; }
-      setChallengeCode(d.code);
-      const url = `${window.location.origin}/38-0/challenge/${d.code}`;
-      const text = `I built a Draft XI (${team.strength}) — can you beat it? `;
-      if (navigator.share) navigator.share({ title: "Draft XI Challenge", text, url }).catch(() => {});
-      else navigator.clipboard.writeText(`${text}${url}`).catch(() => {});
-      setCreatingChallenge(false);
-    } catch { setErr("Network error"); setCreatingChallenge(false); }
   }
 
   // Re-shape the same XI into a compatible formation before playing others.
@@ -396,18 +373,7 @@ export default function TeamScreen() {
                 <span className="font-display" style={{ fontSize: 24 }}>{matching ? "…" : "→"}</span>
               </button>
 
-              {/* 2 — Challenge a friend 1v1 */}
-              <button onClick={challengeFriend} disabled={creatingChallenge}
-                className="w-full rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.98] transition-transform disabled:opacity-60"
-                style={{ background: "rgba(34,211,238,0.1)", color: "#22d3ee", border: "1px solid rgba(34,211,238,0.35)" }}>
-                <span className="text-left">
-                  <span className="block font-display tracking-wide" style={{ fontSize: 20 }}>{challengeCode ? `CODE ${challengeCode}` : "CHALLENGE A FRIEND 🔗"}</span>
-                  <span className="block font-body" style={{ fontSize: 12, opacity: 0.8 }}>Send a 1v1 link — can they beat your XI?</span>
-                </span>
-                <span className="font-display" style={{ fontSize: 24 }}>{creatingChallenge ? "…" : "→"}</span>
-              </button>
-
-              {/* 3 — Build a private league */}
+              {/* 2 — Build a private league */}
               <button onClick={() => router.push(user ? "/38-0/leagues" : "/auth/sign-in")}
                 className="w-full rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.98] transition-transform"
                 style={{ background: "rgba(167,139,250,0.1)", color: "#a78bfa", border: "1px solid rgba(167,139,250,0.35)" }}>
