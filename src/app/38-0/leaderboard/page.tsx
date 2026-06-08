@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * /xi/leaderboard — global Daily + All-time H2H win boards (the recurring
+ * /38-0/leaderboard — global Daily + All-time H2H win boards (the recurring
  * viral screenshot moment: a fresh race every morning). Fails soft if the cloud
  * tables aren't live yet. Custom-league boards reuse this via ?league=<id>.
  */
@@ -41,7 +41,7 @@ export default function Leaderboard() {
     <div className="min-h-[100dvh] pb-28" style={{ background: "#0a0a0f" }}>
       <div className="max-w-lg mx-auto px-5 pt-safe">
         <div className="flex items-center justify-between pt-4 pb-2">
-          <Link href="/xi" className="font-body text-sm" style={{ color: "#8888aa" }}>← Draft XI</Link>
+          <Link href="/38-0" className="font-body text-sm" style={{ color: "#8888aa" }}>← Draft XI</Link>
         </div>
 
         <h1 className="font-display tracking-wide leading-none" style={{ fontSize: 44, color: "#fff" }}>
@@ -62,7 +62,7 @@ export default function Leaderboard() {
           ))}
         </div>
 
-        <Link href="/xi/leagues" className="flex items-center justify-between rounded-xl px-4 py-3 mb-4 active:scale-[0.98] transition-transform"
+        <Link href="/38-0/leagues" className="flex items-center justify-between rounded-xl px-4 py-3 mb-4 active:scale-[0.98] transition-transform"
           style={{ background: "rgba(167,139,250,0.1)", border: "1px solid rgba(167,139,250,0.3)" }}>
           <span className="font-display tracking-wide" style={{ fontSize: 16, color: "#a78bfa" }}>🏟️ MY LEAGUES</span>
           <span className="font-body" style={{ fontSize: 12, color: "#8888aa" }}>create or join a private board →</span>
@@ -80,7 +80,7 @@ export default function Leaderboard() {
                 ? "Be the first on the board — win a ranked match."
                 : "Cloud leaderboards activate once the season is live. Play Quick Matches now."}
             </p>
-            <Link href="/xi" className="inline-block mt-4 rounded-xl px-5 py-3 font-display tracking-wide"
+            <Link href="/38-0" className="inline-block mt-4 rounded-xl px-5 py-3 font-display tracking-wide"
               style={{ background: "#00ff87", color: "#062013", fontSize: 18 }}>
               BUILD YOUR XI →
             </Link>

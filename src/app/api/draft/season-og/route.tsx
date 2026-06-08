@@ -91,9 +91,9 @@ export async function GET(req: NextRequest) {
         <div style={{ width: "1200px", height: "630px", display: "flex", flexDirection: "column", background: "linear-gradient(150deg, #0c0c12 0%, #07110d 100%)", padding: "40px 52px", fontFamily: "sans-serif", position: "relative" }}>
           {/* header */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ display: "flex", alignItems: "baseline" }}>
-              <span style={{ color: "#fff", fontSize: 34, fontWeight: 900, letterSpacing: 1 }}>YOUR</span>
-              <span style={{ color: "#00ff87", fontSize: 34, fontWeight: 900, letterSpacing: 1 }}>SCORE</span>
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <span style={{ display: "flex", fontSize: 40, fontWeight: 900, color: "#fff", letterSpacing: 1 }}>38-0</span>
+              <span style={{ display: "flex", fontSize: 20, color: "#8b8ba6", fontWeight: 700, marginLeft: 12, letterSpacing: 1 }}>YOURSCORE</span>
             </div>
             <div style={{ display: "flex", alignItems: "center" }}>
               <Pill text={mode} color="#8b8ba6" />
@@ -146,9 +146,9 @@ export async function GET(req: NextRequest) {
       <div style={{ width: "1080px", height: "1360px", display: "flex", flexDirection: "column", background: "linear-gradient(160deg, #0c0c12 0%, #07110d 100%)", padding: "56px 64px", fontFamily: "sans-serif", position: "relative" }}>
         {/* header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "baseline" }}>
-            <span style={{ color: "#fff", fontSize: 48, fontWeight: 900, letterSpacing: 1 }}>YOUR</span>
-            <span style={{ color: "#00ff87", fontSize: 48, fontWeight: 900, letterSpacing: 1 }}>SCORE</span>
+          <div style={{ display: "flex", alignItems: "center" }}>
+            <span style={{ display: "flex", fontSize: 52, fontWeight: 900, color: "#fff", letterSpacing: 1 }}>38-0</span>
+            <span style={{ display: "flex", fontSize: 22, color: "#8b8ba6", fontWeight: 700, marginLeft: 14, letterSpacing: 1 }}>YOURSCORE</span>
           </div>
           <div style={{ display: "flex", alignItems: "center" }}>
             <Pill text={mode} color="#8b8ba6" />

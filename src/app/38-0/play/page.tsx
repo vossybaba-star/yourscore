@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * /xi/play — the draft loop (slicker, 38-0-inspired).
+ * /38-0/play — the draft loop (slicker, 38-0-inspired).
  *
  * Spin a CLUB × SEASON, see the whole squad as a list, pick any player, then choose
  * which OPEN slot to put them in (Available vs Unavailable, with reasons). A live
@@ -43,9 +43,9 @@ export default function DraftPlay() {
 
   useEffect(() => {
     const t = loadTeam();
-    if (!t) { router.replace("/xi"); return; }
+    if (!t) { router.replace("/38-0"); return; }
     setTeam(t);
-    if (isComplete(t)) router.replace("/xi/team");
+    if (isComplete(t)) router.replace("/38-0/team");
   }, [router]);
 
   useEffect(() => () => { if (reelTimer.current) clearInterval(reelTimer.current); }, []);
@@ -79,7 +79,7 @@ export default function DraftPlay() {
     setCurrent(null);
     setReel(null);
     setSelected(null);
-    if (isComplete(next)) setTimeout(() => router.push("/xi/team"), 400);
+    if (isComplete(next)) setTimeout(() => router.push("/38-0/team"), 400);
   }
 
   if (!team) {
@@ -101,7 +101,7 @@ export default function DraftPlay() {
     <div className="min-h-[100dvh] pb-44" style={{ background: "#0a0a0f" }}>
       <div className="max-w-lg mx-auto px-4 pt-safe">
         <div className="pt-4">
-          <Link href="/xi" className="font-body text-sm" style={{ color: "#8888aa" }}>← Back</Link>
+          <Link href="/38-0" className="font-body text-sm" style={{ color: "#8888aa" }}>← Back</Link>
         </div>
         {/* header: formation + overall */}
         <div className="flex items-center justify-between pt-2">
@@ -242,7 +242,7 @@ export default function DraftPlay() {
               </div>
             )
           ) : (
-            <button onClick={() => router.push("/xi/team")}
+            <button onClick={() => router.push("/38-0/team")}
               className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform"
               style={{ background: "#00ff87", color: "#062013", fontSize: 24 }}>
               SEE YOUR RECORD →

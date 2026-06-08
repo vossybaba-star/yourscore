@@ -28,8 +28,8 @@ export function BottomNav() {
   const isLeague = pathname.startsWith("/league") || pathname.startsWith("/leagues");
 const isChallenges =
     (pathname.startsWith("/play") || pathname.startsWith("/challenges") || pathname.startsWith("/h2h")) &&
-    !pathname.startsWith("/xi");
-  const isDraft = pathname.startsWith("/xi");
+    !pathname.startsWith("/38-0");
+  const isDraft = pathname.startsWith("/38-0");
   const isProfile = pathname.startsWith("/profile") || pathname.startsWith("/settings");
 
   // Guest: Home + Play + Draft XI (Draft is playable anonymously — top of funnel).
@@ -60,9 +60,9 @@ const isChallenges =
             <span className="font-body text-xs">Play</span>
           </Link>
 
-          <Link href="/xi" className="flex flex-col items-center gap-1 px-5 py-1 transition-colors" style={{ color: isDraft ? "#00ff87" : "#8888aa" }}>
+          <Link href="/38-0" className="flex flex-col items-center gap-1 px-5 py-1 transition-colors" style={{ color: isDraft ? "#00ff87" : "#8888aa" }}>
             <JerseyIcon active={isDraft} />
-            <span className="font-body text-xs">XI</span>
+            <span className="font-body text-xs">38-0</span>
           </Link>
         </div>
       </div>
@@ -108,9 +108,9 @@ const isChallenges =
         </Link>
 
         {/* Draft XI */}
-        <Link href="/xi" className="flex flex-col items-center gap-1 px-2 py-1 transition-colors" style={{ color: isDraft ? "#00ff87" : "#8888aa" }}>
+        <Link href="/38-0" className="flex flex-col items-center gap-1 px-2 py-1 transition-colors" style={{ color: isDraft ? "#00ff87" : "#8888aa" }}>
           <JerseyIcon active={isDraft} />
-          <span className="font-body text-xs">XI</span>
+          <span className="font-body text-xs">38-0</span>
         </Link>
 
         {/* Profile */}

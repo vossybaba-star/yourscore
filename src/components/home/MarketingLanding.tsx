@@ -491,7 +491,7 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
 
       {/* ── 38-0 tile ────────────────────────────────────────────────────── */}
       <section className="relative z-10 max-w-6xl mx-auto px-6 pb-6">
-        <Link href="/xi"
+        <Link href="/38-0"
           className="flex items-center justify-between px-5 py-4 rounded-2xl transition-all hover:opacity-90 green-pulse"
           style={{ background: "linear-gradient(135deg, rgba(0,255,135,0.08) 0%, rgba(167,139,250,0.06) 100%)", border: "1px solid rgba(0,255,135,0.18)" }}>
           <div className="flex items-center gap-4">
@@ -500,7 +500,7 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
               👕
             </div>
             <div>
-              <p className="font-body text-base font-bold text-white">Draft XI</p>
+              <p className="font-body text-base font-bold text-white">38-0</p>
               <p className="font-body text-xs text-text-muted">Pick your XI · Play friends · Go unbeaten</p>
             </div>
           </div>

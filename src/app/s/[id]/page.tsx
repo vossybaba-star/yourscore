@@ -45,11 +45,11 @@ function ogUrl(p: Record<string, string>): string {
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
   const p = await loadPayload(params.id);
   if (!p) {
-    const title = "YourScore — build your all-time XI";
+    const title = "YourScore 38-0 — build your all-time XI";
     return { title, description: "Build an all-time XI and simulate your season. Think you can beat it?" };
   }
   const pos = parseInt(p.pos || "10", 10);
-  const title = `${p.w ?? 0}-${p.d ?? 0}-${p.l ?? 0} · finished ${ordinal(pos)} on ${p.pts ?? 0} pts | YourScore`;
+  const title = `${p.w ?? 0}-${p.d ?? 0}-${p.l ?? 0} · finished ${ordinal(pos)} on ${p.pts ?? 0} pts | YourScore 38-0`;
   const description = "Build an all-time XI and simulate your season on YourScore. Think you can beat it?";
   const image = ogUrl(p);
   return {
@@ -66,9 +66,9 @@ export default async function SeasonShortSharePage({ params }: { params: { id: s
     return (
       <div className="min-h-[100dvh] grid place-items-center px-6 text-center" style={{ background: "#0a0a0f" }}>
         <div>
-          <div className="font-body" style={{ fontSize: 13, color: "#8888aa", letterSpacing: 1 }}>YOURSCORE</div>
+          <div className="font-body" style={{ fontSize: 13, color: "#8888aa", letterSpacing: 1 }}>38-0 · YOURSCORE</div>
           <div className="font-display tracking-wide mt-3" style={{ fontSize: 28, color: "#fff" }}>This link has expired</div>
-          <Link href="/xi" className="inline-block mt-6 rounded-2xl px-6 py-4 font-display tracking-wide" style={{ background: "#00ff87", color: "#062013", fontSize: 24 }}>
+          <Link href="/38-0" className="inline-block mt-6 rounded-2xl px-6 py-4 font-display tracking-wide" style={{ background: "#00ff87", color: "#062013", fontSize: 24 }}>
             BUILD YOUR OWN XI →
           </Link>
         </div>
@@ -84,13 +84,13 @@ export default async function SeasonShortSharePage({ params }: { params: { id: s
   return (
     <div className="min-h-[100dvh] grid place-items-center px-6 text-center" style={{ background: "#0a0a0f" }}>
       <div>
-        <div className="font-body" style={{ fontSize: 13, color: "#8888aa", letterSpacing: 1 }}>YOURSCORE</div>
+        <div className="font-body" style={{ fontSize: 13, color: "#8888aa", letterSpacing: 1 }}>38-0 · YOURSCORE</div>
         <div className="font-display tracking-wide leading-none mt-3" style={{ fontSize: 64, color: "#fff" }}>{w}-{d}-{l}</div>
         <div className="font-body" style={{ fontSize: 12, color: "#8888aa", letterSpacing: 2 }}>WON · DRAWN · LOST</div>
         <div className="font-body mt-3" style={{ fontSize: 18, color: "#fff" }}>
           Finished <b style={{ color: accent }}>{ordinal(pos)}</b> on <b>{pts}</b> pts
         </div>
-        <Link href="/xi" className="inline-block mt-6 rounded-2xl px-6 py-4 font-display tracking-wide" style={{ background: "#00ff87", color: "#062013", fontSize: 24 }}>
+        <Link href="/38-0" className="inline-block mt-6 rounded-2xl px-6 py-4 font-display tracking-wide" style={{ background: "#00ff87", color: "#062013", fontSize: 24 }}>
           BUILD YOUR OWN XI →
         </Link>
       </div>

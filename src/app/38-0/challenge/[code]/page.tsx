@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * /xi/challenge/[code] — a friend opens a shared challenge: see the
+ * /38-0/challenge/[code] — a friend opens a shared challenge: see the
  * challenger's snapshotted XI, then accept with your own to resolve the H2H.
  */
 
@@ -44,7 +44,7 @@ export default function AcceptChallenge() {
     if (busy) return;
     if (!user) { router.push("/auth/sign-in"); return; }
     const team = loadTeam();
-    if (!team || !isComplete(team)) { router.push("/xi"); return; }
+    if (!team || !isComplete(team)) { router.push("/38-0"); return; }
     setBusy(true); setErr(null);
     try {
       const squad = team.squad.map((p) => ({ slot: p.slot, player_season_id: p.player_season_id }));
@@ -64,7 +64,7 @@ export default function AcceptChallenge() {
         playedAt: Date.now(),
       });
       saveTeam(m.youWon ? recordWin(team) : recordLoss(team));
-      router.push("/xi/match/result");
+      router.push("/38-0/match/result");
     } catch { setErr("Network error"); setBusy(false); }
   }
 
@@ -73,8 +73,8 @@ export default function AcceptChallenge() {
   );
 
   if (!info) return wrap(<span className="font-body" style={{ color: "#8888aa" }}>Loading…</span>);
-  if (info.ready === false) return wrap(<div><div className="font-display tracking-wide" style={{ fontSize: 24, color: "#fff" }}>CHALLENGES COMING SOON</div><Link href="/xi" className="inline-block mt-4 font-body" style={{ color: "#00ff87" }}>← Build your XI</Link></div>);
-  if (status === 404 || info.error === "Challenge not found") return wrap(<div><div className="font-display tracking-wide" style={{ fontSize: 26, color: "#fff" }}>CHALLENGE NOT FOUND</div><Link href="/xi" className="inline-block mt-4 font-body" style={{ color: "#00ff87" }}>← Draft XI</Link></div>);
+  if (info.ready === false) return wrap(<div><div className="font-display tracking-wide" style={{ fontSize: 24, color: "#fff" }}>CHALLENGES COMING SOON</div><Link href="/38-0" className="inline-block mt-4 font-body" style={{ color: "#00ff87" }}>← Build your XI</Link></div>);
+  if (status === 404 || info.error === "Challenge not found") return wrap(<div><div className="font-display tracking-wide" style={{ fontSize: 26, color: "#fff" }}>CHALLENGE NOT FOUND</div><Link href="/38-0" className="inline-block mt-4 font-body" style={{ color: "#00ff87" }}>← Draft XI</Link></div>);
 
   const done = info.status === "accepted" || info.expired;
 
@@ -111,7 +111,7 @@ export default function AcceptChallenge() {
               {busy ? "RESOLVING…" : user ? "ACCEPT WITH MY XI ⚔️" : "SIGN IN TO ACCEPT"}
             </button>
           )}
-          <Link href="/xi" className="block w-full rounded-2xl py-3 text-center font-body active:scale-[0.98] transition-transform"
+          <Link href="/38-0" className="block w-full rounded-2xl py-3 text-center font-body active:scale-[0.98] transition-transform"
             style={{ background: "#12121e", color: "#8888aa", fontSize: 15, border: "1px solid rgba(255,255,255,0.08)" }}>
             Build / view my XI
           </Link>

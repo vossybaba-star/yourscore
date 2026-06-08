@@ -1,5 +1,5 @@
 /**
- * /xi/match/[id] — public, server-rendered H2H result. Reads the snapshotted
+ * /38-0/match/[id] — public, server-rendered H2H result. Reads the snapshotted
  * match from draft_matches and sets og:image → /api/draft/og so pasted links
  * unfurl as a broadcast graphic (the growth loop). Framed from the challenger's
  * perspective (the sharer). Fails soft if the match isn't found / DB not live.
@@ -78,7 +78,7 @@ export default async function MatchPage({ params }: { params: { id: string } }) 
       <div className="min-h-[100dvh] grid place-items-center px-6 text-center" style={{ background: "#0a0a0f" }}>
         <div>
           <div className="font-display tracking-wide" style={{ fontSize: 28, color: "#fff" }}>RESULT NOT FOUND</div>
-          <Link href="/xi" className="inline-block mt-4 font-body" style={{ color: "#00ff87" }}>← Play Draft XI</Link>
+          <Link href="/38-0" className="inline-block mt-4 font-body" style={{ color: "#00ff87" }}>← Play Draft XI</Link>
         </div>
       </div>
     );
@@ -120,7 +120,7 @@ export default async function MatchPage({ params }: { params: { id: string } }) 
           </div>
         </div>
 
-        <Link href="/xi" className="block w-full rounded-2xl py-4 mt-7 text-center font-display tracking-wide active:scale-[0.98] transition-transform"
+        <Link href="/38-0" className="block w-full rounded-2xl py-4 mt-7 text-center font-display tracking-wide active:scale-[0.98] transition-transform"
           style={{ background: "#00ff87", color: "#062013", fontSize: 24 }}>
           BUILD YOUR OWN XI →
         </Link>

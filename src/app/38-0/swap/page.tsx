@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * /xi/swap — post-win reward. Drop exactly ONE player, re-spin that slot, draft
+ * /38-0/swap — post-win reward. Drop exactly ONE player, re-spin that slot, draft
  * a replacement. Consumes the earned swap. Wins compound: chain them to upgrade
  * into a genuinely scary XI.
  */
@@ -30,9 +30,9 @@ export default function SwapScreen() {
 
   useEffect(() => {
     const t = loadTeam();
-    if (!t) { router.replace("/xi"); return; }
-    if (!isComplete(t)) { router.replace("/xi/play"); return; }
-    if (!t.swapAvailable) { router.replace("/xi/team"); return; }
+    if (!t) { router.replace("/38-0"); return; }
+    if (!isComplete(t)) { router.replace("/38-0/play"); return; }
+    if (!t.swapAvailable) { router.replace("/38-0/team"); return; }
     setTeam(t);
   }, [router]);
 
@@ -70,7 +70,7 @@ export default function SwapScreen() {
     if (!fittingOpenSlots(team, player).some((s) => s.id === slot.id)) return;
     const next = { ...placePlayer(team, player, slot), swapAvailable: false };
     saveTeam(next);
-    router.push("/xi/team");
+    router.push("/38-0/team");
   }
 
   useEffect(() => () => { if (reelTimer.current) clearInterval(reelTimer.current); }, []);

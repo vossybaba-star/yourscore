@@ -1,5 +1,5 @@
 /**
- * /xi/season/share — public, server-rendered landing for a shared season result.
+ * /38-0/season/share — public, server-rendered landing for a shared season result.
  * Stateless: the result is encoded in the query string (computed client-side), so
  * generateMetadata sets og:image → /api/draft/season-og and pasted links unfurl as
  * the broadcast graphic. A clean CTA invites the viewer to build their own XI.
@@ -32,8 +32,8 @@ export function generateMetadata({ searchParams }: { searchParams: SP }): Metada
   const pos = parseInt(one(searchParams.pos) || "10", 10);
   const pts = one(searchParams.pts) || "0";
   const w = one(searchParams.w), d = one(searchParams.d), l = one(searchParams.l);
-  const title = `${w}-${d}-${l} · finished ${ordinal(pos)} on ${pts} pts | YourScore`;
-  const description = "This was my result on YourScore — build an all-time XI and simulate your season. Think you can beat it?";
+  const title = `${w}-${d}-${l} · finished ${ordinal(pos)} on ${pts} pts | YourScore 38-0`;
+  const description = "This was my result from YourScore 38-0 — build an all-time XI and simulate your season. Think you can beat it?";
   const image = ogUrl(searchParams);
   return {
     title, description,
@@ -51,13 +51,13 @@ export default function SeasonSharePage({ searchParams }: { searchParams: SP }) 
   return (
     <div className="min-h-[100dvh] grid place-items-center px-6 text-center" style={{ background: "#0a0a0f" }}>
       <div>
-        <div className="font-body" style={{ fontSize: 13, color: "#8888aa", letterSpacing: 1 }}>YOURSCORE</div>
+        <div className="font-body" style={{ fontSize: 13, color: "#8888aa", letterSpacing: 1 }}>38-0 · YOURSCORE</div>
         <div className="font-display tracking-wide leading-none mt-3" style={{ fontSize: 64, color: "#fff" }}>{w}-{d}-{l}</div>
         <div className="font-body" style={{ fontSize: 12, color: "#8888aa", letterSpacing: 2 }}>WON · DRAWN · LOST</div>
         <div className="font-body mt-3" style={{ fontSize: 18, color: "#fff" }}>
           Finished <b style={{ color: accent }}>{ordinal(pos)}</b> on <b>{pts}</b> pts
         </div>
-        <Link href="/xi" className="inline-block mt-6 rounded-2xl px-6 py-4 font-display tracking-wide" style={{ background: "#00ff87", color: "#062013", fontSize: 24 }}>
+        <Link href="/38-0" className="inline-block mt-6 rounded-2xl px-6 py-4 font-display tracking-wide" style={{ background: "#00ff87", color: "#062013", fontSize: 24 }}>
           BUILD YOUR OWN XI →
         </Link>
       </div>

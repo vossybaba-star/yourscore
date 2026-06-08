@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * /xi — Draft XI entry. Pick a formation, then spin to fill it. Shows a
+ * /38-0 — Draft XI entry. Pick a formation, then spin to fill it. Shows a
  * "Continue" card if a team is already in progress / saved locally.
  */
 
@@ -29,7 +29,7 @@ export default function DraftHome() {
   function startNew() {
     const team = emptyTeam(selected, mode);
     saveTeam(team);
-    router.push("/xi/play");
+    router.push("/38-0/play");
   }
 
   return (
@@ -41,10 +41,10 @@ export default function DraftHome() {
             ← YourScore
           </Link>
           <div className="flex items-center gap-2">
-            <Link href="/xi/teams" className="font-body text-xs px-3 py-1 rounded-full" style={{ color: "#a78bfa", background: "rgba(167,139,250,0.1)" }}>
+            <Link href="/38-0/teams" className="font-body text-xs px-3 py-1 rounded-full" style={{ color: "#a78bfa", background: "rgba(167,139,250,0.1)" }}>
               📁 My Teams
             </Link>
-            <Link href="/xi/leaderboard" className="font-body text-xs px-3 py-1 rounded-full" style={{ color: "#00ff87", background: "rgba(0,255,135,0.1)" }}>
+            <Link href="/38-0/leaderboard" className="font-body text-xs px-3 py-1 rounded-full" style={{ color: "#00ff87", background: "rgba(0,255,135,0.1)" }}>
               🏆 Leaderboard
             </Link>
           </div>
@@ -63,7 +63,7 @@ export default function DraftHome() {
         {/* continue card */}
         {existing && existing.squad.length > 0 && (
           <Link
-            href={isComplete(existing) ? "/xi/team" : "/xi/play"}
+            href={isComplete(existing) ? "/38-0/team" : "/38-0/play"}
             className="block mb-6 rounded-2xl p-4 active:scale-[0.98] transition-transform"
             style={{ background: "linear-gradient(135deg,#13261b,#0f1a14)", border: "1px solid rgba(0,255,135,0.25)" }}
           >
