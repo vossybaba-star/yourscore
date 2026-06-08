@@ -25,6 +25,7 @@ export default function SeasonSim() {
   const [done, setDone] = useState(false);
   const [copied, setCopied] = useState(false);
   const [downloaded, setDownloaded] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -121,49 +122,48 @@ export default function SeasonSim() {
   const verdictColor = r.verdict === "OVERPERFORMED" ? "#00ff87" : r.verdict === "UNDERPERFORMED" ? "#ff4757" : "#8888aa";
 
   function shareParams(): URLSearchParams {
+    const xi = team!.squad.map((p) => `${p.position}~${p.name}~${p.overall}`).join("|");
     return new URLSearchParams({
-      pos: String(r.position), pts: String(r.points), w: String(r.wins), d: String(r.draws), l: String(r.losses),
-      gf: String(r.gf), ga: String(r.ga), head: narr.headline, verdict: r.verdict,
-      boot: r.goldenBoot ? `${r.goldenBoot.name} ${r.goldenBoot.goals}` : "",
-      inv: r.invincible ? "1" : "", formation: team!.formation,
+      w: String(r.wins), d: String(r.draws), l: String(r.losses),
+      pts: String(r.points), pos: String(r.position), ovr: String(team!.strength),
+      mode: team!.mode === "expert" ? "Expert" : "Normal",
+      inv: r.invincible ? "1" : "",
+      boot: r.goldenBoot ? `${r.goldenBoot.name}~${r.goldenBoot.goals}` : "",
+      pots: r.playerOfTheSeason ? `${r.playerOfTheSeason.name}~${r.playerOfTheSeason.goals}~${r.playerOfTheSeason.assists}` : "",
+      xi,
     });
   }
+  // The shareable card image, and a public link that unfurls to it on socials.
+  const ogUrl = () => `/api/draft/season-og?${shareParams().toString()}`;
+  const shareUrl = () => `${window.location.origin}/38-0/season/share?${shareParams().toString()}`;
+  // Auto-blurb so posts (esp. X) carry context + the image (via the unfurling link).
+  const blurb = () => r.invincible
+    ? `This was my result from YourScore 38-0 ⚽ — INVINCIBLE, ${r.wins}-${r.draws}-${r.losses}, ${r.points} pts. Think you can beat it?`
+    : `This was my result from YourScore 38-0 ⚽ — ${r.wins}-${r.draws}-${r.losses}, finished ${ordinal(r.position)} on ${r.points} pts. Think you can beat it?`;
 
-  async function share() {
-    const params = shareParams();
-    const url = `${window.location.origin}/38-0/season/share?${params.toString()}`;
-    const text = r.invincible
-      ? `38-0. INVINCIBLE. My Draft XI went unbeaten — ${r.points} points. Beat that:`
-      : `My Draft XI finished ${ordinal(r.position)} on ${r.points} pts (${r.wins}W ${r.draws}D ${r.losses}L). Build yours:`;
+  // Native share sheet — attaches the image file itself where supported (mobile).
+  async function nativeShare() {
+    const url = shareUrl(), text = blurb();
     try {
-      // Always generate the broadcast graphic. Share the image file itself where
-      // supported (mobile); otherwise download the PNG so there's a real image to
-      // share, and copy the unfurling link too.
       let file: File | null = null;
-      try {
-        const res = await fetch(`/api/draft/season-og?${params.toString()}`);
-        if (res.ok) file = new File([await res.blob()], "draft-xi-season.png", { type: "image/png" });
-      } catch { /* network — fall through to link */ }
-
-      if (file && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: "Draft XI — Season", text, url });
-        return;
-      }
-      if (file) {
-        // Download the image so the user has a shareable graphic on desktop/unsupported.
-        const href = URL.createObjectURL(file);
-        const a = document.createElement("a");
-        a.href = href; a.download = "draft-xi-season.png";
-        document.body.appendChild(a); a.click(); a.remove();
-        setTimeout(() => URL.revokeObjectURL(href), 4000);
-        try { await navigator.clipboard.writeText(`${text} ${url}`); } catch { /* clipboard blocked */ }
-        setDownloaded(true); setTimeout(() => setDownloaded(false), 2500);
-        return;
-      }
-      // No image (network) — last resort: native share / copy the link.
-      if (navigator.share) await navigator.share({ title: "Draft XI — Season", text, url });
-      else { await navigator.clipboard.writeText(`${text} ${url}`); setCopied(true); setTimeout(() => setCopied(false), 1800); }
+      try { const res = await fetch(ogUrl()); if (res.ok) file = new File([await res.blob()], "yourscore-38-0.png", { type: "image/png" }); } catch { /* fall through */ }
+      if (file && navigator.canShare?.({ files: [file] })) { await navigator.share({ files: [file], title: "YourScore 38-0", text, url }); return; }
+      if (navigator.share) { await navigator.share({ title: "YourScore 38-0", text, url }); return; }
+      await navigator.clipboard.writeText(`${text} ${url}`); setCopied(true); setTimeout(() => setCopied(false), 1800);
     } catch { /* cancelled */ }
+  }
+  function shareWhatsApp() { window.open(`https://wa.me/?text=${encodeURIComponent(`${blurb()} ${shareUrl()}`)}`, "_blank", "noopener"); }
+  function shareX() { window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(blurb())}&url=${encodeURIComponent(shareUrl())}`, "_blank", "noopener"); }
+  async function copyLink() { try { await navigator.clipboard.writeText(`${blurb()} ${shareUrl()}`); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* blocked */ } }
+  async function saveImage() {
+    try {
+      const res = await fetch(ogUrl()); if (!res.ok) return;
+      const href = URL.createObjectURL(await res.blob());
+      const a = document.createElement("a"); a.href = href; a.download = "yourscore-38-0.png";
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(href), 4000);
+      setDownloaded(true); setTimeout(() => setDownloaded(false), 2500);
+    } catch { /* ignore */ }
   }
 
   const awards: [string, string, string][] = [];
@@ -217,9 +217,9 @@ export default function SeasonSim() {
           ))}
         </div>
 
-        <button onClick={share} className="w-full mt-5 rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform"
-          style={{ background: "#ffb800", color: "#1a1300", fontSize: 24 }}>
-          {downloaded ? "IMAGE SAVED ✓ (link copied)" : copied ? "LINK COPIED ✓" : "📸 SHARE YOUR SEASON"}
+        <button onClick={() => setShareOpen(true)} className="w-full mt-5 rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform"
+          style={{ background: "#00ff87", color: "#062013", fontSize: 24 }}>
+          📸 SHARE YOUR RESULT
         </button>
 
         {/* awards */}
@@ -269,6 +269,37 @@ export default function SeasonSim() {
           </Link>
         </div>
       </div>
+
+      {/* ── Share sheet ── */}
+      {shareOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: "rgba(0,0,0,0.7)" }} onClick={() => setShareOpen(false)}>
+          <div className="w-full max-w-lg rounded-t-3xl px-4 pt-3" style={{ background: "#0b0b12", borderTop: "1px solid rgba(255,255,255,0.1)", paddingBottom: "calc(env(safe-area-inset-bottom,0px) + 16px)" }} onClick={(e) => e.stopPropagation()}>
+            <div className="mx-auto mb-3 rounded-full" style={{ width: 40, height: 4, background: "rgba(255,255,255,0.2)" }} />
+
+            {/* card preview */}
+            <div className="rounded-2xl overflow-hidden mx-auto" style={{ maxWidth: 300, border: "1px solid rgba(255,255,255,0.08)" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={ogUrl()} alt="Your 38-0 season result" style={{ width: "100%", display: "block" }} />
+            </div>
+
+            <button onClick={nativeShare} className="w-full mt-4 rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform"
+              style={{ background: "#00ff87", color: "#062013", fontSize: 20 }}>
+              🔗 Share verified link
+            </button>
+
+            <div className="grid grid-cols-3 gap-2 mt-2">
+              <button onClick={shareWhatsApp} className="rounded-2xl py-3 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "rgba(37,211,102,0.15)", color: "#25d366", fontSize: 15, border: "1px solid rgba(37,211,102,0.4)" }}>WhatsApp</button>
+              <button onClick={shareX} className="rounded-2xl py-3 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "#1a1a2e", color: "#fff", fontSize: 15, border: "1px solid rgba(255,255,255,0.15)" }}>𝕏</button>
+              <button onClick={copyLink} className="rounded-2xl py-3 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "#1a1a2e", color: "#cfcfe6", fontSize: 15, border: "1px solid rgba(255,255,255,0.15)" }}>{copied ? "Copied ✓" : "Copy"}</button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              <button onClick={saveImage} className="rounded-2xl py-3 font-body active:scale-[0.98] transition-transform" style={{ background: "#12121e", color: "#cfcfe6", fontSize: 15, border: "1px solid rgba(255,255,255,0.1)" }}>{downloaded ? "Saved ✓" : "⬇ Save image"}</button>
+              <button onClick={() => setShareOpen(false)} className="rounded-2xl py-3 font-body active:scale-[0.98] transition-transform" style={{ background: "#12121e", color: "#8888aa", fontSize: 15, border: "1px solid rgba(255,255,255,0.1)" }}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
