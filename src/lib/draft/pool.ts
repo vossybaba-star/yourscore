@@ -62,7 +62,12 @@ export function spin(
   /** Canonical player identities already in the XI (see playerIdentity) — excludes
    *  the same player even under a different edition's name string. */
   usedIdentities: Set<string> = new Set(),
-  rng: () => number = Math.random
+  rng: () => number = Math.random,
+  /** Club-seasons already offered this draft, as "club|season". An already-offered
+   *  squad is only re-dealt rarely (see REOFFER_SUPPRESS), so the same options don't
+   *  keep coming up position after position — while the occasional same-squad double
+   *  stays a fun surprise. Same club via a different season is unrestricted. */
+  seen: Set<string> = new Set()
 ): Spin {
   const buckets = DATA.buckets;
   const draftable = (b: Bucket) =>
@@ -72,13 +77,19 @@ export function spin(
         !usedIdentities.has(playerIdentity(p.name)) && // no player twice, even across editions
         openSlotPositions.some((slotPos) => canPlay(p.position, slotPos))
     );
-  for (let attempt = 0; attempt < 60; attempt++) {
+
+  // Already-offered squads slip through only ~15% of the time, so unseen squads are
+  // strongly preferred but a repeat is still possible (a rare double), not banned.
+  const REOFFER_SUPPRESS = 0.85;
+  for (let attempt = 0; attempt < 80; attempt++) {
     const b = buckets[Math.floor(rng() * buckets.length)];
+    if (seen.has(`${b.club}|${b.season}`) && rng() < REOFFER_SUPPRESS) continue;
     const players = draftable(b);
     if (players.length > 0) {
       return { club: b.club, clubSlug: b.clubSlug, season: b.season, players };
     }
   }
+
   // Extremely unlikely fallback: any bucket, still excluding already-used players.
   const b = buckets[Math.floor(rng() * buckets.length)];
   const players = getBucketPlayers(b).filter((p) => !usedPlayerIds.has(p.id) && !usedIdentities.has(playerIdentity(p.name)));
