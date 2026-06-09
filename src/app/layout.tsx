@@ -2,6 +2,7 @@ import * as Sentry from "@sentry/nextjs";
 import type { Metadata, Viewport } from "next";
 import { Bebas_Neue, DM_Sans } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { NativeBootstrap } from "@/components/native/NativeBootstrap";
 import Script from "next/script";
 import "./globals.css";
@@ -74,6 +75,7 @@ export default function RootLayout({
         <NativeBootstrap />
         {children}
         <Analytics />
+        <SpeedInsights />
         {/* Google Analytics 4 */}
         <Script
           src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}`}
