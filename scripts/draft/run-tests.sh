@@ -17,11 +17,14 @@ npx tsc \
   src/lib/draft/season.test.ts \
   src/lib/draft/live-score.ts \
   src/lib/draft/live-score.test.ts \
-  --outDir .tmp-draft-test \
+  src/data/draft/wc2026.ts \
+  src/lib/draft/wc.ts \
+  src/lib/draft/wc.test.ts \
+  --rootDir src --outDir .tmp-draft-test \
   --module commonjs --moduleResolution node --target es2022 \
   --esModuleInterop --skipLibCheck --types node >/dev/null 2>&1 || true
 
-node --test .tmp-draft-test/score.test.js .tmp-draft-test/match.test.js .tmp-draft-test/season.test.js .tmp-draft-test/live-score.test.js
+node --test .tmp-draft-test/lib/draft/*.test.js
 status=$?
 rm -rf .tmp-draft-test
 exit $status

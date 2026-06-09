@@ -45,7 +45,17 @@ export type PlayerSeason = {
   season: string;    // "2016/17"
   position: Position; // canonical
   overall: number;   // 0-99
+  nationality?: string; // e.g. "England" — present after the WC-Run dataset rebuild
   curated: boolean;
+};
+
+/** A nation's entry in the pool's nation index (World Cup Run mode). */
+export type NationEntry = {
+  nation: string;
+  count: number;                                       // player-seasons for this nation
+  lines: { GK: number; DEF: number; MID: number; ATT: number }; // distinct players per line
+  playable: boolean;                                   // enough depth to field an XI + upgrades
+  playerIds: string[];
 };
 
 /** A slot in a formation. `pos` is the canonical position used for fit scoring;

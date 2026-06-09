@@ -58,8 +58,15 @@ const header = parseLine(lines[0]).map((h) => h.trim().toLowerCase());
 const idx = (k) => header.indexOf(k);
 const cName = idx("short_name"), cClub = idx("club_name"), cLeague = idx("league_name"),
   cPos = idx("player_positions"), cOvr = idx("overall");
+// Nationality column varies by edition: modern EA FC = "nationality_name",
+// older FIFA dumps = "nationality" or "nation".
+const cNat = [idx("nationality_name"), idx("nationality"), idx("nation")].find((i) => i >= 0) ?? -1;
 if ([cName, cClub, cLeague, cPos, cOvr].some((i) => i < 0)) {
   console.error("CSV missing expected columns (short_name, club_name, league_name, player_positions, overall)");
+  process.exit(1);
+}
+if (cNat < 0) {
+  console.error("CSV missing a nationality column (looked for: nationality_name, nationality, nation)");
   process.exit(1);
 }
 
@@ -76,13 +83,14 @@ for (let i = 1; i < lines.length; i++) {
   if (!position || !CANON.has(position)) continue;
   const name = (r[cName] || "").replace(/,/g, "").trim();
   const club = (r[cClub] || "").replace(/,/g, "").trim();
+  const nationality = (r[cNat] || "").replace(/,/g, "").trim();
   const overall = parseInt(r[cOvr], 10);
-  if (!name || !club || !Number.isFinite(overall)) continue;
-  rows.push(`${name},${club},${season},${position},${overall}`);
+  if (!name || !club || !nationality || !Number.isFinite(overall)) continue;
+  rows.push(`${name},${club},${season},${position},${overall},${nationality}`);
   kept++;
 }
 
 mkdirSync(dirname(OUT), { recursive: true });
-if (!existsSync(OUT)) writeFileSync(OUT, "name,club,season,position,overall\n");
+if (!existsSync(OUT)) writeFileSync(OUT, "name,club,season,position,overall,nationality\n");
 appendFileSync(OUT, rows.join("\n") + "\n");
 console.log(`Imported ${kept} Premier League players for ${season} → ${OUT}`);
