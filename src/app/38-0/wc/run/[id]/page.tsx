@@ -19,7 +19,7 @@ import { RUN_STAGE_LABEL, UPGRADE_FLOOR, isDuel, type RunStage } from "@/lib/dra
 import { wcNation } from "@/data/draft/wc2026";
 import type { Formation, PlacedPlayer, PlayerSeason } from "@/lib/draft/types";
 
-type Fixture = { stage: string; label: string; opponent: { nation: string; crest?: string }; oppTarget: number };
+type Fixture = { stage: string; label: string; opponent: { nation: string; crest?: string } };
 type Run = {
   id: string; nation: string; status: "active" | "eliminated" | "champion";
   stage: RunStage; stage_index: number; formation: Formation; squad: PlacedPlayer[];

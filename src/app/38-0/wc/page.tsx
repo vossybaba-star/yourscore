@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import { Pitch } from "@/components/draft/Pitch";
 import { useUser } from "@/hooks/useUser";
 import { pickableNations, spinForNation, type PickableNation } from "@/lib/draft/pool";
+import { START_CEILING } from "@/lib/draft/wc";
 import {
   emptyTeam, openSlots, isComplete, usedPlayerIds, usedPlayerNames, placePlayer, hydrateSavedTeam, type LocalTeam,
 } from "@/lib/draft/local";
@@ -56,7 +57,8 @@ export default function WorldCupEntry() {
     if (!team || !nation || spinning) return;
     setSpinning(true); setSlate(null); setSelected(null);
     const open = openSlots(team).map((s) => s.pos);
-    const pool = spinForNation(nation.nation, open, usedPlayerIds(team), usedPlayerNames(team), { count: 6 });
+    // Starting XI is drafted from lower-rated players — better ones are earned via upgrades.
+    const pool = spinForNation(nation.nation, open, usedPlayerIds(team), usedPlayerNames(team), { count: 6, maxOverall: START_CEILING });
     let ticks = 0;
     reelTimer.current = setInterval(() => {
       setReel(pool.length ? pool[Math.floor(Math.random() * pool.length)].name : "—");

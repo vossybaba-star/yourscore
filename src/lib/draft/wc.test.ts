@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   planRun, qualifiesFromGroup, prestige, advanceStage, gamesForStage, buildMatchRow, isDuel,
-  OPP_TARGET, UPGRADE_FLOOR, STAGE_UPGRADES, KNOCKOUT_STAGES, RUN_STAGES,
+  OPP_MULT, oppTargetFor, UPGRADE_FLOOR, STAGE_UPGRADES, KNOCKOUT_STAGES, RUN_STAGES,
   GROUP_QUALIFY_POINTS, type WcRun,
 } from "./wc";
 import { groupOpponents } from "../../data/draft/wc2026";
@@ -23,12 +23,22 @@ test("group qualify threshold (W=3, D=1)", () => {
   assert.equal(qualifiesFromGroup(3), false);
 });
 
-test("opponent Strength target rises every knockout round", () => {
+test("opponent difficulty multiplier rises every knockout round", () => {
   let prev = -Infinity;
   for (const stage of KNOCKOUT_STAGES) {
-    assert.ok(OPP_TARGET[stage] > prev, `${stage} ${OPP_TARGET[stage]} > ${prev}`);
-    prev = OPP_TARGET[stage];
+    assert.ok(OPP_MULT[stage] > prev, `${stage} ${OPP_MULT[stage]} > ${prev}`);
+    prev = OPP_MULT[stage];
   }
+});
+
+test("opponent target is PROPORTIONAL to your strength, and climbs each round", () => {
+  // Stronger team → stronger opponent at the same stage.
+  assert.ok(oppTargetFor(90, "qf") > oppTargetFor(70, "qf"));
+  // Same team → tougher opponent the deeper you go.
+  assert.ok(oppTargetFor(80, "final") > oppTargetFor(80, "group"));
+  // Group eases you in (below your level); final pushes above it.
+  assert.ok(oppTargetFor(80, "group") < 80);
+  assert.ok(oppTargetFor(80, "final") > 80);
 });
 
 test("upgrade floor rises every run stage that grants upgrades", () => {

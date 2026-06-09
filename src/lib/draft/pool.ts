@@ -135,17 +135,19 @@ export function nationPlayers(nation: string): PlayerSeason[] {
 }
 
 /**
- * Nation-locked spin: deal a candidate slate of `count` players FROM ONE NATION
- * that can fill an open slot, respecting `minOverall` (the per-stage quality floor
- * that rises as a run progresses). If too few clear the floor, the floor is relaxed
- * step-wise so the player never dead-ends. Returns candidates sorted by overall desc.
+ * Nation-locked spin: deal a candidate slate of `count` players FROM ONE NATION that
+ * can fill an open slot, within an overall band [`minOverall`, `maxOverall`].
+ *  - `minOverall` is the rising quality FLOOR for upgrade picks (better players each round).
+ *  - `maxOverall` is the CEILING for the starting draft (lower-rated players to begin with).
+ * If a nation lacks depth in the band, it's relaxed (cap raised first, then floor lowered)
+ * so the player never dead-ends. Returns candidates sorted by overall desc.
  */
 export function spinForNation(
   nation: string,
   openSlotPositions: Position[],
   usedPlayerIds: Set<string>,
   usedIdentities: Set<string> = new Set(),
-  opts: { minOverall?: number; count?: number } = {},
+  opts: { minOverall?: number; maxOverall?: number; count?: number } = {},
   rng: () => number = Math.random
 ): PlayerSeason[] {
   const count = opts.count ?? 5;
@@ -155,20 +157,25 @@ export function spinForNation(
       !usedIdentities.has(playerIdentity(p.name)) &&
       openSlotPositions.some((slotPos) => canPlay(p.position, slotPos))
   );
-  // Try the floor; relax by 5 each pass until we have a slate (or run out).
-  for (let floor = opts.minOverall ?? 0; floor >= 0; floor -= 5) {
-    const eligible = pool.filter((p) => p.overall >= floor);
-    if (eligible.length >= Math.min(count, pool.length || count) || floor === 0) {
-      // Sample `count` via a seeded Fisher–Yates partial shuffle, then sort.
-      const arr = eligible.slice();
-      for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(rng() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-      }
-      return arr.slice(0, count).sort((a, b) => b.overall - a.overall);
-    }
+  let floor = opts.minOverall ?? 0;
+  let cap = opts.maxOverall ?? 99;
+  const target = Math.min(count, pool.length);
+  const within = () => pool.filter((p) => p.overall >= floor && p.overall <= cap);
+  let eligible = within();
+  // Relax to keep every nation fieldable: raise the ceiling first (so a thin nation can
+  // still draft above the starting cap), then lower the floor.
+  for (let guard = 0; eligible.length < target && guard < 40; guard++) {
+    if (cap < 99) cap = Math.min(99, cap + 5);
+    else if (floor > 0) floor = Math.max(0, floor - 5);
+    else break;
+    eligible = within();
   }
-  return [];
+  const arr = eligible.slice();
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr.slice(0, count).sort((a, b) => b.overall - a.overall);
 }
 
 /** The 19 real clubs the season simulator plays against — the most recent FIFA

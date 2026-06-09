@@ -37,10 +37,20 @@ export function isDuel(stage: RunStage): boolean {
   return stage === "qf" || stage === "sf" || stage === "final";
 }
 
-// Bot Strength target per real stage (difficulty ramp — opponents get tougher).
-export const OPP_TARGET: Record<WCStage, number> = {
-  group: 70, r32: 76, r16: 79, qf: 82, sf: 85, final: 88,
+// Opponent difficulty is PROPORTIONAL to your current team Strength, scaled per round.
+// Weak team → weak opponents; as you upgrade and your rating climbs, theirs climbs with
+// it. The multiplier also rises each round so the tournament gets tougher the deeper you go.
+export const OPP_MULT: Record<WCStage, number> = {
+  group: 0.94, r32: 0.97, r16: 1.0, qf: 1.03, sf: 1.06, final: 1.1,
 };
+export function oppTargetFor(yourStrength: number, stage: WCStage): number {
+  return Math.max(40, Math.min(95, Math.round(yourStrength * OPP_MULT[stage])));
+}
+
+// Your STARTING XI is drafted from lower-rated players — you earn the stars by winning
+// (upgrade picks below pull from progressively higher floors). Soft cap: spinForNation
+// relaxes it upward for a nation that lacks depth at this level, so every XI is fieldable.
+export const START_CEILING = 78;
 
 // Upgrade picks granted ON ENTERING a run stage, and the quality floor of those picks.
 // The floor rises each round → progressively better players to draft. Three upgrades
@@ -80,7 +90,6 @@ export type WCFixture = {
   stage: WCStage;       // the real tournament stage (for labels)
   label: string;        // e.g. "Round of 32"
   opponent: WCNation;
-  oppTarget: number;
 };
 
 export type WCPlan = {
@@ -110,7 +119,6 @@ export function planRun(nation: string, seed: string): WCPlan {
     stage: "group" as WCStage,
     label: "Group Stage",
     opponent,
-    oppTarget: OPP_TARGET.group,
   }));
 
   // Knockout opponent universe: everyone except you and your group (you wouldn't meet
@@ -125,7 +133,7 @@ export function planRun(nation: string, seed: string): WCPlan {
     const power = 1 + i * 0.6;
     const opponent = weightedPick(pool, (t) => Math.pow(prestige(t.nation), power), rng);
     pool = pool.filter((t) => t.nation !== opponent.nation);
-    knockouts.push({ stage, label: WC_STAGE_LABEL[stage], opponent, oppTarget: OPP_TARGET[stage] });
+    knockouts.push({ stage, label: WC_STAGE_LABEL[stage], opponent });
   });
 
   return { group, knockouts };

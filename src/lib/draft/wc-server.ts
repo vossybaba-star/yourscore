@@ -15,7 +15,7 @@ import { makeOpponent } from "./opponent";
 import { resolveMatch } from "./live-score";
 import { seededRng } from "./score";
 import {
-  planRun, gamesForStage, buildMatchRow, outcomeOf, allowDraw, advanceStage, isDuel,
+  planRun, gamesForStage, buildMatchRow, outcomeOf, allowDraw, advanceStage, isDuel, oppTargetFor,
   type WCPlan, type WCFixture, type WcRun, type WcMatchRow, type WcRunPatch,
   type RunStage, type GameOutcome,
 } from "./wc";
@@ -72,7 +72,8 @@ export function newRunPlan(nation: string, seed: string): WCPlan {
  *  Deterministic by (run seed, stage, game index) so the revealed XI == the played XI. */
 export function buildOpponent(run: WcRun, fixture: WCFixture, idx: number) {
   const seed = `${run.seed}:opp:${fixture.stage}:${idx}`;
-  const opp = makeOpponent(run.formation as Formation, fixture.oppTarget, seededRng(seed));
+  const target = oppTargetFor(run.strength, fixture.stage); // proportional to YOUR current Strength
+  const opp = makeOpponent(run.formation as Formation, target, seededRng(seed));
   return { squad: opp.team.squad, strength: opp.team.strength };
 }
 
