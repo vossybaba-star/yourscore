@@ -40,17 +40,21 @@ export default function DraftHome() {
           <Link href="/" className="font-body text-sm" style={{ color: "#8888aa" }}>
             ← YourScore
           </Link>
-          <div className="flex items-center gap-2">
-            <Link href="/38-0/live" className="font-body text-xs px-3 py-1 rounded-full" style={{ color: "#04130a", background: "#00ff87" }}>
-              ⚡ Live H2H
+        </div>
+
+        {/* embedded nav — equal-width pills, matches the Play tab sub-tabs */}
+        <div className="flex gap-2 mb-5">
+          {([
+            { href: "/38-0/live", label: "⚡ Live H2H", color: "#00ff87" },
+            { href: "/38-0/teams", label: "📁 My Teams", color: "#a78bfa" },
+            { href: "/38-0/leaderboard", label: "🏆 Leaderboard", color: "#ffb800" },
+          ] as { href: string; label: string; color: string }[]).map(({ href, label, color }) => (
+            <Link key={href} href={href}
+              className="flex-1 py-2.5 rounded-full text-center font-display tracking-wide transition-all active:scale-95"
+              style={{ fontSize: 12.5, color, background: `${color}1f`, border: `1px solid ${color}40` }}>
+              {label}
             </Link>
-            <Link href="/38-0/teams" className="font-body text-xs px-3 py-1 rounded-full" style={{ color: "#a78bfa", background: "rgba(167,139,250,0.1)" }}>
-              📁 My Teams
-            </Link>
-            <Link href="/38-0/leaderboard" className="font-body text-xs px-3 py-1 rounded-full" style={{ color: "#00ff87", background: "rgba(0,255,135,0.1)" }}>
-              🏆 Leaderboard
-            </Link>
-          </div>
+          ))}
         </div>
 
         <h1 className="font-display tracking-wide leading-none" style={{ fontSize: 64, color: "#fff" }}>

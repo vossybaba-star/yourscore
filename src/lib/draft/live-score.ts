@@ -10,7 +10,11 @@
  */
 
 import type { PlacedPlayer, Position } from "./types";
-import { posCategory, seededRng } from "./score";
+import { lineRatings, posCategory, seededRng } from "./score";
+import { poisson, resolveHalfGoals, attackShare } from "./match";
+
+// Re-export the Poisson sampler from its new home so existing importers keep working.
+export { poisson };
 
 // ─── Tunables (one place — adjust after playtesting) ──────────────────────────
 
@@ -27,22 +31,9 @@ export const LIVE_CONFIG = {
   },
   /** Swap budgets per player. */
   swaps: { pregame: 1, halftime: 2 },
-  /** Total expected goals per half across both teams (≈2.8 per match). */
-  xgPerHalf: 1.4,
-  /**
-   * Logistic divisor for the per-half goal SHARE. Deliberately softer than
-   * score.ts's H2H curve (÷8): aggregating two halves shrinks variance, so a
-   * gentler share keeps underdog goals — and upsets — alive over a full match.
-   */
-  shareDivisor: 12,
   /** Penalty conversion: near coin-flip with only a faint Strength lean. */
   pens: { base: 0.72, lean: 0.0015, min: 0.6, max: 0.82, rounds: 5 },
 } as const;
-
-/** Stronger side's expected share of a half's goals. Soft logistic (see config). */
-export function shareFor(a: number, b: number): number {
-  return 1 / (1 + Math.pow(10, (b - a) / LIVE_CONFIG.shareDivisor));
-}
 
 // ─── Phases ───────────────────────────────────────────────────────────────────
 
@@ -51,31 +42,8 @@ export type LivePhase =
   | "half2" | "draw_decision" | "penalties" | "result" | "abandoned";
 
 // ─── Goals ─────────────────────────────────────────────────────────────────────
-
-/** Knuth Poisson sampler driven by an injected RNG (so resolution is seeded). */
-export function poisson(lambda: number, rng: () => number): number {
-  const L = Math.exp(-lambda);
-  let k = 0;
-  let p = 1;
-  do {
-    k++;
-    p *= rng();
-  } while (p > L);
-  return k - 1;
-}
-
-/**
- * Resolve one half into goals for each side. Total expected goals is split by
- * winProbability(a, b) — the stronger side gets the larger share — then each
- * side's tally is an independent Poisson draw. The stronger side scores more on
- * average, but variance keeps upsets alive.
- */
-export function resolveHalfGoals(a: number, b: number, rng: () => number): { a: number; b: number } {
-  const shareA = shareFor(a, b);
-  const lambdaA = LIVE_CONFIG.xgPerHalf * shareA;
-  const lambdaB = LIVE_CONFIG.xgPerHalf * (1 - shareA);
-  return { a: poisson(lambdaA, rng), b: poisson(lambdaB, rng) };
-}
+// The goal model (poisson, resolveHalfGoals, attackShare) lives in match.ts and is
+// shared with the season sim and the one-shot match — see imports above.
 
 /** Aggregate the two halves. `level` flags a tie (which may go to penalties). */
 export function aggregate(
@@ -241,14 +209,17 @@ function rateSide(
   });
 }
 
-/** Simulate one half: the scoreline (resolveHalfGoals) plus corners, throw-ins,
- *  goal events (scorer/assist/minute) and per-player ratings. Deterministic by seed. */
+/** Simulate one half: the scoreline (line-based resolveHalfGoals — each side's attack
+ *  vs the other's defence) plus corners, throw-ins, goal events (scorer/assist/minute)
+ *  and per-player ratings. Deterministic by seed. */
 export function simulateHalf(
-  strA: number, strB: number, squadA: PlacedPlayer[], squadB: PlacedPlayer[], half: 1 | 2, seed: string
+  squadA: PlacedPlayer[], squadB: PlacedPlayer[], half: 1 | 2, seed: string
 ): HalfSim {
   const rng = seededRng(seed);
-  const goals = resolveHalfGoals(strA, strB, rng);
-  const shareA = shareFor(strA, strB);
+  const linesA = lineRatings(squadA);
+  const linesB = lineRatings(squadB);
+  const goals = resolveHalfGoals(linesA, linesB, rng);
+  const shareA = attackShare(linesA, linesB);
   // Corners lean to the stronger side and a bit of variance reads fine at low counts.
   const corners = splitTotal(poisson(5, rng), shareA, rng);
   // Throw-ins are roughly even — split near-proportionally (±1) so it never lands
@@ -365,4 +336,57 @@ export function buildReport(sim: MatchSim): MatchReport {
   if (bestA && (!bestB || bestA.rating >= bestB.rating)) potm = { ...bestA, side: "a" };
   else if (bestB) potm = { ...bestB, side: "b" };
   return { a, b, events, ratingsA, ratingsB, potm, bestA, worstA: botOf(ratingsA), bestB, worstB: botOf(ratingsB) };
+}
+
+// ─── One-shot 90' match (quick / async / challenge) ────────────────────────────
+// A single match is two halves with the SAME squads (no swap) merged into one
+// report — so its scoreline aggregates to Poisson(λ) and the stored shape is
+// byte-identical to the live path's detail.report (the result UI needs no special case).
+
+export type SingleMatchResult = {
+  outcome: "A" | "B" | "draw";
+  goals: { a: number; b: number };
+  pens: { a: number; b: number } | null;
+  report: MatchReport;
+};
+
+const meanOverall = (sq: PlacedPlayer[]): number =>
+  sq.length ? sq.reduce((s, p) => s + p.overall, 0) / sq.length : 0;
+
+/**
+ * Resolve a one-off head-to-head. Deterministic by seed. A level 90' stands as a
+ * draw when `allowDraw` (the 1v1 default for quick/async/challenge); otherwise it is
+ * settled by a penalty shootout so the outcome is decisive.
+ */
+export function resolveMatch(
+  squadA: PlacedPlayer[], squadB: PlacedPlayer[], seed: string,
+  opts?: { allowDraw?: boolean }
+): SingleMatchResult {
+  const sim: MatchSim = {
+    h1: simulateHalf(squadA, squadB, 1, `${seed}:h1`),
+    h2: simulateHalf(squadA, squadB, 2, `${seed}:h2`),
+  };
+  const report = buildReport(sim);
+  const a = report.a.goals;
+  const b = report.b.goals;
+  let outcome: SingleMatchResult["outcome"] = a > b ? "A" : b > a ? "B" : "draw";
+  let pens: { a: number; b: number } | null = null;
+  if (a === b && !(opts?.allowDraw ?? false)) {
+    pens = resolveShootout(meanOverall(squadA), meanOverall(squadB), seededRng(`${seed}:pens`));
+    outcome = pens.a > pens.b ? "A" : "B";
+  }
+  return { outcome, goals: { a, b }, pens, report };
+}
+
+/** Mirror a report so the other side reads as "a" — used when a stored report is
+ *  challenger-oriented (a = challenger) but a client needs it from its own POV. */
+export function flipReport(r: MatchReport): MatchReport {
+  const flip = (s: "a" | "b"): "a" | "b" => (s === "a" ? "b" : "a");
+  return {
+    a: r.b, b: r.a,
+    events: r.events.map((e) => ({ ...e, side: flip(e.side) })),
+    ratingsA: r.ratingsB, ratingsB: r.ratingsA,
+    potm: r.potm ? { ...r.potm, side: flip(r.potm.side) } : null,
+    bestA: r.bestB, worstA: r.worstB, bestB: r.bestA, worstB: r.worstA,
+  };
 }

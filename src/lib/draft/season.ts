@@ -17,6 +17,7 @@
 
 import type { Formation, PlacedPlayer, Projected } from "./types";
 import { lineRatings, posCategory, seededRng, clamp, tierFor } from "./score";
+import { matchLambdas, type TeamLines } from "./match";
 
 export type Opponent = { name: string; strength: number };
 
@@ -28,22 +29,19 @@ function poissonPmf(lambda: number, k: number): number {
   return p;
 }
 
-/** Expected goals for/against in one match, from the FIFA strength gap. The
- *  attack/defence balance of the drafted XI tilts the goals slightly. */
-function lambdas(strength: number, opp: number, home: boolean, attTilt: number, defTilt: number): [number, number] {
-  const edge = (strength - opp) / 9;
-  const lf = clamp(1.45 + edge + attTilt + (home ? 0.22 : -0.04), 0.15, 5);
-  const la = clamp(1.45 - edge - defTilt + (home ? -0.08 : 0.16), 0.15, 5);
-  return [lf, la];
+/** A real club is modelled as a flat XI — every line sits at its scalar Strength.
+ *  The shared engine then derives goals from my attack line vs the club's defence. */
+function clubLines(strength: number): TeamLines {
+  return { attack: strength, midfield: strength, defence: strength, gk: strength };
 }
 
-/** Closed-form expected league points for a team of `strength` vs `opponents`
- *  (home + away), summing match win/draw probabilities over Poisson goals. */
-function expectedPoints(strength: number, opponents: Opponent[], attTilt = 0, defTilt = 0): number {
+/** Closed-form expected league points for an XI (its line ratings) vs `opponents`
+ *  (home + away), summing match win/draw probabilities over the canonical Poisson λ. */
+function expectedPoints(myLines: TeamLines, opponents: Opponent[]): number {
   let pts = 0;
   for (const o of opponents) {
-    for (const home of [true, false]) {
-      const [lf, la] = lambdas(strength, o.strength, home, attTilt, defTilt);
+    for (const home of ["A", "B"] as const) {
+      const [lf, la] = matchLambdas(myLines, clubLines(o.strength), { home });
       let w = 0, d = 0;
       for (let i = 0; i <= 9; i++) for (let j = 0; j <= 9; j++) {
         const p = poissonPmf(lf, i) * poissonPmf(la, j);
@@ -57,20 +55,12 @@ function expectedPoints(strength: number, opponents: Opponent[], attTilt = 0, de
 
 /** Each club's "par" points (expected points vs the rest of the league). */
 function leaguePar(opponents: Opponent[]): number[] {
-  return opponents.map((c) => expectedPoints(c.strength, opponents.filter((o) => o !== c)));
+  return opponents.map((c) => expectedPoints(clubLines(c.strength), opponents.filter((o) => o !== c)));
 }
 
 /** League position for a points total: 1 + how many clubs are expected to finish above it. */
 function positionFor(points: number, par: number[]): number {
   return clamp(1 + par.filter((p) => p > points).length, 1, par.length + 1);
-}
-
-function tilts(squad: PlacedPlayer[], strength: number) {
-  const l = lineRatings(squad);
-  return {
-    att: ((l.attack || strength) - strength) / 28,
-    def: (((l.defence || strength) + (l.gk || strength)) / 2 - strength) / 28,
-  };
 }
 
 // ── Bookies' pre-season odds (Monte-Carlo of the sim) ────────────────────────
@@ -84,15 +74,15 @@ export type PreSeasonOdds = {
 const pct = (n: number, total: number) => Math.round((n / total) * 1000) / 10;
 
 export function preSeasonOdds(squad: PlacedPlayer[], strength: number, opponents: Opponent[]): PreSeasonOdds {
-  const { att, def } = tilts(squad, strength);
+  const myLines = lineRatings(squad);
   const par = leaguePar(opponents);
-  const expPts = Math.round(expectedPoints(strength, opponents, att, def));
+  const expPts = Math.round(expectedPoints(myLines, opponents));
 
   const N = 300;
   let win = 0, t4 = 0, t6 = 0, t10 = 0, rel = 0;
   for (let i = 0; i < N; i++) {
     const rng = seededRng(`odds-${strength}-${i}`);
-    const pts = samplePoints(strength, opponents, att, def, rng);
+    const pts = samplePoints(myLines, opponents, rng);
     const pos = positionFor(pts, par);
     if (pos === 1) win++;
     if (pos <= 4) t4++;
@@ -129,10 +119,10 @@ function poisson(lambda: number, rng: () => number): number {
 }
 
 /** Lightweight points-only sample (for Monte-Carlo odds). */
-function samplePoints(strength: number, opponents: Opponent[], att: number, def: number, rng: () => number): number {
+function samplePoints(myLines: TeamLines, opponents: Opponent[], rng: () => number): number {
   let pts = 0;
-  for (const home of [true, false]) for (const o of opponents) {
-    const [lf, la] = lambdas(strength, o.strength, home, att, def);
+  for (const home of ["A", "B"] as const) for (const o of opponents) {
+    const [lf, la] = matchLambdas(myLines, clubLines(o.strength), { home });
     const f = poisson(lf, rng), a = poisson(la, rng);
     pts += f > a ? 3 : f === a ? 1 : 0;
   }
@@ -143,14 +133,14 @@ export function simulateSeason(
   squad: PlacedPlayer[], formation: Formation, strength: number, seed: string, opponents: Opponent[]
 ): SeasonResult {
   const rng = seededRng(seed);
-  const { att, def } = tilts(squad, strength);
+  const myLines = lineRatings(squad);
   const par = leaguePar(opponents);
 
   const games: SeasonGame[] = [];
   let wins = 0, draws = 0, losses = 0, gf = 0, ga = 0;
   for (const venue of ["H", "A"] as const) {
     for (const o of opponents) {
-      const [lf, la] = lambdas(strength, o.strength, venue === "H", att, def);
+      const [lf, la] = matchLambdas(myLines, clubLines(o.strength), { home: venue === "H" ? "A" : "B" });
       const f = poisson(lf, rng), a = poisson(la, rng);
       gf += f; ga += a;
       const result: SeasonGame["result"] = f > a ? "W" : f < a ? "L" : "D";
@@ -163,7 +153,7 @@ export function simulateSeason(
   const invincible = losses === 0 && draws === 0;
   const position = invincible ? 1 : positionFor(points, par);
 
-  const expPts = Math.round(expectedPoints(strength, opponents, att, def));
+  const expPts = Math.round(expectedPoints(myLines, opponents));
   const projFinish = positionFor(expPts, par);
   const projected: Projected = {
     wins: 0, draws: 0, losses: 0, points: expPts, position: projFinish, tier: tierFor(expPts),

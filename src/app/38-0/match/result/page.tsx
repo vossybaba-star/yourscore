@@ -1,9 +1,10 @@
 "use client";
 
 /**
- * /38-0/match/result — H2H result for the most recent local Quick Match: both
- * XIs, the winner, the deciding margin, and a one-tap share. (Cloud matches will
- * use /38-0/match/[id] with a server-rendered OG image; this is the local view.)
+ * /38-0/match/result — full-time result for the most recent local Quick Match:
+ * the real scoreline, scorers, MOTM, broadcast stats, both XIs, and a one-tap share
+ * of the scoreline graphic. Mirrors the public /38-0/match/[id] live view; this is
+ * the local (guest) version, reading the last match from localStorage.
  */
 
 import { useEffect, useState } from "react";
@@ -12,6 +13,7 @@ import { useRouter } from "next/navigation";
 import { Pitch } from "@/components/draft/Pitch";
 import { loadLastMatch, type LocalMatch } from "@/lib/draft/local";
 import { tierColor } from "@/lib/draft/ui";
+import { liveOgQuery } from "@/lib/draft/share";
 
 export default function MatchResult() {
   const router = useRouter();
@@ -25,29 +27,29 @@ export default function MatchResult() {
   }, [router]);
 
   function ogUrl(): string {
-    if (!m) return "/api/draft/og";
-    const won = m.winner === "you";
-    const params = new URLSearchParams({
-      result: won ? "win" : "loss",
-      tier: m.you.projected?.tier ?? "Champions",
-      formation: m.you.formation,
-      you: "Your XI",
-      youStr: String(m.you.strength),
-      opp: m.opp.name,
-      oppStr: String(m.opp.strength),
+    if (!m) return "/api/draft/live-og";
+    const q = liveOgQuery({
+      p1: "Your XI", p2: m.opp.name,
+      s1: m.goals.you, s2: m.goals.opp,
+      str1: m.you.strength, str2: m.opp.strength,
+      pens: m.pens ? { a: m.pens.you, b: m.pens.opp } : null,
+      report: m.report,
     });
-    return `/api/draft/og?${params.toString()}`;
+    return `/api/draft/live-og?${q}`;
   }
 
   async function share() {
     if (!m) return;
-    const won = m.winner === "you";
-    const text = won
-      ? `My Draft XI (${m.you.strength}) beat ${m.opp.name} (${m.opp.strength}) head-to-head ⚽🔥 Build yours:`
-      : `${m.opp.name} (${m.opp.strength}) knocked out my Draft XI (${m.you.strength}). Rebuilding… Take me on:`;
+    const won = m.outcome === "you";
+    const drew = m.outcome === "draw";
+    const score = `${m.goals.you}–${m.goals.opp}`;
+    const text = drew
+      ? `My Draft XI drew ${score} with ${m.opp.name} head-to-head ⚽ Build yours and take me on:`
+      : won
+      ? `My Draft XI beat ${m.opp.name} ${score} head-to-head ⚽🔥 Build yours:`
+      : `${m.opp.name} beat my Draft XI ${m.goals.opp}–${m.goals.you}. Rebuilding… Take me on:`;
     const url = "https://yourscore.app/38-0";
     try {
-      // Try sharing the broadcast graphic itself (mobile), falling back to text+link.
       try {
         const res = await fetch(ogUrl());
         const blob = await res.blob();
@@ -72,21 +74,56 @@ export default function MatchResult() {
     return <div className="min-h-[100dvh] grid place-items-center" style={{ background: "#0a0a0f", color: "#8888aa" }}>Loading…</div>;
   }
 
-  const won = m.winner === "you";
-  const accent = won ? "#00ff87" : "#ff4757";
+  const won = m.outcome === "you";
+  const drew = m.outcome === "draw";
+  const accent = won ? "#00ff87" : drew ? "#ffb800" : "#ff4757";
+  const headline = won ? "WIN" : drew ? "DRAW" : "LOSS";
+  const rep = m.report;
 
   return (
     <div className="min-h-[100dvh] pb-28" style={{ background: "#0a0a0f" }}>
       <div className="max-w-lg mx-auto px-5 pt-safe">
+        {/* full-time scoreline */}
         <div className="pt-8 text-center">
-          <div className="font-display tracking-wide leading-none" style={{ fontSize: 80, color: accent }}>
-            {won ? "WIN" : "LOSS"}
+          <div className="font-display tracking-wide leading-none" style={{ fontSize: 64, color: accent }}>
+            {headline}
           </div>
-          <div className="font-body mt-2" style={{ fontSize: 16, color: "#fff" }}>
-            Your <b style={{ color: accent }}>{m.you.strength}</b> {won ? "beat" : "lost to"} {m.opp.name}&apos;s <b>{m.opp.strength}</b>
+          <div className="flex items-center justify-center gap-3 mt-3">
+            <span className="font-display tracking-wide truncate text-right" style={{ fontSize: 16, color: won ? "#00ff87" : "#cfcfe6", maxWidth: 130 }}>You</span>
+            <span className="font-display tabular-nums" style={{ fontSize: 44, fontWeight: 900, color: won ? "#00ff87" : "#cfcfe6" }}>{m.goals.you}</span>
+            <span style={{ color: "#555", fontSize: 26 }}>–</span>
+            <span className="font-display tabular-nums" style={{ fontSize: 44, fontWeight: 900, color: m.outcome === "opp" ? "#00ff87" : "#cfcfe6" }}>{m.goals.opp}</span>
+            <span className="font-display tracking-wide truncate text-left" style={{ fontSize: 16, color: m.outcome === "opp" ? "#00ff87" : "#cfcfe6", maxWidth: 130 }}>{m.opp.name}</span>
           </div>
-          <div className="font-body mt-1" style={{ fontSize: 13, color: "#8888aa" }}>
-            {m.margin === 0 ? "Decided on the night — a coin-flip" : `Margin: ${m.margin} Strength`}
+          {m.pens && <div className="font-body mt-1" style={{ fontSize: 13, color: "#ffb800" }}>penalties {m.pens.you}–{m.pens.opp}</div>}
+
+          {rep.potm && (
+            <div className="inline-flex items-center gap-2 rounded-full mt-3 px-4 py-1.5" style={{ background: "rgba(255,184,0,0.12)", border: "1px solid rgba(255,184,0,0.35)" }}>
+              <span className="font-body" style={{ fontSize: 12, color: "#ffb800", letterSpacing: 1 }}>⭐ MOTM</span>
+              <span className="font-body" style={{ fontSize: 14, color: "#fff" }}>{rep.potm.name} <b style={{ color: "#ffb800" }}>{rep.potm.rating.toFixed(1)}</b></span>
+            </div>
+          )}
+          {rep.events.length > 0 && (
+            <div className="font-body mt-2 truncate" style={{ fontSize: 12, color: "#cfcfe6" }}>⚽ {rep.events.map((e) => `${e.scorerName} ${e.minute}'`).join(" · ")}</div>
+          )}
+
+          {/* broadcast stats */}
+          <div className="rounded-xl overflow-hidden mt-4" style={{ background: "#0d0d14", border: "1px solid rgba(255,255,255,0.08)" }}>
+            {([
+              ["Possession", `${rep.a.possession}%`, `${rep.b.possession}%`, rep.a.possession, rep.b.possession],
+              ["Shots", rep.a.shots, rep.b.shots, rep.a.shots, rep.b.shots],
+              ["On target", rep.a.shotsOnTarget, rep.b.shotsOnTarget, rep.a.shotsOnTarget, rep.b.shotsOnTarget],
+              ["Corners", rep.a.corners, rep.b.corners, rep.a.corners, rep.b.corners],
+              ["Fouls", rep.a.fouls, rep.b.fouls, rep.a.fouls, rep.b.fouls],
+              ["Offsides", rep.a.offsides, rep.b.offsides, rep.a.offsides, rep.b.offsides],
+              ["Throw-ins", rep.a.throwins, rep.b.throwins, rep.a.throwins, rep.b.throwins],
+            ] as [string, string | number, string | number, number, number][]).map(([label, av, bv, an, bn]) => (
+              <div key={label} className="flex items-center px-3 py-1.5" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                <span className="flex-1 text-left font-body tabular-nums font-bold" style={{ fontSize: 15, color: an >= bn ? "#fff" : "#8888aa" }}>{av}</span>
+                <span className="text-center font-body" style={{ width: 110, fontSize: 10, letterSpacing: 1, color: "#7a7a92" }}>{label.toUpperCase()}</span>
+                <span className="flex-1 text-right font-body tabular-nums font-bold" style={{ fontSize: 15, color: bn >= an ? "#fff" : "#8888aa" }}>{bv}</span>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -101,7 +138,7 @@ export default function MatchResult() {
           </div>
           <div>
             <div className="flex items-center justify-between mb-1">
-              <span className="font-display tracking-wide leading-tight truncate" style={{ fontSize: 16, color: !won ? "#ff4757" : "#fff", maxWidth: "70%" }}>{m.opp.name}</span>
+              <span className="font-display tracking-wide leading-tight truncate" style={{ fontSize: 16, color: m.outcome === "opp" ? "#ff4757" : "#fff", maxWidth: "70%" }}>{m.opp.name}</span>
               <span className="font-display" style={{ fontSize: 18, color: tierColor(m.opp.projected?.tier ?? "Mid-table") }}>{m.opp.strength}</span>
             </div>
             <Pitch formation={m.opp.formation} squad={m.opp.squad} compact />
@@ -120,6 +157,12 @@ export default function MatchResult() {
               className="block w-full rounded-2xl py-4 text-center font-display tracking-wide active:scale-[0.98] transition-transform"
               style={{ background: "#00ff87", color: "#062013", fontSize: 22 }}>
               SWAP ONE PLAYER →
+            </Link>
+          ) : drew ? (
+            <Link href="/38-0/team"
+              className="block w-full rounded-2xl py-4 text-center font-display tracking-wide active:scale-[0.98] transition-transform"
+              style={{ background: "rgba(255,184,0,0.14)", color: "#ffb800", fontSize: 22, border: "1px solid rgba(255,184,0,0.4)" }}>
+              GO AGAIN →
             </Link>
           ) : (
             <Link href="/38-0"

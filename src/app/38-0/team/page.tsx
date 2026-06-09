@@ -13,12 +13,13 @@ import { useRouter } from "next/navigation";
 import { Pitch } from "@/components/draft/Pitch";
 import { BottomNav } from "@/components/ui/BottomNav";
 import {
-  loadTeam, saveTeam, isComplete, recordWin, recordLoss, saveLastMatch,
+  loadTeam, saveTeam, isComplete, recordWin, recordLoss, recordDraw, saveLastMatch,
   compatibleFormations, reslot, seasonSeed, loadLastSeason, type LocalTeam,
 } from "@/lib/draft/local";
 import type { Formation } from "@/lib/draft/types";
 import { makeOpponent } from "@/lib/draft/opponent";
-import { resolveH2H, seededRng, tierFor } from "@/lib/draft/score";
+import { tierFor } from "@/lib/draft/score";
+import { resolveMatch } from "@/lib/draft/live-score";
 import { tierColor, TIER_TAGLINE, strengthPct } from "@/lib/draft/ui";
 import { preSeasonOdds } from "@/lib/draft/season";
 import { leagueOpponents } from "@/lib/draft/pool";
@@ -47,21 +48,21 @@ export default function TeamScreen() {
     setMatching(true);
     const matchId = `local-${team.updatedAt}-${Math.floor(Math.random() * 1e6)}`;
     const opp = makeOpponent(team.formation, team.strength);
-    // Single-game resolution via the shared, seeded engine.
-    const winner = resolveH2H(team.strength, opp.team.strength, seededRng(matchId));
-    const youWon = winner === "A";
-    const margin = Math.abs(Math.round((team.strength - opp.team.strength) * 10) / 10);
+    // Real scoreline via the shared, seeded engine (your attack vs their defence).
+    const res = resolveMatch(team.squad, opp.team.squad, matchId, { allowDraw: true });
 
     saveLastMatch({
       id: matchId,
       you: { name: "You", formation: team.formation, squad: team.squad, strength: team.strength, projected: team.projected },
       opp: { name: opp.name, formation: opp.team.formation, squad: opp.team.squad, strength: opp.team.strength, projected: opp.team.projected },
-      winner: youWon ? "you" : "opp",
-      margin,
+      outcome: res.outcome === "A" ? "you" : res.outcome === "B" ? "opp" : "draw",
+      goals: { you: res.goals.a, opp: res.goals.b },
+      pens: res.pens ? { you: res.pens.a, opp: res.pens.b } : null,
+      report: res.report,
       playedAt: Date.now(),
     });
 
-    const next = youWon ? recordWin(team) : recordLoss(team);
+    const next = res.outcome === "A" ? recordWin(team) : res.outcome === "B" ? recordLoss(team) : recordDraw(team);
     saveTeam(next);
     setTimeout(() => router.push("/38-0/match/result"), 450);
   }
@@ -136,6 +137,47 @@ export default function TeamScreen() {
   const lastSeason = loadLastSeason();
   const hasLastSeason = !!lastSeason && lastSeason.seed === seasonSeed(team);
 
+  // Bookies' pre-season odds card. Sits above the pitch pre-sim; once a season has
+  // been simulated the actual result owns the top, so the projection drops to the bottom.
+  const oddsBands: [string, number, string][] = [
+    ["Win the league", odds.winLeague, "#ffb800"],
+    ["Top 4", odds.top4, "#00ff87"],
+    ["Top 6", odds.top6, "#22d3ee"],
+    ["Top 10", odds.top10, "#a78bfa"],
+    ["Relegation", odds.relegation, "#ff4757"],
+  ];
+  const oddsCard = (
+    <div className="rounded-3xl p-5" style={{ background: "#0d0d14", border: "1px solid rgba(255,255,255,0.08)" }}>
+      <div className="flex items-center justify-between mb-3">
+        <span className="font-body" style={{ fontSize: 11, color: "#8888aa", letterSpacing: 1 }}>PRE-SEASON ODDS</span>
+        <span className="font-body" style={{ fontSize: 11, color: "#8888aa" }}>What the bookies make of your XI</span>
+      </div>
+      <div className="flex items-end justify-between mb-4">
+        <div>
+          <div className="font-body" style={{ fontSize: 11, color: "#8888aa" }}>PROJECTED FINISH</div>
+          <div className="font-display tracking-wide" style={{ fontSize: 40, color: "#fff", lineHeight: 1 }}>{ordinal(odds.projectedFinish)}</div>
+        </div>
+        <div className="text-right">
+          <div className="font-body" style={{ fontSize: 11, color: "#8888aa" }}>EXPECTED POINTS</div>
+          <div className="font-display" style={{ fontSize: 40, color: "#00ff87", lineHeight: 1 }}>{odds.expectedPoints}</div>
+        </div>
+      </div>
+      <div className="space-y-2">
+        {oddsBands.map(([label, val, color]) => (
+          <div key={label}>
+            <div className="flex items-center justify-between mb-0.5">
+              <span className="font-body" style={{ fontSize: 12, color: "#cfcfe6" }}>{label}</span>
+              <span className="font-body" style={{ fontSize: 12, color: "#fff" }}>{val}%</span>
+            </div>
+            <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.07)" }}>
+              <div className="h-full rounded-full" style={{ width: `${val}%`, background: color }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-[100dvh] pb-28" style={{ background: "#0a0a0f" }}>
       <div className="max-w-lg mx-auto px-5 pt-safe">
@@ -155,6 +197,57 @@ export default function TeamScreen() {
             </span>
           </div>
         </div>
+
+        {/* primary actions — two-wide grid, the single set of top-level actions */}
+        <div className="grid grid-cols-2 gap-2.5 mb-4">
+          <button onClick={user ? goLive : quickMatch} disabled={matching}
+            className="rounded-2xl py-3.5 px-3 text-center font-display tracking-wide active:scale-[0.97] transition-transform disabled:opacity-60"
+            style={{ background: "#00ff87", color: "#062013", fontSize: 16 }}>
+            ⚡ Go Head-to-Head
+          </button>
+          <button onClick={() => router.push(user ? "/38-0/leagues" : "/auth/sign-in")}
+            className="rounded-2xl py-3.5 px-3 text-center font-display tracking-wide active:scale-[0.97] transition-transform"
+            style={{ background: "rgba(167,139,250,0.12)", color: "#a78bfa", fontSize: 16, border: "1px solid rgba(167,139,250,0.4)" }}>
+            🏆 Build a League
+          </button>
+          <Link href="/38-0/leaderboard"
+            className="rounded-2xl py-3.5 px-3 text-center font-display tracking-wide active:scale-[0.97] transition-transform"
+            style={{ background: "rgba(0,255,135,0.1)", color: "#00ff87", fontSize: 16, border: "1px solid rgba(0,255,135,0.3)" }}>
+            🥇 Leaderboard
+          </Link>
+          <button onClick={beginSave} disabled={saving}
+            className="rounded-2xl py-3.5 px-3 text-center font-display tracking-wide active:scale-[0.97] transition-transform disabled:opacity-70"
+            style={{ background: "rgba(255,184,0,0.12)", color: "#ffb800", fontSize: 16, border: "1px solid rgba(255,184,0,0.4)" }}>
+            💾 {saved ? "Saved ✓" : "Save Team"}
+          </button>
+        </div>
+
+        {/* name-this-team panel — revealed by Save Team */}
+        {naming && (
+          <div className="rounded-2xl p-3 mb-4" style={{ background: "#12121e", border: "1px solid rgba(255,184,0,0.35)" }}>
+            <div className="font-body mb-2" style={{ fontSize: 11, color: "#ffb800", letterSpacing: 1 }}>NAME THIS TEAM</div>
+            <input value={teamName} onChange={(e) => setTeamName(e.target.value)} maxLength={40} autoFocus
+              placeholder="e.g. My dream XI"
+              className="w-full rounded-xl px-3 py-3 font-body mb-2" style={{ background: "#0a0a0f", color: "#fff", border: "1px solid rgba(255,255,255,0.1)" }} />
+            <div className="grid grid-cols-2 gap-2">
+              <button onClick={saveToLibrary} disabled={saving}
+                className="rounded-xl py-3 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-70"
+                style={{ background: "#ffb800", color: "#241a00", fontSize: 16 }}>
+                {saving ? "SAVING…" : "SAVE TO MY TEAMS"}
+              </button>
+              <button onClick={() => setNaming(false)} disabled={saving}
+                className="rounded-xl py-3 font-body active:scale-[0.98] transition-transform" style={{ background: "transparent", color: "#8888aa", fontSize: 14, border: "1px solid rgba(255,255,255,0.1)" }}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
+        {err && (
+          <div className="rounded-xl px-4 py-2 mb-4 font-body text-center" style={{ fontSize: 13, color: "#ff4757", background: "rgba(255,71,87,0.1)" }}>
+            {err}
+          </div>
+        )}
 
         {/* tier banner — shows the ACTUAL season result once simulated, else the projection */}
         {(() => {
@@ -233,47 +326,8 @@ export default function TeamScreen() {
 
         <Pitch formation={team.formation} squad={team.squad} compact />
 
-        {/* Bookies' pre-season odds — same projection as the banner + the sim */}
-        {(() => {
-          const bands: [string, number, string][] = [
-            ["Win the league", odds.winLeague, "#ffb800"],
-            ["Top 4", odds.top4, "#00ff87"],
-            ["Top 6", odds.top6, "#22d3ee"],
-            ["Top 10", odds.top10, "#a78bfa"],
-            ["Relegation", odds.relegation, "#ff4757"],
-          ];
-          return (
-            <div className="mt-5 rounded-3xl p-5" style={{ background: "#0d0d14", border: "1px solid rgba(255,255,255,0.08)" }}>
-              <div className="flex items-center justify-between mb-3">
-                <span className="font-body" style={{ fontSize: 11, color: "#8888aa", letterSpacing: 1 }}>PRE-SEASON ODDS</span>
-                <span className="font-body" style={{ fontSize: 11, color: "#8888aa" }}>What the bookies make of your XI</span>
-              </div>
-              <div className="flex items-end justify-between mb-4">
-                <div>
-                  <div className="font-body" style={{ fontSize: 11, color: "#8888aa" }}>PROJECTED FINISH</div>
-                  <div className="font-display tracking-wide" style={{ fontSize: 40, color: "#fff", lineHeight: 1 }}>{ordinal(odds.projectedFinish)}</div>
-                </div>
-                <div className="text-right">
-                  <div className="font-body" style={{ fontSize: 11, color: "#8888aa" }}>EXPECTED POINTS</div>
-                  <div className="font-display" style={{ fontSize: 40, color: "#00ff87", lineHeight: 1 }}>{odds.expectedPoints}</div>
-                </div>
-              </div>
-              <div className="space-y-2">
-                {bands.map(([label, val, color]) => (
-                  <div key={label}>
-                    <div className="flex items-center justify-between mb-0.5">
-                      <span className="font-body" style={{ fontSize: 12, color: "#cfcfe6" }}>{label}</span>
-                      <span className="font-body" style={{ fontSize: 12, color: "#fff" }}>{val}%</span>
-                    </div>
-                    <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.07)" }}>
-                      <div className="h-full rounded-full" style={{ width: `${val}%`, background: color }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
-        })()}
+        {/* Pre-season odds — sits here until a season is simulated, then moves to the bottom */}
+        {!hasLastSeason && <div className="mt-5">{oddsCard}</div>}
 
         <button onClick={() => router.push("/38-0/season")}
           className="w-full mt-4 rounded-2xl py-5 font-display tracking-wide active:scale-[0.98] transition-transform"
@@ -281,140 +335,76 @@ export default function TeamScreen() {
           {hasLastSeason ? "📊 VIEW SEASON RESULT →" : "⚽ SIMULATE SEASON →"}
         </button>
 
-        {/* play actions — always available */}
+        {/* secondary — library, swap, the live-H2H explainer, practice/fresh */}
         <div className="mt-3 space-y-3">
-          {err && (
-            <div className="rounded-xl px-4 py-2 font-body text-center" style={{ fontSize: 13, color: "#ff4757", background: "rgba(255,71,87,0.1)" }}>
-              {err}
+          {/* My Teams library entry */}
+          {user && (
+            <Link href="/38-0/teams"
+              className="flex items-center justify-between w-full rounded-2xl px-4 py-3 active:scale-[0.98] transition-transform"
+              style={{ background: "rgba(167,139,250,0.08)", color: "#a78bfa", border: "1px solid rgba(167,139,250,0.25)" }}>
+              <span className="font-display tracking-wide" style={{ fontSize: 16 }}>{saved ? "📁 MY TEAMS ✓ saved" : "📁 MY TEAMS"}</span>
+              <span className="font-display" style={{ fontSize: 18 }}>→</span>
+            </Link>
+          )}
+
+          {team.swapAvailable && (
+            <Link href="/38-0/swap"
+              className="block w-full rounded-2xl py-4 text-center font-display tracking-wide active:scale-[0.98] transition-transform"
+              style={{ background: "rgba(255,184,0,0.12)", color: "#ffb800", fontSize: 22, border: "1px solid rgba(255,184,0,0.4)" }}>
+              ⬆ SWAP ONE PLAYER (you earned it)
+            </Link>
+          )}
+
+          {/* How live head-to-head works — context for the Go Head-to-Head action above */}
+          <div className="pt-2">
+            <div className="font-display tracking-wide" style={{ fontSize: 22, color: "#fff" }}>
+              HOW LIVE H2H WORKS
             </div>
-          )}
+            <div className="font-body" style={{ fontSize: 12, color: "#8888aa" }}>
+              Your XI is built — now take it online and beat other managers.
+            </div>
+          </div>
 
-          {(
-            <>
-              {/* Save to My Teams (guests → sign up). Tapping reveals a name field. */}
-              {naming ? (
-                <div className="rounded-2xl p-3" style={{ background: "#12121e", border: "1px solid rgba(167,139,250,0.35)" }}>
-                  <div className="font-body mb-2" style={{ fontSize: 11, color: "#a78bfa", letterSpacing: 1 }}>NAME THIS TEAM</div>
-                  <input value={teamName} onChange={(e) => setTeamName(e.target.value)} maxLength={40} autoFocus
-                    placeholder="e.g. My dream XI"
-                    className="w-full rounded-xl px-3 py-3 font-body mb-2" style={{ background: "#0a0a0f", color: "#fff", border: "1px solid rgba(255,255,255,0.1)" }} />
-                  <div className="grid grid-cols-2 gap-2">
-                    <button onClick={saveToLibrary} disabled={saving}
-                      className="rounded-xl py-3 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-70"
-                      style={{ background: "#a78bfa", color: "#15082b", fontSize: 17 }}>
-                      {saving ? "SAVING…" : "SAVE TO MY TEAMS"}
-                    </button>
-                    <button onClick={() => setNaming(false)} disabled={saving}
-                      className="rounded-xl py-3 font-body active:scale-[0.98] transition-transform" style={{ background: "transparent", color: "#8888aa", fontSize: 14, border: "1px solid rgba(255,255,255,0.1)" }}>
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <button onClick={beginSave} disabled={saving}
-                  className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-70"
-                  style={{ background: "#a78bfa", color: "#15082b", fontSize: 22 }}>
-                  {saved ? "💾 SAVE ANOTHER COPY" : user ? "💾 SAVE TEAM" : "💾 SAVE TEAM — SIGN UP"}
-                </button>
-              )}
-
-              {/* My Teams library entry */}
-              {user && (
-                <Link href="/38-0/teams"
-                  className="flex items-center justify-between w-full rounded-2xl px-4 py-3 active:scale-[0.98] transition-transform"
-                  style={{ background: "rgba(167,139,250,0.08)", color: "#a78bfa", border: "1px solid rgba(167,139,250,0.25)" }}>
-                  <span className="font-display tracking-wide" style={{ fontSize: 16 }}>{saved ? "📁 MY TEAMS ✓ saved" : "📁 MY TEAMS"}</span>
-                  <span className="font-display" style={{ fontSize: 18 }}>→</span>
-                </Link>
-              )}
-
-              {team.swapAvailable && (
-                <Link href="/38-0/swap"
-                  className="block w-full rounded-2xl py-4 text-center font-display tracking-wide active:scale-[0.98] transition-transform"
-                  style={{ background: "rgba(255,184,0,0.12)", color: "#ffb800", fontSize: 22, border: "1px solid rgba(255,184,0,0.4)" }}>
-                  ⬆ SWAP ONE PLAYER (you earned it)
-                </Link>
-              )}
-
-              {/* Multiplayer — the "after journey": take your built XI online */}
-              <div className="pt-2">
-                <div className="font-display tracking-wide" style={{ fontSize: 22, color: "#fff" }}>
-                  MULTIPLAYER
-                </div>
-                <div className="font-body" style={{ fontSize: 12, color: "#8888aa" }}>
-                  Your XI is built — now take it online and beat other managers.
-                </div>
+          {/* 3 steps, left to right (live two-half H2H) */}
+          <div className="grid grid-cols-3 gap-2">
+            {([
+              ["KICK OFF LIVE", "Matched with a live manager — see their XI"],
+              ["TWO HALVES", "Swap before kick-off & at the break to outscore them"],
+              ["AGGREGATE WINS", "Goals over 90 decide it · climb the board"],
+            ] as [string, string][]).map(([title, desc], i) => (
+              <div key={title} className="rounded-2xl p-3" style={{ background: "#0d0d14", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <span className="font-display tracking-wide" style={{ fontSize: 16, color: "#00ff87" }}>{i + 1}</span>
+                <div className="font-display tracking-wide mt-1.5" style={{ fontSize: 16, color: "#fff", lineHeight: 1.1 }}>{title}</div>
+                <div className="font-body mt-1" style={{ fontSize: 12.5, color: "#8888aa", lineHeight: 1.3 }}>{desc}</div>
               </div>
+            ))}
+          </div>
 
-              {/* How it works — 3 steps, left to right (live two-half H2H) */}
-              <div className="grid grid-cols-3 gap-2">
-                {([
-                  ["KICK OFF LIVE", "Matched with a live manager — see their XI"],
-                  ["TWO HALVES", "Swap before kick-off & at the break to outscore them"],
-                  ["AGGREGATE WINS", "Goals over 90 decide it · climb the board"],
-                ] as [string, string][]).map(([title, desc], i) => (
-                  <div key={title} className="rounded-2xl p-3" style={{ background: "#0d0d14", border: "1px solid rgba(255,255,255,0.08)" }}>
-                    <span className="font-display tracking-wide" style={{ fontSize: 16, color: "#00ff87" }}>{i + 1}</span>
-                    <div className="font-display tracking-wide mt-1.5" style={{ fontSize: 16, color: "#fff", lineHeight: 1.1 }}>{title}</div>
-                    <div className="font-body mt-1" style={{ fontSize: 12.5, color: "#8888aa", lineHeight: 1.3 }}>{desc}</div>
-                  </div>
-                ))}
-              </div>
-
-              {/* 1 — Live head-to-head vs another player (replaces the old ranked
-                     async match now that the player has a team) */}
-              <button onClick={user ? goLive : quickMatch} disabled={matching}
-                className="w-full rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.98] transition-transform disabled:opacity-60"
-                style={{ background: "#00ff87", color: "#062013" }}>
-                <span className="text-left">
-                  <span className="block font-display tracking-wide" style={{ fontSize: 20 }}>{user ? "GO LIVE — HEAD-TO-HEAD ⚡" : "QUICK MATCH ⚔️"}</span>
-                  <span className="block font-body" style={{ fontSize: 12, opacity: 0.75 }}>{user ? "Two halves vs a live player · swap at the break · climbs the leaderboard" : "Practice match against a CPU XI"}</span>
-                </span>
-                <span className="font-display" style={{ fontSize: 24 }}>{matching ? "…" : "→"}</span>
-              </button>
-
-              {/* 2 — Build a private league */}
-              <button onClick={() => router.push(user ? "/38-0/leagues" : "/auth/sign-in")}
-                className="w-full rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.98] transition-transform"
-                style={{ background: "rgba(167,139,250,0.1)", color: "#a78bfa", border: "1px solid rgba(167,139,250,0.35)" }}>
-                <span className="text-left">
-                  <span className="block font-display tracking-wide" style={{ fontSize: 20 }}>BUILD A LEAGUE 🏆</span>
-                  <span className="block font-body" style={{ fontSize: 12, opacity: 0.8 }}>Private league with a code & QR — invite your group, climb the table</span>
-                </span>
-                <span className="font-display" style={{ fontSize: 24 }}>→</span>
-              </button>
-
-              {/* Secondary — global leaderboard + practice/fresh */}
-              <div className="grid grid-cols-2 gap-3 pt-1">
-                <Link href="/38-0/leaderboard"
-                  className="rounded-2xl py-3 text-center font-display tracking-wide active:scale-[0.98] transition-transform"
-                  style={{ background: "rgba(0,255,135,0.08)", color: "#00ff87", fontSize: 16, border: "1px solid rgba(0,255,135,0.25)" }}>
-                  🏆 LEADERBOARD
-                </Link>
-                {user ? (
-                  <button onClick={quickMatch} disabled={matching}
-                    className="rounded-2xl py-3 font-body active:scale-[0.98] transition-transform disabled:opacity-60"
-                    style={{ background: "#12121e", color: "#8888aa", fontSize: 14, border: "1px solid rgba(255,255,255,0.08)" }}>
-                    Practice vs CPU
-                  </button>
-                ) : (
-                  <button onClick={() => router.push("/38-0")}
-                    className="rounded-2xl py-3 font-body active:scale-[0.98] transition-transform"
-                    style={{ background: "#12121e", color: "#8888aa", fontSize: 14, border: "1px solid rgba(255,255,255,0.08)" }}>
-                    Fresh team
-                  </button>
-                )}
-              </div>
-
-            </>
-          )}
         </div>
+
+        {/* Projected finish drops to the bottom once a season has been simulated */}
+        {hasLastSeason && <div className="mt-5">{oddsCard}</div>}
 
         <p className="font-body text-center mt-5" style={{ color: "#8888aa", fontSize: 12 }}>
           {user
             ? "Live H2H wins climb the global leaderboard. Tweak your XI, then go again."
             : "Sign in to play live head-to-head & climb the global leaderboard."}
         </p>
+
+        {/* Practice vs CPU / fresh team — sits right at the bottom of the page */}
+        {user ? (
+          <button onClick={quickMatch} disabled={matching}
+            className="w-full mt-4 rounded-2xl py-3 font-body active:scale-[0.98] transition-transform disabled:opacity-60"
+            style={{ background: "#12121e", color: "#8888aa", fontSize: 14, border: "1px solid rgba(255,255,255,0.08)" }}>
+            Practice vs CPU
+          </button>
+        ) : (
+          <button onClick={() => router.push("/38-0")}
+            className="w-full mt-4 rounded-2xl py-3 font-body active:scale-[0.98] transition-transform"
+            style={{ background: "#12121e", color: "#8888aa", fontSize: 14, border: "1px solid rgba(255,255,255,0.08)" }}>
+            Fresh team
+          </button>
+        )}
       </div>
       <BottomNav />
     </div>

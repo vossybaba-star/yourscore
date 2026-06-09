@@ -37,10 +37,14 @@ the spec; sign-in is only needed for cloud save / real matchmaking / leaderboard
 
 `scoreTeam → Strength (~40-99)`: weighted mean of `overall × positionalFit`, spine
 slots weighted heavier, minus GK/shape penalties, plus capped (+6) chemistry.
-`projectSeason` maps Strength → tuned 38-game record/tier; `winProbability`/`resolveH2H`
-resolve a single game with a seeded RNG (server-reproducible). Tuned so only a
-near-perfect (~96+) XI can reach 38-0 Invincible and H2H upsets run ~8–30% at a 6-pt
-edge. Run tests: `bash scripts/draft/run-tests.sh` (10/10 passing).
+`projectSeason` maps Strength → tuned 38-game record/tier. **All scorelines come from
+ONE engine (`match.ts`)** — quick/async/challenge single games, the 38-game season, and
+live two-half H2H: each side's expected goals (λ) are its **attack line vs the
+opponent's defence line**, Poisson-drawn on a seeded RNG (server-reproducible). Two
+elite attacks vs weak defences run high-scoring; two great defences grind; the league
+total averages ~2.7 with a realistic ~24% draw rate. Tuned so only a near-perfect
+(~96+) XI reaches 38-0 Invincible (~0.5%/season). One-off matches can genuinely draw,
+and async/challenge results credit W/D/L. Run tests: `bash scripts/draft/run-tests.sh`.
 
 ## Data
 
@@ -143,8 +147,9 @@ penalties** (both must agree, else it stands as a draw — ranked matches can dr
 **How it works:** one `draft_live_matches` row is the authoritative state, advanced
 through a phase machine by an **idempotent, deadline-driven** transition endpoint
 (serverless-friendly — both clients ping `/advance`, the conditional UPDATE makes it
-fire once). Half goals come from each side's Strength via a seeded Poisson split;
-penalties via a seeded shootout. Clients sync over Supabase Realtime
+fire once). Half goals come from the shared `match.ts` engine — each side's attack vs
+the other's defence, Poisson(λ/2) per half (two halves aggregate to the same
+distribution as a one-shot 90'); penalties via a seeded shootout. Clients sync over Supabase Realtime
 (`draft:match:<id>`, postgres_changes + presence). Matchmaking: friend **6-char code**
 or a **random queue** (atomic `draft_live_pair`, `FOR UPDATE SKIP LOCKED`) with a
 **disguised ranking bot** fallback (realistic name, no "bot" label, paces on the clock

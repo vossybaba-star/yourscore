@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimitDistributed } from "@/lib/ratelimit";
-import { createDraftDb, creditWin, applyTeamResult, GLOBAL_LEAGUE, type TeamSnapshot } from "@/lib/draft/server";
-import { resolveH2H, seededRng } from "@/lib/draft/score";
+import { createDraftDb, GLOBAL_LEAGUE, type TeamSnapshot } from "@/lib/draft/server";
+import { creditResult, applyTeamStreak } from "@/lib/draft/live-server";
+import { resolveMatch, flipReport } from "@/lib/draft/live-score";
 import type { Formation, PlacedPlayer, Projected } from "@/lib/draft/types";
 
 // GET: show a friend challenge (challenger's snapshotted XI) so a friend can size
@@ -80,10 +81,12 @@ export async function POST(req: NextRequest, { params }: { params: { code: strin
   };
 
   const matchId = crypto.randomUUID();
-  // "A" = the accepting friend.
-  const iWon = resolveH2H(mySide.strength, challengerSnap.strength, seededRng(matchId)) === "A";
-  const margin = Math.abs(Math.round((mySide.strength - challengerSnap.strength) * 10) / 10);
-  const winnerId = iWon ? user.id : ch.challenger_id ?? GLOBAL_LEAGUE;
+  // Resolve challenger-first (side a = challenger) so the stored report/goals align
+  // with the challenger_* columns and the public match page. The accepter is side b.
+  const res = resolveMatch(challengerSnap.squad, mySide.squad, matchId, { allowDraw: true });
+  const challengerWon = res.outcome === "A";
+  const iWon = res.outcome === "B";
+  const winnerId = challengerWon ? ch.challenger_id ?? GLOBAL_LEAGUE : iWon ? user.id : null;
 
   await db.from("draft_matches").insert({
     id: matchId,
@@ -96,25 +99,33 @@ export async function POST(req: NextRequest, { params }: { params: { code: strin
     winner_id: winnerId,
     league_id: ch.league_id,
     played_at: new Date().toISOString(),
+    challenger_goals: res.goals.a,
+    opponent_goals: res.goals.b,
+    detail: { outcome: res.outcome, single: true, pens: res.pens, report: res.report } as unknown as never,
   });
 
-  // Credit the winner (global + league board). Apply win/loss to both live teams.
-  if (iWon) {
-    await creditWin(db, user.id, mySide.name);
-    if (ch.league_id) await creditWin(db, user.id, mySide.name, ch.league_id);
-  } else if (ch.challenger_id) {
-    await creditWin(db, ch.challenger_id, challengerSnap.name);
-    if (ch.league_id) await creditWin(db, ch.challenger_id, challengerSnap.name, ch.league_id);
+  // Credit W/D/L for both players (global + league board) and update both streaks.
+  const myRes = iWon ? "win" : challengerWon ? "loss" : "draw";
+  const chRes = challengerWon ? "win" : iWon ? "loss" : "draw";
+  await creditResult(db, user.id, mySide.name, myRes);
+  if (ch.league_id) await creditResult(db, user.id, mySide.name, myRes, ch.league_id);
+  if (ch.challenger_id) {
+    await creditResult(db, ch.challenger_id, challengerSnap.name, chRes);
+    if (ch.league_id) await creditResult(db, ch.challenger_id, challengerSnap.name, chRes, ch.league_id);
   }
-  await applyTeamResult(db, user.id, iWon);
-  if (ch.challenger_id) await applyTeamResult(db, ch.challenger_id, !iWon);
+  await applyTeamStreak(db, user.id, myRes);
+  if (ch.challenger_id) await applyTeamStreak(db, ch.challenger_id, chRes);
 
   await db.from("draft_challenges").update({ status: "accepted", match_id: matchId }).eq("id", ch.id);
 
+  // Return everything from the accepter's POV (you = side b), flipping the report.
   return NextResponse.json({
     matchId,
     youWon: iWon,
-    margin,
+    outcome: iWon ? "you" : challengerWon ? "opp" : "draw",
+    goals: { you: res.goals.b, opp: res.goals.a },
+    pens: res.pens ? { you: res.pens.b, opp: res.pens.a } : null,
+    report: flipReport(res.report),
     you: mySide,
     opp: challengerSnap,
   });

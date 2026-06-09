@@ -12,7 +12,7 @@ import { Pitch } from "@/components/draft/Pitch";
 import { spin, allBuckets, type Spin } from "@/lib/draft/pool";
 import {
   loadTeam, saveTeam, usedPlayerIds, usedPlayerNames, placePlayer,
-  recordWin, recordLoss, saveLastMatch, loadMatchup, clearMatchup,
+  recordWin, recordLoss, recordDraw, saveLastMatch, loadMatchup, clearMatchup,
   type LocalTeam, type Matchup,
 } from "@/lib/draft/local";
 import { slotsFor } from "@/lib/draft/formations";
@@ -102,9 +102,9 @@ export default function PreMatch() {
         id: m.matchId,
         you: { name: "You", formation: m.you.formation, squad: m.you.squad, strength: m.you.strength, projected: m.you.projected },
         opp: { name: m.opp.name, formation: m.opp.formation, squad: m.opp.squad, strength: m.opp.strength, projected: m.opp.projected },
-        winner: m.youWon ? "you" : "opp", margin: m.margin, playedAt: Date.now(),
+        outcome: m.outcome, goals: m.goals, pens: m.pens ?? null, report: m.report, playedAt: Date.now(),
       });
-      saveTeam(m.youWon ? recordWin(team) : recordLoss(team));
+      saveTeam(m.outcome === "you" ? recordWin(team) : m.outcome === "opp" ? recordLoss(team) : recordDraw(team));
       clearMatchup();
       router.push("/38-0/match/result");
     } catch { setErr("Network error"); setPlaying(false); }

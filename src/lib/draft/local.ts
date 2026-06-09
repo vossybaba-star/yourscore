@@ -12,6 +12,7 @@ import { slotsFor } from "./formations";
 import { fitMultiplier, canPlay, posCategory, scoreTeam, projectSeason, spineWeight, playerIdentity, type PosCategory } from "./score";
 import { getPlayer } from "./pool";
 import type { SeasonResult } from "./season";
+import type { MatchReport } from "./live-score";
 
 const STORAGE_KEY = "draftxi:team:v1";
 
@@ -55,6 +56,12 @@ export function recordWin(team: LocalTeam): LocalTeam {
 
 /** Post-loss: reset the streak, but the team stays active and challengeable. */
 export function recordLoss(team: LocalTeam): LocalTeam {
+  return { ...team, winStreak: 0, status: "active", updatedAt: Date.now() };
+}
+
+/** Post-draw: a draw breaks a win streak (and grants no swap), but the team stays
+ *  active — same as a loss for the loop, just not a defeat. */
+export function recordDraw(team: LocalTeam): LocalTeam {
   return { ...team, winStreak: 0, status: "active", updatedAt: Date.now() };
 }
 
@@ -227,7 +234,8 @@ export function clearTeam(): void {
 
 // ── Last match (for the result + share screen) ──────────────────────────────
 
-const MATCH_KEY = "draftxi:lastmatch:v1";
+// v2: real scoreline + full match report (v1 stored only winner + a fake margin).
+const MATCH_KEY = "draftxi:lastmatch:v2";
 
 export type MatchSide = {
   name: string;
@@ -241,8 +249,12 @@ export type LocalMatch = {
   id: string;
   you: MatchSide;
   opp: MatchSide;
-  winner: "you" | "opp";
-  margin: number;
+  outcome: "you" | "opp" | "draw";
+  goals: { you: number; opp: number };
+  /** Penalty result if a level 90' was settled by a shootout, else null. */
+  pens: { you: number; opp: number } | null;
+  /** Full-time report (scorers, assists, ratings, MOTM, stats) — side a = you, b = opp. */
+  report: MatchReport;
   playedAt: number;
 };
 
