@@ -57,15 +57,59 @@ export default function DraftHome() {
           ))}
         </div>
 
-        <h1 className="font-display tracking-wide leading-none" style={{ fontSize: 64, color: "#fff" }}>
-          DRAFT <span style={{ color: "#00ff87" }}>XI</span>
+        <h1 className="font-display tracking-wide leading-none" style={{ fontSize: 52, color: "#fff" }}>
+          38<span style={{ color: "#00ff87" }}>-0</span>
         </h1>
-        <p className="font-body mt-1 mb-1" style={{ color: "#cfcfe6", fontSize: 15 }}>
-          Spin for legends. Draft your XI. Beat the world head-to-head.
+        <p className="font-body mt-1 mb-4" style={{ color: "#8888aa", fontSize: 13, letterSpacing: 1 }}>
+          TWO WAYS TO PLAY
         </p>
-        <p className="font-body mb-5" style={{ color: "#8888aa", fontSize: 12 }}>
-          {POOL_META.players} all-time Premier League player-seasons · {POOL_META.buckets} legendary squads
-        </p>
+
+        {/* Game chooser — two separate games under the 38-0 tab */}
+        <div className="flex flex-col gap-3 mb-7">
+          {/* World Cup Run */}
+          <Link href="/38-0/wc" className="block rounded-2xl p-4 active:scale-[0.98] transition-transform"
+            style={{ background: "linear-gradient(135deg,#1a1407,#0f1a14)", border: "1px solid rgba(255,184,0,0.45)" }}>
+            <div className="flex items-center justify-between">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="font-display tracking-wide" style={{ fontSize: 24, color: "#ffb800" }}>🏆 WORLD CUP RUN</span>
+                  <span className="rounded-full px-2 py-0.5 font-body" style={{ fontSize: 9, color: "#0a0a0f", background: "#ffb800", letterSpacing: 1 }}>NEW</span>
+                </div>
+                <div className="font-body mt-1" style={{ fontSize: 13, color: "#cfcfe6" }}>
+                  Pick a nation. Draft their XI. Win World Cup 2026.
+                </div>
+              </div>
+              <div className="font-display flex-shrink-0 ml-2" style={{ fontSize: 28, color: "#ffb800" }}>→</div>
+            </div>
+          </Link>
+
+          {/* Premier League XI (the original game — set up below) */}
+          <a href="#pl-setup" className="block rounded-2xl p-4 active:scale-[0.98] transition-transform"
+            style={{ background: "linear-gradient(135deg,#13261b,#0f1a14)", border: "1px solid rgba(0,255,135,0.35)" }}>
+            <div className="flex items-center justify-between">
+              <div className="min-w-0">
+                <div className="font-display tracking-wide" style={{ fontSize: 24, color: "#00ff87" }}>⚽ PREMIER LEAGUE XI</div>
+                <div className="font-body mt-1" style={{ fontSize: 13, color: "#cfcfe6" }}>
+                  Build your all-time PL XI. Play mates head-to-head.
+                </div>
+              </div>
+              <div className="font-display flex-shrink-0 ml-2" style={{ fontSize: 28, color: "#00ff87" }}>↓</div>
+            </div>
+          </a>
+        </div>
+
+        {/* ── Premier League XI game ─────────────────────────────────────── */}
+        <div id="pl-setup" className="pt-1">
+          <h2 className="font-display tracking-wide leading-none" style={{ fontSize: 30, color: "#fff" }}>
+            ⚽ PREMIER LEAGUE <span style={{ color: "#00ff87" }}>XI</span>
+          </h2>
+          <p className="font-body mt-1 mb-1" style={{ color: "#cfcfe6", fontSize: 14 }}>
+            Spin for legends. Draft your all-time XI. Beat the world head-to-head.
+          </p>
+          <p className="font-body mb-5" style={{ color: "#8888aa", fontSize: 12 }}>
+            {POOL_META.players} all-time Premier League player-seasons · {POOL_META.buckets} legendary squads
+          </p>
+        </div>
 
         {/* continue card */}
         {existing && existing.squad.length > 0 && (

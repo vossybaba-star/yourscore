@@ -349,8 +349,9 @@ export type SingleMatchResult = {
   goals: { a: number; b: number };
   pens: { a: number; b: number } | null;
   report: MatchReport;
-  /** The two per-half sims (events + stats) so the client can play the match out. */
-  sim: MatchSim;
+  /** The two per-half sims (events + stats) so the client can play the match out.
+   *  Always set by resolveMatch; optional so lighter callers/mocks needn't supply it. */
+  sim?: MatchSim;
 };
 
 const meanOverall = (sq: PlacedPlayer[]): number =>
