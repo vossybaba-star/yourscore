@@ -4,6 +4,7 @@ import { Bebas_Neue, DM_Sans } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { NativeBootstrap } from "@/components/native/NativeBootstrap";
+import { SignupPixel } from "@/components/analytics/SignupPixel";
 import Script from "next/script";
 import "./globals.css";
 
@@ -73,6 +74,7 @@ export default function RootLayout({
     <html lang="en" className={`${bebasNeue.variable} ${dmSans.variable}`}>
       <body>
         <NativeBootstrap />
+        <SignupPixel />
         {children}
         <Analytics />
         <SpeedInsights />
