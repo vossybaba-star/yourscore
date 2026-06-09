@@ -67,9 +67,14 @@ if (!existsSync(RAW_DIR)) {
   process.exit(1);
 }
 
-// ── Build name→nationality lookups from every raw CSV ───────────────────────
-const byNameClub = new Map(); // `${name}|${club}` → nationality
-const byName = new Map();      // name → Set<nationality> (collision detection)
+// Two clubs are "the same" if one normalised name contains the other (≥5 chars), so
+// pool "Fulham FC" ↔ source "Fulham", "West Ham United" ↔ "West Ham", etc. Safe because
+// every match is ALSO gated on the player's name, so a club false-positive would need a
+// same-named player at two near-identically-named clubs (vanishingly rare).
+const clubMatch = (a, b) => a === b || (b.length >= 5 && a.includes(b)) || (a.length >= 5 && b.includes(a));
+
+// ── Build name→[{club,nat}] lookup from every raw CSV ───────────────────────
+const srcByKey = new Map(); // name-key → [{ club, nat }]
 let srcRows = 0;
 const files = readdirSync(RAW_DIR).filter((f) => f.toLowerCase().endsWith(".csv"));
 if (files.length === 0) { console.error(`No CSVs in ${RAW_DIR}.`); process.exit(1); }
@@ -88,12 +93,12 @@ for (const f of files) {
     const nat = (r[cNat] || "").trim();
     if (!nat) continue;
     const club = cClub >= 0 ? norm(r[cClub]) : "";
+    if (!club) continue; // need a club to match safely
     const keys = keysFor(r[cName]);
     if (keys.length === 0) continue;
     for (const k of keys) {
-      if (club) byNameClub.set(`${k}|${club}`, nat);
-      if (!byName.has(k)) byName.set(k, new Set());
-      byName.get(k).add(nat);
+      if (!srcByKey.has(k)) srcByKey.set(k, []);
+      srcByKey.get(k).push({ club, nat });
     }
     srcRows++;
   }
@@ -106,21 +111,30 @@ const header = parseLine(lines[0]).map((h) => h.trim().toLowerCase());
 const hasNat = header.includes("nationality");
 const pName = header.indexOf("name"), pClub = header.indexOf("club");
 
-let matched = 0, byClub = 0, byUnique = 0, collision = 0, miss = 0;
+let matched = 0, byClub = 0, collision = 0, miss = 0;
 const out = [hasNat ? lines[0] : `${lines[0]},nationality`];
 for (let i = 1; i < lines.length; i++) {
   const r = parseLine(lines[i]);
   const club = norm(r[pClub]);
   const keys = keysFor(r[pName]);
+  // Match ONLY by name + club (same person, high confidence). We deliberately do NOT
+  // fall back to a name-only match: a retired/old player absent from the source
+  // editions would otherwise inherit the nationality of a DIFFERENT current player who
+  // happens to share an initial+surname (e.g. English S. Warnock → a Scottish S. Warnock).
+  // Better to leave such a player without a nationality (excluded) than mis-tag them.
   let nat;
-  for (const k of keys) { const v = byNameClub.get(`${k}|${club}`); if (v) { nat = v; byClub++; break; } }
-  if (!nat) {
-    const nats = new Set();
-    for (const k of keys) { const s = byName.get(k); if (s) for (const v of s) nats.add(v); }
-    if (nats.size === 1) { nat = [...nats][0]; byUnique++; }
-    else if (nats.size > 1) { collision++; }
-    else { miss++; }
+  const nats = new Set();
+  let nameSeen = false;
+  for (const k of keys) {
+    const arr = srcByKey.get(k);
+    if (!arr) continue;
+    nameSeen = true;
+    for (const e of arr) if (clubMatch(club, e.club)) nats.add(e.nat);
   }
+  if (nats.size === 1) { nat = [...nats][0]; byClub++; }
+  else if (nats.size > 1) collision++;       // same name+club, conflicting nationalities — skip
+  else if (nameSeen) collision++;            // name in source but not at this club — different person, skip
+  else miss++;
   if (nat) matched++;
   // Rebuild row with nationality as the final column (strip any existing one first).
   const base = hasNat ? r.slice(0, -1) : r;
@@ -130,6 +144,6 @@ for (let i = 1; i < lines.length; i++) {
 writeFileSync(PLAYERS, out.join("\n") + "\n");
 const total = lines.length - 1;
 console.log(`players.csv rows: ${total}`);
-console.log(`  matched: ${matched} (${(100 * matched / total).toFixed(1)}%) — by name+club: ${byClub}, by unique name: ${byUnique}`);
+console.log(`  matched: ${matched} (${(100 * matched / total).toFixed(1)}%) — by name+club: ${byClub}`);
 console.log(`  unmatched: name collisions ${collision}, no source ${miss}`);
 console.log(`Wrote ${PLAYERS}. Next: node scripts/draft/build-dataset.mjs`);

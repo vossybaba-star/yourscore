@@ -132,8 +132,9 @@ for (const p of players) {
 }
 // Playable = enough distinct players per line to field an XI in some formation
 // AND headroom for the run's upgrade picks. Threshold is tunable.
-// You field exactly one GK, so GK>=1 suffices; DEF/MID/ATT carry upgrade headroom.
-const PLAYABLE = { GK: 1, DEF: 5, MID: 4, ATT: 3 };
+// Minimum DISTINCT players per line to field a real XI (with a little headroom). A
+// 3/4/5-at-the-back XI needs ≥4 defenders, a 3-man midfield ≥3, a front line ≥3.
+const PLAYABLE = { GK: 1, DEF: 4, MID: 3, ATT: 3 };
 const nations = [...natMap.values()]
   .map((n) => {
     const lines = { GK: n.lineIds.GK.size, DEF: n.lineIds.DEF.size, MID: n.lineIds.MID.size, ATT: n.lineIds.ATT.size };
