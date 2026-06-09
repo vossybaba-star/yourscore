@@ -216,7 +216,10 @@ type View = {
 };
 
 function Header({ view, phase, secondsLeft, opponentOnline }: { view: View; phase: string; secondsLeft: number | null; opponentOnline: boolean }) {
-  const showScore = ["half1", "halftime_swap", "half2", "draw_decision", "penalties", "result"].includes(phase);
+  // While a half is playing the server already holds the final half score, so the
+  // header must NOT show it — that would spoil the live playback. The running score
+  // lives in <MatchWatch>; half-time/result legitimately show the score.
+  const showScore = ["halftime_swap", "draw_decision", "penalties", "result"].includes(phase);
   return (
     <div>
       <div className="flex items-center justify-between text-sm">
