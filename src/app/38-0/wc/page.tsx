@@ -122,7 +122,6 @@ export default function WorldCupEntry() {
                 <img src={n.crest} alt={n.nation} width={34} height={34} style={{ width: 34, height: 34, objectFit: "contain" }} />
                 <div className="min-w-0">
                   <div className="font-body truncate" style={{ fontSize: 14, color: "#fff" }}>{n.nation}</div>
-                  <div className="font-body" style={{ fontSize: 11, color: "#8888aa" }}>{n.count} players</div>
                 </div>
               </button>
             ))}

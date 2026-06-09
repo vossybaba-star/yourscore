@@ -22,40 +22,38 @@ import type { SingleMatchResult } from "./live-score";
 export { WC_STAGES, WC_STAGE_LABEL };
 export type { WCStage, WCNation };
 
-// ─── Per-stage config (tunable after playtesting) ───────────────────────────
-// `oppTarget` is the bot's target Strength for that round (the difficulty ramp).
-// `upgrades` is how many upgrade picks you're granted ENTERING that stage.
-// `upgradeFloor` is the minimum overall of candidates an upgrade pick deals.
-export type WCStageConfig = {
-  stage: WCStage;
-  oppTarget: number;
-  upgrades: number;
-  upgradeFloor: number;
+// ─── Run shape ──────────────────────────────────────────────────────────────
+// The RUN compresses the real tournament into 5 steps:
+//   group — the 3 real group games, resolved in ONE simulation (qualify on points)
+//   ko    — Round of 32 + Round of 16, resolved in ONE simulation (win both to advance)
+//   qf / sf / final — individual DUELS where the opponent's XI is revealed first so you
+//                     can make changes before kickoff.
+export type RunStage = "group" | "ko" | "qf" | "sf" | "final";
+export const RUN_STAGES: RunStage[] = ["group", "ko", "qf", "sf", "final"];
+export const RUN_STAGE_LABEL: Record<RunStage, string> = {
+  group: "Group Stage", ko: "Round of 32 & 16", qf: "Quarter-Final", sf: "Semi-Final", final: "Final",
 };
-
-export const WC_RUN: WCStageConfig[] = [
-  { stage: "group", oppTarget: 72, upgrades: 0, upgradeFloor: 0 },
-  { stage: "r32", oppTarget: 76, upgrades: 1, upgradeFloor: 80 },
-  { stage: "r16", oppTarget: 79, upgrades: 1, upgradeFloor: 82 },
-  { stage: "qf", oppTarget: 82, upgrades: 2, upgradeFloor: 84 },
-  { stage: "sf", oppTarget: 85, upgrades: 2, upgradeFloor: 86 },
-  { stage: "final", oppTarget: 88, upgrades: 2, upgradeFloor: 88 },
-];
-
-const CONFIG_BY_STAGE = new Map(WC_RUN.map((c) => [c.stage, c]));
-export function stageConfig(stage: WCStage): WCStageConfig {
-  return CONFIG_BY_STAGE.get(stage)!;
+export function isDuel(stage: RunStage): boolean {
+  return stage === "qf" || stage === "sf" || stage === "final";
 }
 
-/** Group games to play, and the points needed to qualify (W=3, D=1). */
-export const GROUP_GAMES = 3;
-export const GROUP_QUALIFY_POINTS = 4; // ~ a win + a draw, or two wins
+// Bot Strength target per real stage (difficulty ramp — opponents get tougher).
+export const OPP_TARGET: Record<WCStage, number> = {
+  group: 70, r32: 76, r16: 79, qf: 82, sf: 85, final: 88,
+};
 
+// Upgrade picks granted ON ENTERING a run stage, and the quality floor of those picks.
+// The floor rises each round → progressively better players to draft. Three upgrades
+// after the group; two before each of QF / SF / Final.
+export const STAGE_UPGRADES: Record<RunStage, number> = { group: 0, ko: 3, qf: 2, sf: 2, final: 2 };
+export const UPGRADE_FLOOR: Record<RunStage, number> = { group: 0, ko: 78, qf: 82, sf: 85, final: 88 };
+
+export const GROUP_QUALIFY_POINTS = 4; // ~ a win + a draw, or two wins
 export function qualifiesFromGroup(points: number): boolean {
   return points >= GROUP_QUALIFY_POINTS;
 }
 
-/** The knockout stages in order (everything after the group). */
+/** Real knockout stages in order (used to assign bracket opponents). */
 export const KNOCKOUT_STAGES: WCStage[] = WC_STAGES.filter((s) => s !== "group");
 
 // ─── Nation "prestige" (for plausible knockout opponents) ────────────────────
@@ -79,7 +77,8 @@ export function prestige(nation: string): number {
 // ─── Bracket plan ────────────────────────────────────────────────────────────
 
 export type WCFixture = {
-  stage: WCStage;
+  stage: WCStage;       // the real tournament stage (for labels)
+  label: string;        // e.g. "Round of 32"
   opponent: WCNation;
   oppTarget: number;
 };
@@ -109,8 +108,9 @@ export function planRun(nation: string, seed: string): WCPlan {
   const groupOpp = groupOpponents(nation);
   const group: WCFixture[] = groupOpp.map((opponent) => ({
     stage: "group" as WCStage,
+    label: "Group Stage",
     opponent,
-    oppTarget: stageConfig("group").oppTarget,
+    oppTarget: OPP_TARGET.group,
   }));
 
   // Knockout opponent universe: everyone except you and your group (you wouldn't meet
@@ -125,7 +125,7 @@ export function planRun(nation: string, seed: string): WCPlan {
     const power = 1 + i * 0.6;
     const opponent = weightedPick(pool, (t) => Math.pow(prestige(t.nation), power), rng);
     pool = pool.filter((t) => t.nation !== opponent.nation);
-    knockouts.push({ stage, opponent, oppTarget: stageConfig(stage).oppTarget });
+    knockouts.push({ stage, label: WC_STAGE_LABEL[stage], opponent, oppTarget: OPP_TARGET[stage] });
   });
 
   return { group, knockouts };
@@ -139,7 +139,7 @@ export type WcRun = {
   nation: string;
   seed: string;
   status: "active" | "eliminated" | "champion";
-  stage: WCStage;
+  stage: RunStage;
   stage_index: number;
   formation: Formation;
   squad: PlacedPlayer[];
@@ -171,36 +171,28 @@ export type WcRunPatch = Partial<Pick<WcRun,
   resolved: boolean;
 };
 
-/** The fixture the run should play right now, or null if the run is over. */
-export function currentFixture(run: WcRun): (WCFixture & { idx: number; allowDraw: boolean }) | null {
-  if (run.status !== "active") return null;
-  if (run.stage === "group") {
-    const f = run.plan.group[run.group_played];
-    if (!f) return null;
-    return { ...f, idx: run.group_played, allowDraw: true };
+/** The fixtures making up the run's CURRENT stage (group = 3, ko = 2, duel = 1). */
+export function gamesForStage(plan: WCPlan, stage: RunStage): WCFixture[] {
+  switch (stage) {
+    case "group": return plan.group;
+    case "ko": return plan.knockouts.slice(0, 2);
+    case "qf": return [plan.knockouts[2]];
+    case "sf": return [plan.knockouts[3]];
+    case "final": return [plan.knockouts[4]];
   }
-  const f = run.plan.knockouts[run.stage_index - 1];
-  if (!f) return null;
-  return { ...f, idx: 0, allowDraw: false };
 }
 
-/**
- * Pure advancement: given the run, the fixture played, and the result, compute the
- * match row to store and the patch to the run (next stage / elimination / trophy).
- * `won` is from the YOU (side "A") perspective; knockouts never draw (resolveMatch
- * settles on pens when allowDraw is false).
- */
-export function applyResult(
-  run: WcRun,
-  fixture: WCFixture & { idx: number; allowDraw: boolean },
-  result: SingleMatchResult,
-  oppStrength: number
-): { match: WcMatchRow; patch: WcRunPatch } {
+export type GameOutcome = "win" | "loss" | "draw";
+
+/** Build the DB row for one played game (pure). */
+export function buildMatchRow(
+  runId: string, stage: RunStage, fixture: WCFixture, result: SingleMatchResult, oppStrength: number, idx: number
+): WcMatchRow {
   const won = result.outcome === "A" ? true : result.outcome === "B" ? false : null;
-  const match: WcMatchRow = {
-    run_id: run.id,
-    stage: fixture.stage,
-    idx: fixture.idx,
+  return {
+    run_id: runId,
+    stage,
+    idx,
     opponent_nation: fixture.opponent.nation,
     opponent_crest: wcNation(fixture.opponent.nation)?.crest ?? null,
     opponent_strength: oppStrength,
@@ -211,38 +203,37 @@ export function applyResult(
     won,
     detail: result.report,
   };
+}
 
+export function outcomeOf(result: SingleMatchResult): GameOutcome {
+  return result.outcome === "A" ? "win" : result.outcome === "B" ? "loss" : "draw";
+}
+
+/** Group games allow draws (scored on points); knockouts are decisive. */
+export function allowDraw(stage: RunStage): boolean {
+  return stage === "group";
+}
+
+/**
+ * Pure stage advancement: given the run and the outcome of EVERY game in the current
+ * stage, compute the run patch (qualify / advance / eliminate / champion + the upgrades
+ * granted on entering the next stage).
+ *  - group: qualify on points (W=3, D=1).
+ *  - ko / qf / sf / final: must win every game to advance; the final wins the trophy.
+ */
+export function advanceStage(run: WcRun, outcomes: GameOutcome[]): WcRunPatch {
   if (run.stage === "group") {
-    const group_points = run.group_points + (won === true ? 3 : won === null ? 1 : 0);
-    const group_played = run.group_played + 1;
-    if (group_played < 3) {
-      return { match, patch: { group_points, group_played, resolved: false } };
-    }
+    const group_points = outcomes.reduce((s, o) => s + (o === "win" ? 3 : o === "draw" ? 1 : 0), 0);
     if (qualifiesFromGroup(group_points)) {
-      return {
-        match,
-        patch: {
-          group_points, group_played,
-          stage: "r32", stage_index: 1,
-          upgrades_left: stageConfig("r32").upgrades,
-          resolved: false,
-        },
-      };
+      return { group_points, group_played: 3, stage: "ko", stage_index: 1, upgrades_left: STAGE_UPGRADES.ko, resolved: false };
     }
-    return { match, patch: { group_points, group_played, status: "eliminated", resolved: true } };
+    return { group_points, group_played: 3, status: "eliminated", resolved: true };
   }
-
-  // Knockout: decisive. Win advances; the final wins the trophy; a loss ends the run.
-  if (won) {
-    if (run.stage === "final") {
-      return { match, patch: { status: "champion", resolved: true } };
-    }
-    const nextIndex = run.stage_index + 1;
-    const nextStage = KNOCKOUT_STAGES[nextIndex - 1];
-    return {
-      match,
-      patch: { stage: nextStage, stage_index: nextIndex, upgrades_left: stageConfig(nextStage).upgrades, resolved: false },
-    };
-  }
-  return { match, patch: { status: "eliminated", resolved: true } };
+  // Knockout stages — win them all to go through.
+  const advanced = outcomes.every((o) => o === "win");
+  if (!advanced) return { status: "eliminated", resolved: true };
+  if (run.stage === "final") return { status: "champion", resolved: true };
+  const idx = RUN_STAGES.indexOf(run.stage);
+  const next = RUN_STAGES[idx + 1];
+  return { stage: next, stage_index: idx + 1, upgrades_left: STAGE_UPGRADES[next], resolved: false };
 }
