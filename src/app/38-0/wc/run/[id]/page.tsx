@@ -88,16 +88,34 @@ export default function WorldCupRun() {
 
   const crest = useMemo(() => (run ? wcNation(run.nation)?.crest : null), [run]);
 
+  // Compact run path for the scorecard: "Label~Detail~R" rows (R = W|L|Q).
+  const scorecardUrl = useMemo(() => {
+    if (!run) return "";
+    const rows: string[] = [];
+    const grp = matches.filter((m) => m.stage === "group");
+    if (grp.length) {
+      const pts = grp.reduce((s, m) => s + (m.won === true ? 3 : m.won === null ? 1 : 0), 0);
+      rows.push(`Group~${pts} pts~${pts >= 4 ? "Q" : "L"}`);
+    }
+    matches.filter((m) => m.stage === "ko").sort((a, b) => a.idx - b.idx)
+      .forEach((m, i) => rows.push(`${i === 0 ? "R32" : "R16"}~${m.you_goals}-${m.opp_goals}~${m.won ? "W" : "L"}`));
+    ([["qf", "QF"], ["sf", "SF"], ["final", "Final"]] as const).forEach(([s, lbl]) => {
+      const m = matches.find((x) => x.stage === s);
+      if (m) rows.push(`${lbl}~${m.you_goals}-${m.opp_goals}${m.pens_you != null ? ` p${m.pens_you}-${m.pens_opp}` : ""}~${m.won ? "W" : "L"}`);
+    });
+    const p = new URLSearchParams({ nation: run.nation, status: run.status, stage: run.stage, path: rows.join("|") });
+    if (crest) p.set("crest", crest);
+    return `/api/draft/wc-og?${p}`;
+  }, [run, matches, crest]);
+
   function shareRun() {
     if (!run) return;
-    const params = new URLSearchParams({ nation: run.nation, status: run.status, stage: run.stage });
-    if (crest) params.set("crest", crest);
     const text = run.status === "champion"
       ? `I won the World Cup with ${run.nation} on YourScore! 🏆`
       : `My ${run.nation} World Cup run ended at the ${RUN_STAGE_LABEL[run.stage]}. Beat that 👇`;
     const url = `${window.location.origin}/38-0/wc`;
     if (navigator.share) navigator.share({ title: "YourScore — World Cup Run", text, url }).catch(() => {});
-    else { navigator.clipboard?.writeText(`${text} ${url}`); window.open(`${window.location.origin}/api/draft/wc-og?${params}`, "_blank"); }
+    else { navigator.clipboard?.writeText(`${text} ${url}`); window.open(`${window.location.origin}${scorecardUrl}`, "_blank"); }
   }
 
   if (loading) return <Screen><div style={{ color: "#8888aa" }}>Loading…</div></Screen>;
@@ -142,7 +160,8 @@ export default function WorldCupRun() {
           <div className="mt-4 rounded-2xl p-5 text-center" style={{ background: "linear-gradient(135deg,#1a1407,#2a2007)", border: "1px solid rgba(255,184,0,0.5)" }}>
             <div style={{ fontSize: 46 }}>🏆</div>
             <div className="font-display tracking-wide" style={{ fontSize: 28, color: "#ffb800" }}>WORLD CUP WINNERS</div>
-            <div className="font-body mt-1" style={{ fontSize: 14, color: "#cdb98a" }}>{run.nation} are champions of the world.</div>
+            <div className="font-body mt-1 mb-3" style={{ fontSize: 14, color: "#cdb98a" }}>{run.nation} are champions of the world.</div>
+            <Scorecard url={scorecardUrl} />
             <div className="flex items-center justify-center gap-2 mt-3">
               <button onClick={shareRun} className="rounded-xl px-5 py-2.5 font-display tracking-wide" style={{ background: "#ffb800", color: "#0a0a0f", fontSize: 16 }}>SHARE 🏆</button>
               <Link href="/38-0/wc" className="rounded-xl px-5 py-2.5 font-display tracking-wide" style={{ background: "rgba(255,255,255,0.1)", color: "#fff", fontSize: 16 }}>NEW RUN</Link>
@@ -155,6 +174,7 @@ export default function WorldCupRun() {
             <div className="font-body mt-1" style={{ fontSize: 13, color: "#c98a92" }}>
               Your run ended at the {RUN_STAGE_LABEL[run.stage]}{run.stage === "group" ? ` (${run.group_points} pts)` : ""}.
             </div>
+            <div className="mt-3"><Scorecard url={scorecardUrl} /></div>
             <div className="flex items-center justify-center gap-2 mt-3">
               <button onClick={shareRun} className="rounded-xl px-4 py-2 font-display tracking-wide" style={{ background: "rgba(255,255,255,0.1)", color: "#fff", fontSize: 15 }}>SHARE</button>
               <Link href="/38-0/wc" className="rounded-xl px-4 py-2 font-display tracking-wide" style={{ background: "#00ff87", color: "#062013", fontSize: 15 }}>NEW RUN</Link>
@@ -269,6 +289,16 @@ export default function WorldCupRun() {
         </div>
       )}
     </div>
+  );
+}
+
+function Scorecard({ url }: { url: string }) {
+  if (!url) return null;
+  return (
+    <a href={url} target="_blank" rel="noreferrer" className="block rounded-xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.12)" }}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={url} alt="Your World Cup Run scorecard" style={{ width: "100%", aspectRatio: "1200 / 630", display: "block" }} />
+    </a>
   );
 }
 
