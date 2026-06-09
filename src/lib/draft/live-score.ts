@@ -23,9 +23,10 @@ export const LIVE_CONFIG = {
   timers: {
     reveal: 15,
     pregame_swap: 25,
-    half1: 7,
+    // Each half plays out on screen over 30s (sped-up 45 minutes) — see playback.ts.
+    half1: 30,
     halftime_swap: 35,
-    half2: 7,
+    half2: 30,
     draw_decision: 15,
     penalties: 7,
   },
@@ -348,6 +349,8 @@ export type SingleMatchResult = {
   goals: { a: number; b: number };
   pens: { a: number; b: number } | null;
   report: MatchReport;
+  /** The two per-half sims (events + stats) so the client can play the match out. */
+  sim: MatchSim;
 };
 
 const meanOverall = (sq: PlacedPlayer[]): number =>
@@ -375,7 +378,7 @@ export function resolveMatch(
     pens = resolveShootout(meanOverall(squadA), meanOverall(squadB), seededRng(`${seed}:pens`));
     outcome = pens.a > pens.b ? "A" : "B";
   }
-  return { outcome, goals: { a, b }, pens, report };
+  return { outcome, goals: { a, b }, pens, report, sim };
 }
 
 /** Mirror a report so the other side reads as "a" — used when a stored report is

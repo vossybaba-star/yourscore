@@ -16,6 +16,7 @@ import { spin, allBuckets, type Spin } from "@/lib/draft/pool";
 import { playerIdentity, seededRng } from "@/lib/draft/score";
 import { slotsFor } from "@/lib/draft/formations";
 import { buildReport, type MatchSim, type HalfSim, type PlayerRating, type GoalEvent } from "@/lib/draft/live-score";
+import { MatchWatch } from "@/components/draft/MatchWatch";
 import { liveOgQuery } from "@/lib/draft/share";
 import type { Formation, PlacedPlayer, PlayerSeason } from "@/lib/draft/types";
 import type { DraftLiveMatchRow } from "@/types/draft-db";
@@ -137,16 +138,29 @@ export default function LiveMatchScreen() {
           </>
         )}
 
-        {(m.phase === "half1" || m.phase === "half2") && (
-          <Panel>
-            <p className="text-center font-display tracking-wide" style={{ fontSize: 26, color: "#00ff87" }}>
-              {m.phase === "half1" ? "First Half" : "Second Half"}
-            </p>
-            <p className="text-center mt-2 text-sm" style={{ color: "#9a9ab0" }}>
-              {m.phase === "half1" ? `${view.h1[0]} – ${view.h1[1]} this half` : `${view.h2[0]} – ${view.h2[1]} this half`}
-            </p>
-          </Panel>
-        )}
+        {(m.phase === "half1" || m.phase === "half2") && (() => {
+          const isH1 = m.phase === "half1";
+          const hs = isH1 ? sim?.h1 : sim?.h2;
+          const progress = Math.max(0, Math.min(1, 1 - (secondsLeft ?? 30) / 30));
+          if (!hs) {
+            return (
+              <Panel>
+                <p className="text-center font-display tracking-wide" style={{ fontSize: 26, color: "#00ff87" }}>
+                  {isH1 ? "Kick-off!" : "Second half underway"}
+                </p>
+              </Panel>
+            );
+          }
+          return (
+            <Panel>
+              <MatchWatch
+                sim={hs} half={isH1 ? 1 : 2} matchId={m.id} progress={progress}
+                priorGoals={isH1 ? { a: 0, b: 0 } : { a: m.h1_p1 ?? 0, b: m.h1_p2 ?? 0 }}
+                meSide={view.meP1 ? "a" : "b"} myName={view.myName} oppName={view.oppName}
+              />
+            </Panel>
+          );
+        })()}
 
         {m.phase === "draw_decision" && (
           <Panel>

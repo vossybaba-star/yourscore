@@ -144,6 +144,12 @@ flow (which is untouched). Spec + plan: `docs/superpowers/specs/2026-06-08-38-0-
 **halftime (2 changes)** → half 2 → result. A level aggregate offers **opt-in
 penalties** (both must agree, else it stands as a draw — ranked matches can draw).
 
+**Watch the half:** each half **plays out on screen over ~30s** (sped-up 45 mins, Champ
+Manager style) — a running clock, the scoreline popping on goals, a commentary feed, and
+ticking stat bars. Pure playback (`playback.ts` → `watchFrame`) over the already-computed
+`HalfSim`; the live screen drives `progress` from the phase deadline, guest Quick Match
+from a local ticker (`/38-0/match/watch`). Spec: `docs/superpowers/specs/2026-06-09-38-0-watch-the-match-*.md`.
+
 **How it works:** one `draft_live_matches` row is the authoritative state, advanced
 through a phase machine by an **idempotent, deadline-driven** transition endpoint
 (serverless-friendly — both clients ping `/advance`, the conditional UPDATE makes it
