@@ -8,20 +8,30 @@
  * returns a run id; we then go to the Road-to-the-Final screen.
  */
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Pitch } from "@/components/draft/Pitch";
+import { useUser } from "@/hooks/useUser";
 import { pickableNations, spinForNation, type PickableNation } from "@/lib/draft/pool";
 import {
-  emptyTeam, openSlots, isComplete, usedPlayerIds, usedPlayerNames, placePlayer, type LocalTeam,
+  emptyTeam, openSlots, isComplete, usedPlayerIds, usedPlayerNames, placePlayer, hydrateSavedTeam, type LocalTeam,
 } from "@/lib/draft/local";
 import { slotsFor } from "@/lib/draft/formations";
 import { canPlay, lineRatings, posCategory, CATEGORY_COLOR } from "@/lib/draft/score";
 import { getTeamBadgeUrlSync } from "@/lib/teamImages";
-import type { Formation, PlayerSeason, Slot } from "@/lib/draft/types";
+import type { Formation, PlacedPlayer, PlayerSeason, Slot } from "@/lib/draft/types";
 
 const FORMATION = "4-3-3" as Formation; // sensible default; nation pools are deepest here
+const SIGN_IN_PATH = "/38-0/wc";
+
+// Persist an in-progress pick across a sign-in round-trip, so a signed-out player who
+// drafts an XI lands back on the exact same team after authenticating.
+type SavedDraft = { nation: string; formation: Formation; squad: PlacedPlayer[]; pendingEnter: boolean };
+const DRAFT_KEY = "wc:draft:v1";
+function saveDraft(d: SavedDraft) { try { localStorage.setItem(DRAFT_KEY, JSON.stringify(d)); } catch { /* ignore */ } }
+function loadDraft(): SavedDraft | null { try { const r = localStorage.getItem(DRAFT_KEY); return r ? JSON.parse(r) as SavedDraft : null; } catch { return null; } }
+function clearDraft() { try { localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ } }
 
 export default function WorldCupEntry() {
   const router = useRouter();
@@ -65,22 +75,53 @@ export default function WorldCupEntry() {
     setTeam(next); setSlate(null); setSelected(null);
   }
 
-  async function start() {
-    if (!team || !nation || !isComplete(team) || starting) return;
+  const { user, loading: authLoading } = useUser();
+
+  // Submit a finished XI. If the player isn't signed in, save the pick and send them
+  // to sign-in with a return path; we resume automatically when they come back.
+  async function enter(nationName: string, formation: Formation, squad: PlacedPlayer[]) {
     setStarting(true); setError(null);
     try {
       const res = await fetch("/api/draft/wc", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "start", nation: nation.nation, formation: team.formation, squad: team.squad }),
+        body: JSON.stringify({ action: "start", nation: nationName, formation, squad }),
       });
+      if (res.status === 401) {
+        saveDraft({ nation: nationName, formation, squad, pendingEnter: true });
+        router.push(`/auth/sign-in?next=${encodeURIComponent(SIGN_IN_PATH)}`);
+        return;
+      }
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? "Could not start"); setStarting(false); return; }
+      clearDraft();
       router.push(`/38-0/wc/run/${data.runId}`);
     } catch {
       setError("Network error — try again."); setStarting(false);
     }
   }
+
+  function start() {
+    if (!team || !nation || !isComplete(team) || starting) return;
+    enter(nation.nation, team.formation, team.squad);
+  }
+
+  // On load, restore a saved pick (so a player returns to their exact team), and if
+  // they were mid-"enter" and are now signed in, resume automatically.
+  useEffect(() => {
+    if (authLoading) return;
+    const d = loadDraft();
+    if (!d) return;
+    if (!nation) {
+      const n = nations.find((x) => x.nation === d.nation);
+      if (n) { setNation(n); setTeam(hydrateSavedTeam(d.formation, d.squad)); }
+    }
+    if (d.pendingEnter && user) {
+      saveDraft({ ...d, pendingEnter: false }); // consume the flag so we don't loop
+      enter(d.nation, d.formation, d.squad);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, authLoading, nations]);
 
   // ── Nation picker ───────────────────────────────────────────────────────────
   if (!nation || !team) {

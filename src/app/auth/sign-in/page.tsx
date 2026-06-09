@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useUser } from "@/hooks/useUser";
 import { AuthProviders } from "@/components/auth/AuthButton";
 import { GridBackground } from "@/components/ui/GridBackground";
@@ -10,10 +10,17 @@ import { GridBackground } from "@/components/ui/GridBackground";
 export default function SignInPage() {
   const { user, loading } = useUser();
   const router = useRouter();
+  // Where to return after signing in (e.g. ?next=/38-0/wc). Only internal paths.
+  const [next, setNext] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!loading && user) router.replace("/");
-  }, [user, loading, router]);
+    const n = new URLSearchParams(window.location.search).get("next");
+    setNext(n && n.startsWith("/") && !n.startsWith("//") ? n : null);
+  }, []);
+
+  useEffect(() => {
+    if (!loading && user) router.replace(next || "/");
+  }, [user, loading, next, router]);
 
   return (
     <main className="min-h-dvh bg-bg flex flex-col">
@@ -45,7 +52,7 @@ export default function SignInPage() {
           </div>
 
           <div className="rounded-2xl p-6 bg-surface border border-border">
-            <AuthProviders />
+            <AuthProviders nextPath={next ?? undefined} />
           </div>
 
           <p className="text-center font-body text-xs text-text-muted mt-6">
