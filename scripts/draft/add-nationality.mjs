@@ -81,11 +81,12 @@ if (files.length === 0) { console.error(`No CSVs in ${RAW_DIR}.`); process.exit(
 
 for (const f of files) {
   const lines = readFileSync(join(RAW_DIR, f), "utf8").split(/\r?\n/);
-  const header = parseLine(lines[0]).map((h) => h.trim().toLowerCase().replace(/^﻿/, ""));
+  // Normalise headers to bare alphanumerics so "Club Name", "club_name", "Club" all match.
+  const header = parseLine(lines[0]).map((h) => h.replace(/^﻿/, "").toLowerCase().replace(/[^a-z0-9]/g, ""));
   const idx = (...names) => { for (const n of names) { const i = header.indexOf(n); if (i >= 0) return i; } return -1; };
-  const cName = idx("short_name", "name");
-  const cNat = idx("nationality_name", "nationality", "nation");
-  const cClub = idx("club_name", "club");
+  const cName = idx("shortname", "name", "fullname", "longname");
+  const cNat = idx("nationalityname", "nationality", "nation", "country");
+  const cClub = idx("clubname", "club", "team", "currentclub");
   if (cName < 0 || cNat < 0) { console.warn(`Skipping ${f}: no name/nationality columns.`); continue; }
   for (let i = 1; i < lines.length; i++) {
     if (!lines[i]) continue;
