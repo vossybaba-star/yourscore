@@ -12,7 +12,7 @@ import { slotsFor } from "./formations";
 import { fitMultiplier, canPlay, posCategory, scoreTeam, projectSeason, spineWeight, playerIdentity, type PosCategory } from "./score";
 import { getPlayer } from "./pool";
 import type { SeasonResult } from "./season";
-import type { MatchReport } from "./live-score";
+import type { MatchReport, MatchSim } from "./live-score";
 
 const STORAGE_KEY = "draftxi:team:v1";
 
@@ -234,8 +234,8 @@ export function clearTeam(): void {
 
 // ── Last match (for the result + share screen) ──────────────────────────────
 
-// v2: real scoreline + full match report (v1 stored only winner + a fake margin).
-const MATCH_KEY = "draftxi:lastmatch:v2";
+// v3: adds the per-half sim so the result flow can play the match out (watch screen).
+const MATCH_KEY = "draftxi:lastmatch:v3";
 
 export type MatchSide = {
   name: string;
@@ -255,6 +255,8 @@ export type LocalMatch = {
   pens: { you: number; opp: number } | null;
   /** Full-time report (scorers, assists, ratings, MOTM, stats) — side a = you, b = opp. */
   report: MatchReport;
+  /** Per-half sims (side a = you) so the watch screen can play the match out. */
+  sim?: MatchSim;
   playedAt: number;
 };
 

@@ -2033,5 +2033,2055 @@
     "mtime": 1780963780.9171762,
     "ast_hash": "52f9c3a8a1b385aa9ff313f70c59b39c",
     "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/.claude/launch.json": {
+    "mtime": 1780996295.3479397,
+    "ast_hash": "d6d8c70bb5279080cb06e3f599901daa",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/.eslintrc.json": {
+    "mtime": 1780996295.3485754,
+    "ast_hash": "5cc89077d438e3d0d0a8308ab7e06a5a",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/build.gradle": {
+    "mtime": 1780996295.3519876,
+    "ast_hash": "63c2cdb8147ffcd34fa93d0a80136a8d",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/capacitor.build.gradle": {
+    "mtime": 1780996295.3522022,
+    "ast_hash": "90a5386a6f0654410cb474495bcd1837",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/google-services.json": {
+    "mtime": 1780996295.35242,
+    "ast_hash": "bf5fa458ee2b89ff0b53b256d5fa03a8",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/androidTest/java/com/getcapacitor/myapp/ExampleInstrumentedTest.java": {
+    "mtime": 1780996295.3528922,
+    "ast_hash": "fbaf7cc870c663eb52dcf218531c439d",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/java/app/yourscore/app/MainActivity.java": {
+    "mtime": 1780996295.3533797,
+    "ast_hash": "ceee44286dc5cf9417a4f84a22e8b369",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/test/java/com/getcapacitor/myapp/ExampleUnitTest.java": {
+    "mtime": 1780996295.3685114,
+    "ast_hash": "e91b4501c14da821682fa5c26a16d616",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/build.gradle": {
+    "mtime": 1780996295.368634,
+    "ast_hash": "682315a426653617c6a74fc12bef55b6",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/capacitor.settings.gradle": {
+    "mtime": 1780996295.3688636,
+    "ast_hash": "aedd95476a420a54dfebed10c28dbae8",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/gradlew": {
+    "mtime": 1780996295.3698888,
+    "ast_hash": "794669d78aef1dd5c7d889ef618b311a",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/settings.gradle": {
+    "mtime": 1780996295.3701384,
+    "ast_hash": "f6cd925b3f859e23c3d819fe2459e0e4",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/variables.gradle": {
+    "mtime": 1780996295.3702517,
+    "ast_hash": "4b3fce8ea2a515a9d2e47e74757172ec",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/capacitor.config.ts": {
+    "mtime": 1780996295.3708272,
+    "ast_hash": "c29dc2a5f963a6fa8233406d8335bca6",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/ios/App/App/AppDelegate.swift": {
+    "mtime": 1780996295.390838,
+    "ast_hash": "b2865a48d0e54c1613fa58272418bf98",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/ios/App/App/Assets.xcassets/AppIcon.appiconset/Contents.json": {
+    "mtime": 1780996295.391647,
+    "ast_hash": "9482c752eb96b98a4e7f9da65c8b236d",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/ios/App/App/Assets.xcassets/Contents.json": {
+    "mtime": 1780996295.3918111,
+    "ast_hash": "31cc68f34934a99c0b0c1bebde56309c",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/ios/App/App/Assets.xcassets/Splash.imageset/Contents.json": {
+    "mtime": 1780996295.3920727,
+    "ast_hash": "d0e5195c41b0faccfadc4d6904f8d4d4",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/ios/App/App/ViewController.swift": {
+    "mtime": 1780996295.3953896,
+    "ast_hash": "9e4571d4442ecb07a0b9d622feacef94",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/ios/App/CapApp-SPM/Package.swift": {
+    "mtime": 1780996295.3958662,
+    "ast_hash": "bfeef9c422671e9ebaabccb2da07f7c8",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/ios/App/CapApp-SPM/Sources/CapApp-SPM/CapApp-SPM.swift": {
+    "mtime": 1780996295.3963733,
+    "ast_hash": "0d92cb44a62bc3f2d73464a2e4f9a890",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/next.config.mjs": {
+    "mtime": 1780996295.3970482,
+    "ast_hash": "a5483095c76eb9c04ff84fdb38d800dd",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/package.json": {
+    "mtime": 1780996295.3972487,
+    "ast_hash": "77bbb493d0ec4d2a91e260cf346d4a4e",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/postcss.config.mjs": {
+    "mtime": 1780996295.3986797,
+    "ast_hash": "b7941c02b947e17ae32f67ae7e664ec8",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/manifest.json": {
+    "mtime": 1780996295.432302,
+    "ast_hash": "7be90d1e152ed644d8aafd75e0106984",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/scripts/draft/build-dataset.mjs": {
+    "mtime": 1780996295.4324892,
+    "ast_hash": "0167085c04a1d6ad647c4a50fea46ac1",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/scripts/draft/import-fifa.mjs": {
+    "mtime": 1780996295.4330218,
+    "ast_hash": "cb54fe910579aed7f2068f261464a192",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/scripts/draft/run-tests.sh": {
+    "mtime": 1780996446.06256,
+    "ast_hash": "9cb4ca4b69fb4df65afd514acbd497f4",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/scripts/reseed-fake-profiles.mjs": {
+    "mtime": 1780996295.4333746,
+    "ast_hash": "bbf94c26cd2e9c10c80cf26aff3da2a2",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/scripts/run-migration.mjs": {
+    "mtime": 1780996295.4335794,
+    "ast_hash": "abf11ee67e10cc8ffd518e71aabe88d8",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/scripts/seed-challenges.mjs": {
+    "mtime": 1780996295.433785,
+    "ast_hash": "c03473cc6484a30171a636e50e0b8380",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/scripts/seed-featured-packs.mjs": {
+    "mtime": 1780996295.4339783,
+    "ast_hash": "5c8d5f0e5e1489d8a7491b81e323631f",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/sentry.edge.config.ts": {
+    "mtime": 1780996295.4341927,
+    "ast_hash": "ae8e7ea70af78bf75d0dc3778121a916",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/sentry.server.config.ts": {
+    "mtime": 1780996295.4343784,
+    "ast_hash": "a6c11153e2a13f5822391756c9a62907",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/38-0/challenge/[code]/page.tsx": {
+    "mtime": 1780996295.4771705,
+    "ast_hash": "1bb648836831cdf1dd9da9cde30a2a8f",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/38-0/leaderboard/page.tsx": {
+    "mtime": 1780996295.477456,
+    "ast_hash": "2abcb6834613f686e3596e18f09ff41a",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/38-0/league/[code]/page.tsx": {
+    "mtime": 1780996295.4778194,
+    "ast_hash": "40ed1b2142e86ae93f49becf4b516c2f",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/38-0/leagues/page.tsx": {
+    "mtime": 1780996295.478141,
+    "ast_hash": "dfdfb7f244bbc63860c4022b2b47ded1",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/38-0/live/[code]/page.tsx": {
+    "mtime": 1780996295.4784698,
+    "ast_hash": "bb41cc9d307183882854ea4aa8066923",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/38-0/live/match/[id]/page.tsx": {
+    "mtime": 1780996559.0928082,
+    "ast_hash": "b6e7fbaa5a52f42525da54734ebd96df",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/38-0/live/page.tsx": {
+    "mtime": 1780996295.479127,
+    "ast_hash": "961415d02504cf106cb90b6315352383",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/38-0/match/[id]/page.tsx": {
+    "mtime": 1780996295.4794493,
+    "ast_hash": "bc277bf4bc73af3f9b9616a5a62d0da0",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/38-0/match/prematch/page.tsx": {
+    "mtime": 1780996295.479749,
+    "ast_hash": "f798ddde12b9b52a9992c3ff9b05d51c",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/38-0/match/result/page.tsx": {
+    "mtime": 1780996295.4799964,
+    "ast_hash": "4be556ff595f36c3836d61b2cb4b0b3f",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/38-0/match/watch/page.tsx": {
+    "mtime": 1780996664.718744,
+    "ast_hash": "6dbe7e27983c05f3fb06dcecfc44b9ab",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/38-0/page.tsx": {
+    "mtime": 1780996295.4801235,
+    "ast_hash": "7881c55caf2c01d915bdd53a3549dc3e",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/38-0/play/page.tsx": {
+    "mtime": 1780996295.4804735,
+    "ast_hash": "2dea8ed190a61e4e69f2d2f9fba2cf69",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/38-0/season/page.tsx": {
+    "mtime": 1780996295.4807975,
+    "ast_hash": "ead2d470b78b28d9c288bb2e3cc81ad8",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/38-0/season/share/SaveTeamButton.tsx": {
+    "mtime": 1780996295.4810956,
+    "ast_hash": "472de40ceceb991031d79bd5111a7612",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/38-0/season/share/page.tsx": {
+    "mtime": 1780996295.4813597,
+    "ast_hash": "d147230fe4946a147feb96a42f5ce0ca",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/38-0/swap/page.tsx": {
+    "mtime": 1780996295.4817035,
+    "ast_hash": "0bedf7dd132f9757376c831592a9fa90",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/38-0/team/page.tsx": {
+    "mtime": 1780996617.7473135,
+    "ast_hash": "610e37e4fcd8b177e8eb5c044b3b761b",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/38-0/teams/page.tsx": {
+    "mtime": 1780996295.4823055,
+    "ast_hash": "1e935ca2de638e37f58a800578fdd367",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/admin/challenges/page.tsx": {
+    "mtime": 1780996295.4826956,
+    "ast_hash": "624eca9407f314aad53709c0e30378f6",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/admin/fire/[roomId]/page.tsx": {
+    "mtime": 1780996295.4831302,
+    "ast_hash": "b3f9427e0fb227089bffa06019ad4a7b",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/admin/layout.tsx": {
+    "mtime": 1780996295.483367,
+    "ast_hash": "fc9cee6500e976a440100cba9d98c4ea",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/admin/matches/page.tsx": {
+    "mtime": 1780996295.4836915,
+    "ast_hash": "067d78e27b73edfa58111b138e0c4fb9",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/admin/page.tsx": {
+    "mtime": 1780996295.483899,
+    "ast_hash": "2cd8fd9e3abedd4f787cb17eacc8bb47",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/admin/questions/[matchId]/page.tsx": {
+    "mtime": 1780996295.4843996,
+    "ast_hash": "2532e8c1858f0b3e6429b127b64d0b79",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/admin/rooms/page.tsx": {
+    "mtime": 1780996295.484593,
+    "ast_hash": "1badd009799cbaec3a60f19ab4769a43",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/api/admin/approve-question/route.ts": {
+    "mtime": 1780996295.4849792,
+    "ast_hash": "a2085920ce83cd4b38374b7fc56f9986",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/api/admin/fire/route.ts": {
+    "mtime": 1780996295.4852915,
+    "ast_hash": "983f9700502a15afe80834ae0404fb8e",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/api/admin/generate-questions/route.ts": {
+    "mtime": 1780996295.4856536,
+    "ast_hash": "ba179fdb5f2213e70d878da1ea7eea81",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/api/answer/route.ts": {
+    "mtime": 1780996295.485939,
+    "ast_hash": "40902a4f4e4686033f09a36f8f4eca92",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/api/cron/reclassify/route.ts": {
+    "mtime": 1780996295.4862669,
+    "ast_hash": "e9ae69a3fba14286ace5daad3f5d4d96",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/api/draft/challenge/[code]/route.ts": {
+    "mtime": 1780996295.486624,
+    "ast_hash": "0a38517297daa444baeff3b1f68e1c63",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/api/draft/challenge/route.ts": {
+    "mtime": 1780996295.4868355,
+    "ast_hash": "bcac49648ef340dd3cb953fae521bf9f",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/api/draft/cron/reset/route.ts": {
+    "mtime": 1780996295.4871676,
+    "ast_hash": "4c848455478cb33ae80976d33b3fec48",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/api/draft/leaderboard/route.ts": {
+    "mtime": 1780996295.487465,
+    "ast_hash": "833436e5312494a331442688ce772088",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/api/draft/league/[code]/route.ts": {
+    "mtime": 1780996295.4877968,
+    "ast_hash": "8d59da21ed02c9f9dde6109c93e2c710",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/api/draft/league/join/route.ts": {
+    "mtime": 1780996295.488088,
+    "ast_hash": "3febef1a309503f0770bc61e07a488e3",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/api/draft/league/route.ts": {
+    "mtime": 1780996295.488294,
+    "ast_hash": "04b958df6d45d9142dad35f0362b7985",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/api/draft/live-og/route.tsx": {
+    "mtime": 1780996295.4885783,
+    "ast_hash": "63a25f19bf27746c7b4a0dc3217882ac",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/api/draft/live/[id]/route.ts": {
+    "mtime": 1780996295.488875,
+    "ast_hash": "06216a22e3092249af6ef8cb75297502",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/api/draft/live/advance/route.ts": {
+    "mtime": 1780996295.489144,
+    "ast_hash": "c1aba730d2545010eadff1df4b623ed9",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/api/draft/live/ready/route.ts": {
+    "mtime": 1780996295.4894257,
+    "ast_hash": "03ec1613019d90b2bcd469e1ee2c6ee3",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/api/draft/live/route.ts": {
+    "mtime": 1780996295.4896705,
+    "ast_hash": "0dc21c9c1eae4fcb5dfd2a33756bb311",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/api/draft/live/swap/route.ts": {
+    "mtime": 1780996295.4899535,
+    "ast_hash": "5270a4aaa575ead9512b81667a68ab0d",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/api/draft/match/route.ts": {
+    "mtime": 1780996295.490244,
+    "ast_hash": "1ea47fb6976a32c0762afc9f9c31cae3",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/api/draft/og/route.tsx": {
+    "mtime": 1780996295.4904952,
+    "ast_hash": "bad8b10b53241c47f53c98dc54fd010d",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/api/draft/promo-og/route.tsx": {
+    "mtime": 1780996295.4907625,
+    "ast_hash": "b2d9d5cd5c616a252e462db48284ded6",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/api/draft/season-og/route.tsx": {
+    "mtime": 1780996295.4911335,
+    "ast_hash": "086bc364321757c5b05e3c3bcbe8acd3",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/api/draft/share/route.ts": {
+    "mtime": 1780996295.4913874,
+    "ast_hash": "ef58536714cb263c0401d7b485d92c27",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/api/draft/team/route.ts": {
+    "mtime": 1780996295.4916651,
+    "ast_hash": "dbb7327dfbf2cd6cf3e3bcd0ef42da1b",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/api/draft/teams/route.ts": {
+    "mtime": 1780996295.491939,
+    "ast_hash": "2708bde656f94e1ec43ebacd2fe69c0a",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/api/email/lifecycle/route.ts": {
+    "mtime": 1780996295.492241,
+    "ast_hash": "a9a79516f4811f9a40d0f626aa253a64",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/api/h2h/play/route.ts": {
+    "mtime": 1780996295.492549,
+    "ast_hash": "9a450aad14445fec166bd5e61fe4beca",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/api/og/home/route.tsx": {
+    "mtime": 1780996295.4929123,
+    "ast_hash": "472c6259a22b9e324d39a010bf2b7884",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/api/quiz/complete/route.ts": {
+    "mtime": 1780996295.4931598,
+    "ast_hash": "775231f65be5dde898039b1075033281",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/api/quiz/generate-custom/route.ts": {
+    "mtime": 1780996295.4934554,
+    "ast_hash": "70dbac6db09f7b5ae6e61330c45c7f94",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/api/quiz/solo-complete/route.ts": {
+    "mtime": 1780996295.4937575,
+    "ast_hash": "0d6a582a4b86b3c91359a11f25b4e97d",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/api/quiz/start/route.ts": {
+    "mtime": 1780996295.4939845,
+    "ast_hash": "ce90f418359673d6aef41da6bc859dd2",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/api/room/create/route.ts": {
+    "mtime": 1780996295.4942524,
+    "ast_hash": "bdec5579ef10ac115d99ecb37b254781",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/api/room/join/route.ts": {
+    "mtime": 1780996295.4945827,
+    "ast_hash": "7126830b97a30112199cd92b56ae22aa",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/api/room/next/route.ts": {
+    "mtime": 1780996295.4948876,
+    "ast_hash": "1092a6c2d23fa5518689f7050aa66764",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/api/room/start/route.ts": {
+    "mtime": 1780996295.4951675,
+    "ast_hash": "7e22d76984d27b7f10aff38a0f53de8d",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/auth/callback/route.ts": {
+    "mtime": 1780996295.495488,
+    "ast_hash": "277a91ea7a84daf38b12e28070b4b387",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/auth/reset-password/page.tsx": {
+    "mtime": 1780996295.4957662,
+    "ast_hash": "be45571f4e5d77775daf420470382af9",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/auth/sign-in/page.tsx": {
+    "mtime": 1780996295.4960444,
+    "ast_hash": "cd140b6b32a61e929741a5db482a8d69",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/challenges/[slug]/page.tsx": {
+    "mtime": 1780996295.496421,
+    "ast_hash": "0abe50b4a17fc6eb6333988f32ef683d",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/challenges/page.tsx": {
+    "mtime": 1780996295.4966514,
+    "ast_hash": "50310d025bbaf90468dd658039146ca4",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/friends/page.tsx": {
+    "mtime": 1780996295.498059,
+    "ast_hash": "a356671449d3efa6fb7c3a2f4eb7cfd1",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/global-error.tsx": {
+    "mtime": 1780996295.4983346,
+    "ast_hash": "4c37831085c8a6bddee26fbcd9912368",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/h2h/[id]/page.tsx": {
+    "mtime": 1780996295.4989967,
+    "ast_hash": "511cb94f87dea5ad02a1c0b7baba24d2",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/how-it-works/page.tsx": {
+    "mtime": 1780996295.4993339,
+    "ast_hash": "8fd5560d44fb431db7023b3394a5887d",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/icon-192.png/route.ts": {
+    "mtime": 1780996295.4995975,
+    "ast_hash": "cd0bc38bec82b5787c20af8ca7356979",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/icon-512.png/route.ts": {
+    "mtime": 1780996295.4999459,
+    "ast_hash": "f6626d02d4729cca2d4efd71a71fb350",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/join/page.tsx": {
+    "mtime": 1780996295.5003383,
+    "ast_hash": "838f7ff71ef1475cc56904542a9cfc14",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/layout.tsx": {
+    "mtime": 1780996295.5006042,
+    "ast_hash": "a6c644c3604afe3672838929333f058a",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/league/[id]/page.tsx": {
+    "mtime": 1780996295.5010917,
+    "ast_hash": "6de41dde33123f010365053e1078657c",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/league/join/[code]/page.tsx": {
+    "mtime": 1780996295.501458,
+    "ast_hash": "4054763a0c77045dafcef8b41ed9173e",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/league/join/page.tsx": {
+    "mtime": 1780996295.5016935,
+    "ast_hash": "2ba029b070ae34913bcfdd9664dba604",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/league/new/page.tsx": {
+    "mtime": 1780996295.5020726,
+    "ast_hash": "d1fc83b4554bec057f414ff01f865d6f",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/leagues/page.tsx": {
+    "mtime": 1780996295.5023656,
+    "ast_hash": "7ac781dfc08a773418a3243426913f56",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/match/[id]/page.tsx": {
+    "mtime": 1780996295.5027697,
+    "ast_hash": "bb9d86e33b981281541c80adbae2c818",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/messages/[userId]/page.tsx": {
+    "mtime": 1780996295.5030708,
+    "ast_hash": "4e2f6cccf3213e01d5e448d57bb62356",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/page.tsx": {
+    "mtime": 1780996295.5032992,
+    "ast_hash": "cc3c6926ac77f434ceb4efbdc3d70c10",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/play/[roomId]/page.tsx": {
+    "mtime": 1780996295.5036907,
+    "ast_hash": "0ba7018d09553d2ecc7aa143d231c1e3",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/play/new/page.tsx": {
+    "mtime": 1780996295.5039222,
+    "ast_hash": "c657d7839dcf3e4efcda5e3ebadb4f89",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/play/page.tsx": {
+    "mtime": 1780996295.5042083,
+    "ast_hash": "3eaf5e2f23cc51a2a56686eb74d6e222",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/privacy/page.tsx": {
+    "mtime": 1780996295.5044982,
+    "ast_hash": "d474af6a8ffcca7c0b31d17c8d4cb6ba",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/profile/[userId]/page.tsx": {
+    "mtime": 1780996295.504796,
+    "ast_hash": "c0795ba8cc7a439e32f840b7e538f1ba",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/profile/page.tsx": {
+    "mtime": 1780996295.5050728,
+    "ast_hash": "ee109ffbbc18ad3ba359b6d71d541e69",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/quiz/create/page.tsx": {
+    "mtime": 1780996295.5054073,
+    "ast_hash": "c5cc46131a371f226263d33455a311fb",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/quiz/ready/page.tsx": {
+    "mtime": 1780996295.505654,
+    "ast_hash": "0bf3659a575166fb59a8d90796114143",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/s/[id]/page.tsx": {
+    "mtime": 1780996295.5059197,
+    "ast_hash": "c0f5e21b4a9f6f57340180c0e087026f",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/settings/page.tsx": {
+    "mtime": 1780996295.506193,
+    "ast_hash": "d3212289e03ca88a89236d26ada36135",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/support/page.tsx": {
+    "mtime": 1780996295.506468,
+    "ast_hash": "783d7b6b37d343c8b764fc2586a0320f",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/app/terms/page.tsx": {
+    "mtime": 1780996295.5067408,
+    "ast_hash": "f953533e1a3149e737ea9109d97ee997",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/components/auth/AuthButton.tsx": {
+    "mtime": 1780996295.507166,
+    "ast_hash": "ab11aef1d2abc5cf7a2fce599392cfe2",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/components/draft/DraftHeader.tsx": {
+    "mtime": 1780996295.507436,
+    "ast_hash": "e32d5abe5658ec47945012f906a0000c",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/components/draft/MatchWatch.tsx": {
+    "mtime": 1780996499.2739878,
+    "ast_hash": "9c6395d2fe94ea174ec3798d373950a1",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/components/draft/Pitch.tsx": {
+    "mtime": 1780996295.5076752,
+    "ast_hash": "7cf480faa28e42d0127494523a3e99ee",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/components/game/AnswerButtons.tsx": {
+    "mtime": 1780996295.5079372,
+    "ast_hash": "29599304793422dc8c2866cba882d2ab",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/components/game/CountdownTimer.tsx": {
+    "mtime": 1780996295.5081587,
+    "ast_hash": "d21123b8c1880f6d640a76bbab475732",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/components/game/Leaderboard.tsx": {
+    "mtime": 1780996295.5083318,
+    "ast_hash": "486ce7aaa30299988f905aace2a4598b",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/components/game/QuestionCard.tsx": {
+    "mtime": 1780996295.5085025,
+    "ast_hash": "57ba26a2c27c3d6a5b8deb312216d466",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/components/home/Dashboard.tsx": {
+    "mtime": 1780996295.5087898,
+    "ast_hash": "be16788448e21cf5f7b90ad901eb8612",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/components/home/MarketingLanding.tsx": {
+    "mtime": 1780996295.5090678,
+    "ast_hash": "8dd4d0dc0e553f12df2796bc6dde5de1",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/components/native/NativeBootstrap.tsx": {
+    "mtime": 1780996295.5093644,
+    "ast_hash": "c6e0e2a5fe40e009d1430e9979860bbc",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/components/ui/BackButton.tsx": {
+    "mtime": 1780996295.5096662,
+    "ast_hash": "3069bd673a1096db43e0a5f318052bdd",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/components/ui/BottomNav.tsx": {
+    "mtime": 1780996295.509903,
+    "ast_hash": "f98d02790dc13334675275a5d2416e9d",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/components/ui/FlagImage.tsx": {
+    "mtime": 1780996295.5101209,
+    "ast_hash": "670c06e61e4a1b381662f1e2f0a2c036",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/components/ui/GridBackground.tsx": {
+    "mtime": 1780996295.5103626,
+    "ast_hash": "5ea51c9c90f02f2457c8c29f4e1eaddb",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/components/ui/Spinner.tsx": {
+    "mtime": 1780996295.5106015,
+    "ast_hash": "e7c98f3efec716d0384ad17bc7db3130",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/data/draft/player-seasons.json": {
+    "mtime": 1780996295.5118887,
+    "ast_hash": "86b07da88155a4fa7425ed11b1902baa",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/hooks/useUser.ts": {
+    "mtime": 1780996295.514356,
+    "ast_hash": "60a059348853d863d0d1f8f94eafb62d",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/instrumentation-client.ts": {
+    "mtime": 1780996295.5146108,
+    "ast_hash": "653a11df03e2fdc22a3fa4da676011f2",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/instrumentation.ts": {
+    "mtime": 1780996295.5147758,
+    "ast_hash": "f1a88b2d0309631d0c8c1987cd43c0bc",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/lib/auth/admin.ts": {
+    "mtime": 1780996295.5151138,
+    "ast_hash": "319240a14c56e01986fe095ec66ae148",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/lib/competitionImages.ts": {
+    "mtime": 1780996295.515275,
+    "ast_hash": "985a555ecb1107dbdec389abebb282f9",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/lib/draft/formations.ts": {
+    "mtime": 1780996295.5155268,
+    "ast_hash": "93571c77e4cad0fb22c9a1e055d23439",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/lib/draft/live-score.test.ts": {
+    "mtime": 1780996295.515738,
+    "ast_hash": "4cf8edcc1ec389962ac80e6f8c5a37a1",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/lib/draft/live-score.ts": {
+    "mtime": 1780996580.2839615,
+    "ast_hash": "a30901ca5c6142b11bbad50a80390f98",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/lib/draft/live-server.ts": {
+    "mtime": 1780996295.5162292,
+    "ast_hash": "9e68b03806b9b2b6a60986d2f2a3883c",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/lib/draft/local.ts": {
+    "mtime": 1780996603.2077112,
+    "ast_hash": "35f2e7dfc0f538be32a039a34ab93891",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/lib/draft/match.test.ts": {
+    "mtime": 1780996295.5166082,
+    "ast_hash": "884551d6443bf9fbc24cf4b053f4e233",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/lib/draft/match.ts": {
+    "mtime": 1780996295.5167773,
+    "ast_hash": "52f9c3a8a1b385aa9ff313f70c59b39c",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/lib/draft/opponent.ts": {
+    "mtime": 1780996295.5169466,
+    "ast_hash": "1853c2e492c665d0330890fcebf06103",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/lib/draft/playback.test.ts": {
+    "mtime": 1780996433.7993531,
+    "ast_hash": "65fc626973df3ac1f95cec3e4022854f",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/lib/draft/playback.ts": {
+    "mtime": 1780996390.7385361,
+    "ast_hash": "1c383ea24196cb76e544ea11796b1439",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/lib/draft/pool.ts": {
+    "mtime": 1780996295.5170488,
+    "ast_hash": "2f3d160722c97277936976fa55eb1b57",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/lib/draft/score.test.ts": {
+    "mtime": 1780996295.517245,
+    "ast_hash": "31e162b4742f209b972f1e1823bcde23",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/lib/draft/score.ts": {
+    "mtime": 1780996295.5175369,
+    "ast_hash": "5a8702acdbb7433b86e1a71d17f8e4f9",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/lib/draft/season.test.ts": {
+    "mtime": 1780996295.517873,
+    "ast_hash": "ba302e824104d478b280af9faed430af",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/lib/draft/season.ts": {
+    "mtime": 1780996295.51811,
+    "ast_hash": "38c03121933b54ca745e523f4a78ade1",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/lib/draft/seedLeaderboard.ts": {
+    "mtime": 1780996295.5184407,
+    "ast_hash": "00c0cee376d5a46afd09a72034228a29",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/lib/draft/server.ts": {
+    "mtime": 1780996295.5185835,
+    "ast_hash": "023432ba43b52feef2f09b35d8352969",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/lib/draft/share.ts": {
+    "mtime": 1780996295.5188103,
+    "ast_hash": "6dc1dd04f5c2849968ce934fb49cc82d",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/lib/draft/types.ts": {
+    "mtime": 1780996295.5189211,
+    "ast_hash": "5ab9c5841427f2e5617e8e1764a44f5d",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/lib/draft/ui.ts": {
+    "mtime": 1780996295.5191588,
+    "ast_hash": "c17e93a7b14720603e11b4e218331827",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/lib/draft/useLiveMatch.ts": {
+    "mtime": 1780996295.5194108,
+    "ast_hash": "b9e893cbce004647d88c39703c3a1f1a",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/lib/email/client.ts": {
+    "mtime": 1780996295.519605,
+    "ast_hash": "346354df1fd6d1791422c38607a35f75",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/lib/email/render.ts": {
+    "mtime": 1780996295.5197449,
+    "ast_hash": "8594bccf7bdd2b3ccb5e7466ef7d9232",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/lib/email/senders.ts": {
+    "mtime": 1780996295.5199869,
+    "ast_hash": "fd27014a02d5991ed8ea2102cc694bf5",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/lib/native.ts": {
+    "mtime": 1780996295.5201745,
+    "ast_hash": "56426b1e8969640eee37edad42b2a076",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/lib/og/logoDataUri.ts": {
+    "mtime": 1780996295.520664,
+    "ast_hash": "9534f3149be79ed56baf81a9cbf6f3d3",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/lib/playerImages.ts": {
+    "mtime": 1780996295.5208879,
+    "ast_hash": "21058f6a8c9a2ef742d4bea2f5095c96",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/lib/push.ts": {
+    "mtime": 1780996295.5211082,
+    "ast_hash": "a89820117cf02d48da95b35504bcd3b1",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/lib/ratelimit.ts": {
+    "mtime": 1780996295.5213504,
+    "ast_hash": "20ed55fc88d7a8bbd08160eabe0ac017",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/lib/scoring.ts": {
+    "mtime": 1780996295.5216057,
+    "ast_hash": "fbeb053bc557160dbd2d4c0fd4b69141",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/lib/supabase/client.ts": {
+    "mtime": 1780996295.5218847,
+    "ast_hash": "200d5a26f87072ad7d111d1f12d0fdba",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/lib/supabase/middleware.ts": {
+    "mtime": 1780996295.5221322,
+    "ast_hash": "10bd0365a1103766cdf7847fa2e09fe8",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/lib/supabase/server.ts": {
+    "mtime": 1780996295.5223663,
+    "ast_hash": "48fd25e3f438389155aff45a76239ece",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/lib/supabase/service.ts": {
+    "mtime": 1780996295.5225832,
+    "ast_hash": "bf3995459cc5af66aaa829077f1b91b5",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/lib/teamImages.ts": {
+    "mtime": 1780996295.5228212,
+    "ast_hash": "24aaad1a766b5fa1a7d485c527f8b2f4",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/lib/theme.ts": {
+    "mtime": 1780996295.5229468,
+    "ast_hash": "65f31a97f4cff5b91f6884a0d0584375",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/lib/useGameLoop.ts": {
+    "mtime": 1780996295.5232766,
+    "ast_hash": "7337039af66de5019ccb95555847fc2e",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/lib/utils.ts": {
+    "mtime": 1780996295.5234275,
+    "ast_hash": "8c8fced832c1960a17103089b3c426e7",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/middleware.ts": {
+    "mtime": 1780996295.5236394,
+    "ast_hash": "bf4f39983143e9c188259640e99b73b0",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/types/database.ts": {
+    "mtime": 1780996295.5239623,
+    "ast_hash": "319d5e6350c40e006144518118eac8d0",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/src/types/draft-db.ts": {
+    "mtime": 1780996295.5241895,
+    "ast_hash": "a2085b182f08379edeb7a1337153173d",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/supabase/.temp/linked-project.json": {
+    "mtime": 1780996295.5245934,
+    "ast_hash": "6a3c92e68d8d67f4711e3c2429ff8b1c",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/supabase/functions/send-push/index.ts": {
+    "mtime": 1780996295.5255537,
+    "ast_hash": "a8441402c4825d750f5a489ae98bc0ef",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/supabase/migrations/02_quiz_bank.sql": {
+    "mtime": 1780996295.5260048,
+    "ast_hash": "2f14c822f35f93d190e4531dfce6c77e",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/supabase/migrations/03_security_hardening.sql": {
+    "mtime": 1780996295.5262249,
+    "ast_hash": "f649fdadff4d1dd0de4bd1bf64f34bf6",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/supabase/migrations/04_multiplayer_rooms.sql": {
+    "mtime": 1780996295.5264277,
+    "ast_hash": "b650eefd2ae38e09ae42e4de7c09c248",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/supabase/migrations/05_security_hardening_2.sql": {
+    "mtime": 1780996295.5266263,
+    "ast_hash": "cbc01f04ff245e0f0951aa98927fb3ab",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/supabase/migrations/06_h2h_server_scoring.sql": {
+    "mtime": 1780996295.5268486,
+    "ast_hash": "321c4d85cdf446fb63690bb7cea340ee",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/supabase/migrations/07_rate_limit.sql": {
+    "mtime": 1780996295.5270061,
+    "ast_hash": "5634b9407f644c489f6841c26a5363f2",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/supabase/migrations/08_scoring_v2.sql": {
+    "mtime": 1780996295.527151,
+    "ast_hash": "127a63081cb1fe1bd51df7de6f1803eb",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/supabase/migrations/09_room_scores_speed.sql": {
+    "mtime": 1780996295.5272882,
+    "ast_hash": "caa58251a3c3586f4e8ff5ed1c1f9729",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/supabase/migrations/10_league_standings_rpcs.sql": {
+    "mtime": 1780996295.5274181,
+    "ast_hash": "adb6930aedea84e57ac2e97fc67cf08e",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/supabase/migrations/11_realtime_replica_identity.sql": {
+    "mtime": 1780996295.527617,
+    "ast_hash": "0d361741b96d694526569c078ce2f3d5",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/supabase/migrations/12_perf_and_solo_security.sql": {
+    "mtime": 1780996295.5278563,
+    "ast_hash": "18a3e5b12c8685846d8502bcded3e628",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/supabase/migrations/13_league_members_insert_guard.sql": {
+    "mtime": 1780996295.5280914,
+    "ast_hash": "e2f32af8e85fba40aa516e53afcd7934",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/supabase/migrations/14_draft_xi.sql": {
+    "mtime": 1780996295.5283186,
+    "ast_hash": "257e8226a9a41cef479a86e2062f1787",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/supabase/migrations/16_draft_saved_teams.sql": {
+    "mtime": 1780996295.5285404,
+    "ast_hash": "d22f7a946893305a740a83ecaa54c172",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/supabase/migrations/17_draft_shares.sql": {
+    "mtime": 1780996295.528775,
+    "ast_hash": "586c9e42a99c2ba62a82ab45ac14ad64",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/supabase/migrations/18_draft_live.sql": {
+    "mtime": 1780996295.5290256,
+    "ast_hash": "d6bd454b804f9c6ec5a3cfeacd93baac",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/supabase/migrations/19_draft_live_hardening.sql": {
+    "mtime": 1780996295.5292308,
+    "ast_hash": "a5e2285e0b9b174364960f3c6620c749",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/supabase/migrations/20_draft_league_live.sql": {
+    "mtime": 1780996295.5294213,
+    "ast_hash": "ae627da07e51b31c1b30678e286e1d57",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/supabase/migrations/21_draft_live_sim.sql": {
+    "mtime": 1780996295.5296373,
+    "ast_hash": "a6bb9e7ffa27a0886b530aa8a7501260",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/supabase/schema.sql": {
+    "mtime": 1780996295.529905,
+    "ast_hash": "044e3ff264855a1852787e311c320733",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/tailwind.config.ts": {
+    "mtime": 1780996295.5317483,
+    "ast_hash": "902ac04cb7edbb3cd91c376ef2babbed",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/tsconfig.json": {
+    "mtime": 1780996295.5319455,
+    "ast_hash": "717034177067e699f4f2121bcc678a11",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/CLAUDE.md": {
+    "mtime": 1780996295.3490877,
+    "ast_hash": "594312984bfa756e447556f1f81d891d",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/DRAFT-XI.md": {
+    "mtime": 1780996941.4480274,
+    "ast_hash": "99e34378023a19a1e008873ab943d0b3",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/MARKETING_BRIEF.md": {
+    "mtime": 1780996295.3496673,
+    "ast_hash": "e220c7ae488b5e13ce305f44ecf7ce69",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/MOBILE.md": {
+    "mtime": 1780996295.3499286,
+    "ast_hash": "1eb5a34ba9f37631bf359eaacc30cbe4",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/PRODUCT.md": {
+    "mtime": 1780996295.350129,
+    "ast_hash": "2e2ad04473b724ac79e199cc8d344404",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/README.md": {
+    "mtime": 1780996295.350373,
+    "ast_hash": "f15aaa42d5d299d091b1171097ea56ad",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/STORE_LISTING.md": {
+    "mtime": 1780996295.350613,
+    "ast_hash": "7032951b6ed533757d0312dc21a60bde",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/YOURSCORE.md": {
+    "mtime": 1780996295.3509283,
+    "ast_hash": "19f56326704bfc118c0130e345a8f007",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/docs/superpowers/specs/2026-06-08-38-0-live-multiplayer-design.md": {
+    "mtime": 1780996295.3712156,
+    "ast_hash": "62f3b494f6effed19cd70731369b802b",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/docs/superpowers/specs/2026-06-08-38-0-live-multiplayer-plan.md": {
+    "mtime": 1780996295.3714502,
+    "ast_hash": "df369f674775d071eb4aa3b9093882fe",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/docs/superpowers/specs/2026-06-09-38-0-watch-the-match-design.md": {
+    "mtime": 1780996295.3716867,
+    "ast_hash": "db836d3db7a32fc0784b1ad82bc96c40",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/docs/superpowers/specs/2026-06-09-38-0-watch-the-match-plan.md": {
+    "mtime": 1780996295.371933,
+    "ast_hash": "2f906d7e04c29cee7a797fb078268d90",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/emails/README.md": {
+    "mtime": 1780996295.3722079,
+    "ast_hash": "4ce89ed11d7202b8f686fb72ac3c6e92",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/emails/_skeleton.html": {
+    "mtime": 1780996295.3724205,
+    "ast_hash": "28d672d9ce5d235afb0bd0210a924000",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/emails/lifecycle/01-welcome.html": {
+    "mtime": 1780996295.3727155,
+    "ast_hash": "941a46ecafe3fce0d44109fe8e1e3572",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/emails/lifecycle/02-first-quiz.html": {
+    "mtime": 1780996295.3729393,
+    "ast_hash": "e0e54188a0e383ecb6011fdfd3323484",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/emails/lifecycle/03-first-league-created.html": {
+    "mtime": 1780996295.373543,
+    "ast_hash": "a0fdac3be380fe5ef521e66caab2aa91",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/emails/lifecycle/04-league-invite.html": {
+    "mtime": 1780996295.3737001,
+    "ast_hash": "95181671f37356711f4f9a9a8d50b67c",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/emails/lifecycle/05-pre-match-nudge.html": {
+    "mtime": 1780996295.3738284,
+    "ast_hash": "75e6997b8a42d1d775c2518abfc7346a",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/emails/lifecycle/06-post-match-recap.html": {
+    "mtime": 1780996295.3740783,
+    "ast_hash": "47f912a189120e4335e5a55acab5259f",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/emails/lifecycle/07-weekly-digest.html": {
+    "mtime": 1780996295.3742943,
+    "ast_hash": "59650f8982c9760ea336abe01e38ff4a",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/emails/lifecycle/08-top-of-league.html": {
+    "mtime": 1780996295.374654,
+    "ast_hash": "a487165e0934506f258bfb7c7e09a5ff",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/emails/lifecycle/09-first-member-joins.html": {
+    "mtime": 1780996295.374934,
+    "ast_hash": "fd563227268cb978a21cffe51e1c9f45",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/emails/lifecycle/10-tournament-wrap.html": {
+    "mtime": 1780996295.3752968,
+    "ast_hash": "3ea0790ff1521f5d59430486f63843e7",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/ios/App/CapApp-SPM/README.md": {
+    "mtime": 1780996295.3960645,
+    "ast_hash": "d256f6b5922d4249607779141357d565",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/pnpm-workspace.yaml": {
+    "mtime": 1780996295.3983939,
+    "ast_hash": "a55feea8043a69bf646382124ee3aef0",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/social-media/content-brief.md": {
+    "mtime": 1780996295.4347954,
+    "ast_hash": "229003d6d1a2d564a597d10246da1869",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/social-media/posts/38-0-season-card-01-midtable.html": {
+    "mtime": 1780996295.4354212,
+    "ast_hash": "faead402be6d532d8a737ebdac89695b",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/social-media/posts/38-0-season-card-02-topfour.html": {
+    "mtime": 1780996295.4359713,
+    "ast_hash": "386a8ae0d6118f4dea8d6cab0bc593d2",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/social-media/posts/38-0-season-card-03-europe.html": {
+    "mtime": 1780996295.436579,
+    "ast_hash": "e76d4f85db392780365cd3ad374fcd52",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/social-media/posts/post-01-bruno-record.html": {
+    "mtime": 1780996295.4368,
+    "ast_hash": "a94fd9ebfd997f347ebc34c97a5c39e0",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/social-media/store/feature-graphic.html": {
+    "mtime": 1780996295.4370434,
+    "ast_hash": "adc1452e726a3d9553a32cce5e4d9260",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/social-media/templates/debate-card.html": {
+    "mtime": 1780996295.4685137,
+    "ast_hash": "bc5a4cd54e26b9c3aa2189f29a4edbce",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/social-media/templates/quiz-story.html": {
+    "mtime": 1780996295.4763544,
+    "ast_hash": "df0c528dbb473edbfcc77a93925fab44",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/social-media/templates/stat-card.html": {
+    "mtime": 1780996295.47675,
+    "ast_hash": "64e1bd13c9d3fa9574e5e03b1a7374ad",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/supabase/templates/confirmation.html": {
+    "mtime": 1780996295.5302324,
+    "ast_hash": "a45f278123cae4b18dffb03ddf02d8da",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/supabase/templates/email_change.html": {
+    "mtime": 1780996295.530503,
+    "ast_hash": "7c85fe9a015d65c3831669361e08c0ca",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/supabase/templates/invite.html": {
+    "mtime": 1780996295.5308883,
+    "ast_hash": "99d7dfeb148ebb39347cdcae75542ba0",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/supabase/templates/magic_link.html": {
+    "mtime": 1780996295.5310104,
+    "ast_hash": "110465b31c5e5f2f99ec580fe3b76ea0",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/supabase/templates/reauthentication.html": {
+    "mtime": 1780996295.531188,
+    "ast_hash": "63c311b31da71247769bf03be9efb727",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/supabase/templates/recovery.html": {
+    "mtime": 1780996295.531506,
+    "ast_hash": "8d9791c1a543997d94a3c5641f91bfe5",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/drawable-land-hdpi/splash.png": {
+    "mtime": 1780996295.3537045,
+    "ast_hash": "9ff75f124764b8760c43e3579ff594f2",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/drawable-land-ldpi/splash.png": {
+    "mtime": 1780996295.353997,
+    "ast_hash": "0fda971a9c45666d733d5527505cf4a5",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/drawable-land-mdpi/splash.png": {
+    "mtime": 1780996295.3542607,
+    "ast_hash": "1ffc36f732fefee032abe0c6c2e4d9f2",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/drawable-land-night-hdpi/splash.png": {
+    "mtime": 1780996295.3544188,
+    "ast_hash": "9ff75f124764b8760c43e3579ff594f2",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/drawable-land-night-ldpi/splash.png": {
+    "mtime": 1780996295.354594,
+    "ast_hash": "0fda971a9c45666d733d5527505cf4a5",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/drawable-land-night-mdpi/splash.png": {
+    "mtime": 1780996295.354731,
+    "ast_hash": "1ffc36f732fefee032abe0c6c2e4d9f2",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/drawable-land-night-xhdpi/splash.png": {
+    "mtime": 1780996295.3552067,
+    "ast_hash": "4ac9e8c9180a35de67ac59e506776da1",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/drawable-land-night-xxhdpi/splash.png": {
+    "mtime": 1780996295.355679,
+    "ast_hash": "fc4caed81fcb3b6fac727f38fe587d3e",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/drawable-land-night-xxxhdpi/splash.png": {
+    "mtime": 1780996295.3562193,
+    "ast_hash": "b57e66e3382621a17d510812b9fdc4ec",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/drawable-land-xhdpi/splash.png": {
+    "mtime": 1780996295.3564677,
+    "ast_hash": "4ac9e8c9180a35de67ac59e506776da1",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/drawable-land-xxhdpi/splash.png": {
+    "mtime": 1780996295.356722,
+    "ast_hash": "fc4caed81fcb3b6fac727f38fe587d3e",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/drawable-land-xxxhdpi/splash.png": {
+    "mtime": 1780996295.3569887,
+    "ast_hash": "b57e66e3382621a17d510812b9fdc4ec",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/drawable-night/splash.png": {
+    "mtime": 1780996295.357155,
+    "ast_hash": "0fda971a9c45666d733d5527505cf4a5",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/drawable-port-hdpi/splash.png": {
+    "mtime": 1780996295.3573701,
+    "ast_hash": "53d36fc49798d4e6c4cad87b8a2b72d3",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/drawable-port-ldpi/splash.png": {
+    "mtime": 1780996295.3576472,
+    "ast_hash": "0cee47c8f9985563017714fb989c5ba3",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/drawable-port-mdpi/splash.png": {
+    "mtime": 1780996295.3578691,
+    "ast_hash": "f45147b4cefb0a9bede51ff0b58a73e5",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/drawable-port-night-hdpi/splash.png": {
+    "mtime": 1780996295.3581042,
+    "ast_hash": "53d36fc49798d4e6c4cad87b8a2b72d3",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/drawable-port-night-ldpi/splash.png": {
+    "mtime": 1780996295.3582554,
+    "ast_hash": "0cee47c8f9985563017714fb989c5ba3",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/drawable-port-night-mdpi/splash.png": {
+    "mtime": 1780996295.3584146,
+    "ast_hash": "f45147b4cefb0a9bede51ff0b58a73e5",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/drawable-port-night-xhdpi/splash.png": {
+    "mtime": 1780996295.358723,
+    "ast_hash": "31b8a7a010f390419a93906995b1d4ae",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/drawable-port-night-xxhdpi/splash.png": {
+    "mtime": 1780996295.3590693,
+    "ast_hash": "a1f4e48faa164bbf7d5862f7de4d2c21",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/drawable-port-night-xxxhdpi/splash.png": {
+    "mtime": 1780996295.3593686,
+    "ast_hash": "4a4f575c18c1b0beaaf1ba0ccdf83861",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/drawable-port-xhdpi/splash.png": {
+    "mtime": 1780996295.359554,
+    "ast_hash": "31b8a7a010f390419a93906995b1d4ae",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/drawable-port-xxhdpi/splash.png": {
+    "mtime": 1780996295.3597376,
+    "ast_hash": "a1f4e48faa164bbf7d5862f7de4d2c21",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/drawable-port-xxxhdpi/splash.png": {
+    "mtime": 1780996295.359959,
+    "ast_hash": "4a4f575c18c1b0beaaf1ba0ccdf83861",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/drawable/splash.png": {
+    "mtime": 1780996295.3606522,
+    "ast_hash": "f45147b4cefb0a9bede51ff0b58a73e5",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/mipmap-hdpi/ic_launcher.png": {
+    "mtime": 1780996295.3616543,
+    "ast_hash": "53f00352b512811b1be5580672a51c1d",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/mipmap-hdpi/ic_launcher_background.png": {
+    "mtime": 1780996295.3621235,
+    "ast_hash": "cf5fcc8a1531c95071dfa07d902f2402",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/mipmap-hdpi/ic_launcher_foreground.png": {
+    "mtime": 1780996295.362329,
+    "ast_hash": "b658bfb33fd6a9e35e3baf60fb5003f6",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png": {
+    "mtime": 1780996295.3625617,
+    "ast_hash": "c0699a9c535f9c14c6630b3e4c8a9ac8",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/mipmap-ldpi/ic_launcher.png": {
+    "mtime": 1780996295.3627434,
+    "ast_hash": "c2a074aadf8eb5cd9739cc05a7deb552",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/mipmap-ldpi/ic_launcher_background.png": {
+    "mtime": 1780996295.3628676,
+    "ast_hash": "67d62c25bdb3a8289c5bacf7c0fbe472",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/mipmap-ldpi/ic_launcher_foreground.png": {
+    "mtime": 1780996295.3629968,
+    "ast_hash": "de4891435023789397176f61685cd756",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/mipmap-ldpi/ic_launcher_round.png": {
+    "mtime": 1780996295.3631074,
+    "ast_hash": "cd4bf3916cc73b94e9818ba5692fe989",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/mipmap-mdpi/ic_launcher.png": {
+    "mtime": 1780996295.3632727,
+    "ast_hash": "67c275e750269e05da4f8f864e086489",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/mipmap-mdpi/ic_launcher_background.png": {
+    "mtime": 1780996295.3634098,
+    "ast_hash": "26a764c59948108590da0679f76870c3",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/mipmap-mdpi/ic_launcher_foreground.png": {
+    "mtime": 1780996295.3635535,
+    "ast_hash": "55c75943a37d0263b2d05e7ed3a46db5",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png": {
+    "mtime": 1780996295.3636777,
+    "ast_hash": "e0d55d756d8ec2283ca09611655f4f73",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/mipmap-xhdpi/ic_launcher.png": {
+    "mtime": 1780996295.3638735,
+    "ast_hash": "0403a50253fcc5dccf1065dc90ae9b8e",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/mipmap-xhdpi/ic_launcher_background.png": {
+    "mtime": 1780996295.3639994,
+    "ast_hash": "262c60f27e434ce41c4e68548d20a915",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/mipmap-xhdpi/ic_launcher_foreground.png": {
+    "mtime": 1780996295.36427,
+    "ast_hash": "7283cd7d6b27f9e4e56e3d037161f044",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png": {
+    "mtime": 1780996295.364411,
+    "ast_hash": "cd37acbc359f0165302ded896de9ac2a",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png": {
+    "mtime": 1780996295.3646052,
+    "ast_hash": "9d8c63af4edbc54ea416b061d45dc1a7",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/mipmap-xxhdpi/ic_launcher_background.png": {
+    "mtime": 1780996295.364732,
+    "ast_hash": "879beea84f332fc2d5713608fc48be70",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/mipmap-xxhdpi/ic_launcher_foreground.png": {
+    "mtime": 1780996295.365157,
+    "ast_hash": "33f24825e11cc127fa32e371a910ee6a",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png": {
+    "mtime": 1780996295.3654008,
+    "ast_hash": "70dcd722eb6e172218fb136386763d7d",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png": {
+    "mtime": 1780996295.3657253,
+    "ast_hash": "06528dafc55c76a265f66f56f101317a",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_background.png": {
+    "mtime": 1780996295.3658538,
+    "ast_hash": "04ce8586bbd00625dac092bdd0faa722",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png": {
+    "mtime": 1780996295.3663175,
+    "ast_hash": "8bde690b0cb312f0e61719c61d76eb41",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png": {
+    "mtime": 1780996295.3668685,
+    "ast_hash": "3158dd3f32b25bbb18fb53dc0ad1f9f9",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/assets/logo.png": {
+    "mtime": 1780996295.3705935,
+    "ast_hash": "9ade700ed85897b391be331e07499226",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png": {
+    "mtime": 1780996295.3914437,
+    "ast_hash": "300b9ef3488131cb1fb126a3f7150707",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/ios/App/App/Assets.xcassets/Splash.imageset/Default@1x~universal~anyany-dark.png": {
+    "mtime": 1780996295.3926158,
+    "ast_hash": "6fa2bae2f9eb75cb6b78aab08663e6f4",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/ios/App/App/Assets.xcassets/Splash.imageset/Default@1x~universal~anyany.png": {
+    "mtime": 1780996295.3928735,
+    "ast_hash": "6fa2bae2f9eb75cb6b78aab08663e6f4",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/ios/App/App/Assets.xcassets/Splash.imageset/Default@2x~universal~anyany-dark.png": {
+    "mtime": 1780996295.393123,
+    "ast_hash": "6fa2bae2f9eb75cb6b78aab08663e6f4",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/ios/App/App/Assets.xcassets/Splash.imageset/Default@2x~universal~anyany.png": {
+    "mtime": 1780996295.3933623,
+    "ast_hash": "6fa2bae2f9eb75cb6b78aab08663e6f4",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/ios/App/App/Assets.xcassets/Splash.imageset/Default@3x~universal~anyany-dark.png": {
+    "mtime": 1780996295.3935843,
+    "ast_hash": "6fa2bae2f9eb75cb6b78aab08663e6f4",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/ios/App/App/Assets.xcassets/Splash.imageset/Default@3x~universal~anyany.png": {
+    "mtime": 1780996295.3937995,
+    "ast_hash": "6fa2bae2f9eb75cb6b78aab08663e6f4",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/ios/App/App/Assets.xcassets/Splash.imageset/splash-2732x2732-1.png": {
+    "mtime": 1780996295.3941417,
+    "ast_hash": "958532b95c3e7d4997327dc977b80600",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/ios/App/App/Assets.xcassets/Splash.imageset/splash-2732x2732-2.png": {
+    "mtime": 1780996295.3943038,
+    "ast_hash": "958532b95c3e7d4997327dc977b80600",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/ios/App/App/Assets.xcassets/Splash.imageset/splash-2732x2732.png": {
+    "mtime": 1780996295.3944554,
+    "ast_hash": "958532b95c3e7d4997327dc977b80600",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/argentina.png": {
+    "mtime": 1780996295.399417,
+    "ast_hash": "28d1d6dab82f2c5abb1f281b85d94462",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/arsenal.png": {
+    "mtime": 1780996295.3999949,
+    "ast_hash": "e66164c8d796a539de37d13152a569c2",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/aston-villa.png": {
+    "mtime": 1780996295.400447,
+    "ast_hash": "86d4678819d95cea276d605ccad4d2bc",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/australia.png": {
+    "mtime": 1780996295.4013588,
+    "ast_hash": "79bc6171733a220c70835aa9829882a1",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/belgium.png": {
+    "mtime": 1780996295.4016392,
+    "ast_hash": "a9cf4c63b7da1174addf1e5ee474a44c",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/birmingham-city.png": {
+    "mtime": 1780996295.4021282,
+    "ast_hash": "148692bc15192806a4e4c26c0834947a",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/blackburn-rovers.png": {
+    "mtime": 1780996295.4025855,
+    "ast_hash": "2560d63cc210b09ea890a3501b583dd4",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/blackpool.png": {
+    "mtime": 1780996295.4033017,
+    "ast_hash": "134ab85d8db824381d9178d3123e4c12",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/bolton-wanderers.png": {
+    "mtime": 1780996295.4037442,
+    "ast_hash": "27f73f32c099d0d483a4a0bf2a995a0b",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/bournemouth.png": {
+    "mtime": 1780996295.4041812,
+    "ast_hash": "4dfd03546f2bc2e1ab8487ccac482c5e",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/brazil.png": {
+    "mtime": 1780996295.4044712,
+    "ast_hash": "d460a62d49cd1e9049c8f2bde348af33",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/brentford.png": {
+    "mtime": 1780996295.404859,
+    "ast_hash": "95efaa1aef2a676891aec663e7561bfb",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/brighton.png": {
+    "mtime": 1780996295.4052713,
+    "ast_hash": "085c325543de0ed069ee61368c5e24ca",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/burnley.png": {
+    "mtime": 1780996295.4055896,
+    "ast_hash": "4b8da2ee997255ca7e177357ca60a6ac",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/cardiff-city.png": {
+    "mtime": 1780996295.4058483,
+    "ast_hash": "70ad96b9b71d62e9518ade2520df6590",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/charlton-athletic.png": {
+    "mtime": 1780996295.4062552,
+    "ast_hash": "06bcb7c8bc96c1dfa67402f784baeac9",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/chelsea.png": {
+    "mtime": 1780996295.4066489,
+    "ast_hash": "69c02980cb165a219eb751c863c8f286",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/colombia.png": {
+    "mtime": 1780996295.4071612,
+    "ast_hash": "b09453cfea39deecae80b319a475718b",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/croatia.png": {
+    "mtime": 1780996295.4075847,
+    "ast_hash": "50be2626dac3f0b778c5bdc3724bf82e",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/crystal-palace.png": {
+    "mtime": 1780996295.4079008,
+    "ast_hash": "17bf94cca90a57a01591daf67d61e907",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/denmark.png": {
+    "mtime": 1780996295.4082792,
+    "ast_hash": "16d7109a82f5c952233b7f7ce5016076",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/derby-county.png": {
+    "mtime": 1780996295.4092467,
+    "ast_hash": "a2aed6218596ea84874ea6e78cf88e37",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/england.png": {
+    "mtime": 1780996295.4098558,
+    "ast_hash": "0671588a2561f181914e37b419c1fd08",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/everton.png": {
+    "mtime": 1780996295.410435,
+    "ast_hash": "7f5280ea8ce1f3e9d7fb44f7d7e06e0b",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/france.png": {
+    "mtime": 1780996295.410753,
+    "ast_hash": "675cd86f5949a5cec829c9565cadf67f",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/fulham.png": {
+    "mtime": 1780996295.4110706,
+    "ast_hash": "5681aa0d1bdf9fd4d23aa25646639863",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/germany.png": {
+    "mtime": 1780996295.4113703,
+    "ast_hash": "a03b49b480df208f5c0e53ad12bc52ba",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/ghana.png": {
+    "mtime": 1780996295.41167,
+    "ast_hash": "c443206e183de8987c2448acb9be8ea9",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/hull-city.png": {
+    "mtime": 1780996295.4120495,
+    "ast_hash": "36904f0588ad1707a09a4a35cb5939d2",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/ipswich-town.png": {
+    "mtime": 1780996295.4123597,
+    "ast_hash": "bfe2cbc5413f7d6040c67588c59c6086",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/italy.png": {
+    "mtime": 1780996295.4128165,
+    "ast_hash": "225a1407ac4164c1579f2ae53c1bd466",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/japan.png": {
+    "mtime": 1780996295.4132404,
+    "ast_hash": "cb23d3ad3d3eafaf7986fdc64aa61c25",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/leeds-united.png": {
+    "mtime": 1780996295.4139419,
+    "ast_hash": "c6c4d9216be3d7c2fce9f5851e7cc735",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/leicester-city.png": {
+    "mtime": 1780996295.414359,
+    "ast_hash": "a4307fbc0d304dd3b08f531660b33ee8",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/liverpool.png": {
+    "mtime": 1780996295.4151464,
+    "ast_hash": "50af0805dda3cfedb9282c68a80528ef",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/luton-town.png": {
+    "mtime": 1780996295.4156806,
+    "ast_hash": "4d3eecdc52e7208ed89f1a43c4136cd6",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/manchester-city.png": {
+    "mtime": 1780996295.4163036,
+    "ast_hash": "496445509570c097678f221f3176183b",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/manchester-united.png": {
+    "mtime": 1780996295.4166067,
+    "ast_hash": "6941879ab449edff0298b4bf32c6e0f0",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/mexico.png": {
+    "mtime": 1780996295.4168978,
+    "ast_hash": "702030bf985f7bc217cd15327a8467e3",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/middlesbrough.png": {
+    "mtime": 1780996295.41732,
+    "ast_hash": "ba2ab03b432136b78cfc5dbe8728be29",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/morocco.png": {
+    "mtime": 1780996295.4176853,
+    "ast_hash": "a984ee6444d2a4a64d31e02a5b14d3fe",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/netherlands.png": {
+    "mtime": 1780996295.418085,
+    "ast_hash": "fe1f154fa8605c3a6124d6de88902587",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/newcastle-united.png": {
+    "mtime": 1780996295.4190009,
+    "ast_hash": "08275ea959ef8159b5c28663fa6116fa",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/nigeria.png": {
+    "mtime": 1780996295.419713,
+    "ast_hash": "3be3e1fb5f58698550c673bddf876187",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/norwich-city.png": {
+    "mtime": 1780996295.4206696,
+    "ast_hash": "b73861864cdbf1a48634a35cb1a19b10",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/nottingham-forest.png": {
+    "mtime": 1780996295.4209,
+    "ast_hash": "02306a8f8b5c26971254e9a16b401724",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/poland.png": {
+    "mtime": 1780996295.42129,
+    "ast_hash": "041d1b411adece9c9490d31c3ec84b19",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/portsmouth.png": {
+    "mtime": 1780996295.421526,
+    "ast_hash": "749bd885351d86ebb9f9048bb78575a5",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/portugal.png": {
+    "mtime": 1780996295.421792,
+    "ast_hash": "8830b4fc022b0ecbc8dc231ead32154a",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/qpr.png": {
+    "mtime": 1780996295.4222312,
+    "ast_hash": "1d79a504cc75c3b3b3dc45876f5925c4",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/reading.png": {
+    "mtime": 1780996295.4224992,
+    "ast_hash": "4bb5221a0167ffcd025d1b7480698131",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/senegal.png": {
+    "mtime": 1780996295.4227927,
+    "ast_hash": "fb4b6839908a598204b43240e917bba4",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/sheffield-united.png": {
+    "mtime": 1780996295.4232714,
+    "ast_hash": "6c683bd772045e209cee318699a29806",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/south-korea.png": {
+    "mtime": 1780996295.4236228,
+    "ast_hash": "757122ee6956efe32b939b620ecc23b0",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/southampton.png": {
+    "mtime": 1780996295.4240315,
+    "ast_hash": "d0efd52788c61de5838b0b938bdd5ec6",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/spain.png": {
+    "mtime": 1780996295.4242492,
+    "ast_hash": "a52fd0d2aaac0e507b8725f0f52719cd",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/stoke-city.png": {
+    "mtime": 1780996295.424692,
+    "ast_hash": "eae4587d3c3b2da4b5b6e297f8d0a855",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/sunderland.png": {
+    "mtime": 1780996295.4249978,
+    "ast_hash": "f4f78494a48c02a03a656cc011f09671",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/swansea-city.png": {
+    "mtime": 1780996295.4252596,
+    "ast_hash": "7319de05209e1a7b8bb6ccdb2277b0b8",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/switzerland.png": {
+    "mtime": 1780996295.4254835,
+    "ast_hash": "2a472343e30c5573c52b9ce3a411f575",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/tottenham-hotspur.png": {
+    "mtime": 1780996295.4256923,
+    "ast_hash": "fa155688dd1b2404a6c1be4cd58f283b",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/uruguay.png": {
+    "mtime": 1780996295.4259048,
+    "ast_hash": "fb598072b016ff4757fe659be5e88384",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/usa.png": {
+    "mtime": 1780996295.4261618,
+    "ast_hash": "1cb0b4177fa16bc7e7f6dd282b4535d5",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/watford.png": {
+    "mtime": 1780996295.426404,
+    "ast_hash": "3698e66f07c7f7bc53a1d1bb8c1666c8",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/west-bromwich-albion.png": {
+    "mtime": 1780996295.426986,
+    "ast_hash": "1a40dc855169b00926e317bb361e4dcb",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/west-ham-united.png": {
+    "mtime": 1780996295.4273143,
+    "ast_hash": "bc388d9154db065bbf17b0a057fa77c3",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/wigan-athletic.png": {
+    "mtime": 1780996295.4275863,
+    "ast_hash": "71d6a6736258e425783b1d2bafec61e5",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/badges/wolverhampton-wanderers.png": {
+    "mtime": 1780996295.42792,
+    "ast_hash": "42657e3f9ce8901c81e29bf4183a7520",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/icon-192.png": {
+    "mtime": 1780996295.428371,
+    "ast_hash": "8460b1dac720f7ffd33211402b774da2",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/icon-512.png": {
+    "mtime": 1780996295.4292564,
+    "ast_hash": "54780e5b271d2362e1e27f5de6187aca",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/icons/icon-128.webp": {
+    "mtime": 1780996295.4295323,
+    "ast_hash": "179a37492a48d22ecde3004300d48565",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/icons/icon-192.webp": {
+    "mtime": 1780996295.4297302,
+    "ast_hash": "068c846b6854caeb0650af36f4208266",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/icons/icon-256.webp": {
+    "mtime": 1780996295.4302769,
+    "ast_hash": "5eb4a86efa949a6abd00d3e8c8bfa732",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/icons/icon-48.webp": {
+    "mtime": 1780996295.4303856,
+    "ast_hash": "5811077da4815b94ae43f3ec522e5c77",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/icons/icon-512.webp": {
+    "mtime": 1780996295.430617,
+    "ast_hash": "07febc163ab9eed1357c6bf93e9f15f4",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/icons/icon-72.webp": {
+    "mtime": 1780996295.4307387,
+    "ast_hash": "018cd2543f2500f2601a0337bf780caf",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/icons/icon-96.webp": {
+    "mtime": 1780996295.4308512,
+    "ast_hash": "990c735c0a3c8136b71795b2084c51c1",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/logo-mark.png": {
+    "mtime": 1780996295.431346,
+    "ast_hash": "926f55b4198261eff47048f7acf88e55",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/logo-source.png": {
+    "mtime": 1780996295.4315317,
+    "ast_hash": "9ade700ed85897b391be331e07499226",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/public/logo.png": {
+    "mtime": 1780996295.4320502,
+    "ast_hash": "8d51e9bca025c10f06f808fd814833aa",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/social-media/store/feature-graphic.png": {
+    "mtime": 1780996295.4380262,
+    "ast_hash": "4f3656138442891974b8db6a53a12566",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/social-media/store/screenshots/01-hero.png": {
+    "mtime": 1780996295.4404142,
+    "ast_hash": "7af2652170a66f00c62ff24e3fafbc75",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/social-media/store/screenshots/02-challenges.png": {
+    "mtime": 1780996295.446321,
+    "ast_hash": "938b4700fa2cafe19349b2376b47dcd9",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/social-media/store/screenshots/03-challenge.png": {
+    "mtime": 1780996295.4511886,
+    "ast_hash": "2845f8b9f86c2543b76da0dae1ead95d",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/social-media/store/screenshots/04-how-it-works.png": {
+    "mtime": 1780996295.4533129,
+    "ast_hash": "e1438bbaac804595afb4f10b569cd5d8",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/social-media/store/screenshots/resized/01-hero.png": {
+    "mtime": 1780996295.45562,
+    "ast_hash": "29b1c033e9dcb4d2a65c19e275bb4e57",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/social-media/store/screenshots/resized/02-challenges.png": {
+    "mtime": 1780996295.4601605,
+    "ast_hash": "21b0c3534093ac19b16716bca9dea7f2",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/social-media/store/screenshots/resized/03-challenge.png": {
+    "mtime": 1780996295.4654465,
+    "ast_hash": "13ec702a7e747e36f5e881913445d80f",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/social-media/store/screenshots/resized/04-how-it-works.png": {
+    "mtime": 1780996295.4680307,
+    "ast_hash": "5cc6c8464a40264fd01ce07edb3b12ad",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/social-media/templates/generated/debate-card.png": {
+    "mtime": 1780996295.4713418,
+    "ast_hash": "c24f730b9e0f3dab17334bc1292e7e72",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/social-media/templates/generated/quiz-story.png": {
+    "mtime": 1780996295.4732933,
+    "ast_hash": "2ed6f5cc3f24dbf7f0c2132bd9044c8d",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-watch-build/social-media/templates/generated/stat-card.png": {
+    "mtime": 1780996295.4758923,
+    "ast_hash": "75b1bd0d76be05b8477469ebeaba783e",
+    "semantic_hash": ""
   }
 }

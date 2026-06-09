@@ -59,12 +59,14 @@ export default function TeamScreen() {
       goals: { you: res.goals.a, opp: res.goals.b },
       pens: res.pens ? { you: res.pens.a, opp: res.pens.b } : null,
       report: res.report,
+      sim: res.sim,
       playedAt: Date.now(),
     });
 
     const next = res.outcome === "A" ? recordWin(team) : res.outcome === "B" ? recordLoss(team) : recordDraw(team);
     saveTeam(next);
-    setTimeout(() => router.push("/38-0/match/result"), 450);
+    // Watch the match play out, then hand off to the result screen.
+    setTimeout(() => router.push("/38-0/match/watch"), 300);
   }
 
   // Ranked: save the XI to the cloud (server recomputes Strength), matchmake against
