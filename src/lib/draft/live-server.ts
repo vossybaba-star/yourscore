@@ -154,12 +154,12 @@ function resolutionForEntering(target: LivePhase, row: DraftLiveMatchRow): Parti
     case "half1": {
       // Full sim (goals + corners/throw-ins/scorers/assists/ratings) over the XIs
       // as they stand entering H1. side a = p1, b = p2.
-      const s = simulateHalf(a, b, (row.p1_squad ?? []) as PlacedPlayer[], (row.p2_squad ?? []) as PlacedPlayer[], 1, `${row.id}:h1`);
+      const s = simulateHalf((row.p1_squad ?? []) as PlacedPlayer[], (row.p2_squad ?? []) as PlacedPlayer[], 1, `${row.id}:h1`);
       return { h1_p1: s.goals.a, h1_p2: s.goals.b, sim: { h1: s } as unknown as never };
     }
     case "half2": {
       // Uses the post-halftime-swap squads/strengths; merge onto the stored H1.
-      const s = simulateHalf(a, b, (row.p1_squad ?? []) as PlacedPlayer[], (row.p2_squad ?? []) as PlacedPlayer[], 2, `${row.id}:h2`);
+      const s = simulateHalf((row.p1_squad ?? []) as PlacedPlayer[], (row.p2_squad ?? []) as PlacedPlayer[], 2, `${row.id}:h2`);
       const prev = (row.sim ?? {}) as MatchSim;
       return { h2_p1: s.goals.a, h2_p2: s.goals.b, sim: { ...prev, h2: s } as unknown as never };
     }

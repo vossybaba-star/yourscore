@@ -2,17 +2,18 @@
  * 38-0 Live Multiplayer engine tests. Run via `bash scripts/draft/run-tests.sh`
  * (compiled to CJS) — the engine is pure with extensionless imports.
  *
- * These double as the tuning harness for the live two-half match: goal
- * distributions land in a football-plausible range, the stronger side wins more
- * often without killing upsets, penalties are near coin-flip, and the phase
- * machine routes every branch deterministically.
+ * Covers the two-half match: scorers/assists/ratings are coherent, the phase machine
+ * routes every branch deterministically, penalties are near coin-flip, and the
+ * one-shot resolveMatch is deterministic and consistent with its scoreline.
+ * The goal MODEL itself (λ from attack vs defence, calibration) is tested in
+ * match.test.ts.
  */
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  poisson, resolveHalfGoals, aggregate, resolveShootout, nextPhase, LIVE_CONFIG,
-  simulateHalf, buildReport,
+  poisson, aggregate, resolveShootout, nextPhase,
+  simulateHalf, buildReport, resolveMatch,
   type LivePhase, type PhaseInput,
 } from "./live-score";
 import { seededRng } from "./score";
@@ -45,49 +46,6 @@ test("poisson mean tracks lambda", () => {
   for (let i = 0; i < N; i++) sum += poisson(0.7, seededRng(`p-${i}`));
   const mean = sum / N;
   assert.ok(Math.abs(mean - 0.7) < 0.05, `mean ${mean} should be ~0.7`);
-});
-
-// ─── Half goals ──────────────────────────────────────────────────────────────
-
-test("half goals: total averages near the configured xG", () => {
-  const N = 20000;
-  let total = 0;
-  for (let i = 0; i < N; i++) {
-    const g = resolveHalfGoals(80, 80, seededRng(`h-${i}`));
-    total += g.a + g.b;
-  }
-  const avg = total / N;
-  assert.ok(Math.abs(avg - LIVE_CONFIG.xgPerHalf) < 0.1, `avg half total ${avg} ~ ${LIVE_CONFIG.xgPerHalf}`);
-});
-
-test("half goals: stronger side outscores weaker on average", () => {
-  const N = 20000;
-  let a = 0;
-  let b = 0;
-  for (let i = 0; i < N; i++) {
-    const g = resolveHalfGoals(90, 65, seededRng(`s-${i}`));
-    a += g.a;
-    b += g.b;
-  }
-  assert.ok(a > b * 1.8, `strong ${a} should clearly beat weak ${b}`);
-});
-
-test("full match: upset rate stays dramatic-but-fair at a moderate edge", () => {
-  // A ~6pt edge over a full two-half match should win most of the time but lose
-  // often enough to stay dramatic (target ~70-90% favourite win rate).
-  const N = 4000;
-  let favWins = 0;
-  let draws = 0;
-  for (let i = 0; i < N; i++) {
-    const rng = seededRng(`m-${i}`);
-    const agg = aggregate(resolveHalfGoals(84, 78, rng), resolveHalfGoals(84, 78, rng));
-    if (agg.a > agg.b) favWins++;
-    else if (agg.level) draws++;
-  }
-  const decisive = N - draws;
-  const rate = favWins / decisive;
-  assert.ok(rate > 0.6 && rate < 0.92, `favourite decisive win rate ${rate.toFixed(2)} in (0.6, 0.92)`);
-  assert.ok(draws > 0, "draws should occur");
 });
 
 // ─── Aggregate ─────────────────────────────────────────────────────────────────
@@ -169,7 +127,7 @@ const sqB = mkSquad("B");
 
 test("simulateHalf: events match the scoreline and ratings cover every player", () => {
   for (let i = 0; i < 200; i++) {
-    const h = simulateHalf(86, 78, sqA, sqB, 1, `sim-${i}`);
+    const h = simulateHalf(sqA, sqB, 1, `sim-${i}`);
     const eventsA = h.events.filter((e) => e.side === "a").length;
     const eventsB = h.events.filter((e) => e.side === "b").length;
     assert.equal(eventsA, h.goals.a, "side-a goal events == goals.a");
@@ -190,7 +148,7 @@ test("simulateHalf: events match the scoreline and ratings cover every player", 
 
 test("simulateHalf: an assist is a different player than the scorer", () => {
   for (let i = 0; i < 300; i++) {
-    const h = simulateHalf(90, 60, sqA, sqB, 2, `asst-${i}`);
+    const h = simulateHalf(sqA, sqB, 2, `asst-${i}`);
     for (const e of h.events) {
       if (e.assistId) assert.notEqual(e.assistId, e.scorerId, "no self-assist");
       assert.ok(e.minute >= 46 && e.minute <= 90, `h2 minute ${e.minute}`);
@@ -200,15 +158,15 @@ test("simulateHalf: an assist is a different player than the scorer", () => {
 
 test("simulateHalf is deterministic for a seed", () => {
   assert.deepEqual(
-    simulateHalf(86, 78, sqA, sqB, 1, "fixed"),
-    simulateHalf(86, 78, sqA, sqB, 1, "fixed"),
+    simulateHalf(sqA, sqB, 1, "fixed"),
+    simulateHalf(sqA, sqB, 1, "fixed"),
   );
 });
 
 test("buildReport: totals add the halves and PotM is the global top rating", () => {
   const sim = {
-    h1: simulateHalf(88, 74, sqA, sqB, 1, "rep-h1"),
-    h2: simulateHalf(88, 74, sqA, sqB, 2, "rep-h2"),
+    h1: simulateHalf(sqA, sqB, 1, "rep-h1"),
+    h2: simulateHalf(sqA, sqB, 2, "rep-h2"),
   };
   const rep = buildReport(sim);
   assert.equal(rep.a.goals, sim.h1.goals.a + sim.h2.goals.a);
@@ -226,11 +184,44 @@ test("buildReport: totals add the halves and PotM is the global top rating", () 
 test("buildReport: a half-time sub is rated for the half they played", () => {
   const subbed = mkSquad("A").map((p, i) => (i === 9 ? { ...p, player_season_id: "A-sub-9", name: "A sub" } : p));
   const sim = {
-    h1: simulateHalf(86, 80, sqA, sqB, 1, "sub-h1"),
-    h2: simulateHalf(86, 80, subbed, sqB, 2, "sub-h2"),
+    h1: simulateHalf(sqA, sqB, 1, "sub-h1"),
+    h2: simulateHalf(subbed, sqB, 2, "sub-h2"),
   };
   const rep = buildReport(sim);
   const ids = new Set(rep.ratingsA.map((r) => r.id));
   assert.ok(ids.has("A-st-9"), "the player who started H1 is still rated");
   assert.ok(ids.has("A-sub-9"), "the half-time sub is rated too");
+});
+
+// ─── One-shot match (quick / async / challenge) ────────────────────────────────
+
+test("resolveMatch is deterministic for a seed", () => {
+  assert.deepEqual(resolveMatch(sqA, sqB, "fix"), resolveMatch(sqA, sqB, "fix"));
+});
+
+test("resolveMatch: outcome matches the scoreline; allowDraw lets a level game stand", () => {
+  let sawDraw = false;
+  for (let i = 0; i < 400; i++) {
+    const r = resolveMatch(sqA, sqB, `rm-${i}`, { allowDraw: true });
+    if (r.outcome === "draw") {
+      sawDraw = true;
+      assert.equal(r.goals.a, r.goals.b, "a draw is a level scoreline");
+      assert.equal(r.pens, null, "no shootout when draws are allowed");
+    } else if (r.outcome === "A") assert.ok(r.goals.a > r.goals.b, "A wins ⇒ outscored B");
+    else assert.ok(r.goals.b > r.goals.a, "B wins ⇒ outscored A");
+    assert.equal(r.report.ratingsA.length, sqA.length, "every A player rated");
+    assert.equal(r.report.ratingsB.length, sqB.length, "every B player rated");
+  }
+  assert.ok(sawDraw, "draws should occur over many even matches");
+});
+
+test("resolveMatch: a level 90' is settled by penalties when draws are not allowed", () => {
+  for (let i = 0; i < 400; i++) {
+    const r = resolveMatch(sqA, sqB, `rmd-${i}`); // allowDraw defaults to false
+    assert.notEqual(r.outcome, "draw", "never a draw when not allowed");
+    if (r.goals.a === r.goals.b) {
+      assert.ok(r.pens && r.pens.a !== r.pens.b, "level 90' settled decisively by pens");
+      assert.equal(r.outcome, r.pens!.a > r.pens!.b ? "A" : "B");
+    }
+  }
 });

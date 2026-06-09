@@ -60,3 +60,18 @@ test("simulateSeason: finish tracks quality vs the real FIFA league", () => {
   assert.ok(elite.pos <= 5, `elite avg finish ${elite.pos}`);
   assert.ok(weak.pos >= 14, `weak avg finish ${weak.pos}`);
 });
+
+// Brand guard: going 38-0 (all 38 wins, no draws) must stay rare — achievable only by
+// a near-perfect XI, and even then seldom. Heavy (large N) so it is env-gated.
+if (process.env.DRAFT_CALIBRATION) {
+  test("invincible 38-0 stays rare", () => {
+    const rate = (ovr: number, N: number) => {
+      let inv = 0;
+      for (let i = 0; i < N; i++) if (simulateSeason(xi("4-3-3", ovr), "4-3-3", ovr, `inv${ovr}-${i}`, OPP).invincible) inv++;
+      return inv / N;
+    };
+    assert.ok(rate(88, 8000) < 0.005, "an 88 XI virtually never goes 38-0");
+    const r96 = rate(96, 8000);
+    assert.ok(r96 > 0.001 && r96 < 0.03, `a 96 XI goes 38-0 rarely but possibly, got ${(r96 * 100).toFixed(2)}%`);
+  });
+}

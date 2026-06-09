@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimitDistributed } from "@/lib/ratelimit";
-import { createDraftDb, creditWin, applyTeamResult, GLOBAL_LEAGUE } from "@/lib/draft/server";
-import { resolveH2H, seededRng } from "@/lib/draft/score";
+import { createDraftDb, GLOBAL_LEAGUE } from "@/lib/draft/server";
+import { creditResult, applyTeamStreak } from "@/lib/draft/live-server";
+import { resolveMatch } from "@/lib/draft/live-score";
 import { seededBot } from "@/lib/draft/opponent";
 import type { Formation, PlacedPlayer, Projected } from "@/lib/draft/types";
 
@@ -97,26 +98,32 @@ export async function POST(req: NextRequest) {
 
   const myStrength = meSide.strength;
   const matchId = crypto.randomUUID();                         // fresh — outcome can't be pre-computed
-  const youWon = resolveH2H(myStrength, opp.strength, seededRng(matchId)) === "A";
-  const margin = Math.abs(Math.round((myStrength - opp.strength) * 10) / 10);
-  const winnerId = youWon ? user.id : opponentId ?? GLOBAL_LEAGUE;
+  // Real scoreline via the canonical engine (my attack vs theirs). side a = me.
+  const res = resolveMatch(meSide.squad, opp.squad, matchId, { allowDraw: true });
+  const youWon = res.outcome === "A";
+  const oppWon = res.outcome === "B";
+  const winnerId = youWon ? user.id : oppWon ? opponentId ?? GLOBAL_LEAGUE : null;
 
   await db.from("draft_matches").insert({
     id: matchId, challenger_id: user.id, opponent_id: opponentId,
     challenger_team: meSide as unknown as never, opponent_team: opp as unknown as never,
     challenger_strength: myStrength, opponent_strength: opp.strength,
     winner_id: winnerId, league_id: null, played_at: new Date().toISOString(),
+    challenger_goals: res.goals.a, opponent_goals: res.goals.b,
+    detail: { outcome: res.outcome, single: true, pens: res.pens, report: res.report } as unknown as never,
   });
 
-  if (youWon) {
-    await creditWin(db, user.id, meSide.name);
-  } else if (opponentId) {
-    await creditWin(db, opponentId, opp.name);
-  }
-  await applyTeamResult(db, user.id, youWon);
+  // Credit W/D/L (draws & losses now count too). Mirror the result for a real opponent.
+  const myRes = youWon ? "win" : oppWon ? "loss" : "draw";
+  await creditResult(db, user.id, meSide.name, myRes);
+  if (opponentId) await creditResult(db, opponentId, opp.name, oppWon ? "win" : youWon ? "loss" : "draw");
+  await applyTeamStreak(db, user.id, myRes);
 
   return NextResponse.json({
-    matchId, youWon, margin,
+    matchId, youWon, outcome: youWon ? "you" : oppWon ? "opp" : "draw",
+    goals: { you: res.goals.a, opp: res.goals.b },
+    pens: res.pens ? { you: res.pens.a, opp: res.pens.b } : null,
+    report: res.report,
     you: meSide,
     opp: { name: opp.name, formation: opp.formation, squad: opp.squad, strength: opp.strength, projected: opp.projected },
   });

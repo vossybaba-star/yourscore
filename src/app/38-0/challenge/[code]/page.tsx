@@ -10,7 +10,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { Pitch } from "@/components/draft/Pitch";
 import { useUser } from "@/hooks/useUser";
-import { loadTeam, saveTeam, isComplete, recordWin, recordLoss, saveLastMatch } from "@/lib/draft/local";
+import { loadTeam, saveTeam, isComplete, recordWin, recordLoss, recordDraw, saveLastMatch } from "@/lib/draft/local";
 import type { Formation, PlacedPlayer, Projected } from "@/lib/draft/types";
 
 type Info = {
@@ -59,11 +59,13 @@ export default function AcceptChallenge() {
         id: m.matchId,
         you: { name: "You", formation: m.you.formation, squad: m.you.squad, strength: m.you.strength, projected: m.you.projected },
         opp: { name: m.opp.name, formation: m.opp.formation, squad: m.opp.squad, strength: m.opp.strength, projected: m.opp.projected },
-        winner: m.youWon ? "you" : "opp",
-        margin: m.margin,
+        outcome: m.outcome,
+        goals: m.goals,
+        pens: m.pens ?? null,
+        report: m.report,
         playedAt: Date.now(),
       });
-      saveTeam(m.youWon ? recordWin(team) : recordLoss(team));
+      saveTeam(m.outcome === "you" ? recordWin(team) : m.outcome === "opp" ? recordLoss(team) : recordDraw(team));
       router.push("/38-0/match/result");
     } catch { setErr("Network error"); setBusy(false); }
   }

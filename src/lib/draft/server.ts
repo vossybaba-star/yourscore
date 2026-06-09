@@ -45,61 +45,10 @@ export type TeamSnapshot = {
   projected: import("./types").Projected | null;
 };
 
-/** Apply the win/loss loop to a user's live team: win → streak up; loss → reset
- *  streak. The team always stays active (no rebuild penalty — "stale" is retired).
- *  No-op if they have no saved team. */
-export async function applyTeamResult(
-  db: SupabaseClient<DraftDatabase>,
-  userId: string,
-  won: boolean
-): Promise<void> {
-  const { data: t } = await db.from("draft_teams").select("win_streak").eq("user_id", userId).maybeSingle();
-  if (!t) return;
-  await db
-    .from("draft_teams")
-    .update({
-      win_streak: won ? (t.win_streak ?? 0) + 1 : 0,
-      status: "active", // teams stay playable (no rebuild-on-loss penalty)
-      updated_at: new Date().toISOString(),
-    })
-    .eq("user_id", userId);
-}
-
-/**
- * Credit one H2H win to a player's standings (daily + all-time) for a board.
- * Read-modify-write upsert: resets wins_today when the last win was on a prior
- * day. Low write contention per user, so a transaction isn't warranted for v1.
- */
-export async function creditWin(
-  db: SupabaseClient<DraftDatabase>,
-  winnerId: string,
-  displayName: string,
-  leagueId: string = GLOBAL_LEAGUE
-): Promise<void> {
-  const today = new Date().toISOString().slice(0, 10);
-  const { data: cur } = await db
-    .from("draft_standings")
-    .select("wins_today, wins_all_time, last_win_date")
-    .eq("user_id", winnerId)
-    .eq("league_id", leagueId)
-    .maybeSingle();
-
-  const winsToday = cur && cur.last_win_date === today ? cur.wins_today + 1 : 1;
-  const winsAllTime = (cur?.wins_all_time ?? 0) + 1;
-
-  await db.from("draft_standings").upsert(
-    {
-      user_id: winnerId,
-      display_name: displayName,
-      league_id: leagueId,
-      wins_today: winsToday,
-      wins_all_time: winsAllTime,
-      last_win_date: today,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "user_id,league_id" }
-  );
-}
+// Win/loss/draw crediting + the team streak loop now live in one place — see
+// `creditResult` and `applyTeamStreak` in live-server.ts (atomic W/D/L via the
+// `draft_credit_result` RPC). The async/challenge routes use those too, so quick,
+// async, challenge and live all share one standings path.
 
 export type SquadInput = { slot: string; player_season_id: string };
 

@@ -15,8 +15,9 @@ import type { MatchReport } from "@/lib/draft/live-score";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://yourscore.app";
 
-// A live two-half match stores a per-half breakdown + report in `detail`.
-type MatchDetail = { pens?: { a: number; b: number } | null; report?: MatchReport };
+// Both live (two-half) and one-off (quick/async/challenge) matches store a report in
+// `detail`; one-offs additionally carry `single: true`.
+type MatchDetail = { pens?: { a: number; b: number } | null; report?: MatchReport; single?: boolean };
 
 type Match = {
   challenger_team: TeamSnapshot;
@@ -60,7 +61,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   if (!m) {
     return { title: "Draft XI — YourScore" };
   }
-  const live = isLive(m);
+  const live = hasReport(m);
 
   let image: string;
   let title: string;
@@ -73,7 +74,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
       pens: m.detail?.pens ?? null, report: m.detail!.report!,
     })}`;
     const pens = m.detail?.pens ? ` (pens ${m.detail.pens.a}-${m.detail.pens.b})` : "";
-    title = `${m.challenger_team.name} ${s1}–${s2} ${m.opponent_team.name}${pens} — 38-0 Live`;
+    title = `${m.challenger_team.name} ${s1}–${s2} ${m.opponent_team.name}${pens} — ${m.detail?.single ? "Draft XI" : "38-0 Live"}`;
     description = m.detail!.report!.potm
       ? `MOTM ${m.detail!.report!.potm.name} (${m.detail!.report!.potm.rating.toFixed(1)}). Build your XI and go live, head-to-head.`
       : "Build your all-time Premier League XI and go live, head-to-head.";
@@ -99,8 +100,9 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   };
 }
 
-/** A live two-half result carries goals + a report; an async match doesn't. */
-function isLive(m: Match): m is Match & { detail: { report: MatchReport } } {
+/** Any engine-resolved result (live two-half OR a one-off) carries goals + a full
+ *  report; legacy strength-only async rows don't. Drives the rich scoreline view. */
+function hasReport(m: Match): m is Match & { detail: { report: MatchReport } } {
   return m.challenger_goals != null && !!m.detail?.report;
 }
 
@@ -121,7 +123,7 @@ export default async function MatchPage({ params }: { params: { id: string } }) 
   const challengerWon = m.winner_id === m.challenger_id;
   const c = m.challenger_team;
   const o = m.opponent_team;
-  const live = isLive(m);
+  const live = hasReport(m);
   const rep = m.detail?.report;
   const s1 = m.challenger_goals ?? 0, s2 = m.opponent_goals ?? 0;
   const cWon = live ? (m.detail?.pens ? m.detail.pens.a > m.detail.pens.b : s1 > s2) : challengerWon;
@@ -131,7 +133,7 @@ export default async function MatchPage({ params }: { params: { id: string } }) 
       <div className="max-w-lg mx-auto px-5 pt-safe">
         {live ? (
           <div className="pt-8 text-center">
-            <div className="font-display tracking-wide" style={{ fontSize: 13, color: "#8888aa" }}>38-0 LIVE · FULL TIME</div>
+            <div className="font-display tracking-wide" style={{ fontSize: 13, color: "#8888aa" }}>{m.detail?.single ? "DRAFT XI · FULL TIME" : "38-0 LIVE · FULL TIME"}</div>
             <div className="flex items-center justify-center gap-3 mt-3">
               <span className="font-display tracking-wide truncate text-right" style={{ fontSize: 18, color: cWon ? "#00ff87" : "#cfcfe6", maxWidth: 130 }}>{c.name}</span>
               <span className="font-display tabular-nums" style={{ fontSize: 46, fontWeight: 900, color: cWon ? "#00ff87" : "#cfcfe6" }}>{s1}</span>
