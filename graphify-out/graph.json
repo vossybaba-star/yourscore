@@ -985,10 +985,19 @@
       "norm_label": "@vercel/analytics"
     },
     {
-      "label": "next",
+      "label": "@vercel/speed-insights",
       "file_type": "code",
       "source_file": "package.json",
       "source_location": "L23",
+      "id": "package_dependencies_vercel_speed_insights",
+      "community": 3,
+      "norm_label": "@vercel/speed-insights"
+    },
+    {
+      "label": "next",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L24",
       "id": "package_dependencies_next",
       "community": 3,
       "norm_label": "next"
@@ -997,7 +1006,7 @@
       "label": "react",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L24",
+      "source_location": "L25",
       "id": "package_dependencies_react",
       "community": 3,
       "norm_label": "react"
@@ -1006,7 +1015,7 @@
       "label": "react-dom",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L25",
+      "source_location": "L26",
       "id": "package_dependencies_react_dom",
       "community": 3,
       "norm_label": "react-dom"
@@ -1015,7 +1024,7 @@
       "label": "react-qr-code",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L26",
+      "source_location": "L27",
       "id": "package_dependencies_react_qr_code",
       "community": 3,
       "norm_label": "react-qr-code"
@@ -1024,7 +1033,7 @@
       "label": "resend",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L27",
+      "source_location": "L28",
       "id": "package_dependencies_resend",
       "community": 3,
       "norm_label": "resend"
@@ -1033,7 +1042,7 @@
       "label": "devDependencies",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L29",
+      "source_location": "L30",
       "id": "package_devdependencies",
       "community": 3,
       "norm_label": "devdependencies"
@@ -1042,7 +1051,7 @@
       "label": "@capacitor/assets",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L30",
+      "source_location": "L31",
       "id": "package_devdependencies_capacitor_assets",
       "community": 3,
       "norm_label": "@capacitor/assets"
@@ -1051,7 +1060,7 @@
       "label": "@capacitor/cli",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L31",
+      "source_location": "L32",
       "id": "package_devdependencies_capacitor_cli",
       "community": 3,
       "norm_label": "@capacitor/cli"
@@ -1060,7 +1069,7 @@
       "label": "@types/node",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L32",
+      "source_location": "L33",
       "id": "package_devdependencies_types_node",
       "community": 3,
       "norm_label": "@types/node"
@@ -1069,7 +1078,7 @@
       "label": "@types/react",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L33",
+      "source_location": "L34",
       "id": "package_devdependencies_types_react",
       "community": 3,
       "norm_label": "@types/react"
@@ -1078,7 +1087,7 @@
       "label": "@types/react-dom",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L34",
+      "source_location": "L35",
       "id": "package_devdependencies_types_react_dom",
       "community": 3,
       "norm_label": "@types/react-dom"
@@ -1087,7 +1096,7 @@
       "label": "eslint",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L35",
+      "source_location": "L36",
       "id": "package_devdependencies_eslint",
       "community": 3,
       "norm_label": "eslint"
@@ -1096,7 +1105,7 @@
       "label": "eslint-config-next",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L36",
+      "source_location": "L37",
       "id": "package_devdependencies_eslint_config_next",
       "community": 3,
       "norm_label": "eslint-config-next"
@@ -1105,7 +1114,7 @@
       "label": "postcss",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L37",
+      "source_location": "L38",
       "id": "package_devdependencies_postcss",
       "community": 3,
       "norm_label": "postcss"
@@ -1114,7 +1123,7 @@
       "label": "tailwindcss",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L38",
+      "source_location": "L39",
       "id": "package_devdependencies_tailwindcss",
       "community": 3,
       "norm_label": "tailwindcss"
@@ -1123,7 +1132,7 @@
       "label": "typescript",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L39",
+      "source_location": "L40",
       "id": "package_devdependencies_typescript",
       "community": 3,
       "norm_label": "typescript"
@@ -2231,7 +2240,7 @@
       "source_file": "src/app/38-0/challenge/[code]/page.tsx",
       "source_location": "L29",
       "id": "code_page_acceptchallenge",
-      "community": 28,
+      "community": 21,
       "norm_label": "acceptchallenge()"
     },
     {
@@ -2699,7 +2708,7 @@
       "source_file": "src/app/38-0/match/prematch/page.tsx",
       "source_location": "L27",
       "id": "prematch_page_prematch",
-      "community": 28,
+      "community": 136,
       "norm_label": "prematch()"
     },
     {
@@ -2708,7 +2717,7 @@
       "source_file": "src/app/38-0/match/result/page.tsx",
       "source_location": "L1",
       "id": "result_page",
-      "community": 28,
+      "community": 136,
       "norm_label": "page.tsx"
     },
     {
@@ -2717,7 +2726,7 @@
       "source_file": "src/app/38-0/match/result/page.tsx",
       "source_location": "L18",
       "id": "result_page_matchresult",
-      "community": 28,
+      "community": 136,
       "norm_label": "matchresult()"
     },
     {
@@ -2753,7 +2762,7 @@
       "source_file": "src/app/38-0/page.tsx",
       "source_location": "L1",
       "id": "38_0_page",
-      "community": 25,
+      "community": 28,
       "norm_label": "page.tsx"
     },
     {
@@ -2762,7 +2771,7 @@
       "source_file": "src/app/38-0/page.tsx",
       "source_location": "L19",
       "id": "38_0_page_drafthome",
-      "community": 25,
+      "community": 134,
       "norm_label": "drafthome()"
     },
     {
@@ -2771,7 +2780,7 @@
       "source_file": "src/app/38-0/play/page.tsx",
       "source_location": "L1",
       "id": "src_app_38_0_play_page_tsx_play_page",
-      "community": 25,
+      "community": 133,
       "norm_label": "page.tsx"
     },
     {
@@ -2789,7 +2798,7 @@
       "source_file": "src/app/38-0/play/page.tsx",
       "source_location": "L35",
       "id": "play_page_draftplay",
-      "community": 16,
+      "community": 133,
       "norm_label": "draftplay()"
     },
     {
@@ -2906,7 +2915,7 @@
       "source_file": "src/app/38-0/swap/page.tsx",
       "source_location": "L1",
       "id": "swap_page",
-      "community": 25,
+      "community": 28,
       "norm_label": "page.tsx"
     },
     {
@@ -2915,7 +2924,7 @@
       "source_file": "src/app/38-0/swap/page.tsx",
       "source_location": "L21",
       "id": "swap_page_swapscreen",
-      "community": 16,
+      "community": 133,
       "norm_label": "swapscreen()"
     },
     {
@@ -2924,7 +2933,7 @@
       "source_file": "src/app/38-0/team/page.tsx",
       "source_location": "L1",
       "id": "team_page",
-      "community": 28,
+      "community": 136,
       "norm_label": "page.tsx"
     },
     {
@@ -2978,7 +2987,7 @@
       "source_file": "src/app/38-0/wc/page.tsx",
       "source_location": "L1",
       "id": "wc_page",
-      "community": 25,
+      "community": 133,
       "norm_label": "page.tsx"
     },
     {
@@ -2987,7 +2996,7 @@
       "source_file": "src/app/38-0/wc/page.tsx",
       "source_location": "L24",
       "id": "wc_page_formation",
-      "community": 25,
+      "community": 133,
       "norm_label": "formation"
     },
     {
@@ -3761,7 +3770,7 @@
       "source_file": "src/app/api/draft/live/advance/route.ts",
       "source_location": "L1",
       "id": "advance_route",
-      "community": 10,
+      "community": 36,
       "norm_label": "route.ts"
     },
     {
@@ -3770,7 +3779,7 @@
       "source_file": "src/app/api/draft/live/advance/route.ts",
       "source_location": "L10",
       "id": "advance_route_post",
-      "community": 10,
+      "community": 36,
       "norm_label": "post()"
     },
     {
@@ -4013,7 +4022,7 @@
       "source_file": "src/app/api/draft/team/route.ts",
       "source_location": "L1",
       "id": "team_route",
-      "community": 81,
+      "community": 36,
       "norm_label": "route.ts"
     },
     {
@@ -4022,7 +4031,7 @@
       "source_file": "src/app/api/draft/team/route.ts",
       "source_location": "L11",
       "id": "team_route_post",
-      "community": 81,
+      "community": 36,
       "norm_label": "post()"
     },
     {
@@ -4193,7 +4202,7 @@
       "source_file": "src/app/api/h2h/play/route.ts",
       "source_location": "L1",
       "id": "src_app_api_h2h_play_route_ts_play_route",
-      "community": 89,
+      "community": 83,
       "norm_label": "route.ts"
     },
     {
@@ -4202,7 +4211,7 @@
       "source_file": "src/app/api/h2h/play/route.ts",
       "source_location": "L14",
       "id": "play_route_submittedanswer",
-      "community": 89,
+      "community": 83,
       "norm_label": "submittedanswer"
     },
     {
@@ -4211,7 +4220,7 @@
       "source_file": "src/app/api/h2h/play/route.ts",
       "source_location": "L19",
       "id": "src_app_api_h2h_play_route_ts_play_route_post",
-      "community": 89,
+      "community": 83,
       "norm_label": "post()"
     },
     {
@@ -4409,7 +4418,7 @@
       "source_file": "src/app/api/quiz/start/route.ts",
       "source_location": "L1",
       "id": "src_app_api_quiz_start_route_ts_start_route",
-      "community": 89,
+      "community": 1,
       "norm_label": "route.ts"
     },
     {
@@ -4418,7 +4427,7 @@
       "source_file": "src/app/api/quiz/start/route.ts",
       "source_location": "L7",
       "id": "src_app_api_quiz_start_route_ts_start_route_difficulty",
-      "community": 89,
+      "community": 1,
       "norm_label": "difficulty"
     },
     {
@@ -4427,7 +4436,7 @@
       "source_file": "src/app/api/quiz/start/route.ts",
       "source_location": "L13",
       "id": "start_route_bankquestion",
-      "community": 89,
+      "community": 1,
       "norm_label": "bankquestion"
     },
     {
@@ -4436,7 +4445,7 @@
       "source_file": "src/app/api/quiz/start/route.ts",
       "source_location": "L31",
       "id": "start_route_startbody",
-      "community": 89,
+      "community": 1,
       "norm_label": "startbody"
     },
     {
@@ -4454,7 +4463,7 @@
       "source_file": "src/app/api/quiz/start/route.ts",
       "source_location": "L81",
       "id": "src_app_api_quiz_start_route_ts_start_route_post",
-      "community": 89,
+      "community": 1,
       "norm_label": "post()"
     },
     {
@@ -4643,7 +4652,7 @@
       "source_file": "src/app/auth/sign-in/page.tsx",
       "source_location": "L1",
       "id": "sign_in_page",
-      "community": 84,
+      "community": 140,
       "norm_label": "page.tsx"
     },
     {
@@ -4652,7 +4661,7 @@
       "source_file": "src/app/auth/sign-in/page.tsx",
       "source_location": "L10",
       "id": "sign_in_page_signinpage",
-      "community": 84,
+      "community": 140,
       "norm_label": "signinpage()"
     },
     {
@@ -5030,7 +5039,7 @@
       "source_file": "src/app/how-it-works/page.tsx",
       "source_location": "L1",
       "id": "how_it_works_page",
-      "community": 21,
+      "community": 11,
       "norm_label": "page.tsx"
     },
     {
@@ -5039,7 +5048,7 @@
       "source_file": "src/app/how-it-works/page.tsx",
       "source_location": "L23",
       "id": "how_it_works_page_steps",
-      "community": 21,
+      "community": 11,
       "norm_label": "steps"
     },
     {
@@ -5048,7 +5057,7 @@
       "source_file": "src/app/how-it-works/page.tsx",
       "source_location": "L185",
       "id": "how_it_works_page_faqs",
-      "community": 21,
+      "community": 11,
       "norm_label": "faqs"
     },
     {
@@ -5057,7 +5066,7 @@
       "source_file": "src/app/how-it-works/page.tsx",
       "source_location": "L196",
       "id": "how_it_works_page_howitworkspage",
-      "community": 21,
+      "community": 11,
       "norm_label": "howitworkspage()"
     },
     {
@@ -5102,7 +5111,7 @@
       "source_file": "src/app/join/page.tsx",
       "source_location": "L1",
       "id": "src_app_join_page_tsx_join_page",
-      "community": 140,
+      "community": 21,
       "norm_label": "page.tsx"
     },
     {
@@ -5111,7 +5120,7 @@
       "source_file": "src/app/join/page.tsx",
       "source_location": "L13",
       "id": "join_page_match",
-      "community": 140,
+      "community": 21,
       "norm_label": "match"
     },
     {
@@ -5120,7 +5129,7 @@
       "source_file": "src/app/join/page.tsx",
       "source_location": "L24",
       "id": "join_page_groupbydate",
-      "community": 140,
+      "community": 21,
       "norm_label": "groupbydate()"
     },
     {
@@ -5129,7 +5138,7 @@
       "source_file": "src/app/join/page.tsx",
       "source_location": "L43",
       "id": "join_page_bellicon",
-      "community": 140,
+      "community": 21,
       "norm_label": "bellicon()"
     },
     {
@@ -5138,7 +5147,7 @@
       "source_file": "src/app/join/page.tsx",
       "source_location": "L54",
       "id": "join_page_jerseyimg",
-      "community": 140,
+      "community": 21,
       "norm_label": "jerseyimg()"
     },
     {
@@ -5147,7 +5156,7 @@
       "source_file": "src/app/join/page.tsx",
       "source_location": "L67",
       "id": "join_page_playpage",
-      "community": 140,
+      "community": 21,
       "norm_label": "playpage()"
     },
     {
@@ -5163,7 +5172,7 @@
       "label": "bebasNeue",
       "file_type": "code",
       "source_file": "src/app/layout.tsx",
-      "source_location": "L9",
+      "source_location": "L10",
       "id": "app_layout_bebasneue",
       "community": 22,
       "norm_label": "bebasneue"
@@ -5172,7 +5181,7 @@
       "label": "dmSans",
       "file_type": "code",
       "source_file": "src/app/layout.tsx",
-      "source_location": "L16",
+      "source_location": "L17",
       "id": "app_layout_dmsans",
       "community": 22,
       "norm_label": "dmsans"
@@ -5181,7 +5190,7 @@
       "label": "generateMetadata()",
       "file_type": "code",
       "source_file": "src/app/layout.tsx",
-      "source_location": "L22",
+      "source_location": "L23",
       "id": "app_layout_generatemetadata",
       "community": 22,
       "norm_label": "generatemetadata()"
@@ -5190,7 +5199,7 @@
       "label": "viewport",
       "file_type": "code",
       "source_file": "src/app/layout.tsx",
-      "source_location": "L57",
+      "source_location": "L58",
       "id": "app_layout_viewport",
       "community": 22,
       "norm_label": "viewport"
@@ -5199,7 +5208,7 @@
       "label": "RootLayout()",
       "file_type": "code",
       "source_file": "src/app/layout.tsx",
-      "source_location": "L66",
+      "source_location": "L67",
       "id": "app_layout_rootlayout",
       "community": 22,
       "norm_label": "rootlayout()"
@@ -5345,7 +5354,7 @@
       "source_file": "src/app/league/join/page.tsx",
       "source_location": "L1",
       "id": "src_app_league_join_page_tsx_join_page",
-      "community": 84,
+      "community": 11,
       "norm_label": "page.tsx"
     },
     {
@@ -5354,7 +5363,7 @@
       "source_file": "src/app/league/join/page.tsx",
       "source_location": "L9",
       "id": "join_page_joinleagueindexinner",
-      "community": 84,
+      "community": 11,
       "norm_label": "joinleagueindexinner()"
     },
     {
@@ -5363,7 +5372,7 @@
       "source_file": "src/app/league/join/page.tsx",
       "source_location": "L105",
       "id": "join_page_joinleagueindexpage",
-      "community": 84,
+      "community": 11,
       "norm_label": "joinleagueindexpage()"
     },
     {
@@ -5408,7 +5417,7 @@
       "source_file": "src/app/leagues/page.tsx",
       "source_location": "L1",
       "id": "src_app_leagues_page_tsx_leagues_page",
-      "community": 84,
+      "community": 140,
       "norm_label": "page.tsx"
     },
     {
@@ -5417,7 +5426,7 @@
       "source_file": "src/app/leagues/page.tsx",
       "source_location": "L12",
       "id": "leagues_page_leaguecard",
-      "community": 84,
+      "community": 140,
       "norm_label": "leaguecard"
     },
     {
@@ -5426,7 +5435,7 @@
       "source_file": "src/app/leagues/page.tsx",
       "source_location": "L22",
       "id": "leagues_page_globalplayer",
-      "community": 84,
+      "community": 140,
       "norm_label": "globalplayer"
     },
     {
@@ -5435,7 +5444,7 @@
       "source_file": "src/app/leagues/page.tsx",
       "source_location": "L29",
       "id": "leagues_page_rankstyle",
-      "community": 84,
+      "community": 140,
       "norm_label": "rankstyle()"
     },
     {
@@ -5444,7 +5453,7 @@
       "source_file": "src/app/leagues/page.tsx",
       "source_location": "L36",
       "id": "leagues_page_playerinitial",
-      "community": 84,
+      "community": 140,
       "norm_label": "playerinitial()"
     },
     {
@@ -5453,7 +5462,7 @@
       "source_file": "src/app/leagues/page.tsx",
       "source_location": "L40",
       "id": "leagues_page_playercolor",
-      "community": 84,
+      "community": 140,
       "norm_label": "playercolor()"
     },
     {
@@ -5462,7 +5471,7 @@
       "source_file": "src/app/leagues/page.tsx",
       "source_location": "L50",
       "id": "leagues_page_leaguespage",
-      "community": 84,
+      "community": 140,
       "norm_label": "leaguespage()"
     },
     {
@@ -5543,7 +5552,7 @@
       "source_file": "src/app/messages/[userId]/page.tsx",
       "source_location": "L1",
       "id": "src_app_messages_userid_page_tsx_userid_page",
-      "community": 142,
+      "community": 84,
       "norm_label": "page.tsx"
     },
     {
@@ -5552,7 +5561,7 @@
       "source_file": "src/app/messages/[userId]/page.tsx",
       "source_location": "L9",
       "id": "userid_page_message",
-      "community": 142,
+      "community": 84,
       "norm_label": "message"
     },
     {
@@ -5561,7 +5570,7 @@
       "source_file": "src/app/messages/[userId]/page.tsx",
       "source_location": "L18",
       "id": "userid_page_otherprofile",
-      "community": 142,
+      "community": 84,
       "norm_label": "otherprofile"
     },
     {
@@ -5570,7 +5579,7 @@
       "source_file": "src/app/messages/[userId]/page.tsx",
       "source_location": "L23",
       "id": "userid_page_avatar",
-      "community": 142,
+      "community": 84,
       "norm_label": "avatar()"
     },
     {
@@ -5579,7 +5588,7 @@
       "source_file": "src/app/messages/[userId]/page.tsx",
       "source_location": "L46",
       "id": "userid_page_messagepage",
-      "community": 142,
+      "community": 84,
       "norm_label": "messagepage()"
     },
     {
@@ -6308,7 +6317,7 @@
       "source_file": "src/components/auth/AuthButton.tsx",
       "source_location": "L243",
       "id": "auth_authbutton_authproviders",
-      "community": 84,
+      "community": 140,
       "norm_label": "authproviders()"
     },
     {
@@ -6389,7 +6398,7 @@
       "source_file": "src/components/draft/Pitch.tsx",
       "source_location": "L1",
       "id": "draft_pitch",
-      "community": 25,
+      "community": 28,
       "norm_label": "pitch.tsx"
     },
     {
@@ -6398,7 +6407,7 @@
       "source_file": "src/components/draft/Pitch.tsx",
       "source_location": "L13",
       "id": "draft_pitch_fitcolor",
-      "community": 51,
+      "community": 28,
       "norm_label": "fitcolor()"
     },
     {
@@ -6407,7 +6416,7 @@
       "source_file": "src/components/draft/Pitch.tsx",
       "source_location": "L20",
       "id": "draft_pitch_pitch",
-      "community": 25,
+      "community": 28,
       "norm_label": "pitch()"
     },
     {
@@ -6416,7 +6425,7 @@
       "source_file": "src/components/game/AnswerButtons.tsx",
       "source_location": "L1",
       "id": "game_answerbuttons",
-      "community": 2,
+      "community": 25,
       "norm_label": "answerbuttons.tsx"
     },
     {
@@ -6425,7 +6434,7 @@
       "source_file": "src/components/game/AnswerButtons.tsx",
       "source_location": "L3",
       "id": "game_answerbuttons_letters",
-      "community": 2,
+      "community": 25,
       "norm_label": "letters"
     },
     {
@@ -6434,7 +6443,7 @@
       "source_file": "src/components/game/AnswerButtons.tsx",
       "source_location": "L5",
       "id": "game_answerbuttons_answerbuttonsprops",
-      "community": 2,
+      "community": 25,
       "norm_label": "answerbuttonsprops"
     },
     {
@@ -6443,7 +6452,7 @@
       "source_file": "src/components/game/AnswerButtons.tsx",
       "source_location": "L24",
       "id": "game_answerbuttons_answerbuttons",
-      "community": 2,
+      "community": 25,
       "norm_label": "answerbuttons()"
     },
     {
@@ -6938,7 +6947,7 @@
       "source_file": "src/components/ui/GridBackground.tsx",
       "source_location": "L1",
       "id": "ui_gridbackground",
-      "community": 84,
+      "community": 11,
       "norm_label": "gridbackground.tsx"
     },
     {
@@ -6947,7 +6956,7 @@
       "source_file": "src/components/ui/GridBackground.tsx",
       "source_location": "L3",
       "id": "ui_gridbackground_gridbackground",
-      "community": 84,
+      "community": 11,
       "norm_label": "gridbackground()"
     },
     {
@@ -7055,7 +7064,7 @@
       "source_file": "src/data/draft/wc2026.ts",
       "source_location": "L122",
       "id": "draft_wc2026_allwcnations",
-      "community": 133,
+      "community": 13,
       "norm_label": "allwcnations()"
     },
     {
@@ -7190,7 +7199,7 @@
       "source_file": "src/lib/draft/formations.ts",
       "source_location": "L1",
       "id": "draft_formations",
-      "community": 25,
+      "community": 51,
       "norm_label": "formations.ts"
     },
     {
@@ -7199,7 +7208,7 @@
       "source_file": "src/lib/draft/formations.ts",
       "source_location": "L13",
       "id": "draft_formations_gk",
-      "community": 25,
+      "community": 51,
       "norm_label": "gk"
     },
     {
@@ -7208,7 +7217,7 @@
       "source_file": "src/lib/draft/formations.ts",
       "source_location": "L15",
       "id": "draft_formations_formation_slots",
-      "community": 25,
+      "community": 51,
       "norm_label": "formation_slots"
     },
     {
@@ -7226,7 +7235,7 @@
       "source_file": "src/lib/draft/formations.ts",
       "source_location": "L114",
       "id": "draft_formations_formation_note",
-      "community": 25,
+      "community": 51,
       "norm_label": "formation_note"
     },
     {
@@ -7694,7 +7703,7 @@
       "source_file": "src/lib/draft/live-server.ts",
       "source_location": "L247",
       "id": "draft_live_server_sidesnapshot",
-      "community": 10,
+      "community": 132,
       "norm_label": "sidesnapshot()"
     },
     {
@@ -7703,7 +7712,7 @@
       "source_file": "src/lib/draft/live-server.ts",
       "source_location": "L251",
       "id": "draft_live_server_finalize",
-      "community": 10,
+      "community": 132,
       "norm_label": "finalize()"
     },
     {
@@ -7874,7 +7883,7 @@
       "source_file": "src/lib/draft/local.ts",
       "source_location": "L22",
       "id": "draft_local_draftmode",
-      "community": 25,
+      "community": 28,
       "norm_label": "draftmode"
     },
     {
@@ -7883,7 +7892,7 @@
       "source_file": "src/lib/draft/local.ts",
       "source_location": "L24",
       "id": "draft_local_localteam",
-      "community": 25,
+      "community": 28,
       "norm_label": "localteam"
     },
     {
@@ -7892,7 +7901,7 @@
       "source_file": "src/lib/draft/local.ts",
       "source_location": "L37",
       "id": "draft_local_emptyteam",
-      "community": 25,
+      "community": 134,
       "norm_label": "emptyteam()"
     },
     {
@@ -7928,7 +7937,7 @@
       "source_file": "src/lib/draft/local.ts",
       "source_location": "L69",
       "id": "draft_local_openslots",
-      "community": 25,
+      "community": 134,
       "norm_label": "openslots()"
     },
     {
@@ -7937,7 +7946,7 @@
       "source_file": "src/lib/draft/local.ts",
       "source_location": "L74",
       "id": "draft_local_iscomplete",
-      "community": 25,
+      "community": 134,
       "norm_label": "iscomplete()"
     },
     {
@@ -7946,7 +7955,7 @@
       "source_file": "src/lib/draft/local.ts",
       "source_location": "L78",
       "id": "draft_local_usedplayerids",
-      "community": 25,
+      "community": 134,
       "norm_label": "usedplayerids()"
     },
     {
@@ -7955,7 +7964,7 @@
       "source_file": "src/lib/draft/local.ts",
       "source_location": "L84",
       "id": "draft_local_usedplayernames",
-      "community": 25,
+      "community": 134,
       "norm_label": "usedplayernames()"
     },
     {
@@ -7964,7 +7973,7 @@
       "source_file": "src/lib/draft/local.ts",
       "source_location": "L93",
       "id": "draft_local_bestopenslot",
-      "community": 51,
+      "community": 134,
       "norm_label": "bestopenslot()"
     },
     {
@@ -7973,7 +7982,7 @@
       "source_file": "src/lib/draft/local.ts",
       "source_location": "L109",
       "id": "draft_local_fittingopenslots",
-      "community": 25,
+      "community": 28,
       "norm_label": "fittingopenslots()"
     },
     {
@@ -7982,7 +7991,7 @@
       "source_file": "src/lib/draft/local.ts",
       "source_location": "L114",
       "id": "draft_local_placeplayer",
-      "community": 25,
+      "community": 134,
       "norm_label": "placeplayer()"
     },
     {
@@ -8081,7 +8090,7 @@
       "source_file": "src/lib/draft/local.ts",
       "source_location": "L248",
       "id": "draft_local_localmatch",
-      "community": 28,
+      "community": 136,
       "norm_label": "localmatch"
     },
     {
@@ -8099,7 +8108,7 @@
       "source_file": "src/lib/draft/local.ts",
       "source_location": "L267",
       "id": "draft_local_loadlastmatch",
-      "community": 28,
+      "community": 136,
       "norm_label": "loadlastmatch()"
     },
     {
@@ -8162,7 +8171,7 @@
       "source_file": "src/lib/draft/local.ts",
       "source_location": "L310",
       "id": "draft_local_savelastseason",
-      "community": 136,
+      "community": 28,
       "norm_label": "savelastseason()"
     },
     {
@@ -8423,7 +8432,7 @@
       "source_file": "src/lib/draft/opponent.ts",
       "source_location": "L69",
       "id": "draft_opponent_autodraft",
-      "community": 25,
+      "community": 134,
       "norm_label": "autodraft()"
     },
     {
@@ -8648,7 +8657,7 @@
       "source_file": "src/lib/draft/pool.ts",
       "source_location": "L34",
       "id": "draft_pool_getplayer",
-      "community": 81,
+      "community": 36,
       "norm_label": "getplayer()"
     },
     {
@@ -8675,7 +8684,7 @@
       "source_file": "src/lib/draft/pool.ts",
       "source_location": "L100",
       "id": "draft_pool_allbuckets",
-      "community": 25,
+      "community": 133,
       "norm_label": "allbuckets()"
     },
     {
@@ -8819,7 +8828,7 @@
       "source_file": "src/lib/draft/score.ts",
       "source_location": "L88",
       "id": "draft_score_category_color",
-      "community": 25,
+      "community": 133,
       "norm_label": "category_color"
     },
     {
@@ -8909,7 +8918,7 @@
       "source_file": "src/lib/draft/score.ts",
       "source_location": "L247",
       "id": "draft_score_tierfor",
-      "community": 86,
+      "community": 136,
       "norm_label": "tierfor()"
     },
     {
@@ -8945,7 +8954,7 @@
       "source_file": "src/lib/draft/season.test.ts",
       "source_location": "L1",
       "id": "draft_season_test",
-      "community": 86,
+      "community": 51,
       "norm_label": "season.test.ts"
     },
     {
@@ -8954,7 +8963,7 @@
       "source_file": "src/lib/draft/season.test.ts",
       "source_location": "L10",
       "id": "draft_season_test_opp",
-      "community": 86,
+      "community": 51,
       "norm_label": "opp"
     },
     {
@@ -8963,7 +8972,7 @@
       "source_file": "src/lib/draft/season.test.ts",
       "source_location": "L13",
       "id": "draft_season_test_xi",
-      "community": 86,
+      "community": 51,
       "norm_label": "xi()"
     },
     {
@@ -8981,7 +8990,7 @@
       "source_file": "src/lib/draft/season.ts",
       "source_location": "L22",
       "id": "draft_season_opponent",
-      "community": 86,
+      "community": 51,
       "norm_label": "opponent"
     },
     {
@@ -9071,7 +9080,7 @@
       "source_file": "src/lib/draft/season.ts",
       "source_location": "L105",
       "id": "draft_season_seasonresult",
-      "community": 136,
+      "community": 28,
       "norm_label": "seasonresult"
     },
     {
@@ -9224,7 +9233,7 @@
       "source_file": "src/lib/draft/server.ts",
       "source_location": "L67",
       "id": "draft_server_validateandscore",
-      "community": 81,
+      "community": 36,
       "norm_label": "validateandscore()"
     },
     {
@@ -9269,7 +9278,7 @@
       "source_file": "src/lib/draft/types.ts",
       "source_location": "L1",
       "id": "draft_types",
-      "community": 25,
+      "community": 133,
       "norm_label": "types.ts"
     },
     {
@@ -9278,7 +9287,7 @@
       "source_file": "src/lib/draft/types.ts",
       "source_location": "L13",
       "id": "draft_types_position",
-      "community": 51,
+      "community": 133,
       "norm_label": "position"
     },
     {
@@ -9287,7 +9296,7 @@
       "source_file": "src/lib/draft/types.ts",
       "source_location": "L21",
       "id": "draft_types_positions",
-      "community": 25,
+      "community": 133,
       "norm_label": "positions"
     },
     {
@@ -9296,7 +9305,7 @@
       "source_file": "src/lib/draft/types.ts",
       "source_location": "L26",
       "id": "draft_types_formation",
-      "community": 25,
+      "community": 51,
       "norm_label": "formation"
     },
     {
@@ -9305,7 +9314,7 @@
       "source_file": "src/lib/draft/types.ts",
       "source_location": "L35",
       "id": "draft_types_formations",
-      "community": 25,
+      "community": 133,
       "norm_label": "formations"
     },
     {
@@ -9314,7 +9323,7 @@
       "source_file": "src/lib/draft/types.ts",
       "source_location": "L40",
       "id": "draft_types_playerseason",
-      "community": 25,
+      "community": 133,
       "norm_label": "playerseason"
     },
     {
@@ -9332,7 +9341,7 @@
       "source_file": "src/lib/draft/types.ts",
       "source_location": "L63",
       "id": "draft_types_slot",
-      "community": 25,
+      "community": 133,
       "norm_label": "slot"
     },
     {
@@ -9341,7 +9350,7 @@
       "source_file": "src/lib/draft/types.ts",
       "source_location": "L72",
       "id": "draft_types_placedplayer",
-      "community": 86,
+      "community": 51,
       "norm_label": "placedplayer"
     },
     {
@@ -9350,7 +9359,7 @@
       "source_file": "src/lib/draft/types.ts",
       "source_location": "L84",
       "id": "draft_types_projected",
-      "community": 36,
+      "community": 28,
       "norm_label": "projected"
     },
     {
@@ -9359,7 +9368,7 @@
       "source_file": "src/lib/draft/types.ts",
       "source_location": "L93",
       "id": "draft_types_tier",
-      "community": 28,
+      "community": 136,
       "norm_label": "tier"
     },
     {
@@ -9368,7 +9377,7 @@
       "source_file": "src/lib/draft/types.ts",
       "source_location": "L103",
       "id": "draft_types_teamstatus",
-      "community": 28,
+      "community": 133,
       "norm_label": "teamstatus"
     },
     {
@@ -9377,7 +9386,7 @@
       "source_file": "src/lib/draft/ui.ts",
       "source_location": "L1",
       "id": "draft_ui",
-      "community": 28,
+      "community": 136,
       "norm_label": "ui.ts"
     },
     {
@@ -9386,7 +9395,7 @@
       "source_file": "src/lib/draft/ui.ts",
       "source_location": "L8",
       "id": "draft_ui_tier_color",
-      "community": 28,
+      "community": 136,
       "norm_label": "tier_color"
     },
     {
@@ -9395,7 +9404,7 @@
       "source_file": "src/lib/draft/ui.ts",
       "source_location": "L19",
       "id": "draft_ui_tier_tagline",
-      "community": 28,
+      "community": 136,
       "norm_label": "tier_tagline"
     },
     {
@@ -9404,7 +9413,7 @@
       "source_file": "src/lib/draft/ui.ts",
       "source_location": "L30",
       "id": "draft_ui_tiercolor",
-      "community": 28,
+      "community": 136,
       "norm_label": "tiercolor()"
     },
     {
@@ -9413,7 +9422,7 @@
       "source_file": "src/lib/draft/ui.ts",
       "source_location": "L35",
       "id": "draft_ui_strengthpct",
-      "community": 28,
+      "community": 136,
       "norm_label": "strengthpct()"
     },
     {
@@ -10043,7 +10052,7 @@
       "source_file": "src/lib/ratelimit.ts",
       "source_location": "L1",
       "id": "lib_ratelimit",
-      "community": 81,
+      "community": 36,
       "norm_label": "ratelimit.ts"
     },
     {
@@ -10052,7 +10061,7 @@
       "source_file": "src/lib/ratelimit.ts",
       "source_location": "L7",
       "id": "lib_ratelimit_entry",
-      "community": 81,
+      "community": 36,
       "norm_label": "entry"
     },
     {
@@ -10061,7 +10070,7 @@
       "source_file": "src/lib/ratelimit.ts",
       "source_location": "L8",
       "id": "lib_ratelimit_store",
-      "community": 81,
+      "community": 36,
       "norm_label": "store"
     },
     {
@@ -10070,7 +10079,7 @@
       "source_file": "src/lib/ratelimit.ts",
       "source_location": "L10",
       "id": "lib_ratelimit_ratelimit",
-      "community": 81,
+      "community": 36,
       "norm_label": "ratelimit()"
     },
     {
@@ -10079,7 +10088,7 @@
       "source_file": "src/lib/ratelimit.ts",
       "source_location": "L38",
       "id": "lib_ratelimit_ratelimitdistributed",
-      "community": 81,
+      "community": 83,
       "norm_label": "ratelimitdistributed()"
     },
     {
@@ -10259,7 +10268,7 @@
       "source_file": "src/lib/supabase/server.ts",
       "source_location": "L1",
       "id": "supabase_server",
-      "community": 89,
+      "community": 81,
       "norm_label": "server.ts"
     },
     {
@@ -10268,7 +10277,7 @@
       "source_file": "src/lib/supabase/server.ts",
       "source_location": "L5",
       "id": "supabase_server_createclient",
-      "community": 89,
+      "community": 81,
       "norm_label": "createclient()"
     },
     {
@@ -10295,7 +10304,7 @@
       "source_file": "src/lib/teamImages.ts",
       "source_location": "L1",
       "id": "lib_teamimages",
-      "community": 16,
+      "community": 97,
       "norm_label": "teamimages.ts"
     },
     {
@@ -10304,7 +10313,7 @@
       "source_file": "src/lib/teamImages.ts",
       "source_location": "L11",
       "id": "lib_teamimages_badge_map",
-      "community": 16,
+      "community": 97,
       "norm_label": "badge_map"
     },
     {
@@ -10313,7 +10322,7 @@
       "source_file": "src/lib/teamImages.ts",
       "source_location": "L100",
       "id": "lib_teamimages_getteambadgeurlsync",
-      "community": 16,
+      "community": 133,
       "norm_label": "getteambadgeurlsync()"
     },
     {
@@ -10322,7 +10331,7 @@
       "source_file": "src/lib/teamImages.ts",
       "source_location": "L105",
       "id": "lib_teamimages_getteambadgeurl",
-      "community": 16,
+      "community": 97,
       "norm_label": "getteambadgeurl()"
     },
     {
@@ -10331,7 +10340,7 @@
       "source_file": "src/lib/teamImages.ts",
       "source_location": "L110",
       "id": "lib_teamimages_getteamjerseyurl",
-      "community": 16,
+      "community": 97,
       "norm_label": "getteamjerseyurl()"
     },
     {
@@ -10340,7 +10349,7 @@
       "source_file": "src/lib/teamImages.ts",
       "source_location": "L115",
       "id": "lib_teamimages_prefetchteamimages",
-      "community": 16,
+      "community": 97,
       "norm_label": "prefetchteamimages()"
     },
     {
@@ -10349,7 +10358,7 @@
       "source_file": "src/lib/theme.ts",
       "source_location": "L1",
       "id": "lib_theme",
-      "community": 2,
+      "community": 25,
       "norm_label": "theme.ts"
     },
     {
@@ -10358,7 +10367,7 @@
       "source_file": "src/lib/theme.ts",
       "source_location": "L8",
       "id": "lib_theme_letter",
-      "community": 2,
+      "community": 25,
       "norm_label": "letter"
     },
     {
@@ -10367,7 +10376,7 @@
       "source_file": "src/lib/theme.ts",
       "source_location": "L11",
       "id": "lib_theme_letter_colors",
-      "community": 2,
+      "community": 25,
       "norm_label": "letter_colors"
     },
     {
@@ -10376,7 +10385,7 @@
       "source_file": "src/lib/theme.ts",
       "source_location": "L19",
       "id": "lib_theme_difficulty_color",
-      "community": 2,
+      "community": 25,
       "norm_label": "difficulty_color"
     },
     {
@@ -10385,7 +10394,7 @@
       "source_file": "src/lib/theme.ts",
       "source_location": "L28",
       "id": "lib_theme_difficulty_bg",
-      "community": 2,
+      "community": 25,
       "norm_label": "difficulty_bg"
     },
     {
@@ -10394,7 +10403,7 @@
       "source_file": "src/lib/theme.ts",
       "source_location": "L37",
       "id": "lib_theme_difficultycolor",
-      "community": 2,
+      "community": 25,
       "norm_label": "difficultycolor()"
     },
     {
@@ -10403,7 +10412,7 @@
       "source_file": "src/lib/theme.ts",
       "source_location": "L39",
       "id": "lib_theme_difficultybg",
-      "community": 2,
+      "community": 25,
       "norm_label": "difficultybg()"
     },
     {
@@ -10412,7 +10421,7 @@
       "source_file": "src/lib/theme.ts",
       "source_location": "L43",
       "id": "lib_theme_records_emoji",
-      "community": 94,
+      "community": 25,
       "norm_label": "records_emoji"
     },
     {
@@ -10421,7 +10430,7 @@
       "source_file": "src/lib/useGameLoop.ts",
       "source_location": "L1",
       "id": "lib_usegameloop",
-      "community": 0,
+      "community": 2,
       "norm_label": "usegameloop.ts"
     },
     {
@@ -10430,7 +10439,7 @@
       "source_file": "src/lib/useGameLoop.ts",
       "source_location": "L22",
       "id": "lib_usegameloop_usegameloop",
-      "community": 0,
+      "community": 2,
       "norm_label": "usegameloop()"
     },
     {
@@ -10439,7 +10448,7 @@
       "source_file": "src/lib/utils.ts",
       "source_location": "L1",
       "id": "lib_utils",
-      "community": 94,
+      "community": 139,
       "norm_label": "utils.ts"
     },
     {
@@ -10448,7 +10457,7 @@
       "source_file": "src/lib/utils.ts",
       "source_location": "L4",
       "id": "lib_utils_slugify",
-      "community": 94,
+      "community": 139,
       "norm_label": "slugify()"
     },
     {
@@ -15833,7 +15842,7 @@
       "file_type": "code",
       "source_file": "src/app/leagues/page.tsx",
       "source_location": "L1",
-      "community": 84,
+      "community": 140,
       "norm_label": "page.tsx",
       "id": "leagues_page"
     },
@@ -15878,7 +15887,7 @@
       "file_type": "code",
       "source_file": "src/lib/teamImages.ts",
       "source_location": "L11",
-      "community": 16,
+      "community": 97,
       "norm_label": "espn_ids",
       "id": "lib_teamimages_espn_ids"
     },
@@ -15887,7 +15896,7 @@
       "file_type": "code",
       "source_file": "src/lib/teamImages.ts",
       "source_location": "L44",
-      "community": 16,
+      "community": 97,
       "norm_label": "espnbadgeurl()",
       "id": "lib_teamimages_espnbadgeurl"
     },
@@ -16937,9 +16946,9 @@
       "source_file": "ios/App/App/capacitor.config.json",
       "source_location": "L15",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "app_capacitor_config",
-      "target": "app_capacitor_config_android",
-      "confidence_score": 1.0
+      "target": "app_capacitor_config_android"
     },
     {
       "relation": "contains",
@@ -16947,9 +16956,9 @@
       "source_file": "ios/App/App/capacitor.config.json",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "app_capacitor_config",
-      "target": "app_capacitor_config_appid",
-      "confidence_score": 1.0
+      "target": "app_capacitor_config_appid"
     },
     {
       "relation": "contains",
@@ -16957,9 +16966,9 @@
       "source_file": "ios/App/App/capacitor.config.json",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "app_capacitor_config",
-      "target": "app_capacitor_config_appname",
-      "confidence_score": 1.0
+      "target": "app_capacitor_config_appname"
     },
     {
       "relation": "contains",
@@ -16967,9 +16976,9 @@
       "source_file": "ios/App/App/capacitor.config.json",
       "source_location": "L11",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "app_capacitor_config",
-      "target": "app_capacitor_config_ios",
-      "confidence_score": 1.0
+      "target": "app_capacitor_config_ios"
     },
     {
       "relation": "contains",
@@ -16977,9 +16986,9 @@
       "source_file": "ios/App/App/capacitor.config.json",
       "source_location": "L18",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "app_capacitor_config",
-      "target": "app_capacitor_config_packageclasslist",
-      "confidence_score": 1.0
+      "target": "app_capacitor_config_packageclasslist"
     },
     {
       "relation": "contains",
@@ -16987,9 +16996,9 @@
       "source_file": "ios/App/App/capacitor.config.json",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "app_capacitor_config",
-      "target": "app_capacitor_config_server",
-      "confidence_score": 1.0
+      "target": "app_capacitor_config_server"
     },
     {
       "relation": "contains",
@@ -16997,9 +17006,9 @@
       "source_file": "ios/App/App/capacitor.config.json",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "app_capacitor_config",
-      "target": "app_capacitor_config_webdir",
-      "confidence_score": 1.0
+      "target": "app_capacitor_config_webdir"
     },
     {
       "relation": "contains",
@@ -17007,9 +17016,9 @@
       "source_file": "ios/App/App/capacitor.config.json",
       "source_location": "L8",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "app_capacitor_config_server",
-      "target": "app_capacitor_config_server_androidscheme",
-      "confidence_score": 1.0
+      "target": "app_capacitor_config_server_androidscheme"
     },
     {
       "relation": "contains",
@@ -17017,9 +17026,9 @@
       "source_file": "ios/App/App/capacitor.config.json",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "app_capacitor_config_server",
-      "target": "app_capacitor_config_server_cleartext",
-      "confidence_score": 1.0
+      "target": "app_capacitor_config_server_cleartext"
     },
     {
       "relation": "contains",
@@ -17027,9 +17036,9 @@
       "source_file": "ios/App/App/capacitor.config.json",
       "source_location": "L9",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "app_capacitor_config_server",
-      "target": "app_capacitor_config_server_iosscheme",
-      "confidence_score": 1.0
+      "target": "app_capacitor_config_server_iosscheme"
     },
     {
       "relation": "contains",
@@ -17037,9 +17046,9 @@
       "source_file": "ios/App/App/capacitor.config.json",
       "source_location": "L6",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "app_capacitor_config_server",
-      "target": "app_capacitor_config_server_url",
-      "confidence_score": 1.0
+      "target": "app_capacitor_config_server_url"
     },
     {
       "relation": "contains",
@@ -17047,9 +17056,9 @@
       "source_file": "ios/App/App/capacitor.config.json",
       "source_location": "L13",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "app_capacitor_config_ios",
-      "target": "app_capacitor_config_ios_backgroundcolor",
-      "confidence_score": 1.0
+      "target": "app_capacitor_config_ios_backgroundcolor"
     },
     {
       "relation": "contains",
@@ -17057,9 +17066,9 @@
       "source_file": "ios/App/App/capacitor.config.json",
       "source_location": "L12",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "app_capacitor_config_ios",
-      "target": "app_capacitor_config_ios_contentinset",
-      "confidence_score": 1.0
+      "target": "app_capacitor_config_ios_contentinset"
     },
     {
       "relation": "contains",
@@ -17067,9 +17076,9 @@
       "source_file": "ios/App/App/capacitor.config.json",
       "source_location": "L16",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "app_capacitor_config_android",
-      "target": "app_capacitor_config_android_backgroundcolor",
-      "confidence_score": 1.0
+      "target": "app_capacitor_config_android_backgroundcolor"
     },
     {
       "relation": "contains",
@@ -17340,6 +17349,16 @@
       "confidence_score": 1.0,
       "source": "package_dependencies",
       "target": "package_dependencies_vercel_analytics"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L23",
+      "weight": 1.0,
+      "source": "package_dependencies",
+      "target": "package_dependencies_vercel_speed_insights",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -17697,9 +17716,9 @@
       "source_file": "scripts/draft/add-nationality.mjs",
       "source_location": "L74",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_add_nationality",
-      "target": "draft_add_nationality_clubmatch",
-      "confidence_score": 1.0
+      "target": "draft_add_nationality_clubmatch"
     },
     {
       "relation": "contains",
@@ -17707,9 +17726,9 @@
       "source_file": "scripts/draft/add-nationality.mjs",
       "source_location": "L23",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_add_nationality",
-      "target": "draft_add_nationality_dirname",
-      "confidence_score": 1.0
+      "target": "draft_add_nationality_dirname"
     },
     {
       "relation": "contains",
@@ -17717,9 +17736,9 @@
       "source_file": "scripts/draft/add-nationality.mjs",
       "source_location": "L79",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_add_nationality",
-      "target": "draft_add_nationality_files",
-      "confidence_score": 1.0
+      "target": "draft_add_nationality_files"
     },
     {
       "relation": "contains",
@@ -17727,9 +17746,9 @@
       "source_file": "scripts/draft/add-nationality.mjs",
       "source_location": "L112",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_add_nationality",
-      "target": "draft_add_nationality_hasnat",
-      "confidence_score": 1.0
+      "target": "draft_add_nationality_hasnat"
     },
     {
       "relation": "contains",
@@ -17737,9 +17756,9 @@
       "source_file": "scripts/draft/add-nationality.mjs",
       "source_location": "L111",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_add_nationality",
-      "target": "draft_add_nationality_header",
-      "confidence_score": 1.0
+      "target": "draft_add_nationality_header"
     },
     {
       "relation": "contains",
@@ -17747,9 +17766,9 @@
       "source_file": "scripts/draft/add-nationality.mjs",
       "source_location": "L39",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_add_nationality",
-      "target": "draft_add_nationality_keysfor",
-      "confidence_score": 1.0
+      "target": "draft_add_nationality_keysfor"
     },
     {
       "relation": "contains",
@@ -17757,9 +17776,9 @@
       "source_file": "scripts/draft/add-nationality.mjs",
       "source_location": "L110",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_add_nationality",
-      "target": "draft_add_nationality_lines",
-      "confidence_score": 1.0
+      "target": "draft_add_nationality_lines"
     },
     {
       "relation": "contains",
@@ -17767,9 +17786,9 @@
       "source_file": "scripts/draft/add-nationality.mjs",
       "source_location": "L27",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_add_nationality",
-      "target": "draft_add_nationality_norm",
-      "confidence_score": 1.0
+      "target": "draft_add_nationality_norm"
     },
     {
       "relation": "contains",
@@ -17777,9 +17796,9 @@
       "source_file": "scripts/draft/add-nationality.mjs",
       "source_location": "L116",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_add_nationality",
-      "target": "draft_add_nationality_out",
-      "confidence_score": 1.0
+      "target": "draft_add_nationality_out"
     },
     {
       "relation": "contains",
@@ -17787,9 +17806,9 @@
       "source_file": "scripts/draft/add-nationality.mjs",
       "source_location": "L49",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_add_nationality",
-      "target": "draft_add_nationality_parseline",
-      "confidence_score": 1.0
+      "target": "draft_add_nationality_parseline"
     },
     {
       "relation": "contains",
@@ -17797,9 +17816,9 @@
       "source_file": "scripts/draft/add-nationality.mjs",
       "source_location": "L113",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_add_nationality",
-      "target": "draft_add_nationality_pclub",
-      "confidence_score": 1.0
+      "target": "draft_add_nationality_pclub"
     },
     {
       "relation": "contains",
@@ -17807,9 +17826,9 @@
       "source_file": "scripts/draft/add-nationality.mjs",
       "source_location": "L25",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_add_nationality",
-      "target": "draft_add_nationality_players",
-      "confidence_score": 1.0
+      "target": "draft_add_nationality_players"
     },
     {
       "relation": "contains",
@@ -17817,9 +17836,9 @@
       "source_file": "scripts/draft/add-nationality.mjs",
       "source_location": "L113",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_add_nationality",
-      "target": "draft_add_nationality_pname",
-      "confidence_score": 1.0
+      "target": "draft_add_nationality_pname"
     },
     {
       "relation": "contains",
@@ -17827,9 +17846,9 @@
       "source_file": "scripts/draft/add-nationality.mjs",
       "source_location": "L24",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_add_nationality",
-      "target": "draft_add_nationality_raw_dir",
-      "confidence_score": 1.0
+      "target": "draft_add_nationality_raw_dir"
     },
     {
       "relation": "contains",
@@ -17837,9 +17856,9 @@
       "source_file": "scripts/draft/add-nationality.mjs",
       "source_location": "L77",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_add_nationality",
-      "target": "draft_add_nationality_srcbykey",
-      "confidence_score": 1.0
+      "target": "draft_add_nationality_srcbykey"
     },
     {
       "relation": "contains",
@@ -17847,9 +17866,9 @@
       "source_file": "scripts/draft/add-nationality.mjs",
       "source_location": "L32",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_add_nationality",
-      "target": "draft_add_nationality_tokens",
-      "confidence_score": 1.0
+      "target": "draft_add_nationality_tokens"
     },
     {
       "relation": "calls",
@@ -17858,9 +17877,9 @@
       "source_file": "scripts/draft/add-nationality.mjs",
       "source_location": "L40",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_add_nationality_keysfor",
-      "target": "draft_add_nationality_tokens",
-      "confidence_score": 1.0
+      "target": "draft_add_nationality_tokens"
     },
     {
       "relation": "contains",
@@ -17958,9 +17977,9 @@
       "source_file": "scripts/draft/build-dataset.mjs",
       "source_location": "L119",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_build_dataset",
-      "target": "draft_build_dataset_line",
-      "confidence_score": 1.0
+      "target": "draft_build_dataset_line"
     },
     {
       "relation": "contains",
@@ -17968,9 +17987,9 @@
       "source_file": "scripts/draft/build-dataset.mjs",
       "source_location": "L63",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_build_dataset",
-      "target": "draft_build_dataset_natbyidentity",
-      "confidence_score": 1.0
+      "target": "draft_build_dataset_natbyidentity"
     },
     {
       "relation": "contains",
@@ -17978,9 +17997,9 @@
       "source_file": "scripts/draft/build-dataset.mjs",
       "source_location": "L96",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_build_dataset",
-      "target": "draft_build_dataset_nation_aliases",
-      "confidence_score": 1.0
+      "target": "draft_build_dataset_nation_aliases"
     },
     {
       "relation": "contains",
@@ -17988,9 +18007,9 @@
       "source_file": "scripts/draft/build-dataset.mjs",
       "source_location": "L138",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_build_dataset",
-      "target": "draft_build_dataset_nations",
-      "confidence_score": 1.0
+      "target": "draft_build_dataset_nations"
     },
     {
       "relation": "contains",
@@ -17998,9 +18017,9 @@
       "source_file": "scripts/draft/build-dataset.mjs",
       "source_location": "L123",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_build_dataset",
-      "target": "draft_build_dataset_natmap",
-      "confidence_score": 1.0
+      "target": "draft_build_dataset_natmap"
     },
     {
       "relation": "contains",
@@ -18028,9 +18047,9 @@
       "source_file": "scripts/draft/build-dataset.mjs",
       "source_location": "L137",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_build_dataset",
-      "target": "draft_build_dataset_playable",
-      "confidence_score": 1.0
+      "target": "draft_build_dataset_playable"
     },
     {
       "relation": "contains",
@@ -18280,9 +18299,9 @@
       "source_file": "scripts/draft/validate-wc.mjs",
       "source_location": "L36",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_validate_wc",
-      "target": "draft_validate_wc_byname",
-      "confidence_score": 1.0
+      "target": "draft_validate_wc_byname"
     },
     {
       "relation": "contains",
@@ -18290,9 +18309,9 @@
       "source_file": "scripts/draft/validate-wc.mjs",
       "source_location": "L17",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_validate_wc",
-      "target": "draft_validate_wc_data",
-      "confidence_score": 1.0
+      "target": "draft_validate_wc_data"
     },
     {
       "relation": "contains",
@@ -18300,9 +18319,9 @@
       "source_file": "scripts/draft/validate-wc.mjs",
       "source_location": "L16",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_validate_wc",
-      "target": "draft_validate_wc_dirname",
-      "confidence_score": 1.0
+      "target": "draft_validate_wc_dirname"
     },
     {
       "relation": "contains",
@@ -18310,9 +18329,9 @@
       "source_file": "scripts/draft/validate-wc.mjs",
       "source_location": "L38",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_validate_wc",
-      "target": "draft_validate_wc_pickable",
-      "confidence_score": 1.0
+      "target": "draft_validate_wc_pickable"
     },
     {
       "relation": "contains",
@@ -18320,9 +18339,9 @@
       "source_file": "scripts/draft/validate-wc.mjs",
       "source_location": "L37",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_validate_wc",
-      "target": "draft_validate_wc_playable",
-      "confidence_score": 1.0
+      "target": "draft_validate_wc_playable"
     },
     {
       "relation": "contains",
@@ -18330,9 +18349,9 @@
       "source_file": "scripts/draft/validate-wc.mjs",
       "source_location": "L20",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_validate_wc",
-      "target": "draft_validate_wc_wc",
-      "confidence_score": 1.0
+      "target": "draft_validate_wc_wc"
     },
     {
       "relation": "contains",
@@ -18340,9 +18359,9 @@
       "source_file": "scripts/draft/validate-wc.mjs",
       "source_location": "L46",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_validate_wc",
-      "target": "draft_validate_wc_wcmissing",
-      "confidence_score": 1.0
+      "target": "draft_validate_wc_wcmissing"
     },
     {
       "relation": "contains",
@@ -18350,9 +18369,9 @@
       "source_file": "scripts/draft/validate-wc.mjs",
       "source_location": "L55",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_validate_wc",
-      "target": "draft_validate_wc_wcnone",
-      "confidence_score": 1.0
+      "target": "draft_validate_wc_wcnone"
     },
     {
       "relation": "contains",
@@ -18625,9 +18644,9 @@
       "source_file": "scripts/send-reengagement.mjs",
       "source_location": "L27",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "scripts_send_reengagement",
-      "target": "scripts_send_reengagement_args",
-      "confidence_score": 1.0
+      "target": "scripts_send_reengagement_args"
     },
     {
       "relation": "contains",
@@ -18635,9 +18654,9 @@
       "source_file": "scripts/send-reengagement.mjs",
       "source_location": "L80",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "scripts_send_reengagement",
-      "target": "scripts_send_reengagement_chunk",
-      "confidence_score": 1.0
+      "target": "scripts_send_reengagement_chunk"
     },
     {
       "relation": "contains",
@@ -18645,9 +18664,9 @@
       "source_file": "scripts/send-reengagement.mjs",
       "source_location": "L49",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "scripts_send_reengagement",
-      "target": "scripts_send_reengagement_daysuntilworldcup",
-      "confidence_score": 1.0
+      "target": "scripts_send_reengagement_daysuntilworldcup"
     },
     {
       "relation": "contains",
@@ -18655,9 +18674,9 @@
       "source_file": "scripts/send-reengagement.mjs",
       "source_location": "L24",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "scripts_send_reengagement",
-      "target": "scripts_send_reengagement_dirname",
-      "confidence_score": 1.0
+      "target": "scripts_send_reengagement_dirname"
     },
     {
       "relation": "contains",
@@ -18665,9 +18684,9 @@
       "source_file": "scripts/send-reengagement.mjs",
       "source_location": "L29",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "scripts_send_reengagement",
-      "target": "scripts_send_reengagement_hoursidx",
-      "confidence_score": 1.0
+      "target": "scripts_send_reengagement_hoursidx"
     },
     {
       "relation": "contains",
@@ -18675,9 +18694,9 @@
       "source_file": "scripts/send-reengagement.mjs",
       "source_location": "L87",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "scripts_send_reengagement",
-      "target": "scripts_send_reengagement_main",
-      "confidence_score": 1.0
+      "target": "scripts_send_reengagement_main"
     },
     {
       "relation": "contains",
@@ -18685,9 +18704,9 @@
       "source_file": "scripts/send-reengagement.mjs",
       "source_location": "L58",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "scripts_send_reengagement",
-      "target": "scripts_send_reengagement_rendertemplate",
-      "confidence_score": 1.0
+      "target": "scripts_send_reengagement_rendertemplate"
     },
     {
       "relation": "contains",
@@ -18695,9 +18714,9 @@
       "source_file": "scripts/send-reengagement.mjs",
       "source_location": "L46",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "scripts_send_reengagement",
-      "target": "scripts_send_reengagement_resend",
-      "confidence_score": 1.0
+      "target": "scripts_send_reengagement_resend"
     },
     {
       "relation": "contains",
@@ -18705,9 +18724,9 @@
       "source_file": "scripts/send-reengagement.mjs",
       "source_location": "L43",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "scripts_send_reengagement",
-      "target": "scripts_send_reengagement_supabase",
-      "confidence_score": 1.0
+      "target": "scripts_send_reengagement_supabase"
     },
     {
       "relation": "calls",
@@ -18716,9 +18735,9 @@
       "source_file": "scripts/send-reengagement.mjs",
       "source_location": "L63",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "scripts_send_reengagement_rendertemplate",
-      "target": "scripts_send_reengagement_daysuntilworldcup",
-      "confidence_score": 1.0
+      "target": "scripts_send_reengagement_daysuntilworldcup"
     },
     {
       "relation": "calls",
@@ -18727,9 +18746,9 @@
       "source_file": "scripts/send-reengagement.mjs",
       "source_location": "L129",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "scripts_send_reengagement_main",
-      "target": "scripts_send_reengagement_chunk",
-      "confidence_score": 1.0
+      "target": "scripts_send_reengagement_chunk"
     },
     {
       "relation": "imports_from",
@@ -22763,9 +22782,9 @@
       "source_file": "src/app/38-0/wc/page.tsx",
       "source_location": "L19",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "wc_page",
-      "target": "draft_formations",
-      "confidence_score": 1.0
+      "target": "draft_formations"
     },
     {
       "relation": "imports",
@@ -22774,9 +22793,9 @@
       "source_file": "src/app/38-0/wc/page.tsx",
       "source_location": "L19",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "wc_page",
-      "target": "draft_formations_slotsfor",
-      "confidence_score": 1.0
+      "target": "draft_formations_slotsfor"
     },
     {
       "relation": "imports_from",
@@ -22785,9 +22804,9 @@
       "source_file": "src/app/38-0/wc/page.tsx",
       "source_location": "L16",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "wc_page",
-      "target": "draft_local",
-      "confidence_score": 1.0
+      "target": "draft_local"
     },
     {
       "relation": "imports",
@@ -22796,9 +22815,9 @@
       "source_file": "src/app/38-0/wc/page.tsx",
       "source_location": "L16",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "wc_page",
-      "target": "draft_local_emptyteam",
-      "confidence_score": 1.0
+      "target": "draft_local_emptyteam"
     },
     {
       "relation": "imports",
@@ -22807,9 +22826,9 @@
       "source_file": "src/app/38-0/wc/page.tsx",
       "source_location": "L16",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "wc_page",
-      "target": "draft_local_iscomplete",
-      "confidence_score": 1.0
+      "target": "draft_local_iscomplete"
     },
     {
       "relation": "imports",
@@ -22818,9 +22837,9 @@
       "source_file": "src/app/38-0/wc/page.tsx",
       "source_location": "L16",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "wc_page",
-      "target": "draft_local_localteam",
-      "confidence_score": 1.0
+      "target": "draft_local_localteam"
     },
     {
       "relation": "imports",
@@ -22829,9 +22848,9 @@
       "source_file": "src/app/38-0/wc/page.tsx",
       "source_location": "L16",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "wc_page",
-      "target": "draft_local_openslots",
-      "confidence_score": 1.0
+      "target": "draft_local_openslots"
     },
     {
       "relation": "imports",
@@ -22840,9 +22859,9 @@
       "source_file": "src/app/38-0/wc/page.tsx",
       "source_location": "L16",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "wc_page",
-      "target": "draft_local_placeplayer",
-      "confidence_score": 1.0
+      "target": "draft_local_placeplayer"
     },
     {
       "relation": "imports",
@@ -22851,9 +22870,9 @@
       "source_file": "src/app/38-0/wc/page.tsx",
       "source_location": "L16",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "wc_page",
-      "target": "draft_local_usedplayerids",
-      "confidence_score": 1.0
+      "target": "draft_local_usedplayerids"
     },
     {
       "relation": "imports",
@@ -22862,9 +22881,9 @@
       "source_file": "src/app/38-0/wc/page.tsx",
       "source_location": "L16",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "wc_page",
-      "target": "draft_local_usedplayernames",
-      "confidence_score": 1.0
+      "target": "draft_local_usedplayernames"
     },
     {
       "relation": "imports_from",
@@ -22873,9 +22892,9 @@
       "source_file": "src/app/38-0/wc/page.tsx",
       "source_location": "L14",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "wc_page",
-      "target": "draft_pitch",
-      "confidence_score": 1.0
+      "target": "draft_pitch"
     },
     {
       "relation": "imports",
@@ -22884,9 +22903,9 @@
       "source_file": "src/app/38-0/wc/page.tsx",
       "source_location": "L14",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "wc_page",
-      "target": "draft_pitch_pitch",
-      "confidence_score": 1.0
+      "target": "draft_pitch_pitch"
     },
     {
       "relation": "imports_from",
@@ -22895,9 +22914,9 @@
       "source_file": "src/app/38-0/wc/page.tsx",
       "source_location": "L15",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "wc_page",
-      "target": "draft_pool",
-      "confidence_score": 1.0
+      "target": "draft_pool"
     },
     {
       "relation": "imports",
@@ -22906,9 +22925,9 @@
       "source_file": "src/app/38-0/wc/page.tsx",
       "source_location": "L15",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "wc_page",
-      "target": "draft_pool_pickablenation",
-      "confidence_score": 1.0
+      "target": "draft_pool_pickablenation"
     },
     {
       "relation": "imports",
@@ -22917,9 +22936,9 @@
       "source_file": "src/app/38-0/wc/page.tsx",
       "source_location": "L15",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "wc_page",
-      "target": "draft_pool_pickablenations",
-      "confidence_score": 1.0
+      "target": "draft_pool_pickablenations"
     },
     {
       "relation": "imports",
@@ -22928,9 +22947,9 @@
       "source_file": "src/app/38-0/wc/page.tsx",
       "source_location": "L15",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "wc_page",
-      "target": "draft_pool_spinfornation",
-      "confidence_score": 1.0
+      "target": "draft_pool_spinfornation"
     },
     {
       "relation": "imports_from",
@@ -22939,9 +22958,9 @@
       "source_file": "src/app/38-0/wc/page.tsx",
       "source_location": "L20",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "wc_page",
-      "target": "draft_score",
-      "confidence_score": 1.0
+      "target": "draft_score"
     },
     {
       "relation": "imports",
@@ -22950,9 +22969,9 @@
       "source_file": "src/app/38-0/wc/page.tsx",
       "source_location": "L20",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "wc_page",
-      "target": "draft_score_canplay",
-      "confidence_score": 1.0
+      "target": "draft_score_canplay"
     },
     {
       "relation": "imports",
@@ -22961,9 +22980,9 @@
       "source_file": "src/app/38-0/wc/page.tsx",
       "source_location": "L20",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "wc_page",
-      "target": "draft_score_category_color",
-      "confidence_score": 1.0
+      "target": "draft_score_category_color"
     },
     {
       "relation": "imports",
@@ -22972,9 +22991,9 @@
       "source_file": "src/app/38-0/wc/page.tsx",
       "source_location": "L20",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "wc_page",
-      "target": "draft_score_lineratings",
-      "confidence_score": 1.0
+      "target": "draft_score_lineratings"
     },
     {
       "relation": "imports",
@@ -22983,9 +23002,9 @@
       "source_file": "src/app/38-0/wc/page.tsx",
       "source_location": "L20",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "wc_page",
-      "target": "draft_score_poscategory",
-      "confidence_score": 1.0
+      "target": "draft_score_poscategory"
     },
     {
       "relation": "imports_from",
@@ -22994,9 +23013,9 @@
       "source_file": "src/app/38-0/wc/page.tsx",
       "source_location": "L22",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "wc_page",
-      "target": "draft_types",
-      "confidence_score": 1.0
+      "target": "draft_types"
     },
     {
       "relation": "imports",
@@ -23005,9 +23024,9 @@
       "source_file": "src/app/38-0/wc/page.tsx",
       "source_location": "L22",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "wc_page",
-      "target": "draft_types_formation",
-      "confidence_score": 1.0
+      "target": "draft_types_formation"
     },
     {
       "relation": "imports",
@@ -23016,9 +23035,9 @@
       "source_file": "src/app/38-0/wc/page.tsx",
       "source_location": "L22",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "wc_page",
-      "target": "draft_types_playerseason",
-      "confidence_score": 1.0
+      "target": "draft_types_playerseason"
     },
     {
       "relation": "imports",
@@ -23027,9 +23046,9 @@
       "source_file": "src/app/38-0/wc/page.tsx",
       "source_location": "L22",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "wc_page",
-      "target": "draft_types_slot",
-      "confidence_score": 1.0
+      "target": "draft_types_slot"
     },
     {
       "relation": "imports_from",
@@ -23038,9 +23057,9 @@
       "source_file": "src/app/38-0/wc/page.tsx",
       "source_location": "L21",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "wc_page",
-      "target": "lib_teamimages",
-      "confidence_score": 1.0
+      "target": "lib_teamimages"
     },
     {
       "relation": "imports",
@@ -23049,9 +23068,9 @@
       "source_file": "src/app/38-0/wc/page.tsx",
       "source_location": "L21",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "wc_page",
-      "target": "lib_teamimages_getteambadgeurlsync",
-      "confidence_score": 1.0
+      "target": "lib_teamimages_getteambadgeurlsync"
     },
     {
       "relation": "contains",
@@ -23059,9 +23078,9 @@
       "source_file": "src/app/38-0/wc/page.tsx",
       "source_location": "L24",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "wc_page",
-      "target": "wc_page_formation",
-      "confidence_score": 1.0
+      "target": "wc_page_formation"
     },
     {
       "relation": "contains",
@@ -23069,9 +23088,9 @@
       "source_file": "src/app/38-0/wc/page.tsx",
       "source_location": "L26",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "wc_page",
-      "target": "wc_page_worldcupentry",
-      "confidence_score": 1.0
+      "target": "wc_page_worldcupentry"
     },
     {
       "relation": "calls",
@@ -23091,9 +23110,9 @@
       "source_file": "src/app/38-0/wc/run/[id]/page.tsx",
       "source_location": "L16",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_38_0_wc_run_id_page_tsx_id_page",
-      "target": "draft_formations",
-      "confidence_score": 1.0
+      "target": "draft_formations"
     },
     {
       "relation": "imports",
@@ -23102,9 +23121,9 @@
       "source_file": "src/app/38-0/wc/run/[id]/page.tsx",
       "source_location": "L16",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_38_0_wc_run_id_page_tsx_id_page",
-      "target": "draft_formations_slotsfor",
-      "confidence_score": 1.0
+      "target": "draft_formations_slotsfor"
     },
     {
       "relation": "imports_from",
@@ -23113,9 +23132,9 @@
       "source_file": "src/app/38-0/wc/run/[id]/page.tsx",
       "source_location": "L14",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_38_0_wc_run_id_page_tsx_id_page",
-      "target": "draft_pitch",
-      "confidence_score": 1.0
+      "target": "draft_pitch"
     },
     {
       "relation": "imports",
@@ -23124,9 +23143,9 @@
       "source_file": "src/app/38-0/wc/run/[id]/page.tsx",
       "source_location": "L14",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_38_0_wc_run_id_page_tsx_id_page",
-      "target": "draft_pitch_pitch",
-      "confidence_score": 1.0
+      "target": "draft_pitch_pitch"
     },
     {
       "relation": "imports_from",
@@ -23135,9 +23154,9 @@
       "source_file": "src/app/38-0/wc/run/[id]/page.tsx",
       "source_location": "L15",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_38_0_wc_run_id_page_tsx_id_page",
-      "target": "draft_pool",
-      "confidence_score": 1.0
+      "target": "draft_pool"
     },
     {
       "relation": "imports",
@@ -23146,9 +23165,9 @@
       "source_file": "src/app/38-0/wc/run/[id]/page.tsx",
       "source_location": "L15",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_38_0_wc_run_id_page_tsx_id_page",
-      "target": "draft_pool_spinfornation",
-      "confidence_score": 1.0
+      "target": "draft_pool_spinfornation"
     },
     {
       "relation": "imports_from",
@@ -23157,9 +23176,9 @@
       "source_file": "src/app/38-0/wc/run/[id]/page.tsx",
       "source_location": "L17",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_38_0_wc_run_id_page_tsx_id_page",
-      "target": "draft_score",
-      "confidence_score": 1.0
+      "target": "draft_score"
     },
     {
       "relation": "imports",
@@ -23168,9 +23187,9 @@
       "source_file": "src/app/38-0/wc/run/[id]/page.tsx",
       "source_location": "L17",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_38_0_wc_run_id_page_tsx_id_page",
-      "target": "draft_score_category_color",
-      "confidence_score": 1.0
+      "target": "draft_score_category_color"
     },
     {
       "relation": "imports",
@@ -23179,9 +23198,9 @@
       "source_file": "src/app/38-0/wc/run/[id]/page.tsx",
       "source_location": "L17",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_38_0_wc_run_id_page_tsx_id_page",
-      "target": "draft_score_poscategory",
-      "confidence_score": 1.0
+      "target": "draft_score_poscategory"
     },
     {
       "relation": "imports_from",
@@ -23190,9 +23209,9 @@
       "source_file": "src/app/38-0/wc/run/[id]/page.tsx",
       "source_location": "L20",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_38_0_wc_run_id_page_tsx_id_page",
-      "target": "draft_types",
-      "confidence_score": 1.0
+      "target": "draft_types"
     },
     {
       "relation": "imports",
@@ -23201,9 +23220,9 @@
       "source_file": "src/app/38-0/wc/run/[id]/page.tsx",
       "source_location": "L20",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_38_0_wc_run_id_page_tsx_id_page",
-      "target": "draft_types_formation",
-      "confidence_score": 1.0
+      "target": "draft_types_formation"
     },
     {
       "relation": "imports",
@@ -23212,9 +23231,9 @@
       "source_file": "src/app/38-0/wc/run/[id]/page.tsx",
       "source_location": "L20",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_38_0_wc_run_id_page_tsx_id_page",
-      "target": "draft_types_placedplayer",
-      "confidence_score": 1.0
+      "target": "draft_types_placedplayer"
     },
     {
       "relation": "imports",
@@ -23223,9 +23242,9 @@
       "source_file": "src/app/38-0/wc/run/[id]/page.tsx",
       "source_location": "L20",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_38_0_wc_run_id_page_tsx_id_page",
-      "target": "draft_types_playerseason",
-      "confidence_score": 1.0
+      "target": "draft_types_playerseason"
     },
     {
       "relation": "imports_from",
@@ -23234,9 +23253,9 @@
       "source_file": "src/app/38-0/wc/run/[id]/page.tsx",
       "source_location": "L18",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_38_0_wc_run_id_page_tsx_id_page",
-      "target": "draft_wc",
-      "confidence_score": 1.0
+      "target": "draft_wc"
     },
     {
       "relation": "imports_from",
@@ -23245,9 +23264,9 @@
       "source_file": "src/app/38-0/wc/run/[id]/page.tsx",
       "source_location": "L19",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_38_0_wc_run_id_page_tsx_id_page",
-      "target": "draft_wc2026",
-      "confidence_score": 1.0
+      "target": "draft_wc2026"
     },
     {
       "relation": "imports",
@@ -23256,9 +23275,9 @@
       "source_file": "src/app/38-0/wc/run/[id]/page.tsx",
       "source_location": "L19",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_38_0_wc_run_id_page_tsx_id_page",
-      "target": "draft_wc2026_wcnation",
-      "confidence_score": 1.0
+      "target": "draft_wc2026_wcnation"
     },
     {
       "relation": "imports",
@@ -23267,9 +23286,9 @@
       "source_file": "src/app/38-0/wc/run/[id]/page.tsx",
       "source_location": "L18",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_38_0_wc_run_id_page_tsx_id_page",
-      "target": "draft_wc_isduel",
-      "confidence_score": 1.0
+      "target": "draft_wc_isduel"
     },
     {
       "relation": "imports",
@@ -23278,9 +23297,9 @@
       "source_file": "src/app/38-0/wc/run/[id]/page.tsx",
       "source_location": "L18",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_38_0_wc_run_id_page_tsx_id_page",
-      "target": "draft_wc_run_stage_label",
-      "confidence_score": 1.0
+      "target": "draft_wc_run_stage_label"
     },
     {
       "relation": "imports",
@@ -23289,9 +23308,9 @@
       "source_file": "src/app/38-0/wc/run/[id]/page.tsx",
       "source_location": "L18",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_38_0_wc_run_id_page_tsx_id_page",
-      "target": "draft_wc_runstage",
-      "confidence_score": 1.0
+      "target": "draft_wc_runstage"
     },
     {
       "relation": "imports",
@@ -23300,9 +23319,9 @@
       "source_file": "src/app/38-0/wc/run/[id]/page.tsx",
       "source_location": "L18",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_38_0_wc_run_id_page_tsx_id_page",
-      "target": "draft_wc_upgrade_floor",
-      "confidence_score": 1.0
+      "target": "draft_wc_upgrade_floor"
     },
     {
       "relation": "contains",
@@ -23310,9 +23329,9 @@
       "source_file": "src/app/38-0/wc/run/[id]/page.tsx",
       "source_location": "L309",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_38_0_wc_run_id_page_tsx_id_page",
-      "target": "id_page_divider",
-      "confidence_score": 1.0
+      "target": "id_page_divider"
     },
     {
       "relation": "contains",
@@ -23320,9 +23339,9 @@
       "source_file": "src/app/38-0/wc/run/[id]/page.tsx",
       "source_location": "L22",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_38_0_wc_run_id_page_tsx_id_page",
-      "target": "id_page_fixture",
-      "confidence_score": 1.0
+      "target": "id_page_fixture"
     },
     {
       "relation": "contains",
@@ -23330,9 +23349,9 @@
       "source_file": "src/app/38-0/wc/run/[id]/page.tsx",
       "source_location": "L31",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_38_0_wc_run_id_page_tsx_id_page",
-      "target": "id_page_gamereveal",
-      "confidence_score": 1.0
+      "target": "id_page_gamereveal"
     },
     {
       "relation": "contains",
@@ -23340,9 +23359,9 @@
       "source_file": "src/app/38-0/wc/run/[id]/page.tsx",
       "source_location": "L29",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_38_0_wc_run_id_page_tsx_id_page",
-      "target": "id_page_matchrow",
-      "confidence_score": 1.0
+      "target": "id_page_matchrow"
     },
     {
       "relation": "contains",
@@ -23350,9 +23369,9 @@
       "source_file": "src/app/38-0/wc/run/[id]/page.tsx",
       "source_location": "L30",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_38_0_wc_run_id_page_tsx_id_page",
-      "target": "id_page_opponent",
-      "confidence_score": 1.0
+      "target": "id_page_opponent"
     },
     {
       "relation": "contains",
@@ -23360,9 +23379,9 @@
       "source_file": "src/app/38-0/wc/run/[id]/page.tsx",
       "source_location": "L32",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_38_0_wc_run_id_page_tsx_id_page",
-      "target": "id_page_playresp",
-      "confidence_score": 1.0
+      "target": "id_page_playresp"
     },
     {
       "relation": "contains",
@@ -23370,9 +23389,9 @@
       "source_file": "src/app/38-0/wc/run/[id]/page.tsx",
       "source_location": "L313",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_38_0_wc_run_id_page_tsx_id_page",
-      "target": "id_page_row",
-      "confidence_score": 1.0
+      "target": "id_page_row"
     },
     {
       "relation": "contains",
@@ -23380,9 +23399,9 @@
       "source_file": "src/app/38-0/wc/run/[id]/page.tsx",
       "source_location": "L23",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_38_0_wc_run_id_page_tsx_id_page",
-      "target": "id_page_run",
-      "confidence_score": 1.0
+      "target": "id_page_run"
     },
     {
       "relation": "contains",
@@ -23390,9 +23409,9 @@
       "source_file": "src/app/38-0/wc/run/[id]/page.tsx",
       "source_location": "L295",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_38_0_wc_run_id_page_tsx_id_page",
-      "target": "id_page_scorecard",
-      "confidence_score": 1.0
+      "target": "id_page_scorecard"
     },
     {
       "relation": "contains",
@@ -23400,9 +23419,9 @@
       "source_file": "src/app/38-0/wc/run/[id]/page.tsx",
       "source_location": "L305",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_38_0_wc_run_id_page_tsx_id_page",
-      "target": "id_page_screen",
-      "confidence_score": 1.0
+      "target": "id_page_screen"
     },
     {
       "relation": "contains",
@@ -23410,9 +23429,9 @@
       "source_file": "src/app/38-0/wc/run/[id]/page.tsx",
       "source_location": "L34",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_38_0_wc_run_id_page_tsx_id_page",
-      "target": "id_page_worldcuprun",
-      "confidence_score": 1.0
+      "target": "id_page_worldcuprun"
     },
     {
       "relation": "calls",
@@ -25414,9 +25433,9 @@
       "source_file": "src/app/api/draft/live/[id]/route.ts",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_api_draft_live_id_route_ts_id_route",
-      "target": "draft_live_server",
-      "confidence_score": 1.0
+      "target": "draft_live_server"
     },
     {
       "relation": "imports",
@@ -25425,9 +25444,9 @@
       "source_file": "src/app/api/draft/live/[id]/route.ts",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_api_draft_live_id_route_ts_id_route",
-      "target": "draft_live_server_sideof",
-      "confidence_score": 1.0
+      "target": "draft_live_server_sideof"
     },
     {
       "relation": "imports_from",
@@ -25436,9 +25455,9 @@
       "source_file": "src/app/api/draft/live/[id]/route.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_api_draft_live_id_route_ts_id_route",
-      "target": "draft_server",
-      "confidence_score": 1.0
+      "target": "draft_server"
     },
     {
       "relation": "imports",
@@ -25447,9 +25466,9 @@
       "source_file": "src/app/api/draft/live/[id]/route.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_api_draft_live_id_route_ts_id_route",
-      "target": "draft_server_createdraftdb",
-      "confidence_score": 1.0
+      "target": "draft_server_createdraftdb"
     },
     {
       "relation": "contains",
@@ -25457,9 +25476,9 @@
       "source_file": "src/app/api/draft/live/[id]/route.ts",
       "source_location": "L8",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_api_draft_live_id_route_ts_id_route",
-      "target": "src_app_api_draft_live_id_route_ts_id_route_get",
-      "confidence_score": 1.0
+      "target": "src_app_api_draft_live_id_route_ts_id_route_get"
     },
     {
       "relation": "imports_from",
@@ -25468,9 +25487,9 @@
       "source_file": "src/app/api/draft/live/[id]/route.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_api_draft_live_id_route_ts_id_route",
-      "target": "supabase_server",
-      "confidence_score": 1.0
+      "target": "supabase_server"
     },
     {
       "relation": "imports",
@@ -25479,9 +25498,9 @@
       "source_file": "src/app/api/draft/live/[id]/route.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_api_draft_live_id_route_ts_id_route",
-      "target": "supabase_server_createclient",
-      "confidence_score": 1.0
+      "target": "supabase_server_createclient"
     },
     {
       "relation": "calls",
@@ -27127,9 +27146,9 @@
       "source_file": "src/app/api/draft/wc-og/route.tsx",
       "source_location": "L20",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "wc_og_route",
-      "target": "wc_og_route_get",
-      "confidence_score": 1.0
+      "target": "wc_og_route_get"
     },
     {
       "relation": "contains",
@@ -27137,9 +27156,9 @@
       "source_file": "src/app/api/draft/wc-og/route.tsx",
       "source_location": "L15",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "wc_og_route",
-      "target": "wc_og_route_stage_label",
-      "confidence_score": 1.0
+      "target": "wc_og_route_stage_label"
     },
     {
       "relation": "imports_from",
@@ -27148,9 +27167,9 @@
       "source_file": "src/app/api/draft/wc/[id]/route.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_api_draft_wc_id_route_ts_id_route",
-      "target": "draft_wc_server",
-      "confidence_score": 1.0
+      "target": "draft_wc_server"
     },
     {
       "relation": "imports",
@@ -27159,9 +27178,9 @@
       "source_file": "src/app/api/draft/wc/[id]/route.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_api_draft_wc_id_route_ts_id_route",
-      "target": "draft_wc_server_createwcdb",
-      "confidence_score": 1.0
+      "target": "draft_wc_server_createwcdb"
     },
     {
       "relation": "imports",
@@ -27170,9 +27189,9 @@
       "source_file": "src/app/api/draft/wc/[id]/route.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_api_draft_wc_id_route_ts_id_route",
-      "target": "draft_wc_server_revealopponent",
-      "confidence_score": 1.0
+      "target": "draft_wc_server_revealopponent"
     },
     {
       "relation": "imports",
@@ -27181,9 +27200,9 @@
       "source_file": "src/app/api/draft/wc/[id]/route.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_api_draft_wc_id_route_ts_id_route",
-      "target": "draft_wc_server_rowtorun",
-      "confidence_score": 1.0
+      "target": "draft_wc_server_rowtorun"
     },
     {
       "relation": "contains",
@@ -27191,9 +27210,9 @@
       "source_file": "src/app/api/draft/wc/[id]/route.ts",
       "source_location": "L8",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_api_draft_wc_id_route_ts_id_route",
-      "target": "src_app_api_draft_wc_id_route_ts_id_route_get",
-      "confidence_score": 1.0
+      "target": "src_app_api_draft_wc_id_route_ts_id_route_get"
     },
     {
       "relation": "imports_from",
@@ -27202,9 +27221,9 @@
       "source_file": "src/app/api/draft/wc/[id]/route.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_api_draft_wc_id_route_ts_id_route",
-      "target": "supabase_server",
-      "confidence_score": 1.0
+      "target": "supabase_server"
     },
     {
       "relation": "imports",
@@ -27213,9 +27232,9 @@
       "source_file": "src/app/api/draft/wc/[id]/route.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_api_draft_wc_id_route_ts_id_route",
-      "target": "supabase_server_createclient",
-      "confidence_score": 1.0
+      "target": "supabase_server_createclient"
     },
     {
       "relation": "calls",
@@ -27257,9 +27276,9 @@
       "source_file": "src/app/api/draft/wc/play/route.ts",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_api_draft_wc_play_route_ts_play_route",
-      "target": "draft_wc_server",
-      "confidence_score": 1.0
+      "target": "draft_wc_server"
     },
     {
       "relation": "imports",
@@ -27268,9 +27287,9 @@
       "source_file": "src/app/api/draft/wc/play/route.ts",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_api_draft_wc_play_route_ts_play_route",
-      "target": "draft_wc_server_createwcdb",
-      "confidence_score": 1.0
+      "target": "draft_wc_server_createwcdb"
     },
     {
       "relation": "imports",
@@ -27279,9 +27298,9 @@
       "source_file": "src/app/api/draft/wc/play/route.ts",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_api_draft_wc_play_route_ts_play_route",
-      "target": "draft_wc_server_resolvestage",
-      "confidence_score": 1.0
+      "target": "draft_wc_server_resolvestage"
     },
     {
       "relation": "imports",
@@ -27290,9 +27309,9 @@
       "source_file": "src/app/api/draft/wc/play/route.ts",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_api_draft_wc_play_route_ts_play_route",
-      "target": "draft_wc_server_rowtorun",
-      "confidence_score": 1.0
+      "target": "draft_wc_server_rowtorun"
     },
     {
       "relation": "imports_from",
@@ -27301,9 +27320,9 @@
       "source_file": "src/app/api/draft/wc/play/route.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_api_draft_wc_play_route_ts_play_route",
-      "target": "lib_ratelimit",
-      "confidence_score": 1.0
+      "target": "lib_ratelimit"
     },
     {
       "relation": "imports",
@@ -27312,9 +27331,9 @@
       "source_file": "src/app/api/draft/wc/play/route.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_api_draft_wc_play_route_ts_play_route",
-      "target": "lib_ratelimit_ratelimitdistributed",
-      "confidence_score": 1.0
+      "target": "lib_ratelimit_ratelimitdistributed"
     },
     {
       "relation": "contains",
@@ -27322,9 +27341,9 @@
       "source_file": "src/app/api/draft/wc/play/route.ts",
       "source_location": "L10",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_api_draft_wc_play_route_ts_play_route",
-      "target": "src_app_api_draft_wc_play_route_ts_play_route_post",
-      "confidence_score": 1.0
+      "target": "src_app_api_draft_wc_play_route_ts_play_route_post"
     },
     {
       "relation": "imports_from",
@@ -27333,9 +27352,9 @@
       "source_file": "src/app/api/draft/wc/play/route.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_api_draft_wc_play_route_ts_play_route",
-      "target": "supabase_server",
-      "confidence_score": 1.0
+      "target": "supabase_server"
     },
     {
       "relation": "imports",
@@ -27344,9 +27363,9 @@
       "source_file": "src/app/api/draft/wc/play/route.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_api_draft_wc_play_route_ts_play_route",
-      "target": "supabase_server_createclient",
-      "confidence_score": 1.0
+      "target": "supabase_server_createclient"
     },
     {
       "relation": "calls",
@@ -27399,9 +27418,9 @@
       "source_file": "src/app/api/draft/wc/route.ts",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "wc_route",
-      "target": "draft_wc_server",
-      "confidence_score": 1.0
+      "target": "draft_wc_server"
     },
     {
       "relation": "imports",
@@ -27410,9 +27429,9 @@
       "source_file": "src/app/api/draft/wc/route.ts",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "wc_route",
-      "target": "draft_wc_server_createwcdb",
-      "confidence_score": 1.0
+      "target": "draft_wc_server_createwcdb"
     },
     {
       "relation": "imports",
@@ -27421,9 +27440,9 @@
       "source_file": "src/app/api/draft/wc/route.ts",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "wc_route",
-      "target": "draft_wc_server_newrunplan",
-      "confidence_score": 1.0
+      "target": "draft_wc_server_newrunplan"
     },
     {
       "relation": "imports",
@@ -27432,9 +27451,9 @@
       "source_file": "src/app/api/draft/wc/route.ts",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "wc_route",
-      "target": "draft_wc_server_validatenationlocked",
-      "confidence_score": 1.0
+      "target": "draft_wc_server_validatenationlocked"
     },
     {
       "relation": "imports_from",
@@ -27443,9 +27462,9 @@
       "source_file": "src/app/api/draft/wc/route.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "wc_route",
-      "target": "lib_ratelimit",
-      "confidence_score": 1.0
+      "target": "lib_ratelimit"
     },
     {
       "relation": "imports",
@@ -27454,9 +27473,9 @@
       "source_file": "src/app/api/draft/wc/route.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "wc_route",
-      "target": "lib_ratelimit_ratelimitdistributed",
-      "confidence_score": 1.0
+      "target": "lib_ratelimit_ratelimitdistributed"
     },
     {
       "relation": "imports_from",
@@ -27465,9 +27484,9 @@
       "source_file": "src/app/api/draft/wc/route.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "wc_route",
-      "target": "supabase_server",
-      "confidence_score": 1.0
+      "target": "supabase_server"
     },
     {
       "relation": "imports",
@@ -27476,9 +27495,9 @@
       "source_file": "src/app/api/draft/wc/route.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "wc_route",
-      "target": "supabase_server_createclient",
-      "confidence_score": 1.0
+      "target": "supabase_server_createclient"
     },
     {
       "relation": "contains",
@@ -27486,9 +27505,9 @@
       "source_file": "src/app/api/draft/wc/route.ts",
       "source_location": "L10",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "wc_route",
-      "target": "wc_route_post",
-      "confidence_score": 1.0
+      "target": "wc_route_post"
     },
     {
       "relation": "calls",
@@ -27541,9 +27560,9 @@
       "source_file": "src/app/api/draft/wc/upgrade/route.ts",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "upgrade_route",
-      "target": "draft_wc_server",
-      "confidence_score": 1.0
+      "target": "draft_wc_server"
     },
     {
       "relation": "imports",
@@ -27552,9 +27571,9 @@
       "source_file": "src/app/api/draft/wc/upgrade/route.ts",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "upgrade_route",
-      "target": "draft_wc_server_createwcdb",
-      "confidence_score": 1.0
+      "target": "draft_wc_server_createwcdb"
     },
     {
       "relation": "imports",
@@ -27563,9 +27582,9 @@
       "source_file": "src/app/api/draft/wc/upgrade/route.ts",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "upgrade_route",
-      "target": "draft_wc_server_rowtorun",
-      "confidence_score": 1.0
+      "target": "draft_wc_server_rowtorun"
     },
     {
       "relation": "imports",
@@ -27574,9 +27593,9 @@
       "source_file": "src/app/api/draft/wc/upgrade/route.ts",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "upgrade_route",
-      "target": "draft_wc_server_validatenationlocked",
-      "confidence_score": 1.0
+      "target": "draft_wc_server_validatenationlocked"
     },
     {
       "relation": "imports_from",
@@ -27585,9 +27604,9 @@
       "source_file": "src/app/api/draft/wc/upgrade/route.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "upgrade_route",
-      "target": "lib_ratelimit",
-      "confidence_score": 1.0
+      "target": "lib_ratelimit"
     },
     {
       "relation": "imports",
@@ -27596,9 +27615,9 @@
       "source_file": "src/app/api/draft/wc/upgrade/route.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "upgrade_route",
-      "target": "lib_ratelimit_ratelimitdistributed",
-      "confidence_score": 1.0
+      "target": "lib_ratelimit_ratelimitdistributed"
     },
     {
       "relation": "imports_from",
@@ -27607,9 +27626,9 @@
       "source_file": "src/app/api/draft/wc/upgrade/route.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "upgrade_route",
-      "target": "supabase_server",
-      "confidence_score": 1.0
+      "target": "supabase_server"
     },
     {
       "relation": "imports",
@@ -27618,9 +27637,9 @@
       "source_file": "src/app/api/draft/wc/upgrade/route.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "upgrade_route",
-      "target": "supabase_server_createclient",
-      "confidence_score": 1.0
+      "target": "supabase_server_createclient"
     },
     {
       "relation": "contains",
@@ -27628,9 +27647,9 @@
       "source_file": "src/app/api/draft/wc/upgrade/route.ts",
       "source_location": "L10",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "upgrade_route",
-      "target": "upgrade_route_post",
-      "confidence_score": 1.0
+      "target": "upgrade_route_post"
     },
     {
       "relation": "calls",
@@ -27857,9 +27876,9 @@
       "source_file": "src/app/api/h2h/play/route.ts",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_api_h2h_play_route_ts_play_route",
-      "target": "lib_ratelimit",
-      "confidence_score": 1.0
+      "target": "lib_ratelimit"
     },
     {
       "relation": "imports",
@@ -27868,9 +27887,9 @@
       "source_file": "src/app/api/h2h/play/route.ts",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_api_h2h_play_route_ts_play_route",
-      "target": "lib_ratelimit_ratelimitdistributed",
-      "confidence_score": 1.0
+      "target": "lib_ratelimit_ratelimitdistributed"
     },
     {
       "relation": "imports_from",
@@ -27879,9 +27898,9 @@
       "source_file": "src/app/api/h2h/play/route.ts",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_api_h2h_play_route_ts_play_route",
-      "target": "lib_scoring",
-      "confidence_score": 1.0
+      "target": "lib_scoring"
     },
     {
       "relation": "imports",
@@ -27890,9 +27909,9 @@
       "source_file": "src/app/api/h2h/play/route.ts",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_api_h2h_play_route_ts_play_route",
-      "target": "lib_scoring_calculateperfectroundbonus",
-      "confidence_score": 1.0
+      "target": "lib_scoring_calculateperfectroundbonus"
     },
     {
       "relation": "imports",
@@ -27901,9 +27920,9 @@
       "source_file": "src/app/api/h2h/play/route.ts",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_api_h2h_play_route_ts_play_route",
-      "target": "lib_scoring_scoreanswer",
-      "confidence_score": 1.0
+      "target": "lib_scoring_scoreanswer"
     },
     {
       "relation": "contains",
@@ -27911,9 +27930,9 @@
       "source_file": "src/app/api/h2h/play/route.ts",
       "source_location": "L14",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_api_h2h_play_route_ts_play_route",
-      "target": "play_route_submittedanswer",
-      "confidence_score": 1.0
+      "target": "play_route_submittedanswer"
     },
     {
       "relation": "contains",
@@ -27921,9 +27940,9 @@
       "source_file": "src/app/api/h2h/play/route.ts",
       "source_location": "L19",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_api_h2h_play_route_ts_play_route",
-      "target": "src_app_api_h2h_play_route_ts_play_route_post",
-      "confidence_score": 1.0
+      "target": "src_app_api_h2h_play_route_ts_play_route_post"
     },
     {
       "relation": "imports_from",
@@ -27932,9 +27951,9 @@
       "source_file": "src/app/api/h2h/play/route.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_api_h2h_play_route_ts_play_route",
-      "target": "supabase_server",
-      "confidence_score": 1.0
+      "target": "supabase_server"
     },
     {
       "relation": "imports",
@@ -27943,9 +27962,9 @@
       "source_file": "src/app/api/h2h/play/route.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_api_h2h_play_route_ts_play_route",
-      "target": "supabase_server_createclient",
-      "confidence_score": 1.0
+      "target": "supabase_server_createclient"
     },
     {
       "relation": "imports_from",
@@ -27954,9 +27973,9 @@
       "source_file": "src/app/api/h2h/play/route.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_api_h2h_play_route_ts_play_route",
-      "target": "supabase_service",
-      "confidence_score": 1.0
+      "target": "supabase_service"
     },
     {
       "relation": "imports",
@@ -27965,9 +27984,9 @@
       "source_file": "src/app/api/h2h/play/route.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_api_h2h_play_route_ts_play_route",
-      "target": "supabase_service_createserviceclient",
-      "confidence_score": 1.0
+      "target": "supabase_service_createserviceclient"
     },
     {
       "relation": "contains",
@@ -36023,9 +36042,9 @@
       "source_file": "src/lib/draft/pool.ts",
       "source_location": "L13",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_pool",
-      "target": "draft_wc2026",
-      "confidence_score": 1.0
+      "target": "draft_wc2026"
     },
     {
       "relation": "re_exports",
@@ -36034,9 +36053,9 @@
       "source_file": "src/lib/draft/wc.ts",
       "source_location": "L22",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc",
-      "target": "draft_wc2026",
-      "confidence_score": 1.0
+      "target": "draft_wc2026"
     },
     {
       "relation": "contains",
@@ -36044,9 +36063,9 @@
       "source_file": "src/data/draft/wc2026.ts",
       "source_location": "L122",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc2026",
-      "target": "draft_wc2026_allwcnations",
-      "confidence_score": 1.0
+      "target": "draft_wc2026_allwcnations"
     },
     {
       "relation": "contains",
@@ -36054,9 +36073,9 @@
       "source_file": "src/data/draft/wc2026.ts",
       "source_location": "L117",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc2026",
-      "target": "draft_wc2026_group_of",
-      "confidence_score": 1.0
+      "target": "draft_wc2026_group_of"
     },
     {
       "relation": "contains",
@@ -36064,9 +36083,9 @@
       "source_file": "src/data/draft/wc2026.ts",
       "source_location": "L131",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc2026",
-      "target": "draft_wc2026_groupof",
-      "confidence_score": 1.0
+      "target": "draft_wc2026_groupof"
     },
     {
       "relation": "contains",
@@ -36074,9 +36093,9 @@
       "source_file": "src/data/draft/wc2026.ts",
       "source_location": "L136",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc2026",
-      "target": "draft_wc2026_groupopponents",
-      "confidence_score": 1.0
+      "target": "draft_wc2026_groupopponents"
     },
     {
       "relation": "contains",
@@ -36084,9 +36103,9 @@
       "source_file": "src/data/draft/wc2026.ts",
       "source_location": "L114",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc2026",
-      "target": "draft_wc2026_nation_index",
-      "confidence_score": 1.0
+      "target": "draft_wc2026_nation_index"
     },
     {
       "relation": "contains",
@@ -36094,9 +36113,9 @@
       "source_file": "src/data/draft/wc2026.ts",
       "source_location": "L39",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc2026",
-      "target": "draft_wc2026_wc2026_groups",
-      "confidence_score": 1.0
+      "target": "draft_wc2026_wc2026_groups"
     },
     {
       "relation": "contains",
@@ -36104,9 +36123,9 @@
       "source_file": "src/data/draft/wc2026.ts",
       "source_location": "L30",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc2026",
-      "target": "draft_wc2026_wc_stage_label",
-      "confidence_score": 1.0
+      "target": "draft_wc2026_wc_stage_label"
     },
     {
       "relation": "contains",
@@ -36114,9 +36133,9 @@
       "source_file": "src/data/draft/wc2026.ts",
       "source_location": "L27",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc2026",
-      "target": "draft_wc2026_wc_stages",
-      "confidence_score": 1.0
+      "target": "draft_wc2026_wc_stages"
     },
     {
       "relation": "contains",
@@ -36124,9 +36143,9 @@
       "source_file": "src/data/draft/wc2026.ts",
       "source_location": "L21",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc2026",
-      "target": "draft_wc2026_wcgroup",
-      "confidence_score": 1.0
+      "target": "draft_wc2026_wcgroup"
     },
     {
       "relation": "contains",
@@ -36134,9 +36153,9 @@
       "source_file": "src/data/draft/wc2026.ts",
       "source_location": "L126",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc2026",
-      "target": "draft_wc2026_wcnation",
-      "confidence_score": 1.0
+      "target": "draft_wc2026_wcnation"
     },
     {
       "relation": "contains",
@@ -36144,9 +36163,9 @@
       "source_file": "src/data/draft/wc2026.ts",
       "source_location": "L28",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc2026",
-      "target": "draft_wc2026_wcstage",
-      "confidence_score": 1.0
+      "target": "draft_wc2026_wcstage"
     },
     {
       "relation": "imports_from",
@@ -36155,9 +36174,9 @@
       "source_file": "src/lib/draft/wc.test.ts",
       "source_location": "L8",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_test",
-      "target": "draft_wc2026",
-      "confidence_score": 1.0
+      "target": "draft_wc2026"
     },
     {
       "relation": "imports",
@@ -36166,9 +36185,9 @@
       "source_file": "src/lib/draft/pool.ts",
       "source_location": "L13",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_pool",
-      "target": "draft_wc2026_wcnation",
-      "confidence_score": 1.0
+      "target": "draft_wc2026_wcnation"
     },
     {
       "relation": "imports",
@@ -36177,9 +36196,9 @@
       "source_file": "src/lib/draft/wc.ts",
       "source_location": "L14",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc",
-      "target": "draft_wc2026_wcnation",
-      "confidence_score": 1.0
+      "target": "draft_wc2026_wcnation"
     },
     {
       "relation": "imports",
@@ -36188,9 +36207,9 @@
       "source_file": "src/lib/draft/wc.ts",
       "source_location": "L14",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc",
-      "target": "draft_wc2026_wc_stages",
-      "confidence_score": 1.0
+      "target": "draft_wc2026_wc_stages"
     },
     {
       "relation": "imports",
@@ -36199,9 +36218,9 @@
       "source_file": "src/lib/draft/wc.ts",
       "source_location": "L14",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc",
-      "target": "draft_wc2026_wcstage",
-      "confidence_score": 1.0
+      "target": "draft_wc2026_wcstage"
     },
     {
       "relation": "imports",
@@ -36210,9 +36229,9 @@
       "source_file": "src/lib/draft/wc.ts",
       "source_location": "L14",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc",
-      "target": "draft_wc2026_wc_stage_label",
-      "confidence_score": 1.0
+      "target": "draft_wc2026_wc_stage_label"
     },
     {
       "relation": "imports",
@@ -36221,9 +36240,9 @@
       "source_file": "src/lib/draft/pool.ts",
       "source_location": "L13",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_pool",
-      "target": "draft_wc2026_allwcnations",
-      "confidence_score": 1.0
+      "target": "draft_wc2026_allwcnations"
     },
     {
       "relation": "calls",
@@ -36243,9 +36262,9 @@
       "source_file": "src/lib/draft/wc.ts",
       "source_location": "L14",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc",
-      "target": "draft_wc2026_allwcnations",
-      "confidence_score": 1.0
+      "target": "draft_wc2026_allwcnations"
     },
     {
       "relation": "calls",
@@ -36265,9 +36284,9 @@
       "source_file": "src/lib/draft/wc.ts",
       "source_location": "L14",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc",
-      "target": "draft_wc2026_groupopponents",
-      "confidence_score": 1.0
+      "target": "draft_wc2026_groupopponents"
     },
     {
       "relation": "calls",
@@ -36287,9 +36306,9 @@
       "source_file": "src/lib/draft/wc.test.ts",
       "source_location": "L8",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_test",
-      "target": "draft_wc2026_groupopponents",
-      "confidence_score": 1.0
+      "target": "draft_wc2026_groupopponents"
     },
     {
       "relation": "imports_from",
@@ -37560,9 +37579,9 @@
       "source_file": "src/lib/draft/wc.ts",
       "source_location": "L20",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc",
-      "target": "draft_live_score",
-      "confidence_score": 1.0
+      "target": "draft_live_score"
     },
     {
       "relation": "imports_from",
@@ -37571,9 +37590,9 @@
       "source_file": "src/lib/draft/wc-server.ts",
       "source_location": "L15",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_server",
-      "target": "draft_live_score",
-      "confidence_score": 1.0
+      "target": "draft_live_score"
     },
     {
       "relation": "imports",
@@ -37989,9 +38008,9 @@
       "source_file": "src/lib/draft/wc.ts",
       "source_location": "L20",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc",
-      "target": "draft_live_score_singlematchresult",
-      "confidence_score": 1.0
+      "target": "draft_live_score_singlematchresult"
     },
     {
       "relation": "calls",
@@ -38022,9 +38041,9 @@
       "source_file": "src/lib/draft/wc-server.ts",
       "source_location": "L15",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_server",
-      "target": "draft_live_score_resolvematch",
-      "confidence_score": 1.0
+      "target": "draft_live_score_resolvematch"
     },
     {
       "relation": "imports",
@@ -40862,9 +40881,9 @@
       "source_file": "src/lib/draft/wc-server.ts",
       "source_location": "L14",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_server",
-      "target": "draft_opponent",
-      "confidence_score": 1.0
+      "target": "draft_opponent"
     },
     {
       "relation": "calls",
@@ -40928,9 +40947,9 @@
       "source_file": "src/lib/draft/wc-server.ts",
       "source_location": "L14",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_server",
-      "target": "draft_opponent_makeopponent",
-      "confidence_score": 1.0
+      "target": "draft_opponent_makeopponent"
     },
     {
       "relation": "calls",
@@ -41317,9 +41336,9 @@
       "source_file": "src/lib/draft/pool.ts",
       "source_location": "L30",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_pool",
-      "target": "draft_pool_bynation",
-      "confidence_score": 1.0
+      "target": "draft_pool_bynation"
     },
     {
       "relation": "contains",
@@ -41357,9 +41376,9 @@
       "source_file": "src/lib/draft/pool.ts",
       "source_location": "L111",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_pool",
-      "target": "draft_pool_getnation",
-      "confidence_score": 1.0
+      "target": "draft_pool_getnation"
     },
     {
       "relation": "contains",
@@ -41387,9 +41406,9 @@
       "source_file": "src/lib/draft/pool.ts",
       "source_location": "L128",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_pool",
-      "target": "draft_pool_nationplayers",
-      "confidence_score": 1.0
+      "target": "draft_pool_nationplayers"
     },
     {
       "relation": "contains",
@@ -41397,9 +41416,9 @@
       "source_file": "src/lib/draft/pool.ts",
       "source_location": "L115",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_pool",
-      "target": "draft_pool_pickablenation",
-      "confidence_score": 1.0
+      "target": "draft_pool_pickablenation"
     },
     {
       "relation": "contains",
@@ -41407,9 +41426,9 @@
       "source_file": "src/lib/draft/pool.ts",
       "source_location": "L119",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_pool",
-      "target": "draft_pool_pickablenations",
-      "confidence_score": 1.0
+      "target": "draft_pool_pickablenations"
     },
     {
       "relation": "contains",
@@ -41417,9 +41436,9 @@
       "source_file": "src/lib/draft/pool.ts",
       "source_location": "L107",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_pool",
-      "target": "draft_pool_playablenations",
-      "confidence_score": 1.0
+      "target": "draft_pool_playablenations"
     },
     {
       "relation": "contains",
@@ -41437,9 +41456,9 @@
       "source_file": "src/lib/draft/pool.ts",
       "source_location": "L143",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_pool",
-      "target": "draft_pool_spinfornation",
-      "confidence_score": 1.0
+      "target": "draft_pool_spinfornation"
     },
     {
       "relation": "imports_from",
@@ -41492,9 +41511,9 @@
       "source_file": "src/lib/draft/pool.ts",
       "source_location": "L11",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_pool",
-      "target": "draft_types_nationentry",
-      "confidence_score": 1.0
+      "target": "draft_types_nationentry"
     },
     {
       "relation": "imports",
@@ -41536,9 +41555,9 @@
       "source_file": "src/lib/draft/wc-server.ts",
       "source_location": "L13",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_server",
-      "target": "draft_pool",
-      "confidence_score": 1.0
+      "target": "draft_pool"
     },
     {
       "relation": "imports",
@@ -41569,9 +41588,9 @@
       "source_file": "src/lib/draft/wc-server.ts",
       "source_location": "L13",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_server",
-      "target": "draft_pool_getplayer",
-      "confidence_score": 1.0
+      "target": "draft_pool_getplayer"
     },
     {
       "relation": "calls",
@@ -41602,9 +41621,9 @@
       "source_file": "src/lib/draft/wc-server.ts",
       "source_location": "L13",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_server",
-      "target": "draft_pool_getnation",
-      "confidence_score": 1.0
+      "target": "draft_pool_getnation"
     },
     {
       "relation": "calls",
@@ -41624,9 +41643,9 @@
       "source_file": "src/lib/draft/pool.ts",
       "source_location": "L152",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_pool_spinfornation",
-      "target": "draft_pool_nationplayers",
-      "confidence_score": 1.0
+      "target": "draft_pool_nationplayers"
     },
     {
       "relation": "imports_from",
@@ -42077,9 +42096,9 @@
       "source_file": "src/lib/draft/wc.ts",
       "source_location": "L18",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc",
-      "target": "draft_score",
-      "confidence_score": 1.0
+      "target": "draft_score"
     },
     {
       "relation": "imports_from",
@@ -42088,9 +42107,9 @@
       "source_file": "src/lib/draft/wc-server.ts",
       "source_location": "L16",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_server",
-      "target": "draft_score",
-      "confidence_score": 1.0
+      "target": "draft_score"
     },
     {
       "relation": "imports",
@@ -42418,9 +42437,9 @@
       "source_file": "src/lib/draft/wc.ts",
       "source_location": "L18",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc",
-      "target": "draft_score_seededrng",
-      "confidence_score": 1.0
+      "target": "draft_score_seededrng"
     },
     {
       "relation": "calls",
@@ -42440,9 +42459,9 @@
       "source_file": "src/lib/draft/wc-server.ts",
       "source_location": "L16",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_server",
-      "target": "draft_score_seededrng",
-      "confidence_score": 1.0
+      "target": "draft_score_seededrng"
     },
     {
       "relation": "calls",
@@ -43233,9 +43252,9 @@
       "source_file": "src/lib/draft/wc-server.ts",
       "source_location": "L12",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_server",
-      "target": "draft_server",
-      "confidence_score": 1.0
+      "target": "draft_server"
     },
     {
       "relation": "imports_from",
@@ -43266,9 +43285,9 @@
       "source_file": "src/lib/draft/wc-server.ts",
       "source_location": "L12",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_server",
-      "target": "draft_server_createdraftdb",
-      "confidence_score": 1.0
+      "target": "draft_server_createdraftdb"
     },
     {
       "relation": "calls",
@@ -43310,9 +43329,9 @@
       "source_file": "src/lib/draft/wc-server.ts",
       "source_location": "L12",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_server",
-      "target": "draft_server_validateandscore",
-      "confidence_score": 1.0
+      "target": "draft_server_validateandscore"
     },
     {
       "relation": "calls",
@@ -43392,9 +43411,9 @@
       "source_file": "src/lib/draft/types.ts",
       "source_location": "L53",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_types",
-      "target": "draft_types_nationentry",
-      "confidence_score": 1.0
+      "target": "draft_types_nationentry"
     },
     {
       "relation": "contains",
@@ -43494,9 +43513,9 @@
       "source_file": "src/lib/draft/wc.ts",
       "source_location": "L19",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc",
-      "target": "draft_types",
-      "confidence_score": 1.0
+      "target": "draft_types"
     },
     {
       "relation": "imports_from",
@@ -43505,9 +43524,9 @@
       "source_file": "src/lib/draft/wc-server.ts",
       "source_location": "L11",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_server",
-      "target": "draft_types",
-      "confidence_score": 1.0
+      "target": "draft_types"
     },
     {
       "relation": "imports",
@@ -43516,9 +43535,9 @@
       "source_file": "src/lib/draft/wc.ts",
       "source_location": "L19",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc",
-      "target": "draft_types_formation",
-      "confidence_score": 1.0
+      "target": "draft_types_formation"
     },
     {
       "relation": "imports",
@@ -43527,9 +43546,9 @@
       "source_file": "src/lib/draft/wc-server.ts",
       "source_location": "L11",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_server",
-      "target": "draft_types_formation",
-      "confidence_score": 1.0
+      "target": "draft_types_formation"
     },
     {
       "relation": "imports",
@@ -43538,9 +43557,9 @@
       "source_file": "src/lib/draft/wc.ts",
       "source_location": "L19",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc",
-      "target": "draft_types_placedplayer",
-      "confidence_score": 1.0
+      "target": "draft_types_placedplayer"
     },
     {
       "relation": "imports",
@@ -43549,9 +43568,9 @@
       "source_file": "src/lib/draft/wc-server.ts",
       "source_location": "L11",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_server",
-      "target": "draft_types_placedplayer",
-      "confidence_score": 1.0
+      "target": "draft_types_placedplayer"
     },
     {
       "relation": "imports",
@@ -43695,9 +43714,9 @@
       "source_file": "src/lib/draft/wc-server.ts",
       "source_location": "L23",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_server",
-      "target": "draft_wc",
-      "confidence_score": 1.0
+      "target": "draft_wc"
     },
     {
       "relation": "imports",
@@ -43706,9 +43725,9 @@
       "source_file": "src/lib/draft/wc-server.ts",
       "source_location": "L17",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_server",
-      "target": "draft_wc_advancestage",
-      "confidence_score": 1.0
+      "target": "draft_wc_advancestage"
     },
     {
       "relation": "imports",
@@ -43717,9 +43736,9 @@
       "source_file": "src/lib/draft/wc-server.ts",
       "source_location": "L17",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_server",
-      "target": "draft_wc_allowdraw",
-      "confidence_score": 1.0
+      "target": "draft_wc_allowdraw"
     },
     {
       "relation": "imports",
@@ -43728,9 +43747,9 @@
       "source_file": "src/lib/draft/wc-server.ts",
       "source_location": "L17",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_server",
-      "target": "draft_wc_buildmatchrow",
-      "confidence_score": 1.0
+      "target": "draft_wc_buildmatchrow"
     },
     {
       "relation": "imports",
@@ -43739,9 +43758,9 @@
       "source_file": "src/lib/draft/wc-server.ts",
       "source_location": "L17",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_server",
-      "target": "draft_wc_gameoutcome",
-      "confidence_score": 1.0
+      "target": "draft_wc_gameoutcome"
     },
     {
       "relation": "imports",
@@ -43750,9 +43769,9 @@
       "source_file": "src/lib/draft/wc-server.ts",
       "source_location": "L17",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_server",
-      "target": "draft_wc_gamesforstage",
-      "confidence_score": 1.0
+      "target": "draft_wc_gamesforstage"
     },
     {
       "relation": "imports",
@@ -43761,9 +43780,9 @@
       "source_file": "src/lib/draft/wc-server.ts",
       "source_location": "L17",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_server",
-      "target": "draft_wc_isduel",
-      "confidence_score": 1.0
+      "target": "draft_wc_isduel"
     },
     {
       "relation": "imports",
@@ -43772,9 +43791,9 @@
       "source_file": "src/lib/draft/wc-server.ts",
       "source_location": "L17",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_server",
-      "target": "draft_wc_outcomeof",
-      "confidence_score": 1.0
+      "target": "draft_wc_outcomeof"
     },
     {
       "relation": "imports",
@@ -43783,9 +43802,9 @@
       "source_file": "src/lib/draft/wc-server.ts",
       "source_location": "L17",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_server",
-      "target": "draft_wc_planrun",
-      "confidence_score": 1.0
+      "target": "draft_wc_planrun"
     },
     {
       "relation": "imports",
@@ -43794,9 +43813,9 @@
       "source_file": "src/lib/draft/wc-server.ts",
       "source_location": "L17",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_server",
-      "target": "draft_wc_runstage",
-      "confidence_score": 1.0
+      "target": "draft_wc_runstage"
     },
     {
       "relation": "contains",
@@ -43804,9 +43823,9 @@
       "source_file": "src/lib/draft/wc-server.ts",
       "source_location": "L73",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_server",
-      "target": "draft_wc_server_buildopponent",
-      "confidence_score": 1.0
+      "target": "draft_wc_server_buildopponent"
     },
     {
       "relation": "contains",
@@ -43814,9 +43833,9 @@
       "source_file": "src/lib/draft/wc-server.ts",
       "source_location": "L28",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_server",
-      "target": "draft_wc_server_createwcdb",
-      "confidence_score": 1.0
+      "target": "draft_wc_server_createwcdb"
     },
     {
       "relation": "contains",
@@ -43824,9 +43843,9 @@
       "source_file": "src/lib/draft/wc-server.ts",
       "source_location": "L79",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_server",
-      "target": "draft_wc_server_gamereveal",
-      "confidence_score": 1.0
+      "target": "draft_wc_server_gamereveal"
     },
     {
       "relation": "contains",
@@ -43834,9 +43853,9 @@
       "source_file": "src/lib/draft/wc-server.ts",
       "source_location": "L66",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_server",
-      "target": "draft_wc_server_newrunplan",
-      "confidence_score": 1.0
+      "target": "draft_wc_server_newrunplan"
     },
     {
       "relation": "contains",
@@ -43844,9 +43863,9 @@
       "source_file": "src/lib/draft/wc-server.ts",
       "source_location": "L109",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_server",
-      "target": "draft_wc_server_resolvestage",
-      "confidence_score": 1.0
+      "target": "draft_wc_server_resolvestage"
     },
     {
       "relation": "contains",
@@ -43854,9 +43873,9 @@
       "source_file": "src/lib/draft/wc-server.ts",
       "source_location": "L90",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_server",
-      "target": "draft_wc_server_revealopponent",
-      "confidence_score": 1.0
+      "target": "draft_wc_server_revealopponent"
     },
     {
       "relation": "contains",
@@ -43864,9 +43883,9 @@
       "source_file": "src/lib/draft/wc-server.ts",
       "source_location": "L34",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_server",
-      "target": "draft_wc_server_rowtorun",
-      "confidence_score": 1.0
+      "target": "draft_wc_server_rowtorun"
     },
     {
       "relation": "contains",
@@ -43874,9 +43893,9 @@
       "source_file": "src/lib/draft/wc-server.ts",
       "source_location": "L53",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_server",
-      "target": "draft_wc_server_validatenationlocked",
-      "confidence_score": 1.0
+      "target": "draft_wc_server_validatenationlocked"
     },
     {
       "relation": "imports",
@@ -43885,9 +43904,9 @@
       "source_file": "src/lib/draft/wc-server.ts",
       "source_location": "L17",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_server",
-      "target": "draft_wc_wcfixture",
-      "confidence_score": 1.0
+      "target": "draft_wc_wcfixture"
     },
     {
       "relation": "imports",
@@ -43896,9 +43915,9 @@
       "source_file": "src/lib/draft/wc-server.ts",
       "source_location": "L17",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_server",
-      "target": "draft_wc_wcmatchrow",
-      "confidence_score": 1.0
+      "target": "draft_wc_wcmatchrow"
     },
     {
       "relation": "imports",
@@ -43907,9 +43926,9 @@
       "source_file": "src/lib/draft/wc-server.ts",
       "source_location": "L17",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_server",
-      "target": "draft_wc_wcplan",
-      "confidence_score": 1.0
+      "target": "draft_wc_wcplan"
     },
     {
       "relation": "imports",
@@ -43918,9 +43937,9 @@
       "source_file": "src/lib/draft/wc-server.ts",
       "source_location": "L17",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_server",
-      "target": "draft_wc_wcrun",
-      "confidence_score": 1.0
+      "target": "draft_wc_wcrun"
     },
     {
       "relation": "imports",
@@ -43929,9 +43948,9 @@
       "source_file": "src/lib/draft/wc-server.ts",
       "source_location": "L17",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_server",
-      "target": "draft_wc_wcrunpatch",
-      "confidence_score": 1.0
+      "target": "draft_wc_wcrunpatch"
     },
     {
       "relation": "calls",
@@ -43951,9 +43970,9 @@
       "source_file": "src/lib/draft/wc-server.ts",
       "source_location": "L93",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_server_revealopponent",
-      "target": "draft_wc_server_buildopponent",
-      "confidence_score": 1.0
+      "target": "draft_wc_server_buildopponent"
     },
     {
       "relation": "calls",
@@ -44006,9 +44025,9 @@
       "source_file": "src/lib/draft/wc.test.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_test",
-      "target": "draft_wc",
-      "confidence_score": 1.0
+      "target": "draft_wc"
     },
     {
       "relation": "imports",
@@ -44017,9 +44036,9 @@
       "source_file": "src/lib/draft/wc.test.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_test",
-      "target": "draft_wc_advancestage",
-      "confidence_score": 1.0
+      "target": "draft_wc_advancestage"
     },
     {
       "relation": "imports",
@@ -44028,9 +44047,9 @@
       "source_file": "src/lib/draft/wc.test.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_test",
-      "target": "draft_wc_buildmatchrow",
-      "confidence_score": 1.0
+      "target": "draft_wc_buildmatchrow"
     },
     {
       "relation": "imports",
@@ -44039,9 +44058,9 @@
       "source_file": "src/lib/draft/wc.test.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_test",
-      "target": "draft_wc_gamesforstage",
-      "confidence_score": 1.0
+      "target": "draft_wc_gamesforstage"
     },
     {
       "relation": "imports",
@@ -44050,9 +44069,9 @@
       "source_file": "src/lib/draft/wc.test.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_test",
-      "target": "draft_wc_isduel",
-      "confidence_score": 1.0
+      "target": "draft_wc_isduel"
     },
     {
       "relation": "imports",
@@ -44061,9 +44080,9 @@
       "source_file": "src/lib/draft/wc.test.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_test",
-      "target": "draft_wc_knockout_stages",
-      "confidence_score": 1.0
+      "target": "draft_wc_knockout_stages"
     },
     {
       "relation": "imports",
@@ -44072,9 +44091,9 @@
       "source_file": "src/lib/draft/wc.test.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_test",
-      "target": "draft_wc_opp_target",
-      "confidence_score": 1.0
+      "target": "draft_wc_opp_target"
     },
     {
       "relation": "imports",
@@ -44083,9 +44102,9 @@
       "source_file": "src/lib/draft/wc.test.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_test",
-      "target": "draft_wc_planrun",
-      "confidence_score": 1.0
+      "target": "draft_wc_planrun"
     },
     {
       "relation": "imports",
@@ -44094,9 +44113,9 @@
       "source_file": "src/lib/draft/wc.test.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_test",
-      "target": "draft_wc_prestige",
-      "confidence_score": 1.0
+      "target": "draft_wc_prestige"
     },
     {
       "relation": "imports",
@@ -44105,9 +44124,9 @@
       "source_file": "src/lib/draft/wc.test.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_test",
-      "target": "draft_wc_qualifiesfromgroup",
-      "confidence_score": 1.0
+      "target": "draft_wc_qualifiesfromgroup"
     },
     {
       "relation": "imports",
@@ -44116,9 +44135,9 @@
       "source_file": "src/lib/draft/wc.test.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_test",
-      "target": "draft_wc_run_stages",
-      "confidence_score": 1.0
+      "target": "draft_wc_run_stages"
     },
     {
       "relation": "imports",
@@ -44127,9 +44146,9 @@
       "source_file": "src/lib/draft/wc.test.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_test",
-      "target": "draft_wc_stage_upgrades",
-      "confidence_score": 1.0
+      "target": "draft_wc_stage_upgrades"
     },
     {
       "relation": "contains",
@@ -44137,9 +44156,9 @@
       "source_file": "src/lib/draft/wc.test.ts",
       "source_location": "L17",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_test",
-      "target": "draft_wc_test_res",
-      "confidence_score": 1.0
+      "target": "draft_wc_test_res"
     },
     {
       "relation": "contains",
@@ -44147,9 +44166,9 @@
       "source_file": "src/lib/draft/wc.test.ts",
       "source_location": "L10",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_test",
-      "target": "draft_wc_test_run",
-      "confidence_score": 1.0
+      "target": "draft_wc_test_run"
     },
     {
       "relation": "imports",
@@ -44158,9 +44177,9 @@
       "source_file": "src/lib/draft/wc.test.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_test",
-      "target": "draft_wc_upgrade_floor",
-      "confidence_score": 1.0
+      "target": "draft_wc_upgrade_floor"
     },
     {
       "relation": "imports",
@@ -44169,9 +44188,9 @@
       "source_file": "src/lib/draft/wc.test.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_test",
-      "target": "draft_wc_wcrun",
-      "confidence_score": 1.0
+      "target": "draft_wc_wcrun"
     },
     {
       "relation": "calls",
@@ -44180,9 +44199,9 @@
       "source_file": "src/lib/draft/wc.test.ts",
       "source_location": "L13",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_test_run",
-      "target": "draft_wc_planrun",
-      "confidence_score": 1.0
+      "target": "draft_wc_planrun"
     },
     {
       "relation": "contains",
@@ -44190,9 +44209,9 @@
       "source_file": "src/lib/draft/wc.ts",
       "source_location": "L224",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc",
-      "target": "draft_wc_advancestage",
-      "confidence_score": 1.0
+      "target": "draft_wc_advancestage"
     },
     {
       "relation": "contains",
@@ -44200,9 +44219,9 @@
       "source_file": "src/lib/draft/wc.ts",
       "source_location": "L213",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc",
-      "target": "draft_wc_allowdraw",
-      "confidence_score": 1.0
+      "target": "draft_wc_allowdraw"
     },
     {
       "relation": "contains",
@@ -44210,9 +44229,9 @@
       "source_file": "src/lib/draft/wc.ts",
       "source_location": "L188",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc",
-      "target": "draft_wc_buildmatchrow",
-      "confidence_score": 1.0
+      "target": "draft_wc_buildmatchrow"
     },
     {
       "relation": "contains",
@@ -44220,9 +44239,9 @@
       "source_file": "src/lib/draft/wc.ts",
       "source_location": "L185",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc",
-      "target": "draft_wc_gameoutcome",
-      "confidence_score": 1.0
+      "target": "draft_wc_gameoutcome"
     },
     {
       "relation": "contains",
@@ -44230,9 +44249,9 @@
       "source_file": "src/lib/draft/wc.ts",
       "source_location": "L175",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc",
-      "target": "draft_wc_gamesforstage",
-      "confidence_score": 1.0
+      "target": "draft_wc_gamesforstage"
     },
     {
       "relation": "contains",
@@ -44240,9 +44259,9 @@
       "source_file": "src/lib/draft/wc.ts",
       "source_location": "L36",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc",
-      "target": "draft_wc_isduel",
-      "confidence_score": 1.0
+      "target": "draft_wc_isduel"
     },
     {
       "relation": "contains",
@@ -44250,9 +44269,9 @@
       "source_file": "src/lib/draft/wc.ts",
       "source_location": "L57",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc",
-      "target": "draft_wc_knockout_stages",
-      "confidence_score": 1.0
+      "target": "draft_wc_knockout_stages"
     },
     {
       "relation": "contains",
@@ -44260,9 +44279,9 @@
       "source_file": "src/lib/draft/wc.ts",
       "source_location": "L63",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc",
-      "target": "draft_wc_marquee",
-      "confidence_score": 1.0
+      "target": "draft_wc_marquee"
     },
     {
       "relation": "contains",
@@ -44270,9 +44289,9 @@
       "source_file": "src/lib/draft/wc.ts",
       "source_location": "L41",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc",
-      "target": "draft_wc_opp_target",
-      "confidence_score": 1.0
+      "target": "draft_wc_opp_target"
     },
     {
       "relation": "contains",
@@ -44280,9 +44299,9 @@
       "source_file": "src/lib/draft/wc.ts",
       "source_location": "L208",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc",
-      "target": "draft_wc_outcomeof",
-      "confidence_score": 1.0
+      "target": "draft_wc_outcomeof"
     },
     {
       "relation": "contains",
@@ -44290,9 +44309,9 @@
       "source_file": "src/lib/draft/wc.ts",
       "source_location": "L106",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc",
-      "target": "draft_wc_planrun",
-      "confidence_score": 1.0
+      "target": "draft_wc_planrun"
     },
     {
       "relation": "contains",
@@ -44300,9 +44319,9 @@
       "source_file": "src/lib/draft/wc.ts",
       "source_location": "L69",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc",
-      "target": "draft_wc_prestige",
-      "confidence_score": 1.0
+      "target": "draft_wc_prestige"
     },
     {
       "relation": "contains",
@@ -44310,9 +44329,9 @@
       "source_file": "src/lib/draft/wc.ts",
       "source_location": "L52",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc",
-      "target": "draft_wc_qualifiesfromgroup",
-      "confidence_score": 1.0
+      "target": "draft_wc_qualifiesfromgroup"
     },
     {
       "relation": "contains",
@@ -44320,9 +44339,9 @@
       "source_file": "src/lib/draft/wc.ts",
       "source_location": "L33",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc",
-      "target": "draft_wc_run_stage_label",
-      "confidence_score": 1.0
+      "target": "draft_wc_run_stage_label"
     },
     {
       "relation": "contains",
@@ -44330,9 +44349,9 @@
       "source_file": "src/lib/draft/wc.ts",
       "source_location": "L32",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc",
-      "target": "draft_wc_run_stages",
-      "confidence_score": 1.0
+      "target": "draft_wc_run_stages"
     },
     {
       "relation": "contains",
@@ -44340,9 +44359,9 @@
       "source_file": "src/lib/draft/wc.ts",
       "source_location": "L31",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc",
-      "target": "draft_wc_runstage",
-      "confidence_score": 1.0
+      "target": "draft_wc_runstage"
     },
     {
       "relation": "contains",
@@ -44350,9 +44369,9 @@
       "source_file": "src/lib/draft/wc.ts",
       "source_location": "L48",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc",
-      "target": "draft_wc_stage_upgrades",
-      "confidence_score": 1.0
+      "target": "draft_wc_stage_upgrades"
     },
     {
       "relation": "contains",
@@ -44360,9 +44379,9 @@
       "source_file": "src/lib/draft/wc.ts",
       "source_location": "L49",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc",
-      "target": "draft_wc_upgrade_floor",
-      "confidence_score": 1.0
+      "target": "draft_wc_upgrade_floor"
     },
     {
       "relation": "contains",
@@ -44370,9 +44389,9 @@
       "source_file": "src/lib/draft/wc.ts",
       "source_location": "L79",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc",
-      "target": "draft_wc_wcfixture",
-      "confidence_score": 1.0
+      "target": "draft_wc_wcfixture"
     },
     {
       "relation": "contains",
@@ -44380,9 +44399,9 @@
       "source_file": "src/lib/draft/wc.ts",
       "source_location": "L154",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc",
-      "target": "draft_wc_wcmatchrow",
-      "confidence_score": 1.0
+      "target": "draft_wc_wcmatchrow"
     },
     {
       "relation": "contains",
@@ -44390,9 +44409,9 @@
       "source_file": "src/lib/draft/wc.ts",
       "source_location": "L86",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc",
-      "target": "draft_wc_wcplan",
-      "confidence_score": 1.0
+      "target": "draft_wc_wcplan"
     },
     {
       "relation": "contains",
@@ -44400,9 +44419,9 @@
       "source_file": "src/lib/draft/wc.ts",
       "source_location": "L137",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc",
-      "target": "draft_wc_wcrun",
-      "confidence_score": 1.0
+      "target": "draft_wc_wcrun"
     },
     {
       "relation": "contains",
@@ -44410,9 +44429,9 @@
       "source_file": "src/lib/draft/wc.ts",
       "source_location": "L169",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc",
-      "target": "draft_wc_wcrunpatch",
-      "confidence_score": 1.0
+      "target": "draft_wc_wcrunpatch"
     },
     {
       "relation": "contains",
@@ -44420,9 +44439,9 @@
       "source_file": "src/lib/draft/wc.ts",
       "source_location": "L92",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc",
-      "target": "draft_wc_weightedpick",
-      "confidence_score": 1.0
+      "target": "draft_wc_weightedpick"
     },
     {
       "relation": "calls",
@@ -44431,9 +44450,9 @@
       "source_file": "src/lib/draft/wc.ts",
       "source_location": "L227",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "draft_wc_advancestage",
-      "target": "draft_wc_qualifiesfromgroup",
-      "confidence_score": 1.0
+      "target": "draft_wc_qualifiesfromgroup"
     },
     {
       "relation": "contains",
@@ -46748,9 +46767,9 @@
       "source_file": "/Users/zchukwumah/ys-watch-build/DRAFT-XI.md",
       "source_location": "L1",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "users_zchukwumah_ys_watch_build_draft_xi_md",
-      "target": "ys_watch_build_draft_xi_draft_xi_build_status",
-      "confidence_score": 1.0
+      "target": "ys_watch_build_draft_xi_draft_xi_build_status"
     },
     {
       "relation": "contains",
@@ -46758,9 +46777,9 @@
       "source_file": "/Users/zchukwumah/ys-watch-build/DRAFT-XI.md",
       "source_location": "L65",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "ys_watch_build_draft_xi_draft_xi_build_status",
-      "target": "ys_watch_build_draft_xi_cloud_layer_built_dormant_until_the_migration_is_applied",
-      "confidence_score": 1.0
+      "target": "ys_watch_build_draft_xi_cloud_layer_built_dormant_until_the_migration_is_applied"
     },
     {
       "relation": "contains",
@@ -46768,9 +46787,9 @@
       "source_file": "/Users/zchukwumah/ys-watch-build/DRAFT-XI.md",
       "source_location": "L23",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "ys_watch_build_draft_xi_draft_xi_build_status",
-      "target": "ys_watch_build_draft_xi_code_map",
-      "confidence_score": 1.0
+      "target": "ys_watch_build_draft_xi_code_map"
     },
     {
       "relation": "contains",
@@ -46778,9 +46797,9 @@
       "source_file": "/Users/zchukwumah/ys-watch-build/DRAFT-XI.md",
       "source_location": "L91",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "ys_watch_build_draft_xi_draft_xi_build_status",
-      "target": "ys_watch_build_draft_xi_custom_leagues_built_dormant_until_migration_fails_soft",
-      "confidence_score": 1.0
+      "target": "ys_watch_build_draft_xi_custom_leagues_built_dormant_until_migration_fails_soft"
     },
     {
       "relation": "contains",
@@ -46788,9 +46807,9 @@
       "source_file": "/Users/zchukwumah/ys-watch-build/DRAFT-XI.md",
       "source_location": "L49",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "ys_watch_build_draft_xi_draft_xi_build_status",
-      "target": "ys_watch_build_draft_xi_data",
-      "confidence_score": 1.0
+      "target": "ys_watch_build_draft_xi_data"
     },
     {
       "relation": "contains",
@@ -46798,9 +46817,9 @@
       "source_file": "/Users/zchukwumah/ys-watch-build/DRAFT-XI.md",
       "source_location": "L106",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "ys_watch_build_draft_xi_draft_xi_build_status",
-      "target": "ys_watch_build_draft_xi_friend_challenges_shareable_results_built_dormant_until_migration",
-      "confidence_score": 1.0
+      "target": "ys_watch_build_draft_xi_friend_challenges_shareable_results_built_dormant_until_migration"
     },
     {
       "relation": "contains",
@@ -46808,9 +46827,9 @@
       "source_file": "/Users/zchukwumah/ys-watch-build/DRAFT-XI.md",
       "source_location": "L138",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "ys_watch_build_draft_xi_draft_xi_build_status",
-      "target": "ys_watch_build_draft_xi_live_h2h_multiplayer_built_live_simultaneous_two_half_match",
-      "confidence_score": 1.0
+      "target": "ys_watch_build_draft_xi_live_h2h_multiplayer_built_live_simultaneous_two_half_match"
     },
     {
       "relation": "contains",
@@ -46818,9 +46837,9 @@
       "source_file": "/Users/zchukwumah/ys-watch-build/DRAFT-XI.md",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "ys_watch_build_draft_xi_draft_xi_build_status",
-      "target": "ys_watch_build_draft_xi_playable_now_anonymous_no_db_verified_in_browser",
-      "confidence_score": 1.0
+      "target": "ys_watch_build_draft_xi_playable_now_anonymous_no_db_verified_in_browser"
     },
     {
       "relation": "contains",
@@ -46828,9 +46847,9 @@
       "source_file": "/Users/zchukwumah/ys-watch-build/DRAFT-XI.md",
       "source_location": "L36",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "ys_watch_build_draft_xi_draft_xi_build_status",
-      "target": "ys_watch_build_draft_xi_scoring_engine",
-      "confidence_score": 1.0
+      "target": "ys_watch_build_draft_xi_scoring_engine"
     },
     {
       "relation": "contains",
@@ -46838,9 +46857,9 @@
       "source_file": "/Users/zchukwumah/ys-watch-build/DRAFT-XI.md",
       "source_location": "L121",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "ys_watch_build_draft_xi_draft_xi_build_status",
-      "target": "ys_watch_build_draft_xi_spec_status_complete",
-      "confidence_score": 1.0
+      "target": "ys_watch_build_draft_xi_spec_status_complete"
     },
     {
       "relation": "contains",
@@ -46848,9 +46867,9 @@
       "source_file": "/Users/zchukwumah/ys-watch-build/DRAFT-XI.md",
       "source_location": "L83",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "ys_watch_build_draft_xi_cloud_layer_built_dormant_until_the_migration_is_applied",
-      "target": "ys_watch_build_draft_xi_activation_done_applied_to_the_live_supabase_project",
-      "confidence_score": 1.0
+      "target": "ys_watch_build_draft_xi_activation_done_applied_to_the_live_supabase_project"
     },
     {
       "relation": "contains",
@@ -46858,9 +46877,9 @@
       "source_file": "/Users/zchukwumah/ys-watch-build/DRAFT-XI.md",
       "source_location": "L129",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "ys_watch_build_draft_xi_spec_status_complete",
-      "target": "ys_watch_build_draft_xi_possible_polish_optional_next",
-      "confidence_score": 1.0
+      "target": "ys_watch_build_draft_xi_possible_polish_optional_next"
     },
     {
       "relation": "contains",
@@ -48358,9 +48377,9 @@
       "source_file": "/Users/zchukwumah/ys-watch-build/docs/superpowers/specs/2026-06-09-38-0-watch-the-match-design.md",
       "source_location": "L1",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "users_zchukwumah_ys_watch_build_docs_superpowers_specs_2026_06_09_38_0_watch_the_match_design_md",
-      "target": "specs_2026_06_09_38_0_watch_the_match_design_38_0_watch_the_half_match_playback",
-      "confidence_score": 1.0
+      "target": "specs_2026_06_09_38_0_watch_the_match_design_38_0_watch_the_half_match_playback"
     },
     {
       "relation": "contains",
@@ -48518,9 +48537,9 @@
       "source_file": "/Users/zchukwumah/ys-watch-build/docs/superpowers/specs/2026-06-09-38-0-watch-the-match-plan.md",
       "source_location": "L1",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "users_zchukwumah_ys_watch_build_docs_superpowers_specs_2026_06_09_38_0_watch_the_match_plan_md",
-      "target": "specs_2026_06_09_38_0_watch_the_match_plan_38_0_watch_the_half_implementation_plan",
-      "confidence_score": 1.0
+      "target": "specs_2026_06_09_38_0_watch_the_match_plan_38_0_watch_the_half_implementation_plan"
     },
     {
       "relation": "contains",
@@ -51530,5 +51549,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "90c8607f3fc2c8a130490f6f00c046b18c5fbeb0"
+  "built_at_commit": "af9b603ce7a394c8d4cc9ff765932e6b75b1d54d"
 }
