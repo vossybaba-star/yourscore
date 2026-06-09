@@ -145,6 +145,25 @@ export default function RootLayout({
             `,
           }}
         />
+        {/* Snapchat Pixel — only loads once the pixel ID env var is set */}
+        {process.env.NEXT_PUBLIC_SNAP_PIXEL_ID && (
+          <Script
+            id="snap-pixel"
+            strategy="afterInteractive"
+            dangerouslySetInnerHTML={{
+              __html: `
+                (function(e,t,n){if(e.snaptr)return;var a=e.snaptr=function(){
+                a.handleRequest?a.handleRequest.apply(a,arguments):a.queue.push(arguments)};
+                a.queue=[];var s='script';var r=t.createElement(s);r.async=!0;
+                r.src=n;var u=t.getElementsByTagName(s)[0];
+                u.parentNode.insertBefore(r,u);})(window,document,
+                'https://sc-static.net/scevent.min.js');
+                snaptr('init', '${process.env.NEXT_PUBLIC_SNAP_PIXEL_ID}');
+                snaptr('track', 'PAGE_VIEW');
+              `,
+            }}
+          />
+        )}
       </body>
     </html>
   );
