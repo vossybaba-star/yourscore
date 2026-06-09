@@ -21,10 +21,14 @@ export async function GET(request: Request) {
       // Fire welcome email only on first sign-in (created_at ≈ last_sign_in_at).
       // Fire-and-forget; sender catches its own errors so we never block redirect.
       const user = data.user;
-      if (user?.email && isFirstSignIn(user.created_at, user.last_sign_in_at)) {
+      const firstSignIn = isFirstSignIn(user?.created_at, user?.last_sign_in_at);
+      if (user?.email && firstSignIn) {
         void sendWelcomeEmail({ userId: user.id, email: user.email });
       }
-      return NextResponse.redirect(`${origin}${next}`);
+      // Tag brand-new users so the client can fire the X signup conversion once.
+      const dest = new URL(next, origin);
+      if (firstSignIn) dest.searchParams.set("signup", "1");
+      return NextResponse.redirect(dest.toString());
     }
     console.error("[auth/callback] exchangeCodeForSession failed:", error.message);
   }
