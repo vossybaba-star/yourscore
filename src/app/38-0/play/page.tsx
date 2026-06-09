@@ -40,11 +40,16 @@ export default function DraftPlay() {
   const [reel, setReel] = useState<{ club: string; season: string } | null>(null);
   const [selected, setSelected] = useState<PlayerSeason | null>(null);
   const reelTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Club-seasons already offered this draft ("club|season") — fed to spin() so the
+  // same squad's options don't keep reappearing for position after position.
+  const seenBuckets = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     const t = loadTeam();
     if (!t) { router.replace("/38-0"); return; }
     setTeam(t);
+    // Seed the offered-squads memory from the XI so far (resuming a draft keeps it).
+    seenBuckets.current = new Set(t.squad.map((p) => `${p.club}|${p.season}`));
     if (isComplete(t)) router.replace("/38-0/team");
   }, [router]);
 
@@ -63,7 +68,8 @@ export default function DraftPlay() {
       if (++ticks > 13) {
         if (reelTimer.current) clearInterval(reelTimer.current);
         const open = openSlots(team).map((s) => s.pos);
-        const result = spin(open, usedPlayerIds(team), usedPlayerNames(team));
+        const result = spin(open, usedPlayerIds(team), usedPlayerNames(team), Math.random, seenBuckets.current);
+        seenBuckets.current.add(`${result.club}|${result.season}`);
         setReel({ club: result.club, season: result.season });
         setCurrent(result);
         setSpinning(false);
