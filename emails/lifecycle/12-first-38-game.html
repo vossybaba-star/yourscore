@@ -1,0 +1,95 @@
+<!--
+  Email 12 — First 38-0 game played
+  Trigger: first row in draft_matches as challenger_id or opponent_id
+  Subject:    {{result_word}}. {{my_score}}-{{opp_score}} vs {{opponent}}.
+  Preview:    First game in the books. Now turn it into a rivalry.
+  Tokens: {{result_word}} {{my_score}} {{opp_score}} {{opponent}} {{team_name}} {{strength}} {{w}} {{d}} {{l}}
+  Note: cross-pull suggests H2H if user has no draft_challenges row yet.
+-->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="x-apple-disable-message-reformatting"><meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark">
+  <title>Full time on your first match</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>body,table,td{margin:0;padding:0}img{border:0;outline:none;text-decoration:none;display:block}table{border-collapse:collapse}a{text-decoration:none}
+    @media (max-width:600px){.container{width:100%!important}.px{padding-left:24px!important;padding-right:24px!important}.headline{font-size:40px!important;line-height:42px!important}.score{font-size:64px!important}.stat-num{font-size:32px!important}.stat-cell{display:block!important;width:100%!important;padding:14px 0!important;border-bottom:1px solid rgba(255,255,255,0.04)!important}}</style>
+</head>
+<body style="margin:0;padding:0;background:#0a0a0f;font-family:'DM Sans',Helvetica,Arial,sans-serif;color:#ffffff;">
+  <div style="display:none;max-height:0;overflow:hidden;font-size:1px;line-height:1px;color:#0a0a0f;">First game in the books. Now turn it into a rivalry.</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0a0a0f;background-image:linear-gradient(180deg,#0a0a0f 0%,#0e0e1a 100%);"><tr><td align="center" style="padding:40px 16px;">
+    <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
+
+      <tr><td align="center" class="px" style="padding:0 40px 36px;">
+        <a href="https://yourscore.app"><img src="https://yourscore.app/logo.png" alt="YourScore" width="148" height="44" style="width:148px;height:44px;display:block;"></a>
+      </td></tr>
+
+      <tr><td class="px" align="left" style="padding:0 40px 18px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+          <td bgcolor="#10221a" style="background:rgba(0,255,135,0.08);border:1px solid rgba(0,255,135,0.28);border-radius:999px;padding:6px 14px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:2px;color:#00ff87;font-weight:700;text-transform:uppercase;">&#9917; 38-0 &middot; First match</td>
+        </tr></table>
+      </td></tr>
+
+      <tr><td class="px" style="padding:0 40px 14px;">
+        <h1 class="headline" style="margin:0;font-family:'Bebas Neue',Impact,Arial,sans-serif;font-size:56px;line-height:54px;color:#ffffff;font-weight:400;">{{result_word}}.</h1>
+      </td></tr>
+
+      <tr><td class="px" style="padding:0 40px 32px;">
+        <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:17px;line-height:26px;color:#bbbbcc;">
+          <strong style="color:#ffffff;">{{team_name}}</strong> took on <strong style="color:#ffffff;">{{opponent}}</strong>. First match is done. Now do it with stakes.
+        </p>
+      </td></tr>
+
+      <tr><td class="px" style="padding:0 40px 28px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#12121e" style="background:linear-gradient(135deg,rgba(0,255,135,0.08) 0%,rgba(18,18,30,0.95) 50%,rgba(255,71,87,0.06) 100%);border-radius:16px;border:1px solid rgba(255,255,255,0.08);">
+          <tr><td align="center" style="padding:28px 24px 16px;">
+            <div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:2px;color:#8888aa;font-weight:600;text-transform:uppercase;">Scoreline</div>
+          </td></tr>
+          <tr><td align="center" style="padding:0 24px 18px;">
+            <table cellpadding="0" cellspacing="0" border="0"><tr>
+              <td align="right" style="padding:0 18px 0 0;font-family:'Bebas Neue',Impact,sans-serif;font-size:72px;line-height:1;color:#00ff87;">{{my_score}}</td>
+              <td align="center" style="font-family:'Bebas Neue',Impact,sans-serif;font-size:24px;color:#8888aa;line-height:1;">&ndash;</td>
+              <td align="left" style="padding:0 0 0 18px;font-family:'Bebas Neue',Impact,sans-serif;font-size:72px;line-height:1;color:#ff4757;">{{opp_score}}</td>
+            </tr></table>
+          </td></tr>
+          <tr><td align="center" style="padding:0 24px 8px;">
+            <div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:12px;color:#8888aa;letter-spacing:1px;">{{team_name}} &nbsp;vs&nbsp; {{opponent}}</div>
+          </td></tr>
+          <tr><td style="padding:18px 24px 24px;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+              <td class="stat-cell" align="left" style="padding:14px 0 0;border-top:1px solid rgba(255,255,255,0.08);width:25%;"><div class="stat-num" style="font-family:'Bebas Neue',Impact,sans-serif;font-size:28px;line-height:1;color:#ffb800;">{{strength}}</div><div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:10px;color:#8888aa;letter-spacing:1.5px;text-transform:uppercase;margin-top:6px;">Strength</div></td>
+              <td class="stat-cell" align="center" style="padding:14px 0 0;border-top:1px solid rgba(255,255,255,0.08);width:25%;"><div class="stat-num" style="font-family:'Bebas Neue',Impact,sans-serif;font-size:28px;line-height:1;color:#00ff87;">{{w}}</div><div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:10px;color:#8888aa;letter-spacing:1.5px;text-transform:uppercase;margin-top:6px;">W</div></td>
+              <td class="stat-cell" align="center" style="padding:14px 0 0;border-top:1px solid rgba(255,255,255,0.08);width:25%;"><div class="stat-num" style="font-family:'Bebas Neue',Impact,sans-serif;font-size:28px;line-height:1;color:#ffb800;">{{d}}</div><div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:10px;color:#8888aa;letter-spacing:1.5px;text-transform:uppercase;margin-top:6px;">D</div></td>
+              <td class="stat-cell" align="right" style="padding:14px 0 0;border-top:1px solid rgba(255,255,255,0.08);width:25%;"><div class="stat-num" style="font-family:'Bebas Neue',Impact,sans-serif;font-size:28px;line-height:1;color:#ff4757;">{{l}}</div><div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:10px;color:#8888aa;letter-spacing:1.5px;text-transform:uppercase;margin-top:6px;">L</div></td>
+            </tr></table>
+          </td></tr>
+        </table>
+      </td></tr>
+
+      <tr><td class="px" align="center" style="padding:8px 40px 8px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="#ff4757" style="background:linear-gradient(135deg,#ff4757 0%,#c0392b 100%);border-radius:12px;box-shadow:0 0 32px rgba(255,71,87,0.4);">
+          <a href="https://yourscore.app/38-0/challenge" style="display:inline-block;color:#ffffff;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;letter-spacing:0.5px;padding:18px 40px;border-radius:12px;">Challenge a friend &nbsp;&rarr;</a>
+        </td></tr></table>
+      </td></tr>
+
+      <tr><td class="px" style="padding:24px 40px 0;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#12121e" style="background:linear-gradient(135deg,rgba(167,139,250,0.06) 0%,rgba(10,10,15,0.95) 100%);border-radius:14px;border:1px solid rgba(167,139,250,0.22);">
+          <tr><td style="padding:18px 20px;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+              <td valign="middle" width="54" style="padding-right:14px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td width="40" height="40" align="center" valign="middle" bgcolor="#1e1a36" style="background:rgba(167,139,250,0.15);border:1px solid rgba(167,139,250,0.25);border-radius:10px;font-size:18px;line-height:38px;">&#127942;</td></tr></table></td>
+              <td valign="middle"><div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;color:#ffffff;font-weight:600;line-height:18px;">Or take it season-long</div><a href="https://yourscore.app/38-0/leagues" style="display:inline-block;margin-top:4px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:13px;color:#a78bfa;font-weight:600;">Set up a 38-0 league &nbsp;&rarr;</a></td>
+            </tr></table>
+          </td></tr>
+        </table>
+      </td></tr>
+
+      <tr><td class="px" style="padding:56px 40px 24px;">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="border-top:1px solid rgba(255,255,255,0.06);padding-top:24px;">
+          <p style="margin:0 0 10px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:12px;line-height:18px;color:#6b6b85;"><a href="{{PAUSE_URL}}" style="color:#8888aa;text-decoration:underline;">Pause emails</a> &nbsp;&middot;&nbsp; <a href="{{UNSUB_URL}}" style="color:#8888aa;text-decoration:underline;">Unsubscribe</a> &nbsp;&middot;&nbsp; <a href="https://yourscore.app/support" style="color:#8888aa;text-decoration:underline;">Support</a></p>
+          <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:1.5px;color:#6b6b85;text-transform:uppercase;font-weight:600;">YourScore &nbsp;&middot;&nbsp; Your football knowledge. Ranked.</p>
+        </td></tr></table>
+      </td></tr>
+    </table>
+  </td></tr></table>
+</body></html>
