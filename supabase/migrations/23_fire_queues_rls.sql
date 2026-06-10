@@ -1,0 +1,12 @@
+-- 23_fire_queues_rls.sql
+--
+-- Supabase security advisor flagged `public.fire_queues` as rls_disabled_in_public
+-- (08 Jun 2026): with RLS off, anyone holding the anon key could read/write/delete
+-- every row. The table is part of the (retained but dormant) live-match admin
+-- feature — it queues questions to fire at a scheduled match. It is currently
+-- empty and has no runtime callers; all server access goes through the
+-- service-role client, which bypasses RLS regardless.
+--
+-- Enabling RLS with NO policies = deny-all for the anon/authenticated roles while
+-- the service role keeps full access. Minimal, reversible, and closes the finding.
+alter table public.fire_queues enable row level security;

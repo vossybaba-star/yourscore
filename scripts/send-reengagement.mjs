@@ -76,6 +76,26 @@ async function renderTemplate(userId) {
   return html;
 }
 
+// ── Sendable-email guard ──────────────────────────────────────────────────────
+// Prevents bounces: never send to seed/test accounts or malformed addresses.
+// Supabase flagged a high bounce rate (Jun 2026); the 450 `@yourscore.fake` seed
+// users (reseed-fake-profiles.mjs) and typo'd ad-signup addresses were the cause.
+const BLOCKED_DOMAINS = new Set([
+  "yourscore.fake", // leaderboard seed accounts — never real inboxes
+  "example.com",
+  "test.com",
+]);
+// Conservative RFC-ish check: one @, a dot in the domain, no spaces.
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function isSendable(email) {
+  if (!email || typeof email !== "string") return false;
+  const e = email.trim().toLowerCase();
+  if (!EMAIL_RE.test(e)) return false;
+  const domain = e.split("@")[1];
+  return !BLOCKED_DOMAINS.has(domain);
+}
+
 // ── Chunk array into batches ──────────────────────────────────────────────────
 function chunk(arr, size) {
   const out = [];
@@ -98,11 +118,18 @@ async function main() {
   });
   if (listError) throw new Error(`Supabase listUsers failed: ${listError.message}`);
 
-  const recentUsers = (usersPage?.users ?? []).filter(
+  const recentUsersRaw = (usersPage?.users ?? []).filter(
     (u) => u.created_at >= since && u.email,
   );
 
-  console.log(`   Found ${recentUsers.length} user(s) who signed up in the last ${LOOKBACK_HOURS}h\n`);
+  // Drop seed/test/malformed addresses so we never bounce them.
+  const recentUsers = recentUsersRaw.filter((u) => isSendable(u.email));
+  const skipped = recentUsersRaw.length - recentUsers.length;
+  if (skipped > 0) {
+    console.log(`   ⚠️  Skipped ${skipped} unsendable address(es) (seed/test/malformed) to protect deliverability`);
+  }
+
+  console.log(`   Found ${recentUsers.length} sendable user(s) who signed up in the last ${LOOKBACK_HOURS}h\n`);
 
   if (recentUsers.length === 0) {
     console.log("✅ No users to email. Done.\n");

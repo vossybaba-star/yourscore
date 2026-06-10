@@ -8,6 +8,26 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.next({ request });
   }
 
+  // Disk-IO optimization: anonymous visitors have no session to refresh and can
+  // never be admins, so skip the auth round-trip entirely. supabase.auth.getUser()
+  // fans out to ~5 auth-table queries per call; previously it ran on EVERY request
+  // (including logged-out marketing/landing traffic), dominating DB load. We only
+  // pay that cost when an actual Supabase auth cookie is present.
+  const hasAuthCookie = request.cookies
+    .getAll()
+    .some((c) => /^sb-.*-auth-token(\.\d+)?$/.test(c.name));
+
+  if (!hasAuthCookie) {
+    // No session => nothing to refresh. Still gate /admin (a no-cookie request is
+    // definitely not an admin), matching the authenticated path's redirect.
+    if (request.nextUrl.pathname.startsWith("/admin")) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/";
+      return NextResponse.redirect(url);
+    }
+    return NextResponse.next({ request });
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient<Database>(

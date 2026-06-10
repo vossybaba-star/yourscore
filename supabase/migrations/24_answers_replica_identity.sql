@@ -1,0 +1,11 @@
+-- 24_answers_replica_identity.sql
+--
+-- Disk IO reduction. Migration 11 set REPLICA IDENTITY FULL on several tables for
+-- realtime, but `answers` is NOT in the supabase_realtime publication — so FULL
+-- gave zero benefit while forcing the ENTIRE old row to be written to WAL on every
+-- UPDATE/DELETE. The `answers` table is high-volume gameplay writes, so this was a
+-- meaningful, pure-waste WAL/Disk-IO amplifier.
+--
+-- Reverting to DEFAULT (primary-key) replica identity. No realtime subscriber reads
+-- this table, so there is no behavioural impact.
+alter table public.answers replica identity default;
