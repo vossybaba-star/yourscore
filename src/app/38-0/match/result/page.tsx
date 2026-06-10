@@ -13,7 +13,6 @@ import { useRouter } from "next/navigation";
 import { Pitch } from "@/components/draft/Pitch";
 import { loadLastMatch, type LocalMatch } from "@/lib/draft/local";
 import { tierColor } from "@/lib/draft/ui";
-import { liveOgQuery } from "@/lib/draft/share";
 
 export default function MatchResult() {
   const router = useRouter();
@@ -26,18 +25,6 @@ export default function MatchResult() {
     if (!lm) { router.replace("/38-0"); return; }
     setM(lm);
   }, [router]);
-
-  function ogUrl(): string {
-    if (!m) return "/api/draft/live-og";
-    const q = liveOgQuery({
-      p1: "Your XI", p2: m.opp.name,
-      s1: m.goals.you, s2: m.goals.opp,
-      str1: m.you.strength, str2: m.opp.strength,
-      pens: m.pens ? { a: m.pens.you, b: m.pens.opp } : null,
-      report: m.report,
-    });
-    return `/api/draft/live-og?${q}`;
-  }
 
   function shareText(): string {
     if (!m) return "";
