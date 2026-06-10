@@ -8,39 +8,29 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.next({ request });
   }
 
-  // Disk-IO optimization: anonymous visitors have no session to refresh and can
-  // never be admins, so skip the auth round-trip entirely. supabase.auth.getUser()
-  // fans out to ~5 auth-table queries per call; previously it ran on EVERY request
-  // (including logged-out marketing/landing traffic), dominating DB load. We only
-  // pay that cost when an actual Supabase auth cookie is present.
-  const hasAuthCookie = request.cookies
-    .getAll()
-    .some((c) => /^sb-.*-auth-token(\.\d+)?$/.test(c.name));
-
-  if (!hasAuthCookie) {
-    // No session => nothing to refresh. Still gate /admin (a no-cookie request is
-    // definitely not an admin), matching the authenticated path's redirect.
-    if (request.nextUrl.pathname.startsWith("/admin")) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/";
-      return NextResponse.redirect(url);
-    }
+  // ── Hot path: do NO network auth work for non-/admin routes ────────────────
+  // Auth is only *enforced* server-side for /admin. Previously this middleware
+  // called supabase.auth.getUser() (a network round-trip to Supabase Auth) on
+  // every request to refresh the session. Under the World Cup launch surge that
+  // saturated Supabase Auth — getUser() hung, the middleware blew its 25s budget,
+  // and every page returned MIDDLEWARE_INVOCATION_TIMEOUT (504). Since middleware
+  // runs on every route, that took the whole site down.
+  //
+  // The browser Supabase client (@supabase/ssr createBrowserClient) refreshes the
+  // access token on its own, so sessions still persist without a per-request
+  // middleware refresh. We therefore skip the auth round-trip entirely except on
+  // /admin, where we must verify the user is an admin.
+  if (!request.nextUrl.pathname.startsWith("/admin")) {
     return NextResponse.next({ request });
   }
 
+  // ── /admin only: verify an authenticated admin, bounded + fail-safe ─────────
   let supabaseResponse = NextResponse.next({ request });
 
-  // Fail-safe response used whenever we cannot positively verify the session:
-  // deny /admin (we can't confirm admin), let every other route through. Middleware
-  // runs on EVERY request, so it must never throw — a throw becomes a 500 that locks
-  // the user out of the whole site.
-  const failSafe = () => {
-    if (request.nextUrl.pathname.startsWith("/admin")) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/";
-      return NextResponse.redirect(url);
-    }
-    return NextResponse.next({ request });
+  const denyToHome = () => {
+    const url = request.nextUrl.clone();
+    url.pathname = "/";
+    return NextResponse.redirect(url);
   };
 
   try {
@@ -65,34 +55,22 @@ export async function updateSession(request: NextRequest) {
       }
     );
 
-    // Bound the auth round-trip. Under load Supabase Auth can be slow, and a hung
-    // getUser() would blow the middleware time budget on every route. If it doesn't
-    // resolve in time, fail safe instead of blocking the whole site. The user's
-    // existing cookie is left intact and simply refreshes on a later request.
+    // Bound the auth round-trip so a slow Auth server can never hang middleware.
     const authResult = await Promise.race([
       supabase.auth.getUser(),
       new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error("auth-timeout")), 3000)
       ),
     ]);
-    const user = authResult.data.user;
 
-    // Protect /admin routes — require an authenticated admin, not just any user.
-    // Uses app_metadata (service-role-only), NOT user-editable user_metadata.
-    // Mirrors the is_admin RLS rule (supabase/schema.sql).
-    if (
-      request.nextUrl.pathname.startsWith("/admin") &&
-      user?.app_metadata?.is_admin !== true
-    ) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/";
-      return NextResponse.redirect(url);
+    // app_metadata is service-role-only (not user-editable). Mirrors is_admin RLS.
+    if (authResult.data.user?.app_metadata?.is_admin !== true) {
+      return denyToHome();
     }
 
     return supabaseResponse;
   } catch {
-    // Transient auth failure (timeout, Supabase Auth blip, malformed token).
-    // Degrade gracefully rather than 500 the entire request.
-    return failSafe();
+    // Transient auth failure → can't verify admin → deny rather than 500.
+    return denyToHome();
   }
 }

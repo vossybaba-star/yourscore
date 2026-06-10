@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getUserBounded } from "@/lib/supabase/bounded";
 import { GridBackground } from "@/components/ui/GridBackground";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { ShareStatsButton } from "@/components/ui/ShareStatsButton";
@@ -29,7 +30,7 @@ function AvatarCircle({ name, size = 64, avatarUrl }: { name: string; size?: num
 
 export default async function ProfilePage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getUserBounded(supabase);
 
   if (!user) {
     return (

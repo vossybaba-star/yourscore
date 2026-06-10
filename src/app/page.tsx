@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getUserBounded } from "@/lib/supabase/bounded";
 import { MarketingLanding } from "@/components/home/MarketingLanding";
 import { Dashboard, type DashboardData, type LeagueTab, type FeaturedPack } from "@/components/home/Dashboard";
 
@@ -46,9 +47,7 @@ export default async function RootPage({
   }
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUserBounded(supabase);
 
   // ── Logged-out: marketing landing ──────────────────────────────────────────
   if (!user) {
