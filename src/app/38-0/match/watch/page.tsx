@@ -2,14 +2,14 @@
 
 /**
  * /38-0/match/watch — plays the most recent Quick Match out on screen: first half
- * (~30s) → a brief half-time → second half (~30s) → hands off to the result screen.
- * Local ticker drives progress; the visuals come from <MatchWatch> (playback core).
+ * (~45s) → a brief half-time → second half (~45s) → hands off to the result screen.
+ * Local ticker drives progress; the visuals come from <MatchPitch> (2D pitch playback).
  */
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { loadLastMatch, type LocalMatch } from "@/lib/draft/local";
-import { MatchWatch } from "@/components/draft/MatchWatch";
+import { MatchPitch } from "@/components/draft/MatchPitch";
 import { WATCH_CONFIG } from "@/lib/draft/playback";
 
 const BG = "#0a0a0f";
@@ -81,7 +81,7 @@ export default function WatchPage() {
             </button>
           </div>
         ) : (
-          <MatchWatch
+          <MatchPitch
             sim={stage === "half1" ? m.sim.h1 : m.sim.h2}
             half={stage === "half1" ? 1 : 2}
             matchId={m.id}

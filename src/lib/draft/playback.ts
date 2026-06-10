@@ -15,7 +15,7 @@ import type { HalfSim } from "./live-score";
 
 export const WATCH_CONFIG = {
   /** Real seconds a half plays out over. */
-  halfSeconds: 30,
+  halfSeconds: 45,
   /** Match minutes in a half (the clock runs 0→45 / 45→90). */
   matchMinutesPerHalf: 45,
   /** Fraction of a side's shots that surface as a commentary "chance" beat. */
@@ -130,10 +130,14 @@ export function watchFrame(sim: HalfSim, half: 1 | 2, matchId: string, progress:
 
   // Possession eases from an even 50/50 toward the half's real split.
   const posA = Math.round(50 + (sim.possession.a - 50) * p);
+  // Shots and on-target tick on independent schedules, so clamp on-target ≤ shots while
+  // ticking (it can't outrun total shots on screen); both still reach their real finals.
+  const shots = tickStat(matchId, half, "shots", sim.shots.a, sim.shots.b, elapsed);
+  const onTargetRaw = tickStat(matchId, half, "shotsOnTarget", sim.shotsOnTarget.a, sim.shotsOnTarget.b, elapsed);
   const stats: TickStats = {
     possession: { a: posA, b: 100 - posA },
-    shots: tickStat(matchId, half, "shots", sim.shots.a, sim.shots.b, elapsed),
-    shotsOnTarget: tickStat(matchId, half, "shotsOnTarget", sim.shotsOnTarget.a, sim.shotsOnTarget.b, elapsed),
+    shots,
+    shotsOnTarget: { a: Math.min(onTargetRaw.a, shots.a), b: Math.min(onTargetRaw.b, shots.b) },
     corners: tickStat(matchId, half, "corners", sim.corners.a, sim.corners.b, elapsed),
     fouls: tickStat(matchId, half, "fouls", sim.fouls.a, sim.fouls.b, elapsed),
     offsides: tickStat(matchId, half, "offsides", sim.offsides.a, sim.offsides.b, elapsed),
