@@ -280,7 +280,7 @@ export default function ChallengesPage() {
     createClient()
       .from("quiz_packs")
       .select("id, name, type, parameter, question_count, status, description, featured, featured_order, metadata")
-      .eq("status", "published")
+      .eq("status", "published").eq("rotation_active", true)
       .order("name")
       .then(({ data }) => {
         setPacks((data ?? []) as unknown as QuizPack[]);

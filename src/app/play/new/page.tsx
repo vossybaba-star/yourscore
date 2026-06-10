@@ -92,7 +92,7 @@ function NewGameContent() {
     setPacksLoading(true);
     createClient()
       .from("quiz_packs").select("id, name, type, parameter, question_count")
-      .eq("status", "published").order("name")
+      .eq("status", "published").eq("rotation_active", true).order("name")
       .then(({ data }) => {
         setPacks((data ?? []) as QuizPack[]);
         setPacksLoading(false);
