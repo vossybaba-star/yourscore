@@ -23,19 +23,21 @@ function JerseyIcon({ active }: { active: boolean }) {
 
 export function BottomNav() {
   const pathname = usePathname();
-  const { user } = useUser();
+  const { user, loading } = useUser();
   const pendingFriends = usePendingFriends();
 
   const isHome = pathname === "/";
   const isLeague = pathname.startsWith("/league") || pathname.startsWith("/leagues") || pathname.startsWith("/38-0/league");
-const isChallenges =
+  const isChallenges =
     (pathname.startsWith("/play") || pathname.startsWith("/challenges") || pathname.startsWith("/h2h")) &&
     !pathname.startsWith("/38-0");
   const isDraft = pathname.startsWith("/38-0");
   const isProfile = pathname.startsWith("/profile") || pathname.startsWith("/settings");
 
-  // Guest: Home + Play + Draft XI (Draft is playable anonymously — top of funnel).
-  if (!user) {
+  // While auth state is resolving, show the full signed-in nav — signed-in users
+  // must never flash down to the 3-tab guest nav. Guests see the extra tabs briefly
+  // then they disappear, which is far less disruptive than the reverse.
+  if (!user && !loading) {
     return (
       <div
         className="fixed bottom-0 left-0 right-0 z-50"
