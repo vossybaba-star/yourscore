@@ -7,7 +7,6 @@ import { createClient } from "@/lib/supabase/client";
 import { getTeamBadgeUrl } from "@/lib/teamImages";
 import { getCompetitionBadgeUrl } from "@/lib/competitionImages";
 import { AnswerButtons } from "@/components/game/AnswerButtons";
-import { slugify } from "@/lib/utils";
 import { useGameLoop } from "@/lib/useGameLoop";
 import {
   DIFFICULTY_COLOR as DIFF_COLOR,
@@ -442,29 +441,25 @@ export default function ChallengePage() {
       setUserId(uid);
       const sb = supabase;
 
+      // Load pack content from the edge-cached route (/api/challenges/pack). It's
+      // served from the nearest CDN region with no database hop — previously the
+      // browser fetched EVERY published pack's full question set (110 packs) from
+      // the eu-central-1 DB on every load, a transatlantic payload that tanked
+      // Speed Insights for users far from the UK. Leaderboard/attempt below stay
+      // client-side (user-specific, not cacheable).
       let match: (QuizPack & { questions: RawQuestion[] }) | undefined;
-
-      if (pid) {
-        // Custom pack — load directly by ID, no need to scan all packs
-        const { data: single } = await sb
-          .from("quiz_packs")
-          .select("id, name, type, parameter, question_count, description, questions")
-          .eq("id", pid)
-          .eq("status", "published")
-          .single();
-        if (!single) { router.replace("/challenges"); return; }
-        match = single as unknown as (QuizPack & { questions: RawQuestion[] });
-      } else {
-        // System pack — slug-match across all published packs
-        const { data: packs } = await sb
-          .from("quiz_packs")
-          .select("id, name, type, parameter, question_count, description, questions")
-          .eq("status", "published");
-        match = ((packs ?? []) as unknown as (QuizPack & { questions: RawQuestion[] })[]).find(
-          (p) => slugify(p.name) === slug
-        );
-        if (!match) { router.replace("/challenges"); return; }
+      try {
+        const packQuery = pid
+          ? `pid=${encodeURIComponent(pid)}`
+          : `slug=${encodeURIComponent(slug)}`;
+        const res = await fetch(`/api/challenges/pack?${packQuery}`);
+        if (!res.ok) { router.replace("/challenges"); return; }
+        const json = await res.json();
+        match = json.pack as (QuizPack & { questions: RawQuestion[] }) | undefined;
+      } catch {
+        router.replace("/challenges"); return;
       }
+      if (!match) { router.replace("/challenges"); return; }
 
       setPack(match);
       setQuestions(match.questions ?? []);

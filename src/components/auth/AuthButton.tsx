@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Spinner } from "@/components/ui/Spinner";
 import { useState } from "react";
 import { isNative, NATIVE_AUTH_CALLBACK, openOAuthInBrowser } from "@/lib/native";
+import { checkEmail, suggestEmailCorrection } from "@/lib/email";
 
 type Provider = "google" | "apple" | "facebook";
 
@@ -89,6 +90,8 @@ function EmailSignIn({ nextPath }: { nextPath?: string }) {
 
   async function sendMagicLink() {
     if (!email.trim() || loading) return;
+    const check = checkEmail(email);
+    if (!check.ok) { setError(check.reason ?? "Enter a valid email address."); return; }
     setLoading(true); setError("");
     try {
       const sb = createClient();
@@ -115,6 +118,8 @@ function EmailSignIn({ nextPath }: { nextPath?: string }) {
 
   async function signUp() {
     if (!email.trim() || !password || loading) return;
+    const check = checkEmail(email);
+    if (!check.ok) { setError(check.reason ?? "Enter a valid email address."); return; }
     if (password !== confirmPassword) { setError("Passwords don't match"); return; }
     if (password.length < 6) { setError("Password must be at least 6 characters"); return; }
     setLoading(true); setError("");
@@ -129,6 +134,8 @@ function EmailSignIn({ nextPath }: { nextPath?: string }) {
 
   async function forgotPassword() {
     if (!email.trim()) { setError("Enter your email above first"); return; }
+    const check = checkEmail(email);
+    if (!check.ok) { setError(check.reason ?? "Enter a valid email address."); return; }
     setLoading(true); setError("");
     try {
       const sb = createClient();
@@ -189,6 +196,22 @@ function EmailSignIn({ nextPath }: { nextPath?: string }) {
         placeholder="your@email.com" autoComplete="email"
         className="w-full rounded-xl px-4 py-3.5 font-body text-white text-sm outline-none placeholder:text-white/25"
         style={inputStyle(!!error)} />
+
+      {/* Typo nudge — non-blocking "did you mean…?" for common domain typos */}
+      {(() => {
+        const fix = email.trim() ? suggestEmailCorrection(email) : null;
+        if (!fix) return null;
+        return (
+          <button
+            type="button"
+            onClick={() => { setEmail(fix); setError(""); }}
+            className="w-full text-left font-body text-xs px-1 transition-colors hover:text-white"
+            style={{ color: "#ffb800" }}
+          >
+            Did you mean <span className="underline">{fix}</span>?
+          </button>
+        );
+      })()}
 
       {/* Password (password + signup modes) */}
       {(mode === "password" || mode === "signup") && (
