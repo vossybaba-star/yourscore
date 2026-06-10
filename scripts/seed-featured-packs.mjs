@@ -126,6 +126,8 @@ async function upsertPack(pack) {
     source: "system",
     featured: true,
     featured_order: pack.featured_order,
+    // rotation_active gates visibility in the challenges/lobby pack lists.
+    rotation_active: true,
     metadata: { icon: pack.icon },
     updated_at: new Date().toISOString(),
   };
