@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
   }
 
   const db = createDraftDb();
-  const { error } = await db.rpc("draft_reset_daily", {});
+  const { error } = await db.rpc("draft_reset_daily");
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   return NextResponse.json({ reset: true });

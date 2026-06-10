@@ -271,6 +271,566 @@ export type Database = {
         }
         Relationships: []
       }
+      draft_challenges: {
+        Row: {
+          challenger_id: string | null
+          challenger_name: string
+          challenger_strength: number
+          challenger_team: Json
+          code: string
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          league_id: string | null
+          match_id: string | null
+          status: string
+        }
+        Insert: {
+          challenger_id?: string | null
+          challenger_name: string
+          challenger_strength: number
+          challenger_team: Json
+          code: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          league_id?: string | null
+          match_id?: string | null
+          status?: string
+        }
+        Update: {
+          challenger_id?: string | null
+          challenger_name?: string
+          challenger_strength?: number
+          challenger_team?: Json
+          code?: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          league_id?: string | null
+          match_id?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
+      draft_league_members: {
+        Row: {
+          joined_at: string | null
+          last_seen_at: string | null
+          league_id: string
+          user_id: string
+        }
+        Insert: {
+          joined_at?: string | null
+          last_seen_at?: string | null
+          league_id: string
+          user_id: string
+        }
+        Update: {
+          joined_at?: string | null
+          last_seen_at?: string | null
+          league_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "draft_league_members_league_id_fkey"
+            columns: ["league_id"]
+            isOneToOne: false
+            referencedRelation: "draft_leagues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      draft_leagues: {
+        Row: {
+          created_at: string | null
+          id: string
+          join_code: string
+          name: string
+          owner_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          join_code: string
+          name: string
+          owner_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          join_code?: string
+          name?: string
+          owner_id?: string | null
+        }
+        Relationships: []
+      }
+      draft_live_matches: {
+        Row: {
+          created_at: string
+          h1_p1: number | null
+          h1_p2: number | null
+          h2_p1: number | null
+          h2_p2: number | null
+          id: string
+          invited_id: string | null
+          is_bot: boolean
+          join_code: string | null
+          league_id: string | null
+          p1_formation: string | null
+          p1_half_left: number
+          p1_id: string | null
+          p1_name: string | null
+          p1_pregame_left: number
+          p1_ready: boolean
+          p1_squad: Json | null
+          p1_strength: number | null
+          p1_wants_pens: boolean | null
+          p2_formation: string | null
+          p2_half_left: number
+          p2_id: string | null
+          p2_name: string | null
+          p2_pregame_left: number
+          p2_ready: boolean
+          p2_squad: Json | null
+          p2_strength: number | null
+          p2_wants_pens: boolean | null
+          pens_p1: number | null
+          pens_p2: number | null
+          phase: string
+          phase_deadline: string | null
+          ranked: boolean
+          resolved_at: string | null
+          sim: Json | null
+          updated_at: string
+          winner_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          h1_p1?: number | null
+          h1_p2?: number | null
+          h2_p1?: number | null
+          h2_p2?: number | null
+          id?: string
+          invited_id?: string | null
+          is_bot?: boolean
+          join_code?: string | null
+          league_id?: string | null
+          p1_formation?: string | null
+          p1_half_left?: number
+          p1_id?: string | null
+          p1_name?: string | null
+          p1_pregame_left?: number
+          p1_ready?: boolean
+          p1_squad?: Json | null
+          p1_strength?: number | null
+          p1_wants_pens?: boolean | null
+          p2_formation?: string | null
+          p2_half_left?: number
+          p2_id?: string | null
+          p2_name?: string | null
+          p2_pregame_left?: number
+          p2_ready?: boolean
+          p2_squad?: Json | null
+          p2_strength?: number | null
+          p2_wants_pens?: boolean | null
+          pens_p1?: number | null
+          pens_p2?: number | null
+          phase?: string
+          phase_deadline?: string | null
+          ranked?: boolean
+          resolved_at?: string | null
+          sim?: Json | null
+          updated_at?: string
+          winner_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          h1_p1?: number | null
+          h1_p2?: number | null
+          h2_p1?: number | null
+          h2_p2?: number | null
+          id?: string
+          invited_id?: string | null
+          is_bot?: boolean
+          join_code?: string | null
+          league_id?: string | null
+          p1_formation?: string | null
+          p1_half_left?: number
+          p1_id?: string | null
+          p1_name?: string | null
+          p1_pregame_left?: number
+          p1_ready?: boolean
+          p1_squad?: Json | null
+          p1_strength?: number | null
+          p1_wants_pens?: boolean | null
+          p2_formation?: string | null
+          p2_half_left?: number
+          p2_id?: string | null
+          p2_name?: string | null
+          p2_pregame_left?: number
+          p2_ready?: boolean
+          p2_squad?: Json | null
+          p2_strength?: number | null
+          p2_wants_pens?: boolean | null
+          pens_p1?: number | null
+          pens_p2?: number | null
+          phase?: string
+          phase_deadline?: string | null
+          ranked?: boolean
+          resolved_at?: string | null
+          sim?: Json | null
+          updated_at?: string
+          winner_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "draft_live_matches_league_id_fkey"
+            columns: ["league_id"]
+            isOneToOne: false
+            referencedRelation: "draft_leagues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      draft_live_queue: {
+        Row: {
+          enqueued_at: string
+          league_id: string | null
+          ranked: boolean
+          user_id: string
+        }
+        Insert: {
+          enqueued_at?: string
+          league_id?: string | null
+          ranked?: boolean
+          user_id: string
+        }
+        Update: {
+          enqueued_at?: string
+          league_id?: string | null
+          ranked?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "draft_live_queue_league_id_fkey"
+            columns: ["league_id"]
+            isOneToOne: false
+            referencedRelation: "draft_leagues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      draft_matches: {
+        Row: {
+          challenger_goals: number | null
+          challenger_id: string | null
+          challenger_strength: number
+          challenger_team: Json
+          detail: Json | null
+          id: string
+          league_id: string | null
+          opponent_goals: number | null
+          opponent_id: string | null
+          opponent_strength: number
+          opponent_team: Json
+          played_at: string | null
+          winner_id: string | null
+        }
+        Insert: {
+          challenger_goals?: number | null
+          challenger_id?: string | null
+          challenger_strength: number
+          challenger_team: Json
+          detail?: Json | null
+          id?: string
+          league_id?: string | null
+          opponent_goals?: number | null
+          opponent_id?: string | null
+          opponent_strength: number
+          opponent_team: Json
+          played_at?: string | null
+          winner_id?: string | null
+        }
+        Update: {
+          challenger_goals?: number | null
+          challenger_id?: string | null
+          challenger_strength?: number
+          challenger_team?: Json
+          detail?: Json | null
+          id?: string
+          league_id?: string | null
+          opponent_goals?: number | null
+          opponent_id?: string | null
+          opponent_strength?: number
+          opponent_team?: Json
+          played_at?: string | null
+          winner_id?: string | null
+        }
+        Relationships: []
+      }
+      draft_saved_teams: {
+        Row: {
+          created_at: string | null
+          formation: string
+          id: string
+          name: string
+          projected: Json | null
+          squad: Json
+          strength_rating: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          formation: string
+          id?: string
+          name: string
+          projected?: Json | null
+          squad: Json
+          strength_rating: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          formation?: string
+          id?: string
+          name?: string
+          projected?: Json | null
+          squad?: Json
+          strength_rating?: number
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      draft_shares: {
+        Row: {
+          created_at: string | null
+          id: string
+          payload: Json
+        }
+        Insert: {
+          created_at?: string | null
+          id: string
+          payload: Json
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          payload?: Json
+        }
+        Relationships: []
+      }
+      draft_standings: {
+        Row: {
+          display_name: string
+          draws_all_time: number
+          draws_today: number
+          last_played_date: string | null
+          last_win_date: string | null
+          league_id: string
+          losses_all_time: number
+          losses_today: number
+          updated_at: string | null
+          user_id: string
+          wins_all_time: number
+          wins_today: number
+        }
+        Insert: {
+          display_name: string
+          draws_all_time?: number
+          draws_today?: number
+          last_played_date?: string | null
+          last_win_date?: string | null
+          league_id?: string
+          losses_all_time?: number
+          losses_today?: number
+          updated_at?: string | null
+          user_id: string
+          wins_all_time?: number
+          wins_today?: number
+        }
+        Update: {
+          display_name?: string
+          draws_all_time?: number
+          draws_today?: number
+          last_played_date?: string | null
+          last_win_date?: string | null
+          league_id?: string
+          losses_all_time?: number
+          losses_today?: number
+          updated_at?: string | null
+          user_id?: string
+          wins_all_time?: number
+          wins_today?: number
+        }
+        Relationships: []
+      }
+      draft_teams: {
+        Row: {
+          created_at: string | null
+          display_name: string | null
+          formation: string
+          id: string
+          projected: Json
+          squad: Json
+          status: string
+          strength_rating: number
+          updated_at: string | null
+          user_id: string | null
+          win_streak: number
+        }
+        Insert: {
+          created_at?: string | null
+          display_name?: string | null
+          formation: string
+          id?: string
+          projected: Json
+          squad: Json
+          status?: string
+          strength_rating: number
+          updated_at?: string | null
+          user_id?: string | null
+          win_streak?: number
+        }
+        Update: {
+          created_at?: string | null
+          display_name?: string | null
+          formation?: string
+          id?: string
+          projected?: Json
+          squad?: Json
+          status?: string
+          strength_rating?: number
+          updated_at?: string | null
+          user_id?: string | null
+          win_streak?: number
+        }
+        Relationships: []
+      }
+      draft_wc_matches: {
+        Row: {
+          detail: Json | null
+          id: string
+          idx: number
+          opp_goals: number
+          opponent_crest: string | null
+          opponent_nation: string
+          opponent_strength: number
+          pens_opp: number | null
+          pens_you: number | null
+          played_at: string
+          run_id: string
+          stage: string
+          won: boolean | null
+          you_goals: number
+        }
+        Insert: {
+          detail?: Json | null
+          id?: string
+          idx?: number
+          opp_goals: number
+          opponent_crest?: string | null
+          opponent_nation: string
+          opponent_strength: number
+          pens_opp?: number | null
+          pens_you?: number | null
+          played_at?: string
+          run_id: string
+          stage: string
+          won?: boolean | null
+          you_goals: number
+        }
+        Update: {
+          detail?: Json | null
+          id?: string
+          idx?: number
+          opp_goals?: number
+          opponent_crest?: string | null
+          opponent_nation?: string
+          opponent_strength?: number
+          pens_opp?: number | null
+          pens_you?: number | null
+          played_at?: string
+          run_id?: string
+          stage?: string
+          won?: boolean | null
+          you_goals?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "draft_wc_matches_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "draft_wc_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      draft_wc_runs: {
+        Row: {
+          created_at: string
+          formation: string
+          group_played: number
+          group_points: number
+          id: string
+          nation: string
+          plan: Json
+          resolved_at: string | null
+          seed: string
+          squad: Json
+          stage: string
+          stage_index: number
+          status: string
+          strength: number
+          updated_at: string
+          upgrades_left: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          formation: string
+          group_played?: number
+          group_points?: number
+          id?: string
+          nation: string
+          plan: Json
+          resolved_at?: string | null
+          seed: string
+          squad: Json
+          stage?: string
+          stage_index?: number
+          status?: string
+          strength?: number
+          updated_at?: string
+          upgrades_left?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          formation?: string
+          group_played?: number
+          group_points?: number
+          id?: string
+          nation?: string
+          plan?: Json
+          resolved_at?: string | null
+          seed?: string
+          squad?: Json
+          stage?: string
+          stage_index?: number
+          status?: string
+          strength?: number
+          updated_at?: string
+          upgrades_left?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       fire_queues: {
         Row: {
           created_at: string | null
@@ -314,16 +874,22 @@ export type Database = {
         Row: {
           created_at: string | null
           friend_id: string
+          id: string | null
+          status: string
           user_id: string
         }
         Insert: {
           created_at?: string | null
           friend_id: string
+          id?: string | null
+          status?: string
           user_id: string
         }
         Update: {
           created_at?: string | null
           friend_id?: string
+          id?: string | null
+          status?: string
           user_id?: string
         }
         Relationships: []
@@ -594,6 +1160,33 @@ export type Database = {
         }
         Relationships: []
       }
+      messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          read_at: string | null
+          recipient_id: string
+          sender_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          recipient_id: string
+          sender_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          recipient_id?: string
+          sender_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -798,12 +1391,16 @@ export type Database = {
         Row: {
           created_at: string | null
           created_by: string | null
+          description: string | null
           difficulty_focus: string | null
+          featured: boolean
+          featured_order: number | null
           id: string
           is_custom: boolean
           metadata: Json | null
           name: string
           parameter: string
+          play_count: number
           question_count: number | null
           questions: Json
           rotation_active: boolean | null
@@ -819,12 +1416,16 @@ export type Database = {
         Insert: {
           created_at?: string | null
           created_by?: string | null
+          description?: string | null
           difficulty_focus?: string | null
+          featured?: boolean
+          featured_order?: number | null
           id?: string
           is_custom?: boolean
           metadata?: Json | null
           name: string
           parameter: string
+          play_count?: number
           question_count?: number | null
           questions: Json
           rotation_active?: boolean | null
@@ -840,12 +1441,16 @@ export type Database = {
         Update: {
           created_at?: string | null
           created_by?: string | null
+          description?: string | null
           difficulty_focus?: string | null
+          featured?: boolean
+          featured_order?: number | null
           id?: string
           is_custom?: boolean
           metadata?: Json | null
           name?: string
           parameter?: string
+          play_count?: number
           question_count?: number | null
           questions?: Json
           rotation_active?: boolean | null
@@ -990,6 +1595,7 @@ export type Database = {
         Row: {
           category_filter: string | null
           code: string
+          completed_at: string | null
           created_at: string | null
           created_by: string | null
           current_question_idx: number
@@ -1014,6 +1620,7 @@ export type Database = {
         Insert: {
           category_filter?: string | null
           code: string
+          completed_at?: string | null
           created_at?: string | null
           created_by?: string | null
           current_question_idx?: number
@@ -1038,6 +1645,7 @@ export type Database = {
         Update: {
           category_filter?: string | null
           code?: string
+          completed_at?: string | null
           created_at?: string | null
           created_by?: string | null
           current_question_idx?: number
@@ -1124,6 +1732,43 @@ export type Database = {
         Args: { p_key: string; p_max: number; p_window_seconds: number }
         Returns: boolean
       }
+      draft_credit_result: {
+        Args: {
+          p_league?: string
+          p_name: string
+          p_result: string
+          p_user: string
+        }
+        Returns: undefined
+      }
+      draft_leaderboard: {
+        Args: { p_league_id: string; p_limit?: number; p_metric: string }
+        Returns: {
+          display_name: string
+          rank: number
+          user_id: string
+          wins_all_time: number
+          wins_today: number
+        }[]
+      }
+      draft_leaderboard_points: {
+        Args: { p_league_id: string; p_limit?: number; p_metric: string }
+        Returns: {
+          display_name: string
+          draws: number
+          losses: number
+          points: number
+          rank: number
+          user_id: string
+          wins: number
+        }[]
+      }
+      draft_live_pair: {
+        Args: { p_league: string; p_ranked: boolean; p_user: string }
+        Returns: string
+      }
+      draft_live_reap: { Args: never; Returns: undefined }
+      draft_reset_daily: { Args: never; Returns: undefined }
       get_my_league_standings: {
         Args: { p_limit?: number; p_user_id: string }
         Returns: {

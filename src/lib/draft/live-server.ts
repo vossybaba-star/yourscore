@@ -454,7 +454,10 @@ export async function queueOrPair(
   if (!me) throw new Error("Save a team first");
 
   // 2. Claim the oldest compatible waiter, or enqueue self.
-  const { data: oppId } = await db.rpc("draft_live_pair", { p_user: userId, p_ranked: opts.ranked, p_league: opts.leagueId });
+  // p_league is genuinely nullable at the DB (the SQL pairs with
+  // `league_id is not distinct from p_league`, i.e. null = the public queue).
+  // The generated type declares it non-null, so cast to preserve the null value.
+  const { data: oppId } = await db.rpc("draft_live_pair", { p_user: userId, p_ranked: opts.ranked, p_league: opts.leagueId as string });
   if (!oppId) return { status: "waiting" };
 
   const opp = await loadUserSide(db, oppId as string);
