@@ -190,7 +190,7 @@ function PlayPageInner() {
     e.preventDefault();
     const code = joinCode.trim().toUpperCase();
     if (code.length < 4) return;
-    if (!user) { router.push("/auth/sign-in"); return; }
+    if (!user) { router.push(`/auth/sign-in?next=${encodeURIComponent(`/play?join=${code}`)}`); return; }
     setJoining(true);
     setJoinError("");
     try {
@@ -210,7 +210,7 @@ function PlayPageInner() {
   }
 
   async function handleJoinOpen(room: OpenRoom) {
-    if (!user) { router.push("/auth/sign-in"); return; }
+    if (!user) { router.push(`/auth/sign-in?next=${encodeURIComponent(`/play?join=${room.code}`)}`); return; }
     const res = await fetch("/api/room/join", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

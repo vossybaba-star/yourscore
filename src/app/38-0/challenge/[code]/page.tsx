@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { Pitch } from "@/components/draft/Pitch";
 import { useUser } from "@/hooks/useUser";
+import { AuthProviders } from "@/components/auth/AuthButton";
 import { loadTeam, saveTeam, isComplete, recordWin, recordLoss, recordDraw, saveLastMatch } from "@/lib/draft/local";
 import type { Formation, PlacedPlayer, Projected } from "@/lib/draft/types";
 
@@ -41,8 +42,7 @@ export default function AcceptChallenge() {
   useEffect(() => { load(); }, [load]);
 
   async function accept() {
-    if (busy) return;
-    if (!user) { router.push("/auth/sign-in"); return; }
+    if (busy || !user) return;
     const team = loadTeam();
     if (!team || !isComplete(team)) { router.push("/38-0"); return; }
     setBusy(true); setErr(null);
@@ -106,11 +106,20 @@ export default function AcceptChallenge() {
             <div className="rounded-2xl p-4 text-center font-body" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.08)", color: "#8888aa", fontSize: 14 }}>
               {info.expired ? "This challenge has expired." : "This challenge has already been played."}
             </div>
+          ) : !user ? (
+            /* Guest — show inline sign-in. After auth the user lands back here
+               with their session set and can tap ACCEPT WITH MY XI. */
+            <div className="rounded-2xl p-4" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <p className="font-body text-center mb-4" style={{ fontSize: 13, color: "#8888aa" }}>
+                Sign in to accept this challenge with your XI.
+              </p>
+              <AuthProviders nextPath={`/38-0/challenge/${code}`} />
+            </div>
           ) : (
             <button onClick={accept} disabled={busy}
               className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-60"
               style={{ background: "#00ff87", color: "#062013", fontSize: 24 }}>
-              {busy ? "RESOLVING…" : user ? "ACCEPT WITH MY XI ⚔️" : "SIGN IN TO ACCEPT"}
+              {busy ? "RESOLVING…" : "ACCEPT WITH MY XI ⚔️"}
             </button>
           )}
           <Link href="/38-0" className="block w-full rounded-2xl py-3 text-center font-body active:scale-[0.98] transition-transform"
