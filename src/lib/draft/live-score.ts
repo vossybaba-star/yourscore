@@ -23,10 +23,10 @@ export const LIVE_CONFIG = {
   timers: {
     reveal: 15,
     pregame_swap: 25,
-    // Each half plays out on screen over 30s (sped-up 45 minutes) — see playback.ts.
-    half1: 30,
+    // Each half plays out on screen over 45s as a highlight reel — see playback.ts / pitch.ts.
+    half1: 45,
     halftime_swap: 35,
-    half2: 30,
+    half2: 45,
     draw_decision: 15,
     penalties: 7,
   },

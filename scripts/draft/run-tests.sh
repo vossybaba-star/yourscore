@@ -22,6 +22,8 @@ npx tsc \
   src/lib/draft/wc.test.ts \
   src/lib/draft/playback.ts \
   src/lib/draft/playback.test.ts \
+  src/lib/draft/pitch.ts \
+  src/lib/draft/pitch.test.ts \
   --rootDir src --outDir .tmp-draft-test \
   --module commonjs --moduleResolution node --target es2022 \
   --esModuleInterop --skipLibCheck --types node >/dev/null 2>&1 || true

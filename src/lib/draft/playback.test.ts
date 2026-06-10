@@ -78,7 +78,7 @@ test("watchFrame: at progress=1 everything equals the half's real totals", () =>
   }
 });
 
-test("WATCH_CONFIG: a half plays out over 30 real seconds across 45 minutes", () => {
-  assert.equal(WATCH_CONFIG.halfSeconds, 30);
+test("WATCH_CONFIG: a half plays out over 45 real seconds across 45 minutes", () => {
+  assert.equal(WATCH_CONFIG.halfSeconds, 45);
   assert.equal(WATCH_CONFIG.matchMinutesPerHalf, 45);
 });

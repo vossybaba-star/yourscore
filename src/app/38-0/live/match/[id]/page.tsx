@@ -16,7 +16,8 @@ import { spin, allBuckets, type Spin } from "@/lib/draft/pool";
 import { playerIdentity, seededRng } from "@/lib/draft/score";
 import { slotsFor } from "@/lib/draft/formations";
 import { buildReport, type MatchSim, type HalfSim, type PlayerRating, type GoalEvent } from "@/lib/draft/live-score";
-import { MatchWatch } from "@/components/draft/MatchWatch";
+import { MatchPitch } from "@/components/draft/MatchPitch";
+import { WATCH_CONFIG } from "@/lib/draft/playback";
 import { liveOgQuery } from "@/lib/draft/share";
 import type { Formation, PlacedPlayer, PlayerSeason } from "@/lib/draft/types";
 import type { DraftLiveMatchRow } from "@/types/draft-db";
@@ -152,7 +153,8 @@ export default function LiveMatchScreen() {
         {(m.phase === "half1" || m.phase === "half2") && (() => {
           const isH1 = m.phase === "half1";
           const hs = isH1 ? sim?.h1 : sim?.h2;
-          const progress = Math.max(0, Math.min(1, 1 - (secondsLeft ?? 30) / 30));
+          const H = WATCH_CONFIG.halfSeconds;
+          const progress = Math.max(0, Math.min(1, 1 - (secondsLeft ?? H) / H));
           if (!hs) {
             return (
               <Panel>
@@ -164,7 +166,7 @@ export default function LiveMatchScreen() {
           }
           return (
             <Panel>
-              <MatchWatch
+              <MatchPitch
                 sim={hs} half={isH1 ? 1 : 2} matchId={m.id} progress={progress}
                 priorGoals={isH1 ? { a: 0, b: 0 } : { a: m.h1_p1 ?? 0, b: m.h1_p2 ?? 0 }}
                 meSide={view.meP1 ? "a" : "b"} myName={view.myName} oppName={view.oppName}
@@ -242,7 +244,7 @@ type View = {
 function Header({ view, phase, secondsLeft, opponentOnline }: { view: View; phase: string; secondsLeft: number | null; opponentOnline: boolean }) {
   // While a half is playing the server already holds the final half score, so the
   // header must NOT show it — that would spoil the live playback. The running score
-  // lives in <MatchWatch>; half-time/result legitimately show the score.
+  // lives in <MatchPitch>; half-time/result legitimately show the score.
   const showScore = ["halftime_swap", "draw_decision", "penalties", "result"].includes(phase);
   return (
     <div>
