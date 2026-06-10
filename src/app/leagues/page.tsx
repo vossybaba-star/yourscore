@@ -463,7 +463,6 @@ export default function LeaguesPage() {
                             {p.display_name ?? "Player"}
                             {isMe && <span className="font-normal ml-1.5 text-green" style={{ fontSize: "0.7rem" }}>you</span>}
                           </p>
-                          <p className="font-body text-xs" style={{ color: "#555577" }}>{p.games_played} games</p>
                         </div>
                         {/* Score */}
                         <p className="font-display text-lg flex-shrink-0" style={{ color: isMe ? "#00ff87" : rank <= 3 ? rs.color : "#8888aa" }}>

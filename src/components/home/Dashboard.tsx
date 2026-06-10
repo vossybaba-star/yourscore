@@ -5,9 +5,7 @@ import { GridBackground } from "@/components/ui/GridBackground";
 import Link from "next/link";
 import Image from "next/image";
 import { BottomNav } from "@/components/ui/BottomNav";
-import { FlagImage } from "@/components/ui/FlagImage";
 import { slugify } from "@/lib/utils";
-import type { LiveMatch } from "./MarketingLanding";
 
 const WORLD_CUP_START = new Date("2026-06-11T18:00:00Z");
 
@@ -39,7 +37,6 @@ export interface DashboardData {
   totalScore: number | null;
   globalRank: number | null;
   leagues: LeagueTab[];
-  matches: LiveMatch[];
   featuredPacks: FeaturedPack[];
 }
 
@@ -229,7 +226,7 @@ function FeaturedPacksRow({ packs }: { packs: FeaturedPack[] }) {
 }
 
 export function Dashboard({ data }: { data: DashboardData }) {
-  const { displayName, totalScore, globalRank, leagues, matches, featuredPacks } = data;
+  const { displayName, totalScore, globalRank, leagues, featuredPacks } = data;
   const firstName = displayName ? displayName.split(" ")[0] : null;
 
   return (
@@ -358,42 +355,6 @@ export function Dashboard({ data }: { data: DashboardData }) {
           </Link>
         </div>
 
-        {/* ── Upcoming fixtures horizontal scroller ───────────────────────── */}
-        {matches.length > 0 && (
-          <div className="dash-slide-5">
-            <div className="flex items-center justify-between mb-3">
-              <p className="font-body text-xs text-text-muted uppercase tracking-widest">
-                {matches.some(m => m.status === "live") ? "🔴 Live now" : "Upcoming fixtures"}
-              </p>
-              <Link href="/join" className="font-body text-xs font-semibold text-green">See all →</Link>
-            </div>
-            <div className="overflow-x-auto pb-2 -mx-5 px-5">
-              <div className="flex gap-3" style={{ minWidth: "max-content" }}>
-                {matches.map((m) => {
-                  const isLive = m.status === "live";
-                  const dateStr = new Date(m.match_date).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
-                  return (
-                    <Link key={m.id} href={`/match/${m.id}`}
-                      className="flex flex-col gap-2 rounded-2xl p-4 flex-shrink-0 transition-opacity hover:opacity-80 active:scale-[0.98]"
-                      style={{ background: isLive ? "rgba(0,255,135,0.07)" : "#12121e", border: isLive ? "1px solid rgba(0,255,135,0.2)" : "1px solid rgba(255,255,255,0.08)", width: 148 }}>
-                      <div className="flex items-center justify-between">
-                        <FlagImage team={m.home_team} size={28} />
-                        {isLive
-                          ? <span className="font-display text-sm text-white">{m.home_score}–{m.away_score}</span>
-                          : <span className="font-body text-xs text-text-muted">vs</span>}
-                        <FlagImage team={m.away_team} size={28} />
-                      </div>
-                      <p className="font-body text-xs font-semibold text-white leading-tight">{m.home_team} vs {m.away_team}</p>
-                      <p className="font-body text-xs" style={{ color: isLive ? "#00ff87" : "#8888aa" }}>
-                        {isLive ? "● Live" : dateStr}
-                      </p>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        )}
 
       </div>
       <BottomNav />

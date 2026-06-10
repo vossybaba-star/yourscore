@@ -1,44 +1,30 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { MarketingLanding, type LiveMatch } from "@/components/home/MarketingLanding";
+import { MarketingLanding } from "@/components/home/MarketingLanding";
 import { Dashboard, type DashboardData, type LeagueTab, type FeaturedPack } from "@/components/home/Dashboard";
 
 export const metadata: Metadata = {
-  title: "YourScore — Your football knowledge. Ranked.",
+  title: "YourScore — 38-0. Draft your best XI. Top your league.",
   description:
-    "Start a league with your mates and answer live questions during every match. Your football knowledge, ranked — points stack across every game, all season long.",
+    "Draft your XI. Go head to head. Top your league. YourScore is the football knowledge game for you and your mates.",
   openGraph: {
-    title: "YourScore — Your football knowledge. Ranked.",
+    title: "YourScore — 38-0. Draft your best XI. Top your league.",
     description:
-      "Start a league with your mates and answer live questions during every match. Points stack across every game, all season long.",
+      "Draft your XI. Go head to head. Top your league. YourScore is the football knowledge game for you and your mates.",
     type: "website",
     siteName: "YourScore",
     images: [{ url: "https://yourscore.app/api/og/home", width: 1200, height: 630, alt: "YourScore · 38-0" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "YourScore — Your football knowledge. Ranked.",
+    title: "YourScore — 38-0. Draft your best XI. Top your league.",
     description:
-      "Start a league with your mates and answer live questions during every match. Points stack across every game, all season long.",
+      "Draft your XI. Go head to head. Top your league. YourScore is the football knowledge game for you and your mates.",
     images: ["https://yourscore.app/api/og/home"],
   },
 };
 
-/** Upcoming/live matches — user-independent, fetched server-side for both states. */
-async function fetchUpcomingMatches(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  limit = 8
-): Promise<LiveMatch[]> {
-  const now = new Date().toISOString();
-  const { data } = await supabase
-    .from("matches")
-    .select("id, home_team, away_team, match_date, tournament, status, home_score, away_score")
-    .or(`status.eq.live,and(status.eq.upcoming,match_date.gte.${now})`)
-    .order("match_date", { ascending: true })
-    .limit(limit);
-  return (data as unknown as LiveMatch[]) ?? [];
-}
 
 // Home / dashboard. Server Component: reads the session from cookies (refreshed by
 // middleware) and fetches all server-fetchable data in parallel before render —
@@ -66,16 +52,14 @@ export default async function RootPage({
 
   // ── Logged-out: marketing landing ──────────────────────────────────────────
   if (!user) {
-    const matches = await fetchUpcomingMatches(supabase, 8);
-    return <MarketingLanding matches={matches} />;
+    return <MarketingLanding matches={[]} />;
   }
 
   // ── Logged-in: dashboard ───────────────────────────────────────────────────
   const userId = user.id;
 
-  const [{ data: profile }, matches, { data: standingRows }, { data: featuredRaw }] = await Promise.all([
+  const [{ data: profile }, { data: standingRows }, { data: featuredRaw }] = await Promise.all([
     supabase.from("profiles").select("display_name, total_score").eq("id", userId).single(),
-    fetchUpcomingMatches(supabase, 8),
     supabase.rpc("get_my_league_standings", { p_user_id: userId, p_limit: 20 }),
     // featured/featured_order added via migration — bypass stale generated types
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -134,7 +118,6 @@ export default async function RootPage({
     totalScore,
     globalRank,
     leagues,
-    matches,
     featuredPacks,
   };
 

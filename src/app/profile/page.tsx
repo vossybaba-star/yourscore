@@ -147,7 +147,7 @@ export default async function ProfilePage() {
             <div className="flex-1 min-w-0">
               <p className="font-display text-2xl text-white tracking-wide truncate">{name.toUpperCase()}</p>
               <p className="font-body text-xs text-text-muted mt-0.5 truncate">{user.email}</p>
-              <p className="font-body text-xs text-text-muted">{gamesPlayed} games played</p>
+              {gamesPlayed > 0 && <p className="font-body text-xs text-text-muted">{gamesPlayed} games played</p>}
             </div>
             <Link href="/settings" aria-label="Edit profile"
               className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-all hover:opacity-80 text-text-muted"
