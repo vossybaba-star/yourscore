@@ -18,6 +18,9 @@ interface QuizPack {
   question_count: number;
   status: string;
   description?: string | null;
+  featured?: boolean;
+  featured_order?: number | null;
+  metadata?: { icon?: string } | null;
 }
 
 const END_OF_SEASON_EMOJI: Record<string, string> = {
@@ -107,7 +110,7 @@ function ClubCard({ pack }: { pack: QuizPack }) {
 function RecordsCard({ pack }: { pack: QuizPack }) {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const slug = slugify(pack.name);
-  const emoji = RECORDS_EMOJI[pack.name] ?? null;
+  const emoji = pack.metadata?.icon ?? RECORDS_EMOJI[pack.name] ?? null;
 
   useEffect(() => {
     getCompetitionBadgeUrl(pack.name).then((u) => { if (u) setLogoUrl(u); });
@@ -266,17 +269,17 @@ function EndOfSeasonCard({ pack }: { pack: QuizPack }) {
   );
 }
 
-type ActiveTab = "club" | "records" | "end_of_season";
+type ActiveTab = "club" | "records" | "featured";
 
 export default function ChallengesPage() {
   const [packs, setPacks] = useState<QuizPack[]>([]);
-  const [activeType, setActiveType] = useState<ActiveTab>("end_of_season");
+  const [activeType, setActiveType] = useState<ActiveTab>("featured");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     createClient()
       .from("quiz_packs")
-      .select("id, name, type, parameter, question_count, status, description")
+      .select("id, name, type, parameter, question_count, status, description, featured, featured_order, metadata")
       .eq("status", "published")
       .order("name")
       .then(({ data }) => {
@@ -285,17 +288,24 @@ export default function ChallengesPage() {
       });
   }, []);
 
-  const endOfSeasonPacks = packs.filter((p) => p.parameter === "2025/26 End of Season");
+  const featuredPacks = packs
+    .filter((p) => p.featured)
+    .sort((a, b) => (a.featured_order ?? 99) - (b.featured_order ?? 99));
+  const endOfSeasonPacks = packs.filter(
+    (p) => p.parameter === "2025/26 End of Season" && !p.featured
+  );
+  // Featured tab: the curated featured packs first, then the end-of-season packs.
+  const featuredTabPacks = [...featuredPacks, ...endOfSeasonPacks];
   const filtered =
-    activeType === "end_of_season"
-      ? endOfSeasonPacks
+    activeType === "featured"
+      ? featuredTabPacks
       : activeType === "records"
-      ? packs.filter((p) => p.type === "records" && p.parameter !== "2025/26 End of Season")
+      ? packs.filter((p) => p.type === "records" && p.parameter !== "2025/26 End of Season" && !p.featured)
       : packs.filter((p) => p.type === "club");
 
   const clubCount = packs.filter((p) => p.type === "club").length;
-  const recordsCount = packs.filter((p) => p.type === "records" && p.parameter !== "2025/26 End of Season").length;
-  const endOfSeasonCount = endOfSeasonPacks.length;
+  const recordsCount = packs.filter((p) => p.type === "records" && p.parameter !== "2025/26 End of Season" && !p.featured).length;
+  const featuredCount = featuredTabPacks.length;
   const router = useRouter();
 
   return (
@@ -337,24 +347,24 @@ export default function ChallengesPage() {
           {/* Primary tabs */}
           <div className="flex gap-2 mb-3">
             <button
-              onClick={() => setActiveType("end_of_season")}
+              onClick={() => setActiveType("featured")}
               className="flex items-center gap-1.5 px-3 py-2 rounded-full font-display text-xs tracking-wide transition-all flex-1 justify-center"
               style={{
-                background: activeType === "end_of_season" ? "rgba(34,211,238,0.15)" : "rgba(255,255,255,0.04)",
-                border: `1px solid ${activeType === "end_of_season" ? "rgba(34,211,238,0.5)" : "rgba(255,255,255,0.08)"}`,
-                color: activeType === "end_of_season" ? "#22d3ee" : "#8888aa",
-                boxShadow: activeType === "end_of_season" ? "0 0 16px rgba(34,211,238,0.12)" : "none",
+                background: activeType === "featured" ? "rgba(34,211,238,0.15)" : "rgba(255,255,255,0.04)",
+                border: `1px solid ${activeType === "featured" ? "rgba(34,211,238,0.5)" : "rgba(255,255,255,0.08)"}`,
+                color: activeType === "featured" ? "#22d3ee" : "#8888aa",
+                boxShadow: activeType === "featured" ? "0 0 16px rgba(34,211,238,0.12)" : "none",
               }}
             >
-              🏁 END OF SEASON
+              ⭐ FEATURED
               <span
                 className="px-1.5 py-0.5 rounded-full text-xs"
                 style={{
-                  background: activeType === "end_of_season" ? "rgba(34,211,238,0.25)" : "rgba(255,255,255,0.06)",
-                  color: activeType === "end_of_season" ? "#22d3ee" : "#666688",
+                  background: activeType === "featured" ? "rgba(34,211,238,0.25)" : "rgba(255,255,255,0.06)",
+                  color: activeType === "featured" ? "#22d3ee" : "#666688",
                 }}
               >
-                {endOfSeasonCount}
+                {featuredCount}
               </span>
             </button>
             <button
@@ -413,15 +423,15 @@ export default function ChallengesPage() {
               </div>
             </div>
           )}
-          {/* End of Season banner */}
-          {activeType === "end_of_season" && (
+          {/* Featured banner */}
+          {activeType === "featured" && (
             <div className="flex items-center gap-2">
               <div
                 className="flex items-center gap-2 px-3 py-1.5 rounded-full font-body text-xs font-semibold"
                 style={{ background: "rgba(34,211,238,0.1)", border: "1px solid rgba(34,211,238,0.3)", color: "#22d3ee" }}
               >
                 <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#22d3ee", display: "inline-block", boxShadow: "0 0 6px #22d3ee" }} />
-                2025/26 Season
+                New this week
               </div>
             </div>
           )}
@@ -479,7 +489,7 @@ export default function ChallengesPage() {
         ) : (
           <div className="grid grid-cols-2 gap-3">
             {filtered.map((pack) =>
-              activeType === "end_of_season" ? (
+              pack.parameter === "2025/26 End of Season" ? (
                 <EndOfSeasonCard key={pack.id} pack={pack} />
               ) : pack.type === "club" ? (
                 <ClubCard key={pack.id} pack={pack} />
