@@ -57,7 +57,7 @@ const isChallenges =
             <svg width="21" height="21" viewBox="0 0 22 22" fill="none">
               <path d="M11 2L13.5 8.5H20.5L14.9 12.5L17 19L11 15L5 19L7.1 12.5L1.5 8.5H8.5L11 2Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" fill={isChallenges ? "currentColor" : "none"} fillOpacity={isChallenges ? 0.15 : 0} />
             </svg>
-            <span className="font-body text-xs">Play</span>
+            <span className="font-body text-xs">Quiz</span>
           </Link>
 
           <Link href="/38-0" className="flex flex-col items-center gap-1 px-5 py-1 transition-colors" style={{ color: isDraft ? "#00ff87" : "#8888aa" }}>
@@ -104,7 +104,7 @@ const isChallenges =
           <svg width="21" height="21" viewBox="0 0 22 22" fill="none">
             <path d="M11 2L13.5 8.5H20.5L14.9 12.5L17 19L11 15L5 19L7.1 12.5L1.5 8.5H8.5L11 2Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" fill={isChallenges ? "currentColor" : "none"} fillOpacity={isChallenges ? 0.15 : 0} />
           </svg>
-          <span className="font-body text-xs">Play</span>
+          <span className="font-body text-xs">Quiz</span>
         </Link>
 
         {/* Draft XI */}
