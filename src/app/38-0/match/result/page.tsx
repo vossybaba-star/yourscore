@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 import { Pitch } from "@/components/draft/Pitch";
 import { loadLastMatch, type LocalMatch } from "@/lib/draft/local";
 import { tierColor } from "@/lib/draft/ui";
+import { AddFriendCard } from "@/components/social/AddFriendCard";
 
 export default function MatchResult() {
   const router = useRouter();
@@ -145,6 +146,17 @@ export default function MatchResult() {
             <Pitch formation={m.opp.formation} squad={m.opp.squad} compact />
           </div>
         </div>
+
+        {/* Friend card — only for real opponent (challenge) matches */}
+        {m.oppUserId && (
+          <div className="mt-6">
+            <AddFriendCard
+              userId={m.oppUserId}
+              displayName={m.opp.name}
+              context={`You just played ${m.opp.name}!`}
+            />
+          </div>
+        )}
 
         <div className="mt-6 space-y-3">
           <button onClick={() => setShowShareSheet(true)}

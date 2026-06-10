@@ -12,6 +12,7 @@ import { Pitch } from "@/components/draft/Pitch";
 import { useUser } from "@/hooks/useUser";
 import { AuthProviders } from "@/components/auth/AuthButton";
 import { loadTeam, saveTeam, isComplete, recordWin, recordLoss, recordDraw, saveLastMatch } from "@/lib/draft/local";
+import { AddFriendCard } from "@/components/social/AddFriendCard";
 import type { Formation, PlacedPlayer, Projected } from "@/lib/draft/types";
 
 type Info = {
@@ -35,6 +36,7 @@ export default function AcceptChallenge() {
   const [status, setStatus] = useState<number>(200);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [accepted, setAccepted] = useState(false);
 
   const load = useCallback(() => {
     fetch(`/api/draft/challenge/${code}`).then((r) => { setStatus(r.status); return r.json(); }).then(setInfo).catch(() => setInfo({ ready: false }));
@@ -64,9 +66,10 @@ export default function AcceptChallenge() {
         pens: m.pens ?? null,
         report: m.report,
         playedAt: Date.now(),
+        oppUserId: info?.challengerId,
       });
       saveTeam(m.outcome === "you" ? recordWin(team) : m.outcome === "opp" ? recordLoss(team) : recordDraw(team));
-      router.push("/38-0/match/result");
+      setAccepted(true); // show friend card before navigating to result
     } catch { setErr("Network error"); setBusy(false); }
   }
 
@@ -102,7 +105,23 @@ export default function AcceptChallenge() {
         {err && <div className="rounded-xl px-4 py-2 mt-4 font-body text-center" style={{ fontSize: 13, color: "#ff4757", background: "rgba(255,71,87,0.1)" }}>{err}</div>}
 
         <div className="mt-5 space-y-3">
-          {done ? (
+          {accepted ? (
+            /* Match resolved — show friend card then let them view result */
+            <>
+              {info.challengerId && info.challengerName && (
+                <AddFriendCard
+                  userId={info.challengerId}
+                  displayName={info.challengerName}
+                  context={`You just played ${info.challengerName}!`}
+                />
+              )}
+              <button onClick={() => router.push("/38-0/match/result")}
+                className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform"
+                style={{ background: "#00ff87", color: "#062013", fontSize: 22 }}>
+                VIEW RESULT →
+              </button>
+            </>
+          ) : done ? (
             <div className="rounded-2xl p-4 text-center font-body" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.08)", color: "#8888aa", fontSize: 14 }}>
               {info.expired ? "This challenge has expired." : "This challenge has already been played."}
             </div>

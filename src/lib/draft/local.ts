@@ -262,6 +262,9 @@ export type LocalMatch = {
   /** Per-half sims (side a = you) so the watch screen can play the match out. */
   sim?: MatchSim;
   playedAt: number;
+  /** Set when this match was a challenge against a real user (not a bot).
+   *  Used to surface the friend suggestion on the result screen. */
+  oppUserId?: string;
 };
 
 export function saveLastMatch(m: LocalMatch): void {

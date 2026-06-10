@@ -15,6 +15,7 @@ const QRCode = dynamic(() => import("react-qr-code"), { ssr: false });
 import { QuestionCard, type ActiveQuestion } from "@/components/game/QuestionCard";
 import { Leaderboard, type LeaderboardEntry } from "@/components/game/Leaderboard";
 import { Spinner } from "@/components/ui/Spinner";
+import { AddFriendCard, AddFriendInline } from "@/components/social/AddFriendCard";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -119,8 +120,6 @@ export default function RoomPage() {
   const [completedAt, setCompletedAt] = useState<number | null>(null);
   const [lobbyTimeLeft, setLobbyTimeLeft] = useState<number>(300); // seconds
   const [showLeaveModal, setShowLeaveModal] = useState(false);
-  const [friendRequestsSent, setFriendRequestsSent] = useState<Set<string>>(new Set());
-  const [friendPromptDismissed, setFriendPromptDismissed] = useState(false);
 
   const advanceTimerRef   = useRef<ReturnType<typeof setTimeout> | null>(null);
   const expireTimerRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -662,6 +661,10 @@ export default function RoomPage() {
                   {p.user_id === user?.id && p.user_id !== room.created_by && (
                     <span className="font-body text-xs text-green">You</span>
                   )}
+                  {/* Add friend button — shown for other players, not self */}
+                  {p.user_id !== user?.id && (
+                    <AddFriendInline userId={p.user_id} displayName={p.display_name} />
+                  )}
                 </div>
               ))}
               {players.length < room.max_players && (
@@ -784,37 +787,15 @@ export default function RoomPage() {
             </div>
           )}
 
-          {/* Friend prompt — h2h only, one-shot per session */}
-          {!friendPromptDismissed && user && room.room_mode === "h2h" && opponents[0] && (
-            <div className="rounded-2xl px-5 py-4" style={{ background: "rgba(0,255,135,0.05)", border: "1px solid rgba(0,255,135,0.15)" }}>
-              <p className="font-body text-sm font-bold text-white mb-3">
-                Great game with {opponents[0].display_name} 👏 Want to add them as a friend?
-              </p>
-              {friendRequestsSent.has(opponents[0].user_id) ? (
-                <p className="font-body text-xs text-green">Friend request sent ✓</p>
-              ) : (
-                <div className="flex gap-3">
-                  <button
-                    onClick={async () => {
-                      const sb = supabaseRef.current;
-                      if (!sb || !user || !opponents[0]) return;
-                      await sb.from("friendships" as "rooms").insert({ user_id: user.id, friend_id: opponents[0].user_id, status: "pending" } as never);
-                      setFriendRequestsSent(prev => { const s = new Set(Array.from(prev)); s.add(opponents[0].user_id); return s; });
-                    }}
-                    className="flex-1 py-2.5 rounded-xl font-body text-sm font-bold transition-all"
-                    style={{ background: "rgba(0,255,135,0.12)", color: "#00ff87", border: "1px solid rgba(0,255,135,0.25)" }}>
-                    Add Friend
-                  </button>
-                  <button
-                    onClick={() => setFriendPromptDismissed(true)}
-                    className="flex-1 py-2.5 rounded-xl font-body text-sm transition-all"
-                    style={{ background: "rgba(255,255,255,0.04)", color: "#555577", border: "1px solid rgba(255,255,255,0.08)" }}>
-                    Not Now
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
+          {/* Friend prompts — show for all non-self opponents after game */}
+          {user && opponents.filter(o => o.user_id !== user.id).map(opp => (
+            <AddFriendCard
+              key={opp.user_id}
+              userId={opp.user_id}
+              displayName={opp.display_name}
+              context={room.room_mode === "h2h" ? `Great game with ${opp.display_name}! 👏` : undefined}
+            />
+          ))}
 
           {/* ── Play Again voting panel ──────────────────────────────────── */}
           {!lobbyExpired && (

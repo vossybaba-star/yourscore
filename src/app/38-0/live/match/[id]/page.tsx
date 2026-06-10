@@ -20,7 +20,7 @@ import { MatchPitch } from "@/components/draft/MatchPitch";
 import { WATCH_CONFIG } from "@/lib/draft/playback";
 import { liveOgQuery } from "@/lib/draft/share";
 import { loadTeam, saveTeam, clearTeam } from "@/lib/draft/local";
-import { createClient } from "@/lib/supabase/client";
+import { AddFriendCard } from "@/components/social/AddFriendCard";
 import type { Formation, PlacedPlayer, PlayerSeason } from "@/lib/draft/types";
 import type { DraftLiveMatchRow } from "@/types/draft-db";
 
@@ -325,15 +325,6 @@ function ResultPanel({ view, sim, m }: { view: View; sim: MatchSim | null; m: Dr
 
   // Friend suggestion
   const oppId = view.meP1 ? m.p2_id : m.p1_id;
-  const [friendState, setFriendState] = useState<"idle" | "sent" | "dismissed">("idle");
-  async function addFriend() {
-    if (!oppId) return;
-    const sb = createClient();
-    const { data: { user } } = await sb.auth.getUser();
-    if (!user) return;
-    await sb.from("friendships").insert({ user_id: user.id, friend_id: oppId, status: "pending" });
-    setFriendState("sent");
-  }
 
   // Canonical (p1/p2) report → the share card matches the public unfurl page, so
   // both managers share the same image regardless of which side they're on.
@@ -400,28 +391,11 @@ function ResultPanel({ view, sim, m }: { view: View; sim: MatchSim | null; m: Dr
         </div>
       )}
 
-      {/* Friend suggestion — real opponent only, one-shot per session */}
-      {!m.is_bot && oppId && friendState === "idle" && (
-        <div className="mt-4 rounded-2xl p-4" style={{ background: "rgba(167,139,250,0.06)", border: "1px solid rgba(167,139,250,0.2)" }}>
-          <p className="font-body text-center mb-3" style={{ fontSize: 13, color: "#a78bfa" }}>
-            Add {view.oppName} as a friend?
-          </p>
-          <div className="flex gap-2">
-            <button onClick={addFriend}
-              className="flex-1 rounded-xl py-2.5 font-body font-semibold text-sm"
-              style={{ background: "rgba(167,139,250,0.2)", border: "1px solid rgba(167,139,250,0.35)", color: "#a78bfa" }}>
-              Add friend
-            </button>
-            <button onClick={() => setFriendState("dismissed")}
-              className="flex-1 rounded-xl py-2.5 font-body text-sm"
-              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#8888aa" }}>
-              Not now
-            </button>
-          </div>
+      {/* Friend suggestion — real opponent only */}
+      {!m.is_bot && oppId && (
+        <div className="mt-4">
+          <AddFriendCard userId={oppId} displayName={view.oppName} />
         </div>
-      )}
-      {!m.is_bot && oppId && friendState === "sent" && (
-        <p className="mt-4 text-center font-body text-sm" style={{ color: "#00ff87" }}>Friend request sent ✓</p>
       )}
 
       <button onClick={share} disabled={sharing} className="mt-5 w-full rounded-2xl py-4 font-semibold disabled:opacity-60" style={{ background: "#00ff87", color: "#04130a" }}>
