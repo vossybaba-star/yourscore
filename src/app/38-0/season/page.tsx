@@ -195,11 +195,13 @@ export default function SeasonSim() {
 
   function giveawayTweetText(): string {
     return r.invincible
-      ? `Just went INVINCIBLE on YourScore 38-0 ⚽🏆 ${r.wins}-${r.draws}-${r.losses}, ${r.points} pts. Entering the daily £50 giveaway — yourscore.app/38-0`
-      : `My 38-0 season: ${r.wins}W ${r.draws}D ${r.losses}L, finished ${ordinal(r.position)} on ${r.points} pts ⚽ Entering the @YourScore daily £50 giveaway — yourscore.app/38-0`;
+      ? `Just went INVINCIBLE on YourScore 38-0 ⚽🏆 ${r.wins}-${r.draws}-${r.losses}, ${r.points} pts. Entering the @yourscore_app_ daily £25 giveaway`
+      : `My 38-0 season: ${r.wins}W ${r.draws}D ${r.losses}L, finished ${ordinal(r.position)} on ${r.points} pts ⚽ Entering the @yourscore_app_ daily £25 giveaway`;
   }
   function giveawayTweetUrl(): string {
-    return `https://twitter.com/intent/tweet?text=${encodeURIComponent(giveawayTweetText())}`;
+    // Include the share card URL so Twitter unfurls the scorecard OG image
+    const cardUrl = longShareUrl();
+    return `https://twitter.com/intent/tweet?text=${encodeURIComponent(giveawayTweetText())}&url=${encodeURIComponent(cardUrl)}`;
   }
 
   const awards: [string, string, string][] = [];
@@ -262,7 +264,7 @@ export default function SeasonSim() {
           <div className="flex items-center gap-4 px-5 py-4">
             <div style={{ fontSize: 36, lineHeight: 1 }}>🏆</div>
             <div className="text-left flex-1 min-w-0">
-              <div className="font-display tracking-wide" style={{ fontSize: 20, color: "#ffb800" }}>WIN £50 TODAY</div>
+              <div className="font-display tracking-wide" style={{ fontSize: 20, color: "#ffb800" }}>WIN £25 TODAY</div>
               <div className="font-body" style={{ fontSize: 13, color: "#a89060" }}>Share on 𝕏 to enter the daily giveaway →</div>
             </div>
           </div>
@@ -394,7 +396,7 @@ export default function SeasonSim() {
               <div className="px-6 pt-4 pb-7 text-center">
                 <div style={{ fontSize: 52, lineHeight: 1.1 }}>🏆</div>
                 <div className="font-body mt-3" style={{ fontSize: 11, color: "#ffb800", letterSpacing: 3 }}>DAILY GIVEAWAY</div>
-                <div className="font-display tracking-wide leading-none mt-1" style={{ fontSize: 80, color: "#fff" }}>£50</div>
+                <div className="font-display tracking-wide leading-none mt-1" style={{ fontSize: 80, color: "#fff" }}>£25</div>
                 <p className="font-body mt-3" style={{ fontSize: 15, color: "#cfcfe6", lineHeight: 1.6 }}>
                   Share your season result on 𝕏 to enter.<br />
                   <span style={{ color: "#7a7a92", fontSize: 13 }}>One winner drawn every 24 hours.</span>
