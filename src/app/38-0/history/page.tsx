@@ -11,6 +11,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { useUser } from "@/hooks/useUser";
+import { AddFriendInline } from "@/components/social/AddFriendCard";
 import type { HistoryEntry, OpponentRecord } from "@/app/api/draft/history/route";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -88,7 +89,20 @@ function MatchRow({ m }: { m: HistoryEntry }) {
       </div>
       {/* Opponent + meta */}
       <div className="flex-1 min-w-0">
-        <p className="font-body text-sm font-semibold text-white truncate">vs {m.opponentName}</p>
+        <div className="flex items-center gap-2">
+          {m.opponentId ? (
+            <Link href={`/players/${m.opponentId}`}
+              className="font-body text-sm font-semibold text-white truncate hover:underline"
+              style={{ maxWidth: "calc(100% - 48px)" }}>
+              vs {m.opponentName}
+            </Link>
+          ) : (
+            <p className="font-body text-sm font-semibold text-white truncate">vs {m.opponentName}</p>
+          )}
+          {m.opponentId && (
+            <AddFriendInline userId={m.opponentId} displayName={m.opponentName} />
+          )}
+        </div>
         <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
           <TypeTag type={m.type} />
           {m.myFormation && (
@@ -113,21 +127,31 @@ function OpponentRow({ opp }: { opp: OpponentRecord }) {
   const total = opp.played;
   const winPct = total > 0 ? Math.round((opp.wins / total) * 100) : 0;
   const dominantOutcome = opp.wins > opp.losses ? "W" : opp.losses > opp.wins ? "L" : "D";
+  const avatarColor = {
+    bg: dominantOutcome === "W" ? "rgba(0,255,135,0.12)" : dominantOutcome === "L" ? "rgba(255,71,87,0.12)" : "rgba(255,184,0,0.12)",
+    text: dominantOutcome === "W" ? "#00ff87" : dominantOutcome === "L" ? "#ff4757" : "#ffb800",
+    border: dominantOutcome === "W" ? "rgba(0,255,135,0.2)" : dominantOutcome === "L" ? "rgba(255,71,87,0.2)" : "rgba(255,184,0,0.2)",
+  };
   return (
     <div className="flex items-center gap-3 px-4 py-3 rounded-2xl"
       style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.06)" }}>
-      {/* Avatar initial */}
-      <div className="w-9 h-9 rounded-full flex items-center justify-center font-body font-bold text-sm flex-shrink-0"
-        style={{
-          background: dominantOutcome === "W" ? "rgba(0,255,135,0.12)" : dominantOutcome === "L" ? "rgba(255,71,87,0.12)" : "rgba(255,184,0,0.12)",
-          color: dominantOutcome === "W" ? "#00ff87" : dominantOutcome === "L" ? "#ff4757" : "#ffb800",
-          border: `1px solid ${dominantOutcome === "W" ? "rgba(0,255,135,0.2)" : dominantOutcome === "L" ? "rgba(255,71,87,0.2)" : "rgba(255,184,0,0.2)"}`,
-        }}>
-        {(opp.opponentName[0] ?? "?").toUpperCase()}
-      </div>
+      {/* Avatar — taps through to profile */}
+      <Link href={`/players/${opp.opponentId}`} className="flex-shrink-0">
+        <div className="w-9 h-9 rounded-full flex items-center justify-center font-body font-bold text-sm"
+          style={{ background: avatarColor.bg, color: avatarColor.text, border: `1px solid ${avatarColor.border}` }}>
+          {(opp.opponentName[0] ?? "?").toUpperCase()}
+        </div>
+      </Link>
       {/* Name + stats */}
       <div className="flex-1 min-w-0">
-        <p className="font-body text-sm font-semibold text-white truncate">{opp.opponentName}</p>
+        <div className="flex items-center gap-2">
+          <Link href={`/players/${opp.opponentId}`}
+            className="font-body text-sm font-semibold text-white truncate hover:underline"
+            style={{ maxWidth: "calc(100% - 48px)" }}>
+            {opp.opponentName}
+          </Link>
+          <AddFriendInline userId={opp.opponentId} displayName={opp.opponentName} />
+        </div>
         <div className="flex items-center gap-2 mt-1">
           {/* W/D/L mini bars */}
           {total > 0 && (

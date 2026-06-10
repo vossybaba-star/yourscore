@@ -230,6 +230,25 @@ export default async function ProfilePage() {
           ))}
         </div>
 
+        {/* 38-0 Match History strip */}
+        <Link href="/38-0/history"
+          className="flex items-center justify-between px-5 py-4 rounded-2xl transition-all hover:opacity-90 active:scale-[0.99]"
+          style={{ background: "linear-gradient(135deg, rgba(0,255,135,0.08), rgba(0,255,135,0.04))", border: "1px solid rgba(0,255,135,0.2)" }}>
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
+              style={{ background: "rgba(0,255,135,0.12)" }}>📋</div>
+            <div>
+              <p className="font-body text-sm font-bold text-white">38-0 Match History</p>
+              <p className="font-body text-xs text-text-muted">
+                {draftRecord ? `${draftRecord.w}W ${draftRecord.d}D ${draftRecord.l}L · all head-to-heads` : "View all head-to-heads"}
+              </p>
+            </div>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ color: "#00ff87", flexShrink: 0 }}>
+            <path d="M5 3l6 5-6 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </Link>
+
         {/* Friends / social strip */}
         <Link href="/friends"
           className="flex items-center justify-between px-5 py-4 rounded-2xl transition-all hover:opacity-90 active:scale-[0.99]"

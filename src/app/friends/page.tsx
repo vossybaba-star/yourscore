@@ -48,6 +48,95 @@ function Avatar({ name, size = 40, url }: { name: string; size?: number; url?: s
   );
 }
 
+// ── Contacts invite ──────────────────────────────────────────────────────────
+
+interface ContactEntry {
+  name: string;
+  tel: string | null;
+  email: string | null;
+}
+
+function ContactsInviteButton() {
+  const [contacts, setContacts] = useState<ContactEntry[]>([]);
+  const [supported, setSupported] = useState(false);
+
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    setSupported(typeof navigator !== "undefined" && "contacts" in navigator && "ContactsManager" in (window as any));
+  }, []);
+
+  if (!supported) return null;
+
+  async function pickContacts() {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const selected: any[] = await (navigator as any).contacts.select(["name", "tel", "email"], { multiple: true });
+      const parsed: ContactEntry[] = selected.map((c: any) => ({
+        name: Array.isArray(c.name) ? (c.name[0] ?? "Contact") : (c.name ?? "Contact"),
+        tel: Array.isArray(c.tel) ? (c.tel[0] ?? null) : (c.tel ?? null),
+        email: Array.isArray(c.email) ? (c.email[0] ?? null) : (c.email ?? null),
+      }));
+      setContacts(prev => {
+        const existing = new Set(prev.map(p => p.tel ?? p.email));
+        return [...prev, ...parsed.filter(p => !existing.has(p.tel ?? p.email))];
+      });
+    } catch {
+      // user dismissed — no-op
+    }
+  }
+
+  const INVITE_TEXT = encodeURIComponent("Hey! I'm on YourScore — pick your Dream XI and challenge me to a head-to-head 🤝⚽ Download at yourscore.app");
+
+  return (
+    <div>
+      <button
+        onClick={pickContacts}
+        className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-body text-sm font-semibold transition-all mb-3"
+        style={{ background: "rgba(167,139,250,0.12)", color: "#a78bfa", border: "1px solid rgba(167,139,250,0.25)" }}
+      >
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M10.5 2H5.5A1.5 1.5 0 0 0 4 3.5v9A1.5 1.5 0 0 0 5.5 14h5a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 10.5 2z" stroke="currentColor" strokeWidth="1.4"/>
+          <circle cx="8" cy="10" r="1" fill="currentColor"/>
+        </svg>
+        Invite from contacts
+      </button>
+
+      {contacts.length > 0 && (
+        <div className="space-y-2">
+          {contacts.map((c, i) => (
+            <div key={i} className="flex items-center gap-3 px-4 py-3 rounded-xl"
+              style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+              <div className="w-9 h-9 rounded-full flex items-center justify-center font-body font-bold text-sm flex-shrink-0"
+                style={{ background: "rgba(167,139,250,0.14)", color: "#a78bfa", border: "1px solid rgba(167,139,250,0.25)" }}>
+                {(c.name[0] ?? "?").toUpperCase()}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-body text-sm font-semibold text-white truncate">{c.name}</p>
+                <p className="font-body text-xs text-text-muted truncate">{c.tel ?? c.email ?? "No contact info"}</p>
+              </div>
+              {c.tel ? (
+                <a href={`sms:${c.tel}?body=${INVITE_TEXT}`}
+                  className="flex-shrink-0 px-3 py-1.5 rounded-lg font-body text-xs font-semibold"
+                  style={{ background: "rgba(0,255,135,0.12)", color: "#00ff87", border: "1px solid rgba(0,255,135,0.22)" }}>
+                  Send SMS
+                </a>
+              ) : c.email ? (
+                <a href={`mailto:${c.email}?subject=Join me on YourScore&body=${INVITE_TEXT}`}
+                  className="flex-shrink-0 px-3 py-1.5 rounded-lg font-body text-xs font-semibold"
+                  style={{ background: "rgba(0,255,135,0.12)", color: "#00ff87", border: "1px solid rgba(0,255,135,0.22)" }}>
+                  Email
+                </a>
+              ) : (
+                <span className="font-body text-xs flex-shrink-0" style={{ color: "#555577" }}>No contact info</span>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function FriendsPage() {
   const [myId, setMyId] = useState<string | null>(null);
   const [friends, setFriends] = useState<Friend[]>([]);
@@ -314,6 +403,7 @@ export default function FriendsPage() {
         {/* ── SEARCH TAB ──────────────────────────────────────────────── */}
         {activeTab === "search" && (
           <div>
+            <ContactsInviteButton />
             <input
               type="text"
               placeholder="Search by name…"
