@@ -217,6 +217,11 @@ export default function TeamScreen() {
             style={{ background: "rgba(0,255,135,0.1)", color: "#00ff87", fontSize: 16, border: "1px solid rgba(0,255,135,0.3)" }}>
             🥇 Leaderboard
           </Link>
+          <Link href="/38-0/history"
+            className="rounded-2xl py-3.5 px-3 text-center font-display tracking-wide active:scale-[0.97] transition-transform"
+            style={{ background: "rgba(255,184,0,0.1)", color: "#ffb800", fontSize: 16, border: "1px solid rgba(255,184,0,0.3)" }}>
+            📋 My History
+          </Link>
           <button onClick={beginSave} disabled={saving}
             className="rounded-2xl py-3.5 px-3 text-center font-display tracking-wide active:scale-[0.97] transition-transform disabled:opacity-70"
             style={{ background: "rgba(255,184,0,0.12)", color: "#ffb800", fontSize: 16, border: "1px solid rgba(255,184,0,0.4)" }}>

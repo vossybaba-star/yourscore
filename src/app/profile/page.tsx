@@ -193,14 +193,14 @@ export default async function ProfilePage() {
             <p className="font-display text-3xl leading-none text-white">{quizMpScore > 0 ? quizMpScore.toLocaleString() : "—"}</p>
             <p className="font-body text-xs text-text-muted mt-1.5">Quiz + multiplayer pts</p>
           </div>
-          <div className="rounded-2xl px-4 py-4 bg-surface" style={{ border: "1px solid rgba(0,255,135,0.15)" }}>
+          <Link href="/38-0/history" className="block rounded-2xl px-4 py-4 bg-surface transition-opacity hover:opacity-80" style={{ border: "1px solid rgba(0,255,135,0.15)" }}>
             <p className="font-body text-xs uppercase tracking-widest mb-2" style={{ color: "#00ff87" }}>⚽ 38-0 Record</p>
             {draftRecord ? (
               <>
                 <p className="font-display text-3xl leading-none text-white">
                   {draftRecord.w}<span className="text-xl" style={{ color: "#555577" }}>-{draftRecord.d}-{draftRecord.l}</span>
                 </p>
-                <p className="font-body text-xs text-text-muted mt-1.5">W-D-L all time</p>
+                <p className="font-body text-xs text-text-muted mt-1.5">W-D-L · View history →</p>
               </>
             ) : (
               <>
@@ -208,7 +208,7 @@ export default async function ProfilePage() {
                 <p className="font-body text-xs text-text-muted mt-1.5">No 38-0 games yet</p>
               </>
             )}
-          </div>
+          </Link>
         </div>
 
         {/* Quick stats grid */}
