@@ -10,22 +10,62 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { AuthProviders } from "@/components/auth/AuthButton";
+import { hydrateSavedTeam, saveTeam } from "@/lib/draft/local";
+import type { Formation, PlacedPlayer, Projected } from "@/lib/draft/types";
 
 export default function LiveJoin() {
   const router = useRouter();
   const params = useParams<{ code: string }>();
   const [error, setError] = useState<string | null>(null);
+  const [phase, setPhase] = useState<"joining" | "picking" | "retrying">("joining");
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
+    const CODE = String(params.code).toUpperCase();
+
+    async function tryJoin() {
       const res = await fetch("/api/draft/live", {
         method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ action: "join", code: String(params.code).toUpperCase() }),
+        body: JSON.stringify({ action: "join", code: CODE }),
       });
       const json = await res.json().catch(() => ({ error: "Couldn't join" }));
+      return json;
+    }
+
+    (async () => {
+      let json = await tryJoin();
       if (cancelled) return;
-      if (json.error || !json.match) { setError(json.error ?? "Couldn't join this lobby"); return; }
+
+      // New user with no saved team — auto-generate one so they can play immediately.
+      if (json.error === "Save a team first") {
+        setPhase("picking");
+        const randRes = await fetch("/api/draft/team/random", { method: "POST" });
+        const randData = await randRes.json().catch(() => ({}));
+
+        if (!cancelled && randData.formation && Array.isArray(randData.squad)) {
+          // Hydrate localStorage so the match/result page can display the XI.
+          const localTeam = hydrateSavedTeam(
+            randData.formation as Formation,
+            randData.squad as PlacedPlayer[]
+          );
+          saveTeam({
+            ...localTeam,
+            projected: (randData.projected ?? null) as Projected | null,
+            autoAssigned: true,
+          });
+
+          // Retry the join now that the team is saved.
+          setPhase("retrying");
+          json = await tryJoin();
+          if (cancelled) return;
+        }
+      }
+
+      if (json.error || !json.match) {
+        setError(json.error ?? "Couldn't join this lobby");
+        setPhase("joining");
+        return;
+      }
       router.replace(`/38-0/live/match/${json.match.id}`);
     })();
     return () => { cancelled = true; };
@@ -64,7 +104,13 @@ export default function LiveJoin() {
       ) : (
         <div className="text-center">
           <div className="mx-auto h-10 w-10 rounded-full animate-spin" style={{ border: "3px solid rgba(0,255,135,0.25)", borderTopColor: "#00ff87" }} />
-          <p className="mt-5" style={{ color: "#9a9ab0" }}>Joining lobby…</p>
+          <p className="mt-5 font-body" style={{ color: "#9a9ab0" }}>
+            {phase === "picking"
+              ? "Picking your team…"
+              : phase === "retrying"
+              ? "Joining lobby…"
+              : "Joining lobby…"}
+          </p>
         </div>
       )}
     </div>

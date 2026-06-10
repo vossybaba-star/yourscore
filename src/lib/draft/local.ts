@@ -32,6 +32,10 @@ export type LocalTeam = {
   strength: number;
   projected: Projected | null;
   updatedAt: number;
+  /** Set when a team was auto-generated on first join via invite link.
+   *  Used to show the post-match "keep or rebuild" prompt. Cleared once the
+   *  user makes a choice. */
+  autoAssigned?: boolean;
 };
 
 export function emptyTeam(formation: Formation, mode: DraftMode = "classic"): LocalTeam {

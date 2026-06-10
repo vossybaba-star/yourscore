@@ -8,7 +8,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Pitch } from "@/components/draft/Pitch";
 import { useLiveMatch } from "@/lib/draft/useLiveMatch";
@@ -19,6 +19,8 @@ import { buildReport, type MatchSim, type HalfSim, type PlayerRating, type GoalE
 import { MatchPitch } from "@/components/draft/MatchPitch";
 import { WATCH_CONFIG } from "@/lib/draft/playback";
 import { liveOgQuery } from "@/lib/draft/share";
+import { loadTeam, saveTeam, clearTeam } from "@/lib/draft/local";
+import { createClient } from "@/lib/supabase/client";
 import type { Formation, PlacedPlayer, PlayerSeason } from "@/lib/draft/types";
 import type { DraftLiveMatchRow } from "@/types/draft-db";
 
@@ -294,6 +296,7 @@ function TwoXI({ view, caption, countdown }: { view: View; caption: string; coun
 }
 
 function ResultPanel({ view, sim, m }: { view: View; sim: MatchSim | null; m: DraftLiveMatchRow }) {
+  const router = useRouter();
   const drew = view.myGoals === view.oppGoals && (view.pens[0] == null);
   const won = view.pens[0] != null ? view.pens[0]! > view.pens[1]! : view.myGoals > view.oppGoals;
   const label = drew ? "Draw" : won ? "You win!" : "You lost";
@@ -301,6 +304,36 @@ function ResultPanel({ view, sim, m }: { view: View; sim: MatchSim | null; m: Dr
   const rv = sim ? fulltimeView(sim, view.meP1) : null;
   const [sharing, setSharing] = useState(false);
   const [shareNote, setShareNote] = useState<string | null>(null);
+
+  // Auto-assigned team prompt
+  const [isAutoTeam, setIsAutoTeam] = useState(false);
+  useEffect(() => {
+    setIsAutoTeam(loadTeam()?.autoAssigned === true);
+  }, []);
+
+  function keepTeam() {
+    const t = loadTeam();
+    if (t) saveTeam({ ...t, autoAssigned: undefined });
+    setIsAutoTeam(false);
+  }
+  function buildOwn() {
+    const t = loadTeam();
+    if (t) saveTeam({ ...t, autoAssigned: undefined });
+    clearTeam();
+    router.push("/38-0");
+  }
+
+  // Friend suggestion
+  const oppId = view.meP1 ? m.p2_id : m.p1_id;
+  const [friendState, setFriendState] = useState<"idle" | "sent" | "dismissed">("idle");
+  async function addFriend() {
+    if (!oppId) return;
+    const sb = createClient();
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return;
+    await sb.from("friendships").insert({ user_id: user.id, friend_id: oppId, status: "pending" });
+    setFriendState("sent");
+  }
 
   // Canonical (p1/p2) report → the share card matches the public unfurl page, so
   // both managers share the same image regardless of which side they're on.
@@ -346,6 +379,51 @@ function ResultPanel({ view, sim, m }: { view: View; sim: MatchSim | null; m: Dr
           <MatchReportCard rv={rv} meP1={view.meP1} myName={view.myName} oppName={view.oppName} showPotm />
         </div>
       )}
+      {/* Auto-assigned team — keep or rebuild */}
+      {isAutoTeam && (
+        <div className="mt-4 rounded-2xl p-4" style={{ background: "rgba(0,255,135,0.06)", border: "1px solid rgba(0,255,135,0.2)" }}>
+          <p className="font-body text-center mb-3" style={{ fontSize: 13, color: "#8888aa" }}>
+            We picked a random XI for you. Want to keep it?
+          </p>
+          <div className="flex gap-2">
+            <button onClick={keepTeam}
+              className="flex-1 rounded-xl py-2.5 font-body font-semibold text-sm"
+              style={{ background: "#00ff87", color: "#062013" }}>
+              Keep this XI ✓
+            </button>
+            <button onClick={buildOwn}
+              className="flex-1 rounded-xl py-2.5 font-body text-sm"
+              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#cfcfe6" }}>
+              Build my own
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Friend suggestion — real opponent only, one-shot per session */}
+      {!m.is_bot && oppId && friendState === "idle" && (
+        <div className="mt-4 rounded-2xl p-4" style={{ background: "rgba(167,139,250,0.06)", border: "1px solid rgba(167,139,250,0.2)" }}>
+          <p className="font-body text-center mb-3" style={{ fontSize: 13, color: "#a78bfa" }}>
+            Add {view.oppName} as a friend?
+          </p>
+          <div className="flex gap-2">
+            <button onClick={addFriend}
+              className="flex-1 rounded-xl py-2.5 font-body font-semibold text-sm"
+              style={{ background: "rgba(167,139,250,0.2)", border: "1px solid rgba(167,139,250,0.35)", color: "#a78bfa" }}>
+              Add friend
+            </button>
+            <button onClick={() => setFriendState("dismissed")}
+              className="flex-1 rounded-xl py-2.5 font-body text-sm"
+              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#8888aa" }}>
+              Not now
+            </button>
+          </div>
+        </div>
+      )}
+      {!m.is_bot && oppId && friendState === "sent" && (
+        <p className="mt-4 text-center font-body text-sm" style={{ color: "#00ff87" }}>Friend request sent ✓</p>
+      )}
+
       <button onClick={share} disabled={sharing} className="mt-5 w-full rounded-2xl py-4 font-semibold disabled:opacity-60" style={{ background: "#00ff87", color: "#04130a" }}>
         {sharing ? "Preparing image…" : "📤 Share result"}
       </button>
