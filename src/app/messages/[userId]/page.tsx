@@ -5,6 +5,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { REALTIME_ENABLED } from "@/lib/realtime";
 
 interface Message {
   id: string;
@@ -80,6 +81,7 @@ export default function MessagePage() {
       await fetchMessages(uid);
 
       // Subscribe to new messages
+      if (!REALTIME_ENABLED) return;
       const channel = sb
         .channel(`dm:${[uid, otherUserId].sort().join(":")}`)
         .on("postgres_changes", {

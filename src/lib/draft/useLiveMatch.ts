@@ -13,6 +13,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
+import { REALTIME_ENABLED } from "@/lib/realtime";
 import type { DraftLiveMatchRow } from "@/types/draft-db";
 
 const TERMINAL = new Set(["result", "abandoned"]);
@@ -100,6 +101,7 @@ export function useLiveMatch(matchId: string | null): UseLiveMatch {
       const { data: { session } } = await sb.auth.getSession();
       if (session?.access_token) sb.realtime.setAuth(session.access_token);
       if (cancelled) return;
+      if (!REALTIME_ENABLED) return;
 
       // Drop any leftover channel for this topic before re-subscribing.
       sb.getChannels().filter((c) => c.topic.includes(`draft:match:${matchId}`)).forEach((c) => sb.removeChannel(c));

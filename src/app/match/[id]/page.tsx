@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
+import { REALTIME_ENABLED } from "@/lib/realtime";
 import { QuestionCard, type ActiveQuestion } from "@/components/game/QuestionCard";
 import { Leaderboard, type LeaderboardEntry } from "@/components/game/Leaderboard";
 import { useUser } from "@/hooks/useUser";
@@ -270,6 +271,7 @@ export default function MatchPage({ params }: { params: { id: string } }) {
       fetchLeaderboard();
 
       // Realtime
+      if (!REALTIME_ENABLED) return;
       const channel = sb.channel(`match:${matchId}`)
         .on("postgres_changes", {
           event: "INSERT", schema: "public", table: "question_events",

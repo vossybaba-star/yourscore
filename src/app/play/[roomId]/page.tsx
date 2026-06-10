@@ -8,6 +8,7 @@ import dynamic from "next/dynamic";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 import { useUser } from "@/hooks/useUser";
+import { REALTIME_ENABLED } from "@/lib/realtime";
 
 // Lazy-loaded so the QR library stays out of the initial bundle (matches the
 // league pages). react-qr-code is the single QR dependency used app-wide.
@@ -345,6 +346,7 @@ export default function RoomPage() {
 
       setLoading(false);
 
+      if (!REALTIME_ENABLED) { return; }
       const channel = sb.channel(`room:${roomId}`, { config: { broadcast: { self: true } } })
         // Question events: show new questions to all clients
         .on("postgres_changes", { event: "INSERT", schema: "public", table: "question_events", filter: `room_id=eq.${roomId}` },
