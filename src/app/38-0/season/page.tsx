@@ -62,13 +62,52 @@ export default function SeasonSim() {
     return () => { if (timer.current) clearInterval(timer.current); };
   }, [result, cached, seed]);
 
-  // Auto-show giveaway prompt when simulation first completes
+  // Hoisted above the early-return so ensureShortUrl can be called from the
+  // auto-show effect (700ms before the giveaway overlay opens).
+  function shareParams(): URLSearchParams {
+    if (!result || !team) return new URLSearchParams();
+    const xi = team.squad.map((p) => `${p.position}~${p.name}~${p.overall}`).join("|");
+    return new URLSearchParams({
+      w: String(result.wins), d: String(result.draws), l: String(result.losses),
+      pts: String(result.points), pos: String(result.position), ovr: String(team.strength),
+      mode: team.mode === "expert" ? "Expert" : "Normal",
+      inv: result.invincible ? "1" : "",
+      boot: result.goldenBoot ? `${result.goldenBoot.name}~${result.goldenBoot.goals}` : "",
+      pots: result.playerOfTheSeason ? `${result.playerOfTheSeason.name}~${result.playerOfTheSeason.goals}~${result.playerOfTheSeason.assists}` : "",
+      xi,
+      gf: String(result.gf), ga: String(result.ga),
+      verdict: result.verdict ?? "",
+      form: team.formation ?? "",
+      play: result.playmaker ? `${result.playmaker.name}~${result.playmaker.assists}` : "",
+      glov: result.goldenGlove ? `${result.goldenGlove.name}~${result.goldenGlove.cleanSheets}` : "",
+    });
+  }
+
+  async function ensureShortUrl(): Promise<void> {
+    if (shortUrl || !result || !team) return;
+    try {
+      const payload = Object.fromEntries(shareParams().entries());
+      const res = await fetch("/api/draft/share", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ payload }),
+      });
+      if (!res.ok) return;
+      const { id } = await res.json();
+      if (id) setShortUrl(`${window.location.origin}/s/${id}`);
+    } catch { /* keep the long fallback */ }
+  }
+
+  // Auto-show giveaway prompt when simulation first completes.
+  // Also kicks off short-URL minting so it's ready before the user taps tweet.
   useEffect(() => {
     if (done && !giveawayShown.current) {
       giveawayShown.current = true;
+      void ensureShortUrl();
       const t = setTimeout(() => setGiveawayOpen(true), 700);
       return () => clearTimeout(t);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [done]);
 
   function skip() {
@@ -132,25 +171,6 @@ export default function SeasonSim() {
   const accent = r.invincible ? "#ffd700" : r.position === 1 ? "#00ff87" : r.position <= 4 ? "#22d3ee" : r.position <= 12 ? "#ffb800" : "#ff4757";
   const verdictColor = r.verdict === "OVERPERFORMED" ? "#00ff87" : r.verdict === "UNDERPERFORMED" ? "#ff4757" : "#8888aa";
 
-  function shareParams(): URLSearchParams {
-    const xi = team!.squad.map((p) => `${p.position}~${p.name}~${p.overall}`).join("|");
-    return new URLSearchParams({
-      w: String(r.wins), d: String(r.draws), l: String(r.losses),
-      pts: String(r.points), pos: String(r.position), ovr: String(team!.strength),
-      mode: team!.mode === "expert" ? "Expert" : "Normal",
-      inv: r.invincible ? "1" : "",
-      boot: r.goldenBoot ? `${r.goldenBoot.name}~${r.goldenBoot.goals}` : "",
-      pots: r.playerOfTheSeason ? `${r.playerOfTheSeason.name}~${r.playerOfTheSeason.goals}~${r.playerOfTheSeason.assists}` : "",
-      xi,
-      // Extended fields for the public scorecard page
-      gf: String(r.gf),
-      ga: String(r.ga),
-      verdict: r.verdict ?? "",
-      form: team!.formation ?? "",
-      play: r.playmaker ? `${r.playmaker.name}~${r.playmaker.assists}` : "",
-      glov: r.goldenGlove ? `${r.goldenGlove.name}~${r.goldenGlove.cleanSheets}` : "",
-    });
-  }
   // The shareable card image, and a public link that unfurls to it on socials.
   const ogUrl = () => `/api/draft/season-og?${shareParams().toString()}`;
   // Long fallback link (carries the whole result in the query string). Used only
@@ -159,23 +179,6 @@ export default function SeasonSim() {
   // Resolved short link, once minted — what we actually share.
   const shareUrl = () => shortUrl ?? longShareUrl();
 
-  // Mint a compact …/s/<id> link by storing the payload server-side. Called
-  // when the share sheet opens so the link is ready before the user taps a target
-  // (avoids popup-blockers on the window.open share paths). Falls back silently.
-  async function ensureShortUrl(): Promise<void> {
-    if (shortUrl) return;
-    try {
-      const payload = Object.fromEntries(shareParams().entries());
-      const res = await fetch("/api/draft/share", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ payload }),
-      });
-      if (!res.ok) return;
-      const { id } = await res.json();
-      if (id) setShortUrl(`${window.location.origin}/s/${id}`);
-    } catch { /* keep the long fallback */ }
-  }
   function openShare() { setShareOpen(true); void ensureShortUrl(); }
   // Auto-blurb so posts (esp. X) carry context + the image (via the unfurling link).
   const blurb = () => r.invincible
@@ -199,9 +202,9 @@ export default function SeasonSim() {
       : `My 38-0 season: ${r.wins}W ${r.draws}D ${r.losses}L, finished ${ordinal(r.position)} on ${r.points} pts ⚽ Entering the @yourscore_app_ daily £25 giveaway`;
   }
   function giveawayTweetUrl(): string {
-    // Include the share card URL so Twitter unfurls the scorecard OG image
-    const cardUrl = longShareUrl();
-    return `https://twitter.com/intent/tweet?text=${encodeURIComponent(giveawayTweetText())}&url=${encodeURIComponent(cardUrl)}`;
+    // Use the short URL (already minted by now); falls back to longShareUrl if needed.
+    // Twitter unfurls the OG scorecard image from the /38-0/season/share page.
+    return `https://twitter.com/intent/tweet?text=${encodeURIComponent(giveawayTweetText())}&url=${encodeURIComponent(shareUrl())}`;
   }
 
   const awards: [string, string, string][] = [];
