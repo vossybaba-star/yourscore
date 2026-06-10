@@ -2,17 +2,17 @@
 
 /**
  * /38-0/match/result — full-time result for the most recent local Quick Match:
- * the real scoreline, scorers, MOTM, broadcast stats, both XIs, and a one-tap share
- * of the scoreline graphic. Mirrors the public /38-0/match/[id] live view; this is
- * the local (guest) version, reading the last match from localStorage.
+ * the broadcast scorecard (scoreline, goal timeline, star of the match, stats, both
+ * XIs — see <Scorecard>) plus a one-tap share and the next-step action. Mirrors the
+ * public /38-0/match/[id] live view; this is the local (guest) version, reading the
+ * last match from localStorage.
  */
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Pitch } from "@/components/draft/Pitch";
+import { Scorecard } from "@/components/draft/Scorecard";
 import { loadLastMatch, type LocalMatch } from "@/lib/draft/local";
-import { tierColor } from "@/lib/draft/ui";
 import { AddFriendCard } from "@/components/social/AddFriendCard";
 
 export default function MatchResult() {
@@ -77,79 +77,25 @@ export default function MatchResult() {
   const won = m.outcome === "you";
   const drew = m.outcome === "draw";
   const accent = won ? "#00ff87" : drew ? "#ffb800" : "#ff4757";
-  const headline = won ? "WIN" : drew ? "DRAW" : "LOSS";
-  const rep = m.report;
 
   return (
     <div className="min-h-[100dvh] pb-28" style={{ background: "#0a0a0f" }}>
-      <div className="max-w-lg mx-auto px-5 pt-safe">
-        {/* full-time scoreline */}
-        <div className="pt-8 text-center">
-          <div className="font-display tracking-wide leading-none" style={{ fontSize: 64, color: accent }}>
-            {headline}
-          </div>
-          <div className="flex items-center justify-center gap-3 mt-3">
-            <span className="font-display tracking-wide truncate text-right" style={{ fontSize: 16, color: won ? "#00ff87" : "#cfcfe6", maxWidth: 130 }}>You</span>
-            <span className="font-display tabular-nums" style={{ fontSize: 44, fontWeight: 900, color: won ? "#00ff87" : "#cfcfe6" }}>{m.goals.you}</span>
-            <span style={{ color: "#555", fontSize: 26 }}>–</span>
-            <span className="font-display tabular-nums" style={{ fontSize: 44, fontWeight: 900, color: m.outcome === "opp" ? "#00ff87" : "#cfcfe6" }}>{m.goals.opp}</span>
-            <span className="font-display tracking-wide truncate text-left" style={{ fontSize: 16, color: m.outcome === "opp" ? "#00ff87" : "#cfcfe6", maxWidth: 130 }}>{m.opp.name}</span>
-          </div>
-          {m.pens && <div className="font-body mt-1" style={{ fontSize: 13, color: "#ffb800" }}>penalties {m.pens.you}–{m.pens.opp}</div>}
+      {/* ambient pitch grid */}
+      <div className="pointer-events-none fixed inset-0 bg-grid-pattern bg-grid" style={{ opacity: 0.5 }} />
 
-          {rep.potm && (
-            <div className="inline-flex items-center gap-2 rounded-full mt-3 px-4 py-1.5" style={{ background: "rgba(255,184,0,0.12)", border: "1px solid rgba(255,184,0,0.35)" }}>
-              <span className="font-body" style={{ fontSize: 12, color: "#ffb800", letterSpacing: 1 }}>⭐ MOTM</span>
-              <span className="font-body" style={{ fontSize: 14, color: "#fff" }}>{rep.potm.name} <b style={{ color: "#ffb800" }}>{rep.potm.rating.toFixed(1)}</b></span>
-            </div>
-          )}
-          {rep.events.length > 0 && (
-            <div className="font-body mt-2 truncate" style={{ fontSize: 12, color: "#cfcfe6" }}>⚽ {rep.events.map((e) => `${e.scorerName} ${e.minute}'`).join(" · ")}</div>
-          )}
-
-          {/* broadcast stats */}
-          <div className="rounded-xl overflow-hidden mt-4" style={{ background: "#0d0d14", border: "1px solid rgba(255,255,255,0.08)" }}>
-            {([
-              ["Possession", `${rep.a.possession}%`, `${rep.b.possession}%`, rep.a.possession, rep.b.possession],
-              ["Shots", rep.a.shots, rep.b.shots, rep.a.shots, rep.b.shots],
-              ["On target", rep.a.shotsOnTarget, rep.b.shotsOnTarget, rep.a.shotsOnTarget, rep.b.shotsOnTarget],
-              ["Corners", rep.a.corners, rep.b.corners, rep.a.corners, rep.b.corners],
-              ["Fouls", rep.a.fouls, rep.b.fouls, rep.a.fouls, rep.b.fouls],
-              ["Offsides", rep.a.offsides, rep.b.offsides, rep.a.offsides, rep.b.offsides],
-              ["Throw-ins", rep.a.throwins, rep.b.throwins, rep.a.throwins, rep.b.throwins],
-            ] as [string, string | number, string | number, number, number][]).map(([label, av, bv, an, bn]) => (
-              <div key={label} className="flex items-center px-3 py-1.5" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-                <span className="flex-1 text-left font-body tabular-nums font-bold" style={{ fontSize: 15, color: an >= bn ? "#fff" : "#8888aa" }}>{av}</span>
-                <span className="text-center font-body" style={{ width: 110, fontSize: 10, letterSpacing: 1, color: "#7a7a92" }}>{label.toUpperCase()}</span>
-                <span className="flex-1 text-right font-body tabular-nums font-bold" style={{ fontSize: 15, color: bn >= an ? "#fff" : "#8888aa" }}>{bv}</span>
-              </div>
-            ))}
-          </div>
+      <div className="relative mx-auto max-w-lg px-4 pt-safe">
+        <div className="flex items-center justify-between py-3">
+          <Link href="/38-0" className="font-body text-sm" style={{ color: "#8888aa" }}>← 38-0</Link>
+          <span className="font-body uppercase" style={{ fontSize: 10, letterSpacing: "0.2em", color: "#5a5a78" }}>
+            Quick Match
+          </span>
         </div>
 
-        {/* both XIs */}
-        <div className="grid grid-cols-2 gap-3 mt-6">
-          <div>
-            <div className="flex items-center justify-between mb-0.5">
-              <span className="font-display tracking-wide" style={{ fontSize: 16, color: won ? "#00ff87" : "#fff" }}>YOU</span>
-              <span className="font-display" style={{ fontSize: 18, color: tierColor(m.you.projected?.tier ?? "Mid-table") }}>{m.you.strength}</span>
-            </div>
-            <p className="font-body mb-1.5" style={{ fontSize: 10, color: "#666688", letterSpacing: "0.04em" }}>Your XI</p>
-            <Pitch formation={m.you.formation} squad={m.you.squad} compact />
-          </div>
-          <div>
-            <div className="flex items-center justify-between mb-0.5">
-              <span className="font-display tracking-wide leading-tight truncate" style={{ fontSize: 16, color: m.outcome === "opp" ? "#ff4757" : "#fff", maxWidth: "70%" }}>{m.opp.name}</span>
-              <span className="font-display" style={{ fontSize: 18, color: tierColor(m.opp.projected?.tier ?? "Mid-table") }}>{m.opp.strength}</span>
-            </div>
-            <p className="font-body mb-1.5 truncate" style={{ fontSize: 10, color: "#666688", letterSpacing: "0.04em" }}>{m.opp.name}&apos;s XI</p>
-            <Pitch formation={m.opp.formation} squad={m.opp.squad} compact />
-          </div>
-        </div>
+        <Scorecard m={m} />
 
         {/* Friend card — only for real opponent (challenge) matches */}
         {m.oppUserId && (
-          <div className="mt-6">
+          <div className="mt-5">
             <AddFriendCard
               userId={m.oppUserId}
               displayName={m.opp.name}
@@ -158,36 +104,36 @@ export default function MatchResult() {
           </div>
         )}
 
-        <div className="mt-6 space-y-3">
+        <div className="mt-5 space-y-3">
           <button onClick={() => setShowShareSheet(true)}
-            className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform"
-            style={{ background: "#ffb800", color: "#1a1300", fontSize: 24 }}>
-            SHARE RESULT 📲
+            className="w-full rounded-2xl py-4 font-display tracking-wide transition-transform focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-[0.98]"
+            style={{ background: "#ffb800", color: "#1a1300", fontSize: 23, outlineColor: "#ffb800" }}>
+            SHARE FULL-TIME CARD 📲
           </button>
 
           {won ? (
             <Link href="/38-0/swap"
-              className="block w-full rounded-2xl py-4 text-center font-display tracking-wide active:scale-[0.98] transition-transform"
-              style={{ background: "#00ff87", color: "#062013", fontSize: 22 }}>
+              className="block w-full rounded-2xl py-4 text-center font-display tracking-wide transition-transform focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-[0.98]"
+              style={{ background: "#00ff87", color: "#062013", fontSize: 22, outlineColor: "#00ff87" }}>
               SWAP ONE PLAYER →
             </Link>
           ) : drew ? (
             <Link href="/38-0/team"
-              className="block w-full rounded-2xl py-4 text-center font-display tracking-wide active:scale-[0.98] transition-transform"
-              style={{ background: "rgba(255,184,0,0.14)", color: "#ffb800", fontSize: 22, border: "1px solid rgba(255,184,0,0.4)" }}>
+              className="block w-full rounded-2xl py-4 text-center font-display tracking-wide transition-transform focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-[0.98]"
+              style={{ background: "rgba(255,184,0,0.14)", color: "#ffb800", fontSize: 22, border: "1px solid rgba(255,184,0,0.4)", outlineColor: "#ffb800" }}>
               GO AGAIN →
             </Link>
           ) : (
             <Link href="/38-0"
-              className="block w-full rounded-2xl py-4 text-center font-display tracking-wide active:scale-[0.98] transition-transform"
-              style={{ background: "#ff4757", color: "#fff", fontSize: 22 }}>
+              className="block w-full rounded-2xl py-4 text-center font-display tracking-wide transition-transform focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-[0.98]"
+              style={{ background: "#ff4757", color: "#fff", fontSize: 22, outlineColor: "#ff4757" }}>
               REBUILD XI →
             </Link>
           )}
 
           <Link href="/38-0/team"
-            className="block w-full rounded-2xl py-3 text-center font-body active:scale-[0.98] transition-transform"
-            style={{ background: "#12121e", color: "#8888aa", fontSize: 15, border: "1px solid rgba(255,255,255,0.08)" }}>
+            className="block w-full rounded-2xl py-3 text-center font-body transition-transform focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-[0.98]"
+            style={{ background: "#12121e", color: "#8888aa", fontSize: 15, border: "1px solid rgba(255,255,255,0.08)", outlineColor: accent }}>
             Back to my team
           </Link>
         </div>
