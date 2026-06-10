@@ -268,6 +268,21 @@ export function AuthProviders({ nextPath }: { nextPath?: string }) {
 
   return (
     <div className="space-y-3">
+      {/* Apple goes ABOVE Google. Apple HIG and Sign in with Apple guidelines
+          require the Apple button to be at least as prominent as any other
+          third-party OAuth option. Putting it first is the cleanest read. */}
+      <OAuthButton
+        provider="apple"
+        label="Continue with Apple"
+        nextPath={nextPath}
+        icon={
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="white">
+            <path d="M14.94 13.94c-.27.62-.59 1.2-.97 1.73-.51.72-.93 1.21-1.25 1.49-.49.45-1.02.68-1.59.69-.41 0-.9-.12-1.48-.36-.58-.24-1.11-.36-1.6-.36-.51 0-1.06.12-1.65.36-.59.24-1.07.36-1.43.37-.55.02-1.09-.22-1.62-.71-.34-.3-.78-.81-1.32-1.54-.57-.78-1.05-1.69-1.42-2.73C.39 11.96.18 10.85.18 9.77c0-1.23.27-2.3.8-3.19.42-.71.97-1.27 1.66-1.69.69-.42 1.43-.63 2.23-.65.43 0 1 .14 1.71.41.71.27 1.17.41 1.37.41.15 0 .65-.16 1.52-.48.82-.3 1.51-.42 2.08-.37 1.54.12 2.7.73 3.47 1.82-1.38.84-2.06 2.01-2.04 3.52.01 1.17.44 2.15 1.27 2.93.38.35.8.62 1.27.81-.1.29-.21.57-.33.84z"/>
+            <path d="M11.31 1.93c0 .92-.34 1.78-1.02 2.57-.81.95-1.79 1.5-2.86 1.41a2.88 2.88 0 0 1-.02-.35c0-.88.39-1.83 1.07-2.59.34-.39.78-.71 1.31-.97.52-.26 1.02-.4 1.49-.42.01.12.02.24.02.35z"/>
+          </svg>
+        }
+      />
+
       <OAuthButton
         provider="google"
         label="Continue with Google"

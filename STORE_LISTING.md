@@ -2,6 +2,8 @@
 
 Copy-paste content for App Store Connect and Google Play Console. Character limits are noted next to each field. Update the World Cup framing post-tournament.
 
+**Single source of truth for product copy is `YOURSCORE.md`** — when revising this file, derive from there, not from past versions of this file. Vocabulary rules (per YOURSCORE.md §2, §14): use **Lobby** not Room, use **football knowledge** not IQ, use exact Lobby types **Private / Public / 1v1**, never reference Facebook sign-in.
+
 ---
 
 ## App Store Connect
@@ -18,54 +20,73 @@ Watch · Predict · Compete
 
 ### Promotional Text (170 char max — editable without a new build)
 ```
-The 2026 World Cup starts soon. Get your league set up before kick-off — answer live questions during every match and see who really knows football.
+World Cup kicks off June 11. Set up a Lobby with mates, play live during matches, and rank your football knowledge across every game of the tournament.
 ```
 
 ### Keywords (100 char max — comma-separated, no spaces after commas, never the app name)
 ```
-football,soccer,quiz,trivia,worldcup,premier,league,fantasy,prediction,live,sports,fan
+football,soccer,quiz,trivia,worldcup,premier,championship,multiplayer,lobby,league,leaderboard,fan
 ```
 
 ### Description (4000 char max)
 ```
-YourScore turns watching football with your friends into a live, structured competition.
+Rank your football knowledge against your mates — every match, any competition, any time.
 
-Answer questions about the match as it unfolds — who just scored, what formation is the manager using, how many goals has this player scored this season. Faster correct answers earn more points. A streak multiplier rewards you for getting three or more right in a row.
+YourScore is the football-knowledge competition app. Not predictions. Not fantasy lineups. What you actually know, scored under pressure, kept as a running ranking against your group.
 
-WATCH WITH FRIENDS
-Create a private room for any match. Share a six-character code or link by WhatsApp, iMessage, or whatever group chat you already use. Everyone joins instantly — no faff, no friction.
+FOUR WAYS TO PLAY
 
-LEAGUES THAT LAST A SEASON
-Your scores roll up into persistent leagues. Track your group's accuracy, streaks, and total points across every match. One league for your mates, another for the office, another for the football WhatsApp.
+LIVE MATCH
+Pick a real fixture and play along as it happens. Questions fire at moments during the actual game, scored live. Everyone on the leaderboard answers the same questions within the same window.
 
-LIVE QUESTIONS
-During the match, questions fire one by one with a 45-second timer. Tap an answer. Watch the leaderboard update in real time on every phone.
+MULTIPLAYER LOBBIES
+Spin up an on-demand game with your mates any time. Open a Lobby, pick its type, pick a Question source, share the 6-character code:
+• Private — invite only, up to 8 players
+• Public — anyone with the link, up to 20
+• 1v1 — head-to-head, you vs one opponent
 
-CHALLENGES — PLAY ANYTIME
-Season-review quiz packs for every Premier League and Championship club. 20 questions per team. Self-paced, no timer, instantly playable.
+Question sources are pre-built Quiz packs (clubs, competitions, themes) or a category + difficulty filter you tune yourself.
 
-HEAD-TO-HEAD
-Pick a friend, pick a team, take turns answering. First to break the other's streak wins.
+SOLO CHALLENGES
+Self-paced, single-player. Season-review packs for every Premier League and Championship club. The lowest-friction way to start playing.
+
+38-0
+Live Draft XI head-to-head. Pick your starting eleven, pin your reputation on it, and play live during a real match.
+
+CUSTOM QUIZ BUILDER
+Generate your own Quiz pack from a prompt, then use it as the question source in any Multiplayer Lobby.
+
+LEAGUES
+Group your friends into a League and compile everyone's results into shared tables. Every League has two boards — a Live board fed by Live-match points, and an Offline board fed by Multiplayer and Solo. Points don't mix. One league for the WhatsApp, another for the office, another for the family.
+
+SCORING
+Speed bands multiply your points by how fast you answer (Lightning ×2.0 down to Very Slow ×0.5). Streaks, comebacks, and perfect rounds bonus extra. Timeouts and rage-quits cost you.
 
 BUILT FOR THE 2026 WORLD CUP
-The fixture list covers the full group stage. Set up your league before June 11 and you're ready to play from kick-off.
+Group stage starts June 11. Set up your League now and you're ranking your mates from the opening fixture.
 
-FREE TO PLAY
-No subscriptions, no paywalls, no ads in the live game. Sign in with Apple, Google, or email — guests can join rooms and watch leaderboards but need an account to score points.
+FREE
+No subscriptions. No paywalls. No ads during the game. Sign in with Apple, Google, or email — guests can browse and play but need an account to earn ranked points and join Leagues.
+
+WHO IT'S FOR
+Football fans who actually watch matches. Group chats with arguments to settle. Anyone who's ever said "I know more football than you do."
 
 WHAT YOU NEED
-A phone. Friends. A football match. We do the rest.
+A phone. A football match. A few mates with opinions.
 ```
 
 ### What's New in This Version (4000 char max, for each update)
 ```
 First release.
 
-Sign in with Apple, Google, Facebook, or email.
-Join rooms by code. Create persistent leagues with your friends.
-Season-review challenges for every Premier League and Championship club.
-Head-to-head quizzes for two players.
-Live push notifications when a question fires in a room you're in.
+Sign in with Apple, Google, or email. Three ways to play:
+• Live match — play along with a real fixture
+• Multiplayer Lobbies — Private / Public / 1v1, share a 6-character code
+• Solo challenge — Premier League and Championship season packs
+
+Plus 38-0: pick your starting eleven and play live, head-to-head during a real match.
+
+Build your own Quiz packs with the Custom Quiz Builder. Group friends into Leagues with separate Live and Offline boards.
 ```
 
 ### Category
@@ -102,14 +123,36 @@ Data linked to user identity (declared via Apple's questionnaire):
 Data NOT collected: location, contacts, browsing history, financial info, health, sensitive info.
 
 ### Required Reviewer Notes (Build Submission → App Review Info)
-> YourScore is a live football quiz app. It is more than a webview wrapper of a website:
->
-> 1. Native push notifications (APNs) deliver in-match question alerts. The web version cannot do this.
-> 2. Deep-linked OAuth via custom URL scheme returns directly to the app without leaving the system browser.
-> 3. The full match-day experience requires the native push pipeline; the web PWA is a degraded preview.
->
-> Test account (provided in the test credentials field): testuser@yourscore.app / [PASSWORD].
-> No special hardware needed. Test on any iPhone — Sign in → Browse Challenges → start any quiz to verify the gameplay flow.
+```
+YourScore is a football-knowledge competition app — not a predictions app, not fantasy football. Players are scored on what they actually know, with a real-time speed multiplier.
+
+The app is a native iOS shell around https://yourscore.app via Capacitor, with native push notifications (APNs) for in-match question alerts, deep-linked OAuth (yourscore://), branded splash + icon, and full safe-area support. It is more than a thin webview wrapper.
+
+Four ways to play, all signed-in:
+
+1) Live match — Matches tab → pick a real fixture → play along as it happens; questions fire during the actual game.
+
+2) Multiplayer Lobby — Play tab → Multiplayer sub-tab → Create Lobby. Pick type (Private / Public / 1v1), pick a Question source (a Quiz pack or category + difficulty filter), share the 6-character code. Joiners enter the code, group up, the game starts with a live leaderboard.
+
+3) Solo challenge — Play tab → Solo sub-tab → pick a club or competition pack and play a self-paced quiz against the global leaderboard.
+
+4) 38-0 — top-nav tab. Live Draft XI head-to-head. Pick your starting eleven, play live during a real match, head-to-head leaderboard.
+
+A Custom Quiz Builder under Play lets users generate their own Quiz packs (AI-assisted) for use as a Multiplayer Question source.
+
+To evaluate, sign in with the test account:
+  Email:    apple-review@yourscore.app
+  Password: Reviewerbf4cb1d2!1A
+
+Or tap Continue with Apple / Google for the OAuth flow.
+
+Cleanest demo path after sign-in:
+  • Play tab → Solo → pick "Arsenal Are Champions" → play through to see the question + scoring engine.
+  • Play tab → Multiplayer → Create Lobby (Private) → start the Game to see the synced live leaderboard.
+  • 38-0 tab → see Draft XI head-to-head.
+
+Tested on iPhone 17 Pro simulator and iPhone 17 Pro Max physical device. No special hardware needed.
+```
 
 ---
 
