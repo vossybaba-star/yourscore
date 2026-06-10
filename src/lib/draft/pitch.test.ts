@@ -106,8 +106,8 @@ test("a goal beat resolves to the scoring side at its goal", () => {
   const reel = buildReel(sim, 1, MID);
   const dwell = reel.segments.find((s) => s.beat?.kind === "goal");
   assert.ok(dwell, "found the goal dwell");
-  // progress at/just after the strike instant.
-  const mmStrike = 20 + PITCH_CONFIG.dwellAfterMin * 0.5;
+  // progress in the outcome window, after the simulated shot has been struck.
+  const mmStrike = 20 + PITCH_CONFIG.dwellAfterMin * 0.9;
   const localT = (mmStrike - dwell!.m0) / (dwell!.m1 - dwell!.m0);
   const progress = dwell!.p0 + localT * (dwell!.p1 - dwell!.p0);
   const f = pitchFrame(sim, 1, MID, progress);

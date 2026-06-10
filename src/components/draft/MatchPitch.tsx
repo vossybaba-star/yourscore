@@ -172,30 +172,19 @@ function drawPitch(
   ctx.beginPath(); ctx.moveTo(px(0), py(0.44)); ctx.lineTo(px(0), py(0.56)); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(px(1), py(0.44)); ctx.lineTo(px(1), py(0.56)); ctx.stroke();
 
-  // Beat flourishes (under the dots): strike streak + goal net flash.
-  if (frame.beat) {
+  // Goal net flash (the ball itself does the shot now, so no scripted streak).
+  if (frame.beat && frame.beat.kind === "goal" && frame.beat.phase === "outcome") {
     const att = frame.beat.side === "a" ? 1 : 0;
-    if (frame.beat.phase === "strike" || (frame.beat.kind === "goal" && frame.beat.phase === "outcome")) {
-      ctx.save();
-      ctx.strokeStyle = "rgba(255,255,255,0.85)";
-      ctx.lineWidth = 2.2;
-      ctx.shadowColor = "#fff";
-      ctx.shadowBlur = reduced ? 0 : 10;
-      ctx.beginPath(); ctx.moveTo(px(frame.ball.x), py(frame.ball.y)); ctx.lineTo(px(att), py(0.5)); ctx.stroke();
-      ctx.restore();
+    ctx.save();
+    ctx.fillStyle = "rgba(0,255,135,0.30)";
+    const gx = att === 1 ? px(0.9) : px(0);
+    ctx.fillRect(gx, py(0.36), px(0.1) - px(0), py(0.64) - py(0.36));
+    if (!reduced) {
+      ctx.strokeStyle = "rgba(0,255,135,0.9)";
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(px(frame.ball.x), py(frame.ball.y), 14, 0, Math.PI * 2); ctx.stroke();
     }
-    if (frame.beat.kind === "goal" && frame.beat.phase === "outcome") {
-      ctx.save();
-      ctx.fillStyle = "rgba(0,255,135,0.30)";
-      const gx = att === 1 ? px(0.9) : px(0);
-      ctx.fillRect(gx, py(0.36), px(0.1) - px(0), py(0.64) - py(0.36));
-      if (!reduced) {
-        ctx.strokeStyle = "rgba(0,255,135,0.9)";
-        ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.arc(px(frame.ball.x), py(frame.ball.y), 14, 0, Math.PI * 2); ctx.stroke();
-      }
-      ctx.restore();
-    }
+    ctx.restore();
   }
 
   // Players.
