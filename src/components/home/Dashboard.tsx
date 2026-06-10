@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { GridBackground } from "@/components/ui/GridBackground";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { slugify } from "@/lib/utils";
@@ -228,6 +229,8 @@ function FeaturedPacksRow({ packs }: { packs: FeaturedPack[] }) {
 export function Dashboard({ data }: { data: DashboardData }) {
   const { displayName, totalScore, globalRank, leagues, featuredPacks } = data;
   const firstName = displayName ? displayName.split(" ")[0] : null;
+  const router = useRouter();
+  const [showLeaguePicker, setShowLeaguePicker] = useState(false);
 
   return (
     <main className="min-h-dvh bg-bg pb-28">
@@ -333,8 +336,8 @@ export function Dashboard({ data }: { data: DashboardData }) {
 
         {/* ── Create a league — big purple CTA ───────────────────────────── */}
         <div className="dash-slide-4">
-          <Link href="/league/new"
-            className="flex items-center justify-between px-5 py-5 rounded-2xl transition-all hover:opacity-90 active:scale-[0.99] league-cta-pulse"
+          <button onClick={() => setShowLeaguePicker(true)}
+            className="w-full flex items-center justify-between px-5 py-5 rounded-2xl transition-all hover:opacity-90 active:scale-[0.99] league-cta-pulse"
             style={{ background: "linear-gradient(135deg, rgba(167,139,250,0.18) 0%, rgba(167,139,250,0.08) 100%)", border: "1px solid rgba(167,139,250,0.3)" }}>
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
@@ -344,7 +347,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
                   <path d="M7 8v9a4 4 0 0 0 8 0V8" stroke="#a78bfa" strokeWidth="1.8" strokeLinecap="round"/>
                 </svg>
               </div>
-              <div>
+              <div className="text-left">
                 <p className="font-body text-base font-bold text-white">Create a league</p>
                 <p className="font-body text-xs text-text-muted">Invite your mates · Points all season</p>
               </div>
@@ -352,12 +355,65 @@ export function Dashboard({ data }: { data: DashboardData }) {
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ color: "#a78bfa", flexShrink: 0 }}>
               <path d="M6 3l6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
-          </Link>
+          </button>
         </div>
-
 
       </div>
       <BottomNav />
+
+      {/* ── League type picker sheet ─────────────────────────────────────── */}
+      {showLeaguePicker && (
+        <>
+          <div className="fixed inset-0 z-40" style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)" }}
+            onClick={() => setShowLeaguePicker(false)} />
+          <div className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl px-5 pt-5 bg-surface"
+            style={{ border: "1px solid rgba(255,255,255,0.08)", borderBottom: "none", paddingBottom: "calc(24px + env(safe-area-inset-bottom, 0px))" }}>
+            <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{ background: "rgba(255,255,255,0.12)" }} />
+            <p className="font-display tracking-wide text-center mb-5" style={{ fontSize: 20, color: "#fff" }}>WHAT TYPE OF LEAGUE?</p>
+
+            {/* 38-0 option */}
+            <button onClick={() => { setShowLeaguePicker(false); router.push("/leagues"); }}
+              className="w-full flex items-center gap-4 rounded-2xl px-4 py-4 mb-3 transition-all active:scale-[0.98]"
+              style={{ background: "rgba(0,255,135,0.08)", border: "1px solid rgba(0,255,135,0.25)" }}>
+              <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ background: "rgba(0,255,135,0.15)", border: "1px solid rgba(0,255,135,0.3)" }}>
+                <svg width="20" height="20" viewBox="0 0 22 22" fill="none">
+                  <path d="M8 2.5 3 5.5 5 9.5 7.3 8.3V19a1 1 0 0 0 1 1h5.4a1 1 0 0 0 1-1V8.3L17 9.5l2-4-5-3C14 4.4 12.7 5.6 11 5.6S8 4.4 8 2.5Z"
+                    stroke="#00ff87" strokeWidth="1.7" strokeLinejoin="round" />
+                </svg>
+              </div>
+              <div className="text-left flex-1">
+                <p className="font-display tracking-wide" style={{ fontSize: 16, color: "#00ff87" }}>38-0 DRAFT XI</p>
+                <p className="font-body text-xs mt-0.5" style={{ color: "#8888aa" }}>Head-to-head league · track W/D/L all season</p>
+              </div>
+              <svg width="16" height="16" viewBox="0 0 18 18" fill="none" style={{ color: "#00ff87", flexShrink: 0 }}>
+                <path d="M6 3l6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+
+            {/* Quiz option */}
+            <button onClick={() => { setShowLeaguePicker(false); router.push("/league/new"); }}
+              className="w-full flex items-center gap-4 rounded-2xl px-4 py-4 transition-all active:scale-[0.98]"
+              style={{ background: "rgba(167,139,250,0.08)", border: "1px solid rgba(167,139,250,0.25)" }}>
+              <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ background: "rgba(167,139,250,0.15)", border: "1px solid rgba(167,139,250,0.3)" }}>
+                <svg width="20" height="20" viewBox="0 0 22 22" fill="none">
+                  <circle cx="11" cy="11" r="8" stroke="#a78bfa" strokeWidth="1.8"/>
+                  <path d="M9 9c0-1.1.9-2 2-2s2 .9 2 2c0 .8-.5 1.5-1.2 1.8L11 13" stroke="#a78bfa" strokeWidth="1.8" strokeLinecap="round"/>
+                  <circle cx="11" cy="15.5" r="0.8" fill="#a78bfa"/>
+                </svg>
+              </div>
+              <div className="text-left flex-1">
+                <p className="font-display tracking-wide" style={{ fontSize: 16, color: "#a78bfa" }}>QUIZ LEAGUE</p>
+                <p className="font-body text-xs mt-0.5" style={{ color: "#8888aa" }}>Knowledge-based · score points every round</p>
+              </div>
+              <svg width="16" height="16" viewBox="0 0 18 18" fill="none" style={{ color: "#a78bfa", flexShrink: 0 }}>
+                <path d="M6 3l6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          </div>
+        </>
+      )}
     </main>
   );
 }
