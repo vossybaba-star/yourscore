@@ -66,7 +66,7 @@ export function Pitch({
             style={{
               left: `${s.x}%`,
               top: `${100 - s.y}%`,
-              width: compact ? 58 : 72,
+              width: compact ? 48 : 60,
               cursor: onSlotClick ? "pointer" : "default",
             }}
           >
@@ -75,9 +75,9 @@ export function Pitch({
                 <div
                   className="flex items-center justify-center rounded-full font-display"
                   style={{
-                    width: compact ? 34 : 42,
-                    height: compact ? 34 : 42,
-                    fontSize: hideOverall ? (compact ? 11 : 13) : (compact ? 16 : 20),
+                    width: compact ? 28 : 36,
+                    height: compact ? 28 : 36,
+                    fontSize: hideOverall ? (compact ? 10 : 12) : (compact ? 13 : 17),
                     background: "rgba(10,10,15,0.85)",
                     border: `2px solid ${fitColor(p)}`,
                     color: fitColor(p),
@@ -89,10 +89,10 @@ export function Pitch({
                 <div
                   className="mt-1 px-1 rounded text-center leading-tight font-body"
                   style={{
-                    fontSize: compact ? 9 : 10,
+                    fontSize: compact ? 8 : 9,
                     color: "#fff",
                     background: "rgba(10,10,15,0.7)",
-                    maxWidth: compact ? 58 : 72,
+                    maxWidth: compact ? 48 : 60,
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                     whiteSpace: "nowrap",
@@ -106,9 +106,9 @@ export function Pitch({
                 <div
                   className="flex items-center justify-center rounded-full font-display"
                   style={{
-                    width: compact ? 34 : 42,
-                    height: compact ? 34 : 42,
-                    fontSize: compact ? 11 : 13,
+                    width: compact ? 28 : 36,
+                    height: compact ? 28 : 36,
+                    fontSize: compact ? 10 : 12,
                     background: highlighted ? "rgba(0,255,135,0.18)" : "rgba(255,255,255,0.06)",
                     border: `2px dashed ${highlighted ? "#00ff87" : "rgba(255,255,255,0.3)"}`,
                     color: highlighted ? "#00ff87" : "#8888aa",
@@ -116,7 +116,7 @@ export function Pitch({
                 >
                   {s.label}
                 </div>
-                <div className="mt-1 font-body" style={{ fontSize: compact ? 9 : 10, color: "#8888aa" }}>
+                <div className="mt-1 font-body" style={{ fontSize: compact ? 8 : 9, color: "#8888aa" }}>
                   empty
                 </div>
               </>

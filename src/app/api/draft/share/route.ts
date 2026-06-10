@@ -20,7 +20,7 @@ function genId(len = 7): string {
 }
 
 // Only the keys the season-og card understands — ignore anything else.
-const KEYS = ["w", "d", "l", "pts", "pos", "ovr", "mode", "inv", "boot", "pots", "xi"] as const;
+const KEYS = ["w", "d", "l", "pts", "pos", "ovr", "mode", "inv", "boot", "pots", "xi", "gf", "ga", "verdict", "form", "play", "glov"] as const;
 
 export async function GET(req: NextRequest) {
   const id = req.nextUrl.searchParams.get("id");

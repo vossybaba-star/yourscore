@@ -132,6 +132,13 @@ export default function SeasonSim() {
       boot: r.goldenBoot ? `${r.goldenBoot.name}~${r.goldenBoot.goals}` : "",
       pots: r.playerOfTheSeason ? `${r.playerOfTheSeason.name}~${r.playerOfTheSeason.goals}~${r.playerOfTheSeason.assists}` : "",
       xi,
+      // Extended fields for the public scorecard page
+      gf: String(r.gf),
+      ga: String(r.ga),
+      verdict: r.verdict ?? "",
+      form: team!.formation ?? "",
+      play: r.playmaker ? `${r.playmaker.name}~${r.playmaker.assists}` : "",
+      glov: r.goldenGlove ? `${r.goldenGlove.name}~${r.goldenGlove.cleanSheets}` : "",
     });
   }
   // The shareable card image, and a public link that unfurls to it on socials.

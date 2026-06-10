@@ -108,11 +108,22 @@ export default function LiveMatchScreen() {
 
         {m.phase === "halftime_swap" && (
           <>
+            {/* Half-time banner */}
+            <Panel>
+              <div className="text-center py-2">
+                <p className="font-display tracking-[0.25em] text-white mb-1" style={{ fontSize: 13, color: "#ffb800" }}>⚽ HALF-TIME ⚽</p>
+                <p className="font-display" style={{ fontSize: 52, fontWeight: 900, lineHeight: 1 }}>
+                  {view.myGoals} – {view.oppGoals}
+                </p>
+                <p className="font-body text-sm mt-2" style={{ color: "#9a9ab0" }}>
+                  {view.myName} vs {view.oppName}
+                </p>
+              </div>
+            </Panel>
+
             {/* Half-time report + both squads, then your changes (one combined screen). */}
             {sim?.h1 && (
               <Panel>
-                <p className="text-center text-xs" style={{ color: "#ffb800", letterSpacing: 1 }}>HALF-TIME REPORT</p>
-                <p className="text-center font-display" style={{ fontSize: 34, fontWeight: 800 }}>{view.myGoals} – {view.oppGoals}</p>
                 <div className="mt-3">
                   <MatchReportCard rv={halftimeView(sim.h1, view.meP1)} meP1={view.meP1} myName={view.myName} oppName={view.oppName} showPotm={false} />
                 </div>
@@ -181,7 +192,20 @@ export default function LiveMatchScreen() {
         )}
 
         {m.phase === "result" && <ResultPanel view={view} sim={sim} m={m} />}
-        {m.phase === "abandoned" && <Panel><p className="text-center" style={{ color: "#9a9ab0" }}>Match abandoned.</p><Link href="/38-0/live" className="underline block text-center mt-3" style={{ color: "#00ff87" }}>Play again →</Link></Panel>}
+        {m.phase === "abandoned" && (
+          <Panel>
+            <p className="text-center text-2xl mb-3">⏰</p>
+            <p className="font-display text-center text-white text-lg mb-2">Match Abandoned</p>
+            <p className="font-body text-center text-sm mb-4" style={{ color: "#9a9ab0" }}>
+              {view.myReady
+                ? `${view.oppName} didn't show up in time.`
+                : "The match timed out before it could start."}
+            </p>
+            <Link href="/38-0/live" className="block text-center font-body text-sm" style={{ color: "#00ff87" }}>
+              Play again →
+            </Link>
+          </Panel>
+        )}
       </div>
 
       {spinSlot && (

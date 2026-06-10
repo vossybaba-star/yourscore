@@ -35,7 +35,7 @@ const STEPS = [
             <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: "rgba(167,139,250,0.15)" }}>
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 1.5h8v3L6 7.5l-4-3z" stroke="#a78bfa" strokeWidth="1.2" strokeLinejoin="round"/><path d="M2.5 4.5v4a3.5 3.5 0 0 0 7 0v-4" stroke="#a78bfa" strokeWidth="1.2" strokeLinecap="round"/></svg>
             </div>
-            <span className="font-body text-xs font-semibold text-white">The Lads</span>
+            <span className="font-body text-xs font-semibold text-white">The Mates</span>
           </div>
           <span className="font-body text-xs text-text-muted">6 games</span>
         </div>

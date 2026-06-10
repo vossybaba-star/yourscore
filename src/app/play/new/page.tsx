@@ -346,7 +346,7 @@ function NewGameContent() {
             <div>
               <p className="font-body text-xs font-semibold uppercase tracking-wider mb-2 text-text-muted">Lobby name (optional)</p>
               <input type="text" value={roomName} onChange={e => setRoomName(e.target.value.slice(0, 40))}
-                placeholder="e.g. The Lads · Friday Night"
+                placeholder="e.g. The Mates · Friday Night"
                 className="w-full rounded-2xl px-4 py-3 font-body text-base text-white outline-none"
                 style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", caretColor: "#ffb800" }} />
             </div>

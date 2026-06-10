@@ -130,7 +130,7 @@ function CreateLeagueInner() {
                 <label className="font-body text-xs text-text-muted uppercase tracking-widest block mb-3">Description <span className="normal-case">(optional)</span></label>
                 <input
                   type="text" value={description} onChange={(e) => setDescription(e.target.value.slice(0, 80))}
-                  placeholder="The lads from uni, every game this summer"
+                  placeholder="The mates from uni, every game this summer"
                   className="w-full rounded-xl px-4 py-4 font-body text-white text-base outline-none transition-all placeholder:text-white/20 bg-surface"
                   style={{ border: "1px solid rgba(255,255,255,0.1)" }}
                 />

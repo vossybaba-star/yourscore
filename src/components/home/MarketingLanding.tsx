@@ -124,7 +124,7 @@ function LeagueHeroCard() {
             </svg>
           </div>
           <div>
-            <p className="font-body text-xs font-semibold text-white">The Lads 🏆</p>
+            <p className="font-body text-xs font-semibold text-white">The Mates 🏆</p>
             <p className="font-body text-xs text-text-muted">6 games played</p>
           </div>
         </div>
@@ -410,14 +410,12 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
             </div>
 
             <h1 className="font-display text-6xl sm:text-7xl lg:text-8xl text-white leading-none mb-6">
-              YOUR<br />FOOTBALL<br />
-              <span className="text-green" style={{ textShadow: "0 0 50px rgba(0,255,135,0.35)" }}>KNOWLEDGE.</span>{" "}
-              <span style={{ color: "#a78bfa", textShadow: "0 0 50px rgba(167,139,250,0.35)" }}>RANKED.</span>
+              <span className="text-green" style={{ textShadow: "0 0 50px rgba(0,255,135,0.35)" }}>38-0.</span><br />
+              DRAFT YOUR<br />BEST XI.
             </h1>
 
             <p className="font-body text-text-muted text-lg leading-relaxed mb-8 max-w-lg">
-              Start a league with your mates. Answer live questions during every match. Points stack across{" "}
-              <span className="text-white font-medium">every game, all season long.</span>
+              Draft your XI · Go head to head · Top your league.
             </p>
 
             {/* Primary CTA — Create a league */}

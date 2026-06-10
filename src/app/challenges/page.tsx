@@ -17,6 +17,7 @@ interface QuizPack {
   parameter: string;
   question_count: number;
   status: string;
+  description?: string | null;
 }
 
 const END_OF_SEASON_EMOJI: Record<string, string> = {
@@ -83,7 +84,10 @@ function ClubCard({ pack }: { pack: QuizPack }) {
       {/* Text + CTA */}
       <div className="px-4 pb-4 pt-3">
         <p className="font-body text-sm font-bold text-white leading-tight mb-0.5 truncate">{pack.name}</p>
-        <p className="font-body text-xs mb-3" style={{ color: "#7777aa" }}>2025/26 Season Game</p>
+        <p className="font-body text-xs mb-1.5" style={{ color: "#7777aa" }}>2025/26 Season Game</p>
+        {pack.description && (
+          <p className="font-body text-xs mb-2.5 line-clamp-2 leading-relaxed" style={{ color: "#9999bb" }}>{pack.description}</p>
+        )}
         <div
           className="rounded-xl py-2 text-center"
           style={{
@@ -156,7 +160,10 @@ function RecordsCard({ pack }: { pack: QuizPack }) {
 
       <div className="px-4 pb-4 pt-3">
         <p className="font-body text-sm font-bold text-white leading-tight mb-0.5">{pack.name}</p>
-        <p className="font-body text-xs mb-3" style={{ color: "#7777aa" }}>All-Time Records</p>
+        <p className="font-body text-xs mb-1.5" style={{ color: "#7777aa" }}>All-Time Records</p>
+        {pack.description && (
+          <p className="font-body text-xs mb-2.5 line-clamp-2 leading-relaxed" style={{ color: "#9999bb" }}>{pack.description}</p>
+        )}
         <div
           className="rounded-xl py-2 text-center"
           style={{
@@ -239,7 +246,10 @@ function EndOfSeasonCard({ pack }: { pack: QuizPack }) {
 
       <div className="px-4 pb-4 pt-3">
         <p className="font-body text-sm font-bold text-white leading-tight mb-0.5">{pack.name}</p>
-        <p className="font-body text-xs mb-3" style={{ color: "#7777aa" }}>End of Season</p>
+        <p className="font-body text-xs mb-1.5" style={{ color: "#7777aa" }}>End of Season</p>
+        {pack.description && (
+          <p className="font-body text-xs mb-2.5 line-clamp-2 leading-relaxed" style={{ color: "#9999bb" }}>{pack.description}</p>
+        )}
         <div
           className="rounded-xl py-2 text-center"
           style={{
@@ -266,11 +276,11 @@ export default function ChallengesPage() {
   useEffect(() => {
     createClient()
       .from("quiz_packs")
-      .select("id, name, type, parameter, question_count, status")
+      .select("id, name, type, parameter, question_count, status, description")
       .eq("status", "published")
       .order("name")
       .then(({ data }) => {
-        setPacks((data ?? []) as QuizPack[]);
+        setPacks((data ?? []) as unknown as QuizPack[]);
         setLoading(false);
       });
   }, []);

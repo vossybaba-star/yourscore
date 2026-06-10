@@ -118,6 +118,9 @@ export default function RoomPage() {
   // Lobby persistence: timestamp when game completed (for 5-min countdown)
   const [completedAt, setCompletedAt] = useState<number | null>(null);
   const [lobbyTimeLeft, setLobbyTimeLeft] = useState<number>(300); // seconds
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [friendRequestsSent, setFriendRequestsSent] = useState<Set<string>>(new Set());
+  const [friendPromptDismissed, setFriendPromptDismissed] = useState(false);
 
   const advanceTimerRef   = useRef<ReturnType<typeof setTimeout> | null>(null);
   const expireTimerRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -146,6 +149,14 @@ export default function RoomPage() {
   useEffect(() => {
     if (room) setJoinUrl(`${window.location.origin}/play?join=${room.code}`);
   }, [room]);
+
+  // Warn before tab close during active lobby/game
+  useEffect(() => {
+    if (!room || room.status === "completed") return;
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ""; };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [room?.status]);
 
   // ── Fetch helpers ──────────────────────────────────────────────────────────
 
@@ -581,10 +592,10 @@ export default function RoomPage() {
         <GridBackground opacity={0.02} />
 
         <nav className="relative z-10 flex items-center justify-between px-5 py-4 max-w-lg mx-auto">
-          <Link href="/play" className="flex items-center gap-2 font-body text-sm text-text-muted">
+          <button onClick={() => setShowLeaveModal(true)} className="flex items-center gap-2 font-body text-sm text-text-muted">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
             Play
-          </Link>
+          </button>
           <span className="font-body text-xs px-3 py-1 rounded-full"
             style={{ background: `${modeColor}18`, color: modeColor, border: `1px solid ${modeColor}30` }}>
             {modeLabel} · Lobby
@@ -682,6 +693,33 @@ export default function RoomPage() {
             </div>
           )}
         </div>
+
+        {/* Leave lobby confirmation modal */}
+        {showLeaveModal && (
+          <div className="fixed inset-0 z-50 flex items-end justify-center"
+            style={{ background: "rgba(0,0,0,0.75)" }}
+            onClick={() => setShowLeaveModal(false)}>
+            <div className="w-full max-w-lg px-5 pb-6" onClick={e => e.stopPropagation()}>
+              <div className="rounded-2xl overflow-hidden" style={{ background: "#1a1a2e", border: "1px solid rgba(255,255,255,0.1)" }}>
+                <div className="px-5 py-5">
+                  <p className="font-display text-lg text-white mb-1">Leave lobby?</p>
+                  <p className="font-body text-sm text-text-muted">You&apos;re about to leave this lobby. You may lose your place or progress.</p>
+                </div>
+                <div className="flex" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
+                  <button onClick={() => setShowLeaveModal(false)}
+                    className="flex-1 py-4 font-body text-sm font-bold text-white"
+                    style={{ borderRight: "1px solid rgba(255,255,255,0.07)" }}>
+                    Stay
+                  </button>
+                  <Link href="/play" className="flex-1 py-4 font-body text-sm text-center"
+                    style={{ color: "#f87171" }}>
+                    Leave
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     );
   }
@@ -691,6 +729,7 @@ export default function RoomPage() {
   if (room.status === "completed") {
     const winner = leaderboard[0];
     const me = leaderboard.find(e => e.user_id === user?.id);
+    const opponents = leaderboard.filter(e => e.user_id !== user?.id);
     const yesVotes = playAgainVotes.size;
     const totalPlayers = players.length || leaderboard.length;
     const lobbyExpired = lobbyTimeLeft === 0;
@@ -745,6 +784,38 @@ export default function RoomPage() {
             </div>
           )}
 
+          {/* Friend prompt — h2h only, one-shot per session */}
+          {!friendPromptDismissed && user && room.room_mode === "h2h" && opponents[0] && (
+            <div className="rounded-2xl px-5 py-4" style={{ background: "rgba(0,255,135,0.05)", border: "1px solid rgba(0,255,135,0.15)" }}>
+              <p className="font-body text-sm font-bold text-white mb-3">
+                Great game with {opponents[0].display_name} 👏 Want to add them as a friend?
+              </p>
+              {friendRequestsSent.has(opponents[0].user_id) ? (
+                <p className="font-body text-xs text-green">Friend request sent ✓</p>
+              ) : (
+                <div className="flex gap-3">
+                  <button
+                    onClick={async () => {
+                      const sb = supabaseRef.current;
+                      if (!sb || !user || !opponents[0]) return;
+                      await sb.from("friendships" as "rooms").insert({ user_id: user.id, friend_id: opponents[0].user_id, status: "pending" } as never);
+                      setFriendRequestsSent(prev => { const s = new Set(Array.from(prev)); s.add(opponents[0].user_id); return s; });
+                    }}
+                    className="flex-1 py-2.5 rounded-xl font-body text-sm font-bold transition-all"
+                    style={{ background: "rgba(0,255,135,0.12)", color: "#00ff87", border: "1px solid rgba(0,255,135,0.25)" }}>
+                    Add Friend
+                  </button>
+                  <button
+                    onClick={() => setFriendPromptDismissed(true)}
+                    className="flex-1 py-2.5 rounded-xl font-body text-sm transition-all"
+                    style={{ background: "rgba(255,255,255,0.04)", color: "#555577", border: "1px solid rgba(255,255,255,0.08)" }}>
+                    Not Now
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* ── Play Again voting panel ──────────────────────────────────── */}
           {!lobbyExpired && (
             <div className="rounded-2xl overflow-hidden" style={{ background: "rgba(255,184,0,0.06)", border: "1px solid rgba(255,184,0,0.2)" }}>
@@ -773,7 +844,7 @@ export default function RoomPage() {
                         color: myVote === "yes" ? "#0a0a0f" : "#ffb800",
                         border: `1px solid ${myVote === "yes" ? "#ffb800" : "rgba(255,184,0,0.3)"}`,
                       }}>
-                      {myVote === "yes" ? "✓ I'm in!" : "Play Again 🎮"}
+                      {myVote === "yes" ? "✓ I'm in!" : room.room_mode === "h2h" && opponents[0] ? `Run it back against ${opponents[0].display_name}? 🎮` : "Play Again 🎮"}
                     </button>
                     <button onClick={() => castPlayAgainVote("no")}
                       className="flex-1 py-3 rounded-xl font-body font-bold text-sm transition-all"

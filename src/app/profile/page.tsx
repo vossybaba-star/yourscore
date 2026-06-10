@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { GridBackground } from "@/components/ui/GridBackground";
 import { BottomNav } from "@/components/ui/BottomNav";
+import { ShareStatsButton } from "@/components/ui/ShareStatsButton";
 
 function AvatarCircle({ name, size = 64, avatarUrl }: { name: string; size?: number; avatarUrl?: string | null }) {
   if (avatarUrl) {
@@ -54,11 +55,12 @@ export default async function ProfilePage() {
     { data: roomScoreRows },
     { data: challengeRows },
     { data: friendRows },
+    { data: draftStanding },
   ] = await Promise.all([
     supabase.from("profiles").select("display_name, total_score, games_played, avatar_url").eq("id", userId).single(),
     // created_at/rank added via migration — bypass stale generated types
     sb.from("room_scores")
-      .select("total_score, correct_answers, total_answers, current_streak, rank, created_at")
+      .select("room_id, total_score, correct_answers, total_answers, current_streak, rank, created_at")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .limit(50),
@@ -72,6 +74,12 @@ export default async function ProfilePage() {
       .select("user_id, friend_id, status")
       .or(`user_id.eq.${userId},friend_id.eq.${userId}`)
       .eq("status", "accepted"),
+    // 38-0 global standings (null league_id = global row)
+    sb.from("draft_standings")
+      .select("wins_all_time, draws_all_time, losses_all_time")
+      .eq("user_id", userId)
+      .is("league_id", null)
+      .maybeSingle(),
   ]);
 
   const totalScore = profile?.total_score ?? 0;
@@ -95,6 +103,31 @@ export default async function ProfilePage() {
   const name = profile?.display_name || user.email?.split("@")[0] || "Player";
   const gamesPlayed = profile?.games_played ?? 0;
   const friendCount = (friendRows ?? []).length;
+
+  // Separate score breakdowns
+  const quizMpScore = allRoomScores.reduce((s: number, r: any) => s + (r.total_score ?? 0), 0);
+  const draftRecord = draftStanding
+    ? { w: draftStanding.wins_all_time ?? 0, d: draftStanding.draws_all_time ?? 0, l: draftStanding.losses_all_time ?? 0 }
+    : null;
+
+  // Recently played with: other users who were in my last 20 rooms
+  const myRecentRoomIds: string[] = Array.from(new Set(
+    allRoomScores.slice(0, 20).map((r: any) => r.room_id).filter(Boolean)
+  ));
+  let recentlyPlayedWith: { user_id: string; display_name: string }[] = [];
+  if (myRecentRoomIds.length > 0) {
+    const { data: coPlayers } = await sb
+      .from("room_scores")
+      .select("user_id, profiles(display_name)")
+      .in("room_id", myRecentRoomIds)
+      .neq("user_id", userId)
+      .limit(20);
+    const seen = new Set<string>();
+    recentlyPlayedWith = (coPlayers ?? [])
+      .filter((r: any) => { if (seen.has(r.user_id)) return false; seen.add(r.user_id); return true; })
+      .map((r: any) => ({ user_id: r.user_id, display_name: r.profiles?.display_name ?? "Player" }))
+      .slice(0, 6);
+  }
 
   // Recent multiplayer games (last 5)
   const recentMultiplayer = allRoomScores.slice(0, 5);
@@ -139,18 +172,44 @@ export default async function ProfilePage() {
                 <p className="font-display text-5xl leading-none" style={{ color: "#a78bfa" }}>#{globalRank}</p>
                 <p className="font-body text-xs text-text-muted mt-1.5">{totalScore.toLocaleString()} total points</p>
               </div>
-              <div className="text-right">
+              <div className="text-right flex flex-col items-end gap-2">
                 {wins > 0 && (
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full mb-2"
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full"
                     style={{ background: "rgba(255,215,0,0.1)", border: "1px solid rgba(255,215,0,0.25)" }}>
                     <span>🏆</span>
                     <span className="font-body text-xs font-bold" style={{ color: "#ffd700" }}>{wins} wins</span>
                   </div>
                 )}
+                <ShareStatsButton rank={globalRank} score={totalScore} accuracy={accuracy} />
               </div>
             </div>
           </div>
         )}
+
+        {/* Score breakdown — quiz vs 38-0 */}
+        <div className="grid grid-cols-2 gap-2.5">
+          <div className="rounded-2xl px-4 py-4 bg-surface" style={{ border: "1px solid rgba(255,184,0,0.15)" }}>
+            <p className="font-body text-xs uppercase tracking-widest mb-2" style={{ color: "#ffb800" }}>⚡ Quiz Score</p>
+            <p className="font-display text-3xl leading-none text-white">{quizMpScore > 0 ? quizMpScore.toLocaleString() : "—"}</p>
+            <p className="font-body text-xs text-text-muted mt-1.5">Quiz + multiplayer pts</p>
+          </div>
+          <div className="rounded-2xl px-4 py-4 bg-surface" style={{ border: "1px solid rgba(0,255,135,0.15)" }}>
+            <p className="font-body text-xs uppercase tracking-widest mb-2" style={{ color: "#00ff87" }}>⚽ 38-0 Record</p>
+            {draftRecord ? (
+              <>
+                <p className="font-display text-3xl leading-none text-white">
+                  {draftRecord.w}<span className="text-xl" style={{ color: "#555577" }}>-{draftRecord.d}-{draftRecord.l}</span>
+                </p>
+                <p className="font-body text-xs text-text-muted mt-1.5">W-D-L all time</p>
+              </>
+            ) : (
+              <>
+                <p className="font-display text-3xl leading-none" style={{ color: "#444466" }}>—</p>
+                <p className="font-body text-xs text-text-muted mt-1.5">No 38-0 games yet</p>
+              </>
+            )}
+          </div>
+        </div>
 
         {/* Quick stats grid */}
         <div className="grid grid-cols-2 gap-2.5">
@@ -188,6 +247,26 @@ export default async function ProfilePage() {
             <path d="M5 3l6 5-6 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </Link>
+
+        {/* Recently played with */}
+        {recentlyPlayedWith.length > 0 && (
+          <div>
+            <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-3">Recently played with</p>
+            <div className="flex flex-wrap gap-2">
+              {recentlyPlayedWith.map((p) => (
+                <Link key={p.user_id} href="/friends"
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl transition-all hover:opacity-90"
+                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                  <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                    style={{ background: "rgba(167,139,250,0.15)", color: "#a78bfa" }}>
+                    {(p.display_name[0] ?? "?").toUpperCase()}
+                  </div>
+                  <span className="font-body text-sm text-white">{p.display_name}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Recent multiplayer games */}
         {recentMultiplayer.length > 0 && (

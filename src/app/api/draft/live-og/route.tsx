@@ -24,6 +24,7 @@ const AMBER = "#ffb800";
 export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams;
   const g = (k: string) => q.get(k);
+  const portrait = g("portrait") === "1";
   const p1 = (g("p1") ?? "Home").slice(0, 22);
   const p2 = (g("p2") ?? "Away").slice(0, 22);
   const s1 = g("s1") ?? "0";
@@ -58,6 +59,80 @@ export async function GET(req: NextRequest) {
     })
     .slice(0, 6);
 
+  // ── Portrait (9:16 — Instagram Stories / TikTok) ─────────────────────────
+  if (portrait) {
+    return new ImageResponse(
+      (
+        <div style={{ width: "1080px", height: "1920px", display: "flex", flexDirection: "column", alignItems: "center", background: "linear-gradient(180deg, #0a0a0f 0%, #12121e 60%, #0a0a0f 100%)", fontFamily: "sans-serif", position: "relative" }}>
+          {/* top accent bar */}
+          <div style={{ width: "100%", height: 8, background: GREEN }} />
+
+          {/* brand */}
+          <div style={{ display: "flex", alignItems: "center", marginTop: 80 }}>
+            <span style={{ fontSize: 42, fontWeight: 800, color: "#fff", letterSpacing: 1 }}>YOUR</span>
+            <span style={{ fontSize: 42, fontWeight: 800, color: GREEN, letterSpacing: 1 }}>SCORE</span>
+            <span style={{ fontSize: 32, color: "#8888aa", fontWeight: 600, marginLeft: 16 }}>38-0 LIVE</span>
+          </div>
+          <div style={{ display: "flex", fontSize: 28, color: AMBER, fontWeight: 700, letterSpacing: 3, marginTop: 12 }}>FULL TIME</div>
+
+          {/* scoreline */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: 80 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
+              <span style={{ fontSize: 140, fontWeight: 900, color: c1, lineHeight: 1 }}>{s1}</span>
+              <span style={{ fontSize: 80, fontWeight: 700, color: "#555" }}>–</span>
+              <span style={{ fontSize: 140, fontWeight: 900, color: c2, lineHeight: 1 }}>{s2}</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 80, marginTop: 24 }}>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                <span style={{ fontSize: 38, fontWeight: 800, color: c1, textAlign: "center", maxWidth: 420 }}>{p1}</span>
+                {str1 ? <span style={{ fontSize: 26, color: "#8888aa", marginTop: 6 }}>{`STR ${str1}`}</span> : <span />}
+              </div>
+              <span style={{ fontSize: 32, color: "#555" }}>vs</span>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                <span style={{ fontSize: 38, fontWeight: 800, color: c2, textAlign: "center", maxWidth: 420 }}>{p2}</span>
+                {str2 ? <span style={{ fontSize: 26, color: "#8888aa", marginTop: 6 }}>{`STR ${str2}`}</span> : <span />}
+              </div>
+            </div>
+            {pens ? <div style={{ display: "flex", fontSize: 30, color: AMBER, marginTop: 20 }}>{`Penalties ${pens}`}</div> : <div />}
+          </div>
+
+          {/* MOTM */}
+          {potm ? (
+            <div style={{ display: "flex", marginTop: 60 }}>
+              <div style={{ display: "flex", alignItems: "center", background: "rgba(255,184,0,0.12)", border: "2px solid rgba(255,184,0,0.4)", borderRadius: 20, padding: "16px 40px", gap: 16 }}>
+                <span style={{ fontSize: 30, color: AMBER }}>MOTM</span>
+                <span style={{ fontSize: 36, color: "#fff", fontWeight: 700 }}>{potm}</span>
+                {potmR ? <span style={{ fontSize: 36, color: AMBER, fontWeight: 800 }}>{potmR}</span> : <span />}
+              </div>
+            </div>
+          ) : <div />}
+
+          {/* stats panel */}
+          <div style={{ display: "flex", flexDirection: "column", width: 860, marginTop: 64 }}>
+            {stats.map((s) => (
+              <div key={s.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 0", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+                <span style={{ width: 120, textAlign: "left", fontSize: 34, fontWeight: 800, color: s.an >= s.bn ? "#fff" : "#8888aa" }}>{s.a}</span>
+                <span style={{ fontSize: 24, letterSpacing: 2, color: "#8888aa" }}>{s.label}</span>
+                <span style={{ width: 120, textAlign: "right", fontSize: 34, fontWeight: 800, color: s.bn >= s.an ? "#fff" : "#8888aa" }}>{s.b}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* footer */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: "auto", marginBottom: 80, gap: 8 }}>
+            {sc ? <div style={{ display: "flex", fontSize: 26, color: "#cfcfe6" }}>{`Goals: ${sc}`}</div> : <div />}
+            <div style={{ display: "flex", fontSize: 34, color: GREEN, fontWeight: 700, letterSpacing: 1 }}>yourscore.app/38-0</div>
+          </div>
+
+          {/* bottom accent */}
+          <div style={{ position: "absolute", left: 0, bottom: 0, width: "1080px", height: 8, background: GREEN }} />
+        </div>
+      ),
+      { width: 1080, height: 1920 }
+    );
+  }
+
+  // ── Landscape (16:9 — default OG/Twitter card) ────────────────────────────
   return new ImageResponse(
     (
       <div style={{ width: "1200px", height: "630px", display: "flex", flexDirection: "column", background: "linear-gradient(135deg, #0a0a0f 0%, #12121e 100%)", padding: "44px 64px", fontFamily: "sans-serif", position: "relative" }}>

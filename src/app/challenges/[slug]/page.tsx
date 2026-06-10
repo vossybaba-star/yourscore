@@ -33,6 +33,7 @@ interface QuizPack {
   type: string;
   parameter: string;
   question_count: number;
+  description?: string | null;
 }
 
 interface RawQuestion {
@@ -264,15 +265,52 @@ interface LeaderRow {
   profiles: { display_name: string | null } | null;
 }
 
-function PackLeaderboard({ entries, userId, accent, loading }: {
+function PackLeaderboard({ entries, userId, accent, loading, maxVisible = 10 }: {
   entries: LeaderEntry[];
   userId: string | null;
   accent: string;
   loading?: boolean;
+  maxVisible?: number;
 }) {
+  const [showAll, setShowAll] = useState(false);
   const userRank = userId ? entries.findIndex(e => e.user_id === userId) + 1 : 0;
   const MEDALS = ["🥇", "🥈", "🥉"];
   const RANK_COLORS = ["#ffb800", "#aaaacc", "#cd7f32"];
+
+  const visible = showAll ? entries : entries.slice(0, maxVisible);
+  const hasMore = !showAll && entries.length > maxVisible;
+  const userOutsideVisible = userId && userRank > 0 && userRank > visible.length;
+
+  function EntryRow({ entry, rank }: { entry: LeaderEntry; rank: number }) {
+    const isUser = entry.user_id === userId;
+    return (
+      <div
+        className="flex items-center gap-3 px-5 py-3 transition-colors"
+        style={{
+          background: isUser ? `${accent}0f` : undefined,
+          borderLeft: isUser ? `3px solid ${accent}` : "3px solid transparent",
+        }}>
+        <span className="font-display text-sm w-7 text-center flex-shrink-0"
+          style={{ color: rank <= 3 ? RANK_COLORS[rank - 1] : "#44446a" }}>
+          {rank <= 3 ? MEDALS[rank - 1] : rank}
+        </span>
+        <div className="flex-1 min-w-0">
+          <p className="font-body text-sm truncate" style={{ color: isUser ? "#ffffff" : "#aaaacc" }}>
+            {isUser
+              ? `You${entry.display_name ? ` (${entry.display_name})` : ""}`
+              : (entry.display_name ?? "Player")}
+          </p>
+          <p className="font-body text-xs mt-0.5" style={{ color: "#555577" }}>
+            {entry.correct_count} correct
+          </p>
+        </div>
+        <span className="font-display text-sm flex-shrink-0"
+          style={{ color: isUser ? accent : "#8888aa" }}>
+          {entry.score.toLocaleString()}
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-2xl overflow-hidden bg-surface" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
@@ -296,37 +334,35 @@ function PackLeaderboard({ entries, userId, accent, loading }: {
         </div>
       ) : (
         <div className="pb-2">
-          {entries.map((entry, idx) => {
-            const rank = idx + 1;
-            const isUser = entry.user_id === userId;
-            return (
-              <div key={entry.user_id + idx}
-                className="flex items-center gap-3 px-5 py-3 transition-colors"
-                style={{
-                  background: isUser ? `${accent}0f` : undefined,
-                  borderLeft: isUser ? `3px solid ${accent}` : "3px solid transparent",
-                }}>
-                <span className="font-display text-sm w-7 text-center flex-shrink-0"
-                  style={{ color: rank <= 3 ? RANK_COLORS[rank - 1] : "#44446a" }}>
-                  {rank <= 3 ? MEDALS[rank - 1] : rank}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <p className="font-body text-sm truncate" style={{ color: isUser ? "#ffffff" : "#aaaacc" }}>
-                    {isUser
-                      ? `You${entry.display_name ? ` (${entry.display_name})` : ""}`
-                      : (entry.display_name ?? "Player")}
-                  </p>
-                  <p className="font-body text-xs mt-0.5" style={{ color: "#555577" }}>
-                    {entry.correct_count} correct
-                  </p>
-                </div>
-                <span className="font-display text-sm flex-shrink-0"
-                  style={{ color: isUser ? accent : "#8888aa" }}>
-                  {entry.score.toLocaleString()}
-                </span>
+          {visible.map((entry, idx) => (
+            <EntryRow key={entry.user_id + idx} entry={entry} rank={idx + 1} />
+          ))}
+          {userOutsideVisible && entries[userRank - 1] && (
+            <>
+              <div className="px-5 py-1 text-center">
+                <span className="font-body text-xs" style={{ color: "#44446a" }}>···</span>
               </div>
-            );
-          })}
+              <EntryRow entry={entries[userRank - 1]} rank={userRank} />
+            </>
+          )}
+          {hasMore && (
+            <button
+              onClick={() => setShowAll(true)}
+              className="w-full py-3 font-body text-xs text-center transition-colors"
+              style={{ color: accent, borderTop: "1px solid rgba(255,255,255,0.05)" }}
+            >
+              View full leaderboard ({entries.length} scores) ↓
+            </button>
+          )}
+          {showAll && entries.length > maxVisible && (
+            <button
+              onClick={() => setShowAll(false)}
+              className="w-full py-3 font-body text-xs text-center"
+              style={{ color: "#555577", borderTop: "1px solid rgba(255,255,255,0.05)" }}
+            >
+              Show less ↑
+            </button>
+          )}
         </div>
       )}
     </div>
@@ -412,7 +448,7 @@ export default function ChallengePage() {
         // Custom pack — load directly by ID, no need to scan all packs
         const { data: single } = await sb
           .from("quiz_packs")
-          .select("id, name, type, parameter, question_count, questions")
+          .select("id, name, type, parameter, question_count, description, questions")
           .eq("id", pid)
           .eq("status", "published")
           .single();
@@ -422,7 +458,7 @@ export default function ChallengePage() {
         // System pack — slug-match across all published packs
         const { data: packs } = await sb
           .from("quiz_packs")
-          .select("id, name, type, parameter, question_count, questions")
+          .select("id, name, type, parameter, question_count, description, questions")
           .eq("status", "published");
         match = ((packs ?? []) as unknown as (QuizPack & { questions: RawQuestion[] })[]).find(
           (p) => slugify(p.name) === slug
@@ -606,11 +642,6 @@ export default function ChallengePage() {
     const gradientHero = isRecords
       ? "linear-gradient(175deg, #1a0f30 0%, #130e22 50%, #0a0a0f 100%)"
       : "linear-gradient(175deg, #1f1400 0%, #17100a 50%, #0a0a0f 100%)";
-    const diffCounts = questions.reduce((acc, q) => {
-      const d = q.difficulty?.toLowerCase() ?? "medium";
-      acc[d] = (acc[d] ?? 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
 
     return (
       <div className="min-h-screen flex flex-col bg-bg">
@@ -671,19 +702,14 @@ export default function ChallengePage() {
           )}
 
           <>
-            <div className="rounded-2xl p-4 flex items-center gap-0 bg-surface"
-                style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
-                {(["easy", "medium", "hard"] as const).map((d, i) => (
-                  <div key={d} className="flex flex-col items-center flex-1"
-                    style={{ borderRight: i < 2 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
-                    <span className="font-display text-2xl" style={{ color: DIFF_COLOR[d] }}>{diffCounts[d] ?? 0}</span>
-                    <span className="font-body text-xs mt-1 capitalize px-2 py-0.5 rounded-full"
-                      style={{ background: DIFF_BG[d], color: DIFF_COLOR[d] }}>{d}</span>
-                  </div>
-                ))}
-              </div>
+              {/* Pack description */}
+              {pack.description && (
+                <p className="font-body text-sm text-center px-2" style={{ color: "#aaaacc", lineHeight: 1.6 }}>
+                  {pack.description}
+                </p>
+              )}
 
-              {/* Scoring explainer */}
+              {/* Speed scoring explainer */}
               <div className="rounded-2xl px-4 py-4 bg-surface"
                 style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
                 <div className="flex items-center gap-2 mb-3">
@@ -705,22 +731,21 @@ export default function ChallengePage() {
                 </div>
               </div>
 
-              <PackLeaderboard entries={leaderboard} userId={userId} accent={accent} loading={leaderLoading} />
-
               <div className="flex items-start gap-3 px-4 py-3 rounded-xl"
-                style={{ background: "rgba(255,71,87,0.08)", border: "1px solid rgba(255,71,87,0.2)" }}>
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="flex-shrink-0 mt-0.5">
-                  <path d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zM8 5v4M8 10.5v.5" stroke="#ff4757" strokeWidth="1.5" strokeLinecap="round"/>
+                style={{ background: "rgba(255,183,0,0.08)", border: "1px solid rgba(255,183,0,0.25)" }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="flex-shrink-0 mt-0.5">
+                  <path d="M12 2a7 7 0 0 1 3.93 12.8c-.37.26-.58.67-.58 1.1V17a1 1 0 0 1-1 1h-4.7a1 1 0 0 1-1-1v-1.1c0-.43-.21-.84-.58-1.1A7 7 0 0 1 12 2z" stroke="#ffb700" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M9.5 21h5" stroke="#ffb700" strokeWidth="1.5" strokeLinecap="round"/>
                 </svg>
-                <p className="font-body text-sm font-semibold text-danger">
+                <p className="font-body text-sm font-semibold" style={{ color: "#ffb700" }}>
                   {priorAttempt
-                    ? "Play again for practice — your leaderboard score is locked in."
-                    : "Your first score goes on the leaderboard — it’s final once you start."}
+                    ? "You’re playing for practice — your leaderboard score is locked in."
+                    : "Heads up: your first score counts on the leaderboard."}
                 </p>
               </div>
 
               <button
-                onClick={() => setPhase("playing")}
+                onClick={() => { window.scrollTo(0, 0); setPhase("playing"); }}
                 className="w-full rounded-2xl py-4 font-display text-lg tracking-widest transition-transform active:scale-[0.97] mt-1 text-white"
                 style={{
                   background: isRecords
@@ -729,7 +754,7 @@ export default function ChallengePage() {
                   boxShadow: isRecords ? "0 4px 24px rgba(124,58,237,0.4)" : "0 4px 24px rgba(255,140,0,0.35)",
                 }}
               >
-                START GAME
+                START · {questions.length} Qs
               </button>
 
               {!userId && (
@@ -740,6 +765,8 @@ export default function ChallengePage() {
                   {" "}to save your score
                 </p>
               )}
+
+              <PackLeaderboard entries={leaderboard} userId={userId} accent={accent} loading={leaderLoading} maxVisible={10} />
           </>
         </div>
       </div>

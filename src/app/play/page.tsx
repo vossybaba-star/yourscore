@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { Suspense, useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import { createClient } from "@/lib/supabase/client";
 import { BottomNav } from "@/components/ui/BottomNav";
@@ -111,9 +111,18 @@ function OpenRoomCard({ room, onJoin }: { room: OpenRoom; onJoin: () => void }) 
 type MainTab = "solo" | "multiplayer";
 type SoloTab = "end_of_season" | "club" | "records";
 
-export default function PlayPage() {
+function joinErrorMessage(raw: string): string {
+  if (raw.includes("not found") || raw.includes("Lobby not found")) return "This lobby no longer exists. Go to Play > Head-to-Head to start a new match.";
+  if (raw.includes("already started") || raw.includes("Game already")) return "This lobby has already started.";
+  if (raw.includes("full") || raw.includes("Lobby is full")) return "This lobby is full.";
+  if (raw.includes("Invalid code")) return "That code isn't valid — double-check it.";
+  return raw || "Could not join this lobby.";
+}
+
+function PlayPageInner() {
   const { user } = useUser();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [mainTab, setMainTab] = useState<MainTab>("solo");
   const [soloTab, setSoloTab] = useState<SoloTab>("end_of_season");
   const [packs, setPacks] = useState<QuizPack[]>([]);
@@ -168,6 +177,15 @@ export default function PlayPage() {
     else { setJoinCode(""); setJoinError(""); }
   }, [joinSheetOpen]);
 
+  // Auto-join from ?join=CODE URL param (shared invite links)
+  useEffect(() => {
+    const code = searchParams?.get("join");
+    if (!code) return;
+    setMainTab("multiplayer");
+    setJoinCode(code.toUpperCase());
+    setJoinSheetOpen(true);
+  }, [searchParams]);
+
   async function handleJoinSubmit(e: React.FormEvent) {
     e.preventDefault();
     const code = joinCode.trim().toUpperCase();
@@ -182,7 +200,7 @@ export default function PlayPage() {
         body: JSON.stringify({ code }),
       });
       const data = await res.json();
-      if (!res.ok) { setJoinError(data.error ?? "Could not join"); setJoining(false); return; }
+      if (!res.ok) { setJoinError(joinErrorMessage(data.error ?? "")); setJoining(false); return; }
       setJoinSheetOpen(false);
       router.push(`/play/${data.room.id}`);
     } catch {
@@ -408,5 +426,13 @@ export default function PlayPage() {
         </>
       )}
     </div>
+  );
+}
+
+export default function PlayPage() {
+  return (
+    <Suspense>
+      <PlayPageInner />
+    </Suspense>
   );
 }

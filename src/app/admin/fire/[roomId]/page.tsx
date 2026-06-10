@@ -63,7 +63,7 @@ export default function FirePanel({ params }: { params: { roomId: string } }) {
 
   useEffect(() => {
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-      setRoomName("The Lads' Lobby");
+      setRoomName("The Mates' Lobby");
       return;
     }
     import("@/lib/supabase/client").then(({ createClient }) => {
