@@ -58,3 +58,4 @@ next-env.d.ts
 
 # Draft XI — raw FIFA source CSVs (large; dataset is regenerated into src/data/draft)
 scripts/draft/data/raw/
+social-media/store/screenshots/v2-raw/
