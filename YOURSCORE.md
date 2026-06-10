@@ -6,7 +6,7 @@
 > `~/Downloads/yourscore-build-doc.md` are historical/subordinate — read them only for
 > detail this file points to, and never treat them as current scope.
 >
-> **Confirmed with the founder:** 2026-06-04 (every section reviewed and signed off, and
+> **Confirmed with the founder:** 2026-06-10 (every section reviewed and signed off, and
 > reconciled against `src/` + `supabase/migrations/`).
 > **Maintenance:** update this file in the same session you change the product, bump the
 > date above, and run `graphify update .` after code changes.
@@ -210,9 +210,10 @@ mid-Game).
 ## 9. Auth, Notifications & Social
 
 ### Auth — live in production
-**Google** · **Email + password** · **Email magic link**.
-**Apple sign-in: not yet** (planned — required for full iOS App Store release). Facebook
-is not live. Guests can play but need an account to earn points / rank.
+**Apple** · **Google** · **Email + password** · **Email magic link**.
+Apple Sign-In landed June 2026 alongside the iOS App Store submission (App Review
+Guideline 4.8). Facebook is not live. Guests can play but need an account to earn
+points / rank.
 
 ### Notifications
 - **Primary: native push** (APNs iOS / FCM Android) — live-Question alerts when
@@ -236,7 +237,6 @@ is not live. Guests can play but need an account to earn points / rank.
 - **Hints system** (scoring hooks exist) — then no-hints/hint scoring goes live.
 - **Pub Leagues** — venue-owned Leagues patrons join at the pub (first dedicated venue
   product, vs. pubs-as-acquisition today).
-- **Apple sign-in** for full iOS release.
 - **Naming cleanup** so code matches the locked vocabulary: rename `rooms` →
   `lobby`/`lobbies` (tables, routes, code), and the `/join` route → `/matches` (the tab
   already shows "Matches"). Until then: `rooms*` tables = Lobbies; `/join` = the Matches

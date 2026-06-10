@@ -19,7 +19,7 @@ features. Do not treat them as current scope.
 - **Ways to play:** Live matches · Multiplayer (Lobby types: Private / Public / 1v1) · Solo challenges. Custom Quiz Builder feeds multiplayer Quiz packs.
 - **Leagues:** compile a group's results; two separate boards per league — **Live** (live matches) vs **Offline** (multiplayer incl. 1v1; solo lighter, TBD). Points never mix.
 - **Discontinued:** WhatsApp API notifications; **shelved:** sponsored rooms. **Avoid "Room"/"IQ".**
-- **Not built yet:** Friends, public profiles, hints system, Apple sign-in (Google + email/password + magic link are live).
+- **Not built yet:** Friends, public profiles, hints system (Apple + Google + email/password + magic link are live).
 - **Note:** `rooms*` tables = Lobbies (rename pending).
 
 ## Debugging errors — CHECK SENTRY FIRST
