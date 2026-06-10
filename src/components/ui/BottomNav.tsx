@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
+import { usePendingFriends } from "@/hooks/usePendingFriends";
 
 // Football-shirt icon for the Draft XI tab.
 function JerseyIcon({ active }: { active: boolean }) {
@@ -23,6 +24,7 @@ function JerseyIcon({ active }: { active: boolean }) {
 export function BottomNav() {
   const pathname = usePathname();
   const { user } = useUser();
+  const pendingFriends = usePendingFriends();
 
   const isHome = pathname === "/";
   const isLeague = pathname.startsWith("/league") || pathname.startsWith("/leagues") || pathname.startsWith("/38-0/league");
@@ -115,10 +117,27 @@ const isChallenges =
 
         {/* Profile */}
         <Link href="/profile" className="flex flex-col items-center gap-1 px-2 py-1 transition-colors" style={{ color: isProfile ? "#00ff87" : "#8888aa" }}>
-          <svg width="21" height="21" viewBox="0 0 22 22" fill="none">
-            <circle cx="11" cy="7" r="4" stroke="currentColor" strokeWidth="1.8" fill={isProfile ? "currentColor" : "none"} fillOpacity={isProfile ? 0.15 : 0} />
-            <path d="M3 20c0-4 3.582-7 8-7s8 3 8 7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-          </svg>
+          <div className="relative">
+            <svg width="21" height="21" viewBox="0 0 22 22" fill="none">
+              <circle cx="11" cy="7" r="4" stroke="currentColor" strokeWidth="1.8" fill={isProfile ? "currentColor" : "none"} fillOpacity={isProfile ? 0.15 : 0} />
+              <path d="M3 20c0-4 3.582-7 8-7s8 3 8 7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+            {pendingFriends > 0 && (
+              <span
+                style={{
+                  position: "absolute", top: -3, right: -5,
+                  minWidth: 14, height: 14, borderRadius: 7,
+                  background: "#ef4444", color: "#fff",
+                  fontSize: 9, fontWeight: 700, lineHeight: "14px",
+                  textAlign: "center", padding: "0 3px",
+                  fontFamily: "var(--font-body, sans-serif)",
+                  border: "1.5px solid rgba(10,10,15,0.96)",
+                }}
+              >
+                {pendingFriends > 9 ? "9+" : pendingFriends}
+              </span>
+            )}
+          </div>
           <span className="font-body text-xs">Profile</span>
         </Link>
       </div>

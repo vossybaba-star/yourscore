@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { slugify } from "@/lib/utils";
+import { usePendingFriends } from "@/hooks/usePendingFriends";
 
 const WORLD_CUP_START = new Date("2026-06-11T18:00:00Z");
 
@@ -225,6 +226,59 @@ function FeaturedPacksRow({ packs }: { packs: FeaturedPack[] }) {
   );
 }
 
+/** Self-contained client island — shows a friend-request nudge if the user
+ *  has pending incoming requests. Renders nothing when count is 0. */
+function PendingFriendsNotice() {
+  const count = usePendingFriends();
+  if (!count) return null;
+  return (
+    <Link
+      href="/friends"
+      className="flex items-center justify-between px-4 py-3.5 rounded-2xl transition-all hover:opacity-90 active:scale-[0.99]"
+      style={{
+        background: "linear-gradient(135deg, rgba(239,68,68,0.1) 0%, rgba(239,68,68,0.05) 100%)",
+        border: "1px solid rgba(239,68,68,0.25)",
+      }}
+    >
+      <div className="flex items-center gap-3">
+        <div
+          className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 text-base relative"
+          style={{ background: "rgba(239,68,68,0.14)", border: "1px solid rgba(239,68,68,0.3)" }}
+        >
+          👥
+          <span
+            style={{
+              position: "absolute", top: -4, right: -4,
+              minWidth: 15, height: 15, borderRadius: 8,
+              background: "#ef4444", color: "#fff",
+              fontSize: 9, fontWeight: 700, lineHeight: "15px",
+              textAlign: "center", padding: "0 3px",
+              fontFamily: "var(--font-body, sans-serif)",
+              border: "1.5px solid rgba(10,10,15,0.96)",
+            }}
+          >
+            {count > 9 ? "9+" : count}
+          </span>
+        </div>
+        <div>
+          <p className="font-body text-sm font-bold text-white">
+            {count === 1 ? "1 friend request" : `${count} friend requests`}
+          </p>
+          <p className="font-body text-xs text-text-muted">
+            {count === 1 ? "Someone wants to connect" : "People want to connect with you"}
+          </p>
+        </div>
+      </div>
+      <span
+        className="font-body text-xs font-bold px-3 py-1.5 rounded-lg flex-shrink-0"
+        style={{ background: "rgba(239,68,68,0.14)", border: "1px solid rgba(239,68,68,0.3)", color: "#f87171" }}
+      >
+        View →
+      </span>
+    </Link>
+  );
+}
+
 export function Dashboard({ data }: { data: DashboardData }) {
   const { displayName, totalScore, globalRank, leagues, featuredPacks } = data;
   const firstName = displayName ? displayName.split(" ")[0] : null;
@@ -324,6 +378,9 @@ export function Dashboard({ data }: { data: DashboardData }) {
             </span>
           </Link>
         </div>
+
+        {/* ── Pending friend requests ───────────────────────────────────── */}
+        <PendingFriendsNotice />
 
         {/* ── Featured quiz packs ───────────────────────────────────────── */}
         <FeaturedPacksRow packs={featuredPacks} />
