@@ -63,7 +63,7 @@ export default function Leaderboard() {
           ))}
         </div>
 
-        <Link href="/38-0/leagues" className="flex items-center justify-between rounded-xl px-4 py-3 mb-4 active:scale-[0.98] transition-transform"
+        <Link href="/leagues" className="flex items-center justify-between rounded-xl px-4 py-3 mb-4 active:scale-[0.98] transition-transform"
           style={{ background: "rgba(167,139,250,0.1)", border: "1px solid rgba(167,139,250,0.3)" }}>
           <span className="font-display tracking-wide" style={{ fontSize: 16, color: "#a78bfa" }}>🏟️ MY LEAGUES</span>
           <span className="font-body" style={{ fontSize: 12, color: "#8888aa" }}>create or join a private board →</span>
