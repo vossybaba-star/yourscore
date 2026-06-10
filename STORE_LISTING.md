@@ -165,43 +165,64 @@ YourScore: Live Football Quiz
 
 ### Short description (80 char max)
 ```
-Live football quizzes with your mates. Leagues, rooms, season challenges.
+Rank your football knowledge against your mates. Lobbies, leagues, 38-0.
 ```
 
 ### Full description (4000 char max)
 ```
-YourScore turns watching football into a live competition with your friends.
+Rank your football knowledge against your mates — every match, any competition, any time.
 
-WATCH TOGETHER, COMPETE TOGETHER
-Create a private room for any match. Share the six-character code with your group on WhatsApp or anywhere else. Everyone joins instantly. Questions fire during the game — tap to answer in 45 seconds or less. Speed and accuracy stack up on the leaderboard.
+YourScore is the football-knowledge competition app. Not predictions. Not fantasy lineups. What you actually know, scored under pressure, kept as a running ranking against your group.
 
-PERSISTENT LEAGUES
-Your scores from every match roll into season-long leagues. Track total points, accuracy, win streaks, and games played for each player in your group.
+FOUR WAYS TO PLAY
 
-SEASON CHALLENGES
-Quiz packs for every Premier League and Championship club — 20 questions per team, no timer, play anytime. See where you rank on the global leaderboard.
+LIVE MATCH
+Pick a real fixture and play along as it happens. Questions fire at moments during the actual game, scored live. Everyone on the leaderboard answers the same questions within the same window.
 
-HEAD-TO-HEAD
-Pick a friend and a team. Take turns. Break the other player's streak to win.
+MULTIPLAYER LOBBIES
+Spin up an on-demand game with your mates any time. Open a Lobby, pick its type, pick a Question source, share the 6-character code:
+• Private — invite only, up to 8 players
+• Public — anyone with the link, up to 20
+• 1v1 — head-to-head, you vs one opponent
+
+Question sources are pre-built Quiz packs (clubs, competitions, themes) or a category + difficulty filter you tune yourself.
+
+SOLO CHALLENGES
+Self-paced, single-player. Season-review packs for every Premier League and Championship club. The lowest-friction way to start playing.
+
+38-0
+Live Draft XI head-to-head. Pick your starting eleven, pin your reputation on it, and play live during a real match.
+
+CUSTOM QUIZ BUILDER
+Generate your own Quiz pack from a prompt, then use it as the question source in any Multiplayer Lobby.
+
+LEAGUES
+Group your friends into a League and compile everyone's results into shared tables. Every League has two boards — a Live board fed by Live-match points, and an Offline board fed by Multiplayer and Solo. Points don't mix. One league for the WhatsApp, another for the office, another for the family.
+
+SCORING
+Speed bands multiply your points by how fast you answer (Lightning ×2.0 down to Very Slow ×0.5). Streaks, comebacks, and perfect rounds bonus extra. Timeouts and rage-quits cost you.
 
 BUILT FOR THE 2026 WORLD CUP
-Group-stage fixtures loaded. Get your league set up before June 11.
+Group stage starts June 11. Set up your League now and you're ranking your mates from the opening fixture.
 
-FREE, NO ADS IN THE GAME
-Sign in with Google or email. Guests can join rooms and watch the leaderboard without an account; signed-in users earn points.
+FREE
+No subscriptions. No paywalls. No ads during the game. Sign in with Google or email — guests can browse and play but need an account to earn ranked points and join Leagues.
 
-REQUIRES
-A phone. A football match. Friends.
+WHO IT'S FOR
+Football fans who actually watch matches. Group chats with arguments to settle. Anyone who's ever said "I know more football than you do."
+
+WHAT YOU NEED
+A phone. A football match. A few mates with opinions.
 ```
 
 ### Tags (Play Store auto-suggests)
-Suggest: sports, soccer, football, quiz, trivia, multiplayer, leaderboard
+Suggest: sports, soccer, football, quiz, trivia, multiplayer, leaderboard, lobby, league
 
 ### Category
 - App category: **Sports**
 
 ### Content rating
-Run the IARC questionnaire — should yield **Everyone** or **Everyone 10+** depending on the gambling/competition phrasing answers (no real-money gambling = clean).
+Run the IARC questionnaire — should yield **Everyone**. Answer No to all gambling/violence/sexuality categories (no real-money wagering, no UGC moderation surface beyond quiz answers).
 
 ### Privacy Policy URL
 ```
@@ -212,10 +233,33 @@ https://yourscore.app/privacy
 Ages 13+ (matches Supabase Auth ToS minimum age).
 
 ### Data safety form (Play Console)
-- Collects: email, user ID, app interactions
-- Shared: none
-- Encrypted in transit: yes
-- Users can request deletion: yes (link to support email)
+- Collects: email, user ID, app interactions (gameplay answers, scores)
+- Shared: none with third parties for advertising/marketing
+- Encrypted in transit: yes (HTTPS only)
+- Encrypted at rest: yes (Supabase Postgres)
+- Users can request deletion: yes — via Profile → Delete account, or by emailing support@yourscore.app
+- Account creation required for ranked points + Leagues; browsing/Solo play available as guest
+
+### App signing — Play App Signing
+Upload key SHA-1: `7C:B8:A8:81:D9:50:34:0F:6A:81:80:A8:8A:66:38:8F:21:60:CD:1B`
+Upload key SHA-256: `59:7C:B1:B5:32:5C:45:85:8F:8A:E5:5A:99:FB:D7:4F:C6:C3:39:D8:83:70:D1:DA:C1:03:43:55:8A:B2:E0:C2`
+Keystore lives at `~/Documents/keys/yourscore-release.keystore` (back up to 1Password — Google never re-signs).
+
+### Internal Testing access list
+- vossybaba@gmail.com (developer)
+- apple-review@yourscore.app (review test account, password `Reviewerbf4cb1d2!1A`)
+
+### Reviewer-style notes (Play Console requires test instructions for sign-in apps)
+```
+YourScore is a football-knowledge competition app. Demo flow after sign-in:
+1. Bottom nav → Play → Multiplayer sub-tab → Create Game. Pick type (Private/Public/1v1), pick a Quiz pack, share the 6-character code OR
+2. Bottom nav → Play → Solo sub-tab → pick a club pack and play through.
+3. Bottom nav → 38-0 → Premier League XI → pick a formation → Draft XI live head-to-head.
+
+Sign in with the test account or Continue with Google:
+  Email:    apple-review@yourscore.app
+  Password: Reviewerbf4cb1d2!1A
+```
 
 ### Feature graphic (1024 x 500 px)
 Asset to design: dark background, "YourScore" wordmark left-aligned, screenshot of a live leaderboard or question card on the right. Brand colours: bg #0a0a14, accent #00ff87.
