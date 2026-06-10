@@ -27,7 +27,7 @@ export default function MatchResult() {
     setM(lm);
   }, [router]);
 
-  function ogUrl(portrait = false): string {
+  function ogUrl(): string {
     if (!m) return "/api/draft/live-og";
     const q = liveOgQuery({
       p1: "Your XI", p2: m.opp.name,
@@ -36,7 +36,7 @@ export default function MatchResult() {
       pens: m.pens ? { a: m.pens.you, b: m.pens.opp } : null,
       report: m.report,
     });
-    return `/api/draft/live-og?${q}${portrait ? "&portrait=1" : ""}`;
+    return `/api/draft/live-og?${q}`;
   }
 
   function shareText(): string {
@@ -51,33 +51,11 @@ export default function MatchResult() {
       : `${m.opp.name} beat my Draft XI ${m.goals.opp}–${m.goals.you}. Rebuilding… Take me on:`;
   }
 
-  async function downloadPortrait() {
-    try {
-      const res = await fetch(ogUrl(true));
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "draft-xi-story.png";
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch { /* ignore */ }
-  }
-
   async function shareNative() {
     if (!m) return;
     const text = shareText();
     const url = "https://yourscore.app/38-0";
     try {
-      try {
-        const res = await fetch(ogUrl());
-        const blob = await res.blob();
-        const file = new File([blob], "draft-xi.png", { type: "image/png" });
-        if (navigator.canShare?.({ files: [file] })) {
-          await navigator.share({ files: [file], title: "Draft XI", text, url });
-          return;
-        }
-      } catch { /* fall through */ }
       if (navigator.share) {
         await navigator.share({ title: "Draft XI", text, url });
       } else {
@@ -249,7 +227,7 @@ export default function MatchResult() {
                   </a>
 
                   {/* Instagram */}
-                  <button onClick={downloadPortrait}
+                  <button onClick={() => { setShowShareSheet(false); shareNative(); }}
                     className="flex flex-col items-center gap-2">
                     <div className="flex items-center justify-center rounded-2xl"
                       style={{ width: 56, height: 56, background: "rgba(225,48,108,0.15)", border: "1px solid rgba(225,48,108,0.3)" }}>
@@ -263,7 +241,7 @@ export default function MatchResult() {
                   </button>
 
                   {/* TikTok */}
-                  <button onClick={downloadPortrait}
+                  <button onClick={() => { setShowShareSheet(false); shareNative(); }}
                     className="flex flex-col items-center gap-2">
                     <div className="flex items-center justify-center rounded-2xl"
                       style={{ width: 56, height: 56, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}>
@@ -302,9 +280,6 @@ export default function MatchResult() {
                   </span>
                 </button>
 
-                <p className="font-body text-xs text-center mt-3" style={{ color: "#555577" }}>
-                  Instagram & TikTok — saves a portrait image to share as a Story
-                </p>
               </div>
             </div>
           </div>

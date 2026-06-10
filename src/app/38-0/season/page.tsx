@@ -24,7 +24,6 @@ export default function SeasonSim() {
   const [shown, setShown] = useState(0); // matches revealed
   const [done, setDone] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [downloaded, setDownloaded] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [shortUrl, setShortUrl] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -172,31 +171,16 @@ export default function SeasonSim() {
     ? `This was my result from YourScore 38-0 ⚽ — INVINCIBLE, ${r.wins}-${r.draws}-${r.losses}, ${r.points} pts. Think you can beat it?`
     : `This was my result from YourScore 38-0 ⚽ — ${r.wins}-${r.draws}-${r.losses}, finished ${ordinal(r.position)} on ${r.points} pts. Think you can beat it?`;
 
-  // Native share sheet — attaches the image file itself where supported (mobile).
   async function nativeShare() {
     await ensureShortUrl();
     const url = shareUrl(), text = blurb();
     try {
-      let file: File | null = null;
-      try { const res = await fetch(ogUrl()); if (res.ok) file = new File([await res.blob()], "yourscore-38-0.png", { type: "image/png" }); } catch { /* fall through */ }
-      if (file && navigator.canShare?.({ files: [file] })) { await navigator.share({ files: [file], title: "YourScore 38-0", text, url }); return; }
       if (navigator.share) { await navigator.share({ title: "YourScore 38-0", text, url }); return; }
       await navigator.clipboard.writeText(`${text} ${url}`); setCopied(true); setTimeout(() => setCopied(false), 1800);
     } catch { /* cancelled */ }
   }
-  function shareWhatsApp() { window.open(`https://wa.me/?text=${encodeURIComponent(`${blurb()} ${shareUrl()}`)}`, "_blank", "noopener"); }
   function shareX() { window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(blurb())}&url=${encodeURIComponent(shareUrl())}`, "_blank", "noopener"); }
   async function copyLink() { try { await ensureShortUrl(); await navigator.clipboard.writeText(`${blurb()} ${shareUrl()}`); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* blocked */ } }
-  async function saveImage() {
-    try {
-      const res = await fetch(ogUrl()); if (!res.ok) return;
-      const href = URL.createObjectURL(await res.blob());
-      const a = document.createElement("a"); a.href = href; a.download = "yourscore-38-0.png";
-      document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(() => URL.revokeObjectURL(href), 4000);
-      setDownloaded(true); setTimeout(() => setDownloaded(false), 2500);
-    } catch { /* ignore */ }
-  }
 
   const awards: [string, string, string][] = [];
   if (r.goldenBoot) awards.push(["👟 Golden Boot", r.goldenBoot.name, `${r.goldenBoot.goals} goals`]);
@@ -329,18 +313,24 @@ export default function SeasonSim() {
 
             <button onClick={nativeShare} className="w-full mt-4 rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform"
               style={{ background: "#00ff87", color: "#062013", fontSize: 20 }}>
-              🔗 Share verified link
+              🔗 Share link
             </button>
 
             <div className="grid grid-cols-3 gap-2 mt-2">
-              <button onClick={shareWhatsApp} className="rounded-2xl py-3 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "rgba(37,211,102,0.15)", color: "#25d366", fontSize: 15, border: "1px solid rgba(37,211,102,0.4)" }}>WhatsApp</button>
               <button onClick={shareX} className="rounded-2xl py-3 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "#1a1a2e", color: "#fff", fontSize: 15, border: "1px solid rgba(255,255,255,0.15)" }}>𝕏</button>
-              <button onClick={copyLink} className="rounded-2xl py-3 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "#1a1a2e", color: "#cfcfe6", fontSize: 15, border: "1px solid rgba(255,255,255,0.15)" }}>{copied ? "Copied ✓" : "Copy"}</button>
+              <button onClick={() => { setShareOpen(false); nativeShare(); }} className="rounded-2xl py-3 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "rgba(225,48,108,0.12)", color: "#e1306c", fontSize: 15, border: "1px solid rgba(225,48,108,0.3)" }}>Instagram</button>
+              <button onClick={() => { setShareOpen(false); nativeShare(); }} className="rounded-2xl py-3 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "#1a1a2e", color: "#cfcfe6", fontSize: 15, border: "1px solid rgba(255,255,255,0.15)" }}>TikTok</button>
             </div>
 
-            <button onClick={saveImage} className="w-full mt-2 rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform"
-              style={{ background: downloaded ? "rgba(0,255,135,0.15)" : "#12121e", color: downloaded ? "#00ff87" : "#cfcfe6", fontSize: 18, border: downloaded ? "1px solid rgba(0,255,135,0.3)" : "1px solid rgba(255,255,255,0.1)" }}>
-              {downloaded ? "✓ Saved!" : "💾 Save My Team"}
+            <button onClick={copyLink} className="w-full mt-2 flex items-center gap-3 px-4 py-3 rounded-2xl transition-all"
+              style={{ background: copied ? "rgba(0,255,135,0.1)" : "rgba(255,255,255,0.06)", border: `1px solid ${copied ? "rgba(0,255,135,0.3)" : "rgba(255,255,255,0.1)"}` }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke={copied ? "#00ff87" : "#aaaacc"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke={copied ? "#00ff87" : "#aaaacc"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              <span className="font-body text-sm font-semibold" style={{ color: copied ? "#00ff87" : "#aaaacc" }}>
+                {copied ? "Copied!" : "Copy link"}
+              </span>
             </button>
 
             <button onClick={() => setShareOpen(false)} className="w-full mt-2 rounded-2xl py-3 font-body active:scale-[0.98] transition-transform" style={{ background: "transparent", color: "#8888aa", fontSize: 15 }}>Close</button>
