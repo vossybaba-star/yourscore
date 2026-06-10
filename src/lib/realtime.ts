@@ -8,4 +8,4 @@
  * Disabling realtime removes that churn so the instance can recover / accept a
  * compute upgrade. Flip back to `true` (and redeploy) once compute is scaled up.
  */
-export const REALTIME_ENABLED = false;
+export const REALTIME_ENABLED = true;
