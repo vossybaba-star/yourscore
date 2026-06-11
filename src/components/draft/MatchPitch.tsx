@@ -65,8 +65,13 @@ export function MatchPitch(props: Props) {
     const resize = () => {
       const parent = canvas.parentElement;
       if (!parent) return;
+      const newW = parent.clientWidth;
+      // Skip when the container is hidden (display:none → clientWidth = 0) or
+      // not yet laid out — keep the previous dimensions so the rAF loop
+      // doesn't get zero-width geometry and throw IndexSizeError on ctx.arc().
+      if (newW <= 0) return;
       dpr = Math.min(2, window.devicePixelRatio || 1);
-      cssW = parent.clientWidth;
+      cssW = newW;
       cssH = Math.round(cssW * 0.64);
       canvas.width = Math.round(cssW * dpr);
       canvas.height = Math.round(cssH * dpr);
@@ -99,7 +104,7 @@ export function MatchPitch(props: Props) {
       dispRef.current = disp;
 
       const frame = pitchFrame(sim, half, matchId, disp);
-      if (viewRef.current === "pitch") drawPitch(ctx, cssW, cssH, dpr, frame, meSide, reducedRef.current);
+      if (viewRef.current === "pitch" && cssW > 0 && cssH > 0) drawPitch(ctx, cssW, cssH, dpr, frame, meSide, reducedRef.current);
 
       // HUD (numbers + commentary feed) — recompute only when the clock minute or score
       // changes (a few Hz), not every frame.
