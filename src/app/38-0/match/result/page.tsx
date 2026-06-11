@@ -85,13 +85,10 @@ export default function MatchResult() {
 
       <div className="relative mx-auto max-w-lg px-4 pt-safe">
         <div className="flex items-center justify-between py-3">
-          <Link href="/38-0" className="font-body text-sm" style={{ color: "#8888aa" }}>← 38-0</Link>
-          <span className="font-body uppercase" style={{ fontSize: 10, letterSpacing: "0.2em", color: "#5a5a78" }}>
-            Quick Match
-          </span>
+          <Link href="/38-0" className="font-mono text-sm uppercase" style={{ color: "#8888aa", letterSpacing: "0.1em" }}>← 38-0</Link>
         </div>
 
-        <Scorecard m={m} />
+        <Scorecard m={m} context="Quick Match" />
 
         {/* Friend card — only for real opponent (challenge) matches */}
         {m.oppUserId && (
@@ -108,7 +105,7 @@ export default function MatchResult() {
           <button onClick={() => setShowShareSheet(true)}
             className="w-full rounded-2xl py-4 font-display tracking-wide transition-transform focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-[0.98]"
             style={{ background: "#ffb800", color: "#1a1300", fontSize: 23, outlineColor: "#ffb800" }}>
-            SHARE FULL-TIME CARD 📲
+            SHARE FULL-TIME CARD
           </button>
 
           {won ? (

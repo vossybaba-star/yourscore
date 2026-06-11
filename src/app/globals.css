@@ -95,9 +95,24 @@ input, textarea, select {
   to   { opacity: 1; transform: translateY(0);   }
 }
 
+/* Slow metallic sheen for foil-stamped type (scoreline, tier crests). The
+   gradient is sized to 200% and drifts across so the highlight band travels
+   like light catching a foil card. Applied only via motion-safe:. */
+@keyframes foilSheen {
+  0%   { background-position: 0% 50%;    }
+  100% { background-position: -200% 50%; }
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+
+  /* Pair with an inline metallic background-image + background-clip:text.
+     The 200% sizing leaves room for the sheen keyframe to travel. */
+  .animate-foil {
+    background-size: 200% auto;
+    animation: foilSheen 7s linear infinite;
   }
 
   .font-display {

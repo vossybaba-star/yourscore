@@ -3,347 +3,303 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>38-0 — Full-Time Scorecard preview</title>
+<title>38-0 — Full-Time Scorecard (premium)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --ink:#0a0a0f; --win:#00ff87; --draw:#ffb800; --loss:#ff4757; --muted:#6e6e88;
-  }
+  :root{ --ink:#07070b; --win:#00ff87; --draw:#ffb800; --loss:#ff4757; }
   *{box-sizing:border-box;}
   body{
-    margin:0; background:var(--ink); color:#fff;
+    margin:0; background:#05050a; color:#fff;
     font-family:"DM Sans",sans-serif; -webkit-font-smoothing:antialiased;
-    display:flex; gap:28px; flex-wrap:wrap; justify-content:center;
-    padding:40px 16px 80px;
-    background-image:
-      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-    background-size:40px 40px;
+    display:flex; gap:30px; flex-wrap:wrap; justify-content:center; align-items:flex-start;
+    padding:44px 16px 90px;
   }
   .disp{font-family:"Bebas Neue",sans-serif; letter-spacing:.02em;}
+  .mono{font-family:"DM Mono",monospace;}
   .tab{font-variant-numeric:tabular-nums;}
-  .phone{width:420px; max-width:100%;}
-  .pagehdr{display:flex; align-items:center; justify-content:space-between; padding:10px 4px;}
+  h1.title{font-family:"Bebas Neue"; letter-spacing:.04em; font-size:26px; width:100%; text-align:center; margin:0 0 2px;}
+  .cap{max-width:760px; color:#7a7a92; font-size:12.5px; line-height:1.6; text-align:center; margin:0 auto 8px;}
+  .phone{width:430px; max-width:100%;}
+  .pagehdr{padding:10px 4px; font-family:"DM Mono"; font-size:13px; letter-spacing:.1em; text-transform:uppercase; color:#8888aa;}
+
+  /* foil helpers */
+  .foil{ -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:transparent; }
+  .f-win{ background-image:linear-gradient(120deg,#eafff5,#5dffba 26%,#00b765 50%,#9effd6 70%,#13a572); }
+  .f-draw{ background-image:linear-gradient(120deg,#fff6d4,#ffe07a 26%,#c79318 50%,#ffe9a3 70%,#a9791a); }
+  .f-loss{ background-image:linear-gradient(120deg,#ffe1e4,#ff7681 26%,#b22b35 50%,#ff9aa1 70%,#bf3640); }
+  .engrave{ background-image:linear-gradient(180deg,#4c4c63,#2a2a39 55%,#191923); filter:drop-shadow(0 1px 0 rgba(255,255,255,.05)); }
+  .sheen{ background-size:200% auto; animation:foilSheen 7s linear infinite; }
+  @keyframes foilSheen{0%{background-position:0% 50%}100%{background-position:-200% 50%}}
+  @media (prefers-reduced-motion:reduce){.sheen{animation:none}}
+
   .card{
-    position:relative; overflow:hidden; border-radius:28px;
-    background:linear-gradient(180deg,#0e0e18 0%,#0a0a0f 100%);
-    border:1px solid rgba(255,255,255,.08);
-    box-shadow:0 30px 80px -40px rgba(0,0,0,.9);
+    position:relative; overflow:hidden; border-radius:26px;
+    background:
+      radial-gradient(120% 80% at 50% -10%, rgba(255,255,255,.05), transparent 55%),
+      linear-gradient(180deg,#101019 0%,#0a0a10 42%,#07070b 100%);
+    box-shadow:0 1px 0 rgba(255,255,255,.05) inset, 0 0 0 1px rgba(255,255,255,.05), 0 40px 90px -50px rgba(0,0,0,.95);
   }
-  .toprule{position:absolute; left:0; right:0; top:0; height:3px;}
-  .glow{position:absolute; left:50%; transform:translateX(-50%); top:-120px; width:420px; height:320px; pointer-events:none;}
-  .pad{position:relative; padding:20px 20px 24px;}
-  .eyebrow{display:flex; align-items:center; justify-content:space-between;}
-  .dot{display:inline-block; width:7px; height:7px; border-radius:50%; animation:pulse 2s cubic-bezier(.4,0,.6,1) infinite;}
-  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-  @media (prefers-reduced-motion:reduce){.dot{animation:none}}
-  .scoreboard{margin-top:24px; display:flex; align-items:center; gap:8px;}
-  .sb-side{flex:1; min-width:0;}
-  .led{font-size:64px; line-height:.9; }
-  .pill{display:inline-flex; align-items:center; gap:6px; border-radius:999px; padding:2px 9px;}
-  .ribbon{margin-top:16px; display:flex; align-items:center; gap:12px;}
-  .ribbon .ln{height:1px; flex:1;}
-  .seclabel{display:flex; align-items:center; gap:8px;}
-  .seclabel .ln{height:1px; flex:1; background:rgba(255,255,255,.07);}
-  .seclabel span{font-size:10px; letter-spacing:.22em; text-transform:uppercase; color:#6a6a86;}
-  .seam{position:absolute; top:4px; bottom:4px; left:50%; transform:translateX(-50%); width:2px;
-    background:linear-gradient(180deg,transparent,rgba(255,255,255,.16),transparent);}
-  .goalrow{display:grid; grid-template-columns:1fr auto 1fr; align-items:center;}
-  .node{display:grid; place-items:center; border-radius:999px; min-width:36px; height:22px; padding:0 7px;
-    font-size:11px; font-weight:800; color:#0a0a0f;}
-  .glabel{font-size:13px; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-  .gassist{font-size:10px; color:#7a7a92;}
-  .motm{display:flex; align-items:center; gap:12px; border-radius:16px; padding:12px 16px;
-    background:linear-gradient(100deg,rgba(255,184,0,.12),rgba(255,184,0,.02)); border:1px solid rgba(255,184,0,.28);}
-  .motm .rate{display:grid; place-items:center; width:52px; height:52px; border-radius:12px; background:rgba(255,184,0,.16); color:var(--draw); font-size:24px;}
-  .statwrap{margin-top:12px; border-radius:16px; overflow:hidden; background:rgba(255,255,255,.02); border:1px solid rgba(255,255,255,.06);}
-  .stat{padding:10px 16px; border-top:1px solid rgba(255,255,255,.05);}
+  .frame{ position:absolute; inset:5px; border-radius:20px; border:1px solid transparent;
+    background:linear-gradient(var(--ink),var(--ink)) padding-box, linear-gradient(120deg,#eafff5,#5dffba 26%,#00b765 50%,#9effd6 70%,#13a572) border-box; opacity:.55; pointer-events:none;}
+  .frame.loss{ background:linear-gradient(var(--ink),var(--ink)) padding-box, linear-gradient(120deg,#ffe1e4,#ff7681 26%,#b22b35 50%,#ff9aa1 70%,#bf3640) border-box;}
+  .grain{ position:absolute; inset:0; opacity:.05; mix-blend-mode:overlay; pointer-events:none;
+    background-size:140px 140px;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+  .reg{position:absolute; width:9px; height:9px; pointer-events:none;}
+  .pad{position:relative; padding:28px 24px;}
+
+  .hdr{display:flex; align-items:center; justify-content:space-between; margin-bottom:26px;}
+  .livewrap{position:relative; display:grid; place-items:center; width:14px; height:14px;}
+  .livering{position:absolute; inset:0; border-radius:50%; opacity:.5; animation:pulse 2s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:.5; transform:scale(1)}50%{opacity:.15; transform:scale(.7)}}
+  .lbl{font-family:"DM Mono"; text-transform:uppercase;}
+
+  .board{display:grid; grid-template-columns:1fr auto 1fr; gap:8px; align-items:center;}
+  .side{display:flex; flex-direction:column; align-items:center; gap:8px; min-width:0;}
+  .crest{position:relative; display:grid; place-items:center; width:38px; height:44px;}
+  .crest .num{font-family:"DM Mono"; font-weight:500; font-size:14px; margin-top:-2px;}
+  .num78{font-size:78px; line-height:.82;}
+  .divider{width:1.5px; height:52px; opacity:.55; transform:skewX(-12deg);
+    background:linear-gradient(120deg,#f4f4fa,#b9b9cc 26%,#6b6b82 50%,#d6d6e2 70%,#82829a);}
+
+  .rule{display:flex; align-items:center; gap:12px; margin-top:28px;}
+  .rule .l{font-family:"DM Mono"; text-transform:uppercase; font-size:9.5px; letter-spacing:.26em; color:#6a6a86;}
+  .rule .tail{height:1px; flex:1; background:linear-gradient(90deg,rgba(255,255,255,.12),transparent);}
+
+  .seam{position:absolute; top:0; bottom:0; left:50%; transform:translateX(-50%); width:1px;
+    background:linear-gradient(180deg,transparent,rgba(255,255,255,.14) 12%,rgba(255,255,255,.14) 88%,transparent);}
+  .grow{display:grid; grid-template-columns:1fr 44px 1fr; align-items:center;}
+  .min{font-family:"DM Mono"; font-weight:500; font-size:11px; padding:2px 7px; border-radius:4px;}
+  .gname{font-weight:600; font-size:13px; color:#f0f0f6; letter-spacing:.01em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .gass{font-family:"DM Mono"; text-transform:uppercase; font-size:8.5px; letter-spacing:.08em; color:#6a6a86; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+
+  .motm{margin-top:14px; display:flex; align-items:center; gap:16px; border-radius:16px; padding:14px 16px;
+    background:linear-gradient(100deg,rgba(255,184,0,.10),rgba(255,184,0,.015)); border:1px solid rgba(255,184,0,.22);}
+  .motm .badge{position:relative; display:grid; place-items:center; width:58px; height:58px;}
+
+  .stat{padding:10px 0; border-top:1px solid rgba(255,255,255,.05);}
   .stat:first-child{border-top:none;}
-  .statline{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:6px;}
-  .track{display:flex; height:6px; width:100%; overflow:hidden; border-radius:999px; background:rgba(255,255,255,.05);}
-  .lineups{margin-top:12px; display:grid; grid-template-columns:1fr 1fr; gap:12px;}
-  .pitch{position:relative; width:100%; aspect-ratio:3/4; border-radius:24px; overflow:hidden;
-    background:linear-gradient(0deg,#0c2a17 0%,#0f3a1f 55%,#0c2a17 100%); border:1px solid rgba(0,255,135,.18);}
+  .statgrid{display:grid; grid-template-columns:1fr auto 1fr; align-items:baseline;}
+  .sv{font-family:"DM Mono"; font-size:13px;}
+  .slabel{padding:0 12px; text-align:center; text-transform:uppercase; font-size:9.5px; letter-spacing:.24em; color:#6a6a86;}
+  .strack{position:relative; margin-top:6px; height:1px; width:100%; background:rgba(255,255,255,.06);}
+  .stick{position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:1px; height:7px; background:rgba(255,255,255,.18);}
+  .sl{position:absolute; top:50%; transform:translateY(-50%); right:50%; height:2px;}
+  .sr{position:absolute; top:50%; transform:translateY(-50%); left:50%; height:2px;}
+
+  .lineups{margin-top:14px; display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+  .tpanel{border-radius:16px; padding:10px; background:rgba(255,255,255,.015); border:1px solid rgba(255,255,255,.06);}
+  .pitch{position:relative; width:100%; aspect-ratio:3/4; border-radius:24px; overflow:hidden; margin-top:8px;
+    background:linear-gradient(0deg,#0c2a17,#0f3a1f 55%,#0c2a17); border:1px solid rgba(0,255,135,.18);}
   .mark{position:absolute; border:1px solid rgba(255,255,255,.18);}
   .tok{position:absolute; transform:translate(-50%,-50%); display:flex; flex-direction:column; align-items:center; width:48px;}
-  .tok .badge{display:grid; place-items:center; width:28px; height:28px; border-radius:50%; font-family:"Bebas Neue"; font-size:13px; background:rgba(10,10,15,.85);}
-  .tok .nm{margin-top:4px; font-size:8px; padding:0 3px; border-radius:3px; background:rgba(10,10,15,.7); max-width:48px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-  .btns{margin-top:20px; display:flex; flex-direction:column; gap:12px;}
+  .tok .b{display:grid; place-items:center; width:28px; height:28px; border-radius:50%; font-family:"Bebas Neue"; font-size:13px; background:rgba(10,10,15,.85);}
+  .tok .n{margin-top:4px; font-size:8px; padding:0 3px; border-radius:3px; background:rgba(10,10,15,.7); max-width:48px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+
+  .auth{margin-top:28px; display:flex; align-items:center; gap:12px;}
+  .auth .h{height:1px; flex:1; background:rgba(255,255,255,.07);}
+  .auth .t{font-family:"DM Mono"; text-transform:uppercase; font-size:9px; letter-spacing:.18em; color:#55556e;}
+
+  .btns{margin-top:22px; display:flex; flex-direction:column; gap:12px;}
   .btn{display:block; width:100%; border:none; border-radius:16px; padding:16px; text-align:center; font-family:"Bebas Neue"; font-size:23px; letter-spacing:.04em; cursor:pointer;}
-  .caption{max-width:880px; color:#8888aa; font-size:13px; line-height:1.6; text-align:center;}
-  h1.title{font-family:"Bebas Neue"; letter-spacing:.04em; font-size:26px; width:100%; text-align:center; margin:0 0 4px;}
 </style>
 </head>
 <body>
-  <h1 class="title">38-0 — Full-Time Scorecard <span style="color:#5a5a78">· preview</span></h1>
-  <p class="caption">Faithful static preview of the new <code style="color:#00ff87">&lt;Scorecard&gt;</code> component (left: a WIN, right: a LOSS) — same Bebas Neue / DM Sans brand fonts, the centre-seam goal timeline signature, mirrored broadcast stat bars, and the star-of-the-match panel. Rendered with sample data.</p>
+  <h1 class="title">38-0 — Full-Time Scorecard <span style="color:#5a5a78">· v2 premium</span></h1>
+  <p class="cap">Foil-stamped collectible card: metallic frame + registration marks + fine grain, a foil scoreline over an engraved opponent, tier crests, the centre-seam goal ledger, a player-of-the-match plaque, a centre-origin stat ledger in mono, framed line-ups, and an authenticity strip. Bebas Neue · DM Sans · DM Mono. (Left: WIN · Right: LOSS.)</p>
 
   <!-- ============ WIN ============ -->
   <div class="phone">
-    <div class="pagehdr">
-      <span style="color:#8888aa; font-size:14px;">← 38-0</span>
-      <span style="font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:#5a5a78;">Quick Match</span>
-    </div>
+    <div class="pagehdr">← 38-0</div>
     <div class="card">
-      <div class="toprule" style="background:var(--win)"></div>
-      <div class="glow" style="background:radial-gradient(closest-side,#00ff8722,transparent 70%)"></div>
+      <div class="frame"></div><div class="grain"></div>
+      <span class="reg" style="top:12px;left:12px;border-top:1px solid rgba(255,255,255,.18);border-left:1px solid rgba(255,255,255,.18)"></span>
+      <span class="reg" style="top:12px;right:12px;border-top:1px solid rgba(255,255,255,.18);border-right:1px solid rgba(255,255,255,.18)"></span>
+      <span class="reg" style="bottom:12px;left:12px;border-bottom:1px solid rgba(255,255,255,.18);border-left:1px solid rgba(255,255,255,.18)"></span>
+      <span class="reg" style="bottom:12px;right:12px;border-bottom:1px solid rgba(255,255,255,.18);border-right:1px solid rgba(255,255,255,.18)"></span>
       <div class="pad">
-        <div class="eyebrow">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <span class="dot" style="background:var(--win); box-shadow:0 0 8px var(--win)"></span>
-            <span style="font-size:11px; letter-spacing:.28em; text-transform:uppercase; color:#aeaec8;">Full time</span>
+        <div class="hdr">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="livewrap"><span class="livering" style="border:1px solid var(--win)"></span><span style="width:5px;height:5px;border-radius:50%;background:var(--win);box-shadow:0 0 6px var(--win)"></span></span>
+            <span class="lbl" style="font-size:10px;letter-spacing:.22em;color:#9a9ab4;">Full time</span>
           </div>
-          <div class="disp" style="font-size:15px; letter-spacing:.06em;"><span>YOUR</span><span style="color:var(--win)">SCORE</span><span style="color:#5a5a78; margin-left:8px;">38-0</span></div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="lbl" style="font-size:10px;letter-spacing:.16em;color:#55556e;">Quick Match</span>
+            <span style="width:1px;height:10px;background:rgba(255,255,255,.12)"></span>
+            <span class="disp" style="font-size:13px;letter-spacing:.05em;"><span style="color:#e9e9f2">YOUR</span><span style="color:var(--win)">SCORE</span></span>
+          </div>
         </div>
 
-        <div class="scoreboard">
-          <div class="sb-side" style="text-align:right;">
-            <div class="disp" style="font-size:22px; line-height:1; color:var(--win); letter-spacing:.03em;">You</div>
-            <div style="margin-top:6px; display:flex; justify-content:flex-end;">
-              <span class="pill" style="background:#ffd70014; border:1px solid #ffd70033;">
-                <span style="font-size:8px; letter-spacing:.1em; text-transform:uppercase; color:#8a8aa6;">Strength</span>
-                <span class="disp tab" style="font-size:14px; line-height:1; color:#ffd700;">96</span>
-              </span>
+        <div class="board">
+          <div class="side">
+            <span class="crest">
+              <svg width="38" height="44" viewBox="0 0 38 44" fill="none" style="position:absolute;inset:0"><path d="M19 1.5 36.5 7v14.5C36.5 32 28.8 39.5 19 42.5 9.2 39.5 1.5 32 1.5 21.5V7L19 1.5Z" fill="rgba(255,255,255,.015)" stroke="#ffd700" stroke-opacity=".5"/><path d="M19 5 33 9.4v11.8C33 29.7 26.7 36 19 38.6 11.3 36 5 29.7 5 21.2V9.4L19 5Z" stroke="rgba(255,255,255,.06)"/></svg>
+              <span class="num" style="color:#ffd700">96</span>
+            </span>
+            <span class="disp" style="font-size:19px;line-height:1;letter-spacing:.04em;color:var(--win)">You</span>
+            <span class="lbl" style="font-size:9px;letter-spacing:.12em;color:#6a6a86">Invincible</span>
+          </div>
+          <div class="side" style="padding:0 4px;">
+            <div style="display:flex;align-items:center;gap:14px;">
+              <span class="foil f-win sheen disp tab num78" style="filter:drop-shadow(0 0 22px #00ff8733)">3</span>
+              <span class="divider"></span>
+              <span class="engrave disp tab num78">2</span>
             </div>
+            <span class="foil f-win sheen disp" style="font-size:16px;letter-spacing:.42em;margin-top:10px;padding-left:.42em;">WIN</span>
           </div>
-          <div style="display:flex; flex:0 0 auto; align-items:center; gap:8px; padding:0 4px;">
-            <span class="disp led tab" style="color:var(--win); text-shadow:0 0 24px #00ff8755;">3</span>
-            <span class="disp" style="font-size:30px; color:#3a3a52; margin-top:-4px;">:</span>
-            <span class="disp led tab" style="color:var(--muted);">2</span>
-          </div>
-          <div class="sb-side" style="text-align:left;">
-            <div class="disp" style="font-size:22px; line-height:1; color:#fff; letter-spacing:.03em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Mancini</div>
-            <div style="margin-top:6px; display:flex; justify-content:flex-start;">
-              <span class="pill" style="background:#00ff8714; border:1px solid #00ff8733;">
-                <span style="font-size:8px; letter-spacing:.1em; text-transform:uppercase; color:#8a8aa6;">Str</span>
-                <span class="disp tab" style="font-size:14px; line-height:1; color:#00ff87;">88</span>
-              </span>
-            </div>
+          <div class="side">
+            <span class="crest">
+              <svg width="38" height="44" viewBox="0 0 38 44" fill="none" style="position:absolute;inset:0"><path d="M19 1.5 36.5 7v14.5C36.5 32 28.8 39.5 19 42.5 9.2 39.5 1.5 32 1.5 21.5V7L19 1.5Z" fill="rgba(255,255,255,.015)" stroke="#00ff87" stroke-opacity=".5"/><path d="M19 5 33 9.4v11.8C33 29.7 26.7 36 19 38.6 11.3 36 5 29.7 5 21.2V9.4L19 5Z" stroke="rgba(255,255,255,.06)"/></svg>
+              <span class="num" style="color:#00ff87">88</span>
+            </span>
+            <span class="disp" style="font-size:19px;line-height:1;letter-spacing:.04em;color:#f2f2f8">Mancini</span>
+            <span class="lbl" style="font-size:9px;letter-spacing:.12em;color:#6a6a86">Champions</span>
           </div>
         </div>
 
-        <div class="ribbon">
-          <span class="ln" style="background:linear-gradient(90deg,transparent,rgba(255,255,255,.14))"></span>
-          <span class="disp" style="font-size:18px; letter-spacing:.34em; color:var(--win); text-shadow:0 0 18px #00ff8744;">WIN</span>
-          <span class="ln" style="background:linear-gradient(90deg,rgba(255,255,255,.14),transparent)"></span>
-        </div>
-      </div>
-
-      <!-- goal timeline -->
-      <div style="padding:0 20px 20px;">
-        <div class="seclabel"><span>Goals</span><span class="ln"></span></div>
-        <div style="position:relative; margin-top:12px;">
+        <div class="rule"><span class="l">Goals</span><span class="tail"></span></div>
+        <div style="position:relative;margin-top:14px;">
           <div class="seam"></div>
-          <ul style="position:relative; margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:10px;">
-            <li class="goalrow">
-              <div style="padding-right:12px; text-align:right;"><div class="glabel">Henry ⚽</div><div class="gassist">assist Pires</div></div>
-              <div><span class="node" style="background:var(--win); box-shadow:0 0 12px #00ff8755;">12'</span></div>
-              <div></div>
-            </li>
-            <li class="goalrow">
-              <div></div>
-              <div><span class="node" style="background:var(--loss); box-shadow:0 0 12px #ff475755;">34'</span></div>
-              <div style="padding-left:12px; text-align:left;"><div class="glabel">⚽ Agüero</div></div>
-            </li>
-            <li class="goalrow">
-              <div style="padding-right:12px; text-align:right;"><div class="glabel">Bergkamp ⚽</div><div class="gassist">assist Ljungberg</div></div>
-              <div><span class="node" style="background:var(--win); box-shadow:0 0 12px #00ff8755;">51'</span></div>
-              <div></div>
-            </li>
-            <li class="goalrow">
-              <div></div>
-              <div><span class="node" style="background:var(--loss); box-shadow:0 0 12px #ff475755;">67'</span></div>
-              <div style="padding-left:12px; text-align:left;"><div class="glabel">⚽ Silva</div><div class="gassist">assist De Bruyne</div></div>
-            </li>
-            <li class="goalrow">
-              <div style="padding-right:12px; text-align:right;"><div class="glabel">Henry ⚽</div></div>
-              <div><span class="node" style="background:var(--win); box-shadow:0 0 12px #00ff8755;">88'</span></div>
-              <div></div>
-            </li>
+          <ul style="position:relative;margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:11px;">
+            <li class="grow"><div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;padding-right:4px;"><div style="min-width:0;text-align:right"><div class="gname">Henry</div><div class="gass">Pires</div></div><svg width="11" height="11" viewBox="0 0 11 11"><path d="M5.5 0.6 10.4 5.5 5.5 10.4 0.6 5.5Z" fill="var(--win)"/></svg></div><div style="display:flex;justify-content:center"><span class="min" style="color:var(--win);background:#00ff8714;border:1px solid #00ff8733">12'</span></div><div></div></li>
+            <li class="grow"><div></div><div style="display:flex;justify-content:center"><span class="min" style="color:var(--loss);background:#ff475714;border:1px solid #ff475733">34'</span></div><div style="display:flex;align-items:center;justify-content:flex-start;gap:8px;padding-left:4px;"><svg width="11" height="11" viewBox="0 0 11 11"><path d="M5.5 0.6 10.4 5.5 5.5 10.4 0.6 5.5Z" fill="var(--loss)"/></svg><div style="min-width:0;text-align:left"><div class="gname">Agüero</div></div></div></li>
+            <li class="grow"><div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;padding-right:4px;"><div style="min-width:0;text-align:right"><div class="gname">Bergkamp</div><div class="gass">Ljungberg</div></div><svg width="11" height="11" viewBox="0 0 11 11"><path d="M5.5 0.6 10.4 5.5 5.5 10.4 0.6 5.5Z" fill="var(--win)"/></svg></div><div style="display:flex;justify-content:center"><span class="min" style="color:var(--win);background:#00ff8714;border:1px solid #00ff8733">51'</span></div><div></div></li>
+            <li class="grow"><div></div><div style="display:flex;justify-content:center"><span class="min" style="color:var(--loss);background:#ff475714;border:1px solid #ff475733">67'</span></div><div style="display:flex;align-items:center;justify-content:flex-start;gap:8px;padding-left:4px;"><svg width="11" height="11" viewBox="0 0 11 11"><path d="M5.5 0.6 10.4 5.5 5.5 10.4 0.6 5.5Z" fill="var(--loss)"/></svg><div style="min-width:0;text-align:left"><div class="gname">Silva</div><div class="gass">De Bruyne</div></div></div></li>
+            <li class="grow"><div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;padding-right:4px;"><div style="min-width:0;text-align:right"><div class="gname">Henry</div></div><svg width="11" height="11" viewBox="0 0 11 11"><path d="M5.5 0.6 10.4 5.5 5.5 10.4 0.6 5.5Z" fill="var(--win)"/></svg></div><div style="display:flex;justify-content:center"><span class="min" style="color:var(--win);background:#00ff8714;border:1px solid #00ff8733">88'</span></div><div></div></li>
           </ul>
         </div>
-      </div>
 
-      <!-- MOTM -->
-      <div style="padding:0 20px 20px;">
+        <div class="rule"><span class="l">Player of the match</span><span class="tail"></span></div>
         <div class="motm">
-          <div class="rate disp tab">9.2</div>
-          <div style="min-width:0; flex:1;">
-            <div style="display:flex; align-items:center; gap:8px;">
-              <span style="font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:var(--draw);">★ Star of the match</span>
-              <span style="font-size:9px; letter-spacing:.1em; text-transform:uppercase; color:#8a8aa6; padding:1px 6px; border-radius:999px; border:1px solid rgba(255,255,255,.12);">Your XI</span>
+          <div class="badge">
+            <svg width="58" height="58" viewBox="0 0 58 58" fill="none" style="position:absolute;inset:0"><circle cx="29" cy="29" r="27.5" stroke="rgba(255,184,0,.28)"/><circle cx="29" cy="29" r="23" stroke="rgba(255,184,0,.14)"/><path d="M29 13.5l3.7 9.9 10.6.5-8.3 6.6 2.8 10.2L29 45.1l-8.8 5.6 2.8-10.2-8.3-6.6 10.6-.5z" fill="rgba(255,184,0,.16)" stroke="rgba(255,184,0,.45)" stroke-width=".75" stroke-linejoin="round"/></svg>
+            <span class="foil f-draw sheen disp tab" style="font-size:23px;position:relative;">9.2</span>
+          </div>
+          <div style="min-width:0;flex:1;">
+            <div class="disp" style="font-size:22px;color:#fff;letter-spacing:.03em;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Thierry Henry</div>
+            <div style="margin-top:4px;display:flex;align-items:center;gap:8px;font-family:'DM Mono';text-transform:uppercase;font-size:9.5px;letter-spacing:.12em;color:#8a8aa6;">
+              <span style="color:var(--draw)">Your XI</span><span style="width:1px;height:8px;background:rgba(255,255,255,.14)"></span><span>ST</span><span>· 2G</span>
             </div>
-            <div class="disp" style="font-size:22px; color:#fff; letter-spacing:.02em; margin-top:1px;">Thierry Henry</div>
-            <div style="font-size:11px; color:#8a8aa6;">ST · 2 goals</div>
           </div>
         </div>
-      </div>
 
-      <!-- stats -->
-      <div style="padding:0 20px 20px;">
-        <div class="seclabel"><span>Match stats</span><span class="ln"></span></div>
-        <div class="statwrap">
-          <!-- helper renders below -->
-          <div class="stat"><div class="statline"><span class="tab" style="font-size:14px; font-weight:800; color:#fff;">61%</span><span style="font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:#7a7a92;">Possession</span><span class="tab" style="font-size:14px; font-weight:800; color:#7a7a92;">39%</span></div><div class="track"><div style="width:61%; background:var(--win)"></div><div style="width:39%; background:#5a5a78; opacity:.55"></div></div></div>
-          <div class="stat"><div class="statline"><span class="tab" style="font-size:14px; font-weight:800; color:#fff;">16</span><span style="font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:#7a7a92;">Shots</span><span class="tab" style="font-size:14px; font-weight:800; color:#7a7a92;">9</span></div><div class="track"><div style="width:64%; background:var(--win)"></div><div style="width:36%; background:#5a5a78; opacity:.55"></div></div></div>
-          <div class="stat"><div class="statline"><span class="tab" style="font-size:14px; font-weight:800; color:#fff;">7</span><span style="font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:#7a7a92;">On target</span><span class="tab" style="font-size:14px; font-weight:800; color:#7a7a92;">4</span></div><div class="track"><div style="width:64%; background:var(--win)"></div><div style="width:36%; background:#5a5a78; opacity:.55"></div></div></div>
-          <div class="stat"><div class="statline"><span class="tab" style="font-size:14px; font-weight:800; color:#7a7a92;">5</span><span style="font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:#7a7a92;">Corners</span><span class="tab" style="font-size:14px; font-weight:800; color:#fff;">6</span></div><div class="track"><div style="width:45%; background:var(--win); opacity:.45"></div><div style="width:55%; background:#5a5a78;"></div></div></div>
-          <div class="stat"><div class="statline"><span class="tab" style="font-size:14px; font-weight:800; color:#7a7a92;">8</span><span style="font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:#7a7a92;">Fouls</span><span class="tab" style="font-size:14px; font-weight:800; color:#fff;">11</span></div><div class="track"><div style="width:42%; background:var(--win); opacity:.45"></div><div style="width:58%; background:#5a5a78;"></div></div></div>
+        <div class="rule"><span class="l">Match stats</span><span class="tail"></span></div>
+        <div style="margin-top:8px;">
+          <div class="stat"><div class="statgrid"><span class="sv" style="text-align:left;color:#eef">61%</span><span class="slabel">Possession</span><span class="sv" style="text-align:right;color:#62627a">39%</span></div><div class="strack"><span class="stick"></span><span class="sl" style="width:30.5%;background:var(--win);box-shadow:0 0 6px #00ff8755"></span><span class="sr" style="width:19.5%;background:#54546c"></span></div></div>
+          <div class="stat"><div class="statgrid"><span class="sv" style="text-align:left;color:#eef">16</span><span class="slabel">Shots</span><span class="sv" style="text-align:right;color:#62627a">9</span></div><div class="strack"><span class="stick"></span><span class="sl" style="width:32%;background:var(--win);box-shadow:0 0 6px #00ff8755"></span><span class="sr" style="width:18%;background:#54546c"></span></div></div>
+          <div class="stat"><div class="statgrid"><span class="sv" style="text-align:left;color:#eef">7</span><span class="slabel">On target</span><span class="sv" style="text-align:right;color:#62627a">4</span></div><div class="strack"><span class="stick"></span><span class="sl" style="width:32%;background:var(--win);box-shadow:0 0 6px #00ff8755"></span><span class="sr" style="width:18%;background:#54546c"></span></div></div>
+          <div class="stat"><div class="statgrid"><span class="sv" style="text-align:left;color:#62627a">5</span><span class="slabel">Corners</span><span class="sv" style="text-align:right;color:#eef">6</span></div><div class="strack"><span class="stick"></span><span class="sl" style="width:22.7%;background:rgba(0,255,135,.32)"></span><span class="sr" style="width:27.3%;background:#aab"></span></div></div>
+          <div class="stat"><div class="statgrid"><span class="sv" style="text-align:left;color:#62627a">8</span><span class="slabel">Fouls</span><span class="sv" style="text-align:right;color:#eef">11</span></div><div class="strack"><span class="stick"></span><span class="sl" style="width:21%;background:rgba(0,255,135,.32)"></span><span class="sr" style="width:29%;background:#aab"></span></div></div>
         </div>
-      </div>
 
-      <!-- lineups -->
-      <div style="padding:0 20px 24px;">
-        <div class="seclabel"><span>The line-ups</span><span class="ln"></span></div>
+        <div class="rule"><span class="l">The line-ups</span><span class="tail"></span></div>
         <div class="lineups">
-          <div>
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:2px;">
-              <span class="disp" style="font-size:16px; color:var(--win);">You</span>
-              <span class="disp tab" style="font-size:18px; color:#ffd700;">96</span>
-            </div>
-            <p style="margin:0 0 6px; font-size:10px; color:#666688; letter-spacing:.04em;">Your XI · 4-3-3</p>
-            <div class="pitch" id="pitchA"></div>
+          <div class="tpanel">
+            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;"><span class="disp" style="font-size:15px;color:var(--win);letter-spacing:.03em">You</span><span class="mono" style="font-size:13px;color:#ffd700">96</span></div>
+            <p class="mono" style="margin:0;text-transform:uppercase;font-size:8.5px;letter-spacing:.1em;color:#5a5a74;">Your XI · 4-3-3</p>
+            <div class="pitch" id="pA"></div>
           </div>
-          <div>
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:2px;">
-              <span class="disp" style="font-size:16px; color:#fff;">Mancini</span>
-              <span class="disp tab" style="font-size:18px; color:#00ff87;">88</span>
-            </div>
-            <p style="margin:0 0 6px; font-size:10px; color:#666688; letter-spacing:.04em;">Mancini's XI · 4-3-3</p>
-            <div class="pitch" id="pitchB"></div>
+          <div class="tpanel">
+            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;"><span class="disp" style="font-size:15px;color:#fff;letter-spacing:.03em">Mancini</span><span class="mono" style="font-size:13px;color:#00ff87">88</span></div>
+            <p class="mono" style="margin:0;text-transform:uppercase;font-size:8.5px;letter-spacing:.1em;color:#5a5a74;">Mancini's XI · 4-3-3</p>
+            <div class="pitch" id="pB"></div>
           </div>
         </div>
+
+        <div class="auth"><span class="h"></span><span class="t">№ 1F2A · yourscore.app/38-0</span><span class="h"></span></div>
       </div>
     </div>
-
     <div class="btns">
-      <button class="btn" style="background:#ffb800; color:#1a1300;">SHARE FULL-TIME CARD 📲</button>
-      <button class="btn" style="background:#00ff87; color:#062013; font-size:22px;">SWAP ONE PLAYER →</button>
+      <button class="btn" style="background:#ffb800;color:#1a1300;">SHARE FULL-TIME CARD</button>
+      <button class="btn" style="background:#00ff87;color:#062013;">SWAP ONE PLAYER →</button>
     </div>
   </div>
 
   <!-- ============ LOSS ============ -->
   <div class="phone">
-    <div class="pagehdr">
-      <span style="color:#8888aa; font-size:14px;">← 38-0</span>
-      <span style="font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:#5a5a78;">Quick Match</span>
-    </div>
+    <div class="pagehdr">← 38-0</div>
     <div class="card">
-      <div class="toprule" style="background:var(--loss)"></div>
-      <div class="glow" style="background:radial-gradient(closest-side,#ff475722,transparent 70%)"></div>
+      <div class="frame loss"></div><div class="grain"></div>
+      <span class="reg" style="top:12px;left:12px;border-top:1px solid rgba(255,255,255,.18);border-left:1px solid rgba(255,255,255,.18)"></span>
+      <span class="reg" style="top:12px;right:12px;border-top:1px solid rgba(255,255,255,.18);border-right:1px solid rgba(255,255,255,.18)"></span>
+      <span class="reg" style="bottom:12px;left:12px;border-bottom:1px solid rgba(255,255,255,.18);border-left:1px solid rgba(255,255,255,.18)"></span>
+      <span class="reg" style="bottom:12px;right:12px;border-bottom:1px solid rgba(255,255,255,.18);border-right:1px solid rgba(255,255,255,.18)"></span>
       <div class="pad">
-        <div class="eyebrow">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <span class="dot" style="background:var(--loss); box-shadow:0 0 8px var(--loss)"></span>
-            <span style="font-size:11px; letter-spacing:.28em; text-transform:uppercase; color:#aeaec8;">Full time</span>
+        <div class="hdr">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="livewrap"><span class="livering" style="border:1px solid var(--loss)"></span><span style="width:5px;height:5px;border-radius:50%;background:var(--loss);box-shadow:0 0 6px var(--loss)"></span></span>
+            <span class="lbl" style="font-size:10px;letter-spacing:.22em;color:#9a9ab4;">Full time</span>
           </div>
-          <div class="disp" style="font-size:15px; letter-spacing:.06em;"><span>YOUR</span><span style="color:var(--win)">SCORE</span><span style="color:#5a5a78; margin-left:8px;">38-0</span></div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="lbl" style="font-size:10px;letter-spacing:.16em;color:#55556e;">Quick Match</span>
+            <span style="width:1px;height:10px;background:rgba(255,255,255,.12)"></span>
+            <span class="disp" style="font-size:13px;letter-spacing:.05em;"><span style="color:#e9e9f2">YOUR</span><span style="color:var(--win)">SCORE</span></span>
+          </div>
         </div>
-        <div class="scoreboard">
-          <div class="sb-side" style="text-align:right;">
-            <div class="disp" style="font-size:22px; line-height:1; color:#fff; letter-spacing:.03em;">You</div>
-            <div style="margin-top:6px; display:flex; justify-content:flex-end;">
-              <span class="pill" style="background:#a78bfa14; border:1px solid #a78bfa33;">
-                <span style="font-size:8px; letter-spacing:.1em; text-transform:uppercase; color:#8a8aa6;">Strength</span>
-                <span class="disp tab" style="font-size:14px; line-height:1; color:#a78bfa;">81</span>
-              </span>
+        <div class="board">
+          <div class="side">
+            <span class="crest"><svg width="38" height="44" viewBox="0 0 38 44" fill="none" style="position:absolute;inset:0"><path d="M19 1.5 36.5 7v14.5C36.5 32 28.8 39.5 19 42.5 9.2 39.5 1.5 32 1.5 21.5V7L19 1.5Z" fill="rgba(255,255,255,.015)" stroke="#a78bfa" stroke-opacity=".5"/><path d="M19 5 33 9.4v11.8C33 29.7 26.7 36 19 38.6 11.3 36 5 29.7 5 21.2V9.4L19 5Z" stroke="rgba(255,255,255,.06)"/></svg><span class="num" style="color:#a78bfa">81</span></span>
+            <span class="disp" style="font-size:19px;line-height:1;letter-spacing:.04em;color:#f2f2f8">You</span>
+            <span class="lbl" style="font-size:9px;letter-spacing:.12em;color:#6a6a86">Europe</span>
+          </div>
+          <div class="side" style="padding:0 4px;">
+            <div style="display:flex;align-items:center;gap:14px;">
+              <span class="engrave disp tab num78">0</span>
+              <span class="divider"></span>
+              <span class="foil f-loss sheen disp tab num78" style="filter:drop-shadow(0 0 22px #ff475733)">2</span>
             </div>
+            <span class="foil f-loss sheen disp" style="font-size:16px;letter-spacing:.42em;margin-top:10px;padding-left:.42em;">LOSS</span>
           </div>
-          <div style="display:flex; flex:0 0 auto; align-items:center; gap:8px; padding:0 4px;">
-            <span class="disp led tab" style="color:var(--muted);">0</span>
-            <span class="disp" style="font-size:30px; color:#3a3a52; margin-top:-4px;">:</span>
-            <span class="disp led tab" style="color:var(--loss); text-shadow:0 0 24px #ff475755;">2</span>
-          </div>
-          <div class="sb-side" style="text-align:left;">
-            <div class="disp" style="font-size:22px; line-height:1; color:var(--loss); letter-spacing:.03em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Guardiola</div>
-            <div style="margin-top:6px; display:flex; justify-content:flex-start;">
-              <span class="pill" style="background:#00ff8714; border:1px solid #00ff8733;">
-                <span style="font-size:8px; letter-spacing:.1em; text-transform:uppercase; color:#8a8aa6;">Str</span>
-                <span class="disp tab" style="font-size:14px; line-height:1; color:#00ff87;">92</span>
-              </span>
-            </div>
+          <div class="side">
+            <span class="crest"><svg width="38" height="44" viewBox="0 0 38 44" fill="none" style="position:absolute;inset:0"><path d="M19 1.5 36.5 7v14.5C36.5 32 28.8 39.5 19 42.5 9.2 39.5 1.5 32 1.5 21.5V7L19 1.5Z" fill="rgba(255,255,255,.015)" stroke="#00ff87" stroke-opacity=".5"/><path d="M19 5 33 9.4v11.8C33 29.7 26.7 36 19 38.6 11.3 36 5 29.7 5 21.2V9.4L19 5Z" stroke="rgba(255,255,255,.06)"/></svg><span class="num" style="color:#00ff87">92</span></span>
+            <span class="disp" style="font-size:19px;line-height:1;letter-spacing:.04em;color:var(--loss)">Guardiola</span>
+            <span class="lbl" style="font-size:9px;letter-spacing:.12em;color:#6a6a86">Champions</span>
           </div>
         </div>
-        <div class="ribbon">
-          <span class="ln" style="background:linear-gradient(90deg,transparent,rgba(255,255,255,.14))"></span>
-          <span class="disp" style="font-size:18px; letter-spacing:.34em; color:var(--loss); text-shadow:0 0 18px #ff475744;">LOSS</span>
-          <span class="ln" style="background:linear-gradient(90deg,rgba(255,255,255,.14),transparent)"></span>
-        </div>
-      </div>
-      <div style="padding:0 20px 20px;">
-        <div class="seclabel"><span>Goals</span><span class="ln"></span></div>
-        <div style="position:relative; margin-top:12px;">
+        <div class="rule"><span class="l">Goals</span><span class="tail"></span></div>
+        <div style="position:relative;margin-top:14px;">
           <div class="seam"></div>
-          <ul style="position:relative; margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:10px;">
-            <li class="goalrow">
-              <div></div>
-              <div><span class="node" style="background:var(--loss); box-shadow:0 0 12px #ff475755;">29'</span></div>
-              <div style="padding-left:12px; text-align:left;"><div class="glabel">⚽ Haaland</div><div class="gassist">assist De Bruyne</div></div>
-            </li>
-            <li class="goalrow">
-              <div></div>
-              <div><span class="node" style="background:var(--loss); box-shadow:0 0 12px #ff475755;">74'</span></div>
-              <div style="padding-left:12px; text-align:left;"><div class="glabel">⚽ Foden</div></div>
-            </li>
+          <ul style="position:relative;margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:11px;">
+            <li class="grow"><div></div><div style="display:flex;justify-content:center"><span class="min" style="color:var(--loss);background:#ff475714;border:1px solid #ff475733">29'</span></div><div style="display:flex;align-items:center;justify-content:flex-start;gap:8px;padding-left:4px;"><svg width="11" height="11" viewBox="0 0 11 11"><path d="M5.5 0.6 10.4 5.5 5.5 10.4 0.6 5.5Z" fill="var(--loss)"/></svg><div style="min-width:0;text-align:left"><div class="gname">Haaland</div><div class="gass">De Bruyne</div></div></div></li>
+            <li class="grow"><div></div><div style="display:flex;justify-content:center"><span class="min" style="color:var(--loss);background:#ff475714;border:1px solid #ff475733">74'</span></div><div style="display:flex;align-items:center;justify-content:flex-start;gap:8px;padding-left:4px;"><svg width="11" height="11" viewBox="0 0 11 11"><path d="M5.5 0.6 10.4 5.5 5.5 10.4 0.6 5.5Z" fill="var(--loss)"/></svg><div style="min-width:0;text-align:left"><div class="gname">Foden</div></div></div></li>
           </ul>
         </div>
-      </div>
-      <div style="padding:0 20px 20px;">
+        <div class="rule"><span class="l">Player of the match</span><span class="tail"></span></div>
         <div class="motm">
-          <div class="rate disp tab">8.7</div>
-          <div style="min-width:0; flex:1;">
-            <div style="display:flex; align-items:center; gap:8px;">
-              <span style="font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:var(--draw);">★ Star of the match</span>
-              <span style="font-size:9px; letter-spacing:.1em; text-transform:uppercase; color:#8a8aa6; padding:1px 6px; border-radius:999px; border:1px solid rgba(255,255,255,.12);">Guardiola</span>
+          <div class="badge"><svg width="58" height="58" viewBox="0 0 58 58" fill="none" style="position:absolute;inset:0"><circle cx="29" cy="29" r="27.5" stroke="rgba(255,184,0,.28)"/><circle cx="29" cy="29" r="23" stroke="rgba(255,184,0,.14)"/><path d="M29 13.5l3.7 9.9 10.6.5-8.3 6.6 2.8 10.2L29 45.1l-8.8 5.6 2.8-10.2-8.3-6.6 10.6-.5z" fill="rgba(255,184,0,.16)" stroke="rgba(255,184,0,.45)" stroke-width=".75" stroke-linejoin="round"/></svg><span class="foil f-draw sheen disp tab" style="font-size:23px;position:relative;">8.7</span></div>
+          <div style="min-width:0;flex:1;">
+            <div class="disp" style="font-size:22px;color:#fff;letter-spacing:.03em;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Kevin De Bruyne</div>
+            <div style="margin-top:4px;display:flex;align-items:center;gap:8px;font-family:'DM Mono';text-transform:uppercase;font-size:9.5px;letter-spacing:.12em;color:#8a8aa6;">
+              <span style="color:var(--draw)">Guardiola</span><span style="width:1px;height:8px;background:rgba(255,255,255,.14)"></span><span>CAM</span><span>· 1A</span>
             </div>
-            <div class="disp" style="font-size:22px; color:#fff; letter-spacing:.02em; margin-top:1px;">Kevin De Bruyne</div>
-            <div style="font-size:11px; color:#8a8aa6;">CAM · 1 assist</div>
           </div>
         </div>
-      </div>
-      <div style="padding:0 20px 24px;">
-        <div class="seclabel"><span>Match stats</span><span class="ln"></span></div>
-        <div class="statwrap">
-          <div class="stat"><div class="statline"><span class="tab" style="font-size:14px; font-weight:800; color:#7a7a92;">43%</span><span style="font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:#7a7a92;">Possession</span><span class="tab" style="font-size:14px; font-weight:800; color:#fff;">57%</span></div><div class="track"><div style="width:43%; background:var(--win); opacity:.45"></div><div style="width:57%; background:#5a5a78;"></div></div></div>
-          <div class="stat"><div class="statline"><span class="tab" style="font-size:14px; font-weight:800; color:#7a7a92;">6</span><span style="font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:#7a7a92;">Shots</span><span class="tab" style="font-size:14px; font-weight:800; color:#fff;">14</span></div><div class="track"><div style="width:30%; background:var(--win); opacity:.45"></div><div style="width:70%; background:#5a5a78;"></div></div></div>
+        <div class="rule"><span class="l">Match stats</span><span class="tail"></span></div>
+        <div style="margin-top:8px;">
+          <div class="stat"><div class="statgrid"><span class="sv" style="text-align:left;color:#62627a">43%</span><span class="slabel">Possession</span><span class="sv" style="text-align:right;color:#eef">57%</span></div><div class="strack"><span class="stick"></span><span class="sl" style="width:21.5%;background:rgba(0,255,135,.32)"></span><span class="sr" style="width:28.5%;background:#aab"></span></div></div>
+          <div class="stat"><div class="statgrid"><span class="sv" style="text-align:left;color:#62627a">6</span><span class="slabel">Shots</span><span class="sv" style="text-align:right;color:#eef">14</span></div><div class="strack"><span class="stick"></span><span class="sl" style="width:15%;background:rgba(0,255,135,.32)"></span><span class="sr" style="width:35%;background:#aab"></span></div></div>
         </div>
+        <div class="auth"><span class="h"></span><span class="t">№ 7C04 · yourscore.app/38-0</span><span class="h"></span></div>
       </div>
     </div>
     <div class="btns">
-      <button class="btn" style="background:#ffb800; color:#1a1300;">SHARE FULL-TIME CARD 📲</button>
-      <button class="btn" style="background:#ff4757; color:#fff; font-size:22px;">REBUILD XI →</button>
+      <button class="btn" style="background:#ffb800;color:#1a1300;">SHARE FULL-TIME CARD</button>
+      <button class="btn" style="background:#ff4757;color:#fff;">REBUILD XI →</button>
     </div>
   </div>
 
 <script>
-  // tiny faithful pitch renderer (4-3-3) to match <Pitch compact />
-  const slots433 = [
-    {x:50,y:8,l:'GK',v:'89',c:'#00ff87'},
-    {x:18,y:28,l:'LB',v:'86',c:'#00ff87'},{x:38,y:24,l:'CB',v:'90',c:'#00ff87'},{x:62,y:24,l:'CB',v:'88',c:'#00ff87'},{x:82,y:28,l:'RB',v:'85',c:'#00ff87'},
-    {x:30,y:52,l:'CM',v:'87',c:'#00ff87'},{x:50,y:48,l:'CM',v:'91',c:'#00ff87'},{x:70,y:52,l:'CM',v:'88',c:'#00ff87'},
-    {x:24,y:78,l:'LW',v:'92',c:'#00ff87'},{x:50,y:82,l:'ST',v:'94',c:'#ffb800'},{x:76,y:78,l:'RW',v:'90',c:'#00ff87'}
-  ];
+  const slots=[{x:50,y:8,v:'89',c:'#00ff87'},{x:18,y:28,v:'86',c:'#00ff87'},{x:38,y:24,v:'90',c:'#00ff87'},{x:62,y:24,v:'88',c:'#00ff87'},{x:82,y:28,v:'85',c:'#00ff87'},{x:30,y:52,v:'87',c:'#00ff87'},{x:50,y:48,v:'91',c:'#00ff87'},{x:70,y:52,v:'88',c:'#00ff87'},{x:24,y:78,v:'92',c:'#00ff87'},{x:50,y:82,v:'94',c:'#ffb800'},{x:76,y:78,v:'90',c:'#00ff87'}];
   const names=['Seaman','Cole','Adams','Campbell','Dixon','Vieira','Fabregas','Pires','Henry','Bergkamp','Ljungberg'];
-  function drawPitch(el){
-    el.innerHTML='';
-    const mk=(css)=>{const d=document.createElement('div'); d.className='mark'; Object.assign(d.style,css); el.appendChild(d);};
-    mk({left:'0',right:'0',top:'50%',height:'1px',borderWidth:'0',borderTop:'1px solid rgba(255,255,255,.18)'});
+  function draw(el){ if(!el)return; const mk=(s)=>{const d=document.createElement('div');d.className='mark';Object.assign(d.style,s);el.appendChild(d);};
+    mk({left:0,right:0,top:'50%',height:'1px',borderWidth:0,borderTop:'1px solid rgba(255,255,255,.18)'});
     mk({left:'50%',top:'50%',width:'26%',paddingBottom:'26%',transform:'translate(-50%,-50%)',borderRadius:'50%'});
-    mk({left:'25%',right:'25%',top:'0',height:'12%',borderTop:'none'});
-    mk({left:'25%',right:'25%',bottom:'0',height:'12%',borderBottom:'none'});
-    slots433.forEach((s,i)=>{
-      const t=document.createElement('div'); t.className='tok';
-      t.style.left=s.x+'%'; t.style.top=(100-s.y)+'%';
-      const b=document.createElement('div'); b.className='badge';
-      b.style.border='2px solid '+s.c; b.style.color=s.c; b.textContent=s.v;
-      const n=document.createElement('div'); n.className='nm'; n.textContent=names[i];
-      t.appendChild(b); t.appendChild(n); el.appendChild(t);
-    });
-  }
-  drawPitch(document.getElementById('pitchA'));
-  drawPitch(document.getElementById('pitchB'));
+    mk({left:'25%',right:'25%',top:0,height:'12%',borderTop:'none'});
+    mk({left:'25%',right:'25%',bottom:0,height:'12%',borderBottom:'none'});
+    slots.forEach((s,i)=>{const t=document.createElement('div');t.className='tok';t.style.left=s.x+'%';t.style.top=(100-s.y)+'%';const b=document.createElement('div');b.className='b';b.style.border='2px solid '+s.c;b.style.color=s.c;b.textContent=s.v;const n=document.createElement('div');n.className='n';n.textContent=names[i];t.appendChild(b);t.appendChild(n);el.appendChild(t);});}
+  draw(document.getElementById('pA')); draw(document.getElementById('pB'));
 </script>
 </body>
 </html>
