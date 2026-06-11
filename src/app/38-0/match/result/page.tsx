@@ -103,33 +103,33 @@ export default function MatchResult() {
 
         <div className="mt-5 space-y-3">
           <button onClick={() => setShowShareSheet(true)}
-            className="w-full rounded-2xl py-4 font-display tracking-wide transition-transform focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-[0.98]"
-            style={{ background: "#ffb800", color: "#1a1300", fontSize: 23, outlineColor: "#ffb800" }}>
+            className="w-full rounded-[20px] py-4 font-display tracking-wide transition-all duration-300 hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-[0.98]"
+            style={{ background: "#ffb800", color: "#1a1300", fontSize: 23, outlineColor: "#ffb800", boxShadow: "0 14px 34px -16px rgba(255,184,0,0.7)" }}>
             SHARE FULL-TIME CARD
           </button>
 
           {won ? (
             <Link href="/38-0/swap"
-              className="block w-full rounded-2xl py-4 text-center font-display tracking-wide transition-transform focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-[0.98]"
+              className="block w-full rounded-[20px] py-4 text-center font-display tracking-wide transition-all duration-300 hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-[0.98]"
               style={{ background: "#00ff87", color: "#062013", fontSize: 22, outlineColor: "#00ff87" }}>
               SWAP ONE PLAYER →
             </Link>
           ) : drew ? (
             <Link href="/38-0/team"
-              className="block w-full rounded-2xl py-4 text-center font-display tracking-wide transition-transform focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-[0.98]"
+              className="block w-full rounded-[20px] py-4 text-center font-display tracking-wide transition-all duration-300 hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-[0.98]"
               style={{ background: "rgba(255,184,0,0.14)", color: "#ffb800", fontSize: 22, border: "1px solid rgba(255,184,0,0.4)", outlineColor: "#ffb800" }}>
               GO AGAIN →
             </Link>
           ) : (
             <Link href="/38-0"
-              className="block w-full rounded-2xl py-4 text-center font-display tracking-wide transition-transform focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-[0.98]"
+              className="block w-full rounded-[20px] py-4 text-center font-display tracking-wide transition-all duration-300 hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-[0.98]"
               style={{ background: "#ff4757", color: "#fff", fontSize: 22, outlineColor: "#ff4757" }}>
               REBUILD XI →
             </Link>
           )}
 
           <Link href="/38-0/team"
-            className="block w-full rounded-2xl py-3 text-center font-body transition-transform focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-[0.98]"
+            className="block w-full rounded-[20px] py-3 text-center font-body transition-all duration-300 hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-[0.98]"
             style={{ background: "#12121e", color: "#8888aa", fontSize: 15, border: "1px solid rgba(255,255,255,0.08)", outlineColor: accent }}>
             Back to my team
           </Link>
