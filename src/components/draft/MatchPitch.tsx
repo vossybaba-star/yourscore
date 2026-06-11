@@ -82,16 +82,18 @@ export function MatchPitch(props: Props) {
       if (stopped) return;
       const { sim, half, matchId, progress, priorGoals, meSide } = argsRef.current;
 
-      // Self-driven clock: advance every frame at real-time pace, gently syncing toward the
-      // injected `progress` (which only updates ~1–10Hz). This keeps motion continuous and
-      // smooth at 60fps instead of freezing between progress updates and then lurching.
+      // Wall-clock clock: advance purely on elapsed real time for buttery 60fps motion.
+      // The injected `progress` only ticks ~1Hz (live) / ~10Hz (quick match), so tracking
+      // it frame-to-frame reintroduced a per-second pulse — instead we ignore the small
+      // per-tick steps and only re-sync when it has drifted a lot (resume / seek / skew).
       const now = performance.now();
       const dt = lastTRef.current ? Math.min(0.05, (now - lastTRef.current) / 1000) : 1 / 60;
       lastTRef.current = now;
       let disp = dispRef.current;
       if (reducedRef.current) disp = progress;
       else {
-        disp += dt / WATCH_CONFIG.halfSeconds + (progress - disp) * 0.06;
+        disp += dt / WATCH_CONFIG.halfSeconds;
+        if (Math.abs(progress - disp) > 0.04) disp = progress; // resync only on real drift, not the 1Hz stairstep
         disp = disp < 0 ? 0 : disp > 1 ? 1 : disp;
       }
       dispRef.current = disp;
