@@ -13,6 +13,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Scorecard } from "@/components/draft/Scorecard";
 import { loadLastMatch, type LocalMatch } from "@/lib/draft/local";
+import { liveOgQuery } from "@/lib/draft/share";
 import { AddFriendCard } from "@/components/social/AddFriendCard";
 
 export default function MatchResult() {
@@ -39,10 +40,28 @@ export default function MatchResult() {
       : `${m.opp.name} beat my Draft XI ${m.goals.opp}–${m.goals.you}. Rebuilding… Take me on:`;
   }
 
+  /**
+   * The shared link unfurls as the landscape stat card (/api/draft/live-og via the
+   * /38-0/card page) so followers see the full scoreline + head-to-head stats in the
+   * tweet. Quick matches aren't server-persisted, so the finished match is encoded
+   * into the URL (side a = you, b = opponent). Falls back to the generic link.
+   */
+  function shareUrl(): string {
+    if (!m) return "https://yourscore.app/38-0";
+    const query = liveOgQuery({
+      p1: "You", p2: m.opp.name,
+      s1: m.goals.you, s2: m.goals.opp,
+      str1: m.you.strength, str2: m.opp.strength,
+      pens: m.pens ? { a: m.pens.you, b: m.pens.opp } : null,
+      report: m.report,
+    });
+    return `https://yourscore.app/38-0/card?${query}`;
+  }
+
   async function shareNative() {
     if (!m) return;
     const text = shareText();
-    const url = "https://yourscore.app/38-0";
+    const url = shareUrl();
     try {
       if (navigator.share) {
         await navigator.share({ title: "Draft XI", text, url });
@@ -55,7 +74,7 @@ export default function MatchResult() {
   }
 
   async function copyLink() {
-    const url = "https://yourscore.app/38-0";
+    const url = shareUrl();
     const text = shareText();
     try {
       await navigator.clipboard.writeText(`${text} ${url}`);
@@ -67,7 +86,7 @@ export default function MatchResult() {
   function twitterUrl(): string {
     if (!m) return "#";
     const text = shareText();
-    return `https://twitter.com/intent/tweet?text=${encodeURIComponent(text + " https://yourscore.app/38-0")}`;
+    return `https://twitter.com/intent/tweet?text=${encodeURIComponent(`${text} ${shareUrl()}`)}`;
   }
 
   if (!m) {
