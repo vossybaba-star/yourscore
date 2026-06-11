@@ -18,6 +18,7 @@ import { CATEGORY_COLOR, posCategory } from "@/lib/draft/score";
 import { RUN_STAGE_LABEL, UPGRADE_FLOOR, isDuel, type RunStage } from "@/lib/draft/wc";
 import { wcNation } from "@/data/draft/wc2026";
 import type { Formation, PlacedPlayer, PlayerSeason } from "@/lib/draft/types";
+import { trackGameComplete } from "@/lib/analytics/trackGame";
 
 type Fixture = { stage: string; label: string; opponent: { nation: string; crest?: string } };
 type Run = {
@@ -61,6 +62,9 @@ export default function WorldCupRun() {
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? "Could not play"); setPlaying(false); return; }
       setReveal(data);
+      if (data.result === "champion" || data.result === "eliminated") {
+        trackGameComplete("38-0", { mode: "world_cup_run", result: data.result });
+      }
     } catch { setError("Network error — try again."); }
     setPlaying(false);
   }

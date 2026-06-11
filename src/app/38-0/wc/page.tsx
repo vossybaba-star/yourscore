@@ -22,6 +22,7 @@ import { slotsFor } from "@/lib/draft/formations";
 import { canPlay, lineRatings, posCategory, CATEGORY_COLOR } from "@/lib/draft/score";
 import { getTeamBadgeUrlSync } from "@/lib/teamImages";
 import type { Formation, PlacedPlayer, PlayerSeason, Slot } from "@/lib/draft/types";
+import { trackGamePlay } from "@/lib/analytics/trackGame";
 
 const FORMATION = "4-3-3" as Formation; // sensible default; nation pools are deepest here
 const SIGN_IN_PATH = "/38-0/wc";
@@ -97,6 +98,7 @@ export default function WorldCupEntry() {
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? "Could not start"); setStarting(false); return; }
       clearDraft();
+      trackGamePlay("38-0", { mode: "world_cup_run" });
       router.push(`/38-0/wc/run/${data.runId}`);
     } catch {
       setError("Network error — try again."); setStarting(false);

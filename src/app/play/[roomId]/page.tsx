@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { trackGamePlay, trackGameComplete } from "@/lib/analytics/trackGame";
 import { GridBackground } from "@/components/ui/GridBackground";
 import { useParams } from "next/navigation";
 import Link from "next/link";
@@ -132,6 +133,22 @@ export default function RoomPage() {
   const playersCountRef   = useRef(0);
   const isHostRef         = useRef(false);
   const supabaseRef       = useRef<DB | null>(null);
+  // Per-game audience signals (Multiplayer quiz): "play" once the lobby goes live,
+  // "complete" once it finishes. Gated on having played so a cold viewer opening a
+  // finished room's link doesn't get counted. Fires for every player.
+  const gamePlayedRef     = useRef(false);
+  const gameCompletedRef  = useRef(false);
+  useEffect(() => {
+    const status = room?.status;
+    if (status === "live" && !gamePlayedRef.current) {
+      gamePlayedRef.current = true;
+      trackGamePlay("quiz", { mode: "multiplayer" });
+    }
+    if (status === "completed" && gamePlayedRef.current && !gameCompletedRef.current) {
+      gameCompletedRef.current = true;
+      trackGameComplete("quiz", { mode: "multiplayer" });
+    }
+  }, [room?.status]);
   // Realtime channel — kept so handleAnswer can broadcast an "answered" signal
   // (answers RLS is owner-only, so postgres_changes can't power the counter).
   const channelRef        = useRef<ReturnType<DB["channel"]> | null>(null);

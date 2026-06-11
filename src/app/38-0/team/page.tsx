@@ -24,6 +24,7 @@ import { tierColor, TIER_TAGLINE, strengthPct } from "@/lib/draft/ui";
 import { preSeasonOdds } from "@/lib/draft/season";
 import { leagueOpponents } from "@/lib/draft/pool";
 import { useUser } from "@/hooks/useUser";
+import { trackGamePlay } from "@/lib/analytics/trackGame";
 
 export default function TeamScreen() {
   const router = useRouter();
@@ -46,6 +47,7 @@ export default function TeamScreen() {
   function quickMatch() {
     if (!team || matching) return;
     setMatching(true);
+    trackGamePlay("38-0", { mode: "quick_match" });
     const matchId = `local-${team.updatedAt}-${Math.floor(Math.random() * 1e6)}`;
     const opp = makeOpponent(team.formation, team.strength);
     // Real scoreline via the shared, seeded engine (your attack vs their defence).

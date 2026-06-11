@@ -14,6 +14,7 @@ import { Pitch } from "@/components/draft/Pitch";
 import { loadLastMatch, type LocalMatch } from "@/lib/draft/local";
 import { tierColor } from "@/lib/draft/ui";
 import { AddFriendCard } from "@/components/social/AddFriendCard";
+import { trackGameComplete } from "@/lib/analytics/trackGame";
 
 export default function MatchResult() {
   const router = useRouter();
@@ -25,6 +26,7 @@ export default function MatchResult() {
     const lm = loadLastMatch();
     if (!lm) { router.replace("/38-0"); return; }
     setM(lm);
+    trackGameComplete("38-0", { mode: "match", outcome: lm.outcome });
   }, [router]);
 
   function shareText(): string {

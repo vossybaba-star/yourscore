@@ -7,7 +7,7 @@
  * result. Swaps go through a spin-and-choose sheet; the server validates them.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Pitch } from "@/components/draft/Pitch";
@@ -21,10 +21,22 @@ import { WATCH_CONFIG } from "@/lib/draft/playback";
 import { liveOgQuery } from "@/lib/draft/share";
 import { loadTeam, saveTeam, clearTeam } from "@/lib/draft/local";
 import { AddFriendCard } from "@/components/social/AddFriendCard";
+import { trackGamePlay, trackGameComplete } from "@/lib/analytics/trackGame";
 import type { Formation, PlacedPlayer, PlayerSeason } from "@/lib/draft/types";
 import type { DraftLiveMatchRow } from "@/types/draft-db";
 
 const BG = "#0a0a0f";
+
+function tierColor(tier: string | null): string {
+  switch (tier) {
+    case "Elite": return "#00ff87";
+    case "Diamond": return "#a78bfa";
+    case "Platinum": return "#67e8f9";
+    case "Gold": return "#ffd700";
+    case "Silver": return "#c0c0c0";
+    default: return "#b08d57";
+  }
+}
 
 export default function LiveMatchScreen() {
   const { id } = useParams<{ id: string }>();
@@ -62,6 +74,32 @@ export default function LiveMatchScreen() {
   // The swap window belongs to one phase — close the sheet whenever the phase moves.
   useEffect(() => { setSpinSlot(null); }, [m?.phase]);
 
+  // Per-game audience signals: "play" once on entering a live H2H match, "complete"
+  // once it reaches the result phase. Refs guard against re-firing on re-render.
+  const playedRef = useRef(false);
+  const completedRef = useRef(false);
+  useEffect(() => {
+    if (!m) return;
+    if (!playedRef.current) { playedRef.current = true; trackGamePlay("38-0", { mode: "live_h2h" }); }
+    if (m.phase === "result" && !completedRef.current) { completedRef.current = true; trackGameComplete("38-0", { mode: "live_h2h" }); }
+  }, [m]);
+
+  // Opponent's YourScore Rank tier (real opponents only; read-only, never blocks the match).
+  const oppId = m && side && !m.is_bot ? (side === "p1" ? m.p2_id : m.p1_id) : null;
+  const [oppTier, setOppTier] = useState<string | null>(null);
+  useEffect(() => {
+    setOppTier(null);
+    if (!oppId || !process.env.NEXT_PUBLIC_SUPABASE_URL) return;
+    let cancelled = false;
+    import("@/lib/supabase/client").then(async ({ createClient }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const sb = createClient() as any;
+      const { data } = await sb.rpc("get_yourscore_rank", { p_user_id: oppId });
+      if (!cancelled) setOppTier(data?.[0]?.tier ?? null);
+    });
+    return () => { cancelled = true; };
+  }, [oppId]);
+
   if (loading) return <Centered>Loading match…</Centered>;
   if (error) return <Centered tone="error">{error} <Link href="/38-0/live" className="underline block mt-3">← Back</Link></Centered>;
   if (!m || !view) return <Centered tone="error">Not part of this match. <Link href="/38-0/live" className="underline">← Back</Link></Centered>;
@@ -72,7 +110,7 @@ export default function LiveMatchScreen() {
     <div className="min-h-[100dvh] pb-32" style={{ background: BG, color: "#e8e8f0" }}>
       <div className="max-w-lg mx-auto px-4 pt-8">
         {/* Scoreline header */}
-        <Header view={view} phase={m.phase} secondsLeft={secondsLeft} opponentOnline={opponentOnline} />
+        <Header view={view} phase={m.phase} secondsLeft={secondsLeft} opponentOnline={opponentOnline} oppTier={oppTier} />
 
         {/* What to do now + the rule — fills the space under the scoreline */}
         <Guide phase={m.phase} view={view} />
@@ -243,7 +281,7 @@ type View = {
   myGoals: number; oppGoals: number;
 };
 
-function Header({ view, phase, secondsLeft, opponentOnline }: { view: View; phase: string; secondsLeft: number | null; opponentOnline: boolean }) {
+function Header({ view, phase, secondsLeft, opponentOnline, oppTier }: { view: View; phase: string; secondsLeft: number | null; opponentOnline: boolean; oppTier?: string | null }) {
   // While a half is playing the server already holds the final half score, so the
   // header must NOT show it — that would spoil the live playback. The running score
   // lives in <MatchPitch>; half-time/result legitimately show the score.
@@ -263,17 +301,18 @@ function Header({ view, phase, secondsLeft, opponentOnline }: { view: View; phas
             ? <div className="font-display" style={{ fontSize: 38, fontWeight: 800 }}>{view.myGoals} <span style={{ color: "#555" }}>–</span> {view.oppGoals}</div>
             : <div style={{ color: "#555", fontSize: 22 }}>vs</div>}
         </div>
-        <Team name={view.oppName} str={view.oppStr} online={opponentOnline} alignRight />
+        <Team name={view.oppName} str={view.oppStr} online={opponentOnline} alignRight tier={oppTier} />
       </div>
     </div>
   );
 }
 
-function Team({ name, str, you, online, alignRight }: { name: string; str: number; you?: boolean; online?: boolean; alignRight?: boolean }) {
+function Team({ name, str, you, online, alignRight, tier }: { name: string; str: number; you?: boolean; online?: boolean; alignRight?: boolean; tier?: string | null }) {
   return (
     <div className={alignRight ? "text-right" : ""} style={{ maxWidth: 130 }}>
       <div className="font-semibold truncate" style={{ color: you ? "#00ff87" : "#e8e8f0" }}>{name}</div>
       <div className="text-xs" style={{ color: "#9a9ab0" }}>STR {str.toFixed(1)}{online != null && <span style={{ color: online ? "#00ff87" : "#555" }}> ●</span>}</div>
+      {tier && <div className="text-[10px] font-semibold mt-0.5" style={{ color: tierColor(tier) }}>🏅 {tier}</div>}
     </div>
   );
 }

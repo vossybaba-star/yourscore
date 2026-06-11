@@ -15,6 +15,7 @@ import type { Formation } from "@/lib/draft/types";
 import { FORMATION_NOTE } from "@/lib/draft/formations";
 import { emptyTeam, loadTeam, saveTeam, isComplete, type LocalTeam, type DraftMode } from "@/lib/draft/local";
 import { POOL_META, pickableNations } from "@/lib/draft/pool";
+import { trackGamePlay } from "@/lib/analytics/trackGame";
 
 type DraftTab = "pl" | "wc";
 
@@ -33,6 +34,7 @@ export default function DraftHome() {
   function startNew() {
     const team = emptyTeam(selected, mode);
     saveTeam(team);
+    trackGamePlay("38-0", { mode: "draft", board: tab });
     router.push("/38-0/play");
   }
 

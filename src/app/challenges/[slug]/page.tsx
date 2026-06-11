@@ -8,6 +8,7 @@ import { getTeamBadgeUrl } from "@/lib/teamImages";
 import { getCompetitionBadgeUrl } from "@/lib/competitionImages";
 import { AnswerButtons } from "@/components/game/AnswerButtons";
 import { useGameLoop } from "@/lib/useGameLoop";
+import { trackGamePlay, trackGameComplete } from "@/lib/analytics/trackGame";
 import {
   DIFFICULTY_COLOR as DIFF_COLOR,
   DIFFICULTY_BG as DIFF_BG,
@@ -602,6 +603,7 @@ export default function ChallengePage() {
           }
         }
         setScore(finalScore);
+        trackGameComplete("quiz", { mode: "solo", score: finalScore });
         setPhase("results");
       } else {
         setCurrentIdx((i) => i + 1);
@@ -740,7 +742,7 @@ export default function ChallengePage() {
               </div>
 
               <button
-                onClick={() => { window.scrollTo(0, 0); setPhase("playing"); }}
+                onClick={() => { window.scrollTo(0, 0); trackGamePlay("quiz", { mode: "solo" }); setPhase("playing"); }}
                 className="w-full rounded-2xl py-4 font-display text-lg tracking-widest transition-transform active:scale-[0.97] mt-1 text-white"
                 style={{
                   background: isRecords

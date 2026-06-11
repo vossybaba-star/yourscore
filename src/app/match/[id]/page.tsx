@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { trackGamePlay, trackGameComplete } from "@/lib/analytics/trackGame";
 import Link from "next/link";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
@@ -213,6 +214,10 @@ export default function MatchPage({ params }: { params: { id: string } }) {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [questionCount, setQuestionCount] = useState(0);
   const supabaseRef = useRef<SupabaseClient<Database> | null>(null);
+  // Per-game audience signals (Live-match quiz): "play" on the player's first answer
+  // (so passive viewers don't count), "complete" once the match has ended.
+  const livePlayedRef = useRef(false);
+  const liveCompletedRef = useRef(false);
 
   const matchId = params.id;
 
@@ -323,12 +328,20 @@ export default function MatchPage({ params }: { params: { id: string } }) {
       body: JSON.stringify({ questionEventId: activeQuestion.eventId, selectedAnswer: letter }),
     });
     if (!res.ok) { const err = await res.json(); throw new Error(err.error); }
+    if (!livePlayedRef.current) { livePlayedRef.current = true; trackGamePlay("quiz", { mode: "live_match" }); }
     return res.json();
   }, [activeQuestion]);
 
   const handleQuestionExpire = useCallback(() => {
     setTimeout(() => setActiveQuestion(null), 4000);
   }, []);
+
+  // "complete" once a played live match has ended (no longer live, kickoff in the past).
+  useEffect(() => {
+    if (!match || !livePlayedRef.current || liveCompletedRef.current) return;
+    const ended = match.status !== "live" && new Date(match.match_date) <= new Date();
+    if (ended) { liveCompletedRef.current = true; trackGameComplete("quiz", { mode: "live_match" }); }
+  }, [match]);
 
   // ── Loading ───────────────────────────────────────────────────────────────
   if (loading || userLoading) {
