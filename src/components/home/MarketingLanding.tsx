@@ -533,35 +533,6 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
         </Link>
       </section>
 
-      {/* ── Upcoming Matches teaser ──────────────────────────────────────── */}
-      <section className="relative z-10 max-w-6xl mx-auto px-6 pb-10">
-        <Link href="/join"
-          className="flex items-center justify-between px-5 py-4 rounded-2xl transition-all hover:opacity-90"
-          style={{ background: "linear-gradient(135deg, rgba(0,255,135,0.07) 0%, rgba(10,10,15,1) 80%)", border: "1px solid rgba(0,255,135,0.18)" }}>
-          <div className="flex items-center gap-4">
-            <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ background: "rgba(0,255,135,0.12)", border: "1px solid rgba(0,255,135,0.22)" }}>
-              <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-                <circle cx="11" cy="11" r="8" stroke="#00ff87" strokeWidth="1.8"/>
-                <path d="M11 8.5L13.4 10.2L12.5 13L9.5 13L8.6 10.2Z" stroke="#00ff87" strokeWidth="1.2" strokeLinejoin="round" fill="#00ff87" fillOpacity="0.35"/>
-                <path d="M11 8.5L11 3M13.4 10.2L18.6 8.5M12.5 13L15.7 17.5M9.5 13L6.3 17.5M8.6 10.2L3.4 8.5" stroke="#00ff87" strokeWidth="1.2" strokeLinecap="round"/>
-              </svg>
-            </div>
-            <div>
-              <p className="font-body text-base font-bold text-white">Upcoming Matches</p>
-              <p className="font-body text-sm text-text-muted">See which games are coming · Sign in to play live</p>
-            </div>
-          </div>
-          <span className="font-body text-sm font-bold px-4 py-2 rounded-xl flex-shrink-0 hidden sm:block text-green"
-            style={{ background: "rgba(0,255,135,0.1)", border: "1px solid rgba(0,255,135,0.2)" }}>
-            View matches →
-          </span>
-          <svg className="sm:hidden text-green" width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ flexShrink: 0 }}>
-            <path d="M5 3l8 6-8 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </Link>
-      </section>
-
       {/* ── What a league gets you ────────────────────────────────────────── */}
       <section className="relative z-10 max-w-6xl mx-auto px-6 pb-16">
         <div className="rounded-3xl overflow-hidden" style={{ background: "linear-gradient(135deg, rgba(167,139,250,0.06) 0%, rgba(10,10,15,1) 60%)", border: "1px solid rgba(167,139,250,0.15)" }}>
