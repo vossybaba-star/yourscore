@@ -18,7 +18,6 @@ import { slotsFor } from "@/lib/draft/formations";
 import { buildReport, type MatchSim, type HalfSim, type PlayerRating, type GoalEvent } from "@/lib/draft/live-score";
 import { MatchPitch } from "@/components/draft/MatchPitch";
 import { WATCH_CONFIG } from "@/lib/draft/playback";
-import { liveOgQuery } from "@/lib/draft/share";
 import { loadTeam, saveTeam, clearTeam } from "@/lib/draft/local";
 import { AddFriendCard } from "@/components/social/AddFriendCard";
 import { trackGamePlay, trackGameComplete } from "@/lib/analytics/trackGame";
