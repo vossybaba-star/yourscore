@@ -8,6 +8,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SaveTeamButton } from "./SaveTeamButton";
+import { SeasonScorecard, type SeasonAward, type SeasonData } from "@/components/draft/SeasonScorecard";
 
 export const runtime = "edge";
 
@@ -43,24 +44,47 @@ export function generateMetadata({ searchParams }: { searchParams: SP }): Metada
   };
 }
 
+/** "name~12" → an award with a formatted detail line. */
+function award(v: string | undefined, label: string, fmt: (rest: string[]) => string): SeasonAward | null {
+  if (!v) return null;
+  const [name, ...rest] = v.split("~");
+  return name ? { label, name, detail: fmt(rest) } : null;
+}
+
 export default function SeasonSharePage({ searchParams }: { searchParams: SP }) {
-  const pos = parseInt(one(searchParams.pos) || "10", 10);
-  const pts = one(searchParams.pts) || "0";
-  const w = one(searchParams.w) || "0", d = one(searchParams.d) || "0", l = one(searchParams.l) || "0";
-  const accent = one(searchParams.inv) === "1" ? "#ffd700" : pos === 1 ? "#00ff87" : pos <= 4 ? "#22d3ee" : pos <= 12 ? "#ffb800" : "#ff4757";
+  const num = (k: string, d = 0) => { const n = parseInt(one(searchParams[k]) || "", 10); return Number.isFinite(n) ? n : d; };
+  const awards = [
+    award(one(searchParams.boot), "Golden Boot", (r) => `${r[0] ?? 0} goals`),
+    award(one(searchParams.play), "Playmaker", (r) => `${r[0] ?? 0} assists`),
+    award(one(searchParams.glov), "Golden Glove", (r) => `${r[0] ?? 0} clean sheets`),
+    award(one(searchParams.pots), "Player of the Season", (r) => `${r[0] ?? 0}G · ${r[1] ?? 0}A`),
+  ].filter((a): a is SeasonAward => a !== null);
+
+  const data: SeasonData = {
+    context: "Season",
+    invincible: one(searchParams.inv) === "1",
+    wins: num("w"), draws: num("d"), losses: num("l"),
+    points: num("pts"), position: num("pos", 10),
+    verdict: one(searchParams.verdict) || undefined,
+    gf: one(searchParams.gf) ? num("gf") : undefined,
+    ga: one(searchParams.ga) ? num("ga") : undefined,
+    strength: one(searchParams.ovr) ? num("ovr") : undefined,
+    awards,
+  };
 
   return (
-    <div className="min-h-[100dvh] grid place-items-center px-6 text-center" style={{ background: "#0a0a0f" }}>
-      <div>
-        <div className="font-body" style={{ fontSize: 13, color: "#8888aa", letterSpacing: 1 }}>38-0 · YOURSCORE</div>
-        <div className="font-display tracking-wide leading-none mt-3" style={{ fontSize: 64, color: "#fff" }}>{w}-{d}-{l}</div>
-        <div className="font-body" style={{ fontSize: 12, color: "#8888aa", letterSpacing: 2 }}>WON · DRAWN · LOST</div>
-        <div className="font-body mt-3" style={{ fontSize: 18, color: "#fff" }}>
-          Finished <b style={{ color: accent }}>{ordinal(pos)}</b> on <b>{pts}</b> pts
+    <div className="min-h-[100dvh] pb-16" style={{ background: "#0a0a0f" }}>
+      <div className="pointer-events-none fixed inset-0 bg-grid-pattern bg-grid" style={{ opacity: 0.5 }} />
+      <div className="relative mx-auto max-w-lg px-4 pt-safe">
+        <div className="py-3">
+          <Link href="/38-0" className="font-mono text-sm uppercase" style={{ color: "#8888aa", letterSpacing: "0.1em" }}>← 38-0</Link>
         </div>
-        <div className="mt-6 flex flex-col gap-3 w-full max-w-xs mx-auto">
+
+        <SeasonScorecard data={data} />
+
+        <div className="mt-6 flex flex-col gap-3">
           <SaveTeamButton ogUrl={ogUrl(searchParams)} />
-          <Link href="/38-0" className="inline-block rounded-2xl px-6 py-4 font-display tracking-wide text-center" style={{ background: "#00ff87", color: "#062013", fontSize: 24 }}>
+          <Link href="/38-0" className="block w-full rounded-[20px] px-6 py-4 font-display tracking-wide text-center transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98]" style={{ background: "#00ff87", color: "#062013", fontSize: 24 }}>
             BUILD YOUR OWN XI →
           </Link>
         </div>
