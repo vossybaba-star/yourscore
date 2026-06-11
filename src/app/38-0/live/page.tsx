@@ -123,8 +123,15 @@ export default function LiveEntry() {
     setMode("idle");
   }
 
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
+
   // Signed out — only show once auth state has resolved
   const signedOut = !user && !authLoading;
+
+  function handleFindMatch() {
+    if (signedOut) { setShowAuthPrompt(true); return; }
+    void findMatch();
+  }
 
   return (
     <div className="min-h-[100dvh] pb-32" style={{ background: "#0a0a0f", color: "#e8e8f0" }}>
@@ -144,14 +151,11 @@ export default function LiveEntry() {
 
         {mode === "idle" && (
           <div className="mt-7 space-y-3">
-            {signedOut ? (
-              /* ── Signed-out: auth prompt ── */
+            {/* Auth prompt — appears above "Find a live match" when a signed-out user taps it */}
+            {showAuthPrompt && (
               <>
-                <p className="font-body text-sm pb-1" style={{ color: "#9a9ab0" }}>
-                  Sign in to find a live match or challenge a friend head-to-head.
-                </p>
                 <Link href="/auth/sign-in?signup=1"
-                  className="flex items-center justify-center gap-2 w-full rounded-2xl py-4 font-body font-semibold text-center"
+                  className="flex items-center justify-center w-full rounded-2xl py-4 font-body font-semibold text-center"
                   style={{ background: "#00ff87", color: "#04130a", fontSize: 16 }}>
                   Sign Up — Free
                 </Link>
@@ -160,18 +164,16 @@ export default function LiveEntry() {
                   style={{ background: "rgba(255,255,255,0.06)", color: "#e8e8f0", border: "1px solid rgba(255,255,255,0.12)", fontSize: 16 }}>
                   Sign In
                 </Link>
-              </>
-            ) : (
-              /* ── Signed-in: action buttons ── */
-              <>
-                <button onClick={findMatch} className="w-full rounded-2xl py-4 font-semibold" style={{ background: "#00ff87", color: "#04130a" }}>
-                  Find a live match
-                </button>
-                <button onClick={playFriend} className="w-full rounded-2xl py-4 font-semibold" style={{ background: "rgba(255,255,255,0.06)", color: "#e8e8f0", border: "1px solid rgba(255,255,255,0.12)" }}>
-                  Play a friend
-                </button>
+                <div style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }} />
               </>
             )}
+
+            <button onClick={handleFindMatch} className="w-full rounded-2xl py-4 font-semibold" style={{ background: "#00ff87", color: "#04130a" }}>
+              Find a live match
+            </button>
+            <button onClick={playFriend} className="w-full rounded-2xl py-4 font-semibold" style={{ background: "rgba(255,255,255,0.06)", color: "#e8e8f0", border: "1px solid rgba(255,255,255,0.12)" }}>
+              Play a friend
+            </button>
 
             {/* Join with a code — always visible */}
             <div className="pt-4">
