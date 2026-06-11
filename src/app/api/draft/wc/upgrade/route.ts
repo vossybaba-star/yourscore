@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimitDistributed } from "@/lib/ratelimit";
-import { rowToRun, validateNationLocked, createWcDb } from "@/lib/draft/wc-server";
+import { rowToRun, validateNationLocked, validateWorld, createWcDb } from "@/lib/draft/wc-server";
 
-// Spend one upgrade pick: replace a slot with another player FROM THE SAME NATION.
-// Allowed only while the run is active and has upgrades left. Re-validates the whole
-// XI (fit, no duplicate, nation-locked) and recomputes Strength server-side.
+// Spend one upgrade pick: replace a slot with another player. In nation mode the new
+// player must be from the same nation; in world mode any WC-eligible player is allowed.
+// Allowed only while the run is active and has upgrades left. Re-validates the whole XI
+// (fit, no duplicate, eligibility) and recomputes Strength server-side.
 
 export async function POST(req: NextRequest) {
   const auth = await createClient();
@@ -37,7 +38,9 @@ export async function POST(req: NextRequest) {
   }));
   let team;
   try {
-    team = validateNationLocked(run.formation, squadInput, run.nation);
+    team = run.mode === "world"
+      ? validateWorld(run.formation, squadInput)
+      : validateNationLocked(run.formation, squadInput, run.nation);
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : "Invalid upgrade" }, { status: 400 });
   }

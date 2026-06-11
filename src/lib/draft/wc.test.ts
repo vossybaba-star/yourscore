@@ -1,15 +1,15 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  planRun, qualifiesFromGroup, prestige, advanceStage, gamesForStage, buildMatchRow, isDuel,
+  planRun, planWorldRun, qualifiesFromGroup, prestige, advanceStage, gamesForStage, buildMatchRow, isDuel,
   OPP_MULT, oppTargetFor, STAGE_UPGRADES, KNOCKOUT_STAGES, RUN_STAGES,
-  GROUP_QUALIFY_POINTS, type WcRun,
+  GROUP_QUALIFY_POINTS, WORLD_TEAM_NAME, type WcRun,
 } from "./wc";
 import { groupOpponents } from "../../data/draft/wc2026";
 
 function run(over: Partial<WcRun> = {}): WcRun {
   return {
-    id: "r1", nation: "Brazil", seed: "s", status: "active", stage: "group", stage_index: 0,
+    id: "r1", mode: "nation", nation: "Brazil", seed: "s", status: "active", stage: "group", stage_index: 0,
     formation: "4-3-3", squad: [], strength: 80, plan: planRun("Brazil", "s"),
     group_played: 0, group_points: 0, upgrades_left: 0, ...over,
   };
@@ -119,6 +119,35 @@ test("planRun deterministic by seed, varies across seeds", () => {
   const c = planRun("France", "B").knockouts.map((f) => f.opponent.nation);
   assert.deepEqual(a, b);
   assert.notDeepEqual(a, c);
+});
+
+test("planWorldRun: 3 group + 5 knockout opponents, all distinct real WC nations", () => {
+  const plan = planWorldRun("w1");
+  assert.equal(plan.group.length, 3);
+  assert.equal(plan.knockouts.length, 5);
+  const all = [...plan.group, ...plan.knockouts].map((f) => f.opponent.nation);
+  assert.equal(new Set(all).size, 8, "all opponents distinct");
+  // Knockout stages are the real r32→final order.
+  assert.deepEqual(plan.knockouts.map((f) => f.stage), KNOCKOUT_STAGES);
+});
+
+test("planWorldRun deterministic by seed, varies across seeds", () => {
+  const a = planWorldRun("seedA").knockouts.map((f) => f.opponent.nation);
+  const b = planWorldRun("seedA").knockouts.map((f) => f.opponent.nation);
+  const c = planWorldRun("seedB").knockouts.map((f) => f.opponent.nation);
+  assert.deepEqual(a, b);
+  assert.notDeepEqual(a, c);
+});
+
+test("planWorldRun works with gamesForStage (group=3, ko=2, duels=1)", () => {
+  const plan = planWorldRun("w2");
+  assert.equal(gamesForStage(plan, "group").length, 3);
+  assert.equal(gamesForStage(plan, "ko").length, 2);
+  assert.equal(gamesForStage(plan, "final").length, 1);
+});
+
+test("WORLD_TEAM_NAME is a stable label", () => {
+  assert.equal(WORLD_TEAM_NAME, "World XI");
 });
 
 test("final opponent skews to marquee nations across many runs", () => {

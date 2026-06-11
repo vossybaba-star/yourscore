@@ -12,6 +12,9 @@ import type { League, NationEntry, PlayerSeason, Position } from "./types";
 import { canPlay, playerIdentity } from "./score";
 import { allWCNations, type WCNation } from "@/data/draft/wc2026";
 
+/** Names of every nation at WC 2026 — the eligible set for the open "World Cup" draft. */
+const WC_NATION_NAMES = new Set<string>(allWCNations().map((n) => n.nation));
+
 type Bucket = { league: League; club: string; clubSlug: string; season: string; playerIds: string[] };
 
 type Club = { name: string; clubSlug: string; season: string; league: League; strength: number };
@@ -28,6 +31,8 @@ const DATA = raw as unknown as {
 
 const byId = new Map<string, PlayerSeason>(DATA.players.map((p) => [p.id, p]));
 const byNation = new Map<string, NationEntry>((DATA.nations ?? []).map((n) => [n.nation, n]));
+/** Every player whose nationality is a WC 2026 nation — the open "World Cup" draft pool. */
+const WC_PLAYERS: PlayerSeason[] = DATA.players.filter((p) => !!p.nationality && WC_NATION_NAMES.has(p.nationality));
 
 export const POOL_META = DATA.counts;
 /** Per-league counts (players + spinnable squads) for UI copy. */
@@ -183,6 +188,38 @@ export function spinForNation(
     eligible = within();
   }
   const arr = eligible.slice();
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr.slice(0, count).sort((a, b) => b.overall - a.overall);
+}
+
+/** Is this player eligible for the open World Cup draft (nationality at WC 2026)? */
+export function isWCEligible(player: PlayerSeason): boolean {
+  return !!player.nationality && WC_NATION_NAMES.has(player.nationality);
+}
+
+/**
+ * Open "World Cup" spin: deal `count` players from ANY WC 2026 nation that can fill an
+ * open slot — no nation lock, pure luck of the spin (every rating in play from pick one).
+ * The huge pool means no band/relaxation is needed. Returns candidates sorted by overall desc.
+ */
+export function spinWorld(
+  openSlotPositions: Position[],
+  usedPlayerIds: Set<string>,
+  usedIdentities: Set<string> = new Set(),
+  opts: { count?: number } = {},
+  rng: () => number = Math.random
+): PlayerSeason[] {
+  const count = opts.count ?? 6;
+  const pool = WC_PLAYERS.filter(
+    (p) =>
+      !usedPlayerIds.has(p.id) &&
+      !usedIdentities.has(playerIdentity(p.name)) &&
+      openSlotPositions.some((slotPos) => canPlay(p.position, slotPos))
+  );
+  const arr = pool.slice();
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1));
     [arr[i], arr[j]] = [arr[j], arr[i]];

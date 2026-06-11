@@ -10,14 +10,15 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Formation, PlacedPlayer } from "./types";
 import { createDraftDb, validateAndScore } from "./server";
-import { getPlayer, getNation } from "./pool";
+import { getPlayer, getNation, isWCEligible } from "./pool";
 import { makeOpponent } from "./opponent";
 import { resolveMatch } from "./live-score";
 import { seededRng } from "./score";
 import {
-  planRun, gamesForStage, buildMatchRow, outcomeOf, allowDraw, advanceStage, isDuel, oppTargetFor,
+  planRun, planWorldRun, gamesForStage, buildMatchRow, outcomeOf, allowDraw, advanceStage, isDuel, oppTargetFor,
+  WORLD_TEAM_NAME,
   type WCPlan, type WCFixture, type WcRun, type WcMatchRow, type WcRunPatch,
-  type RunStage, type GameOutcome,
+  type RunStage, type GameOutcome, type RunMode,
 } from "./wc";
 
 export type { WcRun };
@@ -34,6 +35,7 @@ export function createWcDb(): SupabaseClient<any> {
 export function rowToRun(row: Record<string, unknown>): WcRun {
   return {
     id: String(row.id),
+    mode: (row.mode === "world" ? "world" : "nation") as RunMode,
     nation: String(row.nation),
     seed: String(row.seed),
     status: row.status as WcRun["status"],
@@ -62,10 +64,26 @@ export function validateNationLocked(formationRaw: unknown, squadRaw: unknown, n
   return team;
 }
 
-/** Plan a fresh run for a nation (deterministic by seed). */
-export function newRunPlan(nation: string, seed: string): WCPlan {
-  return planRun(nation, seed);
+/** Validate a submitted XI for the open World Cup mode: every player must be eligible
+ *  (nationality at WC 2026), but ANY nation is allowed — no single-nation lock. */
+export function validateWorld(formationRaw: unknown, squadRaw: unknown) {
+  const team = validateAndScore(formationRaw, squadRaw);
+  for (const p of team.squad) {
+    const full = getPlayer(p.player_season_id);
+    if (!full || !isWCEligible(full)) {
+      throw new Error(`${p.name} is not at the World Cup`);
+    }
+  }
+  return team;
 }
+
+/** Plan a fresh run (deterministic by seed). World mode generates a gauntlet bracket;
+ *  nation mode uses the nation's real group + a seeded bracket. */
+export function newRunPlan(mode: RunMode, nation: string, seed: string): WCPlan {
+  return mode === "world" ? planWorldRun(seed) : planRun(nation, seed);
+}
+
+export { WORLD_TEAM_NAME };
 
 /** Build a game's opponent XI: a strength-tuned bot at the fixture target, labelled
  *  with the real fixture nation (opponents aren't nation-locked — flag + name only).

@@ -30,6 +30,14 @@ export type { WCStage, WCNation };
 //                     can make changes before kickoff.
 export type RunStage = "group" | "ko" | "qf" | "sf" | "final";
 export const RUN_STAGES: RunStage[] = ["group", "ko", "qf", "sf", "final"];
+
+// Two ways to play a run:
+//   "nation" — nation-locked squad, your nation's REAL group + bracket (the original mode).
+//   "world"  — open draft from ANY WC 2026 nation's players; no nation, a generated gauntlet
+//              (a 3-team group, then a knockout bracket of the strongest WC nations to the Final).
+export type RunMode = "nation" | "world";
+/** Display name carried on a world-mode run's `nation` column (it has no real nation). */
+export const WORLD_TEAM_NAME = "World XI";
 export const RUN_STAGE_LABEL: Record<RunStage, string> = {
   group: "Group Stage", ko: "Round of 32 & 16", qf: "Quarter-Final", sf: "Semi-Final", final: "Final",
 };
@@ -134,11 +142,42 @@ export function planRun(nation: string, seed: string): WCPlan {
   return { group, knockouts };
 }
 
+/**
+ * Plan a WORLD-mode run (open draft, no nation), deterministic by `seed`:
+ *  - group: three nations from the full WC field (light prestige weighting).
+ *  - knockouts: five more, prestige-weighted harder each round so powers run deep.
+ * All eight opponents are distinct real WC nations. Match difficulty still comes from
+ * the stage ramp (oppTargetFor), so the nation choice here is flavour, not strength.
+ */
+export function planWorldRun(seed: string): WCPlan {
+  const rng = seededRng(`${seed}:wplan`);
+  let pool = allWCNations();
+
+  const group: WCFixture[] = [];
+  for (let i = 0; i < 3 && pool.length; i++) {
+    const opponent = weightedPick(pool, (t) => prestige(t.nation), rng);
+    pool = pool.filter((t) => t.nation !== opponent.nation);
+    group.push({ stage: "group", label: "Group Stage", opponent });
+  }
+
+  const knockouts: WCFixture[] = [];
+  KNOCKOUT_STAGES.forEach((stage, i) => {
+    if (pool.length === 0) return;
+    const power = 1 + i * 0.6; // later rounds skew harder to marquee nations
+    const opponent = weightedPick(pool, (t) => Math.pow(prestige(t.nation), power), rng);
+    pool = pool.filter((t) => t.nation !== opponent.nation);
+    knockouts.push({ stage, label: WC_STAGE_LABEL[stage], opponent });
+  });
+
+  return { group, knockouts };
+}
+
 // ─── Run state + advancement (pure — the API persists the result) ────────────
 
 /** The mutable run state (subset of the draft_wc_runs row). */
 export type WcRun = {
   id: string;
+  mode: RunMode;
   nation: string;
   seed: string;
   status: "active" | "eliminated" | "champion";

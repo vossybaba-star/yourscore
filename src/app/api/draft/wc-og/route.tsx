@@ -21,6 +21,7 @@ export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams;
   const nation = q.get("nation") ?? "Your nation";
   const crest = q.get("crest");
+  const world = q.get("world") === "1";
   const stage = q.get("stage") ?? "group";
   const status = q.get("status") ?? "active";
   const stageLabel = STAGE_LABEL[stage] ?? "Group Stage";
@@ -29,9 +30,11 @@ export async function GET(req: NextRequest) {
   const eliminated = status === "eliminated";
   const accent = champion ? "#ffd700" : eliminated ? "#ff4757" : "#00ff87";
   const headline = champion ? "CHAMPIONS" : eliminated ? "OUT" : stageLabel.toUpperCase();
-  const sub = champion ? `${nation} won the World Cup 🏆`
-    : eliminated ? `${nation} — out at the ${stageLabel}`
-    : `${nation} reached the ${stageLabel}`;
+  // World mode has no nation; refer to it as "a World XI" for natural copy.
+  const who = world ? "A World XI" : nation;
+  const sub = champion ? `${who} won the World Cup 🏆`
+    : eliminated ? `${who} — out at the ${stageLabel}`
+    : `${who} reached the ${stageLabel}`;
 
   // Parse the path: each row "Label~Detail~R".
   const rows = (q.get("path") ?? "").split("|").filter(Boolean).map((r) => {
@@ -56,6 +59,8 @@ export async function GET(req: NextRequest) {
               {crest ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={crest} alt="" width={96} height={96} style={{ objectFit: "contain", marginRight: 22 }} />
+              ) : world ? (
+                <div style={{ display: "flex", fontSize: 84, marginRight: 22 }}>🌍</div>
               ) : null}
               <div style={{ fontSize: 52, fontWeight: 800, color: "#fff" }}>{nation}</div>
             </div>

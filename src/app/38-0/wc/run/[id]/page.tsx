@@ -12,17 +12,17 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Pitch } from "@/components/draft/Pitch";
-import { spinForNation } from "@/lib/draft/pool";
+import { spinForNation, spinWorld } from "@/lib/draft/pool";
 import { slotsFor } from "@/lib/draft/formations";
 import { CATEGORY_COLOR, posCategory } from "@/lib/draft/score";
-import { RUN_STAGE_LABEL, isDuel, type RunStage } from "@/lib/draft/wc";
+import { RUN_STAGE_LABEL, isDuel, type RunStage, type RunMode } from "@/lib/draft/wc";
 import { wcNation } from "@/data/draft/wc2026";
 import type { Formation, PlacedPlayer, PlayerSeason } from "@/lib/draft/types";
 import { trackGameComplete } from "@/lib/analytics/trackGame";
 
 type Fixture = { stage: string; label: string; opponent: { nation: string; crest?: string } };
 type Run = {
-  id: string; nation: string; status: "active" | "eliminated" | "champion";
+  id: string; mode: RunMode; nation: string; status: "active" | "eliminated" | "champion";
   stage: RunStage; stage_index: number; formation: Formation; squad: PlacedPlayer[];
   strength: number; plan: { group: Fixture[]; knockouts: Fixture[] };
   group_points: number; upgrades_left: number;
@@ -75,7 +75,9 @@ export default function WorldCupRun() {
     const slot = slotsFor(run.formation).find((s) => s.id === slotId)!;
     const usedIds = new Set(run.squad.map((p) => p.player_season_id));
     const usedNames = new Set(run.squad.map((p) => p.name));
-    setSlate(spinForNation(run.nation, [slot.pos], usedIds, usedNames, { count: 6 }));
+    setSlate(run.mode === "world"
+      ? spinWorld([slot.pos], usedIds, usedNames, { count: 6 })
+      : spinForNation(run.nation, [slot.pos], usedIds, usedNames, { count: 6 }));
   }
 
   async function applyUpgrade(newPlayerId: string) {
@@ -90,7 +92,8 @@ export default function WorldCupRun() {
     setBusy(false);
   }
 
-  const crest = useMemo(() => (run ? wcNation(run.nation)?.crest : null), [run]);
+  const world = run?.mode === "world";
+  const crest = useMemo(() => (run && !world ? wcNation(run.nation)?.crest : null), [run, world]);
 
   // Compact run path for the scorecard: "Label~Detail~R" rows (R = W|L|Q).
   const scorecardUrl = useMemo(() => {
@@ -109,14 +112,16 @@ export default function WorldCupRun() {
     });
     const p = new URLSearchParams({ nation: run.nation, status: run.status, stage: run.stage, path: rows.join("|") });
     if (crest) p.set("crest", crest);
+    if (world) p.set("world", "1");
     return `/api/draft/wc-og?${p}`;
-  }, [run, matches, crest]);
+  }, [run, matches, crest, world]);
 
   function shareRun() {
     if (!run) return;
+    const who = world ? "a World XI" : run.nation;
     const text = run.status === "champion"
-      ? `I won the World Cup with ${run.nation} on YourScore! 🏆`
-      : `My ${run.nation} World Cup run ended at the ${RUN_STAGE_LABEL[run.stage]}. Beat that 👇`;
+      ? `I won the World Cup with ${who} on YourScore! 🏆`
+      : `My ${world ? "World XI" : run.nation} World Cup run ended at the ${RUN_STAGE_LABEL[run.stage]}. Beat that 👇`;
     const url = `${window.location.origin}/38-0/wc`;
     if (navigator.share) navigator.share({ title: "YourScore — World Cup Run", text, url }).catch(() => {});
     else { navigator.clipboard?.writeText(`${text} ${url}`); window.open(`${window.location.origin}${scorecardUrl}`, "_blank"); }
@@ -143,10 +148,12 @@ export default function WorldCupRun() {
 
         {/* Header */}
         <div className="flex items-center gap-3 pt-2">
-          {crest && (
+          {crest ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={crest} alt={run.nation} width={48} height={48} style={{ width: 48, height: 48, objectFit: "contain" }} />
-          )}
+          ) : world ? (
+            <span style={{ fontSize: 42, lineHeight: 1 }}>🌍</span>
+          ) : null}
           <div className="flex-1">
             <div className="font-display tracking-wide" style={{ fontSize: 26, color: "#fff" }}>{run.nation}</div>
             <div className="font-body" style={{ fontSize: 12, color: "#8888aa" }}>

@@ -1,11 +1,12 @@
 "use client";
 
 /**
- * /38-0/wc — World Cup Run: pick a nation, then draft a NATION-LOCKED XI.
+ * /38-0/wc — World Cup Run. Two modes:
+ *   "nation" — pick a nation, draft a NATION-LOCKED XI, play that nation's real WC path.
+ *   "world"  — open draft: build an XI from ANY WC 2026 nation's players, play a gauntlet.
  *
- * Only players from the chosen nation can be spun (spinForNation). Once the XI is
- * complete we POST to /api/draft/wc (start), which validates + plans the bracket and
- * returns a run id; we then go to the Road-to-the-Final screen.
+ * The chosen XI is POSTed to /api/draft/wc (start) which validates + plans the bracket and
+ * returns a run id; we then go to the Road-to-the-Final screen. Server is authoritative.
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -13,7 +14,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Pitch } from "@/components/draft/Pitch";
 import { useUser } from "@/hooks/useUser";
-import { pickableNations, spinForNation, type PickableNation } from "@/lib/draft/pool";
+import { pickableNations, spinForNation, spinWorld, type PickableNation } from "@/lib/draft/pool";
+import { WORLD_TEAM_NAME, type RunMode } from "@/lib/draft/wc";
 import {
   emptyTeam, openSlots, isComplete, usedPlayerIds, usedPlayerNames, placePlayer, hydrateSavedTeam, type LocalTeam,
 } from "@/lib/draft/local";
@@ -28,7 +30,7 @@ const SIGN_IN_PATH = "/38-0/wc";
 
 // Persist an in-progress pick across a sign-in round-trip, so a signed-out player who
 // drafts an XI lands back on the exact same team after authenticating.
-type SavedDraft = { nation: string; formation: Formation; squad: PlacedPlayer[]; pendingEnter: boolean };
+type SavedDraft = { mode: RunMode; nation: string | null; formation: Formation; squad: PlacedPlayer[]; pendingEnter: boolean };
 const DRAFT_KEY = "wc:draft:v1";
 function saveDraft(d: SavedDraft) { try { localStorage.setItem(DRAFT_KEY, JSON.stringify(d)); } catch { /* ignore */ } }
 function loadDraft(): SavedDraft | null { try { const r = localStorage.getItem(DRAFT_KEY); return r ? JSON.parse(r) as SavedDraft : null; } catch { return null; } }
@@ -37,6 +39,7 @@ function clearDraft() { try { localStorage.removeItem(DRAFT_KEY); } catch { /* i
 export default function WorldCupEntry() {
   const router = useRouter();
   const nations = useMemo(() => pickableNations(), []);
+  const [mode, setMode] = useState<RunMode | null>(null);
   const [nation, setNation] = useState<PickableNation | null>(null);
   const [team, setTeam] = useState<LocalTeam | null>(null);
   const [slate, setSlate] = useState<PlayerSeason[] | null>(null);
@@ -47,6 +50,15 @@ export default function WorldCupEntry() {
   const [error, setError] = useState<string | null>(null);
   const reelTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  const world = mode === "world";
+
+  function chooseMode(m: RunMode) {
+    setMode(m);
+    setNation(null); setSlate(null); setSelected(null); setReel(null);
+    // World mode has no nation gate — go straight to the open draft.
+    setTeam(m === "world" ? emptyTeam(FORMATION) : null);
+  }
+
   function chooseNation(n: PickableNation) {
     setNation(n);
     setTeam(emptyTeam(FORMATION));
@@ -54,11 +66,13 @@ export default function WorldCupEntry() {
   }
 
   function doSpin() {
-    if (!team || !nation || spinning) return;
+    if (!team || spinning || (mode === "nation" && !nation)) return;
     setSpinning(true); setSlate(null); setSelected(null);
     const open = openSlots(team).map((s) => s.pos);
     // Pure luck of the spin — any rating can come up, from the very first pick.
-    const pool = spinForNation(nation.nation, open, usedPlayerIds(team), usedPlayerNames(team), { count: 6 });
+    const pool = world
+      ? spinWorld(open, usedPlayerIds(team), usedPlayerNames(team), { count: 6 })
+      : spinForNation(nation!.nation, open, usedPlayerIds(team), usedPlayerNames(team), { count: 6 });
     let ticks = 0;
     reelTimer.current = setInterval(() => {
       setReel(pool.length ? pool[Math.floor(Math.random() * pool.length)].name : "—");
@@ -81,23 +95,23 @@ export default function WorldCupEntry() {
 
   // Submit a finished XI. If the player isn't signed in, save the pick and send them
   // to sign-in with a return path; we resume automatically when they come back.
-  async function enter(nationName: string, formation: Formation, squad: PlacedPlayer[]) {
+  async function enter(runMode: RunMode, nationName: string, formation: Formation, squad: PlacedPlayer[]) {
     setStarting(true); setError(null);
     try {
       const res = await fetch("/api/draft/wc", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "start", nation: nationName, formation, squad }),
+        body: JSON.stringify({ action: "start", mode: runMode, nation: nationName, formation, squad }),
       });
       if (res.status === 401) {
-        saveDraft({ nation: nationName, formation, squad, pendingEnter: true });
+        saveDraft({ mode: runMode, nation: runMode === "world" ? null : nationName, formation, squad, pendingEnter: true });
         router.push(`/auth/sign-in?next=${encodeURIComponent(SIGN_IN_PATH)}`);
         return;
       }
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? "Could not start"); setStarting(false); return; }
       clearDraft();
-      trackGamePlay("38-0", { mode: "world_cup_run" });
+      trackGamePlay("38-0", { mode: runMode === "world" ? "world_cup_open" : "world_cup_run" });
       router.push(`/38-0/wc/run/${data.runId}`);
     } catch {
       setError("Network error — try again."); setStarting(false);
@@ -105,8 +119,9 @@ export default function WorldCupEntry() {
   }
 
   function start() {
-    if (!team || !nation || !isComplete(team) || starting) return;
-    enter(nation.nation, team.formation, team.squad);
+    if (!team || !mode || !isComplete(team) || starting) return;
+    if (mode === "nation" && !nation) return;
+    enter(mode, mode === "world" ? WORLD_TEAM_NAME : nation!.nation, team.formation, team.squad);
   }
 
   // On load: (1) restore a saved draft; (2) auto-select nation from ?nation= query param;
@@ -115,45 +130,75 @@ export default function WorldCupEntry() {
     if (authLoading) return;
     const d = loadDraft();
     if (d) {
-      if (!nation) {
-        const n = nations.find((x) => x.nation === d.nation);
-        if (n) { setNation(n); setTeam(hydrateSavedTeam(d.formation, d.squad)); }
+      if (!mode) {
+        setMode(d.mode);
+        if (d.mode === "world") {
+          setTeam(hydrateSavedTeam(d.formation, d.squad));
+        } else {
+          const n = nations.find((x) => x.nation === d.nation);
+          if (n) { setNation(n); setTeam(hydrateSavedTeam(d.formation, d.squad)); }
+        }
       }
       if (d.pendingEnter && user) {
         saveDraft({ ...d, pendingEnter: false });
-        enter(d.nation, d.formation, d.squad);
+        enter(d.mode, d.mode === "world" ? WORLD_TEAM_NAME : (d.nation ?? ""), d.formation, d.squad);
       }
       return;
     }
     // No saved draft — check for ?nation= param (set by the main 38-0 page tab)
     const params = new URLSearchParams(window.location.search);
     const nationParam = params.get("nation");
-    if (nationParam && !nation) {
+    if (nationParam && !mode) {
       const n = nations.find((x) => x.nation === nationParam);
-      if (n) chooseNation(n);
+      if (n) { setMode("nation"); chooseNation(n); }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, authLoading, nations]);
 
-  // ── Nation picker ───────────────────────────────────────────────────────────
-  if (!nation || !team) {
+  // ── Mode picker ───────────────────────────────────────────────────────────
+  if (!mode) {
     return (
       <div className="min-h-[100dvh] pb-16" style={{ background: "#0a0a0f" }}>
         <div className="max-w-lg mx-auto px-4 pt-safe">
           <div className="pt-4"><Link href="/38-0" className="font-body text-sm" style={{ color: "#8888aa" }}>← Back</Link></div>
           <h1 className="font-display tracking-wide mt-3" style={{ fontSize: 32, color: "#fff" }}>🏆 WORLD CUP RUN</h1>
           <p className="font-body mt-1 mb-4" style={{ fontSize: 14, color: "#cfcfe6" }}>
-            A solo World Cup campaign. Pick a nation, build an XI from <b style={{ color: "#fff" }}>their players only</b>, and play their real World Cup 2026 path.
+            A solo World Cup campaign. Build an XI, then play through a World Cup path — group, then knockouts — all the way to the final. Pick your mode.
           </p>
 
+          {/* Mode cards */}
+          <div className="flex flex-col gap-3 mb-5">
+            <button onClick={() => chooseMode("nation")} className="text-left rounded-2xl p-4 active:scale-[0.99] transition-transform"
+              style={{ background: "#12121e", border: "1px solid rgba(0,255,135,0.3)" }}>
+              <div className="flex items-center gap-2.5 mb-1">
+                <span style={{ fontSize: 22 }}>🏴</span>
+                <span className="font-display tracking-wide" style={{ fontSize: 20, color: "#00ff87" }}>NATIONAL TEAM</span>
+              </div>
+              <div className="font-body" style={{ fontSize: 13, color: "#cfcfe6", lineHeight: 1.4 }}>
+                Pick a nation and draft <b style={{ color: "#fff" }}>their players only</b>. Play that nation&apos;s real World Cup 2026 fixtures.
+              </div>
+            </button>
+
+            <button onClick={() => chooseMode("world")} className="text-left rounded-2xl p-4 active:scale-[0.99] transition-transform"
+              style={{ background: "#12121e", border: "1px solid rgba(255,184,0,0.4)" }}>
+              <div className="flex items-center gap-2.5 mb-1">
+                <span style={{ fontSize: 22 }}>🌍</span>
+                <span className="font-display tracking-wide" style={{ fontSize: 20, color: "#ffb800" }}>WORLD CUP</span>
+              </div>
+              <div className="font-body" style={{ fontSize: 13, color: "#cfcfe6", lineHeight: 1.4 }}>
+                Open draft — build a <b style={{ color: "#fff" }}>dream team from any nation&apos;s players</b>. Beat the best in the world to lift the trophy.
+              </div>
+            </button>
+          </div>
+
           {/* How it works */}
-          <div className="rounded-2xl p-4 mb-5" style={{ background: "#12121e", border: "1px solid rgba(255,184,0,0.3)" }}>
+          <div className="rounded-2xl p-4" style={{ background: "#12121e", border: "1px solid rgba(255,184,0,0.3)" }}>
             <div className="font-body mb-2.5" style={{ fontSize: 11, color: "#ffb800", letterSpacing: 1 }}>HOW IT WORKS</div>
             {[
-              ["①", "Pick your nation & draft your XI", "Only players from that nation are in your pool."],
-              ["②", "Play the real WC 2026 fixtures", "Your group, then the knockouts — vs the actual opponents."],
-              ["③", "Win to advance · re-spin each round", "Survive the group, then it's win-or-go-home. Each round you get free re-spins — luck of the draw."],
-              ["④", "Lose a knockout and you're out", "Reach the final and lift the trophy. 🏆"],
+              ["①", "Build your XI", "Spin & pick — any rating can come up, luck of the draw."],
+              ["②", "Play the World Cup", "A group, then the knockouts — vs real nations, tougher each round."],
+              ["③", "Win to advance · free re-spins", "Survive the group, then win-or-go-home. Each round you get free re-spins."],
+              ["④", "Lift the trophy 🏆", "Lose a knockout and you're out. Win the final and you're champions."],
             ].map(([n, title, desc]) => (
               <div key={n as string} className="flex gap-3 mb-2.5 last:mb-0">
                 <span className="font-display flex-shrink-0" style={{ fontSize: 18, color: "#ffb800" }}>{n}</span>
@@ -164,8 +209,21 @@ export default function WorldCupEntry() {
               </div>
             ))}
           </div>
+        </div>
+      </div>
+    );
+  }
 
-          <div className="font-body mb-2" style={{ fontSize: 11, color: "#8888aa", letterSpacing: 1 }}>PICK YOUR NATION</div>
+  // ── Nation picker (nation mode only) ──────────────────────────────────────
+  if (mode === "nation" && (!nation || !team)) {
+    return (
+      <div className="min-h-[100dvh] pb-16" style={{ background: "#0a0a0f" }}>
+        <div className="max-w-lg mx-auto px-4 pt-safe">
+          <div className="pt-4"><button onClick={() => setMode(null)} className="font-body text-sm" style={{ color: "#8888aa" }}>← Change mode</button></div>
+          <h1 className="font-display tracking-wide mt-3" style={{ fontSize: 28, color: "#fff" }}>PICK YOUR NATION</h1>
+          <p className="font-body mt-1 mb-4" style={{ fontSize: 13, color: "#8888aa" }}>
+            Build an XI from their players only and play their real World Cup 2026 path.
+          </p>
           <div className="grid grid-cols-2 gap-2.5">
             {nations.map((n) => (
               <button key={n.nation} onClick={() => chooseNation(n)}
@@ -184,25 +242,37 @@ export default function WorldCupEntry() {
     );
   }
 
-  // ── Nation-locked draft ───────────────────────────────────────────────────────
+  if (!team) return null;
+
+  // ── Draft (both modes) ────────────────────────────────────────────────────
+  const teamName = world ? WORLD_TEAM_NAME : nation!.nation;
+  const teamCrest = world ? null : nation!.crest;
+  const accent = world ? "#ffb800" : "#00ff87";
   const remaining = 11 - team.squad.length;
   const lines = lineRatings(team.squad);
   const slots = slotsFor(team.formation);
   const filledBySlot = new Map(team.squad.map((p) => [p.slot, p]));
   const available = selected ? slots.filter((s) => !filledBySlot.has(s.id) && canPlay(selected.position, s.pos)) : [];
+  const scoutLabel = world ? "🌍 SCOUT THE WORLD" : `🎰 SCOUT ${teamName.toUpperCase()}`;
 
   return (
     <div className="min-h-[100dvh] pb-44" style={{ background: "#0a0a0f" }}>
       <div className="max-w-lg mx-auto px-4 pt-safe">
         <div className="pt-4">
-          <button onClick={() => setNation(null)} className="font-body text-sm" style={{ color: "#8888aa" }}>← Change nation</button>
+          <button onClick={() => (world ? setMode(null) : setNation(null))} className="font-body text-sm" style={{ color: "#8888aa" }}>
+            {world ? "← Change mode" : "← Change nation"}
+          </button>
         </div>
         <div className="flex items-center justify-between pt-2">
           <div className="flex items-center gap-2.5">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={nation.crest} alt={nation.nation} width={40} height={40} style={{ width: 40, height: 40, objectFit: "contain" }} />
+            {teamCrest ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={teamCrest} alt={teamName} width={40} height={40} style={{ width: 40, height: 40, objectFit: "contain" }} />
+            ) : (
+              <span style={{ fontSize: 36, lineHeight: 1 }}>🌍</span>
+            )}
             <div>
-              <div className="font-body" style={{ fontSize: 11, color: "#8888aa", letterSpacing: 1 }}>YOUR {nation.nation.toUpperCase()} XI</div>
+              <div className="font-body" style={{ fontSize: 11, color: "#8888aa", letterSpacing: 1 }}>YOUR {teamName.toUpperCase()}{world ? "" : " XI"}</div>
               <div className="font-display tracking-wide" style={{ fontSize: 22, color: "#fff" }}>{team.formation}</div>
             </div>
           </div>
@@ -237,8 +307,12 @@ export default function WorldCupEntry() {
         <div className="max-w-lg mx-auto px-4 pt-3">
           {spinning && (
             <div className="mb-3 flex items-center gap-3 rounded-2xl px-4 py-3" style={{ background: "#12121e", border: "1px solid rgba(255,184,0,0.4)" }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={nation.crest} alt="" width={40} height={40} style={{ width: 40, height: 40, objectFit: "contain", opacity: 0.85 }} />
+              {teamCrest ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={teamCrest} alt="" width={40} height={40} style={{ width: 40, height: 40, objectFit: "contain", opacity: 0.85 }} />
+              ) : (
+                <span style={{ fontSize: 34 }}>🌍</span>
+              )}
               <div className="font-display tracking-wide truncate" style={{ fontSize: 22, color: "#ffb800" }}>{reel ?? "Scouting…"}</div>
             </div>
           )}
@@ -272,6 +346,7 @@ export default function WorldCupEntry() {
                     <div className="flex items-center justify-center rounded-lg font-display flex-shrink-0" style={{ width: 38, height: 38, fontSize: 18, color: "#0a0a0f", background: c }}>{p.overall}</div>
                     <div className="flex-1 min-w-0">
                       <div className="font-body truncate" style={{ fontSize: 14, color: "#fff" }}>{p.name} <span style={{ color: "#8888aa", fontSize: 12 }}>{p.club} {p.season}</span></div>
+                      {world && p.nationality && <div className="font-body truncate" style={{ fontSize: 11, color: "#ffb800" }}>{p.nationality}</div>}
                     </div>
                     {badge && (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -290,8 +365,8 @@ export default function WorldCupEntry() {
             !slate || spinning ? (
               <button onClick={doSpin} disabled={spinning}
                 className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-60"
-                style={{ background: spinning ? "#1a1a2e" : "#00ff87", color: spinning ? "#ffb800" : "#062013", fontSize: 24 }}>
-                {spinning ? "SCOUTING…" : `🎰 SCOUT ${nation.nation.toUpperCase()}`}
+                style={{ background: spinning ? "#1a1a2e" : accent, color: spinning ? "#ffb800" : "#062013", fontSize: 24 }}>
+                {spinning ? "SCOUTING…" : scoutLabel}
               </button>
             ) : (
               <div className="text-center font-body py-2" style={{ fontSize: 13, color: "#8888aa" }}>Draft a player to continue</div>
