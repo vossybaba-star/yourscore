@@ -50,7 +50,7 @@ export default function AcceptChallenge() {
     setBusy(true); setErr(null);
     try {
       const squad = team.squad.map((p) => ({ slot: p.slot, player_season_id: p.player_season_id }));
-      const saveRes = await fetch("/api/draft/team", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ formation: team.formation, squad }) });
+      const saveRes = await fetch("/api/draft/team", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ formation: team.formation, squad, competition: team.league }) });
       if (!saveRes.ok) { setErr((await saveRes.json().catch(() => ({}))).error ?? "Could not save team"); setBusy(false); return; }
 
       const r = await fetch(`/api/draft/challenge/${code}`, { method: "POST", headers: { "content-type": "application/json" }, body: "{}" });

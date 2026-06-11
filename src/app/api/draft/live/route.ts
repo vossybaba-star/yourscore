@@ -4,6 +4,7 @@ import { rateLimitDistributed } from "@/lib/ratelimit";
 import { createDraftDb, GLOBAL_LEAGUE } from "@/lib/draft/server";
 import { createFriendMatch, joinByCode, queueOrPair, createBotMatch, leaveQueue,
   createLeagueChallenge, acceptChallenge, dismissChallenge, type MatchmakeOpts } from "@/lib/draft/live-server";
+import { asLeague } from "@/lib/draft/types";
 
 // Matchmaking entry point.
 //   create      → open a friend lobby (returns a shareable code)
@@ -22,12 +23,13 @@ export async function POST(req: NextRequest) {
   const { ok } = await rateLimitDistributed(`draft-live-mm:${user.id}`, 60, 60_000);
   if (!ok) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
 
-  let body: { action?: string; code?: string; leagueId?: string; ranked?: boolean; opponentId?: string; matchId?: string } = {};
+  let body: { action?: string; code?: string; leagueId?: string; ranked?: boolean; opponentId?: string; matchId?: string; competition?: string } = {};
   try { body = await req.json(); } catch { /* optional */ }
 
   const leagueId = typeof body.leagueId === "string" ? body.leagueId : null;
   const ranked = body.ranked !== false; // ranked by default
-  const opts: MatchmakeOpts = { ranked, leagueId: leagueId === GLOBAL_LEAGUE ? null : leagueId };
+  const competition = asLeague(body.competition);
+  const opts: MatchmakeOpts = { ranked, leagueId: leagueId === GLOBAL_LEAGUE ? null : leagueId, competition };
   const db = createDraftDb();
 
   try {
@@ -46,7 +48,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ ok: true });
       case "challenge":
         if (!leagueId || !body.opponentId) return NextResponse.json({ error: "Missing league or opponent" }, { status: 400 });
-        return NextResponse.json({ match: await createLeagueChallenge(db, user.id, leagueId, body.opponentId) });
+        return NextResponse.json({ match: await createLeagueChallenge(db, user.id, leagueId, body.opponentId, competition) });
       case "accept":
         if (!body.matchId) return NextResponse.json({ error: "Missing match" }, { status: 400 });
         return NextResponse.json({ match: await acceptChallenge(db, user.id, body.matchId) });

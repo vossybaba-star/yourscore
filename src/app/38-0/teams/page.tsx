@@ -13,7 +13,7 @@ import { BottomNav } from "@/components/ui/BottomNav";
 import { DraftHeader } from "@/components/draft/DraftHeader";
 import { useUser } from "@/hooks/useUser";
 import { hydrateSavedTeam, saveTeam } from "@/lib/draft/local";
-import type { Formation, PlacedPlayer } from "@/lib/draft/types";
+import { asLeague, type Formation, type League, type PlacedPlayer } from "@/lib/draft/types";
 
 type SavedTeam = {
   id: string;
@@ -21,6 +21,7 @@ type SavedTeam = {
   formation: Formation;
   squad: PlacedPlayer[];
   strength_rating: number;
+  competition?: string | null;
   updated_at: string | null;
 };
 
@@ -31,6 +32,8 @@ export default function MyTeams() {
   const [fetched, setFetched] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [competition, setCompetition] = useState<League>("PL");
+  useEffect(() => { setCompetition(asLeague(new URLSearchParams(window.location.search).get("competition"))); }, []);
 
   const load = useCallback(() => {
     fetch("/api/draft/teams")
@@ -44,7 +47,7 @@ export default function MyTeams() {
 
   function use(t: SavedTeam) {
     // Load this saved XI into local play state, then open the team screen.
-    saveTeam(hydrateSavedTeam(t.formation, t.squad));
+    saveTeam(hydrateSavedTeam(t.formation, t.squad, asLeague(t.competition)));
     router.push("/38-0/team");
   }
 
@@ -61,7 +64,7 @@ export default function MyTeams() {
   return (
     <div className="min-h-[100dvh] pb-28" style={{ background: "#0a0a0f" }}>
       <div className="max-w-lg mx-auto px-5 pt-safe">
-        <DraftHeader />
+        <DraftHeader competition={competition} />
         <h1 className="font-display tracking-wide leading-none" style={{ fontSize: 44, color: "#fff" }}>
           MY <span style={{ color: "#00ff87" }}>TEAMS</span>
         </h1>

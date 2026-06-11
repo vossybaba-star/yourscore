@@ -11,6 +11,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useUser } from "@/hooks/useUser";
+import { asLeague, type League } from "@/lib/draft/types";
 
 type QueueResp = { status?: "matched" | "waiting"; match?: { id: string }; error?: string };
 type LeaderRow = {
@@ -37,6 +38,9 @@ export default function LiveEntry() {
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const findGenRef = useRef(0);
   const botAfterRef = useRef(0);
+  // Which competition this live session is for (PL / La Liga), from the entry link.
+  const [competition, setCompetition] = useState<League>("PL");
+  useEffect(() => { setCompetition(asLeague(new URLSearchParams(window.location.search).get("competition"))); }, []);
 
   // Leaderboard
   const [lbMetric, setLbMetric] = useState<"today" | "all">("today");
@@ -46,13 +50,13 @@ export default function LiveEntry() {
   useEffect(() => {
     let alive = true;
     setLbLoading(true);
-    fetch(`/api/draft/leaderboard?metric=${lbMetric}`)
+    fetch(`/api/draft/leaderboard?metric=${lbMetric}&competition=${competition}`)
       .then((r) => r.json())
       .then((d) => { if (alive) setLbRows(d.rows ?? []); })
       .catch(() => { if (alive) setLbRows([]); })
       .finally(() => { if (alive) setLbLoading(false); });
     return () => { alive = false; };
-  }, [lbMetric]);
+  }, [lbMetric, competition]);
 
   const stopPolling = () => { if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; } };
   useEffect(() => () => stopPolling(), []);
@@ -77,7 +81,7 @@ export default function LiveEntry() {
   }, [mode, matchId, oppJoined, router]);
 
   async function api(body: Record<string, unknown>): Promise<QueueResp> {
-    const res = await fetch("/api/draft/live", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+    const res = await fetch("/api/draft/live", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...body, competition }) });
     return res.json().catch(() => ({ error: "Request failed" }));
   }
 
@@ -213,7 +217,7 @@ export default function LiveEntry() {
                   <span className="text-xs" style={{ color: "#cfcfe6" }}>Waiting for your mate to join…</span>
                 </div>
                 <button
-                  onClick={() => navigator.share?.({ title: "38-0 H2H", text: `Play me on 38-0 — code ${code}`, url: `${location.origin}/38-0/live/${code}` }).catch(() => {})}
+                  onClick={() => navigator.share?.({ title: "38-0 H2H", text: `Play me on 38-0 — code ${code}`, url: `${location.origin}/38-0/live/${code}?competition=${competition}` }).catch(() => {})}
                   className="mt-4 w-full rounded-2xl py-3 font-semibold" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "#e8e8f0" }}
                 >
                   Share link

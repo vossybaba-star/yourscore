@@ -39,7 +39,7 @@ export default function SeasonSim() {
   // Seed by the squad so the season is stable: same XI → same result every view.
   const seed = team ? seasonSeed(team) : "";
   const result: SeasonResult | null = useMemo(
-    () => (team ? simulateSeason(team.squad, team.formation, team.strength, seed, leagueOpponents()) : null),
+    () => (team ? simulateSeason(team.squad, team.formation, team.strength, seed, leagueOpponents(team.league)) : null),
     [team, seed]
   );
   // If we've already simulated this exact XI, skip straight to the result.
@@ -167,7 +167,7 @@ export default function SeasonSim() {
 
   // ── Final result ──
   const r = result;
-  const narr = seasonNarrative(r);
+  const narr = seasonNarrative(r, team?.league);
   const accent = r.invincible ? "#ffd700" : r.position === 1 ? "#00ff87" : r.position <= 4 ? "#22d3ee" : r.position <= 12 ? "#ffb800" : "#ff4757";
   const verdictColor = r.verdict === "OVERPERFORMED" ? "#00ff87" : r.verdict === "UNDERPERFORMED" ? "#ff4757" : "#8888aa";
 

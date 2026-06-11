@@ -61,14 +61,14 @@ export default function PreMatch() {
   function doSpin() {
     if (!team || !slot || spinning || spinCount >= MAX_SPINS) return;
     setSpinning(true); setCurrent(null);
-    const buckets = allBuckets();
+    const buckets = allBuckets(team.league);
     let ticks = 0;
     reelTimer.current = setInterval(() => {
       const b = buckets[Math.floor(Math.random() * buckets.length)];
       setReel({ club: b.club, season: b.season });
       if (++ticks > 12) {
         if (reelTimer.current) clearInterval(reelTimer.current);
-        const result = spin([slot.pos], usedPlayerIds(team), usedPlayerNames(team));
+        const result = spin([slot.pos], usedPlayerIds(team), usedPlayerNames(team), Math.random, new Set(), team.league);
         setReel({ club: result.club, season: result.season });
         setCurrent(result); setSpinning(false); setSpinCount((n) => n + 1);
       }
@@ -88,12 +88,12 @@ export default function PreMatch() {
     setPlaying(true); setErr(null);
     try {
       const squad = team.squad.map((p) => ({ slot: p.slot, player_season_id: p.player_season_id }));
-      const saveRes = await fetch("/api/draft/team", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ formation: team.formation, squad }) });
+      const saveRes = await fetch("/api/draft/team", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ formation: team.formation, squad, competition: team.league }) });
       if (!saveRes.ok) { setErr((await saveRes.json().catch(() => ({}))).error ?? "Could not save team"); setPlaying(false); return; }
 
       const r = await fetch("/api/draft/match", {
         method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ stage: "resolve", opponentId: matchup.opponentId, findId: matchup.findId, botFormation: matchup.botFormation, leagueId: matchup.leagueId ?? undefined }),
+        body: JSON.stringify({ stage: "resolve", opponentId: matchup.opponentId, findId: matchup.findId, botFormation: matchup.botFormation, leagueId: matchup.leagueId ?? undefined, competition: team.league }),
       });
       const m = await r.json();
       if (!r.ok) { setErr(m.error ?? "Match failed"); setPlaying(false); return; }

@@ -11,6 +11,7 @@ import { Pitch } from "@/components/draft/Pitch";
 import { createDraftDb, type TeamSnapshot } from "@/lib/draft/server";
 import { tierColor } from "@/lib/draft/ui";
 import { liveOgQuery } from "@/lib/draft/share";
+import { asLeague, LEAGUE_META } from "@/lib/draft/types";
 import type { MatchReport } from "@/lib/draft/live-score";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://yourscore.app";
@@ -62,6 +63,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     return { title: "Draft XI — YourScore" };
   }
   const live = hasReport(m);
+  const leagueName = LEAGUE_META[asLeague((m as { competition?: string }).competition)].name;
 
   let image: string;
   let title: string;
@@ -77,7 +79,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     title = `${m.challenger_team.name} ${s1}–${s2} ${m.opponent_team.name}${pens} — ${m.detail?.single ? "Draft XI" : "38-0 Live"}`;
     description = m.detail!.report!.potm
       ? `MOTM ${m.detail!.report!.potm.name} (${m.detail!.report!.potm.rating.toFixed(1)}). Build your XI and go live, head-to-head.`
-      : "Build your all-time Premier League XI and go live, head-to-head.";
+      : `Build your all-time ${leagueName} XI and go live, head-to-head.`;
   } else {
     const challengerWon = m.winner_id === m.challenger_id;
     const og = new URLSearchParams({
@@ -89,7 +91,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     });
     image = `${BASE}/api/draft/og?${og.toString()}`;
     title = `${m.challenger_team.name} ${challengerWon ? "beat" : "lost to"} ${m.opponent_team.name} — Draft XI`;
-    description = `${m.challenger_strength} vs ${m.opponent_strength}. Build your all-time Premier League XI and take them on.`;
+    description = `${m.challenger_strength} vs ${m.opponent_strength}. Build your all-time ${leagueName} XI and take them on.`;
   }
 
   return {

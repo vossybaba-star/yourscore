@@ -22,7 +22,7 @@ import { liveOgQuery } from "@/lib/draft/share";
 import { loadTeam, saveTeam, clearTeam } from "@/lib/draft/local";
 import { AddFriendCard } from "@/components/social/AddFriendCard";
 import { trackGamePlay, trackGameComplete } from "@/lib/analytics/trackGame";
-import type { Formation, PlacedPlayer, PlayerSeason } from "@/lib/draft/types";
+import { asLeague, type Formation, type League, type PlacedPlayer, type PlayerSeason } from "@/lib/draft/types";
 import type { DraftLiveMatchRow } from "@/types/draft-db";
 
 const BG = "#0a0a0f";
@@ -254,6 +254,7 @@ export default function LiveMatchScreen() {
         <SpinSheet
           formation={view.myFormation} squad={view.mySquad} slotId={spinSlot}
           seedKey={`${m.id}:${side}:${m.phase}:${spinSlot}`}
+          competition={asLeague(m.competition)}
           onClose={() => setSpinSlot(null)}
           onPick={(playerId) => { live.swap(spinSlot, playerId); setSpinSlot(null); }}
         />
@@ -589,7 +590,7 @@ function PerfPill({ label, p, color }: { label: string; p: PlayerRating | null; 
   );
 }
 
-function SpinSheet({ formation, squad, slotId, seedKey, onPick, onClose }: { formation: Formation; squad: PlacedPlayer[]; slotId: string; seedKey: string; onPick: (playerId: string) => void; onClose: () => void }) {
+function SpinSheet({ formation, squad, slotId, seedKey, competition, onPick, onClose }: { formation: Formation; squad: PlacedPlayer[]; slotId: string; seedKey: string; competition: League; onPick: (playerId: string) => void; onClose: () => void }) {
   const slot = slotsFor(formation).find((s) => s.id === slotId)!;
   const [result, setResult] = useState<Spin | null>(null);
   const [spinning, setSpinning] = useState(false);
@@ -601,14 +602,14 @@ function SpinSheet({ formation, squad, slotId, seedKey, onPick, onClose }: { for
     setSpinning(true); setResult(null);
     const usedIds = new Set(squad.filter((p) => p.slot !== slotId).map((p) => p.player_season_id));
     const usedNames = new Set(squad.filter((p) => p.slot !== slotId).map((p) => playerIdentity(p.name)));
-    const buckets = allBuckets();
+    const buckets = allBuckets(competition);
     let ticks = 0;
     const t = setInterval(() => {
       const b = buckets[Math.floor(Math.random() * buckets.length)];
       setReel({ club: b.club, season: b.season }); // cosmetic flicker only
       if (++ticks > 11) {
         clearInterval(t);
-        const r = spin([slot.pos], usedIds, usedNames, seededRng(seedKey)); // seeded → fixed
+        const r = spin([slot.pos], usedIds, usedNames, seededRng(seedKey), new Set(), competition); // seeded → fixed
         setReel({ club: r.club, season: r.season });
         setResult(r); setSpinning(false);
       }

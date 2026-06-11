@@ -1,25 +1,29 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createDraftDb, validateAndScore } from "@/lib/draft/server";
-import { FORMATIONS, type Formation, type PlayerSeason } from "@/lib/draft/types";
+import { FORMATIONS, asLeague, type Formation, type PlayerSeason } from "@/lib/draft/types";
 import { slotsFor } from "@/lib/draft/formations";
 import { canPlay, playerIdentity } from "@/lib/draft/score";
 import raw from "@/data/draft/player-seasons.json";
 
-// POST /api/draft/team/random
+// POST /api/draft/team/random  { competition?: "PL" | "LaLiga" }
 //
-// Generates a valid random XI, saves it to draft_teams, and returns the team
-// so the client can immediately hydrate localStorage and enter a live match.
-// Used when a first-time user follows an invite link and has no saved team.
+// Generates a valid random XI in the given competition, saves it to draft_teams,
+// and returns the team so the client can immediately hydrate localStorage and enter
+// a live match. Used when a first-time user follows an invite link and has no saved
+// team — the competition must match the lobby they're joining.
 
 const data = raw as unknown as { players: PlayerSeason[] };
 
-export async function POST() {
+export async function POST(req: NextRequest) {
   const auth = await createClient();
   const {
     data: { user },
   } = await auth.auth.getUser();
   if (!user) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+
+  const body = await req.json().catch(() => ({}));
+  const competition = asLeague(typeof body?.competition === "string" ? body.competition : null);
 
   // Pick a formation at random from the standard set.
   const formation = FORMATIONS[
@@ -27,8 +31,8 @@ export async function POST() {
   ] as Formation;
   const slots = slotsFor(formation);
 
-  // Shuffle the full player pool, then greedily fill each slot.
-  const pool = [...data.players].sort(() => Math.random() - 0.5);
+  // Shuffle this competition's player pool, then greedily fill each slot.
+  const pool = data.players.filter((p) => p.league === competition).sort(() => Math.random() - 0.5);
   const usedIds = new Set<string>();
   const usedNames = new Set<string>();
 
@@ -82,9 +86,10 @@ export async function POST() {
       strength_rating: validated.strength,
       projected: validated.projected as unknown as never,
       status: "active",
+      competition,
       updated_at: new Date().toISOString(),
     },
-    { onConflict: "user_id" }
+    { onConflict: "user_id,competition" }
   );
 
   if (saveErr) {

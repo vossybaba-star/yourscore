@@ -60,7 +60,7 @@ export default function DraftPlay() {
     setSpinning(true);
     setCurrent(null);
     setSelected(null);
-    const buckets = allBuckets();
+    const buckets = allBuckets(team.league);
     let ticks = 0;
     reelTimer.current = setInterval(() => {
       const b = buckets[Math.floor(Math.random() * buckets.length)];
@@ -68,7 +68,7 @@ export default function DraftPlay() {
       if (++ticks > 13) {
         if (reelTimer.current) clearInterval(reelTimer.current);
         const open = openSlots(team).map((s) => s.pos);
-        const result = spin(open, usedPlayerIds(team), usedPlayerNames(team), Math.random, seenBuckets.current);
+        const result = spin(open, usedPlayerIds(team), usedPlayerNames(team), Math.random, seenBuckets.current, team.league);
         seenBuckets.current.add(`${result.club}|${result.season}`);
         setReel({ club: result.club, season: result.season });
         setCurrent(result);

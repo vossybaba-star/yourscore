@@ -11,7 +11,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { AuthProviders } from "@/components/auth/AuthButton";
 import { hydrateSavedTeam, saveTeam } from "@/lib/draft/local";
-import type { Formation, PlacedPlayer, Projected } from "@/lib/draft/types";
+import { asLeague, type Formation, type PlacedPlayer, type Projected } from "@/lib/draft/types";
 
 export default function LiveJoin() {
   const router = useRouter();
@@ -39,14 +39,19 @@ export default function LiveJoin() {
       // New user with no saved team — auto-generate one so they can play immediately.
       if (json.error === "Save a team first") {
         setPhase("picking");
-        const randRes = await fetch("/api/draft/team/random", { method: "POST" });
+        const lobbyComp = asLeague(new URLSearchParams(window.location.search).get("competition"));
+        const randRes = await fetch("/api/draft/team/random", {
+          method: "POST", headers: { "content-type": "application/json" },
+          body: JSON.stringify({ competition: lobbyComp }),
+        });
         const randData = await randRes.json().catch(() => ({}));
 
         if (!cancelled && randData.formation && Array.isArray(randData.squad)) {
           // Hydrate localStorage so the match/result page can display the XI.
           const localTeam = hydrateSavedTeam(
             randData.formation as Formation,
-            randData.squad as PlacedPlayer[]
+            randData.squad as PlacedPlayer[],
+            lobbyComp
           );
           saveTeam({
             ...localTeam,

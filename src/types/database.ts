@@ -278,6 +278,7 @@ export type Database = {
           challenger_strength: number
           challenger_team: Json
           code: string
+          competition: string
           created_at: string | null
           expires_at: string | null
           id: string
@@ -291,6 +292,7 @@ export type Database = {
           challenger_strength: number
           challenger_team: Json
           code: string
+          competition?: string
           created_at?: string | null
           expires_at?: string | null
           id?: string
@@ -304,6 +306,7 @@ export type Database = {
           challenger_strength?: number
           challenger_team?: Json
           code?: string
+          competition?: string
           created_at?: string | null
           expires_at?: string | null
           id?: string
@@ -405,6 +408,7 @@ export type Database = {
           sim: Json | null
           updated_at: string
           winner_id: string | null
+          competition: string
         }
         Insert: {
           created_at?: string
@@ -444,6 +448,7 @@ export type Database = {
           sim?: Json | null
           updated_at?: string
           winner_id?: string | null
+          competition?: string
         }
         Update: {
           created_at?: string
@@ -483,6 +488,7 @@ export type Database = {
           sim?: Json | null
           updated_at?: string
           winner_id?: string | null
+          competition?: string
         }
         Relationships: [
           {
@@ -500,18 +506,21 @@ export type Database = {
           league_id: string | null
           ranked: boolean
           user_id: string
+          competition: string
         }
         Insert: {
           enqueued_at?: string
           league_id?: string | null
           ranked?: boolean
           user_id: string
+          competition?: string
         }
         Update: {
           enqueued_at?: string
           league_id?: string | null
           ranked?: boolean
           user_id?: string
+          competition?: string
         }
         Relationships: [
           {
@@ -538,6 +547,7 @@ export type Database = {
           opponent_team: Json
           played_at: string | null
           winner_id: string | null
+          competition: string
         }
         Insert: {
           challenger_goals?: number | null
@@ -553,6 +563,7 @@ export type Database = {
           opponent_team: Json
           played_at?: string | null
           winner_id?: string | null
+          competition?: string
         }
         Update: {
           challenger_goals?: number | null
@@ -568,6 +579,7 @@ export type Database = {
           opponent_team?: Json
           played_at?: string | null
           winner_id?: string | null
+          competition?: string
         }
         Relationships: []
       }
@@ -582,6 +594,7 @@ export type Database = {
           strength_rating: number
           updated_at: string | null
           user_id: string
+          competition: string
         }
         Insert: {
           created_at?: string | null
@@ -593,6 +606,7 @@ export type Database = {
           strength_rating: number
           updated_at?: string | null
           user_id: string
+          competition?: string
         }
         Update: {
           created_at?: string | null
@@ -604,6 +618,7 @@ export type Database = {
           strength_rating?: number
           updated_at?: string | null
           user_id?: string
+          competition?: string
         }
         Relationships: []
       }
@@ -639,6 +654,7 @@ export type Database = {
           user_id: string
           wins_all_time: number
           wins_today: number
+          competition: string
         }
         Insert: {
           display_name: string
@@ -653,6 +669,7 @@ export type Database = {
           user_id: string
           wins_all_time?: number
           wins_today?: number
+          competition?: string
         }
         Update: {
           display_name?: string
@@ -667,6 +684,7 @@ export type Database = {
           user_id?: string
           wins_all_time?: number
           wins_today?: number
+          competition?: string
         }
         Relationships: []
       }
@@ -683,6 +701,7 @@ export type Database = {
           updated_at: string | null
           user_id: string | null
           win_streak: number
+          competition: string
         }
         Insert: {
           created_at?: string | null
@@ -696,6 +715,7 @@ export type Database = {
           updated_at?: string | null
           user_id?: string | null
           win_streak?: number
+          competition?: string
         }
         Update: {
           created_at?: string | null
@@ -709,6 +729,7 @@ export type Database = {
           updated_at?: string | null
           user_id?: string | null
           win_streak?: number
+          competition?: string
         }
         Relationships: []
       }
@@ -1738,6 +1759,7 @@ export type Database = {
           p_name: string
           p_result: string
           p_user: string
+          p_competition?: string
         }
         Returns: undefined
       }
@@ -1752,7 +1774,7 @@ export type Database = {
         }[]
       }
       draft_leaderboard_points: {
-        Args: { p_league_id: string; p_limit?: number; p_metric: string }
+        Args: { p_league_id: string; p_limit?: number; p_metric: string; p_competition?: string }
         Returns: {
           display_name: string
           draws: number
@@ -1764,7 +1786,7 @@ export type Database = {
         }[]
       }
       draft_live_pair: {
-        Args: { p_league: string; p_ranked: boolean; p_user: string }
+        Args: { p_league: string; p_ranked: boolean; p_user: string; p_competition?: string }
         Returns: string
       }
       draft_live_reap: { Args: never; Returns: undefined }

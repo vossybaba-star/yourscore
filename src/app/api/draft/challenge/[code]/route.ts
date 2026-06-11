@@ -4,7 +4,7 @@ import { rateLimitDistributed } from "@/lib/ratelimit";
 import { createDraftDb, GLOBAL_LEAGUE, type TeamSnapshot } from "@/lib/draft/server";
 import { creditResult, applyTeamStreak } from "@/lib/draft/live-server";
 import { resolveMatch, flipReport } from "@/lib/draft/live-score";
-import type { Formation, PlacedPlayer, Projected } from "@/lib/draft/types";
+import { asLeague, type Formation, type PlacedPlayer, type Projected } from "@/lib/draft/types";
 
 // GET: show a friend challenge (challenger's snapshotted XI) so a friend can size
 // it up before accepting. POST: the friend resolves it with their own active XI.
@@ -63,11 +63,13 @@ export async function POST(req: NextRequest, { params }: { params: { code: strin
   if (expired(ch.expires_at)) return NextResponse.json({ error: "Challenge expired" }, { status: 410 });
   if (ch.challenger_id === user.id) return NextResponse.json({ error: "That's your own challenge" }, { status: 400 });
 
-  // The friend must have a saved, active XI of their own.
+  // The friend must have a saved, active XI in the challenge's competition.
+  const competition = asLeague((ch as { competition?: string }).competition);
   const { data: mine } = await db
     .from("draft_teams")
     .select("display_name, formation, squad, strength_rating, projected, status")
     .eq("user_id", user.id)
+    .eq("competition", competition)
     .maybeSingle();
   if (!mine) return NextResponse.json({ error: "Save your team first" }, { status: 400 });
 
@@ -98,6 +100,7 @@ export async function POST(req: NextRequest, { params }: { params: { code: strin
     opponent_strength: mySide.strength,
     winner_id: winnerId,
     league_id: ch.league_id,
+    competition,
     played_at: new Date().toISOString(),
     challenger_goals: res.goals.a,
     opponent_goals: res.goals.b,
@@ -107,14 +110,14 @@ export async function POST(req: NextRequest, { params }: { params: { code: strin
   // Credit W/D/L for both players (global + league board) and update both streaks.
   const myRes = iWon ? "win" : challengerWon ? "loss" : "draw";
   const chRes = challengerWon ? "win" : iWon ? "loss" : "draw";
-  await creditResult(db, user.id, mySide.name, myRes);
-  if (ch.league_id) await creditResult(db, user.id, mySide.name, myRes, ch.league_id);
+  await creditResult(db, user.id, mySide.name, myRes, GLOBAL_LEAGUE, competition);
+  if (ch.league_id) await creditResult(db, user.id, mySide.name, myRes, ch.league_id, competition);
   if (ch.challenger_id) {
-    await creditResult(db, ch.challenger_id, challengerSnap.name, chRes);
-    if (ch.league_id) await creditResult(db, ch.challenger_id, challengerSnap.name, chRes, ch.league_id);
+    await creditResult(db, ch.challenger_id, challengerSnap.name, chRes, GLOBAL_LEAGUE, competition);
+    if (ch.league_id) await creditResult(db, ch.challenger_id, challengerSnap.name, chRes, ch.league_id, competition);
   }
-  await applyTeamStreak(db, user.id, myRes);
-  if (ch.challenger_id) await applyTeamStreak(db, ch.challenger_id, chRes);
+  await applyTeamStreak(db, user.id, myRes, competition);
+  if (ch.challenger_id) await applyTeamStreak(db, ch.challenger_id, chRes, competition);
 
   await db.from("draft_challenges").update({ status: "accepted", match_id: matchId }).eq("id", ch.id);
 

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimitDistributed } from "@/lib/ratelimit";
 import { createDraftDb, genJoinCode, type TeamSnapshot } from "@/lib/draft/server";
-import type { Formation, PlacedPlayer, Projected } from "@/lib/draft/types";
+import { asLeague, type Formation, type PlacedPlayer, type Projected } from "@/lib/draft/types";
 
 // Create a friend challenge: snapshot the signed-in player's current active XI and
 // mint a share code. A friend opens /draft/challenge/<code> and resolves it with
@@ -16,15 +16,17 @@ export async function POST(req: NextRequest) {
   const { ok } = await rateLimitDistributed(`draft-challenge:${user.id}`, 20, 60_000);
   if (!ok) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
 
-  let body: { leagueId?: string } = {};
+  let body: { leagueId?: string; competition?: string } = {};
   try { body = await req.json(); } catch { /* optional */ }
   const leagueId = typeof body.leagueId === "string" ? body.leagueId : null;
+  const competition = asLeague(body.competition);
 
   const db = createDraftDb();
   const { data: me, error: meErr } = await db
     .from("draft_teams")
     .select("display_name, formation, squad, strength_rating, projected, status")
     .eq("user_id", user.id)
+    .eq("competition", competition)
     .maybeSingle();
   if (meErr) return NextResponse.json({ error: "Challenges not live yet" }, { status: 503 });
   if (!me) return NextResponse.json({ error: "Save a team first" }, { status: 400 });
@@ -47,6 +49,7 @@ export async function POST(req: NextRequest) {
       challenger_team: snapshot as unknown as never,
       challenger_strength: snapshot.strength,
       league_id: leagueId,
+      competition,
     });
     if (!error) code = candidate;
     else if (error.code !== "23505") {

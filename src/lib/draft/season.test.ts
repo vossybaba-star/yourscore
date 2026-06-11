@@ -2,7 +2,7 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { preSeasonOdds, simulateSeason, type Opponent } from "./season";
+import { preSeasonOdds, simulateSeason, seasonNarrative, type Opponent } from "./season";
 import { slotsFor } from "./formations";
 import type { Formation, PlacedPlayer } from "./types";
 
@@ -27,6 +27,14 @@ test("preSeasonOdds: better teams have better markets", () => {
     for (const v of [o.winLeague, o.top4, o.top6, o.top10, o.relegation]) assert.ok(v >= 0 && v <= 100, `pct ${v}`);
     assert.ok(o.projectedFinish >= 1 && o.projectedFinish <= 20);
   }
+});
+
+test("seasonNarrative: champions headline names the league's country", () => {
+  // Win the title (position 1, not invincible) and check the per-league copy.
+  const champ = simulateSeason(xi("4-3-3", 93), "4-3-3", 93, "title", OPP);
+  champ.position = 1; champ.invincible = false;
+  assert.match(seasonNarrative(champ, "PL").headline, /ENGLAND/);
+  assert.match(seasonNarrative(champ, "LaLiga").headline, /SPAIN/);
 });
 
 test("simulateSeason: a consistent 38-game season", () => {

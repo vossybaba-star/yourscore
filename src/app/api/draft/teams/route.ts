@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimitDistributed } from "@/lib/ratelimit";
 import { createDraftDb, validateAndScore } from "@/lib/draft/server";
+import { asLeague } from "@/lib/draft/types";
 
 // Saved-teams library (separate from the single active draft_teams row).
 //   GET    → list the signed-in user's saved teams (newest first)
@@ -20,7 +21,7 @@ export async function GET() {
     const db = createDraftDb();
     const { data, error } = await db
       .from("draft_saved_teams")
-      .select("id, name, formation, squad, strength_rating, projected, updated_at")
+      .select("id, name, formation, squad, strength_rating, projected, competition, updated_at")
       .eq("user_id", user.id)
       .order("updated_at", { ascending: false });
     if (error) return NextResponse.json({ teams: [], ready: false });
@@ -38,10 +39,11 @@ export async function POST(req: NextRequest) {
   const { ok } = await rateLimitDistributed(`draft-saveteam:${user.id}`, 30, 60_000);
   if (!ok) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
 
-  let body: { name?: unknown; formation?: unknown; squad?: unknown };
+  let body: { name?: unknown; formation?: unknown; squad?: unknown; competition?: unknown };
   try { body = await req.json(); } catch { return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 }); }
 
   const name = (typeof body.name === "string" ? body.name : "").trim().slice(0, 40) || "My XI";
+  const competition = asLeague(typeof body.competition === "string" ? body.competition : null);
 
   let validated;
   try {
@@ -72,6 +74,7 @@ export async function POST(req: NextRequest) {
       squad: validated.squad as unknown as never,
       strength_rating: validated.strength,
       projected: validated.projected as unknown as never,
+      competition,
       updated_at: new Date().toISOString(),
     })
     .select("id, name, formation, squad, strength_rating, projected, updated_at")

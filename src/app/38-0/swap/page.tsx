@@ -49,14 +49,14 @@ export default function SwapScreen() {
     setSpinning(true);
     setCurrent(null);
     const slot = slotsFor(team.formation).find((s) => s.id === openSlotId)!;
-    const buckets = allBuckets();
+    const buckets = allBuckets(team.league);
     let ticks = 0;
     reelTimer.current = setInterval(() => {
       const b = buckets[Math.floor(Math.random() * buckets.length)];
       setReel({ club: b.club, season: b.season });
       if (++ticks > 12) {
         if (reelTimer.current) clearInterval(reelTimer.current);
-        const result = spin([slot.pos], usedPlayerIds(team), usedPlayerNames(team));
+        const result = spin([slot.pos], usedPlayerIds(team), usedPlayerNames(team), Math.random, new Set(), team.league);
         setReel({ club: result.club, season: result.season });
         setCurrent(result);
         setSpinning(false);

@@ -4,7 +4,7 @@
  * fallback for matchmaking later (when no live human opponent is available).
  */
 
-import type { Formation, PlacedPlayer } from "./types";
+import type { Formation, League, PlacedPlayer } from "./types";
 import { spin } from "./pool";
 import { seededRng } from "./score";
 import { emptyTeam, openSlots, bestOpenSlot, placePlayer, isComplete, usedPlayerIds, usedPlayerNames, type LocalTeam } from "./local";
@@ -65,13 +65,13 @@ export function realisticOpponentName(seed: string): string {
 
 export type Opponent = { name: string; team: LocalTeam };
 
-/** Auto-draft a full XI in the given formation. */
-export function autoDraft(formation: Formation, rng: () => number = Math.random): LocalTeam {
-  let team = emptyTeam(formation);
+/** Auto-draft a full XI in the given formation, from `league`'s pool. */
+export function autoDraft(formation: Formation, rng: () => number = Math.random, league: League = "PL"): LocalTeam {
+  let team = emptyTeam(formation, "classic", league);
   let guard = 0;
   while (!isComplete(team) && guard++ < 200) {
     const open = openSlots(team).map((s) => s.pos);
-    const s = spin(open, usedPlayerIds(team), usedPlayerNames(team), rng);
+    const s = spin(open, usedPlayerIds(team), usedPlayerNames(team), rng, new Set(), league);
     // pick the player that fills the heaviest-need slot best (greedy by overall x fit)
     let bestPlayer = null as null | (typeof s.players)[number];
     let bestSlotId = null as null | string;
@@ -92,10 +92,10 @@ export function autoDraft(formation: Formation, rng: () => number = Math.random)
 
 /** A named opponent of roughly comparable strength to the player (for fair-ish
  *  quick matches): try a few auto-drafts, keep the one closest to target. */
-export function makeOpponent(formation: Formation, targetStrength: number, rng: () => number = Math.random): Opponent {
+export function makeOpponent(formation: Formation, targetStrength: number, rng: () => number = Math.random, league: League = "PL"): Opponent {
   let best: LocalTeam | null = null;
   for (let i = 0; i < 4; i++) {
-    const t = autoDraft(formation, rng);
+    const t = autoDraft(formation, rng, league);
     if (!best || Math.abs(t.strength - targetStrength) < Math.abs(best.strength - targetStrength)) best = t;
   }
   const name = OPPONENT_NAMES[Math.floor(rng() * OPPONENT_NAMES.length)];
@@ -104,9 +104,9 @@ export function makeOpponent(formation: Formation, targetStrength: number, rng: 
 
 /** A fully deterministic bot from a string seed — so the opponent previewed before
  *  a match is exactly the one resolved against (the seed is fixed at matchmaking). */
-export function seededBot(formation: Formation, seed: string): Opponent {
+export function seededBot(formation: Formation, seed: string, league: League = "PL"): Opponent {
   const rng = seededRng(seed);
-  const team = autoDraft(formation, rng);
+  const team = autoDraft(formation, rng, league);
   const name = OPPONENT_NAMES[Math.floor(rng() * OPPONENT_NAMES.length)];
   return { name, team };
 }

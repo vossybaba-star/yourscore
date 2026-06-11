@@ -9,6 +9,24 @@
  * scoring engine can run under `node --test` with Node's native type stripping.
  */
 
+/** The football competitions 38-0 is played in. Each is a self-contained pool:
+ *  its own spinnable squads, its own league opponents, its own leaderboard. The
+ *  World Cup Run mode is separate again (nation-locked, built on the PL pool). */
+export type League = "PL" | "LaLiga";
+
+export const LEAGUES: League[] = ["PL", "LaLiga"];
+
+/** Per-league display + flavour strings (copy, country names for the narrative). */
+export const LEAGUE_META: Record<League, { name: string; short: string; country: string; demonym: string; accent: string }> = {
+  PL: { name: "Premier League", short: "PL", country: "England", demonym: "English", accent: "#00ff87" },
+  LaLiga: { name: "La Liga", short: "La Liga", country: "Spain", demonym: "Spanish", accent: "#ff5b2e" },
+};
+
+/** Narrow an arbitrary string to a League, falling back to PL. */
+export function asLeague(v: string | null | undefined): League {
+  return v === "LaLiga" ? "LaLiga" : "PL";
+}
+
 /** Canonical playing positions. Dataset + slots both normalise to these. */
 export type Position =
   | "GK"
@@ -46,6 +64,7 @@ export type PlayerSeason = {
   position: Position; // canonical
   overall: number;   // 0-99
   nationality?: string; // e.g. "England" — present after the WC-Run dataset rebuild
+  league: League;    // "PL" | "LaLiga" — which competition's pool this belongs to
   curated: boolean;
 };
 

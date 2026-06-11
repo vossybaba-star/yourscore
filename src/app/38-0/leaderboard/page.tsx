@@ -11,6 +11,7 @@ import Link from "next/link";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { DraftHeader } from "@/components/draft/DraftHeader";
 import { useUser } from "@/hooks/useUser";
+import { asLeague, type League } from "@/lib/draft/types";
 
 type Row = {
   user_id: string;
@@ -25,25 +26,28 @@ type Row = {
 export default function Leaderboard() {
   const { user } = useUser();
   const [metric, setMetric] = useState<"today" | "all">("today");
+  const [competition, setCompetition] = useState<League>("PL");
   const [rows, setRows] = useState<Row[]>([]);
   const [ready, setReady] = useState(true);
   const [loading, setLoading] = useState(true);
 
+  useEffect(() => { setCompetition(asLeague(new URLSearchParams(window.location.search).get("competition"))); }, []);
+
   useEffect(() => {
     let alive = true;
     setLoading(true);
-    fetch(`/api/draft/leaderboard?metric=${metric}`)
+    fetch(`/api/draft/leaderboard?metric=${metric}&competition=${competition}`)
       .then((r) => r.json())
       .then((d) => { if (alive) { setRows(d.rows ?? []); setReady(d.ready !== false); } })
       .catch(() => { if (alive) { setRows([]); setReady(false); } })
       .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
-  }, [metric]);
+  }, [metric, competition]);
 
   return (
     <div className="min-h-[100dvh] pb-28" style={{ background: "#0a0a0f" }}>
       <div className="max-w-lg mx-auto px-5 pt-safe">
-        <DraftHeader />
+        <DraftHeader competition={competition} />
 
         <h1 className="font-display tracking-wide leading-none" style={{ fontSize: 44, color: "#fff" }}>
           LEADER<span style={{ color: "#00ff87" }}>BOARD</span>

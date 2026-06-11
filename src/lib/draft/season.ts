@@ -15,7 +15,8 @@
  * Deterministic given a seed, so results are reproducible/auditable.
  */
 
-import type { Formation, PlacedPlayer, Projected } from "./types";
+import type { Formation, League, PlacedPlayer, Projected } from "./types";
+import { LEAGUE_META } from "./types";
 import { lineRatings, posCategory, seededRng, clamp, tierFor } from "./score";
 import { matchLambdas, type TeamLines } from "./match";
 
@@ -198,9 +199,10 @@ export function simulateSeason(
 
 // ── Narrative ────────────────────────────────────────────────────────────────
 
-export function seasonNarrative(r: SeasonResult): { headline: string; body: string } {
+export function seasonNarrative(r: SeasonResult, league: League = "PL"): { headline: string; body: string } {
+  const country = LEAGUE_META[league].country.toUpperCase();
   if (r.invincible) return { headline: "INVINCIBLE", body: `38 wins, 38 games — the impossible season. ${r.points} points, unbeaten. They'll talk about this XI forever.` };
-  if (r.position === 1) return { headline: "CHAMPIONS OF ENGLAND", body: `Top of the pile on ${r.points} points. ${r.wins} wins, ${r.losses} defeats. The title is in the cabinet.` };
+  if (r.position === 1) return { headline: `CHAMPIONS OF ${country}`, body: `Top of the pile on ${r.points} points. ${r.wins} wins, ${r.losses} defeats. The title is in the cabinet.` };
   if (r.position <= 4) return { headline: "CHAMPIONS LEAGUE NIGHTS", body: `${ordinal(r.position)} on ${r.points} points — Europe's biggest stage beckons. ${r.gf} scored, ${r.ga} conceded.` };
   if (r.position <= 7) return { headline: "EUROPEAN PUSH", body: `${ordinal(r.position)} on ${r.points} points. A continental tour secured, just short of the very top.` };
   if (r.position <= 12) return { headline: "MID-TABLE", body: `${ordinal(r.position)} on ${r.points} points. Safe and unspectacular — ${r.losses} defeats. We take those.` };

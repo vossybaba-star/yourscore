@@ -8,13 +8,13 @@
  */
 
 import raw from "@/data/draft/player-seasons.json";
-import type { NationEntry, PlayerSeason, Position } from "./types";
+import type { League, NationEntry, PlayerSeason, Position } from "./types";
 import { canPlay, playerIdentity } from "./score";
 import { allWCNations, type WCNation } from "@/data/draft/wc2026";
 
-type Bucket = { club: string; clubSlug: string; season: string; playerIds: string[] };
+type Bucket = { league: League; club: string; clubSlug: string; season: string; playerIds: string[] };
 
-type Club = { name: string; clubSlug: string; season: string; strength: number };
+type Club = { name: string; clubSlug: string; season: string; league: League; strength: number };
 
 const DATA = raw as unknown as {
   generatedAt: string;
@@ -30,6 +30,16 @@ const byId = new Map<string, PlayerSeason>(DATA.players.map((p) => [p.id, p]));
 const byNation = new Map<string, NationEntry>((DATA.nations ?? []).map((n) => [n.nation, n]));
 
 export const POOL_META = DATA.counts;
+/** Per-league counts (players + spinnable squads) for UI copy. */
+export const LEAGUE_COUNTS = (DATA as { leagues?: Record<League, { players: number; buckets: number }> }).leagues ?? {
+  PL: { players: DATA.counts.players, buckets: DATA.counts.buckets },
+  LaLiga: { players: 0, buckets: 0 },
+};
+
+/** Buckets for one competition. */
+function bucketsFor(league: League): Bucket[] {
+  return DATA.buckets.filter((b) => b.league === league);
+}
 
 export function getPlayer(id: string): PlayerSeason | undefined {
   return byId.get(id);
@@ -67,9 +77,11 @@ export function spin(
    *  squad is only re-dealt rarely (see REOFFER_SUPPRESS), so the same options don't
    *  keep coming up position after position — while the occasional same-squad double
    *  stays a fun surprise. Same club via a different season is unrestricted. */
-  seen: Set<string> = new Set()
+  seen: Set<string> = new Set(),
+  /** Which competition's squads to deal from. */
+  league: League = "PL"
 ): Spin {
-  const buckets = DATA.buckets;
+  const buckets = bucketsFor(league);
   const draftable = (b: Bucket) =>
     getBucketPlayers(b).filter(
       (p) =>
@@ -96,9 +108,9 @@ export function spin(
   return { club: b.club, clubSlug: b.clubSlug, season: b.season, players };
 }
 
-/** All spinnable buckets (for previews / the slot-machine reel). */
-export function allBuckets(): Bucket[] {
-  return DATA.buckets;
+/** All spinnable buckets for a competition (for previews / the slot-machine reel). */
+export function allBuckets(league: League = "PL"): Bucket[] {
+  return bucketsFor(league);
 }
 
 // ── World Cup Run: nation-locked pool ───────────────────────────────────────
@@ -179,10 +191,10 @@ export function spinForNation(
 }
 
 /** The 19 real clubs the season simulator plays against — the most recent FIFA
- *  season's Premier League (a coherent modern league, whatever era you drafted
- *  from). Strengths are FIFA-derived. The player joins as the 20th team. */
-export function leagueOpponents(): { name: string; strength: number }[] {
-  const clubs = DATA.clubs ?? [];
+ *  season's clubs for that competition (a coherent modern league, whatever era you
+ *  drafted from). Strengths are FIFA-derived. The player joins as the 20th team. */
+export function leagueOpponents(league: League = "PL"): { name: string; strength: number }[] {
+  const clubs = (DATA.clubs ?? []).filter((c) => c.league === league);
   const latest = clubs.reduce((m, c) => (c.season > m ? c.season : m), "");
   return clubs
     .filter((c) => c.season === latest)

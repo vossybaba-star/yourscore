@@ -5,6 +5,7 @@ import { createDraftDb, GLOBAL_LEAGUE } from "@/lib/draft/server";
 import { creditResult, applyTeamStreak } from "@/lib/draft/live-server";
 import { resolveMatch } from "@/lib/draft/live-score";
 import { seededBot } from "@/lib/draft/opponent";
+import { asLeague } from "@/lib/draft/types";
 import type { Formation, PlacedPlayer, Projected } from "@/lib/draft/types";
 
 // Two-stage ranked H2H so players can preview the opponent and swap before kick-off:
@@ -34,26 +35,28 @@ export async function POST(req: NextRequest) {
 
   // NOTE: league play is Live-H2H-only (see /api/draft/live + the league board).
   // This async path is global/quick H2H only and deliberately ignores any leagueId.
-  let body: { stage?: string; opponentId?: string; findId?: string; botFormation?: string } = {};
+  let body: { stage?: string; opponentId?: string; findId?: string; botFormation?: string; competition?: string } = {};
   try { body = await req.json(); } catch { /* optional */ }
   const stage = body.stage === "resolve" ? "resolve" : "find";
   const targetId = typeof body.opponentId === "string" ? body.opponentId : null;
+  const competition = asLeague(body.competition); // you only match within your competition
 
   const db = createDraftDb();
   const { data: me } = await db
     .from("draft_teams")
     .select("user_id, display_name, formation, squad, strength_rating, projected, win_streak")
     .eq("user_id", user.id)
+    .eq("competition", competition)
     .maybeSingle();
   if (!me) return NextResponse.json({ error: "Save a team first" }, { status: 400 });
   const meSide = sideFromRow(me);
 
-  // Resolve a specific opponent id to its current active team.
+  // Resolve a specific opponent id to its current active team (same competition).
   async function fetchActive(id: string): Promise<TeamSide | null> {
     const { data } = await db
       .from("draft_teams")
       .select("display_name, formation, squad, strength_rating, projected, status")
-      .eq("user_id", id).eq("status", "active").maybeSingle();
+      .eq("user_id", id).eq("status", "active").eq("competition", competition).maybeSingle();
     return data ? sideFromRow(data) : null;
   }
 
@@ -66,17 +69,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ opponentId: targetId, opp, you: meSide });
     }
 
-    // Random: any active team that isn't ours, else a bot.
+    // Random: any active team in this competition that isn't ours, else a bot.
     const { data: candidates } = await db
       .from("draft_teams").select("user_id, display_name, formation, squad, strength_rating, projected")
-      .eq("status", "active").neq("user_id", user.id).limit(50);
+      .eq("status", "active").eq("competition", competition).neq("user_id", user.id).limit(50);
 
     if (candidates && candidates.length > 0) {
       const pick = candidates[Math.floor(Math.random() * candidates.length)];
       return NextResponse.json({ opponentId: pick.user_id, opp: sideFromRow(pick), you: meSide });
     }
     const findId = crypto.randomUUID();
-    const bot = seededBot(me.formation as Formation, findId);
+    const bot = seededBot(me.formation as Formation, findId, competition);
     return NextResponse.json({
       opponentId: null, findId, botFormation: me.formation,
       opp: { name: bot.name, formation: bot.team.formation, squad: bot.team.squad, strength: bot.team.strength, projected: bot.team.projected },
@@ -92,7 +95,7 @@ export async function POST(req: NextRequest) {
     if (!opp) return NextResponse.json({ error: "Opponent unavailable" }, { status: 409 });
   } else {
     if (!body.findId) return NextResponse.json({ error: "Missing match" }, { status: 400 });
-    const bot = seededBot((body.botFormation as Formation) ?? (me.formation as Formation), body.findId);
+    const bot = seededBot((body.botFormation as Formation) ?? (me.formation as Formation), body.findId, competition);
     opp = { name: bot.name, formation: bot.team.formation, squad: bot.team.squad, strength: bot.team.strength, projected: bot.team.projected };
   }
 
@@ -108,16 +111,16 @@ export async function POST(req: NextRequest) {
     id: matchId, challenger_id: user.id, opponent_id: opponentId,
     challenger_team: meSide as unknown as never, opponent_team: opp as unknown as never,
     challenger_strength: myStrength, opponent_strength: opp.strength,
-    winner_id: winnerId, league_id: null, played_at: new Date().toISOString(),
+    winner_id: winnerId, league_id: null, competition, played_at: new Date().toISOString(),
     challenger_goals: res.goals.a, opponent_goals: res.goals.b,
     detail: { outcome: res.outcome, single: true, pens: res.pens, report: res.report } as unknown as never,
   });
 
   // Credit W/D/L (draws & losses now count too). Mirror the result for a real opponent.
   const myRes = youWon ? "win" : oppWon ? "loss" : "draw";
-  await creditResult(db, user.id, meSide.name, myRes);
-  if (opponentId) await creditResult(db, opponentId, opp.name, oppWon ? "win" : youWon ? "loss" : "draw");
-  await applyTeamStreak(db, user.id, myRes);
+  await creditResult(db, user.id, meSide.name, myRes, GLOBAL_LEAGUE, competition);
+  if (opponentId) await creditResult(db, opponentId, opp.name, oppWon ? "win" : youWon ? "loss" : "draw", GLOBAL_LEAGUE, competition);
+  await applyTeamStreak(db, user.id, myRes, competition);
 
   return NextResponse.json({
     matchId, youWon, outcome: youWon ? "you" : oppWon ? "opp" : "draw",
