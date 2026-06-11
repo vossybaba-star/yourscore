@@ -57,6 +57,7 @@ export default async function ProfilePage() {
     { data: challengeRows },
     { data: friendRows },
     { data: draftStanding },
+    { count: pendingFriendCount },
   ] = await Promise.all([
     supabase.from("profiles").select("display_name, total_score, games_played, avatar_url").eq("id", userId).single(),
     // created_at/rank added via migration — bypass stale generated types
@@ -81,7 +82,14 @@ export default async function ProfilePage() {
       .eq("user_id", userId)
       .is("league_id", null)
       .maybeSingle(),
+    // Incoming pending friend requests — drives the badge on the Friends strip.
+    sb.from("friendships")
+      .select("id", { count: "exact", head: true })
+      .eq("friend_id", userId)
+      .eq("status", "pending"),
   ]);
+
+  const pendingFriends = pendingFriendCount ?? 0;
 
   const totalScore = profile?.total_score ?? 0;
 
@@ -252,18 +260,43 @@ export default async function ProfilePage() {
         {/* Friends / social strip */}
         <Link href="/friends"
           className="flex items-center justify-between px-5 py-4 rounded-2xl transition-all hover:opacity-90 active:scale-[0.99]"
-          style={{ background: "linear-gradient(135deg, rgba(0,201,255,0.08), rgba(0,201,255,0.04))", border: "1px solid rgba(0,201,255,0.2)" }}>
+          style={{
+            background: pendingFriends > 0
+              ? "linear-gradient(135deg, rgba(239,68,68,0.10), rgba(0,201,255,0.04))"
+              : "linear-gradient(135deg, rgba(0,201,255,0.08), rgba(0,201,255,0.04))",
+            border: pendingFriends > 0
+              ? "1px solid rgba(239,68,68,0.35)"
+              : "1px solid rgba(0,201,255,0.2)",
+          }}>
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
-              style={{ background: "rgba(0,201,255,0.12)" }}>🤝</div>
+            {/* Icon with optional pending badge */}
+            <div className="relative flex-shrink-0">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg"
+                style={{ background: pendingFriends > 0 ? "rgba(239,68,68,0.15)" : "rgba(0,201,255,0.12)" }}>🤝</div>
+              {pendingFriends > 0 && (
+                <span style={{
+                  position: "absolute", top: -4, right: -4,
+                  minWidth: 16, height: 16, borderRadius: 8,
+                  background: "#ef4444", color: "#fff",
+                  fontSize: 10, fontWeight: 700, lineHeight: "16px",
+                  textAlign: "center", padding: "0 4px",
+                  fontFamily: "var(--font-body, sans-serif)",
+                  border: "1.5px solid #0a0a0f",
+                }}>
+                  {pendingFriends > 9 ? "9+" : pendingFriends}
+                </span>
+              )}
+            </div>
             <div>
               <p className="font-body text-sm font-bold text-white">Friends</p>
-              <p className="font-body text-xs text-text-muted">
-                {friendCount > 0 ? `${friendCount} friend${friendCount !== 1 ? "s" : ""}` : "Add your mates"}
+              <p className="font-body text-xs" style={{ color: pendingFriends > 0 ? "#ef4444" : "var(--color-text-muted, #8888aa)" }}>
+                {pendingFriends > 0
+                  ? `${pendingFriends} pending request${pendingFriends !== 1 ? "s" : ""}`
+                  : friendCount > 0 ? `${friendCount} friend${friendCount !== 1 ? "s" : ""}` : "Add your mates"}
               </p>
             </div>
           </div>
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ color: "#00c9ff", flexShrink: 0 }}>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ color: pendingFriends > 0 ? "#ef4444" : "#00c9ff", flexShrink: 0 }}>
             <path d="M5 3l6 5-6 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </Link>
