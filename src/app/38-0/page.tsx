@@ -262,8 +262,8 @@ export default function DraftHome() {
 
       {/* ── Sticky CTA — Premier League tab only ── */}
       {tab === "pl" && (
-        <div className="fixed bottom-0 left-0 right-0 z-40"
-          style={{ background: "linear-gradient(0deg,#0a0a0f 75%,transparent)", paddingBottom: "calc(env(safe-area-inset-bottom,0px) + 14px)" }}>
+        <div className="fixed bottom-0 left-0 right-0 z-[60]"
+          style={{ background: "linear-gradient(0deg,#0a0a0f 80%,transparent)", paddingBottom: "calc(env(safe-area-inset-bottom,0px) + 72px)" }}>
           <div className="max-w-lg mx-auto px-5 pt-3">
             <button
               onClick={startNew}
