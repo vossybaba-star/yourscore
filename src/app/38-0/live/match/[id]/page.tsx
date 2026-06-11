@@ -15,7 +15,8 @@ import { useLiveMatch } from "@/lib/draft/useLiveMatch";
 import { spin, allBuckets, type Spin } from "@/lib/draft/pool";
 import { playerIdentity, seededRng } from "@/lib/draft/score";
 import { slotsFor } from "@/lib/draft/formations";
-import { buildReport, type MatchSim, type HalfSim, type PlayerRating, type GoalEvent } from "@/lib/draft/live-score";
+import { buildReport, flipReport, type MatchSim, type HalfSim, type PlayerRating, type GoalEvent } from "@/lib/draft/live-score";
+import { ScorecardView, statsFromReport, goalsFromReport, potmFromReport, type ScorecardData } from "@/components/draft/Scorecard";
 import { MatchPitch } from "@/components/draft/MatchPitch";
 import { WATCH_CONFIG } from "@/lib/draft/playback";
 import { liveOgQuery } from "@/lib/draft/share";
@@ -341,7 +342,6 @@ function ResultPanel({ view, sim, m }: { view: View; sim: MatchSim | null; m: Dr
   const won = view.pens[0] != null ? view.pens[0]! > view.pens[1]! : view.myGoals > view.oppGoals;
   const label = drew ? "Draw" : won ? "You win!" : "You lost";
   const color = drew ? "#ffb800" : won ? "#00ff87" : "#ff7a88";
-  const rv = sim ? fulltimeView(sim, view.meP1) : null;
   const [sharing, setSharing] = useState(false);
   const [shareNote, setShareNote] = useState<string | null>(null);
 
@@ -398,18 +398,32 @@ function ResultPanel({ view, sim, m }: { view: View; sim: MatchSim | null; m: Dr
     setSharing(false);
   }
 
+  const meReport = report ? (view.meP1 ? report : flipReport(report)) : null;
+  const meData: ScorecardData | null = meReport ? {
+    context: "38-0 Live",
+    you: { name: view.myName, strength: Math.round(view.myStr), formation: view.myFormation, squad: view.mySquad },
+    opp: { name: view.oppName, strength: Math.round(view.oppStr), formation: view.oppFormation, squad: view.oppSquad },
+    goals: { you: view.myGoals, opp: view.oppGoals },
+    pens: view.pens[0] != null ? { you: view.pens[0]!, opp: view.pens[1]! } : null,
+    outcome: drew ? "draw" : won ? "you" : "opp",
+    stats: statsFromReport(meReport),
+    goalEvents: goalsFromReport(meReport),
+    potm: potmFromReport(meReport, view.myName, view.oppName),
+  } : null;
+
   return (
-    <Panel>
-      <p className="text-center font-display tracking-wide" style={{ fontSize: 34, color }}>{label}</p>
-      <p className="text-center mt-1" style={{ fontSize: 40, fontWeight: 800 }}>
-        {view.myGoals} – {view.oppGoals}{view.pens[0] != null && <span className="block text-sm" style={{ color: "#9a9ab0" }}>pens {view.pens[0]}–{view.pens[1]}</span>}
-      </p>
-      {rv && (
-        <div className="mt-4">
-          <div className="text-xs mb-2" style={{ color: "#ffb800", letterSpacing: 1 }}>FULL-TIME REPORT</div>
-          <MatchReportCard rv={rv} meP1={view.meP1} myName={view.myName} oppName={view.oppName} showPotm />
-        </div>
+    <>
+      {meData ? (
+        <div className="mt-6"><ScorecardView data={meData} /></div>
+      ) : (
+        <Panel>
+          <p className="text-center font-display tracking-wide" style={{ fontSize: 34, color }}>{label}</p>
+          <p className="text-center mt-1" style={{ fontSize: 40, fontWeight: 800 }}>
+            {view.myGoals} – {view.oppGoals}{view.pens[0] != null && <span className="block text-sm" style={{ color: "#9a9ab0" }}>pens {view.pens[0]}–{view.pens[1]}</span>}
+          </p>
+        </Panel>
       )}
+      <Panel>
       {/* Auto-assigned team — keep or rebuild */}
       {isAutoTeam && (
         <div className="mt-4 rounded-2xl p-4" style={{ background: "rgba(0,255,135,0.06)", border: "1px solid rgba(0,255,135,0.2)" }}>
@@ -449,7 +463,8 @@ function ResultPanel({ view, sim, m }: { view: View; sim: MatchSim | null; m: Dr
       {shareNote && <p className="text-center mt-2 text-xs" style={{ color: "#00ff87" }}>{shareNote}</p>}
       <Link href="/38-0/live" className="mt-3 block text-center rounded-2xl py-3 font-semibold" style={{ background: "rgba(0,255,135,0.1)", color: "#00ff87", border: "1px solid rgba(0,255,135,0.3)" }}>Play again</Link>
       <Link href="/38-0/leaderboard" className="mt-3 block text-center underline text-sm" style={{ color: "#8888aa" }}>View leaderboard</Link>
-    </Panel>
+      </Panel>
+    </>
   );
 }
 
@@ -482,18 +497,6 @@ function halftimeView(h: HalfSim, meP1: boolean): ReportView {
     mine: meP1 ? sa : sb, opp: meP1 ? sb : sa, events: h.events,
     myRatings: myR, oppRatings: oppR,
     myBest: bestOf(myR), myWorst: worstOf(myR), oppBest: bestOf(oppR), oppWorst: worstOf(oppR), potm: null,
-  };
-}
-
-/** Map the full-time report (both halves) onto me/opp, with Player of the Match. */
-function fulltimeView(sim: MatchSim, meP1: boolean): ReportView {
-  const r = buildReport(sim);
-  return {
-    mine: meP1 ? r.a : r.b, opp: meP1 ? r.b : r.a, events: r.events,
-    myRatings: meP1 ? r.ratingsA : r.ratingsB, oppRatings: meP1 ? r.ratingsB : r.ratingsA,
-    myBest: meP1 ? r.bestA : r.bestB, myWorst: meP1 ? r.worstA : r.worstB,
-    oppBest: meP1 ? r.bestB : r.bestA, oppWorst: meP1 ? r.worstB : r.worstA,
-    potm: r.potm ? { name: r.potm.name, rating: r.potm.rating, mine: (r.potm.side === "a") === meP1 } : null,
   };
 }
 

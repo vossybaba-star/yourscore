@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import { loadTeam, isComplete, seasonSeed, saveLastSeason, loadLastSeason, type LocalTeam } from "@/lib/draft/local";
 import { leagueOpponents } from "@/lib/draft/pool";
 import { simulateSeason, seasonNarrative, type SeasonResult } from "@/lib/draft/season";
+import { SeasonScorecard, type SeasonAward, type SeasonData } from "@/components/draft/SeasonScorecard";
 
 function ordinal(n: number): string {
   const s = ["th", "st", "nd", "rd"], v = n % 100;
@@ -168,8 +169,6 @@ export default function SeasonSim() {
   // ── Final result ──
   const r = result;
   const narr = seasonNarrative(r, team?.league);
-  const accent = r.invincible ? "#ffd700" : r.position === 1 ? "#00ff87" : r.position <= 4 ? "#22d3ee" : r.position <= 12 ? "#ffb800" : "#ff4757";
-  const verdictColor = r.verdict === "OVERPERFORMED" ? "#00ff87" : r.verdict === "UNDERPERFORMED" ? "#ff4757" : "#8888aa";
 
   // The shareable card image, and a public link that unfurls to it on socials.
   const ogUrl = () => `/api/draft/season-og?${shareParams().toString()}`;
@@ -207,55 +206,34 @@ export default function SeasonSim() {
     return `https://twitter.com/intent/tweet?text=${encodeURIComponent(giveawayTweetText())}&url=${encodeURIComponent(shareUrl())}`;
   }
 
-  const awards: [string, string, string][] = [];
-  if (r.goldenBoot) awards.push(["👟 Golden Boot", r.goldenBoot.name, `${r.goldenBoot.goals} goals`]);
-  if (r.playmaker) awards.push(["🅰️ Playmaker", r.playmaker.name, `${r.playmaker.assists} assists`]);
-  if (r.goldenGlove) awards.push(["🧤 Golden Glove", r.goldenGlove.name, `${r.goldenGlove.cleanSheets} clean sheets`]);
-  if (r.playerOfTheSeason) awards.push(["🏆 Player of the Season", r.playerOfTheSeason.name, `${r.playerOfTheSeason.goals}G · ${r.playerOfTheSeason.assists}A`]);
+  const awards: SeasonAward[] = [];
+  if (r.goldenBoot) awards.push({ label: "Golden Boot", name: r.goldenBoot.name, detail: `${r.goldenBoot.goals} goals` });
+  if (r.playmaker) awards.push({ label: "Playmaker", name: r.playmaker.name, detail: `${r.playmaker.assists} assists` });
+  if (r.goldenGlove) awards.push({ label: "Golden Glove", name: r.goldenGlove.name, detail: `${r.goldenGlove.cleanSheets} clean sheets` });
+  if (r.playerOfTheSeason) awards.push({ label: "Player of the Season", name: r.playerOfTheSeason.name, detail: `${r.playerOfTheSeason.goals}G · ${r.playerOfTheSeason.assists}A` });
+
+  const seasonData: SeasonData = {
+    context: "Season",
+    invincible: r.invincible,
+    wins: r.wins, draws: r.draws, losses: r.losses,
+    points: r.points, position: r.position,
+    projectedPosition: r.projected.position,
+    verdict: r.verdict ?? undefined,
+    gf: r.gf, ga: r.ga, strength: team.strength,
+    awards,
+    contributors: r.players
+      .filter((p) => p.goals > 0 || p.assists > 0)
+      .sort((a, b) => (b.goals * 2 + b.assists) - (a.goals * 2 + a.assists))
+      .slice(0, 6)
+      .map((p) => ({ name: p.name, goals: p.goals, assists: p.assists })),
+  };
 
   return (
     <div className="min-h-[100dvh] pb-16" style={{ background: "#0a0a0f" }}>
-      <div className="max-w-lg mx-auto px-5 pt-safe">
-        <div className="pt-8 text-center">
-          {/* The season record is the headline scoreline */}
-          <div className="font-body" style={{ fontSize: 12, color: "#8888aa", letterSpacing: 1.5 }}>SEASON RECORD</div>
-          <div className="flex items-stretch justify-center gap-2 mt-2">
-            {([["WINS", r.wins, "#00ff87"], ["DRAWS", r.draws, "#ffb800"], ["LOSSES", r.losses, "#ff4757"]] as [string, number, string][]).map(([k, v, c]) => (
-              <div key={k} className="flex-1 rounded-2xl py-4" style={{ background: "#12121e", border: `1px solid ${c}40` }}>
-                <div className="font-display" style={{ fontSize: 60, lineHeight: 1, color: c }}>{v}</div>
-                <div className="font-body mt-1.5" style={{ fontSize: 12, color: "#8888aa", letterSpacing: 1 }}>{k}</div>
-              </div>
-            ))}
-          </div>
-          <div className="font-display tracking-wide leading-none mt-5" style={{ fontSize: r.invincible ? 48 : 24, color: accent }}>
-            {r.invincible ? "INVINCIBLE" : narr.headline}
-          </div>
-          <p className="font-body mt-2" style={{ fontSize: 14, color: "#cfcfe6" }}>{narr.body}</p>
-        </div>
-
-        {/* finished vs projected */}
-        <div className="grid grid-cols-3 gap-3 mt-6">
-          <div className="rounded-2xl py-3 text-center" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}>
-            <div className="font-body" style={{ fontSize: 10, color: "#8888aa" }}>FINISHED</div>
-            <div className="font-display" style={{ fontSize: 30, color: accent }}>{ordinal(r.position)}</div>
-          </div>
-          <div className="rounded-2xl py-3 text-center" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}>
-            <div className="font-body" style={{ fontSize: 10, color: "#8888aa" }}>PROJECTED</div>
-            <div className="font-display" style={{ fontSize: 30, color: "#8888aa" }}>{ordinal(r.projected.position)}</div>
-          </div>
-          <div className="rounded-2xl py-3 text-center grid place-items-center" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}>
-            <div className="font-display tracking-wide" style={{ fontSize: 13, color: verdictColor }}>{r.verdict}</div>
-          </div>
-        </div>
-
-        {/* points / goals */}
-        <div className="grid grid-cols-3 gap-3 mt-3">
-          {[["POINTS", r.points, "#fff"], ["GOALS FOR", r.gf, "#00ff87"], ["GOALS AGAINST", r.ga, "#ff4757"]].map(([k, v, c]) => (
-            <div key={k as string} className="rounded-2xl py-3 text-center" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}>
-              <div className="font-display" style={{ fontSize: 28, color: c as string }}>{v as number}</div>
-              <div className="font-body" style={{ fontSize: 10, color: "#8888aa" }}>{k as string}</div>
-            </div>
-          ))}
+      <div className="max-w-lg mx-auto px-4 pt-safe">
+        <div className="pt-6">
+          <SeasonScorecard data={seasonData} />
+          {narr.body && <p className="text-center font-body mt-3" style={{ fontSize: 13, color: "#9a9ab0", lineHeight: 1.55 }}>{narr.body}</p>}
         </div>
 
         {/* Giveaway CTA — always visible, taps to open the giveaway sheet */}
@@ -290,44 +268,6 @@ export default function SeasonSim() {
             ⚔️ Go Head to Head
           </Link>
         </div>
-
-        {/* awards */}
-        {awards.length > 0 && (
-          <>
-            <div className="font-body mt-6 mb-2" style={{ fontSize: 11, color: "#8888aa", letterSpacing: 1 }}>SEASON AWARDS</div>
-            <div className="grid grid-cols-2 gap-2">
-              {awards.map(([label, name, sub]) => (
-                <div key={label} className="rounded-2xl p-3" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}>
-                  <div className="font-body" style={{ fontSize: 10, color: "#8888aa" }}>{label}</div>
-                  <div className="font-body mt-0.5 truncate" style={{ fontSize: 14, color: "#fff" }}>{name}</div>
-                  <div className="font-body" style={{ fontSize: 11, color: "#00ff87" }}>{sub}</div>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
-
-        {/* top scorers */}
-        {(() => {
-          const scorers = r.players.filter((p) => p.goals > 0 || p.assists > 0).sort((a, b) => (b.goals * 2 + b.assists) - (a.goals * 2 + a.assists)).slice(0, 6);
-          return scorers.length ? (
-            <>
-              <div className="font-body mt-6 mb-2" style={{ fontSize: 11, color: "#8888aa", letterSpacing: 1 }}>TOP CONTRIBUTORS</div>
-              <div className="rounded-2xl overflow-hidden" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}>
-                <div className="flex px-4 py-1.5 font-body" style={{ fontSize: 10, color: "#8888aa" }}>
-                  <span className="flex-1">PLAYER</span><span style={{ width: 36, textAlign: "right" }}>G</span><span style={{ width: 36, textAlign: "right" }}>A</span>
-                </div>
-                {scorers.map((p) => (
-                  <div key={p.name} className="flex px-4 py-2 font-body" style={{ fontSize: 14, color: "#fff", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
-                    <span className="flex-1 truncate">{p.name}</span>
-                    <span style={{ width: 36, textAlign: "right", color: "#00ff87" }}>{p.goals}</span>
-                    <span style={{ width: 36, textAlign: "right", color: "#22d3ee" }}>{p.assists}</span>
-                  </div>
-                ))}
-              </div>
-            </>
-          ) : null;
-        })()}
 
         <div className="mt-6 space-y-2">
           <Link href="/38-0/team" className="block w-full rounded-2xl py-3 text-center font-body" style={{ background: "#12121e", color: "#cfcfe6", fontSize: 15, border: "1px solid rgba(255,255,255,0.08)" }}>
