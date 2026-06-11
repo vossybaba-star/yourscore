@@ -16,6 +16,7 @@ import {
   loadTeam, saveTeam, isComplete, recordWin, recordLoss, recordDraw, saveLastMatch,
   compatibleFormations, reslot, seasonSeed, loadLastSeason, type LocalTeam,
 } from "@/lib/draft/local";
+import { asLeague } from "@/lib/draft/types";
 import type { Formation } from "@/lib/draft/types";
 import { makeOpponent } from "@/lib/draft/opponent";
 import { tierFor } from "@/lib/draft/score";
@@ -28,7 +29,7 @@ import { trackGamePlay } from "@/lib/analytics/trackGame";
 
 export default function TeamScreen() {
   const router = useRouter();
-  const { user } = useUser();
+  const { user, loading: authLoading } = useUser();
   const [team, setTeam] = useState<LocalTeam | null>(null);
   const [matching, setMatching] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -37,12 +38,51 @@ export default function TeamScreen() {
   const [naming, setNaming] = useState(false);
   const [teamName, setTeamName] = useState("");
 
+  // Wait for auth to resolve so we always load the right team for the right account.
+  // Signed-in: fetch from the server (authoritative) and hydrate localStorage.
+  // Anonymous: fall back to localStorage as before.
   useEffect(() => {
+    if (authLoading) return;
+
+    if (user) {
+      fetch("/api/draft/team")
+        .then((r) => r.json())
+        .then((data: { team: { formation: string; squad: unknown; strength_rating: number; projected: unknown; competition: string; status: string; win_streak: number | null } | null }) => {
+          if (!data.team) { router.replace("/38-0"); return; }
+          const existing = loadTeam();
+          // Preserve local-only fields (mode, swapAvailable) if the squad matches —
+          // otherwise they're meaningless for this account so use safe defaults.
+          const squadMatch = existing && JSON.stringify(existing.squad) === JSON.stringify(data.team.squad);
+          const hydrated: LocalTeam = {
+            league: asLeague(data.team.competition),
+            formation: data.team.formation as LocalTeam["formation"],
+            mode: squadMatch ? existing!.mode : "classic",
+            squad: data.team.squad as LocalTeam["squad"],
+            status: (data.team.status as LocalTeam["status"]) ?? "active",
+            winStreak: data.team.win_streak ?? 0,
+            swapAvailable: squadMatch ? existing!.swapAvailable : false,
+            strength: data.team.strength_rating,
+            projected: data.team.projected as LocalTeam["projected"],
+            updatedAt: Date.now(),
+          };
+          saveTeam(hydrated);
+          setTeam(hydrated);
+        })
+        .catch(() => {
+          // Network failure — fall back to localStorage so the page still works.
+          const t = loadTeam();
+          if (!t || !isComplete(t)) { router.replace("/38-0"); return; }
+          setTeam(t);
+        });
+      return;
+    }
+
+    // Anonymous flow — localStorage only.
     const t = loadTeam();
     if (!t) { router.replace("/38-0"); return; }
     if (!isComplete(t)) { router.replace("/38-0/play"); return; }
     setTeam(t);
-  }, [router]);
+  }, [user, authLoading, router]);
 
   function quickMatch() {
     if (!team || matching) return;
@@ -85,10 +125,10 @@ export default function TeamScreen() {
       const squad = team.squad.map((p) => ({ slot: p.slot, player_season_id: p.player_season_id }));
       const saveRes = await fetch("/api/draft/team", {
         method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ formation: team.formation, squad }),
+        body: JSON.stringify({ formation: team.formation, squad, competition: team.league }),
       });
       if (!saveRes.ok) { setErr((await saveRes.json().catch(() => ({}))).error ?? "Could not save team"); setMatching(false); return; }
-      router.push("/38-0/live");
+      router.push(`/38-0/live?competition=${team.league}`);
     } catch {
       setErr("Network error — try again");
       setMatching(false);
