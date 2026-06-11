@@ -49,7 +49,7 @@ export default function TeamScreen() {
     setMatching(true);
     trackGamePlay("38-0", { mode: "quick_match" });
     const matchId = `local-${team.updatedAt}-${Math.floor(Math.random() * 1e6)}`;
-    const opp = makeOpponent(team.formation, team.strength);
+    const opp = makeOpponent(team.formation, team.strength, Math.random, team.league);
     // Real scoreline via the shared, seeded engine (your attack vs their defence).
     const res = resolveMatch(team.squad, opp.team.squad, matchId, { allowDraw: true });
 
@@ -112,10 +112,10 @@ export default function TeamScreen() {
       const squad = team.squad.map((p) => ({ slot: p.slot, player_season_id: p.player_season_id }));
       const name = teamName.trim() || `${team.formation} · ${team.strength}`;
       // Save the named snapshot to the library…
-      const r = await fetch("/api/draft/teams", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name, formation: team.formation, squad }) });
+      const r = await fetch("/api/draft/teams", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name, formation: team.formation, squad, competition: team.league }) });
       if (!r.ok) { setErr((await r.json().catch(() => ({}))).error ?? "Could not save"); setSaving(false); return; }
       // …and set it as the active team so it's immediately playable.
-      await fetch("/api/draft/team", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ formation: team.formation, squad }) }).catch(() => {});
+      await fetch("/api/draft/team", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ formation: team.formation, squad, competition: team.league }) }).catch(() => {});
       setSaved(true); setSaving(false); setNaming(false);
     } catch { setErr("Network error"); setSaving(false); }
   }
@@ -134,7 +134,7 @@ export default function TeamScreen() {
 
   // One FIFA-league-relative projection drives the banner, the odds card and the
   // simulation (they used to disagree).
-  const odds = preSeasonOdds(team.squad, team.strength, leagueOpponents());
+  const odds = preSeasonOdds(team.squad, team.strength, leagueOpponents(team.league));
   const tier = tierFor(odds.expectedPoints);
   const tc = tierColor(tier);
   // The last simulated season for THIS exact XI (so returning shows the result).
@@ -204,7 +204,7 @@ export default function TeamScreen() {
 
         {/* primary actions — two-wide grid, the single set of top-level actions */}
         <div className="grid grid-cols-2 gap-2.5 mb-4">
-          <button onClick={user ? goLive : quickMatch} disabled={matching}
+          <button onClick={goLive} disabled={matching}
             className="rounded-2xl py-3.5 px-3 text-center font-display tracking-wide active:scale-[0.97] transition-transform disabled:opacity-60"
             style={{ background: "#00ff87", color: "#062013", fontSize: 16 }}>
             ⚡ Go Head-to-Head
