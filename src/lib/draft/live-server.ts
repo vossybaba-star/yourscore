@@ -81,16 +81,17 @@ function deadlineFor(phase: LivePhase, now: number): string | null {
 // ─── Derived state ────────────────────────────────────────────────────────────
 
 /** A bot opponent has no client, so it is always "ready" to start (lobby). For
- *  timed phases the deadline drives advancement; Phase 6 adds human-like timing. */
+ *  swap phases the client fires setBotReady 2 s after the human clicks Done, which
+ *  sets p2_ready = true — this function then sees it and advances immediately. */
 function bothReadyFor(row: DraftLiveMatchRow): boolean {
   if (row.phase === "draw_decision") {
     const p2Decided = row.is_bot ? true : row.p2_wants_pens !== null;
     return row.p1_wants_pens !== null && p2Decided;
   }
-  // A bot only short-circuits the lobby (so the match can start). Everywhere else
-  // it "takes its time" — the phase runs to its deadline, like a real opponent
-  // thinking — instead of letting the human's early Done skip the clock.
-  const p2Ready = row.is_bot ? row.phase === "lobby" : row.p2_ready;
+  // Bot is auto-ready for lobby (no client). For pregame_swap / halftime_swap the
+  // client marks p2_ready explicitly (2 s after the human taps Done), so check the
+  // column normally — gives the human the 2-second "thinking" window.
+  const p2Ready = row.is_bot ? (row.phase === "lobby" || row.p2_ready) : row.p2_ready;
   return row.p1_ready && p2Ready;
 }
 
@@ -312,6 +313,19 @@ export async function setReady(db: SupabaseClient<DraftDatabase>, matchId: strin
   const side = sideOf(row, userId);
   if (!side) throw new Error("Not a participant");
   await db.from("draft_live_matches").update({ [`${side}_ready`]: true, updated_at: new Date().toISOString() } as Partial<DraftLiveMatchRow>).eq("id", matchId);
+  return advanceMatch(db, matchId);
+}
+
+/** Mark the bot (p2) ready in a bot match, triggering an immediate advance.
+ *  Only the human player (p1) may call this, and only during a swap window.
+ *  The client fires this ~2 s after the human taps Done so the bot "mirrors" them. */
+export async function setBotReady(db: SupabaseClient<DraftDatabase>, matchId: string, userId: string): Promise<DraftLiveMatchRow | null> {
+  const { data: row } = await db.from("draft_live_matches").select("*").eq("id", matchId).maybeSingle();
+  if (!row) return null;
+  if (!row.is_bot) throw new Error("Not a bot match");
+  if (row.p1_id !== userId) throw new Error("Not a participant");
+  if (row.phase !== "pregame_swap" && row.phase !== "halftime_swap") throw new Error("Not a swap window");
+  await db.from("draft_live_matches").update({ p2_ready: true, updated_at: new Date().toISOString() }).eq("id", matchId);
   return advanceMatch(db, matchId);
 }
 

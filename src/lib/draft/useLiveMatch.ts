@@ -32,6 +32,8 @@ export type UseLiveMatch = {
    *  a toast; the match keeps running. Auto-clears. */
   actionError: string | null;
   ready: () => Promise<void>;
+  /** Mirror the human's Done for a bot match — call 2 s after ready() when is_bot. */
+  botDone: () => Promise<void>;
   swap: (slotId: string, newPlayer: string) => Promise<void>;
   drawChoice: (wantsPens: boolean) => Promise<void>;
 };
@@ -175,6 +177,7 @@ export function useLiveMatch(matchId: string | null): UseLiveMatch {
     error,
     actionError,
     ready: () => act("/api/draft/live/ready", {}),
+    botDone: () => act("/api/draft/live/ready", { bot: true }),
     swap: (slotId, newPlayer) => act("/api/draft/live/swap", { slotId, newPlayer }),
     drawChoice: (wantsPens) => act("/api/draft/live/swap", { wantsPens }),
   };
