@@ -272,9 +272,6 @@ export default function DraftHome() {
             >
               DRAFT YOUR XI →
             </button>
-            <p className="font-body text-center mt-2 pb-1" style={{ color: "#8888aa", fontSize: 11 }}>
-              No sign-up to play · win to upgrade · lose and rebuild
-            </p>
           </div>
         </div>
       )}
