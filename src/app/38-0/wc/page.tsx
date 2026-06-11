@@ -145,8 +145,10 @@ export default function WorldCupEntry() {
       }
       return;
     }
-    // No saved draft — check for ?nation= param (set by the main 38-0 page tab)
+    // No saved draft — honour deep-link params set by the main 38-0 page tab:
+    //   ?mode=world → open draft (any nation); ?nation=X → nation-locked draft.
     const params = new URLSearchParams(window.location.search);
+    if (params.get("mode") === "world" && !mode) { chooseMode("world"); return; }
     const nationParam = params.get("nation");
     if (nationParam && !mode) {
       const n = nations.find((x) => x.nation === nationParam);

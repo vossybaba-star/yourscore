@@ -242,17 +242,17 @@ export default function DraftHome() {
               🏆 WORLD CUP <span style={{ color: "#fff" }}>RUN</span>
             </h2>
             <p className="font-body mt-1 mb-4" style={{ color: "#cfcfe6", fontSize: 14 }}>
-              Pick a nation. Draft their XI from their real player pool. Play their actual World Cup 2026 path.
+              Draft an XI and play a World Cup campaign — group, then knockouts, all the way to the final. Two ways to play.
             </p>
 
             {/* How it works */}
             <div className="rounded-2xl p-4 mb-5" style={{ background: "#12121e", border: "1px solid rgba(255,184,0,0.25)" }}>
               <div className="font-body mb-2.5" style={{ fontSize: 11, color: "#ffb800", letterSpacing: 1 }}>HOW IT WORKS</div>
               {[
-                ["①", "Pick your nation & draft your XI", "Only players from that nation are in your pool."],
-                ["②", "Play the real WC 2026 fixtures",   "Your group, then the knockouts — vs the actual opponents."],
-                ["③", "Win to advance · upgrade each round", "Survive the group, then it's win-or-go-home."],
-                ["④", "Lose a knockout and you're out",   "Reach the final and lift the trophy. 🏆"],
+                ["①", "Build your XI", "Spin & pick — any rating can come up, luck of the draw."],
+                ["②", "Play the World Cup", "A group, then the knockouts — vs real nations, tougher each round."],
+                ["③", "Win to advance · free re-spins", "Survive the group, then it's win-or-go-home."],
+                ["④", "Lose a knockout and you're out", "Reach the final and lift the trophy. 🏆"],
               ].map(([n, title, desc]) => (
                 <div key={n as string} className="flex gap-3 mb-2.5 last:mb-0">
                   <span className="font-display flex-shrink-0" style={{ fontSize: 17, color: "#ffb800" }}>{n}</span>
@@ -264,7 +264,21 @@ export default function DraftHome() {
               ))}
             </div>
 
-            <div className="font-body mb-3" style={{ fontSize: 11, color: "#8888aa", letterSpacing: 1 }}>PICK YOUR NATION</div>
+            {/* World Cup mode — open draft from any nation */}
+            <Link
+              href="/38-0/wc?mode=world"
+              className="flex items-center gap-3 rounded-2xl px-4 py-4 mb-5 active:scale-[0.99] transition-transform"
+              style={{ background: "linear-gradient(135deg,rgba(255,184,0,0.16),rgba(255,184,0,0.04))", border: "1px solid rgba(255,184,0,0.4)" }}
+            >
+              <span style={{ fontSize: 30, flexShrink: 0 }}>🌍</span>
+              <div className="flex-1 min-w-0">
+                <div className="font-display tracking-wide" style={{ fontSize: 18, color: "#ffb800" }}>WORLD CUP — ANY NATION</div>
+                <div className="font-body" style={{ fontSize: 12.5, color: "#cfcfe6", lineHeight: 1.35 }}>Open draft — build a dream team from any nation&apos;s players. Beat the best in the world.</div>
+              </div>
+              <span style={{ fontSize: 16, color: "#ffb800", flexShrink: 0 }}>→</span>
+            </Link>
+
+            <div className="font-body mb-3" style={{ fontSize: 11, color: "#8888aa", letterSpacing: 1 }}>OR PLAY AS A NATION</div>
             <div className="grid grid-cols-2 gap-2.5 pb-6">
               {nations.map((n) => (
                 <Link
