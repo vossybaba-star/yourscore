@@ -256,31 +256,28 @@ function drawPitch(
     ctx.restore();
   }
 
-  // Players.
+  // Players — flat dots with a thin outline. No shadowBlur: blurred shadows on 23 sprites
+  // every frame tank the framerate on mobile, which is what made it feel un-smooth.
   const r = Math.max(4, W * 0.017);
+  ctx.lineWidth = 1.25;
+  ctx.strokeStyle = "rgba(0,0,0,0.5)";
   for (const p of frame.players) {
-    const isMe = p.side === meSide;
     ctx.beginPath();
     ctx.arc(px(p.x), py(p.y), p.role === "gk" ? r * 0.85 : r, 0, Math.PI * 2);
-    ctx.fillStyle = isMe ? ME : OPP;
-    ctx.shadowColor = "rgba(0,0,0,0.5)";
-    ctx.shadowBlur = 3;
+    ctx.fillStyle = p.side === meSide ? ME : OPP;
     ctx.fill();
-    ctx.shadowBlur = 0;
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = "rgba(0,0,0,0.45)";
     ctx.stroke();
   }
 
-  // Ball.
+  // Ball — white dot with a thin dark ring (cheap, no blur).
   const br = Math.max(2.5, W * 0.0095);
   ctx.beginPath();
   ctx.arc(px(frame.ball.x), py(frame.ball.y), br, 0, Math.PI * 2);
   ctx.fillStyle = "#fff";
-  ctx.shadowColor = "rgba(0,0,0,0.6)";
-  ctx.shadowBlur = 4;
   ctx.fill();
-  ctx.shadowBlur = 0;
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = "rgba(0,0,0,0.7)";
+  ctx.stroke();
 
   ctx.restore();
 }

@@ -248,7 +248,7 @@ function simulatePassage(beat: ReelBeat, matchId: string, half: 1 | 2, idx: numb
       if (e.role === "att") {
         const central = Math.abs(e.home.y - 0.5) < 0.12;
         const finalThird = (goalSign > 0 ? lineFront : 1 - lineFront) > 0.66;
-        if (finalThird) { tx = clamp01(goalX - goalSign * (0.05 + rng() * 0.06)); ty = central ? clamp01(0.5 + (rng() - 0.5) * 0.12) : clamp01(0.5 + wide * 0.17); }
+        if (finalThird) { tx = clamp01(goalX - goalSign * (0.09 + rng() * 0.12)); ty = central ? clamp01(0.5 + (rng() - 0.5) * 0.18) : clamp01(0.5 + wide * (0.14 + rng() * 0.08)); }
         else { tx = clamp01(lineFront + goalSign * SIM.attAhead); ty = central ? clamp01(0.5 + (rng() - 0.5) * 0.04) : clamp01(0.5 + wide * SIM.wingWide); }
       } else if (e.role === "mid") {
         tx = clamp01(lineFront - goalSign * SIM.midBehind); ty = clamp01(lerp(e.home.y, 0.5, 0.18));
@@ -258,8 +258,13 @@ function simulatePassage(beat: ReelBeat, matchId: string, half: 1 | 2, idx: numb
       steer(e, tx, ty);
     }
 
-    const backLineX = clamp01(advanceX + goalSign * SIM.defLineGap);
-    const midLineX = clamp01(advanceX + goalSign * SIM.defLineGap * 0.4);
+    // Banks hold goal-side of the ball but never drop ONTO the goal line — they cap at the
+    // box edge (only the keeper sits on the line), so the defence doesn't pile up on it.
+    const defCap = goalX - goalSign * 0.13;
+    const rawBack = advanceX + goalSign * SIM.defLineGap;
+    const rawMid = advanceX + goalSign * SIM.defLineGap * 0.4;
+    const backLineX = goalSign > 0 ? Math.min(rawBack, defCap) : Math.max(rawBack, defCap);
+    const midLineX = goalSign > 0 ? Math.min(rawMid, defCap - 0.06) : Math.max(rawMid, defCap + 0.06);
     const ranked = defOut.map((e) => ({ e, d: dist(e.x, e.y, ball.x, ball.y) })).sort((a, b) => a.d - b.d);
     const pressers = new Set(ranked.slice(0, 2).map((s) => s.e));
     for (const e of defOut) {
