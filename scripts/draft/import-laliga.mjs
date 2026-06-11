@@ -63,10 +63,13 @@ const LALIGA_TOKENS = [
 ];
 
 // Reserve / B sides share the parent club's name but play in the lower leagues — drop
-// them (matched on the accent-stripped lowercase club string).
+// them. Plus a few FOREIGN namesakes the city/name tokens otherwise catch in the
+// worldwide no-league dumps (e.g. "Barcelona SC" = Barcelona Sporting Club, Ecuador —
+// NOT FC Barcelona). Matched on the accent-stripped lowercase club string.
 const RESERVE = [
   " b", "castilla", "mestalla", "sevilla atletico", "bilbao athletic", "promesas",
   "fabril", "juvenil", "atletico madrid b", "barcelona b", "villarreal b",
+  "sporting club", "barcelona sc", // Ecuadorian Barcelona, not FC Barcelona
 ];
 function isReserve(club) {
   const s = (club || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
