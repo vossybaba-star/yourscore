@@ -350,6 +350,13 @@ function PlayPageInner() {
   const [joinError, setJoinError] = useState("");
   const joinInputRef = useRef<HTMLInputElement>(null);
 
+  // WC 2026 leaderboard
+  interface LBRow { rank: number; userId: string; displayName: string; totalScore: number; quizCount: number; }
+  const [wc2026Rows, setWc2026Rows] = useState<LBRow[]>([]);
+  const [wc2026Stats, setWc2026Stats] = useState<{ playerCount: number; packCount: number } | null>(null);
+  const [wc2026Loading, setWc2026Loading] = useState(false);
+  const wc2026Fetched = useRef(false);
+
   // Load quiz packs (same query as challenges page — rotation_active + full fields)
   useEffect(() => {
     createClient()
@@ -402,6 +409,21 @@ function PlayPageInner() {
     setJoinCode(code.toUpperCase());
     setJoinSheetOpen(true);
   }, [searchParams]);
+
+  // Fetch WC 2026 leaderboard (lazy, once per session)
+  useEffect(() => {
+    if (mainTab !== "leaderboards" || wc2026Fetched.current) return;
+    wc2026Fetched.current = true;
+    setWc2026Loading(true);
+    fetch("/api/leaderboard/wc2026")
+      .then(r => r.json())
+      .then(data => {
+        setWc2026Rows(data.rows ?? []);
+        setWc2026Stats({ playerCount: data.playerCount ?? 0, packCount: data.packCount ?? 0 });
+      })
+      .catch(() => { /* silent fail */ })
+      .finally(() => setWc2026Loading(false));
+  }, [mainTab]);
 
   async function handleJoinSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -727,7 +749,7 @@ function PlayPageInner() {
       {mainTab === "leaderboards" && (
         <div className="max-w-lg mx-auto px-4 pt-4 space-y-3">
 
-          {/* Header label */}
+          {/* Verified badge */}
           <div className="flex items-center gap-2 mb-1">
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full font-display text-xs tracking-wide"
               style={{ background: "rgba(0,255,135,0.1)", border: "1px solid rgba(0,255,135,0.25)", color: "#00ff87" }}>
@@ -743,13 +765,11 @@ function PlayPageInner() {
             style={{ background: "linear-gradient(145deg, #0d1a10 0%, #091510 100%)", border: "1px solid rgba(0,255,135,0.25)" }}>
 
             {/* Banner strip */}
-            <div className="relative flex items-center justify-between px-5 py-4"
+            <div className="flex items-center justify-between px-5 py-4"
               style={{ background: "linear-gradient(90deg, rgba(0,255,135,0.12) 0%, rgba(255,184,0,0.08) 100%)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
               <div className="flex items-center gap-2">
-                {/* Live pulse dot */}
                 <span className="relative flex" style={{ width: 10, height: 10 }}>
-                  <span className="absolute inline-flex h-full w-full rounded-full opacity-75 animate-ping"
-                    style={{ background: "#00ff87" }} />
+                  <span className="absolute inline-flex h-full w-full rounded-full opacity-75 animate-ping" style={{ background: "#00ff87" }} />
                   <span className="relative inline-flex rounded-full" style={{ width: 10, height: 10, background: "#00ff87" }} />
                 </span>
                 <span className="font-display text-xs tracking-widest" style={{ color: "#00ff87" }}>LIVE</span>
@@ -757,29 +777,77 @@ function PlayPageInner() {
               <span className="text-2xl">🏆</span>
             </div>
 
-            {/* Body */}
-            <div className="px-5 py-4">
+            {/* Title + stats */}
+            <div className="px-5 pt-4 pb-2">
               <p className="font-display tracking-wide" style={{ fontSize: 22, color: "#fff", lineHeight: 1.2 }}>WORLD CUP 2026</p>
               <p className="font-body mt-1" style={{ fontSize: 13, color: "#6aaa80" }}>Daily quiz series · 2026 FIFA World Cup</p>
 
               <div className="flex items-center gap-3 mt-4">
                 <div className="flex-1 rounded-2xl px-4 py-3 text-center"
                   style={{ background: "rgba(0,255,135,0.07)", border: "1px solid rgba(0,255,135,0.15)" }}>
-                  <p className="font-display" style={{ fontSize: 18, color: "#00ff87" }}>—</p>
+                  <p className="font-display" style={{ fontSize: 18, color: "#00ff87" }}>
+                    {wc2026Loading ? "…" : (wc2026Stats?.playerCount ?? 0)}
+                  </p>
                   <p className="font-body text-xs mt-0.5" style={{ color: "#4a7a5a" }}>Players</p>
                 </div>
                 <div className="flex-1 rounded-2xl px-4 py-3 text-center"
                   style={{ background: "rgba(255,184,0,0.07)", border: "1px solid rgba(255,184,0,0.15)" }}>
-                  <p className="font-display" style={{ fontSize: 18, color: "#ffb800" }}>—</p>
+                  <p className="font-display" style={{ fontSize: 18, color: "#ffb800" }}>
+                    {wc2026Loading ? "…" : (wc2026Stats?.packCount ?? 0)}
+                  </p>
                   <p className="font-body text-xs mt-0.5" style={{ color: "#7a6a30" }}>Quizzes</p>
                 </div>
               </div>
+            </div>
 
-              <div className="mt-4 rounded-2xl px-4 py-3 text-center"
-                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                <p className="font-body text-sm" style={{ color: "#8888aa" }}>Leaderboard coming soon</p>
-                <p className="font-body text-xs mt-0.5" style={{ color: "#555577" }}>Play the daily World Cup quiz to get on the board</p>
-              </div>
+            {/* Rankings */}
+            <div className="px-5 pb-5 mt-3">
+              {wc2026Loading ? (
+                <div className="flex justify-center py-6">
+                  <div className="w-5 h-5 rounded-full border-2 animate-spin" style={{ borderColor: "rgba(255,255,255,0.1)", borderTopColor: "#00ff87" }} />
+                </div>
+              ) : wc2026Rows.length === 0 ? (
+                <div className="rounded-2xl px-4 py-5 text-center"
+                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                  <p className="font-body text-sm" style={{ color: "#8888aa" }}>No scores yet — be first on the board</p>
+                  <p className="font-body text-xs mt-0.5" style={{ color: "#555577" }}>Play a World Cup 2026 daily quiz to enter</p>
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  {/* Column headers */}
+                  <div className="flex items-center px-3 pb-1" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                    <span className="font-body text-xs w-8" style={{ color: "#444466" }}>#</span>
+                    <span className="font-body text-xs flex-1" style={{ color: "#444466" }}>Player</span>
+                    <span className="font-body text-xs w-10 text-right" style={{ color: "#444466" }}>Qs</span>
+                    <span className="font-body text-xs w-16 text-right" style={{ color: "#444466" }}>Score</span>
+                  </div>
+                  {wc2026Rows.map((row) => {
+                    const medal = row.rank === 1 ? "🥇" : row.rank === 2 ? "🥈" : row.rank === 3 ? "🥉" : null;
+                    const isTop3 = row.rank <= 3;
+                    return (
+                      <div key={row.userId}
+                        className="flex items-center px-3 py-2.5 rounded-xl"
+                        style={{
+                          background: isTop3 ? "rgba(0,255,135,0.05)" : "rgba(255,255,255,0.02)",
+                          border: `1px solid ${isTop3 ? "rgba(0,255,135,0.12)" : "rgba(255,255,255,0.04)"}`,
+                        }}>
+                        <span className="font-display text-sm w-8" style={{ color: isTop3 ? "#00ff87" : "#444466" }}>
+                          {medal ?? row.rank}
+                        </span>
+                        <span className="font-body text-sm flex-1 truncate" style={{ color: isTop3 ? "#e8e8f0" : "#aaaacc" }}>
+                          {row.displayName}
+                        </span>
+                        <span className="font-body text-xs w-10 text-right" style={{ color: "#555577" }}>
+                          {row.quizCount}
+                        </span>
+                        <span className="font-display text-sm w-16 text-right" style={{ color: isTop3 ? "#00ff87" : "#8888aa" }}>
+                          {row.totalScore.toLocaleString()}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
 
