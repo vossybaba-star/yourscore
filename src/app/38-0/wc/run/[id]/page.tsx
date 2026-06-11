@@ -246,13 +246,20 @@ export default function WorldCupRun() {
               <button onClick={() => { setPickSlot(null); setSlate(null); }} className="font-body" style={{ fontSize: 12, color: "#8888aa" }}>Cancel</button>
             </div>
             <div className="flex flex-col gap-1">
-              {slate.map((p) => (
-                <button key={p.id} onClick={() => applyUpgrade(p.id)} disabled={busy}
-                  className="flex items-center gap-2 rounded-lg px-2 py-2 text-left active:scale-[0.99]" style={{ background: "rgba(255,255,255,0.04)" }}>
-                  <span className="flex items-center justify-center rounded font-display" style={{ width: 30, height: 30, fontSize: 15, color: "#0a0a0f", background: CATEGORY_COLOR[posCategory(p.position)] }}>{p.overall}</span>
-                  <span className="font-body flex-1 truncate" style={{ fontSize: 13, color: "#fff" }}>{p.name} <span style={{ color: "#8888aa", fontSize: 11 }}>{p.club}</span></span>
-                </button>
-              ))}
+              {slate.map((p) => {
+                const flag = world && p.nationality ? wcNation(p.nationality)?.crest : null;
+                return (
+                  <button key={p.id} onClick={() => applyUpgrade(p.id)} disabled={busy}
+                    className="flex items-center gap-2 rounded-lg px-2 py-2 text-left active:scale-[0.99]" style={{ background: "rgba(255,255,255,0.04)" }}>
+                    <span className="flex items-center justify-center rounded font-display" style={{ width: 30, height: 30, fontSize: 15, color: "#0a0a0f", background: CATEGORY_COLOR[posCategory(p.position)] }}>{p.overall}</span>
+                    <span className="font-body flex-1 truncate" style={{ fontSize: 13, color: "#fff" }}>{p.name} <span style={{ color: "#8888aa", fontSize: 11 }}>{p.club}{world && p.nationality ? ` · ${p.nationality}` : ""}</span></span>
+                    {flag && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={flag} alt="" width={20} height={20} style={{ width: 20, height: 20, objectFit: "contain", flexShrink: 0 }} />
+                    )}
+                  </button>
+                );
+              })}
               {slate.length === 0 && <span className="font-body" style={{ fontSize: 12, color: "#ff8a3d" }}>No options for this slot.</span>}
             </div>
           </div>

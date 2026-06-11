@@ -16,6 +16,7 @@ import { Pitch } from "@/components/draft/Pitch";
 import { useUser } from "@/hooks/useUser";
 import { pickableNations, spinForNation, spinWorld, type PickableNation } from "@/lib/draft/pool";
 import { WORLD_TEAM_NAME, type RunMode } from "@/lib/draft/wc";
+import { wcNation } from "@/data/draft/wc2026";
 import {
   emptyTeam, openSlots, isComplete, usedPlayerIds, usedPlayerNames, placePlayer, hydrateSavedTeam, type LocalTeam,
 } from "@/lib/draft/local";
@@ -341,7 +342,10 @@ export default function WorldCupEntry() {
               {slate.map((p) => {
                 const c = CATEGORY_COLOR[posCategory(p.position)];
                 const elig = slots.some((s) => !filledBySlot.has(s.id) && canPlay(p.position, s.pos));
-                const badge = getTeamBadgeUrlSync(p.club);
+                // World mode: show the player's nationality FLAG (any nation). Nation mode:
+                // every player shares the chosen nation, so show the club badge instead.
+                const flag = world && p.nationality ? wcNation(p.nationality)?.crest : null;
+                const rightImg = world ? flag : getTeamBadgeUrlSync(p.club);
                 return (
                   <button key={p.id} onClick={() => elig && setSelected(p)} disabled={!elig}
                     className="w-full flex items-center gap-3 px-3 py-2.5 text-left" style={{ borderTop: "1px solid rgba(255,255,255,0.04)", opacity: elig ? 1 : 0.4 }}>
@@ -350,9 +354,9 @@ export default function WorldCupEntry() {
                       <div className="font-body truncate" style={{ fontSize: 14, color: "#fff" }}>{p.name} <span style={{ color: "#8888aa", fontSize: 12 }}>{p.club} {p.season}</span></div>
                       {world && p.nationality && <div className="font-body truncate" style={{ fontSize: 11, color: "#ffb800" }}>{p.nationality}</div>}
                     </div>
-                    {badge && (
+                    {rightImg && (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={badge} alt="" width={22} height={22} style={{ width: 22, height: 22, objectFit: "contain", flexShrink: 0 }} />
+                      <img src={rightImg} alt="" width={22} height={22} style={{ width: 22, height: 22, objectFit: "contain", flexShrink: 0 }} />
                     )}
                     <span className="rounded px-1.5 py-0.5 font-body flex-shrink-0" style={{ fontSize: 9, color: c, background: "rgba(255,255,255,0.06)" }}>{p.position}</span>
                   </button>
