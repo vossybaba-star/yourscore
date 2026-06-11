@@ -5,7 +5,7 @@
  * own secondary-nav pills and game content below.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BottomNav } from "@/components/ui/BottomNav";
@@ -14,7 +14,7 @@ import { FORMATIONS } from "@/lib/draft/types";
 import type { Formation } from "@/lib/draft/types";
 import { FORMATION_NOTE } from "@/lib/draft/formations";
 import { emptyTeam, loadTeam, saveTeam, isComplete, type LocalTeam, type DraftMode } from "@/lib/draft/local";
-import { POOL_META } from "@/lib/draft/pool";
+import { POOL_META, pickableNations } from "@/lib/draft/pool";
 
 type DraftTab = "pl" | "wc";
 
@@ -24,6 +24,7 @@ export default function DraftHome() {
   const [selected, setSelected] = useState<Formation>("4-3-3");
   const [mode, setMode] = useState<DraftMode>("classic");
   const [existing, setExisting] = useState<LocalTeam | null>(null);
+  const nations = useMemo(() => pickableNations(), []);
 
   useEffect(() => {
     setExisting(loadTeam());
@@ -203,17 +204,8 @@ export default function DraftHome() {
               })}
             </div>
 
-            <button
-              onClick={startNew}
-              className="w-full mt-7 rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform"
-              style={{ background: "#00ff87", color: "#062013", fontSize: 26 }}
-            >
-              SPIN TO START →
-            </button>
-
-            <p className="font-body text-center mt-4" style={{ color: "#8888aa", fontSize: 12 }}>
-              No sign-up to play. Win to upgrade your team — lose and rebuild.
-            </p>
+            {/* spacer so sticky button doesn't cover the last card */}
+            <div className="h-28" />
           </>
         )}
 
@@ -225,33 +217,68 @@ export default function DraftHome() {
             <h2 className="font-display tracking-wide leading-none" style={{ fontSize: 30, color: "#ffb800" }}>
               🏆 WORLD CUP <span style={{ color: "#fff" }}>RUN</span>
             </h2>
-            <p className="font-body mt-1 mb-5" style={{ color: "#cfcfe6", fontSize: 14 }}>
-              Pick a nation. Draft their XI. Win World Cup 2026.
+            <p className="font-body mt-1 mb-4" style={{ color: "#cfcfe6", fontSize: 14 }}>
+              Pick a nation. Draft their XI from their real player pool. Play their actual World Cup 2026 path.
             </p>
 
-            <Link href="/38-0/wc"
-              className="block rounded-2xl p-5 active:scale-[0.98] transition-transform"
-              style={{ background: "linear-gradient(135deg,#1a1407,#0f1a14)", border: "1px solid rgba(255,184,0,0.45)" }}>
-              <div className="flex items-center justify-between">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-display tracking-wide" style={{ fontSize: 22, color: "#ffb800" }}>START YOUR CAMPAIGN</span>
-                    <span className="rounded-full px-2 py-0.5 font-body" style={{ fontSize: 9, color: "#0a0a0f", background: "#ffb800", letterSpacing: 1 }}>NEW</span>
-                  </div>
-                  <div className="font-body" style={{ fontSize: 13, color: "#cfcfe6" }}>
-                    14 nations · 38-game campaign · Group stage through final
+            {/* How it works */}
+            <div className="rounded-2xl p-4 mb-5" style={{ background: "#12121e", border: "1px solid rgba(255,184,0,0.25)" }}>
+              <div className="font-body mb-2.5" style={{ fontSize: 11, color: "#ffb800", letterSpacing: 1 }}>HOW IT WORKS</div>
+              {[
+                ["①", "Pick your nation & draft your XI", "Only players from that nation are in your pool."],
+                ["②", "Play the real WC 2026 fixtures",   "Your group, then the knockouts — vs the actual opponents."],
+                ["③", "Win to advance · upgrade each round", "Survive the group, then it's win-or-go-home."],
+                ["④", "Lose a knockout and you're out",   "Reach the final and lift the trophy. 🏆"],
+              ].map(([n, title, desc]) => (
+                <div key={n as string} className="flex gap-3 mb-2.5 last:mb-0">
+                  <span className="font-display flex-shrink-0" style={{ fontSize: 17, color: "#ffb800" }}>{n}</span>
+                  <div>
+                    <div className="font-body" style={{ fontSize: 13, color: "#fff" }}>{title}</div>
+                    <div className="font-body" style={{ fontSize: 12, color: "#8888aa", lineHeight: 1.35 }}>{desc}</div>
                   </div>
                 </div>
-                <div className="font-display flex-shrink-0 ml-3" style={{ fontSize: 32, color: "#ffb800" }}>→</div>
-              </div>
-            </Link>
+              ))}
+            </div>
 
-            <p className="font-body text-center mt-4" style={{ color: "#8888aa", fontSize: 12 }}>
-              No sign-up required. Pick your nation and build your XI.
-            </p>
+            <div className="font-body mb-3" style={{ fontSize: 11, color: "#8888aa", letterSpacing: 1 }}>PICK YOUR NATION</div>
+            <div className="grid grid-cols-2 gap-2.5 pb-6">
+              {nations.map((n) => (
+                <Link
+                  key={n.nation}
+                  href={`/38-0/wc?nation=${encodeURIComponent(n.nation)}`}
+                  className="flex items-center gap-3 rounded-2xl px-3 py-3.5 active:scale-[0.98] transition-transform"
+                  style={{ background: "linear-gradient(135deg,rgba(255,184,0,0.09),rgba(255,184,0,0.03))", border: "1px solid rgba(255,184,0,0.28)" }}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={n.crest} alt={n.nation} width={36} height={36} style={{ width: 36, height: 36, objectFit: "contain", flexShrink: 0 }} />
+                  <span className="font-body flex-1 truncate" style={{ fontSize: 14, color: "#fff" }}>{n.nation}</span>
+                  <span style={{ fontSize: 16, color: "#ffb800", flexShrink: 0 }}>→</span>
+                </Link>
+              ))}
+            </div>
           </>
         )}
       </div>
+
+      {/* ── Sticky CTA — Premier League tab only ── */}
+      {tab === "pl" && (
+        <div className="fixed bottom-0 left-0 right-0 z-40"
+          style={{ background: "linear-gradient(0deg,#0a0a0f 75%,transparent)", paddingBottom: "calc(env(safe-area-inset-bottom,0px) + 14px)" }}>
+          <div className="max-w-lg mx-auto px-5 pt-3">
+            <button
+              onClick={startNew}
+              className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform"
+              style={{ background: "#00ff87", color: "#062013", fontSize: 26 }}
+            >
+              DRAFT YOUR XI →
+            </button>
+            <p className="font-body text-center mt-2 pb-1" style={{ color: "#8888aa", fontSize: 11 }}>
+              No sign-up to play · win to upgrade · lose and rebuild
+            </p>
+          </div>
+        </div>
+      )}
+
       <BottomNav />
     </div>
   );

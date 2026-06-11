@@ -108,19 +108,28 @@ export default function WorldCupEntry() {
     enter(nation.nation, team.formation, team.squad);
   }
 
-  // On load, restore a saved pick (so a player returns to their exact team), and if
-  // they were mid-"enter" and are now signed in, resume automatically.
+  // On load: (1) restore a saved draft; (2) auto-select nation from ?nation= query param;
+  // (3) if the player was mid-"enter" and is now signed in, resume automatically.
   useEffect(() => {
     if (authLoading) return;
     const d = loadDraft();
-    if (!d) return;
-    if (!nation) {
-      const n = nations.find((x) => x.nation === d.nation);
-      if (n) { setNation(n); setTeam(hydrateSavedTeam(d.formation, d.squad)); }
+    if (d) {
+      if (!nation) {
+        const n = nations.find((x) => x.nation === d.nation);
+        if (n) { setNation(n); setTeam(hydrateSavedTeam(d.formation, d.squad)); }
+      }
+      if (d.pendingEnter && user) {
+        saveDraft({ ...d, pendingEnter: false });
+        enter(d.nation, d.formation, d.squad);
+      }
+      return;
     }
-    if (d.pendingEnter && user) {
-      saveDraft({ ...d, pendingEnter: false }); // consume the flag so we don't loop
-      enter(d.nation, d.formation, d.squad);
+    // No saved draft — check for ?nation= param (set by the main 38-0 page tab)
+    const params = new URLSearchParams(window.location.search);
+    const nationParam = params.get("nation");
+    if (nationParam && !nation) {
+      const n = nations.find((x) => x.nation === nationParam);
+      if (n) chooseNation(n);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, authLoading, nations]);
