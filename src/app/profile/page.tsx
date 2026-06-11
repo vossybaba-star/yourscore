@@ -28,6 +28,17 @@ function AvatarCircle({ name, size = 64, avatarUrl }: { name: string; size?: num
   );
 }
 
+function tierColor(tier: string | null): string {
+  switch (tier) {
+    case "Elite": return "#00ff87";
+    case "Diamond": return "#a78bfa";
+    case "Platinum": return "#67e8f9";
+    case "Gold": return "#ffd700";
+    case "Silver": return "#c0c0c0";
+    default: return "#b08d57"; // Bronze / unranked
+  }
+}
+
 export default async function ProfilePage() {
   const supabase = await createClient();
   const user = await getUserBounded(supabase);
@@ -56,7 +67,7 @@ export default async function ProfilePage() {
     { data: roomScoreRows },
     { data: challengeRows },
     { data: friendRows },
-    { data: draftStanding },
+    { data: rankRows },
     { count: pendingFriendCount },
   ] = await Promise.all([
     supabase.from("profiles").select("display_name, total_score, games_played, avatar_url").eq("id", userId).single(),
@@ -76,12 +87,8 @@ export default async function ProfilePage() {
       .select("user_id, friend_id, status")
       .or(`user_id.eq.${userId},friend_id.eq.${userId}`)
       .eq("status", "accepted"),
-    // 38-0 global standings (null league_id = global row)
-    sb.from("draft_standings")
-      .select("wins_all_time, draws_all_time, losses_all_time")
-      .eq("user_id", userId)
-      .is("league_id", null)
-      .maybeSingle(),
+    // Unified YourScore Rank (two-track: Match + Knowledge) — RPC normalizes + blends
+    sb.rpc("get_yourscore_rank", { p_user_id: userId }),
     // Incoming pending friend requests — drives the badge on the Friends strip.
     sb.from("friendships")
       .select("id", { count: "exact", head: true })
@@ -93,11 +100,15 @@ export default async function ProfilePage() {
 
   const totalScore = profile?.total_score ?? 0;
 
-  const { count } = await supabase
-    .from("profiles")
-    .select("*", { count: "exact", head: true })
-    .gt("total_score", totalScore);
-  const globalRank = profile ? (count ?? 0) + 1 : null;
+  // Unified two-track rank (from get_yourscore_rank RPC)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rank: any = (rankRows ?? [])[0] ?? null;
+  const tier: string | null = rank?.tier ?? null;
+  const overallRank: number | null = rank?.overall_rank ?? null;
+  const matchScore: number = rank?.match_score ?? 0;
+  const knowledgeScore: number = rank?.knowledge_score ?? 0;
+  const matchPct: number = Number(rank?.match_pct ?? 0);
+  const knowledgePct: number = Number(rank?.knowledge_pct ?? 0);
 
   // Compute stats from room_scores (cast to any — columns added via migration)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -106,18 +117,20 @@ export default async function ProfilePage() {
   const totalCorrect = allRoomScores.reduce((s: number, r: any) => s + (r.correct_answers ?? 0), 0);
   const accuracy = totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : null;
   const bestStreak = allRoomScores.reduce((max: number, r: any) => Math.max(max, r.current_streak ?? 0), 0);
-  const wins = allRoomScores.filter((r: any) => r.rank === 1).length;
   const multiplayerGames = allRoomScores.length;
 
   const name = profile?.display_name || user.email?.split("@")[0] || "Player";
   const gamesPlayed = profile?.games_played ?? 0;
   const friendCount = (friendRows ?? []).length;
 
-  // Separate score breakdowns
-  const quizMpScore = allRoomScores.reduce((s: number, r: any) => s + (r.total_score ?? 0), 0);
-  const draftRecord = draftStanding
-    ? { w: draftStanding.wins_all_time ?? 0, d: draftStanding.draws_all_time ?? 0, l: draftStanding.losses_all_time ?? 0 }
+  // Two visible tracks come from the unified-rank RPC.
+  const draftRecord = rank && (rank.wins || rank.draws || rank.losses || matchScore)
+    ? { w: rank.wins ?? 0, d: rank.draws ?? 0, l: rank.losses ?? 0 }
     : null;
+
+  // Cross-sell nudge: push the player toward their weaker track (the 38-0 <-> quiz bridge).
+  const lowTrack: "match" | "knowledge" = matchPct <= knowledgePct ? "match" : "knowledge";
+  const showNudge = !!rank && (matchScore === 0 || knowledgeScore === 0 || Math.abs(matchPct - knowledgePct) > 0.25);
 
   // Recently played with: other users who were in my last 20 rooms
   const myRecentRoomIds: string[] = Array.from(new Set(
@@ -171,54 +184,53 @@ export default async function ProfilePage() {
 
       <div className="relative z-0 max-w-lg mx-auto px-5 pt-5 space-y-5">
 
-        {/* Global rank hero */}
-        {globalRank !== null && (
+        {/* YourScore Rank hero — unified, two visible tracks */}
+        {rank && (
           <div className="rounded-2xl px-5 py-4"
-            style={{ background: "linear-gradient(135deg, rgba(167,139,250,0.1), rgba(0,255,135,0.05))", border: "1px solid rgba(167,139,250,0.2)" }}>
+            style={{ background: "linear-gradient(135deg, rgba(167,139,250,0.1), rgba(0,255,135,0.05))", border: `1px solid ${tierColor(tier)}33` }}>
             <div className="flex items-end justify-between">
               <div>
-                <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-1.5">Global ranking</p>
-                <p className="font-display text-5xl leading-none" style={{ color: "#a78bfa" }}>#{globalRank}</p>
-                <p className="font-body text-xs text-text-muted mt-1.5">{totalScore.toLocaleString()} total points</p>
+                <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-1.5">YourScore Rank</p>
+                <p className="font-display text-4xl leading-none" style={{ color: tierColor(tier) }}>{tier ?? "Unranked"}</p>
+                <p className="font-body text-xs text-text-muted mt-1.5">
+                  {overallRank !== null ? `#${overallRank} overall` : "Play to get ranked"}
+                  {totalScore > 0 ? ` · ${totalScore.toLocaleString()} pts` : ""}
+                </p>
               </div>
-              <div className="text-right flex flex-col items-end gap-2">
-                {wins > 0 && (
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full"
-                    style={{ background: "rgba(255,215,0,0.1)", border: "1px solid rgba(255,215,0,0.25)" }}>
-                    <span>🏆</span>
-                    <span className="font-body text-xs font-bold" style={{ color: "#ffd700" }}>{wins} wins</span>
-                  </div>
-                )}
-                <ShareStatsButton rank={globalRank} score={totalScore} accuracy={accuracy} />
+              <ShareStatsButton rank={overallRank ?? 0} score={totalScore} accuracy={accuracy} />
+            </div>
+
+            {/* the two tracks that feed the rank */}
+            <div className="grid grid-cols-2 gap-2.5 mt-4">
+              <div className="rounded-xl px-3 py-2.5" style={{ background: "rgba(255,184,0,0.06)", border: "1px solid rgba(255,184,0,0.15)" }}>
+                <p className="font-body text-[10px] uppercase tracking-widest" style={{ color: "#ffb800" }}>🧠 Knowledge</p>
+                <p className="font-display text-2xl text-white leading-none mt-1">{knowledgeScore > 0 ? knowledgeScore.toLocaleString() : "—"}</p>
+                <p className="font-body text-[10px] text-text-muted mt-1">quizzes + solo · better than {Math.round(knowledgePct * 100)}%</p>
               </div>
+              <Link href="/38-0/history" className="block rounded-xl px-3 py-2.5 transition-opacity hover:opacity-80" style={{ background: "rgba(0,255,135,0.06)", border: "1px solid rgba(0,255,135,0.15)" }}>
+                <p className="font-body text-[10px] uppercase tracking-widest" style={{ color: "#00ff87" }}>⚽ Match</p>
+                <p className="font-display text-2xl text-white leading-none mt-1">
+                  {draftRecord ? <>{draftRecord.w}<span className="text-base" style={{ color: "#555577" }}>-{draftRecord.d}-{draftRecord.l}</span></> : "—"}
+                </p>
+                <p className="font-body text-[10px] text-text-muted mt-1">38-0 W-D-L · better than {Math.round(matchPct * 100)}%</p>
+              </Link>
             </div>
           </div>
         )}
 
-        {/* Score breakdown — quiz vs 38-0 */}
-        <div className="grid grid-cols-2 gap-2.5">
-          <div className="rounded-2xl px-4 py-4 bg-surface" style={{ border: "1px solid rgba(255,184,0,0.15)" }}>
-            <p className="font-body text-xs uppercase tracking-widest mb-2" style={{ color: "#ffb800" }}>⚡ Quiz Score</p>
-            <p className="font-display text-3xl leading-none text-white">{quizMpScore > 0 ? quizMpScore.toLocaleString() : "—"}</p>
-            <p className="font-body text-xs text-text-muted mt-1.5">Quiz + multiplayer pts</p>
-          </div>
-          <Link href="/38-0/history" className="block rounded-2xl px-4 py-4 bg-surface transition-opacity hover:opacity-80" style={{ border: "1px solid rgba(0,255,135,0.15)" }}>
-            <p className="font-body text-xs uppercase tracking-widest mb-2" style={{ color: "#00ff87" }}>⚽ 38-0 Record</p>
-            {draftRecord ? (
-              <>
-                <p className="font-display text-3xl leading-none text-white">
-                  {draftRecord.w}<span className="text-xl" style={{ color: "#555577" }}>-{draftRecord.d}-{draftRecord.l}</span>
-                </p>
-                <p className="font-body text-xs text-text-muted mt-1.5">W-D-L · View history →</p>
-              </>
-            ) : (
-              <>
-                <p className="font-display text-3xl leading-none" style={{ color: "#444466" }}>—</p>
-                <p className="font-body text-xs text-text-muted mt-1.5">No 38-0 games yet</p>
-              </>
-            )}
+        {/* Cross-sell nudge — push the weaker track (38-0 <-> quiz bridge) */}
+        {showNudge && (
+          <Link href={lowTrack === "match" ? "/38-0" : "/play"}
+            className="flex items-center justify-between px-4 py-3 rounded-2xl transition-all hover:opacity-90 active:scale-[0.99]"
+            style={{ background: "rgba(167,139,250,0.08)", border: "1px solid rgba(167,139,250,0.2)" }}>
+            <p className="font-body text-sm text-white pr-3">
+              {lowTrack === "match"
+                ? "⚽ Your Match track is low — play 38-0 to climb your rank"
+                : "🧠 Your Knowledge track is low — play a quiz to climb your rank"}
+            </p>
+            <span className="font-body text-xs font-bold flex-shrink-0" style={{ color: "#a78bfa" }}>Play →</span>
           </Link>
-        </div>
+        )}
 
         {/* Quick stats grid */}
         <div className="grid grid-cols-2 gap-2.5">
@@ -253,6 +265,23 @@ export default async function ProfilePage() {
             </div>
           </div>
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ color: "#00ff87", flexShrink: 0 }}>
+            <path d="M5 3l6 5-6 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </Link>
+
+        {/* Rankings strip */}
+        <Link href="/leaderboard"
+          className="flex items-center justify-between px-5 py-4 rounded-2xl transition-all hover:opacity-90 active:scale-[0.99]"
+          style={{ background: "linear-gradient(135deg, rgba(167,139,250,0.08), rgba(167,139,250,0.04))", border: "1px solid rgba(167,139,250,0.2)" }}>
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
+              style={{ background: "rgba(167,139,250,0.12)" }}>🏅</div>
+            <div>
+              <p className="font-body text-sm font-bold text-white">Rankings</p>
+              <p className="font-body text-xs text-text-muted">Global + friends leaderboard</p>
+            </div>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ color: "#a78bfa", flexShrink: 0 }}>
             <path d="M5 3l6 5-6 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </Link>
