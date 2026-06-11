@@ -14,6 +14,12 @@ import { slugify } from "@/lib/utils";
 
 const SITE = "https://yourscore.app";
 
+// Refresh the per-quiz metadata (og:image etc.) at most every 60s rather than
+// caching it indefinitely. This is what lets a freshly attached or swapped share
+// image show up on the link card without a redeploy — without it, generateMetadata's
+// Supabase query is cached on first render and a later image attach stays invisible.
+export const revalidate = 60;
+
 type PackMeta = {
   name: string;
   description: string | null;
