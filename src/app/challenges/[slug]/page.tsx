@@ -644,8 +644,8 @@ export default function ChallengePage() {
     return (
       <div className="min-h-screen flex flex-col bg-bg">
         <div className="relative" style={{ background: gradientHero }}>
-          <button
-            onClick={() => router.back()}
+          <Link
+            href="/play"
             className="absolute top-12 left-5 flex items-center gap-1.5 font-body text-xs z-10"
             style={{ color: "rgba(255,255,255,0.5)" }}
           >
@@ -653,7 +653,7 @@ export default function ChallengePage() {
               <path d="M11 4L6 9l5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             Challenges
-          </button>
+          </Link>
 
           <div className="flex flex-col items-center pt-24 pb-8 px-6">
             {pack.metadata?.cover_image ? (
