@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -34,7 +34,7 @@ interface QuizPack {
   parameter: string;
   question_count: number;
   description?: string | null;
-  metadata?: { icon?: string; cover_image?: string } | null;
+  metadata?: { icon?: string; cover_image?: string; series?: string } | null;
 }
 
 interface RawQuestion {
@@ -398,6 +398,14 @@ export default function ChallengePage() {
   const [lastStreakBonus, setLastStreakBonus] = useState(0);
   const [advancing, setAdvancing] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  // ── Share state ──────────────────────────────────────────────────────────
+  const [shortUrl, setShortUrl] = useState<string | null>(null);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [giveawayOpen, setGiveawayOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const giveawayShown = useRef(false);
+
   // Streak tracking for bonuses
   const [correctStreak, setCorrectStreak] = useState(0);
   const [wrongStreak, setWrongStreak] = useState(0);
@@ -515,6 +523,70 @@ export default function ChallengePage() {
   const currentQ = questions[currentIdx];
   // Max score: sum of Lightning-speed points per question by difficulty
   const maxScore = questions.reduce((s, q) => s + maxPointsForDifficulty(q.difficulty ?? "medium"), 0);
+
+  // ── Share helpers ─────────────────────────────────────────────────────────
+
+  const fallbackUrl = typeof window !== "undefined"
+    ? `${location.origin}/challenges/${slug}`
+    : `https://yourscore.app/challenges/${slug}`;
+
+  async function ensureShortUrl(): Promise<string> {
+    if (shortUrl) return shortUrl;
+    try {
+      const res = await fetch("/api/draft/share", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ payload: { challengeSlug: slug } }),
+      });
+      if (res.ok) {
+        const { id } = await res.json();
+        if (id) { const u = `${window.location.origin}/s/${id}`; setShortUrl(u); return u; }
+      }
+    } catch { /* keep fallback */ }
+    return fallbackUrl;
+  }
+
+  const isWc2026 = pack?.metadata?.series === "wc2026";
+
+  function quizBlurb(): string {
+    if (isWc2026) return `I scored ${score.toLocaleString()} on the ${pack?.name ?? "YourScore Quiz"} @yourscore_app_ ⚽`;
+    return `I scored ${score.toLocaleString()} on "${pack?.name ?? "YourScore Quiz"}" @yourscore_app_ 🧠`;
+  }
+  function giveawayTweetText(): string {
+    if (isWc2026) return `I scored ${score.toLocaleString()} on the ${pack?.name ?? "YourScore Quiz"} @yourscore_app_ ⚽ Entering the daily £25 giveaway`;
+    return `I scored ${score.toLocaleString()} on "${pack?.name ?? "YourScore Quiz"}" @yourscore_app_ 🧠 Entering the daily £25 giveaway`;
+  }
+  function giveawayTweetUrl(): string {
+    const u = shortUrl ?? fallbackUrl;
+    return `https://twitter.com/intent/tweet?text=${encodeURIComponent(giveawayTweetText())}&url=${encodeURIComponent(u)}`;
+  }
+  function openShare() { setShareOpen(true); void ensureShortUrl(); }
+  async function nativeShare() {
+    const url = await ensureShortUrl();
+    try {
+      if (navigator.share) await navigator.share({ title: pack?.name ?? "YourScore Quiz", text: quizBlurb(), url });
+      else { await navigator.clipboard.writeText(`${quizBlurb()} ${url}`); }
+    } catch { /* user cancelled */ }
+  }
+  function shareX() {
+    const u = shortUrl ?? fallbackUrl;
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(quizBlurb())}&url=${encodeURIComponent(u)}`, "_blank", "noopener");
+  }
+  async function copyLink() {
+    const url = await ensureShortUrl();
+    try { await navigator.clipboard.writeText(`${quizBlurb()} ${url}`); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* blocked */ }
+  }
+
+  // Auto-mint short URL + auto-open giveaway overlay when results first appear.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (phase !== "results") return;
+    if (giveawayShown.current) return;
+    giveawayShown.current = true;
+    void ensureShortUrl();
+    const t = setTimeout(() => setGiveawayOpen(true), 700);
+    return () => clearTimeout(t);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
 
   // ── Answer handler ─────────────────────────────────────────────────────
   async function handleAnswer(letter: Letter) {
@@ -997,6 +1069,25 @@ export default function ChallengePage() {
         </div>
 
         <div className="px-5 flex flex-col gap-4 mt-2">
+          {/* ── Giveaway CTA ── */}
+          <button
+            onClick={() => setGiveawayOpen(true)}
+            className="w-full rounded-2xl overflow-hidden active:scale-[0.98] transition-transform"
+            style={{ background: "linear-gradient(135deg, #1c1400, #221900)", border: "2px solid rgba(255,184,0,0.55)" }}
+          >
+            <div className="flex items-center gap-4 px-5 py-4">
+              <div style={{ fontSize: 36, lineHeight: 1 }}>🏆</div>
+              <div className="text-left flex-1 min-w-0">
+                <div className="font-display tracking-wide" style={{ fontSize: 20, color: "#ffb800" }}>WIN £25 TODAY</div>
+                <div className="font-body" style={{ fontSize: 13, color: "#a89060" }}>Share on 𝕏 to enter the daily giveaway →</div>
+              </div>
+            </div>
+          </button>
+
+          <button onClick={openShare} className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "#00ff87", color: "#062013", fontSize: 22 }}>
+            📸 SHARE YOUR RESULT
+          </button>
+
           {/* Timing stats */}
           <div className="rounded-2xl p-5 bg-surface"
             style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
@@ -1102,6 +1193,64 @@ export default function ChallengePage() {
             MORE CHALLENGES →
           </button>
         </div>
+
+        {/* ── Share sheet ── */}
+        {shareOpen && (
+          <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: "rgba(0,0,0,0.7)" }} onClick={() => setShareOpen(false)}>
+            <div className="w-full max-w-lg rounded-t-3xl px-4 pt-3" style={{ background: "#0b0b12", borderTop: "1px solid rgba(255,255,255,0.1)", paddingBottom: "calc(env(safe-area-inset-bottom,0px) + 16px)" }} onClick={(e) => e.stopPropagation()}>
+              <div className="mx-auto mb-3 rounded-full" style={{ width: 40, height: 4, background: "rgba(255,255,255,0.2)" }} />
+              <button onClick={nativeShare} className="w-full mt-2 rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "#00ff87", color: "#062013", fontSize: 20 }}>
+                🔗 Share link
+              </button>
+              <div className="grid grid-cols-3 gap-2 mt-2">
+                <button onClick={shareX} className="rounded-2xl py-3 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "#1a1a2e", color: "#fff", fontSize: 15, border: "1px solid rgba(255,255,255,0.15)" }}>𝕏</button>
+                <button onClick={() => { setShareOpen(false); void nativeShare(); }} className="rounded-2xl py-3 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "rgba(225,48,108,0.12)", color: "#e1306c", fontSize: 15, border: "1px solid rgba(225,48,108,0.3)" }}>Instagram</button>
+                <button onClick={() => { setShareOpen(false); void nativeShare(); }} className="rounded-2xl py-3 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "#1a1a2e", color: "#cfcfe6", fontSize: 15, border: "1px solid rgba(255,255,255,0.15)" }}>TikTok</button>
+              </div>
+              <button onClick={copyLink} className="w-full mt-2 flex items-center gap-3 px-4 py-3 rounded-2xl transition-all" style={{ background: copied ? "rgba(0,255,135,0.1)" : "rgba(255,255,255,0.06)", border: `1px solid ${copied ? "rgba(0,255,135,0.3)" : "rgba(255,255,255,0.1)"}` }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke={copied ? "#00ff87" : "#aaaacc"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke={copied ? "#00ff87" : "#aaaacc"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <span className="font-body text-sm font-semibold" style={{ color: copied ? "#00ff87" : "#aaaacc" }}>{copied ? "Copied!" : "Copy link"}</span>
+              </button>
+              <button onClick={() => setShareOpen(false)} className="w-full mt-2 rounded-2xl py-3 font-body active:scale-[0.98] transition-transform" style={{ background: "transparent", color: "#8888aa", fontSize: 15 }}>Close</button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Giveaway overlay ── */}
+        {giveawayOpen && (
+          <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: "rgba(0,0,0,0.9)" }} onClick={() => setGiveawayOpen(false)}>
+            <div className="w-full max-w-lg px-4" style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 20px)" }} onClick={(e) => e.stopPropagation()}>
+              <div className="rounded-3xl overflow-hidden" style={{ background: "#0e0d1a", border: "2px solid rgba(255,184,0,0.4)" }}>
+                <div className="flex justify-center pt-3 pb-1">
+                  <div className="rounded-full" style={{ width: 40, height: 4, background: "rgba(255,255,255,0.18)" }} />
+                </div>
+                <div className="px-6 pt-4 pb-7 text-center">
+                  <div style={{ fontSize: 52, lineHeight: 1.1 }}>🏆</div>
+                  <div className="font-body mt-3" style={{ fontSize: 11, color: "#ffb800", letterSpacing: 3 }}>DAILY GIVEAWAY</div>
+                  <div className="font-display tracking-wide leading-none mt-1" style={{ fontSize: 80, color: "#fff" }}>£25</div>
+                  <p className="font-body mt-3" style={{ fontSize: 15, color: "#cfcfe6", lineHeight: 1.6 }}>
+                    Share your result on 𝕏 to enter.<br />
+                    <span style={{ color: "#7a7a92", fontSize: 13 }}>One winner drawn every 24 hours.</span>
+                  </p>
+                  <a href={giveawayTweetUrl()} target="_blank" rel="noopener noreferrer" onClick={() => setGiveawayOpen(false)}
+                    className="flex items-center justify-center gap-3 w-full rounded-2xl py-4 mt-6 font-display tracking-wide active:scale-[0.98] transition-transform"
+                    style={{ background: "#fff", color: "#000", fontSize: 20, textDecoration: "none", display: "flex" }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="black">
+                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.741l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                    </svg>
+                    POST ON 𝕏 TO ENTER
+                  </a>
+                  <button onClick={() => setGiveawayOpen(false)} className="w-full mt-3 font-body" style={{ fontSize: 14, color: "#55556a", background: "transparent", border: "none", cursor: "pointer" }}>
+                    Not now
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }

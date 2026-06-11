@@ -19,8 +19,9 @@ function genId(len = 7): string {
   return s;
 }
 
-// Keys the season-og card understands, plus matchId for live H2H result links.
-const KEYS = ["w", "d", "l", "pts", "pos", "ovr", "mode", "inv", "boot", "pots", "xi", "gf", "ga", "verdict", "form", "play", "glov", "matchId"] as const;
+// Keys the season-og card understands, plus matchId for live H2H result links,
+// and challengeSlug for quiz result share cards.
+const KEYS = ["w", "d", "l", "pts", "pos", "ovr", "mode", "inv", "boot", "pots", "xi", "gf", "ga", "verdict", "form", "play", "glov", "matchId", "challengeSlug"] as const;
 
 export async function GET(req: NextRequest) {
   const id = req.nextUrl.searchParams.get("id");
@@ -50,7 +51,7 @@ export async function POST(req: NextRequest) {
     const v = src[k];
     if (typeof v === "string" && v) payload[k] = v.slice(0, 1500);
   }
-  if (!payload.w && !payload.xi && !payload.matchId) return NextResponse.json({ error: "Empty result" }, { status: 400 });
+  if (!payload.w && !payload.xi && !payload.matchId && !payload.challengeSlug) return NextResponse.json({ error: "Empty result" }, { status: 400 });
 
   try {
     const db = createDraftDb();

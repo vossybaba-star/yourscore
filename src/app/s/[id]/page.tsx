@@ -94,6 +94,9 @@ export default async function SeasonShortSharePage({ params }: { params: { id: s
   // Live H2H match link — redirect to the match page which has its own OG tags.
   if (p?.matchId) redirect(`/38-0/match/${p.matchId}`);
 
+  // Quiz challenge share link — redirect to the challenge page.
+  if (p?.challengeSlug) redirect(`/challenges/${p.challengeSlug}`);
+
   if (!p) {
     return (
       <div className="min-h-[100dvh] grid place-items-center px-6 text-center" style={{ background: "#0a0a0f" }}>
