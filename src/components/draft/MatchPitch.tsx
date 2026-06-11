@@ -11,9 +11,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import { pitchFrame, type PitchFrame } from "@/lib/draft/pitch";
-import { watchFrame, type TickStats } from "@/lib/draft/playback";
+import { watchFrame, WATCH_CONFIG, type TickStats, type Beat } from "@/lib/draft/playback";
 import type { HalfSim } from "@/lib/draft/live-score";
 import { ScoreHeader, StatBars, ME, OPP } from "./MatchHud";
+
+type View = "pitch" | "commentary";
 
 type Props = {
   sim: HalfSim;
@@ -35,11 +37,16 @@ export function MatchPitch(props: Props) {
   const argsRef = useRef<Props>(props);
   argsRef.current = props;
   const dispRef = useRef(props.progress);
+  const lastTRef = useRef(0);
   const reducedRef = useRef(false);
+  const [view, setView] = useState<View>("pitch");
+  const viewRef = useRef<View>("pitch");
+  viewRef.current = view;
+  const feedRef = useRef<HTMLDivElement>(null);
 
-  const [hud, setHud] = useState<{ minute: number; my: number; opp: number; stats: TickStats }>(() => {
+  const [hud, setHud] = useState<{ minute: number; my: number; opp: number; stats: TickStats; feed: Beat[] }>(() => {
     const f = pitchFrame(props.sim, props.half, props.matchId, props.progress);
-    return { minute: Math.round(f.matchMinute), my: 0, opp: 0, stats: watchFrame(props.sim, props.half, props.matchId, 0).stats };
+    return { minute: Math.round(f.matchMinute), my: 0, opp: 0, stats: watchFrame(props.sim, props.half, props.matchId, 0).stats, feed: [] };
   });
 
   useEffect(() => {
@@ -69,34 +76,40 @@ export function MatchPitch(props: Props) {
     resize();
     window.addEventListener("resize", resize);
 
-    let lastHud = { minute: -1, my: -1, opp: -1, key: "" };
+    let lastHud = { minute: -1, my: -1, opp: -1 };
 
     const tick = () => {
       if (stopped) return;
       const { sim, half, matchId, progress, priorGoals, meSide } = argsRef.current;
 
-      // Eased clock: chase the injected progress so motion is smooth between updates.
+      // Self-driven clock: advance every frame at real-time pace, gently syncing toward the
+      // injected `progress` (which only updates ~1–10Hz). This keeps motion continuous and
+      // smooth at 60fps instead of freezing between progress updates and then lurching.
+      const now = performance.now();
+      const dt = lastTRef.current ? Math.min(0.05, (now - lastTRef.current) / 1000) : 1 / 60;
+      lastTRef.current = now;
       let disp = dispRef.current;
       if (reducedRef.current) disp = progress;
       else {
-        disp += (progress - disp) * 0.16;
-        if (Math.abs(progress - disp) < 0.0015) disp = progress;
+        disp += dt / WATCH_CONFIG.halfSeconds + (progress - disp) * 0.06;
+        disp = disp < 0 ? 0 : disp > 1 ? 1 : disp;
       }
       dispRef.current = disp;
 
       const frame = pitchFrame(sim, half, matchId, disp);
-      drawPitch(ctx, cssW, cssH, dpr, frame, meSide, reducedRef.current);
+      if (viewRef.current === "pitch") drawPitch(ctx, cssW, cssH, dpr, frame, meSide, reducedRef.current);
 
-      // HUD (numbers) — update only when an integer actually changes.
+      // HUD (numbers + commentary feed) — recompute only when the clock minute or score
+      // changes (a few Hz), not every frame.
       const base = half === 2 ? 45 : 0;
-      const statP = Math.max(0, Math.min(1, (frame.matchMinute - base) / 45));
       const my = meSide === "a" ? priorGoals.a + frame.goalsA : priorGoals.b + frame.goalsB;
       const opp = meSide === "a" ? priorGoals.b + frame.goalsB : priorGoals.a + frame.goalsA;
       const minute = Math.round(frame.matchMinute);
-      const key = `${minute}`;
-      if (minute !== lastHud.minute || my !== lastHud.my || opp !== lastHud.opp || key !== lastHud.key) {
-        lastHud = { minute, my, opp, key };
-        setHud({ minute, my, opp, stats: watchFrame(sim, half, matchId, statP).stats });
+      if (minute !== lastHud.minute || my !== lastHud.my || opp !== lastHud.opp) {
+        lastHud = { minute, my, opp };
+        const statP = Math.max(0, Math.min(1, (frame.matchMinute - base) / 45));
+        const wf = watchFrame(sim, half, matchId, statP);
+        setHud({ minute, my, opp, stats: wf.stats, feed: wf.feed });
       }
 
       raf = requestAnimationFrame(tick);
@@ -117,15 +130,64 @@ export function MatchPitch(props: Props) {
     };
   }, []);
 
+  useEffect(() => {
+    if (view === "commentary" && feedRef.current) feedRef.current.scrollTop = feedRef.current.scrollHeight;
+  }, [hud.feed.length, view]);
+
   return (
     <div>
       <ScoreHeader minute={hud.minute} myName={props.myName} oppName={props.oppName} myGoals={hud.my} oppGoals={hud.opp} />
-      <div className="mt-4 rounded-xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)", lineHeight: 0 }}>
+
+      {/* Watch the pitch, or read the commentary — user's choice. */}
+      <div className="mt-4 flex gap-1 p-1 rounded-xl" style={{ background: "#0d0d14", border: "1px solid rgba(255,255,255,0.08)" }}>
+        <TabBtn active={view === "pitch"} onClick={() => setView("pitch")} label="Pitch" />
+        <TabBtn active={view === "commentary"} onClick={() => setView("commentary")} label="Commentary" />
+      </div>
+
+      {/* Canvas stays mounted (hidden under commentary) so the rAF loop + ref persist. */}
+      <div className="mt-3 rounded-xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)", lineHeight: 0, display: view === "pitch" ? "block" : "none" }}>
         <canvas ref={canvasRef} style={{ display: "block", width: "100%" }} />
       </div>
+
+      {view === "commentary" && (
+        <div ref={feedRef} className="mt-3 rounded-xl overflow-y-auto" style={{ background: "#0d0d14", border: "1px solid rgba(255,255,255,0.08)", maxHeight: 260 }}>
+          {hud.feed.length === 0
+            ? <div className="px-3 py-6 text-center font-body" style={{ fontSize: 13, color: "#7a7a92" }}>Kick-off…</div>
+            : hud.feed.map((b, i) => <FeedLine key={`${b.minute}-${b.kind}-${i}`} beat={b} meSide={props.meSide} half={props.half} />)}
+        </div>
+      )}
+
       <div className="mt-4">
         <StatBars stats={hud.stats} meSide={props.meSide} />
       </div>
+    </div>
+  );
+}
+
+function TabBtn({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex-1 rounded-lg py-2 font-display tracking-wide transition-colors active:scale-[0.99]"
+      style={{ fontSize: 13, letterSpacing: 1, color: active ? "#062013" : "#9a9ab0", background: active ? ME : "transparent" }}
+    >
+      {label.toUpperCase()}
+    </button>
+  );
+}
+
+function FeedLine({ beat, meSide, half }: { beat: Beat; meSide: "a" | "b"; half: 1 | 2 }) {
+  const isGoal = beat.kind === "goal";
+  const isBookend = beat.kind === "kickoff" || beat.kind === "halftime" || beat.kind === "fulltime";
+  const mine = beat.side === meSide;
+  const accent = isBookend ? "#8888aa" : mine ? ME : OPP;
+  const shownMinute = beat.kind === "kickoff" ? (half === 2 ? 45 : 0) : beat.minute;
+  return (
+    <div className="flex items-center gap-2 px-3 py-1.5" style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+      <span className="font-display tabular-nums" style={{ fontSize: 12, color: "#7a7a92", width: 28 }}>{shownMinute}&apos;</span>
+      <span className="font-body" style={{ fontSize: isGoal ? 14 : 12.5, color: isGoal ? accent : "#cfcfe6", fontWeight: isGoal ? 700 : 400 }}>
+        {beat.text}
+      </span>
     </div>
   );
 }

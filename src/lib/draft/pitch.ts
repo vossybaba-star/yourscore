@@ -195,9 +195,22 @@ function getMotion(sim: HalfSim, half: 1 | 2, matchId: string): { reel: Reel; pa
   return m;
 }
 
+/** Interpolate between the two bracketing precomputed frames so motion is smooth at any
+ *  display rate (the sim is precomputed at a fixed FPS; without this it visibly steps). */
 function frameAt(p: PassageSim, localT: number): SimFrame {
-  const i = Math.max(0, Math.min(p.frames.length - 1, Math.round(localT * (p.frames.length - 1))));
-  return p.frames[i];
+  const n = p.frames.length;
+  if (n === 1) return p.frames[0];
+  const fp = clamp01(localT) * (n - 1);
+  const i0 = Math.floor(fp);
+  const i1 = Math.min(n - 1, i0 + 1);
+  const t = fp - i0;
+  const a = p.frames[i0], b = p.frames[i1];
+  return {
+    ball: { x: lerp(a.ball.x, b.ball.x, t), y: lerp(a.ball.y, b.ball.y, t) },
+    inFlight: a.inFlight,
+    players: a.players.map((pa, k) => ({ side: pa.side, role: pa.role, x: lerp(pa.x, b.players[k].x, t), y: lerp(pa.y, b.players[k].y, t) })),
+    event: a.event,
+  };
 }
 
 export function pitchFrame(sim: HalfSim, half: 1 | 2, matchId: string, progress: number): PitchFrame {
