@@ -7,6 +7,7 @@
 
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { createDraftDb } from "@/lib/draft/server";
 
 export const runtime = "nodejs";
@@ -89,6 +90,9 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
 
 export default async function SeasonShortSharePage({ params }: { params: { id: string } }) {
   const p = await loadPayload(params.id);
+
+  // Live H2H match link — redirect to the match page which has its own OG tags.
+  if (p?.matchId) redirect(`/38-0/match/${p.matchId}`);
 
   if (!p) {
     return (

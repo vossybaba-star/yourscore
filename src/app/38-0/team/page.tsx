@@ -273,34 +273,52 @@ export default function TeamScreen() {
           </div>
         </div>
 
-        {/* primary actions — two-wide grid, the single set of top-level actions */}
-        <div className="grid grid-cols-2 gap-2.5 mb-4">
-          <button onClick={goLive} disabled={matching}
-            className="rounded-2xl py-3.5 px-3 text-center font-display tracking-wide active:scale-[0.97] transition-transform disabled:opacity-60"
-            style={{ background: "#00ff87", color: "#062013", fontSize: 16 }}>
-            ⚡ Go Head-to-Head
-          </button>
-          <button onClick={() => router.push(user ? "/38-0/leagues" : "/auth/sign-in")}
-            className="rounded-2xl py-3.5 px-3 text-center font-display tracking-wide active:scale-[0.97] transition-transform"
-            style={{ background: "rgba(167,139,250,0.12)", color: "#a78bfa", fontSize: 16, border: "1px solid rgba(167,139,250,0.4)" }}>
-            🏆 Build a League
-          </button>
-          <Link href="/38-0/leaderboard"
-            className="rounded-2xl py-3.5 px-3 text-center font-display tracking-wide active:scale-[0.97] transition-transform"
-            style={{ background: "rgba(0,255,135,0.1)", color: "#00ff87", fontSize: 16, border: "1px solid rgba(0,255,135,0.3)" }}>
-            🥇 Leaderboard
+        {/* primary actions:
+              auth loading  → nothing (prevents anon gate flashing for signed-in users)
+              signed in     → full action grid
+              confirmed anon → sign-up gate  */}
+        {authLoading ? null : user ? (
+          <div className="grid grid-cols-2 gap-2.5 mb-4">
+            <button onClick={goLive} disabled={matching}
+              className="rounded-2xl py-3.5 px-3 text-center font-display tracking-wide active:scale-[0.97] transition-transform disabled:opacity-60"
+              style={{ background: "#00ff87", color: "#062013", fontSize: 16 }}>
+              ⚡ Go Head-to-Head
+            </button>
+            <button onClick={() => router.push("/38-0/leagues")}
+              className="rounded-2xl py-3.5 px-3 text-center font-display tracking-wide active:scale-[0.97] transition-transform"
+              style={{ background: "rgba(167,139,250,0.12)", color: "#a78bfa", fontSize: 16, border: "1px solid rgba(167,139,250,0.4)" }}>
+              🏆 Build a League
+            </button>
+            <Link href="/38-0/leaderboard"
+              className="rounded-2xl py-3.5 px-3 text-center font-display tracking-wide active:scale-[0.97] transition-transform"
+              style={{ background: "rgba(0,255,135,0.1)", color: "#00ff87", fontSize: 16, border: "1px solid rgba(0,255,135,0.3)" }}>
+              🥇 Leaderboard
+            </Link>
+            <Link href="/38-0/history"
+              className="rounded-2xl py-3.5 px-3 text-center font-display tracking-wide active:scale-[0.97] transition-transform"
+              style={{ background: "rgba(255,184,0,0.1)", color: "#ffb800", fontSize: 16, border: "1px solid rgba(255,184,0,0.3)" }}>
+              📋 My History
+            </Link>
+            <button onClick={beginSave} disabled={saving}
+              className="rounded-2xl py-3.5 px-3 text-center font-display tracking-wide active:scale-[0.97] transition-transform disabled:opacity-70"
+              style={{ background: "rgba(255,184,0,0.12)", color: "#ffb800", fontSize: 16, border: "1px solid rgba(255,184,0,0.4)" }}>
+              💾 {saved ? "Saved ✓" : "Save Team"}
+            </button>
+          </div>
+        ) : (
+          /* Confirmed anonymous (auth resolved, no session) — sign-up gate */
+          <Link
+            href="/auth/sign-in"
+            className="flex items-center justify-between w-full mb-4 rounded-2xl p-4 active:scale-[0.98] transition-transform"
+            style={{ background: "rgba(0,201,255,0.06)", border: "1px solid rgba(0,201,255,0.25)" }}
+          >
+            <div>
+              <div className="font-display tracking-wide" style={{ fontSize: 20, color: "#fff" }}>WANT TO KEEP PLAYING?</div>
+              <div className="font-body mt-0.5" style={{ fontSize: 13, color: "#8888aa" }}>Sign up to go H2H, save this team &amp; climb the board</div>
+            </div>
+            <div className="font-display" style={{ fontSize: 26, color: "#00c9ff" }}>→</div>
           </Link>
-          <Link href="/38-0/history"
-            className="rounded-2xl py-3.5 px-3 text-center font-display tracking-wide active:scale-[0.97] transition-transform"
-            style={{ background: "rgba(255,184,0,0.1)", color: "#ffb800", fontSize: 16, border: "1px solid rgba(255,184,0,0.3)" }}>
-            📋 My History
-          </Link>
-          <button onClick={beginSave} disabled={saving}
-            className="rounded-2xl py-3.5 px-3 text-center font-display tracking-wide active:scale-[0.97] transition-transform disabled:opacity-70"
-            style={{ background: "rgba(255,184,0,0.12)", color: "#ffb800", fontSize: 16, border: "1px solid rgba(255,184,0,0.4)" }}>
-            💾 {saved ? "Saved ✓" : "Save Team"}
-          </button>
-        </div>
+        )}
 
         {/* name-this-team panel — revealed by Save Team */}
         {naming && (

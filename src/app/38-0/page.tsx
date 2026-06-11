@@ -17,6 +17,7 @@ import { FORMATION_NOTE } from "@/lib/draft/formations";
 import { emptyTeam, loadTeam, saveTeam, isComplete, type LocalTeam, type DraftMode } from "@/lib/draft/local";
 import { LEAGUE_COUNTS, pickableNations } from "@/lib/draft/pool";
 import { trackGamePlay } from "@/lib/analytics/trackGame";
+import { useUser } from "@/hooks/useUser";
 
 type DraftTab = "pl" | "laliga" | "wc";
 
@@ -37,6 +38,7 @@ const LEAGUE_TABS: Record<"pl" | "laliga", { league: League; emoji: string; titl
 
 export default function DraftHome() {
   const router = useRouter();
+  const { user, loading: authLoading } = useUser();
   const [tab, setTab] = useState<DraftTab>("pl");
   const [selected, setSelected] = useState<Formation>("4-3-3");
   const [mode, setMode] = useState<DraftMode>("classic");
@@ -59,7 +61,16 @@ export default function DraftHome() {
 
   // The in-progress local team belongs to whichever competition it was drafted in —
   // only surface its "continue" card under the matching tab.
-  const continueTeam = cfg && existing && existing.squad.length > 0 && existing.league === cfg.league ? existing : null;
+  //
+  // Signed-in users:   show both incomplete ("KEEP BUILDING") and complete ("CONTINUE WITH YOUR TEAM").
+  // Anonymous users:   show incomplete only — let them finish the draft → team → season run.
+  //                    A complete team with no sign-in shows a "Save Your Team" CTA instead.
+  const teamInProgress = cfg && existing && existing.squad.length > 0 && existing.league === cfg.league ? existing : null;
+  const continueTeam = teamInProgress && (user || !isComplete(teamInProgress)) ? teamInProgress : null;
+  // Prompt anonymous users who have a complete team (they've drafted but not signed up).
+  // Guard on !authLoading: while auth is still resolving user is null, which would
+  // incorrectly flash the sign-up CTA at signed-in users before their session loads.
+  const anonSavePrompt = !authLoading && !user && !!teamInProgress && isComplete(teamInProgress);
   const q = cfg ? `?competition=${cfg.league}` : "";
 
   return (
@@ -142,7 +153,7 @@ export default function DraftHome() {
               {LEAGUE_COUNTS[cfg.league].players} all-time {LEAGUE_META[cfg.league].name} player-seasons · {LEAGUE_COUNTS[cfg.league].buckets} legendary squads
             </p>
 
-            {/* continue card */}
+            {/* continue card — signed-in: both complete + in-progress; anonymous: in-progress only */}
             {continueTeam && (
               <Link
                 href={isComplete(continueTeam) ? "/38-0/team" : "/38-0/play"}
@@ -161,6 +172,27 @@ export default function DraftHome() {
                   <div className="font-display" style={{ fontSize: 34, color: cfg.accent }}>
                     {isComplete(continueTeam) ? continueTeam.strength : "→"}
                   </div>
+                </div>
+              </Link>
+            )}
+
+            {/* Sign-up prompt for anonymous users who have a complete team — no "continue" without an account */}
+            {anonSavePrompt && (
+              <Link
+                href="/auth/sign-in"
+                className="block mb-6 rounded-2xl p-4 active:scale-[0.98] transition-transform"
+                style={{ background: "rgba(0,201,255,0.06)", border: "1px solid rgba(0,201,255,0.25)" }}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-display tracking-wide" style={{ fontSize: 22, color: "#fff" }}>
+                      SAVE YOUR TEAM
+                    </div>
+                    <div className="font-body" style={{ fontSize: 13, color: "#8888aa" }}>
+                      Sign up to keep this XI and go head-to-head
+                    </div>
+                  </div>
+                  <div className="font-display" style={{ fontSize: 28, color: "#00c9ff" }}>→</div>
                 </div>
               </Link>
             )}

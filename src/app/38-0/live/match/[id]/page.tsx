@@ -19,7 +19,6 @@ import { buildReport, flipReport, type MatchSim, type HalfSim, type PlayerRating
 import { ScorecardView, statsFromReport, goalsFromReport, potmFromReport, type ScorecardData } from "@/components/draft/Scorecard";
 import { MatchPitch } from "@/components/draft/MatchPitch";
 import { WATCH_CONFIG } from "@/lib/draft/playback";
-import { liveOgQuery } from "@/lib/draft/share";
 import { loadTeam, saveTeam, clearTeam } from "@/lib/draft/local";
 import { AddFriendCard } from "@/components/social/AddFriendCard";
 import { trackGamePlay, trackGameComplete } from "@/lib/analytics/trackGame";
@@ -84,6 +83,26 @@ export default function LiveMatchScreen() {
     if (!playedRef.current) { playedRef.current = true; trackGamePlay("38-0", { mode: "live_h2h" }); }
     if (m.phase === "result" && !completedRef.current) { completedRef.current = true; trackGameComplete("38-0", { mode: "live_h2h" }); }
   }, [m]);
+
+  // Bot match: 2 s after the human taps Done in a swap window, mirror it for the bot
+  // so the phase advances without waiting the full timer. Uses a ref for the callback
+  // so the timeout always calls the latest live.botDone without listing live in deps.
+  const botDoneCb = useRef(live.botDone);
+  useEffect(() => { botDoneCb.current = live.botDone; });
+  const botDoneTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    // Only for bot matches, only in swap windows, only once the human is ready.
+    if (!m?.is_bot || !m.p1_ready) return;
+    if (m.phase !== "pregame_swap" && m.phase !== "halftime_swap") return;
+    if (m.p2_ready || botDoneTimer.current) return; // already done / already queued
+    botDoneTimer.current = setTimeout(() => {
+      botDoneTimer.current = null;
+      botDoneCb.current();
+    }, 2000);
+    return () => {
+      if (botDoneTimer.current) { clearTimeout(botDoneTimer.current); botDoneTimer.current = null; }
+    };
+  }, [m?.is_bot, m?.p1_ready, m?.phase, m?.p2_ready]);
 
   // Opponent's YourScore Rank tier (real opponents only; read-only, never blocks the match).
   const oppId = m && side && !m.is_bot ? (side === "p1" ? m.p2_id : m.p1_id) : null;
@@ -342,62 +361,97 @@ function ResultPanel({ view, sim, m }: { view: View; sim: MatchSim | null; m: Dr
   const won = view.pens[0] != null ? view.pens[0]! > view.pens[1]! : view.myGoals > view.oppGoals;
   const label = drew ? "Draw" : won ? "You win!" : "You lost";
   const color = drew ? "#ffb800" : won ? "#00ff87" : "#ff7a88";
-  const [sharing, setSharing] = useState(false);
-  const [shareNote, setShareNote] = useState<string | null>(null);
+  // Share state
+  const [shortUrl, setShortUrl] = useState<string | null>(null);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [giveawayOpen, setGiveawayOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const giveawayShown = useRef(false);
 
   // Auto-assigned team prompt
   const [isAutoTeam, setIsAutoTeam] = useState(false);
-  useEffect(() => {
-    setIsAutoTeam(loadTeam()?.autoAssigned === true);
-  }, []);
+  useEffect(() => { setIsAutoTeam(loadTeam()?.autoAssigned === true); }, []);
 
   function keepTeam() {
-    const t = loadTeam();
-    if (t) saveTeam({ ...t, autoAssigned: undefined });
-    setIsAutoTeam(false);
+    const t = loadTeam(); if (t) saveTeam({ ...t, autoAssigned: undefined }); setIsAutoTeam(false);
   }
   function buildOwn() {
-    const t = loadTeam();
-    if (t) saveTeam({ ...t, autoAssigned: undefined });
-    clearTeam();
-    router.push("/38-0");
+    const t = loadTeam(); if (t) saveTeam({ ...t, autoAssigned: undefined }); clearTeam(); router.push("/38-0");
   }
 
-  // Friend suggestion
   const oppId = view.meP1 ? m.p2_id : m.p1_id;
 
-  // Canonical (p1/p2) report → the share card matches the public unfurl page, so
-  // both managers share the same image regardless of which side they're on.
-  const report = sim ? buildReport(sim) : null;
-  const pens = m.pens_p1 != null && m.pens_p2 != null ? { a: m.pens_p1, b: m.pens_p2 } : null;
-  const link = typeof window !== "undefined" ? `${location.origin}/38-0/match/${m.id}` : "";
-  const ogUrl = report && typeof window !== "undefined"
-    ? `${location.origin}/api/draft/live-og?${liveOgQuery({ p1: m.p1_name ?? "Home", p2: m.p2_name ?? "Away", s1: report.a.goals, s2: report.b.goals, str1: m.p1_strength, str2: m.p2_strength, pens, report })}`
-    : null;
+  // ── Short URL ────────────────────────────────────────────────────────────────
 
-  async function share() {
-    if (sharing) return;
-    setSharing(true); setShareNote(null);
-    const text = `${m.p1_name} ${report?.a.goals ?? view.myGoals}–${report?.b.goals ?? view.oppGoals} ${m.p2_name} on 38-0 Live${report?.potm ? ` · ⭐ ${report.potm.name} (${report.potm.rating.toFixed(1)})` : ""}`;
-    // Best for X / socials: share the actual image as a media file.
+  const fallbackUrl = typeof window !== "undefined" ? `${location.origin}/38-0/match/${m.id}` : `https://yourscore.app/38-0/match/${m.id}`;
+
+  async function ensureShortUrl(): Promise<string> {
+    if (shortUrl) return shortUrl;
     try {
-      if (ogUrl && typeof navigator.canShare === "function") {
-        const blob = await (await fetch(ogUrl)).blob();
-        const file = new File([blob], "38-0-result.png", { type: "image/png" });
-        if (blob.size > 0 && navigator.canShare({ files: [file] })) {
-          await navigator.share({ files: [file], text, title: "38-0 Live result" });
-          setSharing(false); return;
-        }
+      const res = await fetch("/api/draft/share", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ payload: { matchId: m.id } }),
+      });
+      if (res.ok) {
+        const { id } = await res.json();
+        if (id) { const u = `${window.location.origin}/s/${id}`; setShortUrl(u); return u; }
       }
-    } catch { /* fall through to link */ }
-    // Fallback: share / copy the unfurling link.
-    try {
-      if (navigator.share) await navigator.share({ title: "38-0 Live result", text, url: link });
-      else { await navigator.clipboard.writeText(`${text} ${link}`); setShareNote("Link copied"); }
-    } catch { /* user cancelled */ }
-    setSharing(false);
+    } catch { /* keep fallback */ }
+    return fallbackUrl;
   }
 
+  // Auto-mint + auto-open giveaway when result first renders.
+  useEffect(() => {
+    if (giveawayShown.current) return;
+    giveawayShown.current = true;
+    void ensureShortUrl();
+    const t = setTimeout(() => setGiveawayOpen(true), 700);
+    return () => clearTimeout(t);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── Share copy ───────────────────────────────────────────────────────────────
+
+  const score = `${view.myGoals}–${view.oppGoals}`;
+
+  function blurb(): string {
+    if (drew) return `${view.myName} vs ${view.oppName} ${score} on @yourscore_app_ 38-0 Live ⚽`;
+    if (won)  return `I beat ${view.oppName} ${score} on @yourscore_app_ 38-0 Live ⚽`;
+    return `${view.oppName} beat me ${score} on @yourscore_app_ 38-0 Live ⚽`;
+  }
+
+  function giveawayTweetText(): string {
+    if (drew) return `${view.myName} vs ${view.oppName} ${score} on @yourscore_app_ 38-0 Live ⚽ Entering the daily £25 giveaway`;
+    if (won)  return `I beat ${view.oppName} ${score} on @yourscore_app_ 38-0 Live ⚽ Entering the daily £25 giveaway`;
+    return `${view.oppName} beat me ${score} on @yourscore_app_ 38-0 Live ⚽ Entering the daily £25 giveaway`;
+  }
+
+  function giveawayTweetUrl(): string {
+    const u = shortUrl ?? fallbackUrl;
+    return `https://twitter.com/intent/tweet?text=${encodeURIComponent(giveawayTweetText())}&url=${encodeURIComponent(u)}`;
+  }
+
+  function openShare() { setShareOpen(true); void ensureShortUrl(); }
+
+  async function nativeShare() {
+    const url = await ensureShortUrl();
+    try {
+      if (navigator.share) await navigator.share({ title: "38-0 Live result", text: blurb(), url });
+      else { await navigator.clipboard.writeText(`${blurb()} ${url}`); }
+    } catch { /* user cancelled */ }
+  }
+
+  function shareX() {
+    const u = shortUrl ?? fallbackUrl;
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(blurb())}&url=${encodeURIComponent(u)}`, "_blank", "noopener");
+  }
+
+  async function copyLink() {
+    const url = await ensureShortUrl();
+    try { await navigator.clipboard.writeText(`${blurb()} ${url}`); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* blocked */ }
+  }
+
+  const report = sim ? buildReport(sim) : null;
   const meReport = report ? (view.meP1 ? report : flipReport(report)) : null;
   const meData: ScorecardData | null = meReport ? {
     context: "38-0 Live",
@@ -424,46 +478,110 @@ function ResultPanel({ view, sim, m }: { view: View; sim: MatchSim | null; m: Dr
         </Panel>
       )}
       <Panel>
-      {/* Auto-assigned team — keep or rebuild */}
-      {isAutoTeam && (
-        <div className="mt-4 rounded-2xl p-4" style={{ background: "rgba(0,255,135,0.06)", border: "1px solid rgba(0,255,135,0.2)" }}>
-          <p className="font-body text-center mb-3" style={{ fontSize: 13, color: "#8888aa" }}>
-            We picked a random XI for you. Want to keep it?
-          </p>
-          <div className="flex gap-2">
-            <button onClick={keepTeam}
-              className="flex-1 rounded-xl py-2.5 font-body font-semibold text-sm"
-              style={{ background: "#00ff87", color: "#062013" }}>
-              Keep this XI ✓
+        {/* Auto-assigned team — keep or rebuild */}
+        {isAutoTeam && (
+          <div className="mt-4 rounded-2xl p-4" style={{ background: "rgba(0,255,135,0.06)", border: "1px solid rgba(0,255,135,0.2)" }}>
+            <p className="font-body text-center mb-3" style={{ fontSize: 13, color: "#8888aa" }}>
+              We picked a random XI for you. Want to keep it?
+            </p>
+            <div className="flex gap-2">
+              <button onClick={keepTeam} className="flex-1 rounded-xl py-2.5 font-body font-semibold text-sm" style={{ background: "#00ff87", color: "#062013" }}>Keep this XI ✓</button>
+              <button onClick={buildOwn} className="flex-1 rounded-xl py-2.5 font-body text-sm" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#cfcfe6" }}>Build my own</button>
+            </div>
+          </div>
+        )}
+
+        {/* Friend suggestion — real opponent only */}
+        {!m.is_bot && oppId && (
+          <div className="mt-4">
+            <AddFriendCard userId={oppId} displayName={view.oppName} />
+          </div>
+        )}
+
+        {/* Giveaway CTA */}
+        <button
+          onClick={() => setGiveawayOpen(true)}
+          className="w-full mt-5 rounded-2xl overflow-hidden active:scale-[0.98] transition-transform"
+          style={{ background: "linear-gradient(135deg, #1c1400, #221900)", border: "2px solid rgba(255,184,0,0.55)" }}
+        >
+          <div className="flex items-center gap-4 px-5 py-4">
+            <div style={{ fontSize: 36, lineHeight: 1 }}>🏆</div>
+            <div className="text-left flex-1 min-w-0">
+              <div className="font-display tracking-wide" style={{ fontSize: 20, color: "#ffb800" }}>WIN £25 TODAY</div>
+              <div className="font-body" style={{ fontSize: 13, color: "#a89060" }}>Share on 𝕏 to enter the daily giveaway →</div>
+            </div>
+          </div>
+        </button>
+
+        <button onClick={openShare} className="w-full mt-2 rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "#00ff87", color: "#062013", fontSize: 22 }}>
+          📸 SHARE YOUR RESULT
+        </button>
+
+        <Link href="/38-0/live" className="mt-3 block text-center rounded-2xl py-3 font-semibold" style={{ background: "rgba(0,255,135,0.1)", color: "#00ff87", border: "1px solid rgba(0,255,135,0.3)" }}>Play again</Link>
+        <Link href="/38-0/leaderboard" className="mt-3 block text-center underline text-sm" style={{ color: "#8888aa" }}>View leaderboard</Link>
+      </Panel>
+
+      {/* ── Share sheet ── */}
+      {shareOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: "rgba(0,0,0,0.7)" }} onClick={() => setShareOpen(false)}>
+          <div className="w-full max-w-lg rounded-t-3xl px-4 pt-3" style={{ background: "#0b0b12", borderTop: "1px solid rgba(255,255,255,0.1)", paddingBottom: "calc(env(safe-area-inset-bottom,0px) + 16px)" }} onClick={(e) => e.stopPropagation()}>
+            <div className="mx-auto mb-3 rounded-full" style={{ width: 40, height: 4, background: "rgba(255,255,255,0.2)" }} />
+
+            <button onClick={nativeShare} className="w-full mt-2 rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "#00ff87", color: "#062013", fontSize: 20 }}>
+              🔗 Share link
             </button>
-            <button onClick={buildOwn}
-              className="flex-1 rounded-xl py-2.5 font-body text-sm"
-              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#cfcfe6" }}>
-              Build my own
+
+            <div className="grid grid-cols-3 gap-2 mt-2">
+              <button onClick={shareX} className="rounded-2xl py-3 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "#1a1a2e", color: "#fff", fontSize: 15, border: "1px solid rgba(255,255,255,0.15)" }}>𝕏</button>
+              <button onClick={() => { setShareOpen(false); void nativeShare(); }} className="rounded-2xl py-3 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "rgba(225,48,108,0.12)", color: "#e1306c", fontSize: 15, border: "1px solid rgba(225,48,108,0.3)" }}>Instagram</button>
+              <button onClick={() => { setShareOpen(false); void nativeShare(); }} className="rounded-2xl py-3 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "#1a1a2e", color: "#cfcfe6", fontSize: 15, border: "1px solid rgba(255,255,255,0.15)" }}>TikTok</button>
+            </div>
+
+            <button onClick={copyLink} className="w-full mt-2 flex items-center gap-3 px-4 py-3 rounded-2xl transition-all" style={{ background: copied ? "rgba(0,255,135,0.1)" : "rgba(255,255,255,0.06)", border: `1px solid ${copied ? "rgba(0,255,135,0.3)" : "rgba(255,255,255,0.1)"}` }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke={copied ? "#00ff87" : "#aaaacc"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke={copied ? "#00ff87" : "#aaaacc"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              <span className="font-body text-sm font-semibold" style={{ color: copied ? "#00ff87" : "#aaaacc" }}>{copied ? "Copied!" : "Copy link"}</span>
             </button>
+
+            <button onClick={() => setShareOpen(false)} className="w-full mt-2 rounded-2xl py-3 font-body active:scale-[0.98] transition-transform" style={{ background: "transparent", color: "#8888aa", fontSize: 15 }}>Close</button>
           </div>
         </div>
       )}
 
-      {/* Friend suggestion — real opponent only */}
-      {!m.is_bot && oppId && (
-        <div className="mt-4">
-          <AddFriendCard userId={oppId} displayName={view.oppName} />
+      {/* ── Giveaway overlay ── */}
+      {giveawayOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: "rgba(0,0,0,0.9)" }} onClick={() => setGiveawayOpen(false)}>
+          <div className="w-full max-w-lg px-4" style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 20px)" }} onClick={(e) => e.stopPropagation()}>
+            <div className="rounded-3xl overflow-hidden" style={{ background: "#0e0d1a", border: "2px solid rgba(255,184,0,0.4)" }}>
+              <div className="flex justify-center pt-3 pb-1">
+                <div className="rounded-full" style={{ width: 40, height: 4, background: "rgba(255,255,255,0.18)" }} />
+              </div>
+              <div className="px-6 pt-4 pb-7 text-center">
+                <div style={{ fontSize: 52, lineHeight: 1.1 }}>🏆</div>
+                <div className="font-body mt-3" style={{ fontSize: 11, color: "#ffb800", letterSpacing: 3 }}>DAILY GIVEAWAY</div>
+                <div className="font-display tracking-wide leading-none mt-1" style={{ fontSize: 80, color: "#fff" }}>£25</div>
+                <p className="font-body mt-3" style={{ fontSize: 15, color: "#cfcfe6", lineHeight: 1.6 }}>
+                  Share your result on 𝕏 to enter.<br />
+                  <span style={{ color: "#7a7a92", fontSize: 13 }}>One winner drawn every 24 hours.</span>
+                </p>
+                <a href={giveawayTweetUrl()} target="_blank" rel="noopener noreferrer" onClick={() => setGiveawayOpen(false)}
+                  className="flex items-center justify-center gap-3 w-full rounded-2xl py-4 mt-6 font-display tracking-wide active:scale-[0.98] transition-transform"
+                  style={{ background: "#fff", color: "#000", fontSize: 20, textDecoration: "none", display: "flex" }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="black">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.741l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                  </svg>
+                  POST ON 𝕏 TO ENTER
+                </a>
+                <button onClick={() => setGiveawayOpen(false)} className="w-full mt-3 font-body" style={{ fontSize: 14, color: "#55556a", background: "transparent", border: "none", cursor: "pointer" }}>
+                  Not now
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
-
-      <button onClick={share} disabled={sharing} className="mt-5 w-full rounded-2xl py-4 font-semibold disabled:opacity-60" style={{ background: "#00ff87", color: "#04130a" }}>
-        {sharing ? "Preparing image…" : "📤 Share result"}
-      </button>
-      {ogUrl && (
-        <a href={ogUrl} target="_blank" rel="noopener noreferrer" download="38-0-result.png" className="mt-3 block text-center rounded-2xl py-3 font-semibold" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "#e8e8f0" }}>
-          Save image
-        </a>
-      )}
-      {shareNote && <p className="text-center mt-2 text-xs" style={{ color: "#00ff87" }}>{shareNote}</p>}
-      <Link href="/38-0/live" className="mt-3 block text-center rounded-2xl py-3 font-semibold" style={{ background: "rgba(0,255,135,0.1)", color: "#00ff87", border: "1px solid rgba(0,255,135,0.3)" }}>Play again</Link>
-      <Link href="/38-0/leaderboard" className="mt-3 block text-center underline text-sm" style={{ color: "#8888aa" }}>View leaderboard</Link>
-      </Panel>
     </>
   );
 }
