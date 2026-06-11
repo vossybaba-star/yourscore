@@ -14,11 +14,12 @@ import { slugify } from "@/lib/utils";
 
 const SITE = "https://yourscore.app";
 
-// Refresh the per-quiz metadata (og:image etc.) at most every 60s rather than
-// caching it indefinitely. This is what lets a freshly attached or swapped share
-// image show up on the link card without a redeploy — without it, generateMetadata's
-// Supabase query is cached on first render and a later image attach stays invisible.
-export const revalidate = 60;
+// Always read the quiz's metadata fresh when generating the link-preview tags.
+// generateMetadata's Supabase query would otherwise sit in Next's Data Cache
+// (which even survives deploys on Vercel), so a share image attached after the
+// page was first rendered would never appear on the card. force-dynamic disables
+// all fetch caching for this segment, so attached/swapped images show immediately.
+export const dynamic = "force-dynamic";
 
 type PackMeta = {
   name: string;
