@@ -34,6 +34,7 @@ interface QuizPack {
   parameter: string;
   question_count: number;
   description?: string | null;
+  metadata?: { icon?: string; cover_image?: string } | null;
 }
 
 interface RawQuestion {
@@ -655,19 +656,30 @@ export default function ChallengePage() {
           </button>
 
           <div className="flex flex-col items-center pt-24 pb-8 px-6">
-            <div className="relative flex items-center justify-center mb-5"
-              style={{ width: 110, height: 110, borderRadius: 28, background: accentDim, border: `1.5px solid ${accentBorder}` }}>
-              <div style={{ position: "absolute", inset: -8, borderRadius: 36,
-                background: isRecords ? "rgba(167,139,250,0.12)" : "rgba(255,184,0,0.12)", filter: "blur(12px)" }} />
-              {badgeUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={badgeUrl} alt={pack.name} width={80} height={80}
-                  style={{ objectFit: "contain", position: "relative", zIndex: 1,
-                    filter: `drop-shadow(0 4px 16px ${isRecords ? "rgba(167,139,250,0.5)" : "rgba(255,184,0,0.5)"})` }} />
-              ) : (
-                <span className="text-5xl relative z-1">{RECORDS_EMOJI[pack.name] ?? (isRecords ? "📊" : pack.name[0])}</span>
-              )}
-            </div>
+            {pack.metadata?.cover_image ? (
+              <div className="relative w-full mb-6"
+                style={{ maxWidth: 440, aspectRatio: "3 / 2", borderRadius: 22, overflow: "hidden",
+                  border: `1.5px solid ${accentBorder}`,
+                  boxShadow: `0 12px 40px ${isRecords ? "rgba(124,58,237,0.3)" : "rgba(255,140,0,0.25)"}` }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={pack.metadata.cover_image} alt={pack.name}
+                  className="absolute inset-0 h-full w-full" style={{ objectFit: "cover" }} />
+              </div>
+            ) : (
+              <div className="relative flex items-center justify-center mb-5"
+                style={{ width: 110, height: 110, borderRadius: 28, background: accentDim, border: `1.5px solid ${accentBorder}` }}>
+                <div style={{ position: "absolute", inset: -8, borderRadius: 36,
+                  background: isRecords ? "rgba(167,139,250,0.12)" : "rgba(255,184,0,0.12)", filter: "blur(12px)" }} />
+                {badgeUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={badgeUrl} alt={pack.name} width={80} height={80}
+                    style={{ objectFit: "contain", position: "relative", zIndex: 1,
+                      filter: `drop-shadow(0 4px 16px ${isRecords ? "rgba(167,139,250,0.5)" : "rgba(255,184,0,0.5)"})` }} />
+                ) : (
+                  <span className="text-5xl relative z-1">{RECORDS_EMOJI[pack.name] ?? (isRecords ? "📊" : pack.name[0])}</span>
+                )}
+              </div>
+            )}
 
             <h1 className="font-display text-2xl text-white text-center leading-tight mb-1">{pack.name}</h1>
             <div className="flex items-center gap-2 mt-1">

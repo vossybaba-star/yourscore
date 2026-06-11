@@ -23,7 +23,17 @@ interface QuizPack {
   description?: string | null;
   featured?: boolean;
   featured_order?: number | null;
-  metadata?: { icon?: string } | null;
+  metadata?: { icon?: string; cover_image?: string } | null;
+}
+
+// Full-bleed cover image for a card's media zone. Fills the existing 110px-tall
+// banner (object-cover, centred) — used when a quiz has a hand-made cover_image,
+// otherwise the card falls back to its badge/emoji.
+function CoverImg({ src, alt }: { src: string; alt: string }) {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={src} alt={alt} className="absolute inset-0 h-full w-full" style={{ objectFit: "cover" }} />
+  );
 }
 
 interface OpenRoom {
@@ -63,7 +73,9 @@ function ClubCard({ pack }: { pack: QuizPack }) {
             "radial-gradient(ellipse at 50% 80%, rgba(255,184,0,0.12) 0%, transparent 70%), linear-gradient(180deg, rgba(255,184,0,0.05) 0%, transparent 100%)",
         }}
       >
-        {badgeUrl ? (
+        {pack.metadata?.cover_image ? (
+          <CoverImg src={pack.metadata.cover_image} alt={pack.name} />
+        ) : badgeUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={badgeUrl}
@@ -140,7 +152,9 @@ function RecordsCard({ pack }: { pack: QuizPack }) {
             "radial-gradient(ellipse at 50% 80%, rgba(167,139,250,0.14) 0%, transparent 70%), linear-gradient(180deg, rgba(167,139,250,0.06) 0%, transparent 100%)",
         }}
       >
-        {logoUrl ? (
+        {pack.metadata?.cover_image ? (
+          <CoverImg src={pack.metadata.cover_image} alt={pack.name} />
+        ) : logoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={logoUrl}
@@ -218,7 +232,9 @@ function EndOfSeasonCard({ pack }: { pack: QuizPack }) {
             "radial-gradient(ellipse at 50% 80%, rgba(34,211,238,0.14) 0%, transparent 70%), linear-gradient(180deg, rgba(34,211,238,0.06) 0%, transparent 100%)",
         }}
       >
-        {imageUrl ? (
+        {pack.metadata?.cover_image ? (
+          <CoverImg src={pack.metadata.cover_image} alt={pack.name} />
+        ) : imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={imageUrl}

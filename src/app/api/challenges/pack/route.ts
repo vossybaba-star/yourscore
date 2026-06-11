@@ -16,7 +16,7 @@ import { slugify } from "@/lib/utils";
 // Typed as `string` (not a string literal) on purpose: `description` exists in the
 // live DB but is missing from the stale generated types, and a literal select arg
 // would be validated against those types. (TODO: regenerate src/types/database.ts.)
-const PACK_COLS: string = "id, name, type, parameter, question_count, description, questions";
+const PACK_COLS: string = "id, name, type, parameter, question_count, description, questions, metadata";
 
 // Cache the rendered response at the CDN edge for an hour, serving stale for a day
 // while it revalidates in the background.

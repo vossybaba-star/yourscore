@@ -80,6 +80,7 @@ export default async function RootPage({
     parameter: String(p.parameter ?? ""),
     question_count: Number(p.question_count ?? 10),
     icon: p.metadata?.icon ? String(p.metadata.icon) : undefined,
+    coverImage: p.metadata?.cover_image ? String(p.metadata.cover_image) : undefined,
   }));
 
   const totalScore = profile?.total_score ?? null;

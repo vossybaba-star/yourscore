@@ -1,0 +1,128 @@
+{
+  "date": "2026-06-11",
+  "name": "Opening Day Chaos: World Cup 2026 Kicks Off",
+  "parameter": "World Cup 2026 Opening Day",
+  "type": "records",
+  "icon": "🎉",
+  "angle": "News-driven daily quiz, pitched for casual fans. Built on opening day of WC2026 (Mexico v South Africa). Funny/ironic spine: two famous stadiums (the Azteca and MetLife) both had their sponsor names hidden by FIFA, and Haiti were made to bin a kit over a historic battle scene.",
+  "questions": [
+    {
+      "difficulty": "easy",
+      "category": "opening_day",
+      "question": "The 2026 World Cup kicks off today. Which country plays in the opening match?",
+      "options": { "A": "Mexico", "B": "United States", "C": "Canada", "D": "Brazil" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "hosts",
+      "question": "Three countries are co-hosting the 2026 World Cup. Which three?",
+      "options": { "A": "USA, Canada and Mexico", "B": "USA, Mexico and Brazil", "C": "Canada, USA and England", "D": "Mexico, USA and Argentina" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "opening_day",
+      "question": "Mexico open the tournament today against which nation?",
+      "options": { "A": "South Africa", "B": "Nigeria", "C": "Egypt", "D": "Ghana" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "champions",
+      "question": "Who are the reigning world champions heading into 2026?",
+      "options": { "A": "Argentina", "B": "France", "C": "Brazil", "D": "Germany" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "champions",
+      "question": "Which superstar captained Argentina to the 2022 World Cup title?",
+      "options": { "A": "Lionel Messi", "B": "Cristiano Ronaldo", "C": "Neymar", "D": "Kylian Mbappe" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "irony",
+      "question": "A bank paid a fortune to rename Mexico City's famous stadium 'Estadio Banorte' — but FIFA bans sponsor names at the World Cup. What is that stadium's famous original name?",
+      "options": { "A": "Estadio Azteca", "B": "Maracana", "C": "Camp Nou", "D": "Wembley" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "haiti",
+      "question": "FIFA made Haiti change their shirt just before the tournament because the design showed what kind of image?",
+      "options": { "A": "A historic battle scene", "B": "A betting sponsor's logo", "C": "A cartoon character", "D": "A rude gesture" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "format",
+      "question": "How many teams are at the 2026 World Cup, the most ever?",
+      "options": { "A": "48", "B": "32", "C": "24", "D": "64" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "scotland",
+      "question": "Scotland are back at the World Cup after decades away. Famously, they have never managed to do what?",
+      "options": { "A": "Get past the group stage", "B": "Win a single game", "C": "Score a goal", "D": "Qualify two tournaments in a row" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "final",
+      "question": "Where will the 2026 World Cup final be played, just outside New York?",
+      "options": { "A": "New Jersey (MetLife Stadium)", "B": "Los Angeles", "C": "Miami", "D": "Toronto" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "irony",
+      "question": "Like the Azteca, MetLife Stadium has its name hidden by FIFA for the final. Why?",
+      "options": { "A": "FIFA bans sponsor names at the World Cup", "B": "The stadium is still under construction", "C": "A legal dispute over the name", "D": "It is kept secret for security" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "records",
+      "question": "Which country has won the most World Cups, with five titles?",
+      "options": { "A": "Brazil", "B": "Germany", "C": "Italy", "D": "Argentina" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "legends",
+      "question": "Which legend is the only player to win the World Cup three times?",
+      "options": { "A": "Pele", "B": "Diego Maradona", "C": "Lionel Messi", "D": "Ronaldo Nazario" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "champions",
+      "question": "Argentina beat which country on penalties in the 2022 World Cup final?",
+      "options": { "A": "France", "B": "Brazil", "C": "Croatia", "D": "Germany" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "opening_day",
+      "question": "Players often struggle in Mexico City because its stadium sits at an extreme...?",
+      "options": { "A": "Altitude", "B": "Humidity", "C": "Cold", "D": "Sea level" },
+      "answer": "A"
+    }
+  ],
+  "sources": [
+    "https://www.espn.com/soccer/story/_/id/49026257/ (ESPN live blog, 11 June 2026 — Mexico v South Africa opener)",
+    "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup (48 teams; three hosts USA/Canada/Mexico)",
+    "https://mexiconewsdaily.com/news/fifa-azteca-stadium-mexico-city-stadium/ (FIFA bans corporate stadium names; Azteca renamed for the WC)",
+    "https://www.goal.com/en/lists/historic-estadio-azteca-will-be-renamed-to-estadio-banorte-due-to-new-sponsorship/ (Banorte naming rights, 2025)",
+    "https://www.aljazeera.com/sports/2026/6/11/fifa-world-cup-2026-haiti-kit-political-flag-war-imagery-football (Haiti kit banned — Battle of Vertieres battle scene)",
+    "https://en.wikipedia.org/wiki/Scotland_at_the_FIFA_World_Cup (never past the group stage)",
+    "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_final (final at MetLife Stadium, New Jersey; FIFA hides sponsor name)",
+    "https://en.wikipedia.org/wiki/Estadio_Azteca (Mexico City altitude 2,200 m)",
+    "https://en.wikipedia.org/wiki/2022_FIFA_World_Cup_Final (Argentina beat France on penalties; Messi captain)",
+    "https://en.wikipedia.org/wiki/Brazil_national_football_team (record five World Cup titles)",
+    "https://en.wikipedia.org/wiki/Pele (only player to win three World Cups)"
+  ]
+}
