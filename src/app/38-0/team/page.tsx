@@ -38,50 +38,76 @@ export default function TeamScreen() {
   const [naming, setNaming] = useState(false);
   const [teamName, setTeamName] = useState("");
 
-  // Wait for auth to resolve so we always load the right team for the right account.
-  // Signed-in: fetch from the server (authoritative) and hydrate localStorage.
-  // Anonymous: fall back to localStorage as before.
+  // Wait for auth to resolve so we always show the right team for the right account.
+  //
+  // Logic:
+  //   Anonymous → localStorage only (as always).
+  //   Signed in, localStorage is stamped to a DIFFERENT user → load from server.
+  //     This is the cross-account stale-data case: User A played (userId stamped),
+  //     User B signs in — we fetch User B's server team instead of showing User A's.
+  //   Signed in, no explicit mismatch → trust localStorage.
+  //     Covers: fresh draft just built (no userId), same user's saved team, legacy data.
+  //     We never overwrite a freshly-drafted XI with an older server copy.
+  //   Signed in, localStorage empty → load from server (new device / cleared storage).
   useEffect(() => {
     if (authLoading) return;
 
-    if (user) {
+    if (!user) {
+      // Anonymous flow — localStorage only.
+      const t = loadTeam();
+      if (!t) { router.replace("/38-0"); return; }
+      if (!isComplete(t)) { router.replace("/38-0/play"); return; }
+      setTeam(t);
+      return;
+    }
+
+    const localTeam = loadTeam();
+
+    // Explicit cross-account mismatch: localStorage belongs to a different user.
+    // Load the correct team from the server.
+    if (localTeam && localTeam.userId && localTeam.userId !== user.id) {
+      fetchServerTeam(user.id);
+      return;
+    }
+
+    // No mismatch — trust localStorage if it's a complete team.
+    if (localTeam && isComplete(localTeam)) {
+      setTeam(localTeam);
+      return;
+    }
+
+    // No local team (clean browser / new device) — load from server.
+    fetchServerTeam(user.id);
+
+    function fetchServerTeam(uid: string) {
       fetch("/api/draft/team")
         .then((r) => r.json())
         .then((data: { team: { formation: string; squad: unknown; strength_rating: number; projected: unknown; competition: string; status: string; win_streak: number | null } | null }) => {
           if (!data.team) { router.replace("/38-0"); return; }
-          const existing = loadTeam();
-          // Preserve local-only fields (mode, swapAvailable) if the squad matches —
-          // otherwise they're meaningless for this account so use safe defaults.
-          const squadMatch = existing && JSON.stringify(existing.squad) === JSON.stringify(data.team.squad);
           const hydrated: LocalTeam = {
             league: asLeague(data.team.competition),
             formation: data.team.formation as LocalTeam["formation"],
-            mode: squadMatch ? existing!.mode : "classic",
+            mode: "classic",
             squad: data.team.squad as LocalTeam["squad"],
             status: (data.team.status as LocalTeam["status"]) ?? "active",
             winStreak: data.team.win_streak ?? 0,
-            swapAvailable: squadMatch ? existing!.swapAvailable : false,
+            swapAvailable: false,
             strength: data.team.strength_rating,
             projected: data.team.projected as LocalTeam["projected"],
             updatedAt: Date.now(),
+            userId: uid, // stamp so future visits recognise this as their team
           };
           saveTeam(hydrated);
           setTeam(hydrated);
         })
         .catch(() => {
-          // Network failure — fall back to localStorage so the page still works.
+          // Network failure — if there's any local team use it as a fallback rather
+          // than losing the user's work. If nothing, redirect to draft.
           const t = loadTeam();
-          if (!t || !isComplete(t)) { router.replace("/38-0"); return; }
-          setTeam(t);
+          if (t && isComplete(t)) { setTeam(t); return; }
+          router.replace("/38-0");
         });
-      return;
     }
-
-    // Anonymous flow — localStorage only.
-    const t = loadTeam();
-    if (!t) { router.replace("/38-0"); return; }
-    if (!isComplete(t)) { router.replace("/38-0/play"); return; }
-    setTeam(t);
   }, [user, authLoading, router]);
 
   function quickMatch() {
@@ -128,6 +154,9 @@ export default function TeamScreen() {
         body: JSON.stringify({ formation: team.formation, squad, competition: team.league }),
       });
       if (!saveRes.ok) { setErr((await saveRes.json().catch(() => ({}))).error ?? "Could not save team"); setMatching(false); return; }
+      // Stamp userId so this device knows the localStorage team belongs to this
+      // account — prevents it from showing to a different user who signs in later.
+      saveTeam({ ...team, userId: user.id });
       router.push(`/38-0/live?competition=${team.league}`);
     } catch {
       setErr("Network error — try again");
@@ -156,6 +185,8 @@ export default function TeamScreen() {
       if (!r.ok) { setErr((await r.json().catch(() => ({}))).error ?? "Could not save"); setSaving(false); return; }
       // …and set it as the active team so it's immediately playable.
       await fetch("/api/draft/team", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ formation: team.formation, squad, competition: team.league }) }).catch(() => {});
+      // Stamp userId so future visits to the team page recognise this as their team.
+      if (user) saveTeam({ ...team, userId: user.id });
       setSaved(true); setSaving(false); setNaming(false);
     } catch { setErr("Network error"); setSaving(false); }
   }

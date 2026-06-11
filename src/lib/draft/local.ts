@@ -7,7 +7,7 @@
  * from the squad and ignores these client values.
  */
 
-import { FORMATIONS, type Formation, type PlacedPlayer, type PlayerSeason, type Projected, type Slot, type TeamStatus } from "./types";
+import { FORMATIONS, asLeague, type Formation, type League, type PlacedPlayer, type PlayerSeason, type Projected, type Slot, type TeamStatus } from "./types";
 import { slotsFor } from "./formations";
 import { fitMultiplier, canPlay, posCategory, scoreTeam, projectSeason, spineWeight, playerIdentity, type PosCategory } from "./score";
 import { getPlayer } from "./pool";
@@ -22,6 +22,10 @@ const STORAGE_KEY = "draftxi:team:v1";
 export type DraftMode = "classic" | "expert";
 
 export type LocalTeam = {
+  /** Which competition this XI is drafted in — drives the spin pool, the league
+   *  opponents the season is simulated against, and which leaderboard it counts on.
+   *  Defaults to "PL" for teams saved before La Liga shipped. */
+  league: League;
   formation: Formation;
   mode: DraftMode;
   squad: PlacedPlayer[];
@@ -36,10 +40,17 @@ export type LocalTeam = {
    *  Used to show the post-match "keep or rebuild" prompt. Cleared once the
    *  user makes a choice. */
   autoAssigned?: boolean;
+  /** The Supabase user ID that last saved this team to the cloud (via goLive()
+   *  or saveToLibrary()). Used on the team page to detect stale cross-account
+   *  data: if this is set and doesn't match the signed-in user, the server team
+   *  is loaded instead. Undefined means it's a fresh anonymous draft — don't
+   *  overwrite it without an explicit mismatch. */
+  userId?: string;
 };
 
-export function emptyTeam(formation: Formation, mode: DraftMode = "classic"): LocalTeam {
+export function emptyTeam(formation: Formation, mode: DraftMode = "classic", league: League = "PL"): LocalTeam {
   return {
+    league,
     formation,
     mode,
     squad: [],
@@ -181,9 +192,9 @@ export function reslot(team: LocalTeam, newFormation: Formation): LocalTeam {
 
 /** Build a playable LocalTeam from a saved library team (formation + squad), so a
  *  user can load one of their saved teams and play with it. */
-export function hydrateSavedTeam(formation: Formation, squad: PlacedPlayer[]): LocalTeam {
+export function hydrateSavedTeam(formation: Formation, squad: PlacedPlayer[], league: League = "PL"): LocalTeam {
   return recompute({
-    formation, mode: "classic", squad, status: "active", winStreak: 0,
+    league, formation, mode: "classic", squad, status: "active", winStreak: 0,
     swapAvailable: false, strength: 0, projected: null, updatedAt: Date.now(),
   });
 }
@@ -212,6 +223,8 @@ export function loadTeam(): LocalTeam | null {
     const t = JSON.parse(raw) as LocalTeam;
     if (!t.formation || !Array.isArray(t.squad)) return null;
     if (t.mode !== "expert") t.mode = "classic";
+    // Teams saved before La Liga shipped have no league — default them to PL.
+    t.league = asLeague(t.league);
     // "stale" is retired — teams stay playable after a loss. Clear any lingering
     // stale status saved by an older version so it can never block play.
     if (t.status === "stale") t.status = "active";
