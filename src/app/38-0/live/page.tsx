@@ -10,8 +10,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useUser } from "@/hooks/useUser";
 
 type QueueResp = { status?: "matched" | "waiting"; match?: { id: string }; error?: string };
+type LeaderRow = {
+  user_id: string; display_name: string;
+  wins: number; draws: number; losses: number; points: number; rank: number;
+};
 
 // Fall back to a bot quickly when no human is waiting — but jittered (5–8s) so it
 // never feels like a fixed timer, and long enough that the "searching" screen reads
@@ -21,23 +26,38 @@ const HARD_TIMEOUT_MS = 30_000; // give up (instead of spinning forever) if noth
 
 export default function LiveEntry() {
   const router = useRouter();
+  const { user, loading: authLoading } = useUser();
   const [mode, setMode] = useState<"idle" | "friend" | "finding">("idle");
   const [code, setCode] = useState<string | null>(null);
   const [matchId, setMatchId] = useState<string | null>(null);
   const [joinCode, setJoinCode] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [oppJoined, setOppJoined] = useState<string | null>(null); // friend lobby: opponent has joined
+  const [oppJoined, setOppJoined] = useState<string | null>(null);
   const queueStartRef = useRef<number>(0);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const findGenRef = useRef(0); // generation token: a cancel/restart invalidates in-flight ticks
-  const botAfterRef = useRef(0); // jittered moment to drop in a bot if no human pairs
+  const findGenRef = useRef(0);
+  const botAfterRef = useRef(0);
+
+  // Leaderboard
+  const [lbMetric, setLbMetric] = useState<"today" | "all">("today");
+  const [lbRows, setLbRows] = useState<LeaderRow[]>([]);
+  const [lbLoading, setLbLoading] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    setLbLoading(true);
+    fetch(`/api/draft/leaderboard?metric=${lbMetric}`)
+      .then((r) => r.json())
+      .then((d) => { if (alive) setLbRows(d.rows ?? []); })
+      .catch(() => { if (alive) setLbRows([]); })
+      .finally(() => { if (alive) setLbLoading(false); });
+    return () => { alive = false; };
+  }, [lbMetric]);
 
   const stopPolling = () => { if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; } };
   useEffect(() => () => stopPolling(), []);
 
-  // Host's friend lobby: while showing the code, poll for the opponent joining.
-  // The moment they do, notify the host and drop them into the match lobby —
-  // otherwise they'd sit on the code screen with no idea their mate has arrived.
+  // Host's friend lobby: poll for the opponent joining.
   useEffect(() => {
     if (mode !== "friend" || !matchId || oppJoined) return;
     let alive = true;
@@ -80,17 +100,16 @@ export default function LiveEntry() {
   const findMatch = useCallback(async () => {
     setError(null);
     setMode("finding");
-    const gen = ++findGenRef.current; // a later cancel/restart bumps this and invalidates us
+    const gen = ++findGenRef.current;
     queueStartRef.current = Date.now();
     botAfterRef.current = botFallbackDelay();
     const tick = async () => {
       if (findGenRef.current !== gen) { stopPolling(); return; }
       const elapsed = Date.now() - queueStartRef.current;
       const r = await api(elapsed > botAfterRef.current ? { action: "bot" } : { action: "queue" });
-      if (findGenRef.current !== gen) return; // cancelled during the request — don't navigate
+      if (findGenRef.current !== gen) return;
       if (r.error) { stopPolling(); setError(r.error); setMode("idle"); return; }
       if (r.match) { stopPolling(); router.push(`/38-0/live/match/${r.match.id}`); return; }
-      // Backstop: never spin forever if pairing/bot never resolves.
       if (elapsed > HARD_TIMEOUT_MS) { stopPolling(); setError("Couldn't find a match — try again."); setMode("idle"); }
     };
     await tick();
@@ -98,11 +117,14 @@ export default function LiveEntry() {
   }, [router]);
 
   function cancelFind() {
-    findGenRef.current++; // invalidate any in-flight tick so it can't navigate
+    findGenRef.current++;
     stopPolling();
     api({ action: "cancelQueue" }).catch(() => {});
     setMode("idle");
   }
+
+  // Signed out — only show once auth state has resolved
+  const signedOut = !user && !authLoading;
 
   return (
     <div className="min-h-[100dvh] pb-32" style={{ background: "#0a0a0f", color: "#e8e8f0" }}>
@@ -122,12 +144,36 @@ export default function LiveEntry() {
 
         {mode === "idle" && (
           <div className="mt-7 space-y-3">
-            <button onClick={findMatch} className="w-full rounded-2xl py-4 font-semibold" style={{ background: "#00ff87", color: "#04130a" }}>
-              Find a live match
-            </button>
-            <button onClick={playFriend} className="w-full rounded-2xl py-4 font-semibold" style={{ background: "rgba(255,255,255,0.06)", color: "#e8e8f0", border: "1px solid rgba(255,255,255,0.12)" }}>
-              Play a friend
-            </button>
+            {signedOut ? (
+              /* ── Signed-out: auth prompt ── */
+              <>
+                <p className="font-body text-sm pb-1" style={{ color: "#9a9ab0" }}>
+                  Sign in to find a live match or challenge a friend head-to-head.
+                </p>
+                <Link href="/auth/sign-in?signup=1"
+                  className="flex items-center justify-center gap-2 w-full rounded-2xl py-4 font-body font-semibold text-center"
+                  style={{ background: "#00ff87", color: "#04130a", fontSize: 16 }}>
+                  Sign Up — Free
+                </Link>
+                <Link href="/auth/sign-in"
+                  className="flex items-center justify-center w-full rounded-2xl py-4 font-body font-semibold text-center"
+                  style={{ background: "rgba(255,255,255,0.06)", color: "#e8e8f0", border: "1px solid rgba(255,255,255,0.12)", fontSize: 16 }}>
+                  Sign In
+                </Link>
+              </>
+            ) : (
+              /* ── Signed-in: action buttons ── */
+              <>
+                <button onClick={findMatch} className="w-full rounded-2xl py-4 font-semibold" style={{ background: "#00ff87", color: "#04130a" }}>
+                  Find a live match
+                </button>
+                <button onClick={playFriend} className="w-full rounded-2xl py-4 font-semibold" style={{ background: "rgba(255,255,255,0.06)", color: "#e8e8f0", border: "1px solid rgba(255,255,255,0.12)" }}>
+                  Play a friend
+                </button>
+              </>
+            )}
+
+            {/* Join with a code — always visible */}
             <div className="pt-4">
               <label className="text-xs uppercase tracking-wide" style={{ color: "#7a7a92" }}>Join with a code</label>
               <div className="mt-2 flex gap-2">
@@ -160,13 +206,10 @@ export default function LiveEntry() {
               <>
                 <p className="text-sm" style={{ color: "#9a9ab0" }}>Share this code with your mate</p>
                 <div className="mt-3 font-mono tracking-[0.4em] font-bold" style={{ fontSize: 44, color: "#00ff87" }}>{code}</div>
-
-                {/* Always-on status so the host knows the lobby is live and listening. */}
                 <div className="mt-4 inline-flex items-center gap-2 rounded-full px-3 py-1.5" style={{ background: "rgba(255,184,0,0.1)", border: "1px solid rgba(255,184,0,0.25)" }}>
                   <span className="h-2 w-2 rounded-full animate-pulse" style={{ background: "#ffb800" }} />
                   <span className="text-xs" style={{ color: "#cfcfe6" }}>Waiting for your mate to join…</span>
                 </div>
-
                 <button
                   onClick={() => navigator.share?.({ title: "38-0 H2H", text: `Play me on 38-0 — code ${code}`, url: `${location.origin}/38-0/live/${code}` }).catch(() => {})}
                   className="mt-4 w-full rounded-2xl py-3 font-semibold" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "#e8e8f0" }}
@@ -183,6 +226,71 @@ export default function LiveEntry() {
         )}
 
         {mode === "finding" && <FindingPanel onCancel={cancelFind} />}
+
+        {/* ── H2H Leaderboard — shown in idle mode ── */}
+        {mode === "idle" && (
+          <div className="mt-10">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-display tracking-wide" style={{ fontSize: 22, color: "#fff" }}>
+                LEADER<span style={{ color: "#00ff87" }}>BOARD</span>
+              </h2>
+              <Link href="/38-0/leaderboard" className="font-body text-xs" style={{ color: "#8888aa" }}>
+                Full board →
+              </Link>
+            </div>
+
+            {/* Today / All-time toggle */}
+            <div className="flex gap-1 p-1 rounded-2xl mb-3" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+              {([["today", "Today"], ["all", "All-time"]] as const).map(([key, label]) => (
+                <button key={key} onClick={() => setLbMetric(key)}
+                  className="flex-1 py-1.5 rounded-xl font-body text-sm font-semibold transition-all"
+                  style={lbMetric === key ? { background: "#00ff87", color: "#062013" } : { background: "transparent", color: "#8888aa" }}>
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {lbLoading ? (
+              <div className="py-6 text-center font-body text-sm" style={{ color: "#8888aa" }}>Loading…</div>
+            ) : lbRows.length === 0 ? (
+              <div className="rounded-2xl px-4 py-5 text-center" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}>
+                <p className="font-body text-sm" style={{ color: "#8888aa" }}>No wins yet — be first on the board.</p>
+              </div>
+            ) : (
+              <div className="rounded-2xl overflow-hidden" style={{ background: "#0d0d14", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <div className="flex items-center px-3 py-2 font-body" style={{ fontSize: 10, color: "#8888aa", letterSpacing: 0.5, background: "rgba(255,255,255,0.03)" }}>
+                  <span style={{ width: 28, textAlign: "center" }}>#</span>
+                  <span className="flex-1 pl-2">PLAYER</span>
+                  <span style={{ width: 24, textAlign: "center" }}>W</span>
+                  <span style={{ width: 24, textAlign: "center" }}>D</span>
+                  <span style={{ width: 24, textAlign: "center" }}>L</span>
+                  <span style={{ width: 36, textAlign: "center", color: "#cfcfe6" }}>PTS</span>
+                </div>
+                {lbRows.map((r) => {
+                  const isMe = user && r.user_id === user.id;
+                  const medal = r.rank === 1 ? "🥇" : r.rank === 2 ? "🥈" : r.rank === 3 ? "🥉" : null;
+                  return (
+                    <div key={r.user_id} className="flex items-center px-3 py-2.5"
+                      style={{ borderTop: "1px solid rgba(255,255,255,0.05)", background: isMe ? "rgba(0,255,135,0.08)" : "transparent" }}>
+                      <span className="font-display tabular-nums" style={{ width: 28, textAlign: "center", fontSize: medal ? 15 : 14, color: r.rank === 1 ? "#ffb800" : r.rank <= 3 ? "#cfcfe6" : "#8888aa" }}>
+                        {medal ?? r.rank}
+                      </span>
+                      <div className="flex-1 min-w-0 pl-2">
+                        <div className="font-body truncate" style={{ fontSize: 14, color: "#fff" }}>
+                          {r.display_name}{isMe ? " (you)" : ""}
+                        </div>
+                      </div>
+                      <span className="font-body tabular-nums" style={{ width: 24, textAlign: "center", fontSize: 13, color: "#00ff87" }}>{r.wins}</span>
+                      <span className="font-body tabular-nums" style={{ width: 24, textAlign: "center", fontSize: 13, color: "#ffb800" }}>{r.draws}</span>
+                      <span className="font-body tabular-nums" style={{ width: 24, textAlign: "center", fontSize: 13, color: "#ff4757" }}>{r.losses}</span>
+                      <span className="font-display tabular-nums" style={{ width: 36, textAlign: "center", fontSize: 15, color: "#fff" }}>{r.points}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -196,8 +304,6 @@ const FINDING_MESSAGES = [
   "Lining up a game…",
 ];
 
-/** Makes matchmaking feel alive (not a dead spinner) for the few seconds before a
- *  human pairs or the bot drops in: a rotating status + a jittering "online" count. */
 function FindingPanel({ onCancel }: { onCancel: () => void }) {
   const [msg, setMsg] = useState(0);
   const [online, setOnline] = useState(() => 70 + Math.floor(Math.random() * 90));
