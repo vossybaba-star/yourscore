@@ -43,6 +43,7 @@ export default function WorldCupRun() {
   const [reveal, setReveal] = useState<PlayResp | null>(null);
   const [pickSlot, setPickSlot] = useState<string | null>(null);
   const [slate, setSlate] = useState<PlayerSeason[] | null>(null);
+  const [spunNation, setSpunNation] = useState<{ nation: string; crest?: string } | null>(null);
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
@@ -71,13 +72,17 @@ export default function WorldCupRun() {
 
   function scoutSlot(slotId: string) {
     if (!run || run.upgrades_left <= 0) return;
-    setPickSlot(slotId);
+    setPickSlot(slotId); setSpunNation(null);
     const slot = slotsFor(run.formation).find((s) => s.id === slotId)!;
     const usedIds = new Set(run.squad.map((p) => p.player_season_id));
     const usedNames = new Set(run.squad.map((p) => p.name));
-    setSlate(run.mode === "world"
-      ? spinWorld([slot.pos], usedIds, usedNames, { count: 6 })
-      : spinForNation(run.nation, [slot.pos], usedIds, usedNames, { count: 6 }));
+    if (run.mode === "world") {
+      const sp = spinWorld([slot.pos], usedIds, usedNames, { count: 6 });
+      setSpunNation({ nation: sp.nation, crest: sp.crest });
+      setSlate(sp.players);
+    } else {
+      setSlate(spinForNation(run.nation, [slot.pos], usedIds, usedNames, { count: 6 }));
+    }
   }
 
   async function applyUpgrade(newPlayerId: string) {
@@ -86,7 +91,7 @@ export default function WorldCupRun() {
     try {
       const res = await fetch("/api/draft/wc/upgrade", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ runId: id, slotId: pickSlot, newPlayerId }) });
       const data = await res.json();
-      if (res.ok) { setPickSlot(null); setSlate(null); await load(); }
+      if (res.ok) { setPickSlot(null); setSlate(null); setSpunNation(null); await load(); }
       else setError(data.error ?? "Upgrade failed");
     } catch { setError("Network error."); }
     setBusy(false);
@@ -242,24 +247,28 @@ export default function WorldCupRun() {
         {pickSlot && slate && (
           <div className="mt-3 rounded-2xl p-3" style={{ background: "#12121e", border: "1px solid rgba(0,255,135,0.3)" }}>
             <div className="flex items-center justify-between mb-2">
-              <span className="font-body" style={{ fontSize: 12, color: "#8888aa" }}>Re-spin — take one of these, or cancel</span>
-              <button onClick={() => { setPickSlot(null); setSlate(null); }} className="font-body" style={{ fontSize: 12, color: "#8888aa" }}>Cancel</button>
+              {world && spunNation ? (
+                <span className="flex items-center gap-2">
+                  {spunNation.crest && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={spunNation.crest} alt="" width={22} height={22} style={{ width: 22, height: 22, objectFit: "contain" }} />
+                  )}
+                  <span className="font-display tracking-wide" style={{ fontSize: 15, color: "#ffb800" }}>{spunNation.nation}</span>
+                  <span className="font-body" style={{ fontSize: 11, color: "#8888aa" }}>· re-spin</span>
+                </span>
+              ) : (
+                <span className="font-body" style={{ fontSize: 12, color: "#8888aa" }}>Re-spin — take one of these, or cancel</span>
+              )}
+              <button onClick={() => { setPickSlot(null); setSlate(null); setSpunNation(null); }} className="font-body" style={{ fontSize: 12, color: "#8888aa" }}>Cancel</button>
             </div>
             <div className="flex flex-col gap-1">
-              {slate.map((p) => {
-                const flag = world && p.nationality ? wcNation(p.nationality)?.crest : null;
-                return (
-                  <button key={p.id} onClick={() => applyUpgrade(p.id)} disabled={busy}
-                    className="flex items-center gap-2 rounded-lg px-2 py-2 text-left active:scale-[0.99]" style={{ background: "rgba(255,255,255,0.04)" }}>
-                    <span className="flex items-center justify-center rounded font-display" style={{ width: 30, height: 30, fontSize: 15, color: "#0a0a0f", background: CATEGORY_COLOR[posCategory(p.position)] }}>{p.overall}</span>
-                    <span className="font-body flex-1 truncate" style={{ fontSize: 13, color: "#fff" }}>{p.name} <span style={{ color: "#8888aa", fontSize: 11 }}>{p.club}{world && p.nationality ? ` · ${p.nationality}` : ""}</span></span>
-                    {flag && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={flag} alt="" width={20} height={20} style={{ width: 20, height: 20, objectFit: "contain", flexShrink: 0 }} />
-                    )}
-                  </button>
-                );
-              })}
+              {slate.map((p) => (
+                <button key={p.id} onClick={() => applyUpgrade(p.id)} disabled={busy}
+                  className="flex items-center gap-2 rounded-lg px-2 py-2 text-left active:scale-[0.99]" style={{ background: "rgba(255,255,255,0.04)" }}>
+                  <span className="flex items-center justify-center rounded font-display" style={{ width: 30, height: 30, fontSize: 15, color: "#0a0a0f", background: CATEGORY_COLOR[posCategory(p.position)] }}>{p.overall}</span>
+                  <span className="font-body flex-1 truncate" style={{ fontSize: 13, color: "#fff" }}>{p.name} <span style={{ color: "#8888aa", fontSize: 11 }}>{p.club}</span></span>
+                </button>
+              ))}
               {slate.length === 0 && <span className="font-body" style={{ fontSize: 12, color: "#ff8a3d" }}>No options for this slot.</span>}
             </div>
           </div>

@@ -16,7 +16,6 @@ import { Pitch } from "@/components/draft/Pitch";
 import { useUser } from "@/hooks/useUser";
 import { pickableNations, spinForNation, spinWorld, type PickableNation } from "@/lib/draft/pool";
 import { WORLD_TEAM_NAME, type RunMode } from "@/lib/draft/wc";
-import { wcNation } from "@/data/draft/wc2026";
 import {
   emptyTeam, openSlots, isComplete, usedPlayerIds, usedPlayerNames, placePlayer, hydrateSavedTeam, type LocalTeam,
 } from "@/lib/draft/local";
@@ -44,6 +43,7 @@ export default function WorldCupEntry() {
   const [nation, setNation] = useState<PickableNation | null>(null);
   const [team, setTeam] = useState<LocalTeam | null>(null);
   const [slate, setSlate] = useState<PlayerSeason[] | null>(null);
+  const [spunNation, setSpunNation] = useState<{ nation: string; crest?: string } | null>(null);
   const [spinning, setSpinning] = useState(false);
   const [reel, setReel] = useState<string | null>(null);
   const [selected, setSelected] = useState<PlayerSeason | null>(null);
@@ -68,19 +68,27 @@ export default function WorldCupEntry() {
 
   function doSpin() {
     if (!team || spinning || (mode === "nation" && !nation)) return;
-    setSpinning(true); setSlate(null); setSelected(null);
+    setSpinning(true); setSlate(null); setSelected(null); setSpunNation(null);
     const open = openSlots(team).map((s) => s.pos);
-    // Pure luck of the spin — any rating can come up, from the very first pick.
-    const pool = world
-      ? spinWorld(open, usedPlayerIds(team), usedPlayerNames(team), { count: 6 })
-      : spinForNation(nation!.nation, open, usedPlayerIds(team), usedPlayerNames(team), { count: 6 });
+    // Pure luck of the spin — any rating can come up, from the very first pick. World mode
+    // lands on ONE random nation; nation mode is locked to the chosen nation.
+    let players: PlayerSeason[];
+    let spun: { nation: string; crest?: string } | null = null;
+    if (world) {
+      const sp = spinWorld(open, usedPlayerIds(team), usedPlayerNames(team), { count: 6 });
+      players = sp.players;
+      spun = { nation: sp.nation, crest: sp.crest };
+    } else {
+      players = spinForNation(nation!.nation, open, usedPlayerIds(team), usedPlayerNames(team), { count: 6 });
+    }
     let ticks = 0;
     reelTimer.current = setInterval(() => {
-      setReel(pool.length ? pool[Math.floor(Math.random() * pool.length)].name : "—");
+      setReel(players.length ? players[Math.floor(Math.random() * players.length)].name : "—");
       if (++ticks > 11) {
         if (reelTimer.current) clearInterval(reelTimer.current);
         setReel(null);
-        setSlate(pool);
+        setSlate(players);
+        if (spun) setSpunNation(spun);
         setSpinning(false);
       }
     }, 70);
@@ -338,21 +346,30 @@ export default function WorldCupEntry() {
 
           {slate && !spinning && !selected && (
             <div className="mb-3 rounded-2xl overflow-hidden" style={{ background: "#0d0d14", border: "1px solid rgba(255,255,255,0.07)", maxHeight: 320, overflowY: "auto" }}>
-              <div className="px-3 py-2 font-body sticky top-0" style={{ fontSize: 11, color: "#8888aa", background: "#0d0d14" }}>Pick a player → choose their slot</div>
+              {world && spunNation ? (
+                <div className="flex items-center gap-2 px-3 py-2.5 sticky top-0" style={{ background: "#0d0d14", borderBottom: "1px solid rgba(255,184,0,0.25)" }}>
+                  {spunNation.crest && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={spunNation.crest} alt="" width={26} height={26} style={{ width: 26, height: 26, objectFit: "contain", flexShrink: 0 }} />
+                  )}
+                  <span className="font-display tracking-wide" style={{ fontSize: 17, color: "#ffb800" }}>{spunNation.nation}</span>
+                  <span className="font-body" style={{ fontSize: 11, color: "#8888aa" }}>· pick a player</span>
+                </div>
+              ) : (
+                <div className="px-3 py-2 font-body sticky top-0" style={{ fontSize: 11, color: "#8888aa", background: "#0d0d14" }}>Pick a player → choose their slot</div>
+              )}
               {slate.map((p) => {
                 const c = CATEGORY_COLOR[posCategory(p.position)];
                 const elig = slots.some((s) => !filledBySlot.has(s.id) && canPlay(p.position, s.pos));
-                // World mode: show the player's nationality FLAG (any nation). Nation mode:
-                // every player shares the chosen nation, so show the club badge instead.
-                const flag = world && p.nationality ? wcNation(p.nationality)?.crest : null;
-                const rightImg = world ? flag : getTeamBadgeUrlSync(p.club);
+                // Nation mode: every player shares the chosen nation → show the club badge.
+                // World mode: the whole slate is one nation (shown in the header), so no per-row badge.
+                const rightImg = world ? null : getTeamBadgeUrlSync(p.club);
                 return (
                   <button key={p.id} onClick={() => elig && setSelected(p)} disabled={!elig}
                     className="w-full flex items-center gap-3 px-3 py-2.5 text-left" style={{ borderTop: "1px solid rgba(255,255,255,0.04)", opacity: elig ? 1 : 0.4 }}>
                     <div className="flex items-center justify-center rounded-lg font-display flex-shrink-0" style={{ width: 38, height: 38, fontSize: 18, color: "#0a0a0f", background: c }}>{p.overall}</div>
                     <div className="flex-1 min-w-0">
                       <div className="font-body truncate" style={{ fontSize: 14, color: "#fff" }}>{p.name} <span style={{ color: "#8888aa", fontSize: 12 }}>{p.club} {p.season}</span></div>
-                      {world && p.nationality && <div className="font-body truncate" style={{ fontSize: 11, color: "#ffb800" }}>{p.nationality}</div>}
                     </div>
                     {rightImg && (
                       // eslint-disable-next-line @next/next/no-img-element

@@ -33,6 +33,8 @@ const byId = new Map<string, PlayerSeason>(DATA.players.map((p) => [p.id, p]));
 const byNation = new Map<string, NationEntry>((DATA.nations ?? []).map((n) => [n.nation, n]));
 /** Every player whose nationality is a WC 2026 nation — the open "World Cup" draft pool. */
 const WC_PLAYERS: PlayerSeason[] = DATA.players.filter((p) => !!p.nationality && WC_NATION_NAMES.has(p.nationality));
+/** Nation → crest, for labelling a World Cup spin. */
+const WC_CREST = new Map<string, string>(allWCNations().map((n) => [n.nation, n.crest]));
 
 export const POOL_META = DATA.counts;
 /** Per-league counts (players + spinnable squads) for UI copy. */
@@ -200,31 +202,52 @@ export function isWCEligible(player: PlayerSeason): boolean {
   return !!player.nationality && WC_NATION_NAMES.has(player.nationality);
 }
 
+/** A World Cup spin: ONE nation, dealt by luck, plus its players for the open slot. */
+export type WorldSpin = { nation: string; crest?: string; players: PlayerSeason[] };
+
 /**
- * Open "World Cup" spin: deal `count` players from ANY WC 2026 nation that can fill an
- * open slot — no nation lock, pure luck of the spin (every rating in play from pick one).
- * The huge pool means no band/relaxation is needed. Returns candidates sorted by overall desc.
+ * Open "World Cup" spin: land on ONE WC 2026 nation (luck of the spin) and offer THAT
+ * nation's players for the open slot — like the base-game slot machine, but the bucket
+ * is a country. Only nations that can actually fill the slot are in the draw. Selection
+ * weight per nation is CAPPED, so the pool's English bias doesn't make England come up
+ * every time — real footballing nations all appear, minnows occasionally. Pure luck on
+ * rating — every overall is in play. Players sorted by overall desc.
  */
+const SPIN_NATION_WEIGHT_CAP = 8;
 export function spinWorld(
   openSlotPositions: Position[],
   usedPlayerIds: Set<string>,
   usedIdentities: Set<string> = new Set(),
   opts: { count?: number } = {},
   rng: () => number = Math.random
-): PlayerSeason[] {
+): WorldSpin {
   const count = opts.count ?? 6;
-  const pool = WC_PLAYERS.filter(
+  const eligible = WC_PLAYERS.filter(
     (p) =>
       !usedPlayerIds.has(p.id) &&
       !usedIdentities.has(playerIdentity(p.name)) &&
       openSlotPositions.some((slotPos) => canPlay(p.position, slotPos))
   );
-  const arr = pool.slice();
+  if (eligible.length === 0) return { nation: "", players: [] };
+  // Group the fitting players by nation, then weighted-pick a nation (weight capped so a
+  // deep nation like England doesn't crowd out the rest).
+  const byNation = new Map<string, PlayerSeason[]>();
+  for (const p of eligible) {
+    const arr = byNation.get(p.nationality!) ?? [];
+    arr.push(p);
+    byNation.set(p.nationality!, arr);
+  }
+  const nations = Array.from(byNation.keys());
+  const weights = nations.map((n) => Math.min(byNation.get(n)!.length, SPIN_NATION_WEIGHT_CAP));
+  let r = rng() * weights.reduce((s, w) => s + w, 0);
+  let nation = nations[0];
+  for (let i = 0; i < nations.length; i++) { r -= weights[i]; if (r <= 0) { nation = nations[i]; break; } }
+  const arr = byNation.get(nation)!.slice();
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1));
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
-  return arr.slice(0, count).sort((a, b) => b.overall - a.overall);
+  return { nation, crest: WC_CREST.get(nation), players: arr.slice(0, count).sort((a, b) => b.overall - a.overall) };
 }
 
 /** The 19 real clubs the season simulator plays against — the most recent FIFA
