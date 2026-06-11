@@ -418,15 +418,14 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
               Draft your XI · Go head to head · Top your league.
             </p>
 
-            {/* Primary CTA — Create a league */}
-            <Link href="/league/new"
+            {/* Primary CTA — Draft your XI */}
+            <Link href="/38-0"
               className="w-full sm:w-auto inline-flex items-center justify-center gap-3 font-body font-bold text-lg px-10 py-5 rounded-2xl hover:opacity-90 transition-all mb-3 pulse-glow"
-              style={{ background: "#a78bfa", color: "#0a0a0f", display: "flex" }}>
+              style={{ background: "#00ff87", color: "#062013", display: "flex" }}>
               <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-                <path d="M5 3h12v5L11 12 5 8z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" fill="rgba(0,0,0,0.15)"/>
-                <path d="M7 8v9a4 4 0 0 0 8 0V8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+                <path d="M8 2.5 3 5.5 5 9.5 7.3 8.3V19a1 1 0 0 0 1 1h5.4a1 1 0 0 0 1-1V8.3L17 9.5l2-4-5-3C14 4.4 12.7 5.6 11 5.6S8 4.4 8 2.5Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" fill="rgba(0,0,0,0.1)"/>
               </svg>
-              Create a league
+              Draft your XI
             </Link>
 
             {/* Secondary CTAs */}
