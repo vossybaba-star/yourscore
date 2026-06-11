@@ -15,7 +15,7 @@ import { Pitch } from "@/components/draft/Pitch";
 import { spinForNation } from "@/lib/draft/pool";
 import { slotsFor } from "@/lib/draft/formations";
 import { CATEGORY_COLOR, posCategory } from "@/lib/draft/score";
-import { RUN_STAGE_LABEL, UPGRADE_FLOOR, isDuel, type RunStage } from "@/lib/draft/wc";
+import { RUN_STAGE_LABEL, isDuel, type RunStage } from "@/lib/draft/wc";
 import { wcNation } from "@/data/draft/wc2026";
 import type { Formation, PlacedPlayer, PlayerSeason } from "@/lib/draft/types";
 import { trackGameComplete } from "@/lib/analytics/trackGame";
@@ -75,7 +75,7 @@ export default function WorldCupRun() {
     const slot = slotsFor(run.formation).find((s) => s.id === slotId)!;
     const usedIds = new Set(run.squad.map((p) => p.player_season_id));
     const usedNames = new Set(run.squad.map((p) => p.name));
-    setSlate(spinForNation(run.nation, [slot.pos], usedIds, usedNames, { minOverall: UPGRADE_FLOOR[run.stage], count: 6 }));
+    setSlate(spinForNation(run.nation, [slot.pos], usedIds, usedNames, { count: 6 }));
   }
 
   async function applyUpgrade(newPlayerId: string) {
@@ -226,7 +226,7 @@ export default function WorldCupRun() {
         <div className="mt-4">
           <div className="flex items-center justify-between mb-1.5">
             <span className="font-body" style={{ fontSize: 11, color: "#8888aa", letterSpacing: 1 }}>YOUR XI</span>
-            {canUpgrade && <span className="font-body" style={{ fontSize: 12, color: "#00ff87" }}>⬆️ Tap a player to upgrade · {run.upgrades_left} left</span>}
+            {canUpgrade && <span className="font-body" style={{ fontSize: 12, color: "#00ff87" }}>🎲 Tap a player to re-spin · {run.upgrades_left} left</span>}
           </div>
           <Pitch formation={run.formation} squad={run.squad} compact onSlotClick={canUpgrade ? scoutSlot : undefined} highlightSlot={pickSlot} />
         </div>
@@ -235,7 +235,7 @@ export default function WorldCupRun() {
         {pickSlot && slate && (
           <div className="mt-3 rounded-2xl p-3" style={{ background: "#12121e", border: "1px solid rgba(0,255,135,0.3)" }}>
             <div className="flex items-center justify-between mb-2">
-              <span className="font-body" style={{ fontSize: 12, color: "#8888aa" }}>Replace — pick a better player</span>
+              <span className="font-body" style={{ fontSize: 12, color: "#8888aa" }}>Re-spin — take one of these, or cancel</span>
               <button onClick={() => { setPickSlot(null); setSlate(null); }} className="font-body" style={{ fontSize: 12, color: "#8888aa" }}>Cancel</button>
             </div>
             <div className="flex flex-col gap-1">
@@ -246,7 +246,7 @@ export default function WorldCupRun() {
                   <span className="font-body flex-1 truncate" style={{ fontSize: 13, color: "#fff" }}>{p.name} <span style={{ color: "#8888aa", fontSize: 11 }}>{p.club}</span></span>
                 </button>
               ))}
-              {slate.length === 0 && <span className="font-body" style={{ fontSize: 12, color: "#ff8a3d" }}>No upgrades available for this slot.</span>}
+              {slate.length === 0 && <span className="font-body" style={{ fontSize: 12, color: "#ff8a3d" }}>No options for this slot.</span>}
             </div>
           </div>
         )}

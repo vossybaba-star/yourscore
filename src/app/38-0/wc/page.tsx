@@ -14,7 +14,6 @@ import { useRouter } from "next/navigation";
 import { Pitch } from "@/components/draft/Pitch";
 import { useUser } from "@/hooks/useUser";
 import { pickableNations, spinForNation, type PickableNation } from "@/lib/draft/pool";
-import { START_CEILING } from "@/lib/draft/wc";
 import {
   emptyTeam, openSlots, isComplete, usedPlayerIds, usedPlayerNames, placePlayer, hydrateSavedTeam, type LocalTeam,
 } from "@/lib/draft/local";
@@ -58,8 +57,8 @@ export default function WorldCupEntry() {
     if (!team || !nation || spinning) return;
     setSpinning(true); setSlate(null); setSelected(null);
     const open = openSlots(team).map((s) => s.pos);
-    // Starting XI is drafted from lower-rated players — better ones are earned via upgrades.
-    const pool = spinForNation(nation.nation, open, usedPlayerIds(team), usedPlayerNames(team), { count: 6, maxOverall: START_CEILING });
+    // Pure luck of the spin — any rating can come up, from the very first pick.
+    const pool = spinForNation(nation.nation, open, usedPlayerIds(team), usedPlayerNames(team), { count: 6 });
     let ticks = 0;
     reelTimer.current = setInterval(() => {
       setReel(pool.length ? pool[Math.floor(Math.random() * pool.length)].name : "—");
@@ -153,7 +152,7 @@ export default function WorldCupEntry() {
             {[
               ["①", "Pick your nation & draft your XI", "Only players from that nation are in your pool."],
               ["②", "Play the real WC 2026 fixtures", "Your group, then the knockouts — vs the actual opponents."],
-              ["③", "Win to advance · upgrade each round", "Survive the group, then it's win-or-go-home. Better picks unlock as you progress."],
+              ["③", "Win to advance · re-spin each round", "Survive the group, then it's win-or-go-home. Each round you get free re-spins — luck of the draw."],
               ["④", "Lose a knockout and you're out", "Reach the final and lift the trophy. 🏆"],
             ].map(([n, title, desc]) => (
               <div key={n as string} className="flex gap-3 mb-2.5 last:mb-0">

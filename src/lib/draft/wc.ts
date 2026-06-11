@@ -47,16 +47,11 @@ export function oppTargetFor(yourStrength: number, stage: WCStage): number {
   return Math.max(40, Math.min(95, Math.round(yourStrength * OPP_MULT[stage])));
 }
 
-// Your STARTING XI is drafted from lower-rated players — you earn the stars by winning
-// (upgrade picks below pull from progressively higher floors). Soft cap: spinForNation
-// relaxes it upward for a nation that lacks depth at this level, so every XI is fieldable.
-export const START_CEILING = 78;
-
-// Upgrade picks granted ON ENTERING a run stage, and the quality floor of those picks.
-// The floor rises each round → progressively better players to draft. Three upgrades
-// after the group; two before each of QF / SF / Final.
+// Re-spin picks granted ON ENTERING a run stage. Drafting is pure luck of the spin —
+// any rating can come up at any time, from your first pick onward — so an upgrade is
+// just a free re-spin of a slot (it might land better or worse). Three after the group;
+// two before each of QF / SF / Final.
 export const STAGE_UPGRADES: Record<RunStage, number> = { group: 0, ko: 3, qf: 2, sf: 2, final: 2 };
-export const UPGRADE_FLOOR: Record<RunStage, number> = { group: 0, ko: 78, qf: 82, sf: 85, final: 88 };
 
 export const GROUP_QUALIFY_POINTS = 4; // ~ a win + a draw, or two wins
 export function qualifiesFromGroup(points: number): boolean {

@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   planRun, qualifiesFromGroup, prestige, advanceStage, gamesForStage, buildMatchRow, isDuel,
-  OPP_MULT, oppTargetFor, UPGRADE_FLOOR, STAGE_UPGRADES, KNOCKOUT_STAGES, RUN_STAGES,
+  OPP_MULT, oppTargetFor, STAGE_UPGRADES, KNOCKOUT_STAGES, RUN_STAGES,
   GROUP_QUALIFY_POINTS, type WcRun,
 } from "./wc";
 import { groupOpponents } from "../../data/draft/wc2026";
@@ -41,13 +41,7 @@ test("opponent target is PROPORTIONAL to your strength, and climbs each round", 
   assert.ok(oppTargetFor(80, "final") > 80);
 });
 
-test("upgrade floor rises every run stage that grants upgrades", () => {
-  const stages = ["ko", "qf", "sf", "final"] as const;
-  let prev = -1;
-  for (const s of stages) { assert.ok(UPGRADE_FLOOR[s] > prev, `${s}`); prev = UPGRADE_FLOOR[s]; }
-});
-
-test("3 upgrades after the group, 2 before each duel", () => {
+test("re-spin picks granted: 0 in group, 3 after it, 2 before each duel", () => {
   assert.equal(STAGE_UPGRADES.ko, 3);
   assert.equal(STAGE_UPGRADES.qf, 2);
   assert.equal(STAGE_UPGRADES.sf, 2);
