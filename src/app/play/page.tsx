@@ -322,7 +322,7 @@ function OpenRoomCard({ room, onJoin }: { room: OpenRoom; onJoin: () => void }) 
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
-type MainTab = "solo" | "multiplayer";
+type MainTab = "solo" | "multiplayer" | "leaderboards";
 type SoloTab = "featured" | "club" | "records";
 
 function joinErrorMessage(raw: string): string {
@@ -469,7 +469,7 @@ function PlayPageInner() {
             <div>
               <h1 className="font-display text-2xl tracking-tight text-amber">QUIZ</h1>
               <p className="font-body text-xs mt-0.5 text-text-muted">
-                {mainTab === "solo" ? "Test your football knowledge" : "Real-time multiplayer · Play with mates"}
+                {mainTab === "solo" ? "Test your football knowledge" : mainTab === "multiplayer" ? "Real-time multiplayer · Play with mates" : "YourScore verified competitions"}
               </p>
             </div>
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl"
@@ -481,18 +481,29 @@ function PlayPageInner() {
             </div>
           </div>
 
-          {/* Solo / Multiplayer toggle */}
+          {/* Solo / Multiplayer / Leaderboards toggle */}
           <div className="flex gap-1 p-1 rounded-2xl mb-3"
             style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-            {(["solo", "multiplayer"] as MainTab[]).map(t => (
-              <button key={t} onClick={() => setMainTab(t)}
-                className="flex-1 py-2 rounded-xl font-body text-sm font-semibold transition-all"
-                style={mainTab === t
-                  ? { background: "#ffb800", color: "#0a0a0f" }
-                  : { background: "transparent", color: "#8888aa" }}>
-                {t === "solo" ? "Solo" : "Multiplayer"}
-              </button>
-            ))}
+            <button onClick={() => setMainTab("solo")}
+              className="flex-1 py-2 rounded-xl font-body text-xs font-semibold transition-all"
+              style={mainTab === "solo" ? { background: "#ffb800", color: "#0a0a0f" } : { background: "transparent", color: "#8888aa" }}>
+              Solo
+            </button>
+            <button onClick={() => setMainTab("multiplayer")}
+              className="flex-1 py-2 rounded-xl font-body text-xs font-semibold transition-all"
+              style={mainTab === "multiplayer" ? { background: "#ffb800", color: "#0a0a0f" } : { background: "transparent", color: "#8888aa" }}>
+              Multiplayer
+            </button>
+            <button onClick={() => setMainTab("leaderboards")}
+              className="flex-1 flex items-center justify-center gap-1 py-2 rounded-xl font-body text-xs font-semibold transition-all"
+              style={mainTab === "leaderboards"
+                ? { background: "#00ff87", color: "#062013" }
+                : { background: "transparent", color: "#8888aa" }}>
+              Leaderboards
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ flexShrink: 0 }}>
+                <path d="M2 5.2l2 2L8 3" stroke={mainTab === "leaderboards" ? "#062013" : "#555577"} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
           </div>
 
           {/* Solo sub-tabs (Featured / Club / Records) */}
@@ -709,6 +720,69 @@ function PlayPageInner() {
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* ── LEADERBOARDS TAB ─────────────────────────────────────── */}
+      {mainTab === "leaderboards" && (
+        <div className="max-w-lg mx-auto px-4 pt-4 space-y-3">
+
+          {/* Header label */}
+          <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full font-display text-xs tracking-wide"
+              style={{ background: "rgba(0,255,135,0.1)", border: "1px solid rgba(0,255,135,0.25)", color: "#00ff87" }}>
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                <path d="M2 5.2l2 2L8 3" stroke="#00ff87" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              YOURSCORE VERIFIED
+            </div>
+          </div>
+
+          {/* World Cup 2026 card */}
+          <div className="rounded-3xl overflow-hidden"
+            style={{ background: "linear-gradient(145deg, #0d1a10 0%, #091510 100%)", border: "1px solid rgba(0,255,135,0.25)" }}>
+
+            {/* Banner strip */}
+            <div className="relative flex items-center justify-between px-5 py-4"
+              style={{ background: "linear-gradient(90deg, rgba(0,255,135,0.12) 0%, rgba(255,184,0,0.08) 100%)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+              <div className="flex items-center gap-2">
+                {/* Live pulse dot */}
+                <span className="relative flex" style={{ width: 10, height: 10 }}>
+                  <span className="absolute inline-flex h-full w-full rounded-full opacity-75 animate-ping"
+                    style={{ background: "#00ff87" }} />
+                  <span className="relative inline-flex rounded-full" style={{ width: 10, height: 10, background: "#00ff87" }} />
+                </span>
+                <span className="font-display text-xs tracking-widest" style={{ color: "#00ff87" }}>LIVE</span>
+              </div>
+              <span className="text-2xl">🏆</span>
+            </div>
+
+            {/* Body */}
+            <div className="px-5 py-4">
+              <p className="font-display tracking-wide" style={{ fontSize: 22, color: "#fff", lineHeight: 1.2 }}>WORLD CUP 2026</p>
+              <p className="font-body mt-1" style={{ fontSize: 13, color: "#6aaa80" }}>Daily quiz series · 2026 FIFA World Cup</p>
+
+              <div className="flex items-center gap-3 mt-4">
+                <div className="flex-1 rounded-2xl px-4 py-3 text-center"
+                  style={{ background: "rgba(0,255,135,0.07)", border: "1px solid rgba(0,255,135,0.15)" }}>
+                  <p className="font-display" style={{ fontSize: 18, color: "#00ff87" }}>—</p>
+                  <p className="font-body text-xs mt-0.5" style={{ color: "#4a7a5a" }}>Players</p>
+                </div>
+                <div className="flex-1 rounded-2xl px-4 py-3 text-center"
+                  style={{ background: "rgba(255,184,0,0.07)", border: "1px solid rgba(255,184,0,0.15)" }}>
+                  <p className="font-display" style={{ fontSize: 18, color: "#ffb800" }}>—</p>
+                  <p className="font-body text-xs mt-0.5" style={{ color: "#7a6a30" }}>Quizzes</p>
+                </div>
+              </div>
+
+              <div className="mt-4 rounded-2xl px-4 py-3 text-center"
+                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <p className="font-body text-sm" style={{ color: "#8888aa" }}>Leaderboard coming soon</p>
+                <p className="font-body text-xs mt-0.5" style={{ color: "#555577" }}>Play the daily World Cup quiz to get on the board</p>
+              </div>
+            </div>
+          </div>
+
         </div>
       )}
 
