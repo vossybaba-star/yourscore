@@ -22,6 +22,7 @@ const config: Config = {
       fontFamily: {
         display: ["var(--font-bebas)", "sans-serif"],
         body: ["var(--font-dm-sans)", "sans-serif"],
+        mono: ["var(--font-dm-mono)", "ui-monospace", "monospace"],
       },
       animation: {
         "pulse-slow": "pulse 2s cubic-bezier(0.4,0,0.6,1) infinite",

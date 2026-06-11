@@ -95,9 +95,51 @@ input, textarea, select {
   to   { opacity: 1; transform: translateY(0);   }
 }
 
+/* Slow metallic sheen for foil-stamped type (scoreline, tier crests). The
+   gradient is sized to 200% and drifts across so the highlight band travels
+   like light catching a foil card. Applied only via motion-safe:. */
+@keyframes foilSheen {
+  0%   { background-position: 0% 50%;    }
+  100% { background-position: -200% 50%; }
+}
+
+/* Holographic light-bar sweeping across foil type (scoreline / wordmark). Sat on
+   top of the foil with mix-blend color-dodge so it reads like a card catching
+   light. Off under reduced motion. */
+@keyframes scHolo {
+  0%   { background-position: 200% 0;  }
+  100% { background-position: -200% 0; }
+}
+
+/* Ambient embers drifting up inside the card housing. */
+@keyframes scDrift {
+  0%        { transform: translateY(0) translateX(0); opacity: 0; }
+  18%, 82%  { opacity: 0.5; }
+  100%      { transform: translateY(-92px) translateX(14px); opacity: 0; }
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+
+  /* Pair with an inline metallic background-image + background-clip:text.
+     The 200% sizing leaves room for the sheen keyframe to travel. */
+  .animate-foil {
+    background-size: 200% auto;
+    animation: foilSheen 7s linear infinite;
+  }
+
+  /* Holographic sweep overlay (sits over foil text via mix-blend). */
+  .sc-holo {
+    background-size: 200% 100%;
+    animation: scHolo 4.5s linear infinite;
+    mix-blend-mode: color-dodge;
+  }
+
+  /* A single drifting ember inside the card. */
+  .sc-particle {
+    animation: scDrift linear infinite;
   }
 
   .font-display {
@@ -116,4 +158,11 @@ input, textarea, select {
   .border-subtle {
     border: 1px solid rgba(255, 255, 255, 0.08);
   }
+}
+
+/* Scorecard motion is decorative — never let it run when the user opts out. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-foil,
+  .sc-holo { animation: none; }
+  .sc-particle { display: none; }
 }
