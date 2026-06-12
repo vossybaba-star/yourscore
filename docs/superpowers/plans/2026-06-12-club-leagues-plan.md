@@ -15,7 +15,7 @@ Existing code to lean on:
 - `src/lib/ratelimit.ts` — `rateLimitDistributed`.
 - `14_draft_xi.sql` — RLS style for league/member tables.
 
-## Phase 1 — Migration `supabase/migrations/35_club_leagues.sql`
+## Phase 1 — Migration `supabase/migrations/36_club_leagues.sql`
 
 1. `club_leagues`, `club_league_members`, `club_league_events`, `club_event_attempts`
    per spec §3 (events carry `questions` jsonb snapshot; attempts `unique(event_id, user_id)`).
@@ -80,6 +80,6 @@ known-stale; regenerate after the migration is applied).
 
 ## Phase 6 — Ship follow-ups (separate, after founder applies migration)
 
-- Apply migration 35 via Supabase CLI (founder approval).
+- Apply migration 36 via Supabase CLI (founder approval).
 - Update `YOURSCORE.md`: add Club League to glossary + new section; mark roadmap
   "Pub Leagues" delivered-by Club Leagues; bump Confirmed date. Run `graphify update .`.
