@@ -6,7 +6,7 @@
 
 ## 1. Feature summary
 
-Every simulated season pauses at Matchweek 19 with a **Half-Term Report**: your real
+Every simulated season pauses at Matchweek 19 with a **Mid-Season Report**: your real
 record so far, your players' stats, and your January transfer budget — **the same flat
 budget for every manager**. You may sign **up to 3** players from a spun market shortlist of 12, each
 replacing a player in your XI, then the back 19 fixtures play out with the new team.
@@ -21,7 +21,7 @@ Working name: **"The January Window"** (fallback: "Transfer Window").
 1. **MW 1–19** — first half simulates with the current reveal animation. Skip
    fast-forwards to MW19, not MW38. The pause happens for *every* season, including a
    guest's first (decision: no first-season skip; funnel cost is measured, not avoided).
-2. **Half-Term Report** (new screen at MW19):
+2. **Mid-Season Report** (new screen at MW19):
    - Record: W-D-L, points, GF/GA, position vs projection.
    - Player stats so far (top scorer / assister / clean sheets) — the deadwood-spotting data.
    - Budget line: "You have £50m to spend this January." (Same for everyone; the
@@ -140,7 +140,7 @@ the damping.
   before/after release.
 - **Share/OG:** `shareParams` gains a compact transfers param; OG card + share page render
   the IN/OUT strip; `xi` param carries the **final** XI.
-- **Half-Term Report is shareable** (nice-to-have, v1.1): same OG pipeline, half-time card.
+- **Mid-Season Report is shareable** (nice-to-have, v1.1): same OG pipeline, mid-season card.
 
 ## 8. Risks (assessed in session, accepted with mitigations)
 
@@ -170,7 +170,7 @@ the damping.
 
 ## 10. Acceptance criteria
 
-1. Every non-WC season pauses at MW19 with the Half-Term Report; "Play on" reaches the
+1. Every non-WC season pauses at MW19 with the Mid-Season Report; "Play on" reaches the
    final scorecard in one tap — unless an injury forces a replacement first.
 2. Up to 3 signings, market of 12 drawn from the whole pool, flat `WINDOW_BUDGET`
    (start: 10 / £50m) for every manager, cost = positive overall delta, same-line
