@@ -67,7 +67,7 @@ Use these words, with these meanings, everywhere. No synonyms.
 **Leagues & ranking**
 - **Quiz League** — a group's table for the Quiz game (`leagues`). Two boards planned: Live / Offline (§6).
 - **38-0 League** — a custom group league for 38-0 (`draft_leagues`), joined by code, with its own board.
-- **YourScore Rank** *(building)* — a unified two-track rank bridging the games: a **38-0 Match** track + a **Quiz Knowledge** track.
+- **YourScore Rank** ✅ — the unified cross-game leaderboard: **YourScore points = Knowledge pts (Quiz) + Match pts (38-0: win 1,500 / draw 500)**; one strict position per player (no shared ranks). Position is the status; badges (👑/Elite/Diamond/…) are cosmetic, derived from position.
 
 ---
 
@@ -178,9 +178,27 @@ in second-half scorer/assist picks — the player you bring on visibly pays off,
 - **38-0 Leagues** (`draft_leagues`) — custom group leagues for 38-0, joined by code, with
   their own board (in-league wins, challengeable members). ✅ Live.
 
-**YourScore Rank — being built now.** A unified, cross-game rank with **two tracks**: a
-**38-0 Match** rank and a **Quiz Knowledge** rank. This is the deliberate **38-0 → Quiz
-bridge** (pull users in via 38-0, surface their Quiz rank to deepen engagement).
+**YourScore Rank — ✅ LIVE (shipped 2026-06-12).** The unified cross-game leaderboard and
+the deliberate **38-0 ↔ Quiz bridge**. One currency, one table, one #1:
+
+- **YourScore points = Knowledge pts + Match pts.** Knowledge = Quiz points as-is
+  (multiplayer + live + solo). Match = ranked 38-0 record converted at **win = 1,500 /
+  draw = 500** (keeps football's 3:1; one win ≈ one strong quiz session). The exchange
+  rate is the single tuning dial — set in `supabase/migrations/30_yourscore_points.sql`.
+- **Position is the product.** Strict unique positions (`row_number`; ties → earlier
+  account). **No percentiles, no point-based tiers** — v1's percentile blend (migration 27)
+  is superseded. Badges (👑 #1 · Elite top 10 · Diamond top 50 · Platinum top 200 · Gold
+  top 1000) are cosmetic, client-side, derived from position (`src/lib/rank.ts`).
+- **The reward loop:** a **RankRewardCard** mounts on every Game end (38-0 live result,
+  Solo challenge, Multiplayer quiz): points earned, places climbed (never shows a drop),
+  current position, and the chase — "N pts behind <player above> — overtake them".
+- **Surfaces:** `/leaderboard` (Global + Friends scopes), profile hero (position-led),
+  38-0 live-match header shows the opponent's #position.
+- **Data:** `yourscore_user_ratings` view + `get_yourscore_rank` / `get_yourscore_leaderboard`
+  RPCs (migration 30). Read-time only — per-game scoring/writes unchanged.
+- *Known watch-items:* top of table is currently pure 38-0 volume (quiz pts small by
+  comparison); wins vs disguised bots count toward Match pts (bot-farming lever if needed:
+  human-only wins or daily caps). No seasonal reset yet — all-time.
 
 ---
 
