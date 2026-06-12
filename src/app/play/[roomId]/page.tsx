@@ -15,6 +15,7 @@ import { REALTIME_ENABLED } from "@/lib/realtime";
 // league pages). react-qr-code is the single QR dependency used app-wide.
 const QRCode = dynamic(() => import("react-qr-code"), { ssr: false });
 import { QuestionCard, type ActiveQuestion } from "@/components/game/QuestionCard";
+import { RankRewardCard } from "@/components/rank/RankRewardCard";
 import { Leaderboard, type LeaderboardEntry } from "@/components/game/Leaderboard";
 import { Spinner } from "@/components/ui/Spinner";
 import { AddFriendCard, AddFriendInline } from "@/components/social/AddFriendCard";
@@ -805,6 +806,9 @@ export default function RoomPage() {
               <p className="font-display text-3xl text-green">{me.total_score.toLocaleString()}</p>
             </div>
           )}
+
+          {/* Post-game reward moment — points earned + position on the leaderboard */}
+          <RankRewardCard />
 
           {/* Friend prompts — show for all non-self opponents after game */}
           {user && opponents.filter(o => o.user_id !== user.id).map(opp => (

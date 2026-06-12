@@ -14,6 +14,7 @@ import { AuthProviders } from "@/components/auth/AuthButton";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { Spinner } from "@/components/ui/Spinner";
 import { GridBackground } from "@/components/ui/GridBackground";
+import { positionBadge, positionColor } from "@/lib/rank";
 
 type Scope = "global" | "friends";
 
@@ -25,21 +26,9 @@ interface RankRow {
   knowledge_score: number;
   overall_score: number;
   overall_rank: number;
-  tier: string;
   wins: number;
   draws: number;
   losses: number;
-}
-
-function tierColor(tier: string | null): string {
-  switch (tier) {
-    case "Elite": return "#00ff87";
-    case "Diamond": return "#a78bfa";
-    case "Platinum": return "#67e8f9";
-    case "Gold": return "#ffd700";
-    case "Silver": return "#c0c0c0";
-    default: return "#b08d57";
-  }
 }
 
 function playerInitial(name: string | null) { return (name ?? "?")[0].toUpperCase(); }
@@ -112,7 +101,7 @@ export default function LeaderboardPage() {
 
       <div className="relative z-0 max-w-lg mx-auto px-5 pt-4 space-y-4">
         <p className="font-body text-xs text-text-muted text-center">
-          YourScore Rank blends your <span style={{ color: "#ffb800" }}>Knowledge</span> (quizzes) and <span style={{ color: "#00ff87" }}>Match</span> (38-0) tracks.
+          <span style={{ color: "#ffb800" }}>Knowledge</span> pts (quizzes) + <span style={{ color: "#00ff87" }}>Match</span> pts (38-0 · win = 1,500) = your score. More points, higher up. One #1.
         </p>
 
         {/* Friends, signed out */}
@@ -138,17 +127,18 @@ export default function LeaderboardPage() {
         {!loading && rows.length > 0 && (
           <div className="space-y-1.5">
             {rows.map((p, i) => {
-              const pos = i + 1;
+              const listPos = i + 1;
               const isMe = !!user && p.user_id === user.id;
-              const tc = tierColor(p.tier);
+              const badge = positionBadge(p.overall_rank);
+              const accent = positionColor(p.overall_rank);
               const pal = playerColor(p.display_name);
               return (
                 <Link key={p.user_id} href={`/profile/${p.user_id}`}
                   className="flex items-center gap-3 px-4 py-3 rounded-2xl transition-opacity hover:opacity-80"
                   style={{ background: isMe ? "rgba(0,255,135,0.06)" : "#12121e", border: `1px solid ${isMe ? "rgba(0,255,135,0.2)" : "rgba(255,255,255,0.06)"}` }}>
                   <div className="w-7 text-center flex-shrink-0">
-                    {pos <= 3 ? <span className="text-base">{["🥇", "🥈", "🥉"][pos - 1]}</span>
-                      : <span className="font-display text-sm" style={{ color: "#8888aa" }}>#{pos}</span>}
+                    {listPos <= 3 ? <span className="text-base">{["🥇", "🥈", "🥉"][listPos - 1]}</span>
+                      : <span className="font-display text-sm" style={{ color: "#8888aa" }}>#{listPos}</span>}
                   </div>
                   <div className="w-9 h-9 rounded-full flex items-center justify-center font-body font-bold text-sm flex-shrink-0"
                     style={{ background: pal.bg, color: pal.text, border: "1px solid rgba(255,255,255,0.07)" }}>
@@ -160,14 +150,19 @@ export default function LeaderboardPage() {
                       {isMe && <span className="font-normal ml-1.5 text-green" style={{ fontSize: "0.7rem" }}>you</span>}
                     </p>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <span className="font-body" style={{ fontSize: "0.68rem", color: tc }}>{p.tier}</span>
+                      {scope === "friends" && (
+                        <span className="font-body" style={{ fontSize: "0.68rem", color: accent }}>#{p.overall_rank.toLocaleString()} overall</span>
+                      )}
+                      {badge && scope !== "friends" && (
+                        <span className="font-body" style={{ fontSize: "0.68rem", color: accent }}>{badge.emoji} {badge.label}</span>
+                      )}
                       <span className="font-body text-text-muted" style={{ fontSize: "0.68rem" }}>
                         🧠 {p.knowledge_score.toLocaleString()} · ⚽ {p.match_score.toLocaleString()}
                       </span>
                     </div>
                   </div>
-                  <p className="font-display text-lg flex-shrink-0" style={{ color: isMe ? "#00ff87" : tc }}>
-                    {p.overall_score}
+                  <p className="font-display text-lg flex-shrink-0" style={{ color: isMe ? "#00ff87" : "#ffffff" }}>
+                    {p.overall_score.toLocaleString()}
                   </p>
                 </Link>
               );

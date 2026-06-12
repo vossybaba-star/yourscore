@@ -5,6 +5,7 @@ import { getUserBounded } from "@/lib/supabase/bounded";
 import { GridBackground } from "@/components/ui/GridBackground";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { ShareStatsButton } from "@/components/ui/ShareStatsButton";
+import { positionBadge, positionColor } from "@/lib/rank";
 
 function AvatarCircle({ name, size = 64, avatarUrl }: { name: string; size?: number; avatarUrl?: string | null }) {
   if (avatarUrl) {
@@ -26,17 +27,6 @@ function AvatarCircle({ name, size = 64, avatarUrl }: { name: string; size?: num
       {(name[0] ?? "?").toUpperCase()}
     </div>
   );
-}
-
-function tierColor(tier: string | null): string {
-  switch (tier) {
-    case "Elite": return "#00ff87";
-    case "Diamond": return "#a78bfa";
-    case "Platinum": return "#67e8f9";
-    case "Gold": return "#ffd700";
-    case "Silver": return "#c0c0c0";
-    default: return "#b08d57"; // Bronze / unranked
-  }
 }
 
 export default async function ProfilePage() {
@@ -114,15 +104,17 @@ export default async function ProfilePage() {
 
   const totalScore = profile?.total_score ?? 0;
 
-  // Unified two-track rank (from get_yourscore_rank RPC)
+  // YourScore Rank v2 — one currency, position-led (from get_yourscore_rank RPC)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const rank: any = (rankRows ?? [])[0] ?? null;
-  const tier: string | null = rank?.tier ?? null;
   const overallRank: number | null = rank?.overall_rank ?? null;
+  const overallScore: number = rank?.overall_score ?? 0;
   const matchScore: number = rank?.match_score ?? 0;
   const knowledgeScore: number = rank?.knowledge_score ?? 0;
-  const matchPct: number = Number(rank?.match_pct ?? 0);
-  const knowledgePct: number = Number(rank?.knowledge_pct ?? 0);
+  const aheadName: string | null = rank?.ahead_name ?? null;
+  const aheadGap: number | null =
+    rank?.ahead_points != null ? Math.max(1, rank.ahead_points - overallScore) : null;
+  const badge = positionBadge(overallRank);
 
   // Compute stats from room_scores (cast to any — columns added via migration)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -142,9 +134,11 @@ export default async function ProfilePage() {
     ? { w: rank.wins ?? 0, d: rank.draws ?? 0, l: rank.losses ?? 0 }
     : null;
 
-  // Cross-sell nudge: push the player toward their weaker track (the 38-0 <-> quiz bridge).
-  const lowTrack: "match" | "knowledge" = matchPct <= knowledgePct ? "match" : "knowledge";
-  const showNudge = !!rank && (matchScore === 0 || knowledgeScore === 0 || Math.abs(matchPct - knowledgePct) > 0.25);
+  // Cross-sell nudge: push the player toward their weaker track (the 38-0 <-> quiz
+  // bridge). Both tracks are in the same currency now, so compare raw points.
+  const lowTrack: "match" | "knowledge" = matchScore <= knowledgeScore ? "match" : "knowledge";
+  const showNudge = !!rank && (matchScore === 0 || knowledgeScore === 0 ||
+    Math.min(matchScore, knowledgeScore) < Math.max(matchScore, knowledgeScore) * 0.33);
 
   // Recently played with: other users who were in my last 20 rooms
   const myRecentRoomIds: string[] = Array.from(new Set(
@@ -211,37 +205,47 @@ export default async function ProfilePage() {
 
       <div className="relative z-0 max-w-lg mx-auto px-5 pt-5 space-y-5">
 
-        {/* YourScore Rank hero — unified, two visible tracks */}
-        {rank && (
+        {/* YourScore leaderboard hero — position first, one points currency */}
+        {rank && overallRank !== null && (
           <div className="rounded-2xl px-5 py-4"
-            style={{ background: "linear-gradient(135deg, rgba(167,139,250,0.1), rgba(0,255,135,0.05))", border: `1px solid ${tierColor(tier)}33` }}>
+            style={{ background: "linear-gradient(135deg, rgba(167,139,250,0.1), rgba(0,255,135,0.05))", border: `1px solid ${positionColor(overallRank)}33` }}>
             <div className="flex items-end justify-between">
               <div>
-                <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-1.5">YourScore Rank</p>
-                <p className="font-display text-4xl leading-none" style={{ color: tierColor(tier) }}>{tier ?? "Unranked"}</p>
+                <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-1.5">YourScore leaderboard</p>
+                <p className="font-display text-5xl leading-none" style={{ color: positionColor(overallRank) === "#8888aa" ? "#ffffff" : positionColor(overallRank) }}>
+                  #{overallRank.toLocaleString()}
+                </p>
                 <p className="font-body text-xs text-text-muted mt-1.5">
-                  {overallRank !== null ? `#${overallRank} overall` : "Play to get ranked"}
-                  {totalScore > 0 ? ` · ${totalScore.toLocaleString()} pts` : ""}
+                  {overallScore.toLocaleString()} pts{badge ? ` · ${badge.emoji} ${badge.label}` : ""}
                 </p>
               </div>
-              <ShareStatsButton rank={overallRank ?? 0} score={totalScore} accuracy={accuracy} />
+              <ShareStatsButton rank={overallRank} score={overallScore} accuracy={accuracy} />
             </div>
 
-            {/* the two tracks that feed the rank */}
+            {/* the two point sources — same currency, they simply add up */}
             <div className="grid grid-cols-2 gap-2.5 mt-4">
               <div className="rounded-xl px-3 py-2.5" style={{ background: "rgba(255,184,0,0.06)", border: "1px solid rgba(255,184,0,0.15)" }}>
                 <p className="font-body text-[10px] uppercase tracking-widest" style={{ color: "#ffb800" }}>🧠 Knowledge</p>
                 <p className="font-display text-2xl text-white leading-none mt-1">{knowledgeScore > 0 ? knowledgeScore.toLocaleString() : "—"}</p>
-                <p className="font-body text-[10px] text-text-muted mt-1">quizzes + solo · better than {Math.round(knowledgePct * 100)}%</p>
+                <p className="font-body text-[10px] text-text-muted mt-1">pts from quizzes + solo</p>
               </div>
               <Link href="/38-0/history" className="block rounded-xl px-3 py-2.5 transition-opacity hover:opacity-80" style={{ background: "rgba(0,255,135,0.06)", border: "1px solid rgba(0,255,135,0.15)" }}>
                 <p className="font-body text-[10px] uppercase tracking-widest" style={{ color: "#00ff87" }}>⚽ Match</p>
-                <p className="font-display text-2xl text-white leading-none mt-1">
-                  {draftRecord ? <>{draftRecord.w}<span className="text-base" style={{ color: "#555577" }}>-{draftRecord.d}-{draftRecord.l}</span></> : "—"}
+                <p className="font-display text-2xl text-white leading-none mt-1">{matchScore > 0 ? matchScore.toLocaleString() : "—"}</p>
+                <p className="font-body text-[10px] text-text-muted mt-1">
+                  {draftRecord ? `pts from ${draftRecord.w}W ${draftRecord.d}D · win = 1,500` : "pts from 38-0 · win = 1,500"}
                 </p>
-                <p className="font-body text-[10px] text-text-muted mt-1">38-0 W-D-L · better than {Math.round(matchPct * 100)}%</p>
               </Link>
             </div>
+
+            {/* The chase — gap to the player directly above */}
+            <p className="font-body text-[11px] mt-3" style={{ color: "#8888aa" }}>
+              {overallRank === 1
+                ? "👑 Top of the table — every game keeps you there"
+                : aheadGap !== null
+                  ? <>⚔️ {aheadGap.toLocaleString()} pts behind <span className="text-white font-semibold">{aheadName ?? "the player above"}</span> (#{(overallRank - 1).toLocaleString()})</>
+                  : "Every game adds points — keep climbing"}
+            </p>
           </div>
         )}
 

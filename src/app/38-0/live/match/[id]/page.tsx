@@ -21,22 +21,13 @@ import { MatchPitch } from "@/components/draft/MatchPitch";
 import { WATCH_CONFIG } from "@/lib/draft/playback";
 import { loadTeam, saveTeam, clearTeam } from "@/lib/draft/local";
 import { AddFriendCard } from "@/components/social/AddFriendCard";
+import { RankRewardCard } from "@/components/rank/RankRewardCard";
+import { positionColor } from "@/lib/rank";
 import { trackGamePlay, trackGameComplete } from "@/lib/analytics/trackGame";
 import { asLeague, type Formation, type League, type PlacedPlayer, type PlayerSeason } from "@/lib/draft/types";
 import type { DraftLiveMatchRow } from "@/types/draft-db";
 
 const BG = "#0a0a0f";
-
-function tierColor(tier: string | null): string {
-  switch (tier) {
-    case "Elite": return "#00ff87";
-    case "Diamond": return "#a78bfa";
-    case "Platinum": return "#67e8f9";
-    case "Gold": return "#ffd700";
-    case "Silver": return "#c0c0c0";
-    default: return "#b08d57";
-  }
-}
 
 export default function LiveMatchScreen() {
   const { id } = useParams<{ id: string }>();
@@ -104,18 +95,18 @@ export default function LiveMatchScreen() {
     };
   }, [m?.is_bot, m?.p1_ready, m?.phase, m?.p2_ready]);
 
-  // Opponent's YourScore Rank tier (real opponents only; read-only, never blocks the match).
+  // Opponent's YourScore leaderboard position (real opponents only; read-only, never blocks the match).
   const oppId = m && side && !m.is_bot ? (side === "p1" ? m.p2_id : m.p1_id) : null;
-  const [oppTier, setOppTier] = useState<string | null>(null);
+  const [oppPos, setOppPos] = useState<number | null>(null);
   useEffect(() => {
-    setOppTier(null);
+    setOppPos(null);
     if (!oppId || !process.env.NEXT_PUBLIC_SUPABASE_URL) return;
     let cancelled = false;
     import("@/lib/supabase/client").then(async ({ createClient }) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const sb = createClient() as any;
       const { data } = await sb.rpc("get_yourscore_rank", { p_user_id: oppId });
-      if (!cancelled) setOppTier(data?.[0]?.tier ?? null);
+      if (!cancelled) setOppPos(data?.[0]?.overall_rank ?? null);
     });
     return () => { cancelled = true; };
   }, [oppId]);
@@ -130,7 +121,7 @@ export default function LiveMatchScreen() {
     <div className="min-h-[100dvh] pb-32" style={{ background: BG, color: "#e8e8f0" }}>
       <div className="max-w-lg mx-auto px-4 pt-8">
         {/* Scoreline header */}
-        <Header view={view} phase={m.phase} secondsLeft={secondsLeft} opponentOnline={opponentOnline} oppTier={oppTier} />
+        <Header view={view} phase={m.phase} secondsLeft={secondsLeft} opponentOnline={opponentOnline} oppPos={oppPos} />
 
         {/* What to do now + the rule — fills the space under the scoreline */}
         <Guide phase={m.phase} view={view} />
@@ -302,7 +293,7 @@ type View = {
   myGoals: number; oppGoals: number;
 };
 
-function Header({ view, phase, secondsLeft, opponentOnline, oppTier }: { view: View; phase: string; secondsLeft: number | null; opponentOnline: boolean; oppTier?: string | null }) {
+function Header({ view, phase, secondsLeft, opponentOnline, oppPos }: { view: View; phase: string; secondsLeft: number | null; opponentOnline: boolean; oppPos?: number | null }) {
   // While a half is playing the server already holds the final half score, so the
   // header must NOT show it — that would spoil the live playback. The running score
   // lives in <MatchPitch>; half-time/result legitimately show the score.
@@ -322,18 +313,18 @@ function Header({ view, phase, secondsLeft, opponentOnline, oppTier }: { view: V
             ? <div className="font-display" style={{ fontSize: 38, fontWeight: 800 }}>{view.myGoals} <span style={{ color: "#555" }}>–</span> {view.oppGoals}</div>
             : <div style={{ color: "#555", fontSize: 22 }}>vs</div>}
         </div>
-        <Team name={view.oppName} str={view.oppStr} online={opponentOnline} alignRight tier={oppTier} />
+        <Team name={view.oppName} str={view.oppStr} online={opponentOnline} alignRight pos={oppPos} />
       </div>
     </div>
   );
 }
 
-function Team({ name, str, you, online, alignRight, tier }: { name: string; str: number; you?: boolean; online?: boolean; alignRight?: boolean; tier?: string | null }) {
+function Team({ name, str, you, online, alignRight, pos }: { name: string; str: number; you?: boolean; online?: boolean; alignRight?: boolean; pos?: number | null }) {
   return (
     <div className={alignRight ? "text-right" : ""} style={{ maxWidth: 130 }}>
       <div className="font-semibold truncate" style={{ color: you ? "#00ff87" : "#e8e8f0" }}>{name}</div>
       <div className="text-xs" style={{ color: "#9a9ab0" }}>STR {str.toFixed(1)}{online != null && <span style={{ color: online ? "#00ff87" : "#555" }}> ●</span>}</div>
-      {tier && <div className="text-[10px] font-semibold mt-0.5" style={{ color: tierColor(tier) }}>🏅 {tier}</div>}
+      {pos != null && <div className="text-[10px] font-semibold mt-0.5" style={{ color: positionColor(pos) }}>🏅 #{pos.toLocaleString()}</div>}
     </div>
   );
 }
@@ -490,6 +481,11 @@ function ResultPanel({ view, sim, m }: { view: View; sim: MatchSim | null; m: Dr
             </div>
           </div>
         )}
+
+        {/* Post-game reward moment — points earned + position on the leaderboard */}
+        <div className="mt-4">
+          <RankRewardCard />
+        </div>
 
         {/* Friend suggestion — real opponent only */}
         {!m.is_bot && oppId && (

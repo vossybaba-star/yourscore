@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { getTeamBadgeUrl } from "@/lib/teamImages";
 import { getCompetitionBadgeUrl } from "@/lib/competitionImages";
 import { AnswerButtons } from "@/components/game/AnswerButtons";
+import { RankRewardCard } from "@/components/rank/RankRewardCard";
 import { useGameLoop } from "@/lib/useGameLoop";
 import { trackGamePlay, trackGameComplete } from "@/lib/analytics/trackGame";
 import {
@@ -1105,6 +1106,10 @@ export default function ChallengePage() {
               ))}
             </div>
           </div>
+
+          {/* Post-game reward moment — mounts once the attempt is saved so the
+              rank RPC reads post-game state (practice runs show position only) */}
+          {(saved || priorAttempt) && <RankRewardCard />}
 
           {/* Leaderboard */}
           <PackLeaderboard entries={leaderboard} userId={userId} accent={accent} loading={leaderLoading} />
