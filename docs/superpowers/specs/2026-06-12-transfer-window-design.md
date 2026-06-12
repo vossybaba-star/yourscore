@@ -7,8 +7,8 @@
 ## 1. Feature summary
 
 Every simulated season pauses at Matchweek 19 with a **Half-Term Report**: your real
-record so far, your players' stats, and a transfer budget earned from first-half
-performance. You may sign **up to 3** players from a spun market shortlist of 12, each
+record so far, your players' stats, and your January transfer budget — **the same flat
+budget for every manager**. You may sign **up to 3** players from a spun market shortlist of 12, each
 replacing a player in your XI, then the back 19 fixtures play out with the new team.
 One window per season, no reopening — like real January. Window seasons count on the
 verified Leaderboard ✓ with a 🔁 badge.
@@ -23,7 +23,8 @@ Working name: **"The January Window"** (fallback: "Transfer Window").
 2. **Half-Term Report** (new screen at MW19):
    - Record: W-D-L, points, GF/GA, position vs projection.
    - Player stats so far (top scorer / assister / clean sheets) — the deadwood-spotting data.
-   - Budget reveal: "Your first half earned you a £X budget."
+   - Budget line: "You have £50m to spend this January." (Same for everyone; the
+     record/stats above inform *who* to swap, not *how much* you get.)
    - Buttons: **OPEN THE WINDOW →** / **Play on, no changes**.
 3. **The Window** — existing `Pitch` with the XI + the market shortlist of 12. To sign:
    pick a market player, pick the teammate he replaces (same-line rule via existing
@@ -39,9 +40,10 @@ budget points (accepted leak: cost 0 implies "not an upgrade").
 
 ## 3. Economy (existing metrics only — no new currency)
 
-- **Budget** = `BUDGET_BASE + ⌊half1Points / BUDGET_DIVISOR⌋` rating points, with
-  `BUDGET_BASE = 4`, `BUDGET_DIVISOR = 5`. Range 4 (0-pt half) → 15 (perfect 57-pt half).
-  Both constants are **tuning dials** — the calibration gate (§6) turns them, not formFactor.
+- **Budget** = `WINDOW_BUDGET` rating points, **flat for everyone** regardless of
+  first-half performance (founder decision — one fair window, skill is in the spending).
+  Starting value `WINDOW_BUDGET = 10` (£50m in the skin). It is the **tuning dial** —
+  the calibration gate (§6) turns it, not formFactor.
 - **Cost of a signing** = `max(0, incomingOverall − outgoingOverall)`. Sidegrades and
   downgrades are free. Sum of costs ≤ budget. UI presents cost as an **upgrade fee**
   (it varies with who you sell), themed in £m (×5 skin over rating points: "£75m budget").
@@ -64,7 +66,7 @@ budget points (accepted leak: cost 0 implies "not an upgrade").
   19 results shown before the window are exactly the 19 that were simulated, only their
   matchweek order is dramatic.
 - **New shared-lib pure functions** (client and server run identical code):
-  - `transferBudget(half1Points): number`
+  - `WINDOW_BUDGET` constant (no `transferBudget(points)` function — budget is flat)
   - `generateMarket(squad, league, half1Record, seed): PlayerSeason[12]`
   - `applyTransfers(squad, transfers): PlacedPlayer[]` — throws on wrong line
     (`canPlay`), off-market signing, duplicate identity, or overspend.
@@ -82,8 +84,8 @@ budget points (accepted leak: cost 0 implies "not an upgrade").
 
 - POST body gains optional `transfers: [{ out_slot, in_player_season_id }]`.
 - Server chain (client result never read, as today): validate XI₁ → sim half 1 →
-  compute budget → **regenerate the market** → verify each signing is on it and total
-  cost ≤ budget → `applyTransfers` → validate + score XI₂ → sim half 2 → store.
+  **regenerate the market** → verify each signing is on it and total cost ≤
+  `WINDOW_BUDGET` → `applyTransfers` → validate + score XI₂ → sim half 2 → store.
 - Record `seed` = `sortedXI₁ids ‖ sortedInIds` — same squad with different windows is a
   distinct record; identical replay is a no-op (`onConflict (user_id, seed)`, unchanged).
 - **Migration (next after 31):** `draft_season_records` + `window_used boolean not null
@@ -100,7 +102,7 @@ Extend `season.test.ts` to assert under the v2 engine:
 - (a) random-team Invincible rate ≤ ~0.5% (today ~0.3%);
 - (b) elite-XI (≈89.5+ Strength) no-window rate stays within the 10–15% band;
 - (c) elite-XI **with greedy-optimal transfers** ≤ ~1.7× its no-window rate.
-If (c) fails, tune `BUDGET_BASE`/`BUDGET_DIVISOR` down. Exact thresholds re-confirmed
+If (c) fails, tune `WINDOW_BUDGET` down. Exact thresholds re-confirmed
 against the real saved-XI corpus during implementation (same method as the 06-12 pass).
 The all-pool market (no guaranteed upgrades) is expected to do much of the damping.
 
@@ -119,18 +121,18 @@ The all-pool market (no guaranteed upgrades) is expected to do much of the dampi
 
 | Risk | Mitigation |
 |---|---|
-| 38-0 gets easier; June-12 calibration drifts | §6 calibration gate; budget dials; all-pool market damping |
+| 38-0 gets easier; June-12 calibration drifts | §6 calibration gate; `WINDOW_BUDGET` dial; all-pool market damping |
 | Brute-force surface ×10⁴ per squad | Accepted v1; submission-cap lever documented (§5) |
 | Funnel friction on the viral loop (pause in every season, incl. first) | Founder decision: no first-season skip; instrumented (§7) to measure |
 | Drama arc weaker (honest first half) | Dramatize-within-half keeps run-in tension |
-| Weak teams' window mostly cosmetic | Accepted — base budget keeps it alive, feature targets 38-0 chasers |
+| Flat budget hands elite teams the same power as strugglers | Accepted — fairness is the point; §6(c) guards the Invincible rate |
 | Client/server lockstep (5-step verify chain) | All steps are shared-lib pure functions; `engine_version` on records |
 | Delta pricing unintuitive | UI language: "upgrade fee", £m skin |
 | La Liga pool depth for market draw | Check at implementation; quotas degrade gracefully if a line is thin |
 
 ## 9. Testing
 
-- **Unit:** budget bounds (4→15); market determinism, composition (4/4/4, ≥1 GK),
+- **Unit:** market determinism, composition (1 gk / 3 def / 4 mid / 4 att),
   all-pool reachability, de-dupe; `applyTransfers` rejections (wrong line, off-market,
   duplicate, overspend).
 - **Sim:** determinism with/without transfers; per-half stats sum to season totals;
@@ -144,8 +146,9 @@ The all-pool market (no guaranteed upgrades) is expected to do much of the dampi
 
 1. Every non-WC season pauses at MW19 with the Half-Term Report; "Play on" reaches the
    final scorecard in one tap.
-2. Up to 3 signings, market of 12 drawn from the whole pool, budget 4–15 from
-   `4 + ⌊pts/5⌋`, cost = positive overall delta, same-line swaps only.
+2. Up to 3 signings, market of 12 drawn from the whole pool, flat `WINDOW_BUDGET`
+   (start: 10 / £50m) for every manager, cost = positive overall delta, same-line
+   swaps only.
 3. Same XI + same signings reproduce the identical season; server verifies window
    seasons end-to-end and never trusts the client result.
 4. Window seasons appear on Leaderboard ✓ with 🔁; pure seasons unmarked.
