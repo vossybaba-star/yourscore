@@ -11,10 +11,10 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Pitch } from "@/components/draft/Pitch";
+import { EditablePitch } from "@/components/draft/EditablePitch";
 import { spin, allBuckets, type Spin } from "@/lib/draft/pool";
 import {
-  loadTeam, saveTeam, openSlots, isComplete, usedPlayerIds, usedPlayerNames, placePlayer,
+  loadTeam, saveTeam, openSlots, isComplete, usedPlayerIds, usedPlayerNames, placePlayer, movePlayer,
   type LocalTeam,
 } from "@/lib/draft/local";
 import { slotsFor } from "@/lib/draft/formations";
@@ -88,6 +88,13 @@ export default function DraftPlay() {
     if (isComplete(next)) setTimeout(() => router.push("/38-0/team"), 400);
   }
 
+  function moveTo(fromSlotId: string, toSlotId: string) {
+    if (!team) return;
+    const next = movePlayer(team, fromSlotId, toSlotId);
+    saveTeam(next);
+    setTeam(next);
+  }
+
   if (!team) {
     return <div className="min-h-[100dvh] grid place-items-center" style={{ background: "#0a0a0f", color: "#8888aa" }}>Loading…</div>;
   }
@@ -131,7 +138,7 @@ export default function DraftPlay() {
           <span className="font-body" style={{ fontSize: 12, color: "#8888aa" }}>{team.squad.length}/11</span>
         </div>
 
-        <Pitch formation={team.formation} squad={team.squad} hideOverall={expert} compact />
+        <EditablePitch formation={team.formation} squad={team.squad} hideOverall={expert} compact onMove={moveTo} />
 
         {/* live line ratings (hidden in expert) */}
         {!expert && team.squad.length > 0 && (

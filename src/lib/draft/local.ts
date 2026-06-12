@@ -11,6 +11,7 @@ import { FORMATIONS, asLeague, type Formation, type League, type PlacedPlayer, t
 import { slotsFor } from "./formations";
 import { fitMultiplier, canPlay, posCategory, scoreTeam, projectSeason, spineWeight, playerIdentity, type PosCategory } from "./score";
 import { getPlayer } from "./pool";
+import { movableSlots as rearrangeSlots, rearrange as rearrangeSquad } from "./rearrange";
 import type { SeasonResult } from "./season";
 import type { MatchReport, MatchSim } from "./live-score";
 
@@ -146,6 +147,22 @@ export function placePlayer(team: LocalTeam, player: PlayerSeason, slot: Slot): 
 /** Remove a player from a slot (used by swap). */
 export function clearSlot(team: LocalTeam, slotId: string): LocalTeam {
   return recompute({ ...team, squad: team.squad.filter((p) => p.slot !== slotId) });
+}
+
+// ── Position switching (rearrange a built XI) ─────────────────────────────────
+
+/** Slots a player already on the pitch can move into (same-line, excluding their own
+ *  slot; filled ⇒ a swap). Empty array if `slotId` holds no player. */
+export function movableSlots(team: LocalTeam, slotId: string): Slot[] {
+  return rearrangeSlots(team.formation, team.squad, slotId);
+}
+
+/** Move the player in `fromSlotId` to `toSlotId` (relocate, or swap if filled),
+ *  non-destructively, and recompute Strength. No-op (returns the team unchanged) if
+ *  the move isn't a same-line legal one. See `rearrange.ts` for the rules. */
+export function movePlayer(team: LocalTeam, fromSlotId: string, toSlotId: string): LocalTeam {
+  const squad = rearrangeSquad(team.formation, team.squad, fromSlotId, toSlotId);
+  return squad ? recompute({ ...team, squad }) : team;
 }
 
 // ── Formation switching ──────────────────────────────────────────────────────

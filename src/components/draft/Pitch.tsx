@@ -21,6 +21,8 @@ export function Pitch({
   formation,
   squad,
   highlightSlot,
+  eligibleSlots,
+  selectedSlot,
   onSlotClick,
   compact,
   hideOverall,
@@ -28,6 +30,10 @@ export function Pitch({
   formation: Formation;
   squad: PlacedPlayer[];
   highlightSlot?: string | null;
+  /** Slots to flag as valid move targets while rearranging (green ring). */
+  eligibleSlots?: Set<string>;
+  /** The picked-up player's slot while rearranging (lifted, pulsing styling). */
+  selectedSlot?: string | null;
   onSlotClick?: (slotId: string) => void;
   compact?: boolean;
   /** Expert mode: show the player's position in the token instead of the rating. */
@@ -54,20 +60,29 @@ export function Pitch({
         <div className="absolute" style={{ left: "25%", right: "25%", bottom: 0, height: "12%", border: "1px solid rgba(255,255,255,0.18)", borderBottom: "none" }} />
       </div>
 
+      {/* While a player is picked up, fade the slots that aren't valid targets so the
+          eligible (green-glowing) ones read unambiguously against natural-fit greens. */}
       {slots.map((s) => {
         const p = bySlot.get(s.id);
         const highlighted = highlightSlot === s.id;
+        const eligible = eligibleSlots?.has(s.id) ?? false;   // a valid move target
+        const isSelected = selectedSlot === s.id;             // the picked-up player
+        const inMoveMode = selectedSlot != null;
+        const dimmed = inMoveMode && !eligible && !isSelected;
         return (
           <button
             key={s.id}
             onClick={onSlotClick ? () => onSlotClick(s.id) : undefined}
             disabled={!onSlotClick}
-            className="absolute flex flex-col items-center -translate-x-1/2 -translate-y-1/2 transition-transform active:scale-95"
+            className={`absolute flex flex-col items-center -translate-x-1/2 -translate-y-1/2 transition-all active:scale-95${eligible ? " animate-pulse" : ""}`}
             style={{
               left: `${s.x}%`,
               top: `${100 - s.y}%`,
               width: compact ? 48 : 60,
               cursor: onSlotClick ? "pointer" : "default",
+              transform: isSelected ? "translate(-50%,-50%) scale(1.12)" : undefined,
+              zIndex: isSelected ? 2 : undefined,
+              opacity: dimmed ? 0.3 : 1,
             }}
           >
             {p ? (
@@ -78,10 +93,16 @@ export function Pitch({
                     width: compact ? 28 : 36,
                     height: compact ? 28 : 36,
                     fontSize: hideOverall ? (compact ? 10 : 12) : (compact ? 13 : 17),
-                    background: "rgba(10,10,15,0.85)",
-                    border: `2px solid ${fitColor(p)}`,
-                    color: fitColor(p),
-                    boxShadow: highlighted ? `0 0 14px ${fitColor(p)}` : "none",
+                    background: isSelected ? "rgba(0,255,135,0.18)" : "rgba(10,10,15,0.85)",
+                    border: `2px solid ${eligible ? "#00ff87" : isSelected ? "#fff" : fitColor(p)}`,
+                    color: isSelected ? "#fff" : fitColor(p),
+                    boxShadow: isSelected
+                      ? "0 0 16px rgba(255,255,255,0.6)"
+                      : eligible
+                      ? "0 0 14px rgba(0,255,135,0.7)"
+                      : highlighted
+                      ? `0 0 14px ${fitColor(p)}`
+                      : "none",
                   }}
                 >
                   {hideOverall ? p.position : p.overall}
@@ -109,15 +130,16 @@ export function Pitch({
                     width: compact ? 28 : 36,
                     height: compact ? 28 : 36,
                     fontSize: compact ? 10 : 12,
-                    background: highlighted ? "rgba(0,255,135,0.18)" : "rgba(255,255,255,0.06)",
-                    border: `2px dashed ${highlighted ? "#00ff87" : "rgba(255,255,255,0.3)"}`,
-                    color: highlighted ? "#00ff87" : "#8888aa",
+                    background: highlighted || eligible ? "rgba(0,255,135,0.18)" : "rgba(255,255,255,0.06)",
+                    border: `2px dashed ${highlighted || eligible ? "#00ff87" : "rgba(255,255,255,0.3)"}`,
+                    color: highlighted || eligible ? "#00ff87" : "#8888aa",
+                    boxShadow: eligible ? "0 0 14px rgba(0,255,135,0.7)" : "none",
                   }}
                 >
                   {s.label}
                 </div>
-                <div className="mt-1 font-body" style={{ fontSize: compact ? 8 : 9, color: "#8888aa" }}>
-                  empty
+                <div className="mt-1 font-body" style={{ fontSize: compact ? 8 : 9, color: eligible ? "#00ff87" : "#8888aa" }}>
+                  {eligible ? "move here" : "empty"}
                 </div>
               </>
             )}

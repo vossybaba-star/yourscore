@@ -12,12 +12,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Pitch } from "@/components/draft/Pitch";
+import { EditablePitch } from "@/components/draft/EditablePitch";
 import { useUser } from "@/hooks/useUser";
 import { pickableNations, spinForNation, spinWorld, type PickableNation } from "@/lib/draft/pool";
 import { WORLD_TEAM_NAME, type RunMode } from "@/lib/draft/wc";
 import {
-  emptyTeam, openSlots, isComplete, usedPlayerIds, usedPlayerNames, placePlayer, hydrateSavedTeam, type LocalTeam,
+  emptyTeam, openSlots, isComplete, usedPlayerIds, usedPlayerNames, placePlayer, movePlayer, hydrateSavedTeam, type LocalTeam,
 } from "@/lib/draft/local";
 import { slotsFor } from "@/lib/draft/formations";
 import { canPlay, lineRatings, posCategory, CATEGORY_COLOR } from "@/lib/draft/score";
@@ -98,6 +98,11 @@ export default function WorldCupEntry() {
     if (!team || !selected) return;
     const next = placePlayer(team, selected, slot);
     setTeam(next); setSlate(null); setSelected(null);
+  }
+
+  function moveTo(fromSlotId: string, toSlotId: string) {
+    if (!team) return;
+    setTeam(movePlayer(team, fromSlotId, toSlotId));
   }
 
   const { user, loading: authLoading } = useUser();
@@ -300,7 +305,7 @@ export default function WorldCupEntry() {
           <span className="font-body" style={{ fontSize: 12, color: "#8888aa" }}>{team.squad.length}/11</span>
         </div>
 
-        <Pitch formation={team.formation} squad={team.squad} compact />
+        <EditablePitch formation={team.formation} squad={team.squad} compact onMove={moveTo} />
 
         {team.squad.length > 0 && (
           <div className="grid grid-cols-4 gap-2 mt-3">

@@ -11,6 +11,8 @@ npx tsc \
   src/lib/draft/formations.ts \
   src/lib/draft/score.ts \
   src/lib/draft/score.test.ts \
+  src/lib/draft/rearrange.ts \
+  src/lib/draft/rearrange.test.ts \
   src/lib/draft/match.ts \
   src/lib/draft/match.test.ts \
   src/lib/draft/season.ts \

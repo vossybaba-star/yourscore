@@ -10,11 +10,11 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Pitch } from "@/components/draft/Pitch";
+import { EditablePitch } from "@/components/draft/EditablePitch";
 import { BottomNav } from "@/components/ui/BottomNav";
 import {
   loadTeam, saveTeam, isComplete, recordWin, recordLoss, recordDraw, saveLastMatch,
-  compatibleFormations, reslot, seasonSeed, loadLastSeason, type LocalTeam,
+  compatibleFormations, reslot, movePlayer, seasonSeed, loadLastSeason, type LocalTeam,
 } from "@/lib/draft/local";
 import { asLeague } from "@/lib/draft/types";
 import type { Formation } from "@/lib/draft/types";
@@ -135,6 +135,13 @@ export default function TeamScreen() {
     saveTeam(next);
     // Watch the match play out, then hand off to the result screen.
     setTimeout(() => router.push("/38-0/match/watch"), 300);
+  }
+
+  function moveTo(fromSlotId: string, toSlotId: string) {
+    if (!team) return;
+    const next = movePlayer(team, fromSlotId, toSlotId);
+    saveTeam(next);
+    setTeam(next);
   }
 
   // Ranked: save the XI to the cloud (server recomputes Strength), matchmake against
@@ -422,7 +429,7 @@ export default function TeamScreen() {
           );
         })()}
 
-        <Pitch formation={team.formation} squad={team.squad} compact />
+        <EditablePitch formation={team.formation} squad={team.squad} compact onMove={moveTo} />
 
         {/* Pre-season odds — sits here until a season is simulated, then moves to the bottom */}
         {!hasLastSeason && <div className="mt-5">{oddsCard}</div>}
