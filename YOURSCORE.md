@@ -6,8 +6,9 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed with the founder:** 2026-06-10 (full reconciliation against `src/` +
-> `supabase/migrations/` through migration 25, incl. the 38-0 game).
+> **Confirmed with the founder:** 2026-06-12 (full reconciliation against `src/` +
+> `supabase/migrations/` through migration 25, incl. the 38-0 game; interactive
+> penalties added 2026-06-12 — see Match types).
 > **Maintenance:** update this file in the same session you change the product, bump the
 > date, and run `graphify update .` after code changes.
 
@@ -142,7 +143,8 @@ Match loop on `localStorage`; sign-in unlocks cloud save / ranked / social.
 | Type | Status |
 |---|---|
 | **Quick Match** (guest/anon, local) | ✅ Live |
-| **Live H2H multiplayer** (simultaneous two-half match, watch-it-play-out, halftime swaps, opt-in penalties; friend code or random queue w/ disguised bot fallback) | ✅ Live |
+| **Live H2H multiplayer** (simultaneous two-half match, watch-it-play-out, halftime swaps; friend code or random queue w/ disguised bot fallback) | ✅ Live |
+| **Interactive penalty shootout** — every drawn *played* match goes to pens and **the user takes the kicks** (tap one of six zones to shoot; dive as keeper vs CPU in solo modes; in live H2H both players shoot simultaneously vs a seeded AI keeper, kicks streaming live). Pens win = full win (1,500 pts / streak survives); the old live opt-in ("both must agree") is retired. Group games in WC Run and the simulated season keep draws (league formats). Outcomes resolve server-side from a peppered seed in ranked modes; abandoning a shootout auto-completes it seeded — quitting never dodges a loss. | 🔧 Built 2026-06-12, awaiting migration 35 + deploy |
 | **Custom leagues + friend challenges** (create/join 38-0 leagues by code; challenge a specific friend via share code; shareable result graphics) | ✅ Live |
 | **World Cup Run** (solo WC2026 campaign — pick nations) | ✅ Live |
 | **Ranked + global leaderboards** (Daily/All-time, points ladder W3/D1) | 🔧 Being built now |
