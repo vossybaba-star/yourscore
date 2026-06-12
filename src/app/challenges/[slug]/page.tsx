@@ -8,6 +8,7 @@ import { getTeamBadgeUrl } from "@/lib/teamImages";
 import { getCompetitionBadgeUrl } from "@/lib/competitionImages";
 import { AnswerButtons } from "@/components/game/AnswerButtons";
 import { RankRewardCard } from "@/components/rank/RankRewardCard";
+import { StreakWindowTimer } from "@/components/quiz/StreakWindowTimer";
 import { useGameLoop } from "@/lib/useGameLoop";
 import { trackGamePlay, trackGameComplete } from "@/lib/analytics/trackGame";
 import {
@@ -35,7 +36,7 @@ interface QuizPack {
   parameter: string;
   question_count: number;
   description?: string | null;
-  metadata?: { icon?: string; cover_image?: string; series?: string } | null;
+  metadata?: { icon?: string; cover_image?: string; series?: string; daily?: boolean; date?: string } | null;
 }
 
 interface RawQuestion {
@@ -765,6 +766,14 @@ export default function ChallengePage() {
                 {questions.length} questions
               </span>
             </div>
+
+            {/* Daily streak window countdown — only shows on a daily series quiz
+                while the on-time (24h) window is open. */}
+            {pack.metadata?.daily && pack.metadata?.date && (
+              <div className="mt-3">
+                <StreakWindowTimer date={pack.metadata.date} accent={accent} />
+              </div>
+            )}
           </div>
         </div>
 
