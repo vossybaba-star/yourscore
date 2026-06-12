@@ -111,7 +111,7 @@ budget points (accepted leak: cost 0 implies "not an upgrade").
   season with an unreplaced injured player is rejected.
 - Record `seed` = `sortedXI₁ids ‖ sortedInIds` — same squad with different windows is a
   distinct record; identical replay is a no-op (`onConflict (user_id, seed)`, unchanged).
-- **Migration (next after 31):** `draft_season_records` + `window_used boolean not null
+- **Migration (35):** `draft_season_records` + `window_used boolean not null
   default false`, `transfers jsonb`, `engine_version int not null default 1` (existing
   rows backfill to 1; new writes set 2). Board API returns `window_used`; rows render a
   🔁 badge. Pure 38-0s keep undiluted bragging rights.
