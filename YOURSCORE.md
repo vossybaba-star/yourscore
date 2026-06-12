@@ -6,7 +6,7 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed with the founder:** 2026-06-11 (full reconciliation against `src/` +
+> **Confirmed with the founder:** 2026-06-12 (full reconciliation against `src/` +
 > `supabase/migrations/` through migration 25, incl. the 38-0 game).
 > **Maintenance:** update this file in the same session you change the product, bump the
 > date, and run `graphify update .` after code changes.
@@ -146,6 +146,7 @@ Match loop on `localStorage`; sign-in unlocks cloud save / ranked / social.
 | **Custom leagues + friend challenges** (create/join 38-0 leagues by code; challenge a specific friend via share code; shareable result graphics) | ✅ Live |
 | **World Cup Run** (solo WC2026 campaign — pick nations) | ✅ Live |
 | **Ranked + global leaderboards** (Daily/All-time, points ladder W3/D1) | 🔧 Being built now |
+| **Verified "Leaderboard ✓" tab** (closest-to-38-0 season records per competition + closest-to-8-0 WC runs; server re-simulates every submitted XI — client never trusted; personal bests card on /profile) | ✅ Live 2026-06-12 (boards activate with migration 29) |
 
 **Competitions:** **Premier League** is live. **La Liga** (2nd competition) is now
 **live** too — released 2026-06-11 (migration 26; club crests added). Pick a competition,
@@ -154,7 +155,11 @@ then draft your all-time XI from that league's ~20 years of players.
 **Data & engine (high level):** real **FIFA/SoFIFA ratings** across ~8 editions over ~20
 years (~4,900 player-seasons). `score.ts` → Strength; `match.ts` is the single engine for
 all scorelines (attack-line vs defence-line, Poisson on a seeded RNG); `live-score.ts`
-drives the live two-half match. Tuned so only a ~96+ XI reaches "38-0 Invincible".
+drives the live two-half match. **Season feel (2026-06-12):** strong XIs (>74 STR) play
+"on form" — wins land in the 28–37 near-miss zone and good seasons reveal as a long
+unbeaten streak that breaks late ("looked like 38-0"); Invincible itself stays elite-only
+(~94+ STR, a few % per season). **Impact subs:** halftime subs in Live H2H are 3×-weighted
+in second-half scorer/assist picks — the player you bring on visibly pays off, sometimes.
 
 ---
 
