@@ -19,7 +19,7 @@ import { LEAGUE_COUNTS, pickableNations } from "@/lib/draft/pool";
 import { trackGamePlay } from "@/lib/analytics/trackGame";
 import { useUser } from "@/hooks/useUser";
 
-type DraftTab = "pl" | "laliga" | "wc";
+type DraftTab = "pl" | "laliga" | "wc" | "board";
 
 // The two league draft tabs share all gameplay UI — only the competition, branding
 // and accent differ.
@@ -49,7 +49,7 @@ export default function DraftHome() {
     setExisting(loadTeam());
   }, []);
 
-  const cfg = tab === "wc" ? null : LEAGUE_TABS[tab];
+  const cfg = tab === "pl" || tab === "laliga" ? LEAGUE_TABS[tab] : null;
 
   function startNew() {
     if (!cfg) return;
@@ -87,18 +87,19 @@ export default function DraftHome() {
           38<span style={{ color: "#00ff87" }}>-0</span>
         </h1>
 
-        {/* ── Main tab switcher ── */}
-        <div className="flex gap-1 p-1 rounded-2xl mb-4"
-          style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+        {/* ── Main tab switcher (scrolls if 4 tabs overflow a narrow screen) ── */}
+        <div className="flex gap-1 p-1 rounded-2xl mb-4 overflow-x-auto"
+          style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", scrollbarWidth: "none" }}>
           {([
             { key: "pl" as DraftTab, label: "⚽ Premier League", on: "#00ff87", onText: "#062013" },
             { key: "laliga" as DraftTab, label: "🇪🇸 La Liga", on: "#ff5b2e", onText: "#1c0702" },
             { key: "wc" as DraftTab, label: "🏆 World Cup", on: "#ffb800", onText: "#0a0a0f" },
+            { key: "board" as DraftTab, label: "Leaderboard ✓", on: "#22d3ee", onText: "#06181c" },
           ]).map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className="flex-1 py-2 rounded-xl font-body text-xs font-semibold transition-all"
+              className="flex-1 py-2 px-2.5 rounded-xl font-body text-xs font-semibold transition-all whitespace-nowrap"
               style={tab === t.key
                 ? { background: t.on, color: t.onText }
                 : { background: "transparent", color: "#8888aa" }}>
@@ -111,9 +112,9 @@ export default function DraftHome() {
         {cfg && (
           <div className="flex gap-2 mb-6">
             {([
-              { href: `/38-0/live${q}`,        label: "⚡ Live H2H",    color: cfg.accent },
-              { href: `/38-0/teams${q}`,       label: "📁 My Teams",    color: "#a78bfa" },
-              { href: `/38-0/leaderboard${q}`, label: "🏆 Leaderboard", color: "#ffb800" },
+              { href: `/38-0/live${q}`,        label: "⚡ Live H2H",   color: cfg.accent },
+              { href: `/38-0/teams${q}`,       label: "📁 My Teams",   color: "#a78bfa" },
+              { href: `/38-0/leaderboard${q}`, label: "⚔️ H2H Ladder", color: "#ffb800" },
             ]).map(({ href, label, color }) => (
               <Link key={href} href={href}
                 className="flex-1 py-2.5 rounded-full text-center font-display tracking-wide transition-all active:scale-95"
@@ -127,7 +128,7 @@ export default function DraftHome() {
           <div className="flex gap-2 mb-6">
             {([
               { href: "/38-0/teams",       label: "📁 My Teams",   color: "#a78bfa" },
-              { href: "/38-0/leaderboard", label: "🏆 Leaderboard", color: "#ffb800" },
+              { href: "/38-0/leaderboard", label: "⚔️ H2H Ladder", color: "#ffb800" },
             ]).map(({ href, label, color }) => (
               <Link key={href} href={href}
                 className="flex-1 py-2.5 rounded-full text-center font-display tracking-wide transition-all active:scale-95"
@@ -328,6 +329,11 @@ export default function DraftHome() {
             </div>
           </>
         )}
+
+        {/* ══════════════════════════════════════════════════════════════════
+            LEADERBOARD TAB — verified season records, closest to 38-0 / 8-0
+        ══════════════════════════════════════════════════════════════════ */}
+        {tab === "board" && <VerifiedBoard signedIn={!!user} />}
       </div>
 
       {/* ── Sticky CTA — league draft tabs only ── */}
@@ -348,5 +354,161 @@ export default function DraftHome() {
 
       <BottomNav />
     </div>
+  );
+}
+
+// ─── Leaderboard tab ───────────────────────────────────────────────────────────
+// Verified season records: every row is a server re-simulation of the submitted
+// XI (see /api/draft/records), never a client-claimed number — hence the ✓.
+
+type SeasonBoardRow = {
+  user_id: string; display_name: string; wins: number; draws: number; losses: number;
+  points: number; league_pos: number; strength: number; invincible: boolean; created_at: string;
+};
+type WcBoardRow = {
+  user_id: string; display_name: string; nation: string; wins: number; games: number;
+  status: string; created_at: string;
+};
+type BoardData = { seasons: SeasonBoardRow[]; wc: WcBoardRow[]; mine: { season: SeasonBoardRow | null; wc: WcBoardRow | null } };
+
+const medal = (i: number): string => (i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}`);
+
+function VerifiedBoard({ signedIn }: { signedIn: boolean }) {
+  const [comp, setComp] = useState<League>("PL");
+  const [data, setData] = useState<BoardData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    fetch(`/api/draft/records?competition=${comp}`)
+      .then((r) => r.json())
+      .then((d: BoardData) => { if (!cancelled) { setData(d); setLoading(false); } })
+      .catch(() => { if (!cancelled) { setData({ seasons: [], wc: [], mine: { season: null, wc: null } }); setLoading(false); } });
+    return () => { cancelled = true; };
+  }, [comp]);
+
+  const seasons = data?.seasons ?? [];
+  const wc = data?.wc ?? [];
+  const mySeason = data?.mine.season ?? null;
+
+  return (
+    <>
+      <h2 className="font-display tracking-wide leading-none" style={{ fontSize: 30, color: "#fff" }}>
+        LEADERBOARD <span style={{ color: "#22d3ee" }}>✓</span>
+      </h2>
+      <p className="font-body mt-1 mb-5" style={{ color: "#cfcfe6", fontSize: 14 }}>
+        Closest to the perfect season. Every record is re-simulated on our servers — verified, no screenshots.
+      </p>
+
+      {/* Sign-in nudge — seasons only enter the board for signed-in managers */}
+      {!signedIn && (
+        <Link href="/auth/sign-in" className="block mb-5 rounded-2xl p-4 active:scale-[0.98] transition-transform"
+          style={{ background: "rgba(34,211,238,0.07)", border: "1px solid rgba(34,211,238,0.3)" }}>
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="font-display tracking-wide" style={{ fontSize: 20, color: "#fff" }}>CLAIM YOUR SPOT</div>
+              <div className="font-body" style={{ fontSize: 13, color: "#8888aa" }}>Sign in — every season you play enters the board automatically</div>
+            </div>
+            <div className="font-display" style={{ fontSize: 28, color: "#22d3ee" }}>→</div>
+          </div>
+        </Link>
+      )}
+
+      {/* Your best */}
+      {mySeason && (
+        <div className="mb-5 rounded-2xl p-4" style={{ background: "rgba(0,255,135,0.06)", border: "1px solid rgba(0,255,135,0.3)" }}>
+          <div className="font-body" style={{ fontSize: 11, color: "#00ff87", letterSpacing: 2 }}>YOUR BEST {comp === "PL" ? "PREMIER LEAGUE" : "LA LIGA"} SEASON</div>
+          <div className="flex items-baseline gap-3 mt-1">
+            <span className="font-display tracking-wide" style={{ fontSize: 34, color: "#fff" }}>{mySeason.wins}-{mySeason.draws}-{mySeason.losses}</span>
+            <span className="font-body" style={{ fontSize: 14, color: "#8888aa" }}>{mySeason.points} pts</span>
+            {mySeason.invincible && <span className="font-display" style={{ fontSize: 13, color: "#ffd700" }}>🏆 INVINCIBLE</span>}
+          </div>
+          {!mySeason.invincible && (
+            <div className="font-body mt-1" style={{ fontSize: 12, color: "#8888aa" }}>
+              {38 - mySeason.wins} {38 - mySeason.wins === 1 ? "result" : "results"} short of 38-0 — go again.
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Season board ── */}
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-display tracking-wide" style={{ fontSize: 20, color: "#fff" }}>CLOSEST TO 38-0</h3>
+        <div className="flex gap-1 p-0.5 rounded-xl" style={{ background: "rgba(255,255,255,0.05)" }}>
+          {(["PL", "LaLiga"] as League[]).map((c) => (
+            <button key={c} onClick={() => setComp(c)}
+              className="px-3 py-1.5 rounded-lg font-body text-xs font-semibold transition-all"
+              style={comp === c ? { background: c === "PL" ? "#00ff87" : "#ff5b2e", color: "#0a0a0f" } : { background: "transparent", color: "#8888aa" }}>
+              {c === "PL" ? "⚽ PL" : "🇪🇸 La Liga"}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-2xl overflow-hidden mb-7" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}>
+        {loading ? (
+          <div className="py-10 text-center font-body" style={{ fontSize: 13, color: "#8888aa" }}>Loading the board…</div>
+        ) : seasons.length === 0 ? (
+          <div className="py-10 px-6 text-center">
+            <div className="font-display tracking-wide" style={{ fontSize: 18, color: "#fff" }}>NO VERIFIED SEASONS YET</div>
+            <div className="font-body mt-1" style={{ fontSize: 13, color: "#8888aa" }}>Draft an XI, play your season, and be the first name on the board.</div>
+          </div>
+        ) : (
+          seasons.map((r, i) => (
+            <div key={r.user_id} className="flex items-center gap-3 px-4 py-3"
+              style={{ borderTop: i > 0 ? "1px solid rgba(255,255,255,0.05)" : "none", background: r.user_id === mySeason?.user_id ? "rgba(0,255,135,0.05)" : "transparent" }}>
+              <span className="font-display w-7 text-center flex-shrink-0" style={{ fontSize: i < 3 ? 18 : 14, color: "#8888aa" }}>{medal(i)}</span>
+              <div className="flex-1 min-w-0">
+                <div className="font-body truncate" style={{ fontSize: 14, color: "#fff", fontWeight: 600 }}>{r.display_name}</div>
+                <div className="font-body" style={{ fontSize: 11, color: "#666688" }}>{r.points} pts · STR {Math.round(Number(r.strength))}</div>
+              </div>
+              {r.invincible && <span style={{ fontSize: 14 }}>🏆</span>}
+              <div className="font-display tracking-wide flex-shrink-0" style={{ fontSize: 18 }}>
+                <span style={{ color: "#00ff87" }}>{r.wins}</span>
+                <span style={{ color: "#55556a" }}>-</span>
+                <span style={{ color: "#ffb800" }}>{r.draws}</span>
+                <span style={{ color: "#55556a" }}>-</span>
+                <span style={{ color: "#ff4757" }}>{r.losses}</span>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* ── World Cup board ── */}
+      <h3 className="font-display tracking-wide mb-3" style={{ fontSize: 20, color: "#fff" }}>
+        🏆 WORLD CUP — <span style={{ color: "#ffb800" }}>CLOSEST TO 8-0</span>
+      </h3>
+      <div className="rounded-2xl overflow-hidden pb-2" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}>
+        {loading ? (
+          <div className="py-10 text-center font-body" style={{ fontSize: 13, color: "#8888aa" }}>Loading the board…</div>
+        ) : wc.length === 0 ? (
+          <div className="py-10 px-6 text-center">
+            <div className="font-display tracking-wide" style={{ fontSize: 18, color: "#fff" }}>NO RUNS ON THE BOARD YET</div>
+            <div className="font-body mt-1" style={{ fontSize: 13, color: "#8888aa" }}>Win all 8 games of a World Cup Run for the perfect 8-0.</div>
+          </div>
+        ) : (
+          wc.map((r, i) => (
+            <div key={r.user_id} className="flex items-center gap-3 px-4 py-3"
+              style={{ borderTop: i > 0 ? "1px solid rgba(255,255,255,0.05)" : "none", background: r.user_id === data?.mine.wc?.user_id ? "rgba(255,184,0,0.05)" : "transparent" }}>
+              <span className="font-display w-7 text-center flex-shrink-0" style={{ fontSize: i < 3 ? 18 : 14, color: "#8888aa" }}>{medal(i)}</span>
+              <div className="flex-1 min-w-0">
+                <div className="font-body truncate" style={{ fontSize: 14, color: "#fff", fontWeight: 600 }}>{r.display_name}</div>
+                <div className="font-body truncate" style={{ fontSize: 11, color: "#666688" }}>{r.nation}{r.status === "champion" ? " · CHAMPION" : ""}</div>
+              </div>
+              {r.status === "champion" && <span style={{ fontSize: 14 }}>🏆</span>}
+              <div className="font-display tracking-wide flex-shrink-0" style={{ fontSize: 18, color: r.wins >= 8 ? "#ffd700" : "#ffb800" }}>
+                {r.wins}<span style={{ color: "#55556a", fontSize: 13 }}>/8</span>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      <p className="font-body text-center mt-4 pb-6" style={{ fontSize: 11, color: "#55556a" }}>
+        ✓ Verified — records are recomputed server-side from the exact XI. Best season per manager.
+      </p>
+    </>
   );
 }

@@ -69,6 +69,8 @@ export default async function ProfilePage() {
     { data: friendRows },
     { data: rankRows },
     { count: pendingFriendCount },
+    { data: seasonBestRows },
+    { data: wcRunRows },
   ] = await Promise.all([
     supabase.from("profiles").select("display_name, total_score, games_played, avatar_url").eq("id", userId).single(),
     // created_at/rank added via migration — bypass stale generated types
@@ -94,6 +96,18 @@ export default async function ProfilePage() {
       .select("id", { count: "exact", head: true })
       .eq("friend_id", userId)
       .eq("status", "pending"),
+    // 38-0 personal bests — closest-to-38-0 season (verified records, migration 29;
+    // RLS: own rows) and World Cup runs with per-match results for closest-to-8-0.
+    sb.from("draft_season_records")
+      .select("wins, draws, losses, points, invincible, competition")
+      .eq("user_id", userId)
+      .order("wins", { ascending: false })
+      .order("points", { ascending: false })
+      .limit(1),
+    sb.from("draft_wc_runs")
+      .select("nation, status, draft_wc_matches(won)")
+      .eq("user_id", userId)
+      .limit(50),
   ]);
 
   const pendingFriends = pendingFriendCount ?? 0;
@@ -150,6 +164,19 @@ export default async function ProfilePage() {
       .map((r: any) => ({ user_id: r.user_id, display_name: r.profiles?.display_name ?? "Player" }))
       .slice(0, 6);
   }
+
+  // 38-0 personal bests: best verified season + best World Cup run (most wins,
+  // champion outranks). Both null until the player has records — card hides.
+  const seasonBest: any = (seasonBestRows ?? [])[0] ?? null;
+  const wcBest = ((wcRunRows ?? []) as any[])
+    .map((r: any) => ({
+      nation: r.nation as string,
+      champion: r.status === "champion",
+      wins: ((r.draft_wc_matches ?? []) as { won: boolean | null }[]).filter((m) => m.won === true).length,
+      games: (r.draft_wc_matches ?? []).length,
+    }))
+    .filter((r) => r.games > 0)
+    .sort((a, b) => (Number(b.champion) - Number(a.champion)) || (b.wins - a.wins))[0] ?? null;
 
   // Recent multiplayer games (last 5)
   const recentMultiplayer = allRoomScores.slice(0, 5);
@@ -268,6 +295,57 @@ export default async function ProfilePage() {
             <path d="M5 3l6 5-6 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </Link>
+
+        {/* 38-0 personal bests — verified season + World Cup run */}
+        {(seasonBest || wcBest) && (
+          <div className="rounded-2xl px-5 py-4"
+            style={{ background: "linear-gradient(135deg, rgba(34,211,238,0.08), rgba(34,211,238,0.03))", border: "1px solid rgba(34,211,238,0.22)" }}>
+            <div className="flex items-center justify-between mb-3">
+              <p className="font-body text-xs uppercase tracking-widest" style={{ color: "#22d3ee" }}>38-0 Personal Bests ✓</p>
+              <Link href="/38-0" className="font-body text-xs font-bold" style={{ color: "#22d3ee" }}>Leaderboard →</Link>
+            </div>
+            <div className="grid grid-cols-2 gap-2.5">
+              <div className="rounded-xl px-3 py-2.5" style={{ background: "rgba(0,255,135,0.06)", border: "1px solid rgba(0,255,135,0.15)" }}>
+                <p className="font-body text-[10px] uppercase tracking-widest" style={{ color: "#00ff87" }}>⚽ Best season</p>
+                {seasonBest ? (
+                  <>
+                    <p className="font-display text-2xl text-white leading-none mt-1">
+                      {seasonBest.wins}<span className="text-base" style={{ color: "#555577" }}>-{seasonBest.draws}-{seasonBest.losses}</span>
+                      {seasonBest.invincible && <span className="text-base"> 🏆</span>}
+                    </p>
+                    <p className="font-body text-[10px] text-text-muted mt-1">
+                      {seasonBest.invincible ? "INVINCIBLE — the perfect 38-0" : `${seasonBest.points} pts · ${38 - seasonBest.wins} short of 38-0`}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="font-display text-2xl leading-none mt-1" style={{ color: "#555577" }}>—</p>
+                    <p className="font-body text-[10px] text-text-muted mt-1">Play a season to set one</p>
+                  </>
+                )}
+              </div>
+              <div className="rounded-xl px-3 py-2.5" style={{ background: "rgba(255,184,0,0.06)", border: "1px solid rgba(255,184,0,0.15)" }}>
+                <p className="font-body text-[10px] uppercase tracking-widest" style={{ color: "#ffb800" }}>🏆 Best World Cup</p>
+                {wcBest ? (
+                  <>
+                    <p className="font-display text-2xl text-white leading-none mt-1">
+                      {wcBest.wins}<span className="text-base" style={{ color: "#555577" }}>/8 wins</span>
+                      {wcBest.champion && <span className="text-base"> 🏆</span>}
+                    </p>
+                    <p className="font-body text-[10px] text-text-muted mt-1">
+                      {wcBest.nation}{wcBest.champion ? " · CHAMPION" : ""}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="font-display text-2xl leading-none mt-1" style={{ color: "#555577" }}>—</p>
+                    <p className="font-body text-[10px] text-text-muted mt-1">Start a World Cup Run</p>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Rankings strip */}
         <Link href="/leaderboard"

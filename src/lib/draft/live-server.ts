@@ -163,7 +163,14 @@ function resolutionForEntering(target: LivePhase, row: DraftLiveMatchRow): Parti
     }
     case "half2": {
       // Uses the post-halftime-swap squads/strengths; merge onto the stored H1.
-      const s = simulateHalf((row.p1_squad ?? []) as PlacedPlayer[], (row.p2_squad ?? []) as PlacedPlayer[], 2, `${row.id}:h2`);
+      // Halftime subs carry an impact boost — the player you brought on is far
+      // more likely to be the name on an H2 goal (columns added in migration 29;
+      // absent pre-migration they read undefined → no boost, fail-soft).
+      const r = row as DraftLiveMatchRow & { p1_sub_ids?: string[] | null; p2_sub_ids?: string[] | null };
+      const s = simulateHalf(
+        (row.p1_squad ?? []) as PlacedPlayer[], (row.p2_squad ?? []) as PlacedPlayer[], 2, `${row.id}:h2`,
+        { impactA: r.p1_sub_ids ?? [], impactB: r.p2_sub_ids ?? [] }
+      );
       const prev = (row.sim ?? {}) as MatchSim;
       return { h2_p1: s.goals.a, h2_p2: s.goals.b, sim: { ...prev, h2: s } as unknown as never };
     }
@@ -374,16 +381,26 @@ export async function applyLiveSwap(
   const input = squad.map((p) => ({ slot: p.slot, player_season_id: p.slot === slotId ? newPlayerId : p.player_season_id }));
   const scored = validateAndScore(formation, input);
 
+  // Halftime subs are recorded so the H2 sim can boost the incoming player's
+  // scorer/assist odds (the "impact sub" mechanic). Each side only ever writes its
+  // own column, so concurrent p1/p2 swaps can't clobber each other. Pregame swaps
+  // play the whole match — no impact tag.
+  const rowWithSubs = row as DraftLiveMatchRow & { p1_sub_ids?: string[] | null; p2_sub_ids?: string[] | null };
+  const subPatch = row.phase === "halftime_swap"
+    ? { [`${side}_sub_ids`]: [...(rowWithSubs[`${side}_sub_ids`] ?? []), newPlayerId] }
+    : {};
+
   // `.gt(budgetCol, 0)` makes the decrement atomic: two concurrent swaps (double-
   // click / two tabs) serialize on the row lock, and the second re-evaluates the
   // guard against the now-0 budget and writes nothing — so the budget can't be
   // bypassed to fish for extra spins.
-  const { data: updated } = await db
+  const doUpdate = (extra: Record<string, unknown>) => db
     .from("draft_live_matches")
     .update({
       [`${side}_squad`]: scored.squad as unknown as never,
       [`${side}_strength`]: scored.strength,
       [budgetCol]: budget - 1,
+      ...extra,
       updated_at: new Date().toISOString(),
     } as Partial<DraftLiveMatchRow>)
     .eq("id", matchId)
@@ -391,6 +408,13 @@ export async function applyLiveSwap(
     .gt(budgetCol, 0)
     .select("*")
     .maybeSingle();
+
+  let { data: updated, error } = await doUpdate(subPatch);
+  // Pre-migration-29 fallback: if the sub-tracking column doesn't exist yet, the
+  // swap itself must still go through (just without the impact tag).
+  if (!updated && error && Object.keys(subPatch).length > 0) {
+    ({ data: updated } = await doUpdate({}));
+  }
   if (!updated) throw new Error("No changes left");
   return updated;
 }

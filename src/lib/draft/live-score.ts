@@ -32,6 +32,13 @@ export const LIVE_CONFIG = {
   },
   /** Swap budgets per player. */
   swaps: { pregame: 1, halftime: 2 },
+  /**
+   * Scorer/assister pick multiplier for players subbed ON at halftime. The
+   * scoreline itself is untouched (goals still come from the team lines — the
+   * swap already moved Strength); this only tilts WHO gets the goals, so the
+   * player you brought on visibly makes the difference often — but not always.
+   */
+  subImpact: 3,
   /** Penalty conversion: near coin-flip with only a faint Strength lean. */
   pens: { base: 0.72, lean: 0.0015, min: 0.6, max: 0.82, rounds: 5 },
 } as const;
@@ -212,11 +219,16 @@ function rateSide(
 
 /** Simulate one half: the scoreline (line-based resolveHalfGoals — each side's attack
  *  vs the other's defence) plus corners, throw-ins, goal events (scorer/assist/minute)
- *  and per-player ratings. Deterministic by seed. */
+ *  and per-player ratings. Deterministic by seed.
+ *  `opts.impactA/impactB` — player ids subbed on at the break: their scorer/assist
+ *  pick weight is multiplied by LIVE_CONFIG.subImpact for this half. */
 export function simulateHalf(
-  squadA: PlacedPlayer[], squadB: PlacedPlayer[], half: 1 | 2, seed: string
+  squadA: PlacedPlayer[], squadB: PlacedPlayer[], half: 1 | 2, seed: string,
+  opts?: { impactA?: string[]; impactB?: string[] }
 ): HalfSim {
   const rng = seededRng(seed);
+  const impactA = new Set(opts?.impactA ?? []);
+  const impactB = new Set(opts?.impactB ?? []);
   const linesA = lineRatings(squadA);
   const linesB = lineRatings(squadB);
   const goals = resolveHalfGoals(linesA, linesB, rng);
@@ -249,21 +261,24 @@ export function simulateHalf(
   const scA = new Map<string, number>(), asA = new Map<string, number>();
   const scB = new Map<string, number>(), asB = new Map<string, number>();
 
-  const addGoals = (side: "a" | "b", n: number, squad: PlacedPlayer[], sc: Map<string, number>, as: Map<string, number>) => {
+  const addGoals = (side: "a" | "b", n: number, squad: PlacedPlayer[], sc: Map<string, number>, as: Map<string, number>, impact: Set<string>) => {
+    // Fresh legs: a halftime sub is far more likely to be the name on the goal.
+    const boosted = (w: (p: PlacedPlayer) => number) => (p: PlacedPlayer) =>
+      w(p) * (impact.has(p.player_season_id) ? LIVE_CONFIG.subImpact : 1);
     for (let i = 0; i < n; i++) {
-      const scorer = weightedPick(squad, goalWeight, rng);
+      const scorer = weightedPick(squad, boosted(goalWeight), rng);
       if (!scorer) continue;
       sc.set(scorer.player_season_id, (sc.get(scorer.player_season_id) ?? 0) + 1);
       let assistId: string | undefined, assistName: string | undefined;
       if (rng() < 0.75) {
-        const assister = weightedPick(squad, assistWeight, rng, scorer.player_season_id);
+        const assister = weightedPick(squad, boosted(assistWeight), rng, scorer.player_season_id);
         if (assister) { assistId = assister.player_season_id; assistName = assister.name; as.set(assistId, (as.get(assistId) ?? 0) + 1); }
       }
       events.push({ side, minute: base + 1 + Math.floor(rng() * 45), scorerId: scorer.player_season_id, scorerName: scorer.name, assistId, assistName });
     }
   };
-  addGoals("a", goals.a, squadA, scA, asA);
-  addGoals("b", goals.b, squadB, scB, asB);
+  addGoals("a", goals.a, squadA, scA, asA, impactA);
+  addGoals("b", goals.b, squadB, scB, asB, impactB);
   events.sort((x, y) => x.minute - y.minute);
 
   return {

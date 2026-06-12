@@ -31,6 +31,7 @@ export default function SeasonSim() {
   const [shortUrl, setShortUrl] = useState<string | null>(null);
   const [giveawayOpen, setGiveawayOpen] = useState(false);
   const giveawayShown = useRef(false);
+  const recordSubmitted = useRef(false);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -112,6 +113,22 @@ export default function SeasonSim() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [done]);
+
+  // Enter the verified leaderboard: send the XI (never the result — the server
+  // re-runs the sim itself) once per view. Same squad twice is a server no-op.
+  useEffect(() => {
+    if (!done || !user || !team || recordSubmitted.current) return;
+    recordSubmitted.current = true;
+    void fetch("/api/draft/records", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        league: team.league,
+        formation: team.formation,
+        squad: team.squad.map((p) => ({ slot: p.slot, player_season_id: p.player_season_id })),
+      }),
+    }).catch(() => { /* leaderboard entry is best-effort */ });
+  }, [done, user, team]);
 
   function skip() {
     if (timer.current) clearInterval(timer.current);

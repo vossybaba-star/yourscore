@@ -18,7 +18,7 @@
 import type { Formation, League, PlacedPlayer, Projected } from "./types";
 import { LEAGUE_META } from "./types";
 import { lineRatings, posCategory, seededRng, clamp, tierFor } from "./score";
-import { matchLambdas, type TeamLines } from "./match";
+import { matchLambdas, MATCH_CONFIG, type TeamLines } from "./match";
 
 export type Opponent = { name: string; strength: number };
 
@@ -36,13 +36,37 @@ function clubLines(strength: number): TeamLines {
   return { attack: strength, midfield: strength, defence: strength, gk: strength };
 }
 
+/**
+ * Hot-streak multiplier for the PLAYER'S season vs real clubs — the "title charge"
+ * dial. A drafted XI above ~74 Strength plays its season on form: its λ is lifted
+ * and the opponents' damped, so good teams land in the 28–37-win zone (the
+ * near-miss-the-Invincible territory that gets shared) instead of plateauing in
+ * the mid-20s. Weak teams (≤74) are untouched, and 38-0 itself stays the preserve
+ * of an elite XI — the cap keeps even a ~96 team at only a few percent per season.
+ * Applied symmetrically in expectedPoints/samplePoints so the projection, odds and
+ * verdict all describe the same boosted world.
+ */
+function formFactor(strength: number): number {
+  return clamp((strength - 74) / 50, 0, 0.35);
+}
+
+/** The player's λs vs a club, with the form boost applied (clamped to engine bounds). */
+function playerLambdas(myLines: TeamLines, club: number, home: "A" | "B", form: number): [number, number] {
+  const [lf, la] = matchLambdas(myLines, clubLines(club), { home });
+  return [
+    Math.min(lf * (1 + form), MATCH_CONFIG.maxL),
+    Math.max(la * (1 - form), MATCH_CONFIG.minL),
+  ];
+}
+
 /** Closed-form expected league points for an XI (its line ratings) vs `opponents`
- *  (home + away), summing match win/draw probabilities over the canonical Poisson λ. */
-function expectedPoints(myLines: TeamLines, opponents: Opponent[]): number {
+ *  (home + away), summing match win/draw probabilities over the canonical Poisson λ.
+ *  `form` applies the player's hot-streak boost (0 for club-vs-club par). */
+function expectedPoints(myLines: TeamLines, opponents: Opponent[], form = 0): number {
   let pts = 0;
   for (const o of opponents) {
     for (const home of ["A", "B"] as const) {
-      const [lf, la] = matchLambdas(myLines, clubLines(o.strength), { home });
+      const [lf, la] = playerLambdas(myLines, o.strength, home, form);
       let w = 0, d = 0;
       for (let i = 0; i <= 9; i++) for (let j = 0; j <= 9; j++) {
         const p = poissonPmf(lf, i) * poissonPmf(la, j);
@@ -77,13 +101,14 @@ const pct = (n: number, total: number) => Math.round((n / total) * 1000) / 10;
 export function preSeasonOdds(squad: PlacedPlayer[], strength: number, opponents: Opponent[]): PreSeasonOdds {
   const myLines = lineRatings(squad);
   const par = leaguePar(opponents);
-  const expPts = Math.round(expectedPoints(myLines, opponents));
+  const form = formFactor(strength);
+  const expPts = Math.round(expectedPoints(myLines, opponents, form));
 
   const N = 300;
   let win = 0, t4 = 0, t6 = 0, t10 = 0, rel = 0;
   for (let i = 0; i < N; i++) {
     const rng = seededRng(`odds-${strength}-${i}`);
-    const pts = samplePoints(myLines, opponents, rng);
+    const pts = samplePoints(myLines, opponents, rng, form);
     const pos = positionFor(pts, par);
     if (pos === 1) win++;
     if (pos <= 4) t4++;
@@ -120,14 +145,55 @@ function poisson(lambda: number, rng: () => number): number {
 }
 
 /** Lightweight points-only sample (for Monte-Carlo odds). */
-function samplePoints(myLines: TeamLines, opponents: Opponent[], rng: () => number): number {
+function samplePoints(myLines: TeamLines, opponents: Opponent[], rng: () => number, form = 0): number {
   let pts = 0;
   for (const home of ["A", "B"] as const) for (const o of opponents) {
-    const [lf, la] = matchLambdas(myLines, clubLines(o.strength), { home });
+    const [lf, la] = playerLambdas(myLines, o.strength, home, form);
     const f = poisson(lf, rng), a = poisson(la, rng);
     pts += f > a ? 3 : f === a ? 1 : 0;
   }
   return pts;
+}
+
+/** Seeded Fisher–Yates — the reveal order is part of the deterministic result. */
+function shuffle<T>(arr: T[], rng: () => number): T[] {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/**
+ * Reveal-order pass. Totals, stats and the table position are already settled —
+ * this only decides WHICH matchweek each result lands on, i.e. the story the
+ * 38-card reveal tells.
+ *
+ * A strong season (≤8 non-wins) usually becomes a near-miss arc: every draw and
+ * defeat is pushed deep into the run-in, so the player watches a 20–30 game
+ * winning streak build before it breaks — "it looked like 38-0". A 37-1-0 season
+ * stumbles in the final weeks. Otherwise (or ~35% of the time, so strong seasons
+ * don't all read identically) the fixtures just interleave naturally instead of
+ * the raw home-block/away-block order.
+ */
+function dramatizeOrder(games: SeasonGame[], rng: () => number): SeasonGame[] {
+  const nonWins = games.filter((g) => g.result !== "W");
+  if (nonWins.length === 0 || nonWins.length > 8 || rng() < 0.35) return shuffle(games, rng);
+
+  const n = games.length;
+  // Earliest matchweek a setback may land: at least game ~21, later the fewer
+  // setbacks there are (a single blemish lands in the last handful of games).
+  const windowStart = Math.max(Math.floor(n * 0.55), n - nonWins.length * 4);
+  const slots = new Set<number>();
+  while (slots.size < nonWins.length) slots.add(windowStart + Math.floor(rng() * (n - windowStart)));
+
+  const lateNonWins = shuffle(nonWins, rng);
+  const openingWins = shuffle(games.filter((g) => g.result === "W"), rng);
+  const out: SeasonGame[] = [];
+  let wi = 0, ni = 0;
+  for (let i = 0; i < n; i++) out.push(slots.has(i) ? lateNonWins[ni++] : openingWins[wi++]);
+  return out;
 }
 
 export function simulateSeason(
@@ -136,12 +202,13 @@ export function simulateSeason(
   const rng = seededRng(seed);
   const myLines = lineRatings(squad);
   const par = leaguePar(opponents);
+  const form = formFactor(strength);
 
-  const games: SeasonGame[] = [];
+  let games: SeasonGame[] = [];
   let wins = 0, draws = 0, losses = 0, gf = 0, ga = 0;
   for (const venue of ["H", "A"] as const) {
     for (const o of opponents) {
-      const [lf, la] = matchLambdas(myLines, clubLines(o.strength), { home: venue === "H" ? "A" : "B" });
+      const [lf, la] = playerLambdas(myLines, o.strength, venue === "H" ? "A" : "B", form);
       const f = poisson(lf, rng), a = poisson(la, rng);
       gf += f; ga += a;
       const result: SeasonGame["result"] = f > a ? "W" : f < a ? "L" : "D";
@@ -149,12 +216,13 @@ export function simulateSeason(
       games.push({ opponent: o.name, venue, gf: f, ga: a, result });
     }
   }
+  games = dramatizeOrder(games, rng);
 
   const points = wins * 3 + draws;
   const invincible = losses === 0 && draws === 0;
   const position = invincible ? 1 : positionFor(points, par);
 
-  const expPts = Math.round(expectedPoints(myLines, opponents));
+  const expPts = Math.round(expectedPoints(myLines, opponents, form));
   const projFinish = positionFor(expPts, par);
   const projected: Projected = {
     wins: 0, draws: 0, losses: 0, points: expPts, position: projFinish, tier: tierFor(expPts),
