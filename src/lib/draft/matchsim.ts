@@ -173,9 +173,14 @@ function simulatePassage(beat: ReelBeat, matchId: string, half: 1 | 2, idx: numb
   const startBallX = holder.x;
   const advanceAt = (d: number) => lerp(startBallX, goalX, Math.pow(clamp01(d / SIM.finishAt), 1.5));
   const ticks = Math.round((SIM.durBase + rng() * SIM.durVar) * FPS);
+  // Dead-ball restarts get a brief "set" phase: the ball sits at the spot while players move
+  // into a recognisable shape (box crowd for a corner, short options for a throw-in) before
+  // it's delivered — so it reads as a real set piece, not just a ball appearing somewhere.
+  const setupTicks = origin === "corner" || origin === "throwin" || origin === "goalkick" ? Math.round(0.9 * FPS) : 0;
 
   let receiver: Ent | null = null;
   let pendingShot = false, resolved = false, goalFrame = -1;
+  let holdUntil = setupTicks; // a receiver controls the ball for a beat before the next action
   const restart: SimEvent | "regain" = origin === "build" ? "regain" : origin;
   const ball = { x: holder.x, y: holder.y, vx: 0, vy: 0, inFlight: false };
   const frames: SimFrame[] = [];
@@ -183,10 +188,12 @@ function simulatePassage(beat: ReelBeat, matchId: string, half: 1 | 2, idx: numb
   for (let t = 0; t < ticks; t++) {
     const d = t / ticks;
     const advanceX = advanceAt(d);
-    let event: SimEvent | undefined = t === 0 && origin !== "build" ? (origin as SimEvent) : undefined;
+    const inSetup = t < setupTicks;
+    let event: SimEvent | undefined = inSetup ? (origin as SimEvent) : undefined;
 
-    if (!ball.inFlight && holder) {
+    if (!inSetup && !ball.inFlight && holder) {
       const fwdOf = goalSign > 0 ? holder.x : 1 - holder.x;
+      const settled = t >= holdUntil;
       const forceFinish = d > 0.72 && !resolved;
       const inShootZone = fwdOf > (forceFinish ? 0.6 : 0.76) && Math.abs(holder.y - 0.5) < 0.28;
       const pressD = nearestDef(defOut, holder.x, holder.y).d;
@@ -199,7 +206,7 @@ function simulatePassage(beat: ReelBeat, matchId: string, half: 1 | 2, idx: numb
         const a = Math.atan2(0.5 - ball.y, goalX - goalSign * 0.1 - ball.x);
         ball.inFlight = true; ball.vx = Math.cos(a) * SIM.passSpeed; ball.vy = Math.sin(a) * SIM.passSpeed;
         receiver = tgt; holder = null as unknown as Ent; cornerCrossPending = false; event = "corner";
-      } else if (!resolved && inShootZone && (forceFinish || rng() < 0.05)) {
+      } else if (!resolved && settled && inShootZone && (forceFinish || rng() < 0.05)) {
         const ty = goalY + (rng() - 0.5) * 0.12;
         const a = Math.atan2(ty - ball.y, goalX - ball.x);
         ball.inFlight = true; pendingShot = true; receiver = null; holder = null as unknown as Ent;
@@ -207,7 +214,7 @@ function simulatePassage(beat: ReelBeat, matchId: string, half: 1 | 2, idx: numb
       } else {
         const wantForward = forceFinish || behindLine || underPressure;
         const tgt = pickPass(atts, holder, defs, goalSign, advanceX, wantForward, rng);
-        const doPass = tgt && (underPressure || rng() < (wantForward ? 0.45 : 0.6));
+        const doPass = settled && tgt && (underPressure || rng() < (wantForward ? 0.4 : 0.5));
         if (doPass && tgt) {
           const la = Math.atan2(goalY - tgt.y, goalX - tgt.x);
           const ax = tgt.x + Math.cos(la) * SIM.lead, ay = tgt.y + Math.sin(la) * SIM.lead;
@@ -235,11 +242,46 @@ function simulatePassage(beat: ReelBeat, matchId: string, half: 1 | 2, idx: numb
       } else if (receiver) {
         const dd = dist(ball.x, ball.y, receiver.x, receiver.y);
         const slow = Math.hypot(ball.vx, ball.vy) < 0.14;
-        if (dd < SIM.controlRadius * 1.6 || (slow && dd < 0.06)) { holder = receiver; receiver = null; ball.inFlight = false; ball.vx = ball.vy = 0; ball.x = holder.x; ball.y = holder.y; }
+        if (dd < SIM.controlRadius * 1.6 || (slow && dd < 0.06)) { holder = receiver; receiver = null; ball.inFlight = false; ball.vx = ball.vy = 0; ball.x = holder.x; ball.y = holder.y; holdUntil = t + 6; }
       } else if (Math.hypot(ball.vx, ball.vy) < 0.1) { holder = nearestEnt(atts, ball.x, ball.y); ball.inFlight = false; ball.vx = ball.vy = 0; }
     }
 
-    // ── movement: shape, runs, pressing ──
+    // ── movement: set-piece setup, or open-play shape/runs/pressing ──
+    if (inSetup) {
+      const ry = holder.y;
+      if (origin === "corner") {
+        // attackers crowd the box; defenders pack it to mark; keeper guards the near post
+        let ai = 0;
+        for (const e of atts) {
+          if (e === holder) continue;
+          if (e.role === "gk") { steer(e, ownGoalX, 0.5); continue; }
+          if (e.role === "def") { steer(e, lerp(ownGoalX, 0.5, 0.7), e.home.y); continue; }
+          const s = ai++; steer(e, clamp01(goalX - goalSign * (0.06 + (s % 3) * 0.05)), clamp01(0.36 + (s % 4) * 0.09));
+        }
+        let di = 0;
+        for (const e of defOut) { const s = di++; steer(e, clamp01(goalX - goalSign * (0.04 + (s % 3) * 0.045)), clamp01(0.32 + (s % 5) * 0.09)); }
+        steer(defGk, clamp01(goalX - goalSign * 0.02), ry < 0.5 ? 0.44 : 0.56);
+      } else if (origin === "throwin") {
+        // short options come to the thrower along the line; the rest hold; defenders mark
+        let ai = 0;
+        for (const e of atts) {
+          if (e === holder) continue;
+          if (e.role === "gk") { steer(e, ownGoalX, 0.5); continue; }
+          if (ai < 3) steer(e, clamp01(lerp(holder.x, goalX, 0.05 + ai * 0.07)), clamp01(ry + (ry < 0.5 ? 0.09 : -0.09) + (ai - 1) * 0.07));
+          else steer(e, clamp01(lerp(ownGoalX, goalX, 0.45)), e.home.y);
+          ai++;
+        }
+        for (const e of defOut) steer(e, clamp01(lerp(e.home.x, holder.x, 0.3)), clamp01(lerp(e.home.y, ry, 0.3)));
+        steer(defGk, goalX, 0.5);
+      } else { // goal kick — outfield push up to receive; the other side drops off
+        for (const e of atts) {
+          if (e === holder) continue;
+          steer(e, clamp01(lerp(ownGoalX, goalX, e.role === "att" ? 0.55 : e.role === "mid" ? 0.42 : 0.28)), e.home.y);
+        }
+        for (const e of defOut) steer(e, clamp01(lerp(e.home.x, 0.5, 0.4)), e.home.y);
+        steer(defGk, goalX, 0.5);
+      }
+    } else {
     const lineFront = advanceX;
     for (const e of atts) {
       if (e === holder || e === receiver) { if (e === receiver) steer(e, ball.x, ball.y); continue; }
@@ -272,6 +314,7 @@ function simulatePassage(beat: ReelBeat, matchId: string, half: 1 | 2, idx: numb
       steer(e, e.role === "mid" ? midLineX : backLineX, clamp01(lerp(e.home.y, ball.y, 0.12)));
     }
     steer(defGk, lerp(goalX, 0.5, 0.04), clamp(lerp(0.5, ball.y, 0.5), 0.38, 0.62));
+    }
 
     separate(ents);
     for (const e of ents) {
