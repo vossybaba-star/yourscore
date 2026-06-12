@@ -156,10 +156,20 @@ then draft your all-time XI from that league's ~20 years of players.
 years (~4,900 player-seasons). `score.ts` → Strength; `match.ts` is the single engine for
 all scorelines (attack-line vs defence-line, Poisson on a seeded RNG); `live-score.ts`
 drives the live two-half match. **Season feel (2026-06-12):** strong XIs (>74 STR) play
-"on form" — wins land in the 28–37 near-miss zone and good seasons reveal as a long
-unbeaten streak that breaks late ("looked like 38-0"); Invincible itself stays elite-only
-(~94+ STR, a few % per season). **Impact subs:** halftime subs in Live H2H are 3×-weighted
-in second-half scorer/assist picks — the player you bring on visibly pays off, sometimes.
+"on form" — `formFactor` (season.ts) lifts the player's λ and damps the opponents', so
+wins climb with Strength and good seasons reveal as a long unbeaten streak that breaks
+late ("looked like 38-0"). Calibrated against all real saved XIs: a genuinely elite,
+well-built XI (top ~3-5% by Strength, ~89.5+) now has a real, repeatable shot at the
+perfect **38-0 Invincible** (~0.3% of all teams, ~10-15% of elite ones); mid/weak teams
+essentially unchanged. This is a PERMANENT engine property — the season seed is the XI
+itself, so any Invincible is reproducible and re-verifiable forever (never a temporary
+window). A 38-0 triggers a full-screen gold celebration + gold scorecard banner.
+**Impact subs:** halftime subs in Live H2H are 3×-weighted in second-half scorer/assist
+picks — the player you bring on visibly pays off, sometimes.
+**Integrity note:** the leaderboard is "verified ✓ — real results only". We do NOT
+fabricate or back-date Invincibles onto real users' names; the board fills with genuine
+38-0s as players earn them under this engine. (A request to manufacture/disguise wins was
+declined — see [[project-38-0-leaderboard-gamefeel]].)
 
 ---
 
