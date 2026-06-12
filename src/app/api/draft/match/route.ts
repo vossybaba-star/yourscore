@@ -7,6 +7,7 @@ import { resolveMatch } from "@/lib/draft/live-score";
 import { seededBot } from "@/lib/draft/opponent";
 import { asLeague } from "@/lib/draft/types";
 import type { Formation, PlacedPlayer, Projected } from "@/lib/draft/types";
+import { sendFirst38GameEmail } from "@/lib/email/senders";
 
 // Two-stage ranked H2H so players can preview the opponent and swap before kick-off:
 //   stage "find"    → matchmake and RETURN the opponent (no DB write, no result).
@@ -121,6 +122,30 @@ export async function POST(req: NextRequest) {
   await creditResult(db, user.id, meSide.name, myRes, GLOBAL_LEAGUE, competition);
   if (opponentId) await creditResult(db, opponentId, opp.name, oppWon ? "win" : youWon ? "loss" : "draw", GLOBAL_LEAGUE, competition);
   await applyTeamStreak(db, user.id, myRes, competition);
+
+  // Lifecycle: if this was the user's first ever match, fire email 12.
+  if (user.email) {
+    void (async () => {
+      const { count } = await db
+        .from("draft_matches")
+        .select("id", { count: "exact", head: true })
+        .or(`challenger_id.eq.${user.id},opponent_id.eq.${user.id}`);
+      if ((count ?? 0) !== 1) return;
+      // First match — by definition the record is 1-0-0 / 0-1-0 / 0-0-1.
+      await sendFirst38GameEmail({
+        userId: user.id,
+        email: user.email!,
+        teamName: meSide.name,
+        opponent: opp.name,
+        myScore: res.goals.a,
+        oppScore: res.goals.b,
+        strength: Math.round(meSide.strength),
+        w: myRes === "win" ? 1 : 0,
+        d: myRes === "draw" ? 1 : 0,
+        l: myRes === "loss" ? 1 : 0,
+      });
+    })().catch(() => {});
+  }
 
   return NextResponse.json({
     matchId, youWon, outcome: youWon ? "you" : oppWon ? "opp" : "draw",

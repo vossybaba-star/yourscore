@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimitDistributed } from "@/lib/ratelimit";
 import { createDraftDb, genJoinCode } from "@/lib/draft/server";
+import { sendFirst38LeagueEmail } from "@/lib/email/senders";
 
 // POST: create a private league (generates a join code, adds owner as a member).
 // GET:  list the leagues the signed-in user belongs to, with member counts.
@@ -40,6 +41,24 @@ export async function POST(req: NextRequest) {
     { league_id: created.id, user_id: user.id },
     { onConflict: "league_id,user_id" }
   );
+
+  // Lifecycle: if this was the user's first-ever 38-0 league, fire email 14.
+  if (user.email) {
+    void (async () => {
+      const { count } = await db
+        .from("draft_leagues")
+        .select("id", { count: "exact", head: true })
+        .eq("owner_id", user.id);
+      if ((count ?? 0) !== 1) return;
+      await sendFirst38LeagueEmail({
+        userId: user.id,
+        email: user.email!,
+        leagueId: created!.id,
+        leagueName: created!.name,
+        leagueCode: created!.join_code,
+      });
+    })().catch(() => {});
+  }
 
   return NextResponse.json({ id: created.id, name: created.name, code: created.join_code });
 }

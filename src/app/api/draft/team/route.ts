@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { rateLimitDistributed } from "@/lib/ratelimit";
 import { createDraftDb, validateAndScore } from "@/lib/draft/server";
 import { asLeague } from "@/lib/draft/types";
+import { sendFirst38TeamEmail } from "@/lib/email/senders";
 
 // Save the player's current XI to the cloud. Server-authoritative: Strength +
 // projection are recomputed from the squad (client ratings ignored). One active
@@ -87,9 +88,45 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Could not save team" }, { status: 500 });
   }
 
+  // Lifecycle: if this was the user's first-ever team save (across ALL
+  // competitions — one row per competition since multi-comp), fire email 16.
+  // First save detected via exactly one team row whose created_at ≈ updated_at
+  // (upsert leaves created_at alone on update, so a re-save widens the gap).
+  if (user.email) {
+    void (async () => {
+      const { data: rows } = await db
+        .from("draft_teams")
+        .select("created_at, updated_at, display_name")
+        .eq("user_id", user.id);
+      if (!rows || rows.length !== 1) return; // second competition team ≠ first ever
+      const row = rows[0];
+      if (!row.created_at || !row.updated_at) return;
+      const delta = Math.abs(
+        new Date(row.updated_at).getTime() - new Date(row.created_at).getTime(),
+      );
+      if (delta > 60_000) return; // not first save
+      const proj = validated.projected as { position?: number; points?: number };
+      await sendFirst38TeamEmail({
+        userId: user.id,
+        email: user.email!,
+        teamName: row.display_name ?? "Your XI",
+        formation: validated.formation,
+        strength: Math.round(validated.strength),
+        projectedPosition: proj.position ? ordinal(proj.position) : "—",
+        projectedPoints: proj.points ?? 0,
+      });
+    })().catch(() => {});
+  }
+
   return NextResponse.json({
     saved: true,
     strength: validated.strength,
     projected: validated.projected,
   });
+}
+
+function ordinal(n: number): string {
+  const s = ["th", "st", "nd", "rd"];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] ?? s[v] ?? s[0]);
 }
