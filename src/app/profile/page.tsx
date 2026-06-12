@@ -102,8 +102,6 @@ export default async function ProfilePage() {
 
   const pendingFriends = pendingFriendCount ?? 0;
 
-  const totalScore = profile?.total_score ?? 0;
-
   // YourScore Rank v2 — one currency, position-led (from get_yourscore_rank RPC)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const rank: any = (rankRows ?? [])[0] ?? null;
