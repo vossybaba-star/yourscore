@@ -19,6 +19,8 @@ import { RUN_STAGE_LABEL, isDuel, type RunStage, type RunMode } from "@/lib/draf
 import { wcNation } from "@/data/draft/wc2026";
 import type { Formation, PlacedPlayer, PlayerSeason } from "@/lib/draft/types";
 import { trackGameComplete } from "@/lib/analytics/trackGame";
+import { PenaltyShootout, type PensView } from "@/components/draft/PenaltyShootout";
+import type { PenKick } from "@/lib/draft/pens";
 
 type Fixture = { stage: string; label: string; opponent: { nation: string; crest?: string } };
 type Run = {
@@ -31,6 +33,12 @@ type MatchRow = { stage: string; idx: number; you_goals: number; opp_goals: numb
 type Opponent = { nation: string; crest?: string; label: string; formation: Formation; squad: PlacedPlayer[]; strength: number };
 type GameReveal = { label: string; opponent: { nation: string; crest?: string }; goals: { you: number; opp: number }; pens: { you: number; opp: number } | null; outcome: "win" | "loss" | "draw" };
 type PlayResp = { stage: RunStage; games: GameReveal[]; result: "through" | "eliminated" | "champion"; run: Run };
+type WcPensViewT = {
+  myKicks: PenKick[]; oppKicks: PenKick[];
+  role: "shoot" | "dive" | "done"; suddenDeath: boolean;
+  final: { outcome: "you" | "opp"; pens: { you: number; opp: number } } | null;
+};
+type PensPending = { label: string; opponent: { nation: string; crest?: string }; goals: { you: number; opp: number }; view: WcPensViewT };
 
 export default function WorldCupRun() {
   const { id } = useParams<{ id: string }>();
@@ -41,6 +49,10 @@ export default function WorldCupRun() {
   const [error, setError] = useState<string | null>(null);
   const [playing, setPlaying] = useState(false);
   const [reveal, setReveal] = useState<PlayResp | null>(null);
+  const [pens, setPens] = useState<PensPending | null>(null);
+  // Set when the deciding kick lands: either the finished stage payload, or a
+  // flag that the NEXT knockout game is also level (refetch opens its shootout).
+  const [pensDone, setPensDone] = useState<{ stage?: PlayResp; nextShootout?: boolean } | null>(null);
   const [pickSlot, setPickSlot] = useState<string | null>(null);
   const [slate, setSlate] = useState<PlayerSeason[] | null>(null);
   const [spunNation, setSpunNation] = useState<{ nation: string; crest?: string } | null>(null);
@@ -51,6 +63,8 @@ export default function WorldCupRun() {
     const data = await res.json();
     if (!res.ok) { setError(data.error ?? "Run not found"); setLoading(false); return; }
     setRun(data.run); setMatches(data.matches); setOpponent(data.opponent); setLoading(false);
+    // A knockout shootout in progress resumes exactly where it was left.
+    if (data.pensPending) { setPens(data.pensPending); setPensDone(null); }
   }, [id]);
 
   useEffect(() => { load(); }, [load]);
@@ -62,12 +76,41 @@ export default function WorldCupRun() {
       const res = await fetch("/api/draft/wc/play", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ runId: id }) });
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? "Could not play"); setPlaying(false); return; }
+      // A level knockout game pauses the stage — you take the shootout yourself.
+      if (data.pensPending) { setPens(data.pensPending); setPensDone(null); setPlaying(false); return; }
       setReveal(data);
       if (data.result === "champion" || data.result === "eliminated") {
         trackGameComplete("38-0", { mode: "world_cup_run", result: data.result });
       }
     } catch { setError("Network error — try again."); }
     setPlaying(false);
+  }
+
+  async function pensAct(action: "shot" | "dive", zone: number) {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const res = await fetch("/api/draft/wc/kick", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ runId: id, action, zone }) });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error ?? "Kick failed"); setBusy(false); return; }
+      if (data.pensPending) setPens(data.pensPending);
+      if (data.stage || data.nextShootout) setPensDone({ stage: data.stage, nextShootout: data.nextShootout });
+      if (data.stage && (data.stage.result === "champion" || data.stage.result === "eliminated")) {
+        trackGameComplete("38-0", { mode: "world_cup_run", result: data.stage.result });
+      }
+    } catch { setError("Network error — try again."); }
+    setBusy(false);
+  }
+
+  function pensContinue() {
+    if (pensDone?.stage) {
+      setPens(null); setPensDone(null);
+      setReveal(pensDone.stage);
+    } else {
+      // The next knockout game is also level — fetch its shootout.
+      setPens(null); setPensDone(null);
+      load();
+    }
   }
 
   function scoutSlot(slotId: string) {
@@ -289,6 +332,42 @@ export default function WorldCupRun() {
           </div>
         </div>
       )}
+
+      {/* Knockout shootout — a level game is settled by YOUR kicks */}
+      {pens && (() => {
+        const v = pens.view;
+        const pview: PensView = {
+          myKicks: v.myKicks,
+          oppKicks: v.oppKicks,
+          suddenDeath: v.suddenDeath,
+          role: v.role === "done" ? "done" : v.role,
+          result: v.final ? (v.final.outcome === "you" ? "win" : "loss") : null,
+        };
+        return (
+          <div className="fixed inset-0 z-50 grid place-items-center px-5 overflow-y-auto" style={{ background: "rgba(0,0,0,0.85)" }}>
+            <div className="w-full max-w-sm rounded-3xl p-4" style={{ background: "#12121e", border: "1px solid rgba(255,184,0,0.4)" }}>
+              <div className="font-body text-center" style={{ fontSize: 11, color: "#ffb800", letterSpacing: 1 }}>
+                {pens.label.toUpperCase()} · LEVEL AT {pens.goals.you}–{pens.goals.opp} — PENALTIES
+              </div>
+              <div className="font-body text-center mb-3" style={{ fontSize: 12, color: "#8888aa" }}>
+                {run.nation} v {pens.opponent.nation}
+              </div>
+              <PenaltyShootout
+                view={pview}
+                myName={run.nation}
+                oppName={pens.opponent.nation}
+                onShoot={(z) => pensAct("shot", z)}
+                onDive={(c) => pensAct("dive", c)}
+              />
+              {pensDone && v.role === "done" && (
+                <button onClick={pensContinue} className="w-full rounded-2xl py-3 mt-3 font-display tracking-wide" style={{ background: "#00ff87", color: "#062013", fontSize: 18 }}>
+                  {pensDone.nextShootout ? "NEXT SHOOTOUT →" : "CONTINUE →"}
+                </button>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Stage reveal */}
       {reveal && (

@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimitDistributed } from "@/lib/ratelimit";
-import { rowToRun, resolveStage, createWcDb } from "@/lib/draft/wc-server";
+import {
+  rowToRun, resolveStage, createWcDb, wcPensView, wcPensMeta, type WcPensState,
+} from "@/lib/draft/wc-server";
 
 // Play the run's current fixture. Server-authoritative: opponent and goals are
 // resolved here (deterministic by the run seed), the match is recorded, and the run
@@ -25,9 +27,37 @@ export async function POST(req: NextRequest) {
 
   const run = rowToRun(row);
   if (run.status !== "active") return NextResponse.json({ error: "Run is over" }, { status: 400 });
+  // A shootout is still open — resume it (the stage can't replay underneath it).
+  const openPens = (row as { pens_state?: WcPensState | null }).pens_state;
+  if (openPens) {
+    return NextResponse.json({
+      pensPending: { ...wcPensMeta(run, openPens), view: wcPensView(run, openPens) },
+      run,
+    });
+  }
 
   const stage = run.stage;
-  const { rows, reveals, patch } = resolveStage(run);
+  const res = resolveStage(run);
+
+  // A level knockout game pauses the stage — the user takes the shootout.
+  if (res.pending) {
+    if (res.rows.length > 0) {
+      const { error: matchErr } = await db.from("draft_wc_matches").insert(res.rows);
+      if (matchErr) return NextResponse.json({ error: "Could not record matches" }, { status: 500 });
+    }
+    const { error: runErr } = await db
+      .from("draft_wc_runs")
+      .update({ pens_state: res.pending, updated_at: new Date().toISOString() })
+      .eq("id", runId)
+      .eq("user_id", user.id);
+    if (runErr) return NextResponse.json({ error: "Could not update run" }, { status: 500 });
+    return NextResponse.json({
+      pensPending: { ...wcPensMeta(run, res.pending), view: wcPensView(run, res.pending) },
+      run,
+    });
+  }
+
+  const { rows, reveals, patch } = res;
 
   const { error: matchErr } = await db.from("draft_wc_matches").insert(rows);
   if (matchErr) return NextResponse.json({ error: "Could not record matches" }, { status: 500 });

@@ -12,8 +12,13 @@ import type { Formation, PlacedPlayer } from "./types";
 import { createDraftDb, validateAndScore } from "./server";
 import { getPlayer, getNation, isWCEligible } from "./pool";
 import { makeOpponent } from "./opponent";
-import { resolveMatch } from "./live-score";
+import { resolveMatch, type SingleMatchResult } from "./live-score";
 import { seededRng } from "./score";
+import {
+  resolveRound, shootoutStatus, resolveInteractiveShootout,
+  type PenKick, type PenZone, type PenColumn,
+} from "./pens";
+import { pensSeed } from "./pens-server";
 import {
   planRun, planWorldRun, gamesForStage, buildMatchRow, outcomeOf, allowDraw, advanceStage, isDuel, oppTargetFor,
   WORLD_TEAM_NAME,
@@ -120,32 +125,160 @@ export function revealOpponent(run: WcRun) {
   };
 }
 
+/** A knockout game paused mid-stage for its interactive shootout (the user takes
+ *  the kicks — see pens.ts). Stored on draft_wc_runs.pens_state (migration 35).
+ *  `outcomesSoFar`/`revealsSoFar` carry the games already settled in this stage so
+ *  resolution can resume exactly where it stopped (the 2-game "ko" stage can pend
+ *  twice in one play). */
+export type WcPensState = {
+  stage: RunStage;
+  idx: number;
+  goals: { you: number; opp: number };
+  outcomesSoFar: GameOutcome[];
+  revealsSoFar: GameReveal[];
+  shots: PenZone[];
+  dives: PenColumn[];
+};
+
+export type StageResolution =
+  | { rows: WcMatchRow[]; reveals: GameReveal[]; patch: WcRunPatch; pending?: undefined }
+  | { rows: WcMatchRow[]; reveals: GameReveal[]; pending: WcPensState; patch?: undefined };
+
+function revealFor(fixture: WCFixture, oppStrength: number, result: SingleMatchResult): GameReveal {
+  return {
+    label: fixture.label,
+    opponent: fixture.opponent,
+    oppStrength,
+    goals: { you: result.goals.a, opp: result.goals.b },
+    pens: result.pens ? { you: result.pens.a, opp: result.pens.b } : null,
+    outcome: outcomeOf(result),
+  };
+}
+
 /**
- * Resolve the run's CURRENT stage in one go: every game (group=3, ko=2, duel=1) is
- * simulated deterministically, recorded, and the run advances. Returns the match rows
- * to insert, per-game reveals for the UI, and the run patch.
+ * Resolve the run's CURRENT stage from game `fromIdx`: each game is simulated
+ * deterministically and recorded. Group draws stand (league format); a LEVEL
+ * KNOCKOUT GAME pauses the stage — the user takes the shootout interactively and
+ * resolution resumes from the next game once it's settled.
  */
-export function resolveStage(run: WcRun): { rows: WcMatchRow[]; reveals: GameReveal[]; patch: WcRunPatch } {
+export function resolveStageFrom(
+  run: WcRun, fromIdx: number, outcomesSoFar: GameOutcome[], revealsSoFar: GameReveal[]
+): StageResolution {
   const fixtures = gamesForStage(run.plan, run.stage);
   const rows: WcMatchRow[] = [];
   const reveals: GameReveal[] = [];
-  const outcomes: GameOutcome[] = [];
+  const outcomes = [...outcomesSoFar];
 
-  fixtures.forEach((fixture, idx) => {
+  for (let idx = fromIdx; idx < fixtures.length; idx++) {
+    const fixture = fixtures[idx];
     const opp = buildOpponent(run, fixture, idx);
     const seed = `${run.seed}:match:${fixture.stage}:${idx}`;
-    const result = resolveMatch(run.squad, opp.squad, seed, { allowDraw: allowDraw(run.stage) });
+    const result = resolveMatch(run.squad, opp.squad, seed, { allowDraw: true });
+    if (result.outcome === "draw" && !allowDraw(run.stage)) {
+      return {
+        rows, reveals,
+        pending: {
+          stage: run.stage, idx,
+          goals: { you: result.goals.a, opp: result.goals.b },
+          outcomesSoFar: outcomes,
+          revealsSoFar: [...revealsSoFar, ...reveals],
+          shots: [], dives: [],
+        },
+      };
+    }
     rows.push(buildMatchRow(run.id, run.stage, fixture, result, opp.strength, idx));
     outcomes.push(outcomeOf(result));
-    reveals.push({
-      label: fixture.label,
-      opponent: fixture.opponent,
-      oppStrength: opp.strength,
-      goals: { you: result.goals.a, opp: result.goals.b },
-      pens: result.pens ? { you: result.pens.a, opp: result.pens.b } : null,
-      outcome: outcomeOf(result),
-    });
-  });
+    reveals.push(revealFor(fixture, opp.strength, result));
+  }
 
   return { rows, reveals, patch: advanceStage(run, outcomes) };
+}
+
+export function resolveStage(run: WcRun): StageResolution {
+  return resolveStageFrom(run, 0, [], []);
+}
+
+// ─── Interactive knockout shootout ────────────────────────────────────────────
+
+const wcPensSeed = (run: WcRun, s: WcPensState): string =>
+  pensSeed(`${run.seed}:pens:${s.stage}:${s.idx}`);
+
+/** Replay the kicks taken so far (alternating; you are side a and kick first —
+ *  you shoot your rounds, you dive against the CPU's). */
+export function wcPensKicks(run: WcRun, s: WcPensState): { a: PenKick[]; b: PenKick[] } {
+  const seed = wcPensSeed(run, s);
+  const a: PenKick[] = [];
+  const b: PenKick[] = [];
+  for (;;) {
+    const st = shootoutStatus(a, b, "alternating");
+    if (st.decided || !st.next) break;
+    if (st.next === "a") {
+      const shot = s.shots[a.length];
+      if (shot === undefined) break;
+      a.push(resolveRound(seed, "a", a.length + 1, { shot }));
+    } else {
+      const dive = s.dives[b.length];
+      if (dive === undefined) break;
+      b.push(resolveRound(seed, "b", b.length + 1, { dive }));
+    }
+  }
+  return { a, b };
+}
+
+export type WcPensView = {
+  myKicks: PenKick[];
+  oppKicks: PenKick[];
+  role: "shoot" | "dive" | "done";
+  suddenDeath: boolean;
+  final: { outcome: "you" | "opp"; pens: { you: number; opp: number } } | null;
+};
+
+export function wcPensView(run: WcRun, s: WcPensState): WcPensView {
+  const k = wcPensKicks(run, s);
+  const st = shootoutStatus(k.a, k.b, "alternating");
+  return {
+    myKicks: k.a,
+    oppKicks: k.b,
+    role: st.decided ? "done" : st.next === "a" ? "shoot" : "dive",
+    suddenDeath: st.suddenDeath,
+    final: st.decided
+      ? { outcome: st.winner === "a" ? "you" : "opp", pens: { you: st.aGoals, opp: st.bGoals } }
+      : null,
+  };
+}
+
+/** What the run page shows alongside the shootout (opponent chip + the 90' score). */
+export function wcPensMeta(run: WcRun, s: WcPensState) {
+  const fixture = gamesForStage(run.plan, s.stage)[s.idx];
+  return { label: fixture.label, opponent: fixture.opponent, goals: s.goals };
+}
+
+/**
+ * Settle the pending game from its inputs (submitted kicks honored verbatim,
+ * anything missing seeded auto-fill), record it, then RESUME the stage from the
+ * next game — which may itself pend (the 2-game ko stage) or finish the stage.
+ */
+export function completeWcPens(run: WcRun, s: WcPensState): StageResolution {
+  const fixture = gamesForStage(run.plan, s.stage)[s.idx];
+  const opp = buildOpponent(run, fixture, s.idx);
+  const matchSeed = `${run.seed}:match:${s.stage}:${s.idx}`;
+  const drawn = resolveMatch(run.squad, opp.squad, matchSeed, { allowDraw: true });
+  const full = resolveInteractiveShootout(wcPensSeed(run, s), { aShots: s.shots, aDives: s.dives }, "alternating");
+  const settled: SingleMatchResult = {
+    ...drawn,
+    outcome: full.winner === "a" ? "A" : "B",
+    pens: full.score,
+  };
+  const row = buildMatchRow(run.id, s.stage, fixture, settled, opp.strength, s.idx);
+  const reveal = revealFor(fixture, opp.strength, settled);
+  const cont = resolveStageFrom(run, s.idx + 1, [...s.outcomesSoFar, outcomeOf(settled)], [...s.revealsSoFar, reveal]);
+  if (cont.pending) {
+    return { rows: [row, ...cont.rows], reveals: [reveal, ...cont.reveals], pending: cont.pending };
+  }
+  return {
+    rows: [row, ...cont.rows],
+    // The stage is complete — return EVERY game of the stage for the reveal overlay.
+    reveals: [...s.revealsSoFar, reveal, ...cont.reveals],
+    patch: cont.patch,
+  };
 }
