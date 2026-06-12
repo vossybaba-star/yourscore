@@ -41,13 +41,21 @@ function clubLines(strength: number): TeamLines {
  * dial. A drafted XI above ~74 Strength plays its season on form: its λ is lifted
  * and the opponents' damped, so good teams land in the 28–37-win zone (the
  * near-miss-the-Invincible territory that gets shared) instead of plateauing in
- * the mid-20s. Weak teams (≤74) are untouched, and 38-0 itself stays the preserve
- * of an elite XI — the cap keeps even a ~96 team at only a few percent per season.
+ * the mid-20s. Weak teams (≤74) are untouched.
+ *
+ * 38-0 stays the preserve of a genuinely elite, well-built XI: the boost only
+ * approaches its ceiling near the top of the Strength range, so an Invincible
+ * still takes a strong draft AND a good run — but a player who builds a ~92+ XI
+ * now has a real, repeatable shot at it (a double-digit % of such seasons), not a
+ * once-in-a-blue-moon fluke. This is a permanent property of the engine, not a
+ * window: the season seed is the XI itself, so the same team always reproduces
+ * the same result — an Invincible can be replayed and re-verified forever.
+ *
  * Applied symmetrically in expectedPoints/samplePoints so the projection, odds and
  * verdict all describe the same boosted world.
  */
 function formFactor(strength: number): number {
-  return clamp((strength - 74) / 50, 0, 0.35);
+  return clamp((strength - 74) / 26, 0, 0.85);
 }
 
 /** The player's λs vs a club, with the form boost applied (clamped to engine bounds). */

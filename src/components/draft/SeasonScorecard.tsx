@@ -47,6 +47,37 @@ export function SeasonScorecard({ data }: { data: SeasonData }) {
 
   return (
     <ScorecardShell fk={fk} accent={accent} eyebrow="Full season" headline={headline} context={data.context ?? "Season"}>
+      {/* INVINCIBLE — the moment. A gold congratulations banner above the record;
+          only a perfect 38-0 season ever sees it. */}
+      {data.invincible && (
+        <div
+          className="relative overflow-hidden rounded-2xl px-4 py-4 text-center"
+          style={{
+            marginBottom: 20,
+            background: "linear-gradient(135deg, rgba(255,215,0,0.16), rgba(255,184,0,0.04))",
+            border: "1px solid rgba(255,215,0,0.5)",
+            boxShadow: "0 0 40px rgba(255,215,0,0.18), inset 0 0 24px rgba(255,215,0,0.06)",
+          }}
+        >
+          {/* slow gold sheen sweep */}
+          <div
+            className="pointer-events-none absolute inset-0 sc-invincible-sheen"
+            style={{ background: "linear-gradient(110deg, transparent 35%, rgba(255,255,255,0.22) 50%, transparent 65%)" }}
+          />
+          <div style={{ fontSize: 30, lineHeight: 1 }}>🏆</div>
+          <Foil gradient="linear-gradient(90deg,#fff6cf,#ffd700,#f0a000,#ffd700,#fff6cf)" sheen
+            className="font-display mt-2" style={{ fontSize: 30, letterSpacing: "0.08em", lineHeight: 1 }}>
+            INVINCIBLE
+          </Foil>
+          <div className="mt-2 font-display" style={{ fontSize: 16, color: "#ffe98a", letterSpacing: "0.02em" }}>
+            38 played · 38 won · 0 lost
+          </div>
+          <div className="mt-1 font-body" style={{ fontSize: 12.5, color: "#cdbb7a", lineHeight: 1.45 }}>
+            The perfect season. One of the rarest things in 38-0 — congratulations.
+          </div>
+        </div>
+      )}
+
       {/* record — the hero */}
       <div className="grid grid-cols-3 gap-3" style={{ marginBottom: 22 }}>
         {record.map(([label, v, col, key]) => (

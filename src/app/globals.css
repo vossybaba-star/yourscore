@@ -118,6 +118,26 @@ input, textarea, select {
   100%      { transform: translateY(-92px) translateX(14px); opacity: 0; }
 }
 
+/* Gold sheen sweeping across the Invincible congratulations banner. */
+@keyframes scInvincibleSheen {
+  0%        { transform: translateX(-120%); }
+  100%      { transform: translateX(120%); }
+}
+
+/* Gold sparkles falling on the full-screen Invincible celebration. */
+@keyframes scInvincibleFall {
+  0%   { transform: translateY(0) translateX(0) rotate(0deg); opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { transform: translateY(102vh) translateX(var(--driftX, 0px)) rotate(220deg); opacity: 0; }
+}
+
+/* Gentle breathing glow on the INVINCIBLE wordmark. */
+@keyframes scInvinciblePulse {
+  0%, 100% { filter: drop-shadow(0 0 10px rgba(255,215,0,0.35)); }
+  50%      { filter: drop-shadow(0 0 26px rgba(255,215,0,0.7)); }
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
@@ -142,6 +162,16 @@ input, textarea, select {
     animation: scDrift linear infinite;
   }
 
+  /* Gold light-bar sweeping across the Invincible banner. */
+  .sc-invincible-sheen {
+    animation: scInvincibleSheen 3.2s ease-in-out infinite;
+  }
+
+  /* Breathing glow on the full-screen INVINCIBLE wordmark. */
+  .sc-invincible-pulse {
+    animation: scInvinciblePulse 2.4s ease-in-out infinite;
+  }
+
   .font-display {
     font-family: var(--font-bebas), sans-serif;
     letter-spacing: 0.02em;
@@ -163,6 +193,8 @@ input, textarea, select {
 /* Scorecard motion is decorative — never let it run when the user opts out. */
 @media (prefers-reduced-motion: reduce) {
   .animate-foil,
-  .sc-holo { animation: none; }
+  .sc-holo,
+  .sc-invincible-sheen,
+  .sc-invincible-pulse { animation: none; }
   .sc-particle { display: none; }
 }

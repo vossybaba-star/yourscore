@@ -30,6 +30,7 @@ export default function SeasonSim() {
   const [shareOpen, setShareOpen] = useState(false);
   const [shortUrl, setShortUrl] = useState<string | null>(null);
   const [giveawayOpen, setGiveawayOpen] = useState(false);
+  const [invincibleOpen, setInvincibleOpen] = useState(false);
   const giveawayShown = useRef(false);
   const recordSubmitted = useRef(false);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -102,13 +103,15 @@ export default function SeasonSim() {
     } catch { /* keep the long fallback */ }
   }
 
-  // Auto-show giveaway prompt when simulation first completes.
-  // Also kicks off short-URL minting so it's ready before the user taps tweet.
+  // When the season first completes: an Invincible (38-0) earns the full-screen
+  // gold celebration; everyone else gets the giveaway prompt. Either way we mint
+  // the short URL up front so sharing is instant.
   useEffect(() => {
     if (done && !giveawayShown.current) {
       giveawayShown.current = true;
       void ensureShortUrl();
-      const t = setTimeout(() => setGiveawayOpen(true), 700);
+      const invincible = !!result?.invincible;
+      const t = setTimeout(() => (invincible ? setInvincibleOpen(true) : setGiveawayOpen(true)), 700);
       return () => clearTimeout(t);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -350,6 +353,83 @@ export default function SeasonSim() {
             </button>
 
             <button onClick={() => setShareOpen(false)} className="w-full mt-2 rounded-2xl py-3 font-body active:scale-[0.98] transition-transform" style={{ background: "transparent", color: "#8888aa", fontSize: 15 }}>Close</button>
+          </div>
+        </div>
+      )}
+
+      {/* ── INVINCIBLE celebration ── the big moment for a perfect 38-0 season ── */}
+      {invincibleOpen && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center px-5"
+          style={{ background: "radial-gradient(120% 90% at 50% 18%, rgba(60,46,0,0.96), rgba(8,7,3,0.97))" }}
+          onClick={() => setInvincibleOpen(false)}
+        >
+          {/* falling gold sparkles */}
+          <div className="pointer-events-none absolute inset-0 overflow-hidden">
+            {Array.from({ length: 22 }).map((_, i) => (
+              <span
+                key={i}
+                className="absolute sc-particle"
+                style={{
+                  left: `${(i * 37) % 100}%`,
+                  top: "-12px",
+                  fontSize: 9 + (i % 4) * 4,
+                  color: i % 3 === 0 ? "#fff6cf" : "#ffd700",
+                  animationName: "scInvincibleFall" as unknown as string,
+                  animationDuration: `${3.4 + (i % 5) * 0.6}s`,
+                  animationDelay: `${(i % 7) * 0.4}s`,
+                  ["--driftX" as string]: `${((i % 5) - 2) * 18}px`,
+                }}
+              >
+                {i % 4 === 0 ? "★" : "✦"}
+              </span>
+            ))}
+          </div>
+
+          <div className="relative w-full max-w-md text-center" onClick={(e) => e.stopPropagation()}>
+            <div style={{ fontSize: 72, lineHeight: 1 }}>🏆</div>
+            <div className="font-body mt-3" style={{ fontSize: 12, color: "#ffd700", letterSpacing: 5 }}>PERFECT SEASON</div>
+            <h2
+              className="font-display tracking-wide leading-none mt-2 sc-invincible-pulse"
+              style={{
+                fontSize: 64,
+                background: "linear-gradient(92deg,#fff6cf,#ffd700,#f0a000,#ffd700,#fff6cf)",
+                backgroundClip: "text",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+              }}
+            >
+              INVINCIBLE
+            </h2>
+            <div className="font-display tracking-wide mt-2" style={{ fontSize: 30, color: "#fff" }}>
+              {r.wins}<span style={{ color: "#ffd700" }}>-</span>{r.draws}<span style={{ color: "#ffd700" }}>-</span>{r.losses}
+            </div>
+            <p className="font-body mt-3 mx-auto" style={{ fontSize: 14, color: "#e8d9a0", lineHeight: 1.55, maxWidth: 320 }}>
+              38 played, 38 won, not beaten once. One of the rarest results in 38-0 — you built a perfect season.
+              <br />
+              <span style={{ color: "#bfae78", fontSize: 12.5 }}>Post it to claim your place on the board (and enter today&apos;s £25 giveaway).</span>
+            </p>
+
+            <a
+              href={giveawayTweetUrl()}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setInvincibleOpen(false)}
+              className="flex items-center justify-center gap-3 w-full rounded-2xl py-4 mt-6 font-display tracking-wide active:scale-[0.98] transition-transform"
+              style={{ background: "linear-gradient(135deg,#ffe98a,#ffd700)", color: "#1c1400", fontSize: 21, textDecoration: "none", boxShadow: "0 0 36px rgba(255,215,0,0.35)" }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="#1c1400">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.741l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+              </svg>
+              SHARE YOUR INVINCIBLE SEASON
+            </a>
+            <button
+              onClick={() => setInvincibleOpen(false)}
+              className="w-full mt-3 font-body"
+              style={{ fontSize: 14, color: "#8a7d52", background: "transparent", border: "none", cursor: "pointer" }}
+            >
+              See my scorecard
+            </button>
           </div>
         </div>
       )}
