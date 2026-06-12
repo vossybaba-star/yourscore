@@ -22,7 +22,8 @@ export async function POST(req: NextRequest) {
   try {
     const db = createDraftDb();
     if (typeof body.wantsPens === "boolean") {
-      const match = await setDrawChoice(db, body.matchId, user.id, body.wantsPens);
+      // Legacy clients (pre-pens-rework) — draws always go to penalties now.
+      const match = await setDrawChoice(db, body.matchId, user.id);
       if (!match) return NextResponse.json({ error: "Match not found" }, { status: 404 });
       return NextResponse.json({ match });
     }

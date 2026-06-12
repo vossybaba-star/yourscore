@@ -248,7 +248,7 @@ export async function liveKick(
 
   const seed = pensSeed(`${row.id}:pens`);
   const kick = resolveRound(seed, mySide, round, { shot });
-  let p1Kick: PenKick | null = mySide === "a" ? kick : null;
+  const p1Kick: PenKick | null = mySide === "a" ? kick : null;
   let p2Kick: PenKick | null = mySide === "b" ? kick : null;
   // A disguised bot answers in the same statement, round for round.
   if (row.is_bot && k.b.length === round - 1 && mySide === "a") {
@@ -430,7 +430,7 @@ export async function setBotReady(db: SupabaseClient<DraftDatabase>, matchId: st
 /** Legacy no-op (draw_decision is retired — draws always go to penalties now).
  *  Pre-rework clients still post a choice for one release; treat it as a plain
  *  advance ping so their match falls straight into the shootout. */
-export async function setDrawChoice(db: SupabaseClient<DraftDatabase>, matchId: string, userId: string, _wantsPens: boolean): Promise<DraftLiveMatchRow | null> {
+export async function setDrawChoice(db: SupabaseClient<DraftDatabase>, matchId: string, userId: string): Promise<DraftLiveMatchRow | null> {
   const { data: row } = await db.from("draft_live_matches").select("id, p1_id, p2_id").eq("id", matchId).maybeSingle();
   if (!row) return null;
   if (!sideOf(row as DraftLiveMatchRow, userId)) throw new Error("Not a participant");
