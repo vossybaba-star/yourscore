@@ -1,18 +1,19 @@
 "use client";
 
 /**
- * Interactive penalty shootout — the night-stadium scene. Tap a zone to shoot,
- * tap a side to dive. Pure presentation: every kick arrives already resolved
- * (PenKick), so this component never computes an outcome — it stages what it's
- * given. Shared by the solo flow (alternating: you shoot AND dive) and live H2H
- * (simultaneous: you shoot, the opponent's kicks stream into the scoreboard).
+ * Interactive penalty shootout — cinematic night-stadium scene, shot from low
+ * behind the penalty spot the way real penalty games frame it: the goal dominates
+ * the top of the frame, the ball sits big in the foreground, floodlights flare
+ * over a bokeh crowd, and the pitch stripes converge to a vanishing point.
  *
- * Deliberately cheap: one background SVG + CSS transforms (GPU-composited), no
- * canvas, no rAF loop, no deps. The ball flies a real arc (linear X over an
- * eased Y), the keeper is articulated (set → dive → save poses), goals burst
- * particles, a kick that can settle the shootout plays in slow motion. Sound is
- * synthesized WebAudio behind a muted-by-default toggle (sfx.ts); reduced motion
- * drops to instant text outcomes.
+ * Pure presentation: every kick arrives already resolved (PenKick) — this
+ * component never computes an outcome, it stages what it's given. Shared by the
+ * solo flow (alternating: you shoot AND dive) and live H2H (simultaneous: you
+ * shoot, the opponent's kicks stream into the scoreboard).
+ *
+ * Still deliberately cheap: one backdrop SVG + CSS transforms, no canvas, no rAF
+ * loop, no deps, no image assets. Synthesized sound + haptics live in sfx.ts
+ * behind a muted-by-default toggle; reduced motion gets instant text outcomes.
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -31,18 +32,19 @@ export type PensView = {
   result: "win" | "loss" | null;
 };
 
-// ── Stage geometry (percent of the stage box; SVG viewBox 0 0 100 100) ────────
-const COL_X = [27, 50, 73];
-const ROW_Y = { high: 38.5, low: 53.5 } as const;
-const SPOT = { x: 50, y: 86.5 };
+// ── Stage geometry (percent of the stage box; backdrop viewBox 0 0 100 100) ───
+const GOAL = { left: 10, right: 90, bar: 20, line: 56 };
+const COL_X = [25.5, 50, 74.5];
+const ROW_Y = { high: 29, low: 46 } as const;
+const SPOT = { x: 50, y: 85 };
 
 const zoneX = (z: PenZone) => COL_X[z % 3];
 const zoneY = (z: PenZone) => (z >= 3 ? ROW_Y.high : ROW_Y.low);
 /** Where a missed ball ends up: over the bar for center, wide of the post for corners. */
 const missTarget = (z: PenZone) => {
   const col = z % 3;
-  if (col === 1) return { x: 50 + (z >= 3 ? 10 : -10), y: 14 };
-  return { x: col === 0 ? 4 : 96, y: z >= 3 ? 24 : 46 };
+  if (col === 1) return { x: 50 + (z >= 3 ? 11 : -11), y: 6 };
+  return { x: col === 0 ? 2 : 98, y: z >= 3 ? 14 : 36 };
 };
 
 const GREEN = "#00ff87";
@@ -85,20 +87,147 @@ function Pips({ kicks, total, color, align }: { kicks: PenKick[]; total: number;
   );
 }
 
-// ── Articulated keeper ─────────────────────────────────────────────────────────
+// ── Crowd bokeh (deterministic so SSR/CSR match) ───────────────────────────────
+const CROWD_COLORS = ["#41415e", "#37475e", "#503d52", "#3c5557", "#45405f", "#574a44"];
+const CROWD = Array.from({ length: 240 }, (_, i) => {
+  const row = Math.floor(i / 24);
+  const wob = ((i * 73) % 17) / 17;
+  return {
+    x: ((i * 41) % 96) + 2 + wob * 2.2,
+    y: 3 + row * 4.7 + (((i * 29) % 11) / 11) * 2.4,
+    r: 0.55 + row * 0.075 + (((i * 53) % 7) / 7) * 0.22,
+    c: CROWD_COLORS[i % CROWD_COLORS.length],
+  };
+});
+const FLASHES = Array.from({ length: 7 }, (_, i) => ({
+  x: ((i * 137) % 90) + 5,
+  y: 5 + ((i * 61) % 40),
+  d: (i * 0.9) % 4.2,
+}));
+
+// Converging mow stripes: bottom edge → vanishing point above the goal line.
+const VANISH = { x: 50, y: 30 };
+const STRIPES = Array.from({ length: 9 }, (_, i) => {
+  const b0 = -22 + i * 16;
+  const b1 = b0 + 16;
+  const tx = (x: number) => VANISH.x + (x - VANISH.x) * 0.30;
+  return { pts: `${b0},100 ${b1},100 ${tx(b1)},${GOAL.line} ${tx(b0)},${GOAL.line}`, dark: i % 2 === 0 };
+});
+
+function Backdrop({ reduced }: { reduced: boolean }) {
+  // Net mesh: vertical strands bow outward, horizontals sag — a hung net, not a grid.
+  const netV = Array.from({ length: 13 }, (_, i) => {
+    const x = GOAL.left + 2.5 + i * ((GOAL.right - GOAL.left - 5) / 12);
+    const bow = (x - 50) * 0.045;
+    return `M ${x} ${GOAL.bar + 1.2} Q ${x + bow} ${(GOAL.bar + GOAL.line) / 2} ${x - bow * 0.4} ${GOAL.line - 0.8}`;
+  });
+  const netH = Array.from({ length: 8 }, (_, i) => {
+    const y = GOAL.bar + 2.5 + i * ((GOAL.line - GOAL.bar - 5) / 7);
+    return `M ${GOAL.left + 1.5} ${y} Q 50 ${y + 1.6} ${GOAL.right - 1.5} ${y}`;
+  });
+  return (
+    <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="pensSky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#05060d" />
+          <stop offset="0.7" stopColor="#0b0e1d" />
+          <stop offset="1" stopColor="#121627" />
+        </linearGradient>
+        <linearGradient id="pensTurf" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#1c5c38" />
+          <stop offset="0.5" stopColor="#15532f" />
+          <stop offset="1" stopColor="#0b3a20" />
+        </linearGradient>
+        <radialGradient id="pensPool" cx="0.5" cy="0.35" r="0.75">
+          <stop offset="0" stopColor="rgba(235,255,240,0.16)" />
+          <stop offset="0.55" stopColor="rgba(235,255,240,0.05)" />
+          <stop offset="1" stopColor="rgba(235,255,240,0)" />
+        </radialGradient>
+        <radialGradient id="pensFlare" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0" stopColor="rgba(225,235,255,0.85)" />
+          <stop offset="0.25" stopColor="rgba(205,220,255,0.28)" />
+          <stop offset="1" stopColor="rgba(205,220,255,0)" />
+        </radialGradient>
+        <linearGradient id="pensBeam" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="rgba(215,230,255,0.10)" />
+          <stop offset="1" stopColor="rgba(215,230,255,0)" />
+        </linearGradient>
+      </defs>
+
+      {/* night stand behind the goal + bokeh crowd */}
+      <rect x="0" y="0" width="100" height="54" fill="url(#pensSky)" />
+      <g opacity="0.6">
+        {CROWD.map((d, i) => <circle key={i} cx={d.x} cy={d.y} r={d.r} fill={d.c} />)}
+      </g>
+      <rect x="0" y="0" width="100" height="54" fill="rgba(4,5,10,0.5)" />
+      {/* phone flashes twinkling in the crowd */}
+      {!reduced && FLASHES.map((f, i) => (
+        <circle key={i} cx={f.x} cy={f.y} r="0.5" fill="#fff"
+          style={{ animation: `pensTwinkle 4.2s ease-in-out ${f.d}s infinite` }} />
+      ))}
+
+      {/* floodlight beams sweeping down onto the pitch */}
+      <polygon points="2,0 22,0 64,56 30,56" fill="url(#pensBeam)" />
+      <polygon points="78,0 98,0 70,56 36,56" fill="url(#pensBeam)" />
+
+      {/* LED hoarding under the stand */}
+      <rect x="0" y="50.2" width="100" height="3.9" fill="#070b14" />
+      <rect x="0" y="50.2" width="100" height="3.9" fill="rgba(0,255,135,0.05)" />
+      <text x="50" y="53.1" textAnchor="middle" fontSize="2.3" letterSpacing="1.7" fill="rgba(0,255,135,0.55)" fontFamily="inherit" fontWeight="bold">
+        Y O U R S C O R E   ·   3 8 - 0   ·   Y O U R S C O R E   ·   3 8 - 0
+      </text>
+
+      {/* floodlit pitch with converging stripes */}
+      <rect x="0" y="54" width="100" height="46" fill="url(#pensTurf)" />
+      {STRIPES.map((s, i) => s.dark && <polygon key={i} points={s.pts} fill="rgba(0,0,0,0.16)" />)}
+      <rect x="0" y="54" width="100" height="46" fill="url(#pensPool)" />
+      {/* goal line + the D */}
+      <rect x="0" y={GOAL.line - 0.35} width="100" height="0.8" fill="rgba(255,255,255,0.6)" />
+      <path d={`M 14 100 Q 50 ${SPOT.y - 17} 86 100`} fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="0.6" />
+      <ellipse cx={SPOT.x} cy={SPOT.y + 0.5} rx="1.7" ry="0.6" fill="rgba(255,255,255,0.5)" />
+
+      {/* goal mouth: dark interior, hung net, side panels */}
+      <polygon points={`${GOAL.left},${GOAL.bar} ${GOAL.right},${GOAL.bar} ${GOAL.right},${GOAL.line} ${GOAL.left},${GOAL.line}`} fill="rgba(3,4,8,0.82)" />
+      <g stroke="rgba(235,240,255,0.22)" strokeWidth="0.22" fill="none">
+        {netV.map((d, i) => <path key={`v${i}`} d={d} />)}
+        {netH.map((d, i) => <path key={`h${i}`} d={d} />)}
+      </g>
+      {/* side-net shading at the posts */}
+      <polygon points={`${GOAL.left},${GOAL.bar} ${GOAL.left + 4.5},${GOAL.bar + 3} ${GOAL.left + 4.5},${GOAL.line} ${GOAL.left},${GOAL.line}`} fill="rgba(10,12,20,0.4)" />
+      <polygon points={`${GOAL.right},${GOAL.bar} ${GOAL.right - 4.5},${GOAL.bar + 3} ${GOAL.right - 4.5},${GOAL.line} ${GOAL.right},${GOAL.line}`} fill="rgba(10,12,20,0.4)" />
+
+      {/* frame: posts + crossbar with a 3D inner face and ground shadows */}
+      <rect x={GOAL.left - 1} y={GOAL.bar - 0.4} width="1.8" height={GOAL.line - GOAL.bar + 0.4} rx="0.9" fill="#eef0f8" />
+      <rect x={GOAL.left + 0.55} y={GOAL.bar} width="0.55" height={GOAL.line - GOAL.bar} fill="#9aa0b8" />
+      <rect x={GOAL.right - 0.8} y={GOAL.bar - 0.4} width="1.8" height={GOAL.line - GOAL.bar + 0.4} rx="0.9" fill="#eef0f8" />
+      <rect x={GOAL.right - 1.1} y={GOAL.bar} width="0.55" height={GOAL.line - GOAL.bar} fill="#9aa0b8" />
+      <rect x={GOAL.left - 1} y={GOAL.bar - 1.1} width={GOAL.right - GOAL.left + 2} height="1.9" rx="0.95" fill="#eef0f8" />
+      <rect x={GOAL.left - 1} y={GOAL.bar + 0.45} width={GOAL.right - GOAL.left + 2} height="0.55" fill="#9aa0b8" />
+      <ellipse cx={GOAL.left} cy={GOAL.line + 0.5} rx="2.6" ry="0.55" fill="rgba(0,0,0,0.4)" />
+      <ellipse cx={GOAL.right} cy={GOAL.line + 0.5} rx="2.6" ry="0.55" fill="rgba(0,0,0,0.4)" />
+
+      {/* floodlight flares in the top corners */}
+      <circle cx="7" cy="2" r="13" fill="url(#pensFlare)" />
+      <circle cx="93" cy="2" r="13" fill="url(#pensFlare)" />
+      <path d="M 1 2 H 13 M 7 -4 V 8" stroke="rgba(230,240,255,0.5)" strokeWidth="0.3" />
+      <path d="M 87 2 H 99 M 93 -4 V 8" stroke="rgba(230,240,255,0.5)" strokeWidth="0.3" />
+    </svg>
+  );
+}
+
+// ── Articulated, shaded keeper ─────────────────────────────────────────────────
 type KeeperPose = { body: string; armL: string; armR: string; legL: string; legR: string };
 const POSES: Record<"set" | "stay" | "dive", KeeperPose> = {
-  // Crouched, arms wide — on his toes.
-  set:  { body: "scaleY(0.95)", armL: "rotate(48deg)",  armR: "rotate(-48deg)",  legL: "rotate(6deg)",   legR: "rotate(-6deg)" },
+  // Crouched on his toes, arms wide.
+  set:  { body: "scaleY(0.94)", armL: "rotate(52deg)",  armR: "rotate(-52deg)",  legL: "rotate(7deg)",   legR: "rotate(-7deg)" },
   // Stood tall, arms straight up.
-  stay: { body: "scaleY(1.04)", armL: "rotate(152deg)", armR: "rotate(-152deg)", legL: "rotate(0deg)",   legR: "rotate(0deg)" },
-  // Full stretch (container handles the lean/rotation; limbs reach with it).
-  dive: { body: "none",         armL: "rotate(150deg)", armR: "rotate(-178deg)", legL: "rotate(-14deg)", legR: "rotate(22deg)" },
+  stay: { body: "scaleY(1.05)", armL: "rotate(155deg)", armR: "rotate(-155deg)", legL: "rotate(0deg)",   legR: "rotate(0deg)" },
+  // Full stretch (container handles the lean; the limbs reach with it).
+  dive: { body: "none",         armL: "rotate(148deg)", armR: "rotate(-178deg)", legL: "rotate(-16deg)", legR: "rotate(24deg)" },
 };
 
 function Keeper({ color, dive, reach, glow, reduced }: {
   color: string;
-  /** null = set position; 0/1/2 = committed dive (left/stay/right). */
   dive: PenColumn | null;
   /** Vertical reach for a committed dive: negative = flying high. */
   reach: number;
@@ -113,119 +242,83 @@ function Keeper({ color, dive, reach, glow, reduced }: {
   });
   return (
     <div
-      className={!dive && !reduced ? "animate-pulse-slow" : undefined}
       style={{
-        position: "absolute", left: "50%", top: "41%", width: "10.5%", height: "21.5%",
-        transform: `translateX(-50%) translateX(${dir * 235}%) translateY(${dive !== null ? reach : 0}%) rotate(${dir * 64}deg)`,
-        transformOrigin: "50% 92%",
+        position: "absolute", left: "50%", top: "31%", width: "13%", height: "26%",
+        transform: `translateX(-50%) translateX(${dir * 182}%) translateY(${dive !== null ? reach : 0}%) rotate(${dir * 62}deg)`,
+        transformOrigin: "50% 94%",
         transition: reduced ? undefined : "transform 0.42s cubic-bezier(0.3, 0.9, 0.4, 1)",
-        filter: glow ? `drop-shadow(0 0 9px ${AMBER})` : "drop-shadow(0 3px 3px rgba(0,0,0,0.45))",
+        filter: glow ? `drop-shadow(0 0 10px ${AMBER})` : "drop-shadow(0 4px 4px rgba(0,0,0,0.55))",
         zIndex: 3,
       }}
     >
-      <svg viewBox="0 0 36 60" width="100%" height="100%" style={{ overflow: "visible", transform: pose.body, transformOrigin: "50% 90%" }}>
-        {/* legs + boots */}
-        <g style={limb(pose.legL, "15px 35px")}>
-          <rect x="13.2" y="34" width="3.8" height="16" rx="1.9" fill={color} opacity="0.82" />
-          <rect x="12.4" y="49" width="5.4" height="3" rx="1.5" fill="#1a1a24" />
+      <svg viewBox="0 0 44 70" width="100%" height="100%" style={{ overflow: "visible", transform: pose.body, transformOrigin: "50% 92%" }}>
+        <defs>
+          <linearGradient id="pensKitShade" x1="0" y1="0" x2="1" y2="0.2">
+            <stop offset="0" stopColor="rgba(255,255,255,0.28)" />
+            <stop offset="0.45" stopColor="rgba(255,255,255,0)" />
+            <stop offset="1" stopColor="rgba(0,0,0,0.34)" />
+          </linearGradient>
+        </defs>
+        {/* legs: sock + boot */}
+        <g style={limb(POSES === undefined ? "" : pose.legL, "17px 40px")}>
+          <rect x="14.6" y="38" width="4.6" height="14" rx="2.3" fill={color} />
+          <rect x="14.6" y="38" width="4.6" height="14" rx="2.3" fill="url(#pensKitShade)" />
+          <rect x="14.6" y="47" width="4.6" height="5" rx="2" fill="#e8e8f0" />
+          <path d="M 13.6 56.5 q 0 -3.4 3.3 -3.4 h 1.4 v 3.4 z" fill="#15151f" />
         </g>
-        <g style={limb(pose.legR, "21px 35px")}>
-          <rect x="19" y="34" width="3.8" height="16" rx="1.9" fill={color} opacity="0.82" />
-          <rect x="18.2" y="49" width="5.4" height="3" rx="1.5" fill="#1a1a24" />
+        <g style={limb(pose.legR, "27px 40px")}>
+          <rect x="24.8" y="38" width="4.6" height="14" rx="2.3" fill={color} />
+          <rect x="24.8" y="38" width="4.6" height="14" rx="2.3" fill="url(#pensKitShade)" />
+          <rect x="24.8" y="47" width="4.6" height="5" rx="2" fill="#e8e8f0" />
+          <path d="M 30.4 56.5 q 0 -3.4 -3.3 -3.4 h -1.4 v 3.4 z" fill="#15151f" />
         </g>
-        {/* shorts + torso */}
-        <rect x="12" y="28.5" width="12" height="7.5" rx="2.4" fill="#10101a" />
-        <path d="M13 13.5 Q18 11.5 23 13.5 L24.4 29 L11.6 29 Z" fill={color} />
-        <rect x="14.6" y="16" width="6.8" height="1.6" rx="0.8" fill="rgba(0,0,0,0.25)" />
-        {/* head */}
-        <circle cx="18" cy="8" r="5" fill="#d9a883" />
-        <path d="M13.2 6.6 A5 5 0 0 1 22.8 6.6 L22 4.4 A5 5 0 0 0 14 4.4 Z" fill="#2a2a36" />
-        {/* arms + gloves */}
-        <g style={limb(pose.armL, "13.6px 15px")}>
-          <rect x="12" y="14" width="3.3" height="14.5" rx="1.65" fill={color} />
-          <circle cx="13.6" cy="29.5" r="2.6" fill="#f2f2f6" />
+        {/* shorts */}
+        <path d="M 14 33 H 30 L 30.8 41 H 23.4 L 22 37.6 L 20.6 41 H 13.2 Z" fill="#11131d" />
+        {/* torso: tapered jersey + form shading + collar */}
+        <path d="M 15 16 Q 22 13.4 29 16 L 30.4 34 Q 22 36 13.6 34 Z" fill={color} />
+        <path d="M 15 16 Q 22 13.4 29 16 L 30.4 34 Q 22 36 13.6 34 Z" fill="url(#pensKitShade)" />
+        <path d="M 18.6 15.2 Q 22 17.4 25.4 15.2 L 24.4 18.4 H 19.6 Z" fill="rgba(0,0,0,0.3)" />
+        <text x="22" y="27" textAnchor="middle" fontSize="7.5" fontWeight="bold" fill="rgba(255,255,255,0.85)" fontFamily="inherit">1</text>
+        {/* head: neck, face, hair */}
+        <rect x="19.8" y="10.5" width="4.4" height="4" fill="#caa07e" />
+        <circle cx="22" cy="7.6" r="5.6" fill="#d9ab84" />
+        <circle cx="22" cy="7.6" r="5.6" fill="url(#pensKitShade)" opacity="0.5" />
+        <path d="M 16.4 6.8 A 5.6 5.6 0 0 1 27.6 6.8 L 26.6 3.6 Q 22 0.9 17.4 3.6 Z" fill="#23222d" />
+        {/* arms: capsule + glove */}
+        <g style={limb(pose.armL, "16px 18px")}>
+          <rect x="14" y="17" width="4.2" height="17" rx="2.1" fill={color} />
+          <rect x="14" y="17" width="4.2" height="17" rx="2.1" fill="url(#pensKitShade)" />
+          <circle cx="16.1" cy="35.4" r="3" fill="#f4f4f8" />
+          <circle cx="16.1" cy="35.4" r="3" fill="url(#pensKitShade)" opacity="0.6" />
         </g>
-        <g style={limb(pose.armR, "22.4px 15px")}>
-          <rect x="20.7" y="14" width="3.3" height="14.5" rx="1.65" fill={color} />
-          <circle cx="22.4" cy="29.5" r="2.6" fill="#f2f2f6" />
+        <g style={limb(pose.armR, "28px 18px")}>
+          <rect x="25.8" y="17" width="4.2" height="17" rx="2.1" fill={color} />
+          <rect x="25.8" y="17" width="4.2" height="17" rx="2.1" fill="url(#pensKitShade)" />
+          <circle cx="27.9" cy="35.4" r="3" fill="#f4f4f8" />
+          <circle cx="27.9" cy="35.4" r="3" fill="url(#pensKitShade)" opacity="0.6" />
         </g>
       </svg>
     </div>
   );
 }
 
-// ── The scene backdrop (one SVG: crowd, goal, net, pitch) ──────────────────────
-function Backdrop() {
-  return (
-    <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-      <defs>
-        <pattern id="pensCrowd" width="3.4" height="2.6" patternUnits="userSpaceOnUse">
-          <circle cx="0.8" cy="0.7" r="0.55" fill="#3c3c52" />
-          <circle cx="2.5" cy="1.9" r="0.55" fill="#2e3a4e" />
-          <circle cx="1.7" cy="0.4" r="0.4" fill="#4a3a48" />
-        </pattern>
-        <pattern id="pensNetMesh" width="2.1" height="2.1" patternUnits="userSpaceOnUse">
-          <path d="M0 0 H2.1 M0 0 V2.1" stroke="rgba(255,255,255,0.16)" strokeWidth="0.18" />
-        </pattern>
-        <linearGradient id="pensPitch" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#0d3220" />
-          <stop offset="1" stopColor="#11402a" />
-        </linearGradient>
-      </defs>
-
-      {/* crowd tiers */}
-      <rect x="0" y="0" width="100" height="16" fill="url(#pensCrowd)" opacity="0.7" />
-      <rect x="0" y="0" width="100" height="16" fill="#0a0a14" opacity="0.3" />
-      <rect x="0" y="16" width="100" height="13" fill="url(#pensCrowd)" opacity="0.95" />
-      <rect x="0" y="15.6" width="100" height="0.8" fill="#05050a" />
-      <rect x="0" y="28.6" width="100" height="1" fill="#05050a" />
-      {/* ad hoarding */}
-      <rect x="0" y="29.6" width="100" height="3.6" fill="#0e1420" />
-      <text x="50" y="32.3" textAnchor="middle" fontSize="2.1" letterSpacing="1.6" fill="rgba(0,255,135,0.4)" fontFamily="inherit">YOURSCORE · 38-0 · YOURSCORE · 38-0 · YOURSCORE</text>
-
-      {/* pitch with perspective mowing bands */}
-      <rect x="0" y="33.2" width="100" height="66.8" fill="url(#pensPitch)" />
-      {[[33.2, 4.6], [37.8, 5.8], [49, 7.5], [64, 10], [82, 18]].map(([y, h], i) => (
-        <rect key={i} x="0" y={y} width="100" height={h} fill={i % 2 ? "#0f3a26" : "#0a2a1a"} />
-      ))}
-
-      {/* goal: back plane + top + side netting, then the frame */}
-      <polygon points="20,34.5 80,34.5 80,58.5 20,58.5" fill="rgba(6,8,13,0.82)" />
-      <polygon points="20,34.5 80,34.5 80,58.5 20,58.5" fill="url(#pensNetMesh)" />
-      <polygon points="15,30.5 85,30.5 80,34.5 20,34.5" fill="url(#pensNetMesh)" opacity="0.8" />
-      <polygon points="15,30.5 20,34.5 20,58.5 15,62" fill="url(#pensNetMesh)" opacity="0.8" />
-      <polygon points="85,30.5 80,34.5 80,58.5 85,62" fill="url(#pensNetMesh)" opacity="0.8" />
-      <line x1="20" y1="58.5" x2="80" y2="58.5" stroke="rgba(255,255,255,0.18)" strokeWidth="0.25" />
-      {/* posts + crossbar */}
-      <rect x="14.3" y="30" width="1.4" height="32.4" rx="0.7" fill="#f4f4f8" />
-      <rect x="84.3" y="30" width="1.4" height="32.4" rx="0.7" fill="#f4f4f8" />
-      <rect x="14.3" y="29.6" width="71.4" height="1.5" rx="0.75" fill="#f4f4f8" />
-      <rect x="14.3" y="30.9" width="71.4" height="0.4" fill="rgba(0,0,0,0.25)" />
-
-      {/* markings: goal line, six-yard box, spot, arc */}
-      <rect x="0" y="61.7" width="100" height="0.7" fill="rgba(255,255,255,0.5)" />
-      <polygon points="24,62.4 76,62.4 79,73 21,73" fill="none" stroke="rgba(255,255,255,0.32)" strokeWidth="0.55" />
-      <ellipse cx="50" cy="86.5" rx="1.5" ry="0.75" fill="rgba(255,255,255,0.55)" />
-      <path d="M30 100 Q50 90 70 100" fill="none" stroke="rgba(255,255,255,0.28)" strokeWidth="0.55" />
-    </svg>
-  );
-}
-
-// ── The ball (white panels + spin) ─────────────────────────────────────────────
+// ── The ball (panelled, lit from the floodlights) ──────────────────────────────
 function Ball({ spinning, reduced }: { spinning: boolean; reduced: boolean }) {
   return (
     <svg viewBox="0 0 20 20" width="100%" height="100%"
-      style={{ animation: spinning && !reduced ? "pensSpin 0.45s linear infinite" : undefined, display: "block" }}>
-      <circle cx="10" cy="10" r="9.4" fill="#f5f5fa" />
-      <circle cx="10" cy="10" r="9.4" fill="url(#pensBallShade)" />
+      style={{ animation: spinning && !reduced ? "pensSpin 0.4s linear infinite" : undefined, display: "block" }}>
       <defs>
-        <radialGradient id="pensBallShade" cx="0.35" cy="0.3" r="0.95">
-          <stop offset="0.45" stopColor="rgba(255,255,255,0)" />
-          <stop offset="1" stopColor="rgba(40,40,60,0.55)" />
+        <radialGradient id="pensBallLight" cx="0.32" cy="0.26" r="1">
+          <stop offset="0" stopColor="#ffffff" />
+          <stop offset="0.55" stopColor="#e9e9f2" />
+          <stop offset="1" stopColor="#7e8298" />
         </radialGradient>
       </defs>
-      <polygon points="10,6.4 13.2,8.7 12,12.4 8,12.4 6.8,8.7" fill="#23232f" />
-      <path d="M10 0.6 L10 6.4 M13.2 8.7 L18.8 7 M12 12.4 L15.5 17 M8 12.4 L4.5 17 M6.8 8.7 L1.2 7" stroke="#23232f" strokeWidth="1" fill="none" />
+      <circle cx="10" cy="10" r="9.5" fill="url(#pensBallLight)" />
+      <polygon points="10,6.2 13.4,8.6 12.1,12.5 7.9,12.5 6.6,8.6" fill="#1d1d28" />
+      <path d="M10 0.5 L10 6.2 M13.4 8.6 L19 6.8 M12.1 12.5 L15.8 17.2 M7.9 12.5 L4.2 17.2 M6.6 8.6 L1 6.8"
+        stroke="#1d1d28" strokeWidth="1.05" fill="none" strokeLinecap="round" />
+      <ellipse cx="7" cy="5.6" rx="2.6" ry="1.6" fill="rgba(255,255,255,0.65)" transform="rotate(-28 7 5.6)" />
     </svg>
   );
 }
@@ -342,11 +435,12 @@ export function PenaltyShootout({
   let ball = { x: SPOT.x, y: SPOT.y, scale: 1 };
   if (stageKick) {
     const to = stageKick.outcome === "missed" ? missTarget(stageKick.shot) : { x: zoneX(stageKick.shot), y: zoneY(stageKick.shot) };
-    ball = { x: to.x, y: to.y, scale: 0.52 };
+    ball = { x: to.x, y: to.y, scale: 0.42 };
   } else if (aim !== null) {
-    ball = { x: zoneX(aim), y: zoneY(aim), scale: 0.52 }; // optimistic flight to my aim
+    ball = { x: zoneX(aim), y: zoneY(aim), scale: 0.42 }; // optimistic flight to my aim
   }
   const dur = flightMs(anim?.slow ?? false);
+  const ballHome = !inFlight && !stageKick;
 
   // Keeper: resolved kick's dive, or my optimistic pick while waiting.
   const diveCol: PenColumn | null = stageKick ? stageKick.dive : myDive;
@@ -354,7 +448,7 @@ export function PenaltyShootout({
   const saved = anim?.kind === "outcome" && anim.kick.outcome === "saved";
   // A saving keeper reaches the ball's row; a beaten one goes low.
   const reach = stageKick && diveCol !== null && diveCol !== 1
-    ? (stageKick.outcome === "saved" && stageKick.shot >= 3 ? -34 : -6)
+    ? (stageKick.outcome === "saved" && stageKick.shot >= 3 ? -30 : -4)
     : 0;
 
   const outcome = anim?.kind === "outcome" ? anim.kick.outcome : null;
@@ -367,19 +461,21 @@ export function PenaltyShootout({
 
   const caption =
     view.result ? "" :
-    view.role === "shoot" ? "Pick your spot — tap where you want to put it" :
+    view.role === "shoot" ? "Pick your spot — tap a target to put it there" :
     view.role === "dive" ? `${oppName} steps up — pick a way to dive` :
     simultaneous ? `Waiting for ${oppName}…` : "…";
 
   return (
     <div className="w-full select-none">
       <style>{`
-        @keyframes pensNet { 0% { transform: scaleY(1); } 40% { transform: scaleY(1.06) translateY(1.5%); } 100% { transform: scaleY(1); } }
+        @keyframes pensNet { 0% { transform: scaleY(1); } 40% { transform: scaleY(1.05) translateY(1%); } 100% { transform: scaleY(1); } }
         @keyframes pensShake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
         @keyframes pensPop { 0% { transform: scale(0.55); opacity: 0; } 60% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); } }
         @keyframes pensSpin { to { transform: rotate(360deg); } }
         @keyframes pensBurst { 0% { transform: translate(0,0) scale(1); opacity: 1; } 100% { transform: translate(var(--dx), var(--dy)) scale(0.25); opacity: 0; } }
         @keyframes pensConfetti { 0% { transform: translateY(0) rotate(0); opacity: 1; } 100% { transform: translateY(46vh) rotate(540deg); opacity: 0; } }
+        @keyframes pensTwinkle { 0%, 86%, 100% { opacity: 0; } 90% { opacity: 0.95; } 94% { opacity: 0.2; } }
+        @keyframes pensRing { 0%, 100% { transform: scale(1); opacity: 0.75; } 50% { transform: scale(1.07); opacity: 1; } }
       `}</style>
 
       {/* Scoreboard */}
@@ -406,66 +502,74 @@ export function PenaltyShootout({
       <div
         className="relative w-full overflow-hidden rounded-2xl"
         style={{
-          aspectRatio: "10/8",
-          background:
-            "radial-gradient(ellipse 60% 38% at 18% -6%, rgba(210,225,255,0.14) 0%, transparent 60%)," +
-            "radial-gradient(ellipse 60% 38% at 82% -6%, rgba(210,225,255,0.14) 0%, transparent 60%)," +
-            "linear-gradient(180deg, #07070f 0%, #0b0d1a 30%, #0d3220 34%, #11402a 100%)",
+          aspectRatio: "10/9",
+          background: "#05060d",
           border: "1px solid rgba(255,255,255,0.09)",
-          boxShadow: "inset 0 -18px 40px rgba(0,0,0,0.35)",
+          boxShadow: "inset 0 -26px 50px rgba(0,0,0,0.5), inset 0 14px 30px rgba(0,0,0,0.3)",
           transform: slowMo ? "scale(1.025)" : undefined,
           transition: "transform 0.5s ease",
           animation: outcome === "missed" && !reduced.current ? "pensShake 0.16s linear 2" : undefined,
         }}
       >
-        <Backdrop />
+        <Backdrop reduced={reduced.current} />
 
         {/* sudden-death / slow-mo vignette */}
         {(view.suddenDeath || slowMo) && !view.result && (
           <div className={`absolute inset-0 pointer-events-none${reduced.current ? "" : " animate-pulse-slow"}`}
-            style={{ boxShadow: `inset 0 0 46px ${slowMo ? "rgba(255,184,0,0.4)" : "rgba(255,184,0,0.22)"}`, borderRadius: 16 }} />
+            style={{ boxShadow: `inset 0 0 52px ${slowMo ? "rgba(255,184,0,0.42)" : "rgba(255,184,0,0.22)"}`, borderRadius: 16, zIndex: 6 }} />
         )}
         {slowMo && (
           <div className="absolute left-1/2 -translate-x-1/2 rounded-md px-2 py-0.5 font-display"
-            style={{ top: "6%", fontSize: 10, letterSpacing: 2, color: "#0a0a0f", background: AMBER, zIndex: 6 }}>
+            style={{ top: "5%", fontSize: 10, letterSpacing: 2, color: "#0a0a0f", background: AMBER, zIndex: 6 }}>
             DECIDING KICK
           </div>
         )}
 
-        {/* net ripple overlay on goals (re-renders the mesh with the animation) */}
+        {/* net ripple + impact glow on goals */}
         {outcome === "goal" && !reduced.current && (
           <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ zIndex: 2 }}>
-            <g style={{ animation: "pensNet 0.45s ease-out", transformOrigin: "50% 35%" }}>
-              <polygon points="20,34.5 80,34.5 80,58.5 20,58.5" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="0.3" />
+            <g style={{ animation: "pensNet 0.45s ease-out", transformOrigin: "50% 24%" }}>
+              <polygon points={`${GOAL.left},${GOAL.bar} ${GOAL.right},${GOAL.bar} ${GOAL.right},${GOAL.line} ${GOAL.left},${GOAL.line}`} fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="0.3" />
             </g>
-            <ellipse cx={zoneX(anim!.kick.shot)} cy={zoneY(anim!.kick.shot)} rx="7" ry="6" fill={`${outcomeColor}26`} />
+            <ellipse cx={zoneX(anim!.kick.shot)} cy={zoneY(anim!.kick.shot)} rx="8" ry="7" fill={`${outcomeColor}29`} />
           </svg>
         )}
 
         {/* Keeper */}
         <Keeper color={keeperColor} dive={diveCol} reach={reach} glow={saved} reduced={reduced.current} />
 
-        {/* Aim zones (shoot mode) */}
+        {/* Aim targets (shoot mode): pulsing rings, like a proper penalty game */}
         {canShoot &&
-          ([3, 4, 5, 0, 1, 2] as PenZone[]).map((z) => (
+          ([3, 4, 5, 0, 1, 2] as PenZone[]).map((z, i) => (
             <button
               key={z}
               onClick={() => { setAim(z); sfx.kick(); buzz(15); onShoot(z); }}
-              className="absolute rounded-lg active:scale-95"
+              className="absolute active:scale-90"
               style={{
-                left: `${zoneX(z) - 10.5}%`, top: `${zoneY(z) - 7.2}%`, width: "21%", height: "14.5%",
-                border: "1px dashed rgba(0,255,135,0.16)",
-                background: "transparent",
+                left: `${zoneX(z) - 7.5}%`, top: `${zoneY(z) - 8.4}%`, width: "15%", aspectRatio: "1",
+                borderRadius: "50%",
+                border: "1.6px solid rgba(255,255,255,0.55)",
+                boxShadow: "0 0 10px rgba(0,255,135,0.25), inset 0 0 10px rgba(0,255,135,0.12)",
+                background: "radial-gradient(circle, rgba(0,255,135,0.12) 0%, rgba(0,255,135,0.03) 60%, transparent 70%)",
+                animation: reduced.current ? undefined : `pensRing 1.6s ease-in-out ${i * 0.12}s infinite`,
                 zIndex: 5,
               }}
               aria-label={`Aim ${z >= 3 ? "high" : "low"} ${z % 3 === 0 ? "left" : z % 3 === 1 ? "center" : "right"}`}
             >
-              <span className="absolute rounded-full" style={{ left: "50%", top: "50%", width: 3, height: 3, transform: "translate(-50%,-50%)", background: "rgba(0,255,135,0.4)" }} />
+              <span className="absolute rounded-full" style={{ left: "50%", top: "50%", width: 5, height: 5, transform: "translate(-50%,-50%)", background: "rgba(255,255,255,0.8)" }} />
             </button>
           ))}
 
-        {/* Ball + trail. The arc: the outer wrapper eases X linearly while the
-            inner ball eases Y on a fast-rise curve — independent easings make a
+        {/* Ball ground shadow (fades while airborne) */}
+        <div className="absolute pointer-events-none" style={{
+          left: `${SPOT.x}%`, top: `${SPOT.y + 4.2}%`, width: "8%", height: "2.4%",
+          transform: "translateX(-50%)", borderRadius: "50%",
+          background: "radial-gradient(ellipse, rgba(0,0,0,0.5) 0%, transparent 70%)",
+          opacity: ballHome ? 1 : 0, transition: "opacity 0.3s", zIndex: 3,
+        }} />
+
+        {/* Ball + trail. The arc: the wrapper eases X linearly while the inner
+            ball eases Y on a fast-rise curve — independent easings make a
             parabola. Ghosts lag via transition-delay for a motion trail. */}
         {[2, 1, 0].map((g) => {
           const ghost = g > 0;
@@ -474,7 +578,7 @@ export function PenaltyShootout({
               key={g}
               className="absolute inset-y-0 pointer-events-none"
               style={{
-                left: `${ball.x}%`, width: "6%",
+                left: `${ball.x}%`, width: "9%",
                 transform: "translateX(-50%)",
                 transition: reduced.current ? undefined : `left ${dur}ms linear ${g * 55}ms`,
                 opacity: ghost ? (inFlight ? (g === 1 ? 0.3 : 0.15) : 0) : outcome === "missed" ? 0.35 : 1,
@@ -489,7 +593,7 @@ export function PenaltyShootout({
                   transform: `translateY(-50%) scale(${inFlight || stageKick ? ball.scale : 1})`,
                   transition: reduced.current ? undefined
                     : `top ${dur}ms cubic-bezier(0.2, 0.85, 0.4, 1) ${g * 55}ms, transform ${dur}ms ease-out ${g * 55}ms`,
-                  filter: ghost ? "blur(1px)" : "drop-shadow(0 3px 3px rgba(0,0,0,0.45))",
+                  filter: ghost ? "blur(1.5px)" : "drop-shadow(0 5px 5px rgba(0,0,0,0.5))",
                 }}
               >
                 <Ball spinning={!!inFlight && !ghost} reduced={reduced.current} />
@@ -507,8 +611,8 @@ export function PenaltyShootout({
                 <span key={i} className="absolute rounded-full" style={{
                   width: i % 3 ? 5 : 7, height: i % 3 ? 5 : 7,
                   background: i % 4 === 0 ? "#fff" : outcomeColor,
-                  ["--dx" as never]: `${Math.cos(a) * (34 + (i % 3) * 14)}px` as never,
-                  ["--dy" as never]: `${Math.sin(a) * (26 + (i % 3) * 12)}px` as never,
+                  ["--dx" as never]: `${Math.cos(a) * (36 + (i % 3) * 15)}px` as never,
+                  ["--dy" as never]: `${Math.sin(a) * (28 + (i % 3) * 13)}px` as never,
                   animation: "pensBurst 0.65s ease-out forwards",
                 }} />
               );
@@ -519,7 +623,7 @@ export function PenaltyShootout({
         {/* Outcome label */}
         {outcomeText && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ zIndex: 6 }}>
-            <span className="font-display" style={{ fontSize: 40, letterSpacing: 3, color: outcomeColor, textShadow: "0 2px 16px rgba(0,0,0,0.8)", animation: reduced.current ? undefined : "pensPop 0.3s ease-out" }}>
+            <span className="font-display" style={{ fontSize: 42, letterSpacing: 3, color: outcomeColor, textShadow: "0 2px 18px rgba(0,0,0,0.85)", animation: reduced.current ? undefined : "pensPop 0.3s ease-out" }}>
               {outcomeText}
             </span>
           </div>
@@ -527,7 +631,7 @@ export function PenaltyShootout({
 
         {/* Final banner */}
         {view.result && !anim && allShown && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center" style={{ background: "rgba(6,6,12,0.84)", zIndex: 7 }}>
+          <div className="absolute inset-0 flex flex-col items-center justify-center" style={{ background: "rgba(4,5,10,0.86)", zIndex: 7 }}>
             {view.result === "win" && !reduced.current && (
               <div className="absolute inset-x-0 top-0 pointer-events-none">
                 {Array.from({ length: 14 }, (_, i) => (
