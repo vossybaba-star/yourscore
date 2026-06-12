@@ -21,7 +21,6 @@ import { useEffect, useRef, useState } from "react";
 import { Pitch } from "@/components/draft/Pitch";
 import type { LocalMatch } from "@/lib/draft/local";
 import type { Formation, PlacedPlayer, Tier } from "@/lib/draft/types";
-import type { MatchReport } from "@/lib/draft/live-score";
 import { tierColor } from "@/lib/draft/ui";
 // Pure data transforms live in a server-safe util module so server components can
 // import them without crossing the "use client" boundary.
