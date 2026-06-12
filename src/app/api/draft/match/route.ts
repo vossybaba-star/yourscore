@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { rateLimitDistributed } from "@/lib/ratelimit";
 import { createDraftDb, GLOBAL_LEAGUE } from "@/lib/draft/server";
 import { creditResult, applyTeamStreak } from "@/lib/draft/live-server";
+import { settleStalePens, type PensState } from "@/lib/draft/pens-resolve";
 import { resolveMatch } from "@/lib/draft/live-score";
 import { seededBot } from "@/lib/draft/opponent";
 import { asLeague } from "@/lib/draft/types";
@@ -51,6 +52,10 @@ export async function POST(req: NextRequest) {
     .maybeSingle();
   if (!me) return NextResponse.json({ error: "Save a team first" }, { status: 400 });
   const meSide = sideFromRow(me);
+
+  // A walked-away shootout settles (inputs honored, rest seeded) before anything
+  // new can start — abandoning mid-pens never dodges a loss or locks in a draw.
+  await settleStalePens(db, user.id);
 
   // Resolve a specific opponent id to its current active team (same competition).
   async function fetchActive(id: string): Promise<TeamSide | null> {
@@ -101,9 +106,40 @@ export async function POST(req: NextRequest) {
   }
 
   const myStrength = meSide.strength;
-  const matchId = crypto.randomUUID();                         // fresh — outcome can't be pre-computed
+  let matchId = crypto.randomUUID();                           // fresh — outcome can't be pre-computed
   // Real scoreline via the canonical engine (my attack vs theirs). side a = me.
-  const res = resolveMatch(meSide.squad, opp.squad, matchId, { allowDraw: true });
+  let res = resolveMatch(meSide.squad, opp.squad, matchId, { allowDraw: true });
+  // Dev-only: force a level 90' (seed search — the engine itself is never hooked).
+  if (process.env.NODE_ENV === "development" && (body as { forceLevel?: boolean }).forceLevel) {
+    for (let i = 0; i < 400 && res.outcome !== "draw"; i++) {
+      matchId = crypto.randomUUID();
+      res = resolveMatch(meSide.squad, opp.squad, matchId, { allowDraw: true });
+    }
+  }
+
+  // ── Level after 90 → the user takes the shootout. Nothing is credited yet:
+  // the row parks as pens_pending and /api/draft/match/pens settles everything.
+  if (res.outcome === "draw") {
+    const pensState: PensState = {
+      userId: user.id, userSide: "a", flow: "quick",
+      shots: [], dives: [], startedAt: new Date().toISOString(),
+    };
+    await db.from("draft_matches").insert({
+      id: matchId, challenger_id: user.id, opponent_id: opponentId,
+      challenger_team: meSide as unknown as never, opponent_team: opp as unknown as never,
+      challenger_strength: myStrength, opponent_strength: opp.strength,
+      winner_id: null, league_id: null, competition, played_at: new Date().toISOString(),
+      challenger_goals: res.goals.a, opponent_goals: res.goals.b,
+      detail: { outcome: "pens_pending", single: true, pens: null, report: res.report, pensState } as unknown as never,
+    });
+    return NextResponse.json({
+      matchId, youWon: false, outcome: "draw", pensPending: true,
+      goals: { you: res.goals.a, opp: res.goals.b }, pens: null, report: res.report,
+      you: meSide,
+      opp: { name: opp.name, formation: opp.formation, squad: opp.squad, strength: opp.strength, projected: opp.projected },
+    });
+  }
+
   const youWon = res.outcome === "A";
   const oppWon = res.outcome === "B";
   const winnerId = youWon ? user.id : oppWon ? opponentId ?? GLOBAL_LEAGUE : null;
