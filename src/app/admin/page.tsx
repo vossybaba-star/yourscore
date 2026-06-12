@@ -16,6 +16,7 @@ const QUICK_ACTIONS = [
   { label: "Generate questions", desc: "Use AI to create questions for a match", href: "/admin/matches", icon: "✨" },
   { label: "Fire question", desc: "Send a question to a live Lobby", href: "/admin/rooms", icon: "🔥" },
   { label: "Add match", desc: "Schedule a new fixture", href: "/admin/matches", icon: "🏟️" },
+  { label: "Club Leagues", desc: "Provision branded leagues for pubs, creators & sponsors", href: "/admin/club-leagues", icon: "🍺" },
 ];
 
 export default function AdminDashboard() {

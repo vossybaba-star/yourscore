@@ -258,6 +258,187 @@ export type Database = {
         }
         Relationships: []
       }
+      club_event_attempts: {
+        Row: {
+          answers: Json | null
+          completed_at: string
+          correct_count: number
+          event_id: string
+          id: string
+          max_score: number
+          score: number
+          user_id: string
+        }
+        Insert: {
+          answers?: Json | null
+          completed_at?: string
+          correct_count?: number
+          event_id: string
+          id?: string
+          max_score?: number
+          score?: number
+          user_id: string
+        }
+        Update: {
+          answers?: Json | null
+          completed_at?: string
+          correct_count?: number
+          event_id?: string
+          id?: string
+          max_score?: number
+          score?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_event_attempts_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "club_league_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      club_league_events: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          ends_at: string
+          id: string
+          league_id: string
+          pack_id: string | null
+          prize_text: string | null
+          questions: Json
+          starts_at: string
+          status: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          ends_at: string
+          id?: string
+          league_id: string
+          pack_id?: string | null
+          prize_text?: string | null
+          questions: Json
+          starts_at: string
+          status?: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          ends_at?: string
+          id?: string
+          league_id?: string
+          pack_id?: string | null
+          prize_text?: string | null
+          questions?: Json
+          starts_at?: string
+          status?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_league_events_league_id_fkey"
+            columns: ["league_id"]
+            isOneToOne: false
+            referencedRelation: "club_leagues"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_league_events_pack_id_fkey"
+            columns: ["pack_id"]
+            isOneToOne: false
+            referencedRelation: "quiz_packs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      club_league_members: {
+        Row: {
+          joined_at: string
+          league_id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          joined_at?: string
+          league_id: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          joined_at?: string
+          league_id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_league_members_league_id_fkey"
+            columns: ["league_id"]
+            isOneToOne: false
+            referencedRelation: "club_leagues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      club_leagues: {
+        Row: {
+          announcement: string | null
+          brand_color: string | null
+          cover_url: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          join_code: string
+          logo_url: string | null
+          name: string
+          owner_id: string
+          prize_text: string | null
+          slug: string
+          tier: string
+          welcome_text: string | null
+        }
+        Insert: {
+          announcement?: string | null
+          brand_color?: string | null
+          cover_url?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          join_code: string
+          logo_url?: string | null
+          name: string
+          owner_id: string
+          prize_text?: string | null
+          slug: string
+          tier?: string
+          welcome_text?: string | null
+        }
+        Update: {
+          announcement?: string | null
+          brand_color?: string | null
+          cover_url?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          join_code?: string
+          logo_url?: string | null
+          name?: string
+          owner_id?: string
+          prize_text?: string | null
+          slug?: string
+          tier?: string
+          welcome_text?: string | null
+        }
+        Relationships: []
+      }
       device_tokens: {
         Row: {
           created_at: string | null
@@ -2009,6 +2190,17 @@ export type Database = {
           status: string
           user_id: string
           wins: number
+        }[]
+      }
+      get_club_league_feed: {
+        Args: { p_league_id: string; p_limit?: number }
+        Returns: {
+          kind: string
+          user_id: string
+          display_name: string
+          avatar_url: string | null
+          detail: Json
+          created_at: string
         }[]
       }
       get_my_league_standings: {

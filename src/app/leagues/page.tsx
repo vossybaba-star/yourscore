@@ -38,6 +38,13 @@ interface GlobalPlayer {
   total_score: number;
 }
 
+interface ClubLeagueCard {
+  slug: string;
+  name: string;
+  logo_url: string | null;
+  brand_color: string | null;
+}
+
 // ── Small helpers ─────────────────────────────────────────────────────────────
 
 function rankStyle(rank: number) {
@@ -99,6 +106,25 @@ export default function LeaguesPage() {
       .then((r) => r.json())
       .then((d) => setDraftLeagues(d.leagues ?? []))
       .catch(() => {});
+  }, [user]);
+
+  // ── Club Leagues (partner-owned branded leagues the user belongs to) ──
+  const [clubLeagues, setClubLeagues] = useState<ClubLeagueCard[]>([]);
+
+  useEffect(() => {
+    if (!user || !process.env.NEXT_PUBLIC_SUPABASE_URL) return;
+    import("@/lib/supabase/client").then(async ({ createClient }) => {
+      const sb = createClient();
+      // RLS: own membership rows + member-readable club_leagues.
+      const { data } = await sb
+        .from("club_league_members")
+        .select("club_leagues(slug, name, logo_url, brand_color, is_active)")
+        .eq("user_id", user.id);
+      const rows = (data ?? [])
+        .map((r) => r.club_leagues as unknown as (ClubLeagueCard & { is_active: boolean }) | null)
+        .filter((l): l is ClubLeagueCard & { is_active: boolean } => !!l && l.is_active);
+      setClubLeagues(rows);
+    });
   }, [user]);
 
   async function createDraftLeague() {
@@ -237,6 +263,38 @@ export default function LeaguesPage() {
       </div>
 
       <div className="relative z-0 max-w-lg mx-auto px-5 pt-4 space-y-4">
+
+        {/* ════════════════════ CLUB LEAGUES (cross-game, partner-owned) ════ */}
+        {clubLeagues.length > 0 && (
+          <div>
+            <p className="font-body text-xs uppercase tracking-widest mb-3" style={{ color: "#555577" }}>My club leagues</p>
+            <div className="space-y-2">
+              {clubLeagues.map((l) => {
+                const brand = l.brand_color || "#a78bfa";
+                return (
+                  <Link key={l.slug} href={`/l/${l.slug}`}
+                    className="flex items-center gap-3 rounded-xl px-4 py-3 active:scale-[0.98] transition-transform"
+                    style={{ background: "#12121e", border: `1px solid ${brand}33` }}>
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0"
+                      style={{ background: `${brand}15`, border: `1px solid ${brand}33` }}>
+                      {l.logo_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={l.logo_url} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="font-display text-lg" style={{ color: brand }}>{(l.name || "?")[0].toUpperCase()}</span>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-body" style={{ fontSize: 15, color: "#fff" }}>{l.name}</div>
+                      <div className="font-body" style={{ fontSize: 12, color: "#8888aa" }}>Club League · boards, events & feed</div>
+                    </div>
+                    <span className="font-display" style={{ fontSize: 20, color: brand }}>→</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* ════════════════════ 38-0 TAB ════════════════════════════════════ */}
         {mainTab === "38-0" && (
