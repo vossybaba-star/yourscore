@@ -20,9 +20,14 @@ import { seededBot, realisticOpponentName } from "./opponent";
 import type { Formation, League } from "./types";
 import { asLeague } from "./types";
 import {
-  LIVE_CONFIG, nextPhase, resolveShootout, aggregate, simulateHalf, buildReport,
+  LIVE_CONFIG, nextPhase, aggregate, simulateHalf, buildReport,
   type LivePhase, type MatchSim,
 } from "./live-score";
+import {
+  kickAllowed, resolveRound, resolveInteractiveShootout, shootoutStatus,
+  type PenKick, type PenZone,
+} from "./pens";
+import { pensSeed } from "./pens-server";
 import type { PlacedPlayer } from "./types";
 
 export type Outcome = "p1" | "p2" | "draw";
@@ -84,10 +89,8 @@ function deadlineFor(phase: LivePhase, now: number): string | null {
  *  swap phases the client fires setBotReady 2 s after the human clicks Done, which
  *  sets p2_ready = true — this function then sees it and advances immediately. */
 function bothReadyFor(row: DraftLiveMatchRow): boolean {
-  if (row.phase === "draw_decision") {
-    const p2Decided = row.is_bot ? true : row.p2_wants_pens !== null;
-    return row.p1_wants_pens !== null && p2Decided;
-  }
+  // Retired phase — legacy in-flight rows advance straight into penalties.
+  if (row.phase === "draw_decision") return true;
   // Bot is auto-ready for lobby (no client). For pregame_swap / halftime_swap the
   // client marks p2_ready explicitly (2 s after the human taps Done), so check the
   // column normally — gives the human the 2-second "thinking" window.
@@ -146,8 +149,6 @@ function outcomeOf(row: DraftLiveMatchRow): Outcome {
 /** Columns written when ENTERING a phase (goal/penalty resolution + the bot's
  *  draw-decision choice). The phase being entered resolves its own values. */
 function resolutionForEntering(target: LivePhase, row: DraftLiveMatchRow): Partial<DraftLiveMatchRow> {
-  const a = Number(row.p1_strength ?? 0);
-  const b = Number(row.p2_strength ?? 0);
   switch (target) {
     case "pregame_swap":
       // Bot makes its 1 pre-match change as the window opens.
@@ -174,17 +175,100 @@ function resolutionForEntering(target: LivePhase, row: DraftLiveMatchRow): Parti
       const prev = (row.sim ?? {}) as MatchSim;
       return { h2_p1: s.goals.a, h2_p2: s.goals.b, sim: { ...prev, h2: s } as unknown as never };
     }
-    case "draw_decision": {
-      // A disguised bot decides immediately (deterministic; Phase 6 adds delay).
-      return row.is_bot ? { p2_wants_pens: seededRng(`${row.id}:botpens`)() < 0.5 } : {};
-    }
-    case "penalties": {
-      const p = resolveShootout(a, b, seededRng(`${row.id}:pens`));
-      return { pens_p1: p.a, pens_p2: p.b };
+    case "penalties":
+      // Interactive: kicks arrive via liveKick; nothing resolves up front.
+      return {};
+    case "result": {
+      // Leaving the shootout: honor every submitted kick verbatim and auto-fill
+      // whatever the window's expiry left untaken (identical per-round sub-seeds,
+      // so completed kicks never shift). Legacy rows that already carry an
+      // auto-resolved pens_p1 are left exactly as they are.
+      if (row.phase !== "penalties" || row.pens_p1 !== null) return {};
+      const k = kicksOf(row);
+      const full = resolveInteractiveShootout(
+        pensSeed(`${row.id}:pens`),
+        { aShots: k.a.map((x) => x.shot), bShots: k.b.map((x) => x.shot) },
+        "simultaneous"
+      );
+      return {
+        pens_p1: full.score.a, pens_p2: full.score.b,
+        p1_kicks: full.a, p2_kicks: full.b,
+      } as unknown as Partial<DraftLiveMatchRow>;
     }
     default:
       return {};
   }
+}
+
+// ─── Interactive shootout (kicks) ─────────────────────────────────────────────
+
+/** Kick columns land in migration 35; read fail-soft until the types regen. */
+type LiveKicksRow = DraftLiveMatchRow & { p1_kicks?: PenKick[] | null; p2_kicks?: PenKick[] | null };
+
+function kicksOf(row: DraftLiveMatchRow): { a: PenKick[]; b: PenKick[] } {
+  const r = row as LiveKicksRow;
+  return { a: r.p1_kicks ?? [], b: r.p2_kicks ?? [] };
+}
+
+/** Has the simultaneous shootout produced a winner? (false outside penalties.) */
+function pensDecidedOf(row: DraftLiveMatchRow): boolean {
+  if (row.phase !== "penalties") return false;
+  if (row.pens_p1 !== null && row.pens_p2 !== null) return true; // legacy auto rows
+  const k = kicksOf(row);
+  return shootoutStatus(k.a, k.b, "simultaneous").decided;
+}
+
+/**
+ * Take one penalty in a live match. The caller's aim zone is the only input —
+ * the kick resolves server-side from the peppered seed and is appended through
+ * the round-gated `draft_live_kick` RPC (double-taps and racing duplicates write
+ * nothing). In a bot match the bot's kick for the same round lands in the same
+ * statement. Advances to result the moment the shootout is decided.
+ */
+export async function liveKick(
+  db: SupabaseClient<DraftDatabase>,
+  matchId: string,
+  userId: string,
+  round: number,
+  shot: PenZone
+): Promise<DraftLiveMatchRow | null> {
+  const { data: row } = await db.from("draft_live_matches").select("*").eq("id", matchId).maybeSingle();
+  if (!row) return null;
+  const side = sideOf(row, userId);
+  if (!side) throw new Error("Not a participant");
+  if (row.phase !== "penalties") throw new Error("Not in the shootout");
+  if (expired(row, Date.now())) return advanceMatch(db, matchId); // window closed — settle it
+
+  const k = kicksOf(row);
+  const mySide = side === "p1" ? "a" : "b";
+  const myArr = mySide === "a" ? k.a : k.b;
+  // Stale/duplicate round (a retry or a second tab) → just hand back fresh state.
+  if (round !== myArr.length + 1) return row;
+  if (!kickAllowed(k.a, k.b, mySide, "simultaneous")) throw new Error("Wait for the next kick");
+
+  const seed = pensSeed(`${row.id}:pens`);
+  const kick = resolveRound(seed, mySide, round, { shot });
+  let p1Kick: PenKick | null = mySide === "a" ? kick : null;
+  let p2Kick: PenKick | null = mySide === "b" ? kick : null;
+  // A disguised bot answers in the same statement, round for round.
+  if (row.is_bot && k.b.length === round - 1 && mySide === "a") {
+    p2Kick = resolveRound(seed, "b", round, {});
+  }
+
+  const rpc = db.rpc as unknown as (
+    fn: string, args: Record<string, unknown>
+  ) => PromiseLike<{ data: DraftLiveMatchRow[] | null }>;
+  const { data: updatedRows } = await rpc("draft_live_kick", {
+    p_match: matchId, p_round: round, p1_kick: p1Kick, p2_kick: p2Kick,
+  });
+  const updated = updatedRows?.[0] ?? null;
+  if (!updated) {
+    // Lost the round-guard race — return the fresh row instead of erroring.
+    const { data: fresh } = await db.from("draft_live_matches").select("*").eq("id", matchId).maybeSingle();
+    return fresh ?? row;
+  }
+  if (pensDecidedOf(updated)) return advanceMatch(db, matchId);
+  return updated;
 }
 
 /**
@@ -207,7 +291,7 @@ export async function advanceMatch(
     bothReady: bothReadyFor(row),
     expired: expired(row, now),
     level: agg.level,
-    bothWantPens: row.p1_wants_pens === true && row.p2_wants_pens === true,
+    pensDecided: pensDecidedOf(row),
   });
   if (target === row.phase) return row; // nothing to do
 
@@ -282,7 +366,14 @@ async function finalize(db: SupabaseClient<DraftDatabase>, row: DraftLiveMatchRo
     competition: comp,
     challenger_goals: agg.a,
     opponent_goals: agg.b,
-    detail: { outcome, h1: { a: row.h1_p1, b: row.h1_p2 }, h2: { a: row.h2_p1, b: row.h2_p2 }, pens: row.pens_p1 !== null ? { a: row.pens_p1, b: row.pens_p2 } : null, report: buildReport((row.sim ?? {}) as MatchSim) } as unknown as never,
+    detail: {
+      outcome,
+      h1: { a: row.h1_p1, b: row.h1_p2 },
+      h2: { a: row.h2_p1, b: row.h2_p2 },
+      pens: row.pens_p1 !== null ? { a: row.pens_p1, b: row.pens_p2 } : null,
+      pensKicks: kicksOf(row).a.length ? kicksOf(row) : undefined,
+      report: buildReport((row.sim ?? {}) as MatchSim),
+    } as unknown as never,
     played_at: new Date().toISOString(),
   }, { onConflict: "id", ignoreDuplicates: true });
 
@@ -336,14 +427,13 @@ export async function setBotReady(db: SupabaseClient<DraftDatabase>, matchId: st
   return advanceMatch(db, matchId);
 }
 
-/** Record a draw-decision choice (penalties vs take the draw), then try to advance. */
-export async function setDrawChoice(db: SupabaseClient<DraftDatabase>, matchId: string, userId: string, wantsPens: boolean): Promise<DraftLiveMatchRow | null> {
-  const { data: row } = await db.from("draft_live_matches").select("*").eq("id", matchId).maybeSingle();
+/** Legacy no-op (draw_decision is retired — draws always go to penalties now).
+ *  Pre-rework clients still post a choice for one release; treat it as a plain
+ *  advance ping so their match falls straight into the shootout. */
+export async function setDrawChoice(db: SupabaseClient<DraftDatabase>, matchId: string, userId: string, _wantsPens: boolean): Promise<DraftLiveMatchRow | null> {
+  const { data: row } = await db.from("draft_live_matches").select("id, p1_id, p2_id").eq("id", matchId).maybeSingle();
   if (!row) return null;
-  if (row.phase !== "draw_decision") throw new Error("Not in the draw decision");
-  const side = sideOf(row, userId);
-  if (!side) throw new Error("Not a participant");
-  await db.from("draft_live_matches").update({ [`${side}_wants_pens`]: wantsPens, updated_at: new Date().toISOString() } as Partial<DraftLiveMatchRow>).eq("id", matchId);
+  if (!sideOf(row as DraftLiveMatchRow, userId)) throw new Error("Not a participant");
   return advanceMatch(db, matchId);
 }
 

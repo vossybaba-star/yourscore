@@ -16,6 +16,8 @@ import { spin, allBuckets, type Spin } from "@/lib/draft/pool";
 import { playerIdentity, seededRng } from "@/lib/draft/score";
 import { slotsFor } from "@/lib/draft/formations";
 import { buildReport, flipReport, type MatchSim, type HalfSim, type PlayerRating, type GoalEvent } from "@/lib/draft/live-score";
+import { kickAllowed, shootoutStatus, type PenKick } from "@/lib/draft/pens";
+import { PenaltyShootout, type PensView } from "@/components/draft/PenaltyShootout";
 import { ScorecardView, statsFromReport, goalsFromReport, potmFromReport, type ScorecardData } from "@/components/draft/Scorecard";
 import { MatchPitch } from "@/components/draft/MatchPitch";
 import { WATCH_CONFIG } from "@/lib/draft/playback";
@@ -64,6 +66,20 @@ export default function LiveMatchScreen() {
   const [spinSlot, setSpinSlot] = useState<string | null>(null);
   // The swap window belongs to one phase — close the sheet whenever the phase moves.
   useEffect(() => { setSpinSlot(null); }, [m?.phase]);
+
+  // The deciding kick flips the phase to result immediately — hold the shootout
+  // on screen a beat so the last ball and the WIN/LOSS banner aren't cut off.
+  const [pensHold, setPensHold] = useState(false);
+  const prevPhaseRef = useRef<string | null>(null);
+  useEffect(() => {
+    const prev = prevPhaseRef.current;
+    prevPhaseRef.current = m?.phase ?? null;
+    if (prev === "penalties" && m?.phase === "result") {
+      setPensHold(true);
+      const t = setTimeout(() => setPensHold(false), 3200);
+      return () => clearTimeout(t);
+    }
+  }, [m?.phase]);
 
   // Per-game audience signals: "play" once on entering a live H2H match, "complete"
   // once it reaches the result phase. Refs guard against re-firing on re-render.
@@ -227,24 +243,55 @@ export default function LiveMatchScreen() {
         })()}
 
         {m.phase === "draw_decision" && (
+          // Retired phase (legacy in-flight rows pass straight through on the next tick).
           <Panel>
             <p className="text-center font-display" style={{ fontSize: 24, color: "#ffb800" }}>Level after 90!</p>
-            <p className="text-center mt-1 text-sm" style={{ color: "#9a9ab0" }}>Settle it on penalties? Both must agree.</p>
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              <button onClick={() => live.drawChoice(true)} className="rounded-2xl py-4 font-semibold" style={{ background: "#00ff87", color: "#04130a" }}>Penalties</button>
-              <button onClick={() => live.drawChoice(false)} className="rounded-2xl py-4 font-semibold" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "#e8e8f0" }}>Take the draw</button>
-            </div>
+            <p className="text-center mt-1 text-sm" style={{ color: "#9a9ab0" }}>Straight to penalties…</p>
           </Panel>
         )}
 
-        {m.phase === "penalties" && (
-          <Panel>
-            <p className="text-center font-display" style={{ fontSize: 24, color: "#ffb800" }}>Penalties</p>
-            <p className="text-center mt-2" style={{ fontSize: 40, fontWeight: 700 }}>{view.pens[0]} – {view.pens[1]}</p>
-          </Panel>
-        )}
+        {(m.phase === "penalties" || (m.phase === "result" && pensHold)) && (() => {
+          const r = m as DraftLiveMatchRow & { p1_kicks?: PenKick[] | null; p2_kicks?: PenKick[] | null };
+          const a = r.p1_kicks ?? [];
+          const b = r.p2_kicks ?? [];
+          // Legacy rows auto-resolved before the rework carry a score but no kicks.
+          if (m.pens_p1 !== null && a.length === 0) {
+            return (
+              <Panel>
+                <p className="text-center font-display" style={{ fontSize: 24, color: "#ffb800" }}>Penalties</p>
+                <p className="text-center mt-2" style={{ fontSize: 40, fontWeight: 700 }}>{view.pens[0]} – {view.pens[1]}</p>
+              </Panel>
+            );
+          }
+          const mySide = view.meP1 ? "a" : "b";
+          const st = shootoutStatus(a, b, "simultaneous");
+          const decided = m.phase === "result" || m.pens_p1 !== null || st.decided;
+          const myKicks = view.meP1 ? a : b;
+          const winnerSide =
+            m.pens_p1 !== null && m.pens_p2 !== null ? (m.pens_p1 > m.pens_p2 ? "a" : "b") : st.winner;
+          const pview: PensView = {
+            myKicks,
+            oppKicks: view.meP1 ? b : a,
+            suddenDeath: st.suddenDeath,
+            role: decided ? "done" : kickAllowed(a, b, mySide, "simultaneous") ? "shoot" : "waiting",
+            result: decided && winnerSide ? (winnerSide === mySide ? "win" : "loss") : null,
+          };
+          return (
+            <Panel>
+              <PenaltyShootout
+                view={pview}
+                myName={view.myName}
+                oppName={view.oppName}
+                simultaneous
+                secondsLeft={m.phase === "penalties" ? secondsLeft : null}
+                onShoot={(z) => live.kick(myKicks.length + 1, z)}
+                onDive={() => {}}
+              />
+            </Panel>
+          );
+        })()}
 
-        {m.phase === "result" && <ResultPanel view={view} sim={sim} m={m} />}
+        {m.phase === "result" && !pensHold && <ResultPanel view={view} sim={sim} m={m} />}
         {m.phase === "abandoned" && (
           <Panel>
             <p className="text-center text-2xl mb-3">⏰</p>
@@ -781,8 +828,8 @@ const PHASE_GUIDE: Record<string, { tag: string; text: (v: View) => string }> = 
   half1:         { tag: "FIRST HALF",        text: () => "Goals are simulated live from each team's Strength — sit tight." },
   halftime_swap: { tag: "HALFTIME",          text: (v) => `${scoreline(v)}. Make up to 2 changes to swing the second half, then tap Done.` },
   half2:         { tag: "SECOND HALF",       text: () => "Last 45 — your halftime changes are now in play." },
-  draw_decision: { tag: "FULL TIME · LEVEL", text: () => "It's level. Both managers must choose Penalties to settle it — or take the draw." },
-  penalties:     { tag: "PENALTIES",         text: () => "Spot-kicks decide it — a near coin-flip." },
+  draw_decision: { tag: "FULL TIME · LEVEL", text: () => "Level after 90 — straight to penalties." },
+  penalties:     { tag: "PENALTIES",         text: (v) => `Level after 90 — you take your own kicks. You and ${v.oppName} shoot at the same time: pick your corners, best of 5, sudden death if it stays level.` },
 };
 
 function Guide({ phase, view }: { phase: string; view: View }) {

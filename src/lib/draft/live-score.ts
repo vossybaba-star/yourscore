@@ -4,7 +4,8 @@
  * Live H2H is a two-half match: a half's goals come from each side's Strength
  * Rating (recomputed by score.ts after swaps), split by winProbability and drawn
  * from a Poisson keyed on a seeded RNG so the server can resolve reproducibly and
- * audit-ably. A level aggregate may go to an OPT-IN penalty shootout.
+ * audit-ably. A level aggregate ALWAYS goes to an interactive penalty shootout —
+ * both players take their own kicks (see pens.ts / live-server.liveKick).
  *
  * Type-strippable (no enums) so it runs under `node --test`, like score.ts.
  */
@@ -27,8 +28,11 @@ export const LIVE_CONFIG = {
     half1: 45,
     halftime_swap: 35,
     half2: 45,
+    // Retired phase — kept so legacy in-flight rows can tick through it into pens.
     draw_decision: 15,
-    penalties: 7,
+    // Both players take their kicks inside one window: 5 kicks + a few sudden-death
+    // pairs at a comfortable pace. Unanswered kicks auto-fill seeded on expiry.
+    penalties: 75,
   },
   /** Swap budgets per player. */
   swaps: { pregame: 1, halftime: 2 },
@@ -63,7 +67,9 @@ export function aggregate(
   return { a, b, level: a === b };
 }
 
-// ─── Penalties (opt-in, near coin-flip) ────────────────────────────────────────
+// ─── Penalties (legacy/auto path — interactive kicks live in pens.ts) ─────────
+// resolveShootout remains for resolveMatch({allowDraw:false}) and as the coarse
+// fallback for old rows; every interactive flow resolves kick-by-kick via pens.ts.
 
 function pConvert(self: number, opp: number): number {
   const { base, lean, min, max } = LIVE_CONFIG.pens;
@@ -105,10 +111,10 @@ export interface PhaseInput {
   bothReady: boolean;
   /** now >= phase_deadline. */
   expired: boolean;
-  /** Aggregate is level (only meaningful at half2 / draw_decision). */
+  /** Aggregate is level (only meaningful at half2). */
   level: boolean;
-  /** Both players opted into penalties (only meaningful at draw_decision). */
-  bothWantPens: boolean;
+  /** The interactive shootout has a winner (only meaningful at penalties). */
+  pensDecided: boolean;
 }
 
 /**
@@ -118,8 +124,10 @@ export interface PhaseInput {
  *
  * - `lobby` waits for both-ready (no deadline).
  * - Every other phase advances on both-ready OR deadline.
- * - `half2` → `draw_decision` if level, else `result`.
- * - `draw_decision` → `penalties` only if BOTH opted in, else `result` (a draw).
+ * - `half2` → `penalties` if level (always — both players take their kicks), else `result`.
+ * - `draw_decision` is retired: legacy in-flight rows fall straight into `penalties`.
+ * - `penalties` → `result` once the shootout is decided or the window expires
+ *   (unanswered kicks auto-fill seeded at result entry).
  */
 export function nextPhase(s: PhaseInput): LivePhase {
   const advance = s.bothReady || s.expired;
@@ -129,9 +137,9 @@ export function nextPhase(s: PhaseInput): LivePhase {
     case "pregame_swap":  return advance ? "half1" : "pregame_swap";
     case "half1":         return advance ? "halftime_swap" : "half1";
     case "halftime_swap": return advance ? "half2" : "halftime_swap";
-    case "half2":         return advance ? (s.level ? "draw_decision" : "result") : "half2";
-    case "draw_decision": return advance ? (s.bothWantPens ? "penalties" : "result") : "draw_decision";
-    case "penalties":     return advance ? "result" : "penalties";
+    case "half2":         return advance ? (s.level ? "penalties" : "result") : "half2";
+    case "draw_decision": return "penalties";
+    case "penalties":     return s.pensDecided || advance ? "result" : "penalties";
     default:              return s.phase; // result / abandoned are terminal
   }
 }

@@ -35,7 +35,8 @@ export type UseLiveMatch = {
   /** Mirror the human's Done for a bot match — call 2 s after ready() when is_bot. */
   botDone: () => Promise<void>;
   swap: (slotId: string, newPlayer: string) => Promise<void>;
-  drawChoice: (wantsPens: boolean) => Promise<void>;
+  /** Take penalty `round` (1-based), aiming at `shot` (zone 0-5). */
+  kick: (round: number, shot: number) => Promise<void>;
 };
 
 async function post(path: string, body: unknown): Promise<DraftLiveMatchRow | null> {
@@ -123,6 +124,15 @@ export function useLiveMatch(matchId: string | null): UseLiveMatch {
     return () => { cancelled = true; if (channel) sb.removeChannel(channel); };
   }, [matchId, userId]);
 
+  // Realtime-off degradation for the shootout: with the kill-switch on, the
+  // opponent's kicks would otherwise only appear on our own actions — poll while
+  // the penalties window is open. (Each kick response also returns the fresh row.)
+  useEffect(() => {
+    if (REALTIME_ENABLED || match?.phase !== "penalties") return;
+    const t = setInterval(refetch, 3000);
+    return () => clearInterval(t);
+  }, [match?.phase, refetch]);
+
   // Recover stale state after the tab was backgrounded (mobile throttles timers and
   // can drop the socket) — refetch on refocus.
   useEffect(() => {
@@ -179,6 +189,6 @@ export function useLiveMatch(matchId: string | null): UseLiveMatch {
     ready: () => act("/api/draft/live/ready", {}),
     botDone: () => act("/api/draft/live/ready", { bot: true }),
     swap: (slotId, newPlayer) => act("/api/draft/live/swap", { slotId, newPlayer }),
-    drawChoice: (wantsPens) => act("/api/draft/live/swap", { wantsPens }),
+    kick: (round, shot) => act("/api/draft/live/kick", { round, shot }),
   };
 }
