@@ -8,7 +8,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Pitch } from "@/components/draft/Pitch";
-import { ScorecardView, ScorecardShell, SectionLabel, statsFromReport, goalsFromReport, potmFromReport } from "@/components/draft/Scorecard";
+import { ScorecardView, ScorecardShell, SectionLabel } from "@/components/draft/Scorecard";
+import { statsFromReport, goalsFromReport, potmFromReport } from "@/lib/draft/scorecard-utils";
 import { createDraftDb, type TeamSnapshot } from "@/lib/draft/server";
 import { tierColor } from "@/lib/draft/ui";
 import { liveOgQuery } from "@/lib/draft/share";

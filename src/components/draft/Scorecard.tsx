@@ -23,6 +23,14 @@ import type { LocalMatch } from "@/lib/draft/local";
 import type { Formation, PlacedPlayer, Tier } from "@/lib/draft/types";
 import type { MatchReport } from "@/lib/draft/live-score";
 import { tierColor } from "@/lib/draft/ui";
+// Pure data transforms live in a server-safe util module so server components can
+// import them without crossing the "use client" boundary.
+export type { ScorecardStat, ScorecardGoal, ScorecardPotm } from "@/lib/draft/scorecard-utils";
+export { statsFromReport, goalsFromReport, potmFromReport } from "@/lib/draft/scorecard-utils";
+import {
+  statsFromReport, goalsFromReport, potmFromReport,
+  type ScorecardStat, type ScorecardGoal, type ScorecardPotm,
+} from "@/lib/draft/scorecard-utils";
 
 export const SC_WIN = "#00ff87";
 export const SC_DRAW = "#ffb800";
@@ -222,10 +230,6 @@ export function ScorecardShell({ fk, accent, eyebrow = "Full time", headline, se
 // ── Generic head-to-head card ────────────────────────────────────────────────
 
 export type ScorecardSide = { name: string; strength?: number; tier?: Tier; formation?: Formation; squad?: PlacedPlayer[] };
-export type ScorecardStat = { label: string; a: number; b: number; suffix?: string };
-export type ScorecardGoal = { minute: number; mine: boolean; name: string; assist?: string };
-export type ScorecardPotm = { name: string; rating: number; mine: boolean; pos?: string; goals?: number; assists?: number; sideName?: string };
-
 export type ScorecardData = {
   id?: string; context?: string;
   you: ScorecardSide; opp: ScorecardSide;
@@ -241,27 +245,6 @@ export type ScorecardData = {
 
 function serialOf(id?: string): string {
   return (id || "").replace(/[^a-z0-9]/gi, "").slice(-4).toUpperCase().padStart(4, "0") || "0038";
-}
-
-/** Pull the standard sections out of a MatchReport (side a = you, b = opp). */
-export function statsFromReport(rep: MatchReport): ScorecardStat[] {
-  return [
-    { label: "Possession", a: rep.a.possession, b: rep.b.possession, suffix: "%" },
-    { label: "Shots", a: rep.a.shots, b: rep.b.shots },
-    { label: "On target", a: rep.a.shotsOnTarget, b: rep.b.shotsOnTarget },
-    { label: "Corners", a: rep.a.corners, b: rep.b.corners },
-    { label: "Fouls", a: rep.a.fouls, b: rep.b.fouls },
-    { label: "Offsides", a: rep.a.offsides, b: rep.b.offsides },
-    { label: "Throw-ins", a: rep.a.throwins, b: rep.b.throwins },
-  ];
-}
-export function goalsFromReport(rep: MatchReport): ScorecardGoal[] {
-  return [...rep.events].sort((x, y) => x.minute - y.minute).map((e) => ({ minute: e.minute, mine: e.side === "a", name: e.scorerName, assist: e.assistName }));
-}
-export function potmFromReport(rep: MatchReport, youName: string, oppName: string): ScorecardPotm | null {
-  if (!rep.potm) return null;
-  const mine = rep.potm.side === "a";
-  return { name: rep.potm.name, rating: rep.potm.rating, mine, pos: rep.potm.pos, goals: rep.potm.goals, assists: rep.potm.assists, sideName: mine ? youName : oppName };
 }
 
 export function ScorecardView({ data }: { data: ScorecardData }) {
