@@ -20,9 +20,39 @@ import {
   type LocalMatch,
 } from "@/lib/draft/local";
 import { resolveRound, shootoutStatus, type PenColumn, type PenKick, type PenZone } from "@/lib/draft/pens";
+import { resolveMatch } from "@/lib/draft/live-score";
+import { makeOpponent } from "@/lib/draft/opponent";
 import { PenaltyShootout, type PensView } from "@/components/draft/PenaltyShootout";
 
 const BG = "#0a0a0f";
+const DEV = process.env.NODE_ENV === "development";
+
+/** Dev-only: /38-0/match/pens?demo seeds a fresh drawn match between two bot XIs
+ *  and drops straight into the shootout — no drafting, no 90', repeatable. */
+function seedDemoShootout(): LocalMatch | null {
+  const you = makeOpponent("4-3-3", 92, Math.random, "PL");
+  const opp = makeOpponent("4-3-3", 92, Math.random, "PL");
+  for (let i = 0; i < 600; i++) {
+    const id = `demo-${Date.now()}-${i}`;
+    const res = resolveMatch(you.team.squad, opp.team.squad, id, { allowDraw: true });
+    if (res.outcome !== "draw") continue;
+    const lm: LocalMatch = {
+      id,
+      you: { name: "You", formation: you.team.formation, squad: you.team.squad, strength: you.team.strength, projected: you.team.projected },
+      opp: { name: opp.name, formation: opp.team.formation, squad: opp.team.squad, strength: opp.team.strength, projected: opp.team.projected },
+      outcome: "draw",
+      goals: { you: res.goals.a, opp: res.goals.b },
+      pens: null,
+      report: res.report,
+      sim: res.sim,
+      playedAt: Date.now(),
+      pensPending: { mode: "local", seed: `${id}:pens`, shots: [], dives: [] },
+    };
+    saveLastMatch(lm);
+    return lm;
+  }
+  return null; // ~600 seeded matches without a single draw — effectively impossible
+}
 
 /** Replay a local shootout from its stored inputs: my kicks vs the AI keeper, the
  *  CPU's kicks vs my dives, alternating, stopping where the next input is missing. */
@@ -62,6 +92,11 @@ export default function PensPage() {
   const finalized = useRef(false);
 
   useEffect(() => {
+    // Dev-only: ?demo always starts a fresh shootout (no drafting, no 90').
+    if (DEV && new URLSearchParams(window.location.search).has("demo")) {
+      const demo = seedDemoShootout();
+      if (demo) { setM(demo); return; }
+    }
     const lm = loadLastMatch();
     if (!lm) { router.replace("/38-0"); return; }
     if (!lm.pensPending) { router.replace("/38-0/match/result"); return; }
@@ -111,8 +146,11 @@ export default function PensPage() {
         pensPending: undefined,
       };
       saveLastMatch(settled);
-      const team = loadTeam();
-      if (team) saveTeam(settled.outcome === "you" ? recordWin(team) : recordLoss(team));
+      // Demo shootouts are a sandbox — they never touch the real team's streak.
+      if (!m.id.startsWith("demo-")) {
+        const team = loadTeam();
+        if (team) saveTeam(settled.outcome === "you" ? recordWin(team) : recordLoss(team));
+      }
       setM(settled);
     } else if (server?.final) {
       finalized.current = true;
@@ -202,6 +240,15 @@ export default function PensPage() {
             style={{ background: "#00ff87", color: "#062013", fontSize: 18 }}
           >
             SEE RESULT →
+          </button>
+        )}
+        {decided && DEV && m.id.startsWith("demo-") && (
+          <button
+            onClick={() => { finalized.current = false; window.location.href = "/38-0/match/pens?demo"; }}
+            className="mt-2 w-full rounded-2xl py-3 font-display tracking-wide active:scale-[0.98] transition-transform"
+            style={{ background: "rgba(255,184,0,0.12)", color: "#ffb800", border: "1px solid rgba(255,184,0,0.4)", fontSize: 15 }}
+          >
+            ⟳ ANOTHER SHOOTOUT (DEV)
           </button>
         )}
       </div>
