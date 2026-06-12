@@ -396,6 +396,7 @@ export type Database = {
           is_bot: boolean
           join_code: string | null
           league_id: string | null
+          p1_competition: string
           p1_formation: string | null
           p1_half_left: number
           p1_id: string | null
@@ -406,6 +407,7 @@ export type Database = {
           p1_strength: number | null
           p1_sub_ids: Json
           p1_wants_pens: boolean | null
+          p2_competition: string
           p2_formation: string | null
           p2_half_left: number
           p2_id: string | null
@@ -438,6 +440,7 @@ export type Database = {
           is_bot?: boolean
           join_code?: string | null
           league_id?: string | null
+          p1_competition?: string
           p1_formation?: string | null
           p1_half_left?: number
           p1_id?: string | null
@@ -448,6 +451,7 @@ export type Database = {
           p1_strength?: number | null
           p1_sub_ids?: Json
           p1_wants_pens?: boolean | null
+          p2_competition?: string
           p2_formation?: string | null
           p2_half_left?: number
           p2_id?: string | null
@@ -480,6 +484,7 @@ export type Database = {
           is_bot?: boolean
           join_code?: string | null
           league_id?: string | null
+          p1_competition?: string
           p1_formation?: string | null
           p1_half_left?: number
           p1_id?: string | null
@@ -490,6 +495,7 @@ export type Database = {
           p1_strength?: number | null
           p1_sub_ids?: Json
           p1_wants_pens?: boolean | null
+          p2_competition?: string
           p2_formation?: string | null
           p2_half_left?: number
           p2_id?: string | null
@@ -1971,7 +1977,10 @@ export type Database = {
           p_ranked: boolean
           p_user: string
         }
-        Returns: string
+        Returns: {
+          opp_user: string
+          opp_competition: string
+        }[]
       }
       draft_live_reap: { Args: never; Returns: undefined }
       draft_reset_daily: { Args: never; Returns: undefined }

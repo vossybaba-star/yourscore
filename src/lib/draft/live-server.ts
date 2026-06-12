@@ -264,7 +264,11 @@ async function finalize(db: SupabaseClient<DraftDatabase>, row: DraftLiveMatchRo
   const agg = aggregateOf(row);
   const outcome = outcomeOf(row);
   const league = row.league_id ?? null;
-  const comp = asLeague(row.competition);
+  // Each side brought a team from its own competition (they can differ in a
+  // cross-competition queue match), so credit each player to THEIR board. The
+  // permanent record is tagged with the challenger's competition for OG copy.
+  const p1Comp = asLeague(row.p1_competition);
+  const p2Comp = asLeague(row.p2_competition);
 
   // Permanent record keyed on the match id — ON CONFLICT DO NOTHING so a stray
   // second finalize can never double-insert (and the credits below won't double-run,
@@ -279,7 +283,7 @@ async function finalize(db: SupabaseClient<DraftDatabase>, row: DraftLiveMatchRo
     opponent_strength: Number(row.p2_strength ?? 0),
     winner_id: outcome === "p1" ? row.p1_id : outcome === "p2" && !row.is_bot ? row.p2_id : null,
     league_id: league,
-    competition: comp,
+    competition: p1Comp,
     challenger_goals: agg.a,
     opponent_goals: agg.b,
     detail: { outcome, h1: { a: row.h1_p1, b: row.h1_p2 }, h2: { a: row.h2_p1, b: row.h2_p2 }, pens: row.pens_p1 !== null ? { a: row.pens_p1, b: row.pens_p2 } : null, report: buildReport((row.sim ?? {}) as MatchSim) } as unknown as never,
@@ -292,15 +296,15 @@ async function finalize(db: SupabaseClient<DraftDatabase>, row: DraftLiveMatchRo
   const p2Res: "win" | "draw" | "loss" = outcome === "p2" ? "win" : outcome === "draw" ? "draw" : "loss";
 
   if (row.p1_id) {
-    await creditResult(db, row.p1_id, row.p1_name ?? "Player", p1Res, GLOBAL_LEAGUE, comp);
-    if (league) await creditResult(db, row.p1_id, row.p1_name ?? "Player", p1Res, league, comp);
-    await applyTeamStreak(db, row.p1_id, p1Res, comp);
+    await creditResult(db, row.p1_id, row.p1_name ?? "Player", p1Res, GLOBAL_LEAGUE, p1Comp);
+    if (league) await creditResult(db, row.p1_id, row.p1_name ?? "Player", p1Res, league, p1Comp);
+    await applyTeamStreak(db, row.p1_id, p1Res, p1Comp);
   }
   // A bot has no auth user / standings row; only real opponents are credited.
   if (row.p2_id && !row.is_bot) {
-    await creditResult(db, row.p2_id, row.p2_name ?? "Player", p2Res, GLOBAL_LEAGUE, comp);
-    if (league) await creditResult(db, row.p2_id, row.p2_name ?? "Player", p2Res, league, comp);
-    await applyTeamStreak(db, row.p2_id, p2Res, comp);
+    await creditResult(db, row.p2_id, row.p2_name ?? "Player", p2Res, GLOBAL_LEAGUE, p2Comp);
+    if (league) await creditResult(db, row.p2_id, row.p2_name ?? "Player", p2Res, league, p2Comp);
+    await applyTeamStreak(db, row.p2_id, p2Res, p2Comp);
   }
 }
 
@@ -463,7 +467,7 @@ export async function createFriendMatch(db: SupabaseClient<DraftDatabase>, userI
   for (let attempt = 0; attempt < 5; attempt++) {
     const { data, error } = await db.from("draft_live_matches").insert({
       phase: "lobby", join_code: genJoinCode(), ranked: opts.ranked, league_id: opts.leagueId, competition, is_bot: false,
-      p1_id: userId, p1_name: side.name, p1_squad: side.squad as unknown as never, p1_formation: side.formation, p1_strength: side.strength,
+      p1_id: userId, p1_name: side.name, p1_squad: side.squad as unknown as never, p1_formation: side.formation, p1_strength: side.strength, p1_competition: competition,
     }).select("*").maybeSingle();
     if (data) return data;
     if (error && !`${error.message}`.toLowerCase().includes("duplicate")) throw new Error(error.message);
@@ -483,7 +487,7 @@ export async function joinByCode(db: SupabaseClient<DraftDatabase>, userId: stri
   if (!side) throw new Error("Save a team first");
   // Claiming the seat also starts the lobby ready-clock (both players now present).
   const { data: updated } = await db.from("draft_live_matches").update({
-    p2_id: userId, p2_name: side.name, p2_squad: side.squad as unknown as never, p2_formation: side.formation, p2_strength: side.strength,
+    p2_id: userId, p2_name: side.name, p2_squad: side.squad as unknown as never, p2_formation: side.formation, p2_strength: side.strength, p2_competition: asLeague(row.competition),
     phase_deadline: isoIn(LOBBY_SECONDS),
   }).eq("id", row.id).eq("phase", "lobby").is("p2_id", null).select("*").maybeSingle();
   if (!updated) throw new Error("Lobby is full");
@@ -503,27 +507,33 @@ export async function queueOrPair(
   const me = await loadUserSide(db, userId, competition);
   if (!me) throw new Error("Save a team first");
 
-  // 2. Claim the oldest compatible waiter (same competition), or enqueue self.
+  // 2. Claim the oldest compatible waiter, or enqueue self. Cross-competition: the
+  // waiter may have queued with a different competition's XI (a La Liga team can
+  // face a PL one) — the RPC returns whose competition it is so we load the right
+  // team and credit each side to its own board.
   // p_league is genuinely nullable at the DB (the SQL pairs with
   // `league_id is not distinct from p_league`, i.e. null = the public queue).
   // The generated type declares it non-null, so cast to preserve the null value.
-  const { data: oppId } = await db.rpc("draft_live_pair", { p_user: userId, p_ranked: opts.ranked, p_league: opts.leagueId as string, p_competition: competition });
-  if (!oppId) return { status: "waiting" };
+  const { data: paired } = await db.rpc("draft_live_pair", { p_user: userId, p_ranked: opts.ranked, p_league: opts.leagueId as string, p_competition: competition });
+  const hit = Array.isArray(paired) ? paired[0] : null;
+  if (!hit?.opp_user) return { status: "waiting" };
+  const oppId = hit.opp_user;
+  const oppComp = asLeague(hit.opp_competition);
 
-  const opp = await loadUserSide(db, oppId as string, competition);
+  const opp = await loadUserSide(db, oppId, oppComp);
   if (!opp) {
     // The matched waiter no longer has an active team — drop them and requeue self
     // rather than throwing at this (blameless) caller; keep finding.
-    await db.from("draft_live_queue").delete().eq("user_id", oppId as string);
+    await db.from("draft_live_queue").delete().eq("user_id", oppId);
     await db.from("draft_live_queue").upsert({ user_id: userId, ranked: opts.ranked, league_id: opts.leagueId, competition }, { onConflict: "user_id" });
     return { status: "waiting" };
   }
-  // The waiter (opp) was here first → becomes p1; the caller is p2. Both present, so
-  // the lobby ready-clock starts immediately.
+  // The waiter (opp) was here first → becomes p1 (with their competition); the caller
+  // is p2 (with theirs). Both present, so the lobby ready-clock starts immediately.
   const { data: match } = await db.from("draft_live_matches").insert({
-    phase: "lobby", phase_deadline: isoIn(LOBBY_SECONDS), join_code: null, ranked: opts.ranked, league_id: opts.leagueId, competition, is_bot: false,
-    p1_id: oppId as string, p1_name: opp.name, p1_squad: opp.squad as unknown as never, p1_formation: opp.formation, p1_strength: opp.strength,
-    p2_id: userId, p2_name: me.name, p2_squad: me.squad as unknown as never, p2_formation: me.formation, p2_strength: me.strength,
+    phase: "lobby", phase_deadline: isoIn(LOBBY_SECONDS), join_code: null, ranked: opts.ranked, league_id: opts.leagueId, competition: oppComp, is_bot: false,
+    p1_id: oppId, p1_name: opp.name, p1_squad: opp.squad as unknown as never, p1_formation: opp.formation, p1_strength: opp.strength, p1_competition: oppComp,
+    p2_id: userId, p2_name: me.name, p2_squad: me.squad as unknown as never, p2_formation: me.formation, p2_strength: me.strength, p2_competition: competition,
   }).select("*").maybeSingle();
   if (!match) throw new Error("Matchmaking failed — try again");
   return { status: "matched", match };
@@ -544,9 +554,9 @@ export async function createBotMatch(db: SupabaseClient<DraftDatabase>, userId: 
   const bot = seededBot(me.formation as Formation, id, competition);
   const { data: match } = await db.from("draft_live_matches").insert({
     id, phase: "lobby", phase_deadline: isoIn(LOBBY_SECONDS), join_code: null, ranked: opts.ranked, league_id: opts.leagueId, competition, is_bot: true,
-    p1_id: userId, p1_name: me.name, p1_squad: me.squad as unknown as never, p1_formation: me.formation, p1_strength: me.strength,
+    p1_id: userId, p1_name: me.name, p1_squad: me.squad as unknown as never, p1_formation: me.formation, p1_strength: me.strength, p1_competition: competition,
     p2_id: null, p2_name: realisticOpponentName(id),
-    p2_squad: bot.team.squad as unknown as never, p2_formation: bot.team.formation, p2_strength: bot.team.strength,
+    p2_squad: bot.team.squad as unknown as never, p2_formation: bot.team.formation, p2_strength: bot.team.strength, p2_competition: competition,
   }).select("*").maybeSingle();
   if (!match) throw new Error("Could not start a match");
   return match;
@@ -596,7 +606,7 @@ export async function createLeagueChallenge(
     id, phase: "lobby", phase_deadline: isoIn(CHALLENGE_TTL_SECONDS), join_code: null,
     ranked: true, league_id: leagueId, competition, invited_id: opponentId, is_bot: false,
     p1_id: challengerId, p1_name: side.name, p1_squad: side.squad as unknown as never,
-    p1_formation: side.formation, p1_strength: side.strength,
+    p1_formation: side.formation, p1_strength: side.strength, p1_competition: competition,
   }).select("*").maybeSingle();
   if (!match) throw new Error("Could not send the challenge — try again");
   return match;
@@ -623,7 +633,7 @@ export async function acceptChallenge(
   // start the ready clock (guarded so a double-accept can't reopen a claimed seat).
   const { data: updated } = await db.from("draft_live_matches").update({
     p2_id: userId, p2_name: side.name, p2_squad: side.squad as unknown as never,
-    p2_formation: side.formation, p2_strength: side.strength,
+    p2_formation: side.formation, p2_strength: side.strength, p2_competition: asLeague(row.competition),
     phase_deadline: isoIn(LOBBY_SECONDS), updated_at: new Date().toISOString(),
   }).eq("id", matchId).eq("phase", "lobby").is("p2_id", null).select("*").maybeSingle();
   if (!updated) throw new Error("That challenge has expired");

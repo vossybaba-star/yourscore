@@ -265,7 +265,7 @@ export default function LiveMatchScreen() {
         <SpinSheet
           formation={view.myFormation} squad={view.mySquad} slotId={spinSlot}
           seedKey={`${m.id}:${side}:${m.phase}:${spinSlot}`}
-          competition={asLeague(m.competition)}
+          competition={asLeague(side === "p1" ? m.p1_competition : m.p2_competition)}
           onClose={() => setSpinSlot(null)}
           onPick={(playerId) => { live.swap(spinSlot, playerId); setSpinSlot(null); }}
         />
