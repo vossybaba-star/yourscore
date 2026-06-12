@@ -77,7 +77,9 @@ const row = {
   featured: true,
   featured_order: ORDER,
   rotation_active: true,
-  metadata: { icon: quiz.icon, daily: true, date: quiz.date },
+  // series tags the pack into the World Cup leaderboard (the £100 board); daily +
+  // date drive the streak deadline. Defaults to wc2026 unless the JSON overrides.
+  metadata: { icon: quiz.icon, daily: true, date: quiz.date, series: quiz.series || "wc2026" },
   updated_at: new Date().toISOString(),
 };
 
