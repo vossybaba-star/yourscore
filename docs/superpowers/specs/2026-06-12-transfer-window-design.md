@@ -10,8 +10,9 @@ Every simulated season pauses at Matchweek 19 with a **Half-Term Report**: your 
 record so far, your players' stats, and your January transfer budget — **the same flat
 budget for every manager**. You may sign **up to 3** players from a spun market shortlist of 12, each
 replacing a player in your XI, then the back 19 fixtures play out with the new team.
-One window per season, no reopening — like real January. Window seasons count on the
-verified Leaderboard ✓ with a 🔁 badge.
+Sometimes (seeded-random) one of your XI is **injured** at the window and must be
+replaced — the January handicap. One window per season, no reopening — like real
+January. Window seasons count on the verified Leaderboard ✓ with a 🔁 badge.
 
 Working name: **"The January Window"** (fallback: "Transfer Window").
 
@@ -25,7 +26,10 @@ Working name: **"The January Window"** (fallback: "Transfer Window").
    - Player stats so far (top scorer / assister / clean sheets) — the deadwood-spotting data.
    - Budget line: "You have £50m to spend this January." (Same for everyone; the
      record/stats above inform *who* to swap, not *how much* you get.)
-   - Buttons: **OPEN THE WINDOW →** / **Play on, no changes**.
+   - **Injury news** (when rolled, §3a): "❌ <Name> has been ruled out for the season —
+     you must replace him in the window."
+   - Buttons: **OPEN THE WINDOW →** / **Play on, no changes** ("Play on" is disabled
+     while an injured player is unreplaced).
 3. **The Window** — existing `Pitch` with the XI + the market shortlist of 12. To sign:
    pick a market player, pick the teammate he replaces (same-line rule via existing
    `canPlay`), pay the cost. Running budget bar, undo before confirm. **CONFIRM
@@ -54,6 +58,20 @@ budget points (accepted leak: cost 0 implies "not an upgrade").
   terms: 1 gk, 3 def, 4 mid, 4 att), de-duped against the XI and each other via existing
   `playerIdentity`.
 
+### 3a. Injuries — the January handicap
+
+- At MW19, a seeded-random roll (`INJURY_CHANCE = 0.30`, tuning dial) decides whether
+  **exactly one** player from the XI (uniform pick across the 11) is ruled out for the
+  rest of the season. Seeded by the season seed → same XI always produces the same
+  injury outcome; players can't reroll it, and the server can reproduce it.
+- An injured player **must be transferred out**. His replacement consumes one of the
+  3 signing slots and follows normal cost rules (equal-or-worse cover is free, so a
+  legal window always exists). The market's fixed composition (1 gk / 3 def / 4 mid /
+  4 att) guarantees same-line cover for any injured position.
+- The injured player keeps his first-half stats in the season totals (losing the
+  Golden Boot leader at Christmas is the intended nightmare).
+- v1 is 0-or-1 injuries; multi-injury windows are a future dial, not in scope.
+
 ## 4. Engine (`src/lib/draft/season.ts` restructure — Approach A, honest two-half sim)
 
 - **Fixtures:** half 1 = each of the 19 opponents once, venue seeded per opponent;
@@ -67,9 +85,12 @@ budget points (accepted leak: cost 0 implies "not an upgrade").
   matchweek order is dramatic.
 - **New shared-lib pure functions** (client and server run identical code):
   - `WINDOW_BUDGET` constant (no `transferBudget(points)` function — budget is flat)
+  - `rollInjury(squad, seed): PlacedPlayer | null` — the §3a seeded injury roll
+    (`INJURY_CHANCE` constant lives beside it)
   - `generateMarket(squad, league, half1Record, seed): PlayerSeason[12]`
-  - `applyTransfers(squad, transfers): PlacedPlayer[]` — throws on wrong line
-    (`canPlay`), off-market signing, duplicate identity, or overspend.
+  - `applyTransfers(squad, transfers, injured?): PlacedPlayer[]` — throws on wrong line
+    (`canPlay`), off-market signing, duplicate identity, overspend, or an unreplaced
+    injured player.
 - `simulateSeason(squad, formation, strength, seed, opponents, transfers?)` — returns the
   existing `SeasonResult` shape plus a `window` block `{ budget, half1: {w,d,l,pts,gf,ga},
   signings: [{in, out, cost}] }`. Per-half player stats are computed with each half's
@@ -84,8 +105,10 @@ budget points (accepted leak: cost 0 implies "not an upgrade").
 
 - POST body gains optional `transfers: [{ out_slot, in_player_season_id }]`.
 - Server chain (client result never read, as today): validate XI₁ → sim half 1 →
-  **regenerate the market** → verify each signing is on it and total cost ≤
-  `WINDOW_BUDGET` → `applyTransfers` → validate + score XI₂ → sim half 2 → store.
+  **regenerate the market and re-roll the injury** → verify each signing is on the
+  market, total cost ≤ `WINDOW_BUDGET`, and the injured player (if any) is among the
+  outs → `applyTransfers` → validate + score XI₂ → sim half 2 → store. A no-transfer
+  season with an unreplaced injured player is rejected.
 - Record `seed` = `sortedXI₁ids ‖ sortedInIds` — same squad with different windows is a
   distinct record; identical replay is a no-op (`onConflict (user_id, seed)`, unchanged).
 - **Migration (next after 31):** `draft_season_records` + `window_used boolean not null
@@ -104,7 +127,9 @@ Extend `season.test.ts` to assert under the v2 engine:
 - (c) elite-XI **with greedy-optimal transfers** ≤ ~1.7× its no-window rate.
 If (c) fails, tune `WINDOW_BUDGET` down. Exact thresholds re-confirmed
 against the real saved-XI corpus during implementation (same method as the 06-12 pass).
-The all-pool market (no guaranteed upgrades) is expected to do much of the damping.
+The all-pool market (no guaranteed upgrades) and the injury handicap (30% of elite
+seasons lose a starter at the window, often downgrading) are expected to do much of
+the damping.
 
 ## 7. Client data & plumbing
 
@@ -133,8 +158,9 @@ The all-pool market (no guaranteed upgrades) is expected to do much of the dampi
 ## 9. Testing
 
 - **Unit:** market determinism, composition (1 gk / 3 def / 4 mid / 4 att),
-  all-pool reachability, de-dupe; `applyTransfers` rejections (wrong line, off-market,
-  duplicate, overspend).
+  all-pool reachability, de-dupe; injury roll determinism + ~30% rate + uniform pick +
+  guaranteed same-line market cover; `applyTransfers` rejections (wrong line, off-market,
+  duplicate, overspend, unreplaced injured player).
 - **Sim:** determinism with/without transfers; per-half stats sum to season totals;
   reverse-fixture integrity (each opponent exactly twice, venues opposite).
 - **Calibration:** §6 gate.
@@ -145,7 +171,7 @@ The all-pool market (no guaranteed upgrades) is expected to do much of the dampi
 ## 10. Acceptance criteria
 
 1. Every non-WC season pauses at MW19 with the Half-Term Report; "Play on" reaches the
-   final scorecard in one tap.
+   final scorecard in one tap — unless an injury forces a replacement first.
 2. Up to 3 signings, market of 12 drawn from the whole pool, flat `WINDOW_BUDGET`
    (start: 10 / £50m) for every manager, cost = positive overall delta, same-line
    swaps only.
