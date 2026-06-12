@@ -6,6 +6,7 @@ import {
 } from "@/lib/email/senders";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { rateLimitDistributed } from "@/lib/ratelimit";
 import { NextRequest, NextResponse } from "next/server";
 
 /**
@@ -31,6 +32,14 @@ export async function POST(req: NextRequest) {
   const user = authData.user;
   if (!user?.email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // This route triggers outbound email (some of it to OTHER users, e.g. the
+  // league creator), so it must not be spammable: legit lifecycle events fire
+  // at most once or twice per session.
+  const { ok } = await rateLimitDistributed(`email-lifecycle:${user.id}`, 5, 60_000);
+  if (!ok) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
 
   let body: EventBody;

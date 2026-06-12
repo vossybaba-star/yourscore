@@ -26,19 +26,27 @@ export async function GET(_req: NextRequest, { params }: { params: { code: strin
     if (leagueErr) return NextResponse.json({ ready: false });
     if (!league) return NextResponse.json({ error: "League not found" }, { status: 404 });
 
-    // Presence heartbeat: loading the board marks you online for the next window.
-    if (user) {
-      await db.from("draft_league_members")
-        .update({ last_seen_at: new Date().toISOString() })
-        .eq("league_id", league.id).eq("user_id", user.id);
-    }
-
     const { data: members } = await db
       .from("draft_league_members")
       .select("user_id, last_seen_at")
       .eq("league_id", league.id);
     const ids = (members ?? []).map((m) => m.user_id);
     const seenMap = new Map((members ?? []).map((m) => [m.user_id, m.last_seen_at]));
+
+    // Presence heartbeat: loading the board marks you online for the next window.
+    // Only write when the stored heartbeat is >30s stale — the board is polled
+    // every few seconds per viewer and the online window is 75s, so rewriting
+    // the row on every poll was pure write churn for the same answer.
+    if (user && seenMap.has(user.id)) {
+      const seen = seenMap.get(user.id);
+      if (!seen || Date.now() - Date.parse(seen) > 30_000) {
+        const nowIso = new Date().toISOString();
+        await db.from("draft_league_members")
+          .update({ last_seen_at: nowIso })
+          .eq("league_id", league.id).eq("user_id", user.id);
+        seenMap.set(user.id, nowIso); // response reflects the fresh heartbeat
+      }
+    }
     const now = Date.now();
     const onlineOf = (uid: string): boolean => {
       const seen = seenMap.get(uid);

@@ -6,7 +6,12 @@ export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
   const errorParam = searchParams.get("error");
-  const next = searchParams.get("next") ?? "/";
+  // Only honor same-site relative paths — this route is hit unauthenticated with
+  // attacker-controllable query params, so an absolute or protocol-relative
+  // value ("https://evil.com", "//evil.com") would be an open redirect off an
+  // auth endpoint. Mirrors the guard in auth/sign-in.
+  const rawNext = searchParams.get("next") ?? "/";
+  const next = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/";
 
   if (errorParam) {
     const desc = searchParams.get("error_description") ?? errorParam;

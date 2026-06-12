@@ -105,6 +105,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "answers_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "yourscore_user_ratings"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       challenge_attempts: {
@@ -152,6 +159,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenge_attempts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "yourscore_user_ratings"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -371,6 +385,7 @@ export type Database = {
       }
       draft_live_matches: {
         Row: {
+          competition: string
           created_at: string
           h1_p1: number | null
           h1_p2: number | null
@@ -389,6 +404,7 @@ export type Database = {
           p1_ready: boolean
           p1_squad: Json | null
           p1_strength: number | null
+          p1_sub_ids: Json
           p1_wants_pens: boolean | null
           p2_formation: string | null
           p2_half_left: number
@@ -398,6 +414,7 @@ export type Database = {
           p2_ready: boolean
           p2_squad: Json | null
           p2_strength: number | null
+          p2_sub_ids: Json
           p2_wants_pens: boolean | null
           pens_p1: number | null
           pens_p2: number | null
@@ -408,9 +425,9 @@ export type Database = {
           sim: Json | null
           updated_at: string
           winner_id: string | null
-          competition: string
         }
         Insert: {
+          competition?: string
           created_at?: string
           h1_p1?: number | null
           h1_p2?: number | null
@@ -429,6 +446,7 @@ export type Database = {
           p1_ready?: boolean
           p1_squad?: Json | null
           p1_strength?: number | null
+          p1_sub_ids?: Json
           p1_wants_pens?: boolean | null
           p2_formation?: string | null
           p2_half_left?: number
@@ -438,6 +456,7 @@ export type Database = {
           p2_ready?: boolean
           p2_squad?: Json | null
           p2_strength?: number | null
+          p2_sub_ids?: Json
           p2_wants_pens?: boolean | null
           pens_p1?: number | null
           pens_p2?: number | null
@@ -448,9 +467,9 @@ export type Database = {
           sim?: Json | null
           updated_at?: string
           winner_id?: string | null
-          competition?: string
         }
         Update: {
+          competition?: string
           created_at?: string
           h1_p1?: number | null
           h1_p2?: number | null
@@ -469,6 +488,7 @@ export type Database = {
           p1_ready?: boolean
           p1_squad?: Json | null
           p1_strength?: number | null
+          p1_sub_ids?: Json
           p1_wants_pens?: boolean | null
           p2_formation?: string | null
           p2_half_left?: number
@@ -478,6 +498,7 @@ export type Database = {
           p2_ready?: boolean
           p2_squad?: Json | null
           p2_strength?: number | null
+          p2_sub_ids?: Json
           p2_wants_pens?: boolean | null
           pens_p1?: number | null
           pens_p2?: number | null
@@ -488,7 +509,6 @@ export type Database = {
           sim?: Json | null
           updated_at?: string
           winner_id?: string | null
-          competition?: string
         }
         Relationships: [
           {
@@ -502,25 +522,25 @@ export type Database = {
       }
       draft_live_queue: {
         Row: {
+          competition: string
           enqueued_at: string
           league_id: string | null
           ranked: boolean
           user_id: string
-          competition: string
         }
         Insert: {
+          competition?: string
           enqueued_at?: string
           league_id?: string | null
           ranked?: boolean
           user_id: string
-          competition?: string
         }
         Update: {
+          competition?: string
           enqueued_at?: string
           league_id?: string | null
           ranked?: boolean
           user_id?: string
-          competition?: string
         }
         Relationships: [
           {
@@ -538,6 +558,7 @@ export type Database = {
           challenger_id: string | null
           challenger_strength: number
           challenger_team: Json
+          competition: string
           detail: Json | null
           id: string
           league_id: string | null
@@ -547,13 +568,13 @@ export type Database = {
           opponent_team: Json
           played_at: string | null
           winner_id: string | null
-          competition: string
         }
         Insert: {
           challenger_goals?: number | null
           challenger_id?: string | null
           challenger_strength: number
           challenger_team: Json
+          competition?: string
           detail?: Json | null
           id?: string
           league_id?: string | null
@@ -563,13 +584,13 @@ export type Database = {
           opponent_team: Json
           played_at?: string | null
           winner_id?: string | null
-          competition?: string
         }
         Update: {
           challenger_goals?: number | null
           challenger_id?: string | null
           challenger_strength?: number
           challenger_team?: Json
+          competition?: string
           detail?: Json | null
           id?: string
           league_id?: string | null
@@ -579,12 +600,12 @@ export type Database = {
           opponent_team?: Json
           played_at?: string | null
           winner_id?: string | null
-          competition?: string
         }
         Relationships: []
       }
       draft_saved_teams: {
         Row: {
+          competition: string
           created_at: string | null
           formation: string
           id: string
@@ -594,9 +615,9 @@ export type Database = {
           strength_rating: number
           updated_at: string | null
           user_id: string
-          competition: string
         }
         Insert: {
+          competition?: string
           created_at?: string | null
           formation: string
           id?: string
@@ -606,9 +627,9 @@ export type Database = {
           strength_rating: number
           updated_at?: string | null
           user_id: string
-          competition?: string
         }
         Update: {
+          competition?: string
           created_at?: string | null
           formation?: string
           id?: string
@@ -618,7 +639,63 @@ export type Database = {
           strength_rating?: number
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      draft_season_records: {
+        Row: {
+          competition: string
+          created_at: string
+          display_name: string
+          draws: number
+          formation: string | null
+          ga: number
+          gf: number
+          id: string
+          invincible: boolean
+          league_pos: number
+          losses: number
+          points: number
+          seed: string
+          strength: number
+          user_id: string
+          wins: number
+        }
+        Insert: {
           competition?: string
+          created_at?: string
+          display_name?: string
+          draws: number
+          formation?: string | null
+          ga?: number
+          gf?: number
+          id?: string
+          invincible?: boolean
+          league_pos: number
+          losses: number
+          points: number
+          seed: string
+          strength?: number
+          user_id: string
+          wins: number
+        }
+        Update: {
+          competition?: string
+          created_at?: string
+          display_name?: string
+          draws?: number
+          formation?: string | null
+          ga?: number
+          gf?: number
+          id?: string
+          invincible?: boolean
+          league_pos?: number
+          losses?: number
+          points?: number
+          seed?: string
+          strength?: number
+          user_id?: string
+          wins?: number
         }
         Relationships: []
       }
@@ -642,6 +719,7 @@ export type Database = {
       }
       draft_standings: {
         Row: {
+          competition: string
           display_name: string
           draws_all_time: number
           draws_today: number
@@ -654,9 +732,9 @@ export type Database = {
           user_id: string
           wins_all_time: number
           wins_today: number
-          competition: string
         }
         Insert: {
+          competition?: string
           display_name: string
           draws_all_time?: number
           draws_today?: number
@@ -669,9 +747,9 @@ export type Database = {
           user_id: string
           wins_all_time?: number
           wins_today?: number
-          competition?: string
         }
         Update: {
+          competition?: string
           display_name?: string
           draws_all_time?: number
           draws_today?: number
@@ -684,12 +762,12 @@ export type Database = {
           user_id?: string
           wins_all_time?: number
           wins_today?: number
-          competition?: string
         }
         Relationships: []
       }
       draft_teams: {
         Row: {
+          competition: string
           created_at: string | null
           display_name: string | null
           formation: string
@@ -701,9 +779,9 @@ export type Database = {
           updated_at: string | null
           user_id: string | null
           win_streak: number
-          competition: string
         }
         Insert: {
+          competition?: string
           created_at?: string | null
           display_name?: string | null
           formation: string
@@ -715,9 +793,9 @@ export type Database = {
           updated_at?: string | null
           user_id?: string | null
           win_streak?: number
-          competition?: string
         }
         Update: {
+          competition?: string
           created_at?: string | null
           display_name?: string | null
           formation?: string
@@ -729,7 +807,6 @@ export type Database = {
           updated_at?: string | null
           user_id?: string | null
           win_streak?: number
-          competition?: string
         }
         Relationships: []
       }
@@ -799,6 +876,7 @@ export type Database = {
           group_played: number
           group_points: number
           id: string
+          mode: string
           nation: string
           plan: Json
           resolved_at: string | null
@@ -818,6 +896,7 @@ export type Database = {
           group_played?: number
           group_points?: number
           id?: string
+          mode?: string
           nation: string
           plan: Json
           resolved_at?: string | null
@@ -837,6 +916,7 @@ export type Database = {
           group_played?: number
           group_points?: number
           id?: string
+          mode?: string
           nation?: string
           plan?: Json
           resolved_at?: string | null
@@ -963,6 +1043,30 @@ export type Database = {
           quiz_pack_id?: string
           quiz_pack_name?: string
           total_questions?: number
+        }
+        Relationships: []
+      }
+      health_logs: {
+        Row: {
+          checked_at: string | null
+          checks: Json
+          duration_ms: number | null
+          id: string
+          overall: string
+        }
+        Insert: {
+          checked_at?: string | null
+          checks: Json
+          duration_ms?: number | null
+          id?: string
+          overall: string
+        }
+        Update: {
+          checked_at?: string | null
+          checks?: Json
+          duration_ms?: number | null
+          id?: string
+          overall?: string
         }
         Relationships: []
       }
@@ -1406,6 +1510,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "quiz_attempts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "yourscore_user_ratings"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       quiz_packs: {
@@ -1547,6 +1658,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "room_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "yourscore_user_ratings"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       room_scores: {
@@ -1609,6 +1727,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_scores_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "yourscore_user_ratings"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -1697,6 +1822,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "rooms_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "yourscore_user_ratings"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "rooms_match_id_fkey"
             columns: ["match_id"]
             isOneToOne: false
@@ -1704,6 +1836,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      spend_logs: {
+        Row: {
+          amount_gbp: number
+          created_at: string | null
+          date: string
+          id: string
+          notes: string | null
+          platform: string
+        }
+        Insert: {
+          amount_gbp: number
+          created_at?: string | null
+          date: string
+          id?: string
+          notes?: string | null
+          platform: string
+        }
+        Update: {
+          amount_gbp?: number
+          created_at?: string | null
+          date?: string
+          id?: string
+          notes?: string | null
+          platform?: string
+        }
+        Relationships: []
       }
       user_question_history: {
         Row: {
@@ -1742,7 +1901,22 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      yourscore_user_ratings: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          display_name: string | null
+          draws: number | null
+          knowledge_score: number | null
+          losses: number | null
+          match_score: number | null
+          overall_rank: number | null
+          overall_score: number | null
+          user_id: string | null
+          wins: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       apply_timeout_penalty: {
@@ -1755,11 +1929,11 @@ export type Database = {
       }
       draft_credit_result: {
         Args: {
+          p_competition?: string
           p_league?: string
           p_name: string
           p_result: string
           p_user: string
-          p_competition?: string
         }
         Returns: undefined
       }
@@ -1774,7 +1948,12 @@ export type Database = {
         }[]
       }
       draft_leaderboard_points: {
-        Args: { p_league_id: string; p_limit?: number; p_metric: string; p_competition?: string }
+        Args: {
+          p_competition?: string
+          p_league_id: string
+          p_limit?: number
+          p_metric: string
+        }
         Returns: {
           display_name: string
           draws: number
@@ -1786,11 +1965,43 @@ export type Database = {
         }[]
       }
       draft_live_pair: {
-        Args: { p_league: string; p_ranked: boolean; p_user: string; p_competition?: string }
+        Args: {
+          p_competition?: string
+          p_league: string
+          p_ranked: boolean
+          p_user: string
+        }
         Returns: string
       }
       draft_live_reap: { Args: never; Returns: undefined }
       draft_reset_daily: { Args: never; Returns: undefined }
+      draft_season_leaderboard: {
+        Args: { p_competition?: string; p_limit?: number }
+        Returns: {
+          created_at: string
+          display_name: string
+          draws: number
+          invincible: boolean
+          league_pos: number
+          losses: number
+          points: number
+          strength: number
+          user_id: string
+          wins: number
+        }[]
+      }
+      draft_wc_leaderboard: {
+        Args: { p_limit?: number }
+        Returns: {
+          created_at: string
+          display_name: string
+          games: number
+          nation: string
+          status: string
+          user_id: string
+          wins: number
+        }[]
+      }
       get_my_league_standings: {
         Args: { p_limit?: number; p_user_id: string }
         Returns: {
@@ -1813,12 +2024,48 @@ export type Database = {
           name: string
         }[]
       }
+      get_yourscore_leaderboard: {
+        Args: { p_limit?: number; p_user_ids?: string[] }
+        Returns: {
+          avatar_url: string
+          display_name: string
+          draws: number
+          knowledge_score: number
+          losses: number
+          match_score: number
+          overall_rank: number
+          overall_score: number
+          user_id: string
+          wins: number
+        }[]
+      }
+      get_yourscore_rank: {
+        Args: { p_user_id: string }
+        Returns: {
+          ahead_name: string
+          ahead_points: number
+          avatar_url: string
+          display_name: string
+          draws: number
+          knowledge_score: number
+          losses: number
+          match_score: number
+          overall_rank: number
+          overall_score: number
+          user_id: string
+          wins: number
+        }[]
+      }
       increment_profile_score: {
         Args: { p_points: number; p_user_id: string }
         Returns: undefined
       }
       increment_question_stats: {
         Args: { correct_ids: string[]; question_ids: string[] }
+        Returns: undefined
+      }
+      record_quiz_results: {
+        Args: { p_correct: string[]; p_qids: string[]; p_user: string }
         Returns: undefined
       }
       update_league_member_stats: {

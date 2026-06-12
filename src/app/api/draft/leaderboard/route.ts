@@ -12,6 +12,13 @@ import { asLeague } from "@/lib/draft/types";
 // a young ladder looks populated. Private league boards are NEVER padded — those
 // are the user's real mates.
 
+// Response is identical for every viewer of the same (metric, league, competition)
+// URL, so let Vercel's edge cache absorb the per-visit fan-out (the 38-0 live
+// entry page fetches this on every visit).
+const CACHE_HEADERS = {
+  "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+};
+
 export async function GET(req: NextRequest) {
   const metric = req.nextUrl.searchParams.get("metric") === "today" ? "today" : "all";
   const league = req.nextUrl.searchParams.get("league");
@@ -33,7 +40,7 @@ export async function GET(req: NextRequest) {
     if (!isGlobal) return NextResponse.json({ rows: [], ready: false });
   }
 
-  if (!isGlobal) return NextResponse.json({ rows: real, ready: true });
+  if (!isGlobal) return NextResponse.json({ rows: real, ready: true }, { headers: CACHE_HEADERS });
 
   // Global board: merge real players with filler profiles, then re-rank together.
   const realNames = new Set(real.map((r) => r.display_name.toLowerCase()));
@@ -43,5 +50,5 @@ export async function GET(req: NextRequest) {
     .sort((a, b) => b.points - a.points || b.wins - a.wins)
     .slice(0, 100)
     .map((r, i) => ({ ...r, rank: i + 1 }));
-  return NextResponse.json({ rows, ready: true });
+  return NextResponse.json({ rows, ready: true }, { headers: CACHE_HEADERS });
 }

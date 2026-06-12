@@ -71,31 +71,22 @@ export async function POST(req: NextRequest) {
   const supabase = createServiceClient();
   const userId = user.id;
 
-  // Update user_question_history correct field for each result (scoped to this user)
-  for (const result of results) {
-    const { error } = await supabase
-      .from("user_question_history")
-      .update({ correct: result.correct })
-      .eq("user_id", userId)
-      .eq("question_id", result.questionId);
-
-    if (error) {
-      console.error("quiz/complete history update failed", error);
-      return NextResponse.json({ error: "Failed to record results" }, { status: 500 });
-    }
-  }
-
-  // Atomically increment counters via RPC (avoids race conditions)
+  // One round-trip: updates this user's user_question_history rows and
+  // increments question counters in two batched statements (migration 33).
+  // Replaces a per-result UPDATE loop + double-UPDATE counter RPC that wrote
+  // up to ~120 row versions per completion. Service-role only — p_user comes
+  // from the session above, never the body.
   const allIds = results.map((r) => r.questionId);
   const correctIds = results.filter((r) => r.correct).map((r) => r.questionId);
 
-  const { error: rpcError } = await supabase.rpc("increment_question_stats", {
-    question_ids: allIds,
-    correct_ids: correctIds,
+  const { error: rpcError } = await supabase.rpc("record_quiz_results", {
+    p_user: userId,
+    p_qids: allIds,
+    p_correct: correctIds,
   });
 
   if (rpcError) {
-    console.error("quiz/complete increment_question_stats failed", rpcError);
+    console.error("quiz/complete record_quiz_results failed", rpcError);
     return NextResponse.json({ error: "Failed to record results" }, { status: 500 });
   }
 

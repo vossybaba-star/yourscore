@@ -69,7 +69,9 @@ export default function LeagueBoard() {
   // Initial load + light polling (keeps me "online", surfaces incoming challenges).
   useEffect(() => {
     load();
-    pollRef.current = setInterval(load, 4000);
+    // 8s: halves board-poll volume vs 4s while keeping incoming-challenge
+    // discovery well inside the 60s lobby window and the 75s online window.
+    pollRef.current = setInterval(load, 8000);
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, [load]);
 
