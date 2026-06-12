@@ -40,7 +40,8 @@ export default function WatchPage() {
       if (p >= 1) {
         clearInterval(id);
         if (stage === "half1") setStage("halftime");
-        else router.replace("/38-0/match/result");
+        // Level after 90? The shootout settles it before the result screen.
+        else router.replace(m.pensPending ? "/38-0/match/pens" : "/38-0/match/result");
       }
     }, 100);
     return () => clearInterval(id);
