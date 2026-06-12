@@ -13,7 +13,6 @@ import { createDraftDb } from "@/lib/draft/server";
 export const runtime = "nodejs";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://yourscore.app";
-const KEYS = ["w", "d", "l", "pts", "pos", "ovr", "mode", "inv", "boot", "pots", "xi", "gf", "ga", "verdict", "form", "play", "glov"];
 
 function ordinal(n: number): string {
   const s = ["th", "st", "nd", "rd"], v = n % 100;
@@ -62,11 +61,8 @@ async function loadPayload(id: string): Promise<Record<string, string> | null> {
   }
 }
 
-function ogUrl(p: Record<string, string>): string {
-  const params = new URLSearchParams();
-  for (const k of KEYS) { const v = p[k]; if (v) params.set(k, v); }
-  params.set("wide", "1");
-  return `${BASE}/api/draft/season-og?${params.toString()}`;
+function ogUrl(id: string): string {
+  return `${BASE}/api/draft/season-og?id=${encodeURIComponent(id)}&wide=1`;
 }
 
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
@@ -80,7 +76,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   const description = p.xi
     ? `${p.xi.split("|").slice(0, 3).map(c => c.split("~")[1]).join(", ")} and more — build your own XI and take them on.`
     : "Build an all-time XI and simulate your season on YourScore. Think you can beat it?";
-  const image = ogUrl(p);
+  const image = ogUrl(params.id);
   return {
     title, description,
     openGraph: { title, description, images: [{ url: image, width: 1200, height: 630 }], type: "website" },

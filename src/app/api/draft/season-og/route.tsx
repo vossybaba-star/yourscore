@@ -1,10 +1,13 @@
 /**
  * /api/draft/season-og — 38-0 season-result share card (portrait 1080x1500). The
  * viral moment: a broadcast graphic of the simulated season, designed to be saved
- * and posted to WhatsApp / X / socials. Stateless — all data comes from query params
- * (computed client-side) so shared links unfurl without a DB. Built on next/og.
+ * and posted to WhatsApp / X / socials. Built on next/og.
  *
- * Params:
+ * Two modes:
+ *   ?id=<shareId>&wide=1   — load from draft_shares (used by /s/[id] OG tags; short URL)
+ *   ?w=…&d=…&xi=…&wide=1   — direct query params (legacy / in-app preview)
+ *
+ * Params (when using direct query mode):
  *   w,d,l    record           pts        points
  *   pos      league position  ovr        team overall (strength)
  *   mode     'Normal'|'Expert'  inv      '1' for invincible
@@ -13,6 +16,7 @@
  */
 
 import { ImageResponse } from "next/og";
+import { createClient } from "@supabase/supabase-js";
 import type { NextRequest } from "next/server";
 
 export const runtime = "edge";
@@ -33,7 +37,32 @@ function lineOf(pos: string): Line {
 const CHIP: Record<Line, string> = { att: "#ff5b6e", mid: "#00ff87", def: "#3da5ff", gk: "#ffb800" };
 
 export async function GET(req: NextRequest) {
-  const q = req.nextUrl.searchParams;
+  let q = req.nextUrl.searchParams;
+
+  // ID-based mode: load payload from draft_shares so the og:image URL is short
+  // (/api/draft/season-og?id=QqJfw7M&wide=1) rather than encoding everything in
+  // the query string. This also lets Vercel's CDN cache the image by stable URL.
+  const shareId = q.get("id");
+  if (shareId) {
+    try {
+      const db = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        { auth: { persistSession: false } }
+      );
+      const { data } = await db.from("draft_shares").select("payload").eq("id", shareId).maybeSingle();
+      if (data?.payload && typeof data.payload === "object") {
+        const merged = new URLSearchParams(data.payload as Record<string, string>);
+        // Keep wide=1 and any other render flags from the actual URL
+        req.nextUrl.searchParams.forEach((v, k) => {
+          if (k !== "id") merged.set(k, v);
+        });
+        q = merged;
+      }
+    } catch {
+      // Fall through to direct-param rendering with whatever is in the URL
+    }
+  }
   const num = (k: string, d = 0) => { const n = parseInt(q.get(k) ?? "", 10); return Number.isFinite(n) ? n : d; };
   const w = num("w"), d = num("d"), l = num("l");
   const pts = num("pts"), pos = num("pos", 10), ovr = num("ovr");
