@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { trackGamePlay, trackGameComplete } from "@/lib/analytics/trackGame";
 import Link from "next/link";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { RealtimeChannel, SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 import { REALTIME_ENABLED } from "@/lib/realtime";
 import { QuestionCard, type ActiveQuestion } from "@/components/game/QuestionCard";
@@ -225,6 +225,12 @@ export default function MatchPage({ params }: { params: { id: string } }) {
   useEffect(() => {
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL) { setLoading(false); return; }
 
+    // Hoisted so the effect cleanup can remove the channel — a `return` inside
+    // .then() goes to the promise, not to React, which leaked one live
+    // subscription per match-page visit.
+    let cancelled = false;
+    let channel: RealtimeChannel | null = null;
+
     import("@/lib/supabase/client").then(({ createClient }) => {
       const sb = createClient();
       supabaseRef.current = sb;
@@ -276,8 +282,8 @@ export default function MatchPage({ params }: { params: { id: string } }) {
       fetchLeaderboard();
 
       // Realtime
-      if (!REALTIME_ENABLED) return;
-      const channel = sb.channel(`match:${matchId}`)
+      if (!REALTIME_ENABLED || cancelled) return;
+      channel = sb.channel(`match:${matchId}`)
         .on("postgres_changes", {
           event: "INSERT", schema: "public", table: "question_events",
           filter: `match_id=eq.${matchId}`,
@@ -315,9 +321,12 @@ export default function MatchPage({ params }: { params: { id: string } }) {
           } : prev);
         })
         .subscribe();
-
-      return () => { sb.removeChannel(channel); };
     });
+
+    return () => {
+      cancelled = true;
+      if (channel && supabaseRef.current) supabaseRef.current.removeChannel(channel);
+    };
   }, [matchId]);
 
   // ── Answer handler ────────────────────────────────────────────────────────

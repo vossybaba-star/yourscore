@@ -364,7 +364,7 @@ export default function RoomPage() {
 
       setLoading(false);
 
-      if (!REALTIME_ENABLED) { return; }
+      if (!REALTIME_ENABLED || cancelled) { return; }
       const channel = sb.channel(`room:${roomId}`, { config: { broadcast: { self: true } } })
         // Question events: show new questions to all clients
         .on("postgres_changes", { event: "INSERT", schema: "public", table: "question_events", filter: `room_id=eq.${roomId}` },
@@ -432,17 +432,19 @@ export default function RoomPage() {
         .subscribe();
 
       channelRef.current = channel;
-      return () => {
-        cancelled = true;
-        channelRef.current = null;
-        if (leaderboardRefetchRef.current) { clearTimeout(leaderboardRefetchRef.current); leaderboardRefetchRef.current = null; }
-        sb.removeChannel(channel);
-      };
     });
 
     return () => {
       cancelled = true;
       if (leaderboardRefetchRef.current) { clearTimeout(leaderboardRefetchRef.current); leaderboardRefetchRef.current = null; }
+      // Remove the live channel on unmount. The async block above can't hand
+      // its cleanup back to React (a return inside .then() goes to the
+      // promise), so the refs are the hand-off — without this every visit
+      // in/out of a lobby leaked a live subscription.
+      if (channelRef.current && supabaseRef.current) {
+        supabaseRef.current.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
   }, [user, userLoading, roomId, fetchPlayers, fetchLeaderboard, handleNewQuestion, fetchAndShowQuestion, triggerEarlyAdvance]);
 

@@ -68,6 +68,12 @@ export default function MessagePage() {
   }, [otherUserId]);
 
   useEffect(() => {
+    // Channel is created inside an async continuation, so hand it back to the
+    // effect cleanup via these — a `return` inside .then() goes to the promise,
+    // not to React, which leaked one live subscription per page visit.
+    let cancelled = false;
+    let channel: ReturnType<typeof sb.channel> | null = null;
+
     supabase.auth.getUser().then(async ({ data }) => {
       const uid = data.user?.id ?? null;
       setMyId(uid);
@@ -80,9 +86,10 @@ export default function MessagePage() {
 
       await fetchMessages(uid);
 
-      // Subscribe to new messages
-      if (!REALTIME_ENABLED) return;
-      const channel = sb
+      // Subscribe to new messages (own sends also arrive via this channel —
+      // sendMessage only inserts, it never appends locally).
+      if (!REALTIME_ENABLED || cancelled) return;
+      channel = sb
         .channel(`dm:${[uid, otherUserId].sort().join(":")}`)
         .on("postgres_changes", {
           event: "INSERT", schema: "public", table: "messages",
@@ -96,9 +103,12 @@ export default function MessagePage() {
           }
         })
         .subscribe();
-
-      return () => { sb.removeChannel(channel); };
     });
+
+    return () => {
+      cancelled = true;
+      if (channel) sb.removeChannel(channel);
+    };
   }, [otherUserId, fetchMessages, supabase]);
 
   // Auto-scroll to bottom
