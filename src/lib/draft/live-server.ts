@@ -409,10 +409,11 @@ export async function applyLiveSwap(
     .select("*")
     .maybeSingle();
 
-  let { data: updated, error } = await doUpdate(subPatch);
+  const first = await doUpdate(subPatch);
+  let updated = first.data;
   // Pre-migration-29 fallback: if the sub-tracking column doesn't exist yet, the
   // swap itself must still go through (just without the impact tag).
-  if (!updated && error && Object.keys(subPatch).length > 0) {
+  if (!updated && first.error && Object.keys(subPatch).length > 0) {
     ({ data: updated } = await doUpdate({}));
   }
   if (!updated) throw new Error("No changes left");
