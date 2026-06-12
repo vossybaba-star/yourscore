@@ -80,6 +80,9 @@ export type WcBoardRow = {
 
 export async function GET(req: NextRequest) {
   const competition = asLeague(req.nextUrl.searchParams.get("competition"));
+  // Season-board window: "all" (default — best season per manager, all-time) or
+  // "today" (best season per manager set since midnight UTC, the giveaway cycle).
+  const window = req.nextUrl.searchParams.get("window") === "today" ? "today" : "all";
 
   let seasons: SeasonBoardRow[] = [];
   let wc: WcBoardRow[] = [];
@@ -88,10 +91,12 @@ export async function GET(req: NextRequest) {
   try {
     const db = recordsDb();
     const [s, w] = await Promise.all([
-      db.rpc("draft_season_leaderboard", { p_competition: competition, p_limit: 50 }),
+      window === "today"
+        ? todaysSeasons(db, competition)
+        : db.rpc("draft_season_leaderboard", { p_competition: competition, p_limit: 50 }).then((r) => (r.data ?? []) as SeasonBoardRow[]),
       db.rpc("draft_wc_leaderboard", { p_limit: 50 }),
     ]);
-    seasons = (s.data ?? []) as SeasonBoardRow[];
+    seasons = s;
     wc = (w.data ?? []) as WcBoardRow[];
 
     const auth = await createClient();
@@ -107,6 +112,30 @@ export async function GET(req: NextRequest) {
   }
 
   return NextResponse.json({ seasons, wc, mine });
+}
+
+/** Today's board: best season per manager set since midnight UTC. Done as a plain
+ *  table query + JS dedupe (daily volume is small) so it needs no extra RPC. */
+async function todaysSeasons(db: SupabaseClient, competition: string): Promise<SeasonBoardRow[]> {
+  const startOfDay = new Date();
+  startOfDay.setUTCHours(0, 0, 0, 0);
+  const { data } = await db
+    .from("draft_season_records")
+    .select("user_id, display_name, wins, draws, losses, points, league_pos, strength, invincible, created_at")
+    .eq("competition", competition)
+    .gte("created_at", startOfDay.toISOString())
+    .order("wins", { ascending: false }).order("points", { ascending: false })
+    .order("losses", { ascending: true }).order("created_at", { ascending: true })
+    .limit(300);
+  const seen = new Set<string>();
+  const best: SeasonBoardRow[] = [];
+  for (const r of (data ?? []) as SeasonBoardRow[]) {
+    if (seen.has(r.user_id)) continue;
+    seen.add(r.user_id);
+    best.push(r);
+    if (best.length >= 50) break;
+  }
+  return best;
 }
 
 /** The caller's best season even when outside the top 50. */

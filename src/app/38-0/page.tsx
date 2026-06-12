@@ -375,18 +375,19 @@ const medal = (i: number): string => (i === 0 ? "🥇" : i === 1 ? "🥈" : i ==
 
 function VerifiedBoard({ signedIn }: { signedIn: boolean }) {
   const [comp, setComp] = useState<League>("PL");
+  const [boardWindow, setBoardWindow] = useState<"today" | "all">("all");
   const [data, setData] = useState<BoardData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    fetch(`/api/draft/records?competition=${comp}`)
+    fetch(`/api/draft/records?competition=${comp}&window=${boardWindow}`)
       .then((r) => r.json())
       .then((d: BoardData) => { if (!cancelled) { setData(d); setLoading(false); } })
       .catch(() => { if (!cancelled) { setData({ seasons: [], wc: [], mine: { season: null, wc: null } }); setLoading(false); } });
     return () => { cancelled = true; };
-  }, [comp]);
+  }, [comp, boardWindow]);
 
   const seasons = data?.seasons ?? [];
   const wc = data?.wc ?? [];
@@ -398,7 +399,7 @@ function VerifiedBoard({ signedIn }: { signedIn: boolean }) {
         LEADERBOARD <span style={{ color: "#22d3ee" }}>✓</span>
       </h2>
       <p className="font-body mt-1 mb-5" style={{ color: "#cfcfe6", fontSize: 14 }}>
-        Closest to the perfect season. Every record is re-simulated on our servers — verified, no screenshots.
+        Who&apos;s got closest to the perfect season? Every record here is verified ✓ — real results only.
       </p>
 
       {/* Sign-in nudge — seasons only enter the board for signed-in managers */}
@@ -433,7 +434,7 @@ function VerifiedBoard({ signedIn }: { signedIn: boolean }) {
       )}
 
       {/* ── Season board ── */}
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-2">
         <h3 className="font-display tracking-wide" style={{ fontSize: 20, color: "#fff" }}>CLOSEST TO 38-0</h3>
         <div className="flex gap-1 p-0.5 rounded-xl" style={{ background: "rgba(255,255,255,0.05)" }}>
           {(["PL", "LaLiga"] as League[]).map((c) => (
@@ -445,13 +446,24 @@ function VerifiedBoard({ signedIn }: { signedIn: boolean }) {
           ))}
         </div>
       </div>
+      <div className="flex gap-1 mb-3 p-0.5 rounded-xl w-fit" style={{ background: "rgba(255,255,255,0.05)" }}>
+        {([["today", "Today"], ["all", "All-time"]] as const).map(([k, label]) => (
+          <button key={k} onClick={() => setBoardWindow(k)}
+            className="px-3 py-1 rounded-lg font-body text-xs font-semibold transition-all"
+            style={boardWindow === k ? { background: "#22d3ee", color: "#06181c" } : { background: "transparent", color: "#8888aa" }}>
+            {label}
+          </button>
+        ))}
+      </div>
 
       <div className="rounded-2xl overflow-hidden mb-7" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}>
         {loading ? (
           <div className="py-10 text-center font-body" style={{ fontSize: 13, color: "#8888aa" }}>Loading the board…</div>
         ) : seasons.length === 0 ? (
           <div className="py-10 px-6 text-center">
-            <div className="font-display tracking-wide" style={{ fontSize: 18, color: "#fff" }}>NO VERIFIED SEASONS YET</div>
+            <div className="font-display tracking-wide" style={{ fontSize: 18, color: "#fff" }}>
+              {boardWindow === "today" ? "NO SEASONS ON TODAY'S BOARD YET" : "NO VERIFIED SEASONS YET"}
+            </div>
             <div className="font-body mt-1" style={{ fontSize: 13, color: "#8888aa" }}>Draft an XI, play your season, and be the first name on the board.</div>
           </div>
         ) : (
@@ -507,7 +519,7 @@ function VerifiedBoard({ signedIn }: { signedIn: boolean }) {
       </div>
 
       <p className="font-body text-center mt-4 pb-6" style={{ fontSize: 11, color: "#55556a" }}>
-        ✓ Verified — records are recomputed server-side from the exact XI. Best season per manager.
+        ✓ Verified results only · best season per manager · World Cup board is all-time
       </p>
     </>
   );
