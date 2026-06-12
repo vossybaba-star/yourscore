@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
+import { rateLimitDistributed } from "@/lib/ratelimit";
+import { sendFriendAcceptedEmail, sendFriendRequestEmail } from "@/lib/email/senders";
 
 /**
  * GET /api/friends?with=<userId>
@@ -27,6 +30,20 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ status: "pending_received" });
 }
 
+/** Display name of a user, for email copy. */
+async function displayNameOf(userId: string): Promise<string> {
+  const svc = createServiceClient();
+  const { data } = await svc.from("profiles").select("display_name").eq("id", userId).maybeSingle();
+  return data?.display_name ?? "A YourScore player";
+}
+
+/** Email address of a user (service role — auth admin). */
+async function emailOf(userId: string): Promise<string | null> {
+  const svc = createServiceClient();
+  const { data } = await svc.auth.admin.getUserById(userId).catch(() => ({ data: null }));
+  return data?.user?.email ?? null;
+}
+
 /**
  * POST /api/friends  body: { friendId: string }
  * Sends a friend request. Deduplication:
@@ -39,6 +56,10 @@ export async function POST(req: NextRequest) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+
+  // Friend requests fire notification emails — rate-limit to stop blast abuse.
+  const { ok } = await rateLimitDistributed(`friends:${user.id}`, 20, 60_000);
+  if (!ok) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
 
   const body = await req.json().catch(() => ({})) as Record<string, string>;
   const { friendId } = body;
@@ -58,6 +79,22 @@ export async function POST(req: NextRequest) {
     if (existing.user_id === user.id) return NextResponse.json({ status: "already_sent" });
     // They sent us a request first → accept it
     await supabase.from("friendships").update({ status: "accepted" }).eq("id", existing.id!);
+
+    // Lifecycle 21: tell the original requester their request was accepted.
+    void (async () => {
+      const [requesterEmail, accepterName] = await Promise.all([
+        emailOf(existing.user_id),
+        displayNameOf(user.id),
+      ]);
+      if (!requesterEmail) return;
+      await sendFriendAcceptedEmail({
+        requesterUserId: existing.user_id,
+        requesterEmail,
+        friendUserId: user.id,
+        friendName: accepterName,
+      });
+    })().catch(() => {});
+
     return NextResponse.json({ status: "now_friends" });
   }
 
@@ -67,5 +104,21 @@ export async function POST(req: NextRequest) {
     status: "pending",
   });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Lifecycle 20: tell the recipient they have a request waiting.
+  void (async () => {
+    const [recipientEmail, requesterName] = await Promise.all([
+      emailOf(friendId),
+      displayNameOf(user.id),
+    ]);
+    if (!recipientEmail) return;
+    await sendFriendRequestEmail({
+      recipientUserId: friendId,
+      recipientEmail,
+      requesterUserId: user.id,
+      requesterName,
+    });
+  })().catch(() => {});
+
   return NextResponse.json({ status: "sent" });
 }

@@ -207,7 +207,7 @@ export async function sendFirst38TeamEmail(args: {
   projectedPosition: string;
   projectedPoints: number;
 }) {
-  const html = await renderEmail("11-first-draft-xi", {
+  const html = await renderEmail("16-first-draft-xi", {
     team_name: args.teamName,
     formation: args.formation,
     strength: String(args.strength),
@@ -224,7 +224,7 @@ export async function sendFirst38TeamEmail(args: {
     headers: { "X-Entity-Ref-ID": `first-38-team-${args.userId}` },
     tags: [
       { name: "category", value: "lifecycle" },
-      { name: "template", value: "11-first-draft-xi" },
+      { name: "template", value: "16-first-draft-xi" },
     ],
   });
 }
@@ -251,7 +251,7 @@ export async function sendFirst38GameEmail(args: {
       : args.myScore < args.oppScore
         ? "FULL TIME · LOSS"
         : "FULL TIME · DRAW";
-  const html = await renderEmail("12-first-38-game", {
+  const html = await renderEmail("17-first-38-game", {
     result_word: resultWord,
     my_score: String(args.myScore),
     opp_score: String(args.oppScore),
@@ -272,7 +272,7 @@ export async function sendFirst38GameEmail(args: {
     headers: { "X-Entity-Ref-ID": `first-38-game-${args.userId}` },
     tags: [
       { name: "category", value: "lifecycle" },
-      { name: "template", value: "12-first-38-game" },
+      { name: "template", value: "17-first-38-game" },
     ],
   });
 }
@@ -293,7 +293,7 @@ export async function sendFirst38H2HEmail(args: {
   const waText = encodeURIComponent(
     `I built an XI on YourScore. Beat me if you can — ${challengeUrl}`,
   );
-  const html = await renderEmail("13-first-38-h2h", {
+  const html = await renderEmail("18-first-38-h2h", {
     code: args.code,
     challenge_url: challengeUrl,
     whatsapp_share_url: `https://wa.me/?text=${waText}`,
@@ -310,7 +310,7 @@ export async function sendFirst38H2HEmail(args: {
     headers: { "X-Entity-Ref-ID": `first-38-h2h-${args.userId}` },
     tags: [
       { name: "category", value: "lifecycle" },
-      { name: "template", value: "13-first-38-h2h" },
+      { name: "template", value: "18-first-38-h2h" },
     ],
   });
 }
@@ -332,7 +332,7 @@ export async function sendFirst38LeagueEmail(args: {
   const waText = encodeURIComponent(
     `Join my 38-0 league: ${args.leagueName}\nCode: ${args.leagueCode}\n${inviteUrl}`,
   );
-  const html = await renderEmail("14-first-38-league", {
+  const html = await renderEmail("19-first-38-league", {
     league_name: args.leagueName,
     league_code: args.leagueCode,
     league_url: leagueUrl,
@@ -348,7 +348,137 @@ export async function sendFirst38LeagueEmail(args: {
     headers: { "X-Entity-Ref-ID": `first-38-league-${args.leagueId}` },
     tags: [
       { name: "category", value: "lifecycle" },
-      { name: "template", value: "14-first-38-league" },
+      { name: "template", value: "19-first-38-league" },
+    ],
+  });
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * Social + retention senders (20–23).
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+/**
+ * 20 · Friend request received — to the person being added.
+ * Fires on every fresh request (an away-event, not a first-only).
+ */
+export async function sendFriendRequestEmail(args: {
+  recipientUserId: string;
+  recipientEmail: string;
+  requesterUserId: string;
+  requesterName: string;
+}) {
+  const base = process.env.NEXT_PUBLIC_APP_URL ?? "https://yourscore.app";
+  const html = await renderEmail("20-friend-request", {
+    requester_name: args.requesterName,
+    requester_initial: (args.requesterName[0] ?? "?").toUpperCase(),
+    profile_url: `${base}/profile/${args.requesterUserId}`,
+    ...buildFooterUrls(args.recipientUserId, "social"),
+  });
+  await sendOrLog("sendFriendRequestEmail", {
+    from: FROM,
+    to: args.recipientEmail,
+    replyTo: REPLY_TO,
+    subject: `${args.requesterName} wants to be your rival.`,
+    html,
+    headers: { "X-Entity-Ref-ID": `friend-req-${args.requesterUserId}-${args.recipientUserId}` },
+    tags: [
+      { name: "category", value: "social" },
+      { name: "template", value: "20-friend-request" },
+    ],
+  });
+}
+
+/**
+ * 21 · Friend request accepted — to the ORIGINAL requester.
+ */
+export async function sendFriendAcceptedEmail(args: {
+  requesterUserId: string;
+  requesterEmail: string;
+  friendUserId: string;
+  friendName: string;
+}) {
+  const base = process.env.NEXT_PUBLIC_APP_URL ?? "https://yourscore.app";
+  const html = await renderEmail("21-friend-accepted", {
+    friend_name: args.friendName,
+    friend_initial: (args.friendName[0] ?? "?").toUpperCase(),
+    profile_url: `${base}/profile/${args.friendUserId}`,
+    challenge_url: `${base}/38-0/challenge`,
+    ...buildFooterUrls(args.requesterUserId, "social"),
+  });
+  await sendOrLog("sendFriendAcceptedEmail", {
+    from: FROM,
+    to: args.requesterEmail,
+    replyTo: REPLY_TO,
+    subject: `${args.friendName} accepted. Game on.`,
+    html,
+    headers: { "X-Entity-Ref-ID": `friend-acc-${args.friendUserId}-${args.requesterUserId}` },
+    tags: [
+      { name: "category", value: "social" },
+      { name: "template", value: "21-friend-accepted" },
+    ],
+  });
+}
+
+/**
+ * 22 · 38-0 challenge was played — to the CHALLENGER, with the result
+ * from their point of view. An away-event: their team played without them.
+ */
+export async function sendH2HResultEmail(args: {
+  challengerUserId: string;
+  challengerEmail: string;
+  opponentName: string;
+  teamName: string;
+  myScore: number;
+  oppScore: number;
+  matchId: string;
+}) {
+  const base = process.env.NEXT_PUBLIC_APP_URL ?? "https://yourscore.app";
+  const won = args.myScore > args.oppScore;
+  const lost = args.myScore < args.oppScore;
+  const resultWord = won ? "YOU WON" : lost ? "YOU LOST" : "DRAW";
+  const resultColor = won ? "#00ff87" : lost ? "#ff4757" : "#ffb800";
+  const html = await renderEmail("22-h2h-result", {
+    result_word: resultWord,
+    result_color: resultColor,
+    opponent_name: args.opponentName,
+    team_name: args.teamName,
+    my_score: String(args.myScore),
+    opp_score: String(args.oppScore),
+    match_url: `${base}/38-0/match/${args.matchId}`,
+    ...buildFooterUrls(args.challengerUserId, "38-0"),
+  });
+  await sendOrLog("sendH2HResultEmail", {
+    from: FROM,
+    to: args.challengerEmail,
+    replyTo: REPLY_TO,
+    subject: `${resultWord === "DRAW" ? "Draw" : resultWord === "YOU WON" ? "You won" : "You lost"} — ${args.opponentName} played your challenge.`,
+    html,
+    headers: { "X-Entity-Ref-ID": `h2h-result-${args.matchId}` },
+    tags: [
+      { name: "category", value: "social" },
+      { name: "template", value: "22-h2h-result" },
+    ],
+  });
+}
+
+/**
+ * 23 · Come-back nudge — signed up but never played. Sent at most once
+ * per user, by the /api/cron/comeback job (email_log enforces the cap).
+ */
+export async function sendComebackEmail(args: { userId: string; email: string }) {
+  const html = await renderEmail("23-comeback", {
+    ...buildFooterUrls(args.userId, "all"),
+  });
+  await sendOrLog("sendComebackEmail", {
+    from: FROM,
+    to: args.email,
+    replyTo: REPLY_TO,
+    subject: "Your first game is still waiting.",
+    html,
+    headers: { "X-Entity-Ref-ID": `comeback-${args.userId}` },
+    tags: [
+      { name: "category", value: "retention" },
+      { name: "template", value: "23-comeback" },
     ],
   });
 }

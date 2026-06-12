@@ -1,0 +1,80 @@
+<!--
+  Email 20 — Friend request received
+  Trigger: friendships insert with status 'pending' (POST /api/friends)
+  Subject:    {{requester_name}} wants to be your rival.
+  Preview:    Accept and every game becomes a grudge match.
+  Tokens: {{requester_name}} {{profile_url}}
+-->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="x-apple-disable-message-reformatting"><meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark">
+  <title>New friend request</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>body,table,td{margin:0;padding:0}img{border:0;outline:none;text-decoration:none;display:block}table{border-collapse:collapse}a{text-decoration:none}
+    @media (max-width:600px){.container{width:100%!important}.px{padding-left:24px!important;padding-right:24px!important}.headline{font-size:40px!important;line-height:42px!important}}</style>
+</head>
+<body style="margin:0;padding:0;background:#0a0a0f;font-family:'DM Sans',Helvetica,Arial,sans-serif;color:#ffffff;">
+  <div style="display:none;max-height:0;overflow:hidden;font-size:1px;line-height:1px;color:#0a0a0f;">Accept and every game becomes a grudge match.</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0a0a0f;background-image:linear-gradient(180deg,#0a0a0f 0%,#0e0e1a 100%);"><tr><td align="center" style="padding:40px 16px;">
+    <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
+
+      <tr><td align="center" class="px" style="padding:0 40px 36px;">
+        <a href="https://yourscore.app"><img src="https://yourscore.app/logo.png" alt="YourScore" width="148" height="44" style="width:148px;height:44px;display:block;"></a>
+      </td></tr>
+
+      <tr><td class="px" align="left" style="padding:0 40px 18px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+          <td bgcolor="#1e1a36" style="background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.28);border-radius:999px;padding:6px 14px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:2px;color:#a78bfa;font-weight:700;text-transform:uppercase;">&#128075; Friend request</td>
+        </tr></table>
+      </td></tr>
+
+      <tr><td class="px" style="padding:0 40px 14px;">
+        <h1 class="headline" style="margin:0;font-family:'Bebas Neue',Impact,Arial,sans-serif;font-size:56px;line-height:54px;color:#ffffff;font-weight:400;">NEW RIVAL?</h1>
+      </td></tr>
+
+      <tr><td class="px" style="padding:0 40px 32px;">
+        <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:17px;line-height:26px;color:#bbbbcc;">
+          <strong style="color:#ffffff;">{{requester_name}}</strong> sent you a friend request on YourScore. Accept it and every game between you two starts counting.
+        </p>
+      </td></tr>
+
+      <tr><td class="px" style="padding:0 40px 28px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#12121e" style="background:linear-gradient(135deg,rgba(167,139,250,0.08) 0%,rgba(18,18,30,0.95) 100%);border-radius:16px;border:1px solid rgba(167,139,250,0.22);">
+          <tr><td align="center" style="padding:28px 24px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+              <td width="56" height="56" align="center" valign="middle" bgcolor="#1e1a36" style="background:rgba(167,139,250,0.15);border:1.5px solid rgba(167,139,250,0.35);border-radius:50%;font-family:'Bebas Neue',Impact,sans-serif;font-size:26px;color:#a78bfa;line-height:54px;">{{requester_initial}}</td>
+            </tr></table>
+            <div style="font-family:'Bebas Neue',Impact,sans-serif;font-size:26px;color:#ffffff;line-height:1;margin-top:14px;">{{requester_name}}</div>
+            <div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:13px;color:#8888aa;margin-top:6px;">wants to compare football brains with you</div>
+          </td></tr>
+        </table>
+      </td></tr>
+
+      <tr><td class="px" align="center" style="padding:8px 40px 24px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="#a78bfa" style="background:linear-gradient(135deg,#a78bfa 0%,#7c3aed 100%);border-radius:12px;box-shadow:0 0 32px rgba(167,139,250,0.4);">
+          <a href="{{profile_url}}" style="display:inline-block;color:#ffffff;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;letter-spacing:0.5px;padding:18px 44px;border-radius:12px;">See their profile &nbsp;&rarr;</a>
+        </td></tr></table>
+      </td></tr>
+
+      <tr><td class="px" style="padding:0 40px 0;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#12121e" style="background:linear-gradient(135deg,rgba(255,184,0,0.05) 0%,rgba(10,10,15,0.95) 100%);border-radius:14px;border:1px solid rgba(255,184,0,0.18);">
+          <tr><td style="padding:18px 20px;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+              <td valign="middle" width="54" style="padding-right:14px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td width="40" height="40" align="center" valign="middle" bgcolor="#241e10" style="background:rgba(255,184,0,0.15);border:1px solid rgba(255,184,0,0.25);border-radius:10px;font-size:18px;line-height:38px;">&#9876;</td></tr></table></td>
+              <td valign="middle"><div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;color:#ffffff;font-weight:600;line-height:18px;">Once you're friends, send them a 38-0 challenge</div><div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:12px;color:#8888aa;line-height:16px;margin-top:2px;">Your XI vs theirs. Settled in 90 simulated minutes.</div></td>
+            </tr></table>
+          </td></tr>
+        </table>
+      </td></tr>
+
+      <tr><td class="px" style="padding:56px 40px 24px;">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="border-top:1px solid rgba(255,255,255,0.06);padding-top:24px;">
+          <p style="margin:0 0 10px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:12px;line-height:18px;color:#6b6b85;"><a href="{{PAUSE_URL}}" style="color:#8888aa;text-decoration:underline;">Pause emails</a> &nbsp;&middot;&nbsp; <a href="{{UNSUB_URL}}" style="color:#8888aa;text-decoration:underline;">Unsubscribe</a> &nbsp;&middot;&nbsp; <a href="https://yourscore.app/support" style="color:#8888aa;text-decoration:underline;">Support</a></p>
+          <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:1.5px;color:#6b6b85;text-transform:uppercase;font-weight:600;">YourScore &nbsp;&middot;&nbsp; Your football knowledge. Ranked.</p>
+        </td></tr></table>
+      </td></tr>
+    </table>
+  </td></tr></table>
+</body></html>

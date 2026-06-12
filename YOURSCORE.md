@@ -6,7 +6,7 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed with the founder:** 2026-06-12 (full reconciliation against `src/` +
+> **Confirmed with the founder:** 2026-06-10 (full reconciliation against `src/` +
 > `supabase/migrations/` through migration 25, incl. the 38-0 game).
 > **Maintenance:** update this file in the same session you change the product, bump the
 > date, and run `graphify update .` after code changes.
@@ -208,9 +208,17 @@ the deliberate **38-0 ↔ Quiz bridge**. One currency, one table, one #1:
 *(Facebook button exists in the UI but is NOT enabled in prod.)* Native OAuth uses the
 `yourscore://` deep link. Guests can play; account needed for ranked/cloud/social.
 
-**Notifications & email — tied to mobile launch:** the **send-push** Edge Function (APNs/
-FCM) and an **`/api/email/lifecycle`** route are **built/scaffolded but not confirmed live**
-— they come online with the mobile app. We will need both.
+**Push — tied to mobile launch:** the **send-push** Edge Function (APNs/FCM) is built but
+comes online with the mobile app.
+
+**Lifecycle email — LIVE on web (Resend, hello@yourscore.app):** 23 branded templates in
+`emails/lifecycle/` + 6 Supabase Auth templates. Event-triggered: welcome (neutral 4-path),
+first quiz/league/invite (quiz side), first XI/match/H2H/league (38-0 side, 16–19), friend
+request/accepted (20–21), H2H challenge result to the challenger (22), and a once-ever
+come-back nudge via daily cron (23 — gated behind `COMEBACK_EMAILS_ENABLED=true` + the
+`email_log` table, migration 31). Governance: event emails only for things that happened
+while the user was away; campaigns (11–15) are one-off scripts. "Friends online" is
+deliberately push-only, not email.
 
 **Shared social features:**
 | Feature | Status |

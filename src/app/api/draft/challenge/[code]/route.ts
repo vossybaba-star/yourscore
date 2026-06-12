@@ -5,6 +5,8 @@ import { createDraftDb, GLOBAL_LEAGUE, type TeamSnapshot } from "@/lib/draft/ser
 import { creditResult, applyTeamStreak } from "@/lib/draft/live-server";
 import { resolveMatch, flipReport } from "@/lib/draft/live-score";
 import { asLeague, type Formation, type PlacedPlayer, type Projected } from "@/lib/draft/types";
+import { createServiceClient } from "@/lib/supabase/service";
+import { sendH2HResultEmail } from "@/lib/email/senders";
 
 // GET: show a friend challenge (challenger's snapshotted XI) so a friend can size
 // it up before accepting. POST: the friend resolves it with their own active XI.
@@ -120,6 +122,26 @@ export async function POST(req: NextRequest, { params }: { params: { code: strin
   if (ch.challenger_id) await applyTeamStreak(db, ch.challenger_id, chRes, competition);
 
   await db.from("draft_challenges").update({ status: "accepted", match_id: matchId }).eq("id", ch.id);
+
+  // Lifecycle 22: the challenger's team just played without them — send the result.
+  if (ch.challenger_id) {
+    const challengerId = ch.challenger_id;
+    void (async () => {
+      const svc = createServiceClient();
+      const { data: u } = await svc.auth.admin.getUserById(challengerId).catch(() => ({ data: null }));
+      const challengerEmail = u?.user?.email;
+      if (!challengerEmail) return;
+      await sendH2HResultEmail({
+        challengerUserId: challengerId,
+        challengerEmail,
+        opponentName: mySide.name,
+        teamName: challengerSnap.name,
+        myScore: res.goals.a,   // challenger = side a
+        oppScore: res.goals.b,
+        matchId,
+      });
+    })().catch(() => {});
+  }
 
   // Return everything from the accepter's POV (you = side b), flipping the report.
   return NextResponse.json({
