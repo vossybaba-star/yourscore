@@ -36,7 +36,7 @@ export type UseLiveMatch = {
   botDone: () => Promise<void>;
   swap: (slotId: string, newPlayer: string) => Promise<void>;
   /** Take penalty `round` (1-based), aiming at `shot` (zone 0-5). */
-  kick: (round: number, shot: number) => Promise<void>;
+  kick: (round: number, shot: number, power: string) => Promise<void>;
 };
 
 async function post(path: string, body: unknown): Promise<DraftLiveMatchRow | null> {
@@ -189,6 +189,6 @@ export function useLiveMatch(matchId: string | null): UseLiveMatch {
     ready: () => act("/api/draft/live/ready", {}),
     botDone: () => act("/api/draft/live/ready", { bot: true }),
     swap: (slotId, newPlayer) => act("/api/draft/live/swap", { slotId, newPlayer }),
-    kick: (round, shot) => act("/api/draft/live/kick", { round, shot }),
+    kick: (round, shot, power) => act("/api/draft/live/kick", { round, shot, power }),
   };
 }

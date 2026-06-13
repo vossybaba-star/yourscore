@@ -104,7 +104,7 @@ export default function PreMatch() {
         opp: { name: m.opp.name, formation: m.opp.formation, squad: m.opp.squad, strength: m.opp.strength, projected: m.opp.projected },
         outcome: m.outcome, goals: m.goals, pens: m.pens ?? null, report: m.report, playedAt: Date.now(),
         // Level after 90 → the user takes the shootout; the streak settles there.
-        pensPending: m.pensPending ? { mode: "server", shots: [], dives: [] } : undefined,
+        pensPending: m.pensPending ? { mode: "server", shots: [], powers: [], dives: [] } : undefined,
       });
       if (!m.pensPending) {
         saveTeam(m.outcome === "you" ? recordWin(team) : m.outcome === "opp" ? recordLoss(team) : recordDraw(team));

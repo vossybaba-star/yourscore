@@ -122,7 +122,7 @@ export async function POST(req: NextRequest) {
   if (res.outcome === "draw") {
     const pensState: PensState = {
       userId: user.id, userSide: "a", flow: "quick",
-      shots: [], dives: [], startedAt: new Date().toISOString(),
+      shots: [], powers: [], dives: [], startedAt: new Date().toISOString(),
     };
     await db.from("draft_matches").insert({
       id: matchId, challenger_id: user.id, opponent_id: opponentId,

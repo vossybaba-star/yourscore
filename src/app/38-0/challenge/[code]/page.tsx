@@ -68,7 +68,7 @@ export default function AcceptChallenge() {
         playedAt: Date.now(),
         oppUserId: info?.challengerId,
         // Level after 90 → the shootout decides it; streaks settle on the pens screen.
-        pensPending: m.pensPending ? { mode: "server", shots: [], dives: [] } : undefined,
+        pensPending: m.pensPending ? { mode: "server", shots: [], powers: [], dives: [] } : undefined,
       });
       if (m.pensPending) { router.push("/38-0/match/pens"); return; }
       saveTeam(m.outcome === "you" ? recordWin(team) : m.outcome === "opp" ? recordLoss(team) : recordDraw(team));

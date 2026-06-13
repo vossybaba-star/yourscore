@@ -284,7 +284,7 @@ export default function LiveMatchScreen() {
                 oppName={view.oppName}
                 simultaneous
                 secondsLeft={m.phase === "penalties" ? secondsLeft : null}
-                onShoot={(z) => live.kick(myKicks.length + 1, z)}
+                onShoot={(z, p) => live.kick(myKicks.length + 1, z, p)}
                 onDive={() => {}}
               />
             </Panel>

@@ -106,7 +106,7 @@ export async function POST(req: NextRequest, { params }: { params: { code: strin
   if (res.outcome === "draw") {
     const pensState: PensState = {
       userId: user.id, userSide: "b", flow: "challenge",
-      shots: [], dives: [], startedAt: new Date().toISOString(),
+      shots: [], powers: [], dives: [], startedAt: new Date().toISOString(),
     };
     await db.from("draft_matches").insert({
       id: matchId,

@@ -16,7 +16,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { pensSeed } from "./pens-server";
 import {
   resolveRound, shootoutStatus, resolveInteractiveShootout,
-  type PenKick, type PenZone, type PenColumn, type ShootoutInputs,
+  type PenKick, type PenZone, type PenPower, type PenColumn, type ShootoutInputs,
 } from "./pens";
 import { creditResult, applyTeamStreak } from "./live-server";
 import { GLOBAL_LEAGUE, type TeamSnapshot } from "./server";
@@ -35,6 +35,7 @@ export type PensState = {
   /** quick → first-match email + user-only streak; challenge → H2H email + both streaks. */
   flow: "quick" | "challenge";
   shots: PenZone[];
+  powers: PenPower[];
   dives: PenColumn[];
   startedAt: string;
 };
@@ -65,7 +66,9 @@ export function isPending(row: PendingRow): boolean {
 }
 
 export const inputsFor = (s: PensState): ShootoutInputs =>
-  s.userSide === "a" ? { aShots: s.shots, aDives: s.dives } : { bShots: s.shots, bDives: s.dives };
+  s.userSide === "a"
+    ? { aShots: s.shots, aPowers: s.powers, aDives: s.dives }
+    : { bShots: s.shots, bPowers: s.powers, bDives: s.dives };
 
 /** Replay the kicks taken so far — the server-side mirror of the client view.
  *  Side a always kicks first; the user shoots on their side's kicks and dives on
@@ -82,7 +85,7 @@ export function replayPending(matchId: string, s: PensState): { a: PenKick[]; b:
     if (side === s.userSide) {
       const shot = s.shots[arr.length];
       if (shot === undefined) break;
-      arr.push(resolveRound(seed, side, arr.length + 1, { shot }));
+      arr.push(resolveRound(seed, side, arr.length + 1, { shot, power: s.powers[arr.length] }));
     } else {
       const dive = s.dives[arr.length];
       if (dive === undefined) break;

@@ -19,7 +19,7 @@ import {
   loadLastMatch, saveLastMatch, loadTeam, saveTeam, recordWin, recordLoss,
   type LocalMatch,
 } from "@/lib/draft/local";
-import { resolveRound, shootoutStatus, type PenColumn, type PenKick, type PenZone } from "@/lib/draft/pens";
+import { resolveRound, shootoutStatus, type PenColumn, type PenKick, type PenPower, type PenZone } from "@/lib/draft/pens";
 import { resolveMatch } from "@/lib/draft/live-score";
 import { makeOpponent } from "@/lib/draft/opponent";
 import { PenaltyShootout, type PensView } from "@/components/draft/PenaltyShootout";
@@ -46,7 +46,7 @@ function seedDemoShootout(): LocalMatch | null {
       report: res.report,
       sim: res.sim,
       playedAt: Date.now(),
-      pensPending: { mode: "local", seed: `${id}:pens`, shots: [], dives: [] },
+      pensPending: { mode: "local", seed: `${id}:pens`, shots: [], powers: [], dives: [] },
     };
     saveLastMatch(lm);
     return lm;
@@ -56,7 +56,7 @@ function seedDemoShootout(): LocalMatch | null {
 
 /** Replay a local shootout from its stored inputs: my kicks vs the AI keeper, the
  *  CPU's kicks vs my dives, alternating, stopping where the next input is missing. */
-function replayLocal(seed: string, shots: PenZone[], dives: PenColumn[]): { a: PenKick[]; b: PenKick[] } {
+function replayLocal(seed: string, shots: PenZone[], powers: PenPower[], dives: PenColumn[]): { a: PenKick[]; b: PenKick[] } {
   const a: PenKick[] = [];
   const b: PenKick[] = [];
   for (;;) {
@@ -65,7 +65,7 @@ function replayLocal(seed: string, shots: PenZone[], dives: PenColumn[]): { a: P
     if (st.next === "a") {
       const shot = shots[a.length];
       if (shot === undefined) break;
-      a.push(resolveRound(seed, "a", a.length + 1, { shot }));
+      a.push(resolveRound(seed, "a", a.length + 1, { shot, power: powers[a.length] }));
     } else {
       const dive = dives[b.length];
       if (dive === undefined) break;
@@ -116,7 +116,7 @@ export default function PensPage() {
   const kicks = settled
     ? { a: m.pensKicks!.you, b: m.pensKicks!.opp }
     : local
-    ? replayLocal(seed, m!.pensPending!.shots, m!.pensPending!.dives)
+    ? replayLocal(seed, m!.pensPending!.shots, m!.pensPending!.powers, m!.pensPending!.dives)
     : { a: server?.myKicks ?? [], b: server?.oppKicks ?? [] };
   const st = shootoutStatus(kicks.a, kicks.b, "alternating");
   const decided = settled || (local ? st.decided : server?.role === "done");
@@ -170,7 +170,7 @@ export default function PensPage() {
 
   // ── Inputs ───────────────────────────────────────────────────────────────────
   const act = useCallback(
-    async (action: "shot" | "dive", zone: number) => {
+    async (action: "shot" | "dive", zone: number, power?: PenPower) => {
       if (!m) return;
       if (local) {
         const pending = m.pensPending!;
@@ -179,6 +179,7 @@ export default function PensPage() {
           pensPending: {
             ...pending,
             shots: action === "shot" ? [...pending.shots, zone as PenZone] : pending.shots,
+            powers: action === "shot" ? [...pending.powers, power ?? "good"] : pending.powers,
             dives: action === "dive" ? [...pending.dives, zone as PenColumn] : pending.dives,
           },
         };
@@ -192,7 +193,7 @@ export default function PensPage() {
         const res = await fetch("/api/draft/match/pens", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ matchId: m.id, action, zone }),
+          body: JSON.stringify({ matchId: m.id, action, zone, power }),
         });
         if (!res.ok) throw new Error(String(res.status));
         setServer((await res.json()) as ServerState);
@@ -210,20 +211,13 @@ export default function PensPage() {
   }
 
   return (
-    <div className="min-h-[100dvh] pb-16" style={{ background: BG, color: "#e8e8f0" }}>
-      <div className="max-w-lg mx-auto px-4 pt-10">
-        <p className="text-center font-display tracking-wide mb-1" style={{ fontSize: 13, color: "#ffb800", letterSpacing: 1 }}>
-          LEVEL AFTER 90 — PENALTIES
-        </p>
-        <p className="text-center font-display tabular-nums mb-4" style={{ fontSize: 22 }}>
-          {m.goals.you} – {m.goals.opp}
-        </p>
-
+    <div className="min-h-[100dvh] pb-10" style={{ background: BG, color: "#e8e8f0" }}>
+      <div className="max-w-lg mx-auto px-3 pt-4">
         <PenaltyShootout
           view={view}
           myName="You"
           oppName={m.opp.name}
-          onShoot={(z) => act("shot", z)}
+          onShoot={(z, p) => act("shot", z, p)}
           onDive={(c) => act("dive", c)}
         />
 

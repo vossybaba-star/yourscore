@@ -25,7 +25,7 @@ import {
 } from "./live-score";
 import {
   kickAllowed, resolveRound, resolveInteractiveShootout, shootoutStatus,
-  type PenKick, type PenZone,
+  type PenKick, type PenZone, type PenPower,
 } from "./pens";
 import { pensSeed } from "./pens-server";
 import type { PlacedPlayer } from "./types";
@@ -187,7 +187,7 @@ function resolutionForEntering(target: LivePhase, row: DraftLiveMatchRow): Parti
       const k = kicksOf(row);
       const full = resolveInteractiveShootout(
         pensSeed(`${row.id}:pens`),
-        { aShots: k.a.map((x) => x.shot), bShots: k.b.map((x) => x.shot) },
+        { aShots: k.a.map((x) => x.shot), aPowers: k.a.map((x) => x.power), bShots: k.b.map((x) => x.shot), bPowers: k.b.map((x) => x.power) },
         "simultaneous"
       );
       return {
@@ -230,7 +230,8 @@ export async function liveKick(
   matchId: string,
   userId: string,
   round: number,
-  shot: PenZone
+  shot: PenZone,
+  power: PenPower
 ): Promise<DraftLiveMatchRow | null> {
   const { data: row } = await db.from("draft_live_matches").select("*").eq("id", matchId).maybeSingle();
   if (!row) return null;
@@ -247,7 +248,7 @@ export async function liveKick(
   if (!kickAllowed(k.a, k.b, mySide, "simultaneous")) throw new Error("Wait for the next kick");
 
   const seed = pensSeed(`${row.id}:pens`);
-  const kick = resolveRound(seed, mySide, round, { shot });
+  const kick = resolveRound(seed, mySide, round, { shot, power });
   const p1Kick: PenKick | null = mySide === "a" ? kick : null;
   let p2Kick: PenKick | null = mySide === "b" ? kick : null;
   // A disguised bot answers in the same statement, round for round.

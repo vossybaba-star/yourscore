@@ -2,39 +2,45 @@
  * 38-0 Interactive penalty shootout — pure kick mechanics (deterministic, seeded).
  *
  * Every drawn played match goes to penalties, and the user takes them: pick one of
- * six aim zones to shoot, pick a column to dive as keeper. The AI keeper / CPU
- * shooter and every outcome draw from per-kick sub-seeds, so a kick resolved live
- * on the server is byte-identical to a later full recompute (the auto-fill for
- * timeouts and abandonment never shifts the kicks that were actually taken).
+ * NINE aim zones (3 columns × 3 heights), time the POWER meter, and — as keeper —
+ * pick a column to dive. The AI keeper / CPU shooter and every outcome draw from
+ * per-kick sub-seeds, so a kick resolved live on the server is byte-identical to a
+ * later full recompute (the auto-fill for timeouts / abandonment never shifts the
+ * kicks that were actually taken).
  *
- * Risk model: corners convert best but carry a wild-miss tax; center is safe from
- * misses but punished hard when the keeper stays home. Every strategy lands in the
- * ~0.72–0.80 conversion band (consistent with the legacy auto pConvert 0.72), and a
- * correctly guessed dive saves a meaningful fraction — no Strength lean, pens are
- * player skill + seeded luck.
+ * Skill model:
+ *  - Placement: top corners are the hardest to save but carry a real wild-miss tax;
+ *    low/center is safe from misses but easy to save if the keeper reads it.
+ *  - Power: PERFECT timing maximises conversion; OVER blazes it over/wide; UNDER is
+ *    soft and saveable; GOOD is solid. No Strength lean — pens are pure skill + luck.
+ *
+ * Net conversion sits around the legacy auto rate (~0.72) for a CPU/auto kick and
+ * climbs toward ~0.85 for a well-placed, perfectly-struck one.
  *
  * Type-strippable (no enums) so it runs under `node --test`, like score.ts.
  */
 
 import { seededRng } from "./score";
 
-// ─── Zones ─────────────────────────────────────────────────────────────────────
+// ─── Zones, power, keeper ──────────────────────────────────────────────────────
 
-/** Aim zones, shooter's view: 0/1/2 = low left/center/right, 3/4/5 = high L/C/R. */
-export type PenZone = 0 | 1 | 2 | 3 | 4 | 5;
+/** Aim zones, shooter's view: row 0 = low, 1 = mid, 2 = high; col = L/C/R.
+ *  0,1,2 low L/C/R · 3,4,5 mid L/C/R · 6,7,8 high L/C/R. */
+export type PenZone = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+/** Power-meter band the strike landed in (where the needle stopped). */
+export type PenPower = "under" | "good" | "perfect" | "over";
 /** Keeper dive: 0 = left, 1 = stay center, 2 = right (shooter's view). */
 export type PenColumn = 0 | 1 | 2;
 export type KickOutcome = "goal" | "saved" | "missed";
 /** One resolved kick, as stored (jsonb-friendly). `dive` is the defending keeper's pick. */
-export type PenKick = { shot: PenZone; dive: PenColumn; outcome: KickOutcome };
+export type PenKick = { shot: PenZone; power: PenPower; dive: PenColumn; outcome: KickOutcome };
 export type PensMode = "alternating" | "simultaneous";
 
+export const POWERS: PenPower[] = ["under", "good", "perfect", "over"];
 export const zoneColumn = (z: PenZone): PenColumn => (z % 3) as PenColumn;
-export const isHigh = (z: PenZone): boolean => z >= 3;
-
-type ZoneClass = "centerLow" | "centerHigh" | "cornerLow" | "cornerHigh";
-const zoneClass = (z: PenZone): ZoneClass =>
-  zoneColumn(z) === 1 ? (isHigh(z) ? "centerHigh" : "centerLow") : isHigh(z) ? "cornerHigh" : "cornerLow";
+export const zoneRow = (z: PenZone): 0 | 1 | 2 => Math.floor(z / 3) as 0 | 1 | 2;
+export const isHigh = (z: PenZone): boolean => zoneRow(z) === 2;
+export const isCorner = (z: PenZone): boolean => zoneColumn(z) !== 1;
 
 // ─── Tunables (one place — adjust after playtesting) ──────────────────────────
 
@@ -43,16 +49,30 @@ export const PENS_CONFIG = {
   rounds: 5,
   /** Sudden-death rounds before the deterministic backstop settles it. */
   maxSuddenDeathRounds: 20,
-  /** P(shot off target) by zone class — corners/high carry the miss tax. */
-  miss: { centerLow: 0.01, centerHigh: 0.06, cornerLow: 0.05, cornerHigh: 0.1 },
-  /** P(save) when the keeper picked the shot's column — top corners are nearly
-   *  unsaveable even when read; a center shot at a keeper who stayed is bread. */
-  saveMatched: { centerLow: 0.9, centerHigh: 0.65, cornerLow: 0.5, cornerHigh: 0.3 },
-  /** AI keeper column distribution [left, center, right] — stays home often
-   *  enough that lazy center shots get punished. */
-  keeperBias: [0.36, 0.28, 0.36],
-  /** CPU shooter: mostly corners, a fair share of them high. */
-  cpuShot: { cornerShare: 0.7, highShare: 0.45, centerHighShare: 0.25 },
+  /** Base P(shot off target) by row [low, mid, high] — height = placement risk. */
+  rowMiss: [0.01, 0.03, 0.11],
+  /** Extra P(miss) for a corner vs a central column (wide risk). */
+  cornerMiss: 0.04,
+  /** P(save) when the keeper picked the shot's column, by row — top corners are
+   *  nearly unsaveable even when read; a low shot at a keeper who went the right
+   *  way is stopped often. */
+  saveMatched: [0.62, 0.5, 0.3],
+  /** Power band effects. */
+  power: {
+    /** Added to P(miss) (clamped ≥ 0). OVER blazes it; PERFECT places it. */
+    miss: { under: 0.02, good: 0.0, perfect: -0.05, over: 0.24 },
+    /** Multiplier on the matched-save chance. PERFECT beats the dive; UNDER is soft. */
+    saveMul: { under: 1.4, good: 1.05, perfect: 0.66, over: 0.92 },
+  },
+  /** AI keeper column distribution [left, center, right] — stays home enough to
+   *  punish lazy central shots. */
+  keeperBias: [0.37, 0.26, 0.37],
+  /** CPU shooter tendencies. */
+  cpu: {
+    cornerShare: 0.66,      // aims at a corner column this often (else center)
+    rowWeights: [0.42, 0.32, 0.26], // low / mid / high
+    powerWeights: { under: 0.12, good: 0.42, perfect: 0.34, over: 0.12 },
+  },
 } as const;
 
 // ─── AI picks + single-kick outcome ────────────────────────────────────────────
@@ -63,42 +83,54 @@ export function aiKeeperColumn(rng: () => number): PenColumn {
   return r < l ? 0 : r < l + c ? 1 : 2;
 }
 
-export function aiShotZone(rng: () => number): PenZone {
-  const { cornerShare, highShare, centerHighShare } = PENS_CONFIG.cpuShot;
-  if (rng() < cornerShare) {
-    const col: PenColumn = rng() < 0.5 ? 0 : 2;
-    return (rng() < highShare ? col + 3 : col) as PenZone;
-  }
-  return rng() < centerHighShare ? 4 : 1;
+export function aiPower(rng: () => number): PenPower {
+  const w = PENS_CONFIG.cpu.powerWeights;
+  let r = rng();
+  for (const p of POWERS) { if ((r -= w[p]) <= 0) return p; }
+  return "good";
 }
 
-/** Resolve one kick: wild-miss roll first, then the save roll if the keeper read
- *  the column, else it's in. */
-export function kickOutcome(shot: PenZone, dive: PenColumn, rng: () => number): KickOutcome {
-  const cls = zoneClass(shot);
-  if (rng() < PENS_CONFIG.miss[cls]) return "missed";
-  if (dive === zoneColumn(shot) && rng() < PENS_CONFIG.saveMatched[cls]) return "saved";
+export function aiShotZone(rng: () => number): PenZone {
+  const col: PenColumn = rng() < PENS_CONFIG.cpu.cornerShare ? (rng() < 0.5 ? 0 : 2) : 1;
+  const rw = PENS_CONFIG.cpu.rowWeights;
+  let r = rng();
+  let row = 0;
+  for (let i = 0; i < 3; i++) { if ((r -= rw[i]) <= 0) { row = i; break; } }
+  return (row * 3 + col) as PenZone;
+}
+
+/** Resolve one kick: wild-miss roll first (placement + power), then the save roll
+ *  if the keeper read the column, else it's in. */
+export function kickOutcome(shot: PenZone, power: PenPower, dive: PenColumn, rng: () => number): KickOutcome {
+  const row = zoneRow(shot);
+  const missP = Math.max(0, PENS_CONFIG.rowMiss[row] + (isCorner(shot) ? PENS_CONFIG.cornerMiss : 0) + PENS_CONFIG.power.miss[power]);
+  if (rng() < missP) return "missed";
+  if (dive === zoneColumn(shot)) {
+    const saveP = Math.min(0.95, PENS_CONFIG.saveMatched[row] * PENS_CONFIG.power.saveMul[power]);
+    if (rng() < saveP) return "saved";
+  }
   return "goal";
 }
 
 /**
  * THE shared primitive: resolve side `side`'s kick number `round` (1-based) of the
  * shootout keyed by `seed`. Each kick draws from fresh sub-seeds
- * `${seed}:${side}:${round}:shot|dive|out`, so a missing/auto-filled input NEVER
- * shifts any other kick — per-kick server resolution and a later full recompute
- * are byte-identical. Absent `shot` → seeded CPU shot; absent `dive` → seeded AI
- * keeper.
+ * `${seed}:${side}:${round}:shot|power|dive|out`, so a missing/auto-filled input
+ * NEVER shifts any other kick — per-kick server resolution and a later full
+ * recompute are byte-identical. Absent `shot`/`power` → seeded CPU strike; absent
+ * `dive` → seeded AI keeper.
  */
 export function resolveRound(
   seed: string,
   side: "a" | "b",
   round: number,
-  input: { shot?: PenZone; dive?: PenColumn }
+  input: { shot?: PenZone; power?: PenPower; dive?: PenColumn }
 ): PenKick {
   const shot = input.shot ?? aiShotZone(seededRng(`${seed}:${side}:${round}:shot`));
+  const power = input.power ?? aiPower(seededRng(`${seed}:${side}:${round}:power`));
   const dive = input.dive ?? aiKeeperColumn(seededRng(`${seed}:${side}:${round}:dive`));
-  const outcome = kickOutcome(shot, dive, seededRng(`${seed}:${side}:${round}:out`));
-  return { shot, dive, outcome };
+  const outcome = kickOutcome(shot, power, dive, seededRng(`${seed}:${side}:${round}:out`));
+  return { shot, power, dive, outcome };
 }
 
 // ─── Shootout state ────────────────────────────────────────────────────────────
@@ -180,17 +212,18 @@ export function kickAllowed(
 
 export type ShootoutInputs = {
   aShots?: PenZone[];
+  aPowers?: PenPower[];
   /** a's keeper dives AGAINST b's kicks (index = b's round - 1). */
   aDives?: PenColumn[];
   bShots?: PenZone[];
+  bPowers?: PenPower[];
   bDives?: PenColumn[];
 };
 
 /**
  * Deterministic full resolution: submitted inputs are honored verbatim (same
  * per-round sub-seeds as the live path), anything missing is seeded auto-fill.
- * Always decisive — after maxSuddenDeathRounds a seeded coin settles it (the
- * backstop bumps the score without a kick; vanishingly rare).
+ * Always decisive — after maxSuddenDeathRounds a seeded coin settles it.
  */
 export function resolveInteractiveShootout(
   seed: string,
@@ -208,8 +241,8 @@ export function resolveInteractiveShootout(
     const round = st.round;
     const kick =
       side === "a"
-        ? resolveRound(seed, "a", round, { shot: inputs.aShots?.[round - 1], dive: inputs.bDives?.[round - 1] })
-        : resolveRound(seed, "b", round, { shot: inputs.bShots?.[round - 1], dive: inputs.aDives?.[round - 1] });
+        ? resolveRound(seed, "a", round, { shot: inputs.aShots?.[round - 1], power: inputs.aPowers?.[round - 1], dive: inputs.bDives?.[round - 1] })
+        : resolveRound(seed, "b", round, { shot: inputs.bShots?.[round - 1], power: inputs.bPowers?.[round - 1], dive: inputs.aDives?.[round - 1] });
     (side === "a" ? a : b).push(kick);
   }
   const score = { a: goalsOf(a), b: goalsOf(b) };

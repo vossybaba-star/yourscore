@@ -5,7 +5,9 @@ import {
   rowToRun, createWcDb, completeWcPens, wcPensKicks, wcPensView, wcPensMeta,
   type WcPensState,
 } from "@/lib/draft/wc-server";
-import { shootoutStatus, type PenColumn, type PenZone } from "@/lib/draft/pens";
+import { shootoutStatus, type PenColumn, type PenPower, type PenZone } from "@/lib/draft/pens";
+
+const POWERS = ["under", "good", "perfect", "over"];
 
 // One action in a World Cup knockout shootout: { runId, action: "shot"|"dive", zone }.
 // You shoot your kicks and dive against the CPU's, alternating; outcomes resolve
@@ -21,13 +23,14 @@ export async function POST(req: NextRequest) {
   const { ok } = await rateLimitDistributed(`draft-wc-kick:${user.id}`, 40, 60_000);
   if (!ok) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
 
-  let body: { runId?: string; action?: string; zone?: number } = {};
+  let body: { runId?: string; action?: string; zone?: number; power?: string } = {};
   try { body = await req.json(); } catch { /* below */ }
   const runId = String(body.runId ?? "");
   const action = body.action === "shot" || body.action === "dive" ? body.action : null;
   const zone = Number.isInteger(body.zone) ? (body.zone as number) : -1;
+  const power = (POWERS.includes(body.power ?? "") ? body.power : "good") as PenPower;
   if (!runId || !action) return NextResponse.json({ error: "Bad request" }, { status: 400 });
-  if (action === "shot" && (zone < 0 || zone > 5)) return NextResponse.json({ error: "Bad zone" }, { status: 400 });
+  if (action === "shot" && (zone < 0 || zone > 8)) return NextResponse.json({ error: "Bad zone" }, { status: 400 });
   if (action === "dive" && (zone < 0 || zone > 2)) return NextResponse.json({ error: "Bad dive" }, { status: 400 });
 
   const db = createWcDb();
@@ -48,6 +51,7 @@ export async function POST(req: NextRequest) {
   const next: WcPensState = st.decided ? s : {
     ...s,
     shots: action === "shot" ? [...s.shots, zone as PenZone] : s.shots,
+    powers: action === "shot" ? [...(s.powers ?? []), power] : (s.powers ?? []),
     dives: action === "dive" ? [...s.dives, zone as PenColumn] : s.dives,
   };
   const after = wcPensKicks(run, next);

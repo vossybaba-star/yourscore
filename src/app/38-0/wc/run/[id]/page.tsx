@@ -86,11 +86,11 @@ export default function WorldCupRun() {
     setPlaying(false);
   }
 
-  async function pensAct(action: "shot" | "dive", zone: number) {
+  async function pensAct(action: "shot" | "dive", zone: number, power?: string) {
     if (busy) return;
     setBusy(true);
     try {
-      const res = await fetch("/api/draft/wc/kick", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ runId: id, action, zone }) });
+      const res = await fetch("/api/draft/wc/kick", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ runId: id, action, zone, power }) });
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? "Kick failed"); setBusy(false); return; }
       if (data.pensPending) setPens(data.pensPending);
@@ -356,7 +356,7 @@ export default function WorldCupRun() {
                 view={pview}
                 myName={run.nation}
                 oppName={pens.opponent.nation}
-                onShoot={(z) => pensAct("shot", z)}
+                onShoot={(z, p) => pensAct("shot", z, p)}
                 onDive={(c) => pensAct("dive", c)}
               />
               {pensDone && v.role === "done" && (

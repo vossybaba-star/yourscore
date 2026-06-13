@@ -47,13 +47,15 @@ export async function POST(req: NextRequest) {
   const { ok } = await rateLimitDistributed(`draft-pens:${user.id}`, 40, 60_000);
   if (!ok) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
 
-  let body: { matchId?: string; action?: string; zone?: number } = {};
+  const POWERS = ["under", "good", "perfect", "over"];
+  let body: { matchId?: string; action?: string; zone?: number; power?: string } = {};
   try { body = await req.json(); } catch { /* below */ }
   const matchId = typeof body.matchId === "string" ? body.matchId : "";
   const action = body.action === "shot" || body.action === "dive" ? body.action : null;
   const zone = Number.isInteger(body.zone) ? (body.zone as number) : -1;
+  const power = POWERS.includes(body.power ?? "") ? (body.power as "under" | "good" | "perfect" | "over") : "good";
   if (!matchId || !action) return NextResponse.json({ error: "Bad request" }, { status: 400 });
-  if (action === "shot" && (zone < 0 || zone > 5)) return NextResponse.json({ error: "Bad zone" }, { status: 400 });
+  if (action === "shot" && (zone < 0 || zone > 8)) return NextResponse.json({ error: "Bad zone" }, { status: 400 });
   if (action === "dive" && (zone < 0 || zone > 2)) return NextResponse.json({ error: "Bad dive" }, { status: 400 });
 
   const row = await loadRow(matchId, user.id);
@@ -75,6 +77,7 @@ export async function POST(req: NextRequest) {
   const nextState = {
     ...s,
     shots: action === "shot" ? [...s.shots, zone] : s.shots,
+    powers: action === "shot" ? [...(s.powers ?? []), power] : (s.powers ?? []),
     dives: action === "dive" ? [...s.dives, zone] : s.dives,
   };
   const db = createDraftDb();

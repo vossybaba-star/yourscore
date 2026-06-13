@@ -13,7 +13,7 @@ import { fitMultiplier, canPlay, posCategory, scoreTeam, projectSeason, spineWei
 import { getPlayer } from "./pool";
 import type { SeasonResult } from "./season";
 import type { MatchReport, MatchSim } from "./live-score";
-import { resolveInteractiveShootout, type PenKick, type PenZone, type PenColumn } from "./pens";
+import { resolveInteractiveShootout, type PenKick, type PenZone, type PenColumn, type PenPower } from "./pens";
 
 const STORAGE_KEY = "draftxi:team:v1";
 
@@ -282,6 +282,7 @@ export type LocalMatch = {
     mode: "local" | "server";
     seed?: string;
     shots: PenZone[];
+    powers: PenPower[];
     dives: PenColumn[];
   };
   /** Full-time report (scorers, assists, ratings, MOTM, stats) — side a = you, b = opp. */
@@ -303,7 +304,7 @@ export function settleLocalPens(m: LocalMatch): LocalMatch {
   if (!m.pensPending || m.pensPending.mode !== "local" || !m.pensPending.seed) return m;
   const r = resolveInteractiveShootout(
     m.pensPending.seed,
-    { aShots: m.pensPending.shots, aDives: m.pensPending.dives },
+    { aShots: m.pensPending.shots, aPowers: m.pensPending.powers, aDives: m.pensPending.dives },
     "alternating"
   );
   return {

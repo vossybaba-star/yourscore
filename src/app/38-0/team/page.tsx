@@ -149,7 +149,7 @@ export default function TeamScreen() {
       playedAt: Date.now(),
       // A level 90' now goes to a shootout the user takes themselves — the streak
       // and outcome are settled on the pens screen, not here.
-      pensPending: res.outcome === "draw" ? { mode: "local", seed: `${matchId}:pens`, shots: [], dives: [] } : undefined,
+      pensPending: res.outcome === "draw" ? { mode: "local", seed: `${matchId}:pens`, shots: [], powers: [], dives: [] } : undefined,
     });
 
     if (res.outcome !== "draw") {

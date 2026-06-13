@@ -16,7 +16,7 @@ import { resolveMatch, type SingleMatchResult } from "./live-score";
 import { seededRng } from "./score";
 import {
   resolveRound, shootoutStatus, resolveInteractiveShootout,
-  type PenKick, type PenZone, type PenColumn,
+  type PenKick, type PenZone, type PenColumn, type PenPower,
 } from "./pens";
 import { pensSeed } from "./pens-server";
 import {
@@ -137,6 +137,7 @@ export type WcPensState = {
   outcomesSoFar: GameOutcome[];
   revealsSoFar: GameReveal[];
   shots: PenZone[];
+  powers: PenPower[];
   dives: PenColumn[];
 };
 
@@ -182,7 +183,7 @@ export function resolveStageFrom(
           goals: { you: result.goals.a, opp: result.goals.b },
           outcomesSoFar: outcomes,
           revealsSoFar: [...revealsSoFar, ...reveals],
-          shots: [], dives: [],
+          shots: [], powers: [], dives: [],
         },
       };
     }
@@ -215,7 +216,7 @@ export function wcPensKicks(run: WcRun, s: WcPensState): { a: PenKick[]; b: PenK
     if (st.next === "a") {
       const shot = s.shots[a.length];
       if (shot === undefined) break;
-      a.push(resolveRound(seed, "a", a.length + 1, { shot }));
+      a.push(resolveRound(seed, "a", a.length + 1, { shot, power: s.powers[a.length] }));
     } else {
       const dive = s.dives[b.length];
       if (dive === undefined) break;
@@ -263,7 +264,7 @@ export function completeWcPens(run: WcRun, s: WcPensState): StageResolution {
   const opp = buildOpponent(run, fixture, s.idx);
   const matchSeed = `${run.seed}:match:${s.stage}:${s.idx}`;
   const drawn = resolveMatch(run.squad, opp.squad, matchSeed, { allowDraw: true });
-  const full = resolveInteractiveShootout(wcPensSeed(run, s), { aShots: s.shots, aDives: s.dives }, "alternating");
+  const full = resolveInteractiveShootout(wcPensSeed(run, s), { aShots: s.shots, aPowers: s.powers, aDives: s.dives }, "alternating");
   const settled: SingleMatchResult = {
     ...drawn,
     outcome: full.winner === "a" ? "A" : "B",
