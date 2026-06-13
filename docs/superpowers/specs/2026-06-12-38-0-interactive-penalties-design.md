@@ -2,6 +2,18 @@
 
 **Date:** 2026-06-12 · **Status:** approved (plan-mode review)
 
+> **Visual upgrade (2026-06-13):** after a reference mockup raised the bar to a proper
+> mobile-game look, the presentation moved from SVG/CSS to a **real-time 3D scene**
+> (React Three Fiber / three.js): floodlit stadium, 3D goal + net, stylised striker (#7)
+> and keeper (#1, GLTF-ready `<Figure>` slots), ball flying a real arc. The mechanic
+> grew to match the reference UI: **9 aim zones (3×3)** instead of 6, plus a **POWER
+> meter** (under/good/perfect/over) — a timed skill input threaded through `resolveRound`
+> and every server mode. Anti-cheat is unchanged: zone + power are the only client
+> inputs; outcomes resolve from the peppered seed. The scene is `dynamic(ssr:false)` so
+> three.js is code-split to the pens route. Files added: `PenaltyScene3D.tsx`; deps
+> `three`, `@react-three/{fiber,drei,postprocessing}`. The sections below describing the
+> "6 zones" / "DOM-SVG, not canvas" reflect the original plan and are superseded by this.
+
 ## Problem
 
 A drawn 38-0 match is an anticlimax. Quick match / ranked / challenge draws are terminal
