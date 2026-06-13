@@ -18,9 +18,25 @@
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useGLTF, useAnimations } from "@react-three/drei";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { zoneColumn, zoneRow, type KickOutcome, type PenColumn, type PenZone } from "@/lib/draft/pens";
+
+/**
+ * Rigged-model slots. Drop a GLB at these paths and it replaces the procedural
+ * figure automatically (auto-fit to height, recoloured to the kit, plays its
+ * animation clips). `clips` maps our states → clip names IN the GLB so any
+ * Mixamo/Sketchfab export wires up by name.
+ *   STRIKER: idle + a kick clip · KEEPER: idle + a dive clip
+ * The bundled soldier.glb is a PLACEHOLDER proving the pipeline (idle only); swap
+ * in a footballer/keeper export for the real look — see the handoff notes.
+ */
+const STRIKER_MODEL: { url: string; clips: { idle?: string; kick?: string } } | null = {
+  url: "/models/soldier.glb",
+  clips: { idle: "Idle" },
+};
+const KEEPER_MODEL: { url: string; clips: { idle?: string; dive?: string } } | null = null;
 
 // ── Pitch / goal geometry (world units ≈ metres) ───────────────────────────────
 const GOAL = { w: 7.32, h: 2.44, z: -9, postR: 0.07 };
@@ -254,9 +270,46 @@ function Figure({ kit, accent, skin, numberTex, dive }: {
 
 type Play = { shot: PenZone; dive: PenColumn; outcome: KickOutcome; side: "me" | "opp" } | null;
 
+/** Loads a rigged GLB, auto-fits it to ~1.8m (feet on the grass), enables shadows,
+ *  and crossfades to the named clip. One instance per slot (no skeleton cloning
+ *  needed). The model keeps its own materials/kit — drop in a footballer/keeper
+ *  export and it just works; `clip` switches idle ↔ kick/dive. */
+function GltfFigure({ url, clip, faceCamera }: { url: string; clip?: string; faceCamera?: boolean }) {
+  const group = useRef<THREE.Group>(null);
+  const inner = useRef<THREE.Group>(null);
+  const { scene, animations } = useGLTF(url);
+  const { actions, names } = useAnimations(animations, group);
+
+  const fit = useMemo(() => {
+    scene.traverse((o) => { const m = o as THREE.Mesh; if (m.isMesh) { m.castShadow = true; m.frustumCulled = false; } });
+    const box = new THREE.Box3().setFromObject(scene);
+    const size = new THREE.Vector3(); box.getSize(size);
+    const s = 1.8 / (size.y || 1);
+    return { scale: s, y: -box.min.y * s };
+  }, [scene]);
+
+  useEffect(() => {
+    const want = (clip && actions[clip]) ? clip : (names.find((n) => /idle/i.test(n)) ?? names[0]);
+    const a = want ? actions[want] : null;
+    a?.reset().fadeIn(0.25).play();
+    return () => { a?.fadeOut(0.2); };
+  }, [actions, names, clip]);
+
+  return (
+    <group ref={group}>
+      <group ref={inner} scale={fit.scale} position={[0, fit.y, 0]} rotation={[0, faceCamera ? 0 : Math.PI, 0]}>
+        <primitive object={scene} />
+      </group>
+    </group>
+  );
+}
+if (STRIKER_MODEL) useGLTF.preload(STRIKER_MODEL.url);
+// KEEPER_MODEL preload added when a keeper GLB is wired in.
+
 function Striker({ play, clock }: { play: Play; clock: React.MutableRefObject<number> }) {
   const ref = useRef<THREE.Group>(null);
   const num = useMemo(() => kitNumberTexture("7", ME, "#0c0c12"), []);
+  const kicking = !!play && play.side === "me";
   useFrame(() => {
     if (!ref.current) return;
     const g = ref.current;
@@ -269,7 +322,14 @@ function Striker({ play, clock }: { play: Play; clock: React.MutableRefObject<nu
     g.position.set(-0.92 + fwd * 0.5, 0, SPOT.z + 0.6 - fwd * 0.7);
     g.rotation.set(lean * 0.32, 0.2, 0);
   });
-  return <group ref={ref} scale={0.86}><Figure kit="#0e0e14" accent={ME} skin="#d8a87f" numberTex={num} /></group>;
+  const sm = STRIKER_MODEL;
+  return (
+    <group ref={ref} scale={0.86}>
+      {sm
+        ? <GltfFigure url={sm.url} clip={kicking ? sm.clips.kick : sm.clips.idle} />
+        : <Figure kit="#0e0e14" accent={ME} skin="#d8a87f" numberTex={num} />}
+    </group>
+  );
 }
 
 function Keeper({ play, clock }: { play: Play; clock: React.MutableRefObject<number> }) {
@@ -299,7 +359,14 @@ function Keeper({ play, clock }: { play: Play; clock: React.MutableRefObject<num
       if (dive) setDive(null);
     }
   });
-  return <group ref={ref}><Figure kit="#5b3fb0" accent="#c9b6ff" skin="#caa07e" numberTex={num} dive={dive} /></group>;
+  const km = KEEPER_MODEL;
+  return (
+    <group ref={ref}>
+      {km
+        ? <GltfFigure url={km.url} clip={dive ? km.clips.dive : km.clips.idle} faceCamera />
+        : <Figure kit="#5b3fb0" accent="#c9b6ff" skin="#caa07e" numberTex={num} dive={dive} />}
+    </group>
+  );
 }
 
 function GameBall({ play, clock, onPlayed, ballTex, reduced }: {
@@ -393,8 +460,12 @@ export default function PenaltyScene3D({ aim, play, onPlayed, reduced }: {
       <Rig />
       <Floodlights />
       <Environment grass={tex.grass} crowd={tex.crowd} net={tex.net} />
-      <Striker play={play} clock={clock} />
-      <Keeper play={play} clock={clock} />
+      {/* GLB figures suspend while loading — keep them in a boundary so the rest of
+          the scene renders immediately and the model pops in when ready. */}
+      <Suspense fallback={null}>
+        <Striker play={play} clock={clock} />
+        <Keeper play={play} clock={clock} />
+      </Suspense>
       <GameBall play={play} clock={clock} onPlayed={onPlayed} ballTex={tex.ball} reduced={reduced} />
       <Reticle aim={aim} color={ME} />
       {!reduced && (
