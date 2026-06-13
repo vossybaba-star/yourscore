@@ -9,16 +9,16 @@
  */
 
 import type { Metadata } from "next";
-import { createServiceClient } from "@/lib/supabase/service";
 import { slugify } from "@/lib/utils";
 
 const SITE = "https://yourscore.app";
 
-// Always read the quiz's metadata fresh when generating the link-preview tags.
-// generateMetadata's Supabase query would otherwise sit in Next's Data Cache
-// (which even survives deploys on Vercel), so a share image attached after the
-// page was first rendered would never appear on the card. force-dynamic disables
-// all fetch caching for this segment, so attached/swapped images show immediately.
+// Always read the quiz's metadata FRESH when generating the link-preview tags.
+// Otherwise the Supabase read sits in Next's Data Cache (which even survives
+// deploys on Vercel), so a share image attached after the page was first rendered
+// never appears on the card. force-dynamic alone didn't suppress the supabase-js
+// query cache, so we read via a direct REST fetch with `cache: "no-store"` — the
+// reliable bypass — and keep force-dynamic for the segment.
 export const dynamic = "force-dynamic";
 
 type PackMeta = {
@@ -28,17 +28,25 @@ type PackMeta = {
   metadata: { share_image?: string; icon?: string } | null;
 };
 
+// Published quiz_packs are public, so the anon key suffices (same as /api/og/quiz).
 async function getPack(slug: string): Promise<PackMeta | null> {
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!base || !key) return null;
+  const headers = { apikey: key, Authorization: `Bearer ${key}` };
   try {
-    const sb = createServiceClient();
-    const { data: list } = await sb.from("quiz_packs").select("id, name").eq("status", "published");
-    const found = ((list ?? []) as { id: string; name: string }[]).find((p) => slugify(p.name) === slug);
+    const listRes = await fetch(`${base}/rest/v1/quiz_packs?select=id,name&status=eq.published`, { headers, cache: "no-store" });
+    if (!listRes.ok) return null;
+    const list = (await listRes.json()) as { id: string; name: string }[];
+    const found = list.find((p) => slugify(p.name) === slug);
     if (!found) return null;
-    // `description` exists in the live DB but not the stale generated types; select
-    // via a string var to dodge literal-type validation (same trick as the pack route).
-    const cols: string = "name, description, question_count, metadata";
-    const { data } = await sb.from("quiz_packs").select(cols).eq("id", found.id).single();
-    return (data as unknown as PackMeta) ?? null;
+    const res = await fetch(
+      `${base}/rest/v1/quiz_packs?select=name,description,question_count,metadata&id=eq.${encodeURIComponent(found.id)}`,
+      { headers, cache: "no-store" },
+    );
+    if (!res.ok) return null;
+    const rows = (await res.json()) as PackMeta[];
+    return rows[0] ?? null;
   } catch {
     return null;
   }
