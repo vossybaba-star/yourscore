@@ -1,0 +1,128 @@
+{
+  "date": "2026-06-13",
+  "series": "wc2026",
+  "name": "Meet the Mascots: World Cup 2026 Opening Weekend",
+  "parameter": "World Cup 2026 mascots and opening weekend",
+  "type": "records",
+  "icon": "🦅",
+  "angle": "News-driven daily quiz, pitched for casual fans. Funny/ironic spine: FIFA gave WC2026 three official animal mascots (Maple the moose, Zayu the jaguar, Clutch the bald eagle), but the breakout viral star has been Labubu, the wide-eyed plush toy POP MART signed as an official partner. Wrapped around accessible opening-weekend facts and the red-card-fest opener.",
+  "questions": [
+    {
+      "difficulty": "easy",
+      "category": "hosts",
+      "question": "Three countries are co-hosting the 2026 World Cup. Which three?",
+      "options": { "A": "USA, Canada and Mexico", "B": "USA, Mexico and Brazil", "C": "Canada, USA and England", "D": "Mexico, USA and Argentina" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "opening_day",
+      "question": "Which host nation won the opening match of the tournament, beating South Africa 2-0?",
+      "options": { "A": "Mexico", "B": "United States", "C": "Canada", "D": "Brazil" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "mascots",
+      "question": "The 2026 World Cup has three official mascots. The USA's mascot, Clutch, is which animal?",
+      "options": { "A": "A bald eagle", "B": "A grizzly bear", "C": "A bison", "D": "A rattlesnake" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "mascots",
+      "question": "Canada's official World Cup mascot, Maple, is which animal?",
+      "options": { "A": "A moose", "B": "A beaver", "C": "A polar bear", "D": "A goose" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "mascots",
+      "question": "Mexico's official World Cup mascot is a jaguar. What is it called?",
+      "options": { "A": "Zayu", "B": "Pique", "C": "Juanito", "D": "Gol" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "irony",
+      "question": "Despite the three official animal mascots, a wide-eyed plush toy became an unlikely viral star after FIFA made it an official 2026 World Cup partner. What is it called?",
+      "options": { "A": "Labubu", "B": "Sonny Angel", "C": "Furby", "D": "Tamagotchi" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "champions",
+      "question": "Who are the reigning world champions heading into 2026?",
+      "options": { "A": "Argentina", "B": "France", "C": "Brazil", "D": "Germany" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "champions",
+      "question": "Which superstar captained Argentina to the 2022 World Cup title?",
+      "options": { "A": "Lionel Messi", "B": "Cristiano Ronaldo", "C": "Neymar", "D": "Kylian Mbappe" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "format",
+      "question": "How many teams are at the 2026 World Cup, the most ever?",
+      "options": { "A": "48", "B": "32", "C": "24", "D": "64" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "records",
+      "question": "Which country has won the most World Cups, with five titles?",
+      "options": { "A": "Brazil", "B": "Germany", "C": "Italy", "D": "Argentina" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "final",
+      "question": "Where will the 2026 World Cup final be played, just outside New York?",
+      "options": { "A": "MetLife Stadium, New Jersey", "B": "Los Angeles", "C": "Miami", "D": "Toronto" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "opening_ceremony",
+      "question": "Which Colombian pop superstar performed at the World Cup opening ceremony in Mexico City?",
+      "options": { "A": "Shakira", "B": "Dua Lipa", "C": "Rihanna", "D": "Taylor Swift" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "opening_day",
+      "question": "Which famous Mexico City stadium hosted the opening match and ceremony?",
+      "options": { "A": "Estadio Azteca", "B": "Maracana", "C": "Camp Nou", "D": "Wembley" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "legends",
+      "question": "Which legend is the only player to win the World Cup three times?",
+      "options": { "A": "Pele", "B": "Diego Maradona", "C": "Lionel Messi", "D": "Ronaldo Nazario" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "irony",
+      "question": "The bad-tempered opener between Mexico and South Africa saw the referee hand out three of what?",
+      "options": { "A": "Red cards", "B": "Penalties", "C": "Own goals", "D": "Hat-tricks" },
+      "answer": "A"
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Maple,_Zayu_and_Clutch (official WC2026 mascots: Maple the moose for Canada, Zayu the jaguar for Mexico, Clutch the bald eagle for the USA)",
+    "https://www.espn.com/soccer/story/_/id/46377619/who-2026-fifa-world-cup-mascots-maple-zayu-clutch (mascot animals and host countries confirmed)",
+    "https://www.hola.com/us/lifestyle/20260611906886/labubu-fifa-world-cup-2026-mascot/ (POP MART's Labubu partnered with FIFA for WC2026; featured in the official FIFA Sound video 'Goals')",
+    "https://sports.yahoo.com/soccer/live/2026-world-cup-schedule-scores-live-updates-group-stage-mexico-vs-south-africa-south-korea-czechia-150000738.html (Day 1: Mexico 2-0 South Africa; Korea 2-1 Czechia)",
+    "https://www.sbs.com.au/news/article/fifa-world-cup-2026-results-june-12/ogazcegwe (Mexico v South Africa opener: three red cards issued; Quinones and Jimenez scored)",
+    "https://www.today.com/news/sports/live-blog/world-cup-2026-opening-ceremony-mexico-shakira-live-updates-rcna347915 (opening ceremony at Estadio Azteca, Mexico City; Shakira performed)",
+    "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup (48 teams; hosts USA/Canada/Mexico; final at MetLife Stadium, New Jersey)",
+    "https://en.wikipedia.org/wiki/2022_FIFA_World_Cup_Final (Argentina champions; Messi captain)",
+    "https://en.wikipedia.org/wiki/Brazil_national_football_team (record five World Cup titles)",
+    "https://en.wikipedia.org/wiki/Pele (only player to win three World Cups)"
+  ]
+}
