@@ -1,4 +1,4 @@
--- 36_club_leagues.sql
+-- 38_club_leagues.sql
 -- Club Leagues: partner-owned branded leagues + community spaces (pubs, creators,
 -- sponsors). Spec: docs/superpowers/specs/2026-06-12-club-leagues-design.md
 --

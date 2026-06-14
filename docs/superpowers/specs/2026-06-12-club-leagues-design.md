@@ -40,7 +40,7 @@ Rejected: extending existing league tables (bolts a different product onto 4-col
 tables); reviving sponsored Lobbies (ephemeral games ≠ persistent community space; 20-player
 Public Lobby cap is too small for a venue; model was already shelved).
 
-## 3. Data model — migration `36_club_leagues.sql`
+## 3. Data model — migration `38_club_leagues.sql`
 
 All tables RLS-enabled; writes server-authoritative (service role) per house pattern.
 

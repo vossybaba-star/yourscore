@@ -15,7 +15,7 @@ Existing code to lean on:
 - `src/lib/ratelimit.ts` — `rateLimitDistributed`.
 - `14_draft_xi.sql` — RLS style for league/member tables.
 
-## Phase 1 — Migration `supabase/migrations/36_club_leagues.sql`
+## Phase 1 — Migration `supabase/migrations/38_club_leagues.sql`
 
 1. `club_leagues`, `club_league_members`, `club_league_events`, `club_event_attempts`
    per spec §3 (events carry `questions` jsonb snapshot; attempts `unique(event_id, user_id)`).

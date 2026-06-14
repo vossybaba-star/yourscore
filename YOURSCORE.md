@@ -203,8 +203,8 @@ leagues) is kept with ownership nulled. Verified end-to-end against the live sch
 - **38-0 Leagues** (`draft_leagues`) — custom group leagues for 38-0, joined by code, with
   their own board (in-league wins, challengeable members). ✅ Live.
 
-- **Club Leagues** (`club_leagues`) — ⚠️ **BUILT, NOT LIVE** (migration `36_club_leagues.sql`
-  unapplied; not pushed). Partner-owned, branded league + community space for PUBS, CREATORS,
+- **Club Leagues** (`club_leagues`) — ⚠️ **BUILT, NOT LIVE** (migration `38_club_leagues.sql`
+  unapplied). Partner-owned, branded league + community space for PUBS, CREATORS,
   and SPONSORS — the productised, generalised form of the roadmap's "Pub Leagues" (§8). Own
   first-class tables (chosen over extending `draft_leagues`/`leagues` or reviving shelved
   sponsored Lobbies). Per partner:
