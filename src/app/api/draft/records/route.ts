@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
   const { ok } = await rateLimitDistributed(`draft-season-record:${user.id}`, 20, 60_000);
   if (!ok) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
 
-  let body: { league?: unknown; formation?: unknown; squad?: unknown };
+  let body: { league?: unknown; formation?: unknown; squad?: unknown; salt?: unknown };
   try { body = await req.json(); } catch { return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 }); }
 
   const league = asLeague(typeof body.league === "string" ? body.league : null);
@@ -43,14 +43,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: e instanceof Error ? e.message : "Invalid team" }, { status: 400 });
   }
 
-  // Authoritative re-simulation: seed and result both derive from the validated XI.
-  const seed = seedOf(team.squad.map((p) => p.player_season_id));
+  // Per-play roll: the sim is seeded by the XI PLUS the client's salt, so two players
+  // with the identical XI get different seasons (a copied XI can't reproduce a 38-0).
+  // The salt is just an input — the server still re-validates the XI and re-runs the
+  // sim itself (client numbers are never trusted), and only an elite XI can go 38-0
+  // under ANY salt, so a weak team can't fish a perfect season. The client caches its
+  // salt per XI, so re-submitting the same roll is an ignore-duplicate no-op; the
+  // board's distinct-on-user "best season" RPC handles any extra roll (new device).
+  const xiSeed = seedOf(team.squad.map((p) => p.player_season_id));
+  const salt = typeof body.salt === "string" ? body.salt.replace(/[^a-z0-9]/gi, "").slice(0, 64) : "";
+  const seed = salt ? `${xiSeed}:${salt}` : xiSeed;
   const result = simulateSeason(team.squad, team.formation, team.strength, seed, leagueOpponents(league));
 
   try {
     const db = recordsDb();
     const { data: profile } = await db.from("profiles").select("display_name").eq("id", user.id).maybeSingle();
-    // One row per distinct XI — replaying the same squad is a no-op.
+    // One row per distinct roll — re-submitting the same roll is a no-op.
     await db.from("draft_season_records").upsert({
       user_id: user.id,
       display_name: profile?.display_name ?? "Player",

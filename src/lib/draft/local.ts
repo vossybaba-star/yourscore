@@ -319,16 +319,26 @@ export function clearMatchup(): void {
 
 const SEASON_KEY = "draftxi:lastseason:v1";
 
-/** Stable seed for the season sim — the squad itself, so the result is the same
- *  every time you view it (and only changes when you change the XI). */
+/** The XI's identity — the sorted squad ids. Used as the cache key for a team's
+ *  rolled season, and sent to the server as the XI fingerprint. NOT the full sim
+ *  seed: that also mixes in a per-play salt (see makeSeasonSalt) so two players
+ *  with the same XI don't get the same season. */
 export function seasonSeed(team: LocalTeam): string {
   return team.squad.map((p) => p.player_season_id).sort().join("|");
 }
 
-export type StoredSeason = { seed: string; result: SeasonResult; at: number };
+/** A per-play roll token. The season is seeded by the XI PLUS this salt, so a
+ *  copied XI no longer reproduces the same result — the copier gets their own
+ *  roll. Stored alongside the season so the same playthrough stays reproducible
+ *  (and the server re-runs it from the same salt to verify). */
+export function makeSeasonSalt(): string {
+  return Math.random().toString(36).slice(2, 12) + Date.now().toString(36);
+}
 
-export function saveLastSeason(seed: string, result: SeasonResult): void {
-  try { localStorage.setItem(SEASON_KEY, JSON.stringify({ seed, result, at: Date.now() })); } catch { /* ignore */ }
+export type StoredSeason = { seed: string; salt: string; result: SeasonResult; at: number };
+
+export function saveLastSeason(seed: string, salt: string, result: SeasonResult): void {
+  try { localStorage.setItem(SEASON_KEY, JSON.stringify({ seed, salt, result, at: Date.now() })); } catch { /* ignore */ }
 }
 
 export function loadLastSeason(): StoredSeason | null {

@@ -9,7 +9,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { loadTeam, isComplete, seasonSeed, saveLastSeason, loadLastSeason, type LocalTeam } from "@/lib/draft/local";
+import { loadTeam, isComplete, seasonSeed, makeSeasonSalt, saveLastSeason, loadLastSeason, type LocalTeam } from "@/lib/draft/local";
 import { leagueOpponents } from "@/lib/draft/pool";
 import { simulateSeason, seasonNarrative, type SeasonResult } from "@/lib/draft/season";
 import { SeasonScorecard, type SeasonAward, type SeasonData } from "@/components/draft/SeasonScorecard";
@@ -41,14 +41,25 @@ export default function SeasonSim() {
     setTeam(t);
   }, [router]);
 
-  // Seed by the squad so the season is stable: same XI → same result every view.
-  const seed = team ? seasonSeed(team) : "";
+  // The XI's identity (cache key + server fingerprint).
+  const xiSeed = team ? seasonSeed(team) : "";
+  // The roll already saved for THIS XI on this device, if any.
+  const storedForXi = useMemo(() => {
+    if (!team) return null;
+    const last = loadLastSeason();
+    return last && last.seed === xiSeed && last.salt ? last : null;
+  }, [team, xiSeed]);
+  // Per-play salt: reuse this XI's saved roll, else start a fresh one. So the same
+  // XI shows a stable season on revisit, but a DIFFERENT player (different device /
+  // no cache) rolls their own — a copied XI no longer guarantees the same result.
+  const salt = useMemo(() => storedForXi?.salt ?? makeSeasonSalt(), [storedForXi]);
+  const playSeed = xiSeed ? `${xiSeed}:${salt}` : "";
   const result: SeasonResult | null = useMemo(
-    () => (team ? simulateSeason(team.squad, team.formation, team.strength, seed, leagueOpponents(team.league)) : null),
-    [team, seed]
+    () => (team ? simulateSeason(team.squad, team.formation, team.strength, playSeed, leagueOpponents(team.league)) : null),
+    [team, playSeed]
   );
-  // If we've already simulated this exact XI, skip straight to the result.
-  const cached = !!team && loadLastSeason()?.seed === seed;
+  // Already-rolled this exact season → skip straight to the result.
+  const cached = !!storedForXi && storedForXi.salt === salt;
 
   useEffect(() => {
     if (!result) return;
@@ -58,14 +69,14 @@ export default function SeasonSim() {
         if (n >= 38) {
           if (timer.current) clearInterval(timer.current);
           setDone(true);
-          saveLastSeason(seed, result);
+          saveLastSeason(xiSeed, salt, result);
           return 38;
         }
         return n + 1;
       });
     }, 90);
     return () => { if (timer.current) clearInterval(timer.current); };
-  }, [result, cached, seed]);
+  }, [result, cached, xiSeed, salt]);
 
   // Hoisted above the early-return so ensureShortUrl can be called from the
   // auto-show effect (700ms before the giveaway overlay opens).
@@ -117,8 +128,9 @@ export default function SeasonSim() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [done]);
 
-  // Enter the verified leaderboard: send the XI (never the result — the server
-  // re-runs the sim itself) once per view. Same squad twice is a server no-op.
+  // Enter the verified leaderboard: send the XI + this play's salt (never the
+  // result — the server re-runs the sim itself with the same salt so the stored
+  // record matches what the player saw). Same roll twice is a server no-op.
   useEffect(() => {
     if (!done || !user || !team || recordSubmitted.current) return;
     recordSubmitted.current = true;
@@ -129,15 +141,16 @@ export default function SeasonSim() {
         league: team.league,
         formation: team.formation,
         squad: team.squad.map((p) => ({ slot: p.slot, player_season_id: p.player_season_id })),
+        salt,
       }),
     }).catch(() => { /* leaderboard entry is best-effort */ });
-  }, [done, user, team]);
+  }, [done, user, team, salt]);
 
   function skip() {
     if (timer.current) clearInterval(timer.current);
     setShown(38);
     setDone(true);
-    if (result) saveLastSeason(seed, result);
+    if (result) saveLastSeason(xiSeed, salt, result);
   }
 
   if (!team || !result) {
