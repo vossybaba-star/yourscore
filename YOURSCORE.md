@@ -175,6 +175,15 @@ fabricate or back-date Invincibles onto real users' names; the board fills with 
 38-0s as players earn them under this engine. (A request to manufacture/disguise wins was
 declined — see [[project-38-0-leaderboard-gamefeel]].)
 
+**Account deletion (2026-06-14):** Settings → Danger Zone → typed-DELETE confirm →
+`POST /api/account/delete`. The route (service role, always the caller's own session id)
+runs the `delete_user_account()` SQL function then `auth.admin.deleteUser()` then clears
+the avatar. The function erases the user across every public table in FK-safe order — a
+bare auth delete can't, because `profiles.id`/`quiz_packs.user_id` are NO ACTION,
+`answers`/`room_members`/`room_scores`/`rooms` reference profiles with no cascade, and the
+club tables are RESTRICT. Shared content they authored (custom quiz packs, lobbies,
+leagues) is kept with ownership nulled. Verified end-to-end against the live schema.
+
 ---
 
 ## 6. Leagues & Ranking
