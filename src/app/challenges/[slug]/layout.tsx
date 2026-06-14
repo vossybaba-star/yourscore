@@ -64,9 +64,13 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     `Can you ace this ${qCount}-question football quiz? Play free in seconds, then sign up to save your score and climb the leaderboard.`;
   const url = `${SITE}/challenges/${slug}`;
   // Prefer a hand-made share image attached to the pack (metadata.share_image,
-  // set by scripts/set-quiz-share-image.mjs). Fall back to the auto-generated
-  // card at /api/og/quiz when no custom image has been attached.
-  const ogImage = pack?.metadata?.share_image || `${SITE}/api/og/quiz?slug=${encodeURIComponent(slug)}`;
+  // set by scripts/set-quiz-share-image.mjs). Proxy it through yourscore.app so
+  // Twitter's card crawler can fetch it — Supabase storage returns x-robots-tag:none
+  // which blocks Twitter's bot from displaying the image.
+  // Fall back to the auto-generated card at /api/og/quiz when no custom image.
+  const ogImage = pack?.metadata?.share_image
+    ? `${SITE}/api/quiz-image/${encodeURIComponent(slug)}`
+    : `${SITE}/api/og/quiz?slug=${encodeURIComponent(slug)}`;
 
   return {
     title,
