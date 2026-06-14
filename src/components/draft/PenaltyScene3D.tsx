@@ -36,7 +36,10 @@ const STRIKER_MODEL: { url: string; clips: { idle?: string; kick?: string } } | 
   url: "/models/soldier.glb",
   clips: { idle: "Idle" },
 };
-const KEEPER_MODEL: { url: string; clips: { idle?: string; dive?: string } } | null = null;
+const KEEPER_MODEL: { url: string; clips: { idle?: string; dive?: string } } | null = {
+  url: "/models/keeper.glb",
+  clips: {},
+};
 
 // ── Pitch / goal geometry (world units ≈ metres) ───────────────────────────────
 const GOAL = { w: 7.32, h: 2.44, z: -9, postR: 0.07 };
@@ -274,19 +277,29 @@ type Play = { shot: PenZone; dive: PenColumn; outcome: KickOutcome; side: "me" |
  *  and crossfades to the named clip. One instance per slot (no skeleton cloning
  *  needed). The model keeps its own materials/kit — drop in a footballer/keeper
  *  export and it just works; `clip` switches idle ↔ kick/dive. */
-function GltfFigure({ url, clip, faceCamera }: { url: string; clip?: string; faceCamera?: boolean }) {
+function GltfFigure({ url, clip, faceCamera, tint }: { url: string; clip?: string; faceCamera?: boolean; tint?: string }) {
   const group = useRef<THREE.Group>(null);
   const inner = useRef<THREE.Group>(null);
   const { scene, animations } = useGLTF(url);
   const { actions, names } = useAnimations(animations, group);
 
   const fit = useMemo(() => {
-    scene.traverse((o) => { const m = o as THREE.Mesh; if (m.isMesh) { m.castShadow = true; m.frustumCulled = false; } });
+    scene.traverse((o) => {
+      const m = o as THREE.Mesh;
+      if (m.isMesh) {
+        m.castShadow = true; m.frustumCulled = false;
+        if (tint) {
+          const mat = (m.material as THREE.MeshStandardMaterial).clone();
+          mat.color = new THREE.Color(tint);
+          m.material = mat;
+        }
+      }
+    });
     const box = new THREE.Box3().setFromObject(scene);
     const size = new THREE.Vector3(); box.getSize(size);
     const s = 1.8 / (size.y || 1);
     return { scale: s, y: -box.min.y * s };
-  }, [scene]);
+  }, [scene, tint]);
 
   useEffect(() => {
     const want = (clip && actions[clip]) ? clip : (names.find((n) => /idle/i.test(n)) ?? names[0]);
@@ -304,7 +317,7 @@ function GltfFigure({ url, clip, faceCamera }: { url: string; clip?: string; fac
   );
 }
 if (STRIKER_MODEL) useGLTF.preload(STRIKER_MODEL.url);
-// KEEPER_MODEL preload added when a keeper GLB is wired in.
+if (KEEPER_MODEL) useGLTF.preload(KEEPER_MODEL.url);
 
 function Striker({ play, clock }: { play: Play; clock: React.MutableRefObject<number> }) {
   const ref = useRef<THREE.Group>(null);
@@ -326,7 +339,7 @@ function Striker({ play, clock }: { play: Play; clock: React.MutableRefObject<nu
   return (
     <group ref={ref} scale={0.86}>
       {sm
-        ? <GltfFigure url={sm.url} clip={kicking ? sm.clips.kick : sm.clips.idle} />
+        ? <GltfFigure url={sm.url} clip={kicking ? sm.clips.kick : sm.clips.idle} tint="#15151f" />
         : <Figure kit="#0e0e14" accent={ME} skin="#d8a87f" numberTex={num} />}
     </group>
   );
@@ -363,7 +376,7 @@ function Keeper({ play, clock }: { play: Play; clock: React.MutableRefObject<num
   return (
     <group ref={ref}>
       {km
-        ? <GltfFigure url={km.url} clip={dive ? km.clips.dive : km.clips.idle} faceCamera />
+        ? <GltfFigure url={km.url} clip={dive ? km.clips.dive : km.clips.idle} faceCamera tint="#6a4fc0" />
         : <Figure kit="#5b3fb0" accent="#c9b6ff" skin="#caa07e" numberTex={num} dive={dive} />}
     </group>
   );
