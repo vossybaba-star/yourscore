@@ -274,6 +274,13 @@ come-back nudge via daily cron (23 — gated behind `COMEBACK_EMAILS_ENABLED=tru
 while the user was away; campaigns (11–15) are one-off scripts. "Friends online" is
 deliberately push-only, not email.
 
+**Unsubscribe (2026-06-14):** every email footer link → `/settings/email?unsub=all|pause=<scope>&u=<userId>`
+(previously 404'd — now fixed). The page (prefetch-safe, button-triggered) and
+`POST /api/email/unsubscribe` write a `reason='manual'` row to `email_suppressions` —
+the table `loadSuppressions()` reads, so all send scripts skip them. Resubscribe lifts
+only the user's own opt-out (bounce/complaint suppressions stay). Runtime emails also
+carry `List-Unsubscribe` + `List-Unsubscribe-Post` (RFC 8058 one-click) headers.
+
 **Shared social features:**
 | Feature | Status |
 |---|---|
