@@ -48,3 +48,17 @@ export function buildFooterUrls(userId: string, scope: string = "all") {
     UNSUB_URL: `${base}/settings/email?unsub=all&u=${u}`,
   };
 }
+
+/**
+ * RFC 8058 one-click unsubscribe headers — surfaces Gmail/Yahoo's native "Unsubscribe"
+ * button and is required for bulk senders. The List-Unsubscribe URL accepts a POST
+ * (handled by /api/email/unsubscribe) so the provider can opt the user out directly.
+ */
+export function listUnsubscribeHeaders(userId: string): Record<string, string> {
+  const base = process.env.NEXT_PUBLIC_APP_URL ?? "https://yourscore.app";
+  const u = encodeURIComponent(userId);
+  return {
+    "List-Unsubscribe": `<${base}/api/email/unsubscribe?u=${u}&unsub=all>, <mailto:unsubscribe@yourscore.app?subject=unsubscribe>`,
+    "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+  };
+}

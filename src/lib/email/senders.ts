@@ -1,13 +1,18 @@
 import { FROM, REPLY_TO, getResend } from "./client";
-import { buildFooterUrls, renderEmail } from "./render";
+import { buildFooterUrls, listUnsubscribeHeaders, renderEmail } from "./render";
 
-/** Centralised wrapper — never throws, always logs. */
+/** Centralised wrapper — never throws, always logs. Injects the RFC 8058 one-click
+ *  List-Unsubscribe headers for the recipient, so every email is opt-out compliant. */
 async function sendOrLog(
   label: string,
+  recipientUserId: string,
   args: Parameters<ReturnType<typeof getResend>["emails"]["send"]>[0],
 ) {
   try {
-    await getResend().emails.send(args);
+    await getResend().emails.send({
+      ...args,
+      headers: { ...listUnsubscribeHeaders(recipientUserId), ...(args.headers ?? {}) },
+    });
   } catch (err) {
     console.error(`[email] ${label} failed:`, err);
   }
@@ -21,7 +26,7 @@ export async function sendWelcomeEmail(args: { userId: string; email: string }) 
   const html = await renderEmail("01-welcome", {
     ...buildFooterUrls(args.userId, "all"),
   });
-  await sendOrLog("sendWelcomeEmail", {
+  await sendOrLog("sendWelcomeEmail", args.userId, {
     from: FROM,
     to: args.email,
     replyTo: REPLY_TO,
@@ -54,7 +59,7 @@ export async function sendFirstQuizEmail(args: {
     streak: String(args.streak),
     ...buildFooterUrls(args.userId, "all"),
   });
-  await sendOrLog("sendFirstQuizEmail", {
+  await sendOrLog("sendFirstQuizEmail", args.userId, {
     from: FROM,
     to: args.email,
     replyTo: REPLY_TO,
@@ -92,7 +97,7 @@ export async function sendFirstLeagueCreatedEmail(args: {
     whatsapp_share_url: `https://wa.me/?text=${waText}`,
     ...buildFooterUrls(args.userId, args.leagueId),
   });
-  await sendOrLog("sendFirstLeagueCreatedEmail", {
+  await sendOrLog("sendFirstLeagueCreatedEmail", args.userId, {
     from: FROM,
     to: args.email,
     replyTo: REPLY_TO,
@@ -134,7 +139,7 @@ export async function sendLeagueInviteEmail(args: {
     top3_score: t3 ? t3.score.toLocaleString() : "—",
     ...buildFooterUrls(args.userId, args.leagueId),
   });
-  await sendOrLog("sendLeagueInviteEmail", {
+  await sendOrLog("sendLeagueInviteEmail", args.userId, {
     from: FROM,
     to: args.email,
     replyTo: REPLY_TO,
@@ -174,7 +179,7 @@ export async function sendFirstMemberJoinsEmail(args: {
     whatsapp_share_url: `https://wa.me/?text=${waText}`,
     ...buildFooterUrls(args.creatorUserId, args.leagueId),
   });
-  await sendOrLog("sendFirstMemberJoinsEmail", {
+  await sendOrLog("sendFirstMemberJoinsEmail", args.creatorUserId, {
     from: FROM,
     to: args.creatorEmail,
     replyTo: REPLY_TO,
@@ -215,7 +220,7 @@ export async function sendFirst38TeamEmail(args: {
     projected_points: String(args.projectedPoints),
     ...buildFooterUrls(args.userId, "all"),
   });
-  await sendOrLog("sendFirst38TeamEmail", {
+  await sendOrLog("sendFirst38TeamEmail", args.userId, {
     from: FROM,
     to: args.email,
     replyTo: REPLY_TO,
@@ -263,7 +268,7 @@ export async function sendFirst38GameEmail(args: {
     l: String(args.l),
     ...buildFooterUrls(args.userId, "all"),
   });
-  await sendOrLog("sendFirst38GameEmail", {
+  await sendOrLog("sendFirst38GameEmail", args.userId, {
     from: FROM,
     to: args.email,
     replyTo: REPLY_TO,
@@ -301,7 +306,7 @@ export async function sendFirst38H2HEmail(args: {
     strength: String(args.strength),
     ...buildFooterUrls(args.userId, "all"),
   });
-  await sendOrLog("sendFirst38H2HEmail", {
+  await sendOrLog("sendFirst38H2HEmail", args.userId, {
     from: FROM,
     to: args.email,
     replyTo: REPLY_TO,
@@ -339,7 +344,7 @@ export async function sendFirst38LeagueEmail(args: {
     whatsapp_share_url: `https://wa.me/?text=${waText}`,
     ...buildFooterUrls(args.userId, args.leagueId),
   });
-  await sendOrLog("sendFirst38LeagueEmail", {
+  await sendOrLog("sendFirst38LeagueEmail", args.userId, {
     from: FROM,
     to: args.email,
     replyTo: REPLY_TO,
@@ -374,7 +379,7 @@ export async function sendFriendRequestEmail(args: {
     profile_url: `${base}/profile/${args.requesterUserId}`,
     ...buildFooterUrls(args.recipientUserId, "social"),
   });
-  await sendOrLog("sendFriendRequestEmail", {
+  await sendOrLog("sendFriendRequestEmail", args.recipientUserId, {
     from: FROM,
     to: args.recipientEmail,
     replyTo: REPLY_TO,
@@ -405,7 +410,7 @@ export async function sendFriendAcceptedEmail(args: {
     challenge_url: `${base}/38-0/challenge`,
     ...buildFooterUrls(args.requesterUserId, "social"),
   });
-  await sendOrLog("sendFriendAcceptedEmail", {
+  await sendOrLog("sendFriendAcceptedEmail", args.requesterUserId, {
     from: FROM,
     to: args.requesterEmail,
     replyTo: REPLY_TO,
@@ -447,7 +452,7 @@ export async function sendH2HResultEmail(args: {
     match_url: `${base}/38-0/match/${args.matchId}`,
     ...buildFooterUrls(args.challengerUserId, "38-0"),
   });
-  await sendOrLog("sendH2HResultEmail", {
+  await sendOrLog("sendH2HResultEmail", args.challengerUserId, {
     from: FROM,
     to: args.challengerEmail,
     replyTo: REPLY_TO,
@@ -469,7 +474,7 @@ export async function sendComebackEmail(args: { userId: string; email: string })
   const html = await renderEmail("23-comeback", {
     ...buildFooterUrls(args.userId, "all"),
   });
-  await sendOrLog("sendComebackEmail", {
+  await sendOrLog("sendComebackEmail", args.userId, {
     from: FROM,
     to: args.email,
     replyTo: REPLY_TO,

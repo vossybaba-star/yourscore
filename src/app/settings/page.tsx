@@ -412,6 +412,16 @@ export default function SettingsPage() {
           </div>
         </div>
 
+        {/* Email preferences */}
+        <Link
+          href={user ? `/settings/email?u=${user.id}` : "/settings/email"}
+          className="flex items-center justify-between w-full px-4 py-3.5 rounded-2xl font-body text-sm transition-all hover:opacity-90"
+          style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#cfcfe6" }}
+        >
+          <span>Email preferences</span>
+          <span style={{ color: "#8888aa" }}>›</span>
+        </Link>
+
         {/* Sign out */}
         <button
           onClick={handleSignOut}
