@@ -23,6 +23,11 @@ export default function SettingsPage() {
   const [passwordSaved, setPasswordSaved] = useState(false);
   const [passwordError, setPasswordError] = useState("");
   const [resetEmailSent, setResetEmailSent] = useState(false);
+  // Delete account
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   useEffect(() => {
     if (loading) return;
@@ -122,6 +127,27 @@ export default function SettingsPage() {
     const { createClient } = await import("@/lib/supabase/client");
     await createClient().auth.signOut();
     window.location.href = "/";
+  }
+
+  async function handleDeleteAccount() {
+    if (confirmDelete.trim().toUpperCase() !== "DELETE") return;
+    setDeleting(true); setDeleteError("");
+    try {
+      const res = await fetch("/api/account/delete", { method: "POST" });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.error || "Could not delete your account. Please try again.");
+      }
+      // Account is gone — clear the local session and leave.
+      try {
+        const { createClient } = await import("@/lib/supabase/client");
+        await createClient().auth.signOut();
+      } catch { /* session is moot anyway */ }
+      window.location.href = "/?deleted=1";
+    } catch (e: unknown) {
+      setDeleteError(e instanceof Error ? e.message : "Something went wrong.");
+      setDeleting(false);
+    }
   }
 
   if (loading || profileLoading) {
@@ -397,7 +423,80 @@ export default function SettingsPage() {
         >
           Sign out
         </button>
+
+        {/* Danger zone — delete account */}
+        <div className="rounded-2xl p-4" style={{ background: "rgba(255,71,87,0.05)", border: "1px solid rgba(255,71,87,0.2)" }}>
+          <p className="font-body text-[10px] font-semibold tracking-widest mb-2" style={{ color: "#ff4757" }}>DANGER ZONE</p>
+          <p className="font-body text-sm font-semibold text-white">Delete account</p>
+          <p className="font-body text-xs mt-1 mb-3" style={{ color: "#8888aa", lineHeight: 1.55 }}>
+            Permanently delete your account and erase everything we hold — your profile, all games,
+            38-0 teams, seasons &amp; leaderboard records, friends and quiz history. This cannot be undone.
+          </p>
+          <button
+            onClick={() => { setDeleteOpen(true); setConfirmDelete(""); setDeleteError(""); }}
+            className="w-full py-3 rounded-xl font-body text-sm font-semibold transition-all hover:opacity-90"
+            style={{ background: "rgba(255,71,87,0.1)", color: "#ff4757", border: "1px solid rgba(255,71,87,0.3)" }}
+          >
+            Delete my account
+          </button>
+        </div>
       </div>
+
+      {/* Confirmation modal */}
+      {deleteOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center px-5"
+          style={{ background: "rgba(0,0,0,0.82)" }}
+          onClick={() => { if (!deleting) setDeleteOpen(false); }}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl p-5"
+            style={{ background: "#12121e", border: "1px solid rgba(255,71,87,0.35)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-center" style={{ fontSize: 34, lineHeight: 1 }}>⚠️</div>
+            <p className="font-display tracking-wide text-center mt-2" style={{ fontSize: 24, color: "#fff" }}>DELETE ACCOUNT?</p>
+            <p className="font-body text-sm text-center mt-2 mb-4" style={{ color: "#cfcfe6", lineHeight: 1.55 }}>
+              This permanently erases <span style={{ color: "#fff", fontWeight: 600 }}>everything</span> — your profile,
+              every game, your 38-0 teams, seasons &amp; leaderboard records, friends and history.{" "}
+              <span style={{ color: "#ff6b7a" }}>It can&apos;t be undone.</span>
+            </p>
+            <p className="font-body text-xs mb-2" style={{ color: "#8888aa" }}>
+              Type <span style={{ color: "#ff4757", fontWeight: 700, letterSpacing: 1 }}>DELETE</span> to confirm:
+            </p>
+            <input
+              value={confirmDelete}
+              onChange={(e) => setConfirmDelete(e.target.value)}
+              placeholder="DELETE"
+              autoCapitalize="characters" autoCorrect="off" autoComplete="off"
+              disabled={deleting}
+              className="w-full rounded-xl px-4 py-3 font-body text-white text-sm outline-none placeholder:text-white/20 bg-surface"
+              style={{ border: "1px solid rgba(255,71,87,0.3)", letterSpacing: 1 }}
+            />
+            {deleteError && <p className="font-body text-xs mt-2" style={{ color: "#f87171" }}>{deleteError}</p>}
+            <button
+              onClick={handleDeleteAccount}
+              disabled={confirmDelete.trim().toUpperCase() !== "DELETE" || deleting}
+              className="w-full py-3 rounded-xl font-body text-sm font-bold transition-all mt-4"
+              style={{
+                background: confirmDelete.trim().toUpperCase() === "DELETE" && !deleting ? "#ff4757" : "rgba(255,71,87,0.12)",
+                color: confirmDelete.trim().toUpperCase() === "DELETE" && !deleting ? "#fff" : "#7a4a52",
+                cursor: confirmDelete.trim().toUpperCase() === "DELETE" && !deleting ? "pointer" : "not-allowed",
+              }}
+            >
+              {deleting ? "Deleting…" : "Permanently delete my account"}
+            </button>
+            <button
+              onClick={() => { if (!deleting) setDeleteOpen(false); }}
+              disabled={deleting}
+              className="w-full py-2.5 mt-1 font-body text-sm transition-colors hover:text-white"
+              style={{ color: "#8888aa" }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       <BottomNav />
     </main>
