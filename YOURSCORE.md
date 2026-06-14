@@ -8,6 +8,7 @@
 >
 > **Confirmed with the founder:** 2026-06-10 (full reconciliation against `src/` +
 > `supabase/migrations/` through migration 25, incl. the 38-0 game).
+> **Updated 2026-06-14:** added **Club Leagues** (built, not live — migration 36 + push pending).
 > **Maintenance:** update this file in the same session you change the product, bump the
 > date, and run `graphify update .` after code changes.
 
@@ -67,6 +68,7 @@ Use these words, with these meanings, everywhere. No synonyms.
 **Leagues & ranking**
 - **Quiz League** — a group's table for the Quiz game (`leagues`). Two boards planned: Live / Offline (§6).
 - **38-0 League** — a custom group league for 38-0 (`draft_leagues`), joined by code, with its own board.
+- **Club League** 🆕 — a *partner-owned, branded* league + community space (a PUB, CREATOR, or SPONSOR). Distinct from the user-created leagues above: own tables (`club_leagues`), own hub at `/l/<slug>`. ⚠️ Built but NOT live (§6/§8). Never conflate "Club League" (partner-owned) with "custom/38-0 league" (user friend-group).
 - **YourScore Rank** ✅ — the unified cross-game leaderboard: **YourScore points = Knowledge pts (Quiz) + Match pts (38-0: win 1,500 / draw 500)**; one strict position per player (no shared ranks). Position is the status; badges (👑/Elite/Diamond/…) are cosmetic, derived from position.
 
 ---
@@ -201,6 +203,35 @@ leagues) is kept with ownership nulled. Verified end-to-end against the live sch
 - **38-0 Leagues** (`draft_leagues`) — custom group leagues for 38-0, joined by code, with
   their own board (in-league wins, challengeable members). ✅ Live.
 
+- **Club Leagues** (`club_leagues`) — ⚠️ **BUILT, NOT LIVE** (migration `36_club_leagues.sql`
+  unapplied; not pushed). Partner-owned, branded league + community space for PUBS, CREATORS,
+  and SPONSORS — the productised, generalised form of the roadmap's "Pub Leagues" (§8). Own
+  first-class tables (chosen over extending `draft_leagues`/`leagues` or reviving shelved
+  sponsored Lobbies). Per partner:
+  - **Branded hub** at `/l/<slug>` (logo, cover, brand colour, welcome/prize text, pinned
+    announcement, shareable join link/QR). Tabs: **Board · Events · Feed** (+ **Manage** for owners).
+  - **Overall board** = `get_yourscore_leaderboard(p_user_ids := members)` — the *same*
+    YourScore Rank, scoped to that partner's members. Read-time only; **zero new scoring writes**.
+  - **Quiz events** = partner-run quiz nights: pick/build a `quiz_packs` pack → questions are
+    **snapshotted** onto the event (pack edits can't break a live night) → members play in the
+    window → per-event board. Correct answers are **never sent to the client**; server-graded;
+    one attempt each. **Event points count ONLY on the event board** — they do NOT feed
+    `profiles.total_score`/`quiz_attempts`/YourScore points (integrity: partner packs must not
+    mint global ranking points).
+  - **Feed** = read-time derived activity (`get_club_league_feed`): joins, 38-0 H2H results,
+    solo quizzes, event results. No chat in v1.
+  - **Provisioning:** admin at `/admin/club-leagues` (create + owner-by-email + kill switch);
+    partner self-manages branding/events on the hub. **Free for pubs/creators; sponsors invoiced
+    manually** (`tier` field is reporting-only — no in-app billing).
+  - **Outreach asset:** `/api/club-preview` — a parameterized `next/og` PNG of a branded board
+    (`?pub=&color=&logo=&prize=&kind=`) to embed inline in cold email; DB-free mockup.
+  - **Immersion direction (Jun 14, NOT built):** the hub should be a *branded TAKEOVER*
+    ("Spotify artist page" feel) — full-bleed dimmed wallpaper backdrop + page-wide accent shift
+    from the partner's colour, while a subtle "Powered by YourScore" mark + the app's nav/dark
+    surfaces remain. More immersive than a Facebook page, less than white-label.
+  - **v1 deferrals:** chat, 38-0 event types, billing, staff/manager roles, partner analytics,
+    brand-bleed into game screens, true white-label.
+
 **YourScore Rank — ✅ LIVE (shipped 2026-06-12).** The unified cross-game leaderboard and
 the deliberate **38-0 ↔ Quiz bridge**. One currency, one table, one #1:
 
@@ -259,7 +290,9 @@ deliberately push-only, not email.
 - **YourScore Rank** — two-track (38-0 Match + Quiz Knowledge) cross-game bridge (in progress).
 - **Mobile app launch** — unblocks **live-match Quiz** and **push notifications**.
 - **Quiz Live/Offline league boards** + the Solo-weighting rule (founder's partner).
-- **Messages / DMs**, **Hints system** (Quiz scoring hooks exist), **Pub Leagues**.
+- **Club Leagues** (the productised "Pub Leagues") — ✅ **built, awaiting migration 36 + push to
+  go live**; then the immersive brand-takeover redesign of `/l/<slug>` (see §6).
+- **Messages / DMs**, **Hints system** (Quiz scoring hooks exist).
 - **Naming cleanup:** `rooms` → `lobby`/`lobbies` and `/join` → `/matches` (code paths;
   do NOT touch yet — user-facing labels already say Lobby / Matches / Quiz).
 
