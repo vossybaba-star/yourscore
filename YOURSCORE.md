@@ -161,9 +161,13 @@ wins climb with Strength and good seasons reveal as a long unbeaten streak that 
 late ("looked like 38-0"). Calibrated against all real saved XIs: a genuinely elite,
 well-built XI (top ~3-5% by Strength, ~89.5+) now has a real, repeatable shot at the
 perfect **38-0 Invincible** (~0.3% of all teams, ~10-15% of elite ones); mid/weak teams
-essentially unchanged. This is a PERMANENT engine property — the season seed is the XI
-itself, so any Invincible is reproducible and re-verifiable forever (never a temporary
-window). A 38-0 triggers a full-screen gold celebration + gold scorecard banner.
+essentially unchanged. A 38-0 triggers a full-screen gold celebration + gold scorecard
+banner. **Per-play roll (2026-06-14):** the season is seeded by the XI PLUS a per-play
+salt, so two players with the identical XI get DIFFERENT seasons — a copied Invincible
+XI (share cards expose the XI) no longer reproduces the 38-0; the copier gets the same
+per-roll odds anyone at that Strength gets. A roll is cached per-XI per-device (stable on
+revisit) and server-verified by re-running the same salt; building 38-0 stays achievable
+but is genuinely earned per attempt, not copy-pasteable.
 **Impact subs:** halftime subs in Live H2H are 3×-weighted in second-half scorer/assist
 picks — the player you bring on visibly pays off, sometimes.
 **Integrity note:** the leaderboard is "verified ✓ — real results only". We do NOT
