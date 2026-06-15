@@ -92,13 +92,19 @@ function Players({ only, deltas, tint, register }: {
       for (let p = 0; p < px.length; p += 4) {
         const r = px[p], g = px[p + 1], b = px[p + 2];
         const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-        const isSkin = r > 100 && r >= g && g >= b && r - b > 18 && r - b < 125 && g > 70;
-        const isDark = lum < 0.14;
-        if (isSkin || isDark) continue;
-        const f = 0.55 + 0.7 * lum;
-        px[p] = Math.min(255, tc.r * 255 * f);
-        px[p + 1] = Math.min(255, tc.g * 255 * f);
-        px[p + 2] = Math.min(255, tc.b * 255 * f);
+        // Keep WARM tones (skin at any brightness + brown hair); recolour everything
+        // else — the kit, neutral-black "PLAYER 10" text (→ kit colour, vanishes), and
+        // accent bands. This drops the wordmark/number while preserving face + hair.
+        const warm = r >= g && g >= b && r - b > 12;
+        const isSkin = warm && r > 110 && g > 75 && r - b < 130;
+        const isHair = warm && lum < 0.34;
+        if (isSkin || isHair) continue;
+        // Flat team colour (no texture-luminance modulation) so the kit reads as ONE
+        // colour and the "PLAYER 10" text dissolves; the scene lights still shade the
+        // body via the mesh normals, so it isn't flat-looking.
+        px[p] = tc.r * 255;
+        px[p + 1] = tc.g * 255;
+        px[p + 2] = tc.b * 255;
       }
       ctx.putImageData(data, 0, 0);
       const ctex = new THREE.CanvasTexture(cv);
@@ -162,6 +168,11 @@ export default function SpriteSpike() {
       list: () => namesRef.current,
       get: () => ({ only, deltas, cam }),
       png: () => glRef.current?.domElement.toDataURL("image/png"),
+      save: async (name: string) => {
+        const dataUrl = glRef.current?.domElement.toDataURL("image/png");
+        const r = await fetch("/api/_sprite", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, dataUrl }) });
+        return r.json();
+      },
     };
   }, [only, deltas, cam]);
 
