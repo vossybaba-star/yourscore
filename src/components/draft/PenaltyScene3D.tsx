@@ -19,7 +19,7 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
 import { useGLTF, useAnimations } from "@react-three/drei";
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Component, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import * as THREE from "three";
 import { zoneColumn, zoneRow, type KickOutcome, type PenColumn, type PenZone } from "@/lib/draft/pens";
 
@@ -33,8 +33,8 @@ import { zoneColumn, zoneRow, type KickOutcome, type PenColumn, type PenZone } f
  * in a footballer/keeper export for the real look — see the handoff notes.
  */
 const STRIKER_MODEL: { url: string; clips: { idle?: string; kick?: string } } | null = {
-  url: "/models/soldier.glb",
-  clips: { idle: "Idle" },
+  url: "/models/striker.glb", // Mixamo "Remy" + Idle, FBX→GLB (assimpjs) → draco/webp
+  clips: {},                   // single baked clip (Mixamo names it "mixamo.com") → played as idle
 };
 const KEEPER_MODEL: { url: string; clips: { idle?: string; dive?: string } } | null = {
   url: "/models/keeper.glb",
@@ -273,6 +273,15 @@ function Figure({ kit, accent, skin, numberTex, dive }: {
 
 type Play = { shot: PenZone; dive: PenColumn; outcome: KickOutcome; side: "me" | "opp" } | null;
 
+/** A model load/decode failure (draco, texture, bad export) must NEVER kill the
+ *  whole canvas — catch it and render the procedural figure instead. */
+class ModelBoundary extends Component<{ fallback: ReactNode; children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() { return { failed: true }; }
+  componentDidCatch(err: unknown) { console.warn("[pens] 3D model failed, using procedural figure:", err); }
+  render() { return this.state.failed ? this.props.fallback : this.props.children; }
+}
+
 /** Loads a rigged GLB, auto-fits it to ~1.8m (feet on the grass), enables shadows,
  *  and crossfades to the named clip. One instance per slot (no skeleton cloning
  *  needed). The model keeps its own materials/kit — drop in a footballer/keeper
@@ -332,15 +341,16 @@ function Striker({ play, clock }: { play: Play; clock: React.MutableRefObject<nu
       const t = clock.current;
       if (t < 0.34) { const k = t / 0.34; fwd = Math.sin(k * Math.PI) * 0.5; lean = Math.sin(k * Math.PI) * 0.5; }
     }
-    g.position.set(-0.92 + fwd * 0.5, 0, SPOT.z + 0.6 - fwd * 0.7);
-    g.rotation.set(lean * 0.32, 0.2, 0);
+    g.position.set(-1.05 + fwd * 0.5, 0, SPOT.z + 0.75 - fwd * 0.7);
+    g.rotation.set(lean * 0.32, 0.24, 0);
   });
   const sm = STRIKER_MODEL;
+  const fallback = <Figure kit="#0e0e14" accent={ME} skin="#d8a87f" numberTex={num} />;
   return (
     <group ref={ref} scale={0.86}>
       {sm
-        ? <GltfFigure url={sm.url} clip={kicking ? sm.clips.kick : sm.clips.idle} tint="#15151f" />
-        : <Figure kit="#0e0e14" accent={ME} skin="#d8a87f" numberTex={num} />}
+        ? <ModelBoundary fallback={fallback}><Suspense fallback={null}><GltfFigure url={sm.url} clip={kicking ? sm.clips.kick : sm.clips.idle} tint="#c4302b" /></Suspense></ModelBoundary>
+        : fallback}
     </group>
   );
 }
@@ -373,11 +383,12 @@ function Keeper({ play, clock }: { play: Play; clock: React.MutableRefObject<num
     }
   });
   const km = KEEPER_MODEL;
+  const fallback = <Figure kit="#5b3fb0" accent="#c9b6ff" skin="#caa07e" numberTex={num} dive={dive} />;
   return (
     <group ref={ref}>
       {km
-        ? <GltfFigure url={km.url} clip={dive ? km.clips.dive : km.clips.idle} faceCamera tint="#6a4fc0" />
-        : <Figure kit="#5b3fb0" accent="#c9b6ff" skin="#caa07e" numberTex={num} dive={dive} />}
+        ? <ModelBoundary fallback={fallback}><Suspense fallback={null}><GltfFigure url={km.url} clip={dive ? km.clips.dive : km.clips.idle} faceCamera tint="#6a4fc0" /></Suspense></ModelBoundary>
+        : fallback}
     </group>
   );
 }
