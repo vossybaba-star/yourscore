@@ -19,21 +19,23 @@ type LeaderRow = {
   wins: number; draws: number; losses: number; points: number; rank: number;
 };
 
-// Fall back to a bot quickly when no human is waiting — but jittered (5–8s) so it
-// never feels like a fixed timer, and long enough that the "searching" screen reads
-// as real matchmaking rather than a dead spinner.
-const botFallbackDelay = () => 5_000 + Math.floor(Math.random() * 3_000);
+// Fall back to a bot when no human is waiting — jittered 2–3s so it never feels
+// like a fixed timer. Short enough that players don't bail before the bot fires.
+const botFallbackDelay = () => 2_000 + Math.floor(Math.random() * 1_000);
 const HARD_TIMEOUT_MS = 30_000; // give up (instead of spinning forever) if nothing resolves
+// Show the friend-lobby "match with randoms instead?" prompt after this many ms.
+const FRIEND_WAIT_PROMPT_MS = 45_000;
 
 export default function LiveEntry() {
   const router = useRouter();
   const { user, loading: authLoading } = useUser();
-  const [mode, setMode] = useState<"idle" | "friend" | "finding">("idle");
+  const [mode, setMode] = useState<"idle" | "friend" | "finding" | "matched">("idle");
   const [code, setCode] = useState<string | null>(null);
   const [matchId, setMatchId] = useState<string | null>(null);
   const [joinCode, setJoinCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [oppJoined, setOppJoined] = useState<string | null>(null);
+  const [friendWaitTooLong, setFriendWaitTooLong] = useState(false);
   const queueStartRef = useRef<number>(0);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const findGenRef = useRef(0);
@@ -61,10 +63,15 @@ export default function LiveEntry() {
   const stopPolling = () => { if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; } };
   useEffect(() => () => stopPolling(), []);
 
-  // Host's friend lobby: poll for the opponent joining.
+  // Host's friend lobby: poll for the opponent joining + prompt to find randoms after 45s.
   useEffect(() => {
     if (mode !== "friend" || !matchId || oppJoined) return;
     let alive = true;
+    setFriendWaitTooLong(false);
+
+    // Show the "match with other gamers" prompt after 45s
+    const promptTimer = setTimeout(() => { if (alive) setFriendWaitTooLong(true); }, FRIEND_WAIT_PROMPT_MS);
+
     const iv = setInterval(async () => {
       try {
         const res = await fetch(`/api/draft/live/${matchId}`);
@@ -77,7 +84,7 @@ export default function LiveEntry() {
         }
       } catch { /* transient — keep polling */ }
     }, 2000);
-    return () => { alive = false; clearInterval(iv); };
+    return () => { alive = false; clearInterval(iv); clearTimeout(promptTimer); };
   }, [mode, matchId, oppJoined, router]);
 
   async function api(body: Record<string, unknown>): Promise<QueueResp> {
@@ -113,7 +120,15 @@ export default function LiveEntry() {
       const r = await api(elapsed > botAfterRef.current ? { action: "bot" } : { action: "queue" });
       if (findGenRef.current !== gen) return;
       if (r.error) { stopPolling(); setError(r.error); setMode("idle"); return; }
-      if (r.match) { stopPolling(); router.push(`/38-0/live/match/${r.match.id}`); return; }
+      if (r.match) {
+        stopPolling();
+        const mid = r.match.id;
+        setMatchId(mid);
+        setMode("matched");
+        // Brief "opponent found" moment before entering the match
+        setTimeout(() => router.push(`/38-0/live/match/${mid}`), 1600);
+        return;
+      }
       if (elapsed > HARD_TIMEOUT_MS) { stopPolling(); setError("Couldn't find a match — try again."); setMode("idle"); }
     };
     await tick();
@@ -140,9 +155,9 @@ export default function LiveEntry() {
   return (
     <div className="min-h-[100dvh] pb-32" style={{ background: "#0a0a0f", color: "#e8e8f0" }}>
       <div className="max-w-lg mx-auto px-5 pt-10">
-        <Link href="/38-0" className="text-sm" style={{ color: "#8888aa" }}>← 38-0</Link>
-        <h1 className="font-display tracking-wide mt-3" style={{ fontSize: 34, color: "#00ff87" }}>Live H2H</h1>
-        <p className="mt-1 text-sm" style={{ color: "#9a9ab0" }}>
+        <Link href="/38-0" className="text-sm" style={{ color: "#8a948f" }}>← 38-0</Link>
+        <h1 className="font-display tracking-wide mt-3" style={{ fontSize: 34, color: "#aeea00" }}>Live H2H</h1>
+        <p className="mt-1 text-sm" style={{ color: "#9aa39d" }}>
           Two halves. Swap before kick-off and at halftime. Beat your opponent over 90.
         </p>
 
@@ -160,7 +175,7 @@ export default function LiveEntry() {
               <>
                 <Link href="/auth/sign-in?signup=1"
                   className="flex items-center justify-center w-full rounded-2xl py-4 font-body font-semibold text-center"
-                  style={{ background: "#00ff87", color: "#04130a", fontSize: 16 }}>
+                  style={{ background: "#aeea00", color: "#04130a", fontSize: 16 }}>
                   Sign Up — Free
                 </Link>
                 <Link href="/auth/sign-in"
@@ -172,7 +187,7 @@ export default function LiveEntry() {
               </>
             )}
 
-            <button onClick={handleFindMatch} className="w-full rounded-2xl py-4 font-semibold" style={{ background: "#00ff87", color: "#04130a" }}>
+            <button onClick={handleFindMatch} className="w-full rounded-2xl py-4 font-semibold" style={{ background: "#aeea00", color: "#04130a" }}>
               Find a live match
             </button>
             <button onClick={playFriend} className="w-full rounded-2xl py-4 font-semibold" style={{ background: "rgba(255,255,255,0.06)", color: "#e8e8f0", border: "1px solid rgba(255,255,255,0.12)" }}>
@@ -181,7 +196,7 @@ export default function LiveEntry() {
 
             {/* Join with a code — always visible */}
             <div className="pt-4">
-              <label className="text-xs uppercase tracking-wide" style={{ color: "#7a7a92" }}>Join with a code</label>
+              <label className="text-xs uppercase tracking-wide" style={{ color: "#8a948f" }}>Join with a code</label>
               <div className="mt-2 flex gap-2">
                 <input
                   value={joinCode} onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
@@ -200,21 +215,21 @@ export default function LiveEntry() {
         {mode === "friend" && (
           <div className="mt-7 text-center">
             {oppJoined ? (
-              <div className="rounded-2xl p-5" style={{ background: "rgba(0,255,135,0.1)", border: "1px solid rgba(0,255,135,0.45)" }}>
+              <div className="rounded-2xl p-5" style={{ background: "rgba(174,234,0,0.1)", border: "1px solid rgba(174,234,0,0.45)" }}>
                 <div className="text-3xl">🟢</div>
-                <p className="mt-2 font-display tracking-wide" style={{ fontSize: 22, color: "#00ff87" }}>{oppJoined} JOINED!</p>
-                <p className="mt-1 text-sm" style={{ color: "#9a9ab0" }}>Taking you into the lobby…</p>
-                <button onClick={() => matchId && router.push(`/38-0/live/match/${matchId}`)} className="mt-4 w-full rounded-2xl py-4 font-semibold" style={{ background: "#00ff87", color: "#04130a" }}>
+                <p className="mt-2 font-display tracking-wide" style={{ fontSize: 22, color: "#aeea00" }}>{oppJoined} JOINED!</p>
+                <p className="mt-1 text-sm" style={{ color: "#9aa39d" }}>Taking you into the lobby…</p>
+                <button onClick={() => matchId && router.push(`/38-0/live/match/${matchId}`)} className="mt-4 w-full rounded-2xl py-4 font-semibold" style={{ background: "#aeea00", color: "#04130a" }}>
                   Enter now →
                 </button>
               </div>
             ) : (
               <>
-                <p className="text-sm" style={{ color: "#9a9ab0" }}>Share this code with your mate</p>
-                <div className="mt-3 font-mono tracking-[0.4em] font-bold" style={{ fontSize: 44, color: "#00ff87" }}>{code}</div>
+                <p className="text-sm" style={{ color: "#9aa39d" }}>Share this code with your mate</p>
+                <div className="mt-3 font-mono tracking-[0.4em] font-bold" style={{ fontSize: 44, color: "#aeea00" }}>{code}</div>
                 <div className="mt-4 inline-flex items-center gap-2 rounded-full px-3 py-1.5" style={{ background: "rgba(255,184,0,0.1)", border: "1px solid rgba(255,184,0,0.25)" }}>
                   <span className="h-2 w-2 rounded-full animate-pulse" style={{ background: "#ffb800" }} />
-                  <span className="text-xs" style={{ color: "#cfcfe6" }}>Waiting for your mate to join…</span>
+                  <span className="text-xs" style={{ color: "#c4ccc6" }}>Waiting for your mate to join…</span>
                 </div>
                 <button
                   onClick={() => navigator.share?.({ title: "38-0 H2H", text: `Play me on 38-0 — code ${code}`, url: `${location.origin}/38-0/live/${code}?competition=${competition}` }).catch(() => {})}
@@ -222,10 +237,41 @@ export default function LiveEntry() {
                 >
                   Share link
                 </button>
-                <button onClick={() => matchId && router.push(`/38-0/live/match/${matchId}`)} className="mt-3 w-full rounded-2xl py-4 font-semibold" style={{ background: "#00ff87", color: "#04130a" }}>
+                <button onClick={() => matchId && router.push(`/38-0/live/match/${matchId}`)} className="mt-3 w-full rounded-2xl py-4 font-semibold" style={{ background: "#aeea00", color: "#04130a" }}>
                   Enter lobby →
                 </button>
-                <p className="mt-3 text-xs" style={{ color: "#7a7a92" }}>We&apos;ll pull you in automatically the moment they join.</p>
+                <p className="mt-3 text-xs" style={{ color: "#8a948f" }}>We&apos;ll pull you in automatically the moment they join.</p>
+
+                {/* After 45s: offer to match with random online gamers instead */}
+                {friendWaitTooLong && (
+                  <div className="mt-5 rounded-2xl px-4 py-4 text-left"
+                    style={{ background: "rgba(255,184,0,0.08)", border: "1px solid rgba(255,184,0,0.3)" }}>
+                    <p className="text-sm font-semibold" style={{ color: "#ffb800" }}>
+                      Your mate hasn&apos;t joined yet
+                    </p>
+                    <p className="mt-1 text-xs" style={{ color: "#9aa39d" }}>
+                      There are other gamers online right now — want us to match you with one of them instead?
+                    </p>
+                    <button
+                      onClick={() => {
+                        setMode("idle");
+                        setFriendWaitTooLong(false);
+                        void findMatch();
+                      }}
+                      className="mt-3 w-full rounded-xl py-3 font-semibold text-sm"
+                      style={{ background: "#aeea00", color: "#04130a" }}
+                    >
+                      Match me with someone online →
+                    </button>
+                    <button
+                      onClick={() => setFriendWaitTooLong(false)}
+                      className="mt-2 w-full rounded-xl py-2 text-xs"
+                      style={{ color: "#8a948f" }}
+                    >
+                      Keep waiting for my mate
+                    </button>
+                  </div>
+                )}
               </>
             )}
           </div>
@@ -233,14 +279,27 @@ export default function LiveEntry() {
 
         {mode === "finding" && <FindingPanel onCancel={cancelFind} />}
 
+        {mode === "matched" && (
+          <div className="mt-12 text-center">
+            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full"
+              style={{ background: "rgba(174,234,0,0.15)", border: "2px solid #aeea00" }}>
+              <span style={{ fontSize: 28 }}>⚽</span>
+            </div>
+            <p className="mt-5 font-display tracking-wide" style={{ fontSize: 24, color: "#aeea00" }}>
+              Opponent Found!
+            </p>
+            <p className="mt-2 text-sm" style={{ color: "#9aa39d" }}>Taking you into the match…</p>
+          </div>
+        )}
+
         {/* ── H2H Leaderboard — shown in idle mode ── */}
         {mode === "idle" && (
           <div className="mt-10">
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-display tracking-wide" style={{ fontSize: 22, color: "#fff" }}>
-                LEADER<span style={{ color: "#00ff87" }}>BOARD</span>
+                LEADER<span style={{ color: "#aeea00" }}>BOARD</span>
               </h2>
-              <Link href="/38-0/leaderboard" className="font-body text-xs" style={{ color: "#8888aa" }}>
+              <Link href="/38-0/leaderboard" className="font-body text-xs" style={{ color: "#8a948f" }}>
                 Full board →
               </Link>
             </div>
@@ -250,35 +309,35 @@ export default function LiveEntry() {
               {([["today", "Today"], ["all", "All-time"]] as const).map(([key, label]) => (
                 <button key={key} onClick={() => setLbMetric(key)}
                   className="flex-1 py-1.5 rounded-xl font-body text-sm font-semibold transition-all"
-                  style={lbMetric === key ? { background: "#00ff87", color: "#062013" } : { background: "transparent", color: "#8888aa" }}>
+                  style={lbMetric === key ? { background: "#aeea00", color: "#062013" } : { background: "transparent", color: "#8a948f" }}>
                   {label}
                 </button>
               ))}
             </div>
 
             {lbLoading ? (
-              <div className="py-6 text-center font-body text-sm" style={{ color: "#8888aa" }}>Loading…</div>
+              <div className="py-6 text-center font-body text-sm" style={{ color: "#8a948f" }}>Loading…</div>
             ) : lbRows.length === 0 ? (
-              <div className="rounded-2xl px-4 py-5 text-center" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}>
-                <p className="font-body text-sm" style={{ color: "#8888aa" }}>No wins yet — be first on the board.</p>
+              <div className="rounded-2xl px-4 py-5 text-center" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.07)" }}>
+                <p className="font-body text-sm" style={{ color: "#8a948f" }}>No wins yet — be first on the board.</p>
               </div>
             ) : (
-              <div className="rounded-2xl overflow-hidden" style={{ background: "#0d0d14", border: "1px solid rgba(255,255,255,0.08)" }}>
-                <div className="flex items-center px-3 py-2 font-body" style={{ fontSize: 10, color: "#8888aa", letterSpacing: 0.5, background: "rgba(255,255,255,0.03)" }}>
+              <div className="rounded-2xl overflow-hidden" style={{ background: "#080d0a", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <div className="flex items-center px-3 py-2 font-body" style={{ fontSize: 10, color: "#8a948f", letterSpacing: 0.5, background: "rgba(255,255,255,0.03)" }}>
                   <span style={{ width: 28, textAlign: "center" }}>#</span>
                   <span className="flex-1 pl-2">PLAYER</span>
                   <span style={{ width: 24, textAlign: "center" }}>W</span>
                   <span style={{ width: 24, textAlign: "center" }}>D</span>
                   <span style={{ width: 24, textAlign: "center" }}>L</span>
-                  <span style={{ width: 36, textAlign: "center", color: "#cfcfe6" }}>PTS</span>
+                  <span style={{ width: 36, textAlign: "center", color: "#c4ccc6" }}>PTS</span>
                 </div>
                 {lbRows.map((r) => {
                   const isMe = user && r.user_id === user.id;
                   const medal = r.rank === 1 ? "🥇" : r.rank === 2 ? "🥈" : r.rank === 3 ? "🥉" : null;
                   return (
                     <div key={r.user_id} className="flex items-center px-3 py-2.5"
-                      style={{ borderTop: "1px solid rgba(255,255,255,0.05)", background: isMe ? "rgba(0,255,135,0.08)" : "transparent" }}>
-                      <span className="font-display tabular-nums" style={{ width: 28, textAlign: "center", fontSize: medal ? 15 : 14, color: r.rank === 1 ? "#ffb800" : r.rank <= 3 ? "#cfcfe6" : "#8888aa" }}>
+                      style={{ borderTop: "1px solid rgba(255,255,255,0.05)", background: isMe ? "rgba(174,234,0,0.08)" : "transparent" }}>
+                      <span className="font-display tabular-nums" style={{ width: 28, textAlign: "center", fontSize: medal ? 15 : 14, color: r.rank === 1 ? "#ffb800" : r.rank <= 3 ? "#c4ccc6" : "#8a948f" }}>
                         {medal ?? r.rank}
                       </span>
                       <div className="flex-1 min-w-0 pl-2">
@@ -286,7 +345,7 @@ export default function LiveEntry() {
                           {r.display_name}{isMe ? " (you)" : ""}
                         </div>
                       </div>
-                      <span className="font-body tabular-nums" style={{ width: 24, textAlign: "center", fontSize: 13, color: "#00ff87" }}>{r.wins}</span>
+                      <span className="font-body tabular-nums" style={{ width: 24, textAlign: "center", fontSize: 13, color: "#aeea00" }}>{r.wins}</span>
                       <span className="font-body tabular-nums" style={{ width: 24, textAlign: "center", fontSize: 13, color: "#ffb800" }}>{r.draws}</span>
                       <span className="font-body tabular-nums" style={{ width: 24, textAlign: "center", fontSize: 13, color: "#ff4757" }}>{r.losses}</span>
                       <span className="font-display tabular-nums" style={{ width: 36, textAlign: "center", fontSize: 15, color: "#fff" }}>{r.points}</span>
@@ -320,13 +379,13 @@ function FindingPanel({ onCancel }: { onCancel: () => void }) {
   }, []);
   return (
     <div className="mt-12 text-center">
-      <div className="mx-auto h-12 w-12 rounded-full animate-spin" style={{ border: "3px solid rgba(0,255,135,0.2)", borderTopColor: "#00ff87" }} />
+      <div className="mx-auto h-12 w-12 rounded-full animate-spin" style={{ border: "3px solid rgba(174,234,0,0.2)", borderTopColor: "#aeea00" }} />
       <p className="mt-5 font-semibold transition-opacity" style={{ color: "#e8e8f0", minHeight: 22 }}>{FINDING_MESSAGES[msg]}</p>
-      <div className="mt-3 inline-flex items-center gap-2 rounded-full px-3 py-1.5" style={{ background: "rgba(0,255,135,0.08)", border: "1px solid rgba(0,255,135,0.22)" }}>
-        <span className="h-2 w-2 rounded-full animate-pulse" style={{ background: "#00ff87" }} />
-        <span className="text-xs" style={{ color: "#9a9ab0" }}><b style={{ color: "#00ff87" }}>{online}</b> managers online</span>
+      <div className="mt-3 inline-flex items-center gap-2 rounded-full px-3 py-1.5" style={{ background: "rgba(174,234,0,0.08)", border: "1px solid rgba(174,234,0,0.22)" }}>
+        <span className="h-2 w-2 rounded-full animate-pulse" style={{ background: "#aeea00" }} />
+        <span className="text-xs" style={{ color: "#9aa39d" }}><b style={{ color: "#aeea00" }}>{online}</b> managers online</span>
       </div>
-      <button onClick={onCancel} className="mt-8 block mx-auto text-sm underline" style={{ color: "#8888aa" }}>Cancel</button>
+      <button onClick={onCancel} className="mt-8 block mx-auto text-sm underline" style={{ color: "#8a948f" }}>Cancel</button>
     </div>
   );
 }

@@ -25,7 +25,7 @@ export default function SignInPage() {
   return (
     <main className="min-h-dvh bg-bg flex flex-col">
       <GridBackground opacity={0.025} />
-      <div className="fixed top-0 left-0 w-[500px] h-[500px] pointer-events-none" style={{ background: "radial-gradient(circle at 0% 0%, rgba(167,139,250,0.07) 0%, transparent 60%)" }} />
+      <div className="fixed top-0 left-0 w-[500px] h-[500px] pointer-events-none" style={{ background: "radial-gradient(circle at 0% 0%, rgba(174,234,0,0.07) 0%, transparent 60%)" }} />
 
       <nav className="relative z-10 pt-safe px-6 py-5 flex items-center gap-4">
         <button
@@ -35,7 +35,7 @@ export default function SignInPage() {
           aria-label="Go back"
         >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M10 3L5 8l5 5" stroke="#aaaacc" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M10 3L5 8l5 5" stroke="#9aa39d" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
         <Link href="/">

@@ -33,9 +33,9 @@ function ordinal(n: number): string {
 export function SeasonScorecard({ data }: { data: SeasonData }) {
   const top4 = data.position <= 4;
   const fk: "win" | "draw" | "loss" = data.invincible ? "draw" : top4 ? "win" : data.position <= 12 ? "draw" : "loss";
-  const accent = data.invincible ? "#ffd700" : data.position === 1 ? SC_WIN : top4 ? "#22d3ee" : data.position <= 12 ? SC_DRAW : SC_LOSS;
+  const accent = data.invincible ? "#ffd700" : data.position === 1 ? SC_WIN : top4 ? "#aeea00" : data.position <= 12 ? SC_DRAW : SC_LOSS;
   const headline = data.invincible ? "INVINCIBLE" : `FINISHED ${ordinal(data.position).toUpperCase()}`;
-  const verdictColor = data.verdict === "OVERPERFORMED" ? SC_WIN : data.verdict === "UNDERPERFORMED" ? SC_LOSS : "#8a8aa6";
+  const verdictColor = data.verdict === "OVERPERFORMED" ? SC_WIN : data.verdict === "UNDERPERFORMED" ? SC_LOSS : "#9aa39d";
 
   const record: [string, number, string, "win" | "draw" | "loss"][] = [
     ["Won", data.wins, SC_WIN, "win"],
@@ -83,11 +83,11 @@ export function SeasonScorecard({ data }: { data: SeasonData }) {
         {record.map(([label, v, col, key]) => (
           <div key={label} className="rounded-2xl py-4 text-center" style={{ background: "rgba(0,0,0,0.35)", border: `1px solid ${col}33` }}>
             <Foil gradient={FOIL[key]} sheen className="font-display tabular-nums" style={{ fontSize: 56, lineHeight: 0.85 }}>{v}</Foil>
-            <div className="mt-1.5 font-mono uppercase" style={{ fontSize: 9.5, letterSpacing: "0.18em", color: "#6a6a86" }}>{label}</div>
+            <div className="mt-1.5 font-mono uppercase" style={{ fontSize: 9.5, letterSpacing: "0.18em", color: "#8a948f" }}>{label}</div>
           </div>
         ))}
       </div>
-      <div className="text-center font-mono uppercase" style={{ fontSize: 11, letterSpacing: "0.14em", color: "#8a8aa6", marginBottom: 30 }}>
+      <div className="text-center font-mono uppercase" style={{ fontSize: 11, letterSpacing: "0.14em", color: "#9aa39d", marginBottom: 30 }}>
         {data.points} pts{data.strength != null ? ` · STR ${data.strength}` : ""}
       </div>
 
@@ -97,7 +97,7 @@ export function SeasonScorecard({ data }: { data: SeasonData }) {
           <SectionLabel>League finish</SectionLabel>
           <div className="grid grid-cols-3 gap-3" style={{ marginBottom: 30 }}>
             <Cell label="Finished" value={ordinal(data.position)} color={accent} />
-            <Cell label="Projected" value={data.projectedPosition != null ? ordinal(data.projectedPosition) : "—"} color="#8a8aa6" />
+            <Cell label="Projected" value={data.projectedPosition != null ? ordinal(data.projectedPosition) : "—"} color="#9aa39d" />
             <Cell label="Verdict" value={data.verdict ?? "—"} color={verdictColor} small />
           </div>
         </>
@@ -124,7 +124,7 @@ export function SeasonScorecard({ data }: { data: SeasonData }) {
               <div key={a.label} className="rounded-2xl p-3.5" style={{ background: "linear-gradient(135deg,rgba(255,184,0,0.07),rgba(255,184,0,0.015))", border: "1px solid rgba(255,184,0,0.18)" }}>
                 <div className="font-mono uppercase" style={{ fontSize: 8.5, letterSpacing: "0.14em", color: SC_DRAW }}>{a.label}</div>
                 <div className="mt-1 truncate font-display" style={{ fontSize: 18, color: "#fff", letterSpacing: "0.02em" }}>{a.name}</div>
-                <div className="font-mono uppercase" style={{ fontSize: 8.5, letterSpacing: "0.08em", color: "#8a8aa6" }}>{a.detail}</div>
+                <div className="font-mono uppercase" style={{ fontSize: 8.5, letterSpacing: "0.08em", color: "#9aa39d" }}>{a.detail}</div>
               </div>
             ))}
           </div>
@@ -136,7 +136,7 @@ export function SeasonScorecard({ data }: { data: SeasonData }) {
         <>
           <SectionLabel>Top contributors</SectionLabel>
           <div className="overflow-hidden rounded-2xl" style={{ background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.06)", marginBottom: 30 }}>
-            <div className="flex px-4 py-2 font-mono uppercase" style={{ fontSize: 8.5, letterSpacing: "0.14em", color: "#6a6a86" }}>
+            <div className="flex px-4 py-2 font-mono uppercase" style={{ fontSize: 8.5, letterSpacing: "0.14em", color: "#8a948f" }}>
               <span className="flex-1">Player</span>
               <span style={{ width: 36, textAlign: "right" }}>G</span>
               <span style={{ width: 36, textAlign: "right" }}>A</span>
@@ -145,7 +145,7 @@ export function SeasonScorecard({ data }: { data: SeasonData }) {
               <div key={p.name} className="flex items-center px-4 py-2" style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
                 <span className="flex-1 truncate font-body" style={{ fontSize: 13, color: "#eee" }}>{p.name}</span>
                 <span className="font-mono tabular-nums" style={{ width: 36, textAlign: "right", fontSize: 13, color: SC_WIN }}>{p.goals}</span>
-                <span className="font-mono tabular-nums" style={{ width: 36, textAlign: "right", fontSize: 13, color: "#22d3ee" }}>{p.assists}</span>
+                <span className="font-mono tabular-nums" style={{ width: 36, textAlign: "right", fontSize: 13, color: "#aeea00" }}>{p.assists}</span>
               </div>
             ))}
           </div>
@@ -159,7 +159,7 @@ function Cell({ label, value, color, small }: { label: string; value: string; co
   return (
     <div className="grid place-items-center rounded-2xl py-3 text-center" style={{ background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.06)" }}>
       <div className="font-display" style={{ fontSize: small ? 14 : 28, color, letterSpacing: small ? "0.04em" : "0" }}>{value}</div>
-      <div className="mt-0.5 font-mono uppercase" style={{ fontSize: 8.5, letterSpacing: "0.12em", color: "#6a6a86" }}>{label}</div>
+      <div className="mt-0.5 font-mono uppercase" style={{ fontSize: 8.5, letterSpacing: "0.12em", color: "#8a948f" }}>{label}</div>
     </div>
   );
 }

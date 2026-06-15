@@ -45,7 +45,7 @@ const PITCH: Record<string, string> = {
 
 // Illustrative standings — clearly "what your league could look like".
 const ROWS = [
-  { initials: "DK", name: "Dave K.", record: "9W · 2D · 1L", pts: "14,820", from: "#2a1a4a", fg: "#a78bfa" },
+  { initials: "DK", name: "Dave K.", record: "9W · 2D · 1L", pts: "14,820", from: "#3a423d", fg: "#aeea00" },
   { initials: "SM", name: "Sarah M.", record: "7W · 4D · 2L", pts: "13,140", from: "#1a4a2a", fg: "#4ade80" },
   { initials: "TP", name: "Tom P.", record: "6W · 5D · 1L", pts: "11,990", from: "#1a2f4a", fg: "#60a5fa" },
   { initials: "LH", name: "Liam H.", record: "5W · 6D · 1L", pts: "10,540", from: "#4a2a1a", fg: "#fb923c" },
@@ -84,7 +84,7 @@ export async function GET(req: Request) {
           {/* left — pub identity + pitch + quiz-night pill */}
           <div style={{ display: "flex", flexDirection: "column", width: 470, gap: 22 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 92, height: 92, borderRadius: 22, background: "#12121e", border: `2px solid ${accentBorder}`, overflow: "hidden" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 92, height: 92, borderRadius: 22, background: "#0e1611", border: `2px solid ${accentBorder}`, overflow: "hidden" }}>
                 {logo ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={logo} width={92} height={92} alt="" style={{ display: "flex", objectFit: "cover" }} />
@@ -94,7 +94,7 @@ export async function GET(req: Request) {
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                 <span style={{ display: "flex", color: accent, fontSize: 20, fontWeight: 700, letterSpacing: 2 }}>CLUB LEAGUE</span>
-                <span style={{ display: "flex", color: "#6b6b88", fontSize: 21, fontWeight: 600 }}>24 members</span>
+                <span style={{ display: "flex", color: "#8a948f", fontSize: 21, fontWeight: 600 }}>24 members</span>
               </div>
             </div>
 
@@ -102,7 +102,7 @@ export async function GET(req: Request) {
               <span style={{ display: "flex", color: "#ffffff", fontSize: 56, fontWeight: 800, lineHeight: 1.05, letterSpacing: -1 }}>{pub}</span>
             </div>
 
-            <span style={{ display: "flex", color: "#b9b9cc", fontSize: 24, fontWeight: 500, lineHeight: 1.35 }}>{pitch}</span>
+            <span style={{ display: "flex", color: "#c4ccc6", fontSize: 24, fontWeight: 500, lineHeight: 1.35 }}>{pitch}</span>
 
             <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 20px", borderRadius: 14, background: accentDim, border: `1px solid ${accentBorder}` }}>
               <span style={{ display: "flex", fontSize: 26 }}>🏆</span>
@@ -112,24 +112,24 @@ export async function GET(req: Request) {
 
           {/* right — the board */}
           <div style={{ display: "flex", flexDirection: "column", flex: 1, gap: 9 }}>
-            <span style={{ display: "flex", color: "#6b6b88", fontSize: 18, fontWeight: 700, letterSpacing: 2, paddingBottom: 4 }}>CLUB TABLE</span>
+            <span style={{ display: "flex", color: "#8a948f", fontSize: 18, fontWeight: 700, letterSpacing: 2, paddingBottom: 4 }}>CLUB TABLE</span>
             {ROWS.map((row, i) => {
               const top = i === 0;
               return (
-                <div key={row.initials} style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 18px", borderRadius: 14, background: top ? accentDim : "#12121e", border: `1px solid ${top ? accentBorder : "rgba(255,255,255,0.07)"}` }}>
-                  <span style={{ display: "flex", width: 26, justifyContent: "center", color: top ? accent : "#8888aa", fontSize: 22, fontWeight: 800 }}>{i + 1}</span>
+                <div key={row.initials} style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 18px", borderRadius: 14, background: top ? accentDim : "#0e1611", border: `1px solid ${top ? accentBorder : "rgba(255,255,255,0.07)"}` }}>
+                  <span style={{ display: "flex", width: 26, justifyContent: "center", color: top ? accent : "#8a948f", fontSize: 22, fontWeight: 800 }}>{i + 1}</span>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 42, height: 42, borderRadius: 999, background: row.from }}>
                     <span style={{ display: "flex", color: row.fg, fontSize: 18, fontWeight: 700 }}>{row.initials}</span>
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", flex: 1, gap: 2 }}>
                     <span style={{ display: "flex", color: "#ffffff", fontSize: 23, fontWeight: 600 }}>{row.name}</span>
-                    <span style={{ display: "flex", color: "#6b6b88", fontSize: 16, fontWeight: 500 }}>{row.record}</span>
+                    <span style={{ display: "flex", color: "#8a948f", fontSize: 16, fontWeight: 500 }}>{row.record}</span>
                   </div>
-                  <span style={{ display: "flex", color: top ? accent : "#cfcfe0", fontSize: 26, fontWeight: 800 }}>{row.pts}</span>
+                  <span style={{ display: "flex", color: top ? accent : "#c4ccc6", fontSize: 26, fontWeight: 800 }}>{row.pts}</span>
                 </div>
               );
             })}
-            <span style={{ display: "flex", color: "#444466", fontSize: 15, fontWeight: 500, paddingTop: 4 }}>YourScore points — match wins + quiz knowledge, one table</span>
+            <span style={{ display: "flex", color: "#3a423d", fontSize: 15, fontWeight: 500, paddingTop: 4 }}>YourScore points — match wins + quiz knowledge, one table</span>
           </div>
         </div>
 

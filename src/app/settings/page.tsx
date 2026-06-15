@@ -167,7 +167,7 @@ export default function SettingsPage() {
             ← Home
           </Link>
           <Link href="/auth/sign-in" className="inline-flex items-center justify-center px-6 py-3 rounded-xl font-body font-bold text-sm transition-all text-green"
-            style={{ background: "rgba(0,255,135,0.1)", border: "1px solid rgba(0,255,135,0.28)" }}>
+            style={{ background: "rgba(174,234,0,0.1)", border: "1px solid rgba(174,234,0,0.28)" }}>
             Sign in →
           </Link>
         </div>
@@ -358,10 +358,10 @@ export default function SettingsPage() {
           disabled={saving}
           className="w-full py-4 rounded-2xl font-body font-bold text-base transition-all"
           style={{
-            background: saved ? "rgba(0,255,135,0.12)" : "#00ff87",
-            color: saved ? "#00ff87" : "#0a0a0f",
-            border: saved ? "1px solid rgba(0,255,135,0.2)" : "none",
-            boxShadow: saved ? "none" : "0 0 20px rgba(0,255,135,0.2)",
+            background: saved ? "rgba(174,234,0,0.12)" : "#aeea00",
+            color: saved ? "#aeea00" : "#0a0a0f",
+            border: saved ? "1px solid rgba(174,234,0,0.2)" : "none",
+            boxShadow: saved ? "none" : "0 0 20px rgba(174,234,0,0.2)",
           }}
         >
           {saving ? "Saving…" : saved ? "Saved ✓" : "Save changes"}
@@ -377,7 +377,7 @@ export default function SettingsPage() {
                 : "Set a password to sign in without a magic link"}
             </p>
           </div>
-          <div className="p-4 space-y-2.5" style={{ background: "#0d0d18" }}>
+          <div className="p-4 space-y-2.5" style={{ background: "#080d0a" }}>
             {resetEmailSent ? (
               <p className="font-body text-xs text-center py-2 text-green">
                 ✓ Reset link sent to {user?.email}
@@ -396,15 +396,15 @@ export default function SettingsPage() {
                 <button onClick={handleSetPassword} disabled={!newPassword || !confirmPassword || passwordSaving}
                   className="w-full py-3 rounded-xl font-body text-sm font-semibold transition-all hover:opacity-90"
                   style={{
-                    background: newPassword && confirmPassword ? "rgba(0,255,135,0.12)" : "rgba(255,255,255,0.04)",
-                    color: newPassword && confirmPassword ? "#00ff87" : "#555577",
-                    border: `1px solid ${newPassword && confirmPassword ? "rgba(0,255,135,0.25)" : "rgba(255,255,255,0.07)"}`,
+                    background: newPassword && confirmPassword ? "rgba(174,234,0,0.12)" : "rgba(255,255,255,0.04)",
+                    color: newPassword && confirmPassword ? "#aeea00" : "#586058",
+                    border: `1px solid ${newPassword && confirmPassword ? "rgba(174,234,0,0.25)" : "rgba(255,255,255,0.07)"}`,
                   }}>
                   {passwordSaving ? "Saving…" : passwordSaved ? "Password updated ✓" : user?.app_metadata?.providers?.includes("email") ? "Update password" : "Set password"}
                 </button>
                 <button onClick={handleForgotPassword}
                   className="w-full py-1.5 font-body text-xs transition-colors hover:text-white text-center"
-                  style={{ color: "#555577" }}>
+                  style={{ color: "#586058" }}>
                   Forgot current password? Send reset link
                 </button>
               </>
@@ -416,10 +416,10 @@ export default function SettingsPage() {
         <Link
           href={user ? `/settings/email?u=${user.id}` : "/settings/email"}
           className="flex items-center justify-between w-full px-4 py-3.5 rounded-2xl font-body text-sm transition-all hover:opacity-90"
-          style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#cfcfe6" }}
+          style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#c4ccc6" }}
         >
           <span>Email preferences</span>
-          <span style={{ color: "#8888aa" }}>›</span>
+          <span style={{ color: "#8a948f" }}>›</span>
         </Link>
 
         {/* Sign out */}
@@ -438,7 +438,7 @@ export default function SettingsPage() {
         <div className="rounded-2xl p-4" style={{ background: "rgba(255,71,87,0.05)", border: "1px solid rgba(255,71,87,0.2)" }}>
           <p className="font-body text-[10px] font-semibold tracking-widest mb-2" style={{ color: "#ff4757" }}>DANGER ZONE</p>
           <p className="font-body text-sm font-semibold text-white">Delete account</p>
-          <p className="font-body text-xs mt-1 mb-3" style={{ color: "#8888aa", lineHeight: 1.55 }}>
+          <p className="font-body text-xs mt-1 mb-3" style={{ color: "#8a948f", lineHeight: 1.55 }}>
             Permanently delete your account and erase everything we hold — your profile, all games,
             38-0 teams, seasons &amp; leaderboard records, friends and quiz history. This cannot be undone.
           </p>
@@ -461,17 +461,17 @@ export default function SettingsPage() {
         >
           <div
             className="w-full max-w-sm rounded-2xl p-5"
-            style={{ background: "#12121e", border: "1px solid rgba(255,71,87,0.35)" }}
+            style={{ background: "#0e1611", border: "1px solid rgba(255,71,87,0.35)" }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="text-center" style={{ fontSize: 34, lineHeight: 1 }}>⚠️</div>
             <p className="font-display tracking-wide text-center mt-2" style={{ fontSize: 24, color: "#fff" }}>DELETE ACCOUNT?</p>
-            <p className="font-body text-sm text-center mt-2 mb-4" style={{ color: "#cfcfe6", lineHeight: 1.55 }}>
+            <p className="font-body text-sm text-center mt-2 mb-4" style={{ color: "#c4ccc6", lineHeight: 1.55 }}>
               This permanently erases <span style={{ color: "#fff", fontWeight: 600 }}>everything</span> — your profile,
               every game, your 38-0 teams, seasons &amp; leaderboard records, friends and history.{" "}
               <span style={{ color: "#ff6b7a" }}>It can&apos;t be undone.</span>
             </p>
-            <p className="font-body text-xs mb-2" style={{ color: "#8888aa" }}>
+            <p className="font-body text-xs mb-2" style={{ color: "#8a948f" }}>
               Type <span style={{ color: "#ff4757", fontWeight: 700, letterSpacing: 1 }}>DELETE</span> to confirm:
             </p>
             <input
@@ -500,7 +500,7 @@ export default function SettingsPage() {
               onClick={() => { if (!deleting) setDeleteOpen(false); }}
               disabled={deleting}
               className="w-full py-2.5 mt-1 font-body text-sm transition-colors hover:text-white"
-              style={{ color: "#8888aa" }}
+              style={{ color: "#8a948f" }}
             >
               Cancel
             </button>

@@ -61,8 +61,8 @@ type Phase = "loading" | "intro" | "playing" | "results";
 // ── Timer helpers ─────────────────────────────────────────────────────────
 
 function timerColor(ms: number): string {
-  if (ms < 5_000) return "#00ff87";
-  if (ms < 10_000) return "#ffb800";
+  if (ms < 5_000) return "#aeea00";
+  if (ms < 10_000) return "#00d8c0";
   return "#ff4757";
 }
 
@@ -75,10 +75,10 @@ function timerDisplay(ms: number): string {
 
 function scoreData(score: number, max: number) {
   const p = score / max;
-  if (p >= 0.9) return { emoji: "🏆", label: "Elite Knowledge", color: "#ffb800" };
-  if (p >= 0.75) return { emoji: "⚡", label: "Sharp.", color: "#00ff87" };
+  if (p >= 0.9) return { emoji: "🏆", label: "Elite Knowledge", color: "#00d8c0" };
+  if (p >= 0.75) return { emoji: "⚡", label: "Sharp.", color: "#aeea00" };
   if (p >= 0.55) return { emoji: "⚽", label: "Decent.", color: "#4fc3f7" };
-  if (p >= 0.35) return { emoji: "📚", label: "Keep watching.", color: "#a78bfa" };
+  if (p >= 0.35) return { emoji: "📚", label: "Keep watching.", color: "#aeea00" };
   return { emoji: "😬", label: "Back to basics.", color: "#ff4757" };
 }
 
@@ -173,7 +173,7 @@ function ChallengeAFriendButton({
         className="w-full rounded-2xl py-4 font-display text-sm tracking-widest active:scale-[0.97] transition-transform text-green"
         style={{
           background: "transparent",
-          border: "1.5px solid rgba(0,255,135,0.35)",
+          border: "1.5px solid rgba(174,234,0,0.35)",
         }}
       >
         ⚔️ Challenge a friend
@@ -184,9 +184,9 @@ function ChallengeAFriendButton({
   if (status === "creating") {
     return (
       <div className="w-full rounded-2xl py-4 flex items-center justify-center gap-3"
-        style={{ background: "rgba(0,255,135,0.07)", border: "1px solid rgba(0,255,135,0.2)" }}>
+        style={{ background: "rgba(174,234,0,0.07)", border: "1px solid rgba(174,234,0,0.2)" }}>
         <div className="w-5 h-5 rounded-full border-2 border-t-transparent animate-spin"
-          style={{ borderColor: "#00ff87", borderTopColor: "transparent" }} />
+          style={{ borderColor: "#aeea00", borderTopColor: "transparent" }} />
         <span className="font-body text-sm text-text-muted">Creating challenge…</span>
       </div>
     );
@@ -195,7 +195,7 @@ function ChallengeAFriendButton({
   // created
   return (
     <div className="rounded-2xl p-5 flex flex-col gap-3"
-      style={{ background: "rgba(0,255,135,0.06)", border: "1px solid rgba(0,255,135,0.2)" }}>
+      style={{ background: "rgba(174,234,0,0.06)", border: "1px solid rgba(174,234,0,0.2)" }}>
       <div className="flex items-center gap-2">
         <span className="text-lg">⚔️</span>
         <div>
@@ -205,7 +205,7 @@ function ChallengeAFriendButton({
       </div>
 
       <div className="rounded-xl px-3 py-2.5 font-body text-xs break-all bg-bg border border-border"
-        style={{ color: "#7777aa" }}>
+        style={{ color: "#8a948f" }}>
         {link}
       </div>
 
@@ -214,9 +214,9 @@ function ChallengeAFriendButton({
           onClick={handleCopy}
           className="flex-1 rounded-xl py-3 font-display text-xs tracking-widest active:scale-[0.97] transition-transform"
           style={{
-            background: copied ? "rgba(0,255,135,0.15)" : "rgba(255,255,255,0.07)",
-            border: copied ? "1px solid rgba(0,255,135,0.4)" : "1px solid rgba(255,255,255,0.1)",
-            color: copied ? "#00ff87" : "#aaaacc",
+            background: copied ? "rgba(174,234,0,0.15)" : "rgba(255,255,255,0.07)",
+            border: copied ? "1px solid rgba(174,234,0,0.4)" : "1px solid rgba(255,255,255,0.1)",
+            color: copied ? "#aeea00" : "#9aa39d",
           }}
         >
           {copied ? "✓ COPIED" : "COPY LINK"}
@@ -242,7 +242,7 @@ function ChallengeAFriendButton({
         className="block w-full text-center rounded-xl py-3 font-display text-xs tracking-widest active:scale-[0.97] transition-transform border border-border"
         style={{
           background: "transparent",
-          color: "#555577",
+          color: "#586058",
         }}
       >
         ← MORE CHALLENGES
@@ -278,7 +278,7 @@ function PackLeaderboard({ entries, userId, accent, loading, maxVisible = 10 }: 
   const [showAll, setShowAll] = useState(false);
   const userRank = userId ? entries.findIndex(e => e.user_id === userId) + 1 : 0;
   const MEDALS = ["🥇", "🥈", "🥉"];
-  const RANK_COLORS = ["#ffb800", "#aaaacc", "#cd7f32"];
+  const RANK_COLORS = ["#00d8c0", "#9aa39d", "#cd7f32"];
 
   const visible = showAll ? entries : entries.slice(0, maxVisible);
   const hasMore = !showAll && entries.length > maxVisible;
@@ -294,21 +294,21 @@ function PackLeaderboard({ entries, userId, accent, loading, maxVisible = 10 }: 
           borderLeft: isUser ? `3px solid ${accent}` : "3px solid transparent",
         }}>
         <span className="font-display text-sm w-7 text-center flex-shrink-0"
-          style={{ color: rank <= 3 ? RANK_COLORS[rank - 1] : "#44446a" }}>
+          style={{ color: rank <= 3 ? RANK_COLORS[rank - 1] : "#586058" }}>
           {rank <= 3 ? MEDALS[rank - 1] : rank}
         </span>
         <div className="flex-1 min-w-0">
-          <p className="font-body text-sm truncate" style={{ color: isUser ? "#ffffff" : "#aaaacc" }}>
+          <p className="font-body text-sm truncate" style={{ color: isUser ? "#ffffff" : "#9aa39d" }}>
             {isUser
               ? `You${entry.display_name ? ` (${entry.display_name})` : ""}`
               : (entry.display_name ?? "Player")}
           </p>
-          <p className="font-body text-xs mt-0.5" style={{ color: "#555577" }}>
+          <p className="font-body text-xs mt-0.5" style={{ color: "#586058" }}>
             {entry.correct_count} correct
           </p>
         </div>
         <span className="font-display text-sm flex-shrink-0"
-          style={{ color: isUser ? accent : "#8888aa" }}>
+          style={{ color: isUser ? accent : "#8a948f" }}>
           {entry.score.toLocaleString()}
         </span>
       </div>
@@ -318,7 +318,7 @@ function PackLeaderboard({ entries, userId, accent, loading, maxVisible = 10 }: 
   return (
     <div className="rounded-2xl overflow-hidden bg-surface" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
       <div className="px-5 pt-5 pb-3 flex items-center justify-between">
-        <p className="font-display text-xs tracking-widest" style={{ color: "#555577" }}>LEADERBOARD</p>
+        <p className="font-display text-xs tracking-widest" style={{ color: "#586058" }}>LEADERBOARD</p>
         {userRank > 0 && (
           <span className="font-display text-xs px-2 py-0.5 rounded-full"
             style={{ background: `${accent}18`, color: accent, border: `1px solid ${accent}30` }}>
@@ -328,12 +328,12 @@ function PackLeaderboard({ entries, userId, accent, loading, maxVisible = 10 }: 
       </div>
       {loading ? (
         <div className="px-5 pb-5 text-center">
-          <p className="font-body text-xs" style={{ color: "#555577" }}>Loading…</p>
+          <p className="font-body text-xs" style={{ color: "#586058" }}>Loading…</p>
         </div>
       ) : entries.length === 0 ? (
         <div className="px-5 pb-5 text-center">
           <p className="font-body text-sm text-white mb-1">No scores yet</p>
-          <p className="font-body text-xs" style={{ color: "#555577" }}>Be the first to set a score!</p>
+          <p className="font-body text-xs" style={{ color: "#586058" }}>Be the first to set a score!</p>
         </div>
       ) : (
         <div className="pb-2">
@@ -343,7 +343,7 @@ function PackLeaderboard({ entries, userId, accent, loading, maxVisible = 10 }: 
           {userOutsideVisible && entries[userRank - 1] && (
             <>
               <div className="px-5 py-1 text-center">
-                <span className="font-body text-xs" style={{ color: "#44446a" }}>···</span>
+                <span className="font-body text-xs" style={{ color: "#586058" }}>···</span>
               </div>
               <EntryRow entry={entries[userRank - 1]} rank={userRank} />
             </>
@@ -361,7 +361,7 @@ function PackLeaderboard({ entries, userId, accent, loading, maxVisible = 10 }: 
             <button
               onClick={() => setShowAll(false)}
               className="w-full py-3 font-body text-xs text-center"
-              style={{ color: "#555577", borderTop: "1px solid rgba(255,255,255,0.05)" }}
+              style={{ color: "#586058", borderTop: "1px solid rgba(255,255,255,0.05)" }}
             >
               Show less ↑
             </button>
@@ -698,7 +698,7 @@ export default function ChallengePage() {
       <div className="min-h-screen flex items-center justify-center bg-bg">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 rounded-full border-2 border-t-transparent animate-spin"
-            style={{ borderColor: "#ffb800", borderTopColor: "transparent" }} />
+            style={{ borderColor: "#00d8c0", borderTopColor: "transparent" }} />
           <p className="font-display text-xs tracking-widest text-text-muted">LOADING…</p>
         </div>
       </div>
@@ -708,11 +708,11 @@ export default function ChallengePage() {
   // ── Intro ─────────────────────────────────────────────────────────────────
   if (phase === "intro" && pack) {
     const isRecords = pack.type === "records";
-    const accent = isRecords ? "#a78bfa" : "#ffb800";
-    const accentDim = isRecords ? "rgba(167,139,250,0.15)" : "rgba(255,184,0,0.15)";
-    const accentBorder = isRecords ? "rgba(167,139,250,0.35)" : "rgba(255,184,0,0.35)";
+    const accent = isRecords ? "#aeea00" : "#00d8c0";
+    const accentDim = isRecords ? "rgba(174,234,0,0.15)" : "rgba(0,216,192,0.15)";
+    const accentBorder = isRecords ? "rgba(174,234,0,0.35)" : "rgba(0,216,192,0.35)";
     const gradientHero = isRecords
-      ? "linear-gradient(175deg, #1a0f30 0%, #130e22 50%, #0a0a0f 100%)"
+      ? "linear-gradient(175deg, #0e1611 0%, #0e1611 50%, #0a0a0f 100%)"
       : "linear-gradient(175deg, #1f1400 0%, #17100a 50%, #0a0a0f 100%)";
 
     return (
@@ -734,7 +734,7 @@ export default function ChallengePage() {
               <div className="relative w-full mb-6"
                 style={{ maxWidth: 440, aspectRatio: "3 / 2", borderRadius: 22, overflow: "hidden",
                   border: `1.5px solid ${accentBorder}`,
-                  boxShadow: `0 12px 40px ${isRecords ? "rgba(124,58,237,0.3)" : "rgba(255,140,0,0.25)"}` }}>
+                  boxShadow: `0 12px 40px ${isRecords ? "rgba(174,234,0,0.3)" : "rgba(255,140,0,0.25)"}` }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={pack.metadata.cover_image} alt={pack.name}
                   className="absolute inset-0 h-full w-full" style={{ objectFit: "cover" }} />
@@ -743,12 +743,12 @@ export default function ChallengePage() {
               <div className="relative flex items-center justify-center mb-5"
                 style={{ width: 110, height: 110, borderRadius: 28, background: accentDim, border: `1.5px solid ${accentBorder}` }}>
                 <div style={{ position: "absolute", inset: -8, borderRadius: 36,
-                  background: isRecords ? "rgba(167,139,250,0.12)" : "rgba(255,184,0,0.12)", filter: "blur(12px)" }} />
+                  background: isRecords ? "rgba(174,234,0,0.12)" : "rgba(0,216,192,0.12)", filter: "blur(12px)" }} />
                 {badgeUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={badgeUrl} alt={pack.name} width={80} height={80}
                     style={{ objectFit: "contain", position: "relative", zIndex: 1,
-                      filter: `drop-shadow(0 4px 16px ${isRecords ? "rgba(167,139,250,0.5)" : "rgba(255,184,0,0.5)"})` }} />
+                      filter: `drop-shadow(0 4px 16px ${isRecords ? "rgba(174,234,0,0.5)" : "rgba(0,216,192,0.5)"})` }} />
                 ) : (
                   <span className="text-5xl relative z-1">{RECORDS_EMOJI[pack.name] ?? (isRecords ? "📊" : pack.name[0])}</span>
                 )}
@@ -762,7 +762,7 @@ export default function ChallengePage() {
                 {isRecords ? "All-Time Records" : "2025/26 Season Game"}
               </span>
               <span className="font-body text-xs px-3 py-1 rounded-full"
-                style={{ background: "rgba(255,255,255,0.06)", color: "#aaaacc" }}>
+                style={{ background: "rgba(255,255,255,0.06)", color: "#9aa39d" }}>
                 {questions.length} questions
               </span>
             </div>
@@ -780,7 +780,7 @@ export default function ChallengePage() {
         <div className="flex-1 px-5 py-6 flex flex-col gap-4">
           {priorAttempt && (
             <div className="rounded-2xl px-4 py-3 flex items-center gap-3"
-              style={{ background: "rgba(0,255,135,0.07)", border: "1px solid rgba(0,255,135,0.2)" }}>
+              style={{ background: "rgba(174,234,0,0.07)", border: "1px solid rgba(174,234,0,0.2)" }}>
               <span className="text-lg">🏆</span>
               <div className="flex-1 min-w-0">
                 <p className="font-display text-xs tracking-widest mb-0.5 text-green">YOUR LEADERBOARD SCORE</p>
@@ -795,7 +795,7 @@ export default function ChallengePage() {
           <>
               {/* Pack description */}
               {pack.description && (
-                <p className="font-body text-sm text-center px-2" style={{ color: "#aaaacc", lineHeight: 1.6 }}>
+                <p className="font-body text-sm text-center px-2" style={{ color: "#9aa39d", lineHeight: 1.6 }}>
                   {pack.description}
                 </p>
               )}
@@ -809,14 +809,14 @@ export default function ChallengePage() {
                 </div>
                 <div className="flex items-center justify-between gap-2">
                   {[
-                    { time: "Instant", pts: "1,000", color: "#00ff87" },
-                    { time: "~5s", pts: "775", color: "#ffb800" },
+                    { time: "Instant", pts: "1,000", color: "#aeea00" },
+                    { time: "~5s", pts: "775", color: "#00d8c0" },
                     { time: "~10s", pts: "550", color: "#ff4757" },
                   ].map(({ time, pts, color }) => (
                     <div key={time} className="flex-1 rounded-xl py-2.5 px-2 text-center"
                       style={{ background: `${color}10`, border: `1px solid ${color}25` }}>
                       <p className="font-display text-sm" style={{ color }}>{pts}</p>
-                      <p className="font-body text-xs mt-0.5" style={{ color: "#7777aa" }}>{time}</p>
+                      <p className="font-body text-xs mt-0.5" style={{ color: "#8a948f" }}>{time}</p>
                     </div>
                   ))}
                 </div>
@@ -840,19 +840,19 @@ export default function ChallengePage() {
                 className="w-full rounded-2xl py-4 font-display text-lg tracking-widest transition-transform active:scale-[0.97] mt-1 text-white"
                 style={{
                   background: isRecords
-                    ? "linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%)"
-                    : "linear-gradient(135deg, #e65c00 0%, #ffb800 100%)",
-                  boxShadow: isRecords ? "0 4px 24px rgba(124,58,237,0.4)" : "0 4px 24px rgba(255,140,0,0.35)",
+                    ? "linear-gradient(135deg, #aeea00 0%, #aeea00 100%)"
+                    : "linear-gradient(135deg, #e65c00 0%, #00d8c0 100%)",
+                  boxShadow: isRecords ? "0 4px 24px rgba(174,234,0,0.4)" : "0 4px 24px rgba(255,140,0,0.35)",
                 }}
               >
                 START · {questions.length} Qs
               </button>
 
               {!userId && (
-                <p className="font-body text-xs text-center" style={{ color: "#555577" }}>
+                <p className="font-body text-xs text-center" style={{ color: "#586058" }}>
                   Playing as guest —{" "}
                   <Link href={`/auth/sign-in?next=/challenges/${slug}`}
-                    style={{ color: "#a78bfa", textDecoration: "underline" }}>sign in first</Link>
+                    style={{ color: "#aeea00", textDecoration: "underline" }}>sign in first</Link>
                   {" "}to save your score
                 </p>
               )}
@@ -868,10 +868,10 @@ export default function ChallengePage() {
   if (phase === "playing" && currentQ) {
     const progressFilled = ((currentIdx + (revealed ? 1 : 0)) / questions.length) * 100;
     const diff = currentQ.difficulty?.toLowerCase() ?? "medium";
-    const diffColor = DIFF_COLOR[diff] ?? "#ffb800";
-    const diffBg = DIFF_BG[diff] ?? "rgba(255,184,0,0.12)";
+    const diffColor = DIFF_COLOR[diff] ?? "#00d8c0";
+    const diffBg = DIFF_BG[diff] ?? "rgba(0,216,192,0.12)";
     const isRecords = pack?.type === "records";
-    const accent = isRecords ? "#a78bfa" : "#ffb800";
+    const accent = isRecords ? "#aeea00" : "#00d8c0";
     const tColor = timerColor(timerMs);
 
     return (
@@ -883,7 +883,7 @@ export default function ChallengePage() {
           <div style={{ height: 3, background: "rgba(255,255,255,0.06)" }}>
             <div className="h-full transition-all duration-700 ease-out"
               style={{ width: `${progressFilled}%`,
-                background: isRecords ? "linear-gradient(90deg, #7c3aed, #a78bfa)" : "linear-gradient(90deg, #e65c00, #ffb800)" }} />
+                background: isRecords ? "linear-gradient(90deg, #aeea00, #aeea00)" : "linear-gradient(90deg, #e65c00, #00d8c0)" }} />
           </div>
 
           <div className="px-5 py-3 flex items-center justify-between gap-3">
@@ -897,7 +897,7 @@ export default function ChallengePage() {
                 }
               }}
               className="flex items-center gap-1.5 font-body text-xs flex-shrink-0"
-              style={{ color: "#555577" }}
+              style={{ color: "#586058" }}
             >
               <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
                 <path d="M11 4L6 9l5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -923,7 +923,7 @@ export default function ChallengePage() {
             <div className="flex items-center gap-1 px-3 py-1.5 rounded-xl flex-shrink-0"
               style={{ background: `${accent}12`, border: `1px solid ${accent}25` }}>
               <span className="font-display text-sm" style={{ color: accent }}>{score.toLocaleString()}</span>
-              <span className="font-body text-xs" style={{ color: "#666688" }}>pts</span>
+              <span className="font-body text-xs" style={{ color: "#5b645e" }}>pts</span>
             </div>
           </div>
 
@@ -933,7 +933,7 @@ export default function ChallengePage() {
               // eslint-disable-next-line @next/next/no-img-element
               <img src={badgeUrl} alt="" width={18} height={18} style={{ objectFit: "contain", opacity: 0.6 }} />
             )}
-            <span className="font-body text-xs" style={{ color: "#555577" }}>
+            <span className="font-body text-xs" style={{ color: "#586058" }}>
               Question <span className="text-white">{currentIdx + 1}</span> of {questions.length}
             </span>
             <span className="ml-auto font-display text-xs px-2.5 py-0.5 rounded-full uppercase tracking-wider"
@@ -947,14 +947,14 @@ export default function ChallengePage() {
         <div className="flex-1 px-5 pb-10 pt-4 flex flex-col">
           {currentQ.category && (
             <span className="font-body text-xs px-2.5 py-1 rounded-full capitalize mb-4 self-start"
-              style={{ background: "rgba(255,255,255,0.05)", color: "#7777aa" }}>
+              style={{ background: "rgba(255,255,255,0.05)", color: "#8a948f" }}>
               {currentQ.category.replace(/_/g, " ")}
             </span>
           )}
 
           {/* Question card */}
           <div className="rounded-2xl p-5 mb-5"
-            style={{ background: "linear-gradient(145deg, #14141f 0%, #1a1a2c 100%)", border: "1px solid rgba(255,255,255,0.08)", minHeight: 100 }}>
+            style={{ background: "linear-gradient(145deg, #0e1611 0%, #15211a 100%)", border: "1px solid rgba(255,255,255,0.08)", minHeight: 100 }}>
             <p className="font-body text-base font-semibold text-white leading-relaxed">{currentQ.question}</p>
           </div>
 
@@ -972,12 +972,12 @@ export default function ChallengePage() {
           {revealed && (
             <div className="mt-4 rounded-2xl px-5 py-4 flex items-center justify-between"
               style={{
-                background: selected === (currentQ.answer as Letter) ? "rgba(0,255,135,0.08)" : "rgba(255,71,87,0.08)",
-                border: `1px solid ${selected === (currentQ.answer as Letter) ? "rgba(0,255,135,0.22)" : "rgba(255,71,87,0.22)"}`,
+                background: selected === (currentQ.answer as Letter) ? "rgba(174,234,0,0.08)" : "rgba(255,71,87,0.08)",
+                border: `1px solid ${selected === (currentQ.answer as Letter) ? "rgba(174,234,0,0.22)" : "rgba(255,71,87,0.22)"}`,
               }}>
               <div>
                 <span className="font-display text-lg tracking-wider"
-                  style={{ color: selected === (currentQ.answer as Letter) ? "#00ff87" : "#ff4757" }}>
+                  style={{ color: selected === (currentQ.answer as Letter) ? "#aeea00" : "#ff4757" }}>
                   {selected === (currentQ.answer as Letter) ? "✓ CORRECT" : "✗ WRONG"}
                 </span>
                 {selected !== (currentQ.answer as Letter) && (
@@ -988,12 +988,12 @@ export default function ChallengePage() {
               </div>
               {lastPoints !== null && (
                 <div className="text-right">
-                  <div className="font-display text-2xl text-amber">+{lastPoints.toLocaleString()}</div>
+                  <div className="font-display text-2xl text-teal">+{lastPoints.toLocaleString()}</div>
                   {lastSpeedLabel && (
                     <div className="font-body text-xs mt-0.5 text-text-muted">{lastSpeedLabel}</div>
                   )}
                   {lastStreakBonus > 0 && (
-                    <div className="font-body text-xs" style={{ color: "#a78bfa" }}>+{lastStreakBonus} bonus</div>
+                    <div className="font-body text-xs" style={{ color: "#aeea00" }}>+{lastStreakBonus} bonus</div>
                   )}
                 </div>
               )}
@@ -1010,7 +1010,7 @@ export default function ChallengePage() {
     const perfectBonus = calculatePerfectRoundBonus(correctCount, questions.length);
     const pct = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
     const isRecords = pack.type === "records";
-    const accent = isRecords ? "#a78bfa" : "#ffb800";
+    const accent = isRecords ? "#aeea00" : "#00d8c0";
     const { emoji, label, color } = scoreData(score, maxScore);
     const avgTime = answerLog.length
       ? Math.round(answerLog.reduce((s, r) => s + r.elapsed_ms, 0) / answerLog.length)
@@ -1028,13 +1028,13 @@ export default function ChallengePage() {
         {/* Hero */}
         <div className="relative flex flex-col items-center pt-16 pb-10 px-6"
           style={{ background: isRecords
-            ? "linear-gradient(175deg, #1a0f30 0%, #0e0c1a 60%, #0a0a0f 100%)"
+            ? "linear-gradient(175deg, #0e1611 0%, #080d0a 60%, #0a0a0f 100%)"
             : "linear-gradient(175deg, #1f1200 0%, #12100a 60%, #0a0a0f 100%)" }}>
           {badgeUrl && (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={badgeUrl} alt={pack.name} width={52} height={52}
               style={{ objectFit: "contain", marginBottom: 16, opacity: 0.85,
-                filter: `drop-shadow(0 4px 12px ${isRecords ? "rgba(167,139,250,0.4)" : "rgba(255,184,0,0.4)"})` }} />
+                filter: `drop-shadow(0 4px 12px ${isRecords ? "rgba(174,234,0,0.4)" : "rgba(0,216,192,0.4)"})` }} />
           )}
 
           <div className="font-display text-7xl mb-1" style={{ color: accent }}>
@@ -1052,7 +1052,7 @@ export default function ChallengePage() {
 
           {perfectBonus > 0 && (
             <div className="flex items-center gap-2 mt-3 px-4 py-2 rounded-full"
-              style={{ background: "rgba(0,255,135,0.08)", border: "1px solid rgba(0,255,135,0.25)" }}>
+              style={{ background: "rgba(174,234,0,0.08)", border: "1px solid rgba(174,234,0,0.25)" }}>
               <span className="text-base">🏆</span>
               <span className="font-body text-xs font-semibold text-green">
                 Perfect round +{perfectBonus} pts
@@ -1063,17 +1063,17 @@ export default function ChallengePage() {
           <div className="flex items-center gap-6 mt-5">
             <div className="text-center">
               <div className="font-display text-2xl text-white">{correctCount}/{questions.length}</div>
-              <div className="font-body text-xs mt-0.5" style={{ color: "#7777aa" }}>Correct</div>
+              <div className="font-body text-xs mt-0.5" style={{ color: "#8a948f" }}>Correct</div>
             </div>
             <div style={{ width: 1, height: 36, background: "rgba(255,255,255,0.08)" }} />
             <div className="text-center">
               <div className="font-display text-2xl" style={{ color: accent }}>{pct}%</div>
-              <div className="font-body text-xs mt-0.5" style={{ color: "#7777aa" }}>Accuracy</div>
+              <div className="font-body text-xs mt-0.5" style={{ color: "#8a948f" }}>Accuracy</div>
             </div>
             <div style={{ width: 1, height: 36, background: "rgba(255,255,255,0.08)" }} />
             <div className="text-center">
               <div className="font-display text-2xl text-green">{timerDisplay(fastestMs)}</div>
-              <div className="font-body text-xs mt-0.5" style={{ color: "#7777aa" }}>Fastest</div>
+              <div className="font-body text-xs mt-0.5" style={{ color: "#8a948f" }}>Fastest</div>
             </div>
           </div>
         </div>
@@ -1083,34 +1083,34 @@ export default function ChallengePage() {
           <button
             onClick={() => setGiveawayOpen(true)}
             className="w-full rounded-2xl overflow-hidden active:scale-[0.98] transition-transform"
-            style={{ background: "linear-gradient(135deg, #1c1400, #221900)", border: "2px solid rgba(255,184,0,0.55)" }}
+            style={{ background: "linear-gradient(135deg, #1c1400, #221900)", border: "2px solid rgba(0,216,192,0.55)" }}
           >
             <div className="flex items-center gap-4 px-5 py-4">
               <div style={{ fontSize: 36, lineHeight: 1 }}>🏆</div>
               <div className="text-left flex-1 min-w-0">
-                <div className="font-display tracking-wide" style={{ fontSize: 20, color: "#ffb800" }}>WIN £25 TODAY</div>
+                <div className="font-display tracking-wide" style={{ fontSize: 20, color: "#00d8c0" }}>WIN £25 TODAY</div>
                 <div className="font-body" style={{ fontSize: 13, color: "#a89060" }}>Share on 𝕏 to enter the daily giveaway →</div>
               </div>
             </div>
           </button>
 
-          <button onClick={openShare} className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "#00ff87", color: "#062013", fontSize: 22 }}>
+          <button onClick={openShare} className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "#aeea00", color: "#062013", fontSize: 22 }}>
             📸 SHARE YOUR RESULT
           </button>
 
           {/* Timing stats */}
           <div className="rounded-2xl p-5 bg-surface"
             style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
-            <p className="font-display text-xs tracking-widest mb-4" style={{ color: "#555577" }}>YOUR TIMING</p>
+            <p className="font-display text-xs tracking-widest mb-4" style={{ color: "#586058" }}>YOUR TIMING</p>
             <div className="flex items-center justify-around">
               {[
-                { label: "Avg time", value: timerDisplay(avgTime), color: "#aaaacc" },
-                { label: "Fastest", value: timerDisplay(fastestMs), color: "#00ff87" },
+                { label: "Avg time", value: timerDisplay(avgTime), color: "#9aa39d" },
+                { label: "Fastest", value: timerDisplay(fastestMs), color: "#aeea00" },
                 { label: "Points/Q", value: Math.round(score / Math.max(correctCount, 1)).toLocaleString(), color: accent },
               ].map(({ label, value, color }) => (
                 <div key={label} className="text-center">
                   <div className="font-display text-xl" style={{ color }}>{value}</div>
-                  <div className="font-body text-xs mt-1" style={{ color: "#666688" }}>{label}</div>
+                  <div className="font-body text-xs mt-1" style={{ color: "#5b645e" }}>{label}</div>
                 </div>
               ))}
             </div>
@@ -1126,7 +1126,7 @@ export default function ChallengePage() {
           {/* Difficulty breakdown */}
           <div className="rounded-2xl p-5 bg-surface"
             style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
-            <p className="font-display text-xs tracking-widest mb-4" style={{ color: "#555577" }}>BY DIFFICULTY</p>
+            <p className="font-display text-xs tracking-widest mb-4" style={{ color: "#586058" }}>BY DIFFICULTY</p>
             <div className="space-y-4">
               {byDiff.map(({ d, correct, total }) => (
                 <div key={d} className="flex items-center gap-3">
@@ -1145,10 +1145,10 @@ export default function ChallengePage() {
           {userId ? (
             priorAttempt ? (
               <div className="rounded-2xl px-5 py-4 flex items-center gap-3"
-                style={{ background: "rgba(255,184,0,0.07)", border: "1px solid rgba(255,184,0,0.2)" }}>
+                style={{ background: "rgba(0,216,192,0.07)", border: "1px solid rgba(0,216,192,0.2)" }}>
                 <span className="text-xl">🎯</span>
                 <div>
-                  <p className="font-display text-sm tracking-wide text-amber">Practice run</p>
+                  <p className="font-display text-sm tracking-wide text-teal">Practice run</p>
                   <p className="font-body text-xs text-text-muted">
                     Your leaderboard score is still{" "}
                     <span className="text-white font-semibold">{priorAttempt.score.toLocaleString()}</span> pts
@@ -1157,7 +1157,7 @@ export default function ChallengePage() {
               </div>
             ) : saved ? (
               <div className="rounded-2xl px-5 py-4 flex items-center gap-3"
-                style={{ background: "rgba(0,255,135,0.07)", border: "1px solid rgba(0,255,135,0.2)" }}>
+                style={{ background: "rgba(174,234,0,0.07)", border: "1px solid rgba(174,234,0,0.2)" }}>
                 <span className="text-xl">✓</span>
                 <div>
                   <p className="font-display text-sm tracking-wide text-green">Score saved ✓</p>
@@ -1167,10 +1167,10 @@ export default function ChallengePage() {
             ) : null
           ) : (
             <div className="rounded-2xl p-5"
-              style={{ background: "rgba(167,139,250,0.07)", border: "1px solid rgba(167,139,250,0.22)" }}>
+              style={{ background: "rgba(174,234,0,0.07)", border: "1px solid rgba(174,234,0,0.22)" }}>
               <div className="flex items-center gap-3 mb-4">
                 <div className="rounded-2xl px-3 py-2 font-display text-xl"
-                  style={{ background: "rgba(167,139,250,0.15)", color: "#a78bfa" }}>
+                  style={{ background: "rgba(174,234,0,0.15)", color: "#aeea00" }}>
                   {score.toLocaleString()}
                 </div>
                 <div>
@@ -1180,7 +1180,7 @@ export default function ChallengePage() {
               </div>
               <Link href={`/auth/sign-in?next=/challenges/${slug}`}
                 className="block w-full rounded-xl py-3.5 text-center font-display text-sm tracking-widest active:scale-[0.97] transition-transform text-white"
-                style={{ background: "linear-gradient(135deg, #7c3aed, #a78bfa)" }}>
+                style={{ background: "linear-gradient(135deg, #aeea00, #aeea00)" }}>
                 SIGN UP &amp; SAVE SCORE
               </Link>
             </div>
@@ -1201,8 +1201,8 @@ export default function ChallengePage() {
           <button onClick={() => router.push("/challenges")}
             className="w-full rounded-2xl py-4 font-display text-sm tracking-widest active:scale-[0.97] transition-transform text-white"
             style={{
-              background: isRecords ? "linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%)" : "linear-gradient(135deg, #e65c00 0%, #ffb800 100%)",
-              boxShadow: isRecords ? "0 4px 24px rgba(124,58,237,0.3)" : "0 4px 24px rgba(255,140,0,0.25)",
+              background: isRecords ? "linear-gradient(135deg, #aeea00 0%, #aeea00 100%)" : "linear-gradient(135deg, #e65c00 0%, #00d8c0 100%)",
+              boxShadow: isRecords ? "0 4px 24px rgba(174,234,0,0.3)" : "0 4px 24px rgba(255,140,0,0.25)",
             }}>
             MORE CHALLENGES →
           </button>
@@ -1211,24 +1211,24 @@ export default function ChallengePage() {
         {/* ── Share sheet ── */}
         {shareOpen && (
           <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: "rgba(0,0,0,0.7)" }} onClick={() => setShareOpen(false)}>
-            <div className="w-full max-w-lg rounded-t-3xl px-4 pt-3" style={{ background: "#0b0b12", borderTop: "1px solid rgba(255,255,255,0.1)", paddingBottom: "calc(env(safe-area-inset-bottom,0px) + 16px)" }} onClick={(e) => e.stopPropagation()}>
+            <div className="w-full max-w-lg rounded-t-3xl px-4 pt-3" style={{ background: "#080d0a", borderTop: "1px solid rgba(255,255,255,0.1)", paddingBottom: "calc(env(safe-area-inset-bottom,0px) + 16px)" }} onClick={(e) => e.stopPropagation()}>
               <div className="mx-auto mb-3 rounded-full" style={{ width: 40, height: 4, background: "rgba(255,255,255,0.2)" }} />
-              <button onClick={nativeShare} className="w-full mt-2 rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "#00ff87", color: "#062013", fontSize: 20 }}>
+              <button onClick={nativeShare} className="w-full mt-2 rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "#aeea00", color: "#062013", fontSize: 20 }}>
                 🔗 Share link
               </button>
               <div className="grid grid-cols-3 gap-2 mt-2">
-                <button onClick={shareX} className="rounded-2xl py-3 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "#1a1a2e", color: "#fff", fontSize: 15, border: "1px solid rgba(255,255,255,0.15)" }}>𝕏</button>
+                <button onClick={shareX} className="rounded-2xl py-3 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "#15211a", color: "#fff", fontSize: 15, border: "1px solid rgba(255,255,255,0.15)" }}>𝕏</button>
                 <button onClick={() => { setShareOpen(false); void nativeShare(); }} className="rounded-2xl py-3 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "rgba(225,48,108,0.12)", color: "#e1306c", fontSize: 15, border: "1px solid rgba(225,48,108,0.3)" }}>Instagram</button>
-                <button onClick={() => { setShareOpen(false); void nativeShare(); }} className="rounded-2xl py-3 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "#1a1a2e", color: "#cfcfe6", fontSize: 15, border: "1px solid rgba(255,255,255,0.15)" }}>TikTok</button>
+                <button onClick={() => { setShareOpen(false); void nativeShare(); }} className="rounded-2xl py-3 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "#15211a", color: "#c4ccc6", fontSize: 15, border: "1px solid rgba(255,255,255,0.15)" }}>TikTok</button>
               </div>
-              <button onClick={copyLink} className="w-full mt-2 flex items-center gap-3 px-4 py-3 rounded-2xl transition-all" style={{ background: copied ? "rgba(0,255,135,0.1)" : "rgba(255,255,255,0.06)", border: `1px solid ${copied ? "rgba(0,255,135,0.3)" : "rgba(255,255,255,0.1)"}` }}>
+              <button onClick={copyLink} className="w-full mt-2 flex items-center gap-3 px-4 py-3 rounded-2xl transition-all" style={{ background: copied ? "rgba(174,234,0,0.1)" : "rgba(255,255,255,0.06)", border: `1px solid ${copied ? "rgba(174,234,0,0.3)" : "rgba(255,255,255,0.1)"}` }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke={copied ? "#00ff87" : "#aaaacc"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke={copied ? "#00ff87" : "#aaaacc"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke={copied ? "#aeea00" : "#9aa39d"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke={copied ? "#aeea00" : "#9aa39d"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
-                <span className="font-body text-sm font-semibold" style={{ color: copied ? "#00ff87" : "#aaaacc" }}>{copied ? "Copied!" : "Copy link"}</span>
+                <span className="font-body text-sm font-semibold" style={{ color: copied ? "#aeea00" : "#9aa39d" }}>{copied ? "Copied!" : "Copy link"}</span>
               </button>
-              <button onClick={() => setShareOpen(false)} className="w-full mt-2 rounded-2xl py-3 font-body active:scale-[0.98] transition-transform" style={{ background: "transparent", color: "#8888aa", fontSize: 15 }}>Close</button>
+              <button onClick={() => setShareOpen(false)} className="w-full mt-2 rounded-2xl py-3 font-body active:scale-[0.98] transition-transform" style={{ background: "transparent", color: "#8a948f", fontSize: 15 }}>Close</button>
             </div>
           </div>
         )}
@@ -1237,17 +1237,17 @@ export default function ChallengePage() {
         {giveawayOpen && (
           <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: "rgba(0,0,0,0.9)" }} onClick={() => setGiveawayOpen(false)}>
             <div className="w-full max-w-lg px-4" style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 20px)" }} onClick={(e) => e.stopPropagation()}>
-              <div className="rounded-3xl overflow-hidden" style={{ background: "#0e0d1a", border: "2px solid rgba(255,184,0,0.4)" }}>
+              <div className="rounded-3xl overflow-hidden" style={{ background: "#080d0a", border: "2px solid rgba(0,216,192,0.4)" }}>
                 <div className="flex justify-center pt-3 pb-1">
                   <div className="rounded-full" style={{ width: 40, height: 4, background: "rgba(255,255,255,0.18)" }} />
                 </div>
                 <div className="px-6 pt-4 pb-7 text-center">
                   <div style={{ fontSize: 52, lineHeight: 1.1 }}>🏆</div>
-                  <div className="font-body mt-3" style={{ fontSize: 11, color: "#ffb800", letterSpacing: 3 }}>DAILY GIVEAWAY</div>
+                  <div className="font-body mt-3" style={{ fontSize: 11, color: "#00d8c0", letterSpacing: 3 }}>DAILY GIVEAWAY</div>
                   <div className="font-display tracking-wide leading-none mt-1" style={{ fontSize: 80, color: "#fff" }}>£25</div>
-                  <p className="font-body mt-3" style={{ fontSize: 15, color: "#cfcfe6", lineHeight: 1.6 }}>
+                  <p className="font-body mt-3" style={{ fontSize: 15, color: "#c4ccc6", lineHeight: 1.6 }}>
                     Share your result on 𝕏 to enter.<br />
-                    <span style={{ color: "#7a7a92", fontSize: 13 }}>One winner drawn every 24 hours.</span>
+                    <span style={{ color: "#8a948f", fontSize: 13 }}>One winner drawn every 24 hours.</span>
                   </p>
                   <a href={giveawayTweetUrl()} target="_blank" rel="noopener noreferrer" onClick={() => setGiveawayOpen(false)}
                     className="flex items-center justify-center gap-3 w-full rounded-2xl py-4 mt-6 font-display tracking-wide active:scale-[0.98] transition-transform"
@@ -1257,7 +1257,7 @@ export default function ChallengePage() {
                     </svg>
                     POST ON 𝕏 TO ENTER
                   </a>
-                  <button onClick={() => setGiveawayOpen(false)} className="w-full mt-3 font-body" style={{ fontSize: 14, color: "#55556a", background: "transparent", border: "none", cursor: "pointer" }}>
+                  <button onClick={() => setGiveawayOpen(false)} className="w-full mt-3 font-body" style={{ fontSize: 14, color: "#586058", background: "transparent", border: "none", cursor: "pointer" }}>
                     Not now
                   </button>
                 </div>

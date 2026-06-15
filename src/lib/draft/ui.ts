@@ -7,10 +7,10 @@ import type { Tier } from "./types";
 
 export const TIER_COLOR: Record<Tier, string> = {
   INVINCIBLE: "#ffd700",
-  Centurions: "#00ff87",
-  Champions: "#00ff87",
-  "Title Challengers": "#22d3ee",
-  Europe: "#a78bfa",
+  Centurions: "#aeea00",
+  Champions: "#aeea00",
+  "Title Challengers": "#aeea00",
+  Europe: "#aeea00",
   "Mid-table": "#ffb800",
   "Relegation Battle": "#ff8a3d",
   Relegated: "#ff4757",

@@ -62,7 +62,7 @@ type PageState =
   | "playing";
 
 function timerColor(ms: number): string {
-  if (ms < 5_000) return "#00ff87";
+  if (ms < 5_000) return "#aeea00";
   if (ms < 10_000) return "#ffb800";
   return "#ff4757";
 }
@@ -94,9 +94,9 @@ function ShareCard({ challenge }: { challenge: H2HChallenge }) {
 
   return (
     <div className="rounded-2xl p-5 flex flex-col gap-3"
-      style={{ background: "rgba(0,255,135,0.06)", border: "1px solid rgba(0,255,135,0.2)" }}>
+      style={{ background: "rgba(174,234,0,0.06)", border: "1px solid rgba(174,234,0,0.2)" }}>
       <div className="rounded-xl px-3 py-2.5 font-body text-xs break-all"
-        style={{ background: "#0a0a0f", border: "1px solid rgba(255,255,255,0.08)", color: "#7777aa" }}>
+        style={{ background: "#0a0a0f", border: "1px solid rgba(255,255,255,0.08)", color: "#8a948f" }}>
         {link}
       </div>
       <div className="flex gap-2">
@@ -104,9 +104,9 @@ function ShareCard({ challenge }: { challenge: H2HChallenge }) {
           onClick={handleCopy}
           className="flex-1 rounded-xl py-3 font-display text-xs tracking-widest active:scale-[0.97] transition-transform"
           style={{
-            background: copied ? "rgba(0,255,135,0.15)" : "rgba(255,255,255,0.07)",
-            border: copied ? "1px solid rgba(0,255,135,0.4)" : "1px solid rgba(255,255,255,0.1)",
-            color: copied ? "#00ff87" : "#aaaacc",
+            background: copied ? "rgba(174,234,0,0.15)" : "rgba(255,255,255,0.07)",
+            border: copied ? "1px solid rgba(174,234,0,0.4)" : "1px solid rgba(255,255,255,0.1)",
+            color: copied ? "#aeea00" : "#9aa39d",
           }}
         >
           {copied ? "✓ COPIED" : "COPY LINK"}
@@ -369,7 +369,7 @@ export default function H2HPage({ params }: { params: { id: string } }) {
             className="w-12 h-12 rounded-full border-2 border-t-transparent animate-spin"
             style={{ borderColor: "#ffb800", borderTopColor: "transparent" }}
           />
-          <p className="font-display text-xs tracking-widest" style={{ color: "#8888aa" }}>
+          <p className="font-display text-xs tracking-widest" style={{ color: "#8a948f" }}>
             LOADING…
           </p>
         </div>
@@ -382,13 +382,13 @@ export default function H2HPage({ params }: { params: { id: string } }) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-6 gap-4" style={gridBg}>
         <p className="font-display text-2xl text-white text-center">Challenge expired or not found</p>
-        <p className="font-body text-sm text-center" style={{ color: "#8888aa" }}>
+        <p className="font-body text-sm text-center" style={{ color: "#8a948f" }}>
           This challenge link is no longer valid.
         </p>
         <Link
           href="/challenges"
           className="rounded-2xl px-6 py-3 font-display text-sm tracking-widest"
-          style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.1)", color: "#aaaacc" }}
+          style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.1)", color: "#9aa39d" }}
         >
           ← Browse Challenges
         </Link>
@@ -401,7 +401,7 @@ export default function H2HPage({ params }: { params: { id: string } }) {
     return (
       <div className="min-h-screen flex flex-col px-5 py-12 gap-6" style={gridBg}>
         <div>
-          <p className="font-display text-xs tracking-widest mb-1" style={{ color: "#00ff87" }}>
+          <p className="font-display text-xs tracking-widest mb-1" style={{ color: "#aeea00" }}>
             YOUR CHALLENGE IS LIVE
           </p>
           <h1 className="font-display text-3xl text-white leading-tight">
@@ -411,21 +411,21 @@ export default function H2HPage({ params }: { params: { id: string } }) {
 
         <div
           className="rounded-2xl p-5 flex items-center gap-4"
-          style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}
+          style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.07)" }}
         >
-          <Avatar name={challenge.challenger_name} color="#00ff87" size={52} />
+          <Avatar name={challenge.challenger_name} color="#aeea00" size={52} />
           <div>
             <p className="font-display text-3xl text-white">
               {challenge.challenger_score.toLocaleString()}
             </p>
-            <p className="font-body text-xs mt-0.5" style={{ color: "#8888aa" }}>
+            <p className="font-body text-xs mt-0.5" style={{ color: "#8a948f" }}>
               {challenge.challenger_correct}/{challenge.total_questions} correct
             </p>
           </div>
         </div>
 
         <div>
-          <p className="font-body text-xs mb-3" style={{ color: "#555577" }}>
+          <p className="font-body text-xs mb-3" style={{ color: "#586058" }}>
             Share this link so someone can try to beat your score:
           </p>
           <ShareCard challenge={challenge} />
@@ -437,7 +437,7 @@ export default function H2HPage({ params }: { params: { id: string } }) {
           style={{
             background: "rgba(255,255,255,0.07)",
             border: "1px solid rgba(255,255,255,0.1)",
-            color: "#aaaacc",
+            color: "#9aa39d",
           }}
         >
           Play on Challenges →
@@ -465,54 +465,54 @@ export default function H2HPage({ params }: { params: { id: string } }) {
       // user is the opponent
       if (opponentScore > challengerScore) {
         resultLabel = "YOU WIN";
-        resultColor = "#00ff87";
-        resultGlow = "0 0 60px rgba(0,255,135,0.25)";
+        resultColor = "#aeea00";
+        resultGlow = "0 0 60px rgba(174,234,0,0.25)";
         resultSub = `You won by ${diff.toLocaleString()} points`;
       } else if (opponentScore < challengerScore) {
         resultLabel = "SO CLOSE";
-        resultColor = "#8888aa";
+        resultColor = "#8a948f";
         resultGlow = "none";
         resultSub = `Beaten by ${diff.toLocaleString()} points`;
       } else {
         resultLabel = "IT'S A TIE";
-        resultColor = "#a78bfa";
-        resultGlow = "0 0 60px rgba(167,139,250,0.2)";
+        resultColor = "#aeea00";
+        resultGlow = "0 0 60px rgba(174,234,0,0.2)";
         resultSub = "Exact same score!";
       }
     } else if (userId && userId === challenge.challenger_id) {
       // user is the challenger looking at results
       if (challengerScore > opponentScore) {
         resultLabel = "YOU WIN";
-        resultColor = "#00ff87";
-        resultGlow = "0 0 60px rgba(0,255,135,0.25)";
+        resultColor = "#aeea00";
+        resultGlow = "0 0 60px rgba(174,234,0,0.25)";
         resultSub = `You won by ${diff.toLocaleString()} points`;
       } else if (challengerScore < opponentScore) {
         resultLabel = "NICE TRY";
-        resultColor = "#8888aa";
+        resultColor = "#8a948f";
         resultGlow = "none";
         resultSub = `Beaten by ${diff.toLocaleString()} points`;
       } else {
         resultLabel = "IT'S A TIE";
-        resultColor = "#a78bfa";
-        resultGlow = "0 0 60px rgba(167,139,250,0.2)";
+        resultColor = "#aeea00";
+        resultGlow = "0 0 60px rgba(174,234,0,0.2)";
         resultSub = "Exact same score!";
       }
     } else {
       // viewer not involved
       if (challengerScore > opponentScore) {
         resultLabel = `${challenge.challenger_name} WINS`;
-        resultColor = "#00ff87";
-        resultGlow = "0 0 60px rgba(0,255,135,0.2)";
+        resultColor = "#aeea00";
+        resultGlow = "0 0 60px rgba(174,234,0,0.2)";
         resultSub = `Won by ${diff.toLocaleString()} points`;
       } else if (challengerScore < opponentScore) {
         resultLabel = "CHALLENGER BEATEN";
-        resultColor = "#a78bfa";
-        resultGlow = "0 0 60px rgba(167,139,250,0.2)";
+        resultColor = "#aeea00";
+        resultGlow = "0 0 60px rgba(174,234,0,0.2)";
         resultSub = `Lost by ${diff.toLocaleString()} points`;
       } else {
         resultLabel = "IT'S A TIE";
-        resultColor = "#a78bfa";
-        resultGlow = "0 0 60px rgba(167,139,250,0.2)";
+        resultColor = "#aeea00";
+        resultGlow = "0 0 60px rgba(174,234,0,0.2)";
         resultSub = "Exact same score!";
       }
     }
@@ -526,14 +526,14 @@ export default function H2HPage({ params }: { params: { id: string } }) {
         <div
           className="flex flex-col items-center pt-16 pb-10 px-6"
           style={{
-            background: "linear-gradient(175deg, #12121e 0%, #0a0a0f 100%)",
+            background: "linear-gradient(175deg, #0e1611 0%, #0a0a0f 100%)",
             borderBottom: "1px solid rgba(255,255,255,0.06)",
             boxShadow: resultGlow,
           }}
         >
           <p
             className="font-display text-xs tracking-widest mb-3"
-            style={{ color: "#555577" }}
+            style={{ color: "#586058" }}
           >
             {challenge.quiz_pack_name}
           </p>
@@ -543,7 +543,7 @@ export default function H2HPage({ params }: { params: { id: string } }) {
           >
             {resultLabel}
           </div>
-          <p className="font-body text-sm" style={{ color: "#8888aa" }}>
+          <p className="font-body text-sm" style={{ color: "#8a948f" }}>
             {resultSub}
           </p>
         </div>
@@ -552,11 +552,11 @@ export default function H2HPage({ params }: { params: { id: string } }) {
           {/* Score comparison */}
           <div
             className="rounded-2xl p-5"
-            style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}
+            style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.07)" }}
           >
             <p
               className="font-display text-xs tracking-widest mb-5"
-              style={{ color: "#555577" }}
+              style={{ color: "#586058" }}
             >
               1V1
             </p>
@@ -566,7 +566,7 @@ export default function H2HPage({ params }: { params: { id: string } }) {
                 <Avatar name={challenge.challenger_name} color="#ffb800" size={44} />
                 <p
                   className="font-body text-xs text-center"
-                  style={{ color: "#8888aa" }}
+                  style={{ color: "#8a948f" }}
                 >
                   {challenge.challenger_name}
                 </p>
@@ -576,7 +576,7 @@ export default function H2HPage({ params }: { params: { id: string } }) {
                 >
                   {challengerScore.toLocaleString()}
                 </p>
-                <p className="font-body text-xs" style={{ color: "#666688" }}>
+                <p className="font-body text-xs" style={{ color: "#5b645e" }}>
                   {challenge.challenger_correct}/{challenge.total_questions} correct
                 </p>
               </div>
@@ -592,7 +592,7 @@ export default function H2HPage({ params }: { params: { id: string } }) {
                 />
                 <span
                   className="font-display text-xs"
-                  style={{ color: "#444466" }}
+                  style={{ color: "#3a423d" }}
                 >
                   VS
                 </span>
@@ -607,20 +607,20 @@ export default function H2HPage({ params }: { params: { id: string } }) {
 
               {/* Opponent */}
               <div className="flex-1 flex flex-col items-center gap-2">
-                <Avatar name={opponentDisplayName} color="#a78bfa" size={44} />
+                <Avatar name={opponentDisplayName} color="#aeea00" size={44} />
                 <p
                   className="font-body text-xs text-center"
-                  style={{ color: "#8888aa" }}
+                  style={{ color: "#8a948f" }}
                 >
                   {opponentDisplayName}
                 </p>
                 <p
                   className="font-display text-3xl"
-                  style={{ color: "#a78bfa" }}
+                  style={{ color: "#aeea00" }}
                 >
                   {opponentScore.toLocaleString()}
                 </p>
-                <p className="font-body text-xs" style={{ color: "#666688" }}>
+                <p className="font-body text-xs" style={{ color: "#5b645e" }}>
                   {opponentCorrect}/{challenge.total_questions} correct
                 </p>
               </div>
@@ -663,7 +663,7 @@ export default function H2HPage({ params }: { params: { id: string } }) {
         {/* Challenge hero */}
         <div className="px-5 pt-6 pb-8"
           style={{ background: "linear-gradient(175deg, #1a0e00 0%, #0d0b00 60%, transparent 100%)" }}>
-          <p className="font-display text-xs tracking-widest mb-3" style={{ color: "#a78bfa" }}>
+          <p className="font-display text-xs tracking-widest mb-3" style={{ color: "#aeea00" }}>
             YOU&apos;VE BEEN CHALLENGED
           </p>
           <h1 className="font-display text-4xl text-white leading-tight mb-5">
@@ -675,13 +675,13 @@ export default function H2HPage({ params }: { params: { id: string } }) {
             <div className="flex items-center gap-4 mb-4">
               <Avatar name={challenge.challenger_name} color="#ffb800" size={52} />
               <div>
-                <p className="font-body text-xs mb-0.5" style={{ color: "#8888aa" }}>
+                <p className="font-body text-xs mb-0.5" style={{ color: "#8a948f" }}>
                   {challenge.challenger_name} played this quiz and scored
                 </p>
                 <p className="font-display text-4xl text-white leading-none">
                   {challenge.challenger_score.toLocaleString()}
                 </p>
-                <p className="font-body text-xs mt-1.5" style={{ color: "#8888aa" }}>
+                <p className="font-body text-xs mt-1.5" style={{ color: "#8a948f" }}>
                   {challenge.challenger_correct} / {challenge.total_questions} correct
                 </p>
               </div>
@@ -696,7 +696,7 @@ export default function H2HPage({ params }: { params: { id: string } }) {
               }} />
             </div>
             <div className="flex justify-between mt-1.5">
-              <span className="font-body text-xs" style={{ color: "#555577" }}>0</span>
+              <span className="font-body text-xs" style={{ color: "#586058" }}>0</span>
               <span className="font-body text-xs" style={{ color: "#ffb800" }}>
                 {scoreBarPct}% of max score
               </span>
@@ -706,8 +706,8 @@ export default function H2HPage({ params }: { params: { id: string } }) {
 
         <div className="px-5 flex flex-col gap-4 pb-10">
           {/* What you're getting into */}
-          <div className="rounded-2xl p-5" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}>
-            <p className="font-display text-xs tracking-widest mb-4" style={{ color: "#555577" }}>HOW IT WORKS</p>
+          <div className="rounded-2xl p-5" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.07)" }}>
+            <p className="font-display text-xs tracking-widest mb-4" style={{ color: "#586058" }}>HOW IT WORKS</p>
             <div className="flex flex-col gap-3">
               {[
                 { icon: "❓", title: `${challenge.total_questions} questions`, sub: `All about ${challenge.quiz_pack_name}` },
@@ -718,7 +718,7 @@ export default function H2HPage({ params }: { params: { id: string } }) {
                   <span className="text-xl flex-shrink-0 mt-0.5">{icon}</span>
                   <div>
                     <p className="font-display text-sm text-white tracking-wide">{title}</p>
-                    <p className="font-body text-xs mt-0.5" style={{ color: "#8888aa" }}>{sub}</p>
+                    <p className="font-body text-xs mt-0.5" style={{ color: "#8a948f" }}>{sub}</p>
                   </div>
                 </div>
               ))}
@@ -727,18 +727,18 @@ export default function H2HPage({ params }: { params: { id: string } }) {
 
           {/* Sign-in CTA */}
           <div className="rounded-2xl p-5"
-            style={{ background: "rgba(167,139,250,0.07)", border: "1px solid rgba(167,139,250,0.22)" }}>
+            style={{ background: "rgba(174,234,0,0.07)", border: "1px solid rgba(174,234,0,0.22)" }}>
             <p className="font-display text-base text-white tracking-wide mb-1">
               Sign in to accept
             </p>
-            <p className="font-body text-xs mb-4" style={{ color: "#8888aa" }}>
+            <p className="font-body text-xs mb-4" style={{ color: "#8a948f" }}>
               Free forever — takes 10 seconds
             </p>
             <SignInWithGoogle redirectTo={`/h2h/${id}`} />
           </div>
 
           {/* Social proof nudge */}
-          <p className="font-body text-xs text-center" style={{ color: "#444466" }}>
+          <p className="font-body text-xs text-center" style={{ color: "#3a423d" }}>
             Join thousands of fans testing their football knowledge
           </p>
         </div>
@@ -778,13 +778,13 @@ export default function H2HPage({ params }: { params: { id: string } }) {
             <div className="flex items-center gap-4 mb-4">
               <Avatar name={challenge.challenger_name} color="#ffb800" size={52} />
               <div>
-                <p className="font-body text-xs mb-0.5" style={{ color: "#8888aa" }}>
+                <p className="font-body text-xs mb-0.5" style={{ color: "#8a948f" }}>
                   {challenge.challenger_name} scored
                 </p>
                 <p className="font-display text-4xl text-white leading-none">
                   {challenge.challenger_score.toLocaleString()}
                 </p>
-                <p className="font-body text-xs mt-1.5" style={{ color: "#8888aa" }}>
+                <p className="font-body text-xs mt-1.5" style={{ color: "#8a948f" }}>
                   {challenge.challenger_correct} / {challenge.total_questions} correct · {challenge.total_questions}Q
                 </p>
               </div>
@@ -806,7 +806,7 @@ export default function H2HPage({ params }: { params: { id: string } }) {
         <div className="px-5 flex flex-col gap-4 pb-10">
           {/* Quick rules */}
           <div className="rounded-2xl px-5 py-4 flex items-center justify-around"
-            style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}>
+            style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.07)" }}>
             {[
               { val: `${challenge.total_questions}`, label: "Questions" },
               { val: "⚡", label: "Speed pts" },
@@ -814,7 +814,7 @@ export default function H2HPage({ params }: { params: { id: string } }) {
             ].map(({ val, label }) => (
               <div key={label} className="text-center">
                 <div className="font-display text-xl text-white">{val}</div>
-                <div className="font-body text-xs mt-0.5" style={{ color: "#7777aa" }}>{label}</div>
+                <div className="font-body text-xs mt-0.5" style={{ color: "#8a948f" }}>{label}</div>
               </div>
             ))}
           </div>
@@ -831,7 +831,7 @@ export default function H2HPage({ params }: { params: { id: string } }) {
             ACCEPT CHALLENGE →
           </button>
 
-          <p className="font-body text-xs text-center" style={{ color: "#444466" }}>
+          <p className="font-body text-xs text-center" style={{ color: "#3a423d" }}>
             Answer fast — points decay with every second
           </p>
         </div>
@@ -890,7 +890,7 @@ export default function H2HPage({ params }: { params: { id: string } }) {
                 }
               }}
               className="flex items-center gap-1.5 font-body text-xs flex-shrink-0"
-              style={{ color: "#555577" }}
+              style={{ color: "#586058" }}
             >
               <svg
                 width="16"
@@ -950,7 +950,7 @@ export default function H2HPage({ params }: { params: { id: string } }) {
               >
                 {score.toLocaleString()}
               </span>
-              <span className="font-body text-xs" style={{ color: "#666688" }}>
+              <span className="font-body text-xs" style={{ color: "#5b645e" }}>
                 pts
               </span>
             </div>
@@ -958,7 +958,7 @@ export default function H2HPage({ params }: { params: { id: string } }) {
 
           {/* Question counter */}
           <div className="px-5 pb-2.5 flex items-center gap-2">
-            <span className="font-body text-xs" style={{ color: "#555577" }}>
+            <span className="font-body text-xs" style={{ color: "#586058" }}>
               Question{" "}
               <span className="text-white">{currentIdx + 1}</span> of{" "}
               {questions.length}
@@ -983,7 +983,7 @@ export default function H2HPage({ params }: { params: { id: string } }) {
               className="font-body text-xs px-2.5 py-1 rounded-full capitalize mb-4 self-start"
               style={{
                 background: "rgba(255,255,255,0.05)",
-                color: "#7777aa",
+                color: "#8a948f",
               }}
             >
               {currentQ.category.replace(/_/g, " ")}
@@ -995,7 +995,7 @@ export default function H2HPage({ params }: { params: { id: string } }) {
             className="rounded-2xl p-5 mb-5"
             style={{
               background:
-                "linear-gradient(145deg, #14141f 0%, #1a1a2c 100%)",
+                "linear-gradient(145deg, #0e1611 0%, #15211a 100%)",
               border: "1px solid rgba(255,255,255,0.08)",
               minHeight: 100,
             }}
@@ -1022,11 +1022,11 @@ export default function H2HPage({ params }: { params: { id: string } }) {
               style={{
                 background:
                   selected === (currentQ.answer as Letter)
-                    ? "rgba(0,255,135,0.08)"
+                    ? "rgba(174,234,0,0.08)"
                     : "rgba(255,71,87,0.08)",
                 border: `1px solid ${
                   selected === (currentQ.answer as Letter)
-                    ? "rgba(0,255,135,0.22)"
+                    ? "rgba(174,234,0,0.22)"
                     : "rgba(255,71,87,0.22)"
                 }`,
               }}
@@ -1037,7 +1037,7 @@ export default function H2HPage({ params }: { params: { id: string } }) {
                   style={{
                     color:
                       selected === (currentQ.answer as Letter)
-                        ? "#00ff87"
+                        ? "#aeea00"
                         : "#ff4757",
                   }}
                 >
@@ -1048,7 +1048,7 @@ export default function H2HPage({ params }: { params: { id: string } }) {
                 {selected !== (currentQ.answer as Letter) && (
                   <p
                     className="font-body text-xs mt-0.5"
-                    style={{ color: "#8888aa" }}
+                    style={{ color: "#8a948f" }}
                   >
                     Answer:{" "}
                     <span style={{ color: "#ffffff" }}>
@@ -1067,7 +1067,7 @@ export default function H2HPage({ params }: { params: { id: string } }) {
                   </div>
                   <div
                     className="font-body text-xs"
-                    style={{ color: "#8888aa" }}
+                    style={{ color: "#8a948f" }}
                   >
                     {timerDisplay(timerMs)}
                   </div>

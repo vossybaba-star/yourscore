@@ -51,7 +51,7 @@ export default function ResetPasswordPage() {
   }
 
   const inputStyle = {
-    background: "#12121e",
+    background: "#0e1611",
     border: `1px solid ${error ? "rgba(255,71,87,0.4)" : "rgba(255,255,255,0.1)"}`,
   };
 
@@ -66,7 +66,7 @@ export default function ResetPasswordPage() {
         </div>
 
         {success ? (
-          <div className="rounded-2xl p-6 text-center" style={{ background: "rgba(0,255,135,0.06)", border: "1px solid rgba(0,255,135,0.2)" }}>
+          <div className="rounded-2xl p-6 text-center" style={{ background: "rgba(174,234,0,0.06)", border: "1px solid rgba(174,234,0,0.2)" }}>
             <p className="text-3xl mb-3">✅</p>
             <p className="font-body text-sm font-semibold text-white mb-1">Password updated!</p>
             <p className="font-body text-xs text-text-muted">Redirecting you home…</p>
@@ -90,8 +90,8 @@ export default function ResetPasswordPage() {
             <button type="submit" disabled={loading || !password || !confirm}
               className="w-full py-3.5 rounded-xl font-body font-bold text-sm transition-all hover:opacity-90 flex items-center justify-center gap-2"
               style={{
-                background: password && confirm && !loading ? "#00ff87" : "rgba(255,255,255,0.06)",
-                color: password && confirm && !loading ? "#0a0a0f" : "#8888aa",
+                background: password && confirm && !loading ? "#aeea00" : "rgba(255,255,255,0.06)",
+                color: password && confirm && !loading ? "#0a0a0f" : "#8a948f",
               }}>
               {loading ? <Spinner size={18} /> : "Set password"}
             </button>
@@ -99,7 +99,7 @@ export default function ResetPasswordPage() {
         )}
 
         <div className="text-center mt-6">
-          <Link href="/" className="font-body text-xs" style={{ color: "#555577" }}>← Back to home</Link>
+          <Link href="/" className="font-body text-xs" style={{ color: "#586058" }}>← Back to home</Link>
         </div>
       </div>
     </main>

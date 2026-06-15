@@ -193,7 +193,7 @@ export default function AdminChallengesPage() {
     <div className="p-8 max-w-4xl">
       <div className="mb-8">
         <h1 className="font-display text-3xl text-white tracking-wide">CHALLENGES</h1>
-        <p className="font-body text-sm mt-1" style={{ color: "#8888aa" }}>
+        <p className="font-body text-sm mt-1" style={{ color: "#8a948f" }}>
           {challenges.length} quizzes · {totalQs} questions
         </p>
       </div>
@@ -201,7 +201,7 @@ export default function AdminChallengesPage() {
       {/* Upload section */}
       <div
         className="rounded-2xl p-6 mb-8"
-        style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}
+        style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.07)" }}
       >
         <h2 className="font-display text-lg text-white mb-4">Upload Quiz</h2>
 
@@ -215,7 +215,7 @@ export default function AdminChallengesPage() {
               style={{
                 background: league === l ? "rgba(255,184,0,0.15)" : "rgba(255,255,255,0.04)",
                 border: `1px solid ${league === l ? "rgba(255,184,0,0.4)" : "rgba(255,255,255,0.08)"}`,
-                color: league === l ? "#ffb800" : "#8888aa",
+                color: league === l ? "#ffb800" : "#8a948f",
               }}
             >
               {l === "premier-league" ? "Premier League" : "Championship"}
@@ -226,7 +226,7 @@ export default function AdminChallengesPage() {
         {/* Format hint */}
         <div
           className="rounded-xl px-4 py-3 mb-4 font-body text-xs leading-relaxed"
-          style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", color: "#8888aa" }}
+          style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", color: "#8a948f" }}
         >
           <p className="text-white font-semibold mb-1">Expected format:</p>
           <p>Arsenal — End of Season Quiz 2025/26</p>
@@ -258,7 +258,7 @@ export default function AdminChallengesPage() {
         )}
 
         {uploadResult && (
-          <p className="mt-2 font-body text-xs" style={{ color: "#00ff87" }}>{uploadResult}</p>
+          <p className="mt-2 font-body text-xs" style={{ color: "#aeea00" }}>{uploadResult}</p>
         )}
 
         <div className="flex gap-3 mt-4">
@@ -275,7 +275,7 @@ export default function AdminChallengesPage() {
               onClick={handleUpload}
               disabled={uploading}
               className="px-5 py-2.5 rounded-xl font-body text-sm font-semibold transition-all disabled:opacity-60"
-              style={{ background: "#00ff87", color: "#0a0a0f" }}
+              style={{ background: "#aeea00", color: "#0a0a0f" }}
             >
               {uploading ? "Uploading…" : `Upload ${preview.length} challenge${preview.length !== 1 ? "s" : ""}`}
             </button>
@@ -299,7 +299,7 @@ export default function AdminChallengesPage() {
                   >
                     <span className="font-body text-sm text-white">{c.team}</span>
                     <div className="flex items-center gap-3">
-                      <span className="font-body text-xs" style={{ color: "#00ff87" }}>{easyCount}E</span>
+                      <span className="font-body text-xs" style={{ color: "#aeea00" }}>{easyCount}E</span>
                       <span className="font-body text-xs" style={{ color: "#ffb800" }}>{medCount}M</span>
                       <span className="font-body text-xs" style={{ color: "#ff4757" }}>{hardCount}H</span>
                       <span className="font-body text-xs font-semibold text-white">{c.questions.length}Q</span>
@@ -317,13 +317,13 @@ export default function AdminChallengesPage() {
         <h2 className="font-display text-lg text-white mb-4">Existing Challenges</h2>
 
         {loadingList ? (
-          <p className="font-body text-sm" style={{ color: "#8888aa" }}>Loading…</p>
+          <p className="font-body text-sm" style={{ color: "#8a948f" }}>Loading…</p>
         ) : challenges.length === 0 ? (
           <div
             className="rounded-2xl p-8 text-center"
-            style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}
+            style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.07)" }}
           >
-            <p className="font-body text-sm" style={{ color: "#8888aa" }}>No challenges yet. Upload your first quiz above.</p>
+            <p className="font-body text-sm" style={{ color: "#8a948f" }}>No challenges yet. Upload your first quiz above.</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -332,13 +332,13 @@ export default function AdminChallengesPage() {
                 key={c.id}
                 className="flex items-center gap-4 rounded-xl px-4 py-3"
                 style={{
-                  background: "#12121e",
-                  border: `1px solid ${c.is_active ? "rgba(0,255,135,0.1)" : "rgba(255,255,255,0.06)"}`,
+                  background: "#0e1611",
+                  border: `1px solid ${c.is_active ? "rgba(174,234,0,0.1)" : "rgba(255,255,255,0.06)"}`,
                 }}
               >
                 <div className="flex-1 min-w-0">
                   <p className="font-body text-sm font-semibold text-white truncate">{c.team_name}</p>
-                  <p className="font-body text-xs mt-0.5" style={{ color: "#8888aa" }}>
+                  <p className="font-body text-xs mt-0.5" style={{ color: "#8a948f" }}>
                     {c.league === "premier-league" ? "PL" : "Championship"} · {c.question_count}Q · {c.slug}
                   </p>
                 </div>
@@ -346,9 +346,9 @@ export default function AdminChallengesPage() {
                 <span
                   className="font-body text-xs px-2 py-0.5 rounded-full flex-shrink-0"
                   style={{
-                    background: c.is_active ? "rgba(0,255,135,0.1)" : "rgba(255,255,255,0.05)",
-                    color: c.is_active ? "#00ff87" : "#8888aa",
-                    border: `1px solid ${c.is_active ? "rgba(0,255,135,0.2)" : "rgba(255,255,255,0.08)"}`,
+                    background: c.is_active ? "rgba(174,234,0,0.1)" : "rgba(255,255,255,0.05)",
+                    color: c.is_active ? "#aeea00" : "#8a948f",
+                    border: `1px solid ${c.is_active ? "rgba(174,234,0,0.2)" : "rgba(255,255,255,0.08)"}`,
                   }}
                 >
                   {c.is_active ? "Active" : "Hidden"}
@@ -358,7 +358,7 @@ export default function AdminChallengesPage() {
                   <button
                     onClick={() => handleToggle(c.id, c.is_active)}
                     className="font-body text-xs px-3 py-1.5 rounded-lg transition-all"
-                    style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "#aaaacc" }}
+                    style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "#9aa39d" }}
                   >
                     {c.is_active ? "Hide" : "Show"}
                   </button>

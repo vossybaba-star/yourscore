@@ -27,7 +27,7 @@ function Avatar({ name, size = 36, url }: { name: string; size?: number; url?: s
     <img src={url} alt={name} style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", border: "1.5px solid rgba(255,255,255,0.1)", flexShrink: 0 }} />
   );
   const palettes = [
-    { bg: "#1a2f4a", text: "#60a5fa" }, { bg: "#2a1a4a", text: "#a78bfa" },
+    { bg: "#1a2f4a", text: "#60a5fa" }, { bg: "#3a423d", text: "#aeea00" },
     { bg: "#1a4a2a", text: "#4ade80" }, { bg: "#4a2a1a", text: "#fb923c" },
   ];
   const c = palettes[(name.charCodeAt(0) || 0) % palettes.length];
@@ -159,7 +159,7 @@ export default function MessagePage() {
             textDecoration: "none",
           }}>
             <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
-              <path d="M10 3L5 8l5 5" stroke="#aaaacc" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M10 3L5 8l5 5" stroke="#9aa39d" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </Link>
           <Avatar name={otherName} size={36} url={other?.avatar_url} />
@@ -186,7 +186,7 @@ export default function MessagePage() {
           return (
             <div key={m.id}>
               {showDate && (
-                <p className="font-body text-xs text-center my-3" style={{ color: "#444466" }}>{dateStr}</p>
+                <p className="font-body text-xs text-center my-3" style={{ color: "#3a423d" }}>{dateStr}</p>
               )}
               <div className={`flex mb-2 ${isMine ? "justify-end" : "justify-start"}`}>
                 {!isMine && (
@@ -245,7 +245,7 @@ export default function MessagePage() {
               transition: "background 0.15s ease",
             }}>
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-              <path d="M16 9H2M16 9L10 3M16 9L10 15" stroke={text.trim() ? "#0a0a0f" : "#444466"} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M16 9H2M16 9L10 3M16 9L10 15" stroke={text.trim() ? "#0a0a0f" : "#3a423d"} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
         </form>

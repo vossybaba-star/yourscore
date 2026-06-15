@@ -18,7 +18,7 @@ interface Question {
   approved: boolean;
 }
 
-const DIFF_COLOR = { easy: "#00ff87", medium: "#ffb800", hard: "#ff4757" };
+const DIFF_COLOR = { easy: "#aeea00", medium: "#ffb800", hard: "#ff4757" };
 const LETTERS = ["a", "b", "c", "d"] as const;
 const LABELS = ["A", "B", "C", "D"];
 
@@ -147,7 +147,7 @@ export default function AdminQuestions({ params }: { params: { matchId: string }
             onClick={generate}
             disabled={generating}
             className="px-5 py-2.5 rounded-xl font-body text-sm font-semibold transition-opacity hover:opacity-80 disabled:opacity-50 flex items-center gap-2"
-            style={{ background: "rgba(167,139,250,0.12)", color: "#a78bfa", border: "1px solid rgba(167,139,250,0.2)" }}
+            style={{ background: "rgba(174,234,0,0.12)", color: "#aeea00", border: "1px solid rgba(174,234,0,0.2)" }}
           >
             {generating ? (
               <>
@@ -167,9 +167,9 @@ export default function AdminQuestions({ params }: { params: { matchId: string }
             onClick={() => setFilter(f)}
             className="px-4 py-2 rounded-xl font-body text-xs font-semibold capitalize transition-all"
             style={{
-              background: filter === f ? "rgba(0,255,135,0.1)" : "rgba(255,255,255,0.03)",
-              color: filter === f ? "#00ff87" : "#8888aa",
-              border: `1px solid ${filter === f ? "rgba(0,255,135,0.2)" : "rgba(255,255,255,0.06)"}`,
+              background: filter === f ? "rgba(174,234,0,0.1)" : "rgba(255,255,255,0.03)",
+              color: filter === f ? "#aeea00" : "#8a948f",
+              border: `1px solid ${filter === f ? "rgba(174,234,0,0.2)" : "rgba(255,255,255,0.06)"}`,
             }}
           >
             {f} {f === "all" ? `(${questions.length})` : f === "approved" ? `(${approvedCount})` : `(${questions.length - approvedCount})`}
@@ -183,7 +183,7 @@ export default function AdminQuestions({ params }: { params: { matchId: string }
           <div
             key={q.id}
             className="rounded-2xl overflow-hidden transition-all"
-            style={{ background: "#12121e", border: `1px solid ${q.approved ? "rgba(0,255,135,0.15)" : "rgba(255,255,255,0.07)"}` }}
+            style={{ background: "#0e1611", border: `1px solid ${q.approved ? "rgba(174,234,0,0.15)" : "rgba(255,255,255,0.07)"}` }}
           >
             {/* Row */}
             <button
@@ -209,9 +209,9 @@ export default function AdminQuestions({ params }: { params: { matchId: string }
                   onClick={(e) => { e.stopPropagation(); toggleApprove(q); }}
                   className="px-3 py-1.5 rounded-lg font-body text-xs font-semibold transition-all hover:opacity-80"
                   style={{
-                    background: q.approved ? "rgba(0,255,135,0.12)" : "rgba(255,255,255,0.05)",
-                    color: q.approved ? "#00ff87" : "#8888aa",
-                    border: `1px solid ${q.approved ? "rgba(0,255,135,0.2)" : "rgba(255,255,255,0.08)"}`,
+                    background: q.approved ? "rgba(174,234,0,0.12)" : "rgba(255,255,255,0.05)",
+                    color: q.approved ? "#aeea00" : "#8a948f",
+                    border: `1px solid ${q.approved ? "rgba(174,234,0,0.2)" : "rgba(255,255,255,0.08)"}`,
                   }}
                 >
                   {q.approved ? "✓ Approved" : "Approve"}
@@ -229,15 +229,15 @@ export default function AdminQuestions({ params }: { params: { matchId: string }
                       key={l}
                       className="flex items-center gap-2 px-3 py-2.5 rounded-xl"
                       style={{
-                        background: q.correct_answer === l ? "rgba(0,255,135,0.08)" : "rgba(255,255,255,0.03)",
-                        border: `1px solid ${q.correct_answer === l ? "rgba(0,255,135,0.2)" : "rgba(255,255,255,0.06)"}`,
+                        background: q.correct_answer === l ? "rgba(174,234,0,0.08)" : "rgba(255,255,255,0.03)",
+                        border: `1px solid ${q.correct_answer === l ? "rgba(174,234,0,0.2)" : "rgba(255,255,255,0.06)"}`,
                       }}
                     >
                       <span
                         className="w-6 h-6 rounded-lg flex items-center justify-center font-display text-xs flex-shrink-0"
                         style={{
-                          background: q.correct_answer === l ? "#00ff87" : "rgba(255,255,255,0.06)",
-                          color: q.correct_answer === l ? "#0a0a0f" : "#8888aa",
+                          background: q.correct_answer === l ? "#aeea00" : "rgba(255,255,255,0.06)",
+                          color: q.correct_answer === l ? "#0a0a0f" : "#8a948f",
                         }}
                       >
                         {LABELS[i]}
@@ -257,7 +257,7 @@ export default function AdminQuestions({ params }: { params: { matchId: string }
         ))}
 
         {filtered.length === 0 && (
-          <div className="rounded-2xl p-10 text-center" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}>
+          <div className="rounded-2xl p-10 text-center" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.07)" }}>
             <p className="font-body text-text-muted text-sm">No questions yet. Hit &ldquo;Generate with AI&rdquo; to create some.</p>
           </div>
         )}

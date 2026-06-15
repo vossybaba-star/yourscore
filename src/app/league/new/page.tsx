@@ -94,7 +94,7 @@ function CreateLeagueInner() {
         </div>
         {user && (
           <Link href="/profile" className="w-8 h-8 rounded-full flex items-center justify-center font-body font-bold text-sm hover:opacity-80 transition-opacity"
-            style={{ background: "linear-gradient(135deg, #1a2f4a, #2a1a4a)", color: "#a78bfa", border: "1.5px solid rgba(167,139,250,0.25)" }}>
+            style={{ background: "linear-gradient(135deg, #1a2f4a, #3a423d)", color: "#aeea00", border: "1.5px solid rgba(174,234,0,0.25)" }}>
             {(profileName || user.email || "?")[0].toUpperCase()}
           </Link>
         )}
@@ -105,7 +105,7 @@ function CreateLeagueInner() {
           <>
             <div className="mb-8">
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-5 font-body text-xs uppercase tracking-widest"
-                style={{ background: "rgba(167,139,250,0.1)", border: "1px solid rgba(167,139,250,0.2)", color: "#a78bfa" }}>
+                style={{ background: "rgba(174,234,0,0.1)", border: "1px solid rgba(174,234,0,0.2)", color: "#aeea00" }}>
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1l1.5 3 3.5.5-2.5 2.5.5 3.5L6 9l-3 1.5.5-3.5L1 4.5 4.5 4z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/></svg>
                 New league
               </div>
@@ -120,7 +120,7 @@ function CreateLeagueInner() {
                   type="text" value={name} onChange={(e) => setName(e.target.value.slice(0, 40))}
                   placeholder="The Usual Suspects" maxLength={40}
                   className="w-full rounded-xl px-4 py-4 font-body text-white text-base outline-none transition-all placeholder:text-white/20"
-                  style={{ background: "#12121e", border: `1px solid ${name ? "rgba(167,139,250,0.4)" : "rgba(255,255,255,0.1)"}` }}
+                  style={{ background: "#0e1611", border: `1px solid ${name ? "rgba(174,234,0,0.4)" : "rgba(255,255,255,0.1)"}` }}
                   onKeyDown={(e) => e.key === "Enter" && name.trim() && user && handleCreate()}
                 />
                 <p className="font-body text-xs text-text-muted mt-2 text-right">{name.length}/40</p>
@@ -137,8 +137,8 @@ function CreateLeagueInner() {
               </div>
             </div>
 
-            <div className="rounded-2xl p-4 mb-6" style={{ background: "rgba(167,139,250,0.04)", border: "1px solid rgba(167,139,250,0.12)" }}>
-              <p className="font-body text-xs font-semibold mb-2" style={{ color: "#a78bfa" }}>What your league tracks</p>
+            <div className="rounded-2xl p-4 mb-6" style={{ background: "rgba(174,234,0,0.04)", border: "1px solid rgba(174,234,0,0.12)" }}>
+              <p className="font-body text-xs font-semibold mb-2" style={{ color: "#aeea00" }}>What your league tracks</p>
               <div className="space-y-2">
                 {[
                   "Points stack across every game each member plays",
@@ -146,7 +146,7 @@ function CreateLeagueInner() {
                   "One leaderboard across World Cup, Euros, Champions League",
                 ].map(t => (
                   <div key={t} className="flex items-start gap-2">
-                    <span className="mt-0.5 flex-shrink-0" style={{ color: "#a78bfa" }}>
+                    <span className="mt-0.5 flex-shrink-0" style={{ color: "#aeea00" }}>
                       <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                     </span>
                     <p className="font-body text-xs text-text-muted">{t}</p>
@@ -164,7 +164,7 @@ function CreateLeagueInner() {
             ) : (
               <button onClick={handleCreate} disabled={!name.trim() || submitting}
                 className="w-full py-4 rounded-xl font-body font-bold text-base flex items-center justify-center gap-2 transition-all"
-                style={{ background: name.trim() ? "#a78bfa" : "rgba(255,255,255,0.06)", color: name.trim() ? "#0a0a0f" : "#8888aa", boxShadow: name.trim() ? "0 0 20px rgba(167,139,250,0.25)" : "none" }}>
+                style={{ background: name.trim() ? "#aeea00" : "rgba(255,255,255,0.06)", color: name.trim() ? "#0a0a0f" : "#8a948f", boxShadow: name.trim() ? "0 0 20px rgba(174,234,0,0.25)" : "none" }}>
                 {submitting ? <Spinner size={18} /> : "Create league"}
               </button>
             )}
@@ -172,8 +172,8 @@ function CreateLeagueInner() {
         ) : (
           <>
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: "rgba(167,139,250,0.15)" }}>
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3.5 9l4 4 7-7" stroke="#a78bfa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: "rgba(174,234,0,0.15)" }}>
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3.5 9l4 4 7-7" stroke="#aeea00" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </div>
               <div>
                 <h1 className="font-display text-4xl text-white leading-none">LEAGUE CREATED</h1>
@@ -185,12 +185,12 @@ function CreateLeagueInner() {
               <div className="px-5 pt-5 pb-4">
                 <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-3">League code</p>
                 <div className="flex items-center gap-3 mb-1">
-                  <span className="font-display text-5xl tracking-[0.12em]" style={{ color: "#a78bfa", textShadow: "0 0 20px rgba(167,139,250,0.3)" }}>
+                  <span className="font-display text-5xl tracking-[0.12em]" style={{ color: "#aeea00", textShadow: "0 0 20px rgba(174,234,0,0.3)" }}>
                     {created.code}
                   </span>
                   <button onClick={copyCode}
                     className="ml-auto flex items-center gap-1.5 text-xs font-body font-semibold px-3 py-2 rounded-lg transition-all"
-                    style={{ background: copied ? "rgba(167,139,250,0.15)" : "rgba(255,255,255,0.06)", color: copied ? "#a78bfa" : "#8888aa", border: `1px solid ${copied ? "rgba(167,139,250,0.3)" : "rgba(255,255,255,0.08)"}` }}>
+                    style={{ background: copied ? "rgba(174,234,0,0.15)" : "rgba(255,255,255,0.06)", color: copied ? "#aeea00" : "#8a948f", border: `1px solid ${copied ? "rgba(174,234,0,0.3)" : "rgba(255,255,255,0.08)"}` }}>
                     {copied ? "✓ Copied" : "Copy link"}
                   </button>
                 </div>
@@ -212,7 +212,7 @@ function CreateLeagueInner() {
                 </button>
                 <button onClick={() => setShowQR(v => !v)}
                   className="flex items-center justify-center gap-1.5 py-3 rounded-xl text-sm font-body font-medium transition-all hover:opacity-80"
-                  style={{ background: showQR ? "rgba(167,139,250,0.15)" : "rgba(255,255,255,0.05)", border: `1px solid ${showQR ? "rgba(167,139,250,0.3)" : "rgba(255,255,255,0.08)"}`, color: showQR ? "#a78bfa" : "#8888aa" }}>
+                  style={{ background: showQR ? "rgba(174,234,0,0.15)" : "rgba(255,255,255,0.05)", border: `1px solid ${showQR ? "rgba(174,234,0,0.3)" : "rgba(255,255,255,0.08)"}`, color: showQR ? "#aeea00" : "#8a948f" }}>
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5" height="5" rx="0.5" stroke="currentColor" strokeWidth="1.3"/><rect x="8" y="1" width="5" height="5" rx="0.5" stroke="currentColor" strokeWidth="1.3"/><rect x="1" y="8" width="5" height="5" rx="0.5" stroke="currentColor" strokeWidth="1.3"/><rect x="3" y="3" width="1.5" height="1.5" fill="currentColor"/><rect x="10" y="3" width="1.5" height="1.5" fill="currentColor"/><rect x="3" y="10" width="1.5" height="1.5" fill="currentColor"/><path d="M8 8h1.5v1.5H8zM10.5 8H12v1.5h-1.5zM10.5 10.5H12V12h-1.5zM8 10.5h1.5V12H8z" fill="currentColor"/></svg>
                   QR Code
                 </button>
@@ -229,7 +229,7 @@ function CreateLeagueInner() {
 
             <Link href={`/league/${created.id}`}
               className="w-full flex items-center justify-center py-4 rounded-xl font-body font-bold text-base"
-              style={{ background: "#a78bfa", color: "#0a0a0f", boxShadow: "0 0 20px rgba(167,139,250,0.25)" }}>
+              style={{ background: "#aeea00", color: "#0a0a0f", boxShadow: "0 0 20px rgba(174,234,0,0.25)" }}>
               Go to league →
             </Link>
           </>

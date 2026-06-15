@@ -155,21 +155,21 @@ export default function LeagueBoard() {
       <div className="min-h-[100dvh] grid place-items-center px-6 text-center" style={{ background: "#0a0a0f" }}>
         <div>
           <div className="font-display tracking-wide" style={{ fontSize: 28, color: "#fff" }}>LEAGUE NOT FOUND</div>
-          <Link href="/38-0/leagues" className="inline-block mt-4 font-body" style={{ color: "#00ff87" }}>← Back to my leagues</Link>
+          <Link href="/38-0/leagues" className="inline-block mt-4 font-body" style={{ color: "#aeea00" }}>← Back to my leagues</Link>
         </div>
       </div>
     );
   }
 
-  if (!board) return <div className="min-h-[100dvh] grid place-items-center" style={{ background: "#0a0a0f", color: "#8888aa" }}>Loading…</div>;
+  if (!board) return <div className="min-h-[100dvh] grid place-items-center" style={{ background: "#0a0a0f", color: "#8a948f" }}>Loading…</div>;
 
   if (board.ready === false) {
     return (
       <div className="min-h-[100dvh] grid place-items-center px-6 text-center" style={{ background: "#0a0a0f" }}>
         <div>
           <div className="font-display tracking-wide" style={{ fontSize: 24, color: "#fff" }}>LEAGUES COMING SOON</div>
-          <p className="font-body mt-2" style={{ fontSize: 13, color: "#8888aa" }}>Cloud leagues activate once the season is live.</p>
-          <Link href="/38-0" className="inline-block mt-4 font-body" style={{ color: "#00ff87" }}>← Build your XI</Link>
+          <p className="font-body mt-2" style={{ fontSize: 13, color: "#8a948f" }}>Cloud leagues activate once the season is live.</p>
+          <Link href="/38-0" className="inline-block mt-4 font-body" style={{ color: "#aeea00" }}>← Build your XI</Link>
         </div>
       </div>
     );
@@ -187,28 +187,28 @@ export default function LeagueBoard() {
           {renaming ? (
             <div className="flex-1">
               <input value={newName} onChange={(e) => setNewName(e.target.value)} maxLength={40} autoFocus
-                className="w-full rounded-xl px-3 py-2 font-display tracking-wide" style={{ background: "#12121e", color: "#fff", border: "1px solid rgba(167,139,250,0.4)", fontSize: 24 }} />
+                className="w-full rounded-xl px-3 py-2 font-display tracking-wide" style={{ background: "#0e1611", color: "#fff", border: "1px solid rgba(174,234,0,0.4)", fontSize: 24 }} />
               <div className="flex gap-2 mt-2">
-                <button onClick={rename} disabled={busy || !newName.trim()} className="rounded-lg px-4 py-2 font-display tracking-wide disabled:opacity-50" style={{ background: "#a78bfa", color: "#15082b", fontSize: 14 }}>SAVE</button>
-                <button onClick={() => setRenaming(false)} className="rounded-lg px-4 py-2 font-body" style={{ color: "#8888aa", fontSize: 14 }}>Cancel</button>
+                <button onClick={rename} disabled={busy || !newName.trim()} className="rounded-lg px-4 py-2 font-display tracking-wide disabled:opacity-50" style={{ background: "#aeea00", color: "#0e1611", fontSize: 14 }}>SAVE</button>
+                <button onClick={() => setRenaming(false)} className="rounded-lg px-4 py-2 font-body" style={{ color: "#8a948f", fontSize: 14 }}>Cancel</button>
               </div>
             </div>
           ) : (
             <h1 className="font-display tracking-wide leading-none flex-1" style={{ fontSize: 36, color: "#fff" }}>{board.league.name}</h1>
           )}
           {board.isOwner && !renaming && (
-            <button onClick={() => { setNewName(board.league.name); setRenaming(true); }} className="font-body text-xs px-2.5 py-1 rounded-full shrink-0 mt-1" style={{ color: "#a78bfa", background: "rgba(167,139,250,0.12)" }}>✏️ Rename</button>
+            <button onClick={() => { setNewName(board.league.name); setRenaming(true); }} className="font-body text-xs px-2.5 py-1 rounded-full shrink-0 mt-1" style={{ color: "#aeea00", background: "rgba(174,234,0,0.12)" }}>✏️ Rename</button>
           )}
         </div>
 
         <div className="flex items-center gap-2 mt-2">
-          <button onClick={shareCode} className="inline-flex items-center gap-2 rounded-full px-3 py-1.5" style={{ background: "rgba(167,139,250,0.12)", border: "1px solid rgba(167,139,250,0.35)" }}>
-            <span className="font-display tracking-widest" style={{ fontSize: 18, color: "#a78bfa" }}>{board.league.code}</span>
-            <span className="font-body" style={{ fontSize: 12, color: "#8888aa" }}>{copied ? "copied ✓" : "tap to share"}</span>
+          <button onClick={shareCode} className="inline-flex items-center gap-2 rounded-full px-3 py-1.5" style={{ background: "rgba(174,234,0,0.12)", border: "1px solid rgba(174,234,0,0.35)" }}>
+            <span className="font-display tracking-widest" style={{ fontSize: 18, color: "#aeea00" }}>{board.league.code}</span>
+            <span className="font-body" style={{ fontSize: 12, color: "#8a948f" }}>{copied ? "copied ✓" : "tap to share"}</span>
           </button>
           <button onClick={() => setShowQR((v) => !v)} className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5"
-            style={{ background: showQR ? "rgba(167,139,250,0.2)" : "rgba(255,255,255,0.05)", border: `1px solid ${showQR ? "rgba(167,139,250,0.35)" : "rgba(255,255,255,0.08)"}` }}>
-            <span className="font-body" style={{ fontSize: 12, color: showQR ? "#a78bfa" : "#8888aa" }}>▦ QR</span>
+            style={{ background: showQR ? "rgba(174,234,0,0.2)" : "rgba(255,255,255,0.05)", border: `1px solid ${showQR ? "rgba(174,234,0,0.35)" : "rgba(255,255,255,0.08)"}` }}>
+            <span className="font-body" style={{ fontSize: 12, color: showQR ? "#aeea00" : "#8a948f" }}>▦ QR</span>
           </button>
         </div>
 
@@ -222,12 +222,12 @@ export default function LeagueBoard() {
         {err && <div className="rounded-xl px-4 py-2 mt-3 font-body text-center" style={{ fontSize: 13, color: "#ff4757", background: "rgba(255,71,87,0.1)" }}>{err}</div>}
 
         {!board.isMember && user && (
-          <button onClick={join} disabled={busy} className="w-full mt-4 rounded-2xl py-3 font-display tracking-wide disabled:opacity-50" style={{ background: "#00ff87", color: "#062013", fontSize: 20 }}>JOIN THIS LEAGUE</button>
+          <button onClick={join} disabled={busy} className="w-full mt-4 rounded-2xl py-3 font-display tracking-wide disabled:opacity-50" style={{ background: "#aeea00", color: "#062013", fontSize: 20 }}>JOIN THIS LEAGUE</button>
         )}
 
         {/* Resume an in-progress match */}
         {board.activeMatchId && (
-          <Link href={`/38-0/live/match/${board.activeMatchId}`} className="block w-full mt-4 rounded-2xl py-3 text-center font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "#00ff87", color: "#062013", fontSize: 18 }}>
+          <Link href={`/38-0/live/match/${board.activeMatchId}`} className="block w-full mt-4 rounded-2xl py-3 text-center font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "#aeea00", color: "#062013", fontSize: 18 }}>
             ▶ RESUME YOUR MATCH
           </Link>
         )}
@@ -236,12 +236,12 @@ export default function LeagueBoard() {
         {board.incoming?.length > 0 && (
           <div className="mt-4 space-y-2">
             {board.incoming.map((c) => (
-              <div key={c.matchId} className="rounded-2xl p-4" style={{ background: "rgba(0,255,135,0.08)", border: "1px solid rgba(0,255,135,0.4)" }}>
+              <div key={c.matchId} className="rounded-2xl p-4" style={{ background: "rgba(174,234,0,0.08)", border: "1px solid rgba(174,234,0,0.4)" }}>
                 <div className="font-display tracking-wide" style={{ fontSize: 16, color: "#fff" }}>⚔️ {c.fromName} challenged you</div>
-                <div className="font-body" style={{ fontSize: 12, color: "#8888aa" }}>Strength {c.fromStrength} · live two-half match</div>
+                <div className="font-body" style={{ fontSize: 12, color: "#8a948f" }}>Strength {c.fromStrength} · live two-half match</div>
                 <div className="grid grid-cols-2 gap-2 mt-3">
-                  <button onClick={() => accept(c.matchId)} disabled={busy} className="rounded-xl py-3 font-display tracking-wide disabled:opacity-50" style={{ background: "#00ff87", color: "#062013", fontSize: 16 }}>ACCEPT →</button>
-                  <button onClick={() => decline(c.matchId)} disabled={busy} className="rounded-xl py-3 font-body disabled:opacity-50" style={{ background: "transparent", color: "#8888aa", fontSize: 14, border: "1px solid rgba(255,255,255,0.12)" }}>Decline</button>
+                  <button onClick={() => accept(c.matchId)} disabled={busy} className="rounded-xl py-3 font-display tracking-wide disabled:opacity-50" style={{ background: "#aeea00", color: "#062013", fontSize: 16 }}>ACCEPT →</button>
+                  <button onClick={() => decline(c.matchId)} disabled={busy} className="rounded-xl py-3 font-body disabled:opacity-50" style={{ background: "transparent", color: "#8a948f", fontSize: 14, border: "1px solid rgba(255,255,255,0.12)" }}>Decline</button>
                 </div>
               </div>
             ))}
@@ -250,49 +250,49 @@ export default function LeagueBoard() {
 
         {/* First-member invite moment */}
         {board.isMember && alone && (
-          <div className="mt-5 rounded-2xl p-5 text-center" style={{ background: "linear-gradient(135deg,#1a1230,#0f0f17)", border: "1px solid rgba(167,139,250,0.35)" }}>
+          <div className="mt-5 rounded-2xl p-5 text-center" style={{ background: "linear-gradient(135deg,#0e1611,#0e1611)", border: "1px solid rgba(174,234,0,0.35)" }}>
             <div className="font-display tracking-wide" style={{ fontSize: 22, color: "#fff" }}>INVITE YOUR MATES</div>
-            <p className="font-body mt-1 mb-3" style={{ fontSize: 13, color: "#cfcfe6" }}>A league needs at least two managers. Share the code or QR — matches are live head-to-head.</p>
-            <button onClick={shareCode} className="w-full rounded-xl py-3 font-display tracking-wide" style={{ background: "#a78bfa", color: "#15082b", fontSize: 18 }}>SHARE INVITE →</button>
+            <p className="font-body mt-1 mb-3" style={{ fontSize: 13, color: "#c4ccc6" }}>A league needs at least two managers. Share the code or QR — matches are live head-to-head.</p>
+            <button onClick={shareCode} className="w-full rounded-xl py-3 font-display tracking-wide" style={{ background: "#aeea00", color: "#0e1611", fontSize: 18 }}>SHARE INVITE →</button>
           </div>
         )}
 
         {/* League table */}
-        <div className="font-body mt-6 mb-2 flex items-center justify-between" style={{ fontSize: 11, color: "#8888aa", letterSpacing: 1 }}>
+        <div className="font-body mt-6 mb-2 flex items-center justify-between" style={{ fontSize: 11, color: "#8a948f", letterSpacing: 1 }}>
           <span>LEAGUE TABLE</span>
           <span>{board.members.length} {board.members.length === 1 ? "MANAGER" : "MANAGERS"}</span>
         </div>
 
         {board.members.length === 0 ? (
-          <div className="font-body text-center py-6 rounded-2xl" style={{ color: "#8888aa", fontSize: 13, background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}>
+          <div className="font-body text-center py-6 rounded-2xl" style={{ color: "#8a948f", fontSize: 13, background: "#0e1611", border: "1px solid rgba(255,255,255,0.07)" }}>
             No managers yet — share the code or QR.
           </div>
         ) : (
-          <div className="rounded-2xl overflow-hidden" style={{ background: "#0d0d14", border: "1px solid rgba(255,255,255,0.08)" }}>
-            <div className="flex items-center px-3 py-2 font-body" style={{ fontSize: 11, color: "#8888aa", letterSpacing: 0.5, background: "rgba(255,255,255,0.03)" }}>
+          <div className="rounded-2xl overflow-hidden" style={{ background: "#080d0a", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <div className="flex items-center px-3 py-2 font-body" style={{ fontSize: 11, color: "#8a948f", letterSpacing: 0.5, background: "rgba(255,255,255,0.03)" }}>
               <span style={{ width: 24, textAlign: "center" }}>#</span>
               <span className="flex-1 pl-2">TEAM</span>
               <span style={{ width: 26, textAlign: "center" }}>P</span>
               <span style={{ width: 26, textAlign: "center" }}>W</span>
               <span style={{ width: 26, textAlign: "center" }}>D</span>
               <span style={{ width: 26, textAlign: "center" }}>L</span>
-              <span style={{ width: 36, textAlign: "center", color: "#cfcfe6" }}>PTS</span>
+              <span style={{ width: 36, textAlign: "center", color: "#c4ccc6" }}>PTS</span>
             </div>
             {board.members.map((m, i) => (
               <div key={m.user_id} className="flex items-center px-3 py-2.5"
-                style={{ borderTop: "1px solid rgba(255,255,255,0.05)", background: m.is_me ? "rgba(0,255,135,0.07)" : "transparent" }}>
-                <span className="font-display tabular-nums" style={{ width: 24, textAlign: "center", fontSize: 15, color: i === 0 ? "#ffb800" : i < 3 ? "#cfcfe6" : "#8888aa" }}>{i + 1}</span>
+                style={{ borderTop: "1px solid rgba(255,255,255,0.05)", background: m.is_me ? "rgba(174,234,0,0.07)" : "transparent" }}>
+                <span className="font-display tabular-nums" style={{ width: 24, textAlign: "center", fontSize: 15, color: i === 0 ? "#ffb800" : i < 3 ? "#c4ccc6" : "#8a948f" }}>{i + 1}</span>
                 <div className="flex-1 min-w-0 pl-2">
                   <div className="font-body truncate" style={{ fontSize: 14, color: "#fff" }}>
                     {m.display_name}{m.is_me ? " (you)" : ""}
                   </div>
-                  <div className="font-body flex items-center gap-1.5" style={{ fontSize: 10, color: m.online ? "#00ff87" : "#8888aa" }}>
+                  <div className="font-body flex items-center gap-1.5" style={{ fontSize: 10, color: m.online ? "#aeea00" : "#8a948f" }}>
                     <span>{m.online ? "● Online" : "○ Offline"}</span>
-                    {m.strength != null && <span style={{ color: "#8888aa" }}>· {m.strength}</span>}
+                    {m.strength != null && <span style={{ color: "#8a948f" }}>· {m.strength}</span>}
                   </div>
                 </div>
-                <span className="font-body tabular-nums" style={{ width: 26, textAlign: "center", fontSize: 14, color: "#cfcfe6" }}>{m.played}</span>
-                <span className="font-body tabular-nums" style={{ width: 26, textAlign: "center", fontSize: 14, color: "#00ff87" }}>{m.won}</span>
+                <span className="font-body tabular-nums" style={{ width: 26, textAlign: "center", fontSize: 14, color: "#c4ccc6" }}>{m.played}</span>
+                <span className="font-body tabular-nums" style={{ width: 26, textAlign: "center", fontSize: 14, color: "#aeea00" }}>{m.won}</span>
                 <span className="font-body tabular-nums" style={{ width: 26, textAlign: "center", fontSize: 14, color: "#ffb800" }}>{m.drawn}</span>
                 <span className="font-body tabular-nums" style={{ width: 26, textAlign: "center", fontSize: 14, color: "#ff4757" }}>{m.lost}</span>
                 <span className="font-display tabular-nums" style={{ width: 36, textAlign: "center", fontSize: 16, color: "#fff" }}>{m.points}</span>
@@ -304,9 +304,9 @@ export default function LeagueBoard() {
         {/* Challenge an online manager (live H2H) */}
         {board.isMember && !board.activeMatchId && (
           <>
-            <div className="font-body mt-5 mb-2" style={{ fontSize: 11, color: "#8888aa", letterSpacing: 1 }}>CHALLENGE A MANAGER · LIVE</div>
+            <div className="font-body mt-5 mb-2" style={{ fontSize: 11, color: "#8a948f", letterSpacing: 1 }}>CHALLENGE A MANAGER · LIVE</div>
             {onlineOpponents.length === 0 ? (
-              <div className="font-body text-center py-5 rounded-2xl" style={{ color: "#8888aa", fontSize: 13, background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}>
+              <div className="font-body text-center py-5 rounded-2xl" style={{ color: "#8a948f", fontSize: 13, background: "#0e1611", border: "1px solid rgba(255,255,255,0.07)" }}>
                 {board.members.length <= 1 ? "Invite mates to play." : "Nobody else online right now. League matches are live — challenge a manager when their dot is green."}
               </div>
             ) : (
@@ -314,10 +314,10 @@ export default function LeagueBoard() {
                 {onlineOpponents.map((m) => (
                   <button key={m.user_id} onClick={() => challenge(m.user_id)} disabled={busy}
                     className="inline-flex items-center gap-2 rounded-full pl-3 pr-2 py-1.5 disabled:opacity-50 active:scale-95 transition-transform"
-                    style={{ background: "#12121e", border: "1px solid rgba(0,255,135,0.3)" }}>
-                    <span className="h-2 w-2 rounded-full" style={{ background: "#00ff87" }} />
+                    style={{ background: "#0e1611", border: "1px solid rgba(174,234,0,0.3)" }}>
+                    <span className="h-2 w-2 rounded-full" style={{ background: "#aeea00" }} />
                     <span className="font-body truncate" style={{ fontSize: 13, color: "#fff", maxWidth: 120 }}>{m.display_name}</span>
-                    <span className="font-display tracking-wide rounded-full px-2" style={{ fontSize: 12, color: "#062013", background: "#00ff87" }}>⚔️ PLAY</span>
+                    <span className="font-display tracking-wide rounded-full px-2" style={{ fontSize: 12, color: "#062013", background: "#aeea00" }}>⚔️ PLAY</span>
                   </button>
                 ))}
               </div>
@@ -337,11 +337,11 @@ export default function LeagueBoard() {
                   <button onClick={() => leaveOrDelete(board.isOwner ? "delete" : "leave")} disabled={busy} className="rounded-lg px-4 py-2 font-display tracking-wide disabled:opacity-50" style={{ background: "#ff4757", color: "#fff", fontSize: 14 }}>
                     {board.isOwner ? "DELETE LEAGUE" : "LEAVE"}
                   </button>
-                  <button onClick={() => setConfirmDelete(false)} className="rounded-lg px-4 py-2 font-body" style={{ color: "#8888aa", fontSize: 14 }}>Cancel</button>
+                  <button onClick={() => setConfirmDelete(false)} className="rounded-lg px-4 py-2 font-body" style={{ color: "#8a948f", fontSize: 14 }}>Cancel</button>
                 </div>
               </div>
             ) : (
-              <button onClick={() => setConfirmDelete(true)} className="font-body text-sm" style={{ color: "#8888aa" }}>
+              <button onClick={() => setConfirmDelete(true)} className="font-body text-sm" style={{ color: "#8a948f" }}>
                 {board.isOwner ? "🗑 Delete league" : "← Leave league"}
               </button>
             )}

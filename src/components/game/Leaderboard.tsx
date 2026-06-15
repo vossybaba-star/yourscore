@@ -18,7 +18,7 @@ export interface LeaderboardEntry {
 function AvatarCircle({ name, size = 36 }: { name: string; size?: number }) {
   const palettes = [
     { bg: "#1a2f4a", text: "#60a5fa" },
-    { bg: "#2a1a4a", text: "#a78bfa" },
+    { bg: "#3a423d", text: "#aeea00" },
     { bg: "#1a4a2a", text: "#4ade80" },
     { bg: "#4a2a1a", text: "#fb923c" },
     { bg: "#4a1a2a", text: "#f87171" },
@@ -83,7 +83,7 @@ function PlayerStatsModal({
         className="rounded-t-3xl overflow-hidden"
         onClick={e => e.stopPropagation()}
         style={{
-          background: "#12121e",
+          background: "#0e1611",
           border: "1px solid rgba(255,255,255,0.08)",
           borderBottom: "none",
           animation: "slideUp 0.3s cubic-bezier(0.16,1,0.3,1) forwards",
@@ -100,16 +100,16 @@ function PlayerStatsModal({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <p className="font-body text-lg font-bold text-white truncate">{entry.display_name}</p>
-              {isSelf && <span className="font-body text-xs" style={{ color: "#00ff87" }}>you</span>}
+              {isSelf && <span className="font-body text-xs" style={{ color: "#aeea00" }}>you</span>}
             </div>
-            <p className="font-body text-sm" style={{ color: "#8888aa" }}>
+            <p className="font-body text-sm" style={{ color: "#8a948f" }}>
               #{entry.rank} · {entry.total_score.toLocaleString()} pts
             </p>
           </div>
           <button
             onClick={onClose}
             className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-            style={{ background: "rgba(255,255,255,0.06)", color: "#8888aa" }}
+            style={{ background: "rgba(255,255,255,0.06)", color: "#8a948f" }}
           >
             ✕
           </button>
@@ -118,9 +118,9 @@ function PlayerStatsModal({
         {/* Stats grid */}
         <div className="grid grid-cols-2 gap-3 p-5">
           {[
-            { label: "Correct", value: entry.correct_answers.toString(), color: "#00ff87", icon: "✓" },
+            { label: "Correct", value: entry.correct_answers.toString(), color: "#aeea00", icon: "✓" },
             { label: "Wrong", value: wrong.toString(), color: "#ff4757", icon: "✗" },
-            { label: "Accuracy", value: acc, color: "#a78bfa", icon: "%" },
+            { label: "Accuracy", value: acc, color: "#aeea00", icon: "%" },
             { label: "Avg Speed", value: fmtSpeed(entry.avg_answer_speed_ms), color: "#60a5fa", icon: "⌀" },
             { label: "Fastest", value: fmtSpeed(entry.fastest_answer_ms), color: "#ffb800", icon: "⚡" },
             {
@@ -135,7 +135,7 @@ function PlayerStatsModal({
               className="rounded-2xl px-4 py-3"
               style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
             >
-              <p className="font-body text-xs uppercase tracking-widest mb-1" style={{ color: "#555577" }}>{label}</p>
+              <p className="font-body text-xs uppercase tracking-widest mb-1" style={{ color: "#586058" }}>{label}</p>
               <p className="font-display text-2xl" style={{ color }}>{value}</p>
             </div>
           ))}
@@ -167,8 +167,8 @@ function LeaderboardCard({ entry, currentUserId, prevRank, isNew, onClick }: Lea
     <div
       className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all cursor-pointer active:scale-[0.98]"
       style={{
-        background: isSelf ? "rgba(0,255,135,0.06)" : "rgba(255,255,255,0.02)",
-        border: `1px solid ${isSelf ? "rgba(0,255,135,0.2)" : "rgba(255,255,255,0.05)"}`,
+        background: isSelf ? "rgba(174,234,0,0.06)" : "rgba(255,255,255,0.02)",
+        border: `1px solid ${isSelf ? "rgba(174,234,0,0.2)" : "rgba(255,255,255,0.05)"}`,
         animation: isNew ? "slideUp 0.35s cubic-bezier(0.16,1,0.3,1) forwards" : undefined,
       }}
       onClick={onClick}
@@ -187,19 +187,19 @@ function LeaderboardCard({ entry, currentUserId, prevRank, isNew, onClick }: Lea
           {entry.current_streak >= 3 && (
             <span className="text-xs font-body text-amber flex items-center gap-0.5">🔥×{entry.current_streak}</span>
           )}
-          {isSelf && <span className="text-xs font-body" style={{ color: "#00ff87" }}>you</span>}
+          {isSelf && <span className="text-xs font-body" style={{ color: "#aeea00" }}>you</span>}
         </div>
-        <p className="font-body text-xs" style={{ color: "#555577" }}>
-          <span style={{ color: "#00ff87" }}>✓{entry.correct_answers}</span>
+        <p className="font-body text-xs" style={{ color: "#586058" }}>
+          <span style={{ color: "#aeea00" }}>✓{entry.correct_answers}</span>
           {entry.total_answers > 0 && (
             <>
-              <span style={{ color: "#333355" }}> · </span>
+              <span style={{ color: "#3a423d" }}> · </span>
               <span style={{ color: "#ff4757" }}>✗{wrong}</span>
-              <span style={{ color: "#333355" }}> · </span>
-              <span style={{ color: "#a78bfa" }}>{acc}</span>
+              <span style={{ color: "#3a423d" }}> · </span>
+              <span style={{ color: "#aeea00" }}>{acc}</span>
               {entry.avg_answer_speed_ms != null && (
                 <>
-                  <span style={{ color: "#333355" }}> · </span>
+                  <span style={{ color: "#3a423d" }}> · </span>
                   <span style={{ color: "#60a5fa" }}>⚡{fmtSpeed(entry.avg_answer_speed_ms)}</span>
                 </>
               )}
@@ -210,12 +210,12 @@ function LeaderboardCard({ entry, currentUserId, prevRank, isNew, onClick }: Lea
 
       {/* Score + delta */}
       <div className="text-right flex-shrink-0">
-        <p className="font-display text-xl leading-none" style={{ color: isSelf ? "#00ff87" : "#ffffff" }}>
+        <p className="font-display text-xl leading-none" style={{ color: isSelf ? "#aeea00" : "#ffffff" }}>
           {entry.total_score.toLocaleString()}
         </p>
         {rankDelta !== 0 && (
           <p className="font-body text-xs mt-0.5 flex items-center justify-end gap-0.5"
-            style={{ color: rankDelta > 0 ? "#00ff87" : "#ff4757" }}>
+            style={{ color: rankDelta > 0 ? "#aeea00" : "#ff4757" }}>
             {rankDelta > 0 ? "▲" : "▼"} {Math.abs(rankDelta)}
           </p>
         )}

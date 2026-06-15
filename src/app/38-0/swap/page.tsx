@@ -76,7 +76,7 @@ export default function SwapScreen() {
   useEffect(() => () => { if (reelTimer.current) clearInterval(reelTimer.current); }, []);
 
   if (!team) {
-    return <div className="min-h-[100dvh] grid place-items-center" style={{ background: "#0a0a0f", color: "#8888aa" }}>Loading…</div>;
+    return <div className="min-h-[100dvh] grid place-items-center" style={{ background: "#0a0a0f", color: "#8a948f" }}>Loading…</div>;
   }
 
   // when choosing, the open slot for the dropped player is filtered to fitting players on spin
@@ -90,7 +90,7 @@ export default function SwapScreen() {
           <div className="font-display tracking-wide" style={{ fontSize: 30, color: "#ffb800" }}>
             {phase === "choose" ? "DROP ONE PLAYER" : `REPLACE: ${slot?.label}`}
           </div>
-          <div className="font-body" style={{ fontSize: 13, color: "#8888aa" }}>
+          <div className="font-body" style={{ fontSize: 13, color: "#8a948f" }}>
             {phase === "choose" ? "Tap the player you want to swap out" : "Spin and draft a replacement"}
           </div>
         </div>
@@ -108,7 +108,7 @@ export default function SwapScreen() {
         <div className="fixed bottom-0 left-0 right-0" style={{ background: "linear-gradient(0deg,#0a0a0f 70%,transparent)", paddingBottom: "calc(env(safe-area-inset-bottom,0px) + 14px)" }}>
           <div className="max-w-lg mx-auto px-4 pt-4">
             {(spinning || reel) && (
-              <div className="mb-3 rounded-2xl px-4 py-4 flex items-center gap-4" style={{ background: "#12121e", border: `1px solid ${spinning ? "rgba(255,184,0,0.4)" : "rgba(255,184,0,0.35)"}` }}>
+              <div className="mb-3 rounded-2xl px-4 py-4 flex items-center gap-4" style={{ background: "#0e1611", border: `1px solid ${spinning ? "rgba(255,184,0,0.4)" : "rgba(255,184,0,0.35)"}` }}>
                 {reel && getTeamBadgeUrlSync(reel.club) ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={getTeamBadgeUrlSync(reel.club)!} alt={reel.club} width={58} height={58}
@@ -116,7 +116,7 @@ export default function SwapScreen() {
                 ) : (<div style={{ width: 58, height: 58 }} />)}
                 <div className="flex-1 text-left min-w-0">
                   <div className="font-display tracking-wide leading-none truncate" style={{ fontSize: 28, color: spinning ? "#ffb800" : "#fff" }}>{reel?.club ?? "—"}</div>
-                  <div className="font-body mt-1" style={{ fontSize: 13, color: "#8888aa" }}>{reel?.season ?? ""}</div>
+                  <div className="font-body mt-1" style={{ fontSize: 13, color: "#8a948f" }}>{reel?.season ?? ""}</div>
                 </div>
               </div>
             )}
@@ -125,7 +125,7 @@ export default function SwapScreen() {
                 {draftable.map((p) => (
                   <button key={p.id} onClick={() => draft(p)}
                     className="flex-shrink-0 rounded-xl p-3 text-left active:scale-95 transition-transform"
-                    style={{ width: 130, background: "#1a1a2e", border: "1px solid rgba(255,184,0,0.3)" }}>
+                    style={{ width: 130, background: "#15211a", border: "1px solid rgba(255,184,0,0.3)" }}>
                     <div className="flex items-baseline justify-between">
                       {team.mode === "expert" ? (
                         <span className="font-display" style={{ fontSize: 26, color: "#ffb800" }}>{p.position}</span>
@@ -140,18 +140,18 @@ export default function SwapScreen() {
                   </button>
                 ))}
                 {draftable.length === 0 && (
-                  <div className="font-body py-3 px-2" style={{ fontSize: 13, color: "#8888aa" }}>No fit from that squad — spin again.</div>
+                  <div className="font-body py-3 px-2" style={{ fontSize: 13, color: "#8a948f" }}>No fit from that squad — spin again.</div>
                 )}
               </div>
             )}
             {!current || spinning ? (
               <button onClick={doSpin} disabled={spinning}
                 className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-60"
-                style={{ background: spinning ? "#1a1a2e" : "#ffb800", color: spinning ? "#ffb800" : "#1a1300", fontSize: 24 }}>
+                style={{ background: spinning ? "#15211a" : "#ffb800", color: spinning ? "#ffb800" : "#1a1300", fontSize: 24 }}>
                 {spinning ? "SPINNING…" : "SPIN 🎰"}
               </button>
             ) : (
-              <div className="text-center font-body py-2" style={{ fontSize: 13, color: "#8888aa" }}>
+              <div className="text-center font-body py-2" style={{ fontSize: 13, color: "#8a948f" }}>
                 Draft a replacement from this squad
               </div>
             )}

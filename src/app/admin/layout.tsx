@@ -18,7 +18,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Sidebar */}
       <aside
         className="w-56 flex-shrink-0 flex flex-col"
-        style={{ background: "#0d0d18", borderRight: "1px solid rgba(255,255,255,0.06)" }}
+        style={{ background: "#080d0a", borderRight: "1px solid rgba(255,255,255,0.06)" }}
       >
         <div className="px-5 py-5" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
           <p className="font-display text-xl text-white tracking-widest">YOURSCORE</p>
@@ -33,9 +33,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 href={item.href}
                 className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-body text-sm transition-all"
                 style={{
-                  background: active ? "rgba(0,255,135,0.08)" : "transparent",
-                  color: active ? "#00ff87" : "#8888aa",
-                  border: active ? "1px solid rgba(0,255,135,0.12)" : "1px solid transparent",
+                  background: active ? "rgba(174,234,0,0.08)" : "transparent",
+                  color: active ? "#aeea00" : "#8a948f",
+                  border: active ? "1px solid rgba(174,234,0,0.12)" : "1px solid transparent",
                 }}
               >
                 <span>{item.icon}</span>

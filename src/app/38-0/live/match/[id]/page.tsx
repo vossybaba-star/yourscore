@@ -129,7 +129,7 @@ export default function LiveMatchScreen() {
         {/* Phase body */}
         {m.phase === "lobby" && (
           <Panel>
-            <p className="text-center" style={{ color: "#9a9ab0" }}>
+            <p className="text-center" style={{ color: "#9aa39d" }}>
               {m.p2_id || m.is_bot ? `${view.oppName} is here.` : "Waiting for your opponent to join…"}
             </p>
             {(m.p2_id || m.is_bot) && (
@@ -137,7 +137,7 @@ export default function LiveMatchScreen() {
                 {view.myReady ? (secondsLeft != null ? `Ready ✓ — waiting for ${view.oppName}…` : "Ready ✓ — waiting…") : "I'm ready"}
               </Action>
             )}
-            <Link href="/38-0/live" className="block text-center mt-3 text-sm underline" style={{ color: "#8888aa" }}>Leave</Link>
+            <Link href="/38-0/live" className="block text-center mt-3 text-sm underline" style={{ color: "#8a948f" }}>Leave</Link>
           </Panel>
         )}
 
@@ -147,7 +147,7 @@ export default function LiveMatchScreen() {
 
         {m.phase === "pregame_swap" && (
           <Panel>
-            <p className="text-center text-sm" style={{ color: "#9a9ab0" }}>
+            <p className="text-center text-sm" style={{ color: "#9aa39d" }}>
               Pre-match: change 1 player after seeing their XI. <b style={{ color: "#ffb800" }}>{view.swapsLeft} left</b>
             </p>
             <div className="mt-3">
@@ -167,7 +167,7 @@ export default function LiveMatchScreen() {
                 <p className="font-display" style={{ fontSize: 52, fontWeight: 900, lineHeight: 1 }}>
                   {view.myGoals} – {view.oppGoals}
                 </p>
-                <p className="font-body text-sm mt-2" style={{ color: "#9a9ab0" }}>
+                <p className="font-body text-sm mt-2" style={{ color: "#9aa39d" }}>
                   {view.myName} vs {view.oppName}
                 </p>
               </div>
@@ -180,7 +180,7 @@ export default function LiveMatchScreen() {
                   <MatchReportCard rv={halftimeView(sim.h1, view.meP1)} meP1={view.meP1} myName={view.myName} oppName={view.oppName} showPotm={false} />
                 </div>
                 <div className="mt-4">
-                  <div className="text-xs mb-1" style={{ color: "#7a7a92", letterSpacing: 1 }}>BOTH SQUADS</div>
+                  <div className="text-xs mb-1" style={{ color: "#8a948f", letterSpacing: 1 }}>BOTH SQUADS</div>
                   <div className="grid grid-cols-2 gap-2">
                     <Pitch formation={view.myFormation} squad={view.mySquad} compact />
                     <Pitch formation={view.oppFormation} squad={view.oppSquad} compact />
@@ -189,7 +189,7 @@ export default function LiveMatchScreen() {
               </Panel>
             )}
             <Panel>
-              <p className="text-center text-sm" style={{ color: "#9a9ab0" }}>
+              <p className="text-center text-sm" style={{ color: "#9aa39d" }}>
                 Make up to 2 changes for the second half. <b style={{ color: "#ffb800" }}>{view.swapsLeft} left</b>
               </p>
               <div className="mt-3">
@@ -209,7 +209,7 @@ export default function LiveMatchScreen() {
           if (!hs) {
             return (
               <Panel>
-                <p className="text-center font-display tracking-wide" style={{ fontSize: 26, color: "#00ff87" }}>
+                <p className="text-center font-display tracking-wide" style={{ fontSize: 26, color: "#aeea00" }}>
                   {isH1 ? "Kick-off!" : "Second half underway"}
                 </p>
               </Panel>
@@ -229,9 +229,9 @@ export default function LiveMatchScreen() {
         {m.phase === "draw_decision" && (
           <Panel>
             <p className="text-center font-display" style={{ fontSize: 24, color: "#ffb800" }}>Level after 90!</p>
-            <p className="text-center mt-1 text-sm" style={{ color: "#9a9ab0" }}>Settle it on penalties? Both must agree.</p>
+            <p className="text-center mt-1 text-sm" style={{ color: "#9aa39d" }}>Settle it on penalties? Both must agree.</p>
             <div className="mt-4 grid grid-cols-2 gap-3">
-              <button onClick={() => live.drawChoice(true)} className="rounded-2xl py-4 font-semibold" style={{ background: "#00ff87", color: "#04130a" }}>Penalties</button>
+              <button onClick={() => live.drawChoice(true)} className="rounded-2xl py-4 font-semibold" style={{ background: "#aeea00", color: "#04130a" }}>Penalties</button>
               <button onClick={() => live.drawChoice(false)} className="rounded-2xl py-4 font-semibold" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "#e8e8f0" }}>Take the draw</button>
             </div>
           </Panel>
@@ -249,12 +249,12 @@ export default function LiveMatchScreen() {
           <Panel>
             <p className="text-center text-2xl mb-3">⏰</p>
             <p className="font-display text-center text-white text-lg mb-2">Match Abandoned</p>
-            <p className="font-body text-center text-sm mb-4" style={{ color: "#9a9ab0" }}>
+            <p className="font-body text-center text-sm mb-4" style={{ color: "#9aa39d" }}>
               {view.myReady
                 ? `${view.oppName} didn't show up in time.`
                 : "The match timed out before it could start."}
             </p>
-            <Link href="/38-0/live" className="block text-center font-body text-sm" style={{ color: "#00ff87" }}>
+            <Link href="/38-0/live" className="block text-center font-body text-sm" style={{ color: "#aeea00" }}>
               Play again →
             </Link>
           </Panel>
@@ -301,10 +301,10 @@ function Header({ view, phase, secondsLeft, opponentOnline, oppPos }: { view: Vi
   return (
     <div>
       <div className="flex items-center justify-between text-sm">
-        <Link href="/38-0/live" style={{ color: "#8888aa" }}>← Live</Link>
+        <Link href="/38-0/live" style={{ color: "#8a948f" }}>← Live</Link>
         {secondsLeft != null
           ? <span className="font-mono rounded-full px-2.5 py-1" style={{ fontSize: 14, fontWeight: 700, color: secondsLeft <= 5 ? "#ff7a88" : "#ffb800", background: secondsLeft <= 5 ? "rgba(255,71,87,0.14)" : "rgba(255,184,0,0.12)" }}>⏱ {secondsLeft}s</span>
-          : phase === "lobby" && <span className="inline-flex items-center gap-1.5 text-xs" style={{ color: "#9a9ab0" }}><span className="h-2 w-2 rounded-full animate-pulse" style={{ background: "#ffb800" }} />waiting</span>}
+          : phase === "lobby" && <span className="inline-flex items-center gap-1.5 text-xs" style={{ color: "#9aa39d" }}><span className="h-2 w-2 rounded-full animate-pulse" style={{ background: "#ffb800" }} />waiting</span>}
       </div>
       <div className="mt-4 flex items-center justify-between">
         <Team name={view.myName} str={view.myStr} you online />
@@ -322,8 +322,8 @@ function Header({ view, phase, secondsLeft, opponentOnline, oppPos }: { view: Vi
 function Team({ name, str, you, online, alignRight, pos }: { name: string; str: number; you?: boolean; online?: boolean; alignRight?: boolean; pos?: number | null }) {
   return (
     <div className={alignRight ? "text-right" : ""} style={{ maxWidth: 130 }}>
-      <div className="font-semibold truncate" style={{ color: you ? "#00ff87" : "#e8e8f0" }}>{name}</div>
-      <div className="text-xs" style={{ color: "#9a9ab0" }}>STR {str.toFixed(1)}{online != null && <span style={{ color: online ? "#00ff87" : "#555" }}> ●</span>}</div>
+      <div className="font-semibold truncate" style={{ color: you ? "#aeea00" : "#e8e8f0" }}>{name}</div>
+      <div className="text-xs" style={{ color: "#9aa39d" }}>STR {str.toFixed(1)}{online != null && <span style={{ color: online ? "#aeea00" : "#555" }}> ●</span>}</div>
       {pos != null && <div className="text-[10px] font-semibold mt-0.5" style={{ color: positionColor(pos) }}>🏅 #{pos.toLocaleString()}</div>}
     </div>
   );
@@ -332,9 +332,9 @@ function Team({ name, str, you, online, alignRight, pos }: { name: string; str: 
 function TwoXI({ view, caption, countdown }: { view: View; caption: string; countdown?: number | null }) {
   return (
     <Panel>
-      <p className="text-center text-sm" style={{ color: "#9a9ab0" }}>{caption}</p>
+      <p className="text-center text-sm" style={{ color: "#9aa39d" }}>{caption}</p>
       {countdown != null && (
-        <p className="text-center font-display tracking-wide mt-1" style={{ fontSize: 30, lineHeight: 1.1, color: countdown <= 5 ? "#ff7a88" : "#00ff87" }}>
+        <p className="text-center font-display tracking-wide mt-1" style={{ fontSize: 30, lineHeight: 1.1, color: countdown <= 5 ? "#ff7a88" : "#aeea00" }}>
           Kick-off in {countdown}s
         </p>
       )}
@@ -351,7 +351,7 @@ function ResultPanel({ view, sim, m }: { view: View; sim: MatchSim | null; m: Dr
   const drew = view.myGoals === view.oppGoals && (view.pens[0] == null);
   const won = view.pens[0] != null ? view.pens[0]! > view.pens[1]! : view.myGoals > view.oppGoals;
   const label = drew ? "Draw" : won ? "You win!" : "You lost";
-  const color = drew ? "#ffb800" : won ? "#00ff87" : "#ff7a88";
+  const color = drew ? "#ffb800" : won ? "#aeea00" : "#ff7a88";
   // Share state
   const [shortUrl, setShortUrl] = useState<string | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
@@ -464,20 +464,20 @@ function ResultPanel({ view, sim, m }: { view: View; sim: MatchSim | null; m: Dr
         <Panel>
           <p className="text-center font-display tracking-wide" style={{ fontSize: 34, color }}>{label}</p>
           <p className="text-center mt-1" style={{ fontSize: 40, fontWeight: 800 }}>
-            {view.myGoals} – {view.oppGoals}{view.pens[0] != null && <span className="block text-sm" style={{ color: "#9a9ab0" }}>pens {view.pens[0]}–{view.pens[1]}</span>}
+            {view.myGoals} – {view.oppGoals}{view.pens[0] != null && <span className="block text-sm" style={{ color: "#9aa39d" }}>pens {view.pens[0]}–{view.pens[1]}</span>}
           </p>
         </Panel>
       )}
       <Panel>
         {/* Auto-assigned team — keep or rebuild */}
         {isAutoTeam && (
-          <div className="mt-4 rounded-2xl p-4" style={{ background: "rgba(0,255,135,0.06)", border: "1px solid rgba(0,255,135,0.2)" }}>
-            <p className="font-body text-center mb-3" style={{ fontSize: 13, color: "#8888aa" }}>
+          <div className="mt-4 rounded-2xl p-4" style={{ background: "rgba(174,234,0,0.06)", border: "1px solid rgba(174,234,0,0.2)" }}>
+            <p className="font-body text-center mb-3" style={{ fontSize: 13, color: "#8a948f" }}>
               We picked a random XI for you. Want to keep it?
             </p>
             <div className="flex gap-2">
-              <button onClick={keepTeam} className="flex-1 rounded-xl py-2.5 font-body font-semibold text-sm" style={{ background: "#00ff87", color: "#062013" }}>Keep this XI ✓</button>
-              <button onClick={buildOwn} className="flex-1 rounded-xl py-2.5 font-body text-sm" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#cfcfe6" }}>Build my own</button>
+              <button onClick={keepTeam} className="flex-1 rounded-xl py-2.5 font-body font-semibold text-sm" style={{ background: "#aeea00", color: "#062013" }}>Keep this XI ✓</button>
+              <button onClick={buildOwn} className="flex-1 rounded-xl py-2.5 font-body text-sm" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#c4ccc6" }}>Build my own</button>
             </div>
           </div>
         )}
@@ -509,39 +509,39 @@ function ResultPanel({ view, sim, m }: { view: View; sim: MatchSim | null; m: Dr
           </div>
         </button>
 
-        <button onClick={openShare} className="w-full mt-2 rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "#00ff87", color: "#062013", fontSize: 22 }}>
+        <button onClick={openShare} className="w-full mt-2 rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "#aeea00", color: "#062013", fontSize: 22 }}>
           📸 SHARE YOUR RESULT
         </button>
 
-        <Link href="/38-0/live" className="mt-3 block text-center rounded-2xl py-3 font-semibold" style={{ background: "rgba(0,255,135,0.1)", color: "#00ff87", border: "1px solid rgba(0,255,135,0.3)" }}>Play again</Link>
-        <Link href="/38-0/leaderboard" className="mt-3 block text-center underline text-sm" style={{ color: "#8888aa" }}>View leaderboard</Link>
+        <Link href="/38-0/live" className="mt-3 block text-center rounded-2xl py-3 font-semibold" style={{ background: "rgba(174,234,0,0.1)", color: "#aeea00", border: "1px solid rgba(174,234,0,0.3)" }}>Play again</Link>
+        <Link href="/38-0/leaderboard" className="mt-3 block text-center underline text-sm" style={{ color: "#8a948f" }}>View leaderboard</Link>
       </Panel>
 
       {/* ── Share sheet ── */}
       {shareOpen && (
         <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: "rgba(0,0,0,0.7)" }} onClick={() => setShareOpen(false)}>
-          <div className="w-full max-w-lg rounded-t-3xl px-4 pt-3" style={{ background: "#0b0b12", borderTop: "1px solid rgba(255,255,255,0.1)", paddingBottom: "calc(env(safe-area-inset-bottom,0px) + 16px)" }} onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-lg rounded-t-3xl px-4 pt-3" style={{ background: "#080d0a", borderTop: "1px solid rgba(255,255,255,0.1)", paddingBottom: "calc(env(safe-area-inset-bottom,0px) + 16px)" }} onClick={(e) => e.stopPropagation()}>
             <div className="mx-auto mb-3 rounded-full" style={{ width: 40, height: 4, background: "rgba(255,255,255,0.2)" }} />
 
-            <button onClick={nativeShare} className="w-full mt-2 rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "#00ff87", color: "#062013", fontSize: 20 }}>
+            <button onClick={nativeShare} className="w-full mt-2 rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "#aeea00", color: "#062013", fontSize: 20 }}>
               🔗 Share link
             </button>
 
             <div className="grid grid-cols-3 gap-2 mt-2">
-              <button onClick={shareX} className="rounded-2xl py-3 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "#1a1a2e", color: "#fff", fontSize: 15, border: "1px solid rgba(255,255,255,0.15)" }}>𝕏</button>
+              <button onClick={shareX} className="rounded-2xl py-3 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "#15211a", color: "#fff", fontSize: 15, border: "1px solid rgba(255,255,255,0.15)" }}>𝕏</button>
               <button onClick={() => { setShareOpen(false); void nativeShare(); }} className="rounded-2xl py-3 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "rgba(225,48,108,0.12)", color: "#e1306c", fontSize: 15, border: "1px solid rgba(225,48,108,0.3)" }}>Instagram</button>
-              <button onClick={() => { setShareOpen(false); void nativeShare(); }} className="rounded-2xl py-3 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "#1a1a2e", color: "#cfcfe6", fontSize: 15, border: "1px solid rgba(255,255,255,0.15)" }}>TikTok</button>
+              <button onClick={() => { setShareOpen(false); void nativeShare(); }} className="rounded-2xl py-3 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "#15211a", color: "#c4ccc6", fontSize: 15, border: "1px solid rgba(255,255,255,0.15)" }}>TikTok</button>
             </div>
 
-            <button onClick={copyLink} className="w-full mt-2 flex items-center gap-3 px-4 py-3 rounded-2xl transition-all" style={{ background: copied ? "rgba(0,255,135,0.1)" : "rgba(255,255,255,0.06)", border: `1px solid ${copied ? "rgba(0,255,135,0.3)" : "rgba(255,255,255,0.1)"}` }}>
+            <button onClick={copyLink} className="w-full mt-2 flex items-center gap-3 px-4 py-3 rounded-2xl transition-all" style={{ background: copied ? "rgba(174,234,0,0.1)" : "rgba(255,255,255,0.06)", border: `1px solid ${copied ? "rgba(174,234,0,0.3)" : "rgba(255,255,255,0.1)"}` }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke={copied ? "#00ff87" : "#aaaacc"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke={copied ? "#00ff87" : "#aaaacc"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke={copied ? "#aeea00" : "#9aa39d"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke={copied ? "#aeea00" : "#9aa39d"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
-              <span className="font-body text-sm font-semibold" style={{ color: copied ? "#00ff87" : "#aaaacc" }}>{copied ? "Copied!" : "Copy link"}</span>
+              <span className="font-body text-sm font-semibold" style={{ color: copied ? "#aeea00" : "#9aa39d" }}>{copied ? "Copied!" : "Copy link"}</span>
             </button>
 
-            <button onClick={() => setShareOpen(false)} className="w-full mt-2 rounded-2xl py-3 font-body active:scale-[0.98] transition-transform" style={{ background: "transparent", color: "#8888aa", fontSize: 15 }}>Close</button>
+            <button onClick={() => setShareOpen(false)} className="w-full mt-2 rounded-2xl py-3 font-body active:scale-[0.98] transition-transform" style={{ background: "transparent", color: "#8a948f", fontSize: 15 }}>Close</button>
           </div>
         </div>
       )}
@@ -550,7 +550,7 @@ function ResultPanel({ view, sim, m }: { view: View; sim: MatchSim | null; m: Dr
       {giveawayOpen && (
         <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: "rgba(0,0,0,0.9)" }} onClick={() => setGiveawayOpen(false)}>
           <div className="w-full max-w-lg px-4" style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 20px)" }} onClick={(e) => e.stopPropagation()}>
-            <div className="rounded-3xl overflow-hidden" style={{ background: "#0e0d1a", border: "2px solid rgba(255,184,0,0.4)" }}>
+            <div className="rounded-3xl overflow-hidden" style={{ background: "#080d0a", border: "2px solid rgba(255,184,0,0.4)" }}>
               <div className="flex justify-center pt-3 pb-1">
                 <div className="rounded-full" style={{ width: 40, height: 4, background: "rgba(255,255,255,0.18)" }} />
               </div>
@@ -558,9 +558,9 @@ function ResultPanel({ view, sim, m }: { view: View; sim: MatchSim | null; m: Dr
                 <div style={{ fontSize: 52, lineHeight: 1.1 }}>🏆</div>
                 <div className="font-body mt-3" style={{ fontSize: 11, color: "#ffb800", letterSpacing: 3 }}>DAILY GIVEAWAY</div>
                 <div className="font-display tracking-wide leading-none mt-1" style={{ fontSize: 80, color: "#fff" }}>£25</div>
-                <p className="font-body mt-3" style={{ fontSize: 15, color: "#cfcfe6", lineHeight: 1.6 }}>
+                <p className="font-body mt-3" style={{ fontSize: 15, color: "#c4ccc6", lineHeight: 1.6 }}>
                   Share your result on 𝕏 to enter.<br />
-                  <span style={{ color: "#7a7a92", fontSize: 13 }}>One winner drawn every 24 hours.</span>
+                  <span style={{ color: "#8a948f", fontSize: 13 }}>One winner drawn every 24 hours.</span>
                 </p>
                 <a href={giveawayTweetUrl()} target="_blank" rel="noopener noreferrer" onClick={() => setGiveawayOpen(false)}
                   className="flex items-center justify-center gap-3 w-full rounded-2xl py-4 mt-6 font-display tracking-wide active:scale-[0.98] transition-transform"
@@ -570,7 +570,7 @@ function ResultPanel({ view, sim, m }: { view: View; sim: MatchSim | null; m: Dr
                   </svg>
                   POST ON 𝕏 TO ENTER
                 </a>
-                <button onClick={() => setGiveawayOpen(false)} className="w-full mt-3 font-body" style={{ fontSize: 14, color: "#55556a", background: "transparent", border: "none", cursor: "pointer" }}>
+                <button onClick={() => setGiveawayOpen(false)} className="w-full mt-3 font-body" style={{ fontSize: 14, color: "#586058", background: "transparent", border: "none", cursor: "pointer" }}>
                   Not now
                 </button>
               </div>
@@ -596,7 +596,7 @@ type ReportView = {
 
 const bestOf = (rs: PlayerRating[]): PlayerRating | null => rs.length ? rs.reduce((m, p) => (p.rating > m.rating ? p : m)) : null;
 const worstOf = (rs: PlayerRating[]): PlayerRating | null => rs.length ? rs.reduce((m, p) => (p.rating < m.rating ? p : m)) : null;
-const ratingColor = (r: number): string => (r >= 8 ? "#00ff87" : r >= 7 ? "#cfcfe6" : r >= 6 ? "#ffb800" : "#ff7a88");
+const ratingColor = (r: number): string => (r >= 8 ? "#aeea00" : r >= 7 ? "#c4ccc6" : r >= 6 ? "#ffb800" : "#ff7a88");
 
 /** Map one half's sim onto me/opp (no PotM at the break). */
 function halftimeView(h: HalfSim, meP1: boolean): ReportView {
@@ -629,16 +629,16 @@ function MatchReportCard({ rv, meP1, myName, oppName, showPotm }: { rv: ReportVi
     <>
       {/* Stat table — You / stat / Opp */}
       <div className="rounded-xl overflow-hidden" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
-        <div className="flex items-center px-3 py-1.5 text-xs" style={{ color: "#9a9ab0", background: "rgba(255,255,255,0.03)" }}>
-          <span className="flex-1 text-left truncate" style={{ color: "#00ff87" }}>{myName}</span>
+        <div className="flex items-center px-3 py-1.5 text-xs" style={{ color: "#9aa39d", background: "rgba(255,255,255,0.03)" }}>
+          <span className="flex-1 text-left truncate" style={{ color: "#aeea00" }}>{myName}</span>
           <span style={{ width: 90, textAlign: "center" }} />
           <span className="flex-1 text-right truncate">{oppName}</span>
         </div>
         {rows.map(([label, a, b, pct]) => (
           <div key={label} className="flex items-center px-3 py-1.5" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-            <span className="flex-1 text-left tabular-nums font-bold" style={{ fontSize: 16, color: a >= b ? "#fff" : "#9a9ab0" }}>{a}{pct ? "%" : ""}</span>
-            <span style={{ width: 90, textAlign: "center", fontSize: 10, letterSpacing: 1, color: "#7a7a92" }}>{label.toUpperCase()}</span>
-            <span className="flex-1 text-right tabular-nums font-bold" style={{ fontSize: 16, color: b >= a ? "#fff" : "#9a9ab0" }}>{b}{pct ? "%" : ""}</span>
+            <span className="flex-1 text-left tabular-nums font-bold" style={{ fontSize: 16, color: a >= b ? "#fff" : "#9aa39d" }}>{a}{pct ? "%" : ""}</span>
+            <span style={{ width: 90, textAlign: "center", fontSize: 10, letterSpacing: 1, color: "#8a948f" }}>{label.toUpperCase()}</span>
+            <span className="flex-1 text-right tabular-nums font-bold" style={{ fontSize: 16, color: b >= a ? "#fff" : "#9aa39d" }}>{b}{pct ? "%" : ""}</span>
           </div>
         ))}
       </div>
@@ -646,15 +646,15 @@ function MatchReportCard({ rv, meP1, myName, oppName, showPotm }: { rv: ReportVi
       {/* Goal feed */}
       {rv.events.length > 0 && (
         <div className="mt-3">
-          <div className="text-xs mb-1" style={{ color: "#7a7a92", letterSpacing: 1 }}>GOALS</div>
+          <div className="text-xs mb-1" style={{ color: "#8a948f", letterSpacing: 1 }}>GOALS</div>
           <div className="space-y-1">
             {rv.events.map((e, i) => {
               const mine = (e.side === "a") === meP1;
               return (
                 <div key={i} className="flex items-center gap-2 text-sm">
-                  <span className="font-mono" style={{ width: 30, color: "#7a7a92" }}>{e.minute}&apos;</span>
-                  <span style={{ color: mine ? "#00ff87" : "#e8e8f0" }}>⚽ {e.scorerName}</span>
-                  {e.assistName && <span className="text-xs truncate" style={{ color: "#9a9ab0" }}>↳ {e.assistName}</span>}
+                  <span className="font-mono" style={{ width: 30, color: "#8a948f" }}>{e.minute}&apos;</span>
+                  <span style={{ color: mine ? "#aeea00" : "#e8e8f0" }}>⚽ {e.scorerName}</span>
+                  {e.assistName && <span className="text-xs truncate" style={{ color: "#9aa39d" }}>↳ {e.assistName}</span>}
                 </div>
               );
             })}
@@ -670,20 +670,20 @@ function MatchReportCard({ rv, meP1, myName, oppName, showPotm }: { rv: ReportVi
         </div>
       )}
       <div className="mt-3 grid grid-cols-2 gap-2">
-        <PerfPill label={`${myName} — best`} p={rv.myBest} color="#00ff87" />
+        <PerfPill label={`${myName} — best`} p={rv.myBest} color="#aeea00" />
         <PerfPill label={`${myName} — worst`} p={rv.myWorst} color="#ff7a88" />
-        <PerfPill label={`${oppName} — best`} p={rv.oppBest} color="#cfcfe6" />
-        <PerfPill label={`${oppName} — worst`} p={rv.oppWorst} color="#9a9ab0" />
+        <PerfPill label={`${oppName} — best`} p={rv.oppBest} color="#c4ccc6" />
+        <PerfPill label={`${oppName} — worst`} p={rv.oppWorst} color="#9aa39d" />
       </div>
 
       {/* Your XI ratings */}
       {rv.myRatings.length > 0 && (
         <div className="mt-3">
-          <div className="text-xs mb-1" style={{ color: "#7a7a92", letterSpacing: 1 }}>YOUR XI RATINGS</div>
+          <div className="text-xs mb-1" style={{ color: "#8a948f", letterSpacing: 1 }}>YOUR XI RATINGS</div>
           <div className="grid grid-cols-2 gap-x-3 gap-y-1">
             {[...rv.myRatings].sort((a, b) => b.rating - a.rating).map((p) => (
               <div key={p.id} className="flex items-center justify-between text-sm gap-2">
-                <span className="truncate" style={{ color: "#cfcfe6" }}><span style={{ color: "#7a7a92" }}>{p.pos}</span> {p.name}{p.goals > 0 ? " ⚽".repeat(Math.min(p.goals, 3)) : ""}</span>
+                <span className="truncate" style={{ color: "#c4ccc6" }}><span style={{ color: "#8a948f" }}>{p.pos}</span> {p.name}{p.goals > 0 ? " ⚽".repeat(Math.min(p.goals, 3)) : ""}</span>
                 <span className="tabular-nums font-bold" style={{ color: ratingColor(p.rating) }}>{p.rating.toFixed(1)}</span>
               </div>
             ))}
@@ -698,7 +698,7 @@ function PerfPill({ label, p, color }: { label: string; p: PlayerRating | null; 
   if (!p) return null;
   return (
     <div className="rounded-xl px-3 py-2 min-w-0" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
-      <div className="text-xs truncate" style={{ color: "#7a7a92" }}>{label}</div>
+      <div className="text-xs truncate" style={{ color: "#8a948f" }}>{label}</div>
       <div className="flex items-center justify-between gap-2">
         <span className="truncate" style={{ fontSize: 13 }}>{p.name}</span>
         <span className="tabular-nums font-bold" style={{ color }}>{p.rating.toFixed(1)}</span>
@@ -735,10 +735,10 @@ function SpinSheet({ formation, squad, slotId, seedKey, competition, onPick, onC
 
   return (
     <div className="fixed inset-0 z-50 flex items-end" style={{ background: "rgba(0,0,0,0.6)" }} onClick={onClose}>
-      <div className="w-full max-w-lg mx-auto rounded-t-3xl p-5 pb-10" style={{ background: "#13131c", border: "1px solid rgba(255,255,255,0.1)" }} onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-lg mx-auto rounded-t-3xl p-5 pb-10" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.1)" }} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between">
           <h3 className="font-semibold">Change {slot.pos}</h3>
-          <button onClick={onClose} style={{ color: "#8888aa" }}>Cancel</button>
+          <button onClick={onClose} style={{ color: "#8a948f" }}>Cancel</button>
         </div>
 
         {!result && (
@@ -746,18 +746,18 @@ function SpinSheet({ formation, squad, slotId, seedKey, competition, onPick, onC
             <button onClick={doSpin} disabled={spinning} className="mt-5 w-full rounded-2xl py-4 font-semibold" style={{ background: "#ffb800", color: "#1a1300", opacity: spinning ? 0.7 : 1 }}>
               {spinning ? `${reel?.club ?? ""} ${reel?.season ?? ""}…` : "Spin"}
             </button>
-            <p className="mt-2 text-center text-xs" style={{ color: "#7a7a92" }}>One spin per position — pick from what you&apos;re dealt, or keep your player.</p>
+            <p className="mt-2 text-center text-xs" style={{ color: "#8a948f" }}>One spin per position — pick from what you&apos;re dealt, or keep your player.</p>
           </>
         )}
 
         {result && (
           <div className="mt-4">
-            <p className="text-xs uppercase tracking-wide" style={{ color: "#7a7a92" }}>{result.club} · {result.season} — pick one or cancel to keep your player</p>
+            <p className="text-xs uppercase tracking-wide" style={{ color: "#8a948f" }}>{result.club} · {result.season} — pick one or cancel to keep your player</p>
             <div className="mt-2 space-y-2 max-h-[40vh] overflow-y-auto">
               {result.players.map((p: PlayerSeason) => (
                 <button key={p.id} onClick={() => onPick(p.id)} className="w-full flex items-center justify-between rounded-xl px-4 py-3" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }}>
-                  <span><span className="font-semibold">{p.name}</span> <span className="text-xs" style={{ color: "#9a9ab0" }}>{p.position}</span></span>
-                  <span className="font-bold" style={{ color: "#00ff87" }}>{p.overall}</span>
+                  <span><span className="font-semibold">{p.name}</span> <span className="text-xs" style={{ color: "#9aa39d" }}>{p.position}</span></span>
+                  <span className="font-bold" style={{ color: "#aeea00" }}>{p.overall}</span>
                 </button>
               ))}
             </div>
@@ -789,9 +789,9 @@ function Guide({ phase, view }: { phase: string; view: View }) {
   const g = PHASE_GUIDE[phase];
   if (!g) return null;
   return (
-    <div className="mt-4 rounded-xl px-4 py-3" style={{ background: "rgba(0,255,135,0.06)", border: "1px solid rgba(0,255,135,0.18)" }}>
-      <div className="font-display tracking-wide" style={{ fontSize: 11, letterSpacing: 1, color: "#00ff87" }}>{g.tag}</div>
-      <div className="mt-1" style={{ fontSize: 13.5, color: "#cfcfe6", lineHeight: 1.4 }}>{g.text(view)}</div>
+    <div className="mt-4 rounded-xl px-4 py-3" style={{ background: "rgba(174,234,0,0.06)", border: "1px solid rgba(174,234,0,0.18)" }}>
+      <div className="font-display tracking-wide" style={{ fontSize: 11, letterSpacing: 1, color: "#aeea00" }}>{g.tag}</div>
+      <div className="mt-1" style={{ fontSize: 13.5, color: "#c4ccc6", lineHeight: 1.4 }}>{g.text(view)}</div>
     </div>
   );
 }
@@ -800,8 +800,8 @@ function Panel({ children }: { children: React.ReactNode }) {
   return <div className="mt-6 rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>{children}</div>;
 }
 function Action({ children, onClick, disabled }: { children: React.ReactNode; onClick: () => void; disabled?: boolean }) {
-  return <button onClick={onClick} disabled={disabled} className="mt-4 w-full rounded-2xl py-4 font-semibold" style={{ background: disabled ? "rgba(255,255,255,0.06)" : "#00ff87", color: disabled ? "#9a9ab0" : "#04130a" }}>{children}</button>;
+  return <button onClick={onClick} disabled={disabled} className="mt-4 w-full rounded-2xl py-4 font-semibold" style={{ background: disabled ? "rgba(255,255,255,0.06)" : "#aeea00", color: disabled ? "#9aa39d" : "#04130a" }}>{children}</button>;
 }
 function Centered({ children, tone }: { children: React.ReactNode; tone?: "error" }) {
-  return <div className="min-h-[100dvh] grid place-items-center px-6 text-center" style={{ background: BG, color: tone === "error" ? "#ff7a88" : "#9a9ab0" }}><div>{children}</div></div>;
+  return <div className="min-h-[100dvh] grid place-items-center px-6 text-center" style={{ background: BG, color: tone === "error" ? "#ff7a88" : "#9aa39d" }}><div>{children}</div></div>;
 }

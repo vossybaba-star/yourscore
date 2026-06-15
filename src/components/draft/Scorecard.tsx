@@ -31,23 +31,23 @@ import {
   type ScorecardStat, type ScorecardGoal, type ScorecardPotm,
 } from "@/lib/draft/scorecard-utils";
 
-export const SC_WIN = "#00ff87";
+export const SC_WIN = "#aeea00";
 export const SC_DRAW = "#ffb800";
 export const SC_LOSS = "#ff4757";
 const INK = "#020204";
 
 /** Metallic gradient families — used as background-clip:text foil stamping. */
 export const FOIL: Record<"win" | "draw" | "loss", string> = {
-  win: "linear-gradient(135deg,#eafff5 0%,#00ff87 25%,#00b765 50%,#00ff87 75%,#eafff5 100%)",
+  win: "linear-gradient(135deg,#eafff5 0%,#aeea00 25%,#00b765 50%,#aeea00 75%,#eafff5 100%)",
   draw: "linear-gradient(135deg,#fff7d1 0%,#ffd700 25%,#c79318 50%,#ffd700 75%,#fff7d1 100%)",
   loss: "linear-gradient(135deg,#ffe1e4 0%,#ff4757 25%,#b22b35 50%,#ff4757 75%,#ffe1e4 100%)",
 };
 const FRAME: Record<"win" | "draw" | "loss", string> = {
-  win: "linear-gradient(135deg,#00ff87 0%,rgba(0,255,135,0.18) 25%,#00ff87 50%,rgba(0,255,135,0.18) 75%,#00ff87 100%)",
+  win: "linear-gradient(135deg,#aeea00 0%,rgba(174,234,0,0.18) 25%,#aeea00 50%,rgba(174,234,0,0.18) 75%,#aeea00 100%)",
   draw: "linear-gradient(135deg,#ffd700 0%,rgba(255,215,0,0.18) 25%,#ffd700 50%,rgba(255,215,0,0.18) 75%,#ffd700 100%)",
   loss: "linear-gradient(135deg,#ff4757 0%,rgba(255,71,87,0.18) 25%,#ff4757 50%,rgba(255,71,87,0.18) 75%,#ff4757 100%)",
 };
-const ENGRAVE = "linear-gradient(180deg,#3a3a52 0%,#22222f 55%,#16161e 100%)";
+const ENGRAVE = "linear-gradient(180deg,#586058 0%,#1d2c23 55%,#0e1611 100%)";
 const HOLO =
   "linear-gradient(110deg,transparent 40%,rgba(255,255,255,0.45) 45%,rgba(120,200,255,0.55) 50%,rgba(255,255,255,0.45) 55%,transparent 60%)";
 const GRAIN =
@@ -131,7 +131,7 @@ export function Crest({ color, label }: { color: string; label: string | number 
 export function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-2.5" style={{ marginBottom: 16 }}>
-      <span className="font-mono uppercase" style={{ fontSize: 9, letterSpacing: "0.3em", color: "#5a5a78" }}>{children}</span>
+      <span className="font-mono uppercase" style={{ fontSize: 9, letterSpacing: "0.3em", color: "#586058" }}>{children}</span>
       <span className="h-px flex-1" style={{ background: "linear-gradient(90deg,rgba(255,255,255,0.1),transparent)" }} />
     </div>
   );
@@ -145,14 +145,14 @@ export function Metric({ label, a, b, accent, suffix = "" }: { label: string; a:
   return (
     <div>
       <div className="grid items-baseline" style={{ gridTemplateColumns: "1fr auto 1fr", gap: 16 }}>
-        <span className="text-left font-mono" style={{ fontSize: 13, fontWeight: 500, color: aLeads ? accent : "#62627a" }}>{a}{suffix}</span>
-        <span className="text-center font-mono uppercase" style={{ fontSize: 9.5, letterSpacing: "0.2em", color: "#6a6a86", minWidth: 96 }}>{label}</span>
-        <span className="text-right font-mono" style={{ fontSize: 13, fontWeight: 500, color: !aLeads ? accent : "#62627a" }}>{b}{suffix}</span>
+        <span className="text-left font-mono" style={{ fontSize: 13, fontWeight: 500, color: aLeads ? accent : "#8a948f" }}>{a}{suffix}</span>
+        <span className="text-center font-mono uppercase" style={{ fontSize: 9.5, letterSpacing: "0.2em", color: "#8a948f", minWidth: 96 }}>{label}</span>
+        <span className="text-right font-mono" style={{ fontSize: 13, fontWeight: 500, color: !aLeads ? accent : "#8a948f" }}>{b}{suffix}</span>
       </div>
       <div className="relative mt-1.5 h-[3px] w-full rounded-full" style={{ background: "rgba(255,255,255,0.05)" }}>
         <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" style={{ width: 1, height: 8, background: "rgba(255,255,255,0.16)" }} />
-        <span className="absolute top-0 bottom-0 rounded-l-full" style={{ right: "50%", width: `${aFill}%`, background: aLeads ? accent : "#23232f", boxShadow: aLeads ? `0 0 8px ${accent}66` : "none" }} />
-        <span className="absolute top-0 bottom-0 rounded-r-full" style={{ left: "50%", width: `${bFill}%`, background: !aLeads ? accent : "#23232f", boxShadow: !aLeads ? `0 0 8px ${accent}66` : "none" }} />
+        <span className="absolute top-0 bottom-0 rounded-l-full" style={{ right: "50%", width: `${aFill}%`, background: aLeads ? accent : "#1d2c23", boxShadow: aLeads ? `0 0 8px ${accent}66` : "none" }} />
+        <span className="absolute top-0 bottom-0 rounded-r-full" style={{ left: "50%", width: `${bFill}%`, background: !aLeads ? accent : "#1d2c23", boxShadow: !aLeads ? `0 0 8px ${accent}66` : "none" }} />
       </div>
     </div>
   );
@@ -203,7 +203,7 @@ export function ScorecardShell({ fk, accent, eyebrow = "Full time", headline, se
         <div className="flex items-center justify-between" style={{ marginBottom: 30 }}>
           <div className="flex items-center gap-2">
             <span className="rounded-full motion-safe:animate-pulse-slow" style={{ width: 6, height: 6, background: accent, boxShadow: `0 0 10px ${accent}` }} />
-            <span className="font-mono uppercase" style={{ fontSize: 10, letterSpacing: "0.2em", color: "#8888aa" }}>{eyebrow}</span>
+            <span className="font-mono uppercase" style={{ fontSize: 10, letterSpacing: "0.2em", color: "#8a948f" }}>{eyebrow}</span>
             <span style={{ width: 1, height: 9, background: "rgba(255,255,255,0.16)" }} />
             <span className="font-mono uppercase" style={{ fontSize: 10, letterSpacing: "0.2em", color: accent }}>{headline}</span>
           </div>
@@ -218,7 +218,7 @@ export function ScorecardShell({ fk, accent, eyebrow = "Full time", headline, se
         {/* authenticity strip */}
         <div className="flex items-center gap-3" style={{ opacity: 0.65 }}>
           <span className="h-px flex-1" style={{ background: "rgba(255,255,255,0.08)" }} />
-          <span className="font-mono uppercase" style={{ fontSize: 9, letterSpacing: "0.18em", color: "#55556e" }}>{serial ? `№ ${serial} · ` : ""}{context ? `${context} · ` : ""}yourscore.app</span>
+          <span className="font-mono uppercase" style={{ fontSize: 9, letterSpacing: "0.18em", color: "#586058" }}>{serial ? `№ ${serial} · ` : ""}{context ? `${context} · ` : ""}yourscore.app</span>
           <span className="h-px flex-1" style={{ background: "rgba(255,255,255,0.08)" }} />
         </div>
       </div>
@@ -294,7 +294,7 @@ export function ScorecardView({ data }: { data: ScorecardData }) {
         <>
           <SectionLabel>Goal ledger</SectionLabel>
           {goals.length === 0 ? (
-            <p className="text-center font-mono" style={{ fontSize: 11, letterSpacing: "0.16em", color: "#62627a", marginBottom: 30 }}>NO GOALS · 0–0</p>
+            <p className="text-center font-mono" style={{ fontSize: 11, letterSpacing: "0.16em", color: "#8a948f", marginBottom: 30 }}>NO GOALS · 0–0</p>
           ) : (
             <div className="relative" style={{ marginBottom: 30 }}>
               <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2" style={{ width: 1, background: "linear-gradient(180deg,transparent,rgba(255,255,255,0.1) 12%,rgba(255,255,255,0.1) 88%,transparent)" }} />
@@ -332,7 +332,7 @@ export function ScorecardView({ data }: { data: ScorecardData }) {
             </div>
             <div className="min-w-0 flex-1">
               <div className="font-display truncate" style={{ fontSize: 22, color: "#fff", letterSpacing: "0.03em" }}>{data.potm.name}</div>
-              <div className="mt-1 flex items-center gap-2 font-mono uppercase" style={{ fontSize: 9.5, letterSpacing: "0.1em", color: "#8a8aa6" }}>
+              <div className="mt-1 flex items-center gap-2 font-mono uppercase" style={{ fontSize: 9.5, letterSpacing: "0.1em", color: "#9aa39d" }}>
                 {data.potm.sideName && <span style={{ color: SC_DRAW }}>{data.potm.sideName}</span>}
                 {data.potm.pos && (<><span style={{ opacity: 0.3 }}>|</span><span>{data.potm.pos}</span></>)}
                 {!!data.potm.goals && (<><span style={{ opacity: 0.3 }}>|</span><span>{data.potm.goals}G</span></>)}
@@ -371,7 +371,7 @@ function GoalInfo({ name, assist, align }: { name: string; assist?: string; alig
   return (
     <div className={align === "right" ? "min-w-0 text-right" : "min-w-0 text-left"}>
       <div className="truncate font-body" style={{ fontSize: 13, fontWeight: 600, color: "#eee" }}>{name}</div>
-      <div className="truncate font-mono uppercase" style={{ fontSize: 8.5, letterSpacing: "0.06em", color: "#6a6a86" }}>{assist ?? "Unassisted"}</div>
+      <div className="truncate font-mono uppercase" style={{ fontSize: 8.5, letterSpacing: "0.06em", color: "#8a948f" }}>{assist ?? "Unassisted"}</div>
     </div>
   );
 }
@@ -383,7 +383,7 @@ function TeamPanel({ name, strength, tierCol, formation, squad, nameColor, label
         <span className="truncate font-display" style={{ fontSize: 15, color: nameColor, letterSpacing: "0.03em" }}>{name}</span>
         {strength != null && <span className="font-mono shrink-0" style={{ fontSize: 13, fontWeight: 500, color: tierCol }}>{strength}</span>}
       </div>
-      <p className="mb-2 mt-0.5 truncate font-mono uppercase" style={{ fontSize: 8, letterSpacing: "0.1em", color: "#5a5a74" }}>{label} · {formation}</p>
+      <p className="mb-2 mt-0.5 truncate font-mono uppercase" style={{ fontSize: 8, letterSpacing: "0.1em", color: "#586058" }}>{label} · {formation}</p>
       <Pitch formation={formation} squad={squad} compact />
     </div>
   );

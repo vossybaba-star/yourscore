@@ -171,39 +171,39 @@ export default function WorldCupEntry() {
     return (
       <div className="min-h-[100dvh] pb-16" style={{ background: "#0a0a0f" }}>
         <div className="max-w-lg mx-auto px-4 pt-safe">
-          <div className="pt-4"><Link href="/38-0" className="font-body text-sm" style={{ color: "#8888aa" }}>← Back</Link></div>
+          <div className="pt-4"><Link href="/38-0" className="font-body text-sm" style={{ color: "#8a948f" }}>← Back</Link></div>
           <h1 className="font-display tracking-wide mt-3" style={{ fontSize: 32, color: "#fff" }}>🏆 WORLD CUP RUN</h1>
-          <p className="font-body mt-1 mb-4" style={{ fontSize: 14, color: "#cfcfe6" }}>
+          <p className="font-body mt-1 mb-4" style={{ fontSize: 14, color: "#c4ccc6" }}>
             A solo World Cup campaign. Build an XI, then play through a World Cup path — group, then knockouts — all the way to the final. Pick your mode.
           </p>
 
           {/* Mode cards */}
           <div className="flex flex-col gap-3 mb-5">
             <button onClick={() => chooseMode("nation")} className="text-left rounded-2xl p-4 active:scale-[0.99] transition-transform"
-              style={{ background: "#12121e", border: "1px solid rgba(0,255,135,0.3)" }}>
+              style={{ background: "#0e1611", border: "1px solid rgba(174,234,0,0.3)" }}>
               <div className="flex items-center gap-2.5 mb-1">
                 <span style={{ fontSize: 22 }}>🏴</span>
-                <span className="font-display tracking-wide" style={{ fontSize: 20, color: "#00ff87" }}>NATIONAL TEAM</span>
+                <span className="font-display tracking-wide" style={{ fontSize: 20, color: "#aeea00" }}>NATIONAL TEAM</span>
               </div>
-              <div className="font-body" style={{ fontSize: 13, color: "#cfcfe6", lineHeight: 1.4 }}>
+              <div className="font-body" style={{ fontSize: 13, color: "#c4ccc6", lineHeight: 1.4 }}>
                 Pick a nation and draft <b style={{ color: "#fff" }}>their players only</b>. Play that nation&apos;s real World Cup 2026 fixtures.
               </div>
             </button>
 
             <button onClick={() => chooseMode("world")} className="text-left rounded-2xl p-4 active:scale-[0.99] transition-transform"
-              style={{ background: "#12121e", border: "1px solid rgba(255,184,0,0.4)" }}>
+              style={{ background: "#0e1611", border: "1px solid rgba(255,184,0,0.4)" }}>
               <div className="flex items-center gap-2.5 mb-1">
                 <span style={{ fontSize: 22 }}>🌍</span>
                 <span className="font-display tracking-wide" style={{ fontSize: 20, color: "#ffb800" }}>WORLD CUP</span>
               </div>
-              <div className="font-body" style={{ fontSize: 13, color: "#cfcfe6", lineHeight: 1.4 }}>
+              <div className="font-body" style={{ fontSize: 13, color: "#c4ccc6", lineHeight: 1.4 }}>
                 Open draft — build a <b style={{ color: "#fff" }}>dream team from any nation&apos;s players</b>. Beat the best in the world to lift the trophy.
               </div>
             </button>
           </div>
 
           {/* How it works */}
-          <div className="rounded-2xl p-4" style={{ background: "#12121e", border: "1px solid rgba(255,184,0,0.3)" }}>
+          <div className="rounded-2xl p-4" style={{ background: "#0e1611", border: "1px solid rgba(255,184,0,0.3)" }}>
             <div className="font-body mb-2.5" style={{ fontSize: 11, color: "#ffb800", letterSpacing: 1 }}>HOW IT WORKS</div>
             {[
               ["①", "Build your XI", "Spin & pick — any rating can come up, luck of the draw."],
@@ -215,7 +215,7 @@ export default function WorldCupEntry() {
                 <span className="font-display flex-shrink-0" style={{ fontSize: 18, color: "#ffb800" }}>{n}</span>
                 <div>
                   <div className="font-body" style={{ fontSize: 13.5, color: "#fff" }}>{title}</div>
-                  <div className="font-body" style={{ fontSize: 12, color: "#8888aa", lineHeight: 1.35 }}>{desc}</div>
+                  <div className="font-body" style={{ fontSize: 12, color: "#8a948f", lineHeight: 1.35 }}>{desc}</div>
                 </div>
               </div>
             ))}
@@ -230,16 +230,16 @@ export default function WorldCupEntry() {
     return (
       <div className="min-h-[100dvh] pb-16" style={{ background: "#0a0a0f" }}>
         <div className="max-w-lg mx-auto px-4 pt-safe">
-          <div className="pt-4"><button onClick={() => setMode(null)} className="font-body text-sm" style={{ color: "#8888aa" }}>← Change mode</button></div>
+          <div className="pt-4"><button onClick={() => setMode(null)} className="font-body text-sm" style={{ color: "#8a948f" }}>← Change mode</button></div>
           <h1 className="font-display tracking-wide mt-3" style={{ fontSize: 28, color: "#fff" }}>PICK YOUR NATION</h1>
-          <p className="font-body mt-1 mb-4" style={{ fontSize: 13, color: "#8888aa" }}>
+          <p className="font-body mt-1 mb-4" style={{ fontSize: 13, color: "#8a948f" }}>
             Build an XI from their players only and play their real World Cup 2026 path.
           </p>
           <div className="grid grid-cols-2 gap-2.5">
             {nations.map((n) => (
               <button key={n.nation} onClick={() => chooseNation(n)}
                 className="flex items-center gap-3 rounded-2xl px-3 py-3 text-left active:scale-[0.98] transition-transform"
-                style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}>
+                style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.07)" }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={n.crest} alt={n.nation} width={34} height={34} style={{ width: 34, height: 34, objectFit: "contain" }} />
                 <div className="min-w-0">
@@ -258,7 +258,7 @@ export default function WorldCupEntry() {
   // ── Draft (both modes) ────────────────────────────────────────────────────
   const teamName = world ? WORLD_TEAM_NAME : nation!.nation;
   const teamCrest = world ? null : nation!.crest;
-  const accent = world ? "#ffb800" : "#00ff87";
+  const accent = world ? "#ffb800" : "#aeea00";
   const remaining = 11 - team.squad.length;
   const lines = lineRatings(team.squad);
   const slots = slotsFor(team.formation);
@@ -270,7 +270,7 @@ export default function WorldCupEntry() {
     <div className="min-h-[100dvh] pb-44" style={{ background: "#0a0a0f" }}>
       <div className="max-w-lg mx-auto px-4 pt-safe">
         <div className="pt-4">
-          <button onClick={() => (world ? setMode(null) : setNation(null))} className="font-body text-sm" style={{ color: "#8888aa" }}>
+          <button onClick={() => (world ? setMode(null) : setNation(null))} className="font-body text-sm" style={{ color: "#8a948f" }}>
             {world ? "← Change mode" : "← Change nation"}
           </button>
         </div>
@@ -283,21 +283,21 @@ export default function WorldCupEntry() {
               <span style={{ fontSize: 36, lineHeight: 1 }}>🌍</span>
             )}
             <div>
-              <div className="font-body" style={{ fontSize: 11, color: "#8888aa", letterSpacing: 1 }}>YOUR {teamName.toUpperCase()}{world ? "" : " XI"}</div>
+              <div className="font-body" style={{ fontSize: 11, color: "#8a948f", letterSpacing: 1 }}>YOUR {teamName.toUpperCase()}{world ? "" : " XI"}</div>
               <div className="font-display tracking-wide" style={{ fontSize: 22, color: "#fff" }}>{team.formation}</div>
             </div>
           </div>
           <div className="text-right">
-            <div className="font-body" style={{ fontSize: 11, color: "#8888aa", letterSpacing: 1 }}>OVERALL</div>
-            <div className="font-display" style={{ fontSize: 38, lineHeight: 1, color: "#00ff87" }}>{team.squad.length ? team.strength : "—"}</div>
+            <div className="font-body" style={{ fontSize: 11, color: "#8a948f", letterSpacing: 1 }}>OVERALL</div>
+            <div className="font-display" style={{ fontSize: 38, lineHeight: 1, color: "#aeea00" }}>{team.squad.length ? team.strength : "—"}</div>
           </div>
         </div>
 
         <div className="flex items-center gap-2 mt-3 mb-3">
           <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.08)" }}>
-            <div className="h-full rounded-full transition-all" style={{ width: `${(team.squad.length / 11) * 100}%`, background: "#00ff87" }} />
+            <div className="h-full rounded-full transition-all" style={{ width: `${(team.squad.length / 11) * 100}%`, background: "#aeea00" }} />
           </div>
-          <span className="font-body" style={{ fontSize: 12, color: "#8888aa" }}>{team.squad.length}/11</span>
+          <span className="font-body" style={{ fontSize: 12, color: "#8a948f" }}>{team.squad.length}/11</span>
         </div>
 
         <Pitch formation={team.formation} squad={team.squad} compact />
@@ -305,9 +305,9 @@ export default function WorldCupEntry() {
         {team.squad.length > 0 && (
           <div className="grid grid-cols-4 gap-2 mt-3">
             {([["ATT", lines.attack, "att"], ["MID", lines.midfield, "mid"], ["DEF", lines.defence, "def"], ["GK", lines.gk, "gk"]] as const).map(([label, val, cat]) => (
-              <div key={label} className="rounded-xl px-2 py-2 text-center" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.06)" }}>
+              <div key={label} className="rounded-xl px-2 py-2 text-center" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.06)" }}>
                 <div className="font-display" style={{ fontSize: 20, color: val ? CATEGORY_COLOR[cat] : "#444" }}>{val || "—"}</div>
-                <div className="font-body" style={{ fontSize: 9, color: "#8888aa", letterSpacing: 1 }}>{label}</div>
+                <div className="font-body" style={{ fontSize: 9, color: "#8a948f", letterSpacing: 1 }}>{label}</div>
               </div>
             ))}
           </div>
@@ -317,7 +317,7 @@ export default function WorldCupEntry() {
       <div className="fixed bottom-0 left-0 right-0" style={{ background: "linear-gradient(0deg,#0a0a0f 78%,transparent)", paddingBottom: "calc(env(safe-area-inset-bottom,0px) + 14px)" }}>
         <div className="max-w-lg mx-auto px-4 pt-3">
           {spinning && (
-            <div className="mb-3 flex items-center gap-3 rounded-2xl px-4 py-3" style={{ background: "#12121e", border: "1px solid rgba(255,184,0,0.4)" }}>
+            <div className="mb-3 flex items-center gap-3 rounded-2xl px-4 py-3" style={{ background: "#0e1611", border: "1px solid rgba(255,184,0,0.4)" }}>
               {teamCrest ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={teamCrest} alt="" width={40} height={40} style={{ width: 40, height: 40, objectFit: "contain", opacity: 0.85 }} />
@@ -329,10 +329,10 @@ export default function WorldCupEntry() {
           )}
 
           {selected && (
-            <div className="mb-3 rounded-2xl p-3" style={{ background: "#161622", border: "1px solid rgba(0,255,135,0.3)" }}>
+            <div className="mb-3 rounded-2xl p-3" style={{ background: "#0e1611", border: "1px solid rgba(174,234,0,0.3)" }}>
               <div className="flex items-center justify-between mb-2">
-                <span className="font-body" style={{ fontSize: 14, color: "#fff" }}>Place <b style={{ color: "#00ff87" }}>{selected.name}</b></span>
-                <button onClick={() => setSelected(null)} className="font-body" style={{ fontSize: 13, color: "#8888aa" }}>Cancel</button>
+                <span className="font-body" style={{ fontSize: 14, color: "#fff" }}>Place <b style={{ color: "#aeea00" }}>{selected.name}</b></span>
+                <button onClick={() => setSelected(null)} className="font-body" style={{ fontSize: 13, color: "#8a948f" }}>Cancel</button>
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {available.map((s) => (
@@ -345,18 +345,18 @@ export default function WorldCupEntry() {
           )}
 
           {slate && !spinning && !selected && (
-            <div className="mb-3 rounded-2xl overflow-hidden" style={{ background: "#0d0d14", border: "1px solid rgba(255,255,255,0.07)", maxHeight: 320, overflowY: "auto" }}>
+            <div className="mb-3 rounded-2xl overflow-hidden" style={{ background: "#080d0a", border: "1px solid rgba(255,255,255,0.07)", maxHeight: 320, overflowY: "auto" }}>
               {world && spunNation ? (
-                <div className="flex items-center gap-2 px-3 py-2.5 sticky top-0" style={{ background: "#0d0d14", borderBottom: "1px solid rgba(255,184,0,0.25)" }}>
+                <div className="flex items-center gap-2 px-3 py-2.5 sticky top-0" style={{ background: "#080d0a", borderBottom: "1px solid rgba(255,184,0,0.25)" }}>
                   {spunNation.crest && (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={spunNation.crest} alt="" width={26} height={26} style={{ width: 26, height: 26, objectFit: "contain", flexShrink: 0 }} />
                   )}
                   <span className="font-display tracking-wide" style={{ fontSize: 17, color: "#ffb800" }}>{spunNation.nation}</span>
-                  <span className="font-body" style={{ fontSize: 11, color: "#8888aa" }}>· pick a player</span>
+                  <span className="font-body" style={{ fontSize: 11, color: "#8a948f" }}>· pick a player</span>
                 </div>
               ) : (
-                <div className="px-3 py-2 font-body sticky top-0" style={{ fontSize: 11, color: "#8888aa", background: "#0d0d14" }}>Pick a player → choose their slot</div>
+                <div className="px-3 py-2 font-body sticky top-0" style={{ fontSize: 11, color: "#8a948f", background: "#080d0a" }}>Pick a player → choose their slot</div>
               )}
               {slate.map((p) => {
                 const c = CATEGORY_COLOR[posCategory(p.position)];
@@ -369,7 +369,7 @@ export default function WorldCupEntry() {
                     className="w-full flex items-center gap-3 px-3 py-2.5 text-left" style={{ borderTop: "1px solid rgba(255,255,255,0.04)", opacity: elig ? 1 : 0.4 }}>
                     <div className="flex items-center justify-center rounded-lg font-display flex-shrink-0" style={{ width: 38, height: 38, fontSize: 18, color: "#0a0a0f", background: c }}>{p.overall}</div>
                     <div className="flex-1 min-w-0">
-                      <div className="font-body truncate" style={{ fontSize: 14, color: "#fff" }}>{p.name} <span style={{ color: "#8888aa", fontSize: 12 }}>{p.club} {p.season}</span></div>
+                      <div className="font-body truncate" style={{ fontSize: 14, color: "#fff" }}>{p.name} <span style={{ color: "#8a948f", fontSize: 12 }}>{p.club} {p.season}</span></div>
                     </div>
                     {rightImg && (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -388,16 +388,16 @@ export default function WorldCupEntry() {
             !slate || spinning ? (
               <button onClick={doSpin} disabled={spinning}
                 className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-60"
-                style={{ background: spinning ? "#1a1a2e" : accent, color: spinning ? "#ffb800" : "#062013", fontSize: 24 }}>
+                style={{ background: spinning ? "#15211a" : accent, color: spinning ? "#ffb800" : "#062013", fontSize: 24 }}>
                 {spinning ? "SCOUTING…" : scoutLabel}
               </button>
             ) : (
-              <div className="text-center font-body py-2" style={{ fontSize: 13, color: "#8888aa" }}>Draft a player to continue</div>
+              <div className="text-center font-body py-2" style={{ fontSize: 13, color: "#8a948f" }}>Draft a player to continue</div>
             )
           ) : (
             <button onClick={start} disabled={starting}
               className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-60"
-              style={{ background: "#00ff87", color: "#062013", fontSize: 24 }}>
+              style={{ background: "#aeea00", color: "#062013", fontSize: 24 }}>
               {starting ? "STARTING…" : "ENTER THE WORLD CUP →"}
             </button>
           )}

@@ -54,7 +54,7 @@ function OAuthButton({ provider, label, icon, nextPath }: { provider: Provider; 
   }
 
   const styles: Record<Provider, { bg: string; border: string; color: string }> = {
-    google:   { bg: "#1a1a2e", border: "rgba(255,255,255,0.12)", color: "#ffffff" },
+    google:   { bg: "#15211a", border: "rgba(255,255,255,0.12)", color: "#ffffff" },
     apple:    { bg: "#000000", border: "rgba(255,255,255,0.12)", color: "#ffffff" },
     facebook: { bg: "#1877f2", border: "rgba(255,255,255,0.12)", color: "#ffffff" },
   };
@@ -150,7 +150,7 @@ function EmailSignIn({ nextPath }: { nextPath?: string }) {
 
   if (sent) {
     return (
-      <div className="rounded-xl p-4 text-center" style={{ background: "rgba(0,255,135,0.06)", border: "1px solid rgba(0,255,135,0.2)" }}>
+      <div className="rounded-xl p-4 text-center" style={{ background: "rgba(174,234,0,0.06)", border: "1px solid rgba(174,234,0,0.2)" }}>
         <p className="font-body text-sm font-semibold text-white mb-1">Check your email</p>
         <p className="font-body text-xs text-text-muted">
           {mode === "signup"
@@ -163,7 +163,7 @@ function EmailSignIn({ nextPath }: { nextPath?: string }) {
 
   if (resetSent) {
     return (
-      <div className="rounded-xl p-4 text-center" style={{ background: "rgba(167,139,250,0.06)", border: "1px solid rgba(167,139,250,0.2)" }}>
+      <div className="rounded-xl p-4 text-center" style={{ background: "rgba(174,234,0,0.06)", border: "1px solid rgba(174,234,0,0.2)" }}>
         <p className="font-body text-sm font-semibold text-white mb-1">Reset email sent</p>
         <p className="font-body text-xs text-text-muted">Check your inbox for a password reset link.</p>
       </div>
@@ -171,7 +171,7 @@ function EmailSignIn({ nextPath }: { nextPath?: string }) {
   }
 
   const inputStyle = (hasError: boolean) => ({
-    background: "#12121e",
+    background: "#0e1611",
     border: `1px solid ${hasError ? "rgba(255,71,87,0.4)" : "rgba(255,255,255,0.1)"}`,
   });
 
@@ -183,8 +183,8 @@ function EmailSignIn({ nextPath }: { nextPath?: string }) {
           <button key={m} onClick={() => { setMode(m); setError(""); }}
             className="flex-1 py-1.5 rounded-lg font-body text-xs font-semibold transition-all"
             style={mode === m
-              ? { background: "#00ff87", color: "#0a0a0f" }
-              : { background: "transparent", color: "#8888aa" }}>
+              ? { background: "#aeea00", color: "#0a0a0f" }
+              : { background: "transparent", color: "#8a948f" }}>
             {m === "magic" ? "Magic link" : m === "password" ? "Password" : "Sign up"}
           </button>
         ))}
@@ -239,8 +239,8 @@ function EmailSignIn({ nextPath }: { nextPath?: string }) {
         disabled={!email.trim() || ((mode !== "magic") && !password) || loading}
         className="w-full py-3.5 rounded-xl font-body font-semibold text-sm transition-all hover:opacity-90 active:scale-[0.98] flex items-center justify-center gap-2"
         style={{
-          background: email.trim() && (mode === "magic" || password) ? "#00ff87" : "rgba(255,255,255,0.06)",
-          color: email.trim() && (mode === "magic" || password) ? "#0a0a0f" : "#8888aa",
+          background: email.trim() && (mode === "magic" || password) ? "#aeea00" : "rgba(255,255,255,0.06)",
+          color: email.trim() && (mode === "magic" || password) ? "#0a0a0f" : "#8a948f",
         }}>
         {loading ? <Spinner size={18} /> : mode === "magic" ? "Send sign-in link" : mode === "signup" ? "Create account" : "Sign in"}
       </button>
@@ -249,7 +249,7 @@ function EmailSignIn({ nextPath }: { nextPath?: string }) {
       {mode === "password" && (
         <button onClick={forgotPassword} disabled={loading}
           className="w-full py-1.5 font-body text-xs transition-colors hover:text-white"
-          style={{ color: "#8888aa" }}>
+          style={{ color: "#8a948f" }}>
           Forgot your password?
         </button>
       )}

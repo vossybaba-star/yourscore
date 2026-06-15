@@ -118,7 +118,7 @@ export default async function MatchPage({ params }: { params: { id: string } }) 
       <div className="min-h-[100dvh] grid place-items-center px-6 text-center" style={{ background: "#0a0a0f" }}>
         <div>
           <div className="font-display tracking-wide" style={{ fontSize: 28, color: "#fff" }}>RESULT NOT FOUND</div>
-          <Link href="/38-0" className="inline-block mt-4 font-body" style={{ color: "#00ff87" }}>← Play Draft XI</Link>
+          <Link href="/38-0" className="inline-block mt-4 font-body" style={{ color: "#aeea00" }}>← Play Draft XI</Link>
         </div>
       </div>
     );
@@ -137,10 +137,10 @@ export default async function MatchPage({ params }: { params: { id: string } }) 
   const cta = (
     <div className="mt-6">
       <Link href="/38-0" className="block w-full rounded-[20px] py-4 text-center font-display tracking-wide transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98]"
-        style={{ background: "#00ff87", color: "#062013", fontSize: 26 }}>
+        style={{ background: "#aeea00", color: "#062013", fontSize: 26 }}>
         {live ? "▶ PLAY 38-0 — FREE" : "BUILD YOUR OWN XI →"}
       </Link>
-      <p className="text-center font-body mt-2" style={{ fontSize: 12, color: "#8888aa" }}>
+      <p className="text-center font-body mt-2" style={{ fontSize: 12, color: "#8a948f" }}>
         Build your all-time Premier League XI and go live, head-to-head. No sign-up to play.
       </p>
     </div>
@@ -151,7 +151,7 @@ export default async function MatchPage({ params }: { params: { id: string } }) 
       <div className="pointer-events-none fixed inset-0 bg-grid-pattern bg-grid" style={{ opacity: 0.5 }} />
       <div className="relative max-w-lg mx-auto px-4 pt-safe">
         <div className="py-3">
-          <Link href="/38-0" className="font-mono text-sm uppercase" style={{ color: "#8888aa", letterSpacing: "0.1em" }}>← 38-0</Link>
+          <Link href="/38-0" className="font-mono text-sm uppercase" style={{ color: "#8a948f", letterSpacing: "0.1em" }}>← 38-0</Link>
         </div>
 
         {live && rep ? (
@@ -168,14 +168,14 @@ export default async function MatchPage({ params }: { params: { id: string } }) 
             potm: potmFromReport(rep, c.name, o.name),
           }} />
         ) : (
-          <ScorecardShell fk={challengerWon ? "win" : "loss"} accent={challengerWon ? "#00ff87" : "#ff4757"} headline={challengerWon ? "WIN" : "LOSS"} context="Head to head">
+          <ScorecardShell fk={challengerWon ? "win" : "loss"} accent={challengerWon ? "#aeea00" : "#ff4757"} headline={challengerWon ? "WIN" : "LOSS"} context="Head to head">
             <div className="text-center" style={{ marginBottom: 30 }}>
               <div className="font-display tracking-wide leading-tight" style={{ fontSize: 30, color: "#fff" }}>
-                <span style={{ color: challengerWon ? "#00ff87" : "#fff" }}>{c.name}</span>
-                <span style={{ color: "#8888aa", fontSize: 20 }}> {challengerWon ? "beat" : "lost to"} </span>
-                <span style={{ color: !challengerWon ? "#00ff87" : "#fff" }}>{o.name}</span>
+                <span style={{ color: challengerWon ? "#aeea00" : "#fff" }}>{c.name}</span>
+                <span style={{ color: "#8a948f", fontSize: 20 }}> {challengerWon ? "beat" : "lost to"} </span>
+                <span style={{ color: !challengerWon ? "#aeea00" : "#fff" }}>{o.name}</span>
               </div>
-              <div className="font-mono mt-2" style={{ fontSize: 13, color: "#8a8aa6", letterSpacing: "0.06em" }}>{m.challenger_strength} vs {m.opponent_strength}</div>
+              <div className="font-mono mt-2" style={{ fontSize: 13, color: "#9aa39d", letterSpacing: "0.06em" }}>{m.challenger_strength} vs {m.opponent_strength}</div>
             </div>
             <SectionLabel>The line-ups</SectionLabel>
             <div className="grid grid-cols-2 gap-4" style={{ marginBottom: 30 }}>
@@ -184,10 +184,10 @@ export default async function MatchPage({ params }: { params: { id: string } }) 
                 return (
                   <div key={i} className="rounded-2xl p-3" style={{ background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,0.06)" }}>
                     <div className="flex items-baseline justify-between gap-2">
-                      <span className="truncate font-display" style={{ fontSize: 15, color: winner ? "#00ff87" : "#fff", letterSpacing: "0.03em" }}>{t.name}</span>
+                      <span className="truncate font-display" style={{ fontSize: 15, color: winner ? "#aeea00" : "#fff", letterSpacing: "0.03em" }}>{t.name}</span>
                       <span className="font-mono shrink-0" style={{ fontSize: 13, color: tierColor(t.projected?.tier ?? "Mid-table") }}>{str as number}</span>
                     </div>
-                    <p className="mb-2 mt-0.5 truncate font-mono uppercase" style={{ fontSize: 8, letterSpacing: "0.1em", color: "#5a5a74" }}>{t.formation}</p>
+                    <p className="mb-2 mt-0.5 truncate font-mono uppercase" style={{ fontSize: 8, letterSpacing: "0.1em", color: "#586058" }}>{t.formation}</p>
                     <Pitch formation={t.formation} squad={t.squad} compact />
                   </div>
                 );

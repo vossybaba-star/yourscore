@@ -30,7 +30,7 @@ function Avatar({ name, size = 40, url }: { name: string; size?: number; url?: s
     <img src={url} alt={name} style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", border: "1.5px solid rgba(255,255,255,0.1)", flexShrink: 0 }} />
   );
   const palettes = [
-    { bg: "#1a2f4a", text: "#60a5fa" }, { bg: "#2a1a4a", text: "#a78bfa" },
+    { bg: "#1a2f4a", text: "#60a5fa" }, { bg: "#3a423d", text: "#aeea00" },
     { bg: "#1a4a2a", text: "#4ade80" }, { bg: "#4a2a1a", text: "#fb923c" },
     { bg: "#4a1a2a", text: "#f87171" },
   ];
@@ -92,7 +92,7 @@ function ContactsInviteButton() {
       <button
         onClick={pickContacts}
         className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-body text-sm font-semibold transition-all mb-3"
-        style={{ background: "rgba(167,139,250,0.12)", color: "#a78bfa", border: "1px solid rgba(167,139,250,0.25)" }}
+        style={{ background: "rgba(174,234,0,0.12)", color: "#aeea00", border: "1px solid rgba(174,234,0,0.25)" }}
       >
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
           <path d="M10.5 2H5.5A1.5 1.5 0 0 0 4 3.5v9A1.5 1.5 0 0 0 5.5 14h5a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 10.5 2z" stroke="currentColor" strokeWidth="1.4"/>
@@ -107,7 +107,7 @@ function ContactsInviteButton() {
             <div key={i} className="flex items-center gap-3 px-4 py-3 rounded-xl"
               style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
               <div className="w-9 h-9 rounded-full flex items-center justify-center font-body font-bold text-sm flex-shrink-0"
-                style={{ background: "rgba(167,139,250,0.14)", color: "#a78bfa", border: "1px solid rgba(167,139,250,0.25)" }}>
+                style={{ background: "rgba(174,234,0,0.14)", color: "#aeea00", border: "1px solid rgba(174,234,0,0.25)" }}>
                 {(c.name[0] ?? "?").toUpperCase()}
               </div>
               <div className="flex-1 min-w-0">
@@ -117,17 +117,17 @@ function ContactsInviteButton() {
               {c.tel ? (
                 <a href={`sms:${c.tel}?body=${INVITE_TEXT}`}
                   className="flex-shrink-0 px-3 py-1.5 rounded-lg font-body text-xs font-semibold"
-                  style={{ background: "rgba(0,255,135,0.12)", color: "#00ff87", border: "1px solid rgba(0,255,135,0.22)" }}>
+                  style={{ background: "rgba(174,234,0,0.12)", color: "#aeea00", border: "1px solid rgba(174,234,0,0.22)" }}>
                   Send SMS
                 </a>
               ) : c.email ? (
                 <a href={`mailto:${c.email}?subject=Join me on YourScore&body=${INVITE_TEXT}`}
                   className="flex-shrink-0 px-3 py-1.5 rounded-lg font-body text-xs font-semibold"
-                  style={{ background: "rgba(0,255,135,0.12)", color: "#00ff87", border: "1px solid rgba(0,255,135,0.22)" }}>
+                  style={{ background: "rgba(174,234,0,0.12)", color: "#aeea00", border: "1px solid rgba(174,234,0,0.22)" }}>
                   Email
                 </a>
               ) : (
-                <span className="font-body text-xs flex-shrink-0" style={{ color: "#555577" }}>No contact info</span>
+                <span className="font-body text-xs flex-shrink-0" style={{ color: "#586058" }}>No contact info</span>
               )}
             </div>
           ))}
@@ -281,7 +281,7 @@ export default function FriendsPage() {
             textDecoration: "none",
           }}>
             <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
-              <path d="M10 3L5 8l5 5" stroke="#aaaacc" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M10 3L5 8l5 5" stroke="#9aa39d" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </Link>
           <h1 className="font-display text-xl text-white flex-1" style={{ letterSpacing: "-0.01em" }}>Friends</h1>
@@ -302,7 +302,7 @@ export default function FriendsPage() {
               className="font-body text-xs font-semibold px-3 py-1.5 rounded-lg transition-all"
               style={{
                 background: activeTab === key ? "rgba(0,201,255,0.15)" : "rgba(255,255,255,0.04)",
-                color: activeTab === key ? "#00c9ff" : "#8888aa",
+                color: activeTab === key ? "#00c9ff" : "#8a948f",
                 border: `1px solid ${activeTab === key ? "rgba(0,201,255,0.3)" : "transparent"}`,
               }}>
               {label}
@@ -367,7 +367,7 @@ export default function FriendsPage() {
                       </button>
                       <button onClick={() => declineRequest(f.id)}
                         className="px-3 py-1.5 rounded-lg font-body text-xs font-semibold transition-all"
-                        style={{ background: "rgba(255,255,255,0.06)", color: "#8888aa" }}>
+                        style={{ background: "rgba(255,255,255,0.06)", color: "#8a948f" }}>
                         Decline
                       </button>
                     </div>
@@ -386,7 +386,7 @@ export default function FriendsPage() {
                     <div className="flex-1 min-w-0">
                       <p className="font-body text-sm font-semibold text-white truncate">{f.display_name}</p>
                     </div>
-                    <span className="font-body text-xs" style={{ color: "#555577" }}>Pending…</span>
+                    <span className="font-body text-xs" style={{ color: "#586058" }}>Pending…</span>
                   </div>
                 ))}
               </div>
@@ -443,7 +443,7 @@ export default function FriendsPage() {
                   </button>
                 )}
                 {r.friendship_status === "pending_sent" && (
-                  <span className="font-body text-xs flex-shrink-0" style={{ color: "#555577" }}>Requested</span>
+                  <span className="font-body text-xs flex-shrink-0" style={{ color: "#586058" }}>Requested</span>
                 )}
                 {r.friendship_status === "pending_received" && (
                   <button onClick={() => {

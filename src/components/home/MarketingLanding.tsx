@@ -33,16 +33,16 @@ const ANIM_CSS = `
     50% { transform: translateY(-6px) rotate(0.5deg); }
   }
   @keyframes pulseGlow {
-    0%, 100% { box-shadow: 0 0 28px rgba(167,139,250,0.35), 0 0 60px rgba(167,139,250,0.12); }
-    50% { box-shadow: 0 0 40px rgba(167,139,250,0.55), 0 0 80px rgba(167,139,250,0.2); }
+    0%, 100% { box-shadow: 0 0 28px rgba(174,234,0,0.35), 0 0 60px rgba(174,234,0,0.12); }
+    50% { box-shadow: 0 0 40px rgba(174,234,0,0.55), 0 0 80px rgba(174,234,0,0.2); }
   }
   @keyframes scoreUp {
     from { opacity: 0; transform: translateY(6px); }
     to { opacity: 1; transform: translateY(0); }
   }
   @keyframes greenPulse {
-    0%, 100% { box-shadow: 0 0 20px rgba(0,255,135,0.3); }
-    50% { box-shadow: 0 0 35px rgba(0,255,135,0.55); }
+    0%, 100% { box-shadow: 0 0 20px rgba(174,234,0,0.3); }
+    50% { box-shadow: 0 0 35px rgba(174,234,0,0.55); }
   }
   @keyframes shimmer {
     0% { background-position: -200% center; }
@@ -97,7 +97,7 @@ const LEAGUE_PLAYERS = [
 
 const PALETTES = [
   { bg: "#1a2f4a", text: "#60a5fa" },
-  { bg: "#2a1a4a", text: "#a78bfa" },
+  { bg: "#3a423d", text: "#aeea00" },
   { bg: "#1a4a2a", text: "#4ade80" },
   { bg: "#4a2a1a", text: "#fb923c" },
 ];
@@ -113,14 +113,14 @@ function LeagueHeroCard() {
 
   return (
     <div className="float-card w-full max-w-[340px] bg-surface"
-      style={{ border: "1px solid rgba(255,255,255,0.1)", borderRadius: 24, overflow: "hidden", boxShadow: "0 32px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(167,139,250,0.08)" }}>
+      style={{ border: "1px solid rgba(255,255,255,0.1)", borderRadius: 24, overflow: "hidden", boxShadow: "0 32px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(174,234,0,0.08)" }}>
       {/* Header */}
-      <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(167,139,250,0.04)" }}>
+      <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(174,234,0,0.04)" }}>
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "rgba(167,139,250,0.15)" }}>
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "rgba(174,234,0,0.15)" }}>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d="M3 2h8v3L7 8l-4-3z" stroke="#a78bfa" strokeWidth="1.3" strokeLinejoin="round" fill="rgba(167,139,250,0.2)"/>
-              <path d="M4 5v5a3 3 0 0 0 6 0V5" stroke="#a78bfa" strokeWidth="1.3" strokeLinecap="round"/>
+              <path d="M3 2h8v3L7 8l-4-3z" stroke="#aeea00" strokeWidth="1.3" strokeLinejoin="round" fill="rgba(174,234,0,0.2)"/>
+              <path d="M4 5v5a3 3 0 0 0 6 0V5" stroke="#aeea00" strokeWidth="1.3" strokeLinecap="round"/>
             </svg>
           </div>
           <div>
@@ -128,10 +128,10 @@ function LeagueHeroCard() {
             <p className="font-body text-xs text-text-muted">6 games played</p>
           </div>
         </div>
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full" style={{ background: "rgba(0,255,135,0.1)", border: "1px solid rgba(0,255,135,0.2)" }}>
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full" style={{ background: "rgba(174,234,0,0.1)", border: "1px solid rgba(174,234,0,0.2)" }}>
           <span className="relative flex h-1.5 w-1.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: "#00ff87" }} />
-            <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: "#00ff87" }} />
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: "#aeea00" }} />
+            <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: "#aeea00" }} />
           </span>
           <span className="font-body text-xs font-semibold text-green">Live</span>
         </div>
@@ -139,7 +139,7 @@ function LeagueHeroCard() {
 
       {/* Tab toggle mini */}
       <div className="px-4 pt-3 pb-2 flex gap-1.5">
-        <span className="font-body text-xs font-semibold px-2.5 py-1 rounded-md" style={{ background: "rgba(167,139,250,0.15)", color: "#a78bfa" }}>Points</span>
+        <span className="font-body text-xs font-semibold px-2.5 py-1 rounded-md" style={{ background: "rgba(174,234,0,0.15)", color: "#aeea00" }}>Points</span>
         <span className="font-body text-xs text-text-muted px-2.5 py-1 rounded-md" style={{ background: "rgba(255,255,255,0.04)" }}>P4P</span>
       </div>
 
@@ -151,10 +151,10 @@ function LeagueHeroCard() {
           <div key={p.name}
             className="flex items-center gap-3 px-4 py-3 transition-all"
             style={{
-              background: isHighlighted ? "rgba(167,139,250,0.06)" : i % 2 === 0 ? "rgba(255,255,255,0.01)" : "transparent",
+              background: isHighlighted ? "rgba(174,234,0,0.06)" : i % 2 === 0 ? "rgba(255,255,255,0.01)" : "transparent",
               borderBottom: i < LEAGUE_PLAYERS.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
             }}>
-            <span className="font-display text-sm w-5 flex-shrink-0" style={{ color: i === 0 ? "#a78bfa" : "#555577" }}>#{i + 1}</span>
+            <span className="font-display text-sm w-5 flex-shrink-0" style={{ color: i === 0 ? "#aeea00" : "#586058" }}>#{i + 1}</span>
             <div className="w-8 h-8 rounded-full flex items-center justify-center font-body font-bold text-xs flex-shrink-0 border border-border"
               style={{ background: pal.bg, color: pal.text }}>
               {p.name[0]}
@@ -171,12 +171,12 @@ function LeagueHeroCard() {
               </div>
               <div className="flex items-center gap-2 mt-0.5">
                 <div className="h-0.5 rounded-full" style={{ width: 32, background: "rgba(255,255,255,0.06)" }}>
-                  <div className="h-full rounded-full" style={{ width: `${p.acc}%`, background: p.acc >= 85 ? "#00ff87" : "#a78bfa" }} />
+                  <div className="h-full rounded-full" style={{ width: `${p.acc}%`, background: p.acc >= 85 ? "#aeea00" : "#aeea00" }} />
                 </div>
-                <span className="font-body text-xs tabular-nums" style={{ color: "#555577" }}>{p.acc}%</span>
+                <span className="font-body text-xs tabular-nums" style={{ color: "#586058" }}>{p.acc}%</span>
               </div>
             </div>
-            <span className="font-display text-base flex-shrink-0" style={{ color: i === 0 ? "#a78bfa" : "white" }}>
+            <span className="font-display text-base flex-shrink-0" style={{ color: i === 0 ? "#aeea00" : "white" }}>
               {p.pts.toLocaleString()}
             </span>
           </div>
@@ -186,7 +186,7 @@ function LeagueHeroCard() {
       {/* Footer */}
       <div className="px-4 py-3 flex items-center justify-between" style={{ borderTop: "1px solid rgba(255,255,255,0.04)", background: "rgba(0,0,0,0.2)" }}>
         <span className="font-body text-xs text-text-muted">🏴󠁧󠁢󠁥󠁮󠁧󠁿 England vs France · 67&apos;</span>
-        <span className="font-body text-xs font-semibold" style={{ color: "#a78bfa" }}>2 watching →</span>
+        <span className="font-body text-xs font-semibold" style={{ color: "#aeea00" }}>2 watching →</span>
       </div>
     </div>
   );
@@ -200,7 +200,7 @@ function UpcomingFixturesSection({ matches }: { matches: LiveMatch[] }) {
     <section className="relative z-10 max-w-6xl mx-auto px-6 pb-20">
       <div className="flex items-center justify-between mb-5">
         <h2 className="font-display text-3xl text-white">UPCOMING FIXTURES</h2>
-        <Link href="/league/new" className="font-body text-xs font-semibold" style={{ color: "#a78bfa" }}>Create a league →</Link>
+        <Link href="/league/new" className="font-body text-xs font-semibold" style={{ color: "#aeea00" }}>Create a league →</Link>
       </div>
       <div className="overflow-x-auto pb-2">
         <div className="flex gap-3" style={{ minWidth: "max-content" }}>
@@ -210,7 +210,7 @@ function UpcomingFixturesSection({ matches }: { matches: LiveMatch[] }) {
             return (
               <Link key={m.id} href={`/match/${m.id}`}
                 className="flex flex-col gap-2 rounded-2xl p-4 hover:opacity-80 transition-opacity flex-shrink-0 group"
-                style={{ background: isLive ? "rgba(0,255,135,0.06)" : "#12121e", border: isLive ? "1px solid rgba(0,255,135,0.2)" : "1px solid rgba(255,255,255,0.08)", width: 160 }}>
+                style={{ background: isLive ? "rgba(174,234,0,0.06)" : "#0e1611", border: isLive ? "1px solid rgba(174,234,0,0.2)" : "1px solid rgba(255,255,255,0.08)", width: 160 }}>
                 <div className="flex items-center justify-between">
                   <FlagImage team={m.home_team} size={28} />
                   {isLive
@@ -221,7 +221,7 @@ function UpcomingFixturesSection({ matches }: { matches: LiveMatch[] }) {
                 <p className="font-body text-xs font-semibold text-white leading-tight">{m.home_team} vs {m.away_team}</p>
                 <div className="flex items-center justify-between">
                   <p className="font-body text-xs text-text-muted">{isLive ? "Live" : dateStr}</p>
-                  <span className="font-body text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: isLive ? "#00ff87" : "#a78bfa" }}>
+                  <span className="font-body text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: isLive ? "#aeea00" : "#aeea00" }}>
                     {isLive ? "Play →" : "Open →"}
                   </span>
                 </div>
@@ -262,7 +262,7 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
     return () => clearInterval(iv);
   }, []);
 
-  const timerColor = timerValue <= 5 ? "#ff4757" : timerValue <= 15 ? "#ffb800" : "#00ff87";
+  const timerColor = timerValue <= 5 ? "#ff4757" : timerValue <= 15 ? "#ffb800" : "#aeea00";
   const dashOffset = 282 * (1 - timerValue / 45);
 
   return (
@@ -271,8 +271,8 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
 
       {/* Grid + glow background */}
       <GridBackground opacity={0.022} />
-      <div className="fixed top-0 left-0 w-[700px] h-[700px] pointer-events-none" style={{ background: "radial-gradient(circle at 0% 0%, rgba(167,139,250,0.07) 0%, transparent 60%)" }} />
-      <div className="fixed bottom-0 right-0 w-[500px] h-[500px] pointer-events-none" style={{ background: "radial-gradient(circle at 100% 100%, rgba(0,255,135,0.05) 0%, transparent 60%)" }} />
+      <div className="fixed top-0 left-0 w-[700px] h-[700px] pointer-events-none" style={{ background: "radial-gradient(circle at 0% 0%, rgba(174,234,0,0.07) 0%, transparent 60%)" }} />
+      <div className="fixed bottom-0 right-0 w-[500px] h-[500px] pointer-events-none" style={{ background: "radial-gradient(circle at 100% 100%, rgba(174,234,0,0.05) 0%, transparent 60%)" }} />
 
       {/* ── Nav ──────────────────────────────────────────────────────────── */}
       <div className="sticky top-0 z-30 pt-safe" style={{ background: "rgba(10,10,15,0.92)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
@@ -287,11 +287,11 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
             Sign In
           </Link>
           <Link href="/auth/sign-in" className="font-body font-bold text-sm px-4 py-2.5 rounded-xl hover:opacity-90 transition-all green-pulse text-green"
-            style={{ background: "rgba(0,255,135,0.12)", border: "1px solid rgba(0,255,135,0.35)" }}>
+            style={{ background: "rgba(174,234,0,0.12)", border: "1px solid rgba(174,234,0,0.35)" }}>
             Sign Up
           </Link>
           <Link href="/league/new" className="hidden sm:block font-body font-bold text-sm px-5 py-2.5 rounded-xl hover:opacity-90 transition-all pulse-glow"
-            style={{ background: "#a78bfa", color: "#0a0a0f" }}>
+            style={{ background: "#aeea00", color: "#0a0a0f" }}>
             Create a league
           </Link>
           {/* Hamburger — mobile only */}
@@ -300,13 +300,13 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
             aria-label={menuOpen ? "Close menu" : "Open menu"}
             className="sm:hidden w-9 h-9 rounded-full flex items-center justify-center transition-all"
             style={{
-              background: menuOpen ? "rgba(0,255,135,0.12)" : "rgba(255,255,255,0.06)",
-              border: `1.5px solid ${menuOpen ? "rgba(0,255,135,0.35)" : "rgba(255,255,255,0.1)"}`,
+              background: menuOpen ? "rgba(174,234,0,0.12)" : "rgba(255,255,255,0.06)",
+              border: `1.5px solid ${menuOpen ? "rgba(174,234,0,0.35)" : "rgba(255,255,255,0.1)"}`,
             }}
           >
             {menuOpen ? (
               <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-                <path d="M2 2l11 11M13 2L2 13" stroke="#00ff87" strokeWidth="1.8" strokeLinecap="round" />
+                <path d="M2 2l11 11M13 2L2 13" stroke="#aeea00" strokeWidth="1.8" strokeLinecap="round" />
               </svg>
             ) : (
               <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
@@ -345,7 +345,7 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
                 style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}
               >
                 <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-                  <path d="M1.5 1.5l10 10M11.5 1.5l-10 10" stroke="#8888aa" strokeWidth="1.7" strokeLinecap="round" />
+                  <path d="M1.5 1.5l10 10M11.5 1.5l-10 10" stroke="#8a948f" strokeWidth="1.7" strokeLinecap="round" />
                 </svg>
               </button>
             </div>
@@ -353,10 +353,10 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
             <nav className="px-4 pb-3">
               {[
                 { href: "/challenges", label: "Challenges", color: "#ffb800" },
-                { href: "/join", label: "Upcoming Matches", color: "#00ff87" },
-                { href: "/league/join", label: "Join league", color: "#c0c0d8" },
-                { href: "/how-it-works", label: "How it works", color: "#c0c0d8" },
-                { href: "/auth/sign-in", label: "Sign in", color: "#8888aa" },
+                { href: "/join", label: "Upcoming Matches", color: "#aeea00" },
+                { href: "/league/join", label: "Join league", color: "#c4ccc6" },
+                { href: "/how-it-works", label: "How it works", color: "#c4ccc6" },
+                { href: "/auth/sign-in", label: "Sign in", color: "#8a948f" },
               ].map(item => (
                 <Link
                   key={item.href}
@@ -378,7 +378,7 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
                 href="/auth/sign-in"
                 onClick={() => setMenuOpen(false)}
                 className="flex items-center justify-center py-3 rounded-xl font-body font-bold text-sm green-pulse text-green"
-                style={{ background: "rgba(0,255,135,0.1)", border: "1px solid rgba(0,255,135,0.28)" }}
+                style={{ background: "rgba(174,234,0,0.1)", border: "1px solid rgba(174,234,0,0.28)" }}
               >
                 Sign Up Free
               </Link>
@@ -386,7 +386,7 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
                 href="/league/new"
                 onClick={() => setMenuOpen(false)}
                 className="flex items-center justify-center py-3 rounded-xl font-body font-bold text-sm pulse-glow"
-                style={{ background: "#a78bfa", color: "#0a0a0f" }}
+                style={{ background: "#aeea00", color: "#0a0a0f" }}
               >
                 Create a league
               </Link>
@@ -404,13 +404,13 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
           <div>
             <div style={{ position: "relative", zIndex: 1 }}>
             <div className="inline-flex items-center gap-2.5 rounded-full px-4 py-2 mb-7"
-              style={{ background: "rgba(0,255,135,0.08)", border: "1px solid rgba(0,255,135,0.18)" }}>
-              <span className="w-2 h-2 rounded-full animate-pulse flex-shrink-0" style={{ background: "#00ff87" }} />
+              style={{ background: "rgba(174,234,0,0.08)", border: "1px solid rgba(174,234,0,0.18)" }}>
+              <span className="w-2 h-2 rounded-full animate-pulse flex-shrink-0" style={{ background: "#aeea00" }} />
               <span className="font-body text-xs text-text-muted uppercase tracking-widest">World Cup · Euros · Champions League</span>
             </div>
 
             <h1 className="font-display text-6xl sm:text-7xl lg:text-8xl text-white leading-none mb-6">
-              <span className="text-green" style={{ textShadow: "0 0 50px rgba(0,255,135,0.35)" }}>38-0.</span><br />
+              <span className="text-green" style={{ textShadow: "0 0 50px rgba(174,234,0,0.35)" }}>38-0.</span><br />
               DRAFT YOUR<br />BEST XI.
             </h1>
 
@@ -421,7 +421,7 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
             {/* Primary CTA — Draft your XI */}
             <Link href="/38-0"
               className="w-full sm:w-auto inline-flex items-center justify-center gap-3 font-body font-bold text-lg px-10 py-5 rounded-2xl hover:opacity-90 transition-all mb-3 pulse-glow"
-              style={{ background: "#00ff87", color: "#062013", display: "flex" }}>
+              style={{ background: "#aeea00", color: "#062013", display: "flex" }}>
               <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
                 <path d="M8 2.5 3 5.5 5 9.5 7.3 8.3V19a1 1 0 0 0 1 1h5.4a1 1 0 0 0 1-1V8.3L17 9.5l2-4-5-3C14 4.4 12.7 5.6 11 5.6S8 4.4 8 2.5Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" fill="rgba(0,0,0,0.1)"/>
               </svg>
@@ -432,7 +432,7 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
             <div className="flex flex-col sm:flex-row gap-3 mb-4">
               <Link href="/auth/sign-in"
                 className="flex-1 flex items-center justify-center gap-2 font-body font-semibold text-base px-6 py-4 rounded-xl transition-all hover:opacity-90 green-pulse text-green"
-                style={{ background: "rgba(0,255,135,0.1)", border: "1px solid rgba(0,255,135,0.3)" }}>
+                style={{ background: "rgba(174,234,0,0.1)", border: "1px solid rgba(174,234,0,0.3)" }}>
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1v14M1 8h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
                 Sign Up — Free
               </Link>
@@ -457,13 +457,13 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
           <div className="flex items-center justify-center lg:justify-end">
             <div className="relative">
               {/* Glow behind card */}
-              <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(circle at 50% 50%, rgba(167,139,250,0.15) 0%, transparent 70%)", transform: "scale(1.3)", zIndex: 1 }} />
+              <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(circle at 50% 50%, rgba(174,234,0,0.15) 0%, transparent 70%)", transform: "scale(1.3)", zIndex: 1 }} />
               <div className="relative" style={{ zIndex: 2 }}>
               <LeagueHeroCard />
 
               {/* Floating badge: "Pound for Pound" */}
               <div className="float-card-2 absolute -bottom-4 -left-4 flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-surface"
-                style={{ border: "1px solid rgba(167,139,250,0.25)", boxShadow: "0 8px 24px rgba(0,0,0,0.4)" }}>
+                style={{ border: "1px solid rgba(174,234,0,0.25)", boxShadow: "0 8px 24px rgba(0,0,0,0.4)" }}>
                 <span className="font-body text-base">👑</span>
                 <div>
                   <p className="font-body text-xs font-bold text-white">P4P #1</p>
@@ -490,10 +490,10 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
       <section className="relative z-10 max-w-6xl mx-auto px-6 pb-6">
         <Link href="/38-0"
           className="flex items-center justify-between px-5 py-4 rounded-2xl transition-all hover:opacity-90 green-pulse"
-          style={{ background: "linear-gradient(135deg, rgba(0,255,135,0.08) 0%, rgba(167,139,250,0.06) 100%)", border: "1px solid rgba(0,255,135,0.18)" }}>
+          style={{ background: "linear-gradient(135deg, rgba(174,234,0,0.08) 0%, rgba(174,234,0,0.06) 100%)", border: "1px solid rgba(174,234,0,0.18)" }}>
           <div className="flex items-center gap-4">
             <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 text-xl"
-              style={{ background: "rgba(0,255,135,0.12)", border: "1px solid rgba(0,255,135,0.22)" }}>
+              style={{ background: "rgba(174,234,0,0.12)", border: "1px solid rgba(174,234,0,0.22)" }}>
               👕
             </div>
             <div>
@@ -502,7 +502,7 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
             </div>
           </div>
           <span className="font-body text-xs font-bold px-3 py-1.5 rounded-lg flex-shrink-0 text-green"
-            style={{ background: "rgba(0,255,135,0.12)", border: "1px solid rgba(0,255,135,0.22)" }}>
+            style={{ background: "rgba(174,234,0,0.12)", border: "1px solid rgba(174,234,0,0.22)" }}>
             Play now
           </span>
         </Link>
@@ -535,12 +535,12 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
 
       {/* ── What a league gets you ────────────────────────────────────────── */}
       <section className="relative z-10 max-w-6xl mx-auto px-6 pb-16">
-        <div className="rounded-3xl overflow-hidden" style={{ background: "linear-gradient(135deg, rgba(167,139,250,0.06) 0%, rgba(10,10,15,1) 60%)", border: "1px solid rgba(167,139,250,0.15)" }}>
+        <div className="rounded-3xl overflow-hidden" style={{ background: "linear-gradient(135deg, rgba(174,234,0,0.06) 0%, rgba(10,10,15,1) 60%)", border: "1px solid rgba(174,234,0,0.15)" }}>
           <div className="px-8 py-10 lg:py-12">
             <div className="grid lg:grid-cols-2 gap-10 items-center">
               <div>
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-5 font-body text-xs uppercase tracking-widest"
-                  style={{ background: "rgba(167,139,250,0.1)", border: "1px solid rgba(167,139,250,0.2)", color: "#a78bfa" }}>
+                  style={{ background: "rgba(174,234,0,0.1)", border: "1px solid rgba(174,234,0,0.2)", color: "#aeea00" }}>
                   <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 1.5h7v3L6 8l-3.5-3.5z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/><path d="M3 4.5v4a3 3 0 0 0 6 0v-4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>
                   Leagues
                 </div>
@@ -563,7 +563,7 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
                 </div>
                 <Link href="/league/new"
                   className="inline-flex items-center gap-2 font-body font-bold text-base px-8 py-4 rounded-xl hover:opacity-90 transition-all"
-                  style={{ background: "#a78bfa", color: "#0a0a0f", boxShadow: "0 0 28px rgba(167,139,250,0.3)" }}>
+                  style={{ background: "#aeea00", color: "#0a0a0f", boxShadow: "0 0 28px rgba(174,234,0,0.3)" }}>
                   Start your league →
                 </Link>
               </div>
@@ -589,8 +589,8 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
                     </div>
                   </div>
                 ))}
-                <div className="px-5 py-3 rounded-2xl text-center" style={{ background: "rgba(167,139,250,0.04)", border: "1px dashed rgba(167,139,250,0.2)" }}>
-                  <p className="font-body text-xs" style={{ color: "#a78bfa" }}>Every game you play adds to your league table</p>
+                <div className="px-5 py-3 rounded-2xl text-center" style={{ background: "rgba(174,234,0,0.04)", border: "1px dashed rgba(174,234,0,0.2)" }}>
+                  <p className="font-body text-xs" style={{ color: "#aeea00" }}>Every game you play adds to your league table</p>
                 </div>
               </div>
             </div>
@@ -606,10 +606,10 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { num: "01", col: "#00ff87", emoji: "⚽", title: "PICK A MATCH", desc: "Choose any live or upcoming game — World Cup, Euros, club football. Open the match and you're in." },
+            { num: "01", col: "#aeea00", emoji: "⚽", title: "PICK A MATCH", desc: "Choose any live or upcoming game — World Cup, Euros, club football. Open the match and you're in." },
             { num: "02", col: "#ffb800", emoji: "⚡", title: "ANSWER LIVE", desc: "45 seconds to answer each question. Answer fast — more points." },
             { num: "03", col: "#ff4757", emoji: "📈", title: "STACK YOUR SCORE", desc: "All points you earn add to your total. Every game, every competition." },
-            { num: "04", col: "#a78bfa", emoji: "🏆", title: "JOIN A LEAGUE", desc: "Invite your mates. One table, all season — and finally find out who actually knows football." },
+            { num: "04", col: "#aeea00", emoji: "🏆", title: "JOIN A LEAGUE", desc: "Invite your mates. One table, all season — and finally find out who actually knows football." },
           ].map((step) => (
             <div key={step.num} className="rounded-2xl p-6 relative overflow-hidden group bg-surface" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
               <div className="font-display text-9xl absolute -top-4 -right-2 opacity-[0.06] group-hover:opacity-[0.1] transition-opacity select-none" style={{ color: step.col }}>{step.num}</div>
@@ -639,10 +639,10 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
             </p>
             <div className="space-y-3">
               {[
-                { col: "#00ff87", label: "Answer in 0–15s", pts: "+200 pts" },
+                { col: "#aeea00", label: "Answer in 0–15s", pts: "+200 pts" },
                 { col: "#ffb800", label: "Answer in 15–30s", pts: "+150 pts" },
                 { col: "#ff9f43", label: "Answer in 30–45s", pts: "+100 pts" },
-                { col: "#a78bfa", label: "3 correct in a row", pts: "×2 bonus" },
+                { col: "#aeea00", label: "3 correct in a row", pts: "×2 bonus" },
               ].map(r => (
                 <div key={r.label} className="flex items-center justify-between py-2.5 px-4 rounded-xl"
                   style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
@@ -656,7 +656,7 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
           {/* Animated question card */}
           <div className="flex items-center justify-center">
             <div className="float-card-2 w-full max-w-sm rounded-3xl overflow-hidden bg-surface border border-border"
-              style={{ boxShadow: "0 0 0 1px rgba(0,255,135,0.08), 0 32px 64px rgba(0,0,0,0.6)" }}>
+              style={{ boxShadow: "0 0 0 1px rgba(174,234,0,0.08), 0 32px 64px rgba(0,0,0,0.6)" }}>
               <div className="flex items-center justify-between px-6 pt-6 pb-4">
                 <div>
                   <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-1">Question 3 of 8</p>
@@ -678,9 +678,9 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
                   const isCorrect = timerValue <= 0 && opt.letter === "b";
                   return (
                     <div key={opt.letter} className="w-full flex items-center gap-3 rounded-xl px-4 py-3"
-                      style={{ background: isCorrect ? "rgba(0,255,135,0.12)" : "rgba(255,255,255,0.04)", border: `1px solid ${isCorrect ? "#00ff87" : "rgba(255,255,255,0.08)"}`, color: isCorrect ? "#00ff87" : "#ffffff" }}>
+                      style={{ background: isCorrect ? "rgba(174,234,0,0.12)" : "rgba(255,255,255,0.04)", border: `1px solid ${isCorrect ? "#aeea00" : "rgba(255,255,255,0.08)"}`, color: isCorrect ? "#aeea00" : "#ffffff" }}>
                       <span className="w-7 h-7 rounded-lg flex items-center justify-center font-display text-sm flex-shrink-0"
-                        style={{ background: isCorrect ? "#00ff87" : "rgba(255,255,255,0.06)", color: isCorrect ? "#0a0a0f" : "inherit" }}>{opt.letter.toUpperCase()}</span>
+                        style={{ background: isCorrect ? "#aeea00" : "rgba(255,255,255,0.06)", color: isCorrect ? "#0a0a0f" : "inherit" }}>{opt.letter.toUpperCase()}</span>
                       <span className="font-body text-sm">{opt.text}</span>
                     </div>
                   );
@@ -693,7 +693,7 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
 
       {/* ── Countdown strip ───────────────────────────────────────────────── */}
       <section className="relative z-10 max-w-6xl mx-auto px-6 pb-16">
-        <div className="rounded-3xl overflow-hidden relative" style={{ background: "linear-gradient(135deg, #0d1a0f 0%, #0a0a0f 50%, #0d0d1a 100%)", border: "1px solid rgba(0,255,135,0.12)" }}>
+        <div className="rounded-3xl overflow-hidden relative" style={{ background: "linear-gradient(135deg, #0d1a0f 0%, #0a0a0f 50%, #080d0a 100%)", border: "1px solid rgba(174,234,0,0.12)" }}>
           <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.015) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.015) 1px,transparent 1px)", backgroundSize: "30px 30px" }} />
 
           {/* Left flanking player (Vinicius) */}
@@ -713,7 +713,7 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
               style={{ right: -30, bottom: 0, width: 190, height: 290, zIndex: 1 }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={countdownRightUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "contain", objectPosition: "bottom", opacity: 0.32, transform: "scaleX(-1)" }} />
-              <div className="absolute inset-0" style={{ background: "linear-gradient(to left, transparent 30%, #0d0d1a 85%)" }} />
+              <div className="absolute inset-0" style={{ background: "linear-gradient(to left, transparent 30%, #080d0a 85%)" }} />
               <div className="absolute inset-0" style={{ background: "linear-gradient(to top, #0a0a0f 0%, transparent 20%)" }} />
             </div>
           )}
@@ -724,11 +724,11 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
             <p className="font-body text-sm text-text-muted mt-4 mb-6">June 11 · Mexico City. The first match to earn points on.</p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link href="/league/new" className="inline-flex items-center gap-2 font-body font-bold text-sm px-6 py-3 rounded-xl transition-all hover:opacity-90 pulse-glow"
-                style={{ background: "#a78bfa", color: "#0a0a0f" }}>
+                style={{ background: "#aeea00", color: "#0a0a0f" }}>
                 Create your league before Jun 11 →
               </Link>
               <Link href="/auth/sign-in" className="inline-flex items-center gap-2 font-body font-semibold text-sm px-6 py-3 rounded-xl transition-all hover:opacity-80 green-pulse text-green"
-                style={{ background: "rgba(0,255,135,0.1)", border: "1px solid rgba(0,255,135,0.2)" }}>
+                style={{ background: "rgba(174,234,0,0.1)", border: "1px solid rgba(174,234,0,0.2)" }}>
                 Sign Up Free →
               </Link>
             </div>
@@ -742,26 +742,26 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
       {/* ── Final CTA ─────────────────────────────────────────────────────── */}
       <section className="relative z-10 max-w-6xl mx-auto px-6 pb-24">
         <div className="rounded-3xl p-10 sm:p-14 text-center relative overflow-hidden"
-          style={{ background: "linear-gradient(135deg, rgba(167,139,250,0.1) 0%, rgba(0,255,135,0.06) 100%)", border: "1px solid rgba(167,139,250,0.2)" }}>
+          style={{ background: "linear-gradient(135deg, rgba(174,234,0,0.1) 0%, rgba(174,234,0,0.06) 100%)", border: "1px solid rgba(174,234,0,0.2)" }}>
           <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.015) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.015) 1px,transparent 1px)", backgroundSize: "30px 30px" }} />
           <div className="relative z-10">
             <div className="flex items-center justify-center gap-4 mb-6 text-5xl">
               🇧🇷 🏴󠁧󠁢󠁥󠁮󠁧󠁿 🇫🇷 🇩🇪 🇦🇷
             </div>
             <h2 className="font-display text-5xl sm:text-6xl text-white mb-3">START YOUR LEAGUE</h2>
-            <p className="font-display text-2xl mb-6" style={{ color: "#a78bfa" }}>World Cup 2026 · June 11</p>
+            <p className="font-display text-2xl mb-6" style={{ color: "#aeea00" }}>World Cup 2026 · June 11</p>
             <p className="font-body text-text-muted mb-8 max-w-md mx-auto">
               Invite your mates, pick your matches, and start building your score. Points stack all season.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
               <Link href="/league/new"
                 className="inline-flex items-center gap-2 font-body font-bold text-lg px-10 py-5 rounded-2xl hover:opacity-90 transition-all pulse-glow"
-                style={{ background: "#a78bfa", color: "#0a0a0f" }}>
+                style={{ background: "#aeea00", color: "#0a0a0f" }}>
                 Create a league →
               </Link>
               <Link href="/auth/sign-in"
                 className="inline-flex items-center gap-2 font-body font-bold text-base px-8 py-4 rounded-2xl hover:opacity-90 transition-all green-pulse text-green"
-                style={{ background: "rgba(0,255,135,0.1)", border: "1px solid rgba(0,255,135,0.3)" }}>
+                style={{ background: "rgba(174,234,0,0.1)", border: "1px solid rgba(174,234,0,0.3)" }}>
                 Sign Up Free →
               </Link>
             </div>

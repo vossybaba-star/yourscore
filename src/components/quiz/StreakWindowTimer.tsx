@@ -13,7 +13,7 @@ function dayEndUtc(dateStr: string): number {
   return Date.parse(`${dateStr}T23:00:00Z`);
 }
 
-export function StreakWindowTimer({ date, accent = "#00ff87" }: { date?: string | null; accent?: string }) {
+export function StreakWindowTimer({ date, accent = "#aeea00" }: { date?: string | null; accent?: string }) {
   // Start null so server and first client render match (no hydration mismatch);
   // the real time is set on mount.
   const [now, setNow] = useState<number | null>(null);

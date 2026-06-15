@@ -48,7 +48,7 @@ export function CountdownTimer({
       ? "#ff4757"
       : remaining <= 15
       ? "#ffb800"
-      : "#00ff87";
+      : "#aeea00";
 
   const pulse = remaining <= 5 && remaining > 0;
 

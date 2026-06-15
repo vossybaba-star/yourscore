@@ -88,7 +88,7 @@ export function posCategory(p: Position): PosCategory {
 export const CATEGORY_COLOR: Record<PosCategory, string> = {
   gk: "#ffb800",
   def: "#4fc3f7",
-  mid: "#00ff87",
+  mid: "#aeea00",
   att: "#ff4757",
 };
 

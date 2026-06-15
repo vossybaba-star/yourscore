@@ -34,7 +34,7 @@ function lineOf(pos: string): Line {
   if (["CDM", "CM", "RCM", "LCM", "CAM", "RM", "LM", "DM", "AM"].includes(p)) return "mid";
   return "def";
 }
-const CHIP: Record<Line, string> = { att: "#ff5b6e", mid: "#00ff87", def: "#3da5ff", gk: "#ffb800" };
+const CHIP: Record<Line, string> = { att: "#ff5b6e", mid: "#aeea00", def: "#3da5ff", gk: "#ffb800" };
 
 export async function GET(req: NextRequest) {
   let q = req.nextUrl.searchParams;
@@ -71,7 +71,7 @@ export async function GET(req: NextRequest) {
   const wide = q.get("wide") === "1"; // landscape card for social unfurls
   const logo = `${req.nextUrl.origin}/logo-mark.png`; // transparent YourScore wordmark
 
-  const accent = inv ? "#ffd700" : pos === 1 ? "#00ff87" : pos <= 4 ? "#22d3ee" : pos <= 7 ? "#a78bfa" : pos <= 12 ? "#ffb800" : "#ff4757";
+  const accent = inv ? "#ffd700" : pos === 1 ? "#aeea00" : pos <= 4 ? "#aeea00" : pos <= 7 ? "#aeea00" : pos <= 12 ? "#ffb800" : "#ff4757";
   const tier = inv ? "INVINCIBLE" : pos === 1 ? "CHAMPIONS" : pos <= 4 ? "TOP FOUR" : pos <= 6 ? "EUROPE" : pos <= 17 ? "MID-TABLE" : "RELEGATED";
 
   // XI → two columns: attack+midfield on the left, defence+keeper on the right.
@@ -92,7 +92,7 @@ export async function GET(req: NextRequest) {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 50, height: 30, borderRadius: 7, background: CHIP[p.line], color: "#0a0a0f", fontSize: 18, fontWeight: 800, marginRight: 14 }}>{p.position}</div>
         <div style={{ fontSize: 27, color: "#fff", fontWeight: 600 }}>{p.name}</div>
       </div>
-      <div style={{ fontSize: 28, color: Number(p.rating) >= 88 ? "#00ff87" : "#cfcfe6", fontWeight: 800 }}>{p.rating}</div>
+      <div style={{ fontSize: 28, color: Number(p.rating) >= 88 ? "#aeea00" : "#c4ccc6", fontWeight: 800 }}>{p.rating}</div>
     </div>
   );
 
@@ -107,7 +107,7 @@ export async function GET(req: NextRequest) {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 42, height: 25, borderRadius: 6, background: CHIP[p.line], color: "#0a0a0f", fontSize: 15, fontWeight: 800, marginRight: 10 }}>{p.position}</div>
         <div style={{ display: "flex", fontSize: 21, color: "#fff", fontWeight: 600 }}>{p.name}</div>
       </div>
-      <div style={{ display: "flex", fontSize: 21, color: Number(p.rating) >= 88 ? "#00ff87" : "#cfcfe6", fontWeight: 800 }}>{p.rating}</div>
+      <div style={{ display: "flex", fontSize: 21, color: Number(p.rating) >= 88 ? "#aeea00" : "#c4ccc6", fontWeight: 800 }}>{p.rating}</div>
     </div>
   );
 
@@ -127,22 +127,22 @@ export async function GET(req: NextRequest) {
               <img src={logo} width={97} height={26} alt="YourScore" style={{ display: "flex", marginLeft: 16 }} />
             </div>
             <div style={{ display: "flex", alignItems: "center" }}>
-              <Pill text={mode} color="#8b8ba6" />
+              <Pill text={mode} color="#9aa39d" />
               <div style={{ display: "flex", width: 12 }} />
-              <Pill text={`OVR ${ovr}`} color="#00ff87" />
+              <Pill text={`OVR ${ovr}`} color="#aeea00" />
             </div>
           </div>
 
           {/* body: hero record (left) + XI (right) */}
           <div style={{ display: "flex", flex: 1, alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ display: "flex", flexDirection: "column", width: 470 }}>
-              <span style={{ display: "flex", fontSize: 20, color: "#8888aa", letterSpacing: 3 }}>SEASON RECORD</span>
+              <span style={{ display: "flex", fontSize: 20, color: "#8a948f", letterSpacing: 3 }}>SEASON RECORD</span>
               <span style={{ display: "flex", fontSize: 132, fontWeight: 900, color: "#fff", lineHeight: 1, marginTop: 4 }}>{w}-{d}-{l}</span>
-              <span style={{ display: "flex", fontSize: 20, color: "#8888aa", letterSpacing: 2, marginTop: 4 }}>WON · DRAWN · LOST</span>
+              <span style={{ display: "flex", fontSize: 20, color: "#8a948f", letterSpacing: 2, marginTop: 4 }}>WON · DRAWN · LOST</span>
               <div style={{ display: "flex", alignItems: "baseline", marginTop: 16 }}>
                 <span style={{ display: "flex", color: accent, fontWeight: 800, fontSize: 28 }}>{pts} pts</span>
-                <span style={{ display: "flex", color: "#8888aa", margin: "0 10px", fontSize: 28 }}>·</span>
-                <span style={{ display: "flex", color: "#cfcfe6", fontSize: 28 }}>finished {ordinal(pos)}</span>
+                <span style={{ display: "flex", color: "#8a948f", margin: "0 10px", fontSize: 28 }}>·</span>
+                <span style={{ display: "flex", color: "#c4ccc6", fontSize: 28 }}>finished {ordinal(pos)}</span>
               </div>
               <div style={{ display: "flex", marginTop: 18, padding: "10px 28px", borderRadius: 999, background: `${accent}1f`, border: `2px solid ${accent}66`, color: accent, fontSize: 26, fontWeight: 800, letterSpacing: 1 }}>{tier}</div>
             </div>
@@ -156,12 +156,12 @@ export async function GET(req: NextRequest) {
           {/* footer */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 16 }}>
             <div style={{ display: "flex", alignItems: "center" }}>
-              {bootName ? <span style={{ display: "flex", fontSize: 20, color: "#cfcfe6", marginRight: 26 }}>👟 {bootName} · {bootGoals}</span> : <span style={{ display: "flex" }} />}
-              {potsName ? <span style={{ display: "flex", fontSize: 20, color: "#cfcfe6" }}>🏆 {potsName}</span> : <span style={{ display: "flex" }} />}
+              {bootName ? <span style={{ display: "flex", fontSize: 20, color: "#c4ccc6", marginRight: 26 }}>👟 {bootName} · {bootGoals}</span> : <span style={{ display: "flex" }} />}
+              {potsName ? <span style={{ display: "flex", fontSize: 20, color: "#c4ccc6" }}>🏆 {potsName}</span> : <span style={{ display: "flex" }} />}
             </div>
             <div style={{ display: "flex", alignItems: "baseline" }}>
-              <span style={{ display: "flex", fontSize: 22, color: "#8888aa", marginRight: 14 }}>Think you can beat this?</span>
-              <span style={{ display: "flex", fontSize: 26, color: "#00ff87", fontWeight: 900 }}>yourscore.app</span>
+              <span style={{ display: "flex", fontSize: 22, color: "#8a948f", marginRight: 14 }}>Think you can beat this?</span>
+              <span style={{ display: "flex", fontSize: 26, color: "#aeea00", fontWeight: 900 }}>yourscore.app</span>
             </div>
           </div>
 
@@ -183,20 +183,20 @@ export async function GET(req: NextRequest) {
             <img src={logo} width={119} height={32} alt="YourScore" style={{ display: "flex", marginLeft: 18 }} />
           </div>
           <div style={{ display: "flex", alignItems: "center" }}>
-            <Pill text={mode} color="#8b8ba6" />
+            <Pill text={mode} color="#9aa39d" />
             <div style={{ display: "flex", width: 14 }} />
-            <Pill text={`OVR ${ovr}`} color="#00ff87" />
+            <Pill text={`OVR ${ovr}`} color="#aeea00" />
           </div>
         </div>
 
         {/* hero record */}
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: 36 }}>
           <div style={{ display: "flex", fontSize: 168, fontWeight: 900, color: "#fff", lineHeight: 1 }}>{w}-{d}-{l}</div>
-          <div style={{ display: "flex", fontSize: 26, color: "#8888aa", letterSpacing: 3, marginTop: 6 }}>WON · DRAWN · LOST</div>
+          <div style={{ display: "flex", fontSize: 26, color: "#8a948f", letterSpacing: 3, marginTop: 6 }}>WON · DRAWN · LOST</div>
           <div style={{ display: "flex", fontSize: 34, marginTop: 18 }}>
             <span style={{ color: accent, fontWeight: 800 }}>{pts} pts</span>
-            <span style={{ color: "#8888aa", margin: "0 12px" }}>·</span>
-            <span style={{ color: "#cfcfe6" }}>finished {ordinal(pos)}</span>
+            <span style={{ color: "#8a948f", margin: "0 12px" }}>·</span>
+            <span style={{ color: "#c4ccc6" }}>finished {ordinal(pos)}</span>
           </div>
           <div style={{ display: "flex", marginTop: 20, padding: "12px 36px", borderRadius: 999, background: `${accent}1f`, border: `2px solid ${accent}66`, color: accent, fontSize: 30, fontWeight: 800, letterSpacing: 1 }}>{tier}</div>
         </div>
@@ -209,23 +209,23 @@ export async function GET(req: NextRequest) {
 
         {/* awards */}
         <div style={{ display: "flex", justifyContent: "space-between", marginTop: 14 }}>
-          <div style={{ display: "flex", flexDirection: "column", width: 440, padding: "20px 24px", borderRadius: 18, background: "#11131c" }}>
-            <div style={{ display: "flex", fontSize: 19, color: "#8888aa", letterSpacing: 1 }}>👟 GOLDEN BOOT</div>
+          <div style={{ display: "flex", flexDirection: "column", width: 440, padding: "20px 24px", borderRadius: 18, background: "#0e1611" }}>
+            <div style={{ display: "flex", fontSize: 19, color: "#8a948f", letterSpacing: 1 }}>👟 GOLDEN BOOT</div>
             <div style={{ display: "flex", fontSize: 28, color: "#fff", fontWeight: 700, marginTop: 6 }}>{bootName || "—"}</div>
             <div style={{ display: "flex", fontSize: 22, color: "#ffb800", marginTop: 2 }}>{bootGoals ? `${bootGoals} goals` : ""}</div>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", width: 440, padding: "20px 24px", borderRadius: 18, background: "#11131c" }}>
-            <div style={{ display: "flex", fontSize: 19, color: "#8888aa", letterSpacing: 1 }}>🏆 PLAYER OF THE SEASON</div>
+          <div style={{ display: "flex", flexDirection: "column", width: 440, padding: "20px 24px", borderRadius: 18, background: "#0e1611" }}>
+            <div style={{ display: "flex", fontSize: 19, color: "#8a948f", letterSpacing: 1 }}>🏆 PLAYER OF THE SEASON</div>
             <div style={{ display: "flex", fontSize: 28, color: "#fff", fontWeight: 700, marginTop: 6 }}>{potsName || "—"}</div>
-            <div style={{ display: "flex", fontSize: 22, color: "#00ff87", marginTop: 2 }}>{potsName ? `${potsG || 0}G · ${potsA || 0}A` : ""}</div>
+            <div style={{ display: "flex", fontSize: 22, color: "#aeea00", marginTop: 2 }}>{potsName ? `${potsG || 0}G · ${potsA || 0}A` : ""}</div>
           </div>
         </div>
 
         {/* footer */}
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: "auto" }}>
-          <div style={{ display: "flex", alignItems: "center", fontSize: 24, color: "#00ff87", fontWeight: 700 }}>✅ Verified result</div>
-          <div style={{ display: "flex", fontSize: 26, color: "#cfcfe6", marginTop: 10 }}>Think you can beat this?</div>
-          <div style={{ display: "flex", fontSize: 40, color: "#00ff87", fontWeight: 900, marginTop: 8 }}>yourscore.app</div>
+          <div style={{ display: "flex", alignItems: "center", fontSize: 24, color: "#aeea00", fontWeight: 700 }}>✅ Verified result</div>
+          <div style={{ display: "flex", fontSize: 26, color: "#c4ccc6", marginTop: 10 }}>Think you can beat this?</div>
+          <div style={{ display: "flex", fontSize: 40, color: "#aeea00", fontWeight: 900, marginTop: 8 }}>yourscore.app</div>
         </div>
 
         <div style={{ position: "absolute", left: 0, bottom: 0, width: "1080px", height: 12, background: accent }} />

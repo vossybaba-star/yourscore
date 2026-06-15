@@ -81,8 +81,8 @@ export function AddFriendCard({ userId, displayName, context }: AddFriendCardPro
 
   if (status === "pending_sent") {
     return (
-      <div className="rounded-2xl px-4 py-3" style={{ background: "rgba(0,255,135,0.05)", border: "1px solid rgba(0,255,135,0.18)" }}>
-        <p className="font-body text-sm text-center" style={{ color: "#00ff87" }}>
+      <div className="rounded-2xl px-4 py-3" style={{ background: "rgba(174,234,0,0.05)", border: "1px solid rgba(174,234,0,0.18)" }}>
+        <p className="font-body text-sm text-center" style={{ color: "#aeea00" }}>
           Friend request sent to {displayName} ✓
         </p>
       </div>
@@ -92,9 +92,9 @@ export function AddFriendCard({ userId, displayName, context }: AddFriendCardPro
   const isPendingReceived = status === "pending_received";
 
   return (
-    <div className="rounded-2xl p-4" style={{ background: "rgba(167,139,250,0.06)", border: "1px solid rgba(167,139,250,0.18)" }}>
+    <div className="rounded-2xl p-4" style={{ background: "rgba(174,234,0,0.06)", border: "1px solid rgba(174,234,0,0.18)" }}>
       {context && (
-        <p className="font-body text-center mb-1" style={{ fontSize: 12, color: "#8888aa" }}>
+        <p className="font-body text-center mb-1" style={{ fontSize: 12, color: "#8a948f" }}>
           {context}
         </p>
       )}
@@ -109,9 +109,9 @@ export function AddFriendCard({ userId, displayName, context }: AddFriendCardPro
           disabled={busy}
           className="flex-1 rounded-xl py-2.5 font-body font-semibold text-sm transition-all disabled:opacity-50"
           style={{
-            background: "rgba(167,139,250,0.2)",
-            border: "1px solid rgba(167,139,250,0.35)",
-            color: "#a78bfa",
+            background: "rgba(174,234,0,0.2)",
+            border: "1px solid rgba(174,234,0,0.35)",
+            color: "#aeea00",
           }}
         >
           {busy ? "…" : isPendingReceived ? "Accept ✓" : "Add friend +"}
@@ -122,7 +122,7 @@ export function AddFriendCard({ userId, displayName, context }: AddFriendCardPro
           style={{
             background: "rgba(255,255,255,0.04)",
             border: "1px solid rgba(255,255,255,0.08)",
-            color: "#8888aa",
+            color: "#8a948f",
           }}
         >
           Not now
@@ -173,7 +173,7 @@ export function AddFriendInline({ userId, displayName }: { userId: string; displ
   if (!user || status === "loading" || status === "dismissed" || status === "friends") return null;
   if (status === "pending_sent") {
     return (
-      <span className="font-body text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(0,255,135,0.1)", color: "#00ff87" }}>
+      <span className="font-body text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(174,234,0,0.1)", color: "#aeea00" }}>
         Added ✓
       </span>
     );
@@ -185,9 +185,9 @@ export function AddFriendInline({ userId, displayName }: { userId: string; displ
       title={`Add ${displayName} as a friend`}
       className="font-body text-xs px-2 py-1 rounded-lg transition-all disabled:opacity-50"
       style={{
-        background: "rgba(167,139,250,0.12)",
-        border: "1px solid rgba(167,139,250,0.25)",
-        color: "#a78bfa",
+        background: "rgba(174,234,0,0.12)",
+        border: "1px solid rgba(174,234,0,0.25)",
+        color: "#aeea00",
       }}
     >
       {busy ? "…" : status === "pending_received" ? "Accept ✓" : "+ Add"}

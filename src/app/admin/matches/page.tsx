@@ -12,10 +12,10 @@ interface Match {
 }
 
 const STATUS_COLOR: Record<string, string> = {
-  upcoming: "#8888aa",
-  live: "#00ff87",
+  upcoming: "#8a948f",
+  live: "#aeea00",
   half_time: "#ffb800",
-  completed: "#555566",
+  completed: "#586058",
 };
 
 export default function AdminMatches() {
@@ -71,7 +71,7 @@ export default function AdminMatches() {
         <button
           onClick={() => setShowAdd(true)}
           className="px-5 py-2.5 rounded-xl font-body text-sm font-semibold transition-opacity hover:opacity-80"
-          style={{ background: "rgba(0,255,135,0.12)", color: "#00ff87", border: "1px solid rgba(0,255,135,0.2)" }}
+          style={{ background: "rgba(174,234,0,0.12)", color: "#aeea00", border: "1px solid rgba(174,234,0,0.2)" }}
         >
           + Add match
         </button>
@@ -82,7 +82,7 @@ export default function AdminMatches() {
           <div
             key={m.id}
             className="flex items-center gap-4 px-5 py-4 rounded-2xl"
-            style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}
+            style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.07)" }}
           >
             <div className="flex-1">
               <p className="font-body text-sm font-semibold text-white">
@@ -113,7 +113,7 @@ export default function AdminMatches() {
 
       {showAdd && (
         <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}>
-          <div className="w-full max-w-md mx-4 rounded-3xl p-6" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.1)" }}>
+          <div className="w-full max-w-md mx-4 rounded-3xl p-6" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.1)" }}>
             <h2 className="font-display text-2xl text-white mb-5">ADD MATCH</h2>
             <div className="space-y-3">
               {[
@@ -167,7 +167,7 @@ export default function AdminMatches() {
                 onClick={handleAdd}
                 disabled={saving}
                 className="flex-1 py-3 rounded-xl font-body text-sm font-semibold transition-opacity hover:opacity-80 disabled:opacity-50"
-                style={{ background: "rgba(0,255,135,0.12)", color: "#00ff87", border: "1px solid rgba(0,255,135,0.2)" }}
+                style={{ background: "rgba(174,234,0,0.12)", color: "#aeea00", border: "1px solid rgba(174,234,0,0.2)" }}
               >
                 {saving ? "Saving…" : "Add match"}
               </button>

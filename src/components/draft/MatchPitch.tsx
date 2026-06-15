@@ -146,7 +146,7 @@ export function MatchPitch(props: Props) {
       <ScoreHeader minute={hud.minute} myName={props.myName} oppName={props.oppName} myGoals={hud.my} oppGoals={hud.opp} />
 
       {/* Watch the pitch, or read the commentary — user's choice. */}
-      <div className="mt-4 flex gap-1 p-1 rounded-xl" style={{ background: "#0d0d14", border: "1px solid rgba(255,255,255,0.08)" }}>
+      <div className="mt-4 flex gap-1 p-1 rounded-xl" style={{ background: "#080d0a", border: "1px solid rgba(255,255,255,0.08)" }}>
         <TabBtn active={view === "pitch"} onClick={() => setView("pitch")} label="Pitch" />
         <TabBtn active={view === "commentary"} onClick={() => setView("commentary")} label="Commentary" />
       </div>
@@ -157,9 +157,9 @@ export function MatchPitch(props: Props) {
       </div>
 
       {view === "commentary" && (
-        <div ref={feedRef} className="mt-3 rounded-xl overflow-y-auto" style={{ background: "#0d0d14", border: "1px solid rgba(255,255,255,0.08)", maxHeight: 260 }}>
+        <div ref={feedRef} className="mt-3 rounded-xl overflow-y-auto" style={{ background: "#080d0a", border: "1px solid rgba(255,255,255,0.08)", maxHeight: 260 }}>
           {hud.feed.length === 0
-            ? <div className="px-3 py-6 text-center font-body" style={{ fontSize: 13, color: "#7a7a92" }}>Kick-off…</div>
+            ? <div className="px-3 py-6 text-center font-body" style={{ fontSize: 13, color: "#8a948f" }}>Kick-off…</div>
             : hud.feed.map((b, i) => <FeedLine key={`${b.minute}-${b.kind}-${i}`} beat={b} meSide={props.meSide} half={props.half} />)}
         </div>
       )}
@@ -176,7 +176,7 @@ function TabBtn({ active, onClick, label }: { active: boolean; onClick: () => vo
     <button
       onClick={onClick}
       className="flex-1 rounded-lg py-2 font-display tracking-wide transition-colors active:scale-[0.99]"
-      style={{ fontSize: 13, letterSpacing: 1, color: active ? "#062013" : "#9a9ab0", background: active ? ME : "transparent" }}
+      style={{ fontSize: 13, letterSpacing: 1, color: active ? "#062013" : "#9aa39d", background: active ? ME : "transparent" }}
     >
       {label.toUpperCase()}
     </button>
@@ -187,12 +187,12 @@ function FeedLine({ beat, meSide, half }: { beat: Beat; meSide: "a" | "b"; half:
   const isGoal = beat.kind === "goal";
   const isBookend = beat.kind === "kickoff" || beat.kind === "halftime" || beat.kind === "fulltime";
   const mine = beat.side === meSide;
-  const accent = isBookend ? "#8888aa" : mine ? ME : OPP;
+  const accent = isBookend ? "#8a948f" : mine ? ME : OPP;
   const shownMinute = beat.kind === "kickoff" ? (half === 2 ? 45 : 0) : beat.minute;
   return (
     <div className="flex items-center gap-2 px-3 py-1.5" style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
-      <span className="font-display tabular-nums" style={{ fontSize: 12, color: "#7a7a92", width: 28 }}>{shownMinute}&apos;</span>
-      <span className="font-body" style={{ fontSize: isGoal ? 14 : 12.5, color: isGoal ? accent : "#cfcfe6", fontWeight: isGoal ? 700 : 400 }}>
+      <span className="font-display tabular-nums" style={{ fontSize: 12, color: "#8a948f", width: 28 }}>{shownMinute}&apos;</span>
+      <span className="font-body" style={{ fontSize: isGoal ? 14 : 12.5, color: isGoal ? accent : "#c4ccc6", fontWeight: isGoal ? 700 : 400 }}>
         {beat.text}
       </span>
     </div>
@@ -245,11 +245,11 @@ function drawPitch(
   if (frame.beat && frame.beat.kind === "goal" && frame.beat.phase === "outcome") {
     const att = frame.beat.side === "a" ? 1 : 0;
     ctx.save();
-    ctx.fillStyle = "rgba(0,255,135,0.30)";
+    ctx.fillStyle = "rgba(174,234,0,0.30)";
     const gx = att === 1 ? px(0.9) : px(0);
     ctx.fillRect(gx, py(0.36), px(0.1) - px(0), py(0.64) - py(0.36));
     if (!reduced) {
-      ctx.strokeStyle = "rgba(0,255,135,0.9)";
+      ctx.strokeStyle = "rgba(174,234,0,0.9)";
       ctx.lineWidth = 2;
       ctx.beginPath(); ctx.arc(px(frame.ball.x), py(frame.ball.y), 14, 0, Math.PI * 2); ctx.stroke();
     }

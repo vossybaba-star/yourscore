@@ -6,10 +6,10 @@ import Link from "next/link";
 type StatKey = "matches" | "questions" | "lobbies" | "players";
 
 const STAT_CARDS: { key: StatKey; label: string; sub: string; color: string; href: string }[] = [
-  { key: "matches", label: "Matches", sub: "scheduled", color: "#00ff87", href: "/admin/matches" },
+  { key: "matches", label: "Matches", sub: "scheduled", color: "#aeea00", href: "/admin/matches" },
   { key: "questions", label: "Quiz Packs", sub: "published", color: "#ffb800", href: "/admin/matches" },
   { key: "lobbies", label: "Lobbies", sub: "total", color: "#ff4757", href: "/admin/rooms" },
-  { key: "players", label: "Players", sub: "total", color: "#a78bfa", href: "/admin/rooms" },
+  { key: "players", label: "Players", sub: "total", color: "#aeea00", href: "/admin/rooms" },
 ];
 
 const QUICK_ACTIONS = [
@@ -54,7 +54,7 @@ export default function AdminDashboard() {
             key={s.key}
             href={s.href}
             className="rounded-2xl p-5 hover:opacity-90 transition-opacity"
-            style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}
+            style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.07)" }}
           >
             <p className="font-display text-3xl leading-none" style={{ color: s.color }}>{counts ? counts[s.key] : "…"}</p>
             <p className="font-body text-sm font-semibold text-white mt-2">{s.label}</p>
@@ -72,7 +72,7 @@ export default function AdminDashboard() {
               key={a.label}
               href={a.href}
               className="flex items-center gap-4 px-5 py-4 rounded-2xl hover:opacity-90 transition-opacity"
-              style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}
+              style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.07)" }}
             >
               <span className="text-2xl flex-shrink-0">{a.icon}</span>
               <div>

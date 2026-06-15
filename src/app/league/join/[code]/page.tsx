@@ -15,8 +15,8 @@ const ANIM = `
     to   { opacity: 1; transform: translateY(0); }
   }
   @keyframes pulseGlow {
-    0%,100% { box-shadow: 0 0 28px rgba(167,139,250,0.35), 0 0 60px rgba(167,139,250,0.1); }
-    50%      { box-shadow: 0 0 48px rgba(167,139,250,0.6),  0 0 90px rgba(167,139,250,0.22); }
+    0%,100% { box-shadow: 0 0 28px rgba(174,234,0,0.35), 0 0 60px rgba(174,234,0,0.1); }
+    50%      { box-shadow: 0 0 48px rgba(174,234,0,0.6),  0 0 90px rgba(174,234,0,0.22); }
   }
   @keyframes floatBadge {
     0%,100% { transform: translateY(0px); }
@@ -37,21 +37,21 @@ type TableMember = { user_id: string; display_name: string; total_score: number 
 function LeagueTablePreview({ members, leagueName }: { members: TableMember[]; leagueName: string }) {
   const MEDALS = ["🥇", "🥈", "🥉"];
   return (
-    <div className="rounded-2xl overflow-hidden" style={{ background: "#0e0e1a", border: "1px solid rgba(167,139,250,0.18)" }}>
+    <div className="rounded-2xl overflow-hidden" style={{ background: "#0e1611", border: "1px solid rgba(174,234,0,0.18)" }}>
       {/* Header */}
       <div className="px-4 py-3 flex items-center justify-between"
-        style={{ background: "rgba(167,139,250,0.06)", borderBottom: "1px solid rgba(167,139,250,0.12)" }}>
+        style={{ background: "rgba(174,234,0,0.06)", borderBottom: "1px solid rgba(174,234,0,0.12)" }}>
         <div className="flex items-center gap-2">
           <span className="text-sm">🏆</span>
           <span className="font-display text-sm text-white tracking-wide">{leagueName}</span>
         </div>
-        <span className="font-body text-xs" style={{ color: "#6655aa" }}>LIVE TABLE</span>
+        <span className="font-body text-xs" style={{ color: "#8a948f" }}>LIVE TABLE</span>
       </div>
 
       {/* Rows */}
       {members.length === 0 ? (
         <div className="px-4 py-6 text-center">
-          <p className="font-body text-sm" style={{ color: "#555577" }}>No scores yet — be the first!</p>
+          <p className="font-body text-sm" style={{ color: "#586058" }}>No scores yet — be the first!</p>
         </div>
       ) : (
         members.map((m, i) => (
@@ -59,21 +59,21 @@ function LeagueTablePreview({ members, leagueName }: { members: TableMember[]; l
             className="flex items-center gap-3 px-4 py-3 transition-colors"
             style={{
               borderBottom: i < members.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
-              background: i === 0 ? "rgba(167,139,250,0.04)" : "transparent",
+              background: i === 0 ? "rgba(174,234,0,0.04)" : "transparent",
             }}>
             {/* Rank */}
             <span className="text-base w-6 text-center flex-shrink-0">
-              {i < 3 ? MEDALS[i] : <span className="font-display text-sm" style={{ color: "#555577" }}>{i + 1}</span>}
+              {i < 3 ? MEDALS[i] : <span className="font-display text-sm" style={{ color: "#586058" }}>{i + 1}</span>}
             </span>
             {/* Avatar initial */}
             <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 font-body font-bold text-xs"
-              style={{ background: "rgba(167,139,250,0.15)", color: "#a78bfa" }}>
+              style={{ background: "rgba(174,234,0,0.15)", color: "#aeea00" }}>
               {(m.display_name || "?")[0].toUpperCase()}
             </div>
             {/* Name */}
             <span className="font-body text-sm text-white flex-1 truncate">{m.display_name}</span>
             {/* Score */}
-            <span className="font-display text-sm flex-shrink-0" style={{ color: m.total_score > 0 ? "#a78bfa" : "#333355" }}>
+            <span className="font-display text-sm flex-shrink-0" style={{ color: m.total_score > 0 ? "#aeea00" : "#3a423d" }}>
               {m.total_score > 0 ? m.total_score.toLocaleString() : "—"}
             </span>
           </div>
@@ -82,16 +82,16 @@ function LeagueTablePreview({ members, leagueName }: { members: TableMember[]; l
 
       {/* "You" placeholder row */}
       <div className="flex items-center gap-3 px-4 py-3"
-        style={{ borderTop: "1px solid rgba(167,139,250,0.12)", background: "rgba(0,255,135,0.03)" }}>
+        style={{ borderTop: "1px solid rgba(174,234,0,0.12)", background: "rgba(174,234,0,0.03)" }}>
         <span className="text-base w-6 text-center flex-shrink-0">
-          <span className="font-display text-sm" style={{ color: "#00ff87" }}>{members.length + 1}</span>
+          <span className="font-display text-sm" style={{ color: "#aeea00" }}>{members.length + 1}</span>
         </span>
         <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 font-body font-bold text-xs"
-          style={{ background: "rgba(0,255,135,0.1)", color: "#00ff87", border: "1px dashed rgba(0,255,135,0.3)" }}>
+          style={{ background: "rgba(174,234,0,0.1)", color: "#aeea00", border: "1px dashed rgba(174,234,0,0.3)" }}>
           ?
         </div>
-        <span className="font-body text-sm italic" style={{ color: "#00ff87" }}>You — join to start scoring</span>
-        <span className="font-display text-sm flex-shrink-0" style={{ color: "#333355" }}>—</span>
+        <span className="font-body text-sm italic" style={{ color: "#aeea00" }}>You — join to start scoring</span>
+        <span className="font-display text-sm flex-shrink-0" style={{ color: "#3a423d" }}>—</span>
       </div>
     </div>
   );
@@ -216,7 +216,7 @@ function JoinLeagueInner({ code }: { code: string }) {
       </p>
       <div className="flex gap-4">
         <Link href="/" className="font-body text-sm text-text-muted">← Home</Link>
-        <Link href="/league/join" className="font-body text-sm font-semibold" style={{ color: "#a78bfa" }}>Try a different code →</Link>
+        <Link href="/league/join" className="font-body text-sm font-semibold" style={{ color: "#aeea00" }}>Try a different code →</Link>
       </div>
     </div>
   );
@@ -224,15 +224,15 @@ function JoinLeagueInner({ code }: { code: string }) {
   // ── CTA card (reused in two places) ────────────────────────────────────────
   const CtaCard = () => !user ? (
     <div className="rounded-2xl p-6 pulse-glow w-full"
-      style={{ background: "linear-gradient(135deg, rgba(167,139,250,0.12) 0%, rgba(10,10,15,0.95) 100%)", border: "1px solid rgba(167,139,250,0.28)" }}>
+      style={{ background: "linear-gradient(135deg, rgba(174,234,0,0.12) 0%, rgba(10,10,15,0.95) 100%)", border: "1px solid rgba(174,234,0,0.28)" }}>
       <p className="font-display text-xl text-white mb-1">ACCEPT YOUR INVITE</p>
       <p className="font-body text-sm mb-5 text-text-muted">Free forever — takes 10 seconds.</p>
       <SignInWithGoogle redirectTo={`/league/join/${code}`} />
-      <p className="font-body text-xs text-center mt-3" style={{ color: "#444466" }}>No credit card. No spam. Just football.</p>
+      <p className="font-body text-xs text-center mt-3" style={{ color: "#3a423d" }}>No credit card. No spam. Just football.</p>
     </div>
   ) : (
     <button onClick={handleJoin} className="w-full py-4 rounded-2xl font-display text-lg tracking-widest transition-transform active:scale-[0.97]"
-      style={{ background: "linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%)", color: "#fff", boxShadow: "0 4px 28px rgba(124,58,237,0.45)" }}>
+      style={{ background: "linear-gradient(135deg, #aeea00 0%, #aeea00 100%)", color: "#fff", boxShadow: "0 4px 28px rgba(174,234,0,0.45)" }}>
       JOIN {league.name.toUpperCase()} →
     </button>
   );
@@ -244,11 +244,11 @@ function JoinLeagueInner({ code }: { code: string }) {
       {/* Background */}
       <GridBackground opacity={0.022} />
       <div className="fixed top-0 left-0 w-[700px] h-[700px] pointer-events-none"
-        style={{ background: "radial-gradient(circle at 0% 0%, rgba(167,139,250,0.09) 0%, transparent 60%)" }} />
+        style={{ background: "radial-gradient(circle at 0% 0%, rgba(174,234,0,0.09) 0%, transparent 60%)" }} />
       <div className="fixed top-0 right-0 w-[500px] h-[500px] pointer-events-none"
-        style={{ background: "radial-gradient(circle at 100% 0%, rgba(0,255,135,0.04) 0%, transparent 60%)" }} />
+        style={{ background: "radial-gradient(circle at 100% 0%, rgba(174,234,0,0.04) 0%, transparent 60%)" }} />
       <div className="fixed bottom-0 right-0 w-[500px] h-[500px] pointer-events-none"
-        style={{ background: "radial-gradient(circle at 100% 100%, rgba(167,139,250,0.05) 0%, transparent 60%)" }} />
+        style={{ background: "radial-gradient(circle at 100% 100%, rgba(174,234,0,0.05) 0%, transparent 60%)" }} />
 
       {/* ── Nav ──────────────────────────────────────────────────────────────── */}
       <nav className="relative z-10 pt-safe flex items-center justify-between px-6 py-5 max-w-6xl mx-auto">
@@ -270,9 +270,9 @@ function JoinLeagueInner({ code }: { code: string }) {
           <div>
             {/* Invite pill */}
             <div className="fade-1 inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-6 font-body text-xs uppercase tracking-widest float-badge"
-              style={{ background: "rgba(167,139,250,0.1)", border: "1px solid rgba(167,139,250,0.25)", color: "#a78bfa" }}>
+              style={{ background: "rgba(174,234,0,0.1)", border: "1px solid rgba(174,234,0,0.25)", color: "#aeea00" }}>
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <path d="M6 1l1.5 3 3.5.5-2.5 2.5.5 3.5L6 9l-3 1.5.5-3.5L1 4.5l3.5-.5L6 1z" fill="#a78bfa" />
+                <path d="M6 1l1.5 3 3.5.5-2.5 2.5.5 3.5L6 9l-3 1.5.5-3.5L1 4.5l3.5-.5L6 1z" fill="#aeea00" />
               </svg>
               {inviterName ? `You've been invited by ${inviterName}` : "You've been invited"}
             </div>
@@ -281,7 +281,7 @@ function JoinLeagueInner({ code }: { code: string }) {
             <h1 className="fade-2 font-display text-white mb-4"
               style={{ fontSize: "clamp(3rem, 7vw, 5.5rem)", lineHeight: 0.95, letterSpacing: "-0.01em" }}>
               JOIN<br />
-              <span style={{ color: "#a78bfa" }}>{league.name.toUpperCase()}</span>
+              <span style={{ color: "#aeea00" }}>{league.name.toUpperCase()}</span>
             </h1>
 
             {/* Description */}
@@ -294,11 +294,11 @@ function JoinLeagueInner({ code }: { code: string }) {
             {/* Member count */}
             <div className="fade-3 flex items-center gap-2 mb-8">
               <span className="inline-flex items-center gap-2 px-3 py-2 rounded-full font-body text-sm"
-                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#ccccee" }}>
+                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#c4ccc6" }}>
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <circle cx="5.5" cy="4.5" r="2.5" stroke="#a78bfa" strokeWidth="1.3"/>
-                  <circle cx="9.5" cy="4.5" r="2.5" stroke="#a78bfa" strokeWidth="1.3"/>
-                  <path d="M1 12c0-2.5 2-4.5 4.5-4.5h2M8 12c0-2.5 2-4.5 4.5-4.5" stroke="#a78bfa" strokeWidth="1.3" strokeLinecap="round"/>
+                  <circle cx="5.5" cy="4.5" r="2.5" stroke="#aeea00" strokeWidth="1.3"/>
+                  <circle cx="9.5" cy="4.5" r="2.5" stroke="#aeea00" strokeWidth="1.3"/>
+                  <path d="M1 12c0-2.5 2-4.5 4.5-4.5h2M8 12c0-2.5 2-4.5 4.5-4.5" stroke="#aeea00" strokeWidth="1.3" strokeLinecap="round"/>
                 </svg>
                 <span className="font-semibold text-white">{league.member_count}</span>
                 {league.member_count === 1 ? " member" : " members"} already in
@@ -332,8 +332,8 @@ function JoinLeagueInner({ code }: { code: string }) {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { num: "01", col: "#a78bfa", emoji: "🔗", title: "ACCEPT INVITE", desc: "Sign up free in 10 seconds. You'll be added to the league automatically." },
-            { num: "02", col: "#00ff87", emoji: "⚽", title: "PICK A MATCH",   desc: "Open any live game — World Cup, Euros, Champions League, Premier League." },
+            { num: "01", col: "#aeea00", emoji: "🔗", title: "ACCEPT INVITE", desc: "Sign up free in 10 seconds. You'll be added to the league automatically." },
+            { num: "02", col: "#aeea00", emoji: "⚽", title: "PICK A MATCH",   desc: "Open any live game — World Cup, Euros, Champions League, Premier League." },
             { num: "03", col: "#ffb800", emoji: "⚡", title: "ANSWER LIVE",    desc: "Questions fire as the game happens. Answer fast — points decay every second." },
             { num: "04", col: "#ff4757", emoji: "📊", title: "CLIMB THE TABLE", desc: "Points stack in the league table. Every match moves the rankings." },
           ].map((step) => (
@@ -394,7 +394,7 @@ function JoinLeagueInner({ code }: { code: string }) {
         style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/logo.png" alt="YourScore" height={20} style={{ height: 20, width: "auto", opacity: 0.45 }} />
-        <div className="flex items-center gap-5 font-body text-xs" style={{ color: "#555577" }}>
+        <div className="flex items-center gap-5 font-body text-xs" style={{ color: "#586058" }}>
           <Link href="/how-it-works" className="hover:text-white transition-colors">How it works</Link>
           <Link href="/challenges" className="hover:text-white transition-colors">Challenges</Link>
           <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>

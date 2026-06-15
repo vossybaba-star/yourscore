@@ -201,7 +201,7 @@ export default function PlayPage() {
     <main className="min-h-dvh bg-bg pb-28">
       <GridBackground opacity={0.025} />
       <div className="fixed top-0 left-0 w-[400px] h-[400px] pointer-events-none"
-        style={{ background: "radial-gradient(circle at 0% 0%, rgba(0,255,135,0.06) 0%, transparent 60%)" }} />
+        style={{ background: "radial-gradient(circle at 0% 0%, rgba(174,234,0,0.06) 0%, transparent 60%)" }} />
 
       {/* Header */}
       <div className="sticky top-0 z-30 pt-safe" style={{ background: "rgba(10,10,15,0.92)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
@@ -220,10 +220,10 @@ export default function PlayPage() {
             <div className="flex items-center gap-2">
               {liveCount > 0 && (
                 <div className="flex items-center gap-2 px-3 py-2 rounded-xl flex-shrink-0"
-                  style={{ background: "rgba(0,255,135,0.1)", border: "1px solid rgba(0,255,135,0.25)" }}>
+                  style={{ background: "rgba(174,234,0,0.1)", border: "1px solid rgba(174,234,0,0.25)" }}>
                   <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: "#00ff87" }} />
-                    <span className="relative inline-flex h-2 w-2 rounded-full" style={{ background: "#00ff87" }} />
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: "#aeea00" }} />
+                    <span className="relative inline-flex h-2 w-2 rounded-full" style={{ background: "#aeea00" }} />
                   </span>
                   <span className="font-body text-xs font-bold text-green">
                     {activePlayers > 0 ? `${activePlayers} playing` : "LIVE"}
@@ -232,13 +232,13 @@ export default function PlayPage() {
               )}
               {user ? (
                 <Link href="/profile" className="w-9 h-9 rounded-full flex items-center justify-center font-body font-bold text-sm transition-opacity hover:opacity-80 flex-shrink-0"
-                  style={{ background: "linear-gradient(135deg, #1a2f4a, #2a1a4a)", color: "#a78bfa", border: "1.5px solid rgba(167,139,250,0.25)" }}>
+                  style={{ background: "linear-gradient(135deg, #1a2f4a, #3a423d)", color: "#aeea00", border: "1.5px solid rgba(174,234,0,0.25)" }}>
                   {((displayName || user.email || "?")[0]).toUpperCase()}
                 </Link>
               ) : (
                 <Link href="/auth/sign-in"
                   className="flex items-center gap-1.5 px-4 py-2 rounded-xl font-body text-sm font-bold flex-shrink-0 transition-opacity hover:opacity-90"
-                  style={{ background: "#00ff87", color: "#0a0a0f" }}>
+                  style={{ background: "#aeea00", color: "#0a0a0f" }}>
                   Sign in
                 </Link>
               )}
@@ -263,7 +263,7 @@ export default function PlayPage() {
             </p>
             <Link href="/league/new"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-body font-bold text-sm"
-              style={{ background: "#a78bfa", color: "#0a0a0f" }}>
+              style={{ background: "#aeea00", color: "#0a0a0f" }}>
               Set up your league →
             </Link>
           </div>
@@ -272,12 +272,12 @@ export default function PlayPage() {
         {/* ── Guest sign-in banner ─────────────────────────────────────────────── */}
         {!loading && isGuest && (
           <div className="rounded-2xl px-5 py-5 flex items-center gap-4"
-            style={{ background: "rgba(0,255,135,0.04)", border: "1px solid rgba(0,255,135,0.18)" }}>
+            style={{ background: "rgba(174,234,0,0.04)", border: "1px solid rgba(174,234,0,0.18)" }}>
             <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
-              style={{ background: "rgba(0,255,135,0.12)", border: "1px solid rgba(0,255,135,0.25)" }}>
+              style={{ background: "rgba(174,234,0,0.12)", border: "1px solid rgba(174,234,0,0.25)" }}>
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <path d="M3 9.5L9 4l6 5.5V15.5a.75.75 0 0 1-.75.75H3.75A.75.75 0 0 1 3 15.5z" stroke="#00ff87" strokeWidth="1.4" strokeLinejoin="round"/>
-                <path d="M6.5 16.25v-5.5h5v5.5" stroke="#00ff87" strokeWidth="1.4" strokeLinecap="round"/>
+                <path d="M3 9.5L9 4l6 5.5V15.5a.75.75 0 0 1-.75.75H3.75A.75.75 0 0 1 3 15.5z" stroke="#aeea00" strokeWidth="1.4" strokeLinejoin="round"/>
+                <path d="M6.5 16.25v-5.5h5v5.5" stroke="#aeea00" strokeWidth="1.4" strokeLinecap="round"/>
               </svg>
             </div>
             <div className="flex-1 min-w-0">
@@ -286,7 +286,7 @@ export default function PlayPage() {
             </div>
             <Link href="/auth/sign-in"
               className="flex-shrink-0 px-4 py-2 rounded-xl font-body text-sm font-bold transition-opacity hover:opacity-90"
-              style={{ background: "#00ff87", color: "#0a0a0f" }}>
+              style={{ background: "#aeea00", color: "#0a0a0f" }}>
               Sign in
             </Link>
           </div>
@@ -297,16 +297,16 @@ export default function PlayPage() {
           <div>
             <div className="flex items-center gap-2 mb-3 px-1">
               <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-                <rect x="1.5" y="2" width="10" height="9.5" rx="1.5" stroke="#a78bfa" strokeWidth="1.3"/>
-                <path d="M1.5 5h10" stroke="#a78bfa" strokeWidth="1.3"/>
-                <path d="M4.5 1v2M8.5 1v2" stroke="#a78bfa" strokeWidth="1.3" strokeLinecap="round"/>
-                <path d="M4 7.5h1.5M7 7.5h2" stroke="#a78bfa" strokeWidth="1.3" strokeLinecap="round"/>
+                <rect x="1.5" y="2" width="10" height="9.5" rx="1.5" stroke="#aeea00" strokeWidth="1.3"/>
+                <path d="M1.5 5h10" stroke="#aeea00" strokeWidth="1.3"/>
+                <path d="M4.5 1v2M8.5 1v2" stroke="#aeea00" strokeWidth="1.3" strokeLinecap="round"/>
+                <path d="M4 7.5h1.5M7 7.5h2" stroke="#aeea00" strokeWidth="1.3" strokeLinecap="round"/>
               </svg>
-              <p className="font-body text-xs font-bold uppercase tracking-widest" style={{ color: "#a78bfa" }}>
+              <p className="font-body text-xs font-bold uppercase tracking-widest" style={{ color: "#aeea00" }}>
                 My schedule
               </p>
               <span className="font-body text-xs px-1.5 py-0.5 rounded-full tabular-nums"
-                style={{ background: "rgba(167,139,250,0.12)", color: "#a78bfa" }}>
+                style={{ background: "rgba(174,234,0,0.12)", color: "#aeea00" }}>
                 {mySchedule.length}
               </span>
             </div>
@@ -324,8 +324,8 @@ export default function PlayPage() {
                     className="flex-shrink-0 rounded-2xl overflow-hidden active:scale-[0.98] transition-transform"
                     style={{
                       width: 168,
-                      background: "linear-gradient(160deg, rgba(167,139,250,0.08) 0%, #12121e 70%)",
-                      border: "1px solid rgba(167,139,250,0.2)",
+                      background: "linear-gradient(160deg, rgba(174,234,0,0.08) 0%, #0e1611 70%)",
+                      border: "1px solid rgba(174,234,0,0.2)",
                     }}>
                     {/* Jersey preview */}
                     <div className="flex items-end justify-center gap-0 pt-3 pb-1 relative overflow-hidden"
@@ -357,18 +357,18 @@ export default function PlayPage() {
 
                     <div className="px-3 py-2.5">
                       <p className="font-body text-xs font-bold text-white leading-tight truncate">
-                        {m.home_team} <span style={{ color: "#555577" }}>vs</span> {m.away_team}
+                        {m.home_team} <span style={{ color: "#586058" }}>vs</span> {m.away_team}
                       </p>
                       <p className="font-body text-xs mt-0.5 text-text-muted">
                         {dayStr} · {timeStr}
                       </p>
                       <div className="flex items-center gap-1.5 mt-2">
-                        <span className="flex h-1.5 w-1.5 rounded-full" style={{ background: "#00ff87" }} />
+                        <span className="flex h-1.5 w-1.5 rounded-full" style={{ background: "#aeea00" }} />
                         <span className="font-body text-xs text-green">Playing</span>
                         {notified && (
                           <>
-                            <span style={{ color: "#333355" }}>·</span>
-                            <span className="font-body text-xs" style={{ color: "#a78bfa" }}>🔔</span>
+                            <span style={{ color: "#3a423d" }}>·</span>
+                            <span className="font-body text-xs" style={{ color: "#aeea00" }}>🔔</span>
                           </>
                         )}
                       </div>
@@ -388,17 +388,17 @@ export default function PlayPage() {
               <div className="flex items-center gap-3 mb-3 px-1">
                 {isLiveSection && (
                   <span className="relative flex h-2 w-2 flex-shrink-0">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: "#00ff87" }} />
-                    <span className="relative inline-flex h-2 w-2 rounded-full" style={{ background: "#00ff87" }} />
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: "#aeea00" }} />
+                    <span className="relative inline-flex h-2 w-2 rounded-full" style={{ background: "#aeea00" }} />
                   </span>
                 )}
                 <p className="font-body text-xs font-bold uppercase tracking-widest"
-                  style={{ color: isLiveSection ? "#00ff87" : "#555577" }}>
+                  style={{ color: isLiveSection ? "#aeea00" : "#586058" }}>
                   {label}
                 </p>
                 {isLiveSection && activePlayers > 0 && (
                   <span className="font-body text-xs px-2 py-0.5 rounded-full text-green"
-                    style={{ background: "rgba(0,255,135,0.08)" }}>
+                    style={{ background: "rgba(174,234,0,0.08)" }}>
                     {activePlayers} active
                   </span>
                 )}
@@ -420,9 +420,9 @@ export default function PlayPage() {
                       <Link key={m.id} href={`/match/${m.id}`}
                         className="block rounded-2xl overflow-hidden active:scale-[0.99] transition-transform"
                         style={{
-                          background: "linear-gradient(160deg, rgba(0,255,135,0.08) 0%, rgba(10,10,15,1) 65%)",
-                          border: "1px solid rgba(0,255,135,0.3)",
-                          boxShadow: "0 0 50px rgba(0,255,135,0.07), inset 0 1px 0 rgba(0,255,135,0.1)",
+                          background: "linear-gradient(160deg, rgba(174,234,0,0.08) 0%, rgba(10,10,15,1) 65%)",
+                          border: "1px solid rgba(174,234,0,0.3)",
+                          boxShadow: "0 0 50px rgba(174,234,0,0.07), inset 0 1px 0 rgba(174,234,0,0.1)",
                         }}>
                         {/* Top bar */}
                         <div className="flex items-center justify-between px-5 pt-4 pb-1">
@@ -434,10 +434,10 @@ export default function PlayPage() {
                               </span>
                             )}
                             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
-                              style={{ background: "rgba(0,255,135,0.12)", border: "1px solid rgba(0,255,135,0.25)" }}>
+                              style={{ background: "rgba(174,234,0,0.12)", border: "1px solid rgba(174,234,0,0.25)" }}>
                               <span className="relative flex h-1.5 w-1.5">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: "#00ff87" }} />
-                                <span className="relative inline-flex h-1.5 w-1.5 rounded-full" style={{ background: "#00ff87" }} />
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: "#aeea00" }} />
+                                <span className="relative inline-flex h-1.5 w-1.5 rounded-full" style={{ background: "#aeea00" }} />
                               </span>
                               <span className="font-body text-xs font-bold text-green">LIVE</span>
                             </div>
@@ -480,13 +480,13 @@ export default function PlayPage() {
                           {isGuest ? (
                             <Link href="/auth/sign-in"
                               className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-body font-bold text-sm text-green"
-                              style={{ background: "rgba(0,255,135,0.1)", border: "1px solid rgba(0,255,135,0.25)" }}>
+                              style={{ background: "rgba(174,234,0,0.1)", border: "1px solid rgba(174,234,0,0.25)" }}>
                               Sign in to join →
                             </Link>
                           ) : (
                             <>
                               <div className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-body font-bold text-sm"
-                                style={{ background: "#00ff87", color: "#0a0a0f" }}>
+                                style={{ background: "#aeea00", color: "#0a0a0f" }}>
                                 <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
                                   <path d="M3 1.5l9 5-9 5z" fill="currentColor" />
                                 </svg>
@@ -497,9 +497,9 @@ export default function PlayPage() {
                                 disabled={notifToggling === m.id}
                                 className="flex items-center justify-center w-11 rounded-xl transition-all disabled:opacity-60"
                                 style={{
-                                  background: notified ? "rgba(167,139,250,0.15)" : "rgba(255,255,255,0.06)",
-                                  border: `1px solid ${notified ? "rgba(167,139,250,0.35)" : "rgba(255,255,255,0.1)"}`,
-                                  color: notified ? "#a78bfa" : "#555577",
+                                  background: notified ? "rgba(174,234,0,0.15)" : "rgba(255,255,255,0.06)",
+                                  border: `1px solid ${notified ? "rgba(174,234,0,0.35)" : "rgba(255,255,255,0.1)"}`,
+                                  color: notified ? "#aeea00" : "#586058",
                                 }}>
                                 {notifToggling === m.id
                                   ? <div className="w-3.5 h-3.5 rounded-full border-2 animate-spin" style={{ borderColor: "rgba(255,255,255,0.15)", borderTopColor: "currentColor" }} />
@@ -517,8 +517,8 @@ export default function PlayPage() {
                     <Link key={m.id} href={`/match/${m.id}`}
                       className="block rounded-2xl overflow-hidden transition-all active:scale-[0.99]"
                       style={{
-                        background: interested ? "rgba(0,255,135,0.03)" : "#12121e",
-                        border: `1px solid ${interested ? "rgba(0,255,135,0.22)" : "rgba(255,255,255,0.07)"}`,
+                        background: interested ? "rgba(174,234,0,0.03)" : "#0e1611",
+                        border: `1px solid ${interested ? "rgba(174,234,0,0.22)" : "rgba(255,255,255,0.07)"}`,
                       }}>
 
                       {/* Header strip — jerseys if available, flags otherwise */}
@@ -539,9 +539,9 @@ export default function PlayPage() {
                             )}
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="font-body text-xs font-bold" style={{ color: "#aaaacc" }}>{timeStr}</span>
+                            <span className="font-body text-xs font-bold" style={{ color: "#9aa39d" }}>{timeStr}</span>
                             <span style={{ color: "rgba(255,255,255,0.12)" }}>·</span>
-                            <span className="font-body text-xs truncate max-w-[120px]" style={{ color: "#555577" }}>{m.tournament}</span>
+                            <span className="font-body text-xs truncate max-w-[120px]" style={{ color: "#586058" }}>{m.tournament}</span>
                           </div>
                         </div>
                       ) : (
@@ -551,9 +551,9 @@ export default function PlayPage() {
                             <FlagImage team={m.away_team} size={44} />
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="font-body text-xs font-bold" style={{ color: "#aaaacc" }}>{timeStr}</span>
+                            <span className="font-body text-xs font-bold" style={{ color: "#9aa39d" }}>{timeStr}</span>
                             <span style={{ color: "rgba(255,255,255,0.12)" }}>·</span>
-                            <span className="font-body text-xs truncate max-w-[100px]" style={{ color: "#555577" }}>{m.tournament}</span>
+                            <span className="font-body text-xs truncate max-w-[100px]" style={{ color: "#586058" }}>{m.tournament}</span>
                           </div>
                         </div>
                       )}
@@ -563,9 +563,9 @@ export default function PlayPage() {
                         {/* Players count */}
                         {intCount > 0 && (
                           <div className="flex items-center gap-1.5 mb-2">
-                            {interested && <span className="h-1.5 w-1.5 rounded-full flex-shrink-0" style={{ background: "#00ff87" }} />}
+                            {interested && <span className="h-1.5 w-1.5 rounded-full flex-shrink-0" style={{ background: "#aeea00" }} />}
                             <span className="font-body text-xs font-semibold"
-                              style={{ color: interested ? "#00ff87" : "#555577" }}>
+                              style={{ color: interested ? "#aeea00" : "#586058" }}>
                               {intCount} {intCount === 1 ? "player" : "players"} joining
                             </span>
                           </div>
@@ -577,7 +577,7 @@ export default function PlayPage() {
                             <FlagImage team={m.home_team} size={32} />
                             <p className="font-body text-base font-bold text-white truncate">{m.home_team}</p>
                           </div>
-                          <span className="font-body text-xs font-bold flex-shrink-0" style={{ color: "#333355" }}>vs</span>
+                          <span className="font-body text-xs font-bold flex-shrink-0" style={{ color: "#3a423d" }}>vs</span>
                           <div className="flex items-center gap-2.5 flex-1 min-w-0 flex-row-reverse">
                             <FlagImage team={m.away_team} size={32} />
                             <p className="font-body text-base font-bold text-white truncate text-right">{m.away_team}</p>
@@ -600,9 +600,9 @@ export default function PlayPage() {
                               disabled={toggling === m.id}
                               className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-body text-sm font-bold transition-all disabled:opacity-60"
                               style={{
-                                background: interested ? "rgba(0,255,135,0.12)" : "rgba(255,255,255,0.05)",
-                                color: interested ? "#00ff87" : "#aaaacc",
-                                border: `1px solid ${interested ? "rgba(0,255,135,0.3)" : "rgba(255,255,255,0.08)"}`,
+                                background: interested ? "rgba(174,234,0,0.12)" : "rgba(255,255,255,0.05)",
+                                color: interested ? "#aeea00" : "#9aa39d",
+                                border: `1px solid ${interested ? "rgba(174,234,0,0.3)" : "rgba(255,255,255,0.08)"}`,
                               }}>
                               {toggling === m.id ? (
                                 <div className="w-4 h-4 rounded-full border-2 animate-spin"
@@ -628,9 +628,9 @@ export default function PlayPage() {
                               disabled={notifToggling === m.id}
                               className="flex items-center justify-center w-11 rounded-xl transition-all disabled:opacity-60"
                               style={{
-                                background: notified ? "rgba(167,139,250,0.12)" : "rgba(255,255,255,0.04)",
-                                border: `1px solid ${notified ? "rgba(167,139,250,0.3)" : "rgba(255,255,255,0.07)"}`,
-                                color: notified ? "#a78bfa" : "#555577",
+                                background: notified ? "rgba(174,234,0,0.12)" : "rgba(255,255,255,0.04)",
+                                border: `1px solid ${notified ? "rgba(174,234,0,0.3)" : "rgba(255,255,255,0.07)"}`,
+                                color: notified ? "#aeea00" : "#586058",
                               }}>
                               {notifToggling === m.id
                                 ? <div className="w-3.5 h-3.5 rounded-full border-2 animate-spin" style={{ borderColor: "rgba(255,255,255,0.15)", borderTopColor: "currentColor" }} />

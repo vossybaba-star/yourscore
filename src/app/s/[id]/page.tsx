@@ -44,10 +44,10 @@ function positionOrder(pos: string): number {
 
 function ovrColor(ovr: number): string {
   if (ovr >= 90) return "#ffd700";
-  if (ovr >= 85) return "#00ff87";
-  if (ovr >= 80) return "#22d3ee";
+  if (ovr >= 85) return "#aeea00";
+  if (ovr >= 80) return "#aeea00";
   if (ovr >= 75) return "#ffb800";
-  return "#a78bfa";
+  return "#aeea00";
 }
 
 async function loadPayload(id: string): Promise<Record<string, string> | null> {
@@ -97,9 +97,9 @@ export default async function SeasonShortSharePage({ params }: { params: { id: s
     return (
       <div className="min-h-[100dvh] grid place-items-center px-6 text-center" style={{ background: "#0a0a0f" }}>
         <div>
-          <div className="font-body" style={{ fontSize: 13, color: "#8888aa", letterSpacing: 1 }}>38-0 · YOURSCORE</div>
+          <div className="font-body" style={{ fontSize: 13, color: "#8a948f", letterSpacing: 1 }}>38-0 · YOURSCORE</div>
           <div className="font-display tracking-wide mt-3" style={{ fontSize: 28, color: "#fff" }}>This link has expired</div>
-          <Link href="/38-0" className="inline-block mt-6 rounded-2xl px-6 py-4 font-display tracking-wide" style={{ background: "#00ff87", color: "#062013", fontSize: 24 }}>
+          <Link href="/38-0" className="inline-block mt-6 rounded-2xl px-6 py-4 font-display tracking-wide" style={{ background: "#aeea00", color: "#062013", fontSize: 24 }}>
             BUILD YOUR OWN XI →
           </Link>
         </div>
@@ -118,8 +118,8 @@ export default async function SeasonShortSharePage({ params }: { params: { id: s
   const ovr = p.ovr ? parseInt(p.ovr, 10) : null;
   const isInvincible = p.inv === "1";
 
-  const accent = isInvincible ? "#ffd700" : pos === 1 ? "#00ff87" : pos <= 4 ? "#22d3ee" : pos <= 12 ? "#ffb800" : "#ff4757";
-  const verdictColor = verdict === "OVERPERFORMED" ? "#00ff87" : verdict === "UNDERPERFORMED" ? "#ff4757" : "#8888aa";
+  const accent = isInvincible ? "#ffd700" : pos === 1 ? "#aeea00" : pos <= 4 ? "#aeea00" : pos <= 12 ? "#ffb800" : "#ff4757";
+  const verdictColor = verdict === "OVERPERFORMED" ? "#aeea00" : verdict === "UNDERPERFORMED" ? "#ff4757" : "#8a948f";
 
   // Parse squad
   const squad = p.xi ? parseXi(p.xi).sort((a, b) => positionOrder(a.position) - positionOrder(b.position)) : [];
@@ -143,14 +143,14 @@ export default async function SeasonShortSharePage({ params }: { params: { id: s
 
         {/* Brand header */}
         <div className="flex items-center justify-between mb-6">
-          <div className="font-body text-xs tracking-widest" style={{ color: "#555577" }}>38-0 · YOURSCORE</div>
-          <div className="font-body text-xs px-3 py-1 rounded-full" style={{ background: "rgba(255,255,255,0.06)", color: "#8888aa" }}>
+          <div className="font-body text-xs tracking-widest" style={{ color: "#586058" }}>38-0 · YOURSCORE</div>
+          <div className="font-body text-xs px-3 py-1 rounded-full" style={{ background: "rgba(255,255,255,0.06)", color: "#8a948f" }}>
             {mode} Mode{ovr ? ` · STR ${ovr}` : ""}
           </div>
         </div>
 
         {/* Season record hero */}
-        <div className="rounded-3xl p-5 mb-4" style={{ background: "#12121e", border: `1px solid ${accent}30` }}>
+        <div className="rounded-3xl p-5 mb-4" style={{ background: "#0e1611", border: `1px solid ${accent}30` }}>
           {isInvincible && (
             <div className="text-center mb-3">
               <span className="font-display text-xs tracking-widest px-3 py-1 rounded-full" style={{ background: "rgba(255,215,0,0.15)", color: "#ffd700", border: "1px solid rgba(255,215,0,0.4)" }}>
@@ -161,7 +161,7 @@ export default async function SeasonShortSharePage({ params }: { params: { id: s
 
           <div className="text-center">
             <div className="font-display tracking-wide leading-none" style={{ fontSize: 56, color: "#fff" }}>{w}–{d}–{l}</div>
-            <div className="font-body mt-1 mb-3" style={{ fontSize: 11, color: "#555577", letterSpacing: 3 }}>WON · DRAWN · LOST</div>
+            <div className="font-body mt-1 mb-3" style={{ fontSize: 11, color: "#586058", letterSpacing: 3 }}>WON · DRAWN · LOST</div>
 
             <div className="flex items-center justify-center gap-2 flex-wrap">
               <span className="font-body px-3 py-1.5 rounded-xl text-sm font-semibold" style={{ background: `${accent}18`, color: accent, border: `1px solid ${accent}40` }}>
@@ -171,7 +171,7 @@ export default async function SeasonShortSharePage({ params }: { params: { id: s
                 {pts} pts
               </span>
               {gf && ga && (
-                <span className="font-body px-3 py-1.5 rounded-xl text-sm font-semibold" style={{ background: "rgba(255,255,255,0.06)", color: "#8888aa" }}>
+                <span className="font-body px-3 py-1.5 rounded-xl text-sm font-semibold" style={{ background: "rgba(255,255,255,0.06)", color: "#8a948f" }}>
                   {gf} — {ga}
                 </span>
               )}
@@ -186,11 +186,11 @@ export default async function SeasonShortSharePage({ params }: { params: { id: s
 
         {/* Squad section */}
         {squad.length > 0 && (
-          <div className="rounded-3xl p-5 mb-4" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="rounded-3xl p-5 mb-4" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.08)" }}>
             <div className="flex items-center justify-between mb-4">
               <p className="font-display text-sm text-white tracking-wide">THE XI</p>
               {formation && (
-                <span className="font-body text-xs px-2.5 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.06)", color: "#8888aa" }}>
+                <span className="font-body text-xs px-2.5 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.06)", color: "#8a948f" }}>
                   {formation}
                 </span>
               )}
@@ -201,7 +201,7 @@ export default async function SeasonShortSharePage({ params }: { params: { id: s
                 <div key={i} className="flex items-center gap-3 rounded-xl px-3 py-2.5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
                   {/* Position chip */}
                   <div className="flex-shrink-0 flex items-center justify-center rounded-lg font-display text-xs"
-                    style={{ width: 38, height: 28, background: "rgba(255,255,255,0.07)", color: "#8888aa", fontSize: 10, letterSpacing: 1 }}>
+                    style={{ width: 38, height: 28, background: "rgba(255,255,255,0.07)", color: "#8a948f", fontSize: 10, letterSpacing: 1 }}>
                     {player.position}
                   </div>
 
@@ -220,14 +220,14 @@ export default async function SeasonShortSharePage({ params }: { params: { id: s
 
         {/* Awards section */}
         {awards.length > 0 && (
-          <div className="rounded-3xl p-5 mb-4" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="rounded-3xl p-5 mb-4" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.08)" }}>
             <p className="font-display text-sm text-white tracking-wide mb-4">SEASON AWARDS</p>
             <div className="space-y-2">
               {awards.map((award, i) => (
                 <div key={i} className="flex items-center gap-3 rounded-xl px-3 py-2.5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
                   <span className="text-lg flex-shrink-0">{award.icon}</span>
                   <div className="flex-1 min-w-0">
-                    <p className="font-body text-xs" style={{ color: "#666688" }}>{award.label}</p>
+                    <p className="font-body text-xs" style={{ color: "#5b645e" }}>{award.label}</p>
                     <p className="font-body text-sm text-white font-semibold truncate">{award.name}</p>
                   </div>
                   <span className="font-display text-sm flex-shrink-0" style={{ color: "#ffb800" }}>{award.stat}</span>
@@ -240,11 +240,11 @@ export default async function SeasonShortSharePage({ params }: { params: { id: s
         {/* CTA */}
         <Link href="/38-0"
           className="block w-full rounded-2xl py-4 text-center font-display tracking-wide active:scale-[0.98] transition-transform"
-          style={{ background: "#00ff87", color: "#062013", fontSize: 20 }}>
+          style={{ background: "#aeea00", color: "#062013", fontSize: 20 }}>
           BUILD YOUR OWN XI →
         </Link>
 
-        <p className="text-center mt-4 font-body text-xs" style={{ color: "#444466" }}>
+        <p className="text-center mt-4 font-body text-xs" style={{ color: "#3a423d" }}>
           yourscore.app · Your football knowledge. Ranked.
         </p>
 

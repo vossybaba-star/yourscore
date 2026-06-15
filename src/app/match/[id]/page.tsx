@@ -79,12 +79,12 @@ function MatchHeader({ match, playerCount }: { match: MatchData; playerCount: nu
     `${elapsed} In Play`;
 
   return (
-    <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid rgba(0,255,135,0.15)" }}>
+    <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid rgba(174,234,0,0.15)" }}>
       <div className="flex items-center justify-between px-4 py-2.5"
-        style={{ background: "rgba(0,255,135,0.08)", borderBottom: "1px solid rgba(0,255,135,0.1)" }}>
+        style={{ background: "rgba(174,234,0,0.08)", borderBottom: "1px solid rgba(174,234,0,0.1)" }}>
         <div className="flex items-center gap-2">
-          <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "#00ff87" }} />
-          <span className="font-body text-xs font-semibold uppercase tracking-widest" style={{ color: "#00ff87" }}>
+          <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "#aeea00" }} />
+          <span className="font-body text-xs font-semibold uppercase tracking-widest" style={{ color: "#aeea00" }}>
             {statusLabel}
           </span>
         </div>
@@ -94,14 +94,14 @@ function MatchHeader({ match, playerCount }: { match: MatchData; playerCount: nu
         </div>
       </div>
 
-      <div className="px-5 py-5" style={{ background: "#12121e", position: "relative" }}>
+      <div className="px-5 py-5" style={{ background: "#0e1611", position: "relative" }}>
         {/* Home player cutout */}
         {homeCutout && (
           <div style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: "clamp(80px, 22vw, 120px)", zIndex: 0, pointerEvents: "none", overflow: "hidden" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={homeCutout} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center", opacity: 0.42 }} />
-            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, transparent 30%, #12121e 85%)" }} />
-            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, #12121e 0%, transparent 25%)" }} />
+            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, transparent 30%, #0e1611 85%)" }} />
+            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, #0e1611 0%, transparent 25%)" }} />
           </div>
         )}
         {/* Away player cutout */}
@@ -109,8 +109,8 @@ function MatchHeader({ match, playerCount }: { match: MatchData; playerCount: nu
           <div style={{ position: "absolute", top: 0, bottom: 0, right: 0, width: "clamp(80px, 22vw, 120px)", zIndex: 0, pointerEvents: "none", overflow: "hidden" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={awayCutout} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center", opacity: 0.42, transform: "scaleX(-1)" }} />
-            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to left, transparent 30%, #12121e 85%)" }} />
-            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, #12121e 0%, transparent 25%)" }} />
+            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to left, transparent 30%, #0e1611 85%)" }} />
+            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, #0e1611 0%, transparent 25%)" }} />
           </div>
         )}
         <div className="flex items-center justify-between" style={{ position: "relative", zIndex: 1 }}>
@@ -153,7 +153,7 @@ function PreMatchBanner({ match }: { match: MatchData }) {
   const s = Math.floor((diff % 60000) / 1000);
 
   return (
-    <div className="rounded-2xl p-5 text-center" style={{ background: "rgba(167,139,250,0.06)", border: "1px solid rgba(167,139,250,0.15)" }}>
+    <div className="rounded-2xl p-5 text-center" style={{ background: "rgba(174,234,0,0.06)", border: "1px solid rgba(174,234,0,0.15)" }}>
       <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-2">Match starts in</p>
       <p className="font-display text-4xl text-white mb-1">
         {h > 0 && <>{h}h </>}{m}m {s}s
@@ -169,7 +169,7 @@ function PreMatchBanner({ match }: { match: MatchData }) {
 
 function SignInPrompt({ matchName }: { matchName: string }) {
   return (
-    <div className="rounded-2xl p-5" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.08)" }}>
+    <div className="rounded-2xl p-5" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.08)" }}>
       <p className="font-body text-sm font-semibold text-white mb-1">Sign in to play</p>
       <p className="font-body text-xs text-text-muted mb-4">
         Answer live questions during <span className="text-white">{matchName}</span> and earn points. Free. 10 seconds to join.
@@ -194,7 +194,7 @@ function ShareStrip({ matchId, matchName }: { matchId: string; matchName: string
   return (
     <button onClick={share}
       className="w-full flex items-center justify-between px-4 py-3 rounded-xl font-body text-xs transition-opacity hover:opacity-80"
-      style={{ background: "rgba(0,255,135,0.04)", border: "1px solid rgba(0,255,135,0.12)", color: "#00ff87" }}>
+      style={{ background: "rgba(174,234,0,0.04)", border: "1px solid rgba(174,234,0,0.12)", color: "#aeea00" }}>
       <span className="font-semibold">{copied ? "Link copied!" : "Invite your mates"}</span>
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
@@ -356,7 +356,7 @@ export default function MatchPage({ params }: { params: { id: string } }) {
   if (loading || userLoading) {
     return (
       <main className="min-h-dvh bg-bg flex items-center justify-center">
-        <div className="w-8 h-8 rounded-full border-2 border-t-green animate-spin" style={{ borderTopColor: "#00ff87", borderColor: "rgba(255,255,255,0.1)" }} />
+        <div className="w-8 h-8 rounded-full border-2 border-t-green animate-spin" style={{ borderTopColor: "#aeea00", borderColor: "rgba(255,255,255,0.1)" }} />
       </main>
     );
   }
@@ -383,9 +383,9 @@ export default function MatchPage({ params }: { params: { id: string } }) {
         <Link href="/join" aria-label="Back to matches"
           className="flex items-center gap-2 -ml-1 px-2 py-1 rounded-lg transition-colors hover:bg-white/5">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <path d="M12.5 4.5L7 10l5.5 5.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#a78bfa" }} />
+            <path d="M12.5 4.5L7 10l5.5 5.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#aeea00" }} />
           </svg>
-          <span className="font-body text-sm font-semibold" style={{ color: "#a78bfa" }}>Matches</span>
+          <span className="font-body text-sm font-semibold" style={{ color: "#aeea00" }}>Matches</span>
         </Link>
         <div className="flex items-center gap-2">
           {questionCount > 0 && (
@@ -393,9 +393,9 @@ export default function MatchPage({ params }: { params: { id: string } }) {
           )}
           <div className="px-2.5 py-1 rounded-full font-body text-xs font-semibold uppercase tracking-widest"
             style={{
-              background: match.status === "live" ? "rgba(0,255,135,0.12)" : "rgba(255,255,255,0.06)",
-              color: match.status === "live" ? "#00ff87" : "#888",
-              border: `1px solid ${match.status === "live" ? "rgba(0,255,135,0.2)" : "rgba(255,255,255,0.08)"}`,
+              background: match.status === "live" ? "rgba(174,234,0,0.12)" : "rgba(255,255,255,0.06)",
+              color: match.status === "live" ? "#aeea00" : "#888",
+              border: `1px solid ${match.status === "live" ? "rgba(174,234,0,0.2)" : "rgba(255,255,255,0.08)"}`,
             }}>
             {match.status === "live" ? "Live" : isPreMatch ? "Upcoming" : "Ended"}
           </div>
@@ -433,11 +433,11 @@ export default function MatchPage({ params }: { params: { id: string } }) {
         {leaderboard.length > 0 && (
           <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
             <div className="px-5 py-4 flex items-center justify-between"
-              style={{ background: "#12121e", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+              style={{ background: "#0e1611", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
               <p className="font-body text-xs text-text-muted uppercase tracking-widest">Live Standings</p>
               <span className="font-body text-xs text-text-muted">{leaderboard.length} players</span>
             </div>
-            <div className="p-3" style={{ background: "#12121e" }}>
+            <div className="p-3" style={{ background: "#0e1611" }}>
               <Leaderboard entries={leaderboard} currentUserId={user?.id} maxVisible={10} />
             </div>
           </div>
@@ -449,7 +449,7 @@ export default function MatchPage({ params }: { params: { id: string } }) {
           if (!me) return null;
           return (
             <div className="rounded-2xl px-5 py-4 flex items-center justify-between"
-              style={{ background: "rgba(0,255,135,0.04)", border: "1px solid rgba(0,255,135,0.12)" }}>
+              style={{ background: "rgba(174,234,0,0.04)", border: "1px solid rgba(174,234,0,0.12)" }}>
               <div>
                 <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-0.5">Your position</p>
                 <p className="font-body text-sm font-semibold text-white">
@@ -458,7 +458,7 @@ export default function MatchPage({ params }: { params: { id: string } }) {
                 </p>
               </div>
               <div className="text-right">
-                <p className="font-display text-3xl" style={{ color: "#00ff87" }}>#{me.rank}</p>
+                <p className="font-display text-3xl" style={{ color: "#aeea00" }}>#{me.rank}</p>
                 <p className="font-body text-xs text-text-muted">{me.total_score.toLocaleString()} pts</p>
               </div>
             </div>

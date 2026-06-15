@@ -13,7 +13,7 @@ interface Room {
   _playerCount?: number;
 }
 
-const STATUS_COLOR = { lobby: "#ffb800", live: "#00ff87", completed: "#555566" };
+const STATUS_COLOR = { lobby: "#ffb800", live: "#aeea00", completed: "#586058" };
 
 export default function AdminRooms() {
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -45,7 +45,7 @@ export default function AdminRooms() {
           <div
             key={r.id}
             className="flex items-center gap-4 px-5 py-4 rounded-2xl"
-            style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}
+            style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.07)" }}
           >
             <div className="flex-1">
               <p className="font-body text-sm font-semibold text-white">{r.name}</p>

@@ -4,7 +4,7 @@ export const metadata = { title: "Terms of Service — YourScore" };
 
 export default function TermsPage() {
   return (
-    <main className="min-h-dvh" style={{ background: "#0a0a0f", color: "#e0e0f0" }}>
+    <main className="min-h-dvh" style={{ background: "#0a0a0f", color: "#eef2f0" }}>
       <nav className="pt-safe px-6 py-5 border-b" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
         <Link href="/">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -14,9 +14,9 @@ export default function TermsPage() {
 
       <div className="max-w-2xl mx-auto px-6 py-12">
         <h1 className="font-display text-4xl text-white mb-2">Terms of Service</h1>
-        <p className="font-body text-sm mb-10" style={{ color: "#8888aa" }}>Last updated: May 2026</p>
+        <p className="font-body text-sm mb-10" style={{ color: "#8a948f" }}>Last updated: May 2026</p>
 
-        <div className="space-y-8 font-body text-sm leading-relaxed" style={{ color: "#c0c0d8" }}>
+        <div className="space-y-8 font-body text-sm leading-relaxed" style={{ color: "#c4ccc6" }}>
           <section>
             <h2 className="font-display text-lg text-white mb-3">1. Acceptance</h2>
             <p>By using YourScore you agree to these terms. If you do not agree, do not use the service.</p>
@@ -59,7 +59,7 @@ export default function TermsPage() {
         </div>
 
         <div className="mt-12 pt-6 border-t" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
-          <Link href="/" className="font-body text-sm" style={{ color: "#8888aa" }}>← Back to YourScore</Link>
+          <Link href="/" className="font-body text-sm" style={{ color: "#8a948f" }}>← Back to YourScore</Link>
         </div>
       </div>
     </main>

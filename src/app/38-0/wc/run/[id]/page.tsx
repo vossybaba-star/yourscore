@@ -132,7 +132,7 @@ export default function WorldCupRun() {
     else { navigator.clipboard?.writeText(`${text} ${url}`); window.open(`${window.location.origin}${scorecardUrl}`, "_blank"); }
   }
 
-  if (loading) return <Screen><div style={{ color: "#8888aa" }}>Loading…</div></Screen>;
+  if (loading) return <Screen><div style={{ color: "#8a948f" }}>Loading…</div></Screen>;
   if (error && !run) return <Screen><div style={{ color: "#ff8a3d" }}>{error}</div></Screen>;
   if (!run) return null;
 
@@ -149,7 +149,7 @@ export default function WorldCupRun() {
   return (
     <div className="min-h-[100dvh] pb-40" style={{ background: "#0a0a0f" }}>
       <div className="max-w-lg mx-auto px-4 pt-safe">
-        <div className="pt-4"><Link href="/38-0" className="font-body text-sm" style={{ color: "#8888aa" }}>← Exit</Link></div>
+        <div className="pt-4"><Link href="/38-0" className="font-body text-sm" style={{ color: "#8a948f" }}>← Exit</Link></div>
 
         {/* Header */}
         <div className="flex items-center gap-3 pt-2">
@@ -161,13 +161,13 @@ export default function WorldCupRun() {
           ) : null}
           <div className="flex-1">
             <div className="font-display tracking-wide" style={{ fontSize: 26, color: "#fff" }}>{run.nation}</div>
-            <div className="font-body" style={{ fontSize: 12, color: "#8888aa" }}>
+            <div className="font-body" style={{ fontSize: 12, color: "#8a948f" }}>
               {run.status === "champion" ? "🏆 World Champions" : run.status === "eliminated" ? "Eliminated" : RUN_STAGE_LABEL[run.stage]}
             </div>
           </div>
           <div className="text-right">
-            <div className="font-body" style={{ fontSize: 10, color: "#8888aa", letterSpacing: 1 }}>OVERALL</div>
-            <div className="font-display" style={{ fontSize: 32, lineHeight: 1, color: "#00ff87" }}>{run.strength}</div>
+            <div className="font-body" style={{ fontSize: 10, color: "#8a948f", letterSpacing: 1 }}>OVERALL</div>
+            <div className="font-display" style={{ fontSize: 32, lineHeight: 1, color: "#aeea00" }}>{run.strength}</div>
           </div>
         </div>
 
@@ -193,14 +193,14 @@ export default function WorldCupRun() {
             <div className="mt-3"><Scorecard url={scorecardUrl} /></div>
             <div className="flex items-center justify-center gap-2 mt-3">
               <button onClick={shareRun} className="rounded-xl px-4 py-2 font-display tracking-wide" style={{ background: "rgba(255,255,255,0.1)", color: "#fff", fontSize: 15 }}>SHARE</button>
-              <Link href="/38-0/wc" className="rounded-xl px-4 py-2 font-display tracking-wide" style={{ background: "#00ff87", color: "#062013", fontSize: 15 }}>NEW RUN</Link>
+              <Link href="/38-0/wc" className="rounded-xl px-4 py-2 font-display tracking-wide" style={{ background: "#aeea00", color: "#062013", fontSize: 15 }}>NEW RUN</Link>
             </div>
           </div>
         )}
 
         {/* Road to the Final */}
-        <div className="mt-4 rounded-2xl overflow-hidden" style={{ background: "#0d0d14", border: "1px solid rgba(255,255,255,0.07)" }}>
-          <div className="px-3 py-2 font-body" style={{ fontSize: 11, color: "#8888aa", letterSpacing: 1 }}>ROAD TO THE FINAL</div>
+        <div className="mt-4 rounded-2xl overflow-hidden" style={{ background: "#080d0a", border: "1px solid rgba(255,255,255,0.07)" }}>
+          <div className="px-3 py-2 font-body" style={{ fontSize: 11, color: "#8a948f", letterSpacing: 1 }}>ROAD TO THE FINAL</div>
           {run.plan.group.map((f, i) => (
             <Row key={`g${i}`} label={`Group · ${i + 1}/3`} opp={f.opponent.nation} crest={wcNation(f.opponent.nation)?.crest}
               result={res("group", i)} current={run.status === "active" && run.stage === "group"} />
@@ -237,15 +237,15 @@ export default function WorldCupRun() {
         {/* Your XI (tap a player to upgrade when picks are available) */}
         <div className="mt-4">
           <div className="flex items-center justify-between mb-1.5">
-            <span className="font-body" style={{ fontSize: 11, color: "#8888aa", letterSpacing: 1 }}>YOUR XI</span>
-            {canUpgrade && <span className="font-body" style={{ fontSize: 12, color: "#00ff87" }}>🎲 Tap a player to re-spin · {run.upgrades_left} left</span>}
+            <span className="font-body" style={{ fontSize: 11, color: "#8a948f", letterSpacing: 1 }}>YOUR XI</span>
+            {canUpgrade && <span className="font-body" style={{ fontSize: 12, color: "#aeea00" }}>🎲 Tap a player to re-spin · {run.upgrades_left} left</span>}
           </div>
           <Pitch formation={run.formation} squad={run.squad} compact onSlotClick={canUpgrade ? scoutSlot : undefined} highlightSlot={pickSlot} />
         </div>
 
         {/* Upgrade slate */}
         {pickSlot && slate && (
-          <div className="mt-3 rounded-2xl p-3" style={{ background: "#12121e", border: "1px solid rgba(0,255,135,0.3)" }}>
+          <div className="mt-3 rounded-2xl p-3" style={{ background: "#0e1611", border: "1px solid rgba(174,234,0,0.3)" }}>
             <div className="flex items-center justify-between mb-2">
               {world && spunNation ? (
                 <span className="flex items-center gap-2">
@@ -254,19 +254,19 @@ export default function WorldCupRun() {
                     <img src={spunNation.crest} alt="" width={22} height={22} style={{ width: 22, height: 22, objectFit: "contain" }} />
                   )}
                   <span className="font-display tracking-wide" style={{ fontSize: 15, color: "#ffb800" }}>{spunNation.nation}</span>
-                  <span className="font-body" style={{ fontSize: 11, color: "#8888aa" }}>· re-spin</span>
+                  <span className="font-body" style={{ fontSize: 11, color: "#8a948f" }}>· re-spin</span>
                 </span>
               ) : (
-                <span className="font-body" style={{ fontSize: 12, color: "#8888aa" }}>Re-spin — take one of these, or cancel</span>
+                <span className="font-body" style={{ fontSize: 12, color: "#8a948f" }}>Re-spin — take one of these, or cancel</span>
               )}
-              <button onClick={() => { setPickSlot(null); setSlate(null); setSpunNation(null); }} className="font-body" style={{ fontSize: 12, color: "#8888aa" }}>Cancel</button>
+              <button onClick={() => { setPickSlot(null); setSlate(null); setSpunNation(null); }} className="font-body" style={{ fontSize: 12, color: "#8a948f" }}>Cancel</button>
             </div>
             <div className="flex flex-col gap-1">
               {slate.map((p) => (
                 <button key={p.id} onClick={() => applyUpgrade(p.id)} disabled={busy}
                   className="flex items-center gap-2 rounded-lg px-2 py-2 text-left active:scale-[0.99]" style={{ background: "rgba(255,255,255,0.04)" }}>
                   <span className="flex items-center justify-center rounded font-display" style={{ width: 30, height: 30, fontSize: 15, color: "#0a0a0f", background: CATEGORY_COLOR[posCategory(p.position)] }}>{p.overall}</span>
-                  <span className="font-body flex-1 truncate" style={{ fontSize: 13, color: "#fff" }}>{p.name} <span style={{ color: "#8888aa", fontSize: 11 }}>{p.club}</span></span>
+                  <span className="font-body flex-1 truncate" style={{ fontSize: 13, color: "#fff" }}>{p.name} <span style={{ color: "#8a948f", fontSize: 11 }}>{p.club}</span></span>
                 </button>
               ))}
               {slate.length === 0 && <span className="font-body" style={{ fontSize: 12, color: "#ff8a3d" }}>No options for this slot.</span>}
@@ -283,7 +283,7 @@ export default function WorldCupRun() {
           <div className="max-w-lg mx-auto px-4 pt-3">
             <button onClick={play} disabled={playing}
               className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-60"
-              style={{ background: "#00ff87", color: "#062013", fontSize: 22 }}>
+              style={{ background: "#aeea00", color: "#062013", fontSize: 22 }}>
               {playing ? "SIMULATING…" : `▶ ${playLabel}`}
             </button>
           </div>
@@ -293,8 +293,8 @@ export default function WorldCupRun() {
       {/* Stage reveal */}
       {reveal && (
         <div className="fixed inset-0 z-50 grid place-items-center px-5" style={{ background: "rgba(0,0,0,0.8)" }} onClick={() => { setReveal(null); load(); }}>
-          <div className="w-full max-w-sm rounded-3xl p-5" style={{ background: "#12121e", border: `1px solid ${reveal.result === "champion" ? "rgba(255,184,0,0.6)" : reveal.result === "eliminated" ? "rgba(255,71,87,0.5)" : "rgba(0,255,135,0.5)"}` }} onClick={(e) => e.stopPropagation()}>
-            <div className="font-body text-center" style={{ fontSize: 11, color: "#8888aa", letterSpacing: 1 }}>{RUN_STAGE_LABEL[reveal.stage]}</div>
+          <div className="w-full max-w-sm rounded-3xl p-5" style={{ background: "#0e1611", border: `1px solid ${reveal.result === "champion" ? "rgba(255,184,0,0.6)" : reveal.result === "eliminated" ? "rgba(255,71,87,0.5)" : "rgba(174,234,0,0.5)"}` }} onClick={(e) => e.stopPropagation()}>
+            <div className="font-body text-center" style={{ fontSize: 11, color: "#8a948f", letterSpacing: 1 }}>{RUN_STAGE_LABEL[reveal.stage]}</div>
             <div className="flex flex-col gap-2 my-3">
               {reveal.games.map((g, i) => (
                 <div key={i} className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: "rgba(255,255,255,0.04)" }}>
@@ -302,16 +302,16 @@ export default function WorldCupRun() {
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={g.opponent.crest} alt="" width={22} height={22} style={{ width: 22, height: 22, objectFit: "contain" }} />
                   )}
-                  <span className="font-body flex-1 truncate" style={{ fontSize: 13, color: "#cfcfe0" }}>{run.nation} v {g.opponent.nation}</span>
+                  <span className="font-body flex-1 truncate" style={{ fontSize: 13, color: "#c4ccc6" }}>{run.nation} v {g.opponent.nation}</span>
                   <span className="font-display" style={{ fontSize: 16, color: "#fff" }}>{g.goals.you}–{g.goals.opp}{g.pens ? ` (${g.pens.you}-${g.pens.opp})` : ""}</span>
-                  <span className="font-display rounded px-1.5" style={{ fontSize: 12, color: "#0a0a0f", background: g.outcome === "win" ? "#00ff87" : g.outcome === "loss" ? "#ff4757" : "#ffb800" }}>{g.outcome === "win" ? "W" : g.outcome === "loss" ? "L" : "D"}</span>
+                  <span className="font-display rounded px-1.5" style={{ fontSize: 12, color: "#0a0a0f", background: g.outcome === "win" ? "#aeea00" : g.outcome === "loss" ? "#ff4757" : "#ffb800" }}>{g.outcome === "win" ? "W" : g.outcome === "loss" ? "L" : "D"}</span>
                 </div>
               ))}
             </div>
-            <div className="font-display tracking-wide text-center" style={{ fontSize: 24, color: reveal.result === "champion" ? "#ffb800" : reveal.result === "eliminated" ? "#ff4757" : "#00ff87" }}>
+            <div className="font-display tracking-wide text-center" style={{ fontSize: 24, color: reveal.result === "champion" ? "#ffb800" : reveal.result === "eliminated" ? "#ff4757" : "#aeea00" }}>
               {reveal.result === "champion" ? "🏆 CHAMPIONS!" : reveal.result === "eliminated" ? "KNOCKED OUT" : "THROUGH ✓"}
             </div>
-            <button onClick={() => { setReveal(null); load(); }} className="w-full rounded-2xl py-3 mt-4 font-display tracking-wide" style={{ background: "#00ff87", color: "#062013", fontSize: 18 }}>CONTINUE →</button>
+            <button onClick={() => { setReveal(null); load(); }} className="w-full rounded-2xl py-3 mt-4 font-display tracking-wide" style={{ background: "#aeea00", color: "#062013", fontSize: 18 }}>CONTINUE →</button>
           </div>
         </div>
       )}
@@ -334,28 +334,28 @@ function Screen({ children }: { children: React.ReactNode }) {
 }
 
 function Divider({ text }: { text: string }) {
-  return <div className="px-3 py-1.5 font-body" style={{ fontSize: 10, color: "#5a5a72", background: "rgba(255,255,255,0.02)" }}>{text}</div>;
+  return <div className="px-3 py-1.5 font-body" style={{ fontSize: 10, color: "#586058", background: "rgba(255,255,255,0.02)" }}>{text}</div>;
 }
 
 function Row({ label, opp, crest, result, current, locked }: {
   label: string; opp: string; crest?: string; result?: MatchRow; current?: boolean; locked?: boolean;
 }) {
   const tag = result ? (result.won === true ? "W" : result.won === false ? "L" : "D") : null;
-  const tagColor = tag === "W" ? "#00ff87" : tag === "L" ? "#ff4757" : tag === "D" ? "#ffb800" : "#5a5a72";
+  const tagColor = tag === "W" ? "#aeea00" : tag === "L" ? "#ff4757" : tag === "D" ? "#ffb800" : "#586058";
   return (
-    <div className="flex items-center gap-3 px-3 py-2.5" style={{ borderTop: "1px solid rgba(255,255,255,0.04)", background: current ? "rgba(0,255,135,0.06)" : undefined, opacity: locked ? 0.4 : 1 }}>
-      <div className="font-body" style={{ fontSize: 10, color: "#8888aa", width: 80, flexShrink: 0, letterSpacing: 0.3 }}>{label}</div>
+    <div className="flex items-center gap-3 px-3 py-2.5" style={{ borderTop: "1px solid rgba(255,255,255,0.04)", background: current ? "rgba(174,234,0,0.06)" : undefined, opacity: locked ? 0.4 : 1 }}>
+      <div className="font-body" style={{ fontSize: 10, color: "#8a948f", width: 80, flexShrink: 0, letterSpacing: 0.3 }}>{label}</div>
       {crest ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={crest} alt="" width={22} height={22} style={{ width: 22, height: 22, objectFit: "contain", flexShrink: 0 }} />
       ) : <div style={{ width: 22, flexShrink: 0 }} />}
-      <div className="font-body flex-1 truncate" style={{ fontSize: 13, color: current ? "#fff" : "#cfcfe0" }}>{opp}</div>
+      <div className="font-body flex-1 truncate" style={{ fontSize: 13, color: current ? "#fff" : "#c4ccc6" }}>{opp}</div>
       {result ? (
         <div className="flex items-center gap-2 flex-shrink-0">
           <span className="font-display" style={{ fontSize: 14, color: "#fff" }}>{result.you_goals}–{result.opp_goals}</span>
           <span className="font-display rounded px-1.5" style={{ fontSize: 12, color: "#0a0a0f", background: tagColor }}>{tag}</span>
         </div>
-      ) : current ? <span className="font-body flex-shrink-0" style={{ fontSize: 11, color: "#00ff87" }}>NEXT</span> : null}
+      ) : current ? <span className="font-body flex-shrink-0" style={{ fontSize: 11, color: "#aeea00" }}>NEXT</span> : null}
     </div>
   );
 }
