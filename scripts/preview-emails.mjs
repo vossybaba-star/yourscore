@@ -187,10 +187,15 @@ h1{font-family:'Bebas Neue',Impact,sans-serif;font-size:48px;letter-spacing:1px;
 <body><div class="wrap">
 <h1>YourScore — Every Email</h1>
 <p class="sub">${total} templates · rendered with sample data · regenerate with <code>node scripts/preview-emails.mjs</code></p>
+<a href="journeys.html" style="display:inline-block;margin:0 0 28px;padding:12px 20px;background:linear-gradient(135deg,#00ff87,#00d970);color:#0a0a0f;font-weight:700;font-size:14px;border-radius:10px;text-decoration:none;box-shadow:0 0 24px rgba(0,255,135,0.3)">📅 See the journey timeline — when each email fires →</a>
 ${groupsHtml}
 </div></body></html>`;
 
   await fs.writeFile(path.join(OUT, "index.html"), index);
+
+  // Copy the hand-maintained journey timeline alongside the gallery.
+  await fs.copyFile(path.join(ROOT, "emails", "journeys.html"), path.join(OUT, "journeys.html")).catch(() => {});
+
   console.log(`Rendered ${total} templates → emails/preview/`);
   console.log("View:  python3 -m http.server -d emails/preview 8765  →  http://localhost:8765/");
 }
