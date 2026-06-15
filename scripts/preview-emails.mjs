@@ -115,6 +115,22 @@ function numFromFile(f) {
   return m ? m[1] : "";
 }
 
+function familyColor(f) {
+  const g = GROUPS.find((g) => g.match.test(f));
+  return g ? g.color : "#8888aa";
+}
+
+// Status pill per email, mirroring the journey timeline.
+function statusOf(f) {
+  const n = numFromFile(f);
+  if (/^A\d$/.test(n)) return { label: "Transactional", cls: "p-live" };
+  const num = parseInt(n, 10);
+  if ([5, 6, 7, 8, 10].includes(num)) return { label: "Needs trigger", cls: "p-todo" };
+  if ([11, 12, 13, 14, 15].includes(num)) return { label: "Campaign", cls: "p-todo" };
+  if (num === 23) return { label: "Gated", cls: "p-gated" };
+  return { label: "Live", cls: "p-live" };
+}
+
 async function main() {
   await fs.rm(OUT, { recursive: true, force: true });
   await fs.mkdir(OUT, { recursive: true });
@@ -187,11 +203,76 @@ h1{font-family:'Bebas Neue',Impact,sans-serif;font-size:48px;letter-spacing:1px;
 <body><div class="wrap">
 <h1>YourScore — Every Email</h1>
 <p class="sub">${total} templates · rendered with sample data · regenerate with <code>node scripts/preview-emails.mjs</code></p>
-<a href="journeys.html" style="display:inline-block;margin:0 0 28px;padding:12px 20px;background:linear-gradient(135deg,#00ff87,#00d970);color:#0a0a0f;font-weight:700;font-size:14px;border-radius:10px;text-decoration:none;box-shadow:0 0 24px rgba(0,255,135,0.3)">📅 See the journey timeline — when each email fires →</a>
+<div style="display:flex;gap:12px;flex-wrap:wrap;margin:0 0 28px">
+  <a href="all.html" style="display:inline-block;padding:12px 20px;background:linear-gradient(135deg,#00ff87,#00d970);color:#0a0a0f;font-weight:700;font-size:14px;border-radius:10px;text-decoration:none;box-shadow:0 0 24px rgba(0,255,135,0.3)">📭 Read every email in full →</a>
+  <a href="journeys.html" style="display:inline-block;padding:12px 20px;background:#12121e;border:1px solid rgba(167,139,250,0.4);color:#a78bfa;font-weight:700;font-size:14px;border-radius:10px;text-decoration:none">📅 Journey timeline →</a>
+</div>
 ${groupsHtml}
 </div></body></html>`;
 
   await fs.writeFile(path.join(OUT, "index.html"), index);
+
+  // ── all.html — every email rendered FULL height, stacked, no clicking ───────
+  // Two balanced columns; iframes auto-size to content (same-origin, so we can
+  // read scrollHeight). Re-fit after web fonts settle.
+  const item = (f) => {
+    const st = statusOf(f);
+    return `
+    <div class="item">
+      <div class="lbl" style="border-left-color:${familyColor(f)}">
+        <span class="n" style="color:${familyColor(f)}">${esc(numFromFile(f))}</span>
+        <span class="t">${esc(titleFromFile(f))}</span>
+        <span class="pill ${st.cls}">${st.label}</span>
+        <a class="full" href="${f}" target="_blank">open ↗</a>
+      </div>
+      <iframe src="${f}" scrolling="no" loading="lazy"></iframe>
+    </div>`;
+  };
+  const colA = cards.filter((_, i) => i % 2 === 0).map(item).join("\n");
+  const colB = cards.filter((_, i) => i % 2 === 1).map(item).join("\n");
+
+  const allPage = `<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>YourScore — Read Every Email</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}body{margin:0;background:#0a0a0f;color:#fff;font-family:'DM Sans',Helvetica,Arial,sans-serif}
+.bar{position:sticky;top:0;z-index:10;background:rgba(10,10,15,0.92);backdrop-filter:blur(8px);border-bottom:1px solid rgba(255,255,255,0.08);padding:14px 26px;display:flex;align-items:center;gap:18px}
+.bar h1{font-family:'Bebas Neue',Impact,sans-serif;font-size:24px;letter-spacing:1px;margin:0}
+.bar a{color:#00ff87;font-size:13px;font-weight:700;text-decoration:none}
+.bar .muted{color:#8888aa;font-size:12px;font-weight:600;margin-left:auto}
+.cols{display:flex;gap:28px;align-items:flex-start;max-width:1340px;margin:0 auto;padding:28px 26px 80px}
+.col{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:34px}
+.item{background:#0d0d16;border:1px solid rgba(255,255,255,0.08);border-radius:14px;overflow:hidden}
+.lbl{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid rgba(255,255,255,0.07);border-left:3px solid #8888aa;background:#12121e}
+.lbl .n{font-family:'Bebas Neue',Impact,sans-serif;font-size:16px;letter-spacing:1px}
+.lbl .t{font-size:13.5px;font-weight:700;color:#fff}
+.lbl .full{margin-left:auto;color:#8888aa;font-size:11px;font-weight:600;text-decoration:none}
+.lbl .full:hover{color:#fff}
+.pill{font-size:9px;letter-spacing:1px;font-weight:700;text-transform:uppercase;padding:2px 7px;border-radius:5px}
+.p-live{background:rgba(0,255,135,0.14);color:#00ff87;border:1px solid rgba(0,255,135,0.4)}
+.p-gated{background:rgba(255,184,0,0.14);color:#ffb800;border:1px solid rgba(255,184,0,0.4)}
+.p-todo{background:rgba(136,136,170,0.14);color:#aaaacc;border:1px solid rgba(136,136,170,0.4)}
+iframe{width:100%;border:0;display:block;background:#0a0a0f}
+@media(max-width:1100px){.cols{flex-direction:column}}
+</style></head>
+<body>
+<div class="bar">
+  <h1>Read Every Email</h1>
+  <a href="index.html">⊞ Grid</a>
+  <a href="journeys.html">📅 Timeline</a>
+  <span class="muted">${total} emails · full height · scroll, no clicking</span>
+</div>
+<div class="cols"><div class="col">${colA}</div><div class="col">${colB}</div></div>
+<script>
+  function fit(f){ try{ var d=f.contentWindow.document; f.style.height=Math.max(d.documentElement.scrollHeight,d.body.scrollHeight)+'px'; }catch(e){} }
+  function fitAll(){ document.querySelectorAll('iframe').forEach(fit); }
+  document.querySelectorAll('iframe').forEach(function(f){ f.addEventListener('load',function(){ fit(f); setTimeout(function(){fit(f)},400); }); });
+  window.addEventListener('load',function(){ fitAll(); [300,900,1800].forEach(function(t){setTimeout(fitAll,t)}); });
+  window.addEventListener('resize',fitAll);
+</script>
+</body></html>`;
+  await fs.writeFile(path.join(OUT, "all.html"), allPage);
 
   // Copy the hand-maintained journey timeline alongside the gallery.
   await fs.copyFile(path.join(ROOT, "emails", "journeys.html"), path.join(OUT, "journeys.html")).catch(() => {});
