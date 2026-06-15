@@ -19,6 +19,7 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
 import { useGLTF, useAnimations } from "@react-three/drei";
+import { clone as skeletonClone } from "three/examples/jsm/utils/SkeletonUtils.js";
 import { Component, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import * as THREE from "three";
 import { zoneColumn, zoneRow, type KickOutcome, type PenColumn, type PenZone } from "@/lib/draft/pens";
@@ -32,14 +33,13 @@ import { zoneColumn, zoneRow, type KickOutcome, type PenColumn, type PenZone } f
  * The bundled soldier.glb is a PLACEHOLDER proving the pipeline (idle only); swap
  * in a footballer/keeper export for the real look — see the handoff notes.
  */
-const STRIKER_MODEL: { url: string; clips: { idle?: string; kick?: string } } | null = {
-  url: "/models/striker.glb", // Mixamo "Remy" + Idle, FBX→GLB (assimpjs) → draco/webp
-  clips: {},                   // single baked clip (Mixamo names it "mixamo.com") → played as idle
-};
-const KEEPER_MODEL: { url: string; clips: { idle?: string; dive?: string } } | null = {
-  url: "/models/keeper.glb",
-  clips: {},
-};
+// StudioOchi "Low Poly Football Soccer Players" (Fab, purchased) — one GLB with 6
+// rigged players in a row sharing one animation. We clone it per slot and isolate a
+// single player by its kit material (OchiFigure), so striker + keeper are two real
+// kitted players from the same file.
+const PLAYERS_URL = "/models/players.glb";
+const STRIKER_MAT = "Athletes_01.001"; // striker kit
+const KEEPER_MAT = "Athletes_06";      // keeper kit
 
 // ── Pitch / goal geometry (world units ≈ metres) ───────────────────────────────
 const GOAL = { w: 7.32, h: 2.44, z: -9, postR: 0.07 };
@@ -286,47 +286,50 @@ class ModelBoundary extends Component<{ fallback: ReactNode; children: ReactNode
  *  and crossfades to the named clip. One instance per slot (no skeleton cloning
  *  needed). The model keeps its own materials/kit — drop in a footballer/keeper
  *  export and it just works; `clip` switches idle ↔ kick/dive. */
-function GltfFigure({ url, clip, faceCamera, tint }: { url: string; clip?: string; faceCamera?: boolean; tint?: string }) {
+function OchiFigure({ keepMaterial, faceCamera }: { keepMaterial: string; faceCamera?: boolean }) {
   const group = useRef<THREE.Group>(null);
-  const inner = useRef<THREE.Group>(null);
-  const { scene, animations } = useGLTF(url);
-  const { actions, names } = useAnimations(animations, group);
+  const { scene, animations } = useGLTF(PLAYERS_URL);
 
-  const fit = useMemo(() => {
-    scene.traverse((o) => {
+  // Clone the whole rig (so each slot animates independently), show only the player
+  // whose kit material matches, and recentre/scale that player to ~1.8m on the spot.
+  const { object, fit } = useMemo(() => {
+    const c = skeletonClone(scene) as THREE.Object3D;
+    let kept: THREE.Object3D | null = null;
+    c.traverse((o) => {
       const m = o as THREE.Mesh;
-      if (m.isMesh) {
-        m.castShadow = true; m.frustumCulled = false;
-        if (tint) {
-          const mat = (m.material as THREE.MeshStandardMaterial).clone();
-          mat.color = new THREE.Color(tint);
-          m.material = mat;
-        }
-      }
+      if (!m.isMesh) return;
+      const name = (m.material as THREE.Material | undefined)?.name ?? "";
+      if (name === keepMaterial && !kept) { kept = m; m.castShadow = true; m.frustumCulled = false; }
+      else m.visible = false;
     });
-    const box = new THREE.Box3().setFromObject(scene);
+    if (!kept) throw new Error(`kit material not found: ${keepMaterial}`);
+    c.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(kept);
     const size = new THREE.Vector3(); box.getSize(size);
-    const s = 1.8 / (size.y || 1);
-    return { scale: s, y: -box.min.y * s };
-  }, [scene, tint]);
+    const ctr = new THREE.Vector3(); box.getCenter(ctr);
+    const scale = 1.8 / (size.y || 1);
+    return { object: c, fit: { scale, x: -ctr.x * scale, y: -box.min.y * scale, z: -ctr.z * scale } };
+  }, [scene, keepMaterial]);
 
+  const { actions, names } = useAnimations(animations, group);
   useEffect(() => {
-    const want = (clip && actions[clip]) ? clip : (names.find((n) => /idle/i.test(n)) ?? names[0]);
-    const a = want ? actions[want] : null;
-    a?.reset().fadeIn(0.25).play();
-    return () => { a?.fadeOut(0.2); };
-  }, [actions, names, clip]);
+    const a = names.length ? actions[names[0]] : null;
+    a?.reset().play();
+    return () => { a?.stop(); };
+  }, [actions, names]);
 
   return (
     <group ref={group}>
-      <group ref={inner} scale={fit.scale} position={[0, fit.y, 0]} rotation={[0, faceCamera ? 0 : Math.PI, 0]}>
-        <primitive object={scene} />
+      {/* rotate around the origin AFTER recentring, so facing never shifts position */}
+      <group rotation={[0, faceCamera ? 0 : Math.PI, 0]}>
+        <group scale={fit.scale} position={[fit.x, fit.y, fit.z]}>
+          <primitive object={object} />
+        </group>
       </group>
     </group>
   );
 }
-if (STRIKER_MODEL) useGLTF.preload(STRIKER_MODEL.url);
-if (KEEPER_MODEL) useGLTF.preload(KEEPER_MODEL.url);
+useGLTF.preload(PLAYERS_URL);
 
 function Striker({ play, clock }: { play: Play; clock: React.MutableRefObject<number> }) {
   const ref = useRef<THREE.Group>(null);
@@ -341,16 +344,16 @@ function Striker({ play, clock }: { play: Play; clock: React.MutableRefObject<nu
       const t = clock.current;
       if (t < 0.34) { const k = t / 0.34; fwd = Math.sin(k * Math.PI) * 0.5; lean = Math.sin(k * Math.PI) * 0.5; }
     }
-    g.position.set(-1.05 + fwd * 0.5, 0, SPOT.z + 0.75 - fwd * 0.7);
-    g.rotation.set(lean * 0.32, 0.24, 0);
+    // Foreground striker sits to the RIGHT so it never fights the bottom-left
+    // aim grid; the run-up lunges left toward the ball on the spot (x≈0).
+    g.position.set(1.35 - fwd * 0.55, 0, SPOT.z + 0.85 - fwd * 0.7);
+    g.rotation.set(lean * 0.32, -0.22, 0);
   });
-  const sm = STRIKER_MODEL;
+  void kicking;
   const fallback = <Figure kit="#0e0e14" accent={ME} skin="#d8a87f" numberTex={num} />;
   return (
     <group ref={ref} scale={0.86}>
-      {sm
-        ? <ModelBoundary fallback={fallback}><Suspense fallback={null}><GltfFigure url={sm.url} clip={kicking ? sm.clips.kick : sm.clips.idle} tint="#c4302b" /></Suspense></ModelBoundary>
-        : fallback}
+      <ModelBoundary fallback={fallback}><Suspense fallback={null}><OchiFigure keepMaterial={STRIKER_MAT} faceCamera /></Suspense></ModelBoundary>
     </group>
   );
 }
@@ -382,13 +385,10 @@ function Keeper({ play, clock }: { play: Play; clock: React.MutableRefObject<num
       if (dive) setDive(null);
     }
   });
-  const km = KEEPER_MODEL;
   const fallback = <Figure kit="#5b3fb0" accent="#c9b6ff" skin="#caa07e" numberTex={num} dive={dive} />;
   return (
     <group ref={ref}>
-      {km
-        ? <ModelBoundary fallback={fallback}><Suspense fallback={null}><GltfFigure url={km.url} clip={dive ? km.clips.dive : km.clips.idle} faceCamera tint="#6a4fc0" /></Suspense></ModelBoundary>
-        : fallback}
+      <ModelBoundary fallback={fallback}><Suspense fallback={null}><OchiFigure keepMaterial={KEEPER_MAT} /></Suspense></ModelBoundary>
     </group>
   );
 }
