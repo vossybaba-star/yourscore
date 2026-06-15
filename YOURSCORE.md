@@ -6,8 +6,9 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed with the founder:** 2026-06-10 (full reconciliation against `src/` +
-> `supabase/migrations/` through migration 25, incl. the 38-0 game).
+> **Confirmed with the founder:** 2026-06-15 (World Cup Daily + World Cup H2H added — see
+> §5B; migration 39). Prior full reconciliation 2026-06-10 against `src/` +
+> `supabase/migrations/` through migration 25, incl. the 38-0 game.
 > **Updated 2026-06-14:** added **Club Leagues** (built, not live — migration 36 + push pending).
 > **Maintenance:** update this file in the same session you change the product, bump the
 > date, and run `graphify update .` after code changes.
@@ -146,7 +147,8 @@ Match loop on `localStorage`; sign-in unlocks cloud save / ranked / social.
 | **Quick Match** (guest/anon, local) | ✅ Live |
 | **Live H2H multiplayer** (simultaneous two-half match, watch-it-play-out, halftime swaps, opt-in penalties; friend code or random queue w/ disguised bot fallback) | ✅ Live |
 | **Custom leagues + friend challenges** (create/join 38-0 leagues by code; challenge a specific friend via share code; shareable result graphics) | ✅ Live |
-| **World Cup Run** (solo WC2026 campaign — pick nations) | ✅ Live |
+| **World Cup Daily** (the World Cup mode — **World XI only**, nation-locked mode hidden for now) — answer-to-draft on a **25s/question timer** (right answers + streaks deal stronger players), then a WC run: group → knockouts. Group qualifies on points (**≥4 auto · =3 qualification penalty shootout · ≤2 out**); knockout draws → shootout, knockout loss = out. **Daily** = ranked, one locked go/day, today's seeded questions, feeds the season board + Rank (via the WC bucket). **Practice** = unlimited, random past questions, no board/Rank. Season board `/38-0/wc/board` ranks closest-to-8-0-0 across the WC2026 window. | ✅ Live 2026-06-15 (migration 39) |
+| **World Cup H2H** (take your WC squad head-to-head — own queue/lobbies/leaderboard, WC competition lane) | ✅ Live 2026-06-15 |
 | **Ranked + global leaderboards** (Daily/All-time, points ladder W3/D1) | 🔧 Being built now |
 | **Verified "Leaderboard ✓" tab** (closest-to-38-0 season records per competition + closest-to-8-0 WC runs; server re-simulates every submitted XI — client never trusted; personal bests card on /profile) | ✅ Live 2026-06-12 (boards activate with migration 29) |
 
