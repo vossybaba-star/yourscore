@@ -16,7 +16,7 @@ import { Pitch } from "@/components/draft/Pitch";
 import { useUser } from "@/hooks/useUser";
 import { pickableNations, spinForNation, spinWorld, type PickableNation } from "@/lib/draft/pool";
 import { WORLD_TEAM_NAME, type RunMode } from "@/lib/draft/wc";
-import { drawQuestion, type ServedQuestion } from "@/lib/draft/wc-quiz";
+import { drawQuestion, dailyQuestions, type ServedQuestion } from "@/lib/draft/wc-quiz";
 import { gradeAnswer, type DraftBand } from "@/lib/draft/draft-quiz";
 import {
   emptyTeam, openSlots, isComplete, usedPlayerIds, usedPlayerNames, placePlayer, hydrateSavedTeam, type LocalTeam,
@@ -29,6 +29,8 @@ import { trackGamePlay } from "@/lib/analytics/trackGame";
 
 const FORMATION = "4-3-3" as Formation; // sensible default; nation pools are deepest here
 const SIGN_IN_PATH = "/38-0/wc";
+const QUESTION_SECONDS = 25; // per-question clock on every draft (timeout = wrong answer)
+const today = () => new Date().toISOString().slice(0, 10);
 
 // Persist an in-progress pick across a sign-in round-trip, so a signed-out player who
 // drafts an XI lands back on the exact same team after authenticating.
@@ -65,6 +67,12 @@ export default function WorldCupEntry() {
   const [feedback, setFeedback] = useState<{ correct: boolean; streak: number } | null>(null);
   const askedIds = useRef<Set<string>>(new Set());
 
+  // Ranked = the daily competition (one go/day, today's seeded questions, season board);
+  // unranked = unlimited practice (random back-catalogue questions). Every draft is timed.
+  const [ranked, setRanked] = useState(false);
+  const dailySet = useRef<ServedQuestion[]>([]);
+  const [timeLeft, setTimeLeft] = useState(QUESTION_SECONDS);
+
   const world = mode === "world";
 
   function resetQuiz() {
@@ -72,27 +80,34 @@ export default function WorldCupEntry() {
     askedIds.current = new Set();
   }
 
-  function chooseMode(m: RunMode) {
-    setMode(m);
-    setNation(null); setSlate(null); setSelected(null); setReel(null); resetQuiz();
-    // World mode has no nation gate — go straight to the open draft.
-    setTeam(m === "world" ? emptyTeam(FORMATION) : null);
+  // Begin a World XI draft. Daily = the ranked competition (one go/day, today's seeded
+  // question set); Practice = unlimited, random back-catalogue questions. (National Team
+  // mode is hidden for now — every run is World XI.)
+  function beginDraft(rankedRun: boolean) {
+    setRanked(rankedRun);
+    dailySet.current = rankedRun ? dailyQuestions(today(), 11) : [];
+    setMode("world"); setNation(null); setSlate(null); setSelected(null); setReel(null); resetQuiz();
+    setTeam(emptyTeam(FORMATION));
   }
 
+  // National Team mode is hidden in the UI for now (World XI only), but the flow is kept
+  // intact behind this helper so it can be re-enabled without a rebuild.
   function chooseNation(n: PickableNation) {
-    setNation(n);
+    setNation(n); setRanked(false); dailySet.current = [];
     setTeam(emptyTeam(FORMATION));
     setSlate(null); setSelected(null); setReel(null); resetQuiz();
   }
 
-  // Tap SCOUT → answer a quiz question first. If the pool is somehow empty, fall back
-  // to a neutral (unbanded) spin so the draft can never dead-end.
+  // Tap SCOUT → answer a quiz question first (timed). Ranked draws today's seeded set in
+  // order; practice draws at random. Empty pool → a neutral spin so it never dead-ends.
   function startSpin() {
-    if (!team || spinning || quiz || (mode === "nation" && !nation)) return;
+    if (!team || spinning || quiz) return;
     setFeedback(null);
-    const q = drawQuestion(Math.random, askedIds.current);
+    const q = ranked
+      ? (dailySet.current[askedCount] ?? drawQuestion(Math.random, askedIds.current))
+      : drawQuestion(Math.random, askedIds.current);
     if (!q) { runSpin({ minOverall: 0, maxOverall: 99 }); return; }
-    setQuiz(q); setAnswered(null);
+    setQuiz(q); setAnswered(null); setTimeLeft(QUESTION_SECONDS);
   }
 
   // Lock the answer, grade it (updating the streak), reveal correct/wrong briefly, then
@@ -144,6 +159,16 @@ export default function WorldCupEntry() {
     setTeam(next); setSlate(null); setSelected(null);
   }
 
+  // Per-question 25s clock. Hitting zero locks in a timeout as a wrong answer (idx -1),
+  // so you can't sit on a question looking the answer up.
+  useEffect(() => {
+    if (!quiz || answered !== null) return;
+    if (timeLeft <= 0) { answerQuiz(-1); return; }
+    const t = setTimeout(() => setTimeLeft((s) => s - 1), 1000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quiz, answered, timeLeft]);
+
   const { user, loading: authLoading } = useUser();
 
   // Submit a finished XI. If the player isn't signed in, save the pick and send them
@@ -154,17 +179,23 @@ export default function WorldCupEntry() {
       const res = await fetch("/api/draft/wc", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "start", mode: runMode, nation: nationName, formation, squad }),
+        body: JSON.stringify({ action: "start", mode: runMode, nation: nationName, formation, squad, ranked }),
       });
       if (res.status === 401) {
         saveDraft({ mode: runMode, nation: runMode === "world" ? null : nationName, formation, squad, pendingEnter: true });
         router.push(`/auth/sign-in?next=${encodeURIComponent(SIGN_IN_PATH)}`);
         return;
       }
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      // Already played today's ranked run → take them to that run (their result stands).
+      if (res.status === 409) {
+        clearDraft();
+        if (data.runId) { router.push(`/38-0/wc/run/${data.runId}`); return; }
+        setError(data.error ?? "You've already played today's ranked run."); setStarting(false); return;
+      }
       if (!res.ok) { setError(data.error ?? "Could not start"); setStarting(false); return; }
       clearDraft();
-      trackGamePlay("38-0", { mode: runMode === "world" ? "world_cup_open" : "world_cup_run" });
+      trackGamePlay("38-0", { mode: ranked ? "world_cup_daily" : runMode === "world" ? "world_cup_open" : "world_cup_run" });
       router.push(`/38-0/wc/run/${data.runId}`);
     } catch {
       setError("Network error — try again."); setStarting(false);
@@ -222,15 +253,12 @@ export default function WorldCupEntry() {
       }
       return;
     }
-    // No saved draft — honour deep-link params set by the main 38-0 page tab:
-    //   ?mode=world → open draft (any nation); ?nation=X → nation-locked draft.
+    // No saved draft — honour deep-link params: ?daily=1 → today's ranked run; otherwise
+    // (?mode=world / ?practice=1) → a practice run. (Nation deep-links are retired while
+    // National Team mode is hidden.)
     const params = new URLSearchParams(window.location.search);
-    if (params.get("mode") === "world" && !mode) { chooseMode("world"); return; }
-    const nationParam = params.get("nation");
-    if (nationParam && !mode) {
-      const n = nations.find((x) => x.nation === nationParam);
-      if (n) { setMode("nation"); chooseNation(n); }
-    }
+    if (!mode && params.get("daily") === "1") { beginDraft(true); return; }
+    if (!mode && (params.get("mode") === "world" || params.get("practice") === "1")) { beginDraft(false); return; }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, authLoading, nations]);
 
@@ -240,44 +268,50 @@ export default function WorldCupEntry() {
       <div className="min-h-[100dvh] pb-16" style={{ background: "#0a0a0f" }}>
         <div className="max-w-lg mx-auto px-4 pt-safe">
           <div className="pt-4"><Link href="/38-0" className="font-body text-sm" style={{ color: "#8a948f" }}>← Back</Link></div>
-          <h1 className="font-display tracking-wide mt-3" style={{ fontSize: 32, color: "#fff" }}>🏆 WORLD CUP RUN</h1>
+          <h1 className="font-display tracking-wide mt-3" style={{ fontSize: 32, color: "#fff" }}>🏆 WORLD CUP</h1>
           <p className="font-body mt-1 mb-4" style={{ fontSize: 14, color: "#c4ccc6" }}>
-            A solo World Cup campaign. Build an XI, then play through a World Cup path — group, then knockouts — all the way to the final. Pick your mode.
+            Answer to build your World XI, then play a World Cup run — group, then knockouts — all the way to the final. The more you know, the better your team.
           </p>
 
-          {/* Mode cards */}
+          {/* Daily vs Practice */}
           <div className="flex flex-col gap-3 mb-5">
-            <button onClick={() => chooseMode("nation")} className="text-left rounded-2xl p-4 active:scale-[0.99] transition-transform"
-              style={{ background: "#0e1611", border: "1px solid rgba(174,234,0,0.3)" }}>
+            <button onClick={() => beginDraft(true)} className="text-left rounded-2xl p-4 active:scale-[0.99] transition-transform"
+              style={{ background: "#0e1611", border: "1px solid rgba(255,184,0,0.45)" }}>
               <div className="flex items-center gap-2.5 mb-1">
-                <span style={{ fontSize: 22 }}>🏴</span>
-                <span className="font-display tracking-wide" style={{ fontSize: 20, color: "#aeea00" }}>NATIONAL TEAM</span>
+                <span style={{ fontSize: 22 }}>🏆</span>
+                <span className="font-display tracking-wide" style={{ fontSize: 20, color: "#ffb800" }}>TODAY&apos;S RUN</span>
+                <span className="font-body rounded-full px-2 py-0.5" style={{ fontSize: 10, color: "#1a1300", background: "#ffb800", letterSpacing: 0.5 }}>RANKED</span>
               </div>
               <div className="font-body" style={{ fontSize: 13, color: "#c4ccc6", lineHeight: 1.4 }}>
-                Pick a nation and draft <b style={{ color: "#fff" }}>their players only</b>. Play that nation&apos;s real World Cup 2026 fixtures.
+                One go a day. Today&apos;s questions, on the clock. Your result <b style={{ color: "#fff" }}>climbs the World Cup leaderboard</b> — get closest to 8-0-0.
               </div>
             </button>
 
-            <button onClick={() => chooseMode("world")} className="text-left rounded-2xl p-4 active:scale-[0.99] transition-transform"
-              style={{ background: "#0e1611", border: "1px solid rgba(255,184,0,0.4)" }}>
+            <button onClick={() => beginDraft(false)} className="text-left rounded-2xl p-4 active:scale-[0.99] transition-transform"
+              style={{ background: "#0e1611", border: "1px solid rgba(174,234,0,0.3)" }}>
               <div className="flex items-center gap-2.5 mb-1">
-                <span style={{ fontSize: 22 }}>🌍</span>
-                <span className="font-display tracking-wide" style={{ fontSize: 20, color: "#ffb800" }}>WORLD CUP</span>
+                <span style={{ fontSize: 22 }}>🎮</span>
+                <span className="font-display tracking-wide" style={{ fontSize: 20, color: "#aeea00" }}>PRACTICE</span>
               </div>
               <div className="font-body" style={{ fontSize: 13, color: "#c4ccc6", lineHeight: 1.4 }}>
-                Open draft — build a <b style={{ color: "#fff" }}>dream team from any nation&apos;s players</b>. Beat the best in the world to lift the trophy.
+                Play as many runs as you like — <b style={{ color: "#fff" }}>questions from past days</b>. Doesn&apos;t count towards the leaderboard.
               </div>
             </button>
+
+            <Link href="/38-0/wc/board" className="text-center font-body rounded-2xl py-3 active:scale-[0.99] transition-transform"
+              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#cfcfe6", fontSize: 14 }}>
+              🏅 World Cup leaderboard →
+            </Link>
           </div>
 
           {/* How it works */}
           <div className="rounded-2xl p-4" style={{ background: "#0e1611", border: "1px solid rgba(255,184,0,0.3)" }}>
             <div className="font-body mb-2.5" style={{ fontSize: 11, color: "#ffb800", letterSpacing: 1 }}>HOW IT WORKS</div>
             {[
-              ["①", "Build your XI", "Spin & pick — any rating can come up, luck of the draw."],
+              ["①", "Answer to draft", "Each pick is unlocked by a question on a 25s clock — right answers (and streaks) deal stronger players."],
               ["②", "Play the World Cup", "A group, then the knockouts — vs real nations, tougher each round."],
-              ["③", "Win to advance · free re-spins", "Survive the group, then win-or-go-home. Each round you get free re-spins."],
-              ["④", "Lift the trophy 🏆", "Lose a knockout and you're out. Win the final and you're champions."],
+              ["③", "Group on the line", "4 pts go through; 3 pts is down to a play-off shootout; less and you're out."],
+              ["④", "Go for 8-0-0 🏆", "Knockout losses end your run. Win them all and you're champions."],
             ].map(([n, title, desc]) => (
               <div key={n as string} className="flex gap-3 mb-2.5 last:mb-0">
                 <span className="font-display flex-shrink-0" style={{ fontSize: 18, color: "#ffb800" }}>{n}</span>
@@ -477,14 +511,18 @@ export default function WorldCupEntry() {
             <>
               <button onClick={start} disabled={starting || h2hBusy}
                 className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-60"
-                style={{ background: "#aeea00", color: "#062013", fontSize: 24 }}>
-                {starting ? "STARTING…" : "ENTER THE WORLD CUP →"}
+                style={{ background: ranked ? "#ffb800" : "#aeea00", color: ranked ? "#1a1300" : "#062013", fontSize: 24 }}>
+                {starting ? "STARTING…" : ranked ? "ENTER TODAY'S RUN →" : "ENTER THE WORLD CUP →"}
               </button>
-              <button onClick={playH2H} disabled={starting || h2hBusy}
-                className="w-full mt-2 rounded-2xl py-3 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-60"
-                style={{ background: "rgba(255,184,0,0.12)", color: "#ffb800", border: "1px solid rgba(255,184,0,0.4)", fontSize: 16 }}>
-                {h2hBusy ? "READYING…" : "⚔️ PLAY H2H INSTEAD"}
-              </button>
+              {/* Practice runs can flip the finished XI into the H2H lane; the ranked daily
+                  is a committed one-go, so it doesn't offer the detour. */}
+              {!ranked && (
+                <button onClick={playH2H} disabled={starting || h2hBusy}
+                  className="w-full mt-2 rounded-2xl py-3 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-60"
+                  style={{ background: "rgba(255,184,0,0.12)", color: "#ffb800", border: "1px solid rgba(255,184,0,0.4)", fontSize: 16 }}>
+                  {h2hBusy ? "READYING…" : "⚔️ PLAY H2H INSTEAD"}
+                </button>
+              )}
             </>
           )}
         </div>
@@ -499,6 +537,16 @@ export default function WorldCupEntry() {
                 {streak >= 1 ? `🔥 Streak ×${streak} — keep it going` : "Get it right for better players"}
               </span>
             </div>
+            {answered === null && (
+              <div className="mb-3">
+                <div className="flex items-center justify-end mb-1">
+                  <span className="font-display tabular-nums" style={{ fontSize: 12, color: timeLeft <= 5 ? "#ff4757" : "#ffb800" }}>⏱ {timeLeft}s</span>
+                </div>
+                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.08)" }}>
+                  <div className="h-full rounded-full" style={{ width: `${(timeLeft / QUESTION_SECONDS) * 100}%`, background: timeLeft <= 5 ? "#ff4757" : "#ffb800", transition: "width 1s linear" }} />
+                </div>
+              </div>
+            )}
             <p className="font-body mb-4" style={{ fontSize: 16, color: "#fff", lineHeight: 1.35 }}>{quiz.prompt}</p>
             <div className="flex flex-col gap-2">
               {quiz.options.map((opt, i) => {
