@@ -28,8 +28,8 @@ const DEV = process.env.NODE_ENV === "development";
 type Cam = { az: number; el: number; dist: number; tx: number; ty: number; tz: number };
 type Deltas = Record<string, [number, number, number]>;
 
-function Players({ only, deltas, register }: {
-  only: number; deltas: Deltas; register: (names: string[]) => void;
+function Players({ only, deltas, tint, register }: {
+  only: number; deltas: Deltas; tint: string | null; register: (names: string[]) => void;
 }) {
   const group = useRef<THREE.Group>(null);
   const { scene } = useGLTF(URL);
@@ -61,6 +61,52 @@ function Players({ only, deltas, register }: {
   }, [object, only]);
 
   useEffect(() => { register(Array.from(bones.keys())); }, [bones, register]);
+
+  // Recolour the kit to ONE solid colour while keeping a realistic skin tone, hair
+  // and boots. The atlas is a palette strip: skin is a warm band, hair/boots/outlines
+  // are near-black, and the kit is everything else (incl. the striped "PLAYER 10"
+  // region). We repaint the texture: keep skin + dark pixels, recolour the rest to the
+  // team colour modulated by luminance (so folds still shade). tint=null restores it.
+  useEffect(() => {
+    let i = 0;
+    object.traverse((o) => {
+      const m = o as THREE.Mesh;
+      if (!m.isMesh) return;
+      const idx = i++;
+      if (only >= 0 && idx !== only) return;
+      const mat = m.material as THREE.MeshStandardMaterial;
+      if (mat.userData._orig === undefined) mat.userData._orig = mat.map ?? null;
+      const orig = mat.userData._orig as THREE.Texture | null;
+      if (!tint) {
+        mat.map = orig; mat.color.set(0xffffff); mat.needsUpdate = true; return;
+      }
+      const img = orig?.image as (HTMLImageElement | ImageBitmap | undefined);
+      if (!img) { mat.color.set(tint); mat.map = null; mat.needsUpdate = true; return; }
+      const cv = document.createElement("canvas");
+      cv.width = (img as HTMLImageElement).width; cv.height = (img as HTMLImageElement).height;
+      const ctx = cv.getContext("2d")!;
+      ctx.drawImage(img as CanvasImageSource, 0, 0);
+      const data = ctx.getImageData(0, 0, cv.width, cv.height);
+      const px = data.data;
+      const tc = new THREE.Color(tint);
+      for (let p = 0; p < px.length; p += 4) {
+        const r = px[p], g = px[p + 1], b = px[p + 2];
+        const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+        const isSkin = r > 100 && r >= g && g >= b && r - b > 18 && r - b < 125 && g > 70;
+        const isDark = lum < 0.14;
+        if (isSkin || isDark) continue;
+        const f = 0.55 + 0.7 * lum;
+        px[p] = Math.min(255, tc.r * 255 * f);
+        px[p + 1] = Math.min(255, tc.g * 255 * f);
+        px[p + 2] = Math.min(255, tc.b * 255 * f);
+      }
+      ctx.putImageData(data, 0, 0);
+      const ctex = new THREE.CanvasTexture(cv);
+      if (orig) { ctex.flipY = orig.flipY; ctex.colorSpace = orig.colorSpace; ctex.wrapS = orig.wrapS; ctex.wrapT = orig.wrapT; }
+      ctex.needsUpdate = true;
+      mat.map = ctex; mat.color.set(0xffffff); mat.needsUpdate = true;
+    });
+  }, [object, tint, only]);
 
   // Apply pose deltas on top of the bind pose. Bones are named per-player with a
   // `_NN` node-index suffix (thighR_41, thighR_86, …); match by BASE name (suffix
@@ -98,6 +144,7 @@ function Rig({ cam }: { cam: Cam }) {
 export default function SpriteSpike() {
   const [only, setOnly] = useState(1);
   const [deltas, setDeltas] = useState<Deltas>({});
+  const [tint, setTint] = useState<string | null>(null);
   const [cam, setCam] = useState<Cam>({ az: 0, el: 0.05, dist: 4.2, tx: 0, ty: 1.0, tz: 0 });
   const glRef = useRef<THREE.WebGLRenderer | null>(null);
   const namesRef = useRef<string[]>([]);
@@ -111,6 +158,7 @@ export default function SpriteSpike() {
       pose: (d: Deltas) => setDeltas(d),
       merge: (d: Deltas) => setDeltas((p) => ({ ...p, ...d })),
       reset: () => setDeltas({}),
+      tint: (hex: string | null) => setTint(hex),
       list: () => namesRef.current,
       get: () => ({ only, deltas, cam }),
       png: () => glRef.current?.domElement.toDataURL("image/png"),
@@ -132,7 +180,7 @@ export default function SpriteSpike() {
         <directionalLight position={[3, 6, 4]} intensity={1.7} />
         <directionalLight position={[-3, 4, -2]} intensity={0.55} />
         <Rig cam={cam} />
-        <Players only={only} deltas={deltas} register={(n) => { namesRef.current = n; }} />
+        <Players only={only} deltas={deltas} tint={tint} register={(n) => { namesRef.current = n; }} />
       </Canvas>
       <div style={{ position: "absolute", top: 8, left: 8, color: "#fff", fontFamily: "monospace", fontSize: 12 }}>
         sprite spike — drive via window.__sprite
