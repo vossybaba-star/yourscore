@@ -12,7 +12,7 @@ import type { Formation, PlacedPlayer } from "./types";
 import { createDraftDb, validateAndScore } from "./server";
 import { getPlayer, getNation, isWCEligible } from "./pool";
 import { makeOpponent } from "./opponent";
-import { resolveMatch } from "./live-score";
+import { resolveMatch, resolveShootout, buildReport, type MatchSim, type SingleMatchResult } from "./live-score";
 import { seededRng } from "./score";
 import {
   planRun, planWorldRun, gamesForStage, buildMatchRow, outcomeOf, allowDraw, advanceStage, isDuel, oppTargetFor,
@@ -126,6 +126,33 @@ export function revealOpponent(run: WcRun) {
  * to insert, per-game reveals for the UI, and the run patch.
  */
 export function resolveStage(run: WcRun): { rows: WcMatchRow[]; reveals: GameReveal[]; patch: WcRunPatch } {
+  // Qualification play-off: a straight penalty shootout (no 90 minutes). Win → R32, lose
+  // → out at the group. Recorded with stage='playoff' so it's a GATE — excluded from the
+  // W/D/L record + season points. (Falls back to the first knockout opponent for any
+  // in-flight run whose stored plan predates plan.playoff.)
+  if (run.stage === "playoff") {
+    const fixture = run.plan.playoff ?? run.plan.knockouts[0];
+    const opp = buildOpponent(run, fixture, 0);
+    const pens = resolveShootout(run.strength, opp.strength, seededRng(`${run.seed}:playoff`));
+    const won = pens.a >= pens.b; // ties break to the player (rare; keeps it decisive)
+    const result: SingleMatchResult = {
+      outcome: won ? "A" : "B",
+      goals: { a: 0, b: 0 },
+      pens,
+      report: buildReport({} as MatchSim),
+    };
+    const row = buildMatchRow(run.id, "playoff", fixture, result, opp.strength, 0);
+    const reveal: GameReveal = {
+      label: "Qualification Play-off",
+      opponent: fixture.opponent,
+      oppStrength: opp.strength,
+      goals: { you: 0, opp: 0 },
+      pens: { you: pens.a, opp: pens.b },
+      outcome: won ? "win" : "loss",
+    };
+    return { rows: [row], reveals: [reveal], patch: advanceStage(run, [won ? "win" : "loss"]) };
+  }
+
   const fixtures = gamesForStage(run.plan, run.stage);
   const rows: WcMatchRow[] = [];
   const reveals: GameReveal[] = [];
