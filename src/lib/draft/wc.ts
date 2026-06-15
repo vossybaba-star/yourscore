@@ -22,6 +22,11 @@ import type { SingleMatchResult } from "./live-score";
 export { WC_STAGES, WC_STAGE_LABEL };
 export type { WCStage, WCNation };
 
+/** The World Cup Daily season window (UTC dates). The season leaderboard aggregates
+ *  ranked runs whose run_date falls in [START, END]; a champion is crowned at the end. */
+export const WC_SEASON_START = "2026-06-11";
+export const WC_SEASON_END = "2026-07-19";
+
 // ─── Run shape ──────────────────────────────────────────────────────────────
 // The RUN compresses the real tournament into 5 steps:
 //   group — the 3 real group games, resolved in ONE simulation (qualify on points)

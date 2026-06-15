@@ -9,6 +9,7 @@
  */
 
 import bundle from "@/data/draft/wc-quiz.json";
+import { seededRng } from "./score";
 
 /** A question as stored in the bundle (canonical option order, `answer` = index). */
 export type WCQuizQuestion = {
@@ -43,7 +44,11 @@ export function drawQuestion(rng: () => number = Math.random, exclude: Set<strin
   if (POOL.length === 0) return null;
   const avail = POOL.filter((qn) => !exclude.has(qn.id));
   const src = avail.length ? avail : POOL;
-  const base = src[Math.floor(rng() * src.length)];
+  return serve(src[Math.floor(rng() * src.length)], rng);
+}
+
+/** Prepare a stored question for display: shuffle its options, track the correct slot. */
+function serve(base: WCQuizQuestion, rng: () => number): ServedQuestion {
   const order = base.options.map((_, i) => i);
   for (let i = order.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1));
@@ -56,4 +61,35 @@ export function drawQuestion(rng: () => number = Math.random, exclude: Set<strin
     correctIndex: order.indexOf(base.answer),
     category: base.category,
   };
+}
+
+/** The questions belonging to one daily pack (bundle ids are `<date>-<n>`). */
+function questionsForDate(date: string): WCQuizQuestion[] {
+  return POOL.filter((q) => q.id.startsWith(`${date}-`));
+}
+
+/**
+ * The fixed set of `count` questions for a ranked daily run, **seeded by date** so every
+ * player faces the same questions in the same order that day (the "same test" rule).
+ * Prefers today's dated pack; if it's missing or too small (e.g. the bundle predates
+ * today's publish), falls back to the most recent pack with enough questions, then to the
+ * whole pool. Options are shuffled deterministically too.
+ */
+export function dailyQuestions(date: string, count = 11): ServedQuestion[] {
+  const rng = seededRng(`wc-daily:${date}`);
+  let pool = questionsForDate(date);
+  if (pool.length < count) {
+    const dates = Array.from(new Set(POOL.map((q) => q.id.replace(/-\d+$/, "")))).sort().reverse();
+    for (const d of dates) {
+      const p = questionsForDate(d);
+      if (p.length >= count) { pool = p; break; }
+    }
+    if (pool.length < count) pool = POOL.slice();
+  }
+  const arr = pool.slice();
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr.slice(0, count).map((q) => serve(q, rng));
 }
