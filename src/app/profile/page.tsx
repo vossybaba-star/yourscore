@@ -16,7 +16,7 @@ function AvatarCircle({ name, size = 64, avatarUrl }: { name: string; size?: num
     );
   }
   const palettes = [
-    { bg: "#1a2f4a", text: "#60a5fa" }, { bg: "#2a1a4a", text: "#a78bfa" },
+    { bg: "#1a2f4a", text: "#60a5fa" }, { bg: "#3a423d", text: "#aeea00" },
     { bg: "#1a4a2a", text: "#4ade80" }, { bg: "#4a2a1a", text: "#fb923c" },
     { bg: "#4a1a2a", text: "#f87171" },
   ];
@@ -39,7 +39,7 @@ export default async function ProfilePage() {
         <div className="text-center space-y-4">
           <p className="font-body text-text-muted">Sign in to see your profile.</p>
           <Link href="/auth/sign-in" className="inline-flex items-center justify-center px-6 py-3 rounded-xl font-body font-bold text-sm text-green"
-            style={{ background: "rgba(0,255,135,0.1)", border: "1px solid rgba(0,255,135,0.28)" }}>
+            style={{ background: "rgba(174,234,0,0.1)", border: "1px solid rgba(174,234,0,0.28)" }}>
             Sign in →
           </Link>
         </div>
@@ -206,11 +206,11 @@ export default async function ProfilePage() {
         {/* YourScore leaderboard hero — position first, one points currency */}
         {rank && overallRank !== null && (
           <div className="rounded-2xl px-5 py-4"
-            style={{ background: "linear-gradient(135deg, rgba(167,139,250,0.1), rgba(0,255,135,0.05))", border: `1px solid ${positionColor(overallRank)}33` }}>
+            style={{ background: "linear-gradient(135deg, rgba(174,234,0,0.1), rgba(174,234,0,0.05))", border: `1px solid ${positionColor(overallRank)}33` }}>
             <div className="flex items-end justify-between">
               <div>
                 <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-1.5">YourScore leaderboard</p>
-                <p className="font-display text-5xl leading-none" style={{ color: positionColor(overallRank) === "#8888aa" ? "#ffffff" : positionColor(overallRank) }}>
+                <p className="font-display text-5xl leading-none" style={{ color: positionColor(overallRank) === "#8a948f" ? "#ffffff" : positionColor(overallRank) }}>
                   #{overallRank.toLocaleString()}
                 </p>
                 <p className="font-body text-xs text-text-muted mt-1.5">
@@ -227,8 +227,8 @@ export default async function ProfilePage() {
                 <p className="font-display text-2xl text-white leading-none mt-1">{knowledgeScore > 0 ? knowledgeScore.toLocaleString() : "—"}</p>
                 <p className="font-body text-[10px] text-text-muted mt-1">pts from quizzes + solo</p>
               </div>
-              <Link href="/38-0/history" className="block rounded-xl px-3 py-2.5 transition-opacity hover:opacity-80" style={{ background: "rgba(0,255,135,0.06)", border: "1px solid rgba(0,255,135,0.15)" }}>
-                <p className="font-body text-[10px] uppercase tracking-widest" style={{ color: "#00ff87" }}>⚽ Match</p>
+              <Link href="/38-0/history" className="block rounded-xl px-3 py-2.5 transition-opacity hover:opacity-80" style={{ background: "rgba(174,234,0,0.06)", border: "1px solid rgba(174,234,0,0.15)" }}>
+                <p className="font-body text-[10px] uppercase tracking-widest" style={{ color: "#aeea00" }}>⚽ Match</p>
                 <p className="font-display text-2xl text-white leading-none mt-1">{matchScore > 0 ? matchScore.toLocaleString() : "—"}</p>
                 <p className="font-body text-[10px] text-text-muted mt-1">
                   {draftRecord ? `pts from ${draftRecord.w}W ${draftRecord.d}D · win = 1,500` : "pts from 38-0 · win = 1,500"}
@@ -237,7 +237,7 @@ export default async function ProfilePage() {
             </div>
 
             {/* The chase — gap to the player directly above */}
-            <p className="font-body text-[11px] mt-3" style={{ color: "#8888aa" }}>
+            <p className="font-body text-[11px] mt-3" style={{ color: "#8a948f" }}>
               {overallRank === 1
                 ? "👑 Top of the table — every game keeps you there"
                 : aheadGap !== null
@@ -251,22 +251,22 @@ export default async function ProfilePage() {
         {showNudge && (
           <Link href={lowTrack === "match" ? "/38-0" : "/play"}
             className="flex items-center justify-between px-4 py-3 rounded-2xl transition-all hover:opacity-90 active:scale-[0.99]"
-            style={{ background: "rgba(167,139,250,0.08)", border: "1px solid rgba(167,139,250,0.2)" }}>
+            style={{ background: "rgba(174,234,0,0.08)", border: "1px solid rgba(174,234,0,0.2)" }}>
             <p className="font-body text-sm text-white pr-3">
               {lowTrack === "match"
                 ? "⚽ Your Match track is low — play 38-0 to climb your rank"
                 : "🧠 Your Knowledge track is low — play a quiz to climb your rank"}
             </p>
-            <span className="font-body text-xs font-bold flex-shrink-0" style={{ color: "#a78bfa" }}>Play →</span>
+            <span className="font-body text-xs font-bold flex-shrink-0" style={{ color: "#aeea00" }}>Play →</span>
           </Link>
         )}
 
         {/* Quick stats grid */}
         <div className="grid grid-cols-2 gap-2.5">
           {[
-            { label: "Accuracy", value: accuracy !== null ? `${accuracy}%` : "—", color: accuracy !== null && accuracy >= 70 ? "#00ff87" : accuracy !== null && accuracy >= 50 ? "#ffb800" : "#ffffff", icon: "🎯" },
+            { label: "Accuracy", value: accuracy !== null ? `${accuracy}%` : "—", color: accuracy !== null && accuracy >= 70 ? "#aeea00" : accuracy !== null && accuracy >= 50 ? "#ffb800" : "#ffffff", icon: "🎯" },
             { label: "Best streak", value: bestStreak > 0 ? `${bestStreak}🔥` : "—", color: "#ffb800", icon: "⚡" },
-            { label: "MP games", value: multiplayerGames > 0 ? String(multiplayerGames) : "—", color: "#a78bfa", icon: "👥" },
+            { label: "MP games", value: multiplayerGames > 0 ? String(multiplayerGames) : "—", color: "#aeea00", icon: "👥" },
             { label: "Friends", value: String(friendCount), color: "#00c9ff", icon: "🤝" },
           ].map((s) => (
             <div key={s.label} className="rounded-2xl px-4 py-4 bg-surface cursor-default" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
@@ -282,10 +282,10 @@ export default async function ProfilePage() {
         {/* 38-0 Match History strip */}
         <Link href="/38-0/history"
           className="flex items-center justify-between px-5 py-4 rounded-2xl transition-all hover:opacity-90 active:scale-[0.99]"
-          style={{ background: "linear-gradient(135deg, rgba(0,255,135,0.08), rgba(0,255,135,0.04))", border: "1px solid rgba(0,255,135,0.2)" }}>
+          style={{ background: "linear-gradient(135deg, rgba(174,234,0,0.08), rgba(174,234,0,0.04))", border: "1px solid rgba(174,234,0,0.2)" }}>
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
-              style={{ background: "rgba(0,255,135,0.12)" }}>📋</div>
+              style={{ background: "rgba(174,234,0,0.12)" }}>📋</div>
             <div>
               <p className="font-body text-sm font-bold text-white">38-0 Match History</p>
               <p className="font-body text-xs text-text-muted">
@@ -293,7 +293,7 @@ export default async function ProfilePage() {
               </p>
             </div>
           </div>
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ color: "#00ff87", flexShrink: 0 }}>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ color: "#aeea00", flexShrink: 0 }}>
             <path d="M5 3l6 5-6 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </Link>
@@ -301,18 +301,18 @@ export default async function ProfilePage() {
         {/* 38-0 personal bests — verified season + World Cup run */}
         {(seasonBest || wcBest) && (
           <div className="rounded-2xl px-5 py-4"
-            style={{ background: "linear-gradient(135deg, rgba(34,211,238,0.08), rgba(34,211,238,0.03))", border: "1px solid rgba(34,211,238,0.22)" }}>
+            style={{ background: "linear-gradient(135deg, rgba(174,234,0,0.08), rgba(174,234,0,0.03))", border: "1px solid rgba(174,234,0,0.22)" }}>
             <div className="flex items-center justify-between mb-3">
-              <p className="font-body text-xs uppercase tracking-widest" style={{ color: "#22d3ee" }}>38-0 Personal Bests ✓</p>
-              <Link href="/38-0" className="font-body text-xs font-bold" style={{ color: "#22d3ee" }}>Leaderboard →</Link>
+              <p className="font-body text-xs uppercase tracking-widest" style={{ color: "#aeea00" }}>38-0 Personal Bests ✓</p>
+              <Link href="/38-0" className="font-body text-xs font-bold" style={{ color: "#aeea00" }}>Leaderboard →</Link>
             </div>
             <div className="grid grid-cols-2 gap-2.5">
-              <div className="rounded-xl px-3 py-2.5" style={{ background: "rgba(0,255,135,0.06)", border: "1px solid rgba(0,255,135,0.15)" }}>
-                <p className="font-body text-[10px] uppercase tracking-widest" style={{ color: "#00ff87" }}>⚽ Best season</p>
+              <div className="rounded-xl px-3 py-2.5" style={{ background: "rgba(174,234,0,0.06)", border: "1px solid rgba(174,234,0,0.15)" }}>
+                <p className="font-body text-[10px] uppercase tracking-widest" style={{ color: "#aeea00" }}>⚽ Best season</p>
                 {seasonBest ? (
                   <>
                     <p className="font-display text-2xl text-white leading-none mt-1">
-                      {seasonBest.wins}<span className="text-base" style={{ color: "#555577" }}>-{seasonBest.draws}-{seasonBest.losses}</span>
+                      {seasonBest.wins}<span className="text-base" style={{ color: "#586058" }}>-{seasonBest.draws}-{seasonBest.losses}</span>
                       {seasonBest.invincible && <span className="text-base"> 🏆</span>}
                     </p>
                     <p className="font-body text-[10px] text-text-muted mt-1">
@@ -321,7 +321,7 @@ export default async function ProfilePage() {
                   </>
                 ) : (
                   <>
-                    <p className="font-display text-2xl leading-none mt-1" style={{ color: "#555577" }}>—</p>
+                    <p className="font-display text-2xl leading-none mt-1" style={{ color: "#586058" }}>—</p>
                     <p className="font-body text-[10px] text-text-muted mt-1">Play a season to set one</p>
                   </>
                 )}
@@ -331,7 +331,7 @@ export default async function ProfilePage() {
                 {wcBest ? (
                   <>
                     <p className="font-display text-2xl text-white leading-none mt-1">
-                      {wcBest.wins}<span className="text-base" style={{ color: "#555577" }}>/8 wins</span>
+                      {wcBest.wins}<span className="text-base" style={{ color: "#586058" }}>/8 wins</span>
                       {wcBest.champion && <span className="text-base"> 🏆</span>}
                     </p>
                     <p className="font-body text-[10px] text-text-muted mt-1">
@@ -340,7 +340,7 @@ export default async function ProfilePage() {
                   </>
                 ) : (
                   <>
-                    <p className="font-display text-2xl leading-none mt-1" style={{ color: "#555577" }}>—</p>
+                    <p className="font-display text-2xl leading-none mt-1" style={{ color: "#586058" }}>—</p>
                     <p className="font-body text-[10px] text-text-muted mt-1">Start a World Cup Run</p>
                   </>
                 )}
@@ -352,16 +352,16 @@ export default async function ProfilePage() {
         {/* Rankings strip */}
         <Link href="/leaderboard"
           className="flex items-center justify-between px-5 py-4 rounded-2xl transition-all hover:opacity-90 active:scale-[0.99]"
-          style={{ background: "linear-gradient(135deg, rgba(167,139,250,0.08), rgba(167,139,250,0.04))", border: "1px solid rgba(167,139,250,0.2)" }}>
+          style={{ background: "linear-gradient(135deg, rgba(174,234,0,0.08), rgba(174,234,0,0.04))", border: "1px solid rgba(174,234,0,0.2)" }}>
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
-              style={{ background: "rgba(167,139,250,0.12)" }}>🏅</div>
+              style={{ background: "rgba(174,234,0,0.12)" }}>🏅</div>
             <div>
               <p className="font-body text-sm font-bold text-white">Rankings</p>
               <p className="font-body text-xs text-text-muted">Global + friends leaderboard</p>
             </div>
           </div>
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ color: "#a78bfa", flexShrink: 0 }}>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ color: "#aeea00", flexShrink: 0 }}>
             <path d="M5 3l6 5-6 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </Link>
@@ -398,7 +398,7 @@ export default async function ProfilePage() {
             </div>
             <div>
               <p className="font-body text-sm font-bold text-white">Friends</p>
-              <p className="font-body text-xs" style={{ color: pendingFriends > 0 ? "#ef4444" : "var(--color-text-muted, #8888aa)" }}>
+              <p className="font-body text-xs" style={{ color: pendingFriends > 0 ? "#ef4444" : "var(--color-text-muted, #8a948f)" }}>
                 {pendingFriends > 0
                   ? `${pendingFriends} pending request${pendingFriends !== 1 ? "s" : ""}`
                   : friendCount > 0 ? `${friendCount} friend${friendCount !== 1 ? "s" : ""}` : "Add your mates"}
@@ -420,7 +420,7 @@ export default async function ProfilePage() {
                   className="flex items-center gap-2 px-3 py-2 rounded-xl transition-all hover:opacity-90"
                   style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
                   <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-                    style={{ background: "rgba(167,139,250,0.15)", color: "#a78bfa" }}>
+                    style={{ background: "rgba(174,234,0,0.15)", color: "#aeea00" }}>
                     {(p.display_name[0] ?? "?").toUpperCase()}
                   </div>
                   <span className="font-body text-sm text-white">{p.display_name}</span>
@@ -449,12 +449,12 @@ export default async function ProfilePage() {
                       <div>
                         <p className="font-body text-sm font-semibold text-white">
                           {g.correct_answers ?? 0}/{g.total_answers ?? 0} correct
-                          {acc !== null && <span className="ml-1.5 text-xs" style={{ color: acc >= 70 ? "#00ff87" : "#8888aa" }}>{acc}%</span>}
+                          {acc !== null && <span className="ml-1.5 text-xs" style={{ color: acc >= 70 ? "#aeea00" : "#8a948f" }}>{acc}%</span>}
                         </p>
                         <p className="font-body text-xs text-text-muted">{dateStr}</p>
                       </div>
                     </div>
-                    <p className="font-display text-lg" style={{ color: "#a78bfa" }}>{(g.total_score ?? 0).toLocaleString()}</p>
+                    <p className="font-display text-lg" style={{ color: "#aeea00" }}>{(g.total_score ?? 0).toLocaleString()}</p>
                   </div>
                 );
               })}
@@ -479,7 +479,7 @@ export default async function ProfilePage() {
                       <div>
                         <p className="font-body text-sm font-semibold text-white">
                           Solo challenge
-                          {pct !== null && <span className="ml-1.5 text-xs" style={{ color: pct >= 70 ? "#00ff87" : "#8888aa" }}>{pct}%</span>}
+                          {pct !== null && <span className="ml-1.5 text-xs" style={{ color: pct >= 70 ? "#aeea00" : "#8a948f" }}>{pct}%</span>}
                         </p>
                         <p className="font-body text-xs text-text-muted">{dateStr}</p>
                       </div>

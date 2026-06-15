@@ -12,7 +12,7 @@ import { fitMultiplier, FIT_EXACT, FIT_SAME } from "@/lib/draft/score";
 
 function fitColor(player: PlacedPlayer): string {
   const f = fitMultiplier(player.position, player.slotPos);
-  if (f >= FIT_EXACT) return "#00ff87";   // natural position
+  if (f >= FIT_EXACT) return "#aeea00";   // natural position
   if (f >= FIT_SAME) return "#ffb800";    // same-line cover (legal)
   return "#ff4757";                       // out of line (shouldn't occur)
 }
@@ -43,7 +43,7 @@ export function Pitch({
         aspectRatio: compact ? "3 / 4" : "10 / 14",
         background:
           "linear-gradient(0deg, #0c2a17 0%, #0f3a1f 55%, #0c2a17 100%)",
-        border: "1px solid rgba(0,255,135,0.18)",
+        border: "1px solid rgba(174,234,0,0.18)",
       }}
     >
       {/* pitch markings */}
@@ -109,14 +109,14 @@ export function Pitch({
                     width: compact ? 28 : 36,
                     height: compact ? 28 : 36,
                     fontSize: compact ? 10 : 12,
-                    background: highlighted ? "rgba(0,255,135,0.18)" : "rgba(255,255,255,0.06)",
-                    border: `2px dashed ${highlighted ? "#00ff87" : "rgba(255,255,255,0.3)"}`,
-                    color: highlighted ? "#00ff87" : "#8888aa",
+                    background: highlighted ? "rgba(174,234,0,0.18)" : "rgba(255,255,255,0.06)",
+                    border: `2px dashed ${highlighted ? "#aeea00" : "rgba(255,255,255,0.3)"}`,
+                    color: highlighted ? "#aeea00" : "#8a948f",
                   }}
                 >
                   {s.label}
                 </div>
-                <div className="mt-1 font-body" style={{ fontSize: compact ? 8 : 9, color: "#8888aa" }}>
+                <div className="mt-1 font-body" style={{ fontSize: compact ? 8 : 9, color: "#8a948f" }}>
                   empty
                 </div>
               </>

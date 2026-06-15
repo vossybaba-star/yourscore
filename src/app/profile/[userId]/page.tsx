@@ -20,7 +20,7 @@ function AvatarCircle({ name, size = 72, avatarUrl }: { name: string; size?: num
       style={{ width: size, height: size, border: "2px solid rgba(255,255,255,0.1)" }} />;
   }
   const palettes = [
-    { bg: "#1a2f4a", text: "#60a5fa" }, { bg: "#2a1a4a", text: "#a78bfa" },
+    { bg: "#1a2f4a", text: "#60a5fa" }, { bg: "#3a423d", text: "#aeea00" },
     { bg: "#1a4a2a", text: "#4ade80" }, { bg: "#4a2a1a", text: "#fb923c" },
     { bg: "#4a1a2a", text: "#f87171" },
   ];
@@ -54,7 +54,7 @@ export default async function PublicProfilePage({ params }: { params: { userId: 
       <main className="min-h-dvh bg-bg flex flex-col items-center justify-center px-6 gap-4">
         <p className="font-display text-5xl">🤔</p>
         <p className="font-display text-2xl text-white">Player not found</p>
-        <Link href="/leagues" className="font-body text-sm" style={{ color: "#a78bfa" }}>← Leaderboard</Link>
+        <Link href="/leagues" className="font-body text-sm" style={{ color: "#aeea00" }}>← Leaderboard</Link>
       </main>
     );
   }
@@ -106,7 +106,7 @@ export default async function PublicProfilePage({ params }: { params: { userId: 
       <nav className="relative z-10 flex items-center justify-between px-5 py-4 max-w-lg mx-auto">
         <BackButton />
         <span className="font-body text-xs px-3 py-1 rounded-full"
-          style={{ background: "rgba(167,139,250,0.1)", color: "#a78bfa", border: "1px solid rgba(167,139,250,0.2)" }}>
+          style={{ background: "rgba(174,234,0,0.1)", color: "#aeea00", border: "1px solid rgba(174,234,0,0.2)" }}>
           Player Profile
         </span>
       </nav>
@@ -120,7 +120,7 @@ export default async function PublicProfilePage({ params }: { params: { userId: 
             <p className="font-display text-3xl text-white tracking-wide truncate">{name.toUpperCase()}</p>
             <div className="flex items-center gap-2 mt-1">
               <span className="font-body text-xs px-2 py-0.5 rounded-full"
-                style={{ background: "rgba(167,139,250,0.12)", color: "#a78bfa", border: "1px solid rgba(167,139,250,0.2)" }}>
+                style={{ background: "rgba(174,234,0,0.12)", color: "#aeea00", border: "1px solid rgba(174,234,0,0.2)" }}>
                 #{globalRank} global
               </span>
             </div>
@@ -130,9 +130,9 @@ export default async function PublicProfilePage({ params }: { params: { userId: 
         {/* Stats grid */}
         <div className="grid grid-cols-2 gap-2.5">
           {[
-            { label: "Total score", value: (profile.total_score ?? 0).toLocaleString(), color: "#00ff87" },
+            { label: "Total score", value: (profile.total_score ?? 0).toLocaleString(), color: "#aeea00" },
             { label: "Games played", value: String(profile.games_played ?? 0), color: "#ffffff" },
-            { label: "Leagues", value: String(leagueCount), color: "#a78bfa" },
+            { label: "Leagues", value: String(leagueCount), color: "#aeea00" },
             { label: "Avg accuracy", value: avgAcc !== null ? `${avgAcc}%` : "—", color: "#ffb800" },
           ].map(s => (
             <div key={s.label} className="rounded-2xl px-5 py-4 bg-surface" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
@@ -153,7 +153,7 @@ export default async function PublicProfilePage({ params }: { params: { userId: 
             <div className="space-y-2">
               {attempts.map(a => {
                 const pct = a.max_score > 0 ? Math.round(a.score / a.max_score * 100) : 0;
-                const pctColor = pct >= 80 ? "#00ff87" : pct >= 50 ? "#ffb800" : "#f87171";
+                const pctColor = pct >= 80 ? "#aeea00" : pct >= 50 ? "#ffb800" : "#f87171";
                 const date = new Date(a.completed_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
                 return (
                   <div key={a.id} className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-surface"
@@ -162,11 +162,11 @@ export default async function PublicProfilePage({ params }: { params: { userId: 
                       <p className="font-body text-sm font-medium text-white truncate">
                         {a.pack_name ?? "Challenge"}
                       </p>
-                      <p className="font-body text-xs" style={{ color: "#555577" }}>{date}</p>
+                      <p className="font-body text-xs" style={{ color: "#586058" }}>{date}</p>
                     </div>
                     <div className="text-right flex-shrink-0">
                       <p className="font-display text-lg leading-none" style={{ color: pctColor }}>{pct}%</p>
-                      <p className="font-body text-xs" style={{ color: "#555577" }}>
+                      <p className="font-body text-xs" style={{ color: "#586058" }}>
                         {a.score}/{a.max_score} pts
                       </p>
                     </div>

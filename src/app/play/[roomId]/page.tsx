@@ -50,14 +50,14 @@ interface QuestionEvent {
 type DB = SupabaseClient<Database>;
 
 const MODE_LABEL: Record<string, string> = { h2h: "1v1", group: "Private", open: "Public" };
-const MODE_COLOR: Record<string, string> = { h2h: "#f87171", group: "#a78bfa", open: "#00ff87" };
+const MODE_COLOR: Record<string, string> = { h2h: "#f87171", group: "#aeea00", open: "#aeea00" };
 const QUESTION_DURATION_MS = 20_000;
 
 // ── Avatar helper ─────────────────────────────────────────────────────────────
 
 function Avatar({ name, size = 40 }: { name: string; size?: number }) {
   const palettes = [
-    { bg: "#1a2f4a", text: "#60a5fa" }, { bg: "#2a1a4a", text: "#a78bfa" },
+    { bg: "#1a2f4a", text: "#60a5fa" }, { bg: "#3a423d", text: "#aeea00" },
     { bg: "#1a4a2a", text: "#4ade80" }, { bg: "#4a2a1a", text: "#fb923c" },
     { bg: "#4a1a2a", text: "#f87171" },
   ];
@@ -83,7 +83,8 @@ function CountdownRing({ closesAt }: { closesAt: string }) {
   const secs = Math.ceil(remaining / 1000);
   const pct = remaining / QUESTION_DURATION_MS;
   const r = 22; const circ = 2 * Math.PI * r;
-  const color = pct > 0.5 ? "#00ff87" : pct > 0.25 ? "#ffb800" : "#f87171";
+  // Timer caution gradient is a gameplay signal, not Quiz branding: keep amber→red.
+  const color = pct > 0.5 ? "#aeea00" : pct > 0.25 ? "#ffb800" : "#f87171";
   return (
     <div className="relative flex items-center justify-center" style={{ width: 56, height: 56 }}>
       <svg width="56" height="56" style={{ position: "absolute", transform: "rotate(-90deg)" }}>
@@ -597,12 +598,12 @@ export default function RoomPage() {
       <main className="min-h-dvh bg-bg flex flex-col items-center justify-center px-6 gap-4">
         <p className="font-display text-5xl">🤔</p>
         <p className="font-display text-2xl text-white">Lobby not found</p>
-        <Link href="/play" className="font-body text-sm text-amber">← Back to Play</Link>
+        <Link href="/play" className="font-body text-sm text-teal">← Back to Play</Link>
       </main>
     );
   }
 
-  const modeColor = MODE_COLOR[room.room_mode] ?? "#a78bfa";
+  const modeColor = MODE_COLOR[room.room_mode] ?? "#aeea00";
   const modeLabel = MODE_LABEL[room.room_mode] ?? room.room_mode;
 
   // ── LOBBY ─────────────────────────────────────────────────────────────────
@@ -637,27 +638,27 @@ export default function RoomPage() {
           </div>
 
           {/* Invite code + QR (Fix #5) */}
-          <div className="rounded-2xl px-5 py-4" style={{ background: "rgba(255,184,0,0.05)", border: "1px solid rgba(255,184,0,0.2)" }}>
+          <div className="rounded-2xl px-5 py-4" style={{ background: "rgba(0,216,192,0.05)", border: "1px solid rgba(0,216,192,0.2)" }}>
             <div className="flex items-center justify-between mb-3">
               <p className="font-body text-xs uppercase tracking-widest text-text-muted">Invite Code</p>
               <button onClick={copyInvite}
                 className="font-body text-xs font-semibold px-3 py-1.5 rounded-lg transition-all"
-                style={{ background: copyDone ? "rgba(0,255,135,0.1)" : "rgba(255,184,0,0.1)", color: copyDone ? "#00ff87" : "#ffb800", border: `1px solid ${copyDone ? "rgba(0,255,135,0.3)" : "rgba(255,184,0,0.25)"}` }}>
+                style={{ background: copyDone ? "rgba(174,234,0,0.1)" : "rgba(0,216,192,0.1)", color: copyDone ? "#aeea00" : "#00d8c0", border: `1px solid ${copyDone ? "rgba(174,234,0,0.3)" : "rgba(0,216,192,0.25)"}` }}>
                 {copyDone ? "✓ Copied!" : "Copy link"}
               </button>
             </div>
-            <p className="font-display text-4xl tracking-[0.3em] mb-4 text-amber">{room.code}</p>
+            <p className="font-display text-4xl tracking-[0.3em] mb-4 text-teal">{room.code}</p>
 
             {/* QR Code */}
             {joinUrl && (
-              <div className="flex flex-col items-center gap-2 pt-3" style={{ borderTop: "1px solid rgba(255,184,0,0.15)" }}>
+              <div className="flex flex-col items-center gap-2 pt-3" style={{ borderTop: "1px solid rgba(0,216,192,0.15)" }}>
                 <p className="font-body text-xs text-text-muted">Scan to join instantly</p>
                 <div className="rounded-2xl p-3 bg-surface">
                   <QRCode
                     value={joinUrl}
                     size={160}
-                    bgColor="#12121e"
-                    fgColor="#ffb800"
+                    bgColor="#0e1611"
+                    fgColor="#00d8c0"
                     level="M"
                   />
                 </div>
@@ -669,16 +670,16 @@ export default function RoomPage() {
           <div className="rounded-2xl overflow-hidden bg-surface border border-border">
             <div className="px-5 py-3 flex items-center justify-between" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
               <p className="font-body text-xs uppercase tracking-widest text-text-muted">Players</p>
-              <span className="font-body text-xs" style={{ color: "#555577" }}>{players.length} / {room.max_players}</span>
+              <span className="font-body text-xs" style={{ color: "#586058" }}>{players.length} / {room.max_players}</span>
             </div>
             <div className="p-3 space-y-1.5">
               {players.map(p => (
                 <div key={p.user_id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
-                  style={{ background: p.user_id === user?.id ? "rgba(0,255,135,0.04)" : "rgba(255,255,255,0.02)", border: `1px solid ${p.user_id === user?.id ? "rgba(0,255,135,0.15)" : "rgba(255,255,255,0.05)"}` }}>
+                  style={{ background: p.user_id === user?.id ? "rgba(174,234,0,0.04)" : "rgba(255,255,255,0.02)", border: `1px solid ${p.user_id === user?.id ? "rgba(174,234,0,0.15)" : "rgba(255,255,255,0.05)"}` }}>
                   <Avatar name={p.display_name} size={32} />
                   <span className="font-body text-sm font-medium text-white flex-1">{p.display_name}</span>
                   {p.user_id === room.created_by && (
-                    <span className="font-body text-xs px-2 py-0.5 rounded-full text-amber" style={{ background: "rgba(255,184,0,0.1)", border: "1px solid rgba(255,184,0,0.2)" }}>Host</span>
+                    <span className="font-body text-xs px-2 py-0.5 rounded-full text-teal" style={{ background: "rgba(0,216,192,0.1)", border: "1px solid rgba(0,216,192,0.2)" }}>Host</span>
                   )}
                   {p.user_id === user?.id && p.user_id !== room.created_by && (
                     <span className="font-body text-xs text-green">You</span>
@@ -692,9 +693,9 @@ export default function RoomPage() {
               {players.length < room.max_players && (
                 <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl" style={{ background: "rgba(255,255,255,0.01)", border: "1px dashed rgba(255,255,255,0.07)" }}>
                   <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: "rgba(255,255,255,0.04)", border: "1px dashed rgba(255,255,255,0.1)" }}>
-                    <span style={{ color: "#444466", fontSize: 16 }}>+</span>
+                    <span style={{ color: "#3a423d", fontSize: 16 }}>+</span>
                   </div>
-                  <span className="font-body text-xs" style={{ color: "#444466" }}>Waiting for players…</span>
+                  <span className="font-body text-xs" style={{ color: "#3a423d" }}>Waiting for players…</span>
                 </div>
               )}
             </div>
@@ -704,14 +705,14 @@ export default function RoomPage() {
           {isHost ? (
             <button onClick={handleStart} disabled={starting || players.length < 1}
               className="w-full py-4 rounded-2xl font-body font-bold text-base transition-all"
-              style={{ background: starting ? "rgba(255,184,0,0.15)" : "#ffb800", color: starting ? "#555577" : "#0a0a0f" }}>
+              style={{ background: starting ? "rgba(0,216,192,0.15)" : "#00d8c0", color: starting ? "#586058" : "#0a0a0f" }}>
               {starting ? "Starting…" : players.length < 2 ? `Waiting for players (${players.length}/2 min)` : `Start Game →`}
             </button>
           ) : (
             <div className="rounded-2xl px-5 py-4 flex items-center gap-3" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
               <div className="flex gap-1 flex-shrink-0">
                 {[0, 1, 2].map(i => (
-                  <span key={i} className="w-2 h-2 rounded-full bg-amber" style={{ animation: `pulse 1.4s ease-in-out ${i * 0.25}s infinite` }} />
+                  <span key={i} className="w-2 h-2 rounded-full bg-teal" style={{ animation: `pulse 1.4s ease-in-out ${i * 0.25}s infinite` }} />
                 ))}
               </div>
               <p className="font-body text-sm text-white">Waiting for host to start the game…</p>
@@ -725,7 +726,7 @@ export default function RoomPage() {
             style={{ background: "rgba(0,0,0,0.75)" }}
             onClick={() => setShowLeaveModal(false)}>
             <div className="w-full max-w-lg px-5 pb-6" onClick={e => e.stopPropagation()}>
-              <div className="rounded-2xl overflow-hidden" style={{ background: "#1a1a2e", border: "1px solid rgba(255,255,255,0.1)" }}>
+              <div className="rounded-2xl overflow-hidden" style={{ background: "#15211a", border: "1px solid rgba(255,255,255,0.1)" }}>
                 <div className="px-5 py-5">
                   <p className="font-display text-lg text-white mb-1">Leave lobby?</p>
                   <p className="font-body text-sm text-text-muted">You&apos;re about to leave this lobby. You may lose your place or progress.</p>
@@ -775,10 +776,10 @@ export default function RoomPage() {
         <nav className="flex items-center justify-between px-5 py-4 max-w-lg mx-auto">
           <Link href="/play" className="font-body text-sm text-text-muted">← Play</Link>
           <div className="flex items-center gap-2">
-            <span className="font-body text-xs" style={{ color: "#555577" }}>Game Over</span>
+            <span className="font-body text-xs" style={{ color: "#586058" }}>Game Over</span>
             {completedAt && !lobbyExpired && (
               <span className="font-body text-xs px-2 py-0.5 rounded-full"
-                style={{ background: "rgba(255,255,255,0.06)", color: lobbyTimeLeft < 60 ? "#f87171" : "#555577" }}>
+                style={{ background: "rgba(255,255,255,0.06)", color: lobbyTimeLeft < 60 ? "#f87171" : "#586058" }}>
                 lobby {formatLobbyTime(lobbyTimeLeft)}
               </span>
             )}
@@ -789,7 +790,7 @@ export default function RoomPage() {
 
           {/* Winner tile */}
           {winner && (
-            <div className="rounded-2xl px-5 py-6 text-center" style={{ background: "linear-gradient(135deg, rgba(255,215,0,0.1) 0%, rgba(255,184,0,0.05) 100%)", border: "1px solid rgba(255,215,0,0.25)" }}>
+            <div className="rounded-2xl px-5 py-6 text-center" style={{ background: "linear-gradient(135deg, rgba(255,215,0,0.1) 0%, rgba(0,216,192,0.05) 100%)", border: "1px solid rgba(255,215,0,0.25)" }}>
               <p className="text-4xl mb-2">🏆</p>
               <p className="font-body text-xs uppercase tracking-widest mb-1 text-text-muted">Winner</p>
               <p className="font-display text-3xl text-white mb-1">{winner.display_name}</p>
@@ -800,7 +801,7 @@ export default function RoomPage() {
 
           {/* Your result */}
           {me && me.user_id !== winner?.user_id && (
-            <div className="rounded-2xl px-5 py-4 flex items-center justify-between" style={{ background: "rgba(0,255,135,0.04)", border: "1px solid rgba(0,255,135,0.15)" }}>
+            <div className="rounded-2xl px-5 py-4 flex items-center justify-between" style={{ background: "rgba(174,234,0,0.04)", border: "1px solid rgba(174,234,0,0.15)" }}>
               <div>
                 <p className="font-body text-xs uppercase tracking-widest mb-0.5 text-text-muted">Your result</p>
                 <p className="font-body text-sm font-bold text-white">#{me.rank} · {me.correct_answers} correct</p>
@@ -824,10 +825,10 @@ export default function RoomPage() {
 
           {/* ── Play Again voting panel ──────────────────────────────────── */}
           {!lobbyExpired && (
-            <div className="rounded-2xl overflow-hidden" style={{ background: "rgba(255,184,0,0.06)", border: "1px solid rgba(255,184,0,0.2)" }}>
-              <div className="px-5 py-3 flex items-center justify-between" style={{ borderBottom: "1px solid rgba(255,184,0,0.12)" }}>
-                <p className="font-body text-xs font-bold uppercase tracking-widest text-amber">Play Again?</p>
-                <p className="font-body text-xs" style={{ color: "#555577" }}>
+            <div className="rounded-2xl overflow-hidden" style={{ background: "rgba(0,216,192,0.06)", border: "1px solid rgba(0,216,192,0.2)" }}>
+              <div className="px-5 py-3 flex items-center justify-between" style={{ borderBottom: "1px solid rgba(0,216,192,0.12)" }}>
+                <p className="font-body text-xs font-bold uppercase tracking-widest text-teal">Play Again?</p>
+                <p className="font-body text-xs" style={{ color: "#586058" }}>
                   {yesVotes > 0 ? `${yesVotes}/${totalPlayers} want to play` : "Vote below"}
                 </p>
               </div>
@@ -836,7 +837,7 @@ export default function RoomPage() {
                 {totalPlayers > 0 && (
                   <div className="h-1.5 rounded-full mb-4 overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
                     <div className="h-full rounded-full transition-all duration-500"
-                      style={{ width: `${(yesVotes / totalPlayers) * 100}%`, background: "#ffb800" }} />
+                      style={{ width: `${(yesVotes / totalPlayers) * 100}%`, background: "#00d8c0" }} />
                   </div>
                 )}
 
@@ -846,9 +847,9 @@ export default function RoomPage() {
                     <button onClick={() => castPlayAgainVote("yes")}
                       className="flex-1 py-3 rounded-xl font-body font-bold text-sm transition-all"
                       style={{
-                        background: myVote === "yes" ? "#ffb800" : "rgba(255,184,0,0.1)",
-                        color: myVote === "yes" ? "#0a0a0f" : "#ffb800",
-                        border: `1px solid ${myVote === "yes" ? "#ffb800" : "rgba(255,184,0,0.3)"}`,
+                        background: myVote === "yes" ? "#00d8c0" : "rgba(0,216,192,0.1)",
+                        color: myVote === "yes" ? "#0a0a0f" : "#00d8c0",
+                        border: `1px solid ${myVote === "yes" ? "#00d8c0" : "rgba(0,216,192,0.3)"}`,
                       }}>
                       {myVote === "yes" ? "✓ I'm in!" : room.room_mode === "h2h" && opponents[0] ? `Run it back against ${opponents[0].display_name}? 🎮` : "Play Again 🎮"}
                     </button>
@@ -856,7 +857,7 @@ export default function RoomPage() {
                       className="flex-1 py-3 rounded-xl font-body font-bold text-sm transition-all"
                       style={{
                         background: myVote === "no" ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.04)",
-                        color: myVote === "no" ? "#ffffff" : "#555577",
+                        color: myVote === "no" ? "#ffffff" : "#586058",
                         border: "1px solid rgba(255,255,255,0.08)",
                       }}>
                       Leave
@@ -869,16 +870,16 @@ export default function RoomPage() {
                       <button onClick={() => castPlayAgainVote("yes")}
                         className="flex-1 py-3 rounded-xl font-body font-bold text-sm transition-all"
                         style={{
-                          background: myVote === "yes" ? "rgba(255,184,0,0.15)" : "rgba(255,255,255,0.04)",
-                          color: myVote === "yes" ? "#ffb800" : "#8888aa",
-                          border: `1px solid ${myVote === "yes" ? "rgba(255,184,0,0.4)" : "rgba(255,255,255,0.08)"}`,
+                          background: myVote === "yes" ? "rgba(0,216,192,0.15)" : "rgba(255,255,255,0.04)",
+                          color: myVote === "yes" ? "#00d8c0" : "#8a948f",
+                          border: `1px solid ${myVote === "yes" ? "rgba(0,216,192,0.4)" : "rgba(255,255,255,0.08)"}`,
                         }}>
                         {myVote === "yes" ? "✓ You're in" : "I'm in"}
                       </button>
                       <button onClick={() => castPlayAgainVote("no")}
                         className="flex-1 py-3 rounded-xl font-body font-bold text-sm transition-all"
                         style={{
-                          background: "rgba(255,255,255,0.04)", color: "#555577",
+                          background: "rgba(255,255,255,0.04)", color: "#586058",
                           border: "1px solid rgba(255,255,255,0.06)",
                         }}>
                         Skip
@@ -886,7 +887,7 @@ export default function RoomPage() {
                     </div>
                     <button onClick={handlePlayAgain}
                       className="w-full py-3.5 rounded-xl font-body font-bold text-sm transition-all"
-                      style={{ background: "#ffb800", color: "#0a0a0f" }}>
+                      style={{ background: "#00d8c0", color: "#0a0a0f" }}>
                       🎮 Start New Game ({yesVotes} ready)
                     </button>
                   </div>
@@ -899,7 +900,7 @@ export default function RoomPage() {
           <div className="rounded-2xl overflow-hidden bg-surface border border-border">
             <div className="px-5 py-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
               <p className="font-body text-xs uppercase tracking-widest text-text-muted">Final Standings</p>
-              <p className="font-body text-xs mt-0.5" style={{ color: "#555577" }}>Tap a player to see their stats</p>
+              <p className="font-body text-xs mt-0.5" style={{ color: "#586058" }}>Tap a player to see their stats</p>
             </div>
             <div className="p-3">
               <Leaderboard entries={leaderboard} currentUserId={user?.id} showFull maxVisible={leaderboard.length} />
@@ -910,14 +911,14 @@ export default function RoomPage() {
           <div className="flex gap-3">
             {isHost && lobbyExpired && (
               <Link href="/play/new"
-                className="flex-1 py-3.5 rounded-2xl font-body font-bold text-sm text-center transition-all hover:opacity-90 bg-amber"
+                className="flex-1 py-3.5 rounded-2xl font-body font-bold text-sm text-center transition-all hover:opacity-90 bg-teal"
                 style={{ color: "#0a0a0f" }}>
                 New Lobby 🎮
               </Link>
             )}
             <Link href="/play"
               className="flex-1 py-3.5 rounded-2xl font-body font-bold text-sm text-center transition-all hover:opacity-80"
-              style={{ background: "rgba(255,255,255,0.06)", color: "#aaaacc", border: "1px solid rgba(255,255,255,0.1)" }}>
+              style={{ background: "rgba(255,255,255,0.06)", color: "#9aa39d", border: "1px solid rgba(255,255,255,0.1)" }}>
               Back to Play
             </Link>
           </div>
@@ -944,17 +945,17 @@ export default function RoomPage() {
           </div>
           <div className="flex items-center gap-2">
             <div className="text-right">
-              <p className="font-body text-sm" style={{ color: "#555577" }}>
-                Q{room.current_question_idx + 1}<span style={{ color: "#333355" }}>/{room.question_count}</span>
+              <p className="font-body text-sm" style={{ color: "#586058" }}>
+                Q{room.current_question_idx + 1}<span style={{ color: "#3a423d" }}>/{room.question_count}</span>
               </p>
               {/* Live answer progress counter (Fix #7) */}
               {activeQuestion && players.length > 0 && (
-                <p className="font-body text-xs" style={{ color: answeredCount >= players.length ? "#00ff87" : "#8888aa" }}>
+                <p className="font-body text-xs" style={{ color: answeredCount >= players.length ? "#aeea00" : "#8a948f" }}>
                   {answeredCount}/{players.length} answered
                 </p>
               )}
               {!activeQuestion && (
-                <p className="font-body text-xs" style={{ color: "#333355" }}>{players.length} players</p>
+                <p className="font-body text-xs" style={{ color: "#3a423d" }}>{players.length} players</p>
               )}
             </div>
             {closesAt && <CountdownRing closesAt={closesAt} />}
@@ -966,10 +967,10 @@ export default function RoomPage() {
 
         {/* Waiting for first question */}
         {!activeQuestion && room.status === "live" && (
-          <div className="rounded-2xl px-5 py-8 text-center" style={{ background: "rgba(255,184,0,0.04)", border: "1px solid rgba(255,184,0,0.15)" }}>
+          <div className="rounded-2xl px-5 py-8 text-center" style={{ background: "rgba(0,216,192,0.04)", border: "1px solid rgba(0,216,192,0.15)" }}>
             <div className="flex justify-center gap-1.5 mb-3">
               {[0, 1, 2].map(i => (
-                <span key={i} className="w-3 h-3 rounded-full bg-amber" style={{ animation: `pulse 1.4s ease-in-out ${i * 0.25}s infinite` }} />
+                <span key={i} className="w-3 h-3 rounded-full bg-teal" style={{ animation: `pulse 1.4s ease-in-out ${i * 0.25}s infinite` }} />
               ))}
             </div>
             <p className="font-body text-sm font-bold text-white">Next question incoming…</p>
@@ -982,7 +983,7 @@ export default function RoomPage() {
           <div className="rounded-2xl overflow-hidden bg-surface border border-border">
             <div className="px-5 py-3 flex items-center justify-between" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
               <p className="font-body text-xs uppercase tracking-widest text-text-muted">Live Standings</p>
-              <span className="font-body text-xs" style={{ color: "#555577" }}>tap for stats</span>
+              <span className="font-body text-xs" style={{ color: "#586058" }}>tap for stats</span>
             </div>
             <div className="p-3">
               <Leaderboard entries={leaderboard} currentUserId={user?.id} maxVisible={8} />
@@ -1005,7 +1006,7 @@ export default function RoomPage() {
       {activeQuestion && !user && (
         <div className="fixed inset-x-0 bottom-0 z-50 p-4" style={{ background: "rgba(10,10,15,0.97)", backdropFilter: "blur(16px)", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
           <p className="font-body text-sm font-bold text-white mb-3">Question is live — sign in to answer</p>
-          <Link href="/auth/sign-in" className="block w-full py-3.5 rounded-xl font-body font-bold text-sm text-center bg-amber"
+          <Link href="/auth/sign-in" className="block w-full py-3.5 rounded-xl font-body font-bold text-sm text-center bg-teal"
             style={{ color: "#0a0a0f" }}>Sign in to play →</Link>
         </div>
       )}

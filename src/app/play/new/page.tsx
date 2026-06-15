@@ -26,9 +26,9 @@ const COUNTS = [5, 10, 20];
 
 const DIFFICULTIES: { key: Difficulty; label: string; color: string }[] = [
   { key: "easy",   label: "Easy",   color: "#4ade80" },
-  { key: "medium", label: "Medium", color: "#ffb800" },
+  { key: "medium", label: "Medium", color: "#00d8c0" },
   { key: "hard",   label: "Hard",   color: "#f87171" },
-  { key: "mixed",  label: "Mixed",  color: "#a78bfa" },
+  { key: "mixed",  label: "Mixed",  color: "#aeea00" },
 ];
 
 const POPULAR_ENTITIES = [
@@ -149,10 +149,10 @@ function NewGameContent() {
         <div className="flex items-center gap-1.5">
           {[1, 2, 3].map(s => (
             <div key={s} className="rounded-full transition-all"
-              style={{ width: s === step ? 20 : 6, height: 6, background: s === step ? "#ffb800" : s < step ? "rgba(255,184,0,0.4)" : "rgba(255,255,255,0.12)" }} />
+              style={{ width: s === step ? 20 : 6, height: 6, background: s === step ? "#00d8c0" : s < step ? "rgba(0,216,192,0.4)" : "rgba(255,255,255,0.12)" }} />
           ))}
         </div>
-        <span className="font-body text-xs" style={{ color: "#555577" }}>Step {step} of 3</span>
+        <span className="font-body text-xs" style={{ color: "#586058" }}>Step {step} of 3</span>
       </nav>
 
       <div className="relative z-0 max-w-lg mx-auto px-5 pt-2 space-y-5">
@@ -170,9 +170,9 @@ function NewGameContent() {
                 <button key={m.key} onClick={() => setMode(m.key)}
                   className="w-full rounded-2xl px-5 py-4 flex items-center gap-4 transition-all active:scale-[0.99]"
                   style={{
-                    background: mode === m.key ? "rgba(255,184,0,0.08)" : "#12121e",
-                    border: `1px solid ${mode === m.key ? "rgba(255,184,0,0.45)" : "rgba(255,255,255,0.08)"}`,
-                    boxShadow: mode === m.key ? "0 0 24px rgba(255,184,0,0.08)" : "none",
+                    background: mode === m.key ? "rgba(0,216,192,0.08)" : "#0e1611",
+                    border: `1px solid ${mode === m.key ? "rgba(0,216,192,0.45)" : "rgba(255,255,255,0.08)"}`,
+                    boxShadow: mode === m.key ? "0 0 24px rgba(0,216,192,0.08)" : "none",
                   }}>
                   <span className="text-3xl flex-shrink-0">{m.icon}</span>
                   <div className="flex-1 text-left">
@@ -181,7 +181,7 @@ function NewGameContent() {
                   </div>
                   <div className="flex-shrink-0">
                     <span className="font-body text-xs px-2 py-1 rounded-full"
-                      style={{ background: "rgba(255,255,255,0.06)", color: "#555577" }}>
+                      style={{ background: "rgba(255,255,255,0.06)", color: "#586058" }}>
                       {m.max}
                     </span>
                   </div>
@@ -190,7 +190,7 @@ function NewGameContent() {
             </div>
 
             <button onClick={() => setStep(2)}
-              className="w-full py-4 rounded-2xl font-body font-bold text-base transition-all hover:opacity-90 bg-amber"
+              className="w-full py-4 rounded-2xl font-body font-bold text-base transition-all hover:opacity-90 bg-teal"
               style={{ color: "#0a0a0f" }}>
               Next →
             </button>
@@ -210,7 +210,7 @@ function NewGameContent() {
               {([["pack", "Quiz Pack"], ["filter", "Custom Topic"]] as [QuestionSource, string][]).map(([key, label]) => (
                 <button key={key} onClick={() => setSource(key)}
                   className="flex-1 py-2.5 rounded-xl font-body text-sm font-semibold transition-all"
-                  style={source === key ? { background: "#ffb800", color: "#0a0a0f" } : { background: "transparent", color: "#8888aa" }}>
+                  style={source === key ? { background: "#00d8c0", color: "#0a0a0f" } : { background: "transparent", color: "#8a948f" }}>
                   {label}
                 </button>
               ))}
@@ -227,20 +227,20 @@ function NewGameContent() {
                       <button key={pack.id} onClick={() => setSelectedPack(pack)}
                         className="w-full rounded-2xl px-4 py-3 flex items-center gap-3 transition-all"
                         style={{
-                          background: selectedPack?.id === pack.id ? "rgba(255,184,0,0.08)" : "#12121e",
-                          border: `1px solid ${selectedPack?.id === pack.id ? "rgba(255,184,0,0.45)" : "rgba(255,255,255,0.07)"}`,
+                          background: selectedPack?.id === pack.id ? "rgba(0,216,192,0.08)" : "#0e1611",
+                          border: `1px solid ${selectedPack?.id === pack.id ? "rgba(0,216,192,0.45)" : "rgba(255,255,255,0.07)"}`,
                         }}>
                         <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                          style={{ background: "rgba(255,184,0,0.08)", border: "1px solid rgba(255,184,0,0.18)" }}>
-                          <span className="font-display text-sm text-amber">{pack.name[0]}</span>
+                          style={{ background: "rgba(0,216,192,0.08)", border: "1px solid rgba(0,216,192,0.18)" }}>
+                          <span className="font-display text-sm text-teal">{pack.name[0]}</span>
                         </div>
                         <div className="flex-1 min-w-0 text-left">
                           <p className="font-body text-sm font-semibold text-white truncate">{pack.name}</p>
-                          <p className="font-body text-xs" style={{ color: "#555577" }}>{pack.question_count} questions</p>
+                          <p className="font-body text-xs" style={{ color: "#586058" }}>{pack.question_count} questions</p>
                         </div>
                         {selectedPack?.id === pack.id && (
                           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                            <path d="M3 8l4 4 6-7" stroke="#ffb800" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            <path d="M3 8l4 4 6-7" stroke="#00d8c0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                           </svg>
                         )}
                       </button>
@@ -258,12 +258,12 @@ function NewGameContent() {
                   <input type="text" value={entity} onChange={e => setEntity(e.target.value)}
                     placeholder="e.g. Arsenal, World Cup, Premier League…"
                     className="w-full rounded-2xl px-4 py-3 font-body text-base text-white outline-none"
-                    style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", caretColor: "#ffb800" }} />
+                    style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", caretColor: "#00d8c0" }} />
                   <div className="flex flex-wrap gap-2 mt-2">
                     {POPULAR_ENTITIES.map(e => (
                       <button key={e} onClick={() => setEntity(e)}
                         className="px-3 py-1 rounded-full font-body text-xs transition-all"
-                        style={{ background: entity === e ? "rgba(255,184,0,0.15)" : "rgba(255,255,255,0.05)", color: entity === e ? "#ffb800" : "#8888aa", border: `1px solid ${entity === e ? "rgba(255,184,0,0.3)" : "rgba(255,255,255,0.08)"}` }}>
+                        style={{ background: entity === e ? "rgba(0,216,192,0.15)" : "rgba(255,255,255,0.05)", color: entity === e ? "#00d8c0" : "#8a948f", border: `1px solid ${entity === e ? "rgba(0,216,192,0.3)" : "rgba(255,255,255,0.08)"}` }}>
                         {e}
                       </button>
                     ))}
@@ -279,7 +279,7 @@ function NewGameContent() {
                         style={{
                           background: difficulty === d.key ? `${d.color}20` : "rgba(255,255,255,0.04)",
                           border: `1px solid ${difficulty === d.key ? `${d.color}55` : "rgba(255,255,255,0.08)"}`,
-                          color: difficulty === d.key ? d.color : "#8888aa",
+                          color: difficulty === d.key ? d.color : "#8a948f",
                         }}>
                         {d.label}
                       </button>
@@ -291,7 +291,7 @@ function NewGameContent() {
 
             <button onClick={() => setStep(3)} disabled={!canAdvanceStep2}
               className="w-full py-4 rounded-2xl font-body font-bold text-base transition-all"
-              style={{ background: canAdvanceStep2 ? "#ffb800" : "rgba(255,184,0,0.15)", color: canAdvanceStep2 ? "#0a0a0f" : "#555577" }}>
+              style={{ background: canAdvanceStep2 ? "#00d8c0" : "rgba(0,216,192,0.15)", color: canAdvanceStep2 ? "#0a0a0f" : "#586058" }}>
               Next →
             </button>
           </>
@@ -308,13 +308,13 @@ function NewGameContent() {
             {/* Summary card */}
             <div className="rounded-2xl px-5 py-4 space-y-2 bg-surface border border-border">
               <div className="flex items-center justify-between">
-                <span className="font-body text-xs uppercase tracking-wider" style={{ color: "#555577" }}>Mode</span>
+                <span className="font-body text-xs uppercase tracking-wider" style={{ color: "#586058" }}>Mode</span>
                 <span className="font-body text-sm font-semibold text-white">
                   {MODES.find(m => m.key === mode)?.icon} {MODES.find(m => m.key === mode)?.label}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="font-body text-xs uppercase tracking-wider" style={{ color: "#555577" }}>Questions</span>
+                <span className="font-body text-xs uppercase tracking-wider" style={{ color: "#586058" }}>Questions</span>
                 <span className="font-body text-sm font-semibold text-white">
                   {source === "pack" ? selectedPack?.name : entity} {source === "filter" && `· ${difficulty}`}
                 </span>
@@ -329,12 +329,12 @@ function NewGameContent() {
                   <button key={c} onClick={() => setQuestionCount(c)}
                     className="flex-1 py-3 rounded-2xl font-display text-2xl transition-all"
                     style={{
-                      background: questionCount === c ? "rgba(255,184,0,0.12)" : "#12121e",
-                      border: `1px solid ${questionCount === c ? "rgba(255,184,0,0.5)" : "rgba(255,255,255,0.08)"}`,
-                      color: questionCount === c ? "#ffb800" : "#555577",
+                      background: questionCount === c ? "rgba(0,216,192,0.12)" : "#0e1611",
+                      border: `1px solid ${questionCount === c ? "rgba(0,216,192,0.5)" : "rgba(255,255,255,0.08)"}`,
+                      color: questionCount === c ? "#00d8c0" : "#586058",
                     }}>
                     {c}
-                    <span className="block font-body text-xs mt-0.5" style={{ color: questionCount === c ? "#ffb800" : "#444466" }}>
+                    <span className="block font-body text-xs mt-0.5" style={{ color: questionCount === c ? "#00d8c0" : "#3a423d" }}>
                       {c === 5 ? "~2 min" : c === 10 ? "~4 min" : "~8 min"}
                     </span>
                   </button>
@@ -348,7 +348,7 @@ function NewGameContent() {
               <input type="text" value={roomName} onChange={e => setRoomName(e.target.value.slice(0, 40))}
                 placeholder="e.g. The Mates · Friday Night"
                 className="w-full rounded-2xl px-4 py-3 font-body text-base text-white outline-none"
-                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", caretColor: "#ffb800" }} />
+                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", caretColor: "#00d8c0" }} />
             </div>
 
             {createError && (
@@ -357,7 +357,7 @@ function NewGameContent() {
 
             <button onClick={handleCreate} disabled={creating}
               className="w-full py-4 rounded-2xl font-body font-bold text-base transition-all"
-              style={{ background: creating ? "rgba(255,184,0,0.15)" : "#ffb800", color: creating ? "#555577" : "#0a0a0f" }}>
+              style={{ background: creating ? "rgba(0,216,192,0.15)" : "#00d8c0", color: creating ? "#586058" : "#0a0a0f" }}>
               {creating ? "Creating…" : "Create Game 🎮"}
             </button>
           </>

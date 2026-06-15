@@ -17,10 +17,10 @@ export const runtime = "edge";
 
 const TIER_COLOR: Record<string, string> = {
   INVINCIBLE: "#ffd700",
-  Centurions: "#00ff87",
-  Champions: "#00ff87",
-  "Title Challengers": "#22d3ee",
-  Europe: "#a78bfa",
+  Centurions: "#aeea00",
+  Champions: "#aeea00",
+  "Title Challengers": "#aeea00",
+  Europe: "#aeea00",
   "Mid-table": "#ffb800",
   "Relegation Battle": "#ff8a3d",
   Relegated: "#ff4757",
@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
   const youStr = q.get("youStr") ?? strength;
   const oppStr = q.get("oppStr");
   const rank = q.get("rank");
-  const accent = result === "loss" ? "#ff4757" : TIER_COLOR[tier] ?? "#00ff87";
+  const accent = result === "loss" ? "#ff4757" : TIER_COLOR[tier] ?? "#aeea00";
 
   const headline = result === "win" ? "WIN" : result === "loss" ? "LOSS" : tier;
 
@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
           height: "630px",
           display: "flex",
           flexDirection: "column",
-          background: "linear-gradient(135deg, #0a0a0f 0%, #12121e 100%)",
+          background: "linear-gradient(135deg, #0a0a0f 0%, #0e1611 100%)",
           padding: "64px",
           fontFamily: "sans-serif",
           position: "relative",
@@ -59,11 +59,11 @@ export async function GET(req: NextRequest) {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", fontSize: 34, fontWeight: 800, letterSpacing: 1 }}>
             <span style={{ color: "#fff" }}>YOUR</span>
-            <span style={{ color: "#00ff87" }}>SCORE</span>
-            <span style={{ color: "#8888aa", marginLeft: 16, fontWeight: 600 }}>· DRAFT XI</span>
+            <span style={{ color: "#aeea00" }}>SCORE</span>
+            <span style={{ color: "#8a948f", marginLeft: 16, fontWeight: 600 }}>· DRAFT XI</span>
           </div>
           {formation ? (
-            <div style={{ fontSize: 30, color: "#8888aa" }}>{formation}</div>
+            <div style={{ fontSize: 30, color: "#8a948f" }}>{formation}</div>
           ) : (
             <div />
           )}
@@ -75,13 +75,13 @@ export async function GET(req: NextRequest) {
           {result && opp ? (
             <div style={{ fontSize: 44, color: "#fff", marginTop: 28, display: "flex" }}>
               <span style={{ color: accent, fontWeight: 800 }}>{you} {youStr}</span>
-              <span style={{ color: "#8888aa", margin: "0 16px" }}>
+              <span style={{ color: "#8a948f", margin: "0 16px" }}>
                 {result === "win" ? "beat" : "lost to"}
               </span>
               <span style={{ fontWeight: 800 }}>{opp} {oppStr}</span>
             </div>
           ) : (
-            <div style={{ fontSize: 44, color: "#cfcfe6", marginTop: 28, display: "flex" }}>
+            <div style={{ fontSize: 44, color: "#c4ccc6", marginTop: 28, display: "flex" }}>
               {strength ? `Strength ${strength}` : "Build your all-time Premier League XI"}
             </div>
           )}
@@ -97,10 +97,10 @@ export async function GET(req: NextRequest) {
                 today
               </span>
             ) : (
-              <span style={{ color: "#cfcfe6" }}>Spin. Draft. Beat the world.</span>
+              <span style={{ color: "#c4ccc6" }}>Spin. Draft. Beat the world.</span>
             )}
           </div>
-          <div style={{ fontSize: 32, color: "#00ff87", fontWeight: 700 }}>yourscore.app/draft</div>
+          <div style={{ fontSize: 32, color: "#aeea00", fontWeight: 700 }}>yourscore.app/draft</div>
         </div>
 
         {/* accent bar */}

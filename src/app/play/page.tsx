@@ -61,8 +61,8 @@ function ClubCard({ pack }: { pack: QuizPack }) {
       href={`/challenges/${slug}`}
       className="block rounded-3xl overflow-hidden transition-all duration-150 active:scale-[0.96]"
       style={{
-        background: "linear-gradient(160deg, #161624 0%, #1c1a2e 100%)",
-        border: "1px solid rgba(255,184,0,0.18)",
+        background: "linear-gradient(160deg, #0e1611 0%, #15211a 100%)",
+        border: "1px solid rgba(0,216,192,0.18)",
       }}
     >
       <div
@@ -70,7 +70,7 @@ function ClubCard({ pack }: { pack: QuizPack }) {
         style={{
           height: 110,
           background:
-            "radial-gradient(ellipse at 50% 80%, rgba(255,184,0,0.12) 0%, transparent 70%), linear-gradient(180deg, rgba(255,184,0,0.05) 0%, transparent 100%)",
+            "radial-gradient(ellipse at 50% 80%, rgba(0,216,192,0.12) 0%, transparent 70%), linear-gradient(180deg, rgba(0,216,192,0.05) 0%, transparent 100%)",
         }}
       >
         {pack.metadata?.cover_image ? (
@@ -84,7 +84,7 @@ function ClubCard({ pack }: { pack: QuizPack }) {
             height={68}
             style={{
               objectFit: "contain",
-              filter: "drop-shadow(0 6px 16px rgba(255,184,0,0.35))",
+              filter: "drop-shadow(0 6px 16px rgba(0,216,192,0.35))",
               position: "relative",
               zIndex: 1,
             }}
@@ -92,32 +92,32 @@ function ClubCard({ pack }: { pack: QuizPack }) {
         ) : (
           <div
             className="flex items-center justify-center rounded-2xl font-display text-3xl text-white"
-            style={{ width: 68, height: 68, background: "rgba(255,184,0,0.1)", border: "1px solid rgba(255,184,0,0.2)" }}
+            style={{ width: 68, height: 68, background: "rgba(0,216,192,0.1)", border: "1px solid rgba(0,216,192,0.2)" }}
           >
             {pack.name[0]}
           </div>
         )}
         <div
-          className="absolute top-3 right-3 font-display text-xs px-2 py-0.5 rounded-lg text-amber"
-          style={{ background: "rgba(0,0,0,0.5)", border: "1px solid rgba(255,184,0,0.3)" }}
+          className="absolute top-3 right-3 font-display text-xs px-2 py-0.5 rounded-lg text-teal"
+          style={{ background: "rgba(0,0,0,0.5)", border: "1px solid rgba(0,216,192,0.3)" }}
         >
           {pack.question_count}Q
         </div>
       </div>
       <div className="px-4 pb-4 pt-3">
         <p className="font-body text-sm font-bold text-white leading-tight mb-0.5 truncate">{pack.name}</p>
-        <p className="font-body text-xs mb-1.5" style={{ color: "#7777aa" }}>2025/26 Season Game</p>
+        <p className="font-body text-xs mb-1.5" style={{ color: "#8a948f" }}>2025/26 Season Game</p>
         {pack.description && (
-          <p className="font-body text-xs mb-2.5 line-clamp-2 leading-relaxed" style={{ color: "#9999bb" }}>{pack.description}</p>
+          <p className="font-body text-xs mb-2.5 line-clamp-2 leading-relaxed" style={{ color: "#7a857f" }}>{pack.description}</p>
         )}
         <div
           className="rounded-xl py-2 text-center"
           style={{
-            background: "linear-gradient(135deg, rgba(255,184,0,0.18) 0%, rgba(255,120,0,0.12) 100%)",
-            border: "1px solid rgba(255,184,0,0.3)",
+            background: "linear-gradient(135deg, rgba(0,216,192,0.18) 0%, rgba(255,120,0,0.12) 100%)",
+            border: "1px solid rgba(0,216,192,0.3)",
           }}
         >
-          <span className="font-display text-xs tracking-widest text-amber">PLAY NOW →</span>
+          <span className="font-display text-xs tracking-widest text-teal">PLAY NOW →</span>
         </div>
       </div>
     </Link>
@@ -140,8 +140,8 @@ function RecordsCard({ pack }: { pack: QuizPack }) {
       href={`/challenges/${slug}`}
       className="block rounded-3xl overflow-hidden transition-all duration-150 active:scale-[0.96]"
       style={{
-        background: "linear-gradient(160deg, #12101e 0%, #1a1430 100%)",
-        border: "1px solid rgba(167,139,250,0.2)",
+        background: "linear-gradient(160deg, #0e1611 0%, #15211a 100%)",
+        border: "1px solid rgba(0,216,192,0.2)",
       }}
     >
       <div
@@ -149,7 +149,7 @@ function RecordsCard({ pack }: { pack: QuizPack }) {
         style={{
           height: 110,
           background:
-            "radial-gradient(ellipse at 50% 80%, rgba(167,139,250,0.14) 0%, transparent 70%), linear-gradient(180deg, rgba(167,139,250,0.06) 0%, transparent 100%)",
+            "radial-gradient(ellipse at 50% 80%, rgba(0,216,192,0.14) 0%, transparent 70%), linear-gradient(180deg, rgba(0,216,192,0.06) 0%, transparent 100%)",
         }}
       >
         {pack.metadata?.cover_image ? (
@@ -163,37 +163,37 @@ function RecordsCard({ pack }: { pack: QuizPack }) {
             height={64}
             style={{
               objectFit: "contain",
-              filter: "drop-shadow(0 6px 16px rgba(167,139,250,0.45))",
+              filter: "drop-shadow(0 6px 16px rgba(0,216,192,0.45))",
               position: "relative",
               zIndex: 1,
             }}
           />
         ) : (
-          <span className="text-5xl" style={{ filter: "drop-shadow(0 4px 12px rgba(167,139,250,0.4))" }}>
+          <span className="text-5xl" style={{ filter: "drop-shadow(0 4px 12px rgba(0,216,192,0.4))" }}>
             {emoji ?? "📊"}
           </span>
         )}
         <div
           className="absolute top-3 right-3 font-display text-xs px-2 py-0.5 rounded-lg"
-          style={{ background: "rgba(0,0,0,0.5)", color: "#a78bfa", border: "1px solid rgba(167,139,250,0.3)" }}
+          style={{ background: "rgba(0,0,0,0.5)", color: "#00d8c0", border: "1px solid rgba(0,216,192,0.3)" }}
         >
           {pack.question_count}Q
         </div>
       </div>
       <div className="px-4 pb-4 pt-3">
         <p className="font-body text-sm font-bold text-white leading-tight mb-0.5">{pack.name}</p>
-        <p className="font-body text-xs mb-1.5" style={{ color: "#7777aa" }}>All-Time Records</p>
+        <p className="font-body text-xs mb-1.5" style={{ color: "#8a948f" }}>All-Time Records</p>
         {pack.description && (
-          <p className="font-body text-xs mb-2.5 line-clamp-2 leading-relaxed" style={{ color: "#9999bb" }}>{pack.description}</p>
+          <p className="font-body text-xs mb-2.5 line-clamp-2 leading-relaxed" style={{ color: "#7a857f" }}>{pack.description}</p>
         )}
         <div
           className="rounded-xl py-2 text-center"
           style={{
-            background: "linear-gradient(135deg, rgba(167,139,250,0.18) 0%, rgba(124,58,237,0.12) 100%)",
-            border: "1px solid rgba(167,139,250,0.3)",
+            background: "linear-gradient(135deg, rgba(0,216,192,0.18) 0%, rgba(0,216,192,0.05) 100%)",
+            border: "1px solid rgba(0,216,192,0.3)",
           }}
         >
-          <span className="font-display text-xs tracking-widest" style={{ color: "#a78bfa" }}>PLAY NOW →</span>
+          <span className="font-display text-xs tracking-widest" style={{ color: "#00d8c0" }}>PLAY NOW →</span>
         </div>
       </div>
     </Link>
@@ -220,8 +220,8 @@ function EndOfSeasonCard({ pack }: { pack: QuizPack }) {
       href={`/challenges/${slug}`}
       className="block rounded-3xl overflow-hidden transition-all duration-150 active:scale-[0.96]"
       style={{
-        background: "linear-gradient(160deg, #0f1f1e 0%, #0a1a24 100%)",
-        border: "1px solid rgba(34,211,238,0.2)",
+        background: "linear-gradient(160deg, #15211a 0%, #0a1a24 100%)",
+        border: "1px solid rgba(0,216,192,0.2)",
       }}
     >
       <div
@@ -229,7 +229,7 @@ function EndOfSeasonCard({ pack }: { pack: QuizPack }) {
         style={{
           height: 110,
           background:
-            "radial-gradient(ellipse at 50% 80%, rgba(34,211,238,0.14) 0%, transparent 70%), linear-gradient(180deg, rgba(34,211,238,0.06) 0%, transparent 100%)",
+            "radial-gradient(ellipse at 50% 80%, rgba(0,216,192,0.14) 0%, transparent 70%), linear-gradient(180deg, rgba(0,216,192,0.06) 0%, transparent 100%)",
         }}
       >
         {pack.metadata?.cover_image ? (
@@ -243,43 +243,43 @@ function EndOfSeasonCard({ pack }: { pack: QuizPack }) {
             height={64}
             style={{
               objectFit: "contain",
-              filter: "drop-shadow(0 6px 16px rgba(34,211,238,0.45))",
+              filter: "drop-shadow(0 6px 16px rgba(0,216,192,0.45))",
               position: "relative",
               zIndex: 1,
             }}
           />
         ) : (
-          <span className="text-5xl" style={{ filter: "drop-shadow(0 4px 12px rgba(34,211,238,0.4))" }}>
+          <span className="text-5xl" style={{ filter: "drop-shadow(0 4px 12px rgba(0,216,192,0.4))" }}>
             {emoji ?? "🏁"}
           </span>
         )}
         <div
           className="absolute top-3 right-3 font-display text-xs px-2 py-0.5 rounded-lg"
-          style={{ background: "rgba(0,0,0,0.5)", color: "#22d3ee", border: "1px solid rgba(34,211,238,0.3)" }}
+          style={{ background: "rgba(0,0,0,0.5)", color: "#00d8c0", border: "1px solid rgba(0,216,192,0.3)" }}
         >
           {pack.question_count}Q
         </div>
         <div
           className="absolute top-3 left-3 font-body text-xs px-2 py-0.5 rounded-full font-semibold"
-          style={{ background: "rgba(34,211,238,0.15)", color: "#22d3ee", border: "1px solid rgba(34,211,238,0.3)" }}
+          style={{ background: "rgba(0,216,192,0.15)", color: "#00d8c0", border: "1px solid rgba(0,216,192,0.3)" }}
         >
           25/26
         </div>
       </div>
       <div className="px-4 pb-4 pt-3">
         <p className="font-body text-sm font-bold text-white leading-tight mb-0.5">{pack.name}</p>
-        <p className="font-body text-xs mb-1.5" style={{ color: "#7777aa" }}>End of Season</p>
+        <p className="font-body text-xs mb-1.5" style={{ color: "#8a948f" }}>End of Season</p>
         {pack.description && (
-          <p className="font-body text-xs mb-2.5 line-clamp-2 leading-relaxed" style={{ color: "#9999bb" }}>{pack.description}</p>
+          <p className="font-body text-xs mb-2.5 line-clamp-2 leading-relaxed" style={{ color: "#7a857f" }}>{pack.description}</p>
         )}
         <div
           className="rounded-xl py-2 text-center"
           style={{
-            background: "linear-gradient(135deg, rgba(34,211,238,0.18) 0%, rgba(6,182,212,0.12) 100%)",
-            border: "1px solid rgba(34,211,238,0.3)",
+            background: "linear-gradient(135deg, rgba(0,216,192,0.18) 0%, rgba(6,182,212,0.12) 100%)",
+            border: "1px solid rgba(0,216,192,0.3)",
           }}
         >
-          <span className="font-display text-xs tracking-widest" style={{ color: "#22d3ee" }}>PLAY NOW →</span>
+          <span className="font-display text-xs tracking-widest" style={{ color: "#00d8c0" }}>PLAY NOW →</span>
         </div>
       </div>
     </Link>
@@ -290,13 +290,13 @@ function EndOfSeasonCard({ pack }: { pack: QuizPack }) {
 
 function OpenRoomCard({ room, onJoin }: { room: OpenRoom; onJoin: () => void }) {
   const modeLabel = room.room_mode === "h2h" ? "1v1" : room.room_mode === "open" ? "Public" : "Private";
-  const modeColor = room.room_mode === "h2h" ? "#f87171" : room.room_mode === "open" ? "#00ff87" : "#a78bfa";
+  const modeColor = room.room_mode === "h2h" ? "#f87171" : room.room_mode === "open" ? "#aeea00" : "#00d8c0";
 
   return (
     <div className="rounded-2xl px-4 py-3 flex items-center gap-3 bg-surface"
       style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
       <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-        style={{ background: "rgba(255,184,0,0.08)", border: "1px solid rgba(255,184,0,0.18)" }}>
+        style={{ background: "rgba(0,216,192,0.08)", border: "1px solid rgba(0,216,192,0.18)" }}>
         <span className="text-lg">⚡</span>
       </div>
       <div className="flex-1 min-w-0">
@@ -306,14 +306,14 @@ function OpenRoomCard({ room, onJoin }: { room: OpenRoom; onJoin: () => void }) 
             style={{ background: `${modeColor}18`, color: modeColor, border: `1px solid ${modeColor}30` }}>
             {modeLabel}
           </span>
-          <span className="font-body text-xs" style={{ color: "#555577" }}>
+          <span className="font-body text-xs" style={{ color: "#586058" }}>
             {room.question_count}Q · {room._member_count ?? 0} waiting
           </span>
         </div>
       </div>
       <button onClick={onJoin}
-        className="flex-shrink-0 px-3 py-2 rounded-xl font-body text-xs font-bold transition-all hover:opacity-90 text-amber"
-        style={{ background: "rgba(255,184,0,0.12)", border: "1px solid rgba(255,184,0,0.25)" }}>
+        className="flex-shrink-0 px-3 py-2 rounded-xl font-body text-xs font-bold transition-all hover:opacity-90 text-teal"
+        style={{ background: "rgba(0,216,192,0.12)", border: "1px solid rgba(0,216,192,0.25)" }}>
         Join
       </button>
     </div>
@@ -489,15 +489,15 @@ function PlayPageInner() {
           {/* Title row */}
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="font-display text-2xl tracking-tight text-amber">QUIZ</h1>
+              <h1 className="font-display text-2xl tracking-tight text-teal">QUIZ</h1>
               <p className="font-body text-xs mt-0.5 text-text-muted">
                 {mainTab === "solo" ? "Test your football knowledge" : mainTab === "multiplayer" ? "Real-time multiplayer · Play with mates" : "YourScore verified competitions"}
               </p>
             </div>
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl"
-              style={{ background: "rgba(255,184,0,0.08)", border: "1px solid rgba(255,184,0,0.2)" }}>
+              style={{ background: "rgba(0,216,192,0.08)", border: "1px solid rgba(0,216,192,0.2)" }}>
               <span className="text-xs">⚡</span>
-              <span className="font-display text-xs text-amber">
+              <span className="font-display text-xs text-teal">
                 {packsLoading ? "…" : `${packs.length} GAMES`}
               </span>
             </div>
@@ -508,22 +508,22 @@ function PlayPageInner() {
             style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
             <button onClick={() => setMainTab("solo")}
               className="flex-1 py-2 rounded-xl font-body text-xs font-semibold transition-all"
-              style={mainTab === "solo" ? { background: "#ffb800", color: "#0a0a0f" } : { background: "transparent", color: "#8888aa" }}>
+              style={mainTab === "solo" ? { background: "#00d8c0", color: "#0a0a0f" } : { background: "transparent", color: "#8a948f" }}>
               Solo
             </button>
             <button onClick={() => setMainTab("multiplayer")}
               className="flex-1 py-2 rounded-xl font-body text-xs font-semibold transition-all"
-              style={mainTab === "multiplayer" ? { background: "#ffb800", color: "#0a0a0f" } : { background: "transparent", color: "#8888aa" }}>
+              style={mainTab === "multiplayer" ? { background: "#00d8c0", color: "#0a0a0f" } : { background: "transparent", color: "#8a948f" }}>
               Multiplayer
             </button>
             <button onClick={() => setMainTab("leaderboards")}
               className="flex-1 flex items-center justify-center gap-1 py-2 rounded-xl font-body text-xs font-semibold transition-all"
               style={mainTab === "leaderboards"
-                ? { background: "#00ff87", color: "#062013" }
-                : { background: "transparent", color: "#8888aa" }}>
+                ? { background: "#aeea00", color: "#062013" }
+                : { background: "transparent", color: "#8a948f" }}>
               Leaderboards
               <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ flexShrink: 0 }}>
-                <path d="M2 5.2l2 2L8 3" stroke={mainTab === "leaderboards" ? "#062013" : "#555577"} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M2 5.2l2 2L8 3" stroke={mainTab === "leaderboards" ? "#062013" : "#586058"} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>
           </div>
@@ -535,18 +535,18 @@ function PlayPageInner() {
                 onClick={() => setSoloTab("featured")}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-full font-display text-xs tracking-wide transition-all flex-1 justify-center"
                 style={{
-                  background: soloTab === "featured" ? "rgba(34,211,238,0.15)" : "rgba(255,255,255,0.04)",
-                  border: `1px solid ${soloTab === "featured" ? "rgba(34,211,238,0.5)" : "rgba(255,255,255,0.08)"}`,
-                  color: soloTab === "featured" ? "#22d3ee" : "#8888aa",
-                  boxShadow: soloTab === "featured" ? "0 0 16px rgba(34,211,238,0.12)" : "none",
+                  background: soloTab === "featured" ? "rgba(0,216,192,0.15)" : "rgba(255,255,255,0.04)",
+                  border: `1px solid ${soloTab === "featured" ? "rgba(0,216,192,0.5)" : "rgba(255,255,255,0.08)"}`,
+                  color: soloTab === "featured" ? "#00d8c0" : "#8a948f",
+                  boxShadow: soloTab === "featured" ? "0 0 16px rgba(0,216,192,0.12)" : "none",
                 }}
               >
                 ⭐ FEATURED
                 <span
                   className="px-1.5 py-0.5 rounded-full text-xs"
                   style={{
-                    background: soloTab === "featured" ? "rgba(34,211,238,0.25)" : "rgba(255,255,255,0.06)",
-                    color: soloTab === "featured" ? "#22d3ee" : "#666688",
+                    background: soloTab === "featured" ? "rgba(0,216,192,0.25)" : "rgba(255,255,255,0.06)",
+                    color: soloTab === "featured" ? "#00d8c0" : "#5b645e",
                   }}
                 >
                   {featuredCount}
@@ -556,18 +556,18 @@ function PlayPageInner() {
                 onClick={() => setSoloTab("club")}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-full font-display text-xs tracking-wide transition-all flex-1 justify-center"
                 style={{
-                  background: soloTab === "club" ? "rgba(255,184,0,0.15)" : "rgba(255,255,255,0.04)",
-                  border: `1px solid ${soloTab === "club" ? "rgba(255,184,0,0.5)" : "rgba(255,255,255,0.08)"}`,
-                  color: soloTab === "club" ? "#ffb800" : "#8888aa",
-                  boxShadow: soloTab === "club" ? "0 0 16px rgba(255,184,0,0.12)" : "none",
+                  background: soloTab === "club" ? "rgba(0,216,192,0.15)" : "rgba(255,255,255,0.04)",
+                  border: `1px solid ${soloTab === "club" ? "rgba(0,216,192,0.5)" : "rgba(255,255,255,0.08)"}`,
+                  color: soloTab === "club" ? "#00d8c0" : "#8a948f",
+                  boxShadow: soloTab === "club" ? "0 0 16px rgba(0,216,192,0.12)" : "none",
                 }}
               >
                 ⚽ CLUB
                 <span
                   className="px-1.5 py-0.5 rounded-full text-xs"
                   style={{
-                    background: soloTab === "club" ? "rgba(255,184,0,0.25)" : "rgba(255,255,255,0.06)",
-                    color: soloTab === "club" ? "#ffb800" : "#666688",
+                    background: soloTab === "club" ? "rgba(0,216,192,0.25)" : "rgba(255,255,255,0.06)",
+                    color: soloTab === "club" ? "#00d8c0" : "#5b645e",
                   }}
                 >
                   {clubCount}
@@ -577,18 +577,18 @@ function PlayPageInner() {
                 onClick={() => setSoloTab("records")}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-full font-display text-xs tracking-wide transition-all flex-1 justify-center"
                 style={{
-                  background: soloTab === "records" ? "rgba(167,139,250,0.15)" : "rgba(255,255,255,0.04)",
-                  border: `1px solid ${soloTab === "records" ? "rgba(167,139,250,0.5)" : "rgba(255,255,255,0.08)"}`,
-                  color: soloTab === "records" ? "#a78bfa" : "#8888aa",
-                  boxShadow: soloTab === "records" ? "0 0 16px rgba(167,139,250,0.12)" : "none",
+                  background: soloTab === "records" ? "rgba(0,216,192,0.15)" : "rgba(255,255,255,0.04)",
+                  border: `1px solid ${soloTab === "records" ? "rgba(0,216,192,0.5)" : "rgba(255,255,255,0.08)"}`,
+                  color: soloTab === "records" ? "#00d8c0" : "#8a948f",
+                  boxShadow: soloTab === "records" ? "0 0 16px rgba(0,216,192,0.12)" : "none",
                 }}
               >
                 🏆 RECORDS
                 <span
                   className="px-1.5 py-0.5 rounded-full text-xs"
                   style={{
-                    background: soloTab === "records" ? "rgba(167,139,250,0.25)" : "rgba(255,255,255,0.06)",
-                    color: soloTab === "records" ? "#a78bfa" : "#666688",
+                    background: soloTab === "records" ? "rgba(0,216,192,0.25)" : "rgba(255,255,255,0.06)",
+                    color: soloTab === "records" ? "#00d8c0" : "#5b645e",
                   }}
                 >
                   {recordsCount}
@@ -602,9 +602,9 @@ function PlayPageInner() {
             <div className="flex items-center gap-2 pb-1">
               <div
                 className="flex items-center gap-2 px-3 py-1.5 rounded-full font-body text-xs font-semibold text-green"
-                style={{ background: "rgba(0,255,135,0.1)", border: "1px solid rgba(0,255,135,0.3)" }}
+                style={{ background: "rgba(174,234,0,0.1)", border: "1px solid rgba(174,234,0,0.3)" }}
               >
-                <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#00ff87", display: "inline-block", boxShadow: "0 0 6px #00ff87" }} />
+                <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#aeea00", display: "inline-block", boxShadow: "0 0 6px #aeea00" }} />
                 Premier League
               </div>
             </div>
@@ -613,9 +613,9 @@ function PlayPageInner() {
             <div className="flex items-center gap-2 pb-1">
               <div
                 className="flex items-center gap-2 px-3 py-1.5 rounded-full font-body text-xs font-semibold"
-                style={{ background: "rgba(34,211,238,0.1)", border: "1px solid rgba(34,211,238,0.3)", color: "#22d3ee" }}
+                style={{ background: "rgba(0,216,192,0.1)", border: "1px solid rgba(0,216,192,0.3)", color: "#00d8c0" }}
               >
-                <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#22d3ee", display: "inline-block", boxShadow: "0 0 6px #22d3ee" }} />
+                <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#00d8c0", display: "inline-block", boxShadow: "0 0 6px #00d8c0" }} />
                 New this week
               </div>
             </div>
@@ -632,13 +632,13 @@ function PlayPageInner() {
               onClick={() => router.push("/quiz/create")}
               className="w-full rounded-2xl overflow-hidden transition-all duration-150 active:scale-[0.98]"
               style={{
-                background: "linear-gradient(135deg, rgba(0,255,135,0.12) 0%, rgba(0,200,100,0.06) 100%)",
-                border: "1px solid rgba(0,255,135,0.3)",
+                background: "linear-gradient(135deg, rgba(174,234,0,0.12) 0%, rgba(0,200,100,0.06) 100%)",
+                border: "1px solid rgba(174,234,0,0.3)",
                 padding: "16px 20px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                boxShadow: "0 0 24px rgba(0,255,135,0.06)",
+                boxShadow: "0 0 24px rgba(174,234,0,0.06)",
               }}
             >
               <div style={{ textAlign: "left" }}>
@@ -688,14 +688,14 @@ function PlayPageInner() {
           <div className="grid grid-cols-2 gap-3">
             <Link href="/play/new"
               className="flex flex-col items-center justify-center gap-2 rounded-2xl py-5 transition-all hover:opacity-90 active:scale-[0.98]"
-              style={{ background: "linear-gradient(135deg, rgba(255,184,0,0.12) 0%, rgba(255,120,0,0.06) 100%)", border: "1px solid rgba(255,184,0,0.28)" }}>
+              style={{ background: "linear-gradient(135deg, rgba(0,216,192,0.12) 0%, rgba(255,120,0,0.06) 100%)", border: "1px solid rgba(0,216,192,0.28)" }}>
               <div className="w-10 h-10 rounded-xl flex items-center justify-center"
-                style={{ background: "rgba(255,184,0,0.15)", border: "1px solid rgba(255,184,0,0.3)" }}>
+                style={{ background: "rgba(0,216,192,0.15)", border: "1px solid rgba(0,216,192,0.3)" }}>
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                  <path d="M10 2v16M2 10h16" stroke="#ffb800" strokeWidth="2.2" strokeLinecap="round" />
+                  <path d="M10 2v16M2 10h16" stroke="#00d8c0" strokeWidth="2.2" strokeLinecap="round" />
                 </svg>
               </div>
-              <p className="font-body text-sm font-bold text-amber">Create Game</p>
+              <p className="font-body text-sm font-bold text-teal">Create Game</p>
               <p className="font-body text-xs text-center text-text-muted">Set mode, questions &amp; invite mates</p>
             </Link>
 
@@ -705,7 +705,7 @@ function PlayPageInner() {
               <div className="w-10 h-10 rounded-xl flex items-center justify-center"
                 style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)" }}>
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                  <path d="M2 10h12M10 4l6 6-6 6" stroke="#aaaacc" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M2 10h12M10 4l6 6-6 6" stroke="#9aa39d" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
               <p className="font-body text-sm font-bold text-white">Join with Code</p>
@@ -716,13 +716,13 @@ function PlayPageInner() {
           {/* Open rooms */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <p className="font-body text-xs font-bold uppercase tracking-widest" style={{ color: "#555577" }}>Open Lobbies</p>
-              <button onClick={() => { setRoomsFetched(false); }} className="font-body text-xs" style={{ color: "#555577" }}>Refresh</button>
+              <p className="font-body text-xs font-bold uppercase tracking-widest" style={{ color: "#586058" }}>Open Lobbies</p>
+              <button onClick={() => { setRoomsFetched(false); }} className="font-body text-xs" style={{ color: "#586058" }}>Refresh</button>
             </div>
 
             {roomsLoading && (
               <div className="flex items-center justify-center py-8">
-                <div className="w-5 h-5 rounded-full border-2 animate-spin" style={{ borderColor: "rgba(255,255,255,0.1)", borderTopColor: "#ffb800" }} />
+                <div className="w-5 h-5 rounded-full border-2 animate-spin" style={{ borderColor: "rgba(255,255,255,0.1)", borderTopColor: "#00d8c0" }} />
               </div>
             )}
 
@@ -752,9 +752,9 @@ function PlayPageInner() {
           {/* Verified badge */}
           <div className="flex items-center gap-2 mb-1">
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full font-display text-xs tracking-wide"
-              style={{ background: "rgba(0,255,135,0.1)", border: "1px solid rgba(0,255,135,0.25)", color: "#00ff87" }}>
+              style={{ background: "rgba(174,234,0,0.1)", border: "1px solid rgba(174,234,0,0.25)", color: "#aeea00" }}>
               <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                <path d="M2 5.2l2 2L8 3" stroke="#00ff87" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M2 5.2l2 2L8 3" stroke="#aeea00" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
               YOURSCORE VERIFIED
             </div>
@@ -762,17 +762,17 @@ function PlayPageInner() {
 
           {/* World Cup 2026 card */}
           <div className="rounded-3xl overflow-hidden"
-            style={{ background: "linear-gradient(145deg, #0d1a10 0%, #091510 100%)", border: "1px solid rgba(0,255,135,0.25)" }}>
+            style={{ background: "linear-gradient(145deg, #0d1a10 0%, #091510 100%)", border: "1px solid rgba(174,234,0,0.25)" }}>
 
             {/* Banner strip */}
             <div className="flex items-center justify-between px-5 py-4"
-              style={{ background: "linear-gradient(90deg, rgba(0,255,135,0.12) 0%, rgba(255,184,0,0.08) 100%)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+              style={{ background: "linear-gradient(90deg, rgba(174,234,0,0.12) 0%, rgba(0,216,192,0.08) 100%)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
               <div className="flex items-center gap-2">
                 <span className="relative flex" style={{ width: 10, height: 10 }}>
-                  <span className="absolute inline-flex h-full w-full rounded-full opacity-75 animate-ping" style={{ background: "#00ff87" }} />
-                  <span className="relative inline-flex rounded-full" style={{ width: 10, height: 10, background: "#00ff87" }} />
+                  <span className="absolute inline-flex h-full w-full rounded-full opacity-75 animate-ping" style={{ background: "#aeea00" }} />
+                  <span className="relative inline-flex rounded-full" style={{ width: 10, height: 10, background: "#aeea00" }} />
                 </span>
-                <span className="font-display text-xs tracking-widest" style={{ color: "#00ff87" }}>LIVE</span>
+                <span className="font-display text-xs tracking-widest" style={{ color: "#aeea00" }}>LIVE</span>
               </div>
               <span className="text-2xl">🏆</span>
             </div>
@@ -784,15 +784,15 @@ function PlayPageInner() {
 
               <div className="flex items-center gap-3 mt-4">
                 <div className="flex-1 rounded-2xl px-4 py-3 text-center"
-                  style={{ background: "rgba(0,255,135,0.07)", border: "1px solid rgba(0,255,135,0.15)" }}>
-                  <p className="font-display" style={{ fontSize: 18, color: "#00ff87" }}>
+                  style={{ background: "rgba(174,234,0,0.07)", border: "1px solid rgba(174,234,0,0.15)" }}>
+                  <p className="font-display" style={{ fontSize: 18, color: "#aeea00" }}>
                     {wc2026Loading ? "…" : (wc2026Stats?.playerCount ?? 0)}
                   </p>
                   <p className="font-body text-xs mt-0.5" style={{ color: "#4a7a5a" }}>Players</p>
                 </div>
                 <div className="flex-1 rounded-2xl px-4 py-3 text-center"
-                  style={{ background: "rgba(255,184,0,0.07)", border: "1px solid rgba(255,184,0,0.15)" }}>
-                  <p className="font-display" style={{ fontSize: 18, color: "#ffb800" }}>
+                  style={{ background: "rgba(0,216,192,0.07)", border: "1px solid rgba(0,216,192,0.15)" }}>
+                  <p className="font-display" style={{ fontSize: 18, color: "#00d8c0" }}>
                     {wc2026Loading ? "…" : (wc2026Stats?.packCount ?? 0)}
                   </p>
                   <p className="font-body text-xs mt-0.5" style={{ color: "#7a6a30" }}>Quizzes</p>
@@ -804,22 +804,22 @@ function PlayPageInner() {
             <div className="px-5 pb-5 mt-3">
               {wc2026Loading ? (
                 <div className="flex justify-center py-6">
-                  <div className="w-5 h-5 rounded-full border-2 animate-spin" style={{ borderColor: "rgba(255,255,255,0.1)", borderTopColor: "#00ff87" }} />
+                  <div className="w-5 h-5 rounded-full border-2 animate-spin" style={{ borderColor: "rgba(255,255,255,0.1)", borderTopColor: "#aeea00" }} />
                 </div>
               ) : wc2026Rows.length === 0 ? (
                 <div className="rounded-2xl px-4 py-5 text-center"
                   style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                  <p className="font-body text-sm" style={{ color: "#8888aa" }}>No scores yet — be first on the board</p>
-                  <p className="font-body text-xs mt-0.5" style={{ color: "#555577" }}>Play a World Cup 2026 daily quiz to enter</p>
+                  <p className="font-body text-sm" style={{ color: "#8a948f" }}>No scores yet — be first on the board</p>
+                  <p className="font-body text-xs mt-0.5" style={{ color: "#586058" }}>Play a World Cup 2026 daily quiz to enter</p>
                 </div>
               ) : (
                 <div className="space-y-1.5">
                   {/* Column headers */}
                   <div className="flex items-center px-3 pb-1" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                    <span className="font-body text-xs w-8" style={{ color: "#444466" }}>#</span>
-                    <span className="font-body text-xs flex-1" style={{ color: "#444466" }}>Player</span>
-                    <span className="font-body text-xs w-10 text-right" style={{ color: "#444466" }}>Qs</span>
-                    <span className="font-body text-xs w-16 text-right" style={{ color: "#444466" }}>Score</span>
+                    <span className="font-body text-xs w-8" style={{ color: "#3a423d" }}>#</span>
+                    <span className="font-body text-xs flex-1" style={{ color: "#3a423d" }}>Player</span>
+                    <span className="font-body text-xs w-10 text-right" style={{ color: "#3a423d" }}>Qs</span>
+                    <span className="font-body text-xs w-16 text-right" style={{ color: "#3a423d" }}>Score</span>
                   </div>
                   {wc2026Rows.map((row) => {
                     const medal = row.rank === 1 ? "🥇" : row.rank === 2 ? "🥈" : row.rank === 3 ? "🥉" : null;
@@ -828,19 +828,19 @@ function PlayPageInner() {
                       <div key={row.userId}
                         className="flex items-center px-3 py-2.5 rounded-xl"
                         style={{
-                          background: isTop3 ? "rgba(0,255,135,0.05)" : "rgba(255,255,255,0.02)",
-                          border: `1px solid ${isTop3 ? "rgba(0,255,135,0.12)" : "rgba(255,255,255,0.04)"}`,
+                          background: isTop3 ? "rgba(174,234,0,0.05)" : "rgba(255,255,255,0.02)",
+                          border: `1px solid ${isTop3 ? "rgba(174,234,0,0.12)" : "rgba(255,255,255,0.04)"}`,
                         }}>
-                        <span className="font-display text-sm w-8" style={{ color: isTop3 ? "#00ff87" : "#444466" }}>
+                        <span className="font-display text-sm w-8" style={{ color: isTop3 ? "#aeea00" : "#3a423d" }}>
                           {medal ?? row.rank}
                         </span>
-                        <span className="font-body text-sm flex-1 truncate" style={{ color: isTop3 ? "#e8e8f0" : "#aaaacc" }}>
+                        <span className="font-body text-sm flex-1 truncate" style={{ color: isTop3 ? "#e8e8f0" : "#9aa39d" }}>
                           {row.displayName}
                         </span>
-                        <span className="font-body text-xs w-10 text-right" style={{ color: "#555577" }}>
+                        <span className="font-body text-xs w-10 text-right" style={{ color: "#586058" }}>
                           {row.quizCount}
                         </span>
-                        <span className="font-display text-sm w-16 text-right" style={{ color: isTop3 ? "#00ff87" : "#8888aa" }}>
+                        <span className="font-display text-sm w-16 text-right" style={{ color: isTop3 ? "#aeea00" : "#8a948f" }}>
                           {row.totalScore.toLocaleString()}
                         </span>
                       </div>
@@ -862,7 +862,7 @@ function PlayPageInner() {
           <div className="fixed inset-0 z-40" style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)" }}
             onClick={() => setJoinSheetOpen(false)} />
           <div className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl px-5 pt-5 pb-10 bg-surface"
-            style={{ border: "1px solid rgba(255,184,0,0.2)", borderBottom: "none" }}>
+            style={{ border: "1px solid rgba(0,216,192,0.2)", borderBottom: "none" }}>
             <div className="w-10 h-1 rounded-full mx-auto mb-6" style={{ background: "rgba(255,255,255,0.12)" }} />
             <div className="flex items-center justify-between mb-5">
               <div>
@@ -872,7 +872,7 @@ function PlayPageInner() {
               <button onClick={() => setJoinSheetOpen(false)}
                 className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "rgba(255,255,255,0.07)" }}>
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                  <path d="M1 1l10 10M11 1L1 11" stroke="#aaaacc" strokeWidth="1.8" strokeLinecap="round" />
+                  <path d="M1 1l10 10M11 1L1 11" stroke="#9aa39d" strokeWidth="1.8" strokeLinecap="round" />
                 </svg>
               </button>
             </div>
@@ -881,11 +881,11 @@ function PlayPageInner() {
                 onChange={e => setJoinCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8))}
                 placeholder="ENTER CODE" autoComplete="off" autoCapitalize="characters" spellCheck={false}
                 className="w-full rounded-2xl px-5 font-display text-3xl text-center tracking-[0.25em] text-white outline-none mb-3"
-                style={{ height: 72, background: "rgba(255,184,0,0.06)", border: `1px solid ${joinCode.length >= 4 ? "rgba(255,184,0,0.5)" : "rgba(255,184,0,0.2)"}`, caretColor: "#ffb800", transition: "border-color 0.2s" }} />
+                style={{ height: 72, background: "rgba(0,216,192,0.06)", border: `1px solid ${joinCode.length >= 4 ? "rgba(0,216,192,0.5)" : "rgba(0,216,192,0.2)"}`, caretColor: "#00d8c0", transition: "border-color 0.2s" }} />
               {joinError && <p className="text-center font-body text-sm mb-3" style={{ color: "#f87171" }}>{joinError}</p>}
               <button type="submit" disabled={joinCode.trim().length < 4 || joining}
                 className="w-full py-4 rounded-2xl font-body font-bold text-base transition-all"
-                style={{ background: joinCode.trim().length >= 4 && !joining ? "#ffb800" : "rgba(255,184,0,0.15)", color: joinCode.trim().length >= 4 && !joining ? "#0a0a0f" : "#555577" }}>
+                style={{ background: joinCode.trim().length >= 4 && !joining ? "#00d8c0" : "rgba(0,216,192,0.15)", color: joinCode.trim().length >= 4 && !joining ? "#0a0a0f" : "#586058" }}>
                 {joining ? "Joining…" : "Join game →"}
               </button>
             </form>

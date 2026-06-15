@@ -54,7 +54,7 @@ export default function WatchPage() {
   }, [stage]);
 
   if (!m || !m.sim?.h1 || !m.sim?.h2) {
-    return <div className="min-h-[100dvh] grid place-items-center" style={{ background: BG, color: "#8888aa" }}>Loading…</div>;
+    return <div className="min-h-[100dvh] grid place-items-center" style={{ background: BG, color: "#8a948f" }}>Loading…</div>;
   }
 
   const h1 = m.sim.h1;
@@ -63,7 +63,7 @@ export default function WatchPage() {
   return (
     <div className="min-h-[100dvh] pb-16" style={{ background: BG, color: "#e8e8f0" }}>
       <div className="max-w-lg mx-auto px-4 pt-10">
-        <p className="text-center font-display tracking-wide mb-4" style={{ fontSize: 13, color: "#8888aa", letterSpacing: 1 }}>
+        <p className="text-center font-display tracking-wide mb-4" style={{ fontSize: 13, color: "#8a948f", letterSpacing: 1 }}>
           {stage === "half1" ? "FIRST HALF" : stage === "half2" ? "SECOND HALF" : "HALF TIME"}
         </p>
 
@@ -73,10 +73,10 @@ export default function WatchPage() {
             <div className="font-display tabular-nums mt-2" style={{ fontSize: 40, fontWeight: 900 }}>
               {h1Goals.a} – {h1Goals.b}
             </div>
-            <p className="font-body mt-2" style={{ fontSize: 13, color: "#9a9ab0" }}>You vs {m.opp.name}</p>
+            <p className="font-body mt-2" style={{ fontSize: 13, color: "#9aa39d" }}>You vs {m.opp.name}</p>
             <button onClick={() => setStage("half2")}
               className="mt-6 rounded-2xl px-6 py-3 font-display tracking-wide active:scale-[0.98] transition-transform"
-              style={{ background: "#00ff87", color: "#062013", fontSize: 18 }}>
+              style={{ background: "#aeea00", color: "#062013", fontSize: 18 }}>
               SECOND HALF →
             </button>
           </div>

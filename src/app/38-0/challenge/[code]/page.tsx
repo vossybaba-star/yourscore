@@ -77,9 +77,9 @@ export default function AcceptChallenge() {
     <div className="min-h-[100dvh] grid place-items-center px-6 text-center" style={{ background: "#0a0a0f" }}>{children}</div>
   );
 
-  if (!info) return wrap(<span className="font-body" style={{ color: "#8888aa" }}>Loading…</span>);
-  if (info.ready === false) return wrap(<div><div className="font-display tracking-wide" style={{ fontSize: 24, color: "#fff" }}>CHALLENGES COMING SOON</div><Link href="/38-0" className="inline-block mt-4 font-body" style={{ color: "#00ff87" }}>← Build your XI</Link></div>);
-  if (status === 404 || info.error === "Challenge not found") return wrap(<div><div className="font-display tracking-wide" style={{ fontSize: 26, color: "#fff" }}>CHALLENGE NOT FOUND</div><Link href="/38-0" className="inline-block mt-4 font-body" style={{ color: "#00ff87" }}>← Draft XI</Link></div>);
+  if (!info) return wrap(<span className="font-body" style={{ color: "#8a948f" }}>Loading…</span>);
+  if (info.ready === false) return wrap(<div><div className="font-display tracking-wide" style={{ fontSize: 24, color: "#fff" }}>CHALLENGES COMING SOON</div><Link href="/38-0" className="inline-block mt-4 font-body" style={{ color: "#aeea00" }}>← Build your XI</Link></div>);
+  if (status === 404 || info.error === "Challenge not found") return wrap(<div><div className="font-display tracking-wide" style={{ fontSize: 26, color: "#fff" }}>CHALLENGE NOT FOUND</div><Link href="/38-0" className="inline-block mt-4 font-body" style={{ color: "#aeea00" }}>← Draft XI</Link></div>);
 
   const done = info.status === "accepted" || info.expired;
 
@@ -87,12 +87,12 @@ export default function AcceptChallenge() {
     <div className="min-h-[100dvh] pb-28" style={{ background: "#0a0a0f" }}>
       <div className="max-w-lg mx-auto px-5 pt-safe">
         <div className="pt-6 text-center">
-          <div className="font-body" style={{ fontSize: 13, color: "#8888aa" }}>YOU&apos;VE BEEN CHALLENGED</div>
+          <div className="font-body" style={{ fontSize: 13, color: "#8a948f" }}>YOU&apos;VE BEEN CHALLENGED</div>
           <h1 className="font-display tracking-wide leading-none mt-1" style={{ fontSize: 40, color: "#fff" }}>
-            BEAT <span style={{ color: "#00ff87" }}>{info.challengerName}</span>
+            BEAT <span style={{ color: "#aeea00" }}>{info.challengerName}</span>
           </h1>
-          <div className="font-body mt-2" style={{ fontSize: 14, color: "#cfcfe6" }}>
-            Their XI · <b style={{ color: "#00ff87" }}>{info.strength}</b> strength · {info.formation}
+          <div className="font-body mt-2" style={{ fontSize: 14, color: "#c4ccc6" }}>
+            Their XI · <b style={{ color: "#aeea00" }}>{info.strength}</b> strength · {info.formation}
           </div>
         </div>
 
@@ -117,19 +117,19 @@ export default function AcceptChallenge() {
               )}
               <button onClick={() => router.push("/38-0/match/result")}
                 className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform"
-                style={{ background: "#00ff87", color: "#062013", fontSize: 22 }}>
+                style={{ background: "#aeea00", color: "#062013", fontSize: 22 }}>
                 VIEW RESULT →
               </button>
             </>
           ) : done ? (
-            <div className="rounded-2xl p-4 text-center font-body" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.08)", color: "#8888aa", fontSize: 14 }}>
+            <div className="rounded-2xl p-4 text-center font-body" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.08)", color: "#8a948f", fontSize: 14 }}>
               {info.expired ? "This challenge has expired." : "This challenge has already been played."}
             </div>
           ) : !user ? (
             /* Guest — show inline sign-in. After auth the user lands back here
                with their session set and can tap ACCEPT WITH MY XI. */
-            <div className="rounded-2xl p-4" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.08)" }}>
-              <p className="font-body text-center mb-4" style={{ fontSize: 13, color: "#8888aa" }}>
+            <div className="rounded-2xl p-4" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <p className="font-body text-center mb-4" style={{ fontSize: 13, color: "#8a948f" }}>
                 Sign in to accept this challenge with your XI.
               </p>
               <AuthProviders nextPath={`/38-0/challenge/${code}`} />
@@ -137,12 +137,12 @@ export default function AcceptChallenge() {
           ) : (
             <button onClick={accept} disabled={busy}
               className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-60"
-              style={{ background: "#00ff87", color: "#062013", fontSize: 24 }}>
+              style={{ background: "#aeea00", color: "#062013", fontSize: 24 }}>
               {busy ? "RESOLVING…" : "ACCEPT WITH MY XI ⚔️"}
             </button>
           )}
           <Link href="/38-0" className="block w-full rounded-2xl py-3 text-center font-body active:scale-[0.98] transition-transform"
-            style={{ background: "#12121e", color: "#8888aa", fontSize: 15, border: "1px solid rgba(255,255,255,0.08)" }}>
+            style={{ background: "#0e1611", color: "#8a948f", fontSize: 15, border: "1px solid rgba(255,255,255,0.08)" }}>
             Build / view my XI
           </Link>
         </div>

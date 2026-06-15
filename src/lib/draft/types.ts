@@ -18,7 +18,7 @@ export const LEAGUES: League[] = ["PL", "LaLiga"];
 
 /** Per-league display + flavour strings (copy, country names for the narrative). */
 export const LEAGUE_META: Record<League, { name: string; short: string; country: string; demonym: string; accent: string }> = {
-  PL: { name: "Premier League", short: "PL", country: "England", demonym: "English", accent: "#00ff87" },
+  PL: { name: "Premier League", short: "PL", country: "England", demonym: "English", accent: "#aeea00" },
   LaLiga: { name: "La Liga", short: "La Liga", country: "Spain", demonym: "Spanish", accent: "#ff5b2e" },
 };
 

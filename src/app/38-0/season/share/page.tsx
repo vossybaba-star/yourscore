@@ -77,14 +77,14 @@ export default function SeasonSharePage({ searchParams }: { searchParams: SP }) 
       <div className="pointer-events-none fixed inset-0 bg-grid-pattern bg-grid" style={{ opacity: 0.5 }} />
       <div className="relative mx-auto max-w-lg px-4 pt-safe">
         <div className="py-3">
-          <Link href="/38-0" className="font-mono text-sm uppercase" style={{ color: "#8888aa", letterSpacing: "0.1em" }}>← 38-0</Link>
+          <Link href="/38-0" className="font-mono text-sm uppercase" style={{ color: "#8a948f", letterSpacing: "0.1em" }}>← 38-0</Link>
         </div>
 
         <SeasonScorecard data={data} />
 
         <div className="mt-6 flex flex-col gap-3">
           <SaveTeamButton ogUrl={ogUrl(searchParams)} />
-          <Link href="/38-0" className="block w-full rounded-[20px] px-6 py-4 font-display tracking-wide text-center transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98]" style={{ background: "#00ff87", color: "#062013", fontSize: 24 }}>
+          <Link href="/38-0" className="block w-full rounded-[20px] px-6 py-4 font-display tracking-wide text-center transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98]" style={{ background: "#aeea00", color: "#062013", fontSize: 24 }}>
             BUILD YOUR OWN XI →
           </Link>
         </div>

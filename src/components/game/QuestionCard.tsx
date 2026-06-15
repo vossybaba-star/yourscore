@@ -67,10 +67,10 @@ export function QuestionCard({ question, onAnswer, onExpire }: QuestionCardProps
     if (!reveal && !expired) {
       if (selected === letter) {
         return {
-          bg: "rgba(0,255,135,0.08)",
-          border: "rgba(0,255,135,0.5)",
+          bg: "rgba(174,234,0,0.08)",
+          border: "rgba(174,234,0,0.5)",
           text: "#ffffff",
-          labelBg: "rgba(0,255,135,0.2)",
+          labelBg: "rgba(174,234,0,0.2)",
         };
       }
       return {
@@ -87,10 +87,10 @@ export function QuestionCard({ question, onAnswer, onExpire }: QuestionCardProps
 
     if (isCorrect) {
       return {
-        bg: "rgba(0,255,135,0.12)",
-        border: "#00ff87",
-        text: "#00ff87",
-        labelBg: "#00ff87",
+        bg: "rgba(174,234,0,0.12)",
+        border: "#aeea00",
+        text: "#aeea00",
+        labelBg: "#aeea00",
         labelText: "#0a0a0f",
       };
     }
@@ -105,12 +105,12 @@ export function QuestionCard({ question, onAnswer, onExpire }: QuestionCardProps
     return {
       bg: "transparent",
       border: "rgba(255,255,255,0.04)",
-      text: "#8888aa",
+      text: "#8a948f",
       labelBg: "rgba(255,255,255,0.04)",
     };
   }
 
-  const difficultyColor = { easy: "#00ff87", medium: "#ffb800", hard: "#ff4757" }[question.difficulty];
+  const difficultyColor = { easy: "#aeea00", medium: "#ffb800", hard: "#ff4757" }[question.difficulty];
 
   return (
     <div
@@ -120,7 +120,7 @@ export function QuestionCard({ question, onAnswer, onExpire }: QuestionCardProps
       <div
         className="rounded-t-3xl overflow-hidden"
         style={{
-          background: "#12121e",
+          background: "#0e1611",
           border: "1px solid rgba(255,255,255,0.08)",
           borderBottom: "none",
           animation: "slideUp 0.35s cubic-bezier(0.16,1,0.3,1) forwards",
@@ -131,7 +131,7 @@ export function QuestionCard({ question, onAnswer, onExpire }: QuestionCardProps
         {/* Header */}
         <div
           className="flex items-center justify-between px-5 pt-5 pb-4 sticky top-0"
-          style={{ background: "#12121e", borderBottom: "1px solid rgba(255,255,255,0.06)" }}
+          style={{ background: "#0e1611", borderBottom: "1px solid rgba(255,255,255,0.06)" }}
         >
           <div className="flex items-center gap-2">
             <span
@@ -200,21 +200,21 @@ export function QuestionCard({ question, onAnswer, onExpire }: QuestionCardProps
           <div
             className="mx-4 mb-6 rounded-2xl p-4"
             style={{
-              background: reveal.isCorrect ? "rgba(0,255,135,0.08)" : "rgba(255,71,87,0.08)",
-              border: `1px solid ${reveal.isCorrect ? "rgba(0,255,135,0.2)" : "rgba(255,71,87,0.2)"}`,
+              background: reveal.isCorrect ? "rgba(174,234,0,0.08)" : "rgba(255,71,87,0.08)",
+              border: `1px solid ${reveal.isCorrect ? "rgba(174,234,0,0.2)" : "rgba(255,71,87,0.2)"}`,
             }}
           >
             <div className="flex items-center justify-between mb-2">
               <span
                 className="font-display text-2xl"
-                style={{ color: reveal.isCorrect ? "#00ff87" : "#ff4757" }}
+                style={{ color: reveal.isCorrect ? "#aeea00" : "#ff4757" }}
               >
                 {reveal.isCorrect ? "CORRECT!" : "WRONG"}
               </span>
               {reveal.points > 0 && (
                 <span
                   className="font-display text-2xl"
-                  style={{ color: "#00ff87" }}
+                  style={{ color: "#aeea00" }}
                 >
                   +{reveal.points}
                 </span>

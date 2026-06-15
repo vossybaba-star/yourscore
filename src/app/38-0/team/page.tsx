@@ -200,7 +200,7 @@ export default function TeamScreen() {
   }
 
   if (!team || !team.projected) {
-    return <div className="min-h-[100dvh] grid place-items-center" style={{ background: "#0a0a0f", color: "#8888aa" }}>Loading…</div>;
+    return <div className="min-h-[100dvh] grid place-items-center" style={{ background: "#0a0a0f", color: "#8a948f" }}>Loading…</div>;
   }
 
   // One FIFA-league-relative projection drives the banner, the odds card and the
@@ -216,32 +216,32 @@ export default function TeamScreen() {
   // been simulated the actual result owns the top, so the projection drops to the bottom.
   const oddsBands: [string, number, string][] = [
     ["Win the league", odds.winLeague, "#ffb800"],
-    ["Top 4", odds.top4, "#00ff87"],
-    ["Top 6", odds.top6, "#22d3ee"],
-    ["Top 10", odds.top10, "#a78bfa"],
+    ["Top 4", odds.top4, "#aeea00"],
+    ["Top 6", odds.top6, "#aeea00"],
+    ["Top 10", odds.top10, "#aeea00"],
     ["Relegation", odds.relegation, "#ff4757"],
   ];
   const oddsCard = (
-    <div className="rounded-3xl p-5" style={{ background: "#0d0d14", border: "1px solid rgba(255,255,255,0.08)" }}>
+    <div className="rounded-3xl p-5" style={{ background: "#080d0a", border: "1px solid rgba(255,255,255,0.08)" }}>
       <div className="flex items-center justify-between mb-3">
-        <span className="font-body" style={{ fontSize: 11, color: "#8888aa", letterSpacing: 1 }}>PRE-SEASON ODDS</span>
-        <span className="font-body" style={{ fontSize: 11, color: "#8888aa" }}>What the bookies make of your XI</span>
+        <span className="font-body" style={{ fontSize: 11, color: "#8a948f", letterSpacing: 1 }}>PRE-SEASON ODDS</span>
+        <span className="font-body" style={{ fontSize: 11, color: "#8a948f" }}>What the bookies make of your XI</span>
       </div>
       <div className="flex items-end justify-between mb-4">
         <div>
-          <div className="font-body" style={{ fontSize: 11, color: "#8888aa" }}>PROJECTED FINISH</div>
+          <div className="font-body" style={{ fontSize: 11, color: "#8a948f" }}>PROJECTED FINISH</div>
           <div className="font-display tracking-wide" style={{ fontSize: 40, color: "#fff", lineHeight: 1 }}>{ordinal(odds.projectedFinish)}</div>
         </div>
         <div className="text-right">
-          <div className="font-body" style={{ fontSize: 11, color: "#8888aa" }}>EXPECTED POINTS</div>
-          <div className="font-display" style={{ fontSize: 40, color: "#00ff87", lineHeight: 1 }}>{odds.expectedPoints}</div>
+          <div className="font-body" style={{ fontSize: 11, color: "#8a948f" }}>EXPECTED POINTS</div>
+          <div className="font-display" style={{ fontSize: 40, color: "#aeea00", lineHeight: 1 }}>{odds.expectedPoints}</div>
         </div>
       </div>
       <div className="space-y-2">
         {oddsBands.map(([label, val, color]) => (
           <div key={label}>
             <div className="flex items-center justify-between mb-0.5">
-              <span className="font-body" style={{ fontSize: 12, color: "#cfcfe6" }}>{label}</span>
+              <span className="font-body" style={{ fontSize: 12, color: "#c4ccc6" }}>{label}</span>
               <span className="font-body" style={{ fontSize: 12, color: "#fff" }}>{val}%</span>
             </div>
             <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.07)" }}>
@@ -257,7 +257,7 @@ export default function TeamScreen() {
     <div className="min-h-[100dvh] pb-28" style={{ background: "#0a0a0f" }}>
       <div className="max-w-lg mx-auto px-5 pt-safe">
         <div className="flex items-center justify-between pt-4 pb-2">
-          <Link href="/38-0" className="font-body text-sm" style={{ color: "#8888aa" }}>← Draft XI</Link>
+          <Link href="/38-0" className="font-body text-sm" style={{ color: "#8a948f" }}>← Draft XI</Link>
           <div className="flex items-center gap-2">
             {team.mode === "expert" && (
               <span className="font-body text-xs px-2.5 py-1 rounded-full" style={{ color: "#ffb800", background: "rgba(255,184,0,0.12)" }}>
@@ -266,7 +266,7 @@ export default function TeamScreen() {
             )}
             <span
               className="font-body text-xs px-2.5 py-1 rounded-full"
-              style={{ color: "#00ff87", background: "rgba(0,255,135,0.12)" }}
+              style={{ color: "#aeea00", background: "rgba(174,234,0,0.12)" }}
             >
               ● AVAILABLE
             </span>
@@ -281,17 +281,17 @@ export default function TeamScreen() {
           <div className="grid grid-cols-2 gap-2.5 mb-4">
             <button onClick={goLive} disabled={matching}
               className="rounded-2xl py-3.5 px-3 text-center font-display tracking-wide active:scale-[0.97] transition-transform disabled:opacity-60"
-              style={{ background: "#00ff87", color: "#062013", fontSize: 16 }}>
+              style={{ background: "#aeea00", color: "#062013", fontSize: 16 }}>
               ⚡ Go Head-to-Head
             </button>
             <button onClick={() => router.push("/38-0/leagues")}
               className="rounded-2xl py-3.5 px-3 text-center font-display tracking-wide active:scale-[0.97] transition-transform"
-              style={{ background: "rgba(167,139,250,0.12)", color: "#a78bfa", fontSize: 16, border: "1px solid rgba(167,139,250,0.4)" }}>
+              style={{ background: "rgba(174,234,0,0.12)", color: "#aeea00", fontSize: 16, border: "1px solid rgba(174,234,0,0.4)" }}>
               🏆 Build a League
             </button>
             <Link href="/38-0/leaderboard"
               className="rounded-2xl py-3.5 px-3 text-center font-display tracking-wide active:scale-[0.97] transition-transform"
-              style={{ background: "rgba(0,255,135,0.1)", color: "#00ff87", fontSize: 16, border: "1px solid rgba(0,255,135,0.3)" }}>
+              style={{ background: "rgba(174,234,0,0.1)", color: "#aeea00", fontSize: 16, border: "1px solid rgba(174,234,0,0.3)" }}>
               🥇 Leaderboard
             </Link>
             <Link href="/38-0/history"
@@ -314,7 +314,7 @@ export default function TeamScreen() {
           >
             <div>
               <div className="font-display tracking-wide" style={{ fontSize: 20, color: "#fff" }}>WANT TO KEEP PLAYING?</div>
-              <div className="font-body mt-0.5" style={{ fontSize: 13, color: "#8888aa" }}>Sign up to go H2H, save this team &amp; climb the board</div>
+              <div className="font-body mt-0.5" style={{ fontSize: 13, color: "#8a948f" }}>Sign up to go H2H, save this team &amp; climb the board</div>
             </div>
             <div className="font-display" style={{ fontSize: 26, color: "#00c9ff" }}>→</div>
           </Link>
@@ -322,7 +322,7 @@ export default function TeamScreen() {
 
         {/* name-this-team panel — revealed by Save Team */}
         {naming && (
-          <div className="rounded-2xl p-3 mb-4" style={{ background: "#12121e", border: "1px solid rgba(255,184,0,0.35)" }}>
+          <div className="rounded-2xl p-3 mb-4" style={{ background: "#0e1611", border: "1px solid rgba(255,184,0,0.35)" }}>
             <div className="font-body mb-2" style={{ fontSize: 11, color: "#ffb800", letterSpacing: 1 }}>NAME THIS TEAM</div>
             <input value={teamName} onChange={(e) => setTeamName(e.target.value)} maxLength={40} autoFocus
               placeholder="e.g. My dream XI"
@@ -334,7 +334,7 @@ export default function TeamScreen() {
                 {saving ? "SAVING…" : "SAVE TO MY TEAMS"}
               </button>
               <button onClick={() => setNaming(false)} disabled={saving}
-                className="rounded-xl py-3 font-body active:scale-[0.98] transition-transform" style={{ background: "transparent", color: "#8888aa", fontSize: 14, border: "1px solid rgba(255,255,255,0.1)" }}>
+                className="rounded-xl py-3 font-body active:scale-[0.98] transition-transform" style={{ background: "transparent", color: "#8a948f", fontSize: 14, border: "1px solid rgba(255,255,255,0.1)" }}>
                 Cancel
               </button>
             </div>
@@ -351,38 +351,38 @@ export default function TeamScreen() {
         {(() => {
           const sr = hasLastSeason && lastSeason ? lastSeason.result : null;
           const verdictColor = sr
-            ? sr.verdict === "OVERPERFORMED" ? "#00ff87" : sr.verdict === "UNDERPERFORMED" ? "#ff4757" : "#8888aa"
-            : "#8888aa";
+            ? sr.verdict === "OVERPERFORMED" ? "#aeea00" : sr.verdict === "UNDERPERFORMED" ? "#ff4757" : "#8a948f"
+            : "#8a948f";
           return (
-            <div className="rounded-3xl p-5 mb-4" style={{ background: `linear-gradient(135deg, ${tc}22, #0f0f17)`, border: `1px solid ${tc}55` }}>
+            <div className="rounded-3xl p-5 mb-4" style={{ background: `linear-gradient(135deg, ${tc}22, #0e1611)`, border: `1px solid ${tc}55` }}>
               <div className="flex items-center justify-between">
                 <div className="font-display tracking-wide leading-none" style={{ fontSize: 40, color: tc }}>{tier}</div>
                 {sr && <span className="font-body px-2.5 py-1 rounded-full" style={{ fontSize: 11, color: verdictColor, background: `${verdictColor}1f`, letterSpacing: 1 }}>SEASON DONE · {sr.verdict}</span>}
               </div>
-              <div className="font-body mt-1" style={{ fontSize: 13, color: "#cfcfe6" }}>{TIER_TAGLINE[tier]}</div>
+              <div className="font-body mt-1" style={{ fontSize: 13, color: "#c4ccc6" }}>{TIER_TAGLINE[tier]}</div>
 
               <div className="flex items-end justify-between mt-4">
                 <div>
-                  <div className="font-body" style={{ fontSize: 11, color: "#8888aa" }}>{sr ? "FINISHED" : "PROJECTED FINISH"}</div>
+                  <div className="font-body" style={{ fontSize: 11, color: "#8a948f" }}>{sr ? "FINISHED" : "PROJECTED FINISH"}</div>
                   <div className="font-display tracking-wide" style={{ fontSize: 30, color: "#fff" }}>
                     {ordinal(sr ? sr.position : odds.projectedFinish)}
                   </div>
-                  <div className="font-body" style={{ fontSize: 12, color: "#8888aa" }}>
+                  <div className="font-body" style={{ fontSize: 12, color: "#8a948f" }}>
                     {sr ? `${sr.points} pts · ${sr.wins}W ${sr.draws}D ${sr.losses}L` : `${odds.expectedPoints} pts expected`}
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="font-body" style={{ fontSize: 11, color: "#8888aa" }}>STRENGTH</div>
+                  <div className="font-body" style={{ fontSize: 11, color: "#8a948f" }}>STRENGTH</div>
                   <div className="font-display" style={{ fontSize: 48, color: tc, lineHeight: 1 }}>{team.strength}</div>
                 </div>
               </div>
 
               {sr ? (
                 <div className="grid grid-cols-4 gap-2 mt-4">
-                  {([["PTS", sr.points, "#fff"], ["W", sr.wins, "#00ff87"], ["GF", sr.gf, "#22d3ee"], ["GA", sr.ga, "#ff4757"]] as [string, number, string][]).map(([k, v, c]) => (
+                  {([["PTS", sr.points, "#fff"], ["W", sr.wins, "#aeea00"], ["GF", sr.gf, "#aeea00"], ["GA", sr.ga, "#ff4757"]] as [string, number, string][]).map(([k, v, c]) => (
                     <div key={k} className="rounded-xl py-2 text-center" style={{ background: "rgba(0,0,0,0.25)", border: "1px solid rgba(255,255,255,0.06)" }}>
                       <div className="font-display" style={{ fontSize: 22, color: c }}>{v}</div>
-                      <div className="font-body" style={{ fontSize: 10, color: "#8888aa" }}>{k}</div>
+                      <div className="font-body" style={{ fontSize: 10, color: "#8a948f" }}>{k}</div>
                     </div>
                   ))}
                 </div>
@@ -407,13 +407,13 @@ export default function TeamScreen() {
           if (compat.length < 2) return null;
           return (
             <div className="flex items-center gap-2 mb-3">
-              <span className="font-body" style={{ fontSize: 11, color: "#8888aa", letterSpacing: 1 }}>SHAPE</span>
+              <span className="font-body" style={{ fontSize: 11, color: "#8a948f", letterSpacing: 1 }}>SHAPE</span>
               {compat.map((f) => {
                 const on = f === team.formation;
                 return (
                   <button key={f} onClick={() => switchFormation(f)}
                     className="rounded-lg px-3 py-1.5 font-display tracking-wide active:scale-95 transition-all"
-                    style={{ fontSize: 15, color: on ? "#062013" : "#cfcfe6", background: on ? "#00ff87" : "#12121e", border: `1px solid ${on ? "#00ff87" : "rgba(255,255,255,0.1)"}` }}>
+                    style={{ fontSize: 15, color: on ? "#062013" : "#c4ccc6", background: on ? "#aeea00" : "#0e1611", border: `1px solid ${on ? "#aeea00" : "rgba(255,255,255,0.1)"}` }}>
                     {f}
                   </button>
                 );
@@ -429,7 +429,7 @@ export default function TeamScreen() {
 
         <button onClick={() => router.push("/38-0/season")}
           className="w-full mt-4 rounded-2xl py-5 font-display tracking-wide active:scale-[0.98] transition-transform"
-          style={{ background: hasLastSeason ? "rgba(0,255,135,0.12)" : "#00ff87", color: hasLastSeason ? "#00ff87" : "#062013", fontSize: hasLastSeason ? 22 : 28, border: hasLastSeason ? "1px solid rgba(0,255,135,0.4)" : "none" }}>
+          style={{ background: hasLastSeason ? "rgba(174,234,0,0.12)" : "#aeea00", color: hasLastSeason ? "#aeea00" : "#062013", fontSize: hasLastSeason ? 22 : 28, border: hasLastSeason ? "1px solid rgba(174,234,0,0.4)" : "none" }}>
           {hasLastSeason ? "📊 VIEW SEASON RESULT →" : "⚽ SIMULATE SEASON →"}
         </button>
 
@@ -439,7 +439,7 @@ export default function TeamScreen() {
           {user && (
             <Link href="/38-0/teams"
               className="flex items-center justify-between w-full rounded-2xl px-4 py-3 active:scale-[0.98] transition-transform"
-              style={{ background: "rgba(167,139,250,0.08)", color: "#a78bfa", border: "1px solid rgba(167,139,250,0.25)" }}>
+              style={{ background: "rgba(174,234,0,0.08)", color: "#aeea00", border: "1px solid rgba(174,234,0,0.25)" }}>
               <span className="font-display tracking-wide" style={{ fontSize: 16 }}>{saved ? "📁 MY TEAMS ✓ saved" : "📁 MY TEAMS"}</span>
               <span className="font-display" style={{ fontSize: 18 }}>→</span>
             </Link>
@@ -458,7 +458,7 @@ export default function TeamScreen() {
             <div className="font-display tracking-wide" style={{ fontSize: 22, color: "#fff" }}>
               HOW LIVE H2H WORKS
             </div>
-            <div className="font-body" style={{ fontSize: 12, color: "#8888aa" }}>
+            <div className="font-body" style={{ fontSize: 12, color: "#8a948f" }}>
               Your XI is built — now take it online and beat other managers.
             </div>
           </div>
@@ -470,10 +470,10 @@ export default function TeamScreen() {
               ["TWO HALVES", "Swap before kick-off & at the break to outscore them"],
               ["AGGREGATE WINS", "Goals over 90 decide it · climb the board"],
             ] as [string, string][]).map(([title, desc], i) => (
-              <div key={title} className="rounded-2xl p-3" style={{ background: "#0d0d14", border: "1px solid rgba(255,255,255,0.08)" }}>
-                <span className="font-display tracking-wide" style={{ fontSize: 16, color: "#00ff87" }}>{i + 1}</span>
+              <div key={title} className="rounded-2xl p-3" style={{ background: "#080d0a", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <span className="font-display tracking-wide" style={{ fontSize: 16, color: "#aeea00" }}>{i + 1}</span>
                 <div className="font-display tracking-wide mt-1.5" style={{ fontSize: 16, color: "#fff", lineHeight: 1.1 }}>{title}</div>
-                <div className="font-body mt-1" style={{ fontSize: 12.5, color: "#8888aa", lineHeight: 1.3 }}>{desc}</div>
+                <div className="font-body mt-1" style={{ fontSize: 12.5, color: "#8a948f", lineHeight: 1.3 }}>{desc}</div>
               </div>
             ))}
           </div>
@@ -483,7 +483,7 @@ export default function TeamScreen() {
         {/* Projected finish drops to the bottom once a season has been simulated */}
         {hasLastSeason && <div className="mt-5">{oddsCard}</div>}
 
-        <p className="font-body text-center mt-5" style={{ color: "#8888aa", fontSize: 12 }}>
+        <p className="font-body text-center mt-5" style={{ color: "#8a948f", fontSize: 12 }}>
           {user
             ? "Live H2H wins climb the global leaderboard. Tweak your XI, then go again."
             : "Sign in to play live head-to-head & climb the global leaderboard."}
@@ -493,13 +493,13 @@ export default function TeamScreen() {
         {user ? (
           <button onClick={quickMatch} disabled={matching}
             className="w-full mt-4 rounded-2xl py-3 font-body active:scale-[0.98] transition-transform disabled:opacity-60"
-            style={{ background: "#12121e", color: "#8888aa", fontSize: 14, border: "1px solid rgba(255,255,255,0.08)" }}>
+            style={{ background: "#0e1611", color: "#8a948f", fontSize: 14, border: "1px solid rgba(255,255,255,0.08)" }}>
             Practice vs CPU
           </button>
         ) : (
           <button onClick={() => router.push("/38-0")}
             className="w-full mt-4 rounded-2xl py-3 font-body active:scale-[0.98] transition-transform"
-            style={{ background: "#12121e", color: "#8888aa", fontSize: 14, border: "1px solid rgba(255,255,255,0.08)" }}>
+            style={{ background: "#0e1611", color: "#8a948f", fontSize: 14, border: "1px solid rgba(255,255,255,0.08)" }}>
             Fresh team
           </button>
         )}

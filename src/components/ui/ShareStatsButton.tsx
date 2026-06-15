@@ -39,7 +39,7 @@ export function ShareStatsButton({
     <button
       onClick={handleShare}
       className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-body text-sm font-semibold transition-all active:scale-95"
-      style={{ background: "rgba(0,255,135,0.08)", color: copied ? "#00ff87" : "#aaaacc", border: `1px solid ${copied ? "rgba(0,255,135,0.3)" : "rgba(255,255,255,0.1)"}` }}
+      style={{ background: "rgba(174,234,0,0.08)", color: copied ? "#aeea00" : "#9aa39d", border: `1px solid ${copied ? "rgba(174,234,0,0.3)" : "rgba(255,255,255,0.1)"}` }}
     >
       {copied ? (
         <>✓ Copied!</>

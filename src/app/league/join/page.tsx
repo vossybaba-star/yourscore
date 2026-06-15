@@ -21,7 +21,7 @@ function JoinLeagueIndexInner() {
     <main className="min-h-dvh bg-bg">
       {/* Background grid */}
       <GridBackground opacity={0.025} />
-      <div className="fixed top-0 left-0 w-[500px] h-[500px] pointer-events-none" style={{ background: "radial-gradient(circle at 0% 0%, rgba(167,139,250,0.06) 0%, transparent 60%)" }} />
+      <div className="fixed top-0 left-0 w-[500px] h-[500px] pointer-events-none" style={{ background: "radial-gradient(circle at 0% 0%, rgba(174,234,0,0.06) 0%, transparent 60%)" }} />
 
       {/* Nav */}
       <nav className="relative z-10 pt-safe flex items-center justify-between px-6 py-5 max-w-2xl mx-auto">
@@ -34,7 +34,7 @@ function JoinLeagueIndexInner() {
       <div className="relative z-10 max-w-sm mx-auto px-6 pt-8">
         {/* Badge */}
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-6 font-body text-xs uppercase tracking-widest"
-          style={{ background: "rgba(167,139,250,0.1)", border: "1px solid rgba(167,139,250,0.2)", color: "#a78bfa" }}>
+          style={{ background: "rgba(174,234,0,0.1)", border: "1px solid rgba(174,234,0,0.2)", color: "#aeea00" }}>
           <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2.5 1.5h7v3L6 8l-3.5-3.5z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/><path d="M3 4.5v4a3 3 0 0 0 6 0v-4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>
           Join a league
         </div>
@@ -54,9 +54,9 @@ function JoinLeagueIndexInner() {
             autoCapitalize="characters"
             className="w-full rounded-2xl px-5 py-4 font-display text-3xl tracking-[0.18em] text-center outline-none transition-all placeholder:text-white/15"
             style={{
-              background: "#12121e",
-              border: `1px solid ${code.length >= 4 ? "rgba(167,139,250,0.45)" : "rgba(255,255,255,0.1)"}`,
-              color: "#a78bfa",
+              background: "#0e1611",
+              border: `1px solid ${code.length >= 4 ? "rgba(174,234,0,0.45)" : "rgba(255,255,255,0.1)"}`,
+              color: "#aeea00",
               letterSpacing: "0.18em",
             }}
           />
@@ -65,9 +65,9 @@ function JoinLeagueIndexInner() {
             disabled={code.trim().length < 4}
             className="w-full py-4 rounded-xl font-body font-bold text-base transition-all"
             style={{
-              background: code.trim().length >= 4 ? "#a78bfa" : "rgba(255,255,255,0.06)",
-              color: code.trim().length >= 4 ? "#0a0a0f" : "#8888aa",
-              boxShadow: code.trim().length >= 4 ? "0 0 20px rgba(167,139,250,0.25)" : "none",
+              background: code.trim().length >= 4 ? "#aeea00" : "rgba(255,255,255,0.06)",
+              color: code.trim().length >= 4 ? "#0a0a0f" : "#8a948f",
+              boxShadow: code.trim().length >= 4 ? "0 0 20px rgba(174,234,0,0.25)" : "none",
             }}
           >
             Find league →
@@ -88,7 +88,7 @@ function JoinLeagueIndexInner() {
           <Link
             href="/auth/sign-in"
             className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl font-body font-bold text-sm transition-all hover:opacity-90 text-green"
-            style={{ background: "rgba(0,255,135,0.1)", border: "1px solid rgba(0,255,135,0.28)" }}
+            style={{ background: "rgba(174,234,0,0.1)", border: "1px solid rgba(174,234,0,0.28)" }}
           >
             Sign Up Free →
           </Link>

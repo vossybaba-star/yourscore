@@ -53,7 +53,7 @@ function groupByDate(matches: HistoryEntry[]): { label: string; entries: History
 
 function ResultBadge({ outcome }: { outcome: "W" | "D" | "L" }) {
   const cfg = {
-    W: { bg: "rgba(0,255,135,0.12)", border: "rgba(0,255,135,0.3)", color: "#00ff87", label: "W" },
+    W: { bg: "rgba(174,234,0,0.12)", border: "rgba(174,234,0,0.3)", color: "#aeea00", label: "W" },
     D: { bg: "rgba(255,184,0,0.12)", border: "rgba(255,184,0,0.3)", color: "#ffb800", label: "D" },
     L: { bg: "rgba(255,71,87,0.12)", border: "rgba(255,71,87,0.3)", color: "#ff4757", label: "L" },
   }[outcome];
@@ -67,23 +67,23 @@ function ResultBadge({ outcome }: { outcome: "W" | "D" | "L" }) {
 
 function TypeTag({ type }: { type: "live" | "quick" }) {
   return type === "live"
-    ? <span className="font-body text-xs px-1.5 py-0.5 rounded" style={{ background: "rgba(0,255,135,0.08)", color: "#00ff87" }}>⚡ Live</span>
-    : <span className="font-body text-xs px-1.5 py-0.5 rounded" style={{ background: "rgba(167,139,250,0.08)", color: "#a78bfa" }}>⚔️ Challenge</span>;
+    ? <span className="font-body text-xs px-1.5 py-0.5 rounded" style={{ background: "rgba(174,234,0,0.08)", color: "#aeea00" }}>⚡ Live</span>
+    : <span className="font-body text-xs px-1.5 py-0.5 rounded" style={{ background: "rgba(174,234,0,0.08)", color: "#aeea00" }}>⚔️ Challenge</span>;
 }
 
 function MatchRow({ m }: { m: HistoryEntry }) {
-  const outcomeColor = m.outcome === "W" ? "#00ff87" : m.outcome === "D" ? "#ffb800" : "#ff4757";
+  const outcomeColor = m.outcome === "W" ? "#aeea00" : m.outcome === "D" ? "#ffb800" : "#ff4757";
   return (
     <div className="flex items-center gap-3 px-4 py-3 rounded-2xl transition-all"
-      style={{ background: "#12121e", border: `1px solid rgba(255,255,255,0.06)` }}>
+      style={{ background: "#0e1611", border: `1px solid rgba(255,255,255,0.06)` }}>
       <ResultBadge outcome={m.outcome} />
       {/* Score */}
       <div className="w-14 text-center flex-shrink-0">
         <span className="font-display text-xl tabular-nums" style={{ color: outcomeColor }}>
           {m.myGoals}
         </span>
-        <span className="font-display text-xl" style={{ color: "#444466" }}>–</span>
-        <span className="font-display text-xl tabular-nums" style={{ color: m.outcome === "L" ? outcomeColor : "#cfcfe6" }}>
+        <span className="font-display text-xl" style={{ color: "#3a423d" }}>–</span>
+        <span className="font-display text-xl tabular-nums" style={{ color: m.outcome === "L" ? outcomeColor : "#c4ccc6" }}>
           {m.oppGoals}
         </span>
       </div>
@@ -106,16 +106,16 @@ function MatchRow({ m }: { m: HistoryEntry }) {
         <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
           <TypeTag type={m.type} />
           {m.myFormation && (
-            <span className="font-body text-xs" style={{ color: "#555577" }}>{m.myFormation}</span>
+            <span className="font-body text-xs" style={{ color: "#586058" }}>{m.myFormation}</span>
           )}
         </div>
       </div>
       {/* Date + strength */}
       <div className="text-right flex-shrink-0">
-        <p className="font-body text-xs" style={{ color: "#555577" }}>{relativeDate(m.playedAt)}</p>
+        <p className="font-body text-xs" style={{ color: "#586058" }}>{relativeDate(m.playedAt)}</p>
         {m.myStrength != null && (
-          <p className="font-body text-xs mt-0.5" style={{ color: "#444466" }}>
-            {m.myStrength} <span style={{ color: "#333355" }}>vs</span> {m.oppStrength}
+          <p className="font-body text-xs mt-0.5" style={{ color: "#3a423d" }}>
+            {m.myStrength} <span style={{ color: "#3a423d" }}>vs</span> {m.oppStrength}
           </p>
         )}
       </div>
@@ -128,13 +128,13 @@ function OpponentRow({ opp }: { opp: OpponentRecord }) {
   const winPct = total > 0 ? Math.round((opp.wins / total) * 100) : 0;
   const dominantOutcome = opp.wins > opp.losses ? "W" : opp.losses > opp.wins ? "L" : "D";
   const avatarColor = {
-    bg: dominantOutcome === "W" ? "rgba(0,255,135,0.12)" : dominantOutcome === "L" ? "rgba(255,71,87,0.12)" : "rgba(255,184,0,0.12)",
-    text: dominantOutcome === "W" ? "#00ff87" : dominantOutcome === "L" ? "#ff4757" : "#ffb800",
-    border: dominantOutcome === "W" ? "rgba(0,255,135,0.2)" : dominantOutcome === "L" ? "rgba(255,71,87,0.2)" : "rgba(255,184,0,0.2)",
+    bg: dominantOutcome === "W" ? "rgba(174,234,0,0.12)" : dominantOutcome === "L" ? "rgba(255,71,87,0.12)" : "rgba(255,184,0,0.12)",
+    text: dominantOutcome === "W" ? "#aeea00" : dominantOutcome === "L" ? "#ff4757" : "#ffb800",
+    border: dominantOutcome === "W" ? "rgba(174,234,0,0.2)" : dominantOutcome === "L" ? "rgba(255,71,87,0.2)" : "rgba(255,184,0,0.2)",
   };
   return (
     <div className="flex items-center gap-3 px-4 py-3 rounded-2xl"
-      style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.06)" }}>
+      style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.06)" }}>
       {/* Avatar — taps through to profile */}
       <Link href={`/players/${opp.opponentId}`} className="flex-shrink-0">
         <div className="w-9 h-9 rounded-full flex items-center justify-center font-body font-bold text-sm"
@@ -156,20 +156,20 @@ function OpponentRow({ opp }: { opp: OpponentRecord }) {
           {/* W/D/L mini bars */}
           {total > 0 && (
             <div className="flex h-1.5 rounded-full overflow-hidden gap-px flex-1 max-w-[80px]">
-              <div className="rounded-l-full" style={{ width: `${(opp.wins / total) * 100}%`, background: "#00ff87", minWidth: opp.wins > 0 ? 3 : 0 }} />
+              <div className="rounded-l-full" style={{ width: `${(opp.wins / total) * 100}%`, background: "#aeea00", minWidth: opp.wins > 0 ? 3 : 0 }} />
               <div style={{ width: `${(opp.draws / total) * 100}%`, background: "#ffb800", minWidth: opp.draws > 0 ? 3 : 0 }} />
               <div className="rounded-r-full" style={{ width: `${(opp.losses / total) * 100}%`, background: "#ff4757", minWidth: opp.losses > 0 ? 3 : 0 }} />
             </div>
           )}
-          <span className="font-body text-xs" style={{ color: "#555577" }}>
+          <span className="font-body text-xs" style={{ color: "#586058" }}>
             {opp.wins}W {opp.draws}D {opp.losses}L
           </span>
         </div>
       </div>
       {/* Win % + game count */}
       <div className="text-right flex-shrink-0">
-        <p className="font-display text-lg leading-none" style={{ color: winPct >= 50 ? "#00ff87" : "#ff4757" }}>{winPct}%</p>
-        <p className="font-body text-xs mt-0.5" style={{ color: "#555577" }}>{total} game{total !== 1 ? "s" : ""}</p>
+        <p className="font-display text-lg leading-none" style={{ color: winPct >= 50 ? "#aeea00" : "#ff4757" }}>{winPct}%</p>
+        <p className="font-body text-xs mt-0.5" style={{ color: "#586058" }}>{total} game{total !== 1 ? "s" : ""}</p>
       </div>
     </div>
   );
@@ -216,7 +216,7 @@ export default function HistoryPage() {
             className="w-9 h-9 flex items-center justify-center rounded-xl flex-shrink-0"
             style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)" }}>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M10 3L5 8l5 5" stroke="#8888aa" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M10 3L5 8l5 5" stroke="#8a948f" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
           <div className="flex-1">
@@ -224,7 +224,7 @@ export default function HistoryPage() {
             <p className="font-body text-xs text-text-muted mt-0.5">38-0 Head-to-Head</p>
           </div>
           <Link href="/38-0/leaderboard" className="font-body text-xs font-semibold px-3 py-1.5 rounded-lg"
-            style={{ background: "rgba(0,255,135,0.1)", color: "#00ff87", border: "1px solid rgba(0,255,135,0.2)" }}>
+            style={{ background: "rgba(174,234,0,0.1)", color: "#aeea00", border: "1px solid rgba(174,234,0,0.2)" }}>
             Leaderboard
           </Link>
         </div>
@@ -235,19 +235,19 @@ export default function HistoryPage() {
         {/* Overall record banner */}
         {matches !== null && totalPlayed > 0 && (
           <div className="rounded-2xl px-5 py-4"
-            style={{ background: "linear-gradient(135deg, rgba(0,255,135,0.08) 0%, rgba(167,139,250,0.05) 100%)", border: "1px solid rgba(0,255,135,0.15)" }}>
-            <p className="font-body text-xs uppercase tracking-widest mb-3" style={{ color: "#00ff87" }}>Your Record</p>
+            style={{ background: "linear-gradient(135deg, rgba(174,234,0,0.08) 0%, rgba(174,234,0,0.05) 100%)", border: "1px solid rgba(174,234,0,0.15)" }}>
+            <p className="font-body text-xs uppercase tracking-widest mb-3" style={{ color: "#aeea00" }}>Your Record</p>
             <div className="flex items-end gap-4">
               <div className="flex-1">
                 <p className="font-display text-4xl leading-none text-white">
                   {totalWins}
-                  <span className="text-2xl" style={{ color: "#555577" }}>-{totalDraws}-{totalLosses}</span>
+                  <span className="text-2xl" style={{ color: "#586058" }}>-{totalDraws}-{totalLosses}</span>
                 </p>
                 <p className="font-body text-xs text-text-muted mt-1.5">W-D-L · {totalPlayed} games</p>
               </div>
               {/* Win % gauge */}
               <div className="text-right">
-                <p className="font-display text-3xl leading-none" style={{ color: totalWins / totalPlayed >= 0.5 ? "#00ff87" : "#ff4757" }}>
+                <p className="font-display text-3xl leading-none" style={{ color: totalWins / totalPlayed >= 0.5 ? "#aeea00" : "#ff4757" }}>
                   {Math.round((totalWins / totalPlayed) * 100)}%
                 </p>
                 <p className="font-body text-xs text-text-muted mt-1">win rate</p>
@@ -255,7 +255,7 @@ export default function HistoryPage() {
             </div>
             {/* W/D/L bar */}
             <div className="flex h-2 rounded-full overflow-hidden gap-px mt-3">
-              <div style={{ flex: totalWins, background: "#00ff87", minWidth: totalWins > 0 ? 4 : 0 }} />
+              <div style={{ flex: totalWins, background: "#aeea00", minWidth: totalWins > 0 ? 4 : 0 }} />
               <div style={{ flex: totalDraws, background: "#ffb800", minWidth: totalDraws > 0 ? 4 : 0 }} />
               <div style={{ flex: totalLosses, background: "#ff4757", minWidth: totalLosses > 0 ? 4 : 0 }} />
             </div>
@@ -270,9 +270,9 @@ export default function HistoryPage() {
               onClick={() => setActiveTab("matches")}
               className="flex-1 py-2 rounded-xl font-body text-sm font-semibold transition-all"
               style={{
-                background: activeTab === "matches" ? "rgba(0,255,135,0.12)" : "transparent",
-                color: activeTab === "matches" ? "#00ff87" : "#8888aa",
-                border: activeTab === "matches" ? "1px solid rgba(0,255,135,0.25)" : "1px solid transparent",
+                background: activeTab === "matches" ? "rgba(174,234,0,0.12)" : "transparent",
+                color: activeTab === "matches" ? "#aeea00" : "#8a948f",
+                border: activeTab === "matches" ? "1px solid rgba(174,234,0,0.25)" : "1px solid transparent",
               }}>
               Matches ({totalPlayed})
             </button>
@@ -280,9 +280,9 @@ export default function HistoryPage() {
               onClick={() => setActiveTab("opponents")}
               className="flex-1 py-2 rounded-xl font-body text-sm font-semibold transition-all"
               style={{
-                background: activeTab === "opponents" ? "rgba(167,139,250,0.12)" : "transparent",
-                color: activeTab === "opponents" ? "#a78bfa" : "#8888aa",
-                border: activeTab === "opponents" ? "1px solid rgba(167,139,250,0.25)" : "1px solid transparent",
+                background: activeTab === "opponents" ? "rgba(174,234,0,0.12)" : "transparent",
+                color: activeTab === "opponents" ? "#aeea00" : "#8a948f",
+                border: activeTab === "opponents" ? "1px solid rgba(174,234,0,0.25)" : "1px solid transparent",
               }}>
               Opponents ({opponents.length})
             </button>
@@ -292,8 +292,8 @@ export default function HistoryPage() {
         {/* Loading */}
         {matches === null && !error && (
           <div className="py-16 flex flex-col items-center gap-4">
-            <div className="h-8 w-8 rounded-full animate-spin" style={{ border: "2px solid rgba(0,255,135,0.2)", borderTopColor: "#00ff87" }} />
-            <p className="font-body text-sm" style={{ color: "#8888aa" }}>Loading match history…</p>
+            <div className="h-8 w-8 rounded-full animate-spin" style={{ border: "2px solid rgba(174,234,0,0.2)", borderTopColor: "#aeea00" }} />
+            <p className="font-body text-sm" style={{ color: "#8a948f" }}>Loading match history…</p>
           </div>
         )}
 
@@ -311,7 +311,7 @@ export default function HistoryPage() {
             <p className="font-body text-sm text-text-muted mb-6">Play your first head-to-head to start your history.</p>
             <Link href="/38-0/live"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-body font-bold text-sm"
-              style={{ background: "rgba(0,255,135,0.12)", color: "#00ff87", border: "1px solid rgba(0,255,135,0.25)" }}>
+              style={{ background: "rgba(174,234,0,0.12)", color: "#aeea00", border: "1px solid rgba(174,234,0,0.25)" }}>
               Find a match →
             </Link>
           </div>
@@ -322,7 +322,7 @@ export default function HistoryPage() {
           <div className="space-y-6">
             {groups.map(({ label, entries }) => (
               <div key={label}>
-                <p className="font-body text-xs uppercase tracking-widest mb-3" style={{ color: "#555577" }}>{label}</p>
+                <p className="font-body text-xs uppercase tracking-widest mb-3" style={{ color: "#586058" }}>{label}</p>
                 <div className="space-y-2">
                   {entries.map(m => <MatchRow key={m.id} m={m} />)}
                 </div>
@@ -343,12 +343,12 @@ export default function HistoryPage() {
           <div className="flex gap-3 pt-2">
             <Link href="/38-0/live"
               className="flex-1 flex items-center justify-center py-3 rounded-2xl font-body text-sm font-semibold"
-              style={{ background: "rgba(0,255,135,0.08)", color: "#00ff87", border: "1px solid rgba(0,255,135,0.18)" }}>
+              style={{ background: "rgba(174,234,0,0.08)", color: "#aeea00", border: "1px solid rgba(174,234,0,0.18)" }}>
               Play now →
             </Link>
             <Link href="/friends"
               className="flex-1 flex items-center justify-center py-3 rounded-2xl font-body text-sm font-semibold"
-              style={{ background: "rgba(167,139,250,0.08)", color: "#a78bfa", border: "1px solid rgba(167,139,250,0.18)" }}>
+              style={{ background: "rgba(174,234,0,0.08)", color: "#aeea00", border: "1px solid rgba(174,234,0,0.18)" }}>
               Friends
             </Link>
           </div>

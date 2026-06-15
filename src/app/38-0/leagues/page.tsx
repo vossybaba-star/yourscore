@@ -55,39 +55,39 @@ export default function Leagues() {
       <div className="max-w-lg mx-auto px-5 pt-safe">
         <DraftHeader />
         <h1 className="font-display tracking-wide leading-none" style={{ fontSize: 44, color: "#fff" }}>
-          MY <span style={{ color: "#a78bfa" }}>LEAGUES</span>
+          MY <span style={{ color: "#aeea00" }}>LEAGUES</span>
         </h1>
-        <p className="font-body mt-1 mb-5" style={{ fontSize: 13, color: "#8888aa" }}>
+        <p className="font-body mt-1 mb-5" style={{ fontSize: 13, color: "#8a948f" }}>
           Compete just with your mates — separate from the global board.
         </p>
 
         {!user && !loading ? (
-          <div className="rounded-2xl p-6 text-center" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="rounded-2xl p-6 text-center" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.08)" }}>
             <div className="font-display tracking-wide" style={{ fontSize: 20, color: "#fff" }}>SIGN IN FOR LEAGUES</div>
-            <p className="font-body mt-2" style={{ fontSize: 13, color: "#8888aa" }}>Create or join a private league to compete with your group.</p>
-            <Link href="/auth/sign-in" className="inline-block mt-4 rounded-xl px-5 py-3 font-display tracking-wide" style={{ background: "#a78bfa", color: "#15082b", fontSize: 18 }}>SIGN IN →</Link>
+            <p className="font-body mt-2" style={{ fontSize: 13, color: "#8a948f" }}>Create or join a private league to compete with your group.</p>
+            <Link href="/auth/sign-in" className="inline-block mt-4 rounded-xl px-5 py-3 font-display tracking-wide" style={{ background: "#aeea00", color: "#0e1611", fontSize: 18 }}>SIGN IN →</Link>
           </div>
         ) : (
           <>
             {err && <div className="rounded-xl px-4 py-2 mb-3 font-body text-center" style={{ fontSize: 13, color: "#ff4757", background: "rgba(255,71,87,0.1)" }}>{err}</div>}
 
             {/* create */}
-            <div className="rounded-2xl p-4 mb-3" style={{ background: "#12121e", border: "1px solid rgba(167,139,250,0.25)" }}>
-              <div className="font-display tracking-wide mb-2" style={{ fontSize: 18, color: "#a78bfa" }}>CREATE A LEAGUE</div>
+            <div className="rounded-2xl p-4 mb-3" style={{ background: "#0e1611", border: "1px solid rgba(174,234,0,0.25)" }}>
+              <div className="font-display tracking-wide mb-2" style={{ fontSize: 18, color: "#aeea00" }}>CREATE A LEAGUE</div>
               <div className="flex gap-2">
                 <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} placeholder="League name"
                   className="flex-1 rounded-xl px-3 py-3 font-body" style={{ background: "#0a0a0f", color: "#fff", border: "1px solid rgba(255,255,255,0.1)" }} />
-                <button onClick={create} disabled={busy || !name.trim()} className="rounded-xl px-5 font-display tracking-wide disabled:opacity-50" style={{ background: "#a78bfa", color: "#15082b", fontSize: 18 }}>CREATE</button>
+                <button onClick={create} disabled={busy || !name.trim()} className="rounded-xl px-5 font-display tracking-wide disabled:opacity-50" style={{ background: "#aeea00", color: "#0e1611", fontSize: 18 }}>CREATE</button>
               </div>
             </div>
 
             {/* join */}
-            <div className="rounded-2xl p-4 mb-5" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <div className="rounded-2xl p-4 mb-5" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.08)" }}>
               <div className="font-display tracking-wide mb-2" style={{ fontSize: 18, color: "#fff" }}>JOIN BY CODE</div>
               <div className="flex gap-2">
                 <input value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} maxLength={6} placeholder="ABC123"
                   className="flex-1 rounded-xl px-3 py-3 font-display tracking-widest" style={{ background: "#0a0a0f", color: "#fff", border: "1px solid rgba(255,255,255,0.1)", fontSize: 20 }} />
-                <button onClick={join} disabled={busy || !code.trim()} className="rounded-xl px-5 font-display tracking-wide disabled:opacity-50" style={{ background: "#00ff87", color: "#062013", fontSize: 18 }}>JOIN</button>
+                <button onClick={join} disabled={busy || !code.trim()} className="rounded-xl px-5 font-display tracking-wide disabled:opacity-50" style={{ background: "#aeea00", color: "#062013", fontSize: 18 }}>JOIN</button>
               </div>
             </div>
 
@@ -96,12 +96,12 @@ export default function Leagues() {
               <div className="space-y-2">
                 {leagues.map((l) => (
                   <Link key={l.id} href={`/38-0/league/${l.code}`} className="flex items-center justify-between rounded-xl px-4 py-3 active:scale-[0.98] transition-transform"
-                    style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.08)" }}>
+                    style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.08)" }}>
                     <div>
                       <div className="font-body" style={{ fontSize: 16, color: "#fff" }}>{l.name}</div>
-                      <div className="font-body" style={{ fontSize: 12, color: "#8888aa" }}>{l.member_count} member{l.member_count === 1 ? "" : "s"} · {l.code}</div>
+                      <div className="font-body" style={{ fontSize: 12, color: "#8a948f" }}>{l.member_count} member{l.member_count === 1 ? "" : "s"} · {l.code}</div>
                     </div>
-                    <span className="font-display" style={{ fontSize: 20, color: "#a78bfa" }}>→</span>
+                    <span className="font-display" style={{ fontSize: 20, color: "#aeea00" }}>→</span>
                   </Link>
                 ))}
               </div>

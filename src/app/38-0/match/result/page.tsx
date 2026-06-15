@@ -92,12 +92,12 @@ export default function MatchResult() {
   }
 
   if (!m) {
-    return <div className="min-h-[100dvh] grid place-items-center" style={{ background: "#0a0a0f", color: "#8888aa" }}>Loading…</div>;
+    return <div className="min-h-[100dvh] grid place-items-center" style={{ background: "#0a0a0f", color: "#8a948f" }}>Loading…</div>;
   }
 
   const won = m.outcome === "you";
   const drew = m.outcome === "draw";
-  const accent = won ? "#00ff87" : drew ? "#ffb800" : "#ff4757";
+  const accent = won ? "#aeea00" : drew ? "#ffb800" : "#ff4757";
 
   return (
     <div className="min-h-[100dvh] pb-28" style={{ background: "#0a0a0f" }}>
@@ -106,7 +106,7 @@ export default function MatchResult() {
 
       <div className="relative mx-auto max-w-lg px-4 pt-safe">
         <div className="flex items-center justify-between py-3">
-          <Link href="/38-0" className="font-mono text-sm uppercase" style={{ color: "#8888aa", letterSpacing: "0.1em" }}>← 38-0</Link>
+          <Link href="/38-0" className="font-mono text-sm uppercase" style={{ color: "#8a948f", letterSpacing: "0.1em" }}>← 38-0</Link>
         </div>
 
         <Scorecard m={m} context="Quick Match" />
@@ -132,7 +132,7 @@ export default function MatchResult() {
           {won ? (
             <Link href="/38-0/swap"
               className="block w-full rounded-[20px] py-4 text-center font-display tracking-wide transition-all duration-300 hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-[0.98]"
-              style={{ background: "#00ff87", color: "#062013", fontSize: 22, outlineColor: "#00ff87" }}>
+              style={{ background: "#aeea00", color: "#062013", fontSize: 22, outlineColor: "#aeea00" }}>
               SWAP ONE PLAYER →
             </Link>
           ) : drew ? (
@@ -151,7 +151,7 @@ export default function MatchResult() {
 
           <Link href="/38-0/team"
             className="block w-full rounded-[20px] py-3 text-center font-body transition-all duration-300 hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-[0.98]"
-            style={{ background: "#12121e", color: "#8888aa", fontSize: 15, border: "1px solid rgba(255,255,255,0.08)", outlineColor: accent }}>
+            style={{ background: "#0e1611", color: "#8a948f", fontSize: 15, border: "1px solid rgba(255,255,255,0.08)", outlineColor: accent }}>
             Back to my team
           </Link>
         </div>
@@ -165,7 +165,7 @@ export default function MatchResult() {
           onClick={() => setShowShareSheet(false)}
         >
           <div className="w-full max-w-lg px-4 pb-6" onClick={(e) => e.stopPropagation()}>
-            <div className="rounded-3xl overflow-hidden" style={{ background: "#16162a", border: "1px solid rgba(255,255,255,0.1)" }}>
+            <div className="rounded-3xl overflow-hidden" style={{ background: "#15211a", border: "1px solid rgba(255,255,255,0.1)" }}>
               {/* handle */}
               <div className="flex justify-center pt-3 pb-1">
                 <div className="rounded-full" style={{ width: 36, height: 4, background: "rgba(255,255,255,0.2)" }} />
@@ -186,7 +186,7 @@ export default function MatchResult() {
                         <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.741l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
                       </svg>
                     </div>
-                    <span className="font-body text-xs" style={{ color: "#8888aa" }}>Post on 𝕏</span>
+                    <span className="font-body text-xs" style={{ color: "#8a948f" }}>Post on 𝕏</span>
                   </a>
 
                   {/* Instagram */}
@@ -200,7 +200,7 @@ export default function MatchResult() {
                         <circle cx="17.5" cy="6.5" r="1" fill="#e1306c"/>
                       </svg>
                     </div>
-                    <span className="font-body text-xs" style={{ color: "#8888aa" }}>Instagram</span>
+                    <span className="font-body text-xs" style={{ color: "#8a948f" }}>Instagram</span>
                   </button>
 
                   {/* TikTok */}
@@ -212,7 +212,7 @@ export default function MatchResult() {
                         <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.27 8.27 0 004.83 1.54V6.78a4.86 4.86 0 01-1.06-.09z"/>
                       </svg>
                     </div>
-                    <span className="font-body text-xs" style={{ color: "#8888aa" }}>TikTok</span>
+                    <span className="font-body text-xs" style={{ color: "#8a948f" }}>TikTok</span>
                   </button>
 
                   {/* More */}
@@ -226,19 +226,19 @@ export default function MatchResult() {
                         <circle cx="19" cy="12" r="2" fill="white"/>
                       </svg>
                     </div>
-                    <span className="font-body text-xs" style={{ color: "#8888aa" }}>More</span>
+                    <span className="font-body text-xs" style={{ color: "#8a948f" }}>More</span>
                   </button>
                 </div>
 
                 {/* copy link row */}
                 <button onClick={copyLink}
                   className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all"
-                  style={{ background: linkCopied ? "rgba(0,255,135,0.1)" : "rgba(255,255,255,0.06)", border: `1px solid ${linkCopied ? "rgba(0,255,135,0.3)" : "rgba(255,255,255,0.1)"}` }}>
+                  style={{ background: linkCopied ? "rgba(174,234,0,0.1)" : "rgba(255,255,255,0.06)", border: `1px solid ${linkCopied ? "rgba(174,234,0,0.3)" : "rgba(255,255,255,0.1)"}` }}>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke={linkCopied ? "#00ff87" : "#aaaacc"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke={linkCopied ? "#00ff87" : "#aaaacc"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke={linkCopied ? "#aeea00" : "#9aa39d"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke={linkCopied ? "#aeea00" : "#9aa39d"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
-                  <span className="font-body text-sm font-semibold" style={{ color: linkCopied ? "#00ff87" : "#aaaacc" }}>
+                  <span className="font-body text-sm font-semibold" style={{ color: linkCopied ? "#aeea00" : "#9aa39d" }}>
                     {linkCopied ? "Copied!" : "Copy link"}
                   </span>
                 </button>

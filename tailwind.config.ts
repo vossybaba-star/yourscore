@@ -9,15 +9,23 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        bg: "#0a0a0f",
-        surface: "#12121e",
-        "surface-2": "#1a1a2e",
-        green: "#00ff87",
+        // Surfaces — deep "pitch → ink" ramp (de-violeted; was blue-violet greys)
+        bg: "#080d0a",
+        surface: "#0e1611",
+        "surface-2": "#15211a",
+        "surface-3": "#1d2c23",
+        // Brand system: lime = 38-0/energy/actions, teal = Quiz/knowledge, gold = wins only
+        lime: "#aeea00",
+        teal: "#00d8c0",
+        gold: "#ffc233",
+        // `green` kept as an alias so existing bg-green/text-green pick up the new
+        // action colour (lime) without touching every usage site.
+        green: "#aeea00",
         amber: "#ffb800",
         danger: "#ff4757",
-        "text-primary": "#ffffff",
-        "text-muted": "#8888aa",
-        border: "rgba(255,255,255,0.08)",
+        "text-primary": "#eef2f0",
+        "text-muted": "#8a948f",
+        border: "rgba(255,255,255,0.07)",
       },
       fontFamily: {
         display: ["var(--font-bebas)", "sans-serif"],

@@ -40,9 +40,9 @@ function QuizReadyContent() {
           <div style={{
             width: 80, height: 80, borderRadius: 24, margin: "0 auto",
             display: "flex", alignItems: "center", justifyContent: "center",
-            background: "linear-gradient(135deg, rgba(0,255,135,0.2), rgba(0,255,135,0.08))",
-            border: "1.5px solid rgba(0,255,135,0.4)",
-            boxShadow: "0 0 40px rgba(0,255,135,0.2)",
+            background: "linear-gradient(135deg, rgba(174,234,0,0.2), rgba(174,234,0,0.08))",
+            border: "1.5px solid rgba(174,234,0,0.4)",
+            boxShadow: "0 0 40px rgba(174,234,0,0.2)",
             fontSize: 38,
           }}>
             ⚡
@@ -58,7 +58,7 @@ function QuizReadyContent() {
         </h1>
         <p className="slide-2" style={{
           fontFamily: "var(--font-body, sans-serif)", fontSize: 14,
-          color: "#8888aa", marginBottom: 32,
+          color: "#8a948f", marginBottom: 32,
         }}>
           What do you want to do with it?
         </p>
@@ -70,18 +70,18 @@ function QuizReadyContent() {
             style={{
               display: "flex", alignItems: "center", gap: 14,
               padding: "16px 18px", borderRadius: 16, textDecoration: "none",
-              background: "linear-gradient(135deg, rgba(0,255,135,0.14), rgba(0,255,135,0.06))",
-              border: "1px solid rgba(0,255,135,0.35)",
+              background: "linear-gradient(135deg, rgba(174,234,0,0.14), rgba(174,234,0,0.06))",
+              border: "1px solid rgba(174,234,0,0.35)",
               transition: "all 0.15s ease",
             }}
           >
             <div style={{
               width: 42, height: 42, borderRadius: 12, flexShrink: 0,
               display: "flex", alignItems: "center", justifyContent: "center",
-              background: "rgba(0,255,135,0.15)", fontSize: 20,
+              background: "rgba(174,234,0,0.15)", fontSize: 20,
             }}>🎯</div>
             <div style={{ textAlign: "left" }}>
-              <p style={{ fontFamily: "var(--font-display, sans-serif)", fontSize: 15, fontWeight: 700, color: "#00ff87", margin: 0 }}>
+              <p style={{ fontFamily: "var(--font-display, sans-serif)", fontSize: 15, fontWeight: 700, color: "#aeea00", margin: 0 }}>
                 Play Solo
               </p>
               <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: 12, color: "#6eeab0", margin: "2px 0 0" }}>
@@ -89,7 +89,7 @@ function QuizReadyContent() {
               </p>
             </div>
             <svg style={{ marginLeft: "auto", flexShrink: 0 }} width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M5 3l6 5-6 5" stroke="#00ff87" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M5 3l6 5-6 5" stroke="#aeea00" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </Link>
 
@@ -99,26 +99,26 @@ function QuizReadyContent() {
             style={{
               display: "flex", alignItems: "center", gap: 14,
               padding: "16px 18px", borderRadius: 16, textDecoration: "none",
-              background: "linear-gradient(135deg, rgba(167,139,250,0.14), rgba(167,139,250,0.06))",
-              border: "1px solid rgba(167,139,250,0.35)",
+              background: "linear-gradient(135deg, rgba(174,234,0,0.14), rgba(174,234,0,0.06))",
+              border: "1px solid rgba(174,234,0,0.35)",
               transition: "all 0.15s ease",
             }}
           >
             <div style={{
               width: 42, height: 42, borderRadius: 12, flexShrink: 0,
               display: "flex", alignItems: "center", justifyContent: "center",
-              background: "rgba(167,139,250,0.15)", fontSize: 20,
+              background: "rgba(174,234,0,0.15)", fontSize: 20,
             }}>👥</div>
             <div style={{ textAlign: "left" }}>
-              <p style={{ fontFamily: "var(--font-display, sans-serif)", fontSize: 15, fontWeight: 700, color: "#a78bfa", margin: 0 }}>
+              <p style={{ fontFamily: "var(--font-display, sans-serif)", fontSize: 15, fontWeight: 700, color: "#aeea00", margin: 0 }}>
                 Open a Lobby
               </p>
-              <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: 12, color: "#9b87d6", margin: "2px 0 0" }}>
+              <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: 12, color: "#9aa39d", margin: "2px 0 0" }}>
                 Play with your mates
               </p>
             </div>
             <svg style={{ marginLeft: "auto", flexShrink: 0 }} width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M5 3l6 5-6 5" stroke="#a78bfa" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M5 3l6 5-6 5" stroke="#aeea00" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </Link>
 
@@ -129,7 +129,7 @@ function QuizReadyContent() {
             style={{
               display: "block", padding: "12px", borderRadius: 14,
               fontFamily: "var(--font-body, sans-serif)", fontSize: 13, fontWeight: 600,
-              color: "#555577", textAlign: "center", textDecoration: "none",
+              color: "#586058", textAlign: "center", textDecoration: "none",
               marginTop: 4,
             }}
           >

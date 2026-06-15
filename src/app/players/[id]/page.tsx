@@ -32,7 +32,7 @@ function AvatarCircle({
   }
   const palettes = [
     { bg: "#1a2f4a", text: "#60a5fa" },
-    { bg: "#2a1a4a", text: "#a78bfa" },
+    { bg: "#3a423d", text: "#aeea00" },
     { bg: "#1a4a2a", text: "#4ade80" },
     { bg: "#4a2a1a", text: "#fb923c" },
     { bg: "#4a1a2a", text: "#f87171" },
@@ -99,9 +99,9 @@ export default async function PlayerProfilePage({ params }: PlayerPageProps) {
             href="/38-0/history"
             className="inline-flex items-center justify-center px-6 py-3 rounded-xl font-body font-bold text-sm"
             style={{
-              background: "rgba(167,139,250,0.1)",
-              border: "1px solid rgba(167,139,250,0.28)",
-              color: "#a78bfa",
+              background: "rgba(174,234,0,0.1)",
+              border: "1px solid rgba(174,234,0,0.28)",
+              color: "#aeea00",
             }}
           >
             ← Back
@@ -152,7 +152,7 @@ export default async function PlayerProfilePage({ params }: PlayerPageProps) {
               style={{
                 background: "rgba(255,255,255,0.05)",
                 border: "1px solid rgba(255,255,255,0.1)",
-                color: "#8888aa",
+                color: "#8a948f",
               }}
               aria-label="Back"
             >
@@ -198,8 +198,8 @@ export default async function PlayerProfilePage({ params }: PlayerPageProps) {
           className="rounded-2xl px-5 py-5"
           style={{
             background:
-              "linear-gradient(135deg, rgba(167,139,250,0.1), rgba(0,255,135,0.05))",
-            border: "1px solid rgba(167,139,250,0.2)",
+              "linear-gradient(135deg, rgba(174,234,0,0.1), rgba(174,234,0,0.05))",
+            border: "1px solid rgba(174,234,0,0.2)",
           }}
         >
           <div className="flex items-end justify-between">
@@ -209,7 +209,7 @@ export default async function PlayerProfilePage({ params }: PlayerPageProps) {
               </p>
               <p
                 className="font-display text-5xl leading-none"
-                style={{ color: "#a78bfa" }}
+                style={{ color: "#aeea00" }}
               >
                 #{globalRank}
               </p>
@@ -225,7 +225,7 @@ export default async function PlayerProfilePage({ params }: PlayerPageProps) {
                   border: "1px solid rgba(255,255,255,0.1)",
                 }}
               >
-                <p className="font-body text-xs" style={{ color: "#8888aa" }}>
+                <p className="font-body text-xs" style={{ color: "#8a948f" }}>
                   {gamesPlayed} games
                 </p>
               </div>
@@ -238,13 +238,13 @@ export default async function PlayerProfilePage({ params }: PlayerPageProps) {
           className="rounded-2xl px-5 py-5"
           style={{
             background:
-              "linear-gradient(135deg, rgba(0,255,135,0.07), rgba(0,255,135,0.03))",
-            border: "1px solid rgba(0,255,135,0.18)",
+              "linear-gradient(135deg, rgba(174,234,0,0.07), rgba(174,234,0,0.03))",
+            border: "1px solid rgba(174,234,0,0.18)",
           }}
         >
           <p
             className="font-body text-xs uppercase tracking-widest mb-3"
-            style={{ color: "#00ff87" }}
+            style={{ color: "#aeea00" }}
           >
             38-0 Head-to-Head record
           </p>
@@ -253,7 +253,7 @@ export default async function PlayerProfilePage({ params }: PlayerPageProps) {
               <div className="text-center">
                 <p
                   className="font-display text-4xl leading-none"
-                  style={{ color: "#00ff87" }}
+                  style={{ color: "#aeea00" }}
                 >
                   {draftRecord.w}
                 </p>

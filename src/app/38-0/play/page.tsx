@@ -89,7 +89,7 @@ export default function DraftPlay() {
   }
 
   if (!team) {
-    return <div className="min-h-[100dvh] grid place-items-center" style={{ background: "#0a0a0f", color: "#8888aa" }}>Loading…</div>;
+    return <div className="min-h-[100dvh] grid place-items-center" style={{ background: "#0a0a0f", color: "#8a948f" }}>Loading…</div>;
   }
 
   const expert = team.mode === "expert";
@@ -107,17 +107,17 @@ export default function DraftPlay() {
     <div className="min-h-[100dvh] pb-44" style={{ background: "#0a0a0f" }}>
       <div className="max-w-lg mx-auto px-4 pt-safe">
         <div className="pt-4">
-          <Link href="/38-0" className="font-body text-sm" style={{ color: "#8888aa" }}>← Back</Link>
+          <Link href="/38-0" className="font-body text-sm" style={{ color: "#8a948f" }}>← Back</Link>
         </div>
         {/* header: formation + overall */}
         <div className="flex items-center justify-between pt-2">
           <div>
-            <div className="font-body" style={{ fontSize: 11, color: "#8888aa", letterSpacing: 1 }}>FORMATION</div>
+            <div className="font-body" style={{ fontSize: 11, color: "#8a948f", letterSpacing: 1 }}>FORMATION</div>
             <div className="font-display tracking-wide" style={{ fontSize: 26, color: "#fff" }}>{team.formation}</div>
           </div>
           <div className="text-right">
-            <div className="font-body" style={{ fontSize: 11, color: "#8888aa", letterSpacing: 1 }}>{expert ? "EXPERT" : "OVERALL"}</div>
-            <div className="font-display" style={{ fontSize: 38, lineHeight: 1, color: expert ? "#ffb800" : "#00ff87" }}>
+            <div className="font-body" style={{ fontSize: 11, color: "#8a948f", letterSpacing: 1 }}>{expert ? "EXPERT" : "OVERALL"}</div>
+            <div className="font-display" style={{ fontSize: 38, lineHeight: 1, color: expert ? "#ffb800" : "#aeea00" }}>
               {expert ? "🔒" : team.squad.length ? team.strength : "—"}
             </div>
           </div>
@@ -126,9 +126,9 @@ export default function DraftPlay() {
         {/* progress */}
         <div className="flex items-center gap-2 mt-3 mb-3">
           <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.08)" }}>
-            <div className="h-full rounded-full transition-all" style={{ width: `${(team.squad.length / 11) * 100}%`, background: "#00ff87" }} />
+            <div className="h-full rounded-full transition-all" style={{ width: `${(team.squad.length / 11) * 100}%`, background: "#aeea00" }} />
           </div>
-          <span className="font-body" style={{ fontSize: 12, color: "#8888aa" }}>{team.squad.length}/11</span>
+          <span className="font-body" style={{ fontSize: 12, color: "#8a948f" }}>{team.squad.length}/11</span>
         </div>
 
         <Pitch formation={team.formation} squad={team.squad} hideOverall={expert} compact />
@@ -137,9 +137,9 @@ export default function DraftPlay() {
         {!expert && team.squad.length > 0 && (
           <div className="grid grid-cols-4 gap-2 mt-3">
             {([["ATT", lines.attack, "att"], ["MID", lines.midfield, "mid"], ["DEF", lines.defence, "def"], ["GK", lines.gk, "gk"]] as const).map(([label, val, cat]) => (
-              <div key={label} className="rounded-xl px-2 py-2 text-center" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.06)" }}>
+              <div key={label} className="rounded-xl px-2 py-2 text-center" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.06)" }}>
                 <div className="font-display" style={{ fontSize: 20, color: val ? CATEGORY_COLOR[cat] : "#444" }}>{val || "—"}</div>
-                <div className="font-body" style={{ fontSize: 9, color: "#8888aa", letterSpacing: 1 }}>{label}</div>
+                <div className="font-body" style={{ fontSize: 9, color: "#8a948f", letterSpacing: 1 }}>{label}</div>
               </div>
             ))}
           </div>
@@ -151,16 +151,16 @@ export default function DraftPlay() {
         <div className="max-w-lg mx-auto px-4 pt-3">
           {/* CLUB × SEASON reels */}
           {(spinning || reel) && (
-            <div className="mb-3 flex items-center gap-3 rounded-2xl px-4 py-3" style={{ background: "#12121e", border: `1px solid ${spinning ? "rgba(255,184,0,0.4)" : "rgba(0,255,135,0.35)"}` }}>
+            <div className="mb-3 flex items-center gap-3 rounded-2xl px-4 py-3" style={{ background: "#0e1611", border: `1px solid ${spinning ? "rgba(255,184,0,0.4)" : "rgba(174,234,0,0.35)"}` }}>
               {badge ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={badge} alt={reel?.club ?? ""} width={46} height={46}
-                  style={{ width: 46, height: 46, objectFit: "contain", filter: spinning ? "grayscale(0.3) opacity(0.85)" : "drop-shadow(0 0 10px rgba(0,255,135,0.45))" }} />
+                  style={{ width: 46, height: 46, objectFit: "contain", filter: spinning ? "grayscale(0.3) opacity(0.85)" : "drop-shadow(0 0 10px rgba(174,234,0,0.45))" }} />
               ) : <div style={{ width: 46, height: 46 }} />}
               <div className="flex-1 min-w-0">
-                <div className="font-body" style={{ fontSize: 9, color: "#8888aa", letterSpacing: 1 }}>CLUB × SEASON</div>
+                <div className="font-body" style={{ fontSize: 9, color: "#8a948f", letterSpacing: 1 }}>CLUB × SEASON</div>
                 <div className="font-display tracking-wide leading-none truncate" style={{ fontSize: 24, color: spinning ? "#ffb800" : "#fff" }}>
-                  {reel?.club ?? "—"} {reel?.season && <span style={{ color: "#8888aa", fontSize: 18 }}>{reel.season}</span>}
+                  {reel?.club ?? "—"} {reel?.season && <span style={{ color: "#8a948f", fontSize: 18 }}>{reel.season}</span>}
                 </div>
               </div>
             </div>
@@ -168,12 +168,12 @@ export default function DraftPlay() {
 
           {/* placement panel */}
           {selected && (
-            <div className="mb-3 rounded-2xl p-3" style={{ background: "#161622", border: "1px solid rgba(0,255,135,0.3)" }}>
+            <div className="mb-3 rounded-2xl p-3" style={{ background: "#0e1611", border: "1px solid rgba(174,234,0,0.3)" }}>
               <div className="flex items-center justify-between mb-2">
-                <span className="font-body" style={{ fontSize: 14, color: "#fff" }}>Place <b style={{ color: "#00ff87" }}>{selected.name}</b></span>
-                <button onClick={() => setSelected(null)} className="font-body" style={{ fontSize: 13, color: "#8888aa" }}>Cancel</button>
+                <span className="font-body" style={{ fontSize: 14, color: "#fff" }}>Place <b style={{ color: "#aeea00" }}>{selected.name}</b></span>
+                <button onClick={() => setSelected(null)} className="font-body" style={{ fontSize: 13, color: "#8a948f" }}>Cancel</button>
               </div>
-              <div className="font-body mb-1" style={{ fontSize: 10, color: "#8888aa", letterSpacing: 1 }}>AVAILABLE ({available.length})</div>
+              <div className="font-body mb-1" style={{ fontSize: 10, color: "#8a948f", letterSpacing: 1 }}>AVAILABLE ({available.length})</div>
               <div className="flex flex-wrap gap-1.5 mb-2">
                 {available.map((s) => {
                   const c = CATEGORY_COLOR[posCategory(s.pos)];
@@ -186,7 +186,7 @@ export default function DraftPlay() {
                 })}
                 {available.length === 0 && <span className="font-body" style={{ fontSize: 12, color: "#ff8a3d" }}>No open slot fits — pick another player.</span>}
               </div>
-              <div className="font-body mb-1" style={{ fontSize: 10, color: "#8888aa", letterSpacing: 1 }}>UNAVAILABLE</div>
+              <div className="font-body mb-1" style={{ fontSize: 10, color: "#8a948f", letterSpacing: 1 }}>UNAVAILABLE</div>
               <div className="flex flex-wrap gap-1.5">
                 {unavailable.map((s) => {
                   const taken = filledBySlot.get(s.id);
@@ -202,8 +202,8 @@ export default function DraftPlay() {
 
           {/* squad list */}
           {current && !spinning && !selected && (
-            <div className="mb-3 rounded-2xl overflow-hidden" style={{ background: "#0d0d14", border: "1px solid rgba(255,255,255,0.07)", maxHeight: 340, overflowY: "auto" }}>
-              <div className="px-3 py-2 font-body sticky top-0" style={{ fontSize: 11, color: "#8888aa", background: "#0d0d14" }}>
+            <div className="mb-3 rounded-2xl overflow-hidden" style={{ background: "#080d0a", border: "1px solid rgba(255,255,255,0.07)", maxHeight: 340, overflowY: "auto" }}>
+              <div className="px-3 py-2 font-body sticky top-0" style={{ fontSize: 11, color: "#8a948f", background: "#080d0a" }}>
                 Pick a player → choose their slot
               </div>
               {current.players.map((p) => {
@@ -220,7 +220,7 @@ export default function DraftPlay() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="font-body truncate" style={{ fontSize: 14, color: "#fff" }}>
-                        {p.name} <span style={{ color: "#8888aa", fontSize: 12 }}>{p.club} {p.season}</span>
+                        {p.name} <span style={{ color: "#8a948f", fontSize: 12 }}>{p.club} {p.season}</span>
                       </div>
                     </div>
                     <div className="flex gap-1 flex-shrink-0">
@@ -239,18 +239,18 @@ export default function DraftPlay() {
             !current || spinning ? (
               <button onClick={doSpin} disabled={spinning}
                 className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-60"
-                style={{ background: spinning ? "#1a1a2e" : "#00ff87", color: spinning ? "#ffb800" : "#062013", fontSize: 24 }}>
+                style={{ background: spinning ? "#15211a" : "#aeea00", color: spinning ? "#ffb800" : "#062013", fontSize: 24 }}>
                 {spinning ? "SPINNING…" : "🎰 SPIN THE WHEEL"}
               </button>
             ) : (
-              <div className="text-center font-body py-2" style={{ fontSize: 13, color: "#8888aa" }}>
+              <div className="text-center font-body py-2" style={{ fontSize: 13, color: "#8a948f" }}>
                 Draft a player from this squad to continue
               </div>
             )
           ) : (
             <button onClick={() => router.push("/38-0/team")}
               className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform"
-              style={{ background: "#00ff87", color: "#062013", fontSize: 24 }}>
+              style={{ background: "#aeea00", color: "#062013", fontSize: 24 }}>
               SEE YOUR RECORD →
             </button>
           )}

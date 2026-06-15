@@ -441,7 +441,7 @@ export async function sendH2HResultEmail(args: {
   const won = args.myScore > args.oppScore;
   const lost = args.myScore < args.oppScore;
   const resultWord = won ? "YOU WON" : lost ? "YOU LOST" : "DRAW";
-  const resultColor = won ? "#00ff87" : lost ? "#ff4757" : "#ffb800";
+  const resultColor = won ? "#aeea00" : lost ? "#ff4757" : "#ffb800";
   const html = await renderEmail("22-h2h-result", {
     result_word: resultWord,
     result_color: resultColor,

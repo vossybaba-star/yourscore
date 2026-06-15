@@ -4,7 +4,7 @@ export const metadata = { title: "Privacy Policy — YourScore" };
 
 export default function PrivacyPage() {
   return (
-    <main className="min-h-dvh" style={{ background: "#0a0a0f", color: "#e0e0f0" }}>
+    <main className="min-h-dvh" style={{ background: "#0a0a0f", color: "#eef2f0" }}>
       <nav className="pt-safe px-6 py-5 border-b" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
         <Link href="/">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -14,9 +14,9 @@ export default function PrivacyPage() {
 
       <div className="max-w-2xl mx-auto px-6 py-12">
         <h1 className="font-display text-4xl text-white mb-2">Privacy Policy</h1>
-        <p className="font-body text-sm mb-10" style={{ color: "#8888aa" }}>Last updated: May 2026</p>
+        <p className="font-body text-sm mb-10" style={{ color: "#8a948f" }}>Last updated: May 2026</p>
 
-        <div className="space-y-8 font-body text-sm leading-relaxed" style={{ color: "#c0c0d8" }}>
+        <div className="space-y-8 font-body text-sm leading-relaxed" style={{ color: "#c4ccc6" }}>
           <section>
             <h2 className="font-display text-lg text-white mb-3">What we collect</h2>
             <p>When you create an account we store your email address and any display name you choose. When you play, we store your scores, answers, and streaks. If you sign in with Google, we receive your name and email from Google.</p>
@@ -54,7 +54,7 @@ export default function PrivacyPage() {
         </div>
 
         <div className="mt-12 pt-6 border-t" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
-          <Link href="/" className="font-body text-sm" style={{ color: "#8888aa" }}>← Back to YourScore</Link>
+          <Link href="/" className="font-body text-sm" style={{ color: "#8a948f" }}>← Back to YourScore</Link>
         </div>
       </div>
     </main>

@@ -3,15 +3,21 @@
 @tailwind utilities;
 
 :root {
-  --bg: #0a0a0f;
-  --surface: #12121e;
-  --surface-2: #1a1a2e;
-  --green: #00ff87;
+  /* Surfaces — deep "pitch → ink" ramp (de-violeted) */
+  --bg: #080d0a;
+  --surface: #0e1611;
+  --surface-2: #15211a;
+  --surface-3: #1d2c23;
+  /* Brand: lime = 38-0/energy/actions, teal = Quiz, gold = wins only */
+  --lime: #aeea00;
+  --teal: #00d8c0;
+  --gold: #ffc233;
+  --green: #aeea00; /* alias → action colour */
   --amber: #ffb800;
   --danger: #ff4757;
-  --text-primary: #ffffff;
-  --text-muted: #8888aa;
-  --border: rgba(255, 255, 255, 0.08);
+  --text-primary: #eef2f0;
+  --text-muted: #8a948f;
+  --border: rgba(255, 255, 255, 0.07);
 }
 
 * {
@@ -72,7 +78,7 @@ input, textarea, select {
 
 /* Selection */
 ::selection {
-  background: rgba(0, 255, 135, 0.2);
+  background: rgba(174, 234, 0, 0.22);
   color: #fff;
 }
 
@@ -177,12 +183,14 @@ input, textarea, select {
     letter-spacing: 0.02em;
   }
 
+  /* Glow toned down + shifted to lime. Reserve for hero / win moments only —
+     uniform glow on everything was a top "AI slop" tell. */
   .glow-green {
-    box-shadow: 0 0 20px rgba(0, 255, 135, 0.3);
+    box-shadow: 0 0 18px rgba(174, 234, 0, 0.22);
   }
 
   .glow-green-sm {
-    box-shadow: 0 0 8px rgba(0, 255, 135, 0.25);
+    box-shadow: 0 0 8px rgba(174, 234, 0, 0.2);
   }
 
   .border-subtle {
@@ -197,4 +205,132 @@ input, textarea, select {
   .sc-invincible-sheen,
   .sc-invincible-pulse { animation: none; }
   .sc-particle { display: none; }
+}
+
+/* =====================================================================
+   Design-refresh component vocabulary (visual-refresh).
+   Drop-in classes for the redesigned, non-slop elements. Screens adopt
+   these incrementally to replace inline Tailwind shapes — same content,
+   committed element design. See ~/yourscore-design/*.html for the source.
+   ===================================================================== */
+@layer components {
+  /* Layered, tactile primary action (38-0 / global actions). Sits on a
+     coloured "lip" and depresses on press — physical, not flat. */
+  .btn-ticket {
+    display: inline-flex;
+    align-items: stretch;
+    justify-content: center;
+    background: var(--lime);
+    color: #1d2400;
+    border: 0;
+    border-radius: 11px;
+    overflow: hidden;
+    font-family: var(--font-bebas), sans-serif;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    box-shadow: 0 6px 0 #74980a, 0 10px 18px rgba(174, 234, 0, 0.22);
+    transform: translateY(0);
+    transition: transform 0.06s ease, box-shadow 0.06s ease;
+    clip-path: polygon(0 0, calc(100% - 11px) 0, 100% 11px, 100% 100%, 0 100%);
+  }
+  .btn-ticket:active {
+    transform: translateY(5px);
+    box-shadow: 0 1px 0 #74980a, 0 4px 10px rgba(174, 234, 0, 0.18);
+  }
+  /* Quiz variant (teal). */
+  .btn-ticket--teal {
+    background: var(--teal);
+    color: #04231f;
+    box-shadow: 0 6px 0 #0a9183, 0 10px 18px rgba(0, 216, 192, 0.22);
+  }
+  .btn-ticket--teal:active {
+    box-shadow: 0 1px 0 #0a9183, 0 4px 10px rgba(0, 216, 192, 0.18);
+  }
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    color: var(--text-primary);
+    border-radius: 11px;
+    font-family: var(--font-bebas), sans-serif;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+  }
+
+  /* Surfaces — a real elevation ramp instead of glow-to-separate. */
+  .card-raised {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+  /* Hero / scoreboard surface with a subtle dot-matrix texture. */
+  .surface-grid {
+    position: relative;
+    background: var(--surface-3);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 14px;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+  }
+  .surface-grid::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    opacity: 0.5;
+    background-image: radial-gradient(rgba(174, 234, 0, 0.18) 1px, transparent 1.4px);
+    background-size: 11px 11px;
+    pointer-events: none;
+  }
+
+  /* Typographic underline tabs (replaces the shadcn segmented pill). */
+  .tab {
+    position: relative;
+    padding: 0 1px 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    background: none;
+    border: 0;
+    cursor: pointer;
+  }
+  .tab--active { color: var(--text-primary); }
+  .tab--active::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 3px;
+    background: var(--lime);
+    border-radius: 2px 2px 0 0;
+  }
+  .tab--quiz.tab--active::after { background: var(--teal); }
+
+  /* Mono "team-sheet" tag (replaces soft pill badges). */
+  .tag-sheet {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 7px;
+    padding: 5px 11px;
+    font-family: var(--font-dm-mono), monospace;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-primary);
+  }
+  .tag-sheet .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--lime);
+  }
+}
+
+@keyframes ten-pop {
+  0% { transform: translateY(3px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
 }

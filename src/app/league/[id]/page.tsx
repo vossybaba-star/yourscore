@@ -48,7 +48,7 @@ function accuracy(correct: number, attempted: number): number {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function AccuracyBar({ pct }: { pct: number }) {
-  const color = pct >= 75 ? "#00ff87" : pct >= 50 ? "#a78bfa" : "#8888aa";
+  const color = pct >= 75 ? "#aeea00" : pct >= 50 ? "#aeea00" : "#8a948f";
   return (
     <div className="h-1 rounded-full overflow-hidden" style={{ width: 40, background: "rgba(255,255,255,0.08)" }}>
       <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: color }} />
@@ -58,7 +58,7 @@ function AccuracyBar({ pct }: { pct: number }) {
 
 function AvatarCircle({ name, size = 36 }: { name: string; size?: number }) {
   const palettes = [
-    { bg: "#1a2f4a", text: "#60a5fa" }, { bg: "#2a1a4a", text: "#a78bfa" },
+    { bg: "#1a2f4a", text: "#60a5fa" }, { bg: "#3a423d", text: "#aeea00" },
     { bg: "#1a4a2a", text: "#4ade80" }, { bg: "#4a2a1a", text: "#fb923c" },
     { bg: "#4a1a2a", text: "#f87171" },
   ];
@@ -73,8 +73,8 @@ function AvatarCircle({ name, size = 36 }: { name: string; size?: number }) {
 
 function Badge({ children, color }: { children: React.ReactNode; color: string }) {
   const configs: Record<string, { bg: string; border: string; text: string }> = {
-    green:  { bg: "rgba(0,255,135,0.1)",    border: "rgba(0,255,135,0.25)",    text: "#00ff87" },
-    purple: { bg: "rgba(167,139,250,0.12)", border: "rgba(167,139,250,0.3)",   text: "#a78bfa" },
+    green:  { bg: "rgba(174,234,0,0.1)",    border: "rgba(174,234,0,0.25)",    text: "#aeea00" },
+    purple: { bg: "rgba(174,234,0,0.12)", border: "rgba(174,234,0,0.3)",   text: "#aeea00" },
     orange: { bg: "rgba(251,146,60,0.12)",  border: "rgba(251,146,60,0.3)",    text: "#fb923c" },
     blue:   { bg: "rgba(96,165,250,0.12)",  border: "rgba(96,165,250,0.3)",    text: "#60a5fa" },
   };
@@ -249,7 +249,7 @@ export default function LeaguePage({ params }: { params: { id: string } }) {
   return (
     <main className="min-h-dvh bg-bg pb-28">
       <GridBackground opacity={0.025} />
-      <div className="fixed top-0 left-0 w-[500px] h-[500px] pointer-events-none" style={{ background: "radial-gradient(circle at 0% 0%, rgba(167,139,250,0.06) 0%, transparent 60%)" }} />
+      <div className="fixed top-0 left-0 w-[500px] h-[500px] pointer-events-none" style={{ background: "radial-gradient(circle at 0% 0%, rgba(174,234,0,0.06) 0%, transparent 60%)" }} />
 
       {/* Header */}
       <div className="sticky top-0 z-10 pt-safe" style={{ background: "rgba(10,10,15,0.92)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
@@ -266,7 +266,7 @@ export default function LeaguePage({ params }: { params: { id: string } }) {
           <div className="flex items-center gap-2">
             <button onClick={copyInvite}
               className="font-body text-xs font-semibold px-3 py-1.5 rounded-lg transition-all"
-              style={{ background: copied ? "rgba(167,139,250,0.15)" : "rgba(255,255,255,0.06)", color: copied ? "#a78bfa" : "#8888aa", border: `1px solid ${copied ? "rgba(167,139,250,0.3)" : "rgba(255,255,255,0.08)"}` }}>
+              style={{ background: copied ? "rgba(174,234,0,0.15)" : "rgba(255,255,255,0.06)", color: copied ? "#aeea00" : "#8a948f", border: `1px solid ${copied ? "rgba(174,234,0,0.3)" : "rgba(255,255,255,0.08)"}` }}>
               {copied ? "✓ Copied" : `${league.code} · Invite`}
             </button>
           </div>
@@ -276,11 +276,11 @@ export default function LeaguePage({ params }: { params: { id: string } }) {
       <div className="relative z-0 max-w-lg mx-auto px-5 pt-5 space-y-4">
 
         {/* Tabs */}
-        <div className="flex gap-1 p-1 rounded-xl" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.06)" }}>
+        <div className="flex gap-1 p-1 rounded-xl" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.06)" }}>
           {([["standings", "Standings"], ["live", "Members"], ["fixtures", "Fixtures"]] as const).map(([key, label]) => (
             <button key={key} onClick={() => setTab(key)}
               className="flex-1 py-2.5 rounded-lg font-body text-sm font-semibold transition-all"
-              style={{ background: tab === key ? "rgba(167,139,250,0.15)" : "transparent", color: tab === key ? "#a78bfa" : "#8888aa" }}>
+              style={{ background: tab === key ? "rgba(174,234,0,0.15)" : "transparent", color: tab === key ? "#aeea00" : "#8a948f" }}>
               {label}
             </button>
           ))}
@@ -295,19 +295,19 @@ export default function LeaguePage({ params }: { params: { id: string } }) {
               <div className="flex gap-1 p-0.5 rounded-lg" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)" }}>
                 <button onClick={() => setSortBy("points")}
                   className="px-3 py-1.5 rounded-md font-body text-xs font-semibold transition-all"
-                  style={{ background: sortBy === "points" ? "rgba(167,139,250,0.2)" : "transparent", color: sortBy === "points" ? "#a78bfa" : "#8888aa" }}>
+                  style={{ background: sortBy === "points" ? "rgba(174,234,0,0.2)" : "transparent", color: sortBy === "points" ? "#aeea00" : "#8a948f" }}>
                   Season
                 </button>
                 <button onClick={() => setSortBy("form")}
                   className="px-3 py-1.5 rounded-md font-body text-xs font-semibold transition-all"
-                  style={{ background: sortBy === "form" ? "rgba(0,255,135,0.15)" : "transparent", color: sortBy === "form" ? "#00ff87" : "#8888aa" }}>
+                  style={{ background: sortBy === "form" ? "rgba(174,234,0,0.15)" : "transparent", color: sortBy === "form" ? "#aeea00" : "#8a948f" }}>
                   Form (last 5)
                 </button>
               </div>
             </div>
 
             {sortBy === "form" && (
-              <div className="px-4 py-3 rounded-xl" style={{ background: "rgba(0,255,135,0.04)", border: "1px solid rgba(0,255,135,0.15)" }}>
+              <div className="px-4 py-3 rounded-xl" style={{ background: "rgba(174,234,0,0.04)", border: "1px solid rgba(174,234,0,0.15)" }}>
                 <p className="font-body text-xs text-green">
                   Points from each player&apos;s last 5 games. Shows who&apos;s in form right now.
                 </p>
@@ -317,11 +317,11 @@ export default function LeaguePage({ params }: { params: { id: string } }) {
             {/* Table header */}
             <div className="flex items-center gap-2 px-4 py-2 rounded-t-2xl"
               style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderBottom: "none" }}>
-              <span className="font-body text-xs uppercase tracking-widest w-6 flex-shrink-0" style={{ color: "#555577" }}>Pos</span>
-              <span className="flex-1 font-body text-xs uppercase tracking-widest" style={{ color: "#555577" }}>Player</span>
-              <span className="font-body text-xs uppercase tracking-widest w-8 text-right flex-shrink-0" style={{ color: "#555577" }}>P</span>
-              <span className="font-body text-xs uppercase tracking-widest w-10 text-right flex-shrink-0" style={{ color: "#555577" }}>Acc</span>
-              <span className="font-body text-xs uppercase tracking-widest w-14 text-right flex-shrink-0" style={{ color: "#555577" }}>Pts</span>
+              <span className="font-body text-xs uppercase tracking-widest w-6 flex-shrink-0" style={{ color: "#586058" }}>Pos</span>
+              <span className="flex-1 font-body text-xs uppercase tracking-widest" style={{ color: "#586058" }}>Player</span>
+              <span className="font-body text-xs uppercase tracking-widest w-8 text-right flex-shrink-0" style={{ color: "#586058" }}>P</span>
+              <span className="font-body text-xs uppercase tracking-widest w-10 text-right flex-shrink-0" style={{ color: "#586058" }}>Acc</span>
+              <span className="font-body text-xs uppercase tracking-widest w-14 text-right flex-shrink-0" style={{ color: "#586058" }}>Pts</span>
             </div>
 
             <div className="rounded-b-2xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
@@ -341,16 +341,16 @@ export default function LeaguePage({ params }: { params: { id: string } }) {
                   <Link key={m.user_id} href={`/profile/${m.user_id}`}
                     className="flex items-center gap-2 px-4 py-3 transition-opacity hover:opacity-80"
                     style={{
-                      background: isMe ? "rgba(167,139,250,0.06)" : i % 2 === 0 ? "#12121e" : "rgba(255,255,255,0.01)",
+                      background: isMe ? "rgba(174,234,0,0.06)" : i % 2 === 0 ? "#0e1611" : "rgba(255,255,255,0.01)",
                       borderBottom: i < sortedMembers.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
                     }}>
                     {/* Pos */}
                     <div className="w-6 flex-shrink-0 flex flex-col items-center">
-                      <span className="font-display text-sm" style={{ color: medalColor ?? "#8888aa" }}>
+                      <span className="font-display text-sm" style={{ color: medalColor ?? "#8a948f" }}>
                         {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i + 1}`}
                       </span>
                       {isMe && rankDelta !== null && rankDelta !== 0 && (
-                        <span className="font-body text-xs leading-none" style={{ color: rankDelta > 0 ? "#00ff87" : "#f87171" }}>
+                        <span className="font-body text-xs leading-none" style={{ color: rankDelta > 0 ? "#aeea00" : "#f87171" }}>
                           {rankDelta > 0 ? `▲${rankDelta}` : `▼${Math.abs(rankDelta)}`}
                         </span>
                       )}
@@ -361,23 +361,23 @@ export default function LeaguePage({ params }: { params: { id: string } }) {
                       <div className="min-w-0">
                         <div className="flex items-center gap-1 flex-wrap">
                           <p className="font-body text-sm font-medium text-white truncate">{m.display_name}</p>
-                          {isMe && <span className="font-body text-xs" style={{ color: "#a78bfa" }}>you</span>}
+                          {isMe && <span className="font-body text-xs" style={{ color: "#aeea00" }}>you</span>}
                         </div>
                         <div className="flex gap-1 flex-wrap">{badges}</div>
                       </div>
                     </div>
                     {/* P (games) */}
-                    <span className="font-body text-xs tabular-nums w-8 text-right flex-shrink-0" style={{ color: "#555577" }}>
+                    <span className="font-body text-xs tabular-nums w-8 text-right flex-shrink-0" style={{ color: "#586058" }}>
                       {gPlayed}
                     </span>
                     {/* Acc */}
                     <span className="font-body text-xs tabular-nums w-10 text-right flex-shrink-0"
-                      style={{ color: m.questions_attempted > 0 ? (acc >= 75 ? "#00ff87" : acc >= 50 ? "#a78bfa" : "#8888aa") : "#333355" }}>
+                      style={{ color: m.questions_attempted > 0 ? (acc >= 75 ? "#aeea00" : acc >= 50 ? "#aeea00" : "#8a948f") : "#3a423d" }}>
                       {m.questions_attempted > 0 ? `${acc}%` : "—"}
                     </span>
                     {/* Pts */}
                     <div className="w-14 text-right flex-shrink-0">
-                      <p className="font-display text-base leading-none" style={{ color: sortBy === "form" ? (i === 0 ? "#00ff87" : "white") : (i === 0 ? "#a78bfa" : "white") }}>
+                      <p className="font-display text-base leading-none" style={{ color: sortBy === "form" ? (i === 0 ? "#aeea00" : "white") : (i === 0 ? "#aeea00" : "white") }}>
                         {(sortBy === "form" ? formScore : m.total_score).toLocaleString()}
                       </p>
                     </div>
@@ -396,14 +396,14 @@ export default function LeaguePage({ params }: { params: { id: string } }) {
               const formScore = formScores[m.user_id] ?? 0;
               return (
                 <div className="sticky bottom-0 mt-1 rounded-2xl overflow-hidden"
-                  style={{ background: "rgba(10,10,15,0.97)", backdropFilter: "blur(12px)", border: "1px solid rgba(167,139,250,0.3)" }}>
+                  style={{ background: "rgba(10,10,15,0.97)", backdropFilter: "blur(12px)", border: "1px solid rgba(174,234,0,0.3)" }}>
                   <Link href={`/profile/${m.user_id}`}
                     className="flex items-center gap-2 px-4 py-3"
-                    style={{ background: "rgba(167,139,250,0.08)" }}>
+                    style={{ background: "rgba(174,234,0,0.08)" }}>
                     <div className="w-6 flex-shrink-0 flex flex-col items-center">
-                      <span className="font-display text-sm" style={{ color: "#a78bfa" }}>#{myIdx + 1}</span>
+                      <span className="font-display text-sm" style={{ color: "#aeea00" }}>#{myIdx + 1}</span>
                       {rankDelta !== null && rankDelta !== 0 && (
-                        <span className="font-body text-xs leading-none" style={{ color: rankDelta > 0 ? "#00ff87" : "#f87171" }}>
+                        <span className="font-body text-xs leading-none" style={{ color: rankDelta > 0 ? "#aeea00" : "#f87171" }}>
                           {rankDelta > 0 ? `▲${rankDelta}` : `▼${Math.abs(rankDelta)}`}
                         </span>
                       )}
@@ -411,15 +411,15 @@ export default function LeaguePage({ params }: { params: { id: string } }) {
                     <div className="flex-1 flex items-center gap-2 min-w-0">
                       <AvatarCircle name={m.display_name} size={28} />
                       <p className="font-body text-sm font-medium text-white truncate">{m.display_name}</p>
-                      <span className="font-body text-xs" style={{ color: "#a78bfa" }}>you</span>
+                      <span className="font-body text-xs" style={{ color: "#aeea00" }}>you</span>
                     </div>
-                    <span className="font-body text-xs tabular-nums w-8 text-right flex-shrink-0" style={{ color: "#555577" }}>{gPlayed}</span>
+                    <span className="font-body text-xs tabular-nums w-8 text-right flex-shrink-0" style={{ color: "#586058" }}>{gPlayed}</span>
                     <span className="font-body text-xs tabular-nums w-10 text-right flex-shrink-0"
-                      style={{ color: acc >= 75 ? "#00ff87" : acc >= 50 ? "#a78bfa" : "#8888aa" }}>
+                      style={{ color: acc >= 75 ? "#aeea00" : acc >= 50 ? "#aeea00" : "#8a948f" }}>
                       {m.questions_attempted > 0 ? `${acc}%` : "—"}
                     </span>
                     <div className="w-14 text-right flex-shrink-0">
-                      <p className="font-display text-base leading-none" style={{ color: "#a78bfa" }}>
+                      <p className="font-display text-base leading-none" style={{ color: "#aeea00" }}>
                         {(sortBy === "form" ? formScore : m.total_score).toLocaleString()}
                       </p>
                     </div>
@@ -441,7 +441,7 @@ export default function LeaguePage({ params }: { params: { id: string } }) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <p className="font-body text-sm font-semibold text-white">{m.display_name}</p>
-                    {m.user_id === user?.id && <span className="font-body text-xs px-1.5 py-0.5 rounded" style={{ background: "rgba(167,139,250,0.1)", color: "#a78bfa" }}>you</span>}
+                    {m.user_id === user?.id && <span className="font-body text-xs px-1.5 py-0.5 rounded" style={{ background: "rgba(174,234,0,0.1)", color: "#aeea00" }}>you</span>}
                   </div>
                   <p className="font-body text-xs text-text-muted mt-0.5">
                     {m.total_score > 0
@@ -449,7 +449,7 @@ export default function LeaguePage({ params }: { params: { id: string } }) {
                       : "No games played yet"}
                   </p>
                 </div>
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ color: "#333355", flexShrink: 0 }}>
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ color: "#3a423d", flexShrink: 0 }}>
                   <path d="M4 2l6 5-6 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </Link>
@@ -458,7 +458,7 @@ export default function LeaguePage({ params }: { params: { id: string } }) {
             {isCreator && (
               <button onClick={copyInvite}
                 className="w-full py-3.5 rounded-2xl font-body text-sm font-semibold flex items-center justify-center gap-2 transition-all hover:opacity-80"
-                style={{ border: "1px dashed rgba(167,139,250,0.3)", color: "#a78bfa", background: "rgba(167,139,250,0.04)" }}>
+                style={{ border: "1px dashed rgba(174,234,0,0.3)", color: "#aeea00", background: "rgba(174,234,0,0.04)" }}>
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
                 {copied ? "Link copied!" : "Invite more people"}
               </button>
@@ -474,22 +474,22 @@ export default function LeaguePage({ params }: { params: { id: string } }) {
         )}
 
         {/* Invite code card */}
-        <div className="rounded-2xl overflow-hidden" style={{ background: "rgba(167,139,250,0.04)", border: "1px solid rgba(167,139,250,0.12)" }}>
+        <div className="rounded-2xl overflow-hidden" style={{ background: "rgba(174,234,0,0.04)", border: "1px solid rgba(174,234,0,0.12)" }}>
           <div className="p-4 flex items-center justify-between">
             <div>
               <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-0.5">Invite code</p>
-              <p className="font-display text-2xl tracking-widest" style={{ color: "#a78bfa" }}>{league.code}</p>
+              <p className="font-display text-2xl tracking-widest" style={{ color: "#aeea00" }}>{league.code}</p>
             </div>
             <div className="flex items-center gap-2">
               <button onClick={() => setShowQR(v => !v)}
                 className="font-body text-sm font-semibold px-3 py-2 rounded-xl transition-all hover:opacity-80 flex items-center gap-1.5"
-                style={{ background: showQR ? "rgba(167,139,250,0.2)" : "rgba(255,255,255,0.05)", color: showQR ? "#a78bfa" : "#8888aa", border: `1px solid ${showQR ? "rgba(167,139,250,0.3)" : "rgba(255,255,255,0.08)"}` }}>
+                style={{ background: showQR ? "rgba(174,234,0,0.2)" : "rgba(255,255,255,0.05)", color: showQR ? "#aeea00" : "#8a948f", border: `1px solid ${showQR ? "rgba(174,234,0,0.3)" : "rgba(255,255,255,0.08)"}` }}>
                 <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5" height="5" rx="0.5" stroke="currentColor" strokeWidth="1.3"/><rect x="8" y="1" width="5" height="5" rx="0.5" stroke="currentColor" strokeWidth="1.3"/><rect x="1" y="8" width="5" height="5" rx="0.5" stroke="currentColor" strokeWidth="1.3"/><rect x="3" y="3" width="1.5" height="1.5" fill="currentColor"/><rect x="10" y="3" width="1.5" height="1.5" fill="currentColor"/><rect x="3" y="10" width="1.5" height="1.5" fill="currentColor"/><path d="M8 8h1.5v1.5H8zM10.5 8H12v1.5h-1.5zM10.5 10.5H12V12h-1.5zM8 10.5h1.5V12H8z" fill="currentColor"/></svg>
                 QR
               </button>
               <button onClick={copyInvite}
                 className="font-body text-sm font-semibold px-4 py-2 rounded-xl transition-all hover:opacity-80"
-                style={{ background: copied ? "rgba(167,139,250,0.2)" : "rgba(167,139,250,0.1)", color: "#a78bfa", border: "1px solid rgba(167,139,250,0.2)" }}>
+                style={{ background: copied ? "rgba(174,234,0,0.2)" : "rgba(174,234,0,0.1)", color: "#aeea00", border: "1px solid rgba(174,234,0,0.2)" }}>
                 {copied ? "✓ Copied" : "Copy link"}
               </button>
             </div>

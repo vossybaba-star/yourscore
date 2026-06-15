@@ -200,15 +200,15 @@ export default function ClubEventPage() {
     return (
       <main className="min-h-dvh bg-bg flex flex-col items-center justify-center px-8 text-center">
         <p className="font-display text-4xl mb-3">🎯</p>
-        <p className="font-body text-sm mb-6" style={{ color: "#8888aa" }}>{msg}</p>
-        <Link href={`/l/${params.slug}`} className="rounded-xl px-5 py-3 font-body font-bold text-sm" style={{ background: "#a78bfa", color: "#0a0a0f" }}>
+        <p className="font-body text-sm mb-6" style={{ color: "#8a948f" }}>{msg}</p>
+        <Link href={`/l/${params.slug}`} className="rounded-xl px-5 py-3 font-body font-bold text-sm" style={{ background: "#aeea00", color: "#0a0a0f" }}>
           {errCode === 401 || errCode === 403 ? "Go to the club page" : "Back"}
         </Link>
       </main>
     );
   }
 
-  const brand = data.league.brand_color || "#a78bfa";
+  const brand = data.league.brand_color || "#aeea00";
   const ev = data.event;
 
   // ── Playing ──
@@ -219,7 +219,7 @@ export default function ClubEventPage() {
       <main className="min-h-dvh bg-bg flex flex-col max-w-lg mx-auto">
         <div className="px-5 pt-6 pb-2">
           <div className="flex items-center justify-between mb-2">
-            <span className="font-body text-xs" style={{ color: "#8888aa" }}>
+            <span className="font-body text-xs" style={{ color: "#8a948f" }}>
               {idx + 1} / {questions.length} · {ev.title}
             </span>
             <span className="font-display text-base tabular-nums" style={{ color: timeLeft < 6000 ? "#ff4757" : "#fff" }}>
@@ -232,7 +232,7 @@ export default function ClubEventPage() {
         </div>
         <div className="flex-1 px-5 pb-10 pt-4 flex flex-col">
           <div className="rounded-2xl p-5 mb-5"
-            style={{ background: "linear-gradient(145deg, #14141f 0%, #1a1a2c 100%)", border: "1px solid rgba(255,255,255,0.08)", minHeight: 100 }}>
+            style={{ background: "linear-gradient(145deg, #0e1611 0%, #15211a 100%)", border: "1px solid rgba(255,255,255,0.08)", minHeight: 100 }}>
             <p className="font-body text-base font-semibold text-white leading-relaxed">{q.question}</p>
           </div>
           <AnswerButtons
@@ -244,7 +244,7 @@ export default function ClubEventPage() {
             onAnswer={handleAnswer}
           />
           {selected && (
-            <p className="font-body text-xs text-center mt-4" style={{ color: "#555577" }}>
+            <p className="font-body text-xs text-center mt-4" style={{ color: "#586058" }}>
               Locked in — results at the end.
             </p>
           )}
@@ -257,29 +257,29 @@ export default function ClubEventPage() {
     return (
       <main className="min-h-dvh bg-bg flex flex-col items-center justify-center gap-4">
         <Spinner size={28} />
-        <p className="font-body text-sm" style={{ color: "#8888aa" }}>Grading your answers…</p>
+        <p className="font-body text-sm" style={{ color: "#8a948f" }}>Grading your answers…</p>
       </main>
     );
   }
 
   // ── Idle / Done: event header + board ──
   const my = result ?? data.myAttempt;
-  const chipColor = ev.window === "live" ? "#00ff87" : ev.window === "upcoming" ? "#60a5fa" : "#8888aa";
+  const chipColor = ev.window === "live" ? "#aeea00" : ev.window === "upcoming" ? "#60a5fa" : "#8a948f";
 
   return (
     <main className="min-h-dvh bg-bg pb-28">
       <div className="max-w-lg mx-auto px-5 pt-6 space-y-4">
-        <Link href={`/l/${params.slug}`} className="font-body text-xs" style={{ color: "#8888aa" }}>
+        <Link href={`/l/${params.slug}`} className="font-body text-xs" style={{ color: "#8a948f" }}>
           ← {data.league.name}
         </Link>
 
-        <div className="rounded-2xl p-5" style={{ background: "#12121e", border: `1px solid ${brand}33` }}>
+        <div className="rounded-2xl p-5" style={{ background: "#0e1611", border: `1px solid ${brand}33` }}>
           <span className="font-body text-xs font-bold px-2 py-0.5 rounded-md" style={{ color: chipColor, background: `${chipColor}1f` }}>
             {ev.window.toUpperCase()}
           </span>
           <h1 className="font-display text-2xl text-white tracking-wide mt-2 mb-1">{ev.title}</h1>
-          {ev.description && <p className="font-body text-sm mb-2" style={{ color: "#aaaacc" }}>{ev.description}</p>}
-          <p className="font-body text-xs" style={{ color: "#555577" }}>
+          {ev.description && <p className="font-body text-sm mb-2" style={{ color: "#9aa39d" }}>{ev.description}</p>}
+          <p className="font-body text-xs" style={{ color: "#586058" }}>
             {new Date(ev.startsAt).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
             {" — "}
             {new Date(ev.endsAt).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
@@ -301,7 +301,7 @@ export default function ClubEventPage() {
           <div className="rounded-2xl p-5 text-center" style={{ background: `${brand}10`, border: `1px solid ${brand}44` }}>
             <p className="font-body text-xs uppercase tracking-widest mb-1" style={{ color: brand }}>Your score</p>
             <p className="font-display text-5xl text-white leading-none mb-1">{my.score.toLocaleString()}</p>
-            <p className="font-body text-xs" style={{ color: "#8888aa" }}>{my.correctCount} correct · max {my.maxScore.toLocaleString()}</p>
+            <p className="font-body text-xs" style={{ color: "#8a948f" }}>{my.correctCount} correct · max {my.maxScore.toLocaleString()}</p>
           </div>
         )}
 
@@ -316,15 +316,15 @@ export default function ClubEventPage() {
           </button>
         )}
         {ev.window === "upcoming" && (
-          <p className="font-body text-xs text-center" style={{ color: "#555577" }}>The quiz opens when the event starts.</p>
+          <p className="font-body text-xs text-center" style={{ color: "#586058" }}>The quiz opens when the event starts.</p>
         )}
 
         {/* Board */}
         <div>
-          <p className="font-body text-xs uppercase tracking-widest mb-2" style={{ color: "#555577" }}>Event board</p>
+          <p className="font-body text-xs uppercase tracking-widest mb-2" style={{ color: "#586058" }}>Event board</p>
           {data.board.length === 0 ? (
-            <div className="rounded-2xl p-6 text-center" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}>
-              <p className="font-body text-sm" style={{ color: "#8888aa" }}>No scores yet{ev.window === "live" ? " — be the first!" : "."}</p>
+            <div className="rounded-2xl p-6 text-center" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.07)" }}>
+              <p className="font-body text-sm" style={{ color: "#8a948f" }}>No scores yet{ev.window === "live" ? " — be the first!" : "."}</p>
             </div>
           ) : (
             <div className="space-y-1.5">
@@ -335,7 +335,7 @@ export default function ClubEventPage() {
                     key={b.userId}
                     className="flex items-center gap-3 px-4 py-3 rounded-2xl"
                     style={{
-                      background: isMe ? `${brand}14` : "#12121e",
+                      background: isMe ? `${brand}14` : "#0e1611",
                       border: `1px solid ${isMe ? `${brand}44` : "rgba(255,255,255,0.06)"}`,
                     }}
                   >
@@ -343,7 +343,7 @@ export default function ClubEventPage() {
                       {b.position <= 3 ? (
                         <span className="text-base">{["🥇", "🥈", "🥉"][b.position - 1]}</span>
                       ) : (
-                        <span className="font-display text-sm" style={{ color: "#8888aa" }}>#{b.position}</span>
+                        <span className="font-display text-sm" style={{ color: "#8a948f" }}>#{b.position}</span>
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -351,9 +351,9 @@ export default function ClubEventPage() {
                         {b.displayName}
                         {isMe && <span className="font-normal ml-1.5" style={{ fontSize: "0.7rem", color: brand }}>you</span>}
                       </p>
-                      <p className="font-body text-xs" style={{ color: "#555577" }}>{b.correctCount} correct</p>
+                      <p className="font-body text-xs" style={{ color: "#586058" }}>{b.correctCount} correct</p>
                     </div>
-                    <p className="font-display text-lg flex-shrink-0" style={{ color: b.position === 1 ? "#ffd700" : "#aaaacc" }}>
+                    <p className="font-display text-lg flex-shrink-0" style={{ color: b.position === 1 ? "#ffd700" : "#9aa39d" }}>
                       {b.score.toLocaleString()}
                     </p>
                   </div>

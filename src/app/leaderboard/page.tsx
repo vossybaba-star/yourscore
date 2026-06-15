@@ -34,7 +34,7 @@ interface RankRow {
 function playerInitial(name: string | null) { return (name ?? "?")[0].toUpperCase(); }
 function playerColor(name: string | null) {
   const palettes = [
-    { bg: "#1a2f4a", text: "#60a5fa" }, { bg: "#2a1a4a", text: "#a78bfa" },
+    { bg: "#1a2f4a", text: "#60a5fa" }, { bg: "#3a423d", text: "#aeea00" },
     { bg: "#1a4a2a", text: "#4ade80" }, { bg: "#4a2a1a", text: "#fb923c" },
     { bg: "#4a1a2a", text: "#f87171" },
   ];
@@ -79,7 +79,7 @@ export default function LeaderboardPage() {
     <main className="min-h-dvh bg-bg pb-28">
       <GridBackground opacity={0.025} />
       <div className="fixed top-0 right-0 w-[400px] h-[400px] pointer-events-none"
-        style={{ background: "radial-gradient(circle at 100% 0%, rgba(167,139,250,0.07) 0%, transparent 60%)" }} />
+        style={{ background: "radial-gradient(circle at 100% 0%, rgba(174,234,0,0.07) 0%, transparent 60%)" }} />
 
       {/* Header */}
       <div className="sticky top-0 z-30 pt-safe" style={{ background: "rgba(10,10,15,0.92)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
@@ -91,7 +91,7 @@ export default function LeaderboardPage() {
             {([["global", "Global 🌍"] as const, ["friends", "Friends 🤝"] as const]).map(([key, label]) => (
               <button key={key} onClick={() => setScope(key)}
                 className="flex-1 py-2.5 rounded-xl font-body text-sm font-semibold transition-all"
-                style={scope === key ? { background: "#a78bfa", color: "#0a0a0f" } : { background: "transparent", color: "#8888aa" }}>
+                style={scope === key ? { background: "#aeea00", color: "#0a0a0f" } : { background: "transparent", color: "#8a948f" }}>
                 {label}
               </button>
             ))}
@@ -101,12 +101,12 @@ export default function LeaderboardPage() {
 
       <div className="relative z-0 max-w-lg mx-auto px-5 pt-4 space-y-4">
         <p className="font-body text-xs text-text-muted text-center">
-          <span style={{ color: "#ffb800" }}>Knowledge</span> pts (quizzes) + <span style={{ color: "#00ff87" }}>Match</span> pts (38-0 · win = 1,500) = your score. More points, higher up. One #1.
+          <span style={{ color: "#ffb800" }}>Knowledge</span> pts (quizzes) + <span style={{ color: "#aeea00" }}>Match</span> pts (38-0 · win = 1,500) = your score. More points, higher up. One #1.
         </p>
 
         {/* Friends, signed out */}
         {scope === "friends" && !user && !userLoading && (
-          <div className="rounded-2xl p-6" style={{ background: "rgba(167,139,250,0.06)", border: "1px solid rgba(167,139,250,0.15)" }}>
+          <div className="rounded-2xl p-6" style={{ background: "rgba(174,234,0,0.06)", border: "1px solid rgba(174,234,0,0.15)" }}>
             <p className="font-display text-2xl text-white mb-1">See how you rank vs your mates</p>
             <p className="font-body text-sm mb-5 text-text-muted">Sign in to compare your YourScore Rank with your friends.</p>
             <AuthProviders />
@@ -135,10 +135,10 @@ export default function LeaderboardPage() {
               return (
                 <Link key={p.user_id} href={`/profile/${p.user_id}`}
                   className="flex items-center gap-3 px-4 py-3 rounded-2xl transition-opacity hover:opacity-80"
-                  style={{ background: isMe ? "rgba(0,255,135,0.06)" : "#12121e", border: `1px solid ${isMe ? "rgba(0,255,135,0.2)" : "rgba(255,255,255,0.06)"}` }}>
+                  style={{ background: isMe ? "rgba(174,234,0,0.06)" : "#0e1611", border: `1px solid ${isMe ? "rgba(174,234,0,0.2)" : "rgba(255,255,255,0.06)"}` }}>
                   <div className="w-7 text-center flex-shrink-0">
                     {listPos <= 3 ? <span className="text-base">{["🥇", "🥈", "🥉"][listPos - 1]}</span>
-                      : <span className="font-display text-sm" style={{ color: "#8888aa" }}>#{listPos}</span>}
+                      : <span className="font-display text-sm" style={{ color: "#8a948f" }}>#{listPos}</span>}
                   </div>
                   <div className="w-9 h-9 rounded-full flex items-center justify-center font-body font-bold text-sm flex-shrink-0"
                     style={{ background: pal.bg, color: pal.text, border: "1px solid rgba(255,255,255,0.07)" }}>
@@ -161,7 +161,7 @@ export default function LeaderboardPage() {
                       </span>
                     </div>
                   </div>
-                  <p className="font-display text-lg flex-shrink-0" style={{ color: isMe ? "#00ff87" : "#ffffff" }}>
+                  <p className="font-display text-lg flex-shrink-0" style={{ color: isMe ? "#aeea00" : "#ffffff" }}>
                     {p.overall_score.toLocaleString()}
                   </p>
                 </Link>

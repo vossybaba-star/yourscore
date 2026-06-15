@@ -44,9 +44,9 @@ function EmailPrefsInner() {
 
   const card = (children: React.ReactNode) => (
     <main className="min-h-dvh bg-bg flex items-center justify-center px-5" style={{ background: "#0a0a0f" }}>
-      <div className="w-full max-w-md rounded-3xl p-7 text-center" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.08)" }}>
+      <div className="w-full max-w-md rounded-3xl p-7 text-center" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.08)" }}>
         <div className="font-display tracking-wide mb-5" style={{ fontSize: 22, color: "#fff" }}>
-          YOUR<span style={{ color: "#00ff87" }}>SCORE</span>
+          YOUR<span style={{ color: "#aeea00" }}>SCORE</span>
         </div>
         {children}
       </div>
@@ -58,10 +58,10 @@ function EmailPrefsInner() {
     return card(
       <>
         <p className="font-display tracking-wide" style={{ fontSize: 24, color: "#fff" }}>EMAIL PREFERENCES</p>
-        <p className="font-body mt-3" style={{ fontSize: 14, color: "#8888aa", lineHeight: 1.55 }}>
+        <p className="font-body mt-3" style={{ fontSize: 14, color: "#8a948f", lineHeight: 1.55 }}>
           Open this from the link at the bottom of any YourScore email to manage your emails.
         </p>
-        <Link href="/" className="inline-block mt-6 rounded-2xl px-6 py-3 font-display tracking-wide" style={{ background: "#00ff87", color: "#062013", fontSize: 18 }}>
+        <Link href="/" className="inline-block mt-6 rounded-2xl px-6 py-3 font-display tracking-wide" style={{ background: "#aeea00", color: "#062013", fontSize: 18 }}>
           ← Home
         </Link>
       </>,
@@ -78,16 +78,16 @@ function EmailPrefsInner() {
         <p className="font-display tracking-wide mt-3" style={{ fontSize: 24, color: "#fff" }}>
           {paused ? "EMAILS PAUSED" : "YOU'RE UNSUBSCRIBED"}
         </p>
-        <p className="font-body mt-3" style={{ fontSize: 14, color: "#cfcfe6", lineHeight: 1.55 }}>
+        <p className="font-body mt-3" style={{ fontSize: 14, color: "#c4ccc6", lineHeight: 1.55 }}>
           {paused
             ? "We'll hold off for now. You can turn YourScore emails back on whenever you like."
             : "You won't receive YourScore emails any more. Changed your mind? You can resubscribe anytime."}
         </p>
         <button onClick={() => act("resub")} className="w-full mt-6 rounded-2xl py-3.5 font-body font-semibold transition-all hover:opacity-90"
-          style={{ background: "rgba(0,255,135,0.1)", color: "#00ff87", border: "1px solid rgba(0,255,135,0.28)", fontSize: 15 }}>
+          style={{ background: "rgba(174,234,0,0.1)", color: "#aeea00", border: "1px solid rgba(174,234,0,0.28)", fontSize: 15 }}>
           {paused ? "Resume emails" : "Resubscribe"}
         </button>
-        <Link href="/" className="inline-block mt-3 font-body text-sm" style={{ color: "#8888aa" }}>← Back to YourScore</Link>
+        <Link href="/" className="inline-block mt-3 font-body text-sm" style={{ color: "#8a948f" }}>← Back to YourScore</Link>
       </>,
     );
   }
@@ -97,14 +97,14 @@ function EmailPrefsInner() {
       <>
         <div style={{ fontSize: 40 }}>📬</div>
         <p className="font-display tracking-wide mt-3" style={{ fontSize: 24, color: "#fff" }}>YOU&apos;RE SUBSCRIBED</p>
-        <p className="font-body mt-3" style={{ fontSize: 14, color: "#cfcfe6", lineHeight: 1.55 }}>
+        <p className="font-body mt-3" style={{ fontSize: 14, color: "#c4ccc6", lineHeight: 1.55 }}>
           You&apos;ll get YourScore emails again. You can opt out at any time from the link in any email.
         </p>
         <button onClick={() => act("unsub")} className="w-full mt-6 rounded-2xl py-3.5 font-body font-semibold transition-all hover:opacity-90"
           style={{ background: "rgba(255,71,87,0.08)", color: "#ff4757", border: "1px solid rgba(255,71,87,0.2)", fontSize: 15 }}>
           Unsubscribe from all emails
         </button>
-        <Link href="/" className="inline-block mt-3 font-body text-sm" style={{ color: "#8888aa" }}>← Back to YourScore</Link>
+        <Link href="/" className="inline-block mt-3 font-body text-sm" style={{ color: "#8a948f" }}>← Back to YourScore</Link>
       </>,
     );
   }
@@ -116,7 +116,7 @@ function EmailPrefsInner() {
       <p className="font-display tracking-wide" style={{ fontSize: 24, color: "#fff" }}>
         {paused ? "PAUSE EMAILS?" : "UNSUBSCRIBE?"}
       </p>
-      <p className="font-body mt-3" style={{ fontSize: 14, color: "#cfcfe6", lineHeight: 1.55 }}>
+      <p className="font-body mt-3" style={{ fontSize: 14, color: "#c4ccc6", lineHeight: 1.55 }}>
         {paused
           ? "We'll stop sending YourScore emails until you turn them back on."
           : "You'll stop receiving all YourScore emails — game results, league updates and reminders."}
@@ -126,7 +126,7 @@ function EmailPrefsInner() {
         style={{ background: "#ff4757", color: "#fff", fontSize: 15 }}>
         {paused ? "Pause my emails" : "Unsubscribe me"}
       </button>
-      <Link href="/" className="inline-block mt-3 font-body text-sm" style={{ color: "#8888aa" }}>
+      <Link href="/" className="inline-block mt-3 font-body text-sm" style={{ color: "#8a948f" }}>
         No thanks, keep me subscribed
       </Link>
     </>,

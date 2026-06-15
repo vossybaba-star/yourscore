@@ -51,14 +51,14 @@ function rankStyle(rank: number) {
   if (rank === 1) return { color: "#ffd700", bg: "rgba(255,215,0,0.12)", border: "rgba(255,215,0,0.28)", bar: "#ffd700" };
   if (rank === 2) return { color: "#c0c0c0", bg: "rgba(192,192,192,0.1)", border: "rgba(192,192,192,0.22)", bar: "#c0c0c0" };
   if (rank === 3) return { color: "#e8945a", bg: "rgba(232,148,90,0.1)", border: "rgba(232,148,90,0.22)", bar: "#e8945a" };
-  return { color: "#a78bfa", bg: "rgba(167,139,250,0.1)", border: "rgba(167,139,250,0.2)", bar: "#a78bfa" };
+  return { color: "#aeea00", bg: "rgba(174,234,0,0.1)", border: "rgba(174,234,0,0.2)", bar: "#aeea00" };
 }
 
 function playerInitial(name: string | null) { return (name ?? "?")[0].toUpperCase(); }
 
 function playerColor(name: string | null) {
   const palettes = [
-    { bg: "#1a2f4a", text: "#60a5fa" }, { bg: "#2a1a4a", text: "#a78bfa" },
+    { bg: "#1a2f4a", text: "#60a5fa" }, { bg: "#3a423d", text: "#aeea00" },
     { bg: "#1a4a2a", text: "#4ade80" }, { bg: "#4a2a1a", text: "#fb923c" },
     { bg: "#4a1a2a", text: "#f87171" },
   ];
@@ -217,7 +217,7 @@ export default function LeaguesPage() {
     <main className="min-h-dvh bg-bg pb-28">
       <GridBackground opacity={0.025} />
       <div className="fixed top-0 right-0 w-[400px] h-[400px] pointer-events-none"
-        style={{ background: "radial-gradient(circle at 100% 0%, rgba(167,139,250,0.07) 0%, transparent 60%)" }} />
+        style={{ background: "radial-gradient(circle at 100% 0%, rgba(174,234,0,0.07) 0%, transparent 60%)" }} />
 
       {/* ── Sticky header ─────────────────────────────────────────────────── */}
       <div className="sticky top-0 z-30 pt-safe" style={{ background: "rgba(10,10,15,0.92)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
@@ -227,7 +227,7 @@ export default function LeaguesPage() {
             <div className="flex items-center gap-2">
               <button onClick={() => setJoinSheetOpen(true)}
                 className="flex items-center gap-1.5 font-body text-sm font-semibold px-4 py-2 rounded-xl transition-all hover:opacity-90"
-                style={{ background: "rgba(255,255,255,0.05)", color: "#aaaacc", border: "1px solid rgba(255,255,255,0.1)" }}>
+                style={{ background: "rgba(255,255,255,0.05)", color: "#9aa39d", border: "1px solid rgba(255,255,255,0.1)" }}>
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                   <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
@@ -235,7 +235,7 @@ export default function LeaguesPage() {
               </button>
               <Link href="/league/new"
                 className="flex items-center gap-1.5 font-body text-sm font-semibold px-4 py-2 rounded-xl transition-all hover:opacity-90"
-                style={{ background: "rgba(167,139,250,0.12)", color: "#a78bfa", border: "1px solid rgba(167,139,250,0.2)" }}>
+                style={{ background: "rgba(174,234,0,0.12)", color: "#aeea00", border: "1px solid rgba(174,234,0,0.2)" }}>
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                   <path d="M7 1v12M1 7h12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                 </svg>
@@ -252,8 +252,8 @@ export default function LeaguesPage() {
               <button key={key} onClick={() => selectMainTab(key)}
                 className="flex-1 py-2.5 rounded-xl font-body text-sm font-semibold transition-all"
                 style={mainTab === key
-                  ? { background: key === "38-0" ? "#00ff87" : "#a78bfa", color: "#0a0a0f" }
-                  : { background: "transparent", color: "#8888aa" }
+                  ? { background: key === "38-0" ? "#aeea00" : "#aeea00", color: "#0a0a0f" }
+                  : { background: "transparent", color: "#8a948f" }
                 }>
                 {label}
               </button>
@@ -267,14 +267,14 @@ export default function LeaguesPage() {
         {/* ════════════════════ CLUB LEAGUES (cross-game, partner-owned) ════ */}
         {clubLeagues.length > 0 && (
           <div>
-            <p className="font-body text-xs uppercase tracking-widest mb-3" style={{ color: "#555577" }}>My club leagues</p>
+            <p className="font-body text-xs uppercase tracking-widest mb-3" style={{ color: "#586058" }}>My club leagues</p>
             <div className="space-y-2">
               {clubLeagues.map((l) => {
-                const brand = l.brand_color || "#a78bfa";
+                const brand = l.brand_color || "#aeea00";
                 return (
                   <Link key={l.slug} href={`/l/${l.slug}`}
                     className="flex items-center gap-3 rounded-xl px-4 py-3 active:scale-[0.98] transition-transform"
-                    style={{ background: "#12121e", border: `1px solid ${brand}33` }}>
+                    style={{ background: "#0e1611", border: `1px solid ${brand}33` }}>
                     <div className="w-9 h-9 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0"
                       style={{ background: `${brand}15`, border: `1px solid ${brand}33` }}>
                       {l.logo_url ? (
@@ -286,7 +286,7 @@ export default function LeaguesPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="font-body" style={{ fontSize: 15, color: "#fff" }}>{l.name}</div>
-                      <div className="font-body" style={{ fontSize: 12, color: "#8888aa" }}>Club League · boards, events & feed</div>
+                      <div className="font-body" style={{ fontSize: 12, color: "#8a948f" }}>Club League · boards, events & feed</div>
                     </div>
                     <span className="font-display" style={{ fontSize: 20, color: brand }}>→</span>
                   </Link>
@@ -300,10 +300,10 @@ export default function LeaguesPage() {
         {mainTab === "38-0" && (
           <>
             {!user && !userLoading ? (
-              <div className="rounded-2xl p-6 text-center" style={{ background: "#12121e", border: "1px solid rgba(0,255,135,0.15)" }}>
+              <div className="rounded-2xl p-6 text-center" style={{ background: "#0e1611", border: "1px solid rgba(174,234,0,0.15)" }}>
                 <div className="font-display tracking-wide mb-2" style={{ fontSize: 20, color: "#fff" }}>SIGN IN FOR LEAGUES</div>
-                <p className="font-body mb-4" style={{ fontSize: 13, color: "#8888aa" }}>Create or join a private 38-0 league to compete with your group.</p>
-                <Link href="/auth/sign-in" className="inline-block rounded-xl px-5 py-3 font-display tracking-wide" style={{ background: "#00ff87", color: "#062013", fontSize: 18 }}>SIGN IN →</Link>
+                <p className="font-body mb-4" style={{ fontSize: 13, color: "#8a948f" }}>Create or join a private 38-0 league to compete with your group.</p>
+                <Link href="/auth/sign-in" className="inline-block rounded-xl px-5 py-3 font-display tracking-wide" style={{ background: "#aeea00", color: "#062013", fontSize: 18 }}>SIGN IN →</Link>
               </div>
             ) : (
               <>
@@ -312,28 +312,28 @@ export default function LeaguesPage() {
                 )}
 
                 {/* Create */}
-                <div className="rounded-2xl p-4" style={{ background: "#12121e", border: "1px solid rgba(0,255,135,0.18)" }}>
-                  <div className="font-display tracking-wide mb-2" style={{ fontSize: 16, color: "#00ff87" }}>CREATE A LEAGUE</div>
+                <div className="rounded-2xl p-4" style={{ background: "#0e1611", border: "1px solid rgba(174,234,0,0.18)" }}>
+                  <div className="font-display tracking-wide mb-2" style={{ fontSize: 16, color: "#aeea00" }}>CREATE A LEAGUE</div>
                   <div className="flex gap-2">
                     <input value={draftName} onChange={(e) => setDraftName(e.target.value)} maxLength={40} placeholder="League name"
                       onKeyDown={(e) => e.key === "Enter" && createDraftLeague()}
                       className="flex-1 rounded-xl px-3 py-3 font-body outline-none" style={{ background: "#0a0a0f", color: "#fff", border: "1px solid rgba(255,255,255,0.1)" }} />
                     <button onClick={createDraftLeague} disabled={draftBusy || !draftName.trim()}
-                      className="rounded-xl px-5 font-display tracking-wide disabled:opacity-50 transition-opacity" style={{ background: "#00ff87", color: "#062013", fontSize: 16 }}>
+                      className="rounded-xl px-5 font-display tracking-wide disabled:opacity-50 transition-opacity" style={{ background: "#aeea00", color: "#062013", fontSize: 16 }}>
                       CREATE
                     </button>
                   </div>
                 </div>
 
                 {/* Join */}
-                <div className="rounded-2xl p-4" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <div className="rounded-2xl p-4" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.08)" }}>
                   <div className="font-display tracking-wide mb-2" style={{ fontSize: 16, color: "#fff" }}>JOIN BY CODE</div>
                   <div className="flex gap-2">
                     <input value={draftCode} onChange={(e) => setDraftCode(e.target.value.toUpperCase())} maxLength={6} placeholder="ABC123"
                       onKeyDown={(e) => e.key === "Enter" && joinDraftLeague()}
                       className="flex-1 rounded-xl px-3 py-3 font-display tracking-widest outline-none" style={{ background: "#0a0a0f", color: "#fff", border: "1px solid rgba(255,255,255,0.1)", fontSize: 20 }} />
                     <button onClick={joinDraftLeague} disabled={draftBusy || !draftCode.trim()}
-                      className="rounded-xl px-5 font-display tracking-wide disabled:opacity-50 transition-opacity" style={{ background: "#a78bfa", color: "#15082b", fontSize: 16 }}>
+                      className="rounded-xl px-5 font-display tracking-wide disabled:opacity-50 transition-opacity" style={{ background: "#aeea00", color: "#0e1611", fontSize: 16 }}>
                       JOIN
                     </button>
                   </div>
@@ -342,17 +342,17 @@ export default function LeaguesPage() {
                 {/* My draft leagues */}
                 {draftLeagues.length > 0 && (
                   <div>
-                    <p className="font-body text-xs uppercase tracking-widest mb-3" style={{ color: "#555577" }}>My leagues</p>
+                    <p className="font-body text-xs uppercase tracking-widest mb-3" style={{ color: "#586058" }}>My leagues</p>
                     <div className="space-y-2">
                       {draftLeagues.map((l) => (
                         <Link key={l.id} href={`/38-0/league/${l.code}`}
                           className="flex items-center justify-between rounded-xl px-4 py-3 active:scale-[0.98] transition-transform"
-                          style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.08)" }}>
+                          style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.08)" }}>
                           <div>
                             <div className="font-body" style={{ fontSize: 15, color: "#fff" }}>{l.name}</div>
-                            <div className="font-body" style={{ fontSize: 12, color: "#8888aa" }}>{l.member_count} member{l.member_count === 1 ? "" : "s"} · {l.code}</div>
+                            <div className="font-body" style={{ fontSize: 12, color: "#8a948f" }}>{l.member_count} member{l.member_count === 1 ? "" : "s"} · {l.code}</div>
                           </div>
-                          <span className="font-display" style={{ fontSize: 20, color: "#a78bfa" }}>→</span>
+                          <span className="font-display" style={{ fontSize: 20, color: "#aeea00" }}>→</span>
                         </Link>
                       ))}
                     </div>
@@ -362,12 +362,12 @@ export default function LeaguesPage() {
                 {/* Global board shortcut */}
                 <Link href="/38-0/leaderboard"
                   className="flex items-center justify-between rounded-xl px-4 py-3 active:scale-[0.98] transition-transform"
-                  style={{ background: "rgba(0,255,135,0.06)", border: "1px solid rgba(0,255,135,0.18)" }}>
+                  style={{ background: "rgba(174,234,0,0.06)", border: "1px solid rgba(174,234,0,0.18)" }}>
                   <div>
                     <div className="font-body text-sm font-semibold" style={{ color: "#fff" }}>Global 38-0 leaderboard</div>
-                    <div className="font-body text-xs" style={{ color: "#8888aa" }}>Daily + all-time rankings →</div>
+                    <div className="font-body text-xs" style={{ color: "#8a948f" }}>Daily + all-time rankings →</div>
                   </div>
-                  <span className="font-body text-xs font-bold px-3 py-1.5 rounded-lg" style={{ background: "rgba(0,255,135,0.12)", color: "#00ff87" }}>View</span>
+                  <span className="font-body text-xs font-bold px-3 py-1.5 rounded-lg" style={{ background: "rgba(174,234,0,0.12)", color: "#aeea00" }}>View</span>
                 </Link>
               </>
             )}
@@ -379,7 +379,7 @@ export default function LeaguesPage() {
           <>
             {/* Not signed in */}
             {!userLoading && !user && (
-              <div className="rounded-2xl p-6" style={{ background: "rgba(167,139,250,0.06)", border: "1px solid rgba(167,139,250,0.15)" }}>
+              <div className="rounded-2xl p-6" style={{ background: "rgba(174,234,0,0.06)", border: "1px solid rgba(174,234,0,0.15)" }}>
                 <p className="font-display text-2xl text-white mb-1">Your leagues live here</p>
                 <p className="font-body text-sm mb-5 text-text-muted">Sign in to create a league, invite your mates, and track your score all season.</p>
                 <AuthProviders />
@@ -393,8 +393,8 @@ export default function LeaguesPage() {
                   <button key={key} onClick={() => selectQuizSubTab(key)}
                     className="flex-1 py-2.5 rounded-xl font-body text-sm font-semibold transition-all"
                     style={quizSubTab === key
-                      ? { background: "#a78bfa", color: "#0a0a0f" }
-                      : { background: "transparent", color: "#8888aa" }
+                      ? { background: "#aeea00", color: "#0a0a0f" }
+                      : { background: "transparent", color: "#8a948f" }
                     }>
                     {label}
                   </button>
@@ -410,7 +410,7 @@ export default function LeaguesPage() {
                 {/* Summary hero */}
                 {!quizLoading && user && quizLeagues.length > 0 && (
                   <div className="rounded-2xl px-5 py-4"
-                    style={{ background: "linear-gradient(135deg, rgba(167,139,250,0.1) 0%, rgba(167,139,250,0.04) 100%)", border: "1px solid rgba(167,139,250,0.18)" }}>
+                    style={{ background: "linear-gradient(135deg, rgba(174,234,0,0.1) 0%, rgba(174,234,0,0.04) 100%)", border: "1px solid rgba(174,234,0,0.18)" }}>
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="font-body text-xs uppercase tracking-widest mb-1.5 text-text-muted">Your leagues</p>
@@ -421,7 +421,7 @@ export default function LeaguesPage() {
                         <div className="text-right">
                           <p className="font-body text-xs uppercase tracking-widest mb-1.5 text-text-muted">Best rank</p>
                           <p className="font-display text-5xl leading-none"
-                            style={{ color: bestQuizRank === 1 ? "#ffd700" : bestQuizRank <= 3 ? "#e8945a" : "#a78bfa" }}>
+                            style={{ color: bestQuizRank === 1 ? "#ffd700" : bestQuizRank <= 3 ? "#e8945a" : "#aeea00" }}>
                             #{bestQuizRank}
                           </p>
                           {bestQuizRank === 1 && <p className="font-body text-xs mt-1" style={{ color: "#ffd700" }}>👑 leading</p>}
@@ -462,7 +462,7 @@ export default function LeaguesPage() {
                                 {league.description && (
                                   <p className="font-body text-xs truncate mb-1 text-text-muted">{league.description}</p>
                                 )}
-                                <p className="font-body text-xs" style={{ color: "#444466" }}>
+                                <p className="font-body text-xs" style={{ color: "#3a423d" }}>
                                   {league.member_count} {league.member_count === 1 ? "member" : "members"}
                                 </p>
                               </div>
@@ -474,11 +474,11 @@ export default function LeaguesPage() {
                             </div>
                             <div className="space-y-2">
                               <div className="flex items-center justify-between">
-                                <p className="font-body text-xs" style={{ color: "#555577" }}>
+                                <p className="font-body text-xs" style={{ color: "#586058" }}>
                                   {isLeading ? "🏆 Leading the table" : gapFromTop ?? ""}
                                 </p>
                                 <p className="font-display text-lg" style={{ color: rs.color }}>
-                                  {league.my_score.toLocaleString()} <span className="font-body text-xs" style={{ color: "#555577" }}>pts</span>
+                                  {league.my_score.toLocaleString()} <span className="font-body text-xs" style={{ color: "#586058" }}>pts</span>
                                 </p>
                               </div>
                               <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.05)" }}>
@@ -503,7 +503,7 @@ export default function LeaguesPage() {
                     </p>
                     <Link href="/league/new"
                       className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-body font-bold text-sm transition-all hover:opacity-90"
-                      style={{ background: "#a78bfa", color: "#0a0a0f" }}>
+                      style={{ background: "#aeea00", color: "#0a0a0f" }}>
                       Create your first league →
                     </Link>
                   </div>
@@ -513,12 +513,12 @@ export default function LeaguesPage() {
                 {!quizLoading && user && quizLeagues.length > 0 && (
                   <Link href="/league/new"
                     className="flex items-center justify-between px-5 py-4 rounded-2xl transition-all hover:opacity-80"
-                    style={{ background: "rgba(167,139,250,0.05)", border: "1px dashed rgba(167,139,250,0.2)" }}>
+                    style={{ background: "rgba(174,234,0,0.05)", border: "1px dashed rgba(174,234,0,0.2)" }}>
                     <div>
                       <p className="font-body text-sm font-semibold text-white">Start another league</p>
                       <p className="font-body text-xs text-text-muted">Different crew? Create as many as you like</p>
                     </div>
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ color: "#a78bfa", flexShrink: 0 }}>
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ color: "#aeea00", flexShrink: 0 }}>
                       <path d="M8 1v14M1 8h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                     </svg>
                   </Link>
@@ -547,7 +547,7 @@ export default function LeaguesPage() {
                           const isMe = user && p.id === user.id;
                           const colors = [
                             { medal: "#ffd700", bg: "rgba(255,215,0,0.1)", border: "rgba(255,215,0,0.25)" },
-                            { medal: "#a78bfa", bg: "rgba(167,139,250,0.1)", border: "rgba(167,139,250,0.25)" },
+                            { medal: "#aeea00", bg: "rgba(174,234,0,0.1)", border: "rgba(174,234,0,0.25)" },
                             { medal: "#e8945a", bg: "rgba(232,148,90,0.1)", border: "rgba(232,148,90,0.2)" },
                           ];
                           const visualPos = idx + 1;
@@ -556,7 +556,7 @@ export default function LeaguesPage() {
                           return (
                             <Link key={p.id} href={`/profile/${p.id}`}
                               className="rounded-2xl px-3 py-4 flex flex-col items-center gap-2 text-center transition-opacity hover:opacity-80 active:scale-[0.98]"
-                              style={{ background: isMe ? "rgba(0,255,135,0.07)" : c.bg, border: `1px solid ${isMe ? "rgba(0,255,135,0.25)" : c.border}`, order: idx === 0 ? 1 : idx === 1 ? 0 : 2, marginTop: visualPos === 1 ? 0 : 12 }}>
+                              style={{ background: isMe ? "rgba(174,234,0,0.07)" : c.bg, border: `1px solid ${isMe ? "rgba(174,234,0,0.25)" : c.border}`, order: idx === 0 ? 1 : idx === 1 ? 0 : 2, marginTop: visualPos === 1 ? 0 : 12 }}>
                               <div className="w-10 h-10 rounded-full flex items-center justify-center font-body font-bold text-base"
                                 style={{ background: pal.bg, color: pal.text, border: "2px solid rgba(255,255,255,0.08)" }}>
                                 {playerInitial(p.display_name)}
@@ -579,7 +579,7 @@ export default function LeaguesPage() {
                         return (
                           <Link key={p.id} href={`/profile/${p.id}`}
                             className="flex items-center gap-3 px-4 py-3 rounded-2xl transition-opacity hover:opacity-80"
-                            style={{ background: isMe ? "rgba(0,255,135,0.06)" : "#12121e", border: `1px solid ${isMe ? "rgba(0,255,135,0.2)" : "rgba(255,255,255,0.06)"}` }}>
+                            style={{ background: isMe ? "rgba(174,234,0,0.06)" : "#0e1611", border: `1px solid ${isMe ? "rgba(174,234,0,0.2)" : "rgba(255,255,255,0.06)"}` }}>
                             <div className="w-8 text-center flex-shrink-0">
                               {rank <= 3 ? <span className="text-base">{["🥇", "🥈", "🥉"][rank - 1]}</span>
                                 : <span className="font-display text-sm" style={{ color: rs.color }}>#{rank}</span>}
@@ -594,7 +594,7 @@ export default function LeaguesPage() {
                                 {isMe && <span className="font-normal ml-1.5 text-green" style={{ fontSize: "0.7rem" }}>you</span>}
                               </p>
                             </div>
-                            <p className="font-display text-lg flex-shrink-0" style={{ color: isMe ? "#00ff87" : rank <= 3 ? rs.color : "#8888aa" }}>
+                            <p className="font-display text-lg flex-shrink-0" style={{ color: isMe ? "#aeea00" : rank <= 3 ? rs.color : "#8a948f" }}>
                               {p.total_score.toLocaleString()}
                             </p>
                           </Link>
@@ -616,7 +616,7 @@ export default function LeaguesPage() {
         <>
           <div className="fixed inset-0 z-40" style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }} onClick={() => setJoinSheetOpen(false)} />
           <div className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl px-5 pt-5 pb-10 bg-surface"
-            style={{ border: "1px solid rgba(167,139,250,0.2)", borderBottom: "none" }}>
+            style={{ border: "1px solid rgba(174,234,0,0.2)", borderBottom: "none" }}>
             <div className="w-10 h-1 rounded-full mx-auto mb-6" style={{ background: "rgba(255,255,255,0.12)" }} />
             <div className="flex items-center justify-between mb-5">
               <div>
@@ -627,7 +627,7 @@ export default function LeaguesPage() {
                 className="w-8 h-8 rounded-full flex items-center justify-center transition-opacity hover:opacity-70"
                 style={{ background: "rgba(255,255,255,0.07)" }}>
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                  <path d="M1 1l10 10M11 1L1 11" stroke="#aaaacc" strokeWidth="1.8" strokeLinecap="round" />
+                  <path d="M1 1l10 10M11 1L1 11" stroke="#9aa39d" strokeWidth="1.8" strokeLinecap="round" />
                 </svg>
               </button>
             </div>
@@ -636,10 +636,10 @@ export default function LeaguesPage() {
                 onChange={(e) => setJoinCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8))}
                 placeholder="ENTER CODE" autoComplete="off" autoCorrect="off" autoCapitalize="characters" spellCheck={false}
                 className="w-full rounded-2xl px-5 font-display text-3xl text-center tracking-[0.25em] text-white outline-none mb-4"
-                style={{ height: 72, background: "rgba(167,139,250,0.06)", border: `1px solid ${joinCode.length >= 4 ? "rgba(167,139,250,0.5)" : "rgba(167,139,250,0.2)"}`, caretColor: "#a78bfa", letterSpacing: "0.25em", transition: "border-color 0.2s" }} />
+                style={{ height: 72, background: "rgba(174,234,0,0.06)", border: `1px solid ${joinCode.length >= 4 ? "rgba(174,234,0,0.5)" : "rgba(174,234,0,0.2)"}`, caretColor: "#aeea00", letterSpacing: "0.25em", transition: "border-color 0.2s" }} />
               <button type="submit" disabled={joinCode.trim().length < 4}
                 className="w-full py-4 rounded-2xl font-body font-bold text-base transition-all"
-                style={{ background: joinCode.trim().length >= 4 ? "#a78bfa" : "rgba(167,139,250,0.15)", color: joinCode.trim().length >= 4 ? "#0a0a0f" : "#555577", cursor: joinCode.trim().length >= 4 ? "pointer" : "not-allowed" }}>
+                style={{ background: joinCode.trim().length >= 4 ? "#aeea00" : "rgba(174,234,0,0.15)", color: joinCode.trim().length >= 4 ? "#0a0a0f" : "#586058", cursor: joinCode.trim().length >= 4 ? "pointer" : "not-allowed" }}>
                 Join league →
               </button>
             </form>

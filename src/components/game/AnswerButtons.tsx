@@ -34,19 +34,19 @@ export function AnswerButtons({ options, answer, selected, revealed, accent, onA
 
         let cardBg = "rgba(255,255,255,0.03)";
         let cardBorder = "rgba(255,255,255,0.09)";
-        let textColor = "#e0e0f0";
+        let textColor = "#eef2f0";
         let chipBg = `${lColor}18`;
         let chipColor = lColor;
 
         if (isCorrectAnswer) {
-          cardBg = "rgba(0,255,135,0.1)"; cardBorder = "#00ff87"; textColor = "#00ff87";
-          chipBg = "#00ff87"; chipColor = "#0a0a0f";
+          cardBg = "rgba(174,234,0,0.1)"; cardBorder = "#aeea00"; textColor = "#aeea00";
+          chipBg = "#aeea00"; chipColor = "#0a0a0f";
         } else if (isWrong) {
           cardBg = "rgba(255,71,87,0.08)"; cardBorder = "rgba(255,71,87,0.5)"; textColor = "#ff4757";
           chipBg = "rgba(255,71,87,0.2)"; chipColor = "#ff4757";
         } else if (isDimmed) {
-          cardBg = "transparent"; cardBorder = "rgba(255,255,255,0.04)"; textColor = "#444466";
-          chipBg = "rgba(255,255,255,0.03)"; chipColor = "#444466";
+          cardBg = "transparent"; cardBorder = "rgba(255,255,255,0.04)"; textColor = "#3a423d";
+          chipBg = "rgba(255,255,255,0.03)"; chipColor = "#3a423d";
         } else if (isSelected && !revealed) {
           cardBg = `${accent}10`; cardBorder = `${accent}50`; textColor = accent;
           chipBg = `${accent}25`; chipColor = accent;

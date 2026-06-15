@@ -17,8 +17,8 @@ import { slugify } from "@/lib/utils";
 
 export const runtime = "edge";
 
-const GREEN = "#00ff87";
-const PURPLE = "#a78bfa";
+const GREEN = "#aeea00";
+const PURPLE = "#aeea00";
 
 type PackLite = {
   name: string;
@@ -63,10 +63,10 @@ export async function GET(req: Request) {
   const qCount = pack?.question_count ?? 15;
   const isRecords = pack?.type === "records";
   const accent = isRecords ? PURPLE : GREEN;
-  const accentDim = isRecords ? "rgba(167,139,250,0.16)" : "rgba(0,255,135,0.14)";
-  const accentBorder = isRecords ? "rgba(167,139,250,0.5)" : "rgba(0,255,135,0.5)";
+  const accentDim = isRecords ? "rgba(174,234,0,0.16)" : "rgba(174,234,0,0.14)";
+  const accentBorder = isRecords ? "rgba(174,234,0,0.5)" : "rgba(174,234,0,0.5)";
   const bg = isRecords
-    ? "linear-gradient(150deg, #0a0a0f 0%, #160e2b 55%, #0b0716 100%)"
+    ? "linear-gradient(150deg, #0a0a0f 0%, #0e1611 55%, #080d0a 100%)"
     : "linear-gradient(150deg, #0a0a0f 0%, #0b1a12 55%, #08130d 100%)";
 
   return new ImageResponse(
@@ -102,10 +102,10 @@ export async function GET(req: Request) {
           {/* meta pills */}
           <div style={{ display: "flex", gap: 14 }}>
             <div style={{ display: "flex", padding: "10px 24px", borderRadius: 999, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.14)" }}>
-              <span style={{ display: "flex", color: "#dcdcec", fontSize: 27, fontWeight: 700 }}>{qCount} questions</span>
+              <span style={{ display: "flex", color: "#c4ccc6", fontSize: 27, fontWeight: 700 }}>{qCount} questions</span>
             </div>
             <div style={{ display: "flex", padding: "10px 24px", borderRadius: 999, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.14)" }}>
-              <span style={{ display: "flex", color: "#dcdcec", fontSize: 27, fontWeight: 700 }}>⚡ Speed scored</span>
+              <span style={{ display: "flex", color: "#c4ccc6", fontSize: 27, fontWeight: 700 }}>⚡ Speed scored</span>
             </div>
           </div>
         </div>
@@ -115,7 +115,7 @@ export async function GET(req: Request) {
           <div style={{ display: "flex", alignItems: "center", padding: "16px 34px", borderRadius: 999, background: accent }}>
             <span style={{ display: "flex", color: "#0a0a0f", fontSize: 32, fontWeight: 900, letterSpacing: 1 }}>TAKE THE QUIZ →</span>
           </div>
-          <span style={{ display: "flex", color: "#9a9ab8", fontSize: 26, fontWeight: 600 }}>Beat the leaderboard · yourscore.app</span>
+          <span style={{ display: "flex", color: "#9aa39d", fontSize: 26, fontWeight: 600 }}>Beat the leaderboard · yourscore.app</span>
         </div>
 
         {/* accent base line */}

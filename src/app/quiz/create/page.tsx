@@ -69,11 +69,11 @@ const ERA_OPTIONS = [
 ];
 
 const DIFF_OPTIONS = [
-  { value: "",       label: "Mixed",  dot: "#aaaacc" },
+  { value: "",       label: "Mixed",  dot: "#9aa39d" },
   { value: "easy",   label: "Easy",   dot: "#4ade80" },
-  { value: "medium", label: "Medium", dot: "#ffb800" },
+  { value: "medium", label: "Medium", dot: "#00d8c0" },
   { value: "hard",   label: "Hard",   dot: "#f87171" },
-  { value: "expert", label: "Expert", dot: "#a78bfa" },
+  { value: "expert", label: "Expert", dot: "#aeea00" },
   { value: "master", label: "Master", dot: "#00c9ff" },
 ];
 
@@ -82,9 +82,9 @@ const DIFF_OPTIONS = [
 type FocusType = "club" | "national" | "records";
 
 const CATEGORIES: { key: FocusType; label: string; icon: string; color: string; rgba: string; desc: string; comingSoon?: boolean }[] = [
-  { key: "club",     label: "Club",          icon: "⚽", color: "#ffb800", rgba: "255,184,0",   desc: "Pick a Premier League side" },
+  { key: "club",     label: "Club",          icon: "⚽", color: "#00d8c0", rgba: "0,216,192",   desc: "Pick a Premier League side" },
   { key: "national", label: "National Team", icon: "🌍", color: "#00c9ff", rgba: "0,201,255",   desc: "International football" },
-  { key: "records",  label: "Records",       icon: "🏆", color: "#a78bfa", rgba: "167,139,250", desc: "PL history, UCL, World Cup" },
+  { key: "records",  label: "Records",       icon: "🏆", color: "#aeea00", rgba: "174,234,0", desc: "PL history, UCL, World Cup" },
 ];
 
 // ── Quiz Builder ───────────────────────────────────────────────────────────────
@@ -182,7 +182,7 @@ export default function CreateQuizPage() {
           100% { background-position: 200% 0; }
         }
         .generating-shimmer {
-          background: linear-gradient(90deg, #00ff87 0%, #00cc6a 40%, #00ff87 60%, #00cc6a 100%);
+          background: linear-gradient(90deg, #aeea00 0%, #00cc6a 40%, #aeea00 60%, #00cc6a 100%);
           background-size: 200% 100%;
           animation: shimmer 1.5s infinite;
         }
@@ -205,7 +205,7 @@ export default function CreateQuizPage() {
               textDecoration: "none",
             }}>
               <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
-                <path d="M10 3L5 8l5 5" stroke="#aaaacc" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M10 3L5 8l5 5" stroke="#9aa39d" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </Link>
 
@@ -223,7 +223,7 @@ export default function CreateQuizPage() {
               padding: "4px 10px", borderRadius: 999,
               background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
               fontFamily: "var(--font-body, sans-serif)", fontSize: 11, fontWeight: 700,
-              color: "#8888aa", letterSpacing: "0.04em",
+              color: "#8a948f", letterSpacing: "0.04em",
             }}>
               {step === 1 ? "Pick category" : step === 2 ? "Pick team" : "Fine-tune"}
             </div>
@@ -234,7 +234,7 @@ export default function CreateQuizPage() {
             <div style={{
               height: "100%", borderRadius: 2,
               width: step === 1 ? "33%" : step === 2 ? "66%" : "100%",
-              background: activeCategory ? `rgba(${activeCategory.rgba}, 0.8)` : "rgba(0,255,135,0.5)",
+              background: activeCategory ? `rgba(${activeCategory.rgba}, 0.8)` : "rgba(174,234,0,0.5)",
               transition: "width 0.4s ease, background 0.3s ease",
             }} />
           </div>
@@ -247,7 +247,7 @@ export default function CreateQuizPage() {
         <div>
           <p style={{
             fontFamily: "var(--font-body, sans-serif)", fontSize: 11, fontWeight: 700,
-            letterSpacing: "0.1em", textTransform: "uppercase", color: "#8888aa",
+            letterSpacing: "0.1em", textTransform: "uppercase", color: "#8a948f",
             marginBottom: 12,
           }}>
             {step === 1 ? "What kind of quiz?" : "Category"}
@@ -282,7 +282,7 @@ export default function CreateQuizPage() {
                     }}>{label}</p>
                     <p style={{
                       fontFamily: "var(--font-body, sans-serif)", fontSize: 10,
-                      color: comingSoon ? "#555566" : active ? `rgba(${rgba},0.7)` : "#666688",
+                      color: comingSoon ? "#586058" : active ? `rgba(${rgba},0.7)` : "#5b645e",
                       textAlign: "center", marginTop: 2, lineHeight: 1.3,
                     }}>{desc}</p>
                   </div>
@@ -307,7 +307,7 @@ export default function CreateQuizPage() {
           >
             <p style={{
               fontFamily: "var(--font-body, sans-serif)", fontSize: 11, fontWeight: 700,
-              letterSpacing: "0.1em", textTransform: "uppercase", color: "#8888aa",
+              letterSpacing: "0.1em", textTransform: "uppercase", color: "#8a948f",
               marginBottom: 12,
             }}>
               {focusType === "club" ? "Pick a club" : focusType === "national" ? "Pick a nation" : "Pick a topic"}
@@ -328,7 +328,7 @@ export default function CreateQuizPage() {
                     fontFamily: "var(--font-body, sans-serif)", fontSize: 14, outline: "none",
                     transition: "border-color 0.15s ease",
                   }}
-                  onFocus={(e) => { e.currentTarget.style.borderColor = "rgba(255,184,0,0.4)"; }}
+                  onFocus={(e) => { e.currentTarget.style.borderColor = "rgba(0,216,192,0.4)"; }}
                   onBlur={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; }}
                 />
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6 }}>
@@ -344,17 +344,17 @@ export default function CreateQuizPage() {
                           justifyContent: "center", gap: 5,
                           padding: "10px 4px", borderRadius: 12, height: 76,
                           cursor: "pointer", transition: "all 0.15s ease",
-                          background: isSelected ? "rgba(255,184,0,0.12)" : "rgba(255,255,255,0.03)",
-                          border: `1px solid ${isSelected ? "rgba(255,184,0,0.55)" : "rgba(255,255,255,0.07)"}`,
-                          boxShadow: isSelected ? "0 0 14px rgba(255,184,0,0.18)" : "none",
+                          background: isSelected ? "rgba(0,216,192,0.12)" : "rgba(255,255,255,0.03)",
+                          border: `1px solid ${isSelected ? "rgba(0,216,192,0.55)" : "rgba(255,255,255,0.07)"}`,
+                          boxShadow: isSelected ? "0 0 14px rgba(0,216,192,0.18)" : "none",
                         }}
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         {badge && <img src={badge} alt={club} width={34} height={34}
-                          style={{ objectFit: "contain", filter: isSelected ? "drop-shadow(0 1px 6px rgba(255,184,0,0.4))" : "none" }} />}
+                          style={{ objectFit: "contain", filter: isSelected ? "drop-shadow(0 1px 6px rgba(0,216,192,0.4))" : "none" }} />}
                         <span style={{
                           fontFamily: "var(--font-body, sans-serif)", fontSize: 9,
-                          color: isSelected ? "#ffb800" : "#aaaacc", fontWeight: 600,
+                          color: isSelected ? "#00d8c0" : "#9aa39d", fontWeight: 600,
                           textAlign: "center", lineHeight: 1.2,
                           overflow: "hidden", display: "-webkit-box",
                           WebkitLineClamp: 2, WebkitBoxOrient: "vertical", width: "100%",
@@ -365,7 +365,7 @@ export default function CreateQuizPage() {
                     );
                   })}
                   {filteredClubs.length === 0 && (
-                    <p style={{ gridColumn: "span 4", textAlign: "center", padding: "24px 0", color: "#555577", fontFamily: "var(--font-body, sans-serif)", fontSize: 13 }}>
+                    <p style={{ gridColumn: "span 4", textAlign: "center", padding: "24px 0", color: "#586058", fontFamily: "var(--font-body, sans-serif)", fontSize: 13 }}>
                       No clubs found
                     </p>
                   )}
@@ -397,7 +397,7 @@ export default function CreateQuizPage() {
                         style={{ objectFit: "contain", filter: isSelected ? "drop-shadow(0 1px 6px rgba(0,201,255,0.4))" : "none" }} />}
                       <span style={{
                         fontFamily: "var(--font-body, sans-serif)", fontSize: 9, fontWeight: 600,
-                        color: isSelected ? "#00c9ff" : "#aaaacc",
+                        color: isSelected ? "#00c9ff" : "#9aa39d",
                         textAlign: "center", lineHeight: 1.2,
                       }}>{name}</span>
                     </button>
@@ -421,15 +421,15 @@ export default function CreateQuizPage() {
                         cursor: comingSoon ? "default" : "pointer",
                         transition: "all 0.15s ease",
                         opacity: comingSoon ? 0.4 : 1,
-                        background: isSelected ? "rgba(167,139,250,0.12)" : "rgba(255,255,255,0.03)",
-                        border: `1px solid ${isSelected ? "rgba(167,139,250,0.55)" : "rgba(255,255,255,0.07)"}`,
-                        boxShadow: isSelected ? "0 0 14px rgba(167,139,250,0.18)" : "none",
+                        background: isSelected ? "rgba(174,234,0,0.12)" : "rgba(255,255,255,0.03)",
+                        border: `1px solid ${isSelected ? "rgba(174,234,0,0.55)" : "rgba(255,255,255,0.07)"}`,
+                        boxShadow: isSelected ? "0 0 14px rgba(174,234,0,0.18)" : "none",
                       }}
                     >
-                      <span style={{ fontSize: 22, flexShrink: 0, filter: isSelected ? "drop-shadow(0 1px 6px rgba(167,139,250,0.5))" : "none" }}>{emoji}</span>
+                      <span style={{ fontSize: 22, flexShrink: 0, filter: isSelected ? "drop-shadow(0 1px 6px rgba(174,234,0,0.5))" : "none" }}>{emoji}</span>
                       <span style={{
                         fontFamily: "var(--font-body, sans-serif)", fontSize: 11, fontWeight: 600,
-                        color: isSelected ? "#a78bfa" : comingSoon ? "#555566" : "#aaaacc",
+                        color: isSelected ? "#aeea00" : comingSoon ? "#586058" : "#9aa39d",
                         lineHeight: 1.3, textAlign: "left",
                       }}>{label}{comingSoon ? " (soon)" : ""}</span>
                     </button>
@@ -448,8 +448,8 @@ export default function CreateQuizPage() {
             <div style={{
               display: "flex", alignItems: "center", gap: 10,
               padding: "10px 14px", borderRadius: 12, marginBottom: 20,
-              background: activeCategory ? `rgba(${activeCategory.rgba},0.08)` : "rgba(0,255,135,0.08)",
-              border: `1px solid ${activeCategory ? `rgba(${activeCategory.rgba},0.25)` : "rgba(0,255,135,0.2)"}`,
+              background: activeCategory ? `rgba(${activeCategory.rgba},0.08)` : "rgba(174,234,0,0.08)",
+              border: `1px solid ${activeCategory ? `rgba(${activeCategory.rgba},0.25)` : "rgba(174,234,0,0.2)"}`,
             }}>
               {(focusType === "club" || focusType === "national") && selectedEntity && getTeamBadgeUrlSync(selectedEntity) ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -468,13 +468,13 @@ export default function CreateQuizPage() {
               }}>{selectedEntity}</p>
               <button
                 onClick={() => { setSelectedEntity(null); setStep(2); }}
-                style={{ background: "none", border: "none", cursor: "pointer", color: "#555577", fontSize: 16 }}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "#586058", fontSize: 16 }}
               >×</button>
             </div>
 
             {/* Era */}
             <div style={{ marginBottom: 16 }}>
-              <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8888aa", marginBottom: 8 }}>Era</p>
+              <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8a948f", marginBottom: 8 }}>Era</p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                 {ERA_OPTIONS.map((opt) => (
                   <button
@@ -484,9 +484,9 @@ export default function CreateQuizPage() {
                       padding: "6px 13px", borderRadius: 999,
                       fontFamily: "var(--font-body, sans-serif)", fontSize: 12, fontWeight: 600,
                       cursor: "pointer", transition: "all 0.15s ease",
-                      background: era === opt.value ? "rgba(0,255,135,0.14)" : "rgba(255,255,255,0.04)",
-                      border: `1px solid ${era === opt.value ? "rgba(0,255,135,0.45)" : "rgba(255,255,255,0.08)"}`,
-                      color: era === opt.value ? "#00ff87" : "#8888aa",
+                      background: era === opt.value ? "rgba(174,234,0,0.14)" : "rgba(255,255,255,0.04)",
+                      border: `1px solid ${era === opt.value ? "rgba(174,234,0,0.45)" : "rgba(255,255,255,0.08)"}`,
+                      color: era === opt.value ? "#aeea00" : "#8a948f",
                     }}
                   >
                     {opt.label}
@@ -497,7 +497,7 @@ export default function CreateQuizPage() {
 
             {/* Difficulty */}
             <div style={{ marginBottom: 20 }}>
-              <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8888aa", marginBottom: 8 }}>Difficulty</p>
+              <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8a948f", marginBottom: 8 }}>Difficulty</p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                 {DIFF_OPTIONS.map((opt) => (
                   <button
@@ -508,9 +508,9 @@ export default function CreateQuizPage() {
                       padding: "6px 13px", borderRadius: 999,
                       fontFamily: "var(--font-body, sans-serif)", fontSize: 12, fontWeight: 600,
                       cursor: "pointer", transition: "all 0.15s ease",
-                      background: difficulty === opt.value ? "rgba(0,255,135,0.14)" : "rgba(255,255,255,0.04)",
-                      border: `1px solid ${difficulty === opt.value ? "rgba(0,255,135,0.45)" : "rgba(255,255,255,0.08)"}`,
-                      color: difficulty === opt.value ? "#00ff87" : "#8888aa",
+                      background: difficulty === opt.value ? "rgba(174,234,0,0.14)" : "rgba(255,255,255,0.04)",
+                      border: `1px solid ${difficulty === opt.value ? "rgba(174,234,0,0.45)" : "rgba(255,255,255,0.08)"}`,
+                      color: difficulty === opt.value ? "#aeea00" : "#8a948f",
                     }}
                   >
                     <span style={{ width: 6, height: 6, borderRadius: "50%", background: opt.dot, flexShrink: 0 }} />
@@ -519,7 +519,7 @@ export default function CreateQuizPage() {
                 ))}
               </div>
               {difficulty === "" && (
-                <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: 11, color: "#444466", marginTop: 6 }}>
+                <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: 11, color: "#3a423d", marginTop: 6 }}>
                   ✓ Mixed balances all difficulty levels
                 </p>
               )}
@@ -551,7 +551,7 @@ export default function CreateQuizPage() {
           {!canGenerate && !selectedEntity && (
             <p style={{
               textAlign: "center", fontFamily: "var(--font-body, sans-serif)",
-              fontSize: 12, color: "#444466", marginBottom: 8,
+              fontSize: 12, color: "#3a423d", marginBottom: 8,
             }}>
               {!focusType ? "Choose a category to start" : "Pick a team or topic"}
             </p>
@@ -568,10 +568,10 @@ export default function CreateQuizPage() {
               background: generating
                 ? undefined
                 : canGenerate
-                ? "linear-gradient(135deg, #00ff87, #00cc6a)"
+                ? "linear-gradient(135deg, #aeea00, #00cc6a)"
                 : "rgba(255,255,255,0.06)",
-              color: canGenerate ? "#000000" : "#333355",
-              boxShadow: canGenerate && !generating ? "0 4px 28px rgba(0,255,135,0.32)" : "none",
+              color: canGenerate ? "#000000" : "#3a423d",
+              boxShadow: canGenerate && !generating ? "0 4px 28px rgba(174,234,0,0.32)" : "none",
             }}
             className={generating ? "generating-shimmer" : ""}
           >

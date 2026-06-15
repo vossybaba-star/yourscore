@@ -32,8 +32,8 @@ export type Badge = { label: string; emoji: string; color: string } | null;
 export function positionBadge(position: number | null | undefined): Badge {
   if (!position || position < 1) return null;
   if (position === 1) return { label: "Top of the table", emoji: "👑", color: "#ffd700" };
-  if (position <= 10) return { label: "Elite", emoji: "🏅", color: "#00ff87" };
-  if (position <= 50) return { label: "Diamond", emoji: "💎", color: "#a78bfa" };
+  if (position <= 10) return { label: "Elite", emoji: "🏅", color: "#aeea00" };
+  if (position <= 50) return { label: "Diamond", emoji: "💎", color: "#aeea00" };
   if (position <= 200) return { label: "Platinum", emoji: "🔷", color: "#67e8f9" };
   if (position <= 1000) return { label: "Gold", emoji: "🥇", color: "#ffb800" };
   return null;
@@ -41,5 +41,5 @@ export function positionBadge(position: number | null | undefined): Badge {
 
 /** Accent colour for a position (badge colour, or neutral when unbadged). */
 export function positionColor(position: number | null | undefined): string {
-  return positionBadge(position)?.color ?? "#8888aa";
+  return positionBadge(position)?.color ?? "#8a948f";
 }

@@ -68,29 +68,29 @@ export function RankRewardCard() {
 
   return (
     <Link href="/leaderboard" className="block rounded-2xl px-4 py-3.5 transition-opacity hover:opacity-90"
-      style={{ background: "linear-gradient(135deg, rgba(167,139,250,0.10), rgba(0,255,135,0.05))", border: `1px solid ${accent}33` }}>
+      style={{ background: "linear-gradient(135deg, rgba(174,234,0,0.10), rgba(174,234,0,0.05))", border: `1px solid ${accent}33` }}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5 min-w-0">
           <span className="text-lg flex-shrink-0">{badge?.emoji ?? "🏅"}</span>
           <div className="min-w-0">
-            <p className="font-display text-xl leading-none" style={{ color: accent === "#8888aa" ? "#ffffff" : accent }}>
+            <p className="font-display text-xl leading-none" style={{ color: accent === "#8a948f" ? "#ffffff" : accent }}>
               #{pos.toLocaleString()}
-              <span className="font-body text-xs ml-1.5" style={{ color: "#8888aa" }}>{row.overall_score.toLocaleString()} pts</span>
+              <span className="font-body text-xs ml-1.5" style={{ color: "#8a948f" }}>{row.overall_score.toLocaleString()} pts</span>
             </p>
-            <p className="font-body text-[10px] uppercase tracking-widest mt-1" style={{ color: "#555577" }}>
+            <p className="font-body text-[10px] uppercase tracking-widest mt-1" style={{ color: "#586058" }}>
               YourScore leaderboard{badge ? ` · ${badge.label}` : ""}
             </p>
           </div>
         </div>
         <div className="text-right flex-shrink-0">
           {gained && gained.points > 0 && (
-            <p className="font-body text-sm font-bold" style={{ color: "#00ff87" }}>+{gained.points.toLocaleString()} pts</p>
+            <p className="font-body text-sm font-bold" style={{ color: "#aeea00" }}>+{gained.points.toLocaleString()} pts</p>
           )}
           {gained && gained.places > 0 && (
-            <p className="font-body text-xs" style={{ color: "#a78bfa" }}>▲ {gained.places.toLocaleString()} place{gained.places === 1 ? "" : "s"}</p>
+            <p className="font-body text-xs" style={{ color: "#aeea00" }}>▲ {gained.places.toLocaleString()} place{gained.places === 1 ? "" : "s"}</p>
           )}
           {(!gained || (gained.points === 0 && gained.places === 0)) && (
-            <p className="font-body text-xs" style={{ color: "#8888aa" }}>Keep playing to climb</p>
+            <p className="font-body text-xs" style={{ color: "#8a948f" }}>Keep playing to climb</p>
           )}
         </div>
       </div>
@@ -98,7 +98,7 @@ export function RankRewardCard() {
         <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
           <div className="h-full rounded-full" style={{ width: `${Math.max(4, chasePct * 100)}%`, background: `linear-gradient(90deg, ${accent}66, ${accent})`, transition: "width 0.6s ease-out" }} />
         </div>
-        <p className="font-body text-[10px] mt-1.5" style={{ color: "#555577" }}>
+        <p className="font-body text-[10px] mt-1.5" style={{ color: "#586058" }}>
           {isTop
             ? "👑 Top of the table — defend it"
             : gap !== null

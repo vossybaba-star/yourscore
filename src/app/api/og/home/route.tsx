@@ -11,7 +11,7 @@ import { LOGO_DATA_URI } from "@/lib/og/logoDataUri";
 
 export const runtime = "edge";
 
-const GREEN = "#00ff87";
+const GREEN = "#aeea00";
 
 export async function GET() {
   return new ImageResponse(
@@ -24,17 +24,17 @@ export async function GET() {
         {/* hero */}
         <div style={{ display: "flex", alignItems: "baseline", marginTop: 36 }}>
           <span style={{ display: "flex", fontSize: 196, fontWeight: 900, color: "#fff", lineHeight: 1, letterSpacing: -4 }}>38</span>
-          <span style={{ display: "flex", fontSize: 196, fontWeight: 900, color: "#8b8ba6", lineHeight: 1, letterSpacing: -4, margin: "0 6px" }}>-</span>
+          <span style={{ display: "flex", fontSize: 196, fontWeight: 900, color: "#9aa39d", lineHeight: 1, letterSpacing: -4, margin: "0 6px" }}>-</span>
           <span style={{ display: "flex", fontSize: 196, fontWeight: 900, color: GREEN, lineHeight: 1, letterSpacing: -4 }}>0</span>
         </div>
 
         {/* label */}
-        <div style={{ display: "flex", marginTop: 8, padding: "10px 30px", borderRadius: 999, background: "rgba(0,255,135,0.1)", border: `1px solid ${GREEN}55` }}>
+        <div style={{ display: "flex", marginTop: 8, padding: "10px 30px", borderRadius: 999, background: "rgba(174,234,0,0.1)", border: `1px solid ${GREEN}55` }}>
           <span style={{ display: "flex", color: GREEN, fontSize: 30, fontWeight: 800, letterSpacing: 4 }}>GO UNBEATEN</span>
         </div>
 
         {/* tagline */}
-        <span style={{ display: "flex", fontSize: 32, color: "#cfcfe6", fontWeight: 600, marginTop: 36 }}>Build your all-time XI. Beat the world, head-to-head.</span>
+        <span style={{ display: "flex", fontSize: 32, color: "#c4ccc6", fontWeight: 600, marginTop: 36 }}>Build your all-time XI. Beat the world, head-to-head.</span>
 
         {/* footer */}
         <span style={{ display: "flex", fontSize: 28, color: GREEN, fontWeight: 800, marginTop: 40 }}>yourscore.app</span>

@@ -25,7 +25,7 @@ interface LiveStats {
   correct: number;
 }
 
-const DIFF_COLOR = { easy: "#00ff87", medium: "#ffb800", hard: "#ff4757" };
+const DIFF_COLOR = { easy: "#aeea00", medium: "#ffb800", hard: "#ff4757" };
 const LETTERS = ["a", "b", "c", "d"] as const;
 const LABELS = ["A", "B", "C", "D"];
 
@@ -167,7 +167,7 @@ export default function FirePanel({ params }: { params: { roomId: string } }) {
     }
   }
 
-  const progressColor = timeLeft > 10 ? "#00ff87" : timeLeft > 5 ? "#ffb800" : "#ff4757";
+  const progressColor = timeLeft > 10 ? "#aeea00" : timeLeft > 5 ? "#ffb800" : "#ff4757";
   const totalResponses = stats.total || 1;
 
   return (
@@ -195,20 +195,20 @@ export default function FirePanel({ params }: { params: { roomId: string } }) {
                   onClick={() => setSelectedQ(selected ? null : q)}
                   className="w-full text-left px-4 py-4 rounded-2xl transition-all disabled:opacity-40"
                   style={{
-                    background: selected ? "rgba(0,255,135,0.06)" : "#12121e",
-                    border: `1px solid ${selected ? "rgba(0,255,135,0.25)" : "rgba(255,255,255,0.07)"}`,
+                    background: selected ? "rgba(174,234,0,0.06)" : "#0e1611",
+                    border: `1px solid ${selected ? "rgba(174,234,0,0.25)" : "rgba(255,255,255,0.07)"}`,
                   }}
                 >
                   <div className="flex items-start gap-3">
                     <div
                       className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 mt-0.5"
                       style={{
-                        background: selected ? "#00ff87" : fired ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.06)",
+                        background: selected ? "#aeea00" : fired ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.06)",
                         border: selected ? "none" : "1px solid rgba(255,255,255,0.1)",
                       }}
                     >
                       {selected && <span style={{ color: "#0a0a0f", fontSize: 11 }}>✓</span>}
-                      {fired && <span style={{ color: "#555566", fontSize: 11 }}>✓</span>}
+                      {fired && <span style={{ color: "#586058", fontSize: 11 }}>✓</span>}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-body text-sm font-medium text-white leading-snug">{q.question_text}</p>
@@ -233,11 +233,11 @@ export default function FirePanel({ params }: { params: { roomId: string } }) {
         {/* Right: fire controls + live stats */}
         <div className="space-y-4">
           {/* Fire button */}
-          <div className="rounded-2xl p-5" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}>
+          <div className="rounded-2xl p-5" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.07)" }}>
             <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-4">Fire question</p>
 
             {selectedQ ? (
-              <div className="mb-4 rounded-xl p-3" style={{ background: "rgba(0,255,135,0.04)", border: "1px solid rgba(0,255,135,0.12)" }}>
+              <div className="mb-4 rounded-xl p-3" style={{ background: "rgba(174,234,0,0.04)", border: "1px solid rgba(174,234,0,0.12)" }}>
                 <p className="font-body text-xs text-text-muted mb-1">Selected</p>
                 <p className="font-body text-sm text-white leading-snug line-clamp-2">{selectedQ.question_text}</p>
               </div>
@@ -256,9 +256,9 @@ export default function FirePanel({ params }: { params: { roomId: string } }) {
                     onClick={() => setDuration(s)}
                     className="px-3 py-1.5 rounded-lg font-body text-xs font-semibold transition-all"
                     style={{
-                      background: duration === s ? "rgba(0,255,135,0.12)" : "rgba(255,255,255,0.04)",
-                      color: duration === s ? "#00ff87" : "#8888aa",
-                      border: `1px solid ${duration === s ? "rgba(0,255,135,0.2)" : "rgba(255,255,255,0.07)"}`,
+                      background: duration === s ? "rgba(174,234,0,0.12)" : "rgba(255,255,255,0.04)",
+                      color: duration === s ? "#aeea00" : "#8a948f",
+                      border: `1px solid ${duration === s ? "rgba(174,234,0,0.2)" : "rgba(255,255,255,0.07)"}`,
                     }}
                   >
                     {s}s
@@ -273,7 +273,7 @@ export default function FirePanel({ params }: { params: { roomId: string } }) {
               className="w-full py-4 rounded-xl font-display text-xl tracking-widest transition-all disabled:opacity-40"
               style={{
                 background: selectedQ && !activeEventId ? "rgba(255,71,87,0.15)" : "rgba(255,255,255,0.04)",
-                color: selectedQ && !activeEventId ? "#ff4757" : "#555566",
+                color: selectedQ && !activeEventId ? "#ff4757" : "#586058",
                 border: `1px solid ${selectedQ && !activeEventId ? "rgba(255,71,87,0.3)" : "rgba(255,255,255,0.06)"}`,
               }}
             >
@@ -283,7 +283,7 @@ export default function FirePanel({ params }: { params: { roomId: string } }) {
 
           {/* Live stats */}
           {(activeEventId || stats.total > 0) && (
-            <div className="rounded-2xl p-5" style={{ background: "#12121e", border: "1px solid rgba(0,255,135,0.1)" }}>
+            <div className="rounded-2xl p-5" style={{ background: "#0e1611", border: "1px solid rgba(174,234,0,0.1)" }}>
               <div className="flex items-center justify-between mb-4">
                 <p className="font-body text-xs text-text-muted uppercase tracking-widest">Live responses</p>
                 <div className="flex items-center gap-3">
@@ -294,7 +294,7 @@ export default function FirePanel({ params }: { params: { roomId: string } }) {
                     </span>
                   )}
                   <span className="font-body text-xs text-text-muted flex items-center gap-1">
-                    <span className="font-display text-xl" style={{ color: "#00ff87" }}>{stats.total}</span>
+                    <span className="font-display text-xl" style={{ color: "#aeea00" }}>{stats.total}</span>
                     <span>answers</span>
                   </span>
                 </div>
@@ -306,14 +306,14 @@ export default function FirePanel({ params }: { params: { roomId: string } }) {
                   const count = stats[l];
                   const pct = Math.round((count / totalResponses) * 100);
                   const isCorrect = selectedQ?.correct_answer === l;
-                  const barColor = isCorrect ? "#00ff87" : "#8888aa";
+                  const barColor = isCorrect ? "#aeea00" : "#8a948f";
                   return (
                     <div key={l}>
                       <div className="flex items-center justify-between mb-1">
                         <div className="flex items-center gap-2">
                           <span
                             className="w-5 h-5 rounded-md flex items-center justify-center font-display text-xs"
-                            style={{ background: isCorrect ? "#00ff87" : "rgba(255,255,255,0.08)", color: isCorrect ? "#0a0a0f" : "#8888aa" }}
+                            style={{ background: isCorrect ? "#aeea00" : "rgba(255,255,255,0.08)", color: isCorrect ? "#0a0a0f" : "#8a948f" }}
                           >
                             {LABELS[i]}
                           </span>
@@ -335,7 +335,7 @@ export default function FirePanel({ params }: { params: { roomId: string } }) {
               {stats.total > 0 && (
                 <div className="mt-4 pt-4 flex items-center justify-between" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
                   <p className="font-body text-xs text-text-muted">Correct</p>
-                  <p className="font-display text-xl" style={{ color: "#00ff87" }}>
+                  <p className="font-display text-xl" style={{ color: "#aeea00" }}>
                     {stats.correct}/{stats.total} ({Math.round((stats.correct / stats.total) * 100)}%)
                   </p>
                 </div>

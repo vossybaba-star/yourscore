@@ -75,7 +75,7 @@ interface HubPayload {
   feed?: FeedRow[];
 }
 
-const DEFAULT_BRAND = "#a78bfa";
+const DEFAULT_BRAND = "#aeea00";
 
 function initial(name: string) {
   return (name || "?").trim()[0]?.toUpperCase() ?? "?";
@@ -113,11 +113,11 @@ function feedLine(f: FeedRow): { icon: string; text: string } {
 function windowChip(w: EventRow["window"]) {
   switch (w) {
     case "live":
-      return { label: "LIVE NOW", color: "#00ff87", bg: "rgba(0,255,135,0.12)" };
+      return { label: "LIVE NOW", color: "#aeea00", bg: "rgba(174,234,0,0.12)" };
     case "upcoming":
       return { label: "UPCOMING", color: "#60a5fa", bg: "rgba(96,165,250,0.12)" };
     case "ended":
-      return { label: "ENDED", color: "#8888aa", bg: "rgba(255,255,255,0.06)" };
+      return { label: "ENDED", color: "#8a948f", bg: "rgba(255,255,255,0.06)" };
     case "cancelled":
       return { label: "CANCELLED", color: "#ff4757", bg: "rgba(255,71,87,0.1)" };
   }
@@ -203,10 +203,10 @@ export default function ClubLeaguePage() {
       <main className="min-h-dvh bg-bg flex flex-col items-center justify-center px-8 text-center">
         <p className="font-display text-4xl mb-3">🔍</p>
         <p className="font-display text-2xl text-white mb-2">Club not found</p>
-        <p className="font-body text-sm mb-6" style={{ color: "#8888aa" }}>
+        <p className="font-body text-sm mb-6" style={{ color: "#8a948f" }}>
           This club league doesn&apos;t exist or is no longer active.
         </p>
-        <Link href="/" className="rounded-xl px-5 py-3 font-body font-bold text-sm" style={{ background: "#a78bfa", color: "#0a0a0f" }}>
+        <Link href="/" className="rounded-xl px-5 py-3 font-body font-bold text-sm" style={{ background: "#aeea00", color: "#0a0a0f" }}>
           Back to YourScore
         </Link>
       </main>
@@ -227,7 +227,7 @@ export default function ClubLeaguePage() {
             style={{
               background: league.cover_url
                 ? `url(${league.cover_url}) center/cover`
-                : `linear-gradient(135deg, ${brand}33 0%, #12121e 80%)`,
+                : `linear-gradient(135deg, ${brand}33 0%, #0e1611 80%)`,
             }}
           >
             <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, transparent 30%, #0a0a0f 100%)" }} />
@@ -235,7 +235,7 @@ export default function ClubLeaguePage() {
           <div className="px-5 -mt-12 relative z-10">
             <div
               className="w-20 h-20 rounded-2xl flex items-center justify-center mb-4 overflow-hidden"
-              style={{ background: "#12121e", border: `2px solid ${brand}55` }}
+              style={{ background: "#0e1611", border: `2px solid ${brand}55` }}
             >
               {league.logo_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -249,7 +249,7 @@ export default function ClubLeaguePage() {
               Club League · {data.memberCount} member{data.memberCount === 1 ? "" : "s"}
             </p>
             {league.welcome_text && (
-              <p className="font-body text-sm mb-4" style={{ color: "#aaaacc", lineHeight: 1.6 }}>{league.welcome_text}</p>
+              <p className="font-body text-sm mb-4" style={{ color: "#9aa39d", lineHeight: 1.6 }}>{league.welcome_text}</p>
             )}
             {league.prize_text && (
               <div className="rounded-2xl px-4 py-3 mb-5" style={{ background: "rgba(255,215,0,0.07)", border: "1px solid rgba(255,215,0,0.2)" }}>
@@ -268,11 +268,11 @@ export default function ClubLeaguePage() {
             >
               {joining ? "JOINING…" : "JOIN THE CLUB →"}
             </button>
-            <p className="font-body text-xs text-center mt-3" style={{ color: "#555577" }}>
+            <p className="font-body text-xs text-center mt-3" style={{ color: "#586058" }}>
               {user ? "You'll appear on the club board instantly." : "Sign in or create a free account to join."}
             </p>
-            <p className="font-body text-xs text-center mt-6" style={{ color: "#444466" }}>
-              Powered by <Link href="/" className="underline" style={{ color: "#8888aa" }}>YourScore</Link>
+            <p className="font-body text-xs text-center mt-6" style={{ color: "#3a423d" }}>
+              Powered by <Link href="/" className="underline" style={{ color: "#8a948f" }}>YourScore</Link>
             </p>
           </div>
         </div>
@@ -299,7 +299,7 @@ export default function ClubLeaguePage() {
           style={{
             background: league.cover_url
               ? `url(${league.cover_url}) center/cover`
-              : `linear-gradient(135deg, ${brand}33 0%, #12121e 80%)`,
+              : `linear-gradient(135deg, ${brand}33 0%, #0e1611 80%)`,
           }}
         >
           <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, transparent 20%, #0a0a0f 100%)" }} />
@@ -307,7 +307,7 @@ export default function ClubLeaguePage() {
         <div className="px-5 -mt-9 relative z-10 flex items-end gap-3 mb-4">
           <div
             className="w-16 h-16 rounded-2xl flex items-center justify-center overflow-hidden flex-shrink-0"
-            style={{ background: "#12121e", border: `2px solid ${brand}55` }}
+            style={{ background: "#0e1611", border: `2px solid ${brand}55` }}
           >
             {league.logo_url ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -339,7 +339,7 @@ export default function ClubLeaguePage() {
                 key={key}
                 onClick={() => setTab(key)}
                 className="flex-1 py-2.5 rounded-xl font-body text-sm font-semibold transition-all"
-                style={tab === key ? { background: brand, color: "#0a0a0f" } : { background: "transparent", color: "#8888aa" }}
+                style={tab === key ? { background: brand, color: "#0a0a0f" } : { background: "transparent", color: "#8a948f" }}
               >
                 {label}
               </button>
@@ -362,8 +362,8 @@ export default function ClubLeaguePage() {
 function BoardTab({ board, meId, brand, prizeText }: { board: BoardRow[]; meId?: string; brand: string; prizeText: string | null }) {
   if (board.length === 0) {
     return (
-      <div className="rounded-2xl p-8 text-center" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}>
-        <p className="font-body text-sm" style={{ color: "#8888aa" }}>No members on the board yet.</p>
+      <div className="rounded-2xl p-8 text-center" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.07)" }}>
+        <p className="font-body text-sm" style={{ color: "#8a948f" }}>No members on the board yet.</p>
       </div>
     );
   }
@@ -383,7 +383,7 @@ function BoardTab({ board, meId, brand, prizeText }: { board: BoardRow[]; meId?:
             href={`/profile/${r.user_id}`}
             className="flex items-center gap-3 px-4 py-3 rounded-2xl transition-opacity hover:opacity-80"
             style={{
-              background: isMe ? `${brand}14` : "#12121e",
+              background: isMe ? `${brand}14` : "#0e1611",
               border: `1px solid ${isMe ? `${brand}44` : "rgba(255,255,255,0.06)"}`,
             }}
           >
@@ -391,7 +391,7 @@ function BoardTab({ board, meId, brand, prizeText }: { board: BoardRow[]; meId?:
               {pos <= 3 ? (
                 <span className="text-base">{["🥇", "🥈", "🥉"][pos - 1]}</span>
               ) : (
-                <span className="font-display text-sm" style={{ color: "#8888aa" }}>#{pos}</span>
+                <span className="font-display text-sm" style={{ color: "#8a948f" }}>#{pos}</span>
               )}
             </div>
             <div
@@ -410,17 +410,17 @@ function BoardTab({ board, meId, brand, prizeText }: { board: BoardRow[]; meId?:
                 {r.display_name}
                 {isMe && <span className="font-normal ml-1.5" style={{ fontSize: "0.7rem", color: brand }}>you</span>}
               </p>
-              <p className="font-body text-xs" style={{ color: "#555577" }}>
+              <p className="font-body text-xs" style={{ color: "#586058" }}>
                 {r.wins}W · {r.draws}D · {r.losses}L · global #{r.overall_rank}
               </p>
             </div>
-            <p className="font-display text-lg flex-shrink-0" style={{ color: pos === 1 ? "#ffd700" : isMe ? brand : "#aaaacc" }}>
+            <p className="font-display text-lg flex-shrink-0" style={{ color: pos === 1 ? "#ffd700" : isMe ? brand : "#9aa39d" }}>
               {r.overall_score.toLocaleString()}
             </p>
           </Link>
         );
       })}
-      <p className="font-body text-xs text-center pt-2" style={{ color: "#444466" }}>
+      <p className="font-body text-xs text-center pt-2" style={{ color: "#3a423d" }}>
         YourScore points — 38-0 wins, quiz knowledge, one table.
       </p>
     </div>
@@ -436,9 +436,9 @@ function EventsTab({ events, slug, brand }: { events: EventRow[]; slug: string; 
 
   if (events.length === 0) {
     return (
-      <div className="rounded-2xl p-8 text-center" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}>
+      <div className="rounded-2xl p-8 text-center" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.07)" }}>
         <p className="font-display text-3xl mb-2">🗓️</p>
-        <p className="font-body text-sm" style={{ color: "#8888aa" }}>No events yet — watch this space.</p>
+        <p className="font-body text-sm" style={{ color: "#8a948f" }}>No events yet — watch this space.</p>
       </div>
     );
   }
@@ -450,7 +450,7 @@ function EventsTab({ events, slug, brand }: { events: EventRow[]; slug: string; 
         href={`/l/${slug}/event/${e.id}`}
         className="block rounded-2xl px-4 py-4 transition-opacity hover:opacity-90 active:scale-[0.99]"
         style={{
-          background: e.window === "live" ? `${brand}10` : "#12121e",
+          background: e.window === "live" ? `${brand}10` : "#0e1611",
           border: `1px solid ${e.window === "live" ? `${brand}44` : "rgba(255,255,255,0.07)"}`,
         }}
       >
@@ -458,13 +458,13 @@ function EventsTab({ events, slug, brand }: { events: EventRow[]; slug: string; 
           <span className="font-body text-xs font-bold px-2 py-0.5 rounded-md" style={{ color: chip.color, background: chip.bg }}>
             {chip.label}
           </span>
-          <span className="font-body text-xs" style={{ color: "#555577" }}>
+          <span className="font-body text-xs" style={{ color: "#586058" }}>
             {new Date(e.starts_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}{" "}
             {new Date(e.starts_at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}
           </span>
         </div>
         <p className="font-body text-base font-bold text-white mb-0.5">{e.title}</p>
-        {e.description && <p className="font-body text-xs truncate" style={{ color: "#8888aa" }}>{e.description}</p>}
+        {e.description && <p className="font-body text-xs truncate" style={{ color: "#8a948f" }}>{e.description}</p>}
         {e.prize_text && (
           <p className="font-body text-xs mt-1.5" style={{ color: "#ffd700" }}>🏆 {e.prize_text}</p>
         )}
@@ -482,13 +482,13 @@ function EventsTab({ events, slug, brand }: { events: EventRow[]; slug: string; 
       {active.map((e) => <Card key={e.id} e={e} />)}
       {upcoming.length > 0 && (
         <>
-          <p className="font-body text-xs uppercase tracking-widest pt-1" style={{ color: "#555577" }}>Upcoming</p>
+          <p className="font-body text-xs uppercase tracking-widest pt-1" style={{ color: "#586058" }}>Upcoming</p>
           {upcoming.map((e) => <Card key={e.id} e={e} />)}
         </>
       )}
       {past.length > 0 && (
         <>
-          <p className="font-body text-xs uppercase tracking-widest pt-1" style={{ color: "#555577" }}>Past</p>
+          <p className="font-body text-xs uppercase tracking-widest pt-1" style={{ color: "#586058" }}>Past</p>
           {past.map((e) => <Card key={e.id} e={e} />)}
         </>
       )}
@@ -501,8 +501,8 @@ function EventsTab({ events, slug, brand }: { events: EventRow[]; slug: string; 
 function FeedTab({ feed }: { feed: FeedRow[] }) {
   if (feed.length === 0) {
     return (
-      <div className="rounded-2xl p-8 text-center" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}>
-        <p className="font-body text-sm" style={{ color: "#8888aa" }}>Nothing yet — go play something.</p>
+      <div className="rounded-2xl p-8 text-center" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.07)" }}>
+        <p className="font-body text-sm" style={{ color: "#8a948f" }}>Nothing yet — go play something.</p>
       </div>
     );
   }
@@ -514,11 +514,11 @@ function FeedTab({ feed }: { feed: FeedRow[] }) {
           <div
             key={`${f.kind}-${f.user_id}-${f.created_at}-${i}`}
             className="flex items-center gap-3 px-4 py-3 rounded-2xl"
-            style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.06)" }}
+            style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.06)" }}
           >
             <span className="text-lg flex-shrink-0">{icon}</span>
-            <p className="font-body text-sm flex-1 min-w-0" style={{ color: "#ccccdd", lineHeight: 1.45 }}>{text}</p>
-            <span className="font-body text-xs flex-shrink-0" style={{ color: "#555577" }}>{timeAgo(f.created_at)}</span>
+            <p className="font-body text-sm flex-1 min-w-0" style={{ color: "#c4ccc6", lineHeight: 1.45 }}>{text}</p>
+            <span className="font-body text-xs flex-shrink-0" style={{ color: "#586058" }}>{timeAgo(f.created_at)}</span>
           </div>
         );
       })}
@@ -619,14 +619,14 @@ function ManageTab({ league, slug, brand, onSaved }: { league: LeagueData; slug:
   return (
     <div className="space-y-4">
       {/* Share / QR */}
-      <div className="rounded-2xl p-4" style={{ background: "#12121e", border: `1px solid ${brand}33` }}>
+      <div className="rounded-2xl p-4" style={{ background: "#0e1611", border: `1px solid ${brand}33` }}>
         <p className="font-display tracking-wide mb-3" style={{ fontSize: 16, color: brand }}>INVITE YOUR PUNTERS</p>
         <div className="flex gap-4 items-center">
           <div className="bg-white p-2 rounded-xl flex-shrink-0">
             <QRCode value={joinUrl} size={104} />
           </div>
           <div className="min-w-0">
-            <p className="font-body text-xs mb-1" style={{ color: "#8888aa" }}>Scan to join, or share the link:</p>
+            <p className="font-body text-xs mb-1" style={{ color: "#8a948f" }}>Scan to join, or share the link:</p>
             <p className="font-body text-sm text-white break-all mb-2">{joinUrl}</p>
             <button
               onClick={() => navigator.clipboard?.writeText(joinUrl)}
@@ -640,10 +640,10 @@ function ManageTab({ league, slug, brand, onSaved }: { league: LeagueData; slug:
       </div>
 
       {/* Create event */}
-      <div className="rounded-2xl p-4 space-y-2.5" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.08)" }}>
+      <div className="rounded-2xl p-4 space-y-2.5" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.08)" }}>
         <p className="font-display tracking-wide" style={{ fontSize: 16, color: "#fff" }}>RUN A QUIZ NIGHT</p>
         {packs.length === 0 ? (
-          <p className="font-body text-xs" style={{ color: "#8888aa" }}>
+          <p className="font-body text-xs" style={{ color: "#8a948f" }}>
             First, build a quiz pack —{" "}
             <Link href="/quiz/create" className="underline" style={{ color: brand }}>create one here</Link>, then come back to schedule the night.
           </p>
@@ -672,12 +672,12 @@ function ManageTab({ league, slug, brand, onSaved }: { league: LeagueData; slug:
             </select>
             <div className="flex gap-2">
               <label className="flex-1">
-                <span className="font-body text-xs block mb-1" style={{ color: "#8888aa" }}>Starts</span>
+                <span className="font-body text-xs block mb-1" style={{ color: "#8a948f" }}>Starts</span>
                 <input type="datetime-local" value={ev.startsAt} onChange={(e) => setEv({ ...ev, startsAt: e.target.value })}
                   className="w-full rounded-xl px-3 py-2.5 font-body text-sm outline-none" style={inputStyle} />
               </label>
               <label className="flex-1">
-                <span className="font-body text-xs block mb-1" style={{ color: "#8888aa" }}>Ends</span>
+                <span className="font-body text-xs block mb-1" style={{ color: "#8a948f" }}>Ends</span>
                 <input type="datetime-local" value={ev.endsAt} onChange={(e) => setEv({ ...ev, endsAt: e.target.value })}
                   className="w-full rounded-xl px-3 py-2.5 font-body text-sm outline-none" style={inputStyle} />
               </label>
@@ -690,10 +690,10 @@ function ManageTab({ league, slug, brand, onSaved }: { league: LeagueData; slug:
               className="w-full rounded-xl px-3 py-3 font-body text-sm outline-none"
               style={inputStyle}
             />
-            <p className="font-body text-xs" style={{ color: "#8888aa" }}>
+            <p className="font-body text-xs" style={{ color: "#8a948f" }}>
               Need new questions? <Link href="/quiz/create" className="underline" style={{ color: brand }}>Build a pack</Link>
             </p>
-            {evMsg && <p className="font-body text-xs" style={{ color: evMsg.includes("✓") ? "#00ff87" : "#ff4757" }}>{evMsg}</p>}
+            {evMsg && <p className="font-body text-xs" style={{ color: evMsg.includes("✓") ? "#aeea00" : "#ff4757" }}>{evMsg}</p>}
             <button
               onClick={createEvent}
               disabled={evBusy || !ev.title.trim() || !ev.packId || !ev.startsAt || !ev.endsAt}
@@ -707,7 +707,7 @@ function ManageTab({ league, slug, brand, onSaved }: { league: LeagueData; slug:
       </div>
 
       {/* Branding */}
-      <div className="rounded-2xl p-4 space-y-2.5" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.08)" }}>
+      <div className="rounded-2xl p-4 space-y-2.5" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.08)" }}>
         <p className="font-display tracking-wide" style={{ fontSize: 16, color: "#fff" }}>YOUR CLUB&apos;S LOOK</p>
         {(
           [
@@ -718,7 +718,7 @@ function ManageTab({ league, slug, brand, onSaved }: { league: LeagueData; slug:
           ] as const
         ).map(([key, label, type]) => (
           <label key={key} className="block">
-            <span className="font-body text-xs block mb-1" style={{ color: "#8888aa" }}>{label}</span>
+            <span className="font-body text-xs block mb-1" style={{ color: "#8a948f" }}>{label}</span>
             <input
               type={type}
               value={form[key]}
@@ -736,7 +736,7 @@ function ManageTab({ league, slug, brand, onSaved }: { league: LeagueData; slug:
           ] as const
         ).map(([key, label]) => (
           <label key={key} className="block">
-            <span className="font-body text-xs block mb-1" style={{ color: "#8888aa" }}>{label}</span>
+            <span className="font-body text-xs block mb-1" style={{ color: "#8a948f" }}>{label}</span>
             <textarea
               value={form[key]}
               onChange={(e) => setForm({ ...form, [key]: e.target.value })}
@@ -747,7 +747,7 @@ function ManageTab({ league, slug, brand, onSaved }: { league: LeagueData; slug:
             />
           </label>
         ))}
-        {saveMsg && <p className="font-body text-xs" style={{ color: saveMsg.includes("✓") ? "#00ff87" : "#ff4757" }}>{saveMsg}</p>}
+        {saveMsg && <p className="font-body text-xs" style={{ color: saveMsg.includes("✓") ? "#aeea00" : "#ff4757" }}>{saveMsg}</p>}
         <button
           onClick={saveBranding}
           disabled={saving || !form.name.trim()}

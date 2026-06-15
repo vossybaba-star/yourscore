@@ -7,12 +7,12 @@ import { BottomNav } from "@/components/ui/BottomNav";
 
 const ANIM_CSS = `
   @keyframes pulseGlow {
-    0%, 100% { box-shadow: 0 0 24px rgba(167,139,250,0.35); }
-    50% { box-shadow: 0 0 40px rgba(167,139,250,0.55); }
+    0%, 100% { box-shadow: 0 0 24px rgba(174,234,0,0.35); }
+    50% { box-shadow: 0 0 40px rgba(174,234,0,0.55); }
   }
   @keyframes greenGlow {
-    0%, 100% { box-shadow: 0 0 24px rgba(0,255,135,0.35); }
-    50% { box-shadow: 0 0 40px rgba(0,255,135,0.55); }
+    0%, 100% { box-shadow: 0 0 24px rgba(174,234,0,0.35); }
+    50% { box-shadow: 0 0 40px rgba(174,234,0,0.55); }
   }
   @keyframes floatUp {
     from { opacity: 0; transform: translateY(16px); }
@@ -28,17 +28,17 @@ const ANIM_CSS = `
 const QUIZ_STEPS = [
   {
     num: "01",
-    color: "#a78bfa",
+    color: "#aeea00",
     emoji: "🏆",
     title: "Create a league",
     short: "Your squad, one table",
     body: "Start a private league in 30 seconds. Invite your mates via WhatsApp or a link. Points track across every game you each play — World Cup, Euros, Champions League, all season.",
     visual: (
-      <div className="rounded-2xl overflow-hidden" style={{ background: "#0d0d18", border: "1px solid rgba(167,139,250,0.15)" }}>
+      <div className="rounded-2xl overflow-hidden" style={{ background: "#080d0a", border: "1px solid rgba(174,234,0,0.15)" }}>
         <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: "rgba(167,139,250,0.15)" }}>
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 1.5h8v3L6 7.5l-4-3z" stroke="#a78bfa" strokeWidth="1.2" strokeLinejoin="round"/><path d="M2.5 4.5v4a3.5 3.5 0 0 0 7 0v-4" stroke="#a78bfa" strokeWidth="1.2" strokeLinecap="round"/></svg>
+            <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: "rgba(174,234,0,0.15)" }}>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 1.5h8v3L6 7.5l-4-3z" stroke="#aeea00" strokeWidth="1.2" strokeLinejoin="round"/><path d="M2.5 4.5v4a3.5 3.5 0 0 0 7 0v-4" stroke="#aeea00" strokeWidth="1.2" strokeLinecap="round"/></svg>
             </div>
             <span className="font-body text-xs font-semibold text-white">The Mates</span>
           </div>
@@ -51,43 +51,43 @@ const QUIZ_STEPS = [
         ].map((p, i) => (
           <div key={p.n} className="flex items-center gap-2.5 px-4 py-2.5"
             style={{ borderBottom: i < 2 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
-            <span className="font-display text-xs w-4" style={{ color: i === 0 ? "#a78bfa" : "#555577" }}>#{i+1}</span>
+            <span className="font-display text-xs w-4" style={{ color: i === 0 ? "#aeea00" : "#586058" }}>#{i+1}</span>
             <span className="text-sm">{p.f}</span>
             <span className="font-body text-sm font-medium text-white flex-1">{p.n}</span>
             {p.streak >= 2 && <span className="font-body text-xs" style={{ color: "#fb923c" }}>🔥{p.streak}</span>}
             <span className="font-body text-xs text-text-muted">{p.acc}%</span>
-            <span className="font-display text-sm" style={{ color: i === 0 ? "#a78bfa" : "white" }}>{p.pts.toLocaleString()}</span>
+            <span className="font-display text-sm" style={{ color: i === 0 ? "#aeea00" : "white" }}>{p.pts.toLocaleString()}</span>
           </div>
         ))}
         <div className="px-4 py-2.5 flex items-center justify-between" style={{ borderTop: "1px solid rgba(255,255,255,0.04)", background: "rgba(0,0,0,0.2)" }}>
           <span className="font-body text-xs text-text-muted">Invite code</span>
-          <span className="font-display text-sm tracking-widest" style={{ color: "#a78bfa" }}>TL9999</span>
+          <span className="font-display text-sm tracking-widest" style={{ color: "#aeea00" }}>TL9999</span>
         </div>
       </div>
     ),
   },
   {
     num: "02",
-    color: "#00ff87",
+    color: "#aeea00",
     emoji: "⚽",
     title: "Sign up for a match",
     short: "Tell us you're watching",
     body: "Browse upcoming fixtures, tap the ones you're going to watch. We'll line up the questions tailored to that matchup — the players, the history, the rivalry — and ping your phone the moment kick-off lands.",
     visual: (
       <div className="space-y-2">
-        <div className="rounded-2xl px-4 py-4" style={{ background: "#0d0d18", border: "1px solid rgba(0,255,135,0.15)" }}>
+        <div className="rounded-2xl px-4 py-4" style={{ background: "#080d0a", border: "1px solid rgba(174,234,0,0.15)" }}>
           <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-3">Upcoming</p>
           <div className="flex items-center justify-between mb-3">
             <div>
               <p className="font-body text-sm font-semibold text-white">England vs France</p>
               <p className="font-body text-xs text-text-muted">Jun 24 · World Cup · 20:00</p>
             </div>
-            <span className="font-body text-xs px-3 py-1.5 rounded-lg font-semibold text-green" style={{ background: "rgba(0,255,135,0.12)", border: "1px solid rgba(0,255,135,0.3)" }}>I&apos;m playing</span>
+            <span className="font-body text-xs px-3 py-1.5 rounded-lg font-semibold text-green" style={{ background: "rgba(174,234,0,0.12)", border: "1px solid rgba(174,234,0,0.3)" }}>I&apos;m playing</span>
           </div>
           <div className="flex items-center gap-3 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: "#00ff87" }} />
-              <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: "#00ff87" }} />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: "#aeea00" }} />
+              <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: "#aeea00" }} />
             </span>
             <span className="font-body text-xs text-white">We&apos;ll send the first question at kick-off</span>
           </div>
@@ -97,13 +97,13 @@ const QUIZ_STEPS = [
   },
   {
     num: "03",
-    color: "#ffb800",
+    color: "#00d8c0",
     emoji: "⚡",
     title: "Answer live",
     short: "45 seconds per question",
     body: "Questions fire automatically during the match, timed to key moments. Everyone gets the same question at the same time. Faster correct answers score more. Speed is everything.",
     visual: (
-      <div className="rounded-2xl overflow-hidden" style={{ background: "#0d0d18", border: "1px solid rgba(255,184,0,0.15)" }}>
+      <div className="rounded-2xl overflow-hidden" style={{ background: "#080d0a", border: "1px solid rgba(0,216,192,0.15)" }}>
         <div className="flex items-center justify-between px-4 pt-4 pb-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
           <div>
             <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-0.5">Question 3 of 8</p>
@@ -112,9 +112,9 @@ const QUIZ_STEPS = [
           <div className="relative w-12 h-12 flex-shrink-0">
             <svg className="w-12 h-12 -rotate-90" viewBox="0 0 100 100">
               <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="8" />
-              <circle cx="50" cy="50" r="45" fill="none" stroke="#ffb800" strokeWidth="8" strokeLinecap="round" strokeDasharray="282" strokeDashoffset="100" />
+              <circle cx="50" cy="50" r="45" fill="none" stroke="#00d8c0" strokeWidth="8" strokeLinecap="round" strokeDasharray="282" strokeDashoffset="100" />
             </svg>
-            <span className="absolute inset-0 flex items-center justify-center font-display text-lg text-amber">24</span>
+            <span className="absolute inset-0 flex items-center justify-center font-display text-lg text-teal">24</span>
           </div>
         </div>
         <div className="p-3 space-y-2">
@@ -125,13 +125,13 @@ const QUIZ_STEPS = [
             { l: "d", t: "95 caps", sel: false, correct: false },
           ].map(opt => (
             <div key={opt.l} className="flex items-center gap-2.5 rounded-xl px-3 py-2.5"
-              style={{ background: opt.sel ? "rgba(255,184,0,0.1)" : "rgba(255,255,255,0.03)", border: `1px solid ${opt.sel ? "rgba(255,184,0,0.4)" : "rgba(255,255,255,0.07)"}` }}>
+              style={{ background: opt.sel ? "rgba(0,216,192,0.1)" : "rgba(255,255,255,0.03)", border: `1px solid ${opt.sel ? "rgba(0,216,192,0.4)" : "rgba(255,255,255,0.07)"}` }}>
               <span className="w-6 h-6 rounded-md flex items-center justify-center font-display text-xs flex-shrink-0"
-                style={{ background: opt.sel ? "rgba(255,184,0,0.2)" : "rgba(255,255,255,0.05)", color: opt.sel ? "#ffb800" : "#8888aa" }}>
+                style={{ background: opt.sel ? "rgba(0,216,192,0.2)" : "rgba(255,255,255,0.05)", color: opt.sel ? "#00d8c0" : "#8a948f" }}>
                 {opt.l.toUpperCase()}
               </span>
               <span className="font-body text-sm text-white">{opt.t}</span>
-              {opt.sel && <span className="ml-auto font-body text-xs text-amber">selected</span>}
+              {opt.sel && <span className="ml-auto font-body text-xs text-teal">selected</span>}
             </div>
           ))}
         </div>
@@ -140,18 +140,18 @@ const QUIZ_STEPS = [
   },
   {
     num: "04",
-    color: "#00ff87",
+    color: "#aeea00",
     emoji: "📈",
     title: "Points stack",
     short: "All season, every game",
     body: "Your score updates after every match. Points stack across every tournament you play. Your league table shows raw score, accuracy %, and current streak — multiple ways to claim you're the best.",
     visual: (
       <div className="space-y-3">
-        <div className="rounded-2xl px-4 py-3" style={{ background: "#0d0d18", border: "1px solid rgba(0,255,135,0.15)" }}>
+        <div className="rounded-2xl px-4 py-3" style={{ background: "#080d0a", border: "1px solid rgba(174,234,0,0.15)" }}>
           <div className="flex items-center justify-between mb-3">
             <span className="font-body text-xs font-semibold text-white uppercase tracking-widest">After 6 games</span>
             <div className="flex gap-1.5">
-              <span className="font-body text-xs px-2 py-0.5 rounded" style={{ background: "rgba(167,139,250,0.15)", color: "#a78bfa" }}>Points</span>
+              <span className="font-body text-xs px-2 py-0.5 rounded" style={{ background: "rgba(174,234,0,0.15)", color: "#aeea00" }}>Points</span>
               <span className="font-body text-xs px-2 py-0.5 rounded text-text-muted" style={{ background: "rgba(255,255,255,0.04)" }}>P4P</span>
             </div>
           </div>
@@ -162,21 +162,21 @@ const QUIZ_STEPS = [
           ].map((p, i) => (
             <div key={p.n} className="flex items-center gap-2 py-2"
               style={{ borderBottom: i < 2 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
-              <span className="font-display text-xs w-5" style={{ color: i === 0 ? "#a78bfa" : "#555577" }}>#{i+1}</span>
+              <span className="font-display text-xs w-5" style={{ color: i === 0 ? "#aeea00" : "#586058" }}>#{i+1}</span>
               <span className="font-body text-sm font-medium text-white flex-1">{p.n}</span>
               {p.streak >= 2 && <span className="font-body text-xs" style={{ color: "#fb923c" }}>🔥{p.streak}</span>}
               <span className="font-body text-xs text-green">{p.gain}</span>
-              <span className="font-display text-sm" style={{ color: i === 0 ? "#a78bfa" : "white" }}>{p.pts.toLocaleString()}</span>
+              <span className="font-display text-sm" style={{ color: i === 0 ? "#aeea00" : "white" }}>{p.pts.toLocaleString()}</span>
             </div>
           ))}
         </div>
         <div className="grid grid-cols-3 gap-2">
           {[
-            { label: "Raw score", val: "2,840", col: "#a78bfa" },
-            { label: "Accuracy",  val: "91%",   col: "#00ff87" },
+            { label: "Raw score", val: "2,840", col: "#aeea00" },
+            { label: "Accuracy",  val: "91%",   col: "#aeea00" },
             { label: "Streak",    val: "🔥 4",   col: "#fb923c" },
           ].map(s => (
-            <div key={s.label} className="rounded-xl p-3 text-center" style={{ background: "#0d0d18", border: "1px solid rgba(255,255,255,0.06)" }}>
+            <div key={s.label} className="rounded-xl p-3 text-center" style={{ background: "#080d0a", border: "1px solid rgba(255,255,255,0.06)" }}>
               <p className="font-display text-xl" style={{ color: s.col }}>{s.val}</p>
               <p className="font-body text-xs text-text-muted mt-0.5">{s.label}</p>
             </div>
@@ -192,26 +192,26 @@ const QUIZ_STEPS = [
 const DRAFT_STEPS = [
   {
     num: "01",
-    color: "#00ff87",
+    color: "#aeea00",
     emoji: "👕",
     title: "Draft your XI",
     short: "11 players, one formation",
     body: "Pick a formation, then build your squad from hundreds of real players across every era. Spin to discover them or browse by position. Your XI is your team — own it.",
     visual: (
-      <div className="rounded-2xl overflow-hidden" style={{ background: "#0d0d18", border: "1px solid rgba(0,255,135,0.15)" }}>
+      <div className="rounded-2xl overflow-hidden" style={{ background: "#080d0a", border: "1px solid rgba(174,234,0,0.15)" }}>
         {/* Formation header */}
         <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
           <span className="font-body text-xs font-semibold text-white">My XI</span>
-          <span className="font-display text-xs tracking-widest" style={{ color: "#00ff87" }}>4-3-3</span>
+          <span className="font-display text-xs tracking-widest" style={{ color: "#aeea00" }}>4-3-3</span>
         </div>
         {/* Mini pitch grid */}
         <div className="px-4 py-3">
-          <div className="rounded-xl overflow-hidden relative" style={{ background: "rgba(0,255,135,0.04)", border: "1px solid rgba(0,255,135,0.1)", padding: "12px 8px" }}>
+          <div className="rounded-xl overflow-hidden relative" style={{ background: "rgba(174,234,0,0.04)", border: "1px solid rgba(174,234,0,0.1)", padding: "12px 8px" }}>
             {/* GK row */}
             <div className="flex justify-center mb-3">
               <div className="text-center">
                 <div className="w-9 h-9 rounded-full mx-auto flex items-center justify-center font-display text-xs text-white mb-1"
-                  style={{ background: "rgba(0,255,135,0.18)", border: "1.5px solid rgba(0,255,135,0.35)" }}>GK</div>
+                  style={{ background: "rgba(174,234,0,0.18)", border: "1.5px solid rgba(174,234,0,0.35)" }}>GK</div>
                 <p className="font-body text-xs text-white" style={{ fontSize: 9 }}>Alisson</p>
               </div>
             </div>
@@ -220,10 +220,10 @@ const DRAFT_STEPS = [
               {["TAA", "VVD", "Dias", "Robertson"].map(n => (
                 <div key={n} className="text-center">
                   <div className="w-8 h-8 rounded-full mx-auto flex items-center justify-center font-display text-xs text-white mb-1"
-                    style={{ background: "rgba(0,255,135,0.12)", border: "1px solid rgba(0,255,135,0.25)" }}>
+                    style={{ background: "rgba(174,234,0,0.12)", border: "1px solid rgba(174,234,0,0.25)" }}>
                     {n.slice(0,2)}
                   </div>
-                  <p className="font-body" style={{ fontSize: 8, color: "#8888aa" }}>{n}</p>
+                  <p className="font-body" style={{ fontSize: 8, color: "#8a948f" }}>{n}</p>
                 </div>
               ))}
             </div>
@@ -232,10 +232,10 @@ const DRAFT_STEPS = [
               {["De Bruyne", "Rodri", "Bellingham"].map(n => (
                 <div key={n} className="text-center">
                   <div className="w-8 h-8 rounded-full mx-auto flex items-center justify-center font-display text-xs text-white mb-1"
-                    style={{ background: "rgba(255,184,0,0.12)", border: "1px solid rgba(255,184,0,0.25)" }}>
+                    style={{ background: "rgba(0,216,192,0.12)", border: "1px solid rgba(0,216,192,0.25)" }}>
                     {n.slice(0,2)}
                   </div>
-                  <p className="font-body" style={{ fontSize: 8, color: "#8888aa" }}>{n.split(" ")[0].slice(0,7)}</p>
+                  <p className="font-body" style={{ fontSize: 8, color: "#8a948f" }}>{n.split(" ")[0].slice(0,7)}</p>
                 </div>
               ))}
             </div>
@@ -244,10 +244,10 @@ const DRAFT_STEPS = [
               {["Salah", "Haaland", "Vinicius"].map(n => (
                 <div key={n} className="text-center">
                   <div className="w-8 h-8 rounded-full mx-auto flex items-center justify-center font-display text-xs text-white mb-1"
-                    style={{ background: "rgba(167,139,250,0.15)", border: "1px solid rgba(167,139,250,0.3)" }}>
+                    style={{ background: "rgba(174,234,0,0.15)", border: "1px solid rgba(174,234,0,0.3)" }}>
                     {n.slice(0,2)}
                   </div>
-                  <p className="font-body" style={{ fontSize: 8, color: "#8888aa" }}>{n}</p>
+                  <p className="font-body" style={{ fontSize: 8, color: "#8a948f" }}>{n}</p>
                 </div>
               ))}
             </div>
@@ -255,41 +255,41 @@ const DRAFT_STEPS = [
         </div>
         <div className="px-4 pb-3 flex items-center justify-between">
           <span className="font-body text-xs text-text-muted">Team strength</span>
-          <span className="font-display text-base" style={{ color: "#00ff87" }}>87</span>
+          <span className="font-display text-base" style={{ color: "#aeea00" }}>87</span>
         </div>
       </div>
     ),
   },
   {
     num: "02",
-    color: "#a78bfa",
+    color: "#aeea00",
     emoji: "⚔️",
     title: "Challenge a friend",
     short: "H2H or live lobby",
     body: "Send a challenge link to anyone — they accept with their own XI and the match runs automatically. Or start a live lobby and play in real time. No one picks the same player twice.",
     visual: (
       <div className="space-y-2.5">
-        <div className="rounded-2xl px-4 py-4" style={{ background: "#0d0d18", border: "1px solid rgba(167,139,250,0.2)" }}>
+        <div className="rounded-2xl px-4 py-4" style={{ background: "#080d0a", border: "1px solid rgba(174,234,0,0.2)" }}>
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 rounded-full flex items-center justify-center font-body font-bold text-sm flex-shrink-0"
-              style={{ background: "linear-gradient(135deg,#1a2f4a,#2a1a4a)", color: "#a78bfa", border: "1.5px solid rgba(167,139,250,0.25)" }}>Z</div>
+              style={{ background: "linear-gradient(135deg,#1a2f4a,#3a423d)", color: "#aeea00", border: "1.5px solid rgba(174,234,0,0.25)" }}>Z</div>
             <div>
               <p className="font-body text-sm font-semibold text-white">Your XI</p>
               <p className="font-body text-xs text-text-muted">Strength 87 · 4-3-3</p>
             </div>
           </div>
           <div className="flex items-center gap-2 rounded-xl px-3 py-2.5"
-            style={{ background: "rgba(167,139,250,0.07)", border: "1px solid rgba(167,139,250,0.18)" }}>
+            style={{ background: "rgba(174,234,0,0.07)", border: "1px solid rgba(174,234,0,0.18)" }}>
             <span className="font-body text-xs text-text-muted flex-1">yourscore.app/38-0/challenge/RW7X</span>
-            <span className="font-body text-xs font-bold px-2 py-1 rounded-lg" style={{ background: "rgba(167,139,250,0.2)", color: "#a78bfa" }}>Copy</span>
+            <span className="font-body text-xs font-bold px-2 py-1 rounded-lg" style={{ background: "rgba(174,234,0,0.2)", color: "#aeea00" }}>Copy</span>
           </div>
           <p className="font-body text-xs text-text-muted mt-2.5 text-center">Share this link · they pick their XI · match runs instantly</p>
         </div>
         <div className="rounded-xl px-4 py-3 flex items-center gap-3"
-          style={{ background: "rgba(0,255,135,0.06)", border: "1px solid rgba(0,255,135,0.18)" }}>
+          style={{ background: "rgba(174,234,0,0.06)", border: "1px solid rgba(174,234,0,0.18)" }}>
           <span className="relative flex h-2 w-2 flex-shrink-0">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: "#00ff87" }} />
-            <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: "#00ff87" }} />
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: "#aeea00" }} />
+            <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: "#aeea00" }} />
           </span>
           <span className="font-body text-xs text-white">Live lobby · play with friends right now</span>
         </div>
@@ -298,13 +298,13 @@ const DRAFT_STEPS = [
   },
   {
     num: "03",
-    color: "#ffb800",
+    color: "#00d8c0",
     emoji: "🎬",
     title: "Watch the match unfold",
     short: "Goals, drama, big moments",
     body: "A full 90-minute simulation plays out — goals, assists, cards, stats. Your squad's real-world performances determine who scores and who concedes. Every match tells a story.",
     visual: (
-      <div className="rounded-2xl overflow-hidden" style={{ background: "#0d0d18", border: "1px solid rgba(255,184,0,0.15)" }}>
+      <div className="rounded-2xl overflow-hidden" style={{ background: "#080d0a", border: "1px solid rgba(0,216,192,0.15)" }}>
         {/* Match header */}
         <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
           <div className="text-center flex-1">
@@ -321,9 +321,9 @@ const DRAFT_STEPS = [
         {/* Goal feed */}
         <div className="px-4 py-3 space-y-2">
           {[
-            { min: "23'", scorer: "Haaland ⚽", side: "you",  col: "#00ff87" },
+            { min: "23'", scorer: "Haaland ⚽", side: "you",  col: "#aeea00" },
             { min: "41'", scorer: "Benzema ⚽", side: "them", col: "#ff7a88" },
-            { min: "67'", scorer: "Salah ⚽",   side: "you",  col: "#00ff87" },
+            { min: "67'", scorer: "Salah ⚽",   side: "you",  col: "#aeea00" },
           ].map(g => (
             <div key={g.min} className="flex items-center gap-2.5 rounded-lg px-3 py-2"
               style={{ background: `${g.col}08`, border: `1px solid ${g.col}20` }}>
@@ -334,8 +334,8 @@ const DRAFT_STEPS = [
           ))}
         </div>
         <div className="px-4 pb-3">
-          <div className="rounded-lg px-3 py-2 text-center" style={{ background: "rgba(255,184,0,0.08)", border: "1px solid rgba(255,184,0,0.2)" }}>
-            <span className="font-body text-xs" style={{ color: "#ffb800" }}>12 minutes remaining…</span>
+          <div className="rounded-lg px-3 py-2 text-center" style={{ background: "rgba(0,216,192,0.08)", border: "1px solid rgba(0,216,192,0.2)" }}>
+            <span className="font-body text-xs" style={{ color: "#00d8c0" }}>12 minutes remaining…</span>
           </div>
         </div>
       </div>
@@ -343,22 +343,22 @@ const DRAFT_STEPS = [
   },
   {
     num: "04",
-    color: "#00ff87",
+    color: "#aeea00",
     emoji: "📊",
     title: "Build your record",
     short: "Go unbeaten. Stay at 38-0.",
     body: "Every win, draw and loss updates your W/D/L record. Lose, and your streak resets. Win enough and the dream is alive — an unbeaten season. 38 games, 0 losses. Can you do it?",
     visual: (
       <div className="space-y-3">
-        <div className="rounded-2xl px-4 py-4" style={{ background: "#0d0d18", border: "1px solid rgba(0,255,135,0.15)" }}>
+        <div className="rounded-2xl px-4 py-4" style={{ background: "#080d0a", border: "1px solid rgba(174,234,0,0.15)" }}>
           <div className="flex items-center justify-between mb-4">
             <span className="font-body text-xs font-semibold text-white uppercase tracking-widest">Your Record</span>
-            <span className="font-display text-xs tracking-widest" style={{ color: "#00ff87" }}>Season 1</span>
+            <span className="font-display text-xs tracking-widest" style={{ color: "#aeea00" }}>Season 1</span>
           </div>
           <div className="grid grid-cols-3 gap-3 mb-4">
             {[
-              { label: "Won",   val: "9",  col: "#00ff87" },
-              { label: "Drawn", val: "2",  col: "#ffb800" },
+              { label: "Won",   val: "9",  col: "#aeea00" },
+              { label: "Drawn", val: "2",  col: "#00d8c0" },
               { label: "Lost",  val: "1",  col: "#ff7a88" },
             ].map(s => (
               <div key={s.label} className="rounded-xl p-3 text-center" style={{ background: `${s.col}08`, border: `1px solid ${s.col}20` }}>
@@ -368,14 +368,14 @@ const DRAFT_STEPS = [
             ))}
           </div>
           <div className="rounded-xl px-4 py-3 flex items-center justify-between"
-            style={{ background: "rgba(0,255,135,0.06)", border: "1px solid rgba(0,255,135,0.18)" }}>
+            style={{ background: "rgba(174,234,0,0.06)", border: "1px solid rgba(174,234,0,0.18)" }}>
             <div>
               <p className="font-body text-xs text-text-muted">Current streak</p>
               <p className="font-display text-lg text-white">🔥 5 wins</p>
             </div>
             <div className="text-right">
               <p className="font-body text-xs text-text-muted">Season goal</p>
-              <p className="font-display text-lg" style={{ color: "#00ff87" }}>38-0</p>
+              <p className="font-display text-lg" style={{ color: "#aeea00" }}>38-0</p>
             </div>
           </div>
         </div>
@@ -419,7 +419,7 @@ function StepCards({ steps, activeStep, setActiveStep }: {
           className="rounded-3xl overflow-hidden cursor-pointer transition-all"
           style={{
             border: `1px solid ${activeStep === i ? `${step.color}30` : "rgba(255,255,255,0.07)"}`,
-            background: activeStep === i ? `linear-gradient(135deg, ${step.color}08 0%, rgba(10,10,15,1) 60%)` : "#12121e",
+            background: activeStep === i ? `linear-gradient(135deg, ${step.color}08 0%, rgba(10,10,15,1) 60%)` : "#0e1611",
           }}>
           <div className="grid md:grid-cols-2 gap-0">
             {/* Left: copy */}
@@ -481,8 +481,8 @@ export default function HowItWorksPage() {
     return () => clearInterval(iv);
   }, [tab, steps.length]);
 
-  const accentColor = tab === "quiz" ? "#a78bfa" : "#00ff87";
-  const accentRgba  = tab === "quiz" ? "167,139,250" : "0,255,135";
+  const accentColor = tab === "quiz" ? "#aeea00" : "#aeea00";
+  const accentRgba  = tab === "quiz" ? "174,234,0" : "174,234,0";
 
   return (
     <main className="min-h-dvh bg-bg pb-28">
@@ -498,7 +498,7 @@ export default function HowItWorksPage() {
         </Link>
         <Link href="/38-0/play"
           className="font-body font-bold text-sm px-5 py-2.5 rounded-xl transition-all hover:opacity-90 green-pulse-glow"
-          style={{ background: "#00ff87", color: "#0a0a0f" }}>
+          style={{ background: "#aeea00", color: "#0a0a0f" }}>
           Draft Your XI →
         </Link>
       </nav>
@@ -508,8 +508,8 @@ export default function HowItWorksPage() {
         {/* Hero */}
         <div className="text-center pt-6 pb-10">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6 font-body text-xs uppercase tracking-widest text-green"
-            style={{ background: "rgba(0,255,135,0.08)", border: "1px solid rgba(0,255,135,0.15)" }}>
-            <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "#00ff87" }} />
+            style={{ background: "rgba(174,234,0,0.08)", border: "1px solid rgba(174,234,0,0.15)" }}>
+            <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "#aeea00" }} />
             World Cup · Euros · Champions League
           </div>
           <h1 className="font-display text-6xl sm:text-7xl text-white leading-none mb-5">
@@ -529,9 +529,9 @@ export default function HowItWorksPage() {
             onClick={() => switchTab("quiz")}
             className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-body text-sm font-semibold transition-all"
             style={{
-              background: tab === "quiz" ? "rgba(167,139,250,0.18)" : "transparent",
-              color: tab === "quiz" ? "#a78bfa" : "#8888aa",
-              border: tab === "quiz" ? "1px solid rgba(167,139,250,0.3)" : "1px solid transparent",
+              background: tab === "quiz" ? "rgba(174,234,0,0.18)" : "transparent",
+              color: tab === "quiz" ? "#aeea00" : "#8a948f",
+              border: tab === "quiz" ? "1px solid rgba(174,234,0,0.3)" : "1px solid transparent",
             }}>
             <span>⭐</span> Quiz
           </button>
@@ -539,9 +539,9 @@ export default function HowItWorksPage() {
             onClick={() => switchTab("draft")}
             className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-body text-sm font-semibold transition-all"
             style={{
-              background: tab === "draft" ? "rgba(0,255,135,0.15)" : "transparent",
-              color: tab === "draft" ? "#00ff87" : "#8888aa",
-              border: tab === "draft" ? "1px solid rgba(0,255,135,0.3)" : "1px solid transparent",
+              background: tab === "draft" ? "rgba(174,234,0,0.15)" : "transparent",
+              color: tab === "draft" ? "#aeea00" : "#8a948f",
+              border: tab === "draft" ? "1px solid rgba(174,234,0,0.3)" : "1px solid transparent",
             }}>
             <span>👕</span> 38-0
           </button>
@@ -567,11 +567,11 @@ export default function HowItWorksPage() {
             </div>
             <div className="bg-surface">
               {[
-                { label: "Answer in 0–15s",    pts: "+200 pts", col: "#00ff87" },
-                { label: "Answer in 15–30s",   pts: "+150 pts", col: "#ffb800" },
+                { label: "Answer in 0–15s",    pts: "+200 pts", col: "#aeea00" },
+                { label: "Answer in 15–30s",   pts: "+150 pts", col: "#00d8c0" },
                 { label: "Answer in 30–45s",   pts: "+100 pts", col: "#ff9f43" },
-                { label: "3 correct in a row", pts: "×2 bonus", col: "#a78bfa" },
-                { label: "Wrong or timed out", pts: "0 pts",    col: "#555577" },
+                { label: "3 correct in a row", pts: "×2 bonus", col: "#aeea00" },
+                { label: "Wrong or timed out", pts: "0 pts",    col: "#586058" },
               ].map((row, i) => (
                 <div key={row.label} className="flex items-center justify-between px-6 py-4"
                   style={{ borderBottom: i < 4 ? "1px solid rgba(255,255,255,0.05)" : "none" }}>
@@ -585,17 +585,17 @@ export default function HowItWorksPage() {
 
         {/* 38-0 strength explainer — draft only */}
         {tab === "draft" && (
-          <div className="rounded-2xl overflow-hidden mb-14" style={{ border: "1px solid rgba(0,255,135,0.15)" }}>
-            <div className="px-6 py-4" style={{ background: "rgba(0,255,135,0.05)", borderBottom: "1px solid rgba(0,255,135,0.1)" }}>
+          <div className="rounded-2xl overflow-hidden mb-14" style={{ border: "1px solid rgba(174,234,0,0.15)" }}>
+            <div className="px-6 py-4" style={{ background: "rgba(174,234,0,0.05)", borderBottom: "1px solid rgba(174,234,0,0.1)" }}>
               <h3 className="font-display text-2xl text-white">HOW STRENGTH WORKS</h3>
             </div>
-            <div style={{ background: "#12121e" }}>
+            <div style={{ background: "#0e1611" }}>
               {[
-                { label: "Player overall rating",       pts: "0–100",        col: "#00ff87" },
-                { label: "Formation fit bonus",         pts: "+up to 15%",   col: "#ffb800" },
-                { label: "Balanced squad (all lines)",  pts: "+cohesion",    col: "#a78bfa" },
-                { label: "Win: streak reward",          pts: "1 free swap",  col: "#00ff87" },
-                { label: "Unbeaten season",             pts: "38-0 badge",   col: "#ffb800" },
+                { label: "Player overall rating",       pts: "0–100",        col: "#aeea00" },
+                { label: "Formation fit bonus",         pts: "+up to 15%",   col: "#00d8c0" },
+                { label: "Balanced squad (all lines)",  pts: "+cohesion",    col: "#aeea00" },
+                { label: "Win: streak reward",          pts: "1 free swap",  col: "#aeea00" },
+                { label: "Unbeaten season",             pts: "38-0 badge",   col: "#00d8c0" },
               ].map((row, i) => (
                 <div key={row.label} className="flex items-center justify-between px-6 py-4"
                   style={{ borderBottom: i < 4 ? "1px solid rgba(255,255,255,0.05)" : "none" }}>
@@ -641,11 +641,11 @@ export default function HowItWorksPage() {
                 <button
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
                   className="w-full flex items-center justify-between px-5 py-4 text-left transition-all hover:opacity-80"
-                  style={{ background: openFaq === i ? `rgba(${accentRgba},0.04)` : "#12121e" }}>
+                  style={{ background: openFaq === i ? `rgba(${accentRgba},0.04)` : "#0e1611" }}>
                   <span className="font-body text-sm font-semibold text-white pr-4">{faq.q}</span>
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
                     style={{ transform: openFaq === i ? "rotate(180deg)" : "none", transition: "transform 0.2s", flexShrink: 0 }}>
-                    <path d="M4 6l4 4 4-4" stroke="#8888aa" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M4 6l4 4 4-4" stroke="#8a948f" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </button>
                 {openFaq === i && (
@@ -660,7 +660,7 @@ export default function HowItWorksPage() {
 
         {/* CTA */}
         <div className="rounded-3xl p-8 sm:p-12 text-center mb-8 relative overflow-hidden"
-          style={{ background: `linear-gradient(135deg, rgba(${accentRgba},0.1) 0%, rgba(0,255,135,0.04) 100%)`, border: `1px solid rgba(${accentRgba},0.2)` }}>
+          style={{ background: `linear-gradient(135deg, rgba(${accentRgba},0.1) 0%, rgba(174,234,0,0.04) 100%)`, border: `1px solid rgba(${accentRgba},0.2)` }}>
           <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.015) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.015) 1px,transparent 1px)", backgroundSize: "30px 30px" }} />
           <div className="relative z-10">
             <p className="font-display text-4xl sm:text-5xl text-white mb-3">READY TO PLAY?</p>
@@ -668,12 +668,12 @@ export default function HowItWorksPage() {
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link href="/38-0/play"
                 className="flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-body font-bold text-base transition-all hover:opacity-90 green-pulse-glow"
-                style={{ background: "#00ff87", color: "#0a0a0f" }}>
+                style={{ background: "#aeea00", color: "#0a0a0f" }}>
                 Draft Your XI →
               </Link>
               <Link href="/league/new"
                 className="flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-body font-bold text-base transition-all hover:opacity-90"
-                style={{ background: "#a78bfa", color: "#0a0a0f" }}>
+                style={{ background: "#aeea00", color: "#0a0a0f" }}>
                 Create a Quiz League →
               </Link>
               <Link href="/challenges"
