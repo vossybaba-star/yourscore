@@ -18,7 +18,7 @@
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
-import { useGLTF, useAnimations } from "@react-three/drei";
+import { useGLTF } from "@react-three/drei";
 import { clone as skeletonClone } from "three/examples/jsm/utils/SkeletonUtils.js";
 import { Component, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import * as THREE from "three";
@@ -38,11 +38,10 @@ import { zoneColumn, zoneRow, type KickOutcome, type PenColumn, type PenZone } f
 // single player by its kit material (OchiFigure), so striker + keeper are two real
 // kitted players from the same file.
 const PLAYERS_URL = "/models/players.glb";
-// The human player is ALWAYS the green #1 kit: they take their kicks AND go in
-// goal to save the opponent's. The opponent is the purple kit. Which kit stands
-// at the ball vs in the goal swaps with whose turn it is (see PenaltyScene3D).
-const YOU_MAT = "Athletes_01.001"; // green — the human (#1)
-const OPP_MAT = "Athletes_06";     // purple — the opponent
+// Fixed roles (no swapping): the TAKER always stands at the spot (lime), the KEEPER
+// always in goal (purple). One player mesh drives both — recoloured per role — and a
+// "YOU" marker (in PenaltyShootout) shows which one the human controls this turn.
+const KIT_MAT = "Athletes_01.001"; // the player mesh we isolate + recolour for both slots
 // Model forward axis: the keeper (in goal, facing the shooter) reads correctly at
 // y=π; the taker faces the goal at y=0.
 const FACE_SHOOTER = Math.PI;
@@ -290,50 +289,140 @@ class ModelBoundary extends Component<{ fallback: ReactNode; children: ReactNode
   render() { return this.state.failed ? this.props.fallback : this.props.children; }
 }
 
-/** Loads a rigged GLB, auto-fits it to ~1.8m (feet on the grass), enables shadows,
- *  and crossfades to the named clip. One instance per slot (no skeleton cloning
- *  needed). The model keeps its own materials/kit — drop in a footballer/keeper
- *  export and it just works; `clip` switches idle ↔ kick/dive. */
-function OchiFigure({ keepMaterial, spin = FACE_SHOOTER, animate = true }:
-  { keepMaterial: string; spin?: number; animate?: boolean }) {
-  const group = useRef<THREE.Group>(null);
-  const { scene, animations } = useGLTF(PLAYERS_URL);
+// ── Procedural animation ──────────────────────────────────────────────────────
+// The GLB's one baked clip is a useless jog/showcase, so we drive the rig's bones
+// directly with poses validated in the sprite spike (three.js bone-local euler,
+// matched by base name — bones are suffixed thighR_41 etc). Keyframes are
+// interpolated by the play clock, giving real multi-frame motion without the
+// asset's missing animation data.
+type Pose = Record<string, [number, number, number]>;
+type KF = { t: number; p: Pose };
 
-  // Clone the whole rig (so each slot animates independently), show only the player
-  // whose kit material matches, and recentre/scale that player to ~1.8m on the spot.
-  const { object, fit } = useMemo(() => {
+const KICK: KF[] = [
+  { t: 0.00, p: { "thighR": [0.55, 0, 0], "shinR": [1.0, 0, 0], "spine.003": [-0.1, 0, 0], "thighL": [-0.1, 0, 0], "upper_armL": [0, 0, 0.3], "upper_armR": [0, 0, -0.2] } },
+  { t: 0.16, p: { "thighR": [-1.25, 0, 0], "shinR": [0.4, 0, 0], "spine.003": [0.18, 0, 0], "thighL": [0.18, 0, 0], "upper_armL": [0, 0, 1.0], "upper_armR": [0, 0, -0.6] } },
+  { t: 0.30, p: { "thighR": [-1.5, 0, 0], "shinR": [0.12, 0, 0], "spine.003": [0.22, 0, 0], "thighL": [0.1, 0, 0], "upper_armL": [0, 0, 0.9], "upper_armR": [0, 0, -0.5] } },
+  { t: 0.62, p: { "spine.003": [0.05, 0, 0] } },
+];
+const READY: Pose = { "thighL": [0, 0, 0.26], "thighR": [0, 0, -0.26], "upper_armL": [0, 0, 0.55], "upper_armR": [0, 0, -0.55], "forearmL": [0.25, 0, 0], "forearmR": [0.25, 0, 0] };
+const REACH: KF[] = [
+  { t: 0.00, p: READY },
+  { t: 0.30, p: READY },
+  { t: 0.70, p: { "upper_armL": [0, 0, 2.5], "upper_armR": [0, 0, -2.5], "forearmL": [0, 0, 0.2], "forearmR": [0, 0, -0.2], "thighL": [0, 0, 0.18], "thighR": [0, 0, -0.18], "shinL": [-0.15, 0, 0], "shinR": [-0.15, 0, 0] } },
+];
+const CATCH: KF[] = [
+  { t: 0.00, p: READY },
+  { t: 0.26, p: READY },
+  { t: 0.55, p: { "upper_armL": [-1.2, 0, 0.35], "upper_armR": [-1.2, 0, -0.35], "forearmL": [-0.6, 0, 0], "forearmR": [-0.6, 0, 0], "spine.003": [0.12, 0, 0], "thighL": [0, 0, 0.14], "thighR": [0, 0, -0.14], "shinL": [-0.2, 0, 0], "shinR": [-0.2, 0, 0] } },
+];
+
+function poseKeys(kfs: KF[]): string[] {
+  const s = new Set<string>();
+  for (const k of kfs) for (const b of Object.keys(k.p)) s.add(b);
+  return Array.from(s);
+}
+function sampleKF(kfs: KF[], t: number, out: Pose) {
+  let a = kfs[0], b = kfs[0];
+  for (let i = 0; i < kfs.length; i++) { if (kfs[i].t <= t) { a = kfs[i]; b = kfs[Math.min(i + 1, kfs.length - 1)]; } }
+  const span = b.t - a.t;
+  const f = span > 0 ? THREE.MathUtils.clamp((t - a.t) / span, 0, 1) : 1;
+  for (const key of poseKeys(kfs)) {
+    const pa = a.p[key] ?? [0, 0, 0], pb = b.p[key] ?? [0, 0, 0];
+    out[key] = [pa[0] + (pb[0] - pa[0]) * f, pa[1] + (pb[1] - pa[1]) * f, pa[2] + (pb[2] - pa[2]) * f];
+  }
+}
+
+// Solid single-colour kit (no stripes/number) while keeping a realistic face/skin:
+// keep warm pixels (skin + hair), repaint the rest flat to the team colour, and the
+// boots' atlas band to dark. (Ported from the sprite spike; runs client-side.)
+function recolorKit(src: THREE.MeshStandardMaterial, tintHex: string): THREE.MeshStandardMaterial {
+  const mat = src.clone();
+  const img = mat.map?.image as (HTMLImageElement | ImageBitmap | undefined);
+  if (!img || typeof document === "undefined") return mat;
+  const cv = document.createElement("canvas");
+  cv.width = (img as HTMLImageElement).width; cv.height = (img as HTMLImageElement).height;
+  const ctx = cv.getContext("2d"); if (!ctx) return mat;
+  ctx.drawImage(img as CanvasImageSource, 0, 0);
+  const data = ctx.getImageData(0, 0, cv.width, cv.height); const px = data.data; const W = cv.width;
+  const tc = new THREE.Color(tintHex); const dark = new THREE.Color("#23252e");
+  for (let p = 0; p < px.length; p += 4) {
+    const r = px[p], g = px[p + 1], b = px[p + 2];
+    const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    const warm = r >= g && g >= b && r - b > 12;
+    if ((warm && r > 110 && g > 75 && r - b < 130) || (warm && lum < 0.34)) continue; // skin/hair
+    const xf = ((p / 4) % W) / W;
+    const c = xf >= 0.75 && xf <= 0.875 ? dark : tc; // boot band → dark
+    px[p] = c.r * 255; px[p + 1] = c.g * 255; px[p + 2] = c.b * 255;
+  }
+  ctx.putImageData(data, 0, 0);
+  const o = mat.map!; const t = new THREE.CanvasTexture(cv);
+  t.flipY = o.flipY; t.colorSpace = o.colorSpace; t.wrapS = o.wrapS; t.wrapT = o.wrapT; t.needsUpdate = true;
+  mat.map = t; mat.color.set(0xffffff); mat.needsUpdate = true;
+  return mat;
+}
+
+const _e = new THREE.Euler();
+const _q = new THREE.Quaternion();
+
+/** Clones the rig, isolates one player, recolours the kit to a flat team colour, and
+ *  drives the bones procedurally per role/play (kick for the taker, reach/catch for
+ *  the keeper) using the validated poses above. */
+function OchiFigure({ keepMaterial, tint, spin = FACE_SHOOTER, role, play, clock }:
+  { keepMaterial: string; tint: string; spin?: number; role: "taker" | "keeper"; play: Play; clock: React.MutableRefObject<number> }) {
+  const { scene } = useGLTF(PLAYERS_URL);
+
+  const { object, fit, bones, bind } = useMemo(() => {
     const c = skeletonClone(scene) as THREE.Object3D;
     let kept: THREE.Object3D | null = null;
     c.traverse((o) => {
       const m = o as THREE.Mesh;
-      if (!m.isMesh) return;
-      const name = (m.material as THREE.Material | undefined)?.name ?? "";
-      if (name === keepMaterial && !kept) { kept = m; m.castShadow = true; m.frustumCulled = false; }
-      else m.visible = false;
+      if (m.isMesh) {
+        const name = (m.material as THREE.Material | undefined)?.name ?? "";
+        if (name === keepMaterial && !kept) {
+          kept = m; m.castShadow = true; m.frustumCulled = false;
+          m.material = recolorKit(m.material as THREE.MeshStandardMaterial, tint);
+        } else m.visible = false;
+      }
     });
     if (!kept) throw new Error(`kit material not found: ${keepMaterial}`);
+    const bones = new Map<string, THREE.Bone>();
+    const bind = new Map<string, THREE.Quaternion>();
+    c.traverse((o) => {
+      if ((o as THREE.Bone).isBone) {
+        const base = o.name.replace(/_\d+$/, "");
+        bones.set(base, o as THREE.Bone);
+        bind.set(base, (o as THREE.Bone).quaternion.clone());
+      }
+    });
     c.updateMatrixWorld(true);
     const box = new THREE.Box3().setFromObject(kept);
     const size = new THREE.Vector3(); box.getSize(size);
     const ctr = new THREE.Vector3(); box.getCenter(ctr);
     const scale = 1.8 / (size.y || 1);
-    return { object: c, fit: { scale, x: -ctr.x * scale, y: -box.min.y * scale, z: -ctr.z * scale } };
-  }, [scene, keepMaterial]);
+    return { object: c, fit: { scale, x: -ctr.x * scale, y: -box.min.y * scale, z: -ctr.z * scale }, bones, bind };
+  }, [scene, keepMaterial, tint]);
 
-  // The GLB ships ONE baked "showcase" clip where each of the 6 players loops a
-  // different action. It reads as a kick run-up for the taker (good), but on the
-  // keeper it looks like he's kicking — so the keeper renders at bind pose
-  // (animate=false) and we drive the dive purely by body transform.
-  const { actions, names } = useAnimations(animations, group);
-  useEffect(() => {
-    const a = names.length ? actions[names[0]] : null;
-    if (animate) a?.reset().play();
-    return () => { a?.stop(); };
-  }, [actions, names, animate]);
+  const pose = useRef<Pose>({});
+  useFrame(() => {
+    const t = clock.current;
+    const p = pose.current;
+    for (const k of Object.keys(p)) delete p[k];
+    if (role === "taker") {
+      if (play) sampleKF(KICK, t, p);
+    } else {
+      if (play) sampleKF(play.dive === 1 ? CATCH : REACH, t, p);
+      else Object.assign(p, READY);
+    }
+    bones.forEach((b, base) => {
+      const e = p[base];
+      const bq = bind.get(base)!;
+      if (e) { _e.set(e[0], e[1], e[2]); _q.setFromEuler(_e); b.quaternion.copy(bq).multiply(_q); }
+      else b.quaternion.copy(bq);
+    });
+  });
 
   return (
-    <group ref={group}>
-      {/* rotate around the origin AFTER recentring, so facing never shifts position */}
+    <group>
       <group rotation={[0, spin, 0]}>
         <group scale={fit.scale} position={[fit.x, fit.y, fit.z]}>
           <primitive object={object} />
@@ -344,37 +433,26 @@ function OchiFigure({ keepMaterial, spin = FACE_SHOOTER, animate = true }:
 }
 useGLTF.preload(PLAYERS_URL);
 
-function Taker({ material, accent, play, clock }: {
-  material: string; accent: string; play: Play; clock: React.MutableRefObject<number>;
-}) {
+function Taker({ play, clock }: { play: Play; clock: React.MutableRefObject<number> }) {
   const ref = useRef<THREE.Group>(null);
-  const num = useMemo(() => kitNumberTexture("1", accent, "#0c0c12"), [accent]);
+  const num = useMemo(() => kitNumberTexture("1", ME, "#0c0c12"), []);
   useFrame(() => {
     if (!ref.current) return;
     const g = ref.current;
-    // Stand just behind & left of the ball, facing the goal; on a kick, step in so
-    // the body passes through the spot at the strike (≈0.26), then settle back.
     let lean = 0, fwd = 0;
-    if (play) {
-      const t = clock.current;
-      if (t < 0.34) { const k = t / 0.34; const s = Math.sin(k * Math.PI); fwd = s; lean = s * 0.5; }
-    }
-    // Centred just behind the ball (clears the bottom-left aim grid), stepping
-    // through the spot on the strike so the body visibly meets the ball.
+    if (play) { const t = clock.current; if (t < 0.34) { const s = Math.sin((t / 0.34) * Math.PI); fwd = s; lean = s * 0.5; } }
     g.position.set(-0.18 + fwd * 0.3, 0, SPOT.z + 0.95 - fwd * 0.95);
-    g.rotation.set(lean * 0.22, FACE_GOAL, 0);
+    g.rotation.set(lean * 0.18, FACE_GOAL, 0);
   });
-  const fallback = <Figure kit="#0e0e14" accent={accent} skin="#d8a87f" numberTex={num} />;
+  const fallback = <Figure kit={ME} accent="#0c1400" skin="#d8a87f" numberTex={num} />;
   return (
     <group ref={ref} scale={0.92}>
-      <ModelBoundary fallback={fallback}><Suspense fallback={null}><OchiFigure keepMaterial={material} spin={FACE_GOAL} /></Suspense></ModelBoundary>
+      <ModelBoundary fallback={fallback}><Suspense fallback={null}><OchiFigure keepMaterial={KIT_MAT} tint={ME} spin={FACE_GOAL} role="taker" play={play} clock={clock} /></Suspense></ModelBoundary>
     </group>
   );
 }
 
-function Keeper({ material, accent, play, clock }: {
-  material: string; accent: string; play: Play; clock: React.MutableRefObject<number>;
-}) {
+function Keeper({ play, clock }: { play: Play; clock: React.MutableRefObject<number> }) {
   const ref = useRef<THREE.Group>(null);
   const num = useMemo(() => kitNumberTexture("1", "#f0ecff", "#5b3fb0"), []);
   const [dive, setDive] = useState<{ col: PenColumn; t: number; high: boolean } | null>(null);
@@ -383,33 +461,29 @@ function Keeper({ material, accent, play, clock }: {
     const g = ref.current;
     const t = clock.current;
     if (play) {
-      // Commit the dive at t≈0.28 (after the strike), reaching the dive pose by t≈0.7.
-      // The body throws sideways and tips toward horizontal (z-roll near ±90°), which
-      // reads as a real save far better than the bind-pose figure just sliding across.
+      // The bones reach (REACH/CATCH); the group slides + tips the body toward the
+      // dive side so the reach becomes a full horizontal save.
       const col = play.dive;
       const high = zoneRow(play.shot) === 2 && play.outcome === "saved";
       const k = THREE.MathUtils.clamp((t - 0.28) / 0.42, 0, 1);
-      const e = k * k * (3 - 2 * k); // smoothstep ease
-      const tx = col === 0 ? -2.5 : col === 2 ? 2.5 : 0;
-      const ty = (col === 1 ? 0.1 : 0.7) + (high ? 0.55 : 0);
-      const roll = col === 0 ? 1.25 : col === 2 ? -1.25 : 0; // tip toward horizontal
-      const pitch = col === 1 ? -0.2 : 0;                    // centre: small forward reach
+      const e = k * k * (3 - 2 * k);
+      const tx = col === 0 ? -2.4 : col === 2 ? 2.4 : 0;
+      const ty = (col === 1 ? 0.05 : 0.6) + (high ? 0.5 : 0);
+      const roll = col === 0 ? 1.2 : col === 2 ? -1.2 : 0;
       g.position.set(THREE.MathUtils.lerp(0, tx, e), THREE.MathUtils.lerp(0, ty, e), GOAL.z + 0.35);
-      g.rotation.set(pitch * e, FACE_SHOOTER, THREE.MathUtils.lerp(0, roll, e));
+      g.rotation.set(0, FACE_SHOOTER, THREE.MathUtils.lerp(0, roll, e));
       if (!dive) setDive({ col, t: k, high });
     } else {
-      // idle: small ready bob
       const bob = Math.sin(performance.now() / 380) * 0.04;
       g.position.set(0, bob, GOAL.z + 0.35);
       g.rotation.set(0, FACE_SHOOTER, 0);
       if (dive) setDive(null);
     }
   });
-  const fallback = <Figure kit="#5b3fb0" accent={accent} skin="#caa07e" numberTex={num} dive={dive} />;
+  const fallback = <Figure kit={OPP} accent="#f0ecff" skin="#caa07e" numberTex={num} dive={dive} />;
   return (
     <group ref={ref}>
-      {/* bind pose (animate=false): the shared clip looks like kicking on the keeper */}
-      <ModelBoundary fallback={fallback}><Suspense fallback={null}><OchiFigure keepMaterial={material} spin={FACE_SHOOTER} animate={false} /></Suspense></ModelBoundary>
+      <ModelBoundary fallback={fallback}><Suspense fallback={null}><OchiFigure keepMaterial={KIT_MAT} tint={OPP} spin={FACE_SHOOTER} role="keeper" play={play} clock={clock} /></Suspense></ModelBoundary>
     </group>
   );
 }
@@ -482,26 +556,16 @@ function Rig() {
   return null;
 }
 
-export default function PenaltyScene3D({ aim, play, onPlayed, reduced, defending }: {
+export default function PenaltyScene3D({ aim, play, onPlayed, reduced }: {
   aim: PenZone | null;
   play: Play;
   onPlayed: () => void;
   reduced: boolean;
-  defending: boolean;          // your turn to save → you (green) go in goal
 }) {
   const tex = useTextures();
   const clock = useRef(0);
   // reset the shared animation clock whenever a new play starts
   useEffect(() => { clock.current = 0; }, [play]);
-
-  // The human (green) takes the kick when shooting and goes in goal when saving.
-  // During a play, `play.side` is authoritative; while idle, `defending` decides
-  // the staging (opponent stepping up to the spot vs you set to shoot).
-  const youShoot = play ? play.side === "me" : !defending;
-  const takerMat = youShoot ? YOU_MAT : OPP_MAT;
-  const keeperMat = youShoot ? OPP_MAT : YOU_MAT;
-  const takerAccent = youShoot ? ME : OPP;
-  const keeperAccent = youShoot ? OPP : ME;
   return (
     <Canvas
       shadows
@@ -518,8 +582,8 @@ export default function PenaltyScene3D({ aim, play, onPlayed, reduced, defending
       {/* GLB figures suspend while loading — keep them in a boundary so the rest of
           the scene renders immediately and the model pops in when ready. */}
       <Suspense fallback={null}>
-        <Taker material={takerMat} accent={takerAccent} play={play} clock={clock} />
-        <Keeper material={keeperMat} accent={keeperAccent} play={play} clock={clock} />
+        <Taker play={play} clock={clock} />
+        <Keeper play={play} clock={clock} />
       </Suspense>
       <GameBall play={play} clock={clock} onPlayed={onPlayed} ballTex={tex.ball} reduced={reduced} />
       <Reticle aim={aim} color={ME} />
