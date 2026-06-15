@@ -196,6 +196,7 @@ export default function WorldCupRun() {
   const canUpgrade = !terminal && run.upgrades_left > 0;
   const playLabel = run.stage === "group" ? "PLAY GROUP STAGE"
     : run.stage === "ko" ? "PLAY R32 & R16"
+    : run.stage === "playoff" ? "TAKE THE PLAY-OFF SHOOTOUT"
     : `PLAY THE ${RUN_STAGE_LABEL[run.stage].toUpperCase()}`;
 
   return (
@@ -283,6 +284,16 @@ export default function WorldCupRun() {
               <span className="font-body" style={{ fontSize: 13, color: "#fff" }}>{opponent.label} opponent — <b style={{ color: "#ff8a3d" }}>{opponent.nation}</b> ({opponent.strength})</span>
             </div>
             <Pitch formation={opponent.formation} squad={opponent.squad} compact />
+          </div>
+        )}
+
+        {/* Qualification play-off: the authentic "best third-placed" explanation. */}
+        {!terminal && run.stage === "playoff" && (
+          <div className="mt-4 rounded-2xl p-4" style={{ background: "#1a1300", border: "1px solid rgba(255,184,0,0.45)" }}>
+            <div className="font-display tracking-wide" style={{ fontSize: 15, color: "#ffb800" }}>IT&apos;S DOWN TO PENALTIES</div>
+            <p className="font-body mt-1.5" style={{ fontSize: 13, color: "#e8d6a8", lineHeight: 1.45 }}>
+              You finished 3rd in your group on <b style={{ color: "#fff" }}>{run.group_points} points</b> — level with the other nations on the qualification cut-line. In the World Cup the <b style={{ color: "#fff" }}>best third-placed teams</b> go through, so it comes down to a play-off shootout for the final Round-of-32 spot.
+            </p>
           </div>
         )}
 
