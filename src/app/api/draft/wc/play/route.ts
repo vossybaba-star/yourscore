@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimitDistributed } from "@/lib/ratelimit";
 import { rowToRun, resolveStage, createWcDb } from "@/lib/draft/wc-server";
+import { GLOBAL_LEAGUE } from "@/lib/draft/server";
 
 // Play the run's current fixture. Server-authoritative: opponent and goals are
 // resolved here (deterministic by the run seed), the match is recorded, and the run
@@ -31,6 +32,17 @@ export async function POST(req: NextRequest) {
 
   const { error: matchErr } = await db.from("draft_wc_matches").insert(rows);
   if (matchErr) return NextResponse.json({ error: "Could not record matches" }, { status: 500 });
+
+  // Ranked daily runs feed YourScore Rank via the shared "WC" standings bucket; practice
+  // runs don't touch Rank. The play-off is a qualification GATE, so that stage is skipped.
+  // Each game's result (win/draw/loss) is credited like any other 38-0 ranked game.
+  if (row.ranked && stage !== "playoff") {
+    const { data: prof } = await db.from("profiles").select("display_name").eq("id", user.id).maybeSingle();
+    const name = (prof?.display_name as string) ?? "Player";
+    for (const g of reveals) {
+      await db.rpc("draft_credit_result", { p_user: user.id, p_name: name, p_result: g.outcome, p_league: GLOBAL_LEAGUE, p_competition: "WC" });
+    }
+  }
 
   const { resolved, ...runPatch } = patch;
   const { error: runErr } = await db
