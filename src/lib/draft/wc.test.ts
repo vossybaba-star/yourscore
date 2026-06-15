@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {
   planRun, planWorldRun, qualifiesFromGroup, prestige, advanceStage, gamesForStage, buildMatchRow, isDuel,
   OPP_MULT, oppTargetFor, STAGE_UPGRADES, KNOCKOUT_STAGES, RUN_STAGES,
-  GROUP_QUALIFY_POINTS, WORLD_TEAM_NAME, type WcRun,
+  GROUP_QUALIFY_POINTS, GROUP_PLAYOFF_POINTS, groupOutcome, WORLD_TEAM_NAME, type WcRun,
 } from "./wc";
 import { groupOpponents } from "../../data/draft/wc2026";
 
@@ -79,9 +79,36 @@ test("group: qualifying on points advances to ko with 3 upgrades", () => {
 });
 
 test("group: failing to qualify eliminates the run", () => {
-  const patch = advanceStage(run({ stage: "group" }), ["loss", "loss", "draw"]); // 1 pt
+  const patch = advanceStage(run({ stage: "group" }), ["loss", "loss", "loss"]); // 0 pts
   assert.equal(patch.status, "eliminated");
   assert.equal(patch.resolved, true);
+});
+
+test("groupOutcome tiers: >=4 qualify, ==3 playoff, <=2 out", () => {
+  assert.equal(groupOutcome(GROUP_QUALIFY_POINTS), "qualify");
+  assert.equal(groupOutcome(6), "qualify");
+  assert.equal(groupOutcome(GROUP_PLAYOFF_POINTS), "playoff");
+  assert.equal(groupOutcome(3), "playoff");
+  assert.equal(groupOutcome(2), "out");
+  assert.equal(groupOutcome(0), "out");
+});
+
+test("group: exactly 3 points sends the run to the qualification play-off", () => {
+  const patch = advanceStage(run({ stage: "group" }), ["win", "loss", "loss"]); // 3 pts
+  assert.equal(patch.group_points, 3);
+  assert.equal(patch.stage, "playoff");
+  assert.equal(patch.status, undefined); // not eliminated — still alive
+  assert.equal(patch.resolved, false);
+});
+
+test("playoff: shootout win advances to ko, loss eliminates", () => {
+  assert.equal(advanceStage(run({ stage: "playoff", group_points: 3 }), ["win"]).stage, "ko");
+  assert.equal(advanceStage(run({ stage: "playoff", group_points: 3 }), ["win"]).upgrades_left, STAGE_UPGRADES.ko);
+  assert.equal(advanceStage(run({ stage: "playoff", group_points: 3 }), ["loss"]).status, "eliminated");
+});
+
+test("gamesForStage: playoff is a single fixture", () => {
+  assert.equal(gamesForStage(run().plan, "playoff").length, 1);
 });
 
 test("ko (R32+R16): must win BOTH to reach the quarters", () => {

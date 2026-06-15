@@ -28,7 +28,11 @@ export type { WCStage, WCNation };
 //   ko    — Round of 32 + Round of 16, resolved in ONE simulation (win both to advance)
 //   qf / sf / final — individual DUELS where the opponent's XI is revealed first so you
 //                     can make changes before kickoff.
-export type RunStage = "group" | "ko" | "qf" | "sf" | "final";
+// `playoff` is a CONDITIONAL detour between group and ko: a borderline group finish
+// (exactly GROUP_PLAYOFF_POINTS) goes to a qualification penalty shootout — modelling the
+// real WC2026 "best third-placed teams" cut-line. It is NOT in RUN_STAGES (the main
+// win-chain) because most runs skip it; it's reached only via advanceStage.
+export type RunStage = "group" | "playoff" | "ko" | "qf" | "sf" | "final";
 export const RUN_STAGES: RunStage[] = ["group", "ko", "qf", "sf", "final"];
 
 // Two ways to play a run:
@@ -39,10 +43,15 @@ export type RunMode = "nation" | "world";
 /** Display name carried on a world-mode run's `nation` column (it has no real nation). */
 export const WORLD_TEAM_NAME = "World XI";
 export const RUN_STAGE_LABEL: Record<RunStage, string> = {
-  group: "Group Stage", ko: "Round of 32 & 16", qf: "Quarter-Final", sf: "Semi-Final", final: "Final",
+  group: "Group Stage", playoff: "Qualification Play-off", ko: "Round of 32 & 16", qf: "Quarter-Final", sf: "Semi-Final", final: "Final",
 };
 export function isDuel(stage: RunStage): boolean {
   return stage === "qf" || stage === "sf" || stage === "final";
+}
+/** The play-off is a straight penalty shootout (no 90 minutes) — handled on its own
+ *  path in the server/UI, distinct from a normal duel. */
+export function isPlayoff(stage: RunStage): boolean {
+  return stage === "playoff";
 }
 
 // Opponent difficulty is PROPORTIONAL to your current team Strength, scaled per round.
@@ -59,11 +68,18 @@ export function oppTargetFor(yourStrength: number, stage: WCStage): number {
 // any rating can come up at any time, from your first pick onward — so an upgrade is
 // just a free re-spin of a slot (it might land better or worse). Three after the group;
 // two before each of QF / SF / Final.
-export const STAGE_UPGRADES: Record<RunStage, number> = { group: 0, ko: 3, qf: 2, sf: 2, final: 2 };
+export const STAGE_UPGRADES: Record<RunStage, number> = { group: 0, playoff: 0, ko: 3, qf: 2, sf: 2, final: 2 };
 
-export const GROUP_QUALIFY_POINTS = 4; // ~ a win + a draw, or two wins
+export const GROUP_QUALIFY_POINTS = 4; // >= this from 3 games → auto-qualify (top-2 finish)
+export const GROUP_PLAYOFF_POINTS = 3; // exactly this → qualification shootout (best third-placed)
 export function qualifiesFromGroup(points: number): boolean {
   return points >= GROUP_QUALIFY_POINTS;
+}
+/** Group outcome tier: auto-qualify (≥4), a qualification play-off shootout (==3), or out (≤2). */
+export function groupOutcome(points: number): "qualify" | "playoff" | "out" {
+  if (points >= GROUP_QUALIFY_POINTS) return "qualify";
+  if (points === GROUP_PLAYOFF_POINTS) return "playoff";
+  return "out";
 }
 
 /** Real knockout stages in order (used to assign bracket opponents). */
@@ -98,6 +114,7 @@ export type WCFixture = {
 export type WCPlan = {
   group: WCFixture[];      // 3 real group opponents
   knockouts: WCFixture[];  // r32 → final, 5 plausible real opponents
+  playoff: WCFixture;      // opponent for the qualification shootout (only used on the play-off line)
 };
 
 /** Weighted pick from a list by a weight fn (seeded). Removes nothing. */
@@ -139,7 +156,10 @@ export function planRun(nation: string, seed: string): WCPlan {
     knockouts.push({ stage, label: WC_STAGE_LABEL[stage], opponent });
   });
 
-  return { group, knockouts };
+  const playoffOpp = pool.length ? weightedPick(pool, (t) => prestige(t.nation), rng) : knockouts[0].opponent;
+  const playoff: WCFixture = { stage: "group", label: "Qualification Play-off", opponent: playoffOpp };
+
+  return { group, knockouts, playoff };
 }
 
 /**
@@ -169,7 +189,10 @@ export function planWorldRun(seed: string): WCPlan {
     knockouts.push({ stage, label: WC_STAGE_LABEL[stage], opponent });
   });
 
-  return { group, knockouts };
+  const playoffOpp = pool.length ? weightedPick(pool, (t) => prestige(t.nation), rng) : knockouts[0].opponent;
+  const playoff: WCFixture = { stage: "group", label: "Qualification Play-off", opponent: playoffOpp };
+
+  return { group, knockouts, playoff };
 }
 
 // ─── Run state + advancement (pure — the API persists the result) ────────────
@@ -217,6 +240,7 @@ export type WcRunPatch = Partial<Pick<WcRun,
 export function gamesForStage(plan: WCPlan, stage: RunStage): WCFixture[] {
   switch (stage) {
     case "group": return plan.group;
+    case "playoff": return [plan.playoff];
     case "ko": return plan.knockouts.slice(0, 2);
     case "qf": return [plan.knockouts[2]];
     case "sf": return [plan.knockouts[3]];
@@ -266,10 +290,21 @@ export function allowDraw(stage: RunStage): boolean {
 export function advanceStage(run: WcRun, outcomes: GameOutcome[]): WcRunPatch {
   if (run.stage === "group") {
     const group_points = outcomes.reduce((s, o) => s + (o === "win" ? 3 : o === "draw" ? 1 : 0), 0);
-    if (qualifiesFromGroup(group_points)) {
+    const tier = groupOutcome(group_points);
+    if (tier === "qualify") {
       return { group_points, group_played: 3, stage: "ko", stage_index: 1, upgrades_left: STAGE_UPGRADES.ko, resolved: false };
     }
+    if (tier === "playoff") {
+      // Borderline — to the qualification shootout. Stays at stage_index 0 (pre-knockouts).
+      return { group_points, group_played: 3, stage: "playoff", stage_index: 0, upgrades_left: 0, resolved: false };
+    }
     return { group_points, group_played: 3, status: "eliminated", resolved: true };
+  }
+  if (run.stage === "playoff") {
+    // A single shootout: win → into the Round of 32, lose → out at the group.
+    const won = outcomes[0] === "win";
+    if (won) return { stage: "ko", stage_index: 1, upgrades_left: STAGE_UPGRADES.ko, resolved: false };
+    return { status: "eliminated", resolved: true };
   }
   // Knockout stages — win them all to go through.
   const advanced = outcomes.every((o) => o === "win");
