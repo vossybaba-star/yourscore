@@ -28,8 +28,8 @@ const DEV = process.env.NODE_ENV === "development";
 type Cam = { az: number; el: number; dist: number; tx: number; ty: number; tz: number };
 type Deltas = Record<string, [number, number, number]>;
 
-function Players({ only, deltas, tint, register }: {
-  only: number; deltas: Deltas; tint: string | null; register: (names: string[]) => void;
+function Players({ only, deltas, tint, bootRange, register }: {
+  only: number; deltas: Deltas; tint: string | null; bootRange: [number, number] | null; register: (names: string[]) => void;
 }) {
   const group = useRef<THREE.Group>(null);
   const { scene } = useGLTF(URL);
@@ -88,7 +88,10 @@ function Players({ only, deltas, tint, register }: {
       ctx.drawImage(img as CanvasImageSource, 0, 0);
       const data = ctx.getImageData(0, 0, cv.width, cv.height);
       const px = data.data;
-      const tc = new THREE.Color(tint);
+      const W = cv.width;
+      const tc = new THREE.Color(tint === "__BANDS__" ? "#ffffff" : tint);
+      const dark = new THREE.Color("#23252e"); // neutral dark for boots/socks
+      const dbg = new THREE.Color();
       for (let p = 0; p < px.length; p += 4) {
         const r = px[p], g = px[p + 1], b = px[p + 2];
         const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
@@ -99,12 +102,18 @@ function Players({ only, deltas, tint, register }: {
         const isSkin = warm && r > 110 && g > 75 && r - b < 130;
         const isHair = warm && lum < 0.34;
         if (isSkin || isHair) continue;
-        // Flat team colour (no texture-luminance modulation) so the kit reads as ONE
-        // colour and the "PLAYER 10" text dissolves; the scene lights still shade the
-        // body via the mesh normals, so it isn't flat-looking.
-        px[p] = tc.r * 255;
-        px[p + 1] = tc.g * 255;
-        px[p + 2] = tc.b * 255;
+        const xfrac = ((p / 4) % W) / W;            // atlas band position (palette strip)
+        let c = tc;
+        if (tint === "__BANDS__") {
+          dbg.setHSL(Math.floor(xfrac * 8) / 8, 0.85, 0.5); c = dbg; // map each band to a hue
+        } else if (bootRange && xfrac >= bootRange[0] && xfrac <= bootRange[1]) {
+          c = dark;                                  // boots/socks band → neutral dark
+        }
+        // Flat colour (no texture-luminance modulation) so the kit reads as ONE colour
+        // and the "PLAYER 10" text dissolves; scene lights shade the body via normals.
+        px[p] = c.r * 255;
+        px[p + 1] = c.g * 255;
+        px[p + 2] = c.b * 255;
       }
       ctx.putImageData(data, 0, 0);
       const ctex = new THREE.CanvasTexture(cv);
@@ -112,7 +121,7 @@ function Players({ only, deltas, tint, register }: {
       ctex.needsUpdate = true;
       mat.map = ctex; mat.color.set(0xffffff); mat.needsUpdate = true;
     });
-  }, [object, tint, only]);
+  }, [object, tint, only, bootRange]);
 
   // Apply pose deltas on top of the bind pose. Bones are named per-player with a
   // `_NN` node-index suffix (thighR_41, thighR_86, …); match by BASE name (suffix
@@ -151,6 +160,7 @@ export default function SpriteSpike() {
   const [only, setOnly] = useState(1);
   const [deltas, setDeltas] = useState<Deltas>({});
   const [tint, setTint] = useState<string | null>(null);
+  const [bootRange, setBootRange] = useState<[number, number] | null>(null);
   const [cam, setCam] = useState<Cam>({ az: 0, el: 0.05, dist: 4.2, tx: 0, ty: 1.0, tz: 0 });
   const glRef = useRef<THREE.WebGLRenderer | null>(null);
   const namesRef = useRef<string[]>([]);
@@ -165,12 +175,13 @@ export default function SpriteSpike() {
       merge: (d: Deltas) => setDeltas((p) => ({ ...p, ...d })),
       reset: () => setDeltas({}),
       tint: (hex: string | null) => setTint(hex),
+      boots: (lo: number | null, hi?: number) => setBootRange(lo === null ? null : [lo, hi ?? lo]),
       list: () => namesRef.current,
       get: () => ({ only, deltas, cam }),
       png: () => glRef.current?.domElement.toDataURL("image/png"),
       save: async (name: string) => {
         const dataUrl = glRef.current?.domElement.toDataURL("image/png");
-        const r = await fetch("/api/_sprite", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, dataUrl }) });
+        const r = await fetch("/api/devsprite", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, dataUrl }) });
         return r.json();
       },
     };
@@ -191,7 +202,7 @@ export default function SpriteSpike() {
         <directionalLight position={[3, 6, 4]} intensity={1.7} />
         <directionalLight position={[-3, 4, -2]} intensity={0.55} />
         <Rig cam={cam} />
-        <Players only={only} deltas={deltas} tint={tint} register={(n) => { namesRef.current = n; }} />
+        <Players only={only} deltas={deltas} tint={tint} bootRange={bootRange} register={(n) => { namesRef.current = n; }} />
       </Canvas>
       <div style={{ position: "absolute", top: 8, left: 8, color: "#fff", fontFamily: "monospace", fontSize: 12 }}>
         sprite spike — drive via window.__sprite

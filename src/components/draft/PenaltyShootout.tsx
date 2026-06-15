@@ -15,21 +15,13 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import dynamic from "next/dynamic";
+import PenaltyScene2D from "./PenaltyScene2D";
 import {
   shootoutStatus, zoneColumn, zoneRow,
   type KickOutcome, type PenColumn, type PenKick, type PenPower, type PensMode, type PenZone,
 } from "@/lib/draft/pens";
 import { sfx, buzz, sfxEnabled, setSfxEnabled } from "@/lib/draft/sfx";
 
-const PenaltyScene3D = dynamic(() => import("./PenaltyScene3D"), {
-  ssr: false,
-  loading: () => (
-    <div className="absolute inset-0 grid place-items-center" style={{ background: "#05060d", color: "#5d6275", fontSize: 12 }}>
-      Walking up to the spot…
-    </div>
-  ),
-});
 
 export type PensRole = "shoot" | "dive" | "waiting" | "done";
 
@@ -263,7 +255,7 @@ export function PenaltyShootout({
 
       {/* ── Stage: 3D scene with overlaid HUD ── */}
       <div className="relative w-full overflow-hidden rounded-2xl" style={{ aspectRatio: "9/12", background: "#05060d", border: "1px solid rgba(255,255,255,0.08)" }}>
-        <PenaltyScene3D aim={canShoot ? aim : null} play={play3d} onPlayed={onPlayed} reduced={reduced.current} defending={view.role === "dive"} />
+        <PenaltyScene2D aim={canShoot ? aim : null} play={play3d} onPlayed={onPlayed} reduced={reduced.current} defending={view.role === "dive"} />
 
         {/* top HUD: round counter + score + pips */}
         <div className="absolute top-0 inset-x-0 px-3 pt-3 pb-6"
