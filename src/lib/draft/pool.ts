@@ -218,17 +218,32 @@ export function spinWorld(
   openSlotPositions: Position[],
   usedPlayerIds: Set<string>,
   usedIdentities: Set<string> = new Set(),
-  opts: { count?: number } = {},
+  /** `minOverall`/`maxOverall` are the quiz-gated quality band (see draft-quiz.ts):
+   *  a soft rating window. It's relaxed (ceiling up first, then floor down) when too
+   *  few WC players fit, so a spin never comes up empty. */
+  opts: { count?: number; minOverall?: number; maxOverall?: number } = {},
   rng: () => number = Math.random
 ): WorldSpin {
   const count = opts.count ?? 6;
-  const eligible = WC_PLAYERS.filter(
+  const fits = WC_PLAYERS.filter(
     (p) =>
       !usedPlayerIds.has(p.id) &&
       !usedIdentities.has(playerIdentity(p.name)) &&
       openSlotPositions.some((slotPos) => canPlay(p.position, slotPos))
   );
-  if (eligible.length === 0) return { nation: "", players: [] };
+  if (fits.length === 0) return { nation: "", players: [] };
+  // Narrow to the quality band, relaxing until at least a few players qualify.
+  let floor = opts.minOverall ?? 0;
+  let cap = opts.maxOverall ?? 99;
+  const within = () => fits.filter((p) => p.overall >= floor && p.overall <= cap);
+  let banded = within();
+  for (let g = 0; banded.length < Math.min(count, 3) && g < 40; g++) {
+    if (cap < 99) cap = Math.min(99, cap + 5);
+    else if (floor > 0) floor = Math.max(0, floor - 5);
+    else break;
+    banded = within();
+  }
+  const eligible = banded.length ? banded : fits;
   // Group the fitting players by nation, then weighted-pick a nation (weight capped so a
   // deep nation like England doesn't crowd out the rest).
   const byNation = new Map<string, PlayerSeason[]>();

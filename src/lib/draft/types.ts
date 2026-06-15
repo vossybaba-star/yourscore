@@ -27,6 +27,28 @@ export function asLeague(v: string | null | undefined): League {
   return v === "LaLiga" ? "LaLiga" : "PL";
 }
 
+/** A live-H2H matchmaking lane. A superset of League with the World Cup lane "WC":
+ *  WC squads (nation-locked or World XI) play their own separate queue / lobbies /
+ *  leaderboard. Kept distinct from `League` on purpose — the pool, season simulator
+ *  and league pickers must NOT gain a phantom "WC" league; only the live layer,
+ *  draft_teams competition column, and leaderboard are competition-keyed. */
+export type Competition = League | "WC";
+
+export const COMPETITIONS: Competition[] = ["PL", "LaLiga", "WC"];
+
+/** Per-competition display strings (extends LEAGUE_META with the WC lane). */
+export const COMPETITION_META: Record<Competition, { name: string; short: string; accent: string }> = {
+  PL: { name: LEAGUE_META.PL.name, short: LEAGUE_META.PL.short, accent: LEAGUE_META.PL.accent },
+  LaLiga: { name: LEAGUE_META.LaLiga.name, short: LEAGUE_META.LaLiga.short, accent: LEAGUE_META.LaLiga.accent },
+  WC: { name: "World Cup", short: "WC", accent: "#ffb800" },
+};
+
+/** Narrow an arbitrary string to a Competition, falling back to PL. Unlike
+ *  `asLeague` this PRESERVES "WC" so the World Cup lane survives request parsing. */
+export function asCompetition(v: string | null | undefined): Competition {
+  return v === "LaLiga" ? "LaLiga" : v === "WC" ? "WC" : "PL";
+}
+
 /** Canonical playing positions. Dataset + slots both normalise to these. */
 export type Position =
   | "GK"

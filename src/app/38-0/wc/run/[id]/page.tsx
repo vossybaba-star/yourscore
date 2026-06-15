@@ -8,11 +8,13 @@
  * are spent by tapping a player on your pitch.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Pitch } from "@/components/draft/Pitch";
 import { spinForNation, spinWorld } from "@/lib/draft/pool";
+import { drawQuestion, type ServedQuestion } from "@/lib/draft/wc-quiz";
+import { gradeAnswer, type DraftBand } from "@/lib/draft/draft-quiz";
 import { slotsFor } from "@/lib/draft/formations";
 import { CATEGORY_COLOR, posCategory } from "@/lib/draft/score";
 import { RUN_STAGE_LABEL, isDuel, type RunStage, type RunMode } from "@/lib/draft/wc";
@@ -34,6 +36,8 @@ type PlayResp = { stage: RunStage; games: GameReveal[]; result: "through" | "eli
 
 export default function WorldCupRun() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
+  const [h2hBusy, setH2hBusy] = useState(false);
   const [run, setRun] = useState<Run | null>(null);
   const [matches, setMatches] = useState<MatchRow[]>([]);
   const [opponent, setOpponent] = useState<Opponent | null>(null);
@@ -45,6 +49,13 @@ export default function WorldCupRun() {
   const [slate, setSlate] = useState<PlayerSeason[] | null>(null);
   const [spunNation, setSpunNation] = useState<{ nation: string; crest?: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  // Quiz-gated upgrades: answer a WC question to re-spin a slot. Correct (and a streak)
+  // raises the quality of the players offered; wrong caps it. Streak is run-local.
+  const [quiz, setQuiz] = useState<ServedQuestion | null>(null);
+  const [answered, setAnswered] = useState<number | null>(null);
+  const [streak, setStreak] = useState(0);
+  const [feedback, setFeedback] = useState<{ correct: boolean; streak: number } | null>(null);
+  const askedIds = useRef<Set<string>>(new Set());
 
   const load = useCallback(async () => {
     const res = await fetch(`/api/draft/wc/${id}`);
@@ -70,18 +81,59 @@ export default function WorldCupRun() {
     setPlaying(false);
   }
 
+  // Save this exact XI as the active World Cup team and drop into the WC H2H lane.
+  // The team is stored under competition="WC" so it never collides with a PL/La Liga
+  // team and only ever faces other WC squads (see /38-0/wc/h2h).
+  async function playH2H() {
+    if (!run || h2hBusy) return;
+    setH2hBusy(true); setError(null);
+    try {
+      const res = await fetch("/api/draft/team", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          competition: "WC",
+          formation: run.formation,
+          squad: run.squad.map((p) => ({ slot: p.slot, player_season_id: p.player_season_id })),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error ?? "Couldn't ready your squad for H2H"); setH2hBusy(false); return; }
+      router.push("/38-0/wc/h2h");
+    } catch { setError("Network error — try again."); setH2hBusy(false); }
+  }
+
+  // Tap a slot → answer a quiz question, then re-spin it at the quality that grade earns.
   function scoutSlot(slotId: string) {
-    if (!run || run.upgrades_left <= 0) return;
-    setPickSlot(slotId); setSpunNation(null);
+    if (!run || run.upgrades_left <= 0 || quiz) return;
+    setPickSlot(slotId); setSpunNation(null); setSlate(null); setFeedback(null);
+    const q = drawQuestion(Math.random, askedIds.current);
+    if (!q) { spinSlot(slotId, { minOverall: 0, maxOverall: 99 }); return; }
+    setQuiz(q); setAnswered(null);
+  }
+
+  function answerQuiz(idx: number) {
+    if (!quiz || answered !== null || !pickSlot) return;
+    setAnswered(idx);
+    const correct = idx === quiz.correctIndex;
+    const { streak: newStreak, band } = gradeAnswer(streak, correct);
+    askedIds.current.add(quiz.id);
+    setStreak(newStreak);
+    setFeedback({ correct, streak: newStreak });
+    const slotId = pickSlot;
+    setTimeout(() => { setQuiz(null); setAnswered(null); spinSlot(slotId, band); }, 900);
+  }
+
+  function spinSlot(slotId: string, band: DraftBand) {
+    if (!run) return;
     const slot = slotsFor(run.formation).find((s) => s.id === slotId)!;
     const usedIds = new Set(run.squad.map((p) => p.player_season_id));
     const usedNames = new Set(run.squad.map((p) => p.name));
     if (run.mode === "world") {
-      const sp = spinWorld([slot.pos], usedIds, usedNames, { count: 6 });
+      const sp = spinWorld([slot.pos], usedIds, usedNames, { count: 6, minOverall: band.minOverall, maxOverall: band.maxOverall });
       setSpunNation({ nation: sp.nation, crest: sp.crest });
       setSlate(sp.players);
     } else {
-      setSlate(spinForNation(run.nation, [slot.pos], usedIds, usedNames, { count: 6 }));
+      setSlate(spinForNation(run.nation, [slot.pos], usedIds, usedNames, { count: 6, minOverall: band.minOverall, maxOverall: band.maxOverall }));
     }
   }
 
@@ -238,9 +290,15 @@ export default function WorldCupRun() {
         <div className="mt-4">
           <div className="flex items-center justify-between mb-1.5">
             <span className="font-body" style={{ fontSize: 11, color: "#8a948f", letterSpacing: 1 }}>YOUR XI</span>
-            {canUpgrade && <span className="font-body" style={{ fontSize: 12, color: "#aeea00" }}>🎲 Tap a player to re-spin · {run.upgrades_left} left</span>}
+            {canUpgrade && <span className="font-body" style={{ fontSize: 12, color: "#aeea00" }}>⚽ Tap a player → answer to upgrade · {run.upgrades_left} left{streak >= 2 ? ` · 🔥×${streak}` : ""}</span>}
           </div>
           <Pitch formation={run.formation} squad={run.squad} compact onSlotClick={canUpgrade ? scoutSlot : undefined} highlightSlot={pickSlot} />
+          <button onClick={playH2H} disabled={h2hBusy}
+            className="mt-3 w-full rounded-2xl py-3 font-display tracking-wide active:scale-[0.98] transition-transform"
+            style={{ background: "#ffb800", color: "#1a1300", fontSize: 16, opacity: h2hBusy ? 0.7 : 1 }}>
+            {h2hBusy ? "Readying squad…" : "⚔️ Play this XI head-to-head"}
+          </button>
+          <p className="mt-1.5 text-center font-body" style={{ fontSize: 11, color: "#7a7a92" }}>Take your World Cup squad live vs another manager — own board.</p>
         </div>
 
         {/* Upgrade slate */}
@@ -312,6 +370,49 @@ export default function WorldCupRun() {
               {reveal.result === "champion" ? "🏆 CHAMPIONS!" : reveal.result === "eliminated" ? "KNOCKED OUT" : "THROUGH ✓"}
             </div>
             <button onClick={() => { setReveal(null); load(); }} className="w-full rounded-2xl py-3 mt-4 font-display tracking-wide" style={{ background: "#aeea00", color: "#062013", fontSize: 18 }}>CONTINUE →</button>
+          </div>
+        </div>
+      )}
+
+      {quiz && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-0 sm:px-5"
+          style={{ background: "rgba(0,0,0,0.72)" }}
+          onClick={() => { if (answered === null) { setQuiz(null); setPickSlot(null); } }}>
+          <div className="w-full max-w-lg rounded-t-3xl sm:rounded-3xl p-5 pb-8" style={{ background: "#13131c", border: "1px solid rgba(255,184,0,0.3)" }} onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-1">
+              <span className="font-display tracking-wide" style={{ fontSize: 13, color: "#ffb800" }}>⚽ ANSWER TO UPGRADE</span>
+              <span className="font-body" style={{ fontSize: 11, color: "#8a948f" }}>
+                {streak >= 1 ? `🔥 Streak ×${streak}` : "Get it right for a better pick"}
+              </span>
+            </div>
+            <p className="font-body mb-4" style={{ fontSize: 16, color: "#fff", lineHeight: 1.35 }}>{quiz.prompt}</p>
+            <div className="flex flex-col gap-2">
+              {quiz.options.map((opt, i) => {
+                const locked = answered !== null;
+                const isCorrect = i === quiz.correctIndex;
+                const isPicked = i === answered;
+                const bg = locked ? (isCorrect ? "rgba(0,255,135,0.16)" : isPicked ? "rgba(255,71,87,0.16)" : "rgba(255,255,255,0.04)") : "rgba(255,255,255,0.05)";
+                const border = locked ? (isCorrect ? "rgba(0,255,135,0.6)" : isPicked ? "rgba(255,71,87,0.6)" : "rgba(255,255,255,0.08)") : "rgba(255,255,255,0.12)";
+                return (
+                  <button key={i} onClick={() => answerQuiz(i)} disabled={locked}
+                    className="w-full text-left rounded-xl px-4 py-3 font-body active:scale-[0.99] transition-transform"
+                    style={{ background: bg, border: `1px solid ${border}`, color: "#fff", fontSize: 15 }}>
+                    {opt}
+                    {locked && isCorrect && <span style={{ color: "#00ff87" }}> ✓</span>}
+                    {locked && isPicked && !isCorrect && <span style={{ color: "#ff7a88" }}> ✗</span>}
+                  </button>
+                );
+              })}
+            </div>
+            {feedback ? (
+              <p className="mt-3 text-center font-body" style={{ fontSize: 13, color: feedback.correct ? "#00ff87" : "#ff8a3d" }}>
+                {feedback.correct
+                  ? feedback.streak >= 2 ? `🔥 Correct — streak ×${feedback.streak}! Elite players unlocked.` : "✅ Correct — strong players unlocked."
+                  : "❌ Not quite — a thinner pick. Streak reset."}
+              </p>
+            ) : (
+              <p className="mt-3 text-center font-body" style={{ fontSize: 11, color: "#5a5a72" }}>Tap outside to cancel — your upgrade isn&apos;t spent until you pick.</p>
+            )}
           </div>
         </div>
       )}

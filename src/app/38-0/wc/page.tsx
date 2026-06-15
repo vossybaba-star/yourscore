@@ -16,6 +16,8 @@ import { Pitch } from "@/components/draft/Pitch";
 import { useUser } from "@/hooks/useUser";
 import { pickableNations, spinForNation, spinWorld, type PickableNation } from "@/lib/draft/pool";
 import { WORLD_TEAM_NAME, type RunMode } from "@/lib/draft/wc";
+import { drawQuestion, type ServedQuestion } from "@/lib/draft/wc-quiz";
+import { gradeAnswer, type DraftBand } from "@/lib/draft/draft-quiz";
 import {
   emptyTeam, openSlots, isComplete, usedPlayerIds, usedPlayerNames, placePlayer, hydrateSavedTeam, type LocalTeam,
 } from "@/lib/draft/local";
@@ -48,14 +50,31 @@ export default function WorldCupEntry() {
   const [reel, setReel] = useState<string | null>(null);
   const [selected, setSelected] = useState<PlayerSeason | null>(null);
   const [starting, setStarting] = useState(false);
+  const [h2hBusy, setH2hBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const reelTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Quiz-gated draft: each spin is unlocked by a World Cup quiz question. A correct
+  // answer (and a correct STREAK) raises the quality of the players dealt; a wrong one
+  // caps it. The more football you know, the stronger your XI.
+  const [quiz, setQuiz] = useState<ServedQuestion | null>(null);
+  const [answered, setAnswered] = useState<number | null>(null); // selected option index (locked)
+  const [streak, setStreak] = useState(0);
+  const [correctCount, setCorrectCount] = useState(0);
+  const [askedCount, setAskedCount] = useState(0);
+  const [feedback, setFeedback] = useState<{ correct: boolean; streak: number } | null>(null);
+  const askedIds = useRef<Set<string>>(new Set());
+
   const world = mode === "world";
+
+  function resetQuiz() {
+    setQuiz(null); setAnswered(null); setStreak(0); setCorrectCount(0); setAskedCount(0); setFeedback(null);
+    askedIds.current = new Set();
+  }
 
   function chooseMode(m: RunMode) {
     setMode(m);
-    setNation(null); setSlate(null); setSelected(null); setReel(null);
+    setNation(null); setSlate(null); setSelected(null); setReel(null); resetQuiz();
     // World mode has no nation gate — go straight to the open draft.
     setTeam(m === "world" ? emptyTeam(FORMATION) : null);
   }
@@ -63,23 +82,48 @@ export default function WorldCupEntry() {
   function chooseNation(n: PickableNation) {
     setNation(n);
     setTeam(emptyTeam(FORMATION));
-    setSlate(null); setSelected(null); setReel(null);
+    setSlate(null); setSelected(null); setReel(null); resetQuiz();
   }
 
-  function doSpin() {
-    if (!team || spinning || (mode === "nation" && !nation)) return;
+  // Tap SCOUT → answer a quiz question first. If the pool is somehow empty, fall back
+  // to a neutral (unbanded) spin so the draft can never dead-end.
+  function startSpin() {
+    if (!team || spinning || quiz || (mode === "nation" && !nation)) return;
+    setFeedback(null);
+    const q = drawQuestion(Math.random, askedIds.current);
+    if (!q) { runSpin({ minOverall: 0, maxOverall: 99 }); return; }
+    setQuiz(q); setAnswered(null);
+  }
+
+  // Lock the answer, grade it (updating the streak), reveal correct/wrong briefly, then
+  // spin from the quality band that grade earned.
+  function answerQuiz(idx: number) {
+    if (!quiz || answered !== null) return;
+    setAnswered(idx);
+    const correct = idx === quiz.correctIndex;
+    const { streak: newStreak, band } = gradeAnswer(streak, correct);
+    askedIds.current.add(quiz.id);
+    setStreak(newStreak);
+    setAskedCount((n) => n + 1);
+    if (correct) setCorrectCount((n) => n + 1);
+    setFeedback({ correct, streak: newStreak });
+    setTimeout(() => { setQuiz(null); setAnswered(null); runSpin(band); }, 900);
+  }
+
+  function runSpin(band: DraftBand) {
+    if (!team || (mode === "nation" && !nation)) return;
     setSpinning(true); setSlate(null); setSelected(null); setSpunNation(null);
     const open = openSlots(team).map((s) => s.pos);
-    // Pure luck of the spin — any rating can come up, from the very first pick. World mode
-    // lands on ONE random nation; nation mode is locked to the chosen nation.
+    // The quiz band shapes quality; within it the spin is still luck. World mode lands on
+    // ONE nation; nation mode is locked to the chosen nation.
     let players: PlayerSeason[];
     let spun: { nation: string; crest?: string } | null = null;
     if (world) {
-      const sp = spinWorld(open, usedPlayerIds(team), usedPlayerNames(team), { count: 6 });
+      const sp = spinWorld(open, usedPlayerIds(team), usedPlayerNames(team), { count: 6, minOverall: band.minOverall, maxOverall: band.maxOverall });
       players = sp.players;
       spun = { nation: sp.nation, crest: sp.crest };
     } else {
-      players = spinForNation(nation!.nation, open, usedPlayerIds(team), usedPlayerNames(team), { count: 6 });
+      players = spinForNation(nation!.nation, open, usedPlayerIds(team), usedPlayerNames(team), { count: 6, minOverall: band.minOverall, maxOverall: band.maxOverall });
     }
     let ticks = 0;
     reelTimer.current = setInterval(() => {
@@ -131,6 +175,30 @@ export default function WorldCupEntry() {
     if (!team || !mode || !isComplete(team) || starting) return;
     if (mode === "nation" && !nation) return;
     enter(mode, mode === "world" ? WORLD_TEAM_NAME : nation!.nation, team.formation, team.squad);
+  }
+
+  // Take this finished XI straight into the World Cup H2H lane instead of a campaign:
+  // save it as the active WC team (competition="WC", its own board) and go to /wc/h2h.
+  async function playH2H() {
+    if (!team || !isComplete(team) || h2hBusy) return;
+    setH2hBusy(true); setError(null);
+    try {
+      const res = await fetch("/api/draft/team", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          competition: "WC", formation: team.formation,
+          squad: team.squad.map((p) => ({ slot: p.slot, player_season_id: p.player_season_id })),
+        }),
+      });
+      if (res.status === 401) {
+        saveDraft({ mode: mode!, nation: world ? null : (nation?.nation ?? null), formation: team.formation, squad: team.squad, pendingEnter: false });
+        router.push(`/auth/sign-in?next=${encodeURIComponent("/38-0/wc/h2h")}`);
+        return;
+      }
+      const data = await res.json();
+      if (!res.ok) { setError(data.error ?? "Couldn't ready your squad for H2H"); setH2hBusy(false); return; }
+      router.push("/38-0/wc/h2h");
+    } catch { setError("Network error — try again."); setH2hBusy(false); }
   }
 
   // On load: (1) restore a saved draft; (2) auto-select nation from ?nation= query param;
@@ -300,6 +368,17 @@ export default function WorldCupEntry() {
           <span className="font-body" style={{ fontSize: 12, color: "#8a948f" }}>{team.squad.length}/11</span>
         </div>
 
+        {askedCount > 0 && (
+          <div className="flex items-center justify-between rounded-xl px-3 py-2 mb-3" style={{ background: "#12121e", border: `1px solid ${streak >= 2 ? "rgba(255,184,0,0.35)" : "rgba(255,255,255,0.07)"}` }}>
+            <span className="font-body" style={{ fontSize: 12, color: "#8a948f" }}>
+              Knowledge <b style={{ color: "#fff" }}>{correctCount}/{askedCount}</b> correct
+            </span>
+            <span className="font-display tracking-wide" style={{ fontSize: 13, color: streak >= 2 ? "#ffb800" : streak === 1 ? "#aeea00" : "#8a948f" }}>
+              {streak >= 2 ? `🔥 STREAK ×${streak}` : streak === 1 ? "✓ ON A ROLL" : "STREAK RESET"}
+            </span>
+          </div>
+        )}
+
         <Pitch formation={team.formation} squad={team.squad} compact />
 
         {team.squad.length > 0 && (
@@ -386,7 +465,7 @@ export default function WorldCupEntry() {
 
           {remaining > 0 ? (
             !slate || spinning ? (
-              <button onClick={doSpin} disabled={spinning}
+              <button onClick={startSpin} disabled={spinning || !!quiz}
                 className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-60"
                 style={{ background: spinning ? "#15211a" : accent, color: spinning ? "#ffb800" : "#062013", fontSize: 24 }}>
                 {spinning ? "SCOUTING…" : scoutLabel}
@@ -395,14 +474,64 @@ export default function WorldCupEntry() {
               <div className="text-center font-body py-2" style={{ fontSize: 13, color: "#8a948f" }}>Draft a player to continue</div>
             )
           ) : (
-            <button onClick={start} disabled={starting}
-              className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-60"
-              style={{ background: "#aeea00", color: "#062013", fontSize: 24 }}>
-              {starting ? "STARTING…" : "ENTER THE WORLD CUP →"}
-            </button>
+            <>
+              <button onClick={start} disabled={starting || h2hBusy}
+                className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-60"
+                style={{ background: "#aeea00", color: "#062013", fontSize: 24 }}>
+                {starting ? "STARTING…" : "ENTER THE WORLD CUP →"}
+              </button>
+              <button onClick={playH2H} disabled={starting || h2hBusy}
+                className="w-full mt-2 rounded-2xl py-3 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-60"
+                style={{ background: "rgba(255,184,0,0.12)", color: "#ffb800", border: "1px solid rgba(255,184,0,0.4)", fontSize: 16 }}>
+                {h2hBusy ? "READYING…" : "⚔️ PLAY H2H INSTEAD"}
+              </button>
+            </>
           )}
         </div>
       </div>
+
+      {quiz && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" style={{ background: "rgba(0,0,0,0.72)" }}>
+          <div className="w-full max-w-lg rounded-t-3xl sm:rounded-3xl p-5 pb-8" style={{ background: "#13131c", border: "1px solid rgba(255,184,0,0.3)" }}>
+            <div className="flex items-center justify-between mb-1">
+              <span className="font-display tracking-wide" style={{ fontSize: 13, color: "#ffb800" }}>⚽ ANSWER TO SCOUT</span>
+              <span className="font-body" style={{ fontSize: 11, color: "#8a948f" }}>
+                {streak >= 1 ? `🔥 Streak ×${streak} — keep it going` : "Get it right for better players"}
+              </span>
+            </div>
+            <p className="font-body mb-4" style={{ fontSize: 16, color: "#fff", lineHeight: 1.35 }}>{quiz.prompt}</p>
+            <div className="flex flex-col gap-2">
+              {quiz.options.map((opt, i) => {
+                const locked = answered !== null;
+                const isCorrect = i === quiz.correctIndex;
+                const isPicked = i === answered;
+                const bg = locked
+                  ? isCorrect ? "rgba(0,255,135,0.16)" : isPicked ? "rgba(255,71,87,0.16)" : "rgba(255,255,255,0.04)"
+                  : "rgba(255,255,255,0.05)";
+                const border = locked
+                  ? isCorrect ? "rgba(0,255,135,0.6)" : isPicked ? "rgba(255,71,87,0.6)" : "rgba(255,255,255,0.08)"
+                  : "rgba(255,255,255,0.12)";
+                return (
+                  <button key={i} onClick={() => answerQuiz(i)} disabled={locked}
+                    className="w-full text-left rounded-xl px-4 py-3 font-body active:scale-[0.99] transition-transform"
+                    style={{ background: bg, border: `1px solid ${border}`, color: "#fff", fontSize: 15 }}>
+                    {opt}
+                    {locked && isCorrect && <span style={{ color: "#00ff87" }}> ✓</span>}
+                    {locked && isPicked && !isCorrect && <span style={{ color: "#ff7a88" }}> ✗</span>}
+                  </button>
+                );
+              })}
+            </div>
+            {feedback && (
+              <p className="mt-3 text-center font-body" style={{ fontSize: 13, color: feedback.correct ? "#00ff87" : "#ff8a3d" }}>
+                {feedback.correct
+                  ? feedback.streak >= 2 ? `🔥 Correct — streak ×${feedback.streak}! Elite players unlocked.` : "✅ Correct — strong players unlocked."
+                  : "❌ Not quite — a thinner pool this pick. Streak reset."}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
