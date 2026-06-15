@@ -195,10 +195,25 @@ export function PenaltyShootout({
       setBadge({ outcome: kick.outcome, side });
       setTimeout(() => setBadge(null), reduced.current ? 500 : 1100);
       if (side === "me") setShownMe((n) => n + 1); else setShownOpp((n) => n + 1);
+      // Banked — clear any locked input (a dive sets `pending` but, unlike a shot,
+      // had no "me" reveal to clear it; without this the next round's button never
+      // re-enables → shootout stalls after the first dive).
+      setPending(false);
       setPhase("aim");
       return null;
     });
   }, []);
+
+  // Watchdog: the 3D ball normally calls onPlayed when its flight ends (~1.5s).
+  // But if the WebGL context is ever lost (mobile backgrounding, low memory, the
+  // rAF loop stalling), that callback never comes and the shootout soft-locks.
+  // onPlayed is idempotent (no-ops if anim already cleared), so a fallback timer
+  // guarantees the game always advances even when the canvas freezes.
+  useEffect(() => {
+    if (!anim) return;
+    const t = setTimeout(onPlayed, reduced.current ? 700 : 2400);
+    return () => clearTimeout(t);
+  }, [anim, onPlayed]);
 
   // Final banner sound.
   const cheered = useRef(false);
@@ -248,7 +263,7 @@ export function PenaltyShootout({
 
       {/* ── Stage: 3D scene with overlaid HUD ── */}
       <div className="relative w-full overflow-hidden rounded-2xl" style={{ aspectRatio: "9/12", background: "#05060d", border: "1px solid rgba(255,255,255,0.08)" }}>
-        <PenaltyScene3D aim={canShoot ? aim : null} play={play3d} onPlayed={onPlayed} reduced={reduced.current} />
+        <PenaltyScene3D aim={canShoot ? aim : null} play={play3d} onPlayed={onPlayed} reduced={reduced.current} defending={view.role === "dive"} />
 
         {/* top HUD: round counter + score + pips */}
         <div className="absolute top-0 inset-x-0 px-3 pt-3 pb-6"
