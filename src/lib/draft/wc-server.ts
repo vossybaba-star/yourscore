@@ -393,6 +393,9 @@ export async function finalizeResolved(
   if (res.rows.length > 0) await db.from("draft_wc_matches").insert(res.rows);
 
   const { resolved, ...runPatch } = res.patch;
+  // Ranked daily is "draft once, play it out" — no re-spins. advanceStage grants upgrades
+  // between knockout rounds for practice; force them off for a ranked run.
+  if (ranked) runPatch.upgrades_left = 0;
   await db.from("draft_wc_runs")
     .update({ ...runPatch, pens_state: null, updated_at: new Date().toISOString(), ...(resolved ? { resolved_at: new Date().toISOString() } : {}) })
     .eq("id", run.id).eq("user_id", userId);
