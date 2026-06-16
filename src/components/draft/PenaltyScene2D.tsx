@@ -21,16 +21,16 @@ const A = "/sprites/pens";
 
 // Goal geometry measured against the 9:16 bg.png (posts ~23–77%, crossbar ~39%,
 // line ~48%). The aim/dive 9-grid maps inside the goal mouth; tweak if the art reframes.
-const GOAL = { left: 26, right: 74, top: 34, bottom: 46 };
+const GOAL = { left: 28, right: 72, top: 36, bottom: 48 };
 const colX = (c: 0 | 1 | 2) => GOAL.left + (GOAL.right - GOAL.left) * (c === 0 ? 1 / 6 : c === 1 ? 0.5 : 5 / 6);
 const rowY = (r: 0 | 1 | 2) => GOAL.top + (GOAL.bottom - GOAL.top) * (r === 2 ? 0.18 : r === 1 ? 0.55 : 0.92);
 const zonePos = (z: PenZone) => ({ x: colX(zoneColumn(z)), y: rowY(zoneRow(z)) });
 // Resting ball sits on the spot ahead of the taker; it flies from here to the chosen zone.
-const SPOT = { x: 56, y: 58 };
+const SPOT = { x: 54, y: 57 };
 
 // Sprite heights in % of the stage HEIGHT (9:16); width is auto so aspect is preserved.
 // Keeper stands on the goal line (small, distant); taker is the foreground hero.
-const KEEPER_BASE = { x: 50, y: 41 }; // centre of the ready keeper, feet ~goal line
+const KEEPER_BASE = { x: 50, y: 44 }; // centre of the ready keeper, feet ~goal line
 const KEEPER = {
   ready: { src: "keeper_ready", h: 9.5 },
   dive_l: { src: "keeper_dive_l", h: 5.8 },
