@@ -44,6 +44,16 @@ export function createWcDb(): SupabaseClient<any> {
   return createDraftDb() as unknown as SupabaseClient<any>;
 }
 
+/** The active ranked "edition" key (a YYYY-MM-DD string). The ranked daily keys off this
+ *  instead of the UTC calendar date: the current run stays live for everyone who hasn't
+ *  played it until a NEW edition is posted (rolled by scripts/draft/roll-wc-edition.mjs as
+ *  part of the daily quiz launch). Falls back to today's UTC date if the singleton is unset. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function activeEdition(db: SupabaseClient<any>): Promise<string> {
+  const { data } = await db.from("wc_ranked_edition").select("edition").eq("id", true).maybeSingle();
+  return (data?.edition as string | undefined) ?? new Date().toISOString().slice(0, 10);
+}
+
 /** Map a draft_wc_runs DB row to the WcRun working shape. */
 export function rowToRun(row: Record<string, unknown>): WcRun {
   return {

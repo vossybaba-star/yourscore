@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimitDistributed } from "@/lib/ratelimit";
-import { createWcDb } from "@/lib/draft/wc-server";
+import { createWcDb, activeEdition } from "@/lib/draft/wc-server";
 import {
   rankedQuestions, draftSlots, rankedDraftStep, toSlatePlayer,
   WC_DRAFT_FORMATION, type DraftPick,
@@ -18,7 +18,6 @@ import {
 // attempt is committed (a lock row) even before submit — so they can't read the questions,
 // bail, and re-draft with the revealed answers.
 
-const today = () => new Date().toISOString().slice(0, 10);
 const LOCK_AFTER = 6; // commit the day's ranked attempt once the 7th pick (index 6) is reached
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -43,8 +42,8 @@ export async function POST(req: NextRequest) {
   let body: { action?: string; i?: number; answers?: unknown; picks?: unknown };
   try { body = await req.json(); } catch { return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 }); }
 
-  const date = today();
   const db = createWcDb();
+  const date = await activeEdition(db); // the active ranked edition, not the calendar date
 
   if (body.action === "status") {
     const locked = user ? await lockedToday(db, user.id, date) : false;
