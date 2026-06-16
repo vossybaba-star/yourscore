@@ -3,7 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { GridBackground } from "@/components/ui/GridBackground";
 import { BottomNav } from "@/components/ui/BottomNav";
-import { BackButton } from "@/components/ui/BackButton";
+import { BackPill } from "@/components/ui/BackPill";
 
 interface RecentAttempt {
   id: string;
@@ -104,7 +104,7 @@ export default async function PublicProfilePage({ params }: { params: { userId: 
 
       {/* Nav */}
       <nav className="relative z-10 flex items-center justify-between px-5 py-4 max-w-lg mx-auto">
-        <BackButton />
+        <BackPill href="/leagues" label="Leaderboard" tone="neutral" />
         <span className="font-body text-xs px-3 py-1 rounded-full"
           style={{ background: "rgba(174,234,0,0.1)", color: "#aeea00", border: "1px solid rgba(174,234,0,0.2)" }}>
           Player Profile

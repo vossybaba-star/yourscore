@@ -13,6 +13,7 @@ import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Spinner } from "@/components/ui/Spinner";
+import { BackPill } from "@/components/ui/BackPill";
 
 type State = "idle" | "working" | "unsubscribed" | "paused" | "subscribed" | "error";
 
@@ -61,9 +62,7 @@ function EmailPrefsInner() {
         <p className="font-body mt-3" style={{ fontSize: 14, color: "#8a948f", lineHeight: 1.55 }}>
           Open this from the link at the bottom of any YourScore email to manage your emails.
         </p>
-        <Link href="/" className="inline-block mt-6 rounded-2xl px-6 py-3 font-display tracking-wide" style={{ background: "#aeea00", color: "#062013", fontSize: 18 }}>
-          ← Home
-        </Link>
+        <div className="mt-6"><BackPill href="/" label="Home" tone="neutral" /></div>
       </>,
     );
   }

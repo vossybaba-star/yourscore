@@ -7,6 +7,7 @@ import { useUser } from "@/hooks/useUser";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { Spinner } from "@/components/ui/Spinner";
 import { createClient } from "@/lib/supabase/client";
+import { BackPill } from "@/components/ui/BackPill";
 
 interface League {
   id: string;
@@ -255,9 +256,7 @@ export default function LeaguePage({ params }: { params: { id: string } }) {
       <div className="sticky top-0 z-10 pt-safe" style={{ background: "rgba(10,10,15,0.92)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
         <div className="max-w-lg mx-auto px-5 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/leagues" className="text-text-muted hover:text-white transition-colors">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 12L6 8l4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            </Link>
+            <BackPill href="/leagues" label="Leagues" tone="neutral" />
             <div>
               <p className="font-body text-xs text-text-muted uppercase tracking-widest">League</p>
               <p className="font-display text-lg text-white leading-tight">{league.name}</p>

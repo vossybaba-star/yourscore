@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useUser } from "@/hooks/useUser";
 import { Spinner } from "@/components/ui/Spinner";
 import { BottomNav } from "@/components/ui/BottomNav";
+import { BackPill } from "@/components/ui/BackPill";
 
 export default function SettingsPage() {
   const { user, loading } = useUser();
@@ -163,9 +164,7 @@ export default function SettingsPage() {
       <main className="min-h-dvh bg-bg flex items-center justify-center px-6">
         <div className="text-center space-y-4">
           <p className="font-body text-text-muted">Sign in to access settings.</p>
-          <Link href="/" className="font-body text-sm font-semibold text-green">
-            ← Home
-          </Link>
+          <BackPill href="/" label="Home" tone="neutral" />
           <Link href="/auth/sign-in" className="inline-flex items-center justify-center px-6 py-3 rounded-xl font-body font-bold text-sm transition-all text-green"
             style={{ background: "rgba(174,234,0,0.1)", border: "1px solid rgba(174,234,0,0.28)" }}>
             Sign in →

@@ -9,9 +9,9 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Pitch } from "@/components/draft/Pitch";
+import { BackPill } from "@/components/ui/BackPill";
 import { spin, allBuckets, type Spin } from "@/lib/draft/pool";
 import {
   loadTeam, saveTeam, openSlots, isComplete, usedPlayerIds, usedPlayerNames, placePlayer,
@@ -107,7 +107,7 @@ export default function DraftPlay() {
     <div className="min-h-[100dvh] pb-44" style={{ background: "#0a0a0f" }}>
       <div className="max-w-lg mx-auto px-4 pt-safe">
         <div className="pt-4">
-          <Link href="/38-0" className="font-body text-sm" style={{ color: "#8a948f" }}>← Back</Link>
+          <BackPill href="/38-0" label="Back" tone="draft" />
         </div>
         {/* header: formation + overall */}
         <div className="flex items-center justify-between pt-2">

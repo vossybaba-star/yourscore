@@ -12,6 +12,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Pitch } from "@/components/draft/Pitch";
 import { BottomNav } from "@/components/ui/BottomNav";
+import { BackPill } from "@/components/ui/BackPill";
 import {
   loadTeam, saveTeam, isComplete, recordWin, recordLoss, saveLastMatch,
   loadLastMatch, settleLocalPens,
@@ -281,7 +282,7 @@ export default function TeamScreen() {
     <div className="min-h-[100dvh] pb-28" style={{ background: "#0a0a0f" }}>
       <div className="max-w-lg mx-auto px-5 pt-safe">
         <div className="flex items-center justify-between pt-4 pb-2">
-          <Link href="/38-0" className="font-body text-sm" style={{ color: "#8a948f" }}>← Draft XI</Link>
+          <BackPill href="/38-0" label="Draft XI" tone="draft" />
           <div className="flex items-center gap-2">
             {team.mode === "expert" && (
               <span className="font-body text-xs px-2.5 py-1 rounded-full" style={{ color: "#ffb800", background: "rgba(255,184,0,0.12)" }}>

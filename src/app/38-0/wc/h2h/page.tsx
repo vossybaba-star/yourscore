@@ -17,6 +17,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { BackPill } from "@/components/ui/BackPill";
 import { useUser } from "@/hooks/useUser";
 
 const COMPETITION = "WC" as const;
@@ -150,7 +151,7 @@ export default function WorldCupH2H() {
   return (
     <div className="min-h-[100dvh] pb-32" style={{ background: "#0a0a0f", color: "#e8e8f0" }}>
       <div className="max-w-lg mx-auto px-5 pt-10">
-        <Link href="/38-0/wc" className="text-sm" style={{ color: "#8888aa" }}>← World Cup</Link>
+        <BackPill href="/38-0/wc" label="World Cup" tone="wc" />
         <h1 className="font-display tracking-wide mt-3" style={{ fontSize: 34, color: ACCENT }}>World Cup H2H 🌍</h1>
         <p className="mt-1 text-sm" style={{ color: "#9a9ab0" }}>
           Take your World Cup squad head-to-head. Two halves, swap before kick-off and at the break. WC squads only — own board.

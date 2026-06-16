@@ -17,6 +17,7 @@ import { useUser } from "@/hooks/useUser";
 import { AnswerButtons } from "@/components/game/AnswerButtons";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { Spinner } from "@/components/ui/Spinner";
+import { BackPill } from "@/components/ui/BackPill";
 import type { Letter } from "@/lib/theme";
 
 const WINDOW_MS = 30_000; // per-question; keep in sync with the attempt API
@@ -269,9 +270,7 @@ export default function ClubEventPage() {
   return (
     <main className="min-h-dvh bg-bg pb-28">
       <div className="max-w-lg mx-auto px-5 pt-6 space-y-4">
-        <Link href={`/l/${params.slug}`} className="font-body text-xs" style={{ color: "#8a948f" }}>
-          ← {data.league.name}
-        </Link>
+        <BackPill href={`/l/${params.slug}`} label={data.league.name} tone="neutral" />
 
         <div className="rounded-2xl p-5" style={{ background: "#0e1611", border: `1px solid ${brand}33` }}>
           <span className="font-body text-xs font-bold px-2 py-0.5 rounded-md" style={{ color: chipColor, background: `${chipColor}1f` }}>

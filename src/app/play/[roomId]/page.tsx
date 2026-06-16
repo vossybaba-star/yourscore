@@ -5,6 +5,7 @@ import { trackGamePlay, trackGameComplete } from "@/lib/analytics/trackGame";
 import { GridBackground } from "@/components/ui/GridBackground";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { BackPill } from "@/components/ui/BackPill";
 import dynamic from "next/dynamic";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
@@ -598,7 +599,7 @@ export default function RoomPage() {
       <main className="min-h-dvh bg-bg flex flex-col items-center justify-center px-6 gap-4">
         <p className="font-display text-5xl">🤔</p>
         <p className="font-display text-2xl text-white">Lobby not found</p>
-        <Link href="/play" className="font-body text-sm text-teal">← Back to Play</Link>
+        <BackPill href="/play" label="Back to Play" tone="play" />
       </main>
     );
   }
@@ -774,7 +775,7 @@ export default function RoomPage() {
     return (
       <main className="min-h-dvh pb-20 bg-bg">
         <nav className="flex items-center justify-between px-5 py-4 max-w-lg mx-auto">
-          <Link href="/play" className="font-body text-sm text-text-muted">← Play</Link>
+          <BackPill href="/play" label="Play" tone="play" />
           <div className="flex items-center gap-2">
             <span className="font-body text-xs" style={{ color: "#586058" }}>Game Over</span>
             {completedAt && !lobbyExpired && (

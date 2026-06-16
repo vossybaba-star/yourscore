@@ -9,6 +9,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { BackPill } from "@/components/ui/BackPill";
 
 interface AdminLeague {
   id: string;
@@ -95,7 +96,7 @@ export default function AdminClubLeaguesPage() {
     <main className="min-h-dvh bg-bg px-5 py-8">
       <div className="max-w-2xl mx-auto space-y-6">
         <div>
-          <Link href="/admin" className="font-body text-xs" style={{ color: "#8a948f" }}>← Admin</Link>
+          <BackPill href="/admin" label="Admin" tone="neutral" />
           <h1 className="font-display text-3xl text-white tracking-wide mt-2">Club Leagues</h1>
           <p className="font-body text-sm mt-1" style={{ color: "#8a948f" }}>
             Provision branded leagues for pubs, creators, and sponsors. The partner manages

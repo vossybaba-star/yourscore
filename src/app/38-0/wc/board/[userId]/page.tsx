@@ -10,8 +10,8 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { useParams } from "next/navigation";
+import { BackPill } from "@/components/ui/BackPill";
 import { Pitch } from "@/components/draft/Pitch";
 import { useUser } from "@/hooks/useUser";
 import type { Formation, PlacedPlayer } from "@/lib/draft/types";
@@ -135,7 +135,7 @@ export default function PlayerHistory() {
   return (
     <div className="min-h-[100dvh] pb-32" style={{ background: "#0a0a0f", color: "#e8e8f0" }}>
       <div className="max-w-lg mx-auto px-5 pt-10">
-        <Link href="/38-0/wc/board" className="text-sm" style={{ color: "#8888aa" }}>← Season board</Link>
+        <BackPill href="/38-0/wc/board" label="Season board" tone="wc" />
 
         {/* ── Player header ── */}
         <div className="flex items-center gap-3 mt-3">

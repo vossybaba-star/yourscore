@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BackPill } from "@/components/ui/BackPill";
 
 export const metadata = { title: "Terms of Service — YourScore" };
 
@@ -59,7 +60,7 @@ export default function TermsPage() {
         </div>
 
         <div className="mt-12 pt-6 border-t" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
-          <Link href="/" className="font-body text-sm" style={{ color: "#8a948f" }}>← Back to YourScore</Link>
+          <BackPill href="/" label="Back to YourScore" tone="neutral" />
         </div>
       </div>
     </main>

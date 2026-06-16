@@ -5,6 +5,7 @@ import { GridBackground } from "@/components/ui/GridBackground";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Spinner } from "@/components/ui/Spinner";
+import { BackPill } from "@/components/ui/BackPill";
 
 function JoinLeagueIndexInner() {
   const router = useRouter();
@@ -95,7 +96,7 @@ function JoinLeagueIndexInner() {
         </div>
 
         <div className="mt-6 text-center">
-          <Link href="/" className="font-body text-xs text-text-muted hover:text-white transition-colors">← Back to home</Link>
+          <BackPill href="/" label="Back to home" tone="neutral" />
         </div>
       </div>
     </main>

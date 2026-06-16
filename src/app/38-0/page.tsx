@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BottomNav } from "@/components/ui/BottomNav";
+import { BackPill } from "@/components/ui/BackPill";
 import { Pitch } from "@/components/draft/Pitch";
 import { FORMATIONS, LEAGUE_META } from "@/lib/draft/types";
 import type { Formation, League } from "@/lib/draft/types";
@@ -79,9 +80,7 @@ export default function DraftHome() {
       <div className="max-w-lg mx-auto px-5 pt-safe">
         {/* header */}
         <div className="flex items-center justify-between pt-5 pb-3">
-          <Link href="/" className="font-body text-sm" style={{ color: "#8a948f" }}>
-            ← YourScore
-          </Link>
+          <BackPill href="/" label="YourScore" tone="draft" />
         </div>
 
         <h1 className="font-display tracking-wide leading-none mb-4" style={{ fontSize: 52, color: "#fff" }}>

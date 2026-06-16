@@ -17,6 +17,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ScorecardView, type ScorecardData, type ScorecardStat } from "@/components/draft/Scorecard";
+import { BackPill } from "@/components/ui/BackPill";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://yourscore.app";
 
@@ -94,7 +95,7 @@ export default function CardPage({ searchParams }: { searchParams: SP }) {
       <div className="pointer-events-none fixed inset-0 bg-grid-pattern bg-grid" style={{ opacity: 0.5 }} />
       <div className="relative mx-auto max-w-lg px-4 pt-safe">
         <div className="py-3">
-          <Link href="/38-0" className="font-mono text-sm uppercase" style={{ color: "#8a948f", letterSpacing: "0.1em" }}>← 38-0</Link>
+          <BackPill href="/38-0" label="38-0" tone="draft" />
         </div>
 
         <ScorecardView data={data} />

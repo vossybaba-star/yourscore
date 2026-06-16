@@ -14,6 +14,7 @@ import { BottomNav } from "@/components/ui/BottomNav";
 import { FlagImage } from "@/components/ui/FlagImage";
 import { getPlayerCutoutUrl, COUNTRY_STAR } from "@/lib/playerImages";
 import { GridBackground } from "@/components/ui/GridBackground";
+import { BackPill } from "@/components/ui/BackPill";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -366,7 +367,7 @@ export default function MatchPage({ params }: { params: { id: string } }) {
       <main className="min-h-dvh bg-bg flex flex-col items-center justify-center px-6">
         <p className="font-display text-5xl mb-4">🤔</p>
         <h1 className="font-display text-3xl text-white mb-3">Match not found</h1>
-        <Link href="/" className="font-body text-sm text-text-muted hover:text-white transition-colors">← Back to home</Link>
+        <BackPill href="/" label="Home" tone="neutral" />
       </main>
     );
   }

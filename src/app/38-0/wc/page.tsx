@@ -17,6 +17,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { BackPill } from "@/components/ui/BackPill";
 import { Pitch } from "@/components/draft/Pitch";
 import { InviteMastermind } from "@/components/draft/InviteMastermind";
 import { useUser } from "@/hooks/useUser";
@@ -369,7 +370,7 @@ export default function WorldCupEntry() {
     return (
       <div className="min-h-[100dvh] pb-16" style={{ background: "#0a0a0f" }}>
         <div className="max-w-lg mx-auto px-4 pt-safe">
-          <div className="pt-4"><Link href="/38-0" className="font-body text-sm" style={{ color: "#8a948f" }}>← Back</Link></div>
+          <div className="pt-4"><BackPill href="/38-0" label="Back" tone="wc" /></div>
           <h1 className="font-display tracking-wide mt-3" style={{ fontSize: 30, color: "#fff" }}>🧠 WORLD CUP MASTERMIND</h1>
           <p className="font-body mt-1 mb-4" style={{ fontSize: 14, color: "#c4ccc6" }}>
             Answer World Cup questions to build your XI — the more you know, the stronger your team — then play the tournament. Today&apos;s Run is ranked; Just Play is unlimited practice.

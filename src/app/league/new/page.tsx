@@ -8,6 +8,7 @@ import { useUser } from "@/hooks/useUser";
 import { SignInWithGoogle } from "@/components/auth/AuthButton";
 import { Spinner } from "@/components/ui/Spinner";
 import { createClient } from "@/lib/supabase/client";
+import { BackPill } from "@/components/ui/BackPill";
 
 function generateLeagueCode(name: string): string {
   const prefix = name.slice(0, 2).toUpperCase().replace(/[^A-Z]/g, "X");
@@ -86,7 +87,7 @@ function CreateLeagueInner() {
 
       <nav className="relative z-10 pt-safe flex items-center justify-between px-6 py-5 max-w-2xl mx-auto">
         <div className="flex items-center gap-4">
-          <Link href="/leagues" className="font-body text-sm text-text-muted hover:text-white transition-colors">← Back</Link>
+          <BackPill href="/leagues" label="Back" tone="neutral" />
           <Link href="/">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo.png" alt="YourScore" height={28} style={{ height: 28, width: "auto" }} />

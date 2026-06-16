@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { GridBackground } from "@/components/ui/GridBackground";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { AddFriendCard } from "@/components/social/AddFriendCard";
+import { BackPill } from "@/components/ui/BackPill";
 
 // Inline avatar component — matches the one in profile/page.tsx
 function AvatarCircle({
@@ -146,31 +147,7 @@ export default async function PlayerProfilePage({ params }: PlayerPageProps) {
         <div className="max-w-lg mx-auto px-5 py-4">
           <div className="flex items-center gap-4">
             {/* Back link */}
-            <Link
-              href="/38-0/history"
-              className="flex items-center justify-center w-9 h-9 rounded-full flex-shrink-0 transition-all hover:opacity-80"
-              style={{
-                background: "rgba(255,255,255,0.05)",
-                border: "1px solid rgba(255,255,255,0.1)",
-                color: "#8a948f",
-              }}
-              aria-label="Back"
-            >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 16 16"
-                fill="none"
-              >
-                <path
-                  d="M10 3L5 8l5 5"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </Link>
+            <BackPill href="/38-0/history" label="Back" tone="neutral" />
 
             <AvatarCircle
               name={name}

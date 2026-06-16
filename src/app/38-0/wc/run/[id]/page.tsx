@@ -28,6 +28,7 @@ import type { Formation, PlacedPlayer, PlayerSeason } from "@/lib/draft/types";
 import { trackGameComplete } from "@/lib/analytics/trackGame";
 import { useUser } from "@/hooks/useUser";
 import { PenaltyShootout, type PensView } from "@/components/draft/PenaltyShootout";
+import { BackPill } from "@/components/ui/BackPill";
 import type { PenKick } from "@/lib/draft/pens";
 
 type Fixture = { stage: string; label: string; opponent: { nation: string; crest?: string } };
@@ -419,7 +420,7 @@ export default function WorldCupRun() {
   return (
     <div className="min-h-[100dvh] pb-40" style={{ background: "#0a0a0f" }}>
       <div className="max-w-lg mx-auto px-4 pt-safe">
-        <div className="pt-4"><Link href="/38-0" className="font-body text-sm" style={{ color: "#8a948f" }}>← Exit</Link></div>
+        <div className="pt-4"><BackPill href="/38-0" label="Exit" tone="wc" /></div>
 
         {/* Header */}
         <div className="flex items-center gap-3 pt-2">

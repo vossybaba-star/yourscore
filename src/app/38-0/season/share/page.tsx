@@ -8,6 +8,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SaveTeamButton } from "./SaveTeamButton";
+import { BackPill } from "@/components/ui/BackPill";
 import { SeasonScorecard, type SeasonAward, type SeasonData } from "@/components/draft/SeasonScorecard";
 
 export const runtime = "edge";
@@ -77,7 +78,7 @@ export default function SeasonSharePage({ searchParams }: { searchParams: SP }) 
       <div className="pointer-events-none fixed inset-0 bg-grid-pattern bg-grid" style={{ opacity: 0.5 }} />
       <div className="relative mx-auto max-w-lg px-4 pt-safe">
         <div className="py-3">
-          <Link href="/38-0" className="font-mono text-sm uppercase" style={{ color: "#8a948f", letterSpacing: "0.1em" }}>← 38-0</Link>
+          <BackPill href="/38-0" label="38-0" tone="draft" />
         </div>
 
         <SeasonScorecard data={data} />

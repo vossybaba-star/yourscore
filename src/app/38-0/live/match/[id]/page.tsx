@@ -11,6 +11,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Pitch } from "@/components/draft/Pitch";
+import { BackPill } from "@/components/ui/BackPill";
 import { useLiveMatch } from "@/lib/draft/useLiveMatch";
 import { spin, spinWorld, allBuckets } from "@/lib/draft/pool";
 import { playerIdentity, seededRng } from "@/lib/draft/score";
@@ -348,7 +349,7 @@ function Header({ view, phase, secondsLeft, opponentOnline, oppPos }: { view: Vi
   return (
     <div>
       <div className="flex items-center justify-between text-sm">
-        <Link href="/38-0/live" style={{ color: "#8a948f" }}>← Live</Link>
+        <BackPill href="/38-0/live" label="Live" tone="draft" />
         {secondsLeft != null
           ? <span className="font-mono rounded-full px-2.5 py-1" style={{ fontSize: 14, fontWeight: 700, color: secondsLeft <= 5 ? "#ff7a88" : "#ffb800", background: secondsLeft <= 5 ? "rgba(255,71,87,0.14)" : "rgba(255,184,0,0.12)" }}>⏱ {secondsLeft}s</span>
           : phase === "lobby" && <span className="inline-flex items-center gap-1.5 text-xs" style={{ color: "#9aa39d" }}><span className="h-2 w-2 rounded-full animate-pulse" style={{ background: "#ffb800" }} />waiting</span>}

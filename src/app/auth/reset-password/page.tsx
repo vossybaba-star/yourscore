@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Spinner } from "@/components/ui/Spinner";
-import Link from "next/link";
+import { BackPill } from "@/components/ui/BackPill";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -98,8 +98,8 @@ export default function ResetPasswordPage() {
           </form>
         )}
 
-        <div className="text-center mt-6">
-          <Link href="/" className="font-body text-xs" style={{ color: "#586058" }}>← Back to home</Link>
+        <div className="mt-6 flex justify-center">
+          <BackPill href="/" label="Home" tone="neutral" />
         </div>
       </div>
     </main>

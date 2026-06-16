@@ -12,6 +12,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Scorecard } from "@/components/draft/Scorecard";
+import { BackPill } from "@/components/ui/BackPill";
 import { loadLastMatch, type LocalMatch } from "@/lib/draft/local";
 import { liveOgQuery } from "@/lib/draft/share";
 import { AddFriendCard } from "@/components/social/AddFriendCard";
@@ -108,7 +109,7 @@ export default function MatchResult() {
 
       <div className="relative mx-auto max-w-lg px-4 pt-safe">
         <div className="flex items-center justify-between py-3">
-          <Link href="/38-0" className="font-mono text-sm uppercase" style={{ color: "#8a948f", letterSpacing: "0.1em" }}>← 38-0</Link>
+          <BackPill href="/38-0" label="38-0" tone="draft" />
         </div>
 
         <Scorecard m={m} context="Quick Match" />
