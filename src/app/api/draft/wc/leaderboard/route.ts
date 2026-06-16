@@ -14,7 +14,8 @@ export async function GET() {
     const { data, error } = await db.rpc("get_wc_daily_leaderboard", {
       p_start: WC_SEASON_START,
       p_end: WC_SEASON_END,
-      p_limit: 100,
+      p_limit: 100000, // the WHOLE table, not just the top 100 (also lets a player find their
+                       // own standing on the finish screen however far down they are)
     });
     if (error) return NextResponse.json({ rows: [], ready: false });
     return NextResponse.json({ rows: data ?? [], ready: true });
