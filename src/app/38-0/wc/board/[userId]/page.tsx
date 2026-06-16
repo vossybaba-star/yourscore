@@ -28,6 +28,7 @@ type Run = {
   run_id: string; run_date: string; formation: string; squad: PlacedPlayer[]; strength: number;
   status: string; stage: string;
   wins: number; draws: number; losses: number; points: number;
+  quiz_correct: number | null; quiz_total: number | null;
   display_name: string; avatar_url: string | null;
   matches: Match[];
 };
@@ -58,6 +59,12 @@ function outcome(run: Run): { text: string; color: string } {
   if (run.stage === "group") return { text: "Out in the group stage", color: "#ff7a88" };
   const where = run.stage === "ko" ? "the knockouts" : (STAGE_LABEL[run.stage] ?? "the knockouts");
   return { text: `Knocked out — ${where}`, color: "#ff7a88" };
+}
+
+// Colour the quiz score by how well they did (green strong / gold ok / red weak).
+function quizColor(correct: number, total: number): string {
+  const r = total ? correct / total : 0;
+  return r >= 0.8 ? "#00ff87" : r >= 0.5 ? ACCENT : "#ff7a88";
 }
 
 function Pill({ won }: { won: boolean | null }) {
@@ -179,6 +186,14 @@ export default function PlayerHistory() {
                   <div className="font-body" style={{ fontSize: 11, color: "#8888aa" }}>STR {Math.round(Number(run.strength))} · {run.points} pts</div>
                 </div>
               </div>
+              {run.quiz_total != null && (
+                <div className="mt-3 pt-3 flex items-center justify-between" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                  <span className="font-body" style={{ fontSize: 12, color: "#9a9ab0" }}>🧠 Mastermind quiz</span>
+                  <span className="font-display tabular-nums" style={{ fontSize: 15, color: quizColor(run.quiz_correct ?? 0, run.quiz_total) }}>
+                    {run.quiz_correct ?? 0}/{run.quiz_total} correct
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* the XI */}

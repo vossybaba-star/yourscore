@@ -83,6 +83,16 @@ export function rankedDraftStep(date: string, answers: number[], priorPicks: Dra
 export const toSlatePlayer = (p: PlayerSeason): SlatePlayer =>
   ({ id: p.id, name: p.name, club: p.club, position: p.position, overall: p.overall });
 
+/** Grade a ranked run's quiz: how many of the day's questions the player answered
+ *  correctly (server-side — the client never had the correct indices). Recorded on the
+ *  run row at submit so it can be shown on the season-board history. */
+export function rankedQuizScore(date: string, answers: number[]): { correct: number; total: number } {
+  const qs = dailyQuestions(date, draftQuestionCount());
+  let correct = 0;
+  for (let j = 0; j < qs.length; j++) if (answers[j] === qs[j].correctIndex) correct++;
+  return { correct, total: qs.length };
+}
+
 /**
  * Replay the whole ranked draft and confirm every pick was a legitimate option the server
  * would have offered for the band its answers earned (and lands in a valid, unused slot).
