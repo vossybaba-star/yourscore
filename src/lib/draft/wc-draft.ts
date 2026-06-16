@@ -65,8 +65,13 @@ export type DraftStep = { correct: boolean; correctIndex: number; nation: string
  * The slate for pick `k`: spin the still-open positions within the band that answers[0..k]
  * earned, from a server-secret seed so it's reproducible on the server (per-pick + verify)
  * but unpredictable to the client. `priorPicks` are the players already taken this draft.
+ *
+ * `salt` (the player's user id) makes the slates PER-PLAYER: everyone answers the same
+ * questions, but the teams/players offered differ from player to player — no two squads are
+ * drawn from the same options. The band still rises with correct answers (better players),
+ * and the secret pepper still hides the seed from the client (anti-cheat).
  */
-export function rankedDraftStep(date: string, answers: number[], priorPicks: DraftPick[], k: number): DraftStep {
+export function rankedDraftStep(date: string, salt: string, answers: number[], priorPicks: DraftPick[], k: number): DraftStep {
   const { band, correct, correctIndex } = bandAfter(date, answers, k);
   const slots = slotsFor(WC_DRAFT_FORMATION);
   const usedSlots = new Set(priorPicks.map((p) => p.slot));
@@ -75,7 +80,7 @@ export function rankedDraftStep(date: string, answers: number[], priorPicks: Dra
   const usedIdentities = new Set(
     priorPicks.map((p) => { const pl = getPlayer(p.player_season_id); return pl ? playerIdentity(pl.name) : ""; }),
   );
-  const seed = pensSeed(`wc-draft:${date}:step:${k}`);
+  const seed = pensSeed(`wc-draft:${date}:${salt}:step:${k}`);
   const sp = spinWorld(openPositions, usedIds, usedIdentities, { count: 6, minOverall: band.minOverall, maxOverall: band.maxOverall }, seededRng(seed));
   return { correct, correctIndex, nation: sp.nation, crest: sp.crest, era: sp.era, players: sp.players };
 }
@@ -99,7 +104,7 @@ export function rankedQuizScore(date: string, answers: number[]): { correct: num
  * Returns the validated `{slot, player_season_id}` list to build the XI from, or null if
  * anything fails to reconcile (tampering, stale client, wrong length).
  */
-export function verifyRankedDraft(date: string, answers: number[], picks: DraftPick[]): DraftPick[] | null {
+export function verifyRankedDraft(date: string, salt: string, answers: number[], picks: DraftPick[]): DraftPick[] | null {
   const slots = slotsFor(WC_DRAFT_FORMATION);
   const n = slots.length;
   if (!Array.isArray(answers) || !Array.isArray(picks) || answers.length !== n || picks.length !== n) return null;
@@ -109,7 +114,7 @@ export function verifyRankedDraft(date: string, answers: number[], picks: DraftP
     const pick = picks[k];
     if (!pick || typeof pick.slot !== "string" || typeof pick.player_season_id !== "string") return null;
     if (usedSlots.has(pick.slot) || !slots.some((s) => s.id === pick.slot)) return null;
-    const step = rankedDraftStep(date, answers, picks.slice(0, k), k);
+    const step = rankedDraftStep(date, salt, answers, picks.slice(0, k), k);
     if (!step.players.some((p) => p.id === pick.player_season_id)) return null; // not a server-offered option
     usedSlots.add(pick.slot);
   }

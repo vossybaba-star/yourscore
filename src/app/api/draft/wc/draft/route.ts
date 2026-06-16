@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
       await db.from("draft_wc_daily_locks").upsert({ user_id: user.id, run_date: date, picks: i + 1 }, { onConflict: "user_id,run_date" });
     }
 
-    const step = rankedDraftStep(date, answers, picks, i);
+    const step = rankedDraftStep(date, user?.id ?? "anon", answers, picks, i);
     return NextResponse.json({
       correct: step.correct,
       correctIndex: step.correctIndex,

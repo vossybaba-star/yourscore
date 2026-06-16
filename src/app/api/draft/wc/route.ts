@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
         const o = p as { slot?: unknown; player_season_id?: unknown };
         return { slot: String(o?.slot ?? ""), player_season_id: String(o?.player_season_id ?? "") };
       }) as DraftPick[];
-      const verified = verifyRankedDraft(runDate!, answers, submitted);
+      const verified = verifyRankedDraft(runDate!, user.id, answers, submitted);
       if (!verified) return NextResponse.json({ error: "Ranked draft could not be verified — please play it through." }, { status: 400 });
       team = validateWorld(WC_DRAFT_FORMATION, verified);
       // Record how many of today's questions they got right (server-graded).
