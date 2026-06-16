@@ -18,7 +18,16 @@ export async function GET() {
                        // own standing on the finish screen however far down they are)
     });
     if (error) return NextResponse.json({ rows: [], ready: false });
-    return NextResponse.json({ rows: data ?? [], ready: true });
+
+    // Merge in each player's comment count so the board can show a 💬 badge (best-effort —
+    // a missing comments migration just leaves the counts off).
+    const counts = new Map<string, number>();
+    try {
+      const { data: cc } = await db.rpc("get_wc_comment_counts", { p_start: WC_SEASON_START, p_end: WC_SEASON_END });
+      for (const r of (cc ?? []) as { user_id: string; comments: number }[]) counts.set(r.user_id, r.comments);
+    } catch { /* leave badges off */ }
+    const rows = ((data ?? []) as { user_id: string }[]).map((r) => ({ ...r, comments: counts.get(r.user_id) ?? 0 }));
+    return NextResponse.json({ rows, ready: true });
   } catch {
     return NextResponse.json({ rows: [], ready: false });
   }

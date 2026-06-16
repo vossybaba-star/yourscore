@@ -13,7 +13,19 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Pitch } from "@/components/draft/Pitch";
+import { useUser } from "@/hooks/useUser";
 import type { Formation, PlacedPlayer } from "@/lib/draft/types";
+
+type Comment = { id: string; run_id: string; author_id: string; author_name: string; author_avatar: string | null; body: string; created_at: string };
+
+// Compact relative time for comment timestamps ("3h", "2d", "just now").
+function rel(iso: string): string {
+  const s = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
+  if (s < 60) return "just now";
+  if (s < 3600) return `${Math.floor(s / 60)}m`;
+  if (s < 86400) return `${Math.floor(s / 3600)}h`;
+  return `${Math.floor(s / 86400)}d`;
+}
 
 const ACCENT = "#ffb800";
 
@@ -80,8 +92,10 @@ function Pill({ won }: { won: boolean | null }) {
 export default function PlayerHistory() {
   const params = useParams();
   const userId = String(params?.userId ?? "");
+  const { user } = useUser();
   const [runs, setRuns] = useState<Run[] | null>(null);
   const [sel, setSel] = useState(0);
+  const [comments, setComments] = useState<Comment[]>([]);
 
   useEffect(() => {
     let alive = true;
@@ -89,8 +103,20 @@ export default function PlayerHistory() {
       .then((r) => r.json())
       .then((d) => { if (alive) setRuns((d.runs ?? []) as Run[]); })
       .catch(() => { if (alive) setRuns([]); });
+    fetch(`/api/draft/wc/comments?user=${encodeURIComponent(userId)}`)
+      .then((r) => r.json())
+      .then((d) => { if (alive) setComments((d.comments ?? []) as Comment[]); })
+      .catch(() => { if (alive) setComments([]); });
     return () => { alive = false; };
   }, [userId]);
+
+  // Comments grouped by the run they're on (one fetch for the whole profile).
+  const commentsByRun = useMemo(() => {
+    const m: Record<string, Comment[]> = {};
+    for (const c of comments) (m[c.run_id] ??= []).push(c);
+    return m;
+  }, [comments]);
+  const canModerate = !!user && user.id === userId; // viewing your own profile → can remove any
 
   const name = runs?.[0]?.display_name ?? "Player";
   const season = useMemo(() => {
@@ -227,9 +253,100 @@ export default function PlayerHistory() {
                 })}
               </div>
             )}
+
+            {/* ── Comments on this result/squad ── */}
+            <CommentThread
+              runId={run.run_id}
+              comments={commentsByRun[run.run_id] ?? []}
+              canModerate={canModerate}
+              meId={user?.id ?? null}
+              onAdd={(c) => setComments((prev) => [...prev, c])}
+              onRemove={(id) => setComments((prev) => prev.filter((x) => x.id !== id))}
+            />
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function CommentThread({ runId, comments, canModerate, meId, onAdd, onRemove }: {
+  runId: string; comments: Comment[]; canModerate: boolean; meId: string | null;
+  onAdd: (c: Comment) => void; onRemove: (id: string) => void;
+}) {
+  const MAX = 240;
+  const [text, setText] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function post() {
+    const body = text.trim();
+    if (!body || busy) return;
+    setBusy(true); setErr(null);
+    try {
+      const res = await fetch("/api/draft/wc/comments", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "create", runId, body }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setErr(data.error ?? "Couldn't post"); setBusy(false); return; }
+      onAdd(data.comment as Comment); setText("");
+    } catch { setErr("Network error — try again."); }
+    setBusy(false);
+  }
+
+  async function remove(id: string) {
+    try {
+      const res = await fetch("/api/draft/wc/comments", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete", commentId: id }),
+      });
+      if (res.ok) onRemove(id);
+    } catch { /* leave it; refresh clears */ }
+  }
+
+  return (
+    <div className="rounded-2xl p-3" style={{ background: "#0d0d14", border: "1px solid rgba(255,255,255,0.08)" }}>
+      <div className="font-body mb-2 px-1" style={{ fontSize: 11, color: "#9fd8d8", letterSpacing: 1 }}>
+        💬 COMMENTS{comments.length ? ` · ${comments.length}` : ""}
+      </div>
+      {comments.length === 0 && (
+        <p className="font-body px-1 pb-1" style={{ fontSize: 12, color: "#6a6a82" }}>No comments yet — be the first.</p>
+      )}
+      <div className="flex flex-col gap-2">
+        {comments.map((c) => (
+          <div key={c.id} className="flex items-start gap-2 rounded-xl px-3 py-2" style={{ background: "rgba(255,255,255,0.03)" }}>
+            <div className="flex-shrink-0" style={{ width: 24, height: 24, borderRadius: 12, background: "rgba(255,184,0,0.15)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+              {c.author_avatar
+                // eslint-disable-next-line @next/next/no-img-element
+                ? <img src={c.author_avatar} alt="" width={24} height={24} style={{ width: 24, height: 24, objectFit: "cover" }} />
+                : <span className="font-display" style={{ fontSize: 11, color: ACCENT }}>{(c.author_name[0] ?? "?").toUpperCase()}</span>}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-body" style={{ fontSize: 12, color: "#cfcfe6" }}>
+                <b style={{ color: "#fff" }}>{c.author_name}</b> <span style={{ color: "#6a6a82" }}>· {rel(c.created_at)}</span>
+              </div>
+              <div className="font-body" style={{ fontSize: 13, color: "#e8e8f0", wordBreak: "break-word", whiteSpace: "pre-wrap" }}>{c.body}</div>
+            </div>
+            {(canModerate || c.author_id === meId) && (
+              <button onClick={() => remove(c.id)} className="font-body flex-shrink-0 active:opacity-60" style={{ fontSize: 11, color: "#6a6a82" }}>Delete</button>
+            )}
+          </div>
+        ))}
+      </div>
+      {meId ? (
+        <div className="mt-2">
+          <textarea value={text} onChange={(e) => setText(e.target.value.slice(0, MAX))} placeholder="Leave a comment…" rows={2}
+            className="w-full rounded-xl px-3 py-2 font-body" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", color: "#fff", fontSize: 13, resize: "none" }} />
+          <div className="flex items-center justify-between mt-1">
+            <span className="font-body" style={{ fontSize: 10, color: err ? "#ff7a88" : "#6a6a82" }}>{err ?? `${text.length}/${MAX}`}</span>
+            <button onClick={post} disabled={busy || !text.trim()} className="rounded-full px-4 py-1.5 font-display tracking-wide active:scale-95 transition-transform disabled:opacity-50"
+              style={{ background: "#1d9bf0", color: "#fff", fontSize: 13 }}>{busy ? "…" : "Post"}</button>
+          </div>
+        </div>
+      ) : (
+        <p className="font-body mt-2 px-1" style={{ fontSize: 11, color: "#6a6a82" }}>Sign in to comment.</p>
+      )}
     </div>
   );
 }
