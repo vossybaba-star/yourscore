@@ -18,7 +18,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import PenaltyScene2D from "./PenaltyScene2D";
 import {
   shootoutStatus, zoneColumn, zoneRow,
-  type KickOutcome, type PenColumn, type PenKick, type PenPower, type PensMode, type PenZone,
+  type KickOutcome, type PenKick, type PenPower, type PensMode, type PenZone,
 } from "@/lib/draft/pens";
 import { sfx, buzz, sfxEnabled, setSfxEnabled } from "@/lib/draft/sfx";
 
@@ -140,7 +140,7 @@ export function PenaltyShootout({
   secondsLeft?: number | null;
   /** Now carries the timed power band alongside the aim zone. */
   onShoot: (zone: PenZone, power: PenPower) => void;
-  onDive: (col: PenColumn) => void;
+  onDive: (zone: PenZone) => void;
 }) {
   const reduced = useRef(false);
   useEffect(() => { reduced.current = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false; }, []);
@@ -154,6 +154,7 @@ export function PenaltyShootout({
 
   // Aiming.
   const [aim, setAim] = useState<PenZone>(8);              // default top-right corner
+  const [diveAim, setDiveAim] = useState<PenZone>(4);      // keeper's 9-zone dive pick (centre default)
   const [phase, setPhase] = useState<"aim" | "power">("aim");
   const [lockSignal, setLockSignal] = useState(0);
   const [pending, setPending] = useState(false);           // locked, awaiting resolved kick
@@ -355,17 +356,32 @@ export function PenaltyShootout({
           )}
 
           {canDive && (
-            <div>
-              <div className="text-center font-body mb-2" style={{ fontSize: 11, color: "#aab" }}>{oppName} steps up — dive!</div>
-              <div className="grid grid-cols-3 gap-2">
-                {([0, 1, 2] as PenColumn[]).map((c) => (
-                  <button key={c} onClick={() => { setPending(true); sfx.kick(); buzz(18); onDive(c); }}
-                    className="rounded-xl py-3.5 font-display active:scale-[0.97] transition-transform"
-                    style={{ fontSize: 13, letterSpacing: 1, color: ME, background: "rgba(180,255,46,0.1)", border: `1px solid ${ME}66` }}>
-                    {c === 0 ? "◀ LEFT" : c === 1 ? "STAY" : "RIGHT ▶"}
-                  </button>
-                ))}
+            <div className="flex items-end gap-3">
+              <div>
+                <div className="font-display mb-1" style={{ fontSize: 9, letterSpacing: 1.5, color: "#8a8fa0" }}>DIVE</div>
+                <div className="grid grid-cols-3 gap-1" style={{ width: 132 }}>
+                  {GRID.map((z) => {
+                    const active = diveAim === z;
+                    return (
+                      <button key={z} onClick={() => { setDiveAim(z); buzz(8); sfx.kick(); }}
+                        className="rounded-md active:scale-95 transition-all" aria-label={`Dive ${["low","mid","high"][zoneRow(z)]} ${["left","center","right"][zoneColumn(z)]}`}
+                        style={{
+                          aspectRatio: "1/1",
+                          background: active ? "rgba(180,255,46,0.22)" : "rgba(255,255,255,0.05)",
+                          border: `1.5px solid ${active ? ME : "rgba(255,255,255,0.18)"}`,
+                          boxShadow: active ? `0 0 10px ${ME}77` : undefined,
+                        }}>
+                        <span className="block mx-auto rounded-full" style={{ width: 4, height: 4, background: active ? ME : "rgba(255,255,255,0.3)" }} />
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
+              <button onClick={() => { setPending(true); sfx.kick(); buzz(18); onDive(diveAim); }}
+                className="flex-1 rounded-xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform"
+                style={{ background: ME, color: "#0c1400", fontSize: 16, boxShadow: `0 0 20px ${ME}55` }}>
+                DIVE →
+              </button>
             </div>
           )}
 

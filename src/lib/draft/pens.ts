@@ -29,11 +29,12 @@ import { seededRng } from "./score";
 export type PenZone = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 /** Power-meter band the strike landed in (where the needle stopped). */
 export type PenPower = "under" | "good" | "perfect" | "over";
-/** Keeper dive: 0 = left, 1 = stay center, 2 = right (shooter's view). */
+/** A goal-mouth column: 0 = left, 1 = centre, 2 = right (shooter's view). */
 export type PenColumn = 0 | 1 | 2;
 export type KickOutcome = "goal" | "saved" | "missed";
-/** One resolved kick, as stored (jsonb-friendly). `dive` is the defending keeper's pick. */
-export type PenKick = { shot: PenZone; power: PenPower; dive: PenColumn; outcome: KickOutcome };
+/** One resolved kick, as stored (jsonb-friendly). `dive` is the defending keeper's
+ *  pick — now a full 9-zone (PenZone), same grid the shooter aims at. */
+export type PenKick = { shot: PenZone; power: PenPower; dive: PenZone; outcome: KickOutcome };
 export type PensMode = "alternating" | "simultaneous";
 
 export const POWERS: PenPower[] = ["under", "good", "perfect", "over"];
@@ -53,20 +54,25 @@ export const PENS_CONFIG = {
   rowMiss: [0.01, 0.03, 0.11],
   /** Extra P(miss) for a corner vs a central column (wide risk). */
   cornerMiss: 0.04,
-  /** P(save) when the keeper picked the shot's column, by row — top corners are
-   *  nearly unsaveable even when read; a low shot at a keeper who went the right
-   *  way is stopped often. */
-  saveMatched: [0.62, 0.5, 0.3],
+  /** P(save) when the keeper dives to the EXACT shot zone, by row [low, mid, high]
+   *  — top corners stay hard to keep out even when read dead-on. */
+  saveExact: [0.82, 0.74, 0.5],
+  /** P(save) when the keeper is one cell off along a single axis (right side wrong
+   *  height, or right height wrong side) — a stretch that reaches sometimes. */
+  saveAdjacent: 0.34,
+  /** P(save) when the keeper is one cell off diagonally — a desperate fingertip. */
+  saveDiagonal: 0.12,
   /** Power band effects. */
   power: {
     /** Added to P(miss) (clamped ≥ 0). OVER blazes it; PERFECT places it. */
     miss: { under: 0.02, good: 0.0, perfect: -0.05, over: 0.24 },
-    /** Multiplier on the matched-save chance. PERFECT beats the dive; UNDER is soft. */
+    /** Multiplier on the save chance. PERFECT beats the dive; UNDER is soft. */
     saveMul: { under: 1.4, good: 1.05, perfect: 0.66, over: 0.92 },
   },
-  /** AI keeper column distribution [left, center, right] — stays home enough to
-   *  punish lazy central shots. */
+  /** AI keeper pick distribution: column [left, center, right] × row [low, mid, high]
+   *  — covers the corners but rarely flies to the top, like a real keeper. */
   keeperBias: [0.37, 0.26, 0.37],
+  keeperRowBias: [0.42, 0.4, 0.18],
   /** CPU shooter tendencies. */
   cpu: {
     cornerShare: 0.66,      // aims at a corner column this often (else center)
@@ -77,10 +83,16 @@ export const PENS_CONFIG = {
 
 // ─── AI picks + single-kick outcome ────────────────────────────────────────────
 
-export function aiKeeperColumn(rng: () => number): PenColumn {
+/** Seeded AI keeper pick — a full 9-zone dive (column × row biased). */
+export function aiKeeperZone(rng: () => number): PenZone {
   const [l, c] = PENS_CONFIG.keeperBias;
-  const r = rng();
-  return r < l ? 0 : r < l + c ? 1 : 2;
+  const rc = rng();
+  const col = rc < l ? 0 : rc < l + c ? 1 : 2;
+  const rw = PENS_CONFIG.keeperRowBias;
+  let rr = rng();
+  let row = 0;
+  for (let i = 0; i < 3; i++) { if ((rr -= rw[i]) <= 0) { row = i; break; } }
+  return (row * 3 + col) as PenZone;
 }
 
 export function aiPower(rng: () => number): PenPower {
@@ -99,14 +111,21 @@ export function aiShotZone(rng: () => number): PenZone {
   return (row * 3 + col) as PenZone;
 }
 
-/** Resolve one kick: wild-miss roll first (placement + power), then the save roll
- *  if the keeper read the column, else it's in. */
-export function kickOutcome(shot: PenZone, power: PenPower, dive: PenColumn, rng: () => number): KickOutcome {
+/** Resolve one kick: wild-miss roll first (placement + power), then a save roll
+ *  scaled by how well the keeper's 9-zone dive covers the shot zone — exact cell,
+ *  one cell off on a single axis (adjacent), or one cell off diagonally. */
+export function kickOutcome(shot: PenZone, power: PenPower, dive: PenZone, rng: () => number): KickOutcome {
   const row = zoneRow(shot);
   const missP = Math.max(0, PENS_CONFIG.rowMiss[row] + (isCorner(shot) ? PENS_CONFIG.cornerMiss : 0) + PENS_CONFIG.power.miss[power]);
   if (rng() < missP) return "missed";
-  if (dive === zoneColumn(shot)) {
-    const saveP = Math.min(0.95, PENS_CONFIG.saveMatched[row] * PENS_CONFIG.power.saveMul[power]);
+  const dcol = Math.abs(zoneColumn(shot) - zoneColumn(dive));
+  const drow = Math.abs(zoneRow(shot) - zoneRow(dive));
+  let base = 0;
+  if (dcol === 0 && drow === 0) base = PENS_CONFIG.saveExact[row];
+  else if ((dcol === 0 && drow === 1) || (drow === 0 && dcol === 1)) base = PENS_CONFIG.saveAdjacent;
+  else if (dcol <= 1 && drow <= 1) base = PENS_CONFIG.saveDiagonal;
+  if (base > 0) {
+    const saveP = Math.min(0.95, base * PENS_CONFIG.power.saveMul[power]);
     if (rng() < saveP) return "saved";
   }
   return "goal";
@@ -124,11 +143,11 @@ export function resolveRound(
   seed: string,
   side: "a" | "b",
   round: number,
-  input: { shot?: PenZone; power?: PenPower; dive?: PenColumn }
+  input: { shot?: PenZone; power?: PenPower; dive?: PenZone }
 ): PenKick {
   const shot = input.shot ?? aiShotZone(seededRng(`${seed}:${side}:${round}:shot`));
   const power = input.power ?? aiPower(seededRng(`${seed}:${side}:${round}:power`));
-  const dive = input.dive ?? aiKeeperColumn(seededRng(`${seed}:${side}:${round}:dive`));
+  const dive = input.dive ?? aiKeeperZone(seededRng(`${seed}:${side}:${round}:dive`));
   const outcome = kickOutcome(shot, power, dive, seededRng(`${seed}:${side}:${round}:out`));
   return { shot, power, dive, outcome };
 }
@@ -213,11 +232,11 @@ export function kickAllowed(
 export type ShootoutInputs = {
   aShots?: PenZone[];
   aPowers?: PenPower[];
-  /** a's keeper dives AGAINST b's kicks (index = b's round - 1). */
-  aDives?: PenColumn[];
+  /** a's keeper dives AGAINST b's kicks (index = b's round - 1). 9-zone picks. */
+  aDives?: PenZone[];
   bShots?: PenZone[];
   bPowers?: PenPower[];
-  bDives?: PenColumn[];
+  bDives?: PenZone[];
 };
 
 /**

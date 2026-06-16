@@ -4,10 +4,10 @@ in-app 2D compositor needs, all from ONE fixed hero camera so the layers align:
   - taker_idle/kick.png : taker (foreground, rear view), transparent
   - keeper_ready/dive_l/dive_r/catch.png : keeper (in goal, front view), transparent
 Run: bl.py code scripts/draft/blender/build_assets.py
-Outputs -> public/sprites/blender/"""
+Outputs -> public/sprites/pens/"""
 import bpy, math, mathutils, os
 
-OUT = os.path.abspath("public/sprites/blender"); os.makedirs(OUT, exist_ok=True)
+OUT = os.path.abspath("public/sprites/pens"); os.makedirs(OUT, exist_ok=True)
 GW, GH, GZ, R = 7.32, 2.44, -9.0, 0.08
 
 # ---------- wipe ----------

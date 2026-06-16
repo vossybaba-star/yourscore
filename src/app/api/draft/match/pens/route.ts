@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
   const power = POWERS.includes(body.power ?? "") ? (body.power as "under" | "good" | "perfect" | "over") : "good";
   if (!matchId || !action) return NextResponse.json({ error: "Bad request" }, { status: 400 });
   if (action === "shot" && (zone < 0 || zone > 8)) return NextResponse.json({ error: "Bad zone" }, { status: 400 });
-  if (action === "dive" && (zone < 0 || zone > 2)) return NextResponse.json({ error: "Bad dive" }, { status: 400 });
+  if (action === "dive" && (zone < 0 || zone > 8)) return NextResponse.json({ error: "Bad dive" }, { status: 400 });
 
   const row = await loadRow(matchId, user.id);
   if ("error" in row) return NextResponse.json({ error: row.error }, { status: row.status });

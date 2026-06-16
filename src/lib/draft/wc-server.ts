@@ -16,7 +16,7 @@ import { resolveMatch, type SingleMatchResult } from "./live-score";
 import { seededRng } from "./score";
 import {
   resolveRound, shootoutStatus, resolveInteractiveShootout,
-  type PenKick, type PenZone, type PenColumn, type PenPower,
+  type PenKick, type PenZone, type PenPower,
 } from "./pens";
 import { pensSeed } from "./pens-server";
 import {
@@ -138,7 +138,7 @@ export type WcPensState = {
   revealsSoFar: GameReveal[];
   shots: PenZone[];
   powers: PenPower[];
-  dives: PenColumn[];
+  dives: PenZone[];
 };
 
 export type StageResolution =

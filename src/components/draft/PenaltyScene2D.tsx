@@ -13,10 +13,10 @@
 import { useEffect, useRef, useState } from "react";
 import { zoneColumn, zoneRow, type KickOutcome, type PenColumn, type PenZone } from "@/lib/draft/pens";
 
-type Play = { shot: PenZone; dive: PenColumn; outcome: KickOutcome; side: "me" | "opp" } | null;
+type Play = { shot: PenZone; dive: PenZone; outcome: KickOutcome; side: "me" | "opp" } | null;
 
 const ME = "#b4ff2e";
-const A = "/sprites/blender";
+const A = "/sprites/pens";
 
 // Goal mouth + spot in % of the stage, measured against bg.png.
 const GOAL = { left: 31, right: 69, top: 34, bottom: 47 };
@@ -59,14 +59,20 @@ export default function PenaltyScene2D({ aim, play, onPlayed, reduced, defending
 
   const ball = play && ballFly ? ballTarget(play.shot, play.outcome) : SPOT;
   const ballScale = play && ballFly ? 0.5 : 1;
-  const keeperFrame = diving && play ? (play.dive === 0 ? "keeper_dive_l" : play.dive === 2 ? "keeper_dive_r" : "keeper_catch") : "keeper_ready";
+  const dcol = play ? zoneColumn(play.dive) : 1;
+  const keeperFrame = diving && play ? (dcol === 0 ? "keeper_dive_l" : dcol === 2 ? "keeper_dive_r" : "keeper_catch") : "keeper_ready";
+  // Translate the keeper layer toward the chosen 9-zone so the dive lands on the
+  // exact cell (not just the column).
+  const gMidY = (GOAL.top + GOAL.bottom) / 2;
+  const kp = diving && play ? zonePos(play.dive) : null;
+  const keeperTf = kp ? `translate(${(kp.x - 50) * 0.85}%, ${(kp.y - gMidY) * 0.85}%)` : "translate(0,0)";
   const reticle = aim !== null ? zonePos(aim) : null;
 
   return (
     <div className="absolute inset-0 overflow-hidden" style={{ background: "#7fa0c8" }}>
       <img src={`${A}/bg.png`} alt="" aria-hidden style={layer} />
       {/* keeper (in goal) — frame swaps for ready/dive/catch */}
-      <img src={`${A}/${keeperFrame}.png`} alt="" aria-hidden style={{ ...layer, zIndex: 2, transition: "opacity 90ms linear" }} />
+      <img src={`${A}/${keeperFrame}.png`} alt="" aria-hidden style={{ ...layer, zIndex: 2, transform: keeperTf, transition: "opacity 90ms linear, transform 340ms cubic-bezier(.4,.7,.4,1)" }} />
       {/* aim reticle on the goal */}
       {reticle && (
         <div className="absolute" style={{ left: `${reticle.x}%`, top: `${reticle.y}%`, transform: "translate(-50%,-50%)", width: 30, height: 30, borderRadius: "50%", border: `3px solid ${ME}`, boxShadow: `0 0 14px ${ME}cc`, zIndex: 3, animation: "pens2dPulse 1s ease-in-out infinite" }} />

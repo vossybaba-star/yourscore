@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert";
 import {
   PENS_CONFIG,
-  aiKeeperColumn,
+  aiKeeperZone,
   aiPower,
   kickOutcome,
   resolveRound,
@@ -82,7 +82,7 @@ function convRate(zone: PenZone, power: PenPower, tag: string): number {
   let goals = 0;
   for (let i = 0; i < N; i++) {
     const rng = seededRng(`${tag}-${zone}-${power}-${i}`);
-    const dive = aiKeeperColumn(rng);
+    const dive = aiKeeperZone(rng);
     if (kickOutcome(zone, power, dive, rng) === "goal") goals++;
   }
   return goals / N;
@@ -108,8 +108,9 @@ test("higher placement and OVER power raise the wild-miss rate", () => {
   const missRate = (z: PenZone, power: PenPower): number => {
     let miss = 0;
     for (let i = 0; i < N; i++) {
-      const dive = (zoneColumn(z) === 0 ? 2 : 0); // keeper away → only the miss roll can fail it
-      if (kickOutcome(z, power, dive as 0 | 1 | 2, seededRng(`miss-${z}-${power}-${i}`)) === "missed") miss++;
+      // keeper dives to the opposite corner (unreachable) → only the miss roll can fail it
+      const far = ((zoneRow(z) === 2 ? 0 : 2) * 3 + (zoneColumn(z) === 0 ? 2 : 0)) as PenZone;
+      if (kickOutcome(z, power, far, seededRng(`miss-${z}-${power}-${i}`)) === "missed") miss++;
     }
     return miss / N;
   };

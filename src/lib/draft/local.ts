@@ -13,7 +13,7 @@ import { fitMultiplier, canPlay, posCategory, scoreTeam, projectSeason, spineWei
 import { getPlayer } from "./pool";
 import type { SeasonResult } from "./season";
 import type { MatchReport, MatchSim } from "./live-score";
-import { resolveInteractiveShootout, type PenKick, type PenZone, type PenColumn, type PenPower } from "./pens";
+import { resolveInteractiveShootout, type PenKick, type PenZone, type PenPower } from "./pens";
 
 const STORAGE_KEY = "draftxi:team:v1";
 
@@ -283,7 +283,7 @@ export type LocalMatch = {
     seed?: string;
     shots: PenZone[];
     powers: PenPower[];
-    dives: PenColumn[];
+    dives: PenZone[];
   };
   /** Full-time report (scorers, assists, ratings, MOTM, stats) — side a = you, b = opp. */
   report: MatchReport;

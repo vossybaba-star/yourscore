@@ -16,7 +16,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { pensSeed } from "./pens-server";
 import {
   resolveRound, shootoutStatus, resolveInteractiveShootout,
-  type PenKick, type PenZone, type PenPower, type PenColumn, type ShootoutInputs,
+  type PenKick, type PenZone, type PenPower, type ShootoutInputs,
 } from "./pens";
 import { creditResult, applyTeamStreak } from "./live-server";
 import { GLOBAL_LEAGUE, type TeamSnapshot } from "./server";
@@ -36,7 +36,7 @@ export type PensState = {
   flow: "quick" | "challenge";
   shots: PenZone[];
   powers: PenPower[];
-  dives: PenColumn[];
+  dives: PenZone[];
   startedAt: string;
 };
 

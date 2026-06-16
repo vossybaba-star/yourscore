@@ -19,7 +19,7 @@ import {
   loadLastMatch, saveLastMatch, loadTeam, saveTeam, recordWin, recordLoss,
   type LocalMatch,
 } from "@/lib/draft/local";
-import { resolveRound, shootoutStatus, type PenColumn, type PenKick, type PenPower, type PenZone } from "@/lib/draft/pens";
+import { resolveRound, shootoutStatus, type PenKick, type PenPower, type PenZone } from "@/lib/draft/pens";
 import { resolveMatch } from "@/lib/draft/live-score";
 import { makeOpponent } from "@/lib/draft/opponent";
 import { PenaltyShootout, type PensView } from "@/components/draft/PenaltyShootout";
@@ -56,7 +56,7 @@ function seedDemoShootout(): LocalMatch | null {
 
 /** Replay a local shootout from its stored inputs: my kicks vs the AI keeper, the
  *  CPU's kicks vs my dives, alternating, stopping where the next input is missing. */
-function replayLocal(seed: string, shots: PenZone[], powers: PenPower[], dives: PenColumn[]): { a: PenKick[]; b: PenKick[] } {
+function replayLocal(seed: string, shots: PenZone[], powers: PenPower[], dives: PenZone[]): { a: PenKick[]; b: PenKick[] } {
   const a: PenKick[] = [];
   const b: PenKick[] = [];
   for (;;) {
@@ -180,7 +180,7 @@ export default function PensPage() {
             ...pending,
             shots: action === "shot" ? [...pending.shots, zone as PenZone] : pending.shots,
             powers: action === "shot" ? [...pending.powers, power ?? "good"] : pending.powers,
-            dives: action === "dive" ? [...pending.dives, zone as PenColumn] : pending.dives,
+            dives: action === "dive" ? [...pending.dives, zone as PenZone] : pending.dives,
           },
         };
         saveLastMatch(next);
