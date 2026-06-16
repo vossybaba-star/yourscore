@@ -93,14 +93,15 @@ export default function WorldCupBoard() {
                     <span className="font-display tabular-nums" style={{ width: 28, textAlign: "center", fontSize: medal ? 15 : 14, color: r.rank === 1 ? ACCENT : r.rank <= 3 ? "#cfcfe6" : "#8888aa" }}>
                       {medal ?? r.rank}
                     </span>
-                    <div className="flex-1 min-w-0 pl-2">
-                      <div className="font-body truncate flex items-center gap-1.5" style={{ fontSize: 14, color: "#fff" }}>
-                        <span className="truncate">{r.display_name}{isMe ? " (you)" : ""}</span>
-                        {!!r.comments && (
-                          <span className="font-body flex-shrink-0 rounded-full px-1.5" style={{ fontSize: 10, color: "#9fd8d8", background: "rgba(0,224,224,0.14)", border: "1px solid rgba(0,224,224,0.3)" }}>💬 {r.comments}</span>
-                        )}
-                      </div>
+                    <div className="min-w-0 pl-2" style={{ maxWidth: "46%" }}>
+                      <div className="font-body truncate" style={{ fontSize: 14, color: "#fff" }}>{r.display_name}{isMe ? " (you)" : ""}</div>
                       <div className="font-body" style={{ fontSize: 10, color: "#6a6a82" }}>{r.days} {r.days === 1 ? "day" : "days"} played · view drafts →</div>
+                    </div>
+                    {/* Comment indicator — centred in the gap so it's obvious which entries have comments */}
+                    <div className="flex-1 flex items-center justify-center px-1">
+                      {!!r.comments && (
+                        <span className="font-body inline-flex items-center gap-1 rounded-full px-2 py-0.5" style={{ fontSize: 11, color: "#9fd8d8", background: "rgba(0,216,192,0.14)", border: "1px solid rgba(0,216,192,0.34)" }}>💬 {r.comments}</span>
+                      )}
                     </div>
                     <span className="font-body tabular-nums" style={{ width: 24, textAlign: "center", fontSize: 13, color: "#00ff87" }}>{r.wins}</span>
                     <span className="font-body tabular-nums" style={{ width: 24, textAlign: "center", fontSize: 13, color: ACCENT }}>{r.draws}</span>
