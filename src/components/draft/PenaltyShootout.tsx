@@ -150,6 +150,8 @@ export function PenaltyShootout({
   const [shownMe, setShownMe] = useState(view.myKicks.length);
   const [shownOpp, setShownOpp] = useState(view.oppKicks.length);
   const [anim, setAnim] = useState<Anim | null>(null);     // kick currently animating in 3D
+  const animRef = useRef<Anim | null>(null);               // mirror of `anim` for onPlayed
+  useEffect(() => { animRef.current = anim; }, [anim]);
   const [badge, setBadge] = useState<{ outcome: KickOutcome; side: "me" | "opp" } | null>(null);
 
   // Aiming.
@@ -177,24 +179,25 @@ export function PenaltyShootout({
     }
   }, [anim, shownMe, shownOpp, view.myKicks, view.oppKicks, simultaneous, mode]);
 
-  // Scene finished animating a kick → fire sound/badge, then bank it.
+  // Scene finished animating a kick → fire sound/badge, then bank it. Side effects MUST
+  // stay outside any state updater (React Strict Mode double-invokes updaters, which would
+  // double-increment the reveal counters and soft-lock the shootout). The animRef guard
+  // makes this idempotent across the scene callback + the watchdog both firing.
   const onPlayed = useCallback(() => {
-    setAnim((cur) => {
-      if (!cur) return null;
-      const { side, kick } = cur;
-      if (kick.outcome === "goal") { if (side === "me") { sfx.goal(); buzz([25, 40, 80]); } else { sfx.miss(); buzz(15); } }
-      else if (kick.outcome === "saved") { sfx.save(); buzz(side === "me" ? 60 : [40, 30, 40]); }
-      else { sfx.miss(); buzz(side === "me" ? 30 : 15); }
-      setBadge({ outcome: kick.outcome, side });
-      setTimeout(() => setBadge(null), reduced.current ? 500 : 1100);
-      if (side === "me") setShownMe((n) => n + 1); else setShownOpp((n) => n + 1);
-      // Banked — clear any locked input (a dive sets `pending` but, unlike a shot,
-      // had no "me" reveal to clear it; without this the next round's button never
-      // re-enables → shootout stalls after the first dive).
-      setPending(false);
-      setPhase("aim");
-      return null;
-    });
+    const cur = animRef.current;
+    if (!cur) return;
+    animRef.current = null;
+    setAnim(null);
+    const { side, kick } = cur;
+    if (kick.outcome === "goal") { if (side === "me") { sfx.goal(); buzz([25, 40, 80]); } else { sfx.miss(); buzz(15); } }
+    else if (kick.outcome === "saved") { sfx.save(); buzz(side === "me" ? 60 : [40, 30, 40]); }
+    else { sfx.miss(); buzz(side === "me" ? 30 : 15); }
+    setBadge({ outcome: kick.outcome, side });
+    setTimeout(() => setBadge(null), reduced.current ? 500 : 1100);
+    if (side === "me") setShownMe((n) => n + 1); else setShownOpp((n) => n + 1);
+    // Clear any locked input so the next round's controls re-enable.
+    setPending(false);
+    setPhase("aim");
   }, []);
 
   // Watchdog: the 3D ball normally calls onPlayed when its flight ends (~1.5s).
