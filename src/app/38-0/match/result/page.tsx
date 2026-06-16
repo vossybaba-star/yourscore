@@ -26,6 +26,8 @@ export default function MatchResult() {
   useEffect(() => {
     const lm = loadLastMatch();
     if (!lm) { router.replace("/38-0"); return; }
+    // A drawn match still owes its shootout — settle it before showing a result.
+    if (lm.pensPending) { router.replace("/38-0/match/pens"); return; }
     setM(lm);
     trackGameComplete("38-0", { mode: "match", outcome: lm.outcome });
   }, [router]);

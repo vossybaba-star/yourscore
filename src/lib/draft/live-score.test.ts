@@ -77,7 +77,7 @@ test("penalties lean slightly to the stronger side", () => {
 
 // ─── Phase machine ─────────────────────────────────────────────────────────────
 
-const base: PhaseInput = { phase: "lobby", bothReady: false, expired: false, level: false, bothWantPens: false };
+const base: PhaseInput = { phase: "lobby", bothReady: false, expired: false, level: false, pensDecided: false };
 
 test("lobby: ready → reveal; no-show past the deadline → abandoned; else holds", () => {
   assert.equal(nextPhase({ ...base, phase: "lobby", bothReady: true }), "reveal");
@@ -98,20 +98,24 @@ test("timed phases advance on both-ready OR deadline", () => {
   }
 });
 
-test("half2 routes to draw_decision only when level", () => {
-  assert.equal(nextPhase({ ...base, phase: "half2", expired: true, level: true }), "draw_decision");
+test("half2 routes straight to penalties when level — draws are never terminal", () => {
+  assert.equal(nextPhase({ ...base, phase: "half2", expired: true, level: true }), "penalties");
   assert.equal(nextPhase({ ...base, phase: "half2", expired: true, level: false }), "result");
 });
 
-test("draw_decision goes to penalties only if BOTH opt in, else a draw result", () => {
-  assert.equal(nextPhase({ ...base, phase: "draw_decision", expired: true, bothWantPens: true }), "penalties");
-  assert.equal(nextPhase({ ...base, phase: "draw_decision", expired: true, bothWantPens: false }), "result");
-  // No game is forced to penalties: a timeout (default = take the draw) ends as a draw.
-  assert.equal(nextPhase({ ...base, phase: "draw_decision", expired: true }), "result");
+test("retired draw_decision falls straight into penalties (legacy in-flight rows)", () => {
+  assert.equal(nextPhase({ ...base, phase: "draw_decision" }), "penalties");
+  assert.equal(nextPhase({ ...base, phase: "draw_decision", expired: true }), "penalties");
+});
+
+test("penalties end on a decided shootout or the window expiring", () => {
+  assert.equal(nextPhase({ ...base, phase: "penalties", pensDecided: true }), "result");
+  assert.equal(nextPhase({ ...base, phase: "penalties", expired: true }), "result");
+  assert.equal(nextPhase({ ...base, phase: "penalties" }), "penalties");
 });
 
 test("nextPhase is deterministic (same input → same output)", () => {
-  const inp: PhaseInput = { phase: "half2", bothReady: false, expired: true, level: true, bothWantPens: false };
+  const inp: PhaseInput = { phase: "half2", bothReady: false, expired: true, level: true, pensDecided: false };
   assert.equal(nextPhase(inp), nextPhase(inp));
 });
 

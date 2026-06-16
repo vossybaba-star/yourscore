@@ -6,16 +6,17 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed with the founder:** 2026-06-15 (World Cup Daily + World Cup H2H added — see
-> §5B; migration 39). Prior full reconciliation 2026-06-10 against `src/` +
-> `supabase/migrations/` through migration 25, incl. the 38-0 game.
+> **Confirmed with the founder:** 2026-06-16 (World Cup Daily + World Cup H2H — see §5B,
+> migration 39; **interactive penalties** shipped, see Match types — migration 35).
+> Prior full reconciliation 2026-06-10 against `src/` + `supabase/migrations/`.
 > **Updated 2026-06-14:** added **Club Leagues** (built, not live — migration 36 + push pending).
 > **Updated 2026-06-16:** **World Cup** reorganised into **two modes** — **World Cup
 > Mastermind** (daily quiz-gated ranked run + Practice, season board) and **World Cup Run**
 > (open, no-quiz draft). **Nation / National-Team mode retired** from the UI. World Cup is
-> now the **first/default tab** in 38-0. Drawn knockouts + the 3-pt play-off are settled by
-> a **quiz decider question** (not a shootout, for now). **Shipped to prod** (migration 39
-> applied).
+> now the **first/default tab** in 38-0. A drawn knockout (and the 3-pt qualification
+> play-off) is the **player's choice**: take an interactive **penalty shootout** OR answer
+> one more **World Cup quiz question** (25s) to go through. **Shipped to prod** (migrations
+> 35 + 39 applied).
 > **Maintenance:** update this file in the same session you change the product, bump the
 > date, and run `graphify update .` after code changes.
 
@@ -151,7 +152,8 @@ Match loop on `localStorage`; sign-in unlocks cloud save / ranked / social.
 | Type | Status |
 |---|---|
 | **Quick Match** (guest/anon, local) | ✅ Live |
-| **Live H2H multiplayer** (simultaneous two-half match, watch-it-play-out, halftime swaps, opt-in penalties; friend code or random queue w/ disguised bot fallback) | ✅ Live |
+| **Live H2H multiplayer** (simultaneous two-half match, watch-it-play-out, halftime swaps; friend code or random queue w/ disguised bot fallback) | ✅ Live |
+| **Interactive penalty shootout** — every drawn *played* match goes to pens and **the user takes the kicks** in a **real-time 3D scene** (React Three Fiber: floodlit stadium, 3D goal/keeper/striker, ball flies a real arc). Pick one of **9 aim zones** (3×3) + time a **POWER meter** (under/good/perfect/over); dive as keeper vs CPU in solo modes; in live H2H both players shoot simultaneously vs a seeded AI keeper, kicks streaming live. Pens win = full win (1,500 pts / streak survives); the old live opt-in ("both must agree") is retired. Group games in WC Run and the simulated season keep draws (league formats). Outcomes resolve server-side from a peppered seed in ranked modes; abandoning a shootout auto-completes it seeded — quitting never dodges a loss. The 3D scene is lazy-loaded (code-split to the pens route); striker/keeper are GLTF-ready slots for future rigged models. | 🔧 Built 2026-06-13, awaiting migration 35 + deploy |
 | **Custom leagues + friend challenges** (create/join 38-0 leagues by code; challenge a specific friend via share code; shareable result graphics) | ✅ Live |
 | **World Cup** — two player-facing modes, both an open **World XI** draft (nation/National-Team mode **retired** from the UI): **🧠 World Cup Mastermind** (quiz-gated — each pick unlocked by a **25s/question** timer; right answers + streaks deal stronger players) with **Today's Run** (ranked, one locked go/day, today's seeded questions, feeds the season board + Rank via the WC bucket) and **Practice** (unlimited, random past questions, no board/Rank); plus **🌍 World Cup Run** (open, no-quiz draft, replayable). The run: group → knockouts. Group qualifies on points (**≥4 auto · =3 play-off · ≤2 out**); a 3-pt play-off and any **drawn knockout are settled by a quiz decider** — one timed WC question, server-graded (temporary, until the penalty-shootout work lands) — knockout loss = out; perfect run = **8-0-0**. Season board `/38-0/wc/board` ranks closest-to-8-0-0 across the WC2026 window. World Cup is now the **first/default 38-0 tab**. | ✅ Live 2026-06-16 (migration 39 applied) |
 | **World Cup H2H** (take your WC squad head-to-head — own queue/lobbies/leaderboard, WC competition lane) | ✅ Live 2026-06-15 |

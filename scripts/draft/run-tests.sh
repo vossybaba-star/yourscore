@@ -17,6 +17,8 @@ npx tsc \
   src/lib/draft/season.test.ts \
   src/lib/draft/live-score.ts \
   src/lib/draft/live-score.test.ts \
+  src/lib/draft/pens.ts \
+  src/lib/draft/pens.test.ts \
   src/data/draft/wc2026.ts \
   src/lib/draft/wc.ts \
   src/lib/draft/wc.test.ts \

@@ -13,6 +13,7 @@ import { fitMultiplier, canPlay, posCategory, scoreTeam, projectSeason, spineWei
 import { getPlayer } from "./pool";
 import type { SeasonResult } from "./season";
 import type { MatchReport, MatchSim } from "./live-score";
+import { resolveInteractiveShootout, type PenKick, type PenZone, type PenPower } from "./pens";
 
 const STORAGE_KEY = "draftxi:team:v1";
 
@@ -270,6 +271,20 @@ export type LocalMatch = {
   goals: { you: number; opp: number };
   /** Penalty result if a level 90' was settled by a shootout, else null. */
   pens: { you: number; opp: number } | null;
+  /** Kick-by-kick shootout record (interactive pens), for the result screen pips. */
+  pensKicks?: { you: PenKick[]; opp: PenKick[] };
+  /** Set while a drawn match still owes its shootout. `local` mode resolves
+   *  entirely on-device with `seed`; `server` mode plays against
+   *  /api/draft/match/pens. Inputs taken so far are stored as we go, so an
+   *  abandoned shootout auto-completes (seeded) on the next visit — quitting is
+   *  never better than playing. */
+  pensPending?: {
+    mode: "local" | "server";
+    seed?: string;
+    shots: PenZone[];
+    powers: PenPower[];
+    dives: PenZone[];
+  };
   /** Full-time report (scorers, assists, ratings, MOTM, stats) — side a = you, b = opp. */
   report: MatchReport;
   /** Per-half sims (side a = you) so the watch screen can play the match out. */
@@ -279,6 +294,27 @@ export type LocalMatch = {
    *  Used to surface the friend suggestion on the result screen. */
   oppUserId?: string;
 };
+
+/**
+ * Settle a local-mode shootout that's still pending (abandoned mid-way or not):
+ * inputs taken so far are honored, the rest auto-fill seeded — quitting is never
+ * better than playing. Returns the finalized match; no-op for anything else.
+ */
+export function settleLocalPens(m: LocalMatch): LocalMatch {
+  if (!m.pensPending || m.pensPending.mode !== "local" || !m.pensPending.seed) return m;
+  const r = resolveInteractiveShootout(
+    m.pensPending.seed,
+    { aShots: m.pensPending.shots, aPowers: m.pensPending.powers, aDives: m.pensPending.dives },
+    "alternating"
+  );
+  return {
+    ...m,
+    outcome: r.winner === "a" ? "you" : "opp",
+    pens: { you: r.score.a, opp: r.score.b },
+    pensKicks: { you: r.a, opp: r.b },
+    pensPending: undefined,
+  };
+}
 
 export function saveLastMatch(m: LocalMatch): void {
   try { localStorage.setItem(MATCH_KEY, JSON.stringify(m)); } catch { /* ignore */ }

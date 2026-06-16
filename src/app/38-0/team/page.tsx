@@ -13,7 +13,8 @@ import { useRouter } from "next/navigation";
 import { Pitch } from "@/components/draft/Pitch";
 import { BottomNav } from "@/components/ui/BottomNav";
 import {
-  loadTeam, saveTeam, isComplete, recordWin, recordLoss, recordDraw, saveLastMatch,
+  loadTeam, saveTeam, isComplete, recordWin, recordLoss, saveLastMatch,
+  loadLastMatch, settleLocalPens,
   compatibleFormations, reslot, seasonSeed, loadLastSeason, type LocalTeam,
 } from "@/lib/draft/local";
 import { asLeague } from "@/lib/draft/types";
@@ -114,14 +115,31 @@ export default function TeamScreen() {
     if (!team || matching) return;
     setMatching(true);
     trackGamePlay("38-0", { mode: "quick_match" });
-    const matchId = `local-${team.updatedAt}-${Math.floor(Math.random() * 1e6)}`;
-    const opp = makeOpponent(team.formation, team.strength, Math.random, team.league);
+    // An abandoned shootout settles (seeded) before a new match can start, so
+    // quitting mid-pens never preserves a streak a loss would have ended.
+    let cur = team;
+    const prev = loadLastMatch();
+    if (prev?.pensPending?.mode === "local") {
+      const settled = settleLocalPens(prev);
+      saveLastMatch(settled);
+      cur = settled.outcome === "you" ? recordWin(cur) : recordLoss(cur);
+    }
+    let matchId = `local-${cur.updatedAt}-${Math.floor(Math.random() * 1e6)}`;
+    const opp = makeOpponent(cur.formation, cur.strength, Math.random, cur.league);
     // Real scoreline via the shared, seeded engine (your attack vs their defence).
-    const res = resolveMatch(team.squad, opp.team.squad, matchId, { allowDraw: true });
+    let res = resolveMatch(cur.squad, opp.team.squad, matchId, { allowDraw: true });
+    // Dev-only: force a drawn 90' (to reach the shootout) by searching seeds —
+    // results are seeded by matchId, so the engine itself is never hooked.
+    if (process.env.NODE_ENV === "development" && localStorage.getItem("draftxi:forcedraw") === "1") {
+      for (let i = 0; i < 400 && res.outcome !== "draw"; i++) {
+        matchId = `local-${cur.updatedAt}-f${i}`;
+        res = resolveMatch(cur.squad, opp.team.squad, matchId, { allowDraw: true });
+      }
+    }
 
     saveLastMatch({
       id: matchId,
-      you: { name: "You", formation: team.formation, squad: team.squad, strength: team.strength, projected: team.projected },
+      you: { name: "You", formation: cur.formation, squad: cur.squad, strength: cur.strength, projected: cur.projected },
       opp: { name: opp.name, formation: opp.team.formation, squad: opp.team.squad, strength: opp.team.strength, projected: opp.team.projected },
       outcome: res.outcome === "A" ? "you" : res.outcome === "B" ? "opp" : "draw",
       goals: { you: res.goals.a, opp: res.goals.b },
@@ -129,11 +147,17 @@ export default function TeamScreen() {
       report: res.report,
       sim: res.sim,
       playedAt: Date.now(),
+      // A level 90' now goes to a shootout the user takes themselves — the streak
+      // and outcome are settled on the pens screen, not here.
+      pensPending: res.outcome === "draw" ? { mode: "local", seed: `${matchId}:pens`, shots: [], powers: [], dives: [] } : undefined,
     });
 
-    const next = res.outcome === "A" ? recordWin(team) : res.outcome === "B" ? recordLoss(team) : recordDraw(team);
-    saveTeam(next);
-    // Watch the match play out, then hand off to the result screen.
+    if (res.outcome !== "draw") {
+      saveTeam(res.outcome === "A" ? recordWin(cur) : recordLoss(cur));
+    } else {
+      saveTeam(cur); // streak settles on the pens screen
+    }
+    // Watch the match play out, then hand off to pens (if drawn) or the result screen.
     setTimeout(() => router.push("/38-0/match/watch"), 300);
   }
 
