@@ -47,3 +47,16 @@ export function gradeAnswer(prevStreak: number, correct: boolean): { streak: num
   const streak = nextStreak(prevStreak, correct);
   return { streak, band: bandForGrade({ correct, streak }) };
 }
+
+// Between-stage UPGRADE re-spins (distinct from the initial XI draft above). A correct
+// answer is required to re-spin at all (a wrong answer forfeits the pick — handled by the
+// caller). The re-spin is a MODEST improvement on the player already in the slot, not a
+// jump to elite: candidates start a notch above the current overall (soft bound, so a
+// thin nation still offers something).
+export const UPGRADE_MIN_BUMP = 1;    // re-spin floor sits this far above the current player
+export const UPGRADE_FLOOR_CAP = 90;  // ...but never demand elite-only, so there's always a pool
+
+/** The spin band for a CORRECT upgrade re-spin, relative to the slot's current overall. */
+export function upgradeBand(currentOverall: number): DraftBand {
+  return { minOverall: Math.min(UPGRADE_FLOOR_CAP, currentOverall + UPGRADE_MIN_BUMP), maxOverall: 99 };
+}

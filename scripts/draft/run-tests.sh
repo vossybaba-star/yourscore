@@ -19,6 +19,8 @@ npx tsc \
   src/lib/draft/live-score.test.ts \
   src/lib/draft/pens.ts \
   src/lib/draft/pens.test.ts \
+  src/lib/draft/draft-quiz.ts \
+  src/lib/draft/draft-quiz.test.ts \
   src/data/draft/wc2026.ts \
   src/lib/draft/wc.ts \
   src/lib/draft/wc.test.ts \

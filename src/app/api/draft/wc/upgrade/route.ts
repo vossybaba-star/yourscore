@@ -16,11 +16,12 @@ export async function POST(req: NextRequest) {
   const { ok } = await rateLimitDistributed(`draft-wc-upgrade:${user.id}`, 60, 60_000);
   if (!ok) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
 
-  let body: { runId?: string; slotId?: string; newPlayerId?: string };
+  let body: { runId?: string; slotId?: string; newPlayerId?: string; forfeit?: boolean };
   try { body = await req.json(); } catch { return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 }); }
   const runId = String(body.runId ?? "");
   const slotId = String(body.slotId ?? "");
   const newPlayerId = String(body.newPlayerId ?? "");
+  const forfeit = body.forfeit === true;
 
   const db = createWcDb();
   const { data: row } = await db.from("draft_wc_runs").select("*").eq("id", runId).eq("user_id", user.id).single();
@@ -29,6 +30,17 @@ export async function POST(req: NextRequest) {
   const run = rowToRun(row);
   if (run.status !== "active") return NextResponse.json({ error: "Run is over" }, { status: 400 });
   if (run.upgrades_left <= 0) return NextResponse.json({ error: "No upgrades left" }, { status: 400 });
+
+  // Forfeit: a wrong gating answer burns one upgrade pick with no change to the XI, so the
+  // re-spin gate can't be retried until correct.
+  if (forfeit) {
+    const { error } = await db.from("draft_wc_runs")
+      .update({ upgrades_left: run.upgrades_left - 1, updated_at: new Date().toISOString() })
+      .eq("id", runId).eq("user_id", user.id);
+    if (error) return NextResponse.json({ error: "Could not forfeit upgrade" }, { status: 500 });
+    return NextResponse.json({ squad: run.squad, strength: run.strength, upgrades_left: run.upgrades_left - 1, forfeited: true });
+  }
+
   if (!run.squad.some((p) => p.slot === slotId)) return NextResponse.json({ error: "Unknown slot" }, { status: 400 });
 
   // Swap the chosen slot's player; re-validate the full XI (also enforces nation-lock).

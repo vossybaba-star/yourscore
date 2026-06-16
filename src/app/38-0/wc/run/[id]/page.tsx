@@ -18,7 +18,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Pitch } from "@/components/draft/Pitch";
 import { spinForNation, spinWorld } from "@/lib/draft/pool";
 import { drawQuestion, type ServedQuestion } from "@/lib/draft/wc-quiz";
-import { gradeAnswer, type DraftBand } from "@/lib/draft/draft-quiz";
+import { upgradeBand, type DraftBand } from "@/lib/draft/draft-quiz";
 import { slotsFor } from "@/lib/draft/formations";
 import { CATEGORY_COLOR, posCategory } from "@/lib/draft/score";
 import { RUN_STAGE_LABEL, isDuel, type RunStage, type RunMode } from "@/lib/draft/wc";
@@ -73,12 +73,11 @@ export default function WorldCupRun() {
   const [slate, setSlate] = useState<PlayerSeason[] | null>(null);
   const [spunNation, setSpunNation] = useState<{ nation: string; crest?: string } | null>(null);
   const [busy, setBusy] = useState(false);
-  // Quiz-gated upgrades: answer a WC question to re-spin a slot. Correct (and a streak)
-  // raises the quality of the players offered; wrong caps it. Streak is run-local.
+  // Quiz-gated upgrades: tap a slot, answer a WC question. CORRECT → re-spin that slot with
+  // a modest improvement on the current player; WRONG → no re-spin and the pick is forfeited.
   const [quiz, setQuiz] = useState<ServedQuestion | null>(null);
   const [answered, setAnswered] = useState<number | null>(null);
-  const [streak, setStreak] = useState(0);
-  const [feedback, setFeedback] = useState<{ correct: boolean; streak: number } | null>(null);
+  const [feedback, setFeedback] = useState<{ correct: boolean } | null>(null);
   const askedIds = useRef<Set<string>>(new Set());
 
   // Tie decider: a drawn knockout / the play-off. `tieMode` is "choose" (pens vs question)
@@ -230,15 +229,30 @@ export default function WorldCupRun() {
   }
 
   function answerQuiz(idx: number) {
-    if (!quiz || answered !== null || !pickSlot) return;
+    if (!quiz || answered !== null || !pickSlot || !run) return;
     setAnswered(idx);
     const correct = idx === quiz.correctIndex;
-    const { streak: newStreak, band } = gradeAnswer(streak, correct);
     askedIds.current.add(quiz.id);
-    setStreak(newStreak);
-    setFeedback({ correct, streak: newStreak });
+    setFeedback({ correct });
     const slotId = pickSlot;
-    setTimeout(() => { setQuiz(null); setAnswered(null); spinSlot(slotId, band); }, 900);
+    if (correct) {
+      // Re-spin with a modest improvement on the player currently in this slot.
+      const cur = run.squad.find((p) => p.slot === slotId)?.overall ?? 0;
+      setTimeout(() => { setQuiz(null); setAnswered(null); spinSlot(slotId, upgradeBand(cur)); }, 900);
+    } else {
+      // No re-spin — the upgrade pick is forfeited (server burns it so it can't be retried).
+      setTimeout(() => { setQuiz(null); setAnswered(null); setPickSlot(null); void forfeitUpgrade(); }, 1100);
+    }
+  }
+
+  async function forfeitUpgrade() {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await fetch("/api/draft/wc/upgrade", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ runId: id, forfeit: true }) });
+      await load();
+    } catch { /* non-fatal — upgrades_left refreshes on the next load */ }
+    setBusy(false);
   }
 
   function spinSlot(slotId: string, band: DraftBand) {
@@ -419,7 +433,7 @@ export default function WorldCupRun() {
         <div className="mt-4">
           <div className="flex items-center justify-between mb-1.5">
             <span className="font-body" style={{ fontSize: 11, color: "#8a948f", letterSpacing: 1 }}>YOUR XI</span>
-            {canUpgrade && <span className="font-body" style={{ fontSize: 12, color: "#aeea00" }}>⚽ Tap a player → answer to upgrade · {run.upgrades_left} left{streak >= 2 ? ` · 🔥×${streak}` : ""}</span>}
+            {canUpgrade && <span className="font-body" style={{ fontSize: 12, color: "#aeea00" }}>⚽ Tap a player → answer right to upgrade · {run.upgrades_left} left</span>}
           </div>
           <Pitch formation={run.formation} squad={run.squad} compact onSlotClick={canUpgrade ? scoutSlot : undefined} highlightSlot={pickSlot} />
           <button onClick={playH2H} disabled={h2hBusy}
@@ -582,7 +596,7 @@ export default function WorldCupRun() {
             <div className="flex items-center justify-between mb-1">
               <span className="font-display tracking-wide" style={{ fontSize: 13, color: "#ffb800" }}>⚽ ANSWER TO UPGRADE</span>
               <span className="font-body" style={{ fontSize: 11, color: "#8a948f" }}>
-                {streak >= 1 ? `🔥 Streak ×${streak}` : "Get it right for a better pick"}
+                Right → re-spin · wrong → pick lost
               </span>
             </div>
             <p className="font-body mb-4" style={{ fontSize: 16, color: "#fff", lineHeight: 1.35 }}>{quiz.prompt}</p>
@@ -607,11 +621,11 @@ export default function WorldCupRun() {
             {feedback ? (
               <p className="mt-3 text-center font-body" style={{ fontSize: 13, color: feedback.correct ? "#00ff87" : "#ff8a3d" }}>
                 {feedback.correct
-                  ? feedback.streak >= 2 ? `🔥 Correct — streak ×${feedback.streak}! Elite players unlocked.` : "✅ Correct — strong players unlocked."
-                  : "❌ Not quite — a thinner pick. Streak reset."}
+                  ? "✅ Correct — re-spinning with stronger players."
+                  : "❌ Wrong — no re-spin. That upgrade pick is gone."}
               </p>
             ) : (
-              <p className="mt-3 text-center font-body" style={{ fontSize: 11, color: "#5a5a72" }}>Tap outside to cancel — your upgrade isn&apos;t spent until you pick.</p>
+              <p className="mt-3 text-center font-body" style={{ fontSize: 11, color: "#5a5a72" }}>Tap outside to cancel before answering — answer wrong and the pick is forfeited.</p>
             )}
           </div>
         </div>
