@@ -24,19 +24,28 @@ interface Brand {
   logo: string;
   wallpaper: string;
   prize: string;
+  winner: string;
   kind: Kind;
 }
 
-const EMPTY: Brand = { name: "", color: "a78bfa", logo: "", wallpaper: "", prize: "£50 bar tab", kind: "pub" };
+const EMPTY: Brand = { name: "", color: "a78bfa", logo: "", wallpaper: "", prize: "£50 bar tab", winner: "Dave K.", kind: "pub" };
 
-function buildImageUrl(b: Brand): string {
+const SCREENS: { key: "hub" | "board" | "win"; label: string; sub: string }[] = [
+  { key: "hub", label: "Club home", sub: "the branded takeover" },
+  { key: "board", label: "Leaderboard", sub: "the league table" },
+  { key: "win", label: "Winner", sub: "£50 prize celebration" },
+];
+
+function buildImageUrl(b: Brand, screen?: "hub" | "board" | "win"): string {
   const p = new URLSearchParams();
   if (b.name) p.set("pub", b.name);
   if (b.color) p.set("color", b.color);
   if (b.logo) p.set("logo", b.logo);
   if (b.wallpaper) p.set("wallpaper", b.wallpaper);
   if (b.prize) p.set("prize", b.prize);
+  if (b.winner) p.set("winner", b.winner);
   p.set("kind", b.kind);
+  if (screen) p.set("screen", screen);
   return `/api/club-preview?${p.toString()}`;
 }
 
@@ -102,13 +111,26 @@ export default function ClubPreviewGenerator() {
   const [copied, setCopied] = useState(false);
   const [downloading, setDownloading] = useState(false);
 
-  // Debounced image URL so live edits don't hammer the renderer.
-  const targetUrl = useMemo(() => buildImageUrl(brand), [brand]);
-  const [imgSrc, setImgSrc] = useState<string>(buildImageUrl(EMPTY));
+  // Debounced screen URLs so live edits don't hammer the renderer.
+  const targets = useMemo(
+    () => ({
+      hub: buildImageUrl(brand, "hub"),
+      board: buildImageUrl(brand, "board"),
+      win: buildImageUrl(brand, "win"),
+      banner: buildImageUrl(brand),
+    }),
+    [brand]
+  );
+  const [srcs, setSrcs] = useState(() => ({
+    hub: buildImageUrl(EMPTY, "hub"),
+    board: buildImageUrl(EMPTY, "board"),
+    win: buildImageUrl(EMPTY, "win"),
+    banner: buildImageUrl(EMPTY),
+  }));
   useEffect(() => {
-    const t = setTimeout(() => setImgSrc(targetUrl), 500);
+    const t = setTimeout(() => setSrcs(targets), 500);
     return () => clearTimeout(t);
-  }, [targetUrl]);
+  }, [targets]);
 
   const set = useCallback(<K extends keyof Brand>(k: K, v: Brand[K]) => {
     setBrand((b) => ({ ...b, [k]: v }));
@@ -136,6 +158,7 @@ export default function ClubPreviewGenerator() {
         logo: d.logo ?? "",
         wallpaper: d.wallpaper ?? "",
         prize: brand.prize,
+        winner: brand.winner,
         kind: brand.kind,
       };
       // If the site gave no theme colour, sample it from the logo.
@@ -158,28 +181,34 @@ export default function ClubPreviewGenerator() {
     if (c) set("color", c);
   }
 
-  async function download() {
+  async function downloadOne(url: string, suffix: string) {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const obj = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = obj;
+    a.download = `clubleague-${slugify(brand.name || "venue")}-${suffix}.png`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(obj);
+  }
+
+  async function downloadAll() {
     if (downloading) return;
     setDownloading(true);
     try {
-      const res = await fetch(targetUrl);
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `clubleague-${slugify(brand.name || "venue")}.png`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      for (const s of SCREENS) {
+        await downloadOne(buildImageUrl(brand, s.key), s.key);
+      }
     } catch {
-      setMsg("Could not download — try the image URL instead");
+      setMsg("Could not download — try the image URLs instead");
     }
     setDownloading(false);
   }
 
-  function copyUrl() {
-    const abs = typeof window !== "undefined" ? window.location.origin + targetUrl : targetUrl;
+  function copyUrl(url: string) {
+    const abs = typeof window !== "undefined" ? window.location.origin + url : url;
     navigator.clipboard?.writeText(abs);
     setCopied(true);
     setTimeout(() => setCopied(false), 1600);
@@ -221,29 +250,63 @@ export default function ClubPreviewGenerator() {
           {msg && <p className="font-body text-xs" style={{ color: msg.includes("✓") ? "#aeea00" : "#ff4757" }}>{msg}</p>}
         </div>
 
-        {/* Step 2 — preview */}
-        <div className="rounded-2xl overflow-hidden" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.08)" }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={imgSrc} alt="Club League preview" style={{ display: "block", width: "100%", aspectRatio: "1200 / 630", objectFit: "cover", background: "#0a0a0f" }} />
-          <div className="flex items-center gap-2 p-3">
+        {/* Step 2 — the three screens */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="font-display tracking-wide" style={{ fontSize: 15, color: "#fff" }}>THE THREE SCREENS</p>
             <button
-              onClick={download}
+              onClick={downloadAll}
               disabled={downloading}
-              className="rounded-xl px-4 py-2.5 font-display tracking-wide disabled:opacity-50"
-              style={{ background: accent, color: "#0a0a0f", fontSize: 14 }}
+              className="rounded-xl px-4 py-2 font-display tracking-wide disabled:opacity-50"
+              style={{ background: accent, color: "#0a0a0f", fontSize: 13 }}
             >
-              {downloading ? "PREPARING…" : "↓ DOWNLOAD PNG"}
+              {downloading ? "PREPARING…" : "↓ DOWNLOAD ALL 3"}
             </button>
-            <button
-              onClick={copyUrl}
-              className="rounded-xl px-4 py-2.5 font-body text-sm font-semibold"
-              style={{ background: "rgba(255,255,255,0.06)", color: "#cfcfe0", border: "1px solid rgba(255,255,255,0.12)" }}
-            >
-              {copied ? "Copied ✓" : "Copy image URL"}
-            </button>
-            <span className="font-body text-xs ml-auto" style={{ color: "#8a948f" }}>
-              1200×630 · embeds inline in email
-            </span>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            {SCREENS.map((s) => (
+              <div key={s.key} className="rounded-2xl overflow-hidden" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.08)" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={srcs[s.key]} alt={s.label} style={{ display: "block", width: "100%", aspectRatio: "860 / 1530", objectFit: "cover", background: "#0a0a0f" }} />
+                <div className="px-3 pt-2 pb-3">
+                  <p className="font-body text-sm font-semibold text-white">{s.label}</p>
+                  <p className="font-body text-xs mb-2" style={{ color: "#8a948f" }}>{s.sub}</p>
+                  <div className="flex gap-1.5">
+                    <button onClick={() => downloadOne(srcs[s.key], s.key)}
+                      className="flex-1 rounded-lg py-1.5 font-body text-xs font-bold"
+                      style={{ background: accent, color: "#0a0a0f" }}>
+                      ↓ PNG
+                    </button>
+                    <button onClick={() => copyUrl(srcs[s.key])}
+                      className="rounded-lg px-2.5 py-1.5 font-body text-xs font-semibold"
+                      style={{ background: "rgba(255,255,255,0.06)", color: "#cfcfe0", border: "1px solid rgba(255,255,255,0.12)" }}>
+                      URL
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Wide email banner (bonus) */}
+          <div className="rounded-2xl overflow-hidden" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.08)" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={srcs.banner} alt="Email banner" style={{ display: "block", width: "100%", aspectRatio: "1200 / 630", objectFit: "cover", background: "#0a0a0f" }} />
+            <div className="flex items-center gap-2 p-3">
+              <button onClick={() => downloadOne(srcs.banner, "banner")}
+                className="rounded-xl px-4 py-2.5 font-display tracking-wide"
+                style={{ background: "rgba(255,255,255,0.08)", color: "#fff", border: "1px solid rgba(255,255,255,0.12)", fontSize: 13 }}>
+                ↓ WIDE BANNER PNG
+              </button>
+              <button onClick={() => copyUrl(srcs.banner)}
+                className="rounded-xl px-4 py-2.5 font-body text-sm font-semibold"
+                style={{ background: "rgba(255,255,255,0.06)", color: "#cfcfe0", border: "1px solid rgba(255,255,255,0.12)" }}>
+                {copied ? "Copied ✓" : "Copy URL"}
+              </button>
+              <span className="font-body text-xs ml-auto" style={{ color: "#8a948f" }}>
+                1200×630 · inline email hero
+              </span>
+            </div>
           </div>
         </div>
 
@@ -295,11 +358,18 @@ export default function ClubPreviewGenerator() {
               placeholder="https://…/pub-interior.jpg" className="w-full rounded-xl px-3 py-2.5 font-body text-sm outline-none" style={inputStyle} />
           </label>
 
-          <label className="block">
-            <span className="font-body text-xs block mb-1" style={{ color: "#8a948f" }}>Quiz-night prize line</span>
-            <input value={brand.prize} onChange={(e) => set("prize", e.target.value)} maxLength={40}
-              className="w-full rounded-xl px-3 py-2.5 font-body text-sm outline-none" style={inputStyle} />
-          </label>
+          <div className="grid grid-cols-2 gap-3">
+            <label className="block">
+              <span className="font-body text-xs block mb-1" style={{ color: "#8a948f" }}>Quiz-night prize line</span>
+              <input value={brand.prize} onChange={(e) => set("prize", e.target.value)} maxLength={40}
+                className="w-full rounded-xl px-3 py-2.5 font-body text-sm outline-none" style={inputStyle} />
+            </label>
+            <label className="block">
+              <span className="font-body text-xs block mb-1" style={{ color: "#8a948f" }}>Winner name (celebration screen)</span>
+              <input value={brand.winner} onChange={(e) => set("winner", e.target.value)} maxLength={30}
+                className="w-full rounded-xl px-3 py-2.5 font-body text-sm outline-none" style={inputStyle} />
+            </label>
+          </div>
         </div>
       </div>
     </main>
