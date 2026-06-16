@@ -31,8 +31,12 @@ type Run = {
 };
 type MatchRow = { stage: string; idx: number; you_goals: number; opp_goals: number; pens_you: number | null; pens_opp: number | null; won: boolean | null };
 type Opponent = { nation: string; crest?: string; label: string; formation: Formation; squad: PlacedPlayer[]; strength: number };
-type GameReveal = { label: string; opponent: { nation: string; crest?: string }; goals: { you: number; opp: number }; pens: { you: number; opp: number } | null; outcome: "win" | "loss" | "draw" };
+type GameReveal = { label: string; opponent: { nation: string; crest?: string }; goals: { you: number; opp: number }; pens: { you: number; opp: number } | null; outcome: "win" | "loss" | "draw"; decidedByQuestion?: boolean };
 type PlayResp = { stage: RunStage; games: GameReveal[]; result: "through" | "eliminated" | "champion"; run: Run };
+// A drawn knockout / the play-off, sent back to settle with a quiz answer (no correct index).
+type Decider = { idx: number; stage: string; label: string; opponent: { nation: string; crest?: string }; oppStrength: number; goals: { you: number; opp: number }; question: { id: string; prompt: string; options: string[]; category: string } };
+type PlayOrDecide = PlayResp | { awaitingDecider: true; stage: RunStage; deciders: Decider[]; run: Run };
+const DECIDER_SECONDS = 25;
 
 export default function WorldCupRun() {
   const { id } = useParams<{ id: string }>();
@@ -57,6 +61,15 @@ export default function WorldCupRun() {
   const [feedback, setFeedback] = useState<{ correct: boolean; streak: number } | null>(null);
   const askedIds = useRef<Set<string>>(new Set());
 
+  // Quiz decider: a drawn knockout / the play-off is settled by one WC question (in place
+  // of a shootout, temporarily). Answer right → through, wrong → out. Server grades it.
+  const [deciders, setDeciders] = useState<Decider[] | null>(null);
+  const [decIdx, setDecIdx] = useState(0);
+  const [decPicked, setDecPicked] = useState<number | null>(null);
+  const decAnswers = useRef<Record<number, number>>({});
+  const [decTimeLeft, setDecTimeLeft] = useState(DECIDER_SECONDS);
+  const [decBusy, setDecBusy] = useState(false);
+
   const load = useCallback(async () => {
     const res = await fetch(`/api/draft/wc/${id}`);
     const data = await res.json();
@@ -66,19 +79,64 @@ export default function WorldCupRun() {
 
   useEffect(() => { load(); }, [load]);
 
+  // 25s clock on each decider question; running out locks a timeout (wrong → out).
+  useEffect(() => {
+    if (!deciders || decPicked !== null || decBusy) return;
+    if (decTimeLeft <= 0) { answerDecider(-1); return; }
+    const t = setTimeout(() => setDecTimeLeft((s) => s - 1), 1000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deciders, decIdx, decPicked, decTimeLeft, decBusy]);
+
   async function play() {
     if (playing) return;
     setPlaying(true); setError(null); setPickSlot(null); setSlate(null);
     try {
       const res = await fetch("/api/draft/wc/play", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ runId: id }) });
-      const data = await res.json();
+      const data = await res.json() as PlayOrDecide & { error?: string };
       if (!res.ok) { setError(data.error ?? "Could not play"); setPlaying(false); return; }
-      setReveal(data);
-      if (data.result === "champion" || data.result === "eliminated") {
-        trackGameComplete("38-0", { mode: "world_cup_run", result: data.result });
+      if ("awaitingDecider" in data && data.awaitingDecider) {
+        decAnswers.current = {};
+        setDeciders(data.deciders); setDecIdx(0); setDecPicked(null); setDecTimeLeft(DECIDER_SECONDS);
+        setPlaying(false); return;
+      }
+      const r = data as PlayResp;
+      setReveal(r);
+      if (r.result === "champion" || r.result === "eliminated") {
+        trackGameComplete("38-0", { mode: "world_cup_run", result: r.result });
       }
     } catch { setError("Network error — try again."); }
     setPlaying(false);
+  }
+
+  // Settle the drawn tie(s): collect one answer per decider, then POST /decide. The client
+  // never knows the correct answer — the server grades it and returns the resolved reveal.
+  function answerDecider(choice: number) {
+    if (!deciders || decPicked !== null) return;
+    setDecPicked(choice);
+    decAnswers.current[deciders[decIdx].idx] = choice;
+    setTimeout(() => {
+      if (decIdx + 1 < deciders.length) { setDecIdx(decIdx + 1); setDecPicked(null); setDecTimeLeft(DECIDER_SECONDS); }
+      else void submitDeciders();
+    }, 800);
+  }
+
+  async function submitDeciders() {
+    setDecBusy(true);
+    try {
+      const res = await fetch("/api/draft/wc/decide", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ runId: id, answers: decAnswers.current }) });
+      const data = await res.json() as PlayOrDecide & { error?: string };
+      if (!res.ok) { setError(data.error ?? "Could not settle the tie"); setDeciders(null); setDecBusy(false); return; }
+      if ("awaitingDecider" in data && data.awaitingDecider) { // more ties to settle (rare)
+        setDeciders(data.deciders); setDecIdx(0); setDecPicked(null); setDecTimeLeft(DECIDER_SECONDS); setDecBusy(false); return;
+      }
+      setDeciders(null); setDecBusy(false);
+      const r = data as PlayResp;
+      setReveal(r);
+      if (r.result === "champion" || r.result === "eliminated") {
+        trackGameComplete("38-0", { mode: "world_cup_run", result: r.result });
+      }
+    } catch { setError("Network error — try again."); setDecBusy(false); }
   }
 
   // Save this exact XI as the active World Cup team and drop into the WC H2H lane.
@@ -196,7 +254,7 @@ export default function WorldCupRun() {
   const canUpgrade = !terminal && run.upgrades_left > 0;
   const playLabel = run.stage === "group" ? "PLAY GROUP STAGE"
     : run.stage === "ko" ? "PLAY R32 & R16"
-    : run.stage === "playoff" ? "TAKE THE PLAY-OFF SHOOTOUT"
+    : run.stage === "playoff" ? "PLAY THE QUALIFICATION PLAY-OFF"
     : `PLAY THE ${RUN_STAGE_LABEL[run.stage].toUpperCase()}`;
 
   return (
@@ -290,9 +348,9 @@ export default function WorldCupRun() {
         {/* Qualification play-off: the authentic "best third-placed" explanation. */}
         {!terminal && run.stage === "playoff" && (
           <div className="mt-4 rounded-2xl p-4" style={{ background: "#1a1300", border: "1px solid rgba(255,184,0,0.45)" }}>
-            <div className="font-display tracking-wide" style={{ fontSize: 15, color: "#ffb800" }}>IT&apos;S DOWN TO PENALTIES</div>
+            <div className="font-display tracking-wide" style={{ fontSize: 15, color: "#ffb800" }}>IT&apos;S DOWN TO ONE QUESTION</div>
             <p className="font-body mt-1.5" style={{ fontSize: 13, color: "#e8d6a8", lineHeight: 1.45 }}>
-              You finished 3rd in your group on <b style={{ color: "#fff" }}>{run.group_points} points</b> — level with the other nations on the qualification cut-line. In the World Cup the <b style={{ color: "#fff" }}>best third-placed teams</b> go through, so it comes down to a play-off shootout for the final Round-of-32 spot.
+              You finished 3rd in your group on <b style={{ color: "#fff" }}>{run.group_points} points</b> — level with the other nations on the qualification cut-line. In the World Cup the <b style={{ color: "#fff" }}>best third-placed teams</b> go through, so it comes down to the wire: <b style={{ color: "#fff" }}>answer one question</b> to grab the final Round-of-32 spot.
             </p>
           </div>
         )}
@@ -372,7 +430,12 @@ export default function WorldCupRun() {
                     <img src={g.opponent.crest} alt="" width={22} height={22} style={{ width: 22, height: 22, objectFit: "contain" }} />
                   )}
                   <span className="font-body flex-1 truncate" style={{ fontSize: 13, color: "#c4ccc6" }}>{run.nation} v {g.opponent.nation}</span>
-                  <span className="font-display" style={{ fontSize: 16, color: "#fff" }}>{g.goals.you}–{g.goals.opp}{g.pens ? ` (${g.pens.you}-${g.pens.opp})` : ""}</span>
+                  <span className="font-display" style={{ fontSize: 16, color: "#fff" }}>
+                    {g.label === "Qualification Play-off"
+                      ? "Play-off"
+                      : <>{g.goals.you}–{g.goals.opp}{g.pens ? ` (${g.pens.you}-${g.pens.opp})` : ""}</>}
+                    {g.decidedByQuestion && <span style={{ fontSize: 11, color: "#ffb800" }}> · Q</span>}
+                  </span>
                   <span className="font-display rounded px-1.5" style={{ fontSize: 12, color: "#0a0a0f", background: g.outcome === "win" ? "#aeea00" : g.outcome === "loss" ? "#ff4757" : "#ffb800" }}>{g.outcome === "win" ? "W" : g.outcome === "loss" ? "L" : "D"}</span>
                 </div>
               ))}
@@ -424,6 +487,48 @@ export default function WorldCupRun() {
             ) : (
               <p className="mt-3 text-center font-body" style={{ fontSize: 11, color: "#5a5a72" }}>Tap outside to cancel — your upgrade isn&apos;t spent until you pick.</p>
             )}
+          </div>
+        </div>
+      )}
+
+      {deciders && deciders[decIdx] && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-0 sm:px-5" style={{ background: "rgba(0,0,0,0.78)" }}>
+          <div className="w-full max-w-lg rounded-t-3xl sm:rounded-3xl p-5 pb-8" style={{ background: "#13131c", border: "1px solid rgba(255,184,0,0.4)" }}>
+            <div className="flex items-center justify-between mb-1">
+              <span className="font-display tracking-wide" style={{ fontSize: 13, color: "#ffb800" }}>
+                ⚽ {deciders[decIdx].stage === "playoff" ? "ANSWER TO QUALIFY" : "DRAW — ANSWER TO GO THROUGH"}
+              </span>
+              <span className="font-body" style={{ fontSize: 11, color: "#8a948f" }}>
+                {deciders[decIdx].stage === "playoff" ? "Qualification play-off" : `${deciders[decIdx].label} · ${deciders[decIdx].goals.you}-${deciders[decIdx].goals.opp}`}
+                {deciders.length > 1 ? ` · ${decIdx + 1}/${deciders.length}` : ""}
+              </span>
+            </div>
+            {decPicked === null && !decBusy && (
+              <div className="mb-3">
+                <div className="flex items-center justify-end mb-1">
+                  <span className="font-display tabular-nums" style={{ fontSize: 12, color: decTimeLeft <= 5 ? "#ff4757" : "#ffb800" }}>⏱ {decTimeLeft}s</span>
+                </div>
+                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.08)" }}>
+                  <div className="h-full rounded-full" style={{ width: `${(decTimeLeft / DECIDER_SECONDS) * 100}%`, background: decTimeLeft <= 5 ? "#ff4757" : "#ffb800", transition: "width 1s linear" }} />
+                </div>
+              </div>
+            )}
+            <p className="font-body mb-4" style={{ fontSize: 16, color: "#fff", lineHeight: 1.35 }}>{deciders[decIdx].question.prompt}</p>
+            <div className="flex flex-col gap-2">
+              {deciders[decIdx].question.options.map((opt, i) => {
+                const picked = i === decPicked;
+                return (
+                  <button key={i} onClick={() => answerDecider(i)} disabled={decPicked !== null || decBusy}
+                    className="w-full text-left rounded-xl px-4 py-3 font-body active:scale-[0.99] transition-transform"
+                    style={{ background: picked ? "rgba(255,184,0,0.18)" : "rgba(255,255,255,0.05)", border: `1px solid ${picked ? "rgba(255,184,0,0.6)" : "rgba(255,255,255,0.12)"}`, color: "#fff", fontSize: 15 }}>
+                    {opt}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="mt-3 text-center font-body" style={{ fontSize: 12, color: "#8a948f" }}>
+              {decBusy ? "Settling it…" : decPicked !== null ? "Locked in…" : "Correct → through. Wrong (or time out) → out."}
+            </p>
           </div>
         </div>
       )}

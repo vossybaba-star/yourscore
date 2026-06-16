@@ -332,7 +332,7 @@ export default function DraftHome() {
                 ? [
                     ["①", "Answer to draft", "Each pick is unlocked by a World Cup question on a 25s clock — right answers (and streaks) deal stronger players."],
                     ["②", "Play the World Cup", "A group, then the knockouts — vs real nations, tougher each round."],
-                    ["③", "Group on the line", "4 pts go through; 3 pts is a play-off shootout; less and you're out."],
+                    ["③", "Group on the line", "4 pts go through; level on 3 → one sudden-death question to qualify; less and you're out."],
                     ["④", "Climb the season board", "One ranked run a day. Get closest to a perfect 8-0-0."],
                   ]
                 : [

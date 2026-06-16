@@ -347,7 +347,7 @@ export default function WorldCupEntry() {
             {[
               ["①", "Answer to draft", "Each pick is unlocked by a question on a 25s clock — right answers (and streaks) deal stronger players."],
               ["②", "Play the World Cup", "A group, then the knockouts — vs real nations, tougher each round."],
-              ["③", "Group on the line", "4 pts go through; 3 pts is down to a play-off shootout; less and you're out."],
+              ["③", "Group on the line", "4 pts go through; level on 3 → one sudden-death question to qualify; less and you're out."],
               ["④", "Go for 8-0-0 🏆", "Knockout losses end your run. Win them all and you're champions."],
             ].map(([n, title, desc]) => (
               <div key={n as string} className="flex gap-3 mb-2.5 last:mb-0">
