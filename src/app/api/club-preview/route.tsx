@@ -13,8 +13,13 @@
 
 import { ImageResponse } from "next/og";
 import { LOGO_DATA_URI } from "@/lib/og/logoDataUri";
+import { requireAdmin } from "@/lib/auth/admin";
 
 export const runtime = "edge";
+
+// Internal tooling: these are outreach mockups the operator downloads + attaches
+// to emails, so the route is admin-only. Same-origin authed requests from the
+// /admin/club-preview generator still carry the session cookie and work.
 
 const DEFAULT_ACCENT = "a78bfa"; // YourScore purple
 
@@ -49,6 +54,9 @@ const PORTRAIT = { width: 860, height: 1530 };
 const LANDSCAPE = { width: 1200, height: 630 };
 
 export async function GET(req: Request) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   const { searchParams } = new URL(req.url);
   const pub = (searchParams.get("pub") || "Your Venue").slice(0, 40);
   const prize = (searchParams.get("prize") || "£50 bar tab").slice(0, 40);
