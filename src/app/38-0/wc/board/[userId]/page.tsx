@@ -222,6 +222,16 @@ export default function PlayerHistory() {
               )}
             </div>
 
+            {/* ── Comments on this result/squad — directly under the result tile ── */}
+            <CommentThread
+              runId={run.run_id}
+              comments={commentsByRun[run.run_id] ?? []}
+              canModerate={canModerate}
+              meId={user?.id ?? null}
+              onAdd={(c) => setComments((prev) => [...prev, c])}
+              onRemove={(id) => setComments((prev) => prev.filter((x) => x.id !== id))}
+            />
+
             {/* the XI */}
             <div className="rounded-2xl p-3" style={{ background: "#080d0a", border: "1px solid rgba(255,255,255,0.07)" }}>
               <div className="font-body mb-2 px-1" style={{ fontSize: 11, color: ACCENT, letterSpacing: 1 }}>THE XI THEY DREW</div>
@@ -253,16 +263,6 @@ export default function PlayerHistory() {
                 })}
               </div>
             )}
-
-            {/* ── Comments on this result/squad ── */}
-            <CommentThread
-              runId={run.run_id}
-              comments={commentsByRun[run.run_id] ?? []}
-              canModerate={canModerate}
-              meId={user?.id ?? null}
-              onAdd={(c) => setComments((prev) => [...prev, c])}
-              onRemove={(id) => setComments((prev) => prev.filter((x) => x.id !== id))}
-            />
           </div>
         )}
       </div>
