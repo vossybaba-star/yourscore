@@ -257,7 +257,14 @@ export function spinWorld(
     byTeam.set(key, arr);
   }
   const keys = Array.from(byTeam.keys());
-  const weights = keys.map((k) => Math.min(byTeam.get(k)!.length, SPIN_NATION_WEIGHT_CAP));
+  // When only a slot or two remain open, the team-and-era is being chosen to FILL that exact
+  // position — so weight by the squad's BEST fitting player (squared) rather than by depth.
+  // A correct answer (high band floor) then reliably surfaces a top-rated player at the slot,
+  // and only teams that actually have a strong one for it come up. Broad openings keep the
+  // depth-capped weighting so the early draft stays varied.
+  const narrow = openSlotPositions.length <= 2;
+  const bestOverall = (k: string) => byTeam.get(k)!.reduce((m, p) => Math.max(m, p.overall), 0);
+  const weights = keys.map((k) => narrow ? bestOverall(k) ** 2 : Math.min(byTeam.get(k)!.length, SPIN_NATION_WEIGHT_CAP));
   let r = rng() * weights.reduce((s, w) => s + w, 0);
   let key = keys[0];
   for (let i = 0; i < keys.length; i++) { r -= weights[i]; if (r <= 0) { key = keys[i]; break; } }

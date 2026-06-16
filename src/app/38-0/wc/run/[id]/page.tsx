@@ -328,13 +328,21 @@ export default function WorldCupRun() {
     return `/api/draft/wc-og?${p}`;
   }, [run, matches, crest, world]);
 
-  function shareRun() {
-    if (!run) return;
+  function shareText() {
+    if (!run) return "";
     const who = world ? "a World XI" : run.nation;
-    const text = run.status === "champion"
+    return run.status === "champion"
       ? `I won the World Cup with ${who} on YourScore! 🏆`
       : `My ${world ? "World XI" : run.nation} World Cup run ended at the ${RUN_STAGE_LABEL[run.stage]}. Beat that 👇`;
-    const url = `${window.location.origin}/38-0/wc`;
+  }
+  const shareLink = () => `${typeof window !== "undefined" ? window.location.origin : "https://yourscore.app"}/38-0/wc`;
+  // Twitter/X web intent (matches the other games' share) — text + link, opens in a new tab.
+  const tweetHref = () => `https://twitter.com/intent/tweet?text=${encodeURIComponent(`${shareText()} ${shareLink()}`)}`;
+
+  function shareRun() {
+    if (!run) return;
+    const text = shareText();
+    const url = shareLink();
     if (navigator.share) navigator.share({ title: "YourScore — World Cup Run", text, url }).catch(() => {});
     else { navigator.clipboard?.writeText(`${text} ${url}`); window.open(`${window.location.origin}${scorecardUrl}`, "_blank"); }
   }
@@ -403,7 +411,8 @@ export default function WorldCupRun() {
               <div className="mt-3"><Scorecard url={scorecardUrl} /></div>
               <div className="flex items-center justify-center gap-2 mt-3 flex-wrap">
                 <button onClick={shareRun} className="rounded-xl px-4 py-2 font-display tracking-wide" style={{ background: champ ? "#ffb800" : "rgba(255,255,255,0.1)", color: champ ? "#0a0a0f" : "#fff", fontSize: 15 }}>SHARE{champ ? " 🏆" : ""}</button>
-                <Link href="/38-0/wc/board" className="rounded-xl px-4 py-2 font-display tracking-wide" style={{ background: "rgba(174,234,0,0.14)", color: "#aeea00", border: "1px solid rgba(174,234,0,0.4)", fontSize: 15 }}>VIEW TABLE</Link>
+                <a href={tweetHref()} target="_blank" rel="noopener noreferrer" className="rounded-xl px-4 py-2 font-display tracking-wide" style={{ background: "#1d9bf0", color: "#fff", fontSize: 15 }}>SHARE ON 𝕏</a>
+                <Link href="/38-0/wc/board" prefetch className="rounded-xl px-4 py-2 font-display tracking-wide" style={{ background: "rgba(174,234,0,0.14)", color: "#aeea00", border: "1px solid rgba(174,234,0,0.4)", fontSize: 15 }}>VIEW TABLE</Link>
                 <Link href="/38-0/wc?practice=1" className="rounded-xl px-4 py-2 font-display tracking-wide" style={{ background: "#aeea00", color: "#062013", fontSize: 15 }}>JUST PLAY</Link>
               </div>
             </div>

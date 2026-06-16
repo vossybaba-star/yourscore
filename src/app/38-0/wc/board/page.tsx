@@ -50,7 +50,16 @@ export default function WorldCupBoard() {
 
         <div className="mt-7">
           {loading ? (
-            <div className="py-8 text-center font-body text-sm" style={{ color: "#8888aa" }}>Loading…</div>
+            <div className="rounded-2xl overflow-hidden" style={{ background: "#0d0d14", border: "1px solid rgba(255,255,255,0.08)" }}>
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3 px-3 py-3" style={{ borderTop: i ? "1px solid rgba(255,255,255,0.05)" : "none" }}>
+                  <span className="wcb-sk" style={{ width: 18, height: 14, borderRadius: 4 }} />
+                  <span className="wcb-sk flex-1" style={{ height: 14, borderRadius: 4, maxWidth: `${70 - i * 5}%` }} />
+                  <span className="wcb-sk" style={{ width: 40, height: 14, borderRadius: 4 }} />
+                </div>
+              ))}
+              <style>{`.wcb-sk{display:block;background:rgba(255,255,255,0.06);animation:wcbShimmer 1.1s ease-in-out infinite}@keyframes wcbShimmer{0%,100%{opacity:.45}50%{opacity:.95}}`}</style>
+            </div>
           ) : rows.length === 0 ? (
             <div className="rounded-2xl px-4 py-6 text-center" style={{ background: "#12121e", border: "1px solid rgba(255,255,255,0.07)" }}>
               <p className="font-body text-sm" style={{ color: "#8888aa" }}>No runs banked yet — play today&apos;s run to open the board.</p>
