@@ -134,12 +134,15 @@ async function upsertPack(pack) {
 
   const { data: existing } = await supabase
     .from("quiz_packs")
-    .select("id")
+    .select("id, metadata")
     .eq("name", pack.name)
     .maybeSingle();
 
   if (existing?.id) {
-    const { error } = await supabase.from("quiz_packs").update(row).eq("id", existing.id);
+    // MERGE metadata on re-seed — preserve an attached cover_image / share_image
+    // (set later by set-quiz-share-image.mjs); only refresh the icon.
+    const mergedMeta = { ...(existing.metadata || {}), icon: pack.icon };
+    const { error } = await supabase.from("quiz_packs").update({ ...row, metadata: mergedMeta }).eq("id", existing.id);
     if (error) throw error;
     return { action: "updated", id: existing.id };
   }

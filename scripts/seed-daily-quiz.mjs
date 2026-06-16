@@ -33,6 +33,60 @@ if (COMMIT && !SERVICE_KEY) { console.error("SUPABASE_SERVICE_ROLE_KEY required 
 
 const quiz = JSON.parse(readFileSync(fileArg, "utf8"));
 
+const LETTERS = ["A", "B", "C", "D"];
+
+// ── Option shuffling ───────────────────────────────────────────────────────────
+// Authors tend to write the correct answer as option A every time, so a raw pack
+// has the answer sitting in slot A for all 15 questions — and the challenge page
+// renders options in fixed A→D order with no client shuffle, making the answer
+// always the first choice. We fix that here at publish time: randomise each
+// question's option positions and recompute the answer letter so the correct
+// answer is spread across A–D.
+//
+// Deterministic on purpose. The seed is derived from the date + question index +
+// question text, so re-publishing the same file yields the same shuffle — idempotent
+// with the upsert-by-name flow below, and stable for anyone who already saw the pack.
+function hashSeed(str) {
+  let h = 2166136261 >>> 0; // FNV-1a
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619) >>> 0;
+  }
+  return h >>> 0;
+}
+
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function shuffleOptions(q, i) {
+  if (!q?.options || !LETTERS.every((k) => q.options[k]) || !LETTERS.includes(q.answer)) {
+    return q; // leave malformed questions untouched — validation will flag them
+  }
+  const rng = mulberry32(hashSeed(`${quiz.date ?? quiz.name}-${i}-${q.question}`));
+  const order = [...LETTERS];
+  for (let j = order.length - 1; j > 0; j--) {
+    const k = Math.floor(rng() * (j + 1));
+    [order[j], order[k]] = [order[k], order[j]];
+  }
+  // order[slot] = original letter now placed in that slot.
+  const options = {};
+  LETTERS.forEach((slot, idx) => { options[slot] = q.options[order[idx]]; });
+  const answer = LETTERS[order.indexOf(q.answer)];
+  return { ...q, options, answer };
+}
+
+if (Array.isArray(quiz.questions)) {
+  quiz.questions = quiz.questions.map((q, i) => shuffleOptions(q, i));
+}
+
 // ── Validation ───────────────────────────────────────────────────────────────
 const ALLOWED_DIFF = ["easy", "medium", "hard", "expert", "master"];
 function validate(q) {
@@ -56,6 +110,9 @@ console.log(`  parameter=${quiz.parameter}  icon=${quiz.icon}  questions=${quiz.
 const diffs = {};
 for (const qq of quiz.questions ?? []) diffs[qq.difficulty] = (diffs[qq.difficulty] ?? 0) + 1;
 console.log(`  difficulty mix: ${JSON.stringify(diffs)}`);
+const ansDist = {};
+for (const qq of quiz.questions ?? []) ansDist[qq.answer] = (ansDist[qq.answer] ?? 0) + 1;
+console.log(`  answer spread (post-shuffle): ${JSON.stringify(ansDist)}`);
 if (errs.length) { errs.forEach((e) => console.log(`  ✗ ${e}`)); console.error("\nValidation failed — nothing written."); process.exit(1); }
 console.log(`  ✓ valid`);
 
@@ -67,6 +124,10 @@ if (!COMMIT) {
 // ── Write ────────────────────────────────────────────────────────────────────
 const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
 
+// series tags the pack into the World Cup leaderboard (the £100 board); daily +
+// date drive the streak deadline. Defaults to wc2026 unless the JSON overrides.
+const dailyMeta = { icon: quiz.icon, daily: true, date: quiz.date, series: quiz.series || "wc2026" };
+
 const row = {
   type: quiz.type || "records",
   name: quiz.name,
@@ -77,16 +138,17 @@ const row = {
   featured: true,
   featured_order: ORDER,
   rotation_active: true,
-  // series tags the pack into the World Cup leaderboard (the £100 board); daily +
-  // date drive the streak deadline. Defaults to wc2026 unless the JSON overrides.
-  metadata: { icon: quiz.icon, daily: true, date: quiz.date, series: quiz.series || "wc2026" },
+  metadata: dailyMeta,
   updated_at: new Date().toISOString(),
 };
 
-const { data: existing } = await supabase.from("quiz_packs").select("id").eq("name", quiz.name).maybeSingle();
+const { data: existing } = await supabase.from("quiz_packs").select("id, metadata").eq("name", quiz.name).maybeSingle();
 let res;
 if (existing?.id) {
-  const { error } = await supabase.from("quiz_packs").update(row).eq("id", existing.id);
+  // MERGE metadata on re-publish — never clobber an attached cover_image / share_image
+  // (set later by set-quiz-share-image.mjs). Only the daily fields are refreshed.
+  const mergedMeta = { ...(existing.metadata || {}), ...dailyMeta };
+  const { error } = await supabase.from("quiz_packs").update({ ...row, metadata: mergedMeta }).eq("id", existing.id);
   if (error) { console.error(error); process.exit(1); }
   res = { action: "updated", id: existing.id };
 } else {
