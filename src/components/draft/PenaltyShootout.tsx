@@ -247,15 +247,15 @@ export function PenaltyShootout({
   const GRID: PenZone[] = [6, 7, 8, 3, 4, 5, 0, 1, 2];
 
   return (
-    <div className="w-full select-none">
+    <div className="w-full h-full flex items-center justify-center select-none">
       <style>{`
         @keyframes pensPop { 0% { transform: scale(0.5); opacity: 0; } 55% { transform: scale(1.12); opacity: 1; } 100% { transform: scale(1); } }
         @keyframes pensConfetti { 0% { transform: translateY(0) rotate(0); opacity: 1; } 100% { transform: translateY(60vh) rotate(540deg); opacity: 0; } }
         @keyframes pensRingPulse { 0%,100% { transform: scale(1); opacity: 0.85; } 50% { transform: scale(1.12); opacity: 1; } }
       `}</style>
 
-      {/* ── Stage: 3D scene with overlaid HUD ── */}
-      <div className="relative w-full overflow-hidden rounded-2xl" style={{ aspectRatio: "4/3", background: "#05060d", border: "1px solid rgba(255,255,255,0.08)" }}>
+      {/* ── Stage: full-screen 9:16 scene with overlaid HUD + controls ── */}
+      <div className="relative overflow-hidden mx-auto" style={{ background: "#05060d", width: "min(100%, calc(100dvh * 9 / 16))", aspectRatio: "9 / 16" }}>
         <PenaltyScene2D aim={canShoot ? aim : null} play={play3d} onPlayed={onPlayed} reduced={reduced.current} defending={view.role === "dive"} />
 
         {/* top HUD: round counter + score + pips */}
@@ -323,10 +323,9 @@ export function PenaltyShootout({
             <div className="font-display tabular-nums mt-1" style={{ fontSize: 24, color: "#fff", letterSpacing: 1 }}>{myGoals}–{oppGoals}</div>
           </div>
         )}
-      </div>
-
-      {/* bottom controls panel — BELOW the 4:3 scene so it never covers the pitch */}
-      <div className="px-3 pt-3 pb-3 rounded-b-2xl" style={{ background: "#080a12", borderLeft: "1px solid rgba(255,255,255,0.08)", borderRight: "1px solid rgba(255,255,255,0.08)", borderBottom: "1px solid rgba(255,255,255,0.08)", marginTop: -1 }}>
+        {/* bottom controls — overlaid on the pitch (aim grid / power / dive) */}
+        <div className="absolute bottom-0 inset-x-0 px-3 pt-12 pb-[max(0.9rem,env(safe-area-inset-bottom))]" style={{ background: "linear-gradient(0deg, rgba(4,5,12,0.94) 0%, rgba(4,5,12,0.55) 62%, transparent 100%)", zIndex: 10 }}>
+          <div className="mx-auto" style={{ maxWidth: 380 }}>
 
           {canShoot && phase === "aim" && (
             <div className="flex items-end gap-3">
@@ -411,6 +410,8 @@ export function PenaltyShootout({
               {pending ? "…" : anim ? "" : simultaneous ? `Waiting for ${oppName}…` : ""}
             </div>
           )}
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -19,30 +19,29 @@ type Play = { shot: PenZone; dive: PenZone; outcome: KickOutcome; side: "me" | "
 const ME = "#b4ff2e";
 const A = "/sprites/pens";
 
-// Goal geometry measured against bg.png (posts 28–72%, crossbar 31%, line 53%).
-// The aim/dive 9-grid maps inside the goal mouth; tweak here if the art reframes.
-const GOAL = { left: 33, right: 67, top: 35, bottom: 49 };
+// Goal geometry measured against the 9:16 bg.png (posts ~23–77%, crossbar ~39%,
+// line ~48%). The aim/dive 9-grid maps inside the goal mouth; tweak if the art reframes.
+const GOAL = { left: 26, right: 74, top: 34, bottom: 46 };
 const colX = (c: 0 | 1 | 2) => GOAL.left + (GOAL.right - GOAL.left) * (c === 0 ? 1 / 6 : c === 1 ? 0.5 : 5 / 6);
 const rowY = (r: 0 | 1 | 2) => GOAL.top + (GOAL.bottom - GOAL.top) * (r === 2 ? 0.18 : r === 1 ? 0.55 : 0.92);
 const zonePos = (z: PenZone) => ({ x: colX(zoneColumn(z)), y: rowY(zoneRow(z)) });
-// Resting ball sits on the grass just to the taker's right (clear of his body), as
-// in the reference; it flies from here to the chosen zone.
-const SPOT = { x: 58, y: 76 };
+// Resting ball sits on the spot ahead of the taker; it flies from here to the chosen zone.
+const SPOT = { x: 56, y: 58 };
 
-// Sprite boxes in % of the stage (4:3), from each trimmed PNG's pixel size scaled to
-// a common character size. Keeper sits on the goal line; taker is the foreground hero.
-const KEEPER_BASE = { x: 50, y: 43 }; // centre of the ready keeper, feet ~goal line
+// Sprite heights in % of the stage HEIGHT (9:16); width is auto so aspect is preserved.
+// Keeper stands on the goal line (small, distant); taker is the foreground hero.
+const KEEPER_BASE = { x: 50, y: 41 }; // centre of the ready keeper, feet ~goal line
 const KEEPER = {
-  ready: { src: "keeper_ready", w: 7.4, h: 16.0 },
-  dive_l: { src: "keeper_dive_l", w: 15.2, h: 9.8 },
-  dive_r: { src: "keeper_dive_r", w: 19.6, h: 14.2 },
-  catch: { src: "keeper_catch", w: 5.7, h: 18.6 },
+  ready: { src: "keeper_ready", h: 9.5 },
+  dive_l: { src: "keeper_dive_l", h: 5.8 },
+  dive_r: { src: "keeper_dive_r", h: 8.4 },
+  catch: { src: "keeper_catch", h: 11.0 },
 } as const;
 const TAKER = {
-  idle: { src: "taker_idle", w: 9.1, h: 30.0 },
-  kick: { src: "taker_kick", w: 18.8, h: 29.0 },
+  idle: { src: "taker_idle", h: 22.0 },
+  kick: { src: "taker_kick", h: 21.3 },
 } as const;
-const TAKER_FOOT = { x: 50, y: 92 }; // bottom-centre anchor for the taker
+const TAKER_FOOT = { x: 46, y: 72 }; // bottom-centre anchor for the taker
 
 function keeperFrame(diving: boolean, dive: PenZone): keyof typeof KEEPER {
   if (!diving) return "ready";
@@ -112,7 +111,7 @@ export default function PenaltyScene2D({ aim, play, onPlayed, reduced, defending
         src={`${A}/${kFrame.src}.png`} alt="" aria-hidden
         style={{
           position: "absolute", left: `${kc.x}%`, top: `${kc.y}%`,
-          width: `${kFrame.w}%`, height: `${kFrame.h}%`, objectFit: "contain",
+          height: `${kFrame.h}%`, width: "auto",
           transform: "translate(-50%,-50%)", transformOrigin: "center",
           transition: "left 360ms cubic-bezier(.3,.7,.4,1), top 360ms cubic-bezier(.3,.7,.4,1), opacity 90ms linear",
           zIndex: 2, pointerEvents: "none", userSelect: "none",
@@ -129,7 +128,7 @@ export default function PenaltyScene2D({ aim, play, onPlayed, reduced, defending
         src={`${A}/${tFrame.src}.png`} alt="" aria-hidden
         style={{
           position: "absolute", left: `${TAKER_FOOT.x}%`, top: `${TAKER_FOOT.y}%`,
-          width: `${tFrame.w}%`, height: `${tFrame.h}%`, objectFit: "contain", objectPosition: "bottom",
+          height: `${tFrame.h}%`, width: "auto",
           transform: "translate(-50%,-100%)", transformOrigin: "bottom center",
           transition: "opacity 70ms linear", zIndex: 4, pointerEvents: "none", userSelect: "none",
         }}

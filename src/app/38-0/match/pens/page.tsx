@@ -211,41 +211,46 @@ export default function PensPage() {
   }
 
   return (
-    <div className="min-h-[100dvh] pb-10" style={{ background: BG, color: "#e8e8f0" }}>
-      <div className="max-w-lg mx-auto px-3 pt-4">
-        <PenaltyShootout
-          view={view}
-          myName="You"
-          oppName={m.opp.name}
-          onShoot={(z, p) => act("shot", z, p)}
-          onDive={(c) => act("dive", c)}
-        />
+    // The shootout takes over the whole screen; the 9:16 stage is centred and the
+    // result actions float at the bottom over the final banner.
+    <div className="relative h-[100dvh] overflow-hidden" style={{ background: BG, color: "#e8e8f0" }}>
+      <PenaltyShootout
+        view={view}
+        myName="You"
+        oppName={m.opp.name}
+        onShoot={(z, p) => act("shot", z, p)}
+        onDive={(c) => act("dive", c)}
+      />
 
-        {error && (
-          <button onClick={() => { setError(null); }} className="mt-3 w-full text-center font-body" style={{ fontSize: 12, color: "#ff5c7a" }}>
-            {error}
-          </button>
-        )}
-
-        {decided && (
-          <button
-            onClick={() => router.replace("/38-0/match/result")}
-            className="mt-4 w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform"
-            style={{ background: "#00ff87", color: "#062013", fontSize: 18 }}
-          >
-            SEE RESULT →
-          </button>
-        )}
-        {decided && DEV && m.id.startsWith("demo-") && (
-          <button
-            onClick={() => { finalized.current = false; window.location.href = "/38-0/match/pens?demo"; }}
-            className="mt-2 w-full rounded-2xl py-3 font-display tracking-wide active:scale-[0.98] transition-transform"
-            style={{ background: "rgba(255,184,0,0.12)", color: "#ffb800", border: "1px solid rgba(255,184,0,0.4)", fontSize: 15 }}
-          >
-            ⟳ ANOTHER SHOOTOUT (DEV)
-          </button>
-        )}
-      </div>
+      {(error || decided) && (
+        <div className="absolute inset-x-0 bottom-0 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] flex flex-col items-center gap-2" style={{ zIndex: 40 }}>
+          <div className="w-full" style={{ maxWidth: 380 }}>
+            {error && (
+              <button onClick={() => { setError(null); }} className="mb-2 w-full text-center font-body" style={{ fontSize: 12, color: "#ff5c7a" }}>
+                {error}
+              </button>
+            )}
+            {decided && (
+              <button
+                onClick={() => router.replace("/38-0/match/result")}
+                className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform"
+                style={{ background: "#00ff87", color: "#062013", fontSize: 18 }}
+              >
+                SEE RESULT →
+              </button>
+            )}
+            {decided && DEV && m.id.startsWith("demo-") && (
+              <button
+                onClick={() => { finalized.current = false; window.location.href = "/38-0/match/pens?demo"; }}
+                className="mt-2 w-full rounded-2xl py-3 font-display tracking-wide active:scale-[0.98] transition-transform"
+                style={{ background: "rgba(255,184,0,0.12)", color: "#ffb800", border: "1px solid rgba(255,184,0,0.4)", fontSize: 15 }}
+              >
+                ⟳ ANOTHER SHOOTOUT (DEV)
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
