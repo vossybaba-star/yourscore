@@ -50,6 +50,7 @@ export async function POST(req: NextRequest) {
       correctIndex: step.correctIndex,
       nation: step.nation,
       crest: step.crest,
+      era: step.era,
       players: step.players.map(toSlatePlayer),
     });
   }

@@ -59,7 +59,7 @@ function bandAfter(date: string, answers: number[], k: number): { band: { minOve
   return { band, correct, correctIndex: qs[k]?.correctIndex ?? -1 };
 }
 
-export type DraftStep = { correct: boolean; correctIndex: number; nation: string; crest?: string; players: PlayerSeason[] };
+export type DraftStep = { correct: boolean; correctIndex: number; nation: string; crest?: string; era?: string; players: PlayerSeason[] };
 
 /**
  * The slate for pick `k`: spin the still-open positions within the band that answers[0..k]
@@ -77,7 +77,7 @@ export function rankedDraftStep(date: string, answers: number[], priorPicks: Dra
   );
   const seed = pensSeed(`wc-draft:${date}:step:${k}`);
   const sp = spinWorld(openPositions, usedIds, usedIdentities, { count: 6, minOverall: band.minOverall, maxOverall: band.maxOverall }, seededRng(seed));
-  return { correct, correctIndex, nation: sp.nation, crest: sp.crest, players: sp.players };
+  return { correct, correctIndex, nation: sp.nation, crest: sp.crest, era: sp.era, players: sp.players };
 }
 
 export const toSlatePlayer = (p: PlayerSeason): SlatePlayer =>

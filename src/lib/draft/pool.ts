@@ -202,8 +202,9 @@ export function isWCEligible(player: PlayerSeason): boolean {
   return !!player.nationality && WC_NATION_NAMES.has(player.nationality);
 }
 
-/** A World Cup spin: ONE nation, dealt by luck, plus its players for the open slot. */
-export type WorldSpin = { nation: string; crest?: string; players: PlayerSeason[] };
+/** A World Cup spin: ONE nation FROM ONE ERA (a coherent team-and-year, e.g. Brazil 2016/17),
+ *  dealt by luck, plus that squad's players for the open slot. */
+export type WorldSpin = { nation: string; crest?: string; era?: string; players: PlayerSeason[] };
 
 /**
  * Open "World Cup" spin: land on ONE WC 2026 nation (luck of the spin) and offer THAT
@@ -244,25 +245,29 @@ export function spinWorld(
     banded = within();
   }
   const eligible = banded.length ? banded : fits;
-  // Group the fitting players by nation, then weighted-pick a nation (weight capped so a
-  // deep nation like England doesn't crowd out the rest).
-  const byNation = new Map<string, PlayerSeason[]>();
+  // Group by nation AND era (FIFA edition), then weighted-pick ONE team-and-year — so a
+  // slate is e.g. "Brazil 2016/17", never one nation's players mixed across years. Weight
+  // is capped so a deep squad doesn't crowd out the rest.
+  const SEP = "|||";
+  const byTeam = new Map<string, PlayerSeason[]>();
   for (const p of eligible) {
-    const arr = byNation.get(p.nationality!) ?? [];
+    const key = `${p.nationality}${SEP}${p.season}`;
+    const arr = byTeam.get(key) ?? [];
     arr.push(p);
-    byNation.set(p.nationality!, arr);
+    byTeam.set(key, arr);
   }
-  const nations = Array.from(byNation.keys());
-  const weights = nations.map((n) => Math.min(byNation.get(n)!.length, SPIN_NATION_WEIGHT_CAP));
+  const keys = Array.from(byTeam.keys());
+  const weights = keys.map((k) => Math.min(byTeam.get(k)!.length, SPIN_NATION_WEIGHT_CAP));
   let r = rng() * weights.reduce((s, w) => s + w, 0);
-  let nation = nations[0];
-  for (let i = 0; i < nations.length; i++) { r -= weights[i]; if (r <= 0) { nation = nations[i]; break; } }
-  const arr = byNation.get(nation)!.slice();
+  let key = keys[0];
+  for (let i = 0; i < keys.length; i++) { r -= weights[i]; if (r <= 0) { key = keys[i]; break; } }
+  const [nation, era] = key.split(SEP);
+  const arr = byTeam.get(key)!.slice();
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1));
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
-  return { nation, crest: WC_CREST.get(nation), players: arr.slice(0, count).sort((a, b) => b.overall - a.overall) };
+  return { nation, crest: WC_CREST.get(nation), era, players: arr.slice(0, count).sort((a, b) => b.overall - a.overall) };
 }
 
 /** The 19 real clubs the season simulator plays against — the most recent FIFA

@@ -25,6 +25,7 @@ import { RUN_STAGE_LABEL, isDuel, type RunStage, type RunMode } from "@/lib/draf
 import { wcNation } from "@/data/draft/wc2026";
 import type { Formation, PlacedPlayer, PlayerSeason } from "@/lib/draft/types";
 import { trackGameComplete } from "@/lib/analytics/trackGame";
+import { useUser } from "@/hooks/useUser";
 import { PenaltyShootout, type PensView } from "@/components/draft/PenaltyShootout";
 import type { PenKick } from "@/lib/draft/pens";
 
@@ -33,8 +34,10 @@ type Run = {
   id: string; mode: RunMode; nation: string; status: "active" | "eliminated" | "champion";
   stage: RunStage; stage_index: number; formation: Formation; squad: PlacedPlayer[];
   strength: number; plan: { group: Fixture[]; knockouts: Fixture[] };
-  group_points: number; upgrades_left: number;
+  group_points: number; upgrades_left: number; ranked?: boolean;
 };
+// The signed-in player's season standing (from the WC daily board) — shown on a ranked finish.
+type Standing = { rank: number; points: number; wins: number; draws: number; losses: number };
 type MatchRow = { stage: string; idx: number; you_goals: number; opp_goals: number; pens_you: number | null; pens_opp: number | null; won: boolean | null };
 type Opponent = { nation: string; crest?: string; label: string; formation: Formation; squad: PlacedPlayer[]; strength: number };
 type GameReveal = { label: string; opponent: { nation: string; crest?: string }; goals: { you: number; opp: number }; pens: { you: number; opp: number } | null; outcome: "win" | "loss" | "draw"; decidedByQuestion?: boolean };
@@ -88,6 +91,10 @@ export default function WorldCupRun() {
   const [decTimeLeft, setDecTimeLeft] = useState(DECIDER_SECONDS);
   const [decBusy, setDecBusy] = useState(false);
 
+  const { user } = useUser();
+  // On a finished RANKED run, the player's season standing for the positive scorecard.
+  const [standing, setStanding] = useState<Standing | null>(null);
+
   const openTie = useCallback((t: PendingTie) => {
     setTie(t); setTieMode("choose"); setDecPicked(null); setDecTimeLeft(DECIDER_SECONDS); setDecBusy(false);
   }, []);
@@ -96,13 +103,29 @@ export default function WorldCupRun() {
     const res = await fetch(`/api/draft/wc/${id}`);
     const data = await res.json();
     if (!res.ok) { setError(data.error ?? "Run not found"); setLoading(false); return; }
-    setRun(data.run); setMatches(data.matches); setOpponent(data.opponent); setLoading(false);
+    setRun({ ...data.run, ranked: data.ranked === true }); setMatches(data.matches); setOpponent(data.opponent); setLoading(false);
     // A tie in progress resumes exactly where it was left: mid-shootout, or at the choice.
     if (data.pensPending) { setPens(data.pensPending); setPensDone(null); }
     else if (data.pendingTie) openTie(data.pendingTie);
   }, [id, openTie]);
 
   useEffect(() => { load(); }, [load]);
+
+  // When a ranked run finishes, pull the player's season standing from the WC daily board
+  // for the (positive) scorecard. Fails soft — the banner just omits the rank line.
+  useEffect(() => {
+    if (!run || run.status === "active" || !run.ranked || !user) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/draft/wc/leaderboard");
+        const data = await res.json();
+        const me = (data.rows ?? []).find((r: { user_id: string }) => r.user_id === user.id);
+        if (!cancelled && me) setStanding({ rank: me.rank, points: me.points, wins: me.wins, draws: me.draws, losses: me.losses });
+      } catch { /* banner omits the rank line */ }
+    })();
+    return () => { cancelled = true; };
+  }, [run, user]);
 
   // 25s clock on the decider QUESTION (not the choice); running out locks a timeout (out).
   useEffect(() => {
@@ -326,7 +349,7 @@ export default function WorldCupRun() {
   const res = (stage: string, idx = 0) => matches.find((m) => m.stage === stage && m.idx === idx);
   const duel = isDuel(run.stage);
   const canUpgrade = !terminal && run.upgrades_left > 0;
-  const playLabel = run.stage === "group" ? "PLAY GROUP STAGE"
+  const playLabel = run.stage === "group" ? "PLAY YOUR DRAFT"
     : run.stage === "ko" ? "PLAY R32 & R16"
     : run.stage === "playoff" ? "PLAY THE QUALIFICATION PLAY-OFF"
     : `PLAY THE ${RUN_STAGE_LABEL[run.stage].toUpperCase()}`;
@@ -357,7 +380,36 @@ export default function WorldCupRun() {
         </div>
 
         {/* Terminal banners */}
-        {run.status === "champion" && (
+        {/* RANKED: always a positive finish — your result + where you stand + come back tomorrow. */}
+        {run.ranked && terminal && (() => {
+          const champ = run.status === "champion";
+          return (
+            <div className="mt-4 rounded-2xl p-5 text-center" style={{ background: champ ? "linear-gradient(135deg,#1a1407,#2a2007)" : "linear-gradient(135deg,#07140d,#0c1a12)", border: `1px solid ${champ ? "rgba(255,184,0,0.55)" : "rgba(174,234,0,0.45)"}` }}>
+              <div style={{ fontSize: 44 }}>{champ ? "🏆" : "⚽"}</div>
+              <div className="font-display tracking-wide" style={{ fontSize: 26, color: champ ? "#ffb800" : "#aeea00" }}>{champ ? "WORLD CHAMPIONS!" : "GREAT RUN!"}</div>
+              <div className="font-body mt-1" style={{ fontSize: 14, color: "#cdd6cf" }}>
+                {champ ? `You went all the way with ${run.nation}.` : `You reached the ${RUN_STAGE_LABEL[run.stage]} with ${run.nation}${run.stage === "group" ? ` (${run.group_points} pts)` : ""}.`}
+              </div>
+              {standing && (
+                <div className="mt-3 rounded-xl px-4 py-3" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                  <div className="font-body" style={{ fontSize: 11, color: "#8a948f", letterSpacing: 1 }}>YOUR WORLD CUP TABLE</div>
+                  <div className="font-display tracking-wide mt-0.5" style={{ fontSize: 22, color: "#fff" }}>#{standing.rank} · {standing.points} pts</div>
+                  <div className="font-body" style={{ fontSize: 12, color: "#8a948f" }}>{standing.wins}W · {standing.draws}D · {standing.losses}L this season</div>
+                </div>
+              )}
+              <p className="font-body mt-3" style={{ fontSize: 13, color: "#9fb0a4", lineHeight: 1.45 }}>
+                Come back tomorrow for a fresh draft and more points — or keep playing now in Practice.
+              </p>
+              <div className="mt-3"><Scorecard url={scorecardUrl} /></div>
+              <div className="flex items-center justify-center gap-2 mt-3 flex-wrap">
+                <button onClick={shareRun} className="rounded-xl px-4 py-2 font-display tracking-wide" style={{ background: champ ? "#ffb800" : "rgba(255,255,255,0.1)", color: champ ? "#0a0a0f" : "#fff", fontSize: 15 }}>SHARE{champ ? " 🏆" : ""}</button>
+                <Link href="/38-0/wc/board" className="rounded-xl px-4 py-2 font-display tracking-wide" style={{ background: "rgba(174,234,0,0.14)", color: "#aeea00", border: "1px solid rgba(174,234,0,0.4)", fontSize: 15 }}>VIEW TABLE</Link>
+                <Link href="/38-0/wc?practice=1" className="rounded-xl px-4 py-2 font-display tracking-wide" style={{ background: "#aeea00", color: "#062013", fontSize: 15 }}>PLAY UNRANKED</Link>
+              </div>
+            </div>
+          );
+        })()}
+        {!run.ranked && run.status === "champion" && (
           <div className="mt-4 rounded-2xl p-5 text-center" style={{ background: "linear-gradient(135deg,#1a1407,#2a2007)", border: "1px solid rgba(255,184,0,0.5)" }}>
             <div style={{ fontSize: 46 }}>🏆</div>
             <div className="font-display tracking-wide" style={{ fontSize: 28, color: "#ffb800" }}>WORLD CUP WINNERS</div>
@@ -369,7 +421,7 @@ export default function WorldCupRun() {
             </div>
           </div>
         )}
-        {run.status === "eliminated" && (
+        {!run.ranked && run.status === "eliminated" && (
           <div className="mt-4 rounded-2xl p-4 text-center" style={{ background: "#1a0f12", border: "1px solid rgba(255,71,87,0.4)" }}>
             <div className="font-display tracking-wide" style={{ fontSize: 22, color: "#ff4757" }}>KNOCKED OUT</div>
             <div className="font-body mt-1" style={{ fontSize: 13, color: "#c98a92" }}>
@@ -436,12 +488,17 @@ export default function WorldCupRun() {
             {canUpgrade && <span className="font-body" style={{ fontSize: 12, color: "#aeea00" }}>⚽ Tap a player → answer right to upgrade · {run.upgrades_left} left</span>}
           </div>
           <Pitch formation={run.formation} squad={run.squad} compact onSlotClick={canUpgrade ? scoutSlot : undefined} highlightSlot={pickSlot} />
-          <button onClick={playH2H} disabled={h2hBusy}
-            className="mt-3 w-full rounded-2xl py-3 font-display tracking-wide active:scale-[0.98] transition-transform"
-            style={{ background: "#ffb800", color: "#1a1300", fontSize: 16, opacity: h2hBusy ? 0.7 : 1 }}>
-            {h2hBusy ? "Readying squad…" : "⚔️ Play this XI head-to-head"}
-          </button>
-          <p className="mt-1.5 text-center font-body" style={{ fontSize: 11, color: "#7a7a92" }}>Take your World Cup squad live vs another manager — own board.</p>
+          {/* Ranked is a committed run — no detour into the H2H lane. Practice can flip across. */}
+          {!run.ranked && (
+            <>
+              <button onClick={playH2H} disabled={h2hBusy}
+                className="mt-3 w-full rounded-2xl py-3 font-display tracking-wide active:scale-[0.98] transition-transform"
+                style={{ background: "#ffb800", color: "#1a1300", fontSize: 16, opacity: h2hBusy ? 0.7 : 1 }}>
+                {h2hBusy ? "Readying squad…" : "⚔️ Play this XI head-to-head"}
+              </button>
+              <p className="mt-1.5 text-center font-body" style={{ fontSize: 11, color: "#7a7a92" }}>Take your World Cup squad live vs another manager — own board.</p>
+            </>
+          )}
         </div>
 
         {/* Upgrade slate */}
@@ -485,7 +542,7 @@ export default function WorldCupRun() {
             <button onClick={play} disabled={playing}
               className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-60"
               style={{ background: "#aeea00", color: "#062013", fontSize: 22 }}>
-              {playing ? "SIMULATING…" : `▶ ${playLabel}`}
+              {playing ? "PLAYING…" : `▶ ${playLabel}`}
             </button>
           </div>
         </div>

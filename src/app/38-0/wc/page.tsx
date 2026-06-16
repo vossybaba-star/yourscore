@@ -51,7 +51,7 @@ export default function WorldCupEntry() {
   const [nation, setNation] = useState<PickableNation | null>(null);
   const [team, setTeam] = useState<LocalTeam | null>(null);
   const [slate, setSlate] = useState<PlayerSeason[] | null>(null);
-  const [spunNation, setSpunNation] = useState<{ nation: string; crest?: string } | null>(null);
+  const [spunNation, setSpunNation] = useState<{ nation: string; crest?: string; era?: string } | null>(null);
   const [spinning, setSpinning] = useState(false);
   const [reel, setReel] = useState<string | null>(null);
   const [selected, setSelected] = useState<PlayerSeason | null>(null);
@@ -189,7 +189,7 @@ export default function WorldCupEntry() {
       setQuiz((q) => (q ? { ...q, correctIndex: data.correctIndex } : q)); // reveal now (post-answer)
       setFeedback({ correct: data.correct, streak: newStreak });
       const players = (data.players ?? []) as PlayerSeason[];
-      const spun = data.nation ? { nation: data.nation as string, crest: data.crest as string | undefined } : null;
+      const spun = data.nation ? { nation: data.nation as string, crest: data.crest as string | undefined, era: data.era as string | undefined } : null;
       setTimeout(() => { setQuiz(null); setAnswered(null); revealSlate(players, spun); }, 900);
     } catch { setError("Network error — try again."); setAnswered(null); }
   }
@@ -200,11 +200,11 @@ export default function WorldCupEntry() {
     // The quiz band shapes quality; within it the spin is still luck. World mode lands on
     // ONE nation; nation mode is locked to the chosen nation.
     let players: PlayerSeason[];
-    let spun: { nation: string; crest?: string } | null = null;
+    let spun: { nation: string; crest?: string; era?: string } | null = null;
     if (world) {
       const sp = spinWorld(open, usedPlayerIds(team), usedPlayerNames(team), { count: 6, minOverall: band.minOverall, maxOverall: band.maxOverall });
       players = sp.players;
-      spun = { nation: sp.nation, crest: sp.crest };
+      spun = { nation: sp.nation, crest: sp.crest, era: sp.era };
     } else {
       players = spinForNation(nation!.nation, open, usedPlayerIds(team), usedPlayerNames(team), { count: 6, minOverall: band.minOverall, maxOverall: band.maxOverall });
     }
@@ -212,7 +212,7 @@ export default function WorldCupEntry() {
   }
 
   // The slot-machine reveal over a slate (shared by the client spin and the ranked server slate).
-  function revealSlate(players: PlayerSeason[], spun: { nation: string; crest?: string } | null) {
+  function revealSlate(players: PlayerSeason[], spun: { nation: string; crest?: string; era?: string } | null) {
     setSpinning(true); setSlate(null); setSelected(null); setSpunNation(null);
     let ticks = 0;
     reelTimer.current = setInterval(() => {
@@ -569,6 +569,7 @@ export default function WorldCupEntry() {
                     <img src={spunNation.crest} alt="" width={26} height={26} style={{ width: 26, height: 26, objectFit: "contain", flexShrink: 0 }} />
                   )}
                   <span className="font-display tracking-wide" style={{ fontSize: 17, color: "#ffb800" }}>{spunNation.nation}</span>
+                  {spunNation.era && <span className="font-display tracking-wide" style={{ fontSize: 13, color: "#cdb98a" }}>{spunNation.era}</span>}
                   <span className="font-body" style={{ fontSize: 11, color: "#8a948f" }}>· pick a player</span>
                 </div>
               ) : (
@@ -615,7 +616,7 @@ export default function WorldCupEntry() {
               <button onClick={start} disabled={starting || h2hBusy}
                 className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-60"
                 style={{ background: ranked ? "#ffb800" : "#aeea00", color: ranked ? "#1a1300" : "#062013", fontSize: 24 }}>
-                {starting ? "STARTING…" : ranked ? "ENTER TODAY'S RUN →" : "ENTER THE WORLD CUP →"}
+                {starting ? "STARTING…" : ranked ? "PLAY YOUR DRAFT →" : "ENTER THE WORLD CUP →"}
               </button>
               {/* Practice runs can flip the finished XI into the H2H lane; the ranked daily
                   is a committed one-go, so it doesn't offer the detour. */}

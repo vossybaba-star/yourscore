@@ -90,6 +90,18 @@ export default function PenaltyScene2D({ aim, play, onPlayed, reduced, defending
     return () => { timers.current.forEach(clearTimeout); timers.current = []; };
   }, [play, reduced, onPlayed]);
 
+  // Warm the whole sprite set on mount so the backdrop + every keeper/taker frame are
+  // decoded before the first kick — otherwise the small sprites pop in over an empty stage
+  // while the large bg.png is still downloading.
+  useEffect(() => {
+    const urls = [
+      `${A}/bg.png`,
+      ...Object.values(KEEPER).map((k) => `${A}/${k.src}.png`),
+      ...Object.values(TAKER).map((t) => `${A}/${t.src}.png`),
+    ];
+    urls.forEach((u) => { const im = new window.Image(); im.src = u; });
+  }, []);
+
   // Ball position/scale.
   const bt = play && ballFly ? ballTarget(play.shot, play.outcome, play.dive) : { ...SPOT, scale: 1 };
 
@@ -103,8 +115,12 @@ export default function PenaltyScene2D({ aim, play, onPlayed, reduced, defending
   const reticle = aim !== null ? zonePos(aim) : null;
 
   return (
-    <div className="absolute inset-0 overflow-hidden" style={{ background: "#0b1a3a" }}>
-      <img src={`${A}/bg.png`} alt="" aria-hidden style={fill} />
+    <div className="absolute inset-0 overflow-hidden" style={{
+      // Stadium-shaped gradient (sky/stands → grass at the goal line ~48%) so the stage
+      // reads as a pitch from the first frame, even before bg.png finishes loading.
+      background: "linear-gradient(#0a1a3c 0%, #15294d 34%, #1c5e36 49%, #2a8f4a 70%, #1f7a3e 100%)",
+    }}>
+      <img src={`${A}/bg.png`} alt="" aria-hidden loading="eager" decoding="async" style={fill} />
 
       {/* keeper — centred at kc, frame swaps for ready/dive/catch */}
       <img

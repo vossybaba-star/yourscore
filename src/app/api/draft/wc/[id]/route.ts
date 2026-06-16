@@ -29,5 +29,5 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   const state = (row as { pens_state?: WcStageState | null }).pens_state ?? null;
   const pensPending = state?.pens ? { ...wcPensMeta(run, state), view: wcPensView(run, state) } : null;
   const pendingTie = state && !state.pens ? tieFromState(run, state) : null;
-  return NextResponse.json({ run, matches: matches ?? [], opponent: revealOpponent(run), pensPending, pendingTie });
+  return NextResponse.json({ run, matches: matches ?? [], opponent: revealOpponent(run), pensPending, pendingTie, ranked: row.ranked === true });
 }
