@@ -36,9 +36,17 @@ export default function WorldCupBoard() {
 
   return (
     <div className="min-h-[100dvh] pb-32" style={{ background: "#0a0a0f", color: "#e8e8f0" }}>
-      <div className="max-w-lg mx-auto px-5 pt-10">
-        <Link href="/38-0/wc" className="text-sm" style={{ color: "#8888aa" }}>← World Cup</Link>
-        <h1 className="font-display tracking-wide mt-3" style={{ fontSize: 32, color: ACCENT }}>WORLD CUP <span style={{ color: "#fff" }}>SEASON</span></h1>
+      {/* Sticky back bar — a real pill button that stays put however far down you scroll. */}
+      <div className="sticky top-0 z-30" style={{ background: "rgba(10,10,15,0.82)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", borderBottom: "1px solid rgba(255,255,255,0.06)", paddingTop: "calc(env(safe-area-inset-top,0px) + 10px)", paddingBottom: 10 }}>
+        <div className="max-w-lg mx-auto px-5">
+          <Link href="/38-0/wc" className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 font-display tracking-wide active:scale-95 transition-transform"
+            style={{ background: "rgba(255,184,0,0.14)", border: "1px solid rgba(255,184,0,0.45)", color: ACCENT, fontSize: 14 }}>
+            ← World Cup
+          </Link>
+        </div>
+      </div>
+      <div className="max-w-lg mx-auto px-5 pt-5">
+        <h1 className="font-display tracking-wide" style={{ fontSize: 32, color: ACCENT }}>WORLD CUP <span style={{ color: "#fff" }}>SEASON</span></h1>
         <p className="mt-1 text-sm" style={{ color: "#9a9ab0" }}>
           One ranked run a day through the World Cup. Closest to a perfect 8-0-0 across the tournament wins.
         </p>
