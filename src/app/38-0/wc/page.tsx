@@ -21,7 +21,7 @@ import { Pitch } from "@/components/draft/Pitch";
 import { useUser } from "@/hooks/useUser";
 import { pickableNations, spinForNation, spinWorld, type PickableNation } from "@/lib/draft/pool";
 import { WORLD_TEAM_NAME, type RunMode } from "@/lib/draft/wc";
-import { drawQuestion, dailyQuestions, type ServedQuestion } from "@/lib/draft/wc-quiz";
+import { drawQuestion, type ServedQuestion } from "@/lib/draft/wc-quiz";
 import { gradeAnswer, type DraftBand } from "@/lib/draft/draft-quiz";
 import {
   emptyTeam, openSlots, isComplete, usedPlayerIds, usedPlayerNames, placePlayer, hydrateSavedTeam, type LocalTeam,
@@ -35,7 +35,6 @@ import { trackGamePlay } from "@/lib/analytics/trackGame";
 const FORMATION = "4-3-3" as Formation; // sensible default; nation pools are deepest here
 const SIGN_IN_PATH = "/38-0/wc";
 const QUESTION_SECONDS = 25; // per-question clock on every draft (timeout = wrong answer)
-const today = () => new Date().toISOString().slice(0, 10);
 
 // Persist an in-progress pick across a sign-in round-trip, so a signed-out player who
 // drafts an XI lands back on the exact same team after authenticating.
@@ -72,13 +71,19 @@ export default function WorldCupEntry() {
   const [feedback, setFeedback] = useState<{ correct: boolean; streak: number } | null>(null);
   const askedIds = useRef<Set<string>>(new Set());
 
-  // Ranked = the daily competition (one go/day, today's seeded questions, season board);
-  // unranked = unlimited practice (random back-catalogue questions). Every draft is timed.
+  // Ranked = the daily competition (one go/day, season board). It is SERVER-AUTHORITATIVE:
+  // the server serves each question (no answer), grades it, and spins each pick's slate from
+  // a secret seed; the client only displays + picks (see /api/draft/wc/draft). Practice is
+  // unranked + fully client-side. Every draft is timed.
   const [ranked, setRanked] = useState(false);
   // Quiz-gated (Mastermind: Today's Run + Practice) vs open (World Cup Run: no quiz).
   const [quizGated, setQuizGated] = useState(true);
-  const dailySet = useRef<ServedQuestion[]>([]);
   const [timeLeft, setTimeLeft] = useState(QUESTION_SECONDS);
+  // Ranked draft state: the server's answer-free questions, and the answers/picks we replay
+  // to the server on submit so it can verify the XI was legitimately earned.
+  const serverQs = useRef<{ id: string; prompt: string; options: string[]; category: string }[]>([]);
+  const draftAnswers = useRef<number[]>([]);
+  const draftPicks = useRef<{ slot: string; player_season_id: string }[]>([]);
 
   const world = mode === "world";
 
@@ -87,15 +92,34 @@ export default function WorldCupEntry() {
     askedIds.current = new Set();
   }
 
-  // Begin a World XI draft. Daily = the ranked competition (one go/day, today's seeded
-  // question set); Practice = unlimited, random back-catalogue questions. (National Team
-  // mode is hidden for now — every run is World XI.)
+  // Begin a World XI draft. Daily = the ranked competition (server-authoritative); Practice
+  // = unlimited, client-side, random back-catalogue questions. (National Team mode is hidden
+  // for now — every run is World XI.)
   function beginDraft(rankedRun: boolean, gated: boolean = true) {
     setRanked(rankedRun);
     setQuizGated(gated);
-    dailySet.current = rankedRun ? dailyQuestions(today(), 11) : [];
     setMode("world"); setNation(null); setSlate(null); setSelected(null); setReel(null); resetQuiz();
     setTeam(emptyTeam(FORMATION));
+    draftAnswers.current = []; draftPicks.current = []; serverQs.current = [];
+    if (rankedRun) void loadRankedQuestions();
+  }
+
+  // Ranked: pull today's questions from the server WITHOUT answers (the server grades them
+  // and spins each slate). The run isn't created until submit, so this is safe pre-sign-in.
+  async function loadRankedQuestions() {
+    try {
+      const res = await fetch("/api/draft/wc/draft", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "begin" }) });
+      const data = await res.json();
+      if (res.ok && Array.isArray(data.questions)) serverQs.current = data.questions;
+      else setError(data.error ?? "Couldn't load today's questions — refresh and retry.");
+    } catch { setError("Couldn't load today's questions — refresh and retry."); }
+  }
+
+  // Today's Run is a logged-in competition (it feeds the board + Rank), and the server draft
+  // verifies against the signed-in run. Require sign-in up front, returning here to start.
+  function startRanked() {
+    if (!user) { router.push(`/auth/sign-in?next=${encodeURIComponent("/38-0/wc?daily=1")}`); return; }
+    beginDraft(true);
   }
 
   // World Cup Run — the open, no-quiz draft. Spin any-nation players at full quality and
@@ -105,30 +129,36 @@ export default function WorldCupEntry() {
   // National Team mode is hidden in the UI for now (World XI only), but the flow is kept
   // intact behind this helper so it can be re-enabled without a rebuild.
   function chooseNation(n: PickableNation) {
-    setNation(n); setRanked(false); dailySet.current = [];
+    setNation(n); setRanked(false);
     setTeam(emptyTeam(FORMATION));
     setSlate(null); setSelected(null); setReel(null); resetQuiz();
   }
 
-  // Tap SCOUT → answer a quiz question first (timed). Ranked draws today's seeded set in
-  // order; practice draws at random. Empty pool → a neutral spin so it never dead-ends.
+  // Tap SCOUT → answer a quiz question first (timed). Ranked pulls the next server question
+  // (no answer); practice draws at random. Empty pool → a neutral spin so it never dead-ends.
   function startSpin() {
     if (!team || spinning || quiz) return;
     setFeedback(null);
     // World Cup Run (open draft) has no quiz gate — spin straight away at full quality.
     if (!quizGated) { runSpin({ minOverall: 0, maxOverall: 99 }); return; }
-    const q = ranked
-      ? (dailySet.current[askedCount] ?? drawQuestion(Math.random, askedIds.current))
-      : drawQuestion(Math.random, askedIds.current);
+    if (ranked) {
+      const sq = serverQs.current[draftAnswers.current.length];
+      if (!sq) { setError("Couldn't load today's questions — refresh and retry."); return; }
+      setQuiz({ id: sq.id, prompt: sq.prompt, options: sq.options, correctIndex: -1, category: sq.category });
+      setAnswered(null); setTimeLeft(QUESTION_SECONDS);
+      return;
+    }
+    const q = drawQuestion(Math.random, askedIds.current);
     if (!q) { runSpin({ minOverall: 0, maxOverall: 99 }); return; }
     setQuiz(q); setAnswered(null); setTimeLeft(QUESTION_SECONDS);
   }
 
-  // Lock the answer, grade it (updating the streak), reveal correct/wrong briefly, then
-  // spin from the quality band that grade earned.
+  // Lock the answer, grade it, reveal correct/wrong briefly, then spin the earned slate.
   function answerQuiz(idx: number) {
     if (!quiz || answered !== null) return;
     setAnswered(idx);
+    if (ranked) { void answerRanked(idx); return; }
+    // Practice: graded + spun fully client-side (no integrity needs — not ranked).
     const correct = idx === quiz.correctIndex;
     const { streak: newStreak, band } = gradeAnswer(streak, correct);
     askedIds.current.add(quiz.id);
@@ -139,9 +169,33 @@ export default function WorldCupEntry() {
     setTimeout(() => { setQuiz(null); setAnswered(null); runSpin(band); }, 900);
   }
 
+  // Ranked: the server grades the answer and returns the earned slate (it spins from a secret
+  // seed). We reveal the correct option only AFTER answering, and never learn the slate's seed.
+  async function answerRanked(idx: number) {
+    const i = draftAnswers.current.length;
+    const answers = [...draftAnswers.current, idx];
+    try {
+      const res = await fetch("/api/draft/wc/draft", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "slate", i, answers, picks: draftPicks.current }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error ?? "Couldn't load your pick — try again."); setAnswered(null); return; }
+      draftAnswers.current = answers;
+      const newStreak = data.correct ? streak + 1 : 0;
+      setStreak(newStreak);
+      setAskedCount((n) => n + 1);
+      if (data.correct) setCorrectCount((n) => n + 1);
+      setQuiz((q) => (q ? { ...q, correctIndex: data.correctIndex } : q)); // reveal now (post-answer)
+      setFeedback({ correct: data.correct, streak: newStreak });
+      const players = (data.players ?? []) as PlayerSeason[];
+      const spun = data.nation ? { nation: data.nation as string, crest: data.crest as string | undefined } : null;
+      setTimeout(() => { setQuiz(null); setAnswered(null); revealSlate(players, spun); }, 900);
+    } catch { setError("Network error — try again."); setAnswered(null); }
+  }
+
   function runSpin(band: DraftBand) {
     if (!team || (mode === "nation" && !nation)) return;
-    setSpinning(true); setSlate(null); setSelected(null); setSpunNation(null);
     const open = openSlots(team).map((s) => s.pos);
     // The quiz band shapes quality; within it the spin is still luck. World mode lands on
     // ONE nation; nation mode is locked to the chosen nation.
@@ -154,6 +208,12 @@ export default function WorldCupEntry() {
     } else {
       players = spinForNation(nation!.nation, open, usedPlayerIds(team), usedPlayerNames(team), { count: 6, minOverall: band.minOverall, maxOverall: band.maxOverall });
     }
+    revealSlate(players, spun);
+  }
+
+  // The slot-machine reveal over a slate (shared by the client spin and the ranked server slate).
+  function revealSlate(players: PlayerSeason[], spun: { nation: string; crest?: string } | null) {
+    setSpinning(true); setSlate(null); setSelected(null); setSpunNation(null);
     let ticks = 0;
     reelTimer.current = setInterval(() => {
       setReel(players.length ? players[Math.floor(Math.random() * players.length)].name : "—");
@@ -169,6 +229,8 @@ export default function WorldCupEntry() {
 
   function placeAt(slot: Slot) {
     if (!team || !selected) return;
+    // Ranked: record the pick in placement order so the server can replay + verify on submit.
+    if (ranked) draftPicks.current = [...draftPicks.current, { slot: slot.id, player_season_id: selected.id }];
     const next = placePlayer(team, selected, slot);
     setTeam(next); setSlate(null); setSelected(null);
   }
@@ -193,7 +255,11 @@ export default function WorldCupEntry() {
       const res = await fetch("/api/draft/wc", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "start", mode: runMode, nation: nationName, formation, squad, ranked }),
+        // Ranked submits the answers + picks for the server to replay & verify (it rebuilds
+        // the XI itself). Practice/open submit the client-built squad.
+        body: JSON.stringify(ranked
+          ? { action: "start", ranked: true, answers: draftAnswers.current, picks: draftPicks.current }
+          : { action: "start", mode: runMode, nation: nationName, formation, squad, ranked: false }),
       });
       if (res.status === 401) {
         saveDraft({ mode: runMode, nation: runMode === "world" ? null : nationName, formation, squad, pendingEnter: true });
@@ -271,7 +337,7 @@ export default function WorldCupEntry() {
     // (?mode=world / ?practice=1) → a practice run. (Nation deep-links are retired while
     // National Team mode is hidden.)
     const params = new URLSearchParams(window.location.search);
-    if (!mode && params.get("daily") === "1") { beginDraft(true); return; }
+    if (!mode && params.get("daily") === "1") { startRanked(); return; }
     if (!mode && params.get("run") === "1") { beginRun(); return; }
     if (!mode && (params.get("mode") === "world" || params.get("practice") === "1")) { beginDraft(false); return; }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -294,7 +360,7 @@ export default function WorldCupEntry() {
             <span className="font-body" style={{ fontSize: 11, color: "#8a948f" }}>answer to build a stronger XI</span>
           </div>
           <div className="flex flex-col gap-3 mb-5">
-            <button onClick={() => beginDraft(true)} className="text-left rounded-2xl p-4 active:scale-[0.99] transition-transform"
+            <button onClick={() => startRanked()} className="text-left rounded-2xl p-4 active:scale-[0.99] transition-transform"
               style={{ background: "#0e1611", border: "1px solid rgba(255,184,0,0.45)" }}>
               <div className="flex items-center gap-2.5 mb-1">
                 <span style={{ fontSize: 22 }}>🏆</span>
