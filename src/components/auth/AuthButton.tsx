@@ -95,9 +95,11 @@ function EmailSignIn({ nextPath }: { nextPath?: string }) {
     setLoading(true); setError("");
     try {
       const sb = createClient();
-      const emailRedirectTo = nextPath
-        ? `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`
-        : REDIRECT();
+      // In the native app the link MUST come back via the custom scheme so iOS opens the
+      // app (and the PKCE verifier — stored in the app — can complete the exchange).
+      // Sending it to the web origin opens Safari instead and fails the exchange.
+      const base = isNative() ? NATIVE_AUTH_CALLBACK : `${window.location.origin}/auth/callback`;
+      const emailRedirectTo = nextPath ? `${base}?next=${encodeURIComponent(nextPath)}` : base;
       const { error: err } = await sb.auth.signInWithOtp({ email: email.trim().toLowerCase(), options: { emailRedirectTo } });
       if (err) throw err;
       setSent(true);
