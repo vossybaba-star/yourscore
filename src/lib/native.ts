@@ -6,6 +6,7 @@ export const platform = () => Capacitor.getPlatform();
 
 export const NATIVE_AUTH_SCHEME = 'yourscore';
 export const NATIVE_AUTH_CALLBACK = `${NATIVE_AUTH_SCHEME}://auth/callback`;
+export const NATIVE_RESET_CALLBACK = `${NATIVE_AUTH_SCHEME}://auth/reset-password`;
 export const WEB_AUTH_CALLBACK = 'https://yourscore.app/auth/callback';
 
 export function authCallbackUrl(): string {

@@ -1,0 +1,15 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["3VA9BF73U6.app.yourscore.app"],
+        "components": [
+          { "/": "/auth/callback", "comment": "magic link / OAuth sign-in" },
+          { "/": "/auth/callback*", "comment": "sign-in with query string" },
+          { "/": "/auth/reset-password", "comment": "password reset" },
+          { "/": "/auth/reset-password*", "comment": "password reset with query string" }
+        ]
+      }
+    ]
+  }
+}

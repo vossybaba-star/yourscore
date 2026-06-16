@@ -23,31 +23,29 @@ export function NativeBootstrap() {
       const { App } = await import("@capacitor/app");
       const supabase = createClient();
 
-      // Catch the OAuth callback URL that may have launched the app while it
-      // wasn't running. App.getLaunchUrl returns the original cold-launch URL
-      // exactly once.
-      const launch = await App.getLaunchUrl();
-      if (launch?.url?.startsWith("yourscore://auth/callback")) {
-        const result = await exchangeCodeFromDeepLink(supabase, launch.url);
+      // Handle an auth deep link (custom scheme): OAuth + magic-link land on
+      // yourscore://auth/callback (→ next); password reset on
+      // yourscore://auth/reset-password (→ the in-app set-password screen).
+      // Either way we exchange the PKCE code here (the verifier lives in this
+      // webview), establishing the session, then route.
+      const handleAuthDeepLink = async (url: string): Promise<void> => {
+        const isCallback = url.startsWith("yourscore://auth/callback");
+        const isReset = url.startsWith("yourscore://auth/reset-password");
+        if (!isCallback && !isReset) return;
+        const result = await exchangeCodeFromDeepLink(supabase, url);
         await closeOAuthBrowser();
-        if (result.ok) {
-          window.location.href = safeNext(new URL(launch.url).searchParams.get("next"));
-        } else {
-          console.warn("[native-auth] cold launch", result.error);
-        }
-      }
+        if (!result.ok) { console.warn("[native-auth]", result.error); return; }
+        window.location.href = isReset ? "/auth/reset-password" : safeNext(new URL(url).searchParams.get("next"));
+      };
 
-      // Warm-state callbacks: app already running, OAuth redirects back to it.
+      // Cold launch: the deep link may have launched the app while it wasn't
+      // running. App.getLaunchUrl returns the original cold-launch URL once.
+      const launch = await App.getLaunchUrl();
+      if (launch?.url) await handleAuthDeepLink(launch.url);
+
+      // Warm state: app already running when the deep link returns.
       const handler = await App.addListener("appUrlOpen", async (event) => {
-        if (!event?.url) return;
-        if (!event.url.startsWith("yourscore://auth/callback")) return;
-        const result = await exchangeCodeFromDeepLink(supabase, event.url);
-        await closeOAuthBrowser();
-        if (!result.ok) {
-          console.warn("[native-auth]", result.error);
-          return;
-        }
-        window.location.href = safeNext(new URL(event.url).searchParams.get("next"));
+        if (event?.url) await handleAuthDeepLink(event.url);
       });
 
       // Push registration intentionally NOT auto-triggered on sign-in. Apple

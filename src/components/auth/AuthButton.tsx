@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { Spinner } from "@/components/ui/Spinner";
 import { useState } from "react";
-import { isNative, NATIVE_AUTH_CALLBACK, openOAuthInBrowser } from "@/lib/native";
+import { isNative, NATIVE_AUTH_CALLBACK, NATIVE_RESET_CALLBACK, openOAuthInBrowser } from "@/lib/native";
 import { checkEmail, suggestEmailCorrection } from "@/lib/email";
 
 type Provider = "google" | "apple" | "facebook";
@@ -142,7 +142,9 @@ function EmailSignIn({ nextPath }: { nextPath?: string }) {
     try {
       const sb = createClient();
       const { error: err } = await sb.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
+        // Native: route the recovery link back through the app (custom scheme) so iOS
+        // opens YourScore and the PKCE exchange runs where the verifier lives.
+        redirectTo: isNative() ? NATIVE_RESET_CALLBACK : `${window.location.origin}/auth/reset-password`,
       });
       if (err) throw err;
       setResetSent(true);
