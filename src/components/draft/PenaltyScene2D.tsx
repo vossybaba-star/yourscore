@@ -19,23 +19,6 @@ type Play = { shot: PenZone; dive: PenZone; outcome: KickOutcome; side: "me" | "
 const ME = "#b4ff2e";
 const A = "/sprites/pens";
 
-// Classic soccer-ball face: white with a central black pentagon, seams radiating to the
-// rim, and partial black pentagons at the edges — reads as a football even at ~17px.
-const BALL_SVG = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-<circle cx='50' cy='50' r='47' fill='#fff' stroke='#1d1d1d' stroke-width='3'/>
-<polygon points='50,27 65,38 59,56 41,56 35,38' fill='#161616'/>
-<g fill='#161616'>
-<path d='M50,8 a42,42 0 0 1 17,8 L65,38 50,27 Z'/>
-<path d='M84,33 a42,42 0 0 1 5,20 L70,58 59,56 65,38 Z'/>
-<path d='M70,86 a42,42 0 0 1 -22,5 L45,72 59,56 Z'/>
-<path d='M16,67 a42,42 0 0 1 -5,-22 L31,40 35,38 41,56 Z'/>
-<path d='M33,16 a42,42 0 0 1 17,-8 L50,27 35,38 Z'/>
-</g>
-<g stroke='#1d1d1d' stroke-width='3' fill='none' stroke-linecap='round'>
-<path d='M50,27 L50,9'/><path d='M65,38 L84,32'/><path d='M59,56 L70,73'/><path d='M41,56 L30,73'/><path d='M35,38 L16,32'/>
-</g>
-</svg>`;
-
 // Goal geometry measured against the 9:16 bg.png (posts ~23–77%, crossbar ~39%,
 // line ~48%). The aim/dive 9-grid maps inside the goal mouth; tweak if the art reframes.
 const GOAL = { left: 28, right: 72, top: 36, bottom: 48 };
@@ -158,14 +141,12 @@ export default function PenaltyScene2D({ aim, play, onPlayed, reduced, defending
         borderRadius: "50%", filter: "blur(0.4px)", zIndex: 1,
       }} />
 
-      {/* ball — white with black pentagons/seams */}
+      {/* ball */}
       <div className="absolute rounded-full" style={{
         left: `${bt.x}%`, top: `${bt.y}%`, width: "5%", aspectRatio: "1/1",
         transform: `translate(-50%,-50%) scale(${bt.scale})`,
-        backgroundColor: "#fff",
-        backgroundImage: `url("data:image/svg+xml,${encodeURIComponent(BALL_SVG)}")`,
-        backgroundSize: "100% 100%",
-        boxShadow: "inset -2px -3px 5px rgba(0,0,0,0.28), 0 3px 7px rgba(0,0,0,0.45)", zIndex: 5,
+        background: "radial-gradient(circle at 35% 30%, #fff 0%, #e9edf2 55%, #aeb6bf 100%)",
+        boxShadow: "0 3px 7px rgba(0,0,0,0.4)", zIndex: 5,
         transition: reduced || !ballFly ? "none" : "left 620ms cubic-bezier(.3,.5,.5,1), top 620ms cubic-bezier(.3,.5,.5,1), transform 620ms ease-out",
       }} />
 

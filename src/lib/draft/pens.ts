@@ -62,12 +62,17 @@ export const PENS_CONFIG = {
   saveAdjacent: 0.34,
   /** P(save) when the keeper is one cell off diagonally — a desperate fingertip. */
   saveDiagonal: 0.12,
-  /** Power band effects. */
+  /** Power band effects — the meter actually matters now.
+   *  OVER (too hard) skies/blazes it wide; UNDER (too soft) is slow and easily kept
+   *  out — sometimes it doesn't even reach. PERFECT is the reward. */
   power: {
-    /** Added to P(miss) (clamped ≥ 0). OVER blazes it; PERFECT places it. */
-    miss: { under: 0.02, good: 0.0, perfect: -0.05, over: 0.24 },
-    /** Multiplier on the save chance. PERFECT beats the dive; UNDER is soft. */
-    saveMul: { under: 1.4, good: 1.05, perfect: 0.66, over: 0.92 },
+    /** Added to P(off-target miss), clamped ≥ 0. OVER sails over/wide. */
+    miss: { under: 0.0, good: 0.0, perfect: -0.06, over: 0.42 },
+    /** Multiplier on the keeper's save chance. PERFECT beats the dive; UNDER dribbles. */
+    saveMul: { under: 1.85, good: 1.05, perfect: 0.5, over: 0.95 },
+    /** Flat P(too soft to count): the ball is hit so weakly it's stopped on the line
+     *  / gathered regardless of where the keeper went. Only the soft band. */
+    weak: { under: 0.2, good: 0.0, perfect: 0.0, over: 0.0 },
   },
   /** AI keeper pick distribution: column [left, center, right] × row [low, mid, high]
    *  — covers the corners but rarely flies to the top, like a real keeper. */
@@ -118,6 +123,9 @@ export function kickOutcome(shot: PenZone, power: PenPower, dive: PenZone, rng: 
   const row = zoneRow(shot);
   const missP = Math.max(0, PENS_CONFIG.rowMiss[row] + (isCorner(shot) ? PENS_CONFIG.cornerMiss : 0) + PENS_CONFIG.power.miss[power]);
   if (rng() < missP) return "missed";
+  // Too soft to count: a weakly-struck ball is stopped on the line / gathered, whether
+  // or not the keeper guessed right.
+  if (rng() < PENS_CONFIG.power.weak[power]) return "saved";
   const dcol = Math.abs(zoneColumn(shot) - zoneColumn(dive));
   const drow = Math.abs(zoneRow(shot) - zoneRow(dive));
   let base = 0;
