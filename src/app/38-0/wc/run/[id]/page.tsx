@@ -35,9 +35,10 @@ type Run = {
   stage: RunStage; stage_index: number; formation: Formation; squad: PlacedPlayer[];
   strength: number; plan: { group: Fixture[]; knockouts: Fixture[] };
   group_points: number; upgrades_left: number; ranked?: boolean;
+  quiz_correct?: number | null; quiz_total?: number | null; run_date?: string | null;
 };
 // The signed-in player's season standing (from the WC daily board) — shown on a ranked finish.
-type Standing = { rank: number; points: number; wins: number; draws: number; losses: number };
+type Standing = { rank: number; points: number; wins: number; draws: number; losses: number; display_name?: string };
 type MatchRow = { stage: string; idx: number; you_goals: number; opp_goals: number; pens_you: number | null; pens_opp: number | null; won: boolean | null };
 type Opponent = { nation: string; crest?: string; label: string; formation: Formation; squad: PlacedPlayer[]; strength: number };
 type GameReveal = { label: string; opponent: { nation: string; crest?: string }; goals: { you: number; opp: number }; pens: { you: number; opp: number } | null; outcome: "win" | "loss" | "draw"; decidedByQuestion?: boolean };
@@ -121,7 +122,7 @@ export default function WorldCupRun() {
         const res = await fetch("/api/draft/wc/leaderboard");
         const data = await res.json();
         const me = (data.rows ?? []).find((r: { user_id: string }) => r.user_id === user.id);
-        if (!cancelled && me) setStanding({ rank: me.rank, points: me.points, wins: me.wins, draws: me.draws, losses: me.losses });
+        if (!cancelled && me) setStanding({ rank: me.rank, points: me.points, wins: me.wins, draws: me.draws, losses: me.losses, display_name: me.display_name });
       } catch { /* banner omits the rank line */ }
     })();
     return () => { cancelled = true; };
@@ -307,8 +308,47 @@ export default function WorldCupRun() {
   const world = run?.mode === "world";
   const crest = useMemo(() => (run && !world ? wcNation(run.nation)?.crest : null), [run, world]);
 
-  // Compact run path for the scorecard: "Label~Detail~R" rows (R = W|L|Q).
-  const scorecardUrl = useMemo(() => {
+  // ── Share data ──────────────────────────────────────────────────────────────
+  // This run's record (W-D-L), excluding the qualification play-off gate.
+  const runRec = useMemo(() => {
+    let w = 0, d = 0, l = 0;
+    for (const m of matches) {
+      if (m.stage === "playoff") continue;
+      if (m.won === true) w++; else if (m.won === false) l++; else d++;
+    }
+    return `${w}-${d}-${l}`;
+  }, [matches]);
+
+  const playerName = (standing?.display_name
+    || (user?.user_metadata?.name as string | undefined)
+    || (user?.user_metadata?.full_name as string | undefined)
+    || "A manager");
+
+  const dateLabel = useMemo(() => {
+    const d = run?.run_date;
+    if (!d) return "";
+    const M = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const [, mo, day] = d.split("-").map(Number);
+    return `${Number(day)} ${M[(mo ?? 1) - 1]}`;
+  }, [run]);
+
+  const quizStr = run?.quiz_total ? `${run.quiz_correct ?? 0}/${run.quiz_total}` : "";
+
+  // Personalised Mastermind card params (ranked daily): name + record + 🧠 quiz + rank.
+  const masterParams = useMemo(() => {
+    if (!run) return null;
+    const p = new URLSearchParams({ mode: "mastermind", player: playerName, status: run.status, stage: run.stage });
+    if (runRec) p.set("rec", runRec);
+    if (quizStr) p.set("quiz", quizStr);
+    if (standing?.rank) p.set("rank", String(standing.rank));
+    if (dateLabel) p.set("date", dateLabel);
+    if (world) p.set("world", "1"); else p.set("nation", run.nation);
+    if (crest) p.set("crest", crest);
+    return p.toString();
+  }, [run, playerName, runRec, quizStr, standing, dateLabel, world, crest]);
+
+  // Open World Cup Run scorecard path: "Label~Detail~R" rows (R = W|L|Q).
+  const runPathUrl = useMemo(() => {
     if (!run) return "";
     const rows: string[] = [];
     const grp = matches.filter((m) => m.stage === "group");
@@ -328,23 +368,36 @@ export default function WorldCupRun() {
     return `/api/draft/wc-og?${p}`;
   }, [run, matches, crest, world]);
 
+  // Ranked → the personalised Mastermind card; otherwise the open-run path card.
+  const scorecardUrl = run?.ranked && masterParams ? `/api/draft/wc-og?${masterParams}` : runPathUrl;
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://yourscore.app";
+  // The tweet's destination. Ranked → the /share page whose og:image IS the Mastermind
+  // card (so the player's own scorecard unfurls in-feed); otherwise the WC entry.
+  const shareLink = () => (run?.ranked && masterParams) ? `${origin}/38-0/wc/share?${masterParams}` : `${origin}/38-0/wc`;
+
   function shareText() {
     if (!run) return "";
+    if (run.ranked) {
+      const quizBit = quizStr ? `🧠 ${quizStr} on today's World Cup Mastermind` : "Today's World Cup Mastermind";
+      const resultBit = run.status === "champion"
+        ? `and I won the whole thing 🏆 (${runRec})`
+        : `— run ended in the ${RUN_STAGE_LABEL[run.stage]} (${runRec})`;
+      return `${quizBit} ${resultBit}. Entering the @yourscore_app_ daily £25 giveaway. Beat my score 👇`;
+    }
     const who = world ? "a World XI" : run.nation;
     return run.status === "champion"
       ? `I won the World Cup with ${who} on YourScore! 🏆`
       : `My ${world ? "World XI" : run.nation} World Cup run ended at the ${RUN_STAGE_LABEL[run.stage]}. Beat that 👇`;
   }
-  const shareLink = () => `${typeof window !== "undefined" ? window.location.origin : "https://yourscore.app"}/38-0/wc`;
-  // Twitter/X web intent (matches the other games' share) — text + link, opens in a new tab.
-  const tweetHref = () => `https://twitter.com/intent/tweet?text=${encodeURIComponent(`${shareText()} ${shareLink()}`)}`;
+  // Twitter/X web intent — text + link (the link's page provides the unfurled image).
+  const tweetHref = () => `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText())}&url=${encodeURIComponent(shareLink())}`;
 
   function shareRun() {
     if (!run) return;
     const text = shareText();
     const url = shareLink();
-    if (navigator.share) navigator.share({ title: "YourScore — World Cup Run", text, url }).catch(() => {});
-    else { navigator.clipboard?.writeText(`${text} ${url}`); window.open(`${window.location.origin}${scorecardUrl}`, "_blank"); }
+    if (navigator.share) navigator.share({ title: "YourScore — World Cup", text, url }).catch(() => {});
+    else { navigator.clipboard?.writeText(`${text} ${url}`); window.open(tweetHref(), "_blank"); }
   }
 
   if (loading) return <Screen><div style={{ color: "#8a948f" }}>Loading…</div></Screen>;
@@ -409,9 +462,19 @@ export default function WorldCupRun() {
                 Come back tomorrow for a fresh draft and more points — or keep playing now with Just Play.
               </p>
               <div className="mt-3"><Scorecard url={scorecardUrl} /></div>
-              <div className="flex items-center justify-center gap-2 mt-3 flex-wrap">
-                <button onClick={shareRun} className="rounded-xl px-4 py-2 font-display tracking-wide" style={{ background: champ ? "#ffb800" : "rgba(255,255,255,0.1)", color: champ ? "#0a0a0f" : "#fff", fontSize: 15 }}>SHARE{champ ? " 🏆" : ""}</button>
-                <a href={tweetHref()} target="_blank" rel="noopener noreferrer" className="rounded-xl px-4 py-2 font-display tracking-wide" style={{ background: "#1d9bf0", color: "#fff", fontSize: 15 }}>SHARE ON 𝕏</a>
+              {/* £25 daily giveaway — the primary share; the tweet unfurls the Mastermind card. */}
+              <a href={tweetHref()} target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-3 mt-3 rounded-2xl px-4 py-3 active:scale-[0.98] transition-transform"
+                style={{ background: "linear-gradient(135deg,#1c1400,#221900)", border: "2px solid rgba(255,215,0,0.6)" }}>
+                <span style={{ fontSize: 30, lineHeight: 1 }}>🏆</span>
+                <div className="text-left flex-1 min-w-0">
+                  <div className="font-display tracking-wide" style={{ fontSize: 18, color: "#ffd700" }}>WIN £25 TODAY</div>
+                  <div className="font-body" style={{ fontSize: 12, color: "#a89060" }}>Share your card on 𝕏 to enter the daily giveaway →</div>
+                </div>
+                <span style={{ fontSize: 18, color: "#1d9bf0" }}>𝕏</span>
+              </a>
+              <div className="flex items-center justify-center gap-2 mt-2 flex-wrap">
+                <button onClick={shareRun} className="rounded-xl px-4 py-2 font-display tracking-wide" style={{ background: "rgba(255,255,255,0.1)", color: "#fff", fontSize: 15 }}>SHARE</button>
                 <Link href="/38-0/wc/board" prefetch className="rounded-xl px-4 py-2 font-display tracking-wide" style={{ background: "rgba(174,234,0,0.14)", color: "#aeea00", border: "1px solid rgba(174,234,0,0.4)", fontSize: 15 }}>VIEW TABLE</Link>
                 <Link href="/38-0/wc?practice=1" className="rounded-xl px-4 py-2 font-display tracking-wide" style={{ background: "#aeea00", color: "#062013", fontSize: 15 }}>JUST PLAY</Link>
               </div>
