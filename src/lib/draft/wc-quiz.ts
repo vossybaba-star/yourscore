@@ -75,30 +75,17 @@ export function deciderQuestion(seed: string): ServedQuestion {
   return serve(POOL[Math.floor(rng() * POOL.length)], rng);
 }
 
-/** The questions belonging to one daily pack (bundle ids are `<date>-<n>`). */
-function questionsForDate(date: string): WCQuizQuestion[] {
-  return POOL.filter((q) => q.id.startsWith(`${date}-`));
-}
-
 /**
- * The fixed set of `count` questions for a ranked daily run, **seeded by date** so every
- * player faces the same questions in the same order that day (the "same test" rule).
- * Prefers today's dated pack; if it's missing or too small (e.g. the bundle predates
- * today's publish), falls back to the most recent pack with enough questions, then to the
- * whole pool. Options are shuffled deterministically too.
+ * The fixed set of `count` questions for a ranked daily run, drawn at random from the
+ * **entire World Cup question bank** (every dated pack in the bundle, not just today's),
+ * **seeded by date** so every player faces the same questions in the same order that day
+ * (the "same test" rule) while the set still rotates day to day. Options are shuffled
+ * deterministically too. Practice runs use `drawQuestion` instead — also the whole bank,
+ * but freshly random each play.
  */
 export function dailyQuestions(date: string, count = 11): ServedQuestion[] {
   const rng = seededRng(`wc-daily:${date}`);
-  let pool = questionsForDate(date);
-  if (pool.length < count) {
-    const dates = Array.from(new Set(POOL.map((q) => q.id.replace(/-\d+$/, "")))).sort().reverse();
-    for (const d of dates) {
-      const p = questionsForDate(d);
-      if (p.length >= count) { pool = p; break; }
-    }
-    if (pool.length < count) pool = POOL.slice();
-  }
-  const arr = pool.slice();
+  const arr = POOL.slice();
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1));
     [arr[i], arr[j]] = [arr[j], arr[i]];
