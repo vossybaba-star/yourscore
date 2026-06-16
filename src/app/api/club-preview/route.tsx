@@ -57,6 +57,7 @@ export async function GET(req: Request) {
   const pub = (searchParams.get("pub") || "Your Venue").slice(0, 40);
   const prize = (searchParams.get("prize") || "£50 bar tab").slice(0, 40);
   const logo = searchParams.get("logo");
+  const wallpaper = searchParams.get("wallpaper");
   const kind = searchParams.get("kind") || "pub";
 
   const rgb = parseHex(searchParams.get("color")) ?? parseHex(DEFAULT_ACCENT)!;
@@ -69,6 +70,17 @@ export async function GET(req: Request) {
   return new ImageResponse(
     (
       <div style={{ width: "1200px", height: "630px", display: "flex", flexDirection: "column", background: "#0a0a0f", fontFamily: "sans-serif", position: "relative", padding: "52px 60px" }}>
+        {/* immersive brand takeover: the venue's own image as a dimmed full-bleed
+            backdrop, tinted toward their colour, behind a dark scrim for legibility. */}
+        {wallpaper ? (
+          <div style={{ display: "flex", position: "absolute", top: 0, left: 0, width: "1200px", height: "630px" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={wallpaper} width={1200} height={630} alt="" style={{ width: "1200px", height: "630px", objectFit: "cover", opacity: 0.28 }} />
+            <div style={{ position: "absolute", top: 0, left: 0, width: "1200px", height: "630px", background: "linear-gradient(120deg, rgba(10,10,15,0.97) 30%, rgba(10,10,15,0.62) 100%)" }} />
+            <div style={{ position: "absolute", top: 0, left: 0, width: "1200px", height: "630px", background: accentDim }} />
+          </div>
+        ) : null}
+
         {/* top row: wordmark + CLUB LEAGUE badge */}
         <div style={{ display: "flex", width: "100%", alignItems: "center", justifyContent: "space-between" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}

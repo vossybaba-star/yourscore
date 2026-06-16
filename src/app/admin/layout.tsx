@@ -8,6 +8,8 @@ const NAV = [
   { href: "/admin/matches", label: "Matches", icon: "🏟️" },
   { href: "/admin/rooms", label: "Lobbies", icon: "🚪" },
   { href: "/admin/challenges", label: "Challenges", icon: "★" },
+  { href: "/admin/club-leagues", label: "Club Leagues", icon: "🍺" },
+  { href: "/admin/club-preview", label: "League visuals", icon: "🎨" },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
