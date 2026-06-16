@@ -16,6 +16,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { Pitch } from "@/components/draft/Pitch";
+import { InviteMastermind } from "@/components/draft/InviteMastermind";
 import { spinForNation, spinWorld } from "@/lib/draft/pool";
 import { drawQuestion, type ServedQuestion } from "@/lib/draft/wc-quiz";
 import { upgradeBand, type DraftBand } from "@/lib/draft/draft-quiz";
@@ -478,6 +479,8 @@ export default function WorldCupRun() {
                 <Link href="/38-0/wc/board" prefetch className="rounded-xl px-4 py-2 font-display tracking-wide" style={{ background: "rgba(174,234,0,0.14)", color: "#aeea00", border: "1px solid rgba(174,234,0,0.4)", fontSize: 15 }}>VIEW TABLE</Link>
                 <Link href="/38-0/wc?practice=1" className="rounded-xl px-4 py-2 font-display tracking-wide" style={{ background: "#aeea00", color: "#062013", fontSize: 15 }}>JUST PLAY</Link>
               </div>
+              {/* Viral loop — bring a friend into the daily Mastermind. */}
+              <div className="mt-2"><InviteMastermind label="CHALLENGE A FRIEND" /></div>
             </div>
           );
         })()}

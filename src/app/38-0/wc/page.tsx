@@ -18,6 +18,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Pitch } from "@/components/draft/Pitch";
+import { InviteMastermind } from "@/components/draft/InviteMastermind";
 import { useUser } from "@/hooks/useUser";
 import { pickableNations, spinForNation, spinWorld, type PickableNation } from "@/lib/draft/pool";
 import { WORLD_TEAM_NAME, type RunMode } from "@/lib/draft/wc";
@@ -407,6 +408,8 @@ export default function WorldCupEntry() {
               style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#cfcfe6", fontSize: 14 }}>
               🏅 World Cup season board →
             </Link>
+
+            <InviteMastermind />
           </div>
 
           {/* How it works (Mastermind — the ranked daily loop) */}
