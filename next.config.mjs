@@ -1,9 +1,6 @@
 import { withSentryConfig } from "@sentry/nextjs";
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Three.js / R3F stack: transpile so Next's server compiler handles their ESM
-  // cleanly (the 3D penalty shootout scene, lazy-loaded client-only).
-  transpilePackages: ["three", "@react-three/fiber", "@react-three/drei", "@react-three/postprocessing"],
   // Type errors now fail the build. DB types are generated from the live schema
   // (src/types/database.ts via `supabase gen types typescript`). The few defunct
   // admin match-question spots are explicitly cast with TODO(live-match) markers.

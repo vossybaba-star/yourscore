@@ -15,22 +15,12 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import dynamic from "next/dynamic";
+import PenaltyScene2D from "./PenaltyScene2D";
 import {
   shootoutStatus, zoneColumn, zoneRow,
   type KickOutcome, type PenColumn, type PenKick, type PenPower, type PensMode, type PenZone,
 } from "@/lib/draft/pens";
 import { sfx, buzz, sfxEnabled, setSfxEnabled } from "@/lib/draft/sfx";
-
-// 3D scene is WebGL/client-only — lazy + ssr:false so it never renders on the server.
-const PenaltyScene3D = dynamic(() => import("./PenaltyScene3D"), {
-  ssr: false,
-  loading: () => (
-    <div className="absolute inset-0 grid place-items-center" style={{ background: "#05060d", color: "#5d6275", fontSize: 12 }}>
-      Walking up to the spot…
-    </div>
-  ),
-});
 
 
 export type PensRole = "shoot" | "dive" | "waiting" | "done";
@@ -265,18 +255,7 @@ export function PenaltyShootout({
 
       {/* ── Stage: 3D scene with overlaid HUD ── */}
       <div className="relative w-full overflow-hidden rounded-2xl" style={{ aspectRatio: "9/12", background: "#05060d", border: "1px solid rgba(255,255,255,0.08)" }}>
-        <PenaltyScene3D aim={canShoot ? aim : null} play={play3d} onPlayed={onPlayed} reduced={reduced.current} />
-
-        {/* "YOU" marker — fixed taker + keeper never swap; this hops to whichever
-            player the human controls this turn (above the taker when shooting, above
-            the keeper in goal when saving). */}
-        {!view.result && (
-          <div className="absolute pointer-events-none" aria-hidden
-            style={{ left: "50%", top: view.role === "dive" ? "20%" : "63%", transform: "translate(-50%,-50%)", zIndex: 9, transition: "top 320ms ease" }}>
-            <div className="font-display" style={{ background: ME, color: "#0c1400", fontSize: 10, letterSpacing: 1.5, padding: "2px 8px", borderRadius: 6, boxShadow: `0 0 12px ${ME}88`, fontWeight: 700 }}>YOU</div>
-            <div style={{ width: 0, height: 0, margin: "0 auto", borderLeft: "5px solid transparent", borderRight: "5px solid transparent", borderTop: `6px solid ${ME}` }} />
-          </div>
-        )}
+        <PenaltyScene2D aim={canShoot ? aim : null} play={play3d} onPlayed={onPlayed} reduced={reduced.current} defending={view.role === "dive"} />
 
         {/* top HUD: round counter + score + pips */}
         <div className="absolute top-0 inset-x-0 px-3 pt-3 pb-6"
