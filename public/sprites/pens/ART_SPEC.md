@@ -33,3 +33,27 @@ Notes:
 - Style: SNES-but-better — clean, vibrant, "cartoony but real" (your reference).
 
 Once dropped in, reload `/38-0/match/pens?demo` — no code changes needed.
+
+## Generation prompts (locked style, Jun 16 2026)
+
+Style reference = the flat composite `ChatGPT Image Jun 16, 2026, 08_15_47 AM.png`
+(BLUE UNITED vs RED UNITED, behind-the-taker, crowd behind the goal). **Attach that image
+to every prompt** so the style/camera/scale stay identical. Each layer is the SAME 4:3
+frame with the subject in the SAME spot, everything else transparent → they stack
+pixel-aligned.
+
+**bg.png** — "Recreate the EXACT same image (same style, stadium, crowd, ad boards, goal,
+net, pitch, lighting, camera) but completely EMPTY: no keeper, no taker, no ball, no top
+scoreboard bar, no bottom AIM/POWER meter. Just empty stadium + empty goal+net + pitch with
+the penalty spot. Same 4:3."
+
+**keeper_ready / keeper_dive_l / keeper_dive_r / keeper_catch** — "Output ONLY the
+goalkeeper (same yellow kit, same size/position in the goal mouth) on a fully transparent
+background, same 4:3 canvas, nothing else. Pose: READY arms slightly out / diving to HIS
+LEFT (screen-right) / diving to HIS RIGHT (screen-left) / jumping straight UP arms raised."
+
+**taker_idle / taker_kick** — "Output ONLY the #10 taker (blue shirt/white shorts, from
+BEHIND, same size/position at the spot) on a fully transparent background, same 4:3 canvas,
+nothing else. Pose: standing idle / mid-kick right leg swung through."
+
+If transparency is unclean, generate the subject on solid magenta (#FF00FF) and key it out.

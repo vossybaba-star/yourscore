@@ -255,7 +255,7 @@ export function PenaltyShootout({
       `}</style>
 
       {/* ── Stage: 3D scene with overlaid HUD ── */}
-      <div className="relative w-full overflow-hidden rounded-2xl" style={{ aspectRatio: "9/12", background: "#05060d", border: "1px solid rgba(255,255,255,0.08)" }}>
+      <div className="relative w-full overflow-hidden rounded-2xl" style={{ aspectRatio: "4/3", background: "#05060d", border: "1px solid rgba(255,255,255,0.08)" }}>
         <PenaltyScene2D aim={canShoot ? aim : null} play={play3d} onPlayed={onPlayed} reduced={reduced.current} defending={view.role === "dive"} />
 
         {/* top HUD: round counter + score + pips */}
@@ -303,9 +303,30 @@ export function PenaltyShootout({
           </div>
         )}
 
-        {/* bottom controls: aim grid + power, or dive, or waiting */}
-        <div className="absolute bottom-0 inset-x-0 px-3 pb-3 pt-8"
-          style={{ background: "linear-gradient(0deg, rgba(4,5,12,0.9) 0%, rgba(4,5,12,0.5) 70%, transparent 100%)", zIndex: 10 }}>
+        {/* final banner */}
+        {view.result && idle && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center" style={{ background: "rgba(4,5,12,0.84)", zIndex: 13 }}>
+            {view.result === "win" && !reduced.current && (
+              <div className="absolute inset-x-0 top-0 pointer-events-none">
+                {Array.from({ length: 16 }, (_, i) => (
+                  <span key={i} className="absolute" style={{
+                    left: `${4 + i * 6}%`, top: "-5%", width: 6, height: 11,
+                    background: [ME, AMBER, "#fff", OPP][i % 4],
+                    animation: `pensConfetti ${1.7 + (i % 5) * 0.3}s ease-in ${(i % 7) * 0.11}s forwards`,
+                  }} />
+                ))}
+              </div>
+            )}
+            <div className="font-display" style={{ fontSize: 38, letterSpacing: 2, color: view.result === "win" ? ME : OPP, textShadow: `0 0 28px ${view.result === "win" ? ME : OPP}66`, animation: reduced.current ? undefined : "pensPop 0.35s ease-out" }}>
+              {view.result === "win" ? "YOU WIN ON PENS" : "LOST ON PENS"}
+            </div>
+            <div className="font-display tabular-nums mt-1" style={{ fontSize: 24, color: "#fff", letterSpacing: 1 }}>{myGoals}–{oppGoals}</div>
+          </div>
+        )}
+      </div>
+
+      {/* bottom controls panel — BELOW the 4:3 scene so it never covers the pitch */}
+      <div className="px-3 pt-3 pb-3 rounded-b-2xl" style={{ background: "#080a12", borderLeft: "1px solid rgba(255,255,255,0.08)", borderRight: "1px solid rgba(255,255,255,0.08)", borderBottom: "1px solid rgba(255,255,255,0.08)", marginTop: -1 }}>
 
           {canShoot && phase === "aim" && (
             <div className="flex items-end gap-3">
@@ -390,28 +411,6 @@ export function PenaltyShootout({
               {pending ? "…" : anim ? "" : simultaneous ? `Waiting for ${oppName}…` : ""}
             </div>
           )}
-        </div>
-
-        {/* final banner */}
-        {view.result && idle && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center" style={{ background: "rgba(4,5,12,0.84)", zIndex: 13 }}>
-            {view.result === "win" && !reduced.current && (
-              <div className="absolute inset-x-0 top-0 pointer-events-none">
-                {Array.from({ length: 16 }, (_, i) => (
-                  <span key={i} className="absolute" style={{
-                    left: `${4 + i * 6}%`, top: "-5%", width: 6, height: 11,
-                    background: [ME, AMBER, "#fff", OPP][i % 4],
-                    animation: `pensConfetti ${1.7 + (i % 5) * 0.3}s ease-in ${(i % 7) * 0.11}s forwards`,
-                  }} />
-                ))}
-              </div>
-            )}
-            <div className="font-display" style={{ fontSize: 38, letterSpacing: 2, color: view.result === "win" ? ME : OPP, textShadow: `0 0 28px ${view.result === "win" ? ME : OPP}66`, animation: reduced.current ? undefined : "pensPop 0.35s ease-out" }}>
-              {view.result === "win" ? "YOU WIN ON PENS" : "LOST ON PENS"}
-            </div>
-            <div className="font-display tabular-nums mt-1" style={{ fontSize: 24, color: "#fff", letterSpacing: 1 }}>{myGoals}–{oppGoals}</div>
-          </div>
-        )}
       </div>
     </div>
   );
