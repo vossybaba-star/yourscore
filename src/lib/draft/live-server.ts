@@ -15,10 +15,10 @@ import type { DraftDatabase, DraftLiveMatchRow } from "@/types/draft-db";
 import { GLOBAL_LEAGUE, genJoinCode, validateAndScore, type TeamSnapshot } from "./server";
 import { seededRng, scoreTeam, canPlay, playerIdentity } from "./score";
 import { slotsFor } from "./formations";
-import { spin } from "./pool";
-import { seededBot, realisticOpponentName } from "./opponent";
-import type { Formation, League } from "./types";
-import { asLeague } from "./types";
+import { spin, spinWorld, getPlayer, isWCEligible } from "./pool";
+import { seededBot, seededWorldBot, realisticOpponentName } from "./opponent";
+import type { Formation, Competition } from "./types";
+import { asCompetition } from "./types";
 import {
   LIVE_CONFIG, nextPhase, resolveShootout, aggregate, simulateHalf, buildReport,
   type LivePhase, type MatchSim,
@@ -42,7 +42,7 @@ export async function creditResult(
   displayName: string,
   result: "win" | "draw" | "loss",
   leagueId: string = GLOBAL_LEAGUE,
-  competition: League = "PL"
+  competition: Competition = "PL"
 ): Promise<void> {
   await db.rpc("draft_credit_result", { p_user: userId, p_name: displayName, p_result: result, p_league: leagueId, p_competition: competition });
 }
@@ -52,7 +52,7 @@ export async function applyTeamStreak(
   db: SupabaseClient<DraftDatabase>,
   userId: string,
   result: "win" | "draw" | "loss",
-  competition: League = "PL"
+  competition: Competition = "PL"
 ): Promise<void> {
   if (result === "draw") return;
   const { data: t } = await db.from("draft_teams").select("win_streak").eq("user_id", userId).eq("competition", competition).maybeSingle();
@@ -98,7 +98,7 @@ function bothReadyFor(row: DraftLiveMatchRow): boolean {
 /** A disguised bot makes its own changes server-side: re-spin `count` random
  *  slots (seeded, reproducible) and re-score — so its XI evolves between halves
  *  like a human's, and its second-half Strength shifts accordingly. */
-function applyBotSwaps(squad: PlacedPlayer[], formation: Formation, count: number, seed: string): { squad: PlacedPlayer[]; strength: number } {
+function applyBotSwaps(squad: PlacedPlayer[], formation: Formation, count: number, seed: string, competition: Competition = "PL"): { squad: PlacedPlayer[]; strength: number } {
   const rng = seededRng(seed);
   const slots = slotsFor(formation);
   let next = squad.slice();
@@ -108,7 +108,12 @@ function applyBotSwaps(squad: PlacedPlayer[], formation: Formation, count: numbe
     if (!slot) continue;
     const usedIds = new Set(next.filter((p) => p.slot !== target.slot).map((p) => p.player_season_id));
     const usedNames = new Set(next.filter((p) => p.slot !== target.slot).map((p) => playerIdentity(p.name)));
-    const legal = spin([slot.pos], usedIds, usedNames, rng).players.filter((p) => canPlay(p.position, slot.pos));
+    // A WC bot re-spins from the World Cup pool (one nation at a time) so its in-match
+    // changes stay WC-eligible, mirroring how a human swaps in a WC match.
+    const dealt = competition === "WC"
+      ? spinWorld([slot.pos], usedIds, usedNames, {}, rng).players
+      : spin([slot.pos], usedIds, usedNames, rng).players;
+    const legal = dealt.filter((p) => canPlay(p.position, slot.pos));
     if (legal.length === 0) continue;
     const c = legal[Math.floor(rng() * legal.length)];
     next = next.map((p) => p.slot === target.slot
@@ -120,7 +125,7 @@ function applyBotSwaps(squad: PlacedPlayer[], formation: Formation, count: numbe
 
 function botSwapPatch(row: DraftLiveMatchRow, count: number, seed: string): Partial<DraftLiveMatchRow> {
   if (!row.is_bot || !row.p2_squad) return {};
-  const r = applyBotSwaps(row.p2_squad as PlacedPlayer[], (row.p2_formation ?? "4-3-3") as Formation, count, seed);
+  const r = applyBotSwaps(row.p2_squad as PlacedPlayer[], (row.p2_formation ?? "4-3-3") as Formation, count, seed, asCompetition(row.competition));
   return { p2_squad: r.squad as unknown as never, p2_strength: r.strength };
 }
 
@@ -267,8 +272,8 @@ async function finalize(db: SupabaseClient<DraftDatabase>, row: DraftLiveMatchRo
   // Each side brought a team from its own competition (they can differ in a
   // cross-competition queue match), so credit each player to THEIR board. The
   // permanent record is tagged with the challenger's competition for OG copy.
-  const p1Comp = asLeague(row.p1_competition);
-  const p2Comp = asLeague(row.p2_competition);
+  const p1Comp = asCompetition(row.p1_competition);
+  const p2Comp = asCompetition(row.p2_competition);
 
   // Permanent record keyed on the match id — ON CONFLICT DO NOTHING so a stray
   // second finalize can never double-insert (and the credits below won't double-run,
@@ -381,6 +386,13 @@ export async function applyLiveSwap(
   if (!squad || !formation) throw new Error("No team to change");
   if (!squad.some((p) => p.slot === slotId)) throw new Error("Unknown slot");
 
+  // In a World Cup match the incoming player must be WC-2026 eligible — keeps a WC
+  // squad faithful (validateAndScore only checks the id exists, not nationality).
+  if (asCompetition(row.competition) === "WC") {
+    const incoming = getPlayer(newPlayerId);
+    if (!incoming || !isWCEligible(incoming)) throw new Error("That player isn't at the World Cup");
+  }
+
   // Rebuild the XI with the swapped slot, then re-validate + re-score authoritatively.
   const input = squad.map((p) => ({ slot: p.slot, player_season_id: p.slot === slotId ? newPlayerId : p.player_season_id }));
   const scored = validateAndScore(formation, input);
@@ -427,10 +439,10 @@ export async function applyLiveSwap(
 // ─── Matchmaking ──────────────────────────────────────────────────────────────
 
 type Side = { squad: PlacedPlayer[]; formation: string; strength: number; name: string };
-export type MatchmakeOpts = { ranked: boolean; leagueId: string | null; competition?: League };
+export type MatchmakeOpts = { ranked: boolean; leagueId: string | null; competition?: Competition };
 
 /** A user's active saved XI as a match side, or null if they have no team yet. */
-async function loadUserSide(db: SupabaseClient<DraftDatabase>, userId: string, competition: League = "PL"): Promise<Side | null> {
+async function loadUserSide(db: SupabaseClient<DraftDatabase>, userId: string, competition: Competition = "PL"): Promise<Side | null> {
   // A user can hold one active team PER competition, so the competition is required
   // to pick the right one (a bare query would multi-row and throw on maybeSingle).
   const { data } = await db
@@ -461,7 +473,7 @@ async function findActiveMatch(db: SupabaseClient<DraftDatabase>, userId: string
 
 /** Friend lobby: create an open match with a shareable code (retries on collision). */
 export async function createFriendMatch(db: SupabaseClient<DraftDatabase>, userId: string, opts: MatchmakeOpts): Promise<DraftLiveMatchRow> {
-  const competition = asLeague(opts.competition);
+  const competition = asCompetition(opts.competition);
   const side = await loadUserSide(db, userId, competition);
   if (!side) throw new Error("Save a team first");
   for (let attempt = 0; attempt < 5; attempt++) {
@@ -483,11 +495,11 @@ export async function joinByCode(db: SupabaseClient<DraftDatabase>, userId: stri
   if (row.p1_id === userId) throw new Error("You're already in this lobby");
   if (row.p2_id) throw new Error("Lobby is full");
   // Join with the team in the lobby's competition (a PL lobby needs your PL XI).
-  const side = await loadUserSide(db, userId, asLeague(row.competition));
+  const side = await loadUserSide(db, userId, asCompetition(row.competition));
   if (!side) throw new Error("Save a team first");
   // Claiming the seat also starts the lobby ready-clock (both players now present).
   const { data: updated } = await db.from("draft_live_matches").update({
-    p2_id: userId, p2_name: side.name, p2_squad: side.squad as unknown as never, p2_formation: side.formation, p2_strength: side.strength, p2_competition: asLeague(row.competition),
+    p2_id: userId, p2_name: side.name, p2_squad: side.squad as unknown as never, p2_formation: side.formation, p2_strength: side.strength, p2_competition: asCompetition(row.competition),
     phase_deadline: isoIn(LOBBY_SECONDS),
   }).eq("id", row.id).eq("phase", "lobby").is("p2_id", null).select("*").maybeSingle();
   if (!updated) throw new Error("Lobby is full");
@@ -503,7 +515,7 @@ export async function queueOrPair(
   const existing = await findActiveMatch(db, userId);
   if (existing) return { status: "matched", match: existing };
 
-  const competition = asLeague(opts.competition);
+  const competition = asCompetition(opts.competition);
   const me = await loadUserSide(db, userId, competition);
   if (!me) throw new Error("Save a team first");
 
@@ -518,7 +530,7 @@ export async function queueOrPair(
   const hit = Array.isArray(paired) ? paired[0] : null;
   if (!hit?.opp_user) return { status: "waiting" };
   const oppId = hit.opp_user;
-  const oppComp = asLeague(hit.opp_competition);
+  const oppComp = asCompetition(hit.opp_competition);
 
   const opp = await loadUserSide(db, oppId, oppComp);
   if (!opp) {
@@ -546,12 +558,16 @@ export async function createBotMatch(db: SupabaseClient<DraftDatabase>, userId: 
   const existing = await findActiveMatch(db, userId);
   if (existing) return existing;
 
-  const competition = asLeague(opts.competition);
+  const competition = asCompetition(opts.competition);
   const me = await loadUserSide(db, userId, competition);
   if (!me) throw new Error("Save a team first");
   await db.from("draft_live_queue").delete().eq("user_id", userId);
   const id = crypto.randomUUID();
-  const bot = seededBot(me.formation as Formation, id, competition);
+  // WC matches face a World Cup pool bot (open-pool XI); league matches face a
+  // league-pool bot. A WC competition has no league pool, so it must branch here.
+  const bot = competition === "WC"
+    ? seededWorldBot(me.formation as Formation, id)
+    : seededBot(me.formation as Formation, id, competition);
   const { data: match } = await db.from("draft_live_matches").insert({
     id, phase: "lobby", phase_deadline: isoIn(LOBBY_SECONDS), join_code: null, ranked: opts.ranked, league_id: opts.leagueId, competition, is_bot: true,
     p1_id: userId, p1_name: me.name, p1_squad: me.squad as unknown as never, p1_formation: me.formation, p1_strength: me.strength, p1_competition: competition,
@@ -581,10 +597,10 @@ export const CHALLENGE_TTL_SECONDS = 150;
  *  members; the challenger may only have one live match in flight (a second
  *  create resumes the existing one). */
 export async function createLeagueChallenge(
-  db: SupabaseClient<DraftDatabase>, challengerId: string, leagueId: string, opponentId: string, competitionRaw: League = "PL"
+  db: SupabaseClient<DraftDatabase>, challengerId: string, leagueId: string, opponentId: string, competitionRaw: Competition = "PL"
 ): Promise<DraftLiveMatchRow> {
   if (challengerId === opponentId) throw new Error("You can't challenge yourself");
-  const competition = asLeague(competitionRaw);
+  const competition = asCompetition(competitionRaw);
 
   const { data: members } = await db
     .from("draft_league_members").select("user_id")
@@ -626,14 +642,14 @@ export async function acceptChallenge(
   const existing = await findActiveMatch(db, userId);
   if (existing && existing.id !== matchId) throw new Error("Finish your current match first");
 
-  const side = await loadUserSide(db, userId, asLeague(row.competition));
+  const side = await loadUserSide(db, userId, asCompetition(row.competition));
   if (!side) throw new Error("Save a team first");
 
   // The challenger (p1) was here first; the accepter takes p2. Both present now →
   // start the ready clock (guarded so a double-accept can't reopen a claimed seat).
   const { data: updated } = await db.from("draft_live_matches").update({
     p2_id: userId, p2_name: side.name, p2_squad: side.squad as unknown as never,
-    p2_formation: side.formation, p2_strength: side.strength, p2_competition: asLeague(row.competition),
+    p2_formation: side.formation, p2_strength: side.strength, p2_competition: asCompetition(row.competition),
     phase_deadline: isoIn(LOBBY_SECONDS), updated_at: new Date().toISOString(),
   }).eq("id", matchId).eq("phase", "lobby").is("p2_id", null).select("*").maybeSingle();
   if (!updated) throw new Error("That challenge has expired");

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimitDistributed } from "@/lib/ratelimit";
 import { createDraftDb, validateAndScore } from "@/lib/draft/server";
-import { asLeague } from "@/lib/draft/types";
+import { asCompetition } from "@/lib/draft/types";
 import { sendFirst38TeamEmail } from "@/lib/email/senders";
 
 // Save the player's current XI to the cloud. Server-authoritative: Strength +
@@ -24,6 +24,10 @@ export async function GET() {
     .select("formation, squad, strength_rating, projected, competition, status, win_streak")
     .eq("user_id", user.id)
     .eq("status", "active")
+    // The World Cup H2H team lives in draft_teams under competition="WC" so the live
+    // engine can load it, but it must never surface as the user's generic "active team"
+    // in the base PL/La Liga flows (team page, prematch, league/challenge join, etc.).
+    .neq("competition", "WC")
     .order("updated_at", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -45,7 +49,7 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
-  const competition = asLeague(typeof body.competition === "string" ? body.competition : null);
+  const competition = asCompetition(typeof body.competition === "string" ? body.competition : null);
 
   let validated;
   try {

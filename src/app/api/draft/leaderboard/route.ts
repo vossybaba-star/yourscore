@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createDraftDb, GLOBAL_LEAGUE } from "@/lib/draft/server";
 import { seedLeaderboardRows, type SeedRow } from "@/lib/draft/seedLeaderboard";
-import { asLeague } from "@/lib/draft/types";
+import { asCompetition } from "@/lib/draft/types";
 
 // Public leaderboard read. metric=today (daily, resets 00:00 UTC) | all (all-time).
 // league=<uuid> for a private league board; omitted = global. Ranked by points
@@ -22,7 +22,7 @@ const CACHE_HEADERS = {
 export async function GET(req: NextRequest) {
   const metric = req.nextUrl.searchParams.get("metric") === "today" ? "today" : "all";
   const league = req.nextUrl.searchParams.get("league");
-  const competition = asLeague(req.nextUrl.searchParams.get("competition"));
+  const competition = asCompetition(req.nextUrl.searchParams.get("competition"));
   const isGlobal = !league || league === GLOBAL_LEAGUE;
 
   let real: SeedRow[] = [];

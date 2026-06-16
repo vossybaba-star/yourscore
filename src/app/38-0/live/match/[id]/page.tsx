@@ -12,7 +12,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Pitch } from "@/components/draft/Pitch";
 import { useLiveMatch } from "@/lib/draft/useLiveMatch";
-import { spin, allBuckets, type Spin } from "@/lib/draft/pool";
+import { spin, spinWorld, allBuckets } from "@/lib/draft/pool";
 import { playerIdentity, seededRng } from "@/lib/draft/score";
 import { slotsFor } from "@/lib/draft/formations";
 import { buildReport, flipReport, type MatchSim, type HalfSim, type PlayerRating, type GoalEvent } from "@/lib/draft/live-score";
@@ -24,7 +24,7 @@ import { AddFriendCard } from "@/components/social/AddFriendCard";
 import { RankRewardCard } from "@/components/rank/RankRewardCard";
 import { positionColor } from "@/lib/rank";
 import { trackGamePlay, trackGameComplete } from "@/lib/analytics/trackGame";
-import { asLeague, type Formation, type League, type PlacedPlayer, type PlayerSeason } from "@/lib/draft/types";
+import { asCompetition, type Competition, type Formation, type PlacedPlayer, type PlayerSeason } from "@/lib/draft/types";
 import type { DraftLiveMatchRow } from "@/types/draft-db";
 
 const BG = "#0a0a0f";
@@ -265,7 +265,7 @@ export default function LiveMatchScreen() {
         <SpinSheet
           formation={view.myFormation} squad={view.mySquad} slotId={spinSlot}
           seedKey={`${m.id}:${side}:${m.phase}:${spinSlot}`}
-          competition={asLeague(side === "p1" ? m.p1_competition : m.p2_competition)}
+          competition={asCompetition(side === "p1" ? m.p1_competition : m.p2_competition)}
           onClose={() => setSpinSlot(null)}
           onPick={(playerId) => { live.swap(spinSlot, playerId); setSpinSlot(null); }}
         />
@@ -707,28 +707,34 @@ function PerfPill({ label, p, color }: { label: string; p: PlayerRating | null; 
   );
 }
 
-function SpinSheet({ formation, squad, slotId, seedKey, competition, onPick, onClose }: { formation: Formation; squad: PlacedPlayer[]; slotId: string; seedKey: string; competition: League; onPick: (playerId: string) => void; onClose: () => void }) {
+function SpinSheet({ formation, squad, slotId, seedKey, competition, onPick, onClose }: { formation: Formation; squad: PlacedPlayer[]; slotId: string; seedKey: string; competition: Competition; onPick: (playerId: string) => void; onClose: () => void }) {
   const slot = slotsFor(formation).find((s) => s.id === slotId)!;
-  const [result, setResult] = useState<Spin | null>(null);
+  const [result, setResult] = useState<{ label: string; players: PlayerSeason[] } | null>(null);
   const [spinning, setSpinning] = useState(false);
-  const [reel, setReel] = useState<{ club: string; season: string } | null>(null);
+  const [reel, setReel] = useState<string | null>(null);
 
-  // ONE spin per position: the bucket is seeded by (match, side, phase, slot), so
-  // closing and re-opening shows the SAME options — no re-rolling until you like it.
+  // ONE spin per position: seeded by (match, side, phase, slot), so closing and
+  // reopening shows the SAME options — no re-rolling until you like it. A league match
+  // deals a club-season; a World Cup match lands on one WC 2026 nation and offers it.
   function doSpin() {
     setSpinning(true); setResult(null);
     const usedIds = new Set(squad.filter((p) => p.slot !== slotId).map((p) => p.player_season_id));
     const usedNames = new Set(squad.filter((p) => p.slot !== slotId).map((p) => playerIdentity(p.name)));
-    const buckets = allBuckets(competition);
+    const buckets = competition === "WC" ? null : allBuckets(competition); // null → World Cup flicker
     let ticks = 0;
     const t = setInterval(() => {
-      const b = buckets[Math.floor(Math.random() * buckets.length)];
-      setReel({ club: b.club, season: b.season }); // cosmetic flicker only
+      if (buckets) { const b = buckets[Math.floor(Math.random() * buckets.length)]; setReel(`${b.club} ${b.season}`); }
+      else setReel("scouting the world…"); // cosmetic flicker only
       if (++ticks > 11) {
         clearInterval(t);
-        const r = spin([slot.pos], usedIds, usedNames, seededRng(seedKey), new Set(), competition); // seeded → fixed
-        setReel({ club: r.club, season: r.season });
-        setResult(r); setSpinning(false);
+        if (competition === "WC") {
+          const r = spinWorld([slot.pos], usedIds, usedNames, {}, seededRng(seedKey)); // seeded → fixed
+          setReel(r.nation); setResult({ label: r.nation, players: r.players });
+        } else {
+          const r = spin([slot.pos], usedIds, usedNames, seededRng(seedKey), new Set(), competition); // seeded → fixed
+          setReel(`${r.club} ${r.season}`); setResult({ label: `${r.club} · ${r.season}`, players: r.players });
+        }
+        setSpinning(false);
       }
     }, 70);
   }
@@ -744,7 +750,7 @@ function SpinSheet({ formation, squad, slotId, seedKey, competition, onPick, onC
         {!result && (
           <>
             <button onClick={doSpin} disabled={spinning} className="mt-5 w-full rounded-2xl py-4 font-semibold" style={{ background: "#ffb800", color: "#1a1300", opacity: spinning ? 0.7 : 1 }}>
-              {spinning ? `${reel?.club ?? ""} ${reel?.season ?? ""}…` : "Spin"}
+              {spinning ? `${reel ?? ""}…` : "Spin"}
             </button>
             <p className="mt-2 text-center text-xs" style={{ color: "#8a948f" }}>One spin per position — pick from what you&apos;re dealt, or keep your player.</p>
           </>
@@ -752,7 +758,7 @@ function SpinSheet({ formation, squad, slotId, seedKey, competition, onPick, onC
 
         {result && (
           <div className="mt-4">
-            <p className="text-xs uppercase tracking-wide" style={{ color: "#8a948f" }}>{result.club} · {result.season} — pick one or cancel to keep your player</p>
+            <p className="text-xs uppercase tracking-wide" style={{ color: "#8a948f" }}>{result.label} — pick one or cancel to keep your player</p>
             <div className="mt-2 space-y-2 max-h-[40vh] overflow-y-auto">
               {result.players.map((p: PlayerSeason) => (
                 <button key={p.id} onClick={() => onPick(p.id)} className="w-full flex items-center justify-between rounded-xl px-4 py-3" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }}>

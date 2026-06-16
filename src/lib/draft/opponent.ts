@@ -5,7 +5,7 @@
  */
 
 import type { Formation, League, PlacedPlayer } from "./types";
-import { spin } from "./pool";
+import { spin, spinWorld } from "./pool";
 import { seededRng } from "./score";
 import { emptyTeam, openSlots, bestOpenSlot, placePlayer, isComplete, usedPlayerIds, usedPlayerNames, type LocalTeam } from "./local";
 
@@ -107,6 +107,42 @@ export function makeOpponent(formation: Formation, targetStrength: number, rng: 
 export function seededBot(formation: Formation, seed: string, league: League = "PL"): Opponent {
   const rng = seededRng(seed);
   const team = autoDraft(formation, rng, league);
+  const name = OPPONENT_NAMES[Math.floor(rng() * OPPONENT_NAMES.length)];
+  return { name, team };
+}
+
+/** Auto-draft a full XI from the open World Cup pool: each spin lands on ONE WC 2026
+ *  nation and offers its players, so a greedy fill mixes nations into a World XI —
+ *  exactly the squad type a human builds in the open World Cup draft. The team's
+ *  `league` field is a placeholder ("PL"); its players come from `spinWorld`, not a
+ *  league pool, so it's never re-spun by league. */
+export function autoDraftWorld(formation: Formation, rng: () => number = Math.random): LocalTeam {
+  let team = emptyTeam(formation, "classic", "PL");
+  let guard = 0;
+  while (!isComplete(team) && guard++ < 200) {
+    const open = openSlots(team).map((s) => s.pos);
+    const s = spinWorld(open, usedPlayerIds(team), usedPlayerNames(team), {}, rng);
+    let bestPlayer = null as null | (typeof s.players)[number];
+    let bestSlotId = null as null | string;
+    let bestScore = -1;
+    for (const p of s.players) {
+      const slot = bestOpenSlot(team, p);
+      if (!slot) continue;
+      const score = p.overall + (p.position === slot.pos ? 6 : 0);
+      if (score > bestScore) { bestScore = score; bestPlayer = p; bestSlotId = slot.id; }
+    }
+    if (bestPlayer && bestSlotId) {
+      const slot = openSlots(team).find((x) => x.id === bestSlotId)!;
+      team = placePlayer(team, bestPlayer, slot);
+    }
+  }
+  return team;
+}
+
+/** Deterministic World Cup bot opponent (open-pool XI), seeded for preview/replay parity. */
+export function seededWorldBot(formation: Formation, seed: string): Opponent {
+  const rng = seededRng(seed);
+  const team = autoDraftWorld(formation, rng);
   const name = OPPONENT_NAMES[Math.floor(rng() * OPPONENT_NAMES.length)];
   return { name, team };
 }

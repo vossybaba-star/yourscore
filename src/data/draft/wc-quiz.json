@@ -1,0 +1,831 @@
+{
+  "generatedFrom": [
+    "2026-06-11-opening-day.json",
+    "2026-06-12-mascots.json",
+    "2026-06-14-kickoff-carnage.json",
+    "2026-06-15-opening-matchday-verdicts.json",
+    "2026-06-16-wild-matchday-four.json"
+  ],
+  "count": 63,
+  "questions": [
+    {
+      "id": "2026-06-11-0",
+      "q": "The 2026 World Cup kicks off today. Which country plays in the opening match?",
+      "options": [
+        "Mexico",
+        "United States",
+        "Canada",
+        "Brazil"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "opening_day"
+    },
+    {
+      "id": "2026-06-11-1",
+      "q": "Three countries are co-hosting the 2026 World Cup. Which three?",
+      "options": [
+        "USA, Canada and Mexico",
+        "USA, Mexico and Brazil",
+        "Canada, USA and England",
+        "Mexico, USA and Argentina"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "hosts"
+    },
+    {
+      "id": "2026-06-11-2",
+      "q": "Mexico open the tournament today against which nation?",
+      "options": [
+        "South Africa",
+        "Nigeria",
+        "Egypt",
+        "Ghana"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "opening_day"
+    },
+    {
+      "id": "2026-06-11-3",
+      "q": "Who are the reigning world champions heading into 2026?",
+      "options": [
+        "Argentina",
+        "France",
+        "Brazil",
+        "Germany"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "champions"
+    },
+    {
+      "id": "2026-06-11-4",
+      "q": "Which superstar captained Argentina to the 2022 World Cup title?",
+      "options": [
+        "Lionel Messi",
+        "Cristiano Ronaldo",
+        "Neymar",
+        "Kylian Mbappe"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "champions"
+    },
+    {
+      "id": "2026-06-11-5",
+      "q": "A bank paid a fortune to rename Mexico City's famous stadium 'Estadio Banorte' — but FIFA bans sponsor names at the World Cup. What is that stadium's famous original name?",
+      "options": [
+        "Estadio Azteca",
+        "Maracana",
+        "Camp Nou",
+        "Wembley"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "irony"
+    },
+    {
+      "id": "2026-06-11-6",
+      "q": "FIFA made Haiti change their shirt just before the tournament because the design showed what kind of image?",
+      "options": [
+        "A historic battle scene",
+        "A betting sponsor's logo",
+        "A cartoon character",
+        "A rude gesture"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "haiti"
+    },
+    {
+      "id": "2026-06-11-7",
+      "q": "How many teams are at the 2026 World Cup, the most ever?",
+      "options": [
+        "48",
+        "32",
+        "24",
+        "64"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "format"
+    },
+    {
+      "id": "2026-06-11-8",
+      "q": "Scotland are back at the World Cup after decades away. Famously, they have never managed to do what?",
+      "options": [
+        "Get past the group stage",
+        "Win a single game",
+        "Score a goal",
+        "Qualify two tournaments in a row"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "scotland"
+    },
+    {
+      "id": "2026-06-11-9",
+      "q": "Where will the 2026 World Cup final be played, just outside New York?",
+      "options": [
+        "New Jersey (MetLife Stadium)",
+        "Los Angeles",
+        "Miami",
+        "Toronto"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "final"
+    },
+    {
+      "id": "2026-06-11-10",
+      "q": "Like the Azteca, MetLife Stadium has its name hidden by FIFA for the final. Why?",
+      "options": [
+        "FIFA bans sponsor names at the World Cup",
+        "The stadium is still under construction",
+        "A legal dispute over the name",
+        "It is kept secret for security"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "irony"
+    },
+    {
+      "id": "2026-06-11-11",
+      "q": "Which country has won the most World Cups, with five titles?",
+      "options": [
+        "Brazil",
+        "Germany",
+        "Italy",
+        "Argentina"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "records"
+    },
+    {
+      "id": "2026-06-11-12",
+      "q": "Which legend is the only player to win the World Cup three times?",
+      "options": [
+        "Pele",
+        "Diego Maradona",
+        "Lionel Messi",
+        "Ronaldo Nazario"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "legends"
+    },
+    {
+      "id": "2026-06-11-13",
+      "q": "Argentina beat which country on penalties in the 2022 World Cup final?",
+      "options": [
+        "France",
+        "Brazil",
+        "Croatia",
+        "Germany"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "champions"
+    },
+    {
+      "id": "2026-06-11-14",
+      "q": "Players often struggle in Mexico City because its stadium sits at an extreme...?",
+      "options": [
+        "Altitude",
+        "Humidity",
+        "Cold",
+        "Sea level"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "opening_day"
+    },
+    {
+      "id": "2026-06-13-1",
+      "q": "Which host nation won the opening match of the tournament, beating South Africa 2-0?",
+      "options": [
+        "Mexico",
+        "United States",
+        "Canada",
+        "Brazil"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "opening_day"
+    },
+    {
+      "id": "2026-06-13-2",
+      "q": "The 2026 World Cup has three official mascots. The USA's mascot, Clutch, is which animal?",
+      "options": [
+        "A bald eagle",
+        "A grizzly bear",
+        "A bison",
+        "A rattlesnake"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "mascots"
+    },
+    {
+      "id": "2026-06-13-3",
+      "q": "Canada's official World Cup mascot, Maple, is which animal?",
+      "options": [
+        "A moose",
+        "A beaver",
+        "A polar bear",
+        "A goose"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "mascots"
+    },
+    {
+      "id": "2026-06-13-4",
+      "q": "Mexico's official World Cup mascot is a jaguar. What is it called?",
+      "options": [
+        "Zayu",
+        "Pique",
+        "Juanito",
+        "Gol"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "mascots"
+    },
+    {
+      "id": "2026-06-13-5",
+      "q": "Despite the three official animal mascots, a wide-eyed plush toy became an unlikely viral star after FIFA made it an official 2026 World Cup partner. What is it called?",
+      "options": [
+        "Labubu",
+        "Sonny Angel",
+        "Furby",
+        "Tamagotchi"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "irony"
+    },
+    {
+      "id": "2026-06-13-11",
+      "q": "Which Colombian pop superstar performed at the World Cup opening ceremony in Mexico City?",
+      "options": [
+        "Shakira",
+        "Dua Lipa",
+        "Rihanna",
+        "Taylor Swift"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "opening_ceremony"
+    },
+    {
+      "id": "2026-06-13-12",
+      "q": "Which famous Mexico City stadium hosted the opening match and ceremony?",
+      "options": [
+        "Estadio Azteca",
+        "Maracana",
+        "Camp Nou",
+        "Wembley"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "opening_day"
+    },
+    {
+      "id": "2026-06-13-14",
+      "q": "The bad-tempered opener between Mexico and South Africa saw the referee hand out three of what?",
+      "options": [
+        "Red cards",
+        "Penalties",
+        "Own goals",
+        "Hat-tricks"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "irony"
+    },
+    {
+      "id": "2026-06-14-0",
+      "q": "Mexico beat South Africa in the 2026 World Cup opener. What was the final score?",
+      "options": [
+        "2-0",
+        "1-0",
+        "3-1",
+        "0-0"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "opening_results"
+    },
+    {
+      "id": "2026-06-14-1",
+      "q": "The opening game set an unwanted record. How many players were sent off in Mexico v South Africa?",
+      "options": [
+        "3",
+        "1",
+        "0",
+        "2"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "red_cards"
+    },
+    {
+      "id": "2026-06-14-2",
+      "q": "After all those red cards, how many players did South Africa finish the opening match with?",
+      "options": [
+        "9",
+        "10",
+        "8",
+        "11"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "red_cards"
+    },
+    {
+      "id": "2026-06-14-3",
+      "q": "Who scored the very first goal of the 2026 World Cup, inside ten minutes of the opener?",
+      "options": [
+        "Julian Quinones",
+        "Raul Jimenez",
+        "Lionel Messi",
+        "Santiago Gimenez"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "scorers"
+    },
+    {
+      "id": "2026-06-14-4",
+      "q": "Which veteran striker scored Mexico's second goal in the 2-0 win over South Africa?",
+      "options": [
+        "Raul Jimenez",
+        "Hirving Lozano",
+        "Edson Alvarez",
+        "Santiago Gimenez"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "scorers"
+    },
+    {
+      "id": "2026-06-14-5",
+      "q": "Hosts the USA hammered Paraguay 4-1 in their opener. How many goals did the USA score?",
+      "options": [
+        "4",
+        "2",
+        "1",
+        "3"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "opening_results"
+    },
+    {
+      "id": "2026-06-14-6",
+      "q": "Co-hosts Canada were held to a draw by Bosnia and Herzegovina in their first game. What was the score?",
+      "options": [
+        "1-1",
+        "0-0",
+        "2-2",
+        "3-3"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "opening_results"
+    },
+    {
+      "id": "2026-06-14-7",
+      "q": "South Korea opened with a 2-1 win on day one. Which European side did they beat?",
+      "options": [
+        "Czechia",
+        "Croatia",
+        "Switzerland",
+        "Poland"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "opening_results"
+    },
+    {
+      "id": "2026-06-14-8",
+      "q": "Who are the reigning world champions heading into the 2026 World Cup?",
+      "options": [
+        "Argentina",
+        "France",
+        "Brazil",
+        "Germany"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "champions"
+    },
+    {
+      "id": "2026-06-14-11",
+      "q": "Mexico's opening match was played at Mexico City's most famous stadium, known as the...?",
+      "options": [
+        "Estadio Azteca",
+        "Maracana",
+        "Camp Nou",
+        "Wembley"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "venues"
+    },
+    {
+      "id": "2026-06-15-0",
+      "q": "Mexico opened the 2026 World Cup with a 2-0 win in Mexico City over which side?",
+      "options": [
+        "South Africa",
+        "Nigeria",
+        "Egypt",
+        "Senegal"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "opening_match"
+    },
+    {
+      "id": "2026-06-15-1",
+      "q": "The United States began their home campaign with a 4-1 win over which South American side?",
+      "options": [
+        "Paraguay",
+        "Uruguay",
+        "Ecuador",
+        "Colombia"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "hosts"
+    },
+    {
+      "id": "2026-06-15-2",
+      "q": "Australia produced one of the opening round's biggest upsets, beating which side 2-0?",
+      "options": [
+        "Turkiye",
+        "Germany",
+        "Croatia",
+        "Japan"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "australia"
+    },
+    {
+      "id": "2026-06-15-3",
+      "q": "Alongside Folarin Balogun's brace, which playmaker was also on the scoresheet in the United States' 4-1 win over Paraguay?",
+      "options": [
+        "Gio Reyna",
+        "Christian Pulisic",
+        "Weston McKennie",
+        "Tyler Adams"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "usa"
+    },
+    {
+      "id": "2026-06-15-4",
+      "q": "The United States' 4-1 win over Paraguay was led by a brace from which striker?",
+      "options": [
+        "Folarin Balogun",
+        "Christian Pulisic",
+        "Ricardo Pepi",
+        "Josh Sargent"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "usa"
+    },
+    {
+      "id": "2026-06-15-5",
+      "q": "Brazil were held to a 1-1 draw by Morocco. Who scored Brazil's equaliser?",
+      "options": [
+        "Vinicius Junior",
+        "Rodrygo",
+        "Raphinha",
+        "Endrick"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "brazil"
+    },
+    {
+      "id": "2026-06-15-6",
+      "q": "Scotland beat Haiti 1-0 to go top of Group C, thanks to a deflected first-half strike from which midfielder?",
+      "options": [
+        "John McGinn",
+        "Scott McTominay",
+        "Che Adams",
+        "Ben Doak"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "scotland"
+    },
+    {
+      "id": "2026-06-15-7",
+      "q": "Korea Republic recovered from a goal down to win their opener against which European side?",
+      "options": [
+        "Czechia",
+        "Croatia",
+        "Poland",
+        "Slovakia"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "asia"
+    },
+    {
+      "id": "2026-06-15-8",
+      "q": "Co-hosts Canada were held to a 1-1 draw in their opening game by whom?",
+      "options": [
+        "Bosnia and Herzegovina",
+        "Serbia",
+        "North Macedonia",
+        "Albania"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "canada"
+    },
+    {
+      "id": "2026-06-15-9",
+      "q": "Switzerland dominated possession and shots but were pegged back to a 1-1 draw by which side?",
+      "options": [
+        "Qatar",
+        "Saudi Arabia",
+        "United Arab Emirates",
+        "Iraq"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "group_b"
+    },
+    {
+      "id": "2026-06-15-10",
+      "q": "Mexico's 2-0 win over South Africa, settled by Julian Quinones and Raul Jimenez, was marred by how many red cards?",
+      "options": [
+        "Three",
+        "One",
+        "Two",
+        "Zero"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "discipline"
+    },
+    {
+      "id": "2026-06-15-11",
+      "q": "Australia's surprise 2-0 win over Turkiye was opened by a 27th-minute goal from which young winger?",
+      "options": [
+        "Nestory Irankunda",
+        "Connor Metcalfe",
+        "Riley McGree",
+        "Mitchell Duke"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "australia"
+    },
+    {
+      "id": "2026-06-15-12",
+      "q": "Which midfielder gave Morocco an early lead against Brazil before Vinicius Junior levelled?",
+      "options": [
+        "Ismael Saibari",
+        "Hakim Ziyech",
+        "Sofyan Amrabat",
+        "Youssef En-Nesyri"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "morocco"
+    },
+    {
+      "id": "2026-06-15-13",
+      "q": "Qatar's late equaliser against Switzerland was scored by which experienced campaigner?",
+      "options": [
+        "Boualem Khoukhi",
+        "Akram Afif",
+        "Almoez Ali",
+        "Hassan Al-Haydos"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "qatar"
+    },
+    {
+      "id": "2026-06-15-14",
+      "q": "Scotland's win over Haiti was their first at a World Cup since 1990. Which unwanted World Cup record do they hold?",
+      "options": [
+        "Most appearances without ever reaching the knockout stage",
+        "Most red cards at a single World Cup",
+        "Most consecutive goalless draws",
+        "Most penalty shootout defeats"
+      ],
+      "answer": 0,
+      "difficulty": "expert",
+      "category": "scotland_history"
+    },
+    {
+      "id": "2026-06-16-0",
+      "q": "Which side recovered from conceding the opening goal to thrash World Cup debutants Curacao 7-1?",
+      "options": [
+        "Germany",
+        "Spain",
+        "Netherlands",
+        "Portugal"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "opening_rounds"
+    },
+    {
+      "id": "2026-06-16-1",
+      "q": "Who are the reigning world champions, due to begin the defence of their title this week?",
+      "options": [
+        "Argentina",
+        "France",
+        "Brazil",
+        "Spain"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "champions"
+    },
+    {
+      "id": "2026-06-16-2",
+      "q": "Scotland celebrated their first World Cup win in 36 years. Which side did they edge 1-0?",
+      "options": [
+        "Haiti",
+        "Norway",
+        "Cape Verde",
+        "New Zealand"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "opening_rounds"
+    },
+    {
+      "id": "2026-06-16-3",
+      "q": "Japan snatched a 2-2 draw with the Netherlands thanks to an 88th-minute equaliser. Who scored it?",
+      "options": [
+        "Daichi Kamada",
+        "Takefusa Kubo",
+        "Kaoru Mitoma",
+        "Keito Nakamura"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "group_f"
+    },
+    {
+      "id": "2026-06-16-4",
+      "q": "Brazil were held to a 1-1 draw by Morocco. Which forward scored their equaliser?",
+      "options": [
+        "Vinicius Junior",
+        "Rodrygo",
+        "Raphinha",
+        "Endrick"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "group_play"
+    },
+    {
+      "id": "2026-06-16-5",
+      "q": "Ivory Coast beat Ecuador 1-0 with a dramatic 90th-minute winner. Who scored it?",
+      "options": [
+        "Amad Diallo",
+        "Sebastien Haller",
+        "Franck Kessie",
+        "Nicolas Pepe"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "group_e"
+    },
+    {
+      "id": "2026-06-16-6",
+      "q": "Sweden's 5-1 rout of Tunisia was their biggest haul in a single World Cup match since which tournament?",
+      "options": [
+        "1938",
+        "1958",
+        "1994",
+        "2002"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "records"
+    },
+    {
+      "id": "2026-06-16-7",
+      "q": "The United States opened with a 4-1 win over Paraguay. Which striker scored their two first-half goals?",
+      "options": [
+        "Folarin Balogun",
+        "Christian Pulisic",
+        "Ricardo Pepi",
+        "Gio Reyna"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "group_play"
+    },
+    {
+      "id": "2026-06-16-8",
+      "q": "Qatar claimed the first World Cup point in their history with a 1-1 draw against which European side?",
+      "options": [
+        "Switzerland",
+        "Belgium",
+        "Croatia",
+        "Uruguay"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "milestones"
+    },
+    {
+      "id": "2026-06-16-9",
+      "q": "France begin their campaign on Tuesday against an African side they famously lost to in the 2002 opener. Who?",
+      "options": [
+        "Senegal",
+        "Morocco",
+        "Cameroon",
+        "Ivory Coast"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "fixtures"
+    },
+    {
+      "id": "2026-06-16-10",
+      "q": "In Germany's 7-1 win over Curacao, one forward scored twice, including a penalty. Who was it?",
+      "options": [
+        "Kai Havertz",
+        "Jamal Musiala",
+        "Felix Nmecha",
+        "Deniz Undav"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "group_e"
+    },
+    {
+      "id": "2026-06-16-11",
+      "q": "The USA sealed their 4-1 win over Paraguay with a stoppage-time strike curled in with the outside of the boot. Who scored it?",
+      "options": [
+        "Gio Reyna",
+        "Christian Pulisic",
+        "Weston McKennie",
+        "Folarin Balogun"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "group_play"
+    },
+    {
+      "id": "2026-06-16-12",
+      "q": "South Korea came from behind to beat Czechia 2-1. Which Czech captain had given his side an early lead?",
+      "options": [
+        "Ladislav Krejci",
+        "Patrik Schick",
+        "Tomas Soucek",
+        "Adam Hlozek"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "group_play"
+    },
+    {
+      "id": "2026-06-16-13",
+      "q": "The reigning champions open their title defence on Tuesday in Kansas City against which African nation?",
+      "options": [
+        "Algeria",
+        "Egypt",
+        "Morocco",
+        "Tunisia"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "fixtures"
+    },
+    {
+      "id": "2026-06-16-14",
+      "q": "Curacao stunned Germany by taking a shock early lead before collapsing. Which player scored that goal?",
+      "options": [
+        "Livano Comenencia",
+        "Tahith Chong",
+        "Juninho Bacuna",
+        "Leandro Bacuna"
+      ],
+      "answer": 0,
+      "difficulty": "expert",
+      "category": "group_e"
+    }
+  ]
+}

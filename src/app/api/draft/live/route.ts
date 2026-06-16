@@ -4,7 +4,7 @@ import { rateLimitDistributed } from "@/lib/ratelimit";
 import { createDraftDb, GLOBAL_LEAGUE } from "@/lib/draft/server";
 import { createFriendMatch, joinByCode, queueOrPair, createBotMatch, leaveQueue,
   createLeagueChallenge, acceptChallenge, dismissChallenge, type MatchmakeOpts } from "@/lib/draft/live-server";
-import { asLeague } from "@/lib/draft/types";
+import { asCompetition } from "@/lib/draft/types";
 
 // Matchmaking entry point.
 //   create      → open a friend lobby (returns a shareable code)
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
 
   const leagueId = typeof body.leagueId === "string" ? body.leagueId : null;
   const ranked = body.ranked !== false; // ranked by default
-  const competition = asLeague(body.competition);
+  const competition = asCompetition(body.competition);
   const opts: MatchmakeOpts = { ranked, leagueId: leagueId === GLOBAL_LEAGUE ? null : leagueId, competition };
   const db = createDraftDb();
 
