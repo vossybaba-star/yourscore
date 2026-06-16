@@ -63,6 +63,18 @@ function serve(base: WCQuizQuestion, rng: () => number): ServedQuestion {
   };
 }
 
+/**
+ * A deterministic decider question from a seed (e.g. `${runSeed}:decider:qf:0`) — used to
+ * settle a drawn knockout tie or the qualification play-off in place of a penalty shootout.
+ * Deterministic so the server can re-derive the same question (and grade the answer) on the
+ * follow-up submit without persisting it. Keeps `correctIndex` — callers strip it before
+ * sending to the client.
+ */
+export function deciderQuestion(seed: string): ServedQuestion {
+  const rng = seededRng(seed);
+  return serve(POOL[Math.floor(rng() * POOL.length)], rng);
+}
+
 /** The questions belonging to one daily pack (bundle ids are `<date>-<n>`). */
 function questionsForDate(date: string): WCQuizQuestion[] {
   return POOL.filter((q) => q.id.startsWith(`${date}-`));

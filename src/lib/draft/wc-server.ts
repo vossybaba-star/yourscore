@@ -9,13 +9,14 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Formation, PlacedPlayer } from "./types";
-import { createDraftDb, validateAndScore } from "./server";
+import { createDraftDb, validateAndScore, GLOBAL_LEAGUE } from "./server";
 import { getPlayer, getNation, isWCEligible } from "./pool";
+import { deciderQuestion } from "./wc-quiz";
 import { makeOpponent } from "./opponent";
-import { resolveMatch, resolveShootout, buildReport, type MatchSim, type SingleMatchResult } from "./live-score";
+import { resolveMatch, buildReport, type MatchSim, type SingleMatchResult } from "./live-score";
 import { seededRng } from "./score";
 import {
-  planRun, planWorldRun, gamesForStage, buildMatchRow, outcomeOf, allowDraw, advanceStage, isDuel, oppTargetFor,
+  planRun, planWorldRun, gamesForStage, buildMatchRow, outcomeOf, advanceStage, isDuel, oppTargetFor,
   WORLD_TEAM_NAME,
   type WCPlan, type WCFixture, type WcRun, type WcMatchRow, type WcRunPatch,
   type RunStage, type GameOutcome, type RunMode,
@@ -102,7 +103,29 @@ export type GameReveal = {
   goals: { you: number; opp: number };
   pens: { you: number; opp: number } | null;
   outcome: GameOutcome;
+  decidedByQuestion?: boolean; // true when a draw was settled by the quiz decider
 };
+
+/** A question (no correct index) sent to the client to settle a drawn tie / play-off. */
+export type PublicQuestion = { id: string; prompt: string; options: string[]; category: string };
+
+/** A drawn tie (or the play-off) awaiting the player's decider answer. */
+export type PendingDecider = {
+  idx: number;
+  stage: RunStage;
+  label: string;
+  opponent: WCFixture["opponent"];
+  oppStrength: number;
+  goals: { you: number; opp: number }; // the level 90' score (0-0 for the play-off)
+  question: PublicQuestion;
+};
+
+export type StageResolution =
+  | { kind: "resolved"; rows: WcMatchRow[]; reveals: GameReveal[]; patch: WcRunPatch }
+  | { kind: "decider"; deciders: PendingDecider[] };
+
+const publicQuestion = (q: { id: string; prompt: string; options: string[]; category: string }): PublicQuestion =>
+  ({ id: q.id, prompt: q.prompt, options: q.options, category: q.category });
 
 /** For a DUEL stage (qf/sf/final), the opponent you're about to face — squad shown so
  *  the player can make changes. Same seed as play, so it's the team actually faced. */
@@ -121,58 +144,110 @@ export function revealOpponent(run: WcRun) {
 }
 
 /**
- * Resolve the run's CURRENT stage in one go: every game (group=3, ko=2, duel=1) is
- * simulated deterministically, recorded, and the run advances. Returns the match rows
- * to insert, per-game reveals for the UI, and the run patch.
+ * Resolve the run's CURRENT stage. Group games are simulated and scored on points (draws
+ * allowed). Knockout ties that finish level — and the qualification play-off — are settled
+ * by a **quiz decider** instead of a penalty shootout (temporary, until the shootout work
+ * lands): a correct answer goes through, wrong is out.
+ *
+ * Called twice for a stage that contains a draw: first with no `answers` (returns
+ * `kind:"decider"` with the question(s) and DOESN'T persist); then from /decide with the
+ * player's answers (everything is deterministic from the run seed, so the non-drawn games
+ * re-simulate identically) → `kind:"resolved"`.
  */
-export function resolveStage(run: WcRun): { rows: WcMatchRow[]; reveals: GameReveal[]; patch: WcRunPatch } {
-  // Qualification play-off: a straight penalty shootout (no 90 minutes). Win → R32, lose
-  // → out at the group. Recorded with stage='playoff' so it's a GATE — excluded from the
-  // W/D/L record + season points. (Falls back to the first knockout opponent for any
-  // in-flight run whose stored plan predates plan.playoff.)
+export function resolveStage(run: WcRun, answers: Record<number, number> = {}): StageResolution {
+  const deciderSeed = (idx: number) => `${run.seed}:decider:${run.stage}:${idx}`;
+
+  // Qualification play-off: no 90 minutes — a single decider question. Recorded with
+  // stage='playoff' so it's a GATE (excluded from the W/D/L record + season points).
+  // Falls back to the first knockout opponent for any in-flight run whose stored plan
+  // predates plan.playoff.
   if (run.stage === "playoff") {
     const fixture = run.plan.playoff ?? run.plan.knockouts[0];
     const opp = buildOpponent(run, fixture, 0);
-    const pens = resolveShootout(run.strength, opp.strength, seededRng(`${run.seed}:playoff`));
-    const won = pens.a >= pens.b; // ties break to the player (rare; keeps it decisive)
-    const result: SingleMatchResult = {
-      outcome: won ? "A" : "B",
-      goals: { a: 0, b: 0 },
-      pens,
-      report: buildReport({} as MatchSim),
-    };
+    const q = deciderQuestion(deciderSeed(0));
+    if (answers[0] === undefined) {
+      return { kind: "decider", deciders: [{ idx: 0, stage: "playoff", label: "Qualification Play-off", opponent: fixture.opponent, oppStrength: opp.strength, goals: { you: 0, opp: 0 }, question: publicQuestion(q) }] };
+    }
+    const won = answers[0] === q.correctIndex;
+    const result: SingleMatchResult = { outcome: won ? "A" : "B", goals: { a: 0, b: 0 }, pens: null, report: buildReport({} as MatchSim) };
     const row = buildMatchRow(run.id, "playoff", fixture, result, opp.strength, 0);
-    const reveal: GameReveal = {
-      label: "Qualification Play-off",
-      opponent: fixture.opponent,
-      oppStrength: opp.strength,
-      goals: { you: 0, opp: 0 },
-      pens: { you: pens.a, opp: pens.b },
-      outcome: won ? "win" : "loss",
-    };
-    return { rows: [row], reveals: [reveal], patch: advanceStage(run, [won ? "win" : "loss"]) };
+    const reveal: GameReveal = { label: "Qualification Play-off", opponent: fixture.opponent, oppStrength: opp.strength, goals: { you: 0, opp: 0 }, pens: null, outcome: won ? "win" : "loss", decidedByQuestion: true };
+    return { kind: "resolved", rows: [row], reveals: [reveal], patch: advanceStage(run, [won ? "win" : "loss"]) };
   }
 
   const fixtures = gamesForStage(run.plan, run.stage);
-  const rows: WcMatchRow[] = [];
-  const reveals: GameReveal[] = [];
-  const outcomes: GameOutcome[] = [];
+  const settled: { row: WcMatchRow; reveal: GameReveal; outcome: GameOutcome }[] = [];
+  const pending: PendingDecider[] = [];
 
   fixtures.forEach((fixture, idx) => {
     const opp = buildOpponent(run, fixture, idx);
-    const seed = `${run.seed}:match:${fixture.stage}:${idx}`;
-    const result = resolveMatch(run.squad, opp.squad, seed, { allowDraw: allowDraw(run.stage) });
-    rows.push(buildMatchRow(run.id, run.stage, fixture, result, opp.strength, idx));
-    outcomes.push(outcomeOf(result));
-    reveals.push({
-      label: fixture.label,
-      opponent: fixture.opponent,
-      oppStrength: opp.strength,
-      goals: { you: result.goals.a, opp: result.goals.b },
-      pens: result.pens ? { you: result.pens.a, opp: result.pens.b } : null,
+    // Always allow a 90' draw to surface (knockout ties go to the quiz decider, not pens).
+    const result = resolveMatch(run.squad, opp.squad, `${run.seed}:match:${fixture.stage}:${idx}`, { allowDraw: true });
+    const drawn = outcomeOf(result) === "draw" && run.stage !== "group";
+
+    if (drawn) {
+      const q = deciderQuestion(deciderSeed(idx));
+      if (answers[idx] === undefined) {
+        pending.push({ idx, stage: run.stage, label: fixture.label, opponent: fixture.opponent, oppStrength: opp.strength, goals: { you: result.goals.a, opp: result.goals.b }, question: publicQuestion(q) });
+        return;
+      }
+      const won = answers[idx] === q.correctIndex;
+      const decided: SingleMatchResult = { ...result, outcome: won ? "A" : "B", pens: null };
+      settled.push({
+        row: buildMatchRow(run.id, run.stage, fixture, decided, opp.strength, idx),
+        reveal: { label: fixture.label, opponent: fixture.opponent, oppStrength: opp.strength, goals: { you: result.goals.a, opp: result.goals.b }, pens: null, outcome: won ? "win" : "loss", decidedByQuestion: true },
+        outcome: won ? "win" : "loss",
+      });
+      return;
+    }
+
+    settled.push({
+      row: buildMatchRow(run.id, run.stage, fixture, result, opp.strength, idx),
+      reveal: { label: fixture.label, opponent: fixture.opponent, oppStrength: opp.strength, goals: { you: result.goals.a, opp: result.goals.b }, pens: result.pens ? { you: result.pens.a, opp: result.pens.b } : null, outcome: outcomeOf(result) },
       outcome: outcomeOf(result),
     });
   });
 
-  return { rows, reveals, patch: advanceStage(run, outcomes) };
+  if (pending.length > 0) return { kind: "decider", deciders: pending };
+
+  return {
+    kind: "resolved",
+    rows: settled.map((s) => s.row),
+    reveals: settled.map((s) => s.reveal),
+    patch: advanceStage(run, settled.map((s) => s.outcome)),
+  };
+}
+
+/**
+ * Persist a resolved stage and return the play/decide response. Inserts the match rows,
+ * advances the run, and (for a ranked daily run) credits each game to YourScore Rank —
+ * play-off games excluded, since the play-off is a qualification gate.
+ */
+export async function finalizeResolved(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  db: SupabaseClient<any>, userId: string, run: WcRun, stageBefore: RunStage,
+  res: Extract<StageResolution, { kind: "resolved" }>, ranked: boolean
+): Promise<{ stage: RunStage; games: GameReveal[]; result: "through" | "eliminated" | "champion"; run: WcRun }> {
+  await db.from("draft_wc_matches").insert(res.rows);
+
+  const { resolved, ...runPatch } = res.patch;
+  await db.from("draft_wc_runs")
+    .update({ ...runPatch, updated_at: new Date().toISOString(), ...(resolved ? { resolved_at: new Date().toISOString() } : {}) })
+    .eq("id", run.id).eq("user_id", userId);
+
+  if (ranked && stageBefore !== "playoff") {
+    const { data: prof } = await db.from("profiles").select("display_name").eq("id", userId).maybeSingle();
+    const name = (prof?.display_name as string) ?? "Player";
+    for (const g of res.reveals) {
+      await db.rpc("draft_credit_result", { p_user: userId, p_name: name, p_result: g.outcome, p_league: GLOBAL_LEAGUE, p_competition: "WC" });
+    }
+  }
+
+  const after = { ...run, ...runPatch };
+  return {
+    stage: stageBefore,
+    games: res.reveals,
+    result: after.status === "champion" ? "champion" : after.status === "eliminated" ? "eliminated" : "through",
+    run: after,
+  };
 }
