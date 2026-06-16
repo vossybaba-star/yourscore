@@ -78,20 +78,21 @@ export default function WorldCupBoard() {
                 const isMe = user && r.user_id === user.id;
                 const medal = r.rank === 1 ? "🥇" : r.rank === 2 ? "🥈" : r.rank === 3 ? "🥉" : null;
                 return (
-                  <div key={r.user_id} className="flex items-center px-3 py-2.5"
+                  <Link key={r.user_id} href={`/38-0/wc/board/${r.user_id}`}
+                    className="flex items-center px-3 py-2.5 transition-colors active:opacity-80"
                     style={{ borderTop: "1px solid rgba(255,255,255,0.05)", background: isMe ? "rgba(255,184,0,0.08)" : "transparent" }}>
                     <span className="font-display tabular-nums" style={{ width: 28, textAlign: "center", fontSize: medal ? 15 : 14, color: r.rank === 1 ? ACCENT : r.rank <= 3 ? "#cfcfe6" : "#8888aa" }}>
                       {medal ?? r.rank}
                     </span>
                     <div className="flex-1 min-w-0 pl-2">
                       <div className="font-body truncate" style={{ fontSize: 14, color: "#fff" }}>{r.display_name}{isMe ? " (you)" : ""}</div>
-                      <div className="font-body" style={{ fontSize: 10, color: "#6a6a82" }}>{r.days} {r.days === 1 ? "day" : "days"} played</div>
+                      <div className="font-body" style={{ fontSize: 10, color: "#6a6a82" }}>{r.days} {r.days === 1 ? "day" : "days"} played · view drafts →</div>
                     </div>
                     <span className="font-body tabular-nums" style={{ width: 24, textAlign: "center", fontSize: 13, color: "#00ff87" }}>{r.wins}</span>
                     <span className="font-body tabular-nums" style={{ width: 24, textAlign: "center", fontSize: 13, color: ACCENT }}>{r.draws}</span>
                     <span className="font-body tabular-nums" style={{ width: 24, textAlign: "center", fontSize: 13, color: "#ff4757" }}>{r.losses}</span>
                     <span className="font-display tabular-nums" style={{ width: 40, textAlign: "center", fontSize: 16, color: "#fff" }}>{r.points}</span>
-                  </div>
+                  </Link>
                 );
               })}
             </div>
