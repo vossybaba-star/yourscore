@@ -84,6 +84,9 @@ export default function WorldCupEntry() {
   const serverQs = useRef<{ id: string; prompt: string; options: string[]; category: string }[]>([]);
   const draftAnswers = useRef<number[]>([]);
   const draftPicks = useRef<{ slot: string; player_season_id: string }[]>([]);
+  // Today's ranked attempt is locked once it's been played OR drafted past the 6th pick
+  // (anti-preview). When locked, the Today's Run card is blurred + unselectable.
+  const [rankedLocked, setRankedLocked] = useState(false);
 
   const world = mode === "world";
 
@@ -110,6 +113,7 @@ export default function WorldCupEntry() {
     try {
       const res = await fetch("/api/draft/wc/draft", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "begin" }) });
       const data = await res.json();
+      if (data.locked) { setRankedLocked(true); setMode(null); setError(data.error ?? "You've already used today's ranked run — come back tomorrow."); return; }
       if (res.ok && Array.isArray(data.questions)) serverQs.current = data.questions;
       else setError(data.error ?? "Couldn't load today's questions — refresh and retry.");
     } catch { setError("Couldn't load today's questions — refresh and retry."); }
@@ -117,7 +121,9 @@ export default function WorldCupEntry() {
 
   // Today's Run is a logged-in competition (it feeds the board + Rank), and the server draft
   // verifies against the signed-in run. Require sign-in up front, returning here to start.
+  // Once today's ranked attempt is committed (played, or passed pick 6), it's locked.
   function startRanked() {
+    if (rankedLocked) return;
     if (!user) { router.push(`/auth/sign-in?next=${encodeURIComponent("/38-0/wc?daily=1")}`); return; }
     beginDraft(true);
   }
@@ -247,6 +253,20 @@ export default function WorldCupEntry() {
 
   const { user, loading: authLoading } = useUser();
 
+  // Is today's ranked attempt already used (played, or drafted past pick 6)? Blurs the card.
+  useEffect(() => {
+    if (!user) { setRankedLocked(false); return; }
+    let off = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/draft/wc/draft", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "status" }) });
+        const data = await res.json();
+        if (!off && data?.lockedToday) setRankedLocked(true);
+      } catch { /* leave unlocked; the begin call still guards */ }
+    })();
+    return () => { off = true; };
+  }, [user]);
+
   // Submit a finished XI. If the player isn't signed in, save the pick and send them
   // to sign-in with a return path; we resume automatically when they come back.
   async function enter(runMode: RunMode, nationName: string, formation: Formation, squad: PlacedPlayer[]) {
@@ -349,55 +369,37 @@ export default function WorldCupEntry() {
       <div className="min-h-[100dvh] pb-16" style={{ background: "#0a0a0f" }}>
         <div className="max-w-lg mx-auto px-4 pt-safe">
           <div className="pt-4"><Link href="/38-0" className="font-body text-sm" style={{ color: "#8a948f" }}>← Back</Link></div>
-          <h1 className="font-display tracking-wide mt-3" style={{ fontSize: 32, color: "#fff" }}>🏆 WORLD CUP</h1>
+          <h1 className="font-display tracking-wide mt-3" style={{ fontSize: 30, color: "#fff" }}>🧠 WORLD CUP MASTERMIND</h1>
           <p className="font-body mt-1 mb-4" style={{ fontSize: 14, color: "#c4ccc6" }}>
-            Build a World XI, then play a World Cup run — group, then knockouts — all the way to the final.
+            Answer World Cup questions to build your XI — the more you know, the stronger your team — then play the tournament. Today&apos;s Run is ranked; Just Play is unlimited practice.
           </p>
 
-          {/* ── Mode 1 — World Cup Mastermind (quiz-gated): Today's Run + Practice ── */}
-          <div className="flex items-center gap-2 mb-2">
-            <span className="font-display tracking-wide" style={{ fontSize: 13, color: "#ffb800" }}>🧠 WORLD CUP MASTERMIND</span>
-            <span className="font-body" style={{ fontSize: 11, color: "#8a948f" }}>answer to build a stronger XI</span>
-          </div>
           <div className="flex flex-col gap-3 mb-5">
-            <button onClick={() => startRanked()} className="text-left rounded-2xl p-4 active:scale-[0.99] transition-transform"
-              style={{ background: "#0e1611", border: "1px solid rgba(255,184,0,0.45)" }}>
+            {/* Today's Run (ranked). Locked once it's been played or drafted past pick 6. */}
+            <button onClick={() => startRanked()} disabled={rankedLocked} aria-disabled={rankedLocked}
+              className="text-left rounded-2xl p-4 active:scale-[0.99] transition-transform disabled:active:scale-100"
+              style={{ background: "#0e1611", border: "1px solid rgba(255,184,0,0.45)", opacity: rankedLocked ? 0.5 : 1, filter: rankedLocked ? "grayscale(0.6)" : "none", cursor: rankedLocked ? "not-allowed" : "pointer" }}>
               <div className="flex items-center gap-2.5 mb-1">
                 <span style={{ fontSize: 22 }}>🏆</span>
                 <span className="font-display tracking-wide" style={{ fontSize: 20, color: "#ffb800" }}>TODAY&apos;S RUN</span>
-                <span className="font-body rounded-full px-2 py-0.5" style={{ fontSize: 10, color: "#1a1300", background: "#ffb800", letterSpacing: 0.5 }}>RANKED</span>
+                <span className="font-body rounded-full px-2 py-0.5" style={{ fontSize: 10, color: "#1a1300", background: "#ffb800", letterSpacing: 0.5 }}>{rankedLocked ? "PLAYED" : "RANKED"}</span>
               </div>
               <div className="font-body" style={{ fontSize: 13, color: "#c4ccc6", lineHeight: 1.4 }}>
-                One go a day. Today&apos;s questions, on the clock. Your result <b style={{ color: "#fff" }}>climbs the season board</b> — get closest to 8-0-0.
+                {rankedLocked
+                  ? <>You&apos;ve used today&apos;s ranked run. <b style={{ color: "#fff" }}>Come back tomorrow</b> for a fresh draft — or Just Play below.</>
+                  : <>One go a day. Today&apos;s questions, on the clock. Your result <b style={{ color: "#fff" }}>climbs the season board</b> — get closest to 8-0-0.</>}
               </div>
             </button>
 
+            {/* Just Play — unlimited, doesn't count towards the board. */}
             <button onClick={() => beginDraft(false)} className="text-left rounded-2xl p-4 active:scale-[0.99] transition-transform"
               style={{ background: "#0e1611", border: "1px solid rgba(255,184,0,0.22)" }}>
               <div className="flex items-center gap-2.5 mb-1">
                 <span style={{ fontSize: 22 }}>🎯</span>
-                <span className="font-display tracking-wide" style={{ fontSize: 20, color: "#ffd27a" }}>PRACTICE</span>
+                <span className="font-display tracking-wide" style={{ fontSize: 20, color: "#ffd27a" }}>JUST PLAY</span>
               </div>
               <div className="font-body" style={{ fontSize: 13, color: "#c4ccc6", lineHeight: 1.4 }}>
-                Sharpen up with <b style={{ color: "#fff" }}>questions from past days</b>. Unlimited goes; doesn&apos;t count towards the board.
-              </div>
-            </button>
-          </div>
-
-          {/* ── Mode 2 — World Cup Run (open draft, no quiz) ── */}
-          <div className="flex items-center gap-2 mb-2">
-            <span className="font-display tracking-wide" style={{ fontSize: 13, color: "#aeea00" }}>🌍 WORLD CUP RUN</span>
-            <span className="font-body" style={{ fontSize: 11, color: "#8a948f" }}>pure draft, no questions</span>
-          </div>
-          <div className="flex flex-col gap-3 mb-5">
-            <button onClick={beginRun} className="text-left rounded-2xl p-4 active:scale-[0.99] transition-transform"
-              style={{ background: "#0e1611", border: "1px solid rgba(174,234,0,0.32)" }}>
-              <div className="flex items-center gap-2.5 mb-1">
-                <span style={{ fontSize: 22 }}>🎮</span>
-                <span className="font-display tracking-wide" style={{ fontSize: 20, color: "#aeea00" }}>PLAY A RUN</span>
-              </div>
-              <div className="font-body" style={{ fontSize: 13, color: "#c4ccc6", lineHeight: 1.4 }}>
-                <b style={{ color: "#fff" }}>Spin a dream XI from any nation</b> and play the knockouts to the final. Play as many as you like.
+                Build and play as many World Cups as you like. <b style={{ color: "#fff" }}>Doesn&apos;t count towards the board</b> — pure practice.
               </div>
             </button>
 

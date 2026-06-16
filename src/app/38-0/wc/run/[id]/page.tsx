@@ -398,13 +398,13 @@ export default function WorldCupRun() {
                 </div>
               )}
               <p className="font-body mt-3" style={{ fontSize: 13, color: "#9fb0a4", lineHeight: 1.45 }}>
-                Come back tomorrow for a fresh draft and more points — or keep playing now in Practice.
+                Come back tomorrow for a fresh draft and more points — or keep playing now with Just Play.
               </p>
               <div className="mt-3"><Scorecard url={scorecardUrl} /></div>
               <div className="flex items-center justify-center gap-2 mt-3 flex-wrap">
                 <button onClick={shareRun} className="rounded-xl px-4 py-2 font-display tracking-wide" style={{ background: champ ? "#ffb800" : "rgba(255,255,255,0.1)", color: champ ? "#0a0a0f" : "#fff", fontSize: 15 }}>SHARE{champ ? " 🏆" : ""}</button>
                 <Link href="/38-0/wc/board" className="rounded-xl px-4 py-2 font-display tracking-wide" style={{ background: "rgba(174,234,0,0.14)", color: "#aeea00", border: "1px solid rgba(174,234,0,0.4)", fontSize: 15 }}>VIEW TABLE</Link>
-                <Link href="/38-0/wc?practice=1" className="rounded-xl px-4 py-2 font-display tracking-wide" style={{ background: "#aeea00", color: "#062013", fontSize: 15 }}>PLAY UNRANKED</Link>
+                <Link href="/38-0/wc?practice=1" className="rounded-xl px-4 py-2 font-display tracking-wide" style={{ background: "#aeea00", color: "#062013", fontSize: 15 }}>JUST PLAY</Link>
               </div>
             </div>
           );
