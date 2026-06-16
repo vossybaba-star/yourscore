@@ -1,9 +1,14 @@
 "use client";
 
 /**
- * /38-0/wc — World Cup Run. Two modes:
- *   "nation" — pick a nation, draft a NATION-LOCKED XI, play that nation's real WC path.
- *   "world"  — open draft: build an XI from ANY WC 2026 nation's players, play a gauntlet.
+ * /38-0/wc — the World Cup game. Two player-facing modes, both an open World XI draft:
+ *   World Cup Mastermind (quiz-gated) — each pick is unlocked by a timed WC question; the
+ *     better you answer, the stronger the players dealt. Has Today's Run (ranked, one
+ *     go/day, season board) and Practice (unranked). Deep-links: ?daily=1 / ?practice=1.
+ *   World Cup Run (open draft, ?run=1) — no quiz; spin any-nation players at full quality
+ *     and play the gauntlet. Not ranked, replayable.
+ *
+ * (National Team / nation-locked mode is retired from the UI — World XI only.)
  *
  * The chosen XI is POSTed to /api/draft/wc (start) which validates + plans the bracket and
  * returns a run id; we then go to the Road-to-the-Final screen. Server is authoritative.
@@ -70,6 +75,8 @@ export default function WorldCupEntry() {
   // Ranked = the daily competition (one go/day, today's seeded questions, season board);
   // unranked = unlimited practice (random back-catalogue questions). Every draft is timed.
   const [ranked, setRanked] = useState(false);
+  // Quiz-gated (Mastermind: Today's Run + Practice) vs open (World Cup Run: no quiz).
+  const [quizGated, setQuizGated] = useState(true);
   const dailySet = useRef<ServedQuestion[]>([]);
   const [timeLeft, setTimeLeft] = useState(QUESTION_SECONDS);
 
@@ -83,12 +90,17 @@ export default function WorldCupEntry() {
   // Begin a World XI draft. Daily = the ranked competition (one go/day, today's seeded
   // question set); Practice = unlimited, random back-catalogue questions. (National Team
   // mode is hidden for now — every run is World XI.)
-  function beginDraft(rankedRun: boolean) {
+  function beginDraft(rankedRun: boolean, gated: boolean = true) {
     setRanked(rankedRun);
+    setQuizGated(gated);
     dailySet.current = rankedRun ? dailyQuestions(today(), 11) : [];
     setMode("world"); setNation(null); setSlate(null); setSelected(null); setReel(null); resetQuiz();
     setTeam(emptyTeam(FORMATION));
   }
+
+  // World Cup Run — the open, no-quiz draft. Spin any-nation players at full quality and
+  // play the gauntlet; not ranked, not gated, replayable.
+  function beginRun() { beginDraft(false, false); }
 
   // National Team mode is hidden in the UI for now (World XI only), but the flow is kept
   // intact behind this helper so it can be re-enabled without a rebuild.
@@ -103,6 +115,8 @@ export default function WorldCupEntry() {
   function startSpin() {
     if (!team || spinning || quiz) return;
     setFeedback(null);
+    // World Cup Run (open draft) has no quiz gate — spin straight away at full quality.
+    if (!quizGated) { runSpin({ minOverall: 0, maxOverall: 99 }); return; }
     const q = ranked
       ? (dailySet.current[askedCount] ?? drawQuestion(Math.random, askedIds.current))
       : drawQuestion(Math.random, askedIds.current);
@@ -195,7 +209,7 @@ export default function WorldCupEntry() {
       }
       if (!res.ok) { setError(data.error ?? "Could not start"); setStarting(false); return; }
       clearDraft();
-      trackGamePlay("38-0", { mode: ranked ? "world_cup_daily" : runMode === "world" ? "world_cup_open" : "world_cup_run" });
+      trackGamePlay("38-0", { mode: ranked ? "world_cup_daily" : quizGated ? "world_cup_open" : "world_cup_run" });
       router.push(`/38-0/wc/run/${data.runId}`);
     } catch {
       setError("Network error — try again."); setStarting(false);
@@ -258,6 +272,7 @@ export default function WorldCupEntry() {
     // National Team mode is hidden.)
     const params = new URLSearchParams(window.location.search);
     if (!mode && params.get("daily") === "1") { beginDraft(true); return; }
+    if (!mode && params.get("run") === "1") { beginRun(); return; }
     if (!mode && (params.get("mode") === "world" || params.get("practice") === "1")) { beginDraft(false); return; }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, authLoading, nations]);
@@ -270,10 +285,14 @@ export default function WorldCupEntry() {
           <div className="pt-4"><Link href="/38-0" className="font-body text-sm" style={{ color: "#8a948f" }}>← Back</Link></div>
           <h1 className="font-display tracking-wide mt-3" style={{ fontSize: 32, color: "#fff" }}>🏆 WORLD CUP</h1>
           <p className="font-body mt-1 mb-4" style={{ fontSize: 14, color: "#c4ccc6" }}>
-            Answer to build your World XI, then play a World Cup run — group, then knockouts — all the way to the final. The more you know, the better your team.
+            Build a World XI, then play a World Cup run — group, then knockouts — all the way to the final.
           </p>
 
-          {/* Daily vs Practice */}
+          {/* ── Mode 1 — World Cup Mastermind (quiz-gated): Today's Run + Practice ── */}
+          <div className="flex items-center gap-2 mb-2">
+            <span className="font-display tracking-wide" style={{ fontSize: 13, color: "#ffb800" }}>🧠 WORLD CUP MASTERMIND</span>
+            <span className="font-body" style={{ fontSize: 11, color: "#8a948f" }}>answer to build a stronger XI</span>
+          </div>
           <div className="flex flex-col gap-3 mb-5">
             <button onClick={() => beginDraft(true)} className="text-left rounded-2xl p-4 active:scale-[0.99] transition-transform"
               style={{ background: "#0e1611", border: "1px solid rgba(255,184,0,0.45)" }}>
@@ -283,30 +302,48 @@ export default function WorldCupEntry() {
                 <span className="font-body rounded-full px-2 py-0.5" style={{ fontSize: 10, color: "#1a1300", background: "#ffb800", letterSpacing: 0.5 }}>RANKED</span>
               </div>
               <div className="font-body" style={{ fontSize: 13, color: "#c4ccc6", lineHeight: 1.4 }}>
-                One go a day. Today&apos;s questions, on the clock. Your result <b style={{ color: "#fff" }}>climbs the World Cup leaderboard</b> — get closest to 8-0-0.
+                One go a day. Today&apos;s questions, on the clock. Your result <b style={{ color: "#fff" }}>climbs the season board</b> — get closest to 8-0-0.
               </div>
             </button>
 
             <button onClick={() => beginDraft(false)} className="text-left rounded-2xl p-4 active:scale-[0.99] transition-transform"
-              style={{ background: "#0e1611", border: "1px solid rgba(174,234,0,0.3)" }}>
+              style={{ background: "#0e1611", border: "1px solid rgba(255,184,0,0.22)" }}>
               <div className="flex items-center gap-2.5 mb-1">
-                <span style={{ fontSize: 22 }}>🎮</span>
-                <span className="font-display tracking-wide" style={{ fontSize: 20, color: "#aeea00" }}>PRACTICE</span>
+                <span style={{ fontSize: 22 }}>🎯</span>
+                <span className="font-display tracking-wide" style={{ fontSize: 20, color: "#ffd27a" }}>PRACTICE</span>
               </div>
               <div className="font-body" style={{ fontSize: 13, color: "#c4ccc6", lineHeight: 1.4 }}>
-                Play as many runs as you like — <b style={{ color: "#fff" }}>questions from past days</b>. Doesn&apos;t count towards the leaderboard.
+                Sharpen up with <b style={{ color: "#fff" }}>questions from past days</b>. Unlimited goes; doesn&apos;t count towards the board.
+              </div>
+            </button>
+          </div>
+
+          {/* ── Mode 2 — World Cup Run (open draft, no quiz) ── */}
+          <div className="flex items-center gap-2 mb-2">
+            <span className="font-display tracking-wide" style={{ fontSize: 13, color: "#aeea00" }}>🌍 WORLD CUP RUN</span>
+            <span className="font-body" style={{ fontSize: 11, color: "#8a948f" }}>pure draft, no questions</span>
+          </div>
+          <div className="flex flex-col gap-3 mb-5">
+            <button onClick={beginRun} className="text-left rounded-2xl p-4 active:scale-[0.99] transition-transform"
+              style={{ background: "#0e1611", border: "1px solid rgba(174,234,0,0.32)" }}>
+              <div className="flex items-center gap-2.5 mb-1">
+                <span style={{ fontSize: 22 }}>🎮</span>
+                <span className="font-display tracking-wide" style={{ fontSize: 20, color: "#aeea00" }}>PLAY A RUN</span>
+              </div>
+              <div className="font-body" style={{ fontSize: 13, color: "#c4ccc6", lineHeight: 1.4 }}>
+                <b style={{ color: "#fff" }}>Spin a dream XI from any nation</b> and play the knockouts to the final. Play as many as you like.
               </div>
             </button>
 
             <Link href="/38-0/wc/board" className="text-center font-body rounded-2xl py-3 active:scale-[0.99] transition-transform"
               style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#cfcfe6", fontSize: 14 }}>
-              🏅 World Cup leaderboard →
+              🏅 World Cup season board →
             </Link>
           </div>
 
-          {/* How it works */}
+          {/* How it works (Mastermind — the ranked daily loop) */}
           <div className="rounded-2xl p-4" style={{ background: "#0e1611", border: "1px solid rgba(255,184,0,0.3)" }}>
-            <div className="font-body mb-2.5" style={{ fontSize: 11, color: "#ffb800", letterSpacing: 1 }}>HOW IT WORKS</div>
+            <div className="font-body mb-2.5" style={{ fontSize: 11, color: "#ffb800", letterSpacing: 1 }}>HOW MASTERMIND WORKS</div>
             {[
               ["①", "Answer to draft", "Each pick is unlocked by a question on a 25s clock — right answers (and streaks) deal stronger players."],
               ["②", "Play the World Cup", "A group, then the knockouts — vs real nations, tougher each round."],

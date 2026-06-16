@@ -9,6 +9,11 @@
 > **Confirmed with the founder:** 2026-06-10 (full reconciliation against `src/` +
 > `supabase/migrations/` through migration 25, incl. the 38-0 game).
 > **Updated 2026-06-14:** added **Club Leagues** (built, not live — migration 36 + push pending).
+> **Updated 2026-06-16:** **World Cup** reorganised into **two modes** — **World Cup
+> Mastermind** (daily quiz-gated ranked run + Practice, season board) and **World Cup Run**
+> (open, no-quiz draft). **Nation / National-Team mode retired** from the UI. World Cup is
+> now the **first/default tab** in 38-0. Merged the `wc-daily` branch into `main` (adds
+> migration `39_draft_wc_daily.sql`) — *migration apply to prod + push still pending.*
 > **Maintenance:** update this file in the same session you change the product, bump the
 > date, and run `graphify update .` after code changes.
 
@@ -146,7 +151,7 @@ Match loop on `localStorage`; sign-in unlocks cloud save / ranked / social.
 | **Quick Match** (guest/anon, local) | ✅ Live |
 | **Live H2H multiplayer** (simultaneous two-half match, watch-it-play-out, halftime swaps, opt-in penalties; friend code or random queue w/ disguised bot fallback) | ✅ Live |
 | **Custom leagues + friend challenges** (create/join 38-0 leagues by code; challenge a specific friend via share code; shareable result graphics) | ✅ Live |
-| **World Cup Run** (solo WC2026 campaign — pick nations) | ✅ Live |
+| **World Cup** — two modes, both an open **World XI** draft (nation mode retired): **World Cup Mastermind** (quiz-gated; each pick unlocked by a timed WC question — Today's Run = ranked one-go/day feeding a season board at `/38-0/wc/board`, plus unlimited Practice) and **World Cup Run** (open, no-quiz draft, replayable). Group → qualification play-off (3 pts → shootout) → knockouts → 8-0-0. | ✅ Built (on `main`; migration 39 + push pending) |
 | **Ranked + global leaderboards** (Daily/All-time, points ladder W3/D1) | 🔧 Being built now |
 | **Verified "Leaderboard ✓" tab** (closest-to-38-0 season records per competition + closest-to-8-0 WC runs; server re-simulates every submitted XI — client never trusted; personal bests card on /profile) | ✅ Live 2026-06-12 (boards activate with migration 29) |
 

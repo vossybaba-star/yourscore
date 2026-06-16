@@ -6,7 +6,7 @@
  * own nation-pick flow.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BottomNav } from "@/components/ui/BottomNav";
@@ -15,7 +15,7 @@ import { FORMATIONS, LEAGUE_META } from "@/lib/draft/types";
 import type { Formation, League } from "@/lib/draft/types";
 import { FORMATION_NOTE } from "@/lib/draft/formations";
 import { emptyTeam, loadTeam, saveTeam, isComplete, type LocalTeam, type DraftMode } from "@/lib/draft/local";
-import { LEAGUE_COUNTS, pickableNations } from "@/lib/draft/pool";
+import { LEAGUE_COUNTS } from "@/lib/draft/pool";
 import { trackGamePlay } from "@/lib/analytics/trackGame";
 import { useUser } from "@/hooks/useUser";
 
@@ -39,11 +39,12 @@ const LEAGUE_TABS: Record<"pl" | "laliga", { league: League; emoji: string; titl
 export default function DraftHome() {
   const router = useRouter();
   const { user, loading: authLoading } = useUser();
-  const [tab, setTab] = useState<DraftTab>("pl");
+  const [tab, setTab] = useState<DraftTab>("wc");
   const [selected, setSelected] = useState<Formation>("4-3-3");
   const [mode, setMode] = useState<DraftMode>("classic");
   const [existing, setExisting] = useState<LocalTeam | null>(null);
-  const nations = useMemo(() => pickableNations(), []);
+  // Which mode the World Cup "How it works" panel is explaining.
+  const [wcHow, setWcHow] = useState<"mastermind" | "run">("mastermind");
 
   useEffect(() => {
     setExisting(loadTeam());
@@ -91,9 +92,9 @@ export default function DraftHome() {
         <div className="flex gap-1 p-1 rounded-2xl mb-4 overflow-x-auto"
           style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", scrollbarWidth: "none" }}>
           {([
+            { key: "wc" as DraftTab, label: "🏆 World Cup", on: "#ffb800", onText: "#0a0a0f" },
             { key: "pl" as DraftTab, label: "⚽ Premier League", on: "#aeea00", onText: "#062013" },
             { key: "laliga" as DraftTab, label: "🇪🇸 La Liga", on: "#ff5b2e", onText: "#1c0702" },
-            { key: "wc" as DraftTab, label: "🏆 World Cup", on: "#ffb800", onText: "#0a0a0f" },
             { key: "board" as DraftTab, label: "Leaderboard ✓", on: "#aeea00", onText: "#06181c" },
           ]).map((t) => (
             <button
@@ -128,7 +129,8 @@ export default function DraftHome() {
           <div className="flex gap-2 mb-6">
             {([
               { href: "/38-0/teams",       label: "📁 My Teams",   color: "#aeea00" },
-              { href: "/38-0/leaderboard", label: "⚔️ H2H Ladder", color: "#ffb800" },
+              { href: "/38-0/wc/board",    label: "🏅 WC Season",  color: "#ffb800" },
+              { href: "/38-0/leaderboard", label: "⚔️ H2H Ladder", color: "#ff5b2e" },
             ]).map(({ href, label, color }) => (
               <Link key={href} href={href}
                 className="flex-1 py-2.5 rounded-full text-center font-display tracking-wide transition-all active:scale-95"
@@ -272,59 +274,81 @@ export default function DraftHome() {
         {tab === "wc" && (
           <>
             <h2 className="font-display tracking-wide leading-none" style={{ fontSize: 30, color: "#ffb800" }}>
-              🏆 WORLD CUP <span style={{ color: "#fff" }}>RUN</span>
+              🏆 WORLD CUP
             </h2>
-            <p className="font-body mt-1 mb-4" style={{ color: "#c4ccc6", fontSize: 14 }}>
-              Draft an XI and play a World Cup campaign — group, then knockouts, all the way to the final. Two ways to play.
+            <p className="font-body mt-1 mb-5" style={{ color: "#c4ccc6", fontSize: 14 }}>
+              Build a World XI and play a full World Cup — group, then knockouts, all the way to the final. Two ways in.
             </p>
 
-            {/* How it works */}
-            <div className="rounded-2xl p-4 mb-5" style={{ background: "#0e1611", border: "1px solid rgba(255,184,0,0.25)" }}>
-              <div className="font-body mb-2.5" style={{ fontSize: 11, color: "#ffb800", letterSpacing: 1 }}>HOW IT WORKS</div>
-              {[
-                ["①", "Build your XI", "Spin & pick — any rating can come up, luck of the draw."],
-                ["②", "Play the World Cup", "A group, then the knockouts — vs real nations, tougher each round."],
-                ["③", "Win to advance · free re-spins", "Survive the group, then it's win-or-go-home."],
-                ["④", "Lose a knockout and you're out", "Reach the final and lift the trophy. 🏆"],
-              ].map(([n, title, desc]) => (
+            {/* ── Mode 1: World Cup Mastermind (the daily quiz-gated run) ── */}
+            <Link
+              href="/38-0/wc"
+              className="block rounded-2xl p-4 mb-3 active:scale-[0.99] transition-transform"
+              style={{ background: "linear-gradient(135deg,rgba(255,184,0,0.16),rgba(255,184,0,0.04))", border: "1px solid rgba(255,184,0,0.45)" }}
+            >
+              <div className="flex items-center gap-2.5 mb-1">
+                <span style={{ fontSize: 24 }}>🧠</span>
+                <span className="font-display tracking-wide" style={{ fontSize: 19, color: "#ffb800" }}>WORLD CUP MASTERMIND</span>
+                <span className="font-body rounded-full px-2 py-0.5" style={{ fontSize: 9, color: "#1a1300", background: "#ffb800", letterSpacing: 0.5 }}>DAILY · RANKED</span>
+              </div>
+              <div className="font-body" style={{ fontSize: 13, color: "#c4ccc6", lineHeight: 1.4 }}>
+                Answer World Cup questions to build your XI — <b style={{ color: "#fff" }}>the more you know, the stronger your team</b>. One ranked run a day; closest to a perfect 8-0-0 tops the season board.
+              </div>
+            </Link>
+
+            {/* ── Mode 2: World Cup Run (open, no-quiz draft) ── */}
+            <Link
+              href="/38-0/wc?run=1"
+              className="block rounded-2xl p-4 mb-5 active:scale-[0.99] transition-transform"
+              style={{ background: "linear-gradient(135deg,rgba(174,234,0,0.12),rgba(174,234,0,0.03))", border: "1px solid rgba(174,234,0,0.32)" }}
+            >
+              <div className="flex items-center gap-2.5 mb-1">
+                <span style={{ fontSize: 24 }}>🌍</span>
+                <span className="font-display tracking-wide" style={{ fontSize: 19, color: "#aeea00" }}>WORLD CUP RUN</span>
+                <span className="font-body rounded-full px-2 py-0.5" style={{ fontSize: 9, color: "#062013", background: "#aeea00", letterSpacing: 0.5 }}>FREE PLAY</span>
+              </div>
+              <div className="font-body" style={{ fontSize: 13, color: "#c4ccc6", lineHeight: 1.4 }}>
+                Pure draft, no questions. <b style={{ color: "#fff" }}>Spin a dream XI from any nation</b> and play the knockouts to the final. Play as many runs as you like.
+              </div>
+            </Link>
+
+            {/* ── How it works — one tab per mode ── */}
+            <div className="rounded-2xl p-4 mb-6" style={{ background: "#0e1611", border: "1px solid rgba(255,184,0,0.25)" }}>
+              <div className="flex items-center justify-between mb-3">
+                <div className="font-body" style={{ fontSize: 11, color: "#ffb800", letterSpacing: 1 }}>HOW IT WORKS</div>
+                <div className="flex gap-1 p-0.5 rounded-lg" style={{ background: "rgba(255,255,255,0.05)" }}>
+                  {([["mastermind", "Mastermind"], ["run", "Run"]] as const).map(([k, label]) => (
+                    <button key={k} onClick={() => setWcHow(k)}
+                      className="px-2.5 py-1 rounded-md font-body font-semibold transition-all"
+                      style={wcHow === k
+                        ? { background: k === "mastermind" ? "#ffb800" : "#aeea00", color: k === "mastermind" ? "#1a1300" : "#062013", fontSize: 11 }
+                        : { background: "transparent", color: "#8a948f", fontSize: 11 }}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {(wcHow === "mastermind"
+                ? [
+                    ["①", "Answer to draft", "Each pick is unlocked by a World Cup question on a 25s clock — right answers (and streaks) deal stronger players."],
+                    ["②", "Play the World Cup", "A group, then the knockouts — vs real nations, tougher each round."],
+                    ["③", "Group on the line", "4 pts go through; 3 pts is a play-off shootout; less and you're out."],
+                    ["④", "Climb the season board", "One ranked run a day. Get closest to a perfect 8-0-0."],
+                  ]
+                : [
+                    ["①", "Build your XI", "Spin & pick from any nation — pure luck of the draw, no questions."],
+                    ["②", "Play the World Cup", "A group, then the knockouts, all the way to the final."],
+                    ["③", "Win to advance", "Survive the group, then it's win-or-go-home — free re-spins each round."],
+                    ["④", "Lift the trophy 🏆", "Reach the final and win it. Play as many runs as you like."],
+                  ]
+              ).map(([n, title, desc]) => (
                 <div key={n as string} className="flex gap-3 mb-2.5 last:mb-0">
-                  <span className="font-display flex-shrink-0" style={{ fontSize: 17, color: "#ffb800" }}>{n}</span>
+                  <span className="font-display flex-shrink-0" style={{ fontSize: 17, color: wcHow === "mastermind" ? "#ffb800" : "#aeea00" }}>{n}</span>
                   <div>
                     <div className="font-body" style={{ fontSize: 13, color: "#fff" }}>{title}</div>
                     <div className="font-body" style={{ fontSize: 12, color: "#8a948f", lineHeight: 1.35 }}>{desc}</div>
                   </div>
                 </div>
-              ))}
-            </div>
-
-            {/* World Cup mode — open draft from any nation */}
-            <Link
-              href="/38-0/wc?mode=world"
-              className="flex items-center gap-3 rounded-2xl px-4 py-4 mb-5 active:scale-[0.99] transition-transform"
-              style={{ background: "linear-gradient(135deg,rgba(255,184,0,0.16),rgba(255,184,0,0.04))", border: "1px solid rgba(255,184,0,0.4)" }}
-            >
-              <span style={{ fontSize: 30, flexShrink: 0 }}>🌍</span>
-              <div className="flex-1 min-w-0">
-                <div className="font-display tracking-wide" style={{ fontSize: 18, color: "#ffb800" }}>WORLD CUP — ANY NATION</div>
-                <div className="font-body" style={{ fontSize: 12.5, color: "#c4ccc6", lineHeight: 1.35 }}>Open draft — build a dream team from any nation&apos;s players. Beat the best in the world.</div>
-              </div>
-              <span style={{ fontSize: 16, color: "#ffb800", flexShrink: 0 }}>→</span>
-            </Link>
-
-            <div className="font-body mb-3" style={{ fontSize: 11, color: "#8a948f", letterSpacing: 1 }}>OR PLAY AS A NATION</div>
-            <div className="grid grid-cols-2 gap-2.5 pb-6">
-              {nations.map((n) => (
-                <Link
-                  key={n.nation}
-                  href={`/38-0/wc?nation=${encodeURIComponent(n.nation)}`}
-                  className="flex items-center gap-3 rounded-2xl px-3 py-3.5 active:scale-[0.98] transition-transform"
-                  style={{ background: "linear-gradient(135deg,rgba(255,184,0,0.09),rgba(255,184,0,0.03))", border: "1px solid rgba(255,184,0,0.28)" }}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={n.crest} alt={n.nation} width={36} height={36} style={{ width: 36, height: 36, objectFit: "contain", flexShrink: 0 }} />
-                  <span className="font-body flex-1 truncate" style={{ fontSize: 14, color: "#fff" }}>{n.nation}</span>
-                  <span style={{ fontSize: 16, color: "#ffb800", flexShrink: 0 }}>→</span>
-                </Link>
               ))}
             </div>
           </>
