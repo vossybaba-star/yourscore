@@ -22,3 +22,24 @@ a timeline in order; each holds for its VO line. Regenerate with
 
 Built with satori + resvg (the same stack the app uses for share graphics); brand colours
 and layouts mirror `/38-0/wc`.
+
+## Real in-app captures (`real/`)
+
+Genuine screenshots of the running app (no captions), for proving the feature is live.
+The draft mechanic is driven live in-browser as a guest (Practice mode = the same flow as
+Today's Run); the server-backed run/board pages render the real app components fed demo API
+data. Regenerate with the dev server running on :3000 via `node scripts/reel-capture.cjs`.
+
+| File | What it shows |
+|------|----------------|
+| `01-mode-picker.png` | World Cup tab — Today's Run (RANKED) / Mastermind / How Mastermind works |
+| `02-how-it-works.png` | The in-app "How Mastermind works" steps |
+| `03-draft-empty.png` | Empty World XI / 4-3-3 before drafting |
+| `04-question.png` | A real WC question with the 25s timer ("Answer to scout") |
+| `05-correct.png` | Correct answer (green ✓), streak "ON A ROLL", Overall climbing |
+| `06-slate.png` | The earned player slate to pick from (real players + ratings) |
+| `07-draft-progress.png` | XI building up — pitch, Strength/Overall, line ratings |
+| `08-run-quarterfinal.png` | Road to the Final + opponent reveal + Play the Quarter-final |
+| `09-run-champion.png` | Champions — 8-0-0 run, real share scorecard |
+| `10-board.png` | World Cup Daily season leaderboard |
+
