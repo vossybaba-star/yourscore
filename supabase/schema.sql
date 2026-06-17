@@ -478,9 +478,9 @@ begin
   insert into public.profiles (id, display_name, avatar_url)
   values (
     new.id,
+    -- Privacy by default: first name only (see migration 46).
     coalesce(
-      new.raw_user_meta_data->>'full_name',
-      new.raw_user_meta_data->>'name',
+      nullif(split_part(coalesce(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name', ''), ' ', 1), ''),
       split_part(new.email, '@', 1)
     ),
     new.raw_user_meta_data->>'avatar_url'

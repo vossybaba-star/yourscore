@@ -292,12 +292,13 @@ export default function SettingsPage() {
             style={{ border: "1px solid rgba(255,255,255,0.07)" }}
           >
             <div className="px-5 py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-              <label className="font-body text-xs text-text-muted block mb-2">Display name</label>
+              <label className="font-body text-xs text-text-muted block mb-1">Display name</label>
+              <p className="font-body text-xs mb-2" style={{ color: "rgba(255,255,255,0.35)" }}>Shown publicly on leaderboards, leagues &amp; shared cards. A nickname is fine.</p>
               <input
                 type="text"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value.slice(0, 30))}
-                placeholder="Your name"
+                placeholder="A nickname or first name"
                 className="w-full font-body text-sm text-white bg-transparent outline-none placeholder:text-white/20"
                 onKeyDown={(e) => e.key === "Enter" && handleSave()}
               />
