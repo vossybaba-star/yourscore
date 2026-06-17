@@ -11,6 +11,7 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import Link from "next/link";
+import { createServiceClient } from "@/lib/supabase/service";
 
 const CARD_PARAMS = ["mode", "run", "player", "quiz", "rec", "rank", "date", "status", "stage", "world", "nation", "crest"] as const;
 
@@ -24,6 +25,25 @@ function buildOgQuery(sp: Record<string, string | string[] | undefined>): string
   return p.toString();
 }
 
+// The unfurl TITLE/description, resolved server-side from the run id so the link text never
+// falls back to "A manager" even when only `run` travels (the image is already self-contained
+// via the og route). Cheap: just the player's name + quiz score. Fails soft to null.
+async function resolveTitleBits(runId: string): Promise<{ player: string; quiz: string | null } | null> {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = createServiceClient() as any;
+    const { data: r } = await db
+      .from("draft_wc_runs").select("user_id,quiz_correct,quiz_total").eq("id", runId).maybeSingle();
+    if (!r) return null;
+    const { data: p } = await db.from("profiles").select("display_name").eq("id", r.user_id).maybeSingle();
+    const player = (p?.display_name as string | undefined)?.trim() || "A manager";
+    const quiz = r.quiz_total ? `${r.quiz_correct ?? 0}/${r.quiz_total}` : null;
+    return { player, quiz };
+  } catch {
+    return null;
+  }
+}
+
 export async function generateMetadata(
   { searchParams }: { searchParams: Record<string, string | string[] | undefined> },
 ): Promise<Metadata> {
@@ -33,8 +53,15 @@ export async function generateMetadata(
   const origin = `${proto}://${host}`;
   const img = `${origin}/api/draft/wc-og?${buildOgQuery(searchParams)}`;
 
-  const player = (Array.isArray(searchParams.player) ? searchParams.player[0] : searchParams.player) || "A manager";
-  const quiz = Array.isArray(searchParams.quiz) ? searchParams.quiz[0] : searchParams.quiz;
+  const runId = Array.isArray(searchParams.run) ? searchParams.run[0] : searchParams.run;
+  let player = (Array.isArray(searchParams.player) ? searchParams.player[0] : searchParams.player) || "";
+  let quiz = (Array.isArray(searchParams.quiz) ? searchParams.quiz[0] : searchParams.quiz) || "";
+  // No explicit name/quiz in the link? Resolve them from the run so the title isn't generic.
+  if ((!player || !quiz) && runId) {
+    const bits = await resolveTitleBits(runId);
+    if (bits) { player = player || bits.player; quiz = quiz || (bits.quiz ?? ""); }
+  }
+  if (!player) player = "A manager";
   const title = `${player} · World Cup Mastermind`;
   const description = quiz
     ? `${quiz} on today's World Cup Mastermind quiz. Think you know football? Beat them on 38-0.`
