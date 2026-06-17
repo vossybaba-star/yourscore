@@ -1,30 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimitDistributed } from "@/lib/ratelimit";
-import { createWcDb, activeEdition } from "@/lib/draft/wc-server";
+import { createWcDb, activeEdition, previousEdition, resolveEdition } from "@/lib/draft/wc-server";
 import {
   rankedQuestions, draftSlots, rankedDraftStep, toSlatePlayer,
   WC_DRAFT_FORMATION, type DraftPick,
 } from "@/lib/draft/wc-draft";
 
-// Server-authoritative RANKED draft (the daily competition). The client never receives the
-// answer or the seed — it asks the server for each pick's slate after answering.
-//   { action: "begin" }                          → { questions[], slots[], formation } | { locked:true }
-//   { action: "status" }                         → { lockedToday }
-//   { action: "slate", i, answers[], picks[] }    → { correct, correctIndex, nation, crest, era, players[] }
+// Server-authoritative RANKED draft (the daily competition + one-day catch-up). The client
+// never receives the answer or the seed — it asks the server for each pick's slate after
+// answering. A `catchup:true` request targets the IMMEDIATELY-PREVIOUS edition instead of
+// the current one (the only past edition that can ever be played).
+//   { action: "begin", catchup? }                → { questions[], slots[], formation } | { locked:true }
+//   { action: "status" }                         → { lockedToday, catchup: { edition, available } }
+//   { action: "slate", catchup?, i, answers, picks } → { correct, correctIndex, nation, crest, era, players[] }
 // The final XI is submitted to /api/draft/wc (start) and re-verified there.
 //
-// Anti-preview: once a player passes their 6th pick (i >= LOCK_AFTER), the day's ranked
+// Anti-preview: once a player passes their 6th pick (i >= LOCK_AFTER), the edition's ranked
 // attempt is committed (a lock row) even before submit — so they can't read the questions,
 // bail, and re-draft with the revealed answers.
 
-const LOCK_AFTER = 6; // commit the day's ranked attempt once the 7th pick (index 6) is reached
+const LOCK_AFTER = 6; // commit the attempt once the 7th pick (index 6) is reached
 
+// Has this user already used (played, or drafted past pick 6 in) the given edition?
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function lockedToday(db: any, userId: string, date: string): Promise<boolean> {
+async function lockedFor(db: any, userId: string, edition: string): Promise<boolean> {
   const [lock, run] = await Promise.all([
-    db.from("draft_wc_daily_locks").select("user_id").eq("user_id", userId).eq("run_date", date).maybeSingle(),
-    db.from("draft_wc_runs").select("id").eq("user_id", userId).eq("ranked", true).eq("run_date", date).maybeSingle(),
+    db.from("draft_wc_daily_locks").select("user_id").eq("user_id", userId).eq("run_date", edition).maybeSingle(),
+    db.from("draft_wc_runs").select("id").eq("user_id", userId).eq("ranked", true).eq("run_date", edition).maybeSingle(),
   ]);
   return !!lock.data || !!run.data;
 }
@@ -39,22 +42,30 @@ export async function POST(req: NextRequest) {
   const { ok } = await rateLimitDistributed(`draft-wc-draft:${user?.id ?? "anon"}`, 120, 60_000);
   if (!ok) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
 
-  let body: { action?: string; i?: number; answers?: unknown; picks?: unknown };
+  let body: { action?: string; i?: number; answers?: unknown; picks?: unknown; catchup?: boolean };
   try { body = await req.json(); } catch { return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 }); }
 
   const db = createWcDb();
-  const date = await activeEdition(db); // the active ranked edition, not the calendar date
+  const catchup = body.catchup === true;
 
   if (body.action === "status") {
-    const locked = user ? await lockedToday(db, user.id, date) : false;
-    return NextResponse.json({ lockedToday: locked });
+    // Report the current run's state AND whether a one-day catch-up is open for this user.
+    const current = await activeEdition(db);
+    const prev = await previousEdition(db);
+    const lockedToday = user ? await lockedFor(db, user.id, current) : false;
+    const catchupAvailable = !!(user && prev && !(await lockedFor(db, user.id, prev)));
+    return NextResponse.json({ lockedToday, catchup: { edition: prev, available: catchupAvailable } });
   }
 
+  // begin/slate target the current edition, or the previous one for a catch-up.
+  const date = await resolveEdition(db, catchup);
+  if (!date) return NextResponse.json({ error: "There's no catch-up run available right now." }, { status: 400 });
+
   if (body.action === "begin") {
-    if (user && await lockedToday(db, user.id, date)) {
-      return NextResponse.json({ locked: true, error: "You've already used today's ranked run — come back tomorrow." });
+    if (user && await lockedFor(db, user.id, date)) {
+      return NextResponse.json({ locked: true, error: catchup ? "You've already played that run." : "You've already used today's ranked run — come back tomorrow." });
     }
-    return NextResponse.json({ questions: rankedQuestions(date), slots: draftSlots(), formation: WC_DRAFT_FORMATION });
+    return NextResponse.json({ questions: rankedQuestions(date), slots: draftSlots(), formation: WC_DRAFT_FORMATION, catchup });
   }
 
   if (body.action === "slate") {

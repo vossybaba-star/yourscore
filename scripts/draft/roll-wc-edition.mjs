@@ -41,9 +41,13 @@ const edition = process.argv[2] || new Date().toISOString().slice(0, 10);
 if (!/^\d{4}-\d{2}-\d{2}$/.test(edition)) { console.error(`Edition must be YYYY-MM-DD (got "${edition}")`); process.exit(1); }
 
 const db = createClient(URL, KEY);
+// The edition being replaced becomes the catch-up "previous" edition (unless this is a
+// no-op re-roll of the same edition, in which case we leave prev untouched).
+const { data: cur } = await db.from("wc_ranked_edition").select("edition, prev_edition").eq("id", true).maybeSingle();
+const prev_edition = cur && cur.edition && cur.edition !== edition ? cur.edition : (cur?.prev_edition ?? null);
 const { error } = await db.from("wc_ranked_edition").upsert(
-  { id: true, edition, published_at: new Date().toISOString() },
+  { id: true, edition, prev_edition, published_at: new Date().toISOString() },
   { onConflict: "id" },
 );
 if (error) { console.error("Failed to roll edition:", error.message); process.exit(1); }
-console.log(`✅ WC ranked edition is now ${edition} — everyone gets a fresh run.`);
+console.log(`✅ WC ranked edition is now ${edition}${prev_edition ? ` (catch-up: ${prev_edition})` : ""} — everyone gets a fresh run.`);

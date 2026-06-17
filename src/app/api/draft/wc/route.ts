@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimitDistributed } from "@/lib/ratelimit";
-import { validateNationLocked, validateWorld, newRunPlan, createWcDb, activeEdition, WORLD_TEAM_NAME } from "@/lib/draft/wc-server";
+import { validateNationLocked, validateWorld, newRunPlan, createWcDb, resolveEdition, WORLD_TEAM_NAME } from "@/lib/draft/wc-server";
 import { verifyRankedDraft, rankedQuizScore, WC_DRAFT_FORMATION, type DraftPick } from "@/lib/draft/wc-draft";
 
 // Start a World Cup Run: validate a nation-locked XI, plan the bracket (deterministic
@@ -16,16 +16,19 @@ export async function POST(req: NextRequest) {
   const { ok } = await rateLimitDistributed(`draft-wc-start:${user.id}`, 20, 60_000);
   if (!ok) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
 
-  let body: { action?: string; mode?: string; nation?: string; formation?: unknown; squad?: unknown; ranked?: boolean; answers?: unknown; picks?: unknown };
+  let body: { action?: string; mode?: string; nation?: string; formation?: unknown; squad?: unknown; ranked?: boolean; answers?: unknown; picks?: unknown; catchup?: boolean };
   try { body = await req.json(); } catch { return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 }); }
   if (body.action !== "start") return NextResponse.json({ error: "Unknown action" }, { status: 400 });
 
   // Ranked = the daily competition (one locked go/edition, World XI only, season board).
-  // Unranked = unlimited practice. The run is keyed to the active EDITION (server-side, not
-  // the calendar date): the current run stays live until a new edition is posted.
+  // Unranked = unlimited practice. The run is keyed to an EDITION (server-side, not the
+  // calendar date): the current edition, or — for a `catchup` — the immediately-previous one
+  // (the only past edition that can be played). One-go per edition is enforced either way.
   const ranked = body.ranked === true;
+  const catchup = ranked && body.catchup === true;
   const db = createWcDb();
-  const runDate = ranked ? await activeEdition(db) : null;
+  const runDate = ranked ? await resolveEdition(db, catchup) : null;
+  if (ranked && !runDate) return NextResponse.json({ error: "There's no catch-up run available right now." }, { status: 400 });
   const mode = ranked ? "world" : (body.mode === "world" ? "world" : "nation");
   // nation mode: locked to one nation; world mode: open draft, stored under "World XI".
   const nation = mode === "world" ? WORLD_TEAM_NAME : String(body.nation ?? "");

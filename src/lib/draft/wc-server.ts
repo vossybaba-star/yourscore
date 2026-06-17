@@ -54,6 +54,20 @@ export async function activeEdition(db: SupabaseClient<any>): Promise<string> {
   return (data?.edition as string | undefined) ?? new Date().toISOString().slice(0, 10);
 }
 
+/** The immediately-PREVIOUS ranked edition (one-day catch-up), or null if there isn't one. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function previousEdition(db: SupabaseClient<any>): Promise<string | null> {
+  const { data } = await db.from("wc_ranked_edition").select("prev_edition").eq("id", true).maybeSingle();
+  return (data?.prev_edition as string | undefined) ?? null;
+}
+
+/** Which ranked edition a request targets: the current one, or — for a `catchup` request —
+ *  the immediately-previous one (the only past edition that can ever be played). */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function resolveEdition(db: SupabaseClient<any>, catchup: boolean): Promise<string | null> {
+  return catchup ? await previousEdition(db) : await activeEdition(db);
+}
+
 /** Map a draft_wc_runs DB row to the WcRun working shape. */
 export function rowToRun(row: Record<string, unknown>): WcRun {
   return {
