@@ -16,11 +16,16 @@ export function InviteMastermind({ label = "INVITE A FRIEND" }: { label?: string
 
   async function invite() {
     const url = `${typeof window !== "undefined" ? window.location.origin : "https://yourscore.app"}/38-0/wc`;
+    // Put the link INSIDE the text rather than as a separate `url` field: when someone picks
+    // "Copy" from the native share sheet, several platforms copy only `text` and drop a
+    // separate url — so the copied message would have no link. Embedding it guarantees the
+    // link is always there (exactly once), whether shared to an app or copied.
+    const message = `${INVITE_TEXT} ${url}`;
     if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
-      try { await navigator.share({ title: "World Cup Mastermind", text: INVITE_TEXT, url }); return; } catch { /* cancelled → fall through to copy */ }
+      try { await navigator.share({ title: "World Cup Mastermind", text: message }); return; } catch { /* cancelled → fall through to copy */ }
     }
     try {
-      await navigator.clipboard.writeText(`${INVITE_TEXT} ${url}`);
+      await navigator.clipboard.writeText(message);
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
     } catch { /* clipboard blocked — nothing we can do */ }
