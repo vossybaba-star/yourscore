@@ -94,7 +94,7 @@ export default function WorldCupBoard() {
                     </span>
                     <div className="min-w-0 pl-2" style={{ maxWidth: "46%" }}>
                       <div className="font-body truncate" style={{ fontSize: 14, color: "#fff" }}>{r.display_name}{isMe ? " (you)" : ""}</div>
-                      <div className="font-body" style={{ fontSize: 10, color: "#6a6a82" }}>{r.days} {r.days === 1 ? "day" : "days"} played · view drafts →</div>
+                      <div className="font-body" style={{ fontSize: 10, color: "#6a6a82" }}>view drafts →</div>
                     </div>
                     {/* Comment indicator — centred in the gap so it's obvious which entries have comments */}
                     <div className="flex-1 flex items-center justify-center px-1">
@@ -102,7 +102,9 @@ export default function WorldCupBoard() {
                         <span className="font-body inline-flex items-center gap-1 rounded-full px-2 py-0.5" style={{ fontSize: 11, color: "#9fd8d8", background: "rgba(0,216,192,0.14)", border: "1px solid rgba(0,216,192,0.34)" }}>💬 {r.comments}</span>
                       )}
                     </div>
-                    <span className="font-body tabular-nums" style={{ width: 24, textAlign: "center", fontSize: 13, color: "#8888aa" }}>{r.wins + r.draws + r.losses}</span>
+                    {/* Played = ranked World Cup Mastermind games (runs) — NOT the matches
+                        inside them. days = distinct ranked run_dates (one ranked run/day). */}
+                    <span className="font-body tabular-nums" style={{ width: 24, textAlign: "center", fontSize: 13, color: "#8888aa" }}>{r.days}</span>
                     <span className="font-body tabular-nums" style={{ width: 24, textAlign: "center", fontSize: 13, color: "#00ff87" }}>{r.wins}</span>
                     <span className="font-body tabular-nums" style={{ width: 24, textAlign: "center", fontSize: 13, color: ACCENT }}>{r.draws}</span>
                     <span className="font-body tabular-nums" style={{ width: 24, textAlign: "center", fontSize: 13, color: "#ff4757" }}>{r.losses}</span>
