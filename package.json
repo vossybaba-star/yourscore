@@ -22,10 +22,12 @@
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
     "next": "14.2.35",
+    "posthog-js": "^1.386.8",
     "react": "^18",
     "react-dom": "^18",
     "react-qr-code": "^2.0.21",
-    "resend": "^6.12.4"
+    "resend": "^6.12.4",
+    "svix": "^1.95.2"
   },
   "devDependencies": {
     "@capacitor/assets": "^3.0.5",
