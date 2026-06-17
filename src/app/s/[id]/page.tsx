@@ -71,6 +71,22 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     const title = "YourScore 38-0 — build your all-time XI";
     return { title, description: "Build an all-time XI and simulate your season. Think you can beat it?" };
   }
+  // Quiz result share → a QUIZ scorecard (not the 38-0 season card).
+  if (p.challengeSlug) {
+    const qp = new URLSearchParams({ slug: p.challengeSlug });
+    if (p.qscore) qp.set("score", p.qscore);
+    if (p.qcorrect) qp.set("correct", p.qcorrect);
+    if (p.qtotal) qp.set("total", p.qtotal);
+    const image = `${BASE}/api/og/quiz?${qp.toString()}`;
+    const sc = p.qscore ? Number(p.qscore).toLocaleString() : null;
+    const title = sc ? `I scored ${sc} on a YourScore football quiz 🧠` : "Take this YourScore football quiz 🧠";
+    const description = "Think you know football? Beat my score.";
+    return {
+      title, description,
+      openGraph: { title, description, images: [{ url: image, width: 1200, height: 630 }], type: "website" },
+      twitter: { card: "summary_large_image", title, description, images: [image] },
+    };
+  }
   const pos = parseInt(p.pos || "10", 10);
   const title = `${p.w ?? 0}-${p.d ?? 0}-${p.l ?? 0} · finished ${ordinal(pos)} on ${p.pts ?? 0} pts | YourScore 38-0`;
   const description = p.xi

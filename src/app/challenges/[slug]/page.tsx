@@ -535,9 +535,17 @@ export default function ChallengePage() {
   async function ensureShortUrl(): Promise<string> {
     if (shortUrl) return shortUrl;
     try {
+      // Carry the result so the share card is a QUIZ scorecard (score + correct/total),
+      // not the generic quiz promo or a 38-0 card.
+      const correctCount = answerLog.filter((r) => r.correct).length;
       const res = await fetch("/api/draft/share", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ payload: { challengeSlug: slug } }),
+        body: JSON.stringify({ payload: {
+          challengeSlug: slug,
+          qscore: String(score),
+          qcorrect: String(correctCount),
+          qtotal: String(answerLog.length),
+        } }),
       });
       if (res.ok) {
         const { id } = await res.json();

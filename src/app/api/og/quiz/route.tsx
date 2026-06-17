@@ -55,6 +55,13 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const slug = searchParams.get("slug");
   const pid = searchParams.get("pid");
+  // Result share: when a score is present we render a SCORECARD (the player's score +
+  // correct/total) rather than the "take the quiz" promo card.
+  const scoreRaw = searchParams.get("score");
+  const score = scoreRaw != null && scoreRaw !== "" ? Number(scoreRaw) : null;
+  const correct = searchParams.get("correct");
+  const total = searchParams.get("total");
+  const hasScore = score != null && Number.isFinite(score);
 
   const pack = await resolvePack(slug, pid).catch(() => null);
 
@@ -77,43 +84,50 @@ export async function GET(req: Request) {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={LOGO_DATA_URI} width={232} height={62} alt="YourScore" style={{ display: "flex" }} />
           <div style={{ display: "flex", padding: "9px 22px", borderRadius: 999, background: accentDim, border: `1px solid ${accentBorder}` }}>
-            <span style={{ display: "flex", color: accent, fontSize: 24, fontWeight: 800, letterSpacing: 3 }}>DAILY QUIZ</span>
+            <span style={{ display: "flex", color: accent, fontSize: 24, fontWeight: 800, letterSpacing: 3 }}>{hasScore ? "QUIZ RESULT" : "DAILY QUIZ"}</span>
           </div>
         </div>
 
         {/* center block — spacing via `gap` (Satori honors gap reliably; it
             ignores marginTop on flex children in a centered column). */}
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1, justifyContent: "center", gap: 22 }}>
-          {/* icon tile */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 116, height: 116, borderRadius: 28, background: accentDim, border: `1.5px solid ${accentBorder}` }}>
-            <span style={{ display: "flex", fontSize: 68 }}>{icon}</span>
-          </div>
-
-          {/* title — wrapped in a FIXED-HEIGHT, centered box. Satori mis-measures
-              the height of a wrapping text node, so the elements after it overlap
-              line two. A fixed-height container reserves the space deterministically
-              (fits up to two lines), so the pills below always clear the title. */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 126, maxWidth: 1010 }}>
-            <span style={{ textAlign: "center", color: "#ffffff", fontSize: 52, fontWeight: 800, lineHeight: 1.07, letterSpacing: -1 }}>
-              {name}
-            </span>
-          </div>
-
-          {/* meta pills */}
-          <div style={{ display: "flex", gap: 14 }}>
-            <div style={{ display: "flex", padding: "10px 24px", borderRadius: 999, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.14)" }}>
-              <span style={{ display: "flex", color: "#c4ccc6", fontSize: 27, fontWeight: 700 }}>{qCount} questions</span>
+        {hasScore ? (
+          // ── Scorecard: the player's result ──
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1, justifyContent: "center", gap: 14 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 96, maxWidth: 1010 }}>
+              <span style={{ textAlign: "center", color: "#c4ccc6", fontSize: 40, fontWeight: 800, lineHeight: 1.05, letterSpacing: -0.5 }}>{name}</span>
             </div>
-            <div style={{ display: "flex", padding: "10px 24px", borderRadius: 999, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.14)" }}>
-              <span style={{ display: "flex", color: "#c4ccc6", fontSize: 27, fontWeight: 700 }}>⚡ Speed scored</span>
+            <span style={{ display: "flex", color: accent, fontSize: 150, fontWeight: 900, lineHeight: 1 }}>{score!.toLocaleString()}</span>
+            <span style={{ display: "flex", color: "#9aa39d", fontSize: 28, fontWeight: 700, letterSpacing: 4 }}>POINTS</span>
+            {correct && total ? (
+              <div style={{ display: "flex", marginTop: 6, padding: "10px 26px", borderRadius: 999, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.14)" }}>
+                <span style={{ display: "flex", color: "#c4ccc6", fontSize: 28, fontWeight: 700 }}>{correct}/{total} correct</span>
+              </div>
+            ) : null}
+          </div>
+        ) : (
+          // ── Promo: take the quiz ──
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1, justifyContent: "center", gap: 22 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 116, height: 116, borderRadius: 28, background: accentDim, border: `1.5px solid ${accentBorder}` }}>
+              <span style={{ display: "flex", fontSize: 68 }}>{icon}</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 126, maxWidth: 1010 }}>
+              <span style={{ textAlign: "center", color: "#ffffff", fontSize: 52, fontWeight: 800, lineHeight: 1.07, letterSpacing: -1 }}>{name}</span>
+            </div>
+            <div style={{ display: "flex", gap: 14 }}>
+              <div style={{ display: "flex", padding: "10px 24px", borderRadius: 999, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.14)" }}>
+                <span style={{ display: "flex", color: "#c4ccc6", fontSize: 27, fontWeight: 700 }}>{qCount} questions</span>
+              </div>
+              <div style={{ display: "flex", padding: "10px 24px", borderRadius: 999, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.14)" }}>
+                <span style={{ display: "flex", color: "#c4ccc6", fontSize: 27, fontWeight: 700 }}>⚡ Speed scored</span>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* bottom: CTA + leaderboard hook */}
         <div style={{ display: "flex", width: "100%", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", padding: "16px 34px", borderRadius: 999, background: accent }}>
-            <span style={{ display: "flex", color: "#0a0a0f", fontSize: 32, fontWeight: 900, letterSpacing: 1 }}>TAKE THE QUIZ →</span>
+            <span style={{ display: "flex", color: "#0a0a0f", fontSize: 32, fontWeight: 900, letterSpacing: 1 }}>{hasScore ? "BEAT MY SCORE →" : "TAKE THE QUIZ →"}</span>
           </div>
           <span style={{ display: "flex", color: "#9aa39d", fontSize: 26, fontWeight: 600 }}>Beat the leaderboard · yourscore.app</span>
         </div>
