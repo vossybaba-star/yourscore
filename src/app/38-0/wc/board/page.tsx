@@ -76,6 +76,7 @@ export default function WorldCupBoard() {
               <div className="flex items-center px-3 py-2 font-body" style={{ fontSize: 10, color: "#8888aa", letterSpacing: 0.5, background: "rgba(255,255,255,0.03)" }}>
                 <span style={{ width: 28, textAlign: "center" }}>#</span>
                 <span className="flex-1 pl-2">PLAYER</span>
+                <span style={{ width: 24, textAlign: "center" }}>P</span>
                 <span style={{ width: 24, textAlign: "center" }}>W</span>
                 <span style={{ width: 24, textAlign: "center" }}>D</span>
                 <span style={{ width: 24, textAlign: "center" }}>L</span>
@@ -101,6 +102,7 @@ export default function WorldCupBoard() {
                         <span className="font-body inline-flex items-center gap-1 rounded-full px-2 py-0.5" style={{ fontSize: 11, color: "#9fd8d8", background: "rgba(0,216,192,0.14)", border: "1px solid rgba(0,216,192,0.34)" }}>💬 {r.comments}</span>
                       )}
                     </div>
+                    <span className="font-body tabular-nums" style={{ width: 24, textAlign: "center", fontSize: 13, color: "#8888aa" }}>{r.wins + r.draws + r.losses}</span>
                     <span className="font-body tabular-nums" style={{ width: 24, textAlign: "center", fontSize: 13, color: "#00ff87" }}>{r.wins}</span>
                     <span className="font-body tabular-nums" style={{ width: 24, textAlign: "center", fontSize: 13, color: ACCENT }}>{r.draws}</span>
                     <span className="font-body tabular-nums" style={{ width: 24, textAlign: "center", fontSize: 13, color: "#ff4757" }}>{r.losses}</span>
