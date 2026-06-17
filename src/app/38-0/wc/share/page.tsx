@@ -12,7 +12,7 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import Link from "next/link";
 
-const CARD_PARAMS = ["mode", "player", "quiz", "rec", "rank", "date", "status", "stage", "world", "nation", "crest"] as const;
+const CARD_PARAMS = ["mode", "run", "player", "quiz", "rec", "rank", "date", "status", "stage", "world", "nation", "crest"] as const;
 
 function buildOgQuery(sp: Record<string, string | string[] | undefined>): string {
   const p = new URLSearchParams();

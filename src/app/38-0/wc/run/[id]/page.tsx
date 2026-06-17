@@ -336,10 +336,12 @@ export default function WorldCupRun() {
 
   const quizStr = run?.quiz_total ? `${run.quiz_correct ?? 0}/${run.quiz_total}` : "";
 
-  // Personalised Mastermind card params (ranked daily): name + record + 🧠 quiz + rank.
+  // Personalised Mastermind card params (ranked daily). `run` makes the card SELF-CONTAINED:
+  // the og route resolves name + record + 🧠 quiz + rank + result server-side from the run id,
+  // so it's always complete even if this client state is stale. The rest travel as a fallback.
   const masterParams = useMemo(() => {
     if (!run) return null;
-    const p = new URLSearchParams({ mode: "mastermind", player: playerName, status: run.status, stage: run.stage });
+    const p = new URLSearchParams({ mode: "mastermind", run: id, player: playerName, status: run.status, stage: run.stage });
     if (runRec) p.set("rec", runRec);
     if (quizStr) p.set("quiz", quizStr);
     if (standing?.rank) p.set("rank", String(standing.rank));
@@ -347,7 +349,7 @@ export default function WorldCupRun() {
     if (world) p.set("world", "1"); else p.set("nation", run.nation);
     if (crest) p.set("crest", crest);
     return p.toString();
-  }, [run, playerName, runRec, quizStr, standing, dateLabel, world, crest]);
+  }, [run, id, playerName, runRec, quizStr, standing, dateLabel, world, crest]);
 
   // Open World Cup Run scorecard path: "Label~Detail~R" rows (R = W|L|Q).
   const runPathUrl = useMemo(() => {
