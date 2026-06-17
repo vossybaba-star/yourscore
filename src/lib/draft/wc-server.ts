@@ -54,11 +54,21 @@ export async function activeEdition(db: SupabaseClient<any>): Promise<string> {
   return (data?.edition as string | undefined) ?? new Date().toISOString().slice(0, 10);
 }
 
-/** The immediately-PREVIOUS ranked edition (one-day catch-up), or null if there isn't one. */
+/** The immediately-PREVIOUS ranked edition (one-day catch-up), or null if there isn't one.
+ *  Derived dynamically as the latest ranked run_date strictly before the active edition —
+ *  self-correcting, so it can't drift like a hand-maintained pointer (which once went stale
+ *  and pointed catch-up two days back). Only ever the single most-recent prior edition. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function previousEdition(db: SupabaseClient<any>): Promise<string | null> {
-  const { data } = await db.from("wc_ranked_edition").select("prev_edition").eq("id", true).maybeSingle();
-  return (data?.prev_edition as string | undefined) ?? null;
+  const current = await activeEdition(db);
+  const { data } = await db.from("draft_wc_runs")
+    .select("run_date")
+    .eq("ranked", true)
+    .lt("run_date", current)
+    .order("run_date", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return (data?.run_date as string | undefined) ?? null;
 }
 
 /** Which ranked edition a request targets: the current one, or — for a `catchup` request —
