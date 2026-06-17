@@ -5,8 +5,17 @@ share cards). Because they're drawn from the real brand system — not an AI ima
 model — they're always pixel-sharp, always on-brand, and never carry an
 "AI-generated" look.
 
+**The brand is the real one, not an approximation:**
+
+- **Type** — **Bebas Neue** (the condensed caps of the logo / all display headers)
+  over **DM Sans** body, loaded from the actual TTFs (`src/lib/og/fonts/`).
+- **Wordmark** — the real logo asset (`logo-mark.png`, inlined), not text.
+- **Colour rule** (from `tailwind.config.ts`): **lime `#aeea00` = 38-0 / actions ·
+  teal `#00d8c0` = Quiz / knowledge · gold `#ffc233` = wins only**, on the app's
+  `#080d0a` pitch→ink background. Each preset uses the right accent automatically.
+
 **Design law:** the *information* is always the dominant layer. Hero imagery (the
-gold trophy, pitch lines, dot-grid) renders as a dimmed full-bleed backdrop that
+gold trophy, pitch lines, grid) renders as a dimmed full-bleed backdrop that
 sets the mood but never out-shouts the words and the number we're communicating.
 
 ## See them / download them
@@ -42,10 +51,10 @@ It returns a PNG. Open it in a browser and save, or `curl -o post.png "<url>"`.
 | value    | post                          | accent | backdrop |
 |----------|-------------------------------|--------|----------|
 | `wc`     | World Cup Mastermind (launch) | gold   | trophy   |
-| `380`    | 38-0 — the flagship           | green  | pitch    |
-| `quiz`   | Quiz — "knowledge. Ranked."   | green  | grid     |
+| `380`    | 38-0 — the flagship           | lime   | pitch    |
+| `quiz`   | Quiz — "knowledge. Ranked."   | teal   | grid     |
 | `rank`   | YourScore Rank                | gold   | grid     |
-| `league` | Start a league                | green  | pitch    |
+| `league` | Start a league                | lime   | pitch    |
 | `stat`   | Pure info-first (a big stat)  | gold   | trophy   |
 
 All copy is drawn from `YOURSCORE.md`, so the messaging matches the live product.
@@ -64,7 +73,7 @@ code. URL-encode the values.
 | `p1` `p2` `p3`         | the three support pills                                  |
 | `cta`                  | the footer button                                        |
 | `url`                  | the footer handle (default `yourscore.app`)             |
-| `accent`               | `green` or `gold` (overrides the preset)                |
+| `accent`               | `lime` · `teal` · `gold` (overrides the preset)         |
 | `backdrop`             | `trophy` · `pitch` · `grid` · `none`                    |
 
 ### Examples
@@ -98,6 +107,8 @@ A knockout-stage announcement reusing the WC look:
 - `src/lib/og/igBrand.tsx` — the brand system as reusable Satori primitives
   (palette, wordmark, kicker, hero, pills, footer, accent bar, and the code-drawn
   trophy / pitch / grid backdrops).
+- `src/lib/og/fonts.ts` + `src/lib/og/fonts/*.ttf` — Bebas Neue + DM Sans, handed
+  to `ImageResponse`.
 - `src/app/api/og/instagram/route.tsx` — the route + presets.
 - `src/app/marketing/instagram/page.tsx` — the preview/download gallery.
 

@@ -26,10 +26,12 @@ import {
   Hero,
   Pill,
   BRAND,
+  FONT_DISPLAY,
   type Accent,
   type Backdrop,
   type IgSize,
 } from "@/lib/og/igBrand";
+import { loadBrandFonts } from "@/lib/og/fonts";
 
 export const runtime = "edge";
 
@@ -59,9 +61,9 @@ const PRESETS: Record<string, Preset> = {
     cta: "Play today’s run →",
     url: "yourscore.app/38-0/wc",
   },
-  // 38-0 — the flagship team-builder (green + pitch).
+  // 38-0 — the flagship team-builder (lime + pitch).
   "380": {
-    accent: "green",
+    accent: "lime",
     backdrop: "pitch",
     badge: "The flagship",
     supra: "Build an unbeaten season",
@@ -71,9 +73,9 @@ const PRESETS: Record<string, Preset> = {
     cta: "Build your XI →",
     url: "yourscore.app/38-0",
   },
-  // Quiz — the knowledge game (green + grid).
+  // Quiz — the knowledge game (teal + grid).
   quiz: {
-    accent: "green",
+    accent: "teal",
     backdrop: "grid",
     badge: "Football knowledge",
     hero: "Your football knowledge. {Ranked.}",
@@ -94,9 +96,9 @@ const PRESETS: Record<string, Preset> = {
     cta: "Find your rank →",
     url: "yourscore.app/leaderboard",
   },
-  // Leagues — the social loop (green + pitch).
+  // Leagues — the social loop (lime + pitch).
   league: {
-    accent: "green",
+    accent: "lime",
     backdrop: "pitch",
     badge: "Leagues",
     supra: "For the group chat",
@@ -132,7 +134,7 @@ export async function GET(req: NextRequest) {
   const size = (["square", "portrait", "story"].includes(q.get("size") ?? "")
     ? q.get("size")
     : "portrait") as IgSize;
-  const accent = (q.get("accent") === "green" || q.get("accent") === "gold"
+  const accent = (["lime", "teal", "gold"].includes(q.get("accent") ?? "")
     ? q.get("accent")
     : preset.accent) as Accent;
   const backdrop = (["trophy", "pitch", "grid", "none"].includes(q.get("backdrop") ?? "")
@@ -154,6 +156,7 @@ export async function GET(req: NextRequest) {
   const { w, h } = IG_DIMENSIONS[size];
   const pad = size === "story" ? 96 : 80;
   const contentWidth = w - 2 * pad;
+  const fonts = await loadBrandFonts();
   // The hero stays the dominant element; cap scales with canvas height.
   const heroMax = size === "story" ? 220 : size === "portrait" ? 208 : 192;
   const subSize = size === "square" ? 38 : 42;
@@ -163,7 +166,7 @@ export async function GET(req: NextRequest) {
     (
       <PostFrame size={size} accent={accent} backdrop={backdrop} badge={badge} cta={cta} url={url}>
         {supra ? (
-          <span style={{ display: "flex", color: BRAND.muted, fontSize: 34, fontWeight: 800, letterSpacing: 3 }}>
+          <span style={{ display: "flex", fontFamily: FONT_DISPLAY, color: BRAND.muted, fontSize: 42, letterSpacing: 4, lineHeight: 1 }}>
             {supra.toUpperCase()}
           </span>
         ) : (
@@ -204,6 +207,8 @@ export async function GET(req: NextRequest) {
     {
       width: w,
       height: h,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      fonts: fonts as any,
       headers: { "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400" },
     }
   );
