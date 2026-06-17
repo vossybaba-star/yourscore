@@ -11,6 +11,7 @@ export default function SettingsPage() {
   const { user, loading } = useUser();
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
+  const [usernameError, setUsernameError] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [profileLoading, setProfileLoading] = useState(true);
@@ -80,15 +81,22 @@ export default function SettingsPage() {
   async function handleSave() {
     if (!user || !process.env.NEXT_PUBLIC_SUPABASE_URL) return;
     setSaving(true);
+    setUsernameError("");
+    const handle = username.trim();
+    if (handle && handle.length < 3) { setSaving(false); setUsernameError("At least 3 characters."); return; }
     const { createClient } = await import("@/lib/supabase/client");
-    await createClient()
+    // Username is the public identity — mirror it into display_name (what every surface
+    // reads) so the handle shows everywhere without rewiring them.
+    const { error } = await createClient()
       .from("profiles")
-      .update({
-        display_name: displayName.trim() || null,
-        username: username.trim() || null,
-      })
+      .update({ username: handle || null, ...(handle ? { display_name: handle } : {}) })
       .eq("id", user.id);
     setSaving(false);
+    if (error) {
+      setUsernameError(/duplicate|unique/i.test(error.message) ? "That username is taken." : "Couldn't save — try again.");
+      return;
+    }
+    if (handle) setDisplayName(handle);
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   }
@@ -174,7 +182,7 @@ export default function SettingsPage() {
     );
   }
 
-  const initials = (displayName || user.email || "?")[0].toUpperCase();
+  const initials = (username || displayName || user.email || "?")[0].toUpperCase();
 
   return (
     <main className="min-h-dvh bg-bg pb-28">
@@ -270,7 +278,7 @@ export default function SettingsPage() {
           </label>
           <div>
             <p className="font-body text-base font-semibold text-white">
-              {displayName || user.email?.split("@")[0]}
+              {username ? `@${username}` : displayName || user.email?.split("@")[0]}
             </p>
             <p className="font-body text-xs text-text-muted mt-0.5">{user.email}</p>
             {uploadError && <p className="font-body text-xs mt-1 text-danger">{uploadError}</p>}
@@ -291,40 +299,24 @@ export default function SettingsPage() {
             className="rounded-2xl overflow-hidden bg-surface"
             style={{ border: "1px solid rgba(255,255,255,0.07)" }}
           >
-            <div className="px-5 py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-              <label className="font-body text-xs text-text-muted block mb-1">Display name</label>
-              <p className="font-body text-xs mb-2" style={{ color: "rgba(255,255,255,0.35)" }}>Shown publicly on leaderboards, leagues &amp; shared cards. A nickname is fine.</p>
-              <input
-                type="text"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value.slice(0, 30))}
-                placeholder="A nickname or first name"
-                className="w-full font-body text-sm text-white bg-transparent outline-none placeholder:text-white/20"
-                onKeyDown={(e) => e.key === "Enter" && handleSave()}
-              />
-            </div>
             <div className="px-5 py-4">
-              <label className="font-body text-xs text-text-muted block mb-2">
-                Username <span className="text-white/30 font-normal">(optional)</span>
-              </label>
+              <label className="font-body text-xs text-text-muted block mb-1">Username</label>
+              <p className="font-body text-xs mb-2" style={{ color: "rgba(255,255,255,0.35)" }}>Your public name across YourScore — leaderboards, leagues &amp; shared cards.</p>
               <div className="flex items-center gap-1">
                 <span className="font-body text-sm text-text-muted">@</span>
                 <input
                   type="text"
                   value={username}
-                  onChange={(e) =>
-                    setUsername(
-                      e.target.value
-                        .toLowerCase()
-                        .replace(/[^a-z0-9_]/g, "")
-                        .slice(0, 20)
-                    )
-                  }
+                  onChange={(e) => {
+                    setUsernameError("");
+                    setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 20));
+                  }}
                   placeholder="yourusername"
                   className="flex-1 font-body text-sm text-white bg-transparent outline-none placeholder:text-white/20"
                   onKeyDown={(e) => e.key === "Enter" && handleSave()}
                 />
               </div>
+              {usernameError && <p className="font-body text-xs mt-2" style={{ color: "#ff7a88" }}>{usernameError}</p>}
             </div>
           </div>
         </div>

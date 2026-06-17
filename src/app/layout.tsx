@@ -4,7 +4,7 @@ import { Bebas_Neue, DM_Sans, DM_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { NativeBootstrap } from "@/components/native/NativeBootstrap";
-import { DisplayNamePrompt } from "@/components/profile/DisplayNamePrompt";
+import { UsernamePrompt } from "@/components/profile/UsernamePrompt";
 import { NativeOnboarding } from "@/components/native/onboarding/NativeOnboarding";
 import { PushPrePrompt } from "@/components/native/PushPrePrompt";
 import { SignupPixel } from "@/components/analytics/SignupPixel";
@@ -84,7 +84,7 @@ export default function RootLayout({
     <html lang="en" className={`${bebasNeue.variable} ${dmSans.variable} ${dmMono.variable}`}>
       <body>
         <NativeBootstrap />
-        <DisplayNamePrompt />
+        <UsernamePrompt />
         <NativeOnboarding />
         <PushPrePrompt />
         <SignupPixel />
