@@ -70,26 +70,22 @@ const QUIZ_STEPS = [
     num: "02",
     color: "#aeea00",
     emoji: "⚽",
-    title: "Sign up for a match",
-    short: "Tell us you're watching",
-    body: "Browse upcoming fixtures, tap the ones you're going to watch. We'll line up the questions tailored to that matchup — the players, the history, the rivalry — and ping your phone the moment kick-off lands.",
+    title: "Pick a quiz",
+    short: "Daily packs + solo challenges",
+    body: "Jump into the daily World Cup quiz or any football trivia pack — players, records, history, the lot. Fresh questions every day. Play solo whenever you like, or spin up a lobby and take your mates on.",
     visual: (
       <div className="space-y-2">
         <div className="rounded-2xl px-4 py-4" style={{ background: "#080d0a", border: "1px solid rgba(174,234,0,0.15)" }}>
-          <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-3">Upcoming</p>
+          <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-3">Daily quiz</p>
           <div className="flex items-center justify-between mb-3">
             <div>
-              <p className="font-body text-sm font-semibold text-white">England vs France</p>
-              <p className="font-body text-xs text-text-muted">Jun 24 · World Cup · 20:00</p>
+              <p className="font-body text-sm font-semibold text-white">World Cup 2026 · Opening Day</p>
+              <p className="font-body text-xs text-text-muted">8 questions · speed scored</p>
             </div>
-            <span className="font-body text-xs px-3 py-1.5 rounded-lg font-semibold text-green" style={{ background: "rgba(174,234,0,0.12)", border: "1px solid rgba(174,234,0,0.3)" }}>I&apos;m playing</span>
+            <span className="font-body text-xs px-3 py-1.5 rounded-lg font-semibold text-green" style={{ background: "rgba(174,234,0,0.12)", border: "1px solid rgba(174,234,0,0.3)" }}>Play →</span>
           </div>
           <div className="flex items-center gap-3 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: "#aeea00" }} />
-              <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: "#aeea00" }} />
-            </span>
-            <span className="font-body text-xs text-white">We&apos;ll send the first question at kick-off</span>
+            <span className="font-body text-xs text-white">🏆 New questions every day</span>
           </div>
         </div>
       </div>
@@ -99,9 +95,9 @@ const QUIZ_STEPS = [
     num: "03",
     color: "#00d8c0",
     emoji: "⚡",
-    title: "Answer live",
-    short: "45 seconds per question",
-    body: "Questions fire automatically during the match, timed to key moments. Everyone gets the same question at the same time. Faster correct answers score more. Speed is everything.",
+    title: "Answer fast",
+    short: "Speed scored, every question",
+    body: "The clock's ticking on every question. Everyone in a lobby gets the same questions, so it's a fair race — faster correct answers score more. Know your football and trust your gut. Speed is everything.",
     visual: (
       <div className="rounded-2xl overflow-hidden" style={{ background: "#080d0a", border: "1px solid rgba(0,216,192,0.15)" }}>
         <div className="flex items-center justify-between px-4 pt-4 pb-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
@@ -144,7 +140,7 @@ const QUIZ_STEPS = [
     emoji: "📈",
     title: "Points stack",
     short: "All season, every game",
-    body: "Your score updates after every match. Points stack across every tournament you play. Your league table shows raw score, accuracy %, and current streak — multiple ways to claim you're the best.",
+    body: "Your score updates after every game. Points stack across every quiz and challenge you play. Your league table shows raw score, accuracy %, and current streak — multiple ways to claim you're the best.",
     visual: (
       <div className="space-y-3">
         <div className="rounded-2xl px-4 py-3" style={{ background: "#080d0a", border: "1px solid rgba(174,234,0,0.15)" }}>
@@ -387,12 +383,12 @@ const DRAFT_STEPS = [
 // ── FAQ ───────────────────────────────────────────────────────────────────────
 
 const QUIZ_FAQS = [
-  { q: "Do I need an account?", a: "Only to answer questions and earn points. Sign in with Google, Apple, Facebook, or email (magic link) — takes 10 seconds. Watching the leaderboard is free without signing in." },
-  { q: "What's the difference between a league and a match?", a: "A match is one fixture — you sign up, answer the live quiz questions as it plays out, and your score from that game feeds into your leagues. A league is permanent — it tracks your whole group's points across every match and challenge each member plays, all season long." },
-  { q: "Who fires the questions?", a: "YourScore fires questions automatically during the match, timed to key moments. We push them straight to your phone — just have your notifications on." },
-  { q: "Can I join mid-game?", a: "Yes. You can sign up for a fixture at any point during it. You'll miss questions that already fired, but you'll be scored on all remaining ones." },
+  { q: "Do I need an account?", a: "Only to answer questions and earn points. Sign in with Google, Apple, Facebook, or email (magic link) — takes 10 seconds. Browsing the leaderboard is free without signing in." },
+  { q: "What's the difference between a league and a game?", a: "A game is one play-through — the daily quiz, a trivia pack, or a lobby with your mates. Your score from that game feeds into your leagues. A league is permanent — it tracks your whole group's points across every game each member plays, all season long." },
+  { q: "Do I have to play at a set time?", a: "No. Play solo whenever you like — the daily quiz and every pack are always there. Want to go head-to-head? Spin up a lobby and your mates jump in when they're ready." },
+  { q: "What's the daily quiz?", a: "A fresh set of football questions every day — players, records, history, the World Cup. Same questions for everyone, speed scored, so it's a fair race up the leaderboard." },
   { q: "How are points calculated?", a: "Correct answers score 100–200 points based on speed. Consecutive correct answers trigger a streak multiplier (up to 2×). Wrong answers or timeouts score 0." },
-  { q: "Is it free?", a: "Completely free. Unlimited matches, unlimited leagues, every tournament." },
+  { q: "Is it free?", a: "Completely free. Unlimited games, unlimited leagues, every tournament." },
 ];
 
 const DRAFT_FAQS = [
@@ -517,7 +513,7 @@ export default function HowItWorksPage() {
           </h1>
           <p className="font-body text-text-muted text-lg max-w-xl mx-auto leading-relaxed">
             {tab === "quiz"
-              ? "Four steps from zero to bragging rights. Start a league with your mates, answer questions live, and build your score all season."
+              ? "Four steps from zero to bragging rights. Start a league with your mates, race through daily quizzes, and build your score all season."
               : "Draft a squad of 11, challenge your friends head-to-head, and chase the dream: 38 games, 0 losses."}
           </p>
         </div>
@@ -611,9 +607,9 @@ export default function HowItWorksPage() {
         {(() => {
           const statsItems = tab === "quiz"
             ? [
-                { n: "104",  label: "matches at launch" },
-                { n: "45s",  label: "to answer each question" },
-                { n: "∞",    label: "points you can earn" },
+                { n: "Daily", label: "fresh quiz, every day" },
+                { n: "45s",   label: "to answer each question" },
+                { n: "∞",     label: "points you can earn" },
               ]
             : [
                 { n: "100+", label: "players to choose from" },
@@ -664,7 +660,7 @@ export default function HowItWorksPage() {
           <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.015) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.015) 1px,transparent 1px)", backgroundSize: "30px 30px" }} />
           <div className="relative z-10">
             <p className="font-display text-4xl sm:text-5xl text-white mb-3">READY TO PLAY?</p>
-            <p className="font-body text-text-muted mb-8">World Cup 2026 kicks off June 11. Get your squad set up.</p>
+            <p className="font-body text-text-muted mb-8">The World Cup is on. Get your squad set up and start climbing.</p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link href="/38-0/play"
                 className="flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-body font-bold text-base transition-all hover:opacity-90 green-pulse-glow"
