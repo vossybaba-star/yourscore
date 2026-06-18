@@ -64,5 +64,10 @@
 	<string>YourScore uses the camera so you can set a profile photo.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>YourScore needs access to your photos so you can set a profile picture.</string>
+	<key>NSUserTrackingUsageDescription</key>
+	<string>Allow tracking so we can measure which ads bring players to YourScore and keep the app free. Your data is never sold.</string>
+	<!-- TODO (SKAN, before resubmitting): paste AppsFlyer's official SKAdNetworkItems
+	     list here. Source: AppsFlyer dashboard > YourScore > SKAN setup, or
+	     support.appsflyer.com SKAdNetwork IDs. Not guessed here to avoid wrong IDs. -->
 </dict>
 </plist>

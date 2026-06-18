@@ -1,4 +1,5 @@
 import { track } from "@vercel/analytics";
+import { afLogEvent } from "@/lib/native/appsflyer";
 
 // Which game a Player is engaging with. Drives per-game ad audiences.
 export type GameId = "38-0" | "quiz";
@@ -65,6 +66,9 @@ function trackGameEvent(game: GameId, event: GameEvent, props: Props = {}): void
 
   // Vercel Analytics.
   track(event === "play" ? "play_game" : "complete_game", payload);
+
+  // AppsFlyer (native only) — log plays so app-install campaigns can optimise toward players.
+  if (event === "play") void afLogEvent("play_game", { game });
 }
 
 export const trackGamePlay = (game: GameId, props?: Props): void => trackGameEvent(game, "play", props);
