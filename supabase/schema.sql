@@ -475,7 +475,7 @@ CREATE OR REPLACE FUNCTION public.handle_new_user()
  SET search_path TO 'public'
 AS $function$
 begin
-  insert into public.profiles (id, display_name, avatar_url)
+  insert into public.profiles (id, display_name, avatar_url, notifications_opt_in)
   values (
     new.id,
     -- Privacy by default: first name only (see migration 46).
@@ -483,7 +483,9 @@ begin
       nullif(split_part(coalesce(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name', ''), ' ', 1), ''),
       split_part(new.email, '@', 1)
     ),
-    new.raw_user_meta_data->>'avatar_url'
+    new.raw_user_meta_data->>'avatar_url',
+    -- Notifications consent from signup (migration 50).
+    coalesce((new.raw_user_meta_data->>'notifications_opt_in')::boolean, false)
   )
   on conflict (id) do nothing;
   return new;

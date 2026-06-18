@@ -5,6 +5,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { NativeBootstrap } from "@/components/native/NativeBootstrap";
 import { UsernamePrompt } from "@/components/profile/UsernamePrompt";
+import { AppStoreBanner } from "@/components/app/AppStoreBanner";
 import { NativeOnboarding } from "@/components/native/onboarding/NativeOnboarding";
 import { PushPrePrompt } from "@/components/native/PushPrePrompt";
 import { SignupPixel } from "@/components/analytics/SignupPixel";
@@ -85,6 +86,7 @@ export default function RootLayout({
       <body>
         <NativeBootstrap />
         <UsernamePrompt />
+        <AppStoreBanner />
         <NativeOnboarding />
         <PushPrePrompt />
         <SignupPixel />

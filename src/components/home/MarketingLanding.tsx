@@ -609,14 +609,14 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
       <section className="relative z-10 max-w-6xl mx-auto px-6 pb-16">
         <div className="text-center mb-10">
           <h2 className="font-display text-5xl text-white mb-3">HOW IT WORKS</h2>
-          <p className="font-body text-text-muted">No app. No setup. You&apos;re in by the time the match starts.</p>
+          <p className="font-body text-text-muted">Two games, one score. Draft your XI, test your football knowledge, climb the table with your mates.</p>
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { num: "01", col: "#aeea00", emoji: "⚽", title: "PICK A MATCH", desc: "Choose any live or upcoming game — World Cup, Euros, club football. Open the match and you're in." },
-            { num: "02", col: "#ffb800", emoji: "⚡", title: "ANSWER LIVE", desc: "45 seconds to answer each question. Answer fast — more points." },
-            { num: "03", col: "#ff4757", emoji: "📈", title: "STACK YOUR SCORE", desc: "All points you earn add to your total. Every game, every competition." },
-            { num: "04", col: "#aeea00", emoji: "🏆", title: "JOIN A LEAGUE", desc: "Invite your mates. One table, all season — and finally find out who actually knows football." },
+            { num: "01", col: "#aeea00", emoji: "⚽", title: "DRAFT YOUR XI", desc: "Spin a squad of real-rated legends and draft your best XI — the 38-0 team-builder." },
+            { num: "02", col: "#ffb800", emoji: "⚔️", title: "GO HEAD TO HEAD", desc: "Play your XI against the world. Win and swap a player, lose and rebuild — chase the perfect unbeaten season." },
+            { num: "03", col: "#00d8c0", emoji: "🧠", title: "TEST YOUR KNOWLEDGE", desc: "Daily World Cup quizzes, speed-scored. The more football you know, the higher you climb." },
+            { num: "04", col: "#aeea00", emoji: "🏆", title: "TOP YOUR LEAGUE", desc: "Start a private league and invite your mates. One table, all season — settle who actually knows football." },
           ].map((step) => (
             <div key={step.num} className="rounded-2xl p-6 relative overflow-hidden group bg-surface" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
               <div className="font-display text-9xl absolute -top-4 -right-2 opacity-[0.06] group-hover:opacity-[0.1] transition-opacity select-none" style={{ color: step.col }}>{step.num}</div>
@@ -639,10 +639,10 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
       <section className="relative z-10 max-w-6xl mx-auto px-6 pb-16">
         <div className="grid lg:grid-cols-2 gap-10 items-center">
           <div>
-            <p className="font-body text-xs uppercase tracking-widest mb-3 text-amber">Real-time</p>
-            <h2 className="font-display text-4xl sm:text-5xl text-white mb-4">LIVE DURING<br />THE MATCH.</h2>
+            <p className="font-body text-xs uppercase tracking-widest mb-3 text-amber">Speed scored</p>
+            <h2 className="font-display text-4xl sm:text-5xl text-white mb-4">THE FASTER<br />YOU KNOW.</h2>
             <p className="font-body text-text-muted text-base leading-relaxed mb-6">
-              Every question is about the teams in front of you — their history, their players, their records. Questions land throughout the match at natural moments, not pinned to events on the pitch. At half-time, expect a few based on how the game&apos;s gone so far.
+              Every question is pure football — players, records, history, the World Cup. The faster you answer, the more you score, and a streak multiplies it. Play the daily quiz solo or go head-to-head with your mates.
             </p>
             <div className="space-y-3">
               {[
@@ -667,7 +667,7 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
               <div className="flex items-center justify-between px-6 pt-6 pb-4">
                 <div>
                   <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-1">Question 3 of 8</p>
-                  <p className="font-body text-xs text-text-muted">🏴󠁧󠁢󠁥󠁮󠁧󠁿 England vs France 🇫🇷</p>
+                  <p className="font-body text-xs text-text-muted">🏆 World Cup · Daily Quiz</p>
                 </div>
                 <div className="relative w-14 h-14">
                   <svg className="w-14 h-14 -rotate-90" viewBox="0 0 100 100">

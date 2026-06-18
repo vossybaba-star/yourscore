@@ -87,6 +87,8 @@ function EmailSignIn({ nextPath }: { nextPath?: string }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [resetSent, setResetSent] = useState(false);
+  // Notifications consent (opt-in) — get pinged when games are running / it's your turn.
+  const [notifyMe, setNotifyMe] = useState(false);
 
   async function sendMagicLink() {
     if (!email.trim() || loading) return;
@@ -127,7 +129,12 @@ function EmailSignIn({ nextPath }: { nextPath?: string }) {
     setLoading(true); setError("");
     try {
       const sb = createClient();
-      const { error: err } = await sb.auth.signUp({ email: email.trim().toLowerCase(), password });
+      // Notifications consent rides along in user_metadata; handle_new_user copies it to
+      // profiles.notifications_opt_in (migration 50).
+      const { error: err } = await sb.auth.signUp({
+        email: email.trim().toLowerCase(), password,
+        options: { data: { notifications_opt_in: notifyMe } },
+      });
       if (err) throw err;
       setSent(true);
     } catch (e: unknown) { setError(e instanceof Error ? e.message : "Sign up failed"); }
@@ -233,6 +240,17 @@ function EmailSignIn({ nextPath }: { nextPath?: string }) {
           placeholder="Confirm password" autoComplete="new-password"
           className="w-full rounded-xl px-4 py-3.5 font-body text-white text-sm outline-none placeholder:text-white/25"
           style={inputStyle(!!error)} />
+      )}
+
+      {/* Notifications opt-in (signup only) */}
+      {mode === "signup" && (
+        <label className="flex items-start gap-2.5 cursor-pointer select-none px-0.5">
+          <input type="checkbox" checked={notifyMe} onChange={e => setNotifyMe(e.target.checked)}
+            className="mt-0.5 h-4 w-4 flex-shrink-0" style={{ accentColor: "#aeea00" }} />
+          <span className="font-body text-xs leading-snug" style={{ color: "#8a948f" }}>
+            Notify me when games are running and it&apos;s my turn to play. You can change this anytime in settings.
+          </span>
+        </label>
       )}
 
       {error && <p className="font-body text-xs text-red-400">{error}</p>}
