@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { isNative, closeOAuthBrowser, exchangeCodeFromDeepLink } from "@/lib/native";
+import { initAppsFlyer } from "@/lib/native/appsflyer";
 import { createClient } from "@/lib/supabase/client";
 
 // Only allow same-origin relative redirects. Rejects absolute URLs
@@ -15,6 +16,11 @@ function safeNext(raw: string | null): string {
 export function NativeBootstrap() {
   useEffect(() => {
     if (!isNative()) return;
+
+    // Start AppsFlyer for mobile install attribution (no-op on web). Runs even
+    // without Supabase configured — it's independent of auth.
+    void initAppsFlyer();
+
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return;
 
     let cleanup: (() => void) | null = null;
