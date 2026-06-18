@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   bandForGrade, nextStreak, gradeAnswer, upgradeBand,
   QUIZ_BASE_FLOOR, QUIZ_STREAK_STEP, QUIZ_FLOOR_CAP, QUIZ_WRONG_CEILING,
+  QUIZ_BASE_CEILING, QUIZ_CEILING_STEP,
   UPGRADE_MIN_BUMP, UPGRADE_FLOOR_CAP,
 } from "./draft-quiz";
 
@@ -12,18 +13,28 @@ test("a wrong answer removes the floor and caps below elite", () => {
   assert.equal(b.maxOverall, QUIZ_WRONG_CEILING);
 });
 
-test("first correct answer opens an elite ceiling at the base floor", () => {
+test("first correct answer deals a solid, sub-elite band (no elite ceiling yet)", () => {
   const b = bandForGrade({ correct: true, streak: 1 });
   assert.equal(b.minOverall, QUIZ_BASE_FLOOR);
-  assert.equal(b.maxOverall, 99);
+  assert.equal(b.maxOverall, QUIZ_BASE_CEILING);
+  assert.ok(b.maxOverall < 88, "a lone correct answer can't deal an elite player");
 });
 
-test("a correct streak escalates the floor, capped", () => {
+test("a correct streak escalates BOTH floor and ceiling, capped", () => {
   const two = bandForGrade({ correct: true, streak: 2 });
   assert.equal(two.minOverall, QUIZ_BASE_FLOOR + QUIZ_STREAK_STEP);
-  // Far into a streak the floor saturates at the cap, never above.
+  assert.equal(two.maxOverall, QUIZ_BASE_CEILING + QUIZ_CEILING_STEP);
+  // Far into a streak the floor saturates at the cap and the ceiling reaches elite (99).
   const deep = bandForGrade({ correct: true, streak: 50 });
   assert.equal(deep.minOverall, QUIZ_FLOOR_CAP);
+  assert.equal(deep.maxOverall, 99);
+});
+
+test("elite players are gated behind a real streak (≈5+), not the first pick", () => {
+  // Below the threshold the ceiling stays sub-elite...
+  assert.ok(bandForGrade({ correct: true, streak: 3 }).maxOverall < 88);
+  // ...and a sustained streak finally opens the elite tier.
+  assert.ok(bandForGrade({ correct: true, streak: 6 }).maxOverall >= 88);
 });
 
 test("streak counts consecutive correct and resets on a miss", () => {

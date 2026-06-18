@@ -137,7 +137,7 @@ export { WORLD_TEAM_NAME };
  *  Deterministic by (run seed, stage, game index) so the revealed XI == the played XI. */
 export function buildOpponent(run: WcRun, fixture: WCFixture, idx: number) {
   const seed = `${run.seed}:opp:${fixture.stage}:${idx}`;
-  const target = oppTargetFor(run.strength, fixture.stage); // proportional to YOUR current Strength
+  const target = oppTargetFor(fixture.stage); // fixed per-round standard — NOT scaled to your Strength
   const opp = makeOpponent(run.formation as Formation, target, seededRng(seed));
   return { squad: opp.team.squad, strength: opp.team.strength };
 }

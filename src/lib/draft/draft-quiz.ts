@@ -7,6 +7,11 @@
  * removes the floor. So the more football you know, the stronger your XI — and the
  * better your shot at going unbeaten.
  *
+ * BOTH ends of the band climb with the streak. A single correct answer deals a SOLID
+ * player (sub-elite ceiling); only a real consecutive streak unlocks an elite ceiling,
+ * so the best players come up TOWARD THE END of the draft once you've strung answers
+ * together — they're earned, never handed out on pick one.
+ *
  * Pure + dependency-free so it runs under `node --test`.
  */
 
@@ -23,6 +28,11 @@ export const QUIZ_BASE_FLOOR = 66;   // floor for a single correct answer (strea
 export const QUIZ_STREAK_STEP = 3;   // floor gained per extra consecutive correct
 export const QUIZ_FLOOR_CAP = 84;    // floor never exceeds this (elite stays a spin, not a guarantee)
 export const QUIZ_WRONG_CEILING = 72; // a wrong answer can't deal an elite player
+// The CEILING also climbs with the streak, so elite players are gated behind a run of
+// correct answers (not available on the first correct pick). Tuned so the elite tier
+// (~88+) only opens once the streak reaches ~5 — i.e. toward the end of an 11-pick draft.
+export const QUIZ_BASE_CEILING = 76; // ceiling for a single correct answer (streak 1) — solid, not elite
+export const QUIZ_CEILING_STEP = 3;  // ceiling gained per extra consecutive correct (reaches 99 deep in a streak)
 
 /** Advance a correct-streak: +1 on a correct answer, reset to 0 on a miss. */
 export function nextStreak(prev: number, correct: boolean): number {
@@ -30,15 +40,18 @@ export function nextStreak(prev: number, correct: boolean): number {
 }
 
 /**
- * The spin band for an answered question. Correct → high floor (rising with the
- * streak), elite ceiling. Wrong → no floor, sub-elite ceiling. The streak passed is
- * the value AFTER this answer (so the first correct answer is streak 1).
+ * The spin band for an answered question. Correct → floor AND ceiling both rise with
+ * the streak: a lone correct answer deals a solid, sub-elite player; an elite ceiling
+ * only opens once the streak builds (≈streak 5+). Wrong → no floor, sub-elite ceiling.
+ * The streak passed is the value AFTER this answer (so the first correct answer is
+ * streak 1).
  */
 export function bandForGrade(grade: QuizGrade): DraftBand {
   if (!grade.correct) return { minOverall: 0, maxOverall: QUIZ_WRONG_CEILING };
   const steps = Math.max(0, grade.streak - 1);
   const floor = Math.min(QUIZ_FLOOR_CAP, QUIZ_BASE_FLOOR + steps * QUIZ_STREAK_STEP);
-  return { minOverall: floor, maxOverall: 99 };
+  const ceiling = Math.min(99, QUIZ_BASE_CEILING + steps * QUIZ_CEILING_STEP);
+  return { minOverall: floor, maxOverall: ceiling };
 }
 
 /** One-call helper: given the previous streak and this answer's correctness, return

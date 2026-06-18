@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   planRun, planWorldRun, qualifiesFromGroup, prestige, advanceStage, gamesForStage, buildMatchRow, isDuel,
-  OPP_MULT, oppTargetFor, STAGE_UPGRADES, KNOCKOUT_STAGES, RUN_STAGES,
+  OPP_TARGET, oppTargetFor, STAGE_UPGRADES, KNOCKOUT_STAGES, RUN_STAGES,
   GROUP_QUALIFY_POINTS, GROUP_PLAYOFF_POINTS, groupOutcome, WORLD_TEAM_NAME, type WcRun,
 } from "./wc";
 import { groupOpponents } from "../../data/draft/wc2026";
@@ -23,22 +23,23 @@ test("group qualify threshold (W=3, D=1)", () => {
   assert.equal(qualifiesFromGroup(3), false);
 });
 
-test("opponent difficulty multiplier rises every knockout round", () => {
+test("opponent difficulty standard rises every knockout round", () => {
   let prev = -Infinity;
   for (const stage of KNOCKOUT_STAGES) {
-    assert.ok(OPP_MULT[stage] > prev, `${stage} ${OPP_MULT[stage]} > ${prev}`);
-    prev = OPP_MULT[stage];
+    assert.ok(OPP_TARGET[stage] > prev, `${stage} ${OPP_TARGET[stage]} > ${prev}`);
+    prev = OPP_TARGET[stage];
   }
 });
 
-test("opponent target is PROPORTIONAL to your strength, and climbs each round", () => {
-  // Stronger team → stronger opponent at the same stage.
-  assert.ok(oppTargetFor(90, "qf") > oppTargetFor(70, "qf"));
-  // Same team → tougher opponent the deeper you go.
-  assert.ok(oppTargetFor(80, "final") > oppTargetFor(80, "group"));
-  // Group eases you in (below your level); final pushes above it.
-  assert.ok(oppTargetFor(80, "group") < 80);
-  assert.ok(oppTargetFor(80, "final") > 80);
+test("opponent target is a FIXED per-round standard (not scaled to your strength)", () => {
+  // A fixed benchmark per round — the same regardless of how strong you are.
+  assert.equal(oppTargetFor("qf"), OPP_TARGET.qf);
+  // The ladder climbs the deeper you go.
+  assert.ok(oppTargetFor("final") > oppTargetFor("group"));
+  // The group eases you in; the final benchmark sits near the top of the pool so a
+  // well-drafted XI is favoured most of the way and a weak XI is found out early.
+  assert.ok(oppTargetFor("group") < oppTargetFor("r16"));
+  assert.ok(oppTargetFor("final") >= 85);
 });
 
 test("re-spin picks granted: 0 in group, 3 after it, 2 before each duel", () => {
