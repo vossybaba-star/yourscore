@@ -17,6 +17,15 @@
 > play-off) is the **player's choice**: take an interactive **penalty shootout** OR answer
 > one more **World Cup quiz question** (25s) to go through. **Shipped to prod** (migrations
 > 35 + 39 applied).
+> **Updated 2026-06-18:** **World Cup Mastermind rebalanced so knowledge pays off.**
+> (1) Opponent difficulty no longer rubber-bands to your own Strength — each round is a
+> **fixed standard** (group 68 · R32 72 · R16 75 · QF 79 · SF 83 · Final 87, in `wc.ts`
+> `OPP_TARGET`/`oppTargetFor`). A well-drafted XI (≈84 Str) is now the favourite from the
+> group through the semi and a slight underdog only in the Final; a weak XI is found out in
+> the knockouts. (2) The draft band's **ceiling now climbs with the correct-answer streak**
+> (`draft-quiz.ts` `QUIZ_BASE_CEILING`/`QUIZ_CEILING_STEP`) — a lone correct answer deals a
+> solid (sub-elite) player; **elite players (~88+) only unlock around a streak of 5**, so the
+> best players come up toward the end of the draft once you've earned them.
 > **Maintenance:** update this file in the same session you change the product, bump the
 > date, and run `graphify update .` after code changes.
 

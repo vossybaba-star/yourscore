@@ -59,14 +59,22 @@ export function isPlayoff(stage: RunStage): boolean {
   return stage === "playoff";
 }
 
-// Opponent difficulty is PROPORTIONAL to your current team Strength, scaled per round.
-// Weak team → weak opponents; as you upgrade and your rating climbs, theirs climbs with
-// it. The multiplier also rises each round so the tournament gets tougher the deeper you go.
-export const OPP_MULT: Record<WCStage, number> = {
-  group: 0.94, r32: 0.97, r16: 1.0, qf: 1.03, sf: 1.06, final: 1.1,
+// Opponent difficulty is a FIXED STANDARD per round — it does NOT rubber-band to your
+// own Strength. Each round sets a benchmark the field has to clear, so KNOWLEDGE PAYS
+// OFF: a well-drafted XI (earned with a good quiz) is the favourite deep into the
+// bracket, while a weak XI gets found out early. The ladder rises each round so the
+// tournament gets tougher the deeper you go, and the Final benchmark sits near the top
+// of the pool (a real test even for an elite squad), but it is never tuned ABOVE you
+// just because you're strong.
+//
+// Reference points (pool spans ~40–93): a ~84-Strength team is favoured every round and
+// roughly even in the Final; a ~70-Strength team eases through the group but is an
+// underdog once the knockouts bite; a ~60-Strength team struggles from the group on.
+export const OPP_TARGET: Record<WCStage, number> = {
+  group: 68, r32: 72, r16: 75, qf: 79, sf: 83, final: 87,
 };
-export function oppTargetFor(yourStrength: number, stage: WCStage): number {
-  return Math.max(40, Math.min(95, Math.round(yourStrength * OPP_MULT[stage])));
+export function oppTargetFor(stage: WCStage): number {
+  return OPP_TARGET[stage];
 }
 
 // Re-spin picks granted ON ENTERING a run stage. Drafting is pure luck of the spin —
@@ -172,7 +180,7 @@ export function planRun(nation: string, seed: string): WCPlan {
  *  - group: three nations from the full WC field (light prestige weighting).
  *  - knockouts: five more, prestige-weighted harder each round so powers run deep.
  * All eight opponents are distinct real WC nations. Match difficulty still comes from
- * the stage ramp (oppTargetFor), so the nation choice here is flavour, not strength.
+ * the fixed stage ladder (oppTargetFor), so the nation choice here is flavour, not strength.
  */
 export function planWorldRun(seed: string): WCPlan {
   const rng = seededRng(`${seed}:wplan`);
