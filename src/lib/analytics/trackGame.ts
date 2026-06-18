@@ -69,3 +69,23 @@ function trackGameEvent(game: GameId, event: GameEvent, props: Props = {}): void
 
 export const trackGamePlay = (game: GameId, props?: Props): void => trackGameEvent(game, "play", props);
 export const trackGameComplete = (game: GameId, props?: Props): void => trackGameEvent(game, "complete", props);
+
+// ── Download (app-install intent) ────────────────────────────────────────────
+// Fired when a Player taps a "Get the app" / App Store CTA on the web. NOTE: a real
+// App Store install can't be observed from the web — this is the download-INTENT
+// signal, used to build "wants the app" ad audiences and let X optimise toward
+// downloads. True install attribution needs Apple App Analytics or an MMP (separate).
+// X needs a pre-created Events-Manager event ID; fires only once the env var is set.
+const X_DOWNLOAD_EVENT_ID = process.env.NEXT_PUBLIC_X_DOWNLOAD_EVENT_ID;
+
+export function trackDownload(props: Props = {}): void {
+  if (typeof window === "undefined") return;
+  const payload: Props = { platform: "ios", ...props };
+
+  if (X_DOWNLOAD_EVENT_ID) window.twq?.("event", X_DOWNLOAD_EVENT_ID, payload); // X (Twitter)
+  window.fbq?.("trackCustom", "Download", payload);    // Meta
+  window.ttq?.track?.("Download", payload);             // TikTok (standard Download event)
+  window.snaptr?.("track", "CUSTOM_EVENT_3", payload); // Snapchat (1=play · 2=complete · 3=download)
+  window.gtag?.("event", "download_app", payload);      // Google Analytics 4
+  track("download_app", payload);                       // Vercel Analytics
+}

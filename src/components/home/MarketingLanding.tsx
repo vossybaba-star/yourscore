@@ -7,6 +7,7 @@ import Image from "next/image";
 import { FlagImage } from "@/components/ui/FlagImage";
 import { getPlayerCutoutUrl } from "@/lib/playerImages";
 import { BottomNav } from "@/components/ui/BottomNav";
+import { DownloadAppButton } from "@/components/app/DownloadAppButton";
 
 export interface LiveMatch {
   id: string;
@@ -444,6 +445,12 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
                 </svg>
                 Join a league
               </Link>
+              <DownloadAppButton
+                source="hero"
+                label="Get the app"
+                className="flex-1 flex items-center justify-center gap-2 font-body font-semibold text-base px-6 py-4 rounded-xl transition-all hover:opacity-80 text-white"
+                style={{ border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.03)" }}
+              />
             </div>
 
             <p className="font-body text-xs text-text-muted">

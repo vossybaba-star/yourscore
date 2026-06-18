@@ -102,9 +102,14 @@ Two audiences that reinforce each other:
 the web app) are the intended primary distribution, with App Store / Play Store listings
 drafted and store-readiness work in progress.
 
-**Current reality: the web app is the live product.** The **mobile app is NOT launched
-yet.** Today everything runs at **https://yourscore.app** (Next.js on Vercel; also a PWA).
-Two things are deliberately **gated on the mobile launch**:
+**Current reality: the web app is the primary live product; the iOS app is now LIVE**
+(App Store, approved ~2026-06-15). Everything runs at **https://yourscore.app** (Next.js on
+Vercel; also a PWA). The web now carries a **"Get the app" CTA** (`DownloadAppButton`, in the
+logged-out hero) that fires a **Download (app-install *intent*) conversion** across all
+ad/analytics platforms (`trackDownload`; X event `tw-p6vxh-p6vxk`, audience on) — the CTA stays
+hidden until `NEXT_PUBLIC_IOS_APP_URL` is set. This tracks download *intent* (web clicks), not
+confirmed installs; true install attribution (Apple App Analytics / an MMP) is not wired. Two
+things were historically **gated on the mobile launch**:
 - **Live-match Quiz** (playing along to a real fixture) — see §5A.1.
 - **Push notifications** — see §7.
 
