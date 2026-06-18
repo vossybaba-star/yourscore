@@ -18,6 +18,9 @@ export default function SettingsPage() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
+  // Notifications opt-in (persisted to profiles.notifications_opt_in)
+  const [notifyMe, setNotifyMe] = useState(false);
+  const [notifySaving, setNotifySaving] = useState(false);
   // Password section
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -40,7 +43,7 @@ export default function SettingsPage() {
     import("@/lib/supabase/client").then(({ createClient }) => {
       createClient()
         .from("profiles")
-        .select("display_name, username, avatar_url")
+        .select("display_name, username, avatar_url, notifications_opt_in")
         .eq("id", user.id)
         .single()
         .then(({ data }) => {
@@ -48,6 +51,7 @@ export default function SettingsPage() {
             setDisplayName(data.display_name ?? "");
             setUsername(data.username ?? "");
             setAvatarUrl(data.avatar_url ?? null);
+            setNotifyMe(data.notifications_opt_in ?? false);
           }
           setProfileLoading(false);
         });
@@ -76,6 +80,19 @@ export default function SettingsPage() {
     } finally {
       setUploading(false);
     }
+  }
+
+  async function handleToggleNotify(next: boolean) {
+    if (!user || !process.env.NEXT_PUBLIC_SUPABASE_URL) return;
+    setNotifyMe(next); // optimistic
+    setNotifySaving(true);
+    const { createClient } = await import("@/lib/supabase/client");
+    const { error } = await createClient()
+      .from("profiles")
+      .update({ notifications_opt_in: next })
+      .eq("id", user.id);
+    setNotifySaving(false);
+    if (error) setNotifyMe(!next); // rollback on failure
   }
 
   async function handleSave() {
@@ -341,6 +358,46 @@ export default function SettingsPage() {
                 {user.app_metadata?.provider ?? "google"}
               </span>
             </div>
+          </div>
+        </div>
+
+        {/* Notifications */}
+        <div>
+          <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-3">Notifications</p>
+          <div
+            className="rounded-2xl overflow-hidden bg-surface px-5 py-4 flex items-center gap-4"
+            style={{ border: "1px solid rgba(255,255,255,0.07)" }}
+          >
+            <div className="flex-1 min-w-0">
+              <p className="font-body text-sm font-semibold text-white">Game notifications</p>
+              <p className="font-body text-xs mt-0.5" style={{ color: "#8a948f", lineHeight: 1.5 }}>
+                Get a nudge when games are running and it&apos;s your turn to play. Off means we stay quiet.
+              </p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={notifyMe}
+              aria-label="Game notifications"
+              disabled={notifySaving}
+              onClick={() => handleToggleNotify(!notifyMe)}
+              className="relative flex-shrink-0 rounded-full transition-colors"
+              style={{
+                width: 46, height: 28,
+                background: notifyMe ? "#aeea00" : "rgba(255,255,255,0.12)",
+                opacity: notifySaving ? 0.6 : 1,
+              }}
+            >
+              <span
+                className="absolute rounded-full transition-all"
+                style={{
+                  top: 3, left: notifyMe ? 21 : 3,
+                  width: 22, height: 22,
+                  background: notifyMe ? "#0a0a0f" : "#fff",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.4)",
+                }}
+              />
+            </button>
           </div>
         </div>
 

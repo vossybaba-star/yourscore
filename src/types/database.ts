@@ -1506,6 +1506,7 @@ export type Database = {
           display_name: string | null
           games_played: number | null
           id: string
+          notifications_opt_in: boolean
           social_handle: string | null
           social_platform: string | null
           total_score: number | null
@@ -1517,6 +1518,7 @@ export type Database = {
           display_name?: string | null
           games_played?: number | null
           id: string
+          notifications_opt_in?: boolean
           social_handle?: string | null
           social_platform?: string | null
           total_score?: number | null
@@ -1528,6 +1530,7 @@ export type Database = {
           display_name?: string | null
           games_played?: number | null
           id?: string
+          notifications_opt_in?: boolean
           social_handle?: string | null
           social_platform?: string | null
           total_score?: number | null
