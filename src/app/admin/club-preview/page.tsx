@@ -91,11 +91,23 @@ function boardRow(r: (typeof ROWS)[number], pos: number, V: V) {
       <div class="r" style="color:#586058">${r.w}W · ${r.d}D · ${r.l}L · global #${num(r.g)}</div></div>
     <div class="pt" style="color:${ptcol}">${r.p}</div></div>`;
 }
+// Illustrative upcoming World Cup fixtures for the events screen.
+const FIXTURES = [
+  { m: "England vs Wales", d: "Sat 21 Jun · 8:00 pm" },
+  { m: "Brazil vs Argentina", d: "Sun 22 Jun · 8:00 pm" },
+  { m: "France vs Spain", d: "Mon 23 Jun · 5:00 pm" },
+];
+function fixtureRow(f: { m: string; d: string }, V: V) {
+  return `<div style="display:flex;align-items:center;justify-content:space-between;border-radius:16px;padding:18px 22px;margin-bottom:10px;background:#0e1611;border:1px solid rgba(255,255,255,0.07)">
+    <div><div style="font-size:27px;font-weight:700">${esc(f.m)}</div><div style="font-size:20px;color:#586058;margin-top:3px">${esc(f.d)}</div></div>
+    <span style="font-size:18px;font-weight:700;color:${V.accent};background:${V.dim};padding:8px 16px;border-radius:10px;white-space:nowrap">Half Time Quiz</span></div>`;
+}
+
 function renderHome(b: Brand) {
   const V = vars(b);
   return `${topbar}${coverHeader(b, V)}
     <div class="cpv-pinned" style="background:${V.b11};border:1px solid ${V.b33}"><div class="k" style="color:${V.accent}">📌 Pinned</div>
-      <div class="v">Tuesday quiz night, 8pm. Winner takes the ${esc(b.prize)}.</div></div>
+      <div class="v">England vs Ghana — Half Time Quiz tonight. Winner takes the ${esc(b.prize)}.</div></div>
     ${tabs("Board", V)}
     <div class="cpv-prize" style="background:rgba(255,215,0,0.06);border:1px solid rgba(255,215,0,0.15);color:#ffd700">🏆 ${esc(b.prize)}</div>
     ${ROWS.map((r, i) => boardRow(r, i + 1, V)).join("")}
@@ -106,15 +118,13 @@ function renderEvents(b: Brand) {
   const V = vars(b);
   return `${topbar}${coverHeader(b, V)}${tabs("Events", V)}
     <div class="cpv-ev" style="background:${V.a(0.07)};border:1px solid ${V.b44}">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><span class="cpv-chip" style="color:${V.accent};background:${V.dim}">LIVE NOW</span><span style="color:#586058;font-size:22px">Tue · 8:00 pm</span></div>
-      <div style="font-size:34px;font-weight:800;margin-bottom:4px">Tuesday Quiz Night</div>
-      <div style="font-size:23px;color:#8a948f;margin-bottom:8px">15 questions · all-comers welcome</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><span class="cpv-chip" style="color:${V.accent};background:${V.dim}">LIVE NOW</span><span style="color:#586058;font-size:22px">Today · half time</span></div>
+      <div style="font-size:34px;font-weight:800;margin-bottom:4px">England vs Ghana — Half Time Quiz</div>
+      <div style="font-size:23px;color:#8a948f;margin-bottom:8px">Play at half time · all welcome</div>
       <div style="font-size:24px;color:#ffd700">🏆 ${esc(b.prize)}</div>
       <div style="margin-top:20px;border-radius:16px;padding:18px;text-align:center;background:${V.accent};color:#0a0a0f;font-size:28px;font-weight:800;letter-spacing:1px">PLAY NOW →</div></div>
-    <div style="font-size:21px;text-transform:uppercase;letter-spacing:2px;color:#586058;margin:6px 0 14px">Upcoming</div>
-    <div class="cpv-ev" style="background:#0e1611;border:1px solid rgba(255,255,255,0.07)">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><span class="cpv-chip" style="color:#60a5fa;background:rgba(96,165,250,0.12)">UPCOMING</span><span style="color:#586058;font-size:22px">Sun · 7:00 pm</span></div>
-      <div style="font-size:34px;font-weight:800;margin-bottom:4px">Sunday Football Quiz</div><div style="font-size:24px;color:#ffd700">🏆 House round on us</div></div>
+    <div style="font-size:21px;text-transform:uppercase;letter-spacing:2px;color:#586058;margin:6px 0 14px">Upcoming fixtures</div>
+    ${FIXTURES.map((f) => fixtureRow(f, V)).join("")}
     </div>${nav(V)}`;
 }
 function renderResult(b: Brand) {
@@ -123,8 +133,8 @@ function renderResult(b: Brand) {
     <div style="font-size:22px;color:#8a948f;margin-bottom:18px">← ${esc(b.name)}</div>
     <div style="border-radius:22px;padding:26px;background:#0e1611;border:1px solid ${V.b33};margin-bottom:18px">
       <span class="cpv-chip" style="color:#8a948f;background:rgba(255,255,255,0.06)">ENDED</span>
-      <div style="font-size:40px;font-weight:800;margin:14px 0 6px">Tuesday Quiz Night</div>
-      <div style="font-size:22px;color:#586058">Tue 8:00 pm — 9:00 pm · 15 questions</div>
+      <div style="font-size:40px;font-weight:800;margin:14px 0 6px">England vs Ghana — Half Time Quiz</div>
+      <div style="font-size:22px;color:#586058">Played at half time · 10 questions</div>
       <div style="margin-top:16px;border-radius:14px;padding:14px 18px;background:rgba(255,215,0,0.07);border:1px solid rgba(255,215,0,0.18);color:#ffd700;font-size:24px">🏆 ${esc(b.prize)}</div></div>
     <div style="border-radius:22px;padding:30px;text-align:center;background:${V.dim};border:1px solid ${V.b44};margin-bottom:22px">
       <div style="color:${V.accent};font-size:22px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">🏆 Winner — ${esc(b.winner)}</div>
