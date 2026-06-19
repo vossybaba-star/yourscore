@@ -181,8 +181,26 @@ const SHOTS = [["home", renderHome], ["events", renderEvents], ["result", render
 function slug(s: string) { return (s || "venue").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "venue"; }
 function loadImg(src: string): Promise<HTMLImageElement> { return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; }); }
 
+// Wait for the screens' logo/wallpaper images to load, then double-render each
+// (html-to-image's first pass can miss images/fonts) so the download matches the
+// live preview exactly.
+function waitShotImages() {
+  const imgs = Array.from(document.querySelectorAll("#shot-home img, #shot-events img, #shot-result img"));
+  return Promise.all(imgs.map((im) => {
+    const el = im as HTMLImageElement;
+    return el.complete && el.naturalWidth > 0 ? null :
+      new Promise<void>((res) => { el.addEventListener("load", () => res(), { once: true }); el.addEventListener("error", () => res(), { once: true }); });
+  }));
+}
+async function shotDataUrl(k: string): Promise<string> {
+  const node = document.getElementById("shot-" + k)!;
+  const opt = { width: 860, height: 1530, pixelRatio: 2, cacheBust: true, backgroundColor: "#0a0a0f" };
+  await toPng(node, opt); // warm-up
+  return toPng(node, opt); // real render
+}
 async function composeStrip(): Promise<string> {
-  const urls = await Promise.all(SHOTS.map(([k]) => toPng(document.getElementById("shot-" + k)!, { width: 860, height: 1530, pixelRatio: 2, cacheBust: true, backgroundColor: "#0a0a0f" })));
+  await waitShotImages();
+  const urls = await Promise.all(SHOTS.map(([k]) => shotDataUrl(k)));
   const imgs = await Promise.all(urls.map(loadImg));
   const sw = imgs[0].naturalWidth, sh = imgs[0].naturalHeight, pad = 80, gap = 64, r = 44;
   const W = pad * 2 + sw * 3 + gap * 2, H = pad * 2 + sh;
