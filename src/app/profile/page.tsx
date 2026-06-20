@@ -61,6 +61,8 @@ export default async function ProfilePage() {
     { count: pendingFriendCount },
     { data: seasonBestRows },
     { data: wcRunRows },
+    { data: bestStreakRows },
+    { count: mpGamesCount },
   ] = await Promise.all([
     supabase.from("profiles").select("display_name, total_score, games_played, avatar_url").eq("id", userId).single(),
     // created_at/rank added via migration — bypass stale generated types
@@ -98,6 +100,18 @@ export default async function ProfilePage() {
       .select("nation, status, draft_wc_matches(won)")
       .eq("user_id", userId)
       .limit(50),
+    // All-time best streak: peak consecutive-correct run in any single game.
+    // best_streak is the per-game high-water mark (not current_streak, which
+    // resets to 0 after a wrong answer). Order desc, take the single max.
+    sb.from("room_scores")
+      .select("best_streak")
+      .eq("user_id", userId)
+      .order("best_streak", { ascending: false })
+      .limit(1),
+    // True lifetime multiplayer-game count (the last-50 fetch above caps the list).
+    sb.from("room_scores")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId),
   ]);
 
   const pendingFriends = pendingFriendCount ?? 0;
@@ -120,8 +134,11 @@ export default async function ProfilePage() {
   const totalAnswered = allRoomScores.reduce((s: number, r: any) => s + (r.total_answers ?? 0), 0);
   const totalCorrect = allRoomScores.reduce((s: number, r: any) => s + (r.correct_answers ?? 0), 0);
   const accuracy = totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : null;
-  const bestStreak = allRoomScores.reduce((max: number, r: any) => Math.max(max, r.current_streak ?? 0), 0);
-  const multiplayerGames = allRoomScores.length;
+  // True all-time peak streak (best_streak = per-game high-water mark), not the
+  // mid-game current_streak that resets to 0 on a wrong answer.
+  const bestStreak: number = (bestStreakRows ?? [])[0]?.best_streak ?? 0;
+  // Lifetime multiplayer games, uncapped (allRoomScores is the last-50 window).
+  const multiplayerGames = mpGamesCount ?? allRoomScores.length;
 
   const name = profile?.display_name || user.email?.split("@")[0] || "Player";
   const gamesPlayed = profile?.games_played ?? 0;
@@ -264,17 +281,18 @@ export default async function ProfilePage() {
         {/* Quick stats grid */}
         <div className="grid grid-cols-2 gap-2.5">
           {[
-            { label: "Accuracy", value: accuracy !== null ? `${accuracy}%` : "—", color: accuracy !== null && accuracy >= 70 ? "#aeea00" : accuracy !== null && accuracy >= 50 ? "#ffb800" : "#ffffff", icon: "🎯" },
-            { label: "Best streak", value: bestStreak > 0 ? `${bestStreak}🔥` : "—", color: "#ffb800", icon: "⚡" },
-            { label: "MP games", value: multiplayerGames > 0 ? String(multiplayerGames) : "—", color: "#aeea00", icon: "👥" },
-            { label: "Friends", value: String(friendCount), color: "#00c9ff", icon: "🤝" },
+            { label: "Quiz accuracy", sub: "answers you got right", value: accuracy !== null ? `${accuracy}%` : "—", color: accuracy !== null && accuracy >= 70 ? "#aeea00" : accuracy !== null && accuracy >= 50 ? "#ffb800" : "#ffffff", icon: "🎯" },
+            { label: "Best streak", sub: "in a row, one game", value: bestStreak > 0 ? `${bestStreak}🔥` : "—", color: "#ffb800", icon: "⚡" },
+            { label: "Lobbies", sub: "multiplayer games", value: multiplayerGames > 0 ? String(multiplayerGames) : "—", color: "#aeea00", icon: "👥" },
+            { label: "Friends", sub: "added", value: String(friendCount), color: "#00c9ff", icon: "🤝" },
           ].map((s) => (
             <div key={s.label} className="rounded-2xl px-4 py-4 bg-surface cursor-default" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-lg">{s.icon}</span>
               </div>
               <p className="font-display text-3xl leading-none" style={{ color: s.color }}>{s.value}</p>
-              <p className="font-body text-xs text-text-muted mt-1.5">{s.label}</p>
+              <p className="font-body text-xs text-white mt-1.5">{s.label}</p>
+              <p className="font-body text-[11px] text-text-muted mt-0.5 leading-tight">{s.sub}</p>
             </div>
           ))}
         </div>
