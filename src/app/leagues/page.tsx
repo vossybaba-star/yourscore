@@ -312,63 +312,81 @@ export default function LeaguesPage() {
                   <div className="rounded-xl px-4 py-2 font-body text-center" style={{ fontSize: 13, color: "#ff4757", background: "rgba(255,71,87,0.1)" }}>{draftErr}</div>
                 )}
 
-                {/* Create */}
-                <div className="rounded-2xl p-4" style={{ background: "#0e1611", border: "1px solid rgba(174,234,0,0.18)" }}>
-                  <div className="font-display tracking-wide mb-2" style={{ fontSize: 16, color: "#aeea00" }}>CREATE A LEAGUE</div>
-                  <div className="flex gap-2">
-                    <input value={draftName} onChange={(e) => setDraftName(e.target.value)} maxLength={40} placeholder="League name"
-                      onKeyDown={(e) => e.key === "Enter" && createDraftLeague()}
-                      className="flex-1 rounded-xl px-3 py-3 font-body outline-none" style={{ background: "#0a0a0f", color: "#fff", border: "1px solid rgba(255,255,255,0.1)" }} />
-                    <Button onClick={createDraftLeague} disabled={draftBusy || !draftName.trim()}
-                      variant="primary" tone="lime" size="sm">
-                      CREATE
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Join */}
-                <div className="rounded-2xl p-4" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.08)" }}>
-                  <div className="font-display tracking-wide mb-2" style={{ fontSize: 16, color: "#fff" }}>JOIN BY CODE</div>
-                  <div className="flex gap-2">
-                    <input value={draftCode} onChange={(e) => setDraftCode(e.target.value.toUpperCase())} maxLength={6} placeholder="ABC123"
-                      onKeyDown={(e) => e.key === "Enter" && joinDraftLeague()}
-                      className="flex-1 rounded-xl px-3 py-3 font-display tracking-widest outline-none" style={{ background: "#0a0a0f", color: "#fff", border: "1px solid rgba(255,255,255,0.1)", fontSize: 20 }} />
-                    <Button onClick={joinDraftLeague} disabled={draftBusy || !draftCode.trim()}
-                      variant="primary" tone="lime" size="sm">
-                      JOIN
-                    </Button>
-                  </div>
-                </div>
-
-                {/* My draft leagues */}
+                {/* My 38-0 boards — lead with them when the user has any */}
                 {draftLeagues.length > 0 && (
                   <div>
-                    <p className="font-body text-xs uppercase tracking-widest mb-3" style={{ color: "#586058" }}>My leagues</p>
-                    <div className="space-y-2">
+                    <p className="font-body text-xs uppercase tracking-widest mb-3" style={{ color: "#586058" }}>Your 38-0 boards</p>
+                    <div className="space-y-2.5">
                       {draftLeagues.map((l) => (
                         <Link key={l.id} href={`/38-0/league/${l.code}`}
-                          className="flex items-center justify-between rounded-xl px-4 py-3 active:scale-[0.98] transition-transform"
-                          style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.08)" }}>
-                          <div>
-                            <div className="font-body" style={{ fontSize: 15, color: "#fff" }}>{l.name}</div>
-                            <div className="font-body" style={{ fontSize: 12, color: "#8a948f" }}>{l.member_count} member{l.member_count === 1 ? "" : "s"} · {l.code}</div>
+                          className="flex items-center gap-3 rounded-2xl px-4 py-3.5 active:scale-[0.99] transition-all hover:opacity-90 bg-surface"
+                          style={{ border: "1px solid rgba(174,234,0,0.18)" }}>
+                          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                            style={{ background: "rgba(174,234,0,0.12)", border: "1px solid rgba(174,234,0,0.25)" }}>
+                            <svg width="18" height="18" viewBox="0 0 14 14" fill="none">
+                              <path d="M3 2h8v3L7 8l-4-3z" stroke="#aeea00" strokeWidth="1.4" strokeLinejoin="round" fill="rgba(174,234,0,0.2)" />
+                              <path d="M4 5v5a3 3 0 0 0 6 0V5" stroke="#aeea00" strokeWidth="1.4" strokeLinecap="round" />
+                            </svg>
                           </div>
-                          <span className="font-display" style={{ fontSize: 20, color: "#aeea00" }}>→</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-body text-sm font-bold text-white truncate">{l.name}</div>
+                            <div className="font-body text-xs text-text-muted">
+                              {l.member_count} member{l.member_count === 1 ? "" : "s"} · code {l.code}
+                            </div>
+                          </div>
+                          <svg width="16" height="16" viewBox="0 0 18 18" fill="none" style={{ color: "#aeea00", flexShrink: 0 }}>
+                            <path d="M6 3l6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
                         </Link>
                       ))}
                     </div>
                   </div>
                 )}
 
-                {/* Global board shortcut */}
-                <Link href="/38-0/leaderboard"
-                  className="flex items-center justify-between rounded-xl px-4 py-3 active:scale-[0.98] transition-transform"
-                  style={{ background: "rgba(174,234,0,0.06)", border: "1px solid rgba(174,234,0,0.18)" }}>
-                  <div>
-                    <div className="font-body text-sm font-semibold" style={{ color: "#fff" }}>Global 38-0 leaderboard</div>
-                    <div className="font-body text-xs" style={{ color: "#8a948f" }}>Daily + all-time rankings →</div>
+                {/* Create or join — one combined card, not two competing forms */}
+                <div className="rounded-2xl overflow-hidden" style={{ background: "#0e1611", border: "1px solid rgba(174,234,0,0.18)" }}>
+                  <div className="px-4 pt-4 pb-3">
+                    <p className="font-display tracking-wide" style={{ fontSize: 16, color: "#aeea00" }}>
+                      {draftLeagues.length > 0 ? "START ANOTHER LEAGUE" : "START A LEAGUE"}
+                    </p>
+                    <p className="font-body text-xs text-text-muted mt-0.5">Name it, share the code, compete all season.</p>
+                    <div className="flex gap-2 mt-3">
+                      <input value={draftName} onChange={(e) => setDraftName(e.target.value)} maxLength={40} placeholder="League name"
+                        onKeyDown={(e) => e.key === "Enter" && createDraftLeague()}
+                        className="flex-1 rounded-xl px-3 py-3 font-body outline-none" style={{ background: "#0a0a0f", color: "#fff", border: "1px solid rgba(255,255,255,0.1)" }} />
+                      <Button onClick={createDraftLeague} disabled={draftBusy || !draftName.trim()} variant="primary" tone="lime" size="sm">
+                        CREATE
+                      </Button>
+                    </div>
                   </div>
-                  <span className="font-body text-xs font-bold px-3 py-1.5 rounded-lg" style={{ background: "rgba(174,234,0,0.12)", color: "#aeea00" }}>View</span>
+                  <div className="flex items-center gap-3 px-4">
+                    <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.07)" }} />
+                    <span className="font-body text-xs" style={{ color: "#586058" }}>or join</span>
+                    <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.07)" }} />
+                  </div>
+                  <div className="px-4 pt-3 pb-4">
+                    <div className="flex gap-2">
+                      <input value={draftCode} onChange={(e) => setDraftCode(e.target.value.toUpperCase())} maxLength={6} placeholder="ABC123"
+                        onKeyDown={(e) => e.key === "Enter" && joinDraftLeague()}
+                        className="flex-1 rounded-xl px-3 py-3 font-display tracking-widest outline-none" style={{ background: "#0a0a0f", color: "#fff", border: "1px solid rgba(255,255,255,0.1)", fontSize: 20 }} />
+                      <Button onClick={joinDraftLeague} disabled={draftBusy || !draftCode.trim()} variant="ghost" size="sm">
+                        JOIN
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Global 38-0 board — first-class, not a buried link */}
+                <Link href="/38-0/leaderboard"
+                  className="flex items-center gap-3 rounded-2xl px-4 py-4 active:scale-[0.99] transition-all hover:opacity-90"
+                  style={{ background: "linear-gradient(135deg, rgba(174,234,0,0.1), rgba(174,234,0,0.04))", border: "1px solid rgba(174,234,0,0.25)" }}>
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-lg"
+                    style={{ background: "rgba(174,234,0,0.14)", border: "1px solid rgba(174,234,0,0.28)" }}>🌍</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-body text-sm font-bold text-white">Global 38-0 leaderboard</div>
+                    <div className="font-body text-xs text-text-muted">See where you rank · daily + all-time</div>
+                  </div>
+                  <span className="font-display text-sm tracking-wide flex-shrink-0" style={{ color: "#aeea00" }}>VIEW →</span>
                 </Link>
               </>
             )}
