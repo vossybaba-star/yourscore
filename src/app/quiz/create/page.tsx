@@ -143,7 +143,11 @@ export default function CreateQuizPage() {
     setError(null);
     try {
       const { data: { user } } = await createClient().auth.getUser();
-      if (!user) { setError("Sign in to create a quiz"); setGenerating(false); return; }
+      if (!user) {
+        // Don't dead-end with an error — send them to sign in and back here.
+        router.push("/auth/sign-in?next=/quiz/create");
+        return;
+      }
 
       const res = await fetch("/api/quiz/generate-custom", {
         method: "POST",

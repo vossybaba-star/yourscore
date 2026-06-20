@@ -21,7 +21,21 @@ function PushPrePromptInner() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (!loading && user && !hasPromptedPush()) setShow(true);
+    if (loading || !user || hasPromptedPush()) return;
+    // Respect the user's notifications choice. The OS push permission dialog
+    // should only reach people who opted in (signup checkbox / Settings toggle).
+    // Users who left it off explicitly said no — surfacing a system prompt to
+    // them is exactly the "notifications where there shouldn't be" complaint.
+    let cancelled = false;
+    (async () => {
+      const { data } = await createClient()
+        .from("profiles")
+        .select("notifications_opt_in")
+        .eq("id", user.id)
+        .single();
+      if (!cancelled && data?.notifications_opt_in === true) setShow(true);
+    })();
+    return () => { cancelled = true; };
   }, [loading, user]);
 
   if (!show) return null;

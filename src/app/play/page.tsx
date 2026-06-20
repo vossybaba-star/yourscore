@@ -377,10 +377,15 @@ function PlayPageInner() {
     setRoomsLoading(true);
     import("@/lib/supabase/client").then(async ({ createClient: cc }) => {
       const sb = cc();
+      // Only surface lobbies opened in the last 3 hours. Public lobbies waiting
+      // on players are abandoned long before then — older ones are dead and were
+      // cluttering the list (also swept server-side by /api/cron/cleanup-lobbies).
+      const freshCutoff = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString();
       const { data: rooms } = await sb
         .from("rooms")
         .select("id, name, code, room_mode, question_count, category_filter, difficulty_filter, created_at")
         .eq("type", "player").eq("status", "lobby").eq("room_mode", "open")
+        .gte("created_at", freshCutoff)
         .order("created_at", { ascending: false }).limit(20);
 
       if (rooms?.length) {

@@ -2,7 +2,7 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 
 function QuizReadyContent() {
   const params = useSearchParams();
@@ -10,10 +10,14 @@ function QuizReadyContent() {
   const packId = params.get("packId") ?? "";
   const slug = params.get("slug") ?? "";
 
-  if (!packId) {
-    router.replace("/quiz/create");
-    return null;
-  }
+  // Landed here without a pack (stale link, refresh after navigation) — bounce
+  // back to the builder. Run as an effect, not during render, so we don't fire a
+  // navigation as a render side-effect.
+  useEffect(() => {
+    if (!packId) router.replace("/quiz/create");
+  }, [packId, router]);
+
+  if (!packId) return null;
 
   return (
     <div className="bg-bg min-h-screen flex flex-col items-center justify-center px-5">
