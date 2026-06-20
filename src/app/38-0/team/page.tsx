@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 import { Pitch } from "@/components/draft/Pitch";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { BackPill } from "@/components/ui/BackPill";
+import { Button } from "@/components/ui/Button";
 import {
   loadTeam, saveTeam, isComplete, recordWin, recordLoss, saveLastMatch,
   loadLastMatch, settleLocalPens,
@@ -353,15 +354,12 @@ export default function TeamScreen() {
               placeholder="e.g. My dream XI"
               className="w-full rounded-xl px-3 py-3 font-body mb-2" style={{ background: "#0a0a0f", color: "#fff", border: "1px solid rgba(255,255,255,0.1)" }} />
             <div className="grid grid-cols-2 gap-2">
-              <button onClick={saveToLibrary} disabled={saving}
-                className="rounded-xl py-3 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-70"
-                style={{ background: "#ffb800", color: "#241a00", fontSize: 16 }}>
+              <Button variant="primary" tone="lime" size="md" fullWidth onClick={saveToLibrary} disabled={saving}>
                 {saving ? "SAVING…" : "SAVE TO MY TEAMS"}
-              </button>
-              <button onClick={() => setNaming(false)} disabled={saving}
-                className="rounded-xl py-3 font-body active:scale-[0.98] transition-transform" style={{ background: "transparent", color: "#8a948f", fontSize: 14, border: "1px solid rgba(255,255,255,0.1)" }}>
+              </Button>
+              <Button variant="ghost" size="md" fullWidth onClick={() => setNaming(false)} disabled={saving}>
                 Cancel
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -452,11 +450,15 @@ export default function TeamScreen() {
         {/* Pre-season odds — sits here until a season is simulated, then moves to the bottom */}
         {!hasLastSeason && <div className="mt-5">{oddsCard}</div>}
 
-        <button onClick={() => router.push("/38-0/season")}
-          className="w-full mt-4 rounded-2xl py-5 font-display tracking-wide active:scale-[0.98] transition-transform"
-          style={{ background: hasLastSeason ? "rgba(174,234,0,0.12)" : "#aeea00", color: hasLastSeason ? "#aeea00" : "#062013", fontSize: hasLastSeason ? 22 : 28, border: hasLastSeason ? "1px solid rgba(174,234,0,0.4)" : "none" }}>
-          {hasLastSeason ? "📊 VIEW SEASON RESULT →" : "⚽ SIMULATE SEASON →"}
-        </button>
+        {hasLastSeason ? (
+          <Button variant="ghost" size="lg" fullWidth className="mt-4" onClick={() => router.push("/38-0/season")}>
+            📊 VIEW SEASON RESULT →
+          </Button>
+        ) : (
+          <Button variant="primary" tone="lime" size="lg" fullWidth className="mt-4" onClick={() => router.push("/38-0/season")}>
+            ⚽ SIMULATE SEASON →
+          </Button>
+        )}
 
         {/* secondary — library, swap, the live-H2H explainer, practice/fresh */}
         <div className="mt-3 space-y-3">
@@ -516,17 +518,13 @@ export default function TeamScreen() {
 
         {/* Practice vs CPU / fresh team — sits right at the bottom of the page */}
         {user ? (
-          <button onClick={quickMatch} disabled={matching}
-            className="w-full mt-4 rounded-2xl py-3 font-body active:scale-[0.98] transition-transform disabled:opacity-60"
-            style={{ background: "#0e1611", color: "#8a948f", fontSize: 14, border: "1px solid rgba(255,255,255,0.08)" }}>
+          <Button variant="ghost" size="md" fullWidth className="mt-4" onClick={quickMatch} disabled={matching}>
             Practice vs CPU
-          </button>
+          </Button>
         ) : (
-          <button onClick={() => router.push("/38-0")}
-            className="w-full mt-4 rounded-2xl py-3 font-body active:scale-[0.98] transition-transform"
-            style={{ background: "#0e1611", color: "#8a948f", fontSize: 14, border: "1px solid rgba(255,255,255,0.08)" }}>
+          <Button variant="ghost" size="md" fullWidth className="mt-4" onClick={() => router.push("/38-0")}>
             Fresh team
-          </button>
+          </Button>
         )}
       </div>
       <BottomNav />

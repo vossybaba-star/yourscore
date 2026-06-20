@@ -15,6 +15,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/Button";
 import {
   loadLastMatch, saveLastMatch, loadTeam, saveTeam, recordWin, recordLoss,
   type LocalMatch,
@@ -231,22 +232,26 @@ export default function PensPage() {
               </button>
             )}
             {decided && (
-              <button
+              <Button
+                variant="primary"
+                tone="lime"
+                size="md"
+                fullWidth
                 onClick={() => router.replace("/38-0/match/result")}
-                className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform"
-                style={{ background: "#00ff87", color: "#062013", fontSize: 18 }}
               >
                 SEE RESULT →
-              </button>
+              </Button>
             )}
             {decided && DEV && m.id.startsWith("demo-") && (
-              <button
+              <Button
+                variant="ghost"
+                size="md"
+                fullWidth
+                className="mt-2"
                 onClick={() => { finalized.current = false; window.location.href = "/38-0/match/pens?demo"; }}
-                className="mt-2 w-full rounded-2xl py-3 font-display tracking-wide active:scale-[0.98] transition-transform"
-                style={{ background: "rgba(255,184,0,0.12)", color: "#ffb800", border: "1px solid rgba(255,184,0,0.4)", fontSize: 15 }}
               >
                 ⟳ ANOTHER SHOOTOUT (DEV)
-              </button>
+              </Button>
             )}
           </div>
         </div>

@@ -7,6 +7,7 @@
 
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Button } from "@/components/ui/Button";
 import { Pitch } from "@/components/draft/Pitch";
 import { BackPill } from "@/components/ui/BackPill";
 import { ScorecardView, ScorecardShell, SectionLabel } from "@/components/draft/Scorecard";
@@ -137,10 +138,9 @@ export default async function MatchPage({ params }: { params: { id: string } }) 
 
   const cta = (
     <div className="mt-6">
-      <Link href="/38-0" className="block w-full rounded-[20px] py-4 text-center font-display tracking-wide transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98]"
-        style={{ background: "#aeea00", color: "#062013", fontSize: 26 }}>
+      <Button variant="primary" tone="lime" size="lg" fullWidth href="/38-0">
         {live ? "▶ PLAY 38-0 — FREE" : "BUILD YOUR OWN XI →"}
-      </Link>
+      </Button>
       <p className="text-center font-body mt-2" style={{ fontSize: 12, color: "#8a948f" }}>
         Build your all-time Premier League XI and go live, head-to-head. No sign-up to play.
       </p>

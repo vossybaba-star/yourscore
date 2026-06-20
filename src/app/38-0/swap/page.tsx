@@ -9,6 +9,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Pitch } from "@/components/draft/Pitch";
+import { Button } from "@/components/ui/Button";
 import { spin, allBuckets, type Spin } from "@/lib/draft/pool";
 import {
   loadTeam, saveTeam, isComplete, usedPlayerIds, usedPlayerNames, clearSlot, placePlayer, fittingOpenSlots,
@@ -145,11 +146,9 @@ export default function SwapScreen() {
               </div>
             )}
             {!current || spinning ? (
-              <button onClick={doSpin} disabled={spinning}
-                className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-60"
-                style={{ background: spinning ? "#15211a" : "#ffb800", color: spinning ? "#ffb800" : "#1a1300", fontSize: 24 }}>
+              <Button variant="primary" tone="lime" size="lg" fullWidth onClick={doSpin} disabled={spinning}>
                 {spinning ? "SPINNING…" : "SPIN 🎰"}
-              </button>
+              </Button>
             ) : (
               <div className="text-center font-body py-2" style={{ fontSize: 13, color: "#8a948f" }}>
                 Draft a replacement from this squad

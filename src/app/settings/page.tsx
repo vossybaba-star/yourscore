@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useUser } from "@/hooks/useUser";
+import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { BackPill } from "@/components/ui/BackPill";
@@ -190,10 +191,9 @@ export default function SettingsPage() {
         <div className="text-center space-y-4">
           <p className="font-body text-text-muted">Sign in to access settings.</p>
           <BackPill href="/" label="Home" tone="neutral" />
-          <Link href="/auth/sign-in" className="inline-flex items-center justify-center px-6 py-3 rounded-xl font-body font-bold text-sm transition-all text-green"
-            style={{ background: "rgba(174,234,0,0.1)", border: "1px solid rgba(174,234,0,0.28)" }}>
+          <Button href="/auth/sign-in" variant="ghost" size="md">
             Sign in →
-          </Link>
+          </Button>
         </div>
       </main>
     );
@@ -402,19 +402,16 @@ export default function SettingsPage() {
         </div>
 
         {/* Save button (also at bottom for convenience) */}
-        <button
+        <Button
+          variant="primary"
+          tone="lime"
+          size="lg"
+          fullWidth
           onClick={handleSave}
           disabled={saving}
-          className="w-full py-4 rounded-2xl font-body font-bold text-base transition-all"
-          style={{
-            background: saved ? "rgba(174,234,0,0.12)" : "#aeea00",
-            color: saved ? "#aeea00" : "#0a0a0f",
-            border: saved ? "1px solid rgba(174,234,0,0.2)" : "none",
-            boxShadow: saved ? "none" : "0 0 20px rgba(174,234,0,0.2)",
-          }}
         >
           {saving ? "Saving…" : saved ? "Saved ✓" : "Save changes"}
-        </button>
+        </Button>
 
         {/* Password section */}
         <div className="rounded-2xl overflow-hidden border border-border">
@@ -442,15 +439,16 @@ export default function SettingsPage() {
                   className="w-full rounded-xl px-4 py-3 font-body text-white text-sm outline-none placeholder:text-white/25 bg-surface"
                   style={{ border: `1px solid ${passwordError ? "rgba(255,71,87,0.4)" : "rgba(255,255,255,0.1)"}` }} />
                 {passwordError && <p className="font-body text-xs" style={{ color: "#f87171" }}>{passwordError}</p>}
-                <button onClick={handleSetPassword} disabled={!newPassword || !confirmPassword || passwordSaving}
-                  className="w-full py-3 rounded-xl font-body text-sm font-semibold transition-all hover:opacity-90"
-                  style={{
-                    background: newPassword && confirmPassword ? "rgba(174,234,0,0.12)" : "rgba(255,255,255,0.04)",
-                    color: newPassword && confirmPassword ? "#aeea00" : "#586058",
-                    border: `1px solid ${newPassword && confirmPassword ? "rgba(174,234,0,0.25)" : "rgba(255,255,255,0.07)"}`,
-                  }}>
+                <Button
+                  variant="primary"
+                  tone="lime"
+                  size="md"
+                  fullWidth
+                  onClick={handleSetPassword}
+                  disabled={!newPassword || !confirmPassword || passwordSaving}
+                >
                   {passwordSaving ? "Saving…" : passwordSaved ? "Password updated ✓" : user?.app_metadata?.providers?.includes("email") ? "Update password" : "Set password"}
-                </button>
+                </Button>
                 <button onClick={handleForgotPassword}
                   className="w-full py-1.5 font-body text-xs transition-colors hover:text-white text-center"
                   style={{ color: "#586058" }}>
@@ -472,16 +470,9 @@ export default function SettingsPage() {
         </Link>
 
         {/* Sign out */}
-        <button
-          onClick={handleSignOut}
-          className="w-full py-3.5 rounded-2xl font-body text-sm font-semibold transition-all hover:opacity-80 text-danger"
-          style={{
-            background: "rgba(255,71,87,0.07)",
-            border: "1px solid rgba(255,71,87,0.15)",
-          }}
-        >
+        <Button variant="ghost" size="md" fullWidth onClick={handleSignOut}>
           Sign out
-        </button>
+        </Button>
 
         {/* Danger zone — delete account */}
         <div className="rounded-2xl p-4" style={{ background: "rgba(255,71,87,0.05)", border: "1px solid rgba(255,71,87,0.2)" }}>
@@ -491,13 +482,14 @@ export default function SettingsPage() {
             Permanently delete your account and erase everything we hold — your profile, all games,
             38-0 teams, seasons &amp; leaderboard records, friends and quiz history. This cannot be undone.
           </p>
-          <button
+          <Button
+            variant="danger"
+            size="md"
+            fullWidth
             onClick={() => { setDeleteOpen(true); setConfirmDelete(""); setDeleteError(""); }}
-            className="w-full py-3 rounded-xl font-body text-sm font-semibold transition-all hover:opacity-90"
-            style={{ background: "rgba(255,71,87,0.1)", color: "#ff4757", border: "1px solid rgba(255,71,87,0.3)" }}
           >
             Delete my account
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -533,26 +525,26 @@ export default function SettingsPage() {
               style={{ border: "1px solid rgba(255,71,87,0.3)", letterSpacing: 1 }}
             />
             {deleteError && <p className="font-body text-xs mt-2" style={{ color: "#f87171" }}>{deleteError}</p>}
-            <button
+            <Button
+              variant="danger"
+              size="md"
+              fullWidth
+              className="mt-4"
               onClick={handleDeleteAccount}
               disabled={confirmDelete.trim().toUpperCase() !== "DELETE" || deleting}
-              className="w-full py-3 rounded-xl font-body text-sm font-bold transition-all mt-4"
-              style={{
-                background: confirmDelete.trim().toUpperCase() === "DELETE" && !deleting ? "#ff4757" : "rgba(255,71,87,0.12)",
-                color: confirmDelete.trim().toUpperCase() === "DELETE" && !deleting ? "#fff" : "#7a4a52",
-                cursor: confirmDelete.trim().toUpperCase() === "DELETE" && !deleting ? "pointer" : "not-allowed",
-              }}
             >
               {deleting ? "Deleting…" : "Permanently delete my account"}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="ghost"
+              size="md"
+              fullWidth
+              className="mt-1"
               onClick={() => { if (!deleting) setDeleteOpen(false); }}
               disabled={deleting}
-              className="w-full py-2.5 mt-1 font-body text-sm transition-colors hover:text-white"
-              style={{ color: "#8a948f" }}
             >
               Cancel
-            </button>
+            </Button>
           </div>
         </div>
       )}

@@ -8,6 +8,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/Button";
 import { Pitch } from "@/components/draft/Pitch";
 import { spin, allBuckets, type Spin } from "@/lib/draft/pool";
 import {
@@ -150,10 +151,10 @@ export default function PreMatch() {
               </div>
             )}
             <div className="grid grid-cols-2 gap-2">
-              <button onClick={doSpin} disabled={spinning || spinCount >= MAX_SPINS} className="rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-50" style={{ background: spinning ? "#15211a" : "#ffb800", color: spinning ? "#ffb800" : "#1a1300", fontSize: 20 }}>
+              <Button variant="primary" tone="lime" size="md" fullWidth onClick={doSpin} disabled={spinning || spinCount >= MAX_SPINS}>
                 {spinning ? "SPINNING…" : spinCount >= MAX_SPINS ? "NO SPINS LEFT" : current ? `SPIN AGAIN ↻ (${MAX_SPINS - spinCount} left)` : "SPIN 🎰"}
-              </button>
-              <button onClick={() => { setSwapSlot(null); setCurrent(null); setReel(null); }} className="rounded-2xl py-4 font-body active:scale-[0.98] transition-transform" style={{ background: "#0e1611", color: "#c4ccc6", fontSize: 15, border: "1px solid rgba(255,255,255,0.1)" }}>← Back</button>
+              </Button>
+              <Button variant="ghost" size="md" fullWidth onClick={() => { setSwapSlot(null); setCurrent(null); setReel(null); }}>← Back</Button>
             </div>
           </div>
         </div>
@@ -200,16 +201,12 @@ export default function PreMatch() {
           </div>
         </div>
 
-        <button onClick={play} disabled={playing}
-          className="w-full mt-4 rounded-2xl py-5 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-60"
-          style={{ background: "#aeea00", color: "#062013", fontSize: 26 }}>
+        <Button variant="primary" tone="lime" size="lg" fullWidth className="mt-4" onClick={play} disabled={playing}>
           {playing ? "PLAYING…" : "PLAY MATCH ⚔️"}
-        </button>
-        <button onClick={() => { clearMatchup(); router.push("/38-0/team"); }}
-          className="w-full mt-2 rounded-2xl py-3 font-body active:scale-[0.98] transition-transform"
-          style={{ background: "transparent", color: "#8a948f", fontSize: 14 }}>
+        </Button>
+        <Button variant="ghost" size="md" fullWidth className="mt-2" onClick={() => { clearMatchup(); router.push("/38-0/team"); }}>
           Back to my team
-        </button>
+        </Button>
       </div>
     </div>
   );

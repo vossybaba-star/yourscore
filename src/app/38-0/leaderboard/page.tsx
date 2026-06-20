@@ -9,6 +9,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { BottomNav } from "@/components/ui/BottomNav";
+import { Button } from "@/components/ui/Button";
 import { DraftHeader } from "@/components/draft/DraftHeader";
 import { useUser } from "@/hooks/useUser";
 import { asLeague, type League } from "@/lib/draft/types";
@@ -85,10 +86,9 @@ export default function Leaderboard() {
                 ? "Be the first on the board — win a ranked match."
                 : "Cloud leaderboards activate once the season is live. Play Quick Matches now."}
             </p>
-            <Link href="/38-0" className="inline-block mt-4 rounded-xl px-5 py-3 font-display tracking-wide"
-              style={{ background: "#aeea00", color: "#062013", fontSize: 18 }}>
+            <Button href="/38-0" variant="primary" tone="lime" size="md" className="inline-flex mt-4">
               BUILD YOUR XI →
-            </Link>
+            </Button>
           </div>
         ) : (
           /* Premier League–style table: Played, Won, Drawn, Lost, Points columns. */

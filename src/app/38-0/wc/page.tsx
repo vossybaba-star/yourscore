@@ -17,6 +17,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/Button";
 import { BackPill } from "@/components/ui/BackPill";
 import { Pitch } from "@/components/draft/Pitch";
 import { InviteMastermind } from "@/components/draft/InviteMastermind";
@@ -427,10 +428,9 @@ export default function WorldCupEntry() {
               </div>
             </button>
 
-            <Link href="/38-0/wc/board" className="text-center font-body rounded-2xl py-3 active:scale-[0.99] transition-transform"
-              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#cfcfe6", fontSize: 14 }}>
+            <Button variant="ghost" size="md" fullWidth href="/38-0/wc/board">
               🏅 World Cup season board →
-            </Link>
+            </Button>
 
             <InviteMastermind />
           </div>
@@ -491,7 +491,6 @@ export default function WorldCupEntry() {
   // ── Draft (both modes) ────────────────────────────────────────────────────
   const teamName = world ? WORLD_TEAM_NAME : nation!.nation;
   const teamCrest = world ? null : nation!.crest;
-  const accent = world ? "#ffb800" : "#aeea00";
   const remaining = 11 - team.squad.length;
   const lines = lineRatings(team.squad);
   const slots = slotsFor(team.formation);
@@ -631,29 +630,23 @@ export default function WorldCupEntry() {
 
           {remaining > 0 ? (
             !slate || spinning ? (
-              <button onClick={startSpin} disabled={spinning || !!quiz}
-                className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-60"
-                style={{ background: spinning ? "#15211a" : accent, color: spinning ? "#ffb800" : "#062013", fontSize: 24 }}>
+              <Button variant="primary" tone="lime" size="md" fullWidth onClick={startSpin} disabled={spinning || !!quiz}>
                 {spinning ? "SCOUTING…" : scoutLabel}
-              </button>
+              </Button>
             ) : (
               <div className="text-center font-body py-2" style={{ fontSize: 13, color: "#8a948f" }}>Draft a player to continue</div>
             )
           ) : (
             <>
-              <button onClick={start} disabled={starting || h2hBusy}
-                className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-60"
-                style={{ background: ranked ? "#ffb800" : "#aeea00", color: ranked ? "#1a1300" : "#062013", fontSize: 24 }}>
+              <Button variant="primary" tone="lime" size="md" fullWidth onClick={start} disabled={starting || h2hBusy}>
                 {starting ? "STARTING…" : ranked ? "PLAY YOUR DRAFT →" : "ENTER THE WORLD CUP →"}
-              </button>
+              </Button>
               {/* Practice runs can flip the finished XI into the H2H lane; the ranked daily
                   is a committed one-go, so it doesn't offer the detour. */}
               {!ranked && (
-                <button onClick={playH2H} disabled={starting || h2hBusy}
-                  className="w-full mt-2 rounded-2xl py-3 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-60"
-                  style={{ background: "rgba(255,184,0,0.12)", color: "#ffb800", border: "1px solid rgba(255,184,0,0.4)", fontSize: 16 }}>
+                <Button variant="ghost" size="md" fullWidth className="mt-2" onClick={playH2H} disabled={starting || h2hBusy}>
                   {h2hBusy ? "READYING…" : "⚔️ PLAY H2H INSTEAD"}
-                </button>
+                </Button>
               )}
             </>
           )}

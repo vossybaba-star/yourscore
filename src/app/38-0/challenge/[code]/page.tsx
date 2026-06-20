@@ -8,6 +8,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import { Button } from "@/components/ui/Button";
 import { Pitch } from "@/components/draft/Pitch";
 import { useUser } from "@/hooks/useUser";
 import { AuthProviders } from "@/components/auth/AuthButton";
@@ -118,11 +119,9 @@ export default function AcceptChallenge() {
                   context={`You just played ${info.challengerName}!`}
                 />
               )}
-              <button onClick={() => router.push("/38-0/match/result")}
-                className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform"
-                style={{ background: "#aeea00", color: "#062013", fontSize: 22 }}>
+              <Button variant="primary" tone="lime" size="md" fullWidth onClick={() => router.push("/38-0/match/result")}>
                 VIEW RESULT →
-              </button>
+              </Button>
             </>
           ) : done ? (
             <div className="rounded-2xl p-4 text-center font-body" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.08)", color: "#8a948f", fontSize: 14 }}>
@@ -138,16 +137,13 @@ export default function AcceptChallenge() {
               <AuthProviders nextPath={`/38-0/challenge/${code}`} />
             </div>
           ) : (
-            <button onClick={accept} disabled={busy}
-              className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-60"
-              style={{ background: "#aeea00", color: "#062013", fontSize: 24 }}>
+            <Button variant="primary" tone="lime" size="md" fullWidth onClick={accept} disabled={busy}>
               {busy ? "RESOLVING…" : "ACCEPT WITH MY XI ⚔️"}
-            </button>
+            </Button>
           )}
-          <Link href="/38-0" className="block w-full rounded-2xl py-3 text-center font-body active:scale-[0.98] transition-transform"
-            style={{ background: "#0e1611", color: "#8a948f", fontSize: 15, border: "1px solid rgba(255,255,255,0.08)" }}>
+          <Button variant="ghost" size="md" fullWidth href="/38-0">
             Build / view my XI
-          </Link>
+          </Button>
         </div>
       </div>
     </div>

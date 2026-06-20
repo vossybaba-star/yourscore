@@ -8,6 +8,7 @@ import { SignInWithGoogle } from "@/components/auth/AuthButton";
 import { Spinner } from "@/components/ui/Spinner";
 import { createClient } from "@/lib/supabase/client";
 import { GridBackground } from "@/components/ui/GridBackground";
+import { Button } from "@/components/ui/Button";
 
 const ANIM = `
   @keyframes fadeUp {
@@ -231,10 +232,9 @@ function JoinLeagueInner({ code }: { code: string }) {
       <p className="font-body text-xs text-center mt-3" style={{ color: "#3a423d" }}>No credit card. No spam. Just football.</p>
     </div>
   ) : (
-    <button onClick={handleJoin} className="w-full py-4 rounded-2xl font-display text-lg tracking-widest transition-transform active:scale-[0.97]"
-      style={{ background: "linear-gradient(135deg, #aeea00 0%, #aeea00 100%)", color: "#fff", boxShadow: "0 4px 28px rgba(174,234,0,0.45)" }}>
+    <Button onClick={handleJoin} variant="primary" tone="lime" size="lg" fullWidth>
       JOIN {league.name.toUpperCase()} →
-    </button>
+    </Button>
   );
 
   return (

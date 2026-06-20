@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getUserBounded } from "@/lib/supabase/bounded";
+import { Button } from "@/components/ui/Button";
 import { GridBackground } from "@/components/ui/GridBackground";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { ShareStatsButton } from "@/components/ui/ShareStatsButton";
@@ -38,10 +39,9 @@ export default async function ProfilePage() {
       <main className="min-h-dvh bg-bg flex items-center justify-center px-6">
         <div className="text-center space-y-4">
           <p className="font-body text-text-muted">Sign in to see your profile.</p>
-          <Link href="/auth/sign-in" className="inline-flex items-center justify-center px-6 py-3 rounded-xl font-body font-bold text-sm text-green"
-            style={{ background: "rgba(174,234,0,0.1)", border: "1px solid rgba(174,234,0,0.28)" }}>
+          <Button href="/auth/sign-in" variant="ghost" size="md">
             Sign in →
-          </Link>
+          </Button>
         </div>
       </main>
     );

@@ -6,6 +6,7 @@ import { GridBackground } from "@/components/ui/GridBackground";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { BackPill } from "@/components/ui/BackPill";
+import { Button } from "@/components/ui/Button";
 import dynamic from "next/dynamic";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
@@ -704,11 +705,9 @@ export default function RoomPage() {
 
           {/* Start / waiting */}
           {isHost ? (
-            <button onClick={handleStart} disabled={starting || players.length < 1}
-              className="w-full py-4 rounded-2xl font-body font-bold text-base transition-all"
-              style={{ background: starting ? "rgba(0,216,192,0.15)" : "#00d8c0", color: starting ? "#586058" : "#0a0a0f" }}>
+            <Button variant="primary" tone="teal" size="lg" fullWidth onClick={handleStart} disabled={starting || players.length < 1}>
               {starting ? "Starting…" : players.length < 2 ? `Waiting for players (${players.length}/2 min)` : `Start Game →`}
-            </button>
+            </Button>
           ) : (
             <div className="rounded-2xl px-5 py-4 flex items-center gap-3" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
               <div className="flex gap-1 flex-shrink-0">
@@ -886,11 +885,9 @@ export default function RoomPage() {
                         Skip
                       </button>
                     </div>
-                    <button onClick={handlePlayAgain}
-                      className="w-full py-3.5 rounded-xl font-body font-bold text-sm transition-all"
-                      style={{ background: "#00d8c0", color: "#0a0a0f" }}>
+                    <Button variant="primary" tone="teal" size="md" fullWidth onClick={handlePlayAgain}>
                       🎮 Start New Game ({yesVotes} ready)
-                    </button>
+                    </Button>
                   </div>
                 )}
               </div>
@@ -911,17 +908,13 @@ export default function RoomPage() {
           {/* Bottom actions */}
           <div className="flex gap-3">
             {isHost && lobbyExpired && (
-              <Link href="/play/new"
-                className="flex-1 py-3.5 rounded-2xl font-body font-bold text-sm text-center transition-all hover:opacity-90 bg-teal"
-                style={{ color: "#0a0a0f" }}>
+              <Button variant="primary" tone="teal" size="md" href="/play/new" className="flex-1">
                 New Lobby 🎮
-              </Link>
+              </Button>
             )}
-            <Link href="/play"
-              className="flex-1 py-3.5 rounded-2xl font-body font-bold text-sm text-center transition-all hover:opacity-80"
-              style={{ background: "rgba(255,255,255,0.06)", color: "#9aa39d", border: "1px solid rgba(255,255,255,0.1)" }}>
+            <Button variant="ghost" size="md" href="/play" className="flex-1">
               Back to Play
-            </Link>
+            </Button>
           </div>
         </div>
       </main>
@@ -1007,8 +1000,7 @@ export default function RoomPage() {
       {activeQuestion && !user && (
         <div className="fixed inset-x-0 bottom-0 z-50 p-4" style={{ background: "rgba(10,10,15,0.97)", backdropFilter: "blur(16px)", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
           <p className="font-body text-sm font-bold text-white mb-3">Question is live — sign in to answer</p>
-          <Link href="/auth/sign-in" className="block w-full py-3.5 rounded-xl font-body font-bold text-sm text-center bg-teal"
-            style={{ color: "#0a0a0f" }}>Sign in to play →</Link>
+          <Button variant="primary" tone="teal" size="md" fullWidth href="/auth/sign-in">Sign in to play →</Button>
         </div>
       )}
     </main>

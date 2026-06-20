@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { getTeamBadgeUrlSync } from "@/lib/teamImages";
+import { Button } from "@/components/ui/Button";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -560,31 +561,20 @@ export default function CreateQuizPage() {
               {!focusType ? "Choose a category to start" : "Pick a team or topic"}
             </p>
           )}
-          <button
+          <Button
+            variant="primary"
+            tone="teal"
+            size="lg"
+            fullWidth
             onClick={handleGenerate}
             disabled={!canGenerate}
-            style={{
-              width: "100%", padding: "16px", borderRadius: 16,
-              fontFamily: "var(--font-display, sans-serif)", fontSize: 15,
-              fontWeight: 700, letterSpacing: "0.06em",
-              cursor: canGenerate ? "pointer" : "not-allowed",
-              transition: "all 0.2s ease", border: "none",
-              background: generating
-                ? undefined
-                : canGenerate
-                ? "linear-gradient(135deg, #aeea00, #00cc6a)"
-                : "rgba(255,255,255,0.06)",
-              color: canGenerate ? "#000000" : "#3a423d",
-              boxShadow: canGenerate && !generating ? "0 4px 28px rgba(174,234,0,0.32)" : "none",
-            }}
-            className={generating ? "generating-shimmer" : ""}
           >
             {generating
               ? "Building your quiz…"
               : canGenerate
               ? `Generate ${selectedEntity} Quiz →`
               : "Select a team or topic first"}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

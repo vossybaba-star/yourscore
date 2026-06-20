@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Spinner } from "@/components/ui/Spinner";
 import { BackPill } from "@/components/ui/BackPill";
+import { Button } from "@/components/ui/Button";
 
 function JoinLeagueIndexInner() {
   const router = useRouter();
@@ -61,18 +62,13 @@ function JoinLeagueIndexInner() {
               letterSpacing: "0.18em",
             }}
           />
-          <button
+          <Button
             type="submit"
             disabled={code.trim().length < 4}
-            className="w-full py-4 rounded-xl font-body font-bold text-base transition-all"
-            style={{
-              background: code.trim().length >= 4 ? "#aeea00" : "rgba(255,255,255,0.06)",
-              color: code.trim().length >= 4 ? "#0a0a0f" : "#8a948f",
-              boxShadow: code.trim().length >= 4 ? "0 0 20px rgba(174,234,0,0.25)" : "none",
-            }}
+            variant="primary" tone="lime" size="lg" fullWidth
           >
             Find league →
-          </button>
+          </Button>
         </form>
 
         {/* Divider */}
@@ -86,13 +82,9 @@ function JoinLeagueIndexInner() {
         <div className="rounded-2xl p-5 bg-surface border border-border">
           <p className="font-body text-sm font-semibold text-white mb-1">Don&apos;t have a code?</p>
           <p className="font-body text-xs text-text-muted mb-4">Sign up free and create your own league — then invite your mates.</p>
-          <Link
-            href="/auth/sign-in"
-            className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl font-body font-bold text-sm transition-all hover:opacity-90 text-green"
-            style={{ background: "rgba(174,234,0,0.1)", border: "1px solid rgba(174,234,0,0.28)" }}
-          >
+          <Button href="/auth/sign-in" variant="ghost" size="md" fullWidth>
             Sign Up Free →
-          </Link>
+          </Button>
         </div>
 
         <div className="mt-6 text-center">

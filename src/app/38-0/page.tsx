@@ -11,6 +11,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { BackPill } from "@/components/ui/BackPill";
+import { Button } from "@/components/ui/Button";
 import { Pitch } from "@/components/draft/Pitch";
 import { FORMATIONS, LEAGUE_META } from "@/lib/draft/types";
 import type { Formation, League } from "@/lib/draft/types";
@@ -364,13 +365,9 @@ export default function DraftHome() {
         <div className="fixed left-0 right-0 z-40"
           style={{ bottom: "calc(56px + env(safe-area-inset-bottom, 0px))", background: "linear-gradient(0deg,#0a0a0f 70%,transparent)", paddingBottom: "4px" }}>
           <div className="max-w-lg mx-auto px-5 pt-3">
-            <button
-              onClick={startNew}
-              className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform"
-              style={{ background: cfg.accent, color: cfg.onAccent, fontSize: 26 }}
-            >
+            <Button variant="primary" tone="lime" size="lg" fullWidth onClick={startNew}>
               DRAFT YOUR XI →
-            </button>
+            </Button>
           </div>
         </div>
       )}

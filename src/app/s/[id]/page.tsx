@@ -6,9 +6,9 @@
  */
 
 import type { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createDraftDb } from "@/lib/draft/server";
+import { Button } from "@/components/ui/Button";
 
 export const runtime = "nodejs";
 
@@ -115,9 +115,9 @@ export default async function SeasonShortSharePage({ params }: { params: { id: s
         <div>
           <div className="font-body" style={{ fontSize: 13, color: "#8a948f", letterSpacing: 1 }}>38-0 · YOURSCORE</div>
           <div className="font-display tracking-wide mt-3" style={{ fontSize: 28, color: "#fff" }}>This link has expired</div>
-          <Link href="/38-0" className="inline-block mt-6 rounded-2xl px-6 py-4 font-display tracking-wide" style={{ background: "#aeea00", color: "#062013", fontSize: 24 }}>
+          <Button href="/38-0" variant="primary" tone="lime" size="lg" className="mt-6">
             BUILD YOUR OWN XI →
-          </Link>
+          </Button>
         </div>
       </div>
     );
@@ -254,11 +254,9 @@ export default async function SeasonShortSharePage({ params }: { params: { id: s
         )}
 
         {/* CTA */}
-        <Link href="/38-0"
-          className="block w-full rounded-2xl py-4 text-center font-display tracking-wide active:scale-[0.98] transition-transform"
-          style={{ background: "#aeea00", color: "#062013", fontSize: 20 }}>
+        <Button href="/38-0" variant="primary" tone="lime" size="lg" fullWidth>
           BUILD YOUR OWN XI →
-        </Link>
+        </Button>
 
         <p className="text-center mt-4 font-body text-xs" style={{ color: "#3a423d" }}>
           yourscore.app · Your football knowledge. Ranked.

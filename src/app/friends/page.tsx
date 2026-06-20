@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { BottomNav } from "@/components/ui/BottomNav";
+import { Button } from "@/components/ui/Button";
 
 interface Friend {
   id: string;          // friendship row id
@@ -89,17 +90,13 @@ function ContactsInviteButton() {
 
   return (
     <div>
-      <button
-        onClick={pickContacts}
-        className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-body text-sm font-semibold transition-all mb-3"
-        style={{ background: "rgba(174,234,0,0.12)", color: "#aeea00", border: "1px solid rgba(174,234,0,0.25)" }}
-      >
+      <Button onClick={pickContacts} variant="ghost" size="md" fullWidth className="gap-2 mb-3">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
           <path d="M10.5 2H5.5A1.5 1.5 0 0 0 4 3.5v9A1.5 1.5 0 0 0 5.5 14h5a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 10.5 2z" stroke="currentColor" strokeWidth="1.4"/>
           <circle cx="8" cy="10" r="1" fill="currentColor"/>
         </svg>
         Invite from contacts
-      </button>
+      </Button>
 
       {contacts.length > 0 && (
         <div className="space-y-2">
