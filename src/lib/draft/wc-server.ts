@@ -19,7 +19,7 @@ import type { Formation, PlacedPlayer } from "./types";
 import { createDraftDb, validateAndScore, GLOBAL_LEAGUE } from "./server";
 import { getPlayer, getNation, isWCEligible } from "./pool";
 import { deciderQuestion } from "./wc-quiz";
-import { makeOpponent } from "./opponent";
+import { makeOpponentAt } from "./opponent";
 import { resolveMatch, buildReport, type MatchSim, type SingleMatchResult } from "./live-score";
 import { seededRng } from "./score";
 import {
@@ -138,7 +138,7 @@ export { WORLD_TEAM_NAME };
 export function buildOpponent(run: WcRun, fixture: WCFixture, idx: number) {
   const seed = `${run.seed}:opp:${fixture.stage}:${idx}`;
   const target = oppTargetFor(fixture.stage); // fixed per-round standard — NOT scaled to your Strength
-  const opp = makeOpponent(run.formation as Formation, target, seededRng(seed));
+  const opp = makeOpponentAt(run.formation as Formation, target, seededRng(seed));
   return { squad: opp.team.squad, strength: opp.team.strength };
 }
 

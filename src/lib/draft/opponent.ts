@@ -139,6 +139,52 @@ export function autoDraftWorld(formation: Formation, rng: () => number = Math.ra
   return team;
 }
 
+/** Auto-draft a World XI with a rating CEILING — greedy fill from the open WC pool, but no
+ *  player rated above `maxOverall`, so the team's Strength lands near (just under) the cap.
+ *  Lowering the cap yields a genuinely weaker side; raising it an elite one. This is what
+ *  lets a WC opponent be pitched to a chosen level instead of always drafting ~80. */
+export function autoDraftCapped(formation: Formation, maxOverall: number, rng: () => number = Math.random): LocalTeam {
+  let team = emptyTeam(formation, "classic", "PL");
+  let guard = 0;
+  while (!isComplete(team) && guard++ < 200) {
+    const open = openSlots(team).map((s) => s.pos);
+    const s = spinWorld(open, usedPlayerIds(team), usedPlayerNames(team), { maxOverall }, rng);
+    let bestPlayer = null as null | (typeof s.players)[number];
+    let bestSlotId = null as null | string;
+    let bestScore = -1;
+    for (const p of s.players) {
+      const slot = bestOpenSlot(team, p);
+      if (!slot) continue;
+      const score = p.overall + (p.position === slot.pos ? 6 : 0);
+      if (score > bestScore) { bestScore = score; bestPlayer = p; bestSlotId = slot.id; }
+    }
+    if (bestPlayer && bestSlotId) {
+      const slot = openSlots(team).find((x) => x.id === bestSlotId)!;
+      team = placePlayer(team, bestPlayer, slot);
+    }
+  }
+  return team;
+}
+
+// Greedy fill lands a little under the cap, so aim the cap a touch above the target and then
+// keep whichever of several drafts sits closest — together these hit the target reliably.
+const OPP_CAP_OFFSET = 3;
+
+/** A fixed-strength World Cup opponent: drafts several CEILING-capped World XIs and keeps the
+ *  one whose Strength is closest to `targetStrength`. Unlike makeOpponent (which floors at ~80
+ *  because it greedy-drafts the whole pool), this can hit a low target — so each WC round can
+ *  be set to its own level (gentle group → elite final), independent of the player's team. */
+export function makeOpponentAt(formation: Formation, targetStrength: number, rng: () => number = Math.random): Opponent {
+  const cap = targetStrength + OPP_CAP_OFFSET;
+  let best: LocalTeam | null = null;
+  for (let i = 0; i < 8; i++) {
+    const t = autoDraftCapped(formation, cap, rng);
+    if (!best || Math.abs(t.strength - targetStrength) < Math.abs(best.strength - targetStrength)) best = t;
+  }
+  const name = OPPONENT_NAMES[Math.floor(rng() * OPPONENT_NAMES.length)];
+  return { name, team: best! };
+}
+
 /** Deterministic World Cup bot opponent (open-pool XI), seeded for preview/replay parity. */
 export function seededWorldBot(formation: Formation, seed: string): Opponent {
   const rng = seededRng(seed);
