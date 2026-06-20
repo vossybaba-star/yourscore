@@ -153,6 +153,9 @@ export default function LeaguesPage() {
   // ── Quiz leagues state ──
   const [quizSubTab, setQuizSubTab] = useState<QuizSubTab>(initQuizSubTab);
   const [quizLeagues, setQuizLeagues] = useState<QuizLeague[]>([]);
+  // Per-league chase gap (pts to the player directly above + their name), keyed
+  // by league id. Computed from full standings so cards can show momentum.
+  const [leagueGaps, setLeagueGaps] = useState<Record<string, { gap: number; aboveName: string }>>({});
   const [quizLoading, setQuizLoading] = useState(true);
   const [globalPlayers, setGlobalPlayers] = useState<GlobalPlayer[]>([]);
   const [globalLoading, setGlobalLoading] = useState(false);
@@ -172,12 +175,30 @@ export default function LeaguesPage() {
     if (userLoading || !user || !process.env.NEXT_PUBLIC_SUPABASE_URL) { setQuizLoading(false); return; }
     import("@/lib/supabase/client").then(async ({ createClient }) => {
       const sb = createClient();
-      const { data } = await sb.rpc("get_my_leagues", { p_user_id: user.id });
+      const [{ data }, { data: standings }] = await Promise.all([
+        sb.rpc("get_my_leagues", { p_user_id: user.id }),
+        sb.rpc("get_my_league_standings", { p_user_id: user.id, p_limit: 50 }),
+      ]);
       setQuizLeagues((data ?? []).map((row: Record<string, unknown>) => ({
         id: String(row.id), name: String(row.name), description: row.description as string | null,
         code: String(row.code), member_count: Number(row.member_count ?? 0),
         my_score: Number(row.my_score ?? 0), my_rank: Number(row.my_rank ?? 1),
       })));
+
+      // Compute the gap to the player directly above me in each league.
+      const byLeague = new Map<string, { uid: string; name: string; score: number }[]>();
+      for (const r of (standings ?? []) as Record<string, unknown>[]) {
+        const lid = String(r.league_id);
+        if (!byLeague.has(lid)) byLeague.set(lid, []);
+        byLeague.get(lid)!.push({ uid: String(r.user_id ?? ""), name: String(r.display_name ?? "Player"), score: Number(r.total_score ?? 0) });
+      }
+      const gaps: Record<string, { gap: number; aboveName: string }> = {};
+      for (const [lid, members] of Array.from(byLeague.entries())) {
+        const sorted = [...members].sort((a, b) => b.score - a.score);
+        const idx = sorted.findIndex((m) => m.uid === user.id);
+        if (idx > 0) gaps[lid] = { gap: Math.max(0, sorted[idx - 1].score - sorted[idx].score), aboveName: sorted[idx - 1].name };
+      }
+      setLeagueGaps(gaps);
       setQuizLoading(false);
     });
   }, [user, userLoading]);
@@ -460,7 +481,14 @@ export default function LeaguesPage() {
                         : 100;
                       const rs = rankStyle(rankNum);
                       const isLeading = rankNum === 1;
-                      const gapFromTop = league.member_count > 1 && !isLeading ? `#${rankNum} of ${league.member_count}` : null;
+                      const gapInfo = leagueGaps[league.id];
+                      const gapFromTop = isLeading
+                        ? null
+                        : gapInfo
+                        ? `🎯 ${gapInfo.gap.toLocaleString()} pts behind ${gapInfo.aboveName}`
+                        : league.member_count > 1
+                        ? `#${rankNum} of ${league.member_count}`
+                        : null;
                       return (
                         <Link key={league.id} href={`/league/${league.id}`}
                           className="block rounded-2xl overflow-hidden transition-opacity hover:opacity-90 active:scale-[0.99] bg-surface border border-border">
