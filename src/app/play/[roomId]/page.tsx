@@ -515,6 +515,20 @@ export default function RoomPage() {
     return res.json();
   }
 
+  // When a question resolves (the overlay clears), bring the updated Live
+  // Standings into view so a player who'd scrolled sees their new position
+  // without hunting for it.
+  const standingsRef = useRef<HTMLDivElement>(null);
+  const wasQuestionActiveRef = useRef(false);
+  useEffect(() => {
+    const wasActive = wasQuestionActiveRef.current;
+    wasQuestionActiveRef.current = !!activeQuestion;
+    if (wasActive && !activeQuestion && leaderboard.length > 0) {
+      const t = setTimeout(() => standingsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
+      return () => clearTimeout(t);
+    }
+  }, [activeQuestion, leaderboard.length]);
+
   // FIX #2 (question sync): capture which sequence number expired so the
   // 3500ms clear timer doesn't wipe a newer question loaded after expire fires.
   const handleQuestionExpire = useCallback(() => {
@@ -974,7 +988,7 @@ export default function RoomPage() {
 
         {/* Leaderboard */}
         {leaderboard.length > 0 && (
-          <div className="rounded-2xl overflow-hidden bg-surface border border-border">
+          <div ref={standingsRef} className="rounded-2xl overflow-hidden bg-surface border border-border scroll-mt-4">
             <div className="px-5 py-3 flex items-center justify-between" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
               <p className="font-body text-xs uppercase tracking-widest text-text-muted">Live Standings</p>
               <span className="font-body text-xs" style={{ color: "#586058" }}>tap for stats</span>
