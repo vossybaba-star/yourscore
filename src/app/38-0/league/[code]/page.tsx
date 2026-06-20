@@ -11,6 +11,7 @@
 import { useCallback, useEffect, useRef, useState, type ComponentType } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import { Button } from "@/components/ui/Button";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { DraftHeader } from "@/components/draft/DraftHeader";
 import { useUser } from "@/hooks/useUser";
@@ -189,7 +190,7 @@ export default function LeagueBoard() {
               <input value={newName} onChange={(e) => setNewName(e.target.value)} maxLength={40} autoFocus
                 className="w-full rounded-xl px-3 py-2 font-display tracking-wide" style={{ background: "#0e1611", color: "#fff", border: "1px solid rgba(174,234,0,0.4)", fontSize: 24 }} />
               <div className="flex gap-2 mt-2">
-                <button onClick={rename} disabled={busy || !newName.trim()} className="rounded-lg px-4 py-2 font-display tracking-wide disabled:opacity-50" style={{ background: "#aeea00", color: "#0e1611", fontSize: 14 }}>SAVE</button>
+                <Button variant="primary" tone="lime" size="sm" onClick={rename} disabled={busy || !newName.trim()}>SAVE</Button>
                 <button onClick={() => setRenaming(false)} className="rounded-lg px-4 py-2 font-body" style={{ color: "#8a948f", fontSize: 14 }}>Cancel</button>
               </div>
             </div>
@@ -222,14 +223,14 @@ export default function LeagueBoard() {
         {err && <div className="rounded-xl px-4 py-2 mt-3 font-body text-center" style={{ fontSize: 13, color: "#ff4757", background: "rgba(255,71,87,0.1)" }}>{err}</div>}
 
         {!board.isMember && user && (
-          <button onClick={join} disabled={busy} className="w-full mt-4 rounded-2xl py-3 font-display tracking-wide disabled:opacity-50" style={{ background: "#aeea00", color: "#062013", fontSize: 20 }}>JOIN THIS LEAGUE</button>
+          <Button variant="primary" tone="lime" size="md" fullWidth className="mt-4" onClick={join} disabled={busy}>JOIN THIS LEAGUE</Button>
         )}
 
         {/* Resume an in-progress match */}
         {board.activeMatchId && (
-          <Link href={`/38-0/live/match/${board.activeMatchId}`} className="block w-full mt-4 rounded-2xl py-3 text-center font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "#aeea00", color: "#062013", fontSize: 18 }}>
+          <Button variant="primary" tone="lime" size="md" fullWidth className="mt-4" href={`/38-0/live/match/${board.activeMatchId}`}>
             ▶ RESUME YOUR MATCH
-          </Link>
+          </Button>
         )}
 
         {/* Incoming live challenges */}
@@ -240,8 +241,8 @@ export default function LeagueBoard() {
                 <div className="font-display tracking-wide" style={{ fontSize: 16, color: "#fff" }}>⚔️ {c.fromName} challenged you</div>
                 <div className="font-body" style={{ fontSize: 12, color: "#8a948f" }}>Strength {c.fromStrength} · live two-half match</div>
                 <div className="grid grid-cols-2 gap-2 mt-3">
-                  <button onClick={() => accept(c.matchId)} disabled={busy} className="rounded-xl py-3 font-display tracking-wide disabled:opacity-50" style={{ background: "#aeea00", color: "#062013", fontSize: 16 }}>ACCEPT →</button>
-                  <button onClick={() => decline(c.matchId)} disabled={busy} className="rounded-xl py-3 font-body disabled:opacity-50" style={{ background: "transparent", color: "#8a948f", fontSize: 14, border: "1px solid rgba(255,255,255,0.12)" }}>Decline</button>
+                  <Button variant="primary" tone="lime" size="sm" fullWidth onClick={() => accept(c.matchId)} disabled={busy}>ACCEPT →</Button>
+                  <Button variant="ghost" size="sm" fullWidth onClick={() => decline(c.matchId)} disabled={busy}>Decline</Button>
                 </div>
               </div>
             ))}
@@ -253,7 +254,7 @@ export default function LeagueBoard() {
           <div className="mt-5 rounded-2xl p-5 text-center" style={{ background: "linear-gradient(135deg,#0e1611,#0e1611)", border: "1px solid rgba(174,234,0,0.35)" }}>
             <div className="font-display tracking-wide" style={{ fontSize: 22, color: "#fff" }}>INVITE YOUR MATES</div>
             <p className="font-body mt-1 mb-3" style={{ fontSize: 13, color: "#c4ccc6" }}>A league needs at least two managers. Share the code or QR — matches are live head-to-head.</p>
-            <button onClick={shareCode} className="w-full rounded-xl py-3 font-display tracking-wide" style={{ background: "#aeea00", color: "#0e1611", fontSize: 18 }}>SHARE INVITE →</button>
+            <Button variant="primary" tone="lime" size="md" fullWidth onClick={shareCode}>SHARE INVITE →</Button>
           </div>
         )}
 
@@ -334,9 +335,9 @@ export default function LeagueBoard() {
                   {board.isOwner ? "Delete this league for everyone? This can't be undone." : "Leave this league?"}
                 </div>
                 <div className="flex gap-2 mt-3">
-                  <button onClick={() => leaveOrDelete(board.isOwner ? "delete" : "leave")} disabled={busy} className="rounded-lg px-4 py-2 font-display tracking-wide disabled:opacity-50" style={{ background: "#ff4757", color: "#fff", fontSize: 14 }}>
+                  <Button variant="danger" size="sm" onClick={() => leaveOrDelete(board.isOwner ? "delete" : "leave")} disabled={busy}>
                     {board.isOwner ? "DELETE LEAGUE" : "LEAVE"}
-                  </button>
+                  </Button>
                   <button onClick={() => setConfirmDelete(false)} className="rounded-lg px-4 py-2 font-body" style={{ color: "#8a948f", fontSize: 14 }}>Cancel</button>
                 </div>
               </div>

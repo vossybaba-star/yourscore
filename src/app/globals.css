@@ -246,6 +246,23 @@ input, textarea, select {
   .btn-ticket--teal:active {
     box-shadow: 0 1px 0 #0a9183, 0 4px 10px rgba(0, 216, 192, 0.18);
   }
+  /* Wins variant (gold) — reserved for celebrating a result, never generic actions. */
+  .btn-ticket--gold {
+    background: var(--gold);
+    color: #2a1d00;
+    box-shadow: 0 6px 0 #a07d10, 0 10px 18px rgba(255, 194, 51, 0.22);
+  }
+  .btn-ticket--gold:active {
+    box-shadow: 0 1px 0 #a07d10, 0 4px 10px rgba(255, 194, 51, 0.18);
+  }
+  /* Disabled — kill the lift + press so it reads inert. */
+  .btn-ticket:disabled,
+  .btn-ticket[aria-disabled="true"] {
+    opacity: 0.5;
+    box-shadow: 0 6px 0 rgba(255, 255, 255, 0.08);
+    cursor: not-allowed;
+    pointer-events: none;
+  }
   .btn-ghost {
     display: inline-flex;
     align-items: center;

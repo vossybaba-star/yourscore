@@ -6,9 +6,9 @@
  */
 
 import type { Metadata } from "next";
-import Link from "next/link";
 import { SaveTeamButton } from "./SaveTeamButton";
 import { BackPill } from "@/components/ui/BackPill";
+import { Button } from "@/components/ui/Button";
 import { SeasonScorecard, type SeasonAward, type SeasonData } from "@/components/draft/SeasonScorecard";
 
 export const runtime = "edge";
@@ -85,9 +85,9 @@ export default function SeasonSharePage({ searchParams }: { searchParams: SP }) 
 
         <div className="mt-6 flex flex-col gap-3">
           <SaveTeamButton ogUrl={ogUrl(searchParams)} />
-          <Link href="/38-0" className="block w-full rounded-[20px] px-6 py-4 font-display tracking-wide text-center transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98]" style={{ background: "#aeea00", color: "#062013", fontSize: 24 }}>
+          <Button href="/38-0" variant="primary" tone="lime" size="lg" fullWidth>
             BUILD YOUR OWN XI →
-          </Link>
+          </Button>
         </div>
       </div>
     </div>

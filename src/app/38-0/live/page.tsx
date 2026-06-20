@@ -10,6 +10,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Button } from "@/components/ui/Button";
 import { BackPill } from "@/components/ui/BackPill";
 import { useUser } from "@/hooks/useUser";
 import { asLeague, type League } from "@/lib/draft/types";
@@ -174,26 +175,22 @@ export default function LiveEntry() {
             {/* Auth prompt — appears above "Find a live match" when a signed-out user taps it */}
             {showAuthPrompt && (
               <>
-                <Link href="/auth/sign-in?signup=1"
-                  className="flex items-center justify-center w-full rounded-2xl py-4 font-body font-semibold text-center"
-                  style={{ background: "#aeea00", color: "#04130a", fontSize: 16 }}>
+                <Button variant="primary" tone="lime" size="md" fullWidth href="/auth/sign-in?signup=1">
                   Sign Up — Free
-                </Link>
-                <Link href="/auth/sign-in"
-                  className="flex items-center justify-center w-full rounded-2xl py-4 font-body font-semibold text-center"
-                  style={{ background: "rgba(255,255,255,0.06)", color: "#e8e8f0", border: "1px solid rgba(255,255,255,0.12)", fontSize: 16 }}>
+                </Button>
+                <Button variant="ghost" size="md" fullWidth href="/auth/sign-in">
                   Sign In
-                </Link>
+                </Button>
                 <div style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }} />
               </>
             )}
 
-            <button onClick={handleFindMatch} className="w-full rounded-2xl py-4 font-semibold" style={{ background: "#aeea00", color: "#04130a" }}>
+            <Button variant="primary" tone="lime" size="md" fullWidth onClick={handleFindMatch}>
               Find a live match
-            </button>
-            <button onClick={playFriend} className="w-full rounded-2xl py-4 font-semibold" style={{ background: "rgba(255,255,255,0.06)", color: "#e8e8f0", border: "1px solid rgba(255,255,255,0.12)" }}>
+            </Button>
+            <Button variant="ghost" size="md" fullWidth onClick={playFriend}>
               Play a friend
-            </button>
+            </Button>
 
             {/* Join with a code — always visible */}
             <div className="pt-4">
@@ -205,9 +202,9 @@ export default function LiveEntry() {
                   className="flex-1 rounded-xl px-4 py-3 tracking-[0.3em] font-mono"
                   style={{ background: "rgba(255,255,255,0.05)", color: "#fff", border: "1px solid rgba(255,255,255,0.12)" }}
                 />
-                <button onClick={joinByCode} disabled={joinCode.trim().length < 4} className="rounded-xl px-5 font-semibold" style={{ background: "#ffb800", color: "#1a1300", opacity: joinCode.trim().length < 4 ? 0.5 : 1 }}>
+                <Button variant="primary" tone="lime" size="sm" onClick={joinByCode} disabled={joinCode.trim().length < 4}>
                   Join
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -220,9 +217,9 @@ export default function LiveEntry() {
                 <div className="text-3xl">🟢</div>
                 <p className="mt-2 font-display tracking-wide" style={{ fontSize: 22, color: "#aeea00" }}>{oppJoined} JOINED!</p>
                 <p className="mt-1 text-sm" style={{ color: "#9aa39d" }}>Taking you into the lobby…</p>
-                <button onClick={() => matchId && router.push(`/38-0/live/match/${matchId}`)} className="mt-4 w-full rounded-2xl py-4 font-semibold" style={{ background: "#aeea00", color: "#04130a" }}>
+                <Button variant="primary" tone="lime" size="md" fullWidth className="mt-4" onClick={() => matchId && router.push(`/38-0/live/match/${matchId}`)}>
                   Enter now →
-                </button>
+                </Button>
               </div>
             ) : (
               <>
@@ -232,15 +229,15 @@ export default function LiveEntry() {
                   <span className="h-2 w-2 rounded-full animate-pulse" style={{ background: "#ffb800" }} />
                   <span className="text-xs" style={{ color: "#c4ccc6" }}>Waiting for your mate to join…</span>
                 </div>
-                <button
+                <Button
+                  variant="ghost" size="md" fullWidth className="mt-4"
                   onClick={() => navigator.share?.({ title: "38-0 H2H", text: `Play me on 38-0 — code ${code}`, url: `${location.origin}/38-0/live/${code}?competition=${competition}` }).catch(() => {})}
-                  className="mt-4 w-full rounded-2xl py-3 font-semibold" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "#e8e8f0" }}
                 >
                   Share link
-                </button>
-                <button onClick={() => matchId && router.push(`/38-0/live/match/${matchId}`)} className="mt-3 w-full rounded-2xl py-4 font-semibold" style={{ background: "#aeea00", color: "#04130a" }}>
+                </Button>
+                <Button variant="primary" tone="lime" size="md" fullWidth className="mt-3" onClick={() => matchId && router.push(`/38-0/live/match/${matchId}`)}>
                   Enter lobby →
-                </button>
+                </Button>
                 <p className="mt-3 text-xs" style={{ color: "#8a948f" }}>We&apos;ll pull you in automatically the moment they join.</p>
 
                 {/* After 45s: offer to match with random online gamers instead */}
@@ -253,17 +250,16 @@ export default function LiveEntry() {
                     <p className="mt-1 text-xs" style={{ color: "#9aa39d" }}>
                       There are other gamers online right now — want us to match you with one of them instead?
                     </p>
-                    <button
+                    <Button
+                      variant="primary" tone="lime" size="sm" fullWidth className="mt-3"
                       onClick={() => {
                         setMode("idle");
                         setFriendWaitTooLong(false);
                         void findMatch();
                       }}
-                      className="mt-3 w-full rounded-xl py-3 font-semibold text-sm"
-                      style={{ background: "#aeea00", color: "#04130a" }}
                     >
                       Match me with someone online →
-                    </button>
+                    </Button>
                     <button
                       onClick={() => setFriendWaitTooLong(false)}
                       className="mt-2 w-full rounded-xl py-2 text-xs"

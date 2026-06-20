@@ -14,6 +14,7 @@ import { AuthProviders } from "@/components/auth/AuthButton";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { Spinner } from "@/components/ui/Spinner";
 import { GridBackground } from "@/components/ui/GridBackground";
+import { Button } from "@/components/ui/Button";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -303,7 +304,7 @@ export default function LeaguesPage() {
               <div className="rounded-2xl p-6 text-center" style={{ background: "#0e1611", border: "1px solid rgba(174,234,0,0.15)" }}>
                 <div className="font-display tracking-wide mb-2" style={{ fontSize: 20, color: "#fff" }}>SIGN IN FOR LEAGUES</div>
                 <p className="font-body mb-4" style={{ fontSize: 13, color: "#8a948f" }}>Create or join a private 38-0 league to compete with your group.</p>
-                <Link href="/auth/sign-in" className="inline-block rounded-xl px-5 py-3 font-display tracking-wide" style={{ background: "#aeea00", color: "#062013", fontSize: 18 }}>SIGN IN →</Link>
+                <Button href="/auth/sign-in" variant="primary" tone="lime" size="md">SIGN IN →</Button>
               </div>
             ) : (
               <>
@@ -318,10 +319,10 @@ export default function LeaguesPage() {
                     <input value={draftName} onChange={(e) => setDraftName(e.target.value)} maxLength={40} placeholder="League name"
                       onKeyDown={(e) => e.key === "Enter" && createDraftLeague()}
                       className="flex-1 rounded-xl px-3 py-3 font-body outline-none" style={{ background: "#0a0a0f", color: "#fff", border: "1px solid rgba(255,255,255,0.1)" }} />
-                    <button onClick={createDraftLeague} disabled={draftBusy || !draftName.trim()}
-                      className="rounded-xl px-5 font-display tracking-wide disabled:opacity-50 transition-opacity" style={{ background: "#aeea00", color: "#062013", fontSize: 16 }}>
+                    <Button onClick={createDraftLeague} disabled={draftBusy || !draftName.trim()}
+                      variant="primary" tone="lime" size="sm">
                       CREATE
-                    </button>
+                    </Button>
                   </div>
                 </div>
 
@@ -332,10 +333,10 @@ export default function LeaguesPage() {
                     <input value={draftCode} onChange={(e) => setDraftCode(e.target.value.toUpperCase())} maxLength={6} placeholder="ABC123"
                       onKeyDown={(e) => e.key === "Enter" && joinDraftLeague()}
                       className="flex-1 rounded-xl px-3 py-3 font-display tracking-widest outline-none" style={{ background: "#0a0a0f", color: "#fff", border: "1px solid rgba(255,255,255,0.1)", fontSize: 20 }} />
-                    <button onClick={joinDraftLeague} disabled={draftBusy || !draftCode.trim()}
-                      className="rounded-xl px-5 font-display tracking-wide disabled:opacity-50 transition-opacity" style={{ background: "#aeea00", color: "#0e1611", fontSize: 16 }}>
+                    <Button onClick={joinDraftLeague} disabled={draftBusy || !draftCode.trim()}
+                      variant="primary" tone="lime" size="sm">
                       JOIN
-                    </button>
+                    </Button>
                   </div>
                 </div>
 
@@ -501,11 +502,9 @@ export default function LeaguesPage() {
                     <p className="font-body text-sm mb-6 text-text-muted">
                       Create a league and invite your mates — your points stack across every match all season.
                     </p>
-                    <Link href="/league/new"
-                      className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-body font-bold text-sm transition-all hover:opacity-90"
-                      style={{ background: "#aeea00", color: "#0a0a0f" }}>
+                    <Button href="/league/new" variant="primary" tone="teal" size="md">
                       Create your first league →
-                    </Link>
+                    </Button>
                   </div>
                 )}
 
@@ -637,11 +636,10 @@ export default function LeaguesPage() {
                 placeholder="ENTER CODE" autoComplete="off" autoCorrect="off" autoCapitalize="characters" spellCheck={false}
                 className="w-full rounded-2xl px-5 font-display text-3xl text-center tracking-[0.25em] text-white outline-none mb-4"
                 style={{ height: 72, background: "rgba(174,234,0,0.06)", border: `1px solid ${joinCode.length >= 4 ? "rgba(174,234,0,0.5)" : "rgba(174,234,0,0.2)"}`, caretColor: "#aeea00", letterSpacing: "0.25em", transition: "border-color 0.2s" }} />
-              <button type="submit" disabled={joinCode.trim().length < 4}
-                className="w-full py-4 rounded-2xl font-body font-bold text-base transition-all"
-                style={{ background: joinCode.trim().length >= 4 ? "#aeea00" : "rgba(174,234,0,0.15)", color: joinCode.trim().length >= 4 ? "#0a0a0f" : "#586058", cursor: joinCode.trim().length >= 4 ? "pointer" : "not-allowed" }}>
+              <Button type="submit" disabled={joinCode.trim().length < 4}
+                variant="primary" tone="teal" size="lg" fullWidth>
                 Join league →
-              </button>
+              </Button>
             </form>
           </div>
         </>

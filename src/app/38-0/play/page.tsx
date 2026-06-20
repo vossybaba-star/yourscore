@@ -12,6 +12,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Pitch } from "@/components/draft/Pitch";
 import { BackPill } from "@/components/ui/BackPill";
+import { Button } from "@/components/ui/Button";
 import { spin, allBuckets, type Spin } from "@/lib/draft/pool";
 import {
   loadTeam, saveTeam, openSlots, isComplete, usedPlayerIds, usedPlayerNames, placePlayer,
@@ -237,22 +238,18 @@ export default function DraftPlay() {
           {/* spin button — once you've spun you must draft from that squad (no re-spin) */}
           {remaining > 0 ? (
             !current || spinning ? (
-              <button onClick={doSpin} disabled={spinning}
-                className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-60"
-                style={{ background: spinning ? "#15211a" : "#aeea00", color: spinning ? "#ffb800" : "#062013", fontSize: 24 }}>
+              <Button variant="primary" tone="lime" size="lg" fullWidth onClick={doSpin} disabled={spinning}>
                 {spinning ? "SPINNING…" : "🎰 SPIN THE WHEEL"}
-              </button>
+              </Button>
             ) : (
               <div className="text-center font-body py-2" style={{ fontSize: 13, color: "#8a948f" }}>
                 Draft a player from this squad to continue
               </div>
             )
           ) : (
-            <button onClick={() => router.push("/38-0/team")}
-              className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform"
-              style={{ background: "#aeea00", color: "#062013", fontSize: 24 }}>
+            <Button variant="primary" tone="lime" size="lg" fullWidth onClick={() => router.push("/38-0/team")}>
               SEE YOUR RECORD →
-            </button>
+            </Button>
           )}
         </div>
       </div>

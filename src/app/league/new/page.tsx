@@ -9,6 +9,7 @@ import { SignInWithGoogle } from "@/components/auth/AuthButton";
 import { Spinner } from "@/components/ui/Spinner";
 import { createClient } from "@/lib/supabase/client";
 import { BackPill } from "@/components/ui/BackPill";
+import { Button } from "@/components/ui/Button";
 
 function generateLeagueCode(name: string): string {
   const prefix = name.slice(0, 2).toUpperCase().replace(/[^A-Z]/g, "X");
@@ -163,11 +164,10 @@ function CreateLeagueInner() {
                 <SignInWithGoogle redirectTo="/league/new" />
               </div>
             ) : (
-              <button onClick={handleCreate} disabled={!name.trim() || submitting}
-                className="w-full py-4 rounded-xl font-body font-bold text-base flex items-center justify-center gap-2 transition-all"
-                style={{ background: name.trim() ? "#aeea00" : "rgba(255,255,255,0.06)", color: name.trim() ? "#0a0a0f" : "#8a948f", boxShadow: name.trim() ? "0 0 20px rgba(174,234,0,0.25)" : "none" }}>
+              <Button onClick={handleCreate} disabled={!name.trim() || submitting}
+                variant="primary" tone="lime" size="lg" fullWidth>
                 {submitting ? <Spinner size={18} /> : "Create league"}
-              </button>
+              </Button>
             )}
           </>
         ) : (
@@ -228,11 +228,9 @@ function CreateLeagueInner() {
               )}
             </div>
 
-            <Link href={`/league/${created.id}`}
-              className="w-full flex items-center justify-center py-4 rounded-xl font-body font-bold text-base"
-              style={{ background: "#aeea00", color: "#0a0a0f", boxShadow: "0 0 20px rgba(174,234,0,0.25)" }}>
+            <Button href={`/league/${created.id}`} variant="primary" tone="lime" size="lg" fullWidth>
               Go to league →
-            </Link>
+            </Button>
           </>
         )}
       </div>

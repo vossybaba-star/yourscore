@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import { createClient } from "@/lib/supabase/client";
 import { BottomNav } from "@/components/ui/BottomNav";
+import { Button } from "@/components/ui/Button";
 import { getTeamBadgeUrl } from "@/lib/teamImages";
 import { getCompetitionBadgeUrl } from "@/lib/competitionImages";
 import { slugify } from "@/lib/utils";
@@ -311,11 +312,9 @@ function OpenRoomCard({ room, onJoin }: { room: OpenRoom; onJoin: () => void }) 
           </span>
         </div>
       </div>
-      <button onClick={onJoin}
-        className="flex-shrink-0 px-3 py-2 rounded-xl font-body text-xs font-bold transition-all hover:opacity-90 text-teal"
-        style={{ background: "rgba(0,216,192,0.12)", border: "1px solid rgba(0,216,192,0.25)" }}>
+      <Button variant="primary" tone="teal" size="sm" onClick={onJoin} className="flex-shrink-0">
         Join
-      </button>
+      </Button>
     </div>
   );
 }
@@ -888,11 +887,9 @@ function PlayPageInner() {
                 className="w-full rounded-2xl px-5 font-display text-3xl text-center tracking-[0.25em] text-white outline-none mb-3"
                 style={{ height: 72, background: "rgba(0,216,192,0.06)", border: `1px solid ${joinCode.length >= 4 ? "rgba(0,216,192,0.5)" : "rgba(0,216,192,0.2)"}`, caretColor: "#00d8c0", transition: "border-color 0.2s" }} />
               {joinError && <p className="text-center font-body text-sm mb-3" style={{ color: "#f87171" }}>{joinError}</p>}
-              <button type="submit" disabled={joinCode.trim().length < 4 || joining}
-                className="w-full py-4 rounded-2xl font-body font-bold text-base transition-all"
-                style={{ background: joinCode.trim().length >= 4 && !joining ? "#00d8c0" : "rgba(0,216,192,0.15)", color: joinCode.trim().length >= 4 && !joining ? "#0a0a0f" : "#586058" }}>
+              <Button type="submit" variant="primary" tone="teal" size="lg" fullWidth disabled={joinCode.trim().length < 4 || joining}>
                 {joining ? "Joining…" : "Join game →"}
-              </button>
+              </Button>
             </form>
           </div>
         </>

@@ -10,6 +10,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { Button } from "@/components/ui/Button";
 import { Pitch } from "@/components/draft/Pitch";
 import { BackPill } from "@/components/ui/BackPill";
 import { useLiveMatch } from "@/lib/draft/useLiveMatch";
@@ -524,8 +525,8 @@ function ResultPanel({ view, sim, m }: { view: View; sim: MatchSim | null; m: Dr
               We picked a random XI for you. Want to keep it?
             </p>
             <div className="flex gap-2">
-              <button onClick={keepTeam} className="flex-1 rounded-xl py-2.5 font-body font-semibold text-sm" style={{ background: "#aeea00", color: "#062013" }}>Keep this XI ✓</button>
-              <button onClick={buildOwn} className="flex-1 rounded-xl py-2.5 font-body text-sm" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#c4ccc6" }}>Build my own</button>
+              <Button variant="primary" tone="lime" size="sm" fullWidth className="flex-1" onClick={keepTeam}>Keep this XI ✓</Button>
+              <Button variant="ghost" size="sm" fullWidth className="flex-1" onClick={buildOwn}>Build my own</Button>
             </div>
           </div>
         )}
@@ -557,11 +558,11 @@ function ResultPanel({ view, sim, m }: { view: View; sim: MatchSim | null; m: Dr
           </div>
         </button>
 
-        <button onClick={openShare} className="w-full mt-2 rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "#aeea00", color: "#062013", fontSize: 22 }}>
+        <Button variant="primary" tone="lime" size="md" fullWidth className="mt-2" onClick={openShare}>
           📸 SHARE YOUR RESULT
-        </button>
+        </Button>
 
-        <Link href="/38-0/live" className="mt-3 block text-center rounded-2xl py-3 font-semibold" style={{ background: "rgba(174,234,0,0.1)", color: "#aeea00", border: "1px solid rgba(174,234,0,0.3)" }}>Play again</Link>
+        <Button variant="ghost" size="md" fullWidth className="mt-3" href="/38-0/live">Play again</Button>
         <Link href="/38-0/leaderboard" className="mt-3 block text-center underline text-sm" style={{ color: "#8a948f" }}>View leaderboard</Link>
       </Panel>
 

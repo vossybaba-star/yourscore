@@ -10,6 +10,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BottomNav } from "@/components/ui/BottomNav";
+import { Button } from "@/components/ui/Button";
 import { DraftHeader } from "@/components/draft/DraftHeader";
 import { useUser } from "@/hooks/useUser";
 import { hydrateSavedTeam, saveTeam } from "@/lib/draft/local";
@@ -78,7 +79,7 @@ export default function MyTeams() {
           <div className="rounded-2xl p-6 text-center" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.08)" }}>
             <div className="font-display tracking-wide" style={{ fontSize: 20, color: "#fff" }}>SIGN IN TO SAVE TEAMS</div>
             <p className="font-body mt-2" style={{ fontSize: 13, color: "#8a948f" }}>Build an XI and save it to your library to come back to it.</p>
-            <Link href="/auth/sign-in" className="inline-block mt-4 rounded-xl px-5 py-3 font-display tracking-wide" style={{ background: "#aeea00", color: "#062013", fontSize: 18 }}>SIGN IN →</Link>
+            <Button href="/auth/sign-in" variant="primary" tone="lime" size="md" className="inline-flex mt-4">SIGN IN →</Button>
           </div>
         ) : !fetched ? (
           <div className="font-body text-center py-10" style={{ color: "#8a948f", fontSize: 13 }}>Loading…</div>
@@ -86,7 +87,7 @@ export default function MyTeams() {
           <div className="rounded-2xl p-6 text-center" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.08)" }}>
             <div className="font-display tracking-wide" style={{ fontSize: 20, color: "#fff" }}>NO SAVED TEAMS YET</div>
             <p className="font-body mt-2" style={{ fontSize: 13, color: "#8a948f" }}>Build an XI, then tap Save to add it here.</p>
-            <Link href="/38-0" className="inline-block mt-4 rounded-xl px-5 py-3 font-display tracking-wide" style={{ background: "#aeea00", color: "#062013", fontSize: 18 }}>BUILD AN XI →</Link>
+            <Button href="/38-0" variant="primary" tone="lime" size="md" className="inline-flex mt-4">BUILD AN XI →</Button>
           </div>
         ) : (
           <div className="space-y-2">
@@ -99,7 +100,7 @@ export default function MyTeams() {
                   <div className="font-body truncate" style={{ fontSize: 15, color: "#fff" }}>{t.name}</div>
                   <div className="font-body" style={{ fontSize: 12, color: "#8a948f" }}>{t.formation} · {t.squad.length}/11 · Strength {t.strength_rating}</div>
                 </div>
-                <button onClick={() => use(t)} className="rounded-xl px-4 py-2.5 font-display tracking-wide active:scale-95 transition-transform" style={{ background: "#aeea00", color: "#062013", fontSize: 15 }}>USE</button>
+                <Button variant="primary" tone="lime" size="sm" onClick={() => use(t)}>USE</Button>
                 <button onClick={() => remove(t.id)} disabled={busy === t.id} aria-label="Delete team" className="rounded-xl px-3 py-2.5 active:scale-95 transition-transform disabled:opacity-50" style={{ background: "rgba(255,71,87,0.1)", color: "#ff4757", fontSize: 15, border: "1px solid rgba(255,71,87,0.25)" }}>🗑</button>
               </div>
             ))}

@@ -8,6 +8,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/Button";
 import { loadLastMatch, type LocalMatch } from "@/lib/draft/local";
 import { MatchPitch } from "@/components/draft/MatchPitch";
 import { WATCH_CONFIG } from "@/lib/draft/playback";
@@ -75,11 +76,9 @@ export default function WatchPage() {
               {h1Goals.a} – {h1Goals.b}
             </div>
             <p className="font-body mt-2" style={{ fontSize: 13, color: "#9aa39d" }}>You vs {m.opp.name}</p>
-            <button onClick={() => setStage("half2")}
-              className="mt-6 rounded-2xl px-6 py-3 font-display tracking-wide active:scale-[0.98] transition-transform"
-              style={{ background: "#aeea00", color: "#062013", fontSize: 18 }}>
+            <Button variant="primary" tone="lime" size="md" className="mt-6" onClick={() => setStage("half2")}>
               SECOND HALF →
-            </button>
+            </Button>
           </div>
         ) : (
           <MatchPitch

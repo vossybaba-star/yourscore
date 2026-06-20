@@ -15,6 +15,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import { Button } from "@/components/ui/Button";
 import { Pitch } from "@/components/draft/Pitch";
 import { InviteMastermind } from "@/components/draft/InviteMastermind";
 import { spinForNation, spinWorld } from "@/lib/draft/pool";
@@ -569,11 +570,9 @@ export default function WorldCupRun() {
           {/* Ranked is a committed run — no detour into the H2H lane. Practice can flip across. */}
           {!run.ranked && (
             <>
-              <button onClick={playH2H} disabled={h2hBusy}
-                className="mt-3 w-full rounded-2xl py-3 font-display tracking-wide active:scale-[0.98] transition-transform"
-                style={{ background: "#ffb800", color: "#1a1300", fontSize: 16, opacity: h2hBusy ? 0.7 : 1 }}>
+              <Button variant="primary" tone="lime" size="md" fullWidth className="mt-3" onClick={playH2H} disabled={h2hBusy}>
                 {h2hBusy ? "Readying squad…" : "⚔️ Play this XI head-to-head"}
-              </button>
+              </Button>
               <p className="mt-1.5 text-center font-body" style={{ fontSize: 11, color: "#7a7a92" }}>Take your World Cup squad live vs another manager — own board.</p>
             </>
           )}
@@ -617,11 +616,9 @@ export default function WorldCupRun() {
       {!terminal && (
         <div className="fixed bottom-0 left-0 right-0" style={{ background: "linear-gradient(0deg,#0a0a0f 78%,transparent)", paddingBottom: "calc(env(safe-area-inset-bottom,0px) + 14px)" }}>
           <div className="max-w-lg mx-auto px-4 pt-3">
-            <button onClick={play} disabled={playing}
-              className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-60"
-              style={{ background: "#aeea00", color: "#062013", fontSize: 22 }}>
+            <Button variant="primary" tone="lime" size="md" fullWidth onClick={play} disabled={playing}>
               {playing ? "PLAYING…" : `▶ ${playLabel}`}
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -683,9 +680,9 @@ export default function WorldCupRun() {
                 onDive={(c) => pensAct("dive", c)}
               />
               {pensDone && v.role === "done" && (
-                <button onClick={pensContinue} className="w-full rounded-2xl py-3 mt-3 font-display tracking-wide" style={{ background: "#00ff87", color: "#062013", fontSize: 18 }}>
+                <Button variant="primary" tone="lime" size="md" fullWidth className="mt-3" onClick={pensContinue}>
                   {pensDone.nextTie ? "NEXT TIE →" : "CONTINUE →"}
-                </button>
+                </Button>
               )}
             </div>
           </div>
@@ -718,7 +715,7 @@ export default function WorldCupRun() {
             <div className="font-display tracking-wide text-center" style={{ fontSize: 24, color: reveal.result === "champion" ? "#ffb800" : reveal.result === "eliminated" ? "#ff4757" : "#aeea00" }}>
               {reveal.result === "champion" ? "🏆 CHAMPIONS!" : reveal.result === "eliminated" ? "KNOCKED OUT" : "THROUGH ✓"}
             </div>
-            <button onClick={() => { setReveal(null); load(); }} className="w-full rounded-2xl py-3 mt-4 font-display tracking-wide" style={{ background: "#aeea00", color: "#062013", fontSize: 18 }}>CONTINUE →</button>
+            <Button variant="primary" tone="lime" size="md" fullWidth className="mt-4" onClick={() => { setReveal(null); load(); }}>CONTINUE →</Button>
           </div>
         </div>
       )}

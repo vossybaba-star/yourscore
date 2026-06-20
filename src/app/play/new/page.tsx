@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import { createClient } from "@/lib/supabase/client";
 import { Spinner } from "@/components/ui/Spinner";
+import { Button } from "@/components/ui/Button";
 
 interface QuizPack {
   id: string; name: string; type: string; parameter: string; question_count: number;
@@ -189,11 +190,9 @@ function NewGameContent() {
               ))}
             </div>
 
-            <button onClick={() => setStep(2)}
-              className="w-full py-4 rounded-2xl font-body font-bold text-base transition-all hover:opacity-90 bg-teal"
-              style={{ color: "#0a0a0f" }}>
+            <Button variant="primary" tone="teal" size="lg" fullWidth onClick={() => setStep(2)}>
               Next →
-            </button>
+            </Button>
           </>
         )}
 
@@ -289,11 +288,9 @@ function NewGameContent() {
               </div>
             )}
 
-            <button onClick={() => setStep(3)} disabled={!canAdvanceStep2}
-              className="w-full py-4 rounded-2xl font-body font-bold text-base transition-all"
-              style={{ background: canAdvanceStep2 ? "#00d8c0" : "rgba(0,216,192,0.15)", color: canAdvanceStep2 ? "#0a0a0f" : "#586058" }}>
+            <Button variant="primary" tone="teal" size="lg" fullWidth onClick={() => setStep(3)} disabled={!canAdvanceStep2}>
               Next →
-            </button>
+            </Button>
           </>
         )}
 
@@ -355,11 +352,9 @@ function NewGameContent() {
               <p className="font-body text-sm text-center" style={{ color: "#f87171" }}>{createError}</p>
             )}
 
-            <button onClick={handleCreate} disabled={creating}
-              className="w-full py-4 rounded-2xl font-body font-bold text-base transition-all"
-              style={{ background: creating ? "rgba(0,216,192,0.15)" : "#00d8c0", color: creating ? "#586058" : "#0a0a0f" }}>
+            <Button variant="primary" tone="teal" size="lg" fullWidth onClick={handleCreate} disabled={creating}>
               {creating ? "Creating…" : "Create Game 🎮"}
-            </button>
+            </Button>
           </>
         )}
       </div>

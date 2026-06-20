@@ -11,6 +11,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/Button";
 import { Scorecard } from "@/components/draft/Scorecard";
 import { BackPill } from "@/components/ui/BackPill";
 import { loadLastMatch, type LocalMatch } from "@/lib/draft/local";
@@ -100,7 +101,6 @@ export default function MatchResult() {
 
   const won = m.outcome === "you";
   const drew = m.outcome === "draw";
-  const accent = won ? "#aeea00" : drew ? "#ffb800" : "#ff4757";
 
   return (
     <div className="min-h-[100dvh] pb-28" style={{ background: "#0a0a0f" }}>
@@ -126,37 +126,27 @@ export default function MatchResult() {
         )}
 
         <div className="mt-5 space-y-3">
-          <button onClick={() => setShowShareSheet(true)}
-            className="w-full rounded-[20px] py-4 font-display tracking-wide transition-all duration-300 hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-[0.98]"
-            style={{ background: "#ffb800", color: "#1a1300", fontSize: 23, outlineColor: "#ffb800", boxShadow: "0 14px 34px -16px rgba(255,184,0,0.7)" }}>
+          <Button variant="primary" tone="gold" size="lg" fullWidth onClick={() => setShowShareSheet(true)}>
             SHARE FULL-TIME CARD
-          </button>
+          </Button>
 
           {won ? (
-            <Link href="/38-0/swap"
-              className="block w-full rounded-[20px] py-4 text-center font-display tracking-wide transition-all duration-300 hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-[0.98]"
-              style={{ background: "#aeea00", color: "#062013", fontSize: 22, outlineColor: "#aeea00" }}>
+            <Button variant="primary" tone="lime" size="lg" fullWidth href="/38-0/swap">
               SWAP ONE PLAYER →
-            </Link>
+            </Button>
           ) : drew ? (
-            <Link href="/38-0/team"
-              className="block w-full rounded-[20px] py-4 text-center font-display tracking-wide transition-all duration-300 hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-[0.98]"
-              style={{ background: "rgba(255,184,0,0.14)", color: "#ffb800", fontSize: 22, border: "1px solid rgba(255,184,0,0.4)", outlineColor: "#ffb800" }}>
+            <Button variant="ghost" size="lg" fullWidth href="/38-0/team">
               GO AGAIN →
-            </Link>
+            </Button>
           ) : (
-            <Link href="/38-0"
-              className="block w-full rounded-[20px] py-4 text-center font-display tracking-wide transition-all duration-300 hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-[0.98]"
-              style={{ background: "#ff4757", color: "#fff", fontSize: 22, outlineColor: "#ff4757" }}>
+            <Button variant="danger" size="lg" fullWidth href="/38-0">
               REBUILD XI →
-            </Link>
+            </Button>
           )}
 
-          <Link href="/38-0/team"
-            className="block w-full rounded-[20px] py-3 text-center font-body transition-all duration-300 hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-[0.98]"
-            style={{ background: "#0e1611", color: "#8a948f", fontSize: 15, border: "1px solid rgba(255,255,255,0.08)", outlineColor: accent }}>
+          <Button variant="ghost" size="md" fullWidth href="/38-0/team">
             Back to my team
-          </Link>
+          </Button>
         </div>
       </div>
 

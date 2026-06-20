@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { Button } from "@/components/ui/Button";
 import { SignInWithGoogle } from "@/components/auth/AuthButton";
 import { AnswerButtons } from "@/components/game/AnswerButtons";
 import { useGameLoop } from "@/lib/useGameLoop";
@@ -431,17 +432,9 @@ export default function H2HPage({ params }: { params: { id: string } }) {
           <ShareCard challenge={challenge} />
         </div>
 
-        <Link
-          href="/challenges"
-          className="w-full rounded-2xl py-4 font-display text-sm tracking-widest text-center active:scale-[0.97] transition-transform"
-          style={{
-            background: "rgba(255,255,255,0.07)",
-            border: "1px solid rgba(255,255,255,0.1)",
-            color: "#9aa39d",
-          }}
-        >
+        <Button href="/challenges" variant="ghost" size="md" fullWidth>
           Play on Challenges →
-        </Link>
+        </Button>
       </div>
     );
   }
@@ -627,17 +620,9 @@ export default function H2HPage({ params }: { params: { id: string } }) {
             </div>
           </div>
 
-          <Link
-            href="/challenges"
-            className="w-full rounded-2xl py-4 font-display text-sm tracking-widest text-center active:scale-[0.97] transition-transform"
-            style={{
-              background: "linear-gradient(135deg, #e65c00 0%, #ffb800 100%)",
-              color: "#ffffff",
-              boxShadow: "0 4px 24px rgba(255,140,0,0.25)",
-            }}
-          >
+          <Button href="/challenges" variant="primary" tone="teal" size="lg" fullWidth>
             Play another challenge →
-          </Link>
+          </Button>
         </div>
       </div>
     );
@@ -819,17 +804,15 @@ export default function H2HPage({ params }: { params: { id: string } }) {
             ))}
           </div>
 
-          <button
+          <Button
+            variant="primary"
+            tone="teal"
+            size="lg"
+            fullWidth
             onClick={startPlaying}
-            className="w-full rounded-2xl py-5 font-display text-lg tracking-widest active:scale-[0.97] transition-transform"
-            style={{
-              background: "linear-gradient(135deg, #e65c00 0%, #ffb800 100%)",
-              color: "#ffffff",
-              boxShadow: "0 4px 24px rgba(255,140,0,0.35)",
-            }}
           >
             ACCEPT CHALLENGE →
-          </button>
+          </Button>
 
           <p className="font-body text-xs text-center" style={{ color: "#3a423d" }}>
             Answer fast — points decay with every second

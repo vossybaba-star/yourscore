@@ -15,9 +15,9 @@
  */
 
 import type { Metadata } from "next";
-import Link from "next/link";
 import { ScorecardView, type ScorecardData, type ScorecardStat } from "@/components/draft/Scorecard";
 import { BackPill } from "@/components/ui/BackPill";
+import { Button } from "@/components/ui/Button";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://yourscore.app";
 
@@ -101,10 +101,9 @@ export default function CardPage({ searchParams }: { searchParams: SP }) {
         <ScorecardView data={data} />
 
         <div className="mt-6">
-          <Link href="/38-0" className="block w-full rounded-[20px] py-4 text-center font-display tracking-wide transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98]"
-            style={{ background: "#aeea00", color: "#062013", fontSize: 26 }}>
+          <Button href="/38-0" variant="primary" tone="lime" size="lg" fullWidth>
             BUILD YOUR OWN XI →
-          </Link>
+          </Button>
           <p className="mt-2 text-center font-body" style={{ fontSize: 12, color: "#8a948f" }}>
             Draft your all-time Premier League XI and take them on head-to-head. No sign-up to play.
           </p>

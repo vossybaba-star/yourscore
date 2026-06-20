@@ -13,6 +13,7 @@ import { loadTeam, isComplete, seasonSeed, makeSeasonSalt, saveLastSeason, loadL
 import { leagueOpponents } from "@/lib/draft/pool";
 import { simulateSeason, seasonNarrative, type SeasonResult } from "@/lib/draft/season";
 import { SeasonScorecard, type SeasonAward, type SeasonData } from "@/components/draft/SeasonScorecard";
+import { Button } from "@/components/ui/Button";
 import { useUser } from "@/hooks/useUser";
 
 function ordinal(n: number): string {
@@ -286,10 +287,9 @@ export default function SeasonSim() {
           </div>
         </button>
 
-        <button onClick={openShare} className="w-full mt-2 rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform"
-          style={{ background: "#aeea00", color: "#062013", fontSize: 22 }}>
+        <Button variant="primary" tone="lime" size="md" fullWidth className="mt-2" onClick={openShare}>
           📸 SHARE YOUR RESULT
-        </button>
+        </Button>
 
         <div className="grid grid-cols-2 gap-2 mt-2">
           {user ? (
@@ -322,12 +322,12 @@ export default function SeasonSim() {
         </div>
 
         <div className="mt-6 space-y-2">
-          <Link href="/38-0/team" className="block w-full rounded-2xl py-3 text-center font-body" style={{ background: "#0e1611", color: "#c4ccc6", fontSize: 15, border: "1px solid rgba(255,255,255,0.08)" }}>
+          <Button href="/38-0/team" variant="ghost" size="md" fullWidth>
             Back to my team
-          </Link>
-          <Link href="/38-0" className="block w-full rounded-2xl py-3 text-center font-display tracking-wide" style={{ background: "#aeea00", color: "#062013", fontSize: 20 }}>
+          </Button>
+          <Button href="/38-0" variant="primary" tone="lime" size="md" fullWidth>
             BUILD A NEW XI →
-          </Link>
+          </Button>
         </div>
       </div>
 
@@ -343,10 +343,9 @@ export default function SeasonSim() {
               <img src={ogUrl()} alt="Your 38-0 season result" style={{ width: "100%", display: "block" }} />
             </div>
 
-            <button onClick={nativeShare} className="w-full mt-4 rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform"
-              style={{ background: "#aeea00", color: "#062013", fontSize: 20 }}>
+            <Button variant="primary" tone="lime" size="md" fullWidth className="mt-4" onClick={nativeShare}>
               🔗 Share link
-            </button>
+            </Button>
 
             <div className="grid grid-cols-3 gap-2 mt-2">
               <button onClick={shareX} className="rounded-2xl py-3 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "#15211a", color: "#fff", fontSize: 15, border: "1px solid rgba(255,255,255,0.15)" }}>𝕏</button>

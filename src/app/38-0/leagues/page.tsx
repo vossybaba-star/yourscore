@@ -8,6 +8,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/Button";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { DraftHeader } from "@/components/draft/DraftHeader";
 import { useUser } from "@/hooks/useUser";
@@ -65,7 +66,7 @@ export default function Leagues() {
           <div className="rounded-2xl p-6 text-center" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.08)" }}>
             <div className="font-display tracking-wide" style={{ fontSize: 20, color: "#fff" }}>SIGN IN FOR LEAGUES</div>
             <p className="font-body mt-2" style={{ fontSize: 13, color: "#8a948f" }}>Create or join a private league to compete with your group.</p>
-            <Link href="/auth/sign-in" className="inline-block mt-4 rounded-xl px-5 py-3 font-display tracking-wide" style={{ background: "#aeea00", color: "#0e1611", fontSize: 18 }}>SIGN IN →</Link>
+            <Button variant="primary" tone="lime" size="md" className="mt-4" href="/auth/sign-in">SIGN IN →</Button>
           </div>
         ) : (
           <>
@@ -77,7 +78,7 @@ export default function Leagues() {
               <div className="flex gap-2">
                 <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} placeholder="League name"
                   className="flex-1 rounded-xl px-3 py-3 font-body" style={{ background: "#0a0a0f", color: "#fff", border: "1px solid rgba(255,255,255,0.1)" }} />
-                <button onClick={create} disabled={busy || !name.trim()} className="rounded-xl px-5 font-display tracking-wide disabled:opacity-50" style={{ background: "#aeea00", color: "#0e1611", fontSize: 18 }}>CREATE</button>
+                <Button variant="primary" tone="lime" size="sm" onClick={create} disabled={busy || !name.trim()}>CREATE</Button>
               </div>
             </div>
 
@@ -87,7 +88,7 @@ export default function Leagues() {
               <div className="flex gap-2">
                 <input value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} maxLength={6} placeholder="ABC123"
                   className="flex-1 rounded-xl px-3 py-3 font-display tracking-widest" style={{ background: "#0a0a0f", color: "#fff", border: "1px solid rgba(255,255,255,0.1)", fontSize: 20 }} />
-                <button onClick={join} disabled={busy || !code.trim()} className="rounded-xl px-5 font-display tracking-wide disabled:opacity-50" style={{ background: "#aeea00", color: "#062013", fontSize: 18 }}>JOIN</button>
+                <Button variant="primary" tone="lime" size="sm" onClick={join} disabled={busy || !code.trim()}>JOIN</Button>
               </div>
             </div>
 

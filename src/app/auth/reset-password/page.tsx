@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
 import { BackPill } from "@/components/ui/BackPill";
 
@@ -87,14 +88,10 @@ export default function ResetPasswordPage() {
               className="w-full rounded-xl px-4 py-3.5 font-body text-white text-sm outline-none placeholder:text-white/25"
               style={inputStyle} />
             {error && <p className="font-body text-xs" style={{ color: "#f87171" }}>{error}</p>}
-            <button type="submit" disabled={loading || !password || !confirm}
-              className="w-full py-3.5 rounded-xl font-body font-bold text-sm transition-all hover:opacity-90 flex items-center justify-center gap-2"
-              style={{
-                background: password && confirm && !loading ? "#aeea00" : "rgba(255,255,255,0.06)",
-                color: password && confirm && !loading ? "#0a0a0f" : "#8a948f",
-              }}>
+            <Button type="submit" variant="primary" tone="lime" size="lg" fullWidth
+              disabled={loading || !password || !confirm}>
               {loading ? <Spinner size={18} /> : "Set password"}
-            </button>
+            </Button>
           </form>
         )}
 

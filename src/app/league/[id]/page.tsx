@@ -8,6 +8,7 @@ import { BottomNav } from "@/components/ui/BottomNav";
 import { Spinner } from "@/components/ui/Spinner";
 import { createClient } from "@/lib/supabase/client";
 import { BackPill } from "@/components/ui/BackPill";
+import { Button } from "@/components/ui/Button";
 
 interface League {
   id: string;
@@ -455,12 +456,10 @@ export default function LeaguePage({ params }: { params: { id: string } }) {
             ))}
 
             {isCreator && (
-              <button onClick={copyInvite}
-                className="w-full py-3.5 rounded-2xl font-body text-sm font-semibold flex items-center justify-center gap-2 transition-all hover:opacity-80"
-                style={{ border: "1px dashed rgba(174,234,0,0.3)", color: "#aeea00", background: "rgba(174,234,0,0.04)" }}>
+              <Button onClick={copyInvite} variant="ghost" size="md" fullWidth className="gap-2">
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
                 {copied ? "Link copied!" : "Invite more people"}
-              </button>
+              </Button>
             )}
           </div>
         )}

@@ -10,6 +10,7 @@ import { AnswerButtons } from "@/components/game/AnswerButtons";
 import { RankRewardCard } from "@/components/rank/RankRewardCard";
 import { StreakWindowTimer } from "@/components/quiz/StreakWindowTimer";
 import { useGameLoop } from "@/lib/useGameLoop";
+import { Button } from "@/components/ui/Button";
 import { trackGamePlay, trackGameComplete } from "@/lib/analytics/trackGame";
 import {
   DIFFICULTY_COLOR as DIFF_COLOR,
@@ -843,18 +844,16 @@ export default function ChallengePage() {
                 </p>
               </div>
 
-              <button
+              <Button
+                variant="primary"
+                tone="teal"
+                size="lg"
+                fullWidth
                 onClick={() => { window.scrollTo(0, 0); trackGamePlay("quiz", { mode: "solo" }); setPhase("playing"); }}
-                className="w-full rounded-2xl py-4 font-display text-lg tracking-widest transition-transform active:scale-[0.97] mt-1 text-white"
-                style={{
-                  background: isRecords
-                    ? "linear-gradient(135deg, #aeea00 0%, #aeea00 100%)"
-                    : "linear-gradient(135deg, #e65c00 0%, #00d8c0 100%)",
-                  boxShadow: isRecords ? "0 4px 24px rgba(174,234,0,0.4)" : "0 4px 24px rgba(255,140,0,0.35)",
-                }}
+                className="mt-1"
               >
                 START · {questions.length} Qs
-              </button>
+              </Button>
 
               {!userId && (
                 <p className="font-body text-xs text-center" style={{ color: "#586058" }}>
@@ -1186,11 +1185,9 @@ export default function ChallengePage() {
                   <p className="font-body text-xs text-text-muted">See where you rank against everyone</p>
                 </div>
               </div>
-              <Link href={`/auth/sign-in?next=/challenges/${slug}`}
-                className="block w-full rounded-xl py-3.5 text-center font-display text-sm tracking-widest active:scale-[0.97] transition-transform text-white"
-                style={{ background: "linear-gradient(135deg, #aeea00, #aeea00)" }}>
+              <Button variant="primary" tone="teal" size="md" fullWidth href={`/auth/sign-in?next=/challenges/${slug}`}>
                 SIGN UP &amp; SAVE SCORE
-              </Link>
+              </Button>
             </div>
           )}
 
@@ -1206,14 +1203,9 @@ export default function ChallengePage() {
             />
           )}
 
-          <button onClick={() => router.push("/challenges")}
-            className="w-full rounded-2xl py-4 font-display text-sm tracking-widest active:scale-[0.97] transition-transform text-white"
-            style={{
-              background: isRecords ? "linear-gradient(135deg, #aeea00 0%, #aeea00 100%)" : "linear-gradient(135deg, #e65c00 0%, #00d8c0 100%)",
-              boxShadow: isRecords ? "0 4px 24px rgba(174,234,0,0.3)" : "0 4px 24px rgba(255,140,0,0.25)",
-            }}>
+          <Button variant="primary" tone="teal" size="lg" fullWidth onClick={() => router.push("/challenges")}>
             MORE CHALLENGES →
-          </button>
+          </Button>
         </div>
 
         {/* ── Share sheet ── */}
