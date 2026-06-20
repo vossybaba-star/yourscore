@@ -8,31 +8,40 @@ const supabase = createClient(
 );
 
 export async function POST(req: NextRequest) {
-  // Verify Resend webhook signature if secret is configured
+  // FAIL CLOSED. This endpoint runs with the service-role key, so an unsigned
+  // request must never be processed. Previously, a missing RESEND_WEBHOOK_SECRET
+  // silently skipped verification and turned this into an unauthenticated
+  // account-mutation endpoint. If the secret is not configured, reject.
   const secret = process.env.RESEND_WEBHOOK_SECRET;
-  if (secret) {
-    const signature = req.headers.get("svix-signature");
-    if (!signature) {
-      return NextResponse.json({ error: "Missing signature" }, { status: 401 });
-    }
-    // Svix signature verification
-    const { Webhook } = await import("svix");
-    const wh = new Webhook(secret);
-    const body = await req.text();
-    try {
-      wh.verify(body, {
-        "svix-id": req.headers.get("svix-id") ?? "",
-        "svix-timestamp": req.headers.get("svix-timestamp") ?? "",
-        "svix-signature": signature,
-      });
-    } catch {
-      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
-    }
-    const event = JSON.parse(body);
-    return handleEvent(event);
+  if (!secret) {
+    console.error("[resend webhook] RESEND_WEBHOOK_SECRET is not set — rejecting request");
+    return NextResponse.json({ error: "Webhook not configured" }, { status: 503 });
   }
 
-  const event = await req.json();
+  const signature = req.headers.get("svix-signature");
+  if (!signature) {
+    return NextResponse.json({ error: "Missing signature" }, { status: 401 });
+  }
+
+  const body = await req.text();
+  const { Webhook } = await import("svix");
+  const wh = new Webhook(secret);
+  try {
+    wh.verify(body, {
+      "svix-id": req.headers.get("svix-id") ?? "",
+      "svix-timestamp": req.headers.get("svix-timestamp") ?? "",
+      "svix-signature": signature,
+    });
+  } catch {
+    return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+  }
+
+  let event: { type: string; data: Record<string, unknown> };
+  try {
+    event = JSON.parse(body);
+  } catch {
+    return NextResponse.json({ error: "Invalid body" }, { status: 400 });
+  }
   return handleEvent(event);
 }
 
@@ -46,19 +55,19 @@ async function handleEvent(event: { type: string; data: Record<string, unknown> 
     const reason = type === "email.bounced" ? "bounce" : "complaint";
     const detail =
       type === "email.bounced"
-        ? ((data.bounce_type as string | undefined) ?? null)
+        ? ((data.bounce_type as string | undefined) ?? (data.bounce as { type?: string } | undefined)?.type ?? null)
         : ((data.complaint_type as string | undefined) ?? null);
 
+    // SUPPRESS-ONLY. Stop emailing this address — but never destroy the account.
+    // A bounce (even a "permanent" one) or a spam complaint must not delete a
+    // user's account and game history: bounces can be transient (full mailbox,
+    // greylisting) and are spoofable upstream, and complaints are not deletion
+    // requests. Account deletion is handled exclusively by the authenticated
+    // self-serve flow (delete_user_account, gated by the signed-in user).
     await supabase.from("email_suppressions").upsert(
       { email: email.toLowerCase().trim(), reason, detail },
       { onConflict: "email", ignoreDuplicates: true }
     );
-
-    // Delete the user account — clears all public schema data then removes the auth identity.
-    const { data: userId } = await supabase.rpc("delete_bounced_user", { p_email: email });
-    if (userId) {
-      await supabase.auth.admin.deleteUser(userId);
-    }
   }
 
   return NextResponse.json({ ok: true });
