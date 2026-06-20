@@ -1,0 +1,47 @@
+import { NextRequest, NextResponse } from "next/server";
+import { createServiceClient } from "@/lib/supabase/service";
+
+/**
+ * Lightweight pre-check for the custom quiz builder: how many verified
+ * (active, data-grounded) questions exist for an entity (optionally within an
+ * era). The builder calls this when a team/topic is picked so it can tell the
+ * user up front whether a quiz can be built — rather than letting them hit
+ * "Generate" and only then learn there aren't enough questions.
+ *
+ * Mirrors the filters in /api/quiz/generate-custom. Era is included because the
+ * generator narrows by era; difficulty is intentionally ignored here since the
+ * generator falls back across difficulties when a tier is thin.
+ */
+const ENTITY_RE = /^[A-Za-z0-9 _'.&-]{1,60}$/;
+const ALLOWED_ERAS = ["all-time", "early-pl", "2010s", "2020s", "2024-25"];
+
+export async function GET(req: NextRequest) {
+  const entity = req.nextUrl.searchParams.get("entity") ?? "";
+  const era = req.nextUrl.searchParams.get("era") ?? undefined;
+
+  if (!entity || !ENTITY_RE.test(entity)) {
+    return NextResponse.json({ error: "Invalid entity" }, { status: 400 });
+  }
+  if (era !== undefined && era !== "" && !ALLOWED_ERAS.includes(era)) {
+    return NextResponse.json({ error: "Invalid era" }, { status: 400 });
+  }
+
+  const supabase = createServiceClient();
+  let query = supabase
+    .from("questions")
+    .select("id", { count: "exact", head: true })
+    .eq("entity", entity)
+    .eq("status", "active")
+    .eq("source", "data-grounded");
+
+  if (era && era !== "all-time") {
+    query = query.eq("era", era);
+  }
+
+  const { count, error } = await query;
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ count: count ?? 0 });
+}

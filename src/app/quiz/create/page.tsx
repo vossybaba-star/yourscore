@@ -103,8 +103,37 @@ export default function CreateQuizPage() {
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Availability pre-check — how many verified questions exist for the pick.
+  // null = unknown/not-yet-fetched; number = known count. Drives the readiness
+  // hint and blocks generation when there aren't enough (server needs ≥5).
+  const [availability, setAvailability] = useState<number | null>(null);
+  const [availLoading, setAvailLoading] = useState(false);
+
   const step2Ref = useRef<HTMLDivElement>(null);
   const step3Ref = useRef<HTMLDivElement>(null);
+
+  // Fetch availability whenever the entity or era changes (records topics use
+  // the label as the entity, same as the generator). Debounced lightly so era
+  // toggles don't spam the endpoint.
+  useEffect(() => {
+    if (!selectedEntity) { setAvailability(null); return; }
+    let cancelled = false;
+    setAvailLoading(true);
+    const t = setTimeout(async () => {
+      try {
+        const qs = new URLSearchParams({ entity: selectedEntity });
+        if (era) qs.set("era", era);
+        const res = await fetch(`/api/quiz/availability?${qs.toString()}`);
+        const json = await res.json();
+        if (!cancelled) setAvailability(res.ok ? (json.count ?? 0) : null);
+      } catch {
+        if (!cancelled) setAvailability(null);
+      } finally {
+        if (!cancelled) setAvailLoading(false);
+      }
+    }, 250);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [selectedEntity, era]);
 
   // Reset on category change
   useEffect(() => {
@@ -172,7 +201,11 @@ export default function CreateQuizPage() {
   }
 
   const activeCategory = CATEGORIES.find((c) => c.key === focusType);
-  const canGenerate = !!selectedEntity && !!focusType && !generating;
+  // Block generation when we know there aren't enough questions (server needs ≥5).
+  // While availability is unknown (null) we don't block — the server is the
+  // final authority and will return a clear message if it's genuinely short.
+  const notEnough = availability !== null && availability < 5;
+  const canGenerate = !!selectedEntity && !!focusType && !generating && !notEnough;
 
   return (
     <div className="bg-bg min-h-screen" style={{ paddingBottom: 120 }}>
@@ -553,12 +586,27 @@ export default function CreateQuizPage() {
         pointerEvents: "none",
       }}>
         <div style={{ maxWidth: 512, margin: "0 auto", pointerEvents: "all" }}>
-          {!canGenerate && !selectedEntity && (
+          {!selectedEntity ? (
             <p style={{
               textAlign: "center", fontFamily: "var(--font-body, sans-serif)",
               fontSize: 12, color: "#3a423d", marginBottom: 8,
             }}>
               {!focusType ? "Choose a category to start" : "Pick a team or topic"}
+            </p>
+          ) : (
+            // Readiness hint: confirm a quiz can be built before they tap Generate.
+            <p style={{
+              textAlign: "center", fontFamily: "var(--font-body, sans-serif)",
+              fontSize: 12, marginBottom: 8,
+              color: availLoading ? "#3a423d" : notEnough ? "#f87171" : availability === null ? "#3a423d" : "#aeea00",
+            }}>
+              {availLoading
+                ? "Checking questions…"
+                : availability === null
+                ? " "
+                : notEnough
+                ? `Only ${availability} question${availability === 1 ? "" : "s"} here yet — try another era or topic`
+                : `✓ ${availability} questions ready`}
             </p>
           )}
           <Button
@@ -571,9 +619,11 @@ export default function CreateQuizPage() {
           >
             {generating
               ? "Building your quiz…"
-              : canGenerate
-              ? `Generate ${selectedEntity} Quiz →`
-              : "Select a team or topic first"}
+              : !selectedEntity
+              ? "Select a team or topic first"
+              : notEnough
+              ? "Not enough questions yet"
+              : `Generate ${selectedEntity} Quiz →`}
           </Button>
         </div>
       </div>
