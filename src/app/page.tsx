@@ -86,7 +86,7 @@ export default async function RootPage({
     supabase.rpc("get_my_league_standings", { p_user_id: userId, p_limit: 20 }),
     sb
       .from("quiz_packs")
-      .select("id, name, type, parameter, question_count, featured_order, metadata")
+      .select("id, name, type, parameter, question_count, featured_order, metadata, created_at")
       .eq("featured", true)
       .eq("status", "published")
       .order("featured_order", { ascending: true })
@@ -125,6 +125,7 @@ export default async function RootPage({
     question_count: Number(p.question_count ?? 10),
     icon: p.metadata?.icon ? String(p.metadata.icon) : undefined,
     coverImage: p.metadata?.cover_image ? String(p.metadata.cover_image) : undefined,
+    publishedAt: p.created_at ? String(p.created_at) : undefined,
   }));
 
   // ── Rank (from get_yourscore_rank) ──────────────────────────────────────────
@@ -164,7 +165,9 @@ export default async function RootPage({
   // ── "Play next" — pick the single most relevant action by live state ────────
   let playNext: PlayNextInfo;
   if (wcRun) {
-    playNext = { kind: "wc", href: "/38-0/wc", title: "Resume your run", sub: `${wcRun.nation} · ${wcRun.stage}` };
+    // Sub is the stage only — never "<Nation> · <Stage>", which read as if the
+    // player *represents* the nation. The run is theirs, not a country's.
+    playNext = { kind: "wc", href: "/38-0/wc", title: "Resume your run", sub: `Pick up at the ${wcRun.stage}` };
   } else if (openLobbies > 0) {
     playNext = { kind: "lobby", href: "/play", title: "Join a lobby", sub: `${openLobbies} open right now — jump in` };
   } else {

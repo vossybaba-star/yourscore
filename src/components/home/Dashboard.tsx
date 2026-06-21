@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { GridBackground } from "@/components/ui/GridBackground";
-import { Button } from "@/components/ui/Button";
 import Link from "next/link";
 import Image from "next/image";
 import { BottomNav } from "@/components/ui/BottomNav";
@@ -65,6 +64,15 @@ export interface FeaturedPack {
   question_count: number;
   icon?: string;
   coverImage?: string;
+  publishedAt?: string;
+}
+
+// Short "Jun 18" style publish date for quiz cards.
+function shortDate(iso?: string): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 }
 
 export interface DashboardData {
@@ -163,34 +171,41 @@ function FeaturedPacksRow({ packs }: { packs: FeaturedPack[] }) {
   return (
     <div className="d-5">
       <div className="flex items-center justify-between mb-3">
-        <p className="font-body text-xs text-text-muted uppercase tracking-widest">⭐ Featured this week</p>
+        <p className="font-body text-xs text-text-muted uppercase tracking-widest">Featured this week</p>
         <Link href="/challenges" className="font-body text-xs font-semibold text-amber">All →</Link>
       </div>
       <div className="overflow-x-auto pb-2 -mx-5 px-5">
-        <div className="flex gap-3" style={{ minWidth: "max-content" }}>
+        <div className="flex gap-3 items-stretch" style={{ minWidth: "max-content" }}>
           {packs.map((pack) => {
             const cfg = PACK_TYPE_CONFIG[pack.type] ?? PACK_TYPE_CONFIG.records;
+            const date = shortDate(pack.publishedAt);
             return (
               <Link
                 key={pack.id}
                 href={`/challenges/${slugify(pack.name)}`}
-                className="flex-shrink-0 rounded-2xl overflow-hidden transition-opacity hover:opacity-80 active:scale-[0.98]"
-                style={{ width: 160, background: `rgba(${cfg.rgba},0.07)`, border: `1px solid rgba(${cfg.rgba},0.2)`, textDecoration: "none" }}
+                className="flex-shrink-0 rounded-2xl overflow-hidden transition-opacity hover:opacity-80 active:scale-[0.98] flex flex-col"
+                style={{ width: 168, background: `rgba(${cfg.rgba},0.07)`, border: `1px solid rgba(${cfg.rgba},0.2)`, textDecoration: "none" }}
               >
                 {pack.coverImage ? (
-                  <div style={{ position: "relative", width: "100%", aspectRatio: "3 / 2" }}>
+                  <div style={{ position: "relative", width: "100%", aspectRatio: "16 / 9" }}>
+                    {/* eager + async so featured art paints immediately, not lazily */}
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={pack.coverImage} alt={pack.name} className="absolute inset-0 h-full w-full" style={{ objectFit: "cover" }} />
+                    <img src={pack.coverImage} alt={pack.name} loading="eager" decoding="async" fetchPriority="high"
+                      className="absolute inset-0 h-full w-full" style={{ objectFit: "cover" }} />
                   </div>
-                ) : null}
-                <div className="p-4">
-                  {!pack.coverImage && (
-                    <div className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl mb-3 flex-shrink-0" style={{ background: `rgba(${cfg.rgba},0.14)` }}>
-                      {pack.icon ?? cfg.emoji}
-                    </div>
-                  )}
-                  <p className="font-body text-xs font-bold text-white leading-tight mb-1 line-clamp-2">{pack.name}</p>
-                  <p className="font-body text-xs" style={{ color: cfg.color }}>{pack.question_count} questions</p>
+                ) : (
+                  <div className="flex items-center justify-center font-display text-white"
+                    style={{ width: "100%", aspectRatio: "16 / 9", fontSize: 40, background: `rgba(${cfg.rgba},0.12)`, color: cfg.color }}>
+                    {pack.name[0]?.toUpperCase() ?? "Q"}
+                  </div>
+                )}
+                {/* Title gets full room (no clamp) so it's never cut; date sits at the base. */}
+                <div className="p-3 flex flex-col flex-1">
+                  <p className="font-body text-xs font-bold text-white leading-snug mb-2">{pack.name}</p>
+                  <p className="font-body text-[11px] mt-auto" style={{ color: "#8a948f" }}>
+                    {date ? <span style={{ color: cfg.color }}>{date}</span> : null}
+                    {date ? " · " : ""}{pack.question_count} Qs
+                  </p>
                 </div>
               </Link>
             );
@@ -211,7 +226,7 @@ function PendingFriendsNotice() {
       style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.22)" }}
     >
       <div className="flex items-center gap-3">
-        <span className="text-base">👥</span>
+        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: "#ef4444" }} />
         <p className="font-body text-sm font-semibold text-white">
           {count === 1 ? "1 friend request waiting" : `${count} friend requests waiting`}
         </p>
@@ -221,17 +236,97 @@ function PendingFriendsNotice() {
   );
 }
 
-// ── Quick-play chips ────────────────────────────────────────────────────────────
+// ── Premium game-mode tiles ─────────────────────────────────────────────────────
+// The three primary calls to action. No emoji — each is a distinct, branded
+// surface with its own colour, texture and oversized ghost wordmark.
 
-function QuickChip({ href, emoji, label, accent }: { href: string; emoji: string; label: string; accent: string }) {
+interface GameTile {
+  href: string;
+  kicker: string;
+  title: string;
+  tagline: string;
+  accent: string;
+  rgba: string;
+  ink: string; // dark text colour for the accent chip
+  texture: string; // CSS background-image for the pattern layer
+  ghost: string; // huge faded wordmark in the corner
+}
+
+const GAME_TILES: GameTile[] = [
+  {
+    href: "/38-0",
+    kicker: "DRAFT XI",
+    title: "38-0",
+    tagline: "Build the perfect XI. Go unbeaten.",
+    accent: "#aeea00",
+    rgba: "174,234,0",
+    ink: "#0a1400",
+    // pitch mow-lines
+    texture: "repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 30px)",
+    ghost: "38",
+  },
+  {
+    href: "/play",
+    kicker: "QUIZ",
+    title: "QUIZZES",
+    tagline: "Test your football knowledge, fast.",
+    accent: "#00d8c0",
+    rgba: "0,216,192",
+    ink: "#012420",
+    // dot grid
+    texture: "radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px)",
+    ghost: "?",
+  },
+  {
+    href: "/38-0/wc",
+    kicker: "WORLD CUP",
+    title: "MASTERMIND",
+    tagline: "Daily run. Top the board. Win £100.",
+    accent: "#ffc233",
+    rgba: "255,194,51",
+    ink: "#2a1d00",
+    // diagonal rays
+    texture: "repeating-linear-gradient(120deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 16px)",
+    ghost: "★",
+  },
+];
+
+function GameTileCard({ t, delayClass }: { t: GameTile; delayClass: string }) {
   return (
     <Link
-      href={href}
-      className="flex-1 flex flex-col items-center justify-center gap-1 rounded-xl py-3 transition-all hover:opacity-90 active:scale-[0.97]"
-      style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}
+      href={t.href}
+      className={`${delayClass} relative block overflow-hidden rounded-2xl transition-transform active:scale-[0.99]`}
+      style={{
+        height: 92,
+        border: `1px solid rgba(${t.rgba},0.35)`,
+        background: `linear-gradient(105deg, rgba(${t.rgba},0.16) 0%, rgba(${t.rgba},0.05) 48%, #0c1410 100%)`,
+        boxShadow: `0 6px 22px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)`,
+      }}
     >
-      <span className="text-xl">{emoji}</span>
-      <span className="font-display text-sm tracking-wide" style={{ color: accent }}>{label}</span>
+      {/* texture layer */}
+      <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: t.texture, backgroundSize: t.texture.includes("radial") ? "15px 15px" : undefined, opacity: 0.6 }} />
+      {/* accent glow, right edge */}
+      <div className="absolute inset-y-0 right-0 w-2/3 pointer-events-none"
+        style={{ background: `radial-gradient(120% 100% at 100% 50%, rgba(${t.rgba},0.22), transparent 68%)` }} />
+      {/* oversized ghost wordmark */}
+      <span className="absolute font-display pointer-events-none select-none"
+        style={{ right: 56, top: "50%", transform: "translateY(-50%)", fontSize: 88, lineHeight: 1, color: `rgba(${t.rgba},0.13)` }}>
+        {t.ghost}
+      </span>
+
+      <div className="relative h-full flex items-center justify-between pl-5 pr-4">
+        <div className="min-w-0">
+          <p className="font-body text-[10px] font-bold uppercase tracking-[0.22em] mb-1" style={{ color: t.accent }}>{t.kicker}</p>
+          <p className="font-display text-[28px] leading-none text-white tracking-wide">{t.title}</p>
+          <p className="font-body text-xs mt-1.5 truncate" style={{ color: "#9aa39d" }}>{t.tagline}</p>
+        </div>
+        <span className="flex items-center justify-center rounded-full flex-shrink-0"
+          style={{ width: 30, height: 30, background: t.accent }}>
+          <svg width="14" height="14" viewBox="0 0 18 18" fill="none" style={{ color: t.ink }}>
+            <path d="M6 3l6 6-6 6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </span>
+      </div>
     </Link>
   );
 }
@@ -265,10 +360,13 @@ export function Dashboard({ data }: { data: DashboardData }) {
 
       <div className="relative z-0 max-w-lg mx-auto px-5 space-y-4 pt-4">
 
-        {/* ── Momentum + rank hero ──────────────────────────────────────────── */}
-        <div className="d-1 rounded-3xl overflow-hidden surface-grid">
+        {/* ── Momentum + rank hero — tap to open full profile ───────────────── */}
+        <Link href="/profile" className="d-1 block rounded-3xl overflow-hidden surface-grid transition-transform active:scale-[0.99]">
           <div className="px-5 pt-5 pb-4">
-            <p className="font-body text-xs text-text-muted mb-3">{firstName ? `Back for more, ${firstName} 👋` : "Welcome back"}</p>
+            <div className="flex items-center justify-between mb-3">
+              <p className="font-body text-xs text-text-muted">{firstName ? `Back for more, ${firstName}` : "Welcome back"}</p>
+              <span className="font-body text-xs font-semibold" style={{ color: "#aeea00" }}>Your profile →</span>
+            </div>
 
             <div className="flex items-end justify-between mb-4">
               <div>
@@ -289,9 +387,9 @@ export function Dashboard({ data }: { data: DashboardData }) {
             <div className="flex items-center justify-between gap-3">
               <FormPips form={momentum.form} />
               {momentum.streak >= 2 && (
-                <span className="font-display flex items-center gap-1.5 px-2.5 py-1 rounded-full text-sm"
+                <span className="font-display px-2.5 py-1 rounded-full text-sm tracking-wide"
                   style={{ background: "rgba(255,194,51,0.14)", color: "#ffc233", border: "1px solid rgba(255,194,51,0.3)" }}>
-                  <span className="flame">🔥</span>{momentum.streak} win streak
+                  {momentum.streak} WIN STREAK
                 </span>
               )}
             </div>
@@ -299,28 +397,28 @@ export function Dashboard({ data }: { data: DashboardData }) {
 
           {/* Rank-gap chase line */}
           {rank.aheadName && rank.aheadGap !== null ? (
-            <div className="px-5 py-3 flex items-center gap-2" style={{ borderTop: "1px solid rgba(255,255,255,0.06)", background: "rgba(0,0,0,0.18)" }}>
-              <span className="text-sm">🎯</span>
+            <div className="px-5 py-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)", background: "rgba(0,0,0,0.18)" }}>
               <p className="font-body text-xs text-text-muted">
                 <span className="text-white font-semibold">{rank.aheadGap.toLocaleString()} pts</span> behind{" "}
                 <span className="text-white font-semibold">{rank.aheadName}</span> — catch them
               </p>
             </div>
           ) : rank.overall === 1 ? (
-            <div className="px-5 py-3 flex items-center gap-2" style={{ borderTop: "1px solid rgba(255,255,255,0.06)", background: "rgba(0,0,0,0.18)" }}>
-              <span className="text-sm">👑</span>
+            <div className="px-5 py-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)", background: "rgba(0,0,0,0.18)" }}>
               <p className="font-body text-xs" style={{ color: "#ffc233" }}>Top of the world. Now defend it.</p>
             </div>
           ) : null}
-        </div>
+        </Link>
 
         {/* ── Play next — the smart CTA ──────────────────────────────────────── */}
         <div className="d-2 rounded-3xl overflow-hidden pn-glow"
           style={{ ["--pn-glow" as string]: `rgba(${pn.rgba},0.3)`, background: `linear-gradient(135deg, rgba(${pn.rgba},0.14) 0%, rgba(${pn.rgba},0.04) 100%)`, border: `1px solid rgba(${pn.rgba},0.3)` }}>
           <Link href={playNext.href} className="flex items-center gap-4 px-5 py-4 active:scale-[0.99] transition-transform">
-            <div className="flex items-center justify-center rounded-2xl flex-shrink-0 text-2xl"
+            <div className="flex items-center justify-center rounded-2xl flex-shrink-0"
               style={{ width: 52, height: 52, background: `rgba(${pn.rgba},0.16)`, border: `1px solid rgba(${pn.rgba},0.3)` }}>
-              {pn.emoji}
+              <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                <path d="M7 5l10 6-10 6V5z" fill={pn.accent} />
+              </svg>
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-body text-xs uppercase tracking-widest mb-0.5" style={{ color: pn.accent }}>Play next</p>
@@ -333,11 +431,11 @@ export function Dashboard({ data }: { data: DashboardData }) {
           </Link>
         </div>
 
-        {/* ── Quick-play chips ───────────────────────────────────────────────── */}
-        <div className="d-2 flex gap-2.5">
-          <QuickChip href="/38-0" emoji="👕" label="38-0" accent="#aeea00" />
-          <QuickChip href="/play" emoji="🧠" label="QUIZ" accent="#00d8c0" />
-          <QuickChip href="/38-0/wc" emoji="🏆" label="WORLD CUP" accent="#ffc233" />
+        {/* ── Premium game-mode tiles — the primary CTAs ─────────────────────── */}
+        <div className="space-y-2.5">
+          {GAME_TILES.map((t, i) => (
+            <GameTileCard key={t.href} t={t} delayClass={i === 0 ? "d-2" : i === 1 ? "d-3" : "d-4"} />
+          ))}
         </div>
 
         {/* Active WC run is surfaced by the Play-next card above, so no separate
@@ -349,7 +447,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
         {/* ── Your leagues — position + gap ──────────────────────────────────── */}
         <div className="d-3">
           <div className="flex items-center justify-between mb-3">
-            <p className="font-body text-xs text-text-muted uppercase tracking-widest">🏆 Your leagues</p>
+            <p className="font-body text-xs text-text-muted uppercase tracking-widest">Your leagues</p>
             <Link href="/leagues" className="font-body text-xs font-semibold" style={{ color: "#aeea00" }}>All →</Link>
           </div>
           {leagues.length === 0 ? (
@@ -408,13 +506,6 @@ export function Dashboard({ data }: { data: DashboardData }) {
 
         {/* ── Featured quiz packs ────────────────────────────────────────────── */}
         <FeaturedPacksRow packs={featuredPacks} />
-
-        {/* ── Draft your XI — anchor CTA ─────────────────────────────────────── */}
-        <div className="d-5 pt-1">
-          <Button href="/38-0/play" variant="primary" tone="lime" size="lg" fullWidth>
-            DRAFT YOUR XI →
-          </Button>
-        </div>
 
       </div>
       <BottomNav />
