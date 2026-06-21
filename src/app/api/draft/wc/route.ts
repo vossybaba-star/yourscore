@@ -16,19 +16,21 @@ export async function POST(req: NextRequest) {
   const { ok } = await rateLimitDistributed(`draft-wc-start:${user.id}`, 20, 60_000);
   if (!ok) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
 
-  let body: { action?: string; mode?: string; nation?: string; formation?: unknown; squad?: unknown; ranked?: boolean; answers?: unknown; picks?: unknown; catchup?: boolean };
+  let body: { action?: string; mode?: string; nation?: string; formation?: unknown; squad?: unknown; ranked?: boolean; answers?: unknown; picks?: unknown; catchup?: boolean; catchupDate?: string };
   try { body = await req.json(); } catch { return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 }); }
   if (body.action !== "start") return NextResponse.json({ error: "Unknown action" }, { status: 400 });
 
   // Ranked = the daily competition (one locked go/edition, World XI only, season board).
   // Unranked = unlimited practice. The run is keyed to an EDITION (server-side, not the
-  // calendar date): the current edition, or — for a `catchup` — the immediately-previous one
-  // (the only past edition that can be played). One-go per edition is enforced either way.
+  // calendar date): the current edition, or — for a `catchup` — ANY past edition the caller
+  // selects from the open back-catalog (catchupDate). Omitting catchupDate falls back to the
+  // immediately-previous edition for legacy callers. One-go per edition is enforced either way.
   const ranked = body.ranked === true;
   const catchup = ranked && body.catchup === true;
+  const catchupDate = catchup && typeof body.catchupDate === "string" ? body.catchupDate : null;
   const db = createWcDb();
-  const runDate = ranked ? await resolveEdition(db, catchup) : null;
-  if (ranked && !runDate) return NextResponse.json({ error: "There's no catch-up run available right now." }, { status: 400 });
+  const runDate = ranked ? await resolveEdition(db, catchup, catchupDate) : null;
+  if (ranked && !runDate) return NextResponse.json({ error: "That catch-up edition isn't available." }, { status: 400 });
   const mode = ranked ? "world" : (body.mode === "world" ? "world" : "nation");
   // nation mode: locked to one nation; world mode: open draft, stored under "World XI".
   const nation = mode === "world" ? WORLD_TEAM_NAME : String(body.nation ?? "");

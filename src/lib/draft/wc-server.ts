@@ -71,11 +71,36 @@ export async function previousEdition(db: SupabaseClient<any>): Promise<string |
   return (data?.run_date as string | undefined) ?? null;
 }
 
-/** Which ranked edition a request targets: the current one, or — for a `catchup` request —
- *  the immediately-previous one (the only past edition that can ever be played). */
+/** Every ranked edition strictly before the active one — the open back-catalog a late-joiner
+ *  can catch up on. Derived from real run_dates in `draft_wc_runs` so it self-corrects (no
+ *  hand-maintained list to drift). Most-recent first. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function resolveEdition(db: SupabaseClient<any>, catchup: boolean): Promise<string | null> {
-  return catchup ? await previousEdition(db) : await activeEdition(db);
+export async function pastEditions(db: SupabaseClient<any>): Promise<string[]> {
+  const current = await activeEdition(db);
+  const { data } = await db.from("draft_wc_runs")
+    .select("run_date")
+    .eq("ranked", true)
+    .lt("run_date", current)
+    .order("run_date", { ascending: false });
+  const seen = new Set<string>();
+  for (const r of (data ?? []) as { run_date: string }[]) {
+    if (r.run_date) seen.add(r.run_date);
+  }
+  return Array.from(seen);
+}
+
+/** Which ranked edition a request targets: the current one, or — for a `catchup` request —
+ *  the past edition the caller picked. `catchupDate` selects ANY past edition (open back-
+ *  catalog); null falls back to the immediately-previous one for legacy callers. Returns null
+ *  if the requested catch-up date isn't a real past edition (rejects the run). */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function resolveEdition(db: SupabaseClient<any>, catchup: boolean, catchupDate?: string | null): Promise<string | null> {
+  if (!catchup) return await activeEdition(db);
+  if (!catchupDate) return await previousEdition(db);
+  const current = await activeEdition(db);
+  if (catchupDate >= current) return null;
+  const past = await pastEditions(db);
+  return past.includes(catchupDate) ? catchupDate : null;
 }
 
 /** Map a draft_wc_runs DB row to the WcRun working shape. */

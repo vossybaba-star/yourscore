@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/Button";
 import { BackPill } from "@/components/ui/BackPill";
 import { Pitch } from "@/components/draft/Pitch";
 import { InviteMastermind } from "@/components/draft/InviteMastermind";
+import { WcEditionStrip, type EditionCell } from "@/components/draft/WcEditionStrip";
 import { useUser } from "@/hooks/useUser";
 import { pickableNations, spinForNation, spinWorld, type PickableNation } from "@/lib/draft/pool";
 import { WORLD_TEAM_NAME, type RunMode } from "@/lib/draft/wc";
@@ -89,9 +90,13 @@ export default function WorldCupEntry() {
   // Today's ranked attempt is locked once it's been played OR drafted past the 6th pick
   // (anti-preview). When locked, the Today's Run card is blurred + unselectable.
   const [rankedLocked, setRankedLocked] = useState(false);
-  // One-day catch-up: can this user still play yesterday's (the previous) edition?
-  const [catchupAvail, setCatchupAvail] = useState(false);
-  const catchupRef = useRef(false); // true while drafting the catch-up (previous) edition
+  // The WC edition strip (today + every past edition, with this user's per-day state/stats).
+  // Drives catch-up + result peeks; a non-empty strip means the user is signed in.
+  const [editions, setEditions] = useState<EditionCell[]>([]);
+  // While drafting a catch-up: the specific past edition date (YYYY-MM-DD) being played,
+  // or null for the normal "today's run" flow. The string flows through the API as
+  // `catchupDate` so any past edition the catch-up index page picked can be served.
+  const catchupRef = useRef<string | null>(null);
 
   const world = mode === "world";
 
@@ -116,9 +121,15 @@ export default function WorldCupEntry() {
   // and spins each slate). The run isn't created until submit, so this is safe pre-sign-in.
   async function loadRankedQuestions() {
     try {
-      const res = await fetch("/api/draft/wc/draft", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "begin", catchup: catchupRef.current }) });
+      const cu = catchupRef.current; // null = today's run; string = catch-up date
+      const res = await fetch("/api/draft/wc/draft", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "begin", catchup: cu !== null, catchupDate: cu }) });
       const data = await res.json();
-      if (data.locked) { if (catchupRef.current) setCatchupAvail(false); else setRankedLocked(true); setMode(null); setError(data.error ?? "You've already used that ranked run."); return; }
+      if (data.locked) {
+        // Already used: lock today's card, or grey that catch-up day in the strip.
+        if (cu === null) setRankedLocked(true);
+        else setEditions((eds) => eds.map((e) => (e.date === cu ? { ...e, available: false } : e)));
+        setMode(null); setError(data.error ?? "You've already used that ranked run."); return;
+      }
       if (res.ok && Array.isArray(data.questions)) serverQs.current = data.questions;
       else setError(data.error ?? "Couldn't load the questions — refresh and retry.");
     } catch { setError("Couldn't load the questions — refresh and retry."); }
@@ -126,11 +137,20 @@ export default function WorldCupEntry() {
 
   // Today's Run is a logged-in competition (it feeds the board + Rank), and the server draft
   // verifies against the signed-in run. Require sign-in up front, returning here to start.
-  // `isCatchup` plays the immediately-previous edition (one-day catch-up) instead.
-  function startRanked(isCatchup = false) {
-    if (isCatchup ? !catchupAvail : rankedLocked) return;
-    catchupRef.current = isCatchup;
-    if (!user) { router.push(`/auth/sign-in?next=${encodeURIComponent(`/38-0/wc?${isCatchup ? "catchup" : "daily"}=1`)}`); return; }
+  // `catchupDate` plays a specific past edition (chosen on the edition strip); null plays
+  // today's edition.
+  function startRanked(catchupDate: string | null = null) {
+    const isCatchup = catchupDate !== null;
+    // Today's run is client-gated by rankedLocked. A catch-up isn't client-gated — the date
+    // comes from the strip (which only offers open editions) and is re-validated server-side,
+    // so there's no flag to race against the ?catchup=DATE deep-link auto-start.
+    if (!isCatchup && rankedLocked) return;
+    catchupRef.current = catchupDate;
+    if (!user) {
+      const qs = isCatchup ? `catchup=${catchupDate}` : "daily=1";
+      router.push(`/auth/sign-in?next=${encodeURIComponent(`/38-0/wc?${qs}`)}`);
+      return;
+    }
     beginDraft(true);
   }
 
@@ -187,9 +207,10 @@ export default function WorldCupEntry() {
     const i = draftAnswers.current.length;
     const answers = [...draftAnswers.current, idx];
     try {
+      const cu = catchupRef.current; // null = today's run; string = catch-up date
       const res = await fetch("/api/draft/wc/draft", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "slate", i, answers, picks: draftPicks.current, catchup: catchupRef.current }),
+        body: JSON.stringify({ action: "slate", i, answers, picks: draftPicks.current, catchup: cu !== null, catchupDate: cu }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? "Couldn't load your pick — try again."); setAnswered(null); return; }
@@ -261,7 +282,7 @@ export default function WorldCupEntry() {
 
   // Is today's ranked attempt already used (played, or drafted past pick 6)? Blurs the card.
   useEffect(() => {
-    if (!user) { setRankedLocked(false); setCatchupAvail(false); return; }
+    if (!user) { setRankedLocked(false); setEditions([]); return; }
     let off = false;
     (async () => {
       try {
@@ -269,7 +290,9 @@ export default function WorldCupEntry() {
         const data = await res.json();
         if (off) return;
         if (data?.lockedToday) setRankedLocked(true);
-        if (data?.catchup?.available) setCatchupAvail(true);
+        // The edition strip (today + past, with this user's per-day state) drives the WC tab's
+        // catch-up + result peeks — replacing the old standalone catch-up tile/page.
+        if (Array.isArray(data?.editions)) setEditions(data.editions as EditionCell[]);
       } catch { /* leave unlocked; the begin call still guards */ }
     })();
     return () => { off = true; };
@@ -286,7 +309,10 @@ export default function WorldCupEntry() {
         // Ranked submits the answers + picks for the server to replay & verify (it rebuilds
         // the XI itself). Practice/open submit the client-built squad.
         body: JSON.stringify(ranked
-          ? { action: "start", ranked: true, catchup: catchupRef.current, answers: draftAnswers.current, picks: draftPicks.current }
+          // catchupRef.current is the catch-up DATE (or null for today). Send the boolean flag
+          // the route checks (`catchup === true`) plus the date — matching begin/slate, so the
+          // run resolves to the chosen past edition and verifies against ITS slates.
+          ? { action: "start", ranked: true, catchup: catchupRef.current !== null, catchupDate: catchupRef.current, answers: draftAnswers.current, picks: draftPicks.current }
           : { action: "start", mode: runMode, nation: nationName, formation, squad, ranked: false }),
       });
       if (res.status === 401) {
@@ -365,8 +391,11 @@ export default function WorldCupEntry() {
     // (?mode=world / ?practice=1) → a practice run. (Nation deep-links are retired while
     // National Team mode is hidden.)
     const params = new URLSearchParams(window.location.search);
-    if (!mode && params.get("daily") === "1") { startRanked(false); return; }
-    if (!mode && params.get("catchup") === "1") { startRanked(true); return; }
+    if (!mode && params.get("daily") === "1") { startRanked(null); return; }
+    // ?catchup=YYYY-MM-DD plays that exact past edition (deep-link from the open back-catalog
+    // index page). The server validates the date is a real past edition this user hasn't used.
+    const catchupParam = params.get("catchup");
+    if (!mode && catchupParam && /^\d{4}-\d{2}-\d{2}$/.test(catchupParam)) { startRanked(catchupParam); return; }
     if (!mode && params.get("run") === "1") { beginRun(); return; }
     if (!mode && (params.get("mode") === "world" || params.get("practice") === "1")) { beginDraft(false); return; }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -382,6 +411,19 @@ export default function WorldCupEntry() {
           <p className="font-body mt-1 mb-4" style={{ fontSize: 14, color: "#c4ccc6" }}>
             Answer World Cup questions to build your XI — the more you know, the stronger your team — then play the tournament. Today&apos;s Run is ranked; Just Play is unlimited practice.
           </p>
+
+          {/* Edition strip — your World Cup timeline: catch up on days you missed, peek past
+              results, see at a glance whether you're up to date. (Signed-in; replaces /catch-up.) */}
+          {/* Edition strip — your World Cup timeline: catch up on days you missed, peek past
+              results, see at a glance whether you're up to date. (Signed-in; replaces /catch-up.) */}
+          {editions.length > 0 && (
+            <WcEditionStrip
+              editions={editions}
+              onPlayToday={() => startRanked()}
+              onCatchUp={(d) => startRanked(d)}
+              onViewRun={(id) => router.push(`/38-0/wc/run/${id}`)}
+            />
+          )}
 
           <div className="flex flex-col gap-3 mb-5">
             {/* Today's Run (ranked). Locked once it's been played or drafted past pick 6. */}
@@ -400,20 +442,6 @@ export default function WorldCupEntry() {
               </div>
             </button>
 
-            {/* One-day catch-up — only shows if you missed the previous edition. Counts. */}
-            {catchupAvail && (
-              <button onClick={() => startRanked(true)} className="text-left rounded-2xl p-4 active:scale-[0.99] transition-transform"
-                style={{ background: "#0e1611", border: "1px dashed rgba(255,184,0,0.45)" }}>
-                <div className="flex items-center gap-2.5 mb-1">
-                  <span style={{ fontSize: 22 }}>🕑</span>
-                  <span className="font-display tracking-wide" style={{ fontSize: 18, color: "#ffd27a" }}>CATCH UP</span>
-                  <span className="font-body rounded-full px-2 py-0.5" style={{ fontSize: 10, color: "#1a1300", background: "#ffb800", letterSpacing: 0.5 }}>RANKED</span>
-                </div>
-                <div className="font-body" style={{ fontSize: 13, color: "#c4ccc6", lineHeight: 1.4 }}>
-                  Missed yesterday? <b style={{ color: "#fff" }}>Play it once</b> to bank the points. Available until the next run is posted.
-                </div>
-              </button>
-            )}
 
             {/* Just Play — unlimited, doesn't count towards the board. */}
             <button onClick={() => beginDraft(false)} className="text-left rounded-2xl p-4 active:scale-[0.99] transition-transform"
