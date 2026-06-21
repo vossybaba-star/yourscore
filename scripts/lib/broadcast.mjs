@@ -4,6 +4,8 @@
  * The send-only RESEND_API_KEY is kept for transactional emails (password resets etc.)
  */
 
+import { createClient } from "@supabase/supabase-js";
+
 const BASE = "https://api.resend.com";
 
 function hdrs(apiKey) {
@@ -135,4 +137,84 @@ export async function syncAndBroadcast(apiKey, {
   }
 
   return { audienceId: aud, broadcastId };
+}
+
+/**
+ * Query a user segment from Supabase and return an array of email strings.
+ *
+ * @param {string} supabaseUrl
+ * @param {string} serviceKey
+ * @param {string} rpcName     — e.g. "get_segment_wc_active"
+ * @param {object} params      — e.g. { p_days: 7 }
+ * @returns {Promise<string[]>}
+ */
+export async function querySegment(supabaseUrl, serviceKey, rpcName, params = {}) {
+  const sb = createClient(supabaseUrl, serviceKey);
+  const PAGE = 1000;
+  let all = [];
+  let from = 0;
+  while (true) {
+    const { data, error } = await sb.rpc(rpcName, params).range(from, from + PAGE - 1);
+    if (error) throw new Error(`Segment ${rpcName}: ${error.message}`);
+    const rows = data ?? [];
+    all = all.concat(rows);
+    if (rows.length < PAGE) break;
+    from += PAGE;
+  }
+  return all.map(r => r.email).filter(Boolean);
+}
+
+/**
+ * Convenience wrapper: query a named segment then call syncAndBroadcast.
+ * Segment names map to the SQL functions in migration 55_user_segments.sql.
+ *
+ * @param {string} campaignsKey       RESEND_CAMPAIGNS_API_KEY
+ * @param {string} supabaseUrl
+ * @param {string} serviceKey         SUPABASE_SERVICE_ROLE_KEY
+ * @param {object} opts
+ * @param {string} opts.segment       Segment name, e.g. "wc_active"
+ * @param {object} [opts.segmentArgs] Params for the segment RPC, e.g. { p_days: 7 }
+ * @param {string} opts.audienceName  Name for the temp Resend audience
+ * @param {string} opts.name          Broadcast name (internal label)
+ * @param {string} opts.from
+ * @param {string} [opts.replyTo]
+ * @param {string} opts.subject
+ * @param {string} opts.html
+ * @param {boolean} [opts.dryRun]
+ */
+export async function broadcastToSegment(campaignsKey, supabaseUrl, serviceKey, {
+  segment,
+  segmentArgs = {},
+  audienceName,
+  name,
+  from,
+  replyTo,
+  subject,
+  html,
+  dryRun = false,
+}) {
+  const rpc = `get_segment_${segment}`;
+  console.log(`   Querying segment: ${rpc}(${JSON.stringify(segmentArgs)})`);
+  const emails = await querySegment(supabaseUrl, serviceKey, rpc, segmentArgs);
+  console.log(`   Segment size: ${emails.length} users`);
+
+  if (emails.length === 0) {
+    console.log("   No users in segment — nothing to send.");
+    return { audienceId: null, broadcastId: null, count: 0 };
+  }
+
+  const result = await syncAndBroadcast(campaignsKey, {
+    audienceId: null,
+    audienceName: audienceName ?? `${segment} — ${name}`,
+    emails,
+    name,
+    from,
+    replyTo,
+    subject,
+    html,
+    deleteTempAudience: false,
+    dryRun,
+  });
+
+  return { ...result, count: emails.length };
 }
