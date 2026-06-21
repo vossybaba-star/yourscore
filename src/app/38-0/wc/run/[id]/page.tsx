@@ -86,6 +86,10 @@ export default function WorldCupRun() {
   const [answered, setAnswered] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<{ correct: boolean } | null>(null);
   const askedIds = useRef<Set<string>>(new Set());
+  // Questions answered this session — once past 6, leaving prompts a confirm so
+  // a deep run isn't abandoned by a stray tap on Exit.
+  const answeredCount = useRef(0);
+  const [confirmExit, setConfirmExit] = useState(false);
 
   // Tie decider: a drawn knockout / the play-off. `tieMode` is "choose" (pens vs question)
   // then "quiz" if the player picks the question; picking pens opens the shootout instead.
@@ -181,6 +185,7 @@ export default function WorldCupRun() {
   function answerDecider(choice: number) {
     if (!tie || tieMode !== "quiz" || decPicked !== null || decBusy) return;
     setDecPicked(choice);
+    answeredCount.current += 1;
     setTimeout(() => void submitDecider(choice), 800);
   }
 
@@ -258,6 +263,7 @@ export default function WorldCupRun() {
   function answerQuiz(idx: number) {
     if (!quiz || answered !== null || !pickSlot || !run) return;
     setAnswered(idx);
+    answeredCount.current += 1;
     const correct = idx === quiz.correctIndex;
     askedIds.current.add(quiz.id);
     setFeedback({ correct });
@@ -423,7 +429,30 @@ export default function WorldCupRun() {
   return (
     <div className="min-h-[100dvh] pb-40" style={{ background: "#0a0a0f" }}>
       <div className="max-w-lg mx-auto px-4 pt-safe">
-        <div className="pt-4"><BackPill href="/38-0" label="Exit" tone="wc" /></div>
+        <div className="pt-4">
+          <BackPill label="Exit" tone="wc"
+            onClick={() => {
+              if (!terminal && answeredCount.current >= 6) setConfirmExit(true);
+              else router.push("/38-0");
+            }} />
+        </div>
+
+        {confirmExit && (
+          <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}
+            onClick={() => setConfirmExit(false)}>
+            <div className="w-full max-w-lg rounded-t-3xl px-5 pt-5 pb-10" style={{ background: "#0e1611", border: "1px solid rgba(255,184,0,0.25)", borderBottom: "none" }}
+              onClick={(e) => e.stopPropagation()}>
+              <p className="font-display tracking-wide text-white mb-1" style={{ fontSize: 22 }}>Leave your run?</p>
+              <p className="font-body text-sm mb-5" style={{ color: "#9aa39d" }}>
+                Your progress is saved — you can pick this run back up any time from the home screen.
+              </p>
+              <div className="flex gap-2">
+                <Button variant="ghost" size="md" fullWidth onClick={() => setConfirmExit(false)}>Keep playing</Button>
+                <Button variant="primary" tone="gold" size="md" fullWidth onClick={() => router.push("/38-0")}>Leave run</Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Header */}
         <div className="flex items-center gap-3 pt-2">
