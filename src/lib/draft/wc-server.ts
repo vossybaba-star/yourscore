@@ -54,39 +54,41 @@ export async function activeEdition(db: SupabaseClient<any>): Promise<string> {
   return (data?.edition as string | undefined) ?? new Date().toISOString().slice(0, 10);
 }
 
-/** The immediately-PREVIOUS ranked edition (one-day catch-up), or null if there isn't one.
- *  Derived dynamically as the latest ranked run_date strictly before the active edition —
- *  self-correcting, so it can't drift like a hand-maintained pointer (which once went stale
- *  and pointed catch-up two days back). Only ever the single most-recent prior edition. */
+/** Step a YYYY-MM-DD string by `n` calendar days (UTC), returning YYYY-MM-DD. */
+function addDays(date: string, n: number): string {
+  const [y, m, d] = date.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
+}
+
+/** The launch edition — the earliest ranked run_date (when the WC Mastermind first went live).
+ *  It's the floor of the back-catalogue: catch-up spans from here up to today. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function previousEdition(db: SupabaseClient<any>): Promise<string | null> {
-  const current = await activeEdition(db);
+async function firstEdition(db: SupabaseClient<any>): Promise<string | null> {
   const { data } = await db.from("draft_wc_runs")
-    .select("run_date")
-    .eq("ranked", true)
-    .lt("run_date", current)
-    .order("run_date", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .select("run_date").eq("ranked", true).order("run_date", { ascending: true }).limit(1).maybeSingle();
   return (data?.run_date as string | undefined) ?? null;
 }
 
-/** Every ranked edition strictly before the active one — the open back-catalog a late-joiner
- *  can catch up on. Derived from real run_dates in `draft_wc_runs` so it self-corrects (no
- *  hand-maintained list to drift). Most-recent first. */
+/** Every past edition a late-joiner can catch up on: EVERY calendar day from the launch edition
+ *  up to (not including) today's edition — not just days someone happened to play. Each date is
+ *  a deterministic, date-seeded edition, so days that were skipped before the daily auto-roll
+ *  existed (e.g. 19-20 Jun, missed when the roll lapsed) are still catchable. Most-recent first. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function pastEditions(db: SupabaseClient<any>): Promise<string[]> {
   const current = await activeEdition(db);
-  const { data } = await db.from("draft_wc_runs")
-    .select("run_date")
-    .eq("ranked", true)
-    .lt("run_date", current)
-    .order("run_date", { ascending: false });
-  const seen = new Set<string>();
-  for (const r of (data ?? []) as { run_date: string }[]) {
-    if (r.run_date) seen.add(r.run_date);
-  }
-  return Array.from(seen);
+  const start = await firstEdition(db);
+  if (!start || start >= current) return [];
+  const out: string[] = [];
+  for (let d = start; d < current; d = addDays(d, 1)) out.push(d);
+  return out.reverse(); // most-recent first
+}
+
+/** The most-recent catchable edition (yesterday's, by the back-catalogue), or null if none.
+ *  Legacy single-day catch-up path; the strip targets a specific date via catchupDate instead. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function previousEdition(db: SupabaseClient<any>): Promise<string | null> {
+  const past = await pastEditions(db);
+  return past[0] ?? null;
 }
 
 /** Which ranked edition a request targets: the current one, or — for a `catchup` request —
