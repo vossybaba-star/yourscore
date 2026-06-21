@@ -70,5 +70,17 @@ async function handleEvent(event: { type: string; data: Record<string, unknown> 
     );
   }
 
+  // Broadcast unsubscribe — fired when a contact clicks the Resend-managed unsubscribe link.
+  // Sync to email_suppressions so transactional sends also respect it.
+  if (type === "contact.unsubscribed") {
+    const email = data.email as string | undefined;
+    if (email) {
+      await supabase.from("email_suppressions").upsert(
+        { email: email.toLowerCase().trim(), reason: "unsubscribe", detail: "broadcast" },
+        { onConflict: "email", ignoreDuplicates: true }
+      );
+    }
+  }
+
   return NextResponse.json({ ok: true });
 }
