@@ -16,7 +16,7 @@
  * Prints two lines: SHARE=<path> and COVER=<path>.
  */
 
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import sharp from "sharp";
@@ -26,6 +26,7 @@ import { loadQuiz, titleParts, extractNations, flagPhrase, slugify, ACCENT_HEX }
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const FONTS = join(__dirname, "assets", "fonts");
+const REF_DIR = join(__dirname, "assets", "references");
 const ROOT = join(__dirname, "..");
 
 const args = process.argv.slice(2);
@@ -34,6 +35,21 @@ const quizFile = flag("--quiz") || args.find((a) => a.endsWith(".json"));
 const OUT = flag("--out") || "/tmp";
 const QUALITY = flag("--quality") || "high";
 const flagsOverride = flag("--flags");
+const NO_REF = args.includes("--no-ref"); // force plain text-to-image, ignore the reference set
+
+// Curated style references — a few of the founder's best prior cards live in
+// scripts/assets/references/. When present we condition gpt-image-1 on them (via the
+// /images/edits endpoint) so every day's art matches that established look WITHOUT a
+// browser. Drop in text-free background art (see that folder's README). No refs → we fall
+// back to plain text-to-image, so the script always works.
+function refFiles() {
+  if (NO_REF || !existsSync(REF_DIR)) return [];
+  return readdirSync(REF_DIR)
+    .filter((f) => /\.(png|jpe?g|webp)$/i.test(f) && !f.startsWith("."))
+    .sort()
+    .slice(0, 4) // keep the payload tight; 1–3 strong refs beat many
+    .map((f) => join(REF_DIR, f));
+}
 
 if (!quizFile) { console.error("Usage: gen-quiz-images.mjs --quiz <file>.json [--out dir] [--quality high|medium|low]"); process.exit(1); }
 const KEY = process.env.OPENAI_API_KEY;
@@ -71,7 +87,38 @@ function bgPrompt() {
   return `Premium editorial sports key art: ${scene}. Cinematic World Cup tournament atmosphere at dusk under blazing floodlights, confetti and flares hazing in the air. Rich sophisticated grade: deep navy night sky, warm gold glow, saturated flag colours, shallow depth of field. IMPORTANT: absolutely NO text, NO words, NO letters, NO logos, NO watermarks anywhere in the image. Leave the upper-left third as clean, darker negative space (sky / shadow) for a title to be added later — keep the trophy out of the upper-left. Photographic, high-end broadcast key-art look, subtle cinematic grain.`;
 }
 
+// Style-match preamble used only when we have reference art: keep gpt-image-1 anchored to
+// the reference look/grade but free to invent a NEW composition (low input_fidelity = creative).
+function bgPromptWithRef() {
+  return `Use the attached reference image(s) ONLY as a style guide — match their colour grade, lighting, mood and premium editorial finish — but create a BRAND NEW image with a different composition. ${bgPrompt()}`;
+}
+
 async function genBackground(size) {
+  const refs = refFiles();
+
+  if (refs.length) {
+    // Reference-conditioned: /images/edits with gpt-image-1 + the curated style refs.
+    const fd = new FormData();
+    fd.append("model", "gpt-image-1");
+    fd.append("prompt", bgPromptWithRef());
+    fd.append("size", size);
+    fd.append("quality", QUALITY);
+    fd.append("n", "1");
+    fd.append("input_fidelity", "low"); // anchor the STYLE, not a pixel copy → new composition
+    for (const p of refs) {
+      const buf = readFileSync(p);
+      const type = /\.png$/i.test(p) ? "image/png" : /\.webp$/i.test(p) ? "image/webp" : "image/jpeg";
+      fd.append("image[]", new Blob([buf], { type }), p.split("/").pop());
+    }
+    const res = await fetch("https://api.openai.com/v1/images/edits", {
+      method: "POST", headers: { Authorization: `Bearer ${KEY}` }, body: fd,
+    });
+    const j = await res.json();
+    if (!res.ok || !j.data?.[0]?.b64_json) throw new Error(`gpt-image-1 edits ${res.status}: ${JSON.stringify(j.error || j).slice(0, 300)}`);
+    return Buffer.from(j.data[0].b64_json, "base64");
+  }
+
+  // Fallback: plain text-to-image (no reference set yet).
   const res = await fetch("https://api.openai.com/v1/images/generations", {
     method: "POST",
     headers: { Authorization: `Bearer ${KEY}`, "Content-Type": "application/json" },
@@ -157,8 +204,10 @@ async function makeCard(genSize, W, H, outPath, kind) {
   return outPath;
 }
 
+const _refs = refFiles();
 console.error(`\nGenerating cards for "${quiz.name}" (quality=${QUALITY})`);
 console.error(`  flags: ${nations.join(", ")}`);
+console.error(`  style: ${_refs.length ? `reference-conditioned (${_refs.map((r) => r.split("/").pop()).join(", ")})` : "text-to-image (no references)"}`);
 
 const sharePath = join(OUT, `${slug}-share.png`);
 const coverPath = join(OUT, `${slug}-cover.png`);
