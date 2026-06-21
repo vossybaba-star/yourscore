@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { GridBackground } from "@/components/ui/GridBackground";
 import Link from "next/link";
 import { useUser } from "@/hooks/useUser";
@@ -109,6 +110,10 @@ function getMemberBadges(m: LeagueMember, isP4PLeader: boolean) {
 
 export default function LeaguePage({ params }: { params: { id: string } }) {
   const { user } = useUser();
+  const router = useRouter();
+  const [deleting, setDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleteErr, setDeleteErr] = useState<string | null>(null);
   const [league, setLeague] = useState<League | null>(null);
   const [members, setMembers] = useState<LeagueMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -203,6 +208,16 @@ export default function LeaguePage({ params }: { params: { id: string } }) {
     navigator.clipboard.writeText(`${window.location.origin}/league/join/${league.code}`);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  }
+
+  async function deleteLeague() {
+    if (!league || deleting) return;
+    setDeleting(true);
+    // RLS policy leagues_delete restricts this to the creator; league_members
+    // cascade away via the fkey. Bounce to the leagues hub on success.
+    const { error } = await createClient().from("leagues").delete().eq("id", league.id);
+    if (error) { setDeleting(false); setDeleteErr("Couldn't delete the league. Try again."); return; }
+    router.replace("/leagues");
   }
 
   const isCreator = user?.id === league?.created_by;
@@ -460,6 +475,30 @@ export default function LeaguePage({ params }: { params: { id: string } }) {
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
                 {copied ? "Link copied!" : "Invite more people"}
               </Button>
+            )}
+
+            {/* Creator-only: delete the whole league */}
+            {isCreator && (
+              <div className="mt-3 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                {deleteErr && <p className="font-body text-xs mb-2 text-center" style={{ color: "#ff4757" }}>{deleteErr}</p>}
+                {!confirmDelete ? (
+                  <button onClick={() => setConfirmDelete(true)}
+                    className="w-full text-center font-body text-xs py-2 transition-opacity hover:opacity-100"
+                    style={{ color: "#8a948f" }}>
+                    Delete this league
+                  </button>
+                ) : (
+                  <div className="rounded-xl p-3" style={{ background: "rgba(255,71,87,0.06)", border: "1px solid rgba(255,71,87,0.2)" }}>
+                    <p className="font-body text-xs text-center mb-3 text-white">Delete this league for everyone? This can&apos;t be undone.</p>
+                    <div className="flex gap-2">
+                      <Button onClick={() => setConfirmDelete(false)} variant="ghost" size="sm" fullWidth disabled={deleting}>Cancel</Button>
+                      <Button onClick={deleteLeague} variant="danger" size="sm" fullWidth disabled={deleting}>
+                        {deleting ? "Deleting…" : "Delete league"}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         )}
