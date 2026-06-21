@@ -24,7 +24,7 @@ interface QuizPack {
   description?: string | null;
   featured?: boolean;
   featured_order?: number | null;
-  metadata?: { icon?: string; cover_image?: string } | null;
+  metadata?: { icon?: string; cover_image?: string; series?: string; daily?: boolean; date?: string } | null;
   created_at?: string | null;
 }
 
@@ -337,7 +337,14 @@ function OpenRoomCard({ room, onJoin }: { room: OpenRoom; onJoin: () => void }) 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 type MainTab = "solo" | "multiplayer" | "leaderboards";
-type SoloTab = "featured" | "club" | "records";
+type SoloTab = "featured" | "worldcup" | "club" | "records";
+
+// A World Cup quiz: tagged via metadata.series (the daily seed sets series:"wc2026")
+// or named/parametered for the World Cup. These are the daily £100-series packs.
+function isWorldCupPack(p: QuizPack): boolean {
+  if ((p.metadata?.series ?? "").toLowerCase().startsWith("wc")) return true;
+  return /world cup/i.test(p.name) || /world cup/i.test(p.parameter ?? "");
+}
 
 function joinErrorMessage(raw: string): string {
   if (raw.includes("not found") || raw.includes("Lobby not found")) return "This lobby no longer exists. Go to Play > Head-to-Head to start a new match.";
@@ -486,15 +493,24 @@ function PlayPageInner() {
     (p) => p.parameter === "2025/26 End of Season" && !p.featured
   );
   const featuredTabPacks = [...featuredPacks, ...endOfSeasonPacks];
+  // World Cup quizzes, newest first (auto-arranged by publish date).
+  const worldCupPacks = packs
+    .filter(isWorldCupPack)
+    .sort((a, b) => new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime());
+
   const filtered =
     soloTab === "featured"
       ? featuredTabPacks
+      : soloTab === "worldcup"
+      ? worldCupPacks
+      // Records excludes World Cup packs — those now live in their own tab.
       : soloTab === "records"
-      ? packs.filter((p) => p.type === "records" && p.parameter !== "2025/26 End of Season" && !p.featured)
+      ? packs.filter((p) => p.type === "records" && p.parameter !== "2025/26 End of Season" && !p.featured && !isWorldCupPack(p))
       : packs.filter((p) => p.type === "club");
 
   const clubCount = packs.filter((p) => p.type === "club").length;
-  const recordsCount = packs.filter((p) => p.type === "records" && p.parameter !== "2025/26 End of Season" && !p.featured).length;
+  const worldCupCount = worldCupPacks.length;
+  const recordsCount = packs.filter((p) => p.type === "records" && p.parameter !== "2025/26 End of Season" && !p.featured && !isWorldCupPack(p)).length;
   const featuredCount = featuredTabPacks.length;
 
   return (
@@ -547,12 +563,13 @@ function PlayPageInner() {
             </button>
           </div>
 
-          {/* Solo sub-tabs (Featured / Club / Records) */}
+          {/* Solo sub-tabs (Featured / World Cup / Club / Records) — scrollable so
+              four pills never cramp on a narrow phone. */}
           {mainTab === "solo" && (
-            <div className="flex gap-2 mb-3">
+            <div className="flex gap-2 mb-3 overflow-x-auto -mx-1 px-1" style={{ scrollbarWidth: "none" }}>
               <button
                 onClick={() => setSoloTab("featured")}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-full font-display text-xs tracking-wide transition-all flex-1 justify-center"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-full font-display text-xs tracking-wide transition-all flex-shrink-0 justify-center whitespace-nowrap"
                 style={{
                   background: soloTab === "featured" ? "rgba(0,216,192,0.15)" : "rgba(255,255,255,0.04)",
                   border: `1px solid ${soloTab === "featured" ? "rgba(0,216,192,0.5)" : "rgba(255,255,255,0.08)"}`,
@@ -572,8 +589,29 @@ function PlayPageInner() {
                 </span>
               </button>
               <button
+                onClick={() => setSoloTab("worldcup")}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-full font-display text-xs tracking-wide transition-all flex-shrink-0 justify-center whitespace-nowrap"
+                style={{
+                  background: soloTab === "worldcup" ? "rgba(255,194,51,0.15)" : "rgba(255,255,255,0.04)",
+                  border: `1px solid ${soloTab === "worldcup" ? "rgba(255,194,51,0.5)" : "rgba(255,255,255,0.08)"}`,
+                  color: soloTab === "worldcup" ? "#ffc233" : "#8a948f",
+                  boxShadow: soloTab === "worldcup" ? "0 0 16px rgba(255,194,51,0.12)" : "none",
+                }}
+              >
+                🌍 WORLD CUP
+                <span
+                  className="px-1.5 py-0.5 rounded-full text-xs"
+                  style={{
+                    background: soloTab === "worldcup" ? "rgba(255,194,51,0.25)" : "rgba(255,255,255,0.06)",
+                    color: soloTab === "worldcup" ? "#ffc233" : "#5b645e",
+                  }}
+                >
+                  {worldCupCount}
+                </span>
+              </button>
+              <button
                 onClick={() => setSoloTab("club")}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-full font-display text-xs tracking-wide transition-all flex-1 justify-center"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-full font-display text-xs tracking-wide transition-all flex-shrink-0 justify-center whitespace-nowrap"
                 style={{
                   background: soloTab === "club" ? "rgba(0,216,192,0.15)" : "rgba(255,255,255,0.04)",
                   border: `1px solid ${soloTab === "club" ? "rgba(0,216,192,0.5)" : "rgba(255,255,255,0.08)"}`,
@@ -594,7 +632,7 @@ function PlayPageInner() {
               </button>
               <button
                 onClick={() => setSoloTab("records")}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-full font-display text-xs tracking-wide transition-all flex-1 justify-center"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-full font-display text-xs tracking-wide transition-all flex-shrink-0 justify-center whitespace-nowrap"
                 style={{
                   background: soloTab === "records" ? "rgba(0,216,192,0.15)" : "rgba(255,255,255,0.04)",
                   border: `1px solid ${soloTab === "records" ? "rgba(0,216,192,0.5)" : "rgba(255,255,255,0.08)"}`,
