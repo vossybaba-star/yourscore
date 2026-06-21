@@ -11,7 +11,7 @@ import { useState } from "react";
 const INVITE_TEXT =
   "Play today's World Cup Mastermind ⚽🧠 — answer football questions to draft a World XI and win the World Cup. Think you know football? Take me on:";
 
-export function InviteMastermind({ label = "INVITE A FRIEND" }: { label?: string }) {
+export function InviteMastermind({ label = "INVITE A FRIEND", oneLine = false }: { label?: string; oneLine?: boolean }) {
   const [copied, setCopied] = useState(false);
 
   async function invite() {
@@ -35,10 +35,10 @@ export function InviteMastermind({ label = "INVITE A FRIEND" }: { label?: string
     <button onClick={invite}
       className="w-full flex items-center gap-3 rounded-2xl px-4 py-3.5 active:scale-[0.98] transition-transform"
       style={{ background: "rgba(0,216,192,0.1)", border: "1px solid rgba(0,216,192,0.4)" }}>
-      <span style={{ fontSize: 24, lineHeight: 1 }}>📣</span>
+      <span style={{ fontSize: oneLine ? 20 : 24, lineHeight: 1 }}>📣</span>
       <div className="text-left flex-1 min-w-0">
-        <div className="font-display tracking-wide" style={{ fontSize: 16, color: "#00d8c0" }}>{copied ? "LINK COPIED ✓" : label}</div>
-        <div className="font-body" style={{ fontSize: 12, color: "#8a948f" }}>Send the Mastermind link — see who knows football best</div>
+        <div className="font-display tracking-wide" style={{ fontSize: oneLine ? 18 : 16, color: "#00d8c0" }}>{copied ? "LINK COPIED ✓" : label}</div>
+        {!oneLine && <div className="font-body" style={{ fontSize: 12, color: "#8a948f" }}>Send the Mastermind link — see who knows football best</div>}
       </div>
       <span style={{ fontSize: 16, color: "#00d8c0" }}>→</span>
     </button>

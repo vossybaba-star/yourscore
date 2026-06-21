@@ -92,7 +92,12 @@ export default function WorldCupEntry() {
   const [rankedLocked, setRankedLocked] = useState(false);
   // The WC edition strip (today + every past edition, with this user's per-day state/stats).
   // Drives catch-up + result peeks; a non-empty strip means the user is signed in.
-  const [editions, setEditions] = useState<EditionCell[]>([]);
+  // Seed from the last cached strip so it renders INSTANTLY on (re)entry — no waiting on the
+  // status round-trip. The fetch below refreshes + re-caches; logout clears it.
+  const [editions, setEditions] = useState<EditionCell[]>(() => {
+    try { if (typeof window !== "undefined") { const c = localStorage.getItem("wc-editions"); if (c) return JSON.parse(c) as EditionCell[]; } } catch { /* ignore */ }
+    return [];
+  });
   // While drafting a catch-up: the specific past edition date (YYYY-MM-DD) being played,
   // or null for the normal "today's run" flow. The string flows through the API as
   // `catchupDate` so any past edition the catch-up index page picked can be served.
@@ -282,7 +287,7 @@ export default function WorldCupEntry() {
 
   // Is today's ranked attempt already used (played, or drafted past pick 6)? Blurs the card.
   useEffect(() => {
-    if (!user) { setRankedLocked(false); setEditions([]); return; }
+    if (!user) { setRankedLocked(false); setEditions([]); try { localStorage.removeItem("wc-editions"); } catch { /* ignore */ } return; }
     let off = false;
     (async () => {
       try {
@@ -291,8 +296,11 @@ export default function WorldCupEntry() {
         if (off) return;
         if (data?.lockedToday) setRankedLocked(true);
         // The edition strip (today + past, with this user's per-day state) drives the WC tab's
-        // catch-up + result peeks — replacing the old standalone catch-up tile/page.
-        if (Array.isArray(data?.editions)) setEditions(data.editions as EditionCell[]);
+        // catch-up + result peeks. Cache it so the next entry renders instantly (see init above).
+        if (Array.isArray(data?.editions)) {
+          setEditions(data.editions as EditionCell[]);
+          try { localStorage.setItem("wc-editions", JSON.stringify(data.editions)); } catch { /* ignore */ }
+        }
       } catch { /* leave unlocked; the begin call still guards */ }
     })();
     return () => { off = true; };
@@ -412,9 +420,7 @@ export default function WorldCupEntry() {
             Answer World Cup questions to build your XI — the more you know, the stronger your team — then play the tournament. Today&apos;s Run is ranked; Just Play is unlimited practice.
           </p>
 
-          {/* Edition strip — your World Cup timeline: catch up on days you missed, peek past
-              results, see at a glance whether you're up to date. (Signed-in; replaces /catch-up.) */}
-          {/* Edition strip — your World Cup timeline: catch up on days you missed, peek past
+          {/* Edition strip — your ranked World Cup timeline: catch up on missed days, peek past
               results, see at a glance whether you're up to date. (Signed-in; replaces /catch-up.) */}
           {editions.length > 0 && (
             <WcEditionStrip
@@ -443,23 +449,20 @@ export default function WorldCupEntry() {
             </button>
 
 
-            {/* Just Play — unlimited, doesn't count towards the board. */}
-            <button onClick={() => beginDraft(false)} className="text-left rounded-2xl p-4 active:scale-[0.99] transition-transform"
+            {/* Just Play — one-liner (unlimited practice, no board). */}
+            <button onClick={() => beginDraft(false)} className="flex items-center gap-2.5 rounded-2xl px-4 py-3.5 active:scale-[0.99] transition-transform"
               style={{ background: "#0e1611", border: "1px solid rgba(255,184,0,0.22)" }}>
-              <div className="flex items-center gap-2.5 mb-1">
-                <span style={{ fontSize: 22 }}>🎯</span>
-                <span className="font-display tracking-wide" style={{ fontSize: 20, color: "#ffd27a" }}>JUST PLAY</span>
-              </div>
-              <div className="font-body" style={{ fontSize: 13, color: "#c4ccc6", lineHeight: 1.4 }}>
-                Build and play as many World Cups as you like. <b style={{ color: "#fff" }}>Doesn&apos;t count towards the board</b> — pure practice.
-              </div>
+              <span style={{ fontSize: 20 }}>🎯</span>
+              <span className="font-display tracking-wide" style={{ fontSize: 18, color: "#ffd27a" }}>JUST PLAY</span>
+              <span className="font-body" style={{ fontSize: 12, color: "#8a948f" }}>· unlimited practice</span>
+              <span className="ml-auto" style={{ fontSize: 16, color: "#ffd27a" }}>→</span>
             </button>
 
             <Button variant="ghost" size="md" fullWidth href="/38-0/wc/board">
               🏅 World Cup season board →
             </Button>
 
-            <InviteMastermind />
+            <InviteMastermind oneLine />
           </div>
 
           {/* How it works (Mastermind — the ranked daily loop) */}

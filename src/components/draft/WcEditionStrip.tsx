@@ -74,9 +74,11 @@ export function WcEditionStrip({
 
   return (
     <div className="mb-5">
-      {/* up-to-date summary */}
+      {/* Catch-up chips gently pulse so missed days draw the eye. */}
+      <style>{`@keyframes wcCatchupFlash{0%,100%{background-color:#0e1611;box-shadow:0 0 0 0 rgba(255,184,0,0)}50%{background-color:#1b1408;box-shadow:0 0 14px 0 rgba(255,184,0,0.4)}}.wc-catchup-flash{animation:wcCatchupFlash 1.6s ease-in-out infinite}`}</style>
+      {/* subheading + up-to-date status */}
       <div className="flex items-center gap-2 mb-2">
-        <span className="font-body" style={{ fontSize: 11, letterSpacing: 1, color: "#8a948f" }}>YOUR WORLD CUP</span>
+        <span className="font-display tracking-wide" style={{ fontSize: 15, color: "#ffb800" }}>YOUR RANKED WORLD CUP</span>
         <span className="flex-1" />
         {missed === 0 ? (
           <span className="font-body flex items-center gap-1" style={{ fontSize: 12, color: "#aeea00" }}>
@@ -109,10 +111,11 @@ export function WcEditionStrip({
           const dim = !c.played && !c.available;
           return (
             <button key={c.date} onClick={() => tap(c)}
-              className="flex flex-col items-center rounded-2xl active:scale-[0.97] transition-transform flex-shrink-0"
+              className={`flex flex-col items-center rounded-2xl active:scale-[0.97] transition-transform flex-shrink-0${dashed ? " wc-catchup-flash" : ""}`}
               style={{
                 width: 72, padding: "10px 6px",
-                background: c.isToday && c.available ? "#ffb800" : "#0e1611",
+                // catch-up chips let the flash keyframe drive their background; others are static
+                background: c.isToday && c.available ? "#ffb800" : dashed ? undefined : "#0e1611",
                 border: `1px ${dashed ? "dashed" : "solid"} ${border}`,
                 opacity: dim ? 0.45 : 1,
                 outline: isOpen ? "2px solid rgba(174,234,0,0.6)" : "none",
