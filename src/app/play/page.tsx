@@ -25,6 +25,15 @@ interface QuizPack {
   featured?: boolean;
   featured_order?: number | null;
   metadata?: { icon?: string; cover_image?: string } | null;
+  created_at?: string | null;
+}
+
+// "Jun 18" style published date for quiz cards.
+function packDate(iso?: string | null): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 }
 
 // Full-bleed cover image for a card's media zone. Fills the existing 110px-tall
@@ -32,8 +41,10 @@ interface QuizPack {
 // otherwise the card falls back to its badge/emoji.
 function CoverImg({ src, alt }: { src: string; alt: string }) {
   return (
+    // eager + async + high priority so quiz art paints immediately, not lazily.
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={src} alt={alt} className="absolute inset-0 h-full w-full" style={{ objectFit: "cover" }} />
+    <img src={src} alt={alt} loading="eager" decoding="async" fetchPriority="high"
+      className="absolute inset-0 h-full w-full" style={{ objectFit: "cover" }} />
   );
 }
 
@@ -106,8 +117,10 @@ function ClubCard({ pack }: { pack: QuizPack }) {
         </div>
       </div>
       <div className="px-4 pb-4 pt-3">
-        <p className="font-body text-sm font-bold text-white leading-tight mb-0.5 truncate">{pack.name}</p>
-        <p className="font-body text-xs mb-1.5" style={{ color: "#8a948f" }}>2025/26 Season Game</p>
+        <p className="font-body text-sm font-bold text-white leading-snug mb-0.5">{pack.name}</p>
+        <p className="font-body text-xs mb-1.5" style={{ color: "#8a948f" }}>
+          2025/26 Season Game{packDate(pack.created_at) ? ` · ${packDate(pack.created_at)}` : ""}
+        </p>
         {pack.description && (
           <p className="font-body text-xs mb-2.5 line-clamp-2 leading-relaxed" style={{ color: "#7a857f" }}>{pack.description}</p>
         )}
@@ -183,7 +196,9 @@ function RecordsCard({ pack }: { pack: QuizPack }) {
       </div>
       <div className="px-4 pb-4 pt-3">
         <p className="font-body text-sm font-bold text-white leading-tight mb-0.5">{pack.name}</p>
-        <p className="font-body text-xs mb-1.5" style={{ color: "#8a948f" }}>All-Time Records</p>
+        <p className="font-body text-xs mb-1.5" style={{ color: "#8a948f" }}>
+          All-Time Records{packDate(pack.created_at) ? ` · ${packDate(pack.created_at)}` : ""}
+        </p>
         {pack.description && (
           <p className="font-body text-xs mb-2.5 line-clamp-2 leading-relaxed" style={{ color: "#7a857f" }}>{pack.description}</p>
         )}
@@ -360,7 +375,7 @@ function PlayPageInner() {
   useEffect(() => {
     createClient()
       .from("quiz_packs")
-      .select("id, name, type, parameter, question_count, status, description, featured, featured_order, metadata")
+      .select("id, name, type, parameter, question_count, status, description, featured, featured_order, metadata, created_at")
       .eq("status", "published")
       .eq("rotation_active", true)
       .order("name")

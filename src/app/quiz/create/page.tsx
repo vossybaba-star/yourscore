@@ -601,12 +601,10 @@ export default function CreateQuizPage() {
               color: availLoading ? "#3a423d" : notEnough ? "#f87171" : availability === null ? "#3a423d" : "#aeea00",
             }}>
               {availLoading
-                ? "Checking questions…"
-                : availability === null
-                ? " "
+                ? "Checking"
                 : notEnough
-                ? `Only ${availability} question${availability === 1 ? "" : "s"} here yet — try another era or topic`
-                : `✓ ${availability} questions ready`}
+                ? "Not enough questions here yet - try another era or topic"
+                : ""}
             </p>
           )}
           <Button
