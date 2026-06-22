@@ -2,6 +2,7 @@
 
 import { track } from "@vercel/analytics";
 import { useEffect } from "react";
+import { afLogEvent } from "@/lib/native/appsflyer";
 
 // Conversion IDs. Pixel base scripts live in app/layout.tsx; this only fires events.
 const X_SIGNUP_EVENT_ID = process.env.NEXT_PUBLIC_X_SIGNUP_EVENT_ID || "tw-p6vxh-p6vxj";
@@ -34,6 +35,7 @@ function fireSignupConversions() {
     window.gtag?.("event", "conversion", { send_to: GOOGLE_ADS_SIGNUP_SEND_TO }); // Google Ads
   }
   track("signup"); // Vercel Analytics
+  void afLogEvent("af_complete_registration"); // AppsFlyer (native only)
 }
 
 /**
