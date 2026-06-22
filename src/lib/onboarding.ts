@@ -11,6 +11,10 @@ import { isNative } from "./native";
 
 const ONBOARDED_KEY = "yourscore:onboarding:v1";
 const PUSH_PROMPTED_KEY = "yourscore:push-prompted:v1";
+// Separate from the signup pre-prompt: the in-context "be first on tomorrow's
+// board" opt-in shown after a daily quiz. Tracked on its own so converting here
+// is independent of the onboarding push ask.
+const QUIZ_NOTIFY_KEY = "yourscore:quiz-notify-prompted:v1";
 
 function readFlag(key: string): boolean {
   try {
@@ -46,6 +50,16 @@ export function hasPromptedPush(): boolean {
 export function markPushPrompted(): void {
   if (!isNative()) return;
   writeFlag(PUSH_PROMPTED_KEY);
+}
+
+export function hasPromptedQuizNotify(): boolean {
+  if (!isNative()) return true;
+  return readFlag(QUIZ_NOTIFY_KEY);
+}
+
+export function markQuizNotifyPrompted(): void {
+  if (!isNative()) return;
+  writeFlag(QUIZ_NOTIFY_KEY);
 }
 
 // QA helper — clears both flags so the flow can be replayed on-device. Wired to
