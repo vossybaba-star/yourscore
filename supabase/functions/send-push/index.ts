@@ -1,8 +1,11 @@
-// Supabase Edge Function — send a push notification to all device tokens
-// for the players in a given room.
+// Supabase Edge Function — send a push notification to device tokens.
 //
-// Trigger from /admin/rooms when an admin fires a question.
-// Body: { roomId: string; title: string; body: string; url?: string }
+// Two targeting modes (provide exactly one):
+//   { roomId, title, body, url? }    — fan out to a Lobby's members (live quiz).
+//   { userIds[], title, body, url? } — fan out to an explicit user list
+//                                      (lifecycle pushes: WC Mastermind, etc.).
+//
+// Trigger from /admin/rooms (roomId) or src/lib/notify.ts (userIds).
 //
 // Deploy: `supabase functions deploy send-push`
 //
@@ -20,7 +23,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { create as createJwt, getNumericDate } from 'https://deno.land/x/djwt@v3.0.2/mod.ts';
 
 interface Payload {
-  roomId: string;
+  roomId?: string;
+  userIds?: string[];
   title: string;
   body: string;
   url?: string;
@@ -46,9 +50,15 @@ Deno.serve(async (req) => {
   } catch {
     return new Response('Bad Request', { status: 400 });
   }
-  const { roomId, title, body, url } = payload;
-  if (typeof roomId !== 'string' || typeof title !== 'string' || typeof body !== 'string') {
+  const { roomId, userIds: directUserIds, title, body, url } = payload;
+  if (typeof title !== 'string' || typeof body !== 'string') {
     return new Response('Bad Request', { status: 400 });
+  }
+  const hasRoom = typeof roomId === 'string';
+  const hasList = Array.isArray(directUserIds) && directUserIds.length > 0;
+  if (hasRoom === hasList) {
+    // exactly one targeting mode required
+    return new Response('Bad Request: provide roomId OR userIds', { status: 400 });
   }
 
   const supabase = createClient(
@@ -56,14 +66,19 @@ Deno.serve(async (req) => {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
   );
 
-  const { data: members } = await supabase
-    .from('room_members')
-    .select('user_id')
-    .eq('room_id', roomId);
+  // Resolve the target user list.
+  let userIds: string[];
+  if (hasList) {
+    userIds = directUserIds as string[];
+  } else {
+    const { data: members } = await supabase
+      .from('room_members')
+      .select('user_id')
+      .eq('room_id', roomId as string);
+    if (!members?.length) return new Response(JSON.stringify({ sent: 0 }), { status: 200 });
+    userIds = members.map((m) => m.user_id);
+  }
 
-  if (!members?.length) return new Response(JSON.stringify({ sent: 0 }), { status: 200 });
-
-  const userIds = members.map((m) => m.user_id);
   const { data: tokens } = await supabase
     .from('device_tokens')
     .select('token, platform')
