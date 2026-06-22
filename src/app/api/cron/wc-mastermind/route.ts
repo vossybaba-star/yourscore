@@ -24,7 +24,10 @@ import { notifyUsers } from "@/lib/notify";
  *
  * Auth: Vercel cron sends `Authorization: Bearer ${CRON_SECRET}`.
  */
-const FALLBACK_HOUR = 18; // 6pm UTC for users with no inferred active hour
+// Evening (UK-anchored) — the assumed downtime for users with no inferred hour.
+// Must match EVENING_HOUR in scripts/compute-send-times.mjs so never-played
+// users and snapped-to-evening users land in the same bucket.
+const FALLBACK_HOUR = 19;
 const MAX_PER_RUN = 2000;
 
 export async function GET(req: NextRequest) {
