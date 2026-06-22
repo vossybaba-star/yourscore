@@ -706,21 +706,32 @@ export default function WorldCupEntry() {
             <div className="flex flex-col gap-2">
               {quiz.options.map((opt, i) => {
                 const locked = answered !== null;
-                const isCorrect = i === quiz.correctIndex;
+                // Ranked answers grade on the server: correctIndex stays -1 until
+                // the result arrives. Until then the pick is just "selected"
+                // (amber) — never red — so a correct answer can't flash wrong first.
+                const graded = quiz.correctIndex >= 0;
+                const isCorrect = graded && i === quiz.correctIndex;
                 const isPicked = i === answered;
-                const bg = locked
-                  ? isCorrect ? "rgba(0,255,135,0.16)" : isPicked ? "rgba(255,71,87,0.16)" : "rgba(255,255,255,0.04)"
-                  : "rgba(255,255,255,0.05)";
-                const border = locked
-                  ? isCorrect ? "rgba(0,255,135,0.6)" : isPicked ? "rgba(255,71,87,0.6)" : "rgba(255,255,255,0.08)"
-                  : "rgba(255,255,255,0.12)";
+                const pickedPending = isPicked && locked && !graded;
+                const bg = !locked
+                  ? "rgba(255,255,255,0.05)"
+                  : isCorrect ? "rgba(0,255,135,0.16)"
+                  : pickedPending ? "rgba(255,184,0,0.18)"
+                  : isPicked ? "rgba(255,71,87,0.16)"
+                  : "rgba(255,255,255,0.04)";
+                const border = !locked
+                  ? "rgba(255,255,255,0.12)"
+                  : isCorrect ? "rgba(0,255,135,0.6)"
+                  : pickedPending ? "rgba(255,184,0,0.6)"
+                  : isPicked ? "rgba(255,71,87,0.6)"
+                  : "rgba(255,255,255,0.08)";
                 return (
                   <button key={i} onClick={() => answerQuiz(i)} disabled={locked}
                     className="w-full text-left rounded-xl px-4 py-3 font-body active:scale-[0.99] transition-transform"
                     style={{ background: bg, border: `1px solid ${border}`, color: "#fff", fontSize: 15 }}>
                     {opt}
-                    {locked && isCorrect && <span style={{ color: "#00ff87" }}> ✓</span>}
-                    {locked && isPicked && !isCorrect && <span style={{ color: "#ff7a88" }}> ✗</span>}
+                    {graded && isCorrect && <span style={{ color: "#00ff87" }}> ✓</span>}
+                    {graded && isPicked && !isCorrect && <span style={{ color: "#ff7a88" }}> ✗</span>}
                   </button>
                 );
               })}
