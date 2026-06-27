@@ -6,7 +6,6 @@ import { useUser } from "@/hooks/useUser";
 import { createClient } from "@/lib/supabase/client";
 import { registerForPush } from "@/lib/push";
 import { hasPromptedPush, markPushPrompted } from "@/lib/onboarding";
-import { GridBackground } from "@/components/ui/GridBackground";
 
 // Apple Guideline 4.5.4 soft pre-prompt — our own UI; the OS permission dialog
 // only fires when the user taps Enable. Shown proactively the first time a real
@@ -72,57 +71,66 @@ function PushPrePromptInner() {
 
   return (
     <div
-      className="fixed inset-0 z-[110] overflow-hidden flex flex-col"
+      className="fixed inset-0 z-[110] flex items-center justify-center px-6"
       style={{
-        background: "var(--bg)",
-        paddingLeft: "env(safe-area-inset-left)",
-        paddingRight: "env(safe-area-inset-right)",
+        background: "rgba(5,5,10,0.72)",
+        backdropFilter: "blur(6px)",
+        WebkitBackdropFilter: "blur(6px)",
+        paddingTop: "env(safe-area-inset-top)",
+        paddingBottom: "env(safe-area-inset-bottom)",
       }}
+      onClick={() => { if (!busy) later(); }}
     >
-      <GridBackground opacity={0.025} />
       <div
-        className="pointer-events-none absolute inset-0"
-        style={{ background: "radial-gradient(70% 42% at 50% 0%, #aeea0029, transparent 72%)" }}
-      />
-
-      <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-8 text-center">
-        <div
-          className="flex items-center justify-center rounded-2xl mb-7"
-          style={{ width: 76, height: 76, background: "rgba(174,234,0,0.15)" }}
-        >
-          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#aeea00" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-          </svg>
-        </div>
-
-        <h2 className="font-display text-[2.6rem] leading-[0.92] uppercase text-white">
-          Be first
-          <br />on the board
-        </h2>
-        <p className="font-body text-sm text-text-muted mt-3 max-w-[300px]">
-          There&apos;s a new board to top every day. We&apos;ll ping you the moment it goes live, so you can grab top spot before everyone else.
-        </p>
-      </div>
-
-      <div
-        className="relative z-10 px-7 space-y-3 w-full max-w-[420px] mx-auto"
-        style={{ paddingBottom: "max(env(safe-area-inset-bottom), 18px)" }}
+        className="relative w-full max-w-[360px] overflow-hidden rounded-[28px] p-7 text-center"
+        style={{
+          background: "#12121b",
+          border: "1px solid rgba(255,255,255,0.08)",
+          boxShadow: "0 24px 60px rgba(0,0,0,0.55)",
+        }}
+        onClick={(e) => e.stopPropagation()}
       >
-        <button
-          onClick={enable}
-          disabled={busy}
-          className="btn-ticket w-full justify-center py-4 text-lg disabled:opacity-70"
-        >
-          {busy ? "Enabling…" : "Enable notifications"}
-        </button>
-        <button
-          onClick={later}
-          disabled={busy}
-          className="w-full py-3 font-body text-sm text-text-muted hover:text-white transition-colors"
-        >
-          Maybe later
-        </button>
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 h-28"
+          style={{ background: "radial-gradient(80% 100% at 50% 0%, #aeea0026, transparent 72%)" }}
+        />
+
+        <div className="relative">
+          <div
+            className="mx-auto flex items-center justify-center rounded-2xl mb-5"
+            style={{ width: 60, height: 60, background: "rgba(174,234,0,0.15)" }}
+          >
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#aeea00" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
+          </div>
+
+          <h2 className="font-display text-[2rem] leading-[0.95] uppercase text-white">
+            Be first
+            <br />on the board
+          </h2>
+          <p className="font-body text-sm text-text-muted mt-3">
+            There&apos;s a new board to top every day. We&apos;ll ping you the moment it goes live, so you can grab top spot before everyone else.
+          </p>
+
+          <div className="mt-6 space-y-2">
+            <button
+              onClick={enable}
+              disabled={busy}
+              className="btn-ticket w-full justify-center py-3.5 text-base disabled:opacity-70"
+            >
+              {busy ? "Enabling…" : "Enable notifications"}
+            </button>
+            <button
+              onClick={later}
+              disabled={busy}
+              className="w-full py-2.5 font-body text-sm text-text-muted hover:text-white transition-colors"
+            >
+              Maybe later
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
