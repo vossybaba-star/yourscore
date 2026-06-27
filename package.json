@@ -16,12 +16,13 @@
     "@capacitor/core": "^8.3.4",
     "@capacitor/ios": "^8.3.4",
     "@capacitor/push-notifications": "^8.1.1",
+    "@resvg/resvg-js": "^2.6.2",
     "@sentry/nextjs": "^10.56.0",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.106.1",
     "@vercel/analytics": "^2.0.1",
-    "appsflyer-capacitor-plugin": "^6.16.3",
     "@vercel/speed-insights": "^2.0.0",
+    "appsflyer-capacitor-plugin": "^6.16.3",
     "html-to-image": "^1.11.13",
     "next": "14.2.35",
     "posthog-js": "^1.386.8",
@@ -29,6 +30,7 @@
     "react-dom": "^18",
     "react-qr-code": "^2.0.21",
     "resend": "^6.12.4",
+    "satori": "^0.26.0",
     "svix": "^1.95.2"
   },
   "devDependencies": {
