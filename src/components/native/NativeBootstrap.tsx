@@ -54,11 +54,28 @@ export function NativeBootstrap() {
         if (event?.url) await handleAuthDeepLink(event.url);
       });
 
-      // Push registration intentionally NOT auto-triggered on sign-in. Apple
-      // Guideline 4.5.4 / 5.1.1 prefers an in-context pre-prompt before the
-      // system permission alert. Wire registerForPush() (src/lib/push.ts) to
-      // an explicit user action (e.g. settings toggle or first match sign-up)
-      // in a future release.
+      // Push: we never REQUEST permission on launch (Apple 4.5.4 — that stays
+      // behind the in-context pre-prompt). But for users who've ALREADY opted
+      // in, re-register on every launch so their APNs token stays current
+      // (tokens rotate). registerForPush() checks permission first, so this is a
+      // silent no-op for anyone who hasn't granted it. This is the path that
+      // actually fills device_tokens for the existing opted-in base.
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("notifications_opt_in")
+            .eq("id", user.id)
+            .single();
+          if (profile?.notifications_opt_in === true) {
+            const { registerForPush } = await import("@/lib/push");
+            await registerForPush(supabase, user.id);
+          }
+        }
+      } catch (e) {
+        console.warn("[native-bootstrap] push re-register failed", e);
+      }
 
       cleanup = () => {
         handler.remove();
