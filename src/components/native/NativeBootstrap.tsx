@@ -61,13 +61,19 @@ export function NativeBootstrap() {
       // silent no-op for anyone who hasn't granted it. This is the path that
       // actually fills device_tokens for the existing opted-in base.
       try {
+        // TEMP instrumentation — remove once token registration is diagnosed.
+        const dbg = (event: string, detail?: string | null) =>
+          (supabase as unknown as import("@supabase/supabase-js").SupabaseClient)
+            .from("push_debug").insert({ user_id: null, event, detail: detail ?? null }).then(() => {}, () => {});
         const { data: { user } } = await supabase.auth.getUser();
+        await dbg("bootstrap", user ? `user ${user.id.slice(0, 8)}` : "no_user");
         if (user) {
           const { data: profile } = await supabase
             .from("profiles")
             .select("notifications_opt_in")
             .eq("id", user.id)
             .single();
+          await dbg("bootstrap_optin", String(profile?.notifications_opt_in));
           if (profile?.notifications_opt_in === true) {
             const { registerForPush } = await import("@/lib/push");
             await registerForPush(supabase, user.id);
