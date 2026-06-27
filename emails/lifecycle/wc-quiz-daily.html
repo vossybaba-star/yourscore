@@ -1,0 +1,212 @@
+<!--
+  wc-quiz-daily.html — tokenized template for the WC Quiz Series daily email.
+  One template for every day. send-wc-quiz-daily.mjs fills the tokens.
+  Tokens: {{DAY}} {{SUBJECT}} {{PREHEADER}} {{QUIZ_TITLE}} {{QUIZ_DESC}}
+          {{QUIZ_URL}} {{IMAGE_URL}} {{PAUSE_URL}} {{UNSUB_URL}}
+-->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="x-apple-disable-message-reformatting">
+  <meta name="color-scheme" content="dark">
+  <meta name="supported-color-schemes" content="dark">
+  <title>{{SUBJECT}}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body,table,td,p,a{margin:0;padding:0}
+    img{border:0;outline:none;text-decoration:none;display:block}
+    table{border-collapse:collapse}
+    a{text-decoration:none}
+    @media (max-width:620px){
+      .container{width:100%!important}
+      .px{padding-left:20px!important;padding-right:20px!important}
+      .hero{font-size:72px!important;line-height:66px!important}
+    }
+  </style>
+</head>
+
+<body style="margin:0;padding:0;background-color:#07070d;background-image:linear-gradient(rgba(0,255,135,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,135,0.025) 1px,transparent 1px);background-size:32px 32px;font-family:'DM Sans',Helvetica,Arial,sans-serif;color:#ffffff;">
+
+  <!-- Preheader -->
+  <div style="display:none;max-height:0;overflow:hidden;font-size:1px;line-height:1px;color:#07070d;">{{PREHEADER}}</div>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr><td align="center" style="padding:36px 16px 52px;">
+
+    <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
+
+      <!-- Logo -->
+      <tr><td align="center" style="padding:0 40px 44px;">
+        <a href="https://yourscore.app/play" style="display:inline-block;">
+          <img src="https://yourscore.app/logo.png" alt="YourScore" width="148" height="44" style="width:148px;height:44px;display:block;">
+        </a>
+      </td></tr>
+
+      <!-- Green top rule -->
+      <tr><td style="padding:0 40px 30px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr><td style="height:2px;background:linear-gradient(90deg,#00ff87 0%,rgba(0,255,135,0.3) 70%,transparent 100%);border-radius:2px;"></td></tr>
+        </table>
+      </td></tr>
+
+      <!-- Badge -->
+      <tr><td class="px" align="left" style="padding:0 40px 16px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+          <td style="background:rgba(0,255,135,0.08);border:1px solid rgba(0,255,135,0.25);border-radius:999px;padding:5px 16px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:2.5px;color:#00ff87;font-weight:700;text-transform:uppercase;">&#127942;&nbsp; World Cup Quiz Series &nbsp;&#183;&nbsp; Day {{DAY}}</td>
+        </tr></table>
+      </td></tr>
+
+      <!-- Hero -->
+      <tr><td class="px" style="padding:0 40px 10px;">
+        <div class="hero" style="font-family:'Bebas Neue',Impact,Arial,sans-serif;font-size:96px;line-height:88px;color:#ffffff;letter-spacing:-1px;text-shadow:0 0 100px rgba(0,255,135,0.2);">DAY {{DAY}}<br><span style="color:#00ff87;">IS LIVE.</span></div>
+      </td></tr>
+
+      <!-- Sub-line -->
+      <tr><td class="px" style="padding:0 40px 32px;">
+        <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:18px;line-height:28px;color:#8888aa;font-weight:500;">
+          A new quiz is up. <strong style="color:#ffffff;">Answer today and build your streak</strong> — every consecutive day you play adds bonus points on top of your score.
+        </p>
+      </td></tr>
+
+      <!-- TODAY'S QUIZ CARD -->
+      <tr><td class="px" style="padding:0 40px 52px;">
+        <p style="margin:0 0 12px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:2px;color:#00ff87;font-weight:700;text-transform:uppercase;">&#9654;&nbsp; Today's quiz — Day {{DAY}}</p>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid rgba(0,255,135,0.2);border-radius:16px;overflow:hidden;background:rgba(0,255,135,0.04);">
+          <tr>
+            <td style="padding:0;">
+              <a href="{{QUIZ_URL}}" style="display:block;">
+                <img src="{{IMAGE_URL}}"
+                     alt="{{QUIZ_TITLE}}"
+                     width="520"
+                     style="width:100%;max-width:100%;border-radius:15px 15px 0 0;display:block;">
+              </a>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:20px 24px 24px;">
+              <p style="margin:0 0 8px;font-family:'Bebas Neue',Impact,Arial,sans-serif;font-size:26px;line-height:26px;color:#ffffff;letter-spacing:0.5px;">{{QUIZ_TITLE}}</p>
+              <p style="margin:0 0 18px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;line-height:21px;color:#8888aa;">
+                {{QUIZ_DESC}}
+              </p>
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr><td style="background:linear-gradient(135deg,#00ff87 0%,#00d464 100%);border-radius:10px;">
+                  <a href="{{QUIZ_URL}}" style="display:inline-block;color:#07070d;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;font-weight:800;letter-spacing:0.3px;padding:13px 32px;border-radius:10px;">Play now &nbsp;&rarr;</a>
+                </td></tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </td></tr>
+
+      <!-- Divider -->
+      <tr><td style="padding:0 40px 32px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr><td style="height:1px;background:rgba(255,255,255,0.06);"></td></tr>
+        </table>
+      </td></tr>
+
+      <!-- How it works -->
+      <tr><td class="px" style="padding:0 40px 20px;">
+        <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:13px;letter-spacing:2px;color:#6b6b85;font-weight:700;text-transform:uppercase;">How the series works</p>
+      </td></tr>
+
+      <tr><td class="px" style="padding:0 40px 40px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+
+          <tr><td style="padding:0 0 12px 0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td width="52" valign="top" style="padding-right:16px;">
+                  <div style="width:44px;height:44px;background:rgba(0,255,135,0.1);border:1px solid rgba(0,255,135,0.2);border-radius:12px;display:table;text-align:center;vertical-align:middle;">
+                    <span style="display:table-cell;vertical-align:middle;font-size:20px;">&#128197;</span>
+                  </div>
+                </td>
+                <td valign="top">
+                  <p style="margin:0 0 3px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;color:#ffffff;">New quiz every day</p>
+                  <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;line-height:20px;color:#6b6b85;">A fresh World Cup question set drops daily for the duration of the tournament.</p>
+                </td>
+              </tr>
+            </table>
+          </td></tr>
+
+          <tr><td style="padding:0 0 12px 0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td width="52" valign="top" style="padding-right:16px;">
+                  <div style="width:44px;height:44px;background:rgba(0,255,135,0.1);border:1px solid rgba(0,255,135,0.2);border-radius:12px;display:table;text-align:center;vertical-align:middle;">
+                    <span style="display:table-cell;vertical-align:middle;font-size:20px;">&#128293;</span>
+                  </div>
+                </td>
+                <td valign="top">
+                  <p style="margin:0 0 3px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;color:#ffffff;">Build your streak for bonus points</p>
+                  <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;line-height:20px;color:#6b6b85;">Answer on the day a quiz is released to build your streak. The longer it goes, the more bonus points you earn.</p>
+                </td>
+              </tr>
+            </table>
+          </td></tr>
+
+          <tr><td style="padding:0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td width="52" valign="top" style="padding-right:16px;">
+                  <div style="width:44px;height:44px;background:rgba(0,255,135,0.1);border:1px solid rgba(0,255,135,0.2);border-radius:12px;display:table;text-align:center;vertical-align:middle;">
+                    <span style="display:table-cell;vertical-align:middle;font-size:20px;">&#127942;</span>
+                  </div>
+                </td>
+                <td valign="top">
+                  <p style="margin:0 0 3px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;color:#ffffff;">Highest points by the final wins</p>
+                  <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;line-height:20px;color:#6b6b85;">Total score accumulates across every quiz. The leaderboard crowns a winner when the World Cup final is played.</p>
+                </td>
+              </tr>
+            </table>
+          </td></tr>
+
+        </table>
+      </td></tr>
+
+      <!-- Divider -->
+      <tr><td style="padding:0 40px 36px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr><td style="height:1px;background:rgba(255,255,255,0.06);"></td></tr>
+        </table>
+      </td></tr>
+
+      <!-- CTA -->
+      <tr><td class="px" style="padding:0 40px 56px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+          <tr><td style="background:linear-gradient(135deg,#00ff87 0%,#00d464 100%);border-radius:13px;box-shadow:0 0 44px rgba(0,255,135,0.38);">
+            <a href="{{QUIZ_URL}}" style="display:inline-block;color:#07070d;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:16px;font-weight:800;letter-spacing:0.4px;padding:20px 52px;border-radius:13px;">Play Day {{DAY}} &nbsp;&rarr;</a>
+          </td></tr>
+        </table>
+        <p style="margin:14px 0 0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:13px;color:#6b6b85;">Takes about 5 minutes.</p>
+      </td></tr>
+
+      <!-- Footer -->
+      <tr><td style="padding:0 40px 0;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr><td style="border-top:1px solid rgba(255,255,255,0.05);padding:24px 0 32px;">
+            <p style="margin:0 0 14px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:13px;line-height:20px;color:#6b6b85;">
+              <a href="https://x.com/yourscore_app_" style="color:#8888aa;text-decoration:none;">&#x1D54F; @yourscore_app_</a>
+              &nbsp;&nbsp;
+              <a href="https://instagram.com/yourscore.app" style="color:#8888aa;text-decoration:none;">&#x1F4F7; @yourscore.app</a>
+              &nbsp;&nbsp;
+              <a href="https://tiktok.com/@yourscore.app" style="color:#8888aa;text-decoration:none;">&#x266B; @yourscore.app</a>
+            </p>
+            <p style="margin:0 0 10px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:12px;line-height:18px;color:#6b6b85;">
+              <a href="{{PAUSE_URL}}" style="color:#8888aa;text-decoration:underline;">Pause emails</a> &nbsp;&middot;&nbsp;
+              <a href="{{UNSUB_URL}}" style="color:#8888aa;text-decoration:underline;">Unsubscribe</a> &nbsp;&middot;&nbsp;
+              <a href="https://yourscore.app/support" style="color:#8888aa;text-decoration:underline;">Support</a>
+            </p>
+            <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:1.5px;color:#6b6b85;text-transform:uppercase;font-weight:600;">YourScore &nbsp;&middot;&nbsp; Your football knowledge. Ranked.</p>
+          </td></tr>
+        </table>
+      </td></tr>
+
+    </table>
+  </td></tr>
+  </table>
+
+</body>
+</html>
