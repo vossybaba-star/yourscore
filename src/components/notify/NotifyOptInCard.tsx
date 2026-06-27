@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { isNative } from "@/lib/native";
 import { createClient } from "@/lib/supabase/client";
 import { registerForPush } from "@/lib/push";
-import { hasPromptedQuizNotify, markQuizNotifyPrompted } from "@/lib/onboarding";
+import { hasPromptedPush, markPushPrompted } from "@/lib/onboarding";
 
 // Reusable in-context push opt-in card. Drop it on any post-engagement surface
 // (quiz results, 38-0 match result, …) with copy tuned to that moment. It
@@ -35,7 +35,7 @@ export function NotifyOptInCard({
   const [done, setDone] = useState(false);
 
   useEffect(() => {
-    if (!isNative() || hasPromptedQuizNotify()) return;
+    if (!isNative() || hasPromptedPush()) return;
     let cancelled = false;
     (async () => {
       const { data } = await createClient()
@@ -45,7 +45,7 @@ export function NotifyOptInCard({
         .single();
       if (cancelled) return;
       if (data?.notifications_opt_in === true) {
-        markQuizNotifyPrompted();
+        markPushPrompted();
         return;
       }
       setShow(true);
@@ -68,13 +68,13 @@ export function NotifyOptInCard({
       console.warn("[notify-optin] enable failed", e);
       setDone(true);
     } finally {
-      markQuizNotifyPrompted();
+      markPushPrompted();
       setBusy(false);
     }
   }
 
   function later() {
-    markQuizNotifyPrompted();
+    markPushPrompted();
     setShow(false);
   }
 

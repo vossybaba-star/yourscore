@@ -8,12 +8,13 @@ import { registerForPush } from "@/lib/push";
 import { hasPromptedPush, markPushPrompted } from "@/lib/onboarding";
 import { GridBackground } from "@/components/ui/GridBackground";
 
-// Apple Guideline 4.5.4 in-context soft pre-prompt, decoupled from the onboarding
-// overlay. The native sign-in flow ends in a full-page reload (NativeBootstrap),
-// which tears the carousel down — so the push ask lives here instead and fires
-// the moment a real session exists: right after account creation, and for guests
-// the first time they sign in later. Gating on `user` means registerForPush()
-// always has a userId to store the device token against.
+// Apple Guideline 4.5.4 soft pre-prompt — our own UI; the OS permission dialog
+// only fires when the user taps Enable. Shown proactively the first time a real
+// session exists (right after signup / first sign-in), so the opt-in is the
+// first thing a new user sees. This is the primary acquisition surface for push
+// permission; the in-context cards (NotifyOptInCard) are a backup for anyone who
+// taps "Maybe later". Gating on `user` means registerForPush() always has a
+// userId to store the device token against.
 
 function PushPrePromptInner() {
   const { user, loading } = useUser();
@@ -22,10 +23,6 @@ function PushPrePromptInner() {
 
   useEffect(() => {
     if (loading || !user || hasPromptedPush()) return;
-    // Respect the user's notifications choice. The OS push permission dialog
-    // should only reach people who opted in (signup checkbox / Settings toggle).
-    // Users who left it off explicitly said no — surfacing a system prompt to
-    // them is exactly the "notifications where there shouldn't be" complaint.
     let cancelled = false;
     (async () => {
       const { data } = await createClient()
@@ -33,7 +30,16 @@ function PushPrePromptInner() {
         .select("notifications_opt_in")
         .eq("id", user.id)
         .single();
-      if (!cancelled && data?.notifications_opt_in === true) setShow(true);
+      if (cancelled) return;
+      if (data?.notifications_opt_in === true) {
+        // Already opted in (e.g. via a contextual card) — make sure the OS grant
+        // + device token actually exist, silently, then never prompt again.
+        registerForPush(createClient(), user.id).catch(() => {});
+        markPushPrompted();
+        return;
+      }
+      // Not opted in yet → make the ask, up front.
+      setShow(true);
     })();
     return () => { cancelled = true; };
   }, [loading, user]);
@@ -43,7 +49,13 @@ function PushPrePromptInner() {
   async function enable() {
     setBusy(true);
     try {
-      if (user) await registerForPush(createClient(), user.id);
+      if (user) {
+        const supabase = createClient();
+        // Flip the consent flag first so the send pipeline counts them even if
+        // the OS dialog is slow / dismissed.
+        await supabase.from("profiles").update({ notifications_opt_in: true }).eq("id", user.id);
+        await registerForPush(supabase, user.id);
+      }
     } catch (e) {
       console.warn("[push] pre-prompt enable failed", e);
     } finally {
@@ -85,11 +97,11 @@ function PushPrePromptInner() {
         </div>
 
         <h2 className="font-display text-[2.6rem] leading-[0.92] uppercase text-white">
-          Never miss
-          <br />a challenge
+          Be first
+          <br />on the board
         </h2>
         <p className="font-body text-sm text-text-muted mt-3 max-w-[300px]">
-          Get notified when your mates challenge you and when it&apos;s your move.
+          Get a heads-up the second the daily Mastermind drops — and when a mate challenges you.
         </p>
       </div>
 
