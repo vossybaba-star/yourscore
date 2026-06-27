@@ -37,10 +37,17 @@ Deno.serve(async (req) => {
   // shouldn't be able to fan out pushes or enumerate device tokens via roomId
   // guessing. Only the admin server (Next.js API route) holds this key.
   const authHeader = req.headers.get('authorization') ?? '';
-  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-  // Fail CLOSED: if the secret is unset, reject everything (never accept a
-  // bare "Bearer " token). Otherwise require an exact match.
-  if (!serviceKey || authHeader !== `Bearer ${serviceKey}`) {
+  // Accept either service-level key the callers may present. Supabase injects
+  // SUPABASE_SERVICE_ROLE_KEY into this function as the NEW sb_secret_… key, but
+  // server callers (notify.ts, /admin/rooms) send their own SUPABASE_SERVICE_ROLE_KEY
+  // env — still the LEGACY service_role JWT in Vercel. Accept both so a key-system
+  // mismatch can't silently 401 every push. Fail CLOSED: never accept a bare
+  // "Bearer " when both are unset.
+  const accepted = [
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
+    Deno.env.get('SERVICE_ROLE_LEGACY'),
+  ].filter((k): k is string => !!k).map((k) => `Bearer ${k}`);
+  if (!accepted.length || !accepted.includes(authHeader)) {
     return new Response('Unauthorized', { status: 401 });
   }
 
