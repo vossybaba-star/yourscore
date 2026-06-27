@@ -10,7 +10,12 @@ import { isNative } from "./native";
 // everyone by bumping the key, with no migration.
 
 const ONBOARDED_KEY = "yourscore:onboarding:v1";
-const PUSH_PROMPTED_KEY = "yourscore:push-prompted:v1";
+// Bumped v1 -> v2 (Jun 2026): the first proactive app-open prompt set this flag
+// on every device it showed on, so anyone who dismissed it once was permanently
+// excluded. Bumping the suffix re-arms the prompt for everyone with the rewritten
+// copy, with no migration. Opted-in users still won't see UI (the inner check
+// short-circuits on notifications_opt_in).
+const PUSH_PROMPTED_KEY = "yourscore:push-prompted:v2";
 // Separate from the signup pre-prompt: the in-context opt-in shown after a quiz
 // or 38-0 match (NotifyOptInCard). Tracked on its own so converting there is
 // independent of the onboarding push ask, and shown at most once across surfaces.

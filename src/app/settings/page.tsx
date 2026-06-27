@@ -240,14 +240,6 @@ export default function SettingsPage() {
       </div>
 
       <div className="relative z-0 max-w-lg mx-auto px-5 pt-6 space-y-6">
-        {/* TEMP diagnostic — remove once the push-prompt issue is resolved */}
-        <Link
-          href="/debug/push"
-          className="block rounded-xl px-4 py-3 font-body text-sm font-semibold"
-          style={{ background: "rgba(174,234,0,0.12)", border: "1px solid rgba(174,234,0,0.4)", color: "#aeea00" }}
-        >
-          🔧 Push prompt gate check →
-        </Link>
 
         {/* Avatar */}
         <div className="flex items-center gap-4">
