@@ -8,6 +8,7 @@ import { getTeamBadgeUrl } from "@/lib/teamImages";
 import { getCompetitionBadgeUrl } from "@/lib/competitionImages";
 import { AnswerButtons } from "@/components/game/AnswerButtons";
 import { RankRewardCard } from "@/components/rank/RankRewardCard";
+import { QuizNotifyPrompt } from "@/components/quiz/QuizNotifyPrompt";
 import { StreakWindowTimer } from "@/components/quiz/StreakWindowTimer";
 import { useGameLoop } from "@/lib/useGameLoop";
 import { Button } from "@/components/ui/Button";
@@ -1126,6 +1127,12 @@ export default function ChallengePage() {
           {/* Post-game reward moment — mounts once the attempt is saved so the
               rank RPC reads post-game state (practice runs show position only) */}
           {(saved || priorAttempt) && <RankRewardCard />}
+
+          {/* In-context push opt-in — broadens token capture from the results
+              screen. Native-only; self-gates on prior prompt / existing opt-in. */}
+          {userId && (saved || priorAttempt) && (
+            <QuizNotifyPrompt userId={userId} accent={accent} daily={Boolean(pack.metadata?.daily)} />
+          )}
 
           {/* Leaderboard */}
           <PackLeaderboard entries={leaderboard} userId={userId} accent={accent} loading={leaderLoading} />

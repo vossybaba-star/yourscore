@@ -14,6 +14,7 @@ import { useUser } from "@/hooks/useUser";
 import { AuthProviders } from "@/components/auth/AuthButton";
 import { loadTeam, saveTeam, isComplete, recordWin, recordLoss, recordDraw, saveLastMatch } from "@/lib/draft/local";
 import { AddFriendCard } from "@/components/social/AddFriendCard";
+import { NotifyOptInCard } from "@/components/notify/NotifyOptInCard";
 import type { Formation, PlacedPlayer, Projected } from "@/lib/draft/types";
 
 type Info = {
@@ -117,6 +118,15 @@ export default function AcceptChallenge() {
                   userId={info.challengerId}
                   displayName={info.challengerName}
                   context={`You just played ${info.challengerName}!`}
+                />
+              )}
+              {user && (
+                <NotifyOptInCard
+                  userId={user.id}
+                  accent="#aeea00"
+                  headline="Never miss a rematch"
+                  body="Turn on notifications and we'll ping you when a mate challenges you or plays your XI."
+                  doneBody="We'll ping you when a mate challenges you."
                 />
               )}
               <Button variant="primary" tone="lime" size="md" fullWidth onClick={() => router.push("/38-0/match/result")}>

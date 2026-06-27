@@ -8,6 +8,7 @@ import { UsernamePrompt } from "@/components/profile/UsernamePrompt";
 import { AppStoreBanner } from "@/components/app/AppStoreBanner";
 import { NativeOnboarding } from "@/components/native/onboarding/NativeOnboarding";
 import { PushPrePrompt } from "@/components/native/PushPrePrompt";
+import { TimezoneSync } from "@/components/TimezoneSync";
 import { SignupPixel } from "@/components/analytics/SignupPixel";
 import Script from "next/script";
 import "./globals.css";
@@ -89,6 +90,7 @@ export default function RootLayout({
         <AppStoreBanner />
         <NativeOnboarding />
         <PushPrePrompt />
+        <TimezoneSync />
         <SignupPixel />
         {children}
         <Analytics />

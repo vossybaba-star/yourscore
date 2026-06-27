@@ -3,6 +3,7 @@
   "regions": ["fra1"],
   "crons": [
     { "path": "/api/cron/comeback", "schedule": "0 17 * * *" },
-    { "path": "/api/cron/cleanup-lobbies", "schedule": "0 * * * *" }
+    { "path": "/api/cron/cleanup-lobbies", "schedule": "0 * * * *" },
+    { "path": "/api/cron/wc-mastermind", "schedule": "0 * * * *" }
   ]
 }
