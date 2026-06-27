@@ -54,37 +54,49 @@ export function NativeBootstrap() {
         if (event?.url) await handleAuthDeepLink(event.url);
       });
 
-      // Push: we never REQUEST permission on launch (Apple 4.5.4 — that stays
-      // behind the in-context pre-prompt). But for users who've ALREADY opted
-      // in, re-register on every launch so their APNs token stays current
-      // (tokens rotate). registerForPush() checks permission first, so this is a
-      // silent no-op for anyone who hasn't granted it. This is the path that
-      // actually fills device_tokens for the existing opted-in base.
-      try {
-        // TEMP instrumentation — remove once token registration is diagnosed.
-        const dbg = (event: string, detail?: string | null) =>
-          (supabase as unknown as import("@supabase/supabase-js").SupabaseClient)
-            .from("push_debug").insert({ user_id: null, event, detail: detail ?? null }).then(() => {}, () => {});
-        const { data: { user } } = await supabase.auth.getUser();
-        await dbg("bootstrap", user ? `user ${user.id.slice(0, 8)}` : "no_user");
-        if (user) {
+      // Push: we never REQUEST permission (Apple 4.5.4 — that stays behind the
+      // in-context pre-prompt). But for users who've ALREADY opted in, re-register
+      // their APNs token (tokens rotate). registerForPush() checks permission
+      // first, so it's a silent no-op for anyone who hasn't granted it. We run it
+      // on boot AND on every resume: the mount effect only fires on a cold start,
+      // so a backgrounded app brought back to the foreground would otherwise never
+      // refresh its token. This is the path that fills device_tokens.
+      const syncPush = async () => {
+        try {
+          // TEMP instrumentation — remove once token registration is diagnosed.
+          const dbg = (event: string, detail?: string | null) =>
+            (supabase as unknown as import("@supabase/supabase-js").SupabaseClient)
+              .from("push_debug").insert({ user_id: null, event, detail: detail ?? null }).then(() => {}, () => {});
+          const { data: { user } } = await supabase.auth.getUser();
+          await dbg("sync", user ? `user ${user.id.slice(0, 8)}` : "no_user");
+          if (!user) return;
           const { data: profile } = await supabase
             .from("profiles")
             .select("notifications_opt_in")
             .eq("id", user.id)
             .single();
-          await dbg("bootstrap_optin", String(profile?.notifications_opt_in));
+          await dbg("sync_optin", String(profile?.notifications_opt_in));
           if (profile?.notifications_opt_in === true) {
             const { registerForPush } = await import("@/lib/push");
             await registerForPush(supabase, user.id);
           }
+        } catch (e) {
+          console.warn("[native-bootstrap] push re-register failed", e);
         }
-      } catch (e) {
-        console.warn("[native-bootstrap] push re-register failed", e);
-      }
+      };
+
+      void syncPush();
+
+      // Re-run whenever the app returns to the foreground (resume) — the mount
+      // effect above only fires on a cold start, so a resume would otherwise
+      // skip registration entirely.
+      const stateHandler = await App.addListener("appStateChange", ({ isActive }) => {
+        if (isActive) void syncPush();
+      });
 
       cleanup = () => {
         handler.remove();
+        stateHandler.remove();
       };
     })();
 
