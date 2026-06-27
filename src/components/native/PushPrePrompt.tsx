@@ -101,7 +101,7 @@ function PushPrePromptInner() {
           <br />on the board
         </h2>
         <p className="font-body text-sm text-text-muted mt-3 max-w-[300px]">
-          Get a heads-up the second the daily Mastermind drops — and when a mate challenges you.
+          There&apos;s a new board to top every day. We&apos;ll ping you the moment it goes live, so you can grab top spot before everyone else.
         </p>
       </div>
 
