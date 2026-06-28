@@ -22,6 +22,13 @@ const TG = process.env.TELEGRAM_BOT_TOKEN;
 const CHAT = process.env.TELEGRAM_CHAT_ID;
 if (!TG || !CHAT) { console.error("✗ Missing TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID in env"); process.exit(1); }
 
+// Opt-out auto-posting: a pushed draft goes out on its own unless you Decline (or it's mid-edit)
+// within the objection window. Spacing keeps it a steady trickle, never a burst. Disable with
+// X_AUTOPOST=0; tune the timings with X_AUTOPOST_DELAY_MIN / X_AUTOPOST_SPACING_MIN.
+const AUTO_POST = process.env.X_AUTOPOST !== "0";
+const AUTO_DELAY_MS = (Number(process.env.X_AUTOPOST_DELAY_MIN) || 20) * 60 * 1000;   // wait this long for an objection
+const AUTO_SPACING_MS = (Number(process.env.X_AUTOPOST_SPACING_MIN) || 12) * 60 * 1000; // min gap between auto-posts
+
 const GIF_DIR = join(PATHS.queue, "..", "gif-cache");
 const IMG_DIR = join(PATHS.queue, "..", "img-cache");
 const UA = { "User-Agent": "Mozilla/5.0" };
@@ -45,6 +52,14 @@ const draftButtons = (id) => ({ inline_keyboard: [
   [{ text: "💬 Reword / Feedback", callback_data: `fb:${id}` }],
   [{ text: "✏️ Edit", callback_data: `edit:${id}` }, { text: "🗑 Decline", callback_data: `skip:${id}` }],
 ] });
+
+// Re-send a draft after a reword/edit and RESTART its auto-post window, so the new wording
+// gets a full objection period (and the latest message is the one we mark when it posts).
+async function repush(d, text) {
+  const r = await send(text, draftButtons(d.id));
+  if (r.ok) d.tg = { messageId: r.result.message_id, pushed: true, pushedAt: Date.now() };
+  return r;
+}
 
 // ── GIF resolution / download ────────────────────────────────────────────────
 const firstUrl = (t) => (t.match(/https?:\/\/\S+/) || [null])[0];
@@ -147,18 +162,20 @@ if (cmd === "push") {
   let held = 0;
   if (!argIds.length && targets.length > PUSH_CAP) { held = targets.length - PUSH_CAP; targets = targets.slice(0, PUSH_CAP); }
   if (!targets.length) { console.log("(nothing new to push)"); process.exit(0); }
+  const tag = AUTO_POST ? `\n\n⏳ auto-posts in ${AUTO_DELAY_MS / 60000}m unless you Decline` : "";
   for (const d of targets) {
-    const text = `🟢 New draft  ·  @${d.source.username}  ·  ${d.draftChars}c\n\n${d.draft}\n\nSource: ${d.source.url}`;
+    const text = `🟢 New draft  ·  @${d.source.username}  ·  ${d.draftChars}c\n\n${d.draft}\n\nSource: ${d.source.url}${tag}`;
+    const at = Date.now();
     let r;
     // If we have a clean repostable photo, show it WITH the caption so you judge the whole
     // post at a glance. Fall back to a text message if Telegram can't fetch the photo URL.
     if (d.image?.url) {
       r = await sendPhoto(d.image.url, text, draftButtons(d.id));
-      if (r.ok) { d.tg = { messageId: r.result.message_id, pushed: true, photo: true }; }
-      else { r = await send(`${text}\n\n(image: ${d.image.url})`, draftButtons(d.id)); if (r.ok) d.tg = { messageId: r.result.message_id, pushed: true }; }
+      if (r.ok) { d.tg = { messageId: r.result.message_id, pushed: true, pushedAt: at, photo: true }; }
+      else { r = await send(`${text}\n\n(image: ${d.image.url})`, draftButtons(d.id)); if (r.ok) d.tg = { messageId: r.result.message_id, pushed: true, pushedAt: at }; }
     } else {
       r = await send(text, draftButtons(d.id));
-      if (r.ok) d.tg = { messageId: r.result.message_id, pushed: true };
+      if (r.ok) d.tg = { messageId: r.result.message_id, pushed: true, pushedAt: at };
     }
     if (r.ok) console.log(`pushed ${d.id}${d.image?.url ? " 📷" : ""}`);
     else console.error(`✗ push ${d.id}: ${JSON.stringify(r).slice(0, 140)}`);
@@ -222,7 +239,7 @@ if (cmd === "poll") {
             if (!tweet) { await send("Reword came back empty. Try different feedback, or tap ✏️ Edit to write it yourself."); continue; }
             d.draft = tweet; d.draftChars = charLen(d.draft); d.reworded = true;
             const tag = note ? `\n(${note})` : "";
-            await send(`💬 Reworded (${d.draftChars}c)${d.draftChars > 280 ? " ⚠️ OVER 280" : ""}:${tag}\n\n${d.draft}`, draftButtons(d.id));
+            await repush(d, `💬 Reworded (${d.draftChars}c)${d.draftChars > 280 ? " ⚠️ OVER 280" : ""}:${tag}\n\n${d.draft}`);
           } catch (e) { await send(`✗ Reword failed: ${e.message}. Tap ✏️ Edit to write it yourself.`); }
           continue;
         }
@@ -233,7 +250,7 @@ if (cmd === "poll") {
           if (!d) { await send("That draft is gone."); continue; }
           if (d.status !== "pending") { await send("That draft isn't active anymore."); continue; }
           d.draft = sanitize(msg.text); d.draftChars = charLen(d.draft); d.edited = true;
-          await send(`✏️ Updated (${d.draftChars}c)${d.draftChars > 280 ? " ⚠️ OVER 280" : ""}:\n\n${d.draft}`, draftButtons(d.id));
+          await repush(d, `✏️ Updated (${d.draftChars}c)${d.draftChars > 280 ? " ⚠️ OVER 280" : ""}:\n\n${d.draft}`);
           continue;
         }
         // 1.5) A plain-text reply to a draft message = feedback. No button tap needed:
@@ -248,7 +265,7 @@ if (cmd === "poll") {
               if (tweet) {
                 d.draft = tweet; d.draftChars = charLen(d.draft); d.reworded = true;
                 const tag = note ? `\n(${note})` : "";
-                await send(`💬 Reworded (${d.draftChars}c)${d.draftChars > 280 ? " ⚠️ OVER 280" : ""}:${tag}\n\n${d.draft}`, draftButtons(d.id));
+                await repush(d, `💬 Reworded (${d.draftChars}c)${d.draftChars > 280 ? " ⚠️ OVER 280" : ""}:${tag}\n\n${d.draft}`);
               } else { await send("Reword came back empty. Tap ✏️ Edit to write it yourself."); }
             } catch (e) { await send(`✗ Reword failed: ${e.message}`); }
             continue;
@@ -282,6 +299,32 @@ if (cmd === "poll") {
       }
     } catch (e) { console.error("update error:", e.message); }
   }
+
+  // ── Auto-post sweep (opt-out): anything pushed, not declined, not mid-edit, and past its
+  //    objection window goes out on its own. One per run, spaced, so it trickles not bursts.
+  if (AUTO_POST) {
+    const now = Date.now();
+    const busy = state.tg.awaitingEdit || state.tg.awaitingFeedback || state.tg.awaitingGif;
+    if (now - (state.tg.lastAutoPostAt || 0) >= AUTO_SPACING_MS) {
+      const due = queue
+        .filter((d) => d.status === "pending" && d.tg?.pushed && d.tg.pushedAt
+          && now - d.tg.pushedAt >= AUTO_DELAY_MS
+          && d.id !== busy
+          && charLen(d.draft) <= 280)        // never auto-post a broken (over-limit) tweet
+        .sort((a, b) => a.tg.pushedAt - b.tg.pushedAt);
+      const d = due[0];
+      if (d) {
+        try {
+          const url = await doPost(d);
+          d.autoPosted = true;
+          state.tg.lastAutoPostAt = now;
+          await editDraftMsg(d, `✅ Auto-posted${d.postedKind || ""} (no objection)\n${url}`);
+          console.log(`auto-posted ${d.id}`);
+        } catch (e) { await send(`✗ Auto-post failed for ${d.id}: ${e.message}`); console.error(`auto-post ${d.id}: ${e.message}`); }
+      }
+    }
+  }
+
   save();
   process.exit(0);
 }

@@ -215,9 +215,9 @@ for (const idea of fresh) {
     source: { username: `idea:${idea.pillar || "?"}`, name: "YourScore idea", url: "https://yourscore.app" },
     draft: idea.tweet, draftChars, origin: "x-ideas", pillar: idea.pillar || "", why: idea.why || "",
   };
-  const text = `💡 Idea  ·  ${idea.pillar || "?"}  ·  ${draftChars}c\n\n${idea.tweet}\n\n↳ ${idea.why || ""}`;
+  const text = `💡 Idea  ·  ${idea.pillar || "?"}  ·  ${draftChars}c\n\n${idea.tweet}\n\n↳ ${idea.why || ""}\n\n⏳ auto-posts unless you Decline`;
   const r = await tg("sendMessage", { chat_id: CHAT, text, reply_markup: draftButtons(id), disable_web_page_preview: true });
-  if (r.ok) { d.tg = { messageId: r.result.message_id, pushed: true }; }
+  if (r.ok) { d.tg = { messageId: r.result.message_id, pushed: true, pushedAt: Date.now() }; }
   else console.error(`✗ push ${id}: ${JSON.stringify(r).slice(0, 140)}`);
   queue.push(d);
 }
