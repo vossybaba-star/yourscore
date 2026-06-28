@@ -8,7 +8,8 @@
  * leverage way to grow the opted-in/token audience as 1.0.2 rolls out.
  *
  * Hidden when: not native, App Store URL not configured, already on a
- * push-capable build, or dismissed this session. Mirrors AppStoreBanner (the
+ * push-capable build, no newer build is live on the App Store yet, or dismissed
+ * this session. Mirrors AppStoreBanner (the
  * web "download" banner) in placement + styling; the two never coexist (one is
  * web-only, the other native-only).
  */
@@ -52,8 +53,16 @@ export function UpdateBanner() {
       try {
         const { App } = await import("@capacitor/app");
         const info = await App.getInfo();
-        if (!cancelled && needsUpdate(info.version, info.build)) setShow(true);
-      } catch { /* getInfo unavailable → don't nag */ }
+        if (cancelled) return;
+        // Only nudge users who don't yet have working push.
+        if (!needsUpdate(info.version, info.build)) return;
+        // ...and only when a newer build actually exists on the App Store, so we
+        // never dead-end them on "Update" before the new version is approved.
+        const res = await fetch("/api/ios-version");
+        const { version: storeVersion } = (await res.json()) as { version: string | null };
+        if (cancelled || !storeVersion) return;
+        if (cmpVersion(storeVersion, info.version) > 0) setShow(true);
+      } catch { /* network/getInfo failure → don't nag */ }
     })();
     return () => { cancelled = true; };
   }, []);
