@@ -63,19 +63,13 @@ export function NativeBootstrap() {
       // refresh its token. This is the path that fills device_tokens.
       const syncPush = async () => {
         try {
-          // TEMP instrumentation — remove once token registration is diagnosed.
-          const dbg = (event: string, detail?: string | null) =>
-            (supabase as unknown as import("@supabase/supabase-js").SupabaseClient)
-              .from("push_debug").insert({ user_id: null, event, detail: detail ?? null }).then(() => {}, () => {});
           const { data: { user } } = await supabase.auth.getUser();
-          await dbg("sync", user ? `user ${user.id.slice(0, 8)}` : "no_user");
           if (!user) return;
           const { data: profile } = await supabase
             .from("profiles")
             .select("notifications_opt_in")
             .eq("id", user.id)
             .single();
-          await dbg("sync_optin", String(profile?.notifications_opt_in));
           if (profile?.notifications_opt_in === true) {
             const { registerForPush } = await import("@/lib/push");
             await registerForPush(supabase, user.id);
