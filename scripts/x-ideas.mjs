@@ -1,0 +1,224 @@
+/**
+ * x-ideas.mjs — the YourScore tweet IDEAS agent (runs every 3h, waking hours).
+ *
+ * Looks at the whole picture and proposes a short set (3-4) of ORIGINAL tweet ideas
+ * for @Yourscore_App_, then pushes them to Telegram for approval. Nothing posts
+ * without a tap. Folds in the old repurpose job: the "what's happening on Twitter"
+ * signal here is the tracked watchlist, so x-propose is retired in favour of this.
+ *
+ * Signals it weighs each run:
+ *   1. What we're shipping     - recent git commit subjects (inferred, never quoted)
+ *   2. The product's talking points - the live, audience-facing features (below)
+ *   3. What's happening on X    - top tweets from the tracked watchlist (last 24h)
+ *   4. What we've already said  - last ~40 posted tweets + the queue, to NOT repeat
+ *
+ * A single Claude call turns all that into 3-4 fresh ideas across different pillars,
+ * deduped against recent posts. Each idea carries its pillar + a one-line "why".
+ *
+ * Usage:  node --env-file=.env.local scripts/x-ideas.mjs [--dry]
+ */
+
+import { execSync } from "node:child_process";
+import { PATHS, loadJSON, saveJSON, getBearer, resolveUser, fetchRecent, sanitize, charLen, HANDLE, REWORD_MODEL } from "./lib/x-watch.mjs";
+
+const DRY = process.argv.includes("--dry");
+const ANTHROPIC = process.env.ANTHROPIC_API_KEY;
+const TG = process.env.TELEGRAM_BOT_TOKEN;
+const CHAT = process.env.TELEGRAM_CHAT_ID;
+const OUR_USER_ID = "1894746376396849152"; // @Yourscore_App_
+const WANT = 4;           // ideas to aim for per run
+const ACCTS_PER_RUN = 3;  // tracked accounts READ per run (rotates - cost control)
+const NEWS_PER_ACCT = 5;  // tweets scanned per tracked account for the "news" signal
+const OWN_POSTS_READ = 10; // our own recent tweets pulled for dedup (was 40)
+const NEWS_WINDOW_H = 24;
+
+if (!ANTHROPIC) { console.error("✗ Missing ANTHROPIC_API_KEY (use --env-file=.env.local)"); process.exit(1); }
+
+// ── The product's current, audience-facing talking points (from YOURSCORE.md) ──
+// These steer the "feature" ideas. Freshness hints keep us off worn angles.
+const TALKING_POINTS = `
+38-0 (the flagship team-builder): spin a squad of real-rated legends across football eras, draft your best XI, see if it's good enough to go a 38-game season unbeaten. Win, you sign a better player. Lose, your team goes stale and you rebuild.
+38-0 Live Head-to-Head: build your XI, face a real person, you see their team and they see yours, one tweak before kickoff and two at half time, then you watch it play out live with commentary and stats.
+Interactive penalty shootout (shipped 16 Jun, still FRESH): a drawn knockout now goes to penalties and YOU take the kicks. Pick your corner, time the power, keep your nerve.
+World Cup Run: an open, no-quiz draft. Build a World XI from any nation and chase the WC2026 trophy. Replayable.
+La Liga competition: build your all-time Spanish XI and simulate the season (Messi or Ronaldo, Xavi and Iniesta).
+YourScore Rank: one ranking across both games (quiz knowledge + 38-0 results), one number, one #1. Where do you actually sit.
+Daily World Cup quiz series: a new quiz every day of the tournament, build a streak, top the board by the final to win £100.
+Shareable scorecards + challenge a friend: every result is a card made to share, and you can send your XI to a mate to settle who knows football.
+World Cup Mastermind (quiz-gated draft): answer World Cup questions to unlock stronger players. Two ways to play: "Today's Run" is the ranked one go a day that counts on the World Cup board; "Practice" is unlimited past questions but does NOT count on the board or rank. NOTE: the plain "answer right, unlock a player" line has been tweeted to death this week. Treat it as OVER-EXPOSED. Only reference Mastermind from a genuinely new angle (a real story, the board race, a person). Never claim a ranking/board mechanic you're not sure of (e.g. practice does not count).
+`.trim();
+
+const PILLARS = "identity (who it's for) · feature (just shipped / how a mode works) · news (a real football moment today, repurposed in our fan voice) · community (a question or challenge, usually no link) · proof (a real run, the £100, a scorecard)";
+
+const SYSTEM = `You are the tweet ideas agent for YourScore (@${HANDLE}), a football game app. Games: "38-0" (a team-builder where you draft an all-time XI and chase a 38-game unbeaten season) and a football "Quiz". You decide what we should tweet next.
+
+WHO WE ARE: fans of football who set up a game. Not journalists, pundits, or a stats account. We talk like a normal person texting their mates: warm, easy, a bit of wonder at how good football is. Never an authority, never salesy.
+
+YOUR JOB: from the signals you are given (what we're building, our talking points, what's happening on X today, and what we've already posted), propose ${WANT} ORIGINAL tweet ideas we could send right now. Make them VARIED across these pillars: ${PILLARS}. Aim for a spread: at least one feature, one news/topical, and one community idea. Never ${WANT} of the same kind.
+
+HARD RULES (locked house style):
+- NEVER use the long dash (em or en dash). Biggest "AI wrote this" tell and the founder hates it. Use a full stop, comma or colon, or one spaced hyphen " - ". Real score hyphens like "1-0" are fine.
+- No other AI-tell punctuation: plain straight quotes ' and ", three dots ... not the ellipsis glyph, no "•" bullets, no arrow characters.
+- Natural contractions (don't, you're, it's). Never robotic.
+- Emoji: at least one per tweet, but NOT one on every line. Usually one near the end. Never a wall of emoji.
+- Easy on stats. Lead with the player, the moment or the feeling, not numbers or records.
+- Warm and admiring, never a hot take, snark or a pundit's verdict.
+- Short and easy: a few short lines, not a paragraph, not a wall of text.
+- No hashtag wall (one at most, usually none). UK English. 275 characters or fewer including any link.
+- For a "feature" idea, end with the relevant link on its own final line. For "community" ideas, usually NO link (pure reach). Links: 38-0 core/H2H/penalties = https://yourscore.app/38-0 ; World Cup modes = https://yourscore.app/38-0/wc ; daily quiz = https://yourscore.app ; site = https://yourscore.app.
+- NEWS accuracy: when you react to a tweet from the signals, stay ACCURATE to what it says. Never invent fees, dates, quotes, clubs or outcomes. Keep any hedge ("reportedly"). Do NOT @mention, quote or credit the source. Make it ours. If nothing newsworthy fits, skip news and do another community/feature idea instead.
+- DO NOT REPEAT what we've recently posted (you'll be shown it). The founder is very sensitive to repetition. In particular, do not re-run the World Cup Mastermind "answer a question, unlock a player" explainer. Find fresh angles.
+- The git commit subjects are INTERNAL signals of what's ACTIVE right now. Use them ONLY to decide which of OUR TALKING POINTS is most timely to feature. Do NOT state any specific product change, number or new capability based on a commit. Every concrete claim in a tweet MUST be grounded in the talking points above, never invented from a commit. Never quote commits or mention anything internal, technical or about security/bugs.
+- If the live signals (X news, recent posts) come back empty, still produce strong community and feature ideas from the talking points, and be EXTRA careful not to repeat an obvious recent angle.
+
+OUTPUT: respond with ONLY a JSON object, no prose, no code fences:
+{"ideas":[{"tweet":"<the full tweet text, with link line if it's a feature>","pillar":"<one of: identity|feature|news|community|proof>","why":"<one short line: why this is worth sending right now>"}]}`;
+
+function parseModelJSON(raw) {
+  const s = raw.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+  const start = s.indexOf("{");
+  if (start === -1) throw new SyntaxError("no JSON in model output");
+  let depth = 0, inStr = false, esc = false;
+  for (let i = start; i < s.length; i++) {
+    const c = s[i];
+    if (inStr) { if (esc) esc = false; else if (c === "\\") esc = true; else if (c === '"') inStr = false; }
+    else if (c === '"') inStr = true;
+    else if (c === "{") depth++;
+    else if (c === "}" && --depth === 0) return JSON.parse(s.slice(start, i + 1));
+  }
+  return JSON.parse(s.slice(start));
+}
+
+const norm = (t) => (t || "").toLowerCase().replace(/https?:\/\/\S+/g, "").replace(/[^a-z0-9 ]/g, "").replace(/\s+/g, " ").trim();
+const key12 = (t) => norm(t).split(" ").slice(0, 12).join(" "); // first ~12 words, for dedup
+
+// ── 1) What we're shipping: recent commit subjects (hints only) ───────────────
+function recentCommits() {
+  try {
+    const out = execSync(`git -C /Users/zchukwumah/yourscore log --since="4 days ago" --no-merges --pretty=format:%s -n 60`, { encoding: "utf8" });
+    return out.split("\n").map((s) => s.trim()).filter(Boolean)
+      .filter((s) => !/^(chore|wip|fix typo|merge|bump|lint|format)\b/i.test(s)).slice(0, 40);
+  } catch { return []; }
+}
+
+// ── 3) What we've already said: our last ~40 posted tweets ────────────────────
+async function recentPosts() {
+  try {
+    const bearer = await getBearer();
+    const url = `https://api.twitter.com/2/users/${OUR_USER_ID}/tweets?max_results=${OWN_POSTS_READ}&exclude=retweets,replies&tweet.fields=created_at`;
+    const r = await fetch(url, { headers: { Authorization: `Bearer ${bearer}` } });
+    const j = await r.json();
+    return (j.data || []).map((t) => t.text);
+  } catch (e) { console.error(`recentPosts: ${e.message}`); return []; }
+}
+
+// ── 4) What's happening on X: top tracked tweets in the last 24h ──────────────
+async function newsSignal(state) {
+  const watchlist = loadJSON(PATHS.watchlist, null);
+  const all = (watchlist?.accounts || []).filter((a) => a && a.username);
+  // Cost control: read only a FEW accounts per run, rotating a cursor through the
+  // watchlist so every account still gets covered over the day - just not all at once.
+  state.ideas ??= {};
+  const n = Math.max(all.length, 1);
+  const start = (state.ideas.acctCursor || 0) % n;
+  const accounts = all.length <= ACCTS_PER_RUN
+    ? all
+    : Array.from({ length: ACCTS_PER_RUN }, (_, k) => all[(start + k) % n]);
+  state.ideas.acctCursor = (start + ACCTS_PER_RUN) % n;
+  console.log(`reading ${accounts.length} account(s) this run: ${accounts.map((a) => "@" + a.username).join(", ")}`);
+  const cutoff = Date.now() - NEWS_WINDOW_H * 3600 * 1000;
+  const items = [];
+  for (const acct of accounts) {
+    const handle = acct.username.replace(/^@/, ""), key = handle.toLowerCase();
+    try {
+      state.users ??= {};
+      let user = state.users[key];
+      if (!user) { user = await resolveUser(handle); state.users[key] = user; }
+      const tweets = await fetchRecent(user.id, { max: NEWS_PER_ACCT });
+      for (const t of tweets) {
+        if (t.created_at && Date.parse(t.created_at) < cutoff) continue;
+        const m = t.public_metrics || {};
+        const eng = (m.like_count || 0) + 2 * (m.retweet_count || 0) + (m.reply_count || 0);
+        items.push({ handle, text: t.text, eng });
+      }
+    } catch (e) { console.error(`@${handle}: ${e.message}`); }
+  }
+  items.sort((a, b) => b.eng - a.eng);
+  return items.slice(0, 12);
+}
+
+// ── Telegram push (mirrors x-telegram.mjs draftButtons so the poller handles taps) ──
+const tg = (method, body) => fetch(`https://api.telegram.org/bot${TG}/${method}`, {
+  method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body),
+}).then((r) => r.json());
+const draftButtons = (id) => ({ inline_keyboard: [
+  [{ text: "✅ Post", callback_data: `post:${id}` }, { text: "🎬 Add GIF", callback_data: `gif:${id}` }],
+  [{ text: "💬 Reword / Feedback", callback_data: `fb:${id}` }],
+  [{ text: "✏️ Edit", callback_data: `edit:${id}` }, { text: "🗑 Decline", callback_data: `skip:${id}` }],
+] });
+
+// ── main ──────────────────────────────────────────────────────────────────────
+const state = loadJSON(PATHS.state, {});
+const queue = loadJSON(PATHS.queue, []);
+
+const commits = recentCommits();
+const [posts, news] = await Promise.all([recentPosts(), newsSignal(state)]);
+
+const seenKeys = new Set([
+  ...queue.map((d) => key12(d.draft)),
+  ...posts.map(key12),
+]);
+
+const user = [
+  `WHAT WE'RE SHIPPING (internal commit subjects, hints only - infer audience-facing features, never quote):\n${commits.length ? commits.map((c) => "- " + c).join("\n") : "(none)"}`,
+  `\nOUR CURRENT TALKING POINTS:\n${TALKING_POINTS}`,
+  `\nWHAT'S HAPPENING ON X RIGHT NOW (tracked accounts, top by engagement, last 24h - react accurately, no credit):\n${news.length ? news.map((n) => `- ${n.text.replace(/\n/g, " ")}`).join("\n") : "(nothing notable)"}`,
+  `\nWHAT WE'VE ALREADY POSTED RECENTLY (do NOT repeat any of these angles):\n${posts.length ? posts.map((p) => `- ${p.replace(/\n/g, " ")}`).join("\n") : "(none)"}`,
+  `\nPropose ${WANT} fresh, varied ideas now.`,
+].join("\n");
+
+const res = await fetch("https://api.anthropic.com/v1/messages", {
+  method: "POST",
+  headers: { "x-api-key": ANTHROPIC, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+  body: JSON.stringify({ model: REWORD_MODEL, max_tokens: 1400, system: SYSTEM, messages: [{ role: "user", content: user }] }),
+});
+const body = await res.text();
+if (!res.ok) { console.error(`Anthropic ${res.status}: ${body.slice(0, 300)}`); process.exit(1); }
+const out = parseModelJSON(JSON.parse(body).content?.map((b) => b.text || "").join("") ?? "");
+let ideas = Array.isArray(out.ideas) ? out.ideas : [];
+
+// Dedup vs what's already queued/posted (and within this batch), clean punctuation.
+const fresh = [];
+for (const idea of ideas) {
+  const tweet = sanitize(idea.tweet || "");
+  if (!tweet) continue;
+  const k = key12(tweet);
+  if (seenKeys.has(k)) { console.log(`  skip (dup): ${tweet.split("\n")[0]}`); continue; }
+  seenKeys.add(k);
+  fresh.push({ ...idea, tweet });
+}
+
+if (!fresh.length) { console.log("no fresh ideas this run"); if (!DRY) saveJSON(PATHS.state, state); process.exit(0); }
+
+console.log(`Proposing ${fresh.length} idea(s):`);
+const stamp = Date.now();
+let i = 0;
+for (const idea of fresh) {
+  const id = "ix" + (stamp + i).toString().slice(-9); i++;
+  const draftChars = charLen(idea.tweet);
+  console.log(`  [${idea.pillar}] ${id} (${draftChars}c) - ${idea.tweet.split("\n")[0]}`);
+  if (DRY) continue;
+  const d = {
+    id, status: "pending", createdAt: new Date().toISOString(),
+    source: { username: `idea:${idea.pillar || "?"}`, name: "YourScore idea", url: "https://yourscore.app" },
+    draft: idea.tweet, draftChars, origin: "x-ideas", pillar: idea.pillar || "", why: idea.why || "",
+  };
+  const text = `💡 Idea  ·  ${idea.pillar || "?"}  ·  ${draftChars}c\n\n${idea.tweet}\n\n↳ ${idea.why || ""}`;
+  const r = await tg("sendMessage", { chat_id: CHAT, text, reply_markup: draftButtons(id), disable_web_page_preview: true });
+  if (r.ok) { d.tg = { messageId: r.result.message_id, pushed: true }; }
+  else console.error(`✗ push ${id}: ${JSON.stringify(r).slice(0, 140)}`);
+  queue.push(d);
+}
+
+if (!DRY) { saveJSON(PATHS.state, state); saveJSON(PATHS.queue, queue); }
+console.log(DRY ? "🛑 DRY - nothing saved or pushed" : `done - ${fresh.length} pushed to Telegram`);

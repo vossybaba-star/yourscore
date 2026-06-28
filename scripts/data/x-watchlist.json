@@ -1,0 +1,10 @@
+{
+  "_readme": "Accounts YourScore tracks to repurpose into @Yourscore_App_ tweets. 'username' (no @), optional 'note' steers the reword voice/filter, optional 'perRun' overrides how many NEW tweets to pull per run. Global defaults.perRun applies otherwise.",
+  "defaults": { "perRun": 2 },
+  "accounts": [
+    { "username": "brfootball", "note": "Football news and culture. Punchy, conversational reaction to the moment, especially live World Cup games. Often posts clean action photos we can repost." },
+    { "username": "Footballtweet", "note": "World Cup discussion account. Lean into the live match debate and the night's talking points." },
+    { "username": "BBCSport", "note": "Reliable news. React to the genuine World Cup story or result. Skip non-football and pure programming/schedule posts." },
+    { "username": "OptaJoe", "note": "Stat-led. Lead with the number, then a real-fan reaction. Often a natural quiz hook (which player, who scored, what record). During the World Cup, prioritise live match stats and records." }
+  ]
+}
