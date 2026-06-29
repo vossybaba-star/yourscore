@@ -46,6 +46,16 @@ function gate(args) {
     return false;
   }
 }
+// Tri-state gate for the images step so we can tell Regenerate (exit 3, loop) apart from a
+// timeout/no-response (exit 1 — keep the cards and move on, NOT loop and re-generate).
+function gateAction(args) {
+  try { run("tg-gates.mjs", args, { stdio: ["ignore", "inherit", "inherit"] }); return "approve"; }
+  catch (e) {
+    if (e.status === 3) return "regenerate";
+    if (e.status !== 1) console.error(`gate error (${args[0]}): ${e.message}`);
+    return "skip"; // reject / skip / timeout / unexpected
+  }
+}
 
 const todayUK = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/London" }); // YYYY-MM-DD
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -147,8 +157,10 @@ async function main() {
       cover = out.match(/COVER=(.+)/)?.[1]?.trim();
       if (!share || !cover) throw new Error("image generation did not return paths");
       first = false;
-      if (gate(["images", "--share", share, "--cover", cover])) break; // Approve → keep these
-      if (regen === 3) await sendMessage("ℹ️ Keeping the last cards (regenerate limit reached).");
+      const act = gateAction(["images", "--share", share, "--cover", cover]);
+      if (act === "approve") break;                 // keep these
+      if (act === "skip") { await sendMessage("ℹ️ No response on the cards — keeping them and continuing."); break; } // timeout/skip: do NOT regenerate
+      if (regen === 3) await sendMessage("ℹ️ Keeping the last cards (regenerate limit reached)."); // act === regenerate → loop
     }
     if (!DRY) {
       run("set-quiz-share-image.mjs", ["--slug", slug, "--image", share, "--commit"]);
