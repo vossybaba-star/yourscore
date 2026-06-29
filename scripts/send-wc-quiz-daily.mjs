@@ -21,7 +21,7 @@
  */
 
 import { createClient } from "@supabase/supabase-js";
-import { Resend } from "resend";
+import { syncAndBroadcast } from "./lib/broadcast.mjs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -45,17 +45,21 @@ if (!quizFile) throw new Error("Pass --quiz <daily-quiz json path>");
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const RESEND_KEY = process.env.RESEND_API_KEY;
+const CAMPAIGNS_KEY = process.env.RESEND_CAMPAIGNS_API_KEY;
+const AUDIENCE_ID = process.env.RESEND_AUDIENCE_ID;
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://yourscore.app";
 const FROM = process.env.RESEND_FROM_EMAIL ?? "YourScore <hello@yourscore.app>";
+const REPLY_TO = process.env.RESEND_REPLY_TO ?? "hello@yourscore.app";
 
 if (!SUPABASE_URL || !SERVICE_KEY) throw new Error("Missing SUPABASE env vars");
-if (!RESEND_KEY) throw new Error("Missing RESEND_API_KEY");
+// Bulk sends go out as a Resend BROADCAST (marketing), not transactional
+// batch.send — so the daily blast no longer burns the transactional quota.
+if (!CAMPAIGNS_KEY) throw new Error("Missing RESEND_CAMPAIGNS_API_KEY");
+if (!AUDIENCE_ID) throw new Error("Missing RESEND_AUDIENCE_ID");
 
 const supabase = createClient(SUPABASE_URL, SERVICE_KEY, {
   auth: { autoRefreshToken: false, persistSession: false },
 });
-const resend = new Resend(RESEND_KEY);
 
 // ── Resolve the campaign fields from the quiz ────────────────────────────────
 const quiz = loadQuiz(quizFile);
@@ -94,7 +98,7 @@ function chunk(arr, size) {
 
 const escHtml = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
-async function renderTemplate(userId) {
+async function renderTemplate() {
   const filePath = path.join(__dirname, "..", "emails", "lifecycle", "wc-quiz-daily.html");
   let html = await fs.readFile(filePath, "utf-8");
   const tokens = {
@@ -105,11 +109,14 @@ async function renderTemplate(userId) {
     QUIZ_DESC: escHtml(DESC),
     QUIZ_URL: challenge,
     IMAGE_URL: shareImage,
-    PAUSE_URL: `${APP_URL}/settings/email?pause=all&u=${encodeURIComponent(userId)}`,
-    UNSUB_URL: `${APP_URL}/settings/email?unsub=all&u=${encodeURIComponent(userId)}`,
   };
   for (const [key, value] of Object.entries(tokens)) html = html.replaceAll(`{{${key}}}`, value);
-  const missing = html.match(/\{\{[A-Z_a-z][A-Z_a-z0-9]*\}\}/g);
+  // {{UNSUB_URL}} / {{PAUSE_URL}} are intentionally left in place — syncAndBroadcast
+  // swaps them to Resend's managed {{{RESEND_UNSUBSCRIBE_URL}}} (broadcasts handle
+  // unsubscribes at the audience level, so no per-user link is needed).
+  const missing = html
+    .replace(/\{\{(UNSUB_URL|PAUSE_URL)\}\}/g, "")
+    .match(/\{\{[A-Z_a-z][A-Z_a-z0-9]*\}\}/g);
   if (missing) throw new Error(`Unsubstituted tokens: ${[...new Set(missing)].join(", ")}`);
   return html;
 }
@@ -135,7 +142,7 @@ async function main() {
 
   // Fail fast if the template can't render (catches a missing token before we
   // page through thousands of users).
-  await renderTemplate("preflight-check");
+  await renderTemplate();
 
   console.log(`📋 Fetching all auth users...`);
   const allAuthUsers = [];
@@ -157,43 +164,27 @@ async function main() {
 
   if (DRY_RUN) {
     console.log(`   First 5: ${targets.slice(0, 5).map((u) => u.email).join(", ")}`);
-    console.log("\n🛑 DRY RUN — pass --send to fire.\n");
-    return;
   }
 
-  console.log(`⚙️  Pre-rendering ${targets.length} emails...`);
-  const payloads = await Promise.all(
-    targets.map(async (u) => ({
-      from: FROM,
-      to: u.email,
-      replyTo: "hello@yourscore.app",
-      subject: SUBJECT,
-      html: await renderTemplate(u.id),
-      headers: { "X-Entity-Ref-ID": `${TEMPLATE_TAG}-${u.id}` },
-      tags: [
-        { name: "category", value: "campaign" },
-        { name: "template", value: TEMPLATE_TAG },
-      ],
-    }))
-  );
+  // One render for everyone (broadcasts aren't per-recipient), then send as a
+  // single Resend Broadcast to the audience — marketing, not transactional.
+  const html = await renderTemplate();
+  const emails = targets.map((u) => ({ email: u.email }));
 
-  const batches = chunk(payloads, 100);
-  const estMins = FAST ? "<1" : Math.ceil((batches.length * BATCH_DELAY_MS) / 60_000);
-  console.log(`🚀 Sending ${batches.length} batch(es) of 100 — staggered every ${BATCH_DELAY_MS / 1000}s (~${estMins} min total)\n`);
+  await syncAndBroadcast(CAMPAIGNS_KEY, {
+    audienceId: AUDIENCE_ID,
+    emails,
+    name: `WC Quiz Series — Day ${DAY} (${TEMPLATE_TAG})`,
+    from: FROM,
+    replyTo: REPLY_TO,
+    subject: SUBJECT,
+    previewText: PREHEADER,
+    html,
+    dryRun: DRY_RUN,
+  });
 
-  const start = Date.now();
-  let sent = 0;
-  for (const [i, batch] of batches.entries()) {
-    const { data, error } = await resend.batch.send(batch);
-    if (error) { console.error(`   ❌ Batch ${i + 1}/${batches.length} error:`, error.message); }
-    else {
-      sent += data?.data?.length ?? 0;
-      console.log(`   ✅ Batch ${i + 1}/${batches.length}: ${data?.data?.length ?? 0} sent (${sent} total, ${((Date.now() - start) / 1000).toFixed(0)}s elapsed)`);
-    }
-    if (!FAST && i < batches.length - 1) await new Promise((r) => setTimeout(r, BATCH_DELAY_MS));
-  }
-
-  console.log(`\n🎉 Done: ${sent}/${targets.length} sent in ${((Date.now() - start) / 1000).toFixed(1)}s\n`);
+  if (DRY_RUN) console.log("\n🛑 DRY RUN — pass --send to fire.\n");
+  else console.log(`\n🎉 Broadcast fired to the audience (≈${targets.length} sendable contacts).\n`);
 }
 
 main().catch((err) => { console.error("Fatal:", err); process.exit(1); });
