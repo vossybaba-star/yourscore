@@ -44,26 +44,44 @@ function gate(args) {
 }
 
 const todayUK = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/London" }); // YYYY-MM-DD
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// Wait for THIS MORNING's draft. The draft routine (Claude + web research) can take ~80 min and
+// may finish AFTER this launchd job fires, so poll for a quiz dated today instead of halting on
+// the first look (the 07:08-vs-08:10 race that broke 29 Jun). Match on the quiz's own `date`,
+// not file mtime, and return as soon as it's there (no waiting when it already exists).
+async function waitForTodaysDraft(maxWaitMin = 100, stepMin = 5) {
+  const deadline = Date.now() + maxWaitMin * 60000;
+  let announced = false;
+  for (;;) {
+    let best = null, bestM = -1;
+    for (const f of readdirSync(QUIZ_DIR).filter((x) => x.endsWith(".json"))) {
+      try {
+        const p = join(QUIZ_DIR, f);
+        const q = loadQuiz(p);
+        const m = statSync(p).mtimeMs;
+        if (q.date === todayUK && m > bestM) { best = { quizPath: p, quiz: q }; bestM = m; }
+      } catch { /* skip unreadable */ }
+    }
+    if (best) return best;
+    if (Date.now() >= deadline) return null;
+    if (!announced) { announced = true; try { await sendMessage(`⏳ Waiting for today's quiz draft to finish (up to ${maxWaitMin} min)…`); } catch {} }
+    await sleep(stepMin * 60000);
+  }
+}
 
 async function main() {
-  // 1. newest draft = this morning's generation
-  const files = readdirSync(QUIZ_DIR).filter((f) => f.endsWith(".json"))
-    .map((f) => ({ f, m: statSync(join(QUIZ_DIR, f)).mtimeMs })).sort((a, b) => b.m - a.m);
-  if (!files.length) throw new Error("no draft quizzes found");
-  const quizPath = join(QUIZ_DIR, files[0].f);
-  const quiz = loadQuiz(quizPath);
-
-  // Safety: the newest draft must be from TODAY. If the 6:57am draft routine didn't
-  // run (Mac asleep, error), refuse to publish a stale quiz as today's.
-  const fileDateUK = new Date(files[0].m).toLocaleDateString("en-CA", { timeZone: "Europe/London" });
-  if (fileDateUK !== todayUK) {
-    await sendMessage(`⚠️ <b>Launch halted</b> — no fresh quiz for ${todayUK} (newest draft is from ${fileDateUK}). The morning draft routine may not have run. No quiz was published.`);
+  // 1. Wait for today's draft (handles the draft finishing after this launch fires).
+  const found = await waitForTodaysDraft();
+  if (!found) {
+    await sendMessage(`⚠️ <b>Launch halted</b> — no quiz dated ${todayUK} appeared within the wait window. The morning draft routine may not have run. Nothing was published. (The 08:00 edition roll still keeps the in-app daily live.)`);
     return;
   }
+  const { quizPath, quiz } = found;
 
-  // force date to today (we send same-day; streak deadline = tonight)
-  if (quiz.date !== todayUK) {
-    quiz.date = todayUK; quiz.series = quiz.series || "wc2026";
+  {
+    // Quiz already dated today (we matched on it); just ensure the series is set.
+    quiz.series = quiz.series || "wc2026";
     writeFileSync(quizPath, JSON.stringify(quiz, null, 2));
   }
   const { slug, challenge } = urls(quiz);
