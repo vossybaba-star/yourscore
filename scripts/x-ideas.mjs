@@ -212,17 +212,14 @@ for (const idea of fresh) {
   const draftChars = charLen(idea.tweet);
   console.log(`\n  [${idea.pillar}] ${id} (${draftChars}c)\n    ${idea.tweet.replace(/\n/g, "\n    ")}\n    ↳ ${idea.why || ""}`);
   if (DRY) continue;
-  const d = {
+  // Just QUEUE it. The x-telegram poller trickles drafts to Telegram one at a time, so ideas
+  // never arrive in a clump and never jump ahead of time-sensitive engagement.
+  queue.push({
     id, status: "pending", createdAt: new Date().toISOString(),
     source: { username: `idea:${idea.pillar || "?"}`, name: "YourScore idea", url: "https://yourscore.app" },
     draft: idea.tweet, draftChars, origin: "x-ideas", pillar: idea.pillar || "", why: idea.why || "",
-  };
-  const text = `💡 Idea  ·  ${idea.pillar || "?"}  ·  ${draftChars}c\n\n${idea.tweet}\n\n↳ ${idea.why || ""}\n\n(product idea — won't post until you tap Post)`;
-  const r = await tg("sendMessage", { chat_id: CHAT, text, reply_markup: draftButtons(id), disable_web_page_preview: true });
-  if (r.ok) { d.tg = { messageId: r.result.message_id, pushed: true, pushedAt: Date.now() }; }
-  else console.error(`✗ push ${id}: ${JSON.stringify(r).slice(0, 140)}`);
-  queue.push(d);
+  });
 }
 
 if (!DRY) { saveJSON(PATHS.state, state); saveJSON(PATHS.queue, queue); }
-console.log(DRY ? "🛑 DRY - nothing saved or pushed" : `done - ${fresh.length} pushed to Telegram`);
+console.log(DRY ? "🛑 DRY - nothing saved or pushed" : `done - ${fresh.length} idea(s) queued (the poller trickles them to Telegram)`);

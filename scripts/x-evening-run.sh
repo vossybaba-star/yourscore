@@ -21,8 +21,8 @@ echo "===== $TS =====" >> "$LOG"
 OUT="$("$NODE" --env-file=.env.local scripts/x-track.mjs 2>&1)"
 echo "$OUT" >> "$LOG"
 
-# Push the new drafts to Telegram for review (Post / Add GIF / Skip).
-"$NODE" --env-file=.env.local scripts/x-telegram.mjs push >> "$LOG" 2>&1
+# NOTE: we do NOT push here anymore. x-track just QUEUES; the x-telegram poller trickles
+# drafts to Telegram one at a time so approvals never arrive in a clump.
 
 # Pull "queued N new" from the summary line for a desktop nudge.
 NEW="$(printf '%s\n' "$OUT" | sed -n 's/.*queued \([0-9][0-9]*\) new.*/\1/p' | tail -1)"

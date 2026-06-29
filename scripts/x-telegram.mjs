@@ -31,6 +31,10 @@ if (!TG || !CHAT) { console.error("✗ Missing TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_
 const AUTO_POST = process.env.X_AUTOPOST !== "0";
 const AUTO_DELAY_MS = (Number(process.env.X_AUTOPOST_DELAY_MIN) || 20) * 60 * 1000;    // wait this long for an objection
 const AUTO_SPACING_MS = (Number(process.env.X_AUTOPOST_SPACING_MIN) || 120) * 60 * 1000; // min gap between auto-posts (2h, no bursts)
+// Engines just QUEUE drafts; the poller trickles them to Telegram ONE at a time, this far apart,
+// so you never get a clump. A draft older than the stale window is dropped unpushed (cold by then).
+const PUSH_SPACING_MS = (Number(process.env.X_PUSH_SPACING_MIN) || 12) * 60 * 1000;
+const PUSH_STALE_MS = (Number(process.env.X_PUSH_STALE_HOURS) || 4) * 60 * 60 * 1000;
 
 const GIF_DIR = join(PATHS.queue, "..", "gif-cache");
 const IMG_DIR = join(PATHS.queue, "..", "img-cache");
@@ -150,6 +154,31 @@ async function doPost(d) {
   return d.postedUrl;
 }
 
+// Send ONE draft's approval card to Telegram, formatted by type. Sets d.tg on success.
+async function pushDraft(d) {
+  const buttons = draftButtons(d.id);
+  const at = Date.now();
+  const ok = (r, extra = {}) => { if (r.ok) { d.tg = { messageId: r.result.message_id, pushed: true, pushedAt: at, ...extra }; return true; } return false; };
+
+  if (d.engage) { // reply / quote a viral tweet
+    const e = d.engage;
+    const card = `🔁 ${e.kind.toUpperCase()} to @${e.targetHandle}\n\nTHEIR TWEET:\n"${e.targetText}"\n\nOUR ${e.kind.toUpperCase()}:\n${d.draft}\n\n${e.targetUrl}`;
+    return ok(await tg("sendMessage", { chat_id: CHAT, text: card, reply_markup: buttons, disable_web_page_preview: false }));
+  }
+  if (d.origin === "x-ideas") { // product / original idea — always a tap
+    const card = `💡 Idea  ·  ${d.pillar || "?"}  ·  ${d.draftChars}c\n\n${d.draft}\n\n↳ ${d.why || ""}\n\n(product idea — won't post until you tap Post)`;
+    return ok(await tg("sendMessage", { chat_id: CHAT, text: card, reply_markup: buttons, disable_web_page_preview: true }));
+  }
+  // repurpose (x-track): auto-post candidate; show the photo with the caption when we have one
+  const tag = (AUTO_POST && d.origin === "x-track") ? `\n\n⏳ auto-posts in ${AUTO_DELAY_MS / 60000}m unless you Decline` : "";
+  const text = `🟢 New draft  ·  @${d.source.username}  ·  ${d.draftChars}c\n\n${d.draft}\n\nSource: ${d.source.url}${tag}`;
+  if (d.image?.url) {
+    if (ok(await sendPhoto(d.image.url, text, buttons), { photo: true })) return true;
+    return ok(await send(`${text}\n\n(image: ${d.image.url})`, buttons)); // photo fetch failed → text
+  }
+  return ok(await send(text, buttons));
+}
+
 // ── commands ───────────────────────────────────────────────────────────────--
 const cmd = process.argv[2];
 const argIds = process.argv.slice(3).filter((a) => !a.startsWith("--"));
@@ -162,32 +191,13 @@ const byId = (id) => queue.find((d) => d.id === id);
 const save = () => { saveJSON(PATHS.queue, queue); saveJSON(PATHS.state, state); };
 
 if (cmd === "push") {
-  const PUSH_CAP = 6; // never flood Telegram with a big burst in one run
-  let targets = argIds.length
-    ? argIds.map(byId).filter(Boolean)
-    : queue.filter((d) => d.status === "pending" && !d.tg?.pushed);
-  let held = 0;
-  if (!argIds.length && targets.length > PUSH_CAP) { held = targets.length - PUSH_CAP; targets = targets.slice(0, PUSH_CAP); }
-  if (!targets.length) { console.log("(nothing new to push)"); process.exit(0); }
-  const tag = AUTO_POST ? `\n\n⏳ auto-posts in ${AUTO_DELAY_MS / 60000}m unless you Decline` : "";
-  for (const d of targets) {
-    const text = `🟢 New draft  ·  @${d.source.username}  ·  ${d.draftChars}c\n\n${d.draft}\n\nSource: ${d.source.url}${tag}`;
-    const at = Date.now();
-    let r;
-    // If we have a clean repostable photo, show it WITH the caption so you judge the whole
-    // post at a glance. Fall back to a text message if Telegram can't fetch the photo URL.
-    if (d.image?.url) {
-      r = await sendPhoto(d.image.url, text, draftButtons(d.id));
-      if (r.ok) { d.tg = { messageId: r.result.message_id, pushed: true, pushedAt: at, photo: true }; }
-      else { r = await send(`${text}\n\n(image: ${d.image.url})`, draftButtons(d.id)); if (r.ok) d.tg = { messageId: r.result.message_id, pushed: true, pushedAt: at }; }
-    } else {
-      r = await send(text, draftButtons(d.id));
-      if (r.ok) d.tg = { messageId: r.result.message_id, pushed: true, pushedAt: at };
-    }
-    if (r.ok) console.log(`pushed ${d.id}${d.image?.url ? " 📷" : ""}`);
-    else console.error(`✗ push ${d.id}: ${JSON.stringify(r).slice(0, 140)}`);
-  }
-  if (held) console.log(`(held ${held} extra draft(s) to avoid a burst; they push on the next run)`);
+  // Manual/backfill push. By default the POLLER trickles drafts one at a time (see below), so
+  // this is only for pushing specific ids by hand. `--all` force-pushes every pending draft now.
+  const all = process.argv.includes("--all");
+  const targets = argIds.length ? argIds.map(byId).filter(Boolean)
+    : all ? queue.filter((d) => d.status === "pending" && !d.tg?.pushed) : [];
+  if (!targets.length) { console.log("(nothing to push by hand — the poller trickles new drafts automatically)"); process.exit(0); }
+  for (const d of targets) console.log(await pushDraft(d) ? `pushed ${d.id}` : `✗ push ${d.id} failed`);
   save();
   process.exit(0);
 }
@@ -330,6 +340,23 @@ if (cmd === "poll") {
           console.log(`auto-posted ${d.id}`);
         } catch (e) { await send(`✗ Auto-post failed for ${d.id}: ${e.message}`); console.error(`auto-post ${d.id}: ${e.message}`); }
       }
+    }
+  }
+
+  // ── Trickle: engines just QUEUE; here we send ONE new card per spacing window so approvals
+  //    arrive steadily, never in a clump. Engagement (time-sensitive) jumps the queue; stale
+  //    drafts are dropped unpushed (the thread/news is cold by the time we'd ask).
+  {
+    const now = Date.now();
+    for (const d of queue) {
+      if (d.status === "pending" && !d.tg?.pushed && now - new Date(d.createdAt).getTime() > PUSH_STALE_MS) {
+        d.status = "expired"; console.log(`expired (stale, unpushed) ${d.id}`);
+      }
+    }
+    if (now - (state.tg.lastPushAt || 0) >= PUSH_SPACING_MS) {
+      const ready = queue.filter((d) => d.status === "pending" && !d.tg?.pushed)
+        .sort((a, b) => (b.engage ? 1 : 0) - (a.engage ? 1 : 0) || new Date(a.createdAt) - new Date(b.createdAt));
+      if (ready[0] && await pushDraft(ready[0])) { state.tg.lastPushAt = now; console.log(`trickled ${ready[0].id}`); }
     }
   }
 

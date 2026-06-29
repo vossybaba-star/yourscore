@@ -64,14 +64,11 @@ for (const t of targets) {
   };
   console.log(`  [${d.kind}] ${id} → @${t.handle} (${(t.followers / 1000).toFixed(0)}k, eng ${t.eng})\n    them: ${t.text.replace(/\n/g, " ").slice(0, 90)}\n    us:   ${d.text.replace(/\n/g, " ")}`);
   made++;
-  if (DRY) continue;
-  const card = `🔁 ${d.kind.toUpperCase()} to @${t.handle} (${(t.followers / 1000).toFixed(0)}k followers)\n\nTHEIR TWEET:\n"${t.text.slice(0, 220)}"\n\nOUR ${d.kind.toUpperCase()}:\n${d.text}\n\n${t.url}`;
-  const r = await tg("sendMessage", { chat_id: CHAT, text: card, reply_markup: draftButtons(id), disable_web_page_preview: false });
-  if (r.ok) draft.tg = { messageId: r.result.message_id, pushed: true, pushedAt: Date.now() };
-  else console.error(`✗ push ${id}: ${JSON.stringify(r).slice(0, 120)}`);
-  queue.push(draft);
+  // Just QUEUE it. The x-telegram poller trickles drafts to Telegram one at a time (engagement
+  // jumps the queue since it's time-sensitive), so they never arrive in a clump.
+  if (!DRY) queue.push(draft);
 }
 
 if (state.engage.done.length > 500) state.engage.done = state.engage.done.slice(-500); // keep bounded
 if (!DRY) { saveJSON(PATHS.queue, queue); saveJSON(PATHS.state, state); }
-console.log(`\n${DRY ? "🛑 DRY — nothing saved/pushed" : made + " engagement card(s) pushed to Telegram"}`);
+console.log(`\n${DRY ? "🛑 DRY — nothing saved/pushed" : made + " engagement draft(s) queued (the poller trickles them to Telegram)"}`);
