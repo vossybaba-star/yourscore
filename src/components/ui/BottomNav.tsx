@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import { usePendingFriends } from "@/hooks/usePendingFriends";
+import { usePendingTurns } from "@/hooks/usePendingTurns";
 
 // Football-shirt icon for the Draft XI tab.
 function JerseyIcon({ active }: { active: boolean }) {
@@ -25,6 +26,7 @@ export function BottomNav() {
   const pathname = usePathname();
   const { user, loading } = useUser();
   const pendingFriends = usePendingFriends();
+  const pendingTurns = usePendingTurns();
 
   const isHome = pathname === "/";
   const isLeague = pathname.startsWith("/league") || pathname.startsWith("/leagues") || pathname.startsWith("/38-0/league");
@@ -105,9 +107,26 @@ export function BottomNav() {
 
         {/* Play */}
         <Link href="/play" className="flex flex-col items-center gap-1 px-2 py-1 transition-colors" style={{ color: isChallenges ? "#00d8c0" : "#8a948f" }}>
-          <svg width="21" height="21" viewBox="0 0 22 22" fill="none">
-            <path d="M11 2L13.5 8.5H20.5L14.9 12.5L17 19L11 15L5 19L7.1 12.5L1.5 8.5H8.5L11 2Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" fill={isChallenges ? "currentColor" : "none"} fillOpacity={isChallenges ? 0.15 : 0} />
-          </svg>
+          <div className="relative">
+            <svg width="21" height="21" viewBox="0 0 22 22" fill="none">
+              <path d="M11 2L13.5 8.5H20.5L14.9 12.5L17 19L11 15L5 19L7.1 12.5L1.5 8.5H8.5L11 2Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" fill={isChallenges ? "currentColor" : "none"} fillOpacity={isChallenges ? 0.15 : 0} />
+            </svg>
+            {pendingTurns > 0 && (
+              <span
+                style={{
+                  position: "absolute", top: -3, right: -5,
+                  minWidth: 14, height: 14, borderRadius: 7,
+                  background: "#00d8c0", color: "#04231f",
+                  fontSize: 9, fontWeight: 700, lineHeight: "14px",
+                  textAlign: "center", padding: "0 3px",
+                  fontFamily: "var(--font-body, sans-serif)",
+                  border: "1.5px solid rgba(8,13,10,0.97)",
+                }}
+              >
+                {pendingTurns > 9 ? "9+" : pendingTurns}
+              </span>
+            )}
+          </div>
           <span className="font-body text-xs">Quiz</span>
         </Link>
 
