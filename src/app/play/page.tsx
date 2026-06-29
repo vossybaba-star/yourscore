@@ -11,6 +11,7 @@ import { getTeamBadgeUrl } from "@/lib/teamImages";
 import { getCompetitionBadgeUrl } from "@/lib/competitionImages";
 import { slugify } from "@/lib/utils";
 import { RECORDS_EMOJI } from "@/lib/theme";
+import { useYourTurns, type InboxChallenge } from "@/hooks/useYourTurns";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -354,6 +355,54 @@ function joinErrorMessage(raw: string): string {
   return raw || "Could not join this lobby.";
 }
 
+// One row in the async-challenge inbox. kind drives the styling/CTA.
+function InboxRow({ c, kind }: { c: InboxChallenge; kind: "play" | "waiting" | "result" }) {
+  const initial = (c.otherName[0] ?? "?").toUpperCase();
+
+  if (kind === "play") {
+    return (
+      <Link href={`/h2h/${c.id}`} className="flex items-center gap-3 rounded-2xl px-4 py-3.5 bg-surface transition-all active:scale-[0.99]" style={{ border: "1px solid rgba(0,216,192,0.25)" }}>
+        <div className="w-9 h-9 rounded-full flex items-center justify-center font-body font-bold text-sm flex-shrink-0" style={{ background: "rgba(0,216,192,0.15)", color: "#00d8c0", border: "1px solid rgba(0,216,192,0.25)" }}>{initial}</div>
+        <div className="flex-1 min-w-0">
+          <p className="font-body text-sm font-semibold text-white truncate">{c.otherName} challenged you</p>
+          <p className="font-body text-xs text-text-muted truncate">{c.packName} · {(c.theirScore ?? 0).toLocaleString()} to beat</p>
+        </div>
+        <span className="font-display text-xs tracking-wide px-3 py-1.5 rounded-lg flex-shrink-0" style={{ background: "rgba(0,216,192,0.15)", color: "#00d8c0", border: "1px solid rgba(0,216,192,0.3)" }}>PLAY</span>
+      </Link>
+    );
+  }
+
+  if (kind === "waiting") {
+    return (
+      <div className="flex items-center gap-3 rounded-2xl px-4 py-3.5 bg-surface" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
+        <div className="w-9 h-9 rounded-full flex items-center justify-center font-body font-bold text-sm flex-shrink-0" style={{ background: "rgba(255,255,255,0.06)", color: "#9aa39d", border: "1px solid rgba(255,255,255,0.1)" }}>{initial}</div>
+        <div className="flex-1 min-w-0">
+          <p className="font-body text-sm font-semibold text-white truncate">{c.otherName}</p>
+          <p className="font-body text-xs text-text-muted truncate">{c.packName} · you scored {(c.myScore ?? 0).toLocaleString()}</p>
+        </div>
+        <span className="font-body text-xs flex-shrink-0" style={{ color: "#586058" }}>Waiting…</span>
+      </div>
+    );
+  }
+
+  const my = c.myScore ?? 0, their = c.theirScore ?? 0;
+  const draw = my === their, won = my > their;
+  const col = draw ? "#8a948f" : won ? "#aeea00" : "#ff6b78";
+  return (
+    <Link href={`/h2h/${c.id}`} className="flex items-center gap-3 rounded-2xl px-4 py-3.5 bg-surface transition-all active:scale-[0.99]" style={{ border: `1px solid ${col}33` }}>
+      <div className="w-9 h-9 rounded-full flex items-center justify-center font-body font-bold text-sm flex-shrink-0" style={{ background: `${col}22`, color: col, border: `1px solid ${col}44` }}>{initial}</div>
+      <div className="flex-1 min-w-0">
+        <p className="font-body text-sm font-semibold text-white truncate">vs {c.otherName}</p>
+        <p className="font-body text-xs text-text-muted truncate">{c.packName}</p>
+      </div>
+      <div className="text-right flex-shrink-0">
+        <p className="font-display text-sm" style={{ color: col }}>{draw ? "Draw" : won ? "Won" : "Lost"}</p>
+        <p className="font-body text-xs text-text-muted">{my.toLocaleString()} · {their.toLocaleString()}</p>
+      </div>
+    </Link>
+  );
+}
+
 function PlayPageInner() {
   const { user } = useUser();
   const router = useRouter();
@@ -365,6 +414,7 @@ function PlayPageInner() {
   const [openRooms, setOpenRooms] = useState<OpenRoom[]>([]);
   const [roomsLoading, setRoomsLoading] = useState(false);
   const [roomsFetched, setRoomsFetched] = useState(false);
+  const turns = useYourTurns();
   const [joinSheetOpen, setJoinSheetOpen] = useState(false);
   const [joinCode, setJoinCode] = useState("");
   const [joining, setJoining] = useState(false);
@@ -526,7 +576,7 @@ function PlayPageInner() {
             <div>
               <h1 className="font-display text-2xl tracking-tight text-teal">QUIZ</h1>
               <p className="font-body text-xs mt-0.5 text-text-muted">
-                {mainTab === "solo" ? "Test your football knowledge" : mainTab === "multiplayer" ? "Real-time multiplayer · Play with mates" : "YourScore verified competitions"}
+                {mainTab === "solo" ? "Test your football knowledge" : mainTab === "multiplayer" ? "Challenge mates · play on your own time" : "YourScore verified competitions"}
               </p>
             </div>
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl"
@@ -740,6 +790,52 @@ function PlayPageInner() {
       {/* ── MULTIPLAYER TAB ───────────────────────────────────────────── */}
       {mainTab === "multiplayer" && (
         <div className="max-w-lg mx-auto px-4 pt-4 space-y-4">
+
+          {/* ── Async challenge inbox ──────────────────────────────────── */}
+          <Link href="/friends"
+            className="flex items-center gap-3 rounded-2xl px-5 py-4 transition-all hover:opacity-90 active:scale-[0.99]"
+            style={{ background: "linear-gradient(135deg, rgba(0,216,192,0.14), rgba(0,216,192,0.04))", border: "1px solid rgba(0,216,192,0.3)" }}>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "rgba(0,216,192,0.16)", border: "1px solid rgba(0,216,192,0.3)" }}>
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 3v14M3 10h14" stroke="#00d8c0" strokeWidth="2.2" strokeLinecap="round" /></svg>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-body text-sm font-bold text-white">Challenge a friend</p>
+              <p className="font-body text-xs text-text-muted">Pick a mate and a quiz — they play on their own time</p>
+            </div>
+            <svg width="16" height="16" viewBox="0 0 18 18" fill="none" style={{ color: "#00d8c0", flexShrink: 0 }}><path d="M6 3l6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          </Link>
+
+          {!turns.loading && (turns.yourTurn.length > 0 || turns.waiting.length > 0 || turns.results.length > 0) && (
+            <>
+              {turns.yourTurn.length > 0 && (
+                <div>
+                  <p className="font-body text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "#00d8c0" }}>Your turn</p>
+                  <div className="space-y-2">
+                    {turns.yourTurn.map((c) => <InboxRow key={c.id} c={c} kind="play" />)}
+                  </div>
+                </div>
+              )}
+              {turns.waiting.length > 0 && (
+                <div>
+                  <p className="font-body text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "#586058" }}>Waiting on them</p>
+                  <div className="space-y-2">
+                    {turns.waiting.map((c) => <InboxRow key={c.id} c={c} kind="waiting" />)}
+                  </div>
+                </div>
+              )}
+              {turns.results.length > 0 && (
+                <div>
+                  <p className="font-body text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "#586058" }}>Recent results</p>
+                  <div className="space-y-2">
+                    {turns.results.map((c) => <InboxRow key={c.id} c={c} kind="result" />)}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* ── Play live together — secondary ─────────────────────────── */}
+          <p className="font-body text-xs font-bold uppercase tracking-widest pt-1" style={{ color: "#586058" }}>Play live together</p>
 
           {/* Create / Join CTAs */}
           <div className="grid grid-cols-2 gap-3">
