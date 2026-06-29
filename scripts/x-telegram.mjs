@@ -25,9 +25,12 @@ if (!TG || !CHAT) { console.error("✗ Missing TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_
 // Opt-out auto-posting: a pushed draft goes out on its own unless you Decline (or it's mid-edit)
 // within the objection window. Spacing keeps it a steady trickle, never a burst. Disable with
 // X_AUTOPOST=0; tune the timings with X_AUTOPOST_DELAY_MIN / X_AUTOPOST_SPACING_MIN.
+// Auto-post is for REPURPOSE drafts only (x-track). Product/original ideas (x-ideas) always wait
+// for an explicit tap — they're the CTA tweets that need a human's taste. Wide spacing so the
+// repurpose stream can never bunch into a burst.
 const AUTO_POST = process.env.X_AUTOPOST !== "0";
-const AUTO_DELAY_MS = (Number(process.env.X_AUTOPOST_DELAY_MIN) || 20) * 60 * 1000;   // wait this long for an objection
-const AUTO_SPACING_MS = (Number(process.env.X_AUTOPOST_SPACING_MIN) || 12) * 60 * 1000; // min gap between auto-posts
+const AUTO_DELAY_MS = (Number(process.env.X_AUTOPOST_DELAY_MIN) || 20) * 60 * 1000;    // wait this long for an objection
+const AUTO_SPACING_MS = (Number(process.env.X_AUTOPOST_SPACING_MIN) || 120) * 60 * 1000; // min gap between auto-posts (2h, no bursts)
 
 const GIF_DIR = join(PATHS.queue, "..", "gif-cache");
 const IMG_DIR = join(PATHS.queue, "..", "img-cache");
@@ -308,6 +311,7 @@ if (cmd === "poll") {
     if (now - (state.tg.lastAutoPostAt || 0) >= AUTO_SPACING_MS) {
       const due = queue
         .filter((d) => d.status === "pending" && d.tg?.pushed && d.tg.pushedAt
+          && d.origin !== "x-ideas"           // ONLY repurpose auto-posts; product ideas need a tap
           && now - d.tg.pushedAt >= AUTO_DELAY_MS
           && d.id !== busy
           && charLen(d.draft) <= 280)        // never auto-post a broken (over-limit) tweet

@@ -26,7 +26,7 @@ const ANTHROPIC = process.env.ANTHROPIC_API_KEY;
 const TG = process.env.TELEGRAM_BOT_TOKEN;
 const CHAT = process.env.TELEGRAM_CHAT_ID;
 const OUR_USER_ID = "1894746376396849152"; // @Yourscore_App_
-const WANT = 4;           // ideas to aim for per run
+const WANT = 2;           // UP TO this many per run — fewer, only if genuinely great
 const ACCTS_PER_RUN = 3;  // tracked accounts READ per run (rotates - cost control)
 const NEWS_PER_ACCT = 5;  // tweets scanned per tracked account for the "news" signal
 const OWN_POSTS_READ = 10; // our own recent tweets pulled for dedup (was 40)
@@ -54,7 +54,7 @@ const SYSTEM = `You are the tweet ideas agent for YourScore (@${HANDLE}), a foot
 
 WHO WE ARE: fans of football who set up a game, and we PLAY our own game every day. We know it inside out, the way you know a game you actually love. Not journalists, pundits, or a stats account. We talk like a normal person texting their mates: warm, easy, a bit of wonder at how good football is. Never an authority, never salesy, never a brochure.
 
-YOUR JOB: from the signals you are given (what we're building, our talking points, what's happening on X today, and what we've already posted), propose ${WANT} ORIGINAL tweet ideas we could send right now. Make them VARIED across these pillars: ${PILLARS}. Aim for a spread: at least one feature, one news/topical, and one community idea. Never ${WANT} of the same kind.
+YOUR JOB: from the signals you are given (what we're building, our talking points, what's happening on X today, and what we've already posted), propose UP TO ${WANT} ORIGINAL tweet ideas we could send right now — but ONLY ones that genuinely deserve to go out. THE BAR IS HIGH: we are a small account with little reach, so we post a FEW great things, never filler. Returning 1 strong idea, or even 0, is better than 2 average ones. If you propose two, they must be DIFFERENT pillars (${PILLARS}) and must NOT repeat a product angle or CTA we've used recently — no second "build your XI", "£100 board" or "one go a day" tweet if we've just run one. A founder with taste will read these; do not waste the slot.
 
 HARD RULES (locked house style):
 - NEVER use the long dash (em or en dash). Biggest "AI wrote this" tell and the founder hates it. Use a full stop, comma or colon, or one spaced hyphen " - ". Real score hyphens like "1-0" are fine.
@@ -215,7 +215,7 @@ for (const idea of fresh) {
     source: { username: `idea:${idea.pillar || "?"}`, name: "YourScore idea", url: "https://yourscore.app" },
     draft: idea.tweet, draftChars, origin: "x-ideas", pillar: idea.pillar || "", why: idea.why || "",
   };
-  const text = `💡 Idea  ·  ${idea.pillar || "?"}  ·  ${draftChars}c\n\n${idea.tweet}\n\n↳ ${idea.why || ""}\n\n⏳ auto-posts unless you Decline`;
+  const text = `💡 Idea  ·  ${idea.pillar || "?"}  ·  ${draftChars}c\n\n${idea.tweet}\n\n↳ ${idea.why || ""}\n\n(product idea — won't post until you tap Post)`;
   const r = await tg("sendMessage", { chat_id: CHAT, text, reply_markup: draftButtons(id), disable_web_page_preview: true });
   if (r.ok) { d.tg = { messageId: r.result.message_id, pushed: true, pushedAt: Date.now() }; }
   else console.error(`✗ push ${id}: ${JSON.stringify(r).slice(0, 140)}`);

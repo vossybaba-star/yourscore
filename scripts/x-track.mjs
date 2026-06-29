@@ -79,6 +79,7 @@ for (const acct of accounts) {
         status: "pending",
         createdAt: new Date().toISOString(),
         source,
+        origin: "x-track",             // repurpose → eligible for auto-post (product ideas are not)
         draft: r.tweet,
         draftChars: charLen(r.tweet),
         image: r.image || null,        // the source photo we may repost (null if none/branded)
