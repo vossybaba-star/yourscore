@@ -46,11 +46,32 @@ async function audienceEmailSet(resend, audienceId) {
  * @returns {Promise<{broadcastId?:string, dryRun?:boolean, synced?:number}>}
  */
 export async function syncAndBroadcast(apiKey, opts) {
-  const { audienceId, emails, name, from, replyTo, subject, previewText, html, dryRun } = opts;
+  const { audienceId, audienceName, emails, name, from, replyTo, subject, previewText, html, dryRun } = opts;
   if (!apiKey) throw new Error("syncAndBroadcast: missing RESEND_CAMPAIGNS_API_KEY");
-  if (!audienceId) throw new Error("syncAndBroadcast: missing audienceId");
+  if (!audienceId && !audienceName) throw new Error("syncAndBroadcast: pass audienceId or audienceName");
 
   const resend = new Resend(apiKey);
+
+  // SEGMENTED sends (re-engagement, never-played, etc.) target a subset, but a
+  // broadcast goes to a whole audience. So for those, spin up a fresh audience
+  // named after the campaign, populated only with the segment's emails, and
+  // broadcast to that. WHOLE-AUDIENCE sends pass audienceId and reuse the
+  // standing audience. `emails` is REQUIRED when creating a fresh audience.
+  let targetAudienceId = audienceId;
+  if (!targetAudienceId) {
+    if (!Array.isArray(emails) || !emails.length) {
+      throw new Error("syncAndBroadcast: audienceName requires a non-empty emails segment");
+    }
+    if (dryRun) {
+      console.log(`   🆕 DRY RUN — would create audience "${audienceName}" and add ${emails.length} contact(s)`);
+      targetAudienceId = "(dry-run-audience)";
+    } else {
+      const { data: aud, error: aErr } = await resend.audiences.create({ name: audienceName });
+      if (aErr || !aud?.id) throw new Error(`audiences.create failed: ${aErr?.message ?? "no id"}`);
+      targetAudienceId = aud.id;
+      console.log(`   🆕 Created campaign audience ${targetAudienceId} ("${audienceName}")`);
+    }
+  }
 
   // Broadcasts MUST carry an unsubscribe link. Swap any legacy per-user tokens
   // for Resend's managed one, then hard-require it.
@@ -60,46 +81,50 @@ export async function syncAndBroadcast(apiKey, opts) {
   if (!body.includes("{{{RESEND_UNSUBSCRIBE_URL}}}")) {
     throw new Error("Broadcast HTML has no unsubscribe link — add {{{RESEND_UNSUBSCRIBE_URL}}}.");
   }
-  // Strip the (valid) triple-brace Resend token first, then flag any leftover.
-  const leftover = body.replaceAll("{{{RESEND_UNSUBSCRIBE_URL}}}", "").match(/\{\{\s*[\w.]+\s*\}\}/g);
+  // Strip valid Resend triple-brace merge tags ({{{FIRST_NAME}}}, {{{FIRST_NAME|there}}},
+  // {{{RESEND_UNSUBSCRIBE_URL}}}, …), then flag any leftover double-brace placeholder
+  // that never got filled.
+  const leftover = body.replace(/\{\{\{[^}]+\}\}\}/g, "").match(/\{\{\s*[\w.|]+\s*\}\}/g);
   if (leftover) throw new Error(`Broadcast HTML has unresolved tokens: ${[...new Set(leftover)].join(", ")}`);
 
   // Keep the audience complete: add any recipients not already in it (so new
   // signups still receive the send). Only the delta is created.
   let synced = 0;
   if (Array.isArray(emails) && emails.length) {
-    const existing = await audienceEmailSet(resend, audienceId);
+    // A freshly created campaign audience starts empty; only an existing
+    // standing audience needs a read to compute the delta.
+    const existing = (audienceId && !dryRun) ? await audienceEmailSet(resend, targetAudienceId) : new Set();
     const missing = emails
       .map((e) => (typeof e === "string" ? { email: e } : e))
       .filter((e) => e.email && !existing.has(e.email.trim().toLowerCase()));
     console.log(`   👥 Audience: ${existing.size} existing · ${missing.length} to add`);
     if (dryRun) {
-      if (missing.length) console.log(`   (dry run — would add ${missing.length} new contact(s))`);
+      if (missing.length) console.log(`   (dry run — would add ${missing.length} contact(s))`);
     } else {
       for (const e of missing) {
         const { error } = await resend.contacts.create({
-          audienceId, email: e.email, firstName: e.firstName, unsubscribed: false,
+          audienceId: targetAudienceId, email: e.email, firstName: e.firstName, unsubscribed: false,
         });
         if (!error) synced++;
         else console.warn(`   ⚠️  contact ${e.email}: ${error.message}`);
       }
-      if (synced) console.log(`   ➕ Added ${synced} new contact(s)`);
+      if (synced) console.log(`   ➕ Added ${synced} contact(s)`);
     }
   }
 
   if (dryRun) {
-    console.log(`   🛑 DRY RUN — would create + send broadcast "${name}" to audience ${audienceId}.`);
+    console.log(`   🛑 DRY RUN — would create + send broadcast "${name}" to audience ${targetAudienceId}.`);
     return { dryRun: true, synced };
   }
 
   const { data: created, error: cErr } = await resend.broadcasts.create({
-    audienceId, from, replyTo, subject, name, html: body, previewText,
+    audienceId: targetAudienceId, from, replyTo, subject, name, html: body, previewText,
   });
   if (cErr || !created?.id) throw new Error(`broadcasts.create failed: ${cErr?.message ?? "no id returned"}`);
 
   const { error: sErr } = await resend.broadcasts.send(created.id);
   if (sErr) throw new Error(`broadcasts.send failed: ${sErr.message}`);
 
-  console.log(`   📣 Broadcast ${created.id} sent to audience ${audienceId} (marketing, not transactional).`);
+  console.log(`   📣 Broadcast ${created.id} sent to audience ${targetAudienceId} (marketing, not transactional).`);
   return { broadcastId: created.id, synced };
 }

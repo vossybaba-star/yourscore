@@ -1,0 +1,122 @@
+<!--
+  25-winback-first-wc.html — win-back for dormant users whose FIRST game was the
+  WC Mastermind. Broadcast template (segments.mjs send dormant-started-wc).
+  Merge tags only: {{{FIRST_NAME|there}}} and {{{RESEND_UNSUBSCRIBE_URL}}}.
+-->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="x-apple-disable-message-reformatting">
+  <meta name="color-scheme" content="dark">
+  <meta name="supported-color-schemes" content="dark">
+  <title>The World Cup Mastermind is still going</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body,table,td,p,a{margin:0;padding:0}
+    img{border:0;outline:none;text-decoration:none;display:block}
+    table{border-collapse:collapse}
+    a{text-decoration:none}
+    @media (max-width:620px){
+      .container{width:100%!important}
+      .px{padding-left:20px!important;padding-right:20px!important}
+      .hero{font-size:60px!important;line-height:56px!important}
+    }
+  </style>
+</head>
+
+<body style="margin:0;padding:0;background-color:#07070d;background-image:linear-gradient(rgba(0,255,135,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,135,0.025) 1px,transparent 1px);background-size:32px 32px;font-family:'DM Sans',Helvetica,Arial,sans-serif;color:#ffffff;">
+
+  <div style="display:none;max-height:0;overflow:hidden;font-size:1px;line-height:1px;color:#07070d;">It's run every day since you joined. Today's is a good one.</div>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr><td align="center" style="padding:36px 16px 52px;">
+
+    <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
+
+      <!-- Logo -->
+      <tr><td align="center" style="padding:0 40px 44px;">
+        <a href="https://yourscore.app/38-0/wc" style="display:inline-block;">
+          <img src="https://yourscore.app/logo.png" alt="YourScore" width="148" height="44" style="width:148px;height:44px;display:block;">
+        </a>
+      </td></tr>
+
+      <!-- Green top rule -->
+      <tr><td style="padding:0 40px 30px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr><td style="height:2px;background:linear-gradient(90deg,#00ff87 0%,rgba(0,255,135,0.3) 70%,transparent 100%);border-radius:2px;"></td></tr>
+        </table>
+      </td></tr>
+
+      <!-- Badge -->
+      <tr><td class="px" align="left" style="padding:0 40px 16px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+          <td style="background:rgba(0,255,135,0.08);border:1px solid rgba(0,255,135,0.25);border-radius:999px;padding:5px 16px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:2.5px;color:#00ff87;font-weight:700;text-transform:uppercase;">&#129504;&nbsp; The daily's still on</td>
+        </tr></table>
+      </td></tr>
+
+      <!-- Hero -->
+      <tr><td class="px" style="padding:0 40px 24px;">
+        <div class="hero" style="font-family:'Bebas Neue',Impact,Arial,sans-serif;font-size:80px;line-height:72px;color:#ffffff;letter-spacing:-1px;text-shadow:0 0 100px rgba(0,255,135,0.2);">THE MASTERMIND<br><span style="color:#00ff87;">KEPT GOING.</span></div>
+      </td></tr>
+
+      <!-- Body -->
+      <tr><td class="px" style="padding:0 40px 36px;">
+        <p style="margin:0 0 18px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:18px;line-height:29px;color:#c7c7d9;font-weight:400;">
+          Alright {{{FIRST_NAME|there}}}, you came in for the daily World Cup Mastermind. It's run every single day since.
+        </p>
+        <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:18px;line-height:29px;color:#8888aa;font-weight:400;">
+          Today's is a good one, and there's a &pound;100 board with a spot on it for you. Takes a few minutes to get back in.
+        </p>
+      </td></tr>
+
+      <!-- CTA -->
+      <tr><td class="px" style="padding:0 40px 52px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+          <tr><td style="background:linear-gradient(135deg,#00ff87 0%,#00d464 100%);border-radius:13px;box-shadow:0 0 44px rgba(0,255,135,0.38);">
+            <a href="https://yourscore.app/38-0/wc" style="display:inline-block;color:#07070d;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:16px;font-weight:800;letter-spacing:0.4px;padding:20px 52px;border-radius:13px;">Play today's Mastermind &nbsp;&rarr;</a>
+          </td></tr>
+        </table>
+      </td></tr>
+
+      <!-- Get the app -->
+      <tr><td class="px" style="padding:0 40px 52px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid rgba(0,255,135,0.2);border-radius:16px;background:rgba(0,255,135,0.05);">
+          <tr><td style="padding:26px 28px;" align="center">
+            <p style="margin:0 0 6px;font-family:'Bebas Neue',Impact,Arial,sans-serif;font-size:27px;line-height:28px;color:#ffffff;letter-spacing:0.5px;">GET THE APP</p>
+            <p style="margin:0 0 20px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;line-height:21px;color:#8888aa;">Turn on notifications and be first on the board the moment each day's Mastermind drops.</p>
+            <a href="https://apps.apple.com/gb/app/yourscore/id6773626424" style="display:inline-block;">
+              <img src="https://yourscore.app/email/app-store-badge.png" alt="Download on the App Store" width="208" height="71" style="width:208px;height:71px;display:block;border:0;">
+            </a>
+          </td></tr>
+        </table>
+      </td></tr>
+
+      <!-- Footer -->
+      <tr><td style="padding:0 40px 0;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr><td style="border-top:1px solid rgba(255,255,255,0.05);padding:24px 0 32px;">
+            <p style="margin:0 0 14px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:13px;line-height:20px;color:#6b6b85;">
+              <a href="https://x.com/yourscore_app_" style="color:#8888aa;text-decoration:none;">&#x1D54F; @yourscore_app_</a>
+              &nbsp;&nbsp;
+              <a href="https://instagram.com/yourscore.app" style="color:#8888aa;text-decoration:none;">&#x1F4F7; @yourscore.app</a>
+              &nbsp;&nbsp;
+              <a href="https://tiktok.com/@yourscore.app" style="color:#8888aa;text-decoration:none;">&#x266B; @yourscore.app</a>
+            </p>
+            <p style="margin:0 0 10px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:12px;line-height:18px;color:#6b6b85;">
+              <a href="https://apps.apple.com/gb/app/yourscore/id6773626424" style="color:#8888aa;text-decoration:underline;">Get the app</a> &nbsp;&middot;&nbsp;
+              <a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:#8888aa;text-decoration:underline;">Unsubscribe</a> &nbsp;&middot;&nbsp;
+              <a href="https://yourscore.app/support" style="color:#8888aa;text-decoration:underline;">Support</a>
+            </p>
+            <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:1.5px;color:#6b6b85;text-transform:uppercase;font-weight:600;">YourScore &nbsp;&middot;&nbsp; Your football knowledge. Ranked.</p>
+          </td></tr>
+        </table>
+      </td></tr>
+
+    </table>
+  </td></tr>
+  </table>
+
+</body>
+</html>
