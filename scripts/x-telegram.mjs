@@ -137,7 +137,11 @@ async function doPost(d) {
   let mediaId = null, kind = "";
   if (d.gifPath) { mediaId = await uploadAnimated(readFileSync(d.gifPath), d.gifMime); kind = " with GIF"; }
   else if (d.image?.url) { mediaId = await uploadSourcePhoto(d); kind = " with image"; }
-  const data = await postTweet(sanitize(d.draft), mediaId);
+  const opts = mediaId ? { mediaId } : {};
+  // Engagement drafts post AS a reply or quote of the target tweet.
+  if (d.engage?.kind === "reply") { opts.replyTo = d.engage.targetId; kind = " (reply)"; }
+  if (d.engage?.kind === "quote") { opts.quoteId = d.engage.targetId; kind = " (quote)"; }
+  const data = await postTweet(sanitize(d.draft), opts);
   d.status = "posted";
   d.postedId = data.id;
   d.postedUrl = `https://x.com/${HANDLE}/status/${data.id}`;
@@ -311,7 +315,7 @@ if (cmd === "poll") {
     if (now - (state.tg.lastAutoPostAt || 0) >= AUTO_SPACING_MS) {
       const due = queue
         .filter((d) => d.status === "pending" && d.tg?.pushed && d.tg.pushedAt
-          && d.origin !== "x-ideas"           // ONLY repurpose auto-posts; product ideas need a tap
+          && d.origin === "x-track"           // ONLY repurpose auto-posts; product ideas + engagement need a tap
           && now - d.tg.pushedAt >= AUTO_DELAY_MS
           && d.id !== busy
           && charLen(d.draft) <= 280)        // never auto-post a broken (over-limit) tweet

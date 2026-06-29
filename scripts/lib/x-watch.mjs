@@ -131,6 +131,34 @@ export async function fetchRecent(userId, { sinceId, max = 10 } = {}) {
   }));
 }
 
+// Spam/gambling terms to keep out of the engagement search (the open firehose is full of them).
+const SPAM = ["giveaway", "bet", "bets", "betting", "odds", "parlay", "ticket", "tickets", "prediction", "predictions", "promo", "casino", "gamble", "gambling", "picks", "bankroll", "sportsbook", "fanduel", "draftkings", "stake", "1xbet", "free money", "cash app", "$"];
+const SPAM_RE = new RegExp(`\\b(${SPAM.filter((s) => /^[a-z ]+$/.test(s)).join("|")})\\b`, "i");
+
+/**
+ * Find high-reach, real football tweets worth engaging with (reply/quote targets).
+ * Relevancy-ordered so genuinely viral tweets surface (not just the newest), then filtered to
+ * real accounts (follower floor) with the gambling/spam firehose stripped out.
+ * @returns {Promise<Array<{id,handle,name,followers,text,eng,url,photo}>>}
+ */
+export async function searchViral({ query, minFollowers = 80000, max = 100 } = {}) {
+  const q = `(${query}) -is:retweet -is:reply -is:quote lang:en ${SPAM.filter((s) => /^[a-z]+$/.test(s)).map((s) => "-" + s).join(" ")}`;
+  const url = `https://api.twitter.com/2/tweets/search/recent?query=${encodeURIComponent(q)}&max_results=${max}&sort_order=relevancy`
+    + `&tweet.fields=public_metrics,created_at,author_id&expansions=author_id,attachments.media_keys`
+    + `&user.fields=username,name,public_metrics&media.fields=url,type,preview_image_url`;
+  const j = await xGet(url);
+  const users = Object.fromEntries((j.includes?.users || []).map((u) => [u.id, u]));
+  const media = Object.fromEntries((j.includes?.media || []).map((m) => [m.media_key, m]));
+  return (j.data || []).map((t) => {
+    const u = users[t.author_id] || {}, m = t.public_metrics || {};
+    const eng = (m.like_count || 0) + 2 * (m.retweet_count || 0) + (m.reply_count || 0) + (m.quote_count || 0);
+    const photo = (t.attachments?.media_keys || []).map((k) => media[k]).find((x) => x && x.type === "photo" && x.url);
+    return { id: t.id, handle: u.username, name: u.name, followers: u.public_metrics?.followers_count || 0, text: t.text, eng, url: u.username ? `https://x.com/${u.username}/status/${t.id}` : null, photo: photo ? { url: photo.url } : null };
+  }).filter((t) => t.handle && t.followers >= minFollowers && !SPAM_RE.test(t.text)
+      && !/sportsbook|gambl|casino|parlay|bookie|sportsbet|betway|bet365|draftkings|fanduel|1xbet|picks/i.test(t.handle))
+    .sort((a, b) => b.eng - a.eng);
+}
+
 /** Download an image URL → { data:base64, media_type, bytes } for Claude vision / re-upload. */
 export async function fetchImage(url) {
   const res = await fetch(url);
@@ -177,8 +205,14 @@ export async function uploadMedia(path) {
   return id;
 }
 
-export async function postTweet(text, mediaId) {
-  const payload = mediaId ? { text, media: { media_ids: [mediaId] } } : { text };
+// opts: a media_id string (legacy) OR { mediaId, replyTo, quoteId } for replies / quote tweets.
+export async function postTweet(text, opts = {}) {
+  if (typeof opts === "string") opts = { mediaId: opts };
+  const { mediaId, replyTo, quoteId } = opts;
+  const payload = { text };
+  if (mediaId) payload.media = { media_ids: [mediaId] };
+  if (replyTo) payload.reply = { in_reply_to_tweet_id: String(replyTo) };
+  if (quoteId) payload.quote_tweet_id = String(quoteId);
   const res = await fetch(TWEETS_URL, {
     method: "POST",
     headers: { Authorization: authHeader("POST", TWEETS_URL), "Content-Type": "application/json" },
@@ -339,6 +373,50 @@ export async function reword(source, { note } = {}) {
     image: image && out.useImage ? image : null,
     imageNote: out.imageNote || "",
   };
+}
+
+// ── Engagement: reply to / quote a viral tweet (ride someone else's reach) ────
+const ENGAGE_VOICE = `You handle X engagement for YourScore (@${HANDLE}), a football game app. RIGHT NOW you are NOT promoting anything. You are a real football fan jumping into a big conversation to be a good voice in the thread. We get noticed by being likeable and sharp, never by pitching.
+
+CONTEXT: the 2026 World Cup is happening RIGHT NOW (June-July 2026, hosted by USA/Canada/Mexico). These tweets are REAL, current events. Treat every result, score and story as real - never call them fictional, speculative or misinformation.
+
+You are given ONE high-reach football tweet. Decide whether to REPLY or QUOTE it, and write our post.
+- REPLY (usually the best for reach): a short, genuine reaction that ADDS to the thread - a real thought, a memory, a light take, a warm laugh, or a question back. It must make a stranger smile or nod. NEVER generic ("great post", "this", "love this"), never a pitch, never a link, and NEVER mention YourScore or our games at all.
+- QUOTE: our own short take on the moment for our own timeline. A bit more personality allowed. Still a fan first; at most a light, natural nod to how fun football is. Usually no link, no hard pitch.
+
+HARD RULES: never the em or en dash (use a full stop, comma, or one spaced hyphen " - "); straight quotes only; three dots ... not the ellipsis glyph; no bullet or arrow characters; no hashtag walls (none at all is best in a reply); UK English; 240 characters or fewer. Sound like a person, not a brand.
+
+THE BAR IS HIGH. Default to UNUSABLE. Only engage if we genuinely have something good to say to a big, relevant football moment and our post would earn its place in that thread. Skip gambling, ragebait, pure news with nothing to add, off-topic, or anything where we would just be noise. When in doubt, unusable.
+
+OUTPUT JSON only, no prose, no code fences:
+{"usable": true|false, "kind": "reply"|"quote", "text": "<our reply or quote, or empty string>", "reason": "<short why/why-not>"}`;
+
+/**
+ * Draft a reply or quote for a viral tweet. Vision-aware (sees the tweet's photo).
+ * @param {{handle:string, followers:number, text:string, photo?:{url:string}}} target
+ * @returns {Promise<{usable:boolean, kind:'reply'|'quote', text:string, reason:string}>}
+ */
+export async function draftEngagement(target) {
+  requireAnthropic();
+  const content = [];
+  if (target.photo?.url) {
+    try {
+      const img = await fetchImage(target.photo.url);
+      if (img.bytes <= 4.5 * 1024 * 1024 && /^image\/(jpeg|png|webp|gif)$/.test(img.media_type))
+        content.push({ type: "image", source: { type: "base64", media_type: img.media_type, data: img.data } });
+    } catch { /* no image context */ }
+  }
+  content.push({ type: "text", text: `HIGH-REACH TWEET from @${target.handle} (${target.followers.toLocaleString()} followers):\n"""\n${target.text}\n"""${target.photo ? "\n\n(the attached image is on that tweet)" : ""}` });
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "x-api-key": ANTHROPIC, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+    body: JSON.stringify({ model: REWORD_MODEL, max_tokens: 500, system: ENGAGE_VOICE, messages: [{ role: "user", content }] }),
+  });
+  const body = await res.text();
+  if (!res.ok) throw new Error(`Anthropic ${res.status}: ${body}`);
+  const text = JSON.parse(body).content?.map((b) => b.text || "").join("") ?? "";
+  const out = parseModelJSON(text);
+  return { usable: !!out.usable, kind: out.kind === "quote" ? "quote" : "reply", text: sanitize(out.text || ""), reason: out.reason || "" };
 }
 
 // ── revise (feedback-driven rewrite of an existing original draft) ───────────--
