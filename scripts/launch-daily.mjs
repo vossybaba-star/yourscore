@@ -18,7 +18,7 @@
  */
 
 import { execFileSync, spawn } from "node:child_process";
-import { readFileSync, writeFileSync, readdirSync, statSync, openSync } from "node:fs";
+import { readFileSync, writeFileSync, readdirSync, statSync, openSync, mkdirSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createClient } from "@supabase/supabase-js";
@@ -29,6 +29,10 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
 const QUIZ_DIR = join(ROOT, "content", "daily-quizzes");
 const DRY = process.argv.includes("--dry");
+const FORCE = process.argv.includes("--force");
+// Per-day idempotency: the draft routine kicks this on completion, so guard against a second
+// kick re-publishing/re-sending. Records the last date we actually published. --force overrides.
+const LOCK = join(ROOT, "scripts", "data", "launch-daily.ran");
 
 const node = process.execPath;
 const run = (script, args, opts = {}) =>
@@ -70,14 +74,25 @@ async function waitForTodaysDraft(maxWaitMin = 100, stepMin = 5) {
   }
 }
 
+// Idempotency: the draft routine triggers this on completion; never publish/send twice in a day.
+const launchedToday = () => { try { return readFileSync(LOCK, "utf8").trim() === todayUK; } catch { return false; } };
+const markLaunched = () => { try { mkdirSync(dirname(LOCK), { recursive: true }); writeFileSync(LOCK, todayUK + "\n"); } catch {} };
+
 async function main() {
-  // 1. Wait for today's draft (handles the draft finishing after this launch fires).
+  // 1. Wait for today's draft (returns at once when it already exists — the normal case now
+  //    that the draft's COMPLETION triggers this run, not a fixed clock time).
   const found = await waitForTodaysDraft();
   if (!found) {
     await sendMessage(`⚠️ <b>Launch halted</b> — no quiz dated ${todayUK} appeared within the wait window. The morning draft routine may not have run. Nothing was published. (The 08:00 edition roll still keeps the in-app daily live.)`);
     return;
   }
   const { quizPath, quiz } = found;
+
+  // Already done today? A second trigger must not re-publish or re-send.
+  if (launchedToday() && !FORCE) {
+    await sendMessage(`✅ Today's quiz (${todayUK}) was already launched. Skipping to avoid a double publish/send. Use --force to re-run.`);
+    return;
+  }
 
   {
     // Quiz already dated today (we matched on it); just ensure the series is set.
@@ -87,8 +102,9 @@ async function main() {
   const { slug, challenge } = urls(quiz);
   await sendMessage(`☀️ <b>Daily quiz launch</b> — ${quiz.date}\nDraft: <b>${quiz.name}</b>\nStarting the approval flow…`);
 
-  // 2. publish
-  if (!DRY) run("seed-daily-quiz.mjs", [quizPath, "--order", "0", "--commit"]);
+  // 2. publish — claim the day's lock FIRST so a concurrent/late trigger sees it and skips,
+  //    then publish. (Belt-and-braces with the guard above.)
+  if (!DRY) { markLaunched(); run("seed-daily-quiz.mjs", [quizPath, "--order", "0", "--commit"]); }
 
   const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
   const DAY = String((await deriveDay(supabase, quiz)) ?? "?");
