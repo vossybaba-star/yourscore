@@ -61,7 +61,7 @@ const END_OF_SEASON_EMOJI: Record<string, string> = { "The Farewell Tour": "👋
 
 // ── ClubCard ──────────────────────────────────────────────────────────────────
 
-function ClubCard({ pack }: { pack: QuizPack }) {
+function ClubCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: string | null }) {
   const [badgeUrl, setBadgeUrl] = useState<string | null>(null);
   const slug = slugify(pack.name);
 
@@ -71,7 +71,7 @@ function ClubCard({ pack }: { pack: QuizPack }) {
 
   return (
     <Link
-      href={`/challenges/${slug}`}
+      href={`/challenges/${slug}${challengeTo ? `?challenge=${challengeTo}` : ""}`}
       className="block rounded-3xl overflow-hidden transition-all duration-150 active:scale-[0.96]"
       style={{
         background: "linear-gradient(160deg, #0e1611 0%, #15211a 100%)",
@@ -141,7 +141,7 @@ function ClubCard({ pack }: { pack: QuizPack }) {
 
 // ── RecordsCard ───────────────────────────────────────────────────────────────
 
-function RecordsCard({ pack }: { pack: QuizPack }) {
+function RecordsCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: string | null }) {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const slug = slugify(pack.name);
   const emoji = pack.metadata?.icon ?? RECORDS_EMOJI[pack.name] ?? null;
@@ -152,7 +152,7 @@ function RecordsCard({ pack }: { pack: QuizPack }) {
 
   return (
     <Link
-      href={`/challenges/${slug}`}
+      href={`/challenges/${slug}${challengeTo ? `?challenge=${challengeTo}` : ""}`}
       className="block rounded-3xl overflow-hidden transition-all duration-150 active:scale-[0.96]"
       style={{
         background: "linear-gradient(160deg, #0e1611 0%, #15211a 100%)",
@@ -219,7 +219,7 @@ function RecordsCard({ pack }: { pack: QuizPack }) {
 
 // ── EndOfSeasonCard ───────────────────────────────────────────────────────────
 
-function EndOfSeasonCard({ pack }: { pack: QuizPack }) {
+function EndOfSeasonCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: string | null }) {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const slug = slugify(pack.name);
   const emoji = END_OF_SEASON_EMOJI[pack.name] ?? null;
@@ -234,7 +234,7 @@ function EndOfSeasonCard({ pack }: { pack: QuizPack }) {
 
   return (
     <Link
-      href={`/challenges/${slug}`}
+      href={`/challenges/${slug}${challengeTo ? `?challenge=${challengeTo}` : ""}`}
       className="block rounded-3xl overflow-hidden transition-all duration-150 active:scale-[0.96]"
       style={{
         background: "linear-gradient(160deg, #15211a 0%, #0a1a24 100%)",
@@ -407,6 +407,8 @@ function PlayPageInner() {
   const { user } = useUser();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const challengeTo = searchParams?.get("challenge") ?? null; // targeting a friend
+  const [challengeName, setChallengeName] = useState<string | null>(null);
   const [mainTab, setMainTab] = useState<MainTab>("solo");
   const [soloTab, setSoloTab] = useState<SoloTab>("featured");
   const [packs, setPacks] = useState<QuizPack[]>([]);
@@ -415,6 +417,16 @@ function PlayPageInner() {
   const [roomsLoading, setRoomsLoading] = useState(false);
   const [roomsFetched, setRoomsFetched] = useState(false);
   const turns = useYourTurns();
+
+  // When sent here to challenge a friend, stay on Solo (pick a quiz) and resolve
+  // their name for the banner. Each quiz card carries ?challenge= so the result
+  // creates a targeted challenge.
+  useEffect(() => {
+    if (!challengeTo) return;
+    setMainTab("solo");
+    createClient().from("profiles").select("display_name").eq("id", challengeTo).single()
+      .then(({ data }: { data: { display_name: string | null } | null }) => setChallengeName(data?.display_name ?? null));
+  }, [challengeTo]);
   const [joinSheetOpen, setJoinSheetOpen] = useState(false);
   const [joinCode, setJoinCode] = useState("");
   const [joining, setJoining] = useState(false);
@@ -615,6 +627,15 @@ function PlayPageInner() {
 
           {/* Solo sub-tabs (Featured / World Cup / Club / Records) — scrollable so
               four pills never cramp on a narrow phone. */}
+          {mainTab === "solo" && challengeTo && (
+            <div className="rounded-2xl px-4 py-3 mb-3 flex items-center gap-2.5" style={{ background: "rgba(0,216,192,0.1)", border: "1px solid rgba(0,216,192,0.3)" }}>
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0 }}><path d="M10 2v16M2 10h16" stroke="#00d8c0" strokeWidth="2.2" strokeLinecap="round" /></svg>
+              <p className="font-body text-sm text-white">
+                Challenging <b style={{ color: "#00d8c0" }}>{challengeName ?? "your friend"}</b> — pick a quiz to set the score
+              </p>
+            </div>
+          )}
+
           {mainTab === "solo" && (
             <div className="flex gap-2 mb-3 overflow-x-auto -mx-1 px-1" style={{ scrollbarWidth: "none" }}>
               <button
@@ -774,11 +795,11 @@ function PlayPageInner() {
               <div className="grid grid-cols-2 gap-3">
                 {filtered.map((pack) =>
                   pack.parameter === "2025/26 End of Season" ? (
-                    <EndOfSeasonCard key={pack.id} pack={pack} />
+                    <EndOfSeasonCard key={pack.id} pack={pack} challengeTo={challengeTo} />
                   ) : pack.type === "club" ? (
-                    <ClubCard key={pack.id} pack={pack} />
+                    <ClubCard key={pack.id} pack={pack} challengeTo={challengeTo} />
                   ) : (
-                    <RecordsCard key={pack.id} pack={pack} />
+                    <RecordsCard key={pack.id} pack={pack} challengeTo={challengeTo} />
                   )
                 )}
               </div>

@@ -93,7 +93,8 @@ interface ChallengeAFriendButtonProps {
   correctCount: number;
   totalQuestions: number;
   maxScore: number;
-  challengerId: string;
+  invitedUserId?: string | null; // a specific friend (from ?challenge=) — else open link
+  invitedName?: string | null;
 }
 
 function ChallengeAFriendButton({
@@ -103,7 +104,8 @@ function ChallengeAFriendButton({
   correctCount,
   totalQuestions,
   maxScore,
-  challengerId,
+  invitedUserId,
+  invitedName,
 }: ChallengeAFriendButtonProps) {
   const [status, setStatus] = useState<"idle" | "creating" | "created">("idle");
   const [challengeId, setChallengeId] = useState<string | null>(null);
@@ -117,39 +119,23 @@ function ChallengeAFriendButton({
     if (status !== "idle") return;
     setStatus("creating");
     try {
-      const supabase = createClient();
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("display_name")
-        .eq("id", challengerId)
-        .single();
-
-      const challengerName = profile?.display_name ?? "Someone";
-
-      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-
-      const { data, error } = await supabase
-        .from("h2h_challenges")
-        .insert({
-          quiz_pack_id: packId,
-          quiz_pack_name: packName,
-          challenger_id: challengerId,
-          challenger_name: challengerName,
-          challenger_score: score,
-          challenger_correct: correctCount,
-          total_questions: totalQuestions,
-          max_score: maxScore,
-          expires_at: expiresAt,
-        })
-        .select("id")
-        .single();
-
-      if (error || !data) {
-        setStatus("idle");
-        return;
-      }
-
+      // Server-side create: owns challenger lookup + targeting (invited_user_id)
+      // + notifications. invitedUserId null = open link challenge.
+      const res = await fetch("/api/h2h/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          quizPackId: packId,
+          quizPackName: packName,
+          score,
+          correct: correctCount,
+          totalQuestions,
+          maxScore,
+          invitedUserId: invitedUserId ?? null,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.id) { setStatus("idle"); return; }
       setChallengeId(data.id);
       setStatus("created");
     } catch {
@@ -201,8 +187,12 @@ function ChallengeAFriendButton({
       <div className="flex items-center gap-2">
         <span className="text-lg">⚔️</span>
         <div>
-          <p className="font-display text-sm tracking-wide text-green">Challenge created!</p>
-          <p className="font-body text-xs text-text-muted">Share the link with a friend</p>
+          <p className="font-display text-sm tracking-wide text-green">
+            {invitedUserId ? `Sent to ${invitedName ?? "your friend"}!` : "Challenge created!"}
+          </p>
+          <p className="font-body text-xs text-text-muted">
+            {invitedUserId ? "They'll see it in their Your Turns inbox" : "Share the link with a friend"}
+          </p>
         </div>
       </div>
 
@@ -381,11 +371,20 @@ export default function ChallengePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pid = searchParams.get("pid"); // custom pack direct-by-ID shortcut
+  const invitedUserId = searchParams.get("challenge"); // targeted async challenge
 
   const [phase, setPhase] = useState<Phase>("loading");
   const [pack, setPack] = useState<QuizPack | null>(null);
   const [questions, setQuestions] = useState<RawQuestion[]>([]);
   const [badgeUrl, setBadgeUrl] = useState<string | null>(null);
+  const [invitedName, setInvitedName] = useState<string | null>(null);
+
+  // Resolve the invited friend's name for the "challenge sent to X" copy.
+  useEffect(() => {
+    if (!invitedUserId) return;
+    createClient().from("profiles").select("display_name").eq("id", invitedUserId).single()
+      .then(({ data }) => setInvitedName(data?.display_name ?? null));
+  }, [invitedUserId]);
 
   const [userId, setUserId] = useState<string | null>(null);
   const [priorAttempt, setPriorAttempt] = useState<{ score: number; max_score: number; correct_count: number } | null>(null);
@@ -1206,7 +1205,8 @@ export default function ChallengePage() {
               correctCount={correctCount}
               totalQuestions={questions.length}
               maxScore={maxScore}
-              challengerId={userId}
+              invitedUserId={invitedUserId}
+              invitedName={invitedName}
             />
           )}
 

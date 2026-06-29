@@ -332,10 +332,16 @@ export default function FriendsPage() {
                   <p className="font-body text-sm font-semibold text-white truncate">{f.display_name}</p>
                   <p className="font-body text-xs text-text-muted">{(f.total_score ?? 0).toLocaleString()} pts</p>
                 </div>
+                <Link href={`/play?challenge=${f.user_id}`}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-display text-xs tracking-wide flex-shrink-0 transition-all active:scale-[0.97]"
+                  style={{ background: "rgba(0,216,192,0.14)", color: "#00d8c0", border: "1px solid rgba(0,216,192,0.3)" }}>
+                  Challenge
+                </Link>
                 <Link href={`/messages/${f.user_id}`}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-body text-xs font-semibold transition-all"
-                  style={{ background: "rgba(0,201,255,0.1)", color: "#00c9ff", border: "1px solid rgba(0,201,255,0.2)" }}>
-                  💬 Message
+                  className="flex items-center justify-center w-8 h-8 rounded-lg flex-shrink-0 transition-all"
+                  style={{ background: "rgba(255,255,255,0.05)", color: "#9aa39d", border: "1px solid rgba(255,255,255,0.1)" }}
+                  aria-label="Message">
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M2 4.5A1.5 1.5 0 0 1 3.5 3h9A1.5 1.5 0 0 1 14 4.5v5A1.5 1.5 0 0 1 12.5 11H6l-3 2.5V11H3.5A1.5 1.5 0 0 1 2 9.5z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/></svg>
                 </Link>
               </div>
             ))}
