@@ -57,6 +57,11 @@ const SEGMENTS = {
   "dormant-38":       { angle: "Your 38-0 squad is waiting — new comp / rematch", pred: u => u.engagement_tier === "dormant" && u.plays_38 },
   "cooling-wc":       { angle: "Don't break the streak — today's WC board is live", pred: u => u.engagement_tier === "cooling" && u.plays_wc },
 
+  // First-game win-backs — lure them back with what they came in for
+  "dormant-started-38":   { angle: "Built an XI on day one — remember your first squad?", pred: u => u.engagement_tier === "dormant" && u.first_game === "38" },
+  "dormant-started-wc":   { angle: "Came for the WC Mastermind — it's still going daily", pred: u => u.engagement_tier === "dormant" && u.first_game === "wc" },
+  "dormant-started-quiz": { angle: "Started on the quiz — a fresh one's live today", pred: u => u.engagement_tier === "dormant" && u.first_game === "quiz" },
+
   // Cross-sell + social plays
   "38-never-quizzed": { angle: "Biggest cross-sell: good at 38-0, try today's quiz", pred: u => u.plays_38 && !u.plays_quiz },
   "active-no-league": { angle: "Retention engine: start a league with your mates", pred: u => u.engagement_tier === "active" && !u.in_league },
@@ -125,6 +130,7 @@ function context(users, name) {
   console.log(`\n🎯 Segment: ${name}  (${m.length} sendable)`);
   console.log(`   Angle: ${seg.angle}\n`);
   console.log(`   Primary game:`, by("primary_game"));
+  console.log(`   First game (entry point):`, by("first_game"));
   console.log(`   Engagement tier:`, by("engagement_tier"));
   console.log(`   In a league: ${m.filter(u => u.in_league).length}  ·  Has friends: ${m.filter(u => u.has_friends).length}  ·  Opted into push: ${m.filter(u => u.notifications_opt_in).length}`);
   console.log(`   Median days since last play: ${median ?? "n/a"}`);
