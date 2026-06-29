@@ -1191,12 +1191,15 @@ export type Database = {
           created_at: string | null
           expires_at: string | null
           id: string
+          invited_user_id: string | null
           max_score: number
           opponent_correct: number | null
           opponent_id: string | null
           opponent_score: number | null
           quiz_pack_id: string
           quiz_pack_name: string
+          seen_by_opponent: boolean
+          status: string
           total_questions: number
         }
         Insert: {
@@ -1207,12 +1210,15 @@ export type Database = {
           created_at?: string | null
           expires_at?: string | null
           id?: string
+          invited_user_id?: string | null
           max_score: number
           opponent_correct?: number | null
           opponent_id?: string | null
           opponent_score?: number | null
           quiz_pack_id: string
           quiz_pack_name: string
+          seen_by_opponent?: boolean
+          status?: string
           total_questions: number
         }
         Update: {
@@ -1223,12 +1229,15 @@ export type Database = {
           created_at?: string | null
           expires_at?: string | null
           id?: string
+          invited_user_id?: string | null
           max_score?: number
           opponent_correct?: number | null
           opponent_id?: string | null
           opponent_score?: number | null
           quiz_pack_id?: string
           quiz_pack_name?: string
+          seen_by_opponent?: boolean
+          status?: string
           total_questions?: number
         }
         Relationships: []

@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
 
   const { data: ch } = await db
     .from("h2h_challenges")
-    .select("id, quiz_pack_id, challenger_id, opponent_score, expires_at")
+    .select("id, quiz_pack_id, challenger_id, opponent_score, expires_at, invited_user_id")
     .eq("id", challengeId)
     .single();
 
@@ -74,6 +74,11 @@ export async function POST(req: NextRequest) {
   }
   if (ch.challenger_id === user.id) {
     return NextResponse.json({ error: "Cannot play your own challenge" }, { status: 400 });
+  }
+  // Targeted challenge: only the invited friend may accept. Open challenges
+  // (invited_user_id null) stay link-based — anyone may play.
+  if (ch.invited_user_id && ch.invited_user_id !== user.id) {
+    return NextResponse.json({ error: "This challenge is for someone else" }, { status: 403 });
   }
 
   // Authoritative answers live in the quiz pack.
@@ -134,6 +139,7 @@ export async function POST(req: NextRequest) {
       opponent_id: user.id,
       opponent_score: score,
       opponent_correct: correct,
+      status: "complete",
     })
     .eq("id", challengeId)
     .is("opponent_score", null)
