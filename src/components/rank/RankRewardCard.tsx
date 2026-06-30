@@ -15,6 +15,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { positionBadge, positionColor, type RankRow } from "@/lib/rank";
+import { AppMomentPrompt } from "@/components/app/AppMomentPrompt";
 
 type Snapshot = { overall_score: number; overall_rank: number };
 
@@ -66,7 +67,13 @@ export function RankRewardCard() {
   // Catch-up bar: how close you are to the player above (their score = full bar).
   const chasePct = gap !== null && row.ahead_points ? Math.min(1, row.overall_score / row.ahead_points) : 1;
 
+  // A "good moment": they just finished a game and earned points (so never on a
+  // brand-new player's first game — gained needs a prior snapshot). This is when
+  // we ask a native user to rate, or nudge a web iPhone user to download.
+  const success = !!(gained && gained.points > 0);
+
   return (
+    <>
     <Link href="/leaderboard" className="block rounded-2xl px-4 py-3.5 transition-opacity hover:opacity-90"
       style={{ background: "linear-gradient(135deg, rgba(174,234,0,0.10), rgba(174,234,0,0.05))", border: `1px solid ${accent}33` }}>
       <div className="flex items-center justify-between">
@@ -107,5 +114,7 @@ export function RankRewardCard() {
         </p>
       </div>
     </Link>
+    <AppMomentPrompt success={success} />
+    </>
   );
 }
