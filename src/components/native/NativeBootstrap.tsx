@@ -44,14 +44,32 @@ export function NativeBootstrap() {
         window.location.href = isReset ? "/auth/reset-password" : safeNext(new URL(url).searchParams.get("next"));
       };
 
+      // Handle every inbound link: auth (custom scheme) first, then https
+      // universal links for shared challenges (/h2h/*, /g/*) — navigate the
+      // webview to that path so a tapped challenge link lands on the board, not
+      // the home screen. Auth https links stay with the custom-scheme flow above.
+      const handleAppLink = async (url: string): Promise<void> => {
+        await handleAuthDeepLink(url);
+        try {
+          const u = new URL(url);
+          if (u.protocol === "https:" && u.hostname === "yourscore.app" &&
+              (u.pathname.startsWith("/h2h/") || u.pathname.startsWith("/g/"))) {
+            const target = u.pathname + u.search;
+            if (window.location.pathname + window.location.search !== target) {
+              window.location.href = target;
+            }
+          }
+        } catch { /* malformed url — ignore */ }
+      };
+
       // Cold launch: the deep link may have launched the app while it wasn't
       // running. App.getLaunchUrl returns the original cold-launch URL once.
       const launch = await App.getLaunchUrl();
-      if (launch?.url) await handleAuthDeepLink(launch.url);
+      if (launch?.url) await handleAppLink(launch.url);
 
       // Warm state: app already running when the deep link returns.
       const handler = await App.addListener("appUrlOpen", async (event) => {
-        if (event?.url) await handleAuthDeepLink(event.url);
+        if (event?.url) await handleAppLink(event.url);
       });
 
       // Push: we never REQUEST permission (Apple 4.5.4 — that stays behind the

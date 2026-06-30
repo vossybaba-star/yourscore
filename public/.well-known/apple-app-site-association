@@ -7,7 +7,9 @@
           { "/": "/auth/callback", "comment": "magic link / OAuth sign-in" },
           { "/": "/auth/callback*", "comment": "sign-in with query string" },
           { "/": "/auth/reset-password", "comment": "password reset" },
-          { "/": "/auth/reset-password*", "comment": "password reset with query string" }
+          { "/": "/auth/reset-password*", "comment": "password reset with query string" },
+          { "/": "/h2h/*", "comment": "1v1 async challenge link" },
+          { "/": "/g/*", "comment": "group challenge board link" }
         ]
       }
     ]

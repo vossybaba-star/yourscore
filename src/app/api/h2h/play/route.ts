@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { rateLimitDistributed } from "@/lib/ratelimit";
+import { notifyUsers } from "@/lib/notify";
 import {
   scoreAnswer,
   calculatePerfectRoundBonus,
@@ -59,7 +60,7 @@ export async function POST(req: NextRequest) {
 
   const { data: ch } = await db
     .from("h2h_challenges")
-    .select("id, quiz_pack_id, challenger_id, opponent_score, expires_at, invited_user_id")
+    .select("id, quiz_pack_id, quiz_pack_name, challenger_id, challenger_score, opponent_score, expires_at, invited_user_id")
     .eq("id", challengeId)
     .single();
 
@@ -149,6 +150,17 @@ export async function POST(req: NextRequest) {
   if (error || !updated) {
     return NextResponse.json({ error: "Challenge already completed" }, { status: 409 });
   }
+
+  // Tell the challenger their challenge just got played → opens /h2h/<id> result.
+  // Won/lost framed from the challenger's side. Best-effort, opt-in-gated, deduped.
+  const beat = score > (ch.challenger_score ?? 0);
+  void notifyUsers({
+    userIds: [ch.challenger_id],
+    title: beat ? "Your score got beaten" : "Your challenge was played",
+    body: `${profile?.display_name ?? "Someone"} ${beat ? "beat your" : "took on your"} ${ch.quiz_pack_name ?? "challenge"} — see the result`,
+    url: `/h2h/${challengeId}`,
+    dedupeKey: `h2h-result:${challengeId}`,
+  });
 
   return NextResponse.json({
     opponentScore: score,

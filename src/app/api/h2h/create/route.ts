@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { rateLimitDistributed } from "@/lib/ratelimit";
+import { notifyUsers } from "@/lib/notify";
 
 // Create a head-to-head challenge from the authenticated challenger's just-played
 // result. Server-side (vs the old client insert) so it can target a specific
@@ -72,8 +73,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Could not create challenge" }, { status: 500 });
   }
 
-  // TODO(Step 6): when invitedUserId is set, send the "X challenged you" email
-  // (gated on profiles.notifications_opt_in, best-effort). Push rides the rebuild.
+  // Notify a targeted friend: "X challenged you" → opens /h2h/<id>. Best-effort,
+  // opt-in-gated, deduped per challenge. (Email also deferred — push covers it.)
+  if (invitedUserId) {
+    void notifyUsers({
+      userIds: [invitedUserId],
+      title: "You've been challenged",
+      body: `${profile?.display_name ?? "Someone"} challenged you on ${quizPackName}`,
+      url: `/h2h/${data.id}`,
+      dedupeKey: `h2h-challenge:${data.id}`,
+    });
+  }
 
   return NextResponse.json({ id: data.id });
 }

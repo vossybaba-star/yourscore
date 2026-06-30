@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { rateLimitDistributed } from "@/lib/ratelimit";
+import { notifyUsers } from "@/lib/notify";
 
 // Create a group challenge: a quiz + a set of participants (the creator, plus any
 // invited friends). The creator may seed the board with their own score or skip
@@ -81,7 +82,17 @@ export async function POST(req: NextRequest) {
   ];
   await db.from("group_challenge_participants").insert(rows);
 
-  // TODO(native): push "X invited you to a group challenge" to invited friends.
+  // Push the invited friends: "X started a group challenge" → opens the board.
+  // Best-effort, opt-in-gated, one push per invitee for this board.
+  if (invited.length) {
+    void notifyUsers({
+      userIds: invited,
+      title: "New group challenge",
+      body: `${names[user.id] ?? "Someone"} started a ${quizPackName} board — beat the group`,
+      url: `/g/${challenge.id}`,
+      dedupeKey: `grp-invite:${challenge.id}`,
+    });
+  }
 
   return NextResponse.json({ id: challenge.id });
 }

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { GroupChallengeButton } from "@/components/challenges/GroupChallengeButton";
+import { haptic } from "@/lib/haptics";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { getTeamBadgeUrl } from "@/lib/teamImages";
@@ -647,6 +648,7 @@ export default function ChallengePage() {
     setCorrectStreak(nextCorrectStreak);
     setWrongStreak(nextWrongStreak);
 
+    void haptic(isCorrect ? "correct" : "wrong"); // native-only buzz on reveal
     setSelected(letter);
     setRevealed(true);
     setLastPoints(isCorrect ? pts : null);
@@ -662,6 +664,7 @@ export default function ChallengePage() {
     setTimeout(async () => {
       if (currentIdx + 1 >= questions.length) {
         const correctCount = newLog.filter((r) => r.correct).length;
+        if (correctCount === questions.length) void haptic("win"); // perfect round
         const perfectBonus = calculatePerfectRoundBonus(correctCount, questions.length);
         // Optimistic local total for instant display; the SAVED score is graded
         // server-side and overrides this if the request succeeds.
