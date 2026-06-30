@@ -23,13 +23,24 @@ export async function GET(req: NextRequest) {
   // untyped handle to avoid the generated-types union complaining.
   const raw = createServiceClient() as unknown as SupabaseClient;
 
-  const { data, error } = await raw
+  const now = new Date().toISOString();
+
+  const { data: h2h, error: e1 } = await raw
     .from("h2h_challenges")
     .update({ status: "expired" })
     .eq("status", "awaiting_opponent")
-    .lt("expires_at", new Date().toISOString())
+    .lt("expires_at", now)
     .select("id");
+  if (e1) return NextResponse.json({ error: e1.message }, { status: 500 });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ expired: data?.length ?? 0 });
+  // Group challenges share the same 7-day lifecycle.
+  const { data: grp, error: e2 } = await raw
+    .from("group_challenges")
+    .update({ status: "expired" })
+    .eq("status", "open")
+    .lt("expires_at", now)
+    .select("id");
+  if (e2) return NextResponse.json({ error: e2.message }, { status: 500 });
+
+  return NextResponse.json({ expired_1v1: h2h?.length ?? 0, expired_group: grp?.length ?? 0 });
 }
