@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { GroupChallengeButton } from "@/components/challenges/GroupChallengeButton";
 import { haptic } from "@/lib/haptics";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -1241,28 +1240,16 @@ export default function ChallengePage() {
               SEE THE LEADERBOARD →
             </Button>
           ) : userId ? (
-            <>
-              <ChallengeAFriendButton
-                packId={pack.id}
-                packName={pack.name}
-                score={score}
-                correctCount={correctCount}
-                totalQuestions={questions.length}
-                maxScore={maxScore}
-                invitedUserId={invitedUserId}
-                invitedName={invitedName}
-              />
-              {!invitedUserId && (
-                <GroupChallengeButton
-                  packId={pack.id}
-                  packName={pack.name}
-                  totalQuestions={questions.length}
-                  maxScore={maxScore}
-                  score={score}
-                  correctCount={correctCount}
-                />
-              )}
-            </>
+            <ChallengeAFriendButton
+              packId={pack.id}
+              packName={pack.name}
+              score={score}
+              correctCount={correctCount}
+              totalQuestions={questions.length}
+              maxScore={maxScore}
+              invitedUserId={invitedUserId}
+              invitedName={invitedName}
+            />
           ) : null}
 
           <Button variant="primary" tone="teal" size="lg" fullWidth onClick={() => router.push("/challenges")}>

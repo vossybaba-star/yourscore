@@ -15,7 +15,7 @@ import { LeaguesPanel } from "@/components/leagues/LeaguesPanel";
 // Leagues are real in-place sub-tabs (Friends + Leagues render the existing
 // pages with their chrome stripped via `embedded`, so back never leaves Versus).
 
-type View = "play" | "friends" | "groups" | "leagues";
+type View = "play" | "friends" | "leagues";
 
 function FeedIcon({ k, color }: { k: VersusFeedItem["iconKey"]; color: string }) {
   const p =
@@ -144,12 +144,12 @@ function VersusInner() {
     );
   }
 
-  const groupTurns = turns.yourTurn.filter((c) => c.kind === "group");
-  const groupWaiting = turns.waiting.filter((c) => c.kind === "group");
-  const groupResults = turns.results.filter((c) => c.kind === "group");
+  // Groups retired — show only 1v1 challenges in the inbox.
+  const only1v1 = (list: InboxChallenge[]) => list.filter((c) => c.kind !== "group");
+  const yourTurn = only1v1(turns.yourTurn), waiting = only1v1(turns.waiting), results = only1v1(turns.results);
 
   const PILLS: { key: View; label: string }[] = [
-    { key: "play", label: "Play" }, { key: "friends", label: "Friends" }, { key: "groups", label: "Groups" }, { key: "leagues", label: "Leagues" },
+    { key: "play", label: "Play" }, { key: "friends", label: "Friends" }, { key: "leagues", label: "Leagues" },
   ];
 
   return (
@@ -178,33 +178,15 @@ function VersusInner() {
       {view === "friends" && <FriendsPanel embedded />}
       {view === "leagues" && <LeaguesPanel embedded />}
 
-      {(view === "play" || view === "groups") && (
+      {view === "play" && (
         <div className="max-w-lg mx-auto px-5">
-          {view === "play" && (
-            <>
-              <div className="pt-4">
-                {VERSUS_FEED.map((item) => item.kind === "hero" ? <HeroCard key={item.id} item={item} /> : <FeedCard key={item.id} item={item} />)}
-              </div>
+          <div className="pt-4">
+            {VERSUS_FEED.map((item) => item.kind === "hero" ? <HeroCard key={item.id} item={item} /> : <FeedCard key={item.id} item={item} />)}
+          </div>
 
-              {turns.yourTurn.length > 0 && (<><SectionLabel>Your turn</SectionLabel><div className="space-y-2">{turns.yourTurn.map((c) => <InboxRow key={c.id} c={c} kind="play" />)}</div></>)}
-              {turns.waiting.length > 0 && (<><SectionLabel>Waiting on them</SectionLabel><div className="space-y-2">{turns.waiting.map((c) => <InboxRow key={c.id} c={c} kind="waiting" />)}</div></>)}
-              {turns.results.length > 0 && (<><SectionLabel>Recent results</SectionLabel><div className="space-y-2">{turns.results.map((c) => <InboxRow key={c.id} c={c} kind="result" />)}</div></>)}
-            </>
-          )}
-
-          {view === "groups" && (
-            <div className="pt-4">
-              <SectionLabel>Your turn</SectionLabel>
-              {groupTurns.length ? <div className="space-y-2">{groupTurns.map((c) => <InboxRow key={c.id} c={c} kind="play" />)}</div> : <p className="font-body text-sm text-text-muted">Nothing waiting on you.</p>}
-              {groupWaiting.length > 0 && (<><SectionLabel>Waiting on them</SectionLabel><div className="space-y-2">{groupWaiting.map((c) => <InboxRow key={c.id} c={c} kind="waiting" />)}</div></>)}
-              {groupResults.length > 0 && (<><SectionLabel>Finished</SectionLabel><div className="space-y-2">{groupResults.map((c) => <InboxRow key={c.id} c={c} kind="result" />)}</div></>)}
-              <div className="mt-6 rounded-2xl p-4 bg-surface" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
-                <p className="font-body text-sm text-white">Start a group board</p>
-                <p className="font-body text-xs text-text-muted mt-1 mb-3">Play a quiz, then invite the group from the result screen.</p>
-                <Link href="/play" className="inline-block rounded-xl px-4 py-2 font-display text-sm tracking-wide" style={{ background: "rgba(0,216,192,0.12)", border: "1px solid rgba(0,216,192,0.35)", color: "#00d8c0" }}>Pick a quiz →</Link>
-              </div>
-            </div>
-          )}
+          {yourTurn.length > 0 && (<><SectionLabel>Your turn</SectionLabel><div className="space-y-2">{yourTurn.map((c) => <InboxRow key={c.id} c={c} kind="play" />)}</div></>)}
+          {waiting.length > 0 && (<><SectionLabel>Waiting on them</SectionLabel><div className="space-y-2">{waiting.map((c) => <InboxRow key={c.id} c={c} kind="waiting" />)}</div></>)}
+          {results.length > 0 && (<><SectionLabel>Recent results</SectionLabel><div className="space-y-2">{results.map((c) => <InboxRow key={c.id} c={c} kind="result" />)}</div></>)}
         </div>
       )}
 
