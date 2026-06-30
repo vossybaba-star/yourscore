@@ -28,23 +28,27 @@ export const OPPONENT_ROUTES: Record<VersusGame["id"], Partial<Record<OpponentMo
   },
 };
 
-// In-app marketing tiles for the Versus tab. Benefit-led, one CTA each, plain
-// fan voice (say "friend", not "mate"). Edit/reorder here — the tab just maps.
-export interface VersusPromo {
+// The Versus feed: an image-led, scrollable discovery surface. One hero, then
+// rich image-backed action cards. Benefit-led, one CTA each, plain fan voice
+// (say "friend", not "mate"). `image` is a static asset in public/. Edit/reorder
+// here — the tab just maps.
+export interface VersusFeedItem {
   id: string;
+  kind: "hero" | "card";
   title: string;
   sub: string;
   cta: string;
   href: string;
   accent: string; // teal = quiz-flavoured, lime = 38-0
+  image: string; // public/ path
   iconKey: "quiz" | "jersey" | "group" | "globe";
 }
 
-export const VERSUS_PROMOS: VersusPromo[] = [
-  { id: "challenge-friend", title: "Challenge a friend", sub: "Pick a quiz, fire them your score and see if they can beat it.", cta: "Choose a friend", href: "/friends", accent: "#00d8c0", iconKey: "quiz" },
-  { id: "play-38-0", title: "Take someone on at 38-0", sub: "Draft your XI and go head-to-head, live.", cta: "Find a match", href: "/38-0/live", accent: "#aeea00", iconKey: "jersey" },
-  { id: "start-group", title: "Get the group involved", sub: "One quiz, the whole group, one leaderboard to settle it.", cta: "Start a group", href: "/play", accent: "#00d8c0", iconKey: "group" },
-  { id: "play-open", title: "Play someone new", sub: "Jump into an open game and take on whoever's about.", cta: "Find a game", href: "/play/new", accent: "#00d8c0", iconKey: "globe" },
+export const VERSUS_FEED: VersusFeedItem[] = [
+  { id: "daily", kind: "hero", title: "The daily World Cup challenge", sub: "Fresh questions every day — see who tops your group", cta: "Play today's", href: "/play", accent: "#00d8c0", image: "/email/wc-banner.jpg", iconKey: "quiz" },
+  { id: "challenge-friend", kind: "card", title: "Challenge a friend", sub: "Pick a quiz, fire them your score, see if they can beat it.", cta: "Choose a friend", href: "/versus?view=friends", accent: "#00d8c0", image: "/email/h2h-gameplay.png", iconKey: "quiz" },
+  { id: "play-38-0", kind: "card", title: "Take someone on at 38-0", sub: "Draft your XI and go head-to-head, live.", cta: "Find a match", href: "/38-0/live", accent: "#aeea00", image: "/email/wc-draft.png", iconKey: "jersey" },
+  { id: "start-group", kind: "card", title: "Get the group involved", sub: "One quiz, the whole group, one leaderboard to settle it.", cta: "Start a group", href: "/play", accent: "#00d8c0", image: "/email/wc-leaderboard.png", iconKey: "group" },
 ];
 
 export const VERSUS_GAMES: VersusGame[] = [
