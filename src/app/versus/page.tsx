@@ -7,6 +7,7 @@ import { useUser } from "@/hooks/useUser";
 import { useYourTurns, type InboxChallenge } from "@/hooks/useYourTurns";
 import { VERSUS_FEED, type VersusFeedItem } from "@/lib/versus/registry";
 import { BottomNav } from "@/components/ui/BottomNav";
+import { LiveLobbies } from "@/components/versus/LiveLobbies";
 import { FriendsPanel } from "@/components/friends/FriendsPanel";
 import { LeaguesPanel } from "@/components/leagues/LeaguesPanel";
 
@@ -185,6 +186,9 @@ function VersusInner() {
           </div>
 
           {yourTurn.length > 0 && (<><SectionLabel>Your turn</SectionLabel><div className="space-y-2">{yourTurn.map((c) => <InboxRow key={c.id} c={c} kind="play" />)}</div></>)}
+
+          <LiveLobbies />
+
           {waiting.length > 0 && (<><SectionLabel>Waiting on them</SectionLabel><div className="space-y-2">{waiting.map((c) => <InboxRow key={c.id} c={c} kind="waiting" />)}</div></>)}
           {results.length > 0 && (<><SectionLabel>Recent results</SectionLabel><div className="space-y-2">{results.map((c) => <InboxRow key={c.id} c={c} kind="result" />)}</div></>)}
         </div>

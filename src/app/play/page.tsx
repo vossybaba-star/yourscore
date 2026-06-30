@@ -645,18 +645,13 @@ function PlayPageInner() {
             </div>
           </div>
 
-          {/* Solo / Multiplayer / Leaderboards toggle */}
+          {/* Solo / Leaderboards toggle (Multiplayer moved to the Versus tab). */}
           <div className="flex gap-1 p-1 rounded-2xl mb-3"
             style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
             <button onClick={() => setMainTab("solo")}
               className="flex-1 py-2 rounded-xl font-body text-xs font-semibold transition-all"
               style={mainTab === "solo" ? { background: "#00d8c0", color: "#0a0a0f" } : { background: "transparent", color: "#8a948f" }}>
               Solo
-            </button>
-            <button onClick={() => setMainTab("multiplayer")}
-              className="flex-1 py-2 rounded-xl font-body text-xs font-semibold transition-all"
-              style={mainTab === "multiplayer" ? { background: "#00d8c0", color: "#0a0a0f" } : { background: "transparent", color: "#8a948f" }}>
-              Multiplayer
             </button>
             <button onClick={() => setMainTab("leaderboards")}
               className="flex-1 flex items-center justify-center gap-1 py-2 rounded-xl font-body text-xs font-semibold transition-all"
