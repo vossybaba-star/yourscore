@@ -136,6 +136,27 @@ function ContactsInviteButton() {
 
 // Friends list / requests / search. Standalone at /friends and embedded in the
 // Versus tab (embedded=true strips the page chrome + bottom nav).
+// Share your personal add-link. navigator.share works in the iOS WKWebView, so
+// this is the cross-platform way to invite (contacts picker is Android-web only).
+function InviteFriendButton({ myId }: { myId: string | null }) {
+  const [copied, setCopied] = useState(false);
+  async function invite() {
+    if (!myId) return;
+    const url = `${typeof window !== "undefined" ? window.location.origin : "https://yourscore.app"}/add/${myId}`;
+    const text = "Add me on YourScore and let's go head-to-head ⚽";
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try { await navigator.share({ title: "YourScore", text, url }); return; } catch { /* dismissed */ }
+    }
+    try { await navigator.clipboard?.writeText(`${text} ${url}`); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* no-op */ }
+  }
+  return (
+    <button onClick={invite} disabled={!myId} className="w-full mb-3 rounded-2xl py-3.5 font-display tracking-widest text-sm active:scale-[0.98] transition-transform disabled:opacity-50"
+      style={{ background: "#00d8c0", color: "#04231f" }}>
+      {copied ? "LINK COPIED ✓" : "INVITE A FRIEND →"}
+    </button>
+  );
+}
+
 export function FriendsPanel({ embedded = false }: { embedded?: boolean }) {
   const [myId, setMyId] = useState<string | null>(null);
   const [friends, setFriends] = useState<Friend[]>([]);
@@ -317,6 +338,7 @@ export function FriendsPanel({ embedded = false }: { embedded?: boolean }) {
         {/* ── FRIENDS TAB ─────────────────────────────────────────────── */}
         {activeTab === "friends" && (
           <>
+            <InviteFriendButton myId={myId} />
             {accepted.length === 0 ? (
               <div className="rounded-2xl p-8 text-center fade-in" style={{ background: "rgba(255,255,255,0.03)", border: "1px dashed rgba(255,255,255,0.08)" }}>
                 <p className="text-3xl mb-3">🤝</p>
