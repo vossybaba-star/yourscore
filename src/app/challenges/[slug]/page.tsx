@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { GroupChallengeButton } from "@/components/challenges/GroupChallengeButton";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { getTeamBadgeUrl } from "@/lib/teamImages";
@@ -395,6 +396,7 @@ export default function ChallengePage() {
   const searchParams = useSearchParams();
   const pid = searchParams.get("pid"); // custom pack direct-by-ID shortcut
   const invitedUserId = searchParams.get("challenge"); // targeted async challenge
+  const groupId = searchParams.get("group"); // playing into a group challenge board
 
   const [phase, setPhase] = useState<Phase>("loading");
   const [pack, setPack] = useState<QuizPack | null>(null);
@@ -709,8 +711,19 @@ export default function ChallengePage() {
             /* network error — keep the optimistic local score on screen */
           }
         }
+        // Playing into a group board → record server-graded score for the board.
+        if (groupId && userId) {
+          void fetch("/api/challenge/play", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              challengeId: groupId,
+              answers: newLog.map((r) => ({ letter: r.selected, elapsedMs: r.elapsed_ms })),
+            }),
+          }).catch(() => {});
+        }
         setScore(finalScore);
-        trackGameComplete("quiz", { mode: "solo", score: finalScore });
+        trackGameComplete("quiz", { mode: groupId ? "group" : "solo", score: finalScore });
         setPhase("results");
       } else {
         setCurrentIdx((i) => i + 1);
@@ -1220,18 +1233,34 @@ export default function ChallengePage() {
             </div>
           )}
 
-          {userId && (
-            <ChallengeAFriendButton
-              packId={pack.id}
-              packName={pack.name}
-              score={score}
-              correctCount={correctCount}
-              totalQuestions={questions.length}
-              maxScore={maxScore}
-              invitedUserId={invitedUserId}
-              invitedName={invitedName}
-            />
-          )}
+          {userId && groupId ? (
+            <Button variant="primary" tone="teal" size="lg" fullWidth onClick={() => router.push(`/g/${groupId}`)}>
+              SEE THE LEADERBOARD →
+            </Button>
+          ) : userId ? (
+            <>
+              <ChallengeAFriendButton
+                packId={pack.id}
+                packName={pack.name}
+                score={score}
+                correctCount={correctCount}
+                totalQuestions={questions.length}
+                maxScore={maxScore}
+                invitedUserId={invitedUserId}
+                invitedName={invitedName}
+              />
+              {!invitedUserId && (
+                <GroupChallengeButton
+                  packId={pack.id}
+                  packName={pack.name}
+                  totalQuestions={questions.length}
+                  maxScore={maxScore}
+                  score={score}
+                  correctCount={correctCount}
+                />
+              )}
+            </>
+          ) : null}
 
           <Button variant="primary" tone="teal" size="lg" fullWidth onClick={() => router.push("/challenges")}>
             MORE CHALLENGES →

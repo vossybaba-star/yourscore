@@ -9,15 +9,18 @@ import { createClient } from "@/lib/supabase/client";
 
 export interface InboxChallenge {
   id: string;
+  kind: "1v1" | "group";
   packName: string;
-  status: string; // awaiting_opponent | complete | expired
+  status: string; // awaiting_opponent | complete | expired | open
   iAmChallenger: boolean;
   myScore: number | null; // null until I've played
-  theirScore: number | null; // null until they've played
-  otherName: string; // the other player (or "Open challenge" for an un-accepted link)
+  theirScore: number | null; // null until they've played (1v1 only)
+  otherName: string; // the other player, or "<creator>'s board" for a group
   invitedUserId: string | null;
   createdAt: string | null;
   expiresAt: string | null;
+  groupPlayers?: number; // group only — total participants
+  groupPlayed?: number; // group only — how many have a score
 }
 
 export interface YourTurns {
@@ -74,6 +77,7 @@ export function useYourTurns(): YourTurns {
         : (r.challenger_name ?? "Player");
       return {
         id: r.id,
+        kind: "1v1",
         packName: r.quiz_pack_name,
         status: r.status,
         iAmChallenger,
@@ -86,9 +90,60 @@ export function useYourTurns(): YourTurns {
       };
     };
 
-    setYourTurn((incoming.data ?? []).map(shape));
-    setWaiting((outgoing.data ?? []).map(shape));
-    setResults((done.data ?? []).map(shape));
+    // ── Group challenges ──────────────────────────────────────────────────────
+    // My participant rows, joined to the board. Classify each (exclusive):
+    //   open + I haven't scored → your turn · open + I've scored → waiting ·
+    //   complete/expired → results.
+    const { data: myParts } = await sb
+      .from("group_challenge_participants")
+      .select("score, challenge:group_challenges(id, quiz_pack_name, creator_id, creator_name, status, expires_at, created_at)")
+      .eq("user_id", uid);
+
+    const gParts = (myParts ?? []).filter((p: Row) => p.challenge);
+    // Player + played counts per board (one query over all my boards).
+    const gIds = gParts.map((p: Row) => p.challenge.id);
+    const counts: Record<string, { players: number; played: number }> = {};
+    if (gIds.length) {
+      const { data: allParts } = await sb
+        .from("group_challenge_participants").select("challenge_id, score").in("challenge_id", gIds);
+      (allParts ?? []).forEach((p: Row) => {
+        const c = counts[p.challenge_id] ?? { players: 0, played: 0 };
+        c.players += 1; if (p.score !== null) c.played += 1;
+        counts[p.challenge_id] = c;
+      });
+    }
+
+    const shapeGroup = (p: Row): InboxChallenge => {
+      const c = p.challenge;
+      return {
+        id: c.id,
+        kind: "group",
+        packName: c.quiz_pack_name,
+        status: c.status,
+        iAmChallenger: c.creator_id === uid,
+        myScore: p.score,
+        theirScore: null,
+        otherName: `${c.creator_name ?? "Someone"}'s board`,
+        invitedUserId: null,
+        createdAt: c.created_at ?? null,
+        expiresAt: c.expires_at ?? null,
+        groupPlayers: counts[c.id]?.players ?? 1,
+        groupPlayed: counts[c.id]?.played ?? 0,
+      };
+    };
+
+    const gTurn: InboxChallenge[] = [], gWait: InboxChallenge[] = [], gDone: InboxChallenge[] = [];
+    for (const p of gParts) {
+      const open = p.challenge.status === "open" && new Date(p.challenge.expires_at) > new Date();
+      if (!open) gDone.push(shapeGroup(p));
+      else if (p.score === null) gTurn.push(shapeGroup(p));
+      else gWait.push(shapeGroup(p));
+    }
+
+    const byNewest = (a: InboxChallenge, b: InboxChallenge) => (b.createdAt ?? "").localeCompare(a.createdAt ?? "");
+    setYourTurn([...(incoming.data ?? []).map(shape), ...gTurn].sort(byNewest));
+    setWaiting([...(outgoing.data ?? []).map(shape), ...gWait].sort(byNewest));
+    setResults([...(done.data ?? []).map(shape), ...gDone].sort(byNewest).slice(0, 15));
     setLoading(false);
   }, []);
 

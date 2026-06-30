@@ -355,9 +355,54 @@ function joinErrorMessage(raw: string): string {
   return raw || "Could not join this lobby.";
 }
 
+// Small avatar glyph marking a group (vs 1v1) inbox row.
+function GroupGlyph({ dim = false }: { dim?: boolean }) {
+  const col = dim ? "#9aa39d" : "#00d8c0";
+  const bg = dim ? "rgba(255,255,255,0.06)" : "rgba(0,216,192,0.15)";
+  return (
+    <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: bg, color: col, border: `1px solid ${dim ? "rgba(255,255,255,0.1)" : "rgba(0,216,192,0.25)"}` }}>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <circle cx="9" cy="8" r="3" stroke="currentColor" strokeWidth="1.8" />
+        <path d="M3.5 19a5.5 5.5 0 0111 0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        <circle cx="17" cy="9" r="2.2" stroke="currentColor" strokeWidth="1.6" />
+        <path d="M16 14.5a4.5 4.5 0 014.5 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      </svg>
+    </div>
+  );
+}
+
 // One row in the async-challenge inbox. kind drives the styling/CTA.
 function InboxRow({ c, kind }: { c: InboxChallenge; kind: "play" | "waiting" | "result" }) {
   const initial = (c.otherName[0] ?? "?").toUpperCase();
+
+  // Group challenges link to the board and show player counts instead of H2H scores.
+  if (c.kind === "group") {
+    const players = c.groupPlayers ?? 1, played = c.groupPlayed ?? 0;
+    const teal = "#00d8c0";
+    if (kind === "waiting") {
+      return (
+        <div className="flex items-center gap-3 rounded-2xl px-4 py-3.5 bg-surface" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
+          <GroupGlyph dim />
+          <div className="flex-1 min-w-0">
+            <p className="font-body text-sm font-semibold text-white truncate">{c.otherName}</p>
+            <p className="font-body text-xs text-text-muted truncate">{c.packName} · {played}/{players} played</p>
+          </div>
+          <span className="font-body text-xs flex-shrink-0" style={{ color: "#586058" }}>Waiting…</span>
+        </div>
+      );
+    }
+    const isPlay = kind === "play";
+    return (
+      <Link href={`/g/${c.id}`} className="flex items-center gap-3 rounded-2xl px-4 py-3.5 bg-surface transition-all active:scale-[0.99]" style={{ border: `1px solid ${isPlay ? "rgba(0,216,192,0.25)" : "rgba(255,255,255,0.08)"}` }}>
+        <GroupGlyph />
+        <div className="flex-1 min-w-0">
+          <p className="font-body text-sm font-semibold text-white truncate">{isPlay ? `${c.otherName} — your turn` : c.otherName}</p>
+          <p className="font-body text-xs text-text-muted truncate">{c.packName} · {players} player{players === 1 ? "" : "s"}{!isPlay ? ` · you scored ${(c.myScore ?? 0).toLocaleString()}` : ""}</p>
+        </div>
+        <span className="font-display text-xs tracking-wide px-3 py-1.5 rounded-lg flex-shrink-0" style={{ background: isPlay ? "rgba(0,216,192,0.15)" : "transparent", color: isPlay ? teal : "#586058", border: isPlay ? "1px solid rgba(0,216,192,0.3)" : "none" }}>{isPlay ? "PLAY" : "BOARD"}</span>
+      </Link>
+    );
+  }
 
   if (kind === "play") {
     return (
