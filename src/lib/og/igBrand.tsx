@@ -63,25 +63,50 @@ const bgFor = (a: Accent) =>
     ? "linear-gradient(150deg, #080d0a 0%, #15110a 55%, #0b0d08 100%)"
     : "linear-gradient(150deg, #080d0a 0%, #0e1611 55%, #0b1410 100%)";
 
-// ── Backdrop imagery (dimmed watermark layer) ────────────────────────────────
+// ── Backdrop imagery ─────────────────────────────────────────────────────────
 export type Backdrop = "trophy" | "pitch" | "grid" | "none";
 
-/** A clean, code-drawn gold trophy. Vector — never reads as an AI image. */
-function TrophyBackdrop({ size }: { size: number }): ReactElement {
-  const g = BRAND.gold;
-  const gd = "#b8860b";
-  const gl = "#ffe08a";
+// Gold ramp for a metallic, lit look (no SVG gradients — Satori-reliable solids).
+const GOLD = {
+  hi: "#fff1c2", // specular highlight
+  l: "#ffdd6e", // light
+  m: "#f5b820", // mid
+  d: "#c0820c", // shadow
+  dd: "#7c5206", // deep shadow
+} as const;
+
+/**
+ * A faceted, lit gold trophy — drawn from many solid-tone facets so it reads as
+ * a real metallic object (highlight down the centre, shadow on the flanks), not
+ * a flat silhouette. Vector, so it never looks like an AI image.
+ */
+function TrophyArt({ size }: { size: number }): ReactElement {
   return (
-    <svg width={size} height={size * 1.3} viewBox="0 0 200 260" style={{ display: "flex" }}>
-      <path d="M44 42 C10 42 10 116 62 116" stroke={g} strokeWidth={14} fill="none" />
-      <path d="M156 42 C190 42 190 116 138 116" stroke={g} strokeWidth={14} fill="none" />
-      <rect x={38} y={30} width={124} height={16} rx={8} fill={gl} />
-      <path d="M44 46 L156 46 L146 118 C146 150 54 150 54 118 Z" fill={g} />
-      <path d="M44 46 L100 46 L100 146 C72 144 56 132 54 118 Z" fill={gd} opacity={0.55} />
-      <rect x={91} y={150} width={18} height={42} fill={gd} />
-      <rect x={60} y={192} width={80} height={16} rx={5} fill={g} />
-      <rect x={48} y={208} width={104} height={24} rx={8} fill={gd} />
-      <rect x={40} y={232} width={120} height={14} rx={6} fill={g} />
+    <svg width={size} height={size * 1.32} viewBox="0 0 200 264" style={{ display: "flex" }}>
+      {/* handles */}
+      <path d="M46 50 C12 50 14 122 64 122" stroke={GOLD.m} strokeWidth={15} fill="none" strokeLinecap="round" />
+      <path d="M154 50 C188 50 186 122 136 122" stroke={GOLD.m} strokeWidth={15} fill="none" strokeLinecap="round" />
+      <path d="M46 50 C18 50 18 110 60 120" stroke={GOLD.l} strokeWidth={6} fill="none" strokeLinecap="round" />
+      {/* bowl — flank shadows then centre highlight for roundness */}
+      <path d="M40 44 L160 44 L148 120 C148 154 52 154 52 120 Z" fill={GOLD.m} />
+      <path d="M40 44 L74 44 L70 120 C66 138 56 132 52 120 Z" fill={GOLD.d} />
+      <path d="M126 44 L160 44 L148 120 C146 134 136 140 130 120 Z" fill={GOLD.d} />
+      <path d="M86 44 L114 44 L110 124 C108 150 92 150 90 124 Z" fill={GOLD.l} />
+      <path d="M95 46 L105 46 L103 120 C102 140 98 140 97 120 Z" fill={GOLD.hi} />
+      {/* rim */}
+      <rect x={36} y={36} width={128} height={14} rx={7} fill={GOLD.l} />
+      <rect x={36} y={36} width={128} height={5} rx={2.5} fill={GOLD.hi} />
+      {/* stem + knot */}
+      <rect x={92} y={150} width={16} height={30} fill={GOLD.m} />
+      <rect x={92} y={150} width={6} height={30} fill={GOLD.l} />
+      <ellipse cx={100} cy={182} rx={20} ry={8} fill={GOLD.d} />
+      <ellipse cx={100} cy={180} rx={20} ry={7} fill={GOLD.m} />
+      {/* tiered base */}
+      <rect x={66} y={188} width={68} height={16} rx={5} fill={GOLD.m} />
+      <rect x={66} y={188} width={68} height={5} rx={2.5} fill={GOLD.l} />
+      <rect x={52} y={204} width={96} height={22} rx={7} fill={GOLD.d} />
+      <rect x={44} y={226} width={112} height={16} rx={6} fill={GOLD.m} />
+      <rect x={44} y={226} width={112} height={5} rx={2.5} fill={GOLD.l} />
     </svg>
   );
 }
@@ -113,33 +138,50 @@ function GridBackdrop({ w, h }: { w: number; h: number }): ReactElement {
   );
 }
 
-function BackdropLayer({ kind, w, h, accent }: { kind: Backdrop; w: number; h: number; accent: Accent }): ReactElement | null {
-  if (kind === "none") return null;
-  const opacity = kind === "trophy" ? 0.1 : kind === "pitch" ? 0.08 : 0.05;
-  const inner =
-    kind === "trophy" ? (
-      <TrophyBackdrop size={Math.min(w, h) * 0.92} />
-    ) : kind === "pitch" ? (
-      <PitchBackdrop w={w} h={h} color={accentHex(accent)} />
-    ) : (
-      <GridBackdrop w={w} h={h} />
-    );
+function Layer({ children, style }: { children?: ReactElement | ReactElement[]; style: Record<string, unknown> }): ReactElement {
+  return <div style={{ position: "absolute", top: 0, left: 0, display: "flex", alignItems: "center", justifyContent: "center", ...style }}>{children}</div>;
+}
+
+/**
+ * The full cinematic stage that sits BEHIND the content: an accent spotlight,
+ * the hero art with a glow halo, an edge vignette, and a soft scrim under the
+ * centre so the headline always reads crisply (information stays dominant).
+ */
+function SceneLayers({ backdrop, accent, w, h }: { backdrop: Backdrop; accent: Accent; w: number; h: number }): ReactElement {
+  const a = accentHex(accent);
+  const rgb = accent === "gold" ? "255,194,51" : accent === "teal" ? "0,216,192" : "174,234,0";
+  const trophySize = Math.min(w, h) * 0.86;
   return (
-    <div
-      style={{
-        position: "absolute",
-        top: 0,
-        left: 0,
-        width: w,
-        height: h,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        opacity,
-      }}
-    >
-      {inner}
-    </div>
+    <Layer style={{ width: w, height: h }}>
+      {/* top spotlight */}
+      <Layer style={{ width: w, height: h, background: `radial-gradient(circle at 50% 30%, rgba(${rgb},0.20) 0%, rgba(8,13,10,0) 52%)` }} />
+
+      {/* hero art + halo */}
+      {backdrop === "trophy" ? (
+        <Layer style={{ width: w, height: h }}>
+          <Layer style={{ width: w, height: h, background: "radial-gradient(circle at 50% 46%, rgba(255,194,51,0.28) 0%, rgba(8,13,10,0) 40%)" }} />
+          <Layer style={{ width: w, height: h }}>
+            <div style={{ display: "flex", opacity: 0.92, transform: "translateY(-2%)" }}>
+              <TrophyArt size={trophySize} />
+            </div>
+          </Layer>
+        </Layer>
+      ) : backdrop === "pitch" ? (
+        <Layer style={{ width: w, height: h, opacity: 0.12 }}>
+          <PitchBackdrop w={w} h={h} color={a} />
+        </Layer>
+      ) : backdrop === "grid" ? (
+        <Layer style={{ width: w, height: h, opacity: 0.06 }}>
+          <GridBackdrop w={w} h={h} />
+        </Layer>
+      ) : (
+        <Layer style={{ width: w, height: h }} />
+      )}
+
+      {/* readability scrim under the centre + edge vignette */}
+      <Layer style={{ width: w, height: h, background: "radial-gradient(circle at 50% 52%, rgba(8,13,10,0.74) 0%, rgba(8,13,10,0.0) 46%)" }} />
+      <Layer style={{ width: w, height: h, background: "radial-gradient(circle at 50% 44%, rgba(8,13,10,0) 52%, rgba(8,13,10,0.66) 100%)" }} />
+    </Layer>
   );
 }
 
@@ -282,7 +324,7 @@ export function PostFrame({
         padding: pad,
       }}
     >
-      <BackdropLayer kind={backdrop} w={w} h={h} accent={accent} />
+      <SceneLayers backdrop={backdrop} accent={accent} w={w} h={h} />
 
       {/* header: real wordmark + kicker */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", zIndex: 1 }}>
