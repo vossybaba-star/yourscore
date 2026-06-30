@@ -49,7 +49,7 @@ function HeroCard({ item }: { item: VersusFeedItem }) {
         </div>
       </div>
       <div className="flex items-center justify-between px-4 py-3" style={{ background: "#0e1a18" }}>
-        <span className="font-body text-xs text-text-muted">Play it, then send it to a friend</span>
+        <span className="font-body text-xs text-text-muted">One go a day · live now</span>
         <span className="font-display text-xs tracking-wide px-4 py-2 rounded-lg" style={{ background: item.accent, color: "#04231f" }}>{item.cta} →</span>
       </div>
     </Link>

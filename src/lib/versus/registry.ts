@@ -45,7 +45,7 @@ export interface VersusFeedItem {
 }
 
 export const VERSUS_FEED: VersusFeedItem[] = [
-  { id: "daily", kind: "hero", title: "The daily World Cup challenge", sub: "Fresh questions every day — see who tops your group", cta: "Play today's", href: "/play", accent: "#00d8c0", image: "/email/wc-banner.jpg", iconKey: "quiz" },
+  { id: "daily", kind: "hero", title: "World Cup Mastermind", sub: "The daily ranked run — top the board, win £100", cta: "Play today's", href: "/38-0/wc?daily=1", accent: "#ffc233", image: "/email/wc-banner.jpg", iconKey: "jersey" },
   { id: "challenge-friend", kind: "card", title: "Challenge a friend", sub: "Pick a quiz, send your score, see if they can beat it.", cta: "Challenge a friend", href: "/versus/challenge", accent: "#00d8c0", image: "/email/h2h-gameplay.png", iconKey: "quiz" },
   { id: "play-38-0", kind: "card", title: "Take someone on at 38-0", sub: "Draft your XI and go head-to-head, live.", cta: "Find a match", href: "/38-0/live", accent: "#aeea00", image: "/email/wc-draft.png", iconKey: "jersey" },
   { id: "leagues", kind: "card", title: "Start a league with your mates", sub: "An ongoing table that settles who really knows their football.", cta: "Go to leagues", href: "/versus?view=leagues", accent: "#00d8c0", image: "/email/wc-leaderboard.png", iconKey: "group" },
