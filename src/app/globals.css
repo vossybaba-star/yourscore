@@ -75,6 +75,9 @@ input, textarea, select {
   background: rgba(255, 255, 255, 0.12);
   border-radius: 2px;
 }
+/* Hide the scrollbar on horizontal carousels (e.g. Versus promo tiles). */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
 
 /* Selection */
 ::selection {

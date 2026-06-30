@@ -1,11 +1,11 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import { useYourTurns, type InboxChallenge } from "@/hooks/useYourTurns";
-import { VERSUS_GAMES, OPPONENT_ROUTES, type VersusGame, type OpponentMode } from "@/lib/versus/registry";
+import { VERSUS_PROMOS, type VersusPromo } from "@/lib/versus/registry";
 import { BottomNav } from "@/components/ui/BottomNav";
 
 // The Versus tab: a game-first hub for playing other people across every game.
@@ -15,19 +15,32 @@ import { BottomNav } from "@/components/ui/BottomNav";
 
 type View = "play" | "groups";
 
-function GameIcon({ k, color }: { k: VersusGame["iconKey"]; color: string }) {
-  if (k === "jersey") {
+function PromoIcon({ k, color }: { k: VersusPromo["iconKey"]; color: string }) {
+  const p =
+    k === "jersey" ? "M8 2.5 3 5.5 5 9.5 7.3 8.3V19a1 1 0 0 0 1 1h5.4a1 1 0 0 0 1-1V8.3L17 9.5l2-4-5-3C14 4.4 12.7 5.6 11 5.6S8 4.4 8 2.5Z"
+    : k === "quiz" ? "M11 2L13.5 8.5H20.5L14.9 12.5L17 19L11 15L5 19L7.1 12.5L1.5 8.5H8.5L11 2Z"
+    : null;
+  if (p) {
     return (
-      <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-        <path d="M8 2.5 3 5.5 5 9.5 7.3 8.3V19a1 1 0 0 0 1 1h5.4a1 1 0 0 0 1-1V8.3L17 9.5l2-4-5-3C14 4.4 12.7 5.6 11 5.6S8 4.4 8 2.5Z"
-          stroke={color} strokeWidth="1.7" strokeLinejoin="round" fill={color} fillOpacity={0.15} />
+      <svg width="20" height="20" viewBox="0 0 22 22" fill="none">
+        <path d={p} stroke={color} strokeWidth="1.7" strokeLinejoin="round" fill={color} fillOpacity={0.15} />
+      </svg>
+    );
+  }
+  if (k === "group") {
+    return (
+      <svg width="20" height="20" viewBox="0 0 22 22" fill="none">
+        <circle cx="8.5" cy="8" r="3" stroke={color} strokeWidth="1.7" />
+        <path d="M3 19a5.5 5.5 0 0111 0" stroke={color} strokeWidth="1.7" strokeLinecap="round" />
+        <circle cx="16" cy="9" r="2.2" stroke={color} strokeWidth="1.5" />
+        <path d="M15 14.5a4.5 4.5 0 014.5 4" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
       </svg>
     );
   }
   return (
-    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-      <path d="M11 2L13.5 8.5H20.5L14.9 12.5L17 19L11 15L5 19L7.1 12.5L1.5 8.5H8.5L11 2Z"
-        stroke={color} strokeWidth="1.7" strokeLinejoin="round" fill={color} fillOpacity={0.15} />
+    <svg width="20" height="20" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="8.5" stroke={color} strokeWidth="1.7" />
+      <path d="M2.5 11h17M11 2.5c2.5 2.3 2.5 14 0 17M11 2.5c-2.5 2.3-2.5 14 0 17" stroke={color} strokeWidth="1.5" />
     </svg>
   );
 }
@@ -115,7 +128,6 @@ function VersusInner() {
   const params = useSearchParams();
   const view = (params.get("view") as View) ?? "play";
   const turns = useYourTurns();
-  const [openGame, setOpenGame] = useState<VersusGame | null>(null);
 
   if (!loading && !user) {
     return (
@@ -173,15 +185,22 @@ function VersusInner() {
               </>
             )}
 
-            <SectionLabel>Start a versus</SectionLabel>
-            <div className="grid grid-cols-2 gap-2.5">
-              {VERSUS_GAMES.map((g) => (
-                <button key={g.id} onClick={() => setOpenGame(g)} className="text-left rounded-2xl p-3.5 bg-surface active:scale-[0.98] transition-transform" style={{ border: `1px solid ${g.accent}55` }}>
-                  <GameIcon k={g.iconKey} color={g.accent} />
-                  <p className="font-display text-base text-white mt-2">{g.label}</p>
-                  <p className="font-body text-xs text-text-muted">{g.tagline}</p>
-                </button>
-              ))}
+            <SectionLabel>What do you want to do?</SectionLabel>
+            <div className="-mx-5 px-5 overflow-x-auto no-scrollbar" style={{ scrollSnapType: "x mandatory" }}>
+              <div className="flex gap-2.5 pb-1" style={{ width: "max-content" }}>
+                {VERSUS_PROMOS.map((p) => (
+                  <Link key={p.id} href={p.href} className="block rounded-2xl p-4 active:scale-[0.98] transition-transform"
+                    style={{ width: 228, scrollSnapAlign: "start", background: "#0f1512", border: `1px solid ${p.accent}55` }}>
+                    <span className="inline-flex p-2 rounded-xl" style={{ background: `${p.accent}22` }}>
+                      <PromoIcon k={p.iconKey} color={p.accent} />
+                    </span>
+                    <p className="font-display text-base text-white mt-3">{p.title}</p>
+                    <p className="font-body text-xs text-text-muted mt-1 leading-snug" style={{ minHeight: 32 }}>{p.sub}</p>
+                    <span className="inline-flex items-center gap-1.5 mt-3 font-display text-xs tracking-wide px-3.5 py-2 rounded-lg"
+                      style={{ background: p.accent, color: p.accent === "#aeea00" ? "#13200a" : "#04231f" }}>{p.cta} →</span>
+                  </Link>
+                ))}
+              </div>
             </div>
 
             {turns.waiting.length > 0 && (
@@ -224,35 +243,6 @@ function VersusInner() {
           </>
         )}
       </div>
-
-      {/* Opponent sheet for the tapped game */}
-      {openGame && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: "rgba(0,0,0,0.7)" }} onClick={() => setOpenGame(null)}>
-          <div className="w-full max-w-lg rounded-t-3xl px-5 pt-3" style={{ background: "#080d0a", borderTop: "1px solid rgba(255,255,255,0.1)", paddingBottom: "calc(env(safe-area-inset-bottom,0px) + 16px)" }} onClick={(e) => e.stopPropagation()}>
-            <div className="mx-auto mb-4 rounded-full" style={{ width: 40, height: 4, background: "rgba(255,255,255,0.2)" }} />
-            <div className="flex items-center gap-2.5 mb-4">
-              <GameIcon k={openGame.iconKey} color={openGame.accent} />
-              <p className="font-display text-lg text-white">{openGame.label} · who are you playing?</p>
-            </div>
-            <div className="space-y-2">
-              {openGame.opponentModes.map((m: OpponentMode) => {
-                const route = OPPONENT_ROUTES[openGame.id][m];
-                if (!route) return null;
-                return (
-                  <Link key={m} href={route.href} className="flex items-center justify-between rounded-2xl px-4 py-3.5 active:scale-[0.99] transition-transform"
-                    style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${openGame.accent}33` }}>
-                    <div>
-                      <p className="font-body text-sm font-semibold text-white">{route.label}</p>
-                      <p className="font-body text-xs text-text-muted">{route.sub}</p>
-                    </div>
-                    <span style={{ color: openGame.accent }}>→</span>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
 
       <BottomNav />
     </main>

@@ -28,6 +28,25 @@ export const OPPONENT_ROUTES: Record<VersusGame["id"], Partial<Record<OpponentMo
   },
 };
 
+// In-app marketing tiles for the Versus tab. Benefit-led, one CTA each, plain
+// fan voice (say "friend", not "mate"). Edit/reorder here — the tab just maps.
+export interface VersusPromo {
+  id: string;
+  title: string;
+  sub: string;
+  cta: string;
+  href: string;
+  accent: string; // teal = quiz-flavoured, lime = 38-0
+  iconKey: "quiz" | "jersey" | "group" | "globe";
+}
+
+export const VERSUS_PROMOS: VersusPromo[] = [
+  { id: "challenge-friend", title: "Challenge a friend", sub: "Pick a quiz, fire them your score and see if they can beat it.", cta: "Choose a friend", href: "/friends", accent: "#00d8c0", iconKey: "quiz" },
+  { id: "play-38-0", title: "Take someone on at 38-0", sub: "Draft your XI and go head-to-head, live.", cta: "Find a match", href: "/38-0/live", accent: "#aeea00", iconKey: "jersey" },
+  { id: "start-group", title: "Get the group involved", sub: "One quiz, the whole group, one leaderboard to settle it.", cta: "Start a group", href: "/play", accent: "#00d8c0", iconKey: "group" },
+  { id: "play-open", title: "Play someone new", sub: "Jump into an open game and take on whoever's about.", cta: "Find a game", href: "/play/new", accent: "#00d8c0", iconKey: "globe" },
+];
+
 export const VERSUS_GAMES: VersusGame[] = [
   {
     id: "quiz",
