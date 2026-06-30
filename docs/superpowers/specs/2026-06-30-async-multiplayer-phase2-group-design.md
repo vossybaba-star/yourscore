@@ -11,6 +11,11 @@ Builds on Phase 1 (async 1v1 on `h2h_challenges`, the Your-Turns inbox). Phase 1
 - **Creator flow:** creator's **choice** — play first to seed the board, or just set it up and play later.
 - **Order:** group challenges first; daily-vs-friends next (an auto-enrolled group with a fresh daily quiz).
 
+> **Build note (2026-06-30):** tables shipped as `group_challenges` /
+> `group_challenge_participants` — a defunct empty legacy `challenges` table
+> already existed. Create ships as **play-first only** (the post-result
+> "Challenge a group" button); the set-up-without-playing path is deferred.
+
 ## Data model
 ```sql
 create table challenges (
