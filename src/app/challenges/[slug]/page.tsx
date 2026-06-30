@@ -150,6 +150,19 @@ function ChallengeAFriendButton({
     setTimeout(() => setCopied(false), 2000);
   }
 
+  // Native share sheet — works inside the iOS WKWebView (Web Share API), so the
+  // app gets the real iMessage/WhatsApp sheet with no Capacitor plugin. Falls
+  // back to copy when unavailable (most desktop browsers).
+  const canShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
+  async function handleShare() {
+    if (!link) return;
+    try {
+      await navigator.share({ text: `I scored ${score.toLocaleString()} on "${packName}" — can you beat it?`, url: link });
+    } catch {
+      void handleCopy();
+    }
+  }
+
   const waText = encodeURIComponent(
     `I scored ${score.toLocaleString()} on "${packName}" — can you beat it? ${link}`
   );
@@ -200,6 +213,16 @@ function ChallengeAFriendButton({
         style={{ color: "#8a948f" }}>
         {link}
       </div>
+
+      {canShare && (
+        <button
+          onClick={handleShare}
+          className="w-full rounded-xl py-3 font-display text-xs tracking-widest active:scale-[0.97] transition-transform"
+          style={{ background: "rgba(0,216,192,0.15)", border: "1px solid rgba(0,216,192,0.4)", color: "#00d8c0" }}
+        >
+          SHARE
+        </button>
+      )}
 
       <div className="flex gap-2">
         <button

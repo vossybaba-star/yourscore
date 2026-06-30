@@ -7,6 +7,7 @@ import Image from "next/image";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { slugify } from "@/lib/utils";
 import { usePendingFriends } from "@/hooks/usePendingFriends";
+import { usePendingTurns } from "@/hooks/usePendingTurns";
 
 const WORLD_CUP_START = new Date("2026-06-11T18:00:00Z");
 
@@ -236,6 +237,26 @@ function PendingFriendsNotice() {
   );
 }
 
+function PendingTurnsNotice() {
+  const count = usePendingTurns();
+  if (!count) return null;
+  return (
+    <Link
+      href="/play"
+      className="flex items-center justify-between px-4 py-3 rounded-2xl transition-all hover:opacity-90 active:scale-[0.99]"
+      style={{ background: "rgba(0,216,192,0.08)", border: "1px solid rgba(0,216,192,0.25)" }}
+    >
+      <div className="flex items-center gap-3">
+        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: "#00d8c0" }} />
+        <p className="font-body text-sm font-semibold text-white">
+          {count === 1 ? "A mate is waiting on your move" : `${count} challenges waiting on you`}
+        </p>
+      </div>
+      <span className="font-body text-xs font-bold" style={{ color: "#00d8c0" }}>Play →</span>
+    </Link>
+  );
+}
+
 // ── Premium game-mode tiles ─────────────────────────────────────────────────────
 // The three primary calls to action. No emoji — each is a distinct, branded
 // surface with its own colour, texture and oversized ghost wordmark.
@@ -442,6 +463,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
             tile here — it would duplicate the same call to action. */}
 
         {/* ── Pending friend requests ────────────────────────────────────────── */}
+        <PendingTurnsNotice />
         <PendingFriendsNotice />
 
         {/* ── Your leagues — position + gap ──────────────────────────────────── */}
