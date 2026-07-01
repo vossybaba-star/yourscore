@@ -25,6 +25,9 @@ export default function ChallengePage() {
   const [picked, setPicked] = useState<Scorecard | null>(null);
   const [sending, setSending] = useState<string | null>(null);
   const [sentTo, setSentTo] = useState<string | null>(null);
+  const [preTo, setPreTo] = useState<string | null>(null); // ?to=<id> — rematch/rivalry target to float up
+
+  useEffect(() => { setPreTo(new URLSearchParams(window.location.search).get("to")); }, []);
 
   const load = useCallback(async () => {
     const sb = createClient();
@@ -122,14 +125,17 @@ export default function ChallengePage() {
                   <p className="font-body text-sm text-white">No friends yet</p>
                   <Link href="/versus?view=friends" className="font-body text-xs mt-1 inline-block" style={{ color: "#00d8c0" }}>Add some first →</Link>
                 </div>
-              ) : friends.map((f) => (
+              ) : [...friends].sort((a, b) => (a.user_id === preTo ? -1 : 0) - (b.user_id === preTo ? -1 : 0)).map((f) => {
+                const isTarget = f.user_id === preTo;
+                return (
                 <button key={f.user_id} onClick={() => send(f)} disabled={!!sending}
-                  className="w-full flex items-center gap-3 rounded-2xl px-4 py-3 bg-surface active:scale-[0.99] transition-transform disabled:opacity-60" style={{ border: "1px solid rgba(0,216,192,0.2)" }}>
+                  className="w-full flex items-center gap-3 rounded-2xl px-4 py-3 bg-surface active:scale-[0.99] transition-transform disabled:opacity-60" style={{ border: `1px solid ${isTarget ? "rgba(0,216,192,0.45)" : "rgba(0,216,192,0.2)"}` }}>
                   <span className="w-9 h-9 rounded-full flex items-center justify-center font-body font-bold text-sm flex-shrink-0" style={{ background: "rgba(255,255,255,0.06)", color: "#cfcfe6" }}>{initial(f.display_name)}</span>
                   <span className="flex-1 text-left font-body text-sm font-semibold text-white truncate">{f.display_name}</span>
-                  <span className="font-display text-xs tracking-wide px-3 py-1.5 rounded-lg flex-shrink-0" style={{ background: "rgba(0,216,192,0.15)", color: "#00d8c0", border: "1px solid rgba(0,216,192,0.3)" }}>{sending === f.user_id ? "…" : "Send"}</span>
+                  <span className="font-display text-xs tracking-wide px-3 py-1.5 rounded-lg flex-shrink-0" style={{ background: "rgba(0,216,192,0.15)", color: "#00d8c0", border: "1px solid rgba(0,216,192,0.3)" }}>{sending === f.user_id ? "…" : isTarget ? "Rematch" : "Send"}</span>
                 </button>
-              ))}
+                );
+              })}
             </div>
           </>
         ) : (
