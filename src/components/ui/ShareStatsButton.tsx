@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { trackShare } from "@/lib/analytics/trackGame";
 
 export function ShareStatsButton({
   rank,
@@ -14,6 +15,7 @@ export function ShareStatsButton({
   const [copied, setCopied] = useState(false);
 
   async function handleShare() {
+    trackShare("stats");
     const parts = [`⚽ YourScore — ranked #${rank ?? "?"}`];
     if (score > 0) parts.push(`${score.toLocaleString()} pts`);
     if (accuracy !== null) parts.push(`${accuracy}% accuracy`);

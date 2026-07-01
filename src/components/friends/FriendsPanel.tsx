@@ -6,6 +6,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { Button } from "@/components/ui/Button";
+import { trackShare } from "@/lib/analytics/trackGame";
 
 interface Friend {
   id: string;          // friendship row id
@@ -142,6 +143,7 @@ function InviteFriendButton({ myId }: { myId: string | null }) {
   const [copied, setCopied] = useState(false);
   async function invite() {
     if (!myId) return;
+    trackShare("friends-invite");
     const url = `${typeof window !== "undefined" ? window.location.origin : "https://yourscore.app"}/add/${myId}`;
     const text = "Add me on YourScore and let's go head-to-head ⚽";
     if (typeof navigator !== "undefined" && navigator.share) {

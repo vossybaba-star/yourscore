@@ -20,6 +20,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { BackPill } from "@/components/ui/BackPill";
 import { useUser } from "@/hooks/useUser";
+import { trackShare } from "@/lib/analytics/trackGame";
 
 const COMPETITION = "WC" as const;
 const ACCENT = "#ffb800"; // World Cup gold
@@ -224,7 +225,7 @@ export default function WorldCupH2H() {
                 </div>
                 <Button
                   variant="ghost" size="md" fullWidth className="mt-4"
-                  onClick={() => navigator.share?.({ title: "World Cup H2H", text: `Play me on 38-0 World Cup — code ${code}`, url: `${location.origin}/38-0/wc/h2h?join=${code}` }).catch(() => {})}
+                  onClick={() => { trackShare("wc-h2h"); navigator.share?.({ title: "World Cup H2H", text: `Play me on 38-0 World Cup — code ${code}`, url: `${location.origin}/38-0/wc/h2h?join=${code}` }).catch(() => {}); }}
                 >
                   Share link
                 </Button>

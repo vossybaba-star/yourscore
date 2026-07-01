@@ -15,6 +15,7 @@ import { simulateSeason, seasonNarrative, type SeasonResult } from "@/lib/draft/
 import { SeasonScorecard, type SeasonAward, type SeasonData } from "@/components/draft/SeasonScorecard";
 import { Button } from "@/components/ui/Button";
 import { useUser } from "@/hooks/useUser";
+import { trackShare } from "@/lib/analytics/trackGame";
 
 function ordinal(n: number): string {
   const s = ["th", "st", "nd", "rd"], v = n % 100;
@@ -221,6 +222,7 @@ export default function SeasonSim() {
     : `This was my result from YourScore 38-0 ⚽ — ${r.wins}-${r.draws}-${r.losses}, finished ${ordinal(r.position)} on ${r.points} pts. Think you can beat it?`;
 
   async function nativeShare() {
+    trackShare("season");
     await ensureShortUrl();
     const url = shareUrl(), text = blurb();
     try {
@@ -229,7 +231,7 @@ export default function SeasonSim() {
     } catch { /* cancelled */ }
   }
   function shareX() { window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(blurb())}&url=${encodeURIComponent(shareUrl())}`, "_blank", "noopener"); }
-  async function copyLink() { try { await ensureShortUrl(); await navigator.clipboard.writeText(`${blurb()} ${shareUrl()}`); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* blocked */ } }
+  async function copyLink() { trackShare("season-copy"); try { await ensureShortUrl(); await navigator.clipboard.writeText(`${blurb()} ${shareUrl()}`); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* blocked */ } }
 
   function giveawayTweetText(): string {
     return r.invincible

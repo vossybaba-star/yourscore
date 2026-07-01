@@ -13,7 +13,7 @@ import { QuizNotifyPrompt } from "@/components/quiz/QuizNotifyPrompt";
 import { StreakWindowTimer } from "@/components/quiz/StreakWindowTimer";
 import { useGameLoop } from "@/lib/useGameLoop";
 import { Button } from "@/components/ui/Button";
-import { trackGamePlay, trackGameComplete } from "@/lib/analytics/trackGame";
+import { trackGamePlay, trackGameComplete, trackShare } from "@/lib/analytics/trackGame";
 import {
   DIFFICULTY_COLOR as DIFF_COLOR,
   DIFFICULTY_BG as DIFF_BG,
@@ -157,6 +157,7 @@ function ChallengeAFriendButton({
   const canShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
   async function handleShare() {
     if (!link) return;
+    trackShare("challenge-friend");
     try {
       await navigator.share({ text: `I scored ${score.toLocaleString()} on "${packName}" — can you beat it?`, url: link });
     } catch {
@@ -597,6 +598,7 @@ export default function ChallengePage() {
   }
   function openShare() { setShareOpen(true); void ensureShortUrl(); }
   async function nativeShare() {
+    trackShare("challenge");
     const url = await ensureShortUrl();
     try {
       if (navigator.share) await navigator.share({ title: pack?.name ?? "YourScore Quiz", text: quizBlurb(), url });

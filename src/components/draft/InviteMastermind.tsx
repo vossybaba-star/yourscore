@@ -7,6 +7,7 @@
  */
 
 import { useState } from "react";
+import { trackShare } from "@/lib/analytics/trackGame";
 
 const INVITE_TEXT =
   "Play today's World Cup Mastermind ⚽🧠 — answer football questions to draft a World XI and win the World Cup. Think you know football? Take me on:";
@@ -15,6 +16,7 @@ export function InviteMastermind({ label = "INVITE A FRIEND", oneLine = false }:
   const [copied, setCopied] = useState(false);
 
   async function invite() {
+    trackShare("mastermind-invite");
     const url = `${typeof window !== "undefined" ? window.location.origin : "https://yourscore.app"}/38-0/wc`;
     // Put the link INSIDE the text rather than as a separate `url` field: when someone picks
     // "Copy" from the native share sheet, several platforms copy only `text` and drop a

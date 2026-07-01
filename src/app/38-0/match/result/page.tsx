@@ -16,7 +16,7 @@ import { BackPill } from "@/components/ui/BackPill";
 import { loadLastMatch, type LocalMatch } from "@/lib/draft/local";
 import { liveOgQuery } from "@/lib/draft/share";
 import { AddFriendCard } from "@/components/social/AddFriendCard";
-import { trackGameComplete } from "@/lib/analytics/trackGame";
+import { trackGameComplete, trackShare } from "@/lib/analytics/trackGame";
 
 export default function MatchResult() {
   const router = useRouter();
@@ -65,6 +65,7 @@ export default function MatchResult() {
 
   async function shareNative() {
     if (!m) return;
+    trackShare("match-result");
     const text = shareText();
     const url = shareUrl();
     try {
@@ -79,6 +80,7 @@ export default function MatchResult() {
   }
 
   async function copyLink() {
+    trackShare("match-result-copy");
     const url = shareUrl();
     const text = shareText();
     try {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { trackGamePlay, trackGameComplete } from "@/lib/analytics/trackGame";
+import { trackGamePlay, trackGameComplete, trackShare } from "@/lib/analytics/trackGame";
 import Link from "next/link";
 import type { RealtimeChannel, SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
@@ -187,6 +187,7 @@ function ShareStrip({ matchId, matchName }: { matchId: string; matchName: string
   const url = typeof window !== "undefined" ? `${window.location.origin}/match/${matchId}` : `/match/${matchId}`;
 
   function share() {
+    trackShare("quiz-match");
     const text = `Answer live questions during ${matchName} on YourScore!\n${url}`;
     if (navigator.share) { navigator.share({ text }).catch(() => {}); }
     else { navigator.clipboard.writeText(url).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }); }

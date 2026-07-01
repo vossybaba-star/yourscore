@@ -27,7 +27,7 @@ import { loadTeam, saveTeam, clearTeam } from "@/lib/draft/local";
 import { AddFriendCard } from "@/components/social/AddFriendCard";
 import { RankRewardCard } from "@/components/rank/RankRewardCard";
 import { positionColor } from "@/lib/rank";
-import { trackGamePlay, trackGameComplete } from "@/lib/analytics/trackGame";
+import { trackGamePlay, trackGameComplete, trackShare } from "@/lib/analytics/trackGame";
 import { asCompetition, type Competition, type Formation, type PlacedPlayer, type PlayerSeason } from "@/lib/draft/types";
 import type { DraftLiveMatchRow } from "@/types/draft-db";
 
@@ -474,6 +474,7 @@ function ResultPanel({ view, sim, m }: { view: View; sim: MatchSim | null; m: Dr
   function openShare() { setShareOpen(true); void ensureShortUrl(); }
 
   async function nativeShare() {
+    trackShare("live-match");
     const url = await ensureShortUrl();
     try {
       if (navigator.share) await navigator.share({ title: "38-0 Live result", text: blurb(), url });
@@ -487,6 +488,7 @@ function ResultPanel({ view, sim, m }: { view: View; sim: MatchSim | null; m: Dr
   }
 
   async function copyLink() {
+    trackShare("live-match-copy");
     const url = await ensureShortUrl();
     try { await navigator.clipboard.writeText(`${blurb()} ${url}`); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* blocked */ }
   }

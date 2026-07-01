@@ -26,7 +26,7 @@ import { CATEGORY_COLOR, posCategory } from "@/lib/draft/score";
 import { RUN_STAGE_LABEL, isDuel, type RunStage, type RunMode } from "@/lib/draft/wc";
 import { wcNation } from "@/data/draft/wc2026";
 import type { Formation, PlacedPlayer, PlayerSeason } from "@/lib/draft/types";
-import { trackGameComplete } from "@/lib/analytics/trackGame";
+import { trackGameComplete, trackShare } from "@/lib/analytics/trackGame";
 import { useUser } from "@/hooks/useUser";
 import { PenaltyShootout, type PensView } from "@/components/draft/PenaltyShootout";
 import { BackPill } from "@/components/ui/BackPill";
@@ -405,6 +405,7 @@ export default function WorldCupRun() {
 
   function shareRun() {
     if (!run) return;
+    trackShare("wc-run");
     const text = shareText();
     const url = shareLink();
     if (navigator.share) navigator.share({ title: "YourScore — World Cup", text, url }).catch(() => {});

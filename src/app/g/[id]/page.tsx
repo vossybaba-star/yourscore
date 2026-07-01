@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { BackPill } from "@/components/ui/BackPill";
 import { Button } from "@/components/ui/Button";
 import { slugify } from "@/lib/utils";
+import { trackShare } from "@/lib/analytics/trackGame";
 
 interface Challenge {
   id: string; quiz_pack_id: string; quiz_pack_name: string; creator_id: string;
@@ -65,6 +66,7 @@ export default function GroupBoardPage() {
   }
 
   function share() {
+    trackShare("scorecard");
     const url = typeof window !== "undefined" ? window.location.href : "";
     const text = ch ? `Join my "${ch.quiz_pack_name}" group challenge on YourScore — see who tops the board ⚽` : "";
     if (typeof navigator !== "undefined" && navigator.share) navigator.share({ text, url }).catch(() => {});

@@ -93,3 +93,22 @@ export function trackDownload(props: Props = {}): void {
   window.gtag?.("event", "download_app", payload);      // Google Analytics 4
   track("download_app", payload);                       // Vercel Analytics
 }
+
+// ── Share (viral-loop intent) ────────────────────────────────────────────────
+// Fired when a Player shares a scorecard / result / invite (native share sheet or
+// clipboard copy). Powers "sharers" ad audiences and virality measurement. `content`
+// names what was shared (e.g. "scorecard", "live-result", "league", "h2h-invite").
+// X needs a pre-created Events-Manager event ID; fires only once the env var is set.
+const X_SHARE_EVENT_ID = process.env.NEXT_PUBLIC_X_SHARE_EVENT_ID;
+
+export function trackShare(content: string, props: Props = {}): void {
+  if (typeof window === "undefined") return;
+  const payload: Props = { content, ...props };
+
+  if (X_SHARE_EVENT_ID) window.twq?.("event", X_SHARE_EVENT_ID, payload); // X (Twitter)
+  window.fbq?.("trackCustom", "Share", payload);        // Meta
+  window.ttq?.track?.("Share", payload);                // TikTok (custom Share event)
+  window.snaptr?.("track", "CUSTOM_EVENT_4", payload);  // Snapchat (1=play · 2=complete · 3=download · 4=share)
+  window.gtag?.("event", "share", payload);             // Google Analytics 4
+  track("share", payload);                              // Vercel Analytics
+}

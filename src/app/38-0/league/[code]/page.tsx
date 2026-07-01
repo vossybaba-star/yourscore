@@ -16,6 +16,7 @@ import { BottomNav } from "@/components/ui/BottomNav";
 import { DraftHeader } from "@/components/draft/DraftHeader";
 import { useUser } from "@/hooks/useUser";
 import { loadTeam, isComplete } from "@/lib/draft/local";
+import { trackShare } from "@/lib/analytics/trackGame";
 
 type Member = {
   user_id: string;
@@ -145,6 +146,7 @@ export default function LeagueBoard() {
   }
 
   function shareCode() {
+    trackShare("league");
     const url = `${window.location.origin}/38-0/league/${code}`;
     const text = `Join my Draft XI league "${board?.league.name ?? ""}" — code ${code}`;
     if (navigator.share) navigator.share({ title: "Draft XI League", text, url }).catch(() => {});
