@@ -80,7 +80,7 @@ function GameSheet({ target, onClose }: { target?: string | null; onClose: () =>
   const router = useRouter();
   const go = (game: "quiz" | "38-0") => {
     if (game === "quiz") router.push(target ? `/versus/challenge?to=${target}` : "/versus/challenge");
-    else router.push("/38-0/live");
+    else router.push("/versus/38-0");
   };
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: "rgba(0,0,0,0.6)" }} onClick={onClose}>
@@ -144,13 +144,17 @@ function YourTurnCard({ c }: { c: InboxChallenge }) {
   );
 }
 
-function GameTile({ game, href, title, sub }: { game: "quiz" | "38-0"; href: string; title: string; sub: string }) {
+function GameTile({ game, href, title, sub, image }: { game: "quiz" | "38-0"; href: string; title: string; sub: string; image: string }) {
   const c = game === "38-0" ? LIME : TEAL;
   return (
-    <Link href={href} className="flex-1 rounded-2xl p-4 active:scale-[0.98] transition-transform" style={{ background: `linear-gradient(155deg, ${c}14, #0c1613)`, border: `1px solid ${c}33` }}>
-      <GameGlyph game={game} size={28} />
-      <p className="font-display text-lg text-white mt-3 leading-none">{title}</p>
-      <p className="font-body text-[11px] text-text-muted mt-1.5 leading-snug">{sub}</p>
+    <Link href={href} className="flex-1 rounded-2xl overflow-hidden relative active:scale-[0.98] transition-transform" style={{ border: `1px solid ${c}40`, minHeight: 150 }}>
+      <div className="absolute inset-0" style={{ background: `url(${image}) center/cover` }} />
+      <div className="absolute inset-0" style={{ background: `linear-gradient(160deg, ${c}26 0%, rgba(8,13,10,0.5) 42%, rgba(8,13,10,0.97) 100%)` }} />
+      <div className="relative p-4 h-full flex flex-col justify-end" style={{ minHeight: 150 }}>
+        <GameGlyph game={game} size={26} />
+        <p className="font-display text-xl text-white mt-2 leading-none">{title}</p>
+        <p className="font-body text-[11px] mt-1.5 leading-snug" style={{ color: "#cdeee7" }}>{sub}</p>
+      </div>
     </Link>
   );
 }
@@ -300,11 +304,17 @@ function VersusInner() {
       {view === "play" && (
         <div className="max-w-lg mx-auto px-5">
           {/* Hero + primary actions */}
-          <div className="pt-5">
-            <p className="font-display text-white leading-[0.92]" style={{ fontSize: 40 }}>PROVE YOU KNOW<br /><span style={{ color: LIME }}>MORE BALL</span> THAN<br />YOUR FRIENDS.</p>
-            <div className="flex gap-2.5 mt-5">
-              <button onClick={() => setSheet({ kind: "game" })} className="flex-1 rounded-2xl py-3.5 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: LIME, color: "#13200a" }}>CHALLENGE SOMEONE</button>
-              <button onClick={() => setSheet({ kind: "code" })} className="rounded-2xl px-5 py-3.5 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "rgba(255,255,255,0.05)", color: "#eef2f0", border: "1px solid rgba(255,255,255,0.12)" }}>JOIN CODE</button>
+          <div className="pt-4">
+            <div className="relative rounded-3xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+              <div className="absolute inset-0" style={{ background: "url(/email/wc-banner.jpg) center/cover" }} />
+              <div className="absolute inset-0" style={{ background: "linear-gradient(115deg, rgba(8,13,10,0.95) 30%, rgba(8,13,10,0.58) 76%, rgba(8,13,10,0.32) 100%)" }} />
+              <div className="relative p-5 pt-6">
+                <p className="font-display text-white leading-[0.9]" style={{ fontSize: 34 }}>PROVE YOU KNOW<br /><span style={{ color: LIME }}>MORE BALL</span><br />THAN YOUR FRIENDS.</p>
+                <div className="flex gap-2.5 mt-4">
+                  <button onClick={() => setSheet({ kind: "game" })} className="flex-1 rounded-2xl py-3.5 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: LIME, color: "#13200a" }}>CHALLENGE SOMEONE</button>
+                  <button onClick={() => setSheet({ kind: "code" })} className="rounded-2xl px-5 py-3.5 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "rgba(0,0,0,0.35)", color: "#eef2f0", border: "1px solid rgba(255,255,255,0.18)", backdropFilter: "blur(4px)" }}>JOIN CODE</button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -314,8 +324,8 @@ function VersusInner() {
           {/* Choose a game */}
           <SectionLabel>Choose a game</SectionLabel>
           <div className="flex gap-2.5">
-            <GameTile game="38-0" href="/38-0" title="38-0" sub="Build your XI. Beat your opponent." />
-            <GameTile game="quiz" href="/versus/challenge" title="Quiz Battle" sub="Speed and accuracy decide it." />
+            <GameTile game="38-0" href="/versus/38-0" title="38-0" sub="Build your XI. Beat your opponent." image="/email/wc-draft.png" />
+            <GameTile game="quiz" href="/versus/challenge" title="Quiz Battle" sub="Speed and accuracy decide it." image="/email/h2h-gameplay.jpg" />
           </div>
 
           {nothingYet && (

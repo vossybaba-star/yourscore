@@ -91,7 +91,9 @@ export function LeaguesPanel({ embedded = false }: { embedded?: boolean }) {
 
   function selectMainTab(t: MainTab) {
     setMainTab(t);
-    if (typeof window !== "undefined") {
+    // Embedded in Versus: don't rewrite the URL — replaceState would drop the
+    // parent's ?view=leagues param and bounce it back to the Play sub-tab.
+    if (typeof window !== "undefined" && !embedded) {
       window.history.replaceState(null, "", t === "quiz" ? "/leagues?tab=quiz" : "/leagues");
     }
   }
@@ -168,7 +170,7 @@ export function LeaguesPanel({ embedded = false }: { embedded?: boolean }) {
 
   function selectQuizSubTab(t: QuizSubTab) {
     setQuizSubTab(t);
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined" && !embedded) {
       window.history.replaceState(null, "", t === "global" ? "/leagues?tab=global" : "/leagues?tab=quiz");
     }
   }
