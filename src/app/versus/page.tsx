@@ -69,7 +69,7 @@ function Flame({ color = LIME }: { color?: string }) {
 function GameSheet({ target, onClose }: { target?: string | null; onClose: () => void }) {
   const router = useRouter();
   const go = (game: "quiz" | "38-0") => {
-    if (game === "quiz") router.push(target ? `/versus/challenge?to=${target}` : "/versus/challenge");
+    if (game === "quiz") router.push(target ? `/versus/quiz?to=${target}` : "/versus/quiz");
     else router.push("/versus/38-0");
   };
   return (
@@ -185,7 +185,7 @@ function ResultRow({ c }: { c: InboxChallenge }) {
         <p className="font-display text-sm text-white leading-none">{my.toLocaleString()}–{their.toLocaleString()}</p>
         <p className="font-body text-[11px] mt-0.5" style={{ color: col }}>{draw ? "Draw" : won ? "Won" : "Lost"}</p>
       </div>
-      <Link href={c.iAmChallenger && c.invitedUserId ? `/versus/challenge?to=${c.invitedUserId}` : "/versus/challenge"} className="font-display text-[11px] tracking-wide px-3 py-2 rounded-lg flex-shrink-0" style={{ background: "rgba(0,216,192,0.12)", color: TEAL, border: `1px solid ${TEAL}33` }}>REMATCH</Link>
+      <Link href={c.iAmChallenger && c.invitedUserId ? `/versus/quiz?to=${c.invitedUserId}` : "/versus/quiz"} className="font-display text-[11px] tracking-wide px-3 py-2 rounded-lg flex-shrink-0" style={{ background: "rgba(0,216,192,0.12)", color: TEAL, border: `1px solid ${TEAL}33` }}>REMATCH</Link>
     </div>
   );
 }
@@ -317,7 +317,7 @@ function VersusInner() {
           <SectionLabel>Choose a game</SectionLabel>
           <div className="flex gap-2.5">
             <GameTile game="38-0" href="/versus/38-0" title="38-0" sub="Build your XI. Beat your opponent." />
-            <GameTile game="quiz" href="/versus/challenge" title="Quiz Battle" sub="Speed and accuracy decide it." />
+            <GameTile game="quiz" href="/versus/quiz" title="Quiz Battle" sub="Same questions, same time. Fastest wins." />
           </div>
 
           {nothingYet && (
