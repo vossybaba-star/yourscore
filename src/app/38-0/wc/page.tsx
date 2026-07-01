@@ -21,6 +21,7 @@ import { BackPill } from "@/components/ui/BackPill";
 import { Pitch } from "@/components/draft/Pitch";
 import { InviteMastermind } from "@/components/draft/InviteMastermind";
 import { WcEditionStrip, type EditionCell } from "@/components/draft/WcEditionStrip";
+import { DraftHubHero } from "@/components/draft/WcHubHero";
 import { useUser } from "@/hooks/useUser";
 import { pickableNations, spinForNation, spinWorld, type PickableNation } from "@/lib/draft/pool";
 import { WORLD_TEAM_NAME, type RunMode } from "@/lib/draft/wc";
@@ -90,6 +91,7 @@ export default function WorldCupEntry() {
   // Today's ranked attempt is locked once it's been played OR drafted past the 6th pick
   // (anti-preview). When locked, the Today's Run card is blurred + unselectable.
   const [rankedLocked, setRankedLocked] = useState(false);
+  const [howOpen, setHowOpen] = useState(false);
   // The WC edition strip (today + every past edition, with this user's per-day state/stats).
   // Drives catch-up + result peeks; a non-empty strip means the user is signed in.
   // Seed from the last cached strip so it renders INSTANTLY on (re)entry — no waiting on the
@@ -415,10 +417,16 @@ export default function WorldCupEntry() {
       <div className="min-h-[100dvh] pb-16" style={{ background: "#0a0a0f" }}>
         <div className="max-w-lg mx-auto px-4 pt-safe">
           <div className="pt-4"><BackPill href="/38-0" label="Back" tone="wc" /></div>
-          <h1 className="font-display tracking-wide mt-3" style={{ fontSize: 30, color: "#fff" }}>🧠 WORLD CUP MASTERMIND</h1>
-          <p className="font-body mt-1 mb-4" style={{ fontSize: 14, color: "#c4ccc6" }}>
-            Answer World Cup questions to build your XI — the more you know, the stronger your team — then play the tournament. Today&apos;s Run is ranked; Just Play is unlimited practice.
-          </p>
+          {/* In-game hero — the first thing ad traffic lands on. */}
+          <div className="mt-3 mb-4">
+            <DraftHubHero
+              eyebrow="DAILY · RANKED"
+              titleLines={["WORLD CUP", "MASTERMIND"]}
+              sub={<>Answer to <span style={{ color: "#fff", fontWeight: 600 }}>draft your XI</span>, then win the World Cup.</>}
+              accent="#ffb800"
+              accentText="#ffcf4d"
+            />
+          </div>
 
           {/* Edition strip — your ranked World Cup timeline: catch up on missed days, peek past
               results, see at a glance whether you're up to date. (Signed-in; replaces /catch-up.) */}
@@ -465,7 +473,12 @@ export default function WorldCupEntry() {
             <InviteMastermind oneLine />
           </div>
 
-          {/* How it works (Mastermind — the ranked daily loop) */}
+          {/* How it works — collapsed by default (was an always-open wall of steps). */}
+          <button onClick={() => setHowOpen((o) => !o)} className="flex items-center gap-1.5 mb-3 font-body" style={{ fontSize: 12, color: "#9aa4ab" }}>
+            <span style={{ color: "#ffb800", fontSize: 14 }}>ⓘ</span> How Mastermind works
+            <span style={{ fontSize: 10 }}>{howOpen ? "▲" : "▼"}</span>
+          </button>
+          {howOpen && (
           <div className="rounded-2xl p-4" style={{ background: "#0e1611", border: "1px solid rgba(255,184,0,0.3)" }}>
             <div className="font-body mb-2.5" style={{ fontSize: 11, color: "#ffb800", letterSpacing: 1 }}>HOW MASTERMIND WORKS</div>
             {[
@@ -483,6 +496,7 @@ export default function WorldCupEntry() {
               </div>
             ))}
           </div>
+          )}
         </div>
       </div>
     );
