@@ -425,6 +425,8 @@ export default function WorldCupEntry() {
               sub={<>Answer to <span style={{ color: "#fff", fontWeight: 600 }}>draft your XI</span>, then win the World Cup.</>}
               accent="#ffb800"
               accentText="#ffcf4d"
+              onPlay={() => startRanked()}
+              showPlay
             />
           </div>
 

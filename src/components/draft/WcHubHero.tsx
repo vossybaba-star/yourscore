@@ -30,7 +30,7 @@ const SHOWCASE: PlacedPlayer[] = [
 ];
 
 export function DraftHubHero({
-  eyebrow, titleLines, sub, accent, accentText, href, showPlay,
+  eyebrow, titleLines, sub, accent, accentText, href, onPlay, showPlay,
 }: {
   eyebrow: string;
   titleLines: string[];
@@ -38,6 +38,7 @@ export function DraftHubHero({
   accent: string;      // border + eyebrow + PLAY
   accentText: string;  // the big title colour
   href?: string;       // when set, the whole hero is a link (and can show PLAY)
+  onPlay?: () => void; // when set (and no href), the whole hero is a button that starts play
   showPlay?: boolean;
 }) {
   const inner = (
@@ -62,11 +63,10 @@ export function DraftHubHero({
     </div>
   );
   const style = { border: `1px solid ${accent}59`, background: `linear-gradient(135deg,${accent}1a 0%,#0b0b0d 62%)` };
-  return href ? (
-    <Link href={href} className="block relative overflow-hidden rounded-2xl active:scale-[0.99] transition-transform" style={{ ...style, textDecoration: "none" }}>{inner}</Link>
-  ) : (
-    <div className="relative overflow-hidden rounded-2xl" style={style}>{inner}</div>
-  );
+  const cls = "block w-full text-left relative overflow-hidden rounded-2xl active:scale-[0.99] transition-transform";
+  if (href) return <Link href={href} className={cls} style={{ ...style, textDecoration: "none" }}>{inner}</Link>;
+  if (onPlay) return <button type="button" onClick={onPlay} className={cls} style={style}>{inner}</button>;
+  return <div className="relative overflow-hidden rounded-2xl" style={style}>{inner}</div>;
 }
 
 /** World Cup preset — taps into the ranked daily. */
