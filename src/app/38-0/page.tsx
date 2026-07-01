@@ -13,6 +13,7 @@ import { BottomNav } from "@/components/ui/BottomNav";
 import { BackPill } from "@/components/ui/BackPill";
 import { Button } from "@/components/ui/Button";
 import { Pitch } from "@/components/draft/Pitch";
+import { WcHubHero, DraftHubHero } from "@/components/draft/WcHubHero";
 import { FORMATIONS, LEAGUE_META } from "@/lib/draft/types";
 import type { Formation, League } from "@/lib/draft/types";
 import { FORMATION_NOTE } from "@/lib/draft/formations";
@@ -47,6 +48,7 @@ export default function DraftHome() {
   const [existing, setExisting] = useState<LocalTeam | null>(null);
   // Which mode the World Cup "How it works" panel is explaining.
   const [wcHow, setWcHow] = useState<"mastermind" | "run">("mastermind");
+  const [wcHowOpen, setWcHowOpen] = useState(false);
 
   useEffect(() => {
     setExisting(loadTeam());
@@ -146,15 +148,18 @@ export default function DraftHome() {
         ══════════════════════════════════════════════════════════════════ */}
         {cfg && (
           <>
-            <h2 className="font-display tracking-wide leading-none" style={{ fontSize: 30, color: "#fff" }}>
-              {cfg.emoji} {cfg.title} <span style={{ color: cfg.accent }}>XI</span>
-            </h2>
-            <p className="font-body mt-1 mb-1" style={{ color: "#c4ccc6", fontSize: 14 }}>
-              {cfg.blurb}
-            </p>
-            <p className="font-body mb-5" style={{ color: "#8a948f", fontSize: 12 }}>
-              {LEAGUE_COUNTS[cfg.league].players} all-time {LEAGUE_META[cfg.league].name} player-seasons · {LEAGUE_COUNTS[cfg.league].buckets} legendary squads
-            </p>
+            <div className="mb-5">
+              <DraftHubHero
+                eyebrow="ALL-TIME XI"
+                titleLines={cfg.title.split(" ")}
+                sub={cfg.blurb}
+                accent={cfg.accent}
+                accentText={cfg.accent}
+              />
+              <p className="font-body mt-2 px-1" style={{ color: "#8a948f", fontSize: 11 }}>
+                {LEAGUE_COUNTS[cfg.league].players} all-time {LEAGUE_META[cfg.league].name} player-seasons · {LEAGUE_COUNTS[cfg.league].buckets} legendary squads
+              </p>
+            </div>
 
             {/* continue card — signed-in: both complete + in-progress; anonymous: in-progress only */}
             {continueTeam && (
@@ -273,46 +278,32 @@ export default function DraftHome() {
         ══════════════════════════════════════════════════════════════════ */}
         {tab === "wc" && (
           <>
-            <h2 className="font-display tracking-wide leading-none" style={{ fontSize: 30, color: "#ffb800" }}>
-              🏆 WORLD CUP
-            </h2>
-            <p className="font-body mt-1 mb-5" style={{ color: "#c4ccc6", fontSize: 14 }}>
-              Build a World XI and play a full World Cup — group, then knockouts, all the way to the final. Two ways in.
-            </p>
+            {/* Hero — pitch + title (the "in-game vibe"); taps into the ranked daily. */}
+            <WcHubHero />
 
-            {/* ── Mode 1: World Cup Mastermind (the daily quiz-gated run) ── */}
-            <Link
-              href="/38-0/wc"
-              className="block rounded-2xl p-4 mb-3 active:scale-[0.99] transition-transform"
-              style={{ background: "linear-gradient(135deg,rgba(255,184,0,0.16),rgba(255,184,0,0.04))", border: "1px solid rgba(255,184,0,0.45)" }}
-            >
-              <div className="flex items-center gap-2.5 mb-1">
-                <span style={{ fontSize: 24 }}>🧠</span>
-                <span className="font-display tracking-wide" style={{ fontSize: 19, color: "#ffb800" }}>WORLD CUP MASTERMIND</span>
-                <span className="font-body rounded-full px-2 py-0.5" style={{ fontSize: 9, color: "#1a1300", background: "#ffb800", letterSpacing: 0.5 }}>DAILY · RANKED</span>
-              </div>
-              <div className="font-body" style={{ fontSize: 13, color: "#c4ccc6", lineHeight: 1.4 }}>
-                Answer World Cup questions to build your XI — <b style={{ color: "#fff" }}>the more you know, the stronger your team</b>. One ranked run a day; closest to a perfect 8-0-0 tops the season board.
-              </div>
-            </Link>
-
-            {/* ── Mode 2: World Cup Run (open, no-quiz draft) ── */}
+            {/* World Cup Run — the free-play alternative, one line. */}
             <Link
               href="/38-0/wc?run=1"
-              className="block rounded-2xl p-4 mb-5 active:scale-[0.99] transition-transform"
-              style={{ background: "linear-gradient(135deg,rgba(174,234,0,0.12),rgba(174,234,0,0.03))", border: "1px solid rgba(174,234,0,0.32)" }}
+              className="flex items-center gap-3 rounded-2xl px-4 py-3.5 mt-3 mb-4 active:scale-[0.99] transition-transform"
+              style={{ background: "#0c1409", border: "1px solid rgba(174,234,0,0.32)", textDecoration: "none" }}
             >
-              <div className="flex items-center gap-2.5 mb-1">
-                <span style={{ fontSize: 24 }}>🌍</span>
-                <span className="font-display tracking-wide" style={{ fontSize: 19, color: "#aeea00" }}>WORLD CUP RUN</span>
-                <span className="font-body rounded-full px-2 py-0.5" style={{ fontSize: 9, color: "#062013", background: "#aeea00", letterSpacing: 0.5 }}>FREE PLAY</span>
+              <span style={{ fontSize: 22 }}>🌍</span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="font-display tracking-wide" style={{ fontSize: 16, color: "#aeea00" }}>WORLD CUP RUN</span>
+                  <span className="font-body rounded-full px-2 py-0.5" style={{ fontSize: 9, color: "#062013", background: "#aeea00", letterSpacing: 0.5 }}>FREE PLAY</span>
+                </div>
+                <div className="font-body" style={{ fontSize: 12, color: "#8a948f" }}>Spin a dream XI from any nation — no questions</div>
               </div>
-              <div className="font-body" style={{ fontSize: 13, color: "#c4ccc6", lineHeight: 1.4 }}>
-                Pure draft, no questions. <b style={{ color: "#fff" }}>Spin a dream XI from any nation</b> and play the knockouts to the final. Play as many runs as you like.
-              </div>
+              <span style={{ fontSize: 16, color: "#aeea00" }}>→</span>
             </Link>
 
-            {/* ── How it works — one tab per mode ── */}
+            {/* How it works — collapsed by default (was a wall of steps). */}
+            <button onClick={() => setWcHowOpen((o) => !o)} className="flex items-center gap-1.5 mb-3 font-body" style={{ fontSize: 12, color: "#9aa4ab" }}>
+              <span style={{ color: "#ffb800", fontSize: 14 }}>ⓘ</span> How it works
+              <span style={{ fontSize: 10 }}>{wcHowOpen ? "▲" : "▼"}</span>
+            </button>
+            {wcHowOpen && (
             <div className="rounded-2xl p-4 mb-6" style={{ background: "#0e1611", border: "1px solid rgba(255,184,0,0.25)" }}>
               <div className="flex items-center justify-between mb-3">
                 <div className="font-body" style={{ fontSize: 11, color: "#ffb800", letterSpacing: 1 }}>HOW IT WORKS</div>
@@ -351,6 +342,7 @@ export default function DraftHome() {
                 </div>
               ))}
             </div>
+            )}
           </>
         )}
 

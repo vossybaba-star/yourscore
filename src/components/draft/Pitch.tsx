@@ -24,6 +24,7 @@ export function Pitch({
   onSlotClick,
   compact,
   hideOverall,
+  noLabels,
 }: {
   formation: Formation;
   squad: PlacedPlayer[];
@@ -32,6 +33,8 @@ export function Pitch({
   compact?: boolean;
   /** Expert mode: show the player's position in the token instead of the rating. */
   hideOverall?: boolean;
+  /** Tokens only — hide the name/position labels under each token (for small hero pitches). */
+  noLabels?: boolean;
 }) {
   const slots = slotsFor(formation);
   const bySlot = new Map(squad.map((p) => [p.slot, p]));
@@ -86,20 +89,22 @@ export function Pitch({
                 >
                   {hideOverall ? p.position : p.overall}
                 </div>
-                <div
-                  className="mt-1 px-1 rounded text-center leading-tight font-body"
-                  style={{
-                    fontSize: compact ? 8 : 9,
-                    color: "#fff",
-                    background: "rgba(10,10,15,0.7)",
-                    maxWidth: compact ? 48 : 60,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {p.name.split(" ").slice(-1)[0]}
-                </div>
+                {!noLabels && (
+                  <div
+                    className="mt-1 px-1 rounded text-center leading-tight font-body"
+                    style={{
+                      fontSize: compact ? 8 : 9,
+                      color: "#fff",
+                      background: "rgba(10,10,15,0.7)",
+                      maxWidth: compact ? 48 : 60,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {p.name.split(" ").slice(-1)[0]}
+                  </div>
+                )}
               </>
             ) : (
               <>
