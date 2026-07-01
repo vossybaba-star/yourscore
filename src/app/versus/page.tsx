@@ -7,6 +7,7 @@ import { useUser } from "@/hooks/useUser";
 import { useYourTurns, type InboxChallenge } from "@/hooks/useYourTurns";
 import { useVersusStats, type Rivalry } from "@/hooks/useVersusStats";
 import { BottomNav } from "@/components/ui/BottomNav";
+import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { FriendsPanel } from "@/components/friends/FriendsPanel";
 import { LeaguesPanel } from "@/components/leagues/LeaguesPanel";
 
@@ -23,20 +24,8 @@ const LIME = "#aeea00"; // 38-0
 const GOLD = "#ffc233"; // wins
 const RED = "#ff6b78";
 
-function initial(n: string) { return (n[0] ?? "?").toUpperCase(); }
-
-function Avatar({ name, avatarUrl, size = 40, ring }: { name: string; avatarUrl?: string | null; size?: number; ring?: string }) {
-  const style: React.CSSProperties = {
-    width: size, height: size,
-    border: ring ? `2px solid ${ring}` : "1px solid rgba(255,255,255,0.1)",
-    background: avatarUrl ? `url(${avatarUrl}) center/cover` : "rgba(255,255,255,0.06)",
-    color: "#cfe9e3",
-  };
-  return (
-    <div className="rounded-full flex items-center justify-center font-body font-bold flex-shrink-0" style={style}>
-      {!avatarUrl && <span style={{ fontSize: size * 0.4 }}>{initial(name)}</span>}
-    </div>
-  );
+function Avatar({ name, avatarUrl, seed, size = 40, ring }: { name: string; avatarUrl?: string | null; seed?: string; size?: number; ring?: string }) {
+  return <PlayerAvatar seed={seed} name={name} avatarUrl={avatarUrl} size={size} ring={ring} />;
 }
 
 function SectionLabel({ children, action }: { children: React.ReactNode; action?: React.ReactNode }) {
@@ -137,7 +126,7 @@ function YourTurnCard({ c }: { c: InboxChallenge }) {
           <p className="font-display text-lg text-white leading-none">vs {c.otherName}</p>
           <p className="font-body text-xs text-text-muted mt-1.5 truncate">{c.packName}</p>
         </div>
-        <Avatar name={c.otherName} size={48} ring="rgba(255,255,255,0.15)" />
+        <Avatar name={c.otherName} seed={c.invitedUserId ?? c.otherName} size={48} ring="rgba(255,255,255,0.15)" />
       </div>
       <div className="mt-4 rounded-xl py-3 text-center font-display tracking-wide" style={{ background: TEAL, color: "#04231f" }}>CONTINUE MATCH →</div>
     </Link>
@@ -185,7 +174,7 @@ function ResultRow({ c }: { c: InboxChallenge }) {
   return (
     <div className="flex items-center gap-3 rounded-2xl px-3.5 py-3" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.07)" }}>
       <span className="font-display text-lg w-5 text-center flex-shrink-0" style={{ color: col }}>{tag}</span>
-      <Avatar name={c.otherName} size={34} />
+      <Avatar name={c.otherName} seed={c.invitedUserId ?? c.otherName} size={34} />
       <div className="flex-1 min-w-0">
         <p className="font-body text-sm font-semibold text-white truncate">vs {c.otherName}</p>
         <p className="font-body text-xs text-text-muted truncate">{c.packName}</p>
@@ -228,7 +217,7 @@ function RivalryCard({ r, onChallenge }: { r: Rivalry; onChallenge: (id: string)
   return (
     <div className="rounded-2xl p-3.5 flex-shrink-0" style={{ width: 190, background: "#0e1611", border: "1px solid rgba(255,255,255,0.08)" }}>
       <div className="flex items-center gap-2.5 mb-3">
-        <Avatar name={r.name} avatarUrl={r.avatarUrl} size={38} ring={leadCol} />
+        <Avatar name={r.name} avatarUrl={r.avatarUrl} seed={r.opponentId} size={38} ring={leadCol} />
         <div className="min-w-0">
           <p className="font-body text-sm font-semibold text-white truncate">{r.name}</p>
           <p className="font-body text-[11px]" style={{ color: leadCol }}>{leadTxt}</p>
@@ -308,9 +297,10 @@ function VersusInner() {
             <div className="relative rounded-3xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
               <div className="absolute inset-0" style={{ background: "url(/email/wc-banner.jpg) center/cover" }} />
               <div className="absolute inset-0" style={{ background: "linear-gradient(115deg, rgba(8,13,10,0.95) 30%, rgba(8,13,10,0.58) 76%, rgba(8,13,10,0.32) 100%)" }} />
-              <div className="relative p-5 pt-6">
-                <p className="font-display text-white leading-[0.9]" style={{ fontSize: 34 }}>PROVE YOU KNOW<br /><span style={{ color: LIME }}>MORE BALL</span><br />THAN YOUR FRIENDS.</p>
-                <div className="flex gap-2.5 mt-4">
+              <div className="relative p-5 pt-7 pb-6">
+                <p className="font-body text-[11px] font-bold uppercase tracking-[0.32em] mb-2.5" style={{ color: LIME }}>Versus</p>
+                <p className="font-display text-white leading-[0.85]" style={{ fontSize: 46 }}>PROVE YOU KNOW<br /><span style={{ color: LIME }}>MORE BALL</span><br />THAN YOUR FRIENDS.</p>
+                <div className="flex gap-2.5 mt-5">
                   <button onClick={() => setSheet({ kind: "game" })} className="flex-1 rounded-2xl py-3.5 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: LIME, color: "#13200a" }}>CHALLENGE SOMEONE</button>
                   <button onClick={() => setSheet({ kind: "code" })} className="rounded-2xl px-5 py-3.5 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "rgba(0,0,0,0.35)", color: "#eef2f0", border: "1px solid rgba(255,255,255,0.18)", backdropFilter: "blur(4px)" }}>JOIN CODE</button>
                 </div>

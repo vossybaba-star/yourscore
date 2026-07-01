@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { BackPill } from "@/components/ui/BackPill";
 import { useUser } from "@/hooks/useUser";
 import { useVersusStats } from "@/hooks/useVersusStats";
+import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 
 // Versus-owned 38-0 challenge entry. Reuses the live-match API (/api/draft/live)
 // but presents the mockup's "who are you playing → challenge sent (code)" flow
@@ -14,8 +15,6 @@ import { useVersusStats } from "@/hooks/useVersusStats";
 
 const LIME = "#aeea00";
 type Resp = { match?: { id: string; join_code?: string }; error?: string };
-
-function initial(n: string) { return (n[0] ?? "?").toUpperCase(); }
 
 export default function Versus380Page() {
   const router = useRouter();
@@ -109,9 +108,7 @@ export default function Versus380Page() {
                 <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
                   {rivals.map((r) => (
                     <div key={r.opponentId} className="flex flex-col items-center gap-1.5 flex-shrink-0" style={{ width: 56 }}>
-                      <div className="w-12 h-12 rounded-full flex items-center justify-center font-body font-bold" style={{ background: r.avatarUrl ? `url(${r.avatarUrl}) center/cover` : "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "#cfe9e3" }}>
-                        {!r.avatarUrl && initial(r.name)}
-                      </div>
+                      <PlayerAvatar seed={r.opponentId} name={r.name} avatarUrl={r.avatarUrl} size={48} />
                       <span className="font-body text-[10px] text-text-muted truncate w-full text-center">{r.name}</span>
                     </div>
                   ))}
