@@ -103,6 +103,7 @@ export async function POST(req: NextRequest) {
   let correct = 0;
   let correctStreak = 0;
   let wrongStreak = 0;
+  const oppAnswers: { letter: string; correct: boolean }[] = []; // per-question, for the reveal
 
   for (let i = 0; i < n; i++) {
     const isCorrect = answers[i].letter === String(questions[i].answer).toUpperCase();
@@ -120,6 +121,7 @@ export async function POST(req: NextRequest) {
 
     score += result.points;
     if (isCorrect) correct += 1;
+    oppAnswers.push({ letter: answers[i].letter, correct: isCorrect });
     correctStreak = result.nextCorrectStreak;
     wrongStreak = result.nextWrongStreak;
   }
@@ -134,12 +136,15 @@ export async function POST(req: NextRequest) {
     .single();
 
   // Conditional update guards against a race (two opponents submitting at once).
-  const { data: updated, error } = await db
+  // Cast: opponent_answers is a new column not yet in the generated types.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: updated, error } = await (db as any)
     .from("h2h_challenges")
     .update({
       opponent_id: user.id,
       opponent_score: score,
       opponent_correct: correct,
+      opponent_answers: oppAnswers,
       status: "complete",
     })
     .eq("id", challengeId)

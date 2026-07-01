@@ -9,7 +9,7 @@ import { notifyUsers } from "@/lib/notify";
 // h2h challenge from it. If you haven't played the quiz yet, returns
 // { needsPlay: true } so the client can route you into the play-then-send flow.
 
-const EXPIRY_MS = 7 * 24 * 60 * 60 * 1000;
+const EXPIRY_MS = 3 * 24 * 60 * 60 * 1000; // 3-day expiry (spec 2026-07-01)
 
 export async function POST(req: NextRequest) {
   const auth = await createClient();
@@ -30,11 +30,21 @@ export async function POST(req: NextRequest) {
   // Your stored scorecard for this pack (authoritative — no client-trusted score).
   const { data: attempt } = await db
     .from("quiz_attempts")
-    .select("score, max_score, correct_count")
+    .select("score, max_score, correct_count, answers")
     .eq("user_id", user.id)
     .eq("pack_id", packId)
     .maybeSingle();
   if (!attempt) return NextResponse.json({ needsPlay: true });
+
+  // Normalise the stored per-question answers to [{letter, correct}] (pack order)
+  // so the h2h reveal can show your picks vs theirs. Null when the attempt has no
+  // per-question detail (older plays) — the reveal just hides the breakdown then.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rawAns = Array.isArray((attempt as any).answers) ? (attempt as any).answers : null;
+  const challengerAnswers = rawAns
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ? rawAns.map((a: any) => ({ letter: a.selected ?? a.letter ?? null, correct: !!a.correct }))
+    : null;
 
   const { data: pack } = await db
     .from("quiz_packs").select("name, questions").eq("id", packId).single();
@@ -44,7 +54,9 @@ export async function POST(req: NextRequest) {
   const { data: profile } = await db
     .from("profiles").select("display_name").eq("id", user.id).single();
 
-  const { data, error } = await db
+  // Cast: challenger_answers/mode are new columns not yet in the generated types.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (db as any)
     .from("h2h_challenges")
     .insert({
       quiz_pack_id: packId,
@@ -55,6 +67,7 @@ export async function POST(req: NextRequest) {
       challenger_correct: attempt.correct_count ?? 0,
       total_questions: totalQuestions,
       max_score: attempt.max_score ?? 0,
+      challenger_answers: challengerAnswers,
       invited_user_id: invitedUserId,
       status: "awaiting_opponent",
       expires_at: new Date(Date.now() + EXPIRY_MS).toISOString(),

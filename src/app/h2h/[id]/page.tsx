@@ -31,6 +31,8 @@ interface H2HChallenge {
   opponent_id: string | null;
   opponent_score: number | null;
   opponent_correct: number | null;
+  challenger_answers: { letter: Letter | null; correct: boolean }[] | null;
+  opponent_answers: { letter: Letter | null; correct: boolean }[] | null;
   created_at: string;
   expires_at: string;
 }
@@ -70,6 +72,17 @@ function timerColor(ms: number): string {
 
 function timerDisplay(ms: number): string {
   return (ms / 1000).toFixed(2) + "s";
+}
+
+// One player's pick for a question in the reveal — green if right, red if wrong.
+function PickChip({ name, pick }: { name: string; pick?: { letter: string | null; correct: boolean } }) {
+  const ok = !!pick?.correct;
+  return (
+    <div className="flex-1 rounded-lg px-2.5 py-1.5 min-w-0" style={{ background: ok ? "rgba(174,234,0,0.09)" : "rgba(255,107,120,0.09)", border: `1px solid ${ok ? "rgba(174,234,0,0.28)" : "rgba(255,107,120,0.28)"}` }}>
+      <p className="font-body text-[10px] truncate" style={{ color: "#8a948f" }}>{name}</p>
+      <p className="font-body text-xs font-semibold" style={{ color: ok ? "#aeea00" : "#ff6b78" }}>{pick?.letter ?? "—"} {ok ? "✓" : "✗"}</p>
+    </div>
+  );
 }
 
 
@@ -219,6 +232,13 @@ export default function H2HPage({ params }: { params: { id: string } }) {
       // Determine state
       if (ch.opponent_score !== null) {
         setPageState("results");
+        // Pull the pack's questions so the reveal can show both players' picks —
+        // only when we actually have per-question data for both sides.
+        if (ch.challenger_answers && ch.opponent_answers) {
+          const { data: pack } = await supabase
+            .from("quiz_packs").select("questions").eq("id", ch.quiz_pack_id).single();
+          if (pack?.questions) setQuestions(pack.questions as unknown as RawQuestion[]);
+        }
       } else if (uid === ch.challenger_id) {
         setPageState("own_challenge");
       } else if (!uid) {
@@ -620,8 +640,39 @@ export default function H2HPage({ params }: { params: { id: string } }) {
             </div>
           </div>
 
-          <Button href="/challenges" variant="primary" tone="teal" size="lg" fullWidth>
-            Play another challenge →
+          {/* Question-by-question reveal — only when both players' per-question data exists */}
+          {challenge.challenger_answers && challenge.opponent_answers && questions.length > 0 && (
+            <div className="rounded-2xl p-5" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.07)" }}>
+              <p className="font-display text-xs tracking-widest mb-4" style={{ color: "#586058" }}>QUESTION BY QUESTION</p>
+              <div className="flex flex-col gap-3.5">
+                {questions.map((q, i) => {
+                  const correctLetter = String(q.answer).toUpperCase() as Letter;
+                  return (
+                    <div key={i} className="pb-3.5" style={{ borderBottom: i < questions.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none" }}>
+                      <p className="font-body text-sm text-white mb-1 leading-snug">{i + 1}. {q.question}</p>
+                      <p className="font-body text-xs mb-2.5" style={{ color: "#8a948f" }}>Answer: <span style={{ color: "#aeea00" }}>{correctLetter}. {q.options?.[correctLetter] ?? ""}</span></p>
+                      <div className="flex gap-2">
+                        <PickChip name={challenge.challenger_name} pick={challenge.challenger_answers?.[i]} />
+                        <PickChip name={opponentDisplayName} pick={challenge.opponent_answers?.[i]} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {(() => {
+            const otherId = userId === challenge.challenger_id ? challenge.opponent_id : challenge.challenger_id;
+            return otherId ? (
+              <Button href={`/versus/challenge?to=${otherId}`} variant="primary" tone="teal" size="lg" fullWidth>
+                Rematch →
+              </Button>
+            ) : null;
+          })()}
+
+          <Button href="/versus" variant="ghost" size="lg" fullWidth>
+            Back to Versus →
           </Button>
         </div>
       </div>
