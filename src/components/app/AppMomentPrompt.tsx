@@ -45,10 +45,23 @@ function stamp(key: string): void {
   try { localStorage.setItem(key, String(Date.now())); } catch { /* ignore */ }
 }
 
-async function requestRate(): Promise<void> {
-  // TODO(next native build): prefer the native in-app review popup —
-  //   const { InAppReview } = await import("@capacitor-community/in-app-review");
-  //   return InAppReview.requestReview();
+// Fire Apple's inline review popup (SKStoreReviewController) via the native
+// plugin. Guarded with isPluginAvailable so a build that predates the plugin
+// (i.e. the current live one, until the next rebuild) doesn't throw — it just
+// reports back that it didn't fire, and we fall back to the soft card.
+// Returns whether the native popup was shown.
+async function fireNativeReview(): Promise<boolean> {
+  try {
+    const { Capacitor } = await import("@capacitor/core");
+    if (!Capacitor.isPluginAvailable("InAppReview")) return false;
+    const { InAppReview } = await import("@capacitor-community/in-app-review");
+    await InAppReview.requestReview();
+    return true;
+  } catch {
+    return false;
+  }
+}
+function openReviewPage(): void {
   try { window.open(REVIEW_URL, "_blank", "noopener"); } catch { /* ignore */ }
 }
 
@@ -57,13 +70,19 @@ export function AppMomentPrompt({ success }: { success: boolean }) {
 
   useEffect(() => {
     if (!success) return;
+    let cancelled = false;
     if (isNative()) {
       if (recently(RATE_KEY, RATE_COOLDOWN)) return;
-      setMode("rate");
+      stamp(RATE_KEY); // asked once — respect the cooldown whether native popup or card
+      // Prefer Apple's inline star popup; if this build predates the plugin,
+      // fall back to a soft card that links to the review page.
+      fireNativeReview().then((fired) => { if (!fired && !cancelled) setMode("rate"); });
     } else if (isAppleMobile()) {
       if (recently(DL_KEY, DL_COOLDOWN)) return;
+      stamp(DL_KEY);
       setMode("download");
     }
+    return () => { cancelled = true; };
   }, [success]);
 
   if (!mode) return null;
@@ -93,7 +112,7 @@ export function AppMomentPrompt({ success }: { success: boolean }) {
       </div>
       <div className="flex gap-2 mt-3">
         {rate ? (
-          <button onClick={() => { act(); void requestRate(); }}
+          <button onClick={() => { act(); openReviewPage(); }}
             className="flex-1 text-center rounded-xl py-2.5 font-display text-sm tracking-widest active:scale-[0.97] transition-transform"
             style={{ background: "#aeea00", color: "#0a0a0f" }}>
             Rate us ⭐
