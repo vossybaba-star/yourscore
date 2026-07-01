@@ -7,8 +7,9 @@ import { GridBackground } from "@/components/ui/GridBackground";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { ShareStatsButton } from "@/components/ui/ShareStatsButton";
 import { positionBadge, positionColor } from "@/lib/rank";
+import { avatarPalette, avatarInitial } from "@/lib/avatar";
 
-function AvatarCircle({ name, size = 64, avatarUrl }: { name: string; size?: number; avatarUrl?: string | null }) {
+function AvatarCircle({ name, size = 64, avatarUrl, seed }: { name: string; size?: number; avatarUrl?: string | null; seed?: string }) {
   if (avatarUrl) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
@@ -16,16 +17,11 @@ function AvatarCircle({ name, size = 64, avatarUrl }: { name: string; size?: num
         style={{ width: size, height: size, border: "2px solid rgba(255,255,255,0.1)" }} />
     );
   }
-  const palettes = [
-    { bg: "#1a2f4a", text: "#60a5fa" }, { bg: "#3a423d", text: "#aeea00" },
-    { bg: "#1a4a2a", text: "#4ade80" }, { bg: "#4a2a1a", text: "#fb923c" },
-    { bg: "#4a1a2a", text: "#f87171" },
-  ];
-  const c = palettes[(name.charCodeAt(0) || 0) % palettes.length];
+  const p = avatarPalette(seed || name);
   return (
-    <div className="rounded-full flex items-center justify-center font-body font-bold flex-shrink-0"
-      style={{ width: size, height: size, background: c.bg, color: c.text, fontSize: size * 0.38, border: "2px solid rgba(255,255,255,0.1)" }}>
-      {(name[0] ?? "?").toUpperCase()}
+    <div className="rounded-full flex items-center justify-center font-display flex-shrink-0"
+      style={{ width: size, height: size, background: `linear-gradient(140deg, ${p.from}, ${p.to})`, color: p.fg, fontSize: size * 0.42, border: "2px solid rgba(255,255,255,0.12)" }}>
+      {avatarInitial(name)}
     </div>
   );
 }
@@ -201,7 +197,7 @@ export default async function ProfilePage() {
       <div className="sticky top-0 z-30 pt-safe" style={{ background: "rgba(10,10,15,0.92)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
         <div className="max-w-lg mx-auto px-5 py-4">
           <div className="flex items-center gap-4">
-            <AvatarCircle name={name} size={56} avatarUrl={profile?.avatar_url} />
+            <AvatarCircle name={name} size={56} avatarUrl={profile?.avatar_url} seed={user.id} />
             <div className="flex-1 min-w-0">
               <p className="font-display text-2xl text-white tracking-wide truncate">{name.toUpperCase()}</p>
               <p className="font-body text-xs text-text-muted mt-0.5 truncate">{user.email}</p>

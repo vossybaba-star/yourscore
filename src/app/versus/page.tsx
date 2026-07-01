@@ -8,6 +8,7 @@ import { useYourTurns, type InboxChallenge } from "@/hooks/useYourTurns";
 import { useVersusStats, type Rivalry } from "@/hooks/useVersusStats";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
+import { PitchArt, QuizArt } from "@/components/versus/GameTileArt";
 import { FriendsPanel } from "@/components/friends/FriendsPanel";
 import { LeaguesPanel } from "@/components/leagues/LeaguesPanel";
 
@@ -133,13 +134,14 @@ function YourTurnCard({ c }: { c: InboxChallenge }) {
   );
 }
 
-function GameTile({ game, href, title, sub, image }: { game: "quiz" | "38-0"; href: string; title: string; sub: string; image: string }) {
+function GameTile({ game, href, title, sub }: { game: "quiz" | "38-0"; href: string; title: string; sub: string }) {
   const c = game === "38-0" ? LIME : TEAL;
   return (
-    <Link href={href} className="flex-1 rounded-2xl overflow-hidden relative active:scale-[0.98] transition-transform" style={{ border: `1px solid ${c}40`, minHeight: 150 }}>
-      <div className="absolute inset-0" style={{ background: `url(${image}) center/cover` }} />
-      <div className="absolute inset-0" style={{ background: `linear-gradient(160deg, ${c}26 0%, rgba(8,13,10,0.5) 42%, rgba(8,13,10,0.97) 100%)` }} />
-      <div className="relative p-4 h-full flex flex-col justify-end" style={{ minHeight: 150 }}>
+    <Link href={href} className="flex-1 rounded-2xl overflow-hidden relative active:scale-[0.98] transition-transform" style={{ border: `1px solid ${c}40`, minHeight: 156 }}>
+      <div className="absolute inset-0" style={{ background: `radial-gradient(120% 90% at 50% 12%, ${c}22, #0b1310 68%)` }} />
+      {game === "38-0" ? <PitchArt /> : <QuizArt />}
+      <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(8,13,10,0) 42%, rgba(8,13,10,0.88) 100%)" }} />
+      <div className="relative p-4 h-full flex flex-col justify-end" style={{ minHeight: 156 }}>
         <GameGlyph game={game} size={26} />
         <p className="font-display text-xl text-white mt-2 leading-none">{title}</p>
         <p className="font-body text-[11px] mt-1.5 leading-snug" style={{ color: "#cdeee7" }}>{sub}</p>
@@ -314,8 +316,8 @@ function VersusInner() {
           {/* Choose a game */}
           <SectionLabel>Choose a game</SectionLabel>
           <div className="flex gap-2.5">
-            <GameTile game="38-0" href="/versus/38-0" title="38-0" sub="Build your XI. Beat your opponent." image="/email/wc-draft.png" />
-            <GameTile game="quiz" href="/versus/challenge" title="Quiz Battle" sub="Speed and accuracy decide it." image="/email/h2h-gameplay.jpg" />
+            <GameTile game="38-0" href="/versus/38-0" title="38-0" sub="Build your XI. Beat your opponent." />
+            <GameTile game="quiz" href="/versus/challenge" title="Quiz Battle" sub="Speed and accuracy decide it." />
           </div>
 
           {nothingYet && (
