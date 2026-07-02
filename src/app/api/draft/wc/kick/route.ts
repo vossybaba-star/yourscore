@@ -6,6 +6,7 @@ import {
   wcPensKicks, wcPensView, wcPensMeta, type WcStageState,
 } from "@/lib/draft/wc-server";
 import { shootoutStatus, type PenPower, type PenZone } from "@/lib/draft/pens";
+import { ensurePool } from "@/lib/draft/pool";
 
 const POWERS = ["under", "good", "perfect", "over"];
 
@@ -16,6 +17,7 @@ const POWERS = ["under", "good", "perfect", "over"];
 // the NEXT tie's choice (the 2-game knockout round).
 
 export async function POST(req: NextRequest) {
+  await ensurePool(); // match resolution can re-validate the XI (pool ratings) — load it server-side first
   const auth = await createClient();
   const { data: { user } } = await auth.auth.getUser();
   if (!user) return NextResponse.json({ error: "Sign in to play" }, { status: 401 });

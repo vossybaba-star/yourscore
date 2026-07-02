@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimitDistributed } from "@/lib/ratelimit";
 import { rowToRun, validateNationLocked, validateWorld, createWcDb } from "@/lib/draft/wc-server";
+import { ensurePool } from "@/lib/draft/pool";
 
 // Spend one upgrade pick: replace a slot with another player. In nation mode the new
 // player must be from the same nation; in world mode any WC-eligible player is allowed.
@@ -9,6 +10,7 @@ import { rowToRun, validateNationLocked, validateWorld, createWcDb } from "@/lib
 // (fit, no duplicate, eligibility) and recomputes Strength server-side.
 
 export async function POST(req: NextRequest) {
+  await ensurePool(); // validate*() reads player ratings from the pool — load it server-side first
   const auth = await createClient();
   const { data: { user } } = await auth.auth.getUser();
   if (!user) return NextResponse.json({ error: "Sign in to play" }, { status: 401 });

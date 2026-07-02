@@ -3,12 +3,14 @@ import { createClient } from "@/lib/supabase/server";
 import { rateLimitDistributed } from "@/lib/ratelimit";
 import { validateNationLocked, validateWorld, newRunPlan, createWcDb, resolveEdition, WORLD_TEAM_NAME } from "@/lib/draft/wc-server";
 import { verifyRankedDraft, rankedQuizScore, WC_DRAFT_FORMATION, type DraftPick } from "@/lib/draft/wc-draft";
+import { ensurePool } from "@/lib/draft/pool";
 
 // Start a World Cup Run: validate a nation-locked XI, plan the bracket (deterministic
 // by a server seed), and create the run row. Server-authoritative — Strength is
 // recomputed and every player is checked to be eligible for the chosen nation.
 
 export async function POST(req: NextRequest) {
+  await ensurePool(); // validate*() reads player ratings from the pool — load it server-side first
   const auth = await createClient();
   const { data: { user } } = await auth.auth.getUser();
   if (!user) return NextResponse.json({ error: "Sign in to play" }, { status: 401 });

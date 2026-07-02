@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimitDistributed } from "@/lib/ratelimit";
+import { ensurePool } from "@/lib/draft/pool";
 import { createWcDb, activeEdition, previousEdition, pastEditions, resolveEdition } from "@/lib/draft/wc-server";
 import {
   rankedQuestions, draftSlots, rankedDraftStep, toSlatePlayer,
@@ -81,6 +82,7 @@ async function editionStrip(db: any, userId: string | null, current: string, pas
 }
 
 export async function POST(req: NextRequest) {
+  await ensurePool(); // slates draw from the player pool (spinWorld) — load it server-side first
   // Slates are date-seeded + server-secret-peppered (not user-specific) and the run isn't
   // created here, so the draft itself works pre-sign-in. But ranked is a logged-in
   // competition (the entry gates sign-in), so lock bookkeeping only runs when signed in.
