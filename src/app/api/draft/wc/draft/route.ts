@@ -73,7 +73,10 @@ async function editionStrip(db: any, userId: string | null, current: string, pas
     const run = runByDate.get(date);
     const isLocked = locked.has(date) || !!run;
     return {
-      date, isToday: date === current, played: !!run, available: !!userId && !isLocked,
+      date, isToday: date === current, played: !!run,
+      // A guest (no account) has done none of them — surface every day as an open catch-up so
+      // the strip entices sign-up; tapping routes into sign-in. Signed-in users get real state.
+      available: userId ? !isLocked : true,
       runId: run?.id ?? null, quizCorrect: run?.quiz_correct ?? null, quizTotal: run?.quiz_total ?? null,
       status: run?.status ?? null, stage: run?.stage ?? null,
       wdl: run ? (wdlByRun.get(run.id) ?? { w: 0, d: 0, l: 0 }) : null,

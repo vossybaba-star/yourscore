@@ -296,7 +296,8 @@ export default function WorldCupEntry() {
 
   // Is today's ranked attempt already used (played, or drafted past pick 6)? Blurs the card.
   useEffect(() => {
-    if (!user) { setRankedLocked(false); setEditions([]); try { localStorage.removeItem("wc-editions"); } catch { /* ignore */ } return; }
+    setRankedLocked(false); // reset; a guest is never locked out of today. Status is fetched
+    // for guests too so the edition strip shows every past day as an open (sign-up-gated) catch-up.
     let off = false;
     (async () => {
       try {
