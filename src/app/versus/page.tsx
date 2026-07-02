@@ -8,7 +8,7 @@ import { useYourTurns, type InboxChallenge } from "@/hooks/useYourTurns";
 import { useVersusStats, type Rivalry } from "@/hooks/useVersusStats";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
-import { PitchArt, QuizArt } from "@/components/versus/GameTileArt";
+import { PitchArt, QuizArt, VersusHeroArt } from "@/components/versus/GameTileArt";
 import { FriendsPanel } from "@/components/friends/FriendsPanel";
 import { LeaguesPanel } from "@/components/leagues/LeaguesPanel";
 
@@ -297,8 +297,9 @@ function VersusInner() {
           {/* Hero + primary actions */}
           <div className="pt-4">
             <div className="relative rounded-3xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
-              <div className="absolute inset-0" style={{ background: "url(/email/wc-banner.jpg) center/cover" }} />
-              <div className="absolute inset-0" style={{ background: "linear-gradient(115deg, rgba(8,13,10,0.95) 30%, rgba(8,13,10,0.58) 76%, rgba(8,13,10,0.32) 100%)" }} />
+              <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, #101d16 0%, #0b1511 100%)" }} />
+              <VersusHeroArt />
+              <div className="absolute inset-0" style={{ background: "linear-gradient(110deg, rgba(8,13,10,0.78) 38%, rgba(8,13,10,0.28) 82%, rgba(8,13,10,0.05) 100%)" }} />
               <div className="relative p-5 pt-7 pb-6">
                 <p className="font-body text-[11px] font-bold uppercase tracking-[0.32em] mb-2.5" style={{ color: LIME }}>Versus</p>
                 <p className="font-display text-white leading-[0.85]" style={{ fontSize: 46 }}>PROVE YOU KNOW<br /><span style={{ color: LIME }}>MORE BALL</span><br />THAN YOUR FRIENDS.</p>

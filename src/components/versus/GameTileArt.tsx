@@ -31,6 +31,31 @@ export function PitchArt() {
   );
 }
 
+// Versus hero — a light, on-brand graphic (no photo): faint pitch markings on
+// the right, the crossed-swords versus mark, and a soft lime glow.
+export function VersusHeroArt() {
+  return (
+    <svg viewBox="0 0 380 200" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 w-full h-full">
+      <defs>
+        <radialGradient id="vhero-glow" cx="76%" cy="28%" r="62%">
+          <stop offset="0%" stopColor={LIME} stopOpacity="0.16" />
+          <stop offset="100%" stopColor={LIME} stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <rect width="380" height="200" fill="url(#vhero-glow)" />
+      <g stroke={LIME} strokeOpacity="0.12" strokeWidth="1.5" fill="none">
+        <circle cx="332" cy="100" r="78" />
+        <line x1="286" y1="-10" x2="286" y2="210" />
+        <path d="M286 56 A 46 46 0 0 1 286 144" />
+      </g>
+      <g transform="translate(252 58) scale(4)" stroke={TEAL} strokeOpacity="0.18" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" fill="none">
+        <path d="M3 3l8.5 8.5M3 3v3l7.5 7.5M3 3h3l7.5 7.5" />
+        <path d="M19 3l-8.5 8.5M19 3v3l-7.5 7.5M19 3h-3L8.5 11.5" />
+      </g>
+    </svg>
+  );
+}
+
 // Quiz Battle — tilted answer cards, a big "?", and speed lines.
 export function QuizArt() {
   return (
