@@ -62,13 +62,31 @@ export function isPoolReady(): boolean {
 
 /** Load the player dataset (once) and build the runtime indexes. Idempotent;
  *  concurrent callers share a single in-flight load. */
+async function loadPoolData(): Promise<PoolData> {
+  // Server (e.g. the records API awaiting ensurePool): bundle the JSON — no
+  // stale-chunk risk server-side.
+  if (typeof window === "undefined") {
+    const m = await import("@/data/draft/player-seasons.json");
+    return ((m as { default?: unknown }).default ?? m) as PoolData;
+  }
+  // Client: fetch a STABLE, deploy-invariant public URL. A webpack dynamic-import
+  // chunk gets a fresh content hash on every deploy, so a cached app shell (the
+  // native WKWebView caches JS aggressively) would request an OLD chunk hash that
+  // newer deploys have deleted → 404 → pool never loads → the user can't pick a
+  // player. A /public URL is served identically by every deploy, so even a stale
+  // cached shell loads it fine.
+  const res = await fetch("/data/draft/player-seasons.json", { cache: "force-cache" });
+  if (!res.ok) throw new Error(`pool fetch failed: ${res.status}`);
+  return (await res.json()) as PoolData;
+}
+
 export async function ensurePool(): Promise<void> {
   if (poolReady) return;
   // On failure, clear the cached promise so a later call retries — otherwise a
-  // single transient chunk-load failure (flaky mobile network) would cache the
-  // rejection forever and permanently break spinning/picking players.
-  loadPromise ??= import("@/data/draft/player-seasons.json")
-    .then((m) => { buildIndexes(((m as { default?: unknown }).default ?? m) as PoolData); })
+  // single transient load failure would cache the rejection forever and
+  // permanently break spinning/picking players.
+  loadPromise ??= loadPoolData()
+    .then((data) => { buildIndexes(data); })
     .catch((err) => { loadPromise = null; throw err; });
   await loadPromise;
 }
