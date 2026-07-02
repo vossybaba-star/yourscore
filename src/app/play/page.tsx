@@ -485,18 +485,17 @@ function PlayPageInner() {
   const [wc2026Loading, setWc2026Loading] = useState(false);
   const wc2026Fetched = useRef(false);
 
-  // Load quiz packs (same query as challenges page — rotation_active + full fields)
+  // Load quiz packs via the edge-cached route (see /api/quiz/packs). The list is
+  // identical for everyone; fetching it directly from Supabase (eu-central-1) on
+  // the client was a ~1s round-trip after hydration (DB query is <1ms).
   useEffect(() => {
-    createClient()
-      .from("quiz_packs")
-      .select("id, name, type, parameter, question_count, status, description, featured, featured_order, metadata, created_at")
-      .eq("status", "published")
-      .eq("rotation_active", true)
-      .order("name")
-      .then(({ data }) => {
-        setPacks((data ?? []) as unknown as QuizPack[]);
+    fetch("/api/quiz/packs")
+      .then((r) => r.json())
+      .then(({ packs }) => {
+        setPacks((packs ?? []) as unknown as QuizPack[]);
         setPacksLoading(false);
-      });
+      })
+      .catch(() => setPacksLoading(false));
   }, []);
 
   // Load open rooms (lazy)

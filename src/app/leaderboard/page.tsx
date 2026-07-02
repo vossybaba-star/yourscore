@@ -53,22 +53,29 @@ export default function LeaderboardPage() {
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL) { setLoading(false); return; }
     let cancelled = false;
     setLoading(true);
+    // Global board is identical for everyone → serve from the edge-cached route
+    // (see /api/leaderboard/yourscore) instead of a ~1s client→eu-central-1 RPC.
+    if (scope !== "friends") {
+      fetch("/api/leaderboard/yourscore")
+        .then((r) => r.json())
+        .then(({ rows }) => { if (!cancelled) { setRows((rows ?? []) as RankRow[]); setLoading(false); } })
+        .catch(() => { if (!cancelled) setLoading(false); });
+      return () => { cancelled = true; };
+    }
+    // Friends board is per-user (not shareable) → direct query.
     import("@/lib/supabase/client").then(async ({ createClient }) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const sb = createClient() as any;
-      let userIds: string[] | null = null;
-      if (scope === "friends") {
-        if (!user) { if (!cancelled) { setRows([]); setLoading(false); } return; }
-        const { data: fr } = await sb
-          .from("friendships")
-          .select("user_id, friend_id, status")
-          .or(`user_id.eq.${user.id},friend_id.eq.${user.id}`)
-          .eq("status", "accepted");
-        const ids = new Set<string>([user.id]);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (fr ?? []).forEach((r: any) => { ids.add(r.user_id); ids.add(r.friend_id); });
-        userIds = Array.from(ids);
-      }
+      if (!user) { if (!cancelled) { setRows([]); setLoading(false); } return; }
+      const { data: fr } = await sb
+        .from("friendships")
+        .select("user_id, friend_id, status")
+        .or(`user_id.eq.${user.id},friend_id.eq.${user.id}`)
+        .eq("status", "accepted");
+      const ids = new Set<string>([user.id]);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (fr ?? []).forEach((r: any) => { ids.add(r.user_id); ids.add(r.friend_id); });
+      const userIds = Array.from(ids);
       const { data } = await sb.rpc("get_yourscore_leaderboard", { p_user_ids: userIds, p_limit: 100 });
       if (!cancelled) { setRows((data ?? []) as RankRow[]); setLoading(false); }
     });
