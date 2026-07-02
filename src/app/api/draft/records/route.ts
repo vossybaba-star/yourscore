@@ -5,7 +5,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { rateLimitDistributed } from "@/lib/ratelimit";
 import { validateAndScore } from "@/lib/draft/server";
 import { simulateSeason } from "@/lib/draft/season";
-import { leagueOpponents } from "@/lib/draft/pool";
+import { leagueOpponents, ensurePool } from "@/lib/draft/pool";
 import { asLeague } from "@/lib/draft/types";
 
 // Verified 38-0 season records — the "closest to 38-0" leaderboard.
@@ -53,6 +53,7 @@ export async function POST(req: NextRequest) {
   const xiSeed = seedOf(team.squad.map((p) => p.player_season_id));
   const salt = typeof body.salt === "string" ? body.salt.replace(/[^a-z0-9]/gi, "").slice(0, 64) : "";
   const seed = salt ? `${xiSeed}:${salt}` : xiSeed;
+  await ensurePool(); // player pool is loaded on demand (server-side: from the bundled JSON chunk)
   const result = simulateSeason(team.squad, team.formation, team.strength, seed, leagueOpponents(league));
 
   try {

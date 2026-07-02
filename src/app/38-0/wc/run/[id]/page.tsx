@@ -18,7 +18,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Pitch } from "@/components/draft/Pitch";
 import { InviteMastermind } from "@/components/draft/InviteMastermind";
-import { spinForNation, spinWorld } from "@/lib/draft/pool";
+import { spinForNation, spinWorld, ensurePool, isPoolReady } from "@/lib/draft/pool";
 import { drawQuestion, type ServedQuestion } from "@/lib/draft/wc-quiz";
 import { upgradeBand, type DraftBand } from "@/lib/draft/draft-quiz";
 import { slotsFor } from "@/lib/draft/formations";
@@ -117,7 +117,7 @@ export default function WorldCupRun() {
     else if (data.pendingTie) openTie(data.pendingTie);
   }, [id, openTie]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { void ensurePool(); load(); }, [load]);
 
   // When a ranked run finishes, pull the player's season standing from the WC daily board
   // for the (positive) scorecard. Fails soft — the banner just omits the rank line.
@@ -290,6 +290,8 @@ export default function WorldCupRun() {
 
   function spinSlot(slotId: string, band: DraftBand) {
     if (!run) return;
+    // Client spin needs the on-demand player pool; load + retry if not ready yet.
+    if (!isPoolReady()) { void ensurePool().then(() => spinSlot(slotId, band)); return; }
     const slot = slotsFor(run.formation).find((s) => s.id === slotId)!;
     const usedIds = new Set(run.squad.map((p) => p.player_season_id));
     const usedNames = new Set(run.squad.map((p) => p.name));

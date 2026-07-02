@@ -1,13 +1,14 @@
 /**
  * Draft XI — player pool access + spin logic.
  *
- * Wraps the shipped dataset (src/data/draft/player-seasons.json) with the runtime
- * indexes the game needs: spin a random (club, season) bucket, list the players in
- * it that can still fill an open slot, and look players up by id. Small enough
- * (~200 rows) to index in memory at import.
+ * Wraps the shipped dataset (src/data/draft/player-seasons.json, ~2.6MB / 10k
+ * player-seasons) with the runtime indexes the game needs: spin a random
+ * (club, season) bucket, list the players in it that can still fill an open slot,
+ * and look players up by id. The dataset is loaded on demand (see ensurePool)
+ * rather than statically imported, so it does not bloat every draft page's
+ * initial JS bundle.
  */
 
-import raw from "@/data/draft/player-seasons.json";
 import type { League, NationEntry, PlayerSeason, Position } from "./types";
 import { canPlay, playerIdentity } from "./score";
 import { allWCNations, type WCNation } from "@/data/draft/wc2026";
@@ -19,7 +20,7 @@ type Bucket = { league: League; club: string; clubSlug: string; season: string; 
 
 type Club = { name: string; clubSlug: string; season: string; league: League; strength: number };
 
-const DATA = raw as unknown as {
+type PoolData = {
   generatedAt: string;
   source: string;
   counts: { players: number; buckets: number; csvAdded: number };
@@ -27,25 +28,71 @@ const DATA = raw as unknown as {
   buckets: Bucket[];
   clubs: Club[];
   nations?: NationEntry[]; // present after the WC-Run dataset rebuild
+  leagues?: Record<League, { players: number; buckets: number }>;
 };
 
-const byId = new Map<string, PlayerSeason>(DATA.players.map((p) => [p.id, p]));
-const byNation = new Map<string, NationEntry>((DATA.nations ?? []).map((n) => [n.nation, n]));
+// The ~2.6MB player dataset is loaded on demand via a dynamic import rather than
+// a static `import`, so webpack ships it as its own async chunk instead of
+// inlining it into every draft/quiz page's initial JS bundle (which blocked first
+// render). Consumers must `await ensurePool()` — and, in React, gate rendering on
+// `isPoolReady()` — before calling any pool function below.
+let DATA: PoolData | null = null;
+let byId = new Map<string, PlayerSeason>();
+let byNation = new Map<string, NationEntry>();
 /** Every player whose nationality is a WC 2026 nation — the open "World Cup" draft pool. */
-const WC_PLAYERS: PlayerSeason[] = DATA.players.filter((p) => !!p.nationality && WC_NATION_NAMES.has(p.nationality));
+let WC_PLAYERS: PlayerSeason[] = [];
 /** Nation → crest, for labelling a World Cup spin. */
-const WC_CREST = new Map<string, string>(allWCNations().map((n) => [n.nation, n.crest]));
+let WC_CREST = new Map<string, string>();
+let poolReady = false;
+let loadPromise: Promise<void> | null = null;
 
-export const POOL_META = DATA.counts;
-/** Per-league counts (players + spinnable squads) for UI copy. */
-export const LEAGUE_COUNTS = (DATA as { leagues?: Record<League, { players: number; buckets: number }> }).leagues ?? {
-  PL: { players: DATA.counts.players, buckets: DATA.counts.buckets },
-  LaLiga: { players: 0, buckets: 0 },
-};
+function buildIndexes(data: PoolData): void {
+  DATA = data;
+  byId = new Map<string, PlayerSeason>(data.players.map((p) => [p.id, p]));
+  byNation = new Map<string, NationEntry>((data.nations ?? []).map((n) => [n.nation, n]));
+  WC_PLAYERS = data.players.filter((p) => !!p.nationality && WC_NATION_NAMES.has(p.nationality));
+  WC_CREST = new Map<string, string>(allWCNations().map((n) => [n.nation, n.crest]));
+  poolReady = true;
+}
+
+/** True once the dataset has loaded and the indexes are built. */
+export function isPoolReady(): boolean {
+  return poolReady;
+}
+
+/** Load the player dataset (once) and build the runtime indexes. Idempotent;
+ *  concurrent callers share a single in-flight load. */
+export async function ensurePool(): Promise<void> {
+  if (poolReady) return;
+  loadPromise ??= import("@/data/draft/player-seasons.json").then((m) => {
+    buildIndexes(((m as { default?: unknown }).default ?? m) as PoolData);
+  });
+  await loadPromise;
+}
+
+function requireData(): PoolData {
+  if (!DATA) throw new Error("Draft pool not loaded — await ensurePool() before using pool functions.");
+  return DATA;
+}
+
+/** Player-pool totals (call after ensurePool). */
+export function poolMeta() {
+  return requireData().counts;
+}
+/** Per-league counts (players + spinnable squads) for UI copy (call after ensurePool). */
+export function leagueCounts(): Record<League, { players: number; buckets: number }> {
+  const d = requireData();
+  return (
+    d.leagues ?? {
+      PL: { players: d.counts.players, buckets: d.counts.buckets },
+      LaLiga: { players: 0, buckets: 0 },
+    }
+  ) as Record<League, { players: number; buckets: number }>;
+}
 
 /** Buckets for one competition. */
 function bucketsFor(league: League): Bucket[] {
-  return DATA.buckets.filter((b) => b.league === league);
+  return requireData().buckets.filter((b) => b.league === league);
 }
 
 export function getPlayer(id: string): PlayerSeason | undefined {
@@ -124,7 +171,7 @@ export function allBuckets(league: League = "PL"): Bucket[] {
 
 /** The nations that can field a full XI (+ upgrade headroom), most-stocked first. */
 export function playableNations(): NationEntry[] {
-  return (DATA.nations ?? []).filter((n) => n.playable);
+  return (requireData().nations ?? []).filter((n) => n.playable);
 }
 
 export function getNation(nation: string): NationEntry | undefined {
@@ -281,7 +328,7 @@ export function spinWorld(
  *  season's clubs for that competition (a coherent modern league, whatever era you
  *  drafted from). Strengths are FIFA-derived. The player joins as the 20th team. */
 export function leagueOpponents(league: League = "PL"): { name: string; strength: number }[] {
-  const clubs = (DATA.clubs ?? []).filter((c) => c.league === league);
+  const clubs = (requireData().clubs ?? []).filter((c) => c.league === league);
   const latest = clubs.reduce((m, c) => (c.season > m ? c.season : m), "");
   return clubs
     .filter((c) => c.season === latest)

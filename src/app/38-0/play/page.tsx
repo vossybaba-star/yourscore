@@ -13,7 +13,7 @@ import { useRouter } from "next/navigation";
 import { Pitch } from "@/components/draft/Pitch";
 import { BackPill } from "@/components/ui/BackPill";
 import { Button } from "@/components/ui/Button";
-import { spin, allBuckets, type Spin } from "@/lib/draft/pool";
+import { spin, allBuckets, ensurePool, isPoolReady, type Spin } from "@/lib/draft/pool";
 import {
   loadTeam, saveTeam, openSlots, isComplete, usedPlayerIds, usedPlayerNames, placePlayer,
   type LocalTeam,
@@ -46,6 +46,7 @@ export default function DraftPlay() {
   const seenBuckets = useRef<Set<string>>(new Set());
 
   useEffect(() => {
+    void ensurePool(); // preload the on-demand player pool for the spin
     const t = loadTeam();
     if (!t) { router.replace("/38-0"); return; }
     setTeam(t);
@@ -58,6 +59,7 @@ export default function DraftPlay() {
 
   function doSpin() {
     if (!team || spinning) return;
+    if (!isPoolReady()) { void ensurePool().then(() => doSpin()); return; }
     setSpinning(true);
     setCurrent(null);
     setSelected(null);

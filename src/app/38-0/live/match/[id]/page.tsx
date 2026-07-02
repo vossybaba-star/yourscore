@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/Button";
 import { Pitch } from "@/components/draft/Pitch";
 import { BackPill } from "@/components/ui/BackPill";
 import { useLiveMatch } from "@/lib/draft/useLiveMatch";
-import { spin, spinWorld, allBuckets } from "@/lib/draft/pool";
+import { spin, spinWorld, allBuckets, ensurePool, isPoolReady } from "@/lib/draft/pool";
 import { playerIdentity, seededRng } from "@/lib/draft/score";
 import { slotsFor } from "@/lib/draft/formations";
 import { buildReport, flipReport, type MatchSim, type HalfSim, type PlayerRating, type GoalEvent } from "@/lib/draft/live-score";
@@ -763,11 +763,14 @@ function SpinSheet({ formation, squad, slotId, seedKey, competition, onPick, onC
   const [result, setResult] = useState<{ label: string; players: PlayerSeason[] } | null>(null);
   const [spinning, setSpinning] = useState(false);
   const [reel, setReel] = useState<string | null>(null);
+  // Preload the on-demand player pool as soon as the spin sheet opens.
+  useEffect(() => { void ensurePool(); }, []);
 
   // ONE spin per position: seeded by (match, side, phase, slot), so closing and
   // reopening shows the SAME options — no re-rolling until you like it. A league match
   // deals a club-season; a World Cup match lands on one WC 2026 nation and offers it.
   function doSpin() {
+    if (!isPoolReady()) { void ensurePool().then(() => doSpin()); return; }
     setSpinning(true); setResult(null);
     const usedIds = new Set(squad.filter((p) => p.slot !== slotId).map((p) => p.player_season_id));
     const usedNames = new Set(squad.filter((p) => p.slot !== slotId).map((p) => playerIdentity(p.name)));

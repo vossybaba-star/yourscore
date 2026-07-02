@@ -26,7 +26,7 @@ import { tierFor } from "@/lib/draft/score";
 import { resolveMatch } from "@/lib/draft/live-score";
 import { tierColor, TIER_TAGLINE, strengthPct } from "@/lib/draft/ui";
 import { preSeasonOdds } from "@/lib/draft/season";
-import { leagueOpponents } from "@/lib/draft/pool";
+import { leagueOpponents, ensurePool, isPoolReady } from "@/lib/draft/pool";
 import { useUser } from "@/hooks/useUser";
 import { trackGamePlay } from "@/lib/analytics/trackGame";
 
@@ -34,6 +34,9 @@ export default function TeamScreen() {
   const router = useRouter();
   const { user, loading: authLoading } = useUser();
   const [team, setTeam] = useState<LocalTeam | null>(null);
+  // Player pool (~2.6MB) loads on demand; the odds/sim below need it.
+  const [poolReady, setPoolReady] = useState(isPoolReady());
+  useEffect(() => { let off = false; ensurePool().then(() => { if (!off) setPoolReady(true); }).catch(() => {}); return () => { off = true; }; }, []);
   const [matching, setMatching] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -225,7 +228,7 @@ export default function TeamScreen() {
     setTeam(next);
   }
 
-  if (!team || !team.projected) {
+  if (!team || !team.projected || !poolReady) {
     return <div className="min-h-[100dvh] grid place-items-center" style={{ background: "#0a0a0f", color: "#8a948f" }}>Loading…</div>;
   }
 

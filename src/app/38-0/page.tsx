@@ -18,7 +18,7 @@ import { FORMATIONS, LEAGUE_META } from "@/lib/draft/types";
 import type { Formation, League } from "@/lib/draft/types";
 import { FORMATION_NOTE } from "@/lib/draft/formations";
 import { emptyTeam, loadTeam, saveTeam, isComplete, type LocalTeam, type DraftMode } from "@/lib/draft/local";
-import { LEAGUE_COUNTS } from "@/lib/draft/pool";
+import { leagueCounts, ensurePool, isPoolReady } from "@/lib/draft/pool";
 import { trackGamePlay } from "@/lib/analytics/trackGame";
 import { useUser } from "@/hooks/useUser";
 
@@ -43,6 +43,9 @@ export default function DraftHome() {
   const router = useRouter();
   const { user, loading: authLoading } = useUser();
   const [tab, setTab] = useState<DraftTab>("wc");
+  // Player pool (~2.6MB) loads on demand; only used for the cosmetic count line below.
+  const [poolReady, setPoolReady] = useState(isPoolReady());
+  useEffect(() => { let off = false; ensurePool().then(() => { if (!off) setPoolReady(true); }).catch(() => {}); return () => { off = true; }; }, []);
   const [selected, setSelected] = useState<Formation>("4-3-3");
   const [mode, setMode] = useState<DraftMode>("classic");
   const [existing, setExisting] = useState<LocalTeam | null>(null);
@@ -156,9 +159,11 @@ export default function DraftHome() {
                 accent={cfg.accent}
                 accentText={cfg.accent}
               />
-              <p className="font-body mt-2 px-1" style={{ color: "#8a948f", fontSize: 11 }}>
-                {LEAGUE_COUNTS[cfg.league].players} all-time {LEAGUE_META[cfg.league].name} player-seasons · {LEAGUE_COUNTS[cfg.league].buckets} legendary squads
-              </p>
+              {poolReady && (
+                <p className="font-body mt-2 px-1" style={{ color: "#8a948f", fontSize: 11 }}>
+                  {leagueCounts()[cfg.league].players} all-time {LEAGUE_META[cfg.league].name} player-seasons · {leagueCounts()[cfg.league].buckets} legendary squads
+                </p>
+              )}
             </div>
 
             {/* continue card — signed-in: both complete + in-progress; anonymous: in-progress only */}

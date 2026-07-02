@@ -10,7 +10,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { loadTeam, isComplete, seasonSeed, makeSeasonSalt, saveLastSeason, loadLastSeason, type LocalTeam } from "@/lib/draft/local";
-import { leagueOpponents } from "@/lib/draft/pool";
+import { leagueOpponents, ensurePool, isPoolReady } from "@/lib/draft/pool";
 import { simulateSeason, seasonNarrative, type SeasonResult } from "@/lib/draft/season";
 import { SeasonScorecard, type SeasonAward, type SeasonData } from "@/components/draft/SeasonScorecard";
 import { Button } from "@/components/ui/Button";
@@ -26,6 +26,9 @@ export default function SeasonSim() {
   const router = useRouter();
   const { user } = useUser();
   const [team, setTeam] = useState<LocalTeam | null>(null);
+  // Player pool (~2.6MB) loads on demand; the season sim below needs it.
+  const [poolReady, setPoolReady] = useState(isPoolReady());
+  useEffect(() => { let off = false; ensurePool().then(() => { if (!off) setPoolReady(true); }).catch(() => {}); return () => { off = true; }; }, []);
   const [shown, setShown] = useState(0); // matches revealed
   const [done, setDone] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -57,8 +60,8 @@ export default function SeasonSim() {
   const salt = useMemo(() => storedForXi?.salt ?? makeSeasonSalt(), [storedForXi]);
   const playSeed = xiSeed ? `${xiSeed}:${salt}` : "";
   const result: SeasonResult | null = useMemo(
-    () => (team ? simulateSeason(team.squad, team.formation, team.strength, playSeed, leagueOpponents(team.league)) : null),
-    [team, playSeed]
+    () => (team && poolReady ? simulateSeason(team.squad, team.formation, team.strength, playSeed, leagueOpponents(team.league)) : null),
+    [team, playSeed, poolReady]
   );
   // Already-rolled this exact season → skip straight to the result.
   const cached = !!storedForXi && storedForXi.salt === salt;

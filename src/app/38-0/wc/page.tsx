@@ -23,7 +23,7 @@ import { InviteMastermind } from "@/components/draft/InviteMastermind";
 import { WcEditionStrip, type EditionCell } from "@/components/draft/WcEditionStrip";
 import { DraftHubHero } from "@/components/draft/WcHubHero";
 import { useUser } from "@/hooks/useUser";
-import { pickableNations, spinForNation, spinWorld, type PickableNation } from "@/lib/draft/pool";
+import { pickableNations, spinForNation, spinWorld, ensurePool, isPoolReady, type PickableNation } from "@/lib/draft/pool";
 import { WORLD_TEAM_NAME, type RunMode } from "@/lib/draft/wc";
 import { drawQuestion, type ServedQuestion } from "@/lib/draft/wc-quiz";
 import { gradeAnswer, type DraftBand } from "@/lib/draft/draft-quiz";
@@ -50,7 +50,11 @@ function clearDraft() { try { localStorage.removeItem(DRAFT_KEY); } catch { /* i
 
 export default function WorldCupEntry() {
   const router = useRouter();
-  const nations = useMemo(() => pickableNations(), []);
+  // The player pool (~2.6MB) is now loaded on demand; kick it off on mount and
+  // re-render once ready so the nation picker + client spins have data.
+  const [poolReady, setPoolReady] = useState(isPoolReady());
+  useEffect(() => { let off = false; ensurePool().then(() => { if (!off) setPoolReady(true); }).catch(() => {}); return () => { off = true; }; }, []);
+  const nations = useMemo(() => (poolReady ? pickableNations() : []), [poolReady]);
   const [mode, setMode] = useState<RunMode | null>(null);
   const [nation, setNation] = useState<PickableNation | null>(null);
   const [team, setTeam] = useState<LocalTeam | null>(null);
@@ -236,6 +240,9 @@ export default function WorldCupEntry() {
 
   function runSpin(band: DraftBand) {
     if (!team || (mode === "nation" && !nation)) return;
+    // Client spin needs the on-demand player pool; if it hasn't finished loading
+    // yet, load it and retry (rather than throwing) so a fast tapper never dead-ends.
+    if (!isPoolReady()) { void ensurePool().then(() => runSpin(band)); return; }
     const open = openSlots(team).map((s) => s.pos);
     // The quiz band shapes quality; within it the spin is still luck. World mode lands on
     // ONE nation; nation mode is locked to the chosen nation.

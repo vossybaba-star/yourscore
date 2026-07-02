@@ -10,7 +10,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Pitch } from "@/components/draft/Pitch";
-import { spin, allBuckets, type Spin } from "@/lib/draft/pool";
+import { spin, allBuckets, ensurePool, isPoolReady, type Spin } from "@/lib/draft/pool";
 import {
   loadTeam, saveTeam, usedPlayerIds, usedPlayerNames, placePlayer,
   recordWin, recordLoss, recordDraw, saveLastMatch, loadMatchup, clearMatchup,
@@ -40,6 +40,7 @@ export default function PreMatch() {
   const reelTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
+    void ensurePool(); // preload the on-demand player pool for the spin
     const t = loadTeam();
     const m = loadMatchup();
     if (!t || !m) { router.replace("/38-0/team"); return; }
@@ -61,6 +62,7 @@ export default function PreMatch() {
 
   function doSpin() {
     if (!team || !slot || spinning || spinCount >= MAX_SPINS) return;
+    if (!isPoolReady()) { void ensurePool().then(() => doSpin()); return; }
     setSpinning(true); setCurrent(null);
     const buckets = allBuckets(team.league);
     let ticks = 0;

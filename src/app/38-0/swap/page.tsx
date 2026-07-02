@@ -10,7 +10,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Pitch } from "@/components/draft/Pitch";
 import { Button } from "@/components/ui/Button";
-import { spin, allBuckets, type Spin } from "@/lib/draft/pool";
+import { spin, allBuckets, ensurePool, isPoolReady, type Spin } from "@/lib/draft/pool";
 import {
   loadTeam, saveTeam, isComplete, usedPlayerIds, usedPlayerNames, clearSlot, placePlayer, fittingOpenSlots,
   type LocalTeam,
@@ -30,6 +30,7 @@ export default function SwapScreen() {
   const reelTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
+    void ensurePool(); // preload the on-demand player pool for the spin
     const t = loadTeam();
     if (!t) { router.replace("/38-0"); return; }
     if (!isComplete(t)) { router.replace("/38-0/play"); return; }
@@ -47,6 +48,7 @@ export default function SwapScreen() {
 
   function doSpin() {
     if (!team || !openSlotId || spinning) return;
+    if (!isPoolReady()) { void ensurePool().then(() => doSpin()); return; }
     setSpinning(true);
     setCurrent(null);
     const slot = slotsFor(team.formation).find((s) => s.id === openSlotId)!;
