@@ -156,18 +156,32 @@ async function main() {
     try {
       const rel = "src/data/draft/wc-quiz.json";
       const summary = run("draft/build-wc-quiz.mjs", []).trim().replace(/\s+/g, " ");
+      // STALENESS GUARD — the freshly-built pool MUST contain a question dated today. If it
+      // doesn't, the pool has silently frozen (exactly the 16 Jun–2 Jul freeze that ran for 17
+      // days unnoticed). Alert LOUDLY on staleness, and emit a positive "fresh through" heartbeat
+      // on success, so a missing message can never be mistaken for a healthy pool.
+      let poolNewest = "?";
+      try {
+        const bundle = JSON.parse(readFileSync(join(ROOT, rel), "utf8"));
+        poolNewest = "0000-00-00";
+        for (const q of bundle.questions || []) { const d = (q.id || "").slice(0, 10); if (d > poolNewest) poolNewest = d; }
+      } catch { poolNewest = "?"; }
+      const stale = poolNewest === "?" || poolNewest < quiz.date; // string compare on YYYY-MM-DD
+      if (stale) {
+        await sendMessage(`🔴 <b>DRAFT POOL STALE</b> — newest question in the rebuilt pool is <b>${poolNewest}</b>, not today (${quiz.date}). Today's pack didn't make it into the bundle, so the ranked draft may recycle old questions. Check content/daily-quizzes/ + scripts/draft/build-wc-quiz.mjs.`);
+      }
       // exit 1 from `diff --quiet` = the bundle changed; exit 0 = identical (nothing to do).
       let changed = false;
       try { git(["diff", "--quiet", "HEAD", "--", rel]); } catch (e) { changed = e.status === 1; }
       if (!changed) {
-        await sendMessage("🧩 Draft pool already current — nothing to deploy.");
+        await sendMessage(`🧩 Draft pool ${stale ? "unchanged" : "already current"} — ${stale ? "⚠️" : "✅ fresh through"} <b>${poolNewest}</b>, nothing to deploy.`);
       } else {
         const branch = git(["rev-parse", "--abbrev-ref", "HEAD"]).trim();
         // Commit ONLY this pathspec, so a dirty working tree never leaks other files into it.
         git(["commit", "-q", "-m", `Refresh WC Mastermind draft pool — ${quiz.date}`, "--", rel]);
         if (branch === "main") {
           git(["push", "origin", "main"]);
-          await sendMessage(`🧩 Draft pool rebuilt + pushed — ${summary.slice(0, 90)}. Vercel redeploying so today's questions reach the ranked draft.`);
+          await sendMessage(`🧩 Draft pool rebuilt + pushed — ✅ fresh through <b>${poolNewest}</b> (${summary.slice(0, 70)}). Vercel redeploying so today's questions reach the ranked draft.`);
         } else {
           await sendMessage(`🧩 Draft pool rebuilt + committed on <b>${branch}</b> (not main) — NOT pushed. Merge to main to activate.`);
         }
