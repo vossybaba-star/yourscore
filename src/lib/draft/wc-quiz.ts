@@ -75,44 +75,61 @@ export function deciderQuestion(seed: string): ServedQuestion {
   return serve(POOL[Math.floor(rng() * POOL.length)], rng);
 }
 
+/** How many days back a ranked edition's questions may come from — the run day plus the
+ *  preceding `WINDOW_DAYS`. A rolling ~2-day window keeps each day current (recent events)
+ *  without being confined to that single day's pack. Tune here (0 = that day only). */
+const WINDOW_DAYS = 2;
+
 /**
- * The `count` questions for a ranked daily run — **a genuine daily game**. Each edition is
- * **anchored to its own day's pack**, so a player replaying a past day sees *that day's* World
- * Cup, not a recycled or cross-tournament mix. When a day's own pack is short of `count` (a
- * missing or small day), the remainder is **backfilled with the most recent PRIOR questions**
- * (recency-weighted) so a run always fills — and a pack dated after the run date is never used.
- * **Seeded by date** so every player faces the same questions in the same order that day (the
- * "same test" rule) while each day is its own set. Deterministic (static pool + fixed date),
- * so the server re-derives the identical set on every slate/submit call. Options are shuffled
- * deterministically too. Practice runs use `drawQuestion` instead — the whole bank, freshly
- * random each play.
+ * The `count` questions for a ranked daily run — **a genuine daily game**. Each edition draws
+ * from a **rolling ~2-day window** ending on its own date (the run day plus the preceding
+ * `WINDOW_DAYS`), recency-weighted toward the run day — so a player replaying a past day sees
+ * *that day's* World Cup and the day or two before it, never a cross-tournament mix and never a
+ * pack dated after the run date. If the window is short of `count` (a gap/early edition) the
+ * remainder is **backfilled with the most recent older questions**. **Seeded by date** so every
+ * player faces the same questions in the same order that day (the "same test" rule) while each
+ * day is its own set. Deterministic (static pool + fixed date), so the server re-derives the
+ * identical set on every slate/submit call. Options are shuffled deterministically too. Practice
+ * runs use `drawQuestion` instead — the whole bank, freshly random each play.
  */
 export function dailyQuestions(date: string, count = 11): ServedQuestion[] {
   const rng = seededRng(`wc-daily:${date}`);
   const ref = Date.parse(`${date}T00:00:00Z`);
-  const dayKey = (q: WCQuizQuestion) => q.id.slice(0, 10);
-  const dateMs = (q: WCQuizQuestion) => Date.parse(`${dayKey(q)}T00:00:00Z`);
+  const DAY = 86_400_000;
+  const dateMs = (q: WCQuizQuestion) => Date.parse(`${q.id.slice(0, 10)}T00:00:00Z`);
   const seededShuffle = <T>(arr: T[]): T[] => {
     const a = arr.slice();
     for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
     return a;
   };
-
-  // 1. Anchor to this day's own questions.
-  const own = Number.isFinite(ref) ? POOL.filter((q) => dayKey(q) === date) : [];
-  const picked: WCQuizQuestion[] = seededShuffle(own).slice(0, count);
-
-  // 2. Backfill (only if the day is short): most-recent PRIOR questions, recency-weighted.
-  if (picked.length < count && Number.isFinite(ref)) {
+  // Recency weight within a group: favour the run day, taper over ~2 days, floor so the window's
+  // older edge still contributes.
+  const weightOf = (q: WCQuizQuestion): number => {
+    const d = dateMs(q);
+    if (!Number.isFinite(d) || !Number.isFinite(ref)) return 1;
+    return Math.exp(-Math.max(0, (ref - d) / DAY) / 1.5) + 0.15;
+  };
+  // Weighted sample without replacement from `src`, appending into `picked` until `count`.
+  const drawFrom = (src: WCQuizQuestion[]) => {
     const chosen = new Set(picked);
-    const bag = POOL
-      .filter((q) => { const d = dateMs(q); return Number.isFinite(d) && d < ref && !chosen.has(q); })
-      .map((q) => ({ q, w: Math.exp(-Math.max(0, (ref - dateMs(q)) / 86_400_000) / 8) + 0.12 }));
+    const bag = src.filter((q) => !chosen.has(q)).map((q) => ({ q, w: weightOf(q) }));
     while (picked.length < count && bag.length > 0) {
       let total = 0; for (const e of bag) total += e.w;
       let r = rng() * total, idx = 0;
       while (idx < bag.length - 1 && r > bag[idx].w) { r -= bag[idx].w; idx++; }
       picked.push(bag[idx].q); bag.splice(idx, 1);
+    }
+  };
+
+  const picked: WCQuizQuestion[] = [];
+
+  // 1. Primary: the rolling window [ref - WINDOW_DAYS, ref], recency-weighted toward the run day.
+  if (Number.isFinite(ref)) {
+    const window = POOL.filter((q) => { const d = dateMs(q); return Number.isFinite(d) && d <= ref && ref - d <= WINDOW_DAYS * DAY; });
+    drawFrom(window);
+    // 2. Backfill (only if the window is short): the most recent OLDER questions.
+    if (picked.length < count) {
+      drawFrom(POOL.filter((q) => { const d = dateMs(q); return Number.isFinite(d) && d < ref - WINDOW_DAYS * DAY; }));
     }
   }
 
