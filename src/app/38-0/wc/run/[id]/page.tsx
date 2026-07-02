@@ -108,6 +108,11 @@ export default function WorldCupRun() {
   const [editions, setEditions] = useState<EditionCell[]>([]);
   const resultRef = useRef<HTMLDivElement>(null);
   const scrolledToResult = useRef(false);
+  // Advancing a round grants fresh upgrade picks (upgrades_left jumps 0 → N). Announce it
+  // with a popup so the player knowingly drafts a stronger XI before the next game.
+  const [upgradeAlert, setUpgradeAlert] = useState(false);
+  const prevUpgrades = useRef<number | null>(null);
+  const pitchRef = useRef<HTMLDivElement>(null);
 
   const openTie = useCallback((t: PendingTie) => {
     setTie(t); setTieMode("choose"); setDecPicked(null); setDecTimeLeft(DECIDER_SECONDS); setDecBusy(false);
@@ -124,6 +129,16 @@ export default function WorldCupRun() {
   }, [id, openTie]);
 
   useEffect(() => { void ensurePool(); load(); }, [load]);
+
+  // Fresh upgrade picks are granted the instant you advance a round (0 → N). Detect that
+  // transition and pop the "draft a stronger player" alert. First load seeds the baseline
+  // (prev = null) so reloading mid-round with picks already in hand doesn't re-nag.
+  useEffect(() => {
+    if (!run) return;
+    const prev = prevUpgrades.current;
+    prevUpgrades.current = run.upgrades_left;
+    if (prev === 0 && run.upgrades_left > 0 && run.status === "active") setUpgradeAlert(true);
+  }, [run]);
 
   // On finish (ranked): the run ends with the user scrolled to the bottom, so pull the
   // scorecard into view; and load the edition strip so they can play days they've missed.
@@ -626,7 +641,7 @@ export default function WorldCupRun() {
         )}
 
         {/* Your XI (tap a player to upgrade when picks are available) */}
-        <div className="mt-4">
+        <div ref={pitchRef} className="mt-4">
           <div className="flex items-center justify-between mb-1.5">
             <span className="font-body" style={{ fontSize: 11, color: "#8a948f", letterSpacing: 1 }}>YOUR XI</span>
             {canUpgrade && <span className="font-body" style={{ fontSize: 12, color: "#aeea00" }}>⚽ Tap a player → answer right to upgrade · {run.upgrades_left} left</span>}
@@ -753,6 +768,21 @@ export default function WorldCupRun() {
           </div>
         );
       })()}
+
+      {/* Squad-upgrade popup — fires when advancing a round grants new draft picks. */}
+      {upgradeAlert && run && !terminal && run.upgrades_left > 0 && (
+        <div className="fixed inset-0 z-[60] grid place-items-center px-5" style={{ background: "rgba(0,0,0,0.82)" }} onClick={() => setUpgradeAlert(false)}>
+          <div className="w-full max-w-sm rounded-3xl p-6 text-center" style={{ background: "linear-gradient(160deg,#14210b,#0c1613)", border: "1px solid rgba(174,234,0,0.55)" }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ fontSize: 40 }}>⭐️</div>
+            <div className="font-display tracking-wide mt-1" style={{ fontSize: 23, color: "#aeea00" }}>STRENGTHEN YOUR XI</div>
+            <p className="font-body mt-2" style={{ fontSize: 14, color: "#cdd6cf", lineHeight: 1.5 }}>
+              You&apos;re through to the <b style={{ color: "#fff" }}>{RUN_STAGE_LABEL[run.stage]}</b>. You&apos;ve earned <b style={{ color: "#fff" }}>{run.upgrades_left} scout{run.upgrades_left === 1 ? "" : "s"}</b> — tap a player on your XI and answer a question to draft a stronger one <b style={{ color: "#fff" }}>before your next game</b>.
+            </p>
+            <Button variant="primary" tone="lime" size="md" fullWidth className="mt-4" onClick={() => { setUpgradeAlert(false); requestAnimationFrame(() => pitchRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })); }}>DRAFT A PLAYER →</Button>
+            <button onClick={() => setUpgradeAlert(false)} className="font-body mt-3" style={{ fontSize: 13, color: "#8a948f" }}>Maybe later</button>
+          </div>
+        </div>
+      )}
 
       {/* Stage reveal */}
       {reveal && (
