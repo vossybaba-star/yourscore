@@ -10,14 +10,14 @@
     {
       "difficulty": "easy",
       "category": "argentina",
-      "question": "Lionel Messi scored a hat-trick as Argentina opened their campaign on Tuesday. What was the final score against Algeria?",
+      "question": "Lionel Messi scored a hat-trick as Argentina opened their 2026 campaign. What was the final score against Algeria?",
       "options": { "A": "3-0", "B": "2-1", "C": "4-2", "D": "1-0" },
       "answer": "A"
     },
     {
       "difficulty": "easy",
       "category": "norway",
-      "question": "Erling Haaland scored twice on his long-awaited World Cup debut on Tuesday. Which nation was he playing for?",
+      "question": "Erling Haaland scored twice on his long-awaited World Cup debut. Which nation was he playing for?",
       "options": { "A": "Norway", "B": "Sweden", "C": "Denmark", "D": "Iceland" },
       "answer": "A"
     },
@@ -59,7 +59,7 @@
     {
       "difficulty": "medium",
       "category": "history",
-      "question": "Miroslav Klose, whose World Cup goals record Messi equalled on Tuesday, won the trophy with which country in 2014?",
+      "question": "Miroslav Klose, whose World Cup goals record Messi equalled at the 2026 tournament, won the trophy with which country in 2014?",
       "options": { "A": "Germany", "B": "Brazil", "C": "Italy", "D": "Spain" },
       "answer": "A"
     },
@@ -108,7 +108,7 @@
     {
       "difficulty": "expert",
       "category": "records",
-      "question": "Tuesday's treble made Messi both the youngest and oldest goalscorer in Argentina's World Cup history. In which tournament did an 18-year-old Messi score his first World Cup goal?",
+      "question": "Messi's treble against Algeria made him both the youngest and oldest goalscorer in Argentina's World Cup history. In which tournament did an 18-year-old Messi score his first World Cup goal?",
       "options": { "A": "2006", "B": "2010", "C": "2014", "D": "2018" },
       "answer": "A"
     }

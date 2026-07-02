@@ -76,46 +76,51 @@ export function deciderQuestion(seed: string): ServedQuestion {
 }
 
 /**
- * The fixed set of `count` questions for a ranked daily run, drawn from the **entire World
- * Cup question bank** (every dated pack in the bundle) but **weighted toward recent events**:
- * a question from a pack nearer the run date is far more likely to be picked, while older
- * questions keep a floor weight so whole-tournament knowledge still counts. **Seeded by date**
- * so every player faces the same questions in the same order that day (the "same test" rule)
- * while the set rotates day to day. Deterministic (static pool + fixed reference date), so the
- * server re-derives the identical set on every slate/submit call. Options are shuffled
+ * The `count` questions for a ranked daily run — **a genuine daily game**. Each edition is
+ * **anchored to its own day's pack**, so a player replaying a past day sees *that day's* World
+ * Cup, not a recycled or cross-tournament mix. When a day's own pack is short of `count` (a
+ * missing or small day), the remainder is **backfilled with the most recent PRIOR questions**
+ * (recency-weighted) so a run always fills — and a pack dated after the run date is never used.
+ * **Seeded by date** so every player faces the same questions in the same order that day (the
+ * "same test" rule) while each day is its own set. Deterministic (static pool + fixed date),
+ * so the server re-derives the identical set on every slate/submit call. Options are shuffled
  * deterministically too. Practice runs use `drawQuestion` instead — the whole bank, freshly
- * random (and unweighted) each play.
+ * random each play.
  */
 export function dailyQuestions(date: string, count = 11): ServedQuestion[] {
   const rng = seededRng(`wc-daily:${date}`);
   const ref = Date.parse(`${date}T00:00:00Z`);
-  const dateOf = (q: WCQuizQuestion) => Date.parse(`${q.id.slice(0, 10)}T00:00:00Z`);
-  // Only questions from packs on/before the run date are eligible, so neither today's run nor a
-  // past catch-up run surfaces events that hadn't happened yet. Fall back to the whole bank if
-  // that leaves too few (very early in the tournament).
-  const eligible = Number.isFinite(ref)
-    ? POOL.filter((q) => { const d = dateOf(q); return !Number.isFinite(d) || d <= ref; })
-    : POOL;
-  const src = eligible.length >= count ? eligible : POOL;
-  // Recency weight: exponential decay by how many days before the run date the pack landed,
-  // plus a floor so older questions never drop out entirely (~8-day time constant).
-  const weightOf = (q: WCQuizQuestion): number => {
-    const qd = dateOf(q);
-    if (!Number.isFinite(qd) || !Number.isFinite(ref)) return 1;
-    const daysAgo = Math.max(0, (ref - qd) / 86_400_000);
-    return Math.exp(-daysAgo / 8) + 0.12;
+  const dayKey = (q: WCQuizQuestion) => q.id.slice(0, 10);
+  const dateMs = (q: WCQuizQuestion) => Date.parse(`${dayKey(q)}T00:00:00Z`);
+  const seededShuffle = <T>(arr: T[]): T[] => {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+    return a;
   };
-  // Weighted sampling without replacement, seeded by date.
-  const pool = src.map((q) => ({ q, w: weightOf(q) }));
-  const picked: WCQuizQuestion[] = [];
-  for (let n = 0; n < count && pool.length > 0; n++) {
-    let total = 0;
-    for (const e of pool) total += e.w;
-    let r = rng() * total;
-    let idx = 0;
-    while (idx < pool.length - 1 && r > pool[idx].w) { r -= pool[idx].w; idx++; }
-    picked.push(pool[idx].q);
-    pool.splice(idx, 1);
+
+  // 1. Anchor to this day's own questions.
+  const own = Number.isFinite(ref) ? POOL.filter((q) => dayKey(q) === date) : [];
+  const picked: WCQuizQuestion[] = seededShuffle(own).slice(0, count);
+
+  // 2. Backfill (only if the day is short): most-recent PRIOR questions, recency-weighted.
+  if (picked.length < count && Number.isFinite(ref)) {
+    const chosen = new Set(picked);
+    const bag = POOL
+      .filter((q) => { const d = dateMs(q); return Number.isFinite(d) && d < ref && !chosen.has(q); })
+      .map((q) => ({ q, w: Math.exp(-Math.max(0, (ref - dateMs(q)) / 86_400_000) / 8) + 0.12 }));
+    while (picked.length < count && bag.length > 0) {
+      let total = 0; for (const e of bag) total += e.w;
+      let r = rng() * total, idx = 0;
+      while (idx < bag.length - 1 && r > bag[idx].w) { r -= bag[idx].w; idx++; }
+      picked.push(bag[idx].q); bag.splice(idx, 1);
+    }
   }
+
+  // 3. Last-ditch pad (empty/very early edition) so a run never dead-ends.
+  if (picked.length < count) {
+    const chosen = new Set(picked);
+    for (const q of seededShuffle(POOL)) { if (picked.length >= count) break; if (!chosen.has(q)) picked.push(q); }
+  }
+
   return picked.map((q) => serve(q, rng));
 }

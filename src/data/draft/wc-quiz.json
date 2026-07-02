@@ -651,7 +651,7 @@
     },
     {
       "id": "2026-06-16-0",
-      "q": "World Cup debutants held the European champions to a goalless draw on Monday. Which nation pulled off the shock?",
+      "q": "World Cup debutants held the European champions to a goalless draw in the group stage. Which nation pulled off the shock?",
       "options": [
         "Cabo Verde",
         "Uzbekistan",
@@ -833,7 +833,7 @@
     },
     {
       "id": "2026-06-16-14",
-      "q": "Monday's Group G games both finished level. Alongside Belgium 1-1 Egypt, Iran drew 2-2 with which side?",
+      "q": "In Group G, alongside Belgium 1-1 Egypt, Iran drew 2-2 with which side?",
       "options": [
         "New Zealand",
         "Australia",
@@ -963,7 +963,7 @@
     },
     {
       "id": "2026-06-15-9",
-      "q": "France begin their campaign on Tuesday against an African side they famously lost to in the 2002 opener. Who?",
+      "q": "France began their 2026 campaign against an African side they famously lost to in the 2002 opener. Who?",
       "options": [
         "Senegal",
         "Morocco",
@@ -1015,7 +1015,7 @@
     },
     {
       "id": "2026-06-15-13",
-      "q": "The reigning champions open their title defence on Tuesday in Kansas City against which African nation?",
+      "q": "The reigning champions opened their title defence in Kansas City against which African nation?",
       "options": [
         "Algeria",
         "Egypt",
@@ -1041,7 +1041,7 @@
     },
     {
       "id": "2026-06-17-0",
-      "q": "Lionel Messi scored a hat-trick as Argentina opened their campaign on Tuesday. What was the final score against Algeria?",
+      "q": "Lionel Messi scored a hat-trick as Argentina opened their 2026 campaign. What was the final score against Algeria?",
       "options": [
         "3-0",
         "2-1",
@@ -1054,7 +1054,7 @@
     },
     {
       "id": "2026-06-17-1",
-      "q": "Erling Haaland scored twice on his long-awaited World Cup debut on Tuesday. Which nation was he playing for?",
+      "q": "Erling Haaland scored twice on his long-awaited World Cup debut. Which nation was he playing for?",
       "options": [
         "Norway",
         "Sweden",
@@ -1132,7 +1132,7 @@
     },
     {
       "id": "2026-06-17-7",
-      "q": "Miroslav Klose, whose World Cup goals record Messi equalled on Tuesday, won the trophy with which country in 2014?",
+      "q": "Miroslav Klose, whose World Cup goals record Messi equalled at the 2026 tournament, won the trophy with which country in 2014?",
       "options": [
         "Germany",
         "Brazil",
@@ -1223,7 +1223,7 @@
     },
     {
       "id": "2026-06-17-14",
-      "q": "Tuesday's treble made Messi both the youngest and oldest goalscorer in Argentina's World Cup history. In which tournament did an 18-year-old Messi score his first World Cup goal?",
+      "q": "Messi's treble against Algeria made him both the youngest and oldest goalscorer in Argentina's World Cup history. In which tournament did an 18-year-old Messi score his first World Cup goal?",
       "options": [
         "2006",
         "2010",
@@ -1626,7 +1626,7 @@
     },
     {
       "id": "2026-06-20-0",
-      "q": "The United States clinched a knockout-round place by beating Australia on Friday. What was the score?",
+      "q": "The United States clinched a knockout-round place by beating Australia in the group stage. What was the score?",
       "options": [
         "1-0",
         "2-0",
@@ -1717,7 +1717,7 @@
     },
     {
       "id": "2026-06-20-7",
-      "q": "Friday's Brazil v Haiti and Scotland v Morocco fixtures were both played in the same group. Which one?",
+      "q": "The Brazil v Haiti and Scotland v Morocco fixtures were both played in the same group. Which one?",
       "options": [
         "Group A",
         "Group C",
@@ -1821,7 +1821,7 @@
     },
     {
       "id": "2026-06-21-0",
-      "q": "World Cup debutants Curacao earned their first ever point on Saturday with a goalless draw. Which side did they hold?",
+      "q": "World Cup debutants Curacao earned their first ever point with a goalless draw. Which side did they hold?",
       "options": [
         "Ecuador",
         "Colombia",
@@ -1886,7 +1886,7 @@
     },
     {
       "id": "2026-06-21-5",
-      "q": "Germany came from behind to win 2-1 in Toronto on Saturday. Which side did they beat?",
+      "q": "Germany came from behind to win 2-1 in Toronto. Which side did they beat?",
       "options": [
         "Ivory Coast",
         "Senegal",
@@ -1977,7 +1977,7 @@
     },
     {
       "id": "2026-06-21-12",
-      "q": "Scotland were stunned by Morocco on Friday, losing 1-0 to an Ismael Saibari strike. How early did the goal come?",
+      "q": "Scotland were stunned by Morocco, losing 1-0 to an Ismael Saibari strike. How early did the goal come?",
       "options": [
         "Inside the first two minutes",
         "Just before half-time",
@@ -2211,7 +2211,7 @@
     },
     {
       "id": "2026-06-23-0",
-      "q": "Lionel Messi made history on Monday by becoming the all-time leading scorer in men's World Cup history. How many World Cup goals does he now have?",
+      "q": "Lionel Messi made history by becoming the all-time leading scorer in men's World Cup history. How many World Cup goals does he have?",
       "options": [
         "18",
         "16",
@@ -2263,7 +2263,7 @@
     },
     {
       "id": "2026-06-23-4",
-      "q": "Messi arrived at Monday's game level with Klose on 16 World Cup goals thanks to what feat in Argentina's tournament opener against Algeria?",
+      "q": "Messi went level with Klose on 16 World Cup goals thanks to what feat in Argentina's tournament opener against Algeria?",
       "options": [
         "A hat-trick",
         "A single penalty",
@@ -2276,7 +2276,7 @@
     },
     {
       "id": "2026-06-23-5",
-      "q": "Monday's goals extended a remarkable run for Messi: he has now scored in how many consecutive World Cup matches dating back to 2022?",
+      "q": "Messi's record-breaking goal extended a remarkable run: he has scored in how many consecutive World Cup matches dating back to 2022?",
       "options": [
         "Six",
         "Three",
@@ -2289,7 +2289,7 @@
     },
     {
       "id": "2026-06-23-6",
-      "q": "In Monday's late kick-off, Kylian Mbappe scored twice as France beat Iraq 3-0. That double drew him level with Klose on how many World Cup goals?",
+      "q": "Kylian Mbappe scored twice as France beat Iraq 3-0. That double drew him level with Klose on how many World Cup goals?",
       "options": [
         "16",
         "18",
@@ -2380,7 +2380,7 @@
     },
     {
       "id": "2026-06-23-13",
-      "q": "After Monday's matches, who led the race for the 2026 Golden Boot with five goals, one clear of Mbappe and Haaland?",
+      "q": "At that stage of the 2026 World Cup, who led the Golden Boot race with five goals, one clear of Mbappe and Haaland?",
       "options": [
         "Lionel Messi",
         "Harry Kane",
@@ -2601,7 +2601,7 @@
     },
     {
       "id": "2026-06-25-0",
-      "q": "Brazil sealed top spot in Group C on Wednesday with a 3-0 win over which side, leaving their World Cup hopes hanging by a thread?",
+      "q": "Brazil sealed top spot in Group C with a 3-0 win over which side, leaving the beaten team's World Cup hopes hanging by a thread?",
       "options": [
         "Scotland",
         "Wales",

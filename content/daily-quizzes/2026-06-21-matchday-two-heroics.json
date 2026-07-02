@@ -9,7 +9,7 @@
     {
       "difficulty": "easy",
       "category": "curacao",
-      "question": "World Cup debutants Curacao earned their first ever point on Saturday with a goalless draw. Which side did they hold?",
+      "question": "World Cup debutants Curacao earned their first ever point with a goalless draw. Which side did they hold?",
       "options": { "A": "Ecuador", "B": "Colombia", "C": "Uruguay", "D": "Paraguay" },
       "answer": "A"
     },
@@ -44,7 +44,7 @@
     {
       "difficulty": "medium",
       "category": "germany",
-      "question": "Germany came from behind to win 2-1 in Toronto on Saturday. Which side did they beat?",
+      "question": "Germany came from behind to win 2-1 in Toronto. Which side did they beat?",
       "options": { "A": "Ivory Coast", "B": "Senegal", "C": "Ghana", "D": "Nigeria" },
       "answer": "A"
     },
@@ -93,7 +93,7 @@
     {
       "difficulty": "hard",
       "category": "scotland",
-      "question": "Scotland were stunned by Morocco on Friday, losing 1-0 to an Ismael Saibari strike. How early did the goal come?",
+      "question": "Scotland were stunned by Morocco, losing 1-0 to an Ismael Saibari strike. How early did the goal come?",
       "options": { "A": "Inside the first two minutes", "B": "Just before half-time", "C": "Midway through the second half", "D": "In stoppage time" },
       "answer": "A"
     },

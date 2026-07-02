@@ -73,7 +73,7 @@
     {
       "difficulty": "medium",
       "category": "fixtures",
-      "question": "France begin their campaign on Tuesday against an African side they famously lost to in the 2002 opener. Who?",
+      "question": "France began their 2026 campaign against an African side they famously lost to in the 2002 opener. Who?",
       "options": { "A": "Senegal", "B": "Morocco", "C": "Cameroon", "D": "Ivory Coast" },
       "answer": "A"
     },
@@ -101,7 +101,7 @@
     {
       "difficulty": "hard",
       "category": "fixtures",
-      "question": "The reigning champions open their title defence on Tuesday in Kansas City against which African nation?",
+      "question": "The reigning champions opened their title defence in Kansas City against which African nation?",
       "options": { "A": "Algeria", "B": "Egypt", "C": "Morocco", "D": "Tunisia" },
       "answer": "A"
     },

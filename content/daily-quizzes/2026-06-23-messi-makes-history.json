@@ -10,7 +10,7 @@
     {
       "difficulty": "easy",
       "category": "records",
-      "question": "Lionel Messi made history on Monday by becoming the all-time leading scorer in men's World Cup history. How many World Cup goals does he now have?",
+      "question": "Lionel Messi made history by becoming the all-time leading scorer in men's World Cup history. How many World Cup goals does he have?",
       "options": { "A": "18", "B": "16", "C": "21", "D": "15" },
       "answer": "A"
     },
@@ -38,21 +38,21 @@
     {
       "difficulty": "medium",
       "category": "records",
-      "question": "Messi arrived at Monday's game level with Klose on 16 World Cup goals thanks to what feat in Argentina's tournament opener against Algeria?",
+      "question": "Messi went level with Klose on 16 World Cup goals thanks to what feat in Argentina's tournament opener against Algeria?",
       "options": { "A": "A hat-trick", "B": "A single penalty", "C": "A stoppage-time winner", "D": "Two assists and no goals" },
       "answer": "A"
     },
     {
       "difficulty": "medium",
       "category": "records",
-      "question": "Monday's goals extended a remarkable run for Messi: he has now scored in how many consecutive World Cup matches dating back to 2022?",
+      "question": "Messi's record-breaking goal extended a remarkable run: he has scored in how many consecutive World Cup matches dating back to 2022?",
       "options": { "A": "Six", "B": "Three", "C": "Ten", "D": "Four" },
       "answer": "A"
     },
     {
       "difficulty": "medium",
       "category": "results",
-      "question": "In Monday's late kick-off, Kylian Mbappe scored twice as France beat Iraq 3-0. That double drew him level with Klose on how many World Cup goals?",
+      "question": "Kylian Mbappe scored twice as France beat Iraq 3-0. That double drew him level with Klose on how many World Cup goals?",
       "options": { "A": "16", "B": "18", "C": "14", "D": "12" },
       "answer": "A"
     },
@@ -101,7 +101,7 @@
     {
       "difficulty": "hard",
       "category": "records",
-      "question": "After Monday's matches, who led the race for the 2026 Golden Boot with five goals, one clear of Mbappe and Haaland?",
+      "question": "At that stage of the 2026 World Cup, who led the Golden Boot race with five goals, one clear of Mbappe and Haaland?",
       "options": { "A": "Lionel Messi", "B": "Harry Kane", "C": "Erling Haaland", "D": "Kylian Mbappe" },
       "answer": "A"
     },

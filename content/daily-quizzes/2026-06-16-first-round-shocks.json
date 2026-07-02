@@ -9,7 +9,7 @@
     {
       "difficulty": "easy",
       "category": "debutants",
-      "question": "World Cup debutants held the European champions to a goalless draw on Monday. Which nation pulled off the shock?",
+      "question": "World Cup debutants held the European champions to a goalless draw in the group stage. Which nation pulled off the shock?",
       "options": { "A": "Cabo Verde", "B": "Uzbekistan", "C": "Curacao", "D": "Jordan" },
       "answer": "A"
     },
@@ -107,7 +107,7 @@
     {
       "difficulty": "hard",
       "category": "group_stage",
-      "question": "Monday's Group G games both finished level. Alongside Belgium 1-1 Egypt, Iran drew 2-2 with which side?",
+      "question": "In Group G, alongside Belgium 1-1 Egypt, Iran drew 2-2 with which side?",
       "options": { "A": "New Zealand", "B": "Australia", "C": "Saudi Arabia", "D": "Qatar" },
       "answer": "A"
     }

@@ -10,7 +10,7 @@
     {
       "difficulty": "easy",
       "category": "group_c",
-      "question": "Brazil sealed top spot in Group C on Wednesday with a 3-0 win over which side, leaving their World Cup hopes hanging by a thread?",
+      "question": "Brazil sealed top spot in Group C with a 3-0 win over which side, leaving the beaten team's World Cup hopes hanging by a thread?",
       "options": { "A": "Scotland", "B": "Wales", "C": "Republic of Ireland", "D": "Norway" },
       "answer": "A"
     },

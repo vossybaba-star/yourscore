@@ -9,7 +9,7 @@
     {
       "difficulty": "easy",
       "category": "usa",
-      "question": "The United States clinched a knockout-round place by beating Australia on Friday. What was the score?",
+      "question": "The United States clinched a knockout-round place by beating Australia in the group stage. What was the score?",
       "options": { "A": "1-0", "B": "2-0", "C": "3-1", "D": "2-2" },
       "answer": "B"
     },
@@ -58,7 +58,7 @@
     {
       "difficulty": "medium",
       "category": "groups",
-      "question": "Friday's Brazil v Haiti and Scotland v Morocco fixtures were both played in the same group. Which one?",
+      "question": "The Brazil v Haiti and Scotland v Morocco fixtures were both played in the same group. Which one?",
       "options": { "A": "Group A", "B": "Group C", "C": "Group F", "D": "Group H" },
       "answer": "B"
     },
