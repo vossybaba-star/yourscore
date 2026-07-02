@@ -1,0 +1,130 @@
+{
+  "date": "2026-06-16",
+  "name": "First Round Shocks and Debutant Heroes",
+  "parameter": "World Cup 2026 First Round",
+  "type": "records",
+  "icon": "🧤",
+  "angle": "The opening round of group games has thrown up the tournament's first big stories — headlined by Cabo Verde's 40-year-old goalkeeper Vozinha keeping out the European champions Spain on his World Cup debut for a 0-0 draw in Atlanta.",
+  "questions": [
+    {
+      "difficulty": "easy",
+      "category": "debutants",
+      "question": "World Cup debutants held the European champions to a goalless draw on Monday. Which nation pulled off the shock?",
+      "options": { "A": "Cabo Verde", "B": "Uzbekistan", "C": "Curacao", "D": "Jordan" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "debutants",
+      "question": "Cabo Verde's man of the match against Spain was their 40-year-old goalkeeper. By what name is he known?",
+      "options": { "A": "Vozinha", "B": "Bebe", "C": "Ryan Mendes", "D": "Marco Soares" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "expert",
+      "category": "records",
+      "question": "Vozinha's clean sheet made him the third-oldest goalkeeper to keep one in a men's World Cup match. He trails only which two greats?",
+      "options": { "A": "Peter Shilton and Dino Zoff", "B": "Gianluigi Buffon and Pat Jennings", "C": "Dino Zoff and Iker Casillas", "D": "Peter Shilton and Gianluigi Buffon" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "debutants",
+      "question": "Spain laid siege to the Cabo Verde goal without reward. Roughly how many shots did they register across the 90 minutes?",
+      "options": { "A": "27", "B": "9", "C": "18", "D": "35" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "champions",
+      "question": "Spain arrived in the United States as the reigning champions of which competition?",
+      "options": { "A": "The European Championship", "B": "The FIFA World Cup", "C": "The UEFA Nations League", "D": "The Confederations Cup" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "debutants",
+      "question": "Germany began their campaign with a 7-1 win over which World Cup debutants?",
+      "options": { "A": "Curacao", "B": "Jamaica", "C": "Panama", "D": "Haiti" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "records",
+      "question": "Curacao are the smallest nation by population ever to reach a men's World Cup. Whose record did they take?",
+      "options": { "A": "Iceland", "B": "Trinidad and Tobago", "C": "Wales", "D": "Slovenia" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "debutants",
+      "question": "Curacao were beaten 7-1 by Germany but still made history in the match. Why?",
+      "options": { "A": "They scored their first ever World Cup goal", "B": "They became the smallest nation to win a point", "C": "They conceded the fastest goal in tournament history", "D": "Their captain saved a penalty" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "home_nations",
+      "question": "Scotland beat Haiti 1-0 for their first World Cup win since which year?",
+      "options": { "A": "1990", "B": "1978", "C": "1998", "D": "1982" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "home_nations",
+      "question": "Who scored the only goal of Scotland's win over Haiti?",
+      "options": { "A": "John McGinn", "B": "Scott McTominay", "C": "Che Adams", "D": "Ryan Christie" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "home_nations",
+      "question": "Scotland's victory was their first at a World Cup since a 2-1 win over which nation in 1990?",
+      "options": { "A": "Sweden", "B": "Norway", "C": "New Zealand", "D": "the Soviet Union" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "upsets",
+      "question": "Australia produced one of the early upsets, winning 2-0 against which side?",
+      "options": { "A": "Turkiye", "B": "Croatia", "C": "Serbia", "D": "Switzerland" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "group_stage",
+      "question": "Sweden made the biggest statement in Group F, thrashing which side 5-1?",
+      "options": { "A": "Tunisia", "B": "Japan", "C": "Senegal", "D": "South Africa" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "group_stage",
+      "question": "Brazil were held to a 1-1 draw in their opening match by which African side?",
+      "options": { "A": "Morocco", "B": "Egypt", "C": "Senegal", "D": "Ivory Coast" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "group_stage",
+      "question": "Monday's Group G games both finished level. Alongside Belgium 1-1 Egypt, Iran drew 2-2 with which side?",
+      "options": { "A": "New Zealand", "B": "Australia", "C": "Saudi Arabia", "D": "Qatar" },
+      "answer": "A"
+    }
+  ],
+  "sources": [
+    "https://www.espn.com/soccer/story/_/id/49071783/ (ESPN — Spain 0-0 Cape Verde, Vozinha the hero; debutants earn first point, Atlanta, 15 Jun 2026)",
+    "https://www.nbcsports.com/soccer/news/world-cup-debutants-cape-verde-hold-spain-in-huge-shock (NBC — Cabo Verde hold Spain; Vozinha; Spain 27 shots, Torres hit crossbar)",
+    "https://www.nbcnews.com/sports/soccer/vozinha-goalkeeper-cape-verde-spain-rcna350188 (NBC News — Vozinha, 40, third-oldest GK to keep a WC clean sheet after Shilton and Zoff; 7 saves; plays for Chaves)",
+    "https://www.aljazeera.com/sports/2026/6/16/who-is-vozinha-cape-verdes-viral-goalkeeper-at-the-world-cup (Al Jazeera — Vozinha profile, 40-year-old goalkeeper)",
+    "https://www.skysports.com/football/germany-vs-curacao/report/549774 (Sky Sports — Germany 7-1 Curacao, Group E)",
+    "https://www.npr.org/2026/06/14/g-s1-128100/havertz-germanys-curacao-world-cup-houston (NPR — Curacao's historic first World Cup goal in 7-1 defeat)",
+    "https://www.skysports.com/football/news/12098/13545528/world-cup-2026-curacao-caribbean-nations-historic-first-appearance (Sky Sports — Curacao smallest nation ever at a World Cup, ~156,000)",
+    "https://www.aol.com/articles/cura-ao-becomes-smallest-country-162620859.html (Curacao take smallest-nation record from Iceland, ~350,000 in 2018)",
+    "https://www.skysports.com/football/haiti-vs-scotland/549772 (Sky Sports — Haiti 0-1 Scotland, John McGinn, Boston, 13 Jun 2026)",
+    "https://www.espn.com/soccer/story/_/id/49057757/ (ESPN — Scotland's first World Cup win since 1990, when they beat Sweden 2-1)",
+    "https://sports.yahoo.com/soccer/live/2026-world-cup-schedule-scores-results-brazil-morocco-qatar-switzerland-australia-turkey-haiti-scotland-saturday-group-stage-play-145258957.html (Yahoo Sports — Australia 2-0 Turkiye; Brazil 1-1 Morocco)",
+    "https://www.thesportsexaminer.com/football-germany-crushes-curacao-7-1-ivory-coast-and-sweden-win-and-the-dutch-and-japan-tie-2-2-in-sundays-fifa-world-cup/ (The Sports Examiner — Sweden 5-1 Tunisia, Netherlands 2-2 Japan, Group F)",
+    "https://www.cbssports.com/soccer/news/world-cup-group-standings-table-results/ (CBS Sports — results table: Belgium 1-1 Egypt, Iran 2-2 New Zealand, Saudi Arabia 1-1 Uruguay, 15 Jun 2026)"
+  ]
+}

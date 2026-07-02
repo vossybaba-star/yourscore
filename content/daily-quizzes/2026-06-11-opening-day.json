@@ -9,7 +9,7 @@
     {
       "difficulty": "easy",
       "category": "opening_day",
-      "question": "The 2026 World Cup kicks off today. Which country plays in the opening match?",
+      "question": "Which country played in the opening match of the 2026 World Cup?",
       "options": { "A": "Mexico", "B": "United States", "C": "Canada", "D": "Brazil" },
       "answer": "A"
     },
@@ -23,7 +23,7 @@
     {
       "difficulty": "easy",
       "category": "opening_day",
-      "question": "Mexico open the tournament today against which nation?",
+      "question": "Mexico opened the 2026 World Cup against which nation?",
       "options": { "A": "South Africa", "B": "Nigeria", "C": "Egypt", "D": "Ghana" },
       "answer": "A"
     },

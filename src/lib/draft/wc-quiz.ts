@@ -76,19 +76,46 @@ export function deciderQuestion(seed: string): ServedQuestion {
 }
 
 /**
- * The fixed set of `count` questions for a ranked daily run, drawn at random from the
- * **entire World Cup question bank** (every dated pack in the bundle, not just today's),
- * **seeded by date** so every player faces the same questions in the same order that day
- * (the "same test" rule) while the set still rotates day to day. Options are shuffled
- * deterministically too. Practice runs use `drawQuestion` instead — also the whole bank,
- * but freshly random each play.
+ * The fixed set of `count` questions for a ranked daily run, drawn from the **entire World
+ * Cup question bank** (every dated pack in the bundle) but **weighted toward recent events**:
+ * a question from a pack nearer the run date is far more likely to be picked, while older
+ * questions keep a floor weight so whole-tournament knowledge still counts. **Seeded by date**
+ * so every player faces the same questions in the same order that day (the "same test" rule)
+ * while the set rotates day to day. Deterministic (static pool + fixed reference date), so the
+ * server re-derives the identical set on every slate/submit call. Options are shuffled
+ * deterministically too. Practice runs use `drawQuestion` instead — the whole bank, freshly
+ * random (and unweighted) each play.
  */
 export function dailyQuestions(date: string, count = 11): ServedQuestion[] {
   const rng = seededRng(`wc-daily:${date}`);
-  const arr = POOL.slice();
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
+  const ref = Date.parse(`${date}T00:00:00Z`);
+  const dateOf = (q: WCQuizQuestion) => Date.parse(`${q.id.slice(0, 10)}T00:00:00Z`);
+  // Only questions from packs on/before the run date are eligible, so neither today's run nor a
+  // past catch-up run surfaces events that hadn't happened yet. Fall back to the whole bank if
+  // that leaves too few (very early in the tournament).
+  const eligible = Number.isFinite(ref)
+    ? POOL.filter((q) => { const d = dateOf(q); return !Number.isFinite(d) || d <= ref; })
+    : POOL;
+  const src = eligible.length >= count ? eligible : POOL;
+  // Recency weight: exponential decay by how many days before the run date the pack landed,
+  // plus a floor so older questions never drop out entirely (~8-day time constant).
+  const weightOf = (q: WCQuizQuestion): number => {
+    const qd = dateOf(q);
+    if (!Number.isFinite(qd) || !Number.isFinite(ref)) return 1;
+    const daysAgo = Math.max(0, (ref - qd) / 86_400_000);
+    return Math.exp(-daysAgo / 8) + 0.12;
+  };
+  // Weighted sampling without replacement, seeded by date.
+  const pool = src.map((q) => ({ q, w: weightOf(q) }));
+  const picked: WCQuizQuestion[] = [];
+  for (let n = 0; n < count && pool.length > 0; n++) {
+    let total = 0;
+    for (const e of pool) total += e.w;
+    let r = rng() * total;
+    let idx = 0;
+    while (idx < pool.length - 1 && r > pool[idx].w) { r -= pool[idx].w; idx++; }
+    picked.push(pool[idx].q);
+    pool.splice(idx, 1);
   }
-  return arr.slice(0, count).map((q) => serve(q, rng));
+  return picked.map((q) => serve(q, rng));
 }

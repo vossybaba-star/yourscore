@@ -1,0 +1,201 @@
+{
+  "date": "2026-06-30",
+  "name": "Giants Fall: Germany and the Netherlands Crash Out on Penalties",
+  "parameter": "World Cup 2026 Round of 32",
+  "type": "records",
+  "icon": "🧨",
+  "angle": "The Round of 32 opened with carnage: Paraguay knocked out four-time champions Germany on penalties in Foxborough while Morocco eliminated the Netherlands from the spot in Monterrey, both on the night of 29 June, a day after Canada reached the last 16 for the first time in their history.",
+  "questions": [
+    {
+      "difficulty": "easy",
+      "category": "knockouts",
+      "question": "Canada reached the World Cup knockout stage for the first time in their history. Which nation did they beat to do it?",
+      "options": {
+        "A": "South Africa",
+        "B": "Senegal",
+        "C": "Nigeria",
+        "D": "Cameroon"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "records",
+      "question": "Five-time world champions Brazil came from behind to win 2-1 in the last 32. Which nation did they knock out?",
+      "options": {
+        "A": "Japan",
+        "B": "South Korea",
+        "C": "Australia",
+        "D": "Saudi Arabia"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "upsets",
+      "question": "Paraguay eliminated four-time champions Germany in the Round of 32. How was the tie settled?",
+      "options": {
+        "A": "A penalty shootout",
+        "B": "A golden goal",
+        "C": "A 90th-minute winner",
+        "D": "An own goal in extra time"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "knockouts",
+      "question": "Who scored the 92nd-minute winner that sent Canada past South Africa and into the last 16?",
+      "options": {
+        "A": "Stephen Eustaquio",
+        "B": "Jonathan David",
+        "C": "Alphonso Davies",
+        "D": "Cyle Larin"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "records",
+      "question": "Trailing Japan at half-time, Brazil turned it around late. Who scored their stoppage-time winner?",
+      "options": {
+        "A": "Gabriel Martinelli",
+        "B": "Vinicius Junior",
+        "C": "Rodrygo",
+        "D": "Raphinha"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "records",
+      "question": "Japan led Brazil for much of the game thanks to a first-half opener. Which midfielder put them ahead?",
+      "options": {
+        "A": "Kaishu Sano",
+        "B": "Takefusa Kubo",
+        "C": "Daichi Kamada",
+        "D": "Kaoru Mitoma"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "upsets",
+      "question": "Which manager saw his Germany side dumped out of the World Cup at the Round of 32?",
+      "options": {
+        "A": "Julian Nagelsmann",
+        "B": "Hansi Flick",
+        "C": "Rudi Voller",
+        "D": "Jurgen Klinsmann"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "upsets",
+      "question": "Paraguay's shootout hero saved twice to knock out Germany. Which goalkeeper was it?",
+      "options": {
+        "A": "Orlando Gill",
+        "B": "Antony Silva",
+        "C": "Roberto Fernandez",
+        "D": "Carlos Coronel"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "upsets",
+      "question": "Who converted the decisive sudden-death penalty to complete Paraguay's stunning win over Germany?",
+      "options": {
+        "A": "Jose Canale",
+        "B": "Julio Enciso",
+        "C": "Miguel Almiron",
+        "D": "Omar Alderete"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "upsets",
+      "question": "On the same night Germany went out, Morocco eliminated which European heavyweight on penalties?",
+      "options": {
+        "A": "Netherlands",
+        "B": "Belgium",
+        "C": "Portugal",
+        "D": "Croatia"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "upsets",
+      "question": "Who scored the goal that put the Netherlands ahead against Morocco before the Dutch were pegged back?",
+      "options": {
+        "A": "Cody Gakpo",
+        "B": "Memphis Depay",
+        "C": "Xavi Simons",
+        "D": "Donyell Malen"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "upsets",
+      "question": "Morocco forced extra time with a stoppage-time equaliser against the Netherlands. Who headed it in?",
+      "options": {
+        "A": "Issa Diop",
+        "B": "Achraf Hakimi",
+        "C": "Romain Saiss",
+        "D": "Nayef Aguerd"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "upsets",
+      "question": "Who slotted home the winning penalty as Morocco knocked the Netherlands out of the World Cup?",
+      "options": {
+        "A": "Ismael Saibari",
+        "B": "Achraf Hakimi",
+        "C": "Hakim Ziyech",
+        "D": "Brahim Diaz"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "knockouts",
+      "question": "Germany's exit made them the first of the tournament's traditional heavyweights to fall. At which stage were they knocked out?",
+      "options": {
+        "A": "Round of 32",
+        "B": "Group stage",
+        "C": "Round of 16",
+        "D": "Quarter-finals"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "fixtures",
+      "question": "In the Round of 32, France faced which Nordic side?",
+      "options": {
+        "A": "Sweden",
+        "B": "Norway",
+        "C": "Denmark",
+        "D": "Switzerland"
+      },
+      "answer": "A"
+    }
+  ],
+  "sources": [
+    "https://www.espn.com/soccer/match/_/gameId/760486/canada-south-africa (Canada 1-0 South Africa, 28 June; Eustaquio 92', Canada reach last 16 for first time)",
+    "https://www.cnn.com/2026/06/28/sport/canada-south-africa-world-cup-round-of-32 (Canada late winner eliminates South Africa)",
+    "https://sports.yahoo.com/soccer/live/world-cup-2026-scores-results-schedule-live-updates-round-of-32-173000083.html (Brazil 2-1 Japan: Sano 29', Casemiro 45+1', Martinelli stoppage time)",
+    "https://www.espn.com/soccer/story/_/id/49220268/germany-dumped-world-cup-paraguay-penalties (Germany 1-1 Paraguay, Paraguay win 4-3 pens; Enciso 42', Havertz 54'; Canale sudden-death winner; Gill two saves)",
+    "https://www.aljazeera.com/sports/2026/6/29/paraguay-shock-germany-in-shootout-win-for-one-of-all-time-world-cup-upsets (Paraguay shock Germany; Germany first powerhouse out in R32; Nagelsmann manager)",
+    "https://www.espn.com/soccer/story/_/id/49220087/netherlands-morocco-live-world-cup-2026-latest-updates-commentary-score-result (Netherlands 1-1 Morocco, Morocco win on pens; Gakpo 72', Issa Diop 91'; Bounou saves Summerville; Saibari winning pen; Monterrey)",
+    "https://www.france24.com/en/sport/20260630-world-cup-2026-morocco-beat-netherlands-on-penalties-to-reach-round-of-16 (Morocco beat Netherlands on penalties to reach round of 16)",
+    "https://www.espn.com/soccer/story/_/id/48939282/2026-fifa-world-cup-fixtures-results-match-schedule-group-stage-knockout-rounds-bracket (30 June fixtures: France v Sweden, Ivory Coast v Norway, Mexico v Ecuador)"
+  ],
+  "series": "wc2026"
+}

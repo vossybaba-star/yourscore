@@ -1,0 +1,204 @@
+{
+  "date": "2026-06-19",
+  "name": "Statement Round: The Stars Announce Themselves at World Cup 2026",
+  "parameter": "World Cup 2026 opening group games",
+  "type": "records",
+  "icon": "🏆",
+  "angle": "The opening round of WC2026 group games turned into a records night: Messi drew level with Klose's all-time mark, Mbappe became France's leading scorer, England edged a six-goal thriller with Croatia, and Canada landed their first ever men's World Cup win.",
+  "questions": [
+    {
+      "difficulty": "easy",
+      "category": "messi_milestone",
+      "question": "By taking the field against Algeria, Lionel Messi became the first man to appear at how many different World Cups?",
+      "options": {
+        "A": "Six",
+        "B": "Five",
+        "C": "Seven",
+        "D": "Four"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "records",
+      "question": "Messi's hat-trick against Algeria took him to 16 World Cup goals, level with the tournament's all-time leading scorer. Who holds that record?",
+      "options": {
+        "A": "Ronaldo (Brazil)",
+        "B": "Gerd Muller",
+        "C": "Just Fontaine",
+        "D": "Miroslav Klose"
+      },
+      "answer": "D"
+    },
+    {
+      "difficulty": "medium",
+      "category": "argentina",
+      "question": "Argentina opened their title defence with a 3-0 win as Messi scored all three. Who were the opponents?",
+      "options": {
+        "A": "Austria",
+        "B": "Algeria",
+        "C": "Jordan",
+        "D": "Nigeria"
+      },
+      "answer": "B"
+    },
+    {
+      "difficulty": "medium",
+      "category": "france",
+      "question": "Kylian Mbappe's brace against Senegal saw him overtake which striker as France's all-time leading scorer?",
+      "options": {
+        "A": "Thierry Henry",
+        "B": "Antoine Griezmann",
+        "C": "Olivier Giroud",
+        "D": "Karim Benzema"
+      },
+      "answer": "C"
+    },
+    {
+      "difficulty": "medium",
+      "category": "france",
+      "question": "France beat Senegal 3-1 in their opener, with one creative star named man of the match. Who was it?",
+      "options": {
+        "A": "Michael Olise",
+        "B": "Ousmane Dembele",
+        "C": "Aurelien Tchouameni",
+        "D": "Bradley Barcola"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "england",
+      "question": "England began their campaign with a 4-2 win over Croatia. Who captained the side and scored twice?",
+      "options": {
+        "A": "Harry Kane",
+        "B": "Jude Bellingham",
+        "C": "Marcus Rashford",
+        "D": "Phil Foden"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "england",
+      "question": "Which head coach led England to their opening win over Croatia?",
+      "options": {
+        "A": "Thomas Tuchel",
+        "B": "Gareth Southgate",
+        "C": "Lee Carsley",
+        "D": "Eddie Howe"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "england",
+      "question": "Croatia were beaten 4-2, but their goalkeeper kept the game close with a string of saves. Who was he?",
+      "options": {
+        "A": "Ivica Ivusic",
+        "B": "Nediljko Labrovic",
+        "C": "Dominik Kotarski",
+        "D": "Dominik Livakovic"
+      },
+      "answer": "D"
+    },
+    {
+      "difficulty": "easy",
+      "category": "canada",
+      "question": "Which co-host claimed their first ever men's World Cup win, thrashing Qatar 6-0?",
+      "options": {
+        "A": "Canada",
+        "B": "Mexico",
+        "C": "United States",
+        "D": "Costa Rica"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "canada",
+      "question": "Who scored a hat-trick in Canada's 6-0 demolition of Qatar?",
+      "options": {
+        "A": "Cyle Larin",
+        "B": "Alphonso Davies",
+        "C": "Jonathan David",
+        "D": "Tajon Buchanan"
+      },
+      "answer": "C"
+    },
+    {
+      "difficulty": "hard",
+      "category": "records",
+      "question": "Canada's 6-0 win was the biggest in men's World Cup history by a team from which confederation?",
+      "options": {
+        "A": "CAF",
+        "B": "CONCACAF",
+        "C": "AFC",
+        "D": "OFC"
+      },
+      "answer": "B"
+    },
+    {
+      "difficulty": "hard",
+      "category": "mexico",
+      "question": "Mexico became the first team to seal a place in the round of 32, beating South Korea 1-0. Who scored the only goal?",
+      "options": {
+        "A": "Santiago Gimenez",
+        "B": "Hirving Lozano",
+        "C": "Luis Romo",
+        "D": "Edson Alvarez"
+      },
+      "answer": "C"
+    },
+    {
+      "difficulty": "hard",
+      "category": "switzerland",
+      "question": "Switzerland scored four times late on to beat Bosnia and Herzegovina 4-1. Which substitute scored twice?",
+      "options": {
+        "A": "Johan Manzambi",
+        "B": "Breel Embolo",
+        "C": "Ruben Vargas",
+        "D": "Dan Ndoye"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "colombia",
+      "question": "Colombia came from behind to beat Uzbekistan 3-1, with Daniel Munoz and Jaminton Campaz also scoring. Which star winger got the other goal?",
+      "options": {
+        "A": "Juan Cuadrado",
+        "B": "James Rodriguez",
+        "C": "Jhon Duran",
+        "D": "Luis Diaz"
+      },
+      "answer": "D"
+    },
+    {
+      "difficulty": "expert",
+      "category": "history",
+      "question": "Mbappe's heroics carried an echo of history: France's only opening-game defeat in their previous eight global tournaments came against Senegal. In which year?",
+      "options": {
+        "A": "1998",
+        "B": "2002",
+        "C": "2006",
+        "D": "2010"
+      },
+      "answer": "B"
+    }
+  ],
+  "sources": [
+    "https://www.espn.com/soccer/story/_/id/49089516/messi-nets-hat-trick-ties-klose-record-1th-world-cup-goal (ESPN — Messi hat-trick v Algeria, 3-0, ties Klose's 16 WC goals)",
+    "https://www.aljazeera.com/sports/2026/6/17/lionel-messi-rewrites-history-books-at-record-sixth-world-cup (Al Jazeera — Messi first man to play six World Cups)",
+    "https://www.skysports.com/football/news/11095/13552714/world-cup-2026-france-3-1-senegal-kylian-mbappe-becomes-leading-scorer-in-les-bleus-history-with-stunning-double (Sky — France 3-1 Senegal, Mbappe passes Giroud as France's top scorer)",
+    "https://www.france24.com/en/sport/20260616-france-senegal-live-mbappe-dembele-mane-kick-off-world-cup-campaign-group-i-showdown (France 24 — Olise man of the match; France's only opening defeat was v Senegal in 2002)",
+    "https://www.skysports.com/football/news/12309/13552729/world-cup-2026-england-4-2-croatia-harry-kane-jude-bellingham-and-marcus-rashford-on-target-as-three-lions-make-winning-start (Sky — England 4-2 Croatia, Kane brace, Bellingham, Rashford; Tuchel)",
+    "https://www.espn.com/soccer/story/_/id/49097138/england-croatia-live-world-cup-2026-latest-updates-commentary-score-result (ESPN — England 4-2 Croatia; Livakovic keeps Croatia in it, Group L, Dallas)",
+    "https://sports.yahoo.com/soccer/article/2026-world-cup-canada-smacks-qatar-6-0-to-secure-first-ever-world-cup-win-000350635.html (Yahoo — Canada 6-0 Qatar, first ever men's WC win, biggest CONCACAF WC win; Jonathan David hat-trick)",
+    "https://www.fifa.com/en/match-centre/match/17/285023/289273/400021450 (FIFA — Canada 6-0 Qatar match centre)",
+    "https://www.espn.com/soccer/story/_/id/49090864/fifa-world-cup-live-updates-mexico-take-south-korea-second-group-stage-game (ESPN — Mexico 1-0 South Korea, first team to reach round of 32)",
+    "https://theanalyst.com/articles/mexico-vs-south-korea-stats-world-cup-2026-live (Opta — Luis Romo 50th-min winner for Mexico v South Korea)",
+    "https://www.skysports.com/football/news/12098/13553619/world-cup-2026-switzerland-4-1-bosnia-herzegovina-johan-manzambi-scores-twice-as-swiss-take-giant-leap-towards-knockout-stages (Sky — Switzerland 4-1 Bosnia, Manzambi brace off the bench)",
+    "https://www.olympics.com/en/news/fifa-world-cup-2026-every-match-result-thursday-18-june-live-scores (Olympics.com — June 18 results incl. Colombia 3-1 Uzbekistan: Munoz, Diaz, Campaz)"
+  ]
+}

@@ -1,0 +1,131 @@
+{
+  "date": "2026-06-26",
+  "series": "wc2026",
+  "name": "Giants Stumble As The Last 32 Takes Shape",
+  "parameter": "World Cup 2026 final group matchday",
+  "type": "records",
+  "icon": "😱",
+  "angle": "The final group matchday delivered the tournament's biggest shocks yet: Ecuador downed group winners Germany, Turkiye beat the hosts USA with the last kick, and Curacao's record-breaking debut ended as the round of 32 locked into place.",
+  "questions": [
+    {
+      "difficulty": "easy",
+      "category": "upsets",
+      "question": "Germany lost their final group game 2-1 to which South American side, who still squeezed into the round of 32?",
+      "options": { "A": "Ecuador", "B": "Colombia", "C": "Uruguay", "D": "Paraguay" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "upsets",
+      "question": "Who scored Ecuador's 78th-minute winner to complete the comeback against Germany?",
+      "options": { "A": "Gonzalo Plata", "B": "Enner Valencia", "C": "Moises Caicedo", "D": "Kendry Paez" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "upsets",
+      "question": "Germany led inside two minutes through a fierce strike from which winger, before Ecuador hit back?",
+      "options": { "A": "Leroy Sane", "B": "Florian Wirtz", "C": "Jamal Musiala", "D": "Kai Havertz" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "group_e",
+      "question": "Despite the defeat to Ecuador, where did Germany finish in Group E?",
+      "options": { "A": "First", "B": "Second", "C": "Third", "D": "Fourth" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "hosts",
+      "question": "Hosts USA suffered their first defeat of the tournament, beaten 3-2 by Turkiye. The USA's opener came from a defender's first international goal. Which centre-back scored it?",
+      "options": { "A": "Auston Trusty", "B": "Chris Richards", "C": "Tim Ream", "D": "Sergino Dest" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "hosts",
+      "question": "Turkiye's equaliser against the USA was finished off by which 21-year-old Real Madrid playmaker?",
+      "options": { "A": "Arda Guler", "B": "Kenan Yildiz", "C": "Hakan Calhanoglu", "D": "Orkun Kokcu" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "hosts",
+      "question": "Turkiye snatched a dramatic 3-2 win over the USA with a goal deep in stoppage time. Who scored that last-gasp winner?",
+      "options": { "A": "Kaan Ayhan", "B": "Arda Guler", "C": "Orkun Kokcu", "D": "Hakan Calhanoglu" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "knockouts",
+      "question": "The USA still topped Group D despite the loss. Which side, through as one of the best third-placed teams, awaits them in the round of 32?",
+      "options": { "A": "Bosnia and Herzegovina", "B": "Qatar", "C": "Serbia", "D": "Croatia" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "group_b",
+      "question": "Switzerland sealed top spot in Group B with a 2-1 win over which co-host nation?",
+      "options": { "A": "Canada", "B": "Mexico", "C": "United States", "D": "Costa Rica" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "group_f",
+      "question": "The Netherlands won Group F with a 3-1 win over which winless side, as Japan and Sweden drew 1-1 to also progress?",
+      "options": { "A": "Tunisia", "B": "Senegal", "C": "Egypt", "D": "Morocco" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "history",
+      "question": "Curacao bowed out in the group stage, ending the run of the smallest nation ever to reach a World Cup. Whose record had they broken to claim that tag?",
+      "options": { "A": "Iceland", "B": "Trinidad and Tobago", "C": "Slovenia", "D": "Wales" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "history",
+      "question": "Curacao's historic first World Cup was masterminded by which much-travelled Dutch head coach?",
+      "options": { "A": "Dick Advocaat", "B": "Guus Hiddink", "C": "Louis van Gaal", "D": "Ronald Koeman" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "history",
+      "question": "Ecuador reaching the knockouts is only the second time they have made it out of the group stage. In which year did they first do it?",
+      "options": { "A": "2006", "B": "2014", "C": "2022", "D": "2002" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "history",
+      "question": "The USA are co-hosting in 2026. The last time they staged the World Cup, in 1994, who lifted the trophy on American soil?",
+      "options": { "A": "Brazil", "B": "Italy", "C": "Germany", "D": "Argentina" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "expert",
+      "category": "history",
+      "question": "Turkiye's victory marked a long-awaited return to the finals. Before 2026, when did they last appear at a World Cup, a tournament in which they finished third?",
+      "options": { "A": "2002", "B": "2006", "C": "1998", "D": "2014" },
+      "answer": "A"
+    }
+  ],
+  "sources": [
+    "https://www.amny.com/sports/world-cup-ecuador-germay-6-25-26/ (Ecuador 2-1 Germany, June 25 — Plata's 78th-minute winner sends Ecuador to round of 32)",
+    "https://www.outlookindia.com/sports/football/ecuador-vs-germany-live-score-fifa-world-cup-2026-group-e-ecu-v-ger-updates-new-york-new-jersey-stadium-highlights (Sane 2nd-minute opener, Angulo equaliser 9', Plata winner 78'; Germany still top Group E)",
+    "https://africa.espn.com/football/story/_/id/49178092/ecuador-vs-germany-live-world-cup-2026-updates-score-result-commentary (Ecuador 2-1 Germany result and group context)",
+    "https://www.outlookindia.com/sports/football/turkey-vs-usa-live-score-fifa-world-cup-2026-group-d-tur-v-usa-updates-los-angeles-stadium-highlights (Turkiye 3-2 USA: Trusty 3', Guler 10', Kokcu 31', Berhalter 49', Kaan Ayhan 90+8' winner)",
+    "https://www.nbcsports.com/soccer/live/usa-vs-turkiye-live-updates-score-goals-highlights-stats-from-2026-fifa-world-cup (Turkiye 3-2 USMNT recap — late Turkish winner; USA still top Group D)",
+    "https://sports.yahoo.com/soccer/article/world-cup-2026-united-states-set-to-play-bosnia-and-herzegovina-in-round-of-32-230920481.html (USA top Group D, face Bosnia and Herzegovina in round of 32; Bosnia through as a third-placed side)",
+    "https://sports.yahoo.com/soccer/article/world-cup-2026-switzerland-claims-group-b-over-canada-bosnia-and-herzegovina-moves-top-among-third-place-teams-205847839.html (Switzerland 2-1 Canada to top Group B; Vargas and Manzambi score)",
+    "https://sports.yahoo.com/soccer/breaking-news/article/2026-world-cup-group-f-netherlands-tops-group-with-win-over-tunisia-as-japan-and-sweden-draw-012333588.html (Netherlands 3-1 Tunisia tops Group F; Japan 1-1 Sweden, both advance)",
+    "https://www.nbcnews.com/sports/soccer/curacao-smalles-nation-world-cup-rcna348528 (Curacao the smallest nation ever to qualify, breaking Iceland's 2018 record; coached by Dick Advocaat)",
+    "https://www.skysports.com/football/news/12098/13545528/world-cup-2026-curacao-caribbean-nations-historic-first-appearance (Curacao profile — smallest ever World Cup nation, Dick Advocaat)",
+    "https://en.wikipedia.org/wiki/Ecuador_at_the_FIFA_World_Cup (Ecuador's only previous knockout appearance came at the 2006 World Cup)",
+    "https://en.wikipedia.org/wiki/1994_FIFA_World_Cup (USA hosted in 1994; Brazil won the final on penalties against Italy)",
+    "https://en.wikipedia.org/wiki/Turkey_at_the_FIFA_World_Cup (Turkiye's last finals before 2026 were 2002, where they finished third)"
+  ]
+}

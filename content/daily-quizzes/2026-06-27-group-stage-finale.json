@@ -1,0 +1,124 @@
+{
+  "date": "2026-06-27",
+  "name": "Group Stage Finale: France Make a Statement",
+  "parameter": "World Cup 2026 Group Stage Finale",
+  "type": "records",
+  "icon": "🎩",
+  "angle": "The 2026 group stage reaches its climax: Ousmane Dembele's first-half hat-trick sends France past Norway 4-1 to top Group I, while the last knockout places fall into place across a frantic final round.",
+  "questions": [
+    {
+      "difficulty": "easy",
+      "category": "france_norway",
+      "question": "France beat Norway 4-1 in Boston to finish their group with three wins from three. Who scored a first-half hat-trick?",
+      "options": { "A": "Ousmane Dembele", "B": "Kylian Mbappe", "C": "Desire Doue", "D": "Bradley Barcola" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "france_norway",
+      "question": "Norway rotated heavily and left one striker on the bench against France, despite the crowd chanting his name. Who was it?",
+      "options": { "A": "Erling Haaland", "B": "Jorgen Strand Larsen", "C": "Alexander Sorloth", "D": "Oscar Bobb" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "groups",
+      "question": "Their win over Norway confirmed France as winners of which group?",
+      "options": { "A": "Group I", "B": "Group G", "C": "Group H", "D": "Group J" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "france_norway",
+      "question": "Norway were handed a second-half penalty against France but spurned it, the spot-kick saved by goalkeeper Mike Maignan. Who took the miss?",
+      "options": { "A": "Jorgen Strand Larsen", "B": "Thelo Aasgaard", "C": "Oscar Bobb", "D": "Antonio Nusa" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "france_norway",
+      "question": "Who scored Norway's only goal against France, briefly pulling it back to 2-1?",
+      "options": { "A": "Thelo Aasgaard", "B": "Jorgen Strand Larsen", "C": "Antonio Nusa", "D": "Oscar Bobb" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "individual",
+      "question": "Dembele arrived at the World Cup as the reigning Ballon d'Or holder. In which year had he won the award?",
+      "options": { "A": "2025", "B": "2024", "C": "2023", "D": "2022" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "groups",
+      "question": "Belgium hammered New Zealand 5-1 to win their group. Which veteran playmaker was among the scorers?",
+      "options": { "A": "Kevin De Bruyne", "B": "Charles De Ketelaere", "C": "Youri Tielemans", "D": "Jeremy Doku" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "groups",
+      "question": "Belgium's rout took top spot in Group G on goal difference. Which side went through as runners-up?",
+      "options": { "A": "Egypt", "B": "Iran", "C": "New Zealand", "D": "Cape Verde" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "groups",
+      "question": "Iran thought they had snatched a stoppage-time winner against Egypt, only for the goal to be chalked off after a VAR review. Why?",
+      "options": { "A": "It was ruled offside", "B": "A handball in the build-up", "C": "A foul on the goalkeeper", "D": "The ball had gone out of play" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "groups",
+      "question": "Spain edged top spot in Group H with a 1-0 win over which South American side?",
+      "options": { "A": "Uruguay", "B": "Colombia", "C": "Paraguay", "D": "Ecuador" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "groups",
+      "question": "Tournament debutants Cape Verde reached the knockout stage as Group H runners-up after a goalless draw with whom?",
+      "options": { "A": "Saudi Arabia", "B": "Uruguay", "C": "Morocco", "D": "Spain" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "groups",
+      "question": "Senegal signed off the group stage in style with a 5-0 demolition of which side in Group I?",
+      "options": { "A": "Iraq", "B": "Iran", "C": "Saudi Arabia", "D": "Qatar" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "knockouts",
+      "question": "Group D winners the United States begin their round-of-32 campaign in Santa Clara against which nation?",
+      "options": { "A": "Bosnia and Herzegovina", "B": "Australia", "C": "Canada", "D": "Mexico" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "knockouts",
+      "question": "Group F runners-up Japan drew a fearsome round-of-32 tie. Which five-time world champions await them?",
+      "options": { "A": "Brazil", "B": "Germany", "C": "Argentina", "D": "France" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "expert",
+      "category": "format",
+      "question": "In the new 48-team format, the top two from all 12 groups go through, joined by a set number of the best third-placed teams. How many third-placed sides advance to the round of 32?",
+      "options": { "A": "8", "B": "4", "C": "6", "D": "12" },
+      "answer": "A"
+    }
+  ],
+  "sources": [
+    "https://www.nbcsports.com/soccer/live/norway-vs-france-live-updates-score-goals-highlights-stats-2026-fifa-world-cup-june-26 (France 4-1 Norway: Dembele first-half hat-trick, Mbappe two assists, Doue late header; Aasgaard scored for Norway; Strand Larsen penalty saved by Maignan; Haaland benched; Gillette Stadium, Boston)",
+    "https://www.espn.com/soccer/story/_/id/49162214/world-cup-live-updates-france-takes-norway-decide-group-i (France top Group I after Dembele first-half hat-trick; Haaland on the bench; Foxborough)",
+    "https://sports.yahoo.com/soccer/live/world-cup-schedule-scores-live-updates-results-group-g-group-h-group-i-160927428.html (Jun 26 results: Belgium 5-1 New Zealand with De Bruyne among scorers, Belgium top Group G on goal difference, Egypt runners-up; Egypt 1-1 Iran with Iran stoppage-time winner ruled offside by VAR; Spain 1-0 Uruguay tops Group H; Cape Verde 0-0 Saudi Arabia finish second; Senegal 5-0 Iraq)",
+    "https://www.aljazeera.com/sports/2026/6/26/which-teams-have-qualified-for-the-world-cup-2026-knockouts-round-of-32 (Confirmed group winners and qualifiers; Cape Verde reach knockouts on debut)",
+    "https://www.espn.com/soccer/story/_/id/48939282/2026-fifa-world-cup-fixtures-results-match-schedule-group-stage-knockout-rounds-bracket (Round of 32 schedule: USA v Bosnia and Herzegovina July 1 Santa Clara; Japan v Brazil)",
+    "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup (48 teams, 12 groups; top two plus eight best third-placed teams advance to the round of 32)",
+    "https://www.olympics.com/en/news/fifa-world-cup-2026-france-v-norway-mbappe-haaland-battle-golden-boot-live (France 4-1 Norway match report; Dembele hat-trick)"
+  ]
+}

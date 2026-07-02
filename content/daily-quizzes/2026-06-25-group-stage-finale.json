@@ -1,0 +1,131 @@
+{
+  "date": "2026-06-25",
+  "series": "wc2026",
+  "name": "Group Stage Finale Into the Last 32",
+  "parameter": "World Cup 2026 Group Stage Finale",
+  "type": "records",
+  "icon": "🏆",
+  "angle": "The 2026 group stage closes out: Brazil and Mexico finish with perfect intent, South Africa go through, Ronaldo writes another record line, and the 32 names for the knockouts take shape.",
+  "questions": [
+    {
+      "difficulty": "easy",
+      "category": "group_c",
+      "question": "Brazil sealed top spot in Group C on Wednesday with a 3-0 win over which side, leaving their World Cup hopes hanging by a thread?",
+      "options": { "A": "Scotland", "B": "Wales", "C": "Republic of Ireland", "D": "Norway" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "brazil",
+      "question": "Which Real Madrid forward scored both of Brazil's first two goals in the 3-0 win over Scotland?",
+      "options": { "A": "Vinicius Junior", "B": "Rodrygo", "C": "Raphinha", "D": "Endrick" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "brazil",
+      "question": "Who came off the Brazil bench against Scotland to make his first appearance for the national team in roughly three years?",
+      "options": { "A": "Neymar", "B": "Dani Alves", "C": "Marcelo", "D": "Philippe Coutinho" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "upsets",
+      "question": "Tournament debutants Cape Verde produced one of the World Cup's great shocks by holding European champions Spain to a 0-0 draw. Which goalkeeper kept the clean sheet?",
+      "options": { "A": "Vozinha", "B": "Andre Onana", "C": "Edouard Mendy", "D": "Yassine Bounou" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "hosts",
+      "question": "Mexico beat Czechia 3-0 at the Azteca to achieve which feat for the first time in their long World Cup history?",
+      "options": { "A": "Win all three group games", "B": "Keep three clean sheets in a group", "C": "Top a group as hosts", "D": "Reach the knockouts without conceding" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "records",
+      "question": "Coming off the bench against Czechia, 40-year-old Guillermo Ochoa featured at his sixth World Cup, joining which two players as the only men to appear at six?",
+      "options": { "A": "Messi and Ronaldo", "B": "Modric and Ronaldo", "C": "Messi and Muller", "D": "Buffon and Ronaldo" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "group_stage",
+      "question": "A 1-0 win over South Korea booked which nation's place in the round of 32?",
+      "options": { "A": "South Africa", "B": "Nigeria", "C": "Senegal", "D": "Ghana" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "selection",
+      "question": "South Korea's hopes faded after head coach Hong Myung-bo made the controversial call to leave which captain out of his starting line-up?",
+      "options": { "A": "Son Heung-min", "B": "Lee Kang-in", "C": "Kim Min-jae", "D": "Hwang Hee-chan" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "records",
+      "question": "Cristiano Ronaldo's brace in Portugal's 5-0 win over Uzbekistan made him the first player ever to score at how many different World Cups?",
+      "options": { "A": "Six", "B": "Five", "C": "Seven", "D": "Four" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "records",
+      "question": "Ronaldo, scoring at 41, became the second-oldest goalscorer in World Cup history. Who remains the oldest, having struck for Cameroon at USA 94?",
+      "options": { "A": "Roger Milla", "B": "Rigobert Song", "C": "Samuel Eto'o", "D": "Thomas N'Kono" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "group_stage",
+      "question": "Croatia ground out a 1-0 win over Panama, the only goal coming from which striker?",
+      "options": { "A": "Ante Budimir", "B": "Andrej Kramaric", "C": "Bruno Petkovic", "D": "Marko Livaja" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "group_stage",
+      "question": "Colombia edged DR Congo 1-0 thanks to a second goal in two games from which marauding full-back?",
+      "options": { "A": "Daniel Munoz", "B": "Johan Mojica", "C": "Santiago Arias", "D": "Deiver Machado" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "group_c",
+      "question": "Morocco beat Haiti 4-2 but finished second in Group C, level on seven points with Brazil. What edged them out of top spot?",
+      "options": { "A": "Goal difference", "B": "Head-to-head record", "C": "Disciplinary points", "D": "Goals scored" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "format",
+      "question": "This is the first World Cup with 48 teams and a round of 32. How many of the third-placed sides across the 12 groups advance to that round?",
+      "options": { "A": "Eight", "B": "Four", "C": "Twelve", "D": "Six" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "expert",
+      "category": "history",
+      "question": "Vinicius became only the fifth Brazilian to score in all three group matches at a World Cup. Which forward set the benchmark by scoring in every match of Brazil's victorious 1970 campaign?",
+      "options": { "A": "Jairzinho", "B": "Pele", "C": "Tostao", "D": "Gerson" },
+      "answer": "A"
+    }
+  ],
+  "sources": [
+    "https://www.espn.com/soccer/story/_/id/49167442/scotland-0-3-brazil-vinicius-junior-leaves-tartan-army-2026-world-cup-hopes-serious-jeopardy-miami (Scotland 0-3 Brazil, June 25 — Vinicius brace, Cunha, Brazil top Group C)",
+    "https://www.espn.com/soccer/story/_/id/49169585/vinicius-junior-brazil-scotland-fifa-2026-world-cup-knockout (Vinicius the fifth Brazilian to score in all three group games, joining Jairzinho 1970, Romario 1994, Ronaldo and Rivaldo 2002)",
+    "https://www.sportsmole.co.uk/football/scotland/world-cup-2026/feature/vinicius-junior-seals-group-c-top-spot-as-neymar-marks-long-awaited-return_600025.html (Neymar's first Brazil minutes in 918 days off the bench)",
+    "https://www.espn.com/soccer/story/_/id/49171513/guillermo-ochoa-cameo-seals-perfect-mexico-group-stage (Ochoa sixth-WC cameo; Mexico 3-0 Czechia at the Azteca; first perfect group stage)",
+    "https://www.nbcnews.com/sports/soccer/mexico-routs-czechia-win-3-world-cup-group-matches-1st-time-rcna351702 (Mexico win all three group games for the first time in their history)",
+    "https://www.espn.com/soccer/story/_/id/49172732/world-cup-2026-today-blog-25-06-2026 (June 25 live blog — South Africa 1-0 South Korea, Son benched by Hong Myung-bo; Morocco 4-2 Haiti)",
+    "https://www.aljazeera.com/sports/2026/6/23/ronaldo-scores-twice-as-portugal-thrash-uzbekistan-5-0-at-world-cup-2026 (Ronaldo first to score at six different World Cups; Portugal 5-0 Uzbekistan)",
+    "https://www.espn.com/soccer/story/_/id/49153993/portugal-uzbekistan-live-world-cup-2026 (Ronaldo, 41, second-oldest WC scorer behind Roger Milla)",
+    "https://www.espn.in/espn/story/_/id/49160160/2026-fifa-world-cup-recap-portugal-uzbekistan-ghana-england-croatia-panama-colombia-congo-dr (Day 13 recap — Croatia 1-0 Panama Budimir; Colombia 1-0 DR Congo Munoz)",
+    "https://www.espn.com/soccer/match/_/gameId/760428/cape-verde-spain (Spain 0-0 Cape Verde, June 15 — debutants hold the European champions; Vozinha in goal)",
+    "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup (48 teams, 12 groups, round of 32 with the eight best third-placed sides)",
+    "https://en.wikipedia.org/wiki/Roger_Milla (oldest goalscorer in World Cup history, Cameroon v Russia 1994)",
+    "https://en.wikipedia.org/wiki/Jairzinho (scored in every match of Brazil's 1970 World Cup win)"
+  ]
+}

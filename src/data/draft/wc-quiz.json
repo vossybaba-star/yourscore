@@ -27,7 +27,7 @@
   "questions": [
     {
       "id": "2026-06-11-0",
-      "q": "The 2026 World Cup kicks off today. Which country plays in the opening match?",
+      "q": "Which country played in the opening match of the 2026 World Cup?",
       "options": [
         "Mexico",
         "United States",
@@ -53,7 +53,7 @@
     },
     {
       "id": "2026-06-11-2",
-      "q": "Mexico open the tournament today against which nation?",
+      "q": "Mexico opened the 2026 World Cup against which nation?",
       "options": [
         "South Africa",
         "Nigeria",
@@ -859,7 +859,7 @@
     },
     {
       "id": "2026-06-15-1",
-      "q": "Who are the reigning world champions, due to begin the defence of their title this week?",
+      "q": "Who were the reigning world champions going into the 2026 World Cup?",
       "options": [
         "Argentina",
         "France",
@@ -1665,7 +1665,7 @@
     },
     {
       "id": "2026-06-20-3",
-      "q": "Who scored after just 70 seconds — the fastest goal of the tournament so far — to settle the Scotland game?",
+      "q": "Who scored after just 70 seconds — one of the quickest goals of the 2026 World Cup — to settle the Scotland game?",
       "options": [
         "Hakim Ziyech",
         "Youssef En-Nesyri",
@@ -2133,7 +2133,7 @@
     },
     {
       "id": "2026-06-22-9",
-      "q": "Which fancied side has stuttered to two draws so far, 1-1 with Egypt and 0-0 with Iran, leaving them third in Group G?",
+      "q": "Which fancied side drew 1-1 with Egypt and 0-0 with Iran in the group stage, leaving them third in Group G?",
       "options": [
         "Belgium",
         "Egypt",
@@ -2406,7 +2406,7 @@
     },
     {
       "id": "2026-06-24-0",
-      "q": "Lionel Messi became the all-time leading goalscorer in men's World Cup history this week. Which nation does he captain?",
+      "q": "Lionel Messi, the all-time leading goalscorer in men's World Cup history, captains which nation?",
       "options": [
         "Argentina",
         "Brazil",
@@ -3186,7 +3186,7 @@
     },
     {
       "id": "2026-06-28-0",
-      "q": "The 2026 World Cup reaches its knockout stage today. Which tie opens the Round of 32?",
+      "q": "Which tie opened the Round of 32 at the 2026 World Cup?",
       "options": [
         "South Africa v Canada",
         "Mexico v United States",
@@ -3550,7 +3550,7 @@
     },
     {
       "id": "2026-06-29-13",
-      "q": "Among today's Round of 32 ties, four-time winners Germany are paired with which South American side?",
+      "q": "In the Round of 32, four-time winners Germany were paired with which South American side?",
       "options": [
         "Paraguay",
         "Ecuador",
@@ -3758,7 +3758,7 @@
     },
     {
       "id": "2026-06-30-14",
-      "q": "France continue their Round of 32 campaign today against which Nordic side?",
+      "q": "In the Round of 32, France faced which Nordic side?",
       "options": [
         "Sweden",
         "Norway",

@@ -1,0 +1,127 @@
+{
+  "date": "2026-06-23",
+  "series": "wc2026",
+  "name": "Messi Makes History World Cup 2026",
+  "parameter": "World Cup 2026 Matchday Three Records",
+  "type": "records",
+  "icon": "🐐",
+  "angle": "Monday 22 June was a night for the record books: Lionel Messi became the men's World Cup all-time leading scorer with an 18th goal, Kylian Mbappe drew level with Miroslav Klose on his 100th France cap, and Erling Haaland's double carried Norway into the last 32.",
+  "questions": [
+    {
+      "difficulty": "easy",
+      "category": "records",
+      "question": "Lionel Messi made history on Monday by becoming the all-time leading scorer in men's World Cup history. How many World Cup goals does he now have?",
+      "options": { "A": "18", "B": "16", "C": "21", "D": "15" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "records",
+      "question": "Messi's milestone moved him clear of which Germany striker, the previous men's World Cup record scorer?",
+      "options": { "A": "Miroslav Klose", "B": "Gerd Muller", "C": "Thomas Muller", "D": "Jurgen Klinsmann" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "results",
+      "question": "Messi's double came in Argentina's 2-0 win over which side, a result that sealed top spot in Group J and a place in the knockouts?",
+      "options": { "A": "Austria", "B": "Algeria", "C": "Australia", "D": "Croatia" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "records",
+      "question": "Before his double, Messi missed an early chance to make the night even more emphatic against Austria. What happened?",
+      "options": { "A": "He missed a penalty", "B": "He was shown a yellow card", "C": "He scored an own goal", "D": "He limped off injured" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "records",
+      "question": "Messi arrived at Monday's game level with Klose on 16 World Cup goals thanks to what feat in Argentina's tournament opener against Algeria?",
+      "options": { "A": "A hat-trick", "B": "A single penalty", "C": "A stoppage-time winner", "D": "Two assists and no goals" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "records",
+      "question": "Monday's goals extended a remarkable run for Messi: he has now scored in how many consecutive World Cup matches dating back to 2022?",
+      "options": { "A": "Six", "B": "Three", "C": "Ten", "D": "Four" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "results",
+      "question": "In Monday's late kick-off, Kylian Mbappe scored twice as France beat Iraq 3-0. That double drew him level with Klose on how many World Cup goals?",
+      "options": { "A": "16", "B": "18", "C": "14", "D": "12" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "milestones",
+      "question": "Mbappe's brace against Iraq was extra special, coming on what landmark occasion for the France captain?",
+      "options": { "A": "His 100th cap for France", "B": "His 30th birthday", "C": "His first match as captain", "D": "His 50th World Cup appearance" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "results",
+      "question": "Who scored France's other goal in the 3-0 win over Iraq that confirmed their place in the round of 32?",
+      "options": { "A": "Ousmane Dembele", "B": "Antoine Griezmann", "C": "Olivier Giroud", "D": "Marcus Thuram" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "results",
+      "question": "Erling Haaland scored twice to send Norway into the last 32 with a 3-2 win over which side?",
+      "options": { "A": "Senegal", "B": "Ghana", "C": "Nigeria", "D": "Ivory Coast" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "results",
+      "question": "Norway had to survive a scare as which Senegal forward scored twice, including a stoppage-time consolation?",
+      "options": { "A": "Ismaila Sarr", "B": "Sadio Mane", "C": "Nicolas Jackson", "D": "Boulaye Dia" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "records",
+      "question": "By reaching 18 goals, Messi also passed the overall record across both World Cups, held by Brazil's Marta. On how many World Cup goals did Marta finish?",
+      "options": { "A": "17", "B": "15", "C": "13", "D": "20" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "results",
+      "question": "Algeria came from behind to beat Jordan 2-1 and stay in contention, with which forward grabbing the winning goal?",
+      "options": { "A": "Amine Gouiri", "B": "Riyad Mahrez", "C": "Islam Slimani", "D": "Said Benrahma" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "records",
+      "question": "After Monday's matches, who led the race for the 2026 Golden Boot with five goals, one clear of Mbappe and Haaland?",
+      "options": { "A": "Lionel Messi", "B": "Harry Kane", "C": "Erling Haaland", "D": "Kylian Mbappe" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "expert",
+      "category": "records",
+      "question": "Haaland's brace made him only the second player in the last 50 years to score multiple goals in each of his first two World Cup matches. Who was the first, in 2018?",
+      "options": { "A": "Harry Kane", "B": "Cristiano Ronaldo", "C": "Romelu Lukaku", "D": "Kylian Mbappe" },
+      "answer": "A"
+    }
+  ],
+  "sources": [
+    "https://www.espn.com/soccer/story/_/id/49140402/lionel-messi-world-cup-record-goals-miroslav-klose-all (ESPN — Messi breaks men's World Cup goals record with Austria double; now 18, past Klose's 16; entered on 16 after opener hat-trick; missed early penalty; scored 38th min and late second; Argentina 2-0 Austria secures knockouts)",
+    "https://www.olympics.com/en/news/lionel-messi-record-tournament-goalscorer-fifa-men-football-world-cup-2026 (Olympics.com — Messi all-time men's World Cup top scorer on 18; also passes Marta's overall record of 17; scored in six consecutive World Cup games since 2022)",
+    "https://www.aljazeera.com/sports/2026/6/22/messi-breaks-world-cups-all-time-scoring-record-with-17th-goal-vs-austria (Al Jazeera — Messi 17th and 18th goals vs Austria, breaks tie with Klose)",
+    "https://www.cbssports.com/soccer/news/argentina-austria-live-updates-world-cup-2026-score-result/live/ (CBS Sports — Argentina qualify and win Group J; Messi breaks men's World Cup scoring record)",
+    "https://theanalyst.com/articles/france-vs-iraq-stats-world-cup-2026 (Opta — France 3-0 Iraq; Mbappe brace on 100th France cap, draws level with Klose on 16 World Cup goals; Dembele also scores; weather-affected)",
+    "https://www.beinsports.com/en-us/soccer/fifa-world-cup-2026/articles/france-3-0-iraq-mbappe-marks-100th-cap-with-brace-in-weather-affected-tie-2026-06-23 (beIN Sports — Mbappe marks 100th cap with brace in 3-0 win over Iraq)",
+    "https://theanalyst.com/articles/norway-vs-senegal-stats-world-cup-2026 (Opta — Norway 3-2 Senegal; Pedersen 44', Haaland 48' and 58', Ismaila Sarr 53' and 93'; Norway through to last 32; Haaland second player in 50 years to score multiple goals in each of his first two World Cup matches, after Harry Kane in 2018; Messi 5 tournament goals leads Mbappe and Haaland on 4)",
+    "https://www.espn.com/soccer/match/_/gameId/760455/algeria-jordan (ESPN — Algeria 2-1 Jordan; Amine Gouiri winner)",
+    "https://www.skysports.com/football/norway-vs-senegal/549807 (Sky Sports — Haaland double sends Norway into last 32)"
+  ]
+}

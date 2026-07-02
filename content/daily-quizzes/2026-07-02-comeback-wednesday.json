@@ -1,0 +1,202 @@
+{
+  "date": "2026-07-02",
+  "series": "wc2026",
+  "name": "Comeback Wednesday: England Belgium and USA Reach the Last 16",
+  "parameter": "World Cup 2026 Round of 32",
+  "type": "records",
+  "icon": "🔥",
+  "angle": "The Round of 32 closed on 1 July with a wave of comebacks: Harry Kane's late double rescued England against DR Congo, Belgium roared back from 2-0 down to sink Senegal on the latest goal in World Cup history, and a 10-man United States saw off Bosnia and Herzegovina to reach the last 16.",
+  "questions": [
+    {
+      "difficulty": "easy",
+      "category": "knockouts",
+      "question": "Harry Kane struck twice late on to rescue England in a 2-1 comeback win over which nation in the Round of 32?",
+      "options": {
+        "A": "DR Congo",
+        "B": "Ghana",
+        "C": "Senegal",
+        "D": "Cameroon"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "knockouts",
+      "question": "Belgium came from 2-0 down to win 3-2 after extra time against which side in the Round of 32?",
+      "options": {
+        "A": "Senegal",
+        "B": "Morocco",
+        "C": "Ivory Coast",
+        "D": "Ghana"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "knockouts",
+      "question": "The United States reached the Round of 16 with a 2-0 win over which nation?",
+      "options": {
+        "A": "Bosnia and Herzegovina",
+        "B": "Serbia",
+        "C": "Croatia",
+        "D": "Slovenia"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "fixtures",
+      "question": "England's win over DR Congo set up a Round of 16 tie with which host nation, to be played at the Azteca?",
+      "options": {
+        "A": "Mexico",
+        "B": "United States",
+        "C": "Canada",
+        "D": "Brazil"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "knockouts",
+      "question": "Who converted the extra-time penalty that completed Belgium's comeback win over Senegal?",
+      "options": {
+        "A": "Youri Tielemans",
+        "B": "Kevin De Bruyne",
+        "C": "Romelu Lukaku",
+        "D": "Jeremy Doku"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "knockouts",
+      "question": "Which substitute pulled a goal back late on to ignite Belgium's fightback against Senegal?",
+      "options": {
+        "A": "Romelu Lukaku",
+        "B": "Michy Batshuayi",
+        "C": "Lois Openda",
+        "D": "Charles De Ketelaere"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "knockouts",
+      "question": "Which forward scored the USA's opener against Bosnia before being sent off in the second half?",
+      "options": {
+        "A": "Folarin Balogun",
+        "B": "Christian Pulisic",
+        "C": "Ricardo Pepi",
+        "D": "Josh Sargent"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "records",
+      "question": "The USA's victory was their first World Cup win over a European side since beating which nation in the 2002 opener?",
+      "options": {
+        "A": "Portugal",
+        "B": "Spain",
+        "C": "Italy",
+        "D": "Poland"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "fixtures",
+      "question": "Belgium's reward for beating Senegal is a Round of 16 meeting with which nation?",
+      "options": {
+        "A": "United States",
+        "B": "Mexico",
+        "C": "Canada",
+        "D": "Morocco"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "managers",
+      "question": "Which manager oversaw England's comeback win over DR Congo?",
+      "options": {
+        "A": "Thomas Tuchel",
+        "B": "Gareth Southgate",
+        "C": "Lee Carsley",
+        "D": "Eddie Howe"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "records",
+      "question": "Youri Tielemans' penalty against Senegal, timed at 124 minutes and 44 seconds, set what World Cup record?",
+      "options": {
+        "A": "The latest goal ever scored in a World Cup match",
+        "B": "The fastest penalty in a World Cup match",
+        "C": "The first successful extra-time penalty in a shootout",
+        "D": "The latest red card in a World Cup match"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "knockouts",
+      "question": "DR Congo stunned England with a seventh-minute opener in Atlanta. Which forward scored it?",
+      "options": {
+        "A": "Brian Cipenga",
+        "B": "Cedric Bakambu",
+        "C": "Yoane Wissa",
+        "D": "Silas Katompa"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "knockouts",
+      "question": "Senegal led Belgium 2-0 through Habib Diarra and which winger before the collapse?",
+      "options": {
+        "A": "Ismaila Sarr",
+        "B": "Sadio Mane",
+        "C": "Nicolas Jackson",
+        "D": "Boulaye Dia"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "golden_boot",
+      "question": "Kane's double against DR Congo took his tally for this World Cup to how many goals, keeping him in the Golden Boot race?",
+      "options": {
+        "A": "Five",
+        "B": "Three",
+        "C": "Four",
+        "D": "Six"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "expert",
+      "category": "records",
+      "question": "Malik Tillman's strike against Bosnia was the USA's first World Cup goal direct from a free kick since which player scored against Switzerland in 1994?",
+      "options": {
+        "A": "Eric Wynalda",
+        "B": "Landon Donovan",
+        "C": "Cobi Jones",
+        "D": "Claudio Reyna"
+      },
+      "answer": "A"
+    }
+  ],
+  "sources": [
+    "https://sports.yahoo.com/soccer/article/2026-fifa-world-cup-daily-schedule-every-match-date-kickoff-time-and-venue-for-all-48-teams-234515087.html (1 July R32 results: England 2-1 DR Congo, Belgium 3-2 Senegal, USA 2-0 Bosnia; R16 schedule 4-7 July)",
+    "https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/articles/england-congo-dr-review-highlights (England 2-1 DR Congo; Cipenga 7', Kane 75' & 86'; Congo's first knockout phase; England to face Mexico at the Azteca)",
+    "https://www.aljazeera.com/sports/2026/7/1/kane-double-fires-england-to-comeback-win-over-dr-congo-at-world-cup-2026 (Kane brace comeback; Tuchel's England; Round of 16 tie with Mexico)",
+    "https://www.olympics.com/en/news/fifa-world-cup2026-harry-kane-england-all-time-top-scorer (Kane England's all-time leading World Cup scorer; five for the tournament, in Golden Boot race)",
+    "https://www.skysports.com/football/news/29908/13558804/world-cup-2026-belgium-3-2-senegal-aet-youri-tielemans-extra-time-penalty-winner-wins-last-32-clash (Belgium 3-2 Senegal aet; Diarra 25', Sarr 51', Lukaku sub 86', Tielemans 88' & 125' pen; latest goal in WC history 124:44; 7-min VAR review on Camara foul)",
+    "https://www.thescore.com/news/3561408/belgium-uses-125-th-minute-penalty-to-seal-epic-comeback-win-vs-senegal (Belgium 125th-minute penalty comeback from 2-0 down in Seattle)",
+    "https://www.espn.com/soccer/story/_/id/49243703/usa-folarin-balogun-red-card-bosnia-herzegovina-world-cup-2026 (Balogun scores 45' then red carded for serious foul play; will miss Belgium tie)",
+    "https://www.cbsnews.com/news/world-cup-us-bosnia-herzegovina-round-of-32/ (USA 2-0 Bosnia; Pochettino's side; second-ever WC knockout win; sets up Belgium)",
+    "https://www.fotmob.com/news/ienpc0o5y16x11yvtdvig080q-united-states-2-0-bosnia-herzegovina-tillman-free-kick-seals-last-16-spot-after-balogun-red-card (Tillman 81' free kick; first US WC free-kick goal since Wynalda 1994; first WC win over a European side since Portugal 2002)"
+  ]
+}

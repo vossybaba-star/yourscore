@@ -1,0 +1,203 @@
+{
+  "date": "2026-06-29",
+  "series": "wc2026",
+  "name": "Knockouts Begin: Canada Reach the Last 16 for the First Time",
+  "parameter": "World Cup 2026 Round of 32",
+  "type": "records",
+  "icon": "🍁",
+  "angle": "The knockout stage is under way and the opening Round of 32 tie produced history: Canada beat South Africa 1-0 with a stoppage-time winner to reach the World Cup last 16 for the first time ever, with the heavyweight ties Brazil v Japan, Germany v Paraguay and Netherlands v Morocco to come.",
+  "questions": [
+    {
+      "difficulty": "easy",
+      "category": "hosts",
+      "question": "Canada have reached the knockouts as one of three host nations. Who are the other two co-hosts of the 2026 World Cup?",
+      "options": {
+        "A": "United States and Mexico",
+        "B": "United States and Brazil",
+        "C": "Mexico and Argentina",
+        "D": "United States and England"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "champions",
+      "question": "As the knockout rounds get going, who are the reigning world champions chasing back-to-back titles?",
+      "options": {
+        "A": "Argentina",
+        "B": "France",
+        "C": "Brazil",
+        "D": "Spain"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "format",
+      "question": "This is the first World Cup to stage a Round of 32, a consequence of the field expanding to how many teams?",
+      "options": {
+        "A": "48",
+        "B": "32",
+        "C": "40",
+        "D": "64"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "canada",
+      "question": "Canada beat South Africa 1-0 in the opening Round of 32 tie. Who struck deep in stoppage time to win it?",
+      "options": {
+        "A": "Stephen Eustaquio",
+        "B": "Jonathan David",
+        "C": "Tajon Buchanan",
+        "D": "Cyle Larin"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "canada",
+      "question": "Canada's captain made his tournament debut off the bench against South Africa, having sat out the group stage with a hamstring injury. Who is he?",
+      "options": {
+        "A": "Alphonso Davies",
+        "B": "Jonathan David",
+        "C": "Stephen Eustaquio",
+        "D": "Tajon Buchanan"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "canada",
+      "question": "Which American head coach guided Canada to that historic knockout win, the first manager to win a knockout match at this tournament?",
+      "options": {
+        "A": "Jesse Marsch",
+        "B": "John Herdman",
+        "C": "Bob Bradley",
+        "D": "Gregg Berhalter"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "bracket",
+      "question": "Canada now go to the last 16 for the first time in their history. They will face the winner of which Round of 32 tie?",
+      "options": {
+        "A": "Netherlands v Morocco",
+        "B": "Brazil v Japan",
+        "C": "Germany v Paraguay",
+        "D": "Argentina v Cape Verde"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "format",
+      "question": "Alongside the twelve group winners and twelve runners-up, how many of the best third-placed teams advanced to fill the Round of 32?",
+      "options": {
+        "A": "Eight",
+        "B": "Four",
+        "C": "Six",
+        "D": "Twelve"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "venue",
+      "question": "Canada's win over South Africa, the tie that opened the last 32, was staged at which Los Angeles-area stadium?",
+      "options": {
+        "A": "SoFi Stadium",
+        "B": "Rose Bowl",
+        "C": "MetLife Stadium",
+        "D": "Estadio Azteca"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "history",
+      "question": "Canada's only previous World Cup goals came in 2022. Against which nation did they score their first-ever World Cup goal?",
+      "options": {
+        "A": "Croatia",
+        "B": "Belgium",
+        "C": "Morocco",
+        "D": "Spain"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "history",
+      "question": "Who scored that first-ever World Cup goal for Canada, a header in the opening minutes against Croatia in 2022?",
+      "options": {
+        "A": "Alphonso Davies",
+        "B": "Jonathan David",
+        "C": "Cyle Larin",
+        "D": "Junior Hoilett"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "history",
+      "question": "Before this run, Canada had played at only two World Cups. They made their debut in which year, going home without a single goal?",
+      "options": {
+        "A": "1986",
+        "B": "1990",
+        "C": "1994",
+        "D": "2002"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "coach",
+      "question": "Jesse Marsch had reached a World Cup last 16 before, as a United States assistant under Bob Bradley. At which tournament?",
+      "options": {
+        "A": "2010",
+        "B": "2002",
+        "C": "2014",
+        "D": "2018"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "bracket",
+      "question": "In the Round of 32, four-time winners Germany were paired with which South American side?",
+      "options": {
+        "A": "Paraguay",
+        "B": "Ecuador",
+        "C": "Uruguay",
+        "D": "Colombia"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "expert",
+      "category": "history",
+      "question": "Davies' first-ever World Cup goal for Canada against Croatia in 2022 was the fastest of that tournament. How quickly did he score?",
+      "options": {
+        "A": "After 68 seconds",
+        "B": "After 29 seconds",
+        "C": "After four minutes",
+        "D": "After eleven minutes"
+      },
+      "answer": "A"
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_knockout_stage (South Africa 0-1 Canada at SoFi Stadium, Inglewood; Eustaquio 90+2; only Round of 32 match on 28 June; 29 June ties Brazil v Japan, Germany v Paraguay, Netherlands v Morocco)",
+    "https://sports.yahoo.com/soccer/live/world-cup-2026-scores-results-schedule-live-updates-round-of-32-173000083.html (Eustaquio stoppage-time winner; Alphonso Davies tournament debut off the bench after group-stage hamstring; Canada reach Round of 16 for first time; face winner of Netherlands v Morocco)",
+    "https://www.thenationalnews.com/sport/world-cup-2026/2026/06/29/world-cup-2026-jesse-marsch-gives-us-cold-shoulder-after-canada-seal-last-16-place/ (Jesse Marsch, Canada head coach, seals last-16 place)",
+    "https://worldsoccertalk.com/amp/world-cup/you-guys-are-canadian-heroes-jesse-marschs-emotional-speech-after-canadas-historic-world-cup-win-over-south-africa/ (Marsch's post-match speech; historic win over South Africa)",
+    "https://www.espn.com/soccer/story/_/id/49010574/snubbed-us-jesse-marsch-marches-canada-world-cup-mission (Marsch, first American to coach Canada; was USA assistant under Bob Bradley at the 2010 World Cup last 16; first manager to win a knockout game at the 2026 tournament)",
+    "https://www.mlssoccer.com/news/alphonso-davies-scores-canada-s-first-world-cup-goal-against-croatia (Davies scores Canada's first-ever World Cup goal, a header, against Croatia in 2022)",
+    "https://www.foxsports.com/stories/soccer/canadas-first-ever-world-cup-goal-even-in-blowout-loss-sparks-hope (Davies' goal came after 68 seconds, the fastest of the 2022 World Cup; Canada's first-ever World Cup goal)",
+    "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup (48-team format; group winners and runners-up plus eight best third-placed teams advance to the Round of 32)",
+    "https://en.wikipedia.org/wiki/Canada_at_the_FIFA_World_Cup (Canada's debut at the 1986 World Cup, lost all three matches without scoring; previous appearances 1986 and 2022)",
+    "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup (co-hosts United States, Canada and Mexico; reigning champions Argentina, winners in 2022)"
+  ]
+}

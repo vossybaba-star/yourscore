@@ -1,0 +1,125 @@
+{
+  "date": "2026-06-18",
+  "name": "Record Book Rewritten: World Cup 2026 Milestone Week",
+  "parameter": "World Cup 2026 Records Week",
+  "type": "records",
+  "icon": "📖",
+  "angle": "The opening round of WC2026 rewrote the record book: Messi's first World Cup hat-trick drew him level with Klose's all-time scoring record at a record sixth tournament, while Mbappe, Kane, Haaland and debutants Cape Verde all left their mark.",
+  "questions": [
+    {
+      "difficulty": "easy",
+      "category": "messi",
+      "question": "Lionel Messi opened his sixth World Cup with his first-ever hat-trick at the tournament. Which side did Argentina beat 3-0 to begin their title defence?",
+      "options": { "A": "Algeria", "B": "Nigeria", "C": "Morocco", "D": "Egypt" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "defending_champions",
+      "question": "Argentina arrived in 2026 as defending champions. Where did they lift the trophy in 2022?",
+      "options": { "A": "Qatar", "B": "Russia", "C": "Brazil", "D": "Germany" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "mbappe",
+      "question": "Kylian Mbappe became which nation's all-time leading scorer during their opening 3-1 win over Senegal?",
+      "options": { "A": "France", "B": "Belgium", "C": "Portugal", "D": "Spain" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "all_time_scorers",
+      "question": "Messi's treble carried him to 16 World Cup goals, level with the tournament's all-time leading scorer. Who holds that record alongside him?",
+      "options": { "A": "Miroslav Klose", "B": "Ronaldo Nazario", "C": "Gerd Muller", "D": "Just Fontaine" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "world_cup_appearances",
+      "question": "Messi and Cristiano Ronaldo share a new distinction in 2026. They are the first players ever to do what?",
+      "options": { "A": "Appear at six different World Cups", "B": "Score at six different World Cups", "C": "Captain a side at six World Cups", "D": "Win the Golden Boot twice" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "mbappe",
+      "question": "Mbappe's double against Senegal took him past Olivier Giroud at the top of France's scoring chart. What was his new national tally?",
+      "options": { "A": "58", "B": "52", "C": "61", "D": "49" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "haaland",
+      "question": "Erling Haaland scored twice on his long-awaited World Cup debut in a 4-1 Norway win. Who were the opponents, themselves back on the biggest stage after a 40-year wait?",
+      "options": { "A": "Iraq", "B": "Iran", "C": "Saudi Arabia", "D": "Egypt" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "debutants",
+      "question": "The shock of the opening round saw World Cup debutants Cape Verde hold a heavyweight to a goalless draw. Which reigning European champions did they frustrate?",
+      "options": { "A": "Spain", "B": "Italy", "C": "Germany", "D": "Portugal" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "england",
+      "question": "England began with a chaotic 4-2 win over Croatia. Who scored twice for the Three Lions, including an early penalty?",
+      "options": { "A": "Harry Kane", "B": "Jude Bellingham", "C": "Marcus Rashford", "D": "Noni Madueke" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "portugal",
+      "question": "Ronaldo's sixth World Cup opened with a frustrating 1-1 draw. Which side earned their first-ever World Cup point against Portugal?",
+      "options": { "A": "DR Congo", "B": "Ghana", "C": "Senegal", "D": "Morocco" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "ronaldo_record",
+      "question": "By starting against DR Congo at 41 years old, Ronaldo set which World Cup record?",
+      "options": { "A": "Oldest outfield player to start a World Cup match", "B": "Oldest goalscorer in World Cup history", "C": "Oldest captain at a World Cup", "D": "Oldest player ever to appear at a World Cup" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "england_records",
+      "question": "Harry Kane's opener against Croatia was his 10th World Cup goal, drawing him level with England's tournament record holder. Who is that?",
+      "options": { "A": "Gary Lineker", "B": "Geoff Hurst", "C": "Bobby Charlton", "D": "Wayne Rooney" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "mbappe",
+      "question": "Mbappe broke the France record in spectacular fashion against Senegal. How did the milestone goal arrive?",
+      "options": { "A": "A long-range strike deep in stoppage time", "B": "A header from a corner", "C": "A penalty", "D": "A close-range tap-in" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "debutants",
+      "question": "Cape Verde's clean sheet against Spain owed much to a veteran goalkeeper who made a string of saves. Roughly how old is their hero, Vozinha?",
+      "options": { "A": "40", "B": "33", "C": "36", "D": "28" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "expert",
+      "category": "england_records",
+      "question": "Jude Bellingham's strike against Croatia made him only the third man to score at two different World Cups before turning 23. Which two legends were already in that group?",
+      "options": { "A": "Pele and Michael Owen", "B": "Pele and Kylian Mbappe", "C": "Diego Maradona and Michael Owen", "D": "Pele and Wayne Rooney" },
+      "answer": "A"
+    }
+  ],
+  "sources": [
+    "https://www.aljazeera.com/sports/2026/6/17/lionel-messi-rewrites-history-books-at-record-sixth-world-cup (Messi hat-trick v Algeria, Argentina 3-0 in Kansas City; reaches 16 WC goals to equal Klose; first player to appear at six World Cups)",
+    "https://www.skysports.com/football/news/world-cup/kylian-mbappe-france-all-time-top-scorer (Mbappe brace v Senegal in 3-1 win; reaches 58 to pass Giroud as France's all-time top scorer; record-breaker a long-range strike in stoppage time)",
+    "https://www.skysports.com/football/news/13552715/world-cup-2026-iraq-1-4-norway-erling-haaland-scores-twice-on-tournament-debut-as-stale-solbakkens-side-make-winning-start (Haaland double on WC debut; Norway 4-1 Iraq; Iraq back after 40-year absence)",
+    "https://www.espn.com/soccer/story/_/id/49074414/spain-world-cup-shock-draw-cape-verde-lamine-yamal (Spain 0-0 Cape Verde; European champions held by debutants)",
+    "https://www.espn.com/soccer/story/_/id/49071783/spain-cape-verde-live-world-cup-2026-latest-updates-commentary-score-result (40-year-old keeper Vozinha makes seven saves; Cape Verde's historic debut point)",
+    "https://www.cbssports.com/soccer/news/england-vs-croatia-live-updates-world-cup-2026-score-result/live/ (England 4-2 Croatia; Kane brace incl. 12th-min penalty, Bellingham and Rashford also score)",
+    "https://www.aljazeera.com/sports/2026/6/17/portugal-held-to-1-1-draw-by-dr-congo-in-their-world-cup-2026-opener (Portugal 1-1 DR Congo; Congo's first WC point; Ronaldo equals Messi on six World Cups)",
+    "https://www.espn.com/soccer/story/_/id/49101842/fifa-world-cup-2026-stats-cristiano-ronaldo-0-10-record-41-ivan-perisic-equal-lionel-messi-jude-bellingham-join-pele-michael-owen (Ronaldo at 41y123d oldest outfield player to start a WC game; Kane's 10th WC goal ties Lineker; Bellingham 3rd to score at two WCs before 23, joining Pele and Owen)"
+  ]
+}

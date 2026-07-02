@@ -1,0 +1,126 @@
+{
+  "date": "2026-06-15",
+  "name": "Opening Matchday Verdicts",
+  "parameter": "World Cup 2026 Opening Matchday",
+  "type": "records",
+  "icon": "⚽",
+  "angle": "A serious read of the 2026 World Cup's opening round of group games: Scotland ending a 36-year wait for a World Cup win, Brazil pegged back by Morocco, the USA's four-goal answer to Paraguay and Australia's upset of Turkiye. Built for fans who watched.",
+  "questions": [
+    {
+      "difficulty": "easy",
+      "category": "opening_match",
+      "question": "Mexico opened the 2026 World Cup with a 2-0 win in Mexico City over which side?",
+      "options": { "A": "South Africa", "B": "Nigeria", "C": "Egypt", "D": "Senegal" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "hosts",
+      "question": "The United States began their home campaign with a 4-1 win over which South American side?",
+      "options": { "A": "Paraguay", "B": "Uruguay", "C": "Ecuador", "D": "Colombia" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "australia",
+      "question": "Australia produced one of the opening round's biggest upsets, beating which side 2-0?",
+      "options": { "A": "Turkiye", "B": "Germany", "C": "Croatia", "D": "Japan" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "usa",
+      "question": "Alongside Folarin Balogun's brace, which playmaker was also on the scoresheet in the United States' 4-1 win over Paraguay?",
+      "options": { "A": "Gio Reyna", "B": "Christian Pulisic", "C": "Weston McKennie", "D": "Tyler Adams" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "usa",
+      "question": "The United States' 4-1 win over Paraguay was led by a brace from which striker?",
+      "options": { "A": "Folarin Balogun", "B": "Christian Pulisic", "C": "Ricardo Pepi", "D": "Josh Sargent" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "brazil",
+      "question": "Brazil were held to a 1-1 draw by Morocco. Who scored Brazil's equaliser?",
+      "options": { "A": "Vinicius Junior", "B": "Rodrygo", "C": "Raphinha", "D": "Endrick" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "scotland",
+      "question": "Scotland beat Haiti 1-0 to go top of Group C, thanks to a deflected first-half strike from which midfielder?",
+      "options": { "A": "John McGinn", "B": "Scott McTominay", "C": "Che Adams", "D": "Ben Doak" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "asia",
+      "question": "Korea Republic recovered from a goal down to win their opener against which European side?",
+      "options": { "A": "Czechia", "B": "Croatia", "C": "Poland", "D": "Slovakia" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "canada",
+      "question": "Co-hosts Canada were held to a 1-1 draw in their opening game by whom?",
+      "options": { "A": "Bosnia and Herzegovina", "B": "Serbia", "C": "North Macedonia", "D": "Albania" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "group_b",
+      "question": "Switzerland dominated possession and shots but were pegged back to a 1-1 draw by which side?",
+      "options": { "A": "Qatar", "B": "Saudi Arabia", "C": "United Arab Emirates", "D": "Iraq" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "discipline",
+      "question": "Mexico's 2-0 win over South Africa, settled by Julian Quinones and Raul Jimenez, was marred by how many red cards?",
+      "options": { "A": "Three", "B": "One", "C": "Two", "D": "Zero" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "australia",
+      "question": "Australia's surprise 2-0 win over Turkiye was opened by a 27th-minute goal from which young winger?",
+      "options": { "A": "Nestory Irankunda", "B": "Connor Metcalfe", "C": "Riley McGree", "D": "Mitchell Duke" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "morocco",
+      "question": "Which midfielder gave Morocco an early lead against Brazil before Vinicius Junior levelled?",
+      "options": { "A": "Ismael Saibari", "B": "Hakim Ziyech", "C": "Sofyan Amrabat", "D": "Youssef En-Nesyri" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "qatar",
+      "question": "Qatar's late equaliser against Switzerland was scored by which experienced campaigner?",
+      "options": { "A": "Boualem Khoukhi", "B": "Akram Afif", "C": "Almoez Ali", "D": "Hassan Al-Haydos" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "expert",
+      "category": "scotland_history",
+      "question": "Scotland's win over Haiti was their first at a World Cup since 1990. Which unwanted World Cup record do they hold?",
+      "options": { "A": "Most appearances without ever reaching the knockout stage", "B": "Most red cards at a single World Cup", "C": "Most consecutive goalless draws", "D": "Most penalty shootout defeats" },
+      "answer": "A"
+    }
+  ],
+  "sources": [
+    "https://www.skysports.com/football/news/12098/13552605/world-cup-2026-mexico-2-0-south-africa-julian-quinones-and-raul-jimenez-score-as-co-hosts-win-opener-in-game-of-three-red-cards (Sky Sports — Mexico 2-0 South Africa; Quinones and Jimenez; three red cards)",
+    "https://www.cbssports.com/soccer/news/mexico-vs-south-africa-live-updates-world-cup-2026-score-result/live/ (CBS — Mexico 2-0 South Africa, three red cards)",
+    "https://sports.yahoo.com/soccer/live/2026-world-cup-scores-results-usmnt-throttles-paraguay-canada-earns-draw-with-bosnia-and-herzegovina-145258177.html (Yahoo live blog — USA 4-1 Paraguay, Balogun brace + Reyna; Canada 1-1 Bosnia, Larin)",
+    "https://sports.yahoo.com/soccer/live/2026-world-cup-schedule-scores-results-brazil-morocco-qatar-switzerland-australia-turkey-haiti-scotland-saturday-group-stage-play-145258957.html (Yahoo — Brazil 1-1 Morocco: Saibari then Vinicius Junior; Scotland 1-0 Haiti: McGinn; Australia 2-0 Turkiye: Irankunda 27', Metcalfe 75'; Switzerland 1-1 Qatar: Khoukhi late)",
+    "https://www.espn.com/soccer/story/_/id/49055260/haiti-scotland-world-cup-2026-result-score-recap-john-mcginn-ben-gannon-doak-group-c (ESPN — Haiti 0-1 Scotland, McGinn, Group C; first World Cup win since 1990)",
+    "https://theanalyst.com/articles/haiti-vs-scotland-stats-world-cup-2026 (Opta Analyst — McGinn ends 28-year World Cup wait; Scotland's first scorer since Craig Burley 1998)",
+    "https://www.guinnessworldrecords.com/world-records/484472-most-appearances-by-a-football-soccer-nation-at-the-fifa-world-cup-without-qual (Guinness World Records — Scotland: most World Cup appearances without reaching the second round)",
+    "https://www.cbssports.com/soccer/news/world-cup-group-standings-table-results/ (CBS — Korea Republic comeback win over Czechia; group standings)",
+    "https://en.wikipedia.org/wiki/2022_FIFA_World_Cup_Final (Argentina beat France on penalties; Messi captain)"
+  ]
+}

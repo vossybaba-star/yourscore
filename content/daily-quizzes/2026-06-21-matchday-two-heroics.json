@@ -1,0 +1,126 @@
+{
+  "date": "2026-06-21",
+  "name": "Matchday Two Heroics at World Cup 2026",
+  "parameter": "World Cup 2026 Matchday Two",
+  "type": "records",
+  "icon": "🧤",
+  "angle": "A standout second round of group games: debutants Curacao held Ecuador 0-0 behind a 15-save goalkeeping display from Eloy Room, Germany came from behind through a Deniz Undav brace, and the Netherlands tore Sweden apart 5-1.",
+  "questions": [
+    {
+      "difficulty": "easy",
+      "category": "curacao",
+      "question": "World Cup debutants Curacao earned their first ever point on Saturday with a goalless draw. Which side did they hold?",
+      "options": { "A": "Ecuador", "B": "Colombia", "C": "Uruguay", "D": "Paraguay" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "saves_record",
+      "question": "Curacao goalkeeper Eloy Room kept Ecuador out almost single-handedly. How many saves did he make in the 0-0 draw, one short of the World Cup single-match record?",
+      "options": { "A": "15", "B": "11", "C": "18", "D": "9" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "goalkeepers",
+      "question": "Room finished a save short of the World Cup single-game record of 16, set in the 2014 round of 16 against Belgium. Which goalkeeper holds that record?",
+      "options": { "A": "Tim Howard", "B": "Guillermo Ochoa", "C": "Keylor Navas", "D": "Manuel Neuer" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "world_cup_minnows",
+      "question": "Curacao's appearance makes them the smallest nation by population ever to play at a men's World Cup. Which 2018 debutant had previously held that distinction?",
+      "options": { "A": "Iceland", "B": "Panama", "C": "Trinidad and Tobago", "D": "Slovenia" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "qualification",
+      "question": "From which confederation did Curacao, a Caribbean island side, qualify for the World Cup?",
+      "options": { "A": "CONCACAF", "B": "CONMEBOL", "C": "CAF", "D": "UEFA" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "germany",
+      "question": "Germany came from behind to win 2-1 in Toronto on Saturday. Which side did they beat?",
+      "options": { "A": "Ivory Coast", "B": "Senegal", "C": "Ghana", "D": "Nigeria" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "comeback",
+      "question": "Germany's comeback was driven by a substitute who scored twice after coming on around the hour mark. Who was it?",
+      "options": { "A": "Deniz Undav", "B": "Nick Woltemade", "C": "Kai Havertz", "D": "Niclas Fuellkrug" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "ivory_coast",
+      "question": "Which Ivory Coast captain gave his side a shock first-half lead against Germany before Undav's late double turned the game?",
+      "options": { "A": "Franck Kessie", "B": "Sebastien Haller", "C": "Simon Adingra", "D": "Nicolas Pepe" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "netherlands",
+      "question": "The biggest win of the day was a 5-1 rout by the Netherlands. Which Scandinavian side did they put to the sword?",
+      "options": { "A": "Sweden", "B": "Denmark", "C": "Norway", "D": "Finland" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "dutch_attack",
+      "question": "Two Dutch forwards scored braces in the win over Sweden: Cody Gakpo and which striker, who struck twice in the first half?",
+      "options": { "A": "Brian Brobbey", "B": "Memphis Depay", "C": "Wout Weghorst", "D": "Donyell Malen" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "brazil",
+      "question": "Brazil eased past Haiti 3-0 on the same day. Which forward scored twice for the Selecao?",
+      "options": { "A": "Matheus Cunha", "B": "Vinicius Junior", "C": "Raphinha", "D": "Rodrygo" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "format",
+      "question": "Germany's victory booked their place in which stage of the expanded 48-team tournament?",
+      "options": { "A": "Round of 32", "B": "Round of 16", "C": "Quarter-finals", "D": "Knockout play-off" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "scotland",
+      "question": "Scotland were stunned by Morocco on Friday, losing 1-0 to an Ismael Saibari strike. How early did the goal come?",
+      "options": { "A": "Inside the first two minutes", "B": "Just before half-time", "C": "Midway through the second half", "D": "In stoppage time" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "debut",
+      "question": "Curacao's gritty point against Ecuador came after a chastening tournament opener. What was the score in that first match against Germany?",
+      "options": { "A": "7-1", "B": "4-0", "C": "3-0", "D": "5-1" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "hosts",
+      "question": "The 2026 World Cup is being co-hosted by the United States, Canada and which other nation?",
+      "options": { "A": "Mexico", "B": "Brazil", "C": "Costa Rica", "D": "Argentina" },
+      "answer": "A"
+    }
+  ],
+  "sources": [
+    "https://sports.yahoo.com/soccer/article/2026-world-cup-eloy-rooms-15-save-masterclass-helps-curacao-stun-ecuador-in-0-0-draw-020003395.html (Eloy Room 15 saves; Curacao smallest nation ever; first WC point; Tim Howard's 16-save record in 2014 R16 v Belgium; Curacao opened with a 7-1 loss to Germany)",
+    "https://www.espn.com/soccer/match/_/gameId/760448/ivory-coast-germany (Germany 2-1 Ivory Coast, Toronto, 20 June 2026)",
+    "https://www.outlookindia.com/sports/football/germany-vs-ivory-coast-live-score-fifa-world-cup-2026-group-e-ger-civ-updates-toronto-stadium-highlights (Kessie opener 30'; Undav introduced ~60', brace 68' and 94'; Germany into Round of 32)",
+    "https://www.bavarianfootballworks.com/fifa-world-cup/219089/match-analysis-observations-world-cup-germany-ivory-coast (Germany 2-1 Ivory Coast analysis; Undav brace)",
+    "https://www.espn.com/soccer/story/_/id/49126635/netherlands-sweden-live-world-cup-2026-latest-updates-commentary-score-result (Netherlands 5-1 Sweden, Houston)",
+    "https://www.outlookindia.com/sports/football/netherlands-vs-sweden-live-score-fifa-world-cup-2026-group-f-ned-v-swe-updates-houston-stadium-highlights (Brobbey first-half brace; Gakpo second-half brace; Summerville; Elanga consolation)",
+    "https://www.skysports.com/football/brazil-vs-haiti/549794 (Brazil 3-0 Haiti; Matheus Cunha 23' and 36'; Vinicius Jr 45+3')",
+    "https://www.espn.com/soccer/story/_/id/49119000/scotland-vs-morocco-latest-updates-commentary-score-world-cup-2026-live-result (Scotland 0-1 Morocco; Ismael Saibari scores after 72 seconds)",
+    "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup (48-team format with USA, Canada and Mexico as co-hosts; Round of 32)"
+  ]
+}

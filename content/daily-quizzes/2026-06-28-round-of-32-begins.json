@@ -1,0 +1,128 @@
+{
+  "date": "2026-06-28",
+  "series": "wc2026",
+  "name": "The Bracket Is Set: World Cup Round of 32 Begins",
+  "parameter": "World Cup 2026 Round of 32",
+  "type": "records",
+  "icon": "🏆",
+  "angle": "The group stage is done and the knockout bracket is locked: the 2026 World Cup reaches its first-ever Round of 32 today, with South Africa v Canada opening the last 32 and the field shaped by a wild final matchday of third-place drama.",
+  "questions": [
+    {
+      "difficulty": "easy",
+      "category": "round_of_32",
+      "question": "Which tie opened the Round of 32 at the 2026 World Cup?",
+      "options": { "A": "South Africa v Canada", "B": "Mexico v United States", "C": "Brazil v Japan", "D": "Argentina v Cape Verde" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "format",
+      "question": "This is the first World Cup to feature a Round of 32, a direct consequence of the tournament expanding to how many teams?",
+      "options": { "A": "48", "B": "32", "C": "40", "D": "64" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "contenders",
+      "question": "Who enter the knockout rounds as reigning world champions?",
+      "options": { "A": "Argentina", "B": "France", "C": "Brazil", "D": "Spain" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "format",
+      "question": "Under the 48-team format, the group runners-up are joined in the last 32 by how many of the best third-placed teams?",
+      "options": { "A": "Eight", "B": "Four", "C": "Twelve", "D": "Six" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "cape_verde",
+      "question": "Reaching the last 32 on their tournament debut, which side became the smallest nation by population ever to make a World Cup knockout stage?",
+      "options": { "A": "Cape Verde", "B": "Curacao", "C": "New Zealand", "D": "Panama" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "cape_verde",
+      "question": "Cape Verde's reward for finishing runners-up in Group H is a Round of 32 tie in Miami against which opponent?",
+      "options": { "A": "Argentina", "B": "Brazil", "C": "France", "D": "Spain" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "group_stage",
+      "question": "Ecuador beat Germany 2-1 on the final group day to sneak through as a best third-placed side. Despite the defeat, Germany still managed what?",
+      "options": { "A": "Won Group E", "B": "Were eliminated", "C": "Finished bottom of the group", "D": "Failed to score in the group" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "group_stage",
+      "question": "Who struck in the 77th minute to complete Ecuador's comeback win over Germany?",
+      "options": { "A": "Gonzalo Plata", "B": "Enner Valencia", "C": "Moises Caicedo", "D": "Kendry Paez" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "first_timers",
+      "question": "Ivory Coast reached a World Cup knockout stage for the first time in their history, advancing as runners-up behind which group winners?",
+      "options": { "A": "Germany", "B": "Brazil", "C": "Spain", "D": "France" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "dr_congo",
+      "question": "DR Congo reached the knockout rounds for the first time ever with a 3-1 comeback over Uzbekistan. Who awaits them in the Round of 32?",
+      "options": { "A": "England", "B": "Belgium", "C": "France", "D": "Portugal" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "dr_congo",
+      "question": "Which forward scored twice in DR Congo's comeback win over Uzbekistan?",
+      "options": { "A": "Yoane Wissa", "B": "Cedric Bakambu", "C": "Silas Katompa", "D": "Theo Bongonda" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "algeria",
+      "question": "A Riyad Mahrez double rescued a 3-3 draw that booked Algeria's place in the last 32. Which side did they draw with?",
+      "options": { "A": "Austria", "B": "Norway", "C": "Switzerland", "D": "Croatia" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "fine_margins",
+      "question": "Algeria's late drama in that 3-3 draw bumped which nation out of the eight best third-placed places, ending their tournament?",
+      "options": { "A": "Iran", "B": "South Korea", "C": "Saudi Arabia", "D": "Uzbekistan" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "hosts",
+      "question": "Mexico topped Group A with a perfect record and now host a Round of 32 tie back at the Estadio Azteca. Who do they face?",
+      "options": { "A": "Ecuador", "B": "United States", "C": "Brazil", "D": "Argentina" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "fine_margins",
+      "question": "Algeria scraped into the knockouts as a best third-placed team on how many points?",
+      "options": { "A": "Four", "B": "Three", "C": "Five", "D": "Two" },
+      "answer": "A"
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_knockout_stage (Round of 32 fixtures, dates and venues; South Africa v Canada opens the last 32 on 28 June at SoFi Stadium)",
+    "https://sports.yahoo.com/soccer/article/world-cup-2026-round-of-32-tracker-whos-qualified-whos-eliminated-and-whos-still-alive-164942403.html (full bracket, group winners and runners-up, eight best third-placed teams)",
+    "https://www.aljazeera.com/sports/2026/6/27/cape-verde-qualify-for-world-cup-round-of-32-set-up-date-with-argentina (Cape Verde smallest nation to reach the knockouts; runners-up in Group H; face Argentina in Miami)",
+    "https://en.wikipedia.org/wiki/Cape_Verde_at_the_FIFA_World_Cup (Cape Verde World Cup debut in 2026; smallest-ever nation to reach the knockout rounds)",
+    "https://www.skysports.com/football/news/12098/13556661/world-cup-2026-ecuador-2-1-germany-south-american-side-stun-four-time-winners-to-reach-knockout-stages (Ecuador 2-1 Germany; Germany still win Group E; Ecuador advance third)",
+    "https://www.espn.com/soccer/match/_/gameId/760468/germany-ecuador (Gonzalo Plata 77th-minute winner for Ecuador over Germany)",
+    "https://sports.yahoo.com/soccer/breaking-news/article/2026-world-cup-ecuador-beats-group-e-winner-germany-to-reach-knockout-round-where-theyll-be-joined-by-first-timer-ivory-coast-221316028.html (Ivory Coast reach the knockouts for the first time as Group E runners-up behind Germany)",
+    "https://www.skysports.com/football/news/12098/13556707/world-cup-2026-dr-congo-3-1-uzbekistan-yoane-wissa-stars-as-the-leopards-complete-comeback-win-to-set-up-last-32-clash-against-england (DR Congo 3-1 Uzbekistan; Yoane Wissa scores twice; first-ever knockout berth; face England)",
+    "https://www.thenationalnews.com/sport/world-cup-2026/2026/06/28/riyad-mahrez-goals-send-algeria-through-to-world-cup-round-of-32/ (Mahrez double in a 3-3 draw with Austria; Algeria advance third on four points; Iran eliminated)",
+    "https://www.espn.com/soccer/story/_/id/48939282/2026-fifa-world-cup-fixtures-results-match-schedule-group-stage-knockout-rounds-bracket (Mexico win Group A with a perfect record; Mexico v Ecuador Round of 32 tie at the Estadio Azteca)"
+  ]
+}

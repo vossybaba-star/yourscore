@@ -1,0 +1,129 @@
+{
+  "date": "2026-06-17",
+  "series": "wc2026",
+  "name": "Day Six The Giants Arrive",
+  "parameter": "World Cup 2026 Day Six",
+  "type": "records",
+  "icon": "⭐",
+  "angle": "The heavyweights finally entered the 2026 World Cup on Tuesday, and Day Six belonged to the record books: Lionel Messi's first World Cup hat-trick drew him level with Miroslav Klose as the men's tournament's all-time top scorer, Kylian Mbappe became France's all-time leading scorer, and Erling Haaland marked his long-awaited debut with a brace.",
+  "questions": [
+    {
+      "difficulty": "easy",
+      "category": "argentina",
+      "question": "Lionel Messi scored a hat-trick as Argentina opened their campaign on Tuesday. What was the final score against Algeria?",
+      "options": { "A": "3-0", "B": "2-1", "C": "4-2", "D": "1-0" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "norway",
+      "question": "Erling Haaland scored twice on his long-awaited World Cup debut on Tuesday. Which nation was he playing for?",
+      "options": { "A": "Norway", "B": "Sweden", "C": "Denmark", "D": "Iceland" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "france",
+      "question": "France came from behind to beat Senegal 3-1. Which forward scored twice, including a long-range strike deep in stoppage time?",
+      "options": { "A": "Kylian Mbappe", "B": "Ousmane Dembele", "C": "Marcus Thuram", "D": "Bradley Barcola" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "records",
+      "question": "Messi's hat-trick took him to 16 World Cup goals, drawing him level with which player as the men's tournament's all-time leading scorer?",
+      "options": { "A": "Miroslav Klose", "B": "Cristiano Ronaldo", "C": "Pele", "D": "Gerd Muller" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "records",
+      "question": "At 38, Messi surpassed Cristiano Ronaldo to become the oldest player ever to do what at a World Cup?",
+      "options": { "A": "Score a hat-trick", "B": "Captain a winning side", "C": "Score from open play", "D": "Provide three assists" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "france",
+      "question": "Mbappe's double made him France's all-time leading scorer with 58 goals, moving him past which striker on 57?",
+      "options": { "A": "Olivier Giroud", "B": "Thierry Henry", "C": "Antoine Griezmann", "D": "Just Fontaine" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "norway",
+      "question": "Norway's 4-1 win over Iraq was their first World Cup appearance since which tournament?",
+      "options": { "A": "1998", "B": "1994", "C": "2002", "D": "1990" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "history",
+      "question": "Miroslav Klose, whose World Cup goals record Messi equalled on Tuesday, won the trophy with which country in 2014?",
+      "options": { "A": "Germany", "B": "Brazil", "C": "Italy", "D": "Spain" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "france",
+      "question": "The brace also took Mbappe past Just Fontaine as France's all-time World Cup scorer. How many World Cup goals does Mbappe now have?",
+      "options": { "A": "14", "B": "12", "C": "16", "D": "10" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "group_j",
+      "question": "Austria opened with a 2-1 win on a night that marked their opponents' first-ever World Cup appearance. Which debutants did they beat?",
+      "options": { "A": "Jordan", "B": "Uzbekistan", "C": "Cabo Verde", "D": "Qatar" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "norway",
+      "question": "Norway's rout of Iraq was rounded off by a goal deep into second-half stoppage time. Who scored it?",
+      "options": { "A": "Kristian Thorstvedt", "B": "Leo Ostigard", "C": "Alexander Sorloth", "D": "Martin Odegaard" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "venue",
+      "question": "Messi's hat-trick came at which Kansas City stadium, home to the NFL's Chiefs?",
+      "options": { "A": "Arrowhead Stadium", "B": "MetLife Stadium", "C": "SoFi Stadium", "D": "Mercedes-Benz Stadium" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "norway",
+      "question": "Haaland dragged Norway to the finals as the leading scorer of European qualifying, eight clear of anyone else. How many did he score in the campaign?",
+      "options": { "A": "16", "B": "8", "C": "12", "D": "21" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "records",
+      "question": "Mbappe broke Just Fontaine's France World Cup record, a tally of 13 goals set at a single tournament. In which year did Fontaine score them?",
+      "options": { "A": "1958", "B": "1954", "C": "1966", "D": "1982" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "expert",
+      "category": "records",
+      "question": "Tuesday's treble made Messi both the youngest and oldest goalscorer in Argentina's World Cup history. In which tournament did an 18-year-old Messi score his first World Cup goal?",
+      "options": { "A": "2006", "B": "2010", "C": "2014", "D": "2018" },
+      "answer": "A"
+    }
+  ],
+  "sources": [
+    "https://www.espn.com/espn/story/_/id/49086623/ (ESPN Day 6 recap — France 3-1 Senegal, Norway 4-1 Iraq, Argentina 3-0 Algeria, goalscorers and minutes)",
+    "https://www.espn.com/soccer/story/_/id/49089516/ (ESPN — Messi hat-trick ties Klose with 16th World Cup goal)",
+    "https://abcnews.com/Sports/wireStory/lionel-messi-ties-kloses-world-cup-goals-record-133947306 (AP/ABC — Messi 3-0 v Algeria at Arrowhead; oldest to score a WC hat-trick at 38; 16 goals across six World Cups)",
+    "https://worldsoccertalk.com/world-cup/lionel-messi-breaks-cristiano-ronaldos-record-to-become-oldest-player-ever-to-score-a-world-cup-hat-trick/ (Messi surpasses Ronaldo as oldest WC hat-trick scorer)",
+    "https://www.france24.com/en/sport/20260616-world-cup-2026-france-down-senegal-mbappe-goal-scoring-record-barcola (France 3-1 Senegal — Mbappe becomes France record scorer, 58 goals past Giroud)",
+    "https://www.football365.com/news/france-3-1-senegal-mbappe-becomes-frances-all-time-leading-scorer-kloses-world-cup-record-in-sight (Mbappe to 14 WC goals past Fontaine; two shy of Klose)",
+    "https://www.skysports.com/football/iraq-vs-norway/report/549783 (Iraq 1-4 Norway — Haaland brace on debut; Thorstvedt and Ostigard goals)",
+    "https://www.nbcnews.com/sports/soccer/erling-haaland-double-world-cup-debut-leads-norway-4-1-win-iraq-rcna350449 (Haaland double on debut; Norway's first WC since 1998; 16 goals in UEFA qualifying)",
+    "https://www.fifa.com/en/match-centre/match/17/285023/289273/400021498 (Austria 2-1 Jordan — Jordan's first World Cup match)",
+    "https://en.wikipedia.org/wiki/Just_Fontaine (record 13 goals at the 1958 World Cup)",
+    "https://en.wikipedia.org/wiki/Miroslav_Klose (all-time men's World Cup top scorer, 16; 2014 winner with Germany)"
+  ]
+}

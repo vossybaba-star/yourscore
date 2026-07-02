@@ -1,0 +1,127 @@
+{
+  "date": "2026-06-20",
+  "name": "Fine Margins: Fast Goals and Tight Wins at World Cup 2026",
+  "parameter": "World Cup 2026 second round of group games",
+  "type": "records",
+  "icon": "⏱️",
+  "angle": "Friday's second-round group games were settled in the margins: Ismael Saibari struck after 70 seconds to win the fastest goal of the tournament as Morocco beat Scotland, Matias Galarza's early strike sank Turkiye, the USA clinched a knockout place without the injured Pulisic, Brazil came alive under Ancelotti, and Haiti became the first team out.",
+  "questions": [
+    {
+      "difficulty": "easy",
+      "category": "usa",
+      "question": "The United States clinched a knockout-round place by beating Australia on Friday. What was the score?",
+      "options": { "A": "1-0", "B": "2-0", "C": "3-1", "D": "2-2" },
+      "answer": "B"
+    },
+    {
+      "difficulty": "easy",
+      "category": "brazil",
+      "question": "Brazil's 3-0 win sent which nation home as the first team eliminated from World Cup 2026?",
+      "options": { "A": "Australia", "B": "Qatar", "C": "Haiti", "D": "Uzbekistan" },
+      "answer": "C"
+    },
+    {
+      "difficulty": "easy",
+      "category": "morocco",
+      "question": "Morocco beat Scotland in Boston to take control of their group. What was the final score?",
+      "options": { "A": "3-0", "B": "2-0", "C": "0-0", "D": "1-0" },
+      "answer": "D"
+    },
+    {
+      "difficulty": "medium",
+      "category": "morocco",
+      "question": "Who scored after just 70 seconds — one of the quickest goals of the 2026 World Cup — to settle the Scotland game?",
+      "options": { "A": "Hakim Ziyech", "B": "Youssef En-Nesyri", "C": "Ismael Saibari", "D": "Brahim Diaz" },
+      "answer": "C"
+    },
+    {
+      "difficulty": "medium",
+      "category": "brazil",
+      "question": "Brazil's two-goal hero against Haiti scored twice before Vinicius Junior added the third. Who was he?",
+      "options": { "A": "Raphinha", "B": "Matheus Cunha", "C": "Rodrygo", "D": "Vinicius Junior" },
+      "answer": "B"
+    },
+    {
+      "difficulty": "medium",
+      "category": "usa",
+      "question": "The USA beat Australia despite missing their captain and talisman, ruled out by injury. Who sat it out?",
+      "options": { "A": "Tyler Adams", "B": "Weston McKennie", "C": "Christian Pulisic", "D": "Gio Reyna" },
+      "answer": "C"
+    },
+    {
+      "difficulty": "medium",
+      "category": "paraguay",
+      "question": "Paraguay stunned Turkiye 1-0 with an early strike. Who scored the winner?",
+      "options": { "A": "Matias Galarza", "B": "Julio Enciso", "C": "Antonio Sanabria", "D": "Miguel Almiron" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "groups",
+      "question": "Friday's Brazil v Haiti and Scotland v Morocco fixtures were both played in the same group. Which one?",
+      "options": { "A": "Group A", "B": "Group C", "C": "Group F", "D": "Group H" },
+      "answer": "B"
+    },
+    {
+      "difficulty": "medium",
+      "category": "usa",
+      "question": "The USA's second goal against Australia was finished by a young defender after a VAR offside reversal. Who was it?",
+      "options": { "A": "Sergino Dest", "B": "Folarin Balogun", "C": "Tim Weah", "D": "Alex Freeman" },
+      "answer": "D"
+    },
+    {
+      "difficulty": "medium",
+      "category": "scotland",
+      "question": "Scotland were aggrieved when a late penalty appeal was waved away. Which midfielder went down in the box?",
+      "options": { "A": "John McGinn", "B": "Scott McTominay", "C": "Billy Gilmour", "D": "Ryan Christie" },
+      "answer": "B"
+    },
+    {
+      "difficulty": "hard",
+      "category": "records",
+      "question": "Saibari's strike against Scotland made him the first Morocco player to achieve what?",
+      "options": { "A": "Captain Morocco at a World Cup", "B": "Score in three different World Cups", "C": "Score in consecutive World Cups", "D": "Score a World Cup hat-trick" },
+      "answer": "C"
+    },
+    {
+      "difficulty": "hard",
+      "category": "paraguay",
+      "question": "Paraguay held on to beat Turkiye with ten men after a first-half red card to which forward?",
+      "options": { "A": "Gustavo Gomez", "B": "Omar Alderete", "C": "Miguel Almiron", "D": "Julio Enciso" },
+      "answer": "C"
+    },
+    {
+      "difficulty": "hard",
+      "category": "morocco",
+      "question": "Who supplied the assist for Saibari's winner, lifting the ball over the Scotland defence?",
+      "options": { "A": "Brahim Diaz", "B": "Hakim Ziyech", "C": "Azzedine Ounahi", "D": "Sofyan Amrabat" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "paraguay",
+      "question": "Which Turkiye goalkeeper was beaten by Galarza's early goal as his side dominated possession but lost?",
+      "options": { "A": "Altay Bayindir", "B": "Ugurcan Cakir", "C": "Mert Gunok", "D": "Berke Ozer" },
+      "answer": "B"
+    },
+    {
+      "difficulty": "expert",
+      "category": "brazil",
+      "question": "Brazil's win came under Carlo Ancelotti, the first foreign coach to lead them at a World Cup. As a manager, how many times has he won the Champions League — a record?",
+      "options": { "A": "Three", "B": "Four", "C": "Five", "D": "Six" },
+      "answer": "C"
+    }
+  ],
+  "sources": [
+    "https://www.espn.com/soccer/match/_/gameId/760445/morocco-scotland (ESPN — Scotland 0-1 Morocco, Boston, June 19)",
+    "https://www.aljazeera.com/sports/2026/6/20/morocco-beat-scotland-1-0-as-saibari-scores-fastest-world-cup-2026 (Al Jazeera — Saibari's 70-second goal, fastest of WC2026; first Morocco player to score in consecutive World Cups)",
+    "https://theanalyst.com/articles/scotland-vs-morocco-stats-fifa-world-cup-2026-live (Opta — Brahim Diaz assist; McTominay penalty appeal turned down)",
+    "https://www.skysports.com/football/united-states-of-america-vs-australia/report/549797 (Sky — USA 2-0 Australia, Cameron Burgess own goal + Alex Freeman via VAR; USA clinch knockout spot)",
+    "https://www.npr.org/2026/06/19/nx-s1-5863602/2026-fifa-world-cup-usmnt-australia (NPR — USA top Australia 2-0 without injured Pulisic)",
+    "https://www.espn.com/soccer/story/_/id/49119519/brazil-haiti-live-world-cup-2026-latest-updates-commentary-score-result (ESPN — Brazil 3-0 Haiti: Matheus Cunha brace, Vinicius Junior; Ancelotti's side; Haiti first team eliminated)",
+    "https://www.espn.com/soccer/match/_/gameId/760443/paraguay-turkiye (ESPN — Turkiye 0-1 Paraguay final score)",
+    "https://www.foxsports.com/watch/fmc-ce2628rxscvzc91p (FOX — Matias Galarza early goal past Ugurcan Cakir; Almiron red card; Turkiye 32 shots)",
+    "https://www.cbssports.com/soccer/news/carlo-ancelotti-to-brazil-italian-manager-signs-with-brazil-on-reported-one-year-deal-through-2026-world-cup (CBS — Ancelotti, first foreign coach to lead Brazil at a WC; record five Champions League titles as a manager)",
+    "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_Group_C (Group C — Brazil, Morocco, Scotland, Haiti)"
+  ]
+}

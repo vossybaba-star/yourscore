@@ -1,0 +1,204 @@
+{
+  "date": "2026-07-01",
+  "series": "wc2026",
+  "name": "Knockout Blows: Giants Fall as Messi Rewrites the Record",
+  "parameter": "World Cup 2026 Round of 32",
+  "type": "records",
+  "icon": "🥊",
+  "angle": "The Round of 32 has turned brutal — Germany and the Netherlands were both dumped out on penalties, Haaland dragged Norway into a last-16 date with Brazil, and Lionel Messi now stands alone as the World Cup's all-time leading scorer.",
+  "questions": [
+    {
+      "difficulty": "easy",
+      "category": "knockouts",
+      "question": "Germany crashed out of the World Cup in the Round of 32, beaten on penalties by which unfancied side?",
+      "options": {
+        "A": "Paraguay",
+        "B": "Ecuador",
+        "C": "Bosnia and Herzegovina",
+        "D": "DR Congo"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "knockouts",
+      "question": "Which striker struck a late winner to send Norway past Ivory Coast and into the last 16?",
+      "options": {
+        "A": "Erling Haaland",
+        "B": "Martin Odegaard",
+        "C": "Antonio Nusa",
+        "D": "Alexander Sorloth"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "knockouts",
+      "question": "France eased past Sweden 3-0 in the Round of 32, with which forward scoring twice?",
+      "options": {
+        "A": "Kylian Mbappe",
+        "B": "Ousmane Dembele",
+        "C": "Bradley Barcola",
+        "D": "Randal Kolo Muani"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "scoring_records",
+      "question": "Lionel Messi is now the outright all-time leading goalscorer in World Cup history. Which player did he overtake at the top of the list?",
+      "options": {
+        "A": "Miroslav Klose",
+        "B": "Ronaldo Nazario",
+        "C": "Gerd Muller",
+        "D": "Just Fontaine"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "scoring_records",
+      "question": "The all-time World Cup goals record that Messi has now surpassed had stood at how many goals?",
+      "options": {
+        "A": "16",
+        "B": "13",
+        "C": "18",
+        "D": "14"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "golden_boot",
+      "question": "Messi and which other forward jointly lead the 2026 Golden Boot race, each on six goals?",
+      "options": {
+        "A": "Kylian Mbappe",
+        "B": "Erling Haaland",
+        "C": "Vinicius Junior",
+        "D": "Harry Kane"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "shootouts",
+      "question": "Morocco knocked the Netherlands out on penalties. Which goalkeeper made the decisive save in the shootout?",
+      "options": {
+        "A": "Yassine Bounou",
+        "B": "Andries Noppert",
+        "C": "Munir El Kajoui",
+        "D": "Ahmed Reda Tagnaouti"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "upsets",
+      "question": "Paraguay's shootout win in the Round of 32 was hailed as a great upset — it eliminated which four-time World Cup winners?",
+      "options": {
+        "A": "Germany",
+        "B": "Uruguay",
+        "C": "Brazil",
+        "D": "France"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "records",
+      "question": "Norway's win over Ivory Coast was a landmark for the nation because it was their first-ever World Cup...?",
+      "options": {
+        "A": "Knockout-stage win",
+        "B": "Goal",
+        "C": "Clean sheet",
+        "D": "Appearance"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "knockouts",
+      "question": "Brazil booked a last-16 tie with Norway by winning their Round of 32 match 2-1 against whom?",
+      "options": {
+        "A": "Japan",
+        "B": "South Korea",
+        "C": "Australia",
+        "D": "Saudi Arabia"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "scoring_records",
+      "question": "Brazil's Ronaldo sits fourth on the all-time World Cup scoring list, just behind Klose. How many World Cup goals did he score in his career?",
+      "options": {
+        "A": "15",
+        "B": "12",
+        "C": "17",
+        "D": "13"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "shootouts",
+      "question": "Whose header deep in stoppage time forced extra time for Morocco against the Netherlands, before the shootout?",
+      "options": {
+        "A": "Issa Diop",
+        "B": "Ismael Saibari",
+        "C": "Youssef En-Nesyri",
+        "D": "Achraf Hakimi"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "knockouts",
+      "question": "Antonio Nusa opened the scoring for Norway against Ivory Coast, teed up by which captain and playmaker?",
+      "options": {
+        "A": "Martin Odegaard",
+        "B": "Sander Berge",
+        "C": "Erling Haaland",
+        "D": "Alexander Sorloth"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "knockouts",
+      "question": "Who scored Germany's equaliser against Paraguay to force extra time, before the fatal shootout?",
+      "options": {
+        "A": "Kai Havertz",
+        "B": "Florian Wirtz",
+        "C": "Niclas Fullkrug",
+        "D": "Jamal Musiala"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "knockouts",
+      "question": "Which winger supplied two assists as France dismantled Sweden 3-0 to reach the last 16?",
+      "options": {
+        "A": "Michael Olise",
+        "B": "Bradley Barcola",
+        "C": "Ousmane Dembele",
+        "D": "Kingsley Coman"
+      },
+      "answer": "A"
+    }
+  ],
+  "sources": [
+    "https://www.skysports.com/football/news/17251/13558815/ (Germany 1-1 Paraguay, Paraguay win 4-3 on pens; Havertz equaliser; four-time winners out)",
+    "https://www.aljazeera.com/sports/2026/6/29/paraguay-shock-germany-in-shootout-win-for-one-of-all-time-world-cup-upsets (Paraguay shootout upset over Germany)",
+    "https://www.aljazeera.com/sports/2026/6/30/morocco-netherlands-world-cup-knockout-penalty-shootout-saibari-diop-gakpo (Morocco beat Netherlands 3-2 on pens; Diop stoppage-time equaliser; Bounou save; Saibari winner)",
+    "https://www.espn.in/football/story/_/id/49220087/ (Netherlands 1-1 Morocco, 2-3 on pens; Bounou decisive save)",
+    "https://www.skysports.com/football/news/12098/13558812/ (Ivory Coast 1-2 Norway; Nusa opener from Odegaard, Amad Diallo equaliser, Haaland 86th-min winner; Norway v Brazil next)",
+    "https://sports.yahoo.com/soccer/breaking-news/article/world-cup-2026-erling-haalands-late-goal-lifts-norway-over-ivory-coast-and-into-the-round-of-16-190435588.html (Norway's first-ever knockout-stage win; Haaland 5 goals, one behind Messi)",
+    "https://www.amny.com/sports/mbappe-brace-france-sweden-6-30-26-wc/ (France 3-0 Sweden; Mbappe brace 45' & 74', Barcola 53', Olise two assists)",
+    "https://www.nbcsports.com/soccer/news/2026-world-cup-top-goalscorers-full-list-latest-on-race-for-the-golden-boot (Golden Boot race: Messi & Mbappe 6, Haaland 5)",
+    "https://www.espn.com/soccer/story/_/id/49145571/ (Messi all-time WC record; Klose previous record 16; Ronaldo 15 in fourth)",
+    "https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/articles/fifa-world-cup-all-time-leading-scorers (all-time WC top scorers: Klose 16, Ronaldo 15)",
+    "https://sports.yahoo.com/soccer/live/world-cup-2026-scores-results-schedule-live-updates-round-of-32-173000083.html (Round of 32 live: Brazil 2-1 Japan; France, Norway, Mexico advance)"
+  ]
+}

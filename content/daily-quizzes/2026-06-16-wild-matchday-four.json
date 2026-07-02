@@ -1,0 +1,126 @@
+{
+  "date": "2026-06-15",
+  "series": "wc2026",
+  "name": "Goals Records and a Wild Matchday Four",
+  "parameter": "World Cup 2026 opening matchdays",
+  "type": "records",
+  "icon": "⚽",
+  "angle": "A serious recap of the opening matchdays at World Cup 2026, built on a wild Matchday Four: Germany's 7-1 demolition of debutants Curacao, Sweden's biggest World Cup haul since 1938, Ivory Coast's last-gasp winner, Japan's late draw with the Netherlands and Scotland's first World Cup win in 36 years, with the reigning champions and France still to begin on Tuesday.",
+  "questions": [
+    {
+      "difficulty": "easy",
+      "category": "opening_rounds",
+      "question": "Which side recovered from conceding the opening goal to thrash World Cup debutants Curacao 7-1?",
+      "options": { "A": "Germany", "B": "Spain", "C": "Netherlands", "D": "Portugal" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "champions",
+      "question": "Who were the reigning world champions going into the 2026 World Cup?",
+      "options": { "A": "Argentina", "B": "France", "C": "Brazil", "D": "Spain" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "opening_rounds",
+      "question": "Scotland celebrated their first World Cup win in 36 years. Which side did they edge 1-0?",
+      "options": { "A": "Haiti", "B": "Norway", "C": "Cape Verde", "D": "New Zealand" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "group_f",
+      "question": "Japan snatched a 2-2 draw with the Netherlands thanks to an 88th-minute equaliser. Who scored it?",
+      "options": { "A": "Daichi Kamada", "B": "Takefusa Kubo", "C": "Kaoru Mitoma", "D": "Keito Nakamura" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "group_play",
+      "question": "Brazil were held to a 1-1 draw by Morocco. Which forward scored their equaliser?",
+      "options": { "A": "Vinicius Junior", "B": "Rodrygo", "C": "Raphinha", "D": "Endrick" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "group_e",
+      "question": "Ivory Coast beat Ecuador 1-0 with a dramatic 90th-minute winner. Who scored it?",
+      "options": { "A": "Amad Diallo", "B": "Sebastien Haller", "C": "Franck Kessie", "D": "Nicolas Pepe" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "records",
+      "question": "Sweden's 5-1 rout of Tunisia was their biggest haul in a single World Cup match since which tournament?",
+      "options": { "A": "1938", "B": "1958", "C": "1994", "D": "2002" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "group_play",
+      "question": "The United States opened with a 4-1 win over Paraguay. Which striker scored their two first-half goals?",
+      "options": { "A": "Folarin Balogun", "B": "Christian Pulisic", "C": "Ricardo Pepi", "D": "Gio Reyna" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "milestones",
+      "question": "Qatar claimed the first World Cup point in their history with a 1-1 draw against which European side?",
+      "options": { "A": "Switzerland", "B": "Belgium", "C": "Croatia", "D": "Uruguay" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "fixtures",
+      "question": "France begin their campaign on Tuesday against an African side they famously lost to in the 2002 opener. Who?",
+      "options": { "A": "Senegal", "B": "Morocco", "C": "Cameroon", "D": "Ivory Coast" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "group_e",
+      "question": "In Germany's 7-1 win over Curacao, one forward scored twice, including a penalty. Who was it?",
+      "options": { "A": "Kai Havertz", "B": "Jamal Musiala", "C": "Felix Nmecha", "D": "Deniz Undav" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "group_play",
+      "question": "The USA sealed their 4-1 win over Paraguay with a stoppage-time strike curled in with the outside of the boot. Who scored it?",
+      "options": { "A": "Gio Reyna", "B": "Christian Pulisic", "C": "Weston McKennie", "D": "Folarin Balogun" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "group_play",
+      "question": "South Korea came from behind to beat Czechia 2-1. Which Czech captain had given his side an early lead?",
+      "options": { "A": "Ladislav Krejci", "B": "Patrik Schick", "C": "Tomas Soucek", "D": "Adam Hlozek" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "fixtures",
+      "question": "The reigning champions open their title defence on Tuesday in Kansas City against which African nation?",
+      "options": { "A": "Algeria", "B": "Egypt", "C": "Morocco", "D": "Tunisia" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "expert",
+      "category": "group_e",
+      "question": "Curacao stunned Germany by taking a shock early lead before collapsing. Which player scored that goal?",
+      "options": { "A": "Livano Comenencia", "B": "Tahith Chong", "C": "Juninho Bacuna", "D": "Leandro Bacuna" },
+      "answer": "A"
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_Group_E (Germany 7-1 Curacao: Comenencia 21' for Curacao, Havertz 45+5' pen. and 88'; Ivory Coast 1-0 Ecuador, Diallo 90')",
+    "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_Group_F (Netherlands 2-2 Japan, Kamada 88'; Sweden 5-1 Tunisia, Ayari brace, Isak, Gyokeres, Svanberg)",
+    "https://sports.yahoo.com/soccer/live/world-cup-2026-live-updates-scores-schedule-results-135432707.html (Day 4 recap: Sweden's first five-goal World Cup match since 1938; Germany six unanswered after going behind)",
+    "https://www.espn.com/soccer/story/_/id/49058587/world-cup-2026-today-blog-14-06-2026-live-updates-news-fixtures-schedule-results-scotland-win-brazil-morocco-draw (Scotland 1-0 Haiti, McGinn, first World Cup win in 36 years; Brazil 1-1 Morocco, Vinicius Junior; Qatar 1-1 Switzerland, first ever World Cup point)",
+    "https://www.nbclosangeles.com/world-cup/usmnt-paraguay-score-balogun-pulisic/3903779/ (USA 4-1 Paraguay: Bobadilla OG 7', Balogun 31' and 45+5', Reyna 90+8')",
+    "https://www.espn.co.uk/football/story/_/id/49038092/world-cup-2026-today-blog-12-06-2026-live-updates-news-fixtures-schedule-results-mexico-south-korea (South Korea 2-1 Czechia, Krejci early opener for Czechia, Hwang In-beom and Oh Hyeon-gyu reply)",
+    "https://www.espn.com/soccer/story/_/id/48939282/2026-fifa-world-cup-fixtures-results-match-schedule-group-stage-knockout-rounds-bracket (June 16 fixtures: France v Senegal, Group I; Argentina v Algeria, Group J, Kansas City)",
+    "https://en.wikipedia.org/wiki/2002_FIFA_World_Cup (Senegal beat France 1-0 in the 2002 opening match)"
+  ]
+}

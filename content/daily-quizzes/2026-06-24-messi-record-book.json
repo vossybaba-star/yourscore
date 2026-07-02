@@ -1,0 +1,125 @@
+{
+  "date": "2026-06-24",
+  "name": "Messi Rewrites the World Cup Record Book",
+  "parameter": "World Cup 2026 all-time goalscoring record",
+  "type": "records",
+  "icon": "🐐",
+  "angle": "Lionel Messi has become the outright all-time leading goalscorer in World Cup history, his brace against Austria taking him past Miroslav Klose's men's record and Marta's overall mark, with Mbappe and Ronaldo writing their own lines this week.",
+  "questions": [
+    {
+      "difficulty": "easy",
+      "category": "goal_record",
+      "question": "Lionel Messi, the all-time leading goalscorer in men's World Cup history, captains which nation?",
+      "options": { "A": "Argentina", "B": "Brazil", "C": "Uruguay", "D": "Spain" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "goal_record",
+      "question": "Messi broke the all-time record with a brace in a 2-0 group-stage win over which European side?",
+      "options": { "A": "Austria", "B": "Switzerland", "C": "Croatia", "D": "Czechia" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "goal_record",
+      "question": "Whose long-standing men's World Cup goalscoring record did Messi overtake? The previous holder was a striker from which country?",
+      "options": { "A": "Germany", "B": "Brazil", "C": "France", "D": "Italy" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "goal_record",
+      "question": "Messi now stands alone at the top of the men's World Cup scoring charts. How many career World Cup goals does he have after the Austria match?",
+      "options": { "A": "18", "B": "16", "C": "15", "D": "20" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "goal_record",
+      "question": "Which Germany legend held the previous men's record of 16 World Cup goals that Messi has now surpassed?",
+      "options": { "A": "Miroslav Klose", "B": "Gerd Muller", "C": "Thomas Muller", "D": "Jurgen Klinsmann" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "goal_record",
+      "question": "Messi first drew level with the men's record by scoring a hat-trick in Argentina's tournament opener against which side?",
+      "options": { "A": "Algeria", "B": "Austria", "C": "Nigeria", "D": "Saudi Arabia" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "record_chase",
+      "question": "Kylian Mbappe drew level with Klose on 16 World Cup goals after a brace in which group-stage match?",
+      "options": { "A": "France's win over Iraq", "B": "France's win over Senegal", "C": "France's draw with Canada", "D": "France's win over Iran" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "record_chase",
+      "question": "What was the final scoreline as France beat Iraq in that fixture?",
+      "options": { "A": "3-0", "B": "2-1", "C": "4-2", "D": "1-0" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "group_stage",
+      "question": "Cristiano Ronaldo scored his first goal of the 2026 World Cup as Portugal thrashed which side 5-0 on June 23?",
+      "options": { "A": "Uzbekistan", "B": "Uruguay", "C": "Ukraine", "D": "Uganda" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "group_stage",
+      "question": "England were held to a goalless draw on June 23 by which African nation?",
+      "options": { "A": "Ghana", "B": "Senegal", "C": "Ivory Coast", "D": "Cameroon" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "record_chase",
+      "question": "Mbappe reached a personal landmark in the Iraq game beyond his goals. What was it?",
+      "options": { "A": "His 100th cap for France", "B": "His first World Cup assist", "C": "His 50th international goal", "D": "His first goal as captain" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "goal_record",
+      "question": "Messi's 18 also passed the overall World Cup goal record across the men's and women's tournaments. That mark of 17 was held by which player?",
+      "options": { "A": "Marta", "B": "Birgit Prinz", "C": "Abby Wambach", "D": "Christine Sinclair" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "goal_record",
+      "question": "Klose set the previous men's record of 16 by surpassing a Brazilian striker who had scored 15. Who was that?",
+      "options": { "A": "Ronaldo Nazario", "B": "Romario", "C": "Rivaldo", "D": "Pele" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "goal_record",
+      "question": "Messi arrived at the 2026 World Cup needing a strong run to reach the top. How many World Cup goals had he scored across all his previous tournaments combined?",
+      "options": { "A": "13", "B": "11", "C": "16", "D": "9" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "expert",
+      "category": "goal_record",
+      "question": "At 38, Messi's hat-trick against Algeria carried an added distinction: he became the oldest player ever to do what at a World Cup?",
+      "options": { "A": "Score a hat-trick", "B": "Captain a side in the final", "C": "Score in a knockout match", "D": "Be named player of the match" },
+      "answer": "A"
+    }
+  ],
+  "sources": [
+    "https://www.espn.com/soccer/story/_/id/49140402/lionel-messi-world-cup-record-goals-miroslav-klose-all (Messi breaks record for most World Cup goals with Austria double; 18 total, passes Klose 16)",
+    "https://www.aljazeera.com/sports/2026/6/22/lionel-messi-scores-brace-as-argentina-beat-austria-2-0-at-world-cup-2026 (Argentina 2-0 Austria; Messi brace; missed early penalty)",
+    "https://www.espn.com/soccer/story/_/id/49089516/messi-nets-hat-trick-ties-klose-record-1th-world-cup-goal (Messi hat-trick vs Algeria in 3-0 opener ties Klose at 16; oldest to score a WC hat-trick at 38)",
+    "https://sports.yahoo.com/articles/marta-salutes-messi-breaking-her-232226133.html (Messi passes Marta's overall record of 17; Marta salutes him)",
+    "https://www.espn.com/soccer/story/_/id/49145571/fifa-world-cup-2026-stats-lionel-messi-all-goalscorer-18-kylian-mbappe-miroslav-klose-16-record-100-haaland (stats: Messi 18, Mbappe 16 level with Klose, Mbappe 100th cap)",
+    "https://www.nbcnews.com/sports/soccer/live-blog/fifa-world-cup-games-2026-june-22-live-updates-rcna351129 (France 3-0 Iraq; Messi makes history vs Austria; Group J)",
+    "https://www.olympics.com/en/news/fifa-world-cup-2026-every-match-result-tuesday-23-june-live-scores (June 23 results: Portugal 5-0 Uzbekistan, England 0-0 Ghana)",
+    "https://www.espn.com/soccer/story/_/id/49150583/messi-100-year-old-super-fan-sees-make-history-portugal-england-action (Ronaldo on target in Portugal 5-0; England draw with Ghana)"
+  ]
+}

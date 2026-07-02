@@ -1,0 +1,122 @@
+{
+  "date": "2026-06-22",
+  "name": "Group Stage Takes Shape World Cup 2026",
+  "parameter": "World Cup 2026 Group Stage",
+  "type": "records",
+  "icon": "🌍",
+  "angle": "With the second round of group fixtures done, the 2026 World Cup picture is sharpening: all three hosts are unbeaten, Germany and the Dutch are running riot, and a few of the favourites have already dropped points.",
+  "questions": [
+    {
+      "difficulty": "easy",
+      "category": "hosts",
+      "question": "All three host nations have come through the opening two rounds unbeaten. Which trio is staging the 2026 World Cup?",
+      "options": { "A": "USA, Mexico and Brazil", "B": "USA, Canada and Mexico", "C": "Canada, USA and England", "D": "Mexico, USA and Argentina" },
+      "answer": "B"
+    },
+    {
+      "difficulty": "easy",
+      "category": "holders",
+      "question": "The reigning world champions opened their defence with a controlled 3-0 win over Algeria. Who are they?",
+      "options": { "A": "France", "B": "Brazil", "C": "Argentina", "D": "Spain" },
+      "answer": "C"
+    },
+    {
+      "difficulty": "easy",
+      "category": "goals",
+      "question": "One side set the early benchmark for ruthlessness, hammering Curacao 7-1. Which nation was it?",
+      "options": { "A": "Germany", "B": "Netherlands", "C": "Spain", "D": "France" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "results",
+      "question": "The Netherlands followed a 2-2 draw with Japan by thrashing which side 5-1?",
+      "options": { "A": "Tunisia", "B": "Switzerland", "C": "Sweden", "D": "Senegal" },
+      "answer": "C"
+    },
+    {
+      "difficulty": "medium",
+      "category": "results",
+      "question": "Among the favourites, Brazil dropped points in their opener, held to a 1-1 draw by which African side?",
+      "options": { "A": "Ivory Coast", "B": "Senegal", "C": "Egypt", "D": "Morocco" },
+      "answer": "D"
+    },
+    {
+      "difficulty": "medium",
+      "category": "results",
+      "question": "Morocco backed up that point by beating which returning nation 1-0 to share top spot in Group C with Brazil?",
+      "options": { "A": "Scotland", "B": "Haiti", "C": "Ghana", "D": "Panama" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "hosts",
+      "question": "Canada delighted the home crowd with a 6-0 rout in Group B. Who were on the wrong end of it?",
+      "options": { "A": "Bosnia and Herzegovina", "B": "Qatar", "C": "Switzerland", "D": "Uzbekistan" },
+      "answer": "B"
+    },
+    {
+      "difficulty": "medium",
+      "category": "results",
+      "question": "England began their campaign with a 4-2 win over which beaten 2018 World Cup finalists?",
+      "options": { "A": "France", "B": "Belgium", "C": "Croatia", "D": "Netherlands" },
+      "answer": "C"
+    },
+    {
+      "difficulty": "medium",
+      "category": "results",
+      "question": "Spain looked laboured in a goalless opener before finding their rhythm with a 4-0 win over whom?",
+      "options": { "A": "Cabo Verde", "B": "Saudi Arabia", "C": "Uruguay", "D": "Morocco" },
+      "answer": "B"
+    },
+    {
+      "difficulty": "medium",
+      "category": "results",
+      "question": "Which fancied side drew 1-1 with Egypt and 0-0 with Iran in the group stage, leaving them third in Group G?",
+      "options": { "A": "Belgium", "B": "Egypt", "C": "New Zealand", "D": "Iran" },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "scorelines",
+      "question": "Japan recovered from their 2-2 draw with the Netherlands to beat Tunisia by what score?",
+      "options": { "A": "2-1", "B": "1-0", "C": "3-2", "D": "4-0" },
+      "answer": "D"
+    },
+    {
+      "difficulty": "hard",
+      "category": "results",
+      "question": "France opened Group I with a 3-1 win over which African side, on a night Norway beat Iraq 4-1?",
+      "options": { "A": "Ivory Coast", "B": "Senegal", "C": "Ghana", "D": "Egypt" },
+      "answer": "B"
+    },
+    {
+      "difficulty": "hard",
+      "category": "results",
+      "question": "Switzerland kept pace with hosts Canada at the top of Group B thanks to a 4-1 win over which side?",
+      "options": { "A": "Qatar", "B": "Austria", "C": "Bosnia and Herzegovina", "D": "Uzbekistan" },
+      "answer": "C"
+    },
+    {
+      "difficulty": "hard",
+      "category": "hosts",
+      "question": "Mexico sit top of Group A with two wins and no goals conceded. Having beaten South Africa 2-0, who did they then edge 1-0?",
+      "options": { "A": "Czechia", "B": "South Korea", "C": "South Africa", "D": "Costa Rica" },
+      "answer": "B"
+    },
+    {
+      "difficulty": "expert",
+      "category": "scorelines",
+      "question": "Before their own 5-1 defeat to the Netherlands, Sweden had won by that exact 5-1 scoreline. Which side did Sweden put five past?",
+      "options": { "A": "Japan", "B": "Curacao", "C": "Tunisia", "D": "Iraq" },
+      "answer": "C"
+    }
+  ],
+  "sources": [
+    "https://www.cbssports.com/soccer/news/world-cup-group-standings-table-results/ (CBS Sports — full group A-L standings and results through 21 June 2026; Germany 7-1 Curacao, Netherlands 5-1 Sweden, Canada 6-0 Qatar, Spain 4-0 Saudi Arabia, Japan 4-0 Tunisia, Switzerland 4-1 Bosnia, Sweden 5-1 Tunisia, Mexico 1-0 South Korea, Brazil 1-1 Morocco, Morocco 1-0 Scotland, France 3-1 Senegal, Argentina 3-0 Algeria, England 4-2 Croatia)",
+    "https://www.nbcsports.com/soccer/news/2026-world-cup-group-stage-table-full-standings-for-all-12-groups (NBC Sports — full standings cross-check; Germany 6 pts +7, Mexico/USA 6 pts, Spain top Group H; confirms 48-team format and top-two + best-eight-third advance)",
+    "https://sports.yahoo.com/soccer/live/world-cup-2026-scores-results-schedule-live-updates-195336732.html (Yahoo Sports — 21 June: Egypt 3-1 New Zealand, Belgium 0-0 Iran, Spain 4-0 Saudi Arabia, Uruguay 2-2 Cabo Verde)",
+    "https://www.aljazeera.com/sports/liveblog/2026/6/20/germany-vs-ivory-coast-live-world-cup-2026 (Al Jazeera — Germany 2-1 Ivory Coast, 20 June)",
+    "https://www.espn.com/soccer/story/_/id/48939282/2026-fifa-world-cup-fixtures-results-match-schedule-group-stage-knockout-rounds-bracket (ESPN — 2026 World Cup fixtures, results and bracket)"
+  ]
+}
