@@ -37,6 +37,9 @@ const LOCK = join(ROOT, "scripts", "data", "launch-daily.ran");
 const node = process.execPath;
 const run = (script, args, opts = {}) =>
   execFileSync(node, [join(__dirname, script), ...args], { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "inherit"], ...opts });
+// Plain git in the repo root (for the build-time draft-pool bundle, which must be committed +
+// pushed to deploy — unlike the DB-published Featured quiz). Throws on non-zero exit like run().
+const git = (args, opts = {}) => execFileSync("git", args, { cwd: ROOT, encoding: "utf8", ...opts });
 // A gate returns true on approve (exit 0), false on reject/skip (exit 1).
 function gate(args) {
   try { run("tg-gates.mjs", args, { stdio: ["ignore", "inherit", "inherit"] }); return true; }
@@ -139,6 +142,42 @@ async function main() {
     }
   } else {
     await sendMessage(`🧪 (dry) would roll the ranked edition to ${quiz.date}.`);
+  }
+
+  // 3c. Refresh the 38-0 WC Mastermind DRAFT question pool. The ranked draft gates every pick
+  //     from a BUILD-TIME bundle (src/data/draft/wc-quiz.json, imported by the app), so a new
+  //     daily quiz only reaches the draft after that bundle is rebuilt AND redeployed. This was
+  //     historically a manual step and got forgotten — the pool froze on 11–16 Jun questions
+  //     from 17 Jun–2 Jul. Now automated: rebuild from every daily pack, then commit + push JUST
+  //     that one file so Vercel redeploys. Runs only after Gate 1 approval (a rejected quiz must
+  //     not enter the draft pool). Best-effort and fully isolated — any failure warns and
+  //     continues; it must never take down the tweet/email sends.
+  if (!DRY) {
+    try {
+      const rel = "src/data/draft/wc-quiz.json";
+      const summary = run("draft/build-wc-quiz.mjs", []).trim().replace(/\s+/g, " ");
+      // exit 1 from `diff --quiet` = the bundle changed; exit 0 = identical (nothing to do).
+      let changed = false;
+      try { git(["diff", "--quiet", "HEAD", "--", rel]); } catch (e) { changed = e.status === 1; }
+      if (!changed) {
+        await sendMessage("🧩 Draft pool already current — nothing to deploy.");
+      } else {
+        const branch = git(["rev-parse", "--abbrev-ref", "HEAD"]).trim();
+        // Commit ONLY this pathspec, so a dirty working tree never leaks other files into it.
+        git(["commit", "-q", "-m", `Refresh WC Mastermind draft pool — ${quiz.date}`, "--", rel]);
+        if (branch === "main") {
+          git(["push", "origin", "main"]);
+          await sendMessage(`🧩 Draft pool rebuilt + pushed — ${summary.slice(0, 90)}. Vercel redeploying so today's questions reach the ranked draft.`);
+        } else {
+          await sendMessage(`🧩 Draft pool rebuilt + committed on <b>${branch}</b> (not main) — NOT pushed. Merge to main to activate.`);
+        }
+      }
+    } catch (e) {
+      await sendMessage(`⚠️ Draft-pool refresh failed: ${e.message.slice(0, 140)}. The draft keeps the previous pool; rebuild manually via scripts/draft/build-wc-quiz.mjs + push.`);
+    }
+  } else {
+    try { run("draft/build-wc-quiz.mjs", []); await sendMessage("🧪 (dry) rebuilt the draft pool locally; would commit + push src/data/draft/wc-quiz.json."); }
+    catch (e) { await sendMessage(`🧪 (dry) draft-pool rebuild errored: ${e.message.slice(0, 120)}`); }
   }
 
   // 4. GATE 2a — cards (regenerate loop, capped). Isolated: if image gen or the gate fails
