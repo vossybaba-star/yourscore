@@ -4,9 +4,26 @@
     "2026-06-12-mascots.json",
     "2026-06-14-kickoff-carnage.json",
     "2026-06-15-opening-matchday-verdicts.json",
-    "2026-06-16-wild-matchday-four.json"
+    "2026-06-16-first-round-shocks.json",
+    "2026-06-16-wild-matchday-four.json",
+    "2026-06-17-the-giants-arrive.json",
+    "2026-06-18-record-book-rewritten.json",
+    "2026-06-19-statement-round.json",
+    "2026-06-20-fine-margins.json",
+    "2026-06-21-matchday-two-heroics.json",
+    "2026-06-22-group-stage-takes-shape.json",
+    "2026-06-23-messi-makes-history.json",
+    "2026-06-24-messi-record-book.json",
+    "2026-06-25-group-stage-finale.json",
+    "2026-06-26-giants-stumble.json",
+    "2026-06-27-group-stage-finale.json",
+    "2026-06-28-round-of-32-begins.json",
+    "2026-06-29-knockouts-begin.json",
+    "2026-06-30-giants-fall.json",
+    "2026-07-01-knockout-blows.json",
+    "2026-07-02-comeback-wednesday.json"
   ],
-  "count": 63,
+  "count": 318,
   "questions": [
     {
       "id": "2026-06-11-0",
@@ -634,6 +651,201 @@
     },
     {
       "id": "2026-06-16-0",
+      "q": "World Cup debutants held the European champions to a goalless draw on Monday. Which nation pulled off the shock?",
+      "options": [
+        "Cabo Verde",
+        "Uzbekistan",
+        "Curacao",
+        "Jordan"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "debutants"
+    },
+    {
+      "id": "2026-06-16-1",
+      "q": "Cabo Verde's man of the match against Spain was their 40-year-old goalkeeper. By what name is he known?",
+      "options": [
+        "Vozinha",
+        "Bebe",
+        "Ryan Mendes",
+        "Marco Soares"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "debutants"
+    },
+    {
+      "id": "2026-06-16-2",
+      "q": "Vozinha's clean sheet made him the third-oldest goalkeeper to keep one in a men's World Cup match. He trails only which two greats?",
+      "options": [
+        "Peter Shilton and Dino Zoff",
+        "Gianluigi Buffon and Pat Jennings",
+        "Dino Zoff and Iker Casillas",
+        "Peter Shilton and Gianluigi Buffon"
+      ],
+      "answer": 0,
+      "difficulty": "expert",
+      "category": "records"
+    },
+    {
+      "id": "2026-06-16-3",
+      "q": "Spain laid siege to the Cabo Verde goal without reward. Roughly how many shots did they register across the 90 minutes?",
+      "options": [
+        "27",
+        "9",
+        "18",
+        "35"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "debutants"
+    },
+    {
+      "id": "2026-06-16-4",
+      "q": "Spain arrived in the United States as the reigning champions of which competition?",
+      "options": [
+        "The European Championship",
+        "The FIFA World Cup",
+        "The UEFA Nations League",
+        "The Confederations Cup"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "champions"
+    },
+    {
+      "id": "2026-06-16-5",
+      "q": "Germany began their campaign with a 7-1 win over which World Cup debutants?",
+      "options": [
+        "Curacao",
+        "Jamaica",
+        "Panama",
+        "Haiti"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "debutants"
+    },
+    {
+      "id": "2026-06-16-6",
+      "q": "Curacao are the smallest nation by population ever to reach a men's World Cup. Whose record did they take?",
+      "options": [
+        "Iceland",
+        "Trinidad and Tobago",
+        "Wales",
+        "Slovenia"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "records"
+    },
+    {
+      "id": "2026-06-16-7",
+      "q": "Curacao were beaten 7-1 by Germany but still made history in the match. Why?",
+      "options": [
+        "They scored their first ever World Cup goal",
+        "They became the smallest nation to win a point",
+        "They conceded the fastest goal in tournament history",
+        "Their captain saved a penalty"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "debutants"
+    },
+    {
+      "id": "2026-06-16-8",
+      "q": "Scotland beat Haiti 1-0 for their first World Cup win since which year?",
+      "options": [
+        "1990",
+        "1978",
+        "1998",
+        "1982"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "home_nations"
+    },
+    {
+      "id": "2026-06-16-9",
+      "q": "Who scored the only goal of Scotland's win over Haiti?",
+      "options": [
+        "John McGinn",
+        "Scott McTominay",
+        "Che Adams",
+        "Ryan Christie"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "home_nations"
+    },
+    {
+      "id": "2026-06-16-10",
+      "q": "Scotland's victory was their first at a World Cup since a 2-1 win over which nation in 1990?",
+      "options": [
+        "Sweden",
+        "Norway",
+        "New Zealand",
+        "the Soviet Union"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "home_nations"
+    },
+    {
+      "id": "2026-06-16-11",
+      "q": "Australia produced one of the early upsets, winning 2-0 against which side?",
+      "options": [
+        "Turkiye",
+        "Croatia",
+        "Serbia",
+        "Switzerland"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "upsets"
+    },
+    {
+      "id": "2026-06-16-12",
+      "q": "Sweden made the biggest statement in Group F, thrashing which side 5-1?",
+      "options": [
+        "Tunisia",
+        "Japan",
+        "Senegal",
+        "South Africa"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "group_stage"
+    },
+    {
+      "id": "2026-06-16-13",
+      "q": "Brazil were held to a 1-1 draw in their opening match by which African side?",
+      "options": [
+        "Morocco",
+        "Egypt",
+        "Senegal",
+        "Ivory Coast"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "group_stage"
+    },
+    {
+      "id": "2026-06-16-14",
+      "q": "Monday's Group G games both finished level. Alongside Belgium 1-1 Egypt, Iran drew 2-2 with which side?",
+      "options": [
+        "New Zealand",
+        "Australia",
+        "Saudi Arabia",
+        "Qatar"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "group_stage"
+    },
+    {
+      "id": "2026-06-15-0",
       "q": "Which side recovered from conceding the opening goal to thrash World Cup debutants Curacao 7-1?",
       "options": [
         "Germany",
@@ -646,7 +858,7 @@
       "category": "opening_rounds"
     },
     {
-      "id": "2026-06-16-1",
+      "id": "2026-06-15-1",
       "q": "Who are the reigning world champions, due to begin the defence of their title this week?",
       "options": [
         "Argentina",
@@ -659,7 +871,7 @@
       "category": "champions"
     },
     {
-      "id": "2026-06-16-2",
+      "id": "2026-06-15-2",
       "q": "Scotland celebrated their first World Cup win in 36 years. Which side did they edge 1-0?",
       "options": [
         "Haiti",
@@ -672,7 +884,7 @@
       "category": "opening_rounds"
     },
     {
-      "id": "2026-06-16-3",
+      "id": "2026-06-15-3",
       "q": "Japan snatched a 2-2 draw with the Netherlands thanks to an 88th-minute equaliser. Who scored it?",
       "options": [
         "Daichi Kamada",
@@ -685,7 +897,7 @@
       "category": "group_f"
     },
     {
-      "id": "2026-06-16-4",
+      "id": "2026-06-15-4",
       "q": "Brazil were held to a 1-1 draw by Morocco. Which forward scored their equaliser?",
       "options": [
         "Vinicius Junior",
@@ -698,7 +910,7 @@
       "category": "group_play"
     },
     {
-      "id": "2026-06-16-5",
+      "id": "2026-06-15-5",
       "q": "Ivory Coast beat Ecuador 1-0 with a dramatic 90th-minute winner. Who scored it?",
       "options": [
         "Amad Diallo",
@@ -711,7 +923,7 @@
       "category": "group_e"
     },
     {
-      "id": "2026-06-16-6",
+      "id": "2026-06-15-6",
       "q": "Sweden's 5-1 rout of Tunisia was their biggest haul in a single World Cup match since which tournament?",
       "options": [
         "1938",
@@ -724,7 +936,7 @@
       "category": "records"
     },
     {
-      "id": "2026-06-16-7",
+      "id": "2026-06-15-7",
       "q": "The United States opened with a 4-1 win over Paraguay. Which striker scored their two first-half goals?",
       "options": [
         "Folarin Balogun",
@@ -737,7 +949,7 @@
       "category": "group_play"
     },
     {
-      "id": "2026-06-16-8",
+      "id": "2026-06-15-8",
       "q": "Qatar claimed the first World Cup point in their history with a 1-1 draw against which European side?",
       "options": [
         "Switzerland",
@@ -750,7 +962,7 @@
       "category": "milestones"
     },
     {
-      "id": "2026-06-16-9",
+      "id": "2026-06-15-9",
       "q": "France begin their campaign on Tuesday against an African side they famously lost to in the 2002 opener. Who?",
       "options": [
         "Senegal",
@@ -763,7 +975,7 @@
       "category": "fixtures"
     },
     {
-      "id": "2026-06-16-10",
+      "id": "2026-06-15-10",
       "q": "In Germany's 7-1 win over Curacao, one forward scored twice, including a penalty. Who was it?",
       "options": [
         "Kai Havertz",
@@ -776,7 +988,7 @@
       "category": "group_e"
     },
     {
-      "id": "2026-06-16-11",
+      "id": "2026-06-15-11",
       "q": "The USA sealed their 4-1 win over Paraguay with a stoppage-time strike curled in with the outside of the boot. Who scored it?",
       "options": [
         "Gio Reyna",
@@ -789,7 +1001,7 @@
       "category": "group_play"
     },
     {
-      "id": "2026-06-16-12",
+      "id": "2026-06-15-12",
       "q": "South Korea came from behind to beat Czechia 2-1. Which Czech captain had given his side an early lead?",
       "options": [
         "Ladislav Krejci",
@@ -802,7 +1014,7 @@
       "category": "group_play"
     },
     {
-      "id": "2026-06-16-13",
+      "id": "2026-06-15-13",
       "q": "The reigning champions open their title defence on Tuesday in Kansas City against which African nation?",
       "options": [
         "Algeria",
@@ -815,7 +1027,7 @@
       "category": "fixtures"
     },
     {
-      "id": "2026-06-16-14",
+      "id": "2026-06-15-14",
       "q": "Curacao stunned Germany by taking a shock early lead before collapsing. Which player scored that goal?",
       "options": [
         "Livano Comenencia",
@@ -826,6 +1038,3126 @@
       "answer": 0,
       "difficulty": "expert",
       "category": "group_e"
+    },
+    {
+      "id": "2026-06-17-0",
+      "q": "Lionel Messi scored a hat-trick as Argentina opened their campaign on Tuesday. What was the final score against Algeria?",
+      "options": [
+        "3-0",
+        "2-1",
+        "4-2",
+        "1-0"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "argentina"
+    },
+    {
+      "id": "2026-06-17-1",
+      "q": "Erling Haaland scored twice on his long-awaited World Cup debut on Tuesday. Which nation was he playing for?",
+      "options": [
+        "Norway",
+        "Sweden",
+        "Denmark",
+        "Iceland"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "norway"
+    },
+    {
+      "id": "2026-06-17-2",
+      "q": "France came from behind to beat Senegal 3-1. Which forward scored twice, including a long-range strike deep in stoppage time?",
+      "options": [
+        "Kylian Mbappe",
+        "Ousmane Dembele",
+        "Marcus Thuram",
+        "Bradley Barcola"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "france"
+    },
+    {
+      "id": "2026-06-17-3",
+      "q": "Messi's hat-trick took him to 16 World Cup goals, drawing him level with which player as the men's tournament's all-time leading scorer?",
+      "options": [
+        "Miroslav Klose",
+        "Cristiano Ronaldo",
+        "Pele",
+        "Gerd Muller"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "records"
+    },
+    {
+      "id": "2026-06-17-4",
+      "q": "At 38, Messi surpassed Cristiano Ronaldo to become the oldest player ever to do what at a World Cup?",
+      "options": [
+        "Score a hat-trick",
+        "Captain a winning side",
+        "Score from open play",
+        "Provide three assists"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "records"
+    },
+    {
+      "id": "2026-06-17-5",
+      "q": "Mbappe's double made him France's all-time leading scorer with 58 goals, moving him past which striker on 57?",
+      "options": [
+        "Olivier Giroud",
+        "Thierry Henry",
+        "Antoine Griezmann",
+        "Just Fontaine"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "france"
+    },
+    {
+      "id": "2026-06-17-6",
+      "q": "Norway's 4-1 win over Iraq was their first World Cup appearance since which tournament?",
+      "options": [
+        "1998",
+        "1994",
+        "2002",
+        "1990"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "norway"
+    },
+    {
+      "id": "2026-06-17-7",
+      "q": "Miroslav Klose, whose World Cup goals record Messi equalled on Tuesday, won the trophy with which country in 2014?",
+      "options": [
+        "Germany",
+        "Brazil",
+        "Italy",
+        "Spain"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "history"
+    },
+    {
+      "id": "2026-06-17-8",
+      "q": "The brace also took Mbappe past Just Fontaine as France's all-time World Cup scorer. How many World Cup goals does Mbappe now have?",
+      "options": [
+        "14",
+        "12",
+        "16",
+        "10"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "france"
+    },
+    {
+      "id": "2026-06-17-9",
+      "q": "Austria opened with a 2-1 win on a night that marked their opponents' first-ever World Cup appearance. Which debutants did they beat?",
+      "options": [
+        "Jordan",
+        "Uzbekistan",
+        "Cabo Verde",
+        "Qatar"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "group_j"
+    },
+    {
+      "id": "2026-06-17-10",
+      "q": "Norway's rout of Iraq was rounded off by a goal deep into second-half stoppage time. Who scored it?",
+      "options": [
+        "Kristian Thorstvedt",
+        "Leo Ostigard",
+        "Alexander Sorloth",
+        "Martin Odegaard"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "norway"
+    },
+    {
+      "id": "2026-06-17-11",
+      "q": "Messi's hat-trick came at which Kansas City stadium, home to the NFL's Chiefs?",
+      "options": [
+        "Arrowhead Stadium",
+        "MetLife Stadium",
+        "SoFi Stadium",
+        "Mercedes-Benz Stadium"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "venue"
+    },
+    {
+      "id": "2026-06-17-12",
+      "q": "Haaland dragged Norway to the finals as the leading scorer of European qualifying, eight clear of anyone else. How many did he score in the campaign?",
+      "options": [
+        "16",
+        "8",
+        "12",
+        "21"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "norway"
+    },
+    {
+      "id": "2026-06-17-13",
+      "q": "Mbappe broke Just Fontaine's France World Cup record, a tally of 13 goals set at a single tournament. In which year did Fontaine score them?",
+      "options": [
+        "1958",
+        "1954",
+        "1966",
+        "1982"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "records"
+    },
+    {
+      "id": "2026-06-17-14",
+      "q": "Tuesday's treble made Messi both the youngest and oldest goalscorer in Argentina's World Cup history. In which tournament did an 18-year-old Messi score his first World Cup goal?",
+      "options": [
+        "2006",
+        "2010",
+        "2014",
+        "2018"
+      ],
+      "answer": 0,
+      "difficulty": "expert",
+      "category": "records"
+    },
+    {
+      "id": "2026-06-18-0",
+      "q": "Lionel Messi opened his sixth World Cup with his first-ever hat-trick at the tournament. Which side did Argentina beat 3-0 to begin their title defence?",
+      "options": [
+        "Algeria",
+        "Nigeria",
+        "Morocco",
+        "Egypt"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "messi"
+    },
+    {
+      "id": "2026-06-18-1",
+      "q": "Argentina arrived in 2026 as defending champions. Where did they lift the trophy in 2022?",
+      "options": [
+        "Qatar",
+        "Russia",
+        "Brazil",
+        "Germany"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "defending_champions"
+    },
+    {
+      "id": "2026-06-18-2",
+      "q": "Kylian Mbappe became which nation's all-time leading scorer during their opening 3-1 win over Senegal?",
+      "options": [
+        "France",
+        "Belgium",
+        "Portugal",
+        "Spain"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "mbappe"
+    },
+    {
+      "id": "2026-06-18-3",
+      "q": "Messi's treble carried him to 16 World Cup goals, level with the tournament's all-time leading scorer. Who holds that record alongside him?",
+      "options": [
+        "Miroslav Klose",
+        "Ronaldo Nazario",
+        "Gerd Muller",
+        "Just Fontaine"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "all_time_scorers"
+    },
+    {
+      "id": "2026-06-18-4",
+      "q": "Messi and Cristiano Ronaldo share a new distinction in 2026. They are the first players ever to do what?",
+      "options": [
+        "Appear at six different World Cups",
+        "Score at six different World Cups",
+        "Captain a side at six World Cups",
+        "Win the Golden Boot twice"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "world_cup_appearances"
+    },
+    {
+      "id": "2026-06-18-5",
+      "q": "Mbappe's double against Senegal took him past Olivier Giroud at the top of France's scoring chart. What was his new national tally?",
+      "options": [
+        "58",
+        "52",
+        "61",
+        "49"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "mbappe"
+    },
+    {
+      "id": "2026-06-18-6",
+      "q": "Erling Haaland scored twice on his long-awaited World Cup debut in a 4-1 Norway win. Who were the opponents, themselves back on the biggest stage after a 40-year wait?",
+      "options": [
+        "Iraq",
+        "Iran",
+        "Saudi Arabia",
+        "Egypt"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "haaland"
+    },
+    {
+      "id": "2026-06-18-7",
+      "q": "The shock of the opening round saw World Cup debutants Cape Verde hold a heavyweight to a goalless draw. Which reigning European champions did they frustrate?",
+      "options": [
+        "Spain",
+        "Italy",
+        "Germany",
+        "Portugal"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "debutants"
+    },
+    {
+      "id": "2026-06-18-8",
+      "q": "England began with a chaotic 4-2 win over Croatia. Who scored twice for the Three Lions, including an early penalty?",
+      "options": [
+        "Harry Kane",
+        "Jude Bellingham",
+        "Marcus Rashford",
+        "Noni Madueke"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "england"
+    },
+    {
+      "id": "2026-06-18-9",
+      "q": "Ronaldo's sixth World Cup opened with a frustrating 1-1 draw. Which side earned their first-ever World Cup point against Portugal?",
+      "options": [
+        "DR Congo",
+        "Ghana",
+        "Senegal",
+        "Morocco"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "portugal"
+    },
+    {
+      "id": "2026-06-18-10",
+      "q": "By starting against DR Congo at 41 years old, Ronaldo set which World Cup record?",
+      "options": [
+        "Oldest outfield player to start a World Cup match",
+        "Oldest goalscorer in World Cup history",
+        "Oldest captain at a World Cup",
+        "Oldest player ever to appear at a World Cup"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "ronaldo_record"
+    },
+    {
+      "id": "2026-06-18-11",
+      "q": "Harry Kane's opener against Croatia was his 10th World Cup goal, drawing him level with England's tournament record holder. Who is that?",
+      "options": [
+        "Gary Lineker",
+        "Geoff Hurst",
+        "Bobby Charlton",
+        "Wayne Rooney"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "england_records"
+    },
+    {
+      "id": "2026-06-18-12",
+      "q": "Mbappe broke the France record in spectacular fashion against Senegal. How did the milestone goal arrive?",
+      "options": [
+        "A long-range strike deep in stoppage time",
+        "A header from a corner",
+        "A penalty",
+        "A close-range tap-in"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "mbappe"
+    },
+    {
+      "id": "2026-06-18-13",
+      "q": "Cape Verde's clean sheet against Spain owed much to a veteran goalkeeper who made a string of saves. Roughly how old is their hero, Vozinha?",
+      "options": [
+        "40",
+        "33",
+        "36",
+        "28"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "debutants"
+    },
+    {
+      "id": "2026-06-18-14",
+      "q": "Jude Bellingham's strike against Croatia made him only the third man to score at two different World Cups before turning 23. Which two legends were already in that group?",
+      "options": [
+        "Pele and Michael Owen",
+        "Pele and Kylian Mbappe",
+        "Diego Maradona and Michael Owen",
+        "Pele and Wayne Rooney"
+      ],
+      "answer": 0,
+      "difficulty": "expert",
+      "category": "england_records"
+    },
+    {
+      "id": "2026-06-19-0",
+      "q": "By taking the field against Algeria, Lionel Messi became the first man to appear at how many different World Cups?",
+      "options": [
+        "Six",
+        "Five",
+        "Seven",
+        "Four"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "messi_milestone"
+    },
+    {
+      "id": "2026-06-19-1",
+      "q": "Messi's hat-trick against Algeria took him to 16 World Cup goals, level with the tournament's all-time leading scorer. Who holds that record?",
+      "options": [
+        "Ronaldo (Brazil)",
+        "Gerd Muller",
+        "Just Fontaine",
+        "Miroslav Klose"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "records"
+    },
+    {
+      "id": "2026-06-19-2",
+      "q": "Argentina opened their title defence with a 3-0 win as Messi scored all three. Who were the opponents?",
+      "options": [
+        "Austria",
+        "Algeria",
+        "Jordan",
+        "Nigeria"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "argentina"
+    },
+    {
+      "id": "2026-06-19-3",
+      "q": "Kylian Mbappe's brace against Senegal saw him overtake which striker as France's all-time leading scorer?",
+      "options": [
+        "Thierry Henry",
+        "Antoine Griezmann",
+        "Olivier Giroud",
+        "Karim Benzema"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "france"
+    },
+    {
+      "id": "2026-06-19-4",
+      "q": "France beat Senegal 3-1 in their opener, with one creative star named man of the match. Who was it?",
+      "options": [
+        "Michael Olise",
+        "Ousmane Dembele",
+        "Aurelien Tchouameni",
+        "Bradley Barcola"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "france"
+    },
+    {
+      "id": "2026-06-19-5",
+      "q": "England began their campaign with a 4-2 win over Croatia. Who captained the side and scored twice?",
+      "options": [
+        "Harry Kane",
+        "Jude Bellingham",
+        "Marcus Rashford",
+        "Phil Foden"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "england"
+    },
+    {
+      "id": "2026-06-19-6",
+      "q": "Which head coach led England to their opening win over Croatia?",
+      "options": [
+        "Thomas Tuchel",
+        "Gareth Southgate",
+        "Lee Carsley",
+        "Eddie Howe"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "england"
+    },
+    {
+      "id": "2026-06-19-7",
+      "q": "Croatia were beaten 4-2, but their goalkeeper kept the game close with a string of saves. Who was he?",
+      "options": [
+        "Ivica Ivusic",
+        "Nediljko Labrovic",
+        "Dominik Kotarski",
+        "Dominik Livakovic"
+      ],
+      "answer": 3,
+      "difficulty": "hard",
+      "category": "england"
+    },
+    {
+      "id": "2026-06-19-8",
+      "q": "Which co-host claimed their first ever men's World Cup win, thrashing Qatar 6-0?",
+      "options": [
+        "Canada",
+        "Mexico",
+        "United States",
+        "Costa Rica"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "canada"
+    },
+    {
+      "id": "2026-06-19-9",
+      "q": "Who scored a hat-trick in Canada's 6-0 demolition of Qatar?",
+      "options": [
+        "Cyle Larin",
+        "Alphonso Davies",
+        "Jonathan David",
+        "Tajon Buchanan"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "canada"
+    },
+    {
+      "id": "2026-06-19-10",
+      "q": "Canada's 6-0 win was the biggest in men's World Cup history by a team from which confederation?",
+      "options": [
+        "CAF",
+        "CONCACAF",
+        "AFC",
+        "OFC"
+      ],
+      "answer": 1,
+      "difficulty": "hard",
+      "category": "records"
+    },
+    {
+      "id": "2026-06-19-11",
+      "q": "Mexico became the first team to seal a place in the round of 32, beating South Korea 1-0. Who scored the only goal?",
+      "options": [
+        "Santiago Gimenez",
+        "Hirving Lozano",
+        "Luis Romo",
+        "Edson Alvarez"
+      ],
+      "answer": 2,
+      "difficulty": "hard",
+      "category": "mexico"
+    },
+    {
+      "id": "2026-06-19-12",
+      "q": "Switzerland scored four times late on to beat Bosnia and Herzegovina 4-1. Which substitute scored twice?",
+      "options": [
+        "Johan Manzambi",
+        "Breel Embolo",
+        "Ruben Vargas",
+        "Dan Ndoye"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "switzerland"
+    },
+    {
+      "id": "2026-06-19-13",
+      "q": "Colombia came from behind to beat Uzbekistan 3-1, with Daniel Munoz and Jaminton Campaz also scoring. Which star winger got the other goal?",
+      "options": [
+        "Juan Cuadrado",
+        "James Rodriguez",
+        "Jhon Duran",
+        "Luis Diaz"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "colombia"
+    },
+    {
+      "id": "2026-06-19-14",
+      "q": "Mbappe's heroics carried an echo of history: France's only opening-game defeat in their previous eight global tournaments came against Senegal. In which year?",
+      "options": [
+        "1998",
+        "2002",
+        "2006",
+        "2010"
+      ],
+      "answer": 1,
+      "difficulty": "expert",
+      "category": "history"
+    },
+    {
+      "id": "2026-06-20-0",
+      "q": "The United States clinched a knockout-round place by beating Australia on Friday. What was the score?",
+      "options": [
+        "1-0",
+        "2-0",
+        "3-1",
+        "2-2"
+      ],
+      "answer": 1,
+      "difficulty": "easy",
+      "category": "usa"
+    },
+    {
+      "id": "2026-06-20-1",
+      "q": "Brazil's 3-0 win sent which nation home as the first team eliminated from World Cup 2026?",
+      "options": [
+        "Australia",
+        "Qatar",
+        "Haiti",
+        "Uzbekistan"
+      ],
+      "answer": 2,
+      "difficulty": "easy",
+      "category": "brazil"
+    },
+    {
+      "id": "2026-06-20-2",
+      "q": "Morocco beat Scotland in Boston to take control of their group. What was the final score?",
+      "options": [
+        "3-0",
+        "2-0",
+        "0-0",
+        "1-0"
+      ],
+      "answer": 3,
+      "difficulty": "easy",
+      "category": "morocco"
+    },
+    {
+      "id": "2026-06-20-3",
+      "q": "Who scored after just 70 seconds — the fastest goal of the tournament so far — to settle the Scotland game?",
+      "options": [
+        "Hakim Ziyech",
+        "Youssef En-Nesyri",
+        "Ismael Saibari",
+        "Brahim Diaz"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "morocco"
+    },
+    {
+      "id": "2026-06-20-4",
+      "q": "Brazil's two-goal hero against Haiti scored twice before Vinicius Junior added the third. Who was he?",
+      "options": [
+        "Raphinha",
+        "Matheus Cunha",
+        "Rodrygo",
+        "Vinicius Junior"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "brazil"
+    },
+    {
+      "id": "2026-06-20-5",
+      "q": "The USA beat Australia despite missing their captain and talisman, ruled out by injury. Who sat it out?",
+      "options": [
+        "Tyler Adams",
+        "Weston McKennie",
+        "Christian Pulisic",
+        "Gio Reyna"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "usa"
+    },
+    {
+      "id": "2026-06-20-6",
+      "q": "Paraguay stunned Turkiye 1-0 with an early strike. Who scored the winner?",
+      "options": [
+        "Matias Galarza",
+        "Julio Enciso",
+        "Antonio Sanabria",
+        "Miguel Almiron"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "paraguay"
+    },
+    {
+      "id": "2026-06-20-7",
+      "q": "Friday's Brazil v Haiti and Scotland v Morocco fixtures were both played in the same group. Which one?",
+      "options": [
+        "Group A",
+        "Group C",
+        "Group F",
+        "Group H"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "groups"
+    },
+    {
+      "id": "2026-06-20-8",
+      "q": "The USA's second goal against Australia was finished by a young defender after a VAR offside reversal. Who was it?",
+      "options": [
+        "Sergino Dest",
+        "Folarin Balogun",
+        "Tim Weah",
+        "Alex Freeman"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "usa"
+    },
+    {
+      "id": "2026-06-20-9",
+      "q": "Scotland were aggrieved when a late penalty appeal was waved away. Which midfielder went down in the box?",
+      "options": [
+        "John McGinn",
+        "Scott McTominay",
+        "Billy Gilmour",
+        "Ryan Christie"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "scotland"
+    },
+    {
+      "id": "2026-06-20-10",
+      "q": "Saibari's strike against Scotland made him the first Morocco player to achieve what?",
+      "options": [
+        "Captain Morocco at a World Cup",
+        "Score in three different World Cups",
+        "Score in consecutive World Cups",
+        "Score a World Cup hat-trick"
+      ],
+      "answer": 2,
+      "difficulty": "hard",
+      "category": "records"
+    },
+    {
+      "id": "2026-06-20-11",
+      "q": "Paraguay held on to beat Turkiye with ten men after a first-half red card to which forward?",
+      "options": [
+        "Gustavo Gomez",
+        "Omar Alderete",
+        "Miguel Almiron",
+        "Julio Enciso"
+      ],
+      "answer": 2,
+      "difficulty": "hard",
+      "category": "paraguay"
+    },
+    {
+      "id": "2026-06-20-12",
+      "q": "Who supplied the assist for Saibari's winner, lifting the ball over the Scotland defence?",
+      "options": [
+        "Brahim Diaz",
+        "Hakim Ziyech",
+        "Azzedine Ounahi",
+        "Sofyan Amrabat"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "morocco"
+    },
+    {
+      "id": "2026-06-20-13",
+      "q": "Which Turkiye goalkeeper was beaten by Galarza's early goal as his side dominated possession but lost?",
+      "options": [
+        "Altay Bayindir",
+        "Ugurcan Cakir",
+        "Mert Gunok",
+        "Berke Ozer"
+      ],
+      "answer": 1,
+      "difficulty": "hard",
+      "category": "paraguay"
+    },
+    {
+      "id": "2026-06-20-14",
+      "q": "Brazil's win came under Carlo Ancelotti, the first foreign coach to lead them at a World Cup. As a manager, how many times has he won the Champions League — a record?",
+      "options": [
+        "Three",
+        "Four",
+        "Five",
+        "Six"
+      ],
+      "answer": 2,
+      "difficulty": "expert",
+      "category": "brazil"
+    },
+    {
+      "id": "2026-06-21-0",
+      "q": "World Cup debutants Curacao earned their first ever point on Saturday with a goalless draw. Which side did they hold?",
+      "options": [
+        "Ecuador",
+        "Colombia",
+        "Uruguay",
+        "Paraguay"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "curacao"
+    },
+    {
+      "id": "2026-06-21-1",
+      "q": "Curacao goalkeeper Eloy Room kept Ecuador out almost single-handedly. How many saves did he make in the 0-0 draw, one short of the World Cup single-match record?",
+      "options": [
+        "15",
+        "11",
+        "18",
+        "9"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "saves_record"
+    },
+    {
+      "id": "2026-06-21-2",
+      "q": "Room finished a save short of the World Cup single-game record of 16, set in the 2014 round of 16 against Belgium. Which goalkeeper holds that record?",
+      "options": [
+        "Tim Howard",
+        "Guillermo Ochoa",
+        "Keylor Navas",
+        "Manuel Neuer"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "goalkeepers"
+    },
+    {
+      "id": "2026-06-21-3",
+      "q": "Curacao's appearance makes them the smallest nation by population ever to play at a men's World Cup. Which 2018 debutant had previously held that distinction?",
+      "options": [
+        "Iceland",
+        "Panama",
+        "Trinidad and Tobago",
+        "Slovenia"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "world_cup_minnows"
+    },
+    {
+      "id": "2026-06-21-4",
+      "q": "From which confederation did Curacao, a Caribbean island side, qualify for the World Cup?",
+      "options": [
+        "CONCACAF",
+        "CONMEBOL",
+        "CAF",
+        "UEFA"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "qualification"
+    },
+    {
+      "id": "2026-06-21-5",
+      "q": "Germany came from behind to win 2-1 in Toronto on Saturday. Which side did they beat?",
+      "options": [
+        "Ivory Coast",
+        "Senegal",
+        "Ghana",
+        "Nigeria"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "germany"
+    },
+    {
+      "id": "2026-06-21-6",
+      "q": "Germany's comeback was driven by a substitute who scored twice after coming on around the hour mark. Who was it?",
+      "options": [
+        "Deniz Undav",
+        "Nick Woltemade",
+        "Kai Havertz",
+        "Niclas Fuellkrug"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "comeback"
+    },
+    {
+      "id": "2026-06-21-7",
+      "q": "Which Ivory Coast captain gave his side a shock first-half lead against Germany before Undav's late double turned the game?",
+      "options": [
+        "Franck Kessie",
+        "Sebastien Haller",
+        "Simon Adingra",
+        "Nicolas Pepe"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "ivory_coast"
+    },
+    {
+      "id": "2026-06-21-8",
+      "q": "The biggest win of the day was a 5-1 rout by the Netherlands. Which Scandinavian side did they put to the sword?",
+      "options": [
+        "Sweden",
+        "Denmark",
+        "Norway",
+        "Finland"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "netherlands"
+    },
+    {
+      "id": "2026-06-21-9",
+      "q": "Two Dutch forwards scored braces in the win over Sweden: Cody Gakpo and which striker, who struck twice in the first half?",
+      "options": [
+        "Brian Brobbey",
+        "Memphis Depay",
+        "Wout Weghorst",
+        "Donyell Malen"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "dutch_attack"
+    },
+    {
+      "id": "2026-06-21-10",
+      "q": "Brazil eased past Haiti 3-0 on the same day. Which forward scored twice for the Selecao?",
+      "options": [
+        "Matheus Cunha",
+        "Vinicius Junior",
+        "Raphinha",
+        "Rodrygo"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "brazil"
+    },
+    {
+      "id": "2026-06-21-11",
+      "q": "Germany's victory booked their place in which stage of the expanded 48-team tournament?",
+      "options": [
+        "Round of 32",
+        "Round of 16",
+        "Quarter-finals",
+        "Knockout play-off"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "format"
+    },
+    {
+      "id": "2026-06-21-12",
+      "q": "Scotland were stunned by Morocco on Friday, losing 1-0 to an Ismael Saibari strike. How early did the goal come?",
+      "options": [
+        "Inside the first two minutes",
+        "Just before half-time",
+        "Midway through the second half",
+        "In stoppage time"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "scotland"
+    },
+    {
+      "id": "2026-06-21-13",
+      "q": "Curacao's gritty point against Ecuador came after a chastening tournament opener. What was the score in that first match against Germany?",
+      "options": [
+        "7-1",
+        "4-0",
+        "3-0",
+        "5-1"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "debut"
+    },
+    {
+      "id": "2026-06-21-14",
+      "q": "The 2026 World Cup is being co-hosted by the United States, Canada and which other nation?",
+      "options": [
+        "Mexico",
+        "Brazil",
+        "Costa Rica",
+        "Argentina"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "hosts"
+    },
+    {
+      "id": "2026-06-22-0",
+      "q": "All three host nations have come through the opening two rounds unbeaten. Which trio is staging the 2026 World Cup?",
+      "options": [
+        "USA, Mexico and Brazil",
+        "USA, Canada and Mexico",
+        "Canada, USA and England",
+        "Mexico, USA and Argentina"
+      ],
+      "answer": 1,
+      "difficulty": "easy",
+      "category": "hosts"
+    },
+    {
+      "id": "2026-06-22-1",
+      "q": "The reigning world champions opened their defence with a controlled 3-0 win over Algeria. Who are they?",
+      "options": [
+        "France",
+        "Brazil",
+        "Argentina",
+        "Spain"
+      ],
+      "answer": 2,
+      "difficulty": "easy",
+      "category": "holders"
+    },
+    {
+      "id": "2026-06-22-2",
+      "q": "One side set the early benchmark for ruthlessness, hammering Curacao 7-1. Which nation was it?",
+      "options": [
+        "Germany",
+        "Netherlands",
+        "Spain",
+        "France"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "goals"
+    },
+    {
+      "id": "2026-06-22-3",
+      "q": "The Netherlands followed a 2-2 draw with Japan by thrashing which side 5-1?",
+      "options": [
+        "Tunisia",
+        "Switzerland",
+        "Sweden",
+        "Senegal"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "results"
+    },
+    {
+      "id": "2026-06-22-4",
+      "q": "Among the favourites, Brazil dropped points in their opener, held to a 1-1 draw by which African side?",
+      "options": [
+        "Ivory Coast",
+        "Senegal",
+        "Egypt",
+        "Morocco"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "results"
+    },
+    {
+      "id": "2026-06-22-5",
+      "q": "Morocco backed up that point by beating which returning nation 1-0 to share top spot in Group C with Brazil?",
+      "options": [
+        "Scotland",
+        "Haiti",
+        "Ghana",
+        "Panama"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "results"
+    },
+    {
+      "id": "2026-06-22-6",
+      "q": "Canada delighted the home crowd with a 6-0 rout in Group B. Who were on the wrong end of it?",
+      "options": [
+        "Bosnia and Herzegovina",
+        "Qatar",
+        "Switzerland",
+        "Uzbekistan"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "hosts"
+    },
+    {
+      "id": "2026-06-22-7",
+      "q": "England began their campaign with a 4-2 win over which beaten 2018 World Cup finalists?",
+      "options": [
+        "France",
+        "Belgium",
+        "Croatia",
+        "Netherlands"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "results"
+    },
+    {
+      "id": "2026-06-22-8",
+      "q": "Spain looked laboured in a goalless opener before finding their rhythm with a 4-0 win over whom?",
+      "options": [
+        "Cabo Verde",
+        "Saudi Arabia",
+        "Uruguay",
+        "Morocco"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "results"
+    },
+    {
+      "id": "2026-06-22-9",
+      "q": "Which fancied side has stuttered to two draws so far, 1-1 with Egypt and 0-0 with Iran, leaving them third in Group G?",
+      "options": [
+        "Belgium",
+        "Egypt",
+        "New Zealand",
+        "Iran"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "results"
+    },
+    {
+      "id": "2026-06-22-10",
+      "q": "Japan recovered from their 2-2 draw with the Netherlands to beat Tunisia by what score?",
+      "options": [
+        "2-1",
+        "1-0",
+        "3-2",
+        "4-0"
+      ],
+      "answer": 3,
+      "difficulty": "hard",
+      "category": "scorelines"
+    },
+    {
+      "id": "2026-06-22-11",
+      "q": "France opened Group I with a 3-1 win over which African side, on a night Norway beat Iraq 4-1?",
+      "options": [
+        "Ivory Coast",
+        "Senegal",
+        "Ghana",
+        "Egypt"
+      ],
+      "answer": 1,
+      "difficulty": "hard",
+      "category": "results"
+    },
+    {
+      "id": "2026-06-22-12",
+      "q": "Switzerland kept pace with hosts Canada at the top of Group B thanks to a 4-1 win over which side?",
+      "options": [
+        "Qatar",
+        "Austria",
+        "Bosnia and Herzegovina",
+        "Uzbekistan"
+      ],
+      "answer": 2,
+      "difficulty": "hard",
+      "category": "results"
+    },
+    {
+      "id": "2026-06-22-13",
+      "q": "Mexico sit top of Group A with two wins and no goals conceded. Having beaten South Africa 2-0, who did they then edge 1-0?",
+      "options": [
+        "Czechia",
+        "South Korea",
+        "South Africa",
+        "Costa Rica"
+      ],
+      "answer": 1,
+      "difficulty": "hard",
+      "category": "hosts"
+    },
+    {
+      "id": "2026-06-22-14",
+      "q": "Before their own 5-1 defeat to the Netherlands, Sweden had won by that exact 5-1 scoreline. Which side did Sweden put five past?",
+      "options": [
+        "Japan",
+        "Curacao",
+        "Tunisia",
+        "Iraq"
+      ],
+      "answer": 2,
+      "difficulty": "expert",
+      "category": "scorelines"
+    },
+    {
+      "id": "2026-06-23-0",
+      "q": "Lionel Messi made history on Monday by becoming the all-time leading scorer in men's World Cup history. How many World Cup goals does he now have?",
+      "options": [
+        "18",
+        "16",
+        "21",
+        "15"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "records"
+    },
+    {
+      "id": "2026-06-23-1",
+      "q": "Messi's milestone moved him clear of which Germany striker, the previous men's World Cup record scorer?",
+      "options": [
+        "Miroslav Klose",
+        "Gerd Muller",
+        "Thomas Muller",
+        "Jurgen Klinsmann"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "records"
+    },
+    {
+      "id": "2026-06-23-2",
+      "q": "Messi's double came in Argentina's 2-0 win over which side, a result that sealed top spot in Group J and a place in the knockouts?",
+      "options": [
+        "Austria",
+        "Algeria",
+        "Australia",
+        "Croatia"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "results"
+    },
+    {
+      "id": "2026-06-23-3",
+      "q": "Before his double, Messi missed an early chance to make the night even more emphatic against Austria. What happened?",
+      "options": [
+        "He missed a penalty",
+        "He was shown a yellow card",
+        "He scored an own goal",
+        "He limped off injured"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "records"
+    },
+    {
+      "id": "2026-06-23-4",
+      "q": "Messi arrived at Monday's game level with Klose on 16 World Cup goals thanks to what feat in Argentina's tournament opener against Algeria?",
+      "options": [
+        "A hat-trick",
+        "A single penalty",
+        "A stoppage-time winner",
+        "Two assists and no goals"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "records"
+    },
+    {
+      "id": "2026-06-23-5",
+      "q": "Monday's goals extended a remarkable run for Messi: he has now scored in how many consecutive World Cup matches dating back to 2022?",
+      "options": [
+        "Six",
+        "Three",
+        "Ten",
+        "Four"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "records"
+    },
+    {
+      "id": "2026-06-23-6",
+      "q": "In Monday's late kick-off, Kylian Mbappe scored twice as France beat Iraq 3-0. That double drew him level with Klose on how many World Cup goals?",
+      "options": [
+        "16",
+        "18",
+        "14",
+        "12"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "results"
+    },
+    {
+      "id": "2026-06-23-7",
+      "q": "Mbappe's brace against Iraq was extra special, coming on what landmark occasion for the France captain?",
+      "options": [
+        "His 100th cap for France",
+        "His 30th birthday",
+        "His first match as captain",
+        "His 50th World Cup appearance"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "milestones"
+    },
+    {
+      "id": "2026-06-23-8",
+      "q": "Who scored France's other goal in the 3-0 win over Iraq that confirmed their place in the round of 32?",
+      "options": [
+        "Ousmane Dembele",
+        "Antoine Griezmann",
+        "Olivier Giroud",
+        "Marcus Thuram"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "results"
+    },
+    {
+      "id": "2026-06-23-9",
+      "q": "Erling Haaland scored twice to send Norway into the last 32 with a 3-2 win over which side?",
+      "options": [
+        "Senegal",
+        "Ghana",
+        "Nigeria",
+        "Ivory Coast"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "results"
+    },
+    {
+      "id": "2026-06-23-10",
+      "q": "Norway had to survive a scare as which Senegal forward scored twice, including a stoppage-time consolation?",
+      "options": [
+        "Ismaila Sarr",
+        "Sadio Mane",
+        "Nicolas Jackson",
+        "Boulaye Dia"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "results"
+    },
+    {
+      "id": "2026-06-23-11",
+      "q": "By reaching 18 goals, Messi also passed the overall record across both World Cups, held by Brazil's Marta. On how many World Cup goals did Marta finish?",
+      "options": [
+        "17",
+        "15",
+        "13",
+        "20"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "records"
+    },
+    {
+      "id": "2026-06-23-12",
+      "q": "Algeria came from behind to beat Jordan 2-1 and stay in contention, with which forward grabbing the winning goal?",
+      "options": [
+        "Amine Gouiri",
+        "Riyad Mahrez",
+        "Islam Slimani",
+        "Said Benrahma"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "results"
+    },
+    {
+      "id": "2026-06-23-13",
+      "q": "After Monday's matches, who led the race for the 2026 Golden Boot with five goals, one clear of Mbappe and Haaland?",
+      "options": [
+        "Lionel Messi",
+        "Harry Kane",
+        "Erling Haaland",
+        "Kylian Mbappe"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "records"
+    },
+    {
+      "id": "2026-06-23-14",
+      "q": "Haaland's brace made him only the second player in the last 50 years to score multiple goals in each of his first two World Cup matches. Who was the first, in 2018?",
+      "options": [
+        "Harry Kane",
+        "Cristiano Ronaldo",
+        "Romelu Lukaku",
+        "Kylian Mbappe"
+      ],
+      "answer": 0,
+      "difficulty": "expert",
+      "category": "records"
+    },
+    {
+      "id": "2026-06-24-0",
+      "q": "Lionel Messi became the all-time leading goalscorer in men's World Cup history this week. Which nation does he captain?",
+      "options": [
+        "Argentina",
+        "Brazil",
+        "Uruguay",
+        "Spain"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "goal_record"
+    },
+    {
+      "id": "2026-06-24-1",
+      "q": "Messi broke the all-time record with a brace in a 2-0 group-stage win over which European side?",
+      "options": [
+        "Austria",
+        "Switzerland",
+        "Croatia",
+        "Czechia"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "goal_record"
+    },
+    {
+      "id": "2026-06-24-2",
+      "q": "Whose long-standing men's World Cup goalscoring record did Messi overtake? The previous holder was a striker from which country?",
+      "options": [
+        "Germany",
+        "Brazil",
+        "France",
+        "Italy"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "goal_record"
+    },
+    {
+      "id": "2026-06-24-3",
+      "q": "Messi now stands alone at the top of the men's World Cup scoring charts. How many career World Cup goals does he have after the Austria match?",
+      "options": [
+        "18",
+        "16",
+        "15",
+        "20"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "goal_record"
+    },
+    {
+      "id": "2026-06-24-4",
+      "q": "Which Germany legend held the previous men's record of 16 World Cup goals that Messi has now surpassed?",
+      "options": [
+        "Miroslav Klose",
+        "Gerd Muller",
+        "Thomas Muller",
+        "Jurgen Klinsmann"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "goal_record"
+    },
+    {
+      "id": "2026-06-24-5",
+      "q": "Messi first drew level with the men's record by scoring a hat-trick in Argentina's tournament opener against which side?",
+      "options": [
+        "Algeria",
+        "Austria",
+        "Nigeria",
+        "Saudi Arabia"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "goal_record"
+    },
+    {
+      "id": "2026-06-24-6",
+      "q": "Kylian Mbappe drew level with Klose on 16 World Cup goals after a brace in which group-stage match?",
+      "options": [
+        "France's win over Iraq",
+        "France's win over Senegal",
+        "France's draw with Canada",
+        "France's win over Iran"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "record_chase"
+    },
+    {
+      "id": "2026-06-24-7",
+      "q": "What was the final scoreline as France beat Iraq in that fixture?",
+      "options": [
+        "3-0",
+        "2-1",
+        "4-2",
+        "1-0"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "record_chase"
+    },
+    {
+      "id": "2026-06-24-8",
+      "q": "Cristiano Ronaldo scored his first goal of the 2026 World Cup as Portugal thrashed which side 5-0 on June 23?",
+      "options": [
+        "Uzbekistan",
+        "Uruguay",
+        "Ukraine",
+        "Uganda"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "group_stage"
+    },
+    {
+      "id": "2026-06-24-9",
+      "q": "England were held to a goalless draw on June 23 by which African nation?",
+      "options": [
+        "Ghana",
+        "Senegal",
+        "Ivory Coast",
+        "Cameroon"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "group_stage"
+    },
+    {
+      "id": "2026-06-24-10",
+      "q": "Mbappe reached a personal landmark in the Iraq game beyond his goals. What was it?",
+      "options": [
+        "His 100th cap for France",
+        "His first World Cup assist",
+        "His 50th international goal",
+        "His first goal as captain"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "record_chase"
+    },
+    {
+      "id": "2026-06-24-11",
+      "q": "Messi's 18 also passed the overall World Cup goal record across the men's and women's tournaments. That mark of 17 was held by which player?",
+      "options": [
+        "Marta",
+        "Birgit Prinz",
+        "Abby Wambach",
+        "Christine Sinclair"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "goal_record"
+    },
+    {
+      "id": "2026-06-24-12",
+      "q": "Klose set the previous men's record of 16 by surpassing a Brazilian striker who had scored 15. Who was that?",
+      "options": [
+        "Ronaldo Nazario",
+        "Romario",
+        "Rivaldo",
+        "Pele"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "goal_record"
+    },
+    {
+      "id": "2026-06-24-13",
+      "q": "Messi arrived at the 2026 World Cup needing a strong run to reach the top. How many World Cup goals had he scored across all his previous tournaments combined?",
+      "options": [
+        "13",
+        "11",
+        "16",
+        "9"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "goal_record"
+    },
+    {
+      "id": "2026-06-24-14",
+      "q": "At 38, Messi's hat-trick against Algeria carried an added distinction: he became the oldest player ever to do what at a World Cup?",
+      "options": [
+        "Score a hat-trick",
+        "Captain a side in the final",
+        "Score in a knockout match",
+        "Be named player of the match"
+      ],
+      "answer": 0,
+      "difficulty": "expert",
+      "category": "goal_record"
+    },
+    {
+      "id": "2026-06-25-0",
+      "q": "Brazil sealed top spot in Group C on Wednesday with a 3-0 win over which side, leaving their World Cup hopes hanging by a thread?",
+      "options": [
+        "Scotland",
+        "Wales",
+        "Republic of Ireland",
+        "Norway"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "group_c"
+    },
+    {
+      "id": "2026-06-25-1",
+      "q": "Which Real Madrid forward scored both of Brazil's first two goals in the 3-0 win over Scotland?",
+      "options": [
+        "Vinicius Junior",
+        "Rodrygo",
+        "Raphinha",
+        "Endrick"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "brazil"
+    },
+    {
+      "id": "2026-06-25-2",
+      "q": "Who came off the Brazil bench against Scotland to make his first appearance for the national team in roughly three years?",
+      "options": [
+        "Neymar",
+        "Dani Alves",
+        "Marcelo",
+        "Philippe Coutinho"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "brazil"
+    },
+    {
+      "id": "2026-06-25-3",
+      "q": "Tournament debutants Cape Verde produced one of the World Cup's great shocks by holding European champions Spain to a 0-0 draw. Which goalkeeper kept the clean sheet?",
+      "options": [
+        "Vozinha",
+        "Andre Onana",
+        "Edouard Mendy",
+        "Yassine Bounou"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "upsets"
+    },
+    {
+      "id": "2026-06-25-4",
+      "q": "Mexico beat Czechia 3-0 at the Azteca to achieve which feat for the first time in their long World Cup history?",
+      "options": [
+        "Win all three group games",
+        "Keep three clean sheets in a group",
+        "Top a group as hosts",
+        "Reach the knockouts without conceding"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "hosts"
+    },
+    {
+      "id": "2026-06-25-5",
+      "q": "Coming off the bench against Czechia, 40-year-old Guillermo Ochoa featured at his sixth World Cup, joining which two players as the only men to appear at six?",
+      "options": [
+        "Messi and Ronaldo",
+        "Modric and Ronaldo",
+        "Messi and Muller",
+        "Buffon and Ronaldo"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "records"
+    },
+    {
+      "id": "2026-06-25-6",
+      "q": "A 1-0 win over South Korea booked which nation's place in the round of 32?",
+      "options": [
+        "South Africa",
+        "Nigeria",
+        "Senegal",
+        "Ghana"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "group_stage"
+    },
+    {
+      "id": "2026-06-25-7",
+      "q": "South Korea's hopes faded after head coach Hong Myung-bo made the controversial call to leave which captain out of his starting line-up?",
+      "options": [
+        "Son Heung-min",
+        "Lee Kang-in",
+        "Kim Min-jae",
+        "Hwang Hee-chan"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "selection"
+    },
+    {
+      "id": "2026-06-25-8",
+      "q": "Cristiano Ronaldo's brace in Portugal's 5-0 win over Uzbekistan made him the first player ever to score at how many different World Cups?",
+      "options": [
+        "Six",
+        "Five",
+        "Seven",
+        "Four"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "records"
+    },
+    {
+      "id": "2026-06-25-9",
+      "q": "Ronaldo, scoring at 41, became the second-oldest goalscorer in World Cup history. Who remains the oldest, having struck for Cameroon at USA 94?",
+      "options": [
+        "Roger Milla",
+        "Rigobert Song",
+        "Samuel Eto'o",
+        "Thomas N'Kono"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "records"
+    },
+    {
+      "id": "2026-06-25-10",
+      "q": "Croatia ground out a 1-0 win over Panama, the only goal coming from which striker?",
+      "options": [
+        "Ante Budimir",
+        "Andrej Kramaric",
+        "Bruno Petkovic",
+        "Marko Livaja"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "group_stage"
+    },
+    {
+      "id": "2026-06-25-11",
+      "q": "Colombia edged DR Congo 1-0 thanks to a second goal in two games from which marauding full-back?",
+      "options": [
+        "Daniel Munoz",
+        "Johan Mojica",
+        "Santiago Arias",
+        "Deiver Machado"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "group_stage"
+    },
+    {
+      "id": "2026-06-25-12",
+      "q": "Morocco beat Haiti 4-2 but finished second in Group C, level on seven points with Brazil. What edged them out of top spot?",
+      "options": [
+        "Goal difference",
+        "Head-to-head record",
+        "Disciplinary points",
+        "Goals scored"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "group_c"
+    },
+    {
+      "id": "2026-06-25-13",
+      "q": "This is the first World Cup with 48 teams and a round of 32. How many of the third-placed sides across the 12 groups advance to that round?",
+      "options": [
+        "Eight",
+        "Four",
+        "Twelve",
+        "Six"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "format"
+    },
+    {
+      "id": "2026-06-25-14",
+      "q": "Vinicius became only the fifth Brazilian to score in all three group matches at a World Cup. Which forward set the benchmark by scoring in every match of Brazil's victorious 1970 campaign?",
+      "options": [
+        "Jairzinho",
+        "Pele",
+        "Tostao",
+        "Gerson"
+      ],
+      "answer": 0,
+      "difficulty": "expert",
+      "category": "history"
+    },
+    {
+      "id": "2026-06-26-0",
+      "q": "Germany lost their final group game 2-1 to which South American side, who still squeezed into the round of 32?",
+      "options": [
+        "Ecuador",
+        "Colombia",
+        "Uruguay",
+        "Paraguay"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "upsets"
+    },
+    {
+      "id": "2026-06-26-1",
+      "q": "Who scored Ecuador's 78th-minute winner to complete the comeback against Germany?",
+      "options": [
+        "Gonzalo Plata",
+        "Enner Valencia",
+        "Moises Caicedo",
+        "Kendry Paez"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "upsets"
+    },
+    {
+      "id": "2026-06-26-2",
+      "q": "Germany led inside two minutes through a fierce strike from which winger, before Ecuador hit back?",
+      "options": [
+        "Leroy Sane",
+        "Florian Wirtz",
+        "Jamal Musiala",
+        "Kai Havertz"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "upsets"
+    },
+    {
+      "id": "2026-06-26-3",
+      "q": "Despite the defeat to Ecuador, where did Germany finish in Group E?",
+      "options": [
+        "First",
+        "Second",
+        "Third",
+        "Fourth"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "group_e"
+    },
+    {
+      "id": "2026-06-26-4",
+      "q": "Hosts USA suffered their first defeat of the tournament, beaten 3-2 by Turkiye. The USA's opener came from a defender's first international goal. Which centre-back scored it?",
+      "options": [
+        "Auston Trusty",
+        "Chris Richards",
+        "Tim Ream",
+        "Sergino Dest"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "hosts"
+    },
+    {
+      "id": "2026-06-26-5",
+      "q": "Turkiye's equaliser against the USA was finished off by which 21-year-old Real Madrid playmaker?",
+      "options": [
+        "Arda Guler",
+        "Kenan Yildiz",
+        "Hakan Calhanoglu",
+        "Orkun Kokcu"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "hosts"
+    },
+    {
+      "id": "2026-06-26-6",
+      "q": "Turkiye snatched a dramatic 3-2 win over the USA with a goal deep in stoppage time. Who scored that last-gasp winner?",
+      "options": [
+        "Kaan Ayhan",
+        "Arda Guler",
+        "Orkun Kokcu",
+        "Hakan Calhanoglu"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "hosts"
+    },
+    {
+      "id": "2026-06-26-7",
+      "q": "The USA still topped Group D despite the loss. Which side, through as one of the best third-placed teams, awaits them in the round of 32?",
+      "options": [
+        "Bosnia and Herzegovina",
+        "Qatar",
+        "Serbia",
+        "Croatia"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "knockouts"
+    },
+    {
+      "id": "2026-06-26-8",
+      "q": "Switzerland sealed top spot in Group B with a 2-1 win over which co-host nation?",
+      "options": [
+        "Canada",
+        "Mexico",
+        "United States",
+        "Costa Rica"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "group_b"
+    },
+    {
+      "id": "2026-06-26-9",
+      "q": "The Netherlands won Group F with a 3-1 win over which winless side, as Japan and Sweden drew 1-1 to also progress?",
+      "options": [
+        "Tunisia",
+        "Senegal",
+        "Egypt",
+        "Morocco"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "group_f"
+    },
+    {
+      "id": "2026-06-26-10",
+      "q": "Curacao bowed out in the group stage, ending the run of the smallest nation ever to reach a World Cup. Whose record had they broken to claim that tag?",
+      "options": [
+        "Iceland",
+        "Trinidad and Tobago",
+        "Slovenia",
+        "Wales"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "history"
+    },
+    {
+      "id": "2026-06-26-11",
+      "q": "Curacao's historic first World Cup was masterminded by which much-travelled Dutch head coach?",
+      "options": [
+        "Dick Advocaat",
+        "Guus Hiddink",
+        "Louis van Gaal",
+        "Ronald Koeman"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "history"
+    },
+    {
+      "id": "2026-06-26-12",
+      "q": "Ecuador reaching the knockouts is only the second time they have made it out of the group stage. In which year did they first do it?",
+      "options": [
+        "2006",
+        "2014",
+        "2022",
+        "2002"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "history"
+    },
+    {
+      "id": "2026-06-26-13",
+      "q": "The USA are co-hosting in 2026. The last time they staged the World Cup, in 1994, who lifted the trophy on American soil?",
+      "options": [
+        "Brazil",
+        "Italy",
+        "Germany",
+        "Argentina"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "history"
+    },
+    {
+      "id": "2026-06-26-14",
+      "q": "Turkiye's victory marked a long-awaited return to the finals. Before 2026, when did they last appear at a World Cup, a tournament in which they finished third?",
+      "options": [
+        "2002",
+        "2006",
+        "1998",
+        "2014"
+      ],
+      "answer": 0,
+      "difficulty": "expert",
+      "category": "history"
+    },
+    {
+      "id": "2026-06-27-0",
+      "q": "France beat Norway 4-1 in Boston to finish their group with three wins from three. Who scored a first-half hat-trick?",
+      "options": [
+        "Ousmane Dembele",
+        "Kylian Mbappe",
+        "Desire Doue",
+        "Bradley Barcola"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "france_norway"
+    },
+    {
+      "id": "2026-06-27-1",
+      "q": "Norway rotated heavily and left one striker on the bench against France, despite the crowd chanting his name. Who was it?",
+      "options": [
+        "Erling Haaland",
+        "Jorgen Strand Larsen",
+        "Alexander Sorloth",
+        "Oscar Bobb"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "france_norway"
+    },
+    {
+      "id": "2026-06-27-2",
+      "q": "Their win over Norway confirmed France as winners of which group?",
+      "options": [
+        "Group I",
+        "Group G",
+        "Group H",
+        "Group J"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "groups"
+    },
+    {
+      "id": "2026-06-27-3",
+      "q": "Norway were handed a second-half penalty against France but spurned it, the spot-kick saved by goalkeeper Mike Maignan. Who took the miss?",
+      "options": [
+        "Jorgen Strand Larsen",
+        "Thelo Aasgaard",
+        "Oscar Bobb",
+        "Antonio Nusa"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "france_norway"
+    },
+    {
+      "id": "2026-06-27-4",
+      "q": "Who scored Norway's only goal against France, briefly pulling it back to 2-1?",
+      "options": [
+        "Thelo Aasgaard",
+        "Jorgen Strand Larsen",
+        "Antonio Nusa",
+        "Oscar Bobb"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "france_norway"
+    },
+    {
+      "id": "2026-06-27-5",
+      "q": "Dembele arrived at the World Cup as the reigning Ballon d'Or holder. In which year had he won the award?",
+      "options": [
+        "2025",
+        "2024",
+        "2023",
+        "2022"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "individual"
+    },
+    {
+      "id": "2026-06-27-6",
+      "q": "Belgium hammered New Zealand 5-1 to win their group. Which veteran playmaker was among the scorers?",
+      "options": [
+        "Kevin De Bruyne",
+        "Charles De Ketelaere",
+        "Youri Tielemans",
+        "Jeremy Doku"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "groups"
+    },
+    {
+      "id": "2026-06-27-7",
+      "q": "Belgium's rout took top spot in Group G on goal difference. Which side went through as runners-up?",
+      "options": [
+        "Egypt",
+        "Iran",
+        "New Zealand",
+        "Cape Verde"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "groups"
+    },
+    {
+      "id": "2026-06-27-8",
+      "q": "Iran thought they had snatched a stoppage-time winner against Egypt, only for the goal to be chalked off after a VAR review. Why?",
+      "options": [
+        "It was ruled offside",
+        "A handball in the build-up",
+        "A foul on the goalkeeper",
+        "The ball had gone out of play"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "groups"
+    },
+    {
+      "id": "2026-06-27-9",
+      "q": "Spain edged top spot in Group H with a 1-0 win over which South American side?",
+      "options": [
+        "Uruguay",
+        "Colombia",
+        "Paraguay",
+        "Ecuador"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "groups"
+    },
+    {
+      "id": "2026-06-27-10",
+      "q": "Tournament debutants Cape Verde reached the knockout stage as Group H runners-up after a goalless draw with whom?",
+      "options": [
+        "Saudi Arabia",
+        "Uruguay",
+        "Morocco",
+        "Spain"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "groups"
+    },
+    {
+      "id": "2026-06-27-11",
+      "q": "Senegal signed off the group stage in style with a 5-0 demolition of which side in Group I?",
+      "options": [
+        "Iraq",
+        "Iran",
+        "Saudi Arabia",
+        "Qatar"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "groups"
+    },
+    {
+      "id": "2026-06-27-12",
+      "q": "Group D winners the United States begin their round-of-32 campaign in Santa Clara against which nation?",
+      "options": [
+        "Bosnia and Herzegovina",
+        "Australia",
+        "Canada",
+        "Mexico"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "knockouts"
+    },
+    {
+      "id": "2026-06-27-13",
+      "q": "Group F runners-up Japan drew a fearsome round-of-32 tie. Which five-time world champions await them?",
+      "options": [
+        "Brazil",
+        "Germany",
+        "Argentina",
+        "France"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "knockouts"
+    },
+    {
+      "id": "2026-06-27-14",
+      "q": "In the new 48-team format, the top two from all 12 groups go through, joined by a set number of the best third-placed teams. How many third-placed sides advance to the round of 32?",
+      "options": [
+        "8",
+        "4",
+        "6",
+        "12"
+      ],
+      "answer": 0,
+      "difficulty": "expert",
+      "category": "format"
+    },
+    {
+      "id": "2026-06-28-0",
+      "q": "The 2026 World Cup reaches its knockout stage today. Which tie opens the Round of 32?",
+      "options": [
+        "South Africa v Canada",
+        "Mexico v United States",
+        "Brazil v Japan",
+        "Argentina v Cape Verde"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "round_of_32"
+    },
+    {
+      "id": "2026-06-28-1",
+      "q": "This is the first World Cup to feature a Round of 32, a direct consequence of the tournament expanding to how many teams?",
+      "options": [
+        "48",
+        "32",
+        "40",
+        "64"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "format"
+    },
+    {
+      "id": "2026-06-28-2",
+      "q": "Who enter the knockout rounds as reigning world champions?",
+      "options": [
+        "Argentina",
+        "France",
+        "Brazil",
+        "Spain"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "contenders"
+    },
+    {
+      "id": "2026-06-28-3",
+      "q": "Under the 48-team format, the group runners-up are joined in the last 32 by how many of the best third-placed teams?",
+      "options": [
+        "Eight",
+        "Four",
+        "Twelve",
+        "Six"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "format"
+    },
+    {
+      "id": "2026-06-28-4",
+      "q": "Reaching the last 32 on their tournament debut, which side became the smallest nation by population ever to make a World Cup knockout stage?",
+      "options": [
+        "Cape Verde",
+        "Curacao",
+        "New Zealand",
+        "Panama"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "cape_verde"
+    },
+    {
+      "id": "2026-06-28-5",
+      "q": "Cape Verde's reward for finishing runners-up in Group H is a Round of 32 tie in Miami against which opponent?",
+      "options": [
+        "Argentina",
+        "Brazil",
+        "France",
+        "Spain"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "cape_verde"
+    },
+    {
+      "id": "2026-06-28-6",
+      "q": "Ecuador beat Germany 2-1 on the final group day to sneak through as a best third-placed side. Despite the defeat, Germany still managed what?",
+      "options": [
+        "Won Group E",
+        "Were eliminated",
+        "Finished bottom of the group",
+        "Failed to score in the group"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "group_stage"
+    },
+    {
+      "id": "2026-06-28-7",
+      "q": "Who struck in the 77th minute to complete Ecuador's comeback win over Germany?",
+      "options": [
+        "Gonzalo Plata",
+        "Enner Valencia",
+        "Moises Caicedo",
+        "Kendry Paez"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "group_stage"
+    },
+    {
+      "id": "2026-06-28-8",
+      "q": "Ivory Coast reached a World Cup knockout stage for the first time in their history, advancing as runners-up behind which group winners?",
+      "options": [
+        "Germany",
+        "Brazil",
+        "Spain",
+        "France"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "first_timers"
+    },
+    {
+      "id": "2026-06-28-9",
+      "q": "DR Congo reached the knockout rounds for the first time ever with a 3-1 comeback over Uzbekistan. Who awaits them in the Round of 32?",
+      "options": [
+        "England",
+        "Belgium",
+        "France",
+        "Portugal"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "dr_congo"
+    },
+    {
+      "id": "2026-06-28-10",
+      "q": "Which forward scored twice in DR Congo's comeback win over Uzbekistan?",
+      "options": [
+        "Yoane Wissa",
+        "Cedric Bakambu",
+        "Silas Katompa",
+        "Theo Bongonda"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "dr_congo"
+    },
+    {
+      "id": "2026-06-28-11",
+      "q": "A Riyad Mahrez double rescued a 3-3 draw that booked Algeria's place in the last 32. Which side did they draw with?",
+      "options": [
+        "Austria",
+        "Norway",
+        "Switzerland",
+        "Croatia"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "algeria"
+    },
+    {
+      "id": "2026-06-28-12",
+      "q": "Algeria's late drama in that 3-3 draw bumped which nation out of the eight best third-placed places, ending their tournament?",
+      "options": [
+        "Iran",
+        "South Korea",
+        "Saudi Arabia",
+        "Uzbekistan"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "fine_margins"
+    },
+    {
+      "id": "2026-06-28-13",
+      "q": "Mexico topped Group A with a perfect record and now host a Round of 32 tie back at the Estadio Azteca. Who do they face?",
+      "options": [
+        "Ecuador",
+        "United States",
+        "Brazil",
+        "Argentina"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "hosts"
+    },
+    {
+      "id": "2026-06-28-14",
+      "q": "Algeria scraped into the knockouts as a best third-placed team on how many points?",
+      "options": [
+        "Four",
+        "Three",
+        "Five",
+        "Two"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "fine_margins"
+    },
+    {
+      "id": "2026-06-29-0",
+      "q": "Canada have reached the knockouts as one of three host nations. Who are the other two co-hosts of the 2026 World Cup?",
+      "options": [
+        "United States and Mexico",
+        "United States and Brazil",
+        "Mexico and Argentina",
+        "United States and England"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "hosts"
+    },
+    {
+      "id": "2026-06-29-1",
+      "q": "As the knockout rounds get going, who are the reigning world champions chasing back-to-back titles?",
+      "options": [
+        "Argentina",
+        "France",
+        "Brazil",
+        "Spain"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "champions"
+    },
+    {
+      "id": "2026-06-29-2",
+      "q": "This is the first World Cup to stage a Round of 32, a consequence of the field expanding to how many teams?",
+      "options": [
+        "48",
+        "32",
+        "40",
+        "64"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "format"
+    },
+    {
+      "id": "2026-06-29-3",
+      "q": "Canada beat South Africa 1-0 in the opening Round of 32 tie. Who struck deep in stoppage time to win it?",
+      "options": [
+        "Stephen Eustaquio",
+        "Jonathan David",
+        "Tajon Buchanan",
+        "Cyle Larin"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "canada"
+    },
+    {
+      "id": "2026-06-29-4",
+      "q": "Canada's captain made his tournament debut off the bench against South Africa, having sat out the group stage with a hamstring injury. Who is he?",
+      "options": [
+        "Alphonso Davies",
+        "Jonathan David",
+        "Stephen Eustaquio",
+        "Tajon Buchanan"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "canada"
+    },
+    {
+      "id": "2026-06-29-5",
+      "q": "Which American head coach guided Canada to that historic knockout win, the first manager to win a knockout match at this tournament?",
+      "options": [
+        "Jesse Marsch",
+        "John Herdman",
+        "Bob Bradley",
+        "Gregg Berhalter"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "canada"
+    },
+    {
+      "id": "2026-06-29-6",
+      "q": "Canada now go to the last 16 for the first time in their history. They will face the winner of which Round of 32 tie?",
+      "options": [
+        "Netherlands v Morocco",
+        "Brazil v Japan",
+        "Germany v Paraguay",
+        "Argentina v Cape Verde"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "bracket"
+    },
+    {
+      "id": "2026-06-29-7",
+      "q": "Alongside the twelve group winners and twelve runners-up, how many of the best third-placed teams advanced to fill the Round of 32?",
+      "options": [
+        "Eight",
+        "Four",
+        "Six",
+        "Twelve"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "format"
+    },
+    {
+      "id": "2026-06-29-8",
+      "q": "Canada's win over South Africa, the tie that opened the last 32, was staged at which Los Angeles-area stadium?",
+      "options": [
+        "SoFi Stadium",
+        "Rose Bowl",
+        "MetLife Stadium",
+        "Estadio Azteca"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "venue"
+    },
+    {
+      "id": "2026-06-29-9",
+      "q": "Canada's only previous World Cup goals came in 2022. Against which nation did they score their first-ever World Cup goal?",
+      "options": [
+        "Croatia",
+        "Belgium",
+        "Morocco",
+        "Spain"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "history"
+    },
+    {
+      "id": "2026-06-29-10",
+      "q": "Who scored that first-ever World Cup goal for Canada, a header in the opening minutes against Croatia in 2022?",
+      "options": [
+        "Alphonso Davies",
+        "Jonathan David",
+        "Cyle Larin",
+        "Junior Hoilett"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "history"
+    },
+    {
+      "id": "2026-06-29-11",
+      "q": "Before this run, Canada had played at only two World Cups. They made their debut in which year, going home without a single goal?",
+      "options": [
+        "1986",
+        "1990",
+        "1994",
+        "2002"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "history"
+    },
+    {
+      "id": "2026-06-29-12",
+      "q": "Jesse Marsch had reached a World Cup last 16 before, as a United States assistant under Bob Bradley. At which tournament?",
+      "options": [
+        "2010",
+        "2002",
+        "2014",
+        "2018"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "coach"
+    },
+    {
+      "id": "2026-06-29-13",
+      "q": "Among today's Round of 32 ties, four-time winners Germany are paired with which South American side?",
+      "options": [
+        "Paraguay",
+        "Ecuador",
+        "Uruguay",
+        "Colombia"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "bracket"
+    },
+    {
+      "id": "2026-06-29-14",
+      "q": "Davies' first-ever World Cup goal for Canada against Croatia in 2022 was the fastest of that tournament. How quickly did he score?",
+      "options": [
+        "After 68 seconds",
+        "After 29 seconds",
+        "After four minutes",
+        "After eleven minutes"
+      ],
+      "answer": 0,
+      "difficulty": "expert",
+      "category": "history"
+    },
+    {
+      "id": "2026-06-30-0",
+      "q": "Canada reached the World Cup knockout stage for the first time in their history. Which nation did they beat to do it?",
+      "options": [
+        "South Africa",
+        "Senegal",
+        "Nigeria",
+        "Cameroon"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "knockouts"
+    },
+    {
+      "id": "2026-06-30-1",
+      "q": "Five-time world champions Brazil came from behind to win 2-1 in the last 32. Which nation did they knock out?",
+      "options": [
+        "Japan",
+        "South Korea",
+        "Australia",
+        "Saudi Arabia"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "records"
+    },
+    {
+      "id": "2026-06-30-2",
+      "q": "Paraguay eliminated four-time champions Germany in the Round of 32. How was the tie settled?",
+      "options": [
+        "A penalty shootout",
+        "A golden goal",
+        "A 90th-minute winner",
+        "An own goal in extra time"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "upsets"
+    },
+    {
+      "id": "2026-06-30-3",
+      "q": "Who scored the 92nd-minute winner that sent Canada past South Africa and into the last 16?",
+      "options": [
+        "Stephen Eustaquio",
+        "Jonathan David",
+        "Alphonso Davies",
+        "Cyle Larin"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "knockouts"
+    },
+    {
+      "id": "2026-06-30-4",
+      "q": "Trailing Japan at half-time, Brazil turned it around late. Who scored their stoppage-time winner?",
+      "options": [
+        "Gabriel Martinelli",
+        "Vinicius Junior",
+        "Rodrygo",
+        "Raphinha"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "records"
+    },
+    {
+      "id": "2026-06-30-5",
+      "q": "Japan led Brazil for much of the game thanks to a first-half opener. Which midfielder put them ahead?",
+      "options": [
+        "Kaishu Sano",
+        "Takefusa Kubo",
+        "Daichi Kamada",
+        "Kaoru Mitoma"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "records"
+    },
+    {
+      "id": "2026-06-30-6",
+      "q": "Which manager saw his Germany side dumped out of the World Cup at the Round of 32?",
+      "options": [
+        "Julian Nagelsmann",
+        "Hansi Flick",
+        "Rudi Voller",
+        "Jurgen Klinsmann"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "upsets"
+    },
+    {
+      "id": "2026-06-30-7",
+      "q": "Paraguay's shootout hero saved twice to knock out Germany. Which goalkeeper was it?",
+      "options": [
+        "Orlando Gill",
+        "Antony Silva",
+        "Roberto Fernandez",
+        "Carlos Coronel"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "upsets"
+    },
+    {
+      "id": "2026-06-30-8",
+      "q": "Who converted the decisive sudden-death penalty to complete Paraguay's stunning win over Germany?",
+      "options": [
+        "Jose Canale",
+        "Julio Enciso",
+        "Miguel Almiron",
+        "Omar Alderete"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "upsets"
+    },
+    {
+      "id": "2026-06-30-9",
+      "q": "On the same night Germany went out, Morocco eliminated which European heavyweight on penalties?",
+      "options": [
+        "Netherlands",
+        "Belgium",
+        "Portugal",
+        "Croatia"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "upsets"
+    },
+    {
+      "id": "2026-06-30-10",
+      "q": "Who scored the goal that put the Netherlands ahead against Morocco before the Dutch were pegged back?",
+      "options": [
+        "Cody Gakpo",
+        "Memphis Depay",
+        "Xavi Simons",
+        "Donyell Malen"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "upsets"
+    },
+    {
+      "id": "2026-06-30-11",
+      "q": "Morocco forced extra time with a stoppage-time equaliser against the Netherlands. Who headed it in?",
+      "options": [
+        "Issa Diop",
+        "Achraf Hakimi",
+        "Romain Saiss",
+        "Nayef Aguerd"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "upsets"
+    },
+    {
+      "id": "2026-06-30-12",
+      "q": "Who slotted home the winning penalty as Morocco knocked the Netherlands out of the World Cup?",
+      "options": [
+        "Ismael Saibari",
+        "Achraf Hakimi",
+        "Hakim Ziyech",
+        "Brahim Diaz"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "upsets"
+    },
+    {
+      "id": "2026-06-30-13",
+      "q": "Germany's exit made them the first of the tournament's traditional heavyweights to fall. At which stage were they knocked out?",
+      "options": [
+        "Round of 32",
+        "Group stage",
+        "Round of 16",
+        "Quarter-finals"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "knockouts"
+    },
+    {
+      "id": "2026-06-30-14",
+      "q": "France continue their Round of 32 campaign today against which Nordic side?",
+      "options": [
+        "Sweden",
+        "Norway",
+        "Denmark",
+        "Switzerland"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "fixtures"
+    },
+    {
+      "id": "2026-07-01-0",
+      "q": "Germany crashed out of the World Cup in the Round of 32, beaten on penalties by which unfancied side?",
+      "options": [
+        "Paraguay",
+        "Ecuador",
+        "Bosnia and Herzegovina",
+        "DR Congo"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "knockouts"
+    },
+    {
+      "id": "2026-07-01-1",
+      "q": "Which striker struck a late winner to send Norway past Ivory Coast and into the last 16?",
+      "options": [
+        "Erling Haaland",
+        "Martin Odegaard",
+        "Antonio Nusa",
+        "Alexander Sorloth"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "knockouts"
+    },
+    {
+      "id": "2026-07-01-2",
+      "q": "France eased past Sweden 3-0 in the Round of 32, with which forward scoring twice?",
+      "options": [
+        "Kylian Mbappe",
+        "Ousmane Dembele",
+        "Bradley Barcola",
+        "Randal Kolo Muani"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "knockouts"
+    },
+    {
+      "id": "2026-07-01-3",
+      "q": "Lionel Messi is now the outright all-time leading goalscorer in World Cup history. Which player did he overtake at the top of the list?",
+      "options": [
+        "Miroslav Klose",
+        "Ronaldo Nazario",
+        "Gerd Muller",
+        "Just Fontaine"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "scoring_records"
+    },
+    {
+      "id": "2026-07-01-4",
+      "q": "The all-time World Cup goals record that Messi has now surpassed had stood at how many goals?",
+      "options": [
+        "16",
+        "13",
+        "18",
+        "14"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "scoring_records"
+    },
+    {
+      "id": "2026-07-01-5",
+      "q": "Messi and which other forward jointly lead the 2026 Golden Boot race, each on six goals?",
+      "options": [
+        "Kylian Mbappe",
+        "Erling Haaland",
+        "Vinicius Junior",
+        "Harry Kane"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "golden_boot"
+    },
+    {
+      "id": "2026-07-01-6",
+      "q": "Morocco knocked the Netherlands out on penalties. Which goalkeeper made the decisive save in the shootout?",
+      "options": [
+        "Yassine Bounou",
+        "Andries Noppert",
+        "Munir El Kajoui",
+        "Ahmed Reda Tagnaouti"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "shootouts"
+    },
+    {
+      "id": "2026-07-01-7",
+      "q": "Paraguay's shootout win in the Round of 32 was hailed as a great upset — it eliminated which four-time World Cup winners?",
+      "options": [
+        "Germany",
+        "Uruguay",
+        "Brazil",
+        "France"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "upsets"
+    },
+    {
+      "id": "2026-07-01-8",
+      "q": "Norway's win over Ivory Coast was a landmark for the nation because it was their first-ever World Cup...?",
+      "options": [
+        "Knockout-stage win",
+        "Goal",
+        "Clean sheet",
+        "Appearance"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "records"
+    },
+    {
+      "id": "2026-07-01-9",
+      "q": "Brazil booked a last-16 tie with Norway by winning their Round of 32 match 2-1 against whom?",
+      "options": [
+        "Japan",
+        "South Korea",
+        "Australia",
+        "Saudi Arabia"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "knockouts"
+    },
+    {
+      "id": "2026-07-01-10",
+      "q": "Brazil's Ronaldo sits fourth on the all-time World Cup scoring list, just behind Klose. How many World Cup goals did he score in his career?",
+      "options": [
+        "15",
+        "12",
+        "17",
+        "13"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "scoring_records"
+    },
+    {
+      "id": "2026-07-01-11",
+      "q": "Whose header deep in stoppage time forced extra time for Morocco against the Netherlands, before the shootout?",
+      "options": [
+        "Issa Diop",
+        "Ismael Saibari",
+        "Youssef En-Nesyri",
+        "Achraf Hakimi"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "shootouts"
+    },
+    {
+      "id": "2026-07-01-12",
+      "q": "Antonio Nusa opened the scoring for Norway against Ivory Coast, teed up by which captain and playmaker?",
+      "options": [
+        "Martin Odegaard",
+        "Sander Berge",
+        "Erling Haaland",
+        "Alexander Sorloth"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "knockouts"
+    },
+    {
+      "id": "2026-07-01-13",
+      "q": "Who scored Germany's equaliser against Paraguay to force extra time, before the fatal shootout?",
+      "options": [
+        "Kai Havertz",
+        "Florian Wirtz",
+        "Niclas Fullkrug",
+        "Jamal Musiala"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "knockouts"
+    },
+    {
+      "id": "2026-07-01-14",
+      "q": "Which winger supplied two assists as France dismantled Sweden 3-0 to reach the last 16?",
+      "options": [
+        "Michael Olise",
+        "Bradley Barcola",
+        "Ousmane Dembele",
+        "Kingsley Coman"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "knockouts"
+    },
+    {
+      "id": "2026-07-02-0",
+      "q": "Harry Kane struck twice late on to rescue England in a 2-1 comeback win over which nation in the Round of 32?",
+      "options": [
+        "DR Congo",
+        "Ghana",
+        "Senegal",
+        "Cameroon"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "knockouts"
+    },
+    {
+      "id": "2026-07-02-1",
+      "q": "Belgium came from 2-0 down to win 3-2 after extra time against which side in the Round of 32?",
+      "options": [
+        "Senegal",
+        "Morocco",
+        "Ivory Coast",
+        "Ghana"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "knockouts"
+    },
+    {
+      "id": "2026-07-02-2",
+      "q": "The United States reached the Round of 16 with a 2-0 win over which nation?",
+      "options": [
+        "Bosnia and Herzegovina",
+        "Serbia",
+        "Croatia",
+        "Slovenia"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "knockouts"
+    },
+    {
+      "id": "2026-07-02-3",
+      "q": "England's win over DR Congo set up a Round of 16 tie with which host nation, to be played at the Azteca?",
+      "options": [
+        "Mexico",
+        "United States",
+        "Canada",
+        "Brazil"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "fixtures"
+    },
+    {
+      "id": "2026-07-02-4",
+      "q": "Who converted the extra-time penalty that completed Belgium's comeback win over Senegal?",
+      "options": [
+        "Youri Tielemans",
+        "Kevin De Bruyne",
+        "Romelu Lukaku",
+        "Jeremy Doku"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "knockouts"
+    },
+    {
+      "id": "2026-07-02-5",
+      "q": "Which substitute pulled a goal back late on to ignite Belgium's fightback against Senegal?",
+      "options": [
+        "Romelu Lukaku",
+        "Michy Batshuayi",
+        "Lois Openda",
+        "Charles De Ketelaere"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "knockouts"
+    },
+    {
+      "id": "2026-07-02-6",
+      "q": "Which forward scored the USA's opener against Bosnia before being sent off in the second half?",
+      "options": [
+        "Folarin Balogun",
+        "Christian Pulisic",
+        "Ricardo Pepi",
+        "Josh Sargent"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "knockouts"
+    },
+    {
+      "id": "2026-07-02-7",
+      "q": "The USA's victory was their first World Cup win over a European side since beating which nation in the 2002 opener?",
+      "options": [
+        "Portugal",
+        "Spain",
+        "Italy",
+        "Poland"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "records"
+    },
+    {
+      "id": "2026-07-02-8",
+      "q": "Belgium's reward for beating Senegal is a Round of 16 meeting with which nation?",
+      "options": [
+        "United States",
+        "Mexico",
+        "Canada",
+        "Morocco"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "fixtures"
+    },
+    {
+      "id": "2026-07-02-9",
+      "q": "Which manager oversaw England's comeback win over DR Congo?",
+      "options": [
+        "Thomas Tuchel",
+        "Gareth Southgate",
+        "Lee Carsley",
+        "Eddie Howe"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "managers"
+    },
+    {
+      "id": "2026-07-02-10",
+      "q": "Youri Tielemans' penalty against Senegal, timed at 124 minutes and 44 seconds, set what World Cup record?",
+      "options": [
+        "The latest goal ever scored in a World Cup match",
+        "The fastest penalty in a World Cup match",
+        "The first successful extra-time penalty in a shootout",
+        "The latest red card in a World Cup match"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "records"
+    },
+    {
+      "id": "2026-07-02-11",
+      "q": "DR Congo stunned England with a seventh-minute opener in Atlanta. Which forward scored it?",
+      "options": [
+        "Brian Cipenga",
+        "Cedric Bakambu",
+        "Yoane Wissa",
+        "Silas Katompa"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "knockouts"
+    },
+    {
+      "id": "2026-07-02-12",
+      "q": "Senegal led Belgium 2-0 through Habib Diarra and which winger before the collapse?",
+      "options": [
+        "Ismaila Sarr",
+        "Sadio Mane",
+        "Nicolas Jackson",
+        "Boulaye Dia"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "knockouts"
+    },
+    {
+      "id": "2026-07-02-13",
+      "q": "Kane's double against DR Congo took his tally for this World Cup to how many goals, keeping him in the Golden Boot race?",
+      "options": [
+        "Five",
+        "Three",
+        "Four",
+        "Six"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "golden_boot"
+    },
+    {
+      "id": "2026-07-02-14",
+      "q": "Malik Tillman's strike against Bosnia was the USA's first World Cup goal direct from a free kick since which player scored against Switzerland in 1994?",
+      "options": [
+        "Eric Wynalda",
+        "Landon Donovan",
+        "Cobi Jones",
+        "Claudio Reyna"
+      ],
+      "answer": 0,
+      "difficulty": "expert",
+      "category": "records"
     }
   ]
 }
