@@ -64,9 +64,12 @@ export function isPoolReady(): boolean {
  *  concurrent callers share a single in-flight load. */
 export async function ensurePool(): Promise<void> {
   if (poolReady) return;
-  loadPromise ??= import("@/data/draft/player-seasons.json").then((m) => {
-    buildIndexes(((m as { default?: unknown }).default ?? m) as PoolData);
-  });
+  // On failure, clear the cached promise so a later call retries — otherwise a
+  // single transient chunk-load failure (flaky mobile network) would cache the
+  // rejection forever and permanently break spinning/picking players.
+  loadPromise ??= import("@/data/draft/player-seasons.json")
+    .then((m) => { buildIndexes(((m as { default?: unknown }).default ?? m) as PoolData); })
+    .catch((err) => { loadPromise = null; throw err; });
   await loadPromise;
 }
 
