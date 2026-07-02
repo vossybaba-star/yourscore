@@ -61,10 +61,11 @@ export default function QuizBattlePage() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const db = sb as any;
 
-    const [pkRes, attRes, frRes] = await Promise.all([
+    // Render the quiz grid off packs + attempts only — don't block it on the
+    // friends query (not needed until step 2).
+    const [pkRes, attRes] = await Promise.all([
       db.from("quiz_packs").select("id, name, type, parameter, question_count, featured, featured_order, metadata, created_at").eq("status", "published").eq("rotation_active", true),
       db.from("quiz_attempts").select("pack_id").eq("user_id", uid),
-      db.from("friendships").select("user_id, friend_id, status").or(`user_id.eq.${uid},friend_id.eq.${uid}`),
     ]);
     const playedIds = new Set(((attRes.data ?? []) as Row[]).map((r) => r.pack_id));
     const list: Pack[] = ((pkRes.data ?? []) as Row[]).map((p) => ({
@@ -76,6 +77,8 @@ export default function QuizBattlePage() {
     }));
     setPacks(list);
 
+    // Friends — loaded after, for step 2.
+    const frRes = await db.from("friendships").select("user_id, friend_id, status").or(`user_id.eq.${uid},friend_id.eq.${uid}`);
     const ids = ((frRes.data ?? []) as Row[]).filter((r) => r.status === "accepted").map((r) => (r.user_id === uid ? r.friend_id : r.user_id)).filter(Boolean);
     if (ids.length) {
       const { data: profs } = await db.from("profiles").select("id, display_name").in("id", ids);
@@ -219,7 +222,7 @@ export default function QuizBattlePage() {
                     <div className="relative flex items-center justify-center" style={{ height: 96, background: "radial-gradient(ellipse at 50% 80%, rgba(0,216,192,0.12), transparent 70%)" }}>
                       {p.cover ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={p.cover} alt={p.name} loading="eager" decoding="async" className="absolute inset-0 w-full h-full" style={{ objectFit: "cover" }} />
+                        <img src={p.cover} alt={p.name} loading="lazy" decoding="async" className="absolute inset-0 w-full h-full" style={{ objectFit: "cover" }} />
                       ) : (
                         <div className="flex items-center justify-center rounded-2xl font-display text-3xl text-white" style={{ width: 58, height: 58, background: "rgba(0,216,192,0.1)", border: "1px solid rgba(0,216,192,0.2)" }}>{initial(p.name)}</div>
                       )}
