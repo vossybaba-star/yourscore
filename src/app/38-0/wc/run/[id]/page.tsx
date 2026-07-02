@@ -18,6 +18,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Pitch } from "@/components/draft/Pitch";
 import { InviteMastermind } from "@/components/draft/InviteMastermind";
+import { WcEditionStrip, type EditionCell } from "@/components/draft/WcEditionStrip";
 import { spinForNation, spinWorld, ensurePool, isPoolReady } from "@/lib/draft/pool";
 import { drawQuestion, type ServedQuestion } from "@/lib/draft/wc-quiz";
 import { upgradeBand, type DraftBand } from "@/lib/draft/draft-quiz";
@@ -102,6 +103,11 @@ export default function WorldCupRun() {
   const { user } = useUser();
   // On a finished RANKED run, the player's season standing for the positive scorecard.
   const [standing, setStanding] = useState<Standing | null>(null);
+  // Final-scorecard extras: the catch-up date scroller (missed days) + one-shot
+  // auto-scroll to the scorecard when the run finishes.
+  const [editions, setEditions] = useState<EditionCell[]>([]);
+  const resultRef = useRef<HTMLDivElement>(null);
+  const scrolledToResult = useRef(false);
 
   const openTie = useCallback((t: PendingTie) => {
     setTie(t); setTieMode("choose"); setDecPicked(null); setDecTimeLeft(DECIDER_SECONDS); setDecBusy(false);
@@ -118,6 +124,22 @@ export default function WorldCupRun() {
   }, [id, openTie]);
 
   useEffect(() => { void ensurePool(); load(); }, [load]);
+
+  // On finish (ranked): the run ends with the user scrolled to the bottom, so pull the
+  // scorecard into view; and load the edition strip so they can play days they've missed.
+  const finished = !!run && run.ranked === true && run.status !== "active";
+  useEffect(() => {
+    if (!finished || scrolledToResult.current) return;
+    scrolledToResult.current = true;
+    requestAnimationFrame(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    (async () => {
+      try {
+        const res = await fetch("/api/draft/wc/draft", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "status" }) });
+        const data = await res.json();
+        if (Array.isArray(data.editions)) setEditions(data.editions as EditionCell[]);
+      } catch { /* strip just stays empty */ }
+    })();
+  }, [finished]);
 
   // When a ranked run finishes, pull the player's season standing from the WC daily board
   // for the (positive) scorecard. Fails soft — the banner just omits the rank line.
@@ -482,7 +504,7 @@ export default function WorldCupRun() {
         {run.ranked && terminal && (() => {
           const champ = run.status === "champion";
           return (
-            <div className="mt-4 rounded-2xl p-5 text-center" style={{ background: champ ? "linear-gradient(135deg,#1a1407,#2a2007)" : "linear-gradient(135deg,#07140d,#0c1a12)", border: `1px solid ${champ ? "rgba(255,184,0,0.55)" : "rgba(174,234,0,0.45)"}` }}>
+            <div ref={resultRef} className="mt-4 rounded-2xl p-5 text-center" style={{ background: champ ? "linear-gradient(135deg,#1a1407,#2a2007)" : "linear-gradient(135deg,#07140d,#0c1a12)", border: `1px solid ${champ ? "rgba(255,184,0,0.55)" : "rgba(174,234,0,0.45)"}` }}>
               <div style={{ fontSize: 44 }}>{champ ? "🏆" : "⚽"}</div>
               <div className="font-display tracking-wide" style={{ fontSize: 26, color: champ ? "#ffb800" : "#aeea00" }}>{champ ? "WORLD CHAMPIONS!" : "GREAT RUN!"}</div>
               <div className="font-body mt-1" style={{ fontSize: 14, color: "#cdd6cf" }}>
@@ -499,6 +521,17 @@ export default function WorldCupRun() {
                 Come back tomorrow for a fresh draft and more points — or keep playing now with Just Play.
               </p>
               <div className="mt-3"><Scorecard url={scorecardUrl} /></div>
+              {/* Catch up on days you've missed — same date scroller as the WC tab. */}
+              {editions.length > 0 && (
+                <div className="mt-4 text-left">
+                  <WcEditionStrip
+                    editions={editions}
+                    onPlayToday={() => router.push("/38-0/wc?daily=1")}
+                    onCatchUp={(d) => router.push(`/38-0/wc?catchup=${d}`)}
+                    onViewRun={(rid) => router.push(`/38-0/wc/run/${rid}`)}
+                  />
+                </div>
+              )}
               {/* £25 daily giveaway — the primary share; the tweet unfurls the Mastermind card. */}
               <a href={tweetHref()} target="_blank" rel="noopener noreferrer"
                 className="flex items-center gap-3 mt-3 rounded-2xl px-4 py-3 active:scale-[0.98] transition-transform"
