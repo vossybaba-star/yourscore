@@ -28,32 +28,32 @@ export function RankRewardCard() {
   useEffect(() => {
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return;
     let cancelled = false;
-    import("@/lib/supabase/client").then(async ({ createClient }) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const sb = createClient() as any;
-      const { data: auth } = await sb.auth.getUser();
-      const userId: string | undefined = auth?.user?.id;
-      if (!userId || cancelled) return;
-      const { data } = await sb.rpc("get_yourscore_rank", { p_user_id: userId });
-      const cur: RankRow | null = data?.[0] ?? null;
-      if (!cur || cancelled) return;
+    // One server call (see /api/rank/me): auth + the get_yourscore_rank RPC run
+    // co-located with the DB, instead of two sequential client→eu-central-1
+    // round-trips (~2s) after every game. userId comes back on the row itself.
+    fetch("/api/rank/me")
+      .then((r) => r.json())
+      .then(({ row: cur }: { row: RankRow | null }) => {
+        if (!cur || cancelled) return;
+        const userId = cur.user_id;
 
-      let prev: Snapshot | null = null;
-      try { prev = JSON.parse(localStorage.getItem(KEY(userId)) ?? "null"); } catch { /* ignore */ }
-      try {
-        localStorage.setItem(KEY(userId), JSON.stringify({
-          overall_score: cur.overall_score, overall_rank: cur.overall_rank,
-        } satisfies Snapshot));
-      } catch { /* storage blocked — deltas just won't show next time */ }
+        let prev: Snapshot | null = null;
+        try { prev = JSON.parse(localStorage.getItem(KEY(userId)) ?? "null"); } catch { /* ignore */ }
+        try {
+          localStorage.setItem(KEY(userId), JSON.stringify({
+            overall_score: cur.overall_score, overall_rank: cur.overall_rank,
+          } satisfies Snapshot));
+        } catch { /* storage blocked — deltas just won't show next time */ }
 
-      setRow(cur);
-      if (prev) {
-        setGained({
-          points: Math.max(0, cur.overall_score - prev.overall_score),
-          places: Math.max(0, prev.overall_rank - cur.overall_rank),
-        });
-      }
-    });
+        setRow(cur);
+        if (prev) {
+          setGained({
+            points: Math.max(0, cur.overall_score - prev.overall_score),
+            places: Math.max(0, prev.overall_rank - cur.overall_rank),
+          });
+        }
+      })
+      .catch(() => { /* leave the card hidden on error */ });
     return () => { cancelled = true; };
   }, []);
 
