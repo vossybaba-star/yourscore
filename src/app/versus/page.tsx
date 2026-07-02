@@ -9,6 +9,7 @@ import { useVersusStats, type Rivalry } from "@/hooks/useVersusStats";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { PitchArt, QuizArt, VersusHeroArt } from "@/components/versus/GameTileArt";
+import { VersusDiscovery } from "@/components/versus/VersusDiscovery";
 import { FriendsPanel } from "@/components/friends/FriendsPanel";
 import { LeaguesPanel } from "@/components/leagues/LeaguesPanel";
 
@@ -260,7 +261,6 @@ function VersusInner() {
   const yourTurn = only1v1(turns.yourTurn), waiting = only1v1(turns.waiting), results = only1v1(turns.results);
   const activeMatches = [...yourTurn, ...waiting];
   const hasHistory = stats.record.wins + stats.record.losses + stats.record.draws > 0;
-  const nothingYet = !turns.loading && !stats.loading && activeMatches.length === 0 && results.length === 0 && !hasHistory;
 
   const PILLS: { key: View; label: string }[] = [
     { key: "play", label: "Play" }, { key: "friends", label: "Friends" }, { key: "leagues", label: "Leagues" },
@@ -321,12 +321,8 @@ function VersusInner() {
             <GameTile game="quiz" href="/versus/quiz" title="Quiz Battle" sub="Same questions, same time. Fastest wins." />
           </div>
 
-          {nothingYet && (
-            <div className="rounded-2xl px-5 py-6 mt-6 text-center" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.07)" }}>
-              <p className="font-body text-sm text-white">No matches yet.</p>
-              <p className="font-body text-xs text-text-muted mt-1">Challenge someone to start a rivalry.</p>
-            </div>
-          )}
+          {/* Cold-start: add-friends promo + top-players rail (social proof) */}
+          <VersusDiscovery />
 
           {/* Active matches (beyond the pinned your-turn) */}
           {activeMatches.length > (yourTurn.length > 0 ? 1 : 0) && (
