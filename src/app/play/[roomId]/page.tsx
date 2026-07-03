@@ -21,9 +21,18 @@ import { QuestionCard, type ActiveQuestion } from "@/components/game/QuestionCar
 import { RankRewardCard } from "@/components/rank/RankRewardCard";
 import { Leaderboard, type LeaderboardEntry } from "@/components/game/Leaderboard";
 import { Spinner } from "@/components/ui/Spinner";
+import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { AddFriendCard, AddFriendInline } from "@/components/social/AddFriendCard";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
+
+// Shadow matches: a real player's previous run replayed in the CPU seat. The
+// room row carries the persona + per-question times (rooms.shadow, mig 66);
+// identity is revealed honestly on the result screen.
+interface ShadowInfo {
+  userId: string; name: string; avatarUrl: string | null;
+  playedAt: string | null; times: (number | null)[]; originalScore: number;
+}
 
 interface Room {
   id: string; name: string; code: string;
@@ -33,6 +42,7 @@ interface Room {
   category_filter: string | null; difficulty_filter: string;
   current_question_idx: number; question_started_at: string | null;
   max_players: number;
+  shadow?: ShadowInfo | null;
 }
 
 interface Player {
@@ -176,6 +186,17 @@ export default function RoomPage() {
   useEffect(() => { hasBotRef.current = players.some((p) => p.user_id === QUIZ_BOT_ID); }, [players]);
   useEffect(() => () => { if (botTickTimerRef.current) clearTimeout(botTickTimerRef.current); }, []);
 
+  // Shadow persona: render the CPU seat as the real player whose run this is.
+  const shadowRef = useRef<ShadowInfo | null>(null);
+  useEffect(() => { shadowRef.current = room?.shadow ?? null; }, [room?.shadow]);
+  const shadow = room?.shadow ?? null;
+  const personaRows = useCallback(<T extends { user_id: string; display_name: string }>(rows: T[]): T[] => {
+    if (!shadow) return rows;
+    return rows.map((r) => r.user_id === QUIZ_BOT_ID
+      ? { ...r, display_name: shadow.name, ...("avatar_url" in r ? { avatar_url: shadow.avatarUrl } : {}) }
+      : r);
+  }, [shadow]);
+
   // Build QR join URL (client-only)
   useEffect(() => {
     if (room) setJoinUrl(`${window.location.origin}/play?join=${room.code}`);
@@ -251,23 +272,34 @@ export default function RoomPage() {
     answeredUidsRef.current = new Set();
     setAnsweredCount(0);
 
-    // CPU tick: mirror the server's seeded answer delay (same seed → the tick
-    // lands exactly when the CPU's recorded time_taken says it answered).
+    // Opponent-seat tick. Shadow rooms use the REAL recorded answer time for
+    // this question (null = they never answered it — no tick, the window runs).
+    // CPU rooms mirror the server's seeded delay (same seed → the tick lands
+    // exactly when the CPU's recorded time_taken says it answered).
     if (botTickTimerRef.current) { clearTimeout(botTickTimerRef.current); botTickTimerRef.current = null; }
     if (hasBotRef.current) {
-      let h = 2166136261;
-      const seed = `${ev.id}:spd`;
-      for (let i = 0; i < seed.length; i++) { h ^= seed.charCodeAt(i); h = Math.imul(h, 16777619); }
-      const delay = Math.round(2800 + (((h >>> 0) % 100000) / 100000) * 7700);
-      botTickTimerRef.current = setTimeout(() => {
-        if (activeEventIdRef.current !== ev.id) return;
-        answeredUidsRef.current.add(QUIZ_BOT_ID);
-        const count = answeredUidsRef.current.size;
-        setAnsweredCount(count);
-        if (isHostRef.current && playersCountRef.current > 0 && count >= playersCountRef.current) {
-          triggerEarlyAdvance();
-        }
-      }, delay);
+      let delay: number | null;
+      const sh = shadowRef.current;
+      if (sh) {
+        const t = sh.times?.[(ev.sequence_number ?? 1) - 1] ?? null;
+        delay = t != null ? Math.max(800, t) : null;
+      } else {
+        let h = 2166136261;
+        const seed = `${ev.id}:spd`;
+        for (let i = 0; i < seed.length; i++) { h ^= seed.charCodeAt(i); h = Math.imul(h, 16777619); }
+        delay = Math.round(2800 + (((h >>> 0) % 100000) / 100000) * 7700);
+      }
+      if (delay != null) {
+        botTickTimerRef.current = setTimeout(() => {
+          if (activeEventIdRef.current !== ev.id) return;
+          answeredUidsRef.current.add(QUIZ_BOT_ID);
+          const count = answeredUidsRef.current.size;
+          setAnsweredCount(count);
+          if (isHostRef.current && playersCountRef.current > 0 && count >= playersCountRef.current) {
+            triggerEarlyAdvance();
+          }
+        }, delay);
+      }
     }
 
     const idx = currentSeqRef.current - 1;
@@ -718,7 +750,7 @@ export default function RoomPage() {
               <span className="font-body text-xs" style={{ color: "#586058" }}>{players.length} / {room.max_players}</span>
             </div>
             <div className="p-3 space-y-1.5">
-              {players.map(p => (
+              {personaRows(players).map(p => (
                 <div key={p.user_id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
                   style={{ background: p.user_id === user?.id ? "rgba(174,234,0,0.04)" : "rgba(255,255,255,0.02)", border: `1px solid ${p.user_id === user?.id ? "rgba(174,234,0,0.15)" : "rgba(255,255,255,0.05)"}` }}>
                   <Avatar name={p.display_name} size={32} />
@@ -796,9 +828,10 @@ export default function RoomPage() {
   // ── COMPLETED ─────────────────────────────────────────────────────────────
 
   if (room.status === "completed") {
-    const winner = leaderboard[0];
-    const me = leaderboard.find(e => e.user_id === user?.id);
-    const opponents = leaderboard.filter(e => e.user_id !== user?.id);
+    const displayBoard = personaRows(leaderboard);
+    const winner = displayBoard[0];
+    const me = displayBoard.find(e => e.user_id === user?.id);
+    const opponents = displayBoard.filter(e => e.user_id !== user?.id);
     const yesVotes = playAgainVotes.size;
     const totalPlayers = players.length || leaderboard.length;
     const lobbyExpired = lobbyTimeLeft === 0;
@@ -866,8 +899,32 @@ export default function RoomPage() {
             />
           ))}
 
-          {/* CPU room: no vote to wait on — one tap starts a fresh CPU match */}
-          {players.some((p) => p.user_id === QUIZ_BOT_ID) ? (
+          {/* Shadow room: the honest reveal — you played a real player's past run */}
+          {room.shadow ? (
+            <div className="rounded-2xl overflow-hidden" style={{ background: "linear-gradient(160deg, rgba(0,216,192,0.1), #0c1613)", border: "1px solid rgba(0,216,192,0.3)" }}>
+              <div className="px-5 pt-5 pb-4">
+                <p className="font-body text-[10px] font-bold uppercase tracking-[0.28em] mb-3" style={{ color: "#00d8c0" }}>The reveal</p>
+                <div className="flex items-center gap-3">
+                  <PlayerAvatar seed={room.shadow.userId} name={room.shadow.name} avatarUrl={room.shadow.avatarUrl} size={44} ring="#00d8c0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-body text-sm text-white leading-snug">
+                      You just played <span className="font-bold">{room.shadow.name}</span>&rsquo;s real run{room.shadow.playedAt ? ` from ${new Date(room.shadow.playedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}` : ""} — every answer, at their real speed.
+                    </p>
+                    <p className="font-body text-xs text-text-muted mt-1">Their run scored {room.shadow.originalScore.toLocaleString()} back then.</p>
+                  </div>
+                </div>
+              </div>
+              <div className="px-5 pb-5 space-y-2">
+                <Link href={`/versus/shadow/${room.shadow.userId}`} className="block w-full text-center rounded-xl py-3 font-display text-sm tracking-wide" style={{ background: "#00d8c0", color: "#04231f" }}>
+                  PLAY THEIR OTHER RUNS →
+                </Link>
+                <Link href={`/versus/quiz?to=${room.shadow.userId}`} className="block w-full text-center rounded-xl py-3 font-display text-sm tracking-wide" style={{ background: "rgba(255,255,255,0.05)", color: "#eef2f0", border: "1px solid rgba(255,255,255,0.14)" }}>
+                  CHALLENGE THEM LIVE →
+                </Link>
+              </div>
+            </div>
+          ) : players.some((p) => p.user_id === QUIZ_BOT_ID) ? (
+            /* CPU room: no vote to wait on — one tap starts a fresh CPU match */
             <div className="rounded-2xl px-5 py-4" style={{ background: "rgba(0,216,192,0.06)", border: "1px solid rgba(0,216,192,0.2)" }}>
               <Button variant="primary" tone="teal" size="md" fullWidth onClick={async () => {
                 const r = await fetch("/api/versus/queue", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "bot" }) }).then((x) => x.json()).catch(() => null);
@@ -956,7 +1013,7 @@ export default function RoomPage() {
               <p className="font-body text-xs mt-0.5" style={{ color: "#586058" }}>Tap a player to see their stats</p>
             </div>
             <div className="p-3">
-              <Leaderboard entries={leaderboard} currentUserId={user?.id} showFull maxVisible={leaderboard.length} />
+              <Leaderboard entries={personaRows(leaderboard)} currentUserId={user?.id} showFull maxVisible={leaderboard.length} />
             </div>
           </div>
 
@@ -1035,7 +1092,7 @@ export default function RoomPage() {
               <span className="font-body text-xs" style={{ color: "#586058" }}>tap for stats</span>
             </div>
             <div className="p-3">
-              <Leaderboard entries={leaderboard} currentUserId={user?.id} maxVisible={8} />
+              <Leaderboard entries={personaRows(leaderboard)} currentUserId={user?.id} maxVisible={8} />
             </div>
           </div>
         )}

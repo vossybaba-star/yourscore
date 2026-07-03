@@ -239,11 +239,13 @@ export async function POST(request: NextRequest) {
     writes.push(db.rpc("update_league_member_stats", { p_user_id: user.id, p_points: pointsAwarded, p_is_correct: isCorrect }));
   }
 
-  // CPU rooms: the CPU answers the same question now (seeded, idempotent).
-  // No-op in human-vs-human rooms; a CPU failure never breaks this answer.
+  // CPU/shadow rooms: the opponent seat answers the same question now (shadow =
+  // the recorded run replayed; CPU = seeded). Idempotent; no-op in human-vs-human
+  // rooms; a failure here never breaks this answer.
   if (effectiveRoomId) {
     writes.push(maybeBotAnswer(db, {
       questionEventId, roomId: effectiveRoomId,
+      sequenceNumber: (event.sequence_number as number | null) ?? null,
       correctAnswer: question.answer, difficulty: question.difficulty ?? "medium",
       windowMs: questionWindowMs,
     }));

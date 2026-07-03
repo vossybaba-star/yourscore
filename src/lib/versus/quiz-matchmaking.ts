@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServiceClient } from "@/lib/supabase/service";
 import { scoreAnswer } from "@/lib/scoring";
 import { QUIZ_BOT_ID, QUIZ_BOT_NAME } from "@/lib/versus/quizBot";
+import { findShadowRun, findRunOfUser, buildShadowInfo, shadowAnswerFor, type ShadowInfo, type ShadowRun } from "@/lib/versus/shadow";
 
 // Quiz Battle instant matchmaking — mirrors the proven 38-0 design
 // (lib/draft/live-server.ts queueOrPair): the `quiz_pair` RPC atomically claims
@@ -117,12 +118,13 @@ export async function cancelQuizQueue(userId: string): Promise<void> {
   await db.from("quiz_queue").delete().eq("user_id", userId);
 }
 
-// ── CPU fallback (mirrors 38-0's bot fallback) ────────────────────────────────
-// When no human is waiting after a few seconds, the client asks for a CPU match:
-// a normal h2h Lobby whose second seat is the dedicated CPU user. The CPU's
-// answers are written server-side in /api/answer (seeded per question) when the
-// human answers, and the room page fakes its "answered" tick locally — the CPU
-// never touches global rank or league stats.
+// ── Shadow + CPU fallback (mirrors 38-0's bot fallback) ───────────────────────
+// When no human is waiting after a few seconds, the fallback chain is
+// Human → SHADOW (a real player's recorded run, replayed) → CPU. Both use the
+// same second seat (the dedicated CPU user); a shadow room additionally carries
+// rooms.shadow (persona + source run) and copies the source room's questions
+// verbatim so the sequence-based replay is exact. Neither the CPU nor a shadow
+// ever touches global rank, league stats, or the shadow owner's own record.
 
 /** Deterministic [0,1) from a string seed — reproducible bot behaviour. */
 function seeded01(seed: string): number {
@@ -131,25 +133,20 @@ function seeded01(seed: string): number {
   return ((h >>> 0) % 100000) / 100000;
 }
 
-/** Leave the queue and start a CPU match now. */
-export async function createBotQuizLobby(userId: string): Promise<QuizQueueResult> {
-  const db = createServiceClient();
-
-  // A real pairing may have landed in the gap — play that instead.
-  const existing = await findInstantLobby(db, userId);
-  if (existing) return { status: "matched", ...existing };
-  await db.from("quiz_queue").delete().eq("user_id", userId);
-
-  const packId = await pickInstantPack(db);
-  if (!packId) throw new Error("No quiz available right now");
-
+/** Insert a CPU-seat h2h Lobby (shared by CPU + shadow paths). */
+async function insertBotSeatLobby(
+  db: Db, userId: string,
+  extras: { packId: string; questionCount: number; questionsJson?: unknown; shadow?: ShadowInfo }
+): Promise<{ id: string; code: string }> {
   let room: { id: string; code: string } | null = null;
   for (let attempt = 0; attempt < 5 && !room; attempt++) {
     const { data, error } = await db.from("rooms").insert({
       code: genCode(), name: INSTANT_MATCH_NAME, type: "player", status: "lobby",
       created_by: userId, max_players: 2, room_mode: "h2h",
-      question_count: 10, pack_id: packId, category_filter: null,
+      question_count: extras.questionCount, pack_id: extras.packId, category_filter: null,
       difficulty_filter: "mixed", current_question_idx: 0,
+      ...(extras.questionsJson !== undefined ? { questions_json: extras.questionsJson } : {}),
+      ...(extras.shadow ? { shadow: extras.shadow } : {}),
     }).select("id, code").maybeSingle();
     if (data) room = data;
     else if (error && !`${error.message}`.toLowerCase().includes("duplicate")) throw new Error(error.message);
@@ -161,38 +158,107 @@ export async function createBotQuizLobby(userId: string): Promise<QuizQueueResul
     { room_id: room.id, user_id: QUIZ_BOT_ID },
   ]);
   if (memberErr) throw new Error(memberErr.message);
+  return room;
+}
 
+/** Shadow Lobby for a specific run: questions copied VERBATIM from the source
+ *  room (same order/options) so sequence-based replay is exact. */
+async function createShadowLobby(db: Db, userId: string, run: ShadowRun): Promise<QuizQueueResult | null> {
+  const { data: src } = await db
+    .from("rooms").select("questions_json, question_count").eq("id", run.sourceRoomId).maybeSingle();
+  if (!src?.questions_json) return null;
+  const shadow = await buildShadowInfo(db, run);
+  if (!shadow) return null;
+
+  const room = await insertBotSeatLobby(db, userId, {
+    packId: run.packId, questionCount: src.question_count ?? 10,
+    questionsJson: src.questions_json, shadow,
+  });
+  return {
+    status: "matched", roomId: room.id, code: room.code,
+    opponent: { id: shadow.userId, name: shadow.name, avatarUrl: shadow.avatarUrl },
+  };
+}
+
+/** Leave the queue and start a fallback match now: a real player's shadow when
+ *  one exists for the instant pack, else the CPU. */
+export async function createBotQuizLobby(userId: string): Promise<QuizQueueResult> {
+  const db = createServiceClient();
+
+  // A real pairing may have landed in the gap — play that instead.
+  const existing = await findInstantLobby(db, userId);
+  if (existing) return { status: "matched", ...existing };
+  await db.from("quiz_queue").delete().eq("user_id", userId);
+
+  const packId = await pickInstantPack(db);
+  if (!packId) throw new Error("No quiz available right now");
+
+  // Shadow first — CPU only when no real run exists for this pack yet.
+  try {
+    const run = await findShadowRun(db, packId, userId);
+    if (run) {
+      const shadowMatch = await createShadowLobby(db, userId, run);
+      if (shadowMatch) return shadowMatch;
+    }
+  } catch { /* shadow selection failing must never block the fallback */ }
+
+  const room = await insertBotSeatLobby(db, userId, { packId, questionCount: 10 });
   return { status: "matched", roomId: room.id, code: room.code, opponent: { id: QUIZ_BOT_ID, name: QUIZ_BOT_NAME, avatarUrl: null } };
 }
 
+/** Targeted revenge shadow: a specific player's run on a specific pack. */
+export async function createShadowOfLobby(userId: string, shadowUserId: string, packId: string): Promise<QuizQueueResult> {
+  if (userId === shadowUserId) throw new Error("You can't play your own shadow");
+  const db = createServiceClient();
+  const run = await findRunOfUser(db, shadowUserId, packId);
+  if (!run) throw new Error("No run of theirs to play on this quiz");
+  const match = await createShadowLobby(db, userId, run);
+  if (!match) throw new Error("Could not load their run — try another quiz");
+  return match;
+}
+
 /**
- * Write the CPU's answer for one question in a CPU room. Called from /api/answer
- * right after the human's answer commits; no-op in human-vs-human rooms. Seeded
- * by the event id, so retries are idempotent. Only touches answers + room_scores —
- * never increment_profile_score / league stats.
+ * Write the opponent seat's answer for one question in a CPU/shadow room.
+ * Called from /api/answer right after the human's answer commits; no-op in
+ * human-vs-human rooms. Shadow rooms replay the recorded answer verbatim; CPU
+ * rooms use the seeded personality. Idempotent per event. Only touches
+ * answers + room_scores — never increment_profile_score / league stats.
  */
 export async function maybeBotAnswer(
   db: Db,
-  args: { questionEventId: string; roomId: string; correctAnswer: string; difficulty: string; windowMs: number }
+  args: { questionEventId: string; roomId: string; sequenceNumber: number | null; correctAnswer: string; difficulty: string; windowMs: number }
 ): Promise<void> {
   try {
-    const { data: member } = await db.from("room_members")
-      .select("user_id").eq("room_id", args.roomId).eq("user_id", QUIZ_BOT_ID).maybeSingle();
-    if (!member) return; // not a CPU room
+    const [{ data: member }, { data: roomRow }] = await Promise.all([
+      db.from("room_members").select("user_id").eq("room_id", args.roomId).eq("user_id", QUIZ_BOT_ID).maybeSingle(),
+      db.from("rooms").select("shadow").eq("id", args.roomId).maybeSingle(),
+    ]);
+    if (!member) return; // not a CPU/shadow room
 
     const { data: already } = await db.from("answers")
       .select("id").eq("question_event_id", args.questionEventId).eq("user_id", QUIZ_BOT_ID).maybeSingle();
     if (already) return;
 
-    // Seeded personality: ~62% accuracy, 2.8–10.5s answers.
-    const rCorrect = seeded01(`${args.questionEventId}:hit`);
-    const rSpeed = seeded01(`${args.questionEventId}:spd`);
-    const rPick = seeded01(`${args.questionEventId}:pick`);
-    const isCorrect = rCorrect < 0.62;
-    const elapsedMs = Math.round(2800 + rSpeed * 7700);
-    const correct = args.correctAnswer.toLowerCase();
-    const wrong = ["a", "b", "c", "d"].filter((l) => l !== correct);
-    const selected = isCorrect ? correct : wrong[Math.floor(rPick * wrong.length) % wrong.length];
+    let isCorrect: boolean, elapsedMs: number, selected: string;
+    const shadow = (roomRow?.shadow ?? null) as ShadowInfo | null;
+    if (shadow && args.sequenceNumber != null) {
+      // Replay the real player's recorded answer for this exact question.
+      const rec = await shadowAnswerFor(db, shadow, args.sequenceNumber);
+      if (!rec) return; // they never answered it — their timeout stays a timeout
+      isCorrect = rec.isCorrect;
+      elapsedMs = rec.elapsedMs;
+      selected = rec.selected;
+    } else {
+      // Seeded CPU personality: ~62% accuracy, 2.8–10.5s answers.
+      const rCorrect = seeded01(`${args.questionEventId}:hit`);
+      const rSpeed = seeded01(`${args.questionEventId}:spd`);
+      const rPick = seeded01(`${args.questionEventId}:pick`);
+      isCorrect = rCorrect < 0.62;
+      elapsedMs = Math.round(2800 + rSpeed * 7700);
+      const correct = args.correctAnswer.toLowerCase();
+      const wrong = ["a", "b", "c", "d"].filter((l) => l !== correct);
+      selected = isCorrect ? correct : wrong[Math.floor(rPick * wrong.length) % wrong.length];
+    }
 
     const { data: scoreRow } = await db.from("room_scores")
       .select("current_streak, wrong_streak, total_score, correct_answers, total_answers, best_streak, avg_answer_speed_ms, fastest_answer_ms")

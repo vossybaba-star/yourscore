@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { TIMEOUT_PENALTY, calculatePerfectRoundBonus } from "@/lib/scoring";
+import { QUIZ_BOT_ID } from "@/lib/versus/quizBot";
+import { notifyUsers } from "@/lib/notify";
+import type { ShadowInfo } from "@/lib/versus/shadow";
 
 const QUESTION_DURATION_MS = 20_000;
 
@@ -24,7 +27,7 @@ export async function POST(req: NextRequest) {
   // Fetch room
   const { data: room, error: roomErr } = await sb
     .from("rooms")
-    .select("id, status, created_by, question_count, questions_json, current_question_idx")
+    .select("id, status, created_by, question_count, questions_json, current_question_idx, pack_id, shadow")
     .eq("id", roomId)
     .single();
 
@@ -89,20 +92,25 @@ export async function POST(req: NextRequest) {
     // Award perfect-round bonuses concurrently (was sequential: 3 round-trips
     // per player, one player at a time). Each player's three writes are
     // independent, so fan them all out with Promise.all.
+    const finalScores = new Map<string, number>();
     await Promise.all(
       (scores ?? []).map(async (s) => {
-        const bonus = calculatePerfectRoundBonus(s.correct_answers ?? 0, room.question_count);
-        if (bonus <= 0) return;
         const uid = s.user_id as string;
+        const bonus = calculatePerfectRoundBonus(s.correct_answers ?? 0, room.question_count);
+        finalScores.set(uid, (s.total_score ?? 0) + Math.max(0, bonus));
+        if (bonus <= 0) return;
         await Promise.all([
           sb
             .from("room_scores")
             .update({ total_score: (s.total_score ?? 0) + bonus })
             .eq("room_id", roomId)
             .eq("user_id", uid),
-          // Propagate to global profile + league standings.
-          sb.rpc("increment_profile_score", { p_user_id: uid, p_points: bonus }),
-          sb.rpc("update_league_member_stats", { p_user_id: uid, p_points: bonus, p_is_correct: false }),
+          // Propagate to global profile + league standings — but never for the
+          // CPU/shadow seat (it must stay off global rank + league boards).
+          ...(uid === QUIZ_BOT_ID ? [] : [
+            sb.rpc("increment_profile_score", { p_user_id: uid, p_points: bonus }),
+            sb.rpc("update_league_member_stats", { p_user_id: uid, p_points: bonus, p_is_correct: false }),
+          ]),
         ]);
       })
     );
@@ -112,6 +120,33 @@ export async function POST(req: NextRequest) {
       .from("rooms")
       .update({ status: "completed", current_question_idx: nextIdx })
       .eq("id", roomId);
+
+    // Shadow match finished → tell the run's owner (fire-and-forget; never
+    // blocks the response). Dedupe by room, opt-in gated by default.
+    const shadow = (room.shadow ?? null) as ShadowInfo | null;
+    if (shadow?.userId) {
+      void (async () => {
+        const humanId = room.created_by as string;
+        const humanScore = finalScores.get(humanId) ?? 0;
+        const shadowScore = finalScores.get(QUIZ_BOT_ID) ?? 0;
+        const [{ data: humanProfile }, { data: pack }] = await Promise.all([
+          sb.from("profiles").select("display_name").eq("id", humanId).maybeSingle(),
+          room.pack_id ? sb.from("quiz_packs").select("name").eq("id", room.pack_id).maybeSingle() : Promise.resolve({ data: null }),
+        ]);
+        const humanName = humanProfile?.display_name ?? "Someone";
+        const packName = pack?.name ?? "a quiz";
+        const beaten = humanScore > shadowScore;
+        await notifyUsers({
+          userIds: [shadow.userId],
+          title: beaten ? "Your run got beaten" : "Your run held them off",
+          body: beaten
+            ? `${humanName} beat your ${packName} run ${humanScore.toLocaleString()}–${shadowScore.toLocaleString()} — get revenge`
+            : `${humanName} couldn't beat your ${packName} run (${shadowScore.toLocaleString()}–${humanScore.toLocaleString()})`,
+          url: `/versus/shadow/${humanId}`,
+          dedupeKey: `shadow-result:${roomId}`,
+        });
+      })().catch(() => {});
+    }
 
     return NextResponse.json({ ok: true, done: true });
   }

@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
   // Fetch room and verify ownership
   const { data: room, error: roomErr } = await sb
     .from("rooms")
-    .select("id, status, created_by, question_count, pack_id, category_filter, difficulty_filter, room_mode")
+    .select("id, status, created_by, question_count, pack_id, category_filter, difficulty_filter, room_mode, shadow, questions_json")
     .eq("id", roomId)
     .single();
 
@@ -38,7 +38,13 @@ export async function POST(req: NextRequest) {
 
   let questions: unknown[] = [];
 
-  if (room.pack_id) {
+  if (room.shadow && Array.isArray(room.questions_json) && room.questions_json.length > 0) {
+    // Shadow Lobby: questions were copied VERBATIM from the source run's room at
+    // creation (same questions, same order) so the sequence-based replay is
+    // exact. Do NOT reshuffle.
+    questions = room.questions_json;
+
+  } else if (room.pack_id) {
     // Pull from quiz_packs.questions JSON array
     const { data: pack, error: packErr } = await sb
       .from("quiz_packs")

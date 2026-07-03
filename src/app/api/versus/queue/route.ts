@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimitDistributed } from "@/lib/ratelimit";
-import { queueOrPairQuiz, cancelQuizQueue, createBotQuizLobby } from "@/lib/versus/quiz-matchmaking";
+import { queueOrPairQuiz, cancelQuizQueue, createBotQuizLobby, createShadowOfLobby } from "@/lib/versus/quiz-matchmaking";
 
 // Quiz Battle instant-match queue (the "Find an opponent" flow).
-//   queue  → poll: { status: "matched", roomId, code, opponent } | { status: "waiting" }
-//   bot    → CPU fallback (call after ~5s with no human match)
-//   cancel → leave the queue
+//   queue    → poll: { status: "matched", roomId, code, opponent } | { status: "waiting" }
+//   bot      → fallback after ~5s with no human: a real player's SHADOW when one
+//              exists for the instant pack, else the CPU
+//   shadowOf → targeted revenge shadow: { userId, packId } (play THEIR run back)
+//   cancel   → leave the queue
 // The 38-0 equivalent lives at /api/draft/live (action: queue/cancelQueue/bot).
 export async function POST(req: NextRequest) {
   const auth = await createClient();
@@ -16,7 +18,7 @@ export async function POST(req: NextRequest) {
   const { ok } = await rateLimitDistributed(`quiz-mm:${user.id}`, 60, 60_000);
   if (!ok) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
 
-  let body: { action?: string } = {};
+  let body: { action?: string; userId?: string; packId?: string } = {};
   try { body = await req.json(); } catch { /* optional */ }
 
   try {
@@ -25,6 +27,11 @@ export async function POST(req: NextRequest) {
         return NextResponse.json(await queueOrPairQuiz(user.id));
       case "bot":
         return NextResponse.json(await createBotQuizLobby(user.id));
+      case "shadowOf":
+        if (typeof body.userId !== "string" || typeof body.packId !== "string") {
+          return NextResponse.json({ error: "Missing userId or packId" }, { status: 400 });
+        }
+        return NextResponse.json(await createShadowOfLobby(user.id, body.userId, body.packId));
       case "cancel":
         await cancelQuizQueue(user.id);
         return NextResponse.json({ ok: true });

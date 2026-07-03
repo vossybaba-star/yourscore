@@ -1976,6 +1976,7 @@ export type Database = {
           is_public: boolean | null
           match_id: string | null
           max_players: number | null
+          shadow: Json | null
           name: string
           pack_id: string | null
           prize_description: string | null
@@ -2003,6 +2004,7 @@ export type Database = {
           max_players?: number | null
           name: string
           pack_id?: string | null
+          shadow?: Json | null
           prize_description?: string | null
           question_count?: number
           question_started_at?: string | null
@@ -2028,6 +2030,7 @@ export type Database = {
           max_players?: number | null
           name?: string
           pack_id?: string | null
+          shadow?: Json | null
           prize_description?: string | null
           question_count?: number
           question_started_at?: string | null
