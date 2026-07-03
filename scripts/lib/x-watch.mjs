@@ -328,10 +328,13 @@ HARD RULES (house style, locked by the founder):
 - THE BAR IS HIGH — default to UNUSABLE. Only mark usable if this moment genuinely deserves a post on its own and you'd be proud to have it be the only thing we tweeted today: a real, notable moment with something worth saying, ideally carried by a clean photo. We post a FEW great things, never many average ones. Reject anything merely okay, generic, low-stakes, a routine result, or that we'd only post to keep the timeline busy. Without a clean repostable photo, the bar is HIGHER still — only usable if the line genuinely stands on its own. Always unusable: giveaways, replies, account admin, pure self-promo, off-topic, or an angle we've clearly used recently. When in doubt, UNUSABLE.
 
 THE IMAGE (when one is attached):
-- The attached image is only CONTEXT so you understand the moment (who, the celebration, the scene). LOOK at it to make your reaction specific and real. We do NOT repost it - it is someone else's photo and flying another brand's image is exactly the inauthentic thing we are killing. Our tweet stands on its words alone.
+- The attached image is the photo posted WITH the source tweet. LOOK at it and make your reaction specific to the actual moment in the picture (the player, the celebration, the scene) - that is what makes it feel real, not generic. Name what you see when you can.
+- useImage decision - can we REPOST this exact image with our tweet?
+  - true ONLY if it is a clean photograph (a real action/celebration/crowd shot) with NO other account's logo, handle, watermark, or graphic overlay, and no baked-in headline/stat-card text.
+  - false if it is a designed graphic, stat card, scoreboard, teamsheet, quote card, or anything carrying another brand's name/logo/watermark, or a press photo with an agency credit stamped on it. Still write the caption; we just will not attach their image.
 
 OUTPUT: respond with ONLY a JSON object, no prose, no code fences:
-{"usable": true|false, "tweet": "<our own reaction, or empty string>", "reason": "<short why/why-not>"}`;
+{"usable": true|false, "tweet": "<our own reaction, or empty string>", "useImage": true|false, "imageNote": "<one line: what's in the image / why useImage>", "reason": "<short why/why-not>"}`;
 
 function parseModelJSON(raw) {
   const s = raw.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
@@ -391,10 +394,9 @@ export async function reword(source, { note } = {}) {
     usable: !!out.usable,
     tweet: sanitize(out.tweet || ""),
     reason: out.reason || "",
-    // We no longer repost the source's photo (authenticity). The image is used only
-    // as visual context for the model; our tweet stands on its words.
-    image: null,
-    imageNote: "",
+    // Repost the source photo only if the model judged it clean (no other brand's mark).
+    image: image && out.useImage ? image : null,
+    imageNote: out.imageNote || "",
   };
 }
 

@@ -1,5 +1,5 @@
 {
-  "_readme": "Accounts YourScore watches ONLY as a signal of what's actually happening in football right now. We do NOT reword their tweets or repost their photos - we write our own genuine reaction. 'note' steers the angle for that account. 'perRun' overrides how many new tweets to consider per run; keep it low, we post a few great things not many average ones.",
+  "_readme": "Accounts YourScore watches ONLY as a signal of what's actually happening in football right now. We do NOT reword their tweets - we write our own genuine reaction (a clean source photo may be reposted with it). 'note' steers the angle for that account. 'perRun' overrides how many new tweets to consider per run; keep it low, we post a few great things not many average ones.",
   "defaults": { "perRun": 1 },
   "accounts": [
     { "username": "brfootball", "note": "Signals the big live moment. React as fans to what just happened on the pitch, in our own words." },
