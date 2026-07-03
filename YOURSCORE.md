@@ -354,11 +354,23 @@ carry `List-Unsubscribe` + `List-Unsubscribe-Post` (RFC 8058 one-click) headers.
 - **Instant matchmaking:** 38-0 uses its existing random queue (silent 2-3s disguised-bot
   fallback). **Quiz Battle matchmaking is new** — `quiz_queue` + `quiz_pair()` RPC
   (migration 64, mirrors `draft_live_pair`) pairs two waiters into a 1v1 Lobby named
-  "Instant Match" on a featured pack. **CPU fallback after ~5s** (founder call): one
-  dedicated CPU auth user (honestly named "CPU", keeper avatar) takes the second seat;
-  its seeded answers (62% accuracy, 2.8–10.5s) are written server-side in `/api/answer`
-  when the human answers — room scores only, NEVER global rank or league stats. Result
-  screen offers one-tap "Rematch CPU" (no play-again voting vs the CPU).
+  "Instant Match" on a featured pack. Fallback chain after ~5s: **Human → SHADOW → CPU**.
+- **Shadow matches (2026-07-03):** the fallback preferentially replays a **real player's
+  previous multiplayer run** in the CPU seat — their exact answers at their exact speed
+  (`rooms.shadow` jsonb, migration 66; shadow Lobby copies the source room's questions
+  VERBATIM so the sequence replay is exact). During the match it looks live (their
+  name/avatar); the result screen makes the **honest reveal** ("You just played X's real
+  run from {date}" + their original score) with **PLAY THEIR OTHER RUNS** (revenge
+  library `/versus/shadow/[userId]`) and **CHALLENGE THEM LIVE**. On completion the
+  run's owner gets an opt-in-gated push ("X beat your {quiz} run — get revenge") deep-
+  linking to the beater's own shadowable runs — the revenge loop. Pool = full
+  multiplayer runs only; QA/CPU accounts excluded; the shadow owner's own stats are
+  never touched by a replay.
+- **CPU fallback** (when no shadow exists for the pack): one dedicated CPU auth user
+  (honestly named "CPU", keeper avatar) takes the second seat; its seeded answers
+  (62% accuracy, 2.8–10.5s) are written server-side in `/api/answer` when the human
+  answers — room scores only, NEVER global rank or league stats. Result screen offers
+  one-tap "Rematch CPU" (no play-again voting vs the CPU).
 - **Public leagues (2026-07-03):** both league tables now carry `is_public` + `featured`
   (migration 64, applied; default private). Creators opt in via a visibility toggle on
   both create flows; `/api/leagues/discover` powers "Discover public leagues" in the
