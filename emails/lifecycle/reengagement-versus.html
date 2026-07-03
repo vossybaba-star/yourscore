@@ -1,0 +1,167 @@
+<!--
+  reengagement-versus.html — win-back for dormant/cooling non-WC players (38-0 or quiz
+  primary). Announces Versus, the new cross-game head-to-head hub. Broadcast template
+  (segments.mjs send dormant-versus). Merge tags only: {{{FIRST_NAME|there}}} +
+  {{{RESEND_UNSUBSCRIBE_URL}}}.
+-->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="x-apple-disable-message-reformatting">
+  <meta name="color-scheme" content="dark">
+  <meta name="supported-color-schemes" content="dark">
+  <title>There's a new way to play: Versus</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body,table,td,p,a{margin:0;padding:0}
+    img{border:0;outline:none;text-decoration:none;display:block}
+    table{border-collapse:collapse}
+    a{text-decoration:none}
+    @media (max-width:620px){
+      .container{width:100%!important}
+      .px{padding-left:20px!important;padding-right:20px!important}
+      .hero{font-size:64px!important;line-height:58px!important}
+    }
+  </style>
+</head>
+
+<body style="margin:0;padding:0;background-color:#07070d;background-image:linear-gradient(rgba(0,255,135,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,135,0.025) 1px,transparent 1px);background-size:32px 32px;font-family:'DM Sans',Helvetica,Arial,sans-serif;color:#ffffff;">
+
+  <!-- Preheader -->
+  <div style="display:none;max-height:0;overflow:hidden;font-size:1px;line-height:1px;color:#07070d;">Match a real opponent in seconds. We built it while you were away.</div>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr><td align="center" style="padding:36px 16px 52px;">
+
+    <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
+
+      <!-- Logo -->
+      <tr><td align="center" style="padding:0 40px 44px;">
+        <a href="https://yourscore.app/versus" style="display:inline-block;">
+          <img src="https://yourscore.app/logo.png" alt="YourScore" width="148" height="44" style="width:148px;height:44px;display:block;">
+        </a>
+      </td></tr>
+
+      <!-- Green top rule -->
+      <tr><td style="padding:0 40px 30px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr><td style="height:2px;background:linear-gradient(90deg,#00ff87 0%,rgba(0,255,135,0.3) 70%,transparent 100%);border-radius:2px;"></td></tr>
+        </table>
+      </td></tr>
+
+      <!-- Badge -->
+      <tr><td class="px" align="left" style="padding:0 40px 16px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+          <td style="background:rgba(0,255,135,0.08);border:1px solid rgba(0,255,135,0.25);border-radius:999px;padding:5px 16px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:2.5px;color:#00ff87;font-weight:700;text-transform:uppercase;">&#9889;&nbsp; New &middot; Versus</td>
+        </tr></table>
+      </td></tr>
+
+      <!-- Hero -->
+      <tr><td class="px" style="padding:0 40px 24px;">
+        <div class="hero" style="font-family:'Bebas Neue',Impact,Arial,sans-serif;font-size:88px;line-height:80px;color:#ffffff;letter-spacing:-1px;text-shadow:0 0 100px rgba(0,255,135,0.2);">GO HEAD<br><span style="color:#00ff87;">TO HEAD.</span></div>
+      </td></tr>
+
+      <!-- Body intro -->
+      <tr><td class="px" style="padding:0 40px 34px;">
+        <p style="margin:0 0 18px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:18px;line-height:29px;color:#c7c7d9;font-weight:400;">
+          {{{FIRST_NAME|there}}}, while you were away we built the thing YourScore was missing: <strong style="color:#ffffff;">Versus</strong> &mdash; the fastest way to take someone on.
+        </p>
+        <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:18px;line-height:29px;color:#8888aa;font-weight:400;">
+          No waiting around for mates to be free. One tap and you're in a match.
+        </p>
+      </td></tr>
+
+      <!-- Feature rows -->
+      <tr><td class="px" style="padding:0 40px 34px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+
+          <tr><td style="padding:0 0 14px 0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td width="56" valign="top" style="padding-right:16px;">
+                  <div style="width:46px;height:46px;background:rgba(0,255,135,0.1);border:1px solid rgba(0,255,135,0.2);border-radius:12px;display:table;text-align:center;">
+                    <span style="display:table-cell;vertical-align:middle;font-size:21px;">&#9917;</span>
+                  </div>
+                </td>
+                <td valign="top">
+                  <p style="margin:0 0 3px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:16px;font-weight:700;color:#ffffff;">Quiz Battle, instantly matched</p>
+                  <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;line-height:21px;color:#8888aa;">Hit Find an Opponent and you're up against a real player on the same questions. First to answer, best score wins.</p>
+                </td>
+              </tr>
+            </table>
+          </td></tr>
+
+          <tr><td style="padding:0 0 14px 0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td width="56" valign="top" style="padding-right:16px;">
+                  <div style="width:46px;height:46px;background:rgba(0,255,135,0.1);border:1px solid rgba(0,255,135,0.2);border-radius:12px;display:table;text-align:center;">
+                    <span style="display:table-cell;vertical-align:middle;font-size:21px;">&#128101;</span>
+                  </div>
+                </td>
+                <td valign="top">
+                  <p style="margin:0 0 3px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:16px;font-weight:700;color:#ffffff;">Or call out a friend</p>
+                  <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;line-height:21px;color:#8888aa;">Send a friend a challenge and settle who actually knows their football. Works for Quiz and 38-0.</p>
+                </td>
+              </tr>
+            </table>
+          </td></tr>
+
+          <tr><td style="padding:0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td width="56" valign="top" style="padding-right:16px;">
+                  <div style="width:46px;height:46px;background:rgba(0,255,135,0.1);border:1px solid rgba(0,255,135,0.2);border-radius:12px;display:table;text-align:center;">
+                    <span style="display:table-cell;vertical-align:middle;font-size:21px;">&#128123;</span>
+                  </div>
+                </td>
+                <td valign="top">
+                  <p style="margin:0 0 3px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:16px;font-weight:700;color:#ffffff;">Nobody around? Take on a shadow</p>
+                  <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;line-height:21px;color:#8888aa;">A shadow match replays a real player's past run &mdash; same answers, same speed. Beat their time and they get pinged to come get you back.</p>
+                </td>
+              </tr>
+            </table>
+          </td></tr>
+
+        </table>
+      </td></tr>
+
+      <!-- CTA -->
+      <tr><td class="px" style="padding:0 40px 52px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+          <tr><td style="background:linear-gradient(135deg,#00ff87 0%,#00d464 100%);border-radius:13px;box-shadow:0 0 44px rgba(0,255,135,0.38);">
+            <a href="https://yourscore.app/versus/find" style="display:inline-block;color:#07070d;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:16px;font-weight:800;letter-spacing:0.4px;padding:20px 52px;border-radius:13px;">Find an opponent &nbsp;&rarr;</a>
+          </td></tr>
+        </table>
+        <p style="margin:14px 0 0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:13px;color:#6b6b85;">A match takes a couple of minutes. Loser asks for a rematch.</p>
+      </td></tr>
+
+      <!-- Footer -->
+      <tr><td style="padding:0 40px 0;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr><td style="border-top:1px solid rgba(255,255,255,0.05);padding:24px 0 32px;">
+            <p style="margin:0 0 14px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:13px;line-height:20px;color:#6b6b85;">
+              <a href="https://x.com/yourscore_app_" style="color:#8888aa;text-decoration:none;">&#x1D54F; @yourscore_app_</a>
+              &nbsp;&nbsp;
+              <a href="https://instagram.com/yourscore.app" style="color:#8888aa;text-decoration:none;">&#x1F4F7; @yourscore.app</a>
+              &nbsp;&nbsp;
+              <a href="https://tiktok.com/@yourscore.app" style="color:#8888aa;text-decoration:none;">&#x266B; @yourscore.app</a>
+            </p>
+            <p style="margin:0 0 10px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:12px;line-height:18px;color:#6b6b85;">
+              <a href="https://apps.apple.com/gb/app/yourscore/id6773626424" style="color:#8888aa;text-decoration:underline;">Get the app</a> &nbsp;&middot;&nbsp;
+              <a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:#8888aa;text-decoration:underline;">Unsubscribe</a> &nbsp;&middot;&nbsp;
+              <a href="https://yourscore.app/support" style="color:#8888aa;text-decoration:underline;">Support</a>
+            </p>
+            <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:1.5px;color:#6b6b85;text-transform:uppercase;font-weight:600;">YourScore &nbsp;&middot;&nbsp; Your football knowledge. Ranked.</p>
+          </td></tr>
+        </table>
+      </td></tr>
+
+    </table>
+  </td></tr>
+  </table>
+
+</body>
+</html>

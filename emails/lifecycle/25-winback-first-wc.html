@@ -1,6 +1,7 @@
 <!--
-  25-winback-first-wc.html — win-back for dormant users whose FIRST game was the
-  WC Mastermind. Broadcast template (segments.mjs send dormant-started-wc).
+  25-winback-first-wc.html — win-back for lapsed WC Mastermind players ("the daily's
+  still on") + a nudge toward the new Versus hub. Broadcast template
+  (segments.mjs send wc-mastermind-lapsed; also usable for dormant-started-wc).
   Merge tags only: {{{FIRST_NAME|there}}} and {{{RESEND_UNSUBSCRIBE_URL}}}.
 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -71,11 +72,51 @@
         </p>
       </td></tr>
 
+      <!-- What today's Mastermind looks like -->
+      <tr><td style="padding:0 32px 40px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr>
+            <td style="width:33%;padding-right:6px;vertical-align:top;">
+              <a href="https://yourscore.app/38-0/wc?daily=1" style="display:block;">
+                <img src="https://yourscore.app/email/wc-draft.png" alt="Draft your XI" width="152" style="width:152px;max-width:100%;border-radius:14px;display:block;box-shadow:0 4px 24px rgba(0,0,0,0.5);">
+              </a>
+              <p style="margin:8px 0 0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:1.5px;color:#55556a;text-transform:uppercase;font-weight:700;">1 &middot; Draft</p>
+            </td>
+            <td style="width:33%;padding:0 3px;vertical-align:top;">
+              <a href="https://yourscore.app/38-0/wc?daily=1" style="display:block;">
+                <img src="https://yourscore.app/email/wc-path.png" alt="Play your real World Cup 2026 path" width="152" style="width:152px;max-width:100%;border-radius:14px;display:block;box-shadow:0 4px 24px rgba(0,0,0,0.5);">
+              </a>
+              <p style="margin:8px 0 0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:1.5px;color:#55556a;text-transform:uppercase;font-weight:700;">2 &middot; Your path</p>
+            </td>
+            <td style="width:33%;padding-left:6px;vertical-align:top;">
+              <a href="https://yourscore.app/38-0/wc?daily=1" style="display:block;">
+                <img src="https://yourscore.app/email/wc-through.png" alt="Win and advance" width="152" style="width:152px;max-width:100%;border-radius:14px;display:block;box-shadow:0 4px 24px rgba(0,0,0,0.5);">
+              </a>
+              <p style="margin:8px 0 0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:1.5px;color:#55556a;text-transform:uppercase;font-weight:700;">3 &middot; Win. Advance.</p>
+            </td>
+          </tr>
+        </table>
+      </td></tr>
+
       <!-- CTA -->
-      <tr><td class="px" style="padding:0 40px 52px;">
+      <tr><td class="px" style="padding:0 40px 40px;">
         <table role="presentation" cellpadding="0" cellspacing="0" border="0">
           <tr><td style="background:linear-gradient(135deg,#00ff87 0%,#00d464 100%);border-radius:13px;box-shadow:0 0 44px rgba(0,255,135,0.38);">
-            <a href="https://yourscore.app/38-0/wc" style="display:inline-block;color:#07070d;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:16px;font-weight:800;letter-spacing:0.4px;padding:20px 52px;border-radius:13px;">Play today's Mastermind &nbsp;&rarr;</a>
+            <a href="https://yourscore.app/38-0/wc?daily=1" style="display:inline-block;color:#07070d;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:16px;font-weight:800;letter-spacing:0.4px;padding:20px 52px;border-radius:13px;">Play today's Mastermind &nbsp;&rarr;</a>
+          </td></tr>
+        </table>
+      </td></tr>
+
+      <!-- New since you left: Versus -->
+      <tr><td class="px" style="padding:0 40px 52px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid rgba(255,255,255,0.08);border-radius:16px;background:rgba(255,255,255,0.02);">
+          <tr><td style="padding:22px 24px;">
+            <p style="margin:0 0 6px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:2px;color:#00ff87;font-weight:700;text-transform:uppercase;">&#9889;&nbsp; New since you left</p>
+            <p style="margin:0 0 8px;font-family:'Bebas Neue',Impact,Arial,sans-serif;font-size:28px;line-height:28px;color:#ffffff;letter-spacing:0.5px;">Versus &mdash; go head to head</p>
+            <p style="margin:0 0 16px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;line-height:21px;color:#8888aa;">
+              Instantly match a real opponent in a Quiz Battle, call out a friend, or take on a shadow match &mdash; a real player's past run you can beat.
+            </p>
+            <a href="https://yourscore.app/versus/find" style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;font-weight:700;color:#00ff87;text-decoration:none;">Find an opponent &nbsp;&rarr;</a>
           </td></tr>
         </table>
       </td></tr>

@@ -62,6 +62,15 @@ const SEGMENTS = {
   "dormant-started-wc":   { angle: "Came for the WC Mastermind — it's still going daily", pred: u => u.engagement_tier === "dormant" && u.first_game === "wc" },
   "dormant-started-quiz": { angle: "Started on the quiz — a fresh one's live today", pred: u => u.engagement_tier === "dormant" && u.first_game === "quiz" },
 
+  // Re-engagement campaign (dormant + cooling; partitions the base by game history)
+  // wc-run-no-mastermind: played the open World Cup Run ("XI") but never the ranked
+  // daily Mastermind — the "you've never tried the ranked one" explainer.
+  "wc-run-no-mastermind": { angle: "Played open WC XI, never the ranked Mastermind — explain the difference", pred: u => (u.engagement_tier === "dormant" || u.engagement_tier === "cooling") && u.plays_wc && !u.played_wc_ranked },
+  // wc-mastermind-lapsed: played a ranked Mastermind run before, now drifted — "it's still live daily".
+  "wc-mastermind-lapsed": { angle: "Lapsed Mastermind player — the World Cup's still live daily + new Versus", pred: u => (u.engagement_tier === "dormant" || u.engagement_tier === "cooling") && u.played_wc_ranked },
+  // dormant-versus: non-WC dormant/cooling (38-0 or quiz primary) — the new head-to-head hub.
+  "dormant-versus": { angle: "Non-WC dormant — meet Versus, go head-to-head (Quiz Battle + shadow)", pred: u => (u.engagement_tier === "dormant" || u.engagement_tier === "cooling") && (u.primary_game === "38" || u.primary_game === "quiz") },
+
   // Cross-sell + social plays
   "38-never-quizzed": { angle: "Biggest cross-sell: good at 38-0, try today's quiz", pred: u => u.plays_38 && !u.plays_quiz },
   "active-no-league": { angle: "Retention engine: start a league with your mates", pred: u => u.engagement_tier === "active" && !u.in_league },
@@ -82,11 +91,16 @@ async function loadUsers() {
   if (error) throw new Error(`get_email_segments failed: ${error.message}`);
 
   const emailById = new Map();
+  const metaNameById = new Map();
   let page = 1;
   while (true) {
     const { data, error: e } = await supabase.auth.admin.listUsers({ perPage: 1000, page });
     if (e) throw new Error(`listUsers failed: ${e.message}`);
-    for (const u of data?.users ?? []) if (u.email) emailById.set(u.id, u.email.trim().toLowerCase());
+    for (const u of data?.users ?? []) {
+      if (u.email) emailById.set(u.id, u.email.trim().toLowerCase());
+      const mn = metaFirstName(u.user_metadata);
+      if (mn) metaNameById.set(u.id, mn);
+    }
     if ((data?.users ?? []).length < 1000) break;
     page++;
   }
@@ -98,11 +112,22 @@ async function loadUsers() {
   for (const r of rows ?? []) {
     const email = emailById.get(r.user_id);
     if (!isSendable(email)) continue;
-    users.push({ ...r, email });
+    users.push({ ...r, email, metaFirstName: metaNameById.get(r.user_id) });
   }
   return users;
 }
 
+// Real first name from OAuth identity metadata (given_name/full_name/name).
+// Rejects handles/usernames: anything with digits, @, _, over 20 chars, or not
+// starting with a letter. Returns undefined so the greeting falls back to "there".
+function metaFirstName(meta) {
+  const m = meta ?? {};
+  const n = String(m.given_name || m.full_name || m.name || "").trim().split(/\s+/)[0] || "";
+  if (!n || n.length > 20 || /[\d@_]/.test(n) || !/^\p{L}/u.test(n)) return undefined;
+  return n;
+}
+
+// Prefer the real OAuth first name; fall back to the profile name (may be a handle).
 function firstName(name) {
   if (!name || typeof name !== "string") return undefined;
   const f = name.trim().split(/\s+/)[0];
@@ -153,20 +178,48 @@ async function send(users, name, args) {
   if (!subject) throw new Error('Pass --subject "..."');
 
   const html = await fs.readFile(path.isAbsolute(templatePath) ? templatePath : path.join(process.cwd(), templatePath), "utf-8");
-  const m = users.filter(seg.pred);
+  let m = users.filter(seg.pred);
   if (!m.length) { console.log("No sendable users in this segment. Done."); return; }
+
+  // Frequency cap — exclude anyone ANY campaign emailed within the window, so the
+  // "max N campaign emails per person" guardrail is enforced, not just hoped.
+  // Pass --cap-days 0 to opt out (e.g. the daily backbone, which is its own send).
+  const capDays = Number(flag("--cap-days") ?? 4);
+  const campaignKey = flag("--key") || `seg:${name}`;
+  if (capDays > 0) {
+    const cutoff = new Date(Date.now() - capDays * 86_400_000).toISOString();
+    const { data: recent, error: re } = await supabase
+      .from("email_sends").select("user_id").gte("sent_at", cutoff);
+    if (re) throw new Error(`email_sends read failed: ${re.message}`);
+    const capped = new Set((recent ?? []).map((r) => r.user_id));
+    const before = m.length;
+    m = m.filter((u) => !capped.has(u.user_id));
+    if (before - m.length) console.log(`   ⏳ Frequency cap (${capDays}d): held back ${before - m.length}, ${m.length} remain`);
+  }
+  if (!m.length) { console.log("All recipients are within the frequency cap. Nothing to send.\n"); return; }
 
   const today = new Date().toISOString().slice(0, 10);
   console.log(`\n📣 Segment "${name}" → ${m.length} recipients  (${DRY_RUN ? "DRY RUN" : "⚡ LIVE"})`);
   console.log(`   ${seg.angle}`);
   console.log(`   Subject: ${subject}`);
+  console.log(`   Cap key: ${campaignKey}  (cap ${capDays}d)`);
 
   await syncAndBroadcast(CAMPAIGNS_KEY, {
     audienceName: `seg:${name} ${today}`,
-    emails: m.map(u => ({ email: u.email, firstName: firstName(u.name) })),
+    emails: m.map(u => ({ email: u.email, firstName: u.metaFirstName ?? firstName(u.name) })),
     name: `Segment ${name} — ${today}`,
     from, replyTo: REPLY_TO, subject, previewText, html, dryRun: DRY_RUN,
   });
+
+  // Record the send so the cap holds for the next campaign (live sends only).
+  if (!DRY_RUN) {
+    const rows = m.map((u) => ({ user_id: u.user_id, campaign_key: campaignKey }));
+    for (let i = 0; i < rows.length; i += 500) {
+      const { error: le } = await supabase.from("email_sends").insert(rows.slice(i, i + 500));
+      if (le) console.warn(`   ⚠️  email_sends log failed: ${le.message}`);
+    }
+    console.log(`   📝 Logged ${rows.length} sends under "${campaignKey}"`);
+  }
 
   console.log(DRY_RUN ? `\n🛑 DRY RUN — add --send to fire.\n` : `\n🎉 Broadcast fired to "${name}".\n`);
 }

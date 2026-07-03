@@ -1,0 +1,175 @@
+<!--
+  winback-wc-run-to-mastermind.html — for users who've played the OPEN World Cup Run
+  ("World Cup XI") but never the ranked daily Mastermind. Explains the difference and
+  pulls them into today's ranked board. Broadcast template (segments.mjs send
+  wc-run-no-mastermind). Merge tags only: {{{FIRST_NAME|there}}} + {{{RESEND_UNSUBSCRIBE_URL}}}.
+-->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="x-apple-disable-message-reformatting">
+  <meta name="color-scheme" content="dark">
+  <meta name="supported-color-schemes" content="dark">
+  <title>You've only played half of the World Cup</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body,table,td,p,a{margin:0;padding:0}
+    img{border:0;outline:none;text-decoration:none;display:block}
+    table{border-collapse:collapse}
+    a{text-decoration:none}
+    @media (max-width:620px){
+      .container{width:100%!important}
+      .px{padding-left:20px!important;padding-right:20px!important}
+      .hero{font-size:62px!important;line-height:58px!important}
+    }
+  </style>
+</head>
+
+<body style="margin:0;padding:0;background-color:#07070d;background-image:linear-gradient(rgba(0,255,135,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,135,0.025) 1px,transparent 1px);background-size:32px 32px;font-family:'DM Sans',Helvetica,Arial,sans-serif;color:#ffffff;">
+
+  <!-- Preheader -->
+  <div style="display:none;max-height:0;overflow:hidden;font-size:1px;line-height:1px;color:#07070d;">You've built the squads. You've never played the ranked one.</div>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr><td align="center" style="padding:36px 16px 52px;">
+
+    <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
+
+      <!-- Logo -->
+      <tr><td align="center" style="padding:0 40px 44px;">
+        <a href="https://yourscore.app/38-0/wc" style="display:inline-block;">
+          <img src="https://yourscore.app/logo.png" alt="YourScore" width="148" height="44" style="width:148px;height:44px;display:block;">
+        </a>
+      </td></tr>
+
+      <!-- Green top rule -->
+      <tr><td style="padding:0 40px 30px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr><td style="height:2px;background:linear-gradient(90deg,#00ff87 0%,rgba(0,255,135,0.3) 70%,transparent 100%);border-radius:2px;"></td></tr>
+        </table>
+      </td></tr>
+
+      <!-- Badge -->
+      <tr><td class="px" align="left" style="padding:0 40px 16px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+          <td style="background:rgba(0,255,135,0.08);border:1px solid rgba(0,255,135,0.25);border-radius:999px;padding:5px 16px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:2.5px;color:#00ff87;font-weight:700;text-transform:uppercase;">&#127757;&nbsp; Two ways to play the World Cup</td>
+        </tr></table>
+      </td></tr>
+
+      <!-- Hero -->
+      <tr><td class="px" style="padding:0 40px 24px;">
+        <div class="hero" style="font-family:'Bebas Neue',Impact,Arial,sans-serif;font-size:82px;line-height:74px;color:#ffffff;letter-spacing:-1px;text-shadow:0 0 100px rgba(0,255,135,0.2);">YOU'VE PLAYED<br><span style="color:#00ff87;">HALF OF IT.</span></div>
+      </td></tr>
+
+      <!-- Body intro -->
+      <tr><td class="px" style="padding:0 40px 32px;">
+        <p style="margin:0 0 18px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:18px;line-height:29px;color:#c7c7d9;font-weight:400;">
+          Alright {{{FIRST_NAME|there}}}, you've been drafting squads in <strong style="color:#ffffff;">World Cup XI</strong> &mdash; pick your eleven, play the tournament, run it back as many times as you like. Love that.
+        </p>
+        <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:18px;line-height:29px;color:#8888aa;font-weight:400;">
+          But that's the open version. There's a second way to play you've never touched &mdash; and it's the one with a board.
+        </p>
+      </td></tr>
+
+      <!-- Comparison: what you've played -->
+      <tr><td class="px" style="padding:0 40px 14px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid rgba(255,255,255,0.08);border-radius:16px;background:rgba(255,255,255,0.02);">
+          <tr><td style="padding:22px 24px;">
+            <p style="margin:0 0 10px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:2px;color:#6b6b85;font-weight:700;text-transform:uppercase;">You've played this</p>
+            <p style="margin:0 0 8px;font-family:'Bebas Neue',Impact,Arial,sans-serif;font-size:30px;line-height:30px;color:#ffffff;letter-spacing:0.5px;">&#127757;&nbsp; World Cup XI</p>
+            <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:15px;line-height:23px;color:#8888aa;">
+              The open draft. Full-strength squads, no questions asked. Unlimited goes, purely for the love of it &mdash; no ranking, no board.
+            </p>
+          </td></tr>
+        </table>
+      </td></tr>
+
+      <!-- Comparison: what you're missing -->
+      <tr><td class="px" style="padding:0 40px 32px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid rgba(0,255,135,0.35);border-radius:16px;background:rgba(0,255,135,0.05);box-shadow:0 0 44px rgba(0,255,135,0.12);">
+          <tr><td style="padding:22px 24px;">
+            <p style="margin:0 0 10px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:2px;color:#00ff87;font-weight:700;text-transform:uppercase;">You haven't played this</p>
+            <p style="margin:0 0 8px;font-family:'Bebas Neue',Impact,Arial,sans-serif;font-size:30px;line-height:30px;color:#ffffff;letter-spacing:0.5px;">&#129504;&nbsp; World Cup Mastermind</p>
+            <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:15px;line-height:23px;color:#c7c7d9;">
+              Here your <strong style="color:#ffffff;">football knowledge builds the squad</strong>. Answer the day's World Cup questions right and you unlock the elite players. One ranked go a day &mdash; and because everyone gets the same questions, the board is pure knowledge. There's <strong style="color:#ffffff;">&pound;100</strong> on it.
+            </p>
+          </td></tr>
+        </table>
+      </td></tr>
+
+      <!-- Kicker -->
+      <tr><td class="px" style="padding:0 40px 24px;">
+        <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:18px;line-height:28px;color:#ffffff;font-weight:600;">Same game you already love. This time it counts.</p>
+      </td></tr>
+
+      <!-- What the Mastermind looks like: answer -> draft -> win -->
+      <tr><td style="padding:0 32px 30px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr>
+            <td style="width:33%;padding-right:6px;vertical-align:top;">
+              <a href="https://yourscore.app/38-0/wc?daily=1" style="display:block;">
+                <img src="https://yourscore.app/email/wc-scout.png" alt="Answer the question to scout the player" width="152" style="width:152px;max-width:100%;border-radius:14px;display:block;box-shadow:0 4px 24px rgba(0,0,0,0.5);">
+              </a>
+              <p style="margin:8px 0 0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:1.5px;color:#55556a;text-transform:uppercase;font-weight:700;">1 &middot; Answer</p>
+            </td>
+            <td style="width:33%;padding:0 3px;vertical-align:top;">
+              <a href="https://yourscore.app/38-0/wc?daily=1" style="display:block;">
+                <img src="https://yourscore.app/email/wc-draft.png" alt="Draft your XI with what you unlock" width="152" style="width:152px;max-width:100%;border-radius:14px;display:block;box-shadow:0 4px 24px rgba(0,0,0,0.5);">
+              </a>
+              <p style="margin:8px 0 0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:1.5px;color:#55556a;text-transform:uppercase;font-weight:700;">2 &middot; Draft</p>
+            </td>
+            <td style="width:33%;padding-left:6px;vertical-align:top;">
+              <a href="https://yourscore.app/38-0/wc?daily=1" style="display:block;">
+                <img src="https://yourscore.app/email/wc-through.png" alt="Send your XI out and go unbeaten" width="152" style="width:152px;max-width:100%;border-radius:14px;display:block;box-shadow:0 4px 24px rgba(0,0,0,0.5);">
+              </a>
+              <p style="margin:8px 0 0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:1.5px;color:#55556a;text-transform:uppercase;font-weight:700;">3 &middot; Go unbeaten</p>
+            </td>
+          </tr>
+        </table>
+      </td></tr>
+
+      <!-- CTA -->
+      <tr><td class="px" style="padding:0 40px 18px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+          <tr><td style="background:linear-gradient(135deg,#00ff87 0%,#00d464 100%);border-radius:13px;box-shadow:0 0 44px rgba(0,255,135,0.38);">
+            <a href="https://yourscore.app/38-0/wc?daily=1" style="display:inline-block;color:#07070d;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:16px;font-weight:800;letter-spacing:0.4px;padding:20px 52px;border-radius:13px;">Play today's Mastermind &nbsp;&rarr;</a>
+          </td></tr>
+        </table>
+      </td></tr>
+
+      <!-- Low-pressure secondary -->
+      <tr><td class="px" style="padding:0 40px 52px;">
+        <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;line-height:21px;color:#6b6b85;">
+          Just want a casual go first? Your <a href="https://yourscore.app/38-0/wc?run=1" style="color:#8888aa;text-decoration:underline;">open World Cup XI</a> is always right here.
+        </p>
+      </td></tr>
+
+      <!-- Footer -->
+      <tr><td style="padding:0 40px 0;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr><td style="border-top:1px solid rgba(255,255,255,0.05);padding:24px 0 32px;">
+            <p style="margin:0 0 14px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:13px;line-height:20px;color:#6b6b85;">
+              <a href="https://x.com/yourscore_app_" style="color:#8888aa;text-decoration:none;">&#x1D54F; @yourscore_app_</a>
+              &nbsp;&nbsp;
+              <a href="https://instagram.com/yourscore.app" style="color:#8888aa;text-decoration:none;">&#x1F4F7; @yourscore.app</a>
+              &nbsp;&nbsp;
+              <a href="https://tiktok.com/@yourscore.app" style="color:#8888aa;text-decoration:none;">&#x266B; @yourscore.app</a>
+            </p>
+            <p style="margin:0 0 10px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:12px;line-height:18px;color:#6b6b85;">
+              <a href="https://apps.apple.com/gb/app/yourscore/id6773626424" style="color:#8888aa;text-decoration:underline;">Get the app</a> &nbsp;&middot;&nbsp;
+              <a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:#8888aa;text-decoration:underline;">Unsubscribe</a> &nbsp;&middot;&nbsp;
+              <a href="https://yourscore.app/support" style="color:#8888aa;text-decoration:underline;">Support</a>
+            </p>
+            <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:1.5px;color:#6b6b85;text-transform:uppercase;font-weight:600;">YourScore &nbsp;&middot;&nbsp; Your football knowledge. Ranked.</p>
+          </td></tr>
+        </table>
+      </td></tr>
+
+    </table>
+  </td></tr>
+  </table>
+
+</body>
+</html>
