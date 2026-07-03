@@ -8,6 +8,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { createDraftDb } from "@/lib/draft/server";
+import { matchOgMetadata } from "@/lib/draft/match-og";
 import { Button } from "@/components/ui/Button";
 
 export const runtime = "nodejs";
@@ -70,6 +71,13 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   if (!p) {
     const title = "YourScore 38-0 — build your all-time XI";
     return { title, description: "Build an all-time XI and simulate your season. Think you can beat it?" };
+  }
+  // Live H2H match share → the MATCH card (the page redirects there anyway).
+  // Without this, a matchId payload fell through to the season card below and
+  // unfurled the sharer's (often empty) season record instead of the match.
+  if (p.matchId) {
+    const md = await matchOgMetadata(p.matchId);
+    if (md) return md;
   }
   // Quiz result share → a QUIZ scorecard (not the 38-0 season card).
   if (p.challengeSlug) {

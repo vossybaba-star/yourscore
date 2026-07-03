@@ -452,7 +452,11 @@ function ResultPanel({ view, sim, m }: { view: View; sim: MatchSim | null; m: Dr
 
   // ── Share copy ───────────────────────────────────────────────────────────────
 
-  const score = `${view.myGoals}–${view.oppGoals}`;
+  // Include the shootout in the score so a pens-decided game doesn't read as a draw
+  // (e.g. "I beat X 0–0" → "I beat X 0–0 (7-6 pens)").
+  const score = view.pens[0] != null
+    ? `${view.myGoals}–${view.oppGoals} (${view.pens[0]}-${view.pens[1]} pens)`
+    : `${view.myGoals}–${view.oppGoals}`;
 
   function blurb(): string {
     if (drew) return `${view.myName} vs ${view.oppName} ${score} on @yourscore_app_ 38-0 Live ⚽`;
