@@ -343,14 +343,20 @@ carry `List-Unsubscribe` + `List-Unsubscribe-Post` (RFC 8058 one-click) headers.
   (`/leagues`, nested). The pending-turns badge lives on this tab. (The Leagues route
   still exists; the bottom-nav Versus tab stays active across `/versus`, `/friends`,
   `/leagues`.)
-- **Versus Play tab (2026-07-03 redesign):** welcome hero + three entry actions —
-  **Find an opponent** (`/versus/find`, instant matchmaking for BOTH games) ·
-  **Challenge someone** · **Join with code** — then Choose-your-game tiles, the user's
-  matches/results/record/rivalries, a **Live now** community strip
-  (`/api/versus/activity`; real metrics + seeded presence baseline flagged
-  `TODO(real-presence)`), a **People ready to play** rail (`/api/versus/ready`,
-  suggested opponents, NOT friendships), and public-league discovery. An urgent
-  your-turn card suppresses the hero.
+- **Versus Play tab (2026-07-03, carousel-mockup redesign):** welcome hero with
+  **FIND AN OPPONENT as the full-width primary action** (Challenge friend / Join code
+  secondaries) → Choose-your-game tiles → the user's matches/results/record/rivalries →
+  two-stat **Live now** strip (`/api/versus/activity`; real metrics + seeded presence
+  baseline flagged `TODO(real-presence)`) → swipeable **Community Highlights**
+  (trending player → TRY TO BEAT their shadows · most-active player → challenge ·
+  rising quiz → play) → **People ready to play** rows with real W-L records
+  (`/api/versus/ready`; suggested opponents, NOT friendships) → public-league rows →
+  Better-with-friends banner. An urgent your-turn card suppresses the hero. Both game
+  start screens lead with **"How do you want to play?"** chevron rows (find opponent /
+  challenge friend / share code); Quiz adds a FEATURED hero cover + POPULAR rail above
+  the full filtered library. Friends tab leads with RIVALS. Leagues tab =
+  **My Leagues | Discover** views with All / 38-0 / Quiz Battle chips + a
+  CREATE LEAGUE / JOIN WITH CODE action row.
 - **Instant matchmaking:** 38-0 uses its existing random queue (silent 2-3s disguised-bot
   fallback). **Quiz Battle matchmaking is new** — `quiz_queue` + `quiz_pair()` RPC
   (migration 64, mirrors `draft_live_pair`) pairs two waiters into a 1v1 Lobby named
