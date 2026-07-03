@@ -363,9 +363,11 @@ carry `List-Unsubscribe` + `List-Unsubscribe-Post` (RFC 8058 one-click) headers.
   run from {date}" + their original score) with **PLAY THEIR OTHER RUNS** (revenge
   library `/versus/shadow/[userId]`) and **CHALLENGE THEM LIVE**. On completion the
   run's owner gets an opt-in-gated push ("X beat your {quiz} run — get revenge") deep-
-  linking to the beater's own shadowable runs — the revenge loop. Pool = full
-  multiplayer runs only; QA/CPU accounts excluded; the shadow owner's own stats are
-  never touched by a replay. **Notification rules:** (1) **RALLY BYPASS** — when the
+  linking to the beater's own shadowable runs — the revenge loop. **Pool = ONE pool:
+  solo quiz attempts AND multiplayer runs both count** (solo attempts replay from
+  quiz_attempts.answers — graded in pack order, so idx maps 1:1 to sequence);
+  QA/CPU accounts excluded; the shadow owner's own stats are never touched by a
+  replay. **Notification rules:** (1) **RALLY BYPASS** — when the
   owner and beater are actively trading blows (owner played the beater's shadow
   within 7 days), every beat notifies INSTANTLY, uncapped, with rally copy ("X hit
   back! … your turn"); playing the full quiz (~2-3 min) is the natural rate limit.
