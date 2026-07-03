@@ -6,8 +6,9 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed with the founder:** 2026-07-03 (**Versus phase 1**: Play-tab redesign,
-> instant matchmaking for both games, public leagues — §9. Previously 2026-06-30:
+> **Confirmed with the founder:** 2026-07-03 (**Versus phase 1 + rounds 2–3**: Play-tab
+> redesign, instant matchmaking for both games incl. pick-your-quiz, shadow matches,
+> results-feed highlights, public leagues — §9. Previously 2026-06-30:
 > **Versus tab** replaces Leagues — §9;
 > async multiplayer Phases 1–2 + group challenges shipped, see §7; native track:
 > challenge push + universal links + haptics).
@@ -348,15 +349,35 @@ carry `List-Unsubscribe` + `List-Unsubscribe-Post` (RFC 8058 one-click) headers.
   secondaries) → Choose-your-game tiles → the user's matches/results/record/rivalries →
   two-stat **Live now** strip (`/api/versus/activity`; real metrics + seeded presence
   baseline flagged `TODO(real-presence)`) → swipeable **Community Highlights**
-  (trending player → TRY TO BEAT their shadows · most-active player → challenge ·
-  rising quiz → play) → **People ready to play** rows with real W-L records
-  (`/api/versus/ready`; suggested opponents, NOT friendships) → public-league rows →
-  Better-with-friends banner. An urgent your-turn card suppresses the hero. Both game
-  start screens lead with **"How do you want to play?"** chevron rows (find opponent /
-  challenge friend / share code); Quiz adds a FEATURED hero cover + POPULAR rail above
-  the full filtered library. Friends tab leads with RIVALS. Leagues tab =
-  **My Leagues | Discover** views with All / 38-0 / Quiz Battle chips + a
-  CREATE LEAGUE / JOIN WITH CODE action row.
+  → public-league rows → Better-with-friends banner. An urgent your-turn card
+  suppresses the hero. Both game start screens lead with **"How do you want to
+  play?"** chevron rows (find opponent / challenge friend / share code); Quiz adds
+  a FEATURED hero cover + POPULAR rail above the full filtered library. Friends tab
+  leads with RIVALS. Leagues tab = **My Leagues | Discover** views with
+  All / 38-0 / Quiz Battle chips + a CREATE LEAGUE / JOIN WITH CODE action row.
+  The Play | Friends | Leagues tabs are full-width segments; bottom sheets sit at
+  z-60, ABOVE the fixed BottomNav (z-50) — a sheet must never be covered by the nav.
+- **Community Highlights (2026-07-03 round 3) = a real results feed:** recent
+  finished matches across BOTH games ("X beat Y 2–1", "A beat B's run 4,200–3,800"),
+  each card game-chipped (38-0 / Quiz Battle) with names, avatars, scoreline, time
+  ago and a one-tap way in (quiz items deep-link the find flow pinned to that pack).
+  Fed by `feed` on `/api/versus/activity` (completed h2h Lobbies last 48h — pure-CPU
+  rooms skipped, shadow rooms shown under the run owner's persona, QA bots excluded —
+  plus resolved 38-0 live matches). Then the standing spotlights: top-ranked player
+  (TRY TO BEAT → shadow library), busiest player (CHALLENGE), hottest quiz (PLAY IT
+  NOW → pack-pinned find). The old "People ready to play" rail was REMOVED
+  (founder call, round 3); `/api/versus/ready` is gone.
+- **Pick-your-quiz head-to-head (2026-07-03 round 3):** the quiz picker's step 2
+  ("Who are you playing?") leads with **FIND AN OPPONENT — get matched on this
+  quiz, no friends needed** → `/versus/find?game=quiz&pack=<id>`; the find flow +
+  queue API accept an optional `packId` that pins the match to the picked quiz
+  (Human → Shadow → CPU chain unchanged; unpublished/bogus pack falls back to the
+  default featured pack; a paired waiter gets the claimer's pack).
+- **Scorecard forward motion (2026-07-03 round 3):** every bot/shadow scorecard
+  leads with a **KEEP PLAYING** panel — primary **PLAY AGAIN — NEW OPPONENT**
+  (find flow pinned to the same quiz) + **PICK A DIFFERENT QUIZ**; the honest-reveal
+  panel keeps its info but its links (PLAY THEIR RUNS / CHALLENGE LIVE) are
+  secondary. h2h scorecards navigate back to **/versus** (not the quiz tab).
 - **Instant matchmaking:** 38-0 uses its existing random queue (silent 2-3s disguised-bot
   fallback). **Quiz Battle matchmaking is new** — `quiz_queue` + `quiz_pair()` RPC
   (migration 64, mirrors `draft_live_pair`) pairs two waiters into a 1v1 Lobby named

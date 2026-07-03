@@ -73,6 +73,7 @@ function FindInner() {
   const params = useSearchParams();
   const { user, loading } = useUser();
   const preset = params.get("game") === "quiz" ? "quiz" : params.get("game") === "38-0" ? "38-0" : null;
+  const packId = params.get("pack"); // pin the quiz match to a picked pack (quiz-picker flow)
 
   const [game, setGame] = useState<Game>(preset ?? "quiz");
   const [stage, setStage] = useState<Stage>(preset ? "searching" : "choose");
@@ -129,7 +130,7 @@ function FindInner() {
           // Human first; past the fallback window, take a CPU opponent (like 38-0).
           const elapsed = Date.now() - started;
           const action = elapsed > quizBotAfter ? "bot" : "queue";
-          const r = await fetch("/api/versus/queue", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action }) }).then((x) => x.json());
+          const r = await fetch("/api/versus/queue", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action, ...(packId ? { packId } : {}) }) }).then((x) => x.json());
           if (r.status === "matched") {
             return finish({
               name: r.opponent?.name ?? "Your opponent", avatarUrl: r.opponent?.avatarUrl ?? null,
@@ -160,7 +161,7 @@ function FindInner() {
       if (timer) clearTimeout(timer);
       if (searchingRef.current) { searchingRef.current = false; cancelQueue(g); }
     };
-  }, [stage, user, cancelQueue]);
+  }, [stage, user, cancelQueue, packId]);
 
   // Found → auto-enter after a beat (the button is there for the impatient).
   useEffect(() => {

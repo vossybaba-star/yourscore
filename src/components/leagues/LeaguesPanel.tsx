@@ -703,14 +703,15 @@ export function LeaguesPanel({ embedded = false }: { embedded?: boolean }) {
       {/* ── Quiz Join Sheet ──────────────────────────────────────────────────── */}
       {joinSheetOpen && (
         <>
-          <div className="fixed inset-0 z-40" style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }} onClick={() => setJoinSheetOpen(false)} />
-          <div className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl px-5 pt-5 pb-10 bg-surface"
-            style={{ border: "1px solid rgba(174,234,0,0.2)", borderBottom: "none" }}>
+          {/* z-[60]: above the fixed BottomNav (z-50) so the sheet is never covered */}
+          <div className="fixed inset-0 z-[55]" style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }} onClick={() => setJoinSheetOpen(false)} />
+          <div className="fixed bottom-0 left-0 right-0 z-[60] rounded-t-3xl px-5 pt-5 bg-surface"
+            style={{ border: "1px solid rgba(174,234,0,0.2)", borderBottom: "none", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 32px)" }}>
             <div className="w-10 h-1 rounded-full mx-auto mb-6" style={{ background: "rgba(255,255,255,0.12)" }} />
             <div className="flex items-center justify-between mb-5">
               <div>
                 <p className="font-display text-xl text-white tracking-wide">Join a league</p>
-                <p className="font-body text-xs mt-0.5 text-text-muted">Enter the code your mate shared</p>
+                <p className="font-body text-xs mt-0.5 text-text-muted">Enter the code your friend shared</p>
               </div>
               <button onClick={() => setJoinSheetOpen(false)}
                 className="w-8 h-8 rounded-full flex items-center justify-center transition-opacity hover:opacity-70"

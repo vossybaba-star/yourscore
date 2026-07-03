@@ -176,7 +176,22 @@ export default function QuizBattlePage() {
               <p className="font-body text-sm text-text-muted mt-1">{picked.name} · {picked.questionCount} questions</p>
             </div>
             {err && <p className="font-body text-sm mt-4" style={{ color: "#ff6b78" }}>{err}</p>}
-            <div className="mt-4 space-y-2.5">
+
+            {/* Find an opponent — the no-friends-needed path: instant match on
+                THIS quiz (human first, then a real player's shadow, then CPU). */}
+            <Link href={`/versus/find?game=quiz&pack=${picked.id}`} className="mt-4 w-full flex items-center gap-3.5 rounded-2xl px-4 py-4 text-left active:scale-[0.99] transition-transform" style={{ background: `linear-gradient(120deg, ${TEAL}, #00b3a0)`, border: `1px solid ${TEAL}` }}>
+              <span className="w-10 h-10 rounded-xl grid place-items-center flex-shrink-0" style={{ background: "rgba(4,35,31,0.25)" }}>
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="#04231f" strokeWidth="1.5" opacity="0.4" /><circle cx="10" cy="10" r="4.5" stroke="#04231f" strokeWidth="1.5" opacity="0.7" /><circle cx="10" cy="10" r="1.6" fill="#04231f" /><path d="M10 10 16 4.5" stroke="#04231f" strokeWidth="1.5" strokeLinecap="round" /></svg>
+              </span>
+              <span className="flex-1 min-w-0">
+                <span className="block font-display text-base leading-none tracking-wide" style={{ color: "#04231f" }}>FIND AN OPPONENT</span>
+                <span className="block font-body text-xs mt-1" style={{ color: "#04231fb3" }}>Get matched on this quiz — no friends needed</span>
+              </span>
+              <svg width="16" height="16" viewBox="0 0 18 18" fill="none" style={{ color: "#04231f", flexShrink: 0 }}><path d="M6 3l6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </Link>
+
+            <p className="font-body text-xs font-bold uppercase tracking-widest mt-6 mb-2.5" style={{ color: "#586058" }}>Or play a friend</p>
+            <div className="space-y-2.5">
               {friends.length === 0 ? (
                 <div className="rounded-2xl p-6 text-center bg-surface" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
                   <p className="font-body text-sm text-white">No friends yet</p>

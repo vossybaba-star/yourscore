@@ -5,8 +5,9 @@ import { queueOrPairQuiz, cancelQuizQueue, createBotQuizLobby, createShadowOfLob
 
 // Quiz Battle instant-match queue (the "Find an opponent" flow).
 //   queue    → poll: { status: "matched", roomId, code, opponent } | { status: "waiting" }
+//              (optional packId pins the match to a picked quiz)
 //   bot      → fallback after ~5s with no human: a real player's SHADOW when one
-//              exists for the instant pack, else the CPU
+//              exists for the pack, else the CPU (optional packId, as above)
 //   shadowOf → targeted revenge shadow: { userId, packId } (play THEIR run back)
 //   cancel   → leave the queue
 // The 38-0 equivalent lives at /api/draft/live (action: queue/cancelQueue/bot).
@@ -24,9 +25,9 @@ export async function POST(req: NextRequest) {
   try {
     switch (body.action) {
       case "queue":
-        return NextResponse.json(await queueOrPairQuiz(user.id));
+        return NextResponse.json(await queueOrPairQuiz(user.id, typeof body.packId === "string" ? body.packId : null));
       case "bot":
-        return NextResponse.json(await createBotQuizLobby(user.id));
+        return NextResponse.json(await createBotQuizLobby(user.id, typeof body.packId === "string" ? body.packId : null));
       case "shadowOf":
         if (typeof body.userId !== "string" || typeof body.packId !== "string") {
           return NextResponse.json({ error: "Missing userId or packId" }, { status: 400 });

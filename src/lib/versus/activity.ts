@@ -23,18 +23,22 @@ export interface VersusActivity {
   trending: { packId: string; name: string; cover: string | null; attempts: number } | null;
   /** Busiest player of the last 24h (community-highlights carousel). Real. */
   mostActive: { userId: string; name: string; avatarUrl: string | null; plays: number } | null;
+  /** Recent finished matches across both games — the community-highlights feed.
+   *  Real results only (bot-vs-QA noise excluded); newest first. */
+  feed: VersusFeedItem[];
 }
 
-export interface ReadyPlayer {
-  userId: string;
-  name: string;
-  avatarUrl: string | null;
+export interface VersusFeedItem {
   game: "quiz" | "38-0";
-  status: "In lobby" | "Online";
-  /** "W-L" from the global rank board (null when unranked). */
-  record: string | null;
-  /** Present when the player is hosting an open Lobby — Play deep-joins it. */
-  joinCode: string | null;
+  when: string;
+  /** Quiz items carry the pack so the CTA can start a match on the same quiz. */
+  packId: string | null;
+  packName: string | null;
+  /** a = winner (or home side on a draw), b = the beaten side. */
+  a: { id: string | null; name: string; avatarUrl: string | null; score: number };
+  b: { id: string | null; name: string; avatarUrl: string | null; score: number };
+  /** Quiz only: side b was a real player's replayed run (shadow match). */
+  shadow: boolean;
 }
 
 /** Deterministic per-day baseline in [lo, hi] — stable across refreshes so the
@@ -55,13 +59,19 @@ export async function getVersusActivity(): Promise<VersusActivity> {
   const since24h = hoursAgoIso(24);
   const today = dayStartIso();
 
-  const [h2hToday, roomsToday, openLobbies, attempts, queue38, queueQuiz] = await Promise.all([
+  const [h2hToday, roomsToday, openLobbies, attempts, queue38, queueQuiz, feedRooms, feedMatches] = await Promise.all([
     db.from("h2h_challenges").select("id", { count: "exact", head: true }).gte("created_at", today),
     db.from("rooms").select("id", { count: "exact", head: true }).eq("status", "completed").gte("created_at", today),
     db.from("rooms").select("id", { count: "exact", head: true }).eq("status", "lobby").eq("room_mode", "open").gte("created_at", hoursAgoIso(3)),
     db.from("quiz_attempts").select("user_id, pack_id").gte("completed_at", since24h).limit(2000),
     db.from("draft_live_queue").select("user_id", { count: "exact", head: true }),
     db.from("quiz_queue").select("user_id", { count: "exact", head: true }).gte("enqueued_at", hoursAgoIso(0.05)),
+    db.from("rooms").select("id, created_at, pack_id, shadow, created_by")
+      .eq("status", "completed").eq("room_mode", "h2h").gte("created_at", hoursAgoIso(48))
+      .order("created_at", { ascending: false }).limit(14),
+    db.from("draft_live_matches").select("p1_id, p2_id, p1_name, p2_name, h1_p1, h1_p2, h2_p1, h2_p2, resolved_at")
+      .not("resolved_at", "is", null).gte("resolved_at", hoursAgoIso(48))
+      .order("resolved_at", { ascending: false }).limit(10),
   ]);
 
   // Trending = the pack with the most attempts in 24h; active = distinct
@@ -91,6 +101,12 @@ export async function getVersusActivity(): Promise<VersusActivity> {
     if (p) mostActive = { userId: busiest[0], name: p.display_name ?? "Player", avatarUrl: p.avatar_url, plays: busiest[1] };
   }
 
+  const feed = await buildFeed(
+    db, botIds,
+    (feedRooms.data ?? []) as FeedRoomRow[],
+    (feedMatches.data ?? []) as FeedMatchRow[],
+  );
+
   const realLooking = (queue38.count ?? 0) + (queueQuiz.count ?? 0);
   return {
     // TODO(real-presence): floor by a seeded baseline until presence exists.
@@ -100,59 +116,97 @@ export async function getVersusActivity(): Promise<VersusActivity> {
     openLobbies: openLobbies.count ?? 0,
     trending,
     mostActive,
+    feed,
   };
 }
 
-/** Suggested opponents: real open-Lobby hosts first (deep-joinable), then
- *  recently-ranked players. These are suggestions, NOT friendships. */
-export async function getReadyPlayers(): Promise<ReadyPlayer[]> {
-  const db = createServiceClient();
-  const out: ReadyPlayer[] = [];
-  const seen = new Set<string>();
+// ── The results feed behind Community Highlights ──────────────────────────────
 
-  // 1. Hosts of open public Lobbies (genuinely joinable right now).
-  const { data: lobbies } = await db
-    .from("rooms")
-    .select("code, created_by")
-    .eq("status", "lobby").eq("room_mode", "open")
-    .gte("created_at", hoursAgoIso(3))
-    .order("created_at", { ascending: false })
-    .limit(6);
-  type LbRow = { user_id: string; display_name: string; avatar_url: string | null; overall_score: number; wins: number | null; losses: number | null };
-  const { data: lb } = await db.rpc("get_yourscore_leaderboard", { p_user_ids: undefined, p_limit: 30 });
-  const lbRows = (lb ?? []) as LbRow[];
-  const recordOf = (id: string): string | null => {
-    const r = lbRows.find((x) => x.user_id === id);
-    return r && (r.wins ?? 0) + (r.losses ?? 0) > 0 ? `${r.wins ?? 0}-${r.losses ?? 0}` : null;
-  };
+type FeedRoomRow = {
+  id: string; created_at: string; pack_id: string | null; created_by: string | null;
+  shadow: { userId?: string; name?: string; avatarUrl?: string | null } | null;
+};
+type FeedMatchRow = {
+  p1_id: string | null; p2_id: string | null; p1_name: string | null; p2_name: string | null;
+  h1_p1: number | null; h1_p2: number | null; h2_p1: number | null; h2_p2: number | null;
+  resolved_at: string | null;
+};
 
-  const hostIds = Array.from(new Set((lobbies ?? []).map((l) => l.created_by).filter(Boolean))) as string[];
-  if (hostIds.length) {
-    const { data: profiles } = await db.from("profiles").select("id, display_name, avatar_url").in("id", hostIds);
-    const byId = new Map((profiles ?? []).map((p) => [p.id, p]));
-    for (const l of lobbies ?? []) {
-      const p = l.created_by ? byId.get(l.created_by) : null;
-      if (!p || seen.has(p.id)) continue;
-      seen.add(p.id);
-      out.push({ userId: p.id, name: p.display_name ?? "Player", avatarUrl: p.avatar_url, game: "quiz", status: "In lobby", record: recordOf(p.id), joinCode: l.code });
-    }
+/** Recent real results, both games, newest first. Quiz Battles come from
+ *  completed h2h Lobbies (CPU-only rooms are skipped; shadow rooms show the
+ *  run owner's persona — that IS a real player's result). 38-0 comes from
+ *  resolved live matches, using the names the match itself displayed. */
+async function buildFeed(
+  db: ReturnType<typeof createServiceClient>, botIds: Set<string>,
+  rooms: FeedRoomRow[], matches: FeedMatchRow[],
+): Promise<VersusFeedItem[]> {
+  const items: VersusFeedItem[] = [];
+
+  // Quiz Battles — scores + human names for the recent completed h2h rooms.
+  const roomIds = rooms.map((r) => r.id);
+  const { data: scores } = roomIds.length
+    ? await db.from("room_scores").select("room_id, user_id, total_score").in("room_id", roomIds)
+    : { data: [] as { room_id: string; user_id: string; total_score: number }[] };
+  const byRoom = new Map<string, { user_id: string; total_score: number }[]>();
+  const humanIds = new Set<string>();
+  for (const s of scores ?? []) {
+    if (!s.room_id || !s.user_id) continue;
+    const list = byRoom.get(s.room_id) ?? [];
+    list.push({ user_id: s.user_id, total_score: s.total_score ?? 0 });
+    byRoom.set(s.room_id, list);
+    if (!botIds.has(s.user_id) && s.user_id !== QUIZ_BOT_ID) humanIds.add(s.user_id);
   }
+  const packIds = Array.from(new Set(rooms.map((r) => r.pack_id).filter(Boolean))) as string[];
+  const [{ data: profs }, { data: packs }] = await Promise.all([
+    humanIds.size
+      ? db.from("profiles").select("id, display_name, avatar_url").in("id", Array.from(humanIds))
+      : Promise.resolve({ data: [] as { id: string; display_name: string | null; avatar_url: string | null }[] }),
+    packIds.length
+      ? db.from("quiz_packs").select("id, name").in("id", packIds)
+      : Promise.resolve({ data: [] as { id: string; name: string }[] }),
+  ]);
+  const profById = new Map((profs ?? []).map((p) => [p.id, p]));
+  const packById = new Map((packs ?? []).map((p) => [p.id, p.name]));
 
-  // 2. Fill with active ranked players (challengeable, not deep-joinable).
-  const candidates = lbRows.filter((r) => (r.overall_score ?? 0) > 0 && !seen.has(r.user_id)).slice(0, 12);
-  // Real signal for preferred game: players holding an active 38-0 XI are 38-0 people.
-  const { data: teams } = candidates.length
-    ? await db.from("draft_teams").select("user_id").eq("status", "active").in("user_id", candidates.map((c) => c.user_id))
-    : { data: [] as { user_id: string }[] };
-  const has38 = new Set((teams ?? []).map((t) => t.user_id));
-  for (const c of candidates.slice(0, 8)) {
-    seen.add(c.user_id);
-    out.push({
-      userId: c.user_id, name: c.display_name, avatarUrl: c.avatar_url,
-      game: has38.has(c.user_id) ? "38-0" : "quiz",
-      // TODO(real-presence): "Online" is optimistic until a presence signal exists.
-      status: "Online", record: recordOf(c.user_id), joinCode: null,
+  for (const r of rooms) {
+    const rows = byRoom.get(r.id) ?? [];
+    if (rows.length < 2) continue;
+    // QA/health-bot rooms are noise, never highlights.
+    if (rows.some((s) => botIds.has(s.user_id)) || (r.created_by && botIds.has(r.created_by))) continue;
+    if (r.shadow?.userId && botIds.has(r.shadow.userId)) continue;
+
+    const sides: VersusFeedItem["a"][] = [];
+    let shadow = false;
+    for (const s of rows.slice(0, 2)) {
+      if (s.user_id === QUIZ_BOT_ID) {
+        if (!r.shadow?.name) { sides.length = 0; break; } // pure CPU seat — skip the room
+        shadow = true;
+        sides.push({ id: r.shadow.userId ?? null, name: r.shadow.name, avatarUrl: r.shadow.avatarUrl ?? null, score: s.total_score });
+      } else {
+        const p = profById.get(s.user_id);
+        sides.push({ id: s.user_id, name: p?.display_name ?? "Player", avatarUrl: p?.avatar_url ?? null, score: s.total_score });
+      }
+    }
+    if (sides.length < 2) continue;
+    sides.sort((x, y) => y.score - x.score);
+    items.push({
+      game: "quiz", when: r.created_at, packId: r.pack_id,
+      packName: r.pack_id ? packById.get(r.pack_id) ?? null : null,
+      a: sides[0], b: sides[1], shadow,
     });
   }
-  return out.slice(0, 10);
+
+  // 38-0 — resolved live matches, with the names the match displayed.
+  for (const m of matches) {
+    if (!m.resolved_at || !m.p1_name || !m.p2_name) continue;
+    if ((m.p1_id && botIds.has(m.p1_id)) || (m.p2_id && botIds.has(m.p2_id))) continue;
+    const g1 = (m.h1_p1 ?? 0) + (m.h2_p1 ?? 0);
+    const g2 = (m.h1_p2 ?? 0) + (m.h2_p2 ?? 0);
+    const p1 = { id: m.p1_id, name: m.p1_name, avatarUrl: null, score: g1 };
+    const p2 = { id: m.p2_id, name: m.p2_name, avatarUrl: null, score: g2 };
+    const [a, b] = g2 > g1 ? [p2, p1] : [p1, p2];
+    items.push({ game: "38-0", when: m.resolved_at, packId: null, packName: null, a, b, shadow: false });
+  }
+
+  return items.sort((x, y) => y.when.localeCompare(x.when)).slice(0, 8);
 }

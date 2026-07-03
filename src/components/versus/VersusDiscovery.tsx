@@ -62,7 +62,7 @@ export function VersusDiscovery({ promoOnly = false }: { promoOnly?: boolean } =
   }
 
   const showPromo = friendCount !== null && friendCount < 3;
-  const showPlayers = !promoOnly && players.length > 0; // superseded by ReadyToPlayRail on the Play tab
+  const showPlayers = !promoOnly && players.length > 0; // the Play tab shows highlights instead
 
   if (!showPromo && !showPlayers) return null;
 

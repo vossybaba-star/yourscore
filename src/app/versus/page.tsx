@@ -13,7 +13,6 @@ import { VersusDiscovery } from "@/components/versus/VersusDiscovery";
 import { VersusActionCards } from "@/components/versus/VersusActionCard";
 import { LiveActivityStrip } from "@/components/versus/LiveActivityStrip";
 import { CommunityHighlights } from "@/components/versus/CommunityHighlights";
-import { ReadyToPlayRail } from "@/components/versus/ReadyToPlayRail";
 import { PublicLeaguesRail } from "@/components/leagues/PublicLeagueCard";
 import { FriendsPanel } from "@/components/friends/FriendsPanel";
 import { LeaguesPanel } from "@/components/leagues/LeaguesPanel";
@@ -79,8 +78,10 @@ function GameSheet({ target, onClose }: { target?: string | null; onClose: () =>
     else router.push("/versus/38-0");
   };
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: "rgba(0,0,0,0.6)" }} onClick={onClose}>
-      <div className="w-full max-w-lg rounded-t-3xl p-5 pb-8" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.08)", animation: "slideUp 0.22s ease" }} onClick={(e) => e.stopPropagation()}>
+    // z-[60]: must sit ABOVE the fixed BottomNav (z-50) or the nav covers the
+    // bottom of the sheet; safe-area padding keeps the last button tappable.
+    <div className="fixed inset-0 z-[60] flex items-end justify-center" style={{ background: "rgba(0,0,0,0.6)" }} onClick={onClose}>
+      <div className="w-full max-w-lg rounded-t-3xl p-5" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.08)", animation: "slideUp 0.22s ease", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 28px)" }} onClick={(e) => e.stopPropagation()}>
         <div className="w-9 h-1 rounded-full mx-auto mb-5" style={{ background: "rgba(255,255,255,0.15)" }} />
         <p className="font-display text-2xl text-white mb-1">Choose a game</p>
         <p className="font-body text-sm text-text-muted mb-5">What do you want to play?</p>
@@ -105,8 +106,8 @@ function CodeSheet({ onClose }: { onClose: () => void }) {
   const [code, setCode] = useState("");
   const join = () => { const c = code.trim().toUpperCase(); if (c) router.push(`/play?join=${encodeURIComponent(c)}`); };
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: "rgba(0,0,0,0.6)" }} onClick={onClose}>
-      <div className="w-full max-w-lg rounded-t-3xl p-5 pb-8" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.08)", animation: "slideUp 0.22s ease" }} onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-[60] flex items-end justify-center" style={{ background: "rgba(0,0,0,0.6)" }} onClick={onClose}>
+      <div className="w-full max-w-lg rounded-t-3xl p-5" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.08)", animation: "slideUp 0.22s ease", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 28px)" }} onClick={(e) => e.stopPropagation()}>
         <div className="w-9 h-1 rounded-full mx-auto mb-5" style={{ background: "rgba(255,255,255,0.15)" }} />
         <p className="font-display text-2xl text-white mb-1">Join with code</p>
         <p className="font-body text-sm text-text-muted mb-4">Enter the code a friend shared.</p>
@@ -281,11 +282,12 @@ function VersusInner() {
           </svg>
           <h1 className="font-display text-2xl text-white" style={{ letterSpacing: "-0.01em" }}>Versus</h1>
         </div>
-        <div className="flex max-w-lg mx-auto px-5 pb-3 gap-2 overflow-x-auto no-scrollbar">
+        {/* Full-width segmented tabs (founder call: the three tabs span the screen) */}
+        <div className="flex max-w-lg mx-auto px-5 pb-3 gap-2">
           {PILLS.map((p) => {
             const active = p.key === view;
             return (
-              <button key={p.key} onClick={() => router.push(`/versus?view=${p.key}`)} className="font-body text-xs font-semibold px-3.5 py-1.5 rounded-lg transition-all flex-shrink-0"
+              <button key={p.key} onClick={() => router.push(`/versus?view=${p.key}`)} className="flex-1 font-body text-sm font-semibold py-2 rounded-lg transition-all text-center"
                 style={{ background: active ? "rgba(0,216,192,0.15)" : "rgba(255,255,255,0.04)", color: active ? TEAL : "#8a948f", border: `1px solid ${active ? "rgba(0,216,192,0.3)" : "transparent"}` }}>
                 {p.label}
               </button>
@@ -365,11 +367,10 @@ function VersusInner() {
             </>
           )}
 
-          {/* Community: live pulse, swipeable highlights, suggested opponents,
-              public leagues, friends promo (carousel mockup order) */}
+          {/* Community: live pulse, the results feed, public leagues, friends
+              promo (founder call: no "ready to play" rail) */}
           <LiveActivityStrip />
           <CommunityHighlights />
-          <ReadyToPlayRail />
           <PublicLeaguesRail limit={2} />
           <VersusDiscovery promoOnly />
         </div>

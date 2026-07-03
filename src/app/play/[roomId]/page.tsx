@@ -850,7 +850,8 @@ export default function RoomPage() {
     return (
       <main className="min-h-dvh pb-20 bg-bg">
         <nav className="flex items-center justify-between px-5 py-4 max-w-lg mx-auto">
-          <BackPill href="/play" label="Play" tone="play" />
+          {/* h2h battles came from Versus — send them back there, not the quiz tab */}
+          <BackPill href={room.room_mode === "h2h" ? "/versus" : "/play"} label={room.room_mode === "h2h" ? "Versus" : "Play"} tone="play" />
           <div className="flex items-center gap-2">
             <span className="font-body text-xs" style={{ color: "#586058" }}>Game Over</span>
             {completedAt && !lobbyExpired && (
@@ -899,8 +900,22 @@ export default function RoomPage() {
             />
           ))}
 
+          {/* Shadow/CPU rooms: forward motion first — the scorecard's job is to
+              get you into the next game, not to be an exit. */}
+          {(room.shadow || players.some((p) => p.user_id === QUIZ_BOT_ID)) && (
+            <div className="rounded-2xl px-5 py-4 space-y-2" style={{ background: "rgba(0,216,192,0.06)", border: "1px solid rgba(0,216,192,0.2)" }}>
+              <p className="font-body text-[10px] font-bold uppercase tracking-[0.28em] mb-1" style={{ color: "#00d8c0" }}>Keep playing</p>
+              <Link href={`/versus/find?game=quiz${room.pack_id ? `&pack=${room.pack_id}` : ""}`} className="block w-full text-center rounded-xl py-3.5 font-display text-base tracking-wide active:scale-[0.99] transition-transform" style={{ background: "#00d8c0", color: "#04231f" }}>
+                PLAY AGAIN — NEW OPPONENT →
+              </Link>
+              <Link href="/versus/quiz" className="block w-full text-center rounded-xl py-3 font-display text-sm tracking-wide" style={{ background: "rgba(255,255,255,0.05)", color: "#eef2f0", border: "1px solid rgba(255,255,255,0.14)" }}>
+                PICK A DIFFERENT QUIZ →
+              </Link>
+            </div>
+          )}
+
           {/* Shadow room: the honest reveal — you played a real player's past run */}
-          {room.shadow ? (
+          {room.shadow && (
             <div className="rounded-2xl overflow-hidden" style={{ background: "linear-gradient(160deg, rgba(0,216,192,0.1), #0c1613)", border: "1px solid rgba(0,216,192,0.3)" }}>
               <div className="px-5 pt-5 pb-4">
                 <p className="font-body text-[10px] font-bold uppercase tracking-[0.28em] mb-3" style={{ color: "#00d8c0" }}>The reveal</p>
@@ -914,26 +929,16 @@ export default function RoomPage() {
                   </div>
                 </div>
               </div>
-              <div className="px-5 pb-5 space-y-2">
-                <Link href={`/versus/shadow/${room.shadow.userId}`} className="block w-full text-center rounded-xl py-3 font-display text-sm tracking-wide" style={{ background: "#00d8c0", color: "#04231f" }}>
-                  PLAY THEIR OTHER RUNS →
+              <div className="px-5 pb-5 flex gap-2">
+                <Link href={`/versus/shadow/${room.shadow.userId}`} className="flex-1 text-center rounded-xl py-3 font-display text-[12px] tracking-wide" style={{ background: "rgba(0,216,192,0.12)", color: "#00d8c0", border: "1px solid rgba(0,216,192,0.3)" }}>
+                  PLAY THEIR RUNS
                 </Link>
-                <Link href={`/versus/quiz?to=${room.shadow.userId}`} className="block w-full text-center rounded-xl py-3 font-display text-sm tracking-wide" style={{ background: "rgba(255,255,255,0.05)", color: "#eef2f0", border: "1px solid rgba(255,255,255,0.14)" }}>
-                  CHALLENGE THEM LIVE →
+                <Link href={`/versus/quiz?to=${room.shadow.userId}`} className="flex-1 text-center rounded-xl py-3 font-display text-[12px] tracking-wide" style={{ background: "rgba(255,255,255,0.05)", color: "#eef2f0", border: "1px solid rgba(255,255,255,0.14)" }}>
+                  CHALLENGE LIVE
                 </Link>
               </div>
             </div>
-          ) : players.some((p) => p.user_id === QUIZ_BOT_ID) ? (
-            /* CPU room: no vote to wait on — one tap starts a fresh CPU match */
-            <div className="rounded-2xl px-5 py-4" style={{ background: "rgba(0,216,192,0.06)", border: "1px solid rgba(0,216,192,0.2)" }}>
-              <Button variant="primary" tone="teal" size="md" fullWidth onClick={async () => {
-                const r = await fetch("/api/versus/queue", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "bot" }) }).then((x) => x.json()).catch(() => null);
-                if (r?.roomId) setNewRoomId(r.roomId);
-              }}>
-                🎮 Rematch CPU
-              </Button>
-            </div>
-          ) : null}
+          )}
 
           {/* ── Play Again voting panel (human rooms) ─────────────────────── */}
           {!lobbyExpired && !players.some((p) => p.user_id === QUIZ_BOT_ID) && (
@@ -1024,8 +1029,8 @@ export default function RoomPage() {
                 New Lobby 🎮
               </Button>
             )}
-            <Button variant="ghost" size="md" href="/play" className="flex-1">
-              Back to Play
+            <Button variant="ghost" size="md" href={room.room_mode === "h2h" ? "/versus" : "/play"} className="flex-1">
+              {room.room_mode === "h2h" ? "Back to Versus" : "Back to Play"}
             </Button>
           </div>
         </div>

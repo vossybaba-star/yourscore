@@ -59,10 +59,16 @@ async function findInstantLobby(db: Db, userId: string): Promise<{ roomId: strin
   return { roomId: m.room_id, code: m.rooms.code, opponent: await profileOf(db, other?.[0]?.user_id ?? null) };
 }
 
-/** Pick the quiz for an instant match: the newest featured pack, falling back to
- *  the newest published pack. Both players get the same questions — that's the
- *  whole game. */
-async function pickInstantPack(db: Db): Promise<string | null> {
+/** Pick the quiz for an instant match. A caller-picked pack wins (the "find an
+ *  opponent on THIS quiz" flow) as long as it's really published; otherwise the
+ *  newest featured pack, falling back to the newest published pack. Both players
+ *  get the same questions — that's the whole game. */
+async function pickInstantPack(db: Db, preferredPackId?: string | null): Promise<string | null> {
+  if (preferredPackId) {
+    const { data: preferred } = await db
+      .from("quiz_packs").select("id").eq("id", preferredPackId).eq("status", "published").maybeSingle();
+    if (preferred) return preferred.id;
+  }
   const { data: featured } = await db
     .from("quiz_packs").select("id").eq("status", "published").eq("featured", true)
     .order("created_at", { ascending: false }).limit(1);
@@ -75,7 +81,7 @@ async function pickInstantPack(db: Db): Promise<string | null> {
 
 /** Poll the queue: resume an existing pairing, claim a waiter (creating the
  *  Lobby), or wait. Safe to call repeatedly — polling refreshes enqueued_at. */
-export async function queueOrPairQuiz(userId: string): Promise<QuizQueueResult> {
+export async function queueOrPairQuiz(userId: string, preferredPackId?: string | null): Promise<QuizQueueResult> {
   const db = createServiceClient();
 
   // 1. Already paired? (the waiter's discovery path; also stops double-pairing)
@@ -88,7 +94,8 @@ export async function queueOrPairQuiz(userId: string): Promise<QuizQueueResult> 
 
   // 3. Paired — create the 1v1 Lobby and seat both. The waiter was first, but the
   //    claimer hosts (they're mid-flow on the found screen and presses Start).
-  const packId = await pickInstantPack(db);
+  //    The claimer's picked quiz decides the pack (the waiter queued for "any").
+  const packId = await pickInstantPack(db, preferredPackId);
   if (!packId) throw new Error("No quiz available right now");
 
   let room: { id: string; code: string } | null = null;
@@ -202,7 +209,7 @@ async function createShadowLobby(db: Db, userId: string, run: ShadowRun): Promis
 
 /** Leave the queue and start a fallback match now: a real player's shadow when
  *  one exists for the instant pack, else the CPU. */
-export async function createBotQuizLobby(userId: string): Promise<QuizQueueResult> {
+export async function createBotQuizLobby(userId: string, preferredPackId?: string | null): Promise<QuizQueueResult> {
   const db = createServiceClient();
 
   // A real pairing may have landed in the gap — play that instead.
@@ -210,7 +217,7 @@ export async function createBotQuizLobby(userId: string): Promise<QuizQueueResul
   if (existing) return { status: "matched", ...existing };
   await db.from("quiz_queue").delete().eq("user_id", userId);
 
-  const packId = await pickInstantPack(db);
+  const packId = await pickInstantPack(db, preferredPackId);
   if (!packId) throw new Error("No quiz available right now");
 
   // Shadow first — CPU only when no real run exists for this pack yet.
