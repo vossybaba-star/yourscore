@@ -235,19 +235,29 @@ async function main() {
     }
   } else { await sendMessage("⏭ Tweet skipped."); }
 
-  // 6. GATE 2c — email
+  // 6. GATE 2c — email. Two segment-aware BROADCASTS (engaged = active + cooling,
+  //    i.e. anyone who played in the last 14 days): quiz-primary players get the WC
+  //    Quiz daily; wc/38 players get the Mastermind draft daily. The sender splits
+  //    by primary_game so the two cohorts are mutually exclusive (nobody gets both),
+  //    and both go out as marketing broadcasts — no transactional-quota burn.
+  //    Dormant / never-played users are intentionally excluded.
   if (gate(["email", "--quiz", quizPath, "--day", DAY])) {
-    if (DRY) { await sendMessage("🧪 (dry) would send the email to all users."); }
+    if (DRY) { await sendMessage("🧪 (dry) would send two engaged-only broadcasts: Quiz daily → quiz players, Mastermind daily → WC/38 players."); }
     else {
-      try {
-        // Detached so the ~34-min staggered blast outlives this orchestrator run.
-        const log = openSync(`/tmp/launch-email-day${DAY}.log`, "a");
-        const child = spawn(node, [join(__dirname, "send-wc-quiz-daily.mjs"), "--quiz", quizPath, "--day", DAY, "--send"],
-          { cwd: ROOT, detached: true, stdio: ["ignore", log, log] });
-        child.unref();
-        await sendMessage(`📤 Email Day ${DAY} send started → all users (~34 min). Log: /tmp/launch-email-day${DAY}.log`);
-      } catch (e) {
-        await sendMessage(`⚠️ Email failed to start: ${e.message.slice(0, 140)}`);
+      for (const { mode, label } of [
+        { mode: "quiz", label: "Quiz daily → engaged quiz players" },
+        { mode: "mastermind", label: "Mastermind daily → engaged WC/38 players" },
+      ]) {
+        try {
+          // Detached so each staggered blast outlives this orchestrator run.
+          const log = openSync(`/tmp/launch-email-day${DAY}-${mode}.log`, "a");
+          const child = spawn(node, [join(__dirname, "send-wc-quiz-daily.mjs"), "--quiz", quizPath, "--day", DAY, "--mode", mode, "--segment", "engaged", "--send"],
+            { cwd: ROOT, detached: true, stdio: ["ignore", log, log] });
+          child.unref();
+          await sendMessage(`📤 Email Day ${DAY}: ${label} started (engaged only · broadcast). Log: /tmp/launch-email-day${DAY}-${mode}.log`);
+        } catch (e) {
+          await sendMessage(`⚠️ Email (${mode}) failed to start: ${e.message.slice(0, 140)}`);
+        }
       }
     }
   } else { await sendMessage("⏭ Email skipped."); }

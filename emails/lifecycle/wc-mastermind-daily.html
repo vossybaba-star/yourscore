@@ -1,8 +1,9 @@
 <!--
-  wc-quiz-daily.html — tokenized template for the WC Quiz Series daily email.
-  One template for every day. send-wc-quiz-daily.mjs fills the tokens.
+  wc-mastermind-daily.html — tokenized template for the daily 38-0 World Cup
+  Mastermind email (the quiz-gated draft). One template for every day;
+  send-wc-mastermind-daily.mjs fills the tokens.
   Tokens: {{DAY}} {{SUBJECT}} {{PREHEADER}} {{QUIZ_TITLE}} {{QUIZ_DESC}}
-          {{QUIZ_URL}} {{IMAGE_URL}} {{PAUSE_URL}} {{UNSUB_URL}}
+          {{MASTERMIND_URL}} {{IMAGE_URL}} {{PAUSE_URL}} {{UNSUB_URL}}
 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
@@ -22,7 +23,7 @@
     @media (max-width:620px){
       .container{width:100%!important}
       .px{padding-left:20px!important;padding-right:20px!important}
-      .hero{font-size:72px!important;line-height:66px!important}
+      .hero{font-size:68px!important;line-height:62px!important}
     }
   </style>
 </head>
@@ -39,7 +40,7 @@
 
       <!-- Logo -->
       <tr><td align="center" style="padding:0 40px 44px;">
-        <a href="https://yourscore.app/play" style="display:inline-block;">
+        <a href="https://yourscore.app/38-0/wc" style="display:inline-block;">
           <img src="https://yourscore.app/logo.png" alt="YourScore" width="148" height="44" style="width:148px;height:44px;display:block;">
         </a>
       </td></tr>
@@ -54,13 +55,13 @@
       <!-- Badge -->
       <tr><td class="px" align="left" style="padding:0 40px 16px;">
         <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-          <td style="background:rgba(0,255,135,0.08);border:1px solid rgba(0,255,135,0.25);border-radius:999px;padding:5px 16px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:2.5px;color:#00ff87;font-weight:700;text-transform:uppercase;">&#127942;&nbsp; World Cup Quiz Series &nbsp;&#183;&nbsp; Day {{DAY}}</td>
+          <td style="background:rgba(0,255,135,0.08);border:1px solid rgba(0,255,135,0.25);border-radius:999px;padding:5px 16px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:2.5px;color:#00ff87;font-weight:700;text-transform:uppercase;">&#129504;&nbsp; World Cup Mastermind 38-0 &nbsp;&#183;&nbsp; Day {{DAY}}</td>
         </tr></table>
       </td></tr>
 
-      <!-- Hero -->
+      <!-- Hero (title) -->
       <tr><td class="px" style="padding:0 40px 10px;">
-        <div class="hero" style="font-family:'Bebas Neue',Impact,Arial,sans-serif;font-size:96px;line-height:88px;color:#ffffff;letter-spacing:-1px;text-shadow:0 0 100px rgba(0,255,135,0.2);">DAY {{DAY}}<br><span style="color:#00ff87;">IS LIVE.</span></div>
+        <div class="hero" style="font-family:'Bebas Neue',Impact,Arial,sans-serif;font-size:92px;line-height:84px;color:#ffffff;letter-spacing:-1px;text-shadow:0 0 100px rgba(0,255,135,0.2);">TODAY'S<br><span style="color:#00ff87;">MASTERMIND.</span></div>
       </td></tr>
 
       <!-- Greeting -->
@@ -68,20 +69,33 @@
         <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:18px;line-height:28px;color:#ffffff;font-weight:600;">Hi {{{FIRST_NAME|there}}},</p>
       </td></tr>
 
-      <!-- Sub-line -->
-      <tr><td class="px" style="padding:0 40px 32px;">
+      <!-- Sub-line (subheading) -->
+      <tr><td class="px" style="padding:0 40px 30px;">
         <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:18px;line-height:28px;color:#8888aa;font-weight:500;">
-          A new quiz is up. <strong style="color:#ffffff;">Answer today and build your streak</strong> — every consecutive day you play adds bonus points on top of your score.
+          The daily 38-0 Mastermind is live. <strong style="color:#ffffff;">The better you answer, the better your squad.</strong> Nail the questions, draft your XI, and see if it's good enough to top today's board.
         </p>
       </td></tr>
 
-      <!-- TODAY'S QUIZ CARD -->
+      <!-- Get the app (below subheading) — the WHOLE tile links to the App Store -->
+      <tr><td class="px" style="padding:0 40px 40px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid rgba(0,255,135,0.2);border-radius:16px;background:rgba(0,255,135,0.05);">
+          <tr><td style="padding:0;">
+            <a href="https://apps.apple.com/gb/app/yourscore/id6773626424" style="display:block;padding:24px 28px;text-align:center;text-decoration:none;">
+              <span style="display:block;margin:0 0 6px;font-family:'Bebas Neue',Impact,Arial,sans-serif;font-size:27px;line-height:28px;color:#ffffff;letter-spacing:0.5px;">GET THE APP</span>
+              <span style="display:block;margin:0 0 20px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;line-height:21px;color:#8888aa;">Turn on notifications and we'll tell you the moment each day's Mastermind drops, so you're first on the board.</span>
+              <img src="https://yourscore.app/email/app-store-badge.png" alt="Download on the App Store" width="208" height="71" style="width:208px;height:71px;display:block;border:0;margin:0 auto;">
+            </a>
+          </td></tr>
+        </table>
+      </td></tr>
+
+      <!-- TODAY'S MASTERMIND CARD -->
       <tr><td class="px" style="padding:0 40px 52px;">
-        <p style="margin:0 0 12px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:2px;color:#00ff87;font-weight:700;text-transform:uppercase;">&#9654;&nbsp; Today's quiz — Day {{DAY}}</p>
+        <p style="margin:0 0 12px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:2px;color:#00ff87;font-weight:700;text-transform:uppercase;">&#9654;&nbsp; Today's Mastermind — Day {{DAY}}</p>
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid rgba(0,255,135,0.2);border-radius:16px;overflow:hidden;background:rgba(0,255,135,0.04);">
           <tr>
             <td style="padding:0;">
-              <a href="{{QUIZ_URL}}" style="display:block;">
+              <a href="{{MASTERMIND_URL}}" style="display:block;">
                 <img src="{{IMAGE_URL}}"
                      alt="{{QUIZ_TITLE}}"
                      width="520"
@@ -97,7 +111,7 @@
               </p>
               <table role="presentation" cellpadding="0" cellspacing="0" border="0">
                 <tr><td style="background:linear-gradient(135deg,#00ff87 0%,#00d464 100%);border-radius:10px;">
-                  <a href="{{QUIZ_URL}}" style="display:inline-block;color:#07070d;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;font-weight:800;letter-spacing:0.3px;padding:13px 32px;border-radius:10px;">Play now &nbsp;&rarr;</a>
+                  <a href="{{MASTERMIND_URL}}" style="display:inline-block;color:#07070d;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;font-weight:800;letter-spacing:0.3px;padding:13px 32px;border-radius:10px;">Draft your XI &nbsp;&rarr;</a>
                 </td></tr>
               </table>
             </td>
@@ -114,7 +128,7 @@
 
       <!-- How it works -->
       <tr><td class="px" style="padding:0 40px 20px;">
-        <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:13px;letter-spacing:2px;color:#6b6b85;font-weight:700;text-transform:uppercase;">How the series works</p>
+        <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:13px;letter-spacing:2px;color:#6b6b85;font-weight:700;text-transform:uppercase;">How the Mastermind works</p>
       </td></tr>
 
       <tr><td class="px" style="padding:0 40px 40px;">
@@ -125,12 +139,12 @@
               <tr>
                 <td width="52" valign="top" style="padding-right:16px;">
                   <div style="width:44px;height:44px;background:rgba(0,255,135,0.1);border:1px solid rgba(0,255,135,0.2);border-radius:12px;display:table;text-align:center;vertical-align:middle;">
-                    <span style="display:table-cell;vertical-align:middle;font-size:20px;">&#128197;</span>
+                    <span style="display:table-cell;vertical-align:middle;font-size:20px;">&#129504;</span>
                   </div>
                 </td>
                 <td valign="top">
-                  <p style="margin:0 0 3px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;color:#ffffff;">New quiz every day</p>
-                  <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;line-height:20px;color:#6b6b85;">A fresh World Cup question set drops daily for the duration of the tournament.</p>
+                  <p style="margin:0 0 3px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;color:#ffffff;">Answer the daily questions</p>
+                  <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;line-height:20px;color:#6b6b85;">A fresh set of World Cup questions every day. How well you answer decides the quality of the squad you get to draft.</p>
                 </td>
               </tr>
             </table>
@@ -141,12 +155,12 @@
               <tr>
                 <td width="52" valign="top" style="padding-right:16px;">
                   <div style="width:44px;height:44px;background:rgba(0,255,135,0.1);border:1px solid rgba(0,255,135,0.2);border-radius:12px;display:table;text-align:center;vertical-align:middle;">
-                    <span style="display:table-cell;vertical-align:middle;font-size:20px;">&#128293;</span>
+                    <span style="display:table-cell;vertical-align:middle;font-size:20px;">&#9917;</span>
                   </div>
                 </td>
                 <td valign="top">
-                  <p style="margin:0 0 3px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;color:#ffffff;">Build your streak for bonus points</p>
-                  <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;line-height:20px;color:#6b6b85;">Answer on the day a quiz is released to build your streak. The longer it goes, the more bonus points you earn.</p>
+                  <p style="margin:0 0 3px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;color:#ffffff;">Draft your best XI</p>
+                  <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;line-height:20px;color:#6b6b85;">Spend what you earn from the questions to build a starting eleven, then send them out to chase a 38-0 season.</p>
                 </td>
               </tr>
             </table>
@@ -161,8 +175,8 @@
                   </div>
                 </td>
                 <td valign="top">
-                  <p style="margin:0 0 3px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;color:#ffffff;">Highest points by the final wins</p>
-                  <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;line-height:20px;color:#6b6b85;">Total score accumulates across every quiz. The leaderboard crowns a winner when the World Cup final is played.</p>
+                  <p style="margin:0 0 3px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;color:#ffffff;">Top the daily board</p>
+                  <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;line-height:20px;color:#6b6b85;">Every player gets the same questions, so the board is all knowledge. Get yours in early and stay top before everyone else has their go.</p>
                 </td>
               </tr>
             </table>
@@ -182,23 +196,10 @@
       <tr><td class="px" style="padding:0 40px 56px;">
         <table role="presentation" cellpadding="0" cellspacing="0" border="0">
           <tr><td style="background:linear-gradient(135deg,#00ff87 0%,#00d464 100%);border-radius:13px;box-shadow:0 0 44px rgba(0,255,135,0.38);">
-            <a href="{{QUIZ_URL}}" style="display:inline-block;color:#07070d;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:16px;font-weight:800;letter-spacing:0.4px;padding:20px 52px;border-radius:13px;">Play Day {{DAY}} &nbsp;&rarr;</a>
+            <a href="{{MASTERMIND_URL}}" style="display:inline-block;color:#07070d;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:16px;font-weight:800;letter-spacing:0.4px;padding:20px 52px;border-radius:13px;">Play today's Mastermind &nbsp;&rarr;</a>
           </td></tr>
         </table>
         <p style="margin:14px 0 0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:13px;color:#6b6b85;">Takes about 5 minutes.</p>
-      </td></tr>
-
-      <!-- Get the app -->
-      <tr><td class="px" style="padding:0 40px 52px;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid rgba(0,255,135,0.2);border-radius:16px;background:rgba(0,255,135,0.05);">
-          <tr><td style="padding:26px 28px;" align="center">
-            <p style="margin:0 0 6px;font-family:'Bebas Neue',Impact,Arial,sans-serif;font-size:27px;line-height:28px;color:#ffffff;letter-spacing:0.5px;">GET THE APP</p>
-            <p style="margin:0 0 20px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;line-height:21px;color:#8888aa;">Turn on notifications and be first on the board the moment each day's quiz drops.</p>
-            <a href="https://apps.apple.com/gb/app/yourscore/id6773626424" style="display:inline-block;">
-              <img src="https://yourscore.app/email/app-store-badge.png" alt="Download on the App Store" width="208" height="71" style="width:208px;height:71px;display:block;border:0;">
-            </a>
-          </td></tr>
-        </table>
       </td></tr>
 
       <!-- Footer -->
