@@ -225,13 +225,13 @@ function RivalryCard({ r, onChallenge }: { r: Rivalry; onChallenge: (id: string)
   const total = r.total || 1;
   return (
     <div className="rounded-2xl p-3.5 flex-shrink-0" style={{ width: 190, background: "#0e1611", border: "1px solid rgba(255,255,255,0.08)" }}>
-      <div className="flex items-center gap-2.5 mb-3">
+      <Link href={`/profile/${r.opponentId}`} className="flex items-center gap-2.5 mb-3">
         <Avatar name={r.name} avatarUrl={r.avatarUrl} seed={r.opponentId} size={38} ring={leadCol} />
         <div className="min-w-0">
           <p className="font-body text-sm font-semibold text-white truncate">{r.name}</p>
           <p className="font-body text-[11px]" style={{ color: leadCol }}>{leadTxt}</p>
         </div>
-      </div>
+      </Link>
       <div className="flex gap-1 h-1.5 rounded-full overflow-hidden mb-3" style={{ background: "rgba(255,255,255,0.06)" }}>
         <div style={{ width: `${(r.wins / total) * 100}%`, background: LIME }} />
         <div style={{ width: `${(r.draws / total) * 100}%`, background: "#5a655e" }} />

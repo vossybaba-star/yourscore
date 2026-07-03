@@ -394,6 +394,15 @@ carry `List-Unsubscribe` + `List-Unsubscribe-Post` (RFC 8058 one-click) headers.
   stats on INSERT so seeding writes stats via a second-pass UPDATE; the quiz
   league page's `profiles(...)` embedded select has NO FK and errored for
   EVERYONE ("No members yet" on every table) — now a two-step fetch.
+- **Public player profiles (2026-07-03):** `/profile/[userId]` shows any player
+  to any player: rank + tier, head-to-head W-D-L record + score (rank RPC),
+  RECENT BATTLES (h2h results from their side), QUIZZES PLAYED (attempts w/
+  score + accuracy — cross-user reads via the service client; RLS scopes
+  quiz_attempts/h2h to their owner so the viewer's session sees nothing),
+  plus **Add friend**, **CHALLENGE THEM** and **PLAY THEIR RUNS**. Reachable by
+  tapping players in league tables, the global leaderboard, Friends (rivals +
+  friends rows), rivalry cards and highlights result cards. This partially
+  supersedes the old "public profiles not built yet" note — profiles ARE public.
 - **Scorecard forward motion (2026-07-03 round 3):** every bot/shadow scorecard
   leads with a **KEEP PLAYING** panel — primary **PLAY AGAIN — NEW OPPONENT**
   (find flow pinned to the same quiz) + **PICK A DIFFERENT QUIZ**; the honest-reveal

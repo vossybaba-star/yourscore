@@ -162,13 +162,16 @@ function RivalRow({ r, isFriend, onAdd, addState }: { r: Rivalry; isFriend: bool
   return (
     <div className="rounded-2xl px-4 py-3" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.08)" }}>
       <div className="flex items-center gap-3">
-        <PlayerAvatar seed={r.opponentId} name={r.name} avatarUrl={r.avatarUrl} size={40} ring={isFriend ? leadCol : undefined} />
-        <div className="flex-1 min-w-0">
-          <p className="font-body text-sm font-semibold text-white truncate">{r.name}</p>
-          {isFriend
-            ? <p className="font-body text-[11px]" style={{ color: leadCol }}>{leadTxt}</p>
-            : <p className="font-body text-[11px] text-text-muted">Played {r.total} {r.total === 1 ? "match" : "matches"}</p>}
-        </div>
+        {/* Avatar + name open the player's public profile */}
+        <Link href={`/profile/${r.opponentId}`} className="flex items-center gap-3 flex-1 min-w-0">
+          <PlayerAvatar seed={r.opponentId} name={r.name} avatarUrl={r.avatarUrl} size={40} ring={isFriend ? leadCol : undefined} />
+          <div className="flex-1 min-w-0">
+            <p className="font-body text-sm font-semibold text-white truncate">{r.name}</p>
+            {isFriend
+              ? <p className="font-body text-[11px]" style={{ color: leadCol }}>{leadTxt}</p>
+              : <p className="font-body text-[11px] text-text-muted">Played {r.total} {r.total === 1 ? "match" : "matches"}</p>}
+          </div>
+        </Link>
         {!isFriend && onAdd && (
           addState === "requested"
             ? <span className="font-body text-xs flex-shrink-0" style={{ color: TEAL }}>Requested</span>
@@ -413,11 +416,13 @@ export function FriendsPanel({ embedded = false }: { embedded?: boolean }) {
             {accepted.map((f, i) => (
               <div key={f.user_id} className="fade-in flex items-center gap-3 px-4 py-3 rounded-2xl bg-surface"
                 style={{ border: "1px solid rgba(255,255,255,0.07)", animationDelay: `${i * 0.05}s` }}>
-                <PlayerAvatar seed={f.user_id} name={f.display_name} avatarUrl={f.avatar_url} size={40} />
-                <div className="flex-1 min-w-0">
-                  <p className="font-body text-sm font-semibold text-white truncate">{f.display_name}</p>
-                  <p className="font-body text-xs text-text-muted">{(f.total_score ?? 0).toLocaleString()} pts</p>
-                </div>
+                <Link href={`/profile/${f.user_id}`} className="flex items-center gap-3 flex-1 min-w-0">
+                  <PlayerAvatar seed={f.user_id} name={f.display_name} avatarUrl={f.avatar_url} size={40} />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-body text-sm font-semibold text-white truncate">{f.display_name}</p>
+                    <p className="font-body text-xs text-text-muted">{(f.total_score ?? 0).toLocaleString()} pts</p>
+                  </div>
+                </Link>
                 <Link href={`/versus/quiz?to=${f.user_id}`}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-display text-xs tracking-wide flex-shrink-0 transition-all active:scale-[0.97]"
                   style={{ background: "rgba(0,216,192,0.14)", color: TEAL, border: "1px solid rgba(0,216,192,0.3)" }}>

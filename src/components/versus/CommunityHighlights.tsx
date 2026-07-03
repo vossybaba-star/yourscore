@@ -76,15 +76,21 @@ function ResultCard({ f }: { f: FeedItem }) {
         <GameChip game={f.game} />
         <span className="font-body text-[10px]" style={{ color: "#586058" }}>{timeAgo(f.when)}</span>
       </div>
-      <div className="flex items-center gap-2 mb-2">
-        <div className="flex -space-x-2 flex-shrink-0">
-          <PlayerAvatar seed={f.a.id ?? f.a.name} name={f.a.name} avatarUrl={f.a.avatarUrl} size={30} ring={GOLD} />
-          <PlayerAvatar seed={f.b.id ?? f.b.name} name={f.b.name} avatarUrl={f.b.avatarUrl} size={30} ring="rgba(255,255,255,0.15)" />
-        </div>
-        <p className="font-body text-xs text-white leading-snug min-w-0">
-          <span className="font-bold">{f.a.name}</span> {verb} <span className="font-bold">{bLabel}</span>
-        </p>
-      </div>
+      {/* Winner's name/avatars open their public profile (when they're a real account) */}
+      {(() => {
+        const row = (
+          <div className="flex items-center gap-2 mb-2">
+            <div className="flex -space-x-2 flex-shrink-0">
+              <PlayerAvatar seed={f.a.id ?? f.a.name} name={f.a.name} avatarUrl={f.a.avatarUrl} size={30} ring={GOLD} />
+              <PlayerAvatar seed={f.b.id ?? f.b.name} name={f.b.name} avatarUrl={f.b.avatarUrl} size={30} ring="rgba(255,255,255,0.15)" />
+            </div>
+            <p className="font-body text-xs text-white leading-snug min-w-0">
+              <span className="font-bold">{f.a.name}</span> {verb} <span className="font-bold">{bLabel}</span>
+            </p>
+          </div>
+        );
+        return f.a.id ? <Link href={`/profile/${f.a.id}`}>{row}</Link> : row;
+      })()}
       <p className="font-display text-xl leading-none" style={{ color: c }}>{scoreline}</p>
       <p className="font-body text-[11px] text-text-muted mt-1 truncate flex-1">
         {f.game === "38-0" ? "Live 38-0 match" : f.packName ?? "Quiz Battle"}
