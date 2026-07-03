@@ -1,6 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { QUIZ_BOT_ID } from "@/lib/versus/quizBot";
+import { notifyUsers } from "@/lib/notify";
 
 // Shadow matches — play the ghost of a real player's previous multiplayer run.
 // A shadow Lobby is a normal CPU-seat room (p2 = QUIZ_BOT_ID) whose questions
@@ -220,5 +221,87 @@ export async function shadowRunsOf(db: Db, userId: string): Promise<ShadowableRu
       playedAt: room.created_at,
       questionCount: room.question_count ?? 10,
     };
+  });
+}
+
+// ── Result notification (founder safeguard: never pester the run's owner) ─────
+// A popular run can be shadowed many times. Rules:
+//   • At most ONE shadow-result push per owner per rolling 24h — anything inside
+//     the quiet window is silently absorbed.
+//   • The next push AGGREGATES what was absorbed: "Feran and 2 others took on
+//     your runs — 2 beat you." Both beats and holds count toward the cap;
+//     whichever finishes first outside the window sends.
+//   • Opt-in gating + per-key dedupe still apply inside notifyUsers.
+
+const QUIET_WINDOW_MS = 24 * 3600_000;
+const AGGREGATE_LOOKBACK_MS = 7 * 24 * 3600_000; // first-ever push looks back this far
+
+export async function notifyShadowResult(
+  db: Db,
+  args: { roomId: string; shadow: ShadowInfo; humanId: string; humanName: string; packName: string; humanScore: number; shadowScore: number }
+): Promise<void> {
+  const owner = args.shadow.userId;
+
+  // 1. Quiet window: latest shadow push to this owner, any room.
+  const { data: lastPush } = await db
+    .from("notification_log")
+    .select("sent_at")
+    .eq("user_id", owner)
+    .like("key", "shadow-result:%")
+    .order("sent_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (lastPush && Date.now() - Date.parse(lastPush.sent_at) < QUIET_WINDOW_MS) return; // absorbed
+
+  // 2. Everything since the last push (or a week) — including this match —
+  //    so the absorbed plays surface in this push instead of being lost.
+  const since = new Date(lastPush ? Date.parse(lastPush.sent_at) : Date.now() - AGGREGATE_LOOKBACK_MS).toISOString();
+  const { data: recent } = await db
+    .from("rooms")
+    .select("id, created_by")
+    .eq("status", "completed")
+    .eq("shadow->>userId", owner)
+    .gte("created_at", since)
+    .limit(50);
+  const rooms = (recent ?? []).filter((r) => r.id !== args.roomId);
+
+  let plays = 1;
+  let beats = args.humanScore > args.shadowScore ? 1 : 0;
+  if (rooms.length > 0) {
+    const { data: scores } = await db
+      .from("room_scores")
+      .select("room_id, user_id, total_score")
+      .in("room_id", rooms.map((r) => r.id));
+    const byRoomUser = new Map((scores ?? []).map((s) => [`${s.room_id}:${s.user_id}`, s.total_score ?? 0]));
+    for (const r of rooms) {
+      plays++;
+      const human = byRoomUser.get(`${r.id}:${r.created_by}`) ?? 0;
+      const bot = byRoomUser.get(`${r.id}:${QUIZ_BOT_ID}`) ?? 0;
+      if (human > bot) beats++;
+    }
+  }
+
+  // 3. Copy: detailed for a single play, aggregated when others were absorbed.
+  let title: string, body: string;
+  if (plays === 1) {
+    const beaten = args.humanScore > args.shadowScore;
+    title = beaten ? "Your run got beaten" : "Your run held them off";
+    body = beaten
+      ? `${args.humanName} beat your ${args.packName} run ${args.humanScore.toLocaleString()}–${args.shadowScore.toLocaleString()} — get revenge`
+      : `${args.humanName} couldn't beat your ${args.packName} run (${args.shadowScore.toLocaleString()}–${args.humanScore.toLocaleString()})`;
+  } else {
+    const others = plays - 1;
+    title = beats > 0 ? "Your runs got taken on" : "Your runs held them all off";
+    body = beats > 0
+      ? `${args.humanName} and ${others} other${others === 1 ? "" : "s"} took on your runs — ${beats} beat you. Get revenge`
+      : `${args.humanName} and ${others} other${others === 1 ? "" : "s"} took on your runs — no one beat you`;
+  }
+
+  await notifyUsers({
+    userIds: [owner],
+    title,
+    body,
+    url: `/versus/shadow/${args.humanId}`,
+    dedupeKey: `shadow-result:${args.roomId}`,
   });
 }

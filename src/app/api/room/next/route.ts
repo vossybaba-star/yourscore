@@ -3,8 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { TIMEOUT_PENALTY, calculatePerfectRoundBonus } from "@/lib/scoring";
 import { QUIZ_BOT_ID } from "@/lib/versus/quizBot";
-import { notifyUsers } from "@/lib/notify";
-import type { ShadowInfo } from "@/lib/versus/shadow";
+import { notifyShadowResult, type ShadowInfo } from "@/lib/versus/shadow";
 
 const QUESTION_DURATION_MS = 20_000;
 
@@ -121,29 +120,25 @@ export async function POST(req: NextRequest) {
       .update({ status: "completed", current_question_idx: nextIdx })
       .eq("id", roomId);
 
-    // Shadow match finished → tell the run's owner (fire-and-forget; never
-    // blocks the response). Dedupe by room, opt-in gated by default.
+    // Shadow match finished → tell the run's owner, under the anti-pestering
+    // rules (max one push per rolling 24h; absorbed plays aggregate into the
+    // next push — see notifyShadowResult). Fire-and-forget; never blocks.
     const shadow = (room.shadow ?? null) as ShadowInfo | null;
     if (shadow?.userId) {
       void (async () => {
         const humanId = room.created_by as string;
-        const humanScore = finalScores.get(humanId) ?? 0;
-        const shadowScore = finalScores.get(QUIZ_BOT_ID) ?? 0;
         const [{ data: humanProfile }, { data: pack }] = await Promise.all([
           sb.from("profiles").select("display_name").eq("id", humanId).maybeSingle(),
           room.pack_id ? sb.from("quiz_packs").select("name").eq("id", room.pack_id).maybeSingle() : Promise.resolve({ data: null }),
         ]);
-        const humanName = humanProfile?.display_name ?? "Someone";
-        const packName = pack?.name ?? "a quiz";
-        const beaten = humanScore > shadowScore;
-        await notifyUsers({
-          userIds: [shadow.userId],
-          title: beaten ? "Your run got beaten" : "Your run held them off",
-          body: beaten
-            ? `${humanName} beat your ${packName} run ${humanScore.toLocaleString()}–${shadowScore.toLocaleString()} — get revenge`
-            : `${humanName} couldn't beat your ${packName} run (${shadowScore.toLocaleString()}–${humanScore.toLocaleString()})`,
-          url: `/versus/shadow/${humanId}`,
-          dedupeKey: `shadow-result:${roomId}`,
+        await notifyShadowResult(sb, {
+          roomId,
+          shadow,
+          humanId,
+          humanName: humanProfile?.display_name ?? "Someone",
+          packName: pack?.name ?? "a quiz",
+          humanScore: finalScores.get(humanId) ?? 0,
+          shadowScore: finalScores.get(QUIZ_BOT_ID) ?? 0,
         });
       })().catch(() => {});
     }
