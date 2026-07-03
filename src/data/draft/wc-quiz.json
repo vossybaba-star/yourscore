@@ -21,9 +21,10 @@
     "2026-06-29-knockouts-begin.json",
     "2026-06-30-giants-fall.json",
     "2026-07-01-knockout-blows.json",
-    "2026-07-02-comeback-wednesday.json"
+    "2026-07-02-comeback-wednesday.json",
+    "2026-07-03-last-32-settled.json"
   ],
-  "count": 318,
+  "count": 333,
   "questions": [
     {
       "id": "2026-06-11-0",
@@ -4158,6 +4159,201 @@
       "answer": 0,
       "difficulty": "expert",
       "category": "records"
+    },
+    {
+      "id": "2026-07-03-0",
+      "q": "Cristiano Ronaldo converted a penalty as Portugal edged which nation 2-1 in the Round of 32?",
+      "options": [
+        "Serbia",
+        "Croatia",
+        "Poland",
+        "Denmark"
+      ],
+      "answer": 1,
+      "difficulty": "easy",
+      "category": "portugal"
+    },
+    {
+      "id": "2026-07-03-1",
+      "q": "Erling Haaland struck the decisive goal as which country won a World Cup knockout match for the first time in its history?",
+      "options": [
+        "Sweden",
+        "Denmark",
+        "Norway",
+        "Austria"
+      ],
+      "answer": 2,
+      "difficulty": "easy",
+      "category": "norway"
+    },
+    {
+      "id": "2026-07-03-2",
+      "q": "Which co-host nation reached the last 16, seeing off South Africa 1-0 with a stoppage-time winner?",
+      "options": [
+        "United States",
+        "Mexico",
+        "Costa Rica",
+        "Canada"
+      ],
+      "answer": 3,
+      "difficulty": "easy",
+      "category": "hosts"
+    },
+    {
+      "id": "2026-07-03-3",
+      "q": "Germany were knocked out in the Round of 32, losing a penalty shootout to which South American side?",
+      "options": [
+        "Paraguay",
+        "Uruguay",
+        "Ecuador",
+        "Colombia"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "upsets"
+    },
+    {
+      "id": "2026-07-03-4",
+      "q": "The Netherlands were also dumped out on penalties in the last 32. Who beat them?",
+      "options": [
+        "Senegal",
+        "Morocco",
+        "Ivory Coast",
+        "Egypt"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "upsets"
+    },
+    {
+      "id": "2026-07-03-5",
+      "q": "Who scored twice as Spain brushed aside Austria 3-0 in the Round of 32?",
+      "options": [
+        "Alvaro Morata",
+        "Lamine Yamal",
+        "Mikel Oyarzabal",
+        "Pedri"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "spain"
+    },
+    {
+      "id": "2026-07-03-6",
+      "q": "The Round of 32 marked the World Cup farewell of which 40-year-old midfielder, beaten by Portugal in his final tournament?",
+      "options": [
+        "Toni Kroos",
+        "Luka Modric",
+        "Ivan Rakitic",
+        "Sergio Busquets"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "farewell"
+    },
+    {
+      "id": "2026-07-03-7",
+      "q": "Which World Cup debutants reached the knockout stage as the smallest nation ever to do so, drawing all three group games before meeting Argentina?",
+      "options": [
+        "Curacao",
+        "Jordan",
+        "Cape Verde",
+        "Panama"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "debutants"
+    },
+    {
+      "id": "2026-07-03-8",
+      "q": "Gabriel Martinelli's stoppage-time strike sent Brazil past which side in the Round of 32?",
+      "options": [
+        "South Korea",
+        "Japan",
+        "Saudi Arabia",
+        "Australia"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "brazil"
+    },
+    {
+      "id": "2026-07-03-9",
+      "q": "Norway's reward for reaching the last 16 is a tie with Brazil, reviving memories of Norway's famous World Cup win over the Selecao in which year?",
+      "options": [
+        "1994",
+        "1990",
+        "1998",
+        "2002"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "narrative"
+    },
+    {
+      "id": "2026-07-03-10",
+      "q": "Spain's win over Austria was their first World Cup knockout victory since which year?",
+      "options": [
+        "2014",
+        "2010",
+        "2018",
+        "2022"
+      ],
+      "answer": 1,
+      "difficulty": "hard",
+      "category": "spain"
+    },
+    {
+      "id": "2026-07-03-11",
+      "q": "Who put Paraguay ahead against Germany before they completed their shootout upset?",
+      "options": [
+        "Miguel Almiron",
+        "Antonio Sanabria",
+        "Julio Enciso",
+        "Angel Romero"
+      ],
+      "answer": 2,
+      "difficulty": "hard",
+      "category": "upsets"
+    },
+    {
+      "id": "2026-07-03-12",
+      "q": "Whose stoppage-time header settled Portugal's 2-1 win over Croatia?",
+      "options": [
+        "Joao Felix",
+        "Goncalo Ramos",
+        "Rafael Leao",
+        "Bruno Fernandes"
+      ],
+      "answer": 1,
+      "difficulty": "hard",
+      "category": "portugal"
+    },
+    {
+      "id": "2026-07-03-13",
+      "q": "England edged DR Congo 2-1, the Central Africans' first World Cup since they competed as Zaire in which year?",
+      "options": [
+        "1970",
+        "1974",
+        "1982",
+        "1990"
+      ],
+      "answer": 1,
+      "difficulty": "hard",
+      "category": "underdogs"
+    },
+    {
+      "id": "2026-07-03-14",
+      "q": "Alongside Haaland, which winger scored for Norway in their 2-1 win over Ivory Coast?",
+      "options": [
+        "Antonio Nusa",
+        "Alexander Sorloth",
+        "Oscar Bobb",
+        "Martin Odegaard"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "norway"
     }
   ]
 }
