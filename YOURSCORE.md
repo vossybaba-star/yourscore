@@ -6,7 +6,9 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed with the founder:** 2026-06-30 (**Versus tab** replaces Leagues — §9;
+> **Confirmed with the founder:** 2026-07-03 (**Versus phase 1**: Play-tab redesign,
+> instant matchmaking for both games, public leagues — §9. Previously 2026-06-30:
+> **Versus tab** replaces Leagues — §9;
 > async multiplayer Phases 1–2 + group challenges shipped, see §7; native track:
 > challenge push + universal links + haptics).
 > Earlier: 2026-06-16 (World Cup Daily + World Cup H2H — §5B, migration 39; interactive
@@ -337,11 +339,27 @@ carry `List-Unsubscribe` + `List-Unsubscribe-Post` (RFC 8058 one-click) headers.
 - **Home** (`/`) · **Versus** (`/versus`) · **Quiz** (`/play`; sub-tabs Solo + Multiplayer)
   · **38-0** (`/38-0`; its own sub-nav: Live · Board · Leagues · Teams) · **Profile**.
 - **Versus** is the game-first cross-game hub for playing other people (the Leagues tab
-  was replaced by it). Sub-nav: **Play** (Your Turns inbox + game picker) · **Friends**
-  (`/friends`) · **Groups** · **Leagues** (`/leagues`, nested). v1 reuses existing online
-  play (public lobbies, async challenges, 38-0 live/queue) — no new matchmaking. The
-  pending-turns badge lives on this tab. (The Leagues route still exists; the bottom-nav
-  Versus tab stays active across `/versus`, `/friends`, `/leagues`.)
+  was replaced by it). Sub-nav: **Play** · **Friends** (`/friends`) · **Leagues**
+  (`/leagues`, nested). The pending-turns badge lives on this tab. (The Leagues route
+  still exists; the bottom-nav Versus tab stays active across `/versus`, `/friends`,
+  `/leagues`.)
+- **Versus Play tab (2026-07-03 redesign):** welcome hero + three entry actions —
+  **Find an opponent** (`/versus/find`, instant matchmaking for BOTH games) ·
+  **Challenge someone** · **Join with code** — then Choose-your-game tiles, the user's
+  matches/results/record/rivalries, a **Live now** community strip
+  (`/api/versus/activity`; real metrics + seeded presence baseline flagged
+  `TODO(real-presence)`), a **People ready to play** rail (`/api/versus/ready`,
+  suggested opponents, NOT friendships), and public-league discovery. An urgent
+  your-turn card suppresses the hero.
+- **Instant matchmaking:** 38-0 uses its existing random queue (silent 2-3s disguised-bot
+  fallback). **Quiz Battle matchmaking is new** — `quiz_queue` + `quiz_pair()` RPC
+  (migration 64, mirrors `draft_live_pair`) pairs two waiters into a 1v1 Lobby named
+  "Instant Match" on a featured pack; no bot, quiet times offer challenge-a-friend
+  instead.
+- **Public leagues (2026-07-03):** both league tables now carry `is_public` + `featured`
+  (migration 64, applied; default private). Creators opt in via a visibility toggle on
+  both create flows; `/api/leagues/discover` powers "Discover public leagues" in the
+  Leagues tab + a Play-tab teaser. Public = join code exposed by design.
 - **Guests** see a reduced nav (Home · Quiz · 38-0).
 - **Matches** (`/join`) still exists as a route (browse fixtures, set up a league around a
   match) but is **not a primary bottom-nav tab** while live-match Quiz is gated.
