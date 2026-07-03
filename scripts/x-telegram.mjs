@@ -145,7 +145,22 @@ async function doPost(d) {
   // Engagement drafts post AS a reply or quote of the target tweet.
   if (d.engage?.kind === "reply") { opts.replyTo = d.engage.targetId; kind = " (reply)"; }
   if (d.engage?.kind === "quote") { opts.quoteId = d.engage.targetId; kind = " (quote)"; }
-  const data = await postTweet(sanitize(d.draft), opts);
+  let data;
+  try {
+    data = await postTweet(sanitize(d.draft), opts);
+  } catch (e) {
+    // X reply-gating: big accounts restrict who can reply (403). A quote tweet has
+    // no such restriction, so fall back to quoting the same tweet — same engagement,
+    // never a silent miss.
+    const replyBlocked = opts.replyTo && /\b403\b/.test(String(e.message)) &&
+      /reply|restrict|not.*allow|engaged|mention/i.test(String(e.message));
+    if (!replyBlocked) throw e;
+    delete opts.replyTo;
+    opts.quoteId = d.engage.targetId;
+    kind = " (quote — reply was gated)";
+    d.engageFallback = "reply→quote";
+    data = await postTweet(sanitize(d.draft), opts);
+  }
   d.status = "posted";
   d.postedId = data.id;
   d.postedUrl = `https://x.com/${HANDLE}/status/${data.id}`;
