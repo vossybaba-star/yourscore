@@ -161,8 +161,12 @@ export async function POST(req: NextRequest) {
   const beat = score > (ch.challenger_score ?? 0);
   void notifyUsers({
     userIds: [ch.challenger_id],
-    title: beat ? "Your score got beaten" : "Your challenge was played",
-    body: `${profile?.display_name ?? "Someone"} ${beat ? "beat your" : "took on your"} ${ch.quiz_pack_name ?? "challenge"} — see the result`,
+    title: beat
+      ? `${profile?.display_name ?? "Someone"} beat your score 😤`
+      : `${profile?.display_name ?? "Someone"} took on your challenge 💪`,
+    body: beat
+      ? `They won on ${ch.quiz_pack_name ?? "your challenge"}. Fancy a rematch?`
+      : `They couldn't beat you on ${ch.quiz_pack_name ?? "your challenge"}. See how they did.`,
     url: `/h2h/${challengeId}`,
     dedupeKey: `h2h-result:${challengeId}`,
   });

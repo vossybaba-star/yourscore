@@ -48,14 +48,19 @@ export async function GET(req: NextRequest) {
   const today = now.toISOString().slice(0, 10); // YYYY-MM-DD (UTC)
 
   // Today's daily WC pack must exist + be published before we ping anyone.
-  const { data: packs } = await svc
+  // Filter at the DB level (metadata @> {daily,date}) — there are now hundreds
+  // of published packs (club packs etc.), so an unordered .limit() would often
+  // miss today's daily pack and no-op with "no-pack-today".
+  const { data: packs } = await raw
     .from("quiz_packs")
     .select("id, name, metadata")
     .eq("status", "published")
-    .limit(50);
-  const todaysPack = (packs ?? []).find((p) => {
-    const m = (p.metadata ?? {}) as { daily?: boolean; date?: string; series?: string };
-    return m.daily === true && m.date === today && (m.series ?? "wc2026") === "wc2026";
+    .contains("metadata", { daily: true, date: today })
+    .order("created_at", { ascending: false })
+    .limit(10);
+  const todaysPack = ((packs ?? []) as { id: string; name: string; metadata: unknown }[]).find((p) => {
+    const m = (p.metadata ?? {}) as { series?: string };
+    return (m.series ?? "wc2026") === "wc2026";
   });
   if (!todaysPack) {
     return NextResponse.json({ enabled: true, sent: 0, reason: "no-pack-today" });
@@ -90,8 +95,8 @@ export async function GET(req: NextRequest) {
 
   const { targeted } = await notifyUsers({
     userIds: Array.from(targets),
-    title: "World Cup Mastermind is live 🧠",
-    body: "Today's quiz is up. Nail it and top the board before everyone else gets their shot.",
+    title: "World Cup Mastermind Daily is live 🧠",
+    body: "Draft your XI Now! Nail it and top the board!",
     url: "/38-0/wc",
     dedupeKey: `wc-mastermind:${today}`,
   });

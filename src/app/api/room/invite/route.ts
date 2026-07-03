@@ -32,8 +32,8 @@ export async function POST(req: NextRequest) {
 
   await notifyUsers({
     userIds: [invitedUserId],
-    title: "Quiz Battle challenge",
-    body: `${me?.display_name ?? "A friend"} wants to play you live on ${packName}`,
+    title: `${me?.display_name ?? "A friend"} wants to play you ⚡`,
+    body: `They're starting a live Quiz Battle on ${packName}. Jump in.`,
     url: `/play?join=${room.code}`,
     dedupeKey: `room-invite:${room.id}:${invitedUserId}`,
   });

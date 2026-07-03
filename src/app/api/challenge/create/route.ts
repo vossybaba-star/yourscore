@@ -87,8 +87,8 @@ export async function POST(req: NextRequest) {
   if (invited.length) {
     void notifyUsers({
       userIds: invited,
-      title: "New group challenge",
-      body: `${names[user.id] ?? "Someone"} started a ${quizPackName} board — beat the group`,
+      title: `${names[user.id] ?? "Someone"} started a group challenge 👥`,
+      body: `It's ${quizPackName}. Get on the board and beat the group.`,
       url: `/g/${challenge.id}`,
       dedupeKey: `grp-invite:${challenge.id}`,
     });

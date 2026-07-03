@@ -417,12 +417,12 @@ export async function notifyShadowResult(
   //    other plays were absorbed alongside it. Named player = a beater, always.
   let title: string, body: string;
   if (plays === 1) {
-    title = "Your run got beaten";
-    body = `${args.humanName} beat your ${args.packName} run ${args.humanScore.toLocaleString()}–${args.shadowScore.toLocaleString()} — get revenge`;
+    title = `${args.humanName} beat your run 👻`;
+    body = `They edged your ${args.packName} run ${args.humanScore.toLocaleString()}-${args.shadowScore.toLocaleString()}. Go again and take it back.`;
   } else {
     const others = plays - 1;
-    title = "Your runs got taken on";
-    body = `${beaterName ?? "Someone"} and ${others} other${others === 1 ? "" : "s"} took on your runs — ${beats} beat you. Get revenge`;
+    title = "Your runs got taken on 👻";
+    body = `${beaterName ?? "Someone"} and ${others} other${others === 1 ? "" : "s"} played your runs. ${beats} beat you. Get your revenge.`;
   }
 
   await notifyUsers({
