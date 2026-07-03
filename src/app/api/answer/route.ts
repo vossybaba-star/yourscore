@@ -6,6 +6,7 @@ import {
   TIMEOUT_PENALTY,
 } from "@/lib/scoring";
 import { rateLimitDistributed } from "@/lib/ratelimit";
+import { maybeBotAnswer } from "@/lib/versus/quiz-matchmaking";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -236,6 +237,16 @@ export async function POST(request: NextRequest) {
   // Update all league_members rows for this user (points count in all leagues)
   if (pointsAwarded > 0 || isCorrect) {
     writes.push(db.rpc("update_league_member_stats", { p_user_id: user.id, p_points: pointsAwarded, p_is_correct: isCorrect }));
+  }
+
+  // CPU rooms: the CPU answers the same question now (seeded, idempotent).
+  // No-op in human-vs-human rooms; a CPU failure never breaks this answer.
+  if (effectiveRoomId) {
+    writes.push(maybeBotAnswer(db, {
+      questionEventId, roomId: effectiveRoomId,
+      correctAnswer: question.answer, difficulty: question.difficulty ?? "medium",
+      windowMs: questionWindowMs,
+    }));
   }
 
   await Promise.all(writes);

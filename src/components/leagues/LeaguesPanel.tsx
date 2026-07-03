@@ -277,17 +277,18 @@ export function LeaguesPanel({ embedded = false }: { embedded?: boolean }) {
 
         {/* ── Main tab selector ─────────────────────────────────────────── */}
         <div className="px-5 pb-3 max-w-lg mx-auto">
-          <div className="flex gap-1 p-1 rounded-2xl" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-            {([["38-0", "38-0 ⚽"] as const, ["quiz", "Quiz 🧠"] as const]).map(([key, label]) => (
-              <button key={key} onClick={() => selectMainTab(key)}
-                className="flex-1 py-2.5 rounded-xl font-body text-sm font-semibold transition-all"
-                style={mainTab === key
-                  ? { background: key === "38-0" ? "#aeea00" : "#aeea00", color: "#0a0a0f" }
-                  : { background: "transparent", color: "#8a948f" }
-                }>
-                {label}
-              </button>
-            ))}
+          <div className="flex gap-6" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+            {([["38-0", "38-0", "#aeea00"] as const, ["quiz", "Quiz Battle", "#00d8c0"] as const]).map(([key, label, accent]) => {
+              const active = mainTab === key;
+              return (
+                <button key={key} onClick={() => selectMainTab(key)}
+                  className="relative pb-2.5 font-display text-base tracking-wide transition-colors"
+                  style={{ color: active ? "#eef2f0" : "#8a948f" }}>
+                  {label}
+                  {active && <span className="absolute left-0 right-0 -bottom-px h-[3px] rounded-t" style={{ background: accent }} />}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -341,31 +342,38 @@ export function LeaguesPanel({ embedded = false }: { embedded?: boolean }) {
                   <div className="rounded-xl px-4 py-2 font-body text-center" style={{ fontSize: 13, color: "#ff4757", background: "rgba(255,71,87,0.1)" }}>{draftErr}</div>
                 )}
 
-                {/* My 38-0 boards — lead with them when the user has any */}
+                {/* Your leagues — lead with them when the user has any */}
                 {draftLeagues.length > 0 && (
                   <div>
-                    <p className="font-body text-xs uppercase tracking-widest mb-3" style={{ color: "#586058" }}>Your 38-0 boards</p>
+                    <p className="font-body text-xs font-bold uppercase tracking-widest mb-2.5" style={{ color: "#586058" }}>Your leagues</p>
                     <div className="space-y-2.5">
                       {draftLeagues.map((l) => (
                         <Link key={l.id} href={`/38-0/league/${l.code}`}
-                          className="flex items-center gap-3 rounded-2xl px-4 py-3.5 active:scale-[0.99] transition-all hover:opacity-90 bg-surface"
+                          className="block rounded-2xl px-4 py-4 active:scale-[0.99] transition-all hover:opacity-90 bg-surface"
                           style={{ border: "1px solid rgba(174,234,0,0.18)" }}>
-                          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                            style={{ background: "rgba(174,234,0,0.12)", border: "1px solid rgba(174,234,0,0.25)" }}>
-                            <svg width="18" height="18" viewBox="0 0 14 14" fill="none">
-                              <path d="M3 2h8v3L7 8l-4-3z" stroke="#aeea00" strokeWidth="1.4" strokeLinejoin="round" fill="rgba(174,234,0,0.2)" />
-                              <path d="M4 5v5a3 3 0 0 0 6 0V5" stroke="#aeea00" strokeWidth="1.4" strokeLinecap="round" />
-                            </svg>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="font-body text-sm font-bold text-white truncate">{l.name}</div>
-                            <div className="font-body text-xs text-text-muted">
-                              {l.member_count} member{l.member_count === 1 ? "" : "s"} · code {l.code}
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                              style={{ background: "rgba(174,234,0,0.12)", border: "1px solid rgba(174,234,0,0.25)" }}>
+                              <svg width="18" height="18" viewBox="0 0 14 14" fill="none">
+                                <path d="M3 2h8v3L7 8l-4-3z" stroke="#aeea00" strokeWidth="1.4" strokeLinejoin="round" fill="rgba(174,234,0,0.2)" />
+                                <path d="M4 5v5a3 3 0 0 0 6 0V5" stroke="#aeea00" strokeWidth="1.4" strokeLinecap="round" />
+                              </svg>
                             </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="font-body text-sm font-bold text-white truncate">{l.name}</div>
+                              <div className="font-body text-xs text-text-muted">
+                                Private · {l.member_count} member{l.member_count === 1 ? "" : "s"} · 38-0
+                              </div>
+                            </div>
+                            <span className="font-display text-[11px] tracking-wide px-3.5 py-2 rounded-lg flex-shrink-0"
+                              style={{ background: "rgba(174,234,0,0.14)", color: "#aeea00", border: "1px solid rgba(174,234,0,0.3)" }}>
+                              VIEW LEAGUE →
+                            </span>
                           </div>
-                          <svg width="16" height="16" viewBox="0 0 18 18" fill="none" style={{ color: "#aeea00", flexShrink: 0 }}>
-                            <path d="M6 3l6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
+                          <div className="flex items-center gap-2 mt-3 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                            <span className="font-mono text-[11px] px-2 py-1 rounded-md" style={{ background: "rgba(255,255,255,0.05)", color: "#aeea00", letterSpacing: "0.1em" }}>{l.code}</span>
+                            <span className="font-body text-[11px] text-text-muted">Share this code to bring your group in</span>
+                          </div>
                         </Link>
                       ))}
                     </div>
@@ -425,7 +433,7 @@ export function LeaguesPanel({ embedded = false }: { embedded?: boolean }) {
                 </Link>
 
                 {/* Public 38-0 leagues anyone can join */}
-                <PublicLeaguesRail game="38-0" />
+                <PublicLeaguesRail game="38-0" showEmpty />
               </>
             )}
           </>
@@ -571,23 +579,18 @@ export function LeaguesPanel({ embedded = false }: { embedded?: boolean }) {
                   </div>
                 )}
 
-                {/* Create more nudge */}
-                {!quizLoading && user && quizLeagues.length > 0 && (
+                {/* Persistent create CTA */}
+                {!quizLoading && user && (
                   <Link href="/league/new"
-                    className="flex items-center justify-between px-5 py-4 rounded-2xl transition-all hover:opacity-80"
-                    style={{ background: "rgba(174,234,0,0.05)", border: "1px dashed rgba(174,234,0,0.2)" }}>
-                    <div>
-                      <p className="font-body text-sm font-semibold text-white">Start another league</p>
-                      <p className="font-body text-xs text-text-muted">Different crew? Create as many as you like</p>
-                    </div>
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ color: "#aeea00", flexShrink: 0 }}>
-                      <path d="M8 1v14M1 8h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                    </svg>
+                    className="flex items-center justify-center gap-2 w-full py-4 rounded-2xl font-display text-lg tracking-wide active:scale-[0.99] transition-transform"
+                    style={{ background: "#aeea00", color: "#13200a" }}>
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1v14M1 8h14" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" /></svg>
+                    CREATE A LEAGUE
                   </Link>
                 )}
 
                 {/* Public quiz leagues anyone can join */}
-                {!quizLoading && user && <PublicLeaguesRail game="quiz" />}
+                {!quizLoading && user && <PublicLeaguesRail game="quiz" showEmpty />}
               </>
             )}
 

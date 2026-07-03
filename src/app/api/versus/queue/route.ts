@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimitDistributed } from "@/lib/ratelimit";
-import { queueOrPairQuiz, cancelQuizQueue } from "@/lib/versus/quiz-matchmaking";
+import { queueOrPairQuiz, cancelQuizQueue, createBotQuizLobby } from "@/lib/versus/quiz-matchmaking";
 
 // Quiz Battle instant-match queue (the "Find an opponent" flow).
 //   queue  → poll: { status: "matched", roomId, code, opponent } | { status: "waiting" }
+//   bot    → CPU fallback (call after ~5s with no human match)
 //   cancel → leave the queue
 // The 38-0 equivalent lives at /api/draft/live (action: queue/cancelQueue/bot).
 export async function POST(req: NextRequest) {
@@ -22,6 +23,8 @@ export async function POST(req: NextRequest) {
     switch (body.action) {
       case "queue":
         return NextResponse.json(await queueOrPairQuiz(user.id));
+      case "bot":
+        return NextResponse.json(await createBotQuizLobby(user.id));
       case "cancel":
         await cancelQuizQueue(user.id);
         return NextResponse.json({ ok: true });

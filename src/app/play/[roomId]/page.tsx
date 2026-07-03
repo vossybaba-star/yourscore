@@ -12,6 +12,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 import { useUser } from "@/hooks/useUser";
 import { REALTIME_ENABLED } from "@/lib/realtime";
+import { QUIZ_BOT_ID } from "@/lib/versus/quizBot";
 
 // Lazy-loaded so the QR library stays out of the initial bundle (matches the
 // league pages). react-qr-code is the single QR dependency used app-wide.
@@ -166,6 +167,15 @@ export default function RoomPage() {
   useEffect(() => { isHostRef.current = isHost; }, [isHost]);
   useEffect(() => { playersCountRef.current = players.length; }, [players]);
 
+  // CPU room? (instant-match fallback seats the dedicated CPU user as p2). The
+  // CPU's real answer is written server-side when the human answers; this ref
+  // powers the local "answered" tick that keeps the counter + early advance
+  // honest on the only real client in the room.
+  const hasBotRef = useRef(false);
+  const botTickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => { hasBotRef.current = players.some((p) => p.user_id === QUIZ_BOT_ID); }, [players]);
+  useEffect(() => () => { if (botTickTimerRef.current) clearTimeout(botTickTimerRef.current); }, []);
+
   // Build QR join URL (client-only)
   useEffect(() => {
     if (room) setJoinUrl(`${window.location.origin}/play?join=${room.code}`);
@@ -240,6 +250,25 @@ export default function RoomPage() {
     activeEventIdRef.current = ev.id;
     answeredUidsRef.current = new Set();
     setAnsweredCount(0);
+
+    // CPU tick: mirror the server's seeded answer delay (same seed → the tick
+    // lands exactly when the CPU's recorded time_taken says it answered).
+    if (botTickTimerRef.current) { clearTimeout(botTickTimerRef.current); botTickTimerRef.current = null; }
+    if (hasBotRef.current) {
+      let h = 2166136261;
+      const seed = `${ev.id}:spd`;
+      for (let i = 0; i < seed.length; i++) { h ^= seed.charCodeAt(i); h = Math.imul(h, 16777619); }
+      const delay = Math.round(2800 + (((h >>> 0) % 100000) / 100000) * 7700);
+      botTickTimerRef.current = setTimeout(() => {
+        if (activeEventIdRef.current !== ev.id) return;
+        answeredUidsRef.current.add(QUIZ_BOT_ID);
+        const count = answeredUidsRef.current.size;
+        setAnsweredCount(count);
+        if (isHostRef.current && playersCountRef.current > 0 && count >= playersCountRef.current) {
+          triggerEarlyAdvance();
+        }
+      }, delay);
+    }
 
     const idx = currentSeqRef.current - 1;
     let q: Record<string, unknown> | null = null;
@@ -700,8 +729,8 @@ export default function RoomPage() {
                   {p.user_id === user?.id && p.user_id !== room.created_by && (
                     <span className="font-body text-xs text-green">You</span>
                   )}
-                  {/* Add friend button — shown for other players, not self */}
-                  {p.user_id !== user?.id && (
+                  {/* Add friend button — shown for other players, not self / the CPU */}
+                  {p.user_id !== user?.id && p.user_id !== QUIZ_BOT_ID && (
                     <AddFriendInline userId={p.user_id} displayName={p.display_name} />
                   )}
                 </div>
@@ -827,8 +856,8 @@ export default function RoomPage() {
           {/* Post-game reward moment — points earned + position on the leaderboard */}
           <RankRewardCard />
 
-          {/* Friend prompts — show for all non-self opponents after game */}
-          {user && opponents.filter(o => o.user_id !== user.id).map(opp => (
+          {/* Friend prompts — show for all non-self, non-CPU opponents after game */}
+          {user && opponents.filter(o => o.user_id !== user.id && o.user_id !== QUIZ_BOT_ID).map(opp => (
             <AddFriendCard
               key={opp.user_id}
               userId={opp.user_id}
@@ -837,8 +866,20 @@ export default function RoomPage() {
             />
           ))}
 
-          {/* ── Play Again voting panel ──────────────────────────────────── */}
-          {!lobbyExpired && (
+          {/* CPU room: no vote to wait on — one tap starts a fresh CPU match */}
+          {players.some((p) => p.user_id === QUIZ_BOT_ID) ? (
+            <div className="rounded-2xl px-5 py-4" style={{ background: "rgba(0,216,192,0.06)", border: "1px solid rgba(0,216,192,0.2)" }}>
+              <Button variant="primary" tone="teal" size="md" fullWidth onClick={async () => {
+                const r = await fetch("/api/versus/queue", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "bot" }) }).then((x) => x.json()).catch(() => null);
+                if (r?.roomId) setNewRoomId(r.roomId);
+              }}>
+                🎮 Rematch CPU
+              </Button>
+            </div>
+          ) : null}
+
+          {/* ── Play Again voting panel (human rooms) ─────────────────────── */}
+          {!lobbyExpired && !players.some((p) => p.user_id === QUIZ_BOT_ID) && (
             <div className="rounded-2xl overflow-hidden" style={{ background: "rgba(0,216,192,0.06)", border: "1px solid rgba(0,216,192,0.2)" }}>
               <div className="px-5 py-3 flex items-center justify-between" style={{ borderBottom: "1px solid rgba(0,216,192,0.12)" }}>
                 <p className="font-body text-xs font-bold uppercase tracking-widest text-teal">Play Again?</p>

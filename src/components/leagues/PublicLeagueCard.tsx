@@ -83,8 +83,10 @@ export function PublicLeagueCard({ league }: { league: PublicLeague }) {
 }
 
 /** Rail of discoverable leagues. `limit` trims it for the Play tab teaser;
- *  `game` narrows it inside the Leagues tab's per-game views. */
-export function PublicLeaguesRail({ limit, game, heading = true }: { limit?: number; game?: "quiz" | "38-0"; heading?: boolean }) {
+ *  `game` narrows it inside the Leagues tab's per-game views. `showEmpty`
+ *  renders a be-the-first promo instead of vanishing when nothing is public
+ *  yet (the Leagues tab wants the section visible; the Play teaser doesn't). */
+export function PublicLeaguesRail({ limit, game, heading = true, showEmpty = false }: { limit?: number; game?: "quiz" | "38-0"; heading?: boolean; showEmpty?: boolean }) {
   const router = useRouter();
   const [leagues, setLeagues] = useState<PublicLeague[] | null>(null);
 
@@ -96,7 +98,7 @@ export function PublicLeaguesRail({ limit, game, heading = true }: { limit?: num
 
   if (!leagues) return null;
   const pool = game ? leagues.filter((l) => l.game === game) : leagues;
-  if (pool.length === 0) return null;
+  if (pool.length === 0 && !showEmpty) return null;
   const shown = limit ? pool.slice(0, limit) : pool;
 
   return (
@@ -109,9 +111,17 @@ export function PublicLeaguesRail({ limit, game, heading = true }: { limit?: num
           )}
         </div>
       )}
-      <div className="space-y-2">
-        {shown.map((l) => <PublicLeagueCard key={`${l.game}:${l.id}`} league={l} />)}
-      </div>
+      {pool.length === 0 ? (
+        <div className="rounded-2xl p-5 text-center" style={{ background: "rgba(255,255,255,0.03)", border: "1px dashed rgba(255,255,255,0.1)" }}>
+          <p className="font-body text-sm font-semibold text-white">No public leagues yet</p>
+          <p className="font-body text-xs text-text-muted mt-1 mb-3.5 leading-relaxed">Be the first — create a league and set it to Public so anyone on YourScore can find and join it.</p>
+          <button onClick={() => router.push("/league/new")} className="font-display text-sm tracking-wide px-5 py-2.5 rounded-xl" style={{ background: `${TEAL}1f`, color: TEAL, border: `1px solid ${TEAL}40` }}>CREATE A PUBLIC LEAGUE →</button>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {shown.map((l) => <PublicLeagueCard key={`${l.game}:${l.id}`} league={l} />)}
+        </div>
+      )}
     </div>
   );
 }

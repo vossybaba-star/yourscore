@@ -12,21 +12,21 @@ import { BackPill } from "@/components/ui/BackPill";
 // game-like flow: choose your game → radar search → opponent found → enter.
 //  • 38-0 rides the existing random queue (/api/draft/live) with its silent
 //    2-3s disguised-bot fallback, so it always resolves fast.
-//  • Quiz Battle uses the new quiz_queue (/api/versus/queue) — human-only, so
-//    after a while we offer "challenge a friend instead" rather than hanging.
+//  • Quiz Battle uses the new quiz_queue (/api/versus/queue); after ~5s with
+//    no human it falls back to a CPU opponent (founder call — same as 38-0).
 // ?game=quiz|38-0 skips the picker (deep-linked from quick-start pages).
 
 const TEAL = "#00d8c0";
 const LIME = "#aeea00";
 
 type Game = "quiz" | "38-0";
-type Stage = "choose" | "searching" | "found" | "quiet" | "needsTeam";
+type Stage = "choose" | "searching" | "found" | "needsTeam";
 
 interface Found { name: string; avatarUrl: string | null; seed: string; href: string }
 
 const POLL_MS = 2500;
-const QUIZ_QUIET_MS = 45_000; // quiz has no bot — offer a graceful out
 const botFallbackDelay = () => 2_000 + Math.floor(Math.random() * 1_000); // mirror 38-0 live
+const quizBotFallbackDelay = () => 4_500 + Math.floor(Math.random() * 1_500); // "after 5 seconds"
 
 const SEARCH_MESSAGES = [
   "Finding someone ready to play…",
@@ -112,6 +112,7 @@ function FindInner() {
     const g = gameRef.current;
     const started = Date.now();
     const botAfter = botFallbackDelay();
+    const quizBotAfter = quizBotFallbackDelay();
     let timer: ReturnType<typeof setTimeout> | null = null;
 
     const finish = (f: Found) => {
@@ -125,7 +126,10 @@ function FindInner() {
       if (!searchingRef.current) return;
       try {
         if (g === "quiz") {
-          const r = await fetch("/api/versus/queue", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "queue" }) }).then((x) => x.json());
+          // Human first; past the fallback window, take a CPU opponent (like 38-0).
+          const elapsed = Date.now() - started;
+          const action = elapsed > quizBotAfter ? "bot" : "queue";
+          const r = await fetch("/api/versus/queue", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action }) }).then((x) => x.json());
           if (r.status === "matched") {
             return finish({
               name: r.opponent?.name ?? "Your opponent", avatarUrl: r.opponent?.avatarUrl ?? null,
@@ -133,7 +137,6 @@ function FindInner() {
             });
           }
           if (r.error) throw new Error(r.error);
-          if (Date.now() - started > QUIZ_QUIET_MS) { searchingRef.current = false; cancelQueue("quiz"); setStage("quiet"); return; }
         } else {
           const elapsed = Date.now() - started;
           const action = elapsed > botAfter ? "bot" : "queue";
@@ -229,17 +232,6 @@ function FindInner() {
             <Link href={found.href} className="mt-8 block w-full rounded-2xl py-4 font-display text-lg tracking-wide active:scale-[0.99] transition-transform" style={{ background: c, color: game === "38-0" ? "#13200a" : "#04231f" }}>
               {game === "38-0" ? "ENTER MATCH →" : "ENTER LOBBY →"}
             </Link>
-          </div>
-        )}
-
-        {stage === "quiet" && (
-          <div className="pt-16 text-center">
-            <p className="font-display text-2xl text-white">No one&rsquo;s free right now</p>
-            <p className="font-body text-sm text-text-muted mt-2 mb-8 leading-relaxed">It&rsquo;s quiet out there. Send a challenge instead — your friend plays whenever they&rsquo;re ready.</p>
-            <div className="space-y-2.5">
-              <Link href="/versus/quiz" className="block w-full rounded-2xl py-3.5 font-display tracking-wide" style={{ background: TEAL, color: "#04231f" }}>CHALLENGE A FRIEND →</Link>
-              <button onClick={() => setStage("searching")} className="block w-full rounded-2xl py-3.5 font-display tracking-wide" style={{ background: "rgba(255,255,255,0.05)", color: "#eef2f0", border: "1px solid rgba(255,255,255,0.12)" }}>KEEP SEARCHING</button>
-            </div>
           </div>
         )}
 

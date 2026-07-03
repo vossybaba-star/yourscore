@@ -1,6 +1,8 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServiceClient } from "@/lib/supabase/service";
+import { scoreAnswer } from "@/lib/scoring";
+import { QUIZ_BOT_ID, QUIZ_BOT_NAME } from "@/lib/versus/quizBot";
 
 // Quiz Battle instant matchmaking — mirrors the proven 38-0 design
 // (lib/draft/live-server.ts queueOrPair): the `quiz_pair` RPC atomically claims
@@ -113,4 +115,115 @@ export async function queueOrPairQuiz(userId: string): Promise<QuizQueueResult> 
 export async function cancelQuizQueue(userId: string): Promise<void> {
   const db = createServiceClient();
   await db.from("quiz_queue").delete().eq("user_id", userId);
+}
+
+// ── CPU fallback (mirrors 38-0's bot fallback) ────────────────────────────────
+// When no human is waiting after a few seconds, the client asks for a CPU match:
+// a normal h2h Lobby whose second seat is the dedicated CPU user. The CPU's
+// answers are written server-side in /api/answer (seeded per question) when the
+// human answers, and the room page fakes its "answered" tick locally — the CPU
+// never touches global rank or league stats.
+
+/** Deterministic [0,1) from a string seed — reproducible bot behaviour. */
+function seeded01(seed: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < seed.length; i++) { h ^= seed.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return ((h >>> 0) % 100000) / 100000;
+}
+
+/** Leave the queue and start a CPU match now. */
+export async function createBotQuizLobby(userId: string): Promise<QuizQueueResult> {
+  const db = createServiceClient();
+
+  // A real pairing may have landed in the gap — play that instead.
+  const existing = await findInstantLobby(db, userId);
+  if (existing) return { status: "matched", ...existing };
+  await db.from("quiz_queue").delete().eq("user_id", userId);
+
+  const packId = await pickInstantPack(db);
+  if (!packId) throw new Error("No quiz available right now");
+
+  let room: { id: string; code: string } | null = null;
+  for (let attempt = 0; attempt < 5 && !room; attempt++) {
+    const { data, error } = await db.from("rooms").insert({
+      code: genCode(), name: INSTANT_MATCH_NAME, type: "player", status: "lobby",
+      created_by: userId, max_players: 2, room_mode: "h2h",
+      question_count: 10, pack_id: packId, category_filter: null,
+      difficulty_filter: "mixed", current_question_idx: 0,
+    }).select("id, code").maybeSingle();
+    if (data) room = data;
+    else if (error && !`${error.message}`.toLowerCase().includes("duplicate")) throw new Error(error.message);
+  }
+  if (!room) throw new Error("Could not start the match — try again");
+
+  const { error: memberErr } = await db.from("room_members").insert([
+    { room_id: room.id, user_id: userId },
+    { room_id: room.id, user_id: QUIZ_BOT_ID },
+  ]);
+  if (memberErr) throw new Error(memberErr.message);
+
+  return { status: "matched", roomId: room.id, code: room.code, opponent: { id: QUIZ_BOT_ID, name: QUIZ_BOT_NAME, avatarUrl: null } };
+}
+
+/**
+ * Write the CPU's answer for one question in a CPU room. Called from /api/answer
+ * right after the human's answer commits; no-op in human-vs-human rooms. Seeded
+ * by the event id, so retries are idempotent. Only touches answers + room_scores —
+ * never increment_profile_score / league stats.
+ */
+export async function maybeBotAnswer(
+  db: Db,
+  args: { questionEventId: string; roomId: string; correctAnswer: string; difficulty: string; windowMs: number }
+): Promise<void> {
+  try {
+    const { data: member } = await db.from("room_members")
+      .select("user_id").eq("room_id", args.roomId).eq("user_id", QUIZ_BOT_ID).maybeSingle();
+    if (!member) return; // not a CPU room
+
+    const { data: already } = await db.from("answers")
+      .select("id").eq("question_event_id", args.questionEventId).eq("user_id", QUIZ_BOT_ID).maybeSingle();
+    if (already) return;
+
+    // Seeded personality: ~62% accuracy, 2.8–10.5s answers.
+    const rCorrect = seeded01(`${args.questionEventId}:hit`);
+    const rSpeed = seeded01(`${args.questionEventId}:spd`);
+    const rPick = seeded01(`${args.questionEventId}:pick`);
+    const isCorrect = rCorrect < 0.62;
+    const elapsedMs = Math.round(2800 + rSpeed * 7700);
+    const correct = args.correctAnswer.toLowerCase();
+    const wrong = ["a", "b", "c", "d"].filter((l) => l !== correct);
+    const selected = isCorrect ? correct : wrong[Math.floor(rPick * wrong.length) % wrong.length];
+
+    const { data: scoreRow } = await db.from("room_scores")
+      .select("current_streak, wrong_streak, total_score, correct_answers, total_answers, best_streak, avg_answer_speed_ms, fastest_answer_ms")
+      .eq("room_id", args.roomId).eq("user_id", QUIZ_BOT_ID).maybeSingle();
+
+    const s = scoreAnswer({
+      isCorrect, elapsedMs, difficulty: args.difficulty,
+      correctStreak: scoreRow?.current_streak ?? 0,
+      wrongStreak: scoreRow?.wrong_streak ?? 0,
+      windowMs: args.windowMs,
+    });
+
+    const totalAnswers = (scoreRow?.total_answers ?? 0) + 1;
+    const prevAvg = scoreRow?.avg_answer_speed_ms ?? null;
+    await Promise.all([
+      db.from("answers").insert({
+        question_event_id: args.questionEventId, user_id: QUIZ_BOT_ID, room_id: args.roomId,
+        match_id: null, selected_answer: selected, is_correct: isCorrect,
+        time_taken_ms: elapsedMs, points_awarded: s.points,
+      }),
+      db.from("room_scores").upsert({
+        room_id: args.roomId, user_id: QUIZ_BOT_ID,
+        total_score: Math.max(0, (scoreRow?.total_score ?? 0) + s.points),
+        correct_answers: (scoreRow?.correct_answers ?? 0) + (isCorrect ? 1 : 0),
+        total_answers: totalAnswers,
+        current_streak: s.nextCorrectStreak,
+        wrong_streak: s.nextWrongStreak,
+        best_streak: Math.max(scoreRow?.best_streak ?? 0, s.nextCorrectStreak),
+        avg_answer_speed_ms: prevAvg != null ? Math.round((prevAvg * (totalAnswers - 1) + elapsedMs) / totalAnswers) : elapsedMs,
+        fastest_answer_ms: scoreRow?.fastest_answer_ms != null ? Math.min(scoreRow.fastest_answer_ms, elapsedMs) : elapsedMs,
+      }, { onConflict: "room_id,user_id" }),
+    ]);
+  } catch { /* the CPU failing to answer must never break the human's answer */ }
 }

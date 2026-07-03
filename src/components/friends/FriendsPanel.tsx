@@ -6,7 +6,19 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { Button } from "@/components/ui/Button";
+import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
+import { useVersusStats, type Rivalry } from "@/hooks/useVersusStats";
 import { trackShare } from "@/lib/analytics/trackGame";
+
+// Friends — one scrolling page (mockup order): invite card → friend requests →
+// RIVALS (head-to-head records vs friends) → people you've played (non-friends
+// you've faced) → all friends → find people. Standalone at /friends and
+// embedded in the Versus tab (embedded=true strips page chrome + bottom nav).
+
+const TEAL = "#00d8c0";
+const LIME = "#aeea00";
+const GOLD = "#ffc233";
+const RED = "#ff6b78";
 
 interface Friend {
   id: string;          // friendship row id
@@ -26,44 +38,19 @@ interface SearchResult {
   friendship_status: "none" | "pending_sent" | "pending_received" | "accepted";
 }
 
-function Avatar({ name, size = 40, url }: { name: string; size?: number; url?: string | null }) {
-  if (url) return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img src={url} alt={name} style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", border: "1.5px solid rgba(255,255,255,0.1)", flexShrink: 0 }} />
-  );
-  const palettes = [
-    { bg: "#1a2f4a", text: "#60a5fa" }, { bg: "#3a423d", text: "#aeea00" },
-    { bg: "#1a4a2a", text: "#4ade80" }, { bg: "#4a2a1a", text: "#fb923c" },
-    { bg: "#4a1a2a", text: "#f87171" },
-  ];
-  const c = palettes[(name.charCodeAt(0) || 0) % palettes.length];
-  return (
-    <div style={{
-      width: size, height: size, borderRadius: "50%", flexShrink: 0,
-      display: "flex", alignItems: "center", justifyContent: "center",
-      background: c.bg, color: c.text, fontSize: size * 0.38, fontWeight: 700,
-      border: "1.5px solid rgba(255,255,255,0.1)",
-      fontFamily: "var(--font-body, sans-serif)",
-    }}>
-      {(name[0] ?? "?").toUpperCase()}
-    </div>
-  );
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return <p className="font-body text-xs font-bold uppercase tracking-widest mt-7 mb-2.5" style={{ color: "#586058" }}>{children}</p>;
 }
 
-// ── Contacts invite ──────────────────────────────────────────────────────────
+// ── Contacts invite (Android web only — iOS lacks navigator.contacts) ─────────
 
-interface ContactEntry {
-  name: string;
-  tel: string | null;
-  email: string | null;
-}
+interface ContactEntry { name: string; tel: string | null; email: string | null }
 
 function ContactsInviteButton() {
   const [contacts, setContacts] = useState<ContactEntry[]>([]);
   const [supported, setSupported] = useState(false);
 
   useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     setSupported(typeof navigator !== "undefined" && "contacts" in navigator && "ContactsManager" in (window as any));
   }, []);
 
@@ -71,7 +58,6 @@ function ContactsInviteButton() {
 
   async function pickContacts() {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const selected: any[] = await (navigator as any).contacts.select(["name", "tel", "email"], { multiple: true });
       const parsed: ContactEntry[] = selected.map((c: any) => ({
         name: Array.isArray(c.name) ? (c.name[0] ?? "Contact") : (c.name ?? "Contact"),
@@ -82,9 +68,7 @@ function ContactsInviteButton() {
         const existing = new Set(prev.map(p => p.tel ?? p.email));
         return [...prev, ...parsed.filter(p => !existing.has(p.tel ?? p.email))];
       });
-    } catch {
-      // user dismissed — no-op
-    }
+    } catch { /* user dismissed */ }
   }
 
   const INVITE_TEXT = encodeURIComponent("Hey! I'm on YourScore — pick your Dream XI and challenge me to a head-to-head 🤝⚽ Download at yourscore.app");
@@ -105,7 +89,7 @@ function ContactsInviteButton() {
             <div key={i} className="flex items-center gap-3 px-4 py-3 rounded-xl"
               style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
               <div className="w-9 h-9 rounded-full flex items-center justify-center font-body font-bold text-sm flex-shrink-0"
-                style={{ background: "rgba(174,234,0,0.14)", color: "#aeea00", border: "1px solid rgba(174,234,0,0.25)" }}>
+                style={{ background: "rgba(174,234,0,0.14)", color: LIME, border: "1px solid rgba(174,234,0,0.25)" }}>
                 {(c.name[0] ?? "?").toUpperCase()}
               </div>
               <div className="flex-1 min-w-0">
@@ -113,17 +97,11 @@ function ContactsInviteButton() {
                 <p className="font-body text-xs text-text-muted truncate">{c.tel ?? c.email ?? "No contact info"}</p>
               </div>
               {c.tel ? (
-                <a href={`sms:${c.tel}?body=${INVITE_TEXT}`}
-                  className="flex-shrink-0 px-3 py-1.5 rounded-lg font-body text-xs font-semibold"
-                  style={{ background: "rgba(174,234,0,0.12)", color: "#aeea00", border: "1px solid rgba(174,234,0,0.22)" }}>
-                  Send SMS
-                </a>
+                <a href={`sms:${c.tel}?body=${INVITE_TEXT}`} className="flex-shrink-0 px-3 py-1.5 rounded-lg font-body text-xs font-semibold"
+                  style={{ background: "rgba(174,234,0,0.12)", color: LIME, border: "1px solid rgba(174,234,0,0.22)" }}>Send SMS</a>
               ) : c.email ? (
-                <a href={`mailto:${c.email}?subject=Join me on YourScore&body=${INVITE_TEXT}`}
-                  className="flex-shrink-0 px-3 py-1.5 rounded-lg font-body text-xs font-semibold"
-                  style={{ background: "rgba(174,234,0,0.12)", color: "#aeea00", border: "1px solid rgba(174,234,0,0.22)" }}>
-                  Email
-                </a>
+                <a href={`mailto:${c.email}?subject=Join me on YourScore&body=${INVITE_TEXT}`} className="flex-shrink-0 px-3 py-1.5 rounded-lg font-body text-xs font-semibold"
+                  style={{ background: "rgba(174,234,0,0.12)", color: LIME, border: "1px solid rgba(174,234,0,0.22)" }}>Email</a>
               ) : (
                 <span className="font-body text-xs flex-shrink-0" style={{ color: "#586058" }}>No contact info</span>
               )}
@@ -135,27 +113,77 @@ function ContactsInviteButton() {
   );
 }
 
-// Friends list / requests / search. Standalone at /friends and embedded in the
-// Versus tab (embedded=true strips the page chrome + bottom nav).
-// Share your personal add-link. navigator.share works in the iOS WKWebView, so
-// this is the cross-platform way to invite (contacts picker is Android-web only).
-function InviteFriendButton({ myId }: { myId: string | null }) {
+// ── Invite card (mockup's "friend code": your personal add-link) ──────────────
+// navigator.share works in the iOS WKWebView, so this is the cross-platform
+// invite; copy is the fallback.
+function InviteCard({ myId }: { myId: string | null }) {
   const [copied, setCopied] = useState(false);
-  async function invite() {
+  const link = `${typeof window !== "undefined" ? window.location.origin : "https://yourscore.app"}/add/${myId ?? ""}`;
+
+  async function copy() {
     if (!myId) return;
     trackShare("friends-invite");
-    const url = `${typeof window !== "undefined" ? window.location.origin : "https://yourscore.app"}/add/${myId}`;
+    try { await navigator.clipboard?.writeText(link); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* no-op */ }
+  }
+  async function share() {
+    if (!myId) return;
+    trackShare("friends-invite");
     const text = "Add me on YourScore and let's go head-to-head ⚽";
     if (typeof navigator !== "undefined" && navigator.share) {
-      try { await navigator.share({ title: "YourScore", text, url }); return; } catch { /* dismissed */ }
+      try { await navigator.share({ title: "YourScore", text, url: link }); return; } catch { /* dismissed */ }
     }
-    try { await navigator.clipboard?.writeText(`${text} ${url}`); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* no-op */ }
+    copy();
   }
+
   return (
-    <button onClick={invite} disabled={!myId} className="w-full mb-3 rounded-2xl py-3.5 font-display tracking-widest text-sm active:scale-[0.98] transition-transform disabled:opacity-50"
-      style={{ background: "#00d8c0", color: "#04231f" }}>
-      {copied ? "LINK COPIED ✓" : "INVITE A FRIEND →"}
-    </button>
+    <div className="rounded-2xl p-4" style={{ background: "linear-gradient(150deg, rgba(0,216,192,0.12), #0c1613)", border: "1px solid rgba(0,216,192,0.28)" }}>
+      <p className="font-body text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: TEAL }}>Your invite link</p>
+      <p className="font-mono text-xs text-white truncate mb-3" style={{ opacity: 0.85 }}>{myId ? link.replace(/^https?:\/\//, "") : "…"}</p>
+      <div className="flex gap-2">
+        <button onClick={copy} disabled={!myId} className="flex-1 rounded-xl py-2.5 font-display text-sm tracking-wide active:scale-[0.98] transition-transform disabled:opacity-50"
+          style={{ background: "rgba(255,255,255,0.06)", color: "#eef2f0", border: "1px solid rgba(255,255,255,0.14)" }}>
+          {copied ? "COPIED ✓" : "COPY LINK"}
+        </button>
+        <button onClick={share} disabled={!myId} className="flex-1 rounded-xl py-2.5 font-display text-sm tracking-wide active:scale-[0.98] transition-transform disabled:opacity-50"
+          style={{ background: TEAL, color: "#04231f" }}>
+          SHARE LINK
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Rival / played rows ───────────────────────────────────────────────────────
+
+function RivalRow({ r, isFriend, onAdd, addState }: { r: Rivalry; isFriend: boolean; onAdd?: (id: string) => void; addState?: "idle" | "requested" }) {
+  const leadTxt = r.lead > 0 ? `You lead ${r.wins}–${r.losses}` : r.lead < 0 ? `You trail ${r.wins}–${r.losses}` : `Level ${r.wins}–${r.losses}`;
+  const leadCol = r.lead > 0 ? LIME : r.lead < 0 ? RED : GOLD;
+  const total = r.total || 1;
+  return (
+    <div className="rounded-2xl px-4 py-3" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.08)" }}>
+      <div className="flex items-center gap-3">
+        <PlayerAvatar seed={r.opponentId} name={r.name} avatarUrl={r.avatarUrl} size={40} ring={isFriend ? leadCol : undefined} />
+        <div className="flex-1 min-w-0">
+          <p className="font-body text-sm font-semibold text-white truncate">{r.name}</p>
+          {isFriend
+            ? <p className="font-body text-[11px]" style={{ color: leadCol }}>{leadTxt}</p>
+            : <p className="font-body text-[11px] text-text-muted">Played {r.total} {r.total === 1 ? "match" : "matches"}</p>}
+        </div>
+        {!isFriend && onAdd && (
+          addState === "requested"
+            ? <span className="font-body text-xs flex-shrink-0" style={{ color: TEAL }}>Requested</span>
+            : <button onClick={() => onAdd(r.opponentId)} className="font-body text-xs font-semibold px-2.5 py-1.5 rounded-lg flex-shrink-0" style={{ background: "rgba(255,255,255,0.05)", color: "#8a948f", border: "1px solid rgba(255,255,255,0.1)" }}>+ Add</button>
+        )}
+        <Link href={`/versus/quiz?to=${r.opponentId}`} className="font-display text-[11px] tracking-wide px-3.5 py-2 rounded-lg flex-shrink-0" style={{ background: "rgba(0,216,192,0.12)", color: TEAL, border: `1px solid ${TEAL}33` }}>CHALLENGE</Link>
+      </div>
+      {isFriend && (
+        <div className="flex gap-1 h-1.5 rounded-full overflow-hidden mt-2.5" style={{ background: "rgba(255,255,255,0.06)" }}>
+          <div style={{ width: `${(r.wins / total) * 100}%`, background: LIME }} />
+          <div style={{ width: `${(r.draws / total) * 100}%`, background: "#5a655e" }} />
+          <div style={{ width: `${(r.losses / total) * 100}%`, background: RED }} />
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -166,20 +194,18 @@ export function FriendsPanel({ embedded = false }: { embedded?: boolean }) {
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [searching, setSearching] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"friends" | "requests" | "search">("friends");
+  const [addState, setAddState] = useState<Record<string, "idle" | "requested">>({});
+  const { rivalries } = useVersusStats();
 
   const supabase = createClient();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sb = supabase as any;
 
   const loadFriends = useCallback(async (uid: string) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data } = await (supabase as any)
       .from("friendships")
       .select("id, user_id, friend_id, status")
       .or(`user_id.eq.${uid},friend_id.eq.${uid}`);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const rows: any[] = data ?? [];
     if (!rows.length) { setFriends([]); return; }
 
@@ -246,6 +272,7 @@ export function FriendsPanel({ embedded = false }: { embedded?: boolean }) {
 
   async function sendRequest(toUserId: string) {
     if (!myId) return;
+    setAddState((s) => ({ ...s, [toUserId]: "requested" }));
     await sb.from("friendships").insert({ user_id: myId, friend_id: toUserId, status: "pending" });
     await loadFriends(myId);
     setSearchResults(prev => prev.map(r => r.id === toUserId ? { ...r, friendship_status: "pending_sent" as const } : r));
@@ -267,10 +294,16 @@ export function FriendsPanel({ embedded = false }: { embedded?: boolean }) {
   const pendingReceived = friends.filter(f => f.status === "pending" && !f.is_requester);
   const pendingSent = friends.filter(f => f.status === "pending" && f.is_requester);
 
+  // Rivalries split: friends → RIVALS; strangers you've faced → PEOPLE YOU'VE PLAYED.
+  const acceptedIds = new Set(accepted.map((f) => f.user_id));
+  const pendingSentIds = new Set(pendingSent.map((f) => f.user_id));
+  const rivals = rivalries.filter((r) => acceptedIds.has(r.opponentId));
+  const played = rivalries.filter((r) => !acceptedIds.has(r.opponentId)).slice(0, 8);
+
   if (loading) {
     return (
-      <main className="min-h-dvh bg-bg flex items-center justify-center">
-        <div className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: "rgba(0,201,255,0.4)", borderTopColor: "#00c9ff" }} />
+      <main className={embedded ? "py-16 flex items-center justify-center" : "min-h-dvh bg-bg flex items-center justify-center"}>
+        <div className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: "rgba(0,216,192,0.4)", borderTopColor: TEAL }} />
       </main>
     );
   }
@@ -294,75 +327,100 @@ export function FriendsPanel({ embedded = false }: { embedded?: boolean }) {
       `}</style>
 
       {/* Header — hidden when embedded inside the Versus tab (it has its own). */}
-      <div className={embedded ? "" : "sticky top-0 z-20 pt-safe"} style={embedded ? undefined : { background: "rgba(10,10,15,0.95)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
-        {!embedded && (
-        <div className="max-w-lg mx-auto px-5 py-4 flex items-center gap-3">
-          <Link href="/profile" style={{
-            width: 34, height: 34, borderRadius: 10, flexShrink: 0,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
-            textDecoration: "none",
-          }}>
-            <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
-              <path d="M10 3L5 8l5 5" stroke="#9aa39d" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </Link>
-          <h1 className="font-display text-xl text-white flex-1" style={{ letterSpacing: "-0.01em" }}>Friends</h1>
-          {pendingReceived.length > 0 && (
-            <span className="w-5 h-5 rounded-full text-center font-body text-xs font-bold flex items-center justify-center"
-              style={{ background: "#ff4757", color: "#fff" }}>{pendingReceived.length}</span>
-          )}
+      {!embedded && (
+        <div className="sticky top-0 z-20 pt-safe" style={{ background: "rgba(8,13,10,0.95)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+          <div className="max-w-lg mx-auto px-5 py-4 flex items-center gap-3">
+            <Link href="/profile" style={{
+              width: 34, height: 34, borderRadius: 10, flexShrink: 0,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
+              textDecoration: "none",
+            }}>
+              <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+                <path d="M10 3L5 8l5 5" stroke="#9aa39d" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </Link>
+            <h1 className="font-display text-xl text-white flex-1" style={{ letterSpacing: "-0.01em" }}>Friends</h1>
+            {pendingReceived.length > 0 && (
+              <span className="w-5 h-5 rounded-full text-center font-body text-xs font-bold flex items-center justify-center"
+                style={{ background: "#ff4757", color: "#fff" }}>{pendingReceived.length}</span>
+            )}
+          </div>
         </div>
+      )}
+
+      <div className="max-w-lg mx-auto px-5 pt-4">
+
+        {/* ── Invite ─────────────────────────────────────────────────────── */}
+        <InviteCard myId={myId} />
+
+        {/* ── Friend requests (incoming leads; hidden when none) ───────────── */}
+        {pendingReceived.length > 0 && (
+          <>
+            <SectionLabel>Friend requests</SectionLabel>
+            <div className="space-y-2">
+              {pendingReceived.map((f, i) => (
+                <div key={f.user_id} className="fade-in flex items-center gap-3 px-4 py-3 rounded-2xl"
+                  style={{ background: "rgba(0,216,192,0.05)", border: "1px solid rgba(0,216,192,0.22)", animationDelay: `${i * 0.05}s` }}>
+                  <PlayerAvatar seed={f.user_id} name={f.display_name} avatarUrl={f.avatar_url} size={40} />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-body text-sm font-semibold text-white truncate">{f.display_name}</p>
+                    <p className="font-body text-xs text-text-muted">wants to be your friend</p>
+                  </div>
+                  <div className="flex gap-2 flex-shrink-0">
+                    <button onClick={() => acceptRequest(f.id)} className="px-3.5 py-1.5 rounded-lg font-display text-xs tracking-wide" style={{ background: TEAL, color: "#04231f" }}>ACCEPT</button>
+                    <button onClick={() => declineRequest(f.id)} className="px-3 py-1.5 rounded-lg font-body text-xs font-semibold" style={{ background: "rgba(255,255,255,0.06)", color: "#8a948f" }}>Decline</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
 
-        {/* Tabs */}
-        <div className="flex max-w-lg mx-auto px-5 pb-3 gap-2">
-          {([
-            { key: "friends", label: `Friends (${accepted.length})` },
-            { key: "requests", label: `Requests${pendingReceived.length > 0 ? ` (${pendingReceived.length})` : ""}` },
-            { key: "search",   label: "Find people" },
-          ] as const).map(({ key, label }) => (
-            <button key={key} onClick={() => setActiveTab(key)}
-              className="font-body text-xs font-semibold px-3 py-1.5 rounded-lg transition-all"
-              style={{
-                background: activeTab === key ? "rgba(0,201,255,0.15)" : "rgba(255,255,255,0.04)",
-                color: activeTab === key ? "#00c9ff" : "#8a948f",
-                border: `1px solid ${activeTab === key ? "rgba(0,201,255,0.3)" : "transparent"}`,
-              }}>
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="max-w-lg mx-auto px-5 pt-5 space-y-3">
-
-        {/* ── FRIENDS TAB ─────────────────────────────────────────────── */}
-        {activeTab === "friends" && (
+        {/* ── Rivals — head-to-head records vs friends ──────────────────── */}
+        {rivals.length > 0 && (
           <>
-            <InviteFriendButton myId={myId} />
-            {accepted.length === 0 ? (
-              <div className="rounded-2xl p-8 text-center fade-in" style={{ background: "rgba(255,255,255,0.03)", border: "1px dashed rgba(255,255,255,0.08)" }}>
-                <p className="text-3xl mb-3">🤝</p>
-                <p className="font-body text-sm font-semibold text-white mb-1">No friends yet</p>
-                <p className="font-body text-xs text-text-muted mb-4">Find your mates and add them</p>
-                <button onClick={() => setActiveTab("search")}
-                  className="font-body text-sm font-semibold px-4 py-2 rounded-xl transition-all"
-                  style={{ background: "rgba(0,201,255,0.15)", color: "#00c9ff", border: "1px solid rgba(0,201,255,0.3)" }}>
-                  Find people →
-                </button>
-              </div>
-            ) : accepted.map((f, i) => (
+            <SectionLabel>Rivals</SectionLabel>
+            <div className="space-y-2">
+              {rivals.map((r) => <RivalRow key={r.opponentId} r={r} isFriend />)}
+            </div>
+          </>
+        )}
+
+        {/* ── People you've played (not friends yet) ────────────────────── */}
+        {played.length > 0 && (
+          <>
+            <SectionLabel>People you&rsquo;ve played</SectionLabel>
+            <div className="space-y-2">
+              {played.map((r) => (
+                <RivalRow key={r.opponentId} r={r} isFriend={false} onAdd={sendRequest}
+                  addState={pendingSentIds.has(r.opponentId) ? "requested" : (addState[r.opponentId] ?? "idle")} />
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* ── All friends ───────────────────────────────────────────────── */}
+        <SectionLabel>{accepted.length > 0 ? `Friends (${accepted.length})` : "Friends"}</SectionLabel>
+        {accepted.length === 0 ? (
+          <div className="rounded-2xl p-8 text-center fade-in" style={{ background: "rgba(255,255,255,0.03)", border: "1px dashed rgba(255,255,255,0.08)" }}>
+            <p className="text-3xl mb-3">🤝</p>
+            <p className="font-body text-sm font-semibold text-white mb-1">No friends yet</p>
+            <p className="font-body text-xs text-text-muted">Share your invite link above, or find people below.</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {accepted.map((f, i) => (
               <div key={f.user_id} className="fade-in flex items-center gap-3 px-4 py-3 rounded-2xl bg-surface"
                 style={{ border: "1px solid rgba(255,255,255,0.07)", animationDelay: `${i * 0.05}s` }}>
-                <Avatar name={f.display_name} size={40} url={f.avatar_url} />
+                <PlayerAvatar seed={f.user_id} name={f.display_name} avatarUrl={f.avatar_url} size={40} />
                 <div className="flex-1 min-w-0">
                   <p className="font-body text-sm font-semibold text-white truncate">{f.display_name}</p>
                   <p className="font-body text-xs text-text-muted">{(f.total_score ?? 0).toLocaleString()} pts</p>
                 </div>
-                <Link href={`/play?challenge=${f.user_id}`}
+                <Link href={`/versus/quiz?to=${f.user_id}`}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-display text-xs tracking-wide flex-shrink-0 transition-all active:scale-[0.97]"
-                  style={{ background: "rgba(0,216,192,0.14)", color: "#00d8c0", border: "1px solid rgba(0,216,192,0.3)" }}>
+                  style={{ background: "rgba(0,216,192,0.14)", color: TEAL, border: "1px solid rgba(0,216,192,0.3)" }}>
                   Challenge
                 </Link>
                 <Link href={`/messages/${f.user_id}`}
@@ -373,129 +431,87 @@ export function FriendsPanel({ embedded = false }: { embedded?: boolean }) {
                 </Link>
               </div>
             ))}
-          </>
+          </div>
         )}
 
-        {/* ── REQUESTS TAB ────────────────────────────────────────────── */}
-        {activeTab === "requests" && (
+        {/* Sent requests (small, informational) */}
+        {pendingSent.length > 0 && (
           <>
-            {pendingReceived.length > 0 && (
-              <div>
-                <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-2">Incoming requests</p>
-                {pendingReceived.map((f, i) => (
-                  <div key={f.user_id} className="fade-in flex items-center gap-3 px-4 py-3 rounded-2xl mb-2"
-                    style={{ background: "rgba(0,201,255,0.05)", border: "1px solid rgba(0,201,255,0.2)", animationDelay: `${i * 0.05}s` }}>
-                    <Avatar name={f.display_name} size={40} url={f.avatar_url} />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-body text-sm font-semibold text-white truncate">{f.display_name}</p>
-                      <p className="font-body text-xs text-text-muted">{(f.total_score ?? 0).toLocaleString()} pts</p>
-                    </div>
-                    <div className="flex gap-2 flex-shrink-0">
-                      <button onClick={() => acceptRequest(f.id)}
-                        className="px-3 py-1.5 rounded-lg font-body text-xs font-semibold transition-all"
-                        style={{ background: "#00c9ff", color: "#0a0a0f" }}>
-                        Accept
-                      </button>
-                      <button onClick={() => declineRequest(f.id)}
-                        className="px-3 py-1.5 rounded-lg font-body text-xs font-semibold transition-all"
-                        style={{ background: "rgba(255,255,255,0.06)", color: "#8a948f" }}>
-                        Decline
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {pendingSent.length > 0 && (
-              <div>
-                <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-2">Sent requests</p>
-                {pendingSent.map((f) => (
-                  <div key={f.user_id} className="flex items-center gap-3 px-4 py-3 rounded-2xl mb-2"
-                    style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
-                    <Avatar name={f.display_name} size={40} url={f.avatar_url} />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-body text-sm font-semibold text-white truncate">{f.display_name}</p>
-                    </div>
-                    <span className="font-body text-xs" style={{ color: "#586058" }}>Pending…</span>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {pendingReceived.length === 0 && pendingSent.length === 0 && (
-              <div className="rounded-2xl p-8 text-center fade-in" style={{ background: "rgba(255,255,255,0.03)", border: "1px dashed rgba(255,255,255,0.08)" }}>
-                <p className="font-body text-sm text-text-muted">No pending requests</p>
-              </div>
-            )}
+            <SectionLabel>Sent requests</SectionLabel>
+            <div className="space-y-2">
+              {pendingSent.map((f) => (
+                <div key={f.user_id} className="flex items-center gap-3 px-4 py-3 rounded-2xl"
+                  style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                  <PlayerAvatar seed={f.user_id} name={f.display_name} avatarUrl={f.avatar_url} size={36} />
+                  <p className="flex-1 font-body text-sm font-semibold text-white truncate">{f.display_name}</p>
+                  <span className="font-body text-xs" style={{ color: "#586058" }}>Pending…</span>
+                </div>
+              ))}
+            </div>
           </>
         )}
 
-        {/* ── SEARCH TAB ──────────────────────────────────────────────── */}
-        {activeTab === "search" && (
-          <div>
-            <ContactsInviteButton />
-            <input
-              type="text"
-              placeholder="Search by name…"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              autoFocus
-              className="text-white w-full"
-              style={{
-                padding: "11px 14px", borderRadius: 12, marginBottom: 12,
-                background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
-                fontFamily: "var(--font-body, sans-serif)", fontSize: 14, outline: "none",
-                boxSizing: "border-box",
-              }}
-              onFocus={e => { e.currentTarget.style.borderColor = "rgba(0,201,255,0.4)"; }}
-              onBlur={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; }}
-            />
+        {/* ── Find people ───────────────────────────────────────────────── */}
+        <SectionLabel>Find people</SectionLabel>
+        <ContactsInviteButton />
+        <input
+          type="text"
+          placeholder="Search by name…"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="text-white w-full"
+          style={{
+            padding: "11px 14px", borderRadius: 12, marginBottom: 12,
+            background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
+            fontFamily: "var(--font-body, sans-serif)", fontSize: 14, outline: "none",
+            boxSizing: "border-box",
+          }}
+          onFocus={e => { e.currentTarget.style.borderColor = "rgba(0,216,192,0.4)"; }}
+          onBlur={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; }}
+        />
 
-            {searching && <p className="font-body text-xs text-center text-text-muted py-4">Searching…</p>}
+        {searching && <p className="font-body text-xs text-center text-text-muted py-4">Searching…</p>}
 
-            {!searching && search.length >= 2 && searchResults.length === 0 && (
-              <p className="font-body text-xs text-center text-text-muted py-4">No players found matching &quot;{search}&quot;</p>
+        {!searching && search.length >= 2 && searchResults.length === 0 && (
+          <p className="font-body text-xs text-center text-text-muted py-4">No players found matching &quot;{search}&quot;</p>
+        )}
+
+        {searchResults.map((r, i) => (
+          <div key={r.id} className="fade-in flex items-center gap-3 px-4 py-3 rounded-2xl mb-2 bg-surface"
+            style={{ border: "1px solid rgba(255,255,255,0.07)", animationDelay: `${i * 0.04}s` }}>
+            <PlayerAvatar seed={r.id} name={r.display_name} avatarUrl={r.avatar_url} size={40} />
+            <div className="flex-1 min-w-0">
+              <p className="font-body text-sm font-semibold text-white truncate">{r.display_name}</p>
+              <p className="font-body text-xs text-text-muted">{(r.total_score ?? 0).toLocaleString()} pts</p>
+            </div>
+            {r.friendship_status === "none" && (
+              <button onClick={() => sendRequest(r.id)}
+                className="px-3 py-1.5 rounded-lg font-body text-xs font-semibold transition-all flex-shrink-0"
+                style={{ background: "rgba(0,216,192,0.15)", color: TEAL, border: "1px solid rgba(0,216,192,0.3)" }}>
+                + Add
+              </button>
             )}
-
-            {searchResults.map((r, i) => (
-              <div key={r.id} className="fade-in flex items-center gap-3 px-4 py-3 rounded-2xl mb-2 bg-surface"
-                style={{ border: "1px solid rgba(255,255,255,0.07)", animationDelay: `${i * 0.04}s` }}>
-                <Avatar name={r.display_name} size={40} url={r.avatar_url} />
-                <div className="flex-1 min-w-0">
-                  <p className="font-body text-sm font-semibold text-white truncate">{r.display_name}</p>
-                  <p className="font-body text-xs text-text-muted">{(r.total_score ?? 0).toLocaleString()} pts</p>
-                </div>
-                {r.friendship_status === "none" && (
-                  <button onClick={() => sendRequest(r.id)}
-                    className="px-3 py-1.5 rounded-lg font-body text-xs font-semibold transition-all flex-shrink-0"
-                    style={{ background: "rgba(0,201,255,0.15)", color: "#00c9ff", border: "1px solid rgba(0,201,255,0.3)" }}>
-                    + Add
-                  </button>
-                )}
-                {r.friendship_status === "pending_sent" && (
-                  <span className="font-body text-xs flex-shrink-0" style={{ color: "#586058" }}>Requested</span>
-                )}
-                {r.friendship_status === "pending_received" && (
-                  <button onClick={() => {
-                    const f = friends.find(fr => fr.user_id === r.id);
-                    if (f) acceptRequest(f.id);
-                  }}
-                    className="px-3 py-1.5 rounded-lg font-body text-xs font-semibold flex-shrink-0"
-                    style={{ background: "#00c9ff", color: "#0a0a0f" }}>
-                    Accept
-                  </button>
-                )}
-                {r.friendship_status === "accepted" && (
-                  <span className="font-body text-xs flex-shrink-0" style={{ color: "#00c9ff" }}>✓ Friends</span>
-                )}
-              </div>
-            ))}
-
-            {search.length < 2 && (
-              <p className="font-body text-xs text-center text-text-muted py-6">Type at least 2 characters to search</p>
+            {r.friendship_status === "pending_sent" && (
+              <span className="font-body text-xs flex-shrink-0" style={{ color: "#586058" }}>Requested</span>
+            )}
+            {r.friendship_status === "pending_received" && (
+              <button onClick={() => {
+                const f = friends.find(fr => fr.user_id === r.id);
+                if (f) acceptRequest(f.id);
+              }}
+                className="px-3 py-1.5 rounded-lg font-body text-xs font-semibold flex-shrink-0"
+                style={{ background: TEAL, color: "#04231f" }}>
+                Accept
+              </button>
+            )}
+            {r.friendship_status === "accepted" && (
+              <span className="font-body text-xs flex-shrink-0" style={{ color: TEAL }}>✓ Friends</span>
             )}
           </div>
+        ))}
+
+        {search.length < 2 && searchResults.length === 0 && !searching && (
+          <p className="font-body text-xs text-text-muted pb-2">Type at least 2 characters to search.</p>
         )}
       </div>
 
