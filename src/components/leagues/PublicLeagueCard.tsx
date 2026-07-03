@@ -22,6 +22,10 @@ export interface PublicLeague {
   memberAvatars: { id: string; name: string; avatarUrl: string | null }[];
   creator: string | null;
   joinCode: string;
+  /** "board" = an official ranked mode surfaced as a league — VIEW its board
+   *  (href) instead of joining by code. */
+  kind?: "league" | "board";
+  href?: string;
 }
 
 export function PublicLeagueCard({ league }: { league: PublicLeague }) {
@@ -33,6 +37,7 @@ export function PublicLeagueCard({ league }: { league: PublicLeague }) {
   async function join() {
     if (busy) return;
     setErr(null);
+    if (league.kind === "board" && league.href) { router.push(league.href); return; }
     if (league.game === "quiz") { router.push(`/league/join/${league.joinCode}`); return; }
     setBusy(true);
     try {
@@ -62,7 +67,7 @@ export function PublicLeagueCard({ league }: { league: PublicLeague }) {
           {league.description && <p className="font-body text-[11px] text-text-muted mt-1 line-clamp-2 leading-snug">{league.description}</p>}
         </div>
         <button onClick={join} disabled={busy} className="font-display text-xs tracking-wide px-4 py-2 rounded-lg flex-shrink-0 active:scale-[0.97] transition-transform disabled:opacity-50" style={{ background: c, color: league.game === "38-0" ? "#13200a" : "#04231f" }}>
-          {busy ? "…" : "JOIN"}
+          {busy ? "…" : league.kind === "board" ? "VIEW" : "JOIN"}
         </button>
       </div>
       {league.memberAvatars.length > 0 && (

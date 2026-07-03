@@ -373,6 +373,19 @@ carry `List-Unsubscribe` + `List-Unsubscribe-Post` (RFC 8058 one-click) headers.
   queue API accept an optional `packId` that pins the match to the picked quiz
   (Human → Shadow → CPU chain unchanged; unpublished/bogus pack falls back to the
   default featured pack; a paired waiter gets the claimer's pack).
+- **Discover leagues seeded (2026-07-03):** the Discover tab leads with the
+  **World Cup Mastermind League** — an official "board" card (VIEW → `/38-0/wc/board`)
+  surfacing the ranked Mastermind mode with its REAL player count + top faces
+  (not a joinable code-league; the daily ranked run IS the join). Below it:
+  the official **World Cup Daily League** (public + featured, owned by the
+  "YourScore" account — members' daily-quiz points land on its board) and
+  three SEEDED banter leagues that read as user-made ("It's Never a Pen FC",
+  "xG Deniers Club", "Agüerooooo 93:20"), owned by seed fan accounts with
+  plausible league stats. Seed accounts are email-suppressed, have no gameplay
+  data (invisible to global rank/activity/shadows), and every trace is removable
+  via `node scripts/seed-public-leagues.mjs --remove` once real leagues have
+  traction. All four leagues are REAL rows — anyone can join and their points
+  count.
 - **Scorecard forward motion (2026-07-03 round 3):** every bot/shadow scorecard
   leads with a **KEEP PLAYING** panel — primary **PLAY AGAIN — NEW OPPONENT**
   (find flow pinned to the same quiz) + **PICK A DIFFERENT QUIZ**; the honest-reveal
