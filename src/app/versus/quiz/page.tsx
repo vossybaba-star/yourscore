@@ -77,11 +77,14 @@ export default function QuizBattlePage() {
     }));
     setPacks(list);
 
-    // Friends — loaded after, for step 2.
+    // Friends — loaded after, for step 2. A ?to= target who isn't a friend yet
+    // (suggested opponent from the Play tab) is fetched and pinned on top, so
+    // "Play" on a stranger's card still lands somewhere useful.
     const frRes = await db.from("friendships").select("user_id, friend_id, status").or(`user_id.eq.${uid},friend_id.eq.${uid}`);
     const ids = ((frRes.data ?? []) as Row[]).filter((r) => r.status === "accepted").map((r) => (r.user_id === uid ? r.friend_id : r.user_id)).filter(Boolean);
-    if (ids.length) {
-      const { data: profs } = await db.from("profiles").select("id, display_name").in("id", ids);
+    const fetchIds = preTo && preTo !== uid && !ids.includes(preTo) ? [...ids, preTo] : ids;
+    if (fetchIds.length) {
+      const { data: profs } = await db.from("profiles").select("id, display_name").in("id", fetchIds);
       const fl: Friend[] = ((profs ?? []) as Row[]).map((p) => ({ user_id: p.id, display_name: p.display_name ?? "Player" }));
       fl.sort((a, b) => (a.user_id === preTo ? -1 : 0) - (b.user_id === preTo ? -1 : 0));
       setFriends(fl);
@@ -102,9 +105,9 @@ export default function QuizBattlePage() {
       (a.featuredOrder - b.featuredOrder) || (Number(a.played) - Number(b.played)) || b.createdAt.localeCompare(a.createdAt));
   }, [packs, cat]);
 
-  async function playLive(friend: Friend) {
+  async function playLive(friend: Friend | null) {
     if (!picked || busy) return;
-    setBusy(`${friend.user_id}:live`); setErr(null);
+    setBusy(friend ? `${friend.user_id}:live` : "code"); setErr(null);
     try {
       const res = await fetch("/api/room/create", {
         method: "POST", headers: { "Content-Type": "application/json" },
@@ -112,7 +115,8 @@ export default function QuizBattlePage() {
       });
       const data = await res.json();
       if (!res.ok || !data.room?.id) { setErr(data.error ?? "Couldn't start the battle"); setBusy(null); return; }
-      void fetch("/api/room/invite", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ roomId: data.room.id, invitedUserId: friend.user_id }) });
+      // No friend picked = share-a-code path: the lobby shows the code to share.
+      if (friend) void fetch("/api/room/invite", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ roomId: data.room.id, invitedUserId: friend.user_id }) });
       router.push(`/play/${data.room.id}`);
     } catch { setErr("Network error"); setBusy(null); }
   }
@@ -186,6 +190,10 @@ export default function QuizBattlePage() {
                 </div>
               ))}
             </div>
+            {/* Share a code — start the lobby without an invite and share from there */}
+            <button onClick={() => playLive(null)} disabled={!!busy} className="w-full rounded-2xl py-3 mt-4 font-display text-sm tracking-wide disabled:opacity-60" style={{ background: "rgba(255,255,255,0.04)", color: "#eef2f0", border: "1px solid rgba(255,255,255,0.12)" }}>
+              {busy === "code" ? "Starting…" : "OR START A LOBBY & SHARE THE CODE →"}
+            </button>
             <p className="font-body text-xs text-text-muted mt-4 leading-relaxed">
               <span style={{ color: "#cdeee7" }}>Play live</span> — you both get the same questions at the same time.{picked.played && <> <span style={{ color: "#cdeee7" }}>Send scorecard</span> — they play whenever and try to beat your score.</>}
             </p>
@@ -193,10 +201,26 @@ export default function QuizBattlePage() {
         ) : (
           /* ── Step 1 — browse the quiz library ── */
           <>
-            <div className="mt-3">
-              <p className="font-display text-2xl text-white leading-tight">Pick a quiz to battle</p>
-              <p className="font-body text-sm text-text-muted mt-1">Choose one, then challenge a friend to it.</p>
+            <div className="mt-4">
+              <p className="font-body text-[11px] font-bold uppercase tracking-[0.32em] mb-2" style={{ color: TEAL }}>Quiz Battle · Versus</p>
+              <p className="font-display text-white leading-[0.92]" style={{ fontSize: 34 }}>PICK A QUIZ.<br />BEAT YOUR OPPONENT.</p>
+              <p className="font-body text-sm text-text-muted mt-2">Both players answer the same questions. Best score wins.</p>
             </div>
+
+            {/* Instant match — the system picks the quiz so both sides get the same one */}
+            <Link href="/versus/find?game=quiz" className="flex items-center gap-3 rounded-2xl px-4 py-3.5 mt-4 active:scale-[0.99] transition-transform" style={{ background: "rgba(0,216,192,0.08)", border: `1px solid ${TEAL}40` }}>
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="flex-shrink-0">
+                <circle cx="10" cy="10" r="8" stroke={TEAL} strokeWidth="1.5" opacity="0.35" />
+                <circle cx="10" cy="10" r="4.5" stroke={TEAL} strokeWidth="1.5" opacity="0.6" />
+                <circle cx="10" cy="10" r="1.6" fill={TEAL} />
+                <path d="M10 10 16 4.5" stroke={TEAL} strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+              <div className="flex-1 min-w-0">
+                <p className="font-display text-sm text-white leading-none tracking-wide">PLAY INSTANT MATCH</p>
+                <p className="font-body text-[11px] text-text-muted mt-1">Get matched with someone ready to play now</p>
+              </div>
+              <span className="font-display text-xs tracking-wide flex-shrink-0" style={{ color: TEAL }}>GO →</span>
+            </Link>
 
             {/* Category filter pills */}
             <div className="flex gap-2 overflow-x-auto no-scrollbar mt-4 -mx-5 px-5">

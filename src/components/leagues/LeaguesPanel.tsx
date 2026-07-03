@@ -15,6 +15,7 @@ import { BottomNav } from "@/components/ui/BottomNav";
 import { Spinner } from "@/components/ui/Spinner";
 import { GridBackground } from "@/components/ui/GridBackground";
 import { Button } from "@/components/ui/Button";
+import { PublicLeaguesRail } from "@/components/leagues/PublicLeagueCard";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -102,6 +103,7 @@ export function LeaguesPanel({ embedded = false }: { embedded?: boolean }) {
   const [draftLeagues, setDraftLeagues] = useState<DraftLeague[]>([]);
   const [draftName, setDraftName] = useState("");
   const [draftCode, setDraftCode] = useState("");
+  const [draftPublic, setDraftPublic] = useState(false);
   const [draftBusy, setDraftBusy] = useState(false);
   const [draftErr, setDraftErr] = useState<string | null>(null);
 
@@ -136,7 +138,7 @@ export function LeaguesPanel({ embedded = false }: { embedded?: boolean }) {
     if (!draftName.trim() || draftBusy) return;
     setDraftBusy(true); setDraftErr(null);
     try {
-      const r = await fetch("/api/draft/league", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name: draftName }) });
+      const r = await fetch("/api/draft/league", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name: draftName, isPublic: draftPublic }) });
       const d = await r.json();
       if (!r.ok) { setDraftErr(d.error ?? "Could not create"); setDraftBusy(false); return; }
       router.push(`/38-0/league/${d.code}`);
@@ -385,6 +387,12 @@ export function LeaguesPanel({ embedded = false }: { embedded?: boolean }) {
                         CREATE
                       </Button>
                     </div>
+                    <button type="button" onClick={() => setDraftPublic((v) => !v)} className="flex items-center gap-2 mt-2.5">
+                      <span className="w-4 h-4 rounded grid place-items-center flex-shrink-0 transition-all" style={{ border: `1.5px solid ${draftPublic ? "#aeea00" : "rgba(255,255,255,0.25)"}`, background: draftPublic ? "#aeea00" : "transparent" }}>
+                        {draftPublic && <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2.5 6.5 5 9l4.5-6" stroke="#0a120d" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+                      </span>
+                      <span className="font-body text-xs" style={{ color: draftPublic ? "#eef2f0" : "#8a948f" }}>Public — anyone can find and join it in Discover</span>
+                    </button>
                   </div>
                   <div className="flex items-center gap-3 px-4">
                     <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.07)" }} />
@@ -415,6 +423,9 @@ export function LeaguesPanel({ embedded = false }: { embedded?: boolean }) {
                   </div>
                   <span className="font-display text-sm tracking-wide flex-shrink-0" style={{ color: "#aeea00" }}>VIEW →</span>
                 </Link>
+
+                {/* Public 38-0 leagues anyone can join */}
+                <PublicLeaguesRail game="38-0" />
               </>
             )}
           </>
@@ -552,7 +563,7 @@ export function LeaguesPanel({ embedded = false }: { embedded?: boolean }) {
                     <p className="font-display text-4xl mb-3">🏆</p>
                     <p className="font-display text-2xl text-white mb-2">No leagues yet</p>
                     <p className="font-body text-sm mb-6 text-text-muted">
-                      Create a league and invite your mates — your points stack across every match all season.
+                      Create a league and invite your friends — your points stack across every match all season.
                     </p>
                     <Button href="/league/new" variant="primary" tone="teal" size="md">
                       Create your first league →
@@ -574,6 +585,9 @@ export function LeaguesPanel({ embedded = false }: { embedded?: boolean }) {
                     </svg>
                   </Link>
                 )}
+
+                {/* Public quiz leagues anyone can join */}
+                {!quizLoading && user && <PublicLeaguesRail game="quiz" />}
               </>
             )}
 

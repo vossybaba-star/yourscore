@@ -20,7 +20,7 @@ type AddState = "idle" | "requested" | "friends";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Row = any;
 
-export function VersusDiscovery() {
+export function VersusDiscovery({ promoOnly = false }: { promoOnly?: boolean } = {}) {
   const [players, setPlayers] = useState<Player[]>([]);
   const [friendCount, setFriendCount] = useState<number | null>(null);
   const [state, setState] = useState<Record<string, AddState>>({});
@@ -62,8 +62,9 @@ export function VersusDiscovery() {
   }
 
   const showPromo = friendCount !== null && friendCount < 3;
+  const showPlayers = !promoOnly && players.length > 0; // superseded by ReadyToPlayRail on the Play tab
 
-  if (!showPromo && players.length === 0) return null;
+  if (!showPromo && !showPlayers) return null;
 
   return (
     <>
@@ -78,7 +79,7 @@ export function VersusDiscovery() {
         </div>
       )}
 
-      {players.length > 0 && (
+      {showPlayers && (
         <>
           <p className="font-body text-xs font-bold uppercase tracking-widest mt-7 mb-2.5" style={{ color: "#586058" }}>Top players</p>
           <div className="space-y-2">

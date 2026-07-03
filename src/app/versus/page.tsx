@@ -10,6 +10,10 @@ import { BottomNav } from "@/components/ui/BottomNav";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { PitchArt, QuizArt, VersusHeroArt } from "@/components/versus/GameTileArt";
 import { VersusDiscovery } from "@/components/versus/VersusDiscovery";
+import { VersusActionCards } from "@/components/versus/VersusActionCard";
+import { LiveActivityStrip } from "@/components/versus/LiveActivityStrip";
+import { ReadyToPlayRail } from "@/components/versus/ReadyToPlayRail";
+import { PublicLeaguesRail } from "@/components/leagues/PublicLeagueCard";
 import { FriendsPanel } from "@/components/friends/FriendsPanel";
 import { LeaguesPanel } from "@/components/leagues/LeaguesPanel";
 
@@ -294,35 +298,37 @@ function VersusInner() {
 
       {view === "play" && (
         <div className="max-w-lg mx-auto px-5">
-          {/* Hero + primary actions */}
-          <div className="pt-4">
-            <div className="relative rounded-3xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
-              <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, #101d16 0%, #0b1511 100%)" }} />
-              <VersusHeroArt />
-              <div className="absolute inset-0" style={{ background: "linear-gradient(110deg, rgba(8,13,10,0.78) 38%, rgba(8,13,10,0.28) 82%, rgba(8,13,10,0.05) 100%)" }} />
-              <div className="relative p-5 pt-7 pb-6">
-                <p className="font-body text-[11px] font-bold uppercase tracking-[0.32em] mb-2.5" style={{ color: LIME }}>Versus</p>
-                <p className="font-display text-white leading-[0.85]" style={{ fontSize: 46 }}>PROVE YOU KNOW<br /><span style={{ color: LIME }}>MORE BALL</span><br />THAN YOUR FRIENDS.</p>
-                <div className="flex gap-2.5 mt-5">
-                  <button onClick={() => setSheet({ kind: "game" })} className="flex-1 rounded-2xl py-3.5 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: LIME, color: "#13200a" }}>CHALLENGE SOMEONE</button>
-                  <button onClick={() => setSheet({ kind: "code" })} className="rounded-2xl px-5 py-3.5 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "rgba(0,0,0,0.35)", color: "#eef2f0", border: "1px solid rgba(255,255,255,0.18)", backdropFilter: "blur(4px)" }}>JOIN CODE</button>
+          {/* Priority: an action waiting on you always outranks discovery. */}
+          {yourTurn.length > 0 && (
+            <div className="pt-4"><YourTurnCard c={yourTurn[0]} /></div>
+          )}
+
+          {/* Hero — full-size welcome when nothing is urgent; suppressed to keep
+              the waiting match on top otherwise. Action cards always render. */}
+          {yourTurn.length === 0 && (
+            <div className="pt-4">
+              <div className="relative rounded-3xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+                <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, #101d16 0%, #0b1511 100%)" }} />
+                <VersusHeroArt />
+                <div className="absolute inset-0" style={{ background: "linear-gradient(110deg, rgba(8,13,10,0.78) 38%, rgba(8,13,10,0.28) 82%, rgba(8,13,10,0.05) 100%)" }} />
+                <div className="relative p-5 pt-7 pb-6">
+                  <p className="font-body text-[11px] font-bold uppercase tracking-[0.32em] mb-2.5" style={{ color: LIME }}>Welcome to Versus</p>
+                  <p className="font-display text-white leading-[0.85]" style={{ fontSize: 46 }}>TIME TO PLAY.<br /><span style={{ color: LIME }}>LET&rsquo;S FIND YOU</span><br />A RIVAL.</p>
+                  <p className="font-body text-xs mt-3" style={{ color: "#cdeee7" }}>Play someone now, challenge a friend or join a match.</p>
                 </div>
               </div>
             </div>
+          )}
+          <div className="mt-2.5">
+            <VersusActionCards onChallenge={() => setSheet({ kind: "game" })} onJoinCode={() => setSheet({ kind: "code" })} />
           </div>
 
-          {/* Your turn */}
-          {yourTurn.length > 0 && (<><SectionLabel>Your turn</SectionLabel><YourTurnCard c={yourTurn[0]} /></>)}
-
-          {/* Choose a game */}
-          <SectionLabel>Choose a game</SectionLabel>
+          {/* Choose your game */}
+          <SectionLabel>Choose your game</SectionLabel>
           <div className="flex gap-2.5">
-            <GameTile game="38-0" href="/versus/38-0" title="38-0" sub="Build your XI. Beat your opponent." />
-            <GameTile game="quiz" href="/versus/quiz" title="Quiz Battle" sub="Same questions, same time. Fastest wins." />
+            <GameTile game="38-0" href="/versus/38-0" title="38-0" sub="Build your XI. Beat their team." />
+            <GameTile game="quiz" href="/versus/quiz" title="Quiz Battle" sub="Same questions. Best score wins." />
           </div>
-
-          {/* Cold-start: add-friends promo + top-players rail (social proof) */}
-          <VersusDiscovery />
 
           {/* Active matches (beyond the pinned your-turn) */}
           {activeMatches.length > (yourTurn.length > 0 ? 1 : 0) && (
@@ -357,6 +363,12 @@ function VersusInner() {
               </div>
             </>
           )}
+
+          {/* Community: live pulse, suggested opponents, friends promo, leagues */}
+          <LiveActivityStrip />
+          <ReadyToPlayRail />
+          <VersusDiscovery promoOnly />
+          <PublicLeaguesRail limit={2} />
         </div>
       )}
 

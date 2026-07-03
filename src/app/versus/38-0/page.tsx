@@ -84,8 +84,8 @@ export default function Versus380Page() {
               <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M8 2.5 3 5.5 5 9.5 7.3 8.3V19a1 1 0 0 0 1 1h5.4a1 1 0 0 0 1-1V8.3L17 9.5l2-4-5-3C14 4.4 12.7 5.6 11 5.6S8 4.4 8 2.5Z" stroke={LIME} strokeWidth="1.7" strokeLinejoin="round" fill={LIME} fillOpacity={0.15} /></svg>
               <span className="font-body text-xs font-bold uppercase tracking-widest" style={{ color: LIME }}>38-0 · Versus</span>
             </div>
-            <p className="font-display text-white leading-[0.92]" style={{ fontSize: 36 }}>CHALLENGE A FRIEND<br />AT 38-0</p>
-            <p className="font-body text-sm mt-2" style={{ color: "#cdeee7" }}>Build your XI, share the code, go head-to-head live.</p>
+            <p className="font-display text-white leading-[0.92]" style={{ fontSize: 36 }}>BUILD YOUR XI.<br />CHALLENGE A RIVAL.</p>
+            <p className="font-body text-sm mt-2" style={{ color: "#cdeee7" }}>Draft your ultimate squad and take on a real opponent.</p>
           </div>
         </div>
       </div>
@@ -99,6 +99,14 @@ export default function Versus380Page() {
             <div className="font-mono font-bold tracking-[0.35em] my-5" style={{ fontSize: 42, color: LIME }}>{code}</div>
             <button onClick={share} className="w-full rounded-2xl py-3.5 font-display tracking-wide mb-2.5" style={{ background: LIME, color: "#13200a" }}>SHARE CHALLENGE →</button>
             {matchId && <button onClick={() => router.push(`/38-0/live/match/${matchId}`)} className="w-full rounded-2xl py-3.5 font-display tracking-wide" style={{ background: "rgba(255,255,255,0.05)", color: "#eef2f0", border: "1px solid rgba(255,255,255,0.14)" }}>ENTER LOBBY →</button>}
+            <div className="flex items-start justify-between gap-2 mt-5 text-left">
+              {["Share the challenge", "Your friend joins", "Kick off"].map((step, i) => (
+                <div key={step} className="flex-1 min-w-0">
+                  <p className="font-display text-lg leading-none" style={{ color: `${LIME}88` }}>{i + 1}</p>
+                  <p className="font-body text-[10px] text-text-muted mt-1 leading-snug">{step}</p>
+                </div>
+              ))}
+            </div>
           </div>
         ) : (
           <>
@@ -137,8 +145,20 @@ export default function Versus380Page() {
               <button onClick={join} disabled={!joinCode.trim() || busy} className="rounded-2xl px-6 font-display tracking-wide disabled:opacity-40" style={{ background: "rgba(174,234,0,0.15)", color: LIME, border: `1px solid ${LIME}40` }}>JOIN</button>
             </div>
 
-            {/* Random opponent */}
-            <Link href="/38-0/live" className="block text-center font-body text-sm mt-6 py-2" style={{ color: "#8a948f" }}>Or find a live opponent now →</Link>
+            {/* Instant matchmaking (the polished find-an-opponent flow) */}
+            <Link href="/versus/find?game=38-0" className="flex items-center gap-3 rounded-2xl px-4 py-3.5 mt-7 active:scale-[0.99] transition-transform" style={{ background: "rgba(174,234,0,0.08)", border: `1px solid ${LIME}40` }}>
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="flex-shrink-0">
+                <circle cx="10" cy="10" r="8" stroke={LIME} strokeWidth="1.5" opacity="0.35" />
+                <circle cx="10" cy="10" r="4.5" stroke={LIME} strokeWidth="1.5" opacity="0.6" />
+                <circle cx="10" cy="10" r="1.6" fill={LIME} />
+                <path d="M10 10 16 4.5" stroke={LIME} strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+              <div className="flex-1 min-w-0">
+                <p className="font-display text-sm text-white leading-none tracking-wide">FIND A LIVE OPPONENT</p>
+                <p className="font-body text-[11px] text-text-muted mt-1">Get matched instantly and play now</p>
+              </div>
+              <span className="font-display text-xs tracking-wide flex-shrink-0" style={{ color: LIME }}>GO →</span>
+            </Link>
 
             {error && <p className="font-body text-sm mt-4 text-center" style={{ color: "#ff6b78" }}>{error}</p>}
           </>

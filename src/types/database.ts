@@ -543,21 +543,27 @@ export type Database = {
       draft_leagues: {
         Row: {
           created_at: string | null
+          featured: boolean
           id: string
+          is_public: boolean
           join_code: string
           name: string
           owner_id: string | null
         }
         Insert: {
           created_at?: string | null
+          featured?: boolean
           id?: string
+          is_public?: boolean
           join_code: string
           name: string
           owner_id?: string | null
         }
         Update: {
           created_at?: string | null
+          featured?: boolean
           id?: string
+          is_public?: boolean
           join_code?: string
           name?: string
           owner_id?: string | null
@@ -1316,7 +1322,9 @@ export type Database = {
           created_at: string | null
           created_by: string | null
           description: string | null
+          featured: boolean
           id: string
+          is_public: boolean
           name: string
         }
         Insert: {
@@ -1324,7 +1332,9 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           description?: string | null
+          featured?: boolean
           id?: string
+          is_public?: boolean
           name: string
         }
         Update: {
@@ -1332,7 +1342,9 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           description?: string | null
+          featured?: boolean
           id?: string
+          is_public?: boolean
           name?: string
         }
         Relationships: []
@@ -1662,6 +1674,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      quiz_queue: {
+        Row: {
+          enqueued_at: string
+          user_id: string
+        }
+        Insert: {
+          enqueued_at?: string
+          user_id: string
+        }
+        Update: {
+          enqueued_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       quiz_attempts: {
         Row: {
@@ -2121,6 +2148,10 @@ export type Database = {
       apply_timeout_penalty: {
         Args: { p_penalty: number; p_room_id: string; p_user_ids: string[] }
         Returns: undefined
+      }
+      quiz_pair: {
+        Args: { p_user: string }
+        Returns: string
       }
       check_rate_limit: {
         Args: { p_key: string; p_max: number; p_window_seconds: number }

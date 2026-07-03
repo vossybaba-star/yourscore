@@ -1,0 +1,117 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
+
+// One discoverable public league. Join is one tap: quiz leagues ride the
+// existing /league/join/[code] flow; 38-0 leagues call the join API directly
+// and drop into the Leagues tab.
+
+const TEAL = "#00d8c0";
+const LIME = "#aeea00";
+const GOLD = "#ffc233";
+
+export interface PublicLeague {
+  id: string;
+  name: string;
+  description: string | null;
+  game: "quiz" | "38-0";
+  featured: boolean;
+  members: number;
+  memberAvatars: { id: string; name: string; avatarUrl: string | null }[];
+  creator: string | null;
+  joinCode: string;
+}
+
+export function PublicLeagueCard({ league }: { league: PublicLeague }) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const c = league.game === "38-0" ? LIME : TEAL;
+
+  async function join() {
+    if (busy) return;
+    setErr(null);
+    if (league.game === "quiz") { router.push(`/league/join/${league.joinCode}`); return; }
+    setBusy(true);
+    try {
+      const r = await fetch("/api/draft/league/join", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ code: league.joinCode }) });
+      const d = await r.json();
+      if (!r.ok) { setErr(d.error ?? "Could not join"); setBusy(false); return; }
+      router.push("/versus?view=leagues");
+    } catch { setErr("Could not join"); setBusy(false); }
+  }
+
+  return (
+    <div className="rounded-2xl p-4" style={{ background: "#0e1611", border: `1px solid ${league.featured ? `${GOLD}44` : "rgba(255,255,255,0.08)"}` }}>
+      <div className="flex items-start gap-3">
+        <div className="w-10 h-10 rounded-xl grid place-items-center flex-shrink-0" style={{ background: `${c}14`, border: `1px solid ${c}33` }}>
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M6 3h8v2h2.5v3A3.5 3.5 0 0 1 13 11.4 4 4 0 0 1 11 13v2.5h2.5V17h-7v-1.5H9V13a4 4 0 0 1-2-1.6A3.5 3.5 0 0 1 3.5 8V5H6V3Z" stroke={c} strokeWidth="1.4" strokeLinejoin="round" fill={`${c}22`} />
+          </svg>
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="font-body text-sm font-semibold text-white truncate">{league.name}</p>
+            {league.featured && <span className="font-body text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded flex-shrink-0" style={{ background: `${GOLD}1f`, color: GOLD }}>Featured</span>}
+          </div>
+          <p className="font-body text-[11px] text-text-muted mt-0.5 truncate">
+            Public · {league.members} {league.members === 1 ? "member" : "members"} · {league.game === "38-0" ? "38-0" : "Quiz Battle"}
+          </p>
+          {league.description && <p className="font-body text-[11px] text-text-muted mt-1 line-clamp-2 leading-snug">{league.description}</p>}
+        </div>
+        <button onClick={join} disabled={busy} className="font-display text-xs tracking-wide px-4 py-2 rounded-lg flex-shrink-0 active:scale-[0.97] transition-transform disabled:opacity-50" style={{ background: c, color: league.game === "38-0" ? "#13200a" : "#04231f" }}>
+          {busy ? "…" : "JOIN"}
+        </button>
+      </div>
+      {league.memberAvatars.length > 0 && (
+        <div className="flex items-center mt-3">
+          <div className="flex -space-x-2">
+            {league.memberAvatars.map((m) => (
+              <span key={m.id} className="rounded-full" style={{ border: "2px solid #0e1611" }}>
+                <PlayerAvatar seed={m.id} name={m.name} avatarUrl={m.avatarUrl} size={22} />
+              </span>
+            ))}
+          </div>
+          {league.creator && <p className="font-body text-[10px] text-text-muted ml-2.5 truncate">Started by {league.creator}</p>}
+        </div>
+      )}
+      {err && <p className="font-body text-xs mt-2" style={{ color: "#ff6b78" }}>{err}</p>}
+    </div>
+  );
+}
+
+/** Rail of discoverable leagues. `limit` trims it for the Play tab teaser;
+ *  `game` narrows it inside the Leagues tab's per-game views. */
+export function PublicLeaguesRail({ limit, game, heading = true }: { limit?: number; game?: "quiz" | "38-0"; heading?: boolean }) {
+  const router = useRouter();
+  const [leagues, setLeagues] = useState<PublicLeague[] | null>(null);
+
+  useEffect(() => {
+    fetch("/api/leagues/discover").then((r) => r.json())
+      .then((d) => setLeagues((d.leagues ?? []) as PublicLeague[]))
+      .catch(() => setLeagues([]));
+  }, []);
+
+  if (!leagues) return null;
+  const pool = game ? leagues.filter((l) => l.game === game) : leagues;
+  if (pool.length === 0) return null;
+  const shown = limit ? pool.slice(0, limit) : pool;
+
+  return (
+    <div>
+      {heading && (
+        <div className="flex items-center justify-between mt-7 mb-2.5">
+          <p className="font-body text-xs font-bold uppercase tracking-widest" style={{ color: "#586058" }}>Discover public leagues</p>
+          {limit && pool.length > limit && (
+            <button onClick={() => router.push("/versus?view=leagues")} className="font-body text-xs" style={{ color: TEAL }}>See all →</button>
+          )}
+        </div>
+      )}
+      <div className="space-y-2">
+        {shown.map((l) => <PublicLeagueCard key={`${l.game}:${l.id}`} league={l} />)}
+      </div>
+    </div>
+  );
+}

@@ -224,11 +224,11 @@ export default function LiveEntry() {
               </div>
             ) : (
               <>
-                <p className="text-sm" style={{ color: "#9aa39d" }}>Share this code with your mate</p>
+                <p className="text-sm" style={{ color: "#9aa39d" }}>Share this code with your friend</p>
                 <div className="mt-3 font-mono tracking-[0.4em] font-bold" style={{ fontSize: 44, color: "#aeea00" }}>{code}</div>
                 <div className="mt-4 inline-flex items-center gap-2 rounded-full px-3 py-1.5" style={{ background: "rgba(255,184,0,0.1)", border: "1px solid rgba(255,184,0,0.25)" }}>
                   <span className="h-2 w-2 rounded-full animate-pulse" style={{ background: "#ffb800" }} />
-                  <span className="text-xs" style={{ color: "#c4ccc6" }}>Waiting for your mate to join…</span>
+                  <span className="text-xs" style={{ color: "#c4ccc6" }}>Waiting for your friend to join…</span>
                 </div>
                 <Button
                   variant="ghost" size="md" fullWidth className="mt-4"
@@ -266,7 +266,7 @@ export default function LiveEntry() {
                       className="mt-2 w-full rounded-xl py-2 text-xs"
                       style={{ color: "#8a948f" }}
                     >
-                      Keep waiting for my mate
+                      Keep waiting for my friend
                     </button>
                   </div>
                 )}

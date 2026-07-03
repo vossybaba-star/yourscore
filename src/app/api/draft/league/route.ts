@@ -15,10 +15,11 @@ export async function POST(req: NextRequest) {
   const { ok } = await rateLimitDistributed(`draft-league:${user.id}`, 10, 60_000);
   if (!ok) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
 
-  let body: { name?: unknown };
+  let body: { name?: unknown; isPublic?: unknown };
   try { body = await req.json(); } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
   const name = typeof body.name === "string" ? body.name.trim().slice(0, 40) : "";
   if (!name) return NextResponse.json({ error: "Name required" }, { status: 400 });
+  const isPublic = body.isPublic === true; // default private (migration 64)
 
   const db = createDraftDb();
 
@@ -27,7 +28,7 @@ export async function POST(req: NextRequest) {
   for (let attempt = 0; attempt < 5 && !created; attempt++) {
     const { data, error } = await db
       .from("draft_leagues")
-      .insert({ owner_id: user.id, name, join_code: genJoinCode() })
+      .insert({ owner_id: user.id, name, join_code: genJoinCode(), is_public: isPublic })
       .select("id, name, join_code")
       .single();
     if (!error && data) created = data;

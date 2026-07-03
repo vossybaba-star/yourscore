@@ -21,6 +21,7 @@ function CreateLeagueInner() {
   const { user, loading } = useUser();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [isPublic, setIsPublic] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [created, setCreated] = useState<{ id: string; code: string } | null>(null);
   const [copied, setCopied] = useState(false);
@@ -48,7 +49,7 @@ function CreateLeagueInner() {
       const sb = createClient();
       const { data, error } = await sb
         .from("leagues")
-        .insert({ name: name.trim(), description: description.trim() || null, code, created_by: user.id })
+        .insert({ name: name.trim(), description: description.trim() || null, code, created_by: user.id, is_public: isPublic })
         .select("id, code")
         .single();
       if (error) throw error;
@@ -136,6 +137,27 @@ function CreateLeagueInner() {
                   className="w-full rounded-xl px-4 py-4 font-body text-white text-base outline-none transition-all placeholder:text-white/20 bg-surface"
                   style={{ border: "1px solid rgba(255,255,255,0.1)" }}
                 />
+              </div>
+
+              <div>
+                <label className="font-body text-xs text-text-muted uppercase tracking-widest block mb-3">Visibility</label>
+                <div className="flex gap-2">
+                  {([
+                    { pub: false, title: "Private", sub: "Invite only — join by code" },
+                    { pub: true, title: "Public", sub: "Anyone can find and join it" },
+                  ] as const).map((opt) => {
+                    const active = isPublic === opt.pub;
+                    return (
+                      <button key={opt.title} type="button" onClick={() => setIsPublic(opt.pub)}
+                        className="flex-1 rounded-xl px-4 py-3.5 text-left transition-all"
+                        style={{ background: active ? "rgba(174,234,0,0.08)" : "#0e1611", border: `1px solid ${active ? "rgba(174,234,0,0.4)" : "rgba(255,255,255,0.1)"}` }}>
+                        <p className="font-body text-sm font-semibold" style={{ color: active ? "#aeea00" : "#eef2f0" }}>{opt.title}</p>
+                        <p className="font-body text-xs text-text-muted mt-0.5">{opt.sub}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+                {isPublic && <p className="font-body text-xs text-text-muted mt-2">Your league will appear in Discover — anyone on YourScore can join.</p>}
               </div>
             </div>
 
