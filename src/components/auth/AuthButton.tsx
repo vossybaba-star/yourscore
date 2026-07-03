@@ -90,12 +90,31 @@ function EmailSignIn({ nextPath }: { nextPath?: string }) {
   // Notifications consent (opt-in) — get pinged when games are running / it's your turn.
   const [notifyMe, setNotifyMe] = useState(false);
 
+  // Server-side deliverability gate: confirms the domain actually runs a mail server
+  // (MX/A lookup) before we ask Supabase to send anything. Stops bounces at the source.
+  // Fails OPEN on a network error so a resolver hiccup never blocks a real signup.
+  async function deliverable(): Promise<boolean> {
+    try {
+      const res = await fetch("/api/auth/validate-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim().toLowerCase() }),
+      });
+      const r = (await res.json()) as { ok: boolean; reason?: string };
+      if (!r.ok) { setError(r.reason ?? "Please enter a valid email address."); return false; }
+      return true;
+    } catch {
+      return true;
+    }
+  }
+
   async function sendMagicLink() {
     if (!email.trim() || loading) return;
     const check = checkEmail(email);
     if (!check.ok) { setError(check.reason ?? "Enter a valid email address."); return; }
     setLoading(true); setError("");
     try {
+      if (!(await deliverable())) { setLoading(false); return; }
       const sb = createClient();
       // In the native app the link MUST come back via the custom scheme so iOS opens the
       // app (and the PKCE verifier — stored in the app — can complete the exchange).
@@ -128,6 +147,7 @@ function EmailSignIn({ nextPath }: { nextPath?: string }) {
     if (password.length < 6) { setError("Password must be at least 6 characters"); return; }
     setLoading(true); setError("");
     try {
+      if (!(await deliverable())) { setLoading(false); return; }
       const sb = createClient();
       // Notifications consent rides along in user_metadata; handle_new_user copies it to
       // profiles.notifications_opt_in (migration 50).
@@ -147,6 +167,7 @@ function EmailSignIn({ nextPath }: { nextPath?: string }) {
     if (!check.ok) { setError(check.reason ?? "Enter a valid email address."); return; }
     setLoading(true); setError("");
     try {
+      if (!(await deliverable())) { setLoading(false); return; }
       const sb = createClient();
       const { error: err } = await sb.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
         // Native: route the recovery link back through the app (custom scheme) so iOS
