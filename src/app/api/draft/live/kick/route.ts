@@ -4,6 +4,7 @@ import { rateLimitDistributed } from "@/lib/ratelimit";
 import { createDraftDb } from "@/lib/draft/server";
 import { liveKick } from "@/lib/draft/live-server";
 import type { PenPower, PenZone } from "@/lib/draft/pens";
+import { ensurePool } from "@/lib/draft/pool";
 
 const POWERS = ["under", "good", "perfect", "over"];
 
@@ -11,6 +12,10 @@ const POWERS = ["under", "good", "perfect", "over"];
 // outcome resolves server-side (peppered seed) inside liveKick and streams to the
 // opponent through the existing draft_live_matches realtime channel.
 export async function POST(req: NextRequest) {
+  // The lazy-loaded player pool must be ready before any live-match logic
+  // runs — bot spins, swap validation and phase advances all reach it.
+  await ensurePool();
+
   const auth = await createClient();
   const { data: { user } } = await auth.auth.getUser();
   if (!user) return NextResponse.json({ error: "Sign in" }, { status: 401 });

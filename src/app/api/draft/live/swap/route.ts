@@ -3,11 +3,16 @@ import { createClient } from "@/lib/supabase/server";
 import { rateLimitDistributed } from "@/lib/ratelimit";
 import { createDraftDb } from "@/lib/draft/server";
 import { applyLiveSwap, setDrawChoice } from "@/lib/draft/live-server";
+import { ensurePool } from "@/lib/draft/pool";
 
 // Player actions during the interactive windows:
 //   { matchId, slotId, newPlayer }  → a spin-and-choose swap (pregame/halftime)
 //   { matchId, wantsPens }          → the draw_decision choice (penalties or not)
 export async function POST(req: NextRequest) {
+  // The lazy-loaded player pool must be ready before any live-match logic
+  // runs — bot spins, swap validation and phase advances all reach it.
+  await ensurePool();
+
   const auth = await createClient();
   const { data: { user } } = await auth.auth.getUser();
   if (!user) return NextResponse.json({ error: "Sign in" }, { status: 401 });

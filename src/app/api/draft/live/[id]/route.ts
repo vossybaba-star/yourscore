@@ -2,10 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createDraftDb } from "@/lib/draft/server";
 import { sideOf } from "@/lib/draft/live-server";
+import { ensurePool } from "@/lib/draft/pool";
 
 // Authoritative state read for initial load / reconnect. The realtime channel
 // keeps the client live after this; this is the snapshot it starts from.
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+  // The lazy-loaded player pool must be ready before any live-match logic
+  // runs — bot spins, swap validation and phase advances all reach it.
+  await ensurePool();
+
   const auth = await createClient();
   const { data: { user } } = await auth.auth.getUser();
   if (!user) return NextResponse.json({ error: "Sign in" }, { status: 401 });

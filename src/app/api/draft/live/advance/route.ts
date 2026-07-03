@@ -3,11 +3,16 @@ import { createClient } from "@/lib/supabase/server";
 import { rateLimitDistributed } from "@/lib/ratelimit";
 import { createDraftDb } from "@/lib/draft/server";
 import { advanceMatch, sideOf } from "@/lib/draft/live-server";
+import { ensurePool } from "@/lib/draft/pool";
 
 // Deadline-driven, idempotent phase transition. Both clients call this when their
 // local countdown hits zero; the conditional UPDATE inside advanceMatch ensures
 // the transition happens exactly once.
 export async function POST(req: NextRequest) {
+  // The lazy-loaded player pool must be ready before any live-match logic
+  // runs — bot spins, swap validation and phase advances all reach it.
+  await ensurePool();
+
   const auth = await createClient();
   const { data: { user } } = await auth.auth.getUser();
   if (!user) return NextResponse.json({ error: "Sign in" }, { status: 401 });

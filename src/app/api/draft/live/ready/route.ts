@@ -3,10 +3,15 @@ import { createClient } from "@/lib/supabase/server";
 import { rateLimitDistributed } from "@/lib/ratelimit";
 import { createDraftDb } from "@/lib/draft/server";
 import { setReady, setBotReady } from "@/lib/draft/live-server";
+import { ensurePool } from "@/lib/draft/pool";
 
 // Mark the caller ready/done for the current phase (lobby start, or "done" in a
 // swap window). Tries to advance the match if both sides are now ready.
 export async function POST(req: NextRequest) {
+  // The lazy-loaded player pool must be ready before any live-match logic
+  // runs — bot spins, swap validation and phase advances all reach it.
+  await ensurePool();
+
   const auth = await createClient();
   const { data: { user } } = await auth.auth.getUser();
   if (!user) return NextResponse.json({ error: "Sign in" }, { status: 401 });

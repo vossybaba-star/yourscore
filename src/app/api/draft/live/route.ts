@@ -5,6 +5,7 @@ import { createDraftDb, GLOBAL_LEAGUE } from "@/lib/draft/server";
 import { createFriendMatch, joinByCode, queueOrPair, createBotMatch, leaveQueue,
   createLeagueChallenge, acceptChallenge, dismissChallenge, type MatchmakeOpts } from "@/lib/draft/live-server";
 import { asCompetition } from "@/lib/draft/types";
+import { ensurePool } from "@/lib/draft/pool";
 
 // Matchmaking entry point.
 //   create      → open a friend lobby (returns a shareable code)
@@ -16,6 +17,10 @@ import { asCompetition } from "@/lib/draft/types";
 //   accept      → accept a directed league challenge { matchId }
 //   decline     → decline/cancel a directed league challenge { matchId }
 export async function POST(req: NextRequest) {
+  // The lazy-loaded player pool must be ready before any live-match logic
+  // runs — bot spins, swap validation and phase advances all reach it.
+  await ensurePool();
+
   const auth = await createClient();
   const { data: { user } } = await auth.auth.getUser();
   if (!user) return NextResponse.json({ error: "Sign in to play live" }, { status: 401 });
