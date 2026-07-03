@@ -1,0 +1,16 @@
+{
+  "_readme": "Football accounts the YourScore IG/FB media page auto-pulls media from (photos + clips) to repurpose. 'username' (no @); optional 'kind' hints classification: media|news|meme. Founder can trim/extend. Wider + more media-first than the X reword watchlist because a media page needs volume.",
+  "defaults": { "perRun": 8 },
+  "accounts": [
+    { "username": "brfootball", "kind": "media" },
+    { "username": "Footballtweet", "kind": "media" },
+    { "username": "ESPNFC", "kind": "media" },
+    { "username": "GOAL", "kind": "media" },
+    { "username": "433", "kind": "media" },
+    { "username": "FabrizioRomano", "kind": "news" },
+    { "username": "OptaJoe", "kind": "news" },
+    { "username": "BBCSport", "kind": "news" },
+    { "username": "TrollFootball", "kind": "meme" },
+    { "username": "FootyHumour", "kind": "meme" }
+  ]
+}

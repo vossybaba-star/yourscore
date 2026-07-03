@@ -113,22 +113,45 @@ export async function fetchRecent(userId, { sinceId, max = 10 } = {}) {
     exclude: "replies,retweets",
     "tweet.fields": "created_at,public_metrics,lang,attachments",
     expansions: "attachments.media_keys",
-    "media.fields": "url,preview_image_url,type,width,height,alt_text",
+    // `variants` gives us playable mp4 URLs for video/GIF (available on the app-only Bearer);
+    // `duration_ms` lets a consumer reject clips that are too long/short for Reels.
+    "media.fields": "url,preview_image_url,type,width,height,alt_text,variants,duration_ms",
   });
   if (sinceId) p.set("since_id", sinceId);
   const j = await xGet(`https://api.twitter.com/2/users/${userId}/tweets?${p}`);
-  // Map each tweet's media_keys to the photo/preview URLs from includes.media so the
-  // reword can SEE the image and we can repost it. Photos have `url`; video/GIF only a
-  // `preview_image_url` (a still) — we keep the still for context but won't repost a clip.
+  // Map each tweet's media_keys to the media objects from includes.media. Photos carry `url`;
+  // video/animated_gif carry `variants` (pick the best mp4) + a `preview_image_url` still. We
+  // keep the still for context AND expose a `videoUrl` so downstream can repost the clip.
   const byKey = Object.fromEntries((j.includes?.media || []).map((m) => [m.media_key, m]));
   return (j.data || []).map((t) => ({
     ...t,
     media: (t.attachments?.media_keys || [])
       .map((k) => byKey[k])
       .filter(Boolean)
-      .map((m) => ({ type: m.type, url: m.url || null, preview: m.preview_image_url || null, width: m.width, height: m.height, alt: m.alt_text || null }))
-      .filter((m) => m.url || m.preview),
+      .map((m) => ({
+        type: m.type,
+        url: m.url || null,
+        videoUrl: bestMp4(m.variants),
+        preview: m.preview_image_url || null,
+        width: m.width,
+        height: m.height,
+        durationMs: m.duration_ms || null,
+        alt: m.alt_text || null,
+      }))
+      .filter((m) => m.url || m.videoUrl || m.preview),
   }));
+}
+
+// Pick the highest-bitrate mp4 variant under a cap, so Publer fetches quickly and IG accepts it.
+// Twitter `variants` = [{bit_rate?, content_type, url}]; animated_gif mp4s have no bit_rate.
+const MAX_VIDEO_BITRATE = 2_500_000;
+function bestMp4(variants) {
+  if (!Array.isArray(variants)) return null;
+  const mp4s = variants.filter((v) => v.content_type === "video/mp4" && v.url);
+  if (!mp4s.length) return null;
+  const capped = mp4s.filter((v) => (v.bit_rate || 0) <= MAX_VIDEO_BITRATE);
+  const pool = capped.length ? capped : mp4s; // if every variant exceeds the cap, take the smallest
+  return pool.sort((a, b) => (b.bit_rate || 0) - (a.bit_rate || 0))[0].url;
 }
 
 // Spam/gambling terms to keep out of the engagement search (the open firehose is full of them).
