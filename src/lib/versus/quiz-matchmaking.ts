@@ -161,18 +161,38 @@ async function insertBotSeatLobby(
   return room;
 }
 
-/** Shadow Lobby for a specific run: questions copied VERBATIM from the source
- *  room (same order/options) so sequence-based replay is exact. */
+/** Shadow Lobby for a specific run. Question source depends on where the run
+ *  was recorded — either way, sequence-based replay is exact:
+ *  • multiplayer run → copy the source room's questions_json VERBATIM
+ *    (rooms shuffle per room, so copying preserves order/options);
+ *  • solo attempt → the pack's questions in pack order, sliced to the attempt
+ *    (solo grades answers[i] vs pack.questions[i], so idx maps 1:1). */
 async function createShadowLobby(db: Db, userId: string, run: ShadowRun): Promise<QuizQueueResult | null> {
-  const { data: src } = await db
-    .from("rooms").select("questions_json, question_count").eq("id", run.sourceRoomId).maybeSingle();
-  if (!src?.questions_json) return null;
+  let questionsJson: unknown = null;
+  let questionCount = 10;
+  if (run.sourceAttemptId) {
+    const [{ data: pack }, { data: attempt }] = await Promise.all([
+      db.from("quiz_packs").select("questions").eq("id", run.packId).maybeSingle(),
+      db.from("quiz_attempts").select("answers").eq("id", run.sourceAttemptId).maybeSingle(),
+    ]);
+    const qs = Array.isArray(pack?.questions) ? pack.questions : [];
+    const logLen = Array.isArray(attempt?.answers) ? attempt.answers.length : 0;
+    if (qs.length === 0 || logLen < 3) return null;
+    questionsJson = qs.slice(0, Math.min(logLen, qs.length));
+    questionCount = (questionsJson as unknown[]).length;
+  } else {
+    const { data: src } = await db
+      .from("rooms").select("questions_json, question_count").eq("id", run.sourceRoomId).maybeSingle();
+    if (!src?.questions_json) return null;
+    questionsJson = src.questions_json;
+    questionCount = src.question_count ?? 10;
+  }
+
   const shadow = await buildShadowInfo(db, run);
   if (!shadow) return null;
 
   const room = await insertBotSeatLobby(db, userId, {
-    packId: run.packId, questionCount: src.question_count ?? 10,
-    questionsJson: src.questions_json, shadow,
+    packId: run.packId, questionCount, questionsJson, shadow,
   });
   return {
     status: "matched", roomId: room.id, code: room.code,

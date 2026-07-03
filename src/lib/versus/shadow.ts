@@ -3,19 +3,28 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { QUIZ_BOT_ID } from "@/lib/versus/quizBot";
 import { notifyUsers } from "@/lib/notify";
 
-// Shadow matches — play the ghost of a real player's previous multiplayer run.
-// A shadow Lobby is a normal CPU-seat room (p2 = QUIZ_BOT_ID) whose questions
-// are copied VERBATIM from the source run's room (same questions, same order,
-// same options — rooms shuffle per room, so copying is what makes sequence-
-// based replay exact). The rooms.shadow jsonb carries the persona + the source
-// pointers; /api/answer replays the recorded answer per question; the shadow
-// owner's own stats are never touched.
+// Shadow matches — play the ghost of a real player's previous run. ONE POOL
+// (founder call): a run counts whether it was a multiplayer/Versus game OR a
+// solo quiz attempt — solo is where most play happens, so it makes the pool
+// deep from day one.
+//   • Multiplayer source: the shadow Lobby copies the source room's
+//     questions_json VERBATIM (rooms shuffle per room, so copying is what makes
+//     sequence-based replay exact).
+//   • Solo source: quiz_attempts are graded in PACK ORDER (solo-complete checks
+//     answers[i] vs pack.questions[i]), so the shadow Lobby uses the pack's
+//     questions in pack order, sliced to the attempt's length — idx maps 1:1 to
+//     sequence, letters map to pack option order.
+// The rooms.shadow jsonb carries the persona + the source pointers; /api/answer
+// replays the recorded answer per question; the shadow owner's own stats are
+// never touched.
 
 export interface ShadowInfo {
   userId: string;
   name: string;
   avatarUrl: string | null;
-  sourceRoomId: string;
+  /** Exactly one of these is set — which table the recording lives in. */
+  sourceRoomId: string | null;
+  sourceAttemptId?: string | null;
   /** When the source run was played (ISO) — honest-reveal copy. */
   playedAt: string | null;
   /** Per-question time_taken_ms by sequence — client presence tick only. */
@@ -25,8 +34,21 @@ export interface ShadowInfo {
 
 export interface ShadowRun {
   userId: string;
-  sourceRoomId: string;
   packId: string;
+  sourceRoomId?: string | null;
+  sourceAttemptId?: string | null;
+  /** Recency for cross-pool ordering. */
+  at: string | null;
+}
+
+/** Solo attempt answer log entry (written by /api/quiz/solo-complete). */
+interface AttemptLogEntry { idx: number; selected: string; correct: boolean; points: number; elapsed_ms: number }
+
+function attemptLog(answers: unknown): AttemptLogEntry[] | null {
+  if (!Array.isArray(answers) || answers.length < 3) return null;
+  const first = answers[0] as AttemptLogEntry | undefined;
+  if (!first || typeof first.selected !== "string" || typeof first.elapsed_ms !== "number") return null;
+  return answers as AttemptLogEntry[];
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -49,7 +71,11 @@ async function fullRunsIn(db: Db, rooms: { id: string; question_count: number }[
   );
 }
 
-/** sourceRoomId:userId pairs this player has already shadowed (avoid reruns). */
+/** Rerun-exclusion keys for the sources this player has already shadowed. */
+function seenKey(run: { sourceRoomId?: string | null; sourceAttemptId?: string | null; userId: string }): string {
+  return run.sourceAttemptId ? `att:${run.sourceAttemptId}:${run.userId}` : `${run.sourceRoomId}:${run.userId}`;
+}
+
 async function alreadyShadowed(db: Db, userId: string): Promise<Set<string>> {
   const { data } = await db
     .from("rooms")
@@ -61,56 +87,88 @@ async function alreadyShadowed(db: Db, userId: string): Promise<Set<string>> {
   const seen = new Set<string>();
   for (const r of data ?? []) {
     const s = r.shadow as ShadowInfo | null;
-    if (s?.sourceRoomId && s?.userId) seen.add(`${s.sourceRoomId}:${s.userId}`);
+    if (s?.userId && (s.sourceRoomId || s.sourceAttemptId)) seen.add(seenKey(s));
   }
   return seen;
 }
 
-/** Most recent full run on a pack by someone else this player hasn't shadowed. */
-export async function findShadowRun(db: Db, packId: string, forUserId: string): Promise<ShadowRun | null> {
+/** Multiplayer candidates on a pack, newest-first. */
+async function roomCandidates(db: Db, packId: string): Promise<ShadowRun[]> {
   const { data: rooms } = await db
     .from("rooms")
-    .select("id, question_count")
+    .select("id, question_count, created_at")
     .eq("pack_id", packId)
     .eq("status", "completed")
     .order("created_at", { ascending: false })
     .limit(50);
-  if (!rooms?.length) return null;
-
-  const exclude = EXCLUDED_RUNNERS();
-  exclude.add(forUserId);
-  const [runs, seen] = await Promise.all([
-    fullRunsIn(db, rooms, exclude),
-    alreadyShadowed(db, forUserId),
-  ]);
-
-  // rooms are newest-first; take the first qualifying run in that order.
-  const order = new Map(rooms.map((r, i) => [r.id, i]));
-  runs.sort((a, b) => (order.get(a.room_id) ?? 99) - (order.get(b.room_id) ?? 99));
-  const hit = runs.find((r) => !seen.has(`${r.room_id}:${r.user_id}`));
-  return hit ? { userId: hit.user_id, sourceRoomId: hit.room_id, packId } : null;
+  if (!rooms?.length) return [];
+  const runs = await fullRunsIn(db, rooms, new Set());
+  const roomById = new Map(rooms.map((r) => [r.id, r]));
+  return runs.map((r) => ({
+    userId: r.user_id, packId, sourceRoomId: r.room_id, sourceAttemptId: null,
+    at: roomById.get(r.room_id)?.created_at ?? null,
+  }));
 }
 
-/** A specific player's most recent full run on a pack (revenge — reruns allowed). */
-export async function findRunOfUser(db: Db, shadowUserId: string, packId: string): Promise<ShadowRun | null> {
-  const { data: rooms } = await db
-    .from("rooms")
-    .select("id, question_count")
+/** Solo candidates on a pack, newest-first (attempts with a usable answer log). */
+async function soloCandidates(db: Db, packId: string): Promise<ShadowRun[]> {
+  const { data: attempts } = await db
+    .from("quiz_attempts")
+    .select("id, user_id, completed_at, answers")
     .eq("pack_id", packId)
-    .eq("status", "completed")
-    .order("created_at", { ascending: false })
+    .not("answers", "is", null)
+    .order("completed_at", { ascending: false })
     .limit(50);
-  if (!rooms?.length) return null;
-  const runs = await fullRunsIn(db, rooms, new Set());
-  const order = new Map(rooms.map((r, i) => [r.id, i]));
-  const hit = runs
-    .filter((r) => r.user_id === shadowUserId)
-    .sort((a, b) => (order.get(a.room_id) ?? 99) - (order.get(b.room_id) ?? 99))[0];
-  return hit ? { userId: hit.user_id, sourceRoomId: hit.room_id, packId } : null;
+  return (attempts ?? [])
+    .filter((a) => attemptLog(a.answers) !== null)
+    .map((a) => ({ userId: a.user_id, packId, sourceRoomId: null, sourceAttemptId: a.id, at: a.completed_at ?? null }));
+}
+
+/** One pool: solo + multiplayer runs on the pack, newest first. */
+async function allCandidates(db: Db, packId: string): Promise<ShadowRun[]> {
+  const [rooms, solos] = await Promise.all([roomCandidates(db, packId), soloCandidates(db, packId)]);
+  return [...rooms, ...solos].sort((a, b) => (b.at ?? "").localeCompare(a.at ?? ""));
+}
+
+/** Most recent run on a pack by someone else this player hasn't shadowed. */
+export async function findShadowRun(db: Db, packId: string, forUserId: string): Promise<ShadowRun | null> {
+  const exclude = EXCLUDED_RUNNERS();
+  exclude.add(forUserId);
+  const [candidates, seen] = await Promise.all([
+    allCandidates(db, packId),
+    alreadyShadowed(db, forUserId),
+  ]);
+  return candidates.find((c) => !exclude.has(c.userId) && !seen.has(seenKey(c))) ?? null;
+}
+
+/** A specific player's most recent run on a pack (revenge — reruns allowed). */
+export async function findRunOfUser(db: Db, shadowUserId: string, packId: string): Promise<ShadowRun | null> {
+  const candidates = await allCandidates(db, packId);
+  return candidates.find((c) => c.userId === shadowUserId) ?? null;
 }
 
 /** Build the ShadowInfo payload for a run: persona + per-sequence times + score. */
 export async function buildShadowInfo(db: Db, run: ShadowRun): Promise<ShadowInfo | null> {
+  // Solo source: everything lives on the attempt row.
+  if (run.sourceAttemptId) {
+    const [{ data: profile }, { data: attempt }] = await Promise.all([
+      db.from("profiles").select("display_name, avatar_url").eq("id", run.userId).maybeSingle(),
+      db.from("quiz_attempts").select("answers, score, completed_at").eq("id", run.sourceAttemptId).maybeSingle(),
+    ]);
+    const log = attemptLog(attempt?.answers);
+    if (!attempt || !log) return null;
+    return {
+      userId: run.userId,
+      name: profile?.display_name ?? "A player",
+      avatarUrl: profile?.avatar_url ?? null,
+      sourceRoomId: null,
+      sourceAttemptId: run.sourceAttemptId,
+      playedAt: attempt.completed_at ?? null,
+      times: log.map((e) => e.elapsed_ms ?? null),
+      originalScore: attempt.score ?? 0,
+    };
+  }
+
   const [{ data: profile }, { data: src }, { data: score }] = await Promise.all([
     db.from("profiles").select("display_name, avatar_url").eq("id", run.userId).maybeSingle(),
     db.from("rooms").select("question_count, created_at").eq("id", run.sourceRoomId).maybeSingle(),
@@ -138,7 +196,8 @@ export async function buildShadowInfo(db: Db, run: ShadowRun): Promise<ShadowInf
     userId: run.userId,
     name: profile?.display_name ?? "A player",
     avatarUrl: profile?.avatar_url ?? null,
-    sourceRoomId: run.sourceRoomId,
+    sourceRoomId: run.sourceRoomId ?? null,
+    sourceAttemptId: null,
     playedAt: src.created_at ?? null,
     times,
     originalScore: score?.total_score ?? 0,
@@ -151,6 +210,17 @@ export async function buildShadowInfo(db: Db, run: ShadowRun): Promise<ShadowInf
 export async function shadowAnswerFor(
   db: Db, shadow: ShadowInfo, sequenceNumber: number
 ): Promise<{ selected: string; isCorrect: boolean; elapsedMs: number } | null> {
+  // Solo source: the attempt log is idx-ordered and the shadow Lobby uses the
+  // pack's questions in the same order — sequence maps 1:1.
+  if (shadow.sourceAttemptId) {
+    const { data: attempt } = await db
+      .from("quiz_attempts").select("answers").eq("id", shadow.sourceAttemptId).maybeSingle();
+    const log = attemptLog(attempt?.answers);
+    const e = log?.[sequenceNumber - 1];
+    if (!e) return null;
+    return { selected: String(e.selected).toLowerCase(), isCorrect: !!e.correct, elapsedMs: e.elapsed_ms };
+  }
+
   const { data: ev } = await db
     .from("question_events")
     .select("id")
@@ -177,30 +247,42 @@ export interface ShadowableRun {
   questionCount: number;
 }
 
-/** The revenge library: a player's shadowable runs, latest per pack. */
+/** The revenge library: a player's shadowable runs (solo + multiplayer, one
+ *  pool), latest per pack. */
 export async function shadowRunsOf(db: Db, userId: string): Promise<ShadowableRun[]> {
-  const { data: scores } = await db
-    .from("room_scores")
-    .select("room_id, total_score, total_answers")
-    .eq("user_id", userId)
-    .limit(200);
-  if (!scores?.length) return [];
+  const [{ data: scores }, { data: attempts }] = await Promise.all([
+    db.from("room_scores").select("room_id, total_score, total_answers").eq("user_id", userId).limit(200),
+    db.from("quiz_attempts").select("id, pack_id, score, completed_at, answers").eq("user_id", userId).not("answers", "is", null).order("completed_at", { ascending: false }).limit(100),
+  ]);
 
-  const { data: rooms } = await db
-    .from("rooms")
-    .select("id, pack_id, question_count, created_at")
-    .in("id", scores.map((s) => s.room_id))
-    .eq("status", "completed")
-    .not("pack_id", "is", null)
-    .order("created_at", { ascending: false });
-  if (!rooms?.length) return [];
+  // Latest full run per pack — a solo attempt and a multiplayer run compete on
+  // recency; the newer one represents that quiz in the library.
+  const perPack = new Map<string, { score: number; playedAt: string | null; questionCount: number }>();
+  const consider = (packId: string, entry: { score: number; playedAt: string | null; questionCount: number }) => {
+    const cur = perPack.get(packId);
+    if (!cur || (entry.playedAt ?? "") > (cur.playedAt ?? "")) perPack.set(packId, entry);
+  };
 
-  const scoreByRoom = new Map(scores.map((s) => [s.room_id, s]));
-  const perPack = new Map<string, { room: (typeof rooms)[number]; score: number }>();
-  for (const r of rooms) {
-    const s = scoreByRoom.get(r.id);
-    if (!s || (s.total_answers ?? 0) < (r.question_count ?? 10)) continue; // full runs only
-    if (!perPack.has(r.pack_id!)) perPack.set(r.pack_id!, { room: r, score: s.total_score ?? 0 }); // newest-first
+  for (const a of attempts ?? []) {
+    const log = attemptLog(a.answers);
+    if (!log || !a.pack_id) continue;
+    consider(a.pack_id, { score: a.score ?? 0, playedAt: a.completed_at ?? null, questionCount: log.length });
+  }
+
+  if (scores?.length) {
+    const { data: rooms } = await db
+      .from("rooms")
+      .select("id, pack_id, question_count, created_at")
+      .in("id", scores.map((s) => s.room_id))
+      .eq("status", "completed")
+      .not("pack_id", "is", null)
+      .order("created_at", { ascending: false });
+    const scoreByRoom = new Map((scores ?? []).map((s) => [s.room_id, s]));
+    for (const r of rooms ?? []) {
+      const s = scoreByRoom.get(r.id);
+      if (!s || (s.total_answers ?? 0) < (r.question_count ?? 10)) continue; // full runs only
+      consider(r.pack_id!, { score: s.total_score ?? 0, playedAt: r.created_at, questionCount: r.question_count ?? 10 });
+    }
   }
   if (perPack.size === 0) return [];
 
@@ -210,18 +292,20 @@ export async function shadowRunsOf(db: Db, userId: string): Promise<ShadowableRu
     .in("id", Array.from(perPack.keys()));
   const packById = new Map((packs ?? []).map((p) => [p.id, p]));
 
-  return Array.from(perPack.entries()).map(([packId, { room, score }]) => {
-    const pack = packById.get(packId);
-    const meta = (pack?.metadata ?? null) as { cover_image?: string } | null;
-    return {
-      packId,
-      packName: pack?.name ?? "Quiz",
-      cover: meta?.cover_image ?? null,
-      score,
-      playedAt: room.created_at,
-      questionCount: room.question_count ?? 10,
-    };
-  });
+  return Array.from(perPack.entries())
+    .map(([packId, entry]) => {
+      const pack = packById.get(packId);
+      const meta = (pack?.metadata ?? null) as { cover_image?: string } | null;
+      return {
+        packId,
+        packName: pack?.name ?? "Quiz",
+        cover: meta?.cover_image ?? null,
+        score: entry.score,
+        playedAt: entry.playedAt,
+        questionCount: entry.questionCount,
+      };
+    })
+    .sort((a, b) => (b.playedAt ?? "").localeCompare(a.playedAt ?? ""));
 }
 
 // ── Result notification (founder safeguard: never pester the run's owner) ─────
