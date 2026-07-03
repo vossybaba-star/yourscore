@@ -22,13 +22,11 @@ const TG = process.env.TELEGRAM_BOT_TOKEN;
 const CHAT = process.env.TELEGRAM_CHAT_ID;
 if (!TG || !CHAT) { console.error("✗ Missing TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID in env"); process.exit(1); }
 
-// Opt-out auto-posting: a pushed draft goes out on its own unless you Decline (or it's mid-edit)
-// within the objection window. Spacing keeps it a steady trickle, never a burst. Disable with
-// X_AUTOPOST=0; tune the timings with X_AUTOPOST_DELAY_MIN / X_AUTOPOST_SPACING_MIN.
-// Auto-post is for REPURPOSE drafts only (x-track). Product/original ideas (x-ideas) always wait
-// for an explicit tap — they're the CTA tweets that need a human's taste. Wide spacing so the
-// repurpose stream can never bunch into a burst.
-const AUTO_POST = process.env.X_AUTOPOST !== "0";
+// Auto-posting is OFF by default now: EVERY draft (football takes included) waits for an
+// explicit tap, so nothing goes out that doesn't sound like us. The founder felt the auto
+// stream read as a bot posting too often, so approve-each is the rule. Opt back in per-type
+// with X_AUTOPOST=1; tune timings with X_AUTOPOST_DELAY_MIN / X_AUTOPOST_SPACING_MIN.
+const AUTO_POST = process.env.X_AUTOPOST === "1";
 const AUTO_DELAY_MS = (Number(process.env.X_AUTOPOST_DELAY_MIN) || 20) * 60 * 1000;    // wait this long for an objection
 const AUTO_SPACING_MS = (Number(process.env.X_AUTOPOST_SPACING_MIN) || 120) * 60 * 1000; // min gap between auto-posts (2h, no bursts)
 // Engines just QUEUE drafts; the poller trickles them to Telegram ONE at a time, this far apart,

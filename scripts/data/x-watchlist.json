@@ -1,10 +1,10 @@
 {
-  "_readme": "Accounts YourScore tracks to repurpose into @Yourscore_App_ tweets. 'username' (no @), optional 'note' steers the reword voice/filter, optional 'perRun' overrides how many NEW tweets to pull per run. Global defaults.perRun applies otherwise.",
-  "defaults": { "perRun": 2 },
+  "_readme": "Accounts YourScore watches ONLY as a signal of what's actually happening in football right now. We do NOT reword their tweets or repost their photos - we write our own genuine reaction. 'note' steers the angle for that account. 'perRun' overrides how many new tweets to consider per run; keep it low, we post a few great things not many average ones.",
+  "defaults": { "perRun": 1 },
   "accounts": [
-    { "username": "brfootball", "note": "Football news and culture. Punchy, conversational reaction to the moment, especially live World Cup games. Often posts clean action photos we can repost." },
-    { "username": "Footballtweet", "note": "World Cup discussion account. Lean into the live match debate and the night's talking points." },
-    { "username": "BBCSport", "note": "Reliable news. React to the genuine World Cup story or result. Skip non-football and pure programming/schedule posts." },
-    { "username": "OptaJoe", "note": "Stat-led. Lead with the number, then a real-fan reaction. Often a natural quiz hook (which player, who scored, what record). During the World Cup, prioritise live match stats and records." }
+    { "username": "brfootball", "note": "Signals the big live moment. React as fans to what just happened on the pitch, in our own words." },
+    { "username": "Footballtweet", "note": "Signals the night's talking point. If there's a genuine debate a knowledge crew would enjoy, that's our angle." },
+    { "username": "BBCSport", "note": "Signals the real result or story. Only the genuine football moment, never programming/schedule posts. Our own take, never a news summary." },
+    { "username": "OptaJoe", "note": "Signals a record or milestone that might be a natural knowledge/trivia hook (which player, who scored, what record) - but lead with the human reaction, never a data dump." }
   ]
 }
