@@ -1,5 +1,6 @@
 import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
+import { QUIZ_BOT_ID } from "@/lib/versus/quizBot";
 
 // Community-activity numbers for the Versus tab. ALL numbers the UI shows come
 // from here (components never hardcode a figure). Two kinds:
@@ -19,7 +20,9 @@ export interface VersusActivity {
   /** Open public Lobbies joinable right now. Real. */
   openLobbies: number;
   /** Most-attempted quiz of the last 24h. Real (null if nothing qualifies). */
-  trending: { packId: string; name: string; attempts: number } | null;
+  trending: { packId: string; name: string; cover: string | null; attempts: number } | null;
+  /** Busiest player of the last 24h (community-highlights carousel). Real. */
+  mostActive: { userId: string; name: string; avatarUrl: string | null; plays: number } | null;
 }
 
 export interface ReadyPlayer {
@@ -28,6 +31,8 @@ export interface ReadyPlayer {
   avatarUrl: string | null;
   game: "quiz" | "38-0";
   status: "In lobby" | "Online";
+  /** "W-L" from the global rank board (null when unranked). */
+  record: string | null;
   /** Present when the player is hosting an open Lobby — Play deep-joins it. */
   joinCode: string | null;
 }
@@ -59,18 +64,31 @@ export async function getVersusActivity(): Promise<VersusActivity> {
     db.from("quiz_queue").select("user_id", { count: "exact", head: true }).gte("enqueued_at", hoursAgoIso(0.05)),
   ]);
 
-  // Trending = the pack with the most attempts in 24h; active = distinct players.
+  // Trending = the pack with the most attempts in 24h; active = distinct
+  // players; mostActive = the busiest human of the last 24h (bots excluded).
+  const botIds = new Set([QUIZ_BOT_ID, process.env.HEALTH_BOT_USER_ID ?? ""].filter(Boolean));
   const byPack = new Map<string, number>();
+  const byUser = new Map<string, number>();
   const users = new Set<string>();
   for (const a of attempts.data ?? []) {
     users.add(a.user_id);
     byPack.set(a.pack_id, (byPack.get(a.pack_id) ?? 0) + 1);
+    if (!botIds.has(a.user_id)) byUser.set(a.user_id, (byUser.get(a.user_id) ?? 0) + 1);
   }
+
   let trending: VersusActivity["trending"] = null;
   const top = Array.from(byPack.entries()).sort((a, b) => b[1] - a[1])[0];
   if (top && top[1] >= 2) {
-    const { data: pack } = await db.from("quiz_packs").select("name").eq("id", top[0]).maybeSingle();
-    if (pack) trending = { packId: top[0], name: pack.name, attempts: top[1] };
+    const { data: pack } = await db.from("quiz_packs").select("name, metadata").eq("id", top[0]).maybeSingle();
+    const meta = (pack?.metadata ?? null) as { cover_image?: string } | null;
+    if (pack) trending = { packId: top[0], name: pack.name, cover: meta?.cover_image ?? null, attempts: top[1] };
+  }
+
+  let mostActive: VersusActivity["mostActive"] = null;
+  const busiest = Array.from(byUser.entries()).sort((a, b) => b[1] - a[1])[0];
+  if (busiest && busiest[1] >= 2) {
+    const { data: p } = await db.from("profiles").select("display_name, avatar_url").eq("id", busiest[0]).maybeSingle();
+    if (p) mostActive = { userId: busiest[0], name: p.display_name ?? "Player", avatarUrl: p.avatar_url, plays: busiest[1] };
   }
 
   const realLooking = (queue38.count ?? 0) + (queueQuiz.count ?? 0);
@@ -81,6 +99,7 @@ export async function getVersusActivity(): Promise<VersusActivity> {
     activeToday: users.size,
     openLobbies: openLobbies.count ?? 0,
     trending,
+    mostActive,
   };
 }
 
@@ -99,6 +118,14 @@ export async function getReadyPlayers(): Promise<ReadyPlayer[]> {
     .gte("created_at", hoursAgoIso(3))
     .order("created_at", { ascending: false })
     .limit(6);
+  type LbRow = { user_id: string; display_name: string; avatar_url: string | null; overall_score: number; wins: number | null; losses: number | null };
+  const { data: lb } = await db.rpc("get_yourscore_leaderboard", { p_user_ids: undefined, p_limit: 30 });
+  const lbRows = (lb ?? []) as LbRow[];
+  const recordOf = (id: string): string | null => {
+    const r = lbRows.find((x) => x.user_id === id);
+    return r && (r.wins ?? 0) + (r.losses ?? 0) > 0 ? `${r.wins ?? 0}-${r.losses ?? 0}` : null;
+  };
+
   const hostIds = Array.from(new Set((lobbies ?? []).map((l) => l.created_by).filter(Boolean))) as string[];
   if (hostIds.length) {
     const { data: profiles } = await db.from("profiles").select("id, display_name, avatar_url").in("id", hostIds);
@@ -107,14 +134,12 @@ export async function getReadyPlayers(): Promise<ReadyPlayer[]> {
       const p = l.created_by ? byId.get(l.created_by) : null;
       if (!p || seen.has(p.id)) continue;
       seen.add(p.id);
-      out.push({ userId: p.id, name: p.display_name ?? "Player", avatarUrl: p.avatar_url, game: "quiz", status: "In lobby", joinCode: l.code });
+      out.push({ userId: p.id, name: p.display_name ?? "Player", avatarUrl: p.avatar_url, game: "quiz", status: "In lobby", record: recordOf(p.id), joinCode: l.code });
     }
   }
 
   // 2. Fill with active ranked players (challengeable, not deep-joinable).
-  type LbRow = { user_id: string; display_name: string; avatar_url: string | null; overall_score: number };
-  const { data: lb } = await db.rpc("get_yourscore_leaderboard", { p_user_ids: undefined, p_limit: 30 });
-  const candidates = ((lb ?? []) as LbRow[]).filter((r) => (r.overall_score ?? 0) > 0 && !seen.has(r.user_id)).slice(0, 12);
+  const candidates = lbRows.filter((r) => (r.overall_score ?? 0) > 0 && !seen.has(r.user_id)).slice(0, 12);
   // Real signal for preferred game: players holding an active 38-0 XI are 38-0 people.
   const { data: teams } = candidates.length
     ? await db.from("draft_teams").select("user_id").eq("status", "active").in("user_id", candidates.map((c) => c.user_id))
@@ -126,7 +151,7 @@ export async function getReadyPlayers(): Promise<ReadyPlayer[]> {
       userId: c.user_id, name: c.display_name, avatarUrl: c.avatar_url,
       game: has38.has(c.user_id) ? "38-0" : "quiz",
       // TODO(real-presence): "Online" is optimistic until a presence signal exists.
-      status: "Online", joinCode: null,
+      status: "Online", record: recordOf(c.user_id), joinCode: null,
     });
   }
   return out.slice(0, 10);

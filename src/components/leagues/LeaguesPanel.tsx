@@ -19,7 +19,6 @@ import { PublicLeaguesRail } from "@/components/leagues/PublicLeagueCard";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type MainTab = "38-0" | "quiz";
 type QuizSubTab = "mine" | "global";
 
 interface DraftLeague { id: string; name: string; code: string; member_count: number; }
@@ -68,10 +67,19 @@ function playerColor(name: string | null) {
   return palettes[n.charCodeAt(0) % palettes.length];
 }
 
-function initMainTab(): MainTab {
-  if (typeof window === "undefined") return "38-0";
+// Carousel mockup: one MY LEAGUES list filtered by game chips + a DISCOVER view.
+type LeaguesView = "mine" | "discover";
+type GameChip = "all" | "38-0" | "quiz";
+
+function initView(): LeaguesView {
+  if (typeof window === "undefined") return "mine";
+  return new URLSearchParams(window.location.search).get("tab") === "discover" ? "discover" : "mine";
+}
+
+function initChip(): GameChip {
+  if (typeof window === "undefined") return "all";
   const p = new URLSearchParams(window.location.search).get("tab");
-  return p === "quiz" || p === "global" ? "quiz" : "38-0";
+  return p === "quiz" || p === "global" ? "quiz" : "all";
 }
 
 function initQuizSubTab(): QuizSubTab {
@@ -87,17 +95,20 @@ export function LeaguesPanel({ embedded = false }: { embedded?: boolean }) {
   const { user, loading: userLoading } = useUser();
   const router = useRouter();
 
-  // ── Top-level tab ──
-  const [mainTab, setMainTab] = useState<MainTab>(initMainTab);
+  // ── Top-level controls: MY LEAGUES | DISCOVER + game chips ──
+  const [view, setView] = useState<LeaguesView>(initView);
+  const [gameChip, setGameChip] = useState<GameChip>(initChip);
 
-  function selectMainTab(t: MainTab) {
-    setMainTab(t);
+  function selectView(v: LeaguesView) {
+    setView(v);
     // Embedded in Versus: don't rewrite the URL — replaceState would drop the
     // parent's ?view=leagues param and bounce it back to the Play sub-tab.
     if (typeof window !== "undefined" && !embedded) {
-      window.history.replaceState(null, "", t === "quiz" ? "/leagues?tab=quiz" : "/leagues");
+      window.history.replaceState(null, "", v === "discover" ? "/leagues?tab=discover" : "/leagues");
     }
   }
+  const show38 = view === "mine" && gameChip !== "quiz";
+  const showQuiz = view === "mine" && gameChip !== "38-0";
 
   // ── 38-0 leagues state ──
   const [draftLeagues, setDraftLeagues] = useState<DraftLeague[]>([]);
@@ -253,50 +264,72 @@ export function LeaguesPanel({ embedded = false }: { embedded?: boolean }) {
       <div className={embedded ? "" : "sticky top-0 z-30 pt-safe"} style={embedded ? undefined : { background: "rgba(10,10,15,0.92)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
         <nav className="flex items-center justify-between px-5 py-4 max-w-lg mx-auto">
           {!embedded && <span className="font-display text-2xl text-white tracking-wider">Leagues</span>}
-          {user && mainTab === "quiz" && (
-            <div className="flex items-center gap-2">
-              <button onClick={() => setJoinSheetOpen(true)}
-                className="flex items-center gap-1.5 font-body text-sm font-semibold px-4 py-2 rounded-xl transition-all hover:opacity-90"
-                style={{ background: "rgba(255,255,255,0.05)", color: "#9aa39d", border: "1px solid rgba(255,255,255,0.1)" }}>
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                Join
-              </button>
-              <Link href="/league/new"
-                className="flex items-center gap-1.5 font-body text-sm font-semibold px-4 py-2 rounded-xl transition-all hover:opacity-90"
-                style={{ background: "rgba(174,234,0,0.12)", color: "#aeea00", border: "1px solid rgba(174,234,0,0.2)" }}>
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M7 1v12M1 7h12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                </svg>
-                New
-              </Link>
-            </div>
-          )}
         </nav>
 
-        {/* ── Main tab selector ─────────────────────────────────────────── */}
+        {/* ── View selector: MY LEAGUES | DISCOVER + game chips ──────────── */}
         <div className="px-5 pb-3 max-w-lg mx-auto">
           <div className="flex gap-6" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
-            {([["38-0", "38-0", "#aeea00"] as const, ["quiz", "Quiz Battle", "#00d8c0"] as const]).map(([key, label, accent]) => {
-              const active = mainTab === key;
+            {([["mine", "My Leagues"] as const, ["discover", "Discover"] as const]).map(([key, label]) => {
+              const active = view === key;
               return (
-                <button key={key} onClick={() => selectMainTab(key)}
+                <button key={key} onClick={() => selectView(key)}
                   className="relative pb-2.5 font-display text-base tracking-wide transition-colors"
                   style={{ color: active ? "#eef2f0" : "#8a948f" }}>
                   {label}
-                  {active && <span className="absolute left-0 right-0 -bottom-px h-[3px] rounded-t" style={{ background: accent }} />}
+                  {active && <span className="absolute left-0 right-0 -bottom-px h-[3px] rounded-t" style={{ background: key === "discover" ? "#00d8c0" : "#aeea00" }} />}
                 </button>
               );
             })}
           </div>
+          {view === "mine" && (
+            <div className="flex gap-2 mt-3">
+              {([["all", "All", "#eef2f0"] as const, ["38-0", "38-0", "#aeea00"] as const, ["quiz", "Quiz Battle", "#00d8c0"] as const]).map(([key, label, accent]) => {
+                const active = gameChip === key;
+                return (
+                  <button key={key} onClick={() => setGameChip(key)}
+                    className="font-body text-xs font-semibold px-3.5 py-1.5 rounded-lg transition-all"
+                    style={{
+                      background: active ? `${accent === "#eef2f0" ? "rgba(255,255,255,0.12)" : accent + "22"}` : "rgba(255,255,255,0.04)",
+                      color: active ? accent : "#8a948f",
+                      border: `1px solid ${active ? (accent === "#eef2f0" ? "rgba(255,255,255,0.25)" : accent + "55") : "transparent"}`,
+                    }}>
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
       <div className="relative z-0 max-w-lg mx-auto px-5 pt-4 space-y-4">
 
+        {/* ════════════════════ DISCOVER ═════════════════════════════════════ */}
+        {view === "discover" && (
+          <>
+            <PublicLeaguesRail showEmpty heading={false} />
+            <p className="font-body text-xs text-text-muted leading-relaxed pt-1">
+              Public leagues are open to everyone — join one and your points count on its board. Got a private code? Use <button onClick={() => setJoinSheetOpen(true)} className="underline" style={{ color: "#00d8c0" }}>join with code</button>.
+            </p>
+          </>
+        )}
+
+        {/* Quick actions (mine view): create or join */}
+        {view === "mine" && user && (
+          <div className="flex gap-2">
+            <Link href="/league/new" className="flex-1 flex items-center justify-center gap-2 rounded-2xl py-3.5 font-display text-sm tracking-wide active:scale-[0.98] transition-transform" style={{ background: "#aeea00", color: "#13200a" }}>
+              CREATE LEAGUE
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" /></svg>
+            </Link>
+            <button onClick={() => setJoinSheetOpen(true)} className="flex-1 flex items-center justify-center gap-2 rounded-2xl py-3.5 font-display text-sm tracking-wide active:scale-[0.98] transition-transform" style={{ background: "rgba(255,255,255,0.04)", color: "#eef2f0", border: "1px solid rgba(255,255,255,0.14)" }}>
+              <svg width="15" height="15" viewBox="0 0 20 20" fill="none"><rect x="2" y="4.5" width="16" height="11" rx="2.5" stroke="#00d8c0" strokeWidth="1.5" /><path d="M6 9.5h.01M10 9.5h.01M14 9.5h.01" stroke="#00d8c0" strokeWidth="2.4" strokeLinecap="round" /></svg>
+              JOIN WITH CODE
+            </button>
+          </div>
+        )}
+
         {/* ════════════════════ CLUB LEAGUES (cross-game, partner-owned) ════ */}
-        {clubLeagues.length > 0 && (
+        {view === "mine" && clubLeagues.length > 0 && (
           <div>
             <p className="font-body text-xs uppercase tracking-widest mb-3" style={{ color: "#586058" }}>My club leagues</p>
             <div className="space-y-2">
@@ -328,7 +361,7 @@ export function LeaguesPanel({ embedded = false }: { embedded?: boolean }) {
         )}
 
         {/* ════════════════════ 38-0 TAB ════════════════════════════════════ */}
-        {mainTab === "38-0" && (
+        {show38 && (
           <>
             {!user && !userLoading ? (
               <div className="rounded-2xl p-6 text-center" style={{ background: "#0e1611", border: "1px solid rgba(174,234,0,0.15)" }}>
@@ -380,8 +413,9 @@ export function LeaguesPanel({ embedded = false }: { embedded?: boolean }) {
                   </div>
                 )}
 
-                {/* Create or join — one combined card, not two competing forms */}
-                <div className="rounded-2xl overflow-hidden" style={{ background: "#0e1611", border: "1px solid rgba(174,234,0,0.18)" }}>
+                {/* Create or join a 38-0 league — shown on its own chip only (the
+                    top action row covers quiz create; this is the 38-0 path). */}
+                <div className="rounded-2xl overflow-hidden" style={{ background: "#0e1611", border: "1px solid rgba(174,234,0,0.18)", display: gameChip === "38-0" ? undefined : "none" }}>
                   <div className="px-4 pt-4 pb-3">
                     <p className="font-display tracking-wide" style={{ fontSize: 16, color: "#aeea00" }}>
                       {draftLeagues.length > 0 ? "START ANOTHER LEAGUE" : "START A LEAGUE"}
@@ -432,15 +466,13 @@ export function LeaguesPanel({ embedded = false }: { embedded?: boolean }) {
                   <span className="font-display text-sm tracking-wide flex-shrink-0" style={{ color: "#aeea00" }}>VIEW →</span>
                 </Link>
 
-                {/* Public 38-0 leagues anyone can join */}
-                <PublicLeaguesRail game="38-0" showEmpty />
               </>
             )}
           </>
         )}
 
         {/* ════════════════════ QUIZ TAB ════════════════════════════════════ */}
-        {mainTab === "quiz" && (
+        {showQuiz && (
           <>
             {/* Not signed in */}
             {!userLoading && !user && (
@@ -579,18 +611,7 @@ export function LeaguesPanel({ embedded = false }: { embedded?: boolean }) {
                   </div>
                 )}
 
-                {/* Persistent create CTA */}
-                {!quizLoading && user && (
-                  <Link href="/league/new"
-                    className="flex items-center justify-center gap-2 w-full py-4 rounded-2xl font-display text-lg tracking-wide active:scale-[0.99] transition-transform"
-                    style={{ background: "#aeea00", color: "#13200a" }}>
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1v14M1 8h14" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" /></svg>
-                    CREATE A LEAGUE
-                  </Link>
-                )}
 
-                {/* Public quiz leagues anyone can join */}
-                {!quizLoading && user && <PublicLeaguesRail game="quiz" showEmpty />}
               </>
             )}
 

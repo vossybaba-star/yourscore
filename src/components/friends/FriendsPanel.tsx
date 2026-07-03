@@ -351,10 +351,17 @@ export function FriendsPanel({ embedded = false }: { embedded?: boolean }) {
 
       <div className="max-w-lg mx-auto px-5 pt-4">
 
-        {/* ── Invite ─────────────────────────────────────────────────────── */}
-        <InviteCard myId={myId} />
+        {/* ── Rivals — head-to-head records vs friends (carousel mockup: first) */}
+        {rivals.length > 0 && (
+          <>
+            <p className="font-body text-xs font-bold uppercase tracking-widest mb-2.5" style={{ color: "#586058" }}>Rivals</p>
+            <div className="space-y-2">
+              {rivals.map((r) => <RivalRow key={r.opponentId} r={r} isFriend />)}
+            </div>
+          </>
+        )}
 
-        {/* ── Friend requests (incoming leads; hidden when none) ───────────── */}
+        {/* ── Friend requests (hidden when none) ───────────────────────────── */}
         {pendingReceived.length > 0 && (
           <>
             <SectionLabel>Friend requests</SectionLabel>
@@ -377,16 +384,6 @@ export function FriendsPanel({ embedded = false }: { embedded?: boolean }) {
           </>
         )}
 
-        {/* ── Rivals — head-to-head records vs friends ──────────────────── */}
-        {rivals.length > 0 && (
-          <>
-            <SectionLabel>Rivals</SectionLabel>
-            <div className="space-y-2">
-              {rivals.map((r) => <RivalRow key={r.opponentId} r={r} isFriend />)}
-            </div>
-          </>
-        )}
-
         {/* ── People you've played (not friends yet) ────────────────────── */}
         {played.length > 0 && (
           <>
@@ -399,6 +396,9 @@ export function FriendsPanel({ embedded = false }: { embedded?: boolean }) {
             </div>
           </>
         )}
+
+        {/* ── Invite ─────────────────────────────────────────────────────── */}
+        <div className="mt-7"><InviteCard myId={myId} /></div>
 
         {/* ── All friends ───────────────────────────────────────────────── */}
         <SectionLabel>{accepted.length > 0 ? `Friends (${accepted.length})` : "Friends"}</SectionLabel>

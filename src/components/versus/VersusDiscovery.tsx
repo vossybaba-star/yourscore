@@ -69,13 +69,12 @@ export function VersusDiscovery({ promoOnly = false }: { promoOnly?: boolean } =
   return (
     <>
       {showPromo && (
-        <div className="rounded-2xl p-4 mt-6" style={{ background: "linear-gradient(150deg, rgba(0,216,192,0.14), #0c1613)", border: "1px solid rgba(0,216,192,0.28)" }}>
-          <p className="font-display text-lg text-white">Better with friends</p>
-          <p className="font-body text-xs text-text-muted mt-1 mb-3.5 leading-relaxed">Add your friends and go head-to-head on quizzes and 38-0 — every result counts toward your record and rivalries.</p>
-          <div className="flex gap-2">
-            <Link href="/versus?view=friends" className="rounded-xl px-4 py-2.5 font-display text-sm tracking-wide" style={{ background: TEAL, color: "#04231f" }}>Add friends →</Link>
-            <Link href="/versus?view=friends" className="rounded-xl px-4 py-2.5 font-display text-sm tracking-wide" style={{ background: "rgba(255,255,255,0.05)", color: "#eef2f0", border: "1px solid rgba(255,255,255,0.12)" }}>Invite a friend</Link>
+        <div className="flex items-center gap-3 rounded-2xl px-4 py-3.5 mt-6" style={{ background: "linear-gradient(150deg, rgba(0,216,192,0.14), #0c1613)", border: "1px solid rgba(0,216,192,0.28)" }}>
+          <div className="flex-1 min-w-0">
+            <p className="font-display text-base text-white leading-none">Better with friends</p>
+            <p className="font-body text-[11px] text-text-muted mt-1 leading-snug">Add friends to challenge — never miss a battle.</p>
           </div>
+          <Link href="/versus?view=friends" className="font-display text-xs tracking-wide px-4 py-2.5 rounded-xl flex-shrink-0 active:scale-[0.97] transition-transform" style={{ background: TEAL, color: "#04231f" }}>ADD FRIENDS +</Link>
         </div>
       )}
 

@@ -5,10 +5,10 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 
-// "People ready to play" — suggested opponents (NOT friends): open-Lobby hosts
-// you can join right now, plus active ranked players you can challenge. Data
-// from /api/versus/ready; self is filtered out client-side (the route is a
-// shared cached list).
+// "People ready to play" — compact rows (carousel mockup): avatar, name,
+// record, PLAY. Suggested opponents (NOT friends): open-Lobby hosts you can
+// join right now, plus active ranked players. Data from /api/versus/ready;
+// self filtered out client-side (the route is a shared cached list).
 
 const TEAL = "#00d8c0";
 const LIME = "#aeea00";
@@ -19,6 +19,7 @@ interface ReadyPlayer {
   avatarUrl: string | null;
   game: "quiz" | "38-0";
   status: "In lobby" | "Online";
+  record: string | null;
   joinCode: string | null;
 }
 
@@ -34,7 +35,7 @@ export function ReadyToPlayRail() {
         fetch("/api/versus/ready").then((r) => r.json()).catch(() => ({ players: [] })),
       ]);
       const uid = auth.user?.id;
-      setPlayers(((res.players ?? []) as ReadyPlayer[]).filter((p) => p.userId !== uid).slice(0, 8));
+      setPlayers(((res.players ?? []) as ReadyPlayer[]).filter((p) => p.userId !== uid).slice(0, 5));
     })();
   }, []);
 
@@ -49,22 +50,22 @@ export function ReadyToPlayRail() {
   return (
     <div>
       <p className="font-body text-xs font-bold uppercase tracking-widest mt-7 mb-2.5" style={{ color: "#586058" }}>People ready to play</p>
-      <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1 -mx-5 px-5">
+      <div className="space-y-2">
         {players.map((p) => {
           const c = p.game === "38-0" ? LIME : TEAL;
           return (
-            <div key={p.userId} className="rounded-2xl p-3.5 flex-shrink-0 flex flex-col" style={{ width: 150, background: "#0e1611", border: "1px solid rgba(255,255,255,0.08)" }}>
-              <div className="flex items-center justify-between mb-2.5">
-                <PlayerAvatar seed={p.userId} name={p.name} avatarUrl={p.avatarUrl} size={38} />
-                <span className="flex items-center gap-1 font-body text-[10px]" style={{ color: p.status === "In lobby" ? LIME : "#8a948f" }}>
-                  <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: p.status === "In lobby" ? LIME : "#5a655e" }} />
-                  {p.status}
-                </span>
+            <div key={p.userId} className="flex items-center gap-3 rounded-2xl px-3.5 py-2.5" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <PlayerAvatar seed={p.userId} name={p.name} avatarUrl={p.avatarUrl} size={36} />
+              <div className="flex-1 min-w-0">
+                <p className="font-body text-sm font-semibold text-white truncate">{p.name}</p>
+                <p className="font-body text-[11px] truncate">
+                  <span style={{ color: c }}>{p.game === "38-0" ? "38-0" : "Quiz Battle"}</span>
+                  <span style={{ color: "#586058" }}> · {p.status}</span>
+                </p>
               </div>
-              <p className="font-body text-sm font-semibold text-white truncate">{p.name}</p>
-              <p className="font-body text-[11px] mb-3" style={{ color: c }}>{p.game === "38-0" ? "38-0" : "Quiz Battle"}</p>
-              <button onClick={() => play(p)} className="mt-auto w-full font-display text-xs tracking-wide py-2 rounded-lg active:scale-[0.98] transition-transform" style={{ background: `${c}1f`, color: c, border: `1px solid ${c}33` }}>
-                {p.joinCode ? "JOIN →" : "PLAY"}
+              {p.record && <span className="font-display text-sm flex-shrink-0" style={{ color: "#8a948f" }}>{p.record}</span>}
+              <button onClick={() => play(p)} className="font-display text-[11px] tracking-wide px-4 py-2 rounded-lg flex-shrink-0 active:scale-[0.97] transition-transform" style={{ background: c, color: p.game === "38-0" ? "#13200a" : "#04231f" }}>
+                {p.joinCode ? "JOIN" : "PLAY"}
               </button>
             </div>
           );

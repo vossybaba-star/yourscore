@@ -12,6 +12,6 @@ export async function GET() {
     const activity = await getVersusActivity();
     return NextResponse.json(activity, { headers: CACHE_HEADERS });
   } catch {
-    return NextResponse.json({ lookingForMatch: 0, battlesToday: 0, activeToday: 0, openLobbies: 0, trending: null });
+    return NextResponse.json({ lookingForMatch: 0, battlesToday: 0, activeToday: 0, openLobbies: 0, trending: null, mostActive: null });
   }
 }

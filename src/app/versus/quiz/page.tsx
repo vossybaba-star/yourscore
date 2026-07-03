@@ -105,6 +105,17 @@ export default function QuizBattlePage() {
       (a.featuredOrder - b.featuredOrder) || (Number(a.played) - Number(b.played)) || b.createdAt.localeCompare(a.createdAt));
   }, [packs, cat]);
 
+  // Carousel-mockup hero + rail: the lead featured pack and the next few picks.
+  const featuredHero = useMemo(() => {
+    const featured = (packs ?? []).filter((p) => p.featured).sort((a, b) => a.featuredOrder - b.featuredOrder);
+    return featured[0] ?? (packs ?? []).slice().sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0] ?? null;
+  }, [packs]);
+  const popular = useMemo(() => {
+    const pool = (packs ?? []).filter((p) => p.id !== featuredHero?.id);
+    return pool.sort((a, b) =>
+      (a.featuredOrder - b.featuredOrder) || b.createdAt.localeCompare(a.createdAt)).slice(0, 6);
+  }, [packs, featuredHero]);
+
   async function playLive(friend: Friend | null) {
     if (!picked || busy) return;
     setBusy(friend ? `${friend.user_id}:live` : "code"); setErr(null);
@@ -207,23 +218,55 @@ export default function QuizBattlePage() {
               <p className="font-body text-sm text-text-muted mt-2">Both players answer the same questions. Best score wins.</p>
             </div>
 
-            {/* Instant match — the system picks the quiz so both sides get the same one */}
-            <Link href="/versus/find?game=quiz" className="flex items-center gap-3 rounded-2xl px-4 py-3.5 mt-4 active:scale-[0.99] transition-transform" style={{ background: "rgba(0,216,192,0.08)", border: `1px solid ${TEAL}40` }}>
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="flex-shrink-0">
-                <circle cx="10" cy="10" r="8" stroke={TEAL} strokeWidth="1.5" opacity="0.35" />
-                <circle cx="10" cy="10" r="4.5" stroke={TEAL} strokeWidth="1.5" opacity="0.6" />
-                <circle cx="10" cy="10" r="1.6" fill={TEAL} />
-                <path d="M10 10 16 4.5" stroke={TEAL} strokeWidth="1.5" strokeLinecap="round" />
-              </svg>
-              <div className="flex-1 min-w-0">
-                <p className="font-display text-sm text-white leading-none tracking-wide">PLAY INSTANT MATCH</p>
-                <p className="font-body text-[11px] text-text-muted mt-1">Get matched with someone ready to play now</p>
-              </div>
-              <span className="font-display text-xs tracking-wide flex-shrink-0" style={{ color: TEAL }}>GO →</span>
-            </Link>
+            {/* Featured — big cover card, tap to pick */}
+            {featuredHero && (
+              <>
+                <p className="font-body text-xs font-bold uppercase tracking-widest mt-5 mb-2.5" style={{ color: "#586058" }}>Featured</p>
+                <button onClick={() => setPicked(featuredHero)} className="w-full text-left rounded-3xl overflow-hidden active:scale-[0.99] transition-transform" style={{ border: `1px solid ${TEAL}40` }}>
+                  <div className="relative" style={{ height: 150, background: "radial-gradient(ellipse at 50% 80%, rgba(0,216,192,0.15), #0b1310 70%)" }}>
+                    {featuredHero.cover && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={featuredHero.cover} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                    )}
+                    <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(8,13,10,0) 30%, rgba(8,13,10,0.9) 100%)" }} />
+                    <span className="absolute top-2.5 left-2.5 font-body text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded-md" style={{ background: TEAL, color: "#04231f" }}>New</span>
+                    <span className="absolute top-2.5 right-2.5 font-display text-[11px] px-2 py-0.5 rounded-lg" style={{ background: "rgba(0,0,0,0.55)", color: TEAL, border: "1px solid rgba(0,216,192,0.3)" }}>{featuredHero.questionCount}Q</span>
+                    <div className="absolute bottom-0 left-0 right-0 p-4 flex items-end justify-between gap-3">
+                      <p className="font-body text-[15px] font-bold text-white leading-snug min-w-0">{featuredHero.name}</p>
+                      <span className="font-display text-[11px] tracking-wide px-3.5 py-2 rounded-lg flex-shrink-0" style={{ background: TEAL, color: "#04231f" }}>PLAY QUIZ →</span>
+                    </div>
+                  </div>
+                </button>
+              </>
+            )}
 
-            {/* Category filter pills */}
-            <div className="flex gap-2 overflow-x-auto no-scrollbar mt-4 -mx-5 px-5">
+            {/* Popular — swipeable covers */}
+            {popular.length > 0 && (
+              <>
+                <p className="font-body text-xs font-bold uppercase tracking-widest mt-6 mb-2.5" style={{ color: "#586058" }}>Popular quizzes</p>
+                <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1 -mx-5 px-5">
+                  {popular.map((p) => (
+                    <button key={p.id} onClick={() => setPicked(p)} className="flex-shrink-0 text-left rounded-2xl overflow-hidden active:scale-[0.97] transition-transform" style={{ width: 108, border: "1px solid rgba(0,216,192,0.18)" }}>
+                      <div className="relative" style={{ height: 76, background: "radial-gradient(ellipse at 50% 80%, rgba(0,216,192,0.12), #0b1310 70%)" }}>
+                        {p.cover ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={p.cover} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
+                        ) : (
+                          <div className="absolute inset-0 grid place-items-center font-display text-2xl text-white">{initial(p.name)}</div>
+                        )}
+                        {!p.played && <span className="absolute top-1.5 left-1.5 font-body text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded" style={{ background: TEAL, color: "#04231f" }}>New</span>}
+                        <span className="absolute top-1.5 right-1.5 font-display text-[10px] px-1.5 rounded" style={{ background: "rgba(0,0,0,0.55)", color: TEAL }}>{p.questionCount}Q</span>
+                      </div>
+                      <p className="font-body text-[11px] font-semibold text-white leading-snug line-clamp-2 px-2 py-2" style={{ background: "#0e1611" }}>{p.name}</p>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* All quizzes — full library with filters */}
+            <p className="font-body text-xs font-bold uppercase tracking-widest mt-6 mb-1" style={{ color: "#586058" }}>All quizzes</p>
+            <div className="flex gap-2 overflow-x-auto no-scrollbar mt-2 -mx-5 px-5">
               {CATS.filter((c) => c.key === "all" || counts[c.key] > 0).map((c) => {
                 const active = c.key === cat;
                 return (
@@ -260,6 +303,34 @@ export default function QuizBattlePage() {
                 ))}
               </div>
             )}
+
+            {/* How do you want to play? */}
+            <p className="font-body text-xs font-bold uppercase tracking-widest mt-7 mb-2.5" style={{ color: "#586058" }}>How do you want to play?</p>
+            <div className="space-y-2.5">
+              {([
+                {
+                  title: "FIND OPPONENT", sub: "Get matched instantly", href: "/versus/find?game=quiz",
+                  icon: <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke={TEAL} strokeWidth="1.5" opacity="0.4" /><circle cx="10" cy="10" r="4.5" stroke={TEAL} strokeWidth="1.5" opacity="0.7" /><circle cx="10" cy="10" r="1.6" fill={TEAL} /><path d="M10 10 16 4.5" stroke={TEAL} strokeWidth="1.5" strokeLinecap="round" /></svg>,
+                },
+                {
+                  title: "CHALLENGE FRIEND", sub: "Send a scorecard from a quiz you've played", href: "/versus/challenge",
+                  icon: <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M17.5 2.5 9 11M17.5 2.5 12 17.5l-3-6.5-6.5-3L17.5 2.5Z" stroke={TEAL} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" /></svg>,
+                },
+                {
+                  title: "SHARE CODE", sub: "Start a Lobby and invite anyone", href: "/play/new",
+                  icon: <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><rect x="2" y="4.5" width="16" height="11" rx="2.5" stroke={TEAL} strokeWidth="1.5" /><path d="M6 9.5h.01M10 9.5h.01M14 9.5h.01" stroke={TEAL} strokeWidth="2.4" strokeLinecap="round" /></svg>,
+                },
+              ] as const).map((row) => (
+                <Link key={row.title} href={row.href} className="w-full flex items-center gap-3.5 rounded-2xl px-4 py-4 text-left active:scale-[0.99] transition-transform" style={{ background: "#0e1611", border: "1px solid rgba(0,216,192,0.22)" }}>
+                  <span className="w-10 h-10 rounded-xl grid place-items-center flex-shrink-0" style={{ background: "rgba(0,216,192,0.1)", border: "1px solid rgba(0,216,192,0.28)" }}>{row.icon}</span>
+                  <span className="flex-1 min-w-0">
+                    <span className="block font-display text-base text-white leading-none tracking-wide">{row.title}</span>
+                    <span className="block font-body text-xs text-text-muted mt-1">{row.sub}</span>
+                  </span>
+                  <svg width="16" height="16" viewBox="0 0 18 18" fill="none" style={{ color: TEAL, flexShrink: 0 }}><path d="M6 3l6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                </Link>
+              ))}
+            </div>
           </>
         )}
       </div>

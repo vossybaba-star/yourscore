@@ -7,14 +7,28 @@ import { BackPill } from "@/components/ui/BackPill";
 import { useUser } from "@/hooks/useUser";
 import { useVersusStats } from "@/hooks/useVersusStats";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
+import { PitchArt } from "@/components/versus/GameTileArt";
 
-// Versus-owned 38-0 challenge entry. Reuses the live-match API (/api/draft/live)
-// but presents the mockup's "who are you playing → challenge sent (code)" flow
-// inside Versus, so 38-0 challenges feel like their own experience instead of
-// bouncing to the standalone /38-0/live game tab.
+// Versus-owned 38-0 challenge entry (carousel mockup): pitch-art hero, a
+// "HOW DO YOU WANT TO PLAY?" chevron-row stack (find / challenge / share code),
+// recent rivals with records, and a compact join-by-code. Reuses the live-match
+// API (/api/draft/live).
 
 const LIME = "#aeea00";
 type Resp = { match?: { id: string; join_code?: string }; error?: string };
+
+function PlayRow({ icon, title, sub, onClick }: { icon: React.ReactNode; title: string; sub: string; onClick: () => void }) {
+  return (
+    <button onClick={onClick} className="w-full flex items-center gap-3.5 rounded-2xl px-4 py-4 text-left active:scale-[0.99] transition-transform" style={{ background: "#0e1611", border: "1px solid rgba(174,234,0,0.22)" }}>
+      <span className="w-10 h-10 rounded-xl grid place-items-center flex-shrink-0" style={{ background: "rgba(174,234,0,0.1)", border: "1px solid rgba(174,234,0,0.28)" }}>{icon}</span>
+      <span className="flex-1 min-w-0">
+        <span className="block font-display text-base text-white leading-none tracking-wide">{title}</span>
+        <span className="block font-body text-xs text-text-muted mt-1">{sub}</span>
+      </span>
+      <svg width="16" height="16" viewBox="0 0 18 18" fill="none" style={{ color: LIME, flexShrink: 0 }}><path d="M6 3l6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+    </button>
+  );
+}
 
 export default function Versus380Page() {
   const router = useRouter();
@@ -32,13 +46,21 @@ export default function Versus380Page() {
     return res.json().catch(() => ({ error: "Request failed" }));
   }
 
-  async function createChallenge() {
+  /** Create a friend Lobby; optionally fire the native share sheet straight away. */
+  async function createChallenge(thenShare: boolean) {
     if (busy) return;
     setBusy(true); setError(null); setNeedTeam(false);
     const r = await api({ action: "create" });
     setBusy(false);
     if (r.error) { if (/team/i.test(r.error)) setNeedTeam(true); else setError(r.error); return; }
-    if (r.match) { setMatchId(r.match.id); setCode(r.match.join_code ?? null); }
+    if (r.match) {
+      setMatchId(r.match.id);
+      setCode(r.match.join_code ?? null);
+      if (thenShare && r.match.join_code && typeof navigator !== "undefined") {
+        const url = `${location.origin}/38-0/live/${r.match.join_code}`;
+        navigator.share?.({ title: "38-0", text: `Take me on at 38-0 — code ${r.match.join_code}`, url }).catch(() => {});
+      }
+    }
   }
 
   async function join() {
@@ -73,16 +95,17 @@ export default function Versus380Page() {
 
   return (
     <main className="min-h-dvh bg-bg pb-28">
-      {/* Image-backed header */}
-      <div className="relative">
-        <div className="absolute inset-0" style={{ background: "url(/email/wc-draft.png) center/cover" }} />
-        <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(8,13,10,0.72) 0%, rgba(8,13,10,0.86) 55%, #080d0a 100%)" }} />
+      {/* Pitch-art hero (built graphics, not photos) */}
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0" style={{ background: "radial-gradient(120% 90% at 50% 0%, rgba(174,234,0,0.14), #080d0a 70%)" }} />
+        <div className="absolute inset-0 opacity-60"><PitchArt /></div>
+        <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(8,13,10,0.25) 0%, rgba(8,13,10,0.7) 60%, #080d0a 100%)" }} />
         <div className="relative max-w-lg mx-auto px-5 pt-safe">
           <div className="pt-4"><BackPill href="/versus" label="Versus" tone="draft" /></div>
-          <div className="pt-6 pb-5">
+          <div className="pt-6 pb-6">
             <div className="flex items-center gap-2 mb-2">
               <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M8 2.5 3 5.5 5 9.5 7.3 8.3V19a1 1 0 0 0 1 1h5.4a1 1 0 0 0 1-1V8.3L17 9.5l2-4-5-3C14 4.4 12.7 5.6 11 5.6S8 4.4 8 2.5Z" stroke={LIME} strokeWidth="1.7" strokeLinejoin="round" fill={LIME} fillOpacity={0.15} /></svg>
-              <span className="font-body text-xs font-bold uppercase tracking-widest" style={{ color: LIME }}>38-0 · Versus</span>
+              <span className="font-body text-xs font-bold uppercase tracking-widest" style={{ color: LIME }}>38-0</span>
             </div>
             <p className="font-display text-white leading-[0.92]" style={{ fontSize: 36 }}>BUILD YOUR XI.<br />CHALLENGE A RIVAL.</p>
             <p className="font-body text-sm mt-2" style={{ color: "#cdeee7" }}>Draft your ultimate squad and take on a real opponent.</p>
@@ -108,32 +131,46 @@ export default function Versus380Page() {
               ))}
             </div>
           </div>
+        ) : needTeam ? (
+          <div className="rounded-2xl p-6 mt-5 text-center" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <p className="font-body text-sm text-white">Save a team first</p>
+            <p className="font-body text-xs text-text-muted mt-1 mb-3">Draft and save your XI, then come back to challenge.</p>
+            <Link href="/38-0" className="inline-block rounded-xl px-4 py-2 font-display text-sm tracking-wide" style={{ background: LIME, color: "#13200a" }}>Build your XI →</Link>
+          </div>
         ) : (
           <>
+            {/* How do you want to play? */}
+            <p className="font-body text-xs font-bold uppercase tracking-widest mt-5 mb-2.5" style={{ color: "#586058" }}>How do you want to play?</p>
+            <div className="space-y-2.5">
+              <PlayRow
+                icon={<svg width="18" height="18" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke={LIME} strokeWidth="1.5" opacity="0.4" /><circle cx="10" cy="10" r="4.5" stroke={LIME} strokeWidth="1.5" opacity="0.7" /><circle cx="10" cy="10" r="1.6" fill={LIME} /><path d="M10 10 16 4.5" stroke={LIME} strokeWidth="1.5" strokeLinecap="round" /></svg>}
+                title="FIND OPPONENT" sub="Get matched instantly"
+                onClick={() => router.push("/versus/find?game=38-0")} />
+              <PlayRow
+                icon={<svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M17.5 2.5 9 11M17.5 2.5 12 17.5l-3-6.5-6.5-3L17.5 2.5Z" stroke={LIME} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" /></svg>}
+                title="CHALLENGE FRIEND" sub="Pick a friend to play"
+                onClick={() => createChallenge(true)} />
+              <PlayRow
+                icon={<svg width="18" height="18" viewBox="0 0 20 20" fill="none"><rect x="2" y="4.5" width="16" height="11" rx="2.5" stroke={LIME} strokeWidth="1.5" /><path d="M6 9.5h.01M10 9.5h.01M14 9.5h.01" stroke={LIME} strokeWidth="2.4" strokeLinecap="round" /></svg>}
+                title="SHARE CODE" sub="Invite a friend to play"
+                onClick={() => createChallenge(false)} />
+            </div>
+            {busy && <p className="font-body text-xs text-text-muted mt-3 text-center">Creating your challenge…</p>}
+
+            {/* Recent rivals */}
             {rivals.length > 0 && (
               <>
-                <p className="font-body text-xs font-bold uppercase tracking-widest mt-5 mb-2.5" style={{ color: "#586058" }}>Your rivals</p>
-                <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
+                <p className="font-body text-xs font-bold uppercase tracking-widest mt-7 mb-2.5" style={{ color: "#586058" }}>Recent rivals</p>
+                <div className="flex gap-4 overflow-x-auto no-scrollbar pb-1">
                   {rivals.map((r) => (
-                    <div key={r.opponentId} className="flex flex-col items-center gap-1.5 flex-shrink-0" style={{ width: 56 }}>
+                    <div key={r.opponentId} className="flex flex-col items-center gap-1.5 flex-shrink-0" style={{ width: 60 }}>
                       <PlayerAvatar seed={r.opponentId} name={r.name} avatarUrl={r.avatarUrl} size={48} />
                       <span className="font-body text-[10px] text-text-muted truncate w-full text-center">{r.name}</span>
+                      <span className="font-display text-[11px] leading-none" style={{ color: r.lead > 0 ? LIME : r.lead < 0 ? "#ff6b78" : "#ffc233" }}>{r.wins}-{r.losses}</span>
                     </div>
                   ))}
                 </div>
               </>
-            )}
-
-            {needTeam ? (
-              <div className="rounded-2xl p-6 mt-5 text-center" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.08)" }}>
-                <p className="font-body text-sm text-white">Save a team first</p>
-                <p className="font-body text-xs text-text-muted mt-1 mb-3">Draft and save your XI, then come back to challenge.</p>
-                <Link href="/38-0" className="inline-block rounded-xl px-4 py-2 font-display text-sm tracking-wide" style={{ background: LIME, color: "#13200a" }}>Build your XI →</Link>
-              </div>
-            ) : (
-              <button onClick={createChallenge} disabled={busy} className="w-full rounded-2xl py-4 font-display tracking-wide mt-6 active:scale-[0.99] transition-transform disabled:opacity-60" style={{ background: LIME, color: "#13200a" }}>
-                {busy ? "Creating…" : "CREATE A CHALLENGE →"}
-              </button>
             )}
 
             {/* Join with a code */}
@@ -144,21 +181,6 @@ export default function Versus380Page() {
                 style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.12)" }} />
               <button onClick={join} disabled={!joinCode.trim() || busy} className="rounded-2xl px-6 font-display tracking-wide disabled:opacity-40" style={{ background: "rgba(174,234,0,0.15)", color: LIME, border: `1px solid ${LIME}40` }}>JOIN</button>
             </div>
-
-            {/* Instant matchmaking (the polished find-an-opponent flow) */}
-            <Link href="/versus/find?game=38-0" className="flex items-center gap-3 rounded-2xl px-4 py-3.5 mt-7 active:scale-[0.99] transition-transform" style={{ background: "rgba(174,234,0,0.08)", border: `1px solid ${LIME}40` }}>
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="flex-shrink-0">
-                <circle cx="10" cy="10" r="8" stroke={LIME} strokeWidth="1.5" opacity="0.35" />
-                <circle cx="10" cy="10" r="4.5" stroke={LIME} strokeWidth="1.5" opacity="0.6" />
-                <circle cx="10" cy="10" r="1.6" fill={LIME} />
-                <path d="M10 10 16 4.5" stroke={LIME} strokeWidth="1.5" strokeLinecap="round" />
-              </svg>
-              <div className="flex-1 min-w-0">
-                <p className="font-display text-sm text-white leading-none tracking-wide">FIND A LIVE OPPONENT</p>
-                <p className="font-body text-[11px] text-text-muted mt-1">Get matched instantly and play now</p>
-              </div>
-              <span className="font-display text-xs tracking-wide flex-shrink-0" style={{ color: LIME }}>GO →</span>
-            </Link>
 
             {error && <p className="font-body text-sm mt-4 text-center" style={{ color: "#ff6b78" }}>{error}</p>}
           </>

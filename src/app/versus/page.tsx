@@ -12,6 +12,7 @@ import { PitchArt, QuizArt, VersusHeroArt } from "@/components/versus/GameTileAr
 import { VersusDiscovery } from "@/components/versus/VersusDiscovery";
 import { VersusActionCards } from "@/components/versus/VersusActionCard";
 import { LiveActivityStrip } from "@/components/versus/LiveActivityStrip";
+import { CommunityHighlights } from "@/components/versus/CommunityHighlights";
 import { ReadyToPlayRail } from "@/components/versus/ReadyToPlayRail";
 import { PublicLeaguesRail } from "@/components/leagues/PublicLeagueCard";
 import { FriendsPanel } from "@/components/friends/FriendsPanel";
@@ -326,8 +327,8 @@ function VersusInner() {
           {/* Choose your game */}
           <SectionLabel>Choose your game</SectionLabel>
           <div className="flex gap-2.5">
-            <GameTile game="38-0" href="/versus/38-0" title="38-0" sub="Build your XI. Beat their team." />
-            <GameTile game="quiz" href="/versus/quiz" title="Quiz Battle" sub="Same questions. Best score wins." />
+            <GameTile game="38-0" href="/versus/38-0" title="38-0" sub="Build your XI team from scratch." />
+            <GameTile game="quiz" href="/versus/quiz" title="Quiz Battle" sub="Score questions. Beat your rival." />
           </div>
 
           {/* Active matches (beyond the pinned your-turn) */}
@@ -364,11 +365,13 @@ function VersusInner() {
             </>
           )}
 
-          {/* Community: live pulse, suggested opponents, friends promo, leagues */}
+          {/* Community: live pulse, swipeable highlights, suggested opponents,
+              public leagues, friends promo (carousel mockup order) */}
           <LiveActivityStrip />
+          <CommunityHighlights />
           <ReadyToPlayRail />
-          <VersusDiscovery promoOnly />
           <PublicLeaguesRail limit={2} />
+          <VersusDiscovery promoOnly />
         </div>
       )}
 
