@@ -141,13 +141,25 @@ export default function LeaguePage({ params }: { params: { id: string } }) {
       // Member stats come from the canonical league_members aggregates (kept
       // up to date by the update_league_member_stats RPC), not recomputed from
       // a full answers scan.
-      const { data: memberRows } = await sb
+      // TWO-STEP fetch: league_members has NO FK to profiles (only auth.users),
+      // so the embedded `profiles(...)` select errors ("no relationship in
+      // schema cache") and every table rendered "No members yet". Same gotcha
+      // the join page already works around.
+      const { data: statRows } = await sb
         .from("league_members")
-        .select("user_id, total_score, games_played, questions_attempted, questions_correct, current_streak, best_streak, profiles(display_name, avatar_url)")
+        .select("user_id, total_score, games_played, questions_attempted, questions_correct, current_streak, best_streak")
         .eq("league_id", params.id)
-        .order("total_score", { ascending: false }) as { data: MemberRow[] | null };
+        .order("total_score", { ascending: false });
 
-      if (!memberRows) { setLoading(false); return; }
+      if (!statRows) { setLoading(false); return; }
+      const { data: profs } = statRows.length
+        ? await sb.from("profiles").select("id, display_name, avatar_url").in("id", statRows.map((m) => m.user_id))
+        : { data: [] as { id: string; display_name: string | null; avatar_url: string | null }[] };
+      const profById = new Map((profs ?? []).map((p) => [p.id, p]));
+      const memberRows: MemberRow[] = statRows.map((m) => ({
+        ...m,
+        profiles: profById.get(m.user_id) ?? null,
+      }));
       const userIds = memberRows.map((m) => m.user_id);
 
       // "Form" (last 5 games) is the only thing that needs per-answer data — fetch
@@ -290,6 +302,19 @@ export default function LeaguePage({ params }: { params: { id: string } }) {
 
       <div className="relative z-0 max-w-lg mx-auto px-5 pt-5 space-y-4">
 
+        {/* Non-member viewing a public league's table — one tap to join it. */}
+        {user && !members.some((m) => m.user_id === user.id) && (
+          <div className="rounded-2xl p-4 flex items-center gap-3" style={{ background: "rgba(0,216,192,0.08)", border: "1px solid rgba(0,216,192,0.3)" }}>
+            <div className="flex-1 min-w-0">
+              <p className="font-body text-sm font-semibold text-white">You&apos;re viewing as a guest</p>
+              <p className="font-body text-xs text-text-muted mt-0.5">Join and your quiz points count on this table.</p>
+            </div>
+            <Link href={`/league/join/${league.code}`} className="font-display text-sm tracking-wide px-5 py-2.5 rounded-xl flex-shrink-0 active:scale-[0.97] transition-transform" style={{ background: "#00d8c0", color: "#04231f" }}>
+              JOIN →
+            </Link>
+          </div>
+        )}
+
         {/* Tabs */}
         <div className="flex gap-1 p-1 rounded-xl" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.06)" }}>
           {([["standings", "Standings"], ["live", "Members"], ["fixtures", "Fixtures"]] as const).map(([key, label]) => (
@@ -347,7 +372,9 @@ export default function LeaguePage({ params }: { params: { id: string } }) {
               ) : sortedMembers.map((m, i) => {
                 const acc = accuracy(m.questions_correct, m.questions_attempted);
                 const badges = getMemberBadges(m, false);
-                const gPlayed = gamesPlayedByUser[m.user_id] ?? 0;
+                // Canonical aggregate first — the answers-scan recount only covers the
+                // recent slice (and is 0 for members with no fetched answers).
+                const gPlayed = Math.max(m.games_played, gamesPlayedByUser[m.user_id] ?? 0);
                 const formScore = formScores[m.user_id] ?? 0;
                 const isMe = m.user_id === user?.id;
                 const medalColor = i === 0 ? "#ffd700" : i === 1 ? "#c0c0c0" : i === 2 ? "#cd7f32" : null;
@@ -407,7 +434,9 @@ export default function LeaguePage({ params }: { params: { id: string } }) {
               if (myIdx < 0 || myIdx < 4) return null;
               const m = sortedMembers[myIdx];
               const acc = accuracy(m.questions_correct, m.questions_attempted);
-              const gPlayed = gamesPlayedByUser[m.user_id] ?? 0;
+              // Canonical aggregate first — the answers-scan recount only covers the
+                // recent slice (and is 0 for members with no fetched answers).
+                const gPlayed = Math.max(m.games_played, gamesPlayedByUser[m.user_id] ?? 0);
               const formScore = formScores[m.user_id] ?? 0;
               return (
                 <div className="sticky bottom-0 mt-1 rounded-2xl overflow-hidden"

@@ -24,6 +24,28 @@ export interface PublicLeague {
   href?: string;
 }
 
+/** The daily World Cup quiz's prize board IS a league — every player of the
+ *  daily quiz is already "in" it. Real count + top faces from the wc2026
+ *  leaderboard (self-fetch: that route owns the streak-multiplier maths and is
+ *  CDN-cached 60s). */
+async function wcDailyQuizCard(origin: string): Promise<PublicLeague | null> {
+  try {
+    const res = await fetch(`${origin}/api/leaderboard/wc2026`, { next: { revalidate: 60 } });
+    const d = await res.json() as { rows: { userId: string; displayName: string }[]; playerCount: number };
+    if (!d.playerCount) return null;
+    return {
+      id: "wc-daily-quiz-board",
+      name: "World Cup Daily League",
+      description: "Everyone playing the daily World Cup quiz is on this table. Daily streaks boost your score — play every day to climb.",
+      game: "quiz", featured: true, joinCode: "",
+      members: d.playerCount,
+      memberAvatars: (d.rows ?? []).slice(0, 4).map((r) => ({ id: r.userId, name: r.displayName, avatarUrl: null })),
+      creator: "YourScore",
+      kind: "board", href: "/play?tab=leaderboards",
+    };
+  } catch { return null; }
+}
+
 /** The WC Mastermind ranked mode IS a league — surface it in Discover with its
  *  REAL player count and top faces. Playing a daily ranked run is the "join". */
 async function wcMastermindCard(db: ReturnType<typeof createServiceClient>): Promise<PublicLeague | null> {
@@ -55,12 +77,13 @@ export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get("q")?.trim().toLowerCase() ?? "";
   try {
     const db = createServiceClient();
-    const [quiz, draft, mastermind] = await Promise.all([
+    const [quiz, draft, mastermind, wcDaily] = await Promise.all([
       db.from("leagues").select("id, name, code, description, created_by, featured").eq("is_public", true)
         .order("featured", { ascending: false }).order("created_at", { ascending: false }).limit(20),
       db.from("draft_leagues").select("id, name, join_code, owner_id, featured").eq("is_public", true)
         .order("featured", { ascending: false }).order("created_at", { ascending: false }).limit(20),
       wcMastermindCard(db),
+      wcDailyQuizCard(req.nextUrl.origin),
     ]);
 
     type Base = Omit<PublicLeague, "members" | "memberAvatars" | "creator"> & { creatorId: string | null };
@@ -69,7 +92,7 @@ export async function GET(req: NextRequest) {
       ...(draft.data ?? []).map((l) => ({ id: l.id, name: l.name, description: null, game: "38-0" as const, featured: !!l.featured, joinCode: l.join_code, creatorId: l.owner_id })),
     ];
     if (q) all = all.filter((l) => l.name.toLowerCase().includes(q));
-    const official = mastermind && (!q || mastermind.name.toLowerCase().includes(q)) ? [mastermind] : [];
+    const official = [mastermind, wcDaily].filter((c): c is PublicLeague => !!c && (!q || c.name.toLowerCase().includes(q)));
     if (all.length === 0) return NextResponse.json({ leagues: official }, { headers: CACHE_HEADERS });
 
     // Member counts + a few faces per league, batched (public slice is small).

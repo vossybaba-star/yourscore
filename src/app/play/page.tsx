@@ -544,6 +544,13 @@ function PlayPageInner() {
     setJoinSheetOpen(true);
   }, [searchParams]);
 
+  // Deep link straight to a tab (?tab=leaderboards — the Discover tab's
+  // World Cup Daily League card lands on the daily-quiz board).
+  useEffect(() => {
+    const tab = searchParams?.get("tab");
+    if (tab === "leaderboards") setMainTab("leaderboards");
+  }, [searchParams]);
+
   // Fetch WC 2026 leaderboard (lazy, once per session)
   useEffect(() => {
     if (mainTab !== "leaderboards" || wc2026Fetched.current) return;

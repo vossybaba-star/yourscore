@@ -69,7 +69,10 @@ function playerColor(name: string | null) {
 
 // Carousel mockup: one MY LEAGUES list filtered by game chips + a DISCOVER view.
 type LeaguesView = "mine" | "discover";
-type GameChip = "all" | "38-0" | "quiz";
+// Founder call: no "All" — you're either looking at 38-0 leagues or Quiz Battle
+// leagues. The chips only apply to MY LEAGUES; Discover always shows everything
+// (each card carries its own game badge).
+type GameChip = "38-0" | "quiz";
 
 function initView(): LeaguesView {
   if (typeof window === "undefined") return "mine";
@@ -77,9 +80,9 @@ function initView(): LeaguesView {
 }
 
 function initChip(): GameChip {
-  if (typeof window === "undefined") return "all";
+  if (typeof window === "undefined") return "38-0";
   const p = new URLSearchParams(window.location.search).get("tab");
-  return p === "quiz" || p === "global" ? "quiz" : "all";
+  return p === "quiz" || p === "global" ? "quiz" : "38-0";
 }
 
 function initQuizSubTab(): QuizSubTab {
@@ -283,15 +286,15 @@ export function LeaguesPanel({ embedded = false }: { embedded?: boolean }) {
           </div>
           {view === "mine" && (
             <div className="flex gap-2 mt-3">
-              {([["all", "All", "#eef2f0"] as const, ["38-0", "38-0", "#aeea00"] as const, ["quiz", "Quiz Battle", "#00d8c0"] as const]).map(([key, label, accent]) => {
+              {([["38-0", "38-0", "#aeea00"] as const, ["quiz", "Quiz Battle", "#00d8c0"] as const]).map(([key, label, accent]) => {
                 const active = gameChip === key;
                 return (
                   <button key={key} onClick={() => setGameChip(key)}
-                    className="font-body text-xs font-semibold px-3.5 py-1.5 rounded-lg transition-all"
+                    className="flex-1 font-body text-sm font-semibold py-2 rounded-lg transition-all text-center"
                     style={{
-                      background: active ? `${accent === "#eef2f0" ? "rgba(255,255,255,0.12)" : accent + "22"}` : "rgba(255,255,255,0.04)",
+                      background: active ? accent + "22" : "rgba(255,255,255,0.04)",
                       color: active ? accent : "#8a948f",
-                      border: `1px solid ${active ? (accent === "#eef2f0" ? "rgba(255,255,255,0.25)" : accent + "55") : "transparent"}`,
+                      border: `1px solid ${active ? accent + "55" : "transparent"}`,
                     }}>
                     {label}
                   </button>

@@ -34,7 +34,14 @@ export function PublicLeagueCard({ league }: { league: PublicLeague }) {
   const [err, setErr] = useState<string | null>(null);
   const c = league.game === "38-0" ? LIME : TEAL;
 
-  async function join() {
+  // Public = viewable: tapping the card opens the league's table even if you're
+  // not a member (the view pages carry their own join CTA). JOIN stays one tap.
+  const viewHref = league.kind === "board" && league.href
+    ? league.href
+    : league.game === "quiz" ? `/league/${league.id}` : `/38-0/league/${league.joinCode}`;
+
+  async function join(e: React.MouseEvent) {
+    e.stopPropagation();
     if (busy) return;
     setErr(null);
     if (league.kind === "board" && league.href) { router.push(league.href); return; }
@@ -49,7 +56,7 @@ export function PublicLeagueCard({ league }: { league: PublicLeague }) {
   }
 
   return (
-    <div className="rounded-2xl p-4" style={{ background: "#0e1611", border: `1px solid ${league.featured ? `${GOLD}44` : "rgba(255,255,255,0.08)"}` }}>
+    <div onClick={() => router.push(viewHref)} className="rounded-2xl p-4 cursor-pointer active:scale-[0.99] transition-transform" style={{ background: "#0e1611", border: `1px solid ${league.featured ? `${GOLD}44` : "rgba(255,255,255,0.08)"}` }}>
       <div className="flex items-start gap-3">
         <div className="w-10 h-10 rounded-xl grid place-items-center flex-shrink-0" style={{ background: `${c}14`, border: `1px solid ${c}33` }}>
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -57,14 +64,16 @@ export function PublicLeagueCard({ league }: { league: PublicLeague }) {
           </svg>
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <p className="font-body text-sm font-semibold text-white truncate">{league.name}</p>
-            {league.featured && <span className="font-body text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded flex-shrink-0" style={{ background: `${GOLD}1f`, color: GOLD }}>Featured</span>}
+          <p className="font-body text-sm font-semibold text-white truncate">{league.name}</p>
+          {/* Which game this league is for — loud and unmissable (founder call). */}
+          <div className="flex items-center gap-1.5 mt-1.5">
+            <span className="font-body text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md flex-shrink-0" style={{ background: `${c}1f`, color: c, border: `1px solid ${c}44` }}>
+              {league.game === "38-0" ? "38-0" : "Quiz Battle"}
+            </span>
+            {league.featured && <span className="font-body text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md flex-shrink-0" style={{ background: `${GOLD}1f`, color: GOLD, border: `1px solid ${GOLD}44` }}>Featured</span>}
+            <span className="font-body text-[11px] text-text-muted truncate">{league.members} {league.members === 1 ? "member" : "members"}</span>
           </div>
-          <p className="font-body text-[11px] text-text-muted mt-0.5 truncate">
-            Public · {league.members} {league.members === 1 ? "member" : "members"} · {league.game === "38-0" ? "38-0" : "Quiz Battle"}
-          </p>
-          {league.description && <p className="font-body text-[11px] text-text-muted mt-1 line-clamp-2 leading-snug">{league.description}</p>}
+          {league.description && <p className="font-body text-[11px] text-text-muted mt-1.5 line-clamp-2 leading-snug">{league.description}</p>}
         </div>
         <button onClick={join} disabled={busy} className="font-display text-xs tracking-wide px-4 py-2 rounded-lg flex-shrink-0 active:scale-[0.97] transition-transform disabled:opacity-50" style={{ background: c, color: league.game === "38-0" ? "#13200a" : "#04231f" }}>
           {busy ? "…" : league.kind === "board" ? "VIEW" : "JOIN"}

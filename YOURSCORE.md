@@ -373,19 +373,27 @@ carry `List-Unsubscribe` + `List-Unsubscribe-Post` (RFC 8058 one-click) headers.
   queue API accept an optional `packId` that pins the match to the picked quiz
   (Human → Shadow → CPU chain unchanged; unpublished/bogus pack falls back to the
   default featured pack; a paired waiter gets the claimer's pack).
-- **Discover leagues seeded (2026-07-03):** the Discover tab leads with the
-  **World Cup Mastermind League** — an official "board" card (VIEW → `/38-0/wc/board`)
-  surfacing the ranked Mastermind mode with its REAL player count + top faces
-  (not a joinable code-league; the daily ranked run IS the join). Below it:
-  the official **World Cup Daily League** (public + featured, owned by the
-  "YourScore" account — members' daily-quiz points land on its board) and
-  three SEEDED banter leagues that read as user-made ("It's Never a Pen FC",
-  "xG Deniers Club", "Agüerooooo 93:20"), owned by seed fan accounts with
-  plausible league stats. Seed accounts are email-suppressed, have no gameplay
-  data (invisible to global rank/activity/shadows), and every trace is removable
-  via `node scripts/seed-public-leagues.mjs --remove` once real leagues have
-  traction. All four leagues are REAL rows — anyone can join and their points
-  count.
+- **Discover leagues (2026-07-03, revised same day):** the Discover tab leads
+  with TWO official "board" cards — **World Cup Mastermind League** (VIEW →
+  `/38-0/wc/board`, real ranked player count + top faces) and **World Cup Daily
+  League** (VIEW → `/play?tab=leaderboards`, backed by the REAL wc2026 daily-quiz
+  prize board — everyone playing the daily quiz is on it; the earlier seeded
+  5-member league row was retired). Below them: three SEEDED banter leagues that
+  read as user-made ("It's Never a Pen FC", "xG Deniers Club", "Agüerooooo
+  93:20"), ~10 members each with plausible points/games/accuracy. Every Discover
+  card carries a prominent game badge (38-0 lime / Quiz Battle teal — founder
+  call: it must be obvious which game a league is for) and the WHOLE CARD opens
+  the league's table — **public league tables are viewable by non-members**
+  (guest banner + one-tap JOIN on the quiz league page; 38-0 league page already
+  did this). Leagues tab chips = **38-0 | Quiz Battle only (no "All")**, scoped
+  to MY LEAGUES. Seed accounts (24 fans + "YourScore") are email-suppressed, have
+  no gameplay data (invisible to global rank/activity/shadows), and every trace
+  is removable via `node scripts/seed-public-leagues.mjs --remove`. Banter
+  leagues are REAL rows — anyone can join and their points count (verified E2E).
+  GOTCHAS fixed en route: `trg_sanitize_league_member_insert` (mig 13) zeroes
+  stats on INSERT so seeding writes stats via a second-pass UPDATE; the quiz
+  league page's `profiles(...)` embedded select has NO FK and errored for
+  EVERYONE ("No members yet" on every table) — now a two-step fetch.
 - **Scorecard forward motion (2026-07-03 round 3):** every bot/shadow scorecard
   leads with a **KEEP PLAYING** panel — primary **PLAY AGAIN — NEW OPPONENT**
   (find flow pinned to the same quiz) + **PICK A DIFFERENT QUIZ**; the honest-reveal
