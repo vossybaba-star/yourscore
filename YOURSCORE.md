@@ -365,10 +365,12 @@ carry `List-Unsubscribe` + `List-Unsubscribe-Post` (RFC 8058 one-click) headers.
   run's owner gets an opt-in-gated push ("X beat your {quiz} run — get revenge") deep-
   linking to the beater's own shadowable runs — the revenge loop. Pool = full
   multiplayer runs only; QA/CPU accounts excluded; the shadow owner's own stats are
-  never touched by a replay. **Anti-pestering rule:** max ONE shadow-result push per
+  never touched by a replay. **Anti-pestering rules:** max ONE shadow-result push per
   owner per rolling 24h — completions inside the quiet window are absorbed and the
-  next push aggregates them ("X and 2 others took on your runs — 2 beat you"); both
-  beats and holds count toward the cap.
+  next push aggregates them ("X and 2 others took on your runs — 2 beat you");
+  **beats open the push, holds never do** (a hold can't burn the daily slot and
+  silence a revenge-worthy beat — holds only appear inside aggregate copy); the
+  named player + revenge link always point at an actual beater.
 - **CPU fallback** (when no shadow exists for the pack): one dedicated CPU auth user
   (honestly named "CPU", keeper avatar) takes the second seat; its seeded answers
   (62% accuracy, 2.8–10.5s) are written server-side in `/api/answer` when the human
