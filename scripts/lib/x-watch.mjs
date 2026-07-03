@@ -142,16 +142,15 @@ export async function fetchRecent(userId, { sinceId, max = 10 } = {}) {
   }));
 }
 
-// Pick the highest-bitrate mp4 variant under a cap, so Publer fetches quickly and IG accepts it.
+// Pick the highest-bitrate mp4 variant — the best-quality master. Downstream (brand-media)
+// re-encodes with its own bitrate cap before re-hosting, so a small variant here only means
+// visibly worse video AND audio in the final Reel, with no upside.
 // Twitter `variants` = [{bit_rate?, content_type, url}]; animated_gif mp4s have no bit_rate.
-const MAX_VIDEO_BITRATE = 2_500_000;
 function bestMp4(variants) {
   if (!Array.isArray(variants)) return null;
   const mp4s = variants.filter((v) => v.content_type === "video/mp4" && v.url);
   if (!mp4s.length) return null;
-  const capped = mp4s.filter((v) => (v.bit_rate || 0) <= MAX_VIDEO_BITRATE);
-  const pool = capped.length ? capped : mp4s; // if every variant exceeds the cap, take the smallest
-  return pool.sort((a, b) => (b.bit_rate || 0) - (a.bit_rate || 0))[0].url;
+  return mp4s.sort((a, b) => (b.bit_rate || 0) - (a.bit_rate || 0))[0].url;
 }
 
 // Spam/gambling terms to keep out of the engagement search (the open firehose is full of them).

@@ -9,7 +9,7 @@
     { "username": "433", "kind": "media" },
     { "username": "FabrizioRomano", "kind": "news" },
     { "username": "OptaJoe", "kind": "news" },
-    { "username": "BBCSport", "kind": "news" },
+    { "username": "BBCSport", "kind": "news", "generalist": true },
     { "username": "TrollFootball", "kind": "meme" },
     { "username": "FootyHumour", "kind": "meme" }
   ]
