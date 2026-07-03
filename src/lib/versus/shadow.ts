@@ -226,24 +226,54 @@ export async function shadowRunsOf(db: Db, userId: string): Promise<ShadowableRu
 
 // ── Result notification (founder safeguard: never pester the run's owner) ─────
 // A popular run can be shadowed many times. Rules:
-//   • At most ONE shadow-result push per owner per rolling 24h — anything inside
-//     the quiet window is silently absorbed.
+//   • RALLY BYPASS: when the owner and the beater are actively trading blows
+//     (the owner played the beater's shadow within the last 7 days), every beat
+//     notifies INSTANTLY — no cap. The back-and-forth is the game; playing a
+//     full quiz (~2-3 min) is the natural rate limit.
+//   • Otherwise, at most ONE shadow-result push per owner per rolling 24h —
+//     anything inside the quiet window is silently absorbed. This protects a
+//     popular run's owner from a crowd of strangers, never from a rival.
 //   • BEATS OPEN THE PUSH, holds never do: a push only sends when at least one
 //     pending play (this one, or one absorbed since the last push) beat the run.
-//     A flattering-but-passive hold can't burn the daily slot and silence a
-//     revenge-worthy beat; holds simply ride along in the aggregate copy.
-//   • The push AGGREGATES everything pending: "Feran and 2 others took on your
-//     runs — 2 beat you. Get revenge."
+//     Holds simply ride along in the aggregate copy.
+//   • The capped push AGGREGATES everything pending: "Feran and 2 others took
+//     on your runs — 2 beat you. Get revenge."
 //   • Opt-in gating + per-key dedupe still apply inside notifyUsers.
 
 const QUIET_WINDOW_MS = 24 * 3600_000;
 const AGGREGATE_LOOKBACK_MS = 7 * 24 * 3600_000; // first-ever push looks back this far
+const RALLY_WINDOW_MS = 7 * 24 * 3600_000;       // reverse-direction play this recent = active rally
 
 export async function notifyShadowResult(
   db: Db,
   args: { roomId: string; shadow: ShadowInfo; humanId: string; humanName: string; packName: string; humanScore: number; shadowScore: number }
 ): Promise<void> {
   const owner = args.shadow.userId;
+
+  // 0. Rally bypass: a beat inside an active back-and-forth notifies instantly.
+  //    "Active" = the owner has played THIS beater's shadow recently (so the
+  //    original beat, the revenge, and every re-revenge all flow uncapped).
+  if (args.humanScore > args.shadowScore) {
+    const { data: reverse } = await db
+      .from("rooms")
+      .select("id")
+      .eq("status", "completed")
+      .eq("created_by", owner)
+      .eq("shadow->>userId", args.humanId)
+      .gte("created_at", new Date(Date.now() - RALLY_WINDOW_MS).toISOString())
+      .limit(1)
+      .maybeSingle();
+    if (reverse) {
+      await notifyUsers({
+        userIds: [owner],
+        title: `${args.humanName} hit back!`,
+        body: `They beat your ${args.packName} run ${args.humanScore.toLocaleString()}–${args.shadowScore.toLocaleString()} — your turn`,
+        url: `/versus/shadow/${args.humanId}`,
+        dedupeKey: `shadow-result:${args.roomId}`,
+      });
+      return;
+    }
+  }
 
   // 1. Quiet window: latest shadow push to this owner, any room.
   const { data: lastPush } = await db
