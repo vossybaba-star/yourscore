@@ -228,9 +228,12 @@ export async function shadowRunsOf(db: Db, userId: string): Promise<ShadowableRu
 // A popular run can be shadowed many times. Rules:
 //   • At most ONE shadow-result push per owner per rolling 24h — anything inside
 //     the quiet window is silently absorbed.
-//   • The next push AGGREGATES what was absorbed: "Feran and 2 others took on
-//     your runs — 2 beat you." Both beats and holds count toward the cap;
-//     whichever finishes first outside the window sends.
+//   • BEATS OPEN THE PUSH, holds never do: a push only sends when at least one
+//     pending play (this one, or one absorbed since the last push) beat the run.
+//     A flattering-but-passive hold can't burn the daily slot and silence a
+//     revenge-worthy beat; holds simply ride along in the aggregate copy.
+//   • The push AGGREGATES everything pending: "Feran and 2 others took on your
+//     runs — 2 beat you. Get revenge."
 //   • Opt-in gating + per-key dedupe still apply inside notifyUsers.
 
 const QUIET_WINDOW_MS = 24 * 3600_000;
@@ -267,6 +270,10 @@ export async function notifyShadowResult(
 
   let plays = 1;
   let beats = args.humanScore > args.shadowScore ? 1 : 0;
+  // The push names (and deep-links to) someone who BEAT the run — revenge needs
+  // a target. Defaults to the current player when they're the beater.
+  let beaterId = beats > 0 ? args.humanId : null;
+  let beaterName = beats > 0 ? args.humanName : null;
   if (rooms.length > 0) {
     const { data: scores } = await db
       .from("room_scores")
@@ -277,31 +284,38 @@ export async function notifyShadowResult(
       plays++;
       const human = byRoomUser.get(`${r.id}:${r.created_by}`) ?? 0;
       const bot = byRoomUser.get(`${r.id}:${QUIZ_BOT_ID}`) ?? 0;
-      if (human > bot) beats++;
+      if (human > bot) {
+        beats++;
+        if (!beaterId && r.created_by) beaterId = r.created_by;
+      }
+    }
+    if (beaterId && !beaterName) {
+      const { data: p } = await db.from("profiles").select("display_name").eq("id", beaterId).maybeSingle();
+      beaterName = p?.display_name ?? "Someone";
     }
   }
 
-  // 3. Copy: detailed for a single play, aggregated when others were absorbed.
+  // 3. Beats open the push. No pending beat → stay quiet; these plays keep
+  //    accumulating and surface whenever a beat finally lands.
+  if (beats === 0) return;
+
+  // 4. Copy: detailed for a single play (necessarily the beat), aggregated when
+  //    other plays were absorbed alongside it. Named player = a beater, always.
   let title: string, body: string;
   if (plays === 1) {
-    const beaten = args.humanScore > args.shadowScore;
-    title = beaten ? "Your run got beaten" : "Your run held them off";
-    body = beaten
-      ? `${args.humanName} beat your ${args.packName} run ${args.humanScore.toLocaleString()}–${args.shadowScore.toLocaleString()} — get revenge`
-      : `${args.humanName} couldn't beat your ${args.packName} run (${args.shadowScore.toLocaleString()}–${args.humanScore.toLocaleString()})`;
+    title = "Your run got beaten";
+    body = `${args.humanName} beat your ${args.packName} run ${args.humanScore.toLocaleString()}–${args.shadowScore.toLocaleString()} — get revenge`;
   } else {
     const others = plays - 1;
-    title = beats > 0 ? "Your runs got taken on" : "Your runs held them all off";
-    body = beats > 0
-      ? `${args.humanName} and ${others} other${others === 1 ? "" : "s"} took on your runs — ${beats} beat you. Get revenge`
-      : `${args.humanName} and ${others} other${others === 1 ? "" : "s"} took on your runs — no one beat you`;
+    title = "Your runs got taken on";
+    body = `${beaterName ?? "Someone"} and ${others} other${others === 1 ? "" : "s"} took on your runs — ${beats} beat you. Get revenge`;
   }
 
   await notifyUsers({
     userIds: [owner],
     title,
     body,
-    url: `/versus/shadow/${args.humanId}`,
+    url: `/versus/shadow/${beaterId ?? args.humanId}`,
     dedupeKey: `shadow-result:${args.roomId}`,
   });
 }
