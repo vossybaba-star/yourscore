@@ -6,6 +6,7 @@ import { haptic } from "@/lib/haptics";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { getTeamBadgeUrl } from "@/lib/teamImages";
+import { coverUrl } from "@/lib/img";
 import { getCompetitionBadgeUrl } from "@/lib/competitionImages";
 import { AnswerButtons } from "@/components/game/AnswerButtons";
 import { RankRewardCard } from "@/components/rank/RankRewardCard";
@@ -785,7 +786,7 @@ export default function ChallengePage() {
                   border: `1.5px solid ${accentBorder}`,
                   boxShadow: `0 12px 40px ${isRecords ? "rgba(174,234,0,0.3)" : "rgba(255,140,0,0.25)"}` }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={pack.metadata.cover_image} alt={pack.name}
+                <img src={coverUrl(pack.metadata.cover_image, 440) ?? pack.metadata.cover_image} alt={pack.name}
                   className="absolute inset-0 h-full w-full" style={{ objectFit: "cover" }} />
               </div>
             ) : (

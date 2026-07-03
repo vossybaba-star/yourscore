@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/Button";
 import { getTeamBadgeUrl } from "@/lib/teamImages";
 import { getCompetitionBadgeUrl } from "@/lib/competitionImages";
 import { slugify } from "@/lib/utils";
+import { coverUrl } from "@/lib/img";
 import { RECORDS_EMOJI } from "@/lib/theme";
 import { useYourTurns, type InboxChallenge } from "@/hooks/useYourTurns";
 
@@ -43,8 +44,9 @@ function packDate(iso?: string | null): string | null {
 function CoverImg({ src, alt }: { src: string; alt: string }) {
   return (
     // eager + async + high priority so quiz art paints immediately, not lazily.
+    // CDN-resized (coverUrl): originals are 2-3MB PNGs — never ship those to a grid.
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={src} alt={alt} loading="eager" decoding="async" fetchPriority="high"
+    <img src={coverUrl(src, 420) ?? src} alt={alt} loading="eager" decoding="async" fetchPriority="high"
       className="absolute inset-0 h-full w-full" style={{ objectFit: "cover" }} />
   );
 }

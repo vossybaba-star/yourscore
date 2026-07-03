@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { coverUrl } from "@/lib/img";
 import { BackPill } from "@/components/ui/BackPill";
 
 // Quiz Battle — quiz-first. Step 1: browse the quiz library (rich cover cards +
@@ -241,7 +242,7 @@ export default function QuizBattlePage() {
                   <div className="relative" style={{ height: 150, background: "radial-gradient(ellipse at 50% 80%, rgba(0,216,192,0.15), #0b1310 70%)" }}>
                     {featuredHero.cover && (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={featuredHero.cover} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                      <img src={coverUrl(featuredHero.cover, 480) ?? featuredHero.cover} alt="" className="absolute inset-0 w-full h-full object-cover" />
                     )}
                     <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(8,13,10,0) 30%, rgba(8,13,10,0.9) 100%)" }} />
                     <span className="absolute top-2.5 left-2.5 font-body text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded-md" style={{ background: TEAL, color: "#04231f" }}>New</span>
@@ -265,7 +266,7 @@ export default function QuizBattlePage() {
                       <div className="relative" style={{ height: 76, background: "radial-gradient(ellipse at 50% 80%, rgba(0,216,192,0.12), #0b1310 70%)" }}>
                         {p.cover ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={p.cover} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
+                          <img src={coverUrl(p.cover, 108) ?? p.cover} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
                         ) : (
                           <div className="absolute inset-0 grid place-items-center font-display text-2xl text-white">{initial(p.name)}</div>
                         )}
@@ -304,7 +305,7 @@ export default function QuizBattlePage() {
                     <div className="relative flex items-center justify-center" style={{ height: 96, background: "radial-gradient(ellipse at 50% 80%, rgba(0,216,192,0.12), transparent 70%)" }}>
                       {p.cover ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={p.cover} alt={p.name} loading="lazy" decoding="async" className="absolute inset-0 w-full h-full" style={{ objectFit: "cover" }} />
+                        <img src={coverUrl(p.cover, 220) ?? p.cover} alt={p.name} loading="lazy" decoding="async" className="absolute inset-0 w-full h-full" style={{ objectFit: "cover" }} />
                       ) : (
                         <div className="flex items-center justify-center rounded-2xl font-display text-3xl text-white" style={{ width: 58, height: 58, background: "rgba(0,216,192,0.1)", border: "1px solid rgba(0,216,192,0.2)" }}>{initial(p.name)}</div>
                       )}

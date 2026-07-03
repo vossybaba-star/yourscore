@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { coverUrl } from "@/lib/img";
 import { BackPill } from "@/components/ui/BackPill";
 
 // Challenge a friend — quiz-first. Pick a quiz you've already played, pick a
@@ -158,7 +159,7 @@ export default function ChallengePage() {
               <div className="mt-4 space-y-2">
                 {cards.map((c) => (
                   <button key={c.packId} onClick={() => setPicked(c)} className="w-full flex items-center gap-3 rounded-2xl p-3 bg-surface active:scale-[0.99] transition-transform" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
-                    <div className="w-12 h-12 rounded-xl flex-shrink-0" style={{ background: c.cover ? `center/cover url(${c.cover})` : "rgba(0,216,192,0.12)" }} />
+                    <div className="w-12 h-12 rounded-xl flex-shrink-0" style={{ background: c.cover ? `center/cover url(${coverUrl(c.cover, 48)})` : "rgba(0,216,192,0.12)" }} />
                     <div className="flex-1 min-w-0 text-left">
                       <p className="font-body text-sm font-semibold text-white truncate">{c.name}</p>
                       <p className="font-body text-xs text-text-muted">Your score: {c.score.toLocaleString()} · {c.correct}/{c.total}</p>

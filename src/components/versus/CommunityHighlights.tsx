@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { coverUrl } from "@/lib/img";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 
 // Community Highlights — a feed of what's actually happening in the game:
@@ -168,7 +169,7 @@ export function CommunityHighlights() {
               <span className="w-9 h-9 rounded-xl overflow-hidden grid place-items-center flex-shrink-0" style={{ background: `${TEAL}14`, border: `1px solid ${TEAL}33` }}>
                 {t.cover
                   // eslint-disable-next-line @next/next/no-img-element
-                  ? <img src={t.cover} alt="" loading="lazy" className="w-full h-full object-cover" />
+                  ? <img src={coverUrl(t.cover, 40) ?? t.cover} alt="" loading="lazy" className="w-full h-full object-cover" />
                   : <span className="font-display text-lg" style={{ color: TEAL }}>{(t.name[0] ?? "?").toUpperCase()}</span>}
               </span>
               <p className="font-body text-xs font-semibold text-white leading-snug line-clamp-2 min-w-0">{t.name}</p>

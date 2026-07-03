@@ -26,7 +26,9 @@ export async function GET() {
       const { data: cc } = await db.rpc("get_wc_comment_counts", { p_start: WC_SEASON_START, p_end: WC_SEASON_END });
       for (const r of (cc ?? []) as { user_id: string; comments: number }[]) counts.set(r.user_id, r.comments);
     } catch { /* leave badges off */ }
-    const rows = ((data ?? []) as { user_id: string }[]).map((r) => ({ ...r, comments: counts.get(r.user_id) ?? 0 }));
+    // Top 300 only: the full table was a ~200KB JSON parse on every phone that
+    // opened the board. Your own standing (however deep) comes from ./me.
+    const rows = ((data ?? []) as { user_id: string }[]).slice(0, 300).map((r) => ({ ...r, comments: counts.get(r.user_id) ?? 0 }));
     return NextResponse.json({ rows, ready: true });
   } catch {
     return NextResponse.json({ rows: [], ready: false });

@@ -163,9 +163,10 @@ export default function WorldCupRun() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch("/api/draft/wc/leaderboard");
+        // One row via the dynamic /me route — the full-table fetch was ~200KB.
+        const res = await fetch("/api/draft/wc/leaderboard/me");
         const data = await res.json();
-        const me = (data.rows ?? []).find((r: { user_id: string }) => r.user_id === user.id);
+        const me = data.row;
         if (!cancelled && me) setStanding({ rank: me.rank, points: me.points, wins: me.wins, draws: me.draws, losses: me.losses, display_name: me.display_name });
       } catch { /* banner omits the rank line */ }
     })();

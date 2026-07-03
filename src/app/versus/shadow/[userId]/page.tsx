@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import { BackPill } from "@/components/ui/BackPill";
+import { coverUrl } from "@/lib/img";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 
 // The revenge library: one player's shadowable runs — pick a quiz they've
@@ -109,7 +110,7 @@ export default function ShadowLibraryPage() {
                 <div className="relative w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 grid place-items-center" style={{ background: "rgba(0,216,192,0.08)", border: "1px solid rgba(0,216,192,0.2)" }}>
                   {run.cover ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={run.cover} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
+                    <img src={coverUrl(run.cover, 56) ?? run.cover} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
                   ) : (
                     <span className="font-display text-xl" style={{ color: TEAL }}>{(run.packName[0] ?? "?").toUpperCase()}</span>
                   )}

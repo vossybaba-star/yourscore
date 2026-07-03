@@ -28,10 +28,19 @@ export default function WorldCupBoard() {
 
   useEffect(() => {
     let alive = true;
-    fetch("/api/draft/wc/leaderboard")
-      .then((r) => r.json())
-      .then((d) => { if (alive) setRows(d.rows ?? []); })
-      .catch(() => { if (alive) setRows([]); })
+    // The board route serves the (cacheable) top 300; your own row rides in
+    // separately so a player ranked 700th still sees their standing appended.
+    Promise.all([
+      fetch("/api/draft/wc/leaderboard").then((r) => r.json()).catch(() => ({ rows: [] })),
+      fetch("/api/draft/wc/leaderboard/me").then((r) => r.json()).catch(() => ({ row: null })),
+    ])
+      .then(([d, m]) => {
+        if (!alive) return;
+        const list: Row[] = d.rows ?? [];
+        const me = m.row as Row | null;
+        if (me && !list.some((r) => r.user_id === me.user_id)) list.push({ ...me, comments: me.comments ?? 0 });
+        setRows(list);
+      })
       .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
   }, []);

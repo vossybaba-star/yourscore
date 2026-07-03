@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { slugify } from "@/lib/utils";
+import { coverUrl } from "@/lib/img";
 import { usePendingFriends } from "@/hooks/usePendingFriends";
 import { usePendingTurns } from "@/hooks/usePendingTurns";
 
@@ -189,9 +190,10 @@ function FeaturedPacksRow({ packs }: { packs: FeaturedPack[] }) {
               >
                 {pack.coverImage ? (
                   <div style={{ position: "relative", width: "100%", aspectRatio: "16 / 9" }}>
-                    {/* eager + async so featured art paints immediately, not lazily */}
+                    {/* eager + async so featured art paints immediately, not lazily.
+                        CDN-resized: the originals are 2-3MB PNGs. */}
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={pack.coverImage} alt={pack.name} loading="eager" decoding="async" fetchPriority="high"
+                    <img src={coverUrl(pack.coverImage, 168) ?? pack.coverImage} alt={pack.name} loading="eager" decoding="async" fetchPriority="high"
                       className="absolute inset-0 h-full w-full" style={{ objectFit: "cover" }} />
                   </div>
                 ) : (
