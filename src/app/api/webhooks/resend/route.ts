@@ -75,7 +75,25 @@ async function handleEvent(event: { type: string; data: Record<string, unknown> 
     return NextResponse.json({ ok: true });
   }
 
+  // Engagement: record open/click recency per address so we can later stop mailing
+  // chronically-unengaged people (a top inbox-vs-junk driver). Opens and clicks are
+  // stored separately — opens are noisy (Apple pre-loads the pixel), clicks are reliable.
+  if (type === "email.opened" || type === "email.clicked") {
+    const email = (data.to as string[] | undefined)?.[0] ?? (data.email as string | undefined);
+    if (email) await recordEngagement(email.toLowerCase().trim(), type === "email.clicked");
+    return NextResponse.json({ ok: true });
+  }
+
   return NextResponse.json({ ok: true });
+}
+
+// Upsert engagement recency. Only the event's own column is written, so an open never
+// clobbers a prior click timestamp (and vice-versa); the row keeps the latest of each.
+async function recordEngagement(email: string, clicked: boolean) {
+  const now = new Date().toISOString();
+  const row: Record<string, unknown> = { email, updated_at: now };
+  row[clicked ? "last_clicked_at" : "last_opened_at"] = now;
+  await supabase.from("email_engagement").upsert(row, { onConflict: "email" });
 }
 
 // SUPPRESS-ONLY. Stop emailing this address — but never destroy the account. A bounce
