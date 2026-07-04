@@ -439,6 +439,89 @@ export type Database = {
         }
         Relationships: []
       }
+      comments: {
+        Row: {
+          body: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          subject_id: string
+          subject_type: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          subject_id: string
+          subject_type: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          subject_id?: string
+          subject_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      debate_votes: {
+        Row: {
+          created_at: string
+          debate_id: string
+          option_idx: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          debate_id: string
+          option_idx: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          debate_id?: string
+          option_idx?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "debate_votes_debate_id_fkey"
+            columns: ["debate_id"]
+            isOneToOne: false
+            referencedRelation: "debates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      debates: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          options: Json
+          question: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          options: Json
+          question: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          options?: Json
+          question?: string
+        }
+        Relationships: []
+      }
       device_tokens: {
         Row: {
           created_at: string | null

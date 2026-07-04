@@ -23,6 +23,8 @@ import { Leaderboard, type LeaderboardEntry } from "@/components/game/Leaderboar
 import { Spinner } from "@/components/ui/Spinner";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { AddFriendCard, AddFriendInline } from "@/components/social/AddFriendCard";
+import { DebateCard } from "@/components/debate/DebateCard";
+import { DiscussionThread } from "@/components/debate/DiscussionThread";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -939,6 +941,12 @@ export default function RoomPage() {
               </div>
             </div>
           )}
+
+          {/* While the result's fresh: the quiz's own discussion + today's debate */}
+          {room.pack_id && (
+            <DiscussionThread subjectType="pack" subjectId={room.pack_id} title="Talk about this quiz" signInNext={`/play/${room.id}`} />
+          )}
+          <DebateCard signInNext={`/play/${room.id}`} />
 
           {/* ── Play Again voting panel (human rooms) ─────────────────────── */}
           {!lobbyExpired && !players.some((p) => p.user_id === QUIZ_BOT_ID) && (
