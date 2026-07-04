@@ -6,7 +6,9 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed with the founder:** 2026-07-03 (**Versus phase 1 + rounds 2–3**: Play-tab
+> **Confirmed with the founder:** 2026-07-04 (**Versus phase 2**: daily debates +
+> discussion threads — §9, migration 70. Previously 2026-07-03: **Versus phase 1 +
+> rounds 2–3**: Play-tab
 > redesign, instant matchmaking for both games incl. pick-your-quiz, shadow matches,
 > results-feed highlights, public leagues — §9. Previously 2026-06-30:
 > **Versus tab** replaces Leagues — §9;
@@ -403,6 +405,25 @@ carry `List-Unsubscribe` + `List-Unsubscribe-Post` (RFC 8058 one-click) headers.
   tapping players in league tables, the global leaderboard, Friends (rivals +
   friends rows), rivalry cards and highlights result cards. This partially
   supersedes the old "public profiles not built yet" note — profiles ARE public.
+- **Daily debates + discussions (2026-07-04, Versus phase 2 — the deferred
+  "Debate questions" shipped):** ONE subjective football debate a day ("Golden
+  boot or clean-sheet record: which says more?") — vote, see the live community
+  split (gold treatment, your pick highlighted), change your vote anytime,
+  **DRAG A FRIEND INTO IT** shares the public **`/debate`** landing (guests can
+  read + see the split; voting/commenting routes through sign-in; the page's OG
+  unfurl image carries the actual question via `/api/og/debate`). Rotation is
+  **date-seeded over the active bank** (UK day, `src/lib/debate.ts`) — no
+  scheduler; when the cycle wraps a debate returns with its votes intact. Bank
+  of 30 fan-voice debates seeded via `scripts/seed-debates.mjs` (idempotent —
+  add rows anytime, rotation adjusts). **Discussion threads** (`comments`
+  table, polymorphic): flat 280-char threads on **debates** ("The argument",
+  under the card) and **quiz packs** ("Talk about this quiz", on the post-match
+  scorecard). World-readable; posting needs an account (8/min rate limit,
+  slur/link filter in `src/lib/moderation.ts`); authors soft-delete their own
+  (via service role — a soft-deleted row fails the `deleted_at is null` SELECT
+  policy, so an author-session update 42501s). Debate card placements: Versus
+  Play tab (below Live-now), every completed-match scorecard, `/debate`.
+  Tables: migration 70 (debates / debate_votes / comments, additive, APPLIED).
 - **Scorecard forward motion (2026-07-03 round 3):** every bot/shadow scorecard
   leads with a **KEEP PLAYING** panel — primary **PLAY AGAIN — NEW OPPONENT**
   (find flow pinned to the same quiz) + **PICK A DIFFERENT QUIZ**; the honest-reveal
