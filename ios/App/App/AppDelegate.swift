@@ -1,10 +1,14 @@
 import UIKit
 import Capacitor
+import AppTrackingTransparency
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
+
+    // Ensures the ATT prompt is only requested once per launch.
+    private var didRequestTracking = false
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
@@ -27,6 +31,26 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func applicationDidBecomeActive(_ application: UIApplication) {
         // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
+        requestTrackingAuthorizationIfNeeded()
+    }
+
+    // Show Apple's App Tracking Transparency prompt once the app is active. AppsFlyer
+    // is started with waitForATTUserAuthorization, so it holds the first session until
+    // this decision is made — with the user's consent it can then use the IDFA for
+    // deterministic ad attribution (SKAdNetwork attribution works either way). The
+    // prompt copy comes from NSUserTrackingUsageDescription in Info.plist. Apple
+    // requires the app to be in the active state, hence requesting from here.
+    private func requestTrackingAuthorizationIfNeeded() {
+        guard #available(iOS 14, *), !didRequestTracking else { return }
+        guard ATTrackingManager.trackingAuthorizationStatus == .notDetermined else {
+            didRequestTracking = true
+            return
+        }
+        didRequestTracking = true
+        // Small delay so the prompt doesn't collide with the launch/first-frame animation.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            ATTrackingManager.requestTrackingAuthorization { _ in }
+        }
     }
 
     func applicationWillTerminate(_ application: UIApplication) {
