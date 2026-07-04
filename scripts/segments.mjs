@@ -206,6 +206,11 @@ async function send(users, name, args) {
 
   await syncAndBroadcast(CAMPAIGNS_KEY, {
     audienceName: `seg:${name} ${today}`,
+    // Every campaign spins up a fresh audience, and Resend counts ALL contacts across
+    // ALL audiences toward the 5,000 marketing cap — so leftover per-send audiences
+    // pile up and eventually block sends. Delete every prior "seg:" audience before
+    // creating this one, so at most one segment audience exists at a time.
+    cleanupPrefix: "seg:",
     emails: m.map(u => ({ email: u.email, firstName: u.metaFirstName ?? firstName(u.name) })),
     name: `Segment ${name} — ${today}`,
     from, replyTo: REPLY_TO, subject, previewText, html, dryRun: DRY_RUN,
@@ -224,10 +229,60 @@ async function send(users, name, args) {
   console.log(DRY_RUN ? `\n🛑 DRY RUN — add --send to fire.\n` : `\n🎉 Broadcast fired to "${name}".\n`);
 }
 
+// ── Ad-audience CSV export ───────────────────────────────────────────────────
+// Writes per-game seed lists for ad-platform Custom Audiences + lookalikes, reusing
+// the same sendable, de-suppressed user set as the email engine. Columns email,fn,ln
+// — the format Meta ingests; TikTok/X read the email column. Uploading these +
+// accepting each platform's Customer-List Terms is the founder's step (legal + PII);
+// this only produces the local files.
+const csvCell = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+
+async function exportAudience(users, args) {
+  const flag = (n) => { const i = args.indexOf(n); return i !== -1 ? args[i + 1] : undefined; };
+  const outDir = flag("--out-dir") || path.join(process.env.HOME || ".", "Downloads", "ys-audiences");
+  await fs.mkdir(outDir, { recursive: true });
+
+  // "38-0" includes World Cup (a 38-0 mode) per the audience plan; quiz is standalone.
+  const buckets = {
+    "all-players":  users,
+    "38-0-players": users.filter((u) => u.plays_38 || u.plays_wc),
+    "quiz-players": users.filter((u) => u.plays_quiz),
+  };
+
+  console.log(`\n📤 Ad-audience export → ${outDir}\n`);
+  for (const [name, rows] of Object.entries(buckets)) {
+    const lines = ["email,fn,ln"];
+    let withName = 0;
+    for (const u of rows) {
+      const fn = u.metaFirstName ?? firstName(u.name) ?? "";
+      if (fn) withName++;
+      lines.push(`${csvCell(u.email)},${csvCell(fn)},${csvCell("")}`);
+    }
+    const file = path.join(outDir, `${name}.csv`);
+    await fs.writeFile(file, lines.join("\n") + "\n", "utf-8");
+    console.log(`  ${name.padEnd(14)} ${String(rows.length).padStart(5)} rows  (${withName} with first name)  → ${file}`);
+  }
+
+  // Sanity + lookalike-viability flags.
+  const g38 = new Set(buckets["38-0-players"].map((u) => u.user_id));
+  const overlap = buckets["quiz-players"].filter((u) => g38.has(u.user_id)).length;
+  console.log(`\n  overlap (play both games): ${overlap}   [all ≈ 38-0 + quiz − overlap]`);
+  const SWEET_SPOT = 1000; // lookalike seeds want ~1k+; Meta floor ~100, X ~500
+  for (const g of ["38-0-players", "quiz-players"]) {
+    const n = buckets[g].length;
+    if (n < SWEET_SPOT) {
+      const label = g.includes("38") ? "38-0" : "Quiz";
+      console.log(`  ⚠️  ${g} = ${n} — below the ~1,000 lookalike sweet spot; lean on the combined "all-players" seed + a ${label} creative until it grows.`);
+    }
+  }
+  console.log("");
+}
+
 async function main() {
   const argv = process.argv.slice(2);
   const users = await loadUsers();
 
+  if (argv[0] === "export-audience") return exportAudience(users, argv.slice(1));
   if (argv[0] === "send") return send(users, argv[1], argv.slice(2));
   if (argv[0] && SEGMENTS[argv[0]]) return context(users, argv[0]);
   if (argv[0]) { console.error(`Unknown segment "${argv[0]}".`); }
