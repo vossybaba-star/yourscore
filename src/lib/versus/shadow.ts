@@ -39,6 +39,9 @@ export interface ShadowRun {
   sourceAttemptId?: string | null;
   /** Recency for cross-pool ordering. */
   at: string | null;
+  /** The run's score — instant matchmaking skips 0-score runs (a shadow that
+   *  gets every question wrong feels broken, not like an opponent). */
+  score: number;
 }
 
 /** Solo attempt answer log entry (written by /api/quiz/solo-complete). */
@@ -54,8 +57,16 @@ function attemptLog(answers: unknown): AttemptLogEntry[] | null {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = SupabaseClient<any>;
 
-/** The health-check QA account — its runs are synthetic, never shadow-worthy. */
-const EXCLUDED_RUNNERS = () => new Set([QUIZ_BOT_ID, process.env.HEALTH_BOT_USER_ID ?? ""].filter(Boolean));
+// The health-check QA accounts (hc, hc2) — their runs are synthetic, never
+// shadow-worthy. Hardcoded because HEALTH_BOT_USER_ID isn't guaranteed to be
+// set in every deploy environment, and a missing env var silently put junk
+// runs in the pool (real users drew hc's 0-score run on day one).
+const QA_ACCOUNT_IDS = [
+  "cf78de0e-da93-4fb8-b3cd-8865ae0a0814", // hc
+  "aa6542bc-ea1d-480c-9070-4a6b79c87381", // hc2
+];
+const EXCLUDED_RUNNERS = () =>
+  new Set([QUIZ_BOT_ID, ...QA_ACCOUNT_IDS, process.env.HEALTH_BOT_USER_ID ?? ""].filter(Boolean));
 
 /** Full-run scores for a set of completed rooms, minus excluded users. */
 async function fullRunsIn(db: Db, rooms: { id: string; question_count: number }[], excludeUserIds: Set<string>) {
@@ -107,6 +118,7 @@ async function roomCandidates(db: Db, packId: string): Promise<ShadowRun[]> {
   return runs.map((r) => ({
     userId: r.user_id, packId, sourceRoomId: r.room_id, sourceAttemptId: null,
     at: roomById.get(r.room_id)?.created_at ?? null,
+    score: r.total_score ?? 0,
   }));
 }
 
@@ -114,14 +126,14 @@ async function roomCandidates(db: Db, packId: string): Promise<ShadowRun[]> {
 async function soloCandidates(db: Db, packId: string): Promise<ShadowRun[]> {
   const { data: attempts } = await db
     .from("quiz_attempts")
-    .select("id, user_id, completed_at, answers")
+    .select("id, user_id, completed_at, answers, score")
     .eq("pack_id", packId)
     .not("answers", "is", null)
     .order("completed_at", { ascending: false })
     .limit(50);
   return (attempts ?? [])
     .filter((a) => attemptLog(a.answers) !== null)
-    .map((a) => ({ userId: a.user_id, packId, sourceRoomId: null, sourceAttemptId: a.id, at: a.completed_at ?? null }));
+    .map((a) => ({ userId: a.user_id, packId, sourceRoomId: null, sourceAttemptId: a.id, at: a.completed_at ?? null, score: a.score ?? 0 }));
 }
 
 /** One pool: solo + multiplayer runs on the pack, newest first. */
@@ -138,7 +150,9 @@ export async function findShadowRun(db: Db, packId: string, forUserId: string): 
     allCandidates(db, packId),
     alreadyShadowed(db, forUserId),
   ]);
-  return candidates.find((c) => !exclude.has(c.userId) && !seen.has(seenKey(c))) ?? null;
+  // score > 0: a shadow that got every question wrong feels broken, not like
+  // an opponent. (Revenge via findRunOfUser has no floor — the target is explicit.)
+  return candidates.find((c) => c.score > 0 && !exclude.has(c.userId) && !seen.has(seenKey(c))) ?? null;
 }
 
 /** A specific player's most recent run on a pack (revenge — reruns allowed). */
