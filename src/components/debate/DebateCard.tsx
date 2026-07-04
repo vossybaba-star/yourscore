@@ -128,7 +128,9 @@ export function DebateCard({
     </div>
   );
 
-  if (!withDiscussion) return card;
+  // The argument only opens once you've picked a side — voting is the entry
+  // fee, commenting is optional (vote and move on is a fine outcome).
+  if (!withDiscussion || !voted) return card;
   return (
     <div className="space-y-2.5">
       {card}
