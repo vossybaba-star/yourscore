@@ -1,5 +1,6 @@
 import { track } from "@vercel/analytics";
 import { afLogEvent } from "@/lib/native/appsflyer";
+import { afGameComplete, afInviteSent, type InviteSurface } from "@/lib/analytics/appsflyerEvents";
 
 // Which game a Player is engaging with. Drives per-game ad audiences.
 export type GameId = "38-0" | "quiz";
@@ -68,7 +69,21 @@ function trackGameEvent(game: GameId, event: GameEvent, props: Props = {}): void
   track(event === "play" ? "play_game" : "complete_game", payload);
 
   // AppsFlyer (native only) — log plays so app-install campaigns can optimise toward players.
-  if (event === "play") void afLogEvent("play_game", { game });
+  if (event === "play") {
+    void afLogEvent("play_game", { game });
+  } else {
+    // Rich completion event + one-time first_game_complete (the activation milestone
+    // the SKAN schema + quality-CPI analysis key on). Map the loose call-site props.
+    const result = props.result ?? props.outcome;
+    afGameComplete({
+      game,
+      mode: props.mode != null ? String(props.mode) : "",
+      competition: props.competition != null ? String(props.competition) : undefined,
+      result: result != null ? String(result) : undefined,
+      score: typeof props.score === "number" ? props.score : undefined,
+      isShadow: props.is_shadow === true || props.shadow === true,
+    });
+  }
 }
 
 export const trackGamePlay = (game: GameId, props?: Props): void => trackGameEvent(game, "play", props);
@@ -111,4 +126,19 @@ export function trackShare(content: string, props: Props = {}): void {
   window.snaptr?.("track", "CUSTOM_EVENT_4", payload);  // Snapchat (1=play · 2=complete · 3=download · 4=share)
   window.gtag?.("event", "share", payload);             // Google Analytics 4
   track("share", payload);                              // Vercel Analytics
+
+  // AppsFlyer (native only) — the viral event; map `content` → invite surface.
+  const surfaceMap: Record<string, InviteSurface> = {
+    scorecard: "scorecard",
+    "live-result": "live-result",
+    league: "league",
+    "h2h-invite": "h2h",
+    h2h: "h2h",
+    "shadow-revenge": "shadow-revenge",
+    lobby: "lobby",
+  };
+  afInviteSent({
+    surface: surfaceMap[content] ?? "other",
+    channel: typeof props.channel === "string" ? props.channel : undefined,
+  });
 }

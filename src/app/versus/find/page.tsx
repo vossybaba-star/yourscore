@@ -7,6 +7,7 @@ import { useUser } from "@/hooks/useUser";
 import { createClient } from "@/lib/supabase/client";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { BackPill } from "@/components/ui/BackPill";
+import { afVersusMatchmake, type OpponentType } from "@/lib/analytics/appsflyerEvents";
 
 // Find an opponent — instant matchmaking for both games, presented as one
 // game-like flow: choose your game → radar search → opponent found → enter.
@@ -116,9 +117,12 @@ function FindInner() {
     const quizBotAfter = quizBotFallbackDelay();
     let timer: ReturnType<typeof setTimeout> | null = null;
 
-    const finish = (f: Found) => {
+    const finish = (f: Found, opponentType: OpponentType) => {
       if (!searchingRef.current) return;
       searchingRef.current = false;
+      // AppsFlyer (native only) — a versus game was matched; opponentType captures
+      // the Human → Shadow → CPU chain so we can see how deep real players get.
+      afVersusMatchmake({ game: g, opponentType, packId: packId ?? undefined });
       setFound(f);
       setStage("found");
     };
@@ -132,10 +136,12 @@ function FindInner() {
           const action = elapsed > quizBotAfter ? "bot" : "queue";
           const r = await fetch("/api/versus/queue", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action, ...(packId ? { packId } : {}) }) }).then((x) => x.json());
           if (r.status === "matched") {
+            const opponentType: OpponentType =
+              action === "bot" ? "cpu" : r.opponent?.shadow || r.shadow ? "shadow" : "human";
             return finish({
               name: r.opponent?.name ?? "Your opponent", avatarUrl: r.opponent?.avatarUrl ?? null,
               seed: r.opponent?.id ?? r.roomId, href: `/play/${r.roomId}`,
-            });
+            }, opponentType);
           }
           if (r.error) throw new Error(r.error);
         } else {
@@ -145,7 +151,8 @@ function FindInner() {
           const match = r.match ?? (r.status === "matched" ? r.match : null);
           if (match?.id) {
             const oppName = match.p1_id === user.id ? (match.p2_name ?? "Your opponent") : (match.p1_name ?? "Your opponent");
-            return finish({ name: oppName, avatarUrl: null, seed: match.id, href: `/38-0/live/match/${match.id}` });
+            const opponentType: OpponentType = action === "bot" ? "cpu" : "human";
+            return finish({ name: oppName, avatarUrl: null, seed: match.id, href: `/38-0/live/match/${match.id}` }, opponentType);
           }
           if (r.error) {
             if (`${r.error}`.toLowerCase().includes("save a team")) { searchingRef.current = false; setStage("needsTeam"); return; }

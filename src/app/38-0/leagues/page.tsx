@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/Button";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { DraftHeader } from "@/components/draft/DraftHeader";
 import { useUser } from "@/hooks/useUser";
+import { afLeagueCreate, afLeagueJoin } from "@/lib/analytics/appsflyerEvents";
 
 type League = { id: string; name: string; code: string; member_count: number };
 
@@ -36,6 +37,7 @@ export default function Leagues() {
       const r = await fetch("/api/draft/league", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name }) });
       const d = await r.json();
       if (!r.ok) { setErr(d.error ?? "Could not create"); setBusy(false); return; }
+      afLeagueCreate({ leagueType: "38-0" });
       router.push(`/38-0/league/${d.code}`);
     } catch { setErr("Network error"); setBusy(false); }
   }
@@ -47,6 +49,7 @@ export default function Leagues() {
       const r = await fetch("/api/draft/league/join", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ code }) });
       const d = await r.json();
       if (!r.ok) { setErr(d.error ?? "Could not join"); setBusy(false); return; }
+      afLeagueJoin({ leagueType: "38-0" });
       router.push(`/38-0/league/${d.code}`);
     } catch { setErr("Network error"); setBusy(false); }
   }

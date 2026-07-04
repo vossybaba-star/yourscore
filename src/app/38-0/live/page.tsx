@@ -15,6 +15,7 @@ import { BackPill } from "@/components/ui/BackPill";
 import { useUser } from "@/hooks/useUser";
 import { asLeague, type League } from "@/lib/draft/types";
 import { trackShare } from "@/lib/analytics/trackGame";
+import { buildInviteLink } from "@/lib/analytics/onelink";
 
 type QueueResp = { status?: "matched" | "waiting"; match?: { id: string }; error?: string };
 type LeaderRow = {
@@ -232,7 +233,7 @@ export default function LiveEntry() {
                 </div>
                 <Button
                   variant="ghost" size="md" fullWidth className="mt-4"
-                  onClick={() => { trackShare("live"); navigator.share?.({ title: "38-0 H2H", text: `Play me on 38-0 — code ${code}`, url: `${location.origin}/38-0/live/${code}?competition=${competition}` }).catch(() => {}); }}
+                  onClick={() => { trackShare("live"); navigator.share?.({ title: "38-0 H2H", text: `Play me on 38-0 — code ${code}`, url: buildInviteLink(`/38-0/live/${code}?competition=${competition}`, { surface: "h2h" }) }).catch(() => {}); }}
                 >
                   Share link
                 </Button>

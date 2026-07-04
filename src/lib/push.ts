@@ -1,5 +1,6 @@
 import { isNative, platform } from './native';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { afPushOptIn } from './analytics/appsflyerEvents';
 
 export async function registerForPush(supabase: SupabaseClient, userId: string) {
   if (!isNative()) return;
@@ -11,6 +12,11 @@ export async function registerForPush(supabase: SupabaseClient, userId: string) 
     const requested = await PushNotifications.requestPermissions();
     if (requested.receive !== 'granted') return;
   }
+
+  // Permission is granted here (either already or just now). Log the opt-in once
+  // per device for AppsFlyer (retention audience); guarded so the re-register on
+  // every launch/resume doesn't re-fire it.
+  afPushOptIn();
 
   // Listeners MUST be attached BEFORE register(). When permission is already
   // granted, iOS returns the APNs token almost immediately, so a listener added

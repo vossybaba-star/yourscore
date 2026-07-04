@@ -9,6 +9,7 @@ import {
   markOnboardingSeen,
   resetOnboarding,
 } from "@/lib/onboarding";
+import { afOnboardingComplete } from "@/lib/analytics/appsflyerEvents";
 import { OnboardingShell } from "./OnboardingShell";
 import { OnboardingPanel } from "./OnboardingPanel";
 import { PanelCarousel } from "./PanelCarousel";
@@ -273,11 +274,13 @@ function OnboardingFlow() {
   // detour, so the post-auth deep-link reload can't re-trigger the carousel.
   function goToAuth() {
     markOnboardingSeen();
+    afOnboardingComplete(); // finished the first-run carousel (→ auth)
     setPhase({ kind: "auth" });
   }
 
   function continueAsGuest() {
     markOnboardingSeen();
+    afOnboardingComplete(); // finished the first-run carousel (→ guest)
     window.location.href = "/38-0"; // straight into the playable game, not the web page
   }
 

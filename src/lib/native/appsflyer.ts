@@ -22,7 +22,7 @@ export async function initAppsFlyer(): Promise<void> {
   if (!isNative() || initialised) return;
   initialised = true;
   try {
-    const { AppsFlyer } = await import("appsflyer-capacitor-plugin");
+    const { AppsFlyer, AFConstants } = await import("appsflyer-capacitor-plugin");
     await AppsFlyer.initSDK({
       devKey: APPSFLYER_DEV_KEY,
       appID: IOS_APP_ID,
@@ -30,9 +30,24 @@ export async function initAppsFlyer(): Promise<void> {
       registerConversionListener: true,
       registerOnDeepLink: true,
       // Wait for the ATT decision before the first session fires so IDFA-based
-      // attribution works once an ATT prompt is added (see Info.plist TODO).
+      // attribution works. The prompt is shown natively in AppDelegate
+      // (requestTrackingAuthorizationIfNeeded); SKAdNetworkItems are in Info.plist.
       waitForATTUserAuthorization: 60,
     });
+
+    // OneLink deferred deep-linking: when a user opens (or installs via) a OneLink
+    // built by buildInviteLink(), route them to the in-app path we encoded as
+    // deep_link_value. No-ops for links without one. Guarded so a shape change in
+    // the plugin payload can never throw during init.
+    try {
+      await AppsFlyer.addListener(AFConstants.UDL_CALLBACK, (res: unknown) => {
+        const r = res as { deepLink?: Record<string, unknown>; data?: Record<string, unknown> };
+        const dlv = (r?.deepLink?.deep_link_value ?? r?.data?.deep_link_value) as string | undefined;
+        if (typeof dlv === "string" && dlv.startsWith("/")) window.location.href = dlv;
+      });
+    } catch (e) {
+      console.warn("[appsflyer] onDeepLink listener failed", e);
+    }
   } catch (e) {
     initialised = false;
     console.warn("[appsflyer] initSDK failed", e);

@@ -10,6 +10,7 @@ import { Spinner } from "@/components/ui/Spinner";
 import { createClient } from "@/lib/supabase/client";
 import { BackPill } from "@/components/ui/BackPill";
 import { Button } from "@/components/ui/Button";
+import { afLeagueCreate } from "@/lib/analytics/appsflyerEvents";
 
 function generateLeagueCode(name: string): string {
   const prefix = name.slice(0, 2).toUpperCase().replace(/[^A-Z]/g, "X");
@@ -60,6 +61,7 @@ function CreateLeagueInner() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ event: "league_created", data: { leagueId: data.id } }),
       }).catch(() => {});
+      afLeagueCreate({ leagueType: "general" });
       setCreated({ id: data.id, code: data.code });
     } catch (e) {
       console.error(e);

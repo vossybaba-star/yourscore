@@ -16,6 +16,7 @@ import { Spinner } from "@/components/ui/Spinner";
 import { GridBackground } from "@/components/ui/GridBackground";
 import { Button } from "@/components/ui/Button";
 import { PublicLeaguesRail } from "@/components/leagues/PublicLeagueCard";
+import { afLeagueCreate, afLeagueJoin } from "@/lib/analytics/appsflyerEvents";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -155,6 +156,7 @@ export function LeaguesPanel({ embedded = false }: { embedded?: boolean }) {
       const r = await fetch("/api/draft/league", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name: draftName, isPublic: draftPublic }) });
       const d = await r.json();
       if (!r.ok) { setDraftErr(d.error ?? "Could not create"); setDraftBusy(false); return; }
+      afLeagueCreate({ leagueType: "38-0" });
       router.push(`/38-0/league/${d.code}`);
     } catch { setDraftErr("Network error"); setDraftBusy(false); }
   }
@@ -166,6 +168,7 @@ export function LeaguesPanel({ embedded = false }: { embedded?: boolean }) {
       const r = await fetch("/api/draft/league/join", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ code: draftCode }) });
       const d = await r.json();
       if (!r.ok) { setDraftErr(d.error ?? "Could not join"); setDraftBusy(false); return; }
+      afLeagueJoin({ leagueType: "38-0" });
       router.push(`/38-0/league/${d.code}`);
     } catch { setDraftErr("Network error"); setDraftBusy(false); }
   }

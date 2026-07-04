@@ -2,7 +2,7 @@
 
 import { track } from "@vercel/analytics";
 import { useEffect } from "react";
-import { afLogEvent } from "@/lib/native/appsflyer";
+import { afRegistration } from "@/lib/analytics/appsflyerEvents";
 
 // Conversion IDs. Pixel base scripts live in app/layout.tsx; this only fires events.
 const X_SIGNUP_EVENT_ID = process.env.NEXT_PUBLIC_X_SIGNUP_EVENT_ID || "tw-p6vxh-p6vxj";
@@ -35,7 +35,20 @@ function fireSignupConversions() {
     window.gtag?.("event", "conversion", { send_to: GOOGLE_ADS_SIGNUP_SEND_TO }); // Google Ads
   }
   track("signup"); // Vercel Analytics
-  void afLogEvent("af_complete_registration"); // AppsFlyer (native only)
+
+  // AppsFlyer (native only) — enriched: which sign-in method, and whether they
+  // played as a guest before registering (converted_from_guest). Method comes off
+  // the auth callback URL if present; guest-convert is inferred from a prior game.
+  const params = new URLSearchParams(window.location.search);
+  const rawMethod = (params.get("method") || params.get("provider") || "").toLowerCase();
+  const method = (["apple", "google", "email", "magic"] as const).find((m) => m === rawMethod);
+  let convertedFromGuest = false;
+  try {
+    convertedFromGuest = localStorage.getItem("af:once:first_game_complete") === "1";
+  } catch {
+    /* storage blocked — leave false */
+  }
+  afRegistration({ method, convertedFromGuest });
 }
 
 /**

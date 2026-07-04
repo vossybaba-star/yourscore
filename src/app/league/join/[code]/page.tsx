@@ -9,6 +9,7 @@ import { Spinner } from "@/components/ui/Spinner";
 import { createClient } from "@/lib/supabase/client";
 import { GridBackground } from "@/components/ui/GridBackground";
 import { Button } from "@/components/ui/Button";
+import { afLeagueJoin } from "@/lib/analytics/appsflyerEvents";
 
 const ANIM = `
   @keyframes fadeUp {
@@ -183,6 +184,7 @@ function JoinLeagueInner({ code }: { code: string }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ event: "league_joined", data: { leagueId: league.id } }),
       }).catch(() => {});
+      afLeagueJoin({ leagueType: "general" });
       router.push(`/league/${league.id}`);
     } catch (e) {
       console.error(e);
