@@ -22,19 +22,17 @@ async function todaysDebate(): Promise<{ question: string; options: string[] } |
   const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!base || !key) return null;
-  // id tiebreaker: bank rows seeded in one insert share a created_at, and an
-  // unstable order would show a different "today's debate" per request.
-  // no-store: the durable data cache once pinned a deactivated bank forever.
+  // Same date-schedule rule as src/lib/debate.ts: today's dated debate, else
+  // the most recent past one. no-store: the durable data cache once pinned a
+  // stale bank forever.
+  const uk = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/London" });
   const res = await fetch(
-    `${base}/rest/v1/debates?active=eq.true&select=question,options&order=created_at.asc,id.asc`,
+    `${base}/rest/v1/debates?active=eq.true&day=lte.${uk}&select=question,options&order=day.desc&limit=1`,
     { headers: { apikey: key, authorization: `Bearer ${key}` }, cache: "no-store" }
   ).catch(() => null);
   if (!res?.ok) return null;
   const rows: { question: string; options: string[] }[] = await res.json().catch(() => []);
-  if (!rows.length) return null;
-  const uk = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/London" });
-  const day = Math.floor(Date.parse(`${uk}T00:00:00Z`) / 86_400_000);
-  return rows[day % rows.length];
+  return rows[0] ?? null;
 }
 
 export async function GET() {

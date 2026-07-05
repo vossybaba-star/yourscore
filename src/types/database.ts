@@ -502,6 +502,7 @@ export type Database = {
         Row: {
           active: boolean
           created_at: string
+          day: string | null
           id: string
           options: Json
           question: string
@@ -509,6 +510,7 @@ export type Database = {
         Insert: {
           active?: boolean
           created_at?: string
+          day?: string | null
           id?: string
           options: Json
           question: string
@@ -516,6 +518,7 @@ export type Database = {
         Update: {
           active?: boolean
           created_at?: string
+          day?: string | null
           id?: string
           options?: Json
           question?: string

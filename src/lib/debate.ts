@@ -2,10 +2,11 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 // Daily debates — one subjective football question a day, no right answer.
-// Rotation is date-seeded over the active bank (UK day), so there's no
-// scheduler to break: everyone computes the same "today's debate", and when
-// the cycle wraps a debate returns with its votes intact (a bigger split, not
-// a stale one). One vote per user per debate, changeable.
+// Dead simple by design (founder, Jul 5): every debate carries an explicit
+// calendar date (debates.day, unique). "Today's debate" is the row dated
+// today — or the most recent past one, so a gap in the schedule never blanks
+// the card. The schedule is authored, dated and reviewable in
+// scripts/seed-debates.mjs. One vote per user per debate, changeable.
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = SupabaseClient<any>;
@@ -23,27 +24,25 @@ export interface DebateSplit {
   total: number;
 }
 
-/** Days since epoch in UK time — the rotation key. */
-export function ukDayNumber(now = new Date()): number {
-  const uk = now.toLocaleDateString("en-CA", { timeZone: "Europe/London" }); // YYYY-MM-DD
-  return Math.floor(Date.parse(`${uk}T00:00:00Z`) / 86_400_000);
+/** Today's date in UK time, YYYY-MM-DD — the schedule key. */
+export function ukToday(now = new Date()): string {
+  return now.toLocaleDateString("en-CA", { timeZone: "Europe/London" });
 }
 
-/** Today's debate: date-seeded pick from the active bank (stable all day). */
+/** The debate dated today (UK), else the most recent past one. */
 export async function todaysDebate(db: Db): Promise<Debate | null> {
-  // id tiebreaker: seeded rows share a created_at; without it the "today's
-  // debate" pick could differ between requests.
   const { data } = await db
     .from("debates")
     .select("id, question, options")
     .eq("active", true)
-    .order("created_at", { ascending: true })
-    .order("id", { ascending: true });
-  if (!data?.length) return null;
-  const row = data[ukDayNumber() % data.length];
-  const options = Array.isArray(row.options) ? (row.options as string[]) : [];
+    .lte("day", ukToday())
+    .order("day", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!data) return null;
+  const options = Array.isArray(data.options) ? (data.options as string[]) : [];
   if (options.length < 2) return null;
-  return { id: row.id, question: row.question, options };
+  return { id: data.id, question: data.question, options };
 }
 
 /** The community split for a debate. Service-role read (votes are RLS own-only). */
