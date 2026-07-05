@@ -9,6 +9,9 @@ import { todaysDebate, debateSplit } from "@/lib/debate";
  * signed out — the card still renders for guests, voting needs an account).
  */
 export const dynamic = "force-dynamic"; // per-user yourVote + live counts — never static
+// Service-client GETs have a constant cache key, so Vercel's data cache will
+// happily serve a stale debate list forever without this (bit us on Jul 5).
+export const fetchCache = "force-no-store";
 
 export async function GET() {
   const svc = createServiceClient();

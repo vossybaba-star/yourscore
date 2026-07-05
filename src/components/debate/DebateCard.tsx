@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import { DiscussionThread } from "@/components/debate/DiscussionThread";
@@ -73,7 +74,13 @@ export function DebateCard({
           <p className="font-body text-[10px]" style={{ color: "#586058" }}>{total.toLocaleString()} vote{total === 1 ? "" : "s"}</p>
         )}
       </div>
-      <p className="px-5 pt-1 pb-4 font-display text-xl text-white leading-tight">{debate.question}</p>
+      <p className="px-5 pt-1 pb-1 font-display text-xl text-white leading-tight">{debate.question}</p>
+      {!voted && (
+        <p className="px-5 pb-3 font-body text-[11px]" style={{ color: "#8a948f" }}>
+          Tap one — that&rsquo;s your vote, done.
+        </p>
+      )}
+      {voted && <div className="pb-3" />}
 
       <div className="px-5 pb-4 space-y-2">
         {debate.options.map((label, i) => {
@@ -85,29 +92,41 @@ export function DebateCard({
                 key={i}
                 onClick={() => vote(i)}
                 disabled={pending !== null}
-                className="w-full text-left rounded-xl py-3 px-4 font-body text-sm font-bold active:scale-[0.99] transition-transform"
+                className="w-full flex items-center gap-3 text-left rounded-xl py-3 px-4 font-body text-sm font-bold active:scale-[0.99] transition-transform"
                 style={{
                   background: pending === i ? `${GOLD}2b` : "rgba(255,255,255,0.05)",
                   color: "#eef2f0",
                   border: "1px solid rgba(255,255,255,0.12)",
                 }}
               >
-                {label}
+                {/* empty tick circle: this is a one-tap ballot, not a link */}
+                <span className="flex items-center justify-center rounded-full flex-shrink-0"
+                  style={{ width: 20, height: 20, border: `1.5px solid ${pending === i ? GOLD : "rgba(255,255,255,0.3)"}` }}>
+                  {pending === i && <span className="rounded-full" style={{ width: 10, height: 10, background: GOLD }} />}
+                </span>
+                <span className="min-w-0">{label}</span>
               </button>
             );
           }
-          // Voted: split bars, yours in gold.
+          // Voted: split bars, yours gets the gold tick.
           return (
             <div key={i} className="relative rounded-xl overflow-hidden" style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${mine ? `${GOLD}66` : "rgba(255,255,255,0.08)"}` }}>
               <div
                 className="absolute inset-y-0 left-0 transition-all duration-700 ease-out"
                 style={{ width: `${pct}%`, background: mine ? `${GOLD}2e` : "rgba(255,255,255,0.06)" }}
               />
-              <div className="relative flex items-center justify-between py-3 px-4">
-                <p className="font-body text-sm font-bold" style={{ color: mine ? GOLD : "#eef2f0" }}>
-                  {label}{mine ? " · you" : ""}
-                </p>
-                <p className="font-display text-base" style={{ color: mine ? GOLD : "#8a948f" }}>{pct}%</p>
+              <div className="relative flex items-center gap-3 py-3 px-4">
+                {mine ? (
+                  <span className="flex items-center justify-center rounded-full flex-shrink-0" style={{ width: 20, height: 20, background: GOLD }}>
+                    <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+                      <path d="M2 6.5L4.8 9L10 3.5" stroke="#10160c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </span>
+                ) : (
+                  <span className="flex-shrink-0" style={{ width: 20 }} />
+                )}
+                <p className="font-body text-sm font-bold flex-1 min-w-0" style={{ color: mine ? GOLD : "#eef2f0" }}>{label}</p>
+                <p className="font-display text-base flex-shrink-0" style={{ color: mine ? GOLD : "#8a948f" }}>{pct}%</p>
               </div>
             </div>
           );
@@ -115,14 +134,23 @@ export function DebateCard({
       </div>
 
       {voted && (
-        <div className="px-5 pb-4">
+        <div className="px-5 pb-4 flex gap-2">
           <button
             onClick={share}
-            className="w-full rounded-xl py-3 font-display text-[12px] tracking-widest active:scale-[0.99] transition-transform"
+            className="flex-1 rounded-xl py-3 font-display text-[12px] tracking-widest active:scale-[0.99] transition-transform"
             style={{ background: `${GOLD}14`, color: GOLD, border: `1px solid ${GOLD}44` }}
           >
-            DRAG A FRIEND INTO IT →
+            DRAG A FRIEND IN →
           </button>
+          {/* When the thread isn't rendered right below, offer the way in */}
+          {!withDiscussion && (
+            <Link href="/debate"
+              className="flex-1 text-center rounded-xl py-3 font-display text-[12px] tracking-widest active:scale-[0.99] transition-transform"
+              style={{ background: "rgba(255,255,255,0.05)", color: "#eef2f0", border: "1px solid rgba(255,255,255,0.14)" }}
+            >
+              THE ARGUMENT →
+            </Link>
+          )}
         </div>
       )}
     </div>

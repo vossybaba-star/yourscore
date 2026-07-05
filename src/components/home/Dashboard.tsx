@@ -10,6 +10,7 @@ import { slugify } from "@/lib/utils";
 import { coverUrl } from "@/lib/img";
 import { usePendingFriends } from "@/hooks/usePendingFriends";
 import { usePendingTurns } from "@/hooks/usePendingTurns";
+import { DebateCard } from "@/components/debate/DebateCard";
 
 const WORLD_CUP_START = new Date("2026-06-11T18:00:00Z");
 
@@ -86,6 +87,16 @@ export interface FeaturedPack {
   icon?: string;
   coverImage?: string;
   publishedAt?: string;
+  /** metadata.series — "wc2026" marks the daily World Cup quiz series. */
+  series?: string;
+}
+
+// Short "5 Jul" style date for the featured card.
+function shortDate(iso?: string): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 }
 
 export interface DashboardData {
@@ -162,15 +173,16 @@ function ProgressCard({ rank, dayStreak, weekDots }: { rank: RankInfo; dayStreak
         <p className="font-body text-[10px] font-bold uppercase tracking-[0.24em] mb-2.5" style={{ color: GOLD }}>Your progress</p>
 
         <div className="flex items-stretch">
-          {/* Streak */}
+          {/* Streak — the zero state invites, never scolds: it's the first thing
+              a signed-in player reads. */}
           <div className="flex items-center gap-2 flex-1 min-w-0">
-            <span className="flame text-xl" style={{ filter: dayStreak === 0 ? "grayscale(1) opacity(0.45)" : undefined }}>🔥</span>
+            <span className="flame text-xl">🔥</span>
             <div className="min-w-0">
               <p className="font-display text-lg leading-none text-white whitespace-nowrap">
-                {dayStreak > 0 ? `${dayStreak} DAY STREAK` : "NO STREAK"}
+                {dayStreak > 0 ? `${dayStreak} DAY STREAK` : "START A STREAK"}
               </p>
               <p className="font-body text-[10px] mt-0.5" style={{ color: "#8a948f" }}>
-                {dayStreak > 0 ? "Keep it going!" : "Play today to start one"}
+                {dayStreak > 0 ? "Keep it going!" : "One game today does it"}
               </p>
             </div>
           </div>
@@ -294,6 +306,8 @@ function RivalryModule({ rivalry, meName, meId }: { rivalry: RivalryInfo | null;
 // The clear play-now moment: full-width art, name, question count, one chevron.
 
 function FeaturedQuizCard({ pack }: { pack: FeaturedPack }) {
+  const isWcSeries = pack.series === "wc2026";
+  const posted = shortDate(pack.publishedAt);
   return (
     <div className="d-3">
       <SectionHead title="Featured quiz" href="/play" />
@@ -309,10 +323,19 @@ function FeaturedQuizCard({ pack }: { pack: FeaturedPack }) {
         )}
         {/* left-anchored scrim keeps the title readable on any art */}
         <div className="absolute inset-0" style={{ background: "linear-gradient(90deg, rgba(6,10,8,0.92) 0%, rgba(6,10,8,0.55) 55%, rgba(6,10,8,0.15) 100%)" }} />
-        <div className="relative flex items-center gap-3 px-4 py-5" style={{ minHeight: 118 }}>
+        <div className="relative flex items-center gap-3 px-4 py-4" style={{ minHeight: 118 }}>
           <div className="flex-1 min-w-0">
+            {/* Series identity: this is today's entry in the daily World Cup run */}
+            {isWcSeries && (
+              <span className="inline-block font-body text-[9px] font-bold uppercase tracking-[0.2em] px-2 py-1 rounded-md mb-1.5"
+                style={{ background: "rgba(255,194,51,0.16)", color: GOLD, border: `1px solid ${GOLD}55` }}>
+                World Cup quiz series
+              </span>
+            )}
             <p className="font-display text-2xl text-white leading-tight" style={{ textShadow: "0 1px 12px rgba(0,0,0,0.6)" }}>{pack.name}</p>
-            <p className="font-body text-xs mt-1" style={{ color: "#c4ccc6" }}>{pack.question_count} questions</p>
+            <p className="font-body text-xs mt-1" style={{ color: "#c4ccc6" }}>
+              {posted ? `Posted ${posted} · ` : ""}{pack.question_count} questions
+            </p>
           </div>
           <span className="flex items-center justify-center rounded-full flex-shrink-0" style={{ width: 36, height: 36, background: TEAL }}>
             <svg width="15" height="15" viewBox="0 0 18 18" fill="none" style={{ color: "#04231f" }}>
@@ -482,6 +505,11 @@ export function Dashboard({ data }: { data: DashboardData }) {
 
         {/* 3. Featured quiz — the play-now moment */}
         {featured && <FeaturedQuizCard pack={featured} />}
+
+        {/* Today's debate — one tap, daily habit (moved here from Versus) */}
+        <div className="d-4">
+          <DebateCard signInNext="/" />
+        </div>
 
         {/* 4. Behaviour-based discovery */}
         <DiscoveryRail packs={rail} played38={played38} />

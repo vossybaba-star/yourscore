@@ -4,6 +4,8 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { rateLimitDistributed } from "@/lib/ratelimit";
 import { debateSplit } from "@/lib/debate";
 
+export const fetchCache = "force-no-store"; // live split — see today/route.ts
+
 /**
  * POST /api/debate/vote { debateId, optionIdx }
  * One vote per debate, changeable (upsert). Returns the fresh split so the

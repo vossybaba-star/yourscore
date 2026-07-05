@@ -35,6 +35,10 @@ export const metadata: Metadata = {
 };
 
 
+// Live per-user data on every render — don't let Vercel's data cache pin any
+// of the supabase GETs (constant-key service reads go permanently stale).
+export const fetchCache = "force-no-store";
+
 // Home / dashboard. Server Component: reads the session from cookies (refreshed by
 // middleware) and fetches all server-fetchable data in parallel before render —
 // no client waterfall. Interactive pieces (countdown ticker, mobile menu, league
@@ -157,6 +161,7 @@ export default async function RootPage({
     icon: p.metadata?.icon ? String(p.metadata.icon) : undefined,
     coverImage: p.metadata?.cover_image ? String(p.metadata.cover_image) : undefined,
     publishedAt: p.created_at ? String(p.created_at) : undefined,
+    series: p.metadata?.series ? String(p.metadata.series) : undefined,
   }));
 
   // ── Rank (from get_yourscore_rank) ──────────────────────────────────────────

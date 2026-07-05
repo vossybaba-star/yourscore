@@ -9,6 +9,7 @@ import { DebateCard } from "@/components/debate/DebateCard";
 // destination of every "DRAG A FRIEND INTO IT" share.
 
 export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store"; // today's debate rotates daily — never cache the list
 
 export async function generateMetadata(): Promise<Metadata> {
   const debate = await todaysDebate(createServiceClient()).catch(() => null);

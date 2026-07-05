@@ -10,6 +10,8 @@ import { commentRejection } from "@/lib/moderation";
 
 const SUBJECT_TYPES = new Set(["pack", "debate"]);
 
+export const fetchCache = "force-no-store"; // live threads — see debate/today/route.ts
+
 export interface CommentRow {
   id: string;
   userId: string;

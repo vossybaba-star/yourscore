@@ -13,7 +13,6 @@ import { VersusDiscovery } from "@/components/versus/VersusDiscovery";
 import { VersusActionCards } from "@/components/versus/VersusActionCard";
 import { LiveActivityStrip } from "@/components/versus/LiveActivityStrip";
 import { CommunityHighlights } from "@/components/versus/CommunityHighlights";
-import { DebateCard } from "@/components/debate/DebateCard";
 import { PublicLeaguesRail } from "@/components/leagues/PublicLeagueCard";
 import { FriendsPanel } from "@/components/friends/FriendsPanel";
 import { LeaguesPanel } from "@/components/leagues/LeaguesPanel";
@@ -368,12 +367,10 @@ function VersusInner() {
             </>
           )}
 
-          {/* Community: live pulse, today's debate, the results feed, public
-              leagues, friends promo (founder call: no "ready to play" rail) */}
+          {/* Community: live pulse, the results feed, public leagues, friends
+              promo (debate card lives on the home page now; the full argument
+              is at /debate) */}
           <LiveActivityStrip />
-          <div className="mt-7">
-            <DebateCard withDiscussion signInNext="/versus" />
-          </div>
           <CommunityHighlights />
           <PublicLeaguesRail limit={2} />
           <VersusDiscovery promoOnly />
