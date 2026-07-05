@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { createServiceClient } from "@/lib/supabase/service";
-import { todaysDebate } from "@/lib/debate";
+import { todaysDebate, ukToday } from "@/lib/debate";
 import { DebateCard } from "@/components/debate/DebateCard";
 import { BackPill } from "@/components/ui/BackPill";
 
@@ -15,13 +15,17 @@ export const fetchCache = "force-no-store"; // today's debate rotates daily — 
 export async function generateMetadata(): Promise<Metadata> {
   const debate = await todaysDebate(createServiceClient()).catch(() => null);
   const title = debate ? `${debate.question} — settle it on YourScore` : "Today's debate — YourScore";
+  // Day-versioned image URL: X/socials cache the card IMAGE by its URL, so a
+  // same-URL image goes stale when the debate rotates (bit us on day one).
+  // The OG route ignores the query; the changing URL forces a fresh fetch.
+  const img = `/api/og/debate?v=${ukToday()}`;
   return {
     title,
     description: "One football debate a day. Vote, see the community split, argue it out.",
     openGraph: {
       title,
       description: "One football debate a day. Vote, see the split, argue it out.",
-      images: [{ url: "/api/og/debate", width: 1200, height: 630 }],
+      images: [{ url: img, width: 1200, height: 630 }],
     },
     twitter: { card: "summary_large_image" },
   };
