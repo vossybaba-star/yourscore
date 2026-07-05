@@ -6,7 +6,19 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed with the founder:** 2026-07-05 (**Home v3** — signed-in home rebuilt to
+> **Confirmed with the founder:** 2026-07-05 round 2 (**Home v3 polish**: zero-streak
+> copy is positive ("START A STREAK", never "no streak" — first thing a player reads);
+> **Today's Debate card moved from Versus to the home page** (one-tap ballot with tick
+> circles + "Tap one — that's your vote, done." microcopy; full argument thread stays
+> at /debate); featured quiz card carries a gold **WORLD CUP QUIZ SERIES** chip
+> (metadata.series="wc2026") + posted date; **debate editorial bar**: every debate must
+> be real and specific — an actual moment/player/rule/part of fan life — and work for
+> every fan, not just big-club fans (bank rewritten in scripts/seed-debates.mjs, which
+> is authoritative: it deactivates active debates not in its list). GOTCHA fixed:
+> service-role supabase GETs in route handlers get pinned forever by Vercel's data
+> cache (constant cache key) — debate/comments routes + home now set
+> `fetchCache = "force-no-store"`.)
+> Same day, round 1 (**Home v3** — signed-in home rebuilt to
 > the founder's "Version 3" mockup: compact progress card with real day-streak +
 > weekday play-dots + points + global rank + chase line, a Rivalries module (live h2h
 > challenge with real expiry countdown, else all-time head-to-head record), a
