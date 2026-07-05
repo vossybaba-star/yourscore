@@ -7,9 +7,10 @@ import {
   Dashboard,
   type DashboardData,
   type FeaturedPack,
-  type FormResult,
   type LeaguePosition,
   type PlayNextInfo,
+  type RivalryInfo,
+  type RecommendedPack,
 } from "@/components/home/Dashboard";
 
 export const metadata: Metadata = {
@@ -79,6 +80,9 @@ export default async function RootPage({
     { data: recentMatches },
     { data: wcRunRows },
     { count: openLobbiesCount },
+    { data: attemptDays },
+    { data: h2hRows },
+    { data: packPool },
   ] = await Promise.all([
     supabase.from("profiles").select("display_name, total_score").eq("id", userId).single(),
     // Unified rank (two-track) — same RPC the profile uses; gives rank + chase gap.
@@ -114,6 +118,33 @@ export default async function RootPage({
       .eq("status", "lobby")
       .eq("room_mode", "open")
       .gte("created_at", lobbyCutoff),
+    // Quiz play days (45d) — feeds the day streak + this-week dots. 38-0 play
+    // days come from recentMatches above; both sets are merged below.
+    sb
+      .from("quiz_attempts")
+      .select("completed_at, pack_id")
+      .eq("user_id", userId)
+      .gte("completed_at", new Date(Date.now() - 45 * 86_400_000).toISOString())
+      .order("completed_at", { ascending: false })
+      .limit(500),
+    // H2H challenges: an unfinished one becomes the rivalry card (real expiry
+    // countdown); the completed ones build the head-to-head record fallback.
+    sb
+      .from("h2h_challenges")
+      .select("id, challenger_id, challenger_name, opponent_id, invited_user_id, challenger_score, opponent_score, quiz_pack_id, quiz_pack_name, status, expires_at, created_at")
+      // invited_user_id covers direct invites the invitee hasn't played yet
+      // (opponent_id only fills once they play their turn).
+      .or(`challenger_id.eq.${userId},opponent_id.eq.${userId},invited_user_id.eq.${userId}`)
+      .order("created_at", { ascending: false })
+      .limit(40),
+    // Pool for the behaviour-based rail: published packs, newest first; the
+    // user's already-played packs are filtered out below.
+    sb
+      .from("quiz_packs")
+      .select("id, name, question_count, metadata, featured, created_at")
+      .eq("status", "published")
+      .order("created_at", { ascending: false })
+      .limit(40),
   ]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -137,18 +168,115 @@ export default async function RootPage({
   const aheadGap: number | null =
     rankRow?.ahead_points != null ? Math.max(1, rankRow.ahead_points - overallScore) : null;
 
-  // ── Momentum: form pips + win streak from recent 38-0 matches ───────────────
+  // ── Day streak + this-week dots (UK days, quiz + 38-0 activity) ─────────────
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const matches: any[] = recentMatches ?? [];
-  const form: FormResult[] = matches.map((m) => ({
-    kind: "38" as const,
-    outcome: m.winner_id === userId ? ("W" as const) : ("L" as const),
-  }));
-  let streak = 0;
-  for (const f of form) {
-    if (f.outcome === "W") streak++;
-    else break;
+  const ukDay = (iso: string) =>
+    new Date(iso).toLocaleDateString("en-CA", { timeZone: "Europe/London" });
+  const playedSet = new Set<string>();
+  for (const a of attemptDays ?? []) if (a.completed_at) playedSet.add(ukDay(a.completed_at));
+  for (const m of matches) if (m.played_at) playedSet.add(ukDay(m.played_at));
+
+  const todayKey = ukDay(new Date().toISOString());
+  // Walk back day by day (noon UTC cursor sidesteps DST edges). A streak is
+  // alive if it includes today OR ended yesterday (today's game not played yet).
+  let dayStreak = 0;
+  {
+    let cursor = Date.parse(`${todayKey}T12:00:00Z`);
+    if (!playedSet.has(todayKey)) cursor -= 86_400_000;
+    while (playedSet.has(new Date(cursor).toLocaleDateString("en-CA", { timeZone: "Europe/London" }))) {
+      dayStreak++;
+      cursor -= 86_400_000;
+    }
   }
+  const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const todayIdx = WEEKDAYS.indexOf(
+    new Date().toLocaleDateString("en-GB", { weekday: "short", timeZone: "Europe/London" })
+  );
+  const weekDots = WEEKDAYS.map((label, i) => {
+    const ts = Date.parse(`${todayKey}T12:00:00Z`) + (i - todayIdx) * 86_400_000;
+    const key = new Date(ts).toLocaleDateString("en-CA", { timeZone: "Europe/London" });
+    return { label: label[0], played: playedSet.has(key), isToday: i === todayIdx, isFuture: i > todayIdx };
+  });
+
+  // ── Rivalry: live h2h challenge first (real expiry), else all-time record ───
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const h2h: any[] = h2hRows ?? [];
+  const now = Date.now();
+  const liveH2h = h2h.find(
+    (c) =>
+      !["completed", "expired", "declined"].includes(c.status) &&
+      (!c.expires_at || Date.parse(c.expires_at) > now)
+  );
+  let rivalry: RivalryInfo | null = null;
+  if (liveH2h) {
+    const iAmChallenger = liveH2h.challenger_id === userId;
+    const oppId: string | null = iAmChallenger
+      ? liveH2h.opponent_id ?? liveH2h.invited_user_id
+      : liveH2h.challenger_id;
+    let oppName = iAmChallenger ? "Your rival" : String(liveH2h.challenger_name ?? "Your rival");
+    if (iAmChallenger && oppId) {
+      const { data: p } = await supabase.from("profiles").select("display_name").eq("id", oppId).maybeSingle();
+      if (p?.display_name) oppName = p.display_name;
+    }
+    rivalry = {
+      live: true,
+      opponentId: oppId,
+      opponentName: oppName,
+      myScore: iAmChallenger ? liveH2h.challenger_score ?? null : liveH2h.opponent_score ?? null,
+      theirScore: iAmChallenger ? liveH2h.opponent_score ?? null : liveH2h.challenger_score ?? null,
+      expiresAt: liveH2h.expires_at ?? null,
+      packName: liveH2h.quiz_pack_name ?? null,
+    };
+  } else {
+    // Most-played opponent across completed challenges → head-to-head record.
+    const byOpp = new Map<string, { name: string; wins: number; losses: number; games: number }>();
+    for (const c of h2h) {
+      if (c.status !== "completed" || c.opponent_score == null) continue;
+      const iAmChallenger = c.challenger_id === userId;
+      const oppId = iAmChallenger ? c.opponent_id : c.challenger_id;
+      if (!oppId) continue;
+      const mine = iAmChallenger ? c.challenger_score : c.opponent_score;
+      const theirs = iAmChallenger ? c.opponent_score : c.challenger_score;
+      const rec = byOpp.get(oppId) ?? { name: iAmChallenger ? "" : String(c.challenger_name ?? ""), wins: 0, losses: 0, games: 0 };
+      rec.games++;
+      if (mine > theirs) rec.wins++;
+      else if (theirs > mine) rec.losses++;
+      byOpp.set(oppId, rec);
+    }
+    const top = Array.from(byOpp.entries()).sort((a, b) => b[1].games - a[1].games)[0];
+    if (top) {
+      let name = top[1].name;
+      if (!name) {
+        const { data: p } = await supabase.from("profiles").select("display_name").eq("id", top[0]).maybeSingle();
+        name = p?.display_name ?? "Your rival";
+      }
+      rivalry = {
+        live: false,
+        opponentId: top[0],
+        opponentName: name,
+        myScore: top[1].wins,
+        theirScore: top[1].losses,
+        expiresAt: null,
+        packName: null,
+      };
+    }
+  }
+
+  // ── Behaviour-based rail: packs they haven't played yet ─────────────────────
+  const attemptedPackIds = new Set((attemptDays ?? []).map((a: { pack_id: string }) => a.pack_id));
+  const played38 = matches.length > 0;
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  const recommended: RecommendedPack[] = ((packPool as any) ?? [])
+    .filter((p: any) => !attemptedPackIds.has(p.id))
+    .slice(0, 6)
+    .map((p: any) => ({
+      id: String(p.id),
+      name: String(p.name),
+      questionCount: Number(p.question_count ?? 10),
+      cover: p.metadata?.cover_image ? String(p.metadata.cover_image) : null,
+    }));
+  /* eslint-enable @typescript-eslint/no-explicit-any */
 
   // ── Active World Cup run ────────────────────────────────────────────────────
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -209,7 +337,11 @@ export default async function RootPage({
     userId,
     displayName: profile?.display_name ?? "",
     rank: { overall: overallRank, score: overallScore, knowledge: rankRow?.knowledge_score ?? 0, match: rankRow?.match_score ?? 0, aheadName, aheadGap },
-    momentum: { form, streak },
+    dayStreak,
+    weekDots,
+    rivalry,
+    recommended,
+    played38,
     wcRun,
     playNext,
     openLobbies,
