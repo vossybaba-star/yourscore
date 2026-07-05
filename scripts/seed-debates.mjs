@@ -19,8 +19,8 @@ const get = (k) => env.match(new RegExp(`^${k}=(.*)$`, "m"))?.[1]?.trim();
 const db = createClient(get("NEXT_PUBLIC_SUPABASE_URL"), get("SUPABASE_SERVICE_ROLE_KEY"));
 
 const SCHEDULE = [
-  { day: "2026-07-05", question: "Half-and-half scarves: harmless souvenir or a crime against football?", options: ["Crime", "Let people enjoy things"] },
-  { day: "2026-07-06", question: "Gazza's tears at Italia 90: the moment modern English football was born?", options: ["It changed everything", "Romanticised nonsense"] },
+  { day: "2026-07-05", question: "Gazza's tears at Italia 90: the moment modern English football was born?", options: ["It changed everything", "Romanticised nonsense"] },
+  { day: "2026-07-06", question: "Half-and-half scarves: harmless souvenir or a crime against football?", options: ["Crime", "Let people enjoy things"] },
   { day: "2026-07-07", question: "Canada in the last 16 for the first time ever — the story of this World Cup?", options: ["Story of the summer", "Wait for the final"] },
   { day: "2026-07-08", question: "The Hand of God: cheating, or the most Maradona thing that ever happened?", options: ["Pure cheating", "Genius, part of the game"] },
   { day: "2026-07-09", question: "Away tickets: cap them at £20 everywhere, like the fans keep asking?", options: ["Cap them now", "Clubs need the money"] },

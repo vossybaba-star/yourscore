@@ -15,10 +15,11 @@ export const fetchCache = "force-no-store"; // today's debate rotates daily — 
 export async function generateMetadata(): Promise<Metadata> {
   const debate = await todaysDebate(createServiceClient()).catch(() => null);
   const title = debate ? `${debate.question} — settle it on YourScore` : "Today's debate — YourScore";
-  // Day-versioned image URL: X/socials cache the card IMAGE by its URL, so a
-  // same-URL image goes stale when the debate rotates (bit us on day one).
-  // The OG route ignores the query; the changing URL forces a fresh fetch.
-  const img = `/api/og/debate?v=${ukToday()}`;
+  // Versioned image URL: X/socials cache the card IMAGE by its URL, so a
+  // same-URL image goes stale when the debate changes (bit us on day one).
+  // Stamped with the debate id too, so even a mid-day schedule swap mints a
+  // fresh URL. The OG route ignores the query.
+  const img = `/api/og/debate?v=${ukToday()}-${debate?.id.slice(0, 8) ?? "none"}`;
   return {
     title,
     description: "One football debate a day. Vote, see the community split, argue it out.",
