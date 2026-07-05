@@ -86,11 +86,44 @@ if (mode === "gate1") {
 
 } else if (mode === "email") {
   const { challenge } = urls(quiz);
+
+  // Compute the EXACT recipient counts so the card matches what actually sends
+  // (mirrors send-wc-quiz-daily.mjs: engaged = active+cooling, split by primary_game,
+  // minus suppressions/unsendable). Wrapped so a query hiccup degrades to a plain
+  // description instead of blocking the gate.
+  let counts = null;
+  try {
+    const { createClient } = await import("@supabase/supabase-js");
+    const { loadSuppressions } = await import("./load-suppressions.mjs");
+    const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
+    const suppressed = await loadSuppressions();
+    const emailById = new Map();
+    for (let page = 1; ; page++) {
+      const { data, error } = await supabase.auth.admin.listUsers({ perPage: 1000, page });
+      if (error) throw error;
+      for (const u of data?.users ?? []) if (u.email) emailById.set(u.id, u.email.trim().toLowerCase());
+      if ((data?.users ?? []).length < 1000) break;
+    }
+    const sendable = (e) => e && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e) && !suppressed.has(e);
+    const { data: segRows, error: segErr } = await supabase.rpc("get_email_segments");
+    if (segErr) throw segErr;
+    let quiz = 0, mm = 0;
+    for (const r of segRows ?? []) {
+      if (r.engagement_tier !== "active" && r.engagement_tier !== "cooling") continue;
+      if (!sendable(emailById.get(r.user_id))) continue;
+      if (r.primary_game === "quiz") quiz++; else mm++;
+    }
+    counts = { quiz, mm, total: quiz + mm };
+  } catch { counts = null; }
+
+  const rows = counts
+    ? [`🧠 Quiz daily → <b>${counts.quiz}</b> engaged quiz players`, `⚽ Mastermind daily → <b>${counts.mm}</b> engaged WC/38 players`]
+    : [`🧠 Quiz daily → engaged <b>quiz</b> players`, `⚽ Mastermind daily → engaged <b>WC/38</b> players`];
+
   const summary = [
     `${PREVIEW ? "🧪 <b>PREVIEW</b> · " : ""}📧 <b>GATE 2c — Approve the emails</b>`, ``,
-    `Day ${DAY} · <b>TWO segmented broadcasts</b> (engaged only = active + cooling):`,
-    `🧠 Quiz daily → engaged <b>quiz</b> players`,
-    `⚽ Mastermind daily → engaged <b>WC/38</b> players`, ``,
+    `Day ${DAY} · <b>TWO segmented broadcasts</b>${counts ? ` · <b>${counts.total}</b> recipients` : ""} (engaged = active + cooling):`,
+    ...rows, ``,
     `Marketing broadcasts (no transactional burn) · relay + suppressed excluded. NOT an all-users blast.`,
     `Blurb: ${esc(shortDescription(quiz))}`, `▶️ ${challenge}`,
   ].join("\n");

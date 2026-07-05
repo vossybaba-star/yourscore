@@ -110,7 +110,9 @@ export async function awaitApproval(prompt, { buttons = ["Approve", "Reject"], t
       offset = up.update_id + 1;
       const cq = up.callback_query;
       if (cq && cq.message?.message_id === msg.message_id) {
-        await call("answerCallbackQuery", { callback_query_id: cq.id, text: `Got it: ${cq.data}` });
+        // The callback ack is just a toast. If it's stale ("query is too old", a 400),
+        // NEVER let it crash the launch — the tap already told us the decision.
+        await call("answerCallbackQuery", { callback_query_id: cq.id, text: `Got it: ${cq.data}` }).catch(() => {});
         // Strip the buttons + show the decision on the original message.
         await call("editMessageReplyMarkup", { chat_id: chatId, message_id: msg.message_id, reply_markup: { inline_keyboard: [] } }).catch(() => {});
         await sendMessage(`✅ You chose: <b>${cq.data}</b>`, { chatId });
@@ -153,7 +155,7 @@ export async function awaitButtonsOrText(prompt, { buttons = ["Approve", "Reject
       offset = up.update_id + 1;
       const cq = up.callback_query;
       if (cq && cq.message?.message_id === msg.message_id) {
-        await call("answerCallbackQuery", { callback_query_id: cq.id, text: `Got it: ${cq.data}` });
+        await call("answerCallbackQuery", { callback_query_id: cq.id, text: `Got it: ${cq.data}` }).catch(() => {});
         await call("editMessageReplyMarkup", { chat_id: chatId, message_id: msg.message_id, reply_markup: { inline_keyboard: [] } }).catch(() => {});
         return { kind: "button", value: String(cq.data) };
       }
