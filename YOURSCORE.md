@@ -6,7 +6,15 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed with the founder:** 2026-07-05 round 3 (**Back navigation retraces steps**
+> **Confirmed with the founder:** 2026-07-05 round 4 (**Debate share card** — the
+> /debate link unfurl is now a pixel-copy of the in-app Daily Debate tile: gold header,
+> question, UNVOTED option buttons with tick circles (founder call: buttons, not the
+> split — the whole point is landing people on yourscore.app). `/debate?pick=N`
+> per-side links pre-highlight the option for guests and auto-cast the vote once
+> they're signed in — the tap on X *is* the vote, sign-up is the gate. No native X
+> poll (deliberate: don't give X the engagement). Rotation order now has an `id`
+> tiebreaker (seeded rows share created_at) and the OG fetch is no-store.)
+> Same day, round 3 (**Back navigation retraces steps**
 > — founder: "when they go back, they just want to retrace their steps". Session nav
 > trail (`src/lib/nav.ts` + NavTracker in the root layout) + `BackPill fallback=` mode:
 > back controls now return the player to the screen they actually came from, skipping
