@@ -45,11 +45,15 @@ export async function todaysDebate(db: Db): Promise<Debate | null> {
   return { id: data.id, question: data.question, options };
 }
 
-/** The community split for a debate. Service-role read (votes are RLS own-only). */
+/** The community split: account votes + anonymous device votes. Service-role
+ * read (both tables are locked to the API). */
 export async function debateSplit(db: Db, debate: Debate): Promise<DebateSplit> {
-  const { data } = await db.from("debate_votes").select("option_idx").eq("debate_id", debate.id);
+  const [{ data: users }, { data: anons }] = await Promise.all([
+    db.from("debate_votes").select("option_idx").eq("debate_id", debate.id),
+    db.from("debate_anon_votes").select("option_idx").eq("debate_id", debate.id),
+  ]);
   const counts = debate.options.map(() => 0);
-  for (const v of data ?? []) {
+  for (const v of [...(users ?? []), ...(anons ?? [])]) {
     if (v.option_idx >= 0 && v.option_idx < counts.length) counts[v.option_idx] += 1;
   }
   return { debate, counts, total: counts.reduce((a, b) => a + b, 0) };

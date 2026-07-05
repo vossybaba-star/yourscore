@@ -469,6 +469,35 @@ export type Database = {
         }
         Relationships: []
       }
+      debate_anon_votes: {
+        Row: {
+          created_at: string
+          debate_id: string
+          option_idx: number
+          voter_key: string
+        }
+        Insert: {
+          created_at?: string
+          debate_id: string
+          option_idx: number
+          voter_key: string
+        }
+        Update: {
+          created_at?: string
+          debate_id?: string
+          option_idx?: number
+          voter_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "debate_anon_votes_debate_id_fkey"
+            columns: ["debate_id"]
+            isOneToOne: false
+            referencedRelation: "debates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       debate_votes: {
         Row: {
           created_at: string

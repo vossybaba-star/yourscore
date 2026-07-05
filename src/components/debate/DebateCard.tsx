@@ -2,15 +2,49 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import { DiscussionThread } from "@/components/debate/DiscussionThread";
 
 // Today's debate — one subjective football question a day, no right answer.
 // Tap an option, watch the community split land. The payoff is disagreement:
 // the card is deliberately loudest when the room is divided.
+//
+// NO ACCOUNT NEEDED to vote (founder, Jul 5): guests vote under a per-device
+// key and their vote is remembered locally; sign-up is the gate for the
+// argument (comments), not the ballot.
 
 const GOLD = "#ffc233";
+
+const VOTER_KEY = "ys:debate:voter";
+const VOTED_KEY = "ys:debate:voted";
+
+/** Stable per-device key for anonymous votes. */
+function voterKey(): string {
+  try {
+    let k = localStorage.getItem(VOTER_KEY);
+    if (!k) {
+      k = crypto.randomUUID();
+      localStorage.setItem(VOTER_KEY, k);
+    }
+    return k;
+  } catch {
+    return "no-storage-" + Math.random().toString(36).slice(2, 12);
+  }
+}
+
+/** Guests' own votes, remembered on the device: { [debateId]: optionIdx }. */
+function localVotes(): Record<string, number> {
+  try {
+    return JSON.parse(localStorage.getItem(VOTED_KEY) ?? "{}");
+  } catch {
+    return {};
+  }
+}
+function rememberVote(debateId: string, idx: number) {
+  try {
+    localStorage.setItem(VOTED_KEY, JSON.stringify({ ...localVotes(), [debateId]: idx }));
+  } catch { /* fine — they can vote again elsewhere */ }
+}
 
 interface TodayPayload {
   debate: { id: string; question: string; options: string[] } | null;
@@ -33,20 +67,26 @@ export function DebateCard({
   initialPick?: number | null;
 }) {
   const { user } = useUser();
-  const router = useRouter();
   const [data, setData] = useState<TodayPayload | null>(null);
   const [pending, setPending] = useState<number | null>(null);
 
   useEffect(() => {
-    fetch("/api/debate/today").then((r) => r.json()).then(setData).catch(() => setData(null));
+    fetch("/api/debate/today").then((r) => r.json()).then((d: TodayPayload) => {
+      // Guests: the server can't know their vote — the device does.
+      if (d?.debate && d.yourVote === null) {
+        const mine = localVotes()[d.debate.id];
+        if (mine !== undefined) d = { ...d, yourVote: mine };
+      }
+      setData(d);
+    }).catch(() => setData(null));
   }, []);
 
-  // Share-link pre-pick: a signed-in, unvoted visitor landing on ?pick=N has
-  // their vote cast for them — the tap they made on X WAS the vote. Fires once.
+  // Share-link pre-pick (?pick=N): the tap they made on X WAS the vote —
+  // cast it on landing, signed in or not. Fires once per mount.
   const autoCastRef = useRef(false);
   useEffect(() => {
     if (initialPick === null || autoCastRef.current) return;
-    if (!user || !data?.debate) return;
+    if (!data?.debate) return;
     autoCastRef.current = true;
     if (data.yourVote !== null) return; // already had their say
     if (initialPick < 0 || initialPick >= data.debate.options.length) return;
@@ -55,10 +95,13 @@ export function DebateCard({
       const res = await fetch("/api/debate/vote", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ debateId: debate.id, optionIdx: initialPick }),
+        body: JSON.stringify({ debateId: debate.id, optionIdx: initialPick, ...(user ? {} : { voterKey: voterKey() }) }),
       });
       const body = await res.json().catch(() => null);
-      if (res.ok && body) setData({ debate, counts: body.counts, total: body.total, yourVote: body.yourVote });
+      if (res.ok && body) {
+        if (!user) rememberVote(debate.id, initialPick);
+        setData({ debate, counts: body.counts, total: body.total, yourVote: body.yourVote });
+      }
     })();
   }, [initialPick, user, data]);
 
@@ -67,17 +110,17 @@ export function DebateCard({
   const voted = yourVote !== null;
 
   async function vote(idx: number) {
-    if (!user) { router.push(`/auth/sign-in?next=${encodeURIComponent(signInNext)}`); return; }
     if (pending !== null) return;
     setPending(idx);
     try {
       const res = await fetch("/api/debate/vote", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ debateId: debate!.id, optionIdx: idx }),
+        body: JSON.stringify({ debateId: debate!.id, optionIdx: idx, ...(user ? {} : { voterKey: voterKey() }) }),
       });
       const body = await res.json();
       if (res.ok) {
+        if (!user) rememberVote(debate!.id, idx);
         setData({ debate, counts: body.counts, total: body.total, yourVote: body.yourVote });
       }
     } finally {
@@ -163,22 +206,33 @@ export function DebateCard({
       </div>
 
       {voted && (
-        <div className="px-5 pb-4 flex gap-2">
-          <button
-            onClick={share}
-            className="flex-1 rounded-xl py-3 font-display text-[12px] tracking-widest active:scale-[0.99] transition-transform"
-            style={{ background: `${GOLD}14`, color: GOLD, border: `1px solid ${GOLD}44` }}
-          >
-            DRAG A FRIEND IN →
-          </button>
-          {/* When the thread isn't rendered right below, offer the way in */}
-          {!withDiscussion && (
-            <Link href="/debate"
-              className="flex-1 text-center rounded-xl py-3 font-display text-[12px] tracking-widest active:scale-[0.99] transition-transform"
-              style={{ background: "rgba(255,255,255,0.05)", color: "#eef2f0", border: "1px solid rgba(255,255,255,0.14)" }}
+        <div className="px-5 pb-4">
+          <div className="flex gap-2">
+            <button
+              onClick={share}
+              className="flex-1 rounded-xl py-3 font-display text-[12px] tracking-widest active:scale-[0.99] transition-transform"
+              style={{ background: `${GOLD}14`, color: GOLD, border: `1px solid ${GOLD}44` }}
             >
-              THE ARGUMENT →
-            </Link>
+              DRAG A FRIEND IN →
+            </button>
+            {/* When the thread isn't rendered right below, offer the way in */}
+            {!withDiscussion && (
+              <Link href="/debate"
+                className="flex-1 text-center rounded-xl py-3 font-display text-[12px] tracking-widest active:scale-[0.99] transition-transform"
+                style={{ background: "rgba(255,255,255,0.05)", color: "#eef2f0", border: "1px solid rgba(255,255,255,0.14)" }}
+              >
+                THE ARGUMENT →
+              </Link>
+            )}
+          </div>
+          {/* Voting is free; the argument needs a name. */}
+          {!user && (
+            <p className="font-body text-[11px] text-center mt-2.5" style={{ color: "#8a948f" }}>
+              Vote counted. Want to argue it out in the comments?{" "}
+              <Link href={`/auth/sign-in?next=${encodeURIComponent(signInNext)}`} className="font-bold" style={{ color: GOLD }}>
+                Join YourScore →
+              </Link>
+            </p>
           )}
         </div>
       )}
