@@ -6,7 +6,15 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed with the founder:** 2026-07-05 round 5 (**Debates are date-allocated,
+> **Confirmed with the founder:** 2026-07-05 round 6 (**Anonymous debate voting** —
+> nobody needs an account to vote on the daily debate. Guests vote under a per-device
+> key (`debate_anon_votes`, migration 72; localStorage `ys:debate:voter`), votes
+> remembered on-device, rate-limited per IP; `?pick=N` share links auto-cast for
+> guests on landing — the tap on X IS the vote. The split counts account + anonymous
+> votes together. **Sign-up now gates the argument (comments), not the ballot** — a
+> post-vote nudge invites guests in. Accepted trade-off: device keys are spoofable;
+> debates are banter, not the £100 board.)
+> Same day, round 5 (**Debates are date-allocated,
 > not rotated** — founder: one per day, allocated to dates, reviewable in advance,
 > keep it very simple. Migration 71 adds `debates.day` (unique); "today's debate" =
 > the row dated today (UK), else the most recent past one. **The schedule IS
