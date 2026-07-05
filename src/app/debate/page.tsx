@@ -44,8 +44,9 @@ export default function DebatePage({ searchParams }: { searchParams: { pick?: st
         <div className="flex items-center justify-between mb-6">
           {/* In-app arrivals retrace (home, a scorecard); shared-link guests fall back home */}
           <BackPill fallback="/" label="Back" tone="neutral" />
+          {/* Home, not Versus: guests get the front door, members get the dashboard */}
           <Link
-            href="/versus"
+            href="/"
             className="font-body text-xs font-bold px-3 py-1.5 rounded-full"
             style={{ background: "rgba(174,234,0,0.12)", color: "#aeea00", border: "1px solid rgba(174,234,0,0.3)" }}
           >
