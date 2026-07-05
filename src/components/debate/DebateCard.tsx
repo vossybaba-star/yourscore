@@ -149,7 +149,12 @@ export function DebateCard({
           Tap one — that&rsquo;s your vote, done.
         </p>
       )}
-      {voted && <div className="pb-3" />}
+      {/* The payoff for voting: where the room stands right now */}
+      {voted && (
+        <p className="px-5 pb-3 font-body text-[11px]" style={{ color: "#8a948f" }}>
+          The split so far —
+        </p>
+      )}
 
       <div className="px-5 pb-4 space-y-2">
         {debate.options.map((label, i) => {
@@ -225,12 +230,12 @@ export function DebateCard({
               </Link>
             )}
           </div>
-          {/* Voting is free; the argument needs a name. */}
+          {/* Voting is free; the pitch after it is the games. */}
           {!user && (
             <p className="font-body text-[11px] text-center mt-2.5" style={{ color: "#8a948f" }}>
-              Vote counted. Want to argue it out in the comments?{" "}
-              <Link href={`/auth/sign-in?next=${encodeURIComponent(signInNext)}`} className="font-bold" style={{ color: GOLD }}>
-                Join YourScore →
+              Vote counted. Reckon you actually know your football?{" "}
+              <Link href="/" className="font-bold" style={{ color: GOLD }}>
+                Prove it — play on YourScore →
               </Link>
             </p>
           )}
