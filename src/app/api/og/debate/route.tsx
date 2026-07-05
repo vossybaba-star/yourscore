@@ -35,8 +35,19 @@ async function todaysDebate(): Promise<{ question: string; options: string[] } |
   return rows[0] ?? null;
 }
 
+// Social crawlers re-fetch this and give up fast: a cold render (1-3s) or a
+// momentary DB blip = X silently drops the card image and caches the failure.
+// s-maxage keeps a CDN copy warm (instant for crawlers); a debate swap
+// propagates within 10 min and mints a new ?v= URL anyway.
+const CDN_CACHE = { "cache-control": "public, max-age=0, s-maxage=600, stale-while-revalidate=3600" };
+
 export async function GET() {
-  const debate = await todaysDebate();
+  let debate: { question: string; options: string[] } | null = null;
+  try {
+    debate = await todaysDebate();
+  } catch {
+    /* fall through to the generic card — never 500 a social crawler */
+  }
   const question = debate?.question ?? "One football debate a day. Settle it.";
   const options = (debate?.options ?? ["Have your say", "See the split"]).slice(0, 3);
   const qSize = question.length > 90 ? 40 : question.length > 55 ? 48 : 56;
@@ -72,6 +83,6 @@ export async function GET() {
         <div style={{ position: "absolute", left: 0, bottom: 0, width: "1200px", height: 12, background: GOLD }} />
       </div>
     ),
-    { width: 1200, height: 630 }
+    { width: 1200, height: 630, headers: CDN_CACHE }
   );
 }
