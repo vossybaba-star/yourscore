@@ -87,9 +87,11 @@ if (mode === "gate1") {
 } else if (mode === "email") {
   const { challenge } = urls(quiz);
   const summary = [
-    `${PREVIEW ? "🧪 <b>PREVIEW</b> · " : ""}📧 <b>GATE 2c — Approve the email</b>`, ``,
-    `Day ${DAY} · Subject: <i>WC 26 Quiz Series | Day ${DAY} is live. Build your streak.</i>`,
-    `To: ALL users (~4,500)`, ``,
+    `${PREVIEW ? "🧪 <b>PREVIEW</b> · " : ""}📧 <b>GATE 2c — Approve the emails</b>`, ``,
+    `Day ${DAY} · <b>TWO segmented broadcasts</b> (engaged only = active + cooling):`,
+    `🧠 Quiz daily → engaged <b>quiz</b> players`,
+    `⚽ Mastermind daily → engaged <b>WC/38</b> players`, ``,
+    `Marketing broadcasts (no transactional burn) · relay + suppressed excluded. NOT an all-users blast.`,
     `Blurb: ${esc(shortDescription(quiz))}`, `▶️ ${challenge}`,
   ].join("\n");
   if (PREVIEW) { await sendMessage(summary, { buttons: ["Send", "Skip"] }); console.log("preview sent"); }

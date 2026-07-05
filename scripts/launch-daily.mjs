@@ -8,7 +8,7 @@
  *   3. 📲 GATE 1 — approve the quiz (Telegram). Reject → stop.
  *   4. generate the two cards (gpt-image-1 hybrid) + attach them
  *   5. 📲 GATE 2a — approve the tweet → post it (skips gracefully if X needs credits)
- *   6. 📲 GATE 2b — approve the email → send to all users
+ *   6. 📲 GATE 2c — approve the emails → TWO segmented broadcasts (engaged quiz players + engaged WC/38 players), NOT an all-users blast
  *   7. final Telegram summary
  *
  * Env (.env.local): SUPABASE_*, OPENAI_API_KEY, X_*, RESEND_API_KEY, TELEGRAM_*.
