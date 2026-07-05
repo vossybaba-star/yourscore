@@ -6,7 +6,15 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed with the founder:** 2026-07-04 (**Versus phase 2**: daily debates +
+> **Confirmed with the founder:** 2026-07-05 (**Home v3** — signed-in home rebuilt to
+> the founder's "Version 3" mockup: compact progress card with real day-streak +
+> weekday play-dots + points + global rank + chase line, a Rivalries module (live h2h
+> challenge with real expiry countdown, else all-time head-to-head record), a
+> full-width Featured Quiz play-now card, a behaviour-based "Because you played 38-0 /
+> Picked for you" rail of unplayed packs, and a compact 3-up mode-tile row replacing
+> the full-width game tiles. All stats real; leagues + open-lobby nudge + pending
+> notices kept. `src/app/page.tsx` + `src/components/home/Dashboard.tsx`.
+> Previously 2026-07-04: **Versus phase 2**: daily debates +
 > discussion threads — §9, migration 70. Previously 2026-07-03: **Versus phase 1 +
 > rounds 2–3**: Play-tab
 > redesign, instant matchmaking for both games incl. pick-your-quiz, shadow matches,
