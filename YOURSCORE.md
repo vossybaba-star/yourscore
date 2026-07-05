@@ -6,7 +6,18 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed with the founder:** 2026-07-05 round 2 (**Home v3 polish**: zero-streak
+> **Confirmed with the founder:** 2026-07-05 round 3 (**Back navigation retraces steps**
+> — founder: "when they go back, they just want to retrace their steps". Session nav
+> trail (`src/lib/nav.ts` + NavTracker in the root layout) + `BackPill fallback=` mode:
+> back controls now return the player to the screen they actually came from, skipping
+> transient screens (matchmaking radar, game rooms, auth) and falling back to the old
+> hardcoded target only on deep links. Rolled out to: player profiles, league tables
+> (quiz + 38-0 via DraftHeader), scorecards, quiz picker/find/challenge/shadow,
+> featured-quiz detail, /debate (which previously had no back at all). New **nav layer
+> in the 4x/day health checks** (`scripts/health/checks/navigation.mjs`) walks the
+> golden paths in a real browser and fails the Telegram scorecard if back stops
+> retracing.)
+> Same day, round 2 (**Home v3 polish**: zero-streak
 > copy is positive ("START A STREAK", never "no streak" — first thing a player reads);
 > **Today's Debate card moved from Versus to the home page** (one-tap ballot with tick
 > circles + "Tap one — that's your vote, done." microcopy; full argument thread stays
