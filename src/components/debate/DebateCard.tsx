@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
@@ -22,10 +22,15 @@ interface TodayPayload {
 export function DebateCard({
   withDiscussion = false,
   signInNext = "/debate",
+  initialPick = null,
 }: {
   /** Render the debate's own discussion thread beneath the card. */
   withDiscussion?: boolean;
   signInNext?: string;
+  /** Share-link pre-pick (/debate?pick=N): auto-casts once signed in and
+   * unvoted; signed-out visitors see the option highlighted, and their tap
+   * rides through sign-in via signInNext. */
+  initialPick?: number | null;
 }) {
   const { user } = useUser();
   const router = useRouter();
@@ -35,6 +40,27 @@ export function DebateCard({
   useEffect(() => {
     fetch("/api/debate/today").then((r) => r.json()).then(setData).catch(() => setData(null));
   }, []);
+
+  // Share-link pre-pick: a signed-in, unvoted visitor landing on ?pick=N has
+  // their vote cast for them — the tap they made on X WAS the vote. Fires once.
+  const autoCastRef = useRef(false);
+  useEffect(() => {
+    if (initialPick === null || autoCastRef.current) return;
+    if (!user || !data?.debate) return;
+    autoCastRef.current = true;
+    if (data.yourVote !== null) return; // already had their say
+    if (initialPick < 0 || initialPick >= data.debate.options.length) return;
+    const debate = data.debate;
+    (async () => {
+      const res = await fetch("/api/debate/vote", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ debateId: debate.id, optionIdx: initialPick }),
+      });
+      const body = await res.json().catch(() => null);
+      if (res.ok && body) setData({ debate, counts: body.counts, total: body.total, yourVote: body.yourVote });
+    })();
+  }, [initialPick, user, data]);
 
   if (!data?.debate) return null;
   const { debate, counts, total, yourVote } = data;
@@ -87,6 +113,9 @@ export function DebateCard({
           const pct = total > 0 ? Math.round((counts[i] / total) * 100) : 0;
           const mine = yourVote === i;
           if (!voted) {
+            // Share-link arrivals see their picked side highlighted; the tap
+            // (and the sign-in it may route through) completes that vote.
+            const prePicked = !user && initialPick === i;
             return (
               <button
                 key={i}
@@ -94,14 +123,14 @@ export function DebateCard({
                 disabled={pending !== null}
                 className="w-full flex items-center gap-3 text-left rounded-xl py-3 px-4 font-body text-sm font-bold active:scale-[0.99] transition-transform"
                 style={{
-                  background: pending === i ? `${GOLD}2b` : "rgba(255,255,255,0.05)",
+                  background: pending === i || prePicked ? `${GOLD}2b` : "rgba(255,255,255,0.05)",
                   color: "#eef2f0",
-                  border: "1px solid rgba(255,255,255,0.12)",
+                  border: `1px solid ${prePicked ? `${GOLD}66` : "rgba(255,255,255,0.12)"}`,
                 }}
               >
                 {/* empty tick circle: this is a one-tap ballot, not a link */}
                 <span className="flex items-center justify-center rounded-full flex-shrink-0"
-                  style={{ width: 20, height: 20, border: `1.5px solid ${pending === i ? GOLD : "rgba(255,255,255,0.3)"}` }}>
+                  style={{ width: 20, height: 20, border: `1.5px solid ${pending === i || prePicked ? GOLD : "rgba(255,255,255,0.3)"}` }}>
                   {pending === i && <span className="rounded-full" style={{ width: 10, height: 10, background: GOLD }} />}
                 </span>
                 <span className="min-w-0">{label}</span>

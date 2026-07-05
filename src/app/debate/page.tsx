@@ -27,7 +27,12 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default function DebatePage() {
+export default function DebatePage({ searchParams }: { searchParams: { pick?: string } }) {
+  // ?pick=N — per-side share links ("Vote Crime → …?pick=0"): the option
+  // arrives pre-selected, and the vote auto-casts once they're signed in.
+  const parsed = Number.parseInt(searchParams?.pick ?? "", 10);
+  const pick = Number.isInteger(parsed) && parsed >= 0 && parsed <= 3 ? parsed : null;
+  const next = pick !== null ? `/debate?pick=${pick}` : "/debate";
   return (
     <main className="min-h-dvh bg-bg">
       <div className="max-w-lg mx-auto px-5 py-8">
@@ -47,7 +52,7 @@ export default function DebatePage() {
           One football debate a day
         </h1>
 
-        <DebateCard withDiscussion signInNext="/debate" />
+        <DebateCard withDiscussion signInNext={next} initialPick={pick} />
 
         <p className="font-body text-xs text-text-muted text-center mt-6">
           Think your football knowledge settles it?{" "}

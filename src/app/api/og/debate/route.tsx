@@ -1,10 +1,14 @@
 /**
  * /api/og/debate — the link-preview image for /debate (1200x630).
  *
- * The unfurl carries today's actual question so the share bait is the debate
- * itself, not a generic brand card. Rotates with the daily pick; edge runtime
- * can't use the server Supabase helpers, so it reads via PostgREST directly
- * (debates are world-readable by RLS).
+ * A pixel-copy of the in-app Daily Debate tile: gold header, the question,
+ * and the two UNVOTED option buttons with tick circles. On a Twitter/X feed
+ * it reads as a votable poll — the whole card is one tap-through to
+ * yourscore.app/debate where the vote really is one tap. Founder call (Jul 5):
+ * show the buttons, not the live split — "I want my say" pulls more taps.
+ *
+ * Rotates with the daily pick; edge runtime can't use the server Supabase
+ * helpers, so it reads via PostgREST directly (debates are world-readable).
  */
 
 import { ImageResponse } from "next/og";
@@ -14,13 +18,16 @@ export const runtime = "edge";
 
 const GOLD = "#ffc233";
 
-async function todaysQuestion(): Promise<{ question: string; options: string[] } | null> {
+async function todaysDebate(): Promise<{ question: string; options: string[] } | null> {
   const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!base || !key) return null;
+  // id tiebreaker: bank rows seeded in one insert share a created_at, and an
+  // unstable order would show a different "today's debate" per request.
+  // no-store: the durable data cache once pinned a deactivated bank forever.
   const res = await fetch(
-    `${base}/rest/v1/debates?active=eq.true&select=question,options&order=created_at.asc`,
-    { headers: { apikey: key, authorization: `Bearer ${key}` }, next: { revalidate: 3600 } }
+    `${base}/rest/v1/debates?active=eq.true&select=question,options&order=created_at.asc,id.asc`,
+    { headers: { apikey: key, authorization: `Bearer ${key}` }, cache: "no-store" }
   ).catch(() => null);
   if (!res?.ok) return null;
   const rows: { question: string; options: string[] }[] = await res.json().catch(() => []);
@@ -31,25 +38,38 @@ async function todaysQuestion(): Promise<{ question: string; options: string[] }
 }
 
 export async function GET() {
-  const debate = await todaysQuestion();
+  const debate = await todaysDebate();
   const question = debate?.question ?? "One football debate a day. Settle it.";
-  const fontSize = question.length > 60 ? 52 : 64;
+  const options = (debate?.options ?? ["Have your say", "See the split"]).slice(0, 3);
+  const qSize = question.length > 90 ? 40 : question.length > 55 ? 48 : 56;
 
   return new ImageResponse(
     (
-      <div style={{ width: "1200px", height: "630px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "linear-gradient(150deg, #0a0a0f 0%, #14110a 55%, #0b0d08 100%)", fontFamily: "sans-serif", position: "relative", padding: "60px" }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={LOGO_DATA_URI} width={260} height={70} alt="YourScore" style={{ display: "flex" }} />
+      <div style={{ width: "1200px", height: "630px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "#0a0a0f", fontFamily: "sans-serif", position: "relative", padding: "44px 90px" }}>
+        {/* The tile — same surface, border and layout as the in-app card */}
+        <div style={{ display: "flex", flexDirection: "column", width: "100%", borderRadius: 28, padding: "36px 44px 40px", background: "linear-gradient(160deg, rgba(255,194,51,0.09), #0e1611)", border: `2px solid rgba(255,194,51,0.35)` }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span style={{ display: "flex", color: GOLD, fontSize: 22, fontWeight: 800, letterSpacing: 6 }}>TODAY&apos;S DEBATE</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={LOGO_DATA_URI} width={150} height={40} alt="YourScore" style={{ display: "flex" }} />
+          </div>
 
-        <div style={{ display: "flex", marginTop: 40, padding: "10px 30px", borderRadius: 999, background: "rgba(255,194,51,0.1)", border: `1px solid ${GOLD}55` }}>
-          <span style={{ display: "flex", color: GOLD, fontSize: 28, fontWeight: 800, letterSpacing: 4 }}>TODAY&apos;S DEBATE</span>
+          <span style={{ display: "flex", fontSize: qSize, fontWeight: 900, color: "#fff", lineHeight: 1.14, marginTop: 22 }}>{question}</span>
+
+          <span style={{ display: "flex", fontSize: 22, color: "#8a948f", marginTop: 12 }}>Tap one — that&apos;s your vote, done.</span>
+
+          <div style={{ display: "flex", flexDirection: "column", marginTop: 26, gap: 14 }}>
+            {options.map((label, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 20, borderRadius: 18, padding: "20px 26px", background: "rgba(255,255,255,0.05)", border: "1.5px solid rgba(255,255,255,0.14)" }}>
+                {/* empty tick circle — reads as a ballot, not a link */}
+                <div style={{ display: "flex", width: 34, height: 34, borderRadius: 999, border: "2.5px solid rgba(255,255,255,0.35)" }} />
+                <span style={{ display: "flex", fontSize: 30, fontWeight: 700, color: "#eef2f0" }}>{label}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
-        <span style={{ display: "flex", fontSize, fontWeight: 900, color: "#fff", lineHeight: 1.15, marginTop: 32, textAlign: "center", maxWidth: 1000 }}>{question}</span>
-
-        <span style={{ display: "flex", fontSize: 30, color: "#c4ccc6", fontWeight: 600, marginTop: 36 }}>Vote. See the split. Argue it out.</span>
-
-        <span style={{ display: "flex", fontSize: 28, color: GOLD, fontWeight: 800, marginTop: 32 }}>yourscore.app/debate</span>
+        <span style={{ display: "flex", fontSize: 26, color: GOLD, fontWeight: 800, marginTop: 26 }}>Vote now at yourscore.app/debate</span>
 
         <div style={{ position: "absolute", left: 0, bottom: 0, width: "1200px", height: 12, background: GOLD }} />
       </div>

@@ -31,11 +31,14 @@ export function ukDayNumber(now = new Date()): number {
 
 /** Today's debate: date-seeded pick from the active bank (stable all day). */
 export async function todaysDebate(db: Db): Promise<Debate | null> {
+  // id tiebreaker: seeded rows share a created_at; without it the "today's
+  // debate" pick could differ between requests.
   const { data } = await db
     .from("debates")
     .select("id, question, options")
     .eq("active", true)
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: true })
+    .order("id", { ascending: true });
   if (!data?.length) return null;
   const row = data[ukDayNumber() % data.length];
   const options = Array.isArray(row.options) ? (row.options as string[]) : [];
