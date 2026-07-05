@@ -6,7 +6,15 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed with the founder:** 2026-07-05 round 4 (**Debate share card** — the
+> **Confirmed with the founder:** 2026-07-05 round 5 (**Debates are date-allocated,
+> not rotated** — founder: one per day, allocated to dates, reviewable in advance,
+> keep it very simple. Migration 71 adds `debates.day` (unique); "today's debate" =
+> the row dated today (UK), else the most recent past one. **The schedule IS
+> `scripts/seed-debates.mjs`** — literal dates Jul 5 → Aug 5, edit + re-run to change;
+> `--list` prints the calendar. The earlier modulo rotation switched the live debate
+> mid-day when the bank changed (scarves→Gazza, 27 votes mid-flight) — scarves
+> restored to Jul 5 with votes intact, Gazza scheduled Jul 6.)
+> Same day, round 4 (**Debate share card** — the
 > /debate link unfurl is now a pixel-copy of the in-app Daily Debate tile: gold header,
 > question, UNVOTED option buttons with tick circles (founder call: buttons, not the
 > split — the whole point is landing people on yourscore.app). `/debate?pick=N`
