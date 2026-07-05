@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { smartBackTarget } from "@/lib/nav";
 import { haptic } from "@/lib/haptics";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -768,16 +769,18 @@ export default function ChallengePage() {
     return (
       <div className="min-h-screen flex flex-col bg-bg">
         <div className="relative" style={{ background: gradientHero }}>
-          <Link
-            href="/play"
+          {/* Retrace: arriving from home's featured card goes back home, not /play */}
+          <button
+            type="button"
+            onClick={() => router.push(smartBackTarget("/play"))}
             className="absolute top-12 left-5 flex items-center gap-1.5 font-body text-xs z-10"
             style={{ color: "rgba(255,255,255,0.5)" }}
           >
             <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
               <path d="M11 4L6 9l5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            Challenges
-          </Link>
+            Back
+          </button>
 
           <div className="flex flex-col items-center pt-24 pb-8 px-6">
             {pack.metadata?.cover_image ? (

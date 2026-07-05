@@ -101,7 +101,7 @@ export default function Versus380Page() {
         <div className="absolute inset-0 opacity-60"><PitchArt /></div>
         <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(8,13,10,0.25) 0%, rgba(8,13,10,0.7) 60%, #080d0a 100%)" }} />
         <div className="relative max-w-lg mx-auto px-5 pt-safe">
-          <div className="pt-4"><BackPill href="/versus" label="Versus" tone="draft" /></div>
+          <div className="pt-4"><BackPill fallback="/versus" label="Back" tone="draft" /></div>
           <div className="pt-6 pb-6">
             <div className="flex items-center gap-2 mb-2">
               <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M8 2.5 3 5.5 5 9.5 7.3 8.3V19a1 1 0 0 0 1 1h5.4a1 1 0 0 0 1-1V8.3L17 9.5l2-4-5-3C14 4.4 12.7 5.6 11 5.6S8 4.4 8 2.5Z" stroke={LIME} strokeWidth="1.7" strokeLinejoin="round" fill={LIME} fillOpacity={0.15} /></svg>

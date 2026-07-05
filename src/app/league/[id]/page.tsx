@@ -284,7 +284,7 @@ export default function LeaguePage({ params }: { params: { id: string } }) {
       <div className="sticky top-0 z-10 pt-safe" style={{ background: "rgba(10,10,15,0.92)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
         <div className="max-w-lg mx-auto px-5 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <BackPill href="/leagues" label="Leagues" tone="neutral" />
+            <BackPill fallback="/versus?view=leagues" label="Back" tone="neutral" />
             <div>
               <p className="font-body text-xs text-text-muted uppercase tracking-widest">League</p>
               <p className="font-display text-lg text-white leading-tight">{league.name}</p>

@@ -195,7 +195,7 @@ function FindInner() {
     <main className="min-h-dvh bg-bg pb-16">
       <div className="max-w-lg mx-auto px-5 pt-safe">
         <div className="pt-4">
-          <BackPill href="/versus" tone="neutral" sticky={false} />
+          <BackPill fallback="/versus" tone="neutral" sticky={false} />
         </div>
 
         {stage === "choose" && (

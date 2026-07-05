@@ -110,7 +110,7 @@ export default function ChallengePage() {
   return (
     <main className="min-h-dvh bg-bg pb-28">
       <div className="max-w-lg mx-auto px-5 pt-safe">
-        <div className="pt-4"><BackPill href="/versus" label="Versus" tone="play" /></div>
+        <div className="pt-4"><BackPill fallback="/versus" label="Back" tone="play" /></div>
 
         {/* Step 2 — pick a friend */}
         {picked ? (

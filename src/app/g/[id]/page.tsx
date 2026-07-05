@@ -87,7 +87,7 @@ export default function GroupBoardPage() {
   return (
     <div className="min-h-dvh bg-bg pb-28">
       <div className="max-w-lg mx-auto px-5 pt-safe">
-        <div className="pt-4"><BackPill href="/play" label="Play" tone="play" /></div>
+        <div className="pt-4"><BackPill fallback="/play" label="Back" tone="play" /></div>
 
         {/* Header */}
         <div className="mt-3 rounded-3xl px-5 py-5 surface-grid">

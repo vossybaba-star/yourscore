@@ -8,8 +8,9 @@
  */
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import type { League } from "@/lib/draft/types";
+import { smartBackTarget } from "@/lib/nav";
 
 const TABS = [
   { href: "/38-0/live", label: "⚡ Live", match: "/38-0/live", color: "#aeea00" },
@@ -22,10 +23,14 @@ const TABS = [
 // Liga session doesn't silently drop you onto the Premier League boards.
 export function DraftHeader({ competition = "PL" }: { competition?: League }) {
   const path = usePathname() ?? "";
+  const router = useRouter();
   const q = competition === "PL" ? "" : `?competition=${competition}`;
   return (
     <div className="flex items-center gap-2 pt-4 pb-3">
-      <Link href="/38-0" className="font-body text-sm shrink-0" style={{ color: "#8a948f" }}>← 38-0</Link>
+      {/* Retrace the player's steps — a 38-0 league opened from Versus goes
+          back to Versus, not the 38-0 hub. No trail → the hub. */}
+      <button type="button" onClick={() => router.push(smartBackTarget("/38-0"))}
+        className="font-body text-sm shrink-0" style={{ color: "#8a948f" }}>← Back</button>
       <div className="flex items-center gap-1.5 overflow-x-auto ml-auto" style={{ scrollbarWidth: "none" }}>
         {TABS.map((t) => {
           const active =

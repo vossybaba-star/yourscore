@@ -159,7 +159,7 @@ export default async function PublicProfilePage({ params }: { params: { userId: 
 
       {/* Nav */}
       <nav className="relative z-10 flex items-center justify-between px-5 py-4 max-w-lg mx-auto">
-        <BackPill href="/versus" label="Versus" tone="neutral" />
+        <BackPill fallback="/versus" label="Back" tone="neutral" />
         <span className="font-body text-xs px-3 py-1 rounded-full"
           style={{ background: "rgba(174,234,0,0.1)", color: LIME, border: "1px solid rgba(174,234,0,0.2)" }}>
           Player Profile

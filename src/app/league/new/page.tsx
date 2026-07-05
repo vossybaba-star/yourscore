@@ -91,7 +91,7 @@ function CreateLeagueInner() {
 
       <nav className="relative z-10 pt-safe flex items-center justify-between px-6 py-5 max-w-2xl mx-auto">
         <div className="flex items-center gap-4">
-          <BackPill href="/leagues" label="Back" tone="neutral" />
+          <BackPill fallback="/versus?view=leagues" label="Back" tone="neutral" />
           <Link href="/">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo.png" alt="YourScore" height={28} style={{ height: 28, width: "auto" }} />

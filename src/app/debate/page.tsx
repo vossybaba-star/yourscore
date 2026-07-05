@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createServiceClient } from "@/lib/supabase/service";
 import { todaysDebate } from "@/lib/debate";
 import { DebateCard } from "@/components/debate/DebateCard";
+import { BackPill } from "@/components/ui/BackPill";
 
 // Public landing for shared debates: guests can read the question and the
 // argument; voting or commenting walks them into sign-up. This page is the
@@ -31,9 +32,8 @@ export default function DebatePage() {
     <main className="min-h-dvh bg-bg">
       <div className="max-w-lg mx-auto px-5 py-8">
         <div className="flex items-center justify-between mb-6">
-          <Link href="/" className="font-display text-lg text-white">
-            YOUR<span className="text-green">SCORE</span>
-          </Link>
+          {/* In-app arrivals retrace (home, a scorecard); shared-link guests fall back home */}
+          <BackPill fallback="/" label="Back" tone="neutral" />
           <Link
             href="/versus"
             className="font-body text-xs font-bold px-3 py-1.5 rounded-full"

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { trackGamePlay, trackGameComplete } from "@/lib/analytics/trackGame";
 import { GridBackground } from "@/components/ui/GridBackground";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { BackPill } from "@/components/ui/BackPill";
 import { Button } from "@/components/ui/Button";
@@ -13,6 +13,7 @@ import type { Database } from "@/types/database";
 import { useUser } from "@/hooks/useUser";
 import { REALTIME_ENABLED } from "@/lib/realtime";
 import { QUIZ_BOT_ID } from "@/lib/versus/quizBot";
+import { smartBackTarget } from "@/lib/nav";
 
 // Lazy-loaded so the QR library stays out of the initial bundle (matches the
 // league pages). react-qr-code is the single QR dependency used app-wide.
@@ -117,6 +118,7 @@ function CountdownRing({ closesAt }: { closesAt: string }) {
 
 export default function RoomPage() {
   const params = useParams();
+  const router = useRouter();
   const { user, loading: userLoading } = useUser();
   const roomId = params.roomId as string;
 
@@ -677,7 +679,7 @@ export default function RoomPage() {
       <main className="min-h-dvh bg-bg flex flex-col items-center justify-center px-6 gap-4">
         <p className="font-display text-5xl">🤔</p>
         <p className="font-display text-2xl text-white">Lobby not found</p>
-        <BackPill href="/play" label="Back to Play" tone="play" />
+        <BackPill fallback="/play" label="Back" tone="play" />
       </main>
     );
   }
@@ -853,7 +855,7 @@ export default function RoomPage() {
       <main className="min-h-dvh pb-20 bg-bg">
         <nav className="flex items-center justify-between px-5 py-4 max-w-lg mx-auto">
           {/* h2h battles came from Versus — send them back there, not the quiz tab */}
-          <BackPill href={room.room_mode === "h2h" ? "/versus" : "/play"} label={room.room_mode === "h2h" ? "Versus" : "Play"} tone="play" />
+          <BackPill fallback={room.room_mode === "h2h" ? "/versus" : "/play"} label="Back" tone="play" />
           <div className="flex items-center gap-2">
             <span className="font-body text-xs" style={{ color: "#586058" }}>Game Over</span>
             {completedAt && !lobbyExpired && (
@@ -1037,8 +1039,8 @@ export default function RoomPage() {
                 New Lobby 🎮
               </Button>
             )}
-            <Button variant="ghost" size="md" href={room.room_mode === "h2h" ? "/versus" : "/play"} className="flex-1">
-              {room.room_mode === "h2h" ? "Back to Versus" : "Back to Play"}
+            <Button variant="ghost" size="md" onClick={() => router.push(smartBackTarget(room.room_mode === "h2h" ? "/versus" : "/play"))} className="flex-1">
+              Back
             </Button>
           </div>
         </div>

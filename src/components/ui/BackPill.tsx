@@ -2,11 +2,16 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { smartBackTarget } from "@/lib/nav";
 
 /**
  * Standard top-left "back" control for every screen — a pill, tinted to its area:
  *   neutral (default) · wc (gold) · draft (38-0 lime) · play (teal).
- * Pass `href` to navigate to a specific route, or omit it to go back in history.
+ * Prefer `fallback`: retraces the player's actual steps via the session nav
+ * trail (src/lib/nav.ts), landing on `fallback` only when there's no trail
+ * (deep link, fresh session). `href` teleports unconditionally — keep it for
+ * screens with exactly one sane parent (deep 38-0 hierarchy, legal pages).
+ * Omit both to go back in raw history.
  * `sticky` pins it to the top of a scroll (used on long lists like the WC board).
  */
 type Tone = "neutral" | "wc" | "draft" | "play";
@@ -18,8 +23,8 @@ const TONES: Record<Tone, { bg: string; border: string; color: string }> = {
   play:    { bg: "rgba(0,216,192,0.13)",   border: "rgba(0,216,192,0.42)",   color: "#00d8c0" },
 };
 
-export function BackPill({ href, label = "Back", tone = "neutral", sticky = false, onClick, className = "" }: {
-  href?: string; label?: string; tone?: Tone; sticky?: boolean; onClick?: () => void; className?: string;
+export function BackPill({ href, fallback, label = "Back", tone = "neutral", sticky = false, onClick, className = "" }: {
+  href?: string; fallback?: string; label?: string; tone?: Tone; sticky?: boolean; onClick?: () => void; className?: string;
 }) {
   const router = useRouter();
   const t = TONES[tone];
@@ -27,9 +32,15 @@ export function BackPill({ href, label = "Back", tone = "neutral", sticky = fals
   const style: React.CSSProperties = { background: t.bg, border: `1px solid ${t.border}`, color: t.color, fontSize: 13, lineHeight: 1 };
   const inner = (<><span aria-hidden style={{ fontSize: 15 }}>←</span><span>{label}</span></>);
 
+  const handleClick =
+    onClick ??
+    (fallback !== undefined
+      ? () => router.push(smartBackTarget(fallback))
+      : () => router.back());
+
   const pill = href
     ? <Link href={href} className={cls} style={style}>{inner}</Link>
-    : <button type="button" onClick={onClick ?? (() => router.back())} className={cls} style={style}>{inner}</button>;
+    : <button type="button" onClick={handleClick} className={cls} style={style}>{inner}</button>;
 
   if (!sticky) return pill;
   return (

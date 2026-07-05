@@ -147,7 +147,7 @@ export default async function PlayerProfilePage({ params }: PlayerPageProps) {
         <div className="max-w-lg mx-auto px-5 py-4">
           <div className="flex items-center gap-4">
             {/* Back link */}
-            <BackPill href="/38-0/history" label="Back" tone="neutral" />
+            <BackPill fallback="/38-0/history" label="Back" tone="neutral" />
 
             <AvatarCircle
               name={name}

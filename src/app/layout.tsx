@@ -1,9 +1,11 @@
 import * as Sentry from "@sentry/nextjs";
+import { Suspense } from "react";
 import type { Metadata, Viewport } from "next";
 import { Bebas_Neue, DM_Sans, DM_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { NativeBootstrap } from "@/components/native/NativeBootstrap";
+import { NavTracker } from "@/components/ui/NavTracker";
 import { UsernamePrompt } from "@/components/profile/UsernamePrompt";
 import { AppStoreBanner } from "@/components/app/AppStoreBanner";
 import { NativeOnboarding } from "@/components/native/onboarding/NativeOnboarding";
@@ -86,6 +88,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${bebasNeue.variable} ${dmSans.variable} ${dmMono.variable}`}>
       <body>
+        <Suspense fallback={null}>
+          <NavTracker />
+        </Suspense>
         <NativeBootstrap />
         <UsernamePrompt />
         <AppStoreBanner />
