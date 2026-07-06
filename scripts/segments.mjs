@@ -80,6 +80,9 @@ const SEGMENTS = {
   // Lifecycle
   "new-7d":           { angle: "Onboarding: signed up this week", pred: u => u.is_new },
   "new-no-play":      { angle: "Just signed up, no game yet — nudge in fast", pred: u => u.is_new && u.engagement_tier === "never" },
+
+  // Broadcast — every sendable user (frequency cap still applies per-user)
+  "all":              { angle: "Full list — use for major moments only", pred: () => true },
 };
 
 const BLOCKED_DOMAINS = new Set(["yourscore.fake", "example.com", "test.com"]);

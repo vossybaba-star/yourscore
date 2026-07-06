@@ -27,9 +27,9 @@ export async function GET(req: NextRequest) {
   }
 
   const svc = createServiceClient();
-  // 'expired' is a new status value; rooms.status is free text (no enum) so no
-  // migration is needed — use an untyped handle to avoid the generated-types
-  // union complaining about the literal.
+  // 'expired' is allowed by rooms_status_check as of migration 65 — use an
+  // untyped handle to avoid the generated-types union complaining about the
+  // literal.
   const raw = svc as unknown as SupabaseClient;
 
   const cutoff = new Date(Date.now() - STALE_HOURS * 60 * 60 * 1000).toISOString();

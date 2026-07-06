@@ -1,0 +1,177 @@
+===== 2026-06-17 12:08 BST =====
+  skip @FabrizioRomano 08580501 (Not confirmed official World Cup news - it's a social media quote from a club player, not a World Cup squad or tournament announcement.)
+  skip @FabrizioRomano 30781047 (This is a Messi quote about his personal emotional state, not confirmed official World Cup news or an official announcement. It does not meet the strict usability criteria for this source account.)
+proposed 01853605 from @FabrizioRomano (78c, eng 193853)
+  🏆 Messi with the Man of the Match against Algeria. / 🇦🇷 Just doing what he does.
+pushed 67208988
+pushed 29395107
+pushed 99835194
+pushed 41276445
+pushed 82484546
+pushed 45962422
+(held 7 extra draft(s) to avoid a burst; they push on the next run)
+===== 2026-06-17 12:10 BST =====
+  skip @FabrizioRomano 08580501 (Not confirmed official World Cup news - this is a social media quote/moment, not an official tournament announcement or squad news. Fails the strict usability criteria for this source account.)
+  skip @FabrizioRomano 30781047 (This is a Messi quote/story but not confirmed official World Cup news or a done deal - it's a personal reflection/interview quote, not an official announcement or confirmed tournament story that meets the strict criteria for this source account.)
+proposed 70423654 from @FabrizioRomano (152c, eng 193416)
+  🐐 Messi. Joint top scorer in World Cup history. / ⚽ 16 goals. Level with Klose. At 38 years old. / 🇦🇷 Just when you think you've seen everything from him...
+pushed 70423654
+  -> pushed single draft 70423654
+===== 2026-06-17 15:00 BST =====
+  skip @FabrizioRomano 30781047 (This is a Messi quote about personal emotion during a club/Inter Miami context - not confirmed official World Cup news or a national team announcement. Fails the strict World Cup-only filter.)
+  skip @FIFAWorldCup 02591693 (Pure generic hype post with no match fact, result or specific moment to react to.)
+  skip @FabrizioRomano 96130511 (This is a quote about Messi's records, not confirmed official World Cup news or an official announcement directly about a squad, national team or tournament story. It's a general football quote/opinion piece, not a done deal or official announcement.)
+  skip @FabrizioRomano 79463285 (Not confirmed official World Cup news or a national team/tournament story. It is a Messi quote about Nadal, off-topic for this account's strict filter.)
+  skip @FabrizioRomano 07058350 (Not confirmed official World Cup news or a national team/tournament announcement. This is a quote about Messi's personal opinion, not a done deal or official World Cup story.)
+scanned 122 candidate(s), none usable this run
+  -> nothing proposed this run
+===== 2026-06-17 16:30 BST =====
+  skip @FIFAWorldCup 02591693 (Generic hype post with no match facts, results or specific moments. Pure promotional content with no repurposable football news.)
+  skip @FabrizioRomano 96130511 (This is a quote about Messi from a club/international context, not a confirmed official World Cup announcement or squad/tournament news. Doesn't meet the strict World Cup confirmed news threshold.)
+  skip @FabrizioRomano 79463285 (Not World Cup or national team news. It is a Messi quote about a tennis documentary, not confirmed official football news.)
+  skip @FIFAWorldCup 68667327 (Too vague - no specific match, moment or result to accurately report. Just a generic hype caption with a media link and no usable football fact.)
+  skip @FabrizioRomano 07058350 (Not confirmed World Cup news or an official tournament announcement. It is a quote about Messi's views on other players, which falls outside the strict criteria for this source account.)
+scanned 123 candidate(s), none usable this run
+  -> nothing proposed this run
+===== 2026-06-17 18:00 BST =====
+  skip @FIFAWorldCup 02591693 (Pure generic hype with no match fact, result or specific moment to react to.)
+  skip @FabrizioRomano 77006828 (This is a quote/reaction story, not a confirmed official World Cup announcement or done deal. It does not meet the strict criteria of confirmed official news directly about the World Cup.)
+  skip @FabrizioRomano 29918279 (No confirmed official World Cup news - this appears to be about Ronaldo arriving somewhere and a goals milestone reference, but there is no confirmed tournament announcement or official squad/national team story to repurpose.)
+  skip @brfootball 43954106 (Source tweet is just 'No words' with a link to media we cannot see. No football event, player or context to work with, so nothing accurate to repurpose.)
+  skip @FabrizioRomano 64047632 (This is a quote about Messi from Mac Allister but it is not a confirmed official World Cup announcement or tournament news - it is a media comment/opinion piece, not a done deal or official squad/tournament story.)
+scanned 121 candidate(s), none usable this run
+  -> nothing proposed this run
+===== 2026-06-17 19:30 BST =====
+  skip @FIFAWorldCup 02591693 (Pure generic hype with no match fact, result or specific moment to repurpose.)
+  skip @FabrizioRomano 29918279 (No confirmed World Cup news or official announcement. This is a general Portugal/Ronaldo arrival note with a record stat, not a confirmed World Cup squad or tournament story.)
+  skip @FabrizioRomano 77365043 (Not confirmed official news - this is a report/claim about a future retirement intention, not a confirmed done deal or official announcement. Also the World Cup hasn't started yet so it's speculative future context rather than a confirmed tournament story.)
+proposed 59605353 from @FabrizioRomano (160c, eng 81329)
+  🐐 Cristiano Ronaldo starting a World Cup match at 41 years old. / ⚽ The oldest outfield player ever to do it. / 🇵🇹 Some things you just have to stop and appreciate.
+pushed 59605353
+  -> pushed single draft 59605353
+===== 2026-06-17 21:00 BST =====
+proposed 31164939 from @FabrizioRomano (182c, eng 80593)
+  ⚽ Wissa has scored what many are calling the greatest World Cup goal ever for DR Congo / 🇨🇩 A historic moment for a country and its fans / 🤩 Football does this sometimes. Just brilliant.
+pushed 31164939
+  -> pushed single draft 31164939
+===== 2026-06-18 08:00 BST =====
+@Squawka: GET https://api.twitter.com/2/users/385473825/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@brfootball: GET https://api.twitter.com/2/users/1561123663/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@433: GET https://api.twitter.com/2/users/2600210567/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@OneFootball: GET https://api.twitter.com/2/users/799369969725227008/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@Footballtweet: GET https://api.twitter.com/2/users/462312323/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@BBCSport: GET https://api.twitter.com/2/users/265902729/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@FIFAWorldCup: GET https://api.twitter.com/2/users/138372303/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@FabrizioRomano: GET https://api.twitter.com/2/users/330262748/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+proposed 93468970 from @OptaJoe (264c, eng 11789)
+  😬 Ten straight major tournament games without a goal for Ronaldo. / 33 shots, 11 on target, nothing. / 🤔 At some point you have to just shake your head and wonder what's going on. / ⚽ Still Portugal's most important player to most fans... but that run is hard to ignore.
+pushed 93468970
+  -> pushed single draft 93468970
+===== 2026-06-18 08:30 BST =====
+@OptaJoe: GET https://api.twitter.com/2/users/44606764/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@Squawka: GET https://api.twitter.com/2/users/385473825/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@brfootball: GET https://api.twitter.com/2/users/1561123663/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@433: GET https://api.twitter.com/2/users/2600210567/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@OneFootball: GET https://api.twitter.com/2/users/799369969725227008/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@Footballtweet: GET https://api.twitter.com/2/users/462312323/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@BBCSport: GET https://api.twitter.com/2/users/265902729/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@FIFAWorldCup: GET https://api.twitter.com/2/users/138372303/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@FabrizioRomano: GET https://api.twitter.com/2/users/330262748/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+no new candidates this run
+  -> nothing proposed this run
+===== 2026-06-18 09:00 BST =====
+@OptaJoe: GET https://api.twitter.com/2/users/44606764/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@Squawka: GET https://api.twitter.com/2/users/385473825/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@brfootball: GET https://api.twitter.com/2/users/1561123663/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@433: GET https://api.twitter.com/2/users/2600210567/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@OneFootball: GET https://api.twitter.com/2/users/799369969725227008/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@Footballtweet: GET https://api.twitter.com/2/users/462312323/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@BBCSport: GET https://api.twitter.com/2/users/265902729/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@FIFAWorldCup: GET https://api.twitter.com/2/users/138372303/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@FabrizioRomano: GET https://api.twitter.com/2/users/330262748/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+no new candidates this run
+  -> nothing proposed this run
+===== 2026-06-18 09:30 BST =====
+@OptaJoe: GET https://api.twitter.com/2/users/44606764/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@Squawka: GET https://api.twitter.com/2/users/385473825/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@brfootball: GET https://api.twitter.com/2/users/1561123663/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@433: GET https://api.twitter.com/2/users/2600210567/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@OneFootball: GET https://api.twitter.com/2/users/799369969725227008/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@Footballtweet: GET https://api.twitter.com/2/users/462312323/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@BBCSport: GET https://api.twitter.com/2/users/265902729/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@FIFAWorldCup: GET https://api.twitter.com/2/users/138372303/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@FabrizioRomano: GET https://api.twitter.com/2/users/330262748/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+no new candidates this run
+  -> nothing proposed this run
+===== 2026-06-18 10:00 BST =====
+@OptaJoe: GET https://api.twitter.com/2/users/44606764/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@Squawka: GET https://api.twitter.com/2/users/385473825/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@brfootball: GET https://api.twitter.com/2/users/1561123663/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@433: GET https://api.twitter.com/2/users/2600210567/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@OneFootball: GET https://api.twitter.com/2/users/799369969725227008/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@Footballtweet: GET https://api.twitter.com/2/users/462312323/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@BBCSport: GET https://api.twitter.com/2/users/265902729/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@FIFAWorldCup: GET https://api.twitter.com/2/users/138372303/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@FabrizioRomano: GET https://api.twitter.com/2/users/330262748/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+no new candidates this run
+  -> nothing proposed this run
+===== 2026-06-18 15:00 BST =====
+@OptaJoe: GET https://api.twitter.com/2/users/44606764/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@Squawka: GET https://api.twitter.com/2/users/385473825/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@brfootball: GET https://api.twitter.com/2/users/1561123663/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@433: GET https://api.twitter.com/2/users/2600210567/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@OneFootball: GET https://api.twitter.com/2/users/799369969725227008/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@Footballtweet: GET https://api.twitter.com/2/users/462312323/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@BBCSport: GET https://api.twitter.com/2/users/265902729/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@FIFAWorldCup: GET https://api.twitter.com/2/users/138372303/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@FabrizioRomano: GET https://api.twitter.com/2/users/330262748/tweets?max_results=15&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+no new candidates this run
+  -> nothing proposed this run
+===== 2026-06-18 16:37 BST =====
+@OptaJoe: fetch failed
+@Squawka: fetch failed
+@brfootball: fetch failed
+@433: fetch failed
+@OneFootball: fetch failed
+@Footballtweet: fetch failed
+@BBCSport: fetch failed
+@FIFAWorldCup: fetch failed
+@FabrizioRomano: fetch failed
+no new candidates this run
+  -> nothing proposed this run
+===== 2026-06-18 18:10 BST =====
+@OptaJoe: fetch failed
+@Squawka: fetch failed
+@brfootball: fetch failed
+@433: fetch failed
+@OneFootball: fetch failed
+@Footballtweet: fetch failed
+@BBCSport: fetch failed
+@FIFAWorldCup: fetch failed
+@FabrizioRomano: fetch failed
+no new candidates this run
+  -> nothing proposed this run
+===== 2026-06-18 19:37 BST =====
+@OptaJoe: fetch failed
+@Squawka: fetch failed
+@brfootball: fetch failed
+@433: fetch failed
+@OneFootball: fetch failed
+@Footballtweet: fetch failed
+@BBCSport: fetch failed
+@FIFAWorldCup: fetch failed
+@FabrizioRomano: fetch failed
+no new candidates this run
+  -> nothing proposed this run
+===== 2026-06-18 21:13 BST =====
+@OptaJoe: fetch failed
+@Squawka: fetch failed
+@brfootball: fetch failed
+@433: fetch failed
+@OneFootball: fetch failed
+@Footballtweet: fetch failed
+@BBCSport: fetch failed
+@FIFAWorldCup: fetch failed
+@FabrizioRomano: fetch failed
+no new candidates this run
+  -> nothing proposed this run

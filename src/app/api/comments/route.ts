@@ -29,6 +29,14 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Missing type or id" }, { status: 400 });
   }
 
+  // Unauthenticated + two service-role queries per call on three hot screens —
+  // rate-limit per IP so an anonymous loop can't amplify Supabase IO.
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const { ok } = await rateLimitDistributed(`comments-get:${ip}`, 30, 60_000);
+  if (!ok) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   const svc = createServiceClient();
   const { data: rows, count } = await svc
     .from("comments")
@@ -53,7 +61,12 @@ export async function GET(req: NextRequest) {
     body: r.body,
     createdAt: r.created_at,
   }));
-  return NextResponse.json({ comments, total: count ?? comments.length });
+  // Threads tolerate seconds of staleness; the client optimistically appends
+  // the poster's own new comment, so a short CDN cache is invisible to users.
+  return NextResponse.json(
+    { comments, total: count ?? comments.length },
+    { headers: { "cache-control": "public, s-maxage=15, stale-while-revalidate=30" } },
+  );
 }
 
 /** POST /api/comments { subjectType, subjectId, body } */

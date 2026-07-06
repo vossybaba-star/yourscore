@@ -1,0 +1,10 @@
+{
+  "comment": "Manual unsubscribe / suppression list. Add emails here to exclude from all campaign sends.",
+  "suppressions": [
+    {
+      "email": "nathancooke99@gmail.com",
+      "reason": "Requested removal via email",
+      "date": "2026-06-11"
+    }
+  ]
+}

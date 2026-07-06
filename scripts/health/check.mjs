@@ -48,6 +48,24 @@ watchdog.unref();
 const report = createReport();
 const ctx = { base: BASE, withLLM }; // shared artifacts: pool, todayPack, servedQuestions, screenshots…
 
+// Network pre-flight: if the RUNNER's own internet is down, every layer would
+// red-alert "site down" (it happened: ERR_INTERNET_DISCONNECTED paged a full
+// outage while yourscore.app was fine). Probe two independent reference hosts;
+// if both are unreachable, record a quiet network-down run and exit 0 —
+// Telegram couldn't deliver the alert anyway.
+async function internetUp() {
+  const probe = (url) =>
+    fetch(url, { method: "HEAD", signal: AbortSignal.timeout(8_000) }).then(() => true, () => false);
+  const [a, b] = await Promise.all([probe("https://www.google.com/generate_204"), probe("https://1.1.1.1/")]);
+  return a || b;
+}
+if (!(await internetUp()) && !(await internetUp())) { // re-check once after the first 8s window
+  console.error("✗ runner has no internet — skipping this run (not a site outage)");
+  report.add("cleanup", "network pre-flight", true, { warn: true, detail: "runner offline — run skipped" });
+  report.persist(startedAt, Date.now() - startedAt.getTime(), { base: BASE, networkDown: true });
+  process.exit(0);
+}
+
 const LAYERS = [
   { key: "cleanup", module: "./cleanup.mjs", budgetMs: 60_000, needsBot: true },
   { key: "api", module: "./checks/anon-api.mjs", budgetMs: 90_000 },

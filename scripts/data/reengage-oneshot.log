@@ -1,0 +1,47 @@
+===== 2026-07-04 08:00 BST fire =====
+--- dormant-versus 08:00:04 ---
+   🚫 238 suppressed address(es) loaded (bounces + manual)
+
+📣 Segment "dormant-versus" → 1941 recipients  (⚡ LIVE)
+   Non-WC dormant — meet Versus, go head-to-head (Quiz Battle + shadow)
+   Subject: There's a new way to play: go head to head
+   Cap key: seg:dormant-versus  (cap 4d)
+   🆕 Created campaign audience 2b525e5e-af8a-422d-8e5d-e074e939a194 ("seg:dormant-versus 2026-07-04")
+   👥 Audience: 0 existing · 1941 to add
+   ➕ Added 1941 contact(s)
+Fatal: Error: broadcasts.send failed: You have reached your contacts quota. Please upgrade your plan to send more emails.
+    at syncAndBroadcast (file:///Users/zchukwumah/yourscore/scripts/lib/broadcast.mjs:139:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async send (file:///Users/zchukwumah/yourscore/scripts/segments.mjs:207:3)
+!! dormant-versus send failed (exit 1)
+--- wc-run-no-mastermind 08:20:27 ---
+   🚫 240 suppressed address(es) loaded (bounces + manual)
+
+📣 Segment "wc-run-no-mastermind" → 1441 recipients  (⚡ LIVE)
+   Played open WC XI, never the ranked Mastermind — explain the difference
+   Subject: You've only played half of the World Cup
+   Cap key: seg:wc-run-no-mastermind  (cap 4d)
+   🆕 Created campaign audience d68a0564-7ddc-494c-80f7-630ca2dde6c8 ("seg:wc-run-no-mastermind 2026-07-04")
+   👥 Audience: 0 existing · 1441 to add
+   ➕ Added 1441 contact(s)
+Fatal: Error: broadcasts.send failed: You have reached your contacts quota. Please upgrade your plan to send more emails.
+    at syncAndBroadcast (file:///Users/zchukwumah/yourscore/scripts/lib/broadcast.mjs:139:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async send (file:///Users/zchukwumah/yourscore/scripts/segments.mjs:207:3)
+!! wc-run-no-mastermind send failed (exit 1)
+--- wc-mastermind-lapsed 08:35:42 ---
+   🚫 241 suppressed address(es) loaded (bounces + manual)
+
+📣 Segment "wc-mastermind-lapsed" → 822 recipients  (⚡ LIVE)
+   Lapsed Mastermind player — the World Cup's still live daily + new Versus
+   Subject: The World Cup Mastermind kept going
+   Cap key: seg:wc-mastermind-lapsed  (cap 4d)
+   🆕 Created campaign audience 59f07475-ebeb-46db-857c-dddb69f0bd15 ("seg:wc-mastermind-lapsed 2026-07-04")
+   👥 Audience: 0 existing · 822 to add
+   ➕ Added 822 contact(s)
+Fatal: Error: broadcasts.send failed: You have reached your contacts quota. Please upgrade your plan to send more emails.
+    at syncAndBroadcast (file:///Users/zchukwumah/yourscore/scripts/lib/broadcast.mjs:139:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async send (file:///Users/zchukwumah/yourscore/scripts/segments.mjs:207:3)
+!! wc-mastermind-lapsed send failed (exit 1)
+===== done 08:44 BST =====

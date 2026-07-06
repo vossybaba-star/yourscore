@@ -1,0 +1,16 @@
+{
+  "comment": "Dead-man switches: each entry asserts an automation left its usual trace recently. Signals are the jobs' INTERNAL logs/state files (launchd StandardOutPath files stay 0-byte on quiet runs, so their mtime is useless). path supports ~. mode 'mtime' checks file age; 'date-content' additionally expects the file to contain today's YYYY-MM-DD (Europe/London); graceHourUK suppresses the alert before that local hour. disabled:true = job exists but isn't loaded yet. When jobs move to the VPS, update paths here only.",
+  "jobs": [
+    { "name": "quiz-launch", "path": "~/yourscore/scripts/data/launch-daily.ran", "maxAgeHours": 26, "mode": "date-content", "graceHourUK": 10, "note": "daily quiz published (Telegram-gated, ~07:06 + 09:30 fallback)" },
+    { "name": "wc-roll", "path": "~/yourscore/scripts/data/wc-roll.cron.log", "maxAgeHours": 26, "mode": "mtime", "graceHourUK": 9, "note": "edition-roll backstop — the fresh/wc-edition check is the real signal" },
+    { "name": "x-track", "path": "~/yourscore/scripts/data/x-track.log", "maxAgeHours": 26, "mode": "mtime", "note": "X watchlist tracker (runs 15:00-23:00 only)" },
+    { "name": "x-engage", "path": "~/yourscore/scripts/data/x-engage.log", "maxAgeHours": 26, "mode": "mtime", "note": "X engagement poster" },
+    { "name": "x-ideas", "path": "~/yourscore/scripts/data/x-ideas.log", "maxAgeHours": 26, "mode": "mtime", "note": "product-idea tweets, 6 slots/day" },
+    { "name": "x-telegram-poll", "path": "~/yourscore/scripts/data/x-state.json", "maxAgeHours": 2, "mode": "mtime", "note": "Telegram approval poller (60s interval) — x-state.json is touched every cycle" },
+    { "name": "content-poll", "path": "~/yourscore-videos/out/pack/poll.log", "maxAgeHours": 104, "mode": "mtime", "note": "content Telegram poller (only logs on activity; activity clusters around the Wed/Sat sends)" },
+    { "name": "content-send", "path": "~/yourscore-videos/out/pack/cron.log", "maxAgeHours": 104, "mode": "mtime", "note": "content build+send — runs Wed + Sat 11:30 only, so the max healthy gap is 4 days + slack" },
+    { "name": "x-drip", "path": "~/yourscore/scripts/data/x-drip.log", "maxAgeHours": 26, "mode": "mtime", "disabled": true, "note": "plist exists but NOT loaded as of 2026-07-03 — enable when reloaded" },
+    { "name": "ig-poll", "path": "~/yourscore-videos/out/ig/launchd.log", "maxAgeHours": 2, "mode": "mtime", "disabled": true, "note": "IG/FB pipeline blocked on founder steps; plists written, not loaded" },
+    { "name": "ig-send", "path": "~/yourscore-videos/out/ig/launchd.log", "maxAgeHours": 26, "mode": "mtime", "disabled": true, "note": "IG/FB pipeline blocked on founder steps; plists written, not loaded" }
+  ]
+}

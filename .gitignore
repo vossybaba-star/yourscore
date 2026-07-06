@@ -60,3 +60,9 @@ next-env.d.ts
 scripts/draft/data/raw/
 social-media/store/screenshots/v2-raw/
 emails/preview/
+
+# Health-check run artifacts (scorecards, screenshots, bot-seen history)
+scripts/data/health/
+
+# Never commit env backups (they carry prod secrets)
+.env.local.bak*

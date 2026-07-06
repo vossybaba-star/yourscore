@@ -46,7 +46,7 @@ async function audienceEmailSet(resend, audienceId) {
  * @returns {Promise<{broadcastId?:string, dryRun?:boolean, synced?:number}>}
  */
 export async function syncAndBroadcast(apiKey, opts) {
-  const { audienceId, audienceName, emails, name, from, replyTo, subject, previewText, html, dryRun } = opts;
+  const { audienceId, audienceName, cleanupPrefix, emails, name, from, replyTo, subject, previewText, html, dryRun } = opts;
   if (!apiKey) throw new Error("syncAndBroadcast: missing RESEND_CAMPAIGNS_API_KEY");
   if (!audienceId && !audienceName) throw new Error("syncAndBroadcast: pass audienceId or audienceName");
 
@@ -66,6 +66,19 @@ export async function syncAndBroadcast(apiKey, opts) {
       console.log(`   🆕 DRY RUN — would create audience "${audienceName}" and add ${emails.length} contact(s)`);
       targetAudienceId = "(dry-run-audience)";
     } else {
+      // Cap safety: a fresh per-campaign audience adds contacts toward the 5,000
+      // marketing cap. Delete prior campaign audiences sharing this prefix first
+      // (their delivery is long done — this path runs at most once/day) so
+      // contacts don't accumulate across days.
+      if (cleanupPrefix) {
+        const { data: list } = await resend.audiences.list();
+        for (const a of list?.data ?? []) {
+          if (a.id && typeof a.name === "string" && a.name.startsWith(cleanupPrefix)) {
+            await resend.audiences.remove(a.id).catch(() => {});
+            console.log(`   🧹 Removed prior audience "${a.name}"`);
+          }
+        }
+      }
       const { data: aud, error: aErr } = await resend.audiences.create({ name: audienceName });
       if (aErr || !aud?.id) throw new Error(`audiences.create failed: ${aErr?.message ?? "no id"}`);
       targetAudienceId = aud.id;

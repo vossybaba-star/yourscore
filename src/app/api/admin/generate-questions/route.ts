@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireAdmin } from "@/lib/auth/admin";
+import { normalizeQuestionText } from "@/lib/questions";
 import Anthropic from "@anthropic-ai/sdk";
 
 const client = new Anthropic();
@@ -62,8 +63,38 @@ Return ONLY a JSON array with this exact structure, no markdown:
     return NextResponse.json({ error: "Failed to parse Claude response", raw }, { status: 500 });
   }
 
+  // Duplicate guard: never insert a question whose normalized text already
+  // exists in the bank (or repeats within this generated batch). Identical-text
+  // rows under different ids defeat id-based session dedup.
+  // Paginated — a plain select is silently capped at 1,000 rows and the bank
+  // is bigger than that.
+  const seenTexts = new Set<string>();
+  const PAGE = 1000;
+  for (let from = 0; ; from += PAGE) {
+    const { data: existing, error: fetchError } = await db
+      .from("questions")
+      .select("question")
+      .neq("status", "retired")
+      .order("id", { ascending: true })
+      .range(from, from + PAGE - 1);
+    if (fetchError) {
+      return NextResponse.json({ error: fetchError.message }, { status: 500 });
+    }
+    for (const r of (existing ?? []) as { question: string | null }[]) {
+      seenTexts.add(normalizeQuestionText(r.question));
+    }
+    if (!existing || existing.length < PAGE) break;
+  }
+  const fresh = (questions as Record<string, unknown>[]).filter((q) => {
+    const key = normalizeQuestionText(q.question_text as string);
+    if (!key || seenTexts.has(key)) return false;
+    seenTexts.add(key);
+    return true;
+  });
+  const skipped = (questions as unknown[]).length - fresh.length;
+
   // Insert into DB
-  const rows = (questions as Record<string, unknown>[]).map((q) => ({
+  const rows = fresh.map((q) => ({
     match_id: matchId,
     question_text: q.question_text as string,
     option_a: q.option_a as string,
@@ -81,9 +112,13 @@ Return ONLY a JSON array with this exact structure, no markdown:
   // TODO(live-match): `rows` use the removed match-question shape
   // (question_text/option_a..d/correct_answer/match_id/approved). Migrate this
   // generator to the question bank shape (entity/options/answer) + question_events.
+  if (rows.length === 0) {
+    return NextResponse.json({ inserted: 0, skippedDuplicates: skipped, questions: [] });
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (db as any).from("questions").insert(rows).select("id");
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  return NextResponse.json({ inserted: data?.length ?? 0, questions: rows });
+  return NextResponse.json({ inserted: data?.length ?? 0, skippedDuplicates: skipped, questions: rows });
 }

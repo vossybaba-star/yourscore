@@ -1,0 +1,293 @@
+===== 2026-06-22 07:06 BST =====
+file:///Users/zchukwumah/yourscore/scripts/tg.mjs:34
+  if (!j.ok) throw new Error(`telegram ${method} ${res.status}: ${JSON.stringify(j).slice(0, 300)}`);
+                   ^
+
+Error: telegram getUpdates 409: {"ok":false,"error_code":409,"description":"Conflict: terminated by other getUpdates request; make sure that only one bot instance is running"}
+    at call (file:///Users/zchukwumah/yourscore/scripts/tg.mjs:34:20)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async awaitApproval (file:///Users/zchukwumah/yourscore/scripts/tg.mjs:88:21)
+    at async file:///Users/zchukwumah/yourscore/scripts/tg-gates.mjs:58:14
+
+Node.js v24.15.0
+----- exit 0 -----
+===== 2026-06-23 07:10 BST =====
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: ConnectTimeoutError: Connect Timeout Error (attempted address: api.telegram.org:443, timeout: 10000ms)
+      at onConnectTimeout (node:internal/deps/undici/undici:1981:23)
+      at Immediate._onImmediate (node:internal/deps/undici/undici:1962:11)
+      at process.processImmediate (node:internal/timers:504:21) {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+
+Node.js v24.15.0
+----- exit 0 -----
+===== 2026-06-23 09:38 BST =====
+
+Generating cards for "Messi Makes History World Cup 2026" (quality=high)
+  flags: France, Norway, Iraq, Algeria, Argentina, Austria
+  style: reference-conditioned (01-giants-share.png, 02-giants-cover.png, 03-record-book.png)
+  ✓ share → /tmp/messi-makes-history-world-cup-2026-share.png
+  ✓ cover → /tmp/messi-makes-history-world-cup-2026-cover.png
+
+Generating cards for "Messi Makes History World Cup 2026" (quality=high)
+  flags: France, Norway, Iraq, Algeria, Argentina, Austria
+  style: reference-conditioned (01-giants-share.png, 02-giants-cover.png, 03-record-book.png)
+  ✓ share → /tmp/messi-makes-history-world-cup-2026-share.png
+  ✓ cover → /tmp/messi-makes-history-world-cup-2026-cover.png
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: ConnectTimeoutError: Connect Timeout Error (attempted addresses: 149.154.166.110:443, 2001:67c:4e8:f004::9:443, timeout: 10000ms)
+      at onConnectTimeout (node:internal/deps/undici/undici:1981:23)
+      at Immediate._onImmediate (node:internal/deps/undici/undici:1962:11)
+      at process.processImmediate (node:internal/timers:504:21) {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+
+Node.js v24.15.0
+
+Generating cards for "Messi Makes History World Cup 2026" (quality=high)
+  flags: France, Norway, Iraq, Algeria, Argentina, Austria
+  style: reference-conditioned (01-giants-share.png, 02-giants-cover.png, 03-record-book.png)
+  ✓ share → /tmp/messi-makes-history-world-cup-2026-share.png
+  ✓ cover → /tmp/messi-makes-history-world-cup-2026-cover.png
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: ConnectTimeoutError: Connect Timeout Error (attempted addresses: 149.154.166.110:443, 2001:67c:4e8:f004::9:443, timeout: 10000ms)
+      at onConnectTimeout (node:internal/deps/undici/undici:1981:23)
+      at Immediate._onImmediate (node:internal/deps/undici/undici:1962:11)
+      at process.processImmediate (node:internal/timers:504:21) {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+
+Node.js v24.15.0
+[TypeError: fetch failed] {
+  [cause]: Error: write EPIPE
+      at WriteWrap.onWriteComplete [as oncomplete] (node:internal/stream_base_commons:87:19)
+      at writevGeneric (node:internal/stream_base_commons:137:26)
+      at Socket._writeGeneric (node:net:1023:11)
+      at Socket._writev (node:net:1032:8)
+      at doWrite (node:internal/streams/writable:594:12)
+      at clearBuffer (node:internal/streams/writable:773:5)
+      at Writable.uncork (node:internal/streams/writable:529:7)
+      at AsyncWriter.write (node:internal/deps/undici/undici:8126:16)
+      at writeIterable (node:internal/deps/undici/undici:8045:23)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+    errno: -32,
+    code: 'EPIPE',
+    syscall: 'write'
+  }
+}
+----- exit 1 -----
+===== 2026-06-23 13:12 BST (manual retry, ipv4first) =====
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: ConnectTimeoutError: Connect Timeout Error (attempted addresses: 149.154.166.110:443, 2001:67c:4e8:f004::9:443, timeout: 10000ms)
+      at onConnectTimeout (node:internal/deps/undici/undici:1981:23)
+      at Immediate._onImmediate (node:internal/deps/undici/undici:1962:11)
+      at process.processImmediate (node:internal/timers:504:21) {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+
+Node.js v24.15.0
+----- exit 0 -----
+===== 2026-06-23 13:14 BST (manual retry, tg.mjs retry-wrapper) =====
+file:///Users/zchukwumah/yourscore/scripts/tg.mjs:129
+  throw new Error("approval timed out");
+        ^
+
+Error: approval timed out
+    at awaitApproval (file:///Users/zchukwumah/yourscore/scripts/tg.mjs:129:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async file:///Users/zchukwumah/yourscore/scripts/tg-gates.mjs:58:14
+
+Node.js v24.15.0
+----- exit 0 -----
+===== 2026-06-23 14:18 BST (resume-social: tweet+email only) =====
+file:///Users/zchukwumah/yourscore/scripts/tg.mjs:172
+  throw new Error("approval timed out");
+        ^
+
+Error: approval timed out
+    at awaitButtonsOrText (file:///Users/zchukwumah/yourscore/scripts/tg.mjs:172:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async file:///Users/zchukwumah/yourscore/scripts/tg-gates.mjs:80:15
+
+Node.js v24.15.0
+file:///Users/zchukwumah/yourscore/scripts/tg.mjs:129
+  throw new Error("approval timed out");
+        ^
+
+Error: approval timed out
+    at awaitApproval (file:///Users/zchukwumah/yourscore/scripts/tg.mjs:129:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async file:///Users/zchukwumah/yourscore/scripts/tg-gates.mjs:96:14
+
+Node.js v24.15.0
+----- exit 0 -----
+===== 2026-06-23 16:19 BST (resume-social: poller stopped) =====
+file:///Users/zchukwumah/yourscore/scripts/tg.mjs:172
+  throw new Error("approval timed out");
+        ^
+
+Error: approval timed out
+    at awaitButtonsOrText (file:///Users/zchukwumah/yourscore/scripts/tg.mjs:172:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async file:///Users/zchukwumah/yourscore/scripts/tg-gates.mjs:80:15
+
+Node.js v24.15.0
+file:///Users/zchukwumah/yourscore/scripts/tg.mjs:129
+  throw new Error("approval timed out");
+        ^
+
+Error: approval timed out
+    at awaitApproval (file:///Users/zchukwumah/yourscore/scripts/tg.mjs:129:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async file:///Users/zchukwumah/yourscore/scripts/tg-gates.mjs:96:14
+
+Node.js v24.15.0
+----- exit 0 -----
+===== 2026-06-24 07:11 BST =====
+----- exit 0 -----
+===== 2026-06-25 07:21 BST =====
+[TypeError: fetch failed] {
+  [cause]: Error: getaddrinfo ENOTFOUND api.telegram.org
+      at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26) {
+    errno: -3008,
+    code: 'ENOTFOUND',
+    syscall: 'getaddrinfo',
+    hostname: 'api.telegram.org'
+  }
+}
+----- exit 1 -----
+===== 2026-06-26 07:06 BST =====
+file:///Users/zchukwumah/yourscore/scripts/tg.mjs:129
+  throw new Error("approval timed out");
+        ^
+
+Error: approval timed out
+    at awaitApproval (file:///Users/zchukwumah/yourscore/scripts/tg.mjs:129:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async file:///Users/zchukwumah/yourscore/scripts/tg-gates.mjs:58:14
+
+Node.js v24.15.0
+----- exit 0 -----
+===== 2026-06-27 07:06 BST =====
+
+Generating cards for "Group Stage Finale: France Make a Statement" (quality=high)
+  flags: France, Norway, Belgium, Iran, New Zealand, Egypt
+  style: reference-conditioned (01-giants-share.png, 02-giants-cover.png, 03-record-book.png)
+  ✓ share → /tmp/group-stage-finale-france-make-a-statement-share.png
+  ✓ cover → /tmp/group-stage-finale-france-make-a-statement-cover.png
+file:///Users/zchukwumah/yourscore/scripts/tg.mjs:164
+  throw new Error("approval timed out");
+        ^
+
+Error: approval timed out
+    at awaitButtonsOrText (file:///Users/zchukwumah/yourscore/scripts/tg.mjs:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async file:///Users/zchukwumah/yourscore/scripts/tg-gates.mjs:80:15
+
+Node.js v24.15.0
+file:///Users/zchukwumah/yourscore/scripts/tg.mjs:121
+  throw new Error("approval timed out");
+        ^
+
+Error: approval timed out
+    at awaitApproval (file:///Users/zchukwumah/yourscore/scripts/tg.mjs:121:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async file:///Users/zchukwumah/yourscore/scripts/tg-gates.mjs:96:14
+
+Node.js v24.15.0
+----- exit 0 -----
+===== 2026-06-28 07:06 BST =====
+
+Generating cards for "The Bracket Is Set: World Cup Round of 32 Begins" (quality=high)
+  flags: Germany, Algeria, Brazil, Ecuador, Uzbekistan, South Africa
+  style: reference-conditioned (01-giants-share.png, 02-giants-cover.png, 03-record-book.png)
+  ✓ share → /tmp/the-bracket-is-set-world-cup-round-of-32-begins-share.png
+  ✓ cover → /tmp/the-bracket-is-set-world-cup-round-of-32-begins-cover.png
+
+Generating cards for "The Bracket Is Set: World Cup Round of 32 Begins" (quality=high)
+  flags: Germany, Algeria, Brazil, Ecuador, Uzbekistan, South Africa
+  style: reference-conditioned (01-giants-share.png, 02-giants-cover.png, 03-record-book.png)
+  ✓ share → /tmp/the-bracket-is-set-world-cup-round-of-32-begins-share.png
+  ✓ cover → /tmp/the-bracket-is-set-world-cup-round-of-32-begins-cover.png
+
+Generating cards for "The Bracket Is Set: World Cup Round of 32 Begins" (quality=high)
+  flags: Germany, Algeria, Brazil, Ecuador, Uzbekistan, South Africa
+  style: reference-conditioned (01-giants-share.png, 02-giants-cover.png, 03-record-book.png)
+  ✓ share → /tmp/the-bracket-is-set-world-cup-round-of-32-begins-share.png
+  ✓ cover → /tmp/the-bracket-is-set-world-cup-round-of-32-begins-cover.png
+
+Generating cards for "The Bracket Is Set: World Cup Round of 32 Begins" (quality=high)
+  flags: Germany, Algeria, Brazil, Ecuador, Uzbekistan, South Africa
+  style: reference-conditioned (01-giants-share.png, 02-giants-cover.png, 03-record-book.png)
+  ✓ share → /tmp/the-bracket-is-set-world-cup-round-of-32-begins-share.png
+  ✓ cover → /tmp/the-bracket-is-set-world-cup-round-of-32-begins-cover.png
+file:///Users/zchukwumah/yourscore/scripts/tg.mjs:164
+  throw new Error("approval timed out");
+        ^
+
+Error: approval timed out
+    at awaitButtonsOrText (file:///Users/zchukwumah/yourscore/scripts/tg.mjs:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async file:///Users/zchukwumah/yourscore/scripts/tg-gates.mjs:80:15
+
+Node.js v24.15.0
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: Error: getaddrinfo ENOTFOUND api.telegram.org
+      at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26) {
+    errno: -3008,
+    code: 'ENOTFOUND',
+    syscall: 'getaddrinfo',
+    hostname: 'api.telegram.org'
+  }
+}
+
+Node.js v24.15.0
+[TypeError: fetch failed] {
+  [cause]: Error: getaddrinfo ENOTFOUND api.telegram.org
+      at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26) {
+    errno: -3008,
+    code: 'ENOTFOUND',
+    syscall: 'getaddrinfo',
+    hostname: 'api.telegram.org'
+  }
+}
+----- exit 1 -----
+===== 2026-06-29 07:08 BST =====
+----- exit 0 -----
+===== 2026-06-30 09:30 BST =====
+----- exit 0 -----
+===== 2026-07-01 09:30 BST =====
+----- exit 0 -----
+===== 2026-07-02 12:54 BST =====
+----- exit 0 -----
+===== 2026-07-03 09:30 BST =====
+----- exit 0 -----
+===== 2026-07-04 09:30 BST =====
+----- exit 0 -----
+===== 2026-07-05 09:30 BST =====
+----- exit 0 -----

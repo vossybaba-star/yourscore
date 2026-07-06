@@ -1,0 +1,1537 @@
+===== 2026-06-19 08:00 BST =====
+@OptaJoe: GET https://api.twitter.com/2/users/44606764/tweets?max_results=8&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@Squawka: GET https://api.twitter.com/2/users/385473825/tweets?max_results=8&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@brfootball: GET https://api.twitter.com/2/users/1561123663/tweets?max_results=8&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@433: GET https://api.twitter.com/2/users/2600210567/tweets?max_results=8&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@OneFootball: GET https://api.twitter.com/2/users/799369969725227008/tweets?max_results=8&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@Footballtweet: GET https://api.twitter.com/2/users/462312323/tweets?max_results=8&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@BBCSport: GET https://api.twitter.com/2/users/265902729/tweets?max_results=8&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@FIFAWorldCup: GET https://api.twitter.com/2/users/138372303/tweets?max_results=8&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@FabrizioRomano: GET https://api.twitter.com/2/users/330262748/tweets?max_results=8&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+Proposing 4 idea(s):
+  [feature] ix852429835 (238c) - Football is so good at making you feel clever and stupid in the same session.
+  [community] ix852429836 (141c) - Who makes your all-time XI? No rules, no era limits, just the 11 you'd actually pick.
+  [identity] ix852429837 (212c) - Some squads are built to win ugly. Some are too good-looking to last.
+  [community] ix852429838 (120c) - Messi or Ronaldo? Yes, obviously. But who's your third pick for a World XI?
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-19 11:00 BST =====
+@OptaJoe: GET https://api.twitter.com/2/users/44606764/tweets?max_results=8&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@Squawka: GET https://api.twitter.com/2/users/385473825/tweets?max_results=8&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@brfootball: GET https://api.twitter.com/2/users/1561123663/tweets?max_results=8&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@433: GET https://api.twitter.com/2/users/2600210567/tweets?max_results=8&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@OneFootball: GET https://api.twitter.com/2/users/799369969725227008/tweets?max_results=8&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@Footballtweet: GET https://api.twitter.com/2/users/462312323/tweets?max_results=8&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@BBCSport: GET https://api.twitter.com/2/users/265902729/tweets?max_results=8&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@FIFAWorldCup: GET https://api.twitter.com/2/users/138372303/tweets?max_results=8&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@FabrizioRomano: GET https://api.twitter.com/2/users/330262748/tweets?max_results=8&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+Proposing 4 idea(s):
+  [feature] ix863229067 (202c) - Build your all-time Spanish XI and take on La Liga. Messi or Ronaldo as the main man. Xavi and Iniesta pulling the strings. See if you can go the season unbeaten. Go on then 👇
+  [community] ix863229068 (169c) - The World Cup board is live and people are climbing it. One ranked run a day, your score on the leaderboard, £100 to the top by the final. Who's actually going for it? 👀
+  [identity] ix863229069 (202c) - Imagine signing Ronaldo because your season's going so well you've earned the right to him. That's basically how 38-0 works. Win, you upgrade. Lose, you rebuild from scratch ⚽
+  [community] ix863229070 (112c) - Honest question. You've got one spot left in your all-time XI. Zidane or Iniesta. Who are you picking and why? 🤔
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-19 14:13 BST =====
+recentPosts: fetch failed
+@OptaJoe: fetch failed
+@Squawka: fetch failed
+@brfootball: fetch failed
+@433: fetch failed
+@OneFootball: fetch failed
+@Footballtweet: fetch failed
+@BBCSport: fetch failed
+@FIFAWorldCup: fetch failed
+@FabrizioRomano: fetch failed
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: Error: getaddrinfo ENOTFOUND api.anthropic.com
+      at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26) {
+    errno: -3008,
+    code: 'ENOTFOUND',
+    syscall: 'getaddrinfo',
+    hostname: 'api.anthropic.com'
+  }
+}
+
+Node.js v24.15.0
+  -> exit 1
+===== 2026-06-19 17:00 BST =====
+@OptaJoe: GET https://api.twitter.com/2/users/44606764/tweets?max_results=8&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@Squawka: GET https://api.twitter.com/2/users/385473825/tweets?max_results=8&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@brfootball: GET https://api.twitter.com/2/users/1561123663/tweets?max_results=8&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@433: GET https://api.twitter.com/2/users/2600210567/tweets?max_results=8&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@OneFootball: GET https://api.twitter.com/2/users/799369969725227008/tweets?max_results=8&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@Footballtweet: GET https://api.twitter.com/2/users/462312323/tweets?max_results=8&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@BBCSport: GET https://api.twitter.com/2/users/265902729/tweets?max_results=8&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@FIFAWorldCup: GET https://api.twitter.com/2/users/138372303/tweets?max_results=8&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@FabrizioRomano: GET https://api.twitter.com/2/users/330262748/tweets?max_results=8&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+Proposing 4 idea(s):
+  [feature] ix884815915 (164c) - You drafted Messi, Ronaldo, Zidane and still got knocked out in week 11.
+  [community] ix884815916 (148c) - Right now there's a World Cup leaderboard and someone near the top picked players nobody else thought of.
+  [feature] ix884815917 (163c) - A drawn knockout used to just... end.
+  [community] ix884815918 (126c) - Genuine question: if you had one pick from any era to take a penalty in a World Cup final, who is it?
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-19 20:00 BST =====
+@OptaJoe: GET https://api.twitter.com/2/users/44606764/tweets?max_results=8&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@Squawka: GET https://api.twitter.com/2/users/385473825/tweets?max_results=8&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@brfootball: GET https://api.twitter.com/2/users/1561123663/tweets?max_results=8&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@433: GET https://api.twitter.com/2/users/2600210567/tweets?max_results=8&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@OneFootball: GET https://api.twitter.com/2/users/799369969725227008/tweets?max_results=8&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@Footballtweet: GET https://api.twitter.com/2/users/462312323/tweets?max_results=8&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@BBCSport: GET https://api.twitter.com/2/users/265902729/tweets?max_results=8&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@FIFAWorldCup: GET https://api.twitter.com/2/users/138372303/tweets?max_results=8&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@FabrizioRomano: GET https://api.twitter.com/2/users/330262748/tweets?max_results=8&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+Proposing 4 idea(s):
+  [feature] ix895621491 (241c) - Pick your best XI from football history and try to go an entire 38-game season unbeaten.
+  [community] ix895621492 (164c) - Right. Answer this honestly.
+  [feature] ix895621493 (226c) - A knockout game goes to a draw and now you have to take the penalties yourself.
+  [proof] ix895621494 (240c) - There's a daily World Cup quiz running right now and a £100 prize for whoever tops the board by the final.
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-19 23:00 BST =====
+@OptaJoe: GET https://api.twitter.com/2/users/44606764/tweets?max_results=8&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@Squawka: GET https://api.twitter.com/2/users/385473825/tweets?max_results=8&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@brfootball: GET https://api.twitter.com/2/users/1561123663/tweets?max_results=8&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@433: GET https://api.twitter.com/2/users/2600210567/tweets?max_results=8&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@OneFootball: GET https://api.twitter.com/2/users/799369969725227008/tweets?max_results=8&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@Footballtweet: GET https://api.twitter.com/2/users/462312323/tweets?max_results=8&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@BBCSport: GET https://api.twitter.com/2/users/265902729/tweets?max_results=8&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@FIFAWorldCup: GET https://api.twitter.com/2/users/138372303/tweets?max_results=8&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@FabrizioRomano: GET https://api.twitter.com/2/users/330262748/tweets?max_results=8&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+Proposing 4 idea(s):
+  [feature] ix906417401 (147c) - Pick your best XI from any era. Send it to a mate. Watch them panic and try to beat it.
+  [community] ix906417402 (189c) - The World Cup board is heating up. Someone's going to hit the final with a squad they barely believe in and somehow win.
+  [identity] ix906417403 (176c) - Football in 2025 is wild. Players you'd have given anything to sign a decade ago are just... available.
+  [community] ix906417404 (96c) - Right, settle this.
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-20 08:00 BST =====
+reading 3 account(s) this run: @OptaJoe, @Squawka, @brfootball
+@OptaJoe: GET https://api.twitter.com/2/users/44606764/tweets?max_results=5&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@Squawka: GET https://api.twitter.com/2/users/385473825/tweets?max_results=5&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@brfootball: GET https://api.twitter.com/2/users/1561123663/tweets?max_results=5&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+Proposing 4 idea(s):
+  [feature] ix938815622 (177c) - Pick your all-time XI. Build a squad across every era. Then try to go a full season without losing.
+  [feature] ix938815623 (202c) - The drawn knockout doesn't end with a replay anymore.
+  [community] ix938815624 (158c) - Genuinely curious. You're building your all-time XI and you can only pick one keeper.
+  [identity] ix938815625 (190c) - We've been thinking about this for ages. Who actually knows football better, quiz players or team-builders?
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-20 11:00 BST =====
+reading 3 account(s) this run: @433, @OneFootball, @Footballtweet
+@433: GET https://api.twitter.com/2/users/2600210567/tweets?max_results=5&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@OneFootball: GET https://api.twitter.com/2/users/799369969725227008/tweets?max_results=5&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@Footballtweet: GET https://api.twitter.com/2/users/462312323/tweets?max_results=5&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+Proposing 4 idea(s):
+  [feature] ix949616378 (257c) - You're not just picking a team. You're picking a belief system.
+  [community] ix949616379 (190c) - The thing about football that never gets old. A match you've watched a hundred times and there's still one moment in it that stops you.
+  [feature] ix949616380 (183c) - You pick the corner. You set the power. Then you wait.
+  [community] ix949616381 (147c) - If you had to build a World XI right now, one player from each nation, no restrictions, who's your first pick?
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-20 14:00 BST =====
+reading 3 account(s) this run: @BBCSport, @FIFAWorldCup, @FabrizioRomano
+@BBCSport: GET https://api.twitter.com/2/users/265902729/tweets?max_results=5&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@FIFAWorldCup: GET https://api.twitter.com/2/users/138372303/tweets?max_results=5&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@FabrizioRomano: GET https://api.twitter.com/2/users/330262748/tweets?max_results=5&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+Proposing 4 idea(s):
+  [feature] ix960418977 (237c) - You draft your best ever XI, across every era, every league.
+  [feature] ix960418978 (248c) - A drawn knockout match doesn't end at 90 minutes any more.
+  [community] ix960418979 (201c) - Serious question for anyone who plays football games...
+  [feature] ix960418980 (243c) - There's a World Cup board up right now and people are competing on it every day.
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-20 17:00 BST =====
+reading 3 account(s) this run: @OptaJoe, @Squawka, @brfootball
+@OptaJoe: GET https://api.twitter.com/2/users/44606764/tweets?max_results=5&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@Squawka: GET https://api.twitter.com/2/users/385473825/tweets?max_results=5&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@brfootball: GET https://api.twitter.com/2/users/1561123663/tweets?max_results=5&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+Proposing 4 idea(s):
+  [feature] ix971219404 (273c) - 38-0 is deceptively simple. Pick your best XI from across football history, sim a 38-game season, don't lose.
+  [feature] ix971219405 (259c) - Hot take: the penalty is the most nervous you ever feel watching football.
+  [community] ix971219406 (167c) - Who is the one player you'd build your all-time XI around?
+  [proof] ix971219407 (181c) - There's a World Cup quiz running every day until the final.
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-20 20:00 BST =====
+reading 3 account(s) this run: @433, @OneFootball, @Footballtweet
+@433: GET https://api.twitter.com/2/users/2600210567/tweets?max_results=5&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@OneFootball: GET https://api.twitter.com/2/users/799369969725227008/tweets?max_results=5&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@Footballtweet: GET https://api.twitter.com/2/users/462312323/tweets?max_results=5&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+Proposing 4 idea(s):
+  [feature] ix982018484 (226c) - Building your all-time XI is one thing. Keeping them unbeaten across a full 38-game season is another thing entirely.
+  [feature] ix982018485 (230c) - The debate is always Messi or Ronaldo. In our La Liga mode you don't have to choose... but your formation might make the choice for you.
+  [community] ix982018486 (173c) - Who's the most important player you've ever left out of your all-time XI?
+  [feature] ix982018487 (224c) - A drawn knockout game and it goes to penalties.
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-20 23:00 BST =====
+reading 3 account(s) this run: @BBCSport, @FIFAWorldCup, @FabrizioRomano
+@BBCSport: GET https://api.twitter.com/2/users/265902729/tweets?max_results=5&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@FIFAWorldCup: GET https://api.twitter.com/2/users/138372303/tweets?max_results=5&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@FabrizioRomano: GET https://api.twitter.com/2/users/330262748/tweets?max_results=5&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+Proposing 4 idea(s):
+  [feature] ix992814943 (205c) - The worst feeling in 38-0 is losing your unbeaten run on game 35.
+  [community] ix992814944 (112c) - Quick one. You're building an all-time Spanish XI.
+  [feature] ix992814945 (184c) - We added penalties recently and honestly it's stress we did not need in our lives.
+  [community] ix992814946 (118c) - If you could take one player from any era into a World Cup, who is it?
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-21 08:00 BST =====
+reading 3 account(s) this run: @OptaJoe, @Squawka, @brfootball
+@OptaJoe: GET https://api.twitter.com/2/users/44606764/tweets?max_results=5&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@Squawka: GET https://api.twitter.com/2/users/385473825/tweets?max_results=5&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@brfootball: GET https://api.twitter.com/2/users/1561123663/tweets?max_results=5&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+Proposing 4 idea(s):
+  [feature] ix025216442 (160c) - Build a squad of all-time greats, play a full 38-game season, don't lose once. Simple idea. Ridiculous fun. Who's your first pick? 👇
+  [feature] ix025216443 (165c) - The penalty shootout goes like this. You pick the corner. You set the power. You bottle it or you bury it. Same as real life, basically 😬
+  [community] ix025216444 (126c) - Quiet football day is the worst kind of day. So: who's in your all-time XI right now? Any era, any league, just your gut. Go 🧠
+  [feature] ix025216445 (174c) - World Cup 2026 board is live. You're building a World XI and going for the trophy. Every run counts. Every choice matters.
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-21 11:00 BST =====
+reading 3 account(s) this run: @433, @OneFootball, @Footballtweet
+@433: GET https://api.twitter.com/2/users/2600210567/tweets?max_results=5&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@OneFootball: GET https://api.twitter.com/2/users/799369969725227008/tweets?max_results=5&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@Footballtweet: GET https://api.twitter.com/2/users/462312323/tweets?max_results=5&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+Proposing 4 idea(s):
+  [feature] ix036015471 (203c) - The feeling when you've gone 20 games unbeaten with your XI and you're starting to actually believe it might happen 🏆
+  [community] ix036015472 (79c) - Who's the most undroppable player you'd build any XI around? No wrong answers 👇
+  [identity] ix036015473 (205c) - One thing about building an all-time XI: you think you know your best eleven until you actually have to pick them 😅
+  [feature] ix036015474 (212c) - 38 games. One chance to go unbeaten. Every match your squad gets a bit older and a bit staler.
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-21 14:00 BST =====
+reading 3 account(s) this run: @BBCSport, @FIFAWorldCup, @FabrizioRomano
+@BBCSport: GET https://api.twitter.com/2/users/265902729/tweets?max_results=5&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@FIFAWorldCup: GET https://api.twitter.com/2/users/138372303/tweets?max_results=5&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@FabrizioRomano: GET https://api.twitter.com/2/users/330262748/tweets?max_results=5&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+Proposing 4 idea(s):
+  [feature] ix046817852 (230c) - Building your all-time Spanish XI and then watching Messi and Ronaldo argue over the same space is something else.
+  [community] ix046817853 (145c) - Nothing on X today worth reacting to, so: who's the one player you'd build your unbeaten XI around?
+  [feature] ix046817854 (196c) - Drawn knockout. Penalties. You pick the corner, you time the run-up, you feel every kick.
+  [community] ix046817855 (191c) - A full 38-game season, one squad, no excuses.
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-21 17:00 BST =====
+reading 3 account(s) this run: @OptaJoe, @Squawka, @brfootball
+@OptaJoe: GET https://api.twitter.com/2/users/44606764/tweets?max_results=5&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@Squawka: GET https://api.twitter.com/2/users/385473825/tweets?max_results=5&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@brfootball: GET https://api.twitter.com/2/users/1561123663/tweets?max_results=5&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+Proposing 4 idea(s):
+  [feature] ix057614322 (187c) - Pick your corner. Time the power. Hold your nerve.
+  [identity] ix057614323 (170c) - The worst feeling in football: a great squad slowly going stale because you lost one you shouldn't have.
+  [community] ix057614324 (140c) - Quick question for the room.
+  [feature] ix057614325 (175c) - Head-to-head in 38-0 is genuinely tense.
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-21 20:00 BST =====
+reading 3 account(s) this run: @OptaJoe, @Squawka, @brfootball
+@OptaJoe: GET https://api.twitter.com/2/users/44606764/tweets?max_results=5&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@Squawka: GET https://api.twitter.com/2/users/385473825/tweets?max_results=5&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@brfootball: GET https://api.twitter.com/2/users/1561123663/tweets?max_results=5&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+Proposing 4 idea(s):
+  [feature] ix068417539 (219c) - The daily World Cup quiz is live and someone is going to win £100 by the final.
+  [community] ix068417540 (131c) - Who was the best player you ever watched live?
+  [feature] ix068417541 (236c) - The thing about building your all-time XI is you can't have everyone.
+  [feature] ix068417542 (192c) - A penalty shootout in a game where you actually take the kicks.
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-21 23:00 BST =====
+reading 3 account(s) this run: @433, @OneFootball, @Footballtweet
+@433: GET https://api.twitter.com/2/users/2600210567/tweets?max_results=5&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@OneFootball: GET https://api.twitter.com/2/users/799369969725227008/tweets?max_results=5&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+@Footballtweet: GET https://api.twitter.com/2/users/462312323/tweets?max_results=5&exclude=replies%2Cretweets&tweet.fields=created_at%2Cpublic_metrics%2Clang → 402: {"account_id":1896702787821445120,"title":"CreditsDepleted","detail":"Your enrolled account [1896702787821445120] does not have any credits to fulfill this request.","type":"https://api.twitter.com/2/problems/credits"}
+Proposing 4 idea(s):
+  [feature] ix079216527 (216c) - The penalty shootout is genuinely nerve-wracking.
+  [community] ix079216528 (103c) - Who's the first name in your all-time XI?
+  [feature] ix079216529 (202c) - A World Cup quiz every single day of the tournament.
+  [identity] ix079216530 (273c) - The 38-0 challenge is basically: how well do you actually know your football history?
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-22 08:00 BST =====
+reading 3 account(s) this run: @BBCSport, @FIFAWorldCup, @FabrizioRomano
+Proposing 4 idea(s):
+  [news] ix111626383 (189c) - Egypt's first ever World Cup win. Salah with a goal and an assist. Man of the Match at a World Cup for the first time in his career.
+  [feature] ix111626384 (141c) - If Salah's in your World XI today, fair enough. He's earned it. 🇪🇬
+  [feature] ix111626385 (154c) - A penalty in a knockout match. You pick the corner, you time the power, you feel it.
+  [community] ix111626386 (196c) - Right then. Egypt are through. Argentina and Spain are squabbling over midfields. Salah just had the night of his World Cup life.
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-22 11:00 BST =====
+reading 3 account(s) this run: @OptaJoe, @Squawka, @brfootball
+  skip (dup): Egypt's first ever World Cup win. Salah with a goal and an assist. Some players just save their best for when it matters most. 🌍
+Proposing 3 idea(s):
+  [community] ix122418944 (185c) - Belgium had 23 shots and couldn't score. Iran held on. ⚽
+  [feature] ix122418945 (177c) - Every 38-0 result gives you a card you can send straight to a mate. 👀
+  [community] ix122418946 (183c) - The World Cup quiz board is moving fast. 🏆
+done - 3 pushed to Telegram
+  -> exit 0
+===== 2026-06-22 14:00 BST =====
+reading 3 account(s) this run: @433, @OneFootball, @Footballtweet
+Proposing 4 idea(s):
+  [news] ix133220976 (192c) - Donnarumma is 27 years old and has never played a single World Cup match. One of the best goalkeepers on the planet and Italy just... aren't there. Football can be genuinely cruel sometimes. 😔
+  [feature] ix133220977 (183c) - The penalty shootout in 38-0 is different. You pick your corner. You time the power. You feel it when you miss. No sim. No luck. Just you and the keeper. 🫀
+  [community] ix133220978 (102c) - Name your best goalkeeper of all time. No thinking too long. Just the first name that comes to mind. 🧤
+  [proof] ix133220979 (173c) - The World Cup board is already moving. Today's quiz is live and the gap between first and second place can close on a single question. Worth a look. 🏆
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-22 17:00 BST =====
+reading 3 account(s) this run: @BBCSport, @FIFAWorldCup, @FabrizioRomano
+Proposing 4 idea(s):
+  [news] ix144018837 (157c) - A 100,000-seat Old Trafford. That is a proper statement. Whatever you think of United right now, that ground is going to be something else when it's done. 🏟️
+  [feature] ix144018838 (235c) - The league table in 38-0 updates live as your season plays out. That moment when you're sitting top with two games to go and you've still got Ronaldo coming off the bench... it's stressful in the best way. ⚽
+  [community] ix144018839 (114c) - Who is the one player who HAS to start in your World XI. Not debatable, first name on the sheet. Drop them below 👇
+  [proof] ix144018840 (142c) - Today's World Cup quiz is up. 15 questions, one leaderboard, £100 to the person on top when the final whistle blows. 🧠🏆
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-22 20:00 BST =====
+reading 3 account(s) this run: @OptaJoe, @Squawka, @brfootball
+Proposing 4 idea(s):
+  [news] ix154819389 (174c) - Messi just became the all-time top scorer in World Cup history. 17 goals. At 38. Scoring in six straight World Cup games.
+  [community] ix154819390 (80c) - If Messi is first name on your World XI, who's second?
+  [feature] ix154819391 (192c) - You can chase the league with your all-time Spanish XI in La Liga mode. Or go full World Cup with a World XI.
+  [feature] ix154819392 (176c) - The quiz league cards now show you exactly how far behind the leader you are.
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-22 23:00 BST =====
+reading 3 account(s) this run: @433, @OneFootball, @Footballtweet
+Proposing 4 idea(s):
+  [news] ix165622697 (202c) - Mbappé scores on his 100th France cap. Three more World Cup goals and he's the all-time top scorer. At 27. With probably two tournaments still to go. 🤯
+  [feature] ix165622698 (212c) - Your World Cup Mastermind run counts on the board. Your practice runs don't.
+  [news] ix165622699 (129c) - Julian Alvarez says the best thing for his future is a transfer. Honest, a bit brave, very him.
+  [community] ix165622700 (110c) - You're picking your all-time XI. One goalkeeper. Which one gets the nod?
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-23 08:00 BST =====
+reading 3 account(s) this run: @BBCSport, @FIFAWorldCup, @FabrizioRomano
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: Error: read ETIMEDOUT
+      at TLSWrap.onStreamRead (node:internal/stream_base_commons:216:20) {
+    errno: -60,
+    code: 'ETIMEDOUT',
+    syscall: 'read'
+  }
+}
+
+Node.js v24.15.0
+  -> exit 1
+===== 2026-06-23 11:00 BST =====
+reading 3 account(s) this run: @BBCSport, @FIFAWorldCup, @FabrizioRomano
+Proposing 4 idea(s):
+  [news] ix208816832 (187c) - Tuchel calling Declan Rice one of the very best midfielders in the world.
+  [news] ix208816833 (143c) - Haaland. Two games. Four goals. First World Cup.
+  [community] ix208816834 (213c) - Quick question for anyone who plays 38-0.
+  [feature] ix208816835 (206c) - The penalty shootout in 38-0 is a proper moment.
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-23 14:00 BST =====
+reading 3 account(s) this run: @OptaJoe, @Squawka, @brfootball
+Proposing 4 idea(s):
+  [news] ix219620460 (236c) - Messi has now scored more World Cup goals than anyone. Created more chances than anyone. And he's 38 years old doing it at THIS tournament.
+  [community] ix219620461 (161c) - Quick one: who's in your World Cup starting XI right now, based purely on this tournament so far?
+  [feature] ix219620462 (199c) - In 38-0 Head-to-Head you see their team, they see yours. One change each before kickoff. Two at half time. Then it plays out live.
+  [news] ix219620463 (203c) - Algeria come from behind at a World Cup for the first time in over a decade. Jordan got their first ever lead at a World Cup. Both in the same game.
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-23 17:00 BST =====
+reading 3 account(s) this run: @433, @OneFootball, @Footballtweet
+Proposing 4 idea(s):
+  [news] ix230423483 (178c) - Ronaldo chasing a goal in his 6th World Cup. No one has ever done it. 41 years old and still the centre of the biggest stage in football. Whatever you think, that is something. 🐐
+  [feature] ix230423484 (164c) - The leagues tab in 38-0 just got a proper rebuild. Your active runs, your H2H record, who you need to beat next. All in one place now. 👀
+  [community] ix230423485 (162c) - If you could only pick ONE player per nation for your all-time World XI, what's the hardest country to choose from? 🌍
+  [feature] ix230423486 (145c) - Quiz leagues now show you exactly how far behind the leader you are. So you know whether to panic or not. Usually panic. ⚽
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-23 20:00 BST =====
+reading 3 account(s) this run: @BBCSport, @FIFAWorldCup, @FabrizioRomano
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: ConnectTimeoutError: Connect Timeout Error (attempted address: api.anthropic.com:443, timeout: 10000ms)
+      at onConnectTimeout (node:internal/deps/undici/undici:1981:23)
+      at Immediate._onImmediate (node:internal/deps/undici/undici:1962:11)
+      at process.processImmediate (node:internal/timers:504:21) {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+
+Node.js v24.15.0
+  -> exit 1
+===== 2026-06-23 23:00 BST =====
+reading 3 account(s) this run: @BBCSport, @FIFAWorldCup, @FabrizioRomano
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: ConnectTimeoutError: Connect Timeout Error (attempted address: api.anthropic.com:443, timeout: 10000ms)
+      at onConnectTimeout (node:internal/deps/undici/undici:1981:23)
+      at Immediate._onImmediate (node:internal/deps/undici/undici:1962:11)
+      at process.processImmediate (node:internal/timers:504:21) {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+
+Node.js v24.15.0
+  -> exit 1
+===== 2026-06-24 08:00 BST =====
+reading 3 account(s) this run: @BBCSport, @FIFAWorldCup, @FabrizioRomano
+Proposing 4 idea(s):
+  [community] ix284416050 (172c) - Colombia through to the knockouts. Falcao, James, Cuadrado, Vidal... the all-time Colombian XI basically picks itself doesn't it. Who's your first name on the teamsheet? 🇨🇴
+  [feature] ix284416051 (190c) - The penalty shootout in 38-0 is genuinely nerve-wracking. You pick the corner, time the power, and watch it go in... or not. Some of you are going to bottle it. ⚽
+  [news] ix284416052 (226c) - Barcelona v Atletico over Alvarez is getting messy. 'Barcelona is lying.' 'Atletico do not want to sell.' Meanwhile you can just... pick whoever you want for your World XI and nobody complains. 😅
+  [community] ix284416053 (197c) - The World Cup board is filling up fast. 🏆 If you haven't played today's Mastermind run yet, someone else is already ahead of you. Today's go counts. Practice doesn't.
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-24 11:00 BST =====
+reading 3 account(s) this run: @OptaJoe, @Squawka, @brfootball
+Proposing 4 idea(s):
+  [news] ix295216532 (197c) - It's Messi's birthday today. 🐐
+  [news] ix295216533 (191c) - Luis Diaz had two goals ruled out in two minutes today.
+  [community] ix295216534 (107c) - Quick question for you.
+  [feature] ix295216535 (189c) - 38-0 now has a penalty shootout.
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-24 14:00 BST =====
+reading 3 account(s) this run: @433, @OneFootball, @Footballtweet
+Proposing 4 idea(s):
+  [news] ix306016494 (102c) - 39 years old today and he's still at a World Cup scoring goals.
+  [feature] ix306016495 (172c) - Pick your corner. Set the power. Don't bottle it.
+  [community] ix306016496 (119c) - Morocco haven't lost in over 10 months of football.
+  [community] ix306016497 (87c) - Messi or Ronaldo first on your team sheet.
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-24 17:00 BST =====
+reading 3 account(s) this run: @BBCSport, @FIFAWorldCup, @FabrizioRomano
+Proposing 4 idea(s):
+  [news] ix316817112 (118c) - Happy birthday Leo. 39 today and still at a World Cup. Still scoring. Still the reason anyone argues about football. 🐐
+  [feature] ix316817113 (245c) - Penalties in knockout football. The worst feeling and the best feeling at the same time.
+  [community] ix316817114 (86c) - If you could put any player from any era in your World Cup squad, first name in. Go. ⚽
+  [proof] ix316817115 (173c) - The daily World Cup quiz has a leaderboard that runs all the way to the final. One winner. £100.
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-24 20:00 BST =====
+reading 3 account(s) this run: @OptaJoe, @Squawka, @brfootball
+Proposing 4 idea(s):
+  [news] ix327619732 (180c) - Declan Rice creating more chances than anyone else in the group stage so far. Not a goal, not a headline, just quietly pulling strings for England. 🏴󠁧󠁢󠁥󠁮󠁧󠁿
+  [feature] ix327619733 (205c) - The penalty shootout is the most terrifying two minutes in football.
+  [community] ix327619734 (187c) - Scotland vs Brazil tonight. Scotland with two shots on target in the whole tournament so far.
+  [proof] ix327619735 (276c) - Top of the World Cup Mastermind board right now, you're ahead of everyone and the tournament's only halfway through.
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-24 23:00 BST =====
+reading 3 account(s) this run: @433, @OneFootball, @Footballtweet
+Proposing 4 idea(s):
+  [news] ix338415835 (137c) - Switzerland knocking Canada out in their own tournament. The hosts' unbeaten run, gone just like that.
+  [community] ix338415836 (154c) - Imagine building the all-time Swiss XI.
+  [feature] ix338415837 (158c) - A knockout game that goes to penalties...
+  [community] ix338415838 (191c) - You're 6 questions into Today's Run on World Cup Mastermind.
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-25 08:00 BST =====
+reading 3 account(s) this run: @BBCSport, @FIFAWorldCup, @FabrizioRomano
+recentPosts: fetch failed
+@BBCSport: fetch failed
+@FIFAWorldCup: fetch failed
+@FabrizioRomano: fetch failed
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: Error: getaddrinfo ENOTFOUND api.anthropic.com
+      at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26) {
+    errno: -3008,
+    code: 'ENOTFOUND',
+    syscall: 'getaddrinfo',
+    hostname: 'api.anthropic.com'
+  }
+}
+
+Node.js v24.15.0
+  -> exit 1
+===== 2026-06-25 11:00 BST =====
+reading 3 account(s) this run: @BBCSport, @FIFAWorldCup, @FabrizioRomano
+Proposing 4 idea(s):
+  [community] ix381617480 (181c) - Vini Jr and Neymar bigging each other up at a World Cup.
+  [feature] ix381617481 (184c) - Penalties. Drawn knockout. Your nerve vs the keeper.
+  [news] ix381617482 (124c) - Six World Cups. Ochoa in goal for Mexico every single time.
+  [community] ix381617483 (195c) - You've been playing the daily World Cup quiz. You're building a streak.
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-25 14:00 BST =====
+reading 3 account(s) this run: @OptaJoe, @Squawka, @brfootball
+Proposing 4 idea(s):
+  [news] ix392417128 (156c) - Vinícius Junior. 3.06 xG in a single World Cup game. Eight shots, two goals, and Scotland just couldn't live with him. 🇧🇷
+  [community] ix392417129 (173c) - Morocco. Two subs off the bench, both score. First African nation to do it in a World Cup. 🇲🇦
+  [feature] ix392417130 (160c) - The knockout bracket is taking shape and it's looking tasty. 🏆
+  [feature] ix392417131 (193c) - A drawn knockout. Penalties. Your nerve. ⚽
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-25 17:00 BST =====
+reading 3 account(s) this run: @433, @OneFootball, @Footballtweet
+Proposing 4 idea(s):
+  [news] ix403220421 (183c) - Vini Jr promised Ancelotti a header goal. Ancelotti said it was impossible and offered him a gift if he did it.
+  [feature] ix403220422 (196c) - The penalty shootout in 38-0 is genuinely nerve-wracking.
+  [community] ix403220423 (192c) - Bruno Guimaraes. Michael Olise. Alexander Isak.
+  [feature] ix403220424 (255c) - The World Cup Mastermind board is live and people are already pulling away.
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-25 20:00 BST =====
+reading 3 account(s) this run: @BBCSport, @FIFAWorldCup, @FabrizioRomano
+Proposing 4 idea(s):
+  [news] ix414018141 (216c) - Mourinho at Real Madrid saying managing big egos is the best problem a coach can have.
+  [community] ix414018142 (143c) - Japan are scoring absolute worldies at this World Cup.
+  [feature] ix414018143 (159c) - A drawn knockout. Penalties. You pick the corner, you time the power, you keep your nerve.
+  [proof] ix414018144 (217c) - The World Cup board race is properly tight right now.
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-25 23:00 BST =====
+reading 3 account(s) this run: @OptaJoe, @Squawka, @brfootball
+Proposing 4 idea(s):
+  [news] ix424816159 (174c) - Ecuador just beat Germany 2-1 to qualify from their group. Coming from behind. Against Germany. At a World Cup. 🇪🇨
+  [feature] ix424816160 (237c) - The board is live and it's tight. One wrong answer and the player you wanted goes to someone else. 🧠
+  [community] ix424816161 (174c) - Vinicius against Scotland. Matheus Cunha at a World Cup. Brazil are just built different right now. 🇧🇷
+  [feature] ix424816162 (176c) - You've built your XI. You've gone 90 minutes. Now it goes to penalties and you're taking them. 🎯
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-26 08:00 BST =====
+reading 3 account(s) this run: @433, @OneFootball, @Footballtweet
+Proposing 4 idea(s):
+  [community] ix457216954 (174c) - Brazil vs Japan. Netherlands vs Morocco. The knockouts are here and the draws are getting serious. 👀
+  [news] ix457216955 (179c) - Paolo Maldini. Maradona, Ronaldo, Cristiano Ronaldo. Three generations of the best. One man always in their way.
+  [feature] ix457216956 (188c) - In 38-0 a draw in the knockout round doesn't end there anymore.
+  [identity] ix457216957 (168c) - Vinicius Jr stepping up when it matters most at a World Cup. Declan Rice calling Messi truly special at 38.
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-26 11:00 BST =====
+reading 3 account(s) this run: @BBCSport, @FIFAWorldCup, @FabrizioRomano
+Proposing 4 idea(s):
+  [news] ix468018657 (153c) - Arsenal tried £55m for Bruno Guimarães today. Newcastle said no immediately.
+  [feature] ix468018658 (163c) - The penalties in 38-0 are proper nerve-wracking now.
+  [community] ix468018659 (161c) - Netherlands, Japan and Sweden all through from Group F.
+  [proof] ix468018660 (184c) - The World Cup board is still very much open.
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-26 14:00 BST =====
+reading 3 account(s) this run: @OptaJoe, @Squawka, @brfootball
+Proposing 4 idea(s):
+  [news] ix478819003 (101c) - Turkey win it in the 98th minute. USMNT go through anyway. That is a wild way to end a group stage. ⚽
+  [feature] ix478819004 (156c) - You take the penalty. You pick the corner. You feel the pressure.
+  [news] ix478819005 (106c) - Australia. Back-to-back knockout stages at the World Cup. 🇦🇺
+  [community] ix478819006 (115c) - Who is the first name on your all-time World XI if you HAD to leave out the country's best player?
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-26 17:00 BST =====
+reading 3 account(s) this run: @433, @OneFootball, @Footballtweet
+Proposing 4 idea(s):
+  [news] ix489617236 (119c) - A dad guiding his blind son through a match with a tactics board so he can feel every move.
+  [feature] ix489617237 (210c) - Norway resting Haaland AND Ødegaard against France today.
+  [feature] ix489617238 (165c) - You're 1-1 in extra time. Penalty shootout. You pick the corner, you time the power, you keep your nerve.
+  [community] ix489617239 (139c) - Zlatan moved by 70,000 Bosnian fans singing at their first ever World Cup.
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-26 20:00 BST =====
+reading 3 account(s) this run: @BBCSport, @FIFAWorldCup, @FabrizioRomano
+Proposing 4 idea(s):
+  [news] ix500416982 (170c) - Gonçalo Ramos reportedly heading to AC Milan for a fee that could top €70m. A striker in his mid-twenties, moving to one of the great clubs. Class move to watch unfold. ⚽
+  [feature] ix500416983 (228c) - You don't lose players in 38-0 because the game tells you to. You lose them because the season grinds you down, your squad goes stale, and you didn't plan for game 30. That's the whole thing really. 😅
+  [community] ix500416984 (104c) - The World Cup is doing things this summer. Which match so far has actually stopped you in your tracks? 🌍
+  [feature] ix500416985 (163c) - A drawn knockout game, extra time, it all comes down to penalties. You pick the corner. You set the power. Then you hold your breath. 😬
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-26 23:00 BST =====
+reading 3 account(s) this run: @OptaJoe, @Squawka, @brfootball
+Proposing 4 idea(s):
+  [news] ix511215008 (195c) - Senegal 5, Iraq 0. Sarr breaks the all-time Senegal scoring record. Gueye scores two absolute bangers. Ndiaye comes off the bench and assists and scores in 33 minutes. That was a joy to watch. 🇸🇳
+  [community] ix511215009 (113c) - The Golden Boot race is heating up and honestly it's shaping up to be a proper one. Who's your pick to lift it? 🥇
+  [feature] ix511215010 (188c) - You're 2-2 deep into a knockout game. Extra time gone. Now it's down to you. Pick your corner, time the power, keep your nerve. Penalties just landed on 38-0. ⚽
+  [community] ix511215011 (206c) - France scoring 3+ in every group game. Mbappé at 21 goal involvements at World Cups. If you're building a World XI right now, how many France players are making your squad? 🇫🇷
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-27 08:00 BST =====
+reading 3 account(s) this run: @433, @OneFootball, @Footballtweet
+Proposing 4 idea(s):
+  [news] ix543622907 (179c) - De Bruyne. A golazo. Belgium top the group. Some players just make the knockouts feel inevitable. 🇧🇪
+  [community] ix543622908 (173c) - France have Mbappé, Dembélé and Olise all in the form of their lives at the same time. 😍
+  [news] ix543622909 (134c) - Cape Verde. 500,000 people. First ever World Cup knockouts. 🇨🇻
+  [feature] ix543622910 (168c) - Every result in 38-0 becomes a scorecard made to share. Build your XI, run the season, send it to a mate and let them beat it if they can. 👀
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-27 11:00 BST =====
+reading 3 account(s) this run: @BBCSport, @FIFAWorldCup, @FabrizioRomano
+Proposing 4 idea(s):
+  [news] ix554419071 (172c) - Cape Verde. 530,000 people. Given a 1% chance of getting out of the group.
+  [feature] ix554419072 (179c) - Today every group gets decided. Last chance to lock in a perfect streak on the daily quiz before the knockouts change everything.
+  [community] ix554419073 (118c) - Reece James out. Tuchel rotating. Panama next.
+  [feature] ix554419074 (199c) - The penalty shootout is the worst and best feeling in football at the same time.
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-27 14:00 BST =====
+reading 3 account(s) this run: @OptaJoe, @Squawka, @brfootball
+Proposing 4 idea(s):
+  [news] ix565215361 (207c) - Iliman Ndiaye comes on as a sub and just... takes over a World Cup match. Sub on, goal, assist, five dribbles. That's a player in form you'd want in your World XI right now. 🇸🇳
+  [feature] ix565215362 (146c) - A drawn knockout goes to penalties. You pick the corner, time the power, keep your nerve.
+  [community] ix565215363 (138c) - Vozinha. 40 years old. Multiple World Cup clean sheets. Still going.
+  [news] ix565215364 (215c) - Senegal had three players all score and assist in the same World Cup match. The last team to do that was Germany in the 7-1.
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-27 17:00 BST =====
+reading 3 account(s) this run: @433, @OneFootball, @Footballtweet
+Proposing 4 idea(s):
+  [news] ix576016778 (216c) - Ronaldo has never faced Real Madrid. Messi has never faced Barcelona.
+  [news] ix576016779 (183c) - Cape Verde are through to the knockouts for the first time ever.
+  [feature] ix576016780 (167c) - The drawn game goes to penalties. You pick the corner. You set the power. You take the kick.
+  [community] ix576016781 (207c) - 10 years ago today, Iceland beat England at the Euros and the internet never really recovered.
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-27 20:00 BST =====
+reading 3 account(s) this run: @BBCSport, @FIFAWorldCup, @FabrizioRomano
+Proposing 4 idea(s):
+  [feature] ix586818064 (219c) - Knockout football nearly here at the World Cup.
+  [news] ix586818065 (199c) - 91 years old. 18th World Cup. Still in the press conference asking the questions everyone wants answered.
+  [feature] ix586818066 (190c) - A drawn knockout goes to penalties in 38-0 now.
+  [community] ix586818067 (166c) - World Cup group stage almost done.
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-27 23:00 BST =====
+reading 3 account(s) this run: @OptaJoe, @Squawka, @brfootball
+Proposing 4 idea(s):
+  [news] ix597622691 (206c) - Vozinha. 40 years old. Multiple clean sheets at a World Cup.
+  [feature] ix597622692 (196c) - The penalty shootout in 38-0 is proper nerve-wracking now.
+  [news] ix597622693 (156c) - Cabo Verde through on three draws. Vozinha 40 years old keeping two clean sheets. Sucic scoring from range.
+  [community] ix597622694 (89c) - Who goes in goal for your all-time World XI then?
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-28 08:00 BST =====
+reading 3 account(s) this run: @433, @OneFootball, @Footballtweet
+Proposing 4 idea(s):
+  [news] ix630019074 (173c) - 9 out of 10 African nations through to the knockouts. 🌍
+  [community] ix630019075 (184c) - The Round of 32 is set and it is a proper draw. 🍿
+  [feature] ix630019076 (192c) - Penalties in 38-0 now go to a shootout you actually take yourself.
+  [news] ix630019077 (210c) - Messi scoring in seven consecutive World Cup matches. 🐐
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-28 11:04 BST =====
+reading 3 account(s) this run: @BBCSport, @FIFAWorldCup, @FabrizioRomano
+@BBCSport: fetch failed
+recentPosts: fetch failed
+@FIFAWorldCup: fetch failed
+@FabrizioRomano: fetch failed
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: Error: getaddrinfo ENOTFOUND api.anthropic.com
+      at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26) {
+    errno: -3008,
+    code: 'ENOTFOUND',
+    syscall: 'getaddrinfo',
+    hostname: 'api.anthropic.com'
+  }
+}
+
+Node.js v24.15.0
+  -> exit 1
+===== 2026-06-28 14:05 BST =====
+reading 3 account(s) this run: @BBCSport, @FIFAWorldCup, @FabrizioRomano
+recentPosts: fetch failed
+@BBCSport: fetch failed
+@FIFAWorldCup: fetch failed
+@FabrizioRomano: fetch failed
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: Error: getaddrinfo ENOTFOUND api.anthropic.com
+      at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26) {
+    errno: -3008,
+    code: 'ENOTFOUND',
+    syscall: 'getaddrinfo',
+    hostname: 'api.anthropic.com'
+  }
+}
+
+Node.js v24.15.0
+  -> exit 1
+===== 2026-06-28 17:11 BST =====
+reading 3 account(s) this run: @BBCSport, @FIFAWorldCup, @FabrizioRomano
+@BBCSport: fetch failed
+recentPosts: fetch failed
+@FIFAWorldCup: fetch failed
+@FabrizioRomano: fetch failed
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: Error: getaddrinfo ENOTFOUND api.anthropic.com
+      at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26) {
+    errno: -3008,
+    code: 'ENOTFOUND',
+    syscall: 'getaddrinfo',
+    hostname: 'api.anthropic.com'
+  }
+}
+
+Node.js v24.15.0
+  -> exit 1
+===== 2026-06-28 20:00 BST =====
+reading 3 account(s) this run: @Footballtweet, @BBCSport, @OptaJoe
+Proposing 4 idea(s):
+
+  [news] ix673219023 (159c)
+    Harry Kane. 11 World Cup goals. England's all-time record. The kind of number that doesn't sink in straight away.
+    
+    Lineker had that record for nearly 40 years.
+    ↳ Kane breaking Lineker's England WC record is the biggest England moment of the tournament so far, and we haven't touched it yet.
+
+  [feature] ix673219024 (263c)
+    The penalty shootout stats are wild. Shoot first, aim low, keep your nerve.
+    
+    All that knowledge and it still comes down to the moment you step up.
+    
+    We made you actually take the kicks. One at a time. Your corner, your power, your call.
+    
+    https://yourscore.app/38-0
+    ↳ 35 WC shootouts is trending and we shipped the interactive penalty mode recently. Good moment to tie the real thing to our mechanic without overselling it.
+
+  [community] ix673219025 (166c)
+    African sides winning 90% of their group stage games at this World Cup.
+    
+    CAF fans, who's the first name on your all-time African XI? One player, no thinking about it.
+    ↳ CAF's 90% group stage stat is the feel-good football story of the tournament. Turns it into a fan question without us pretending to be a stats account.
+
+  [feature] ix673219026 (212c)
+    Modric at 40. Kane at 31 but already a legend. Africa having the tournament of their lives.
+    
+    Every day of this World Cup is a new quiz. Build a streak, top the board by the final, win £100.
+    
+    https://yourscore.app
+    ↳ Links the tournament's best storylines to the daily quiz series and the £100 board race without just dropping a dry promo line.
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-28 23:13 BST =====
+reading 3 account(s) this run: @brfootball, @Footballtweet, @BBCSport
+Proposing 4 idea(s):
+
+  [news] ix684879748 (140c)
+    Canada. A 92nd-minute winner. Their first ever knockout win at a men's World Cup.
+    
+    Eustáquio. What a moment to write your name into history.
+    ↳ The biggest story on X right now, Canada's late winner is everywhere, and we haven't posted on this result yet since our earlier tweet had them still going out.
+
+  [community] ix684879749 (181c)
+    Alphonso Davies finally getting on the pitch at this World Cup after injury. Some things you just want to see happen.
+    
+    Now imagine leaving him out of your World XI draft. Could you?
+    ↳ Davies returning is a huge talking point right now and his place in any World XI draft is a genuine debate that invites replies without needing a link.
+
+  [feature] ix684879750 (199c)
+    The most quietly nerve-wracking thing in it: a game goes to a draw, knockout stage, penalties come up, and suddenly it's just you.
+    
+    Your corner. Your power. One at a time.
+    
+    https://yourscore.app/38-0
+    ↳ Penalties are still fresh and the World Cup knockout stage starting means shootout jeopardy is directly relevant right now, without repeating the already-posted angles.
+
+  [identity] ix684879751 (203c)
+    Your 38-game unbeaten run is going well and then you draw away at the hard ones, twice in a row, and you start to wonder if the squad needs surgery.
+    
+    That feeling. Every time.
+    
+    https://yourscore.app/38-0
+    ↳ Speaks to the tension of managing a 38-game run in a grounded, relatable way, reaching the people who know that exact feeling without sounding like an ad.
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-29 08:07 BST =====
+reading 3 account(s) this run: @brfootball, @Footballtweet, @BBCSport
+Proposing 4 idea(s):
+
+  [feature] ix716839184 (217c)
+    Canada into the last 16 as hosts. The pressure, the late drama, Marsch on the pitch telling them they're heroes.
+    
+    Now build your all-time Canadian XI and see if they can go the distance.
+    
+    https://yourscore.app/38-0/wc
+    ↳ Canada's tournament run is the story of the day and this ties the emotion directly to the World Cup Run mode without repeating any of the angles we've already posted.
+
+  [feature] ix716839185 (153c)
+    The knockout stage is here and the draws are going to penalties.
+    
+    You pick the corner. You set the power. You feel every one.
+    
+    https://yourscore.app/38-0
+    ↳ Penalties are live and fresh, the knockouts starting today is the perfect natural hook, and we haven't used the penalty mechanic angle in recent posts.
+
+  [community] ix716839186 (186c)
+    Canada through. Sweden through. South Africa out on the best run they've ever had.
+    
+    Which nation's all-time XI would you back to actually win this World Cup? One answer, no deliberating.
+    ↳ Topical off today's results, broad enough to pull in replies from multiple fanbases, no link keeps reach high, and it's a different question format to the recent African XI one.
+
+  [proof] ix716839187 (179c)
+    There's a £100 board. One quiz a day. You're either building a streak or you've already lost ground.
+    
+    The round of 16 starts now. So does the catch-up math.
+    
+    https://yourscore.app
+    ↳ Knockout stage beginning naturally raises the stakes of the daily quiz race and the £100 prize, framing it as a timely nudge without repeating any recent post wording.
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-29 11:00 BST =====
+reading 3 account(s) this run: @OptaJoe, @brfootball, @Footballtweet
+Proposing 4 idea(s):
+
+  [feature] ix727215904 (209c)
+    35 penalty shootouts in World Cup history and they never get easier to watch.
+    
+    We built one where you actually take the kicks. Pick your corner, set the power, try not to bottle it.
+    
+    https://yourscore.app/38-0
+    ↳ The 35 WC shootout stat is trending right now and our interactive penalty mode is a direct, genuine hook into that conversation.
+
+  [news] ix727215905 (173c)
+    African teams going through at a 90% rate. Nine out of ten.
+    
+    The best World Cup group stage from any confederation. Ever.
+    
+    Football is spreading and it's brilliant to watch.
+    ↳ The CAF 90% progression stat is getting real traction on X and this is a warm, genuine fan reaction with no over-claim.
+
+  [community] ix727215906 (155c)
+    You've got one go today. One draft, one quiz, one shot at moving up the £100 board.
+    
+    Who's your first name on the teamsheet?
+    
+    https://yourscore.app/38-0/wc
+    ↳ Frames the daily World Cup Mastermind from the angle of the board race and the single daily attempt, without re-running the unlock mechanic that's been over-exposed this week.
+
+  [news] ix727215907 (164c)
+    Eustáquio crying in the interview. 'Everything I do is for my family, for my daughter.'
+    
+    The 92nd minute goal hits different now.
+    
+    That's what the World Cup is for.
+    ↳ Eustáquio's post-match interview is one of the most-shared moments of the last 24 hours and this leans into the human feeling, no stat inflation, no product angle needed.
+done - 4 pushed to Telegram
+  -> exit 0
+===== 2026-06-29 14:00 BST =====
+reading 3 account(s) this run: @BBCSport, @OptaJoe, @brfootball
+Proposing 4 idea(s):
+
+  [community] ix738013420 (168c)
+    South Africa are out but they just had the best men's World Cup run in their history.
+    
+    Which nation do you most want to see win a World Cup they never have? One answer.
+    ↳ South Africa's exit is the emotional story of the day and this angle hasn't been touched. Pure reach, no link, invites real conversation.
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: ConnectTimeoutError: Connect Timeout Error (attempted addresses: 2001:67c:4e8:f004::9:443, 149.154.166.110:443, timeout: 10000ms)
+      at onConnectTimeout (node:internal/deps/undici/undici:1981:23)
+      at Immediate._onImmediate (node:internal/deps/undici/undici:1962:11)
+      at process.processImmediate (node:internal/timers:504:21) {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+
+Node.js v24.15.0
+  -> exit 1
+===== 2026-06-29 17:00 BST =====
+reading 3 account(s) this run: @BBCSport, @OptaJoe, @brfootball
+Proposing 2 idea(s):
+
+  [news] ix748812580 (151c)
+    Messi at a goal every 33 minutes at this World Cup.
+    
+    Put him in your all-time XI and watch the other ten try to keep up.
+    
+    https://yourscore.app/38-0/wc
+    ↳ The Messi stats tweet is the top signal right now, and the World Cup Run mode is a natural fit without repeating any recent CTA angle.
+
+  [community] ix748812581 (225c)
+    The Netherlands fans were asked which rival player they'd want in their team.
+    
+    We think about this every day. Build a squad from anyone, ever, and the answer changes completely.
+    
+    Who's the one player you'd steal from a rival?
+    ↳ Hooks off a live high-engagement X topic, turns it into a genuine fan question with no product push, pure reach.
+done - 2 idea(s) queued (the poller trickles them to Telegram)
+  -> exit 0
+===== 2026-06-29 20:00 BST =====
+reading 3 account(s) this run: @Footballtweet, @BBCSport, @OptaJoe
+Proposing 2 idea(s):
+
+  [news] ix759613816 (182c)
+    Casemiro, first 55 minutes, passengers everywhere, half of Brazil Twitter writing him off.
+    
+    Then the 96th. Then Martinelli.
+    
+    The World Cup does not care about your half-time verdict.
+    ↳ Two separate big moments from Brazil vs Japan dominate the feed right now and this tweet holds both in one human thought without repeating our Messi or penalty angles.
+
+  [feature] ix759613817 (165c)
+    Building your all-time XI is the easy bit.
+    
+    Watching it go one-nil up in the 88th minute and then concede twice is a whole other feeling.
+    
+    https://yourscore.app/38-0
+    ↳ Flags 38-0 from a pure gameplay-emotion angle we haven't used recently, no CTA language, no feature list, just the feeling of playing it.
+done - 2 idea(s) queued (the poller trickles them to Telegram)
+  -> exit 0
+===== 2026-06-29 23:00 BST =====
+reading 3 account(s) this run: @Footballtweet, @BBCSport, @OptaJoe
+Proposing 2 idea(s):
+
+  [news] ix770414421 (215c)
+    Martinelli. 95th minute. Brazil vs Japan.
+    
+    That goal just becoming the latest winner in knockout history since 1966 is the kind of detail that makes you stop scrolling.
+    
+    Football really does save the best for last 😮
+    ↳ Martinelli's 95th-minute record is the biggest football moment in the last 24h, and this angle is pure wonder at the game with no product push needed.
+
+  [news] ix770414422 (166c)
+    Paraguay's first ever knockout goal. Against Germany. From a kid who's been brilliant all tournament.
+    
+    Julio Enciso is the name you'll be telling people you watched 👀
+    ↳ Enciso and Paraguay are the breakout story of the day on X, and this is a warm, admiring fan reaction that fits our voice perfectly - no repeat of recent angles.
+done - 2 idea(s) queued (the poller trickles them to Telegram)
+  -> exit 0
+===== 2026-06-30 08:00 BST =====
+reading 3 account(s) this run: @Footballtweet, @BBCSport, @OptaJoe
+Proposing 2 idea(s):
+
+  [news] ix802813871 (210c)
+    Paraguay knocked Germany out on penalties.
+    
+    Germany, who had won their previous four World Cup shootouts.
+    
+    And the keeper saving it was playing amateur football six years ago 🥅
+    
+    Football is genuinely something.
+    ↳ Paraguay's stunning penalty win is the biggest story right now and this angle (Orlando Gill's journey + Germany's shootout record ending) hasn't been touched in our recent posts, told in pure fan voice with no stats dump.
+
+  [feature] ix802813872 (177c)
+    A knockout goes to penalties and YOU take the kicks.
+    
+    Pick your corner, judge the power, keep your nerve.
+    
+    Feel free to dedicate one to your grandad.
+    
+    https://yourscore.app/38-0
+    ↳ The penalty mechanic is fresh (shipped 16 Jun) and the Enciso/grandad moment from today's news gives a warm, human hook without forcing a news angle, making the feature feel alive rather than promotional.
+done - 2 idea(s) queued (the poller trickles them to Telegram)
+  -> exit 0
+===== 2026-06-30 11:00 BST =====
+reading 3 account(s) this run: @Footballtweet, @BBCSport, @OptaJoe
+Proposing 2 idea(s):
+
+  [feature] ix813614462 (296c)
+    Morocco vs Netherlands. Four penalties missed. A last-16 spot decided on nerve.
+    
+    That shootout had everything.
+    
+    We ship a mode where you actually take the kicks yourself. Pick your corner, time the power, try not to bottle it.
+    
+    It's exactly as stressful as it sounds 😅
+    
+    https://yourscore.app/38-0
+    ↳ Morocco's penalty drama is the biggest football moment in the last 24 hours and it's a natural, genuine hook for the interactive shootout mechanic without repeating any recent product angle.
+
+  [news] ix813614463 (109c)
+    Cody Gakpo scoring, then falling to his knees in tears.
+    
+    Football holds things that nothing else quite can. 🖤
+    ↳ The Gakpo moment is the most human story from the Morocco-Netherlands game and fits our warm, fan-voice identity perfectly with no product angle needed.
+done - 2 idea(s) queued (the poller trickles them to Telegram)
+  -> exit 0
+===== 2026-06-30 14:00 BST =====
+reading 3 account(s) this run: @brfootball, @Footballtweet, @BBCSport
+Proposing 2 idea(s):
+
+  [news] ix824414938 (219c)
+    Bart Verbruggen saving the penalty... then backheeling it into his own net.
+    
+    That is one of the most painful things we have ever seen. 😬
+    
+    And somewhere out there a Dutch fan has just closed their laptop and gone to bed.
+    ↳ The Verbruggen own-goal moment is the most shareable/absurd thing on the timeline right now, and our warm fan voice fits it perfectly without any product angle needed.
+
+  [news] ix824414939 (150c)
+    Bounou saving the fifth penalty against the Netherlands.
+    
+    He did the exact same thing in 2022 against Spain.
+    
+    Some keepers just belong in shootouts. 🧤
+    ↳ Two separate compelling news stories from the same match keeps variety without repeating a product angle, and Bounou's back-to-back WC shootout heroics is genuinely worth its own tweet.
+done - 2 idea(s) queued (the poller trickles them to Telegram)
+  -> exit 0
+===== 2026-06-30 17:00 BST =====
+reading 3 account(s) this run: @OptaJoe, @brfootball, @Footballtweet
+Proposing 2 idea(s):
+
+  [feature] ix835215697 (299c)
+    Penalty shootouts at the World Cup.
+    
+    The conversion rate drops from 78% in normal time all the way down to 68% when it actually matters most.
+    
+    Pressure does something to a person. We built a mode where you feel it. Pick your corner, time the power, hope your nerve holds.
+    
+    https://yourscore.app/38-0
+    ↳ The shootout stats dominating X right now are a perfect natural lead-in to our penalty mechanic, and we haven't pushed the penalties feature this cycle yet.
+
+  [community] ix835215698 (163c)
+    Brazil 2002. Twenty three years ago today.
+    
+    Could their fans name the starting XI? Most of them surprised us.
+    
+    Who's in YOUR all-time Brazil XI? Drop them below 🇧🇷
+    ↳ The Brazil 2002 anniversary content is live on X right now, it's a clean warm angle for a community question with no link needed, and it's completely different from every recent post.
+done - 2 idea(s) queued (the poller trickles them to Telegram)
+  -> exit 0
+===== 2026-06-30 20:03 BST =====
+reading 3 account(s) this run: @BBCSport, @OptaJoe, @brfootball
+Proposing 2 idea(s):
+
+  [news] ix846203137 (172c)
+    Messi. 6 goals in the group stage.
+    
+    Deadlast in distance run per 90 out of 618 outfielders.
+    
+    Still the best player at the tournament. Football is just not a fitness test. 🐐
+    ↳ The Messi stat contrast is the most shareable football moment on X right now and this angle (the game defies logic) fits our warm fan voice perfectly without repeating any recent post.
+
+  [feature] ix846203138 (165c)
+    Norway. Haaland in the 86th minute. Ødegaard creating in his third straight World Cup.
+    
+    That midfield pairing in 38-0 would be a problem.
+    
+    https://yourscore.app/38-0
+    ↳ Ties two of the biggest X moments right now (Haaland, Ødegaard) to the core 38-0 draft mechanic in a natural fan voice, and we haven't linked to 38-0 in any recent post.
+done - 2 idea(s) queued (the poller trickles them to Telegram)
+  -> exit 0
+===== 2026-06-30 23:08 BST =====
+reading 3 account(s) this run: @BBCSport, @OptaJoe, @brfootball
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: Error: read ECONNRESET
+      at TLSWrap.onStreamRead (node:internal/stream_base_commons:216:20) {
+    errno: -54,
+    code: 'ECONNRESET',
+    syscall: 'read'
+  }
+}
+
+Node.js v24.15.0
+  -> exit 1
+===== 2026-07-01 08:00 BST =====
+reading 3 account(s) this run: @BBCSport, @OptaJoe, @brfootball
+Proposing 2 idea(s):
+
+  [news] ix889211863 (158c)
+    Mbappé dedicating that goal to Deschamps after losing his mum last week.
+    
+    Some moments are bigger than football. But they still happen on a football pitch. ❤️
+    ↳ The Mbappé/Deschamps moment is the warmest story on the timeline right now and we haven't touched it. Pure fan voice, no stats, no product angle needed.
+
+  [feature] ix889211864 (190c)
+    Mexico. Four games. Four clean sheets. Through to el quinto partido for the first time in 40 years.
+    
+    Build the all-time El Tri XI and see if they can go further 👇
+    
+    https://yourscore.app/38-0
+    ↳ Mexico are the feelgood story of the day, we haven't posted about them, and the World Cup Run mode is a natural tie-in without over-explaining it.
+done - 2 idea(s) queued (the poller trickles them to Telegram)
+  -> exit 0
+===== 2026-07-01 11:00 BST =====
+reading 3 account(s) this run: @BBCSport, @OptaJoe, @brfootball
+Proposing 2 idea(s):
+
+  [news] ix900013129 (213c)
+    Mexico hadn't won a World Cup knockout match since 1986.
+    
+    They've just done it at the Azteca, in front of their own people, and now England are waiting on Sunday.
+    
+    Forty years is a long time to hold your breath 🇲🇽
+    ↳ Mexico's first knockout win since 1986 is the biggest story on X right now and this angle - the human weight of the wait - is warm and specific without repeating any recent post angle.
+
+  [community] ix900013130 (158c)
+    England v Congo today, and the winner faces Mexico at the Azteca.
+    
+    Who makes your all-time England XI for a game that big? 🏴󠁧󠁢󠁥󠁮󠁧󠁿
+    
+    https://yourscore.app/38-0
+    ↳ England matchday is live on X right now, the Azteca next-round angle makes it timely, and asking for an all-time England XI pulls people straight into 38-0 without sounding like an advert.
+done - 2 idea(s) queued (the poller trickles them to Telegram)
+  -> exit 0
+===== 2026-07-01 14:00 BST =====
+reading 3 account(s) this run: @Footballtweet, @BBCSport, @OptaJoe
+Proposing 2 idea(s):
+
+  [news] ix910815422 (247c)
+    Mbappé in knockout football is just a different creature.
+    
+    Nine goals in nine knockout games at the World Cup. Nobody has ever done that. Not Ronaldo, not Leônidas. Nobody.
+    
+    France build your XI around him in 38-0 and you start to understand why 🤍
+    ↳ Mbappé's knockout record is the biggest football story today and we haven't touched it yet, a clean one-line fact wrapped in genuine admiration with a soft product nod, no stats overload.
+
+  [news] ix910815423 (188c)
+    Mexico's curse is broken.
+    
+    Eight knockout exits on the bounce. Twenty eight years of hurt. And last night they just... ended it.
+    
+    Football does this sometimes and there's nothing better 🇲🇽
+    ↳ Mexico's win is a genuine emotion story we haven't touched, different character and tone to everything else we've posted, and it shows we're watching every game not just the big names.
+done - 2 idea(s) queued (the poller trickles them to Telegram)
+  -> exit 0
+===== 2026-07-01 17:00 BST =====
+reading 3 account(s) this run: @brfootball, @Footballtweet, @BBCSport
+Proposing 2 idea(s):
+
+  [feature] ix921614162 (212c)
+    England vs DR Congo in a knockout.
+    
+    Penalties are very much on the table.
+    
+    You take ours when it goes to shootout in 38-0. Pick your corner, time the power, keep your nerve. No hiding.
+    
+    https://yourscore.app/38-0
+    ↳ England's knockout game is live on X right now and penalty anxiety is the shared feeling, perfect moment to land the shootout mechanic authentically without overselling it.
+
+  [community] ix921614163 (217c)
+    France arguing over whether Mbappé is their greatest ever.
+    
+    Who's in yours? Not just France. Your all-time World Cup XI. Five minutes, no wrong answers, just the names you actually pick.
+    
+    Who's first on the teamsheet?
+    ↳ The Mbappé GOAT debate is trending and this turns it into a broader, inclusive conversation that fits our team-building identity without repeating any recent product angle.
+done - 2 idea(s) queued (the poller trickles them to Telegram)
+  -> exit 0
+===== 2026-07-01 20:00 BST =====
+reading 3 account(s) this run: @OptaJoe, @brfootball, @Footballtweet
+Proposing 2 idea(s):
+
+  [news] ix932411803 (211c)
+    England came back from a goal down to win a World Cup knockout game.
+    
+    First time since the 1966 final. 60 years. Kane, Gordon off the bench, the whole thing.
+    
+    Some days football just gives you everything 🏴󠁧󠁢󠁥󠁮󠁧󠁿
+    ↳ England's comeback is the biggest story on X right now and this angle - the 60-year wait, the human drama - leads with the feeling rather than the stat, fits our warm fan voice, and is totally fresh from our recent posts.
+
+  [feature] ix932411804 (129c)
+    Building your all-time XI is one thing.
+    
+    Watching it try to hold a lead in game 34 of 38 is another 😬
+    
+    https://yourscore.app/38-0
+    ↳ Nothing about 38-0's late-season tension has been touched in recent posts, and with knockout drama all over the timeline right now the feeling of holding on under pressure is exactly the right emotional hook.
+done - 2 idea(s) queued (the poller trickles them to Telegram)
+  -> exit 0
+===== 2026-07-01 23:00 BST =====
+reading 3 account(s) this run: @BBCSport, @OptaJoe, @brfootball
+Proposing 2 idea(s):
+
+  [news] ix943211365 (174c)
+    Ismaïla Sarr matching Roger Milla as the top African scorer in a single World Cup.
+    
+    Milla was 38 years old when he got there.
+    
+    Football is just endlessly, brilliantly weird 🌍
+    ↳ Sarr's fourth goal is the live moment, and the Milla parallel is a genuinely lovely detail that fits our warm fan voice perfectly - no overlap with anything we've posted.
+
+  [community] ix943211366 (215c)
+    England coming back after conceding first.
+    
+    Anthony Gordon changing a World Cup game from the bench.
+    
+    Kane at the Azteca, the ground where Maradona did THAT.
+    
+    Sometimes a single matchday gives you everything 🏴󠁧󠁢󠁥󠁮󠁧󠁿
+    ↳ Pulls together the best threads from tonight's England game into one warm, fan-first moment of wonder - no product push, pure reach, nothing we've already covered.
+done - 2 idea(s) queued (the poller trickles them to Telegram)
+  -> exit 0
+===== 2026-07-02 08:00 BST =====
+reading 3 account(s) this run: @Footballtweet, @BBCSport, @OptaJoe
+Proposing 2 idea(s):
+
+  [news] ix975611880 (173c)
+    Tielemans' penalty at 124:44. The latest goal in World Cup history.
+    
+    And it just went in.
+    
+    Someone somewhere took their own penalty last night and felt every second of that.
+    ↳ Belgium's chaotic win is the biggest talking point right now and the penalty angle ties naturally to our shootout feature without being a hard sell.
+
+  [community] ix975611881 (212c)
+    Arsenal players accounting for more World Cup assists than any other club right now.
+    
+    Saka. Ødegaard. Gyökeres. Rice. Gabriel. Trossard.
+    
+    That's basically an XI. Go on then, build it 👇
+    
+    https://yourscore.app/38-0
+    ↳ The Arsenal stat is genuinely doing numbers on X and flipping it into a light draft challenge is fresh, fan-voice, and earns the link naturally.
+done - 2 idea(s) queued (the poller trickles them to Telegram)
+  -> exit 0
+===== 2026-07-02 12:54 BST =====
+reading 3 account(s) this run: @brfootball, @Footballtweet, @BBCSport
+Proposing 2 idea(s):
+
+  [news] ix993308733 (255c)
+    Santi Cazorla retiring.
+    
+    Two-footed in a way that felt almost unfair, playing through pain that would have ended most careers years earlier, and still genuinely beloved by fans of every club he played for.
+    
+    What a career. Football was lucky to have him. 🙏
+    ↳ Cazorla's retirement is the warmest, most universally felt moment in the signals today, and a short tribute fits our voice perfectly without any product angle needed.
+
+  [news] ix993308734 (194c)
+    Balogun scores, gets sent off, and joins Garrincha, Ronaldinho and Zidane on that list.
+    
+    What a group of people to end up alongside on your World Cup debut 😅
+    
+    USA are through though. Fair trade.
+    ↳ The Balogun stat is genuinely striking and the light contrast between the company he keeps and the pragmatic outcome lets us land a small warm punchline, a different tone from the Cazorla tribute.
+done - 2 idea(s) queued (the poller trickles them to Telegram)
+  -> exit 0
+===== 2026-07-02 14:00 BST =====
+reading 3 account(s) this run: @brfootball, @Footballtweet, @BBCSport
+Proposing 2 idea(s):
+
+  [news] ix997213010 (117c)
+    Garrincha. Ronaldinho. Zidane. Balogun.
+    
+    One of these names will feel very strange on that list in about ten years. 😄
+    ↳ The Balogun stat is the most shareable football moment on X right now, and this angle plays it with warmth and a light touch of humour rather than just repeating the list.
+
+  [community] ix997213011 (117c)
+    Portugal vs Croatia today and Portugal still haven't found their best XI.
+    
+    Which front three do you actually start? 🤔
+    ↳ Portugal's form is a live conversation right now, and an open question about their XI invites real replies with no link needed, giving a small account its best shot at organic engagement.
+done - 2 idea(s) queued (the poller trickles them to Telegram)
+  -> exit 0
+===== 2026-07-02 17:00 BST =====
+reading 3 account(s) this run: @brfootball, @Footballtweet, @BBCSport
+Proposing 2 idea(s):
+
+  [news] ix008015686 (249c)
+    Today is 15 years to the day since Luis Suarez's handball kept Ghana out.
+    
+    Asamoah Gyan stepped up to send his country to a World Cup semi-final and... hit the bar.
+    
+    Penalties can be cruel. Or you can take them yourself 👇
+    
+    https://yourscore.app/38-0
+    ↳ The Suarez/Gyan anniversary is the top football moment on X today and it ties naturally and honestly into our penalty shootout feature without forcing it.
+
+  [community] ix008015687 (240c)
+    Genuine question for anyone building their all-time La Liga XI.
+    
+    Messi and Ronaldo are obvious. But do you actually pick both? Or does one of them make your team worse?
+    
+    Because fitting the midfield around them is where it gets interesting.
+    ↳ La Liga mode hasn't been touched in recent posts, the Messi/Ronaldo debate is evergreen and drives replies, and a no-link community question is the right shape to break up the product-heavy recent feed.
+done - 2 idea(s) queued (the poller trickles them to Telegram)
+  -> exit 0
+===== 2026-07-02 20:11 BST =====
+reading 3 account(s) this run: @OptaJoe, @brfootball, @Footballtweet
+Proposing 2 idea(s):
+
+  [news] ix019510471 (221c)
+    Suarez with his hands up. Gyan runs up.
+    
+    The whole world knows what comes next.
+    
+    The most gut-wrenching penalty of any World Cup, and Spain tonight with all that shootout history on their backs too. Penalties are brutal 🫣
+    ↳ The Suarez/Ghana anniversary is the top signal and Spain's shootout record is also trending. Weaving them together is a natural, warm fan reaction with no product push needed, and it's a completely fresh angle from our recent posts.
+
+  [community] ix019510472 (217c)
+    Cubarsí. Yamal. Starting a World Cup knockout game as teenagers.
+    
+    The last pair to do it was Pelé and Altafini in 1958.
+    
+    Sometimes football just drops something on you that you have to stop and stare at for a second ✨
+    ↳ The Cubarsí/Yamal stat is genuinely jaw-dropping and the Pelé comparison will land with any football fan. Pure warmth, no product angle, no link, strong reach potential as a conversation starter.
+done - 2 idea(s) queued (the poller trickles them to Telegram)
+  -> exit 0
+===== 2026-07-02 23:06 BST =====
+reading 3 account(s) this run: @BBCSport, @OptaJoe, @brfootball
+Proposing 2 idea(s):
+
+  [news] ix029973558 (136c)
+    Unai Simón. 519 minutes. Not a single goal conceded at this World Cup.
+    
+    That's not just good keeping. That's something special to watch.
+    ↳ Simón's record is the biggest individual story from Spain vs Austria and it hasn't been touched by our recent posts - warm admiration, no stats-led framing, no product angle cluttering it.
+
+  [news] ix029973559 (191c)
+    Cubarsí and Yamal starting a World Cup knockout game at 18.
+    
+    The last teenagers to do that together were Pelé and Altafini in 1958.
+    
+    Football does this sometimes. Just drops something on you.
+    ↳ A different Spain angle from the Simón tweet - leads with the feeling of the moment not the stat, pairs two different news pillars from the same game without repeating a product or CTA.
+done - 2 idea(s) queued (the poller trickles them to Telegram)
+  -> exit 0
+===== 2026-07-03 08:00 BST =====
+reading 3 account(s) this run: @Footballtweet, @BBCSport, @OptaJoe
+Proposing 2 idea(s):
+
+  [news] ix062011212 (157c)
+    Lamine Yamal is 18 years old.
+    
+    That performance against Croatia tonight was just... playground football. On the biggest stage.
+    
+    Some players you just watch 🤩
+    ↳ Yamal is the biggest name from tonight's action, the stat about his touches and dribbles is striking, and we can react with genuine warmth and wonder rather than a repeat angle.
+
+  [feature] ix062011213 (224c)
+    Portugal v Croatia. A late winner. A goal ruled out in stoppage time. Modric bowing out.
+    
+    That's why you never leave early.
+    
+    If you wanted a World Cup XI debate after THAT game, we've got you 👇
+    
+    https://yourscore.app/38-0/wc
+    ↳ The Portugal vs Croatia drama is the freshest news hook and this ties it directly into the World Cup Run draft in a natural, fan-voice way without repeating any recent product angle.
+done - 2 idea(s) queued (the poller trickles them to Telegram)
+  -> exit 0
+===== 2026-07-03 11:00 BST =====
+reading 3 account(s) this run: @brfootball, @Footballtweet, @BBCSport
+Proposing 2 idea(s):
+
+  [news] ix072813766 (193c)
+    88 years.
+    
+    Switzerland had lost seven straight knockout ties at the World Cup. Seven. Going back to 1938.
+    
+    Today they finally broke it. 2-0, into the last 16. 🇨🇭
+    
+    Sometimes sport just delivers.
+    ↳ Switzerland's historic knockout breakthrough is the standout emotional football story right now and fits our warm, wonder-at-the-game voice perfectly with no product angle needed.
+
+  [news] ix072813767 (162c)
+    Dzeko going straight into the stands to hold his crying daughter after his last ever World Cup game.
+    
+    That's the whole thing, isn't it. All of it in one moment. 🥹
+    ↳ The Dzeko farewell image is the most human moment on the timeline right now and lets us lead with pure feeling, warm and short, completely different tone and subject from the Swiss tweet.
+done - 2 idea(s) queued (the poller trickles them to Telegram)
+  -> exit 0
+===== 2026-07-03 14:00 BST =====
+reading 3 account(s) this run: @OptaJoe, @brfootball, @Footballtweet
+Proposing 2 idea(s):
+
+  [feature] ix083615846 (240c)
+    Modric at 39, Ronaldo at 40, still doing it at a World Cup.
+    
+    Some players just refuse to be a memory.
+    
+    That's exactly the kind of career you're chasing when you build your XI in 38-0. The legends who never faded.
+    
+    https://yourscore.app/38-0
+    ↳ The Modric and Ronaldo news are both live and rich with the 'timeless legend' feeling that maps naturally to the all-time XI draft mechanic, without repeating any recent product angle.
+
+  [community] ix083615847 (220c)
+    Switzerland ending an 88-year knockout curse. Gonçalo Ramos averaging a goal every 37 minutes. Lamine Yamal doing playground stuff at 18.
+    
+    This World Cup is just relentless.
+    
+    Who's your player of the tournament so far? 👇
+    ↳ Bundles three of today's biggest talking points into a single warm, fan-voice question that invites replies and has no product angle to clash with recent posts.
+done - 2 idea(s) queued (the poller trickles them to Telegram)
+  -> exit 0
+===== 2026-07-03 17:00 BST =====
+reading 3 account(s) this run: @BBCSport, @OptaJoe, @brfootball
+Proposing 2 idea(s):
+
+  [news] ix094411588 (172c)
+    Messi always wanted to be his own thing, not the next Maradona, not Argentina's answer to anyone.
+    
+    Just himself.
+    
+    And somehow that ended up being the greatest of all time 🐐
+    ↳ The Messi identity story is live and high-engagement right now, and we haven't touched him directly this week. A short, warm, admiring take with no stats fits our fan voice perfectly.
+
+  [news] ix094411589 (213c)
+    Mbappé. Musiala. Yamal.
+    
+    The three teenagers to hit 30+ dribbles at a single World Cup since 1966.
+    
+    All three doing it before the age of 20.
+    
+    Football does something special with young players at this tournament 🌍
+    ↳ The teenager dribbles stat is trending and genuinely jaw-dropping, our recent news posts have focused on Spain and Kane so this broadens the conversation, and the angle leads with players not numbers.
+done - 2 idea(s) queued (the poller trickles them to Telegram)
+  -> exit 0
+===== 2026-07-03 19:00 BST =====
+reading 3 account(s) this run: @BBCSport, @OptaJoe, @brfootball
+Proposing 2 idea(s):
+
+  [proof] ix101614383 (209c)
+    The World Cup board race is properly on now.
+    
+    Every daily quiz you skip, someone else answers right and unlocks a stronger player. By the final there's £100 on the line.
+    
+    Today's is up 👇
+    
+    https://yourscore.app
+    ↳ The board race narrative is live and urgent - World Cup knockout stage is heating up, the £100 prize is real, and this angle (someone else is moving while you're reading this) hasn't been used yet.
+
+  [feature] ix101614384 (258c)
+    The thing about 38-0 is you can draft Yamal AND Musiala AND Mbappé into the same XI and just... see what happens.
+    
+    No budget. No era limit. Just you, your best guess at an unbeatable team, and 38 games to find out if you're right.
+    
+    https://yourscore.app/38-0
+    ↳ The WC teenagers dominating X right now make the all-era, no-limits draft feel timely and fun, without claiming those players are in the game - it's a natural 'what if' hook grounded in how 38-0 actually plays.
+done - 2 idea(s) queued (the poller trickles them to Telegram)
+  -> exit 0
+===== 2026-07-04 09:30 BST =====
+reading 3 account(s) this run: @Footballtweet, @BBCSport, @OptaJoe
+Proposing 2 idea(s):
+
+  [feature] ix153815049 (266c)
+    Argentina vs Cabo Verde going to penalties today.
+    
+    We shipped an interactive shootout a few weeks back and it still hasn't got old. Pick your corner, time the power, watch the keeper dive.
+    
+    Some of our runs have been decided by one kick 🫣
+    
+    https://yourscore.app/38-0
+    ↳ Argentina surviving a shootout is the biggest moment on X right now and it's a natural, honest hook into the penalty mechanic, without equating our players to real ones or overselling anything.
+
+  [community] ix153815050 (171c)
+    Quick one for anyone following the World Cup board race.
+    
+    Practice mode doesn't count. Only Today's Run moves your score.
+    
+    Just making sure no one finds out the hard way 😬
+    ↳ Genuinely useful clarification for active board chasers, fresh angle on Mastermind that isn't the over-exposed unlock mechanic, and no link keeps it feeling like a heads-up from a mate rather than a promo.
+done - 2 idea(s) queued (the poller trickles them to Telegram)
+  -> exit 0
+===== 2026-07-04 14:00 BST =====
+reading 3 account(s) this run: @brfootball, @Footballtweet, @BBCSport
+Proposing 2 idea(s):
+
+  [feature] ix170012108 (264c)
+    Morocco and Egypt. Two African nations left standing in the last 16.
+    
+    If you're building a World XI in Mastermind right now, the African player pool is genuinely deep. Getting the questions right to unlock them is a different story 👀
+    
+    https://yourscore.app/38-0/wc
+    ↳ The African knockout stat is the biggest talking point on X right now and it hooks naturally into the Mastermind draft without repeating the 'answer right, unlock a player' formula - this is about which players you can actually get, not how the mechanic works.
+
+  [community] ix170012109 (129c)
+    Honest question for anyone who plays 38-0.
+    
+    Who's the first player you always draft? And have you ever regretted it by game 10? 👇
+    ↳ A warm, open community question about the 38-0 draft habit pulls replies from real players, zero pitch, nothing we've done recently, and no link needed.
+done - 2 idea(s) queued (the poller trickles them to Telegram)
+  -> exit 0
+===== 2026-07-04 19:00 BST =====
+reading 3 account(s) this run: @OptaJoe, @brfootball, @Footballtweet
+Proposing 2 idea(s):
+
+  [feature] ix188018175 (213c)
+    Cabo Verde out, but Vozinha leaves this World Cup a legend.
+    
+    He's the kind of player who ends up in our Mastermind pool for a reason. If he lands in your draft today... you play him.
+    
+    https://yourscore.app/38-0/wc
+    ↳ Vozinha is the breakout story of the round of 16 and ties naturally into the WC Mastermind draft pool without repeating the quiz-unlock angle, instead talking about the moment of getting him dealt to you.
+
+  [community] ix188018176 (186c)
+    The Round of 16 has been all over the place.
+    
+    Top of our World Cup board right now though... someone's been calling every result. £100 on the line by the final.
+    
+    Where are you sitting? 👇
+    ↳ Board race angle hasn't been pushed this week from a community pull perspective, the chaotic R16 makes the leaderboard narrative timely, and asking where people sit invites replies without a link or a hard sell.
+done - 2 idea(s) queued (the poller trickles them to Telegram)
+  -> exit 0
+===== 2026-07-05 09:30 BST =====
+reading 3 account(s) this run: @BBCSport, @OptaJoe, @brfootball
+Proposing 2 idea(s):
+
+  [feature] ix240215556 (222c)
+    France vs Morocco in the quarters again.
+    
+    If you've been playing the daily quiz this week, that one's going to sting or feel very well timed depending on how your board run is going 😅
+    
+    Today's is up 👉 https://yourscore.app
+    ↳ France-Morocco rematch is the dominant conversation right now and it's a natural, fresh hook into the daily WC quiz series without repeating the board-race CTA format we've already run.
+
+  [community] ix240215557 (223c)
+    The best bit of 38-0 is when you spin a squad that looks like a disaster and you make it work anyway.
+    
+    Three defenders who can't defend, two strikers who'll never play together... and somehow you're nine games in unbeaten 🤷
+    ↳ Focuses on the actual spin-and-draft tension from the inside, no link, no CTA, just us talking about our game like people who play it every day - a different pillar and feel from everything recently posted.
+done - 2 idea(s) queued (the poller trickles them to Telegram)
+  -> exit 0
+===== 2026-07-05 14:07 BST =====
+reading 3 account(s) this run: @Footballtweet, @BBCSport, @OptaJoe
+@Footballtweet: fetch failed
+recentPosts: fetch failed
+@BBCSport: fetch failed
+@OptaJoe: fetch failed
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: Error: getaddrinfo ENOTFOUND api.anthropic.com
+      at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26) {
+    errno: -3008,
+    code: 'ENOTFOUND',
+    syscall: 'getaddrinfo',
+    hostname: 'api.anthropic.com'
+  }
+}
+
+Node.js v24.15.0
+  -> exit 1
+===== 2026-07-05 19:00 BST =====
+reading 3 account(s) this run: @Footballtweet, @BBCSport, @OptaJoe
+Proposing 2 idea(s):
+
+  [feature] ix274414422 (193c)
+    England at the Azteca today.
+    
+    If you've been building squads in 38-0 this week and Gazza or Lineker came up in your spin... you'll know the feeling 😅
+    
+    Today's quiz is up 👉 https://yourscore.app
+    ↳ England's first game at the Azteca since 1986 is the perfect timely hook into the daily quiz without repeating any recent quiz CTA angle.
+
+  [identity] ix274414423 (221c)
+    The worst spin in 38-0 is when your XI has four left backs, two goalkeepers in midfield and a striker you've never heard of.
+    
+    And then somehow you go 12 games unbeaten with it.
+    
+    That's the one that keeps you coming back 😭
+    ↳ Leans into the chaos-of-the-random-hand mechanic from a fresh, human angle, no CTA, no link, just the feeling of the game that makes it shareable.
+done - 2 idea(s) queued (the poller trickles them to Telegram)
+  -> exit 0

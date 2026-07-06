@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { rateLimitDistributed } from "@/lib/ratelimit";
 import { slugify, shuffle } from "@/lib/utils";
+import { dedupeByQuestionText } from "@/lib/questions";
 import type { Json } from "@/types/database";
 
 type Difficulty = "easy" | "medium" | "hard" | "expert" | "master";
@@ -151,6 +152,9 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Identical-text rows must not land in one pack, even across difficulties.
+  questions = dedupeByQuestionText(questions);
+
   // If we don't have enough questions, fall back without difficulty filter
   if (questions.length < 8) {
     const { data: fallback } = await supabase
@@ -161,7 +165,7 @@ export async function POST(req: NextRequest) {
       .eq("source", "data-grounded")
       .limit(60);
     if (fallback && fallback.length > 0) {
-      questions = shuffle(fallback as BankQuestion[]).slice(0, 15);
+      questions = dedupeByQuestionText(shuffle(fallback as BankQuestion[])).slice(0, 15);
     }
   }
 

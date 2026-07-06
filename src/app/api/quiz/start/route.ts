@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { rateLimitDistributed } from "@/lib/ratelimit";
 import { shuffle } from "@/lib/utils";
+import { dedupeByQuestionText } from "@/lib/questions";
 
 type Difficulty = "easy" | "medium" | "hard";
 
@@ -184,7 +185,9 @@ export async function POST(req: NextRequest) {
     questions = await runQueries(seenIds);
   }
 
-  const finalQuestions = shuffle(questions);
+  // Text-level dedup: distinct rows with identical question text must never be
+  // dealt in the same session — history-based id dedup can't catch them.
+  const finalQuestions = shuffle(dedupeByQuestionText(questions));
 
   // Upsert history records (correct=null for served questions)
   if (finalQuestions.length > 0) {

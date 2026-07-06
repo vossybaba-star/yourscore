@@ -1,0 +1,19 @@
+{
+  "_comment": "Reddit listening config. subreddits are browsed (sort=hot/new); searches sweep all of Reddit for intent threads. 'note' feeds the drafter as that sub's rules context. Edit freely — reddit-track picks changes up next run.",
+  "defaults": { "perRun": 2, "maxAgeHours": 20, "minUps": 5, "maxQueuedPerRun": 6 },
+  "subreddits": [
+    { "name": "soccer",        "sort": "hot", "minUps": 200, "note": "STRICT no self-promo, no app mentions ever. Only reply if we genuinely add to a big thread (trivia, history, a sharp observation)." },
+    { "name": "worldcup",      "sort": "hot", "minUps": 30,  "note": "WC2026 is on right now. No unsolicited promo; product mention only if someone literally asks for a WC quiz/game." },
+    { "name": "PremierLeague", "sort": "hot", "minUps": 30,  "note": "No link-dropping; be a fan first. Product only if directly asked for a quiz/trivia app." },
+    { "name": "FantasyPL",     "sort": "hot", "minUps": 50,  "note": "Community is sharp and allergic to promo. Useful football-knowledge replies only; no product mentions unless a thread asks for football games/quizzes." },
+    { "name": "footballtactics", "sort": "hot", "minUps": 20, "note": "Thoughtful sub; only reply with real substance. Never promo." }
+  ],
+  "searches": [
+    { "q": "football quiz app",                    "time": "day",  "note": "Someone looking for exactly what we built. Disclose it's ours." },
+    { "q": "football trivia game",                 "time": "day",  "note": "Product-fit thread. Disclose it's ours." },
+    { "q": "daily football quiz",                  "time": "day",  "note": "Product-fit thread. Disclose it's ours." },
+    { "q": "test football knowledge",              "time": "day",  "note": "Product-fit if they want an app/game; otherwise just be helpful." },
+    { "q": "games for football fans",              "time": "day",  "note": "Recommendation thread. Disclose it's ours if we pitch in." },
+    { "q": "app to settle football arguments",     "time": "week", "note": "Long-tail but perfect intent." }
+  ]
+}
