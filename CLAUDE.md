@@ -1,49 +1,111 @@
 # YourScore — Project Instructions
 
-## READ THIS FIRST
-**[`YOURSCORE.md`](./YOURSCORE.md) is the single source of truth for what YourScore is.**
-Read it before answering any product question or referencing any feature. It defines the
-product, the game modes, the league model, scoring, and — importantly — **what has been
-discontinued or shelved**. When it conflicts with any other doc or with older memory,
-`YOURSCORE.md` wins.
+## 0. READ THIS FIRST — product truth lives in one place
+**[`YOURSCORE.md`](./YOURSCORE.md) is the single source of truth for what YourScore is** —
+product, game modes, league model, scoring, locked vocabulary, and what's discontinued.
+**Read it — including its top "Recently shipped" changelog — before referencing any feature
+or claiming that something is or isn't built.** When it conflicts with this file, older docs,
+memory, or your own assumptions, **YOURSCORE.md wins.**
 
-`PRODUCT.md`, `MARKETING_BRIEF.md`, `MOBILE.md`, `STORE_LISTING.md`, and
-`~/Downloads/yourscore-build-doc.md` are **historical** — they contain stale/discontinued
-features. Do not treat them as current scope.
+Do **not** rely on memory — or on a hard-coded feature list in this file — for what exists:
+features ship almost daily. This file deliberately does **not** enumerate features (a second
+list only drifts and misleads the next session — that drift is exactly why agents fall behind).
+YOURSCORE.md carries the feature set and it is kept current.
 
-## Quick facts (see YOURSCORE.md for detail)
-- **What it is:** football-knowledge competition app. Tagline: "Your football knowledge. Ranked." (say "knowledge", not "IQ").
-- **Audience:** consumer friend-groups (the goal) + pubs (acquisition channel now, Pub Leagues later).
-- **Platform:** native iOS/Android primary, wrapping the web app at **yourscore.app** (not `.gg`).
-- **Locked vocabulary:** a **Game** = one play-through. A **Lobby** = where players group up before a Multiplayer game (NOT "Room"). Lobby types: **Private / Public / 1v1**. Say "football knowledge", never "IQ".
-- **Ways to play:** Live matches · Multiplayer (Lobby types: Private / Public / 1v1) · Solo challenges. Custom Quiz Builder feeds multiplayer Quiz packs.
-- **Leagues:** compile a group's results; two separate boards per league — **Live** (live matches) vs **Offline** (multiplayer incl. 1v1; solo lighter, TBD). Points never mix.
-- **Discontinued:** WhatsApp API notifications; **shelved:** sponsored rooms. **Avoid "Room"/"IQ".**
-- **Not built yet:** Friends, public profiles, hints system (Apple + Google + email/password + magic link are live).
-- **Note:** `rooms*` tables = Lobbies (rename pending).
+`PRODUCT.md`, `MARKETING_BRIEF.md`, `MOBILE.md`, `STORE_LISTING.md`, and the old
+`~/Downloads/*build-doc.md` files are historical/stale — never treat them as current scope.
 
-## Debugging errors — CHECK SENTRY FIRST
-Before reading any source files or querying the DB to investigate a bug, always hit
-the Sentry API for live error events. The read token is in `.env.local` as
-`SENTRY_READ_TOKEN`. Org slug: `yourscore-qx`, project slug: `javascript-nextjs`.
+## 1. Stable facts (these rarely change)
+- **What it is:** a football **competition** platform — two games plus a shared social layer.
+  **38-0** (head-to-head team-builder) is the flagship/acquisition hook; **Quiz** (football
+  knowledge) is the depth/retention play. It is **not** a World Cup app — FIFA WC 2026 is the
+  launch/marketing moment; both games are year-round.
+- **Platform / domain:** web app at **yourscore.app** (not `.gg`), wrapped as native
+  iOS/Android (the primary surface).
+- **Locked vocabulary — never deviate:** say **"football knowledge"**, never "IQ". A **Game** =
+  one play-through. A **Lobby** (never "Room") = pre-game grouping; types **Private / Public /
+  1v1** (1v1 = code's `h2h`). Brand the team-builder **"38-0"** ("Draft XI" is an internal
+  descriptor only). Frozen code paths: the Quiz game lives at `/play`; `rooms*` tables ARE
+  Lobbies. Do not rename paths.
+- For anything beyond the above — the current feature set, what's live vs building vs shelved —
+  **read YOURSCORE.md. Do not guess, and do not tell the user a feature isn't built without
+  checking.**
 
-```bash
-# Recent issues (last 24h)
-SENTRY_READ_TOKEN=$(grep SENTRY_READ_TOKEN .env.local | cut -d= -f2) && \
-curl -s "https://de.sentry.io/api/0/projects/yourscore/javascript-nextjs/issues/?limit=10&statsPeriod=24h" \
-  -H "Authorization: Bearer $SENTRY_READ_TOKEN" | \
-  jq '[.[] | {id, title, culprit, count: .count, lastSeen, firstSeen}]'
+## 2. How to work in this repo (operating principles)
+Non-negotiable defaults. They exist because this is a live product with real users, multiple
+Claude sessions editing in parallel, and a small margin for error.
 
-# Events for a specific issue (get stack trace + context)
-SENTRY_READ_TOKEN=$(grep SENTRY_READ_TOKEN .env.local | cut -d= -f2) && \
-curl -s "https://de.sentry.io/api/0/issues/<ISSUE_ID>/events/?limit=3&full=true" \
-  -H "Authorization: Bearer $SENTRY_READ_TOKEN" | \
-  jq '[.[] | {message, datetime, exception: .exception.values[0].stacktrace.frames[-3:]}]'
-```
+**Verify, don't assume.**
+- Before claiming a feature/file/flag exists or how it behaves, check the **live code, DB, or
+  Sentry** — not memory or docs. Memory and recalled notes are point-in-time snapshots; the
+  repo is truth. If a memory names a file/function/flag, confirm it still exists before acting.
+- Before optimizing, **measure** (preview/Chrome, `EXPLAIN ANALYZE`, real timings) — don't
+  guess where the cost is. Before a "fix", reproduce the problem.
+- When an earlier assumption turns out wrong, **say so plainly and correct course** — don't
+  paper over it.
 
-This gives stack traces, request context, and user info in ~5 seconds — far faster
-than file-reading + DB queries. Do this before anything else when investigating an error.
+**Production safety — treat prod as sacred.**
+- Stage changes in **risk order**, smallest first, and **verify each step** (`tsc` → real
+  `next build` → a real check) before the next. Never ship a change to the core game loops
+  (38-0 draft/spin, Quiz play, Live H2H) without an end-to-end run first.
+- **Never `git add -A`.** The working tree almost always holds other sessions' WIP — stage the
+  exact files you changed, nothing else. Before pushing, `git fetch` and confirm a clean
+  fast-forward; **pushing `main` auto-deploys to prod via Vercel.**
+- Commit/push only when asked. When you do, re-check that origin hasn't moved and you aren't
+  clobbering another session.
 
-## After changing the product
-Update `YOURSCORE.md` in the same session, bump its "Confirmed" date, then run
-`graphify update .` to keep the knowledge graph current.
+**Report faithfully.** Distinguish **shipped vs deferred**; state what you verified vs assumed;
+surface failures with the actual output. Don't claim done-and-verified when it's neither.
+
+**Keep the docs true — this is how agents stay current, so do your part.**
+- Any product change → update `YOURSCORE.md` **in the same session** (add a line to its
+  "Recently shipped" changelog, bump the Confirmed date) and run `graphify update .`.
+  A feature that ships without a doc update is precisely why the next session is "out of date."
+
+## 3. Tools & where truth lives
+- **Codebase questions:** `graphify query "<q>"` (then `graphify path` / `graphify explain`)
+  return a scoped subgraph — cheaper than raw grep. `graphify-out/wiki/index.md` for
+  navigation; `graphify-out/GRAPH_REPORT.md` only for broad architecture. Run `graphify
+  update .` after code changes (AST-only, no API cost).
+- **Bugs — CHECK SENTRY FIRST** (before reading files or querying the DB). Read token in
+  `.env.local` as `SENTRY_READ_TOKEN`; org `yourscore-qx`, project `javascript-nextjs`:
+  ```bash
+  SENTRY_READ_TOKEN=$(grep SENTRY_READ_TOKEN .env.local | cut -d= -f2) && \
+  curl -s "https://de.sentry.io/api/0/projects/yourscore/javascript-nextjs/issues/?limit=10&statsPeriod=24h" \
+    -H "Authorization: Bearer $SENTRY_READ_TOKEN" | \
+    jq '[.[] | {id, title, culprit, count, lastSeen, firstSeen}]'
+  # then: /api/0/issues/<ISSUE_ID>/events/?limit=3&full=true  for stack traces + context
+  ```
+- **Database:** Supabase project ref **`mznvuswzgkaupvaqznkm`** (eu-central-1). Drive it via the
+  Management API — `POST api.supabase.com/v1/projects/<ref>/database/query`, plus
+  `/advisors/security`, `/config/auth`, `/health` — with `SUPABASE_ACCESS_TOKEN` from
+  `.env.local`. Note `NEXT_PUBLIC_SUPABASE_URL` is a **custom domain** (`auth.yourscore.app`),
+  so take the ref from here, not by parsing that URL.
+- **Secrets:** read only from gitignored `.env.local`; never print values. One var:
+  `grep '^VAR=' .env.local | cut -d= -f2-`.
+- **Verify UI/behavior:** the preview MCP (`preview_start`, then drive the real flow) or the
+  Chrome MCP against prod — don't ask the user to check manually.
+
+## 4. Gotchas (learned the hard way — don't relearn them)
+- **zsh:** never use `path` or `UID` as a shell loop/temp variable — `path` is bound to `$PATH`
+  and silently breaks every command after it; `UID` is readonly. Use `p`, `route`, `userid`.
+- **Prod build:** `next build` fails on ESLint unused-imports even when `tsc` passes — run a
+  real `next build` before deploying, not just `tsc`.
+- **Vercel data cache:** service-role Supabase GETs in route handlers get pinned forever
+  (constant cache key). Set `export const fetchCache = "force-no-store"` (or `dynamic`) on any
+  authed/service-role route, or you'll serve stale data indefinitely.
+- **Client reads are slow, not the DB:** a browser→Supabase (Frankfurt) fetch is ~0.4–1s
+  regardless of the query (which is sub-ms). For shared data, wrap it in a Vercel **edge-cached**
+  route (`s-maxage`); for per-user data, fetch **server-side** (co-located with the DB). Don't
+  "optimize the query" — move the call.
+- **Postgres/RLS:** function `EXECUTE` is granted to `PUBLIC` by default, so
+  `revoke ... from anon, authenticated` is a no-op — `revoke ... from public` and re-`grant ...
+  to service_role`. An RLS-enabled table with no policy = deny-all for anon/authenticated
+  (service_role bypasses RLS).
+- **Migrations:** numbers collide across parallel sessions — check the `supabase/migrations/`
+  dir AND `schema_migrations` before picking one; many applied migrations were applied via the
+  Management API and are NOT recorded in `schema_migrations`.
+
+## 5. After changing the product
+Update `YOURSCORE.md` in the same session (bump the "Confirmed" date, add a "Recently shipped"
+line), then run `graphify update .` to keep the knowledge graph current.

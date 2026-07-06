@@ -93,6 +93,35 @@
 
 ---
 
+## 0. Recently Shipped (last ~30 days)
+
+Scan-list so any session gets current in one glance — newest first. Full detail is in the
+Confirmed preamble above and the referenced section.
+
+- **2026-07-06** — WC quiz answer bank is now **server-only** (audit C1): client draws
+  answer-free questions via `/api/draft/wc/practice-quiz`; server grades from the seed —
+  prevents offline pre-computation of the £100 board. (§5B)
+- **2026-07-05** — **Anonymous debate voting** (guests vote device-keyed; sign-up gates the
+  argument, not the ballot); **date-allocated debates** (`scripts/seed-debates.mjs` is the
+  schedule); **debate share card** + `?pick=` one-tap vote funnel; **back-navigation retrace**
+  (session nav trail + smart BackPill fallbacks); **Home v3** (progress card + week dots,
+  rivalry module, featured quiz, behaviour rail). (§7 / §9)
+- **2026-07-04** — **Daily Debates + discussion threads** (Versus phase 2); email
+  **open/click engagement** capture via Resend webhook; Resend **unsubscribes** mirrored into
+  `email_suppressions`. (§7)
+- **2026-07-03** — **Public player profiles** (`/players/[id]`: record, battles, quizzes,
+  add-friend); **Leagues Discover** round 2; email **deliverability** MX-check at signup +
+  audience sweep. (§7 / §9)
+- **2026-06-27** — **Push notifications LIVE** (opt-in via NotifyOptInCard; WC Mastermind daily
+  push at personalized per-timezone send times) — no longer "tied to launch". (§7)
+- **2026-06-17** — **Usernames as public identity** (`@username` replaces real-name display
+  across profiles, challenge invites, and league tables). (§2)
+
+> **Maintenance:** shipped a product change? Add a line here (newest first) and bump the
+> Confirmed date. This list is what keeps the next session from being out of date.
+
+---
+
 ## 1. What YourScore Is
 
 **YourScore is a football competition platform — one app, one account, two games, a
@@ -126,6 +155,7 @@ Use these words, with these meanings, everywhere. No synonyms.
 - **38-0** — the team-builder game (name = an unbeaten 38-game season). *("Draft XI" is the internal/descriptor name only — brand it "38-0".)*
 - **Quiz** — the football-knowledge game. *(User-facing label; its route is still `/play` in code — do not change paths.)*
 - **Player / User** — anyone using YourScore (signed in or guest).
+- **Username** — a player's unique, public handle (e.g. `@lukepingu`); the public-facing identity across profiles, challenge invites, and league tables (replaced exposing real OAuth names). Shipped 2026-06-17.
 - **Guest** — no account; can play (esp. 38-0 Quick Match + Quiz solo) but can't earn ranked points / leaderboards / cloud save.
 - **Game** — one play-through (a Quiz game or a 38-0 match).
 

@@ -1,0 +1,15 @@
+{
+  "$comment": "SessionStart hook auto-injects YourScore's current state (the YOURSCORE.md 'Recently Shipped' changelog + the last 10 commits) into every session's context, so agents start current without being told. Read-only. To disable, delete the hooks block.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"${CLAUDE_PROJECT_DIR:-$PWD}\" 2>/dev/null && { echo 'YourScore is a live product; read YOURSCORE.md before referencing features and do not claim a feature is unbuilt without checking. Current state:'; echo '--- Recently shipped (from YOURSCORE.md) ---'; awk '/^## 0\\. Recently Shipped/{f=1} f{print} /^## 1\\./{if(f)exit}' YOURSCORE.md 2>/dev/null | grep -E '^- \\*\\*20' | head -12; echo '--- Last 10 commits ---'; git log -10 --date=short --pretty='%ad %s' 2>/dev/null; } || true"
+          }
+        ]
+      }
+    ]
+  }
+}
