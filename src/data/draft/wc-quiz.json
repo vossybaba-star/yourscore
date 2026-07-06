@@ -24,9 +24,11 @@
     "2026-07-02-comeback-wednesday.json",
     "2026-07-03-last-32-settled.json",
     "2026-07-04-into-the-last-16.json",
-    "2026-07-05-quarter-finals-take-shape.json"
+    "2026-07-05-england-world-cup-history.json",
+    "2026-07-05-quarter-finals-take-shape.json",
+    "2026-07-06-norway-stun-brazil.json"
   ],
-  "count": 363,
+  "count": 393,
   "questions": [
     {
       "id": "2026-06-11-0",
@@ -4554,6 +4556,201 @@
     },
     {
       "id": "2026-07-05-0",
+      "q": "In which year did England win their one and only FIFA World Cup?",
+      "options": [
+        "1966",
+        "1970",
+        "1962",
+        "1958"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "win_1966"
+    },
+    {
+      "id": "2026-07-05-1",
+      "q": "What was the final score when England beat West Germany in the 1966 World Cup Final at Wembley?",
+      "options": [
+        "4-2",
+        "3-2",
+        "3-1",
+        "2-1"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "win_1966"
+    },
+    {
+      "id": "2026-07-05-2",
+      "q": "Geoff Hurst scored the only hat-trick in World Cup Final history in 1966. Who scored England's other goal in that final?",
+      "options": [
+        "Martin Peters",
+        "Bobby Charlton",
+        "Roger Hunt",
+        "Alan Ball"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "win_1966"
+    },
+    {
+      "id": "2026-07-05-3",
+      "q": "Which England manager led the Three Lions to their 1966 World Cup triumph?",
+      "options": [
+        "Alf Ramsey",
+        "Walter Winterbottom",
+        "Ron Greenwood",
+        "Bobby Robson"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "managers"
+    },
+    {
+      "id": "2026-07-05-4",
+      "q": "England reached the World Cup semi-finals in 1990, losing to which country on penalties?",
+      "options": [
+        "West Germany",
+        "Argentina",
+        "Italy",
+        "Brazil"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "1990"
+    },
+    {
+      "id": "2026-07-05-5",
+      "q": "Paul Gascoigne was in tears during the 1990 semi-final after receiving a yellow card. Why did the booking devastate him in that moment?",
+      "options": [
+        "It meant he would have been suspended for the final if England had won",
+        "It was his second yellow of the tournament, ending his World Cup",
+        "It was the harshest booking he had ever received in his career",
+        "He had promised his manager he would stay disciplined all tournament"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "1990"
+    },
+    {
+      "id": "2026-07-05-6",
+      "q": "Which England striker won the Golden Boot at the 1986 World Cup in Mexico with six goals?",
+      "options": [
+        "Gary Lineker",
+        "Peter Beardsley",
+        "Kerry Dixon",
+        "Mark Hateley"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "golden_boot"
+    },
+    {
+      "id": "2026-07-05-7",
+      "q": "David Beckham was sent off for a kick at Diego Simeone at the 1998 World Cup, leaving England to play most of the match with ten men. Which country were England playing?",
+      "options": [
+        "Argentina",
+        "Colombia",
+        "Tunisia",
+        "Romania"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "1998"
+    },
+    {
+      "id": "2026-07-05-8",
+      "q": "In the 2010 World Cup, Frank Lampard's shot clearly crossed the goal line but was not awarded. Which country were England playing when it happened?",
+      "options": [
+        "Germany",
+        "France",
+        "Algeria",
+        "Ghana"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "2010"
+    },
+    {
+      "id": "2026-07-05-9",
+      "q": "Harry Kane won the 2018 World Cup Golden Boot with six goals, helping England reach the semi-finals. Which manager led England to that campaign?",
+      "options": [
+        "Gareth Southgate",
+        "Roy Hodgson",
+        "Sam Allardyce",
+        "Steve McClaren"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "2018"
+    },
+    {
+      "id": "2026-07-05-10",
+      "q": "England actually went behind in the 1966 World Cup Final before coming back to win 4-2. Which West German player opened the scoring?",
+      "options": [
+        "Helmut Haller",
+        "Uwe Seeler",
+        "Franz Beckenbauer",
+        "Siggi Held"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "win_1966"
+    },
+    {
+      "id": "2026-07-05-11",
+      "q": "How many times have England failed to qualify for the FIFA World Cup finals?",
+      "options": [
+        "Three",
+        "Two",
+        "Four",
+        "Once"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "history"
+    },
+    {
+      "id": "2026-07-05-12",
+      "q": "England have been knocked out of the World Cup on penalties on three separate occasions. Which answer correctly names all three opponents?",
+      "options": [
+        "West Germany (1990), Argentina (1998), Portugal (2006)",
+        "Argentina (1990), Germany (1998), France (2006)",
+        "West Germany (1990), Brazil (1994), Portugal (2006)",
+        "Italy (1990), Argentina (1998), Germany (2006)"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "penalties"
+    },
+    {
+      "id": "2026-07-05-13",
+      "q": "Geoff Hurst's controversial second goal in the 1966 Final — the shot that hit the crossbar and bounced on the line — was awarded by a linesman from which country?",
+      "options": [
+        "Soviet Union",
+        "Switzerland",
+        "Yugoslavia",
+        "Hungary"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "win_1966"
+    },
+    {
+      "id": "2026-07-05-14",
+      "q": "England's 1990 World Cup shootout exit against West Germany remains one of the defining moments of English football. Which two players missed the decisive penalties?",
+      "options": [
+        "Stuart Pearce and Chris Waddle",
+        "Gary Lineker and Peter Beardsley",
+        "Paul Gascoigne and Stuart Pearce",
+        "David Platt and Chris Waddle"
+      ],
+      "answer": 0,
+      "difficulty": "expert",
+      "category": "1990"
+    },
+    {
+      "id": "2026-07-05-0",
       "q": "Morocco knocked out which co-host nation 3-0 to reach the World Cup quarter-finals?",
       "options": [
         "Canada",
@@ -4746,6 +4943,201 @@
       "answer": 0,
       "difficulty": "expert",
       "category": "records"
+    },
+    {
+      "id": "2026-07-06-0",
+      "q": "Which nation knocked five-time champions Brazil out of the 2026 World Cup in the round of 16?",
+      "options": [
+        "Norway",
+        "Sweden",
+        "Denmark",
+        "Switzerland"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "upset"
+    },
+    {
+      "id": "2026-07-06-1",
+      "q": "Who scored twice to complete Norway's stunning victory over Brazil?",
+      "options": [
+        "Erling Haaland",
+        "Alexander Sorloth",
+        "Martin Odegaard",
+        "Oscar Bobb"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "haaland"
+    },
+    {
+      "id": "2026-07-06-2",
+      "q": "England reached the quarter-finals by winning 3-2 against which nation at the Estadio Azteca?",
+      "options": [
+        "Mexico",
+        "United States",
+        "Canada",
+        "Colombia"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "england"
+    },
+    {
+      "id": "2026-07-06-3",
+      "q": "Beating Brazil took Norway into the first World Cup quarter-final in their history. Which stage had been their previous best?",
+      "options": [
+        "Round of 16",
+        "Semi-final",
+        "Final",
+        "Third place"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "records"
+    },
+    {
+      "id": "2026-07-06-4",
+      "q": "Haaland's double against Brazil took his tournament tally to how many goals, joining the leaders at the top of the scoring charts?",
+      "options": [
+        "Seven",
+        "Five",
+        "Nine",
+        "Six"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "golden_boot"
+    },
+    {
+      "id": "2026-07-06-5",
+      "q": "Which Brazil forward converted a stoppage-time consolation penalty in the defeat to Norway?",
+      "options": [
+        "Neymar",
+        "Vinicius Junior",
+        "Rodrygo",
+        "Raphinha"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "brazil"
+    },
+    {
+      "id": "2026-07-06-6",
+      "q": "Which England midfielder struck twice to put his side 2-0 up against Mexico?",
+      "options": [
+        "Jude Bellingham",
+        "Phil Foden",
+        "Declan Rice",
+        "Cole Palmer"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "england"
+    },
+    {
+      "id": "2026-07-06-7",
+      "q": "England restored their lead against Mexico from the penalty spot in the second half through which captain?",
+      "options": [
+        "Harry Kane",
+        "Jude Bellingham",
+        "Anthony Gordon",
+        "Marcus Rashford"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "england"
+    },
+    {
+      "id": "2026-07-06-8",
+      "q": "England saw out the win over Mexico a man light after which defender was shown a straight red card?",
+      "options": [
+        "Jarell Quansah",
+        "Marc Guehi",
+        "John Stones",
+        "Ezri Konsa"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "england"
+    },
+    {
+      "id": "2026-07-06-9",
+      "q": "Victory over Mexico set up an England quarter-final against which surprise package of the last eight?",
+      "options": [
+        "Norway",
+        "Morocco",
+        "Paraguay",
+        "Switzerland"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "quarter_finals"
+    },
+    {
+      "id": "2026-07-06-10",
+      "q": "Brazil's round-of-16 defeat was their earliest exit from a World Cup since which year?",
+      "options": [
+        "1990",
+        "2006",
+        "2010",
+        "2018"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "records"
+    },
+    {
+      "id": "2026-07-06-11",
+      "q": "Which Brazil midfielder had a first-half penalty saved by Norway goalkeeper Orjan Nyland?",
+      "options": [
+        "Bruno Guimaraes",
+        "Casemiro",
+        "Lucas Paqueta",
+        "Gerson"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "brazil"
+    },
+    {
+      "id": "2026-07-06-12",
+      "q": "Which Mexico striker pulled a goal back from the penalty spot to make it 3-2 against England?",
+      "options": [
+        "Raul Jimenez",
+        "Santiago Gimenez",
+        "Julian Quinones",
+        "Hirving Lozano"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "mexico"
+    },
+    {
+      "id": "2026-07-06-13",
+      "q": "This was Norway's first World Cup since 1998, the tournament where they also beat Brazil 2-1 in the group stage. Brazil went into that 1998 meeting as the reigning what?",
+      "options": [
+        "World champions",
+        "Copa America holders",
+        "Confederations Cup winners",
+        "Olympic champions"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "history"
+    },
+    {
+      "id": "2026-07-06-14",
+      "q": "Which Norway substitute delivered the cross for Haaland's opening goal against Brazil?",
+      "options": [
+        "Andreas Schjelderup",
+        "Oscar Bobb",
+        "Antonio Nusa",
+        "Alexander Sorloth"
+      ],
+      "answer": 0,
+      "difficulty": "expert",
+      "category": "haaland"
     }
   ]
 }
