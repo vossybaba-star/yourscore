@@ -120,8 +120,8 @@
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/package.json": {
-    "mtime": 1783094293.6088362,
-    "ast_hash": "a3732ecf7ed47ddf39ff86de9a8015b4",
+    "mtime": 1783322510.3119931,
+    "ast_hash": "361bf1133dfe8eb1cb02ba02ad6027c2",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/postcss.config.mjs": {
@@ -2055,13 +2055,13 @@
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/38-0/wc/page.tsx": {
-    "mtime": 1783011791.0511436,
-    "ast_hash": "92307c796efc5ab0169051868ea2718d",
+    "mtime": 1783322807.218611,
+    "ast_hash": "83d4c5c0dd393427e71d6c1db5bbc4e0",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/38-0/wc/run/[id]/page.tsx": {
-    "mtime": 1783100368.1808636,
-    "ast_hash": "38cab7c6316ad509c704456df2e576e9",
+    "mtime": 1783322808.4239814,
+    "ast_hash": "5839d0e9eb7eb36f5827aab8ba91cfe8",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/api/draft/wc-og/route.tsx": {
@@ -3385,8 +3385,8 @@
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/scripts/lib/x-watch.mjs": {
-    "mtime": 1783093146.0500946,
-    "ast_hash": "137f5580c2557daad4d4bb1800ca664b",
+    "mtime": 1783320865.5276303,
+    "ast_hash": "bb1dec9b097d76573f24d2d81d16f196",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/scripts/post-tweet.mjs": {
@@ -3490,8 +3490,8 @@
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/lib/draft/wc-quiz.ts": {
-    "mtime": 1783008484.4701107,
-    "ast_hash": "156f577e7737fd91a7f7a230e7b7802b",
+    "mtime": 1783322523.0375392,
+    "ast_hash": "fb2c9d225fa6f966a68b0dacb33dce93",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/lib/posthog/client.ts": {
@@ -3780,12 +3780,12 @@
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/scripts/data/x-queue.json": {
-    "mtime": 1783318734.9171975,
+    "mtime": 1783323376.9738495,
     "ast_hash": "e78b763286b4e7bbe35fa585bdfb00ae",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/scripts/data/x-state.json": {
-    "mtime": 1783318734.9181705,
+    "mtime": 1783323376.9742756,
     "ast_hash": "62103baed4c3b948ca079246b759086d",
     "semantic_hash": ""
   },
@@ -3905,8 +3905,8 @@
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/scripts/x-ideas.mjs": {
-    "mtime": 1783179002.7571754,
-    "ast_hash": "66aae2dd240aebcc4a977cc6a9d1a8ed",
+    "mtime": 1783320839.9278464,
+    "ast_hash": "269de012a1e4ff85d3acc13c21380ab0",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/scripts/x-propose-run.sh": {
@@ -5580,8 +5580,8 @@
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/app/versus/find/page.tsx": {
-    "mtime": 1783274387.9155703,
-    "ast_hash": "873270e129c676d84d2586aafc550ecd",
+    "mtime": 1783321826.5349343,
+    "ast_hash": "73f1175db35f2905b12d0911b35b057d",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore/src/components/leagues/PublicLeagueCard.tsx": {
@@ -6117,6 +6117,36 @@
   "/Users/zchukwumah/yourscore/public/email/thumb-wcm.png": {
     "mtime": 1783318558.2042902,
     "ast_hash": "9c2841c8d400991e1d55358feebefa9b",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/app/api/draft/wc/practice-quiz/route.ts": {
+    "mtime": 1783322546.8858604,
+    "ast_hash": "806a4a3add6f3cf24a9d1aba0baef2b6",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/src/lib/draft/wc-quiz-public.ts": {
+    "mtime": 1783322525.5546966,
+    "ast_hash": "e02f441036fe984f9660aea81ea0354f",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/email/cover-messi-ronaldo.png": {
+    "mtime": 1783320723.78953,
+    "ast_hash": "c8a2c76d6d27639073c6ecd1e4e0ac50",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/email/cover-wc-immortals.png": {
+    "mtime": 1783320725.7276406,
+    "ast_hash": "b43de13a3f26dd347953c48f3ca3d153",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/email/cover-wc2026.png": {
+    "mtime": 1783320724.7233665,
+    "ast_hash": "2d8b2027986616c53a90dcf2914362ac",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore/public/email/hero-wcm.png": {
+    "mtime": 1783322658.9646568,
+    "ast_hash": "6d92314ee6b515fec7610150377438f6",
     "semantic_hash": ""
   }
 }
