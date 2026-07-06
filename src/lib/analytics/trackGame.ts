@@ -59,6 +59,18 @@ function trackGameEvent(game: GameId, event: GameEvent, props: Props = {}): void
   // TikTok — custom event, distinct name per game.
   window.ttq?.track?.(name, payload);
 
+  // TikTok ONLY optimises ad delivery toward its STANDARD events — custom events
+  // (Play380/Complete380 etc.) are tracked + audience-eligible but NOT optimisable
+  // (confirmed via TikTok's own docs, 2026-07-06). So on a *play* we additionally fire
+  // the standard `ViewContent` event as TikTok's play proxy. It fires ONLY here, never
+  // on page views, so `ViewContent` ≈ plays and the TikTok ad group can optimise toward
+  // real players (not site browsers). TikTok-only — Meta still optimises on `Play380`,
+  // X on its play event. `game` is carried so reporting still splits 38-0 vs quiz.
+  // Full rationale + rollout steps: ~/.claude/.../memory/project_yourscore_tiktok_viewcontent.md
+  if (event === "play") {
+    window.ttq?.track?.("ViewContent", { ...payload, content_id: game, content_type: "play" });
+  }
+
   // Snapchat — custom event slots (1 = play, 2 = complete); game carried in params.
   window.snaptr?.("track", event === "play" ? "CUSTOM_EVENT_1" : "CUSTOM_EVENT_2", payload);
 
