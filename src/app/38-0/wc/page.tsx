@@ -25,7 +25,7 @@ import { DraftHubHero } from "@/components/draft/WcHubHero";
 import { useUser } from "@/hooks/useUser";
 import { pickableNations, spinForNation, spinWorld, ensurePool, isPoolReady, type PickableNation } from "@/lib/draft/pool";
 import { WORLD_TEAM_NAME, type RunMode } from "@/lib/draft/wc";
-import { drawQuestion, type ServedQuestion } from "@/lib/draft/wc-quiz";
+import type { ServedQuestion } from "@/lib/draft/wc-quiz-public";
 import { gradeAnswer, type DraftBand } from "@/lib/draft/draft-quiz";
 import {
   emptyTeam, openSlots, isComplete, usedPlayerIds, usedPlayerNames, placePlayer, hydrateSavedTeam, type LocalTeam,
@@ -90,6 +90,8 @@ export default function WorldCupEntry() {
   // Ranked draft state: the server's answer-free questions, and the answers/picks we replay
   // to the server on submit so it can verify the XI was legitimately earned.
   const serverQs = useRef<{ id: string; prompt: string; options: string[]; category: string }[]>([]);
+  // Seed for the current practice question — the server re-derives (and grades) from it.
+  const practiceSeed = useRef<string | null>(null);
   const draftAnswers = useRef<number[]>([]);
   const draftPicks = useRef<{ slot: string; player_season_id: string }[]>([]);
   // Today's ranked attempt is locked once it's been played OR drafted past the 6th pick
@@ -191,9 +193,26 @@ export default function WorldCupEntry() {
       setAnswered(null); setTimeLeft(QUESTION_SECONDS);
       return;
     }
-    const q = drawQuestion(Math.random, askedIds.current);
-    if (!q) { runSpin({ minOverall: 0, maxOverall: 99 }); return; }
-    setQuiz(q); setAnswered(null); setTimeLeft(QUESTION_SECONDS);
+    void startPracticeQuiz();
+  }
+
+  // Practice questions come from the server answer-free (the pool + answers are
+  // server-only — audit C1). Any failure falls back to a neutral spin so the
+  // draft never dead-ends on a network blip.
+  async function startPracticeQuiz() {
+    try {
+      const res = await fetch("/api/draft/wc/practice-quiz", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "draw", exclude: Array.from(askedIds.current) }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.question) { runSpin({ minOverall: 0, maxOverall: 99 }); return; }
+      practiceSeed.current = data.seed as string;
+      setQuiz({ ...data.question, correctIndex: -1 });
+      setAnswered(null); setTimeLeft(QUESTION_SECONDS);
+    } catch {
+      runSpin({ minOverall: 0, maxOverall: 99 });
+    }
   }
 
   // Lock the answer, grade it, reveal correct/wrong briefly, then spin the earned slate.
@@ -201,15 +220,34 @@ export default function WorldCupEntry() {
     if (!quiz || answered !== null) return;
     setAnswered(idx);
     if (ranked) { void answerRanked(idx); return; }
-    // Practice: graded + spun fully client-side (no integrity needs — not ranked).
-    const correct = idx === quiz.correctIndex;
-    const { streak: newStreak, band } = gradeAnswer(streak, correct);
-    askedIds.current.add(quiz.id);
-    setStreak(newStreak);
-    setAskedCount((n) => n + 1);
-    if (correct) setCorrectCount((n) => n + 1);
-    setFeedback({ correct, streak: newStreak });
-    setTimeout(() => { setQuiz(null); setAnswered(null); runSpin(band); }, 900);
+    void answerPractice(idx);
+  }
+
+  // Practice: the server grades (it alone knows the answer) and reveals the
+  // correct option post-answer — same rhythm as the ranked flow.
+  async function answerPractice(idx: number) {
+    if (!quiz) return;
+    const qid = quiz.id;
+    try {
+      const res = await fetch("/api/draft/wc/practice-quiz", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "answer", seed: practiceSeed.current, choice: idx }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error ?? "Couldn't grade that — try again."); setAnswered(null); return; }
+      const correct = !!data.correct;
+      const { streak: newStreak, band } = gradeAnswer(streak, correct);
+      askedIds.current.add(qid);
+      setQuiz((q) => (q ? { ...q, correctIndex: data.correctIndex } : q)); // reveal now (post-answer)
+      setStreak(newStreak);
+      setAskedCount((n) => n + 1);
+      if (correct) setCorrectCount((n) => n + 1);
+      setFeedback({ correct, streak: newStreak });
+      setTimeout(() => { setQuiz(null); setAnswered(null); runSpin(band); }, 900);
+    } catch {
+      setError("Network error — try again.");
+      setAnswered(null);
+    }
   }
 
   // Ranked: the server grades the answer and returns the earned slate (it spins from a secret

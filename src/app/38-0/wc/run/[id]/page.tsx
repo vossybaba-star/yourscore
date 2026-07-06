@@ -20,7 +20,7 @@ import { Pitch } from "@/components/draft/Pitch";
 import { InviteMastermind } from "@/components/draft/InviteMastermind";
 import { WcEditionStrip, type EditionCell } from "@/components/draft/WcEditionStrip";
 import { spinForNation, spinWorld, ensurePool, isPoolReady } from "@/lib/draft/pool";
-import { drawQuestion, type ServedQuestion } from "@/lib/draft/wc-quiz";
+import type { ServedQuestion } from "@/lib/draft/wc-quiz-public";
 import { upgradeBand, type DraftBand } from "@/lib/draft/draft-quiz";
 import { slotsFor } from "@/lib/draft/formations";
 import { CATEGORY_COLOR, posCategory } from "@/lib/draft/score";
@@ -87,6 +87,8 @@ export default function WorldCupRun() {
   const [answered, setAnswered] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<{ correct: boolean } | null>(null);
   const askedIds = useRef<Set<string>>(new Set());
+  // Seed for the current upgrade question — the server re-derives (and grades) from it.
+  const practiceSeed = useRef<string | null>(null);
   // Questions answered this session — once past 6, leaving prompts a confirm so
   // a deep run isn't abandoned by a stray tap on Exit.
   const answeredCount = useRef(0);
@@ -290,30 +292,59 @@ export default function WorldCupRun() {
   }
 
   // Tap a slot → answer a quiz question, then re-spin it at the quality that grade earns.
+  // Questions come from the server answer-free (pool + answers are server-only — audit C1);
+  // a failed fetch falls back to a neutral spin so an upgrade never dead-ends.
   function scoutSlot(slotId: string) {
     if (!run || run.upgrades_left <= 0 || quiz) return;
     setPickSlot(slotId); setSpunNation(null); setSlate(null); setFeedback(null);
-    const q = drawQuestion(Math.random, askedIds.current);
-    if (!q) { spinSlot(slotId, { minOverall: 0, maxOverall: 99 }); return; }
-    setQuiz(q); setAnswered(null);
+    void (async () => {
+      try {
+        const res = await fetch("/api/draft/wc/practice-quiz", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "draw", exclude: Array.from(askedIds.current) }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.question) { spinSlot(slotId, { minOverall: 0, maxOverall: 99 }); return; }
+        practiceSeed.current = data.seed as string;
+        setQuiz({ ...data.question, correctIndex: -1 });
+        setAnswered(null);
+      } catch {
+        spinSlot(slotId, { minOverall: 0, maxOverall: 99 });
+      }
+    })();
   }
 
   function answerQuiz(idx: number) {
     if (!quiz || answered !== null || !pickSlot || !run) return;
     setAnswered(idx);
-    answeredCount.current += 1;
-    const correct = idx === quiz.correctIndex;
-    askedIds.current.add(quiz.id);
-    setFeedback({ correct });
+    const qid = quiz.id;
     const slotId = pickSlot;
-    if (correct) {
-      // Re-spin with a modest improvement on the player currently in this slot.
-      const cur = run.squad.find((p) => p.slot === slotId)?.overall ?? 0;
-      setTimeout(() => { setQuiz(null); setAnswered(null); spinSlot(slotId, upgradeBand(cur)); }, 900);
-    } else {
-      // No re-spin — the upgrade pick is forfeited (server burns it so it can't be retried).
-      setTimeout(() => { setQuiz(null); setAnswered(null); setPickSlot(null); void forfeitUpgrade(); }, 1100);
-    }
+    void (async () => {
+      try {
+        const res = await fetch("/api/draft/wc/practice-quiz", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "answer", seed: practiceSeed.current, choice: idx }),
+        });
+        const data = await res.json();
+        if (!res.ok) { setError(data.error ?? "Couldn't grade that — try again."); setAnswered(null); return; }
+        answeredCount.current += 1;
+        const correct = !!data.correct;
+        askedIds.current.add(qid);
+        setQuiz((q) => (q ? { ...q, correctIndex: data.correctIndex } : q)); // reveal now (post-answer)
+        setFeedback({ correct });
+        if (correct) {
+          // Re-spin with a modest improvement on the player currently in this slot.
+          const cur = run.squad.find((p) => p.slot === slotId)?.overall ?? 0;
+          setTimeout(() => { setQuiz(null); setAnswered(null); spinSlot(slotId, upgradeBand(cur)); }, 900);
+        } else {
+          // No re-spin — the upgrade pick is forfeited (server burns it so it can't be retried).
+          setTimeout(() => { setQuiz(null); setAnswered(null); setPickSlot(null); void forfeitUpgrade(); }, 1100);
+        }
+      } catch {
+        setError("Network error — try again.");
+        setAnswered(null);
+      }
+    })();
   }
 
   async function forfeitUpgrade() {

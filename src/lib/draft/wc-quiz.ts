@@ -6,8 +6,15 @@
  * are no runtime fs reads. Each question is stored in canonical A–D order with the
  * correct index; `drawQuestion` re-shuffles the options per serve so the answer is
  * never in a fixed slot.
+ *
+ * SERVER-ONLY (audit C1): this module carries every answer AND the deterministic
+ * date-seeded ranked selection — bundling it client-side let anyone precompute the
+ * ranked daily's questions + answers offline and farm the £100 board. Clients get
+ * questions through /api/draft/wc/draft (ranked) and /api/draft/wc/practice-quiz
+ * (practice); types they need live in wc-quiz-public.ts.
  */
 
+import "server-only";
 import bundle from "@/data/draft/wc-quiz.json";
 import { seededRng } from "./score";
 
