@@ -64,6 +64,22 @@ export function SignupPixel() {
 
     fireSignupConversions();
 
+    // Persist the visitor's first-touch acquisition source onto their new
+    // profile (captured on landing by AcquisitionCapture). Fire-and-forget.
+    try {
+      const acq = localStorage.getItem("ys:acq");
+      if (acq) {
+        void fetch("/api/profile/source", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: acq,
+          keepalive: true,
+        });
+      }
+    } catch {
+      /* storage blocked — skip */
+    }
+
     params.delete("signup");
     const qs = params.toString();
     const url = window.location.pathname + (qs ? `?${qs}` : "") + window.location.hash;

@@ -13,6 +13,7 @@ import { PushPrePrompt } from "@/components/native/PushPrePrompt";
 import { UpdateBanner } from "@/components/native/UpdateBanner";
 import { TimezoneSync } from "@/components/TimezoneSync";
 import { SignupPixel } from "@/components/analytics/SignupPixel";
+import { AcquisitionCapture } from "@/components/analytics/AcquisitionCapture";
 import Script from "next/script";
 import "./globals.css";
 
@@ -99,6 +100,7 @@ export default function RootLayout({
         <UpdateBanner />
         <TimezoneSync />
         <SignupPixel />
+        <AcquisitionCapture />
         {children}
         <Analytics />
         <SpeedInsights />
