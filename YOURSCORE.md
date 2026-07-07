@@ -6,7 +6,18 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed with the founder:** 2026-07-07 (**Quiz covers shown whole + CDN crop bug
+> **Confirmed with the founder:** 2026-07-07 late (**Tap guard + nav progress** —
+> founder: "the app is really sensitive as I'm scrolling, it accidentally clicks
+> into different areas… and the loading between screens is a little too long."
+> `TouchGuards` in the root layout: capture-phase click filter kills phantom taps
+> (finger moved >8px measured touchstart→click, since browsers drop touchmove
+> below their own ~15px slop and STILL fire click; plus any tap landing <100ms
+> after a scroll event — momentum taps stop the scroll, they don't open things),
+> and paints an instant 3px teal top progress bar on internal-link taps so
+> navigation is acknowledged immediately. E2E-verified: scroll-drag + 12px jitter
+> no longer navigate, clean taps do. Measured nav (4x CPU throttle): picker→quiz
+> ~1s, back 37ms, tab switch ~150ms — deeper page-weight work is the open lever.)
+> Same day (**Quiz covers shown whole + CDN crop bug
 > fixed** — founder: covers are designed cards (logo + title baked in); size the CARD
 > to the image, never crop the art. Root cause of "images don't fit at all":
 > `coverUrl()`'s Supabase render transform with only `width` centre-crops the sides —
