@@ -6,6 +6,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { NativeBootstrap } from "@/components/native/NativeBootstrap";
 import { NavTracker } from "@/components/ui/NavTracker";
+import { TouchGuards } from "@/components/ui/TouchGuards";
 import { UsernamePrompt } from "@/components/profile/UsernamePrompt";
 import { AppStoreBanner } from "@/components/app/AppStoreBanner";
 import { NativeOnboarding } from "@/components/native/onboarding/NativeOnboarding";
@@ -92,6 +93,7 @@ export default function RootLayout({
         <Suspense fallback={null}>
           <NavTracker />
         </Suspense>
+        <TouchGuards />
         <NativeBootstrap />
         <UsernamePrompt />
         <AppStoreBanner />
