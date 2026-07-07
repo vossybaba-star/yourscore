@@ -29,10 +29,12 @@ import {
 import { pensSeed } from "./pens-server";
 import {
   planRun, planWorldRun, gamesForStage, buildMatchRow, outcomeOf, allowDraw, advanceStage, isDuel, oppTargetFor,
-  WORLD_TEAM_NAME,
+  WORLD_TEAM_NAME, RUN_STAGE_LABEL,
   type WCPlan, type WCFixture, type WcRun, type WcMatchRow, type WcRunPatch,
   type RunStage, type GameOutcome, type RunMode,
 } from "./wc";
+import { createServiceClient } from "@/lib/supabase/service";
+import { sendFirstWcMastermindEmail } from "@/lib/email/senders";
 
 export type { WcRun };
 
@@ -470,6 +472,47 @@ export async function finalizeResolved(
   }
 
   const after = { ...run, ...runPatch };
+
+  // First completed ranked WC Mastermind run → lifecycle email #27.
+  // Fully fire-and-forget: it must NEVER block or throw into the resolution path.
+  if (ranked && (after.status === "champion" || after.status === "eliminated")) {
+    const runId = run.id;
+    void (async () => {
+      // Only the user's VERY FIRST completed ranked run (this one is already terminal above).
+      const { count } = await db.from("draft_wc_runs")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId).eq("ranked", true).in("status", ["champion", "eliminated"]);
+      if ((count ?? 0) !== 1) return;
+      const { data: row } = await db.from("draft_wc_runs")
+        .select("strength, quiz_correct, quiz_total, stage, status")
+        .eq("id", runId).maybeSingle();
+      if (!row) return;
+      const svc = createServiceClient();
+      const { data: u } = await svc.auth.admin.getUserById(userId).catch(() => ({ data: null }));
+      const email = u?.user?.email;
+      if (!email) return;
+      // World rank from the season board (best-effort — same source as the scorecard).
+      let worldRank: number | null = null;
+      try {
+        const { data: lb } = await db.rpc("get_wc_daily_leaderboard", {
+          p_start: "2026-06-11", p_end: "2026-07-19", p_limit: 100000,
+        });
+        worldRank = ((lb ?? []) as { user_id: string; rank: number }[])
+          .find((x) => x.user_id === userId)?.rank ?? null;
+      } catch { /* board not ready yet */ }
+      const result = row.status === "champion"
+        ? "Final, and lifted it"
+        : (RUN_STAGE_LABEL[row.stage as RunStage] ?? "Group Stage");
+      await sendFirstWcMastermindEmail({
+        userId, email,
+        overall: Number(row.strength),
+        quizCorrect: (row.quiz_correct as number | null) ?? null,
+        quizTotal: (row.quiz_total as number | null) ?? null,
+        result, worldRank,
+      });
+    })().catch(() => {});
+  }
+
   return {
     stage: stageBefore,
     games: res.reveals,
