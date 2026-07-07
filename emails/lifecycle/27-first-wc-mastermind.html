@@ -1,0 +1,120 @@
+<!--
+  NEW Email — First ranked World Cup Mastermind run
+  Trigger: user's first ranked "Today's Run" in draft_wc_runs (ranked = true)
+  Tokens: {{quiz_correct}} {{quiz_total}} {{overall}} {{result}} {{world_rank}}
+  Subject: You're on the World Cup board. Now climb.
+-->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="x-apple-disable-message-reformatting"><meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark">
+  <title>You're on the board</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>body,table,td{margin:0;padding:0}img{border:0;outline:none;text-decoration:none;display:block}table{border-collapse:collapse}a{text-decoration:none}
+    @media (max-width:600px){.container{width:100%!important}.px{padding-left:24px!important;padding-right:24px!important}.headline{font-size:44px!important;line-height:46px!important}.stat-num{font-size:38px!important}.hero{width:100%!important;height:auto!important}}</style>
+</head>
+<body style="margin:0;padding:0;background:#0a0a0f;font-family:'DM Sans',Helvetica,Arial,sans-serif;color:#ffffff;">
+  <div style="display:none;max-height:0;overflow:hidden;font-size:1px;line-height:1px;color:#0a0a0f;">Your first ranked run is locked in. Now go back and finish the days you missed.</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0a0a0f;background-image:linear-gradient(180deg,#0a0a0f 0%,#0e0e1a 100%);"><tr><td align="center" style="padding:40px 16px;">
+    <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
+
+      <tr><td align="center" class="px" style="padding:0 40px 34px;">
+        <a href="https://yourscore.app"><img src="https://yourscore.app/logo.png" alt="YourScore" width="148" height="44" style="width:148px;height:44px;display:block;"></a>
+      </td></tr>
+
+      <tr><td class="px" align="left" style="padding:0 40px 12px;">
+        <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:12px;letter-spacing:3px;color:#ffb800;font-weight:700;text-transform:uppercase;">38-0 &middot; World Cup Mastermind &middot; Ranked</p>
+      </td></tr>
+
+      <tr><td class="px" style="padding:0 40px 14px;">
+        <h1 class="headline" style="margin:0;font-family:'Bebas Neue',Impact,Arial,sans-serif;font-size:58px;line-height:56px;color:#ffffff;font-weight:400;">YOU'RE ON THE BOARD.</h1>
+      </td></tr>
+
+      <tr><td class="px" style="padding:0 40px 26px;">
+        <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:17px;line-height:26px;color:#bbbbcc;">
+          Your first ranked run is locked in. <strong style="color:#ffffff;">{{quiz_correct}}/{{quiz_total}}</strong> right built an <strong style="color:#ffffff;">{{overall}}</strong> XI that reached the <strong style="color:#ffffff;">{{result}}</strong> &mdash; and put you on the season board.
+        </p>
+      </td></tr>
+
+      <!-- Real ranked result, borderless (soft gold wash) -->
+      <tr><td class="px" style="padding:0 40px 8px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#12100a" style="background:linear-gradient(135deg,rgba(255,184,0,0.10) 0%,rgba(10,10,15,0) 70%);border-radius:16px;">
+          <tr><td style="padding:22px 22px 6px;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+              <td style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:2px;color:#8888aa;font-weight:700;text-transform:uppercase;">Your ranked run</td>
+              <td align="right" style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:1px;color:#ffb800;font-weight:700;text-transform:uppercase;">Reached the {{result}}</td>
+            </tr></table>
+          </td></tr>
+          <tr><td style="padding:12px 22px 24px;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+              <td align="left" style="width:34%;"><div class="stat-num" style="font-family:'Bebas Neue',Impact,sans-serif;font-size:52px;line-height:1;color:#ffb800;text-shadow:0 0 22px rgba(255,184,0,0.35);">{{quiz_correct}}/{{quiz_total}}</div><div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;color:#8888aa;letter-spacing:1.5px;text-transform:uppercase;margin-top:8px;">&#129504; Questions right</div></td>
+              <td align="center" style="width:33%;"><div class="stat-num" style="font-family:'Bebas Neue',Impact,sans-serif;font-size:52px;line-height:1;color:#00ff87;">{{overall}}</div><div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;color:#8888aa;letter-spacing:1.5px;text-transform:uppercase;margin-top:8px;">Squad rating</div></td>
+              <td align="right" style="width:33%;"><div class="stat-num" style="font-family:'Bebas Neue',Impact,sans-serif;font-size:52px;line-height:1;color:#ffffff;">#{{world_rank}}</div><div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;color:#8888aa;letter-spacing:1.5px;text-transform:uppercase;margin-top:8px;">World rank</div></td>
+            </tr></table>
+          </td></tr>
+        </table>
+      </td></tr>
+
+      <tr><td class="px" align="center" style="padding:12px 40px 4px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="#f3a712" style="background:linear-gradient(135deg,#ffd24d 0%,#f3a712 100%);border-radius:12px;box-shadow:0 0 28px rgba(255,184,0,0.32);">
+          <a href="https://yourscore.app/38-0/wc/board" style="display:inline-block;color:#241900;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;letter-spacing:0.3px;padding:18px 44px;border-radius:12px;">See the season board &nbsp;&rarr;</a>
+        </td></tr></table>
+      </td></tr>
+
+      <!-- ── The catch-up hook ───────────────────────────────────────────── -->
+      <tr><td class="px" style="padding:30px 40px 0;">
+        <div style="border-top:1px solid rgba(255,255,255,0.07);font-size:1px;line-height:1px;height:1px;">&nbsp;</div>
+      </td></tr>
+      <tr><td class="px" style="padding:20px 40px 2px;">
+        <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:2px;color:#6b6b85;font-weight:700;text-transform:uppercase;">Climb the board</p>
+      </td></tr>
+      <tr><td align="center" style="padding:14px 0 0;">
+        <a href="https://yourscore.app/38-0/wc"><img class="hero" src="https://yourscore.app/email/hero-wc-days.png" alt="World Cup season — earlier days still open" width="600" height="158" style="width:600px;height:158px;display:block;"></a>
+      </td></tr>
+      <tr><td class="px" style="padding:14px 40px 0;">
+        <h2 style="margin:0 0 8px;font-family:'Bebas Neue',Impact,Arial,sans-serif;font-size:34px;line-height:34px;color:#ffffff;font-weight:400;">FINISH THE DAYS YOU'VE MISSED.</h2>
+        <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:15px;line-height:23px;color:#bbbbcc;">The season runs every day until the final, and every earlier day is still open. Go back, play the ones you missed, and each run climbs you up the board. One ranked go per day.</p>
+      </td></tr>
+      <tr><td class="px" align="left" style="padding:16px 40px 0;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="#f3a712" style="background:linear-gradient(135deg,#ffd24d 0%,#f3a712 100%);border-radius:12px;box-shadow:0 0 28px rgba(255,184,0,0.28);">
+          <a href="https://yourscore.app/38-0/wc" style="display:inline-block;color:#241900;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;letter-spacing:0.3px;padding:16px 34px;border-radius:12px;">Play an earlier day &nbsp;&rarr;</a>
+        </td></tr></table>
+      </td></tr>
+
+      <!-- ── Featured: Versus ──────────────────────────────────────────── -->
+      <tr><td class="px" style="padding:30px 40px 0;">
+        <div style="border-top:1px solid rgba(255,255,255,0.07);font-size:1px;line-height:1px;height:1px;">&nbsp;</div>
+      </td></tr>
+      <tr><td align="center" style="padding:22px 0 0;">
+        <a href="https://yourscore.app/versus/find"><img class="hero" src="https://yourscore.app/email/hero-versus.png" alt="Versus — go head-to-head" width="600" height="250" style="width:600px;height:250px;display:block;"></a>
+      </td></tr>
+      <tr><td class="px" style="padding:16px 40px 0;">
+        <p style="margin:0 0 6px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:3px;color:#a78bfa;font-weight:700;text-transform:uppercase;">Versus</p>
+        <h2 style="margin:0 0 8px;font-family:'Bebas Neue',Impact,Arial,sans-serif;font-size:34px;line-height:34px;color:#ffffff;font-weight:400;">TAKE YOUR KNOWLEDGE HEAD-TO-HEAD.</h2>
+        <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:15px;line-height:23px;color:#bbbbcc;">Match a real opponent in an instant Quiz Battle, challenge a friend, or take on a rival's shadow run and beat their score. Every game counts toward your rank.</p>
+      </td></tr>
+      <tr><td class="px" align="left" style="padding:16px 40px 0;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="#a78bfa" style="background:linear-gradient(135deg,#a78bfa 0%,#7c3aed 100%);border-radius:12px;box-shadow:0 0 28px rgba(167,139,250,0.35);">
+          <a href="https://yourscore.app/versus/find" style="display:inline-block;color:#ffffff;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;letter-spacing:0.3px;padding:16px 34px;border-radius:12px;">Find an opponent &nbsp;&rarr;</a>
+        </td></tr></table>
+      </td></tr>
+
+      <tr><td class="px" style="padding:44px 40px 24px;">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="border-top:1px solid rgba(255,255,255,0.06);padding-top:24px;">
+          <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:24px;"><tr>
+            <td valign="middle">
+              <div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:2px;color:#6b6b85;text-transform:uppercase;font-weight:700;">Take it with you</div>
+              <div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:15px;color:#ffffff;font-weight:700;margin-top:5px;line-height:20px;">Get YourScore on iPhone</div>
+            </td>
+            <td align="right" valign="middle" width="146">
+              <a href="https://apps.apple.com/gb/app/yourscore/id6773626424"><img src="https://yourscore.app/email/app-store-badge.png" alt="Download on the App Store" width="138" height="47" style="width:138px;height:47px;display:block;"></a>
+            </td>
+          </tr></table>
+          <p style="margin:0 0 10px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:12px;line-height:18px;color:#6b6b85;"><a href="{{PAUSE_URL}}" style="color:#8888aa;text-decoration:underline;">Pause emails</a> &nbsp;&middot;&nbsp; <a href="{{UNSUB_URL}}" style="color:#8888aa;text-decoration:underline;">Unsubscribe</a> &nbsp;&middot;&nbsp; <a href="https://yourscore.app/support" style="color:#8888aa;text-decoration:underline;">Support</a></p>
+          <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:1.5px;color:#6b6b85;text-transform:uppercase;font-weight:600;">YourScore &nbsp;&middot;&nbsp; Your football knowledge. Ranked.</p>
+        </td></tr></table>
+      </td></tr>
+    </table>
+  </td></tr></table>
+</body></html>

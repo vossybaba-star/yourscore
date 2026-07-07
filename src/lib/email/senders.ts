@@ -495,3 +495,38 @@ export async function sendComebackEmail(args: { userId: string; email: string })
     ],
   });
 }
+
+/**
+ * 27 · First ranked World Cup Mastermind run completed.
+ * Fired from finalizeResolved (wc-server) on the user's first terminal ranked run.
+ */
+export async function sendFirstWcMastermindEmail(args: {
+  userId: string;
+  email: string;
+  overall: number;
+  quizCorrect: number | null;
+  quizTotal: number | null;
+  result: string;
+  worldRank: number | null;
+}) {
+  const html = await renderEmail("27-first-wc-mastermind", {
+    overall: String(args.overall),
+    quiz_correct: String(args.quizCorrect ?? 0),
+    quiz_total: String(args.quizTotal ?? 0),
+    result: args.result,
+    world_rank: args.worldRank ? args.worldRank.toLocaleString() : "—",
+    ...buildFooterUrls(args.userId, "all"),
+  });
+  await sendOrLog("sendFirstWcMastermindEmail", args.userId, {
+    from: FROM,
+    to: args.email,
+    replyTo: REPLY_TO,
+    subject: "You're on the World Cup board. Now climb.",
+    html,
+    headers: { "X-Entity-Ref-ID": `first-wc-mastermind-${args.userId}` },
+    tags: [
+      { name: "category", value: "lifecycle" },
+      { name: "template", value: "27-first-wc-mastermind" },
+    ],
+  });
+}
