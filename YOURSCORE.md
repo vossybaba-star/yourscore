@@ -35,7 +35,10 @@
 > prompt — never American football imagery) and are **LIVE (approved Jul 7)**:
 > uploaded to quiz-share/<slug>-art.png with the ~29 records variants inheriting
 > their parent's poster. Crests always composited from public/badges/, never
-> model-drawn.)
+> model-drawn. Same day: the nine postered records evergreens (PL/CL/Euro/WC
+> Records, Golden Boot, Iconic Managers, Penalty Shootout Lore, The Derbies,
+> Transfer Market) switched to rotation_active=true — the picker's Records tab
+> is now a stocked catalogue (9 packs) instead of one.)
 > Previously 2026-07-05 round 6 (**Anonymous debate voting** —
 > nobody needs an account to vote on the daily debate. Guests vote under a per-device
 > key (`debate_anon_votes`, migration 72; localStorage `ys:debate:voter`), votes
