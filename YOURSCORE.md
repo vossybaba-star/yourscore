@@ -122,6 +122,10 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-07** — **Play-level acquisition attribution** (mig 75): WC runs + solo quiz
+  attempts now store first-touch `source`/`utm_*` (client sends localStorage `ys:acq` at
+  creation; server sanitizes) — plays-per-platform/campaign is now a direct DB query,
+  covering guests and pre-capture signups. Paid ad URLs on Meta/TikTok carry UTMs from today.
 - **2026-07-06** — WC quiz answer bank is now **server-only** (audit C1): client draws
   answer-free questions via `/api/draft/wc/practice-quiz`; server grades from the seed —
   prevents offline pre-computation of the £100 board. (§5B)

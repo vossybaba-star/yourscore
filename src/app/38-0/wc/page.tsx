@@ -35,6 +35,7 @@ import { canPlay, lineRatings, posCategory, CATEGORY_COLOR } from "@/lib/draft/s
 import { getTeamBadgeUrlSync } from "@/lib/teamImages";
 import type { Formation, PlacedPlayer, PlayerSeason, Slot } from "@/lib/draft/types";
 import { trackGamePlay } from "@/lib/analytics/trackGame";
+import { getAcq } from "@/lib/analytics/acq";
 
 const FORMATION = "4-3-3" as Formation; // sensible default; nation pools are deepest here
 const SIGN_IN_PATH = "/38-0/wc";
@@ -368,8 +369,8 @@ export default function WorldCupEntry() {
           // catchupRef.current is the catch-up DATE (or null for today). Send the boolean flag
           // the route checks (`catchup === true`) plus the date — matching begin/slate, so the
           // run resolves to the chosen past edition and verifies against ITS slates.
-          ? { action: "start", ranked: true, catchup: catchupRef.current !== null, catchupDate: catchupRef.current, answers: draftAnswers.current, picks: draftPicks.current }
-          : { action: "start", mode: runMode, nation: nationName, formation, squad, ranked: false }),
+          ? { action: "start", ranked: true, catchup: catchupRef.current !== null, catchupDate: catchupRef.current, answers: draftAnswers.current, picks: draftPicks.current, acq: getAcq() }
+          : { action: "start", mode: runMode, nation: nationName, formation, squad, ranked: false, acq: getAcq() }),
       });
       if (res.status === 401) {
         saveDraft({ mode: runMode, nation: runMode === "world" ? null : nationName, formation, squad, pendingEnter: true });

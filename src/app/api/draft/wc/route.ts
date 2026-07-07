@@ -4,6 +4,7 @@ import { rateLimitDistributed } from "@/lib/ratelimit";
 import { validateNationLocked, validateWorld, newRunPlan, createWcDb, resolveEdition, WORLD_TEAM_NAME } from "@/lib/draft/wc-server";
 import { verifyRankedDraft, rankedQuizScore, WC_DRAFT_FORMATION, type DraftPick } from "@/lib/draft/wc-draft";
 import { ensurePool } from "@/lib/draft/pool";
+import { sanitizeAcq } from "@/lib/analytics/acq-server";
 
 // Start a World Cup Run: validate a nation-locked XI, plan the bracket (deterministic
 // by a server seed), and create the run row. Server-authoritative — Strength is
@@ -18,7 +19,7 @@ export async function POST(req: NextRequest) {
   const { ok } = await rateLimitDistributed(`draft-wc-start:${user.id}`, 20, 60_000);
   if (!ok) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
 
-  let body: { action?: string; mode?: string; nation?: string; formation?: unknown; squad?: unknown; ranked?: boolean; answers?: unknown; picks?: unknown; catchup?: boolean; catchupDate?: string };
+  let body: { action?: string; mode?: string; nation?: string; formation?: unknown; squad?: unknown; ranked?: boolean; answers?: unknown; picks?: unknown; catchup?: boolean; catchupDate?: string; acq?: unknown };
   try { body = await req.json(); } catch { return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 }); }
   if (body.action !== "start") return NextResponse.json({ error: "Unknown action" }, { status: 400 });
 
@@ -73,6 +74,9 @@ export async function POST(req: NextRequest) {
 
   const seed = crypto.randomUUID();
   const plan = newRunPlan(mode, nation, seed);
+  // First-touch acquisition source (client-stored ys:acq) — attributes this PLAY
+  // to the platform/campaign that first brought the visitor. See migration 75.
+  const acq = sanitizeAcq(body.acq);
 
   const { data, error } = await db
     .from("draft_wc_runs")
@@ -95,6 +99,10 @@ export async function POST(req: NextRequest) {
       group_played: 0,
       group_points: 0,
       upgrades_left: 0,
+      source: acq.source,
+      utm_source: acq.utm_source,
+      utm_medium: acq.utm_medium,
+      utm_campaign: acq.utm_campaign,
     })
     .select("id")
     .single();

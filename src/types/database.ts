@@ -1814,7 +1814,11 @@ export type Database = {
           max_score: number
           pack_id: string
           score: number
+          source: string | null
           user_id: string
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
         }
         Insert: {
           answers?: Json | null
@@ -1824,7 +1828,11 @@ export type Database = {
           max_score?: number
           pack_id: string
           score?: number
+          source?: string | null
           user_id: string
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
         }
         Update: {
           answers?: Json | null
@@ -1834,7 +1842,11 @@ export type Database = {
           max_score?: number
           pack_id?: string
           score?: number
+          source?: string | null
           user_id?: string
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
         }
         Relationships: [
           {

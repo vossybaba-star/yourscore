@@ -16,6 +16,7 @@ import { StreakWindowTimer } from "@/components/quiz/StreakWindowTimer";
 import { useGameLoop } from "@/lib/useGameLoop";
 import { Button } from "@/components/ui/Button";
 import { trackGamePlay, trackGameComplete, trackShare } from "@/lib/analytics/trackGame";
+import { getAcq } from "@/lib/analytics/acq";
 import {
   DIFFICULTY_COLOR as DIFF_COLOR,
   DIFFICULTY_BG as DIFF_BG,
@@ -682,6 +683,7 @@ export default function ChallengePage() {
               body: JSON.stringify({
                 packId: pack.id,
                 answers: newLog.map((r) => ({ letter: r.selected, elapsedMs: r.elapsed_ms })),
+                acq: getAcq(),
               }),
             });
             if (res.ok) {

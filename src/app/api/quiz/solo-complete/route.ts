@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { rateLimitDistributed } from "@/lib/ratelimit";
+import { sanitizeAcq } from "@/lib/analytics/acq-server";
 import type { Json } from "@/types/database";
 import {
   calculateBasePoints,
@@ -38,7 +39,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
 
-  let body: { packId?: string; answers?: SubmittedAnswer[] };
+  let body: { packId?: string; answers?: SubmittedAnswer[]; acq?: unknown };
   try {
     body = await req.json();
   } catch {
@@ -141,6 +142,9 @@ export async function POST(req: NextRequest) {
 
   // Insert authoritatively. Unique (user_id, pack_id) guards a race between two
   // concurrent submissions — treat a conflict as "already attempted".
+  // First-touch acquisition source (client-stored ys:acq) — attributes this PLAY
+  // to the platform/campaign that first brought the visitor. See migration 75.
+  const acq = sanitizeAcq(body.acq);
   const { error } = await db.from("quiz_attempts").insert({
     user_id: user.id,
     pack_id: packId,
@@ -148,6 +152,10 @@ export async function POST(req: NextRequest) {
     max_score: maxScore,
     correct_count: correct,
     answers: log as unknown as Json,
+    source: acq.source,
+    utm_source: acq.utm_source,
+    utm_medium: acq.utm_medium,
+    utm_campaign: acq.utm_campaign,
   });
 
   if (error) {
