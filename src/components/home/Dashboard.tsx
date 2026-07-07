@@ -8,6 +8,7 @@ import { BottomNav } from "@/components/ui/BottomNav";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { slugify } from "@/lib/utils";
 import { coverUrl } from "@/lib/img";
+import { getTeamBadgeUrlSync } from "@/lib/teamImages";
 import { usePendingFriends } from "@/hooks/usePendingFriends";
 import { usePendingTurns } from "@/hooks/usePendingTurns";
 import { DebateCard } from "@/components/debate/DebateCard";
@@ -362,7 +363,11 @@ function DiscoveryRail({ packs, played38 }: { packs: RecommendedPack[]; played38
     <div className="d-4">
       <SectionHead title={played38 ? "Because you played 38-0" : "Picked for you"} href="/play" />
       <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1 -mx-5 px-5">
-        {packs.map((p) => (
+        {packs.map((p) => {
+          // Club packs ("Liverpool · All Time · Mixed") without a cover show
+          // the real crest — founder call: club crests are fine to use.
+          const crest = p.cover ? null : getTeamBadgeUrlSync(p.name.split(" ·")[0]);
+          return (
           <Link key={p.id} href={`/challenges/${slugify(p.name)}`}
             className="flex-shrink-0 rounded-xl overflow-hidden flex flex-col transition-transform active:scale-[0.98]"
             style={{ width: 118, background: "#0e1611", border: "1px solid rgba(255,255,255,0.08)" }}>
@@ -371,6 +376,13 @@ function DiscoveryRail({ packs, played38 }: { packs: RecommendedPack[]; played38
               {p.cover ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={coverUrl(p.cover, 118) ?? p.cover} alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
+              ) : crest ? (
+                <div className="absolute inset-0 flex items-center justify-center"
+                  style={{ background: "radial-gradient(ellipse at 50% 80%, rgba(0,216,192,0.1), #0b1310 75%)" }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={crest} alt={p.name} width={68} height={68}
+                    style={{ objectFit: "contain", filter: "drop-shadow(0 4px 10px rgba(0,0,0,0.5))" }} />
+                </div>
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center font-display text-2xl"
                   style={{ background: "rgba(0,216,192,0.1)", color: TEAL }}>
@@ -383,7 +395,8 @@ function DiscoveryRail({ packs, played38 }: { packs: RecommendedPack[]; played38
               <p className="font-body text-[10px] mt-auto pt-1" style={{ color: "#8a948f" }}>{p.questionCount} Qs</p>
             </div>
           </Link>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

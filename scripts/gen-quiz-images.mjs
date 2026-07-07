@@ -178,16 +178,15 @@ function overlayTree(W, H) {
   const titleSize = Math.round(W * baseRatio * shrink);
   const titleWidth = Math.round(W * (W > H ? 0.64 : 0.92));
 
+  // Founder (Jul 7): every headline sits on a black plate — completely legible
+  // on any art, and it matches the logo's black box.
   const titleWords = words.map((w, i) =>
-    h("div", { style: { display: "flex", color: i === n - 1 ? ACCENT_HEX : "#ffffff", marginRight: Math.round(titleSize * 0.16) } }, w)
+    h("div", { style: { display: "flex", color: i === n - 1 ? ACCENT_HEX : "#ffffff",
+      backgroundColor: "rgba(6,8,7,0.92)",
+      paddingTop: Math.round(titleSize * 0.05), paddingBottom: Math.round(titleSize * 0.07),
+      paddingLeft: Math.round(titleSize * 0.12), paddingRight: Math.round(titleSize * 0.12),
+      marginRight: Math.round(titleSize * 0.07) } }, w)
   );
-
-  // Poster/comic art (S2/S3) can be bright at the top no matter what the
-  // prompt asks — a soft dark scrim under the text keeps the title readable.
-  // The photographic styles keep their naturally dark skies, no scrim.
-  const scrim = STYLE === 2 || STYLE === 3
-    ? [h("div", { style: { display: "flex", position: "absolute", top: 0, left: 0, width: W, height: Math.round(H * 0.46), background: "linear-gradient(180deg, rgba(5,10,8,0.72) 0%, rgba(5,10,8,0.4) 62%, rgba(5,10,8,0) 100%)" } })]
-    : [];
 
   return h("div", {
     style: {
@@ -195,13 +194,15 @@ function overlayTree(W, H) {
       padding: pad, fontFamily: "Bebas Neue", position: "relative",
     },
   },
-    ...scrim,
     h("img", { src: logoDataUri, width: Math.round(logoH * 3.382), height: logoH, style: { marginBottom: Math.round(H * 0.04) } }),
     h("div", { style: { display: "flex", flexWrap: "wrap", width: titleWidth, fontSize: titleSize, lineHeight: 0.9, rowGap: Math.round(titleSize * 0.04) } }, ...titleWords),
     h("div", {
       style: {
-        display: "flex", alignItems: "center", marginTop: Math.round(H * 0.022),
+        display: "flex", alignItems: "center", alignSelf: "flex-start", marginTop: Math.round(H * 0.022),
         fontFamily: "DM Sans", fontWeight: 700, fontSize: subSize, letterSpacing: subSize * 0.35, color: ACCENT_HEX,
+        backgroundColor: "rgba(6,8,7,0.92)",
+        paddingTop: Math.round(subSize * 0.35), paddingBottom: Math.round(subSize * 0.35),
+        paddingLeft: Math.round(subSize * 0.55), paddingRight: Math.round(subSize * 0.55),
       },
     },
       h("div", { style: { display: "flex", width: Math.round(W * 0.03), height: 3, backgroundColor: ACCENT_HEX, marginRight: subSize * 0.6 } }),
