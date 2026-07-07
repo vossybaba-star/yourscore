@@ -27,9 +27,15 @@
 > pipeline (gen-quiz-images.mjs) now rotates poster/terraces by date; each
 > Regenerate press on the Telegram gate steps poster → terraces → story → ink;
 > `--style N` forces one; poster palettes rotate daily; a dark scrim keeps titles
-> readable on bright poster art. 19 regenerated covers (records posters, EOS mood
-> pieces, June dailies) awaiting founder approval on the review artifact before
-> upload; variants inherit parent art after approval.)
+> readable on bright poster art. The 19 regenerated covers went through
+> contact-sheet review and founder revisions (black plates behind every headline;
+> real club crests composited INTO the artwork — Panini-style sticker rows on the
+> records posters, a Man Utd/Man City pair on The Derbies, corner crest on club
+> cards; bigger crests in the rail/picker; hard FOOTBALL-ONLY rule in every art
+> prompt — never American football imagery) and are **LIVE (approved Jul 7)**:
+> uploaded to quiz-share/<slug>-art.png with the ~29 records variants inheriting
+> their parent's poster. Crests always composited from public/badges/, never
+> model-drawn.)
 > Previously 2026-07-05 round 6 (**Anonymous debate voting** —
 > nobody needs an account to vote on the daily debate. Guests vote under a per-device
 > key (`debate_anon_votes`, migration 72; localStorage `ys:debate:voter`), votes
