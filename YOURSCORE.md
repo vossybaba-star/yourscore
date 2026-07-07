@@ -21,9 +21,15 @@
 > unapproved art batch went live): **generated imagery/brand creative NEVER ships
 > without agreed art direction + contact-sheet approval.** The ~48 new artworks now on
 > previously-coverless packs (records/EOS evergreens + 4 June dailies + variants) are
-> unapproved placeholders pending an art-style decision — founder also wants MORE
-> VARIETY in the daily WC covers ("all very similar, a little boring"); art-style
-> workshop is the open next step. Daily pipeline unchanged: stamped covers.)
+> unapproved placeholders pending replacement. STYLE SYSTEM LOCKED same day after a
+> four-direction sample review: **retro matchday poster = base · fan's-eye terraces
+> in rotation · cinematic story + comic ink reserved for big moments.** The daily
+> pipeline (gen-quiz-images.mjs) now rotates poster/terraces by date; each
+> Regenerate press on the Telegram gate steps poster → terraces → story → ink;
+> `--style N` forces one; poster palettes rotate daily; a dark scrim keeps titles
+> readable on bright poster art. 19 regenerated covers (records posters, EOS mood
+> pieces, June dailies) awaiting founder approval on the review artifact before
+> upload; variants inherit parent art after approval.)
 > Previously 2026-07-05 round 6 (**Anonymous debate voting** —
 > nobody needs an account to vote on the daily debate. Guests vote under a per-device
 > key (`debate_anon_votes`, migration 72; localStorage `ys:debate:voter`), votes
