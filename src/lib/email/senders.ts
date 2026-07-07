@@ -30,7 +30,7 @@ export async function sendWelcomeEmail(args: { userId: string; email: string }) 
     from: FROM,
     to: args.email,
     replyTo: REPLY_TO,
-    subject: "You're in. Pick your move.",
+    subject: "Welcome to YourScore - Play Now",
     html,
     headers: { "X-Entity-Ref-ID": `welcome-${args.userId}` },
     tags: [
@@ -63,7 +63,7 @@ export async function sendFirstQuizEmail(args: {
     from: FROM,
     to: args.email,
     replyTo: REPLY_TO,
-    subject: `${args.score.toLocaleString()} pts. ${args.accuracy}% accuracy. Now beat your mates.`,
+    subject: `${args.score.toLocaleString()} pts, ${args.accuracy}% accuracy. Now beat your friends.`,
     html,
     headers: { "X-Entity-Ref-ID": `first-quiz-${args.userId}` },
     tags: [
@@ -173,6 +173,7 @@ export async function sendFirstMemberJoinsEmail(args: {
   );
   const html = await renderEmail("09-first-member-joins", {
     joiner_name: args.joinerName,
+    joiner_initial: (args.joinerName[0] ?? "?").toUpperCase(),
     league_name: args.leagueName,
     league_code: args.leagueCode,
     league_url: leagueUrl,
@@ -256,8 +257,15 @@ export async function sendFirst38GameEmail(args: {
       : args.myScore < args.oppScore
         ? "FULL TIME · LOSS"
         : "FULL TIME · DRAW";
+  const resultColor =
+    args.myScore > args.oppScore
+      ? "#00ff87"
+      : args.myScore < args.oppScore
+        ? "#ff6b6b"
+        : "#ffb800";
   const html = await renderEmail("17-first-38-game", {
     result_word: resultWord,
+    result_color: resultColor,
     my_score: String(args.myScore),
     opp_score: String(args.oppScore),
     opponent: args.opponent,

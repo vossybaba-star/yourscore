@@ -3,7 +3,6 @@ import { createClient } from "@/lib/supabase/server";
 import { rateLimitDistributed } from "@/lib/ratelimit";
 import { createDraftDb, genJoinCode, type TeamSnapshot } from "@/lib/draft/server";
 import { asLeague, type Formation, type PlacedPlayer, type Projected } from "@/lib/draft/types";
-import { sendFirst38H2HEmail } from "@/lib/email/senders";
 
 // Create a friend challenge: snapshot the signed-in player's current active XI and
 // mint a share code. A friend opens /draft/challenge/<code> and resolves it with
@@ -59,23 +58,10 @@ export async function POST(req: NextRequest) {
   }
   if (!code) return NextResponse.json({ error: "Could not create challenge" }, { status: 500 });
 
-  // Lifecycle: if this was the user's first H2H sent, fire email 13.
-  if (user.email) {
-    void (async () => {
-      const { count } = await db
-        .from("draft_challenges")
-        .select("id", { count: "exact", head: true })
-        .eq("challenger_id", user.id);
-      if ((count ?? 0) !== 1) return;
-      await sendFirst38H2HEmail({
-        userId: user.id,
-        email: user.email!,
-        code: code!,
-        teamName: snapshot.name,
-        strength: Math.round(snapshot.strength),
-      });
-    })().catch(() => {});
-  }
+  // NOTE: the "first H2H challenge sent" lifecycle email (18-first-38-h2h) was
+  // deliberately discarded — it only confirmed an action the user just took in-app,
+  // where the code + share sheet are already in front of them. See the H2H *result*
+  // email (22-h2h-result), which fires when the challenge is actually played.
 
   return NextResponse.json({ code });
 }

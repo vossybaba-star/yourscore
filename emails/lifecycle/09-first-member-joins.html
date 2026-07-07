@@ -1,77 +1,71 @@
 <!--
-  Email 09 — First member joins your league
-  Trigger: first other person joins a league the user created
-  Subject:    {{joiner_name}} just joined {{league_name}}.
-  Preview:    Two down. Now bring in the rest of the group chat.
+  Email 09 — First member joins your quiz league (v2) — to the CREATOR
   Tokens: {{joiner_name}} {{league_name}} {{league_code}} {{league_url}} {{whatsapp_share_url}}
+  Subject: {{joiner_name}} just joined {{league_name}}.
 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="x-apple-disable-message-reformatting"><meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark">
-  <title>Your first league member</title>
+  <title>Your first member joined</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>body,table,td{margin:0;padding:0}img{border:0;outline:none;text-decoration:none;display:block}table{border-collapse:collapse}a{text-decoration:none}
-    @media (max-width:600px){.container{width:100%!important}.px{padding-left:24px!important;padding-right:24px!important}.headline{font-size:40px!important;line-height:42px!important}.code{font-size:44px!important;letter-spacing:8px!important}}</style>
+    @media (max-width:600px){.container{width:100%!important}.px{padding-left:24px!important;padding-right:24px!important}.headline{font-size:44px!important;line-height:46px!important}}</style>
 </head>
 <body style="margin:0;padding:0;background:#0a0a0f;font-family:'DM Sans',Helvetica,Arial,sans-serif;color:#ffffff;">
   <div style="display:none;max-height:0;overflow:hidden;font-size:1px;line-height:1px;color:#0a0a0f;">Two down. Now bring in the rest of the group chat.</div>
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0a0a0f;background-image:linear-gradient(180deg,#0a0a0f 0%,#0e0e1a 100%);"><tr><td align="center" style="padding:40px 16px;">
     <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
 
-      <tr><td align="center" class="px" style="padding:0 40px 36px;">
+      <tr><td align="center" class="px" style="padding:0 40px 34px;">
         <a href="https://yourscore.app"><img src="https://yourscore.app/logo.png" alt="YourScore" width="148" height="44" style="width:148px;height:44px;display:block;"></a>
       </td></tr>
 
-      <tr><td class="px" align="left" style="padding:0 40px 18px;">
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-          <td bgcolor="#1e1a36" style="background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.28);border-radius:999px;padding:6px 14px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:2px;color:#a78bfa;font-weight:700;text-transform:uppercase;">&#10003; {{joiner_name}} just joined</td>
-        </tr></table>
+      <tr><td class="px" align="left" style="padding:0 40px 12px;">
+        <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:12px;letter-spacing:3px;color:#2dd4bf;font-weight:700;text-transform:uppercase;">Quiz League &middot; New member</p>
       </td></tr>
 
       <tr><td class="px" style="padding:0 40px 14px;">
-        <h1 class="headline" style="margin:0;font-family:'Bebas Neue',Impact,Arial,sans-serif;font-size:56px;line-height:54px;color:#ffffff;font-weight:400;">FIRST MEMBER.</h1>
+        <h1 class="headline" style="margin:0;font-family:'Bebas Neue',Impact,Arial,sans-serif;font-size:58px;line-height:56px;color:#ffffff;font-weight:400;">FIRST ONE IN.</h1>
       </td></tr>
 
-      <tr><td class="px" style="padding:0 40px 32px;">
+      <tr><td class="px" style="padding:0 40px 30px;">
         <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:17px;line-height:26px;color:#bbbbcc;">
-          <strong style="color:#ffffff;">{{joiner_name}}</strong> just joined <strong style="color:#a78bfa;">{{league_name}}</strong>. That's two. A league of two is fine. A league of ten is a season-long argument. Get the rest in.
+          <strong style="color:#ffffff;">{{joiner_name}}</strong> just joined <strong style="color:#ffffff;">{{league_name}}</strong>. That's two &mdash; a league with two is a rivalry. Now bring in the rest of the group.
         </p>
       </td></tr>
 
-      <tr><td class="px" style="padding:0 40px 28px;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#12121e" style="background:linear-gradient(135deg,rgba(167,139,250,0.08) 0%,rgba(18,18,30,0.95) 100%);border-radius:16px;border:1px solid rgba(167,139,250,0.22);">
-          <tr><td align="center" style="padding:28px 24px 26px;">
-            <div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:2px;color:#8888aa;font-weight:600;text-transform:uppercase;margin-bottom:14px;">Share this code</div>
-            <div class="code" style="font-family:'Bebas Neue',Impact,sans-serif;font-size:56px;letter-spacing:10px;color:#a78bfa;line-height:1;text-shadow:0 0 24px rgba(167,139,250,0.35);">{{league_code}}</div>
-          </td></tr>
-        </table>
+      <!-- Borderless identity -->
+      <tr><td align="center" style="padding:0 40px 30px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+          <td width="72" height="72" align="center" valign="middle" bgcolor="#07110f" style="background:radial-gradient(circle at 50% 40%,rgba(45,212,191,0.28),rgba(20,184,166,0.10));border:1.5px solid rgba(45,212,191,0.45);border-radius:50%;font-family:'Bebas Neue',Impact,sans-serif;font-size:32px;color:#5eead4;line-height:70px;box-shadow:0 0 34px rgba(45,212,191,0.30);">{{joiner_initial}}</td>
+        </tr></table>
+        <div style="font-family:'Bebas Neue',Impact,sans-serif;font-size:28px;color:#ffffff;line-height:1;margin-top:16px;">{{joiner_name}}</div>
+        <div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:13px;color:#2dd4bf;margin-top:7px;font-weight:600;">&#10003; Joined {{league_name}}</div>
       </td></tr>
 
-      <tr><td class="px" align="center" style="padding:8px 40px 12px;">
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="#00ff87" style="background:linear-gradient(135deg,#00ff87 0%,#00d970 100%);border-radius:12px;box-shadow:0 0 32px rgba(0,255,135,0.4);">
-          <a href="{{whatsapp_share_url}}" style="display:inline-block;color:#0a0a0f;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;letter-spacing:0.5px;padding:18px 36px;border-radius:12px;">Share to WhatsApp &nbsp;&rarr;</a>
+      <tr><td class="px" align="center" style="padding:2px 40px 10px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="#25D366" style="background:linear-gradient(135deg,#37e17d 0%,#25D366 100%);border-radius:12px;box-shadow:0 0 28px rgba(37,211,102,0.35);">
+          <a href="{{whatsapp_share_url}}" style="display:inline-block;color:#04240f;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;letter-spacing:0.3px;padding:18px 40px;border-radius:12px;">Invite more on WhatsApp &nbsp;&rarr;</a>
         </td></tr></table>
       </td></tr>
 
-      <tr><td class="px" align="center" style="padding:0 40px 8px;">
-        <a href="{{league_url}}" style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;color:#a78bfa;font-weight:600;">See who's in &nbsp;&rarr;</a>
+      <tr><td class="px" align="center" style="padding:0 40px 4px;">
+        <a href="{{league_url}}" style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;color:#8888aa;font-weight:600;">or view the table &mdash; code {{league_code}} &nbsp;&rarr;</a>
       </td></tr>
 
-      <tr><td class="px" style="padding:24px 40px 0;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#12121e" style="background:linear-gradient(135deg,rgba(255,184,0,0.05) 0%,rgba(10,10,15,0.95) 100%);border-radius:14px;border:1px solid rgba(255,184,0,0.18);">
-          <tr><td style="padding:18px 20px;">
-            <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-              <td valign="middle" width="54" style="padding-right:14px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td width="40" height="40" align="center" valign="middle" bgcolor="#241e10" style="background:rgba(255,184,0,0.15);border:1px solid rgba(255,184,0,0.25);border-radius:10px;font-size:18px;line-height:38px;">&#128104;&#8205;&#128105;&#8205;&#128103;&#8205;&#128102;</td></tr></table></td>
-              <td valign="middle"><div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:12px;letter-spacing:1.5px;color:#8888aa;font-weight:600;text-transform:uppercase;margin-bottom:3px;">The numbers</div><div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:13px;color:#bbbbcc;line-height:18px;">Best leagues are 6&ndash;12 people. Enough to make every fixture a proper scrap.</div></td>
-            </tr></table>
-          </td></tr>
-        </table>
-      </td></tr>
-
-      <tr><td class="px" style="padding:56px 40px 24px;">
+      <tr><td class="px" style="padding:44px 40px 24px;">
         <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="border-top:1px solid rgba(255,255,255,0.06);padding-top:24px;">
+          <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:24px;"><tr>
+            <td valign="middle">
+              <div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:2px;color:#6b6b85;text-transform:uppercase;font-weight:700;">Take it with you</div>
+              <div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:15px;color:#ffffff;font-weight:700;margin-top:5px;line-height:20px;">Get YourScore on iPhone</div>
+            </td>
+            <td align="right" valign="middle" width="146">
+              <a href="https://apps.apple.com/gb/app/yourscore/id6773626424"><img src="https://yourscore.app/email/app-store-badge.png" alt="Download on the App Store" width="138" height="47" style="width:138px;height:47px;display:block;"></a>
+            </td>
+          </tr></table>
           <p style="margin:0 0 10px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:12px;line-height:18px;color:#6b6b85;"><a href="{{PAUSE_URL}}" style="color:#8888aa;text-decoration:underline;">Pause emails</a> &nbsp;&middot;&nbsp; <a href="{{UNSUB_URL}}" style="color:#8888aa;text-decoration:underline;">Unsubscribe</a> &nbsp;&middot;&nbsp; <a href="https://yourscore.app/support" style="color:#8888aa;text-decoration:underline;">Support</a></p>
           <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:1.5px;color:#6b6b85;text-transform:uppercase;font-weight:600;">YourScore &nbsp;&middot;&nbsp; Your football knowledge. Ranked.</p>
         </td></tr></table>
