@@ -1,8 +1,6 @@
 <!--
-  Supabase Auth — Email change confirmation
-  Wired in supabase/config.toml under [auth.email.template.email_change]
-  Supabase vars: {{ .ConfirmationURL }} {{ .Email }} {{ .NewEmail }}
-  Suggested subject: Confirm your new email
+  Supabase Auth — Email change confirmation (v2)
+  Vars: {{ .ConfirmationURL }} {{ .Email }} {{ .NewEmail }}  ·  Subject: Confirm your new email
 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
@@ -12,60 +10,50 @@
   <title>Confirm your new email</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>body,table,td{margin:0;padding:0}img{border:0;outline:none;text-decoration:none;display:block}table{border-collapse:collapse}a{text-decoration:none}
-    @media (max-width:600px){.container{width:100%!important}.px{padding-left:24px!important;padding-right:24px!important}.headline{font-size:40px!important;line-height:42px!important}}</style>
+    @media (max-width:600px){.container{width:100%!important}.px{padding-left:24px!important;padding-right:24px!important}.headline{font-size:42px!important;line-height:44px!important}}</style>
 </head>
 <body style="margin:0;padding:0;background:#0a0a0f;font-family:'DM Sans',Helvetica,Arial,sans-serif;color:#ffffff;">
   <div style="display:none;max-height:0;overflow:hidden;font-size:1px;line-height:1px;color:#0a0a0f;">Confirm {{ .NewEmail }} to finish updating your account.</div>
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0a0a0f;background-image:linear-gradient(180deg,#0a0a0f 0%,#0e0e1a 100%);"><tr><td align="center" style="padding:40px 16px;">
     <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
 
-      <tr><td align="center" class="px" style="padding:0 40px 36px;">
+      <tr><td align="center" class="px" style="padding:0 40px 34px;">
         <a href="https://yourscore.app"><img src="https://yourscore.app/logo.png" alt="YourScore" width="148" height="44" style="width:148px;height:44px;display:block;"></a>
       </td></tr>
 
-      <tr><td class="px" align="left" style="padding:0 40px 18px;">
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-          <td bgcolor="#10221a" style="background:rgba(0,255,135,0.08);border:1px solid rgba(0,255,135,0.28);border-radius:999px;padding:6px 14px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:2px;color:#00ff87;font-weight:700;text-transform:uppercase;">&#9993; Email change</td>
-        </tr></table>
+      <tr><td class="px" align="left" style="padding:0 40px 12px;">
+        <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:12px;letter-spacing:3px;color:#00ff87;font-weight:700;text-transform:uppercase;">Account security</p>
       </td></tr>
 
       <tr><td class="px" style="padding:0 40px 14px;">
         <h1 class="headline" style="margin:0;font-family:'Bebas Neue',Impact,Arial,sans-serif;font-size:54px;line-height:52px;color:#ffffff;font-weight:400;">CONFIRM NEW EMAIL.</h1>
       </td></tr>
 
-      <tr><td class="px" style="padding:0 40px 32px;">
+      <tr><td class="px" style="padding:0 40px 30px;">
         <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:17px;line-height:26px;color:#bbbbcc;">
-          Confirm <strong style="color:#00ff87;">{{ .NewEmail }}</strong> to finish updating your account. Link expires in 24 hours.
+          Confirm <strong style="color:#00ff87;">{{ .NewEmail }}</strong> to finish updating your account. The link expires in 24 hours.
         </p>
       </td></tr>
 
-      <tr><td class="px" align="center" style="padding:8px 40px 24px;">
+      <tr><td class="px" align="left" style="padding:0 40px 26px;">
         <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="#00ff87" style="background:linear-gradient(135deg,#00ff87 0%,#00d970 100%);border-radius:12px;box-shadow:0 0 32px rgba(0,255,135,0.4);">
-          <a href="{{ .ConfirmationURL }}" style="display:inline-block;color:#0a0a0f;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;letter-spacing:0.5px;padding:18px 44px;border-radius:12px;">Confirm email &nbsp;&rarr;</a>
+          <a href="{{ .ConfirmationURL }}" style="display:inline-block;color:#0a0a0f;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;letter-spacing:0.3px;padding:18px 44px;border-radius:12px;">Confirm email &nbsp;&rarr;</a>
         </td></tr></table>
       </td></tr>
 
-      <tr><td class="px" style="padding:0 40px 24px;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#12121e" style="background:linear-gradient(135deg,rgba(255,255,255,0.03) 0%,rgba(10,10,15,0.95) 100%);border-radius:14px;border:1px solid rgba(255,255,255,0.06);">
-          <tr><td style="padding:16px 18px;">
-            <div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:1.5px;color:#8888aa;font-weight:600;text-transform:uppercase;margin-bottom:6px;">Button not working?</div>
-            <div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:12px;color:#8888aa;word-break:break-all;line-height:18px;">{{ .ConfirmationURL }}</div>
-          </td></tr>
-        </table>
-      </td></tr>
-
+      <!-- Boxless fallback + security note -->
       <tr><td class="px" style="padding:0 40px 0;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#12121e" style="background:linear-gradient(135deg,rgba(255,184,0,0.06) 0%,rgba(10,10,15,0.95) 100%);border-radius:14px;border:1px solid rgba(255,184,0,0.22);">
-          <tr><td style="padding:16px 18px;">
-            <div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:13px;color:#ffb800;font-weight:700;margin-bottom:4px;">Didn't request this?</div>
-            <div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:13px;color:#bbbbcc;line-height:18px;">Ignore this email. Your account stays on {{ .Email }}.</div>
-          </td></tr>
-        </table>
+        <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="border-top:1px solid rgba(255,255,255,0.07);padding-top:18px;">
+          <div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:1.5px;color:#8888aa;font-weight:700;text-transform:uppercase;margin-bottom:6px;">Button not working? Paste this link</div>
+          <div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:12px;color:#7f7f97;word-break:break-all;line-height:18px;">{{ .ConfirmationURL }}</div>
+          <div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:13px;color:#ffb800;font-weight:700;margin:18px 0 3px;">Didn't request this?</div>
+          <div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:13px;color:#bbbbcc;line-height:19px;">Ignore this email &mdash; your account stays on {{ .Email }}.</div>
+        </td></tr></table>
       </td></tr>
 
-      <tr><td class="px" style="padding:56px 40px 24px;">
+      <tr><td class="px" style="padding:44px 40px 24px;">
         <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="border-top:1px solid rgba(255,255,255,0.06);padding-top:24px;">
-          <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:1.5px;color:#6b6b85;text-transform:uppercase;font-weight:600;">YourScore &nbsp;&middot;&nbsp; Your football knowledge. Ranked.</p>
+          <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:1.5px;color:#6b6b85;text-transform:uppercase;font-weight:600;">YourScore &nbsp;&middot;&nbsp; Your football knowledge. Ranked. &nbsp;&middot;&nbsp; <a href="https://yourscore.app/support" style="color:#8888aa;text-decoration:underline;">Support</a></p>
         </td></tr></table>
       </td></tr>
     </table>

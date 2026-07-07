@@ -1,10 +1,7 @@
 <!--
-  Email 23 — Come-back nudge (signed up, never played)
-  Trigger: daily cron /api/cron/comeback — users created 5–21 days ago with no
-           quiz attempt and no 38-0 team, sent at most once ever (email_log).
-  Subject:    Your first game is still waiting.
-  Preview:    Spin a squad, draft your XI, play a match in 2 minutes. Free.
+  Email 23 — Come-back nudge (v2) — signed up, never played (daily cron, once ever)
   Tokens: none beyond footer
+  Subject: Your first game is still waiting.
 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
@@ -14,64 +11,91 @@
   <title>Your first game is waiting</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>body,table,td{margin:0;padding:0}img{border:0;outline:none;text-decoration:none;display:block}table{border-collapse:collapse}a{text-decoration:none}
-    @media (max-width:600px){.container{width:100%!important}.px{padding-left:24px!important;padding-right:24px!important}.headline{font-size:40px!important;line-height:42px!important}}</style>
+    @media (max-width:600px){.container{width:100%!important}.px{padding-left:24px!important;padding-right:24px!important}.headline{font-size:44px!important;line-height:46px!important}.hero{width:100%!important;height:auto!important}}</style>
 </head>
 <body style="margin:0;padding:0;background:#0a0a0f;font-family:'DM Sans',Helvetica,Arial,sans-serif;color:#ffffff;">
   <div style="display:none;max-height:0;overflow:hidden;font-size:1px;line-height:1px;color:#0a0a0f;">Spin a squad, draft your XI, play a match in 2 minutes. Free.</div>
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0a0a0f;background-image:linear-gradient(180deg,#0a0a0f 0%,#0e0e1a 100%);"><tr><td align="center" style="padding:40px 16px;">
     <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
 
-      <tr><td align="center" class="px" style="padding:0 40px 36px;">
+      <tr><td align="center" class="px" style="padding:0 40px 34px;">
         <a href="https://yourscore.app"><img src="https://yourscore.app/logo.png" alt="YourScore" width="148" height="44" style="width:148px;height:44px;display:block;"></a>
       </td></tr>
 
-      <tr><td class="px" align="left" style="padding:0 40px 18px;">
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-          <td bgcolor="#241e10" style="background:rgba(255,184,0,0.1);border:1px solid rgba(255,184,0,0.3);border-radius:999px;padding:6px 14px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:2px;color:#ffb800;font-weight:700;text-transform:uppercase;">&#9917; Unfinished business</td>
-        </tr></table>
+      <tr><td class="px" align="left" style="padding:0 40px 12px;">
+        <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:12px;letter-spacing:3px;color:#ffb800;font-weight:700;text-transform:uppercase;">Unfinished business</p>
       </td></tr>
 
       <tr><td class="px" style="padding:0 40px 14px;">
-        <h1 class="headline" style="margin:0;font-family:'Bebas Neue',Impact,Arial,sans-serif;font-size:56px;line-height:54px;color:#ffffff;font-weight:400;">STILL 0&ndash;0.</h1>
+        <h1 class="headline" style="margin:0;font-family:'Bebas Neue',Impact,Arial,sans-serif;font-size:58px;line-height:56px;color:#ffffff;font-weight:400;">STILL 0&ndash;0.</h1>
       </td></tr>
 
-      <tr><td class="px" style="padding:0 40px 32px;">
+      <tr><td class="px" style="padding:0 40px 6px;">
         <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:17px;line-height:26px;color:#bbbbcc;">
-          You signed up, then life happened. Fair. But your first game takes two minutes: spin a squad of legends, draft your XI, and watch it play a real simulated match.
+          You signed up, then life happened. Fair. But your first game takes two minutes &mdash; spin a squad of legends, draft your XI, and watch it play out. This is what's waiting.
         </p>
       </td></tr>
 
-      <tr><td class="px" style="padding:0 40px 28px;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#12121e" style="background:linear-gradient(135deg,rgba(255,184,0,0.08) 0%,rgba(18,18,30,0.95) 100%);border-radius:16px;border:1px solid rgba(255,184,0,0.22);">
-          <tr><td style="padding:24px;">
-            <table width="100%" cellpadding="0" cellspacing="0" border="0">
-              <tr><td style="padding:8px 0;"><table cellpadding="0" cellspacing="0" border="0"><tr><td width="30" style="font-family:'Bebas Neue',Impact,sans-serif;font-size:18px;color:#ffb800;">1</td><td style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;color:#ffffff;">Spin a squad of real-rated legends</td></tr></table></td></tr>
-              <tr><td style="padding:8px 0;border-top:1px solid rgba(255,255,255,0.05);"><table cellpadding="0" cellspacing="0" border="0"><tr><td width="30" style="font-family:'Bebas Neue',Impact,sans-serif;font-size:18px;color:#ffb800;">2</td><td style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;color:#ffffff;">Draft your best XI into a formation</td></tr></table></td></tr>
-              <tr><td style="padding:8px 0;border-top:1px solid rgba(255,255,255,0.05);"><table cellpadding="0" cellspacing="0" border="0"><tr><td width="30" style="font-family:'Bebas Neue',Impact,sans-serif;font-size:18px;color:#ffb800;">3</td><td style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;color:#ffffff;">Play a match &mdash; then make a mate regret doubting you</td></tr></table></td></tr>
-            </table>
-          </td></tr>
-        </table>
+      <!-- Compact app-moment hero -->
+      <tr><td align="center" style="padding:4px 0 0;">
+        <img class="hero" src="https://yourscore.app/email/blend-draft-xi.png" alt="Build your Draft XI" width="600" height="296" style="width:600px;height:296px;display:block;">
       </td></tr>
 
-      <tr><td class="px" align="center" style="padding:8px 40px 24px;">
+      <tr><td class="px" align="center" style="padding:6px 40px 8px;">
         <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="#00ff87" style="background:linear-gradient(135deg,#00ff87 0%,#00d970 100%);border-radius:12px;box-shadow:0 0 32px rgba(0,255,135,0.4);">
-          <a href="https://yourscore.app/38-0" style="display:inline-block;color:#0a0a0f;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;letter-spacing:0.5px;padding:18px 44px;border-radius:12px;">Play 38-0 now &nbsp;&rarr;</a>
+          <a href="https://yourscore.app/38-0/team" style="display:inline-block;color:#0a0a0f;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;letter-spacing:0.3px;padding:18px 44px;border-radius:12px;">Draft your XI &nbsp;&rarr;</a>
         </td></tr></table>
       </td></tr>
 
-      <tr><td class="px" style="padding:0 40px 0;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#12121e" style="background:linear-gradient(135deg,rgba(0,255,135,0.05) 0%,rgba(10,10,15,0.95) 100%);border-radius:14px;border:1px solid rgba(0,255,135,0.18);">
-          <tr><td style="padding:18px 20px;">
-            <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-              <td valign="middle" width="54" style="padding-right:14px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td width="40" height="40" align="center" valign="middle" bgcolor="#0f2218" style="background:rgba(0,255,135,0.12);border:1px solid rgba(0,255,135,0.25);border-radius:10px;font-size:18px;line-height:38px;">&#9889;</td></tr></table></td>
-              <td valign="middle"><div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;color:#ffffff;font-weight:600;line-height:18px;">More of a quiz person?</div><a href="https://yourscore.app/challenges" style="display:inline-block;margin-top:4px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:13px;color:#00ff87;font-weight:600;">Take a 2-minute club challenge &nbsp;&rarr;</a></td>
-            </tr></table>
-          </td></tr>
-        </table>
+      <tr><td class="px" align="center" style="padding:0 40px 22px;">
+        <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:13px;line-height:20px;color:#8888aa;">Free, no team to manage, live in 30 seconds.</p>
       </td></tr>
 
-      <tr><td class="px" style="padding:56px 40px 24px;">
+      <!-- Or start somewhere else -->
+      <tr><td class="px" style="padding:6px 40px 0;">
+        <div style="border-top:1px solid rgba(255,255,255,0.07);font-size:1px;line-height:1px;height:1px;">&nbsp;</div>
+      </td></tr>
+      <tr><td class="px" style="padding:20px 40px 4px;">
+        <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:2px;color:#6b6b85;font-weight:700;text-transform:uppercase;">Not feeling 38-0? Start here</p>
+      </td></tr>
+
+      <tr><td class="px" style="padding:14px 40px 4px;">
+        <a href="https://yourscore.app/38-0/wc?daily=1" style="text-decoration:none;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+            <td width="158" valign="middle"><img src="https://yourscore.app/email/thumb-wcm.png" alt="World Cup Mastermind" width="150" height="98" style="width:150px;height:98px;display:block;"></td>
+            <td valign="middle" style="padding-left:8px;">
+              <div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:16px;color:#ffffff;font-weight:700;line-height:20px;">38-0 &middot; World Cup Mastermind</div>
+              <div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:13px;color:#8888aa;line-height:18px;margin-top:4px;">Get the questions right, draft the best players. Updated daily.</div>
+              <div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:12.5px;color:#ffb800;font-weight:700;margin-top:8px;">Play today's run &nbsp;&rarr;</div>
+            </td>
+          </tr></table>
+        </a>
+      </td></tr>
+
+      <tr><td class="px" style="padding:12px 40px 4px;">
+        <a href="https://yourscore.app/play" style="text-decoration:none;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+            <td width="158" valign="middle"><img src="https://yourscore.app/email/thumb-quiz.png" alt="Football quiz" width="150" height="98" style="width:150px;height:98px;display:block;"></td>
+            <td valign="middle" style="padding-left:8px;">
+              <div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:16px;color:#ffffff;font-weight:700;line-height:20px;">Test your football knowledge</div>
+              <div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:13px;color:#8888aa;line-height:18px;margin-top:4px;">A 2-minute quiz. Find out where your knowledge actually lands.</div>
+              <div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:12.5px;color:#2dd4bf;font-weight:700;margin-top:8px;">Play a quiz &nbsp;&rarr;</div>
+            </td>
+          </tr></table>
+        </a>
+      </td></tr>
+
+      <tr><td class="px" style="padding:40px 40px 24px;">
         <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="border-top:1px solid rgba(255,255,255,0.06);padding-top:24px;">
+          <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:24px;"><tr>
+            <td valign="middle">
+              <div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:2px;color:#6b6b85;text-transform:uppercase;font-weight:700;">Take it with you</div>
+              <div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:15px;color:#ffffff;font-weight:700;margin-top:5px;line-height:20px;">Get YourScore on iPhone</div>
+            </td>
+            <td align="right" valign="middle" width="146">
+              <a href="https://apps.apple.com/gb/app/yourscore/id6773626424"><img src="https://yourscore.app/email/app-store-badge.png" alt="Download on the App Store" width="138" height="47" style="width:138px;height:47px;display:block;"></a>
+            </td>
+          </tr></table>
           <p style="margin:0 0 10px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:12px;line-height:18px;color:#6b6b85;"><a href="{{PAUSE_URL}}" style="color:#8888aa;text-decoration:underline;">Pause emails</a> &nbsp;&middot;&nbsp; <a href="{{UNSUB_URL}}" style="color:#8888aa;text-decoration:underline;">Unsubscribe</a> &nbsp;&middot;&nbsp; <a href="https://yourscore.app/support" style="color:#8888aa;text-decoration:underline;">Support</a></p>
           <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:1.5px;color:#6b6b85;text-transform:uppercase;font-weight:600;">YourScore &nbsp;&middot;&nbsp; Your football knowledge. Ranked.</p>
         </td></tr></table>
