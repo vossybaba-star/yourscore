@@ -30,6 +30,11 @@ import { notifyUsers } from "@/lib/notify";
 const FALLBACK_HOUR = 19;
 const MAX_PER_RUN = 2000;
 
+// A cron must never act on cached reads: without this, Vercel's durable Data
+// Cache can pin the service-client GETs (today's pack, target users) between
+// deploys and the push would fire with stale data.
+export const fetchCache = "force-no-store";
+
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
   if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {

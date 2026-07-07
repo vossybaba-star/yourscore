@@ -10,6 +10,11 @@ const CACHE_HEADERS = {
   "Cache-Control": "public, s-maxage=120, stale-while-revalidate=600",
 };
 
+// The CDN header above is the ONLY cache this route should have. Without this,
+// Vercel's durable Data Cache pins the service-client GET forever (constant
+// cache key) — pack metadata edits (e.g. cover art) never reach the app.
+export const fetchCache = "force-no-store";
+
 export async function GET() {
   try {
     const db = createServiceClient();

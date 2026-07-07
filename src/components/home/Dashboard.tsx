@@ -315,9 +315,12 @@ function FeaturedQuizCard({ pack }: { pack: FeaturedPack }) {
         className="relative block rounded-2xl overflow-hidden transition-transform active:scale-[0.99]"
         style={{ border: "1px solid rgba(0,216,192,0.25)", minHeight: 118 }}>
         {pack.coverImage ? (
+          // Covers are designed cards with the title baked into the TOP; here the
+          // image is a backdrop (HTML title on the left), so crop from the bottom —
+          // pure art, never a half-sliced baked title.
           // eslint-disable-next-line @next/next/no-img-element
           <img src={coverUrl(pack.coverImage, 440) ?? pack.coverImage} alt="" loading="eager" decoding="async" fetchPriority="high"
-            className="absolute inset-0 h-full w-full object-cover" />
+            className="absolute inset-0 h-full w-full object-cover object-bottom" />
         ) : (
           <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, rgba(0,216,192,0.25), #0c1613)" }} />
         )}
@@ -363,7 +366,8 @@ function DiscoveryRail({ packs, played38 }: { packs: RecommendedPack[]; played38
           <Link key={p.id} href={`/challenges/${slugify(p.name)}`}
             className="flex-shrink-0 rounded-xl overflow-hidden flex flex-col transition-transform active:scale-[0.98]"
             style={{ width: 118, background: "#0e1611", border: "1px solid rgba(255,255,255,0.08)" }}>
-            <div className="relative" style={{ width: "100%", aspectRatio: "16 / 10" }}>
+            {/* Square — matches the designed covers' own aspect so they show whole */}
+            <div className="relative" style={{ width: "100%", aspectRatio: "1 / 1" }}>
               {p.cover ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={coverUrl(p.cover, 118) ?? p.cover} alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" />

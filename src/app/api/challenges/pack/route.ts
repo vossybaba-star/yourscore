@@ -24,6 +24,11 @@ const CACHE_HEADERS = {
   "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400",
 };
 
+// The CDN header above is the ONLY intended cache. Without this, Vercel's
+// durable Data Cache pins the service-client GET forever — pack edits
+// (cover art, questions) would never reach the app between deploys.
+export const fetchCache = "force-no-store";
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const pid = searchParams.get("pid");

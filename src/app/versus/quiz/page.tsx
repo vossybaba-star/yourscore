@@ -242,7 +242,9 @@ export default function QuizBattlePage() {
                   <div className="relative" style={{ height: 150, background: "radial-gradient(ellipse at 50% 80%, rgba(0,216,192,0.15), #0b1310 70%)" }}>
                     {featuredHero.cover && (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={coverUrl(featuredHero.cover, 480) ?? featuredHero.cover} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                      // Backdrop crop: designed covers bake their title into the TOP and this
+                      // hero overlays its own HTML title — crop from the bottom (pure art).
+                      <img src={coverUrl(featuredHero.cover, 480) ?? featuredHero.cover} alt="" className="absolute inset-0 w-full h-full object-cover object-bottom" />
                     )}
                     <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(8,13,10,0) 30%, rgba(8,13,10,0.9) 100%)" }} />
                     <span className="absolute top-2.5 left-2.5 font-body text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded-md" style={{ background: TEAL, color: "#04231f" }}>New</span>
@@ -263,7 +265,8 @@ export default function QuizBattlePage() {
                 <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1 -mx-5 px-5">
                   {popular.map((p) => (
                     <button key={p.id} onClick={() => setPicked(p)} className="flex-shrink-0 text-left rounded-2xl overflow-hidden active:scale-[0.97] transition-transform" style={{ width: 108, border: "1px solid rgba(0,216,192,0.18)" }}>
-                      <div className="relative" style={{ height: 76, background: "radial-gradient(ellipse at 50% 80%, rgba(0,216,192,0.12), #0b1310 70%)" }}>
+                      {/* Cover = a designed card, shown whole (square zone matches it); fallback keeps the short banner */}
+                      <div className="relative" style={p.cover ? { aspectRatio: "1 / 1" } : { height: 76, background: "radial-gradient(ellipse at 50% 80%, rgba(0,216,192,0.12), #0b1310 70%)" }}>
                         {p.cover ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={coverUrl(p.cover, 108) ?? p.cover} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
@@ -302,15 +305,16 @@ export default function QuizBattlePage() {
               <div className="grid grid-cols-2 gap-3 mt-4">
                 {shown.map((p) => (
                   <button key={p.id} onClick={() => setPicked(p)} className="text-left rounded-2xl overflow-hidden active:scale-[0.97] transition-transform" style={{ background: "linear-gradient(160deg,#0e1611,#15211a)", border: "1px solid rgba(0,216,192,0.16)" }}>
-                    <div className="relative flex items-center justify-center" style={{ height: 96, background: "radial-gradient(ellipse at 50% 80%, rgba(0,216,192,0.12), transparent 70%)" }}>
+                    {/* Cover = a designed card, shown whole; fallback keeps the short banner */}
+                    <div className="relative flex items-center justify-center" style={p.cover ? undefined : { height: 96, background: "radial-gradient(ellipse at 50% 80%, rgba(0,216,192,0.12), transparent 70%)" }}>
                       {p.cover ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={coverUrl(p.cover, 220) ?? p.cover} alt={p.name} loading="lazy" decoding="async" className="absolute inset-0 w-full h-full" style={{ objectFit: "cover" }} />
+                        <img src={coverUrl(p.cover, 220) ?? p.cover} alt={p.name} loading="lazy" decoding="async" className="block w-full h-auto" />
                       ) : (
                         <div className="flex items-center justify-center rounded-2xl font-display text-3xl text-white" style={{ width: 58, height: 58, background: "rgba(0,216,192,0.1)", border: "1px solid rgba(0,216,192,0.2)" }}>{initial(p.name)}</div>
                       )}
-                      <span className="absolute top-2 right-2 font-display text-[11px] px-2 py-0.5 rounded-lg" style={{ background: "rgba(0,0,0,0.55)", color: TEAL, border: "1px solid rgba(0,216,192,0.3)" }}>{p.questionCount}Q</span>
-                      {!p.played && <span className="absolute top-2 left-2 font-body text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md" style={{ background: TEAL, color: "#04231f" }}>New</span>}
+                      <span className={`absolute ${p.cover ? "bottom-2" : "top-2"} right-2 font-display text-[11px] px-2 py-0.5 rounded-lg`} style={{ background: "rgba(0,0,0,0.55)", color: TEAL, border: "1px solid rgba(0,216,192,0.3)" }}>{p.questionCount}Q</span>
+                      {!p.played && <span className={`absolute ${p.cover ? "bottom-2" : "top-2"} left-2 font-body text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md`} style={{ background: TEAL, color: "#04231f" }}>New</span>}
                     </div>
                     <div className="px-3 py-2.5">
                       <p className="font-body text-[13px] font-bold text-white leading-snug line-clamp-2">{p.name}</p>

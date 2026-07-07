@@ -15,5 +15,8 @@ export function coverUrl(url: string | null | undefined, cssWidth: number): stri
   if (!url) return null;
   if (!url.includes(OBJECT_MARKER)) return url;
   const width = Math.min(1280, Math.round(cssWidth * 2)); // retina, capped
-  return url.replace(OBJECT_MARKER, RENDER_MARKER) + (url.includes("?") ? "&" : "?") + `width=${width}&quality=70`;
+  // resize=contain is REQUIRED: with only `width`, the render endpoint keeps the
+  // ORIGINAL height (i.e. centre-crops the sides) instead of scaling
+  // proportionally — it silently sliced the edges off every cover in the app.
+  return url.replace(OBJECT_MARKER, RENDER_MARKER) + (url.includes("?") ? "&" : "?") + `width=${width}&quality=70&resize=contain`;
 }

@@ -784,13 +784,15 @@ export default function ChallengePage() {
 
           <div className="flex flex-col items-center pt-24 pb-8 px-6">
             {pack.metadata?.cover_image ? (
+              // The cover is a designed card (logo + title baked in) — show it
+              // WHOLE: the image sets its own height, no fixed-aspect crop.
               <div className="relative w-full mb-6"
-                style={{ maxWidth: 440, aspectRatio: "3 / 2", borderRadius: 22, overflow: "hidden",
+                style={{ maxWidth: 440, borderRadius: 22, overflow: "hidden",
                   border: `1.5px solid ${accentBorder}`,
                   boxShadow: `0 12px 40px ${isRecords ? "rgba(174,234,0,0.3)" : "rgba(255,140,0,0.25)"}` }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={coverUrl(pack.metadata.cover_image, 440) ?? pack.metadata.cover_image} alt={pack.name}
-                  className="absolute inset-0 h-full w-full" style={{ objectFit: "cover" }} />
+                  className="block w-full h-auto" />
               </div>
             ) : (
               <div className="relative flex items-center justify-center mb-5"

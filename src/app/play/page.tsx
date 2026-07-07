@@ -38,16 +38,16 @@ function packDate(iso?: string | null): string | null {
   return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 }
 
-// Full-bleed cover image for a card's media zone. Fills the existing 110px-tall
-// banner (object-cover, centred) — used when a quiz has a hand-made cover_image,
-// otherwise the card falls back to its badge/emoji.
+// Cover image for a card's media zone, shown WHOLE: the hand-made covers are
+// designed cards (logo + title baked in), so the zone must take the image's own
+// aspect — never a fixed-height crop, which sliced the titles mid-letter.
 function CoverImg({ src, alt }: { src: string; alt: string }) {
   return (
     // eager + async + high priority so quiz art paints immediately, not lazily.
     // CDN-resized (coverUrl): originals are 2-3MB PNGs — never ship those to a grid.
     // eslint-disable-next-line @next/next/no-img-element
     <img src={coverUrl(src, 420) ?? src} alt={alt} loading="eager" decoding="async" fetchPriority="high"
-      className="absolute inset-0 h-full w-full" style={{ objectFit: "cover" }} />
+      className="block w-full h-auto" />
   );
 }
 
@@ -82,7 +82,9 @@ function ClubCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: string 
     >
       <div
         className="relative flex items-center justify-center"
-        style={{
+        // With a designed cover the image sets the zone's height (shown whole);
+        // the fixed 110px banner only applies to the badge/initial fallbacks.
+        style={pack.metadata?.cover_image ? undefined : {
           height: 110,
           background:
             "radial-gradient(ellipse at 50% 80%, rgba(0,216,192,0.12) 0%, transparent 70%), linear-gradient(180deg, rgba(0,216,192,0.05) 0%, transparent 100%)",
@@ -113,7 +115,7 @@ function ClubCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: string 
           </div>
         )}
         <div
-          className="absolute top-3 right-3 font-display text-xs px-2 py-0.5 rounded-lg text-teal"
+          className={`absolute ${pack.metadata?.cover_image ? "bottom-3" : "top-3"} right-3 font-display text-xs px-2 py-0.5 rounded-lg text-teal`}
           style={{ background: "rgba(0,0,0,0.5)", border: "1px solid rgba(0,216,192,0.3)" }}
         >
           {pack.question_count}Q
@@ -163,7 +165,7 @@ function RecordsCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: stri
     >
       <div
         className="relative flex items-center justify-center"
-        style={{
+        style={pack.metadata?.cover_image ? undefined : {
           height: 110,
           background:
             "radial-gradient(ellipse at 50% 80%, rgba(0,216,192,0.14) 0%, transparent 70%), linear-gradient(180deg, rgba(0,216,192,0.06) 0%, transparent 100%)",
@@ -191,7 +193,7 @@ function RecordsCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: stri
           </span>
         )}
         <div
-          className="absolute top-3 right-3 font-display text-xs px-2 py-0.5 rounded-lg"
+          className={`absolute ${pack.metadata?.cover_image ? "bottom-3" : "top-3"} right-3 font-display text-xs px-2 py-0.5 rounded-lg`}
           style={{ background: "rgba(0,0,0,0.5)", color: "#00d8c0", border: "1px solid rgba(0,216,192,0.3)" }}
         >
           {pack.question_count}Q
@@ -245,7 +247,7 @@ function EndOfSeasonCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: 
     >
       <div
         className="relative flex items-center justify-center"
-        style={{
+        style={pack.metadata?.cover_image ? undefined : {
           height: 110,
           background:
             "radial-gradient(ellipse at 50% 80%, rgba(0,216,192,0.14) 0%, transparent 70%), linear-gradient(180deg, rgba(0,216,192,0.06) 0%, transparent 100%)",
@@ -273,13 +275,13 @@ function EndOfSeasonCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: 
           </span>
         )}
         <div
-          className="absolute top-3 right-3 font-display text-xs px-2 py-0.5 rounded-lg"
+          className={`absolute ${pack.metadata?.cover_image ? "bottom-3" : "top-3"} right-3 font-display text-xs px-2 py-0.5 rounded-lg`}
           style={{ background: "rgba(0,0,0,0.5)", color: "#00d8c0", border: "1px solid rgba(0,216,192,0.3)" }}
         >
           {pack.question_count}Q
         </div>
         <div
-          className="absolute top-3 left-3 font-body text-xs px-2 py-0.5 rounded-full font-semibold"
+          className={`absolute ${pack.metadata?.cover_image ? "bottom-3" : "top-3"} left-3 font-body text-xs px-2 py-0.5 rounded-full font-semibold`}
           style={{ background: "rgba(0,216,192,0.15)", color: "#00d8c0", border: "1px solid rgba(0,216,192,0.3)" }}
         >
           25/26
