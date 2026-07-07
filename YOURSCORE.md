@@ -6,7 +6,25 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed with the founder:** 2026-07-05 round 6 (**Anonymous debate voting** —
+> **Confirmed with the founder:** 2026-07-07 (**Quiz covers shown whole + CDN crop bug
+> fixed** — founder: covers are designed cards (logo + title baked in); size the CARD
+> to the image, never crop the art. Root cause of "images don't fit at all":
+> `coverUrl()`'s Supabase render transform with only `width` centre-crops the sides —
+> `resize=contain` now appended in `src/lib/img.ts`, fixing every cover in the app at
+> once. Card media zones in /play + /versus/quiz take the image's own aspect
+> (`w-full h-auto`); Q/New chips sit at the BOTTOM of covered cards (off the baked
+> title strip); home featured + versus hero backdrops crop from the bottom (pure art —
+> the HTML overlay carries the title); /challenges hero shows the cover whole. Also
+> `fetchCache="force-no-store"` on api/quiz/packs, api/challenges/pack,
+> api/cron/wc-mastermind — the durable Data Cache was pinning pack reads, so metadata
+> edits never reached the app between deploys. PROCESS RULE (founder, after an
+> unapproved art batch went live): **generated imagery/brand creative NEVER ships
+> without agreed art direction + contact-sheet approval.** The ~48 new artworks now on
+> previously-coverless packs (records/EOS evergreens + 4 June dailies + variants) are
+> unapproved placeholders pending an art-style decision — founder also wants MORE
+> VARIETY in the daily WC covers ("all very similar, a little boring"); art-style
+> workshop is the open next step. Daily pipeline unchanged: stamped covers.)
+> Previously 2026-07-05 round 6 (**Anonymous debate voting** —
 > nobody needs an account to vote on the daily debate. Guests vote under a per-device
 > key (`debate_anon_votes`, migration 72; localStorage `ys:debate:voter`), votes
 > remembered on-device, rate-limited per IP; `?pick=N` share links auto-cast for

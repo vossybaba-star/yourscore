@@ -71,30 +71,63 @@ const dmBold = readFileSync(join(FONTS, "DMSans-Bold.ttf"));
 const logoDataUri = `data:image/png;base64,${readFileSync(join(ROOT, "public", "logo.png")).toString("base64")}`;
 
 // ── 1. Background art (no text/logo) ─────────────────────────────────────────
-// Composition rotates by date so the daily key-art changes each day (not just a
-// flag swap on the same crowd shot). Every variant features the golden World Cup
-// trophy and the competing nations' flags, and keeps the upper-left third clear
-// for the title overlay.
-const COMPOSITIONS = [
-  `a golden World Cup trophy standing in sharp hero focus on the lower-right, on the centre spot of a floodlit pitch, with a blurred sea of fans waving large national flags — ${flagList} — filling the stands behind it`,
-  `the golden World Cup trophy raised aloft amid a roaring crowd on the lower-right, surrounded by large waving national flags — ${flagList} — fireworks and confetti bursting overhead`,
-  `a low dramatic hero shot of the golden World Cup trophy on a plinth lower-centre, bathed in warm light, a packed stadium of fans waving national flags — ${flagList} — softly out of focus behind`,
-  `the golden World Cup trophy glinting in close detail on the right side, stadium floodlights as bokeh, the colours of national flags — ${flagList} — reflected on its gold surface, jubilant crowd beyond`,
+// STYLE SYSTEM (founder-locked, Jul 7): the old look — the same gold-trophy-and-
+// flags photo every day — read as samey. Now the art style itself rotates:
+//   S2 retro matchday poster  = the BASE (flat vintage-programme illustration)
+//   S4 fan's-eye terraces     = in rotation for the fan feel
+//   S1 cinematic story        = reserved for big moments
+//   S3 comic / ink action     = reserved for big moments
+// Day-to-day alternates S2/S4 by date; each "Regenerate" press on the Telegram
+// gate advances the rotation (S2 → S4 → S1 → S3), so big-moment styles are one
+// tap away with no laptop. `--style 1|2|3|4` forces one explicitly.
+const NO_TEXT = `IMPORTANT: absolutely NO text, NO words, NO letters, NO numbers, NO logos, NO badges, NO watermarks anywhere in the image. Keep the upper-left third as calmer, darker negative space for a title to be added later.`;
+
+// Poster palettes rotate by date so each day owns a different colour world.
+const POSTER_PALETTES = [
+  "deep pitch green, rich gold and off-white cream",
+  "midnight navy, warm gold and cream",
+  "deep claret, gold and cream",
+  "royal blue, warm yellow and cream",
+  "near-black, rich gold and cream with one red accent",
+  "deep bottle green, off-white and one sky-blue accent",
 ];
+
+const STYLE_PROMPTS = {
+  1: () => `Cinematic photographic sports key art: the golden World Cup trophy amid a roaring floodlit stadium, large national flags — ${flagList} — waving through gold confetti haze. Deep navy night, warm gold glow, shallow depth of field, broadcast key-art finish, subtle cinematic grain. ${NO_TEXT}`,
+  2: (key) => `Flat graphic illustration in vintage football matchday-poster style: bold simplified geometric shapes, screen-print texture, limited palette of ${POSTER_PALETTES[key % POSTER_PALETTES.length]}. The golden World Cup trophy as a bold central motif with clean geometric floodlight rays, stylised abstract pennants in the colours of ${flagList}, halftone crowd texture below. Mid-century poster composition, thick shapes, no gradients. ${NO_TEXT}`,
+  3: () => `Dramatic graphic-novel comic panel: an explosive World Cup action moment — a full-stretch save, a thumping volley — drawn with bold black ink outlines, dynamic low camera angle, speed lines, halftone dot shading, deep green and gold limited comic palette with white highlights, flags of ${flagList} rippling in the inked crowd. ${NO_TEXT}`,
+  4: () => `Photographic shot from INSIDE a football crowd at night: fans' backs and raised scarves silhouetted in the foreground, flags of ${flagList} held high among them, a flare glowing, the distant floodlit World Cup pitch far below. Emotional documentary feel, deep navy night, warm gold floodlight haze, shallow depth of field, cinematic grain. ${NO_TEXT}`,
+};
+
+// Rotation: base S2/S4 alternating by date; each regenerate (--alt) steps
+// through [today's base, the other base, S1, S3].
+const STYLE_FLAG = Number.parseInt(flag("--style") ?? "", 10);
+const ALT = Number.parseInt(flag("--alt") ?? "0", 10) || 0;
+const dateKey = String(quiz.date || slug).split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+function pickStyle() {
+  if ([1, 2, 3, 4].includes(STYLE_FLAG)) return STYLE_FLAG;
+  const base = dateKey % 2 === 0 ? 2 : 4;
+  const order = [base, base === 2 ? 4 : 2, 1, 3];
+  return order[ALT % order.length];
+}
+const STYLE = pickStyle();
+
 function bgPrompt() {
-  const key = String(quiz.date || slug).split("").reduce((a, c) => a + c.charCodeAt(0), 0);
-  const scene = COMPOSITIONS[key % COMPOSITIONS.length];
-  return `Premium editorial sports key art: ${scene}. Cinematic World Cup tournament atmosphere at dusk under blazing floodlights, confetti and flares hazing in the air. Rich sophisticated grade: deep navy night sky, warm gold glow, saturated flag colours, shallow depth of field. IMPORTANT: absolutely NO text, NO words, NO letters, NO logos, NO watermarks anywhere in the image. Leave the upper-left third as clean, darker negative space (sky / shadow) for a title to be added later — keep the trophy out of the upper-left. Photographic, high-end broadcast key-art look, subtle cinematic grain.`;
+  return STYLE_PROMPTS[STYLE](dateKey);
 }
 
 // Style-match preamble used only when we have reference art: keep gpt-image-1 anchored to
 // the reference look/grade but free to invent a NEW composition (low input_fidelity = creative).
+// ONLY for the cinematic style — the reference set is the old photographic look and would
+// drag the poster/comic/terraces styles straight back to it.
 function bgPromptWithRef() {
   return `Use the attached reference image(s) ONLY as a style guide — match their colour grade, lighting, mood and premium editorial finish — but create a BRAND NEW image with a different composition. ${bgPrompt()}`;
 }
 
 async function genBackground(size) {
-  const refs = refFiles();
+  // Reference art is the OLD photographic look — it only conditions the
+  // cinematic style (S1); the other styles must be free of it or they regress.
+  const refs = STYLE === 1 ? refFiles() : [];
 
   if (refs.length) {
     // Reference-conditioned: /images/edits with gpt-image-1 + the curated style refs.
@@ -149,12 +182,20 @@ function overlayTree(W, H) {
     h("div", { style: { display: "flex", color: i === n - 1 ? ACCENT_HEX : "#ffffff", marginRight: Math.round(titleSize * 0.16) } }, w)
   );
 
+  // Poster/comic art (S2/S3) can be bright at the top no matter what the
+  // prompt asks — a soft dark scrim under the text keeps the title readable.
+  // The photographic styles keep their naturally dark skies, no scrim.
+  const scrim = STYLE === 2 || STYLE === 3
+    ? [h("div", { style: { display: "flex", position: "absolute", top: 0, left: 0, width: W, height: Math.round(H * 0.46), background: "linear-gradient(180deg, rgba(5,10,8,0.72) 0%, rgba(5,10,8,0.4) 62%, rgba(5,10,8,0) 100%)" } })]
+    : [];
+
   return h("div", {
     style: {
       width: W, height: H, display: "flex", flexDirection: "column", justifyContent: "flex-start",
-      padding: pad, fontFamily: "Bebas Neue",
+      padding: pad, fontFamily: "Bebas Neue", position: "relative",
     },
   },
+    ...scrim,
     h("img", { src: logoDataUri, width: Math.round(logoH * 3.382), height: logoH, style: { marginBottom: Math.round(H * 0.04) } }),
     h("div", { style: { display: "flex", flexWrap: "wrap", width: titleWidth, fontSize: titleSize, lineHeight: 0.9, rowGap: Math.round(titleSize * 0.04) } }, ...titleWords),
     h("div", {
@@ -204,10 +245,11 @@ async function makeCard(genSize, W, H, outPath, kind) {
   return outPath;
 }
 
-const _refs = refFiles();
+const _refs = STYLE === 1 ? refFiles() : [];
+const STYLE_NAMES = { 1: "cinematic story", 2: "retro matchday poster", 3: "comic ink", 4: "fan's-eye terraces" };
 console.error(`\nGenerating cards for "${quiz.name}" (quality=${QUALITY})`);
 console.error(`  flags: ${nations.join(", ")}`);
-console.error(`  style: ${_refs.length ? `reference-conditioned (${_refs.map((r) => r.split("/").pop()).join(", ")})` : "text-to-image (no references)"}`);
+console.error(`  style: S${STYLE} ${STYLE_NAMES[STYLE]}${ALT ? ` (regen step ${ALT})` : ""}${_refs.length ? ` + refs (${_refs.map((r) => r.split("/").pop()).join(", ")})` : ""}`);
 
 const sharePath = join(OUT, `${slug}-share.png`);
 const coverPath = join(OUT, `${slug}-cover.png`);

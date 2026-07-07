@@ -205,7 +205,10 @@ async function main() {
     for (let regen = 0; regen < 4; regen++) {
       await sendMessage(first ? "🎨 Generating the two cards…" : "🔄 Regenerating the cards…");
       const reuse = DRY && first ? ["--reuse-bg"] : []; // dry: free first pass; regen always fresh
-      const out = run("gen-quiz-images.mjs", ["--quiz", quizPath, "--out", "/tmp", ...reuse]);
+      // --alt advances the style rotation (S2/S4 base → S1 → S3), so each
+      // Regenerate press on the gate offers a DIFFERENT art style, not a
+      // reroll of the same one — big-moment styles are one tap away.
+      const out = run("gen-quiz-images.mjs", ["--quiz", quizPath, "--out", "/tmp", "--alt", String(regen), ...reuse]);
       share = out.match(/SHARE=(.+)/)?.[1]?.trim();
       cover = out.match(/COVER=(.+)/)?.[1]?.trim();
       if (!share || !cover) throw new Error("image generation did not return paths");
