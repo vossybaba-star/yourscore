@@ -97,8 +97,8 @@ function ClubCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: string 
           <img
             src={badgeUrl}
             alt={pack.name}
-            width={68}
-            height={68}
+            width={82}
+            height={82}
             style={{
               objectFit: "contain",
               filter: "drop-shadow(0 6px 16px rgba(0,216,192,0.35))",

@@ -380,7 +380,7 @@ function DiscoveryRail({ packs, played38 }: { packs: RecommendedPack[]; played38
                 <div className="absolute inset-0 flex items-center justify-center"
                   style={{ background: "radial-gradient(ellipse at 50% 80%, rgba(0,216,192,0.1), #0b1310 75%)" }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={crest} alt={p.name} width={68} height={68}
+                  <img src={crest} alt={p.name} width={84} height={84}
                     style={{ objectFit: "contain", filter: "drop-shadow(0 4px 10px rgba(0,0,0,0.5))" }} />
                 </div>
               ) : (

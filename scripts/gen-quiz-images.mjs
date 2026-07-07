@@ -80,7 +80,7 @@ const logoDataUri = `data:image/png;base64,${readFileSync(join(ROOT, "public", "
 // Day-to-day alternates S2/S4 by date; each "Regenerate" press on the Telegram
 // gate advances the rotation (S2 → S4 → S1 → S3), so big-moment styles are one
 // tap away with no laptop. `--style 1|2|3|4` forces one explicitly.
-const NO_TEXT = `IMPORTANT: absolutely NO text, NO words, NO letters, NO numbers, NO logos, NO badges, NO watermarks anywhere in the image. Keep the upper-left third as calmer, darker negative space for a title to be added later.`;
+const NO_TEXT = `IMPORTANT: absolutely NO text, NO words, NO letters, NO numbers, NO logos, NO badges, NO watermarks anywhere in the image. Keep the upper-left third as calmer, darker negative space for a title to be added later. This is ASSOCIATION FOOTBALL (soccer) ONLY: any ball must be a round soccer ball with classic panels — NEVER an American football, NO egg-shaped balls, NO gridiron, NO helmets, NO shoulder pads.`;
 
 // Poster palettes rotate by date so each day owns a different colour world.
 const POSTER_PALETTES = [
