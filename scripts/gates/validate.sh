@@ -12,6 +12,9 @@ npx tsc \
   src/lib/gates/fpl.ts \
   src/lib/gates/sportmonks.ts \
   src/lib/gates/who-am-i.ts \
+  src/lib/gates/history.ts \
+  src/lib/gates/trivia.ts \
+  src/lib/gates/career-path.ts \
   --rootDir src --outDir .tmp-gates-val \
   --module commonjs --moduleResolution node --target es2022 \
   --esModuleInterop --skipLibCheck --types node

@@ -15,9 +15,13 @@ npx tsc \
   src/lib/gates/sportmonks.ts \
   src/lib/gates/who-am-i.ts \
   src/lib/gates/serve.ts \
+  src/lib/gates/history.ts \
+  src/lib/gates/trivia.ts \
+  src/lib/gates/career-path.ts \
   src/lib/gates/gates.test.ts \
   src/lib/gates/enrich.test.ts \
   src/lib/gates/serve.test.ts \
+  src/lib/gates/history.test.ts \
   --rootDir src --outDir .tmp-gates-test \
   --module commonjs --moduleResolution node --target es2022 \
   --esModuleInterop --skipLibCheck --types node

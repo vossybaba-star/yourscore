@@ -53,7 +53,8 @@ export type GateFormat =
   | "higher-lower"
   | "this-season-form"
   | "who-am-i"
-  | "career-path";
+  | "career-path"
+  | "classic-trivia";
 
 /** A comparable stat for Higher/Lower + This-season form. */
 export type GateStat =

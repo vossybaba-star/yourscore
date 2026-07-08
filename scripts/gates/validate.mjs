@@ -90,5 +90,53 @@ if (!KEY) {
   bad += dirty;
 }
 
+// --- Historical add-on: classic trivia + career-path (live) -----------------
+if (KEY) {
+  const { fetchPlSeasons, fetchSeasonStandings, fetchSeasonTopScorers, buildCareers } =
+    await import(new URL("history.js", base));
+  const { generateTrivia } = await import(new URL("trivia.js", base));
+  const { generateCareerPath } = await import(new URL("career-path.js", base));
+  const { fetchSmSeasonSquads } = await import(new URL("sportmonks.js", base));
+
+  const seasons = await fetchPlSeasons(KEY);
+  console.log(`\nPL seasons on plan: ${seasons.length} (${seasons[0].name} → ${seasons[seasons.length - 1].name})`);
+
+  // Trivia over 5 era-spread seasons
+  const eraNames = ["2005/2006", "2010/2011", "2013/2014", "2019/2020", "2023/2024"];
+  const eras = seasons.filter((s) => eraNames.includes(s.name));
+  const history = [];
+  for (const s of eras) {
+    history.push({
+      season: s,
+      standings: await fetchSeasonStandings(s.id, KEY),
+      topScorers: await fetchSeasonTopScorers(s.id, KEY),
+    });
+  }
+  const trivia = generateTrivia(history, { seed: "v1", nowYear: new Date().getFullYear() });
+  console.log(`\n=== Classic trivia (${trivia.length}) ===`);
+  for (const q of trivia) {
+    const ans = q.options.find((o) => o.id === q.answerId).label;
+    console.log(`  ${q.prompt}  → ${ans}  [diff ${q.difficulty}]  (${q.options.map((o) => o.label).join(" / ")})`);
+  }
+
+  // Careers over 3 consecutive old seasons (light: ~60 squad requests)
+  const careerSeasons = seasons.filter((s) => ["2011/2012", "2012/2013", "2013/2014"].includes(s.name));
+  const squads = [];
+  for (const s of careerSeasons) {
+    const { players: smPlayers } = await fetchSmSeasonSquads(s.id, KEY);
+    squads.push({ season: s, players: smPlayers });
+    console.log(`  squads ${s.name}: ${smPlayers.length} players`);
+  }
+  const careers = buildCareers(squads);
+  const movers = careers.filter((c) => c.clubs.length >= 2);
+  console.log(`careers built: ${careers.length} players, ${movers.length} multi-club`);
+  const cq = generateCareerPath(careers, { seed: "v1", count: 12, nowYear: new Date().getFullYear() });
+  console.log(`\n=== Career path (${cq.length}) ===`);
+  for (const q of cq.slice(0, 6)) {
+    const ans = q.options.find((o) => o.id === q.answerId).label;
+    console.log(`  ${q.prompt}  → ${ans}  [diff ${q.difficulty}]`);
+  }
+}
+
 console.log(`\n${bad === 0 ? "✅ all generated answers correct + clean" : `‼ ${bad} bad questions`}`);
 process.exit(bad === 0 ? 0 : 1);
