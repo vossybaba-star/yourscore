@@ -10,6 +10,8 @@ npx tsc \
   src/lib/gates/fame.ts \
   src/lib/gates/higher-lower.ts \
   src/lib/gates/fpl.ts \
+  src/lib/gates/sportmonks.ts \
+  src/lib/gates/who-am-i.ts \
   --rootDir src --outDir .tmp-gates-val \
   --module commonjs --moduleResolution node --target es2022 \
   --esModuleInterop --skipLibCheck --types node

@@ -40,11 +40,12 @@ export interface Player {
   form: number; // FPL rolling form
   available: boolean; // status === "a" (fit + likely to play)
   photoCode?: number; // FPL "code" for the headshot URL slot
-  // optional — filled by SportMonks later
+  // optional — filled by the SportMonks enrichment (sportmonks.ts)
   nationality?: string;
   age?: number;
+  jersey?: number; // shirt number (the "I wear number 9" clue)
   careerGoals?: number;
-  careerClubs?: string[]; // ordered club history for Career-path
+  careerClubs?: string[]; // ordered club history for Career-path (FIFA dataset)
 }
 
 /** The formats in the initial clean base + the later ones (tagged for routing). */
