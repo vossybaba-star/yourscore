@@ -17,12 +17,19 @@
  */
 
 import { useCallback, useMemo, useRef, useState } from "react";
-import { ensurePool, spin } from "@/lib/draft/pool";
-import { canPlay, playerIdentity, scoreTeam, seededRng } from "@/lib/draft/score";
+import { ensurePool, leagueOpponents } from "@/lib/draft/pool";
+import { playerIdentity, scoreTeam } from "@/lib/draft/score";
 import { simulateSeason, type SeasonResult } from "@/lib/draft/season";
-import { leagueOpponents } from "@/lib/draft/pool";
 import { slotsFor } from "@/lib/draft/formations";
 import type { Formation, PlacedPlayer, PlayerSeason, Position } from "@/lib/draft/types";
+import {
+  dealCurrentSquad,
+  dealSquad,
+  priceOf,
+  r10,
+  type CurrentPlayer,
+  type SlotSquad,
+} from "@/lib/gates/warmup-deals";
 
 const FORMATION: Formation = "4-3-3";
 const GOLD = "#F4C430";
@@ -42,9 +49,7 @@ type ServedQuestion = {
   position: Position;
 };
 type StepResult = { correct: boolean; answerId: number; streak: number; grant: number };
-type CurrentPlayer = { id: number; name: string; club: string; clubId: number; position: string; price: number };
 type WarmupMode = "legends" | "current";
-type SlotSquad = { club: string; season: string; players: PlayerSeason[] };
 type SlotPick = { placed: PlacedPlayer; price: number; squad: SlotSquad };
 type Phase =
   | "intro"
@@ -56,33 +61,6 @@ type Phase =
   | "swap"
   | "result"
   | "error";
-
-const r10 = (x: number) => Math.round(x * 10) / 10;
-
-/** Rating → price (£m). ONE global curve — a 75 costs the same at Watford as at
- *  City (founder: values must be consistent across the whole pool). Rebalanced
- *  (founder, Jul 9) so a wrong-answer £5m still buys most of a weak team:
- *  60 → £4.2 · 70 → £5.0 · 75 → £5.9 · 80 → £7.4 · 85 → £9.5 · 93 → £15. */
-const PRICE_EXP = 4.2;
-function priceOf(overall: number): number {
-  const ov = Math.max(40, Math.min(93, overall));
-  return r10(4 + 11 * Math.pow((ov - 40) / 53, PRICE_EXP));
-}
-
-/** Inverse of priceOf — gives 26/27-mode players a sim rating from their price. */
-function overallFromPrice(price: number): number {
-  const p = Math.max(4, Math.min(15, price));
-  return Math.round(40 + 53 * Math.pow((p - 4) / 11, 1 / PRICE_EXP));
-}
-
-/** Map a granular formation slot ("RB", "CM", "ST"…) to a position bucket —
- *  the 26/27 player feed only knows GK/DEF/MID/FWD. */
-function slotBucket(pos: string): "GK" | "DEF" | "MID" | "FWD" {
-  if (pos === "GK") return "GK";
-  if (["RB", "LB", "CB", "RWB", "LWB", "DEF"].includes(pos)) return "DEF";
-  if (["CM", "CDM", "CAM", "RM", "LM", "MID"].includes(pos)) return "MID";
-  return "FWD";
-}
 
 function sessionKey(): string {
   try {
@@ -104,87 +82,6 @@ function capture(event: string, props?: Record<string, unknown>) {
   } catch {
     /* analytics must never break the game */
   }
-}
-
-/** 26/27 mode: deal a CURRENT club's squad for the slot — same buy flow, players
- *  priced by their real FPL value, sim rating derived from the price. */
-function dealCurrentSquad(
-  players: readonly CurrentPlayer[],
-  slotPos: Position,
-  usedIds: Set<string>,
-  usedIdents: Set<string>,
-  budget: number,
-  seedStr: string,
-): SlotSquad {
-  const rng = seededRng(seedStr);
-  const bucket = slotBucket(slotPos as string);
-  const clubs = Array.from(new Set(players.map((p) => p.club)));
-  for (let i = clubs.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [clubs[i], clubs[j]] = [clubs[j], clubs[i]];
-  }
-  const toSeason = (list: CurrentPlayer[]): PlayerSeason[] =>
-    list
-      .map(
-        (p) =>
-          ({
-            id: `cur-${p.id}`,
-            name: p.name,
-            club: p.club,
-            season: "2026/27",
-            position: slotPos, // auto-fit: bucket data has no granular position
-            overall: overallFromPrice(p.price),
-          }) as unknown as PlayerSeason,
-      )
-      .sort((a, b) => b.overall - a.overall);
-  let best: SlotSquad | null = null;
-  for (const club of clubs) {
-    const eligible = players.filter(
-      (p) =>
-        p.club === club &&
-        p.position === bucket &&
-        !usedIds.has(`cur-${p.id}`) &&
-        !usedIdents.has(playerIdentity(p.name)),
-    );
-    if (eligible.length === 0) continue;
-    const squad = { club, season: "2026/27", players: toSeason(eligible) };
-    if (!best) best = squad;
-    if (eligible.some((p) => priceOf(overallFromPrice(p.price)) <= budget)) return squad;
-  }
-  return best ?? { club: "", season: "2026/27", players: [] };
-}
-
-/** Deal a club+season squad for a slot that contains at least one player the
- *  budget can afford (retry the spin; the pool's own re-spin logic avoids
- *  dead-ends on position). Returns the squad's eligible players, price-tagged. */
-function dealSquad(
-  slotPos: Position,
-  usedIds: Set<string>,
-  usedIdents: Set<string>,
-  budget: number,
-  seedStr: string,
-): SlotSquad {
-  const rng = seededRng(seedStr);
-  const seen = new Set<string>();
-  let last: SlotSquad | null = null;
-  for (let attempt = 0; attempt < 40; attempt++) {
-    const sp = spin([slotPos], usedIds, usedIdents, rng, seen, "PL");
-    seen.add(`${sp.club}|${sp.season}`);
-    const eligible = sp.players.filter(
-      (p) => canPlay(p.position, slotPos) && !usedIds.has(p.id) && !usedIdents.has(playerIdentity(p.name)),
-    );
-    if (eligible.length === 0) continue;
-    const squad: SlotSquad = {
-      club: sp.club,
-      season: sp.season,
-      players: eligible.sort((a, b) => b.overall - a.overall),
-    };
-    last = squad;
-    if (eligible.some((p) => priceOf(p.overall) <= budget)) return squad;
-  }
-  // Vanishingly rare: nothing affordable in 40 deals — return the last squad;
-  // the UI lets the cheapest player go for the full remaining budget.
-  return last ?? { club: "", season: "", players: [] };
 }
 
 export default function YourPlXiWarmup() {

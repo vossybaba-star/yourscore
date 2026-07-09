@@ -64,24 +64,10 @@ export function warmupQuestions(sessionKey: string): {
   };
 }
 
-// Budget grants (£m, tunable). Calibrated against what a DEAL can actually sell
-// you (founder, round 2): a random club's best option at one position usually
-// tops out ~£6–8, so grants must sit near that — not near the £15 superstar
-// ceiling — or a good quizzer banks £50m of dead money and maxes every pick.
-// Targets: perfect round ≈ £72 earned vs ~£77 to max every deal (even
-// perfection forces a compromise or two); 8/11 ≈ £58 (constant choices);
-// all-wrong ≈ £44 (scrimping, stretch-buy safety net still applies).
-export const GRANT_CORRECT = 6;
-export const GRANT_WRONG = 4; // = the cheapest player's price: never stranded, zero slack
-export const GRANT_STREAK_BONUS = 0.5; // per consecutive correct beyond the first…
-export const GRANT_STREAK_CAP = 2; // …capped at +£1 (2 steps)
-
-/** The budget grant (£m) for an answer given the streak AFTER it. */
-export function grantFor(correct: boolean, streak: number): number {
-  if (!correct) return GRANT_WRONG;
-  const bonus = Math.min(GRANT_STREAK_CAP, Math.max(0, streak - 1)) * GRANT_STREAK_BONUS;
-  return Math.round((GRANT_CORRECT + bonus) * 10) / 10;
-}
+// Grants live in warmup-economy.ts with prices (pure, no pool import) — shared
+// with the page and the measurement script so balance numbers are measured, not
+// estimated.
+import { grantFor } from "./warmup-economy";
 
 export interface WarmupStep {
   correct: boolean;
