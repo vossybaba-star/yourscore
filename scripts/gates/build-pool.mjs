@@ -20,6 +20,9 @@ const KEY = process.env.SPORTMONKS_API_KEY;
 if (!KEY) { console.error("SPORTMONKS_API_KEY not set"); process.exit(1); }
 
 const CURRENT_SEASON = 28083; // PL 2026/27
+// The season the FPL stats refer to (bootstrap serves last season until the new
+// one kicks off) — every season-relative prompt is labelled with this.
+const STATS_SEASON_LABEL = "2025/26";
 const CAREER_SEASONS = 12; // most recent N seasons for career reconstruction
 const SEED = process.env.POOL_SEED ?? new Date().toISOString().slice(0, 10);
 const nowYear = new Date().getFullYear();
@@ -34,13 +37,13 @@ const clubMap = matchClubs(boot.teams.map((t) => ({ id: t.id, name: t.name ?? t.
 const enriched = enrichPlayers(players, buildEnrichment(players, smPlayers, clubMap, new Date()));
 console.log(`players: ${players.length} FPL, ${smPlayers.length} SM squad, clubs mapped ${clubMap.size}/20`);
 
-// 2. Current-football formats
+// 2. Current-football formats (season-relative stats labelled — founder rule)
 const questions = [
   ...generateHigherLower(enriched, { stat: "price", seed: SEED, count: 60 }),
-  ...generateHigherLower(enriched, { stat: "goals", seed: SEED, count: 40 }),
-  ...generateThisSeasonForm(enriched, { seed: SEED, count: 50, stat: "points" }),
-  ...generateThisSeasonForm(enriched, { seed: SEED, count: 30, stat: "goals" }),
-  ...generateWhoAmI(enriched, { seed: SEED, count: 40 }),
+  ...generateHigherLower(enriched, { stat: "goals", seed: SEED, count: 40, seasonLabel: STATS_SEASON_LABEL }),
+  ...generateThisSeasonForm(enriched, { seed: SEED, count: 50, stat: "points", seasonLabel: STATS_SEASON_LABEL }),
+  ...generateThisSeasonForm(enriched, { seed: SEED, count: 30, stat: "goals", seasonLabel: STATS_SEASON_LABEL }),
+  ...generateWhoAmI(enriched, { seed: SEED, count: 40, seasonLabel: STATS_SEASON_LABEL }),
 ];
 console.log(`current-football questions: ${questions.length}`);
 
@@ -74,15 +77,31 @@ for (const s of careerWindow) {
     console.log(`  (skip squads ${s.name}: ${e.message})`);
   }
 }
-const careers = buildCareers(squads);
+const careers = buildCareers(squads); // U18 stints filtered by default
 const careerQs = generateCareerPath(careers, { seed: SEED, count: 50, nowYear });
 console.log(`career questions: ${careerQs.length} (${careers.length} careers)`);
 questions.push(...careerQs);
 
-// 4. Write the snapshot
+// 4. Current players (for the "26/27 season" warm-up mode): safe to expose —
+// no answers, just id/name/club/position/price for the client's squad deals.
+// Club = the FULL team name (the Player.club field carries FPL's 3-letter code).
+const fullClubName = new Map(boot.teams.map((t) => [t.id, t.name ?? t.short_name]));
+const currentPlayers = enriched
+  .filter((p) => p.price >= 4 && p.club)
+  .map((p) => ({
+    id: p.id,
+    name: p.name,
+    club: fullClubName.get(p.clubId) ?? p.club,
+    clubId: p.clubId,
+    position: p.position,
+    price: p.price,
+  }));
+console.log(`current players for 26/27 mode: ${currentPlayers.length}`);
+
+// 5. Write the snapshot
 const byFormat = {};
 for (const q of questions) byFormat[q.format] = (byFormat[q.format] ?? 0) + 1;
-const pool = { version: SEED, builtAt: new Date().toISOString(), questions };
+const pool = { version: SEED, builtAt: new Date().toISOString(), questions, currentPlayers };
 const out = join(dirname(fileURLToPath(import.meta.url)), "../../src/data/gates/pool.json");
 mkdirSync(dirname(out), { recursive: true });
 writeFileSync(out, JSON.stringify(pool));

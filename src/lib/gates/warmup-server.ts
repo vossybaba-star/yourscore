@@ -18,7 +18,22 @@ import poolJson from "@/data/gates/pool.json";
 import type { GateQuestion } from "./types";
 import { buildRound, clientView, grade, type Round, type ServedQuestion } from "./serve";
 
-const POOL = poolJson as unknown as { version: string; builtAt: string; questions: GateQuestion[] };
+/** A current-season player as exposed for the "26/27" warm-up mode (no answers here). */
+export interface CurrentPlayer {
+  id: number;
+  name: string;
+  club: string;
+  clubId: number;
+  position: "GK" | "DEF" | "MID" | "FWD";
+  price: number;
+}
+
+const POOL = poolJson as unknown as {
+  version: string;
+  builtAt: string;
+  questions: GateQuestion[];
+  currentPlayers?: CurrentPlayer[];
+};
 
 export const WARMUP_FORMATION = "4-3-3";
 
@@ -35,12 +50,18 @@ function roundFor(sessionKey: string): Round {
   });
 }
 
-/** The 11 served questions for this session (no answers). */
+/** The 11 served questions for this session (no answers) + the current-player
+ *  list that powers the "26/27 season" draft mode. */
 export function warmupQuestions(sessionKey: string): {
   version: string;
   questions: ServedQuestion[];
+  currentPlayers: CurrentPlayer[];
 } {
-  return { version: POOL.version, questions: clientView(roundFor(sessionKey)) };
+  return {
+    version: POOL.version,
+    questions: clientView(roundFor(sessionKey)),
+    currentPlayers: POOL.currentPlayers ?? [],
+  };
 }
 
 // Budget grants (£m, tunable): a correct answer roughly doubles the wrong-answer

@@ -37,6 +37,9 @@ export interface Career {
   firstYear: number;
   lastYear: number;
   seasons: number; // total PL seasons seen
+  /** DOB known → youth stints were age-filtered; unknown DOB careers must not
+   *  be ANSWERS (their club list may hide un-filterable youth spells). */
+  dobKnown: boolean;
 }
 
 /** Parse "2013/2014" → 2013 (used for era difficulty + ordering). */
@@ -51,20 +54,39 @@ export function shortSeasonName(name: string): string {
   return m ? `${m[1]}/${m[3]}` : name;
 }
 
+/** Age (whole years) at the start of a season (≈ Aug 1) from an ISO DOB. */
+export function ageAtSeason(dob: string, startYear: number): number | null {
+  const m = dob.match(/^(\d{4})-(\d{2})/);
+  if (!m) return null;
+  const birthYear = parseInt(m[1], 10);
+  const birthMonth = parseInt(m[2], 10);
+  const age = startYear - birthYear - (birthMonth > 8 ? 1 : 0);
+  return age >= 10 && age <= 55 ? age : null;
+}
+
 /**
  * Build per-player PL careers from a list of season squads (pure).
  * Consecutive seasons at the same club collapse into one entry; a return to a
  * previous club after leaving is a NEW entry (Arsenal → Chelsea → Arsenal).
+ *
+ * Youth containment (founder, Jul 9): squad registrations from before a player
+ * turned `minStintAge` (default 18) are SKIPPED — an academy kid on the bench
+ * list isn't a career stop anyone remembers. Careers with an unknown DOB can't
+ * be filtered, so they're flagged `dobKnown: false` and excluded as answers.
  */
 export function buildCareers(
   seasonSquads: readonly { season: SmSeason; players: readonly SmPlayer[] }[],
+  opts: { minStintAge?: number } = {},
 ): Career[] {
+  const minStintAge = opts.minStintAge ?? 18;
   const ordered = seasonSquads.slice().sort((a, b) => a.season.startYear - b.season.startYear);
   const byPlayer = new Map<number, Career & { lastClub?: string }>();
   for (const { season, players } of ordered) {
     // A player can appear in two squads in one season (mid-season move); keep
     // first-seen order within the season as-is.
     for (const p of players) {
+      const age = p.dateOfBirth ? ageAtSeason(p.dateOfBirth, season.startYear) : null;
+      if (age !== null && age < minStintAge) continue; // youth stint — not a career stop
       let c = byPlayer.get(p.smId);
       if (!c) {
         c = {
@@ -74,9 +96,11 @@ export function buildCareers(
           firstYear: season.startYear,
           lastYear: season.startYear,
           seasons: 0,
+          dobKnown: age !== null,
         };
         byPlayer.set(p.smId, c);
       }
+      if (age === null) c.dobKnown = false;
       if (c.lastYear !== season.startYear || c.seasons === 0) c.seasons++;
       c.lastYear = season.startYear;
       if (c.lastClub !== p.club) {
@@ -85,6 +109,7 @@ export function buildCareers(
       }
     }
   }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- destructure-to-drop
   return Array.from(byPlayer.values()).map(({ lastClub: _drop, ...c }) => c);
 }
 

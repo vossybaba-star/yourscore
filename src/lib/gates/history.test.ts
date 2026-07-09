@@ -20,7 +20,13 @@ function season(id: number, name: string): SmSeason {
   return { id, name, startYear: seasonStartYear(name) };
 }
 
+/** Adult player (DOB 1990 → age-filter never trips in our 2010s fixtures). */
 function sm(id: number, name: string, clubId: number, club: string): SmPlayer {
+  return { smId: id, name, clubId, club, dateOfBirth: "1990-01-01" };
+}
+
+/** Player with unknown DOB — must never be a career-path ANSWER. */
+function smNoDob(id: number, name: string, clubId: number, club: string): SmPlayer {
   return { smId: id, name, clubId, club };
 }
 
@@ -117,6 +123,27 @@ test("career-path: unique sequences only, distractors differ, clean MCQ", () => 
     }
     assert.equal(consistent, 1, "exactly one option fits the sequence");
   }
+});
+
+test("youth containment: U18 stints skipped; unknown-DOB careers never answers", () => {
+  // Young: born 2000 → age 10-12 in 2010-2012 (youth stints at Fulham skipped),
+  // then adult moves later. Ghost: no DOB → dobKnown false → never an answer.
+  const young = (id: number, club: string, clubId: number): SmPlayer =>
+    ({ smId: id, name: "Young", clubId, club, dateOfBirth: "2000-06-01" });
+  const squads = [
+    { season: season(1, "2010/2011"), players: [young(1, "Fulham", 10), smNoDob(2, "Ghost", 20, "Arsenal"), sm(3, "Adult", 30, "Everton")] },
+    { season: season(2, "2011/2012"), players: [young(1, "Fulham", 10), smNoDob(2, "Ghost", 40, "Chelsea"), sm(3, "Adult", 30, "Everton")] },
+    { season: season(3, "2019/2020"), players: [young(1, "Leeds United", 50), smNoDob(2, "Ghost", 20, "Arsenal"), sm(3, "Adult", 50, "Leeds United")] },
+    { season: season(4, "2020/2021"), players: [young(1, "Everton", 30), smNoDob(2, "Ghost", 20, "Arsenal"), sm(3, "Adult", 50, "Leeds United")] },
+  ];
+  const careers = buildCareers(squads);
+  const youngC = careers.find((c) => c.playerId === 1)!;
+  assert.equal(sequenceKey(youngC), "Leeds United → Everton", "U18 Fulham stints skipped");
+  assert.equal(youngC.dobKnown, true);
+  const ghost = careers.find((c) => c.playerId === 2)!;
+  assert.equal(ghost.dobKnown, false);
+  const qs = generateCareerPath(careers, { seed: "y1", count: 10, nowYear: NOW_YEAR, minSeasons: 2 });
+  for (const q of qs) assert.notEqual(q.answerId, 2, "unknown DOB never an answer");
 });
 
 test("career-path: single-club and duplicate-sequence players are never answers", () => {

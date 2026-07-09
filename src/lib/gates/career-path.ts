@@ -24,8 +24,9 @@ export interface CareerPathOpts {
   attempts?: number; // default count * 40
   /** Career must span at least this many distinct PL clubs (default 2). */
   minClubs?: number;
-  /** Career must have at least this many PL seasons (weeds out one-app trivia). */
-  minSeasons?: number; // default 3
+  /** Career must have at least this many PL seasons — the notability floor
+   *  (founder: contain the obscure; default 4). */
+  minSeasons?: number;
   nowYear: number;
 }
 
@@ -48,11 +49,13 @@ export function generateCareerPath(
 ): GateQuestion[] {
   const count = opts.count ?? 30;
   const minClubs = opts.minClubs ?? 2;
-  const minSeasons = opts.minSeasons ?? 3;
+  const minSeasons = opts.minSeasons ?? 4;
   const maxAttempts = opts.attempts ?? count * 40;
   const rand = seededRng(`${opts.seed}:career-path`);
 
-  // Eligible answers: multi-club, non-trivial careers with a UNIQUE sequence.
+  // Eligible answers: multi-club, established careers with a UNIQUE sequence.
+  // dobKnown required — otherwise the club list may hide un-filterable youth
+  // spells (founder: no "clubs he was at aged 16" questions).
   const seqCount = new Map<string, number>();
   for (const c of careers) {
     const k = sequenceKey(c);
@@ -60,6 +63,7 @@ export function generateCareerPath(
   }
   const eligible = careers.filter(
     (c) =>
+      c.dobKnown &&
       c.clubs.length >= minClubs &&
       c.seasons >= minSeasons &&
       seqCount.get(sequenceKey(c)) === 1,

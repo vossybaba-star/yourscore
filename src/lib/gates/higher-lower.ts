@@ -28,6 +28,12 @@ export interface HigherLowerOpts {
   minTop?: number; // default per-stat
   /** Sampling attempts cap (default count * 25). */
   attempts?: number;
+  /**
+   * The season the stats refer to, e.g. "2025/26". Season-relative stats MUST
+   * be labelled explicitly (founder: "this season" goes stale the moment the
+   * season rolls — every time-relative phrase needs a proper label).
+   */
+  seasonLabel?: string;
 }
 
 /** Sensible floor for the top value so comparisons aren't trivial/noise. */
@@ -40,11 +46,16 @@ const DEFAULT_MIN_TOP: Record<GateStat, number> = {
   form: 1,
 };
 
-/** The question stem for each stat. */
-function promptFor(stat: GateStat): string {
+/** The question stem for each stat — season-relative stats carry the label. */
+function promptFor(stat: GateStat, seasonLabel?: string): string {
   if (stat === "price") return "Who's worth more?";
-  if (stat === "form") return "Who's in better form?";
-  return `Who has more ${STAT_LABEL[stat]}?`;
+  const label = seasonLabel ? ` in the ${seasonLabel} season` : "";
+  if (stat === "form") return `Who's in better form${seasonLabel ? ` right now (${seasonLabel})` : ""}?`;
+  if (stat === "goals") return `Who scored more goals${label}?`;
+  if (stat === "assists") return `Who has more assists${label}?`;
+  if (stat === "appearances") return `Who has more starts${label}?`;
+  if (stat === "points") return `Who scored more fantasy points${label}?`;
+  return `Who has more ${STAT_LABEL[stat]}${label}?`;
 }
 
 /**
@@ -72,6 +83,7 @@ function makeQuestion(
   b: Player,
   fame: FameIndex,
   rand: () => number,
+  seasonLabel?: string,
 ): GateQuestion {
   const va = statValue(a, stat);
   const vb = statValue(b, stat);
@@ -82,7 +94,7 @@ function makeQuestion(
   return {
     format,
     stat,
-    prompt: promptFor(stat),
+    prompt: promptFor(stat, seasonLabel),
     options: [
       { id: first.id, label: first.name },
       { id: second.id, label: second.name },
@@ -123,7 +135,7 @@ function generateComparisons(
     if (seen.has(key)) continue;
     if (!isValidComparison(statValue(a, stat), statValue(b, stat), minMargin, minTop)) continue;
     seen.add(key);
-    out.push(makeQuestion(format, stat, a, b, fame, rand));
+    out.push(makeQuestion(format, stat, a, b, fame, rand, opts.seasonLabel));
   }
   return out;
 }

@@ -42,6 +42,8 @@ type ServedQuestion = {
   position: Position;
 };
 type StepResult = { correct: boolean; answerId: number; streak: number; grant: number };
+type CurrentPlayer = { id: number; name: string; club: string; clubId: number; position: string; price: number };
+type WarmupMode = "legends" | "current";
 type SlotSquad = { club: string; season: string; players: PlayerSeason[] };
 type SlotPick = { placed: PlacedPlayer; price: number; squad: SlotSquad };
 type Phase =
@@ -57,11 +59,29 @@ type Phase =
 
 const r10 = (x: number) => Math.round(x * 10) / 10;
 
-/** Rating → price (£m): 40 → £4.0m journeyman, 93 → ~£15m era-defining legend.
- *  Steep curve so elite players demand real saving (the carryover strategy). */
+/** Rating → price (£m). ONE global curve — a 75 costs the same at Watford as at
+ *  City (founder: values must be consistent across the whole pool). Rebalanced
+ *  (founder, Jul 9) so a wrong-answer £5m still buys most of a weak team:
+ *  60 → £4.2 · 70 → £5.0 · 75 → £5.9 · 80 → £7.4 · 85 → £9.5 · 93 → £15. */
+const PRICE_EXP = 4.2;
 function priceOf(overall: number): number {
   const ov = Math.max(40, Math.min(93, overall));
-  return r10(4 + 11 * Math.pow((ov - 40) / 53, 2.2));
+  return r10(4 + 11 * Math.pow((ov - 40) / 53, PRICE_EXP));
+}
+
+/** Inverse of priceOf — gives 26/27-mode players a sim rating from their price. */
+function overallFromPrice(price: number): number {
+  const p = Math.max(4, Math.min(15, price));
+  return Math.round(40 + 53 * Math.pow((p - 4) / 11, 1 / PRICE_EXP));
+}
+
+/** Map a granular formation slot ("RB", "CM", "ST"…) to a position bucket —
+ *  the 26/27 player feed only knows GK/DEF/MID/FWD. */
+function slotBucket(pos: string): "GK" | "DEF" | "MID" | "FWD" {
+  if (pos === "GK") return "GK";
+  if (["RB", "LB", "CB", "RWB", "LWB", "DEF"].includes(pos)) return "DEF";
+  if (["CM", "CDM", "CAM", "RM", "LM", "MID"].includes(pos)) return "MID";
+  return "FWD";
 }
 
 function sessionKey(): string {
@@ -84,6 +104,54 @@ function capture(event: string, props?: Record<string, unknown>) {
   } catch {
     /* analytics must never break the game */
   }
+}
+
+/** 26/27 mode: deal a CURRENT club's squad for the slot — same buy flow, players
+ *  priced by their real FPL value, sim rating derived from the price. */
+function dealCurrentSquad(
+  players: readonly CurrentPlayer[],
+  slotPos: Position,
+  usedIds: Set<string>,
+  usedIdents: Set<string>,
+  budget: number,
+  seedStr: string,
+): SlotSquad {
+  const rng = seededRng(seedStr);
+  const bucket = slotBucket(slotPos as string);
+  const clubs = Array.from(new Set(players.map((p) => p.club)));
+  for (let i = clubs.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [clubs[i], clubs[j]] = [clubs[j], clubs[i]];
+  }
+  const toSeason = (list: CurrentPlayer[]): PlayerSeason[] =>
+    list
+      .map(
+        (p) =>
+          ({
+            id: `cur-${p.id}`,
+            name: p.name,
+            club: p.club,
+            season: "2026/27",
+            position: slotPos, // auto-fit: bucket data has no granular position
+            overall: overallFromPrice(p.price),
+          }) as unknown as PlayerSeason,
+      )
+      .sort((a, b) => b.overall - a.overall);
+  let best: SlotSquad | null = null;
+  for (const club of clubs) {
+    const eligible = players.filter(
+      (p) =>
+        p.club === club &&
+        p.position === bucket &&
+        !usedIds.has(`cur-${p.id}`) &&
+        !usedIdents.has(playerIdentity(p.name)),
+    );
+    if (eligible.length === 0) continue;
+    const squad = { club, season: "2026/27", players: toSeason(eligible) };
+    if (!best) best = squad;
+    if (eligible.some((p) => priceOf(overallFromPrice(p.price)) <= budget)) return squad;
+  }
+  return best ?? { club: "", season: "2026/27", players: [] };
 }
 
 /** Deal a club+season squad for a slot that contains at least one player the
@@ -134,6 +202,9 @@ export default function YourPlXiWarmup() {
   const [season, setSeason] = useState<SeasonResult | null>(null);
   const [strength, setStrength] = useState(0);
   const [err, setErr] = useState("");
+  const [mode, setMode] = useState<WarmupMode>("legends");
+  const [currentPlayers, setCurrentPlayers] = useState<CurrentPlayer[]>([]);
+  const [correctCount, setCorrectCount] = useState(0);
   const keyRef = useRef("");
 
   const slots = useMemo(() => slotsFor(FORMATION), []);
@@ -142,9 +213,10 @@ export default function YourPlXiWarmup() {
     [phase], // eslint-disable-line react-hooks/exhaustive-deps
   );
 
-  const start = useCallback(async () => {
+  const start = useCallback(async (playMode: WarmupMode = "legends") => {
     setPhase("loading");
     setErr("");
+    setMode(playMode);
     try {
       keyRef.current = sessionKey();
       const [res] = await Promise.all([
@@ -156,10 +228,16 @@ export default function YourPlXiWarmup() {
         ensurePool(),
       ]);
       if (!res.ok) throw new Error(`round ${res.status}`);
-      const data = (await res.json()) as { version: string; questions: ServedQuestion[] };
+      const data = (await res.json()) as {
+        version: string;
+        questions: ServedQuestion[];
+        currentPlayers?: CurrentPlayer[];
+      };
       if (!data.questions?.length) throw new Error("empty round");
+      if (playMode === "current" && !(data.currentPlayers?.length)) throw new Error("26/27 pool unavailable");
       setQuestions(data.questions);
       setVersion(data.version);
+      setCurrentPlayers(data.currentPlayers ?? []);
       setAnswers([]);
       setPicks([]);
       setBudget(0);
@@ -167,8 +245,9 @@ export default function YourPlXiWarmup() {
       setStep(null);
       setSeason(null);
       setSwapSlot(null);
+      setCorrectCount(0);
       setPhase("question");
-      capture("warmup_started");
+      capture("warmup_started", { mode: playMode });
     } catch (e) {
       setErr(e instanceof Error ? e.message : "failed to start");
       setPhase("error");
@@ -191,11 +270,12 @@ export default function YourPlXiWarmup() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ key: keyRef.current, version, answers: nextAnswers, k: slotIdx }),
         });
-        if (res.status === 409) return void start(); // stale pool — restart clean
+        if (res.status === 409) return void start(mode); // stale pool — restart clean
         if (!res.ok) throw new Error(`step ${res.status}`);
         const data = (await res.json()) as StepResult;
         setStep(data);
         setBudget((b) => r10(b + data.grant));
+        if (data.correct) setCorrectCount((c) => c + 1);
         setPhase("reveal");
       } catch (e) {
         setErr(e instanceof Error ? e.message : "failed to grade");
@@ -204,17 +284,22 @@ export default function YourPlXiWarmup() {
         answering.current = false;
       }
     },
-    [answers, slotIdx, start, version],
+    [answers, mode, slotIdx, start, version],
   );
 
   const toSquad = useCallback(() => {
     const slot = slots[slotIdx];
     const usedIds = new Set(picks.map((p) => p.placed.player_season_id));
     const usedIdents = new Set(picks.map((p) => playerIdentity(p.placed.name)));
-    setSquadDeal(dealSquad(slot.pos, usedIds, usedIdents, budget, `${keyRef.current}:${version}:deal:${slotIdx}`));
+    const seedStr = `${keyRef.current}:${version}:deal:${slotIdx}`;
+    setSquadDeal(
+      mode === "current"
+        ? dealCurrentSquad(currentPlayers, slot.pos, usedIds, usedIdents, budget, seedStr)
+        : dealSquad(slot.pos, usedIds, usedIdents, budget, seedStr),
+    );
     setPicked(null);
     setPhase("squad");
-  }, [budget, picks, slotIdx, slots, version]);
+  }, [budget, currentPlayers, mode, picks, slotIdx, slots, version]);
 
   /** Cheapest eligible price in the dealt squad — the stretch-buy fallback. */
   const cheapest = useMemo(
@@ -382,7 +467,7 @@ export default function YourPlXiWarmup() {
     >
       <span style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.25 }}>{p.name}</span>
       <span style={{ fontSize: 11, color: TEXT_DIM }}>{p.position}</span>
-      <span style={{ fontSize: 15, fontWeight: 700, color: p.overall >= 85 ? GOLD : "#ECF4EF" }}>{p.overall}</span>
+      <span style={{ fontSize: 15, fontWeight: 700, color: "#ECF4EF" }}>{p.overall}</span>
       <span style={{ fontSize: 12, color: opts.canBuy ? GOLD : TEXT_DIM, fontWeight: 600 }}>
         {opts.stretch ? `£${budget.toFixed(1)}m (all in)` : `£${opts.price.toFixed(1)}m`}
       </span>
@@ -406,6 +491,8 @@ export default function YourPlXiWarmup() {
           <span style={{ display: "flex", gap: 6 }}>
             {(phase === "question" || phase === "reveal" || phase === "squad") &&
               chip(`pick ${Math.min(slotIdx + 1, 11)}/11`)}
+            {(phase === "question" || phase === "reveal" || phase === "squad" || phase === "review" || phase === "swap") &&
+              chip(`✓ ${correctCount}`, correctCount > 0)}
             {phase !== "intro" && phase !== "loading" && phase !== "error" && phase !== "result" && wallet}
           </span>
         </header>
@@ -417,13 +504,18 @@ export default function YourPlXiWarmup() {
               <h1 style={{ fontSize: 24, fontWeight: 700, margin: "6px 0 8px" }}>Your knowledge is your budget</h1>
               <p style={{ fontSize: 14, color: "#B9CABF", lineHeight: 1.55, margin: "0 0 14px" }}>
                 Eleven picks, each gated by a question. Right answers earn a bigger transfer budget — spend
-                it or bank it, because whatever you save carries over. Build your XI from squads across
-                Premier League history, then it plays a full simulated season. Could it go 38-0?
+                it or bank it, because whatever you save carries over, and after your 11th signing you can
+                go back and upgrade any position with what&apos;s left. Then your XI plays a full simulated
+                season. Could it go 38-0?
               </p>
-              <div style={{ display: "flex" }}>{btn("Play — it takes 2 minutes", start)}</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {btn("Play — all-time legends", () => start("legends"))}
+                {btn("Play — the 2026/27 season", () => start("current"), false)}
+              </div>
             </div>
             <p style={{ fontSize: 12, color: TEXT_DIM, textAlign: "center" }}>
-              No sign-up needed. 11 questions, 11 signings, one season.
+              No sign-up needed. 11 questions, 11 signings, one season. Legends = squads from all of PL
+              history; 2026/27 = build from the upcoming season&apos;s real squads.
             </p>
           </section>
         )}
@@ -435,7 +527,7 @@ export default function YourPlXiWarmup() {
         {phase === "error" && (
           <section style={{ background: CARD, border: `1px solid ${EDGE}`, borderRadius: 14, padding: 16 }}>
             <p style={{ fontSize: 14, margin: "0 0 12px" }}>Something went wrong ({err}).</p>
-            <div style={{ display: "flex" }}>{btn("Try again", start)}</div>
+            <div style={{ display: "flex" }}>{btn("Try again", () => start(mode))}</div>
           </section>
         )}
 
@@ -506,7 +598,8 @@ export default function YourPlXiWarmup() {
               {chip(`${squadDeal.club} · ${squadDeal.season}`)}
             </div>
             <p style={{ fontSize: 13, color: TEXT_DIM, margin: 0 }}>
-              Sign one for the {slots[slotIdx].pos} slot — slide for more. Whatever you don&apos;t spend rolls over.
+              Sign one for the {slots[slotIdx].pos} slot — slide for more. Whatever you don&apos;t spend rolls
+              over{slotIdx < 10 ? ", and after your 11th signing you can come back and upgrade any position" : ""}.
             </p>
             <div
               style={{
@@ -553,7 +646,24 @@ export default function YourPlXiWarmup() {
           </section>
         )}
 
-        {(phase === "review" || phase === "swap") && (
+        {(phase === "review" || phase === "swap") && (() => {
+          // Gold in review = "an upgrade is actually possible here with the bank
+          // + this player's sell-back" (founder: show where upgrading is even an
+          // option). A better player must exist in the slot's dealt squad, be
+          // affordable, and not already be in the XI elsewhere.
+          const upgradable = picks.map((pk, i) => {
+            const wallet = r10(budget + pk.price);
+            return pk.squad.players.some((p) => {
+              if (p.overall <= pk.placed.overall) return false;
+              if (priceOf(p.overall) > wallet) return false;
+              const ident = playerIdentity(p.name);
+              return !picks.some(
+                (o, oi) => oi !== i && (o.placed.player_season_id === p.id || playerIdentity(o.placed.name) === ident),
+              );
+            });
+          });
+          const anyUpgrade = upgradable.some(Boolean);
+          return (
           <section style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             <div>
               <div style={{ fontSize: 12, color: TEXT_DIM, letterSpacing: "0.08em" }}>SQUAD REVIEW</div>
@@ -561,7 +671,9 @@ export default function YourPlXiWarmup() {
                 £{budget.toFixed(1)}m left in the bank
               </div>
               <div style={{ fontSize: 13, color: TEXT_DIM }}>
-                Tap any player to upgrade him from the squad he came from — or lock it in.
+                {anyUpgrade
+                  ? "Gold positions can be upgraded with what you've got — tap one, or lock it in."
+                  : "No upgrades in reach with what's left — lock it in when you're ready."}
               </div>
             </div>
             <div
@@ -579,6 +691,7 @@ export default function YourPlXiWarmup() {
                 <div key={li} style={{ display: "flex", justifyContent: "center", gap: 6, flexWrap: "wrap" }}>
                   {line.map((pk) => {
                     const i = picks.indexOf(pk);
+                    const canUp = upgradable[i];
                     return (
                       <button
                         key={pk.placed.slot}
@@ -588,8 +701,8 @@ export default function YourPlXiWarmup() {
                           setPhase("swap");
                         }}
                         style={{
-                          background: pk.placed.overall >= 85 ? "#3A2E08" : CARD,
-                          border: `1px solid ${pk.placed.overall >= 85 ? GOLD : EDGE}`,
+                          background: canUp ? "#3A2E08" : CARD,
+                          border: `1px solid ${canUp ? GOLD : EDGE}`,
                           borderRadius: 9,
                           padding: "5px 7px",
                           fontSize: 11,
@@ -597,12 +710,14 @@ export default function YourPlXiWarmup() {
                           minWidth: 60,
                           cursor: "pointer",
                           color: "#ECF4EF",
+                          opacity: canUp || phase === "review" ? 1 : 0.7,
                         }}
                       >
-                        <div style={{ fontWeight: 600, color: pk.placed.overall >= 85 ? "#F8E9B0" : "#ECF4EF" }}>
+                        <div style={{ fontWeight: 600, color: canUp ? "#F8E9B0" : "#ECF4EF" }}>
                           {pk.placed.name}
+                          {canUp ? " ↑" : ""}
                         </div>
-                        <div style={{ color: pk.placed.overall >= 85 ? GOLD : TEXT_DIM }}>
+                        <div style={{ color: canUp ? GOLD : TEXT_DIM }}>
                           {pk.placed.overall} · £{pk.price.toFixed(1)}
                         </div>
                       </button>
@@ -671,7 +786,8 @@ export default function YourPlXiWarmup() {
               <div style={{ display: "flex" }}>{btn("Lock team & play the season", lockAndSimulate)}</div>
             )}
           </section>
-        )}
+          );
+        })()}
 
         {phase === "result" && season && (
           <section style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -712,8 +828,8 @@ export default function YourPlXiWarmup() {
                     <div
                       key={pk.placed.slot}
                       style={{
-                        background: pk.placed.overall >= 85 ? "#3A2E08" : CARD,
-                        border: `1px solid ${pk.placed.overall >= 85 ? GOLD : EDGE}`,
+                        background: CARD,
+                        border: `1px solid ${EDGE}`,
                         borderRadius: 9,
                         padding: "4px 7px",
                         fontSize: 11,
@@ -721,10 +837,8 @@ export default function YourPlXiWarmup() {
                         minWidth: 58,
                       }}
                     >
-                      <div style={{ fontWeight: 600, color: pk.placed.overall >= 85 ? "#F8E9B0" : "#ECF4EF" }}>
-                        {pk.placed.name}
-                      </div>
-                      <div style={{ color: pk.placed.overall >= 85 ? GOLD : TEXT_DIM }}>{pk.placed.overall}</div>
+                      <div style={{ fontWeight: 600, color: "#ECF4EF" }}>{pk.placed.name}</div>
+                      <div style={{ color: TEXT_DIM }}>{pk.placed.overall}</div>
                     </div>
                   ))}
                 </div>
@@ -733,7 +847,7 @@ export default function YourPlXiWarmup() {
 
             <div style={{ display: "flex", gap: 8 }}>
               {btn("Share it", share, false)}
-              {btn("Run it back", start, false)}
+              {btn("Run it back", () => start(mode), false)}
             </div>
 
             <div

@@ -20,6 +20,9 @@ export interface WhoAmIOpts {
   attempts?: number; // default count * 40
   /** Minimum season goals before the goals clue is used. */
   minGoalsClue?: number; // default 3
+  /** The season the goals clue refers to, e.g. "2025/26" — time-relative
+   *  phrases must be labelled (founder rule). */
+  seasonLabel?: string;
 }
 
 const POSITION_WORD: Record<Position, string> = {
@@ -38,7 +41,7 @@ interface Clue {
 
 /** Build the drip-clue list for an answer. Club is deliberately never a clue —
  *  club + jersey would be a giveaway; the tension is triangulating without it. */
-export function buildClues(answer: Player, minGoalsClue: number): Clue[] {
+export function buildClues(answer: Player, minGoalsClue: number, seasonLabel?: string): Clue[] {
   const clues: Clue[] = [
     {
       line: `I'm a ${POSITION_WORD[answer.position]}.`,
@@ -59,7 +62,9 @@ export function buildClues(answer: Player, minGoalsClue: number): Clue[] {
   ];
   if (answer.goals >= minGoalsClue) {
     clues.push({
-      line: `I've scored ${answer.goals} this season.`,
+      line: seasonLabel
+        ? `I scored ${answer.goals} in the ${seasonLabel} season.`
+        : `I've scored ${answer.goals} this season.`,
       // goals is a base FPL stat — always known
       excludes: (p) => p.goals !== answer.goals,
     });
@@ -114,7 +119,7 @@ export function generateWhoAmI(players: readonly Player[], opts: WhoAmIOpts): Ga
     const answer = eligible[Math.floor(rand() * eligible.length)];
     if (!answer || used.has(answer.id)) continue;
 
-    const clues = buildClues(answer, minGoalsClue);
+    const clues = buildClues(answer, minGoalsClue, opts.seasonLabel);
 
     // Distractors: same position (so the position clue doesn't trivially solve
     // it), excluded by ≥1 KNOWN clue, and not the answer.
