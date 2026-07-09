@@ -64,20 +64,23 @@ export function warmupQuestions(sessionKey: string): {
   };
 }
 
-// Budget grants (£m, tunable): a correct answer roughly doubles the wrong-answer
-// grant, and a live streak adds a little on top (capped). All-wrong ≈ £55m XI
-// (~60-rated relegation scrap); all-correct ≈ £130m+ (~87-rated contender) — the
-// founder's "knowledge decides the team" spread, with saving/spending strategy
-// in between (unspent budget carries over; see the page's review phase).
-export const GRANT_CORRECT = 10;
-export const GRANT_WRONG = 5;
-export const GRANT_STREAK_BONUS = 1; // per consecutive correct beyond the first
-export const GRANT_STREAK_CAP = 3;
+// Budget grants (£m, tunable). Calibrated against what a DEAL can actually sell
+// you (founder, round 2): a random club's best option at one position usually
+// tops out ~£6–8, so grants must sit near that — not near the £15 superstar
+// ceiling — or a good quizzer banks £50m of dead money and maxes every pick.
+// Targets: perfect round ≈ £72 earned vs ~£77 to max every deal (even
+// perfection forces a compromise or two); 8/11 ≈ £58 (constant choices);
+// all-wrong ≈ £44 (scrimping, stretch-buy safety net still applies).
+export const GRANT_CORRECT = 6;
+export const GRANT_WRONG = 4; // = the cheapest player's price: never stranded, zero slack
+export const GRANT_STREAK_BONUS = 0.5; // per consecutive correct beyond the first…
+export const GRANT_STREAK_CAP = 2; // …capped at +£1 (2 steps)
 
 /** The budget grant (£m) for an answer given the streak AFTER it. */
 export function grantFor(correct: boolean, streak: number): number {
   if (!correct) return GRANT_WRONG;
-  return GRANT_CORRECT + Math.min(GRANT_STREAK_CAP, Math.max(0, streak - 1)) * GRANT_STREAK_BONUS;
+  const bonus = Math.min(GRANT_STREAK_CAP, Math.max(0, streak - 1)) * GRANT_STREAK_BONUS;
+  return Math.round((GRANT_CORRECT + bonus) * 10) / 10;
 }
 
 export interface WarmupStep {

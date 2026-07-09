@@ -205,6 +205,8 @@ export default function YourPlXiWarmup() {
   const [mode, setMode] = useState<WarmupMode>("legends");
   const [currentPlayers, setCurrentPlayers] = useState<CurrentPlayer[]>([]);
   const [correctCount, setCorrectCount] = useState(0);
+  const [prevBest, setPrevBest] = useState<{ points: number; wins: number } | null>(null);
+  const [isNewBest, setIsNewBest] = useState(false);
   const keyRef = useRef("");
 
   const slots = useMemo(() => slotsFor(FORMATION), []);
@@ -376,13 +378,25 @@ export default function YourPlXiWarmup() {
     setStrength(str);
     const sim = simulateSeason(squad, FORMATION, str, `warmup:${keyRef.current}:${version}`, leagueOpponents("PL"));
     setSeason(sim);
+    // Personal best per mode (on-device) — gives repeat plays something to chase.
+    try {
+      const bestKey = `ys:warmup:best:${mode}`;
+      const prev = JSON.parse(localStorage.getItem(bestKey) ?? "null") as { points: number; wins: number } | null;
+      setPrevBest(prev);
+      const better = !prev || sim.points > prev.points;
+      setIsNewBest(better && prev !== null);
+      if (better) localStorage.setItem(bestKey, JSON.stringify({ points: sim.points, wins: sim.wins }));
+    } catch {
+      setPrevBest(null);
+      setIsNewBest(false);
+    }
     setPhase("result");
-    capture("warmup_finished", { strength: str, wins: sim.wins, budgetLeft: budget });
-  }, [budget, picks, version]);
+    capture("warmup_finished", { strength: str, wins: sim.wins, budgetLeft: budget, correct: correctCount, mode });
+  }, [budget, correctCount, mode, picks, version]);
 
   const share = useCallback(async () => {
     if (!season) return;
-    const text = `My XI went ${season.wins}-${season.draws}-${season.losses} in Your PL XI — knowledge builds the team. Can you beat it? yourscore.app/your-pl-xi`;
+    const text = `My XI went ${season.wins}-${season.draws}-${season.losses} in Your PL XI (${correctCount}/11 questions right — knowledge builds the team). Can you beat it? yourscore.app/your-pl-xi`;
     capture("warmup_shared");
     try {
       if (navigator.share) await navigator.share({ text });
@@ -393,7 +407,7 @@ export default function YourPlXiWarmup() {
     } catch {
       /* user cancelled */
     }
-  }, [season]);
+  }, [correctCount, season]);
 
   const q = questions[slotIdx];
 
@@ -808,6 +822,13 @@ export default function YourPlXiWarmup() {
                   : season.position === 1
                     ? "Champions — but not invincible. The 38-0 dream lives on."
                     : `Strength ${strength} · ${season.verdict.toLowerCase()}`}
+              </div>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
+                {chip(`✓ ${correctCount}/11 correct`, correctCount >= 8)}
+                {budget > 0 && chip(`£${budget.toFixed(1)}m left unspent`)}
+                {isNewBest
+                  ? chip("🏆 new personal best", true)
+                  : prevBest && chip(`personal best: ${prevBest.points} pts`)}
               </div>
             </div>
 
