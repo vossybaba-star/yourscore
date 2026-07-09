@@ -85,7 +85,7 @@ export function buildCareers(
       }
     }
   }
-  return [...byPlayer.values()].map(({ lastClub: _drop, ...c }) => c);
+  return Array.from(byPlayer.values()).map(({ lastClub: _drop, ...c }) => c);
 }
 
 // ---------------------------------------------------------------------------

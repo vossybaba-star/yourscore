@@ -72,7 +72,7 @@ export function buildRound(
   const slotCount = new Map<Position, number>();
   for (const pos of positions) slotCount.set(pos, (slotCount.get(pos) ?? 0) + 1);
 
-  for (const [pos, n] of slotCount) {
+  for (const [pos, n] of Array.from(slotCount.entries())) {
     const eligible = byPos.get(pos) ?? [];
     const chosen: GateQuestion[] = [];
     for (const q of eligible) {
