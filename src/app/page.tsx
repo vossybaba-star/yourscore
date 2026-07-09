@@ -63,7 +63,40 @@ export default async function RootPage({
 
   // ── Logged-out: marketing landing ──────────────────────────────────────────
   if (!user) {
-    return <MarketingLanding matches={[]} />;
+    const orgSchema = {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://yourscore.app/#organization",
+          name: "YourScore",
+          url: "https://yourscore.app",
+          logo: "https://yourscore.app/icon-192.png",
+          sameAs: ["https://x.com/Yourscore_App_"],
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://yourscore.app/#website",
+          url: "https://yourscore.app",
+          name: "YourScore",
+          publisher: { "@id": "https://yourscore.app/#organization" },
+          potentialAction: {
+            "@type": "SearchAction",
+            target: { "@type": "EntryPoint", urlTemplate: "https://yourscore.app/leaderboard?q={search_term_string}" },
+            "query-input": "required name=search_term_string",
+          },
+        },
+      ],
+    };
+    return (
+      <>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(orgSchema) }}
+        />
+        <MarketingLanding matches={[]} />
+      </>
+    );
   }
 
   // ── Logged-in: dashboard ───────────────────────────────────────────────────
