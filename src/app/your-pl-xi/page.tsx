@@ -378,8 +378,19 @@ export default function YourPlXiWarmup() {
     >
       <span style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.25 }}>{p.name}</span>
       <span style={{ fontSize: 11, color: TEXT_DIM }}>{p.position}</span>
-      <span style={{ fontSize: 15, fontWeight: 700, color: "#ECF4EF" }}>{p.overall}</span>
-      <span style={{ fontSize: 12, color: opts.canBuy ? GOLD : TEXT_DIM, fontWeight: 600 }}>
+      {/* COPY FPL (founder): in 26/27 mode the PRICE is the only currency — no
+          invented rating badge. Legends mode keeps FIFA ratings (the known
+          currency there). */}
+      {mode === "legends" && (
+        <span style={{ fontSize: 15, fontWeight: 700, color: "#ECF4EF" }}>{p.overall}</span>
+      )}
+      <span
+        style={{
+          fontSize: mode === "legends" ? 12 : 15,
+          color: opts.canBuy ? GOLD : TEXT_DIM,
+          fontWeight: mode === "legends" ? 600 : 700,
+        }}
+      >
         {opts.stretch ? `£${budget.toFixed(1)}m (all in)` : `£${opts.price.toFixed(1)}m`}
       </span>
     </button>
@@ -631,7 +642,7 @@ export default function YourPlXiWarmup() {
                           {canUp ? " ↑" : ""}
                         </div>
                         <div style={{ color: canUp ? GOLD : TEXT_DIM }}>
-                          {pk.placed.overall} · £{pk.price.toFixed(1)}
+                          {mode === "legends" ? `${pk.placed.overall} · ` : ""}£{pk.price.toFixed(1)}
                         </div>
                       </button>
                     );
@@ -758,7 +769,9 @@ export default function YourPlXiWarmup() {
                       }}
                     >
                       <div style={{ fontWeight: 600, color: "#ECF4EF" }}>{pk.placed.name}</div>
-                      <div style={{ color: TEXT_DIM }}>{pk.placed.overall}</div>
+                      <div style={{ color: TEXT_DIM }}>
+                        {mode === "legends" ? pk.placed.overall : `£${pk.price.toFixed(1)}`}
+                      </div>
                     </div>
                   ))}
                 </div>

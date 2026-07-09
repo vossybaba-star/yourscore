@@ -7,19 +7,17 @@
 export const r10 = (x: number) => Math.round(x * 10) / 10;
 
 // ── Grants (£m) ───────────────────────────────────────────────────────────────
-// Calibrated against what a DEAL can actually sell (founder, round 2): a random
-// club's best option at one position usually tops out ~£6–8, so grants sit near
-// that — not the £15 superstar ceiling.
-export const GRANT_CORRECT = 6;
-export const GRANT_WRONG = 4; // = the cheapest player's price: never stranded, zero slack
-export const GRANT_STREAK_BONUS = 0.5; // per consecutive correct beyond the first…
-export const GRANT_STREAK_CAP = 2; // …capped at +£1 (2 steps)
+// COPY FPL (founder, round 4): the whole economy anchors to FPL's iconic £100m.
+// A PERFECT round earns exactly £100.0m — "perfect knowledge = the full FPL
+// budget". 11 × £7 + (8+8+7) milestone = £100.0. Wrong = £4 (FPL's price floor:
+// never stranded, zero slack). No streak cash — the streak's reward is that
+// bigger clubs appear in your deals (warmup-deals.ts).
+export const GRANT_CORRECT = 7;
+export const GRANT_WRONG = 4;
 
-/** The budget grant (£m) for an answer given the streak AFTER it. */
-export function grantFor(correct: boolean, streak: number): number {
-  if (!correct) return GRANT_WRONG;
-  const bonus = Math.min(GRANT_STREAK_CAP, Math.max(0, streak - 1)) * GRANT_STREAK_BONUS;
-  return r10(GRANT_CORRECT + bonus);
+/** The budget grant (£m) for an answer. (Streak drives deals, not cash.) */
+export function grantFor(correct: boolean, _streak: number): number {
+  return correct ? GRANT_CORRECT : GRANT_WRONG;
 }
 
 // ── Perfection milestones ─────────────────────────────────────────────────────
@@ -29,9 +27,9 @@ export function grantFor(correct: boolean, streak: number): number {
 // Spread across the last three thresholds so the money lands while there are
 // still picks that can absorb it (the attacking slots draft last in 4-3-3).
 export const MILESTONES: { at: number; bonus: number }[] = [
-  { at: 9, bonus: 10 },
-  { at: 10, bonus: 10 },
-  { at: 11, bonus: 10 },
+  { at: 9, bonus: 8 },
+  { at: 10, bonus: 8 },
+  { at: 11, bonus: 7 },
 ];
 
 /** Bonus £m released by moving from `prevCorrect` to `nowCorrect` total correct. */
