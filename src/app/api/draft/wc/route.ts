@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimitDistributed } from "@/lib/ratelimit";
 import { validateNationLocked, validateWorld, newRunPlan, createWcDb, resolveEdition, WORLD_TEAM_NAME } from "@/lib/draft/wc-server";
-import { verifyRankedDraft, rankedQuizScore, WC_DRAFT_FORMATION, type DraftPick } from "@/lib/draft/wc-draft";
+import { verifyRankedDraft, rankedQuizScore, rankedQuizDetail, WC_DRAFT_FORMATION, type DraftPick } from "@/lib/draft/wc-draft";
 import { ensurePool } from "@/lib/draft/pool";
 import { sanitizeAcq } from "@/lib/analytics/acq-server";
 
@@ -39,6 +39,7 @@ export async function POST(req: NextRequest) {
   const nation = mode === "world" ? WORLD_TEAM_NAME : String(body.nation ?? "");
   let team;
   let quizScore: { correct: number; total: number } | null = null;
+  let quizDetail: Array<Record<string, unknown>> | null = null;
   try {
     if (ranked) {
       // The ranked XI is built ENTIRELY server-side: replay the draft and verify every pick
@@ -52,8 +53,10 @@ export async function POST(req: NextRequest) {
       const verified = verifyRankedDraft(runDate!, user.id, answers, submitted);
       if (!verified) return NextResponse.json({ error: "Ranked draft could not be verified — please play it through." }, { status: 400 });
       team = validateWorld(WC_DRAFT_FORMATION, verified);
-      // Record how many of today's questions they got right (server-graded).
+      // Record how many of today's questions they got right (server-graded), plus the
+      // per-question detail (migration 76) that feeds the Guru/hardest-question content.
       quizScore = rankedQuizScore(runDate!, answers);
+      quizDetail = rankedQuizDetail(runDate!, answers);
     } else {
       team = mode === "world"
         ? validateWorld(body.formation, body.squad)
@@ -95,6 +98,7 @@ export async function POST(req: NextRequest) {
       strength: team.strength,
       quiz_correct: quizScore?.correct ?? null,
       quiz_total: quizScore?.total ?? null,
+      quiz_answers: quizDetail,
       plan,
       group_played: 0,
       group_points: 0,

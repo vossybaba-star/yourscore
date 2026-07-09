@@ -98,6 +98,22 @@ export function rankedQuizScore(date: string, answers: number[]): { correct: num
   return { correct, total: qs.length };
 }
 
+/** Per-question record of a ranked gate, stored on the run row (migration 76) for the
+ *  content pipeline (Question Guru / hardest-question stats). Pack-compatible shape:
+ *  letter-keyed options + letter answer. Questions and option order are deterministic
+ *  per date (same-test rule), so the objects aggregate cleanly across players. */
+export function rankedQuizDetail(date: string, answers: number[]): Array<Record<string, unknown>> {
+  const LETTERS = ["A", "B", "C", "D", "E", "F"];
+  return dailyQuestions(date, draftQuestionCount()).map((q, j) => ({
+    question: q.prompt,
+    options: Object.fromEntries(q.options.map((o, i) => [LETTERS[i] ?? String(i), o])),
+    answer: LETTERS[q.correctIndex] ?? null,
+    category: q.category,
+    selected: LETTERS[answers[j]] ?? null,
+    correct: answers[j] === q.correctIndex,
+  }));
+}
+
 /**
  * Replay the whole ranked draft and confirm every pick was a legitimate option the server
  * would have offered for the band its answers earned (and lands in a valid, unused slot).

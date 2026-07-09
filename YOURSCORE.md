@@ -6,7 +6,15 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed with the founder:** 2026-07-07 late (**Tap guard + nav progress** —
+> **Confirmed with the founder:** 2026-07-09 (**WC Mastermind gate answers recorded** —
+> ranked run creation now persists the gate quiz per-question detail on the run row
+> (`draft_wc_runs.quiz_answers` jsonb, migration 76): question, letter-keyed options,
+> correct letter, the player's pick, correctness — all server-derived (the server
+> already re-grades the gate; nothing new is trusted from the client). Feeds the
+> content pipeline (Question Guru / hardest-question stats) so Mastermind players —
+> the biggest daily pool — power those formats. E2E-verified via a full ranked
+> draft as the health bot; no client change; data accrues from deploy onward.)
+> Previously 2026-07-07 late (**Tap guard + nav progress** —
 > founder: "the app is really sensitive as I'm scrolling, it accidentally clicks
 > into different areas… and the loading between screens is a little too long."
 > `TouchGuards` in the root layout: capture-phase click filter kills phantom taps
