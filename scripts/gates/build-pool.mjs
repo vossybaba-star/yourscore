@@ -34,12 +34,13 @@ const boot = await fetchFplBootstrap();
 const players = fplToPlayers(boot);
 const { teams, players: smPlayers } = await fetchSmSeasonSquads(CURRENT_SEASON, KEY);
 const clubMap = matchClubs(boot.teams.map((t) => ({ id: t.id, name: t.name ?? t.short_name })), teams);
-const enriched = enrichPlayers(players, buildEnrichment(players, smPlayers, clubMap, new Date()));
+const enrichment = buildEnrichment(players, smPlayers, clubMap, new Date());
+const enriched = enrichPlayers(players, enrichment);
 console.log(`players: ${players.length} FPL, ${smPlayers.length} SM squad, clubs mapped ${clubMap.size}/20`);
 
 // 2. Current-football formats (season-relative stats labelled — founder rule)
 const questions = [
-  ...generateHigherLower(enriched, { stat: "price", seed: SEED, count: 60 }),
+  ...generateHigherLower(enriched, { stat: "price", seed: SEED, count: 60, seasonLabel: STATS_SEASON_LABEL }),
   ...generateHigherLower(enriched, { stat: "goals", seed: SEED, count: 40, seasonLabel: STATS_SEASON_LABEL }),
   ...generateThisSeasonForm(enriched, { seed: SEED, count: 50, stat: "points", seasonLabel: STATS_SEASON_LABEL }),
   ...generateThisSeasonForm(enriched, { seed: SEED, count: 30, stat: "goals", seasonLabel: STATS_SEASON_LABEL }),
@@ -84,10 +85,15 @@ questions.push(...careerQs);
 
 // 4. Current players (for the "26/27 season" warm-up mode): safe to expose —
 // no answers, just id/name/club/position/price for the client's squad deals.
+// INTERSECTION rule (founder: Luis Díaz showed at Liverpool — he's at Bayern):
+// the FPL feed still carries LAST season's squads until the new FPL game
+// launches, so a player must ALSO be in a SportMonks 2026/27 squad (the
+// enrichment match) to appear. Movers drop out; nobody gets an invented price;
+// coverage self-heals when FPL flips to 26/27 in August.
 // Club = the FULL team name (the Player.club field carries FPL's 3-letter code).
 const fullClubName = new Map(boot.teams.map((t) => [t.id, t.name ?? t.short_name]));
 const currentPlayers = enriched
-  .filter((p) => p.price >= 4 && p.club)
+  .filter((p) => p.price >= 4 && p.club && enrichment.has(p.id))
   .map((p) => ({
     id: p.id,
     name: p.name,

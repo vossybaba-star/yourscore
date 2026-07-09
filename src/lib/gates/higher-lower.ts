@@ -46,9 +46,12 @@ const DEFAULT_MIN_TOP: Record<GateStat, number> = {
   form: 1,
 };
 
-/** The question stem for each stat — season-relative stats carry the label. */
+/** The question stem for each stat — season-relative stats carry the label,
+ *  and the price prompt names the valuation system (founder: "worth more"
+ *  with no context is ambiguous). */
 function promptFor(stat: GateStat, seasonLabel?: string): string {
-  if (stat === "price") return "Who's worth more?";
+  if (stat === "price")
+    return `Who costs more in fantasy football${seasonLabel ? ` (${seasonLabel} season)` : ""}?`;
   const label = seasonLabel ? ` in the ${seasonLabel} season` : "";
   if (stat === "form") return `Who's in better form${seasonLabel ? ` right now (${seasonLabel})` : ""}?`;
   if (stat === "goals") return `Who scored more goals${label}?`;
