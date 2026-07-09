@@ -6,7 +6,35 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed with the founder:** 2026-07-09 (**WC Mastermind gate answers recorded** —
+> **Confirmed with the founder:** 2026-07-09 (**Blog scaffold live on yourscore.app** —
+> founder approved blog-as-path on the main domain for SEO authority consolidation
+> (unblocks Week 1 of the Your PL XI launch plan). /blog index + /blog/[slug] render
+> MDX from `content/blog/*.mdx` (frontmatter: title, description, date, tags,
+> optional ogImage, draft — drafts excluded from index/params/sitemap/RSS), fully
+> static (generateStaticParams + force-static; dynamicParams=false so unknown slugs
+> 404 at the edge — zero app-runtime impact). Per-post metadata + OpenGraph article
+> tags + Article JSON-LD; OG fallback is a **typographic gold-on-pitch plate** at
+> /api/og/blog (deliberately no artwork — the locked contact-sheet-approval rule);
+> RSS 2.0 at /blog/rss.xml. Also the site's **first-ever sitemap.ts + robots.ts**
+> (Search Console verified same day per marketing session; prod previously 404'd
+> both) — sitemap covers /, /play, /38-0, /how-it-works, /debate, /leaderboard,
+> /blog + posts, legal pages (all verified 200 logged-out); /api and /admin
+> disallowed; per-user profile/league pages deliberately excluded (build-time DB
+> fetch + thin content). **AI crawlers explicitly allowed** in robots.ts (founder
+> decision: get YourScore cited in AI answers) — GPTBot, ClaudeBot, Claude-Web,
+> PerplexityBot, Google-Extended, Applebot-Extended, CCBot named, /api + /admin
+> still off-limits to all. **/llms.txt live** (static route) with the
+> founder-approved entity line (incl. Your PL XI mid-Aug launch) + key-page
+> links — wording changes need marketing sign-off. **FAQPage JSON-LD supported** via frontmatter `faq:`
+> list — one source drives both the rendered "Quick answers" accordion and the
+> schema (NOT body comments: HTML `<!-- -->` comments break MDX builds — see
+> content/blog/README.md, the authoring guide). Publishing = commit an
+> .mdx to content/blog/ and deploy; seed post "Welcome to the YourScore blog"
+> (with live FAQ) is ready. New deps: next-mdx-remote, gray-matter. Build note:
+> next.config.mjs now
+> honours a NEXT_DIST_DIR env override so verify builds don't clobber a running dev
+> server's .next; verified with a real `next build` — all blog routes emit static.)
+> Same day (**WC Mastermind gate answers recorded** —
 > ranked run creation now persists the gate quiz per-question detail on the run row
 > (`draft_wc_runs.quiz_answers` jsonb, migration 76): question, letter-keyed options,
 > correct letter, the player's pick, correctness — all server-derived (the server
