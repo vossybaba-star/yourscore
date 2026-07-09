@@ -3,26 +3,24 @@
 /**
  * Your PL XI — the post-WC WARM-UP game (the funnel ship).
  *
- * Loop: 11 slots (4-3-3); each slot is gated by a question served from the
- * gates API (answers stay server-side). A correct answer — and a live streak —
- * raises the band you draft from (wc-draft's tuned bands); you pick a player
- * from 5 banded candidates out of the all-era PL pool, then the 38-0 season
- * engine simulates your XI. Ends on the funnel: Your PL XI is coming — get
- * early access / start a league (A/B, PostHog events when available).
+ * Draft mechanic (founder, Jul 9): every position is gated by a question. The
+ * answer earns a BUDGET GRANT for that pick (correct ≈ 2× wrong, small streak
+ * bonus). Each pick then deals a club+season squad from the all-era PL pool —
+ * the classic 38-0 spin moment — and you BUY one of its players at a price set
+ * by their rating. Unspent budget CARRIES OVER, and after the 11th pick a
+ * review phase lets you go back and upgrade any position with what's left
+ * (sell → rebuy within that slot's dealt squad). Then the 38-0 season engine
+ * simulates the XI, and the funnel pitches the real game.
  *
- * Anonymous-playable by design (localStorage session key). Gold-on-deep-pitch
- * identity per the design spec.
+ * Anonymous-playable (localStorage session key); questions come from the gates
+ * API (answers stay server-side). Gold-on-deep-pitch identity.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  allBuckets,
-  ensurePool,
-  getBucketPlayers,
-  leagueOpponents,
-} from "@/lib/draft/pool";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { ensurePool, spin } from "@/lib/draft/pool";
 import { canPlay, playerIdentity, scoreTeam, seededRng } from "@/lib/draft/score";
 import { simulateSeason, type SeasonResult } from "@/lib/draft/season";
+import { leagueOpponents } from "@/lib/draft/pool";
 import { slotsFor } from "@/lib/draft/formations";
 import type { Formation, PlacedPlayer, PlayerSeason, Position } from "@/lib/draft/types";
 
@@ -43,13 +41,28 @@ type ServedQuestion = {
   options: { id: number; label: string }[];
   position: Position;
 };
-type StepResult = {
-  correct: boolean;
-  answerId: number;
-  streak: number;
-  band: { minOverall: number; maxOverall: number };
-};
-type Phase = "intro" | "loading" | "question" | "reveal" | "pick" | "result" | "error";
+type StepResult = { correct: boolean; answerId: number; streak: number; grant: number };
+type SlotSquad = { club: string; season: string; players: PlayerSeason[] };
+type SlotPick = { placed: PlacedPlayer; price: number; squad: SlotSquad };
+type Phase =
+  | "intro"
+  | "loading"
+  | "question"
+  | "reveal"
+  | "squad"
+  | "review"
+  | "swap"
+  | "result"
+  | "error";
+
+const r10 = (x: number) => Math.round(x * 10) / 10;
+
+/** Rating → price (£m): 40 → £4.0m journeyman, 93 → ~£15m era-defining legend.
+ *  Steep curve so elite players demand real saving (the carryover strategy). */
+function priceOf(overall: number): number {
+  const ov = Math.max(40, Math.min(93, overall));
+  return r10(4 + 11 * Math.pow((ov - 40) / 53, 2.2));
+}
 
 function sessionKey(): string {
   try {
@@ -73,50 +86,37 @@ function capture(event: string, props?: Record<string, unknown>) {
   }
 }
 
-function bandLabel(band: { minOverall: number; maxOverall: number }): "standard" | "good" | "premium" {
-  if (band.maxOverall <= 72) return "standard";
-  if (band.maxOverall < 85) return "good";
-  return "premium";
-}
-
-/** 5 banded candidates for a slot from the all-era PL pool (soft bounds — the
- *  band relaxes until the slot can always be filled, same spirit as the WC draft). */
-function bandedCandidates(
-  pos: Position,
-  band: { minOverall: number; maxOverall: number },
+/** Deal a club+season squad for a slot that contains at least one player the
+ *  budget can afford (retry the spin; the pool's own re-spin logic avoids
+ *  dead-ends on position). Returns the squad's eligible players, price-tagged. */
+function dealSquad(
+  slotPos: Position,
   usedIds: Set<string>,
-  usedIdentities: Set<string>,
-  seed: string,
-): PlayerSeason[] {
-  const rng = seededRng(seed);
-  let lo = band.minOverall;
-  let hi = band.maxOverall;
-  for (let relax = 0; relax < 12; relax++) {
-    const found: PlayerSeason[] = [];
-    const seenIdentity = new Set<string>();
-    for (const b of allBuckets("PL")) {
-      for (const p of getBucketPlayers(b)) {
-        if (p.overall < lo || p.overall > hi) continue;
-        if (!canPlay(p.position, pos)) continue;
-        if (usedIds.has(p.id)) continue;
-        const ident = playerIdentity(p.name);
-        if (usedIdentities.has(ident) || seenIdentity.has(ident)) continue;
-        seenIdentity.add(ident);
-        found.push(p);
-      }
-    }
-    if (found.length >= 5) {
-      // seeded sample of 5
-      for (let i = found.length - 1; i > 0; i--) {
-        const j = Math.floor(rng() * (i + 1));
-        [found[i], found[j]] = [found[j], found[i]];
-      }
-      return found.slice(0, 5).sort((a, b) => b.overall - a.overall);
-    }
-    lo = Math.max(0, lo - 6);
-    hi = Math.min(99, hi + 3);
+  usedIdents: Set<string>,
+  budget: number,
+  seedStr: string,
+): SlotSquad {
+  const rng = seededRng(seedStr);
+  const seen = new Set<string>();
+  let last: SlotSquad | null = null;
+  for (let attempt = 0; attempt < 40; attempt++) {
+    const sp = spin([slotPos], usedIds, usedIdents, rng, seen, "PL");
+    seen.add(`${sp.club}|${sp.season}`);
+    const eligible = sp.players.filter(
+      (p) => canPlay(p.position, slotPos) && !usedIds.has(p.id) && !usedIdents.has(playerIdentity(p.name)),
+    );
+    if (eligible.length === 0) continue;
+    const squad: SlotSquad = {
+      club: sp.club,
+      season: sp.season,
+      players: eligible.sort((a, b) => b.overall - a.overall),
+    };
+    last = squad;
+    if (eligible.some((p) => priceOf(p.overall) <= budget)) return squad;
   }
-  return [];
+  // Vanishingly rare: nothing affordable in 40 deals — return the last squad;
+  // the UI lets the cheapest player go for the full remaining budget.
+  return last ?? { club: "", season: "", players: [] };
 }
 
 export default function YourPlXiWarmup() {
@@ -126,9 +126,11 @@ export default function YourPlXiWarmup() {
   const [slotIdx, setSlotIdx] = useState(0);
   const [answers, setAnswers] = useState<(number | null)[]>([]);
   const [step, setStep] = useState<StepResult | null>(null);
+  const [budget, setBudget] = useState(0);
+  const [squadDeal, setSquadDeal] = useState<SlotSquad | null>(null);
+  const [picks, setPicks] = useState<SlotPick[]>([]);
   const [picked, setPicked] = useState<string | null>(null);
-  const [candidates, setCandidates] = useState<PlayerSeason[]>([]);
-  const [squad, setSquad] = useState<PlacedPlayer[]>([]);
+  const [swapSlot, setSwapSlot] = useState<number | null>(null);
   const [season, setSeason] = useState<SeasonResult | null>(null);
   const [strength, setStrength] = useState(0);
   const [err, setErr] = useState("");
@@ -159,10 +161,12 @@ export default function YourPlXiWarmup() {
       setQuestions(data.questions);
       setVersion(data.version);
       setAnswers([]);
-      setSquad([]);
+      setPicks([]);
+      setBudget(0);
       setSlotIdx(0);
       setStep(null);
       setSeason(null);
+      setSwapSlot(null);
       setPhase("question");
       capture("warmup_started");
     } catch (e) {
@@ -171,9 +175,15 @@ export default function YourPlXiWarmup() {
     }
   }, []);
 
+  const answering = useRef(false);
   const answer = useCallback(
     async (optionId: number | null) => {
-      const nextAnswers = [...answers, optionId];
+      // Double-tap guard: write by slot index (idempotent) and refuse re-entry —
+      // a second tap must never corrupt the answers array or double-grant budget.
+      if (answering.current) return;
+      answering.current = true;
+      const nextAnswers = [...answers];
+      nextAnswers[slotIdx] = optionId;
       setAnswers(nextAnswers);
       try {
         const res = await fetch("/api/gates/warmup/step", {
@@ -185,34 +195,43 @@ export default function YourPlXiWarmup() {
         if (!res.ok) throw new Error(`step ${res.status}`);
         const data = (await res.json()) as StepResult;
         setStep(data);
+        setBudget((b) => r10(b + data.grant));
         setPhase("reveal");
       } catch (e) {
         setErr(e instanceof Error ? e.message : "failed to grade");
         setPhase("error");
+      } finally {
+        answering.current = false;
       }
     },
     [answers, slotIdx, start, version],
   );
 
-  const toPick = useCallback(() => {
-    if (!step) return;
+  const toSquad = useCallback(() => {
     const slot = slots[slotIdx];
-    const usedIds = new Set(squad.map((p) => p.player_season_id));
-    const usedIdents = new Set(squad.map((p) => playerIdentity(p.name)));
-    const cands = bandedCandidates(
-      slot.pos,
-      step.band,
-      usedIds,
-      usedIdents,
-      `${keyRef.current}:${version}:${slotIdx}`,
-    );
-    setCandidates(cands);
+    const usedIds = new Set(picks.map((p) => p.placed.player_season_id));
+    const usedIdents = new Set(picks.map((p) => playerIdentity(p.placed.name)));
+    setSquadDeal(dealSquad(slot.pos, usedIds, usedIdents, budget, `${keyRef.current}:${version}:deal:${slotIdx}`));
     setPicked(null);
-    setPhase("pick");
-  }, [slotIdx, slots, squad, step, version]);
+    setPhase("squad");
+  }, [budget, picks, slotIdx, slots, version]);
 
-  const pick = useCallback(
+  /** Cheapest eligible price in the dealt squad — the stretch-buy fallback. */
+  const cheapest = useMemo(
+    () => (squadDeal ? Math.min(...squadDeal.players.map((p) => priceOf(p.overall))) : 0),
+    [squadDeal],
+  );
+
+  const buy = useCallback(
     (p: PlayerSeason) => {
+      if (!squadDeal) return;
+      if (picks.length !== slotIdx) return; // double-fire guard: one signing per slot
+      const rawPrice = priceOf(p.overall);
+      const nothingAffordable = cheapest > budget;
+      // Stretch buy: if the deal had nothing affordable, the cheapest player
+      // goes for whatever's left in the bank.
+      const price = rawPrice <= budget ? rawPrice : nothingAffordable && rawPrice === cheapest ? budget : null;
+      if (price === null) return;
       const slot = slots[slotIdx];
       const placed: PlacedPlayer = {
         slot: slot.id,
@@ -224,30 +243,57 @@ export default function YourPlXiWarmup() {
         overall: p.overall,
         position: p.position,
       };
-      const nextSquad = [...squad, placed];
-      setSquad(nextSquad);
+      const nextPicks = [...picks, { placed, price: r10(price), squad: squadDeal }];
+      setPicks(nextPicks);
+      setBudget((b) => r10(b - price));
       if (slotIdx + 1 < slots.length) {
         setSlotIdx(slotIdx + 1);
         setStep(null);
         setPhase("question");
       } else {
-        const str = scoreTeam(nextSquad, FORMATION);
-        setStrength(str);
-        const sim = simulateSeason(
-          nextSquad,
-          FORMATION,
-          str,
-          `warmup:${keyRef.current}:${version}`,
-          leagueOpponents("PL"),
-        );
-        setSeason(sim);
-        setPhase("result");
-        const correctCount = answers.filter((a, i) => a !== null && i < slots.length).length;
-        capture("warmup_finished", { strength: str, wins: sim.wins, correct: correctCount });
+        setPhase("review");
+        capture("warmup_review", { budgetLeft: r10(budget - price) });
       }
     },
-    [answers, slotIdx, slots, squad, version],
+    [budget, cheapest, picks, slotIdx, slots, squadDeal],
   );
+
+  const doSwap = useCallback(
+    (slotI: number, p: PlayerSeason) => {
+      const current = picks[slotI];
+      if (!current) return;
+      if (p.id === current.placed.player_season_id) return void setSwapSlot(null);
+      const refund = current.price;
+      const price = priceOf(p.overall);
+      if (price > r10(budget + refund)) return;
+      const slot = slots[slotI];
+      const placed: PlacedPlayer = {
+        slot: slot.id,
+        slotPos: slot.pos,
+        player_season_id: p.id,
+        name: p.name,
+        club: p.club,
+        season: p.season,
+        overall: p.overall,
+        position: p.position,
+      };
+      const nextPicks = picks.map((pk, i) => (i === slotI ? { ...pk, placed, price } : pk));
+      setPicks(nextPicks);
+      setBudget((b) => r10(b + refund - price));
+      setSwapSlot(null);
+    },
+    [budget, picks, slots],
+  );
+
+  const lockAndSimulate = useCallback(() => {
+    const squad = picks.map((p) => p.placed);
+    const str = scoreTeam(squad, FORMATION);
+    setStrength(str);
+    const sim = simulateSeason(squad, FORMATION, str, `warmup:${keyRef.current}:${version}`, leagueOpponents("PL"));
+    setSeason(sim);
+    setPhase("result");
+    capture("warmup_finished", { strength: str, wins: sim.wins, budgetLeft: budget });
+  }, [budget, picks, version]);
 
   const share = useCallback(async () => {
     if (!season) return;
@@ -280,6 +326,7 @@ export default function YourPlXiWarmup() {
         background: gold ? "#3A2E08" : CARD,
         color: gold ? GOLD : TEXT_DIM,
         border: `1px solid ${gold ? GOLD_DIM : EDGE}`,
+        whiteSpace: "nowrap",
       }}
     >
       {label}
@@ -307,7 +354,40 @@ export default function YourPlXiWarmup() {
     </button>
   );
 
-  const meter = step ? bandLabel(step.band) : null;
+  const wallet = chip(`£${budget.toFixed(1)}m`, true);
+
+  const playerCard = (
+    p: PlayerSeason,
+    opts: { canBuy: boolean; price: number; selected: boolean; onTap: () => void; stretch?: boolean },
+  ) => (
+    <button
+      key={p.id}
+      onClick={opts.onTap}
+      disabled={!opts.canBuy}
+      style={{
+        flex: "0 0 128px",
+        scrollSnapAlign: "start",
+        display: "flex",
+        flexDirection: "column",
+        gap: 3,
+        padding: "12px 10px",
+        borderRadius: 12,
+        textAlign: "left",
+        cursor: opts.canBuy ? "pointer" : "default",
+        background: opts.selected ? "#3A2E08" : CARD,
+        border: `1px solid ${opts.selected ? GOLD : EDGE}`,
+        opacity: opts.canBuy ? 1 : 0.42,
+        color: "#ECF4EF",
+      }}
+    >
+      <span style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.25 }}>{p.name}</span>
+      <span style={{ fontSize: 11, color: TEXT_DIM }}>{p.position}</span>
+      <span style={{ fontSize: 15, fontWeight: 700, color: p.overall >= 85 ? GOLD : "#ECF4EF" }}>{p.overall}</span>
+      <span style={{ fontSize: 12, color: opts.canBuy ? GOLD : TEXT_DIM, fontWeight: 600 }}>
+        {opts.stretch ? `£${budget.toFixed(1)}m (all in)` : `£${opts.price.toFixed(1)}m`}
+      </span>
+    </button>
+  );
 
   return (
     <main
@@ -320,30 +400,30 @@ export default function YourPlXiWarmup() {
         padding: "18px 14px 40px",
       }}
     >
-      <div style={{ width: "100%", maxWidth: 420, display: "flex", flexDirection: "column", gap: 14 }}>
-        <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.14em", color: GOLD }}>
-            YOUR PL XI
+      <div style={{ width: "100%", maxWidth: 430, display: "flex", flexDirection: "column", gap: 14 }}>
+        <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.14em", color: GOLD }}>YOUR PL XI</span>
+          <span style={{ display: "flex", gap: 6 }}>
+            {(phase === "question" || phase === "reveal" || phase === "squad") &&
+              chip(`pick ${Math.min(slotIdx + 1, 11)}/11`)}
+            {phase !== "intro" && phase !== "loading" && phase !== "error" && phase !== "result" && wallet}
           </span>
-          {phase !== "intro" && phase !== "result" && chip(`pick ${Math.min(slotIdx + 1, 11)}/11`)}
         </header>
 
         {phase === "intro" && (
           <section style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <div style={{ background: PITCH, border: `1px solid ${PITCH_EDGE}`, borderRadius: 16, padding: 18 }}>
               <div style={{ fontSize: 12, color: TEXT_DIM, letterSpacing: "0.08em" }}>THE WARM-UP</div>
-              <h1 style={{ fontSize: 24, fontWeight: 700, margin: "6px 0 8px" }}>
-                Your knowledge builds your XI
-              </h1>
+              <h1 style={{ fontSize: 24, fontWeight: 700, margin: "6px 0 8px" }}>Your knowledge is your budget</h1>
               <p style={{ fontSize: 14, color: "#B9CABF", lineHeight: 1.55, margin: "0 0 14px" }}>
-                Every position is gated by a question. Get it right — and keep a streak going — and
-                you&apos;ll be picking from the Premier League&apos;s best across every era. Then your XI plays
-                a full simulated season. Could it go 38-0?
+                Eleven picks, each gated by a question. Right answers earn a bigger transfer budget — spend
+                it or bank it, because whatever you save carries over. Build your XI from squads across
+                Premier League history, then it plays a full simulated season. Could it go 38-0?
               </p>
               <div style={{ display: "flex" }}>{btn("Play — it takes 2 minutes", start)}</div>
             </div>
             <p style={{ fontSize: 12, color: TEXT_DIM, textAlign: "center" }}>
-              No sign-up needed. 11 questions, 11 picks, one season.
+              No sign-up needed. 11 questions, 11 signings, one season.
             </p>
           </section>
         )}
@@ -362,15 +442,11 @@ export default function YourPlXiWarmup() {
         {(phase === "question" || phase === "reveal") && q && (
           <section style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-              {chip(q.position, true)}
-              {step && phase === "reveal"
-                ? chip(`streak ${step.streak}`, step.streak > 1)
-                : slotIdx > 0 && chip(`${slotIdx} answered`)}
+              {chip(slots[slotIdx].pos, true)}
+              {step && phase === "reveal" && step.streak > 1 && chip(`streak ${step.streak} 🔥`, true)}
             </div>
             <div style={{ background: CARD, border: `1px solid ${EDGE}`, borderRadius: 14, padding: 16 }}>
-              <div style={{ fontSize: 17, fontWeight: 600, lineHeight: 1.5, whiteSpace: "pre-line" }}>
-                {q.prompt}
-              </div>
+              <div style={{ fontSize: 17, fontWeight: 600, lineHeight: 1.5, whiteSpace: "pre-line" }}>{q.prompt}</div>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {q.options.map((o) => {
@@ -414,54 +490,61 @@ export default function YourPlXiWarmup() {
                   }}
                 >
                   {step.correct
-                    ? meter === "premium"
-                      ? `On fire — streak ${step.streak}. You're pulling from the premium tier.`
-                      : `Correct — you're pulling from a ${meter} batch.`
-                    : "Not this time — you're shopping in the bargain bin for this slot."}
+                    ? `Correct — £${step.grant.toFixed(1)}m added to your budget${step.streak > 1 ? ` (streak ${step.streak})` : ""}.`
+                    : `Not this time — £${step.grant.toFixed(1)}m for this one. Spend it wisely.`}
                 </div>
-                <div style={{ display: "flex" }}>{btn("See your options", toPick)}</div>
+                <div style={{ display: "flex" }}>{btn("Deal me a squad", toSquad)}</div>
               </div>
             )}
           </section>
         )}
 
-        {phase === "pick" && step && (
+        {phase === "squad" && squadDeal && (
           <section style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <div style={{ display: "flex", gap: 6 }}>
+            <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
               {chip(slots[slotIdx].pos, true)}
-              {chip(`${bandLabel(step.band)} batch`, bandLabel(step.band) === "premium")}
+              {chip(`${squadDeal.club} · ${squadDeal.season}`)}
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {candidates.map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => setPicked(picked === p.id ? null : p.id)}
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    padding: "12px 14px",
-                    borderRadius: 11,
-                    fontSize: 14,
-                    cursor: "pointer",
-                    background: picked === p.id ? "#3A2E08" : CARD,
-                    color: "#ECF4EF",
-                    border: `1px solid ${picked === p.id ? GOLD : EDGE}`,
-                  }}
-                >
-                  <span style={{ fontWeight: 600 }}>{p.name}</span>
-                  <span style={{ fontSize: 12, color: TEXT_DIM }}>
-                    {p.club} {p.season} · <b style={{ color: p.overall >= 85 ? GOLD : "#ECF4EF" }}>{p.overall}</b>
-                  </span>
-                </button>
-              ))}
+            <p style={{ fontSize: 13, color: TEXT_DIM, margin: 0 }}>
+              Sign one for the {slots[slotIdx].pos} slot — slide for more. Whatever you don&apos;t spend rolls over.
+            </p>
+            <div
+              style={{
+                display: "flex",
+                gap: 8,
+                overflowX: "auto",
+                paddingBottom: 6,
+                scrollSnapType: "x mandatory",
+                WebkitOverflowScrolling: "touch",
+              }}
+            >
+              {squadDeal.players.map((p) => {
+                const price = priceOf(p.overall);
+                const nothingAffordable = cheapest > budget;
+                const stretch = nothingAffordable && price === cheapest;
+                const canBuy = price <= budget || stretch;
+                return playerCard(p, {
+                  canBuy,
+                  price,
+                  stretch,
+                  selected: picked === p.id,
+                  onTap: () => setPicked(picked === p.id ? null : p.id),
+                });
+              })}
             </div>
             <div style={{ display: "flex" }}>
               {btn(
-                "Lock him in",
+                picked
+                  ? (() => {
+                      const p = squadDeal.players.find((x) => x.id === picked)!;
+                      const price = priceOf(p.overall);
+                      const stretch = cheapest > budget && price === cheapest;
+                      return `Sign ${p.name} — £${(stretch ? budget : price).toFixed(1)}m`;
+                    })()
+                  : "Pick a player to sign",
                 () => {
-                  const chosen = candidates.find((c) => c.id === picked);
-                  if (chosen) pick(chosen);
+                  const p = squadDeal.players.find((x) => x.id === picked);
+                  if (p) buy(p);
                 },
                 true,
                 picked === null,
@@ -470,13 +553,131 @@ export default function YourPlXiWarmup() {
           </section>
         )}
 
+        {(phase === "review" || phase === "swap") && (
+          <section style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div>
+              <div style={{ fontSize: 12, color: TEXT_DIM, letterSpacing: "0.08em" }}>SQUAD REVIEW</div>
+              <div style={{ fontSize: 20, fontWeight: 700 }}>
+                £{budget.toFixed(1)}m left in the bank
+              </div>
+              <div style={{ fontSize: 13, color: TEXT_DIM }}>
+                Tap any player to upgrade him from the squad he came from — or lock it in.
+              </div>
+            </div>
+            <div
+              style={{
+                background: PITCH,
+                border: `1px solid ${PITCH_EDGE}`,
+                borderRadius: 14,
+                padding: "12px 8px",
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+              }}
+            >
+              {[picks.slice(8, 11), picks.slice(5, 8), picks.slice(1, 5), picks.slice(0, 1)].map((line, li) => (
+                <div key={li} style={{ display: "flex", justifyContent: "center", gap: 6, flexWrap: "wrap" }}>
+                  {line.map((pk) => {
+                    const i = picks.indexOf(pk);
+                    return (
+                      <button
+                        key={pk.placed.slot}
+                        onClick={() => {
+                          setSwapSlot(i);
+                          setPicked(null);
+                          setPhase("swap");
+                        }}
+                        style={{
+                          background: pk.placed.overall >= 85 ? "#3A2E08" : CARD,
+                          border: `1px solid ${pk.placed.overall >= 85 ? GOLD : EDGE}`,
+                          borderRadius: 9,
+                          padding: "5px 7px",
+                          fontSize: 11,
+                          textAlign: "center",
+                          minWidth: 60,
+                          cursor: "pointer",
+                          color: "#ECF4EF",
+                        }}
+                      >
+                        <div style={{ fontWeight: 600, color: pk.placed.overall >= 85 ? "#F8E9B0" : "#ECF4EF" }}>
+                          {pk.placed.name}
+                        </div>
+                        <div style={{ color: pk.placed.overall >= 85 ? GOLD : TEXT_DIM }}>
+                          {pk.placed.overall} · £{pk.price.toFixed(1)}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+
+            {phase === "swap" && swapSlot !== null && picks[swapSlot] && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+                  {chip(picks[swapSlot].placed.slotPos, true)}
+                  {chip(`${picks[swapSlot].squad.club} · ${picks[swapSlot].squad.season}`)}
+                  {chip(`sell ${picks[swapSlot].placed.name} back for £${picks[swapSlot].price.toFixed(1)}m`)}
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 8,
+                    overflowX: "auto",
+                    paddingBottom: 6,
+                    scrollSnapType: "x mandatory",
+                    WebkitOverflowScrolling: "touch",
+                  }}
+                >
+                  {picks[swapSlot].squad.players
+                    .filter((p) => {
+                      // exclude players already in the XI at OTHER slots
+                      const ident = playerIdentity(p.name);
+                      return !picks.some(
+                        (pk, i) => i !== swapSlot && (pk.placed.player_season_id === p.id || playerIdentity(pk.placed.name) === ident),
+                      );
+                    })
+                    .map((p) => {
+                      const price = priceOf(p.overall);
+                      const isCurrent = p.id === picks[swapSlot].placed.player_season_id;
+                      const canBuy = isCurrent || price <= r10(budget + picks[swapSlot].price);
+                      return playerCard(p, {
+                        canBuy,
+                        price,
+                        selected: picked === p.id || isCurrent,
+                        onTap: () => setPicked(picked === p.id ? null : p.id),
+                      });
+                    })}
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  {btn("Keep him", () => { setSwapSlot(null); setPhase("review"); }, false)}
+                  {btn(
+                    "Make the swap",
+                    () => {
+                      const p = picks[swapSlot].squad.players.find((x) => x.id === picked);
+                      if (p) {
+                        doSwap(swapSlot, p);
+                        setPhase("review");
+                      }
+                    },
+                    true,
+                    picked === null || picked === picks[swapSlot].placed.player_season_id,
+                  )}
+                </div>
+              </div>
+            )}
+
+            {phase === "review" && (
+              <div style={{ display: "flex" }}>{btn("Lock team & play the season", lockAndSimulate)}</div>
+            )}
+          </section>
+        )}
+
         {phase === "result" && season && (
           <section style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <div style={{ height: 4, background: GOLD, borderRadius: 2 }} />
             <div>
-              <div style={{ fontSize: 12, color: TEXT_DIM, letterSpacing: "0.08em" }}>
-                YOUR SIMULATED SEASON
-              </div>
+              <div style={{ fontSize: 12, color: TEXT_DIM, letterSpacing: "0.08em" }}>YOUR SIMULATED SEASON</div>
               <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
                 <span style={{ fontSize: 42, fontWeight: 700, color: GOLD }}>
                   {season.wins}-{season.draws}-{season.losses}
@@ -505,29 +706,27 @@ export default function YourPlXiWarmup() {
                 gap: 8,
               }}
             >
-              {/* Slots are drafted in order GK → DEF×4 → MID×3 → FWD×3, so line
-                  grouping is positional (slotPos itself is granular: RB/CB/ST…). */}
-              {[squad.slice(8, 11), squad.slice(5, 8), squad.slice(1, 5), squad.slice(0, 1)].map((line, li) => (
+              {[picks.slice(8, 11), picks.slice(5, 8), picks.slice(1, 5), picks.slice(0, 1)].map((line, li) => (
                 <div key={li} style={{ display: "flex", justifyContent: "center", gap: 6, flexWrap: "wrap" }}>
-                  {line.map((p) => (
-                      <div
-                        key={p.slot}
-                        style={{
-                          background: p.overall >= 85 ? "#3A2E08" : CARD,
-                          border: `1px solid ${p.overall >= 85 ? GOLD : EDGE}`,
-                          borderRadius: 9,
-                          padding: "4px 7px",
-                          fontSize: 11,
-                          textAlign: "center",
-                          minWidth: 58,
-                        }}
-                      >
-                        <div style={{ fontWeight: 600, color: p.overall >= 85 ? "#F8E9B0" : "#ECF4EF" }}>
-                          {p.name}
-                        </div>
-                        <div style={{ color: p.overall >= 85 ? GOLD : TEXT_DIM }}>{p.overall}</div>
+                  {line.map((pk) => (
+                    <div
+                      key={pk.placed.slot}
+                      style={{
+                        background: pk.placed.overall >= 85 ? "#3A2E08" : CARD,
+                        border: `1px solid ${pk.placed.overall >= 85 ? GOLD : EDGE}`,
+                        borderRadius: 9,
+                        padding: "4px 7px",
+                        fontSize: 11,
+                        textAlign: "center",
+                        minWidth: 58,
+                      }}
+                    >
+                      <div style={{ fontWeight: 600, color: pk.placed.overall >= 85 ? "#F8E9B0" : "#ECF4EF" }}>
+                        {pk.placed.name}
                       </div>
-                    ))}
+                      <div style={{ color: pk.placed.overall >= 85 ? GOLD : TEXT_DIM }}>{pk.placed.overall}</div>
+                    </div>
+                  ))}
                 </div>
               ))}
             </div>

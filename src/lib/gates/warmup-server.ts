@@ -17,8 +17,6 @@ import "server-only";
 import poolJson from "@/data/gates/pool.json";
 import type { GateQuestion } from "./types";
 import { buildRound, clientView, grade, type Round, type ServedQuestion } from "./serve";
-import { gradeAnswer } from "../draft/draft-quiz";
-import type { DraftBand } from "../draft/draft-quiz";
 
 const POOL = poolJson as unknown as { version: string; builtAt: string; questions: GateQuestion[] };
 
@@ -45,18 +43,36 @@ export function warmupQuestions(sessionKey: string): {
   return { version: POOL.version, questions: clientView(roundFor(sessionKey)) };
 }
 
+// Budget grants (£m, tunable): a correct answer roughly doubles the wrong-answer
+// grant, and a live streak adds a little on top (capped). All-wrong ≈ £55m XI
+// (~60-rated relegation scrap); all-correct ≈ £130m+ (~87-rated contender) — the
+// founder's "knowledge decides the team" spread, with saving/spending strategy
+// in between (unspent budget carries over; see the page's review phase).
+export const GRANT_CORRECT = 10;
+export const GRANT_WRONG = 5;
+export const GRANT_STREAK_BONUS = 1; // per consecutive correct beyond the first
+export const GRANT_STREAK_CAP = 3;
+
+/** The budget grant (£m) for an answer given the streak AFTER it. */
+export function grantFor(correct: boolean, streak: number): number {
+  if (!correct) return GRANT_WRONG;
+  return GRANT_CORRECT + Math.min(GRANT_STREAK_CAP, Math.max(0, streak - 1)) * GRANT_STREAK_BONUS;
+}
+
 export interface WarmupStep {
   correct: boolean;
   /** The right option id — safe to reveal once this question is answered. */
   answerId: number;
   streak: number;
-  band: DraftBand;
+  /** £m added to the player's draft budget for this pick. */
+  grant: number;
 }
 
 /**
  * Grade answers[0..k] (option ids, null = timeout/skip) and fold them through
- * the streak/band logic. Returns the state AFTER answer k. Null = the round is
- * stale (pool rebuilt) or the input is invalid → client restarts.
+ * the streak logic. Returns the state AFTER answer k, including that answer's
+ * budget grant. Null = the round is stale (pool rebuilt) or the input is
+ * invalid → client restarts.
  */
 export function warmupStep(
   sessionKey: string,
@@ -70,7 +86,6 @@ export function warmupStep(
   if (k >= round.questions.length) return null;
 
   let streak = 0;
-  let band: DraftBand = { minOverall: 0, maxOverall: 99 };
   let lastCorrect = false;
   for (let j = 0; j <= k; j++) {
     const a = answers[j];
@@ -80,15 +95,13 @@ export function warmupStep(
       if (g === null && j === k) return null; // invalid option for the graded step
       correct = g?.correct ?? false;
     }
-    const folded = gradeAnswer(streak, correct);
-    streak = folded.streak;
-    band = folded.band;
+    streak = correct ? streak + 1 : 0;
     lastCorrect = correct;
   }
   return {
     correct: lastCorrect,
     answerId: round.questions[k].answerId,
     streak,
-    band,
+    grant: grantFor(lastCorrect, streak),
   };
 }
