@@ -22,6 +22,25 @@ export function grantFor(correct: boolean, streak: number): number {
   return r10(GRANT_CORRECT + bonus);
 }
 
+// ── Perfection milestones ─────────────────────────────────────────────────────
+// One-off scouting bonuses when TOTAL correct answers cross a threshold — the
+// lever that lets a near-perfect round genuinely afford superstars (measured:
+// without these, even 11/11 tops out around strength 78 = mid-table forever).
+// Spread across the last three thresholds so the money lands while there are
+// still picks that can absorb it (the attacking slots draft last in 4-3-3).
+export const MILESTONES: { at: number; bonus: number }[] = [
+  { at: 9, bonus: 10 },
+  { at: 10, bonus: 10 },
+  { at: 11, bonus: 10 },
+];
+
+/** Bonus £m released by moving from `prevCorrect` to `nowCorrect` total correct. */
+export function milestoneBonus(prevCorrect: number, nowCorrect: number): number {
+  let sum = 0;
+  for (const m of MILESTONES) if (prevCorrect < m.at && nowCorrect >= m.at) sum += m.bonus;
+  return sum;
+}
+
 // ── Prices ────────────────────────────────────────────────────────────────────
 /** Rating → price (£m). ONE global curve — a 75 costs the same at Watford as at
  *  City. 60 → £4.2 · 70 → £5.0 · 75 → £5.9 · 80 → £7.4 · 85 → £9.5 · 93 → £15. */

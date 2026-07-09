@@ -67,15 +67,17 @@ export function warmupQuestions(sessionKey: string): {
 // Grants live in warmup-economy.ts with prices (pure, no pool import) — shared
 // with the page and the measurement script so balance numbers are measured, not
 // estimated.
-import { grantFor } from "./warmup-economy";
+import { grantFor, milestoneBonus } from "./warmup-economy";
 
 export interface WarmupStep {
   correct: boolean;
   /** The right option id — safe to reveal once this question is answered. */
   answerId: number;
   streak: number;
-  /** £m added to the player's draft budget for this pick. */
+  /** £m added to the player's draft budget for this pick (incl. any milestone). */
   grant: number;
+  /** Set when this answer crossed a scouting milestone (9 or 11 total correct). */
+  milestone?: number;
 }
 
 /**
@@ -97,6 +99,7 @@ export function warmupStep(
 
   let streak = 0;
   let lastCorrect = false;
+  let totalCorrect = 0;
   for (let j = 0; j <= k; j++) {
     const a = answers[j];
     let correct = false;
@@ -106,12 +109,15 @@ export function warmupStep(
       correct = g?.correct ?? false;
     }
     streak = correct ? streak + 1 : 0;
+    if (correct) totalCorrect++;
     lastCorrect = correct;
   }
+  const bonus = lastCorrect ? milestoneBonus(totalCorrect - 1, totalCorrect) : 0;
   return {
     correct: lastCorrect,
     answerId: round.questions[k].answerId,
     streak,
-    grant: grantFor(lastCorrect, streak),
+    grant: grantFor(lastCorrect, streak) + bonus,
+    ...(bonus > 0 ? { milestone: totalCorrect } : {}),
   };
 }

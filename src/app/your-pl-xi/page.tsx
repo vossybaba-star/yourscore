@@ -25,7 +25,7 @@ import type { Formation, PlacedPlayer, PlayerSeason, Position } from "@/lib/draf
 import {
   dealCurrentSquad,
   dealSquad,
-  priceOf,
+  playerPrice,
   r10,
   type CurrentPlayer,
   type SlotSquad,
@@ -48,7 +48,7 @@ type ServedQuestion = {
   options: { id: number; label: string }[];
   position: Position;
 };
-type StepResult = { correct: boolean; answerId: number; streak: number; grant: number };
+type StepResult = { correct: boolean; answerId: number; streak: number; grant: number; milestone?: number };
 type WarmupMode = "legends" | "current";
 type SlotPick = { placed: PlacedPlayer; price: number; squad: SlotSquad };
 type Phase =
@@ -193,16 +193,16 @@ export default function YourPlXiWarmup() {
     const seedStr = `${keyRef.current}:${version}:deal:${slotIdx}`;
     setSquadDeal(
       mode === "current"
-        ? dealCurrentSquad(currentPlayers, slot.pos, usedIds, usedIdents, budget, seedStr)
+        ? dealCurrentSquad(currentPlayers, slot.pos, usedIds, usedIdents, budget, seedStr, step?.streak ?? 0)
         : dealSquad(slot.pos, usedIds, usedIdents, budget, seedStr),
     );
     setPicked(null);
     setPhase("squad");
-  }, [budget, currentPlayers, mode, picks, slotIdx, slots, version]);
+  }, [budget, currentPlayers, mode, picks, slotIdx, slots, step, version]);
 
   /** Cheapest eligible price in the dealt squad — the stretch-buy fallback. */
   const cheapest = useMemo(
-    () => (squadDeal ? Math.min(...squadDeal.players.map((p) => priceOf(p.overall))) : 0),
+    () => (squadDeal ? Math.min(...squadDeal.players.map((p) => playerPrice(p))) : 0),
     [squadDeal],
   );
 
@@ -210,7 +210,7 @@ export default function YourPlXiWarmup() {
     (p: PlayerSeason) => {
       if (!squadDeal) return;
       if (picks.length !== slotIdx) return; // double-fire guard: one signing per slot
-      const rawPrice = priceOf(p.overall);
+      const rawPrice = playerPrice(p);
       const nothingAffordable = cheapest > budget;
       // Stretch buy: if the deal had nothing affordable, the cheapest player
       // goes for whatever's left in the bank.
@@ -248,7 +248,7 @@ export default function YourPlXiWarmup() {
       if (!current) return;
       if (p.id === current.placed.player_season_id) return void setSwapSlot(null);
       const refund = current.price;
-      const price = priceOf(p.overall);
+      const price = playerPrice(p);
       if (price > r10(budget + refund)) return;
       const slot = slots[slotI];
       const placed: PlacedPlayer = {
@@ -492,9 +492,11 @@ export default function YourPlXiWarmup() {
                     color: step.correct ? "#F8E9B0" : TEXT_DIM,
                   }}
                 >
-                  {step.correct
-                    ? `Correct — £${step.grant.toFixed(1)}m added to your budget${step.streak > 1 ? ` (streak ${step.streak})` : ""}.`
-                    : `Not this time — £${step.grant.toFixed(1)}m for this one. Spend it wisely.`}
+                  {step.milestone
+                    ? `${step.milestone} correct — scouting bonus! £${step.grant.toFixed(1)}m added to your budget.`
+                    : step.correct
+                      ? `Correct — £${step.grant.toFixed(1)}m added to your budget${step.streak > 1 ? ` (streak ${step.streak})` : ""}.`
+                      : `Not this time — £${step.grant.toFixed(1)}m for this one. Spend it wisely.`}
                 </div>
                 <div style={{ display: "flex" }}>{btn("Deal me a squad", toSquad)}</div>
               </div>
@@ -523,7 +525,7 @@ export default function YourPlXiWarmup() {
               }}
             >
               {squadDeal.players.map((p) => {
-                const price = priceOf(p.overall);
+                const price = playerPrice(p);
                 const nothingAffordable = cheapest > budget;
                 const stretch = nothingAffordable && price === cheapest;
                 const canBuy = price <= budget || stretch;
@@ -541,7 +543,7 @@ export default function YourPlXiWarmup() {
                 picked
                   ? (() => {
                       const p = squadDeal.players.find((x) => x.id === picked)!;
-                      const price = priceOf(p.overall);
+                      const price = playerPrice(p);
                       const stretch = cheapest > budget && price === cheapest;
                       return `Sign ${p.name} — £${(stretch ? budget : price).toFixed(1)}m`;
                     })()
@@ -566,7 +568,7 @@ export default function YourPlXiWarmup() {
             const wallet = r10(budget + pk.price);
             return pk.squad.players.some((p) => {
               if (p.overall <= pk.placed.overall) return false;
-              if (priceOf(p.overall) > wallet) return false;
+              if (playerPrice(p) > wallet) return false;
               const ident = playerIdentity(p.name);
               return !picks.some(
                 (o, oi) => oi !== i && (o.placed.player_season_id === p.id || playerIdentity(o.placed.name) === ident),
@@ -664,7 +666,7 @@ export default function YourPlXiWarmup() {
                       );
                     })
                     .map((p) => {
-                      const price = priceOf(p.overall);
+                      const price = playerPrice(p);
                       const isCurrent = p.id === picks[swapSlot].placed.player_season_id;
                       const canBuy = isCurrent || price <= r10(budget + picks[swapSlot].price);
                       return playerCard(p, {

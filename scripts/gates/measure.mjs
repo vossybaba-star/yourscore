@@ -5,8 +5,8 @@
 //      simulateSeason engine against the actual opponent list.
 
 const base = new URL("../../.tmp-measure/lib/", import.meta.url);
-const { grantFor, priceOf } = await import(new URL("gates/warmup-economy.js", base));
-const { dealCurrentSquad } = await import(new URL("gates/warmup-deals.js", base));
+const { grantFor, milestoneBonus } = await import(new URL("gates/warmup-economy.js", base));
+const { dealCurrentSquad, playerPrice } = await import(new URL("gates/warmup-deals.js", base));
 const { scoreTeam, seededRng } = await import(new URL("draft/score.js", base));
 const { slotsFor } = await import(new URL("draft/formations.js", base));
 const { simulateSeason } = await import(new URL("draft/season.js", base));
@@ -25,10 +25,11 @@ const stats = (xs) => {
 const f1 = (x) => (Math.round(x * 10) / 10).toFixed(1);
 
 // ── Study A: 26/27 economy ────────────────────────────────────────────────────
-function playRun(seedKey, correctSlots, unlimited) {
+function playRun(seedKey, correctSlots, unlimited, strategy = "greedy") {
   // correctSlots: Set of slot indices answered correctly.
   let budget = 0;
   let streak = 0;
+  let totalCorrect = 0;
   const usedIds = new Set();
   const usedIdents = new Set();
   const placed = [];
@@ -37,16 +38,20 @@ function playRun(seedKey, correctSlots, unlimited) {
   for (let k = 0; k < slots.length; k++) {
     const correct = correctSlots.has(k);
     streak = correct ? streak + 1 : 0;
-    budget += grantFor(correct, streak);
+    if (correct) totalCorrect++;
+    budget += grantFor(correct, streak) + (correct ? milestoneBonus(totalCorrect - 1, totalCorrect) : 0);
     const wallet = unlimited ? 1e9 : budget;
-    const squad = dealCurrentSquad(currentPlayers, slots[k].pos, usedIds, usedIdents, wallet, `${seedKey}:deal:${k}`);
+    const squad = dealCurrentSquad(currentPlayers, slots[k].pos, usedIds, usedIdents, wallet, `${seedKey}:deal:${k}`, streak);
     if (!squad.players.length) continue;
-    // greedy: most expensive affordable; stretch-buy cheapest if none.
-    const priced = squad.players.map((p) => ({ p, price: priceOf(p.overall) }));
+    // strategy: greedy = most expensive affordable; saver = cheapest for the
+    // first 6 picks then greedy (banks milestone money for late stars).
+    const priced = squad.players.map((p) => ({ p, price: playerPrice(p) }));
     const affordable = priced.filter((x) => x.price <= wallet);
     const isMaxAffordable = priced[0].price <= wallet;
     if (isMaxAffordable) dealMaxAffordable++;
-    const pick = affordable.length ? affordable[0] : { p: priced[priced.length - 1].p, price: budget };
+    const greedyPick = affordable.length ? affordable[0] : { p: priced[priced.length - 1].p, price: budget };
+    const saverPick = affordable.length ? affordable[affordable.length - 1] : greedyPick;
+    const pick = strategy === "saver" && k < 6 ? saverPick : greedyPick;
     const cost = unlimited ? pick.price : Math.min(pick.price, budget);
     budget -= cost;
     spent += cost;
@@ -68,11 +73,15 @@ function correctSet(n, seed) {
 const N = 400;
 const runsUnlimited = [];
 const runs8 = [];
+const runs9s = [];
 const runs11 = [];
+const runs11s = [];
 for (let i = 0; i < N; i++) {
   runsUnlimited.push(playRun(`u${i}`, correctSet(11, `u${i}`), true));
   runs8.push(playRun(`e${i}`, correctSet(8, `e${i}`), false));
+  runs9s.push(playRun(`n${i}`, correctSet(9, `n${i}`), false, "saver"));
   runs11.push(playRun(`p${i}`, correctSet(11, `p${i}`), false));
+  runs11s.push(playRun(`s${i}`, correctSet(11, `s${i}`), false, "saver"));
 }
 console.log(`\n=== STUDY A · 26/27 economy (${N} seeded runs each) ===`);
 const maxCost = stats(runsUnlimited.map((r) => r.spent));
@@ -80,7 +89,12 @@ const maxStr = stats(runsUnlimited.map((r) => r.strength));
 console.log(`Cost to buy the BEST player in every deal (unlimited money):`);
 console.log(`  £${f1(maxCost.min)}–£${f1(maxCost.max)}m, median £${f1(maxCost.med)}m (p25 £${f1(maxCost.p25)} · p75 £${f1(maxCost.p75)})`);
 console.log(`  XI strength if you max everything: median ${f1(maxStr.med)} (max ${f1(maxStr.max)})`);
-for (const [label, runs, earnedN] of [["8/11 correct", runs8, 8], ["11/11 correct", runs11, 11]]) {
+for (const [label, runs] of [
+  ["8/11 correct (greedy)", runs8],
+  ["9/11 correct (saver)", runs9s],
+  ["11/11 correct (greedy)", runs11],
+  ["11/11 correct (saver)", runs11s],
+]) {
   const left = stats(runs.map((r) => r.leftover));
   const str = stats(runs.map((r) => r.strength));
   const maxable = stats(runs.map((r) => r.dealMaxAffordable));
