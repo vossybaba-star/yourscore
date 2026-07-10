@@ -1,16 +1,6 @@
 import { withSentryConfig } from "@sentry/nextjs";
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  async redirects() {
-    return [
-      {
-        // Post renamed hours after publish (game renamed YourScore Fantasy Football)
-        source: "/blog/your-pl-xi-how-it-works",
-        destination: "/blog/how-to-play-yourscore-fantasy-football",
-        permanent: true,
-      },
-    ];
-  },
   // Verification builds set NEXT_DIST_DIR to build without clobbering a running
   // dev server's .next (multiple sessions share this checkout). Unset on Vercel,
   // so prod deploys still use .next.
@@ -43,6 +33,8 @@ const nextConfig = {
     // (/draft, and a brief /xi) permanently redirect there so old links and
     // bookmarks keep working.
     return [
+      // Blog post renamed hours after publish (game renamed YourScore Fantasy Football)
+      { source: "/blog/your-pl-xi-how-it-works", destination: "/blog/how-to-play-yourscore-fantasy-football", permanent: true },
       { source: "/draft", destination: "/38-0", permanent: true },
       { source: "/draft/:path*", destination: "/38-0/:path*", permanent: true },
       { source: "/xi", destination: "/38-0", permanent: true },
