@@ -178,6 +178,11 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-10** — **"Continue with Facebook" built, env-gated** (e129380): renders on the
+  sign-in panel between Google and email once `NEXT_PUBLIC_FACEBOOK_LOGIN=1` is set in
+  Vercel. NOT live yet — needs a Facebook app (Meta developers console) + the Facebook
+  provider enabled in Supabase first. OAuth redirect URI for the Meta app:
+  `https://auth.yourscore.app/auth/v1/callback`.
 - **2026-07-07** — **Play-level acquisition attribution** (mig 75): WC runs + solo quiz
   attempts now store first-touch `source`/`utm_*` (client sends localStorage `ys:acq` at
   creation; server sanitizes) — plays-per-platform/campaign is now a direct DB query,
