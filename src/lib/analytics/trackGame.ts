@@ -4,6 +4,8 @@ import { afGameComplete, afInviteSent, type InviteSurface } from "@/lib/analytic
 
 // Which game a Player is engaging with. Drives per-game ad audiences.
 export type GameId = "38-0" | "quiz";
+
+const GOOGLE_ADS_PLAY_SEND_TO = process.env.NEXT_PUBLIC_GOOGLE_ADS_PLAY_SEND_TO;
 type GameEvent = "play" | "complete";
 
 type Props = Record<string, string | number | boolean>;
@@ -76,6 +78,11 @@ function trackGameEvent(game: GameId, event: GameEvent, props: Props = {}): void
 
   // Google Analytics 4 — single event keyed on the `game` param for audiences.
   window.gtag?.("event", event === "play" ? "play_game" : "complete_game", payload);
+
+  // Google Ads — fires a conversion on play once the send_to label is configured.
+  if (event === "play" && GOOGLE_ADS_PLAY_SEND_TO) {
+    window.gtag?.("event", "conversion", { send_to: GOOGLE_ADS_PLAY_SEND_TO });
+  }
 
   // Vercel Analytics.
   track(event === "play" ? "play_game" : "complete_game", payload);
