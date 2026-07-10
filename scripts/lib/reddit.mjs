@@ -96,9 +96,18 @@ export const hasApiCreds = () => !!(CLIENT_ID && CLIENT_SECRET && REFRESH_TOKEN)
 // ── RSS fallback (no credentials) ────────────────────────────────────────────
 // Until Reddit approves Data API access, subreddit listings (and sometimes
 // search) are readable via public Atom feeds. HEAVILY rate-limited per IP:
-// roughly one request a minute sustains, bursts get 429. The tracker runs 3x/day
-// so we simply pace every request and retry a 429 once. Feeds carry no vote
-// counts, so RSS-mode posts have ups=null and minUps filters don't apply.
+// roughly one request a minute sustains, bursts get 429, so pace every request
+// and retry a 429 once. Feeds carry no vote counts, so RSS-mode posts have
+// ups=null and minUps filters don't apply.
+//
+// MUST use curl, not fetch(). Reddit fingerprints the TLS handshake, and Node's
+// undici client is blocked outright: on Jul 10 2026 the same URL, same IP, same
+// User-Agent, 70s apart returned curl 200 / fetch 403 / curl 200 — on both the
+// laptop and the VPS. This silently killed every sweep for three hours.
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+const execFileAsync = promisify(execFile);
+
 const RSS_UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126 Safari/537.36";
 const RSS_SPACING_MS = 65_000;
 let _lastRss = 0;
@@ -110,15 +119,37 @@ const unesc = (s) => s
   .replace(/&#39;|&apos;/g, "'").replace(/&#x27;/g, "'").replace(/&amp;/g, "&");
 const stripTags = (s) => unesc(unesc(s)).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 
+const STATUS_MARK = "\n__HTTP_STATUS__:";
+
+/** GET via curl. Returns the body; throws with the status on any non-2xx. */
+async function curlGet(url) {
+  const { stdout } = await execFileAsync("curl", [
+    "-sS", "--compressed", "--max-time", "30",
+    "-A", RSS_UA,
+    "-H", "Accept: application/atom+xml,application/xml;q=0.9,*/*;q=0.8",
+    "-H", "Accept-Language: en-GB,en;q=0.9",
+    "-w", `${STATUS_MARK}%{http_code}`,
+    url,
+  ], { maxBuffer: 20 * 1024 * 1024 });
+  const at = stdout.lastIndexOf(STATUS_MARK);
+  if (at === -1) throw new Error(`rss ${url} → no status from curl`);
+  const status = Number(stdout.slice(at + STATUS_MARK.length).trim());
+  const body = stdout.slice(0, at);
+  if (status < 200 || status >= 300) { const e = new Error(`rss ${url} → ${status}`); e.status = status; throw e; }
+  return body;
+}
+
 async function fetchRss(url) {
   for (let attempt = 0; attempt < 2; attempt++) {
     const wait = _lastRss + RSS_SPACING_MS - Date.now();
     if (wait > 0) await sleep(wait);
     _lastRss = Date.now();
-    const res = await fetch(url, { headers: { "User-Agent": RSS_UA } });
-    if (res.ok) return res.text();
-    if (res.status !== 429) throw new Error(`rss ${url} → ${res.status}`);
-    await sleep(90_000); // one patient retry on 429
+    try {
+      return await curlGet(url);
+    } catch (e) {
+      if (e.status !== 429) throw e;
+      await sleep(90_000); // one patient retry on 429
+    }
   }
   throw new Error(`rss ${url} → 429 (still throttled after retry)`);
 }

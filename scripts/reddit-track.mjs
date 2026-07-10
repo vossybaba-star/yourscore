@@ -63,6 +63,11 @@ async function consider(post, { subNote, searchNote }) {
 
 console.log(`\n👂 reddit-track · ${wl.subreddits.length} subs + ${wl.searches.length} searches · ${hasApiCreds() ? "API" : "RSS (unauthenticated, ~1 req/min pacing)"} mode ${DRY ? "· DRY" : ""}\n`);
 
+// Track fetch health. A run where EVERY fetch fails looks identical, in the log,
+// to a quiet news day ("considered 0") — that silence hid a 3-hour Reddit IP ban
+// on Jul 10. Count outcomes so the run can fail loudly instead.
+let subsOk = 0, subsErr = 0;
+
 for (const s of wl.subreddits) {
   if (ONLY && s.name.toLowerCase() !== ONLY.toLowerCase()) continue;
   if (drafted >= cap) break;
@@ -70,13 +75,14 @@ for (const s of wl.subreddits) {
     const posts = (await listPostsAny(s.name, { sort: s.sort || "hot", limit: 30 }))
       .filter((p) => fresh(p, s.maxAgeHours) && eligible(p, s.minUps))
       .slice(0, s.perRun ?? D.perRun ?? 2);
+    subsOk++;
     console.log(`  r/${s.name}: ${posts.length} candidate(s)`);
     for (const p of posts) {
       if (drafted >= cap) break;
       console.log(`    ${p.title.slice(0, 90)} (${p.ups}↑, ${p.numComments}c)`);
       await consider(p, { subNote: s.note });
     }
-  } catch (e) { console.error(`  r/${s.name}: ✗ ${e.message}`); }
+  } catch (e) { subsErr++; console.error(`  r/${s.name}: ✗ ${e.message}`); }
 }
 
 for (const q of wl.searches) {
@@ -95,7 +101,15 @@ for (const q of wl.searches) {
   } catch (e) { console.error(`  🔎 "${q.q}": ✗ ${e.message}`); }
 }
 
-console.log(`\n📊 considered ${considered} thread(s) · queued ${drafted} draft(s)`);
+console.log(`\n📊 considered ${considered} thread(s) · queued ${drafted} draft(s) · fetch ok ${subsOk}/${subsOk + subsErr}`);
+
+// Every fetch failed: Reddit is blocking this IP (403/429) or the network is down.
+// Exit non-zero so the wrapper alerts instead of writing an empty "all quiet" run.
+if (subsOk === 0 && subsErr > 0) {
+  console.error(`\n🚨 ALL ${subsErr} subreddit fetches failed — Reddit is likely blocking this IP. Nothing saved.`);
+  process.exit(2);
+}
+
 if (DRY) { console.log("🛑 DRY — nothing saved."); process.exit(0); }
 saveJSON(PATHS.state, state);
 saveJSON(PATHS.queue, queue);
