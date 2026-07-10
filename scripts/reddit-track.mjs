@@ -20,7 +20,7 @@ const wl = loadJSON(PATHS.watchlist, null);
 if (!wl) { console.error(`✗ no watchlist at ${PATHS.watchlist}`); process.exit(1); }
 const D = wl.defaults || {};
 
-const state = loadJSON(PATHS.state, { seen: {} });
+const state = loadJSON(PATHS.state, { seen: {}, subOffset: 0 });
 const queue = loadJSON(PATHS.queue, []);
 const queued = new Set(queue.map((d) => d.post.id));
 const now = Date.now();
@@ -68,9 +68,21 @@ console.log(`\n👂 reddit-track · ${wl.subreddits.length} subs + ${wl.searches
 // on Jul 10. Count outcomes so the run can fail loudly instead.
 let subsOk = 0, subsErr = 0;
 
-for (const s of wl.subreddits) {
+// Rotate where the sweep starts. The run stops the moment it hits maxQueuedPerRun,
+// and each RSS fetch costs ~65s, so a fixed order means the tail of the watchlist
+// is never reached on a productive run (Jul 10: 6 drafts by sub 15 of 29, so the
+// bottom 14 went unswept all day). Start where the last run stopped instead; over
+// the day's runs every sub gets a turn.
+const total = wl.subreddits.length;
+const startAt = ONLY ? 0 : ((state.subOffset ?? 0) % total + total) % total;
+const order = ONLY ? wl.subreddits : [...wl.subreddits.slice(startAt), ...wl.subreddits.slice(0, startAt)];
+let visited = 0;
+if (!ONLY) console.log(`  ↻ starting at r/${order[0].name} (offset ${startAt}/${total})\n`);
+
+for (const s of order) {
   if (ONLY && s.name.toLowerCase() !== ONLY.toLowerCase()) continue;
   if (drafted >= cap) break;
+  visited++;
   try {
     const posts = (await listPostsAny(s.name, { sort: s.sort || "hot", limit: 30 }))
       .filter((p) => fresh(p, s.maxAgeHours) && eligible(p, s.minUps))
@@ -84,6 +96,9 @@ for (const s of wl.subreddits) {
     }
   } catch (e) { subsErr++; console.error(`  r/${s.name}: ✗ ${e.message}`); }
 }
+
+// Next run picks up at the first sub this one didn't reach.
+if (!ONLY) state.subOffset = (startAt + visited) % total;
 
 for (const q of wl.searches) {
   if (ONLY) break;
@@ -101,7 +116,7 @@ for (const q of wl.searches) {
   } catch (e) { console.error(`  🔎 "${q.q}": ✗ ${e.message}`); }
 }
 
-console.log(`\n📊 considered ${considered} thread(s) · queued ${drafted} draft(s) · fetch ok ${subsOk}/${subsOk + subsErr}`);
+console.log(`\n📊 considered ${considered} thread(s) · queued ${drafted} draft(s) · fetch ok ${subsOk}/${subsOk + subsErr} · swept ${visited}/${total} subs${ONLY ? "" : ` · next run starts at r/${wl.subreddits[state.subOffset].name}`}`);
 
 // Every fetch failed: Reddit is blocking this IP (403/429) or the network is down.
 // Exit non-zero so the wrapper alerts instead of writing an empty "all quiet" run.
