@@ -16,6 +16,7 @@ export default function FantasyHub() {
   const [menuFor, setMenuFor] = useState<number | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [needsAuth, setNeedsAuth] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
@@ -23,7 +24,9 @@ export default function FantasyHub() {
       if (!s.squad) { router.replace("/fantasy/build"); return; }
       setState(s);
     } catch (e) {
-      if ((e as { status?: number }).status === 401) router.replace("/auth/sign-in?next=/fantasy");
+      // Show an explicit sign-in prompt instead of a silent redirect — an
+      // auto-redirect to /auth/sign-in bounced already-signed-in users around.
+      if ((e as { status?: number }).status === 401) setNeedsAuth(true);
       else setErr((e as Error).message);
     }
   }, [router]);
@@ -74,6 +77,25 @@ export default function FantasyHub() {
     setBusy(false);
   };
 
+  if (needsAuth) return (
+    <main style={page}>
+      <Header />
+      <Card style={{ marginTop: 12 }}>
+        <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Sign in to play</div>
+        <p style={{ fontSize: 13.5, color: MUTED, margin: "0 0 12px", lineHeight: 1.5 }}>
+          Your squad is saved to your YourScore account, so you&apos;ll need to be signed in.
+        </p>
+        <Btn gold onClick={() => router.push("/auth/sign-in?next=/fantasy")}>Sign in</Btn>
+      </Card>
+    </main>
+  );
+  if (err) return (
+    <main style={page}>
+      <Header />
+      <Card style={{ marginTop: 12 }}><p style={{ color: "#E08A6B", fontSize: 13.5, margin: 0 }}>{err}</p></Card>
+      <div style={{ marginTop: 10 }}><Btn onClick={() => { setErr(null); refresh(); }}>Try again</Btn></div>
+    </main>
+  );
   if (!state || !squad) return <main style={page}><Header /><p style={{ color: MUTED }}>Loading…</p></main>;
   const entry = state.entry;
   const result = entry?.result as Result | undefined | null;

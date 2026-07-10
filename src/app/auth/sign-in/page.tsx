@@ -10,13 +10,15 @@ import { GridBackground } from "@/components/ui/GridBackground";
 export default function SignInPage() {
   const { user, loading } = useUser();
   const router = useRouter();
-  // Where to return after signing in (e.g. ?next=/38-0/wc). Only internal paths.
-  const [next, setNext] = useState<string | null>(null);
-
-  useEffect(() => {
+  // Where to return after signing in (e.g. ?next=/fantasy). Only internal paths.
+  // Read synchronously on first client render so the redirect effect below can
+  // never fire with a stale null `next` (which sent already-signed-in users to
+  // "/" instead of their intended destination).
+  const [next] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
     const n = new URLSearchParams(window.location.search).get("next");
-    setNext(n && n.startsWith("/") && !n.startsWith("//") ? n : null);
-  }, []);
+    return n && n.startsWith("/") && !n.startsWith("//") ? n : null;
+  });
 
   useEffect(() => {
     if (!loading && user) router.replace(next || "/");
