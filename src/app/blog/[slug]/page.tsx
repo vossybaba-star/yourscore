@@ -2,7 +2,26 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MDXRemote, type MDXRemoteProps } from "next-mdx-remote/rsc";
+import { EmbeddedTweet, TweetNotFound } from "react-tweet";
+import { getTweet } from "react-tweet/api";
 import { getAllPosts, getPost, formatPostDate, SITE_URL } from "@/lib/blog";
+
+// Tweets render to static HTML at build time (react-tweet RSC) — no Twitter
+// scripts ship to the reader. A deleted/unfetchable tweet degrades to a quiet
+// fallback rather than failing the build.
+async function StaticTweet({ id }: { id: string }) {
+  try {
+    const tweet = await getTweet(id);
+    if (!tweet) return <TweetNotFound />;
+    return (
+      <div className="my-6 flex justify-center [&_.react-tweet-theme]:!my-0" data-theme="dark">
+        <EmbeddedTweet tweet={tweet} />
+      </div>
+    );
+  } catch {
+    return null;
+  }
+}
 
 export const dynamic = "force-static";
 export const dynamicParams = false;
@@ -45,6 +64,7 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
 // Editorial styling for MDX output — the app has no typography plugin, so each
 // element is mapped explicitly to the house look (Bebas headings, DM Sans body).
 const mdxComponents: MDXRemoteProps["components"] = {
+  Tweet: StaticTweet,
   h1: (props) => (
     <h2 className="font-display text-3xl tracking-wide text-text-primary mt-10 mb-3" {...props} />
   ),
