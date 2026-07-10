@@ -20,9 +20,6 @@ const KEY = process.env.SPORTMONKS_API_KEY;
 if (!KEY) { console.error("SPORTMONKS_API_KEY not set"); process.exit(1); }
 
 const CURRENT_SEASON = 28083; // PL 2026/27
-// The season the FPL stats refer to (bootstrap serves last season until the new
-// one kicks off) — every season-relative prompt is labelled with this.
-const STATS_SEASON_LABEL = "2025/26";
 const CAREER_SEASONS = 12; // most recent N seasons for career reconstruction
 const SEED = process.env.POOL_SEED ?? new Date().toISOString().slice(0, 10);
 const nowYear = new Date().getFullYear();
@@ -32,6 +29,20 @@ console.log(`building gate pool (seed ${SEED})…`);
 // 1. Current players: FPL base + SportMonks enrichment
 const boot = await fetchFplBootstrap();
 const players = fplToPlayers(boot);
+
+// The season the FPL stats refer to (bootstrap serves LAST season's game until
+// the new one launches ~late July) — every season-relative prompt is labelled
+// with this (founder rule). Derived from the feed itself so the FPL-flip
+// rebuild needs no code edit: GW1's deadline year starts the season.
+// Override with STATS_SEASON_LABEL=… only if the feed is ever wrong.
+const STATS_SEASON_LABEL = process.env.STATS_SEASON_LABEL ?? deriveSeasonLabel(boot);
+function deriveSeasonLabel(b) {
+  const first = b.events?.[0]?.deadline_time;
+  if (!first) throw new Error("bootstrap has no events — set STATS_SEASON_LABEL env to override");
+  const y = new Date(first).getFullYear();
+  return `${y}/${String((y + 1) % 100).padStart(2, "0")}`;
+}
+console.log(`stats season label: ${STATS_SEASON_LABEL}`);
 const { teams, players: smPlayers } = await fetchSmSeasonSquads(CURRENT_SEASON, KEY);
 const clubMap = matchClubs(boot.teams.map((t) => ({ id: t.id, name: t.name ?? t.short_name })), teams);
 const enrichment = buildEnrichment(players, smPlayers, clubMap, new Date());

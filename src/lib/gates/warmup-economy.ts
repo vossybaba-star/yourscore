@@ -1,17 +1,20 @@
 /**
- * Your PL XI warm-up — the pure economy: grants + prices. No imports, safe
- * everywhere (API route, page, measurement script). Tuning dials live here;
- * deal logic (which needs the player pool) lives in warmup-deals.ts.
+ * YourScore Fantasy Football warm-up — the pure economy: grants + prices. No
+ * imports, safe everywhere (API route, page, measurement script). Tuning dials
+ * live here; deal logic (which needs the player pool) lives in warmup-deals.ts.
  */
 
 export const r10 = (x: number) => Math.round(x * 10) / 10;
 
 // ── Grants (£m) ───────────────────────────────────────────────────────────────
-// COPY FPL (founder, round 4): the whole economy anchors to FPL's iconic £100m.
-// A PERFECT round earns exactly £100.0m — "perfect knowledge = the full FPL
-// budget". 11 × £7 + (8+8+7) milestone = £100.0. Wrong = £4 (FPL's price floor:
-// never stranded, zero slack). No streak cash — the streak's reward is that
-// bigger clubs appear in your deals (warmup-deals.ts).
+// COPY FPL (founder, round 4/5): the economy anchors to FPL — but FPL's £100m
+// buys FIFTEEN players; the four-man bench eats ~£17m, so the honest XI budget
+// is £83m. A PERFECT round earns exactly £83.0m — "FPL's £100m minus a real
+// bench". 11 × £7 + (2+2+2) milestone = £83.0. Wrong = £4 (FPL's price floor:
+// never stranded, zero slack). Measured (measure.sh): cutting the per-answer
+// grant instead (£6 + big milestones) sank 8/11 to str 77 — the mid-tier lives
+// on the per-answer grant, so the £17m bench comes out of the milestones. No
+// streak cash — the streak's reward is bigger clubs in deals (warmup-deals.ts).
 export const GRANT_CORRECT = 7;
 export const GRANT_WRONG = 4;
 
@@ -27,9 +30,9 @@ export function grantFor(correct: boolean, _streak: number): number {
 // Spread across the last three thresholds so the money lands while there are
 // still picks that can absorb it (the attacking slots draft last in 4-3-3).
 export const MILESTONES: { at: number; bonus: number }[] = [
-  { at: 9, bonus: 8 },
-  { at: 10, bonus: 8 },
-  { at: 11, bonus: 7 },
+  { at: 9, bonus: 2 },
+  { at: 10, bonus: 2 },
+  { at: 11, bonus: 2 },
 ];
 
 /** Bonus £m released by moving from `prevCorrect` to `nowCorrect` total correct. */

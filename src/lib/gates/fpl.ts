@@ -14,6 +14,8 @@ import { type Player, type Position } from "./types";
 export interface FplBootstrap {
   elements: FplElement[];
   teams: FplTeam[];
+  /** Gameweeks — the first event's deadline year tells us which season the feed serves. */
+  events?: { id: number; name: string; deadline_time: string }[];
 }
 
 export interface FplElement {

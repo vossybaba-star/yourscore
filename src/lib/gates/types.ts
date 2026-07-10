@@ -1,5 +1,5 @@
 /**
- * Your PL XI — gate generator: shared types.
+ * YourScore Fantasy Football — gate generator: shared types.
  *
  * The "gates" are the knowledge-round challenges that earn a player's transfer
  * budget. This module is the content-generation engine that turns football data

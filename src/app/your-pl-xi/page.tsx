@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Your PL XI — the post-WC WARM-UP game (the funnel ship).
+ * YourScore Fantasy Football — the post-WC WARM-UP game (the funnel ship).
  *
  * Draft mechanic (founder, Jul 9): every position is gated by a question. The
  * answer earns a BUDGET GRANT for that pick (correct ≈ 2× wrong, small streak
@@ -293,7 +293,7 @@ export default function YourPlXiWarmup() {
 
   const share = useCallback(async () => {
     if (!season) return;
-    const text = `My XI went ${season.wins}-${season.draws}-${season.losses} in Your PL XI (${correctCount}/11 questions right — knowledge builds the team). Can you beat it? yourscore.app/your-pl-xi`;
+    const text = `My XI went ${season.wins}-${season.draws}-${season.losses} in YourScore Fantasy Football (${correctCount}/11 questions right — knowledge builds the team). Can you beat it? yourscore.app/your-pl-xi`;
     capture("warmup_shared");
     try {
       if (navigator.share) await navigator.share({ text });
@@ -409,7 +409,7 @@ export default function YourPlXiWarmup() {
     >
       <div style={{ width: "100%", maxWidth: 430, display: "flex", flexDirection: "column", gap: 14 }}>
         <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.14em", color: GOLD }}>YOUR PL XI</span>
+          <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.14em", color: GOLD }}>YOURSCORE FANTASY FOOTBALL</span>
           <span style={{ display: "flex", gap: 6 }}>
             {(phase === "question" || phase === "reveal" || phase === "squad") &&
               chip(`pick ${Math.min(slotIdx + 1, 11)}/11`)}
@@ -797,7 +797,7 @@ export default function YourPlXiWarmup() {
               <div style={{ fontSize: 12, color: GOLD, letterSpacing: "0.1em", fontWeight: 700 }}>
                 COMING FOR THE NEW SEASON
               </div>
-              <div style={{ fontSize: 18, fontWeight: 700 }}>That was a taste of Your PL XI</div>
+              <div style={{ fontSize: 18, fontWeight: 700 }}>That was a taste of YourScore Fantasy Football</div>
               <p style={{ fontSize: 13, color: "#B9CABF", lineHeight: 1.55, margin: 0 }}>
                 The real thing runs on the actual Premier League: your football knowledge earns your
                 transfer budget, you build your XI, and real gameweek performances score it — against

@@ -1,5 +1,5 @@
 /**
- * Your PL XI warm-up — server-authoritative question layer.
+ * YourScore Fantasy Football warm-up — server-authoritative question layer.
  *
  * The warm-up game (post-WC funnel): 11 gate questions, one per XI slot; a
  * correct answer (and a live streak) raises the band the player drafts from —

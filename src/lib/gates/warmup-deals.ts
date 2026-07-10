@@ -1,5 +1,5 @@
 /**
- * Your PL XI warm-up — the ECONOMY in one file: grants, prices, and squad deals.
+ * YourScore Fantasy Football warm-up — the ECONOMY in one file: grants, prices, and squad deals.
  * Pure and client-safe; imported by the page AND by scripts/gates/measure.mjs so
  * balance measurements run the exact game code (no estimate drift). All tuning
  * dials live here.
