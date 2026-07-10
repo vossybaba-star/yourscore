@@ -309,3 +309,46 @@ export async function draftReply(post, { subNote, searchNote } = {}) {
     reason: out.reason || "",
   };
 }
+
+const FOLLOWUP_VOICE = `${VOICE}
+
+YOU ARE NOW DRAFTING A FOLLOW-UP, not a fresh top-level comment: the founder already posted a reply in this thread, and the other redditor has replied back to HIM. Read what they actually said and respond to it directly, the way a real back-and-forth goes - shorter than an opener is usually right, and it's fine to just agree, add one extra detail, or ask a quick question back.
+
+usable should be false only if there is genuinely nothing worth adding: the exchange has run its course, it's gone hostile, or a reply would just be noise. In that case leave "reply" empty and say why in "reason".
+
+OUTPUT: ONLY a JSON object, no prose, no code fences:
+{"usable": true|false, "reply": "<the reply, or empty string>", "mentionsProduct": true|false, "score": <1-10, unused but keep the field>, "reason": "<short why/why-not>"}`;
+
+/**
+ * Draft a reply to a redditor's reply, continuing a thread the founder already posted in.
+ * @param {ReturnType<typeof mapPost>} post   the original thread
+ * @param {string} ourReply    the founder's reply that was posted
+ * @param {string} theirReply  what the redditor said back
+ */
+export async function draftFollowUp(post, ourReply, theirReply) {
+  requireAnthropic();
+  const ctx = [
+    `SUBREDDIT: r/${post.sub}`,
+    `ORIGINAL THREAD TITLE: ${post.title}`,
+    post.body ? `ORIGINAL THREAD BODY:\n"""\n${post.body}\n"""` : "(link/media post, no self-text)",
+    `THE FOUNDER'S POSTED REPLY:\n"""\n${ourReply}\n"""`,
+    `THEIR REPLY BACK TO HIM:\n"""\n${theirReply}\n"""`,
+  ].filter(Boolean).join("\n");
+
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "x-api-key": ANTHROPIC, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+    body: JSON.stringify({ model: DRAFT_MODEL, max_tokens: 700, system: FOLLOWUP_VOICE, messages: [{ role: "user", content: ctx }] }),
+  });
+  const body = await res.text();
+  if (!res.ok) throw new Error(`Anthropic ${res.status}: ${body.slice(0, 300)}`);
+  const text = JSON.parse(body).content?.map((b) => b.text || "").join("") ?? "";
+  const out = parseModelJSON(text);
+  return {
+    usable: !!out.usable,
+    reply: sanitize(out.reply || ""),
+    mentionsProduct: !!out.mentionsProduct,
+    score: Number(out.score) || 0,
+    reason: out.reason || "",
+  };
+}
