@@ -6,7 +6,13 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed with the founder:** 2026-07-09 (**Blog scaffold live on yourscore.app** —
+> **Confirmed with the founder:** 2026-07-10 (**Debate OG card accepts `?day=`** —
+> `/api/og/debate?day=YYYY-MM-DD` renders that exact day's debate card instead of
+> today's (regex-validated; default behaviour unchanged, crawler caching unchanged).
+> Used by the Studio content dash to preview the whole week's upcoming debate cards
+> exactly as they'll unfurl on X. Debates are world-readable seeded content, so
+> early visibility is deliberate and fine.)
+> Previously 2026-07-09 (**Blog scaffold live on yourscore.app** —
 > founder approved blog-as-path on the main domain for SEO authority consolidation
 > (unblocks Week 1 of the Your PL XI launch plan). /blog index + /blog/[slug] render
 > MDX from `content/blog/*.mdx` (frontmatter: title, description, date, tags,

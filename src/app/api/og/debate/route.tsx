@@ -18,16 +18,19 @@ export const runtime = "edge";
 
 const GOLD = "#ffc233";
 
-async function todaysDebate(): Promise<{ question: string; options: string[] } | null> {
+async function todaysDebate(day?: string | null): Promise<{ question: string; options: string[] } | null> {
   const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!base || !key) return null;
-  // Same date-schedule rule as src/lib/debate.ts: today's dated debate, else
-  // the most recent past one. no-store: the durable data cache once pinned a
-  // stale bank forever.
+  // Default: same date-schedule rule as src/lib/debate.ts — today's dated debate,
+  // else the most recent past one. `?day=YYYY-MM-DD` renders that exact day's card
+  // instead (the Studio dash previews the week's upcoming cards with it; debates
+  // are world-readable seeded content, so early visibility is fine). no-store: the
+  // durable data cache once pinned a stale bank forever.
   const uk = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/London" });
+  const filter = day && /^\d{4}-\d{2}-\d{2}$/.test(day) ? `day=eq.${day}` : `day=lte.${uk}`;
   const res = await fetch(
-    `${base}/rest/v1/debates?active=eq.true&day=lte.${uk}&select=question,options&order=day.desc&limit=1`,
+    `${base}/rest/v1/debates?active=eq.true&${filter}&select=question,options&order=day.desc&limit=1`,
     { headers: { apikey: key, authorization: `Bearer ${key}` }, cache: "no-store" }
   ).catch(() => null);
   if (!res?.ok) return null;
@@ -41,10 +44,10 @@ async function todaysDebate(): Promise<{ question: string; options: string[] } |
 // propagates within 10 min and mints a new ?v= URL anyway.
 const CDN_CACHE = { "cache-control": "public, max-age=0, s-maxage=600, stale-while-revalidate=3600" };
 
-export async function GET() {
+export async function GET(req: Request) {
   let debate: { question: string; options: string[] } | null = null;
   try {
-    debate = await todaysDebate();
+    debate = await todaysDebate(new URL(req.url).searchParams.get("day"));
   } catch {
     /* fall through to the generic card — never 500 a social crawler */
   }
