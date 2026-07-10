@@ -1,6 +1,16 @@
 import { withSentryConfig } from "@sentry/nextjs";
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  async redirects() {
+    return [
+      {
+        // Post renamed hours after publish (game renamed YourScore Fantasy Football)
+        source: "/blog/your-pl-xi-how-it-works",
+        destination: "/blog/how-to-play-yourscore-fantasy-football",
+        permanent: true,
+      },
+    ];
+  },
   // Verification builds set NEXT_DIST_DIR to build without clobbering a running
   // dev server's .next (multiple sessions share this checkout). Unset on Vercel,
   // so prod deploys still use .next.

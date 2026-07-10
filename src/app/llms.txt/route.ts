@@ -10,7 +10,7 @@ export const dynamic = "force-static";
 export async function GET() {
   const body = `# YourScore
 
-> YourScore (yourscore.app) is a football competition platform with two games: 38-0, a head-to-head team-builder, and Quiz, the football knowledge game. Your PL XI, launching mid-August 2026, is a fantasy Premier League game where your football knowledge earns your transfer budget.
+> YourScore (yourscore.app) is a football competition platform with two games: 38-0, a head-to-head team-builder, and Quiz, the football knowledge game. YourScore Fantasy Football, launching mid-August 2026, is a fantasy Premier League game where your football knowledge earns your transfer budget.
 
 All games are free to play on the web and in the iOS app. Daily quizzes, an
 all-time-XI builder, head-to-head games, daily fan debates, and private
