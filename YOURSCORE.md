@@ -6,7 +6,15 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed with the founder:** 2026-07-10 (**Debate OG card accepts `?day=`** —
+> **Confirmed with the founder:** 2026-07-10 late (**Social cards fixed — robots.txt was
+> blocking every OG image** — the Jul 9 robots.ts shipped `Disallow: /api/` for all agents,
+> and every preview image lives under /api (og/*, draft/*-og, club-preview), so X, Facebook,
+> LinkedIn, Slack, Telegram, WhatsApp and Discord silently unfurled with no image from that
+> day. robots.ts now names the link-preview crawlers (Twitterbot, facebookexternalhit,
+> Facebot, LinkedInBot, Slackbot-LinkExpanding, TelegramBot, WhatsApp, Discordbot, redditbot,
+> Applebot) with `Allow: /` minus /admin, and the AI + `*` groups carry explicit `Allow:` rules
+> for each OG path ahead of the /api disallow. /api and /admin remain closed to everything else.)
+> Same day (**Debate OG card accepts `?day=`** —
 > `/api/og/debate?day=YYYY-MM-DD` renders that exact day's debate card instead of
 > today's (regex-validated; default behaviour unchanged, crawler caching unchanged).
 > Used by the Studio content dash to preview the whole week's upcoming debate cards
