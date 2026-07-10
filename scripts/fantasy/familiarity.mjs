@@ -7,7 +7,9 @@
  * Baseline: FPL-without-bonus vs FPL-total — the familiarity ceiling ANY
  * deterministic no-BPS system can reach.
  *
- * Usage: node scripts/fantasy/familiarity.mjs [gw] (default 30; fetches live data, caches)
+ * Usage: bash scripts/fantasy/familiarity.sh [gw]   (compiles values.ts then runs this)
+ * Values come from src/lib/fantasy/values.ts — THE game engine's scoring source —
+ * so this harness IS the acceptance test for any change to the values (≥ 0.98 bar).
  */
 
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
@@ -15,6 +17,12 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "../..");
+const valuesPath = join(root, ".tmp-fantasy-val/lib/fantasy/values.js");
+if (!existsSync(valuesPath)) {
+  console.error("compiled values not found — run: bash scripts/fantasy/familiarity.sh");
+  process.exit(1);
+}
+const { pointsFor, ZERO_FACTS } = await import(valuesPath);
 const GW = Number(process.argv[2] ?? 30);
 const cachePath = join(root, `scripts/data/gw${GW}-live.json`);
 
@@ -30,19 +38,18 @@ else {
   writeFileSync(cachePath, JSON.stringify(live));
 }
 
-// ── candidate YourScore values v1 (deterministic; distinct ~2.5× scale; no BPS)
+// ── FPL live stats → MatchFacts → pointsFor (src/lib/fantasy/values.ts) ──────
+const POS_NAME = { 1: "GK", 2: "DEF", 3: "MID", 4: "FWD" };
 function yourScore(pos, s) {
-  let p = 0;
-  p += s.minutes >= 60 ? 6 : s.minutes > 0 ? 3 : 0;
-  p += s.goals_scored * (pos <= 2 ? 15 : pos === 3 ? 13 : 11);
-  p += s.assists * 8;
-  if (s.minutes >= 60 && s.clean_sheets) p += pos <= 2 ? 10 : pos === 3 ? 3 : 0;
-  if (pos === 1) p += Math.floor(s.saves / 3) * 2 + s.penalties_saved * 12;
-  if (pos <= 2) p -= Math.floor(s.goals_conceded / 2) * 2;
-  p -= s.penalties_missed * 5 + s.yellow_cards * 3 + s.red_cards * 8 + s.own_goals * 5;
-  const dc = (s.clearances_blocks_interceptions ?? 0) + (s.tackles ?? 0) + (pos > 2 ? (s.recoveries ?? 0) : 0);
-  if (dc >= (pos === 2 ? 10 : 12)) p += 5; // defensive contribution, our value
-  return p;
+  const cbit = (s.clearances_blocks_interceptions ?? 0) + (s.tackles ?? 0);
+  return pointsFor(POS_NAME[pos] ?? "MID", {
+    ...ZERO_FACTS,
+    minutes: s.minutes, goals: s.goals_scored, assists: s.assists,
+    cleanSheet: s.clean_sheets, conceded: s.goals_conceded, saves: s.saves,
+    pensSaved: s.penalties_saved, pensMissed: s.penalties_missed,
+    yellows: s.yellow_cards, reds: s.red_cards, ownGoals: s.own_goals,
+    dc: cbit, dcRec: cbit + (s.recoveries ?? 0),
+  });
 }
 
 const rows = live.elements
