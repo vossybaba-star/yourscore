@@ -34,6 +34,8 @@ export function enginePool(): PoolPlayer[] {
 export function clientPool() {
   return {
     version: POOL.version,
-    players: POOL.players.map(({ smId: _smId, ...rest }) => rest),
+    players: POOL.players.map((p) => ({
+      id: p.id, name: p.name, club: p.club, clubId: p.clubId, pos: p.pos, price: p.price,
+    })),
   };
 }

@@ -1,0 +1,100 @@
+"use client";
+/**
+ * YourScore Fantasy Football — shared client theme + primitives + fetch helpers.
+ * Visual identity: gold on deep pitch (same family as the warm-up game).
+ */
+import { type CSSProperties, type ReactNode } from "react";
+
+export const GOLD = "#E3B54C";
+export const PITCH = "#0E1F17";
+export const PANEL = "#16261C";
+export const LINE = "#2A4032";
+export const INK = "#EDEAE0";
+export const MUTED = "#9FB2A5";
+
+export type Pos = "GK" | "DEF" | "MID" | "FWD";
+export interface ClientPoolPlayer {
+  id: number; name: string; club: string; clubId: number; pos: Pos; price: number;
+}
+export interface FantasyState {
+  gw: { gw: number; season: string; mode: string; status: string; deadline: string | null };
+  poolVersion: string;
+  openForEdits: boolean;
+  squad: {
+    picks: { id: number; pos: Pos; clubId: number; buyTenths: number }[];
+    bankTenths: number; credits: number; xi: number[]; bench: number[];
+    captain: number; vice: number; version: number;
+  } | null;
+  entry: {
+    status: string;
+    round: { answered: number; correct: number; creditsEarned: number; done: boolean };
+    transfers: number; hits: number; lockedAt: string | null;
+    result: {
+      points: number;
+      breakdown: { id: number; points: number; captain: boolean; subbedIn: boolean }[];
+      autosubs: { out: number; in: number }[]; captainUsed: number;
+    } | null;
+  } | null;
+}
+
+export async function api<T>(path: string, body?: unknown): Promise<T> {
+  const res = await fetch(`/api/fantasy/${path}`, body === undefined
+    ? { method: path === "pool" || path === "state" ? "GET" : "POST" }
+    : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw Object.assign(new Error(json.error ?? `HTTP ${res.status}`), { status: res.status, code: json.code });
+  return json as T;
+}
+
+export const page: CSSProperties = {
+  minHeight: "100dvh", background: PITCH, color: INK,
+  fontFamily: "'Avenir Next','Helvetica Neue',system-ui,sans-serif",
+  padding: "18px 16px 90px", maxWidth: 560, margin: "0 auto",
+};
+
+export function Header({ right }: { right?: ReactNode }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+      <span style={{ fontSize: 12.5, fontWeight: 700, letterSpacing: "0.14em", color: GOLD }}>
+        YOURSCORE FANTASY FOOTBALL
+      </span>
+      <span style={{ display: "flex", gap: 6 }}>{right}</span>
+    </div>
+  );
+}
+
+export function Chip({ children, gold = false }: { children: ReactNode; gold?: boolean }) {
+  return (
+    <span style={{
+      fontSize: 12, fontWeight: 700, padding: "4px 10px", borderRadius: 999,
+      background: gold ? GOLD : PANEL, color: gold ? "#2A1F00" : MUTED,
+      border: `1px solid ${gold ? GOLD : LINE}`, whiteSpace: "nowrap",
+    }}>{children}</span>
+  );
+}
+
+export function Btn({ children, onClick, gold = false, disabled = false, small = false }: {
+  children: ReactNode; onClick?: () => void; gold?: boolean; disabled?: boolean; small?: boolean;
+}) {
+  return (
+    <button onClick={onClick} disabled={disabled} style={{
+      padding: small ? "8px 12px" : "13px 16px", borderRadius: 12,
+      fontSize: small ? 13 : 14.5, fontWeight: 700, cursor: disabled ? "default" : "pointer",
+      background: gold ? GOLD : "transparent", color: gold ? "#2A1F00" : INK,
+      border: `1.5px solid ${gold ? GOLD : LINE}`, opacity: disabled ? 0.45 : 1,
+      width: small ? undefined : "100%",
+    }}>{children}</button>
+  );
+}
+
+export function Card({ children, style }: { children: ReactNode; style?: CSSProperties }) {
+  return (
+    <div style={{ background: PANEL, border: `1px solid ${LINE}`, borderRadius: 14, padding: 14, ...style }}>
+      {children}
+    </div>
+  );
+}
+
+export const fmtM = (tenths: number) => `£${(tenths / 10).toFixed(1)}m`;
+export const POS_ORDER: Pos[] = ["GK", "DEF", "MID", "FWD"];
+export const QUOTA: Record<Pos, number> = { GK: 2, DEF: 5, MID: 5, FWD: 3 };

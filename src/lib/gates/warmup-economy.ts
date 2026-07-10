@@ -18,8 +18,10 @@ export const r10 = (x: number) => Math.round(x * 10) / 10;
 export const GRANT_CORRECT = 7;
 export const GRANT_WRONG = 4;
 
-/** The budget grant (£m) for an answer. (Streak drives deals, not cash.) */
-export function grantFor(correct: boolean, _streak: number): number {
+/** The budget grant (£m) for an answer. (Streak drives deals, not cash — the
+ *  streak arg is kept in the signature for callers, deliberately unused here.) */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function grantFor(correct: boolean, streak: number): number {
   return correct ? GRANT_CORRECT : GRANT_WRONG;
 }
 

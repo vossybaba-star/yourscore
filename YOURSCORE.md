@@ -6,7 +6,51 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed with the founder:** 2026-07-07 late (**Tap guard + nav progress** —
+> **Confirmed with the founder:** 2026-07-11 (**YourScore Fantasy Football — Phase 1 MVP
+> built (branch `your-pl-xi/gate-generator`, not yet merged).** The 4th game, formerly
+> "Your PL XI". Locked model: build a **15-man squad ONCE** (2GK/5DEF/5MID/3FWD, £100m,
+> max 3/club, 4-man bench + auto-subs) → each gameweek a **knowledge round earns TRANSFER
+> CREDITS** (curve B: 5+→1, 7+→2, 9+→3, 11→4; bank cap 5) → extra moves cost −4 pts →
+> captain ×2 (carry-over → vice → best-form default chain) → **real-gameweek YourScore
+> points** from SportMonks match facts (deterministic, **no BPS-style bonus, ever**;
+> validated at the familiarity ceiling, Spearman 0.99 vs FPL actual). Wildcard: 1 issued
+> per half-season + 1 minted by a perfect round (max 1 bonus/half). Competitions =
+> **calendar-month tables** (season behind as prestige); deadline = FPL's convention
+> (90 min before the GW's first kickoff). Live at **/fantasy** (+ /api/fantasy/*,
+> migration 76: fantasy_gameweeks/squads/entries/player_scores). Phase 1 excludes chips,
+> wildcards, leagues, share cards. Dev **replay mode** scores real 25/26 gameweeks until
+> the season starts 21 Aug. Spec: `docs/your-pl-xi-design.md`; research + validation:
+> `docs/fantasy-transfer-research.md`; sims/tests: `scripts/fantasy/*`.)
+>
+> **Previously confirmed:** 2026-07-09 (**Blog scaffold live on yourscore.app** —
+> founder approved blog-as-path on the main domain for SEO authority consolidation
+> (unblocks Week 1 of the Your PL XI launch plan). /blog index + /blog/[slug] render
+> MDX from `content/blog/*.mdx` (frontmatter: title, description, date, tags,
+> optional ogImage, draft — drafts excluded from index/params/sitemap/RSS), fully
+> static (generateStaticParams + force-static; dynamicParams=false so unknown slugs
+> 404 at the edge — zero app-runtime impact). Per-post metadata + OpenGraph article
+> tags + Article JSON-LD; OG fallback is a **typographic gold-on-pitch plate** at
+> /api/og/blog (deliberately no artwork — the locked contact-sheet-approval rule);
+> RSS 2.0 at /blog/rss.xml. Also the site's **first-ever sitemap.ts + robots.ts**
+> (Search Console verified same day per marketing session; prod previously 404'd
+> both) — sitemap covers /, /play, /38-0, /how-it-works, /debate, /leaderboard,
+> /blog + posts, legal pages (all verified 200 logged-out); /api and /admin
+> disallowed; per-user profile/league pages deliberately excluded (build-time DB
+> fetch + thin content). **AI crawlers explicitly allowed** in robots.ts (founder
+> decision: get YourScore cited in AI answers) — GPTBot, ClaudeBot, Claude-Web,
+> PerplexityBot, Google-Extended, Applebot-Extended, CCBot named, /api + /admin
+> still off-limits to all. **/llms.txt live** (static route) with the
+> founder-approved entity line (incl. Your PL XI mid-Aug launch) + key-page
+> links — wording changes need marketing sign-off. **FAQPage JSON-LD supported** via frontmatter `faq:`
+> list — one source drives both the rendered "Quick answers" accordion and the
+> schema (NOT body comments: HTML `<!-- -->` comments break MDX builds — see
+> content/blog/README.md, the authoring guide). Publishing = commit an
+> .mdx to content/blog/ and deploy; seed post "Welcome to the YourScore blog"
+> (with live FAQ) is ready. New deps: next-mdx-remote, gray-matter. Build note:
+> next.config.mjs now
+> honours a NEXT_DIST_DIR env override so verify builds don't clobber a running dev
+> server's .next; verified with a real `next build` — all blog routes emit static.)
+> Previously 2026-07-07 late (**Tap guard + nav progress** —
 > founder: "the app is really sensitive as I'm scrolling, it accidentally clicks
 > into different areas… and the loading between screens is a little too long."
 > `TouchGuards` in the root layout: capture-phase click filter kills phantom taps
