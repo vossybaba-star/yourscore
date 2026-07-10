@@ -110,25 +110,29 @@ export async function run(report, ctx) {
       hint: "quiz/start dealt the same question twice in one game",
     });
 
-    // Cross-session: the bot keeps its user_question_history, so any repeat of a
-    // PREVIOUS run's question means dedup regressed for every long-term player.
+    // Cross-session: judge against the SERVER's dedup memory as it stood before the
+    // deal (ctx.preHistoryIds), not against this checker's lifetime ledger. The two
+    // diverge on purpose — quiz/start deletes the oldest 50% of user_question_history
+    // when a difficulty tier runs dry, so the server re-serves what it chose to
+    // forget while the ledger never forgets. Judging on the ledger turned every
+    // by-design recycle into a "dedup regressed" red (347 ledger ids vs 43 live rows).
+    //
+    // So: a repeat is a regression only if the question was STILL in the player's
+    // live history when it was dealt AND no recycle happened during the call. A
+    // recycle means the bank is too thin for this player — content, not code, and
+    // the depth check below is what should say so.
     const seenFile = join(DATA_DIR, "bot-seen-questions.jsonl");
     let seenBefore = new Set();
     try {
       seenBefore = new Set(readFileSync(seenFile, "utf8").trim().split("\n").map((l) => JSON.parse(l).id));
     } catch { /* first run */ }
-    const repeats = ctx.servedQuestions.filter((q) => q.id && seenBefore.has(q.id));
-    // The server deliberately recycles the oldest 50% of history once a
-    // difficulty tier runs dry for this player (quiz/start serves 15 and
-    // resets when <8 remain). A short deal (<15 served) means the bot is in
-    // exhaustion territory, so repeats there are the by-design recycle — a
-    // CONTENT-DEPTH problem, not a dedup regression. Repeats on a full
-    // 15-question deal with plenty of bank = dedup genuinely broken → red.
-    const exhaustion = ctx.servedQuestions.length < 15 || (ctx.entitySupply > 0 && ctx.entityHistory + 15 >= ctx.entitySupply);
-    report.add("gamer", "no repeats across sessions", repeats.length === 0 || exhaustion, {
-      warn: repeats.length > 0 && exhaustion,
+    const preHistory = ctx.preHistoryIds ?? new Set();
+    const repeats = ctx.servedQuestions.filter((q) => q.id && preHistory.has(q.id));
+    const byDesign = ctx.historyRecycled === true;
+    report.add("gamer", "no repeats across sessions", repeats.length === 0 || byDesign, {
+      warn: repeats.length > 0 && byDesign,
       detail: repeats.length
-        ? `${repeats.length} repeat(s) for ${ctx.quizEntity}${exhaustion ? ` — bank recycling (by design): a regular ${ctx.quizEntity} player sees repeats. Bank needs more questions (${ctx.entityHistory}/${ctx.entitySupply} servable seen)` : " with a full deal and unseen bank left"}`
+        ? `${repeats.length} repeat(s) for ${ctx.quizEntity}${byDesign ? ` — history recycled mid-deal (by design): the ${ctx.quizEntity} bank is too thin for a regular player (${ctx.entityHistory}/${ctx.entitySupply} servable seen)` : " served while still in the player's live history"}`
         : "",
       hint: "user_question_history dedup regressed — real users are seeing repeats",
     });
