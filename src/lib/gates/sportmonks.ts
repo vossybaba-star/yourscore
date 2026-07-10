@@ -33,6 +33,8 @@ export interface Enrichment {
   nationality?: string;
   age?: number;
   jersey?: number;
+  /** The matched SportMonks player id — the FPL↔SM identity bridge. */
+  smId?: number;
 }
 
 /** Lowercase, strip diacritics, collapse whitespace. */
@@ -159,6 +161,7 @@ export function buildEnrichment(
       nationality: s.nationality,
       age: s.dateOfBirth ? ageFrom(s.dateOfBirth, now) : undefined,
       jersey: s.jersey,
+      smId: s.smId,
     });
   }
   return out;
