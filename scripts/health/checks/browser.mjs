@@ -19,6 +19,24 @@ import { DATA_DIR } from "../lib/report.mjs";
 // Console noise that isn't a product bug (analytics pixels etc.) — extend as needed.
 const CONSOLE_ALLOWLIST = [/analytics/i, /pixel/i, /posthog/i, /third-party cookie/i, /net::ERR_BLOCKED_BY_CLIENT/i];
 
+// Third-party telemetry endpoints, including Sentry's /monitoring tunnel (next.config.mjs
+// tunnelRoute). A 4xx from these says nothing about whether YourScore works — Sentry answers
+// its own quota 429 with "This will not affect your application." Reported as a warn (we're
+// blind, not broken), never as a broken page.
+const TELEMETRY_URLS = [
+  /\/monitoring(\?|$)/,
+  /sentry\.io\//,
+  /google-analytics\.com|analytics\.google\.com|googletagmanager\.com/,
+  /posthog/i,
+];
+const isTelemetry = (url) => TELEMETRY_URLS.some((re) => re.test(url));
+
+// Chrome logs "Failed to load resource: the server responded with a status of 429 ()" with no
+// URL attached, so the message alone can't be attributed. Each telemetry failure we observed
+// explains exactly one such line — consume them one-for-one rather than blanket-ignoring the
+// string, so a real 404 on a real asset still fails the run.
+const GENERIC_RESOURCE_ERROR = /Failed to load resource/i;
+
 const PAGES = [
   {
     path: "/",
@@ -100,6 +118,7 @@ export async function run(report, ctx) {
       await authedContext.addCookies(ctx.auth.cookies.map((c) => ({ name: c.name, value: c.value, domain: host, path: "/", secure: true, httpOnly: false, sameSite: "Lax" })));
     }
     const anonContext = await browser.newContext(contextOpts);
+    const telemetryDown = new Set();
 
     for (const spec of PAGES) {
       const context = spec.anon ? anonContext : authedContext;
@@ -107,17 +126,21 @@ export async function run(report, ctx) {
       const state = {};
       const consoleErrors = [];
       const badRequests = [];
+      const telemetryFailures = [];
       page.on("console", (msg) => {
         if (msg.type() === "error" && !CONSOLE_ALLOWLIST.some((re) => re.test(msg.text()))) consoleErrors.push(msg.text());
       });
       page.on("requestfailed", (r) => {
         // ERR_ABORTED = cancelled request (Next.js RSC prefetches abort routinely) — not a failure.
         if (r.failure()?.errorText === "net::ERR_ABORTED") return;
+        if (isTelemetry(r.url())) { telemetryFailures.push(`${r.url().split("?")[0]} (${r.failure()?.errorText})`); return; }
         if (!CONSOLE_ALLOWLIST.some((re) => re.test(r.url()))) badRequests.push(`${r.url().slice(-80)} (${r.failure()?.errorText})`);
       });
       page.on("response", (r) => {
+        if (r.status() < 400) return;
+        if (isTelemetry(r.url())) { telemetryFailures.push(`${r.url().split("?")[0]} → ${r.status()}`); return; }
         // The stale-deploy signature: any static JS/chunk answering 4xx+.
-        if (r.status() >= 400 && (/\.js(\?|$)/.test(r.url()) || r.url().includes("/_next/static/"))) {
+        if (/\.js(\?|$)/.test(r.url()) || r.url().includes("/_next/static/")) {
           badRequests.push(`${r.url().slice(-80)} → ${r.status()}`);
         }
       });
@@ -128,9 +151,17 @@ export async function run(report, ctx) {
         const resp = await page.goto(BASE + spec.path, { timeout: 30_000, waitUntil: "domcontentloaded" });
         if (!resp || resp.status() >= 400) throw new Error(`navigation ${resp?.status()}`);
         await spec.ready(page, state, ctx);
-        await page.waitForTimeout(1500); // let late chunk loads/console errors surface
+        // Long enough for late chunk loads AND the Sentry tunnel POST (which can 429 on
+        // quota) to land — a shorter wait made `home` pass or fail depending on timing.
+        await page.waitForTimeout(3000);
+        telemetryFailures.forEach((f) => telemetryDown.add(f));
+        let explained = telemetryFailures.length;
+        const realErrors = consoleErrors.filter((t) => {
+          if (explained > 0 && GENERIC_RESOURCE_ERROR.test(t)) { explained--; return false; }
+          return true;
+        });
         if (badRequests.length) { ok = false; detail = `failed asset(s): ${badRequests.slice(0, 2).join("; ")}`; }
-        else if (consoleErrors.length) { ok = false; detail = `console error: ${consoleErrors[0].slice(0, 140)}`; }
+        else if (realErrors.length) { ok = false; detail = `console error: ${realErrors[0].slice(0, 140)}`; }
       } catch (e) {
         ok = false;
         detail = [e.message.slice(0, 140), badRequests.slice(0, 2).join("; ")].filter(Boolean).join(" | ");
@@ -150,6 +181,14 @@ export async function run(report, ctx) {
           : "page broken in the client — open the screenshot",
       });
       await page.close();
+    }
+
+    if (telemetryDown.size) {
+      report.add("browser", "telemetry", true, {
+        warn: true,
+        detail: `dropping data: ${[...telemetryDown].slice(0, 2).join("; ")}`,
+        hint: "not user-facing, but errors/analytics are being lost — check the Sentry quota (span_usage_exceeded) before trusting the Sentry sweep",
+      });
     }
   } finally {
     await browser.close();
