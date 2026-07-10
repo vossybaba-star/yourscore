@@ -14,22 +14,22 @@ import {
 } from "@/components/home/Dashboard";
 
 export const metadata: Metadata = {
-  title: "YourScore — 38-0. Draft your best XI. Top your league.",
+  title: "YourScore | The Home of Football Gaming",
   description:
-    "Draft your XI. Go head to head. Top your league. YourScore is the football knowledge game for you and your mates.",
+    "For fans who actually know their football. Fantasy XI, daily quizzes, head-to-head battles and private leagues — all in one place. Free on web and iOS.",
   openGraph: {
-    title: "YourScore — 38-0. Draft your best XI. Top your league.",
+    title: "YourScore | The Home of Football Gaming",
     description:
-      "Draft your XI. Go head to head. Top your league. YourScore is the football knowledge game for you and your mates.",
+      "For fans who actually know their football. Fantasy XI, daily quizzes, head-to-head battles and private leagues — all in one place. Free on web and iOS.",
     type: "website",
     siteName: "YourScore",
     images: [{ url: "https://yourscore.app/api/og/home", width: 1200, height: 630, alt: "YourScore · 38-0" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "YourScore — 38-0. Draft your best XI. Top your league.",
+    title: "YourScore | The Home of Football Gaming",
     description:
-      "Draft your XI. Go head to head. Top your league. YourScore is the football knowledge game for you and your mates.",
+      "For fans who actually know their football. Fantasy XI, daily quizzes, head-to-head battles and private leagues — all in one place. Free on web and iOS.",
     images: ["https://yourscore.app/api/og/home"],
   },
 };

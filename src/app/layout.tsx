@@ -41,9 +41,9 @@ const dmMono = DM_Mono({
 export function generateMetadata(): Metadata {
   return {
     metadataBase: new URL("https://yourscore.app"),
-    title: "YourScore — Live Football Games",
+    title: "YourScore — Football Knowledge Game",
     description:
-      "Answer live questions during the 2026 World Cup. Score points, climb the leaderboard, and compete in leagues with your mates.",
+      "Test your football knowledge with daily quizzes, head-to-head battles and private leagues. Build your XI and compete with your mates. Free on web and iOS.",
     manifest: "/manifest.json",
     appleWebApp: {
       capable: true,
@@ -51,16 +51,16 @@ export function generateMetadata(): Metadata {
       title: "YourScore",
     },
     openGraph: {
-      title: "YourScore — Live Football Games",
-      description: "Answer live questions. Score points. Compete with your mates all tournament long.",
+      title: "YourScore — Football Knowledge Game",
+      description: "Test your football knowledge with daily quizzes, head-to-head battles and private leagues. Build your XI and compete with your mates. Free on web and iOS.",
       type: "website",
       siteName: "YourScore",
       images: [{ url: "https://yourscore.app/api/og/home", width: 1200, height: 630, alt: "YourScore · 38-0" }],
     },
     twitter: {
       card: "summary_large_image",
-      title: "YourScore — Live Football Games",
-      description: "Answer live questions. Score points. Compete with your mates all tournament long.",
+      title: "YourScore — Football Knowledge Game",
+      description: "Test your football knowledge with daily quizzes, head-to-head battles and private leagues. Build your XI and compete with your mates. Free on web and iOS.",
       images: ["https://yourscore.app/api/og/home"],
     },
     icons: {
