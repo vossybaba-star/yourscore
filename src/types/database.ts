@@ -12,33 +12,32 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
+      admin_chat_messages: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          role: string
+          status: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          role: string
+          status?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          role?: string
+          status?: string
+        }
+        Relationships: []
+      }
       answers: {
         Row: {
           answered_at: string | null
@@ -109,6 +108,13 @@ export type Database = {
             foreignKeyName: "answers_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "user_email_segments"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "answers_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "yourscore_user_ratings"
             referencedColumns: ["user_id"]
           },
@@ -159,6 +165,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenge_attempts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_email_segments"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "challenge_attempts_user_id_fkey"
@@ -702,6 +715,7 @@ export type Database = {
           p1_formation: string | null
           p1_half_left: number
           p1_id: string | null
+          p1_kicks: Json
           p1_name: string | null
           p1_pregame_left: number
           p1_ready: boolean
@@ -713,6 +727,7 @@ export type Database = {
           p2_formation: string | null
           p2_half_left: number
           p2_id: string | null
+          p2_kicks: Json
           p2_name: string | null
           p2_pregame_left: number
           p2_ready: boolean
@@ -746,6 +761,7 @@ export type Database = {
           p1_formation?: string | null
           p1_half_left?: number
           p1_id?: string | null
+          p1_kicks?: Json
           p1_name?: string | null
           p1_pregame_left?: number
           p1_ready?: boolean
@@ -757,6 +773,7 @@ export type Database = {
           p2_formation?: string | null
           p2_half_left?: number
           p2_id?: string | null
+          p2_kicks?: Json
           p2_name?: string | null
           p2_pregame_left?: number
           p2_ready?: boolean
@@ -790,6 +807,7 @@ export type Database = {
           p1_formation?: string | null
           p1_half_left?: number
           p1_id?: string | null
+          p1_kicks?: Json
           p1_name?: string | null
           p1_pregame_left?: number
           p1_ready?: boolean
@@ -801,6 +819,7 @@ export type Database = {
           p2_formation?: string | null
           p2_half_left?: number
           p2_id?: string | null
+          p2_kicks?: Json
           p2_name?: string | null
           p2_pregame_left?: number
           p2_ready?: boolean
@@ -1118,6 +1137,27 @@ export type Database = {
         }
         Relationships: []
       }
+      draft_wc_daily_locks: {
+        Row: {
+          created_at: string
+          picks: number
+          run_date: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          picks?: number
+          run_date: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          picks?: number
+          run_date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       draft_wc_matches: {
         Row: {
           detail: Json | null
@@ -1186,9 +1226,16 @@ export type Database = {
           id: string
           mode: string
           nation: string
+          pens_state: Json | null
           plan: Json
+          quiz_answers: Json | null
+          quiz_correct: number | null
+          quiz_total: number | null
+          ranked: boolean
           resolved_at: string | null
+          run_date: string | null
           seed: string
+          source: string | null
           squad: Json
           stage: string
           stage_index: number
@@ -1197,6 +1244,9 @@ export type Database = {
           updated_at: string
           upgrades_left: number
           user_id: string
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
         }
         Insert: {
           created_at?: string
@@ -1206,9 +1256,16 @@ export type Database = {
           id?: string
           mode?: string
           nation: string
+          pens_state?: Json | null
           plan: Json
+          quiz_answers?: Json | null
+          quiz_correct?: number | null
+          quiz_total?: number | null
+          ranked?: boolean
           resolved_at?: string | null
+          run_date?: string | null
           seed: string
+          source?: string | null
           squad: Json
           stage?: string
           stage_index?: number
@@ -1217,6 +1274,9 @@ export type Database = {
           updated_at?: string
           upgrades_left?: number
           user_id: string
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
         }
         Update: {
           created_at?: string
@@ -1226,9 +1286,16 @@ export type Database = {
           id?: string
           mode?: string
           nation?: string
+          pens_state?: Json | null
           plan?: Json
+          quiz_answers?: Json | null
+          quiz_correct?: number | null
+          quiz_total?: number | null
+          ranked?: boolean
           resolved_at?: string | null
+          run_date?: string | null
           seed?: string
+          source?: string | null
           squad?: Json
           stage?: string
           stage_index?: number
@@ -1237,6 +1304,278 @@ export type Database = {
           updated_at?: string
           upgrades_left?: number
           user_id?: string
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+        }
+        Relationships: []
+      }
+      email_engagement: {
+        Row: {
+          email: string
+          last_clicked_at: string | null
+          last_opened_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          email: string
+          last_clicked_at?: string | null
+          last_opened_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          email?: string
+          last_clicked_at?: string | null
+          last_opened_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      email_log: {
+        Row: {
+          sent_at: string
+          template: string
+          user_id: string
+        }
+        Insert: {
+          sent_at?: string
+          template: string
+          user_id: string
+        }
+        Update: {
+          sent_at?: string
+          template?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      email_sends: {
+        Row: {
+          campaign_key: string
+          id: string
+          sent_at: string
+          user_id: string
+        }
+        Insert: {
+          campaign_key: string
+          id?: string
+          sent_at?: string
+          user_id: string
+        }
+        Update: {
+          campaign_key?: string
+          id?: string
+          sent_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      email_suppressions: {
+        Row: {
+          created_at: string
+          detail: string | null
+          email: string
+          id: string
+          reason: string
+        }
+        Insert: {
+          created_at?: string
+          detail?: string | null
+          email: string
+          id?: string
+          reason: string
+        }
+        Update: {
+          created_at?: string
+          detail?: string | null
+          email?: string
+          id?: string
+          reason?: string
+        }
+        Relationships: []
+      }
+      fantasy_entries: {
+        Row: {
+          autosubs: Json | null
+          bench: number[] | null
+          captain: number | null
+          captain_used: number | null
+          gw: number
+          hits: number
+          locked_at: string | null
+          picks: Json | null
+          points: number | null
+          points_breakdown: Json | null
+          round_answers: Json
+          round_correct: number
+          round_credits: number
+          round_done_at: string | null
+          round_version: string | null
+          scored_at: string | null
+          status: string
+          transfers: Json
+          user_id: string
+          vice: number | null
+          xi: number[] | null
+        }
+        Insert: {
+          autosubs?: Json | null
+          bench?: number[] | null
+          captain?: number | null
+          captain_used?: number | null
+          gw: number
+          hits?: number
+          locked_at?: string | null
+          picks?: Json | null
+          points?: number | null
+          points_breakdown?: Json | null
+          round_answers?: Json
+          round_correct?: number
+          round_credits?: number
+          round_done_at?: string | null
+          round_version?: string | null
+          scored_at?: string | null
+          status?: string
+          transfers?: Json
+          user_id: string
+          vice?: number | null
+          xi?: number[] | null
+        }
+        Update: {
+          autosubs?: Json | null
+          bench?: number[] | null
+          captain?: number | null
+          captain_used?: number | null
+          gw?: number
+          hits?: number
+          locked_at?: string | null
+          picks?: Json | null
+          points?: number | null
+          points_breakdown?: Json | null
+          round_answers?: Json
+          round_correct?: number
+          round_credits?: number
+          round_done_at?: string | null
+          round_version?: string | null
+          scored_at?: string | null
+          status?: string
+          transfers?: Json
+          user_id?: string
+          vice?: number | null
+          xi?: number[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fantasy_entries_gw_fkey"
+            columns: ["gw"]
+            isOneToOne: false
+            referencedRelation: "fantasy_gameweeks"
+            referencedColumns: ["gw"]
+          },
+        ]
+      }
+      fantasy_gameweeks: {
+        Row: {
+          deadline: string | null
+          gw: number
+          mode: string
+          season: string
+          sm_season_id: number
+          status: string
+          window_end: string
+          window_start: string
+        }
+        Insert: {
+          deadline?: string | null
+          gw: number
+          mode?: string
+          season: string
+          sm_season_id: number
+          status?: string
+          window_end: string
+          window_start: string
+        }
+        Update: {
+          deadline?: string | null
+          gw?: number
+          mode?: string
+          season?: string
+          sm_season_id?: number
+          status?: string
+          window_end?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
+      fantasy_player_scores: {
+        Row: {
+          facts: Json
+          gw: number
+          minutes: number
+          player_id: number
+          points: number
+          updated_at: string
+        }
+        Insert: {
+          facts: Json
+          gw: number
+          minutes?: number
+          player_id: number
+          points: number
+          updated_at?: string
+        }
+        Update: {
+          facts?: Json
+          gw?: number
+          minutes?: number
+          player_id?: number
+          points?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      fantasy_squads: {
+        Row: {
+          bank_tenths: number
+          bench: number[]
+          captain: number
+          created_at: string
+          created_gw: number
+          credits: number
+          picks: Json
+          updated_at: string
+          user_id: string
+          version: number
+          vice: number
+          xi: number[]
+        }
+        Insert: {
+          bank_tenths: number
+          bench: number[]
+          captain: number
+          created_at?: string
+          created_gw: number
+          credits?: number
+          picks: Json
+          updated_at?: string
+          user_id: string
+          version?: number
+          vice: number
+          xi: number[]
+        }
+        Update: {
+          bank_tenths?: number
+          bench?: number[]
+          captain?: number
+          created_at?: string
+          created_gw?: number
+          credits?: number
+          picks?: Json
+          updated_at?: string
+          user_id?: string
+          version?: number
+          vice?: number
+          xi?: number[]
         }
         Relationships: []
       }
@@ -1303,8 +1642,98 @@ export type Database = {
         }
         Relationships: []
       }
+      group_challenge_participants: {
+        Row: {
+          challenge_id: string
+          correct: number | null
+          created_at: string
+          display_name: string
+          id: string
+          invited: boolean
+          played_at: string | null
+          score: number | null
+          seen: boolean
+          user_id: string
+        }
+        Insert: {
+          challenge_id: string
+          correct?: number | null
+          created_at?: string
+          display_name: string
+          id?: string
+          invited?: boolean
+          played_at?: string | null
+          score?: number | null
+          seen?: boolean
+          user_id: string
+        }
+        Update: {
+          challenge_id?: string
+          correct?: number | null
+          created_at?: string
+          display_name?: string
+          id?: string
+          invited?: boolean
+          played_at?: string | null
+          score?: number | null
+          seen?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_challenge_participants_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "group_challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_challenges: {
+        Row: {
+          created_at: string
+          creator_id: string
+          creator_name: string
+          expires_at: string
+          id: string
+          kind: string
+          max_score: number
+          quiz_pack_id: string
+          quiz_pack_name: string
+          status: string
+          total_questions: number
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          creator_name: string
+          expires_at?: string
+          id?: string
+          kind?: string
+          max_score: number
+          quiz_pack_id: string
+          quiz_pack_name: string
+          status?: string
+          total_questions: number
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          creator_name?: string
+          expires_at?: string
+          id?: string
+          kind?: string
+          max_score?: number
+          quiz_pack_id?: string
+          quiz_pack_name?: string
+          status?: string
+          total_questions?: number
+        }
+        Relationships: []
+      }
       h2h_challenges: {
         Row: {
+          challenger_answers: Json | null
           challenger_correct: number
           challenger_id: string
           challenger_name: string
@@ -1314,6 +1743,8 @@ export type Database = {
           id: string
           invited_user_id: string | null
           max_score: number
+          mode: string
+          opponent_answers: Json | null
           opponent_correct: number | null
           opponent_id: string | null
           opponent_score: number | null
@@ -1324,6 +1755,7 @@ export type Database = {
           total_questions: number
         }
         Insert: {
+          challenger_answers?: Json | null
           challenger_correct: number
           challenger_id: string
           challenger_name: string
@@ -1333,6 +1765,8 @@ export type Database = {
           id?: string
           invited_user_id?: string | null
           max_score: number
+          mode?: string
+          opponent_answers?: Json | null
           opponent_correct?: number | null
           opponent_id?: string | null
           opponent_score?: number | null
@@ -1343,6 +1777,7 @@ export type Database = {
           total_questions: number
         }
         Update: {
+          challenger_answers?: Json | null
           challenger_correct?: number
           challenger_id?: string
           challenger_name?: string
@@ -1352,6 +1787,8 @@ export type Database = {
           id?: string
           invited_user_id?: string | null
           max_score?: number
+          mode?: string
+          opponent_answers?: Json | null
           opponent_correct?: number | null
           opponent_id?: string | null
           opponent_score?: number | null
@@ -1635,42 +2072,84 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_log: {
+        Row: {
+          key: string
+          sent_at: string
+          user_id: string
+        }
+        Insert: {
+          key: string
+          sent_at?: string
+          user_id: string
+        }
+        Update: {
+          key?: string
+          sent_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
+          active_hour_utc: number | null
           avatar_url: string | null
+          country: string | null
           created_at: string | null
           display_name: string | null
           games_played: number | null
           id: string
           notifications_opt_in: boolean
+          referrer: string | null
           social_handle: string | null
           social_platform: string | null
+          source: string | null
+          timezone: string | null
           total_score: number | null
           username: string | null
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
         }
         Insert: {
+          active_hour_utc?: number | null
           avatar_url?: string | null
+          country?: string | null
           created_at?: string | null
           display_name?: string | null
           games_played?: number | null
           id: string
           notifications_opt_in?: boolean
+          referrer?: string | null
           social_handle?: string | null
           social_platform?: string | null
+          source?: string | null
+          timezone?: string | null
           total_score?: number | null
           username?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
         }
         Update: {
+          active_hour_utc?: number | null
           avatar_url?: string | null
+          country?: string | null
           created_at?: string | null
           display_name?: string | null
           games_played?: number | null
           id?: string
           notifications_opt_in?: boolean
+          referrer?: string | null
           social_handle?: string | null
           social_platform?: string | null
+          source?: string | null
+          timezone?: string | null
           total_score?: number | null
           username?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
         }
         Relationships: []
       }
@@ -1790,21 +2269,6 @@ export type Database = {
           },
         ]
       }
-      quiz_queue: {
-        Row: {
-          enqueued_at: string
-          user_id: string
-        }
-        Insert: {
-          enqueued_at?: string
-          user_id: string
-        }
-        Update: {
-          enqueued_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       quiz_attempts: {
         Row: {
           answers: Json | null
@@ -1862,6 +2326,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quiz_attempts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_email_segments"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "quiz_attempts_user_id_fkey"
@@ -1950,6 +2421,21 @@ export type Database = {
         }
         Relationships: []
       }
+      quiz_queue: {
+        Row: {
+          enqueued_at: string
+          user_id: string
+        }
+        Insert: {
+          enqueued_at?: string
+          user_id: string
+        }
+        Update: {
+          enqueued_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       rate_limits: {
         Row: {
           count: number
@@ -2010,6 +2496,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_email_segments"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "room_members_user_id_fkey"
@@ -2085,6 +2578,13 @@ export type Database = {
             foreignKeyName: "room_scores_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "user_email_segments"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "room_scores_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "yourscore_user_ratings"
             referencedColumns: ["user_id"]
           },
@@ -2103,7 +2603,6 @@ export type Database = {
           is_public: boolean | null
           match_id: string | null
           max_players: number | null
-          shadow: Json | null
           name: string
           pack_id: string | null
           prize_description: string | null
@@ -2111,6 +2610,7 @@ export type Database = {
           question_started_at: string | null
           questions_json: Json | null
           room_mode: string
+          shadow: Json | null
           sponsor_logo_url: string | null
           sponsor_name: string | null
           status: string | null
@@ -2131,12 +2631,12 @@ export type Database = {
           max_players?: number | null
           name: string
           pack_id?: string | null
-          shadow?: Json | null
           prize_description?: string | null
           question_count?: number
           question_started_at?: string | null
           questions_json?: Json | null
           room_mode?: string
+          shadow?: Json | null
           sponsor_logo_url?: string | null
           sponsor_name?: string | null
           status?: string | null
@@ -2157,12 +2657,12 @@ export type Database = {
           max_players?: number | null
           name?: string
           pack_id?: string | null
-          shadow?: Json | null
           prize_description?: string | null
           question_count?: number
           question_started_at?: string | null
           questions_json?: Json | null
           room_mode?: string
+          shadow?: Json | null
           sponsor_logo_url?: string | null
           sponsor_name?: string | null
           status?: string | null
@@ -2176,6 +2676,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rooms_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "user_email_segments"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "rooms_created_by_fkey"
@@ -2255,8 +2762,95 @@ export type Database = {
           },
         ]
       }
+      wc_ranked_edition: {
+        Row: {
+          edition: string
+          id: boolean
+          prev_edition: string | null
+          published_at: string
+        }
+        Insert: {
+          edition: string
+          id?: boolean
+          prev_edition?: string | null
+          published_at?: string
+        }
+        Update: {
+          edition?: string
+          id?: boolean
+          prev_edition?: string | null
+          published_at?: string
+        }
+        Relationships: []
+      }
+      wc_run_comments: {
+        Row: {
+          author_id: string
+          body: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          run_id: string
+        }
+        Insert: {
+          author_id: string
+          body: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          run_id: string
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          run_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wc_run_comments_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "draft_wc_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
+      user_email_segments: {
+        Row: {
+          active_hour_utc: number | null
+          country: string | null
+          days_since_active: number | null
+          engagement_tier: string | null
+          first_game: string | null
+          first_game_at: string | null
+          g38_games: number | null
+          has_friends: boolean | null
+          in_league: boolean | null
+          is_new: boolean | null
+          last_active_at: string | null
+          multi_game: boolean | null
+          name: string | null
+          notifications_opt_in: boolean | null
+          played_wc_ranked: boolean | null
+          plays_38: boolean | null
+          plays_quiz: boolean | null
+          plays_wc: boolean | null
+          primary_game: string | null
+          quiz_games: number | null
+          signed_up_at: string | null
+          timezone: string | null
+          total_games: number | null
+          total_score: number | null
+          user_id: string | null
+          wc_games: number | null
+        }
+        Relationships: []
+      }
       yourscore_user_ratings: {
         Row: {
           avatar_url: string | null
@@ -2279,14 +2873,12 @@ export type Database = {
         Args: { p_penalty: number; p_room_id: string; p_user_ids: string[] }
         Returns: undefined
       }
-      quiz_pair: {
-        Args: { p_user: string }
-        Returns: string
-      }
       check_rate_limit: {
         Args: { p_key: string; p_max: number; p_window_seconds: number }
         Returns: boolean
       }
+      delete_bounced_user: { Args: { p_email: string }; Returns: string }
+      delete_user_account: { Args: { p_user: string }; Returns: undefined }
       draft_credit_result: {
         Args: {
           p_competition?: string
@@ -2324,6 +2916,66 @@ export type Database = {
           wins: number
         }[]
       }
+      draft_live_kick: {
+        Args: {
+          p_match: string
+          p_round: number
+          p1_kick?: Json
+          p2_kick?: Json
+        }
+        Returns: {
+          competition: string
+          created_at: string
+          h1_p1: number | null
+          h1_p2: number | null
+          h2_p1: number | null
+          h2_p2: number | null
+          id: string
+          invited_id: string | null
+          is_bot: boolean
+          join_code: string | null
+          league_id: string | null
+          p1_competition: string
+          p1_formation: string | null
+          p1_half_left: number
+          p1_id: string | null
+          p1_kicks: Json
+          p1_name: string | null
+          p1_pregame_left: number
+          p1_ready: boolean
+          p1_squad: Json | null
+          p1_strength: number | null
+          p1_sub_ids: Json
+          p1_wants_pens: boolean | null
+          p2_competition: string
+          p2_formation: string | null
+          p2_half_left: number
+          p2_id: string | null
+          p2_kicks: Json
+          p2_name: string | null
+          p2_pregame_left: number
+          p2_ready: boolean
+          p2_squad: Json | null
+          p2_strength: number | null
+          p2_sub_ids: Json
+          p2_wants_pens: boolean | null
+          pens_p1: number | null
+          pens_p2: number | null
+          phase: string
+          phase_deadline: string | null
+          ranked: boolean
+          resolved_at: string | null
+          sim: Json | null
+          updated_at: string
+          winner_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "draft_live_matches"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       draft_live_pair: {
         Args: {
           p_competition?: string
@@ -2332,8 +2984,8 @@ export type Database = {
           p_user: string
         }
         Returns: {
-          opp_user: string
           opp_competition: string
+          opp_user: string
         }[]
       }
       draft_live_reap: { Args: never; Returns: undefined }
@@ -2368,14 +3020,15 @@ export type Database = {
       get_club_league_feed: {
         Args: { p_league_id: string; p_limit?: number }
         Returns: {
+          avatar_url: string
+          created_at: string
+          detail: Json
+          display_name: string
           kind: string
           user_id: string
-          display_name: string
-          avatar_url: string | null
-          detail: Json
-          created_at: string
         }[]
       }
+      get_email_segments: { Args: never; Returns: Json }
       get_my_league_standings: {
         Args: { p_limit?: number; p_user_id: string }
         Returns: {
@@ -2396,6 +3049,159 @@ export type Database = {
           my_rank: number
           my_score: number
           name: string
+        }[]
+      }
+      get_segment_all_sendable: {
+        Args: never
+        Returns: {
+          email: string
+          user_id: string
+        }[]
+      }
+      get_segment_both_active: {
+        Args: { p_days?: number }
+        Returns: {
+          email: string
+          user_id: string
+        }[]
+      }
+      get_segment_classic_active: {
+        Args: { p_days?: number }
+        Returns: {
+          email: string
+          user_id: string
+        }[]
+      }
+      get_segment_engaged: {
+        Args: { p_days?: number }
+        Returns: {
+          email: string
+          user_id: string
+        }[]
+      }
+      get_segment_lapsed: {
+        Args: { p_max_days?: number; p_min_days?: number }
+        Returns: {
+          email: string
+          user_id: string
+        }[]
+      }
+      get_segment_never_played: {
+        Args: { p_min_signup_days?: number }
+        Returns: {
+          email: string
+          user_id: string
+        }[]
+      }
+      get_segment_new_users: {
+        Args: { p_days?: number }
+        Returns: {
+          email: string
+          user_id: string
+        }[]
+      }
+      get_segment_quiz_active: {
+        Args: { p_days?: number }
+        Returns: {
+          email: string
+          user_id: string
+        }[]
+      }
+      get_segment_quiz_only: {
+        Args: { p_days?: number }
+        Returns: {
+          email: string
+          user_id: string
+        }[]
+      }
+      get_segment_wc_active: {
+        Args: { p_days?: number }
+        Returns: {
+          email: string
+          user_id: string
+        }[]
+      }
+      get_segment_wc_lapsed: {
+        Args: { p_max_days?: number; p_min_days?: number }
+        Returns: {
+          email: string
+          user_id: string
+        }[]
+      }
+      get_segment_wc_only: {
+        Args: { p_days?: number }
+        Returns: {
+          email: string
+          user_id: string
+        }[]
+      }
+      get_segment_wc_streak: {
+        Args: { p_days?: number; p_min_streak?: number }
+        Returns: {
+          days_played: number
+          email: string
+          user_id: string
+        }[]
+      }
+      get_wc_comment_counts: {
+        Args: { p_end: string; p_start: string }
+        Returns: {
+          comments: number
+          user_id: string
+        }[]
+      }
+      get_wc_daily_leaderboard: {
+        Args: { p_end: string; p_limit?: number; p_start: string }
+        Returns: {
+          avatar_url: string
+          days: number
+          display_name: string
+          draws: number
+          losses: number
+          points: number
+          rank: number
+          user_id: string
+          wins: number
+        }[]
+      }
+      get_wc_lapsed_players: {
+        Args: { p_played_date: string; p_today_date: string }
+        Returns: {
+          email: string
+          user_id: string
+        }[]
+      }
+      get_wc_player_history: {
+        Args: { p_end: string; p_start: string; p_user: string }
+        Returns: {
+          avatar_url: string
+          display_name: string
+          draws: number
+          formation: string
+          losses: number
+          matches: Json
+          points: number
+          quiz_correct: number
+          quiz_total: number
+          run_date: string
+          run_id: string
+          squad: Json
+          stage: string
+          status: string
+          strength: number
+          wins: number
+        }[]
+      }
+      get_wc_run_comments: {
+        Args: { p_user: string }
+        Returns: {
+          author_avatar: string
+          author_id: string
+          author_name: string
+          body: string
+          created_at: string
+          id: string
+          run_id: string
         }[]
       }
       get_yourscore_leaderboard: {
@@ -2438,6 +3244,7 @@ export type Database = {
         Args: { correct_ids: string[]; question_ids: string[] }
         Returns: undefined
       }
+      quiz_pair: { Args: { p_user: string }; Returns: string }
       record_quiz_results: {
         Args: { p_correct: string[]; p_qids: string[]; p_user: string }
         Returns: undefined
@@ -2574,9 +3381,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {},
   },
