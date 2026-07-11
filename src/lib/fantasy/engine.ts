@@ -87,9 +87,11 @@ export function validateSelection(squad: Squad, xi: number[], bench: number[], c
   return { xi, bench, captain, vice };
 }
 
-// ── Credits (curve B, founder-locked default) ────────────────────────────────
+// ── Credits (founder-locked 11 Jul — kinder floor after playtest) ─────────────
+// 3 correct earns your first transfer, then +1 every 2 correct up to 4 at 9/11.
+// (FPL gives 1 free transfer/week; a great round here still out-earns that.)
 export function creditsForRound(correct: number): number {
-  return correct >= 11 ? 4 : correct >= 9 ? 3 : correct >= 7 ? 2 : correct >= 5 ? 1 : 0;
+  return correct >= 9 ? 4 : correct >= 7 ? 3 : correct >= 5 ? 2 : correct >= 3 ? 1 : 0;
 }
 export function bankCredits(current: number, minted: number): number {
   return Math.min(CREDIT_CAP, current + minted);

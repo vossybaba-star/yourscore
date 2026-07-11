@@ -62,8 +62,8 @@ export default function RoundPage() {
   if (finished) {
     const credits = round.creditsEarned;
     const got = correctCount || round.correct;
-    // Curve B: 5→1, 7→2, 9→3, 11→4. Show progress to the NEXT credit.
-    const THRESHOLDS = [5, 7, 9, 11];
+    // Curve: 3→1, 5→2, 7→3, 9→4. Show progress to the NEXT credit.
+    const THRESHOLDS = [3, 5, 7, 9];
     const nextAt = THRESHOLDS.find((t) => got < t);
     return (
       <main style={page}>
@@ -76,13 +76,13 @@ export default function RoundPage() {
           <p style={{ fontSize: 13.5, color: MUTED, margin: "0 0 8px", lineHeight: 1.5 }}>
             {got}/11 correct.{" "}
             {credits === 0
-              ? "You need 5 right to earn your first transfer."
+              ? "You need 3 right to earn your first transfer."
               : nextAt
                 ? `${nextAt - got} more next time would've earned another.`
-                : "A perfect round — the most you can earn."}
+                : "Top of the curve — the most a round can earn."}
           </p>
           <p style={{ fontSize: 11.5, color: MUTED, margin: "0 0 16px" }}>
-            How it works: 5 correct = 1 transfer · 7 = 2 · 9 = 3 · 11 = 4. Transfers bank up to five.
+            How it works: 3 correct = 1 transfer · 5 = 2 · 7 = 3 · 9 = 4. Transfers bank up to five.
           </p>
           <Btn gold onClick={() => router.push("/fantasy")}>Back to my squad</Btn>
         </Card>

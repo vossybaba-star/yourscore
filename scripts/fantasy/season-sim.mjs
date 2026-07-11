@@ -59,10 +59,10 @@ const MONTHS = ["Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "
 
 // credit curves to sweep: f(correct of 11) → free transfers earned
 const CURVES = {
-  A_stingy: (c) => (c >= 11 ? 3 : c >= 9 ? 2 : c >= 7 ? 1 : 0),
+  // LOCKED default (founder 11 Jul, kinder floor after playtest): 3→1,5→2,7→3,9→4.
+  E_locked: (c) => (c >= 9 ? 4 : c >= 7 ? 3 : c >= 5 ? 2 : c >= 3 ? 1 : 0),
   B_moderate: (c) => (c >= 11 ? 4 : c >= 9 ? 3 : c >= 7 ? 2 : c >= 5 ? 1 : 0),
-  C_generous: (c) => Math.min(4, Math.floor(c / 3) + (c >= 11 ? 1 : 0)),
-  D_tiered: (c) => (c >= 11 ? 4 : c >= 10 ? 3 : c >= 8 ? 2 : c >= 6 ? 1 : 0),
+  A_stingy: (c) => (c >= 11 ? 3 : c >= 9 ? 2 : c >= 7 ? 1 : 0),
 };
 
 // archetypes: acc = mean correct of 11, playProb = weekly participation

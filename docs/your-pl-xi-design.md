@@ -313,10 +313,12 @@ knowledge-round performance.
 
 *Provisional numbers recalibrate on the warm-up's REAL accuracy data.*
 
-1. **Credit curve B (launch default):** 5+ correct → 1 · 7+ → 2 · 9+ → 3 · 11 → 4;
-   bank cap 5. Measured best casual floor of four curves; +17% elite-vs-casual edge;
-   its flat top makes answer-lookup worthless in fantasy points (cheat resistance
-   is a feature — the good-vs-great race lives on the knowledge leaderboard).
+1. **Credit curve (launch default, kinder floor — founder 11 Jul after playtest):**
+   3+ correct → 1 · 5+ → 2 · 7+ → 3 · 9+ → 4; bank cap 5. (Was 5/7/9/11→1/2/3/4;
+   4/11 earning nothing felt punishing in playtest.) Re-measured: elite-vs-casual
+   edge 16.4% (was 17.3% — still healthy), casual dead-slots 0.13 (better, was 0.17),
+   point-hits 11/season (was 46 — casuals now fix problems without hits). Flat top
+   (elite≈solid) holds, so answer-lookup stays worthless (cheat resistance intact).
 2. **Scoring: lock the METHOD.** Deterministic no-BPS values validated at the
    familiarity ceiling on real gameweeks. Acceptance test forever: final values must
    hit **Spearman ≥ 0.98 vs FPL actual** on real GWs (`scripts/fantasy/familiarity.mjs`).

@@ -107,8 +107,8 @@ test("validateSelection: rejects 2 GKs in XI, <3 DEF, 0 FWD, captain=vice, outsi
 });
 
 // ── credits ───────────────────────────────────────────────────────────────────
-test("creditsForRound: full curve B table", () => {
-  const want = [0, 0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4];
+test("creditsForRound: full curve table (3→1, 5→2, 7→3, 9→4)", () => {
+  const want = [0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 4];
   for (let c = 0; c <= 11; c++) assert.equal(creditsForRound(c), want[c], `correct=${c}`);
 });
 test("bankCredits caps at 5; transferCost credit-then-hit", () => {
