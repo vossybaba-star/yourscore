@@ -119,7 +119,7 @@ export default async function PlayerProfilePage({ params }: PlayerPageProps) {
   // Global rank: count of profiles with higher total_score
   const { count } = await supabase
     .from("profiles")
-    .select("*", { count: "exact", head: true })
+    .select("id", { count: "exact", head: true })
     .gt("total_score", totalScore);
   const globalRank = (count ?? 0) + 1;
 
