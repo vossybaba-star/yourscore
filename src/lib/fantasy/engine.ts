@@ -8,7 +8,7 @@
  * Rules per docs/your-pl-xi-design.md (founder-locked 10 Jul defaults).
  */
 
-import { type FantasyPos, type MatchFacts, pointsFor } from "./values";
+import { type FantasyPos, type MatchFacts, ZERO_FACTS, pointsFor } from "./values";
 
 // ── Constants (validated defaults) ───────────────────────────────────────────
 export const BUDGET_TENTHS = 1000; // £100.0m
@@ -188,7 +188,7 @@ export interface EntryResult {
   total: number;
   captainUsed: number;
   subs: { out: number; in: number }[];
-  breakdown: { id: number; points: number; captain: boolean; subbedIn: boolean }[];
+  breakdown: { id: number; points: number; captain: boolean; subbedIn: boolean; facts: MatchFacts }[];
   hitsDeducted: number;
 }
 export function scoreEntry(
@@ -208,7 +208,7 @@ export function scoreEntry(
     const isCap = id === cap;
     if (isCap) pts *= 2;
     total += pts;
-    return { id, points: pts, captain: isCap, subbedIn: subbedIn.has(id) };
+    return { id, points: pts, captain: isCap, subbedIn: subbedIn.has(id), facts: scores.get(id)?.facts ?? ZERO_FACTS };
   });
   const hitsDeducted = hits * HIT_POINTS;
   total -= hitsDeducted;

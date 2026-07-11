@@ -61,17 +61,28 @@ export default function RoundPage() {
 
   if (finished) {
     const credits = round.creditsEarned;
+    const got = correctCount || round.correct;
+    // Curve B: 5→1, 7→2, 9→3, 11→4. Show progress to the NEXT credit.
+    const THRESHOLDS = [5, 7, 9, 11];
+    const nextAt = THRESHOLDS.find((t) => got < t);
     return (
       <main style={page}>
-        <Header right={<Chip gold>✓ {round.correct ?? correctCount}/11</Chip>} />
+        <Header right={<Chip gold>✓ {got}/11</Chip>} />
         <Card style={{ border: `1px solid ${GOLD}`, textAlign: "center", padding: 24 }}>
           <div style={{ fontSize: 13, letterSpacing: "0.1em", color: GOLD, fontWeight: 700 }}>ROUND COMPLETE</div>
           <div style={{ fontSize: 44, fontWeight: 700, margin: "6px 0" }}>
-            +{credits} credit{credits === 1 ? "" : "s"}
+            {credits > 0 ? `+${credits} transfer${credits === 1 ? "" : "s"}` : "No transfers"}
           </div>
-          <p style={{ fontSize: 13.5, color: MUTED, margin: "0 0 16px" }}>
-            {correctCount || round.correct}/11 correct. Credits bank up to five — spend them on
-            transfers now or save them for a bigger rebuild.
+          <p style={{ fontSize: 13.5, color: MUTED, margin: "0 0 8px", lineHeight: 1.5 }}>
+            {got}/11 correct.{" "}
+            {credits === 0
+              ? "You need 5 right to earn your first transfer."
+              : nextAt
+                ? `${nextAt - got} more next time would've earned another.`
+                : "A perfect round — the most you can earn."}
+          </p>
+          <p style={{ fontSize: 11.5, color: MUTED, margin: "0 0 16px" }}>
+            How it works: 5 correct = 1 transfer · 7 = 2 · 9 = 3 · 11 = 4. Transfers bank up to five.
           </p>
           <Btn gold onClick={() => router.push("/fantasy")}>Back to my squad</Btn>
         </Card>
@@ -94,16 +105,22 @@ export default function RoundPage() {
       </h2>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {q.options.map((o) => {
-          const isAnswer = reveal && o.id === reveal.answerId;
           const isPicked = picked === o.id;
+          // Only colour after the server reveals — before that a picked option
+          // shows a NEUTRAL "selected" state (was flashing red pre-answer).
+          const isAnswer = !!reveal && o.id === reveal.answerId;
+          const isWrongPick = !!reveal && isPicked && !reveal.correct;
+          const pendingPick = isPicked && !reveal;
           return (
             <button key={o.id} onClick={() => answer(o.id)} disabled={!!reveal} style={{
               padding: "13px 14px", borderRadius: 12, fontSize: 14.5, fontWeight: 600,
               textAlign: "left", cursor: reveal ? "default" : "pointer", color: INK,
-              background: isAnswer ? "#1E3B2A" : isPicked && !reveal?.correct ? "#3A2320" : PANEL,
-              border: `1.5px solid ${isAnswer ? GOLD : isPicked ? "#B85C38" : LINE}`,
+              background: isAnswer ? "#1E3B2A" : isWrongPick ? "#3A2320" : pendingPick ? "#233B2C" : PANEL,
+              border: `1.5px solid ${isAnswer ? GOLD : isWrongPick ? "#B85C38" : pendingPick ? GOLD : LINE}`,
+              opacity: reveal && !isAnswer && !isPicked ? 0.55 : 1,
+              transition: "background 120ms, border-color 120ms",
             }}>
-              {o.label}{isAnswer ? "  ✓" : isPicked && reveal && !reveal.correct ? "  ✕" : ""}
+              {o.label}{isAnswer ? "  ✓" : isWrongPick ? "  ✕" : ""}
             </button>
           );
         })}

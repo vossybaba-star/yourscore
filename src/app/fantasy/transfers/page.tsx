@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  api, Btn, Card, Chip, fmtM, GOLD, Header, INK, LINE, MUTED, page, PANEL,
+  api, Btn, Card, Chip, Crest, fmtM, GOLD, Header, INK, LINE, MUTED, page, PANEL,
   type ClientPoolPlayer, type FantasyState,
 } from "@/components/fantasy/shared";
 
@@ -85,7 +85,7 @@ export default function TransfersPage() {
                 borderRadius: 10, background: PANEL, color: INK, border: `1px solid ${LINE}`,
                 cursor: "pointer", fontSize: 14, fontWeight: 600, textAlign: "left",
               }}>
-                <span>{pl?.name ?? p.id} <span style={{ color: MUTED, fontSize: 12, fontWeight: 400 }}>· {p.pos} · {pl?.club}</span></span>
+                <span style={{ display: "flex", alignItems: "center", gap: 7 }}>{pl && <Crest club={pl.club} />}<span>{pl?.name ?? p.id} <span style={{ color: MUTED, fontSize: 12, fontWeight: 400 }}>· {p.pos} · {pl?.club}</span></span></span>
                 <span style={{ color: MUTED, fontSize: 13 }}>sells {fmtM(p.buyTenths)}</span>
               </button>
             );
@@ -111,7 +111,7 @@ export default function TransfersPage() {
                 borderRadius: 10, background: PANEL, color: INK, border: `1px solid ${LINE}`,
                 cursor: "pointer", fontSize: 14, fontWeight: 600, textAlign: "left",
               }}>
-                <span>{p.name} <span style={{ color: MUTED, fontSize: 12, fontWeight: 400 }}>· {p.club}</span></span>
+                <span style={{ display: "flex", alignItems: "center", gap: 7 }}><Crest club={p.club} /><span>{p.name} <span style={{ color: MUTED, fontSize: 12, fontWeight: 400 }}>· {p.club}</span></span></span>
                 <span style={{ fontWeight: 700 }}>£{p.price.toFixed(1)}m</span>
               </button>
             ))}

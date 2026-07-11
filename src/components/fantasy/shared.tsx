@@ -4,6 +4,7 @@
  * Visual identity: gold on deep pitch (same family as the warm-up game).
  */
 import { type CSSProperties, type ReactNode } from "react";
+import { getTeamBadgeUrlSync } from "@/lib/teamImages";
 
 export const GOLD = "#E3B54C";
 export const PITCH = "#0E1F17";
@@ -31,7 +32,7 @@ export interface FantasyState {
     transfers: number; hits: number; lockedAt: string | null;
     result: {
       points: number;
-      breakdown: { id: number; points: number; captain: boolean; subbedIn: boolean }[];
+      breakdown: { id: number; points: number; captain: boolean; subbedIn: boolean; facts?: MatchFacts }[];
       autosubs: { out: number; in: number }[]; captainUsed: number;
     } | null;
   } | null;
@@ -93,6 +94,38 @@ export function Card({ children, style }: { children: ReactNode; style?: CSSProp
       {children}
     </div>
   );
+}
+
+/** Club crest (local /badges/*.png). Silent if a club has no badge mapped. */
+export function Crest({ club, size = 18 }: { club: string; size?: number }) {
+  const src = getTeamBadgeUrlSync(club);
+  if (!src) return <span style={{ width: size, height: size, display: "inline-block" }} aria-hidden />;
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={src} alt="" width={size} height={size}
+    style={{ width: size, height: size, objectFit: "contain", flexShrink: 0 }} />;
+}
+
+export interface MatchFacts {
+  minutes: number; goals: number; assists: number; cleanSheet: number; conceded: number;
+  saves: number; pensSaved: number; pensMissed: number; yellows: number; reds: number;
+  ownGoals: number; dc: number; dcRec: number;
+}
+
+/** Plain-English summary of what a player did, for the result card. */
+export function factLine(pos: Pos, f?: MatchFacts): string {
+  if (!f || f.minutes === 0) return "Didn't play — 0";
+  const bits: string[] = [`${f.minutes}'`];
+  if (f.goals) bits.push(`${f.goals} goal${f.goals > 1 ? "s" : ""}`);
+  if (f.assists) bits.push(`${f.assists} assist${f.assists > 1 ? "s" : ""}`);
+  if (f.cleanSheet && (pos === "GK" || pos === "DEF" || pos === "MID")) bits.push("clean sheet");
+  if (pos === "GK" && f.saves >= 3) bits.push(`${f.saves} saves`);
+  if (f.pensSaved) bits.push(`${f.pensSaved} pen saved`);
+  if ((pos === "DEF" && f.dc >= 10) || (pos !== "DEF" && f.dcRec >= 12)) bits.push("defensive actions");
+  if (f.yellows) bits.push("yellow");
+  if (f.reds) bits.push("red card");
+  if (f.ownGoals) bits.push("own goal");
+  if (f.pensMissed) bits.push("pen missed");
+  return bits.join(" · ");
 }
 
 export const fmtM = (tenths: number) => `£${(tenths / 10).toFixed(1)}m`;

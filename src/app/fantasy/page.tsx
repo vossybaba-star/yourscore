@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  api, Btn, Card, Chip, fmtM, GOLD, Header, INK, LINE, MUTED, page, PANEL,
+  api, Btn, Card, Chip, Crest, factLine, fmtM, GOLD, Header, INK, LINE, MUTED, page, PANEL,
   type ClientPoolPlayer, type FantasyState, type Pos,
 } from "@/components/fantasy/shared";
 
@@ -110,8 +110,9 @@ export default function FantasyHub() {
         <button onClick={() => !locked && setMenuFor(menuFor === id ? null : id)} style={{
           background: PANEL, border: `1px solid ${isCap || isVice ? GOLD : LINE}`, color: INK,
           borderRadius: 10, padding: "8px 10px", fontSize: 12.5, fontWeight: 600, cursor: "pointer",
-          display: "flex", flexDirection: "column", alignItems: "center", minWidth: 74,
+          display: "flex", flexDirection: "column", alignItems: "center", gap: 2, minWidth: 74,
         }}>
+          {p && <Crest club={p.club} size={20} />}
           <span>{p?.name ?? `#${id}`}{isCap ? " ©" : isVice ? " ⓥ" : ""}</span>
           <span style={{ color: MUTED, fontSize: 11 }}>
             {benchIdx !== undefined ? `Bench ${benchIdx + 1}` : `£${p?.price.toFixed(1)}`}
@@ -176,21 +177,32 @@ export default function FantasyHub() {
           <div style={{ fontSize: 12, letterSpacing: "0.1em", color: GOLD, fontWeight: 700 }}>
             GAMEWEEK {state.gw.gw} RESULT
           </div>
-          <div style={{ fontSize: 40, fontWeight: 700, margin: "2px 0 6px" }}>{result.points} pts</div>
-          {entry!.hits > 0 && (
-            <p style={{ fontSize: 12.5, color: MUTED, margin: "0 0 6px" }}>
-              includes −{entry!.hits * 4} from {entry!.hits} extra transfer{entry!.hits === 1 ? "" : "s"}
-            </p>
-          )}
-          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            {result.breakdown.map((b) => (
-              <div key={b.id} style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
-                <span>
-                  {nameOf(b.id)}{b.captain ? " © ×2" : ""}{b.subbedIn ? " (auto-sub)" : ""}
-                </span>
-                <b style={{ color: b.points >= 12 ? GOLD : INK }}>{b.points}</b>
-              </div>
-            ))}
+          <div style={{ fontSize: 40, fontWeight: 700, margin: "2px 0 2px" }}>{result.points} pts</div>
+          <p style={{ fontSize: 12, color: MUTED, margin: "0 0 10px" }}>
+            Your 11 starters, scored off the real matches.{entry!.hits > 0
+              ? ` Includes −${entry!.hits * 4} for ${entry!.hits} extra transfer${entry!.hits === 1 ? "" : "s"}.`
+              : ""}
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {result.breakdown.map((b) => {
+              const p = pool.get(b.id);
+              return (
+                <div key={b.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+                  <span style={{ display: "flex", alignItems: "flex-start", gap: 8, minWidth: 0 }}>
+                    {p && <Crest club={p.club} size={18} />}
+                    <span style={{ minWidth: 0 }}>
+                      <span style={{ fontSize: 13.5, fontWeight: 600 }}>
+                        {nameOf(b.id)}{b.captain ? " ©" : ""}{b.subbedIn ? " ↑" : ""}
+                      </span>
+                      <span style={{ display: "block", fontSize: 11.5, color: MUTED, lineHeight: 1.35 }}>
+                        {factLine((p?.pos ?? "MID"), b.facts)}{b.captain ? " · captain ×2" : ""}{b.subbedIn ? " · auto-subbed on" : ""}
+                      </span>
+                    </span>
+                  </span>
+                  <b style={{ fontSize: 14, color: b.points >= 12 ? GOLD : INK, whiteSpace: "nowrap" }}>{b.points} pts</b>
+                </div>
+              );
+            })}
           </div>
         </Card>
       )}

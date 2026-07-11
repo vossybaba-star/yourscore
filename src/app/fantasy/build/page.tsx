@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  api, Btn, Card, Chip, fmtM, GOLD, Header, INK, LINE, MUTED, page, PANEL,
+  api, Btn, Card, Chip, Crest, fmtM, GOLD, Header, INK, LINE, MUTED, page, PANEL,
   POS_ORDER, QUOTA, type ClientPoolPlayer, type Pos,
 } from "@/components/fantasy/shared";
 
@@ -16,6 +16,7 @@ export default function BuildPage() {
   const [picked, setPicked] = useState<number[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
     api<{ players: ClientPoolPlayer[] }>("pool").then((p) =>
@@ -30,9 +31,22 @@ export default function BuildPage() {
   const clubCount = (clubId: number) => picks.filter((p) => p.clubId === clubId).length;
   const complete = POS_ORDER.every((pos) => posCount(pos) === QUOTA[pos]);
 
-  const canAdd = (p: ClientPoolPlayer) =>
-    !picked.includes(p.id) && posCount(p.pos) < QUOTA[p.pos] &&
-    clubCount(p.clubId) < 3 && spent + Math.round(p.price * 10) <= BUDGET;
+  // Why a player can't be added (null = addable). Drives an explicit message
+  // rather than a silently-greyed row — the founder hit the club cap blind.
+  const blockReason = (p: ClientPoolPlayer): string | null => {
+    if (posCount(p.pos) >= QUOTA[p.pos]) return `You've got all ${QUOTA[p.pos]} ${p.pos} — remove one first.`;
+    if (clubCount(p.clubId) >= 3) return `Max 3 players from ${p.club} — you already have 3.`;
+    if (spent + Math.round(p.price * 10) > BUDGET) return `Not enough budget — ${fmtM(bank)} left.`;
+    return null;
+  };
+  const clubFull = (clubId: number) => clubCount(clubId) >= 3;
+
+  const toggle = (p: ClientPoolPlayer) => {
+    if (picked.includes(p.id)) { setPicked(picked.filter((x) => x !== p.id)); setNotice(null); return; }
+    const reason = blockReason(p);
+    if (reason) { setNotice(reason); return; }
+    setNotice(null); setPicked([...picked, p.id]);
+  };
 
   const submit = async () => {
     setBusy(true); setErr(null);
@@ -70,11 +84,12 @@ export default function BuildPage() {
         <Card style={{ marginBottom: 10 }}>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
             {picks.map((p) => (
-              <button key={p.id} onClick={() => setPicked(picked.filter((x) => x !== p.id))} style={{
+              <button key={p.id} onClick={() => toggle(p)} style={{
+                display: "flex", alignItems: "center", gap: 5,
                 fontSize: 12, padding: "5px 9px", borderRadius: 8, cursor: "pointer",
                 background: "transparent", color: INK, border: `1px solid ${LINE}`,
               }}>
-                {p.name} · {p.pos} · £{p.price.toFixed(1)} ✕
+                <Crest club={p.club} size={14} /> {p.name} · £{p.price.toFixed(1)} ✕
               </button>
             ))}
           </div>
@@ -84,19 +99,21 @@ export default function BuildPage() {
       <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 16 }}>
         {pool.filter((p) => p.pos === tab).slice(0, 60).map((p) => {
           const inSquad = picked.includes(p.id);
-          const addable = canAdd(p);
+          const blocked = !inSquad && blockReason(p) !== null;
+          const capped = !inSquad && clubFull(p.clubId);
           return (
-            <button key={p.id} disabled={!inSquad && !addable}
-              onClick={() => setPicked(inSquad ? picked.filter((x) => x !== p.id) : [...picked, p.id])}
+            // Kept tappable even when blocked so the tap can EXPLAIN why (club cap etc.)
+            <button key={p.id} onClick={() => toggle(p)}
               style={{
                 display: "flex", justifyContent: "space-between", alignItems: "center",
                 padding: "10px 12px", borderRadius: 10, cursor: "pointer", textAlign: "left",
                 background: inSquad ? "#233B2C" : PANEL, color: INK,
-                border: `1px solid ${inSquad ? GOLD : LINE}`, opacity: !inSquad && !addable ? 0.4 : 1,
+                border: `1px solid ${inSquad ? GOLD : LINE}`, opacity: blocked ? 0.5 : 1,
               }}>
-              <span style={{ fontSize: 14, fontWeight: 600 }}>
-                {p.name}
-                <span style={{ fontSize: 12, color: MUTED, fontWeight: 400 }}> · {p.club}</span>
+              <span style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, fontWeight: 600 }}>
+                <Crest club={p.club} />
+                <span>{p.name}<span style={{ fontSize: 12, color: MUTED, fontWeight: 400 }}> · {p.club}</span></span>
+                {capped && <span style={{ fontSize: 10.5, color: "#C9884A", border: "1px solid #C9884A", borderRadius: 6, padding: "1px 5px" }}>3/3</span>}
               </span>
               <span style={{ fontSize: 13.5, fontWeight: 700, color: inSquad ? GOLD : INK }}>
                 £{p.price.toFixed(1)}m
@@ -106,12 +123,13 @@ export default function BuildPage() {
         })}
       </div>
 
+      {notice && <p style={{ color: "#C9884A", fontSize: 13, margin: "0 0 10px", fontWeight: 600 }}>{notice}</p>}
       {err && <p style={{ color: "#E08A6B", fontSize: 13, margin: "0 0 10px" }}>{err}</p>}
       <Btn gold disabled={!complete || busy} onClick={submit}>
-        {complete ? (busy ? "Signing…" : "Confirm squad — auto-pick my XI") : `Pick ${15 - picks.length} more`}
+        {complete ? (busy ? "Signing…" : "Confirm my squad") : `Pick ${15 - picks.length} more`}
       </Btn>
       <p style={{ fontSize: 12, color: MUTED, marginTop: 8, lineHeight: 1.45 }}>
-        We&apos;ll set a sensible starting XI, captain and bench order — change any of it whenever you like.
+        We&apos;ll pick your starting XI, captain and bench order for you — change any of it on the next screen.
       </p>
     </main>
   );
