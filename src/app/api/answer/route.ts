@@ -67,8 +67,12 @@ export async function POST(request: NextRequest) {
   }
 
   // Fetch question — try questions bank first, fall back to rooms.questions_json
-  // (pack-based multiplayer rooms store questions inline, not in the bank)
-  const { data: questionData } = await supabase
+  // (pack-based multiplayer rooms store questions inline, not in the bank).
+  // Read via the service client: anon/authenticated no longer have SELECT on
+  // questions.answer (answer-leak lockdown), so the grader must not use the
+  // user-scoped client here.
+  const dbAns = createServiceClient();
+  const { data: questionData } = await dbAns
     .from("questions")
     .select("answer, difficulty")
     .eq("id", event.question_id ?? "")

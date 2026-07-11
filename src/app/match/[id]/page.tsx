@@ -292,7 +292,7 @@ export default function MatchPage({ params }: { params: { id: string } }) {
         }, async (payload) => {
           const event = payload.new;
           if (event.status !== "live") return;
-          const { data: q } = await sb.from("questions").select("*").eq("id", event.question_id).single();
+          const { data: q } = await sb.from("questions").select("id, question, options, difficulty, category, verification_note").eq("id", event.question_id).single();
           if (!q) return;
           // Bank questions store options as a jsonb {A,B,C,D} map and the answer
           // as a letter — map them onto the QuestionCard's flat fields.

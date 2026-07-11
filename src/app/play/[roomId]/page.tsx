@@ -315,7 +315,7 @@ export default function RoomPage() {
     q = (stored[idx] as Record<string, unknown>) ?? null;
 
     if (!q && ev.question_id) {
-      const { data } = await sb.from("questions").select("*").eq("id", ev.question_id).single();
+      const { data } = await sb.from("questions").select("id, question, options, difficulty, category").eq("id", ev.question_id).single();
       q = data ?? null;
     }
 

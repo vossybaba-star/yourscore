@@ -49,7 +49,7 @@ export default function ChallengePage() {
 
     let packs: Record<string, Row> = {};
     if (packIds.length) {
-      const { data: pk } = await db.from("quiz_packs").select("id, name, questions, metadata").in("id", packIds);
+      const { data: pk } = await db.from("quiz_packs").select("id, name, question_count, metadata").in("id", packIds);
       packs = Object.fromEntries(((pk ?? []) as Row[]).map((p) => [p.id, p]));
     }
     const seen = new Set<string>();
@@ -60,7 +60,7 @@ export default function ChallengePage() {
       seen.add(r.pack_id);
       list.push({
         packId: r.pack_id, name: p.name ?? "Quiz", score: r.score ?? 0, correct: r.correct_count ?? 0,
-        total: Array.isArray(p.questions) ? p.questions.length : 0, cover: p.metadata?.cover_image ?? null,
+        total: (p as { question_count?: number }).question_count ?? 0, cover: p.metadata?.cover_image ?? null,
       });
     }
     setCards(list);
