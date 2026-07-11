@@ -135,7 +135,9 @@ const row = {
   questions: quiz.questions,
   status: "published",
   source: "system",
-  featured: true,
+  // Daily quizzes are no longer surfaced in Featured — they live in the World Cup
+  // category via rotation_active. Founder call, 2026-07-11.
+  featured: false,
   featured_order: ORDER,
   rotation_active: true,
   metadata: dailyMeta,
