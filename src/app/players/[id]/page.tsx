@@ -65,13 +65,14 @@ export default async function PlayerProfilePage({ params }: PlayerPageProps) {
   const supabase = await createClient();
   const sb = supabase as any;
 
-  // Fetch profile and draft standings in parallel
-  const [{ data: profile }, { data: draftStanding }] = await Promise.all([
+  // Fetch profile, YourScore Rank (v2), and 38-0 standings in parallel
+  const [{ data: profile }, { data: rankRows }, { data: draftStanding }] = await Promise.all([
     supabase
       .from("profiles")
-      .select("display_name, total_score, games_played, avatar_url")
+      .select("display_name, avatar_url")
       .eq("id", id)
       .maybeSingle(),
+    sb.rpc("get_yourscore_rank", { p_user_id: id }),
     sb
       .from("draft_standings")
       .select("wins_all_time, draws_all_time, losses_all_time")
@@ -112,16 +113,20 @@ export default async function PlayerProfilePage({ params }: PlayerPageProps) {
     );
   }
 
-  const totalScore: number = profile.total_score ?? 0;
-  const gamesPlayed: number = profile.games_played ?? 0;
   const name: string = profile.display_name || "Player";
 
-  // Global rank: count of profiles with higher total_score
-  const { count } = await supabase
-    .from("profiles")
-    .select("id", { count: "exact", head: true })
-    .gt("total_score", totalScore);
-  const globalRank = (count ?? 0) + 1;
+  // YourScore Rank (v2): the unified rank every player has (knowledge + match) —
+  // the same source the home screen, leaderboard, and /profile use. Replaces the
+  // old profiles.total_score column, which only accrued from live Lobby games and
+  // so was populated for barely 1% of players.
+  const rank = (rankRows?.[0] ?? null) as
+    | { overall_score: number; overall_rank: number; wins: number; draws: number; losses: number }
+    | null;
+  const totalScore: number = rank?.overall_score ?? 0;
+  const globalRank: number | null = rank?.overall_rank ?? null;
+  const rankLabel: string = globalRank ? `#${globalRank}` : "Unranked";
+  const gamesPlayed: number =
+    (rank?.wins ?? 0) + (rank?.draws ?? 0) + (rank?.losses ?? 0);
 
   const draftRecord = draftStanding
     ? {
@@ -188,7 +193,7 @@ export default async function PlayerProfilePage({ params }: PlayerPageProps) {
                 className="font-display text-5xl leading-none"
                 style={{ color: "#aeea00" }}
               >
-                #{globalRank}
+                {rankLabel}
               </p>
               <p className="font-body text-xs text-text-muted mt-1.5">
                 {totalScore.toLocaleString()} total points
