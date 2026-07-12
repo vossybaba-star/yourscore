@@ -64,10 +64,11 @@ export function emptyTeam(formation: Formation, mode: DraftMode = "classic", lea
   };
 }
 
-/** Post-win: streak up. The team stays active and keeps playing (no rebuild
- *  penalty — players tweak their XI via the pre-match swap instead). */
+/** Post-win: streak up and EARN one swap — the win reward the result screen's
+ *  "SWAP ONE PLAYER →" CTA and the team page's earned-swap banner advertise
+ *  (/38-0/swap consumes it and sets it back to false). The team stays active. */
 export function recordWin(team: LocalTeam): LocalTeam {
-  return { ...team, winStreak: team.winStreak + 1, status: "active", updatedAt: Date.now() };
+  return { ...team, winStreak: team.winStreak + 1, swapAvailable: true, status: "active", updatedAt: Date.now() };
 }
 
 /** Post-loss: reset the streak, but the team stays active and challengeable. */

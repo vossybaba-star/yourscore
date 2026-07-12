@@ -120,15 +120,17 @@ export default function SeasonSim() {
   }
 
   // When the season first completes: an Invincible (38-0) earns the full-screen
-  // gold celebration; everyone else gets the giveaway prompt. Either way we mint
-  // the short URL up front so sharing is instant.
+  // gold celebration. The giveaway sheet no longer auto-opens over the scorecard —
+  // the reveal is the reward moment; the always-visible WIN £25 card opens the
+  // sheet on tap. The short URL is still minted up front so sharing is instant.
   useEffect(() => {
     if (done && !giveawayShown.current) {
       giveawayShown.current = true;
       void ensureShortUrl();
-      const invincible = !!result?.invincible;
-      const t = setTimeout(() => (invincible ? setInvincibleOpen(true) : setGiveawayOpen(true)), 700);
-      return () => clearTimeout(t);
+      if (result?.invincible) {
+        const t = setTimeout(() => setInvincibleOpen(true), 700);
+        return () => clearTimeout(t);
+      }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [done]);

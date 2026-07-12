@@ -92,6 +92,16 @@ export default function WatchPage() {
             oppName={m.opp.name}
           />
         )}
+
+        {/* The result is already resolved before playback starts — watching the
+            ~95s broadcast is optional, never a toll. */}
+        <button
+          onClick={() => router.replace(m.pensPending ? "/38-0/match/pens" : "/38-0/match/result")}
+          className="block mx-auto mt-6 font-body px-4 py-2 rounded-full"
+          style={{ fontSize: 13, color: "#9aa39d", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)" }}
+        >
+          Skip to result →
+        </button>
       </div>
     </div>
   );

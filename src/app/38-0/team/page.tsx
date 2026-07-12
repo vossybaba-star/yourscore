@@ -519,13 +519,13 @@ export default function TeamScreen() {
             : "Sign in to play live head-to-head & climb the global leaderboard."}
         </p>
 
-        {/* Practice vs CPU / fresh team — sits right at the bottom of the page */}
-        {user ? (
-          <Button variant="ghost" size="md" fullWidth className="mt-4" onClick={quickMatch} disabled={matching}>
-            Practice vs CPU
-          </Button>
-        ) : (
-          <Button variant="ghost" size="md" fullWidth className="mt-4" onClick={() => router.push("/38-0")}>
+        {/* Practice vs CPU — fully local (seeded engine + localStorage), so guests
+            get the full draft → match loop too; it's the acquisition hook. */}
+        <Button variant="ghost" size="md" fullWidth className="mt-4" onClick={quickMatch} disabled={matching}>
+          Practice vs CPU
+        </Button>
+        {!user && (
+          <Button variant="ghost" size="md" fullWidth className="mt-2" onClick={() => router.push("/38-0")}>
             Fresh team
           </Button>
         )}

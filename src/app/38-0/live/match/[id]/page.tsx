@@ -440,13 +440,12 @@ function ResultPanel({ view, sim, m }: { view: View; sim: MatchSim | null; m: Dr
     return fallbackUrl;
   }
 
-  // Auto-mint + auto-open giveaway when result first renders.
+  // Auto-mint the share URL when the result first renders. The giveaway sheet no
+  // longer auto-opens over the scorecard — the WIN £25 card opens it on tap.
   useEffect(() => {
     if (giveawayShown.current) return;
     giveawayShown.current = true;
     void ensureShortUrl();
-    const t = setTimeout(() => setGiveawayOpen(true), 700);
-    return () => clearTimeout(t);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

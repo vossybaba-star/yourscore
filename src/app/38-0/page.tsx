@@ -192,7 +192,7 @@ export default function DraftHome() {
             {/* Sign-up prompt for anonymous users who have a complete team — no "continue" without an account */}
             {anonSavePrompt && (
               <Link
-                href="/auth/sign-in"
+                href="/auth/sign-in?next=/38-0/team"
                 className="block mb-6 rounded-2xl p-4 active:scale-[0.98] transition-transform"
                 style={{ background: "rgba(0,201,255,0.06)", border: "1px solid rgba(0,201,255,0.25)" }}
               >

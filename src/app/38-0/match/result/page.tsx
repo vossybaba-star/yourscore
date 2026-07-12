@@ -39,10 +39,10 @@ export default function MatchResult() {
     const drew = m.outcome === "draw";
     const score = `${m.goals.you}–${m.goals.opp}`;
     return drew
-      ? `My Draft XI drew ${score} with ${m.opp.name} head-to-head ⚽ Build yours and take me on:`
+      ? `My 38-0 XI drew ${score} with ${m.opp.name} head-to-head ⚽ Build yours and take me on:`
       : won
-      ? `My Draft XI beat ${m.opp.name} ${score} head-to-head ⚽🔥 Build yours:`
-      : `${m.opp.name} beat my Draft XI ${m.goals.opp}–${m.goals.you}. Rebuilding… Take me on:`;
+      ? `My 38-0 XI beat ${m.opp.name} ${score} head-to-head ⚽🔥 Build yours:`
+      : `${m.opp.name} beat my 38-0 XI ${m.goals.opp}–${m.goals.you}. Revenge is coming. Take me on:`;
   }
 
   /**
@@ -70,7 +70,7 @@ export default function MatchResult() {
     const url = shareUrl();
     try {
       if (navigator.share) {
-        await navigator.share({ title: "Draft XI", text, url });
+        await navigator.share({ title: "38-0", text, url });
       } else {
         await navigator.clipboard.writeText(`${text} ${url}`);
         setLinkCopied(true);
@@ -101,7 +101,6 @@ export default function MatchResult() {
   }
 
   const won = m.outcome === "you";
-  const drew = m.outcome === "draw";
 
   return (
     <div className="min-h-[100dvh] pb-28" style={{ background: "#0a0a0f" }}>
@@ -135,19 +134,23 @@ export default function MatchResult() {
             <Button variant="primary" tone="lime" size="lg" fullWidth href="/38-0/swap">
               SWAP ONE PLAYER →
             </Button>
-          ) : drew ? (
-            <Button variant="ghost" size="lg" fullWidth href="/38-0/team">
-              GO AGAIN →
-            </Button>
           ) : (
-            <Button variant="danger" size="lg" fullWidth href="/38-0">
-              REBUILD XI →
+            /* A loss (or draw) doesn't kill the team — it stays active. Send the
+               player straight back into the loop; a fresh build is the secondary. */
+            <Button variant="primary" tone="lime" size="lg" fullWidth href="/38-0/team">
+              GO AGAIN →
             </Button>
           )}
 
-          <Button variant="ghost" size="md" fullWidth href="/38-0/team">
-            Back to my team
-          </Button>
+          {won ? (
+            <Button variant="ghost" size="md" fullWidth href="/38-0/team">
+              Back to my team
+            </Button>
+          ) : (
+            <Button variant="ghost" size="md" fullWidth href="/38-0">
+              Build a fresh XI
+            </Button>
+          )}
         </div>
       </div>
 
