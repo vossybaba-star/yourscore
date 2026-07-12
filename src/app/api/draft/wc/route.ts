@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
   const { ok } = await rateLimitDistributed(`draft-wc-start:${user.id}`, 20, 60_000);
   if (!ok) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
 
-  let body: { action?: string; mode?: string; nation?: string; formation?: unknown; squad?: unknown; ranked?: boolean; answers?: unknown; picks?: unknown; catchup?: boolean; catchupDate?: string; acq?: unknown };
+  let body: { action?: string; mode?: string; nation?: string; formation?: unknown; squad?: unknown; ranked?: boolean; answers?: unknown; picks?: unknown; targets?: unknown; catchup?: boolean; catchupDate?: string; acq?: unknown };
   try { body = await req.json(); } catch { return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 }); }
   if (body.action !== "start") return NextResponse.json({ error: "Unknown action" }, { status: 400 });
 
@@ -50,7 +50,10 @@ export async function POST(req: NextRequest) {
         const o = p as { slot?: unknown; player_season_id?: unknown };
         return { slot: String(o?.slot ?? ""), player_season_id: String(o?.player_season_id ?? "") };
       }) as DraftPick[];
-      const verified = verifyRankedDraft(runDate!, user.id, answers, submitted);
+      // Per-pick scout targets (the pitch slot each slate was narrowed to; null =
+      // untargeted). Replayed by verify so targeted slates reconcile.
+      const targets = (Array.isArray(body.targets) ? body.targets : []).map((t) => (typeof t === "string" && t ? t : null));
+      const verified = verifyRankedDraft(runDate!, user.id, answers, submitted, targets);
       if (!verified) return NextResponse.json({ error: "Ranked draft could not be verified — please play it through." }, { status: 400 });
       team = validateWorld(WC_DRAFT_FORMATION, verified);
       // Record how many of today's questions they got right (server-graded), plus the
