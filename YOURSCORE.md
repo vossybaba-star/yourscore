@@ -6,7 +6,48 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed with the founder:** 2026-07-10 late (**Social cards fixed — robots.txt was
+> **Confirmed with the founder:** 2026-07-12 (**Guest quiz "save your score" + WC Mastermind
+> position drafting — SHIPPED to prod 2026-07-12.**
+> (1) A guest who finishes a solo quiz now sees a highlighted **"You" row at their true rank**
+> on the pack leaderboard (below a full 25-row page it shows "N+"), the sign-up card says
+> exactly which spot they'd claim, and the run is held locally (`quiz:guest-result:v1`, 48h)
+> and **auto-submitted to `/api/quiz/solo-complete` when they return signed-in** — SIGN UP &
+> SAVE SCORE genuinely saves that exact run (server re-grades; local copy never trusted).
+> **The guest row is render-only, visible only on that guest's own device** — nothing is
+> written until they sign up, so other players' leaderboards are never polluted (founder
+> requirement, confirmed).
+> (2) **WC Mastermind: tap an empty pitch slot to scout that exact position** (all draft modes
+> incl. ranked + open WC Run; target cleared after each placement). Ranked stays verifiable:
+> the per-pick `target` slot rides the slate request AND the submit (`targets[]`), is folded
+> into the server seed (`…:step:k:target:<slot>`; untargeted seeds unchanged → old clients
+> verify as before), and `verifyRankedDraft` replays it. Caveat flagged to the founder: a
+> modified client could fish slates across targets — bounded, deliberate trade-off.
+> (3) **Streak-1 draft band retuned up** (founder: a player who got their first question
+> right complained the first deal was too weak — "stronger from the start" meant TUNING,
+> not messaging; no copy changed): first correct answer now deals **70–80 OVR (was 66–76)**
+> — `QUIZ_BASE_FLOOR` 66→70, `QUIZ_BASE_CEILING` 76→80, `QUIZ_CEILING_STEP` 3→2 so **elite
+> (88+) still opens exactly at streak 5** per the Jun 18 rebalance. Deep-streak ceilings are
+> marginally lower (s6 90 vs 91, s8 94 vs 97). Deploy note: anyone MID-ranked-draft when
+> this lands would fail `verifyRankedDraft` on submit (band changes the replayed slates) —
+> same accepted window as the Jun 18 rebalance.)
+>
+> **Previously confirmed:** 2026-07-11 (**YourScore Fantasy Football — Phase 1 MVP
+> built (branch `your-pl-xi/gate-generator`, not yet merged).** The 4th game, formerly
+> "Your PL XI". Locked model: build a **15-man squad ONCE** (2GK/5DEF/5MID/3FWD, £100m,
+> max 3/club, 4-man bench + auto-subs) → each gameweek a **knowledge round earns TRANSFER
+> CREDITS** (curve B: 5+→1, 7+→2, 9+→3, 11→4; bank cap 5) → extra moves cost −4 pts →
+> captain ×2 (carry-over → vice → best-form default chain) → **real-gameweek YourScore
+> points** from SportMonks match facts (deterministic, **no BPS-style bonus, ever**;
+> validated at the familiarity ceiling, Spearman 0.99 vs FPL actual). Wildcard: 1 issued
+> per half-season + 1 minted by a perfect round (max 1 bonus/half). Competitions =
+> **calendar-month tables** (season behind as prestige); deadline = FPL's convention
+> (90 min before the GW's first kickoff). Live at **/fantasy** (+ /api/fantasy/*,
+> migration 76: fantasy_gameweeks/squads/entries/player_scores). Phase 1 excludes chips,
+> wildcards, leagues, share cards. Dev **replay mode** scores real 25/26 gameweeks until
+> the season starts 21 Aug. Spec: `docs/your-pl-xi-design.md`; research + validation:
+> `docs/fantasy-transfer-research.md`; sims/tests: `scripts/fantasy/*`.)
+>
+> **Previously confirmed:** 2026-07-10 late (**Social cards fixed — robots.txt was
 > blocking every OG image** — the Jul 9 robots.ts shipped `Disallow: /api/` for all agents,
 > and every preview image lives under /api (og/*, draft/*-og, club-preview), so X, Facebook,
 > LinkedIn, Slack, Telegram, WhatsApp and Discord silently unfurled with no image from that
@@ -192,6 +233,11 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-12** — **Guest quiz "You" row + save-your-score claim** (render-only on the
+  guest's device — never written to others' boards; localStorage-held answers auto-claimed
+  post-sign-up via solo-complete), **WC Mastermind position-targeted drafting** (tap an empty
+  slot to scout it; ranked target verified server-side), and **streak-1 band retune 66–76 →
+  70–80** (elite still gated at streak 5; no messaging changes). SHIPPED to prod.
 - **2026-07-10** — **"Continue with Facebook" built, env-gated** (e129380): renders on the
   sign-in panel between Google and email once `NEXT_PUBLIC_FACEBOOK_LOGIN=1` is set in
   Vercel. NOT live yet — needs a Facebook app (Meta developers console) + the Facebook

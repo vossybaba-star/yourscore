@@ -64,6 +64,29 @@ interface AnswerRecord {
 type Letter = "A" | "B" | "C" | "D";
 type Phase = "loading" | "intro" | "playing" | "results";
 
+// ── Guest result (save-your-score round trip) ─────────────────────────────
+// A guest's finished run, held locally so "SIGN UP & SAVE SCORE" actually saves it:
+// when they land back on this page signed in, the answers are submitted to
+// /api/quiz/solo-complete (server re-grades — the local copy is never trusted).
+// Mirrors the 38-0 pendingEnter pattern (wc/page.tsx).
+const GUEST_RESULT_KEY = "quiz:guest-result:v1";
+const GUEST_RESULT_TTL_MS = 48 * 60 * 60 * 1000;
+type GuestResult = { packId: string; answers: { letter: Letter; elapsedMs: number }[]; ts: number };
+function saveGuestResult(r: GuestResult) { try { localStorage.setItem(GUEST_RESULT_KEY, JSON.stringify(r)); } catch { /* ignore */ } }
+function loadGuestResult(): GuestResult | null {
+  try {
+    const raw = localStorage.getItem(GUEST_RESULT_KEY);
+    if (!raw) return null;
+    const r = JSON.parse(raw) as GuestResult;
+    if (!r?.packId || !Array.isArray(r.answers) || Date.now() - (r.ts ?? 0) > GUEST_RESULT_TTL_MS) { clearGuestResult(); return null; }
+    return r;
+  } catch { return null; }
+}
+function clearGuestResult() { try { localStorage.removeItem(GUEST_RESULT_KEY); } catch { /* ignore */ } }
+
+// Synthetic row id for the guest's own not-yet-saved score on the leaderboard.
+const GUEST_ROW_ID = "__guest__";
+
 // ── Timer helpers ─────────────────────────────────────────────────────────
 
 function timerColor(ms: number): string {
@@ -288,12 +311,14 @@ interface LeaderRow {
   profiles: { display_name: string | null } | null;
 }
 
-function PackLeaderboard({ entries, userId, accent, loading, maxVisible = 10 }: {
+function PackLeaderboard({ entries, userId, accent, loading, maxVisible = 10, approxRank }: {
   entries: LeaderEntry[];
   userId: string | null;
   accent: string;
   loading?: boolean;
   maxVisible?: number;
+  /** The user's row sits below a full fetched page, so its true rank is "N or lower". */
+  approxRank?: boolean;
 }) {
   const [showAll, setShowAll] = useState(false);
   const userRank = userId ? entries.findIndex(e => e.user_id === userId) + 1 : 0;
@@ -306,6 +331,7 @@ function PackLeaderboard({ entries, userId, accent, loading, maxVisible = 10 }: 
 
   function EntryRow({ entry, rank }: { entry: LeaderEntry; rank: number }) {
     const isUser = entry.user_id === userId;
+    const rankLabel = isUser && approxRank ? `${rank}+` : rank;
     return (
       <div
         className="flex items-center gap-3 px-5 py-3 transition-colors"
@@ -315,7 +341,7 @@ function PackLeaderboard({ entries, userId, accent, loading, maxVisible = 10 }: 
         }}>
         <span className="font-display text-sm w-7 text-center flex-shrink-0"
           style={{ color: rank <= 3 ? RANK_COLORS[rank - 1] : "#586058" }}>
-          {rank <= 3 ? MEDALS[rank - 1] : rank}
+          {rank <= 3 ? MEDALS[rank - 1] : rankLabel}
         </span>
         <div className="flex-1 min-w-0">
           <p className="font-body text-sm truncate" style={{ color: isUser ? "#ffffff" : "#9aa39d" }}>
@@ -342,7 +368,7 @@ function PackLeaderboard({ entries, userId, accent, loading, maxVisible = 10 }: 
         {userRank > 0 && (
           <span className="font-display text-xs px-2 py-0.5 rounded-full"
             style={{ background: `${accent}18`, color: accent, border: `1px solid ${accent}30` }}>
-            YOU #{userRank}
+            YOU #{userRank}{approxRank ? "+" : ""}
           </span>
         )}
       </div>
@@ -518,6 +544,30 @@ export default function ChallengePage() {
         });
       } else {
         getCompetitionBadgeUrl(match.name).then((u: string | null) => { if (u) setBadgeUrl(u); });
+      }
+
+      // A guest score waiting to be claimed? (They played signed-out, tapped
+      // SIGN UP & SAVE SCORE, and are back with an account.) Submit it for
+      // server-side grading BEFORE the attempt/leaderboard reads below, so the
+      // page loads with their score already saved and on the board.
+      if (uid) {
+        const pending = loadGuestResult();
+        if (pending && pending.packId === match.id) {
+          try {
+            const res = await fetch("/api/quiz/solo-complete", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ packId: pending.packId, answers: pending.answers, acq: getAcq() }),
+            });
+            if (res.ok) {
+              clearGuestResult();
+              const result = await res.json();
+              if (result.saved) setSaved(true);
+            } else if (res.status !== 429) {
+              clearGuestResult(); // unrecoverable (pack gone etc.) — don't retry forever
+            }
+          } catch { /* network blip — keep the pending result for the next visit */ }
+        }
       }
 
       if (uid) {
@@ -718,6 +768,15 @@ export default function ChallengePage() {
           } catch {
             /* network error — keep the optimistic local score on screen */
           }
+        }
+        // Guest: hold the finished run locally so signing up can claim it —
+        // "SIGN UP & SAVE SCORE" then genuinely saves this exact run.
+        if (!userId && pack) {
+          saveGuestResult({
+            packId: pack.id,
+            answers: newLog.map((r) => ({ letter: r.selected, elapsedMs: r.elapsed_ms })),
+            ts: Date.now(),
+          });
         }
         // Playing into a group board → record server-graded score for the board.
         if (groupId && userId) {
@@ -1078,6 +1137,23 @@ export default function ChallengePage() {
       return { d, correct, total: dQs.length };
     }).filter(({ total }) => total > 0);
 
+    // Guest: splice this run into the board as a highlighted "You" row at its true
+    // position (ties rank below existing equal scores), so they SEE the spot they'd
+    // claim by signing up. If they'd fall below a full fetched page (25 rows), the
+    // exact rank is unknown — shown as "N+".
+    const guestIdx = !userId
+      ? (() => { const i = leaderboard.findIndex((e) => score > e.score); return i === -1 ? leaderboard.length : i; })()
+      : -1;
+    const guestRank = guestIdx + 1;
+    const guestApprox = !userId && guestIdx === leaderboard.length && leaderboard.length >= 25;
+    const lbEntries = !userId
+      ? [
+          ...leaderboard.slice(0, guestIdx),
+          { user_id: GUEST_ROW_ID, score, correct_count: correctCount, display_name: null },
+          ...leaderboard.slice(guestIdx),
+        ]
+      : leaderboard;
+
     return (
       <div className="min-h-screen flex flex-col bg-bg" style={{ paddingBottom: 40 }}>
         {/* Hero */}
@@ -1181,8 +1257,8 @@ export default function ChallengePage() {
             <QuizNotifyPrompt userId={userId} accent={accent} daily={Boolean(pack.metadata?.daily)} />
           )}
 
-          {/* Leaderboard */}
-          <PackLeaderboard entries={leaderboard} userId={userId} accent={accent} loading={leaderLoading} />
+          {/* Leaderboard — guests see their own run as a highlighted "You" row */}
+          <PackLeaderboard entries={lbEntries} userId={userId ?? GUEST_ROW_ID} accent={accent} loading={leaderLoading} approxRank={guestApprox} />
 
           {/* Difficulty breakdown */}
           <div className="rounded-2xl p-5 bg-surface"
@@ -1235,8 +1311,10 @@ export default function ChallengePage() {
                   {score.toLocaleString()}
                 </div>
                 <div>
-                  <p className="font-body text-sm font-semibold text-white">Save your score</p>
-                  <p className="font-body text-xs text-text-muted">See where you rank against everyone</p>
+                  <p className="font-body text-sm font-semibold text-white">
+                    You&apos;d be #{guestRank}{guestApprox ? "+" : ""} on the leaderboard
+                  </p>
+                  <p className="font-body text-xs text-text-muted">Sign up to lock in your spot — this score is saved the moment you&apos;re in</p>
                 </div>
               </div>
               <Button variant="primary" tone="teal" size="md" fullWidth href={`/auth/sign-in?next=/challenges/${slug}`}>
