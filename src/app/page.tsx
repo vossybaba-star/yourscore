@@ -75,6 +75,9 @@ export default async function RootPage({
 
   // Stale lobbies are hidden in the /play list after 3h — match that here.
   const lobbyCutoff = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString();
+  // One window for every streak source. NOTE: this caps the visible day streak
+  // at ~45 — raise all three streak queries together if longer streaks matter.
+  const streakCutoff = new Date(Date.now() - 45 * 86_400_000).toISOString();
 
   const [
     { data: profile },
@@ -87,6 +90,7 @@ export default async function RootPage({
     { data: attemptDays },
     { data: h2hRows },
     { data: packPool },
+    { data: wcRunDays },
   ] = await Promise.all([
     supabase.from("profiles").select("display_name, total_score").eq("id", userId).single(),
     // Unified rank (two-track) — same RPC the profile uses; gives rank + chase gap.
@@ -99,13 +103,16 @@ export default async function RootPage({
       .eq("status", "published")
       .order("featured_order", { ascending: true })
       .limit(8),
-    // Recent 38-0 results drive the form pips + win streak.
+    // 38-0 play days (45d) — feeds the day streak + week dots. Was limit(12)
+    // with NO date floor: a busy day's 12 matches silently wiped every earlier
+    // streak day from this source.
     sb
       .from("draft_matches")
       .select("winner_id, played_at")
       .or(`challenger_id.eq.${userId},opponent_id.eq.${userId}`)
+      .gte("played_at", streakCutoff)
       .order("played_at", { ascending: false })
-      .limit(12),
+      .limit(500),
     // An active World Cup run becomes the top "Play next" suggestion.
     sb
       .from("draft_wc_runs")
@@ -128,7 +135,7 @@ export default async function RootPage({
       .from("quiz_attempts")
       .select("completed_at, pack_id")
       .eq("user_id", userId)
-      .gte("completed_at", new Date(Date.now() - 45 * 86_400_000).toISOString())
+      .gte("completed_at", streakCutoff)
       .order("completed_at", { ascending: false })
       .limit(500),
     // H2H challenges: an unfinished one becomes the rivalry card (real expiry
@@ -149,6 +156,15 @@ export default async function RootPage({
       .eq("status", "published")
       .order("created_at", { ascending: false })
       .limit(40),
+    // WC Mastermind/Run days (45d) — the pushed daily habit writes ONLY
+    // draft_wc_runs, so without this a faithful daily player read "START A
+    // STREAK" every morning.
+    sb
+      .from("draft_wc_runs")
+      .select("created_at")
+      .eq("user_id", userId)
+      .gte("created_at", streakCutoff)
+      .limit(500),
   ]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -181,6 +197,7 @@ export default async function RootPage({
   const playedSet = new Set<string>();
   for (const a of attemptDays ?? []) if (a.completed_at) playedSet.add(ukDay(a.completed_at));
   for (const m of matches) if (m.played_at) playedSet.add(ukDay(m.played_at));
+  for (const r of wcRunDays ?? []) if (r.created_at) playedSet.add(ukDay(r.created_at));
 
   const todayKey = ukDay(new Date().toISOString());
   // Walk back day by day (noon UTC cursor sidesteps DST edges). A streak is

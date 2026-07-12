@@ -6,7 +6,8 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed with the founder:** 2026-07-10 late (**Social cards fixed — robots.txt was
+> **Confirmed:** 2026-07-11 (**Product-audit fix batch** — see Recently Shipped).
+> Previously 2026-07-10 late (**Social cards fixed — robots.txt was
 > blocking every OG image** — the Jul 9 robots.ts shipped `Disallow: /api/` for all agents,
 > and every preview image lives under /api (og/*, draft/*-og, club-preview), so X, Facebook,
 > LinkedIn, Slack, Telegram, WhatsApp and Discord silently unfurled with no image from that
@@ -192,6 +193,22 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-11** — **Product-audit fix batch** (branch `claude/yourscore-ux-audit-pe7e5y`,
+  from docs/AUDIT-2026-07-11): win now EARNS the one-player swap again (`recordWin` sets
+  `swapAvailable` — the result-screen CTA + team-page banner work again); loss CTA is
+  "GO AGAIN →" (stale-team framing removed from UI + this doc); **guests get Practice vs
+  CPU** (Quick Match is fully local); Quick Match playback has "Skip to result"; the £25
+  giveaway sheet no longer auto-opens over scorecards (inline card opens it); **quiz
+  multiplayer resilience**: any Lobby member can advance an overdue question (server
+  watchdog + atomic claim in /api/room/next — a vanished host no longer stalls the game),
+  refresh/foreground restores the in-flight question, guests hitting a game link get a
+  sign-in gate instead of an infinite spinner, spectators are no longer enrolled as
+  players, failed answers surface an error + retry; home streak now counts WC-run days
+  and lost its limit(12) corruption; PostHog mounted (env-gated, EU host); ~12 routes got
+  the fetchCache guard; validate-email rate-limited; realtime kill-switch env-backed;
+  Sentry PII off; pinch-zoom re-enabled; sign-up prompts return players to their context
+  (`?next=`); h2h accept links full sign-in options; branded global-error screen.
+  ⚠️ Quiz-loop changes need an end-to-end multiplayer run before merging to `main`.
 - **2026-07-10** — **"Continue with Facebook" built, env-gated** (e129380): renders on the
   sign-in panel between Google and email once `NEXT_PUBLIC_FACEBOOK_LOGIN=1` is set in
   Vercel. NOT live yet — needs a Facebook app (Meta developers console) + the Facebook
@@ -275,7 +292,7 @@ Use these words, with these meanings, everywhere. No synonyms.
 - **Projected season** — Strength mapped to a 38-game record + tier (the "could it go 38-0?" projection).
 - **Classic / Expert** — Expert mode hides player ratings during the draft (names + positions only).
 - **Match types** — **Quick Match** (guest/practice, local) · **Ranked** (signed-in, feeds leaderboards — *building*) · **Live H2H** (simultaneous two-half match you watch play out) · **Challenge** (snapshot your XI → friend resolves via share code) · **World Cup Run** (solo WC2026 campaign).
-- **Stale team** — after a loss your team goes stale and must be rebuilt (win → swap one player).
+- **Stale team** — ❌ RETIRED concept: a loss now resets the streak but the team stays active (win → earn a one-player swap).
 
 **Leagues & ranking**
 - **Quiz League** — a group's table for the Quiz game (`leagues`). Two boards planned: Live / Offline (§6).
@@ -353,8 +370,9 @@ deferred — its +75 no-hints bonus / −50 hint penalty aren't live until hints
 A **separate game** (not a Quiz mode). Nav tab **"38-0"** (route `/38-0`). Core loop:
 pick a formation + difficulty → **Spin** a random legendary squad → **Draft** into best
 slots → see live **Strength** → **projected 38-game record + tier** → play a match → win
-→ swap a player / lose → team stale → rebuild. **Classic vs Expert** mode (Expert hides
-ratings). **Anonymous play is the deliberate hook** — guests get the full draft + Quick
+→ **earn a one-player swap** / lose → streak resets but the **team stays active — go
+again** (the old "stale team → forced rebuild" model is retired). **Classic vs Expert**
+mode (Expert hides ratings). **Anonymous play is the deliberate hook** — guests get the full draft + Quick
 Match loop on `localStorage`; sign-in unlocks cloud save / ranked / social.
 
 **Match types — live status:**
@@ -362,7 +380,7 @@ Match loop on `localStorage`; sign-in unlocks cloud save / ranked / social.
 |---|---|
 | **Quick Match** (guest/anon, local) | ✅ Live |
 | **Live H2H multiplayer** (simultaneous two-half match, watch-it-play-out, halftime swaps; friend code or random queue w/ disguised bot fallback) | ✅ Live |
-| **Interactive penalty shootout** — every drawn *played* match goes to pens and **the user takes the kicks** in a **real-time 3D scene** (React Three Fiber: floodlit stadium, 3D goal/keeper/striker, ball flies a real arc). Pick one of **9 aim zones** (3×3) + time a **POWER meter** (under/good/perfect/over); dive as keeper vs CPU in solo modes; in live H2H both players shoot simultaneously vs a seeded AI keeper, kicks streaming live. Pens win = full win (1,500 pts / streak survives); the old live opt-in ("both must agree") is retired. Group games in WC Run and the simulated season keep draws (league formats). Outcomes resolve server-side from a peppered seed in ranked modes; abandoning a shootout auto-completes it seeded — quitting never dodges a loss. The 3D scene is lazy-loaded (code-split to the pens route); striker/keeper are GLTF-ready slots for future rigged models. | 🔧 Built 2026-06-13, awaiting migration 35 + deploy |
+| **Interactive penalty shootout** — every drawn *played* match goes to pens and **the user takes the kicks** in a real-time **2D sprite scene** (`PenaltyScene2D` — floodlit goal, keeper dive, ball arc; the R3F 3D scene was descoped, code comments corrected 2026-07-11). Pick one of **9 aim zones** (3×3) + time a **POWER meter** (under/good/perfect/over); dive as keeper vs CPU in solo modes; in live H2H both players shoot simultaneously vs a seeded AI keeper, kicks streaming live. Pens win = full win (1,500 pts / streak survives); the old live opt-in ("both must agree") is retired. Group games in WC Run and the simulated season keep draws (league formats). Outcomes resolve server-side from a peppered seed in ranked modes; abandoning a shootout auto-completes it seeded — quitting never dodges a loss. The 3D scene is lazy-loaded (code-split to the pens route); striker/keeper are GLTF-ready slots for future rigged models. | 🔧 Built 2026-06-13, awaiting migration 35 + deploy |
 | **Custom leagues + friend challenges** (create/join 38-0 leagues by code; challenge a specific friend via share code; shareable result graphics) | ✅ Live |
 | **World Cup** — two player-facing modes, both an open **World XI** draft (nation/National-Team mode **retired** from the UI): **🧠 World Cup Mastermind** (quiz-gated — each pick unlocked by a **25s/question** timer; right answers + streaks deal stronger players) with **Today's Run** (ranked, one locked go/day, today's seeded questions, feeds the season board + Rank via the WC bucket) and **Practice** (unlimited, random past questions, no board/Rank); plus **🌍 World Cup Run** (open, no-quiz draft, replayable). The run: group → knockouts. Group qualifies on points (**≥4 auto · =3 play-off · ≤2 out**); a 3-pt play-off and any **drawn knockout are settled by a quiz decider** — one timed WC question, server-graded (temporary, until the penalty-shootout work lands) — knockout loss = out; perfect run = **8-0-0**. Season board `/38-0/wc/board` ranks closest-to-8-0-0 across the WC2026 window; **tap any player → `/38-0/wc/board/[userId]` to browse their daily drafts** (switch between days to see each day's XI + result + match-by-match road + **Mastermind quiz score** (how many of the day's questions they got right — `quiz_correct`/`quiz_total` on the run, recorded at submit; pre-migration-42 runs read null); `get_wc_player_history` definer RPC, public read). **Share/viral loop:** the daily result has a personalised **Mastermind scorecard** (`/api/draft/wc-og?mode=mastermind` — name + record + 🧠 quiz hero + world rank + date; "38-0 for the fans that know football") that **unfurls on X** via the `/38-0/wc/share` page (its `og:image` IS the card — fixes the old generic-image unfurl); the result screen pushes a **£25 daily-giveaway** tweet (mirrors the season giveaway, `@yourscore_app_`) and a **Challenge-a-friend** invite (`InviteMastermind`, also on the `/38-0/wc` entry) that shares the mode link. World Cup is now the **first/default 38-0 tab**. | ✅ Live 2026-06-16 (migrations 39–42 applied) |
 | **World Cup H2H** (take your WC squad head-to-head — own queue/lobbies/leaderboard, WC competition lane) | ✅ Live 2026-06-15 |

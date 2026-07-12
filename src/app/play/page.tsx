@@ -352,7 +352,7 @@ function isWorldCupPack(p: QuizPack): boolean {
 }
 
 function joinErrorMessage(raw: string): string {
-  if (raw.includes("not found") || raw.includes("Lobby not found")) return "This lobby no longer exists. Go to Play > Head-to-Head to start a new match.";
+  if (raw.includes("not found") || raw.includes("Lobby not found")) return "This lobby no longer exists. Go to Versus → Find an opponent to start a new match.";
   if (raw.includes("already started") || raw.includes("Game already")) return "This lobby has already started.";
   if (raw.includes("full") || raw.includes("Lobby is full")) return "This lobby is full.";
   if (raw.includes("Invalid code")) return "That code isn't valid — double-check it.";

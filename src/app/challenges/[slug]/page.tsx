@@ -478,29 +478,33 @@ export default function ChallengePage() {
     if (!slug) return;
     const supabase = createClient();
 
-    supabase.auth.getUser().then(async ({ data }) => {
-      const uid = data.user?.id ?? null;
-      setUserId(uid);
-      const sb = supabase;
-
+    (async () => {
       // Load pack content from the edge-cached route (/api/challenges/pack). It's
       // served from the nearest CDN region with no database hop — previously the
       // browser fetched EVERY published pack's full question set (110 packs) from
       // the eu-central-1 DB on every load, a transatlantic payload that tanked
       // Speed Insights for users far from the UK. Leaderboard/attempt below stay
       // client-side (user-specific, not cacheable).
-      let match: (QuizPack & { questions: RawQuestion[] }) | undefined;
-      try {
-        const packQuery = pid
-          ? `pid=${encodeURIComponent(pid)}`
-          : `slug=${encodeURIComponent(slug)}`;
-        const res = await fetch(`/api/challenges/pack?${packQuery}`);
-        if (!res.ok) { router.replace("/challenges"); return; }
-        const json = await res.json();
-        match = json.pack as (QuizPack & { questions: RawQuestion[] }) | undefined;
-      } catch {
-        router.replace("/challenges"); return;
-      }
+      //
+      // The pack fetch starts IMMEDIATELY — it needs no auth. The uid comes from
+      // getSession() (localStorage, no GoTrue roundtrip): it only scopes reads
+      // that RLS enforces anyway. Previously this was a serial 4-hop chain
+      // (auth → pack → attempt → leaderboard) — the measured ~1s picker→quiz lag.
+      const packQuery = pid
+        ? `pid=${encodeURIComponent(pid)}`
+        : `slug=${encodeURIComponent(slug)}`;
+      const packPromise: Promise<(QuizPack & { questions: RawQuestion[] }) | undefined> =
+        fetch(`/api/challenges/pack?${packQuery}`)
+          .then((res) => (res.ok ? res.json() : undefined))
+          .then((json) => json?.pack as (QuizPack & { questions: RawQuestion[] }) | undefined)
+          .catch(() => undefined);
+
+      const { data: { session } } = await supabase.auth.getSession();
+      const uid = session?.user?.id ?? null;
+      setUserId(uid);
+      const sb = supabase;
+
+      const match = await packPromise;
       if (!match) { router.replace("/challenges"); return; }
 
       setPack(match);
@@ -520,24 +524,26 @@ export default function ChallengePage() {
         getCompetitionBadgeUrl(match.name).then((u: string | null) => { if (u) setBadgeUrl(u); });
       }
 
-      if (uid) {
-        const { data: attempt } = await sb
-          .from("quiz_attempts")
-          .select("score, max_score, correct_count")
-          .eq("user_id", uid)
-          .eq("pack_id", match.id)
-          .single();
-        if (attempt) setPriorAttempt(attempt);
-      }
-
-      // Fetch leaderboard
+      // Prior attempt + leaderboard are independent — one parallel wave, not two hops.
       setLeaderLoading(true);
-      const { data: lbRows } = await sb
-        .from("quiz_attempts")
-        .select("user_id, score, correct_count, profiles(display_name)")
-        .eq("pack_id", match.id)
-        .order("score", { ascending: false })
-        .limit(25);
+      const [attemptRes, lbRes] = await Promise.all([
+        uid
+          ? sb
+              .from("quiz_attempts")
+              .select("score, max_score, correct_count")
+              .eq("user_id", uid)
+              .eq("pack_id", match.id)
+              .single()
+          : Promise.resolve({ data: null }),
+        sb
+          .from("quiz_attempts")
+          .select("user_id, score, correct_count, profiles(display_name)")
+          .eq("pack_id", match.id)
+          .order("score", { ascending: false })
+          .limit(25),
+      ]);
+      if (attemptRes.data) setPriorAttempt(attemptRes.data);
+      const lbRows = lbRes.data;
       if (lbRows) {
         setLeaderboard((lbRows as unknown as LeaderRow[]).map((r) => ({
           user_id: r.user_id,
@@ -549,7 +555,7 @@ export default function ChallengePage() {
       setLeaderLoading(false);
 
       setPhase("intro");
-    });
+    })();
   }, [slug, pid, router]);
 
   const currentQ = questions[currentIdx];
@@ -617,15 +623,14 @@ export default function ChallengePage() {
     try { await navigator.clipboard.writeText(`${quizBlurb()} ${url}`); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* blocked */ }
   }
 
-  // Auto-mint short URL + auto-open giveaway overlay when results first appear.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // Auto-mint the short URL when results first appear. The giveaway overlay no
+  // longer auto-opens over the scorecard (the reveal is the reward moment) —
+  // the always-visible WIN £25 card opens it on tap.
   useEffect(() => {
     if (phase !== "results") return;
     if (giveawayShown.current) return;
     giveawayShown.current = true;
     void ensureShortUrl();
-    const t = setTimeout(() => setGiveawayOpen(true), 700);
-    return () => clearTimeout(t);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
 

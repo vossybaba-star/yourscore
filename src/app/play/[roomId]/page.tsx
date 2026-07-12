@@ -152,6 +152,8 @@ export default function RoomPage() {
   const playersCountRef   = useRef(0);
   const isHostRef         = useRef(false);
   const supabaseRef       = useRef<DB | null>(null);
+  // Foreground-restore listener (registered inside the async setup, removed on cleanup)
+  const visibilityHandlerRef = useRef<(() => void) | null>(null);
   // Per-game audience signals (Multiplayer quiz): "play" once the lobby goes live,
   // "complete" once it finishes. Gated on having played so a cold viewer opening a
   // finished room's link doesn't get counted. Fires for every player.
@@ -355,9 +357,9 @@ export default function RoomPage() {
 
   // ── Auto-advance (host only) ──────────────────────────────────────────────
 
-  const scheduleAdvance = useCallback((closes: string) => {
+  const scheduleAdvance = useCallback((closes: string, extraMs = 300) => {
     if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current);
-    const delay = Math.max(0, new Date(closes).getTime() - Date.now() + 300);
+    const delay = Math.max(0, new Date(closes).getTime() - Date.now() + extraMs);
     advanceTimerRef.current = setTimeout(async () => {
       const expectedIdx = currentSeqRef.current - 1;
       setActiveQuestion(null);
@@ -428,7 +430,22 @@ export default function RoomPage() {
         await fetchLeaderboard(sb, roomId);
       }
 
-      await sb.from("room_members").upsert({ room_id: roomId, user_id: user.id }, { onConflict: "room_id,user_id" });
+      // Join as a player only while the room is forming. Visitors landing on a
+      // live/finished room (shared links, spectators) must NOT be enrolled —
+      // that inflated players.length, so "N/M answered" never completed and the
+      // everyone-answered early advance could never fire again.
+      if (roomData.status === "lobby") {
+        await sb.from("room_members").upsert({ room_id: roomId, user_id: user.id }, { onConflict: "room_id,user_id" });
+      }
+
+      // Refresh/rejoin recovery: restore the in-flight question. Realtime only
+      // delivers events that arrive while subscribed, so without this a reload
+      // sat on "Next question incoming…" until the next advance — and a HOST
+      // reload never rescheduled the advance at all (closesAt stayed null),
+      // stalling the whole room.
+      if (roomData.status === "live") {
+        await fetchAndShowQuestion(sb, (roomData.current_question_idx ?? 0) + 1);
+      }
 
       setLoading(false);
 
@@ -500,10 +517,33 @@ export default function RoomPage() {
         .subscribe();
 
       channelRef.current = channel;
+
+      // Tab restore: mobile suspends JS timers AND the realtime socket in the
+      // background, so events fired while away are simply gone. Refetch the
+      // room + in-flight question whenever the app comes back to foreground.
+      const onVisible = () => {
+        if (document.visibilityState !== "visible" || cancelled) return;
+        void (async () => {
+          const { data: fresh } = await sb.from("rooms").select("*").eq("id", roomId).single();
+          if (!fresh || cancelled) return;
+          setRoom(fresh as unknown as Room);
+          if (fresh.status === "live") {
+            await fetchAndShowQuestion(sb, (fresh.current_question_idx ?? 0) + 1);
+            await fetchLeaderboard(sb, roomId);
+          }
+          if (fresh.status === "completed") setCompletedAt((c) => c ?? Date.now());
+        })();
+      };
+      document.addEventListener("visibilitychange", onVisible);
+      visibilityHandlerRef.current = onVisible;
     });
 
     return () => {
       cancelled = true;
+      if (visibilityHandlerRef.current) {
+        document.removeEventListener("visibilitychange", visibilityHandlerRef.current);
+        visibilityHandlerRef.current = null;
+      }
       if (leaderboardRefetchRef.current) { clearTimeout(leaderboardRefetchRef.current); leaderboardRefetchRef.current = null; }
       // Remove the live channel on unmount. The async block above can't hand
       // its cleanup back to React (a return inside .then() goes to the
@@ -516,10 +556,16 @@ export default function RoomPage() {
     };
   }, [user, userLoading, roomId, fetchPlayers, fetchLeaderboard, handleNewQuestion, fetchAndShowQuestion, triggerEarlyAdvance]);
 
-  // Schedule host advance when a new question's closesAt is set.
+  // Schedule the advance when a new question's closesAt lands. The host fires
+  // right on the buzzer; every other member arms a WATCHDOG a few seconds later
+  // (staggered) — the server accepts any member's advance once the question is
+  // overdue, so a host who backgrounds/refreshes/leaves no longer stalls the
+  // game. In the healthy path the next question's closesAt re-arms this effect
+  // before a watchdog ever fires, and the server's atomic claim makes stray
+  // duplicate calls harmless no-ops.
   useEffect(() => {
-    if (!isHost || !closesAt) return;
-    scheduleAdvance(closesAt);
+    if (!closesAt) return;
+    scheduleAdvance(closesAt, isHost ? 300 : 4_000 + Math.random() * 3_000);
     return () => { if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current); };
   }, [isHost, closesAt, scheduleAdvance]);
 
@@ -666,6 +712,23 @@ export default function RoomPage() {
     const m = Math.floor(secs / 60);
     const s = secs % 60;
     return `${m}:${String(s).padStart(2, "0")}`;
+  }
+
+  // ── Signed-out visitors ───────────────────────────────────────────────────
+  // The load effect needs a session (question_events RLS is member-scoped), so
+  // without this gate a guest opening a shared game link spun forever.
+  if (!userLoading && !user) {
+    return (
+      <main className="min-h-dvh bg-bg flex flex-col items-center justify-center px-6 gap-4 text-center">
+        <p className="font-display text-5xl">⚽</p>
+        <p className="font-display text-2xl text-white">You&apos;ve been invited to a quiz lobby</p>
+        <p className="font-body text-sm" style={{ color: "#8a948f" }}>Sign in to take your seat — free, takes 10 seconds.</p>
+        <Button variant="primary" tone="teal" size="lg" href={`/auth/sign-in?next=${encodeURIComponent(`/play/${roomId}`)}`}>
+          Sign in to join →
+        </Button>
+        <BackPill fallback="/play" label="Back" tone="play" />
+      </main>
+    );
   }
 
   // ── Loading ───────────────────────────────────────────────────────────────

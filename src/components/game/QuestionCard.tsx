@@ -39,6 +39,7 @@ export function QuestionCard({ question, onAnswer, onExpire }: QuestionCardProps
   const [reveal, setReveal] = useState<RevealState>(null);
   const [submitting, setSubmitting] = useState(false);
   const [expired, setExpired] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const options = [question.optionA, question.optionB, question.optionC, question.optionD];
 
@@ -46,13 +47,34 @@ export function QuestionCard({ question, onAnswer, onExpire }: QuestionCardProps
     if (selected || submitting || expired) return;
     setSelected(letter);
     setSubmitting(true);
+    setSubmitError(null);
 
+    // A failed submit used to just un-highlight the choice with no signal — the
+    // player never learned whether they scored. Terminal states ("Question
+    // closed", "Already answered") get told straight; anything else (network
+    // blip, rate limit) is retried once, then surfaced.
     try {
       const result = await onAnswer(letter);
       setReveal({ selected: letter, ...result });
-    } catch {
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "";
+      const terminal = /closed|already answered/i.test(msg);
+      if (!terminal) {
+        try {
+          await new Promise((r) => setTimeout(r, 600));
+          const result = await onAnswer(letter);
+          setReveal({ selected: letter, ...result });
+          setSubmitting(false);
+          return;
+        } catch { /* fall through to the error state */ }
+      }
       setReveal(null);
       setSelected(null);
+      setSubmitError(
+        /closed/i.test(msg) ? "Too late — that question closed."
+        : /already answered/i.test(msg) ? "Answer already in — hold tight."
+        : "Connection hiccup — your answer didn't send. Tap to try again."
+      );
     } finally {
       setSubmitting(false);
     }
@@ -225,6 +247,18 @@ export function QuestionCard({ question, onAnswer, onExpire }: QuestionCardProps
                 {question.explanation}
               </p>
             )}
+          </div>
+        )}
+
+        {/* Submit failure — the player must know their answer didn't land */}
+        {submitError && !reveal && !expired && (
+          <div
+            className="mx-4 mb-6 rounded-2xl p-4"
+            style={{ background: "rgba(255,184,0,0.06)", border: "1px solid rgba(255,184,0,0.2)" }}
+          >
+            <p className="font-body text-sm font-semibold" style={{ color: "#ffb800" }}>
+              {submitError}
+            </p>
           </div>
         )}
 
