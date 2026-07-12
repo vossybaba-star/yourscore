@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
+// Vercel data cache pins service-role GETs (constant cache key) — see CLAUDE.md §4.
+export const fetchCache = "force-no-store";
 
 // Discover public leagues — both game types in one list. A league appears here
 // only when its creator flipped it public (is_public, migration 64); featured

@@ -7,6 +7,8 @@ import { validateAndScore } from "@/lib/draft/server";
 import { simulateSeason } from "@/lib/draft/season";
 import { leagueOpponents, ensurePool } from "@/lib/draft/pool";
 import { asLeague } from "@/lib/draft/types";
+// Vercel data cache pins service-role GETs (constant cache key) — see CLAUDE.md §4.
+export const fetchCache = "force-no-store";
 
 // Verified 38-0 season records — the "closest to 38-0" leaderboard.
 //

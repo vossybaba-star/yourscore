@@ -15,6 +15,7 @@ import { UpdateBanner } from "@/components/native/UpdateBanner";
 import { TimezoneSync } from "@/components/TimezoneSync";
 import { SignupPixel } from "@/components/analytics/SignupPixel";
 import { AcquisitionCapture } from "@/components/analytics/AcquisitionCapture";
+import { PostHogProvider } from "@/components/analytics/PostHogProvider";
 import Script from "next/script";
 import "./globals.css";
 
@@ -76,8 +77,7 @@ export function generateMetadata(): Metadata {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  // Pinch-zoom stays enabled (WCAG 1.4.4) — low-vision users must be able to zoom.
   themeColor: "#0a0a0f",
   viewportFit: "cover",
 };
@@ -103,7 +103,9 @@ export default function RootLayout({
         <TimezoneSync />
         <SignupPixel />
         <AcquisitionCapture />
-        {children}
+        {/* No-op until NEXT_PUBLIC_POSTHOG_KEY is set — then route-change pageviews,
+            identify-by-uuid, and masked session recording come on. */}
+        <PostHogProvider>{children}</PostHogProvider>
         <Analytics />
         <SpeedInsights />
         {/* Initialise dataLayer + gtag stub synchronously so useEffect callers

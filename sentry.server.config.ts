@@ -14,7 +14,8 @@ Sentry.init({
   // Enable logs to be sent to Sentry
   enableLogs: true,
 
-  // Enable sending user PII (Personally Identifiable Information)
+  // Do NOT attach IPs/cookies/headers to events — matches the privacy posture
+  // everywhere else (EU data infra, PostHog masking). Flip only with a specific need.
   // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
-  sendDefaultPii: true,
+  sendDefaultPii: false,
 });

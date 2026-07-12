@@ -14,7 +14,10 @@ export function initPostHog(): typeof posthog {
   if (!key) return posthog; // not configured — stay dormant
 
   posthog.init(key, {
-    api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com",
+    // EU cloud by default — matches the rest of the data infra (Supabase Frankfurt,
+    // de.sentry.io). Override with NEXT_PUBLIC_POSTHOG_HOST only if the project
+    // was created in another region.
+    api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://eu.i.posthog.com",
     // Only create person profiles once we've identified a logged-in user — keeps
     // anonymous traffic out of the billable person count and the persons UI.
     person_profiles: "identified_only",

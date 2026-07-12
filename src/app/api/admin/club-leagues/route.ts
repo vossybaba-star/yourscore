@@ -3,6 +3,8 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { requireAdmin } from "@/lib/auth/admin";
 import { makeJoinCode } from "@/lib/club";
 import type { Database } from "@/types/database";
+// Vercel data cache pins service-role GETs (constant cache key) — see CLAUDE.md §4.
+export const fetchCache = "force-no-store";
 
 // Admin provisioning for Club Leagues (spec §5): create (name/slug/tier + owner
 // by email), list, and edit the admin-only fields (slug/tier/is_active/owner).

@@ -9,6 +9,8 @@ import {
   OWNER_EDITABLE_COLS,
 } from "@/lib/club";
 import type { Database } from "@/types/database";
+// Vercel data cache pins service-role GETs (constant cache key) — see CLAUDE.md §4.
+export const fetchCache = "force-no-store";
 
 // GET /api/club/[slug]
 //   Anyone (incl. signed-out): public landing payload — branding + member count.

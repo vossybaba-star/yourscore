@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { getVersusActivity } from "@/lib/versus/activity";
+// Vercel data cache pins service-role GETs (constant cache key) — see CLAUDE.md §4.
+export const fetchCache = "force-no-store";
 
 // Community-activity numbers for the Versus tab ("Live now" strip). Shared by
 // every viewer, so serve it edge-cached — one DB sweep per ~30s, not per view.
