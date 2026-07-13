@@ -64,6 +64,9 @@ export default function WorldCupEntry() {
   const [spinning, setSpinning] = useState(false);
   const [reel, setReel] = useState<string | null>(null);
   const [selected, setSelected] = useState<PlayerSeason | null>(null);
+  // The pitch slot the next scout is aimed at (tap an empty slot to set, tap again to
+  // clear). Null = scout across every open position, as before.
+  const [targetSlotId, setTargetSlotId] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
   const [h2hBusy, setH2hBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -95,6 +98,9 @@ export default function WorldCupEntry() {
   const practiceSeed = useRef<string | null>(null);
   const draftAnswers = useRef<number[]>([]);
   const draftPicks = useRef<{ slot: string; player_season_id: string }[]>([]);
+  // Per-pick scout target (slot id or null), by pick index. Sent with each ranked slate
+  // request AND with the submit, so verifyRankedDraft replays the same narrowed spins.
+  const draftTargets = useRef<(string | null)[]>([]);
   // Today's ranked attempt is locked once it's been played OR drafted past the 6th pick
   // (anti-preview). When locked, the Today's Run card is blurred + unselectable.
   const [rankedLocked, setRankedLocked] = useState(false);
@@ -125,9 +131,9 @@ export default function WorldCupEntry() {
   function beginDraft(rankedRun: boolean, gated: boolean = true) {
     setRanked(rankedRun);
     setQuizGated(gated);
-    setMode("world"); setNation(null); setSlate(null); setSelected(null); setReel(null); resetQuiz();
+    setMode("world"); setNation(null); setSlate(null); setSelected(null); setReel(null); setTargetSlotId(null); resetQuiz();
     setTeam(emptyTeam(FORMATION));
-    draftAnswers.current = []; draftPicks.current = []; serverQs.current = [];
+    draftAnswers.current = []; draftPicks.current = []; draftTargets.current = []; serverQs.current = [];
     if (rankedRun) void loadRankedQuestions();
   }
 
@@ -178,6 +184,15 @@ export default function WorldCupEntry() {
     setNation(n); setRanked(false);
     setTeam(emptyTeam(FORMATION));
     setSlate(null); setSelected(null); setReel(null); resetQuiz();
+  }
+
+  // Tap an EMPTY pitch slot to aim the next scout at that exact position (tap it again to
+  // go back to scouting every open slot). Locked while a question/slate is in flight so a
+  // ranked step's target can't change between the slate request and the pick.
+  function toggleTarget(slotId: string) {
+    if (!team || spinning || quiz || slate || selected) return;
+    if (team.squad.some((p) => p.slot === slotId)) return; // filled — nothing to scout for
+    setTargetSlotId((t) => (t === slotId ? null : slotId));
   }
 
   // Tap SCOUT → answer a quiz question first (timed). Ranked pulls the next server question
@@ -256,11 +271,14 @@ export default function WorldCupEntry() {
   async function answerRanked(idx: number) {
     const i = draftAnswers.current.length;
     const answers = [...draftAnswers.current, idx];
+    // Lock this pick's scout target (slot taps are disabled while the quiz is open, so it
+    // can't drift between the slate request and the submit replay).
+    draftTargets.current[i] = targetSlotId;
     try {
       const cu = catchupRef.current; // null = today's run; string = catch-up date
       const res = await fetch("/api/draft/wc/draft", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "slate", i, answers, picks: draftPicks.current, catchup: cu !== null, catchupDate: cu }),
+        body: JSON.stringify({ action: "slate", i, answers, picks: draftPicks.current, target: targetSlotId, catchup: cu !== null, catchupDate: cu }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? "Couldn't load your pick — try again."); setAnswered(null); return; }
@@ -282,7 +300,10 @@ export default function WorldCupEntry() {
     // Client spin needs the on-demand player pool; if it hasn't finished loading
     // yet, load it and retry (rather than throwing) so a fast tapper never dead-ends.
     if (!isPoolReady()) { void ensurePool().then(() => runSpin(band)); return; }
-    const open = openSlots(team).map((s) => s.pos);
+    // A targeted scout narrows the spin to that one slot's position; spinWorld's
+    // narrow-opening weighting then surfaces teams with a genuinely strong fit there.
+    const targeted = targetSlotId ? openSlots(team).find((s) => s.id === targetSlotId) : undefined;
+    const open = targeted ? [targeted.pos] : openSlots(team).map((s) => s.pos);
     // The quiz band shapes quality; within it the spin is still luck. World mode lands on
     // ONE nation; nation mode is locked to the chosen nation.
     let players: PlayerSeason[];
@@ -319,6 +340,7 @@ export default function WorldCupEntry() {
     if (ranked) draftPicks.current = [...draftPicks.current, { slot: slot.id, player_season_id: selected.id }];
     const next = placePlayer(team, selected, slot);
     setTeam(next); setSlate(null); setSelected(null);
+    setTargetSlotId(null); // a scout target is per-pick — re-aim each round
   }
 
   // Per-question 25s clock. Hitting zero locks in a timeout as a wrong answer (idx -1),
@@ -369,7 +391,7 @@ export default function WorldCupEntry() {
           // catchupRef.current is the catch-up DATE (or null for today). Send the boolean flag
           // the route checks (`catchup === true`) plus the date — matching begin/slate, so the
           // run resolves to the chosen past edition and verifies against ITS slates.
-          ? { action: "start", ranked: true, catchup: catchupRef.current !== null, catchupDate: catchupRef.current, answers: draftAnswers.current, picks: draftPicks.current, acq: getAcq() }
+          ? { action: "start", ranked: true, catchup: catchupRef.current !== null, catchupDate: catchupRef.current, answers: draftAnswers.current, picks: draftPicks.current, targets: draftTargets.current.map((t) => t ?? null), acq: getAcq() }
           : { action: "start", mode: runMode, nation: nationName, formation, squad, ranked: false, acq: getAcq() }),
       });
       if (res.status === 401) {
@@ -588,8 +610,14 @@ export default function WorldCupEntry() {
   const lines = lineRatings(team.squad);
   const slots = slotsFor(team.formation);
   const filledBySlot = new Map(team.squad.map((p) => [p.slot, p]));
-  const available = selected ? slots.filter((s) => !filledBySlot.has(s.id) && canPlay(selected.position, s.pos)) : [];
-  const scoutLabel = world ? "🌍 SCOUT THE WORLD" : `🎰 SCOUT ${teamName.toUpperCase()}`;
+  const available = selected
+    ? slots.filter((s) => !filledBySlot.has(s.id) && canPlay(selected.position, s.pos))
+        .sort((a, b) => (a.id === targetSlotId ? -1 : b.id === targetSlotId ? 1 : 0)) // targeted slot leads
+    : [];
+  const targetSlot = targetSlotId ? slots.find((s) => s.id === targetSlotId && !filledBySlot.has(s.id)) ?? null : null;
+  const scoutLabel = targetSlot
+    ? `🎯 SCOUT A ${targetSlot.label}`
+    : world ? "🌍 SCOUT THE WORLD" : `🎰 SCOUT ${teamName.toUpperCase()}`;
 
   return (
     <div className="min-h-[100dvh] pb-44" style={{ background: "#0a0a0f" }}>
@@ -636,7 +664,20 @@ export default function WorldCupEntry() {
           </div>
         )}
 
-        <Pitch formation={team.formation} squad={team.squad} compact />
+        <Pitch
+          formation={team.formation}
+          squad={team.squad}
+          compact
+          onSlotClick={remaining > 0 ? toggleTarget : undefined}
+          highlightSlot={targetSlot?.id ?? null}
+        />
+        {remaining > 0 && (
+          <p className="font-body text-center mt-2" style={{ fontSize: 11, color: targetSlot ? "#aeea00" : "#586058" }}>
+            {targetSlot
+              ? <>🎯 Scouting a <b>{targetSlot.label}</b> next — tap the slot again to scout all positions</>
+              : "Tap an empty slot to scout for that exact position"}
+          </p>
+        )}
 
         {team.squad.length > 0 && (
           <div className="grid grid-cols-4 gap-2 mt-3">
