@@ -646,10 +646,10 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
             </p>
             <div className="space-y-3">
               {[
-                { col: "#aeea00", label: "Answer in 0–15s", pts: "+200 pts" },
-                { col: "#ffb800", label: "Answer in 15–30s", pts: "+150 pts" },
-                { col: "#ff9f43", label: "Answer in 30–45s", pts: "+100 pts" },
-                { col: "#aeea00", label: "3 correct in a row", pts: "×2 bonus" },
+                { col: "#aeea00", label: "Lightning — first 6 seconds", pts: "×2 points" },
+                { col: "#ffb800", label: "Fast — inside 12 seconds", pts: "×1.5 points" },
+                { col: "#ff9f43", label: "Slow answers taper off", pts: "down to ×0.5" },
+                { col: "#aeea00", label: "Back-to-back correct", pts: "+50 streak" },
               ].map(r => (
                 <div key={r.label} className="flex items-center justify-between py-2.5 px-4 rounded-xl"
                   style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
@@ -726,13 +726,13 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
           )}
 
           <div className="relative z-10 px-8 py-10 text-center">
-            <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-5">World Cup 2026 · Opening match</p>
+            <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-5">World Cup 2026</p>
             <WorldCupCountdown />
-            <p className="font-body text-sm text-text-muted mt-4 mb-6">June 11 · Mexico City. The first match to earn points on.</p>
+            <p className="font-body text-sm text-text-muted mt-4 mb-6">Every match earns points — all the way to the final.</p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link href="/league/new" className="inline-flex items-center gap-2 font-body font-bold text-sm px-6 py-3 rounded-xl transition-all hover:opacity-90 pulse-glow"
                 style={{ background: "#aeea00", color: "#0a0a0f" }}>
-                Create your league before Jun 11 →
+                Create your league →
               </Link>
               <Link href="/auth/sign-in" className="inline-flex items-center gap-2 font-body font-semibold text-sm px-6 py-3 rounded-xl transition-all hover:opacity-80 green-pulse text-green"
                 style={{ background: "rgba(174,234,0,0.1)", border: "1px solid rgba(174,234,0,0.2)" }}>
@@ -756,7 +756,7 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
               🇧🇷 🏴󠁧󠁢󠁥󠁮󠁧󠁿 🇫🇷 🇩🇪 🇦🇷
             </div>
             <h2 className="font-display text-5xl sm:text-6xl text-white mb-3">START YOUR LEAGUE</h2>
-            <p className="font-display text-2xl mb-6" style={{ color: "#aeea00" }}>World Cup 2026 · June 11</p>
+            <p className="font-display text-2xl mb-6" style={{ color: "#aeea00" }}>Free · you and your mates</p>
             <p className="font-body text-text-muted mb-8 max-w-md mx-auto">
               Invite your mates, pick your matches, and start building your score. Points stack all season.
             </p>

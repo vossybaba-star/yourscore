@@ -17,6 +17,7 @@ import { useGameLoop } from "@/lib/useGameLoop";
 import { Button } from "@/components/ui/Button";
 import { trackGamePlay, trackGameComplete, trackShare } from "@/lib/analytics/trackGame";
 import { getAcq } from "@/lib/analytics/acq";
+import { DAILY_GIVEAWAY_ENABLED } from "@/lib/promo";
 import {
   DIFFICULTY_COLOR as DIFF_COLOR,
   DIFFICULTY_BG as DIFF_BG,
@@ -929,10 +930,12 @@ export default function ChallengePage() {
                   <p className="font-display text-sm text-white tracking-wide">Speed scoring</p>
                 </div>
                 <div className="flex items-center justify-between gap-2">
+                  {/* Real engine shape (scoring.ts): points = base × speed multiplier;
+                      Lightning ×2 inside the first 20% of the 30s window. */}
                   {[
-                    { time: "Instant", pts: "1,000", color: "#aeea00" },
-                    { time: "~5s", pts: "775", color: "#00d8c0" },
-                    { time: "~10s", pts: "550", color: "#ff4757" },
+                    { time: "under 6s", pts: "×2", color: "#aeea00" },
+                    { time: "under 12s", pts: "×1.5", color: "#00d8c0" },
+                    { time: "slower", pts: "×1 ↓", color: "#ff4757" },
                   ].map(({ time, pts, color }) => (
                     <div key={time} className="flex-1 rounded-xl py-2.5 px-2 text-center"
                       style={{ background: `${color}10`, border: `1px solid ${color}25` }}>
@@ -1215,7 +1218,8 @@ export default function ChallengePage() {
         </div>
 
         <div className="px-5 flex flex-col gap-4 mt-2">
-          {/* ── Giveaway CTA ── */}
+          {/* ── Giveaway CTA (env-gated: NEXT_PUBLIC_DAILY_GIVEAWAY=false retires it) ── */}
+          {DAILY_GIVEAWAY_ENABLED && (
           <button
             onClick={() => setGiveawayOpen(true)}
             className="w-full rounded-2xl overflow-hidden active:scale-[0.98] transition-transform"
@@ -1229,6 +1233,7 @@ export default function ChallengePage() {
               </div>
             </div>
           </button>
+          )}
 
           <button onClick={openShare} className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "#aeea00", color: "#062013", fontSize: 22 }}>
             📸 SHARE YOUR RESULT
@@ -1376,7 +1381,7 @@ export default function ChallengePage() {
         )}
 
         {/* ── Giveaway overlay ── */}
-        {giveawayOpen && (
+        {DAILY_GIVEAWAY_ENABLED && giveawayOpen && (
           <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: "rgba(0,0,0,0.9)" }} onClick={() => setGiveawayOpen(false)}>
             <div className="w-full max-w-lg px-4" style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 20px)" }} onClick={(e) => e.stopPropagation()}>
               <div className="rounded-3xl overflow-hidden" style={{ background: "#080d0a", border: "2px solid rgba(0,216,192,0.4)" }}>
