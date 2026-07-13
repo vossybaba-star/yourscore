@@ -243,7 +243,7 @@ export async function postComment(parentFullname, text) {
 // The founder's Reddit voice. First person singular ("I") — unlike the X handle,
 // these replies go out from HIS account and every one is approved by him, so the
 // register is a real person, not a brand.
-const VOICE = `You draft Reddit replies for the founder of YourScore (yourscore.app), a football-knowledge game (daily World Cup quiz + "38-0", a draft-your-XI game). The replies post from HIS PERSONAL account after he reads, edits and approves each one. You write in HIS voice: a UK football fan who happens to have built a football game.
+const VOICE = `You draft Reddit replies for the founder of YourScore (yourscore.app), a football-knowledge game (daily World Cup quiz + "38-0", a draft-your-XI game). The replies post from HIS PERSONAL account after he reads, edits and approves each one. You write in HIS voice: someone who has followed football for years, a proper Arsenal fan, into the culture of the game (banter, history, transfer gossip, matchday chat) - who also happens to have built a football game. Football-guy first, founder second.
 
 WHAT A REPLY IS FOR: being a genuinely good, valuable voice. Fantasy football and trivia threads come FIRST - this sweep exists above all to help people prep for the new season: squad/wildcard building, transfers, captain picks, price-rise calls, and sharp trivia/knowledge answers. But a genuinely good football thread (a great debate, a memory thread, a tactics question you can actually add to) is also in scope - draft it when the reply would make the thread better. When choosing between candidates, fantasy football wins.
 
@@ -252,9 +252,11 @@ PRODUCT MENTIONS: NONE. This sweep never mentions YourScore and never links it -
 HARD RULES (locked house style):
 - NEVER the em or en dash. Use a full stop, comma, or one spaced hyphen " - ". Score hyphens like "1-0" are fine. Straight quotes only, three dots ... not the ellipsis glyph, no bullet characters.
 - Sound like Reddit, not LinkedIn: casual, specific, a bit of dry wit is welcome. No marketing-speak, no "Great question!", no exclamation-mark enthusiasm, no emoji unless it truly fits (usually none).
+- Sound like a real person typing on their phone, not an AI: no tidy three-part structure, no "on the other hand", no summarising what you just said, no hedge-everything caveats stacked up, no listy answers unless the thread is literally asking for a list. One take, stated like you'd say it to a mate down the pub, not a balanced briefing.
 - UK English. Contractions. Lowercase-casual is fine where it fits the sub.
-- Length: match the thread. Often 1-3 sentences. A meaty answer to a meaty question can be a short paragraph or two. Never a wall.
-- Accurate: never invent facts, stats, transfers or quotes. If unsure, hedge or leave it out.
+- Length: SHORT by default. Real people replying on Reddit don't write essays. Default to 1-2 sentences. Go to a short paragraph only for a genuinely meaty question that needs it - and even then, stop as soon as the point is made. If you're tempted to write more than 4-5 sentences, cut it. Never a wall.
+- CURRENT-FACTS BAN (critical - you get these wrong): You do NOT have reliable up-to-date football knowledge, and this is being written in 2026 during a live World Cup that is past what you know. NEVER state as fact anything time-sensitive: who currently manages or plays for a club, any transfer/signing/departure/loan, injury or availability, contract news, or any specific result, scoreline, scorer, assist, minute, xG, or league/group standing from the current season or this World Cup. Those are exactly the things you invent (e.g. naming a manager who has already left). Write OPINION, football logic, rules, tactics, and only well-established pre-2023 history. If a reply would only work by asserting a current fact you can't be certain of, mark it UNUSABLE - do not guess, do not hedge it into the reply. A confidently wrong fact in his name is far worse than staying quiet.
+- Accurate: never invent facts, stats, transfers or quotes. If unsure, leave it out entirely (not "I think", just omit).
 - Respect players and the game. No digs, no snark at people. Skip grief/injury/tragedy threads entirely.
 
 THE BAR: default UNUSABLE. Only usable if the reply would genuinely earn upvotes on its own merits and he'd be happy to have written it himself. Skip: betting/gambling, drama/ragebait, mod/meta threads, anything stickied, anything where we'd be noise, threads older than a day with hundreds of comments (we'd be buried), and any thread where a product mention would be the only reason to reply but the rules or vibe forbid it. Also skip any thread that is really about a league, team or competition outside Europe (MLS, Liga MX, Brazilian/South American leagues, African and Asian leagues, etc.) - we have no genuine insight there and these threads don't get engagement for us, so mark UNUSABLE rather than guessing.
@@ -310,6 +312,69 @@ export async function draftReply(post, { subNote, searchNote } = {}) {
   };
 }
 
+// ── Fact-check (web-search grounded) ─────────────────────────────────────────
+// The drafter writes from stale training data and states current-world facts
+// confidently wrong (Jul 13: "Arne Slot at Liverpool" after he'd left). The
+// CURRENT-FACTS BAN in VOICE tells it to avoid such claims, but can't catch a
+// fact it believes true. This second pass gives a checker LIVE web search so it
+// can actually look up "who manages Liverpool" and reject the draft if any
+// checkable current-world claim is wrong or unverifiable. Runs only on drafts
+// that already passed the drafter's bar, so volume (and cost) is small.
+const FACTCHECK_MODEL = "claude-sonnet-4-6"; // supports web_search_20260209
+const FACTCHECK_SYSTEM = `You are a fact-checker for a football (soccer) Reddit reply drafted in July 2026 that a real person is about to post under his own name. Your job: catch any statement of current-world fact that is false or that you cannot verify.
+
+USE WEB SEARCH. For every checkable claim about the CURRENT state of football — who manages or plays for a club, transfers/signings/departures, injuries, and any specific result, scoreline, scorer, assist, or league/table standing from the 2025/26 season or the 2026 World Cup — search to confirm it before trusting it. Do not rely on your own memory for anything time-sensitive; your training is stale.
+
+Do NOT flag: opinions, tactical/subjective judgements, well-established pre-2023 history, rules of the game, or general banter. Those need no checking.
+
+Verdict rules: pass ONLY if every checkable current-world claim is confirmed correct by what you found. If any such claim is wrong, or you searched and could not confirm it, fail. A confidently wrong fact in his name is the thing to prevent.
+
+OUTPUT: ONLY a JSON object, no prose, no code fences:
+{"pass": true|false, "failures": ["<each false/unverifiable claim + what's actually true>"], "note": "<one short line>"}`;
+
+/** Anthropic call with the server-side web_search tool; loops through pause_turn. */
+async function anthropicSearch(system, userText, { model = FACTCHECK_MODEL, maxUses = 6, maxHops = 4 } = {}) {
+  const messages = [{ role: "user", content: userText }];
+  for (let hop = 0; hop < maxHops; hop++) {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "x-api-key": ANTHROPIC, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+      body: JSON.stringify({
+        model, max_tokens: 900, system,
+        tools: [{ type: "web_search_20260209", name: "web_search", max_uses: maxUses }],
+        messages,
+      }),
+    });
+    const raw = await res.text();
+    if (!res.ok) throw new Error(`Anthropic ${res.status}: ${raw.slice(0, 300)}`);
+    const msg = JSON.parse(raw);
+    if (msg.stop_reason === "pause_turn") { messages.push({ role: "assistant", content: msg.content }); continue; }
+    return (msg.content || []).map((b) => b.text || "").join("");
+  }
+  throw new Error("web search did not settle within maxHops");
+}
+
+/**
+ * Verify a drafted reply against live web search.
+ * @returns {{pass:boolean, failures:string[], note:string}}
+ */
+export async function factCheck(post, draft) {
+  requireAnthropic();
+  const ctx = [
+    `SUBREDDIT: r/${post.sub}`,
+    `THREAD TITLE: ${post.title}`,
+    post.body ? `THREAD BODY:\n"""\n${post.body}\n"""` : "(link/media post, no self-text)",
+    `THE DRAFTED REPLY TO CHECK:\n"""\n${draft}\n"""`,
+  ].join("\n");
+  const text = await anthropicSearch(FACTCHECK_SYSTEM, ctx);
+  const out = parseModelJSON(text);
+  return {
+    pass: out.pass !== false, // default to pass only if the checker says nothing failed
+    failures: Array.isArray(out.failures) ? out.failures : [],
+    note: out.note || "",
+  };
+}
+
 const FOLLOWUP_VOICE = `${VOICE}
 
 YOU ARE NOW DRAFTING A FOLLOW-UP, not a fresh top-level comment: the founder already posted a reply in this thread, and the other redditor has replied back to HIM. Read what they actually said and respond to it directly, the way a real back-and-forth goes - shorter than an opener is usually right, and it's fine to just agree, add one extra detail, or ask a quick question back.
@@ -318,6 +383,47 @@ usable should be false only if there is genuinely nothing worth adding: the exch
 
 OUTPUT: ONLY a JSON object, no prose, no code fences:
 {"usable": true|false, "reply": "<the reply, or empty string>", "mentionsProduct": true|false, "score": <1-10, unused but keep the field>, "reason": "<short why/why-not>"}`;
+
+const REWORD_VOICE = `${VOICE}
+
+YOU ARE NOW REWORDING an existing drafted reply that is still pending (not yet posted), because the founder asked for changes. He gives you notes/instructions on what's wrong or what to change - follow them precisely. Keep everything else about the reply (the parts he didn't flag) as close to the original as makes sense. Still obey every house rule above (no em dash, UK English, no product mention, accurate, matches thread length).
+
+OUTPUT: ONLY a JSON object, no prose, no code fences:
+{"usable": true|false, "reply": "<the reworded reply, or empty string>", "mentionsProduct": true|false, "score": <1-10, unused but keep the field>, "reason": "<short note on what changed>"}`;
+
+/**
+ * Reword an existing pending draft per the founder's notes/instructions.
+ * @param {ReturnType<typeof mapPost>} post      the original thread
+ * @param {string} currentDraft  the reply as currently drafted
+ * @param {string} notes         founder's instructions for the reword
+ */
+export async function draftReword(post, currentDraft, notes) {
+  requireAnthropic();
+  const ctx = [
+    `SUBREDDIT: r/${post.sub}`,
+    `THREAD TITLE: ${post.title}`,
+    post.body ? `THREAD BODY:\n"""\n${post.body}\n"""` : "(link/media post, no self-text)",
+    `CURRENT DRAFT (still pending, not posted):\n"""\n${currentDraft}\n"""`,
+    `FOUNDER'S NOTES/INSTRUCTIONS FOR THE REWORD:\n"""\n${notes}\n"""`,
+  ].filter(Boolean).join("\n");
+
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "x-api-key": ANTHROPIC, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+    body: JSON.stringify({ model: DRAFT_MODEL, max_tokens: 700, system: REWORD_VOICE, messages: [{ role: "user", content: ctx }] }),
+  });
+  const body = await res.text();
+  if (!res.ok) throw new Error(`Anthropic ${res.status}: ${body.slice(0, 300)}`);
+  const text = JSON.parse(body).content?.map((b) => b.text || "").join("") ?? "";
+  const out = parseModelJSON(text);
+  return {
+    usable: !!out.usable,
+    reply: sanitize(out.reply || ""),
+    mentionsProduct: !!out.mentionsProduct,
+    score: Number(out.score) || 0,
+    reason: out.reason || "",
+  };
+}
 
 /**
  * Draft a reply to a redditor's reply, continuing a thread the founder already posted in.

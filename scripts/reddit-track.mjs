@@ -10,7 +10,7 @@
  * thread is drafted against at most once, ever.
  */
 
-import { PATHS, loadJSON, saveJSON, listPostsAny, searchPostsAny, draftReply, hasApiCreds } from "./lib/reddit.mjs";
+import { PATHS, loadJSON, saveJSON, listPostsAny, searchPostsAny, draftReply, factCheck, hasApiCreds } from "./lib/reddit.mjs";
 
 const args = process.argv.slice(2);
 const DRY = args.includes("--dry");
@@ -46,6 +46,16 @@ async function consider(post, { subNote, searchNote }) {
   considered++;
   const r = await draftReply(post, { subNote, searchNote });
   if (!r.usable) { console.log(`    · skip (${r.reason.slice(0, 90)})`); return; }
+
+  // Fact-check before queueing: a web-search pass rejects any draft that rests
+  // on a wrong or unverifiable current-world claim (managers, transfers, WC
+  // results). Never propose an inaccurate reply. If the check itself errors,
+  // fail safe by dropping the draft rather than queueing an unchecked one.
+  let fc;
+  try { fc = await factCheck(post, r.reply); }
+  catch (e) { console.log(`    · skip (fact-check errored: ${e.message.slice(0, 70)})`); return; }
+  if (!fc.pass) { console.log(`    ✗ fact-check FAILED: ${(fc.failures[0] || fc.note).slice(0, 100)}`); return; }
+
   const entry = {
     id: post.id,
     status: "pending",
@@ -55,10 +65,11 @@ async function consider(post, { subNote, searchNote }) {
     mentionsProduct: r.mentionsProduct,
     score: r.score,
     reason: r.reason,
+    factChecked: true,
     origin: searchNote ? "search" : "sub",
   };
   queue.push(entry); queued.add(post.id); drafted++;
-  console.log(`    ✓ drafted (score ${r.score}${r.mentionsProduct ? " ⚠️ mentions product" : ""}): ${r.reply.replace(/\n/g, " ⏎ ").slice(0, 110)}`);
+  console.log(`    ✓ drafted + fact-checked (score ${r.score}${r.mentionsProduct ? " ⚠️ mentions product" : ""}): ${r.reply.replace(/\n/g, " ⏎ ").slice(0, 110)}`);
 }
 
 console.log(`\n👂 reddit-track · ${wl.subreddits.length} subs + ${wl.searches.length} searches · ${hasApiCreds() ? "API" : "RSS (unauthenticated, ~1 req/min pacing)"} mode ${DRY ? "· DRY" : ""}\n`);
