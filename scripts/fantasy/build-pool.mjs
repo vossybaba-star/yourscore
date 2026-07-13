@@ -88,6 +88,46 @@ const enrichment = buildEnrichment(players, smPlayers, clubMap, new Date());
   console.log(`second-pass (full-name) matches: +${second}`);
 }
 
+// Third pass: mononym players — FPL uses the SURNAME as web_name (Alisson =
+// "A.Becker", Ederson, Bernardo) but SM lists them by the mononym, so no token
+// overlaps. Match on the FPL FIRST-name token against any SM name token, unique
+// per club, among still-unclaimed SM players. Same precision-over-coverage rule.
+{
+  const norm = (s) => (s ?? "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z\s]/g, " ").trim();
+  const firstTok = (s) => norm(s).split(/\s+/).filter(Boolean)[0] ?? "";
+  const claimed = new Set(Array.from(enrichment.values()).map((e) => e.smId));
+  // SM index: every significant token (len≥4) → the player, at each club (ambiguous if 2+).
+  const smIndex = new Map();
+  for (const s of smPlayers) {
+    if (claimed.has(s.smId)) continue;
+    for (const t of new Set(norm(s.name).split(/\s+/).filter((t) => t.length >= 4))) {
+      const k = `${s.clubId}:${t}`;
+      smIndex.set(k, smIndex.has(k) ? "AMBIG" : s);
+    }
+  }
+  const fplCount = new Map();
+  for (const p of players) {
+    if (enrichment.has(p.id)) continue;
+    const k = `${clubMap.get(p.clubId)}:${firstTok(p.fullName)}`;
+    fplCount.set(k, (fplCount.get(k) ?? 0) + 1);
+  }
+  let third = 0;
+  for (const p of players) {
+    if (enrichment.has(p.id)) continue;
+    const smClub = clubMap.get(p.clubId);
+    if (smClub === undefined) continue;
+    const tok = firstTok(p.fullName);
+    if (tok.length < 4) continue; // avoid short/ambiguous first names
+    const k = `${smClub}:${tok}`;
+    if (fplCount.get(k) !== 1) continue;
+    const s = smIndex.get(k);
+    if (!s || s === "AMBIG") continue;
+    enrichment.set(p.id, { smId: s.smId });
+    third++;
+  }
+  console.log(`third-pass (mononym/first-name) matches: +${third}`);
+}
+
 const fullClubName = new Map(boot.teams.map((t) => [t.id, t.name ?? t.short_name]));
 // INTERSECTION rule (the Díaz precedent): a player without a baked smId can't be
 // scored, so he can't be picked — drop him rather than let him silently score 0.

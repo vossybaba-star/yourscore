@@ -110,6 +110,21 @@ export async function getState(db: Db, userId: string) {
   };
 }
 
+// ── squad reset (Phase 1 / replay testing: wipe squad + entries, start over) ──
+export async function resetSquad(db: Db, userId: string) {
+  const gw = await currentGw(db);
+  if (gw.mode !== "replay") {
+    // In the live game you never rebuild a persisted squad — you transfer/wildcard.
+    // Only allow a full reset before you've ever locked a gameweek.
+    const { data } = await db.from("fantasy_entries")
+      .select("gw").eq("user_id", userId).not("locked_at", "is", null).limit(1);
+    if (data?.length) throw new HttpError(409, "your season has started — use transfers, not a rebuild", "started");
+  }
+  await db.from("fantasy_entries").delete().eq("user_id", userId);
+  await db.from("fantasy_squads").delete().eq("user_id", userId);
+  return { ok: true };
+}
+
 // ── squad creation ────────────────────────────────────────────────────────────
 export async function createSquad(db: Db, userId: string, body: {
   pickIds: number[]; xi?: number[]; bench?: number[]; captain?: number; vice?: number;

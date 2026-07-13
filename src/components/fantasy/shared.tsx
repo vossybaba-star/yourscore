@@ -111,9 +111,12 @@ export interface MatchFacts {
   ownGoals: number; dc: number; dcRec: number;
 }
 
-/** Plain-English summary of what a player did, for the result card. */
+/** Plain-English summary of what a player did, for the result card.
+ *  Returns "" when there's no fact data (e.g. an entry scored before facts were
+ *  tracked) — the render skips the line rather than wrongly say "didn't play". */
 export function factLine(pos: Pos, f?: MatchFacts): string {
-  if (!f || f.minutes === 0) return "Didn't play — 0";
+  if (!f) return "";
+  if (f.minutes === 0) return "Didn't play";
   const bits: string[] = [`${f.minutes}'`];
   if (f.goals) bits.push(`${f.goals} goal${f.goals > 1 ? "s" : ""}`);
   if (f.assists) bits.push(`${f.assists} assist${f.assists > 1 ? "s" : ""}`);

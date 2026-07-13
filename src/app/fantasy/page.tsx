@@ -77,6 +77,13 @@ export default function FantasyHub() {
     setBusy(false);
   };
 
+  const rebuild = async () => {
+    if (!confirm("Start over? This clears your squad and this gameweek so you can rebuild from scratch.")) return;
+    setBusy(true); setErr(null);
+    try { await api("reset"); router.push("/fantasy/build"); }
+    catch (e) { setErr((e as Error).message); setBusy(false); }
+  };
+
   if (needsAuth) return (
     <main style={page}>
       <Header />
@@ -195,7 +202,7 @@ export default function FantasyHub() {
                         {nameOf(b.id)}{b.captain ? " ©" : ""}{b.subbedIn ? " ↑" : ""}
                       </span>
                       <span style={{ display: "block", fontSize: 11.5, color: MUTED, lineHeight: 1.35 }}>
-                        {factLine((p?.pos ?? "MID"), b.facts)}{b.captain ? " · captain ×2" : ""}{b.subbedIn ? " · auto-subbed on" : ""}
+                        {[factLine((p?.pos ?? "MID"), b.facts), b.captain ? "captain ×2" : "", b.subbedIn ? "auto-subbed on" : ""].filter(Boolean).join(" · ")}
                       </span>
                     </span>
                   </span>
@@ -239,6 +246,17 @@ export default function FantasyHub() {
         </p>
       </div>}
       {locked && !result && <p style={{ color: MUTED, fontSize: 13 }}>Locked — scoring…</p>}
+
+      {(state.gw.mode === "replay" || !locked) && (
+        <div style={{ marginTop: 18, paddingTop: 12, borderTop: `1px solid ${LINE}` }}>
+          <button onClick={rebuild} disabled={busy} style={{
+            fontSize: 12.5, color: MUTED, background: "none", border: "none",
+            cursor: "pointer", textDecoration: "underline", padding: 0,
+          }}>
+            {busy ? "Resetting…" : "Start over — rebuild my squad from scratch"}
+          </button>
+        </div>
+      )}
     </main>
   );
 }
