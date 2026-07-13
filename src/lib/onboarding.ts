@@ -20,6 +20,11 @@ const PUSH_PROMPTED_KEY = "yourscore:push-prompted:v2";
 // or 38-0 match (NotifyOptInCard). Tracked on its own so converting there is
 // independent of the onboarding push ask, and shown at most once across surfaces.
 const QUIZ_NOTIFY_KEY = "yourscore:quiz-notify-prompted:v1";
+// "Maybe later" on the pre-prompt used to write the PERMANENT flag — one tap
+// killed every future push ask on the device (the exact bug that forced the
+// v1→v2 key bump). A decline now snoozes instead: the asks re-arm after this.
+const PUSH_SNOOZE_KEY = "yourscore:push-snoozed-until";
+const PUSH_SNOOZE_DAYS = 7;
 
 function readFlag(key: string): boolean {
   try {
@@ -49,12 +54,28 @@ export function markOnboardingSeen(): void {
 
 export function hasPromptedPush(): boolean {
   if (!isNative()) return true;
-  return readFlag(PUSH_PROMPTED_KEY);
+  if (readFlag(PUSH_PROMPTED_KEY)) return true;
+  try {
+    const until = Number(localStorage.getItem(PUSH_SNOOZE_KEY) ?? 0);
+    return Number.isFinite(until) && Date.now() < until;
+  } catch {
+    return true; // fail closed
+  }
 }
 
 export function markPushPrompted(): void {
   if (!isNative()) return;
   writeFlag(PUSH_PROMPTED_KEY);
+}
+
+/** "Maybe later": suppress every push ask for a while, NOT forever. */
+export function snoozePushPrompt(days: number = PUSH_SNOOZE_DAYS): void {
+  if (!isNative()) return;
+  try {
+    localStorage.setItem(PUSH_SNOOZE_KEY, String(Date.now() + days * 86_400_000));
+  } catch {
+    // ignore — worst case the ask shows again sooner
+  }
 }
 
 export function hasPromptedQuizNotify(): boolean {
