@@ -10,7 +10,7 @@
 import { FORMATIONS, asLeague, type Formation, type League, type PlacedPlayer, type PlayerSeason, type Projected, type Slot, type TeamStatus } from "./types";
 import { slotsFor } from "./formations";
 import { fitMultiplier, canPlay, posCategory, scoreTeam, projectSeason, spineWeight, playerIdentity, type PosCategory } from "./score";
-import { getPlayer } from "./pool";
+import { getPlayer, isPoolReady } from "./pool";
 import type { SeasonResult } from "./season";
 import type { MatchReport, MatchSim } from "./live-score";
 import { resolveInteractiveShootout, type PenKick, type PenZone, type PenPower } from "./pens";
@@ -234,7 +234,11 @@ export function loadTeam(): LocalTeam | null {
     // (e.g. a team saved before a data update). This keeps us from ever sending
     // unknown ids to the server — the XI just becomes incomplete and the player
     // is prompted to re-draft the empty slots instead of hitting a cryptic error.
-    const known = t.squad.filter((p) => getPlayer(p.player_season_id));
+    // ⚠️ ONLY when the on-demand pool is actually loaded: getPlayer() returns
+    // undefined for EVERY id while the pool is cold, so running this migration
+    // early filtered the whole squad to [] and PERSISTED the wipe — a cold hit
+    // on any loadTeam() caller (deep link, refresh) silently destroyed the team.
+    const known = isPoolReady() ? t.squad.filter((p) => getPlayer(p.player_season_id)) : t.squad;
     const cleaned = recompute({ ...t, squad: known });
     if (known.length !== t.squad.length) saveTeam(cleaned); // persist the migration
     return cleaned;
