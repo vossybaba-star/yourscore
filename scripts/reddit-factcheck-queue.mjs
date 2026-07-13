@@ -10,8 +10,10 @@ import { PATHS, loadJSON, saveJSON, factCheck } from "./lib/reddit.mjs";
 
 const DRY = process.argv.includes("--dry");
 const queue = loadJSON(PATHS.queue, []);
-const pending = queue.filter((d) => d.status === "pending");
-console.log(`fact-checking ${pending.length} pending drafts${DRY ? " (DRY)" : ""}\n`);
+// Skip drafts already checked (factChecked or already dropped) so a re-run
+// resumes where a previous one stopped rather than redoing the whole queue.
+const pending = queue.filter((d) => d.status === "pending" && !d.factChecked);
+console.log(`fact-checking ${pending.length} unchecked pending drafts${DRY ? " (DRY)" : ""}\n`);
 
 let passed = 0, failed = 0, errored = 0;
 for (const d of pending) {
@@ -30,7 +32,7 @@ for (const d of pending) {
     errored++;
     console.log(`  ! r/${d.post.sub}: check errored (${e.message.slice(0, 50)}) — left pending`);
   }
+  if (!DRY) saveJSON(PATHS.queue, queue); // persist after every draft so a stall never loses progress
 }
 
-if (!DRY) saveJSON(PATHS.queue, queue);
 console.log(`\n${DRY ? "DRY — nothing saved. " : ""}${passed} verified · ${failed} dropped · ${errored} errored (left pending)`);

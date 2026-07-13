@@ -332,20 +332,29 @@ Verdict rules: pass ONLY if every checkable current-world claim is confirmed cor
 OUTPUT: ONLY a JSON object, no prose, no code fences:
 {"pass": true|false, "failures": ["<each false/unverifiable claim + what's actually true>"], "note": "<one short line>"}`;
 
-/** Anthropic call with the server-side web_search tool; loops through pause_turn. */
-async function anthropicSearch(system, userText, { model = FACTCHECK_MODEL, maxUses = 6, maxHops = 4 } = {}) {
+/** Anthropic call with the server-side web_search tool; loops through pause_turn.
+ * A per-request timeout keeps one stalled connection from wedging a whole batch
+ * (web_search turns can be slow; undici has no default body timeout). */
+async function anthropicSearch(system, userText, { model = FACTCHECK_MODEL, maxUses = 6, maxHops = 4, timeoutMs = 90_000 } = {}) {
   const messages = [{ role: "user", content: userText }];
   for (let hop = 0; hop < maxHops; hop++) {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: { "x-api-key": ANTHROPIC, "anthropic-version": "2023-06-01", "content-type": "application/json" },
-      body: JSON.stringify({
-        model, max_tokens: 900, system,
-        tools: [{ type: "web_search_20260209", name: "web_search", max_uses: maxUses }],
-        messages,
-      }),
-    });
-    const raw = await res.text();
+    const ctl = new AbortController();
+    const t = setTimeout(() => ctl.abort(), timeoutMs);
+    let raw, res;
+    try {
+      res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST", signal: ctl.signal,
+        headers: { "x-api-key": ANTHROPIC, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+        body: JSON.stringify({
+          model, max_tokens: 900, system,
+          tools: [{ type: "web_search_20260209", name: "web_search", max_uses: maxUses }],
+          messages,
+        }),
+      });
+      raw = await res.text();
+    } catch (e) {
+      throw new Error(e.name === "AbortError" ? `web search timed out after ${timeoutMs / 1000}s` : e.message);
+    } finally { clearTimeout(t); }
     if (!res.ok) throw new Error(`Anthropic ${res.status}: ${raw.slice(0, 300)}`);
     const msg = JSON.parse(raw);
     if (msg.stop_reason === "pause_turn") { messages.push({ role: "assistant", content: msg.content }); continue; }
