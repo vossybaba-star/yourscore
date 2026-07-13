@@ -142,6 +142,14 @@ export default function MatchResult() {
             </Button>
           )}
 
+          {!won && (
+            /* Loss recovery: redraft any position — each position gets ONE
+               redraft over the team's life (/38-0/redraft enforces it). */
+            <Button variant="ghost" size="md" fullWidth href="/38-0/redraft">
+              REDRAFT A POSITION →
+            </Button>
+          )}
+
           {won ? (
             <Button variant="ghost" size="md" fullWidth href="/38-0/team">
               Back to my team

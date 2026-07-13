@@ -34,6 +34,9 @@ export type LocalTeam = {
   winStreak: number;
   /** A win grants exactly one swap (re-spin one slot). Consumed when used. */
   swapAvailable: boolean;
+  /** Post-loss recovery: slot ids that have used their ONE lifetime redraft.
+   *  Each position can be redrafted once over the team's life (/38-0/redraft). */
+  redraftedSlots?: string[];
   strength: number;
   projected: Projected | null;
   updatedAt: number;
