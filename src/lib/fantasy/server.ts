@@ -161,6 +161,26 @@ export async function resetSquad(db: Db, userId: string) {
   return { ok: true };
 }
 
+// ── demo jump (replay sandbox only) — set the prototype to a named phase so the
+//    weekly journey can be walked and evaluated: open ↔ result. "setup" (squad
+//    build/rebuild) is a client route; "preseason" clears the entry like "open"
+//    but the UI frames it as pre-kickoff. ────────────────────────────────────
+export async function demoJump(db: Db, userId: string, phase: string) {
+  const gw = await currentGw(db);
+  if (gw.mode !== "replay") throw new HttpError(403, "demo controls are replay-only", "live");
+  if (!(await getSquad(db, userId))) throw new HttpError(409, "build a squad first", "no-squad");
+  if (phase === "open" || phase === "preseason") {
+    await db.from("fantasy_entries").delete().eq("user_id", userId).eq("gw", gw.gw);
+    return getState(db, userId);
+  }
+  if (phase === "result") {
+    const entry = await getEntry(db, userId, gw.gw);
+    if (entry?.scored_at) return getState(db, userId);
+    return lockAndScore(db, userId); // snapshot + score the current squad now
+  }
+  throw new HttpError(400, "unknown demo phase", "phase");
+}
+
 // ── knowledge round ───────────────────────────────────────────────────────────
 const roundFor = (gw: number, userId: string): Round =>
   buildRound(GATES.questions, { gameweek: `fantasy:${gw}`, userId, formation: "4-3-3" });

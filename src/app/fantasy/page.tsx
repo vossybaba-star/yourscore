@@ -102,6 +102,26 @@ export default function FantasyHub() {
   const result = entry?.result as Result | undefined | null;
   const locked = !state.openForEdits;
   const roundDone = !!entry?.round.done;
+  const phase: "open" | "locked" | "result" = result ? "result" : locked ? "locked" : "open";
+  const isDemo = state.gw.mode === "replay";
+
+  const demo = async (target: string) => {
+    if (target === "setup") { router.push("/fantasy/build"); return; }
+    setBusy(true); setErr(null);
+    try { await api("demo", { phase: target }); await refresh(); }
+    catch (e) { setErr((e as Error).message); }
+    setBusy(false);
+  };
+
+  const BANNER: Record<typeof phase, { tag: string; head: string; sub: string }> = {
+    open: { tag: "GAMEWEEK OPEN", head: `Gameweek ${state.gw.gw} is open`,
+      sub: "Play your round, make transfers, set your team — then lock it in. In the live game this closes at the Saturday deadline." },
+    locked: { tag: "LOCKED", head: `Gameweek ${state.gw.gw} is locked`,
+      sub: "Your team is set and the matches are playing. Nothing changes now until the points land." },
+    result: { tag: "GAMEWEEK DONE", head: `Gameweek ${state.gw.gw} result`,
+      sub: "The gameweek is scored — here's exactly how your team did. Next week, a fresh round opens." },
+  };
+  const b = BANNER[phase];
 
   const PlayerTile = ({ id, benchIdx }: { id: number; benchIdx?: number }) => {
     const p = pool.get(id);
@@ -151,7 +171,40 @@ export default function FantasyHub() {
         <Chip>{fmtM(squad.bankTenths)} bank</Chip>
       </>} />
 
-      {!roundDone && !locked && (
+      {/* You-are-here phase banner */}
+      <div style={{ background: PANEL, border: `1px solid ${LINE}`, borderLeft: `3px solid ${GOLD}`, borderRadius: 12, padding: "12px 14px", marginBottom: 12 }}>
+        <div style={{ fontSize: 11, letterSpacing: "0.14em", color: GOLD, fontWeight: 700 }}>{b.tag}</div>
+        <div style={{ fontSize: 16, fontWeight: 700, margin: "2px 0 4px" }}>{b.head}</div>
+        <p style={{ fontSize: 12.5, color: MUTED, margin: 0, lineHeight: 1.45 }}>{b.sub}</p>
+      </div>
+
+      {/* Demo stepper — walk the weekly journey (replay/prototype only) */}
+      {isDemo && (
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ fontSize: 10.5, letterSpacing: "0.12em", color: MUTED, marginBottom: 5 }}>
+            DEMO · JUMP TO A STAGE
+          </div>
+          <div style={{ display: "flex", gap: 6 }}>
+            {([
+              ["setup", "Squad setup", false],
+              ["open", "Gameweek open", phase === "open"],
+              ["result", "Result", phase === "result"],
+            ] as [string, string, boolean][]).map(([target, label, active]) => (
+              <button key={target} disabled={busy} onClick={() => demo(target)} style={{
+                flex: 1, padding: "8px 4px", borderRadius: 9, fontSize: 12, fontWeight: 700,
+                cursor: "pointer", background: active ? GOLD : PANEL, color: active ? "#2A1F00" : INK,
+                border: `1px solid ${active ? GOLD : LINE}`,
+              }}>{label}</button>
+            ))}
+          </div>
+          <p style={{ fontSize: 10.5, color: MUTED, margin: "5px 0 0", lineHeight: 1.4 }}>
+            Prototype control. In the real game the season moves you through these on its own; the
+            live &ldquo;locked, matches playing&rdquo; stage sits between open and result.
+          </p>
+        </div>
+      )}
+
+      {phase === "open" && !roundDone && (
         <Card style={{ marginBottom: 12, border: `1px solid ${GOLD}` }}>
           <div style={{ fontSize: 14.5, fontWeight: 700, marginBottom: 4 }}>
             This week&apos;s knowledge round is open
@@ -164,7 +217,7 @@ export default function FantasyHub() {
           </Btn>
         </Card>
       )}
-      {roundDone && !locked && entry && (
+      {phase === "open" && roundDone && entry && (
         <Card style={{ marginBottom: 12 }}>
           <span style={{ fontSize: 13.5 }}>
             Round done: <b style={{ color: GOLD }}>{entry.round.correct}/11</b> → {entry.round.creditsEarned} transfer
@@ -176,7 +229,7 @@ export default function FantasyHub() {
       {result && (
         <Card style={{ marginBottom: 12, border: `1px solid ${GOLD}` }}>
           <div style={{ fontSize: 12, letterSpacing: "0.1em", color: GOLD, fontWeight: 700 }}>
-            GAMEWEEK {state.gw.gw} RESULT
+            YOUR SCORE
           </div>
           <div style={{ fontSize: 40, fontWeight: 700, margin: "2px 0 2px" }}>{result.points} pts</div>
           <p style={{ fontSize: 12, color: MUTED, margin: "0 0 10px" }}>
