@@ -30,12 +30,18 @@ export function BottomNav() {
 
   const isHome = pathname === "/";
   // Versus is the hub: its sub-sections (Friends, Leagues) keep the tab active.
-  const isVersus = pathname.startsWith("/versus") || pathname.startsWith("/friends") || pathname.startsWith("/leagues") || pathname.startsWith("/league");
+  // A viewed player's profile (/profile/<id>) is a social detail page reached
+  // from here, so it holds the Versus tab too — the Profile tab is only YOUR own
+  // profile (exact /profile) + settings.
+  const isVersus =
+    pathname.startsWith("/versus") || pathname.startsWith("/friends") ||
+    pathname.startsWith("/leagues") || pathname.startsWith("/league") ||
+    pathname.startsWith("/profile/");
   const isChallenges =
     (pathname.startsWith("/play") || pathname.startsWith("/challenges") || pathname.startsWith("/h2h")) &&
     !pathname.startsWith("/38-0");
   const isDraft = pathname.startsWith("/38-0");
-  const isProfile = pathname.startsWith("/profile") || pathname.startsWith("/settings");
+  const isProfile = pathname === "/profile" || pathname.startsWith("/settings");
 
   // While auth state is resolving, show the full signed-in nav — signed-in users
   // must never flash down to the 3-tab guest nav. Guests see the extra tabs briefly
@@ -52,7 +58,7 @@ export function BottomNav() {
         }}
       >
         <div className="flex items-center justify-around max-w-lg mx-auto px-1 py-2">
-          <Link href="/" className="flex flex-col items-center gap-1 px-5 py-1 transition-colors" style={{ color: isHome ? "#aeea00" : "#8a948f" }}>
+          <Link href="/" className="flex flex-col items-center gap-1 px-3 py-1 transition-colors" style={{ color: isHome ? "#aeea00" : "#8a948f" }}>
             <svg width="21" height="21" viewBox="0 0 22 22" fill="none">
               <path d="M3 9.5L11 3l8 6.5V19a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill={isHome ? "currentColor" : "none"} fillOpacity={isHome ? 0.15 : 0} />
               <path d="M8 20v-8h6v8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
@@ -60,14 +66,24 @@ export function BottomNav() {
             <span className="font-body text-xs">Home</span>
           </Link>
 
-          <Link href="/play" className="flex flex-col items-center gap-1 px-5 py-1 transition-colors" style={{ color: isChallenges ? "#00d8c0" : "#8a948f" }}>
+          {/* Versus is discoverable to guests too — it renders a public preview. */}
+          <Link href="/versus" className="flex flex-col items-center gap-1 px-3 py-1 transition-colors" style={{ color: isVersus ? "#00d8c0" : "#8a948f" }}>
+            <svg width="21" height="21" viewBox="0 0 22 22" fill="none">
+              <path d="M3 3l8.5 8.5M3 3v3l7.5 7.5M3 3h3l7.5 7.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M19 3l-8.5 8.5M19 3v3l-7.5 7.5M19 3h-3L8.5 11.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M6.5 15.5l2 2M15.5 15.5l-2 2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+            </svg>
+            <span className="font-body text-xs">Versus</span>
+          </Link>
+
+          <Link href="/play" className="flex flex-col items-center gap-1 px-3 py-1 transition-colors" style={{ color: isChallenges ? "#00d8c0" : "#8a948f" }}>
             <svg width="21" height="21" viewBox="0 0 22 22" fill="none">
               <path d="M11 2L13.5 8.5H20.5L14.9 12.5L17 19L11 15L5 19L7.1 12.5L1.5 8.5H8.5L11 2Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" fill={isChallenges ? "currentColor" : "none"} fillOpacity={isChallenges ? 0.15 : 0} />
             </svg>
             <span className="font-body text-xs">Quiz</span>
           </Link>
 
-          <Link href="/38-0" className="flex flex-col items-center gap-1 px-5 py-1 transition-colors" style={{ color: isDraft ? "#aeea00" : "#8a948f" }}>
+          <Link href="/38-0" className="flex flex-col items-center gap-1 px-3 py-1 transition-colors" style={{ color: isDraft ? "#aeea00" : "#8a948f" }}>
             <JerseyIcon active={isDraft} />
             <span className="font-body text-xs">38-0</span>
           </Link>

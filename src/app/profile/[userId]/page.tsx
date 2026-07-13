@@ -157,8 +157,10 @@ export default async function PublicProfilePage({ params }: { params: { userId: 
     <main className="min-h-dvh bg-bg pb-28">
       <GridBackground opacity={0.02} />
 
-      {/* Nav */}
-      <nav className="relative z-10 flex items-center justify-between px-5 py-4 max-w-lg mx-auto">
+      {/* Nav — pad past the status bar (notch / 5G + battery) so the back pill
+          and the Player Profile pill aren't tucked under it. */}
+      <nav className="relative z-10 flex items-center justify-between px-5 pb-4 max-w-lg mx-auto"
+        style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 16px)" }}>
         <BackPill fallback="/versus" label="Back" tone="neutral" />
         <span className="font-body text-xs px-3 py-1 rounded-full"
           style={{ background: "rgba(174,234,0,0.1)", color: LIME, border: "1px solid rgba(174,234,0,0.2)" }}>
