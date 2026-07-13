@@ -202,7 +202,9 @@ function RecordsCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: stri
       <div className="px-4 pb-4 pt-3">
         <p className="font-body text-sm font-bold text-white leading-tight mb-0.5">{pack.name}</p>
         <p className="font-body text-xs mb-1.5" style={{ color: "#8a948f" }}>
-          All-Time Records{packDate(pack.created_at) ? ` · ${packDate(pack.created_at)}` : ""}
+          {/* Was hardcoded "All-Time Records" for every pack — mislabeled the daily
+              World Cup quizzes (audit 13 Jul). Derive from the pack instead. */}
+          {isWorldCupPack(pack) ? "World Cup 2026" : "All-Time Records"}{packDate(pack.created_at) ? ` · ${packDate(pack.created_at)}` : ""}
         </p>
         {pack.description && (
           <p className="font-body text-xs mb-2.5 line-clamp-2 leading-relaxed" style={{ color: "#7a857f" }}>{pack.description}</p>

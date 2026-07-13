@@ -268,6 +268,19 @@ Confirmed preamble above and the referenced section.
   footer gains **Privacy / Terms / Blog** links; **finale week staged**: WcFinaleStrip ("THE
   FINAL — IN N DAYS · board freezes at full time") on the WC picker + season board, self-hides
   after Jul 19. £100 board copy: founder ruled **no change**.
+- **2026-07-13 (pm, batch 2)** — **UI-audit round 2 (founder approve/decline)**: landing
+  truth pass — the fabricated live-match teaser ("2 watching"/"who's live in a match") REMOVED,
+  retired "lose and rebuild" → "lose and go again", the fake match-picking fixture cards
+  (June-dated, "+340 pts earned") → real game-result cards (Quiz / 38-0 / Quiz Battle feeding
+  one table, evergreen); hero subline now decodes 38-0 ("go 38 games unbeaten"), "Join a league"
+  dropped from the hero CTA stack, contradictory "No app needed" caption reworded; **"Challenges"
+  → "Quiz"** on public nav/card/footer (locked vocab); footer gains Privacy/Terms/Blog; **daily
+  World Cup quiz cards no longer mislabeled "All-Time Records"** (RecordsCard derives "World Cup
+  2026" from isWorldCupPack). DECLINED: #7 (keep the illustrative "The Mates" mock leaderboard),
+  #10 (desktop tab-bar pass), #14 (hide low debate vote counts). NON-ISSUES (browser-pane render
+  glitches, not real defects — DOM verified): the "blank landing screen" and "sign-in white
+  logo box". FLAGGED for founder: one stale pack description (id 0f8020c2… "Big Kickoff") — prod
+  DB copy write was permission-gated.
 - **2026-07-12** — **Guest quiz "You" row + save-your-score claim** (render-only on the
   guest's device — never written to others' boards; localStorage-held answers auto-claimed
   post-sign-up via solo-complete), **WC Mastermind position-targeted drafting** (tap an empty
