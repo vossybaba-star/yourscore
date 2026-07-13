@@ -106,10 +106,12 @@ export default function FantasyHub() {
   const isDemo = state.gw.mode === "replay";
 
   const demo = async (target: string) => {
-    if (target === "setup") { router.push("/fantasy/build"); return; }
     setBusy(true); setErr(null);
-    try { await api("demo", { phase: target }); await refresh(); }
-    catch (e) { setErr((e as Error).message); }
+    try {
+      await api("demo", { phase: target });      // setup clears entries → pre-season
+      if (target === "setup") { router.push("/fantasy/build"); return; }
+      await refresh();
+    } catch (e) { setErr((e as Error).message); }
     setBusy(false);
   };
 

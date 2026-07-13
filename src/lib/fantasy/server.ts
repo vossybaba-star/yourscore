@@ -77,10 +77,11 @@ async function hasLockedEntry(db: Db, userId: string): Promise<boolean> {
     .select("gw").eq("user_id", userId).not("locked_at", "is", null).limit(1);
   return !!data?.length;
 }
-/** Free squad rebuild is allowed pre-season (never locked), or always in the
- *  replay sandbox. Once the live season starts, only transfers change the team. */
-async function canRebuild(db: Db, userId: string, gw: GwRow): Promise<boolean> {
-  return gw.mode === "replay" || !(await hasLockedEntry(db, userId));
+/** Free squad rebuild is allowed ONLY pre-season — before you've ever locked a
+ *  gameweek. Once the season has started, the team changes via transfers only.
+ *  (The demo stepper's "Squad setup" resets to pre-season for testing.) */
+async function canRebuild(db: Db, userId: string, _gw: GwRow): Promise<boolean> {
+  return !(await hasLockedEntry(db, userId));
 }
 
 async function ensureEntry(db: Db, userId: string, gw: number): Promise<EntryRow> {
@@ -169,6 +170,11 @@ export async function demoJump(db: Db, userId: string, phase: string) {
   const gw = await currentGw(db);
   if (gw.mode !== "replay") throw new HttpError(403, "demo controls are replay-only", "live");
   if (!(await getSquad(db, userId))) throw new HttpError(409, "build a squad first", "no-squad");
+  if (phase === "setup") {
+    // Back to pre-season: clear ALL entries so no gameweek is locked → free rebuild.
+    await db.from("fantasy_entries").delete().eq("user_id", userId);
+    return getState(db, userId);
+  }
   if (phase === "open" || phase === "preseason") {
     await db.from("fantasy_entries").delete().eq("user_id", userId).eq("gw", gw.gw);
     return getState(db, userId);
