@@ -79,7 +79,7 @@ const QUIZ_STEPS = [
           <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-3">Daily quiz</p>
           <div className="flex items-center justify-between mb-3">
             <div>
-              <p className="font-body text-sm font-semibold text-white">World Cup 2026 · Opening Day</p>
+              <p className="font-body text-sm font-semibold text-white">Daily Quiz · fresh every day</p>
               <p className="font-body text-xs text-text-muted">8 questions · speed scored</p>
             </div>
             <span className="font-body text-xs px-3 py-1.5 rounded-lg font-semibold text-green" style={{ background: "rgba(174,234,0,0.12)", border: "1px solid rgba(174,234,0,0.3)" }}>Play →</span>
@@ -387,7 +387,7 @@ const QUIZ_FAQS = [
   { q: "What's the difference between a league and a game?", a: "A game is one play-through — the daily quiz, a trivia pack, or a lobby with your mates. Your score from that game feeds into your leagues. A league is permanent — it tracks your whole group's points across every game each member plays, all season long." },
   { q: "Do I have to play at a set time?", a: "No. Play solo whenever you like — the daily quiz and every pack are always there. Want to go head-to-head? Spin up a lobby and your mates jump in when they're ready." },
   { q: "What's the daily quiz?", a: "A fresh set of football questions every day — players, records, history, the World Cup. Same questions for everyone, speed scored, so it's a fair race up the leaderboard." },
-  { q: "How are points calculated?", a: "Correct answers score 100–200 points based on speed. Consecutive correct answers trigger a streak multiplier (up to 2×). Wrong answers or timeouts score 0." },
+  { q: "How are points calculated?", a: "The faster you answer correctly, the more you score — harder questions are worth more, and back-to-back correct answers earn a streak bonus. Wrong answers or timeouts score 0." },
   { q: "Is it free?", a: "Completely free. Unlimited games, unlimited leagues, every tournament." },
 ];
 
@@ -562,12 +562,13 @@ export default function HowItWorksPage() {
               <h3 className="font-display text-2xl text-white">SCORING</h3>
             </div>
             <div className="bg-surface">
+              {/* Top-line only (founder call): the exact bands/multipliers stay in-game. */}
               {[
-                { label: "Answer in 0–15s",    pts: "+200 pts", col: "#aeea00" },
-                { label: "Answer in 15–30s",   pts: "+150 pts", col: "#00d8c0" },
-                { label: "Answer in 30–45s",   pts: "+100 pts", col: "#ff9f43" },
-                { label: "3 correct in a row", pts: "×2 bonus", col: "#aeea00" },
-                { label: "Wrong or timed out", pts: "0 pts",    col: "#586058" },
+                { label: "Right answer, fast", pts: "Top points", col: "#aeea00" },
+                { label: "Right answer, slower", pts: "Fewer points", col: "#00d8c0" },
+                { label: "Back-to-back correct", pts: "Streak bonus", col: "#aeea00" },
+                { label: "Harder questions", pts: "Worth more", col: "#ff9f43" },
+                { label: "Wrong or timed out", pts: "0 pts", col: "#586058" },
               ].map((row, i) => (
                 <div key={row.label} className="flex items-center justify-between px-6 py-4"
                   style={{ borderBottom: i < 4 ? "1px solid rgba(255,255,255,0.05)" : "none" }}>
@@ -608,7 +609,7 @@ export default function HowItWorksPage() {
           const statsItems = tab === "quiz"
             ? [
                 { n: "Daily", label: "fresh quiz, every day" },
-                { n: "45s",   label: "to answer each question" },
+                { n: "⏱",    label: "every question on the clock" },
                 { n: "∞",     label: "points you can earn" },
               ]
             : [

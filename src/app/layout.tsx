@@ -42,7 +42,7 @@ const dmMono = DM_Mono({
 export function generateMetadata(): Metadata {
   return {
     metadataBase: new URL("https://yourscore.app"),
-    title: "YourScore — Football Knowledge Game",
+    title: "YourScore — The Home of Football Gaming",
     description:
       "Test your football knowledge with daily quizzes, head-to-head battles and private leagues. Build your XI and compete with your mates. Free on web and iOS.",
     manifest: "/manifest.json",
@@ -52,7 +52,7 @@ export function generateMetadata(): Metadata {
       title: "YourScore",
     },
     openGraph: {
-      title: "YourScore — Football Knowledge Game",
+      title: "YourScore — The Home of Football Gaming",
       description: "Test your football knowledge with daily quizzes, head-to-head battles and private leagues. Build your XI and compete with your mates. Free on web and iOS.",
       type: "website",
       siteName: "YourScore",
@@ -60,7 +60,7 @@ export function generateMetadata(): Metadata {
     },
     twitter: {
       card: "summary_large_image",
-      title: "YourScore — Football Knowledge Game",
+      title: "YourScore — The Home of Football Gaming",
       description: "Test your football knowledge with daily quizzes, head-to-head battles and private leagues. Build your XI and compete with your mates. Free on web and iOS.",
       images: ["https://yourscore.app/api/og/home"],
     },

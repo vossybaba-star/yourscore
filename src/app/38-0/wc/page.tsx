@@ -22,6 +22,7 @@ import { Pitch } from "@/components/draft/Pitch";
 import { InviteMastermind } from "@/components/draft/InviteMastermind";
 import { WcEditionStrip, type EditionCell } from "@/components/draft/WcEditionStrip";
 import { DraftHubHero } from "@/components/draft/WcHubHero";
+import { WcFinaleStrip } from "@/components/draft/WcFinaleStrip";
 import { useUser } from "@/hooks/useUser";
 import { pickableNations, spinForNation, spinWorld, ensurePool, isPoolReady, type PickableNation } from "@/lib/draft/pool";
 import { WORLD_TEAM_NAME, type RunMode } from "@/lib/draft/wc";
@@ -498,6 +499,9 @@ export default function WorldCupEntry() {
               showPlay
             />
           </div>
+
+          {/* Finale week — the board's climax, staged (audit 13 Jul, approved). */}
+          <WcFinaleStrip />
 
           {/* Edition strip — your ranked World Cup timeline: catch up on missed days, peek past
               results, see at a glance whether you're up to date. (Signed-in; replaces /catch-up.) */}

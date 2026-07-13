@@ -260,6 +260,14 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-13 (pm)** — **UI-audit approved fixes** (docs/AUDIT-2026-07-13-ui-first-impressions.md;
+  founder walkthrough): site tagline standardized to **"The Home of Football Gaming"** (root
+  title/OG/twitter); /how-it-works scoring is **top-line only** (founder: no explicit point
+  tables — exact bands stay in-game; fake +200pts/45s copy gone, "Opening Day" demo refreshed);
+  **WORLD CUP MASTERMIND title no longer clips** on 375px (fluid clamp in DraftHubHero); landing
+  footer gains **Privacy / Terms / Blog** links; **finale week staged**: WcFinaleStrip ("THE
+  FINAL — IN N DAYS · board freezes at full time") on the WC picker + season board, self-hides
+  after Jul 19. £100 board copy: founder ruled **no change**.
 - **2026-07-12** — **Guest quiz "You" row + save-your-score claim** (render-only on the
   guest's device — never written to others' boards; localStorage-held answers auto-claimed
   post-sign-up via solo-complete), **WC Mastermind position-targeted drafting** (tap an empty

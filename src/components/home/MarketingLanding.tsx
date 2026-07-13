@@ -787,7 +787,10 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
             <Link href="/challenges" className="hover:opacity-80 transition-colors text-amber">Challenges</Link>
             <Link href="/league/join" className="hover:text-white transition-colors">Join a league</Link>
             <Link href="/league/new" className="hover:text-white transition-colors">Create a league</Link>
+            <Link href="/blog" className="hover:text-white transition-colors">Blog</Link>
             <a href="mailto:hello@yourscore.app" className="hover:text-white transition-colors">Contact</a>
+            <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>
+            <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
           </div>
         </div>
       </footer>

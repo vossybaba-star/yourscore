@@ -12,6 +12,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useUser } from "@/hooks/useUser";
 import { BackPill } from "@/components/ui/BackPill";
+import { WcFinaleStrip } from "@/components/draft/WcFinaleStrip";
 
 const ACCENT = "#ffb800";
 
@@ -58,6 +59,8 @@ export default function WorldCupBoard() {
         <p className="mt-1 text-sm" style={{ color: "#9a9ab0" }}>
           One ranked run a day through the World Cup. Closest to a perfect 8-0-0 across the tournament wins.
         </p>
+
+        <div className="mt-4"><WcFinaleStrip compact /></div>
 
         <Link href="/38-0/wc?daily=1" className="mt-5 block text-center rounded-2xl py-3.5 font-display tracking-wide active:scale-[0.99] transition-transform"
           style={{ background: ACCENT, color: "#1a1300", fontSize: 18 }}>

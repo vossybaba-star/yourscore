@@ -45,7 +45,9 @@ export function DraftHubHero({
     <div className="flex items-center">
       <div className="flex-1 min-w-0 flex flex-col justify-center px-5 py-5">
         <div className="font-body" style={{ fontSize: 11, letterSpacing: 2, color: accent }}>{eyebrow}</div>
-        <div className="font-display leading-[0.92] mt-1" style={{ fontSize: 46, color: accentText }}>
+        {/* Fluid size: at a fixed 46px, "MASTERMIND" clipped behind the pitch on
+            375px phones (the text column is ~190px next to the 150px pitch). */}
+        <div className="font-display leading-[0.92] mt-1" style={{ fontSize: "clamp(28px, 9vw, 46px)", color: accentText }}>
           {titleLines.map((l, i) => (
             <span key={i}>{l}{i < titleLines.length - 1 ? <br /> : null}</span>
           ))}
