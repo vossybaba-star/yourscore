@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { WaitlistCard } from "@/components/blog/WaitlistCard";
 import { getAllPosts, formatPostDate, SITE_URL } from "@/lib/blog";
 
 export const dynamic = "force-static";
@@ -79,6 +80,11 @@ export default function BlogIndexPage() {
         {posts.length === 0 && (
           <p className="font-body text-sm text-text-muted">First posts landing shortly.</p>
         )}
+      </div>
+
+      {/* Launch capture — every reader gets a way onto the fantasy waitlist. */}
+      <div className="mt-10">
+        <WaitlistCard />
       </div>
     </div>
   );

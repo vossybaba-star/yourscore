@@ -5,6 +5,7 @@ import { MDXRemote, type MDXRemoteProps } from "next-mdx-remote/rsc";
 import { EmbeddedTweet, TweetNotFound } from "react-tweet";
 import { getTweet } from "react-tweet/api";
 import { getAllPosts, getPost, formatPostDate, SITE_URL } from "@/lib/blog";
+import { WaitlistCard } from "@/components/blog/WaitlistCard";
 
 // Tweets render to static HTML at build time (react-tweet RSC) — no Twitter
 // scripts ship to the reader. A deleted/unfetchable tweet degrades to a quiet
@@ -176,6 +177,12 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
       <div className="mt-8 border-t border-border pt-8">
         <MDXRemote source={post.content} components={mdxComponents} />
       </div>
+
+      {/* Launch capture — the funnel's bottom (content audit: four posts sold a
+          mid-August launch with no way to leave an email). */}
+      <section className="mt-10">
+        <WaitlistCard />
+      </section>
 
       {post.faq.length > 0 && (
         <section className="mt-10">

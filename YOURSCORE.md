@@ -21,7 +21,13 @@
 > +50 streak — the old "+200 pts" / "Instant 1,000" tiles were fiction); push "Maybe later"
 > snoozes 7 days instead of killing every ask forever (`snoozePushPrompt`, lib/onboarding);
 > and the £25 giveaway got a one-switch kill: `NEXT_PUBLIC_DAILY_GIVEAWAY=false` retires
-> all four surfaces at once (lib/promo).)
+> all four surfaces at once (lib/promo). Also same day: **blog waitlist capture is live** —
+> a one-field "get gameweek-1 access" card on every blog post + the /blog index
+> (`WaitlistCard`), POSTing to `/api/waitlist` (IP rate-limited, server-validated) which
+> stores contacts in the Resend audience **"Fantasy Waitlist"** (resolved/created by name
+> at runtime; audience id e1d3b3ca-5913-417c-aef1-545db9bd35d8). ⚠️ Prod needs
+> `RESEND_CAMPAIGNS_API_KEY` added to Vercel env (the base RESEND_API_KEY is sending-only
+> and 401s on /audiences) — until then the endpoint 502s in prod.)
 > **Previously confirmed:** 2026-07-12 (**Guest quiz "save your score" + WC Mastermind
 > position drafting — SHIPPED to prod 2026-07-12.**
 > (1) A guest who finishes a solo quiz now sees a highlighted **"You" row at their true rank**
