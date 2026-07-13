@@ -7,7 +7,21 @@
 > for detail this file points to, never as current scope.
 >
 > **Confirmed:** 2026-07-13 (**Product-audit fix batches A–C verified + merged with main** —
-> see Recently Shipped; audit docs at `docs/AUDIT-2026-07-11-*.md`).
+> see Recently Shipped; audit docs at `docs/AUDIT-2026-07-11-*.md`. Verification was live:
+> room-watchdog e2e 12/12 against the real DB via two QA bots, the full guest 38-0 loop
+> played through win→swap and loss, h2h accept + guest game-link gate exercised in the
+> browser. It also CAUGHT AND FIXED a P0: `loadTeam()` ran its drop-unknown-players
+> migration while the lazy 2.6MB player pool was still cold — `getPlayer()` returns
+> undefined for every id then — so any cold navigation to a loadTeam() caller (deep
+> link/refresh on /38-0/swap, pens, challenge/league pages) silently WIPED the guest's
+> whole team and PERSISTED the wipe. The migration now only runs once the pool is loaded.
+> Same-session deferred pickups: team-page sign-up prompts carry `?next=/38-0/team`; the
+> logged-out landing's dead "before Jun 11" dates replaced with evergreen copy; the landing
+> + quiz-intro scoring explainers now show the real engine (×2 under 6s / ×1.5 under 12s /
+> +50 streak — the old "+200 pts" / "Instant 1,000" tiles were fiction); push "Maybe later"
+> snoozes 7 days instead of killing every ask forever (`snoozePushPrompt`, lib/onboarding);
+> and the £25 giveaway got a one-switch kill: `NEXT_PUBLIC_DAILY_GIVEAWAY=false` retires
+> all four surfaces at once (lib/promo).)
 > **Previously confirmed:** 2026-07-12 (**Guest quiz "save your score" + WC Mastermind
 > position drafting — SHIPPED to prod 2026-07-12.**
 > (1) A guest who finishes a solo quiz now sees a highlighted **"You" row at their true rank**
