@@ -110,7 +110,12 @@ export function generateCareerPath(
       answerId: answer.playerId,
       difficulty: careerDifficulty(answer, opts.nowYear),
       positions: ["GK", "DEF", "MID", "FWD"], // career knowledge — any slot
-      meta: { answer: answer.name, sequence: answerKey, firstYear: answer.firstYear },
+      meta: {
+        answer: answer.name,
+        sequence: answerKey,
+        firstYear: answer.firstYear,
+        ...(answer.photoUrl ? { photo: answer.photoUrl } : {}),
+      },
     });
   }
   return out;

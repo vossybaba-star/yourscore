@@ -143,14 +143,33 @@ export function generateWhoAmI(players: readonly Player[], opts: WhoAmIOpts): Ga
       id: p.id,
       label: p.name,
     }));
+    // The prompt carries only the TEXT clues (position, age, goals). Nationality
+    // and shirt number are rendered as visuals (flag + shirt graphic) from meta,
+    // so they're stripped from the text to avoid duplication. All clues still
+    // gate validity via `clues` above — this only changes presentation.
+    const promptLines = [`I'm a ${POSITION_WORD[answer.position]}.`, `I'm ${answer.age}.`];
+    if (answer.goals >= minGoalsClue) {
+      promptLines.push(
+        opts.seasonLabel
+          ? `I scored ${answer.goals} in the ${opts.seasonLabel} season.`
+          : `I've scored ${answer.goals} this season.`,
+      );
+    }
     out.push({
       format: "who-am-i",
-      prompt: clues.map((c) => c.line).join("\n"),
+      prompt: promptLines.join("\n"),
       options,
       answerId: answer.id,
       difficulty: difficultyFor(answer, distractors, fame),
       positions: [answer.position],
-      meta: { answer: answer.name, club: answer.club },
+      meta: {
+        answer: answer.name,
+        club: answer.club,
+        nationality: answer.nationality ?? "",
+        jersey: typeof answer.jersey === "number" ? answer.jersey : -1,
+        ...(answer.flagUrl ? { flag: answer.flagUrl } : {}),
+        ...(answer.photoUrl ? { photo: answer.photoUrl } : {}),
+      },
     });
   }
   return out;

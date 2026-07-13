@@ -40,6 +40,8 @@ export interface Career {
   /** DOB known → youth stints were age-filtered; unknown DOB careers must not
    *  be ANSWERS (their club list may hide un-filterable youth spells). */
   dobKnown: boolean;
+  /** SportMonks headshot (most recent season seen) — the reveal image. */
+  photoUrl?: string;
 }
 
 /** Parse "2013/2014" → 2013 (used for era difficulty + ordering). */
@@ -97,10 +99,13 @@ export function buildCareers(
           lastYear: season.startYear,
           seasons: 0,
           dobKnown: age !== null,
+          photoUrl: p.imagePath,
         };
         byPlayer.set(p.smId, c);
       }
       if (age === null) c.dobKnown = false;
+      // Seasons run oldest → newest, so the latest non-empty image wins.
+      if (p.imagePath) c.photoUrl = p.imagePath;
       if (c.lastYear !== season.startYear || c.seasons === 0) c.seasons++;
       c.lastYear = season.startYear;
       if (c.lastClub !== p.club) {

@@ -44,6 +44,8 @@ export interface Player {
   nationality?: string;
   age?: number;
   jersey?: number; // shirt number (the "I wear number 9" clue)
+  photoUrl?: string; // SportMonks headshot — the Who-am-I reveal image
+  flagUrl?: string; // SportMonks nationality flag — the nationality clue image
   careerGoals?: number;
   careerClubs?: string[]; // ordered club history for Career-path (FIFA dataset)
 }
@@ -63,7 +65,8 @@ export type GateStat =
   | "assists"
   | "appearances"
   | "points"
-  | "form";
+  | "form"
+  | "age";
 
 export interface GateOption {
   id: number; // player id
@@ -95,6 +98,7 @@ export const STAT_LABEL: Record<GateStat, string> = {
   appearances: "starts this season",
   points: "fantasy points this season",
   form: "recent form",
+  age: "age",
 };
 
 /** Read a numeric stat off a Player (single source of truth for both generators). */
@@ -112,5 +116,7 @@ export function statValue(p: Player, stat: GateStat): number {
       return p.points;
     case "form":
       return p.form;
+    case "age":
+      return p.age ?? 0;
   }
 }

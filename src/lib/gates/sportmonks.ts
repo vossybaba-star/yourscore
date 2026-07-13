@@ -26,6 +26,8 @@ export interface SmPlayer {
   jersey?: number;
   dateOfBirth?: string; // "YYYY-MM-DD"
   nationality?: string;
+  imagePath?: string; // player headshot URL
+  flagPath?: string; // nationality flag URL
 }
 
 /** Enrichment fields we copy onto a matched Player. */
@@ -33,6 +35,8 @@ export interface Enrichment {
   nationality?: string;
   age?: number;
   jersey?: number;
+  photoUrl?: string;
+  flagUrl?: string;
   /** The matched SportMonks player id — the FPL↔SM identity bridge. */
   smId?: number;
 }
@@ -161,6 +165,8 @@ export function buildEnrichment(
       nationality: s.nationality,
       age: s.dateOfBirth ? ageFrom(s.dateOfBirth, now) : undefined,
       jersey: s.jersey,
+      photoUrl: s.imagePath,
+      flagUrl: s.flagPath,
       smId: s.smId,
     });
   }
@@ -174,7 +180,9 @@ export function enrichPlayers(
 ): Player[] {
   return players.map((p) => {
     const e = enrichment.get(p.id);
-    return e ? { ...p, nationality: e.nationality, age: e.age, jersey: e.jersey } : p;
+    return e
+      ? { ...p, nationality: e.nationality, age: e.age, jersey: e.jersey, photoUrl: e.photoUrl, flagUrl: e.flagUrl }
+      : p;
   });
 }
 
@@ -222,7 +230,8 @@ export async function fetchSmSquad(
       display_name?: string;
       name?: string;
       date_of_birth?: string;
-      nationality?: { name?: string };
+      image_path?: string;
+      nationality?: { name?: string; image_path?: string };
     };
   }[];
   const out: SmPlayer[] = [];
@@ -241,6 +250,8 @@ export async function fetchSmSquad(
       jersey: typeof row.jersey_number === "number" ? row.jersey_number : undefined,
       dateOfBirth: pl.date_of_birth ?? undefined,
       nationality: pl.nationality?.name ?? undefined,
+      imagePath: pl.image_path ?? undefined,
+      flagPath: pl.nationality?.image_path ?? undefined,
     });
   }
   return out;

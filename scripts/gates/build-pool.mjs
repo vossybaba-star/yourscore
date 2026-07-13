@@ -50,11 +50,25 @@ const enriched = enrichPlayers(players, enrichment);
 console.log(`players: ${players.length} FPL, ${smPlayers.length} SM squad, clubs mapped ${clubMap.size}/20`);
 
 // 2. Current-football formats (season-relative stats labelled — founder rule)
+// HL_MIN_FAME: floor so both players in a Higher-or-Lower pair are ones fans
+// actually know. Pairs are same-position by construction (see
+// generateComparisons) — a keeper is never compared to a striker. The game type
+// serves four TOPICS (goals/assists/appearances/age); price + form points stay
+// full-pool for the Fantasy gates.
+const HL_MIN_FAME = 25;
+const hlTopic = (stat, extra = {}) => generateHigherLower(enriched, {
+  stat, seed: SEED, count: 45, minFame: HL_MIN_FAME, seasonLabel: STATS_SEASON_LABEL, ...extra,
+});
 const questions = [
+  // Fantasy gates (full pool): fantasy price + form points.
   ...generateHigherLower(enriched, { stat: "price", seed: SEED, count: 60, seasonLabel: STATS_SEASON_LABEL }),
-  ...generateHigherLower(enriched, { stat: "goals", seed: SEED, count: 40, seasonLabel: STATS_SEASON_LABEL }),
   ...generateThisSeasonForm(enriched, { seed: SEED, count: 50, stat: "points", seasonLabel: STATS_SEASON_LABEL }),
-  ...generateThisSeasonForm(enriched, { seed: SEED, count: 30, stat: "goals", seasonLabel: STATS_SEASON_LABEL }),
+  // Higher-or-Lower game-type topics (same-position, fame-floored).
+  ...hlTopic("goals"),
+  ...hlTopic("assists"),
+  ...hlTopic("appearances"),
+  // Age: exact integer data, so a small margin (≈1yr+) is a fair, hard question.
+  ...hlTopic("age", { minMargin: 0.03 }),
   ...generateWhoAmI(enriched, { seed: SEED, count: 40, seasonLabel: STATS_SEASON_LABEL }),
 ];
 console.log(`current-football questions: ${questions.length}`);

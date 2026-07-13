@@ -29,6 +29,12 @@ export interface HigherLowerOpts {
   /** Sampling attempts cap (default count * 25). */
   attempts?: number;
   /**
+   * Minimum fame (0–100) BOTH players must clear to be eligible. Keeps the
+   * comparison between players people actually recognise — no "Orford vs Talbi".
+   * Fame is pool-relative (see fame.ts); default 0 = no floor.
+   */
+  minFame?: number;
+  /**
    * The season the stats refer to, e.g. "2025/26". Season-relative stats MUST
    * be labelled explicitly (founder: "this season" goes stale the moment the
    * season rolls — every time-relative phrase needs a proper label).
@@ -44,6 +50,7 @@ const DEFAULT_MIN_TOP: Record<GateStat, number> = {
   appearances: 3,
   points: 20,
   form: 1,
+  age: 17, // any real player clears this — the margin does the work for age
 };
 
 /** The question stem for each stat — season-relative stats carry the label,
@@ -52,6 +59,7 @@ const DEFAULT_MIN_TOP: Record<GateStat, number> = {
 function promptFor(stat: GateStat, seasonLabel?: string): string {
   if (stat === "price")
     return `Who costs more in fantasy football${seasonLabel ? ` (${seasonLabel} season)` : ""}?`;
+  if (stat === "age") return "Who is older?"; // age is current, not season-relative
   const label = seasonLabel ? ` in the ${seasonLabel} season` : "";
   if (stat === "form") return `Who's in better form${seasonLabel ? ` right now (${seasonLabel})` : ""}?`;
   if (stat === "goals") return `Who scored more goals${label}?`;
@@ -109,7 +117,14 @@ function makeQuestion(
   };
 }
 
-/** Core two-player-comparison generator, shared by Higher/Lower + This-season form. */
+/**
+ * Core two-player-comparison generator, shared by Higher/Lower + This-season form.
+ *
+ * Pairs are ALWAYS same-position (founder Jul 11: comparing a keeper's goals to a
+ * striker's is nonsense — a forward vs a defender on goals is trivially easy). We
+ * bucket the eligible pool by position and only ever pair within a bucket, so
+ * every question is "which of these two <forwards / midfielders / …> …".
+ */
 function generateComparisons(
   format: GateFormat,
   eligible: readonly Player[],
@@ -120,20 +135,32 @@ function generateComparisons(
   const count = opts.count ?? 40;
   const minMargin = opts.minMargin ?? 0.15;
   const minTop = opts.minTop ?? DEFAULT_MIN_TOP[stat];
-  const maxAttempts = opts.attempts ?? count * 25;
+  const maxAttempts = opts.attempts ?? count * 40;
   const out: GateQuestion[] = [];
   if (eligible.length < 2) return out;
+
+  // Bucket by position; only positions with ≥2 players can form a pair.
+  const byPos = new Map<Player["position"], Player[]>();
+  for (const p of eligible) {
+    const arr = byPos.get(p.position);
+    if (arr) arr.push(p);
+    else byPos.set(p.position, [p]);
+  }
+  const positions = Array.from(byPos.keys()).filter((pos) => (byPos.get(pos)?.length ?? 0) >= 2);
+  if (positions.length === 0) return out;
 
   const rand = seededRng(`${seed}:${format}:${stat}`);
   const seen = new Set<string>();
   let attempts = 0;
   while (out.length < count && attempts < maxAttempts) {
     attempts++;
-    const i = Math.floor(rand() * eligible.length);
-    let j = Math.floor(rand() * eligible.length);
-    if (j === i) j = (j + 1) % eligible.length;
-    const a = eligible[i];
-    const b = eligible[j];
+    const pos = positions[Math.floor(rand() * positions.length)];
+    const bucket = byPos.get(pos)!;
+    const i = Math.floor(rand() * bucket.length);
+    let j = Math.floor(rand() * bucket.length);
+    if (j === i) j = (j + 1) % bucket.length;
+    const a = bucket[i];
+    const b = bucket[j];
     const key = a.id < b.id ? `${a.id}-${b.id}` : `${b.id}-${a.id}`;
     if (seen.has(key)) continue;
     if (!isValidComparison(statValue(a, stat), statValue(b, stat), minMargin, minTop)) continue;
@@ -148,8 +175,18 @@ export function generateHigherLower(
   players: readonly Player[],
   opts: HigherLowerOpts,
 ): GateQuestion[] {
+  // Fame is indexed over the FULL pool (correct normalization), then the floor
+  // filters the eligible players — so a well-known-players-only round still
+  // rates fame relative to everyone.
   const fame = buildFameIndex(players);
-  return generateComparisons("higher-lower", players, fame, opts);
+  const minFame = opts.minFame ?? 0;
+  const famed = minFame > 0 ? players.filter((p) => fame.fame(p.id) >= minFame) : players;
+  // Age is the one stat that can be MISSING (a player who wasn't SM-enriched has
+  // no age → statValue returns 0). Comparing "age 0" is nonsense, so require a
+  // real age for the age topic. Other stats read 0 as a genuine value.
+  const eligible =
+    opts.stat === "age" ? famed.filter((p) => typeof p.age === "number" && p.age >= 15) : famed;
+  return generateComparisons("higher-lower", eligible, fame, opts);
 }
 
 /** Minutes threshold for "regular starter" (~5 full games). */
@@ -166,8 +203,12 @@ export function generateThisSeasonForm(
 ): GateQuestion[] {
   const stat: GateStat = opts.stat ?? "points";
   const fame = buildFameIndex(players); // fame relative to the whole pool
+  const minFame = opts.minFame ?? 0;
   const eligible = players.filter(
-    (p) => p.available && p.minutes >= REGULAR_STARTER_MINUTES,
+    (p) =>
+      p.available &&
+      p.minutes >= REGULAR_STARTER_MINUTES &&
+      (minFame <= 0 || fame.fame(p.id) >= minFame),
   );
   return generateComparisons("this-season-form", eligible, fame, { ...opts, stat });
 }
