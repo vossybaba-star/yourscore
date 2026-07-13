@@ -20,8 +20,13 @@
 > + quiz-intro scoring explainers now show the real engine (×2 under 6s / ×1.5 under 12s /
 > +50 streak — the old "+200 pts" / "Instant 1,000" tiles were fiction); push "Maybe later"
 > snoozes 7 days instead of killing every ask forever (`snoozePushPrompt`, lib/onboarding);
-> and the £25 giveaway got a one-switch kill: `NEXT_PUBLIC_DAILY_GIVEAWAY=false` retires
-> all four surfaces at once (lib/promo). Also same day: **blog waitlist capture is live** —
+> and the £25 giveaway is RETIRED (founder 13 Jul: "There's no giveaway live") — all four
+> WIN £25 surfaces (quiz results, season scorecard, live-match result, WC-run result) plus
+> the WC share page are now plain "SHARE YOUR SCORECARD / Post it on 𝕏" actions with the
+> giveaway phrasing stripped from every share-tweet string; the £25 sheets are deleted.
+> Post-loss recovery shipped the same day: the loss scorecard offers **REDRAFT A POSITION →**
+> (`/38-0/redraft`) — re-spin any slot, but each position gets exactly ONE redraft over the
+> team's life (`team.redraftedSlots`); the post-WIN one-slot swap is unchanged. Also same day: **blog waitlist capture is live** —
 > a one-field "get gameweek-1 access" card on every blog post + the /blog index
 > (`WaitlistCard`), POSTing to `/api/waitlist` (IP rate-limited, server-validated) which
 > stores contacts in the Resend audience **"Fantasy Waitlist"** (resolved/created by name

@@ -10,7 +10,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { loadTeam, isComplete, seasonSeed, makeSeasonSalt, saveLastSeason, loadLastSeason, type LocalTeam } from "@/lib/draft/local";
-import { DAILY_GIVEAWAY_ENABLED } from "@/lib/promo";
 import { leagueOpponents, ensurePool, isPoolReady } from "@/lib/draft/pool";
 import { simulateSeason, seasonNarrative, type SeasonResult } from "@/lib/draft/season";
 import { SeasonScorecard, type SeasonAward, type SeasonData } from "@/components/draft/SeasonScorecard";
@@ -35,9 +34,8 @@ export default function SeasonSim() {
   const [copied, setCopied] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [shortUrl, setShortUrl] = useState<string | null>(null);
-  const [giveawayOpen, setGiveawayOpen] = useState(false);
   const [invincibleOpen, setInvincibleOpen] = useState(false);
-  const giveawayShown = useRef(false);
+  const shortUrlMinted = useRef(false);
   const recordSubmitted = useRef(false);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -85,7 +83,7 @@ export default function SeasonSim() {
   }, [result, cached, xiSeed, salt]);
 
   // Hoisted above the early-return so ensureShortUrl can be called from the
-  // auto-show effect (700ms before the giveaway overlay opens).
+  // auto-mint effect (so sharing is instant when the scorecard lands).
   function shareParams(): URLSearchParams {
     if (!result || !team) return new URLSearchParams();
     const xi = team.squad.map((p) => `${p.position}~${p.name}~${p.overall}`).join("|");
@@ -121,12 +119,11 @@ export default function SeasonSim() {
   }
 
   // When the season first completes: an Invincible (38-0) earns the full-screen
-  // gold celebration. The giveaway sheet no longer auto-opens over the scorecard —
-  // the reveal is the reward moment; the always-visible WIN £25 card opens the
-  // sheet on tap. The short URL is still minted up front so sharing is instant.
+  // gold celebration. The share card is a plain post-on-X action (no giveaway
+  // is live); the short URL is still minted up front so sharing is instant.
   useEffect(() => {
-    if (done && !giveawayShown.current) {
-      giveawayShown.current = true;
+    if (done && !shortUrlMinted.current) {
+      shortUrlMinted.current = true;
       void ensureShortUrl();
       if (result?.invincible) {
         const t = setTimeout(() => setInvincibleOpen(true), 700);
@@ -239,15 +236,15 @@ export default function SeasonSim() {
   function shareX() { window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(blurb())}&url=${encodeURIComponent(shareUrl())}`, "_blank", "noopener"); }
   async function copyLink() { trackShare("season-copy"); try { await ensureShortUrl(); await navigator.clipboard.writeText(`${blurb()} ${shareUrl()}`); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* blocked */ } }
 
-  function giveawayTweetText(): string {
+  function shareTweetText(): string {
     return r.invincible
-      ? `Just went INVINCIBLE on YourScore 38-0 ⚽🏆 ${r.wins}-${r.draws}-${r.losses}, ${r.points} pts. Entering the @yourscore_app_ daily £25 giveaway`
-      : `My 38-0 season: ${r.wins}W ${r.draws}D ${r.losses}L, finished ${ordinal(r.position)} on ${r.points} pts ⚽ Entering the @yourscore_app_ daily £25 giveaway`;
+      ? `Just went INVINCIBLE on YourScore 38-0 ⚽🏆 ${r.wins}-${r.draws}-${r.losses}, ${r.points} pts @yourscore_app_`
+      : `My 38-0 season: ${r.wins}W ${r.draws}D ${r.losses}L, finished ${ordinal(r.position)} on ${r.points} pts ⚽ @yourscore_app_`;
   }
-  function giveawayTweetUrl(): string {
+  function shareTweetUrl(): string {
     // Use the short URL (already minted by now); falls back to longShareUrl if needed.
     // Twitter unfurls the OG scorecard image from the /38-0/season/share page.
-    return `https://twitter.com/intent/tweet?text=${encodeURIComponent(giveawayTweetText())}&url=${encodeURIComponent(shareUrl())}`;
+    return `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareTweetText())}&url=${encodeURIComponent(shareUrl())}`;
   }
 
   const awards: SeasonAward[] = [];
@@ -280,22 +277,20 @@ export default function SeasonSim() {
           {narr.body && <p className="text-center font-body mt-3" style={{ fontSize: 13, color: "#9aa39d", lineHeight: 1.55 }}>{narr.body}</p>}
         </div>
 
-        {/* Giveaway CTA — taps to open the giveaway sheet (env-gated, see lib/promo) */}
-        {DAILY_GIVEAWAY_ENABLED && (
-        <button
-          onClick={() => setGiveawayOpen(true)}
+        {/* Share on X — no prize framing: there is no giveaway live */}
+        <a
+          href={shareTweetUrl()} target="_blank" rel="noopener noreferrer"
           className="w-full mt-5 rounded-2xl overflow-hidden active:scale-[0.98] transition-transform"
           style={{ background: "linear-gradient(135deg, #1c1400, #221900)", border: "2px solid rgba(255,184,0,0.55)" }}
         >
           <div className="flex items-center gap-4 px-5 py-4">
-            <div style={{ fontSize: 36, lineHeight: 1 }}>🏆</div>
+            <div style={{ fontSize: 36, lineHeight: 1 }}>📣</div>
             <div className="text-left flex-1 min-w-0">
-              <div className="font-display tracking-wide" style={{ fontSize: 20, color: "#ffb800" }}>WIN £25 TODAY</div>
-              <div className="font-body" style={{ fontSize: 13, color: "#a89060" }}>Share on 𝕏 to enter the daily giveaway →</div>
+              <div className="font-display tracking-wide" style={{ fontSize: 20, color: "#ffb800" }}>SHARE YOUR SCORECARD</div>
+              <div className="font-body" style={{ fontSize: 13, color: "#a89060" }}>Post it on 𝕏 →</div>
             </div>
           </div>
-        </button>
-        )}
+        </a>
 
         <Button variant="primary" tone="lime" size="md" fullWidth className="mt-2" onClick={openShare}>
           📸 SHARE YOUR RESULT
@@ -429,11 +424,11 @@ export default function SeasonSim() {
             <p className="font-body mt-3 mx-auto" style={{ fontSize: 14, color: "#e8d9a0", lineHeight: 1.55, maxWidth: 320 }}>
               38 played, 38 won, not beaten once. One of the rarest results in 38-0 — you built a perfect season.
               <br />
-              <span style={{ color: "#bfae78", fontSize: 12.5 }}>Post it to claim your place on the board (and enter today&apos;s £25 giveaway).</span>
+              <span style={{ color: "#bfae78", fontSize: 12.5 }}>Post it to claim your place on the board.</span>
             </p>
 
             <a
-              href={giveawayTweetUrl()}
+              href={shareTweetUrl()}
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => setInvincibleOpen(false)}
@@ -456,59 +451,6 @@ export default function SeasonSim() {
         </div>
       )}
 
-      {/* ── Giveaway overlay ── */}
-      {DAILY_GIVEAWAY_ENABLED && giveawayOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-end justify-center"
-          style={{ background: "rgba(0,0,0,0.9)" }}
-          onClick={() => setGiveawayOpen(false)}
-        >
-          <div
-            className="w-full max-w-lg px-4"
-            style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 20px)" }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="rounded-3xl overflow-hidden" style={{ background: "#080d0a", border: "2px solid rgba(255,184,0,0.4)" }}>
-              {/* drag handle */}
-              <div className="flex justify-center pt-3 pb-1">
-                <div className="rounded-full" style={{ width: 40, height: 4, background: "rgba(255,255,255,0.18)" }} />
-              </div>
-
-              <div className="px-6 pt-4 pb-7 text-center">
-                <div style={{ fontSize: 52, lineHeight: 1.1 }}>🏆</div>
-                <div className="font-body mt-3" style={{ fontSize: 11, color: "#ffb800", letterSpacing: 3 }}>DAILY GIVEAWAY</div>
-                <div className="font-display tracking-wide leading-none mt-1" style={{ fontSize: 80, color: "#fff" }}>£25</div>
-                <p className="font-body mt-3" style={{ fontSize: 15, color: "#c4ccc6", lineHeight: 1.6 }}>
-                  Share your season result on 𝕏 to enter.<br />
-                  <span style={{ color: "#8a948f", fontSize: 13 }}>One winner drawn every 24 hours.</span>
-                </p>
-
-                <a
-                  href={giveawayTweetUrl()}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => setGiveawayOpen(false)}
-                  className="flex items-center justify-center gap-3 w-full rounded-2xl py-4 mt-6 font-display tracking-wide active:scale-[0.98] transition-transform"
-                  style={{ background: "#fff", color: "#000", fontSize: 20, textDecoration: "none", display: "flex" }}
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="black">
-                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.741l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                  </svg>
-                  POST ON 𝕏 TO ENTER
-                </a>
-
-                <button
-                  onClick={() => setGiveawayOpen(false)}
-                  className="w-full mt-3 font-body"
-                  style={{ fontSize: 14, color: "#586058", background: "transparent", border: "none", cursor: "pointer" }}
-                >
-                  Not now
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

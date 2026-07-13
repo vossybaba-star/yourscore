@@ -17,7 +17,6 @@ import { useGameLoop } from "@/lib/useGameLoop";
 import { Button } from "@/components/ui/Button";
 import { trackGamePlay, trackGameComplete, trackShare } from "@/lib/analytics/trackGame";
 import { getAcq } from "@/lib/analytics/acq";
-import { DAILY_GIVEAWAY_ENABLED } from "@/lib/promo";
 import {
   DIFFICULTY_COLOR as DIFF_COLOR,
   DIFFICULTY_BG as DIFF_BG,
@@ -461,9 +460,8 @@ export default function ChallengePage() {
   // ── Share state ──────────────────────────────────────────────────────────
   const [shortUrl, setShortUrl] = useState<string | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
-  const [giveawayOpen, setGiveawayOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  const giveawayShown = useRef(false);
+  const shortUrlMinted = useRef(false);
 
   // Streak tracking for bonuses
   const [correctStreak, setCorrectStreak] = useState(0);
@@ -648,14 +646,6 @@ export default function ChallengePage() {
     if (isWc2026) return `I scored ${score.toLocaleString()} on the ${pack?.name ?? "YourScore Quiz"} @yourscore_app_ ⚽`;
     return `I scored ${score.toLocaleString()} on "${pack?.name ?? "YourScore Quiz"}" @yourscore_app_ 🧠`;
   }
-  function giveawayTweetText(): string {
-    if (isWc2026) return `I scored ${score.toLocaleString()} on the ${pack?.name ?? "YourScore Quiz"} @yourscore_app_ ⚽ Entering the daily £25 giveaway`;
-    return `I scored ${score.toLocaleString()} on "${pack?.name ?? "YourScore Quiz"}" @yourscore_app_ 🧠 Entering the daily £25 giveaway`;
-  }
-  function giveawayTweetUrl(): string {
-    const u = shortUrl ?? fallbackUrl;
-    return `https://twitter.com/intent/tweet?text=${encodeURIComponent(giveawayTweetText())}&url=${encodeURIComponent(u)}`;
-  }
   function openShare() { setShareOpen(true); void ensureShortUrl(); }
   async function nativeShare() {
     trackShare("challenge");
@@ -674,13 +664,11 @@ export default function ChallengePage() {
     try { await navigator.clipboard.writeText(`${quizBlurb()} ${url}`); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* blocked */ }
   }
 
-  // Auto-mint the short URL when results first appear. The giveaway overlay no
-  // longer auto-opens over the scorecard (the reveal is the reward moment) —
-  // the always-visible WIN £25 card opens it on tap.
+  // Auto-mint the short URL when results first appear so sharing is instant.
   useEffect(() => {
     if (phase !== "results") return;
-    if (giveawayShown.current) return;
-    giveawayShown.current = true;
+    if (shortUrlMinted.current) return;
+    shortUrlMinted.current = true;
     void ensureShortUrl();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
@@ -1218,22 +1206,20 @@ export default function ChallengePage() {
         </div>
 
         <div className="px-5 flex flex-col gap-4 mt-2">
-          {/* ── Giveaway CTA (env-gated: NEXT_PUBLIC_DAILY_GIVEAWAY=false retires it) ── */}
-          {DAILY_GIVEAWAY_ENABLED && (
+          {/* ── Share on X — no prize framing: there is no giveaway live ── */}
           <button
-            onClick={() => setGiveawayOpen(true)}
+            onClick={shareX}
             className="w-full rounded-2xl overflow-hidden active:scale-[0.98] transition-transform"
             style={{ background: "linear-gradient(135deg, #1c1400, #221900)", border: "2px solid rgba(0,216,192,0.55)" }}
           >
             <div className="flex items-center gap-4 px-5 py-4">
-              <div style={{ fontSize: 36, lineHeight: 1 }}>🏆</div>
+              <div style={{ fontSize: 36, lineHeight: 1 }}>📣</div>
               <div className="text-left flex-1 min-w-0">
-                <div className="font-display tracking-wide" style={{ fontSize: 20, color: "#00d8c0" }}>WIN £25 TODAY</div>
-                <div className="font-body" style={{ fontSize: 13, color: "#a89060" }}>Share on 𝕏 to enter the daily giveaway →</div>
+                <div className="font-display tracking-wide" style={{ fontSize: 20, color: "#00d8c0" }}>SHARE YOUR SCORECARD</div>
+                <div className="font-body" style={{ fontSize: 13, color: "#a89060" }}>Post it on 𝕏 →</div>
               </div>
             </div>
           </button>
-          )}
 
           <button onClick={openShare} className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "#aeea00", color: "#062013", fontSize: 22 }}>
             📸 SHARE YOUR RESULT
@@ -1380,38 +1366,7 @@ export default function ChallengePage() {
           </div>
         )}
 
-        {/* ── Giveaway overlay ── */}
-        {DAILY_GIVEAWAY_ENABLED && giveawayOpen && (
-          <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: "rgba(0,0,0,0.9)" }} onClick={() => setGiveawayOpen(false)}>
-            <div className="w-full max-w-lg px-4" style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 20px)" }} onClick={(e) => e.stopPropagation()}>
-              <div className="rounded-3xl overflow-hidden" style={{ background: "#080d0a", border: "2px solid rgba(0,216,192,0.4)" }}>
-                <div className="flex justify-center pt-3 pb-1">
-                  <div className="rounded-full" style={{ width: 40, height: 4, background: "rgba(255,255,255,0.18)" }} />
-                </div>
-                <div className="px-6 pt-4 pb-7 text-center">
-                  <div style={{ fontSize: 52, lineHeight: 1.1 }}>🏆</div>
-                  <div className="font-body mt-3" style={{ fontSize: 11, color: "#00d8c0", letterSpacing: 3 }}>DAILY GIVEAWAY</div>
-                  <div className="font-display tracking-wide leading-none mt-1" style={{ fontSize: 80, color: "#fff" }}>£25</div>
-                  <p className="font-body mt-3" style={{ fontSize: 15, color: "#c4ccc6", lineHeight: 1.6 }}>
-                    Share your result on 𝕏 to enter.<br />
-                    <span style={{ color: "#8a948f", fontSize: 13 }}>One winner drawn every 24 hours.</span>
-                  </p>
-                  <a href={giveawayTweetUrl()} target="_blank" rel="noopener noreferrer" onClick={() => setGiveawayOpen(false)}
-                    className="flex items-center justify-center gap-3 w-full rounded-2xl py-4 mt-6 font-display tracking-wide active:scale-[0.98] transition-transform"
-                    style={{ background: "#fff", color: "#000", fontSize: 20, textDecoration: "none", display: "flex" }}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="black">
-                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.741l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                    </svg>
-                    POST ON 𝕏 TO ENTER
-                  </a>
-                  <button onClick={() => setGiveawayOpen(false)} className="w-full mt-3 font-body" style={{ fontSize: 14, color: "#586058", background: "transparent", border: "none", cursor: "pointer" }}>
-                    Not now
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+
       </div>
     );
   }

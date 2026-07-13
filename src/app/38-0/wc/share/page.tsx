@@ -5,7 +5,7 @@
  * entry image. The card params travel in the query string (no DB read needed).
  *
  * For a human who taps the link, the body shows the card + a "play today's run" CTA and
- * the daily £25 giveaway nudge.
+ * the share-on-X nudge.
  */
 
 import type { Metadata } from "next";
@@ -94,7 +94,7 @@ export default function WcSharePage(
             style={{ background: "#ffd700", color: "#1a1300", fontSize: 20 }}>
             ▶ Play today&apos;s run
           </Link>
-          <p className="font-body mt-4" style={{ fontSize: 13, color: "#a89060" }}>🏆 Share your result on 𝕏 to enter the daily £25 giveaway.</p>
+          <p className="font-body mt-4" style={{ fontSize: 13, color: "#a89060" }}>📣 Share your result on 𝕏.</p>
         </div>
       </div>
     </main>

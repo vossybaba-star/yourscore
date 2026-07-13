@@ -20,7 +20,6 @@ import { Pitch } from "@/components/draft/Pitch";
 import { InviteMastermind } from "@/components/draft/InviteMastermind";
 import { WcEditionStrip, type EditionCell } from "@/components/draft/WcEditionStrip";
 import { spinForNation, spinWorld, ensurePool, isPoolReady } from "@/lib/draft/pool";
-import { DAILY_GIVEAWAY_ENABLED } from "@/lib/promo";
 import type { ServedQuestion } from "@/lib/draft/wc-quiz-public";
 import { upgradeBand, type DraftBand } from "@/lib/draft/draft-quiz";
 import { slotsFor } from "@/lib/draft/formations";
@@ -465,7 +464,7 @@ export default function WorldCupRun() {
       const resultBit = run.status === "champion"
         ? `and I won the whole thing 🏆 (${runRec})`
         : `— run ended in the ${RUN_STAGE_LABEL[run.stage]} (${runRec})`;
-      return `${quizBit} ${resultBit}. Entering the @yourscore_app_ daily £25 giveaway. Beat my score 👇`;
+      return `${quizBit} ${resultBit} @yourscore_app_. Beat my score 👇`;
     }
     const who = world ? "a World XI" : run.nation;
     return run.status === "champion"
@@ -580,20 +579,18 @@ export default function WorldCupRun() {
                   />
                 </div>
               )}
-              {/* £25 daily giveaway — the primary share; the tweet unfurls the Mastermind card.
-                  Env-gated: NEXT_PUBLIC_DAILY_GIVEAWAY=false retires every giveaway surface. */}
-              {DAILY_GIVEAWAY_ENABLED && (
+              {/* The primary share — the tweet unfurls the Mastermind card. No prize
+                  framing: there is no giveaway live. */}
               <a href={tweetHref()} target="_blank" rel="noopener noreferrer"
                 className="flex items-center gap-3 mt-3 rounded-2xl px-4 py-3 active:scale-[0.98] transition-transform"
                 style={{ background: "linear-gradient(135deg,#1c1400,#221900)", border: "2px solid rgba(255,215,0,0.6)" }}>
                 <span style={{ fontSize: 30, lineHeight: 1 }}>🏆</span>
                 <div className="text-left flex-1 min-w-0">
-                  <div className="font-display tracking-wide" style={{ fontSize: 18, color: "#ffd700" }}>WIN £25 TODAY</div>
-                  <div className="font-body" style={{ fontSize: 12, color: "#a89060" }}>Share your card on 𝕏 to enter the daily giveaway →</div>
+                  <div className="font-display tracking-wide" style={{ fontSize: 18, color: "#ffd700" }}>SHARE YOUR SCORECARD</div>
+                  <div className="font-body" style={{ fontSize: 12, color: "#a89060" }}>Post your card on 𝕏 →</div>
                 </div>
                 <span style={{ fontSize: 18, color: "#1d9bf0" }}>𝕏</span>
               </a>
-              )}
               <div className="flex items-center justify-center gap-2 mt-2 flex-wrap">
                 <button onClick={shareRun} className="rounded-xl px-4 py-2 font-display tracking-wide" style={{ background: "rgba(255,255,255,0.1)", color: "#fff", fontSize: 15 }}>SHARE</button>
                 <Link href="/38-0/wc/board" prefetch className="rounded-xl px-4 py-2 font-display tracking-wide" style={{ background: "rgba(174,234,0,0.14)", color: "#aeea00", border: "1px solid rgba(174,234,0,0.4)", fontSize: 15 }}>VIEW TABLE</Link>
