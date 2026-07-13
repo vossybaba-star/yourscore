@@ -53,12 +53,28 @@ export interface EntryRow {
 
 const squadShape = (r: SquadRow): Squad => ({ picks: r.picks, bankTenths: r.bank_tenths });
 
-async function currentGw(db: Db): Promise<GwRow> {
-  const { data, error } = await db.from("fantasy_gameweeks")
-    .select("*").eq("status", "open").order("gw", { ascending: false }).limit(1).maybeSingle();
+/** The gameweek the user is CURRENTLY on = the earliest one they haven't
+ *  finished (finalised). Advancing to the next week is an explicit action after
+ *  seeing a result, so a just-scored week stays visible until they move on. */
+async function currentGw(db: Db, userId: string): Promise<GwRow> {
+  const { data: gws, error } = await db.from("fantasy_gameweeks")
+    .select("*").order("gw", { ascending: true });
   if (error) throw new HttpError(500, error.message);
-  if (!data) throw new HttpError(409, "no open gameweek", "no-gw");
-  return data as GwRow;
+  if (!gws?.length) throw new HttpError(409, "no gameweeks", "no-gw");
+  const { data: entries } = await db.from("fantasy_entries")
+    .select("gw, status").eq("user_id", userId);
+  const finalOf = new Map((entries ?? []).map((e: { gw: number; status: string }) => [e.gw, e.status]));
+  const current = gws.find((g: GwRow) => finalOf.get(g.gw) !== "final") ?? gws[gws.length - 1];
+  return current as GwRow;
+}
+
+/** How many gameweeks in the season, and how many the user has finalised. */
+async function seasonProgress(db: Db, userId: string, gw: GwRow) {
+  const { data: gws } = await db.from("fantasy_gameweeks").select("gw");
+  const total = gws?.length ?? 1;
+  const { data: done } = await db.from("fantasy_entries")
+    .select("gw").eq("user_id", userId).eq("status", "final");
+  return { gw: gw.gw, total, finalised: done?.length ?? 0 };
 }
 async function getSquad(db: Db, userId: string): Promise<SquadRow | null> {
   const { data, error } = await db.from("fantasy_squads").select("*").eq("user_id", userId).maybeSingle();
@@ -95,11 +111,12 @@ async function ensureEntry(db: Db, userId: string, gw: number): Promise<EntryRow
 
 // ── state (the one-call hub payload) ─────────────────────────────────────────
 export async function getState(db: Db, userId: string) {
-  const gw = await currentGw(db);
+  const gw = await currentGw(db, userId);
   const squad = await getSquad(db, userId);
   const entry = squad ? await getEntry(db, userId, gw.gw) : null;
   return {
     gw,
+    season: await seasonProgress(db, userId, gw),
     poolVersion: fantasyPool().version,
     openForEdits: isOpenForEdits(gw, entry),
     squad: squad && {
@@ -131,7 +148,7 @@ export async function getState(db: Db, userId: string) {
 export async function createSquad(db: Db, userId: string, body: {
   pickIds: number[]; xi?: number[]; bench?: number[]; captain?: number; vice?: number;
 }) {
-  const gw = await currentGw(db);
+  const gw = await currentGw(db, userId);
   const existing = await getSquad(db, userId);
   if (existing && !(await canRebuild(db, userId, gw)))
     throw new HttpError(409, "your season has started — change your team with transfers, not a rebuild", "started");
@@ -167,7 +184,7 @@ export async function resetSquad(db: Db, userId: string) {
 //    build/rebuild) is a client route; "preseason" clears the entry like "open"
 //    but the UI frames it as pre-kickoff. ────────────────────────────────────
 export async function demoJump(db: Db, userId: string, phase: string) {
-  const gw = await currentGw(db);
+  const gw = await currentGw(db, userId);
   if (gw.mode !== "replay") throw new HttpError(403, "demo controls are replay-only", "live");
   if (!(await getSquad(db, userId))) throw new HttpError(409, "build a squad first", "no-squad");
   if (phase === "setup") {
@@ -187,12 +204,22 @@ export async function demoJump(db: Db, userId: string, phase: string) {
   throw new HttpError(400, "unknown demo phase", "phase");
 }
 
+// ── advance to the next gameweek (finalise the current, scored week) ─────────
+export async function advanceGw(db: Db, userId: string) {
+  const gw = await currentGw(db, userId);
+  const entry = await getEntry(db, userId, gw.gw);
+  if (!entry?.scored_at) throw new HttpError(409, "finish this gameweek first", "not-scored");
+  await db.from("fantasy_entries").update({ status: "final" })
+    .eq("user_id", userId).eq("gw", gw.gw);
+  return getState(db, userId); // currentGw now points at the next week
+}
+
 // ── knowledge round ───────────────────────────────────────────────────────────
 const roundFor = (gw: number, userId: string): Round =>
   buildRound(GATES.questions, { gameweek: `fantasy:${gw}`, userId, formation: "4-3-3" });
 
 export async function startRound(db: Db, userId: string) {
-  const gw = await currentGw(db);
+  const gw = await currentGw(db, userId);
   if (!(await getSquad(db, userId))) throw new HttpError(409, "build a squad first", "no-squad");
   let entry = await ensureEntry(db, userId, gw.gw);
   if (!entry.round_version) {
@@ -214,7 +241,7 @@ export async function startRound(db: Db, userId: string) {
 }
 
 export async function stepRound(db: Db, userId: string, k: number, optionId: number | null) {
-  const gw = await currentGw(db);
+  const gw = await currentGw(db, userId);
   const entry = await getEntry(db, userId, gw.gw);
   if (!entry?.round_version) throw new HttpError(409, "round not started", "no-round");
   if (entry.round_done_at) throw new HttpError(409, "round already complete", "done");
@@ -260,7 +287,7 @@ export async function stepRound(db: Db, userId: string, k: number, optionId: num
 
 // ── transfers + selection ─────────────────────────────────────────────────────
 export async function applyTransferTx(db: Db, userId: string, outId: number, inId: number) {
-  const gw = await currentGw(db);
+  const gw = await currentGw(db, userId);
   const squad = await getSquad(db, userId);
   if (!squad) throw new HttpError(409, "no squad", "no-squad");
   const entry = await ensureEntry(db, userId, gw.gw);
@@ -295,7 +322,7 @@ export async function applyTransferTx(db: Db, userId: string, outId: number, inI
 export async function setSelection(db: Db, userId: string, sel: {
   xi: number[]; bench: number[]; captain: number; vice: number;
 }) {
-  const gw = await currentGw(db);
+  const gw = await currentGw(db, userId);
   const squad = await getSquad(db, userId);
   if (!squad) throw new HttpError(409, "no squad", "no-squad");
   const entry = await getEntry(db, userId, gw.gw);
@@ -336,7 +363,7 @@ async function ensurePlayerScores(db: Db, gw: GwRow): Promise<Map<number, { poin
 
 /** Replay-mode lock: snapshot the squad into the entry, then score immediately. */
 export async function lockAndScore(db: Db, userId: string) {
-  const gw = await currentGw(db);
+  const gw = await currentGw(db, userId);
   if (gw.mode !== "replay") throw new HttpError(403, "live gameweeks lock at the deadline", "live");
   const squad = await getSquad(db, userId);
   if (!squad) throw new HttpError(409, "no squad", "no-squad");

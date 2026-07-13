@@ -19,6 +19,7 @@ export interface ClientPoolPlayer {
 }
 export interface FantasyState {
   gw: { gw: number; season: string; mode: string; status: string; deadline: string | null };
+  season: { gw: number; total: number; finalised: number };
   poolVersion: string;
   openForEdits: boolean;
   canRebuild: boolean;

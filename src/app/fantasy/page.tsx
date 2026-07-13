@@ -114,14 +114,27 @@ export default function FantasyHub() {
     } catch (e) { setErr((e as Error).message); }
     setBusy(false);
   };
+  const advance = async () => {
+    setBusy(true); setErr(null);
+    try { await api("advance"); await refresh(); }
+    catch (e) { setErr((e as Error).message); }
+    setBusy(false);
+  };
 
+  const gwN = state.gw.gw, total = state.season.total;
+  const preseason = state.canRebuild && !roundDone && !locked; // never locked, week not started
+  const seasonPos = `Week ${gwN} of ${total}`;
   const BANNER: Record<typeof phase, { tag: string; head: string; sub: string }> = {
-    open: { tag: "GAMEWEEK OPEN", head: `Gameweek ${state.gw.gw} is open`,
-      sub: "Play your round, make transfers, set your team — then lock it in. In the live game this closes at the Saturday deadline." },
-    locked: { tag: "LOCKED", head: `Gameweek ${state.gw.gw} is locked`,
+    open: preseason
+      ? { tag: `PRE-SEASON · ${seasonPos.toUpperCase()}`, head: gwN === 1 ? "The season kicks off here" : `Gameweek ${gwN} is open`,
+          sub: "Your squad isn't committed yet — edit it freely, play your knowledge round to earn transfers, then lock in your team for the gameweek." }
+      : { tag: `GAMEWEEK OPEN · ${seasonPos.toUpperCase()}`, head: `Gameweek ${gwN} is open`,
+          sub: "Play your round, make transfers, set your team — then lock it in. In the live game this closes at the Saturday deadline." },
+    locked: { tag: `LOCKED · ${seasonPos.toUpperCase()}`, head: `Gameweek ${gwN} is locked`,
       sub: "Your team is set and the matches are playing. Nothing changes now until the points land." },
-    result: { tag: "GAMEWEEK DONE", head: `Gameweek ${state.gw.gw} result`,
-      sub: "The gameweek is scored — here's exactly how your team did. Next week, a fresh round opens." },
+    result: { tag: `GAMEWEEK DONE · ${seasonPos.toUpperCase()}`, head: `Gameweek ${gwN} result`,
+      sub: gwN < total ? "Scored — here's how your team did. Move on to the next gameweek when you're ready; your squad and credits carry over."
+        : "That's the last gameweek of the demo season — here's your final result." },
   };
   const b = BANNER[phase];
 
@@ -260,6 +273,13 @@ export default function FantasyHub() {
               );
             })}
           </div>
+          {gwN < total && (
+            <div style={{ marginTop: 14 }}>
+              <Btn gold disabled={busy} onClick={advance}>
+                {busy ? "…" : `Start Gameweek ${gwN + 1} →`}
+              </Btn>
+            </div>
+          )}
         </Card>
       )}
 
