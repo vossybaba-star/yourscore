@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  api, Btn, Card, Chip, Crest, fmtM, GOLD, Header, INK, LINE, MUTED, page, PANEL,
+  api, Btn, Card, Chip, Crest, fmtM, GOLD, Header, INK, LINE, MUTED, page, PANEL, PITCH,
   POS_ORDER, QUOTA, type ClientPoolPlayer, type FantasyState, type Pos,
 } from "@/components/fantasy/shared";
 
@@ -133,14 +133,21 @@ export default function BuildPage() {
         })}
       </div>
 
-      {notice && <p style={{ color: "#C9884A", fontSize: 13, margin: "0 0 10px", fontWeight: 600 }}>{notice}</p>}
-      {err && <p style={{ color: "#E08A6B", fontSize: 13, margin: "0 0 10px" }}>{err}</p>}
-      <Btn gold disabled={!complete || busy} onClick={submit}>
-        {complete ? (busy ? "Saving…" : editing ? "Save my squad" : "Confirm my squad") : `Pick ${15 - picks.length} more`}
-      </Btn>
-      <p style={{ fontSize: 12, color: MUTED, marginTop: 8, lineHeight: 1.45 }}>
-        We&apos;ll pick your starting XI, captain and bench order for you — change any of it on the next screen.
-      </p>
+      {/* Sticky footer — Confirm is always reachable, no scroll to the bottom of a 60-row list. */}
+      <div style={{
+        position: "sticky", bottom: 0, marginTop: 4,
+        background: `linear-gradient(to top, ${PITCH} 72%, transparent)`,
+        paddingTop: 16, paddingBottom: 8,
+      }}>
+        {notice && <p style={{ color: "#C9884A", fontSize: 13, margin: "0 0 8px", fontWeight: 600 }}>{notice}</p>}
+        {err && <p style={{ color: "#E08A6B", fontSize: 13, margin: "0 0 8px" }}>{err}</p>}
+        <Btn gold disabled={!complete || busy} onClick={submit}>
+          {complete ? (busy ? "Saving…" : editing ? "Save my squad" : "Confirm my squad") : `Pick ${15 - picks.length} more`}
+        </Btn>
+        <p style={{ fontSize: 11.5, color: MUTED, margin: "7px 0 0", lineHeight: 1.4, textAlign: "center" }}>
+          We&apos;ll pick your starting XI, captain and bench order — change any of it next.
+        </p>
+      </div>
     </main>
   );
 }

@@ -127,7 +127,7 @@ export default function FantasyHub() {
   const BANNER: Record<typeof phase, { tag: string; head: string; sub: string }> = {
     open: preseason
       ? { tag: `PRE-SEASON · ${seasonPos.toUpperCase()}`, head: gwN === 1 ? "The season kicks off here" : `Gameweek ${gwN} is open`,
-          sub: "Your squad isn't committed yet — edit it freely, play your knowledge round to earn transfers, then lock in your team for the gameweek." }
+          sub: "Your squad isn't committed yet — build and edit it freely, then lock it in for the gameweek. From next gameweek on, your knowledge round earns the transfers to improve it." }
       : { tag: `GAMEWEEK OPEN · ${seasonPos.toUpperCase()}`, head: `Gameweek ${gwN} is open`,
           sub: "Play your round, make transfers, set your team — then lock it in. In the live game this closes at the Saturday deadline." },
     locked: { tag: `LOCKED · ${seasonPos.toUpperCase()}`, head: `Gameweek ${gwN} is locked`,
@@ -219,7 +219,7 @@ export default function FantasyHub() {
         </div>
       )}
 
-      {phase === "open" && !roundDone && (
+      {phase === "open" && !roundDone && !preseason && (
         <Card style={{ marginBottom: 12, border: `1px solid ${GOLD}` }}>
           <div style={{ fontSize: 14.5, fontWeight: 700, marginBottom: 4 }}>
             This week&apos;s knowledge round is open
@@ -303,9 +303,11 @@ export default function FantasyHub() {
       {err && <p style={{ color: "#E08A6B", fontSize: 13, margin: "0 0 10px" }}>{err}</p>}
 
       {!locked && <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        <Btn onClick={() => router.push("/fantasy/transfers")}>
-          Transfers ({squad.credits} free · extras −4 pts)
-        </Btn>
+        {!preseason && (
+          <Btn onClick={() => router.push("/fantasy/transfers")}>
+            Transfers ({squad.credits} free · extras −4 pts)
+          </Btn>
+        )}
         <Btn gold disabled={busy} onClick={lock}>
           {busy ? "Locking…" : `Lock team & play gameweek ${state.gw.gw}`}
         </Btn>
