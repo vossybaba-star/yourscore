@@ -33,10 +33,20 @@ const boot = LIVE
   : JSON.parse(readFileSync(join(root, "scripts/data/fpl-bootstrap-cache.json"), "utf8"));
 console.log(`mode ${LIVE ? "live" : "replay"} · SM season ${SM_SEASON} · ${boot.elements.length} FPL players`);
 
+// Display name = "First Surname" (founder: full name, not FPL's abbreviation).
+// Falls back to FPL's curated web_name only when the full name is unwieldy —
+// mostly Portuguese/Spanish multi-surname cases ("Bruno Guimarães Rodriguez
+// Moura" → "Bruno G.") where picking a single surname would be wrong.
+function displayName(e) {
+  const full = `${e.first_name} ${e.second_name}`.trim().replace(/\s+/g, " ");
+  return full.length > 0 && full.length <= 21 ? full : e.web_name;
+}
+
 // FPL Player shape the gates matcher expects (subset used by buildEnrichment)
 const players = boot.elements.map((e) => ({
   id: e.id,
-  name: e.web_name,
+  name: e.web_name, // web_name kept as the MATCH key (buildEnrichment uses lastToken)
+  display: displayName(e),
   fullName: `${e.first_name} ${e.second_name}`.trim(),
   position: POS[e.element_type],
   club: boot.teams.find((t) => t.id === e.team)?.short_name ?? "",
@@ -136,7 +146,7 @@ const pool = players
   .map((p) => ({
     id: p.id,
     smId: enrichment.get(p.id)?.smId ?? null,
-    name: p.name,
+    name: p.display, // "First Surname" (falls back to FPL web_name when unwieldy)
     club: fullClubName.get(p.clubId) ?? p.club,
     clubId: p.clubId,
     pos: p.position,

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   api, Btn, Card, Chip, Crest, fmtM, GOLD, Header, INK, LINE, MUTED, page, PANEL,
-  POS_ORDER, QUOTA, type ClientPoolPlayer, type Pos,
+  POS_ORDER, QUOTA, type ClientPoolPlayer, type FantasyState, type Pos,
 } from "@/components/fantasy/shared";
 
 const BUDGET = 1000;
@@ -17,11 +17,19 @@ export default function BuildPage() {
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false); // rebuilding an existing squad
 
   useEffect(() => {
     api<{ players: ClientPoolPlayer[] }>("pool").then((p) =>
       setPool(p.players.sort((a, b) => b.price - a.price)));
-  }, []);
+    // Pre-load an existing squad so a pre-season rebuild EDITS it (never a blank slate).
+    api<FantasyState>("state").then((s) => {
+      if (!s.squad) return;
+      if (!s.canRebuild) { router.replace("/fantasy"); return; } // season started → transfers only
+      setEditing(true);
+      setPicked(s.squad.picks.map((p) => p.id));
+    }).catch(() => {});
+  }, [router]);
 
   const byId = useMemo(() => new Map(pool.map((p) => [p.id, p])), [pool]);
   const picks = picked.map((id) => byId.get(id)!).filter(Boolean);
@@ -61,11 +69,13 @@ export default function BuildPage() {
   return (
     <main style={page}>
       <Header right={<Chip gold>{fmtM(bank)} left</Chip>} />
-      <h1 style={{ fontSize: 24, margin: "0 0 4px", fontWeight: 700 }}>Build your squad</h1>
+      <h1 style={{ fontSize: 24, margin: "0 0 4px", fontWeight: 700 }}>
+        {editing ? "Rebuild your squad" : "Build your squad"}
+      </h1>
       <p style={{ fontSize: 13.5, color: MUTED, margin: "0 0 14px", lineHeight: 1.5 }}>
-        Fifteen players — two keepers, five defenders, five midfielders, three forwards.
-        Max three from any club. Same £100.0m as everyone. This is your team all season:
-        from next week, your knowledge round earns the transfers that improve it.
+        {editing
+          ? "Change as many players as you like — you can rebuild freely until the season starts. Once your first gameweek locks, you'll change your team with transfers instead."
+          : "Fifteen players — two keepers, five defenders, five midfielders, three forwards. Max three from any club. Same £100.0m as everyone. This is your team all season: your knowledge round earns the transfers that improve it."}
       </p>
 
       <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
@@ -126,7 +136,7 @@ export default function BuildPage() {
       {notice && <p style={{ color: "#C9884A", fontSize: 13, margin: "0 0 10px", fontWeight: 600 }}>{notice}</p>}
       {err && <p style={{ color: "#E08A6B", fontSize: 13, margin: "0 0 10px" }}>{err}</p>}
       <Btn gold disabled={!complete || busy} onClick={submit}>
-        {complete ? (busy ? "Signing…" : "Confirm my squad") : `Pick ${15 - picks.length} more`}
+        {complete ? (busy ? "Saving…" : editing ? "Save my squad" : "Confirm my squad") : `Pick ${15 - picks.length} more`}
       </Btn>
       <p style={{ fontSize: 12, color: MUTED, marginTop: 8, lineHeight: 1.45 }}>
         We&apos;ll pick your starting XI, captain and bench order for you — change any of it on the next screen.

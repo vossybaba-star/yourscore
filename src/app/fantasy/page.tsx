@@ -77,12 +77,6 @@ export default function FantasyHub() {
     setBusy(false);
   };
 
-  const rebuild = async () => {
-    if (!confirm("Start over? This clears your squad and this gameweek so you can rebuild from scratch.")) return;
-    setBusy(true); setErr(null);
-    try { await api("reset"); router.push("/fantasy/build"); }
-    catch (e) { setErr((e as Error).message); setBusy(false); }
-  };
 
   if (needsAuth) return (
     <main style={page}>
@@ -247,13 +241,13 @@ export default function FantasyHub() {
       </div>}
       {locked && !result && <p style={{ color: MUTED, fontSize: 13 }}>Locked — scoring…</p>}
 
-      {(state.gw.mode === "replay" || !locked) && (
+      {state.canRebuild && (
         <div style={{ marginTop: 18, paddingTop: 12, borderTop: `1px solid ${LINE}` }}>
-          <button onClick={rebuild} disabled={busy} style={{
+          <button onClick={() => router.push("/fantasy/build")} style={{
             fontSize: 12.5, color: MUTED, background: "none", border: "none",
             cursor: "pointer", textDecoration: "underline", padding: 0,
           }}>
-            {busy ? "Resetting…" : "Start over — rebuild my squad from scratch"}
+            Edit my squad — swap any players before the season starts
           </button>
         </div>
       )}

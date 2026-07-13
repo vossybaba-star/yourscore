@@ -71,6 +71,18 @@ async function getEntry(db: Db, userId: string, gw: number): Promise<EntryRow | 
   if (error) throw new HttpError(500, error.message);
   return (data as EntryRow) ?? null;
 }
+/** Has the user ever locked a gameweek? (i.e. their season has started.) */
+async function hasLockedEntry(db: Db, userId: string): Promise<boolean> {
+  const { data } = await db.from("fantasy_entries")
+    .select("gw").eq("user_id", userId).not("locked_at", "is", null).limit(1);
+  return !!data?.length;
+}
+/** Free squad rebuild is allowed pre-season (never locked), or always in the
+ *  replay sandbox. Once the live season starts, only transfers change the team. */
+async function canRebuild(db: Db, userId: string, gw: GwRow): Promise<boolean> {
+  return gw.mode === "replay" || !(await hasLockedEntry(db, userId));
+}
+
 async function ensureEntry(db: Db, userId: string, gw: number): Promise<EntryRow> {
   const existing = await getEntry(db, userId, gw);
   if (existing) return existing;
@@ -107,41 +119,46 @@ export async function getState(db: Db, userId: string) {
         autosubs: entry.autosubs, captainUsed: entry.captain_used,
       } : null,
     },
+    canRebuild: squad ? await canRebuild(db, userId, gw) : true,
   };
 }
 
-// ── squad reset (Phase 1 / replay testing: wipe squad + entries, start over) ──
-export async function resetSquad(db: Db, userId: string) {
-  const gw = await currentGw(db);
-  if (gw.mode !== "replay") {
-    // In the live game you never rebuild a persisted squad — you transfer/wildcard.
-    // Only allow a full reset before you've ever locked a gameweek.
-    const { data } = await db.from("fantasy_entries")
-      .select("gw").eq("user_id", userId).not("locked_at", "is", null).limit(1);
-    if (data?.length) throw new HttpError(409, "your season has started — use transfers, not a rebuild", "started");
-  }
-  await db.from("fantasy_entries").delete().eq("user_id", userId);
-  await db.from("fantasy_squads").delete().eq("user_id", userId);
-  return { ok: true };
-}
-
-// ── squad creation ────────────────────────────────────────────────────────────
+// ── squad build / pre-season rebuild ─────────────────────────────────────────
+// First build inserts. A player who hasn't started their season (or is in the
+// replay sandbox) can freely REBUILD — the whole squad is replaced, no wipe to
+// an empty slate. Once the live season starts, only transfers change the team.
 export async function createSquad(db: Db, userId: string, body: {
   pickIds: number[]; xi?: number[]; bench?: number[]; captain?: number; vice?: number;
 }) {
   const gw = await currentGw(db);
-  if (await getSquad(db, userId)) throw new HttpError(409, "squad already exists", "exists");
+  const existing = await getSquad(db, userId);
+  if (existing && !(await canRebuild(db, userId, gw)))
+    throw new HttpError(409, "your season has started — change your team with transfers, not a rebuild", "started");
+
   let squad: Squad;
   try { squad = validateSquad(body.pickIds, enginePool()); } catch (e) { asHttp(e); throw e; }
   const sel = body.xi && body.bench && body.captain && body.vice
     ? (() => { try { return validateSelection(squad, body.xi!, body.bench!, body.captain!, body.vice!); } catch (e) { asHttp(e); throw e; } })()
     : smartDefaults(squad, enginePool());
-  const { error } = await db.from("fantasy_squads").insert({
+
+  const row = {
     user_id: userId, picks: squad.picks, bank_tenths: squad.bankTenths,
-    xi: sel.xi, bench: sel.bench, captain: sel.captain, vice: sel.vice, created_gw: gw.gw,
-  });
+    credits: 0, xi: sel.xi, bench: sel.bench, captain: sel.captain, vice: sel.vice,
+    created_gw: gw.gw, updated_at: new Date().toISOString(),
+  };
+  // Upsert so a rebuild replaces the row in place (credits reset — you're pre-season).
+  const { error } = await db.from("fantasy_squads").upsert(row, { onConflict: "user_id" });
   if (error) throw new HttpError(500, error.message);
+  // Rebuilding clears the current gameweek's entry so a fresh round/lock starts clean.
+  if (existing) await db.from("fantasy_entries").delete().eq("user_id", userId).eq("gw", gw.gw);
   return getState(db, userId);
+}
+
+// ── full reset (dev/testing only: wipe squad + all entries) ──────────────────
+export async function resetSquad(db: Db, userId: string) {
+  await db.from("fantasy_entries").delete().eq("user_id", userId);
+  await db.from("fantasy_squads").delete().eq("user_id", userId);
+  return { ok: true };
 }
 
 // ── knowledge round ───────────────────────────────────────────────────────────

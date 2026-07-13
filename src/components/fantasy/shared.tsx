@@ -21,6 +21,7 @@ export interface FantasyState {
   gw: { gw: number; season: string; mode: string; status: string; deadline: string | null };
   poolVersion: string;
   openForEdits: boolean;
+  canRebuild: boolean;
   squad: {
     picks: { id: number; pos: Pos; clubId: number; buyTenths: number }[];
     bankTenths: number; credits: number; xi: number[]; bench: number[];
