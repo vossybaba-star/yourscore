@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/Button";
 import { Pitch } from "@/components/draft/Pitch";
 import { BackPill } from "@/components/ui/BackPill";
 import { useLiveMatch } from "@/lib/draft/useLiveMatch";
+import { DAILY_GIVEAWAY_ENABLED } from "@/lib/promo";
 import { spin, spinWorld, allBuckets, ensurePool, isPoolReady } from "@/lib/draft/pool";
 import { playerIdentity, seededRng } from "@/lib/draft/score";
 import { slotsFor } from "@/lib/draft/formations";
@@ -549,6 +550,7 @@ function ResultPanel({ view, sim, m }: { view: View; sim: MatchSim | null; m: Dr
         )}
 
         {/* Giveaway CTA */}
+        {DAILY_GIVEAWAY_ENABLED && (
         <button
           onClick={() => setGiveawayOpen(true)}
           className="w-full mt-5 rounded-2xl overflow-hidden active:scale-[0.98] transition-transform"
@@ -562,6 +564,7 @@ function ResultPanel({ view, sim, m }: { view: View; sim: MatchSim | null; m: Dr
             </div>
           </div>
         </button>
+        )}
 
         <Button variant="primary" tone="lime" size="md" fullWidth className="mt-2" onClick={openShare}>
           📸 SHARE YOUR RESULT
@@ -601,7 +604,7 @@ function ResultPanel({ view, sim, m }: { view: View; sim: MatchSim | null; m: Dr
       )}
 
       {/* ── Giveaway overlay ── */}
-      {giveawayOpen && (
+      {DAILY_GIVEAWAY_ENABLED && giveawayOpen && (
         <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: "rgba(0,0,0,0.9)" }} onClick={() => setGiveawayOpen(false)}>
           <div className="w-full max-w-lg px-4" style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 20px)" }} onClick={(e) => e.stopPropagation()}>
             <div className="rounded-3xl overflow-hidden" style={{ background: "#080d0a", border: "2px solid rgba(255,184,0,0.4)" }}>

@@ -10,6 +10,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { loadTeam, isComplete, seasonSeed, makeSeasonSalt, saveLastSeason, loadLastSeason, type LocalTeam } from "@/lib/draft/local";
+import { DAILY_GIVEAWAY_ENABLED } from "@/lib/promo";
 import { leagueOpponents, ensurePool, isPoolReady } from "@/lib/draft/pool";
 import { simulateSeason, seasonNarrative, type SeasonResult } from "@/lib/draft/season";
 import { SeasonScorecard, type SeasonAward, type SeasonData } from "@/components/draft/SeasonScorecard";
@@ -279,7 +280,8 @@ export default function SeasonSim() {
           {narr.body && <p className="text-center font-body mt-3" style={{ fontSize: 13, color: "#9aa39d", lineHeight: 1.55 }}>{narr.body}</p>}
         </div>
 
-        {/* Giveaway CTA — always visible, taps to open the giveaway sheet */}
+        {/* Giveaway CTA — taps to open the giveaway sheet (env-gated, see lib/promo) */}
+        {DAILY_GIVEAWAY_ENABLED && (
         <button
           onClick={() => setGiveawayOpen(true)}
           className="w-full mt-5 rounded-2xl overflow-hidden active:scale-[0.98] transition-transform"
@@ -293,6 +295,7 @@ export default function SeasonSim() {
             </div>
           </div>
         </button>
+        )}
 
         <Button variant="primary" tone="lime" size="md" fullWidth className="mt-2" onClick={openShare}>
           📸 SHARE YOUR RESULT
@@ -454,7 +457,7 @@ export default function SeasonSim() {
       )}
 
       {/* ── Giveaway overlay ── */}
-      {giveawayOpen && (
+      {DAILY_GIVEAWAY_ENABLED && giveawayOpen && (
         <div
           className="fixed inset-0 z-50 flex items-end justify-center"
           style={{ background: "rgba(0,0,0,0.9)" }}
