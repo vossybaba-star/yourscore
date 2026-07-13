@@ -97,7 +97,7 @@ export default function DraftHome() {
         <div className="flex gap-1 p-1 rounded-2xl mb-4 overflow-x-auto"
           style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", scrollbarWidth: "none" }}>
           {([
-            { key: "wc" as DraftTab, label: "🏆 World Cup", on: "#ffb800", onText: "#0a0a0f" },
+            { key: "wc" as DraftTab, label: "🏆 WC Mastermind", on: "#ffb800", onText: "#0a0a0f" },
             { key: "pl" as DraftTab, label: "⚽ Premier League", on: "#aeea00", onText: "#062013" },
             { key: "laliga" as DraftTab, label: "🇪🇸 La Liga", on: "#ff5b2e", onText: "#1c0702" },
             { key: "board" as DraftTab, label: "Leaderboard ✓", on: "#aeea00", onText: "#06181c" },

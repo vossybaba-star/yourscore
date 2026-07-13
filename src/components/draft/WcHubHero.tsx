@@ -76,7 +76,7 @@ export function WcHubHero() {
   return (
     <DraftHubHero
       eyebrow="DAILY · RANKED"
-      titleLines={["WORLD", "CUP"]}
+      titleLines={["WORLD CUP", "MASTERMIND"]}
       sub={<>Build a World XI and <span style={{ color: "#fff", fontWeight: 600 }}>win it all</span>.</>}
       accent="#ffb800"
       accentText="#ffcf4d"
