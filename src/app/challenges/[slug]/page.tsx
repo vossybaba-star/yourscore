@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { smartBackTarget } from "@/lib/nav";
 import { haptic } from "@/lib/haptics";
@@ -321,12 +321,23 @@ function PackLeaderboard({ entries, userId, accent, loading, maxVisible = 10, ap
   approxRank?: boolean;
 }) {
   const [showAll, setShowAll] = useState(false);
-  const userRank = userId ? entries.findIndex(e => e.user_id === userId) + 1 : 0;
+  const [mode, setMode] = useState<"speed" | "accuracy">("speed");
   const MEDALS = ["🥇", "🥈", "🥉"];
   const RANK_COLORS = ["#00d8c0", "#9aa39d", "#cd7f32"];
 
-  const visible = showAll ? entries : entries.slice(0, maxVisible);
-  const hasMore = !showAll && entries.length > maxVisible;
+  // Speed ranks by points (the default board); Accuracy ranks by most correct,
+  // points breaking ties. Both derived from the same rows so switching is instant.
+  const ranked = useMemo(() => {
+    const copy = [...entries];
+    copy.sort(mode === "accuracy"
+      ? (a, b) => (b.correct_count - a.correct_count) || (b.score - a.score)
+      : (a, b) => (b.score - a.score) || (b.correct_count - a.correct_count));
+    return copy;
+  }, [entries, mode]);
+  const userRank = userId ? ranked.findIndex(e => e.user_id === userId) + 1 : 0;
+
+  const visible = showAll ? ranked : ranked.slice(0, maxVisible);
+  const hasMore = !showAll && ranked.length > maxVisible;
   const userOutsideVisible = userId && userRank > 0 && userRank > visible.length;
 
   function EntryRow({ entry, rank }: { entry: LeaderEntry; rank: number }) {
@@ -350,12 +361,12 @@ function PackLeaderboard({ entries, userId, accent, loading, maxVisible = 10, ap
               : (entry.display_name ?? "Player")}
           </p>
           <p className="font-body text-xs mt-0.5" style={{ color: "#586058" }}>
-            {entry.correct_count} correct
+            {mode === "accuracy" ? `${entry.score.toLocaleString()} pts` : `${entry.correct_count} correct`}
           </p>
         </div>
         <span className="font-display text-sm flex-shrink-0"
           style={{ color: isUser ? accent : "#8a948f" }}>
-          {entry.score.toLocaleString()}
+          {mode === "accuracy" ? entry.correct_count : entry.score.toLocaleString()}
         </span>
       </div>
     );
@@ -372,6 +383,23 @@ function PackLeaderboard({ entries, userId, accent, loading, maxVisible = 10, ap
           </span>
         )}
       </div>
+      {/* Rank by Speed (points) or Accuracy (most correct). */}
+      {entries.length > 0 && (
+        <div className="px-5 pb-3 flex gap-1.5">
+          {(["speed", "accuracy"] as const).map((m) => {
+            const on = mode === m;
+            return (
+              <button key={m} onClick={() => { setMode(m); setShowAll(false); }}
+                className="flex-1 py-1.5 rounded-lg font-body text-xs font-semibold transition-all"
+                style={on
+                  ? { background: accent, color: "#0a0a0f" }
+                  : { background: "rgba(255,255,255,0.04)", color: "#8a948f", border: "1px solid rgba(255,255,255,0.08)" }}>
+                {m === "speed" ? "Speed" : "Accuracy"}
+              </button>
+            );
+          })}
+        </div>
+      )}
       {loading ? (
         <div className="px-5 pb-5 text-center">
           <p className="font-body text-xs" style={{ color: "#586058" }}>Loading…</p>
@@ -386,12 +414,12 @@ function PackLeaderboard({ entries, userId, accent, loading, maxVisible = 10, ap
           {visible.map((entry, idx) => (
             <EntryRow key={entry.user_id + idx} entry={entry} rank={idx + 1} />
           ))}
-          {userOutsideVisible && entries[userRank - 1] && (
+          {userOutsideVisible && ranked[userRank - 1] && (
             <>
               <div className="px-5 py-1 text-center">
                 <span className="font-body text-xs" style={{ color: "#586058" }}>···</span>
               </div>
-              <EntryRow entry={entries[userRank - 1]} rank={userRank} />
+              <EntryRow entry={ranked[userRank - 1]} rank={userRank} />
             </>
           )}
           {hasMore && (
@@ -400,10 +428,10 @@ function PackLeaderboard({ entries, userId, accent, loading, maxVisible = 10, ap
               className="w-full py-3 font-body text-xs text-center transition-colors"
               style={{ color: accent, borderTop: "1px solid rgba(255,255,255,0.05)" }}
             >
-              View full leaderboard ({entries.length} scores) ↓
+              View full leaderboard ({ranked.length} scores) ↓
             </button>
           )}
-          {showAll && entries.length > maxVisible && (
+          {showAll && ranked.length > maxVisible && (
             <button
               onClick={() => setShowAll(false)}
               className="w-full py-3 font-body text-xs text-center"
@@ -483,7 +511,7 @@ export default function ChallengePage() {
       .select("user_id, score, correct_count, profiles(display_name)")
       .eq("pack_id", pack.id)
       .order("score", { ascending: false })
-      .limit(25)
+      .limit(100)
       .then(({ data }) => {
         if (data) {
           const rows = data as unknown as LeaderRow[];
@@ -589,7 +617,7 @@ export default function ChallengePage() {
           .select("user_id, score, correct_count, profiles(display_name)")
           .eq("pack_id", match.id)
           .order("score", { ascending: false })
-          .limit(25),
+          .limit(100),
       ]);
       if (attemptRes.data) setPriorAttempt(attemptRes.data);
       const lbRows = lbRes.data;
