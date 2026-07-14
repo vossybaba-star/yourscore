@@ -395,10 +395,17 @@ New, locked from the review:
 
 - **Football data + crests → SportMonks** (data is commercially licensed; €29–249/mo, self-serve;
   fixtures, stats, players, crests across the app). Crests used for identification.
-- **FPL feed → the app's price + live-scoring source** (SportMonks doesn't carry FPL's price
-  economy). Pull `bootstrap-static` (prices, positions, availability, gameweek calendar),
-  `fixtures` (doubles/blanks), and `event/{gw}/live` (raw per-player stats → our own YourScore
-  points). **Cadence:** snapshot prices/fixtures/availability at gameweek open (+ a near-deadline
+- **FPL feed → the app's PRICE source** (SportMonks doesn't carry FPL's price economy). Pull
+  `bootstrap-static` (prices, positions, availability).
+  > **SUPERSEDED 14 Jul — scoring source is SportMonks, not FPL.** This section originally made
+  > `event/{gw}/live` the live-scoring source too. What shipped instead: per-player stats come
+  > from **SportMonks Match Facts**, baked `smId` → `fantasy_player_scores` → `values.ts`. It was
+  > proven end-to-end first (Spearman **0.993 / 0.987** vs FPL actual, top-20 overlap 15/20 — the
+  > familiarity ceiling), and it keeps ONE feed for both scoring and the fixture calendar. FPL
+  > remains the price source only. The code is right; this paragraph was stale.
+
+  `fixtures` (doubles/blanks), and per-player stats → our own YourScore
+  points. **Cadence:** snapshot prices/fixtures/availability at gameweek open (+ a near-deadline
   refresh for late injuries); poll live stats over the weekend showing **live provisional scores
   that lock to final once the gameweek is `data_checked`** (bonus confirmed). **"In full every
   week" guardrails:** validate each pull (player/team counts, no nulls), **never overwrite the

@@ -40,7 +40,8 @@
 > built (branch `your-pl-xi/gate-generator`, not yet merged).** The 4th game, formerly
 > "Your PL XI". Locked model: build a **15-man squad ONCE** (2GK/5DEF/5MID/3FWD, £100m,
 > max 3/club, 4-man bench + auto-subs) → each gameweek a **knowledge round earns TRANSFER
-> CREDITS** (curve B: 5+→1, 7+→2, 9+→3, 11→4; bank cap 5) → extra moves cost −4 pts →
+> CREDITS** (3+→1, 5+→2, 7+→3, 9+→4; bank cap 5 — the kinder curve locked 11 Jul, because
+> 4/11 earning nothing felt punishing; `engine.ts` implements it) → extra moves cost −4 pts →
 > captain ×2 (carry-over → vice → best-form default chain) → **real-gameweek YourScore
 > points** from SportMonks match facts (deterministic, **no BPS-style bonus, ever**;
 > validated at the familiarity ceiling, Spearman 0.99 vs FPL actual). Wildcard: 1 issued

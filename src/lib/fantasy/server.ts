@@ -16,7 +16,7 @@ import {
   type LockedSelection, type Squad, type SquadPick,
 } from "./engine";
 import { aggregateFixtures, fetchGwFixtures, toPlayerScores } from "./ingest";
-import { ZERO_FACTS, type MatchFacts } from "./values";
+import { SCORING_VERSION, ZERO_FACTS, type MatchFacts } from "./values";
 import { enginePool, fantasyPool } from "./pool";
 import { isOpenForEdits, type GwRow } from "./gameweeks";
 
@@ -174,7 +174,12 @@ export async function createSquad(db: Db, userId: string, body: {
 }
 
 // ── full reset (dev/testing only: wipe squad + all entries) ──────────────────
+/** Destroys a season: the squad and every entry, scores and history included.
+ *  Replay/demo only — in a live season a stray POST here would wipe a real
+ *  manager's year with nothing to restore it from. */
 export async function resetSquad(db: Db, userId: string) {
+  const gw = await currentGw(db, userId);
+  if (gw.mode !== "replay") throw new HttpError(403, "reset is disabled during a live season", "live");
   await db.from("fantasy_entries").delete().eq("user_id", userId);
   await db.from("fantasy_squads").delete().eq("user_id", userId);
   return { ok: true };
@@ -366,6 +371,24 @@ export async function setSelection(db: Db, userId: string, sel: {
 }
 
 // ── scoring ──────────────────────────────────────────────────────────────────
+/** Form for the armband fallback: points over the last 3 scored gameweeks.
+ *  Before anything has scored (gameweek 1) there IS no form, so price stands in
+ *  — the same proxy smartDefaults uses pre-season. Every later gameweek uses the
+ *  real thing: the design says the third-choice armband goes to the in-form
+ *  player, not the dearest one. */
+async function formFor(db: Db, gw: number): Promise<Map<number, number>> {
+  const prior = [gw - 3, gw - 2, gw - 1].filter((g) => g >= 1);
+  const byPlayer = new Map<number, number>();
+  if (prior.length) {
+    const { data, error } = await db.from("fantasy_player_scores")
+      .select("player_id, points").in("gw", prior);
+    if (error) throw new HttpError(500, error.message);
+    for (const r of (data ?? []) as { player_id: number; points: number }[])
+      byPlayer.set(r.player_id, (byPlayer.get(r.player_id) ?? 0) + r.points);
+  }
+  return byPlayer.size ? byPlayer : new Map(enginePool().map((p) => [p.id, p.priceTenths]));
+}
+
 async function ensurePlayerScores(db: Db, gw: GwRow): Promise<Map<number, { points: number; facts: MatchFacts }>> {
   const { data, error } = await db.from("fantasy_player_scores")
     .select("player_id, points, facts").eq("gw", gw.gw);
@@ -382,7 +405,13 @@ async function ensurePlayerScores(db: Db, gw: GwRow): Promise<Map<number, { poin
   const { scores } = toPlayerScores(facts, pool);
   if (!scores.length) throw new HttpError(502, "ingest produced no scores");
   const { error: upErr } = await db.from("fantasy_player_scores").upsert(
-    scores.map((s) => ({ gw: gw.gw, player_id: s.playerId, minutes: s.facts.minutes, facts: s.facts, points: s.points })),
+    // updated_at is set explicitly: on a re-ingest (stat correction) the column
+    // default only fires on INSERT, so without this it would still read as the
+    // moment we first saw the gameweek — useless as a freshness signal.
+    scores.map((s) => ({
+      gw: gw.gw, player_id: s.playerId, minutes: s.facts.minutes,
+      facts: s.facts, points: s.points, updated_at: new Date().toISOString(),
+    })),
     { onConflict: "gw,player_id" },
   );
   if (upErr) throw new HttpError(500, upErr.message);
@@ -415,11 +444,12 @@ export async function lockAndScore(db: Db, userId: string) {
       return [p.id, { points: s?.points ?? 0, facts: s?.facts ?? ZERO_FACTS }] as const;
     }),
   );
-  const form = new Map(enginePool().map((p) => [p.id, p.priceTenths]));
+  const form = await formFor(db, gw.gw);
   const result = scoreEntry(sel, entry.hits, engineScores, form);
   await db.from("fantasy_entries").update({
     status: "scored", points: result.total, points_breakdown: result.breakdown,
     autosubs: result.subs, captain_used: result.captainUsed,
+    scoring_version: SCORING_VERSION,
     scored_at: new Date().toISOString(),
   }).eq("user_id", userId).eq("gw", gw.gw);
   return { points: result.total, breakdown: result.breakdown, subs: result.subs, captainUsed: result.captainUsed, hitsDeducted: result.hitsDeducted };
