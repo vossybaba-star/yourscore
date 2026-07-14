@@ -96,6 +96,7 @@ async function hasLockedEntry(db: Db, userId: string): Promise<boolean> {
 /** Free squad rebuild is allowed ONLY pre-season — before you've ever locked a
  *  gameweek. Once the season has started, the team changes via transfers only.
  *  (The demo stepper's "Squad setup" resets to pre-season for testing.) */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- _gw kept for call-site symmetry
 async function canRebuild(db: Db, userId: string, _gw: GwRow): Promise<boolean> {
   return !(await hasLockedEntry(db, userId));
 }
@@ -177,6 +178,33 @@ export async function resetSquad(db: Db, userId: string) {
   await db.from("fantasy_entries").delete().eq("user_id", userId);
   await db.from("fantasy_squads").delete().eq("user_id", userId);
   return { ok: true };
+}
+
+/** Recent YourScore points per player, for the gameweeks already scored.
+ *
+ *  A transfer is the sharp end of this game — you spend a hard-earned credit, or
+ *  4 points — and until now you made it blind, choosing off price alone. This is
+ *  the evidence: what each player has ACTUALLY scored in our scoring, not FPL's.
+ *  Ordered oldest → newest so the array reads left-to-right like a form guide. */
+export async function recentForm(db: Db, userId: string) {
+  const gw = await currentGw(db, userId);
+  const gws = [gw.gw - 3, gw.gw - 2, gw.gw - 1].filter((g) => g >= 1);
+  if (!gws.length) return { gws: [], points: {} as Record<number, number[]> };
+
+  const { data, error } = await db.from("fantasy_player_scores")
+    .select("gw, player_id, points").in("gw", gws);
+  if (error) throw new HttpError(500, error.message);
+
+  const byPlayer = new Map<number, Map<number, number>>();
+  for (const r of (data ?? []) as { gw: number; player_id: number; points: number }[]) {
+    if (!byPlayer.has(r.player_id)) byPlayer.set(r.player_id, new Map());
+    byPlayer.get(r.player_id)!.set(r.gw, r.points);
+  }
+  // A player absent from a scored gameweek didn't feature — that's a 0, and it's
+  // information, so don't leave a hole in the form line.
+  const points: Record<number, number[]> = {};
+  byPlayer.forEach((m, pid) => { points[pid] = gws.map((g) => m.get(g) ?? 0); });
+  return { gws, points };
 }
 
 // ── demo jump (replay sandbox only) — set the prototype to a named phase so the

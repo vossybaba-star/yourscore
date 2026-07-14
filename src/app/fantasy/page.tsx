@@ -1,9 +1,9 @@
 "use client";
 /** Squad home — XI + bench, captain/vice, credits, lock, result. */
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import {
-  api, Btn, Card, Chip, Crest, factLine, fmtM, GOLD, Header, INK, LINE, MUTED, page, PANEL,
+  api, Btn, Card, Chip, Crest, extrasLine, fmtM, GOLD, Header, INK, LINE, MUTED, page, PANEL,
   type ClientPoolPlayer, type FantasyState, type Pos,
 } from "@/components/fantasy/shared";
 
@@ -261,26 +261,83 @@ export default function FantasyHub() {
               ? ` Includes −${entry!.hits * 4} for ${entry!.hits} extra transfer${entry!.hits === 1 ? "" : "s"}.`
               : ""}
           </p>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {result.breakdown.map((b) => {
-              const p = pool.get(b.id);
-              return (
-                <div key={b.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
-                  <span style={{ display: "flex", alignItems: "flex-start", gap: 8, minWidth: 0 }}>
-                    {p && <Crest club={p.club} size={18} />}
-                    <span style={{ minWidth: 0 }}>
-                      <span style={{ fontSize: 13.5, fontWeight: 600 }}>
-                        {nameOf(b.id)}{b.captain ? " ©" : ""}{b.subbedIn ? " ↑" : ""}
-                      </span>
-                      <span style={{ display: "block", fontSize: 11.5, color: MUTED, lineHeight: 1.35 }}>
-                        {[factLine((p?.pos ?? "MID"), b.facts), b.captain ? "captain ×2" : "", b.subbedIn ? "auto-subbed on" : ""].filter(Boolean).join(" · ")}
-                      </span>
-                    </span>
-                  </span>
-                  <b style={{ fontSize: 14, color: b.points >= 12 ? GOLD : INK, whiteSpace: "nowrap" }}>{b.points} pts</b>
-                </div>
-              );
-            })}
+          {/* Point drivers as columns — so you can scan WHY a player scored, not
+              just what he scored. Extras (saves, cards, conceded) sit under the
+              name; they'd need six more columns nobody could read on a phone. */}
+          <div style={{ overflowX: "auto", margin: "0 -4px" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+              <thead>
+                <tr style={{ fontSize: 10.5, letterSpacing: "0.08em", color: MUTED }}>
+                  <th style={{ textAlign: "left", padding: "0 4px 6px", fontWeight: 600 }}>PLAYER</th>
+                  {(["MIN", "G", "A", "CS"] as const).map((h) => (
+                    <th key={h} style={{ textAlign: "center", padding: "0 4px 6px", fontWeight: 600 }}>{h}</th>
+                  ))}
+                  <th style={{ textAlign: "right", padding: "0 4px 6px", fontWeight: 600 }}>PTS</th>
+                </tr>
+              </thead>
+              <tbody>
+                {result.breakdown.map((b) => {
+                  const p = pool.get(b.id);
+                  const pos = p?.pos ?? "MID";
+                  const f = b.facts;
+                  const played = !!f && f.minutes > 0;
+                  const extras = extrasLine(pos, f);
+                  const csEligible = pos === "GK" || pos === "DEF" || pos === "MID";
+                  const cell: CSSProperties = {
+                    textAlign: "center", padding: "7px 4px", borderTop: `1px solid ${LINE}`,
+                    color: played ? INK : MUTED, fontVariantNumeric: "tabular-nums",
+                  };
+                  return (
+                    <tr key={b.id}>
+                      <td style={{ padding: "7px 4px", borderTop: `1px solid ${LINE}`, minWidth: 0 }}>
+                        <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          {p && <Crest club={p.club} size={16} />}
+                          <span style={{ fontWeight: 600, fontSize: 13 }}>
+                            {nameOf(b.id)}
+                            {b.captain && <span style={{ color: GOLD }} title="Captain — points doubled"> ©</span>}
+                            {b.subbedIn && <span style={{ color: GOLD }} title="Auto-subbed on"> ↑</span>}
+                          </span>
+                        </span>
+                        {(extras || !played) && (
+                          <span style={{ display: "block", fontSize: 11, color: MUTED, marginTop: 2, paddingLeft: 22 }}>
+                            {played ? extras : "Didn't play"}
+                          </span>
+                        )}
+                      </td>
+                      <td style={cell}>{played ? f!.minutes : "–"}</td>
+                      <td style={{ ...cell, color: played && f!.goals ? GOLD : cell.color, fontWeight: played && f!.goals ? 700 : 400 }}>
+                        {played ? (f!.goals || "–") : "–"}
+                      </td>
+                      <td style={{ ...cell, color: played && f!.assists ? GOLD : cell.color, fontWeight: played && f!.assists ? 700 : 400 }}>
+                        {played ? (f!.assists || "–") : "–"}
+                      </td>
+                      <td style={cell}>{played && csEligible ? (f!.cleanSheet ? "✓" : "–") : "–"}</td>
+                      <td style={{
+                        textAlign: "right", padding: "7px 4px", borderTop: `1px solid ${LINE}`,
+                        fontWeight: 700, fontVariantNumeric: "tabular-nums",
+                        color: b.points >= 10 ? GOLD : INK,
+                      }}>{b.points}</td>
+                    </tr>
+                  );
+                })}
+                {entry!.hits > 0 && (
+                  <tr>
+                    <td colSpan={5} style={{ padding: "7px 4px", borderTop: `1px solid ${LINE}`, color: "#E08A6B", fontSize: 12.5 }}>
+                      {entry!.hits} extra transfer{entry!.hits === 1 ? "" : "s"}
+                    </td>
+                    <td style={{ textAlign: "right", padding: "7px 4px", borderTop: `1px solid ${LINE}`, color: "#E08A6B", fontWeight: 700 }}>
+                      −{entry!.hits * 4}
+                    </td>
+                  </tr>
+                )}
+                <tr>
+                  <td colSpan={5} style={{ padding: "9px 4px", borderTop: `1.5px solid ${GOLD}`, fontWeight: 700 }}>Total</td>
+                  <td style={{ textAlign: "right", padding: "9px 4px", borderTop: `1.5px solid ${GOLD}`, fontWeight: 700, color: GOLD }}>
+                    {result.points}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
           {gwN < total && (
             <div style={{ marginTop: 14 }}>

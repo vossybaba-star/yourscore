@@ -33,14 +33,9 @@ const boot = LIVE
   : JSON.parse(readFileSync(join(root, "scripts/data/fpl-bootstrap-cache.json"), "utf8"));
 console.log(`mode ${LIVE ? "live" : "replay"} · SM season ${SM_SEASON} · ${boot.elements.length} FPL players`);
 
-// Display name = "First Surname" (founder: full name, not FPL's abbreviation).
-// Falls back to FPL's curated web_name only when the full name is unwieldy —
-// mostly Portuguese/Spanish multi-surname cases ("Bruno Guimarães Rodriguez
-// Moura" → "Bruno G.") where picking a single surname would be wrong.
-function displayName(e) {
-  const full = `${e.first_name} ${e.second_name}`.trim().replace(/\s+/g, " ");
-  return full.length > 0 && full.length <= 21 ? full : e.web_name;
-}
+// Display name = what fans call him. ONE rule, shared with the gates pool so the
+// squad screen and the question screen never disagree. See scripts/lib/player-name.mjs.
+import { displayName, assertNames } from "../lib/player-name.mjs";
 
 // FPL Player shape the gates matcher expects (subset used by buildEnrichment)
 const players = boot.elements.map((e) => ({
@@ -160,6 +155,12 @@ const coverage = covered / Math.max(1, relevant.length);
 console.log(`pool: ${pool.length} players · smId coverage among regulars (450+ min): ${(coverage * 100).toFixed(1)}% (${covered}/${relevant.length})`);
 const unmatched = relevant.filter((p) => p.smId === null).slice(0, 15);
 if (unmatched.length) console.log("  unmatched regulars:", unmatched.map((p) => `${p.name} (${p.club})`).join(", "));
+
+// Names must be what fans call them — throws if FPL introduces a player the rule
+// can't name (new bare-surname or abbreviation), so a bad pool can never ship.
+assertNames(pool.map((p) => ({
+  name: p.name, club: p.club, minutes: players.find((q) => q.id === p.id)?.minutes ?? 0,
+})));
 
 const clubs = new Set(pool.map((p) => p.clubId));
 if (clubs.size !== 20) console.error(`⚠ expected 20 clubs, got ${clubs.size}`);

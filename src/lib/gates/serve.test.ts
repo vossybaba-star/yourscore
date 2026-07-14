@@ -107,3 +107,50 @@ test("budget: harder correct answers pay more; wrong pays nothing", () => {
   );
   assert.equal(budget, 15);
 });
+
+test("clientView: who-am-i ships the flag + shirt clues, and NEVER the answer", () => {
+  // The generator keeps nationality/shirt out of the prompt text so they can be
+  // rendered as visuals. If clientView drops them the question degrades to
+  // "I'm a midfielder. I'm 32." — unanswerable. If it spreads meta instead, it
+  // hands over `answer` and a photo of the player's face.
+  const q: GateQuestion = {
+    format: "who-am-i",
+    prompt: "I'm a midfielder.\nI'm 32.",
+    options: [
+      { id: 1, label: "Kevin De Bruyne" },
+      { id: 2, label: "\u0130lkay G\u00fcndo\u011fan" },
+      { id: 3, label: "Jordan Henderson" },
+      { id: 4, label: "James Milner" },
+    ],
+    answerId: 1,
+    difficulty: 50,
+    positions: ["MID"],
+    meta: {
+      answer: "De Bruyne",
+      club: "MCI",
+      nationality: "Belgium",
+      jersey: 17,
+      flag: "https://cdn.example/be.png",
+      photo: "https://cdn.example/kdb.png",
+    },
+  };
+  const [view] = clientView({ seed: "s", questions: [q], positions: ["MID"] });
+
+  assert.deepEqual(view.clues, {
+    nationality: "Belgium",
+    flag: "https://cdn.example/be.png",
+    jersey: 17,
+  });
+
+  const wire = JSON.stringify(view);
+  assert.ok(!wire.includes("kdb.png"), "the player's photo would give the answer away");
+  assert.ok(!/"answer"/.test(wire), "meta.answer must never reach the client");
+  assert.equal("answerId" in view, false, "answerId is never served");
+});
+
+test("clientView: non who-am-i formats carry no clues", () => {
+  const round = buildRound(pool(20), { gameweek: "gw1", userId: "bob" });
+  for (const s of clientView(round)) {
+    if (s.format !== "who-am-i") assert.equal(s.clues, undefined);
+  }
+});

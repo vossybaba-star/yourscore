@@ -17,12 +17,27 @@ import type { GateQuestion, Position } from "./types";
 import { seededRng, shuffle } from "./rng";
 
 /** What the client is allowed to see. NO answerId, NO meta. */
+/** The visual clues for a who-am-i question. The generator deliberately keeps
+ *  nationality and shirt number OUT of the prompt text so they can be shown as a
+ *  flag + shirt badge — without these the prompt collapses to "I'm a midfielder.
+ *  I'm 32.", which is unanswerable.
+ *
+ *  ALLOWLIST, not a passthrough: `meta` also holds `answer` and a `photo` of the
+ *  player's face. Either one hands the user the answer, so neither may ever be
+ *  copied in here. */
+export interface QuestionClues {
+  nationality?: string;
+  flag?: string; // flag image URL
+  jersey?: number; // shirt number
+}
+
 export interface ServedQuestion {
   idx: number; // stable index into the round (the grading key)
   format: GateQuestion["format"];
   prompt: string;
   options: { id: number; label: string }[];
   position: Position; // which XI slot this gates (warm-up per-position flow)
+  clues?: QuestionClues; // who-am-i only
 }
 
 /** The server-held round (persist this; never send it to the client). */
@@ -100,7 +115,19 @@ export function clientView(round: Round): ServedQuestion[] {
     prompt: q.prompt,
     options: q.options.map((o) => ({ id: o.id, label: o.label })),
     position: round.positions[idx] ?? q.positions[0] ?? "MID",
+    ...(q.format === "who-am-i" ? { clues: cluesFor(q) } : {}),
   }));
+}
+
+/** Pull ONLY the three safe clue fields out of a who-am-i's meta. Named fields,
+ *  never a spread — a spread would leak `answer` and `photo` the moment the
+ *  generator adds a field. */
+function cluesFor(q: GateQuestion): QuestionClues {
+  const meta = (q.meta ?? {}) as Record<string, unknown>;
+  const nationality = typeof meta.nationality === "string" ? meta.nationality : undefined;
+  const flag = typeof meta.flag === "string" ? meta.flag : undefined;
+  const jersey = typeof meta.jersey === "number" && meta.jersey > 0 ? meta.jersey : undefined;
+  return { ...(nationality ? { nationality } : {}), ...(flag ? { flag } : {}), ...(jersey ? { jersey } : {}) };
 }
 
 /** Grade one answer server-side. */

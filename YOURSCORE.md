@@ -216,6 +216,30 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-14** — **Fantasy Football Phase 1 — founder playtest round 2 (all fixes verified)**.
+  Six fixes on branch `versus/ux-fixes`:
+  (1) **Player naming — ONE rule, both pools** (`scripts/lib/player-name.mjs`): first name +
+  the surname fans know ("David Raya" not "David Raya Martín"; "Dominic Solanke" not "Solanke";
+  mononyms like Casemiro/Rodri kept intact). Applied to the fantasy squad pool AND the gates
+  question pool so the two screens can never disagree; `assertNames()` fails the build if FPL
+  adds a player the rule can't name. Refreshers: `scripts/{fantasy,gates}/refresh-names.mjs`
+  (names only — no SportMonks call, baked smIds untouched).
+  (2) **Name-the-player questions were unanswerable** — all 40 read "I'm a midfielder. I'm 32."
+  The generator was already emitting nationality/shirt/flag and deliberately keeping them out of
+  the prompt to be shown as visuals, but `clientView` never sent them. Added a **narrow
+  allowlist** `ServedQuestion.clues` (nationality + flag + jersey only) — `meta` also holds
+  `answer` and a face photo, so a spread would leak the answer; unit-tested against that.
+  (3) **Round timer now auto-advances** on expiry (server already accepted `optionId: null`).
+  (4) **"You've earned a transfer"** moment fires mid-round at each credit threshold (3/5/7/9).
+  (5) **Result card is now an analytical table** — PLAYER / MIN / G / A / CS / PTS + totals,
+  captain double and the −4 hit as a line item.
+  (6) **Transfers are an informed decision** — new `/api/fantasy/form` (recent YourScore points
+  per player, from `fantasy_player_scores`); candidates sorted **best-form-first** (price-desc
+  was burying in-form bargains) and a **"Worth a look"** shortlist of in-form, affordable,
+  club-legal players you don't own.
+  Also: sticky Confirm on the squad builder; pre-season hides the round + transfers (nothing to
+  spend before the first kickoff).
+
 - **2026-07-13** — **Quiz covers fully restyled — LOGO REMOVED + all live** (founder-approved
   contact sheets). Every one of the 72 live quiz packs now has a themed 1080×1080 cover in ONE
   cohesive **flat retro-poster** style, **no YourScore logo** (title + crest/theme carry the

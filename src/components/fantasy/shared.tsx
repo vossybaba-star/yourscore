@@ -40,9 +40,13 @@ export interface FantasyState {
   } | null;
 }
 
+/** Routes that read rather than mutate. Everything else defaults to POST — a GET
+ *  route missing from this set silently 405s. */
+const GET_PATHS = new Set(["pool", "state", "form"]);
+
 export async function api<T>(path: string, body?: unknown): Promise<T> {
   const res = await fetch(`/api/fantasy/${path}`, body === undefined
-    ? { method: path === "pool" || path === "state" ? "GET" : "POST" }
+    ? { method: GET_PATHS.has(path) ? "GET" : "POST" }
     : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   const json = await res.json().catch(() => ({}));
   if (!res.ok) throw Object.assign(new Error(json.error ?? `HTTP ${res.status}`), { status: res.status, code: json.code });
@@ -129,6 +133,24 @@ export function factLine(pos: Pos, f?: MatchFacts): string {
   if (f.yellows) bits.push("yellow");
   if (f.reds) bits.push("red card");
   if (f.ownGoals) bits.push("own goal");
+  if (f.pensMissed) bits.push("pen missed");
+  return bits.join(" · ");
+}
+
+/** Point drivers that DON'T get their own column in the result table — saves,
+ *  cards, defensive actions, goals conceded. Without this line a GK's 12 points
+ *  look unexplained: the table shows 90 minutes and a clean sheet, not the 6 saves.
+ *  Returns "" when there's nothing extra to say. */
+export function extrasLine(pos: Pos, f?: MatchFacts): string {
+  if (!f || f.minutes === 0) return "";
+  const bits: string[] = [];
+  if (pos === "GK" && f.saves > 0) bits.push(`${f.saves} save${f.saves > 1 ? "s" : ""}`);
+  if (f.pensSaved) bits.push(`${f.pensSaved} pen saved`);
+  if ((pos === "GK" || pos === "DEF") && f.conceded >= 2) bits.push(`${f.conceded} conceded`);
+  if ((pos === "DEF" && f.dc >= 10) || (pos !== "DEF" && f.dcRec >= 12)) bits.push("defensive actions");
+  if (f.yellows) bits.push("yellow");
+  if (f.reds) bits.push("red card");
+  if (f.ownGoals) bits.push(`${f.ownGoals} own goal`);
   if (f.pensMissed) bits.push("pen missed");
   return bits.join(" · ");
 }

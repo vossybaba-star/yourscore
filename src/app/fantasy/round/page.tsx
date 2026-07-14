@@ -6,11 +6,15 @@ import {
   api, Btn, Card, Chip, GOLD, Header, INK, LINE, MUTED, page, PANEL,
 } from "@/components/fantasy/shared";
 
-interface Served { idx: number; format: string; prompt: string; options: { id: number; label: string }[]; position: string }
+interface Clues { nationality?: string; flag?: string; jersey?: number }
+interface Served { idx: number; format: string; prompt: string; options: { id: number; label: string }[]; position: string; clues?: Clues }
 interface StartRes { questions: Served[]; answered: number; correct: number; done: boolean; creditsEarned: number }
 interface StepRes { correct: boolean; answerId: number; correctCount: number; answered: number; done: boolean; creditsEarned: number | null }
 
 const TIMER_SECONDS = 20; // uniform, display-only (anti-look-up; never scored)
+/** Credit curve: 3 correct → 1 transfer, 5 → 2, 7 → 3, 9 → 4. */
+const THRESHOLDS = [3, 5, 7, 9];
+const creditsAt = (correct: number) => THRESHOLDS.filter((t) => correct >= t).length;
 
 export default function RoundPage() {
   const router = useRouter();
@@ -20,6 +24,7 @@ export default function RoundPage() {
   const [reveal, setReveal] = useState<StepRes | null>(null);
   const [picked, setPicked] = useState<number | null>(null);
   const [secs, setSecs] = useState(TIMER_SECONDS);
+  const [timedOut, setTimedOut] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const answering = useRef(false);
 
@@ -40,24 +45,42 @@ export default function RoundPage() {
     return () => clearInterval(t);
   }, [k, reveal, round]);
 
-  if (err) return <main style={page}><Header /><p style={{ color: "#E08A6B" }}>{err}</p></main>;
-  if (!round) return <main style={page}><Header /><p style={{ color: MUTED }}>Loading…</p></main>;
+  // Running out of time submits the question as unanswered and moves you on —
+  // the server takes optionId: null and grades it wrong. Without this the timer
+  // just sat at 0s and the round stalled.
+  useEffect(() => {
+    if (secs > 0 || reveal || !round || round.done || answering.current) return;
+    setTimedOut(true);
+    void submit(null);
+    // submit is stable for the current k; re-running on every dep would double-fire.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [secs, reveal, round]);
 
-  const finished = round.done || k >= round.questions.length;
-  const q = round.questions[k];
-
-  const answer = async (optionId: number) => {
+  const submit = async (optionId: number | null) => {
     if (answering.current || reveal) return;
     answering.current = true;
     setPicked(optionId);
     try {
       const r = await api<StepRes>("round/step", { k, optionId });
       setReveal(r); setCorrectCount(r.correctCount);
-      if (r.done) setRound({ ...round, done: true, creditsEarned: r.creditsEarned ?? 0, correct: r.correctCount, answered: r.answered });
+      if (r.done) setRound((prev) => prev && ({ ...prev, done: true, creditsEarned: r.creditsEarned ?? 0, correct: r.correctCount, answered: r.answered }));
     } catch (e) { setErr((e as Error).message); }
     answering.current = false;
   };
-  const next = () => { setReveal(null); setPicked(null); setK(k + 1); };
+
+  if (err) return <main style={page}><Header /><p style={{ color: "#E08A6B" }}>{err}</p></main>;
+  if (!round) return <main style={page}><Header /><p style={{ color: MUTED }}>Loading…</p></main>;
+
+  const finished = round.done || k >= round.questions.length;
+  const q = round.questions[k];
+
+  const answer = (optionId: number) => void submit(optionId);
+  const next = () => { setReveal(null); setPicked(null); setTimedOut(false); setK(k + 1); };
+
+  // Did THIS answer just tip us over a credit threshold? That's a moment worth
+  // marking — the founder shouldn't have to wait until the round ends to learn
+  // he's earned a transfer.
+  const justEarned = !!reveal && reveal.correct && THRESHOLDS.includes(reveal.correctCount);
 
   if (finished) {
     const credits = round.creditsEarned;
@@ -100,6 +123,39 @@ export default function RoundPage() {
       <div style={{ fontSize: 11, letterSpacing: "0.12em", color: MUTED, marginBottom: 6 }}>
         {q.position} QUESTION
       </div>
+
+      {/* Who-am-I clue badges. The generator keeps nationality + shirt number OUT
+          of the prompt text so they can be shown as visuals — without these the
+          question reads "I'm a midfielder. I'm 32." and can't be answered. */}
+      {q.clues && (q.clues.flag || q.clues.jersey) && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+          {q.clues.flag && (
+            <span style={{
+              display: "inline-flex", alignItems: "center", gap: 7, padding: "6px 11px 6px 7px",
+              borderRadius: 999, background: PANEL, border: `1px solid ${LINE}`,
+            }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={q.clues.flag} alt="" width={22} height={16}
+                style={{ width: 22, height: 16, objectFit: "cover", borderRadius: 3, flexShrink: 0 }} />
+              <span style={{ fontSize: 13, fontWeight: 600 }}>{q.clues.nationality}</span>
+            </span>
+          )}
+          {q.clues.jersey !== undefined && (
+            <span style={{
+              display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 11px",
+              borderRadius: 999, background: PANEL, border: `1px solid ${LINE}`,
+            }}>
+              <span style={{
+                display: "inline-flex", alignItems: "center", justifyContent: "center",
+                width: 22, height: 22, borderRadius: 5, background: GOLD, color: "#2A1F00",
+                fontSize: 12, fontWeight: 800,
+              }}>{q.clues.jersey}</span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: MUTED }}>shirt</span>
+            </span>
+          )}
+        </div>
+      )}
+
       <h2 style={{ fontSize: 19, lineHeight: 1.4, margin: "0 0 16px", whiteSpace: "pre-line", fontWeight: 600 }}>
         {q.prompt}
       </h2>
@@ -128,8 +184,26 @@ export default function RoundPage() {
       {reveal && (
         <div style={{ marginTop: 14 }}>
           <p style={{ fontSize: 13.5, color: reveal.correct ? GOLD : MUTED, margin: "0 0 10px", fontWeight: 600 }}>
-            {reveal.correct ? "Correct." : "Not this time."}
+            {reveal.correct ? "Correct." : timedOut ? "Out of time." : "Not this time."}
           </p>
+
+          {/* The transfer is the whole point of the round — mark it the moment it's earned. */}
+          {justEarned && (
+            <div style={{
+              background: "#233B2C", border: `1px solid ${GOLD}`, borderRadius: 12,
+              padding: "11px 13px", marginBottom: 10,
+            }}>
+              <div style={{ fontSize: 14.5, fontWeight: 700, color: GOLD }}>
+                You&apos;ve earned a transfer
+              </div>
+              <div style={{ fontSize: 12.5, color: MUTED, marginTop: 2 }}>
+                {reveal.correctCount} correct — that&apos;s {creditsAt(reveal.correctCount)} transfer
+                {creditsAt(reveal.correctCount) === 1 ? "" : "s"} this week.
+                {reveal.correctCount < 9 && ` Get to ${THRESHOLDS.find((t) => reveal.correctCount < t)} for another.`}
+              </div>
+            </div>
+          )}
+
           <Btn gold onClick={next}>{k === 10 ? "Finish round" : "Next question"}</Btn>
         </div>
       )}
