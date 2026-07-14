@@ -512,12 +512,16 @@ export async function draftReply(post, { subNote, searchNote, brief } = {}) {
     stage: "draft",
     model: DRAFT_MODEL,
     maxTokens: 3000,
-    // `brief` is the FREE fact sheet (Sportmonks + ESPN). When it's present the
-    // model already has the manager/club/tournament facts and barely needs to
-    // search. When it's absent every draft buys the full paid budget instead —
-    // which is exactly what happened: SPORTMONKS_API_KEY was never added to the
-    // VPS, so `brief` was always empty and every draft ran the expensive path.
-    maxUses: brief ? 1 : 3,
+    // MEASURED (16:00 sweep, Jul 14): $1.61 of a $1.89 run was the draft stage —
+    // 447k INPUT tokens across 9 hops, ~50k per hop, on only ~8 searches. The
+    // searches are not the cost; the RESULTS are. Every search pulls back tens of
+    // thousands of tokens of page content, and the next hop re-sends all of it as
+    // fresh input on Sonnet. One search is therefore worth ~$0.15 in input alone.
+    //
+    // So: at most ONE search, and NONE at all when the free brief already answers
+    // it. `brief` is the Sportmonks + ESPN fact sheet — free, structured, tiny.
+    // With the key on the box, a PL thread costs cents instead of dollars.
+    maxUses: brief ? 0 : 1,
     timeoutMs: 180_000,
   });
   const out = parseModelJSON(text);
@@ -576,7 +580,12 @@ async function anthropicSearch(system, userText, { stage = "search", model = FAC
           headers: { "x-api-key": ANTHROPIC, "anthropic-version": "2023-06-01", "content-type": "application/json" },
           body: JSON.stringify({
             model, max_tokens: maxTokens, system,
-            tools: [{ type: "web_search_20260209", name: "web_search", max_uses: maxUses }],
+            // maxUses:0 means "the free brief already answers this" — send NO search
+            // tool at all rather than max_uses:0, which the API rejects. This is the
+            // cheap path: no results come back, so no 50k-token re-send on the next hop.
+            ...(maxUses > 0
+              ? { tools: [{ type: "web_search_20260209", name: "web_search", max_uses: maxUses }] }
+              : {}),
             messages,
           }),
         });
@@ -622,11 +631,23 @@ export async function factCheck(post, draft, { brief = "" } = {}) {
     // looked up — we were paying for the same research twice, on every draft.
     brief ? `ALREADY VERIFIED (from structured data — trust these, do NOT spend a search re-confirming them):\n"""\n${brief}\n"""` : "",
     `THE DRAFTED REPLY TO CHECK:\n"""\n${draft}\n"""`,
-    `Search ONLY for claims that are not covered above. If every checkable claim is already covered, pass without searching at all.`,
+    // The earlier wording ("pass without searching if everything is covered") let it
+    // pass a draft having searched ZERO times when the brief was EMPTY — nothing was
+    // covered, so nothing should have been skipped. That turned the fact-check into a
+    // rubber stamp on the founder's hardest rule. Be explicit: skipping a search is
+    // only ever allowed for a claim the brief itself states.
+    brief
+      ? `Do not re-search anything the verified block above already states. Every OTHER checkable claim must be searched before you pass it.`
+      : `Nothing has been pre-verified. You MUST search before passing any checkable factual claim (managers, transfers, results, stats, quotes). If you cannot verify a claim, FAIL it — never pass an unchecked claim.`,
   ].filter(Boolean).join("\n");
   // Tight budget on purpose: this is a verification pass over a handful of specific
   // claims, not a fresh research project.
-  const text = await anthropicSearch(FACTCHECK_SYSTEM, ctx, { stage: "factcheck", maxUses: 2, maxHops: 2 });
+  // 90s was clipping healthy calls, not just hung ones: a server-side web_search
+  // turn is slow and spiky, and the checker was timing out (2 attempts, ~180s
+  // wasted) on perfectly good drafts. The drafter already runs at 180s for this
+  // reason — give the checker the same headroom. It costs nothing unless used,
+  // and in the dash this now runs in the background where waiting is free.
+  const text = await anthropicSearch(FACTCHECK_SYSTEM, ctx, { stage: "factcheck", maxUses: 2, maxHops: 2, timeoutMs: 180_000 });
   const out = parseModelJSON(text);
   return {
     pass: out.pass !== false, // default to pass only if the checker says nothing failed

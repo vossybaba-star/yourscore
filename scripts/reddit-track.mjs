@@ -1,24 +1,64 @@
 /**
- * reddit-track.mjs — scan watched subreddits + intent searches, draft replies,
- * queue them for Telegram review. NEVER posts; only writes data/reddit-queue.json.
+ * reddit-track.mjs — the SWEEP. Reads `hot` across every watched sub in ONE
+ * multireddit request, drafts replies, and queues them for the Studio dash.
+ * NEVER posts; only writes data/reddit-queue.json.
  *
  *   node --env-file=.env.local scripts/reddit-track.mjs          # full run
  *   node --env-file=.env.local scripts/reddit-track.mjs --dry    # show, don't save
  *   node --env-file=.env.local scripts/reddit-track.mjs --sub soccer
  *
+ * Pairs with reddit-fast.mjs, which reads `new` for threads minutes old. This one
+ * reads `hot` — the threads that already have an audience. Both land in one queue.
+ *
  * State (data/reddit-state.json) remembers every post already considered, so a
- * thread is drafted against at most once, ever.
+ * thread is drafted against at most once, ever — which is also why running this
+ * every 30min costs no more than running it 5x/day.
  */
 
-import { PATHS, loadJSON, saveJSON, listPostsAny, searchPostsAny, triage, draftReply, factCheck, hasApiCreds, costReport } from "./lib/reddit.mjs";
+import { writeFileSync, unlinkSync, statSync } from "node:fs";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+import { PATHS, loadJSON, saveJSON, listPostsRSS, triage, draftReply, factCheck, hasApiCreds, costReport } from "./lib/reddit.mjs";
 import { factBrief } from "./lib/football-facts.mjs";
 
 // Match the fast lane's bar. Below this we neither queue nor pay to verify.
 const MIN_SCORE = 6;
 
+// The sweep now runs every 30min, so it must finish inside that window or two
+// copies race reddit-state.json and re-draft each other's threads.
+const RUN_BUDGET_MS = 22 * 60_000;
+const startedAt = Date.now();
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+const RUN_LOCK = join(HERE, "data", ".reddit-track.lock");
+const LOCK_STALE_MS = 30 * 60_000;   // longer than RUN_BUDGET_MS: only a DEAD run loses its lock
+
 const args = process.argv.slice(2);
 const DRY = args.includes("--dry");
 const ONLY = args.includes("--sub") ? args[args.indexOf("--sub") + 1] : null;
+
+/**
+ * Single-instance guard. Fails SOFT on purpose: a lock we can't write must never
+ * become a new way for the sweep to die (a root-owned pace file did exactly that
+ * to the fast lane on Jul 14, killing a cron run before it fetched anything).
+ */
+function acquireRunLock() {
+  try { writeFileSync(RUN_LOCK, String(process.pid), { flag: "wx" }); return true; }
+  catch (e) {
+    if (e.code !== "EEXIST") return true;
+    try {
+      if (Date.now() - statSync(RUN_LOCK).mtimeMs < LOCK_STALE_MS) return false;
+      unlinkSync(RUN_LOCK);
+      writeFileSync(RUN_LOCK, String(process.pid), { flag: "wx" });
+      return true;
+    } catch { return true; }
+  }
+}
+if (!DRY && !acquireRunLock()) {
+  console.log(`\n👂 reddit-track · a sweep is already in flight — skipping this cycle.\n`);
+  process.exit(0);
+}
+process.on("exit", () => { try { unlinkSync(RUN_LOCK); } catch { /* already gone */ } });
 
 const wl = loadJSON(PATHS.watchlist, null);
 if (!wl) { console.error(`✗ no watchlist at ${PATHS.watchlist}`); process.exit(1); }
@@ -43,7 +83,10 @@ const eligible = (p, minUps) => !p.stickied && !p.over18 && !state.seen[p.id] &&
   && (p.ups == null || p.ups >= (minUps ?? D.minUps ?? 5));
 
 let drafted = 0, considered = 0;
-const cap = D.maxQueuedPerRun ?? 6;
+// Founder, Jul 14: "I want around ten responses drafted every 30 minutes." This is
+// the ceiling, not a target — the binding limit is SUPPLY (Reddit does not produce
+// ten good football threads every half hour), so most runs will land well under it.
+const cap = D.maxQueuedPerRun ?? 10;
 
 // Anthropic failures are NOT Reddit failures. A draft error thrown out of
 // consider() used to be caught by the per-sub handler and counted as a failed
@@ -122,84 +165,76 @@ async function consider(post, { subNote, searchNote }) {
   console.log(`    ✓ drafted + fact-checked (score ${r.score}${r.mentionsProduct ? " ⚠️ mentions product" : ""}): ${r.reply.replace(/\n/g, " ⏎ ").slice(0, 110)}`);
 }
 
-console.log(`\n👂 reddit-track · ${wl.subreddits.length} subs + ${wl.searches.length} searches · ${hasApiCreds() ? "API" : "RSS (unauthenticated, ~1 req/min pacing)"} mode ${DRY ? "· DRY" : ""}\n`);
 
-// Track fetch health. A run where EVERY fetch fails looks identical, in the log,
-// to a quiet news day ("considered 0") — that silence hid a 3-hour Reddit IP ban
-// on Jul 10. Count outcomes so the run can fail loudly instead.
-let subsOk = 0, subsErr = 0;
+// ONE multireddit request covers every sub. Reddit paces unauthenticated reads at
+// ~65s apart, so the old per-sub loop spent 29 x 65s = 31 MINUTES fetching before it
+// could draft anything — which is the only reason the sweep ran 5x/day instead of
+// continuously. `r/a+b+c/hot.rss` returns all of them at once (verified: 100 posts,
+// 28 of 29 subs, one request, ~1s), so the sweep can now run every 30 minutes.
+//
+// Cost does NOT scale with how often it runs: threads we've already considered are
+// marked seen and skipped BEFORE any paid call, and `hot` barely churns in 30min.
+// Running more often finds the same threads sooner, it doesn't buy them twice.
+const SUBS = ONLY ? [ONLY] : wl.subreddits.map((s) => s.name);
+const NOTE = new Map(wl.subreddits.map((s) => [s.name.toLowerCase(), s.note || ""]));
+const PER_SUB = new Map(wl.subreddits.map((s) => [s.name.toLowerCase(), s.perRun ?? D.perRun ?? 2]));
 
-// Rotate where the sweep starts. The run stops the moment it hits maxQueuedPerRun,
-// and each RSS fetch costs ~65s, so a fixed order means the tail of the watchlist
-// is never reached on a productive run (Jul 10: 6 drafts by sub 15 of 29, so the
-// bottom 14 went unswept all day). Start where the last run stopped instead; over
-// the day's runs every sub gets a turn.
-const total = wl.subreddits.length;
-const startAt = ONLY ? 0 : ((state.subOffset ?? 0) % total + total) % total;
-const order = ONLY ? wl.subreddits : [...wl.subreddits.slice(startAt), ...wl.subreddits.slice(0, startAt)];
-let visited = 0;
-if (!ONLY) console.log(`  ↻ starting at r/${order[0].name} (offset ${startAt}/${total})\n`);
+console.log(`\n👂 reddit-track · sweeping \`hot\` across ${SUBS.length} subs in ONE request · up to ${cap} drafts · ${hasApiCreds() ? "API" : "RSS"} mode ${DRY ? "· DRY" : ""}\n`);
 
-for (const s of order) {
-  if (ONLY && s.name.toLowerCase() !== ONLY.toLowerCase()) continue;
+let raw;
+try {
+  raw = await listPostsRSS(SUBS.join("+"), { sort: "hot", limit: 100 });
+} catch (e) {
+  // Fail LOUD. A total fetch failure used to look exactly like a quiet news day
+  // ("considered 0") — that silence hid a 3-hour Reddit outage on Jul 10.
+  const m = `🚨 Reddit sweep failed: the multireddit fetch was blocked (${e.message}). Nothing drafted.`;
+  console.error(`\n${m}`);
+  await alert(m);
+  process.exit(2);
+}
+
+// `hot` is dominated by whichever subs are loudest — r/Gunners alone was 18 of 100
+// on the test fetch. Cap each sub, then ROUND-ROBIN them, or one busy sub eats the
+// entire draft budget and the other 28 never get looked at.
+const bySub = new Map();
+for (const p of raw) {
+  if (!fresh(p) || !eligible(p)) continue;
+  const k = p.sub.toLowerCase();
+  const arr = bySub.get(k) ?? [];
+  if (arr.length >= (PER_SUB.get(k) ?? 2)) continue;
+  arr.push(p);
+  bySub.set(k, arr);
+}
+const candidates = [];
+for (let i = 0; ; i++) {
+  const row = [...bySub.values()].map((arr) => arr[i]).filter(Boolean);
+  if (!row.length) break;
+  candidates.push(...row);
+}
+
+console.log(`  1 multireddit request · ${raw.length} posts · ${candidates.length} candidate(s) across ${bySub.size} sub(s)\n`);
+
+for (const p of candidates) {
   if (drafted >= cap) break;
-  if (creditOut) break;   // can't draft — stop burning 65s-per-sub RSS fetches for nothing
-  visited++;
-
-  // The FETCH is the only thing subsOk/subsErr may count. These two used to share
-  // one try-block, so any error out of consider() — including "Anthropic credit
-  // balance is too low" — was tallied as a failed Reddit fetch. On Jul 14 that
-  // turned a billing outage into a log reading "20 subreddit fetches blocked,
-  // Reddit is likely blocking the VPS IP", pointing at exactly the wrong problem.
-  let posts;
-  try {
-    posts = (await listPostsAny(s.name, { sort: s.sort || "hot", limit: 30 }))
-      .filter((p) => fresh(p, s.maxAgeHours) && eligible(p, s.minUps))
-      .slice(0, s.perRun ?? D.perRun ?? 2);
-    subsOk++;
-  } catch (e) { subsErr++; console.error(`  r/${s.name}: ✗ fetch: ${e.message}`); continue; }
-
-  console.log(`  r/${s.name}: ${posts.length} candidate(s)`);
-  for (const p of posts) {
-    if (drafted >= cap) break;
-    console.log(`    ${p.title.slice(0, 90)} (${p.ups}↑, ${p.numComments}c)`);
-    // consider() guards its own Anthropic calls, but a leak from any of them must
-    // never be blamed on Reddit. Backstop it here and name the real cause.
-    try {
-      await consider(p, { subNote: s.note });
-    } catch (e) {
-      draftErr++;
-      if (/credit balance/i.test(e.message)) {
-        creditOut = true;
-        console.error(`    ✗ ANTHROPIC OUT OF CREDIT`);
-        break;
-      }
-      console.error(`    ✗ draft pipeline: ${e.message.slice(0, 90)}`);
-    }
-  }
   if (creditOut) break;
-}
-
-// Next run picks up at the first sub this one didn't reach.
-if (!ONLY) state.subOffset = (startAt + visited) % total;
-
-for (const q of wl.searches) {
-  if (ONLY) break;
-  if (drafted >= cap) break;
+  if (Date.now() - startedAt > RUN_BUDGET_MS) {
+    console.log(`\n  ⏳ ${Math.round(RUN_BUDGET_MS / 60000)}min run budget spent — stopping before the next sweep fires.`);
+    break;
+  }
+  console.log(`  r/${p.sub}: ${p.title.slice(0, 80)}`);
+  // consider() guards its own Anthropic calls, but a leak from any of them must
+  // never be blamed on Reddit — that turned a billing outage into "20 subreddit
+  // fetches blocked, Reddit is likely blocking the VPS IP" on Jul 14.
   try {
-    const posts = (await searchPostsAny(q.q, { time: q.time || "day", limit: 25 }))
-      .filter((p) => fresh(p, q.maxAgeHours ?? 48) && eligible(p, q.minUps ?? 0))
-      .slice(0, q.perRun ?? 2);
-    console.log(`  🔎 "${q.q}": ${posts.length} candidate(s)`);
-    for (const p of posts) {
-      if (drafted >= cap) break;
-      console.log(`    r/${p.sub} · ${p.title.slice(0, 80)} (${p.ups}↑)`);
-      await consider(p, { searchNote: q.note, subNote: `unfamiliar sub (r/${p.sub}) - if in doubt about its self-promo rules, keep the reply product-free` });
-    }
-  } catch (e) { console.error(`  🔎 "${q.q}": ✗ ${e.message}`); }
+    await consider(p, { subNote: `r/${p.sub}. ${NOTE.get(p.sub.toLowerCase()) || ""}` });
+  } catch (e) {
+    draftErr++;
+    if (/credit balance/i.test(e.message)) { creditOut = true; console.error(`    ✗ ANTHROPIC OUT OF CREDIT`); break; }
+    console.error(`    ✗ draft pipeline: ${e.message.slice(0, 90)}`);
+  }
 }
 
-console.log(`\n📊 considered ${considered} thread(s) · queued ${drafted} draft(s) · fetch ok ${subsOk}/${subsOk + subsErr} · swept ${visited}/${total} subs${ONLY ? "" : ` · next run starts at r/${wl.subreddits[state.subOffset].name}`}`);
+console.log(`\n📊 considered ${considered} thread(s) · queued ${drafted} draft(s) · ${bySub.size}/${wl.subreddits.length} subs had candidates`);
 console.log(costReport());
 
 // Cron runs this script directly (no wrapper), so a non-zero exit only lands in
@@ -221,14 +256,12 @@ if (creditOut) {
   process.exit(3);
 }
 
-// Every fetch failed: Reddit is blocking this IP (403/429) or the network is down.
-// Exit non-zero so the wrapper alerts instead of writing an empty "all quiet" run.
-if (subsOk === 0 && subsErr > 0) {
-  const m = `🚨 Reddit sweep failed: all ${subsErr} subreddit fetches blocked (403/429). Reddit is likely blocking the VPS IP. Nothing drafted.`;
-  console.error(`\n${m}`);
-  await alert(m);
-  process.exit(2);
-}
+// NOTE: the "every subreddit fetch was blocked" case used to be checked here, with
+// per-sub subsOk/subsErr counters. The sweep now fetches all subs in ONE multireddit
+// request, so that failure IS the throw from listPostsRSS above — which already alerts
+// and exits 2. The counters were deleted with the loop; the check that referenced them
+// was not, and it threw a ReferenceError AFTER every paid draft call but BEFORE the
+// saveJSON below — so each run billed ~$1.70 and then binned the drafts it paid for.
 if (draftErr > 0) console.error(`\n⚠️  ${draftErr} draft(s) failed on the Anthropic side (Reddit reads were fine).`);
 
 if (DRY) { console.log("🛑 DRY — nothing saved."); process.exit(0); }

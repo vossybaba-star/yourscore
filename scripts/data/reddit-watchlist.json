@@ -4,7 +4,7 @@
     "perRun": 1,
     "maxAgeHours": 20,
     "minUps": 5,
-    "maxQueuedPerRun": 6
+    "maxQueuedPerRun": 10
   },
   "subreddits": [
     {
