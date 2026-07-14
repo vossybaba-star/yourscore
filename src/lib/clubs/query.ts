@@ -106,6 +106,49 @@ export async function defaultGameweek(): Promise<{ seasonId: number; roundName: 
 }
 
 /**
+ * Rounds that are FINISHED — i.e. whose last kickoff is at least `settleMinutes`
+ * old — within the last `lookbackHours`. Drives the end-of-gameweek result push.
+ *
+ * Stricter than defaultGameweek(), deliberately: that one only asks "has the last
+ * match kicked off?" (good enough to SHOW a table, which keeps updating), but a
+ * PUSH is irreversible — you cannot un-buzz someone's phone — so it must not fire
+ * while a fixture is still being played into. A round is settled once its last
+ * kickoff is ~2h15 old: a match runs ~115 minutes with the interval, and the rest
+ * is cushion for stoppage time.
+ *
+ * The lookback is not a "have I sent this?" ledger — notification_log's PK is the
+ * real exactly-once guarantee. It just stops us re-walking ancient rounds forever.
+ */
+export async function completedGameweeks(opts: {
+  settleMinutes: number;
+  lookbackHours: number;
+}): Promise<{ seasonId: number; roundName: string }[]> {
+  const rows = await fetchReleaseRows();
+  const now = Date.now();
+  const settleMs = opts.settleMinutes * 60_000;
+  const lookbackMs = opts.lookbackHours * 3_600_000;
+
+  const maxKickoffByRound = new Map<string, number>();
+  const meta = new Map<string, { seasonId: number; roundName: string }>();
+  for (const r of rows) {
+    if (r.season_id == null || !r.round_name) continue;
+    const key = `${r.season_id}::${r.round_name}`;
+    const kickoff = new Date(r.kickoff_at).getTime();
+    if (Number.isNaN(kickoff)) continue;
+    maxKickoffByRound.set(key, Math.max(maxKickoffByRound.get(key) ?? -Infinity, kickoff));
+    meta.set(key, { seasonId: r.season_id, roundName: r.round_name });
+  }
+
+  return Array.from(maxKickoffByRound.entries())
+    .filter(([, lastKickoff]) => {
+      const settledAt = lastKickoff + settleMs;
+      return settledAt <= now && now - settledAt <= lookbackMs;
+    })
+    .sort((a, b) => a[1] - b[1])
+    .map(([key]) => meta.get(key)!);
+}
+
+/**
  * quiz_attempts JOIN halftime_releases ON pack_id, scoped to one gameweek — the
  * ONLY correct way to identify a halftime attempt (per brief; do not sniff
  * quiz_packs.metadata). Done as two queries (Supabase JS has no declared FK

@@ -102,6 +102,15 @@ const CLUB_FANS = {
 const iso = (mins) => new Date(Date.now() + mins * 60_000).toISOString();
 const uuid = () => crypto.randomUUID();
 
+/**
+ * How long ago the gameweek's first match kicked off. Default 260 minutes puts
+ * every fixture comfortably past the cron's 135-minute settle window, so the
+ * end-of-gameweek result push is due. Pass --live to bring them to ~2h ago
+ * instead, which is INSIDE the window — the cron then correctly reports
+ * {idle:true} and sends nothing, because a match might still be being played.
+ */
+const KO_MINS_AGO = process.argv.includes("--live") ? 120 : 260;
+
 console.log(`\nCLUB DEMO — stub :${STUB_PORT}, app :${APP_PORT}\n`);
 
 start(process.execPath, [join(HERE, "stub-supabase.mjs"), "--port", String(STUB_PORT)]);
@@ -116,8 +125,8 @@ FIXTURES.forEach(([home, away], i) => {
   packIds[`${home}|${away}`] = packId;
   releases.push({
     id: uuid(), fixture_id: 910000 + i, season_id: SEASON, round_name: GW,
-    pack_id: packId, home, away, kickoff_at: iso(-120 + i),
-    state: "released", released_at: iso(-70 + i),
+    pack_id: packId, home, away, kickoff_at: iso(-KO_MINS_AGO + i),
+    state: "released", released_at: iso(-KO_MINS_AGO + 50 + i),
     base_questions: [], fresh_questions: [], pack_questions: [],
     fresh_state: "skipped", created_at: iso(-200), updated_at: iso(-70),
   });
@@ -143,7 +152,12 @@ for (const [club, [fanCount, avg]] of Object.entries(CLUB_FANS)) {
   for (let f = 0; f < fanCount; f++) {
     const isViewer = club === "Spurs" && f === 0;
     const userId = isViewer ? VIEWER : uuid();
-    profiles.push({ id: userId, username: `${club.toLowerCase().replace(/\W/g, "")}_fan${f + 1}` });
+    // opted in, so the end-of-gameweek result push has someone to send to.
+    profiles.push({
+      id: userId,
+      username: `${club.toLowerCase().replace(/\W/g, "")}_fan${f + 1}`,
+      notifications_opt_in: true,
+    });
     supporters.push({ user_id: userId, club, season_id: SEASON, created_at: iso(-500) });
     // spread scores ±25% around the club's average, deterministic-ish
     const jitter = 1 + (((n * 37) % 50) - 25) / 100;
