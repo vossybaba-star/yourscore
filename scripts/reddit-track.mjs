@@ -41,10 +41,26 @@ const eligible = (p, minUps) => !p.stickied && !p.over18 && !state.seen[p.id] &&
 let drafted = 0, considered = 0;
 const cap = D.maxQueuedPerRun ?? 6;
 
+// Anthropic failures are NOT Reddit failures. A draft error thrown out of
+// consider() used to be caught by the per-sub handler and counted as a failed
+// FETCH — so an out-of-credit account would alert "every subreddit fetch was
+// blocked, the IP may be rate-limited" and send you hunting a Reddit ban.
+// Catch drafting errors here and surface them honestly instead.
+let draftErr = 0;
+export let creditOut = false;
+
 async function consider(post, { subNote, searchNote }) {
   state.seen[post.id] = now;                        // one shot per thread, usable or not
   considered++;
-  const r = await draftReply(post, { subNote, searchNote });
+  let r;
+  try {
+    r = await draftReply(post, { subNote, searchNote });
+  } catch (e) {
+    draftErr++;
+    if (/credit balance/i.test(e.message)) { creditOut = true; console.error(`    ✗ ANTHROPIC OUT OF CREDIT — cannot draft`); }
+    else console.error(`    ✗ draft failed: ${e.message.slice(0, 90)}`);
+    return;
+  }
   if (!r.usable) { console.log(`    · skip (${r.reason.slice(0, 90)})`); return; }
 
   // Fact-check before queueing: a web-search pass rejects any draft that rests
@@ -53,7 +69,10 @@ async function consider(post, { subNote, searchNote }) {
   // fail safe by dropping the draft rather than queueing an unchecked one.
   let fc;
   try { fc = await factCheck(post, r.reply); }
-  catch (e) { console.log(`    · skip (fact-check errored: ${e.message.slice(0, 70)})`); return; }
+  catch (e) {
+    if (/credit balance/i.test(e.message)) { creditOut = true; console.error(`    ✗ ANTHROPIC OUT OF CREDIT — cannot fact-check`); return; }
+    console.log(`    · skip (fact-check errored: ${e.message.slice(0, 70)})`); return;
+  }
   if (!fc.pass) { console.log(`    ✗ fact-check FAILED: ${(fc.failures[0] || fc.note).slice(0, 100)}`); return; }
 
   const entry = {
@@ -93,6 +112,7 @@ if (!ONLY) console.log(`  ↻ starting at r/${order[0].name} (offset ${startAt}/
 for (const s of order) {
   if (ONLY && s.name.toLowerCase() !== ONLY.toLowerCase()) continue;
   if (drafted >= cap) break;
+  if (creditOut) break;   // can't draft — stop burning 65s-per-sub RSS fetches for nothing
   visited++;
   try {
     const posts = (await listPostsAny(s.name, { sort: s.sort || "hot", limit: 30 }))
@@ -129,12 +149,34 @@ for (const q of wl.searches) {
 
 console.log(`\n📊 considered ${considered} thread(s) · queued ${drafted} draft(s) · fetch ok ${subsOk}/${subsOk + subsErr} · swept ${visited}/${total} subs${ONLY ? "" : ` · next run starts at r/${wl.subreddits[state.subOffset].name}`}`);
 
+// Cron runs this script directly (no wrapper), so a non-zero exit only lands in
+// the log and nobody hears about it — the same silent-failure trap that hid the
+// Jul 10 outage. Alert to Telegram from here.
+async function alert(msg) {
+  try {
+    const { execFile } = await import("node:child_process");
+    const { promisify } = await import("node:util");
+    await promisify(execFile)(process.execPath, [new URL("./tg.mjs", import.meta.url).pathname, "text", msg], { timeout: 20_000 });
+  } catch { /* alerting must never mask the underlying failure */ }
+}
+
+// Anthropic out of credit: report the REAL cause, don't blame Reddit.
+if (creditOut) {
+  const m = `🚨 Reddit sweep DEAD: Anthropic is out of credit.\n\nReddit reads are fine — drafting and fact-checking can't run, so no drafts will reach Studio until you top up (Plans & Billing).`;
+  console.error(`\n${m}`);
+  await alert(m);
+  process.exit(3);
+}
+
 // Every fetch failed: Reddit is blocking this IP (403/429) or the network is down.
 // Exit non-zero so the wrapper alerts instead of writing an empty "all quiet" run.
 if (subsOk === 0 && subsErr > 0) {
-  console.error(`\n🚨 ALL ${subsErr} subreddit fetches failed — Reddit is likely blocking this IP. Nothing saved.`);
+  const m = `🚨 Reddit sweep failed: all ${subsErr} subreddit fetches blocked (403/429). Reddit is likely blocking the VPS IP. Nothing drafted.`;
+  console.error(`\n${m}`);
+  await alert(m);
   process.exit(2);
 }
+if (draftErr > 0) console.error(`\n⚠️  ${draftErr} draft(s) failed on the Anthropic side (Reddit reads were fine).`);
 
 if (DRY) { console.log("🛑 DRY — nothing saved."); process.exit(0); }
 saveJSON(PATHS.state, state);

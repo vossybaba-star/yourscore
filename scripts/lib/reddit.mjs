@@ -255,8 +255,14 @@ HARD RULES (locked house style):
 - Sound like a real person typing on their phone, not an AI: no tidy three-part structure, no "on the other hand", no summarising what you just said, no hedge-everything caveats stacked up, no listy answers unless the thread is literally asking for a list. One take, stated like you'd say it to a mate down the pub, not a balanced briefing.
 - UK English. Contractions. Lowercase-casual is fine where it fits the sub.
 - Length: SHORT by default. Real people replying on Reddit don't write essays. Default to 1-2 sentences. Go to a short paragraph only for a genuinely meaty question that needs it - and even then, stop as soon as the point is made. If you're tempted to write more than 4-5 sentences, cut it. Never a wall.
-- CURRENT-FACTS BAN (critical - you get these wrong): You do NOT have reliable up-to-date football knowledge, and this is being written in 2026 during a live World Cup that is past what you know. NEVER state as fact anything time-sensitive: who currently manages or plays for a club, any transfer/signing/departure/loan, injury or availability, contract news, or any specific result, scoreline, scorer, assist, minute, xG, or league/group standing from the current season or this World Cup. Those are exactly the things you invent (e.g. naming a manager who has already left). Write OPINION, football logic, rules, tactics, and only well-established pre-2023 history. If a reply would only work by asserting a current fact you can't be certain of, mark it UNUSABLE - do not guess, do not hedge it into the reply. A confidently wrong fact in his name is far worse than staying quiet.
-- Accurate: never invent facts, stats, transfers or quotes. If unsure, leave it out entirely (not "I think", just omit).
+- RESEARCH FIRST, THEN FORM THE OPINION. This is the order you work in, and it is not optional. Your own football knowledge is STALE: it is July 2026, a World Cup is underway, and the current season is past what you were trained on. You get these badly wrong from memory (you have named managers who already left their club). You HAVE a web search tool - USE IT BEFORE YOU WRITE.
+  1. Read the thread and work out which current-world facts a good reply would turn on: who manages or plays for a club now, transfers, injuries, form, recent results, scorers, standings, who is still in the tournament, what has already happened.
+  2. SEARCH and establish those facts. Check the thread's own premise too - if it's about a player, confirm his current club before you reference it.
+  3. THEN write the take, built on what you actually found.
+- You MAY state a fact - but ONLY one a search result in this conversation confirms. Don't avoid facts: a sharp, correct detail is usually what makes a reply worth upvoting, so use the good ones you find. What you must never do is state a fact from MEMORY, or reason from a premise you didn't verify.
+- THIS APPLIES TO HISTORY TOO, not just current events. Your recall of specific past detail is also unreliable - who beat whom, in which year, in which round, what the score was, who scored, what a player or manager actually said. If the reply leans on a specific historical claim, SEARCH it like anything else. "Everyone knows this one" is exactly how you post something wrong. Only broad, uncontroversial context (a club's general reputation, how a rule works, what a tactic is) is safe from memory.
+- If a search can't confirm something the reply depends on, cut that bit or mark the whole reply UNUSABLE. Never guess, never hedge a shaky fact in ("I think", "if I remember right"). A confidently wrong fact posted in his name is far worse than staying quiet.
+- Accurate: never invent stats or quotes. Attribute a quote only if search confirms who said it.
 - Respect players and the game. No digs, no snark at people. Skip grief/injury/tragedy threads entirely.
 
 THE BAR: default UNUSABLE. Only usable if the reply would genuinely earn upvotes on its own merits and he'd be happy to have written it himself. Skip: betting/gambling, drama/ragebait, mod/meta threads, anything stickied, anything where we'd be noise, threads older than a day with hundreds of comments (we'd be buried), and any thread where a product mention would be the only reason to reply but the rules or vibe forbid it. Also skip any thread that is really about a league, team or competition outside Europe (MLS, Liga MX, Brazilian/South American leagues, African and Asian leagues, etc.) - we have no genuine insight there and these threads don't get engagement for us, so mark UNUSABLE rather than guessing.
@@ -294,14 +300,12 @@ export async function draftReply(post, { subNote, searchNote } = {}) {
     post.body ? `BODY:\n"""\n${post.body}\n"""` : "(link/media post, no self-text)",
   ].filter(Boolean).join("\n");
 
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: { "x-api-key": ANTHROPIC, "anthropic-version": "2023-06-01", "content-type": "application/json" },
-    body: JSON.stringify({ model: DRAFT_MODEL, max_tokens: 700, system: VOICE, messages: [{ role: "user", content: ctx }] }),
-  });
-  const body = await res.text();
-  if (!res.ok) throw new Error(`Anthropic ${res.status}: ${body.slice(0, 300)}`);
-  const text = JSON.parse(body).content?.map((b) => b.text || "").join("") ?? "";
+  // Research-first: the drafter gets live web search and must establish the
+  // current facts BEFORE forming the take (founder, Jul 13: "gather the facts
+  // first and then form an opinion - that's what the AI should be doing").
+  // Previously it wrote from stale memory and a second pass binned ~40% of the
+  // output as factually wrong; grounding the draft is cheaper than checking it.
+  const text = await anthropicSearch(VOICE, ctx, { model: DRAFT_MODEL, maxTokens: 1400, maxUses: 6 });
   const out = parseModelJSON(text);
   return {
     usable: !!out.usable,
@@ -335,7 +339,7 @@ OUTPUT: ONLY a JSON object, no prose, no code fences:
 /** Anthropic call with the server-side web_search tool; loops through pause_turn.
  * A per-request timeout keeps one stalled connection from wedging a whole batch
  * (web_search turns can be slow; undici has no default body timeout). */
-async function anthropicSearch(system, userText, { model = FACTCHECK_MODEL, maxUses = 6, maxHops = 4, timeoutMs = 90_000 } = {}) {
+async function anthropicSearch(system, userText, { model = FACTCHECK_MODEL, maxTokens = 900, maxUses = 6, maxHops = 4, timeoutMs = 90_000 } = {}) {
   const messages = [{ role: "user", content: userText }];
   for (let hop = 0; hop < maxHops; hop++) {
     const ctl = new AbortController();
@@ -346,7 +350,7 @@ async function anthropicSearch(system, userText, { model = FACTCHECK_MODEL, maxU
         method: "POST", signal: ctl.signal,
         headers: { "x-api-key": ANTHROPIC, "anthropic-version": "2023-06-01", "content-type": "application/json" },
         body: JSON.stringify({
-          model, max_tokens: 900, system,
+          model, max_tokens: maxTokens, system,
           tools: [{ type: "web_search_20260209", name: "web_search", max_uses: maxUses }],
           messages,
         }),
