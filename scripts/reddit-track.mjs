@@ -10,7 +10,8 @@
  * thread is drafted against at most once, ever.
  */
 
-import { PATHS, loadJSON, saveJSON, listPostsAny, searchPostsAny, draftReply, factCheck, hasApiCreds } from "./lib/reddit.mjs";
+import { PATHS, loadJSON, saveJSON, listPostsAny, searchPostsAny, triage, draftReply, factCheck, hasApiCreds } from "./lib/reddit.mjs";
+import { factBrief } from "./lib/football-facts.mjs";
 
 const args = process.argv.slice(2);
 const DRY = args.includes("--dry");
@@ -52,9 +53,30 @@ export let creditOut = false;
 async function consider(post, { subNote, searchNote }) {
   state.seen[post.id] = now;                        // one shot per thread, usable or not
   considered++;
+
+  // Tier 1 — cheap triage, NO web search. Most threads die here having cost
+  // almost nothing, instead of paying to research a thread we'd never reply to.
+  let tri;
+  try { tri = await triage(post, { subNote }); }
+  catch (e) {
+    draftErr++;
+    if (/credit balance/i.test(e.message)) { creditOut = true; console.error(`    ✗ ANTHROPIC OUT OF CREDIT`); }
+    else console.error(`    ✗ triage failed: ${e.message.slice(0, 80)}`);
+    return;
+  }
+  if (!tri.worth) { console.log(`    · skip (${tri.reason.slice(0, 90)})`); return; }
+
+  // Tier 2 — FREE facts (Sportmonks: already paid, PL. ESPN: free, WC/others).
+  // Answers the classes that actually broke drafts: current manager, current
+  // club, who's already out of the tournament. Fails soft to "" — never blocks.
+  let brief = "";
+  try { brief = await factBrief(tri); } catch { /* free-source hiccup: fall back to paid search */ }
+  if (brief) console.log(`    📋 facts: ${brief.split("\n")[0].slice(0, 80)}`);
+
+  // Tier 3 — draft, grounded in the brief; paid search only for the gaps.
   let r;
   try {
-    r = await draftReply(post, { subNote, searchNote });
+    r = await draftReply(post, { subNote, searchNote, brief });
   } catch (e) {
     draftErr++;
     if (/credit balance/i.test(e.message)) { creditOut = true; console.error(`    ✗ ANTHROPIC OUT OF CREDIT — cannot draft`); }
@@ -114,18 +136,39 @@ for (const s of order) {
   if (drafted >= cap) break;
   if (creditOut) break;   // can't draft — stop burning 65s-per-sub RSS fetches for nothing
   visited++;
+
+  // The FETCH is the only thing subsOk/subsErr may count. These two used to share
+  // one try-block, so any error out of consider() — including "Anthropic credit
+  // balance is too low" — was tallied as a failed Reddit fetch. On Jul 14 that
+  // turned a billing outage into a log reading "20 subreddit fetches blocked,
+  // Reddit is likely blocking the VPS IP", pointing at exactly the wrong problem.
+  let posts;
   try {
-    const posts = (await listPostsAny(s.name, { sort: s.sort || "hot", limit: 30 }))
+    posts = (await listPostsAny(s.name, { sort: s.sort || "hot", limit: 30 }))
       .filter((p) => fresh(p, s.maxAgeHours) && eligible(p, s.minUps))
       .slice(0, s.perRun ?? D.perRun ?? 2);
     subsOk++;
-    console.log(`  r/${s.name}: ${posts.length} candidate(s)`);
-    for (const p of posts) {
-      if (drafted >= cap) break;
-      console.log(`    ${p.title.slice(0, 90)} (${p.ups}↑, ${p.numComments}c)`);
+  } catch (e) { subsErr++; console.error(`  r/${s.name}: ✗ fetch: ${e.message}`); continue; }
+
+  console.log(`  r/${s.name}: ${posts.length} candidate(s)`);
+  for (const p of posts) {
+    if (drafted >= cap) break;
+    console.log(`    ${p.title.slice(0, 90)} (${p.ups}↑, ${p.numComments}c)`);
+    // consider() guards its own Anthropic calls, but a leak from any of them must
+    // never be blamed on Reddit. Backstop it here and name the real cause.
+    try {
       await consider(p, { subNote: s.note });
+    } catch (e) {
+      draftErr++;
+      if (/credit balance/i.test(e.message)) {
+        creditOut = true;
+        console.error(`    ✗ ANTHROPIC OUT OF CREDIT`);
+        break;
+      }
+      console.error(`    ✗ draft pipeline: ${e.message.slice(0, 90)}`);
     }
-  } catch (e) { subsErr++; console.error(`  r/${s.name}: ✗ ${e.message}`); }
+  }
+  if (creditOut) break;
 }
 
 // Next run picks up at the first sub this one didn't reach.
@@ -182,4 +225,4 @@ if (DRY) { console.log("🛑 DRY — nothing saved."); process.exit(0); }
 saveJSON(PATHS.state, state);
 saveJSON(PATHS.queue, queue);
 const pending = queue.filter((d) => d.status === "pending").length;
-console.log(`💾 saved · ${pending} pending review → reddit-telegram.mjs push\n`);
+console.log(`💾 saved · ${pending} pending review → Studio dash (studio.yourscore.app → Reddit)\n`);

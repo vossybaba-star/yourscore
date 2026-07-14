@@ -1,9 +1,15 @@
 /**
  * reddit.mjs — shared helpers for the Reddit listening pipeline.
  *
- * The flow (mirrors the X repurpose pipeline):
- *   reddit-track.mjs    poll watched subreddits + searches → draft replies → queue
- *   reddit-telegram.mjs push drafts to Telegram, founder taps Post/Edit/Skip
+ * TWO lanes, both landing in the same queue, both read by the Studio dash
+ * (studio.yourscore.app → Reddit). Nothing is pushed to Telegram; nothing posts.
+ *   reddit-fast.mjs   every 30min · ONE multireddit `new` request across all the
+ *                     joined subs · threads <40min old · the first-commenter lane
+ *   reddit-track.mjs  5x/day · walks each sub's `hot` · catches the bigger threads
+ *                     the fast lane's freshness window misses
+ *
+ * They pace against ONE shared RSS clock (see claimRssSlot), so they can run
+ * concurrently without spending each other's per-IP Reddit budget.
  *
  * HOUSE RULES, locked at build time (Jul 2026, retargeted Jul 2026):
  *   • NOTHING posts without an explicit founder tap. No auto-post path exists.
@@ -106,12 +112,57 @@ export const hasApiCreds = () => !!(CLIENT_ID && CLIENT_SECRET && REFRESH_TOKEN)
 // laptop and the VPS. This silently killed every sweep for three hours.
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { readFileSync, writeFileSync, unlinkSync, statSync } from "node:fs";
 const execFileAsync = promisify(execFile);
 
 const RSS_UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126 Safari/537.36";
 const RSS_SPACING_MS = 65_000;
-let _lastRss = 0;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// Reddit's unauthenticated budget is per-IP. The pacing clock used to be a
+// module variable, which meant it was per-PROCESS: reddit-track and reddit-fast
+// could not see each other and would fire two requests in the same second. The
+// old workaround had the fast lane stand DOWN whenever a sweep was running —
+// which cost it entire runs (and misfired, standing down when nothing ran).
+//
+// Pace through a shared FILE instead: one clock for the whole box. Both lanes
+// can now run concurrently and the global rate still never exceeds one request
+// per RSS_SPACING_MS — which is the constraint that actually matters.
+const PACE_FILE = join(DATA_DIR, ".rss-pace");
+const PACE_LOCK = join(DATA_DIR, ".rss-pace.lock");
+const LOCK_STALE_MS = 15_000;  // a holder killed mid-write must not wedge every lane forever
+
+/**
+ * Claim the next RSS slot. Returns 0 once the slot is OURS (the clock is stamped),
+ * otherwise the ms still to wait. Read-and-stamp is guarded by an exclusive-create
+ * lockfile, so two processes can't both conclude the slot is free.
+ */
+async function claimRssSlot() {
+  for (let spin = 0; spin < 300; spin++) {
+    let held = false;
+    try {
+      writeFileSync(PACE_LOCK, String(process.pid), { flag: "wx" });
+      held = true;
+    } catch {
+      // Someone holds the mutex. Steal it only if its holder clearly died.
+      try { if (Date.now() - statSync(PACE_LOCK).mtimeMs > LOCK_STALE_MS) unlinkSync(PACE_LOCK); }
+      catch { /* it vanished under us — just retry */ }
+      await sleep(100);
+      continue;
+    }
+    try {
+      let last = 0;
+      try { last = Number(readFileSync(PACE_FILE, "utf8")) || 0; } catch { last = 0; }
+      const wait = last + RSS_SPACING_MS - Date.now();
+      if (wait > 0) return wait;                      // not our turn — leave the clock untouched
+      writeFileSync(PACE_FILE, String(Date.now()));   // stamp it: the slot is ours
+      return 0;
+    } finally {
+      if (held) { try { unlinkSync(PACE_LOCK); } catch { /* already stolen */ } }
+    }
+  }
+  return 0;  // mutex wedged beyond stealing: proceed rather than hang a sweep forever
+}
 
 const unesc = (s) => s
   .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
@@ -141,9 +192,13 @@ async function curlGet(url) {
 
 async function fetchRss(url) {
   for (let attempt = 0; attempt < 2; attempt++) {
-    const wait = _lastRss + RSS_SPACING_MS - Date.now();
-    if (wait > 0) await sleep(wait);
-    _lastRss = Date.now();
+    // Wait on the SHARED clock, then take the slot. Any other Reddit lane on this
+    // box is waiting on the same file, so we can't collide with it.
+    for (;;) {
+      const wait = await claimRssSlot();
+      if (wait <= 0) break;
+      await sleep(Math.min(wait, RSS_SPACING_MS));
+    }
     try {
       return await curlGet(url);
     } catch (e) {
@@ -179,8 +234,17 @@ function parseAtom(xml) {
   return posts;
 }
 
-export async function listPostsRSS(subreddit, { sort = "hot" } = {}) {
-  return parseAtom(await fetchRss(`https://www.reddit.com/r/${encodeURIComponent(subreddit)}/${sort}.rss`));
+/**
+ * `subreddit` may be a multireddit ("a+b+c") — one request covering many subs,
+ * which is what keeps the fast lane inside Reddit's ~1-req/min budget.
+ * `limit` matters: the default feed returns 25 entries, which on a busy
+ * multireddit only reaches ~40 minutes back. limit=100 reaches ~2.5 hours, so a
+ * 30-minute poll can't silently drop threads that fell off the end.
+ */
+export async function listPostsRSS(subreddit, { sort = "hot", limit } = {}) {
+  const path = subreddit.split("+").map((s) => encodeURIComponent(s)).join("+");
+  const qs = limit ? `?limit=${limit}` : "";
+  return parseAtom(await fetchRss(`https://www.reddit.com/r/${path}/${sort}.rss${qs}`));
 }
 export async function searchPostsRSS(query, { time = "day" } = {}) {
   return parseAtom(await fetchRss(`https://www.reddit.com/search.rss?${new URLSearchParams({ q: query, sort: "new", t: time })}`));
@@ -285,11 +349,76 @@ function parseModelJSON(raw) {
   return JSON.parse(s.slice(start));
 }
 
+// ── Tier 1: triage (cheap, NO web search) ────────────────────────────────────
+// Most candidate threads get dropped. Deciding that with the paid search tool
+// enabled meant paying to research threads we were never going to reply to.
+// Triage first with a plain call, and only spend on the survivors.
+// This is an EXCLUSION filter, not a quality judge. It runs before we've gathered
+// any facts, so it cannot tell a good opportunity from a bad one — the value of a
+// reply lives in what HE can add, not in how substantial the OP is. An earlier
+// version judged quality and threw away the good stuff: it binned a "is Haaland
+// the best player of this tournament?" thread as "a vague one-liner" (the drafter
+// then scored it 8/10) and binned FPL captaincy threads as "generic" (his top
+// priority sub). So: hard categorical skips only, and DEFAULT TO PROCEEDING.
+// The drafter — which has the facts — makes the real call via usable=false.
+const TRIAGE_SYSTEM = `You are a cheap pre-filter for football (soccer) Reddit threads. A real person (long-time football fan, Arsenal supporter) may reply from his own account. Researching and drafting a reply costs money, so your ONLY job is to throw out threads that are categorically not worth spending anything on.
+
+Set worth=false ONLY if the thread is clearly one of these:
+- a megathread, daily discussion, match thread or mod/meta/announcement post
+- grief, death, tragedy, or a serious injury
+- REAL betting or gambling (odds, accumulators, staking money)
+- pure drama/ragebait, or a thread whose whole point is abusing someone
+- a bare image/meme/video post where the TITLE gives you nothing to discuss either
+- centred on a league or competition OUTSIDE Europe (MLS, Liga MX, Brazil, Asia, Africa) - the World Cup and European leagues are always IN scope
+- a fan-sentiment thread inside a RIVAL club's sub where he could only take part by posing as one of their fans
+
+Otherwise set worth=TRUE. Default to true.
+
+THREE MISTAKES YOU MUST NOT MAKE (you have made all three):
+1. NEVER reject a thread because you don't believe its premise. Your knowledge is STALE - it is July 2026 and a World Cup is happening that you know nothing about. If a thread says a player is starring at this World Cup, ACCEPT THAT and pass it through. You are not the fact-checker; you have no facts. "That player isn't at the World Cup" is not a reason - you are simply wrong.
+2. Fantasy football (FPL, Fantasy Premier League, captaincy, wildcards, transfers, draft) is NOT gambling. It is his single highest-priority topic. ALWAYS pass fantasy football threads through.
+3. An empty body is NOT a reason to reject. Most Reddit posts are link posts with no self-text. Judge the TITLE. Only reject if the title too gives you nothing.
+
+You are NOT judging whether the thread is interesting, substantial, well written, or whether he has anything clever to say - a short, plain question with a big audience is often the BEST thread to reply to. Something later in the pipeline decides that, with real facts in hand. Do not reject for being "generic", "vague", "low effort" or "he'd just be noise". If in doubt, pass it through.
+
+Then name the entities a reply would need facts about, exactly as written in the thread.
+
+Do NOT research anything. Your knowledge of current events is stale and irrelevant here - just read the thread.
+
+OUTPUT: ONLY a JSON object, no prose, no code fences:
+{"worth": true|false, "reason": "<short why>", "clubs": ["<clubs the thread is about>"], "players": ["<players>"], "competition": "<Premier League | World Cup | other | none>"}`;
+
+/** Cheap gate: is this thread worth spending research + drafting on? */
+export async function triage(post, { subNote } = {}) {
+  requireAnthropic();
+  const ctx = [
+    `SUBREDDIT: r/${post.sub}${subNote ? `  (rules note: ${subNote})` : ""}`,
+    `TITLE: ${post.title}`,
+    post.body ? `BODY:\n"""\n${post.body.slice(0, 1200)}\n"""` : "(link/media post, no self-text)",
+  ].join("\n");
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "x-api-key": ANTHROPIC, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+    body: JSON.stringify({ model: DRAFT_MODEL, max_tokens: 300, system: TRIAGE_SYSTEM, messages: [{ role: "user", content: ctx }] }),
+  });
+  const body = await res.text();
+  if (!res.ok) throw new Error(`Anthropic ${res.status}: ${body.slice(0, 300)}`);
+  const out = parseModelJSON(JSON.parse(body).content?.map((b) => b.text || "").join("") ?? "");
+  return {
+    worth: !!out.worth,
+    reason: out.reason || "",
+    clubs: Array.isArray(out.clubs) ? out.clubs : [],
+    players: Array.isArray(out.players) ? out.players : [],
+    competition: out.competition || "",
+  };
+}
+
 /**
  * @param {ReturnType<typeof mapPost>} post
- * @param {{subNote?:string, searchNote?:string}} opts  per-sub rules / per-search steer from the watchlist
+ * @param {{subNote?:string, searchNote?:string, brief?:string}} opts  per-sub rules, plus a
+ *   FREE fact brief (Sportmonks/ESPN) to ground the draft without paid searching.
  */
-export async function draftReply(post, { subNote, searchNote } = {}) {
+export async function draftReply(post, { subNote, searchNote, brief } = {}) {
   requireAnthropic();
   const ageH = Math.round((Date.now() / 1000 - post.createdUtc) / 360) / 10;
   const ctx = [
@@ -298,14 +427,16 @@ export async function draftReply(post, { subNote, searchNote } = {}) {
     `THREAD (${post.ups} upvotes, ${post.numComments} comments, ${ageH}h old${post.linkFlair ? `, flair: ${post.linkFlair}` : ""}):`,
     `TITLE: ${post.title}`,
     post.body ? `BODY:\n"""\n${post.body}\n"""` : "(link/media post, no self-text)",
+    brief ? `\nVERIFIED FACTS (from live football data — TRUST THESE OVER YOUR OWN MEMORY, and over anything you find by searching):\n"""\n${brief}\n"""\nThese are already confirmed. Do NOT spend a web search re-checking anything the brief already answers. Search only for what the brief does not cover (news, quotes, injury reports, what someone said).` : null,
   ].filter(Boolean).join("\n");
 
-  // Research-first: the drafter gets live web search and must establish the
-  // current facts BEFORE forming the take (founder, Jul 13: "gather the facts
-  // first and then form an opinion - that's what the AI should be doing").
-  // Previously it wrote from stale memory and a second pass binned ~40% of the
-  // output as factually wrong; grounding the draft is cheaper than checking it.
-  const text = await anthropicSearch(VOICE, ctx, { model: DRAFT_MODEL, maxTokens: 1400, maxUses: 6 });
+  // Research-first: the drafter establishes the facts BEFORE forming the take
+  // (founder, Jul 13: "gather the facts first and then form an opinion - that's
+  // what the AI should be doing"). Facts come from the FREE brief first
+  // (Sportmonks + ESPN, already paid / no cost); the paid web_search tool is the
+  // fallback for what structured data can't answer. Writing from stale memory
+  // and binning ~40% on a second pass was both wrong and more expensive.
+  const text = await anthropicSearch(VOICE, ctx, { model: DRAFT_MODEL, maxTokens: 1400, maxUses: brief ? 3 : 6 });
   const out = parseModelJSON(text);
   return {
     usable: !!out.usable,
