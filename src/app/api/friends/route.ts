@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { rateLimitDistributed } from "@/lib/ratelimit";
 import { sendFriendAcceptedEmail, sendFriendRequestEmail } from "@/lib/email/senders";
+import { notifyUsers } from "@/lib/notify";
+
 // Vercel data cache pins service-role GETs (constant cache key) — see CLAUDE.md §4.
 export const fetchCache = "force-no-store";
 
@@ -88,6 +90,14 @@ export async function POST(req: NextRequest) {
         emailOf(existing.user_id),
         displayNameOf(user.id),
       ]);
+      // Push (opt-in gated, deduped) — fires independently of the email.
+      void notifyUsers({
+        userIds: [existing.user_id],
+        title: `${accepterName} accepted your friend request 🤝`,
+        body: `You're now friends. Challenge them to a game.`,
+        url: `/friends`,
+        dedupeKey: `friend-accepted:${existing.id}`,
+      });
       if (!requesterEmail) return;
       await sendFriendAcceptedEmail({
         requesterUserId: existing.user_id,
@@ -113,6 +123,14 @@ export async function POST(req: NextRequest) {
       emailOf(friendId),
       displayNameOf(user.id),
     ]);
+    // Push (opt-in gated, deduped) — fires independently of the email.
+    void notifyUsers({
+      userIds: [friendId],
+      title: `${requesterName} sent you a friend request 👋`,
+      body: `Add them back and line up a game.`,
+      url: `/friends`,
+      dedupeKey: `friend-request:${user.id}:${friendId}`,
+    });
     if (!recipientEmail) return;
     await sendFriendRequestEmail({
       recipientUserId: friendId,

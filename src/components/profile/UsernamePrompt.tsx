@@ -15,8 +15,15 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-const SKIP_KEY = "ys:username-prompt:skipped"; // session-scoped: re-nudges next visit
+const SKIP_KEY = "ys:username-prompt:skipped"; // localStorage: dismissed once, stays dismissed
 const clean = (s: string) => s.toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 20);
+
+// Never hard-cover the primary browse/play surfaces — people should see the hub
+// (and start playing) before being asked for a handle. The nudge still surfaces on
+// identity-centric routes (e.g. /profile). display_name already works everywhere until
+// a handle is set, so nothing is blocked by deferring this.
+const NO_PROMPT_PREFIXES = ["/auth", "/settings", "/versus", "/play", "/38-0", "/leagues", "/friends", "/debate", "/add"];
+const skipOnPath = (p: string | null) => p === "/" || NO_PROMPT_PREFIXES.some((x) => p?.startsWith(x));
 
 type Status = "idle" | "short" | "checking" | "available" | "taken" | "saving";
 
@@ -29,8 +36,8 @@ export function UsernamePrompt() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (sessionStorage.getItem(SKIP_KEY)) return;
-    if (pathname?.startsWith("/auth") || pathname?.startsWith("/settings")) return;
+    if (localStorage.getItem(SKIP_KEY)) return;
+    if (skipOnPath(pathname)) return;
     let alive = true;
     (async () => {
       const sb = createClient();
@@ -60,7 +67,7 @@ export function UsernamePrompt() {
     return () => clearTimeout(t);
   }, [value]);
 
-  function skip() { try { sessionStorage.setItem(SKIP_KEY, "1"); } catch { /* ignore */ } setOpen(false); }
+  function skip() { try { localStorage.setItem(SKIP_KEY, "1"); } catch { /* ignore */ } setOpen(false); }
 
   async function save() {
     if (status !== "available") return;
@@ -71,7 +78,7 @@ export function UsernamePrompt() {
       if (!user) { skip(); return; }
       const { error } = await sb.from("profiles").update({ username: value, display_name: value }).eq("id", user.id);
       if (error) { setStatus("taken"); return; } // unique-index race → taken
-      try { sessionStorage.setItem(SKIP_KEY, "1"); } catch { /* ignore */ }
+      try { localStorage.setItem(SKIP_KEY, "1"); } catch { /* ignore */ }
       setOpen(false);
     } catch { setStatus("available"); }
   }

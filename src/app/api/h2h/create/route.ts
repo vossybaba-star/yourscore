@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
     void notifyUsers({
       userIds: [invitedUserId],
       title: `${profile?.display_name ?? "Someone"} challenged you ⚔️`,
-      body: `They've set a score on ${quizPackName}. Your turn to beat it.`,
+      body: `They scored ${Math.round(score as number).toLocaleString()} on ${quizPackName}. Your turn to beat it.`,
       url: `/h2h/${data.id}`,
       dedupeKey: `h2h-challenge:${data.id}`,
     });

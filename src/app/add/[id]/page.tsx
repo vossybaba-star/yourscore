@@ -18,23 +18,30 @@ type State =
   | { kind: "sent"; name: string }
   | { kind: "missing" };
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export default function AddFriendPage() {
-  const { id } = useParams<{ id: string }>();
+  const { id } = useParams<{ id: string }>(); // slug: a username or a raw user id
   const [state, setState] = useState<State>({ kind: "loading" });
+  const [targetId, setTargetId] = useState<string | null>(null); // resolved canonical user id
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     (async () => {
       const sb = createClient();
-      const { data: prof } = await sb.from("profiles").select("display_name").eq("id", id).maybeSingle();
+      // Resolve the slug to a user: exact id for UUIDs, else case-insensitive username.
+      const { data: prof } = UUID_RE.test(id)
+        ? await sb.from("profiles").select("id, display_name").eq("id", id).maybeSingle()
+        : await sb.from("profiles").select("id, display_name").ilike("username", id).maybeSingle();
       if (!prof) { setState({ kind: "missing" }); return; }
+      setTargetId(prof.id);
       const name = prof.display_name ?? "A YourScore player";
 
       const { data: { user } } = await sb.auth.getUser();
       if (!user) { setState({ kind: "signed-out", name }); return; }
-      if (user.id === id) { setState({ kind: "self", name }); return; }
+      if (user.id === prof.id) { setState({ kind: "self", name }); return; }
 
-      const res = await fetch(`/api/friends?with=${id}`);
+      const res = await fetch(`/api/friends?with=${prof.id}`);
       const { status } = await res.json();
       if (status === "friends") setState({ kind: "friends", name });
       else if (status === "pending_sent") setState({ kind: "sent", name });
@@ -43,10 +50,10 @@ export default function AddFriendPage() {
   }, [id]);
 
   async function add() {
-    if (busy || state.kind !== "ready") return;
+    if (busy || state.kind !== "ready" || !targetId) return;
     setBusy(true);
     try {
-      const res = await fetch("/api/friends", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ friendId: id }) });
+      const res = await fetch("/api/friends", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ friendId: targetId }) });
       const data = await res.json();
       if (res.ok && (data.status === "sent" || data.status === "now_friends" || data.status === "already_friends")) {
         setState({ kind: data.status === "sent" ? "sent" : "friends", name: state.name });

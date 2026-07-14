@@ -84,12 +84,12 @@ export function RankRewardCard() {
               #{pos.toLocaleString()}
               <span className="font-body text-xs ml-1.5" style={{ color: "#8a948f" }}>{row.overall_score.toLocaleString()} pts</span>
             </p>
-            <p className="font-body text-[10px] uppercase tracking-widest mt-1" style={{ color: "#586058" }}>
+            <p className="font-body text-[10px] uppercase tracking-widest mt-1 truncate" style={{ color: "#586058" }}>
               YourScore leaderboard{badge ? ` · ${badge.label}` : ""}
             </p>
           </div>
         </div>
-        <div className="text-right flex-shrink-0">
+        <div className="text-right flex-shrink-0 pl-3">
           {gained && gained.points > 0 && (
             <p className="font-body text-sm font-bold" style={{ color: "#aeea00" }}>+{gained.points.toLocaleString()} pts</p>
           )}

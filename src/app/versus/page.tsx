@@ -251,14 +251,57 @@ function VersusInner() {
   const stats = useVersusStats();
   const [sheet, setSheet] = useState<null | { kind: "game"; target?: string | null } | { kind: "code" }>(null);
 
+  // Guests get a readable PREVIEW of the hub (like /debate) — real live activity,
+  // highlights and public leagues — with sign-in gating the actions, not the view.
   if (!loading && !user) {
     return (
-      <main className="min-h-dvh bg-bg grid place-items-center px-6">
-        <div className="text-center">
-          <p className="font-display text-2xl text-white mb-2">Versus</p>
-          <p className="font-body text-sm text-text-muted mb-5">Sign in to challenge your friends.</p>
-          <Link href="/auth/sign-in?next=/versus" className="inline-block rounded-2xl px-6 py-3 font-display tracking-wide" style={{ background: TEAL, color: "#04231f" }}>Sign in →</Link>
+      <main className="min-h-dvh bg-bg pb-28">
+        <div className="sticky top-0 z-20 pt-safe" style={{ background: "rgba(8,13,10,0.95)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+          <div className="max-w-lg mx-auto px-5 py-4 flex items-center gap-2">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+              <path d="M3 3l8.5 8.5M3 3v3l7.5 7.5M3 3h3l7.5 7.5" stroke={TEAL} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M19 3l-8.5 8.5M19 3v3l-7.5 7.5M19 3h-3L8.5 11.5" stroke={TEAL} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <h1 className="font-display text-2xl text-white" style={{ letterSpacing: "-0.01em" }}>Versus</h1>
+          </div>
         </div>
+
+        <div className="max-w-lg mx-auto px-5">
+          <div className="pt-4">
+            <div className="relative rounded-3xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+              <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, #101d16 0%, #0b1511 100%)" }} />
+              <VersusHeroArt />
+              <div className="absolute inset-0" style={{ background: "linear-gradient(110deg, rgba(8,13,10,0.78) 38%, rgba(8,13,10,0.28) 82%, rgba(8,13,10,0.05) 100%)" }} />
+              <div className="relative p-5 pt-7 pb-6">
+                <p className="font-body text-[11px] font-bold uppercase tracking-[0.32em] mb-2.5" style={{ color: LIME }}>Welcome to Versus</p>
+                <p className="font-display text-white leading-[0.85]" style={{ fontSize: 46 }}>PLAY YOUR<br /><span style={{ color: LIME }}>MATES.</span><br />SETTLE IT.</p>
+                <p className="font-body text-xs mt-3" style={{ color: "#cdeee7" }}>Quiz Battles and 38-0, head-to-head. Rivalries, leagues and a daily debate.</p>
+              </div>
+            </div>
+          </div>
+
+          <Link href="/auth/sign-in?next=/versus" className="mt-3 w-full flex items-center justify-center gap-2 rounded-2xl py-4 font-display text-base tracking-wide active:scale-[0.98] transition-transform" style={{ background: TEAL, color: "#04231f" }}>
+            SIGN IN TO PLAY →
+          </Link>
+
+          <SectionLabel>Choose your game</SectionLabel>
+          <div className="flex gap-2.5">
+            <GameTile game="38-0" href="/auth/sign-in?next=/versus/38-0" title="38-0" sub="Build your XI team from scratch." />
+            <GameTile game="quiz" href="/auth/sign-in?next=/versus/quiz" title="Quiz Battle" sub="Score questions. Beat your rival." />
+          </div>
+
+          {/* Real, public proof the hub is live (no auth needed) */}
+          <LiveActivityStrip />
+          <CommunityHighlights />
+          <PublicLeaguesRail limit={2} />
+
+          <div className="mt-4 mb-2 rounded-2xl p-5 text-center" style={{ background: "rgba(0,216,192,0.06)", border: "1px solid rgba(0,216,192,0.2)" }}>
+            <p className="font-body text-sm text-white">Sign in to challenge your friends and climb the table.</p>
+            <Link href="/auth/sign-in?next=/versus" className="inline-block mt-3 rounded-xl px-6 py-3 font-display tracking-wide" style={{ background: TEAL, color: "#04231f" }}>Sign in — it&rsquo;s free →</Link>
+          </div>
+        </div>
+
+        <BottomNav />
       </main>
     );
   }

@@ -64,14 +64,14 @@ export function PublicLeagueCard({ league }: { league: PublicLeague }) {
           </svg>
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-body text-sm font-semibold text-white truncate">{league.name}</p>
+          <p className="font-body text-sm font-semibold text-white line-clamp-2 leading-snug">{league.name}</p>
           {/* Which game this league is for — loud and unmissable (founder call). */}
-          <div className="flex items-center gap-1.5 mt-1.5">
+          <div className="flex items-center flex-wrap gap-1.5 mt-1.5">
             <span className="font-body text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md flex-shrink-0" style={{ background: `${c}1f`, color: c, border: `1px solid ${c}44` }}>
               {league.game === "38-0" ? "38-0" : "Quiz Battle"}
             </span>
             {league.featured && <span className="font-body text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md flex-shrink-0" style={{ background: `${GOLD}1f`, color: GOLD, border: `1px solid ${GOLD}44` }}>Featured</span>}
-            <span className="font-body text-[11px] text-text-muted truncate">{league.members} {league.members === 1 ? "member" : "members"}</span>
+            <span className="font-body text-[11px] text-text-muted whitespace-nowrap">{league.members.toLocaleString()} {league.members === 1 ? "member" : "members"}</span>
           </div>
           {league.description && <p className="font-body text-[11px] text-text-muted mt-1.5 line-clamp-2 leading-snug">{league.description}</p>}
         </div>

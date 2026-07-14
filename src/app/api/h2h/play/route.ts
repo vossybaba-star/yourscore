@@ -159,14 +159,17 @@ export async function POST(req: NextRequest) {
   // Tell the challenger their challenge just got played → opens /h2h/<id> result.
   // Won/lost framed from the challenger's side. Best-effort, opt-in-gated, deduped.
   const beat = score > (ch.challenger_score ?? 0);
+  const yourScore = (ch.challenger_score ?? 0).toLocaleString();
+  const theirScore = score.toLocaleString();
+  const packLabel = ch.quiz_pack_name ?? "your challenge";
   void notifyUsers({
     userIds: [ch.challenger_id],
     title: beat
       ? `${profile?.display_name ?? "Someone"} beat your score 😤`
       : `${profile?.display_name ?? "Someone"} took on your challenge 💪`,
     body: beat
-      ? `They won on ${ch.quiz_pack_name ?? "your challenge"}. Fancy a rematch?`
-      : `They couldn't beat you on ${ch.quiz_pack_name ?? "your challenge"}. See how they did.`,
+      ? `${theirScore}–${yourScore} on ${packLabel}. Fancy a rematch?`
+      : `They fell short of your ${yourScore} on ${packLabel}. See how they did.`,
     url: `/h2h/${challengeId}`,
     dedupeKey: `h2h-result:${challengeId}`,
   });

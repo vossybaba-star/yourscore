@@ -34,6 +34,7 @@ interface SearchResult {
   id: string;
   display_name: string;
   total_score: number;
+  games_played: number;
   avatar_url: string | null;
   friendship_status: "none" | "pending_sent" | "pending_received" | "accepted";
 }
@@ -116,9 +117,11 @@ function ContactsInviteButton() {
 // ── Invite card (mockup's "friend code": your personal add-link) ──────────────
 // navigator.share works in the iOS WKWebView, so this is the cross-platform
 // invite; copy is the fallback.
-function InviteCard({ myId }: { myId: string | null }) {
+function InviteCard({ myId, handle }: { myId: string | null; handle: string | null }) {
   const [copied, setCopied] = useState(false);
-  const link = `${typeof window !== "undefined" ? window.location.origin : "https://yourscore.app"}/add/${myId ?? ""}`;
+  // Prefer the friendly handle (/add/rooney); fall back to the raw id when no username is set.
+  const slug = (handle && handle.trim()) ? handle.trim() : (myId ?? "");
+  const link = `${typeof window !== "undefined" ? window.location.origin : "https://yourscore.app"}/add/${slug}`;
 
   async function copy() {
     if (!myId) return;
@@ -175,7 +178,7 @@ function RivalRow({ r, isFriend, onAdd, addState }: { r: Rivalry; isFriend: bool
         {!isFriend && onAdd && (
           addState === "requested"
             ? <span className="font-body text-xs flex-shrink-0" style={{ color: TEAL }}>Requested</span>
-            : <button onClick={() => onAdd(r.opponentId)} className="font-body text-xs font-semibold px-2.5 py-1.5 rounded-lg flex-shrink-0" style={{ background: "rgba(255,255,255,0.05)", color: "#8a948f", border: "1px solid rgba(255,255,255,0.1)" }}>+ Add</button>
+            : <button onClick={() => onAdd(r.opponentId)} className="font-body text-xs font-semibold px-3.5 py-1.5 rounded-lg flex-shrink-0" style={{ background: "rgba(0,216,192,0.22)", color: "#6ff2e0", border: "1px solid rgba(0,216,192,0.55)" }}>+ Add</button>
         )}
         <Link href={`/versus/quiz?to=${r.opponentId}`} className="font-display text-[11px] tracking-wide px-3.5 py-2 rounded-lg flex-shrink-0" style={{ background: "rgba(0,216,192,0.12)", color: TEAL, border: `1px solid ${TEAL}33` }}>CHALLENGE</Link>
       </div>
@@ -192,6 +195,7 @@ function RivalRow({ r, isFriend, onAdd, addState }: { r: Rivalry; isFriend: bool
 
 export function FriendsPanel({ embedded = false }: { embedded?: boolean }) {
   const [myId, setMyId] = useState<string | null>(null);
+  const [myHandle, setMyHandle] = useState<string | null>(null);
   const [friends, setFriends] = useState<Friend[]>([]);
   const [search, setSearch] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -240,10 +244,13 @@ export function FriendsPanel({ embedded = false }: { embedded?: boolean }) {
     supabase.auth.getUser().then(({ data }) => {
       const uid = data.user?.id ?? null;
       setMyId(uid);
-      if (uid) loadFriends(uid).finally(() => setLoading(false));
-      else setLoading(false);
+      if (uid) {
+        loadFriends(uid).finally(() => setLoading(false));
+        supabase.from("profiles").select("username").eq("id", uid).maybeSingle()
+          .then(({ data: p }) => setMyHandle((p?.username as string | null) ?? null));
+      } else setLoading(false);
     });
-  }, [loadFriends, supabase.auth]);
+  }, [loadFriends, supabase]);
 
   // Debounced search
   useEffect(() => {
@@ -252,12 +259,12 @@ export function FriendsPanel({ embedded = false }: { embedded?: boolean }) {
       setSearching(true);
       const { data } = await supabase
         .from("profiles")
-        .select("id, display_name, total_score, avatar_url")
+        .select("id, display_name, total_score, games_played, avatar_url")
         .ilike("display_name", `%${search.trim()}%`)
         .neq("id", myId ?? "")
         .limit(10);
 
-      const results: SearchResult[] = (data ?? []).map((p: { id: string; display_name: string | null; total_score: number | null; avatar_url: string | null }) => {
+      const results: SearchResult[] = (data ?? []).map((p: { id: string; display_name: string | null; total_score: number | null; games_played: number | null; avatar_url: string | null }) => {
         const f = friends.find(fr => fr.user_id === p.id);
         let friendship_status: SearchResult["friendship_status"] = "none";
         if (f) {
@@ -265,7 +272,7 @@ export function FriendsPanel({ embedded = false }: { embedded?: boolean }) {
           else if (f.is_requester) friendship_status = "pending_sent";
           else friendship_status = "pending_received";
         }
-        return { id: p.id, display_name: p.display_name ?? "Player", total_score: p.total_score ?? 0, avatar_url: p.avatar_url ?? null, friendship_status };
+        return { id: p.id, display_name: p.display_name ?? "Player", total_score: p.total_score ?? 0, games_played: p.games_played ?? 0, avatar_url: p.avatar_url ?? null, friendship_status };
       });
       setSearchResults(results);
       setSearching(false);
@@ -401,7 +408,7 @@ export function FriendsPanel({ embedded = false }: { embedded?: boolean }) {
         )}
 
         {/* ── Invite ─────────────────────────────────────────────────────── */}
-        <div className="mt-7"><InviteCard myId={myId} /></div>
+        <div className="mt-7"><InviteCard myId={myId} handle={myHandle} /></div>
 
         {/* ── All friends ───────────────────────────────────────────────── */}
         <SectionLabel>{accepted.length > 0 ? `Friends (${accepted.length})` : "Friends"}</SectionLabel>
@@ -484,15 +491,22 @@ export function FriendsPanel({ embedded = false }: { embedded?: boolean }) {
         {searchResults.map((r, i) => (
           <div key={r.id} className="fade-in flex items-center gap-3 px-4 py-3 rounded-2xl mb-2 bg-surface"
             style={{ border: "1px solid rgba(255,255,255,0.07)", animationDelay: `${i * 0.04}s` }}>
-            <PlayerAvatar seed={r.id} name={r.display_name} avatarUrl={r.avatar_url} size={40} />
-            <div className="flex-1 min-w-0">
-              <p className="font-body text-sm font-semibold text-white truncate">{r.display_name}</p>
-              <p className="font-body text-xs text-text-muted">{(r.total_score ?? 0).toLocaleString()} pts</p>
-            </div>
+            {/* Avatar + name open the player's public profile (so you're not adding a stranger blind) */}
+            <Link href={`/profile/${r.id}`} className="flex items-center gap-3 flex-1 min-w-0">
+              <PlayerAvatar seed={r.id} name={r.display_name} avatarUrl={r.avatar_url} size={40} />
+              <div className="flex-1 min-w-0">
+                <p className="font-body text-sm font-semibold text-white truncate">{r.display_name}</p>
+                <p className="font-body text-xs" style={{ color: "#9aa79f" }}>
+                  {r.games_played > 0
+                    ? `${r.games_played.toLocaleString()} ${r.games_played === 1 ? "game" : "games"} · ${(r.total_score ?? 0).toLocaleString()} pts`
+                    : "New player"}
+                </p>
+              </div>
+            </Link>
             {r.friendship_status === "none" && (
               <button onClick={() => sendRequest(r.id)}
-                className="px-3 py-1.5 rounded-lg font-body text-xs font-semibold transition-all flex-shrink-0"
-                style={{ background: "rgba(0,216,192,0.15)", color: TEAL, border: "1px solid rgba(0,216,192,0.3)" }}>
+                className="px-3.5 py-1.5 rounded-lg font-body text-xs font-semibold transition-all flex-shrink-0"
+                style={{ background: "rgba(0,216,192,0.22)", color: "#6ff2e0", border: "1px solid rgba(0,216,192,0.55)" }}>
                 + Add
               </button>
             )}

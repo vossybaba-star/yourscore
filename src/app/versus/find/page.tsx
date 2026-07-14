@@ -26,8 +26,12 @@ type Stage = "choose" | "searching" | "found" | "needsTeam";
 interface Found { name: string; avatarUrl: string | null; seed: string; href: string }
 
 const POLL_MS = 2500;
+// Quiz matchmaking should always find someone fast — poll quickly and take the
+// shadow/CPU fallback so a match resolves within ~3s (feels like finding a real
+// opponent, never a long empty wait).
+const QUIZ_POLL_MS = 1200;
 const botFallbackDelay = () => 2_000 + Math.floor(Math.random() * 1_000); // mirror 38-0 live
-const quizBotFallbackDelay = () => 4_500 + Math.floor(Math.random() * 1_500); // "after 5 seconds"
+const quizBotFallbackDelay = () => 1_200 + Math.floor(Math.random() * 500); // 1.2–1.7s → resolves ≤3s
 
 const SEARCH_MESSAGES = [
   "Finding someone ready to play…",
@@ -160,7 +164,7 @@ function FindInner() {
           }
         }
       } catch { /* transient — keep polling */ }
-      if (searchingRef.current) timer = setTimeout(poll, POLL_MS);
+      if (searchingRef.current) timer = setTimeout(poll, g === "quiz" ? QUIZ_POLL_MS : POLL_MS);
     };
     poll();
 
@@ -173,7 +177,7 @@ function FindInner() {
   // Found → auto-enter after a beat (the button is there for the impatient).
   useEffect(() => {
     if (stage !== "found" || !found) return;
-    const t = setTimeout(() => router.push(found.href), 2200);
+    const t = setTimeout(() => router.push(found.href), 1500);
     return () => clearTimeout(t);
   }, [stage, found, router]);
 
