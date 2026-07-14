@@ -6,7 +6,37 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed with the founder:** 2026-07-11 (**YourScore Fantasy Football — Phase 1 MVP
+> **Confirmed with the founder:** 2026-07-13 (**Fantasy News & Insights hub — v1 BUILT
+> on branch `fantasy/news-hub`** (branched off `quiz/game-types`, which carries the
+> fantasy game it depends on; NOT on `main` yet — ships when the fantasy work does).
+> **TWO tabbed surfaces, and the split is the point.** `/fantasy/news` is a **FEED** —
+> a stream of content cards you scroll and tap into: "Worth knowing" insight cards,
+> doubts, then article/tweet cards. `/fantasy/fixtures` is a **TOOL** — the club × GW
+> ticker (rows = 20 clubs, cols = next 5 GWs, each cell tinted by THAT club's
+> difficulty; a match list can't say who a fixture is tough FOR). Both tabs render the
+> same cron-built doc. **No tables on the feed:** the form leaderboard and the ticker
+> become CONTENT via `buildInsights()` ("Szoboszlai is quietly racking up points — 24
+> for Liverpool"), leading with points (the game's own currency, which we can't be
+> wrong about) rather than a stat line that overclaims.
+> Data: SportMonks predicted XIs diffed for "likely doubt" flags (we have **NO injuries
+> endpoint and NO xG** on our plan); club codes come from SportMonks `short_code`
+> (a name heuristic collapses Man City + Man United to "MAN"); form from
+> `fantasy_player_scores` (zero extra SportMonks calls); editorial/tweet river via the
+> VPS pipeline POSTing to `/api/fantasy/news-items` (bearer auth; tweets render as
+> native cards, never widgets.js). One hourly cron `/api/cron/fantasy-news` with
+> per-section staleness gating + `?force=1` (the gate asks "is this old?", never "was
+> this built by current code") + deadline push nudge (gated `FANTASY_NEWS_PUSH_ENABLED`,
+> dedupe `fantasy-deadline:<gw>`). Decisions: general feed, solo-first, no social layer
+> yet; hub does NOT earn transfer credits (parked). Spec: `docs/fantasy-news-hub-spec.md`.
+> **Migration 77 APPLIED to prod by founder Jul 13.** Verified live in preview; prod
+> build passes.
+> ⚠️ TODO before launch: delete the 2 `sample` rows from `fantasy_news_items`; build the
+> VPS worker that feeds real editorial; confirm the predicted-lineup include name once
+> SM populates rows ~24-48h pre-kickoff. The page fetch uses an explicit per-fetch
+> revalidate — service-role GETs get PINNED in Next's data cache otherwise, and the
+> stale doc survives server restarts.)
+>
+> **Previously confirmed:** 2026-07-11 (**YourScore Fantasy Football — Phase 1 MVP
 > built (branch `your-pl-xi/gate-generator`, not yet merged).** The 4th game, formerly
 > "Your PL XI". Locked model: build a **15-man squad ONCE** (2GK/5DEF/5MID/3FWD, £100m,
 > max 3/club, 4-man bench + auto-subs) → each gameweek a **knowledge round earns TRANSFER
@@ -186,6 +216,17 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-13** — **Quiz covers fully restyled — LOGO REMOVED + all live** (founder-approved
+  contact sheets). Every one of the 72 live quiz packs now has a themed 1080×1080 cover in ONE
+  cohesive **flat retro-poster** style, **no YourScore logo** (title + crest/theme carry the
+  brand). Generators: `scripts/gen-club-cover.mjs` (20 PL clubs — real crest composited as the
+  ingrained hero in a floodlit medallion, kit-colour poster), `scripts/gen-records-cover.mjs`
+  (all-time/EOS — per-topic themes: UCL/PL/Euro trophies, golden boot, managers, penalty
+  shootout, derbies, relegation, transfers), and `gen-quiz-images.mjs` (WC — **logo dropped**,
+  new `--cover-only`; backfill forced `--style 2` for consistency). All uploaded to the
+  `quiz-share` bucket + `metadata.cover_image` wired (cache-busted). ⚠️ The daily-WC pipeline
+  logo-drop only affects FUTURE daily cards once `gen-quiz-images.mjs` is committed/deployed to
+  where launch-daily runs. See [[yourscore-quiz-covers]].
 - **2026-07-07** — **Play-level acquisition attribution** (mig 75): WC runs + solo quiz
   attempts now store first-touch `source`/`utm_*` (client sends localStorage `ys:acq` at
   creation; server sanitizes) — plays-per-platform/campaign is now a direct DB query,

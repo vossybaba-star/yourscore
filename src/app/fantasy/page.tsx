@@ -193,6 +193,15 @@ export default function FantasyHub() {
         <p style={{ fontSize: 12.5, color: MUTED, margin: 0, lineHeight: 1.45 }}>{b.sub}</p>
       </div>
 
+      {/* News & insights — team news, form and tips for the week */}
+      <div
+        onClick={() => router.push("/fantasy/news")}
+        style={{ background: PANEL, border: `1px solid ${LINE}`, borderRadius: 12, padding: "10px 14px", marginBottom: 12, display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}
+      >
+        <span style={{ fontSize: 13, fontWeight: 600 }}>News &amp; insights</span>
+        <span style={{ fontSize: 12, color: MUTED }}>team news · form · tips →</span>
+      </div>
+
       {/* Demo stepper — walk the weekly journey (replay/prototype only) */}
       {isDemo && (
         <div style={{ marginBottom: 14 }}>
