@@ -137,13 +137,32 @@ const LOCK_STALE_MS = 15_000;  // a holder killed mid-write must not wedge every
  * otherwise the ms still to wait. Read-and-stamp is guarded by an exclusive-create
  * lockfile, so two processes can't both conclude the slot is free.
  */
+// If the shared clock is unusable (wrong owner, read-only disk), fall back to the
+// in-process clock rather than killing the run. A cross-process pace lock is an
+// OPTIMISATION over standing down; it must never be a new way for a sweep to die.
+// This bit us for real: a hand-run as root left .rss-pace root-owned, and the next
+// cron run — as `deploy` — died with EACCES before it fetched a single post.
+let _paceShared = true;
+let _lastRssLocal = 0;
+
 async function claimRssSlot() {
+  if (!_paceShared) {
+    const wait = _lastRssLocal + RSS_SPACING_MS - Date.now();
+    if (wait > 0) return wait;
+    _lastRssLocal = Date.now();
+    return 0;
+  }
   for (let spin = 0; spin < 300; spin++) {
     let held = false;
     try {
       writeFileSync(PACE_LOCK, String(process.pid), { flag: "wx" });
       held = true;
-    } catch {
+    } catch (e) {
+      if (e.code === "EACCES" || e.code === "EPERM" || e.code === "EROFS") {
+        console.error(`  ⚠️  shared RSS clock unwritable (${e.code}) — pacing per-process instead`);
+        _paceShared = false;
+        return claimRssSlot();
+      }
       // Someone holds the mutex. Steal it only if its holder clearly died.
       try { if (Date.now() - statSync(PACE_LOCK).mtimeMs > LOCK_STALE_MS) unlinkSync(PACE_LOCK); }
       catch { /* it vanished under us — just retry */ }
@@ -157,6 +176,13 @@ async function claimRssSlot() {
       if (wait > 0) return wait;                      // not our turn — leave the clock untouched
       writeFileSync(PACE_FILE, String(Date.now()));   // stamp it: the slot is ours
       return 0;
+    } catch (e) {
+      if (e.code === "EACCES" || e.code === "EPERM" || e.code === "EROFS") {
+        console.error(`  ⚠️  shared RSS clock unwritable (${e.code}) — pacing per-process instead`);
+        _paceShared = false;
+        return claimRssSlot();
+      }
+      throw e;
     } finally {
       if (held) { try { unlinkSync(PACE_LOCK); } catch { /* already stolen */ } }
     }

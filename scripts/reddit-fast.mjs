@@ -35,11 +35,15 @@ const DRY = process.argv.includes("--dry");
 const HERE = dirname(fileURLToPath(import.meta.url));
 const STATE = join(HERE, "data", "reddit-fast-state.json");
 
-// Where being early is worth most: big audiences, fast-moving threads, and the
-// topics he actually wants to own. Kept small on purpose — one RSS request.
-// All the subs he's joined (founder: "all"), watched in ONE multireddit request.
+// Every joined sub (founder: "all") EXCEPT those flagged `fast: false` — the meme,
+// image and satire subs. Being early is worthless there: the value is a funny
+// one-liner on a post that already landed, and we can't even see the image. Worse,
+// they're the highest-volume subs on Reddit, so in a shared `new` feed they crowd
+// out the subs where an early substantive reply actually wins. Measured on the
+// 12:30 run: soccercirclejerk + soccermemes were 7 of 15 fresh threads and yielded
+// nothing. The 5x/day sweep still covers them via `hot`, which only surfaces hits.
 const wl = loadJSON(PATHS.watchlist, { subreddits: [] });
-const SUBS = wl.subreddits.map((s) => s.name);
+const SUBS = wl.subreddits.filter((s) => s.fast !== false).map((s) => s.name);
 const NOTE = new Map(wl.subreddits.map((s) => [s.name.toLowerCase(), s.note || ""]));
 
 // The feed must reach back further than the gap between polls, or threads posted
