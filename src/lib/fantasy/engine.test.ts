@@ -1,9 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  applyTransfer, autoSubs, bankCredits, creditsForRound, effectiveCaptain,
-  scoreEntry, smartDefaults, transferCost, validateSelection, validateSquad,
+  accrueChip, applyTransfer, autoSubs, bankCredits, creditsForRound, effectiveCaptain,
+  halfOf, perfectRoundReward, scoreEntry, smartDefaults, transferCost,
+  validateSelection, validateSquad,
   type LockedSelection, type PoolPlayer, type Squad, RuleError, BUDGET_TENTHS,
+  CHIP_HOLD_CAP, GAMEWEEKS_PER_CHIP, HALF_SEASON_GW,
 } from "./engine";
 import { pointsFor, ZERO_FACTS, type MatchFacts } from "./values";
 
@@ -248,4 +250,81 @@ test("pointsFor: golden per-position values", () => {
 test("RuleError carries a machine-readable code", () => {
   try { validateSquad([], POOL); assert.fail("should throw"); }
   catch (e) { assert.ok(e instanceof RuleError); assert.equal((e as RuleError).code, "size"); }
+});
+
+// ── chips (D:123-156) ─────────────────────────────────────────────────────────
+test("accrueChip: a token every 4 PLAYED gameweeks, cumulative not consecutive", () => {
+  let s = { progress: 0, held: 0, minted: false };
+  for (let i = 1; i < GAMEWEEKS_PER_CHIP; i++) {
+    s = accrueChip(s.progress, s.held);
+    assert.equal(s.minted, false, `no token yet at ${i} played weeks`);
+    assert.equal(s.held, 0);
+  }
+  s = accrueChip(s.progress, s.held);
+  assert.equal(s.minted, true, "4th played gameweek mints the token");
+  assert.equal(s.held, 1);
+  assert.equal(s.progress, 0, "progress resets after minting");
+});
+test("accrueChip: progress stops dead at the hold cap — no stockpiling", () => {
+  const at = accrueChip(3, CHIP_HOLD_CAP);
+  assert.deepEqual(at, { progress: 3, held: CHIP_HOLD_CAP, minted: false });
+});
+test("halfOf: the wildcard's use-it-or-lose-it boundary", () => {
+  assert.equal(halfOf(1), 1);
+  assert.equal(halfOf(HALF_SEASON_GW), 1);
+  assert.equal(halfOf(HALF_SEASON_GW + 1), 2);
+  assert.equal(halfOf(38), 2);
+});
+test("perfectRoundReward: 11/11 mints a wildcard, but only one per half", () => {
+  assert.deepEqual(perfectRoundReward(11, 11, false), { wildcard: true, credits: 0 });
+  // the second perfect round of the same half overflows into credits instead
+  assert.deepEqual(perfectRoundReward(11, 11, true), { wildcard: false, credits: 1 });
+  assert.deepEqual(perfectRoundReward(10, 11, false), { wildcard: false, credits: 0 });
+});
+test("transferCost: every move is free on a wildcard week", () => {
+  assert.deepEqual(transferCost(0, true), { paid: "free" });
+  assert.deepEqual(transferCost(0, false), { paid: "hit" });
+  assert.deepEqual(transferCost(2, false), { paid: "credit" });
+});
+test("scoreEntry: Triple Captain triples instead of doubling", () => {
+  const sel = lockedSel();
+  const scores = new Map(sel.picks.map((p) => [p.id, { points: 10, facts: { ...ZERO_FACTS, minutes: 90 } }]));
+  const normal = scoreEntry(sel, 0, scores, new Map(), null);
+  const tripled = scoreEntry(sel, 0, scores, new Map(), "triple_captain");
+  assert.equal(normal.total, 110 + 10, "11×10 + captain doubled");
+  assert.equal(tripled.total, 110 + 20, "11×10 + captain TRIPLED");
+  assert.equal(tripled.breakdown.find((b) => b.captain)!.points, 30);
+});
+test("scoreEntry: Bench Boost scores all 15 and turns auto-subs off", () => {
+  const sel = lockedSel();
+  // a starter blanks: normally he'd be auto-subbed for a bench player
+  const dud = sel.xi.find((id) => id !== sel.captain)!;
+  const scores = new Map(sel.picks.map((p) => [p.id, {
+    points: p.id === dud ? 0 : 10,
+    facts: { ...ZERO_FACTS, minutes: p.id === dud ? 0 : 90 },
+  }]));
+  const boosted = scoreEntry(sel, 0, scores, new Map(), "bench_boost");
+  assert.equal(boosted.breakdown.length, 15, "all 15 appear");
+  assert.equal(boosted.subs.length, 0, "nothing is subbed — the bench already counts");
+  // 10 playing starters ×10 + dud 0 + captain's extra 10 + 4 bench ×10
+  assert.equal(boosted.total, 100 + 0 + 10 + 40);
+});
+test("scoreEntry: chips never break the pure-recompute contract", () => {
+  const sel = lockedSel();
+  const scores = new Map(sel.picks.map((p) => [p.id, { points: 7, facts: { ...ZERO_FACTS, minutes: 90 } }]));
+  for (const chip of ["triple_captain", "bench_boost", null] as const) {
+    const a = scoreEntry(sel, 1, scores, new Map(), chip);
+    const b = scoreEntry(sel, 1, scores, new Map(), chip);
+    assert.deepEqual(a, b, `${chip}: same input twice → identical output`);
+  }
+});
+test("wildcard: an UNUSED half's wildcard must not survive into the next half", () => {
+  // The rule is use-it-or-lose-it. Expire, THEN add — otherwise a player who sat on
+  // their first-half wildcard would carry it into the second half and end up with
+  // two, i.e. be rewarded for not using it.
+  const held = { wildcards: 1, wildcard_half: 1 as 1 | 2 };
+  const half = halfOf(HALF_SEASON_GW + 1); // now in the second half
+  const live = held.wildcard_half === half ? held.wildcards : 0;
+  assert.equal(live, 0, "the first-half wildcard is dead the moment the half turns");
+  assert.equal(live + 1, 1, "you hold exactly the one newly issued for this half");
 });

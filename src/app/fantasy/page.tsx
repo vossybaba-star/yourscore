@@ -4,10 +4,31 @@ import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "r
 import { useRouter } from "next/navigation";
 import {
   api, Btn, Card, Chip, Crest, extrasLine, fmtM, GOLD, Header, INK, LINE, MUTED, page, PANEL,
-  type ClientPoolPlayer, type FantasyState, type Pos,
+  type ChipName, type ClientPoolPlayer, type FantasyState, type Pos,
 } from "@/components/fantasy/shared";
+import { HALF_SEASON_GW } from "@/lib/fantasy/engine";
 
 type Result = NonNullable<NonNullable<FantasyState["entry"]>["result"]>;
+
+// Fungible tokens (triple_captain, bench_boost, insight, second_chance) all
+// spend from the same held count; the wildcard runs on its own separate track.
+// Insight and Second Chance are round mechanics that don't exist yet — shown so
+// the full chip set is legible, but never playable.
+const CHIP_META: { key: ChipName; label: string; blurb: string; comingSoon?: boolean }[] = [
+  { key: "wildcard", label: "Wildcard", blurb: "Unlimited free transfers this gameweek" },
+  { key: "triple_captain", label: "Triple Captain", blurb: "Your captain's points count ×3, not ×2" },
+  { key: "bench_boost", label: "Bench Boost", blurb: "All 15 players score, bench included" },
+  { key: "insight", label: "Insight", blurb: "Coming soon", comingSoon: true },
+  { key: "second_chance", label: "Second Chance", blurb: "Coming soon", comingSoon: true },
+];
+const CHIP_LABEL: Record<ChipName, string> = Object.fromEntries(CHIP_META.map((c) => [c.key, c.label])) as Record<ChipName, string>;
+
+async function apiRaw<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(`/api/fantasy/${path}`, init);
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw Object.assign(new Error(json.error ?? `HTTP ${res.status}`), { status: res.status, code: json.code });
+  return json as T;
+}
 
 export default function FantasyHub() {
   const router = useRouter();
@@ -84,6 +105,25 @@ export default function FantasyHub() {
     setBusy(false);
   };
 
+  // Playing a chip is the biggest call of the week — confirm before spending it.
+  const playChipAction = async (chip: ChipName, label: string) => {
+    if (!state?.chips) return;
+    const count = chip === "wildcard" ? state.chips.wildcards : state.chips.held;
+    const noun = chip === "wildcard" ? "wildcard" : `chip${count === 1 ? "" : "s"}`;
+    if (!window.confirm(`Play ${label} this gameweek? You hold ${count} ${noun}.`)) return;
+    setBusy(true); setErr(null);
+    try { await api("chip", { chip }); await refresh(); }
+    catch (e) { setErr((e as Error).message); }
+    setBusy(false);
+  };
+
+  const undoChip = async () => {
+    setBusy(true); setErr(null);
+    try { await apiRaw("chip", { method: "DELETE" }); await refresh(); }
+    catch (e) { setErr((e as Error).message); }
+    setBusy(false);
+  };
+
 
   if (needsAuth) return (
     <main style={page}>
@@ -106,6 +146,7 @@ export default function FantasyHub() {
   );
   if (!state || !squad) return <main style={page}><Header /><p style={{ color: MUTED }}>Loading…</p></main>;
   const entry = state.entry;
+  const chips = state.chips;
   const result = entry?.result as Result | undefined | null;
   const locked = !state.openForEdits;
   const roundDone = !!entry?.round.done;
@@ -258,6 +299,57 @@ export default function FantasyHub() {
         </Card>
       )}
 
+      {/* Chips — only once the gameweek is live and your squad is committed;
+          pre-season there's nothing yet to spend a chip protecting. */}
+      {phase === "open" && !preseason && chips && (
+        <Card style={{ marginBottom: 12 }}>
+          <div style={{ fontSize: 14.5, fontWeight: 700, marginBottom: 4 }}>Chips</div>
+          <p style={{ fontSize: 12.5, color: MUTED, margin: "0 0 4px", lineHeight: 1.45 }}>
+            {chips.held} chip{chips.held === 1 ? "" : "s"} held · {chips.progress} of {chips.gameweeksPerChip} gameweeks
+            played toward the next one
+          </p>
+          {chips.wildcards > 0 && (
+            <p style={{ fontSize: 12.5, color: GOLD, margin: "0 0 8px" }}>
+              1 wildcard held — expires at the GW{chips.wildcardHalf === 1 ? HALF_SEASON_GW : state.season.total} deadline
+            </p>
+          )}
+          {chips.playedThisGw ? (
+            <div style={{
+              display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8,
+              background: "#233B2C", border: `1px solid ${GOLD}`, borderRadius: 10, padding: "9px 12px", marginTop: 6,
+            }}>
+              <span style={{ fontSize: 13.5, fontWeight: 700, color: GOLD }}>
+                {CHIP_LABEL[chips.playedThisGw]} played this gameweek
+              </span>
+              <Btn small disabled={busy} onClick={undoChip}>Undo</Btn>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 6 }}>
+              {CHIP_META.map((c) => {
+                const held = c.key === "wildcard" ? chips.wildcards > 0 : chips.held > 0;
+                const playable = held && !c.comingSoon;
+                return (
+                  <button key={c.key} disabled={!playable || busy} onClick={() => playChipAction(c.key, c.label)} style={{
+                    display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8,
+                    padding: "9px 12px", borderRadius: 10, textAlign: "left",
+                    background: PANEL, border: `1px solid ${LINE}`, color: playable ? INK : MUTED,
+                    cursor: playable ? "pointer" : "default", opacity: playable ? 1 : 0.55,
+                  }}>
+                    <span>
+                      <span style={{ fontSize: 13.5, fontWeight: 700, display: "block" }}>{c.label}</span>
+                      <span style={{ fontSize: 11.5 }}>{c.comingSoon ? "Coming soon" : c.blurb}</span>
+                    </span>
+                    {!c.comingSoon && (
+                      <span style={{ fontSize: 11, color: MUTED, flexShrink: 0 }}>{held ? "Play" : "None held"}</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </Card>
+      )}
+
       {result && (
         <Card style={{ marginBottom: 12, border: `1px solid ${GOLD}` }}>
           <div style={{ fontSize: 12, letterSpacing: "0.1em", color: GOLD, fontWeight: 700 }}>
@@ -395,7 +487,9 @@ export default function FantasyHub() {
       {!locked && <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {!preseason && (
           <Btn onClick={() => router.push("/fantasy/transfers")}>
-            Transfers ({squad.credits} free · extras −4 pts)
+            {chips?.playedThisGw === "wildcard"
+              ? "Transfers (wildcard active — all free)"
+              : `Transfers (${squad.credits} free · extras −4 pts)`}
           </Btn>
         )}
         <Btn gold disabled={busy} onClick={lock}>

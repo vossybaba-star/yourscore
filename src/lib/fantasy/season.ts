@@ -31,7 +31,7 @@ import "server-only";
  *      deadline is sacred."
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { scoreEntry, type LockedSelection, type SquadPick } from "./engine";
+import { accrueChip, halfOf, scoreEntry, type Chip, type LockedSelection, type SquadPick } from "./engine";
 import { aggregateFixtures, fetchGwFixtures, toPlayerScores } from "./ingest";
 import { enginePool } from "./pool";
 import { SCORING_VERSION, ZERO_FACTS, type MatchFacts } from "./values";
@@ -92,7 +92,40 @@ export async function lockGameweek(db: Db, gw: SeasonGw): Promise<{ locked: numb
     if (upErr) throw new Error(`lock upsert: ${upErr.message}`);
   }
   await db.from("fantasy_gameweeks").update({ status: "locked" }).eq("gw", gw.gw);
+
+  await issueWildcards(db, halfOf(gw.gw));
   return { locked: rows.length, rolledOver };
+}
+
+/**
+ * One issued wildcard per half, use-it-or-lose-it (D:147-149).
+ *
+ * Two separate questions, and they need two separate columns — collapsing them
+ * into one is a bug that would only surface in December:
+ *   - `wildcard_half`: the half the wildcards you HOLD are valid in. Crossing into
+ *     a new half kills them (that IS the expiry).
+ *   - `issued_half`:   the half we last handed out the standard wildcard for.
+ * A bonus wildcard from a perfect round also sets `wildcard_half`. If the issuer
+ * keyed off that, a player who quizzed 11/11 in the first week of a half would
+ * look "already issued" and would silently never receive their own wildcard —
+ * punished for a perfect round. `issued_half` is what makes it idempotent.
+ */
+async function issueWildcards(db: Db, half: 1 | 2): Promise<void> {
+  const { data: squads, error } = await db.from("fantasy_squads")
+    .select("user_id, wildcards, wildcard_half, issued_half").range(0, 9999);
+  if (error) throw new Error(`wildcard issuance: ${error.message}`);
+
+  for (const s of (squads ?? []) as {
+    user_id: string; wildcards: number; wildcard_half: number | null; issued_half: number | null;
+  }[]) {
+    if (s.issued_half === half && s.wildcard_half === half) continue; // already settled for this half
+    // Anything held for a previous half is dead. Expire, then issue.
+    const live = s.wildcard_half === half ? s.wildcards : 0;
+    const grant = s.issued_half === half ? 0 : 1;
+    await db.from("fantasy_squads")
+      .update({ wildcards: live + grant, wildcard_half: half, issued_half: half })
+      .eq("user_id", s.user_id);
+  }
 }
 
 // ── ingest: SportMonks → fantasy_player_scores ───────────────────────────────
@@ -162,7 +195,7 @@ export async function scoreGameweek(db: Db, gw: SeasonGw, opts: { final: boolean
   if (!scores.size) return { scored: 0 }; // nothing ingested yet — hold
 
   const { data: entries } = await db.from("fantasy_entries")
-    .select("user_id, hits, picks, xi, bench, captain, vice")
+    .select("user_id, hits, picks, xi, bench, captain, vice, chip")
     .eq("gw", gw.gw).not("locked_at", "is", null).range(0, 9999);
 
   const form = await formFor(db, gw.gw);
@@ -171,7 +204,7 @@ export async function scoreGameweek(db: Db, gw: SeasonGw, opts: { final: boolean
 
   for (const e of (entries ?? []) as {
     user_id: string; hits: number; picks: SquadPick[];
-    xi: number[]; bench: number[]; captain: number; vice: number;
+    xi: number[]; bench: number[]; captain: number; vice: number; chip: Chip | null;
   }[]) {
     const sel: LockedSelection = {
       picks: e.picks, xi: e.xi, bench: e.bench, captain: e.captain, vice: e.vice,
@@ -182,7 +215,9 @@ export async function scoreGameweek(db: Db, gw: SeasonGw, opts: { final: boolean
         return [p.id, { points: s?.points ?? 0, facts: s?.facts ?? ZERO_FACTS }] as const;
       }),
     );
-    const result = scoreEntry(sel, e.hits, engineScores, form);
+    // The chip is part of the locked snapshot: whatever was played before the
+    // deadline, a re-score always re-applies it — never a different one.
+    const result = scoreEntry(sel, e.hits, engineScores, form, e.chip);
     await db.from("fantasy_entries").update({
       // Provisional scores land while the football is still on; the entry only
       // becomes "scored" when the gameweek's matches are actually over.
@@ -199,10 +234,42 @@ export async function scoreGameweek(db: Db, gw: SeasonGw, opts: { final: boolean
   return { scored };
 }
 
-/** Close the gameweek for good — stat corrections are past, the table is settled. */
-export async function finaliseGameweek(db: Db, gw: SeasonGw): Promise<void> {
-  await db.from("fantasy_entries").update({ status: "final" }).eq("gw", gw.gw).eq("status", "scored");
+/**
+ * Close the gameweek for good — stat corrections are past, the table is settled.
+ *
+ * Chip accrual (loyalty for a PLAYED gameweek, D:123-127) happens inside this
+ * same status transition, not as a separate pass: `.eq("status", "scored")`
+ * means only entries that are ACTUALLY moving scored → final on this call come
+ * back in `transitioned`. Finalising twice finds nothing left in "scored" the
+ * second time, so `transitioned` is empty and accrual is a no-op — that's the
+ * whole idempotency guarantee, no separate "already accrued" flag needed. A
+ * rolled-over week (never played the round) is filtered out before accruing, so
+ * it advances nobody's chip progress (D:91-93).
+ */
+export async function finaliseGameweek(db: Db, gw: SeasonGw): Promise<{ finalised: number; chipsAccrued: number }> {
+  const { data: transitioned, error } = await db.from("fantasy_entries")
+    .update({ status: "final" }).eq("gw", gw.gw).eq("status", "scored")
+    .select("user_id, round_done_at");
+  if (error) throw new Error(`finalise: ${error.message}`);
   await db.from("fantasy_gameweeks").update({ status: "final" }).eq("gw", gw.gw);
+
+  const played = ((transitioned ?? []) as { user_id: string; round_done_at: string | null }[])
+    .filter((e) => e.round_done_at != null);
+  let chipsAccrued = 0;
+  if (played.length) {
+    const { data: squads, error: sqErr } = await db.from("fantasy_squads")
+      .select("user_id, chips, chip_progress").in("user_id", played.map((e) => e.user_id));
+    if (sqErr) throw new Error(`finalise chip lookup: ${sqErr.message}`);
+    for (const s of (squads ?? []) as { user_id: string; chips: number; chip_progress: number }[]) {
+      const next = accrueChip(s.chip_progress, s.chips);
+      const { error: chErr } = await db.from("fantasy_squads")
+        .update({ chip_progress: next.progress, chips: next.held })
+        .eq("user_id", s.user_id);
+      if (chErr) throw new Error(`finalise chip accrual: ${chErr.message}`);
+      if (next.minted) chipsAccrued++;
+    }
+  }
+  return { finalised: transitioned?.length ?? 0, chipsAccrued };
 }
 
 // ── the tick ─────────────────────────────────────────────────────────────────
@@ -266,8 +333,8 @@ export async function tickSeason(db: Db, now = Date.now()): Promise<TickReport[]
 
     // 3. Once the corrections window has passed, close it.
     if (lastKickoff !== null && now >= lastKickoff + MATCHES_DONE_AFTER_LAST_KICKOFF_MS + FINALISE_AFTER_MATCHES_DONE_MS) {
-      await finaliseGameweek(db, gw);
-      out.push({ gw: gw.gw, action: "finalised", detail: "stat-correction window closed" });
+      const { finalised, chipsAccrued } = await finaliseGameweek(db, gw);
+      out.push({ gw: gw.gw, action: "finalised", detail: `stat-correction window closed (${finalised} entries, ${chipsAccrued} chips accrued)` });
     }
   }
   return out;

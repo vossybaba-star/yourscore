@@ -96,9 +96,51 @@ export function creditsForRound(correct: number): number {
 export function bankCredits(current: number, minted: number): number {
   return Math.min(CREDIT_CAP, current + minted);
 }
-/** How the next transfer is paid: knowledge first, points after. */
-export function transferCost(creditsLeft: number): { paid: "credit" | "hit" } {
+/** How the next transfer is paid: knowledge first, points after.
+ *  On a wildcard week every move is free — that's the whole chip. */
+export function transferCost(creditsLeft: number, wildcard = false): { paid: "credit" | "hit" | "free" } {
+  if (wildcard) return { paid: "free" };
   return { paid: creditsLeft > 0 ? "credit" : "hit" };
+}
+
+// ── Chips (D:123-156) ────────────────────────────────────────────────────────
+/** The chip token, spent as whichever chip you want. `wildcard` runs on its own
+ *  track (issued, not earned) but is played through the same slot: one per week. */
+export type Chip = "triple_captain" | "bench_boost" | "insight" | "second_chance" | "wildcard";
+export const CHIPS: readonly Chip[] = ["triple_captain", "bench_boost", "insight", "second_chance", "wildcard"];
+
+/** Loyalty, not performance: a token every GAMEWEEKS_PER_CHIP gameweeks you
+ *  actually PLAY. Miss a week and you accrue slower — no wipe, no grace needed
+ *  (D:123-127). A week your squad merely rolled over does NOT count: skipping the
+ *  round earns "no transfer credits or chip progress that week" (D:91-93). */
+export const GAMEWEEKS_PER_CHIP = 4;
+export const CHIP_HOLD_CAP = 3;
+
+/** Advance chip accrual by one PLAYED gameweek. Returns the new progress and
+ *  whether a token was minted. At the hold cap, progress simply stops — you can't
+ *  bank a fifth week of credit toward a chip you're not allowed to hold. */
+export function accrueChip(
+  progress: number, held: number,
+): { progress: number; held: number; minted: boolean } {
+  if (held >= CHIP_HOLD_CAP) return { progress, held, minted: false };
+  const next = progress + 1;
+  if (next < GAMEWEEKS_PER_CHIP) return { progress: next, held, minted: false };
+  return { progress: 0, held: held + 1, minted: true };
+}
+
+/** Season halves — the wildcard is use-it-or-lose-it at the halfway deadline
+ *  (D:147-149), FPL's Christmas spike. GW1-19 then GW20-38. */
+export const HALF_SEASON_GW = 19;
+export const halfOf = (gw: number): 1 | 2 => (gw <= HALF_SEASON_GW ? 1 : 2);
+
+/** A PERFECT round mints one bonus wildcard — the marquee earned moment — but at
+ *  most ONE bonus per half, so elite quizzers can't stockpile them weekly. Further
+ *  perfect rounds overflow into banked transfer credits instead (D:150-154). */
+export function perfectRoundReward(
+  correct: number, total: number, bonusUsedThisHalf: boolean,
+): { wildcard: boolean; credits: number } {
+  if (correct < total) return { wildcard: false, credits: 0 };
+  return bonusUsedThisHalf ? { wildcard: false, credits: 1 } : { wildcard: true, credits: 0 };
 }
 
 // ── Transfers ────────────────────────────────────────────────────────────────
@@ -198,20 +240,35 @@ export function scoreEntry(
   hits: number,
   scores: Map<number, PlayerScore>,
   form: Map<number, number> = new Map(),
+  chip: Chip | null = null,
 ): EntryResult {
   const minutes = new Map<number, number>();
   for (const p of sel.picks) minutes.set(p.id, scores.get(p.id)?.facts.minutes ?? 0);
-  const { xi, subs } = autoSubs(sel, minutes);
+
+  // Bench Boost: all 15 score, so there is nothing to substitute FOR — a starter
+  // who didn't play is already worth exactly what his replacement is worth. Auto-subs
+  // are therefore off, as in FPL.
+  const benchBoost = chip === "bench_boost";
+  const { xi, subs } = benchBoost
+    ? ({ xi: sel.xi, subs: [] } as AutoSubResult)
+    : autoSubs(sel, minutes);
+  const scoring = benchBoost ? [...sel.xi, ...sel.bench] : xi;
+
   const cap = effectiveCaptain(sel, xi, minutes, form);
+  const capMultiplier = chip === "triple_captain" ? 3 : 2;
   const subbedIn = new Set(subs.map((s) => s.in));
+
   let total = 0;
-  const breakdown = xi.map((id) => {
+  const breakdown = scoring.map((id) => {
     let pts = scores.get(id)?.points ?? 0;
     const isCap = id === cap;
-    if (isCap) pts *= 2;
+    if (isCap) pts *= capMultiplier;
     total += pts;
     return { id, points: pts, captain: isCap, subbedIn: subbedIn.has(id), facts: scores.get(id)?.facts ?? ZERO_FACTS };
   });
+
+  // A wildcard week's transfers were free, so there is nothing to deduct — the
+  // caller records 0 hits for that week, and this stays a pure sum either way.
   const hitsDeducted = hits * HIT_POINTS;
   total -= hitsDeducted;
   return { total, captainUsed: cap, subs, breakdown, hitsDeducted };

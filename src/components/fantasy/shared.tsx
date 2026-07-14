@@ -14,6 +14,7 @@ export const INK = "#EDEAE0";
 export const MUTED = "#9FB2A5";
 
 export type Pos = "GK" | "DEF" | "MID" | "FWD";
+export type ChipName = "triple_captain" | "bench_boost" | "insight" | "second_chance" | "wildcard";
 export interface ClientPoolPlayer {
   id: number; name: string; club: string; clubId: number; pos: Pos; price: number;
 }
@@ -27,6 +28,10 @@ export interface FantasyState {
     picks: { id: number; pos: Pos; clubId: number; buyTenths: number }[];
     bankTenths: number; credits: number; xi: number[]; bench: number[];
     captain: number; vice: number; version: number;
+  } | null;
+  chips: {
+    held: number; progress: number; gameweeksPerChip: number;
+    wildcards: number; wildcardHalf: number | null; playedThisGw: ChipName | null;
   } | null;
   entry: {
     status: string;
