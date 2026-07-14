@@ -4,7 +4,9 @@
  * PURE + dependency-free on purpose: no `@/` imports, no Supabase, no Next. The
  * cron (src/app/api/cron/daily-nudge/route.ts) does all the data loading and
  * hands a ready NudgeContext to buildDailyNudge(); this file only decides what to
- * say. That keeps it unit-testable with `node --test src/lib/notify/daily-nudge.test.ts`.
+ * say. That keeps it unit-testable: run `scripts/notify/run-tests.sh` (the imports
+ * are extensionless per repo convention, so Node's ESM loader can't run the test
+ * file directly — the script compiles to CJS first, as scripts/draft does).
  *
  * Frequency guarantees (the "not overkill" contract):
  *  - At most ONE push per user per day (the cron uses a shared `daily-push:<date>`

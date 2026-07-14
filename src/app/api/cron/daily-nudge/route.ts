@@ -34,7 +34,48 @@ const FALLBACK_HOUR = 19; // must match wc-mastermind + compute-send-times eveni
 const MAX_PER_RUN = 500;
 const WINDOW_DAYS = 40; // enough history for the 30-day nudge + streak walk-back
 
+// PostgREST silently caps every response at max_rows (1000 on this project) — no
+// error, no signal. The history reads below fan out across up to MAX_PER_RUN users
+// and would blow past that, dropping rows with no warning. A dropped row is not
+// cosmetic: a missing play-day makes playedToday false for someone who DID play,
+// so we'd push them anyway and break the module's core "never nudge a player who
+// already played today" guarantee. So: fetch every history table in id-chunks,
+// and page each chunk to exhaustion.
+const ID_CHUNK = 50; // users per history query — keeps each result far under the cap
+const PAGE = 1000; // == PostgREST max_rows
+
 export const fetchCache = "force-no-store";
+
+const chunk = <T,>(xs: T[], n: number): T[][] => {
+  const out: T[][] = [];
+  for (let i = 0; i < xs.length; i += n) out.push(xs.slice(i, i + n));
+  return out;
+};
+
+/**
+ * Run `build(idsChunk)` for every chunk of ids and page each to exhaustion.
+ * `build` must return a FRESH PostgREST builder (it's finalised by .range()).
+ * Rows are order-stabilised by the caller so paging can't skip.
+ */
+async function fetchAllFor<T>(
+  ids: string[],
+  build: (idsChunk: string[]) => { range: (a: number, b: number) => PromiseLike<{ data: T[] | null; error: unknown }> }
+): Promise<T[]> {
+  const out: T[] = [];
+  for (const ch of chunk(ids, ID_CHUNK)) {
+    for (let from = 0; ; from += PAGE) {
+      const { data, error } = await build(ch).range(from, from + PAGE - 1);
+      if (error) {
+        console.error("[daily-nudge] history read failed", error);
+        break;
+      }
+      const rows = data ?? [];
+      out.push(...rows);
+      if (rows.length < PAGE) break;
+    }
+  }
+  return out;
+}
 
 const ukDay = (iso: string) =>
   new Date(iso).toLocaleDateString("en-CA", { timeZone: "Europe/London" });
@@ -91,8 +132,11 @@ export async function GET(req: NextRequest) {
 
   // ── Reachability: only users with a device token (native push only today) ────
   let ids = Array.from(displayById.keys());
-  const { data: tokenRows } = await raw.from("device_tokens").select("user_id").in("user_id", ids);
-  const reachable = new Set((tokenRows ?? []).map((r: { user_id: string }) => r.user_id));
+  // Also chunked+paged: a user can hold several device tokens, so this can exceed
+  // the 1000-row cap even though `ids` cannot.
+  const tokenRows = await fetchAllFor<{ user_id: string }>(ids, (c) =>
+    raw.from("device_tokens").select("user_id").in("user_id", c).order("user_id", { ascending: true }));
+  const reachable = new Set(tokenRows.map((r) => r.user_id));
   ids = ids.filter((id) => reachable.has(id));
   if (!ids.length) {
     return NextResponse.json({ enabled: true, hour, targeted: 0, reason: "no-reachable-targets" });
@@ -113,15 +157,37 @@ export async function GET(req: NextRequest) {
 
   // ── Batch-load recent play history for all targets ──────────────────────────
   const windowStart = new Date(Date.now() - WINDOW_DAYS * 86_400_000).toISOString();
-  const [{ data: qa }, { data: dm1 }, { data: dm2 }, { data: wr }, { data: fr1 }, { data: fr2 }] =
-    await Promise.all([
-      raw.from("quiz_attempts").select("user_id, pack_id, score, completed_at").in("user_id", ids).gte("completed_at", windowStart),
-      raw.from("draft_matches").select("id, challenger_id, opponent_id, played_at").in("challenger_id", ids).gte("played_at", windowStart),
-      raw.from("draft_matches").select("id, challenger_id, opponent_id, played_at").in("opponent_id", ids).gte("played_at", windowStart),
-      raw.from("draft_wc_runs").select("user_id, run_date, created_at").in("user_id", ids).gte("created_at", windowStart),
-      raw.from("friendships").select("user_id").in("user_id", ids).eq("status", "accepted"),
-      raw.from("friendships").select("friend_id").in("friend_id", ids).eq("status", "accepted"),
-    ]);
+  type QaRow = { user_id: string; pack_id: string; score: number | null; completed_at: string | null };
+  type DmRow = { id: string; challenger_id: string | null; opponent_id: string | null; played_at: string | null };
+  type WrRow = { user_id: string; run_date: string | null; created_at: string | null };
+
+  // Every read is chunked + paged (see fetchAllFor). Ordering is stabilised so a
+  // page boundary can never skip a row; duplicates across pages would be harmless
+  // (play-days are a Set, lastQuiz is a max) but skips would not be.
+  const [qa, dm1, dm2, wr, fr1, fr2] = await Promise.all([
+    fetchAllFor<QaRow>(ids, (c) =>
+      raw.from("quiz_attempts").select("user_id, pack_id, score, completed_at")
+        .in("user_id", c).gte("completed_at", windowStart)
+        .order("completed_at", { ascending: true }).order("user_id", { ascending: true })),
+    fetchAllFor<DmRow>(ids, (c) =>
+      raw.from("draft_matches").select("id, challenger_id, opponent_id, played_at")
+        .in("challenger_id", c).gte("played_at", windowStart)
+        .order("id", { ascending: true })),
+    fetchAllFor<DmRow>(ids, (c) =>
+      raw.from("draft_matches").select("id, challenger_id, opponent_id, played_at")
+        .in("opponent_id", c).gte("played_at", windowStart)
+        .order("id", { ascending: true })),
+    fetchAllFor<WrRow>(ids, (c) =>
+      raw.from("draft_wc_runs").select("user_id, run_date, created_at")
+        .in("user_id", c).gte("created_at", windowStart)
+        .order("created_at", { ascending: true }).order("user_id", { ascending: true })),
+    fetchAllFor<{ user_id: string }>(ids, (c) =>
+      raw.from("friendships").select("user_id").in("user_id", c).eq("status", "accepted")
+        .order("user_id", { ascending: true })),
+    fetchAllFor<{ friend_id: string }>(ids, (c) =>
+      raw.from("friendships").select("friend_id").in("friend_id", c).eq("status", "accepted")
+        .order("friend_id", { ascending: true })),
+  ]);
 
   type Agg = { days: Set<string>; quiz: number; g38: number; wc: number; lastQuiz: { score: number; packId: string; at: string } | null };
   const agg = new Map<string, Agg>();

@@ -13,6 +13,27 @@ import { notifyUsers } from "@/lib/notify";
  *
  * Auth: Vercel cron sends `Authorization: Bearer ${CRON_SECRET}`.
  */
+
+// PostgREST caps every response at max_rows (1000 on this project), silently. So
+// we never `UPDATE ... .select()` an unbounded set: the representation would be
+// truncated while the UPDATE still committed every row, permanently stranding the
+// rows past the cap (flipped to 'expired', so never re-seen, and never notified).
+// Instead: SELECT a bounded batch of ids, UPDATE exactly those, notify, repeat.
+const BATCH = 200; // rows expired + notified per pass
+const MAX_PASSES = 10; // hard backstop: ≤2000 rows/run
+const PUSH_CONCURRENCY = 10;
+
+export const fetchCache = "force-no-store";
+
+type ExpiredRow = { id: string; challenger_id: string | null; invited_user_id: string | null };
+
+/** Await promises `limit` at a time — keeps the fan-out off the event loop's back. */
+async function mapLimit<T>(items: T[], limit: number, fn: (item: T) => Promise<unknown>) {
+  for (let i = 0; i < items.length; i += limit) {
+    await Promise.all(items.slice(i, i + limit).map(fn));
+  }
+}
+
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
   const expected = `Bearer ${process.env.CRON_SECRET}`;
@@ -23,18 +44,75 @@ export async function GET(req: NextRequest) {
   // status is free text (no enum) so the literal needs no migration — use an
   // untyped handle to avoid the generated-types union complaining.
   const raw = createServiceClient() as unknown as SupabaseClient;
-
   const now = new Date().toISOString();
 
-  const { data: h2h, error: e1 } = await raw
-    .from("h2h_challenges")
-    .update({ status: "expired" })
-    .eq("status", "awaiting_opponent")
-    .lt("expires_at", now)
-    .select("id, challenger_id, invited_user_id, quiz_pack_name");
-  if (e1) return NextResponse.json({ error: e1.message }, { status: 500 });
+  let expired1v1 = 0;
+  let notified = 0;
+  let truncated = false;
 
-  // Group challenges share the same 7-day lifecycle.
+  for (let pass = 0; ; pass++) {
+    if (pass >= MAX_PASSES) {
+      truncated = true; // more remain; tomorrow's run drains them
+      console.warn(`[expire-challenges] hit MAX_PASSES (${MAX_PASSES}); more rows remain`);
+      break;
+    }
+
+    // Oldest first, so a backlog drains in a stable order across runs.
+    const { data: batch, error: eSel } = await raw
+      .from("h2h_challenges")
+      .select("id, challenger_id, invited_user_id")
+      .eq("status", "awaiting_opponent")
+      .lt("expires_at", now)
+      .order("expires_at", { ascending: true })
+      .limit(BATCH);
+    if (eSel) return NextResponse.json({ error: eSel.message }, { status: 500 });
+
+    const rows = (batch ?? []) as ExpiredRow[];
+    if (!rows.length) break;
+
+    const { error: eUpd } = await raw
+      .from("h2h_challenges")
+      .update({ status: "expired" })
+      .in("id", rows.map((r) => r.id));
+    if (eUpd) return NextResponse.json({ error: eUpd.message }, { status: 500 });
+    expired1v1 += rows.length;
+
+    // Nudge the challenger when a TARGETED 1v1 expired un-played (their invited
+    // friend never took their turn). Open link-based challenges have no single
+    // recipient to name, so skip those. Opt-in gated; deduped per challenge, so
+    // a cron re-run cannot double-send.
+    const targeted = rows.filter((c) => c.challenger_id && c.invited_user_id);
+    if (targeted.length) {
+      const inviteeIds = Array.from(new Set(targeted.map((c) => c.invited_user_id!)));
+      const { data: names } = await raw
+        .from("profiles")
+        .select("id, display_name")
+        .in("id", inviteeIds);
+      const nameById = new Map<string, string>(
+        (names ?? []).map((n: { id: string; display_name: string | null }) => [n.id, n.display_name ?? "your friend"])
+      );
+
+      // MUST await: Vercel freezes the invocation the moment we return, and a
+      // dropped push is unrecoverable — the row is already 'expired', so the next
+      // run will never reconsider it.
+      await mapLimit(targeted, PUSH_CONCURRENCY, async (c) => {
+        const opp = nameById.get(c.invited_user_id!) ?? "your friend";
+        await notifyUsers({
+          userIds: [c.challenger_id!],
+          title: `Your challenge to ${opp} expired ⏳`,
+          body: `They didn't get to it. Send it again or take on someone new.`,
+          url: `/play`,
+          dedupeKey: `challenge-expired:${c.id}`,
+        });
+      });
+      notified += targeted.length;
+    }
+
+    if (rows.length < BATCH) break; // drained
+  }
+
+  // Group challenges share the same 7-day lifecycle (no per-row push, so the
+  // bounded-batch dance isn't needed — but still cap the returned representation).
   const { data: grp, error: e2 } = await raw
     .from("group_challenges")
     .update({ status: "expired" })
@@ -43,40 +121,10 @@ export async function GET(req: NextRequest) {
     .select("id");
   if (e2) return NextResponse.json({ error: e2.message }, { status: 500 });
 
-  // Nudge the challenger when a TARGETED 1v1 challenge expired un-played (their
-  // invited friend never took their turn). Open link-based challenges have no
-  // single recipient to name, so skip those. Best-effort, opt-in-gated, deduped
-  // per challenge (safe against cron re-runs). Cap the fan-out; log if truncated.
-  // NB: this cron is scheduled in daytime (see vercel.json) so the push never
-  // lands at an antisocial hour.
-  const NOTIFY_CAP = 200;
-  type ExpiredRow = { id: string; challenger_id: string | null; invited_user_id: string | null; quiz_pack_name: string | null };
-  const allTargeted = ((h2h ?? []) as ExpiredRow[]).filter((c) => c.challenger_id && c.invited_user_id);
-  const targeted = allTargeted.slice(0, NOTIFY_CAP);
-  if (allTargeted.length > NOTIFY_CAP) {
-    console.warn(`[expire-challenges] expiry pushes capped at ${NOTIFY_CAP} (of ${allTargeted.length})`);
-  }
-  if (targeted.length) {
-    // Resolve invited friends' names in one batch for the copy.
-    const inviteeIds = Array.from(new Set(targeted.map((c) => c.invited_user_id!)));
-    const { data: names } = await raw
-      .from("profiles")
-      .select("id, display_name")
-      .in("id", inviteeIds);
-    const nameById = new Map<string, string>(
-      (names ?? []).map((n: { id: string; display_name: string | null }) => [n.id, n.display_name ?? "your friend"])
-    );
-    for (const c of targeted) {
-      const opp = nameById.get(c.invited_user_id!) ?? "your friend";
-      void notifyUsers({
-        userIds: [c.challenger_id!],
-        title: `Your challenge to ${opp} expired ⏳`,
-        body: `They didn't get to it. Send it again or take on someone new.`,
-        url: `/play`,
-        dedupeKey: `challenge-expired:${c.id}`,
-      });
-    }
-  }
-
-  return NextResponse.json({ expired_1v1: h2h?.length ?? 0, expired_group: grp?.length ?? 0, notified: targeted.length });
+  return NextResponse.json({
+    expired_1v1: expired1v1,
+    expired_group: grp?.length ?? 0,
+    notified,
+    truncated,
+  });
 }

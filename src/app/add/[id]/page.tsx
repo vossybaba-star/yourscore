@@ -30,9 +30,13 @@ export default function AddFriendPage() {
     (async () => {
       const sb = createClient();
       // Resolve the slug to a user: exact id for UUIDs, else case-insensitive username.
+      // `id` is a raw URL segment, so escape LIKE wildcards before it reaches ilike()
+      // — otherwise /add/a%25 is a pattern, not a name, and can resolve to a user
+      // who never shared a link.
+      const likeSafe = id.replace(/([\\%_])/g, "\\$1");
       const { data: prof } = UUID_RE.test(id)
         ? await sb.from("profiles").select("id, display_name").eq("id", id).maybeSingle()
-        : await sb.from("profiles").select("id, display_name").ilike("username", id).maybeSingle();
+        : await sb.from("profiles").select("id, display_name").ilike("username", likeSafe).maybeSingle();
       if (!prof) { setState({ kind: "missing" }); return; }
       setTargetId(prof.id);
       const name = prof.display_name ?? "A YourScore player";
