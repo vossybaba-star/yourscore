@@ -14,6 +14,8 @@ import { coverUrl } from "@/lib/img";
 import { RECORDS_EMOJI } from "@/lib/theme";
 import { useYourTurns, type InboxChallenge } from "@/hooks/useYourTurns";
 import { HalftimeRail } from "@/components/halftime/HalftimeRail";
+import { ClubPicker } from "@/components/clubs/ClubPicker";
+import { ClubTable } from "@/components/clubs/ClubTable";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -842,6 +844,10 @@ function PlayPageInner() {
         <>
           {/* Halftime Quiz Packs rail — self-hides when there's no PL fixture today */}
           <HalftimeRail />
+
+          {/* Club-Fan Leaderboard — declare card + gameweek table, both self-hide */}
+          <ClubPicker />
+          <ClubTable />
 
           {/* Game types — quick-play formats off the SportMonks player data */}
           <div className="max-w-lg mx-auto px-4 pt-4">
