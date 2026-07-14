@@ -51,8 +51,12 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ gw: roundName, standings }, { headers: noStore() });
   } catch (err) {
+    // A failure must NOT masquerade as "no gameweek yet". Returning an empty
+    // 200 here is how a broken table renders as a quietly absent one — the UI
+    // self-hides on empty, so nobody ever finds out. (This bit us for real: a
+    // 400 from a query made the whole leaderboard silently vanish.) 500 loudly.
     console.error("[clubs/table] failed", err);
-    return NextResponse.json({ gw: null, standings: [] }, { headers: noStore() });
+    return NextResponse.json({ error: "Failed to build the club table" }, { status: 500 });
   }
 }
 
