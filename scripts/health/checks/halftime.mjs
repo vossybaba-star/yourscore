@@ -54,12 +54,12 @@ export async function run(report, ctx) {
     if (error) throw new Error(error.message);
     rows = data ?? [];
   } catch (e) {
-    // The table not existing yet is not a failure — migration 78 may be unapplied.
+    // The table not existing yet is not a failure — migration 80 may be unapplied.
     const notBuilt = /does not exist|schema cache/i.test(e.message);
     report.add("halftime", "slate readable", notBuilt, {
       warn: notBuilt,
-      detail: notBuilt ? "halftime_releases not in prod yet (migration 78 unapplied)" : e.message,
-      hint: "apply supabase/migrations/78_halftime.sql",
+      detail: notBuilt ? "halftime_releases not in prod yet (migration 80 unapplied)" : e.message,
+      hint: "apply supabase/migrations/80_halftime.sql",
     });
     return;
   }
