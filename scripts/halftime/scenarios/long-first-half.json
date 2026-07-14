@@ -1,0 +1,22 @@
+{
+  "name": "long-first-half",
+  "notes": "A 55-minute first half: long stoppage, head injury, VAR. HT lands at KO+55'. A kickoff+45 timer would have released the pack TEN MINUTES INTO THE MATCH, while the first half was still being played. The state flip fires exactly right. This is the scenario that justifies the whole poller.",
+  "fixtures": [
+    {
+      "id": 19427461,
+      "home": "Everton",
+      "away": "Brighton & Hove Albion",
+      "season_id": 28083,
+      "round": "Round 1",
+      "kickoff_min": 90,
+      "lineups_at_min": 30,
+      "timeline": [
+        { "at_min": 0, "state": "NS" },
+        { "at_min": 90, "state": "INPLAY_1ST_HALF" },
+        { "at_min": 145, "state": "HT" },
+        { "at_min": 160, "state": "INPLAY_2ND_HALF" },
+        { "at_min": 210, "state": "FT" }
+      ]
+    }
+  ]
+}

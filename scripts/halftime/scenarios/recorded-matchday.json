@@ -1,0 +1,400 @@
+{
+  "name": "recorded-matchday",
+  "recorded_from": {
+    "date": "2026-05-24",
+    "source": "SportMonks Historical Data (periods include)"
+  },
+  "notes": "Recorded from the real Premier League matchday of 2026-05-24 via SportMonks Historical Data (the periods include: first-half period.ended IS the half-time whistle). Kickoff drift, added time and the length of the interval are all real. On this day a kickoff+45 timer would have been out by up to 649s (Burnley vs Wolverhampton Wanderers). Lineup publication times are NOT in the historical data and are synthesised at T-60.",
+  "fixtures": [
+    {
+      "id": 19427236,
+      "home": "Brighton & Hove Albion",
+      "away": "Manchester United",
+      "season_id": 25583,
+      "round": "Round 38",
+      "kickoff_min": 90,
+      "lineups_at_min": 30,
+      "recorded": {
+        "scheduled_kickoff": "2026-05-24T15:00:00.000Z",
+        "actual_kickoff": "2026-05-24T15:01:32.000Z",
+        "halftime_whistle": "2026-05-24T15:50:50.000Z",
+        "first_half_minutes": 49,
+        "first_half_added": 3,
+        "kickoff_plus_45_error_seconds": 258
+      },
+      "timeline": [
+        {
+          "at_min": 0,
+          "state": "NS"
+        },
+        {
+          "at_min": 92,
+          "state": "INPLAY_1ST_HALF"
+        },
+        {
+          "at_min": 141,
+          "state": "HT"
+        },
+        {
+          "at_min": 156,
+          "state": "INPLAY_2ND_HALF"
+        },
+        {
+          "at_min": 207,
+          "state": "FT"
+        }
+      ]
+    },
+    {
+      "id": 19427237,
+      "home": "Burnley",
+      "away": "Wolverhampton Wanderers",
+      "season_id": 25583,
+      "round": "Round 38",
+      "kickoff_min": 90,
+      "lineups_at_min": 30,
+      "recorded": {
+        "scheduled_kickoff": "2026-05-24T15:00:00.000Z",
+        "actual_kickoff": "2026-05-24T15:01:51.000Z",
+        "halftime_whistle": "2026-05-24T15:57:40.000Z",
+        "first_half_minutes": 55,
+        "first_half_added": 7,
+        "kickoff_plus_45_error_seconds": 649
+      },
+      "timeline": [
+        {
+          "at_min": 0,
+          "state": "NS"
+        },
+        {
+          "at_min": 92,
+          "state": "INPLAY_1ST_HALF"
+        },
+        {
+          "at_min": 148,
+          "state": "HT"
+        },
+        {
+          "at_min": 163,
+          "state": "INPLAY_2ND_HALF"
+        },
+        {
+          "at_min": 215,
+          "state": "FT"
+        }
+      ]
+    },
+    {
+      "id": 19427238,
+      "home": "Crystal Palace",
+      "away": "Arsenal",
+      "season_id": 25583,
+      "round": "Round 38",
+      "kickoff_min": 90,
+      "lineups_at_min": 30,
+      "recorded": {
+        "scheduled_kickoff": "2026-05-24T15:00:00.000Z",
+        "actual_kickoff": "2026-05-24T15:01:57.000Z",
+        "halftime_whistle": "2026-05-24T15:50:30.000Z",
+        "first_half_minutes": 48,
+        "first_half_added": 3,
+        "kickoff_plus_45_error_seconds": 213
+      },
+      "timeline": [
+        {
+          "at_min": 0,
+          "state": "NS"
+        },
+        {
+          "at_min": 92,
+          "state": "INPLAY_1ST_HALF"
+        },
+        {
+          "at_min": 141,
+          "state": "HT"
+        },
+        {
+          "at_min": 157,
+          "state": "INPLAY_2ND_HALF"
+        },
+        {
+          "at_min": 211,
+          "state": "FT"
+        }
+      ]
+    },
+    {
+      "id": 19427239,
+      "home": "Fulham",
+      "away": "Newcastle United",
+      "season_id": 25583,
+      "round": "Round 38",
+      "kickoff_min": 90,
+      "lineups_at_min": 30,
+      "recorded": {
+        "scheduled_kickoff": "2026-05-24T15:00:00.000Z",
+        "actual_kickoff": "2026-05-24T15:00:33.000Z",
+        "halftime_whistle": "2026-05-24T15:50:50.000Z",
+        "first_half_minutes": 50,
+        "first_half_added": 5,
+        "kickoff_plus_45_error_seconds": 317
+      },
+      "timeline": [
+        {
+          "at_min": 0,
+          "state": "NS"
+        },
+        {
+          "at_min": 91,
+          "state": "INPLAY_1ST_HALF"
+        },
+        {
+          "at_min": 141,
+          "state": "HT"
+        },
+        {
+          "at_min": 156,
+          "state": "INPLAY_2ND_HALF"
+        },
+        {
+          "at_min": 210,
+          "state": "FT"
+        }
+      ]
+    },
+    {
+      "id": 19427240,
+      "home": "Liverpool",
+      "away": "Brentford",
+      "season_id": 25583,
+      "round": "Round 38",
+      "kickoff_min": 90,
+      "lineups_at_min": 30,
+      "recorded": {
+        "scheduled_kickoff": "2026-05-24T15:00:00.000Z",
+        "actual_kickoff": "2026-05-24T15:00:46.000Z",
+        "halftime_whistle": "2026-05-24T15:49:54.000Z",
+        "first_half_minutes": 49,
+        "first_half_added": 3,
+        "kickoff_plus_45_error_seconds": 248
+      },
+      "timeline": [
+        {
+          "at_min": 0,
+          "state": "NS"
+        },
+        {
+          "at_min": 91,
+          "state": "INPLAY_1ST_HALF"
+        },
+        {
+          "at_min": 140,
+          "state": "HT"
+        },
+        {
+          "at_min": 156,
+          "state": "INPLAY_2ND_HALF"
+        },
+        {
+          "at_min": 212,
+          "state": "FT"
+        }
+      ]
+    },
+    {
+      "id": 19427241,
+      "home": "Manchester City",
+      "away": "Aston Villa",
+      "season_id": 25583,
+      "round": "Round 38",
+      "kickoff_min": 90,
+      "lineups_at_min": 30,
+      "recorded": {
+        "scheduled_kickoff": "2026-05-24T15:00:00.000Z",
+        "actual_kickoff": "2026-05-24T15:01:15.000Z",
+        "halftime_whistle": "2026-05-24T15:49:29.000Z",
+        "first_half_minutes": 48,
+        "first_half_added": 3,
+        "kickoff_plus_45_error_seconds": 194
+      },
+      "timeline": [
+        {
+          "at_min": 0,
+          "state": "NS"
+        },
+        {
+          "at_min": 91,
+          "state": "INPLAY_1ST_HALF"
+        },
+        {
+          "at_min": 139,
+          "state": "HT"
+        },
+        {
+          "at_min": 155,
+          "state": "INPLAY_2ND_HALF"
+        },
+        {
+          "at_min": 212,
+          "state": "FT"
+        }
+      ]
+    },
+    {
+      "id": 19427242,
+      "home": "Nottingham Forest",
+      "away": "AFC Bournemouth",
+      "season_id": 25583,
+      "round": "Round 38",
+      "kickoff_min": 90,
+      "lineups_at_min": 30,
+      "recorded": {
+        "scheduled_kickoff": "2026-05-24T15:00:00.000Z",
+        "actual_kickoff": "2026-05-24T15:00:36.000Z",
+        "halftime_whistle": "2026-05-24T15:50:13.000Z",
+        "first_half_minutes": 49,
+        "first_half_added": 4,
+        "kickoff_plus_45_error_seconds": 277
+      },
+      "timeline": [
+        {
+          "at_min": 0,
+          "state": "NS"
+        },
+        {
+          "at_min": 91,
+          "state": "INPLAY_1ST_HALF"
+        },
+        {
+          "at_min": 140,
+          "state": "HT"
+        },
+        {
+          "at_min": 156,
+          "state": "INPLAY_2ND_HALF"
+        },
+        {
+          "at_min": 213,
+          "state": "FT"
+        }
+      ]
+    },
+    {
+      "id": 19427243,
+      "home": "Sunderland",
+      "away": "Chelsea",
+      "season_id": 25583,
+      "round": "Round 38",
+      "kickoff_min": 90,
+      "lineups_at_min": 30,
+      "recorded": {
+        "scheduled_kickoff": "2026-05-24T15:00:00.000Z",
+        "actual_kickoff": "2026-05-24T15:00:59.000Z",
+        "halftime_whistle": "2026-05-24T15:49:22.000Z",
+        "first_half_minutes": 48,
+        "first_half_added": 2,
+        "kickoff_plus_45_error_seconds": 203
+      },
+      "timeline": [
+        {
+          "at_min": 0,
+          "state": "NS"
+        },
+        {
+          "at_min": 91,
+          "state": "INPLAY_1ST_HALF"
+        },
+        {
+          "at_min": 139,
+          "state": "HT"
+        },
+        {
+          "at_min": 155,
+          "state": "INPLAY_2ND_HALF"
+        },
+        {
+          "at_min": 213,
+          "state": "FT"
+        }
+      ]
+    },
+    {
+      "id": 19427244,
+      "home": "Tottenham Hotspur",
+      "away": "Everton",
+      "season_id": 25583,
+      "round": "Round 38",
+      "kickoff_min": 90,
+      "lineups_at_min": 30,
+      "recorded": {
+        "scheduled_kickoff": "2026-05-24T15:00:00.000Z",
+        "actual_kickoff": "2026-05-24T15:01:14.000Z",
+        "halftime_whistle": "2026-05-24T15:51:52.000Z",
+        "first_half_minutes": 50,
+        "first_half_added": 4,
+        "kickoff_plus_45_error_seconds": 338
+      },
+      "timeline": [
+        {
+          "at_min": 0,
+          "state": "NS"
+        },
+        {
+          "at_min": 91,
+          "state": "INPLAY_1ST_HALF"
+        },
+        {
+          "at_min": 142,
+          "state": "HT"
+        },
+        {
+          "at_min": 162,
+          "state": "INPLAY_2ND_HALF"
+        },
+        {
+          "at_min": 219,
+          "state": "FT"
+        }
+      ]
+    },
+    {
+      "id": 19427245,
+      "home": "West Ham United",
+      "away": "Leeds United",
+      "season_id": 25583,
+      "round": "Round 38",
+      "kickoff_min": 90,
+      "lineups_at_min": 30,
+      "recorded": {
+        "scheduled_kickoff": "2026-05-24T15:00:00.000Z",
+        "actual_kickoff": "2026-05-24T15:01:21.000Z",
+        "halftime_whistle": "2026-05-24T15:48:54.000Z",
+        "first_half_minutes": 47,
+        "first_half_added": 2,
+        "kickoff_plus_45_error_seconds": 153
+      },
+      "timeline": [
+        {
+          "at_min": 0,
+          "state": "NS"
+        },
+        {
+          "at_min": 91,
+          "state": "INPLAY_1ST_HALF"
+        },
+        {
+          "at_min": 139,
+          "state": "HT"
+        },
+        {
+          "at_min": 157,
+          "state": "INPLAY_2ND_HALF"
+        },
+        {
+          "at_min": 207,
+          "state": "FT"
+        }
+      ]
+    }
+  ]
+}

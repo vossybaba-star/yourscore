@@ -1,0 +1,166 @@
+{
+  "name": "saturday-slate",
+  "notes": "The stress case: a full Premier League Saturday. Ten fixtures — one 12:30, FIVE simultaneous 15:00 kickoffs whose half-time whistles all land inside a ~7-minute band, two 17:30s and two 20:00s. Proves (a) ten independent per-fixture state machines with one shared 6s poll, (b) five near-simultaneous releases with no double-fire, (c) the per-user daily push cap: the first whistle of the day wins and the other nine push nobody. T0 sits at ~11:15, so the 12:30 fixture's lineup watch opens immediately — the poller has to cope with a fixture already inside its pre-match window at launch.",
+  "fixtures": [
+    {
+      "id": 19427501,
+      "home": "Manchester City",
+      "away": "Tottenham Hotspur",
+      "season_id": 28083,
+      "round": "Round 2",
+      "kickoff_min": 75,
+      "lineups_at_min": 15,
+      "timeline": [
+        { "at_min": 0, "state": "NS" },
+        { "at_min": 75, "state": "INPLAY_1ST_HALF" },
+        { "at_min": 122, "state": "HT" },
+        { "at_min": 137, "state": "INPLAY_2ND_HALF" },
+        { "at_min": 185, "state": "FT" }
+      ]
+    },
+    {
+      "id": 19427502,
+      "home": "Arsenal",
+      "away": "Leeds United",
+      "season_id": 28083,
+      "round": "Round 2",
+      "kickoff_min": 225,
+      "lineups_at_min": 165,
+      "timeline": [
+        { "at_min": 0, "state": "NS" },
+        { "at_min": 225, "state": "INPLAY_1ST_HALF" },
+        { "at_min": 270, "state": "HT" },
+        { "at_min": 285, "state": "INPLAY_2ND_HALF" },
+        { "at_min": 333, "state": "FT" }
+      ]
+    },
+    {
+      "id": 19427503,
+      "home": "Chelsea",
+      "away": "Everton",
+      "season_id": 28083,
+      "round": "Round 2",
+      "kickoff_min": 225,
+      "lineups_at_min": 165,
+      "timeline": [
+        { "at_min": 0, "state": "NS" },
+        { "at_min": 225, "state": "INPLAY_1ST_HALF" },
+        { "at_min": 272, "state": "HT" },
+        { "at_min": 287, "state": "INPLAY_2ND_HALF" },
+        { "at_min": 335, "state": "FT" }
+      ]
+    },
+    {
+      "id": 19427504,
+      "home": "Liverpool",
+      "away": "Burnley",
+      "season_id": 28083,
+      "round": "Round 2",
+      "kickoff_min": 225,
+      "lineups_at_min": 168,
+      "timeline": [
+        { "at_min": 0, "state": "NS" },
+        { "at_min": 225, "state": "INPLAY_1ST_HALF" },
+        { "at_min": 273, "state": "HT" },
+        { "at_min": 288, "state": "INPLAY_2ND_HALF" },
+        { "at_min": 336, "state": "FT" }
+      ]
+    },
+    {
+      "id": 19427505,
+      "home": "Newcastle United",
+      "away": "Fulham",
+      "season_id": 28083,
+      "round": "Round 2",
+      "kickoff_min": 225,
+      "lineups_at_min": 170,
+      "timeline": [
+        { "at_min": 0, "state": "NS" },
+        { "at_min": 225, "state": "INPLAY_1ST_HALF" },
+        { "at_min": 275, "state": "HT" },
+        { "at_min": 290, "state": "INPLAY_2ND_HALF" },
+        { "at_min": 338, "state": "FT" }
+      ]
+    },
+    {
+      "id": 19427506,
+      "home": "Brighton & Hove Albion",
+      "away": "Wolverhampton Wanderers",
+      "season_id": 28083,
+      "round": "Round 2",
+      "kickoff_min": 225,
+      "lineups_at_min": 166,
+      "timeline": [
+        { "at_min": 0, "state": "NS" },
+        { "at_min": 225, "state": "INPLAY_1ST_HALF" },
+        { "at_min": 277, "state": "HT" },
+        { "at_min": 292, "state": "INPLAY_2ND_HALF" },
+        { "at_min": 340, "state": "FT" }
+      ]
+    },
+    {
+      "id": 19427507,
+      "home": "Aston Villa",
+      "away": "Nottingham Forest",
+      "season_id": 28083,
+      "round": "Round 2",
+      "kickoff_min": 375,
+      "lineups_at_min": 315,
+      "timeline": [
+        { "at_min": 0, "state": "NS" },
+        { "at_min": 375, "state": "INPLAY_1ST_HALF" },
+        { "at_min": 423, "state": "HT" },
+        { "at_min": 438, "state": "INPLAY_2ND_HALF" },
+        { "at_min": 486, "state": "FT" }
+      ]
+    },
+    {
+      "id": 19427508,
+      "home": "Crystal Palace",
+      "away": "Brentford",
+      "season_id": 28083,
+      "round": "Round 2",
+      "kickoff_min": 375,
+      "lineups_at_min": 317,
+      "timeline": [
+        { "at_min": 0, "state": "NS" },
+        { "at_min": 375, "state": "INPLAY_1ST_HALF" },
+        { "at_min": 425, "state": "HT" },
+        { "at_min": 440, "state": "INPLAY_2ND_HALF" },
+        { "at_min": 488, "state": "FT" }
+      ]
+    },
+    {
+      "id": 19427509,
+      "home": "Manchester United",
+      "away": "Sunderland",
+      "season_id": 28083,
+      "round": "Round 2",
+      "kickoff_min": 525,
+      "lineups_at_min": 465,
+      "timeline": [
+        { "at_min": 0, "state": "NS" },
+        { "at_min": 525, "state": "INPLAY_1ST_HALF" },
+        { "at_min": 572, "state": "HT" },
+        { "at_min": 587, "state": "INPLAY_2ND_HALF" },
+        { "at_min": 635, "state": "FT" }
+      ]
+    },
+    {
+      "id": 19427510,
+      "home": "West Ham United",
+      "away": "AFC Bournemouth",
+      "season_id": 28083,
+      "round": "Round 2",
+      "kickoff_min": 525,
+      "lineups_at_min": 467,
+      "timeline": [
+        { "at_min": 0, "state": "NS" },
+        { "at_min": 525, "state": "INPLAY_1ST_HALF" },
+        { "at_min": 574, "state": "HT" },
+        { "at_min": 589, "state": "INPLAY_2ND_HALF" },
+        { "at_min": 637, "state": "FT" }
+      ]
+    }
+  ]
+}

@@ -13,6 +13,7 @@ import { slugify } from "@/lib/utils";
 import { coverUrl } from "@/lib/img";
 import { RECORDS_EMOJI } from "@/lib/theme";
 import { useYourTurns, type InboxChallenge } from "@/hooks/useYourTurns";
+import { HalftimeRail } from "@/components/halftime/HalftimeRail";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -839,6 +840,9 @@ function PlayPageInner() {
       {/* ── SOLO TAB ─────────────────────────────────────────────────── */}
       {mainTab === "solo" && (
         <>
+          {/* Halftime Quiz Packs rail — self-hides when there's no PL fixture today */}
+          <HalftimeRail />
+
           {/* Game types — quick-play formats off the SportMonks player data */}
           <div className="max-w-lg mx-auto px-4 pt-4">
             <div className="flex items-center gap-2 mb-2.5">
