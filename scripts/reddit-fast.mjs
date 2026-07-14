@@ -63,11 +63,13 @@ const MAX_AGE_MIN = 40;
 // 15 fresh threads examined ONE of them and binned the rest, and by the next run
 // most had aged past MAX_AGE_MIN and were gone for good.
 // (founder, Jul 14: "I need as many as possible per run".)
-// Raised 1 → 6 for volume, then pulled back to 3: on Jul 14 the pipeline burned ~$20
-// in a day, and MAX_DRAFTS multiplies the single most expensive step (a search-backed
-// draft + its fact-check). Volume is worth having, but not before we can SEE what a
-// draft costs — every run now prints its spend. Raise this once the numbers are real.
-const MAX_DRAFTS = 3;
+// Founder, Jul 14: "I need as many as possible per run" and "no limits".
+// The old value of 1 was a Telegram-era rule (don't buzz his phone) and it made the
+// loop BREAK at the cap — a run with 15 fresh threads examined one and let the rest
+// age out. Cost is handled where it belongs, in the per-draft price (see the search
+// dials in lib/reddit.mjs), not by starving him of drafts. Every run prints what it
+// spent, so volume is a decision he makes on numbers, not a surprise at month end.
+const MAX_DRAFTS = 6;
 const MIN_SCORE = 6;       // the quality floor, and now the ONLY thing limiting volume
 
 // A run must finish before the next one starts (30min cadence), or two processes
