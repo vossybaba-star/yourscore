@@ -23,9 +23,11 @@ import {
  * ≤1 push/user/day: one send-hour bucket per user + a shared `daily-push:<date>`
  * dedupe key inside notifyUsers.
  *
- * This SUPERSEDES the generic wc-mastermind blast (the locked WC copy survives as
- * the ladder's fallback branch). Keep only one of the two crons live at a time —
- * see vercel.json.
+ * PRECEDENCE: wc-mastermind wins and is never retired (founder, 14 Jul). The two
+ * crons cannot both send — their dedupe keys differ, so notification_log's PK
+ * can't dedupe across them and every user would get two pushes. This route
+ * therefore stands down while WC_MASTERMIND_PUSH_ENABLED is true, which is the
+ * live state today. It only sends if the WC blast is ever switched off.
  *
  * Safety rails: gated behind DAILY_NUDGE_PUSH_ENABLED; only reachable users
  * (device token present); hard cap MAX_PER_RUN. Auth: Bearer CRON_SECRET.
@@ -93,6 +95,17 @@ export async function GET(req: NextRequest) {
   }
   if (process.env.DAILY_NUDGE_PUSH_ENABLED !== "true") {
     return NextResponse.json({ enabled: false, sent: 0 });
+  }
+  // wc-mastermind has precedence and is never retired (founder, 14 Jul).
+  // Both crons run hourly against the same opted-in users at the same send-hour,
+  // but their notification_log dedupe keys differ ("wc-mastermind:<date>" vs
+  // "daily-push:<date>"), so the (user_id, key) PK cannot dedupe ACROSS them: with
+  // both live, every user would get two pushes a minute apart — and on the WC
+  // fallback branch, byte-identical copy twice. So this route stands down whenever
+  // the WC blast is live. Double-send is therefore impossible by construction, and
+  // nothing can displace wc-mastermind.
+  if (process.env.WC_MASTERMIND_PUSH_ENABLED === "true") {
+    return NextResponse.json({ enabled: false, yields_to: "wc-mastermind", sent: 0 });
   }
 
   // Untyped handle: active_hour_utc + the draft_* tables aren't in the generated

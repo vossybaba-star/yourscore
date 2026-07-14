@@ -43,16 +43,6 @@ export async function GET(req: NextRequest) {
   if (process.env.WC_MASTERMIND_PUSH_ENABLED !== "true") {
     return NextResponse.json({ enabled: false, sent: 0 });
   }
-  // Mutual exclusion with the daily-nudge cron. Both run hourly and target the
-  // same opted-in users at the same send-hour, but their notification_log dedupe
-  // keys differ ("wc-mastermind:<date>" vs "daily-push:<date>"), so the PK cannot
-  // dedupe ACROSS them — with both live, every user gets two pushes a minute apart
-  // (and the WC-fallback branch sends byte-identical copy twice). daily-nudge
-  // supersedes this route; the locked WC copy survives as its fallback branch.
-  // One flag therefore hands over cleanly: no double-send, and no silent gap.
-  if (process.env.DAILY_NUDGE_PUSH_ENABLED === "true") {
-    return NextResponse.json({ enabled: false, superseded_by: "daily-nudge", sent: 0 });
-  }
 
   const svc = createServiceClient();
   // active_hour_utc isn't in the generated types until migration 56 is applied
