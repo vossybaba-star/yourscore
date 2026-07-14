@@ -17,6 +17,7 @@ export default function FantasyHub() {
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [needsAuth, setNeedsAuth] = useState(false);
+  const [hasLeagues, setHasLeagues] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
@@ -35,6 +36,12 @@ export default function FantasyHub() {
     refresh();
     api<{ players: ClientPoolPlayer[] }>("pool").then((p) =>
       setPool(new Map(p.players.map((x) => [x.id, x]))));
+    // Leagues count for the "Play with friends" → "Your leagues" copy switch.
+    // Failure-soft — a signed-out or 500 response must never break the hub.
+    fetch("/api/fantasy/leagues")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j: { leagues?: unknown[] } | null) => { if (j?.leagues?.length) setHasLeagues(true); })
+      .catch(() => {});
   }, [refresh]);
 
   const squad = state?.squad;
@@ -184,6 +191,7 @@ export default function FantasyHub() {
         <Chip>GW {state.gw.gw} · {state.gw.season}</Chip>
         <Chip gold>{squad.credits} credit{squad.credits === 1 ? "" : "s"}</Chip>
         <Chip>{fmtM(squad.bankTenths)} bank</Chip>
+        <Btn small onClick={() => router.push("/fantasy/leagues")}>Leagues</Btn>
       </>} />
 
       {/* You-are-here phase banner */}
@@ -348,6 +356,22 @@ export default function FantasyHub() {
           )}
         </Card>
       )}
+
+      {/* Leagues — a nudge into leagues, or a shortcut back once you're already in one */}
+      {/* Wrapped rather than clicking the Card itself: Card takes no onClick, and an
+          inner-div handler leaves its 14px padding dead to the tap. */}
+      <div onClick={() => router.push("/fantasy/leagues")} style={{ cursor: "pointer" }}>
+        <Card style={{ marginBottom: 12 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 3 }}>
+            {hasLeagues ? "Your leagues" : "Play with friends"}
+          </div>
+          <p style={{ fontSize: 12.5, color: MUTED, margin: 0, lineHeight: 1.45 }}>
+            {hasLeagues
+              ? "See how you stack up this gameweek and this month."
+              : "Create a league, share the code, see who really knows football."}
+          </p>
+        </Card>
+      </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 14 }}>
         {rows.map((row) => (

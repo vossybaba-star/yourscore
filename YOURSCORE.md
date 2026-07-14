@@ -216,6 +216,29 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-14** — **Fantasy Football Phase 2 — Leagues + tables** (branch `fantasy/leagues`,
+  off `fantasy/news-hub`; migration **79 APPLIED to prod**). Private-by-default leagues with a
+  public opt-in: create a league, share the link/code, friends join. Two tables on every league:
+  **Season** (cumulative) and **This month**.
+  - **Monthly mini-seasons**: a gameweek belongs to the calendar month of its `deadline`
+    (Europe/London), falling back to `window_start` for replay rows. No cron, no reset job —
+    the month tab just sums a different set of gameweeks. A late joiner brings their full season
+    history, and the monthly table is what gives them something to win.
+  - **All totals are summed on read** from `fantasy_entries.points` (`scored_at is not null`).
+    **Never materialise a season/month total** — scoring recomputes from the locked snapshot, so
+    a cached total would silently go stale on a rescore. E2E proves a rescore flows straight
+    through with zero league-side writes.
+  - Tables `fantasy_leagues` + `fantasy_league_members` are DELIBERATELY separate from 38-0's
+    `draft_leagues` (which allows client writes and has coupled satellites). Posture matches
+    migration 76: member/public SELECT only, **zero write policies** — all writes service-role.
+    `genJoinCode()` is imported from `src/lib/draft/server.ts`, not copied.
+  - Caps: 20 leagues owned per user, 50 members per league. Code: `src/lib/fantasy/leagues.ts`
+    + `months.ts`, `/api/fantasy/leagues/*`, `/fantasy/leagues[/code]`.
+  - Verified: 24/24 unit tests, real `next build`, and **40/40 E2E against prod** with two real
+    signed-in accounts (create · join · idempotent re-join · season-vs-month sums · month
+    rollover · rescore · guest invite-link read · 403/401 authz · visibility flip · leave ·
+    delete cascade). Test data cleaned up after.
+
 - **2026-07-14** — **Fantasy Football Phase 1 — founder playtest round 2 (all fixes verified)**.
   Six fixes on branch `versus/ux-fixes`:
   (1) **Player naming — ONE rule, both pools** (`scripts/lib/player-name.mjs`): first name +
