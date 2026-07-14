@@ -44,6 +44,46 @@ export const PATHS = {
 };
 
 export const DRAFT_MODEL = "claude-sonnet-4-6";
+// Triage is an exclusion filter — "is this thread even worth researching" — and it
+// runs on EVERY candidate (161 calls on Jul 14). It does not need Sonnet. Haiku is
+// ~3x cheaper per token and the job is a yes/no with a short reason.
+// (Prompt-caching the system prompt is NOT an option here: it is ~700 tokens and
+// Anthropic will not cache below 1024, so don't reach for that lever.)
+export const TRIAGE_MODEL = "claude-haiku-4-5-20251001";
+
+// ── cost accounting ──────────────────────────────────────────────────────────
+// $66 in a week, $20 in a day, and nobody could say where it went — because
+// nothing counted. Every Anthropic call now reports what it spent, and each run
+// prints a total. Web search is the dominant cost and it was completely invisible.
+const PRICES = {                       // USD per 1M tokens
+  "claude-sonnet-4-6": { in: 3, out: 15 },
+  "claude-haiku-4-5-20251001": { in: 1, out: 5 },
+};
+const WEB_SEARCH_USD = 0.01;           // $10 per 1,000 searches
+
+export const usage = { calls: 0, searches: 0, inTok: 0, outTok: 0, usd: 0, byStage: {} };
+
+function bill(stage, model, u, searches = 0) {
+  const p = PRICES[model] || PRICES["claude-sonnet-4-6"];
+  const inTok = (u?.input_tokens || 0) + (u?.cache_read_input_tokens || 0) + (u?.cache_creation_input_tokens || 0);
+  const outTok = u?.output_tokens || 0;
+  const usd = (inTok / 1e6) * p.in + (outTok / 1e6) * p.out + searches * WEB_SEARCH_USD;
+  usage.calls++; usage.searches += searches; usage.inTok += inTok; usage.outTok += outTok; usage.usd += usd;
+  const s = (usage.byStage[stage] ??= { calls: 0, searches: 0, inTok: 0, outTok: 0, usd: 0 });
+  s.calls++; s.searches += searches; s.inTok += inTok; s.outTok += outTok; s.usd += usd;
+  return usd;
+}
+
+/** One-line spend report. Call at the end of every run. */
+export function costReport() {
+  const rows = Object.entries(usage.byStage)
+    .sort((a, b) => b[1].usd - a[1].usd)
+    .map(([k, v]) => `    ${k.padEnd(11)} ${String(v.calls).padStart(3)} calls · ${String(v.searches).padStart(3)} searches · ${(v.inTok / 1000).toFixed(0)}k in · $${v.usd.toFixed(3)}`);
+  return [
+    `💰 spend this run: $${usage.usd.toFixed(3)}  (${usage.calls} calls · ${usage.searches} web searches · ${(usage.inTok / 1000).toFixed(0)}k input tokens)`,
+    ...rows,
+  ].join("\n");
+}
 // Descriptive UA is a Reddit API requirement; generic UAs get 403'd/throttled.
 export const USER_AGENT = "macos:app.yourscore.reddit-listen:v1.0 (football thread listener; human-approved replies)";
 
@@ -425,11 +465,13 @@ export async function triage(post, { subNote } = {}) {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "x-api-key": ANTHROPIC, "anthropic-version": "2023-06-01", "content-type": "application/json" },
-    body: JSON.stringify({ model: DRAFT_MODEL, max_tokens: 300, system: TRIAGE_SYSTEM, messages: [{ role: "user", content: ctx }] }),
+    body: JSON.stringify({ model: TRIAGE_MODEL, max_tokens: 300, system: TRIAGE_SYSTEM, messages: [{ role: "user", content: ctx }] }),
   });
   const body = await res.text();
   if (!res.ok) throw new Error(`Anthropic ${res.status}: ${body.slice(0, 300)}`);
-  const out = parseModelJSON(JSON.parse(body).content?.map((b) => b.text || "").join("") ?? "");
+  const parsed = JSON.parse(body);
+  bill("triage", TRIAGE_MODEL, parsed.usage);
+  const out = parseModelJSON(parsed.content?.map((b) => b.text || "").join("") ?? "");
   return {
     worth: !!out.worth,
     reason: out.reason || "",
@@ -467,9 +509,15 @@ export async function draftReply(post, { subNote, searchNote, brief } = {}) {
   // JSON. And a web_search turn is slow — 90s was clipping healthy calls, not just
   // hung ones. Neither number costs anything unless it's actually used.
   const text = await anthropicSearch(VOICE, ctx, {
+    stage: "draft",
     model: DRAFT_MODEL,
     maxTokens: 3000,
-    maxUses: brief ? 3 : 6,
+    // `brief` is the FREE fact sheet (Sportmonks + ESPN). When it's present the
+    // model already has the manager/club/tournament facts and barely needs to
+    // search. When it's absent every draft buys the full paid budget instead —
+    // which is exactly what happened: SPORTMONKS_API_KEY was never added to the
+    // VPS, so `brief` was always empty and every draft ran the expensive path.
+    maxUses: brief ? 1 : 3,
     timeoutMs: 180_000,
   });
   const out = parseModelJSON(text);
@@ -505,7 +553,13 @@ OUTPUT: ONLY a JSON object, no prose, no code fences:
 /** Anthropic call with the server-side web_search tool; loops through pause_turn.
  * A per-request timeout keeps one stalled connection from wedging a whole batch
  * (web_search turns can be slow; undici has no default body timeout). */
-async function anthropicSearch(system, userText, { model = FACTCHECK_MODEL, maxTokens = 900, maxUses = 6, maxHops = 4, timeoutMs = 90_000, retries = 1 } = {}) {
+// maxUses/maxHops are THE cost dial, and they were wide open (6 searches, 4 hops).
+// Each hop re-sends the whole conversation — INCLUDING every search result pulled so
+// far — as fresh input tokens. So the cost is not linear in searches, it compounds:
+// 6 searches over 4 hops meant ~50-150k input tokens on Sonnet, per call. At ~50
+// calls a day that was ~90% of the entire Reddit spend and it was invisible.
+// 3 searches over 2 hops answers a football question perfectly well.
+async function anthropicSearch(system, userText, { stage = "search", model = FACTCHECK_MODEL, maxTokens = 900, maxUses = 3, maxHops = 2, timeoutMs = 90_000, retries = 1 } = {}) {
   const messages = [{ role: "user", content: userText }];
   for (let hop = 0; hop < maxHops; hop++) {
     let raw, res;
@@ -537,6 +591,9 @@ async function anthropicSearch(system, userText, { model = FACTCHECK_MODEL, maxT
     }
     if (!res.ok) throw new Error(`Anthropic ${res.status}: ${raw.slice(0, 300)}`);
     const msg = JSON.parse(raw);
+    // Server-side web_search reports how many searches it actually ran — the single
+    // most expensive line item, and until now nobody was counting it.
+    bill(stage, model, msg.usage, msg.usage?.server_tool_use?.web_search_requests || 0);
     if (msg.stop_reason === "pause_turn") { messages.push({ role: "assistant", content: msg.content }); continue; }
     // The token budget is shared with the search results the model reads back. When
     // searches eat it, the turn ends BEFORE the model writes its JSON — which then
@@ -554,15 +611,22 @@ async function anthropicSearch(system, userText, { model = FACTCHECK_MODEL, maxT
  * Verify a drafted reply against live web search.
  * @returns {{pass:boolean, failures:string[], note:string}}
  */
-export async function factCheck(post, draft) {
+export async function factCheck(post, draft, { brief = "" } = {}) {
   requireAnthropic();
   const ctx = [
     `SUBREDDIT: r/${post.sub}`,
     `THREAD TITLE: ${post.title}`,
     post.body ? `THREAD BODY:\n"""\n${post.body}\n"""` : "(link/media post, no self-text)",
+    // Hand over the facts we ALREADY hold, free, from structured data. Without this
+    // the checker re-searched the web for the very things the drafter had just
+    // looked up — we were paying for the same research twice, on every draft.
+    brief ? `ALREADY VERIFIED (from structured data — trust these, do NOT spend a search re-confirming them):\n"""\n${brief}\n"""` : "",
     `THE DRAFTED REPLY TO CHECK:\n"""\n${draft}\n"""`,
-  ].join("\n");
-  const text = await anthropicSearch(FACTCHECK_SYSTEM, ctx);
+    `Search ONLY for claims that are not covered above. If every checkable claim is already covered, pass without searching at all.`,
+  ].filter(Boolean).join("\n");
+  // Tight budget on purpose: this is a verification pass over a handful of specific
+  // claims, not a fresh research project.
+  const text = await anthropicSearch(FACTCHECK_SYSTEM, ctx, { stage: "factcheck", maxUses: 2, maxHops: 2 });
   const out = parseModelJSON(text);
   return {
     pass: out.pass !== false, // default to pass only if the checker says nothing failed

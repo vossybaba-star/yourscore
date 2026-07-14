@@ -25,15 +25,18 @@
  */
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { writeFileSync, unlinkSync, statSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { PATHS, loadJSON, saveJSON, listPostsRSS, triage, draftReply, factCheck } from "./lib/reddit.mjs";
+import { PATHS, loadJSON, saveJSON, listPostsRSS, triage, draftReply, factCheck, costReport } from "./lib/reddit.mjs";
 import { factBrief } from "./lib/football-facts.mjs";
 
 const execFileAsync = promisify(execFile);
 const DRY = process.argv.includes("--dry");
 const HERE = dirname(fileURLToPath(import.meta.url));
 const STATE = join(HERE, "data", "reddit-fast-state.json");
+const RUN_LOCK = join(HERE, "data", ".reddit-fast.lock");
+const LOCK_STALE_MS = 25 * 60_000;   // longer than RUN_BUDGET_MS: only a DEAD run gets its lock stolen
 
 // Every joined sub (founder: "all") EXCEPT those flagged `fast: false` — the meme,
 // image and satire subs. Being early is worthless there: the value is a funny
@@ -52,13 +55,30 @@ const NOTE = new Map(wl.subreddits.map((s) => [s.name.toLowerCase(), s.note || "
 // multireddit; limit=100 reaches ~2.5h. Poll every 30min, look back 40min.
 const POLL_LIMIT = 100;
 const MAX_AGE_MIN = 40;
-const MAX_DRAFTS = 1;      // per run — one strong shout beats a buzzing phone
-const MIN_SCORE = 6;       // being early on a weak reply is worth nothing; don't ping him for it
-// Founder, Jul 14: "more content is great". At 6 the lane could exhaust its day by
-// mid-morning and sit silent through the afternoon — the exact hours he's working
-// and wants something fresh to post. 10 keeps it live all day; the MIN_SCORE bar,
-// not the cap, is what protects quality.
-const DAILY_CAP = 10;
+
+// MAX_DRAFTS was 1, with the note "one strong shout beats a buzzing phone" — a rule
+// written when this lane PUSHED TO TELEGRAM. It lands in the Studio queue now, which
+// he browses when he has a minute, so there is no phone to buzz and no reason to
+// throw drafts away. Worse, the loop breaks the moment it hits the cap: a run with
+// 15 fresh threads examined ONE of them and binned the rest, and by the next run
+// most had aged past MAX_AGE_MIN and were gone for good.
+// (founder, Jul 14: "I need as many as possible per run".)
+// Raised 1 → 6 for volume, then pulled back to 3: on Jul 14 the pipeline burned ~$20
+// in a day, and MAX_DRAFTS multiplies the single most expensive step (a search-backed
+// draft + its fact-check). Volume is worth having, but not before we can SEE what a
+// draft costs — every run now prints its spend. Raise this once the numbers are real.
+const MAX_DRAFTS = 3;
+const MIN_SCORE = 6;       // the quality floor, and now the ONLY thing limiting volume
+
+// A run must finish before the next one starts (30min cadence), or two processes
+// race reddit-fast-state.json and re-draft threads the other already took. Stop
+// STARTING new candidates past this; whatever's in flight still completes.
+const RUN_BUDGET_MS = 20 * 60_000;
+const startedAt = Date.now();
+// Not a curation limit — a runaway guard. Quality is held by MIN_SCORE and the
+// fact-check, not by starving him of drafts. An unread draft in the dash costs
+// nothing; a thread that aged out unexamined is gone for good.
+const DAILY_CAP = 40;
 
 const MEGATHREAD = /daily discussion|free talk|megathread|match thread|post.?match|rank the|moderator|mod post|announcement|weekly/i;
 
@@ -75,6 +95,38 @@ if (state.sentToday >= DAILY_CAP) {
   console.log(`\n⚡ reddit-fast · daily cap reached (${DAILY_CAP} early drafts sent today) — standing down.\n`);
   process.exit(0);
 }
+
+/**
+ * Single-instance guard. Now that a run can draft several threads it can take real
+ * time, and two overlapping runs would race reddit-fast-state.json — the loser's
+ * `seen` marks vanish and both draft the same thread.
+ *
+ * This is NOT the old pgrep guard (which matched any command line mentioning the
+ * script, including an ssh wrapper, and stood the lane down when nothing was
+ * running). It's our own lockfile, and — the lesson from the EACCES outage — it
+ * fails SOFT: a lock we cannot write must never become a new way for a run to die.
+ */
+function acquireRunLock() {
+  try {
+    writeFileSync(RUN_LOCK, String(process.pid), { flag: "wx" });
+    return true;
+  } catch (e) {
+    if (e.code !== "EEXIST") return true;         // unwritable → proceed, don't skip the run
+    try {
+      if (Date.now() - statSync(RUN_LOCK).mtimeMs < LOCK_STALE_MS) return false;  // a real run is live
+      unlinkSync(RUN_LOCK);                       // previous run was killed mid-flight
+      writeFileSync(RUN_LOCK, String(process.pid), { flag: "wx" });
+      return true;
+    } catch { return true; }
+  }
+}
+const releaseRunLock = () => { try { unlinkSync(RUN_LOCK); } catch { /* already gone */ } };
+
+if (!acquireRunLock()) {
+  console.log(`\n⚡ reddit-fast · a run is already in flight — skipping this cycle.\n`);
+  process.exit(0);
+}
+process.on("exit", releaseRunLock);
 
 // NOTE: this lane used to stand DOWN whenever reddit-track was running, to avoid
 // two processes spending the same per-IP Reddit budget. That cost it whole runs —
@@ -129,6 +181,12 @@ console.log(`  ${posts.length} in feed · ${fresh.length} fresh & unseen\n`);
 let drafted = 0;
 for (const p of fresh) {
   if (drafted >= MAX_DRAFTS) break;
+  if (Date.now() - startedAt > RUN_BUDGET_MS) {
+    // Leave the rest UNSEEN so the next run picks them up, rather than marking
+    // them examined and losing them.
+    console.log(`\n  ⏳ ${Math.round(RUN_BUDGET_MS / 60000)}min run budget spent — stopping before the next cron fires.`);
+    break;
+  }
   state.seen[p.id] = now;                 // one shot per thread either way
   console.log(`  [${Math.round(ageMin(p))}m] r/${p.sub}: ${p.title.slice(0, 70)}`);
 
@@ -145,7 +203,7 @@ for (const p of fresh) {
     // early is still a weak comment — and it costs him an alert he'll learn to ignore.
     if (r.score < MIN_SCORE) { console.log(`    · skip (score ${r.score} < ${MIN_SCORE}, not worth being early for)`); continue; }
 
-    const fc = await factCheck(p, r.reply);
+    const fc = await factCheck(p, r.reply, { brief });
     if (!fc.pass) { console.log(`    ✗ fact-check failed: ${(fc.failures[0] || fc.note).slice(0, 70)}`); continue; }
 
     drafted++;
@@ -181,4 +239,5 @@ for (const p of fresh) {
 }
 
 if (!DRY) saveJSON(STATE, state);
-console.log(`\n⚡ ${drafted} early draft(s) pushed${DRY ? " (DRY — nothing sent/saved)" : ""}\n`);
+console.log(`\n⚡ ${drafted} early draft(s) pushed${DRY ? " (DRY — nothing sent/saved)" : ""}`);
+console.log(costReport() + "\n");

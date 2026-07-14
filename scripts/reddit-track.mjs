@@ -10,8 +10,11 @@
  * thread is drafted against at most once, ever.
  */
 
-import { PATHS, loadJSON, saveJSON, listPostsAny, searchPostsAny, triage, draftReply, factCheck, hasApiCreds } from "./lib/reddit.mjs";
+import { PATHS, loadJSON, saveJSON, listPostsAny, searchPostsAny, triage, draftReply, factCheck, hasApiCreds, costReport } from "./lib/reddit.mjs";
 import { factBrief } from "./lib/football-facts.mjs";
+
+// Match the fast lane's bar. Below this we neither queue nor pay to verify.
+const MIN_SCORE = 6;
 
 const args = process.argv.slice(2);
 const DRY = args.includes("--dry");
@@ -85,12 +88,18 @@ async function consider(post, { subNote, searchNote }) {
   }
   if (!r.usable) { console.log(`    · skip (${r.reason.slice(0, 90)})`); return; }
 
+  // Don't PAY to fact-check a draft we'd be embarrassed to post. The sweep had no
+  // score floor, so it bought a full web-search verification pass on 4/10 and 5/10
+  // drafts — which then sat in the dash as the stale junk that made it unusable.
+  // A fact-check is the single most expensive step; spend it only on keepers.
+  if (r.score < MIN_SCORE) { console.log(`    · skip (score ${r.score} < ${MIN_SCORE} — not worth fact-checking)`); return; }
+
   // Fact-check before queueing: a web-search pass rejects any draft that rests
   // on a wrong or unverifiable current-world claim (managers, transfers, WC
   // results). Never propose an inaccurate reply. If the check itself errors,
   // fail safe by dropping the draft rather than queueing an unchecked one.
   let fc;
-  try { fc = await factCheck(post, r.reply); }
+  try { fc = await factCheck(post, r.reply, { brief }); }
   catch (e) {
     if (/credit balance/i.test(e.message)) { creditOut = true; console.error(`    ✗ ANTHROPIC OUT OF CREDIT — cannot fact-check`); return; }
     console.log(`    · skip (fact-check errored: ${e.message.slice(0, 70)})`); return;
@@ -191,6 +200,7 @@ for (const q of wl.searches) {
 }
 
 console.log(`\n📊 considered ${considered} thread(s) · queued ${drafted} draft(s) · fetch ok ${subsOk}/${subsOk + subsErr} · swept ${visited}/${total} subs${ONLY ? "" : ` · next run starts at r/${wl.subreddits[state.subOffset].name}`}`);
+console.log(costReport());
 
 // Cron runs this script directly (no wrapper), so a non-zero exit only lands in
 // the log and nobody hears about it — the same silent-failure trap that hid the
