@@ -65,6 +65,10 @@ export async function GET(req: NextRequest) {
       doubts: doc.teamNews.doubts.length,
       form: doc.form.rows.length,
       transfers: doc.transfers.items.length,
+      // Present only when the last tips redraft attempt failed (dead key,
+      // non-ok response, exception, or failed grounding) — see tips.ts. Also
+      // console.error'd from generateTips itself so it isn't silent either way.
+      tipsIssue: doc.tips.issue ?? null,
     },
     nudged,
   });

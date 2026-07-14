@@ -13,7 +13,7 @@
 import { Fragment } from "react";
 import { NewsTabs } from "@/components/fantasy/NewsTabs";
 import {
-  DIFF, INK, MUTED, card, column, h2, loadFeedDoc, shell, ukTime,
+  DIFF, GOLD, INK, MUTED, card, column, h2, loadFeedDoc, shell, ukTime,
 } from "@/components/fantasy/newsUi";
 
 export const revalidate = 300;
@@ -76,8 +76,11 @@ export default async function FantasyFixtures() {
                       {r.short}
                     </div>
                     {gws.map((g) => {
-                      const cell = r.cells.find((c) => c.gw === g);
-                      if (!cell)
+                      // .filter, not .find — a double gameweek pushes TWO cells
+                      // for this club into the same GW, and .find silently
+                      // rendered only the first, hiding half of it.
+                      const cells = r.cells.filter((c) => c.gw === g);
+                      if (cells.length === 0)
                         return (
                           <div
                             key={g}
@@ -86,22 +89,39 @@ export default async function FantasyFixtures() {
                             —
                           </div>
                         );
+                      const isDouble = cells.length > 1;
                       return (
                         <div
                           key={g}
-                          title={`${cell.home ? "vs" : "away to"} ${cell.opponent} — ${DIFF[cell.difficulty].label}`}
+                          title={cells
+                            .map((c) => `${c.home ? "vs" : "away to"} ${c.opponent} — ${DIFF[c.difficulty].label}`)
+                            .join(" · ")}
                           style={{
-                            background: DIFF[cell.difficulty].bg,
-                            color: INK,
-                            fontSize: 11,
-                            textAlign: "center",
-                            padding: "5px 0",
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 2,
+                            border: isDouble ? `1px solid ${GOLD}88` : undefined,
                             borderRadius: 6,
-                            // CAPS = home, lower = away — standard ticker convention.
-                            textTransform: cell.home ? "uppercase" : "lowercase",
+                            padding: isDouble ? 1 : 0,
                           }}
                         >
-                          {cell.oppShort}
+                          {cells.map((cell, i) => (
+                            <div
+                              key={i}
+                              style={{
+                                background: DIFF[cell.difficulty].bg,
+                                color: INK,
+                                fontSize: isDouble ? 9.5 : 11,
+                                textAlign: "center",
+                                padding: "5px 0",
+                                borderRadius: 5,
+                                // CAPS = home, lower = away — standard ticker convention.
+                                textTransform: cell.home ? "uppercase" : "lowercase",
+                              }}
+                            >
+                              {cell.oppShort}
+                            </div>
+                          ))}
                         </div>
                       );
                     })}
@@ -109,7 +129,7 @@ export default async function FantasyFixtures() {
                 ))}
               </div>
             </div>
-            {doc?.deadline && (
+            {doc?.deadline && new Date(doc.deadline).getTime() > Date.now() && (
               <div style={{ color: MUTED, fontSize: 11, marginTop: 10 }}>
                 GW{doc.gw} deadline · {ukTime(doc.deadline)}
               </div>

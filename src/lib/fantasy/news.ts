@@ -20,6 +20,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { MatchFacts } from "./values";
 import { fantasyPool } from "./pool";
+import { generateTips } from "./tips";
 
 // ---------------------------------------------------------------- doc shape
 
@@ -73,6 +74,10 @@ export interface NewsTips {
   captain?: { player: string; why: string };
   differential?: { player: string; why: string };
   note?: string;
+  /** ISO timestamp set when this draft was generated — rendered on the feed
+   *  ("Drafted Tue 14:00") so staleness is honest even when a redraft attempt
+   *  fails and the previous tips are left in place. */
+  draftedAt?: string;
 }
 
 export interface NewsDoc {
@@ -86,7 +91,13 @@ export interface NewsDoc {
   form: { rows: NewsFormRow[]; updatedAt: string };
   insights: { items: NewsInsight[]; updatedAt: string };
   transfers: { items: NewsItem[]; updatedAt: string };
-  tips: NewsTips & { updatedAt?: string };
+  /** `gw` stamps which gameweek the tips were drafted for — that's the
+   *  once-per-GW gate (hourly re-drafting would silently change advice under a
+   *  user who read it this morning, and burn an LLM call each time), UNLESS a
+   *  doubt now names the tipped captain/differential — see buildNewsDoc.
+   *  `issue` carries the reason the LAST redraft attempt failed (if any), so a
+   *  dead API key or a rejected draft is visible instead of silent. */
+  tips: NewsTips & { gw?: number; updatedAt?: string; issue?: string };
 }
 
 // ------------------------------------------------------------ pure builders
@@ -175,8 +186,13 @@ export function buildClubTicker(
   return { gws, runs };
 }
 
-/** Diff two predicted XIs for one club → doubts. Pure.
- *  Only players in the fantasy pool are flagged (others are noise). */
+/** Diff a club's CURRENT predicted XI against its per-GW BASELINE (the first
+ *  snapshot stored for that club in that GW — see buildNewsDoc), not the most
+ *  recent snapshot. Diffing against "latest" makes a doubt vanish after one
+ *  cron cycle (run N flags the drop, run N+1 diffs against the snapshot that
+ *  already lacks the player and finds nothing) even though the player is still
+ *  out — this makes an absence a doubt for as long as it lasts. Pure. Only
+ *  players in the fantasy pool are flagged (others are noise). */
 export function diffPredictedXI(
   prev: NewsClubXI | undefined,
   curr: NewsClubXI,
@@ -231,10 +247,14 @@ export function buildInsights(
     .slice(0, maxSwings);
 
   for (const { r, kind } of swings) {
+    // Gameweek count, not fixture count — a double gameweek pushes cells.length
+    // above the number of GWs on the ticker, which made this read "4 of their
+    // next 7" under a 5-GW header.
+    const gwCount = new Set(r.cells.map((c) => c.gw)).size;
     out.push({
       kind: "fixture-swing",
       title: `${r.club} have a kind run coming`,
-      body: `${kind} of their next ${r.cells.length} look winnable. A good time to be buying their players.`,
+      body: `${kind} of their next ${gwCount} look winnable. A good time to be buying their players.`,
     });
   }
 
@@ -318,13 +338,31 @@ const key = () => {
   return k;
 };
 
+interface SmPage {
+  data?: SmFixtureLite[];
+  pagination?: { has_more?: boolean; next_page?: string | null };
+}
+
+/** A 5-GW window with a double gameweek or a reschedule can exceed a single
+ *  50-fixture page — SportMonks doesn't error, it just truncates, so clubs
+ *  silently lose cells and difficulty runs get computed on missing data.
+ *  Follows pagination.has_more/next_page until exhausted, capped at
+ *  MAX_PAGES so a malformed response can't loop forever. */
+const MAX_FIXTURE_PAGES = 10;
+
 export async function fetchFixturesWindow(fromISO: string, toISO: string): Promise<SmFixtureLite[]> {
-  const res = await fetch(
-    `${SM}/fixtures/between/${fromISO}/${toISO}?filters=fixtureLeagues:8&include=participants&per_page=50&api_token=${key()}`,
-    { cache: "no-store" },
-  );
-  if (!res.ok) throw new Error(`SM fixtures ${res.status}`);
-  return ((await res.json()).data ?? []) as SmFixtureLite[];
+  const out: SmFixtureLite[] = [];
+  let url: string | null =
+    `${SM}/fixtures/between/${fromISO}/${toISO}?filters=fixtureLeagues:8&include=participants&per_page=50&api_token=${key()}`;
+
+  for (let page = 0; url && page < MAX_FIXTURE_PAGES; page++) {
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) throw new Error(`SM fixtures ${res.status}`);
+    const json = (await res.json()) as SmPage;
+    out.push(...(json.data ?? []));
+    url = json.pagination?.has_more && json.pagination.next_page ? json.pagination.next_page : null;
+  }
+  return out;
 }
 
 /** League position per SM team id from current-season standings. */
@@ -338,12 +376,17 @@ export async function fetchStandings(smSeasonId: number): Promise<Map<number, nu
   return new Map(rows.filter((r) => r.participant_id && r.position).map((r) => [r.participant_id!, r.position!]));
 }
 
-/** Predicted XI per fixture. Include name UNVERIFIED pre-season (spec §7.1):
- *  entitlement "Access Predicted Lineups" is confirmed, but SM doesn't
- *  populate rows until ~24-48h pre-kickoff, so the exact include couldn't be
- *  probed on 2026-07-13. Tries the documented include and degrades to [] on
+/** Predicted XI per fixture. Include name STILL UNVERIFIED pre-season
+ *  (spec §7.1): entitlement "Access Predicted Lineups" is confirmed, but SM
+ *  doesn't populate rows until ~24-48h pre-kickoff, so the exact include
+ *  couldn't be probed on 2026-07-13 and must be confirmed against a live
+ *  fixture before launch. Tries the documented include and degrades to [] on
  *  any error — the hub renders an empty team-news data section until verified
- *  against a live fixture (editorial items still show). */
+ *  (editorial items still show).
+ *
+ *  type_id 11 = lineup (starting XI) in SM v3. Rows are required to have it —
+ *  an `undefined` fallback here used to count untyped rows (which can include
+ *  bench players) as starters, generating false "dropped from XI" doubts. */
 export async function fetchPredictedXI(fixtureId: number): Promise<{ smId: number; name: string; teamId: number }[]> {
   try {
     const res = await fetch(
@@ -354,13 +397,23 @@ export async function fetchPredictedXI(fixtureId: number): Promise<{ smId: numbe
     const data = (await res.json()).data as {
       lineups?: { player_id: number; player_name?: string; team_id: number; type_id?: number }[];
     };
-    // type_id 11 = lineup (starting XI) in SM v3; predicted rows use the same shape.
     return (data.lineups ?? [])
-      .filter((l) => l.type_id === 11 || l.type_id === undefined)
+      .filter((l) => l.type_id === 11)
       .map((l) => ({ smId: l.player_id, name: l.player_name ?? `#${l.player_id}`, teamId: l.team_id }));
   } catch {
     return [];
   }
+}
+
+/** Drop a captain/differential pick if its player now appears in the current
+ *  doubts list. Used when a redraft was triggered by exactly that (the tipped
+ *  player got flagged) but the redraft itself failed — leaving the stale pick
+ *  on screen would be the bug this exists to prevent. Pure. */
+function scrubDoubtfulPicks(tips: NewsDoc["tips"], doubtNamesLower: Set<string>): NewsDoc["tips"] {
+  const next = { ...tips };
+  if (next.captain && doubtNamesLower.has(next.captain.player.toLowerCase())) delete next.captain;
+  if (next.differential && doubtNamesLower.has(next.differential.player.toLowerCase())) delete next.differential;
+  return next;
 }
 
 // ---------------------------------------------------------------- assembly
@@ -455,20 +508,28 @@ export async function buildNewsDoc(
         };
         if (clubXI.xi.length === 0) continue;
         predicted.push(clubXI);
-        const { data: prevSnap } = await db
+        // Baseline = the FIRST snapshot stored for this club in this GW, not
+        // the latest — diffing against latest makes a doubt vanish after one
+        // cron cycle (see diffPredictedXI doc comment). ascending + limit(1)
+        // gets that first snapshot; if none exists yet, this run's insert
+        // below BECOMES the baseline and (correctly) produces no doubts.
+        const { data: baselineSnap } = await db
           .from("fantasy_predicted_xi").select("xi")
           .eq("gw", gwRow.gw).eq("club_id", part.id)
-          .order("fetched_at", { ascending: false }).limit(1);
+          .order("fetched_at", { ascending: true }).limit(1);
         doubts.push(...diffPredictedXI(
-          prevSnap?.[0] ? { club: clubXI.club, clubId: part.id, xi: prevSnap[0].xi } : undefined,
+          baselineSnap?.[0] ? { club: clubXI.club, clubId: part.id, xi: baselineSnap[0].xi } : undefined,
           clubXI, poolSmIds,
         ));
         await db.from("fantasy_predicted_xi")
           .insert({ gw: gwRow.gw, club_id: part.id, xi: clubXI.xi, fetched_at: iso });
       }
     }
+    // Filter by TOPIC. Both sections used to read the same untyped table, so
+    // every item rendered twice (once under Team news, once under Transfers).
     const { data: items } = await db
       .from("fantasy_news_items").select("kind, payload, created_at")
+      .eq("topic", "team-news")
       .order("created_at", { ascending: false }).limit(10);
     doc.teamNews = {
       predicted, doubts,
@@ -508,9 +569,49 @@ export async function buildNewsDoc(
     };
   }
 
+  // Tips: ONCE per gameweek (or on force), not hourly — they're a weekly editorial
+  // beat, they cost an LLM call, and re-drafting them every hour would mean the
+  // advice silently changed under a user who read it this morning. The one
+  // exception: a doubt now naming the tipped captain/differential forces an
+  // early redraft — advice that survives its own subject being ruled out is
+  // worse than no advice.
+  const doubtNamesLower = new Set(doc.teamNews.doubts.map((d) => d.name.toLowerCase()));
+  const tippedNames = [doc.tips.captain?.player, doc.tips.differential?.player]
+    .filter((n): n is string => !!n)
+    .map((n) => n.toLowerCase());
+  const tippedPlayerNowDoubtful = tippedNames.some((n) => doubtNamesLower.has(n));
+
+  const tipsStale = !doc.tips.updatedAt || doc.tips.gw !== gwRow.gw || tippedPlayerNowDoubtful;
+  if (opts.force || tipsStale) {
+    const result = await generateTips({
+      gw: gwRow.gw, form: doc.form.rows, runs: doc.fixtures.runs, doubts: doc.teamNews.doubts,
+    });
+    if (result.tips) {
+      doc.tips = { ...result.tips, gw: gwRow.gw, updatedAt: iso, draftedAt: iso };
+    } else {
+      // A failed redraft (API down, dead key, rejected grounding) must not
+      // leave a now-doubtful player as live advice — strip just that pick.
+      // Otherwise leave the previous tips in place rather than blanking the
+      // section, but always record WHY the redraft failed so it's visible in
+      // the cron response instead of silent.
+      const kept = tippedPlayerNowDoubtful
+        ? scrubDoubtfulPicks(doc.tips, doubtNamesLower)
+        : doc.tips;
+      doc.tips = { ...kept, issue: result.reason };
+    }
+  } else if (doc.tips.issue) {
+    // Tips are fresh and nothing forced a redraft — clear a stale issue flag
+    // left over from an earlier failed attempt.
+    doc.tips = { ...doc.tips };
+    delete doc.tips.issue;
+  }
+
   if (todo.transfers) {
+    // "Transfers & talk" = transfer news + the general football river. NOT
+    // team-news (that has its own section) — see the topic filter above.
     const { data: items } = await db
       .from("fantasy_news_items").select("kind, payload, created_at")
+      .in("topic", ["transfer", "general"])
       .order("created_at", { ascending: false }).limit(20);
     doc.transfers = {
       items: (items ?? []).map((i) => ({ kind: i.kind, payload: i.payload, createdAt: i.created_at })),

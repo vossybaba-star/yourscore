@@ -8,7 +8,7 @@
  */
 import type { CSSProperties } from "react";
 import { createClient } from "@supabase/supabase-js";
-import type { Difficulty, NewsDoc, NewsItem } from "@/lib/fantasy/news";
+import type { Difficulty, NewsDoc } from "@/lib/fantasy/news";
 
 export const GOLD = "#E3B54C";
 export const PITCH = "#0E1F17";
@@ -41,31 +41,6 @@ export const ukTime = (iso: string) =>
     timeZone: "Europe/London", weekday: "short", day: "numeric", month: "short",
     hour: "2-digit", minute: "2-digit",
   });
-
-/** One tappable content item in the feed — an article or a tweet.
- *  Tweets render as native cards, NOT X's embed script (widgets.js is heavy and
- *  embed availability is flaky — spec §4.4). */
-export function ItemCard({ item }: { item: NewsItem }) {
-  const p = item.payload;
-  return (
-    <a
-      href={p.url} target="_blank" rel="noopener noreferrer"
-      style={{ ...card, display: "block", textDecoration: "none", padding: 12 }}
-    >
-      {item.kind === "tweet" ? (
-        <>
-          <div style={{ color: GOLD, fontSize: 12, fontWeight: 600 }}>{p.handle}</div>
-          <div style={{ color: INK, fontSize: 13, marginTop: 4, lineHeight: 1.4 }}>{p.text}</div>
-        </>
-      ) : (
-        <>
-          <div style={{ color: INK, fontSize: 13, fontWeight: 600, lineHeight: 1.4 }}>{p.title}</div>
-          {p.source && <div style={{ color: MUTED, fontSize: 11, marginTop: 4 }}>{p.source}</div>}
-        </>
-      )}
-    </a>
-  );
-}
 
 /** Read the current feed doc. Both surfaces render from the SAME cron-built
  *  doc — the tabs are two views of one document, not two pipelines. */
