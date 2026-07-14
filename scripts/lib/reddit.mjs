@@ -462,7 +462,16 @@ export async function draftReply(post, { subNote, searchNote, brief } = {}) {
   // (Sportmonks + ESPN, already paid / no cost); the paid web_search tool is the
   // fallback for what structured data can't answer. Writing from stale memory
   // and binning ~40% on a second pass was both wrong and more expensive.
-  const text = await anthropicSearch(VOICE, ctx, { model: DRAFT_MODEL, maxTokens: 1400, maxUses: brief ? 3 : 6 });
+  // maxTokens is shared with the search results the model reads back, so a research-
+  // first draft needs real headroom: at 1400 the turn kept dying before it wrote the
+  // JSON. And a web_search turn is slow — 90s was clipping healthy calls, not just
+  // hung ones. Neither number costs anything unless it's actually used.
+  const text = await anthropicSearch(VOICE, ctx, {
+    model: DRAFT_MODEL,
+    maxTokens: 3000,
+    maxUses: brief ? 3 : 6,
+    timeoutMs: 180_000,
+  });
   const out = parseModelJSON(text);
   return {
     usable: !!out.usable,
@@ -496,29 +505,46 @@ OUTPUT: ONLY a JSON object, no prose, no code fences:
 /** Anthropic call with the server-side web_search tool; loops through pause_turn.
  * A per-request timeout keeps one stalled connection from wedging a whole batch
  * (web_search turns can be slow; undici has no default body timeout). */
-async function anthropicSearch(system, userText, { model = FACTCHECK_MODEL, maxTokens = 900, maxUses = 6, maxHops = 4, timeoutMs = 90_000 } = {}) {
+async function anthropicSearch(system, userText, { model = FACTCHECK_MODEL, maxTokens = 900, maxUses = 6, maxHops = 4, timeoutMs = 90_000, retries = 1 } = {}) {
   const messages = [{ role: "user", content: userText }];
   for (let hop = 0; hop < maxHops; hop++) {
-    const ctl = new AbortController();
-    const t = setTimeout(() => ctl.abort(), timeoutMs);
     let raw, res;
-    try {
-      res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST", signal: ctl.signal,
-        headers: { "x-api-key": ANTHROPIC, "anthropic-version": "2023-06-01", "content-type": "application/json" },
-        body: JSON.stringify({
-          model, max_tokens: maxTokens, system,
-          tools: [{ type: "web_search_20260209", name: "web_search", max_uses: maxUses }],
-          messages,
-        }),
-      });
-      raw = await res.text();
-    } catch (e) {
-      throw new Error(e.name === "AbortError" ? `web search timed out after ${timeoutMs / 1000}s` : e.message);
-    } finally { clearTimeout(t); }
+    // A server-side web_search turn is genuinely slow and its latency is spiky.
+    // Without a retry, ONE slow turn silently costs a whole draft — on the 13:00
+    // run that killed 3 of 6 candidates, and the lane reported "0 drafts" as if
+    // there had been nothing worth writing about.
+    for (let attempt = 0; ; attempt++) {
+      const ctl = new AbortController();
+      const t = setTimeout(() => ctl.abort(), timeoutMs);
+      try {
+        res = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST", signal: ctl.signal,
+          headers: { "x-api-key": ANTHROPIC, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+          body: JSON.stringify({
+            model, max_tokens: maxTokens, system,
+            tools: [{ type: "web_search_20260209", name: "web_search", max_uses: maxUses }],
+            messages,
+          }),
+        });
+        raw = await res.text();
+        break;
+      } catch (e) {
+        const timedOut = e.name === "AbortError";
+        if (!timedOut) throw new Error(e.message);
+        if (attempt >= retries) throw new Error(`web search timed out after ${timeoutMs / 1000}s (${attempt + 1} attempts)`);
+        console.error(`      · web search stalled (${timeoutMs / 1000}s) — retrying once`);
+      } finally { clearTimeout(t); }
+    }
     if (!res.ok) throw new Error(`Anthropic ${res.status}: ${raw.slice(0, 300)}`);
     const msg = JSON.parse(raw);
     if (msg.stop_reason === "pause_turn") { messages.push({ role: "assistant", content: msg.content }); continue; }
+    // The token budget is shared with the search results the model reads back. When
+    // searches eat it, the turn ends BEFORE the model writes its JSON — which then
+    // surfaced as "no JSON object in model output", blaming the parser for what is
+    // really truncation. Name the real cause.
+    if (msg.stop_reason === "max_tokens") {
+      throw new Error(`ran out of output tokens (max_tokens=${maxTokens}) before finishing the JSON — raise maxTokens`);
+    }
     return (msg.content || []).map((b) => b.text || "").join("");
   }
   throw new Error("web search did not settle within maxHops");
