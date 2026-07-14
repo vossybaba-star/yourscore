@@ -1,0 +1,107 @@
+<!--
+  Email 28 — Question Guru
+  Trigger: manually sent daily via post-guru.mjs to the day's Question Guru
+  Subject:    You're today's Question Guru 🧠
+  Preview:    Only {{correct_pct}}% of players got that right. You did.
+  Tokens: {{display_name}} {{question_text}} {{correct_answer}} {{correct_pct}} {{category}} {{x_url}} {{play_url}}
+-->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="x-apple-disable-message-reformatting"><meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark">
+  <title>You're today's Question Guru</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>body,table,td{margin:0;padding:0}img{border:0;outline:none;text-decoration:none;display:block}table{border-collapse:collapse}a{text-decoration:none}
+    @media (max-width:600px){.container{width:100%!important}.px{padding-left:24px!important;padding-right:24px!important}.headline{font-size:44px!important;line-height:46px!important}}</style>
+</head>
+<body style="margin:0;padding:0;background:#030d05;font-family:'DM Sans',Helvetica,Arial,sans-serif;color:#ffffff;">
+  <div style="display:none;max-height:0;overflow:hidden;font-size:1px;line-height:1px;color:#030d05;">Only {{correct_pct}}% of players got that right. You did.</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#030d05;">
+    <tr><td align="center" style="padding:40px 16px;">
+    <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
+
+      <!-- Logo -->
+      <tr><td align="center" class="px" style="padding:0 40px 40px;">
+        <a href="https://yourscore.app"><img src="https://yourscore.app/logo.png" alt="YourScore" width="148" height="44" style="width:148px;height:44px;display:block;margin:0 auto;"></a>
+      </td></tr>
+
+      <!-- Eyebrow badge -->
+      <tr><td class="px" align="left" style="padding:0 40px 18px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+          <td style="background:rgba(0,216,192,0.1);border:1px solid rgba(0,216,192,0.3);border-radius:999px;padding:6px 16px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:2px;color:#00d8c0;font-weight:700;text-transform:uppercase;">&#129504; Question Guru — {{date}}</td>
+        </tr></table>
+      </td></tr>
+
+      <!-- Headline -->
+      <tr><td class="px" style="padding:0 40px 16px;">
+        <h1 class="headline" style="margin:0;font-family:'Bebas Neue',Impact,Arial,sans-serif;font-size:60px;line-height:58px;color:#00d8c0;font-weight:400;text-shadow:0 0 28px rgba(0,216,192,0.35);">TODAY'S GURU.</h1>
+      </td></tr>
+
+      <!-- Intro -->
+      <tr><td class="px" style="padding:0 40px 32px;">
+        <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:17px;line-height:27px;color:#bbccbb;">
+          Hey <strong style="color:#ffffff;">{{display_name}}</strong> — you answered today's hardest question correctly. Only <strong style="color:#aeea00;">{{correct_pct}}% of players</strong> got it right. That puts you in a very select group.
+        </p>
+      </td></tr>
+
+      <!-- Question card -->
+      <tr><td class="px" style="padding:0 40px 32px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0e1611;border-radius:16px;border:1px solid rgba(255,255,255,0.08);">
+          <!-- Card top bar -->
+          <tr><td style="padding:14px 22px;border-bottom:1px solid rgba(255,255,255,0.06);">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+              <td><span style="display:inline-block;background:rgba(255,71,87,0.12);border:1px solid rgba(255,71,87,0.25);border-radius:999px;padding:4px 12px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:2px;color:#ff4757;font-weight:700;text-transform:uppercase;">Hard</span></td>
+              <td align="right" style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:13px;color:rgba(255,255,255,0.3);">{{category}}</td>
+            </tr></table>
+          </td></tr>
+          <!-- Question text -->
+          <tr><td style="padding:20px 22px 14px;">
+            <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:18px;line-height:27px;color:#ffffff;font-weight:600;">{{question_text}}</p>
+          </td></tr>
+          <!-- Correct answer row -->
+          <tr><td style="padding:0 14px 16px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:rgba(174,234,0,0.1);border:1px solid #aeea00;border-radius:12px;">
+              <tr><td style="padding:14px 16px;">
+                <table cellpadding="0" cellspacing="0" border="0"><tr>
+                  <td style="width:36px;height:36px;background:#aeea00;border-radius:8px;text-align:center;vertical-align:middle;font-family:'Bebas Neue',Impact,sans-serif;font-size:18px;color:#0a0f0a;padding:0 0 2px;">&#10003;</td>
+                  <td style="padding-left:14px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:17px;color:#aeea00;font-weight:600;">{{correct_answer}}</td>
+                </tr></table>
+              </td></tr>
+            </table>
+          </td></tr>
+          <!-- Stat -->
+          <tr><td align="center" style="padding:4px 22px 20px;border-top:1px solid rgba(255,255,255,0.05);">
+            <p style="margin:8px 0 0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:13px;color:rgba(255,255,255,0.3);">Only <strong style="color:#aeea00;">{{correct_pct}}%</strong> of players answered this correctly</p>
+          </td></tr>
+        </table>
+      </td></tr>
+
+      <!-- Social shoutout -->
+      <tr><td class="px" style="padding:0 40px 32px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:rgba(0,216,192,0.06);border:1px solid rgba(0,216,192,0.18);border-radius:12px;padding:20px 22px;">
+          <tr><td>
+            <p style="margin:0 0 10px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;color:#00d8c0;">We shouted you out.</p>
+            <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:15px;line-height:24px;color:#bbccbb;">We announced you as today's Question Guru on X and Instagram. Your username is out there — let your mates know. <a href="{{x_url}}" style="color:#00d8c0;text-decoration:underline;">See the post &#8599;</a></p>
+          </td></tr>
+        </table>
+      </td></tr>
+
+      <!-- CTA -->
+      <tr><td class="px" align="center" style="padding:0 40px 40px;">
+        <a href="{{play_url}}" style="display:inline-block;background:#aeea00;color:#030d05;font-family:'Bebas Neue',Impact,Arial,sans-serif;font-size:22px;letter-spacing:2px;padding:16px 48px;border-radius:8px;text-decoration:none;">Play Again</a>
+      </td></tr>
+
+      <!-- Footer -->
+      <tr><td align="center" style="padding:0 40px 16px;border-top:1px solid rgba(255,255,255,0.06);">
+        <p style="margin:24px 0 0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:13px;color:rgba(255,255,255,0.2);text-align:center;">
+          YourScore · <a href="https://yourscore.app" style="color:rgba(0,216,192,0.5);text-decoration:none;">yourscore.app</a><br>
+          <a href="{{unsub_url}}" style="color:rgba(255,255,255,0.2);text-decoration:underline;">Unsubscribe</a>
+        </p>
+      </td></tr>
+
+    </table>
+    </td></tr>
+  </table>
+</body>
+</html>

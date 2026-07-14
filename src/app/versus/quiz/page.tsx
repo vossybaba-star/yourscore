@@ -265,8 +265,9 @@ export default function QuizBattlePage() {
                 <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1 -mx-5 px-5">
                   {popular.map((p) => (
                     <button key={p.id} onClick={() => setPicked(p)} className="flex-shrink-0 text-left rounded-2xl overflow-hidden active:scale-[0.97] transition-transform" style={{ width: 108, border: "1px solid rgba(0,216,192,0.18)" }}>
-                      {/* Cover = a designed card, shown whole (square zone matches it); fallback keeps the short banner */}
-                      <div className="relative" style={p.cover ? { aspectRatio: "1 / 1" } : { height: 76, background: "radial-gradient(ellipse at 50% 80%, rgba(0,216,192,0.12), #0b1310 70%)" }}>
+                      {/* Cover = a designed card, shown whole (square zone matches it); fallback keeps the short banner.
+                          Branded gradient sits behind the lazy image so it never flashes a black box. */}
+                      <div className="relative" style={p.cover ? { aspectRatio: "1 / 1", background: "radial-gradient(ellipse at 50% 80%, rgba(0,216,192,0.12), #0b1310 70%)" } : { height: 76, background: "radial-gradient(ellipse at 50% 80%, rgba(0,216,192,0.12), #0b1310 70%)" }}>
                         {p.cover ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={coverUrl(p.cover, 108) ?? p.cover} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
@@ -305,8 +306,9 @@ export default function QuizBattlePage() {
               <div className="grid grid-cols-2 gap-3 mt-4">
                 {shown.map((p) => (
                   <button key={p.id} onClick={() => setPicked(p)} className="text-left rounded-2xl overflow-hidden active:scale-[0.97] transition-transform" style={{ background: "linear-gradient(160deg,#0e1611,#15211a)", border: "1px solid rgba(0,216,192,0.16)" }}>
-                    {/* Cover = a designed card, shown whole; fallback keeps the short banner */}
-                    <div className="relative flex items-center justify-center" style={p.cover ? undefined : { height: 96, background: "radial-gradient(ellipse at 50% 80%, rgba(0,216,192,0.12), transparent 70%)" }}>
+                    {/* Cover = a designed card, shown whole; fallback keeps the short banner.
+                        Reserve height + branded gradient so covers don't flash a black box or shift layout. */}
+                    <div className="relative flex items-center justify-center" style={p.cover ? { minHeight: 96, background: "radial-gradient(ellipse at 50% 80%, rgba(0,216,192,0.12), #0b1310 70%)" } : { height: 96, background: "radial-gradient(ellipse at 50% 80%, rgba(0,216,192,0.12), transparent 70%)" }}>
                       {p.cover ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={coverUrl(p.cover, 220) ?? p.cover} alt={p.name} loading="lazy" decoding="async" className="block w-full h-auto" />

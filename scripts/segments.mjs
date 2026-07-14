@@ -138,6 +138,16 @@ function firstName(name) {
 }
 
 function snapshot(users) {
+  // --json: machine-readable snapshot (used by the Studio dash).
+  if (process.argv.includes("--json")) {
+    console.log(JSON.stringify({
+      total: users.length,
+      segments: Object.entries(SEGMENTS).map(([name, { pred, angle }]) => ({
+        name, angle, count: users.filter(pred).length,
+      })),
+    }));
+    return;
+  }
   console.log(`\n📊 YourScore email segments — ${users.length} sendable users\n`);
   const pad = Math.max(...Object.keys(SEGMENTS).map(s => s.length));
   for (const [name, { pred, angle }] of Object.entries(SEGMENTS)) {
@@ -288,7 +298,7 @@ async function main() {
   if (argv[0] === "export-audience") return exportAudience(users, argv.slice(1));
   if (argv[0] === "send") return send(users, argv[1], argv.slice(2));
   if (argv[0] && SEGMENTS[argv[0]]) return context(users, argv[0]);
-  if (argv[0]) { console.error(`Unknown segment "${argv[0]}".`); }
+  if (argv[0] && !argv[0].startsWith("--")) { console.error(`Unknown segment "${argv[0]}".`); }
   return snapshot(users);
 }
 

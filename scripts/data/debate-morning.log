@@ -1,0 +1,10 @@
+file:///Users/zchukwumah/yourscore/scripts/tg.mjs:166
+  throw new Error("approval timed out");
+        ^
+
+Error: approval timed out
+    at awaitButtonsOrText (file:///Users/zchukwumah/yourscore/scripts/tg.mjs:166:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async file:///Users/zchukwumah/yourscore/scripts/social/post-debate-morning.mjs:58:16
+
+Node.js v24.15.0

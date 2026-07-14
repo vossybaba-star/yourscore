@@ -1,19 +1,220 @@
 {
-  "_comment": "Reddit listening config. subreddits are browsed (sort=hot/new); searches sweep all of Reddit for intent threads. 'note' feeds the drafter as that sub's rules context. Edit freely — reddit-track picks changes up next run.",
-  "defaults": { "perRun": 2, "maxAgeHours": 20, "minUps": 5, "maxQueuedPerRun": 6 },
+  "_comment": "Reddit listening config. Subs = the FULL set u/Medium-Procedure7938 has joined (pulled from old.reddit.com/subreddits/mine, Jul 10 2026). Sitewide `searches` were REMOVED Jul 10: search.rss has no restrict_sr, so it swept all of Reddit and burned an LLM judge call on r/deardiary, r/loseit, r/nba etc (48 of 95 candidates). They also existed to catch product-intent threads, which is moot under the Jul 9 no-product-mentions policy. POLICY (matches lib/reddit.mjs VOICE): FPL + trivia lead, genuinely good football threads in scope, NEVER mention YourScore. Founder is an ARSENAL fan — in rival club subs, away-fan banter only, never pose as their supporter. perRun is tiered to cap Anthropic spend: 2 for priority subs, 1 elsewhere.",
+  "defaults": {
+    "perRun": 1,
+    "maxAgeHours": 20,
+    "minUps": 5,
+    "maxQueuedPerRun": 10
+  },
   "subreddits": [
-    { "name": "soccer",        "sort": "hot", "minUps": 200, "note": "STRICT no self-promo, no app mentions ever. Only reply if we genuinely add to a big thread (trivia, history, a sharp observation)." },
-    { "name": "worldcup",      "sort": "hot", "minUps": 30,  "note": "WC2026 is on right now. No unsolicited promo; product mention only if someone literally asks for a WC quiz/game." },
-    { "name": "PremierLeague", "sort": "hot", "minUps": 30,  "note": "No link-dropping; be a fan first. Product only if directly asked for a quiz/trivia app." },
-    { "name": "FantasyPL",     "sort": "hot", "minUps": 50,  "note": "Community is sharp and allergic to promo. Useful football-knowledge replies only; no product mentions unless a thread asks for football games/quizzes." },
-    { "name": "footballtactics", "sort": "hot", "minUps": 20, "note": "Thoughtful sub; only reply with real substance. Never promo." }
+    {
+      "name": "FantasyPL",
+      "sort": "hot",
+      "perRun": 2,
+      "minUps": 50,
+      "note": "TOP PRIORITY. Sharp, allergic to promo. New-season prep: squads, wildcards, transfers, captain picks, price rises. Frame as OUR own strategy/decisions, never advice-giving. Verify any PL stat (Sportmonks first). Never mention the product."
+    },
+    {
+      "name": "fantasypremierleague",
+      "sort": "hot",
+      "perRun": 2,
+      "minUps": 30,
+      "note": "TOP PRIORITY. FPL app community. Same as r/FantasyPL: real FPL value, own-strategy framing, never mention the product."
+    },
+    {
+      "name": "DraftEPL",
+      "sort": "hot",
+      "perRun": 2,
+      "minUps": 5,
+      "note": "PRIORITY. Draft-style FPL, small + niche. Genuine draft strategy. Never mention the product."
+    },
+    {
+      "name": "FantasyWC",
+      "sort": "hot",
+      "perRun": 2,
+      "minUps": 5,
+      "note": "PRIORITY. WC Fantasy, small. Helpful WC-fantasy value. Never mention the product."
+    },
+    {
+      "name": "Gunners",
+      "sort": "hot",
+      "perRun": 2,
+      "minUps": 100,
+      "note": "HOME sub — founder is Arsenal. Be a real fan; this is where the account earns credibility. Never mention the product."
+    },
+    {
+      "name": "worldcup",
+      "sort": "hot",
+      "perRun": 2,
+      "minUps": 30,
+      "note": "WC2026 on now. Trivia/history angles land best. Never mention the product."
+    },
+    {
+      "name": "PremierLeague",
+      "sort": "hot",
+      "perRun": 2,
+      "minUps": 30,
+      "note": "Be a fan first. Trivia/knowledge or a sharp observation. Never mention the product."
+    },
+    {
+      "name": "football",
+      "sort": "hot",
+      "perRun": 2,
+      "minUps": 100,
+      "note": "Discussion-first general football. Substance only. Never mention the product."
+    },
+    {
+      "name": "footballtactics",
+      "sort": "hot",
+      "perRun": 2,
+      "minUps": 20,
+      "note": "Thoughtful sub; reply only with real substance. Never mention the product."
+    },
+    {
+      "name": "soccer",
+      "sort": "hot",
+      "perRun": 1,
+      "minUps": 200,
+      "note": "NOT subscribed, but the biggest football sub. STRICT: only reply if we genuinely add to a big thread (trivia, history, a sharp observation). Never mention the product."
+    },
+    {
+      "name": "ManchesterUnited",
+      "sort": "hot",
+      "perRun": 1,
+      "minUps": 150,
+      "note": "RIVAL club sub. Only big threads, genuine banter as an away/Arsenal fan. NEVER pose as a United fan. Never mention the product."
+    },
+    {
+      "name": "chelseafc",
+      "sort": "hot",
+      "perRun": 1,
+      "minUps": 100,
+      "note": "RIVAL club sub. Away-fan banter only, tread lightly. Never pose as a Chelsea fan. Never mention the product."
+    },
+    {
+      "name": "MCFC",
+      "sort": "hot",
+      "perRun": 1,
+      "minUps": 100,
+      "note": "RIVAL club sub. Away-fan banter only. Never pose as a City fan. Never mention the product."
+    },
+    {
+      "name": "Tottenham",
+      "sort": "hot",
+      "perRun": 1,
+      "minUps": 80,
+      "note": "NORTH LONDON RIVAL — highest-tension sub for an Arsenal fan. Only well-judged banter; easy to get piled on. Never pose as a Spurs fan. Never mention the product."
+    },
+    {
+      "name": "LeedsUnited",
+      "sort": "hot",
+      "perRun": 1,
+      "minUps": 20,
+      "note": "Leeds club sub. Away-fan banter/observations only. Never mention the product."
+    },
+    {
+      "name": "WWFC",
+      "sort": "hot",
+      "perRun": 1,
+      "minUps": 15,
+      "note": "Wolves club sub, smaller. Away-fan banter only. Never mention the product."
+    },
+    {
+      "name": "FootballHotTakes",
+      "sort": "hot",
+      "perRun": 1,
+      "minUps": 10,
+      "note": "Debate sub. Stake a clear opinion and defend it, in the founder's voice. Never mention the product."
+    },
+    {
+      "name": "AllFootballHotTakes",
+      "sort": "hot",
+      "perRun": 1,
+      "minUps": 5,
+      "note": "Smaller hot-take sub. Punchy, defensible opinion. Never mention the product."
+    },
+    {
+      "name": "SpicyFootballTakes",
+      "sort": "hot",
+      "perRun": 1,
+      "minUps": 5,
+      "note": "Controversial-takes sub. Spicy but genuine opinion. Never mention the product."
+    },
+    {
+      "name": "FootballTransferChat",
+      "sort": "hot",
+      "perRun": 1,
+      "minUps": 10,
+      "note": "Transfer rumours/market chat. Informed opinion; verify any PL data (Sportmonks first). Never mention the product."
+    },
+    {
+      "name": "FCWC",
+      "sort": "hot",
+      "perRun": 1,
+      "minUps": 10,
+      "note": "Club World Cup sub. Fan discussion. Never mention the product."
+    },
+    {
+      "name": "SoccerNoobs",
+      "sort": "hot",
+      "perRun": 1,
+      "minUps": 3,
+      "note": "People learning the game. Genuinely helpful, patient answers — this is where trivia/knowledge value shines. Never mention the product."
+    },
+    {
+      "name": "DoYouSpeakFootball",
+      "sort": "hot",
+      "perRun": 1,
+      "minUps": 3,
+      "note": "Small chatty world-football sub. Friendly discussion. Never mention the product."
+    },
+    {
+      "name": "soccerMenace_com",
+      "sort": "hot",
+      "perRun": 1,
+      "minUps": 3,
+      "note": "Small opinion/discussion sub. Genuine takes. Never mention the product."
+    },
+    {
+      "name": "footballmademesmile",
+      "sort": "hot",
+      "perRun": 1,
+      "minUps": 20,
+      "note": "Wholesome moments. Warm, human one-liners. No cynicism. Never mention the product.",
+      "fast": false
+    },
+    {
+      "name": "CristianoRonaldo2",
+      "sort": "hot",
+      "perRun": 1,
+      "minUps": 10,
+      "note": "Jokey anti-Ronaldo/Madrid sub. Light banter only. Never mention the product.",
+      "fast": false
+    },
+    {
+      "name": "soccermemes",
+      "sort": "hot",
+      "perRun": 1,
+      "minUps": 300,
+      "note": "Image-led meme sub. Top posts only. Value = one funny line, not analysis. Skip unless the joke is actually there. Never mention the product.",
+      "fast": false
+    },
+    {
+      "name": "footballmemes",
+      "sort": "hot",
+      "perRun": 1,
+      "minUps": 200,
+      "note": "Meme sub. Short funny comment only. Skip unless the joke lands. Never mention the product.",
+      "fast": false
+    },
+    {
+      "name": "soccercirclejerk",
+      "sort": "hot",
+      "perRun": 1,
+      "minUps": 300,
+      "note": "SATIRE. Comments must match the ironic jerk tone or they flop. Very high bar — SKIP if unsure. Never earnest, never mention the product.",
+      "fast": false
+    }
   ],
-  "searches": [
-    { "q": "football quiz app",                    "time": "day",  "note": "Someone looking for exactly what we built. Disclose it's ours." },
-    { "q": "football trivia game",                 "time": "day",  "note": "Product-fit thread. Disclose it's ours." },
-    { "q": "daily football quiz",                  "time": "day",  "note": "Product-fit thread. Disclose it's ours." },
-    { "q": "test football knowledge",              "time": "day",  "note": "Product-fit if they want an app/game; otherwise just be helpful." },
-    { "q": "games for football fans",              "time": "day",  "note": "Recommendation thread. Disclose it's ours if we pitch in." },
-    { "q": "app to settle football arguments",     "time": "week", "note": "Long-tail but perfect intent." }
-  ]
+  "searches": []
 }

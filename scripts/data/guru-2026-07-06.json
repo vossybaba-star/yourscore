@@ -1,0 +1,19 @@
+{
+  "date": "2026-07-06",
+  "displayDate": "6 Jul 2026",
+  "pngPath": "/Users/zchukwumah/yourscore/scripts/data/guru-card-2026-07-06.png",
+  "guru": {
+    "userId": "db636466-fa42-4216-9e55-e7e87d90a2b7",
+    "name": "shaneo",
+    "username": "shaneo",
+    "email": "shanewillans02@gmail.com"
+  },
+  "question": {
+    "text": "How many times have England failed to qualify for the FIFA World Cup finals?",
+    "correctAnswer": "Three",
+    "correctLetter": "B",
+    "correctPct": 33,
+    "category": "history",
+    "difficulty": "hard"
+  }
+}

@@ -42,13 +42,17 @@ export default async function ProfilePage() {
     { data: wcRunRows },
     { data: bestStreakRows },
     { count: mpGamesCount },
+    { data: accuracyRows },
   ] = await Promise.all([
     supabase.from("profiles").select("display_name, total_score, games_played, avatar_url").eq("id", userId).single(),
-    // created_at/rank added via migration — bypass stale generated types
+    // Recency-ordered window (drives "recently played with"). NOTE: room_scores has
+    // updated_at, NOT created_at — the old created_at reference made this whole query
+    // error, which is why the profile stat tiles read "—". Accuracy now comes from the
+    // all-rows sum below; this window only needs recent room_ids.
     sb.from("room_scores")
-      .select("room_id, total_score, correct_answers, total_answers, current_streak, rank, created_at")
+      .select("room_id, total_score, correct_answers, total_answers, current_streak, rank, updated_at")
       .eq("user_id", userId)
-      .order("created_at", { ascending: false })
+      .order("updated_at", { ascending: false })
       .limit(50),
     supabase.from("challenge_attempts")
       .select("score, max_score, completed_at")
@@ -91,6 +95,13 @@ export default async function ProfilePage() {
     sb.from("room_scores")
       .select("id", { count: "exact", head: true })
       .eq("user_id", userId),
+    // Accuracy over ALL games — the last-50 window (ordered by a late-added
+    // created_at, which sorts NULLS FIRST on DESC) could drop a just-finished
+    // battle. Sum every row so a completed battle always counts.
+    sb.from("room_scores")
+      .select("total_answers, correct_answers")
+      .eq("user_id", userId)
+      .limit(2000),
   ]);
 
   const pendingFriends = pendingFriendCount ?? 0;
@@ -110,8 +121,12 @@ export default async function ProfilePage() {
   // Compute stats from room_scores (cast to any — columns added via migration)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const allRoomScores: any[] = roomScoreRows ?? [];
-  const totalAnswered = allRoomScores.reduce((s: number, r: any) => s + (r.total_answers ?? 0), 0);
-  const totalCorrect = allRoomScores.reduce((s: number, r: any) => s + (r.correct_answers ?? 0), 0);
+  // Accuracy sums EVERY game (accuracyRows), so a fresh battle can't fall outside
+  // the last-50 window; fall back to the windowed rows if that query returned nothing.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const accRows: any[] = (accuracyRows && accuracyRows.length ? accuracyRows : allRoomScores);
+  const totalAnswered = accRows.reduce((s: number, r: any) => s + (r.total_answers ?? 0), 0);
+  const totalCorrect = accRows.reduce((s: number, r: any) => s + (r.correct_answers ?? 0), 0);
   const accuracy = totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : null;
   // True all-time peak streak (best_streak = per-game high-water mark), not the
   // mid-game current_streak that resets to 0 on a wrong answer.

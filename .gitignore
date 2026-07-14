@@ -64,5 +64,9 @@ emails/preview/
 # Health-check run artifacts (scorecards, screenshots, bot-seen history)
 scripts/data/health/
 
+# Daily/weekly social brief snapshots (ephemeral — regenerated each run)
+scripts/data/brief-*.json
+scripts/data/social-brief.cron.log
+
 # Never commit env backups (they carry prod secrets)
 .env.local.bak*

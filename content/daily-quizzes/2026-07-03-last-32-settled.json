@@ -1,0 +1,200 @@
+{
+  "date": "2026-07-03",
+  "name": "The Last 32 Settled",
+  "parameter": "World Cup 2026 Round of 32",
+  "type": "records",
+  "icon": "🎯",
+  "angle": "The expanded Round of 32 reaches its final day: Germany and the Netherlands are both out on penalties, Modric has bowed out at 40, Norway have a first-ever knockout win, and the last 16 begins tomorrow.",
+  "questions": [
+    {
+      "difficulty": "easy",
+      "category": "portugal",
+      "question": "Cristiano Ronaldo converted a penalty as Portugal edged which nation 2-1 in the Round of 32?",
+      "options": {
+        "A": "Serbia",
+        "B": "Croatia",
+        "C": "Poland",
+        "D": "Denmark"
+      },
+      "answer": "B"
+    },
+    {
+      "difficulty": "easy",
+      "category": "norway",
+      "question": "Erling Haaland struck the decisive goal as which country won a World Cup knockout match for the first time in its history?",
+      "options": {
+        "A": "Sweden",
+        "B": "Denmark",
+        "C": "Norway",
+        "D": "Austria"
+      },
+      "answer": "C"
+    },
+    {
+      "difficulty": "easy",
+      "category": "hosts",
+      "question": "Which co-host nation reached the last 16, seeing off South Africa 1-0 with a stoppage-time winner?",
+      "options": {
+        "A": "United States",
+        "B": "Mexico",
+        "C": "Costa Rica",
+        "D": "Canada"
+      },
+      "answer": "D"
+    },
+    {
+      "difficulty": "medium",
+      "category": "upsets",
+      "question": "Germany were knocked out in the Round of 32, losing a penalty shootout to which South American side?",
+      "options": {
+        "A": "Paraguay",
+        "B": "Uruguay",
+        "C": "Ecuador",
+        "D": "Colombia"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "upsets",
+      "question": "The Netherlands were also dumped out on penalties in the last 32. Who beat them?",
+      "options": {
+        "A": "Senegal",
+        "B": "Morocco",
+        "C": "Ivory Coast",
+        "D": "Egypt"
+      },
+      "answer": "B"
+    },
+    {
+      "difficulty": "medium",
+      "category": "spain",
+      "question": "Who scored twice as Spain brushed aside Austria 3-0 in the Round of 32?",
+      "options": {
+        "A": "Alvaro Morata",
+        "B": "Lamine Yamal",
+        "C": "Mikel Oyarzabal",
+        "D": "Pedri"
+      },
+      "answer": "C"
+    },
+    {
+      "difficulty": "medium",
+      "category": "farewell",
+      "question": "The Round of 32 marked the World Cup farewell of which 40-year-old midfielder, beaten by Portugal in his final tournament?",
+      "options": {
+        "A": "Toni Kroos",
+        "B": "Luka Modric",
+        "C": "Ivan Rakitic",
+        "D": "Sergio Busquets"
+      },
+      "answer": "B"
+    },
+    {
+      "difficulty": "medium",
+      "category": "debutants",
+      "question": "Which World Cup debutants reached the knockout stage as the smallest nation ever to do so, drawing all three group games before meeting Argentina?",
+      "options": {
+        "A": "Curacao",
+        "B": "Jordan",
+        "C": "Cape Verde",
+        "D": "Panama"
+      },
+      "answer": "C"
+    },
+    {
+      "difficulty": "medium",
+      "category": "brazil",
+      "question": "Gabriel Martinelli's stoppage-time strike sent Brazil past which side in the Round of 32?",
+      "options": {
+        "A": "South Korea",
+        "B": "Japan",
+        "C": "Saudi Arabia",
+        "D": "Australia"
+      },
+      "answer": "B"
+    },
+    {
+      "difficulty": "medium",
+      "category": "narrative",
+      "question": "Norway's reward for reaching the last 16 is a tie with Brazil, reviving memories of Norway's famous World Cup win over the Selecao in which year?",
+      "options": {
+        "A": "1994",
+        "B": "1990",
+        "C": "1998",
+        "D": "2002"
+      },
+      "answer": "C"
+    },
+    {
+      "difficulty": "hard",
+      "category": "spain",
+      "question": "Spain's win over Austria was their first World Cup knockout victory since which year?",
+      "options": {
+        "A": "2014",
+        "B": "2010",
+        "C": "2018",
+        "D": "2022"
+      },
+      "answer": "B"
+    },
+    {
+      "difficulty": "hard",
+      "category": "upsets",
+      "question": "Who put Paraguay ahead against Germany before they completed their shootout upset?",
+      "options": {
+        "A": "Miguel Almiron",
+        "B": "Antonio Sanabria",
+        "C": "Julio Enciso",
+        "D": "Angel Romero"
+      },
+      "answer": "C"
+    },
+    {
+      "difficulty": "hard",
+      "category": "portugal",
+      "question": "Whose stoppage-time header settled Portugal's 2-1 win over Croatia?",
+      "options": {
+        "A": "Joao Felix",
+        "B": "Goncalo Ramos",
+        "C": "Rafael Leao",
+        "D": "Bruno Fernandes"
+      },
+      "answer": "B"
+    },
+    {
+      "difficulty": "hard",
+      "category": "underdogs",
+      "question": "England edged DR Congo 2-1, the Central Africans' first World Cup since they competed as Zaire in which year?",
+      "options": {
+        "A": "1970",
+        "B": "1974",
+        "C": "1982",
+        "D": "1990"
+      },
+      "answer": "B"
+    },
+    {
+      "difficulty": "hard",
+      "category": "norway",
+      "question": "Alongside Haaland, which winger scored for Norway in their 2-1 win over Ivory Coast?",
+      "options": {
+        "A": "Antonio Nusa",
+        "B": "Alexander Sorloth",
+        "C": "Oscar Bobb",
+        "D": "Martin Odegaard"
+      },
+      "answer": "A"
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_knockout_stage (Round of 32 results: Canada 1-0 South Africa (Eustaquio 90+2'); Brazil 2-1 Japan (Casemiro 56', Martinelli 90+5'); Germany 1-1 Paraguay, Paraguay won pens (Enciso 42'); Netherlands 1-1 Morocco, Morocco won pens; Ivory Coast 1-2 Norway (Nusa 39', Haaland))",
+    "https://sports.yahoo.com/soccer/live/world-cup-2026-bracket-scores-results-schedule-live-updates-round-of-32-173000083.html (Spain 3-0 Austria, Oyarzabal brace + Pedro Porro 66', first knockout win since 2010; Portugal 2-1 Croatia, Ronaldo penalty + Goncalo Ramos 94', Modric age 40 eliminated in final World Cup; Switzerland 2-0 Algeria)",
+    "https://www.nbcnews.com/sports/soccer/erling-haaland-deciding-goal-norway-wins-world-cup-knockout-rcna352513 (Haaland winner; Norway's first-ever World Cup knockout win; last 16 tie with Brazil, 28 years after 1998 upset)",
+    "https://www.espn.com/soccer/story/_/id/49089253/haaland-shines-world-cup-debut-provides-hope-norway (Norway's first World Cup since 1998; Haaland's first major tournament)",
+    "https://www.aljazeera.com/sports/2026/6/27/cape-verde-qualify-for-world-cup-round-of-32-set-up-date-with-argentina (Cape Verde debut; smallest nation to reach a World Cup knockout round; drew all three group games; face Argentina on 3 July)",
+    "https://www.mlssoccer.com/competitions/fifa-world-cup/news/biggest-world-cup-underdog-ever-cape-verde-seek-upset-of-argentina (Cape Verde population ~525,000, smallest nation ever in a World Cup knockout stage)",
+    "https://sports.yahoo.com/soccer/article/2026-world-cup-results-standings-and-schedule-live-scores-group-stage-updates-and-how-to-watch-050724193.html (Paraguay 4-3 pens over Germany; Morocco 3-2 pens over Netherlands; England 2-1 DR Congo; USA 2-0 Bosnia; Round of 32 runs 28 June - 3 July, Round of 16 begins 4 July)"
+  ],
+  "series": "wc2026"
+}

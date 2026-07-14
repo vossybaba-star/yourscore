@@ -1,0 +1,203 @@
+{
+  "date": "2026-07-05",
+  "series": "wc2026",
+  "name": "Three Lions: England's World Cup Story",
+  "parameter": "England at the FIFA World Cup",
+  "type": "national",
+  "icon": "🦁",
+  "angle": "England face Mexico in tonight's Round of 16. Before kick-off, how well do you know the full story of the Three Lions at the World Cup — the glory, the heartbreak, the penalties, and the moments that still sting decades later?",
+  "questions": [
+    {
+      "difficulty": "easy",
+      "category": "win_1966",
+      "question": "In which year did England win their one and only FIFA World Cup?",
+      "options": {
+        "A": "1966",
+        "B": "1970",
+        "C": "1962",
+        "D": "1958"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "win_1966",
+      "question": "What was the final score when England beat West Germany in the 1966 World Cup Final at Wembley?",
+      "options": {
+        "A": "4-2",
+        "B": "3-2",
+        "C": "3-1",
+        "D": "2-1"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "win_1966",
+      "question": "Geoff Hurst scored the only hat-trick in World Cup Final history in 1966. Who scored England's other goal in that final?",
+      "options": {
+        "A": "Martin Peters",
+        "B": "Bobby Charlton",
+        "C": "Roger Hunt",
+        "D": "Alan Ball"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "managers",
+      "question": "Which England manager led the Three Lions to their 1966 World Cup triumph?",
+      "options": {
+        "A": "Alf Ramsey",
+        "B": "Walter Winterbottom",
+        "C": "Ron Greenwood",
+        "D": "Bobby Robson"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "1990",
+      "question": "England reached the World Cup semi-finals in 1990, losing to which country on penalties?",
+      "options": {
+        "A": "West Germany",
+        "B": "Argentina",
+        "C": "Italy",
+        "D": "Brazil"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "1990",
+      "question": "Paul Gascoigne was in tears during the 1990 semi-final after receiving a yellow card. Why did the booking devastate him in that moment?",
+      "options": {
+        "A": "It meant he would have been suspended for the final if England had won",
+        "B": "It was his second yellow of the tournament, ending his World Cup",
+        "C": "It was the harshest booking he had ever received in his career",
+        "D": "He had promised his manager he would stay disciplined all tournament"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "golden_boot",
+      "question": "Which England striker won the Golden Boot at the 1986 World Cup in Mexico with six goals?",
+      "options": {
+        "A": "Gary Lineker",
+        "B": "Peter Beardsley",
+        "C": "Kerry Dixon",
+        "D": "Mark Hateley"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "1998",
+      "question": "David Beckham was sent off for a kick at Diego Simeone at the 1998 World Cup, leaving England to play most of the match with ten men. Which country were England playing?",
+      "options": {
+        "A": "Argentina",
+        "B": "Colombia",
+        "C": "Tunisia",
+        "D": "Romania"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "2010",
+      "question": "In the 2010 World Cup, Frank Lampard's shot clearly crossed the goal line but was not awarded. Which country were England playing when it happened?",
+      "options": {
+        "A": "Germany",
+        "B": "France",
+        "C": "Algeria",
+        "D": "Ghana"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "2018",
+      "question": "Harry Kane won the 2018 World Cup Golden Boot with six goals, helping England reach the semi-finals. Which manager led England to that campaign?",
+      "options": {
+        "A": "Gareth Southgate",
+        "B": "Roy Hodgson",
+        "C": "Sam Allardyce",
+        "D": "Steve McClaren"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "win_1966",
+      "question": "England actually went behind in the 1966 World Cup Final before coming back to win 4-2. Which West German player opened the scoring?",
+      "options": {
+        "A": "Helmut Haller",
+        "B": "Uwe Seeler",
+        "C": "Franz Beckenbauer",
+        "D": "Siggi Held"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "history",
+      "question": "How many times have England failed to qualify for the FIFA World Cup finals?",
+      "options": {
+        "A": "Three",
+        "B": "Two",
+        "C": "Four",
+        "D": "Once"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "penalties",
+      "question": "England have been knocked out of the World Cup on penalties on three separate occasions. Which answer correctly names all three opponents?",
+      "options": {
+        "A": "West Germany (1990), Argentina (1998), Portugal (2006)",
+        "B": "Argentina (1990), Germany (1998), France (2006)",
+        "C": "West Germany (1990), Brazil (1994), Portugal (2006)",
+        "D": "Italy (1990), Argentina (1998), Germany (2006)"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "win_1966",
+      "question": "Geoff Hurst's controversial second goal in the 1966 Final — the shot that hit the crossbar and bounced on the line — was awarded by a linesman from which country?",
+      "options": {
+        "A": "Soviet Union",
+        "B": "Switzerland",
+        "C": "Yugoslavia",
+        "D": "Hungary"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "expert",
+      "category": "1990",
+      "question": "England's 1990 World Cup shootout exit against West Germany remains one of the defining moments of English football. Which two players missed the decisive penalties?",
+      "options": {
+        "A": "Stuart Pearce and Chris Waddle",
+        "B": "Gary Lineker and Peter Beardsley",
+        "C": "Paul Gascoigne and Stuart Pearce",
+        "D": "David Platt and Chris Waddle"
+      },
+      "answer": "A"
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/1966_FIFA_World_Cup_Final (England 4-2 West Germany AET; Haller 12', Hurst 18', Peters 78', Weber 90', Hurst 101', Hurst 120'; only hat-trick in a WC Final)",
+    "https://en.wikipedia.org/wiki/Alf_Ramsey (manager of England 1963-1974; knighted after 1966 win)",
+    "https://en.wikipedia.org/wiki/1990_FIFA_World_Cup#Semi-finals (England 1-1 West Germany AET; lost 3-4 on pens; Pearce and Waddle missed)",
+    "https://en.wikipedia.org/wiki/Paul_Gascoigne (Gascoigne booked in SF = would have been suspended for the final)",
+    "https://en.wikipedia.org/wiki/1986_FIFA_World_Cup#Golden_Boot (Gary Lineker 6 goals, Golden Boot)",
+    "https://en.wikipedia.org/wiki/1998_FIFA_World_Cup#Round_of_16 (Beckham red card vs Argentina R16)",
+    "https://en.wikipedia.org/wiki/2010_FIFA_World_Cup#Round_of_16 (Lampard disallowed goal vs Germany)",
+    "https://en.wikipedia.org/wiki/2018_FIFA_World_Cup#Golden_Boot (Harry Kane 6 goals, 5 penalties)",
+    "https://en.wikipedia.org/wiki/Tofiq_Bahramov (Soviet Union linesman who awarded Hurst's controversial goal; actually Azerbaijani)",
+    "https://en.wikipedia.org/wiki/England_national_football_team#FIFA_World_Cup (failed to qualify: 1974, 1978, 1994)"
+  ]
+}

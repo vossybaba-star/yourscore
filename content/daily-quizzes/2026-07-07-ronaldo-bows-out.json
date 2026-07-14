@@ -1,0 +1,202 @@
+{
+  "date": "2026-07-07",
+  "series": "wc2026",
+  "name": "Ronaldo Bows Out as the Last Eight Takes Shape",
+  "parameter": "World Cup 2026 Round of 16",
+  "type": "records",
+  "icon": "👋",
+  "angle": "The round of 16 closes with a giant taking his leave: Mikel Merino's stoppage-time strike sends Spain past Portugal and, in all likelihood, ends Cristiano Ronaldo's international career, while Belgium put four past co-hosts the United States to complete the picture of the last eight.",
+  "questions": [
+    {
+      "difficulty": "easy",
+      "category": "round_of_16",
+      "question": "Which nation knocked Portugal out of the 2026 World Cup in the round of 16?",
+      "options": {
+        "A": "Spain",
+        "B": "France",
+        "C": "Italy",
+        "D": "Morocco"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "ronaldo",
+      "question": "Cristiano Ronaldo's international career looks to have ended at the 2026 World Cup, playing for which country?",
+      "options": {
+        "A": "Portugal",
+        "B": "Spain",
+        "C": "Brazil",
+        "D": "Argentina"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "belgium",
+      "question": "Belgium ended which co-hosts' World Cup run with a heavy round-of-16 win?",
+      "options": {
+        "A": "United States",
+        "B": "Canada",
+        "C": "Mexico",
+        "D": "Norway"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "spain",
+      "question": "Who scored the stoppage-time winner as Spain beat Portugal 1-0?",
+      "options": {
+        "A": "Mikel Merino",
+        "B": "Ferran Torres",
+        "C": "Lamine Yamal",
+        "D": "Alvaro Morata"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "spain",
+      "question": "In which minute did Spain's winning goal against Portugal arrive?",
+      "options": {
+        "A": "91st",
+        "B": "55th",
+        "C": "74th",
+        "D": "88th"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "records",
+      "question": "Beating Portugal gave Spain their first World Cup knockout win since which year, when they lifted the trophy?",
+      "options": {
+        "A": "2010",
+        "B": "2014",
+        "C": "2008",
+        "D": "2018"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "belgium",
+      "question": "By what scoreline did Belgium beat the United States in the round of 16?",
+      "options": {
+        "A": "4-1",
+        "B": "2-1",
+        "C": "3-2",
+        "D": "2-0"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "belgium",
+      "question": "Which Belgium forward scored twice in the win over the United States?",
+      "options": {
+        "A": "Charles De Ketelaere",
+        "B": "Romelu Lukaku",
+        "C": "Kevin De Bruyne",
+        "D": "Jeremy Doku"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "quarter_finals",
+      "question": "Spain's victory over Portugal set up a quarter-final against which side?",
+      "options": {
+        "A": "Belgium",
+        "B": "France",
+        "C": "Morocco",
+        "D": "England"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "france",
+      "question": "France reached the last eight with a 1-0 win over Paraguay, the goal a penalty from whom?",
+      "options": {
+        "A": "Kylian Mbappe",
+        "B": "Ousmane Dembele",
+        "C": "Desire Doue",
+        "D": "Michael Olise"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "ronaldo",
+      "question": "Ronaldo made history at the 2026 World Cup as the first player to score at how many different World Cup tournaments?",
+      "options": {
+        "A": "Six",
+        "B": "Five",
+        "C": "Seven",
+        "D": "Four"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "usa",
+      "question": "Who scored the United States' lone goal in their 4-1 defeat to Belgium?",
+      "options": {
+        "A": "Malik Tillman",
+        "B": "Christian Pulisic",
+        "C": "Folarin Balogun",
+        "D": "Weston McKennie"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "morocco",
+      "question": "Morocco set up the France quarter-final by beating Canada 3-0, with a brace from which midfielder?",
+      "options": {
+        "A": "Azzedine Ounahi",
+        "B": "Sofyan Amrabat",
+        "C": "Hakim Ziyech",
+        "D": "Soufiane Rahimi"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "history",
+      "question": "Spain's win over Portugal was their first World Cup knockout victory since the 2010 final. Who did they beat to win that tournament?",
+      "options": {
+        "A": "Netherlands",
+        "B": "Germany",
+        "C": "Portugal",
+        "D": "Italy"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "expert",
+      "category": "records",
+      "question": "Ronaldo's group-stage goal against Uzbekistan made him, at 41, the second-oldest scorer in World Cup history. Who remains the oldest?",
+      "options": {
+        "A": "Roger Milla",
+        "B": "Faryd Mondragon",
+        "C": "Dino Zoff",
+        "D": "Stanley Matthews"
+      },
+      "answer": "A"
+    }
+  ],
+  "sources": [
+    "https://www.cnn.com/2026/07/06/sport/world-cup-round-of-16-monday (Spain 1-0 Portugal: Mikel Merino 91st-minute winner ends Ronaldo's tournament and likely his international career; Spain advance to face winner of USA v Belgium)",
+    "https://www.espn.com/espn/story/_/id/49291130/2026-fifa-world-cup-recap-july-6-cristiano-ronaldo-portugal-exit-late-spain-winner-belgium-end-usa-hopes (Merino 91' low drive assisted by Ferran Torres; Belgium 4-1 USA — De Ketelaere 9' and 33', Vanaken 57', Lukaku 90+3', Malik Tillman 31' for USA; sets up Spain v Belgium quarter-final)",
+    "https://www.espn.com/soccer/story/_/id/49290017/cristiano-ronaldo-portugal-spain-last-world-cup-2026 (Ronaldo, 41, exits his sixth and final World Cup in tears)",
+    "https://www.cbssports.com/soccer/news/portugal-spain-live-updates-world-cup-2026-score-result/live/ (Spain eliminate Portugal on late goal; first knockout win since the 2010 final; face winner of USMNT v Belgium)",
+    "https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/articles/cristiano-ronaldo-portugal-goal-record (Ronaldo becomes first player to score at six different World Cups — 2006, 2010, 2014, 2018, 2022, 2026 — netting twice v Uzbekistan; at 41y138d, second-oldest scorer in World Cup history behind Roger Milla, 42y39d)",
+    "https://www.aljazeera.com/sports/2026/7/6/which-teams-are-in-the-world-cup-quarterfinals-and-whats-the-schedule (Confirmed quarter-finalists Morocco, France, Norway, England, Spain, Belgium; France v Morocco July 9 Boston, Belgium v Spain July 10 Los Angeles, Norway v England July 11 Miami)",
+    "https://www.espn.com/espn/story/_/id/49271700/2026-fifa-world-cup-recap-france-paraguay-morocco-canada-kylian-mbappe (France 1-0 Paraguay — Mbappe 69' penalty after Desire Doue was fouled; Morocco 3-0 Canada — Azzedine Ounahi 50' and 82', Soufiane Rahimi late)",
+    "https://en.wikipedia.org/wiki/2010_FIFA_World_Cup_Final (Spain 1-0 Netherlands, Andres Iniesta winner, Spain's only World Cup title)",
+    "https://en.wikipedia.org/wiki/Roger_Milla (Cameroon; oldest goalscorer in World Cup history at 42 years 39 days, 1994 v Russia)"
+  ]
+}

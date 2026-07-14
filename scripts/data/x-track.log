@@ -828,3 +828,45 @@ pushed 91718513
 
 📊 scanned 3 · queued 0 new · skipped 3
 💾 saved. 72 draft(s) pending review → node --env-file=.env.local scripts/x-queue.mjs list
+===== 2026-07-06 17:00 BST =====
+
+🛰️  Tracking 4 account(s) · up to 1 new tweet(s) each · reword=true 
+
+  @brfootball 85934511 · skipped (This is a link to an editorial/opinion piece about Brazil's World Cup campaign. There is no live moment, result or on-pitch event to react to - just a clickbait headline pointing to someone else's content. Nothing here we could turn into our own genuine thought without either rewording their angle or inventing our own take on a complex topic. Unusable.)
+  @Footballtweet 85379284 → draft (244c) 🚫 image-skipped
+    src: 🚨🗣️ Carlo Ancelotti: “Why didn't Vinícius Jr. take the penalty? We looked at the numbers and Raphinha was the best opt
+    Ancelotti went full data analyst on penalty takers and Vinicius came out sixth in the queue. ⏎  ⏎ Sixth. At a World Cup qualifier. In his own country. ⏎  ⏎ That is a bold call to explain out loud in a press conference 👀 ⏎  ⏎ #Brazil #Vinicius #WCQ #Selecao
+    img: Composite graphic: top half shows Vinicius Jr (No.7) and Bruno Guimaraes (No.8) on pitch, bottom half shows Ancelotti at a press conference - carries a visible 'ft' logo/watermark overlay.
+  @BBCSport 67176165 · skipped (The source tweet contains no football moment, result or story we can react to - just a bare link. Nothing to work with.)
+  @OptaJoe 75486994 · skipped (This is a stats graphic from a stats account doing exactly what a stats account does. The image carries the Opta brand and is unusable. More importantly, we have nothing genuinely our own to add - any caption would just be us laundering their data list. Unusable.)
+
+📊 scanned 4 · queued 1 new · skipped 3
+💾 saved. 79 draft(s) pending review → node --env-file=.env.local scripts/x-queue.mjs list
+===== 2026-07-06 22:00 BST =====
+
+🛰️  Tracking 4 account(s) · up to 1 new tweet(s) each · reword=true 
+
+  @brfootball 58826068 → draft (117c) 📷 +image
+    src: MIKEL MERINO IN THE 91ST MINUTE. ⏎  ⏎ MR. CLUTCH 😎 https://t.co/EyaHVjYAv8
+    Mikel Merino. 91st minute. That's the stuff football knowledge questions are made of 🙌 ⏎  ⏎ #Spain #NationsLeague #LaRoja
+    img: Clean celebration photo of Merino in Spain's white away kit, no watermarks or overlays.
+  @Footballtweet 63970658 → draft (206c)
+    src: Yamal this. Yamal that. Mikel Merino is the clutch player for Spain. https://t.co/n22gS7a8Zf https://t.co/8e6yxfyIDe
+    Everyone goes Yamal, Yamal, Yamal. ⏎  ⏎ And then Merino pops up in the moment that actually matters. ⏎  ⏎ Spain have always had that kind of player. The one who doesn't need the spotlight. ⏎  ⏎ #Spain #LaRoja #EURO2024
+    img: Source tweet links to external media but no clean attached image is visible for reposting
+  @BBCSport 75038427 · skipped (Tennis, not football. Completely off-topic for us.)
+  @OptaJoe 00936988 · skipped (This is a pure stat-dump with a pointed dig at Ronaldo ('Ego'). We don't do player digs, we don't lead with records/numbers, and the whole angle here is snarky criticism of an individual - exactly what our tone rules out. Nothing genuine we can add that isn't just a softer reword of their take. Unusable.)
+
+📊 scanned 4 · queued 2 new · skipped 2
+💾 saved. 83 draft(s) pending review → node --env-file=.env.local scripts/x-queue.mjs list
+===== 2026-07-07 17:00 BST =====
+
+🛰️  Tracking 4 account(s) · up to 1 new tweet(s) each · reword=true 
+
+  @brfootball 03413249 · skipped (No specific moment, player, goal or result to react to. Just a vague editorial claim about a Golden Boot race with no concrete detail. Anything we wrote would be rewording their hype, not our own genuine reaction.)
+  @Footballtweet 69431859 · skipped (Completely off-topic - no football moment, result or player involved. Political/celebrity content has no place on our feed.)
+  @BBCSport 15065465 · skipped (Tennis content, not football. Completely off-topic for a football knowledge app.)
+  @OptaJoe 01939538 · skipped (The source tweet is a pure stat-card dig at Ronaldo built around a specific Opta number. There is nothing for us to genuinely react to as football fans beyond rewording or softening their point. Any version we write either repeats their stat dump or becomes a dig at a player, both of which we avoid. Unusable.)
+
+📊 scanned 4 · queued 0 new · skipped 4
+💾 saved. 89 draft(s) pending review → node --env-file=.env.local scripts/x-queue.mjs list

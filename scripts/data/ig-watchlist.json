@@ -1,16 +1,25 @@
 {
-  "_readme": "Football accounts the YourScore IG/FB media page auto-pulls media from (photos + clips) to repurpose. 'username' (no @); optional 'kind' hints classification: media|news|meme. Founder can trim/extend. Wider + more media-first than the X reword watchlist because a media page needs volume.",
+  "_readme": "Football accounts the YourScore media page auto-pulls media from (photos + clips) to repurpose. 'username' (no @); optional 'kind' hints classification: media|news|meme; 'generalist': true means the account also covers OTHER sports, so a post must positively match the football regex to survive ig-fetch.",
+  "_clipNote": "Jul 14 2026: the bottom 7 were added as CLIP sources. Video is now load-bearing (TikTok + YouTube take nothing else, target 2/day) and the non-meme clip supply had dipped to 2 on a bad day. FOUNDER RULE: source clips from NON-OFFICIAL accounts (aggregators, fan pages, meme pages) — NOT leagues, governing bodies or broadcasters, whose clips are rights-managed and get pulled. Sky/CBS/premierleague/FIFAWorldCup were tried and removed for exactly this. Each account below is verified live against the X API. Three traps, all real: clip RATE is not clip VOLUME (@footballdaily = 80% clips but 275-day span, dormant); high volume can be the wrong language (@beINSPORTS = 25 clips/day, 100% Arabic; @Footballogue = French); and handles die (@FootballFunnys was dead — the live one is @FootballFunnnys, three n's). @nocontextfooty yields 5.6 clips/day but posts NO caption text (lang=zxx), which starves our football filter and caption generator — excluded until captions can be derived from vision. Always re-probe before adding.",
   "defaults": { "perRun": 8 },
   "accounts": [
     { "username": "brfootball", "kind": "media" },
     { "username": "Footballtweet", "kind": "media" },
-    { "username": "ESPNFC", "kind": "media" },
+    { "username": "ESPNFC", "kind": "media", "clips": false },
     { "username": "GOAL", "kind": "media" },
     { "username": "433", "kind": "media" },
     { "username": "FabrizioRomano", "kind": "news" },
     { "username": "OptaJoe", "kind": "news" },
-    { "username": "BBCSport", "kind": "news", "generalist": true },
+    { "username": "BBCSport", "kind": "news", "generalist": true, "clips": false },
     { "username": "TrollFootball", "kind": "meme" },
-    { "username": "FootyHumour", "kind": "meme" }
+    { "username": "FootyHumour", "kind": "meme" },
+
+    { "username": "EPLBible", "kind": "media" },
+    { "username": "GiveMeSport", "kind": "media", "generalist": true },
+    { "username": "FootballFunnnys", "kind": "meme" },
+    { "username": "centregoals", "kind": "media" },
+    { "username": "afcstuff", "kind": "media" },
+    { "username": "utdreport", "kind": "media" },
+    { "username": "City_Xtra", "kind": "media" }
   ]
 }

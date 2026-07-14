@@ -33,6 +33,13 @@ let queue = loadJSON(PATHS.queue, []);
 const byId = (id) => queue.find((d) => d.id === id);
 const STATUS_ICON = { pending: "○", approved: "✓", posted: "✅", rejected: "✗" };
 
+// Time-locked copy ("tonight", "today", …) is only true on the day it was drafted.
+// Once that day passes, the tweet reads stale — auto-reject rather than post (founder rule, Jul 8).
+const TIME_WORDS = /\b(tonight|today|this (morning|afternoon|evening)|later today|in an hour|kicks off (in|at))\b/i;
+const ukDay = (iso) => (iso || "").slice(0, 10);
+const ukTodayStr = () => new Date().toLocaleDateString("en-CA", { timeZone: "Europe/London" });
+const timeCopyStale = (d) => TIME_WORDS.test(d.draft || "") && ukDay(d.createdAt) !== "" && ukDay(d.createdAt) !== ukTodayStr();
+
 function save() { saveJSON(PATHS.queue, queue); }
 
 function line(d) {
@@ -63,6 +70,29 @@ switch (cmd) {
     console.log(`\n── YourScore draft ──\n${d.draft}`);
     if (d.rewordReason) console.log(`\n(reword note: ${d.rewordReason})`);
     if (d.postedUrl) console.log(`\nposted: ${d.postedUrl}`);
+    break;
+  }
+
+  case "add": {
+    // Compose a brand-new draft (Studio dash / card pipelines): add "text..." [--approve] [--image path.png]
+    const imgIdx = rest.indexOf("--image");
+    const imagePath = imgIdx !== -1 ? rest[imgIdx + 1] : undefined;
+    const text = sanitize(rest.filter((a, i) => !a.startsWith("--") && i !== imgIdx + 1).join(" "));
+    if (!text) { console.error('✗ provide text: add "..." [--approve] [--image path.png]'); process.exit(1); }
+    const d = {
+      id: "dz" + String(Date.now()).slice(-9),
+      status: rest.includes("--approve") ? "approved" : "pending",
+      createdAt: new Date().toISOString(),
+      source: { username: "studio", name: "Composed in Studio", url: "https://yourscore.app" },
+      draft: text,
+      draftChars: charLen(text),
+      origin: "studio-dash",
+      pillar: "composed",
+    };
+    if (imagePath) d.imagePath = imagePath;
+    queue.push(d);
+    save();
+    console.log(`+ ${d.id} [${d.status}] ${d.draftChars} chars${d.draftChars > 280 ? " ⚠️ OVER 280" : ""}`);
     break;
   }
 
@@ -122,10 +152,17 @@ switch (cmd) {
       const clean = sanitize(d.draft);
       if (clean !== d.draft) { d.draft = clean; d.draftChars = charLen(clean); }
       if (d.draftChars > 280) { console.error(`✗ ${d.id} is ${d.draftChars} chars — skipping (edit under 280).`); continue; }
+      if (timeCopyStale(d)) {
+        console.error(`✗ ${d.id} says "tonight/today" but was drafted ${ukDay(d.createdAt)} — ${DRY ? "would auto-reject" : "auto-rejected (stale time copy)"}.`);
+        if (!DRY) { d.status = "rejected"; d.rejectReason = "time-sensitive copy went stale"; save(); }
+        continue;
+      }
       console.log(`  ${d.id} (${d.draftChars}c):\n    ${d.draft.replace(/\n/g, " ⏎ ")}`);
       if (DRY) continue;
       try {
-        const mediaId = image ? await uploadMedia(image) : null;
+        // --image flag wins; otherwise a per-draft attached card (add --image) rides along.
+        const img = image || d.imagePath;
+        const mediaId = img ? await uploadMedia(img) : null;
         const data = await postTweet(d.draft, mediaId);
         d.status = "posted";
         d.postedId = data.id;
@@ -138,6 +175,22 @@ switch (cmd) {
       }
     }
     if (DRY) console.log("\n🛑 DRY — nothing posted. Drop --dry to publish.");
+    break;
+  }
+
+  case "expire": {
+    // Founder rule (Jul 9): a draft not approved within 48h is a "no" — it leaves
+    // the approval feed. Run daily by cron; expired drafts stay in the file for history.
+    const hours = Number(flag("--hours")) || 48;
+    const cutoff = Date.now() - hours * 3600000;
+    let n = 0;
+    for (const d of queue) {
+      if (d.status !== "pending") continue;
+      if (Date.parse(d.createdAt) < cutoff) { d.status = "expired"; n++; continue; }
+      if (timeCopyStale(d)) { d.status = "expired"; d.rejectReason = "time-sensitive copy went stale"; n++; }
+    }
+    save();
+    console.log(`expired ${n} pending draft(s) older than ${hours}h`);
     break;
   }
 

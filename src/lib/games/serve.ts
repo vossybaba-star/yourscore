@@ -15,8 +15,8 @@
  * round from that seed. Nothing is persisted; no answer key is ever shipped.
  */
 
-import poolData from "@/data/gates/pool.json";
-import { seededRng, shuffle } from "@/lib/gates/rng";
+import poolData from "@/data/games/pool.json";
+import { seededRng, shuffle } from "./rng";
 
 export const GAME_TYPES = ["higher-lower", "guess-the-player"] as const;
 export type GameType = (typeof GAME_TYPES)[number];

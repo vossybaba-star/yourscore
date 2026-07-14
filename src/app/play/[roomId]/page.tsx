@@ -68,6 +68,10 @@ type DB = SupabaseClient<Database>;
 const MODE_LABEL: Record<string, string> = { h2h: "1v1", group: "Private", open: "Public" };
 const MODE_COLOR: Record<string, string> = { h2h: "#f87171", group: "#aeea00", open: "#aeea00" };
 const QUESTION_DURATION_MS = 20_000;
+// Marks a room as auto-matchmade (vs a hand-created private lobby). Must match
+// INSTANT_MATCH_NAME in src/lib/versus/quiz-matchmaking.ts — instant matches skip
+// the invite/QR lobby and auto-start.
+const INSTANT_MATCH_NAME = "Instant Match";
 
 // ── Avatar helper ─────────────────────────────────────────────────────────────
 
@@ -201,6 +205,20 @@ export default function RoomPage() {
       : r);
   }, [shadow]);
 
+  // Instant Match (auto-matchmade h2h) — the players are already paired, so skip
+  // the invite/QR "share a code" lobby entirely: the host auto-starts and both
+  // sides see a brief "Starting…" screen instead. (Hand-created lobbies keep the
+  // normal invite flow.)
+  const isInstantMatch = room?.name === INSTANT_MATCH_NAME && room?.room_mode === "h2h";
+  const autoStartedRef = useRef(false);
+  useEffect(() => {
+    if (!isInstantMatch || !isHost || room?.status !== "lobby") return;
+    if (players.length < 2 || starting || autoStartedRef.current) return;
+    autoStartedRef.current = true;
+    void handleStart();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isInstantMatch, isHost, room?.status, players.length, starting]);
+
   // Build QR join URL (client-only)
   useEffect(() => {
     if (room) setJoinUrl(`${window.location.origin}/play?join=${room.code}`);
@@ -230,13 +248,23 @@ export default function RoomPage() {
     setPlayers(data.map((r) => ({ user_id: r.user_id ?? "", display_name: pm[r.user_id ?? ""] ?? "Player", joined_at: r.joined_at ?? "" })));
   }, []);
 
-  const fetchLeaderboard = useCallback(async (sb: DB, rid: string) => {
-    const { data } = await sb
+  // retries: on a completed room the final room_scores write can lag the rooms
+  // status→completed flip, so the first read races to empty. Retry a few times so
+  // the scorecard (winner, your-result, FINAL STANDINGS) never renders blank.
+  const fetchLeaderboard = useCallback(async (sb: DB, rid: string, retries = 0) => {
+    const runQuery = () => sb
       .from("room_scores")
       .select("user_id, total_score, correct_answers, total_answers, current_streak, rank, avg_answer_speed_ms, fastest_answer_ms")
       .eq("room_id", rid)
       .order("total_score", { ascending: false })
       .limit(20);
+    let res = await runQuery();
+    for (let attempt = 0; attempt < retries && !res.data?.length; attempt++) {
+      await new Promise((r) => setTimeout(r, 900));
+      res = await runQuery();
+    }
+    const data = res.data;
+    // Still nothing after retries → keep the last good board rather than blanking it.
     if (!data?.length) return;
     const uids = data.map((r) => r.user_id).filter((id): id is string => id !== null);
     const { data: profiles } = await sb.from("profiles").select("id, display_name, avatar_url").in("id", uids);
@@ -425,7 +453,8 @@ export default function RoomPage() {
 
       await fetchPlayers(sb, roomId);
       if (roomData.status === "live" || roomData.status === "completed") {
-        await fetchLeaderboard(sb, roomId);
+        // Completed rooms: retry so a just-finished board (final write may lag) fills in.
+        await fetchLeaderboard(sb, roomId, roomData.status === "completed" ? 4 : 0);
       }
 
       await sb.from("room_members").upsert({ room_id: roomId, user_id: user.id }, { onConflict: "room_id,user_id" });
@@ -459,6 +488,8 @@ export default function RoomPage() {
             }
             if (updated.status === "completed") {
               setCompletedAt(Date.now());
+              // Pull the final board (with retries) so the scorecard fills in.
+              void fetchLeaderboard(sb, roomId, 4);
             }
           })
         // New players joining
@@ -690,6 +721,29 @@ export default function RoomPage() {
   // ── LOBBY ─────────────────────────────────────────────────────────────────
 
   if (room.status === "lobby") {
+    // Instant Match: no invite/QR lobby — you're already paired. Host auto-starts
+    // (effect above); everyone just sees "Starting…".
+    if (isInstantMatch) {
+      return (
+        <main className="min-h-dvh grid place-items-center bg-bg px-6">
+          <GridBackground opacity={0.02} />
+          <div className="relative z-10 text-center">
+            <div className="mb-5 flex gap-1.5 justify-center">
+              {[0, 1, 2].map((i) => (
+                <span key={i} className="w-2.5 h-2.5 rounded-full bg-teal" style={{ animation: `pulse 1.4s ease-in-out ${i * 0.25}s infinite` }} />
+              ))}
+            </div>
+            <p className="font-display text-2xl text-white">Opponent found</p>
+            <p className="font-body text-sm text-text-muted mt-1.5">Starting your match…</p>
+            {isHost && (
+              <button onClick={handleStart} disabled={starting} className="mt-6 font-body text-xs underline disabled:opacity-50" style={{ color: "#8a948f" }}>
+                {starting ? "Starting…" : "Tap to start now"}
+              </button>
+            )}
+          </div>
+        </main>
+      );
+    }
     return (
       <main className="min-h-dvh pb-10 bg-bg">
         <GridBackground opacity={0.02} />
@@ -861,7 +915,7 @@ export default function RoomPage() {
             {completedAt && !lobbyExpired && (
               <span className="font-body text-xs px-2 py-0.5 rounded-full"
                 style={{ background: "rgba(255,255,255,0.06)", color: lobbyTimeLeft < 60 ? "#f87171" : "#586058" }}>
-                lobby {formatLobbyTime(lobbyTimeLeft)}
+                Rematch {formatLobbyTime(lobbyTimeLeft)}
               </span>
             )}
           </div>
@@ -869,8 +923,38 @@ export default function RoomPage() {
 
         <div className="max-w-lg mx-auto px-5 space-y-4">
 
-          {/* Winner tile */}
-          {winner && (
+          {/* Result verdict — the payoff: did you win, and by what score. Leads the
+              scorecard for 1v1 (where the winner tile below is then redundant). */}
+          {me && (() => {
+            const opp = opponents[0];
+            const isH2H = room.room_mode === "h2h" && !!opp;
+            let label: string, color: string, bg: string;
+            if (isH2H && me.total_score > opp.total_score) { label = "YOU WON"; color = "#aeea00"; bg = "rgba(174,234,0,0.1)"; }
+            else if (isH2H && me.total_score < opp.total_score) { label = "YOU LOST"; color = "#f87171"; bg = "rgba(248,113,113,0.08)"; }
+            else if (isH2H) { label = "DRAW"; color = "#e8b23a"; bg = "rgba(232,178,58,0.1)"; }
+            else {
+              const place = me.rank ?? (displayBoard.findIndex(e => e.user_id === me.user_id) + 1);
+              const won = place === 1;
+              label = won ? "YOU WON" : `YOU FINISHED #${place}`;
+              color = won ? "#aeea00" : "#cfd8cf"; bg = won ? "rgba(174,234,0,0.1)" : "rgba(255,255,255,0.04)";
+            }
+            return (
+              <div className="rounded-2xl px-5 py-5 text-center" style={{ background: bg, border: `1px solid ${color}44` }}>
+                <p className="font-display text-3xl tracking-wide" style={{ color }}>{label}</p>
+                {isH2H && (
+                  <>
+                    <p className="font-display text-3xl text-white mt-1.5" style={{ fontVariantNumeric: "tabular-nums" }}>
+                      {me.total_score.toLocaleString()} <span style={{ color: "#586058" }}>–</span> {opp.total_score.toLocaleString()}
+                    </p>
+                    <p className="font-body text-xs text-text-muted mt-1">You vs {opp.display_name}</p>
+                  </>
+                )}
+              </div>
+            );
+          })()}
+
+          {/* Winner tile — for multiplayer (3+). For 1v1 the verdict above says it all. */}
+          {winner && !(room.room_mode === "h2h" && me) && (
             <div className="rounded-2xl px-5 py-6 text-center" style={{ background: "linear-gradient(135deg, rgba(255,215,0,0.1) 0%, rgba(0,216,192,0.05) 100%)", border: "1px solid rgba(255,215,0,0.25)" }}>
               <p className="text-4xl mb-2">🏆</p>
               <p className="font-body text-xs uppercase tracking-widest mb-1 text-text-muted">Winner</p>
@@ -1028,7 +1112,11 @@ export default function RoomPage() {
               <p className="font-body text-xs mt-0.5" style={{ color: "#586058" }}>Tap a player to see their stats</p>
             </div>
             <div className="p-3">
-              <Leaderboard entries={personaRows(leaderboard)} currentUserId={user?.id} showFull maxVisible={leaderboard.length} />
+              {leaderboard.length > 0 ? (
+                <Leaderboard entries={personaRows(leaderboard)} currentUserId={user?.id} showFull maxVisible={leaderboard.length} />
+              ) : (
+                <p className="font-body text-sm text-center py-4 text-text-muted">Tallying the final scores…</p>
+              )}
             </div>
           </div>
 

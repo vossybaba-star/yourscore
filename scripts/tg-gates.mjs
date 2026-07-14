@@ -128,7 +128,19 @@ if (mode === "gate1") {
     `Blurb: ${esc(shortDescription(quiz))}`, `▶️ ${challenge}`,
   ].join("\n");
   if (PREVIEW) { await sendMessage(summary, { buttons: ["Send", "Skip"] }); console.log("preview sent"); }
-  else done((await awaitApproval(summary, { buttons: ["Send", "Skip"] })).startsWith("SEND"));
+  else {
+    // VETO, not approval (founder, Jul 10: "the email for the quizzes is one of the most
+    // important parts of the day that needs to go out"). The quiz content was already
+    // approved at Gate 1, so silence here means SEND. Only an explicit Skip stops it —
+    // an unanswered gate used to kill the day's most important send outright.
+    const veto = `${summary}\n\n⏳ <b>Sends automatically in 45 minutes.</b> Tap <b>Skip</b> to stop it.`;
+    try {
+      done((await awaitApproval(veto, { buttons: ["Send", "Skip"], timeoutSec: 2700 })).startsWith("SEND"));
+    } catch {
+      await sendMessage("📧 No reply within the veto window — <b>sending the daily quiz emails now</b> as planned.");
+      done(true);
+    }
+  }
 
 } else {
   console.error("usage: tg-gates.mjs gate1|images|tweet|email ...");

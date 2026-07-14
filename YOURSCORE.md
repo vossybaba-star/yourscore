@@ -6,7 +6,40 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed with the founder:** 2026-07-13 (**Fantasy News & Insights hub — v1 BUILT
+> **Confirmed with the founder:** 2026-07-14 (**Halftime Quiz Packs — BUILT, VERIFIED,
+> pushed to branch `feat/halftime-quiz` (commit 454cdbe); NOT merged to `main` yet.**
+> A quiz pack for EVERY Premier League fixture, released at the **real halftime whistle**
+> (SportMonks `state_id == 3` — never a kickoff+45 timer; a 55-minute first half releases
+> at the real whistle, replay-proven). Detection = long-lived VPS poller (6s livescores
+> poll, `scripts/halftime/poller.mjs`) + Vercel `*/5` watchdog backstop (dead poller →
+> release ≤~6 min late; late = `released_late`, **no push**). Two-pass content: 10
+> historic base questions generated day-before (Telegram approve gate) + ≤3 "fresh"
+> questions mined from the confirmed lineups (structured-claims validator + Telegram
+> **veto-with-timeout** gate — no veto = auto-release; `KILL` = whole matchday base-only).
+> **Nothing generates after kickoff — release is a byte-copy of the pre-kickoff freeze,
+> so no question can reference a first-half event, structurally; push copy carries no
+> score.** Packs are ordinary `quiz_packs` rows (type `records` — prod CHECK allows no
+> new type; linkage in `metadata.halftime`), so solo play, grading, Rank points, Lobbies
+> and the per-pack leaderboard all reuse existing paths untouched. New: migration 78
+> (`halftime_releases`/`halftime_control`/`halftime_heartbeat`, RLS deny-all),
+> `/api/halftime/*` + watchdog cron, `HalftimeRail` on `/play` + `HalftimeCard` on Home
+> (both self-hide off-matchday), health check `scripts/health/checks/halftime.mjs`.
+> Verified: 78/78 unit tests; replay harness (mock SportMonks, real app+poller+watchdog)
+> **13/13 scenarios, 93 assertions, 0 failures** incl. 10-fixture Saturday slate (1 push/
+> user/day, 1,885 calls vs 2,000/hr limit); real `next build` green. Spec + graded
+> scorecard: `docs/halftime-quiz-spec.md` + `docs/halftime-acceptance-scorecard.md` on
+> the branch. **LAUNCH: full public on opening night Fri 2026-08-21** (founder decision —
+> no shadow night). Founder pre-launch: SportMonks trial→paid before Jul 22 (+ re-verify
+> entitlements), apply migration 78, deploy poller per `scripts/halftime/README.md`,
+> Vercel env `HALFTIME_PUSH_ENABLED=true` + `TELEGRAM_*`. Fast-follow approved: a
+> **prediction poll** at the end of each halftime pack (settled at FT from the final
+> score — the return-visit hook; debate-stack is the likely engine). ⚠️ §5A.1 wording
+> decision still open: halftime packs SIDESTEP the live-match-quiz gate (nothing fires
+> during play) — founder to choose a §5A.5 entry vs revised §5A.1. Note §7's "Push —
+> tied to mobile launch" is stale: push has been LIVE since 2026-06-27 (§0) and this
+> feature depends on it.)
+>
+> **Previously confirmed:** 2026-07-13 (**Fantasy News & Insights hub — v1 BUILT
 > on branch `fantasy/news-hub`** (branched off `quiz/game-types`, which carries the
 > fantasy game it depends on; NOT on `main` yet — ships when the fantasy work does).
 > **TWO tabbed surfaces, and the split is the point.** `/fantasy/news` is a **FEED** —
@@ -216,6 +249,15 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-14** — **Halftime Quiz Packs — BUILT + VERIFIED, on branch `feat/halftime-quiz`
+  (454cdbe, pushed, not merged).** A pack per PL fixture released at the REAL halftime whistle
+  (VPS poller on `state_id==3` + Vercel watchdog; never a kickoff+45 timer). Historic base
+  questions day-before (approve gate) + fresh lineup-mined slice (validator + Telegram
+  veto-with-timeout + KILL switch); nothing generates after kickoff, push is spoiler-free,
+  max 1/user/day. Replay harness 13/13 scenarios / 93 assertions / 0 failures; 78/78 unit
+  tests. **Launch: full public opening night Fri 21 Aug.** Founder pre-launch checklist in
+  `docs/halftime-acceptance-scorecard.md` (SportMonks paid conversion by Jul 22 is the hard one).
+  Fast-follow approved: end-of-pack prediction poll settled at FT.
 - **2026-07-14** — **Fantasy Football Phase 1 — founder playtest round 2 (all fixes verified)**.
   Six fixes on branch `versus/ux-fixes`:
   (1) **Player naming — ONE rule, both pools** (`scripts/lib/player-name.mjs`): first name +

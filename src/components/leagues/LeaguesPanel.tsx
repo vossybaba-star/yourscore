@@ -320,8 +320,10 @@ export function LeaguesPanel({ embedded = false }: { embedded?: boolean }) {
           </>
         )}
 
-        {/* Quick actions (mine view): create or join */}
-        {view === "mine" && user && (
+        {/* Quick actions (mine view): create or join. This is the Quiz/general-league
+            path (/league/new + join sheet); the 38-0 chip has its own inline create/join
+            form below, so hide this there to avoid showing the same action twice. */}
+        {view === "mine" && user && gameChip !== "38-0" && (
           <div className="flex gap-2">
             <Link href="/league/new" className="flex-1 flex items-center justify-center gap-2 rounded-2xl py-3.5 font-display text-sm tracking-wide active:scale-[0.98] transition-transform" style={{ background: "#aeea00", color: "#13200a" }}>
               CREATE LEAGUE

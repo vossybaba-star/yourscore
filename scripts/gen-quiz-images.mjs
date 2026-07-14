@@ -125,6 +125,15 @@ function bgPromptWithRef() {
 }
 
 async function genBackground(size) {
+  // Retry wrapper — gpt-image-1 high occasionally stalls (UND_ERR_HEADERS_TIMEOUT).
+  let lastErr;
+  for (let attempt = 1; attempt <= 4; attempt++) {
+    try { return await genBackgroundOnce(size); }
+    catch (e) { lastErr = e; if (attempt < 4) await new Promise((r) => setTimeout(r, 5000 * attempt)); }
+  }
+  throw lastErr;
+}
+async function genBackgroundOnce(size) {
   // Reference art is the OLD photographic look — it only conditions the
   // cinematic style (S1); the other styles must be free of it or they regress.
   const refs = STYLE === 1 ? refFiles() : [];
@@ -194,7 +203,7 @@ function overlayTree(W, H) {
       padding: pad, fontFamily: "Bebas Neue", position: "relative",
     },
   },
-    h("img", { src: logoDataUri, width: Math.round(logoH * 3.382), height: logoH, style: { marginBottom: Math.round(H * 0.04) } }),
+    // No YourScore logo (founder call, Jul 13) — the title + series strip carry the brand.
     h("div", { style: { display: "flex", flexWrap: "wrap", width: titleWidth, fontSize: titleSize, lineHeight: 0.9, rowGap: Math.round(titleSize * 0.04) } }, ...titleWords),
     h("div", {
       style: {
@@ -254,11 +263,13 @@ console.error(`  style: S${STYLE} ${STYLE_NAMES[STYLE]}${ALT ? ` (regen step ${A
 
 const sharePath = join(OUT, `${slug}-share.png`);
 const coverPath = join(OUT, `${slug}-cover.png`);
+const COVER_ONLY = args.includes("--cover-only"); // library backfill: skip the 16:9 share generation
 
-await makeCard("1536x1024", 1600, 900, sharePath, "share");   // 16:9 share
-console.error(`  ✓ share → ${sharePath}`);
+if (!COVER_ONLY) {
+  await makeCard("1536x1024", 1600, 900, sharePath, "share");   // 16:9 share
+  console.error(`  ✓ share → ${sharePath}`);
+  console.log(`SHARE=${sharePath}`);
+}
 await makeCard("1024x1024", 1080, 1080, coverPath, "cover");  // 1:1 cover
 console.error(`  ✓ cover → ${coverPath}`);
-
-console.log(`SHARE=${sharePath}`);
 console.log(`COVER=${coverPath}`);

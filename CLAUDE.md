@@ -15,6 +15,49 @@ YOURSCORE.md carries the feature set and it is kept current.
 `PRODUCT.md`, `MARKETING_BRIEF.md`, `MOBILE.md`, `STORE_LISTING.md`, and the old
 `~/Downloads/*build-doc.md` files are historical/stale — never treat them as current scope.
 
+## ⚑ Before you build — which framework applies
+
+Two docs govern *how* we build. **Check the trigger below and read the matching doc before
+starting.** They are scoped on purpose — do not apply them to work they don't cover.
+
+| If the task is… | Read first | Mandatory? |
+|---|---|---|
+| **A new app feature** (new game mode, new surface, new user-facing capability) | [`docs/FEATURE-BUILD-FRAMEWORK.md`](./docs/FEATURE-BUILD-FRAMEWORK.md) | **Yes** |
+| **A new automated loop** (cron job, scheduled/headless agent, pipeline) | [`docs/LOOP-STANDARD.md`](./docs/LOOP-STANDARD.md) | **Yes** |
+| Bug fix, perf work, copy/content change, refactor, audit, a question | — | No — §2 operating principles apply as normal |
+
+**Two ways this gets triggered — both are valid:**
+1. **You classify it.** Read the founder's request against the table above and pick the bucket.
+   Most cases are obvious. **When genuinely unsure, ask** — do not default to the heavyweight path.
+   The founder can also override in words ("new feature — run the framework" / "quick fix, skip it").
+2. **The founder runs `/feature <description>`** — the explicit switch. It invokes the framework
+   deterministically, with no classification step to get wrong. Prefer this reading when it's used.
+
+**Feature builds default to the FAST PATH** (four beats, 2–4 subagents, plan-mode speed):
+**Haiku researches** (cheap/fast gatherer — real API calls to external dependencies, sourced
+facts, output labelled UNVERIFIED; skipped for purely internal features) → **Fable plans,
+receiving the research** (investigates the codebase itself, verifies load-bearing claims; output
+= plan + locked acceptance criteria) → **🚦 founder approves the plan** → **one Sonnet agent
+builds** at `high` (branch/worktree, never `git add -A`, never push `main`; Opus only by stated
+exception: concurrency/races, scoring/money, core game loops) → **Fable reviews the diff**
+against the locked criteria (`next build` + `next lint` run as commands, never agents) →
+**🚦 founder approves ship** → update YOURSCORE.md, measure vs the impact hypothesis. **Model
+routing is automatic and the skill's responsibility** — Fable beats run inline when the session
+is on Fable, else via an auto-spawned Fable agent with a scoped brief; **never ask the founder
+to switch models**. Speed and cost are requirements.
+
+**The multi-agent deep-run pipeline is OPT-IN ONLY** — propose it with an agents/cost/time
+estimate and get an explicit founder yes *before* starting. Reserve for features where a wrong
+assumption is expensive and discovered late (unverified third-party APIs at the core, live data,
+money, hard seasonal deadlines). Its cost rules (§0a of the framework doc) bind absolutely.
+
+**Automated loops** must satisfy the 4 rules: assert success (not existence), gate every
+outward/irreversible action, bound the retry path, one persistent dedup key per side effect.
+
+**Don't over-apply this.** A typo fix does not get a research phase. If the task is small,
+reversible, and not a new feature or loop, just do the work under §2. When genuinely unsure which
+bucket a task falls in, ask the founder rather than defaulting to the heavyweight path.
+
 ## 1. Stable facts (these rarely change)
 - **What it is:** a football **competition** platform — two games plus a shared social layer.
   **38-0** (head-to-head team-builder) is the flagship/acquisition hook; **Quiz** (football

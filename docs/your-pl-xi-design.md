@@ -60,6 +60,11 @@ timing, the regret cycle.)*
   *"pay for it in knowledge or pay for it in points."*
 - Transfers buy at live FPL-style prices within your squad's budget; **no position lock and
   no stuck players** — any legal swap within budget until deadline lock.
+- **Pre-season squad rebuild (founder 11 Jul):** before your first gameweek locks you can
+  freely rebuild the whole squad (the builder loads your current 15 to edit — never a
+  wipe to empty). Once the season starts, the team changes only via transfers/point-hits.
+- **Player names = "First Surname"** (Bukayo Saka, Alisson Becker); FPL's short name only
+  for unwieldy multi-surname cases (B.Fernandes, Ederson M., Cunha).
 
 **2. Scarcity is preserved deliberately (the make-or-break rule).**
 - **The fixed base budget can't buy eleven elite players** — same as FPL — so squad-building

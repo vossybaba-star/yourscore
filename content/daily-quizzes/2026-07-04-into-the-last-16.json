@@ -1,0 +1,201 @@
+{
+  "date": "2026-07-04",
+  "series": "wc2026",
+  "name": "Into the Last 16",
+  "parameter": "World Cup 2026 Round of 16",
+  "type": "records",
+  "icon": "🏆",
+  "angle": "The Round of 16 gets under way with the bracket finally set: Argentina survived a Cape Verde scare, Egypt reached the knockouts for the first time, and a blockbuster Portugal v Spain tie awaits.",
+  "questions": [
+    {
+      "difficulty": "easy",
+      "category": "last_16",
+      "question": "The standout tie of the last 16 pits two Iberian neighbours against one another. Which pair?",
+      "options": {
+        "A": "Portugal and Spain",
+        "B": "Spain and Italy",
+        "C": "Portugal and France",
+        "D": "Spain and Morocco"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "champions",
+      "question": "Who survived a huge scare from World Cup debutants Cape Verde, winning 3-2 after extra time to reach the last 16?",
+      "options": {
+        "A": "France",
+        "B": "Argentina",
+        "C": "Brazil",
+        "D": "Spain"
+      },
+      "answer": "B"
+    },
+    {
+      "difficulty": "easy",
+      "category": "hosts",
+      "question": "Which co-host nation face Belgium in the Round of 16?",
+      "options": {
+        "A": "United States",
+        "B": "Canada",
+        "C": "Mexico",
+        "D": "Brazil"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "last_16",
+      "question": "England's Round of 16 opponents are which co-host nation?",
+      "options": {
+        "A": "United States",
+        "B": "Canada",
+        "C": "Mexico",
+        "D": "Morocco"
+      },
+      "answer": "C"
+    },
+    {
+      "difficulty": "medium",
+      "category": "last_16",
+      "question": "France, chasing back-to-back finals, face which South American side that stunned Germany on penalties?",
+      "options": {
+        "A": "Uruguay",
+        "B": "Ecuador",
+        "C": "Paraguay",
+        "D": "Bolivia"
+      },
+      "answer": "C"
+    },
+    {
+      "difficulty": "medium",
+      "category": "last_16",
+      "question": "Morocco, who knocked out the Netherlands on penalties, meet which co-host in the last 16?",
+      "options": {
+        "A": "Mexico",
+        "B": "Canada",
+        "C": "United States",
+        "D": "Costa Rica"
+      },
+      "answer": "B"
+    },
+    {
+      "difficulty": "medium",
+      "category": "records",
+      "question": "Egypt reached the knockout stage for the first time in their history, edging Australia 1-1 by what means?",
+      "options": {
+        "A": "An extra-time goal",
+        "B": "A replay",
+        "C": "On penalties",
+        "D": "Away goals"
+      },
+      "answer": "C"
+    },
+    {
+      "difficulty": "medium",
+      "category": "colombia",
+      "question": "Who scored the only goal as Colombia beat Ghana 1-0 to set up a last-16 meeting with Switzerland?",
+      "options": {
+        "A": "James Rodriguez",
+        "B": "Jhon Arias",
+        "C": "Luis Diaz",
+        "D": "Rafael Santos Borre"
+      },
+      "answer": "B"
+    },
+    {
+      "difficulty": "medium",
+      "category": "golden_boot",
+      "question": "Lionel Messi's early strike against Cape Verde moved him one goal clear at the top of the 2026 Golden Boot race, ahead of which rival?",
+      "options": {
+        "A": "Kylian Mbappe",
+        "B": "Erling Haaland",
+        "C": "Cristiano Ronaldo",
+        "D": "Harry Kane"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "last_16",
+      "question": "Erling Haaland's Norway, in their first World Cup since 1998, face which five-time champions in the last 16?",
+      "options": {
+        "A": "Argentina",
+        "B": "Brazil",
+        "C": "Germany",
+        "D": "Uruguay"
+      },
+      "answer": "B"
+    },
+    {
+      "difficulty": "hard",
+      "category": "champions",
+      "question": "Argentina's decisive goal against Cape Verde, in the 111th minute, came off a header from which centre-back before deflecting in?",
+      "options": {
+        "A": "Nicolas Otamendi",
+        "B": "Cristian Romero",
+        "C": "Lisandro Martinez",
+        "D": "Nahuel Molina"
+      },
+      "answer": "B"
+    },
+    {
+      "difficulty": "hard",
+      "category": "debutants",
+      "question": "Which Cape Verde midfielder cancelled out Messi's opener to level the tie at 1-1?",
+      "options": {
+        "A": "Ryan Mendes",
+        "B": "Deroy Duarte",
+        "C": "Jamiro Monteiro",
+        "D": "Garry Rodrigues"
+      },
+      "answer": "B"
+    },
+    {
+      "difficulty": "hard",
+      "category": "history",
+      "question": "Portugal v Spain revives their 2010 last-16 meeting, won 1-0 by Spain on the way to the title. Who scored the only goal that day?",
+      "options": {
+        "A": "Andres Iniesta",
+        "B": "David Villa",
+        "C": "Fernando Torres",
+        "D": "David Silva"
+      },
+      "answer": "B"
+    },
+    {
+      "difficulty": "hard",
+      "category": "records",
+      "question": "The 2026 World Cup is only Egypt's fourth. Before this tournament, when did they last appear at the finals?",
+      "options": {
+        "A": "2010",
+        "B": "1990",
+        "C": "2018",
+        "D": "2014"
+      },
+      "answer": "C"
+    },
+    {
+      "difficulty": "hard",
+      "category": "records",
+      "question": "Cape Verde became the smallest nation ever to reach a World Cup knockout stage. Roughly what is their population?",
+      "options": {
+        "A": "About 525,000",
+        "B": "About 1.5 million",
+        "C": "About 3 million",
+        "D": "About 250,000"
+      },
+      "answer": "A"
+    }
+  ],
+  "sources": [
+    "https://www.aljazeera.com/sports/2026/7/3/fifa-world-cup-2026-round-of-16-bracket-friday-schedule-predictions (Round of 16 bracket: Canada v Morocco, Paraguay v France, Brazil v Norway, Mexico v England, Portugal v Spain, USA v Belgium, Argentina/Egypt, Switzerland/Colombia)",
+    "https://www.espn.com/soccer/story/_/id/49263170/argentina-break-cape-verde-hearts-extra-world-cup-lionel-messi-scores (Argentina 3-2 Cape Verde AET; Messi 29' and 7 goals leads Golden Boot one clear of Mbappe; Duarte equaliser; Lopes Cabral strike; 111' decider off Romero header/own goal)",
+    "https://www.nbcsports.com/soccer/live/argentina-vs-cape-verde-live-updates-score-goals-highlights-stats-2026-fifa-world-cup-july-3 (Goals: Messi 29', Duarte 59', Lisandro Martinez 92', Lopes Cabral 103', Romero-credited 111')",
+    "https://www.espn.com/soccer/story/_/id/49262158/colombia-ghana-live-world-cup-2026-latest-updates-commentary-score-result (Colombia 1-0 Ghana; Jhon Arias 14'; Colombia to face Switzerland)",
+    "https://www.cafonline.com/fifa-world-cup/news/egypt-beat-australia-on-penalties-to-reach-historic-world-cup-last-16/ (Egypt 1-1 Australia, won 4-2 on penalties; first-ever knockout stage)",
+    "https://en.wikipedia.org/wiki/Egypt_at_the_FIFA_World_Cup (Egypt appearances: 1934, 1990, 2018, 2026; never past group stage before 2026)",
+    "https://en.wikipedia.org/wiki/David_Villa (David Villa scored the only goal, 63', in Spain 1-0 Portugal, 2010 World Cup Round of 16)",
+    "https://www.mlssoccer.com/competitions/fifa-world-cup/news/biggest-world-cup-underdog-ever-cape-verde-seek-upset-of-argentina (Cape Verde population ~525,000, smallest nation ever to reach a World Cup knockout stage)"
+  ]
+}

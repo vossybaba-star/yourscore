@@ -1,0 +1,201 @@
+{
+  "date": "2026-07-06",
+  "series": "wc2026",
+  "name": "Haaland Sinks Brazil as the Last Eight Is Set",
+  "parameter": "World Cup 2026 Round of 16",
+  "type": "records",
+  "icon": "⚡",
+  "angle": "The round of 16 closes with a jolt: Erling Haaland strikes twice late to knock five-time champions Brazil out and carry Norway into a first ever World Cup quarter-final, while a ten-man England survive an Estadio Azteca classic against Mexico to complete the last eight.",
+  "questions": [
+    {
+      "difficulty": "easy",
+      "category": "upset",
+      "question": "Which nation knocked five-time champions Brazil out of the 2026 World Cup in the round of 16?",
+      "options": {
+        "A": "Norway",
+        "B": "Sweden",
+        "C": "Denmark",
+        "D": "Switzerland"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "haaland",
+      "question": "Who scored twice to complete Norway's stunning victory over Brazil?",
+      "options": {
+        "A": "Erling Haaland",
+        "B": "Alexander Sorloth",
+        "C": "Martin Odegaard",
+        "D": "Oscar Bobb"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "england",
+      "question": "England reached the quarter-finals by winning 3-2 against which nation at the Estadio Azteca?",
+      "options": {
+        "A": "Mexico",
+        "B": "United States",
+        "C": "Canada",
+        "D": "Colombia"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "records",
+      "question": "Beating Brazil took Norway into the first World Cup quarter-final in their history. Which stage had been their previous best?",
+      "options": {
+        "A": "Round of 16",
+        "B": "Semi-final",
+        "C": "Final",
+        "D": "Third place"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "golden_boot",
+      "question": "Haaland's double against Brazil took his tournament tally to how many goals, joining the leaders at the top of the scoring charts?",
+      "options": {
+        "A": "Seven",
+        "B": "Five",
+        "C": "Nine",
+        "D": "Six"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "brazil",
+      "question": "Which Brazil forward converted a stoppage-time consolation penalty in the defeat to Norway?",
+      "options": {
+        "A": "Neymar",
+        "B": "Vinicius Junior",
+        "C": "Rodrygo",
+        "D": "Raphinha"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "england",
+      "question": "Which England midfielder struck twice to put his side 2-0 up against Mexico?",
+      "options": {
+        "A": "Jude Bellingham",
+        "B": "Phil Foden",
+        "C": "Declan Rice",
+        "D": "Cole Palmer"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "england",
+      "question": "England restored their lead against Mexico from the penalty spot in the second half through which captain?",
+      "options": {
+        "A": "Harry Kane",
+        "B": "Jude Bellingham",
+        "C": "Anthony Gordon",
+        "D": "Marcus Rashford"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "england",
+      "question": "England saw out the win over Mexico a man light after which defender was shown a straight red card?",
+      "options": {
+        "A": "Jarell Quansah",
+        "B": "Marc Guehi",
+        "C": "John Stones",
+        "D": "Ezri Konsa"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "quarter_finals",
+      "question": "Victory over Mexico set up an England quarter-final against which surprise package of the last eight?",
+      "options": {
+        "A": "Norway",
+        "B": "Morocco",
+        "C": "Paraguay",
+        "D": "Switzerland"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "records",
+      "question": "Brazil's round-of-16 defeat was their earliest exit from a World Cup since which year?",
+      "options": {
+        "A": "1990",
+        "B": "2006",
+        "C": "2010",
+        "D": "2018"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "brazil",
+      "question": "Which Brazil midfielder had a first-half penalty saved by Norway goalkeeper Orjan Nyland?",
+      "options": {
+        "A": "Bruno Guimaraes",
+        "B": "Casemiro",
+        "C": "Lucas Paqueta",
+        "D": "Gerson"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "mexico",
+      "question": "Which Mexico striker pulled a goal back from the penalty spot to make it 3-2 against England?",
+      "options": {
+        "A": "Raul Jimenez",
+        "B": "Santiago Gimenez",
+        "C": "Julian Quinones",
+        "D": "Hirving Lozano"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "history",
+      "question": "This was Norway's first World Cup since 1998, the tournament where they also beat Brazil 2-1 in the group stage. Brazil went into that 1998 meeting as the reigning what?",
+      "options": {
+        "A": "World champions",
+        "B": "Copa America holders",
+        "C": "Confederations Cup winners",
+        "D": "Olympic champions"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "expert",
+      "category": "haaland",
+      "question": "Which Norway substitute delivered the cross for Haaland's opening goal against Brazil?",
+      "options": {
+        "A": "Andreas Schjelderup",
+        "B": "Oscar Bobb",
+        "C": "Antonio Nusa",
+        "D": "Alexander Sorloth"
+      },
+      "answer": "A"
+    }
+  ],
+  "sources": [
+    "https://www.aljazeera.com/sports/2026/7/5/haaland-scores-twice-as-norway-stun-brazil-2-1-in-world-cup-2026-last-16 (Norway 2-1 Brazil: Haaland 79' and 90'; Nyland saved Bruno Guimaraes first-half penalty; Neymar consolation penalty deep in stoppage time; Schjelderup crossed for Haaland's opener; Haaland to seven tournament goals, level with Messi; Norway's first ever quarter-final; face Mexico or England in Miami July 11)",
+    "https://www.espn.com/soccer/story/_/id/49279982/brazil-norway-world-cup-2026-erling-haaland (Haaland and Norway condemn Brazil to their earliest World Cup exit since 1990)",
+    "https://www.espn.com/soccer/story/_/id/49280315/haaland-brings-thunder-strikes-brazil-norway-reach-quarterfinals-2026-world-cup (Haaland brace; Nyland penalty save; Norway reach first quarter-final)",
+    "https://www.cbssports.com/soccer/news/brazil-norway-live-updates-world-cup-2026-score-result/live/ (Sorloth and Nusa subbed for Bobb and Schjelderup at half-time; Schjelderup supplied the crosses for Haaland)",
+    "https://en.wikipedia.org/wiki/Norway_at_the_FIFA_World_Cup (Norway appearances 1938, 1994, 1998, 2026; previous best round of 16 in 1938 and 1998; 1998 included a 2-1 group win over reigning champions Brazil)",
+    "https://www.cbssports.com/soccer/news/mexico-england-live-updates-world-cup-2026-score-result/live/ (Mexico 2-3 England at the Azteca; Bellingham brace to 2-0; Quinones volley; Quansah straight red 54'; Kane penalty 60' after Gordon fouled by Rangel; Raul Jimenez penalty for Mexico; England advance with ten men)",
+    "https://www.espn.com/soccer/match/_/gameId/760505/england-mexico (Mexico 2-3 England final score, July 5 2026)",
+    "https://sports.yahoo.com/soccer/live/world-cup-2026-bracket-schedule-scores-results-live-updates-round-of-16-130000983.html (England hold off Mexico, Norway topple Brazil; England v Norway quarter-final)"
+  ]
+}

@@ -106,6 +106,13 @@ export default function RootLayout({
         {children}
         <Analytics />
         <SpeedInsights />
+        {/* Initialise dataLayer + gtag stub synchronously so useEffect callers
+            (SignupPixel etc.) can queue events before gtag.js loads. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}`,
+          }}
+        />
         {/* Google Analytics 4 */}
         <Script
           src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}`}
@@ -120,6 +127,7 @@ export default function RootLayout({
               function gtag(){dataLayer.push(arguments);}
               gtag('js', new Date());
               gtag('config', '${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}');
+              ${process.env.NEXT_PUBLIC_GOOGLE_ADS_CONVERSION_ID ? `gtag('config', '${process.env.NEXT_PUBLIC_GOOGLE_ADS_CONVERSION_ID}');` : ''}
             `,
           }}
         />

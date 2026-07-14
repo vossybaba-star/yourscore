@@ -102,8 +102,9 @@ async function main() {
   const { quizPath, quiz } = found;
 
   // Already done today? A second trigger must not re-publish or re-send.
+  // Exit silently — the 09:30 launchd fallback hits this every day and must not send Telegram noise.
   if (launchedToday() && !FORCE) {
-    await sendMessage(`✅ Today's quiz (${todayUK}) was already launched. Skipping to avoid a double publish/send. Use --force to re-run.`);
+    console.log(`Already launched today (${todayUK}) — exiting silently.`);
     return;
   }
 

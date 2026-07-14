@@ -16567,3 +16567,470 @@ node:internal/modules/run_main:107
 }
 
 Node.js v24.15.0
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: ConnectTimeoutError: Connect Timeout Error (attempted addresses: 149.154.166.110:443, 2001:67c:4e8:f004::9:443, timeout: 10000ms)
+      at onConnectTimeout (node:internal/deps/undici/undici:1981:23)
+      at Immediate._onImmediate (node:internal/deps/undici/undici:1962:11)
+      at process.processImmediate (node:internal/timers:504:21) {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+
+Node.js v24.15.0
+trickled ix326613701
+trickled ix326613702
+trickled eng91415532
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: ConnectTimeoutError: Connect Timeout Error (attempted addresses: 149.154.166.110:443, 2001:67c:4e8:f004::9:443, timeout: 10000ms)
+      at onConnectTimeout (node:internal/deps/undici/undici:1981:23)
+      at Immediate._onImmediate (node:internal/deps/undici/undici:1962:11)
+      at process.processImmediate (node:internal/timers:504:21) {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+
+Node.js v24.15.0
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: Error: read ECONNRESET
+      at TLSWrap.onStreamRead (node:internal/stream_base_commons:216:20) {
+    errno: -54,
+    code: 'ECONNRESET',
+    syscall: 'read'
+  }
+}
+
+Node.js v24.15.0
+trickled eng75390920
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: ConnectTimeoutError: Connect Timeout Error (attempted addresses: 149.154.166.110:443, 2001:67c:4e8:f004::9:443, timeout: 10000ms)
+      at onConnectTimeout (node:internal/deps/undici/undici:1981:23)
+      at Immediate._onImmediate (node:internal/deps/undici/undici:1962:11)
+      at process.processImmediate (node:internal/timers:504:21) {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+
+Node.js v24.15.0
+trickled ix342813731
+trickled ix342813732
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: ConnectTimeoutError: Connect Timeout Error (attempted addresses: 149.154.166.110:443, 2001:67c:4e8:f004::9:443, timeout: 10000ms)
+      at onConnectTimeout (node:internal/deps/undici/undici:1981:23)
+      at Immediate._onImmediate (node:internal/deps/undici/undici:1962:11)
+      at process.processImmediate (node:internal/timers:504:21) {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+
+Node.js v24.15.0
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: ConnectTimeoutError: Connect Timeout Error (attempted addresses: 149.154.166.110:443, 2001:67c:4e8:f004::9:443, timeout: 10000ms)
+      at onConnectTimeout (node:internal/deps/undici/undici:1981:23)
+      at Immediate._onImmediate (node:internal/deps/undici/undici:1962:11)
+      at process.processImmediate (node:internal/timers:504:21) {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+
+Node.js v24.15.0
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: ConnectTimeoutError: Connect Timeout Error (attempted address: api.telegram.org:443, timeout: 10000ms)
+      at onConnectTimeout (node:internal/deps/undici/undici:1981:23)
+      at Immediate._onImmediate (node:internal/deps/undici/undici:1962:11)
+      at process.processImmediate (node:internal/timers:504:21) {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+
+Node.js v24.15.0
+trickled 85379284
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: ConnectTimeoutError: Connect Timeout Error (attempted addresses: 149.154.166.110:443, 2001:67c:4e8:f004::9:443, timeout: 10000ms)
+      at onConnectTimeout (node:internal/deps/undici/undici:1981:23)
+      at Immediate._onImmediate (node:internal/deps/undici/undici:1962:11)
+      at process.processImmediate (node:internal/timers:504:21) {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+
+Node.js v24.15.0
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: ConnectTimeoutError: Connect Timeout Error (attempted addresses: 149.154.166.110:443, 2001:67c:4e8:f004::9:443, timeout: 10000ms)
+      at onConnectTimeout (node:internal/deps/undici/undici:1981:23)
+      at Immediate._onImmediate (node:internal/deps/undici/undici:1962:11)
+      at process.processImmediate (node:internal/timers:504:21) {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+
+Node.js v24.15.0
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: ConnectTimeoutError: Connect Timeout Error (attempted addresses: 149.154.166.110:443, 2001:67c:4e8:f004::9:443, timeout: 10000ms)
+      at onConnectTimeout (node:internal/deps/undici/undici:1981:23)
+      at Immediate._onImmediate (node:internal/deps/undici/undici:1962:11)
+      at process.processImmediate (node:internal/timers:504:21) {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+
+Node.js v24.15.0
+trickled ix360817668
+trickled ix360817669
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: ConnectTimeoutError: Connect Timeout Error (attempted addresses: 149.154.166.110:443, 2001:67c:4e8:f004::9:443, timeout: 10000ms)
+      at onConnectTimeout (node:internal/deps/undici/undici:1981:23)
+      at Immediate._onImmediate (node:internal/deps/undici/undici:1962:11)
+      at process.processImmediate (node:internal/timers:504:21) {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+
+Node.js v24.15.0
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: ConnectTimeoutError: Connect Timeout Error (attempted addresses: 149.154.166.110:443, 2001:67c:4e8:f004::9:443, timeout: 10000ms)
+      at onConnectTimeout (node:internal/deps/undici/undici:1981:23)
+      at Immediate._onImmediate (node:internal/deps/undici/undici:1962:11)
+      at process.processImmediate (node:internal/timers:504:21) {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+
+Node.js v24.15.0
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: ConnectTimeoutError: Connect Timeout Error (attempted addresses: 149.154.166.110:443, 2001:67c:4e8:f004::9:443, timeout: 10000ms)
+      at onConnectTimeout (node:internal/deps/undici/undici:1981:23)
+      at Immediate._onImmediate (node:internal/deps/undici/undici:1962:11)
+      at process.processImmediate (node:internal/timers:504:21) {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+
+Node.js v24.15.0
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: Error: read ECONNRESET
+      at TLSWrap.onStreamRead (node:internal/stream_base_commons:216:20) {
+    errno: -54,
+    code: 'ECONNRESET',
+    syscall: 'read'
+  }
+}
+
+Node.js v24.15.0
+trickled 58826068
+trickled 63970658
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: ConnectTimeoutError: Connect Timeout Error (attempted addresses: 149.154.166.110:443, 2001:67c:4e8:f004::9:443, timeout: 10000ms)
+      at onConnectTimeout (node:internal/deps/undici/undici:1981:23)
+      at Immediate._onImmediate (node:internal/deps/undici/undici:1962:11)
+      at process.processImmediate (node:internal/timers:504:21) {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+
+Node.js v24.15.0
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: ConnectTimeoutError: Connect Timeout Error (attempted addresses: 149.154.166.110:443, 2001:67c:4e8:f004::9:443, timeout: 10000ms)
+      at onConnectTimeout (node:internal/deps/undici/undici:1981:23)
+      at Immediate._onImmediate (node:internal/deps/undici/undici:1962:11)
+      at process.processImmediate (node:internal/timers:504:21) {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+
+Node.js v24.15.0
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: ConnectTimeoutError: Connect Timeout Error (attempted addresses: 149.154.166.110:443, 2001:67c:4e8:f004::9:443, timeout: 10000ms)
+      at onConnectTimeout (node:internal/deps/undici/undici:1981:23)
+      at Immediate._onImmediate (node:internal/deps/undici/undici:1962:11)
+      at process.processImmediate (node:internal/timers:504:21) {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+
+Node.js v24.15.0
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: ConnectTimeoutError: Connect Timeout Error (attempted addresses: 149.154.166.110:443, 2001:67c:4e8:f004::9:443, timeout: 10000ms)
+      at onConnectTimeout (node:internal/deps/undici/undici:1981:23)
+      at Immediate._onImmediate (node:internal/deps/undici/undici:1962:11)
+      at process.processImmediate (node:internal/timers:504:21) {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+
+Node.js v24.15.0
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: ConnectTimeoutError: Connect Timeout Error (attempted addresses: 149.154.166.110:443, 2001:67c:4e8:f004::9:443, timeout: 10000ms)
+      at onConnectTimeout (node:internal/deps/undici/undici:1981:23)
+      at Immediate._onImmediate (node:internal/deps/undici/undici:1962:11)
+      at process.processImmediate (node:internal/timers:504:21) {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+
+Node.js v24.15.0
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: ConnectTimeoutError: Connect Timeout Error (attempted addresses: 149.154.166.110:443, 2001:67c:4e8:f004::9:443, timeout: 10000ms)
+      at onConnectTimeout (node:internal/deps/undici/undici:1981:23)
+      at Immediate._onImmediate (node:internal/deps/undici/undici:1962:11)
+      at process.processImmediate (node:internal/timers:504:21) {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+
+Node.js v24.15.0
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: Error: getaddrinfo ENOTFOUND api.telegram.org
+      at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26) {
+    errno: -3008,
+    code: 'ENOTFOUND',
+    syscall: 'getaddrinfo',
+    hostname: 'api.telegram.org'
+  }
+}
+
+Node.js v24.15.0
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: Error: getaddrinfo ENOTFOUND api.telegram.org
+      at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26) {
+    errno: -3008,
+    code: 'ENOTFOUND',
+    syscall: 'getaddrinfo',
+    hostname: 'api.telegram.org'
+  }
+}
+
+Node.js v24.15.0
+trickled ix413014377
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: ConnectTimeoutError: Connect Timeout Error (attempted addresses: 149.154.166.110:443, 2001:67c:4e8:f004::9:443, timeout: 10000ms)
+      at onConnectTimeout (node:internal/deps/undici/undici:1981:23)
+      at Immediate._onImmediate (node:internal/deps/undici/undici:1962:11)
+      at process.processImmediate (node:internal/timers:504:21) {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+
+Node.js v24.15.0
+trickled ix413014378
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: ConnectTimeoutError: Connect Timeout Error (attempted addresses: 149.154.166.110:443, 2001:67c:4e8:f004::9:443, timeout: 10000ms)
+      at onConnectTimeout (node:internal/deps/undici/undici:1981:23)
+      at Immediate._onImmediate (node:internal/deps/undici/undici:1962:11)
+      at process.processImmediate (node:internal/timers:504:21) {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+
+Node.js v24.15.0
+trickled eng73927938
+trickled eng06221168
+trickled ix429215073
+trickled ix429215074
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: ConnectTimeoutError: Connect Timeout Error (attempted addresses: 2001:67c:4e8:f004::9:443, 149.154.166.110:443, timeout: 10000ms)
+      at onConnectTimeout (node:internal/deps/undici/undici:1981:23)
+      at Immediate._onImmediate (node:internal/deps/undici/undici:1962:11)
+      at process.processImmediate (node:internal/timers:504:21) {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+
+Node.js v24.15.0
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: ConnectTimeoutError: Connect Timeout Error (attempted address: api.telegram.org:443, timeout: 10000ms)
+      at onConnectTimeout (node:internal/deps/undici/undici:1981:23)
+      at Immediate._onImmediate (node:internal/deps/undici/undici:1962:11)
+      at process.processImmediate (node:internal/timers:504:21) {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+
+Node.js v24.15.0
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: ConnectTimeoutError: Connect Timeout Error (attempted addresses: 149.154.166.110:443, 2001:67c:4e8:f004::9:443, timeout: 10000ms)
+      at onConnectTimeout (node:internal/deps/undici/undici:1981:23)
+      at Immediate._onImmediate (node:internal/deps/undici/undici:1962:11)
+      at process.processImmediate (node:internal/timers:504:21) {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+
+Node.js v24.15.0
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: Error: read ECONNRESET
+      at TLSWrap.onStreamRead (node:internal/stream_base_commons:216:20) {
+    errno: -54,
+    code: 'ECONNRESET',
+    syscall: 'read'
+  }
+}
+
+Node.js v24.15.0
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: ConnectTimeoutError: Connect Timeout Error (attempted addresses: 149.154.166.110:443, 2001:67c:4e8:f004::9:443, timeout: 10000ms)
+      at onConnectTimeout (node:internal/deps/undici/undici:1981:23)
+      at Immediate._onImmediate (node:internal/deps/undici/undici:1962:11)
+      at process.processImmediate (node:internal/timers:504:21) {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+
+Node.js v24.15.0
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: ConnectTimeoutError: Connect Timeout Error (attempted addresses: 149.154.166.110:443, 2001:67c:4e8:f004::9:443, timeout: 10000ms)
+      at onConnectTimeout (node:internal/deps/undici/undici:1981:23)
+      at Immediate._onImmediate (node:internal/deps/undici/undici:1962:11)
+      at process.processImmediate (node:internal/timers:504:21) {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+
+Node.js v24.15.0
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: ConnectTimeoutError: Connect Timeout Error (attempted addresses: 149.154.166.110:443, 2001:67c:4e8:f004::9:443, timeout: 10000ms)
+      at onConnectTimeout (node:internal/deps/undici/undici:1981:23)
+      at Immediate._onImmediate (node:internal/deps/undici/undici:1962:11)
+      at process.processImmediate (node:internal/timers:504:21) {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+
+Node.js v24.15.0
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: ConnectTimeoutError: Connect Timeout Error (attempted addresses: 149.154.166.110:443, 2001:67c:4e8:f004::9:443, timeout: 10000ms)
+      at onConnectTimeout (node:internal/deps/undici/undici:1981:23)
+      at Immediate._onImmediate (node:internal/deps/undici/undici:1962:11)
+      at process.processImmediate (node:internal/timers:504:21) {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+
+Node.js v24.15.0

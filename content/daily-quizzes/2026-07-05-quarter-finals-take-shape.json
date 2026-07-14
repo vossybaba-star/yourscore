@@ -1,0 +1,201 @@
+{
+  "date": "2026-07-05",
+  "series": "wc2026",
+  "name": "The Quarter Finals Take Shape",
+  "parameter": "World Cup 2026 Round of 16",
+  "type": "records",
+  "icon": "🦁",
+  "angle": "The last eight begins to take shape: Morocco dismantle co-hosts Canada to become the first African nation to reach the quarter-finals more than once, France edge Paraguay through a Mbappe penalty, and the two set up a blockbuster tie as Messi and Mbappe rewrite the all-time scoring record.",
+  "questions": [
+    {
+      "difficulty": "easy",
+      "category": "last_16",
+      "question": "Morocco knocked out which co-host nation 3-0 to reach the World Cup quarter-finals?",
+      "options": {
+        "A": "Canada",
+        "B": "United States",
+        "C": "Mexico",
+        "D": "Costa Rica"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "france",
+      "question": "Who converted the 70th-minute penalty that sent France past Paraguay and into the last eight?",
+      "options": {
+        "A": "Kylian Mbappe",
+        "B": "Ousmane Dembele",
+        "C": "Antoine Griezmann",
+        "D": "Randal Kolo Muani"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "easy",
+      "category": "morocco",
+      "question": "Morocco, who reached the last eight again in 2026, are known by which nickname?",
+      "options": {
+        "A": "The Atlas Lions",
+        "B": "The Pharaohs",
+        "C": "The Desert Foxes",
+        "D": "The Carthage Eagles"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "morocco",
+      "question": "Which midfielder scored twice as Morocco beat Canada, striking in the 50th and 82nd minutes?",
+      "options": {
+        "A": "Azzedine Ounahi",
+        "B": "Sofyan Amrabat",
+        "C": "Hakim Ziyech",
+        "D": "Brahim Diaz"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "records",
+      "question": "By reaching the last eight in 2026, Morocco became the first African nation to do what?",
+      "options": {
+        "A": "Reach the World Cup quarter-finals more than once",
+        "B": "Win a World Cup knockout match",
+        "C": "Qualify for four World Cups in a row",
+        "D": "Beat a reigning European champion"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "history",
+      "question": "Morocco's deep run echoes 2022, when they became the first African team to achieve what?",
+      "options": {
+        "A": "Reach a World Cup semi-final",
+        "B": "Win a World Cup group",
+        "C": "Keep a clean sheet in a World Cup final",
+        "D": "Score in a World Cup final"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "golden_boot",
+      "question": "Mbappe's penalty took him to seven goals for the tournament, drawing him level at the top of the scoring charts with which player?",
+      "options": {
+        "A": "Lionel Messi",
+        "B": "Erling Haaland",
+        "C": "Harry Kane",
+        "D": "Julian Alvarez"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "quarter_finals",
+      "question": "The two July 4 winners were paired together in the last eight. Who will France face in the quarter-final?",
+      "options": {
+        "A": "Morocco",
+        "B": "Spain",
+        "C": "Brazil",
+        "D": "Colombia"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "france",
+      "question": "France, the 2018 world champions, went all the way to the final again in 2022 but lost to whom?",
+      "options": {
+        "A": "Argentina",
+        "B": "Brazil",
+        "C": "Croatia",
+        "D": "Spain"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "medium",
+      "category": "paraguay",
+      "question": "Paraguay had reached the last 16 by stunning which heavyweight on penalties in the previous round?",
+      "options": {
+        "A": "Germany",
+        "B": "Spain",
+        "C": "Netherlands",
+        "D": "England"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "records",
+      "question": "After his goal against Cape Verde, Lionel Messi holds the all-time record for most goals at World Cup finals. How many?",
+      "options": {
+        "A": "20",
+        "B": "16",
+        "C": "18",
+        "D": "23"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "records",
+      "question": "Both Messi and Mbappe have now passed which German striker, the previous all-time World Cup top scorer on 16 goals?",
+      "options": {
+        "A": "Miroslav Klose",
+        "B": "Gerd Muller",
+        "C": "Thomas Muller",
+        "D": "Jurgen Klinsmann"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "france",
+      "question": "France's decisive penalty came after which forward was brought down in the box by Paraguay's Diego Gomez?",
+      "options": {
+        "A": "Desire Doue",
+        "B": "Bradley Barcola",
+        "C": "Marcus Thuram",
+        "D": "Michael Olise"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "hard",
+      "category": "morocco",
+      "question": "Ounahi's opener against Canada was teed up by a set-piece from which Morocco captain and full-back?",
+      "options": {
+        "A": "Achraf Hakimi",
+        "B": "Noussair Mazraoui",
+        "C": "Romain Saiss",
+        "D": "Yahya Attiyat Allah"
+      },
+      "answer": "A"
+    },
+    {
+      "difficulty": "expert",
+      "category": "records",
+      "question": "Mbappe's strike also made him the record-holder for most goals in World Cup knockout-stage matches. How many has he now scored in the knockouts?",
+      "options": {
+        "A": "10",
+        "B": "8",
+        "C": "12",
+        "D": "7"
+      },
+      "answer": "A"
+    }
+  ],
+  "sources": [
+    "https://www.espn.com/espn/story/_/id/49271700/2026-fifa-world-cup-recap-france-paraguay-morocco-canada-kylian-mbappe (MD23 recap: France 1-0 Paraguay via Mbappe 70' penalty won by Desire Doue off Diego Gomez; Morocco 3-0 Canada, Ounahi 50' from Hakimi set-piece and 82' from Brahim Diaz, Rahimi 90+8'; France to face Morocco in QF)",
+    "https://www.espn.com/soccer/story/_/id/49270266/morocco-defeat-co-hosts-canada-first-team-world-cup-quarterfinals-azzedine-ounahi-soufiane-rahimi (Morocco first African nation to reach the World Cup quarter-finals more than once; back-to-back last eight after 2022)",
+    "https://www.aljazeera.com/sports/2026/7/4/ounahi-fires-morocco-into-world-cup-quarterfinals-with-3-0-win-over-canada (Ounahi brace 50' and 82', Rahimi last-kick third; Atlas Lions to the quarter-finals)",
+    "https://en.wikipedia.org/wiki/Morocco_national_football_team (Atlas Lions; 2022 = first African team to reach a World Cup semi-final, finished fourth)",
+    "https://www.espn.com/soccer/match/_/gameId/760503/france-paraguay (Paraguay 0-1 France, July 4 2026, Mbappe penalty)",
+    "https://sports.yahoo.com/soccer/live/world-cup-2026-bracket-schedule-scores-results-live-updates-round-of-16-130000983.html (July 4 round of 16: Morocco 3-0 Canada, France 1-0 Paraguay; France v Morocco QF July 9)",
+    "https://www.nbcnews.com/data-graphics/mbappe-messi-goal-record-fifa-world-cup-2026-scores-race-rcna351571 (Messi 20 and Mbappe 19 all-time World Cup goals, both past Klose's 16; Mbappe record 10 goals in knockout stages)",
+    "https://en.wikipedia.org/wiki/2022_FIFA_World_Cup_Final (Argentina beat France in the 2022 final; France were 2018 champions)"
+  ]
+}

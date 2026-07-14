@@ -1,6 +1,10 @@
 import { withSentryConfig } from "@sentry/nextjs";
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Verification builds set NEXT_DIST_DIR to build without clobbering a running
+  // dev server's .next (multiple sessions share this checkout). Unset on Vercel,
+  // so prod deploys still use .next.
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   // Type errors now fail the build. DB types are generated from the live schema
   // (src/types/database.ts via `supabase gen types typescript`). The few defunct
   // admin match-question spots are explicitly cast with TODO(live-match) markers.

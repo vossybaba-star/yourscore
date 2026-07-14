@@ -800,3 +800,465 @@ Call log:
   ✓ [gamer] draft slate variety
 ── gamer ──
 ----- exit 1 -----
+===== 2026-07-06 08:20 BST =====
+── cleanup ──
+  ✓ [cleanup] bot rows
+── api ──
+  ✓ [api] GET /
+  ✓ [api] quiz/packs
+  ✓ [api] leaderboard/yourscore
+  ✓ [api] leaderboard/wc2026
+  ✓ [api] draft/wc/leaderboard
+  ✓ [api] draft/leaderboard
+  ✓ [api] ios-version
+  ✓ [api] draft pool JSON — 10051 players
+── fresh ──
+  ✓ [fresh] daily pack — "Haaland Sinks Brazil as the Last Eight Is Set"
+  ✓ [fresh] wc edition
+  ✓ [fresh] lobby cleanup cron
+  ✓ [fresh] challenge expiry cron
+  ✓ [fresh] email volume
+── journeys ──
+  ✓ [journeys] auth
+  ✓ [journeys] quiz start (Manchester City) — status 200, 11 questions
+  ✓ [journeys] quiz complete
+  ✓ [journeys] solo challenge — score 0
+  ✓ [journeys] solo cleanup
+  ✓ [journeys] wc ranked probe: begin — status 200, 11 edition questions
+  ✓ [journeys] wc ranked probe: slate — status 200, 6 players dealt
+  ✓ [journeys] wc run start — strength 92.2
+  ✓ [journeys] wc match engine — 3 matches simulated
+  ✓ [journeys] h2h create
+  ✓ [journeys] lobby create — code QYPGW9
+  ✓ [journeys] bot invisible on boards
+── browser ──
+  ✓ [browser] home
+  ✓ [browser] 38-0 WC
+  ✓ [browser] quiz hub
+  ✓ [browser] leaderboard
+  ✓ [browser] sign-in
+── nav ──
+  ✓ [nav] home → featured quiz → back — retraced to /
+  ✓ [nav] versus → quiz picker → back — retraced to /versus
+  ✓ [nav] league → profile → back — retraced to /league/5fa3f64c-ad09-437d-8e9b-dcb8ea8edc56
+  ✓ [nav] league → back — retraced to /versus?view=leagues
+  ✓ [nav] home → debate → back — retraced to /
+── sentry ──
+  ✓ [sentry] sweep — quiet (top: Error: The WKWebView was deallocated before the message was delivered ×1)
+── jobs ──
+  ✓ [jobs] quiz-launch
+  ✓ [jobs] wc-roll
+  ✓ [jobs] x-track
+  ✓ [jobs] x-engage
+  ✓ [jobs] x-ideas
+  ✓ [jobs] x-telegram-poll
+  ✓ [jobs] content-poll
+  ✓ [jobs] content-send
+── gamer ──
+  ✓ [gamer] question integrity
+  ✓ [gamer] no repeats in pack
+  ✓ [gamer] answer shuffle — spread {"D":5,"A":3,"B":5,"C":2}
+  ✓ [gamer] daily pack freshness
+  ✓ [gamer] no repeats in session
+  ✓ [gamer] no repeats across sessions
+  ⚠ [gamer] question bank depth — Manchester City: 86 servable questions (easy: 14) — a fan playing daily hits repeats within days; generate more (esp. easy)
+  ✓ [gamer] draft slate variety
+── gamer ──
+  ✓ [gamer] LLM review — nothing to flag today
+----- exit 0 -----
+===== 2026-07-06 12:30 BST =====
+── cleanup ──
+  ✓ [cleanup] bot rows
+── api ──
+  ✓ [api] GET /
+  ✓ [api] quiz/packs
+  ✓ [api] leaderboard/yourscore
+  ✓ [api] leaderboard/wc2026
+  ✓ [api] draft/wc/leaderboard
+  ✓ [api] draft/leaderboard
+  ✓ [api] ios-version
+  ✓ [api] draft pool JSON — 10051 players
+── fresh ──
+  ✓ [fresh] daily pack — "Haaland Sinks Brazil as the Last Eight Is Set"
+  ✓ [fresh] wc edition
+  ✓ [fresh] lobby cleanup cron
+  ✓ [fresh] challenge expiry cron
+  ✓ [fresh] player pulse — ranked WC runs today: 118, daily-quiz attempts: 1
+  ✓ [fresh] email volume
+── journeys ──
+  ✓ [journeys] auth
+  ✓ [journeys] quiz start (Tottenham Hotspur) — status 200, 9 questions
+  ✓ [journeys] quiz complete
+  ✓ [journeys] solo challenge — score 1100
+  ✓ [journeys] solo cleanup
+  ✓ [journeys] wc ranked probe: begin — status 200, 11 edition questions
+  ✓ [journeys] wc ranked probe: slate — status 200, 6 players dealt
+  ✓ [journeys] wc run start — strength 92.2
+  ✓ [journeys] wc match engine — 3 matches simulated
+  ✓ [journeys] h2h create
+  ✓ [journeys] lobby create — code AR99R7
+  ✓ [journeys] bot invisible on boards
+── browser ──
+  ✓ [browser] home
+  ✓ [browser] 38-0 WC
+  ✓ [browser] quiz hub
+  ✓ [browser] leaderboard
+  ✓ [browser] sign-in
+── nav ──
+  ✓ [nav] home → featured quiz → back — retraced to /
+  ✓ [nav] versus → quiz picker → back — retraced to /versus
+  ✓ [nav] league → profile → back — retraced to /league/5fa3f64c-ad09-437d-8e9b-dcb8ea8edc56
+  ✓ [nav] league → back — retraced to /versus?view=leagues
+  ✓ [nav] home → debate → back — retraced to /
+── sentry ──
+  ✗ [sentry] sweep — 1 new issue(s), 0 spiking in last 6h — "TypeError: undefined is not an object (evaluating 'window.webkit.messageHandlers')" ×4 (/38-0/wc)
+── jobs ──
+  ✓ [jobs] quiz-launch
+  ✓ [jobs] wc-roll
+  ✓ [jobs] x-track
+  ✓ [jobs] x-engage
+  ✓ [jobs] x-ideas
+  ✓ [jobs] x-telegram-poll
+  ✓ [jobs] content-poll
+  ✓ [jobs] content-send
+── gamer ──
+  ✓ [gamer] question integrity
+  ✓ [gamer] no repeats in pack
+  ✓ [gamer] answer shuffle — spread {"D":5,"A":3,"B":5,"C":2}
+  ✓ [gamer] daily pack freshness
+  ✓ [gamer] no repeats in session
+  ⚠ [gamer] no repeats across sessions — 3 repeat(s) for Tottenham Hotspur — bank recycling (by design): a regular Tottenham Hotspur player sees repeats. Bank needs more questions (55/70 servable seen)
+  ⚠ [gamer] question bank depth — Tottenham Hotspur: 70 servable questions (easy: 10) — a fan playing daily hits repeats within days; generate more (esp. easy)
+  ✓ [gamer] draft slate variety
+── gamer ──
+----- exit 1 -----
+===== 2026-07-06 17:45 BST =====
+── cleanup ──
+  ✓ [cleanup] bot rows
+── api ──
+  ✓ [api] GET /
+  ✓ [api] quiz/packs
+  ✓ [api] leaderboard/yourscore
+  ✓ [api] leaderboard/wc2026
+  ✓ [api] draft/wc/leaderboard
+  ✓ [api] draft/leaderboard
+  ✓ [api] ios-version
+  ✓ [api] draft pool JSON — 10051 players
+── fresh ──
+  ✓ [fresh] daily pack — "Haaland Sinks Brazil as the Last Eight Is Set"
+  ✓ [fresh] wc edition
+  ✓ [fresh] lobby cleanup cron
+  ✓ [fresh] challenge expiry cron
+  ✓ [fresh] player pulse — ranked WC runs today: 300, daily-quiz attempts: 2
+  ✓ [fresh] email volume
+── journeys ──
+  ✓ [journeys] auth
+  ✓ [journeys] quiz start (Tottenham Hotspur) — status 200, 15 questions
+  ✓ [journeys] quiz complete
+  ✓ [journeys] solo challenge — score 250
+  ✓ [journeys] solo cleanup
+  ✓ [journeys] wc ranked probe: begin — status 200, 11 edition questions
+  ✓ [journeys] wc ranked probe: slate — status 200, 6 players dealt
+  ✓ [journeys] wc run start — strength 92.2
+  ✓ [journeys] wc match engine — 3 matches simulated
+  ✓ [journeys] h2h create
+  ✓ [journeys] lobby create — code EMC5NG
+  ✓ [journeys] bot invisible on boards
+── browser ──
+  ✓ [browser] home
+  ✓ [browser] 38-0 WC
+  ✓ [browser] quiz hub
+  ✓ [browser] leaderboard
+  ✓ [browser] sign-in
+── nav ──
+  ✓ [nav] home → featured quiz → back — retraced to /
+  ✓ [nav] versus → quiz picker → back — retraced to /versus
+  ✓ [nav] league → profile → back — retraced to /league/5fa3f64c-ad09-437d-8e9b-dcb8ea8edc56
+  ✓ [nav] league → back — retraced to /versus?view=leagues
+  ✓ [nav] home → debate → back — retraced to /
+── sentry ──
+  ✓ [sentry] sweep — quiet (top: TypeError: undefined is not an object (evaluating 'window.webkit.messageHandlers') ×4)
+── jobs ──
+  ✓ [jobs] quiz-launch
+  ✓ [jobs] wc-roll
+  ✓ [jobs] x-track
+  ✓ [jobs] x-engage
+  ✓ [jobs] x-ideas
+  ✓ [jobs] x-telegram-poll
+  ✓ [jobs] content-poll
+  ✓ [jobs] content-send
+── gamer ──
+  ✓ [gamer] question integrity
+  ✓ [gamer] no repeats in pack
+  ✓ [gamer] answer shuffle — spread {"D":5,"A":3,"B":5,"C":2}
+  ✓ [gamer] daily pack freshness
+  ✓ [gamer] no repeats in session
+  ✓ [gamer] no repeats across sessions
+  ⚠ [gamer] question bank depth — Tottenham Hotspur: 70 servable questions (easy: 10) — a fan playing daily hits repeats within days; generate more (esp. easy)
+  ✓ [gamer] draft slate variety
+── gamer ──
+----- exit 0 -----
+===== 2026-07-06 22:30 BST =====
+── cleanup ──
+  ✓ [cleanup] bot rows
+── api ──
+  ✓ [api] GET /
+  ✓ [api] quiz/packs
+  ✓ [api] leaderboard/yourscore
+  ✓ [api] leaderboard/wc2026
+  ✓ [api] draft/wc/leaderboard
+  ✓ [api] draft/leaderboard
+  ✓ [api] ios-version
+  ✓ [api] draft pool JSON — 10051 players
+── fresh ──
+  ✓ [fresh] daily pack — "Haaland Sinks Brazil as the Last Eight Is Set"
+  ✓ [fresh] wc edition
+  ✓ [fresh] lobby cleanup cron
+  ✓ [fresh] challenge expiry cron
+  ✓ [fresh] player pulse — ranked WC runs today: 496, daily-quiz attempts: 3
+  ✓ [fresh] email volume
+── journeys ──
+  ✓ [journeys] auth
+  ✓ [journeys] quiz start (Newcastle United) — status 200, 11 questions
+  ✓ [journeys] quiz complete
+  ✓ [journeys] solo challenge — score 250
+  ✓ [journeys] solo cleanup
+  ✓ [journeys] wc ranked probe: begin — status 200, 11 edition questions
+  ✓ [journeys] wc ranked probe: slate — status 200, 6 players dealt
+  ✓ [journeys] wc run start — strength 92.2
+  ✓ [journeys] wc match engine — 3 matches simulated
+  ✓ [journeys] h2h create
+  ✓ [journeys] lobby create — code GZADKG
+  ✓ [journeys] bot invisible on boards
+── browser ──
+  ✓ [browser] home
+  ✓ [browser] 38-0 WC
+  ✓ [browser] quiz hub
+  ✓ [browser] leaderboard
+  ✓ [browser] sign-in
+── nav ──
+  ✓ [nav] home → featured quiz → back — retraced to /
+  ✓ [nav] versus → quiz picker → back — retraced to /versus
+  ✓ [nav] league → profile → back — retraced to /league/5fa3f64c-ad09-437d-8e9b-dcb8ea8edc56
+  ✓ [nav] league → back — retraced to /versus?view=leagues
+  ✓ [nav] home → debate → back — retraced to /
+── sentry ──
+  ✓ [sentry] sweep — quiet (top: TypeError: undefined is not an object (evaluating 'window.webkit.messageHandlers') ×6)
+── jobs ──
+  ✓ [jobs] quiz-launch
+  ✓ [jobs] wc-roll
+  ✓ [jobs] x-track
+  ✓ [jobs] x-engage
+  ✓ [jobs] x-ideas
+  ✓ [jobs] x-telegram-poll
+  ✓ [jobs] content-poll
+  ✓ [jobs] content-send
+── gamer ──
+  ✓ [gamer] question integrity
+  ✓ [gamer] no repeats in pack
+  ✓ [gamer] answer shuffle — spread {"D":5,"A":3,"B":5,"C":2}
+  ✓ [gamer] daily pack freshness
+  ✓ [gamer] no repeats in session
+  ✓ [gamer] no repeats across sessions
+  ⚠ [gamer] question bank depth — Newcastle United: 43 servable questions (easy: 2) — a fan playing daily hits repeats within days; generate more (esp. easy)
+  ✓ [gamer] draft slate variety
+── gamer ──
+----- exit 0 -----
+===== 2026-07-07 08:20 BST =====
+── cleanup ──
+  ✓ [cleanup] bot rows
+── api ──
+  ✓ [api] GET /
+  ✓ [api] quiz/packs
+  ✓ [api] leaderboard/yourscore
+  ✓ [api] leaderboard/wc2026
+  ✓ [api] draft/wc/leaderboard
+  ✓ [api] draft/leaderboard
+  ✓ [api] ios-version
+  ✓ [api] draft pool JSON — 10051 players
+── fresh ──
+  ✓ [fresh] daily pack — "Ronaldo Bows Out as the Last Eight Takes Shape"
+  ✓ [fresh] wc edition
+  ✓ [fresh] lobby cleanup cron
+  ✓ [fresh] challenge expiry cron
+  ✓ [fresh] email volume
+── journeys ──
+  ✓ [journeys] auth
+  ✓ [journeys] quiz start (Liverpool) — status 200, 9 questions
+  ✓ [journeys] quiz complete
+  ✓ [journeys] solo challenge — score 2000
+  ✓ [journeys] solo cleanup
+  ✓ [journeys] wc ranked probe: begin — status 200, 11 edition questions
+  ✓ [journeys] wc ranked probe: slate — status 200, 1 players dealt
+  ✓ [journeys] wc run start — strength 92.2
+  ✓ [journeys] wc match engine — 2 matches simulated
+  ✓ [journeys] h2h create
+  ✓ [journeys] lobby create — code AR7VG2
+  ✓ [journeys] bot invisible on boards
+── browser ──
+  ✓ [browser] home
+  ✓ [browser] 38-0 WC
+  ✓ [browser] quiz hub
+  ✓ [browser] leaderboard
+  ✓ [browser] sign-in
+── nav ──
+  ✓ [nav] home → featured quiz → back — retraced to /
+  ✓ [nav] versus → quiz picker → back — retraced to /versus
+  ✓ [nav] league → profile → back — retraced to /league/5fa3f64c-ad09-437d-8e9b-dcb8ea8edc56
+  ✓ [nav] league → back — retraced to /versus?view=leagues
+  ✓ [nav] home → debate → back — retraced to /
+── sentry ──
+  ✓ [sentry] sweep — quiet (top: TypeError: undefined is not an object (evaluating 'window.webkit.messageHandlers') ×6)
+── jobs ──
+  ✓ [jobs] quiz-launch
+  ✓ [jobs] wc-roll
+  ✓ [jobs] x-track
+  ✓ [jobs] x-engage
+  ✓ [jobs] x-ideas
+  ✓ [jobs] x-telegram-poll
+  ✓ [jobs] content-poll
+  ✓ [jobs] content-send
+── gamer ──
+  ✓ [gamer] question integrity
+  ✓ [gamer] no repeats in pack
+  ✓ [gamer] answer shuffle — spread {"A":5,"D":4,"C":3,"B":3}
+  ✓ [gamer] daily pack freshness
+  ✓ [gamer] no repeats in session
+  ✓ [gamer] no repeats across sessions
+  ⚠ [gamer] question bank depth — Liverpool: 90 servable questions (easy: 16) — a fan playing daily hits repeats within days; generate more (esp. easy)
+  ✓ [gamer] draft slate variety
+── gamer ──
+  ✓ [gamer] LLM review — nothing to flag today
+----- exit 0 -----
+===== 2026-07-07 12:30 BST =====
+── cleanup ──
+  ✓ [cleanup] bot rows
+── api ──
+  ✓ [api] GET /
+  ✓ [api] quiz/packs
+  ✓ [api] leaderboard/yourscore
+  ✓ [api] leaderboard/wc2026
+  ✓ [api] draft/wc/leaderboard
+  ✓ [api] draft/leaderboard
+  ✓ [api] ios-version
+  ✓ [api] draft pool JSON — 10051 players
+── fresh ──
+  ✓ [fresh] daily pack — "Ronaldo Bows Out as the Last Eight Takes Shape"
+  ✓ [fresh] wc edition
+  ✓ [fresh] lobby cleanup cron
+  ✓ [fresh] challenge expiry cron
+  ✓ [fresh] player pulse — ranked WC runs today: 186, daily-quiz attempts: 2
+  ✓ [fresh] email volume
+── journeys ──
+  ✓ [journeys] auth
+  ✓ [journeys] quiz start (Manchester United) — status 200, 13 questions
+  ✓ [journeys] quiz complete
+  ✓ [journeys] solo challenge — score 650
+  ✓ [journeys] solo cleanup
+  ✓ [journeys] wc ranked probe: begin — status 200, 11 edition questions
+  ✓ [journeys] wc ranked probe: slate — status 200, 1 players dealt
+  ✓ [journeys] wc run start — strength 92.2
+  ✓ [journeys] wc match engine — 2 matches simulated
+  ✓ [journeys] h2h create
+  ✓ [journeys] lobby create — code G7MDBU
+  ✓ [journeys] bot invisible on boards
+── browser ──
+  ✓ [browser] home
+  ✓ [browser] 38-0 WC
+  ✓ [browser] quiz hub
+  ✓ [browser] leaderboard
+  ✓ [browser] sign-in
+── nav ──
+  ✓ [nav] home → featured quiz → back — retraced to /
+  ✓ [nav] versus → quiz picker → back — retraced to /versus
+  ✓ [nav] league → profile → back — retraced to /league/5fa3f64c-ad09-437d-8e9b-dcb8ea8edc56
+  ✓ [nav] league → back — retraced to /versus?view=leagues
+  ✓ [nav] home → debate → back — retraced to /
+── sentry ──
+  ✗ [sentry] sweep — 0 new issue(s), 1 spiking in last 6h — "TypeError: undefined is not an object (evaluating 'window.ethereum.selectedAddress = undefined')" ×110 (/38-0/wc)
+── jobs ──
+  ✓ [jobs] quiz-launch
+  ✓ [jobs] wc-roll
+  ✓ [jobs] x-track
+  ✓ [jobs] x-engage
+  ✓ [jobs] x-ideas
+  ✓ [jobs] x-telegram-poll
+  ✓ [jobs] content-poll
+  ✓ [jobs] content-send
+── gamer ──
+  ✓ [gamer] question integrity
+  ✓ [gamer] no repeats in pack
+  ✓ [gamer] answer shuffle — spread {"A":5,"D":4,"C":3,"B":3}
+  ✓ [gamer] daily pack freshness
+  ✓ [gamer] no repeats in session
+  ✓ [gamer] no repeats across sessions
+  ⚠ [gamer] question bank depth — Manchester United: 80 servable questions (easy: 10) — a fan playing daily hits repeats within days; generate more (esp. easy)
+  ✓ [gamer] draft slate variety
+── gamer ──
+----- exit 1 -----
+===== 2026-07-07 17:45 BST =====
+── cleanup ──
+  ✓ [cleanup] bot rows
+── api ──
+  ✓ [api] GET /
+  ✓ [api] quiz/packs
+  ✓ [api] leaderboard/yourscore
+  ✓ [api] leaderboard/wc2026
+  ✓ [api] draft/wc/leaderboard
+  ✓ [api] draft/leaderboard
+  ✓ [api] ios-version
+  ✓ [api] draft pool JSON — 10051 players
+── fresh ──
+  ✓ [fresh] daily pack — "Ronaldo Bows Out as the Last Eight Takes Shape"
+  ✓ [fresh] wc edition
+  ✓ [fresh] lobby cleanup cron
+  ✓ [fresh] challenge expiry cron
+  ✓ [fresh] player pulse — ranked WC runs today: 359, daily-quiz attempts: 3
+  ✓ [fresh] email volume
+── journeys ──
+  ✓ [journeys] auth
+  ✓ [journeys] quiz start (Manchester United) — status 200, 11 questions
+  ✓ [journeys] quiz complete
+  ✓ [journeys] solo challenge — score 750
+  ✓ [journeys] solo cleanup
+  ✓ [journeys] wc ranked probe: begin — status 200, 11 edition questions
+  ✓ [journeys] wc ranked probe: slate — status 200, 1 players dealt
+  ✓ [journeys] wc run start — strength 92.2
+  ✓ [journeys] wc match engine — 3 matches simulated
+  ✓ [journeys] h2h create
+  ✓ [journeys] lobby create — code VHU2FM
+  ✓ [journeys] bot invisible on boards
+── browser ──
+  ✓ [browser] home
+  ✓ [browser] 38-0 WC
+  ✓ [browser] quiz hub
+  ✓ [browser] leaderboard
+  ✓ [browser] sign-in
+── nav ──
+  ✓ [nav] home → featured quiz → back — retraced to /
+  ✓ [nav] versus → quiz picker → back — retraced to /versus
+  ✓ [nav] league → profile → back — retraced to /league/5fa3f64c-ad09-437d-8e9b-dcb8ea8edc56
+  ✓ [nav] league → back — retraced to /versus?view=leagues
+  ✓ [nav] home → debate → back — retraced to /
+── sentry ──
+  ✓ [sentry] sweep — quiet (top: TypeError: undefined is not an object (evaluating 'window.ethereum.selectedAddress = undefined') ×110)
+── jobs ──
+  ✓ [jobs] quiz-launch
+  ✓ [jobs] wc-roll
+  ✓ [jobs] x-track
+  ✓ [jobs] x-engage
+  ✓ [jobs] x-ideas
+  ✓ [jobs] x-telegram-poll
+  ✓ [jobs] content-poll
+  ✓ [jobs] content-send
+── gamer ──
+  ✓ [gamer] question integrity
+  ✓ [gamer] no repeats in pack
+  ✓ [gamer] answer shuffle — spread {"A":5,"D":4,"C":3,"B":3}
+  ✓ [gamer] daily pack freshness
+  ✓ [gamer] no repeats in session
+  ⚠ [gamer] no repeats across sessions — 7 repeat(s) for Manchester United — bank recycling (by design): a regular Manchester United player sees repeats. Bank needs more questions (49/80 servable seen)
+  ⚠ [gamer] question bank depth — Manchester United: 80 servable questions (easy: 10) — a fan playing daily hits repeats within days; generate more (esp. easy)
+  ✓ [gamer] draft slate variety
+── gamer ──
+----- exit 0 -----

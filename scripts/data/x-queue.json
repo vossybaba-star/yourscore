@@ -7655,5 +7655,452 @@
       "pushed": true,
       "pushedAt": 1783278787393
     }
+  },
+  {
+    "id": "ix326613701",
+    "status": "pending",
+    "createdAt": "2026-07-06T08:30:13.701Z",
+    "source": {
+      "username": "idea:feature",
+      "name": "YourScore idea",
+      "url": "https://yourscore.app"
+    },
+    "draft": "England beat Mexico at the Azteca and now face the quarters.\n\nToday's quiz is up - 15 questions on the round of 16 closing out. Your board position is your board position and it only gets tighter from here 👀\n\n£100 to the top by the final.\n\nhttps://yourscore.app\n\n#ThreeLions #WorldCup2026 #YourScore",
+    "draftChars": 299,
+    "origin": "x-ideas",
+    "pillar": "feature",
+    "why": "England's quarter-final spot is the live hook, today's quiz is the natural next step, and the board race angle is fresh since recent posts led with the prize mechanic differently - this puts urgency on the standings not the format.",
+    "tg": {
+      "messageId": 1145,
+      "pushed": true,
+      "pushedAt": 1783326672180
+    }
+  },
+  {
+    "id": "ix326613702",
+    "status": "pending",
+    "createdAt": "2026-07-06T08:30:13.703Z",
+    "source": {
+      "username": "idea:community",
+      "name": "YourScore idea",
+      "url": "https://yourscore.app"
+    },
+    "draft": "The thing about the random spin is you never know what you're getting.\n\nSometimes you pull a spine that makes sense. Sometimes you're staring at three left backs and a goalkeeper who's somehow your highest-rated outfield option.\n\nThat second one is always more fun 😅\n\n#YourScore #Football",
+    "draftChars": 288,
+    "origin": "x-ideas",
+    "pillar": "community",
+    "why": "Leans into the spin/draft mechanic from a genuine player-frustration angle rather than a CTA, no link needed, and contrasts well with the feature tweet - warm and recognisable to anyone who's played.",
+    "tg": {
+      "messageId": 1147,
+      "pushed": true,
+      "pushedAt": 1783327404918
+    }
+  },
+  {
+    "id": "eng91415532",
+    "status": "pending",
+    "createdAt": "2026-07-06T12:00:12.077Z",
+    "origin": "x-engage",
+    "source": {
+      "username": "YashRMFC",
+      "name": "Dr Yash ",
+      "url": "https://x.com/YashRMFC/status/2073893978991415532",
+      "tweetId": "2073893978991415532"
+    },
+    "engage": {
+      "kind": "quote",
+      "targetId": "2073893978991415532",
+      "targetUrl": "https://x.com/YashRMFC/status/2073893978991415532",
+      "targetHandle": "YashRMFC",
+      "targetText": "Argentina in this World Cup:\n\nRound of 32 - Cape Verde\nRound of 16 - Egypt\nQuarter-final - Switzerland/Colombia \nSemi-final - Norway/England https://t.co/ukWXHZczXJ"
+    },
+    "draft": "Argentina quietly avoiding every serious contender on their side of the draw until the semis... the bracket has been very kind to them so far. 👀\n\nLet's see if Norway or England have something to say about that.\n\n#Argentina #WorldCup2026 #WorldCup",
+    "draftChars": 246,
+    "why": "A genuine fan observation about Argentina's draw path - adds a light take on the bracket luck without mocking anyone, ends with a forward-looking hook that invites engagement.",
+    "tg": {
+      "messageId": 1148,
+      "pushed": true,
+      "pushedAt": 1783339225813
+    }
+  },
+  {
+    "id": "eng75390920",
+    "status": "pending",
+    "createdAt": "2026-07-06T12:00:18.196Z",
+    "origin": "x-engage",
+    "source": {
+      "username": "DieHardUtdFans",
+      "name": "Manchester United Die Hard Fans",
+      "url": "https://x.com/DieHardUtdFans/status/2073253649875390920",
+      "tweetId": "2073253649875390920"
+    },
+    "engage": {
+      "kind": "quote",
+      "targetId": "2073253649875390920",
+      "targetUrl": "https://x.com/DieHardUtdFans/status/2073253649875390920",
+      "targetHandle": "DieHardUtdFans",
+      "targetText": "WORLD CUP ROUND 16.\n\n🇦🇷 Argentina-Egypt 🇪🇬\n🇵🇹 Portugal-Spain 🇪🇸\n🇨🇦 Canada-Morocco 🇲🇦\n🇫🇷 France-Paraguay 🇵🇾\n🇨🇭 Switzerland-Colombia 🇨🇴\n🏴󠁧󠁢󠁥󠁮󠁧󠁿 England-Mexico 🇲🇽\n🇧🇷 Brazil-Norway 🇳🇴\n🇺🇸 US"
+    },
+    "draft": "Portugal vs Spain in the last 16 of a World Cup. 😤 We did not have that on our bingo card but we are absolutely not complaining.\n\nAlso England drawing the hosts' neighbours. Never a dull moment.\n\n#WorldCup2026 #WorldCup #ENGMEX #PortugalSpain",
+    "draftChars": 242,
+    "why": "The bracket has two genuinely standout storylines - a Portugal v Spain Iberian derby in the knockouts is rare and gripping, and England vs Mexico on host soil is a spicy draw. Plenty to react to with warmth and a light touch, no pitching needed.",
+    "tg": {
+      "messageId": 1149,
+      "pushed": true,
+      "pushedAt": 1783340029408
+    }
+  },
+  {
+    "id": "ix342813731",
+    "status": "pending",
+    "createdAt": "2026-07-06T13:00:13.732Z",
+    "source": {
+      "username": "idea:feature",
+      "name": "YourScore idea",
+      "url": "https://yourscore.app"
+    },
+    "draft": "Three different players, seven goals each, in a single tournament.\n\nWhen a World Cup is this good the daily quiz feels almost too easy to skip.\n\nToday's is up 👉 https://yourscore.app\n\n#WorldCup2026 #YourScore",
+    "draftChars": 208,
+    "origin": "x-ideas",
+    "pillar": "feature",
+    "why": "The record-breaking scoring stats are lighting up X right now and give a natural, accurate hook into the daily quiz streak without repeating any recent quiz CTA angle or the overexposed Mastermind explainer.",
+    "tg": {
+      "messageId": 1150,
+      "pushed": true,
+      "pushedAt": 1783342849194
+    }
+  },
+  {
+    "id": "ix342813732",
+    "status": "pending",
+    "createdAt": "2026-07-06T13:00:13.735Z",
+    "source": {
+      "username": "idea:identity",
+      "name": "YourScore idea",
+      "url": "https://yourscore.app"
+    },
+    "draft": "The hand you're dealt in 38-0 is rarely what you'd want.\n\nThat's sort of the whole game. You spin, you see what you've got, and you make it work.\n\nSome of our best seasons started with a squad that looked genuinely cooked 😅\n\n#38zero #YourScore",
+    "draftChars": 243,
+    "origin": "x-ideas",
+    "pillar": "identity",
+    "why": "Steps away from the World Cup/quiz noise and speaks honestly to what 38-0 actually feels like to play, reinforcing the spin-and-draft mechanic without any free-choice implication and varying the tone from the recent product tweets.",
+    "tg": {
+      "messageId": 1151,
+      "pushed": true,
+      "pushedAt": 1783343582695
+    }
+  },
+  {
+    "id": "85379284",
+    "status": "pending",
+    "createdAt": "2026-07-06T16:00:17.752Z",
+    "source": {
+      "username": "Footballtweet",
+      "name": "Football Tweet ⚽",
+      "tweetId": "2074159436185379284",
+      "url": "https://x.com/Footballtweet/status/2074159436185379284",
+      "text": "🚨🗣️ Carlo Ancelotti: “Why didn't Vinícius Jr. take the penalty? We looked at the numbers and Raphinha was the best option.\n\n“Among the players available, Neymar was the best, then Igor Thiago, then Bruno Guimarães, then Martinelli.”\n\n🤯🇧🇷 That meant Vinícius Jr. was sixth in https://t.co/qakGtylT9b",
+      "createdAt": "2026-07-06T15:52:00.000Z",
+      "metrics": {
+        "retweet_count": 3,
+        "reply_count": 20,
+        "like_count": 30,
+        "quote_count": 0,
+        "bookmark_count": 3,
+        "impression_count": 7909
+      },
+      "media": [
+        {
+          "type": "photo",
+          "url": "https://pbs.twimg.com/media/HMjeQ_RX0AAyrsR.jpg",
+          "videoUrl": null,
+          "preview": null,
+          "width": 960,
+          "height": 1200,
+          "durationMs": null,
+          "alt": null
+        }
+      ]
+    },
+    "origin": "x-track",
+    "draft": "Ancelotti went full data analyst on penalty takers and Vinicius came out sixth in the queue.\n\nSixth. At a World Cup qualifier. In his own country.\n\nThat is a bold call to explain out loud in a press conference 👀\n\n#Brazil #Vinicius #WCQ #Selecao",
+    "draftChars": 244,
+    "image": null,
+    "imageNote": "Composite graphic: top half shows Vinicius Jr (No.7) and Bruno Guimaraes (No.8) on pitch, bottom half shows Ancelotti at a press conference - carries a visible 'ft' logo/watermark overlay.",
+    "rewordReason": "Genuinely debatable moment - a manager publicly ranking his own star player sixth for penalties is exactly the kind of football-knowledge talking point our crew would react to. The Ancelotti press conference angle gives us something real to say beyond just the result.",
+    "tg": {
+      "messageId": 1152,
+      "pushed": true,
+      "pushedAt": 1783353644989
+    }
+  },
+  {
+    "id": "ix360817668",
+    "status": "pending",
+    "createdAt": "2026-07-06T18:00:17.668Z",
+    "source": {
+      "username": "idea:feature",
+      "name": "YourScore idea",
+      "url": "https://yourscore.app"
+    },
+    "draft": "Bellingham last night. Two goals, eight dribbles, Maradona comparisons flying around.\n\nIf he lands in your 38-0 spin you already know he's going straight in. The question is who you have to drop to fit him.\n\nThat's the bit we love about this game 🤷\n\n#ThreeLions #WorldCup2026 #YourScore",
+    "draftChars": 286,
+    "origin": "x-ideas",
+    "pillar": "feature",
+    "why": "Bellingham is the biggest name on X right now after his England performance - this ties his moment to the actual 38-0 draft dilemma (who do you drop, not who do you pick) without repeating any recent angle, and it's warm not salesy.",
+    "tg": {
+      "messageId": 1155,
+      "pushed": true,
+      "pushedAt": 1783360870512
+    }
+  },
+  {
+    "id": "ix360817669",
+    "status": "pending",
+    "createdAt": "2026-07-06T18:00:17.670Z",
+    "source": {
+      "username": "idea:community",
+      "name": "YourScore idea",
+      "url": "https://yourscore.app"
+    },
+    "draft": "Quarter-finals set. Spain vs Portugal today.\n\nWhere do you actually sit on the board right now?\n\nSome streaks are going to live or die on today's quiz 👀\n\nhttps://yourscore.app/38-0/wc\n\n#WorldCup2026 #ESP #POR #YourScore",
+    "draftChars": 219,
+    "origin": "x-ideas",
+    "pillar": "community",
+    "why": "Spain vs Portugal is the live X moment today and the board race is still running - this nudges people to check their standing and play, without repeating the standard quiz-series format tweet or the Mastermind explainer.",
+    "tg": {
+      "messageId": 1156,
+      "pushed": true,
+      "pushedAt": 1783361602115
+    }
+  },
+  {
+    "id": "58826068",
+    "status": "pending",
+    "createdAt": "2026-07-06T21:00:07.922Z",
+    "source": {
+      "username": "brfootball",
+      "name": "B/R Football",
+      "tweetId": "2074235709158826068",
+      "url": "https://x.com/brfootball/status/2074235709158826068",
+      "text": "MIKEL MERINO IN THE 91ST MINUTE.\n\nMR. CLUTCH 😎 https://t.co/EyaHVjYAv8",
+      "createdAt": "2026-07-06T20:55:05.000Z",
+      "metrics": {
+        "retweet_count": 233,
+        "reply_count": 128,
+        "like_count": 1149,
+        "quote_count": 37,
+        "bookmark_count": 14,
+        "impression_count": 49860
+      },
+      "media": [
+        {
+          "type": "photo",
+          "url": "https://pbs.twimg.com/media/HMkqXttXIAAASbs.jpg",
+          "videoUrl": null,
+          "preview": null,
+          "width": 1949,
+          "height": 2436,
+          "durationMs": null,
+          "alt": null
+        }
+      ]
+    },
+    "origin": "x-track",
+    "draft": "Mikel Merino. 91st minute. That's the stuff football knowledge questions are made of 🙌\n\n#Spain #NationsLeague #LaRoja",
+    "draftChars": 117,
+    "image": {
+      "url": "https://pbs.twimg.com/media/HMkqXttXIAAASbs.jpg",
+      "width": 1949,
+      "height": 2436,
+      "alt": null
+    },
+    "imageNote": "Clean celebration photo of Merino in Spain's white away kit, no watermarks or overlays.",
+    "rewordReason": "A genuine late match-winning moment from a major tournament - Merino pointing to the sky in the 91st minute is exactly the kind of moment worth reacting to. Clean photo, no watermarks.",
+    "tg": {
+      "messageId": 1159,
+      "pushed": true,
+      "pushedAt": 1783371642054,
+      "photo": true
+    }
+  },
+  {
+    "id": "63970658",
+    "status": "pending",
+    "createdAt": "2026-07-06T21:00:23.245Z",
+    "source": {
+      "username": "Footballtweet",
+      "name": "Football Tweet ⚽",
+      "tweetId": "2074236832363970658",
+      "url": "https://x.com/Footballtweet/status/2074236832363970658",
+      "text": "Yamal this. Yamal that. Mikel Merino is the clutch player for Spain. https://t.co/n22gS7a8Zf https://t.co/8e6yxfyIDe",
+      "createdAt": "2026-07-06T20:59:32.000Z",
+      "metrics": {
+        "retweet_count": 1,
+        "reply_count": 2,
+        "like_count": 6,
+        "quote_count": 0,
+        "bookmark_count": 0,
+        "impression_count": 114
+      },
+      "media": [
+        {
+          "type": "video",
+          "url": null,
+          "videoUrl": "https://video.twimg.com/amplify_video/2074235797239115776/vid/avc1/1280x720/X2FkZ6S3-V0oBfv-.mp4?tag=14",
+          "preview": "https://pbs.twimg.com/media/HMkqnf7XYAAnM72.jpg",
+          "width": 1920,
+          "height": 1080,
+          "durationMs": 95082,
+          "alt": null
+        }
+      ]
+    },
+    "origin": "x-track",
+    "draft": "Everyone goes Yamal, Yamal, Yamal.\n\nAnd then Merino pops up in the moment that actually matters.\n\nSpain have always had that kind of player. The one who doesn't need the spotlight.\n\n#Spain #LaRoja #EURO2024",
+    "draftChars": 206,
+    "image": null,
+    "imageNote": "Source tweet links to external media but no clean attached image is visible for reposting",
+    "rewordReason": "Genuine talking point a knowledge crew would enjoy - the unsung clutch player vs the headline name. Good debate angle.",
+    "tg": {
+      "messageId": 1160,
+      "pushed": true,
+      "pushedAt": 1783372375329
+    }
+  },
+  {
+    "id": "ix413014377",
+    "status": "pending",
+    "createdAt": "2026-07-07T08:30:14.377Z",
+    "source": {
+      "username": "idea:feature",
+      "name": "YourScore idea",
+      "url": "https://yourscore.app"
+    },
+    "draft": "Belgium just knocked out the hosts 4-1 and Lukaku had one shot.\n\nOne shot.\n\nIf he shows up in your World Cup Mastermind spin today you'll know exactly what to do with him 👀\n\nhttps://yourscore.app/38-0/wc\n\n#WorldCup2026 #BEL #YourScore",
+    "draftChars": 234,
+    "origin": "x-ideas",
+    "pillar": "feature",
+    "why": "Lukaku is the biggest name on X right now after Belgium vs USA - ties a real moment directly into the 38-0 spin mechanic without repeating any recent angle.",
+    "tg": {
+      "messageId": 1163,
+      "pushed": true,
+      "pushedAt": 1783413036468
+    }
+  },
+  {
+    "id": "ix413014378",
+    "status": "pending",
+    "createdAt": "2026-07-07T08:30:14.379Z",
+    "source": {
+      "username": "idea:community",
+      "name": "YourScore idea",
+      "url": "https://yourscore.app"
+    },
+    "draft": "Genuine question for anyone playing the daily quiz this week:\n\nAre you treating it as a streak you're protecting, or are you swinging for the £100 board?\n\nBecause those are very different games 😅\n\n#WorldCup2026 #YourScore",
+    "draftChars": 221,
+    "origin": "x-ideas",
+    "pillar": "community",
+    "why": "Opens a real conversation about how people are actually playing without repeating the quiz CTA format, the board explainer, or any recent post angle.",
+    "tg": {
+      "messageId": 1164,
+      "pushed": true,
+      "pushedAt": 1783413822726
+    }
+  },
+  {
+    "id": "eng73927938",
+    "status": "pending",
+    "createdAt": "2026-07-07T12:00:13.048Z",
+    "origin": "x-engage",
+    "source": {
+      "username": "Oladele",
+      "name": "Ọládélé 🇳🇬👑",
+      "url": "https://x.com/Oladele/status/2074132838773927938",
+      "tweetId": "2074132838773927938"
+    },
+    "engage": {
+      "kind": "quote",
+      "targetId": "2074132838773927938",
+      "targetUrl": "https://x.com/Oladele/status/2074132838773927938",
+      "targetHandle": "Oladele",
+      "targetText": "The next World Cup will not have good hypes around it. There will be no Neymar, no Modric, No Kevin De Bruyne, no Neuer, no Parades, and also the greatest of all time Lionel Messi. The only people that will be there are "
+    },
+    "draft": "This tweet aged a little faster than expected given we are literally mid-tournament right now 😄\n\nBut the wider point stands. Every World Cup feels like a farewell to someone. That bittersweet feeling never gets old.\n\n#WorldCup2026 #WorldCup #Football",
+    "draftChars": 250,
+    "why": "The tweet is already outdated - it predicts a future World Cup without these legends but the 2026 World Cup is happening NOW. We can gently note the irony without mocking anyone, add warmth about the farewell-era feeling, and earn our place in the thread.",
+    "tg": {
+      "messageId": 1165,
+      "pushed": true,
+      "pushedAt": 1783425658286
+    }
+  },
+  {
+    "id": "eng06221168",
+    "status": "pending",
+    "createdAt": "2026-07-07T12:00:17.011Z",
+    "origin": "x-engage",
+    "source": {
+      "username": "RozinaKhan1212",
+      "name": "Rozina Khan",
+      "url": "https://x.com/RozinaKhan1212/status/2073344435606221168",
+      "tweetId": "2073344435606221168"
+    },
+    "engage": {
+      "kind": "quote",
+      "targetId": "2073344435606221168",
+      "targetUrl": "https://x.com/RozinaKhan1212/status/2073344435606221168",
+      "targetHandle": "RozinaKhan1212",
+      "targetText": "FIFA World Cup 2026  \n( Round 16 )\n\n1. Canada Vs Morocco\n \n2. Paraguay Vs France\n\n3. Brazil  Vs Norway \n\n4. Mexico Vs England \n\n5. Portugal Vs Spain\n\n6. USA Vs Belgium \n\n7. Argentina Vs  Egypt \n\n8. Switzerland Vs Columbi"
+    },
+    "draft": "Portugal vs Spain and Mexico vs England in the same round of 16... whoever scheduled this had absolutely no mercy 😅\n\nSome of us won't sleep properly for a fortnight.\n\n#WorldCup2026 #WorldCup #FIFA",
+    "draftChars": 196,
+    "why": "The fixture list has two standout mouth-watering clashes that give us a genuine, warm, situational observation without mocking anyone. Good engagement opportunity on a high-reach post.",
+    "tg": {
+      "messageId": 1166,
+      "pushed": true,
+      "pushedAt": 1783426390573
+    }
+  },
+  {
+    "id": "ix429215073",
+    "status": "pending",
+    "createdAt": "2026-07-07T13:00:15.073Z",
+    "source": {
+      "username": "idea:community",
+      "name": "YourScore idea",
+      "url": "https://yourscore.app"
+    },
+    "draft": "The World Cup quiz streak is real right now.\n\nSomeone's sitting top of that £100 board having answered questions about players most people forgot existed.\n\nHow's your run looking? 👀\n\n#WorldCup2026 #YourScore",
+    "draftChars": 207,
+    "origin": "x-ideas",
+    "pillar": "community",
+    "why": "England are in the quarters, the tournament is heating up, and the board race angle is genuinely timely without repeating any recent CTA or mechanic explainer - pure community pull, no link needed.",
+    "tg": {
+      "messageId": 1167,
+      "pushed": true,
+      "pushedAt": 1783429255073
+    }
+  },
+  {
+    "id": "ix429215074",
+    "status": "pending",
+    "createdAt": "2026-07-07T13:00:15.075Z",
+    "source": {
+      "username": "idea:feature",
+      "name": "YourScore idea",
+      "url": "https://yourscore.app"
+    },
+    "draft": "Expert mode in 38-0 hides every rating.\n\nYou spin your squad and you've got no numbers to lean on, just your own head. Is that a top 10 keeper or a decent one? Does that midfielder make the XI or sit on the bench?\n\nKnow your football or guess. Simple as that.\n\nhttps://yourscore.app/38-0\n\n#38zero #YourScore #Football",
+    "draftChars": 317,
+    "origin": "x-ideas",
+    "pillar": "feature",
+    "why": "Expert mode hasn't been touched recently and it's a genuinely interesting mechanic angle - the tension of drafting blind - that feels fresh against the current run of quiz and board-race posts.",
+    "tg": {
+      "messageId": 1168,
+      "pushed": true,
+      "pushedAt": 1783429986472
+    },
+    "edited": true
   }
 ]
