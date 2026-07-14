@@ -7,6 +7,7 @@ import { useParams, useRouter } from "next/navigation";
 import {
   Btn, Card, Chip, GOLD, Header, INK, LINE, MUTED, page, PANEL,
 } from "@/components/fantasy/shared";
+import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 
 interface LeagueRow {
   rank: number; userId: string; username: string | null; displayName: string | null;
@@ -35,24 +36,6 @@ async function apiRaw<T>(path: string, init?: RequestInit): Promise<T> {
 const nameOf = (r: { username: string | null; displayName: string | null }) =>
   r.displayName ?? (r.username ? `@${r.username}` : "Player");
 
-function AvatarFor({ username, displayName, avatarUrl, size = 30 }: {
-  username: string | null; displayName: string | null; avatarUrl: string | null; size?: number;
-}) {
-  const initial = (displayName ?? username ?? "?").trim().charAt(0).toUpperCase() || "?";
-  if (avatarUrl) {
-    // eslint-disable-next-line @next/next/no-img-element
-    return <img src={avatarUrl} alt="" width={size} height={size}
-      style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />;
-  }
-  return (
-    <span style={{
-      width: size, height: size, borderRadius: "50%", background: PANEL, border: `1px solid ${LINE}`,
-      display: "flex", alignItems: "center", justifyContent: "center", fontSize: size * 0.42,
-      fontWeight: 700, color: MUTED, flexShrink: 0,
-    }}>{initial}</span>
-  );
-}
-
 function TableRows({ rows }: { rows: LeagueRow[] }) {
   if (!rows.length) return <p style={{ fontSize: 13, color: MUTED, margin: 0 }}>No members yet.</p>;
   return (
@@ -66,7 +49,7 @@ function TableRows({ rows }: { rows: LeagueRow[] }) {
             width: 20, textAlign: "center", fontSize: 13, fontWeight: 700,
             color: r.rank === 1 ? GOLD : MUTED, fontVariantNumeric: "tabular-nums", flexShrink: 0,
           }}>{r.rank}</span>
-          <AvatarFor username={r.username} displayName={r.displayName} avatarUrl={r.avatarUrl} />
+          <PlayerAvatar seed={r.userId} name={nameOf(r)} avatarUrl={r.avatarUrl} size={30} />
           <span style={{ flex: 1, minWidth: 0, fontSize: 13.5, fontWeight: 600, color: INK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {nameOf(r)}{r.isMe ? " (you)" : ""}
           </span>
@@ -211,7 +194,10 @@ export default function LeaguePage() {
 
       {!league.isMember && (
         <Card style={{ marginBottom: 14, border: `1px solid ${GOLD}` }}>
-          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8 }}>Join this league</div>
+          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 3 }}>Fancy your chances?</div>
+          <p style={{ fontSize: 12.5, color: MUTED, margin: "0 0 10px", lineHeight: 1.45 }}>
+            Join in and your gameweek points go straight on the table.
+          </p>
           <Btn gold disabled={busy} onClick={join}>{busy ? "…" : "JOIN THIS LEAGUE"}</Btn>
         </Card>
       )}

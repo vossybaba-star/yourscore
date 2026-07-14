@@ -60,12 +60,18 @@ export const page: CSSProperties = {
 };
 
 export function Header({ right }: { right?: ReactNode }) {
+  // Wraps, because the right slot outgrew the row: on a 375px phone the hub's
+  // three chips plus a button ran off the edge, taking the last chip and the
+  // button off-screen entirely with no scrollbar to hint they were there.
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+    <div style={{
+      display: "flex", justifyContent: "space-between", alignItems: "center",
+      flexWrap: "wrap", gap: 8, marginBottom: 14,
+    }}>
       <span style={{ fontSize: 12.5, fontWeight: 700, letterSpacing: "0.14em", color: GOLD }}>
         YOURSCORE FANTASY FOOTBALL
       </span>
-      <span style={{ display: "flex", gap: 6 }}>{right}</span>
+      <span style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>{right}</span>
     </div>
   );
 }
