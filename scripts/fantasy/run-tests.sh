@@ -10,6 +10,8 @@ npx tsc \
   src/lib/fantasy/values.ts \
   src/lib/fantasy/engine.ts \
   src/lib/fantasy/engine.test.ts \
+  src/lib/fantasy/months.ts \
+  src/lib/fantasy/months.test.ts \
   --rootDir src --outDir .tmp-fantasy-test \
   --module commonjs --moduleResolution node --target es2022 \
   --esModuleInterop --skipLibCheck --types node
