@@ -6,6 +6,7 @@
     { "path": "/api/cron/cleanup-lobbies", "schedule": "0 * * * *" },
     { "path": "/api/cron/expire-challenges", "schedule": "0 3 * * *" },
     { "path": "/api/cron/wc-mastermind", "schedule": "0 * * * *" },
-    { "path": "/api/cron/fantasy-news", "schedule": "30 * * * *" }
+    { "path": "/api/cron/fantasy-news", "schedule": "30 * * * *" },
+    { "path": "/api/cron/fantasy-tick", "schedule": "*/10 * * * *" }
   ]
 }

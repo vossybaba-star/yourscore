@@ -53,14 +53,26 @@ export interface EntryRow {
 
 const squadShape = (r: SquadRow): Squad => ({ picks: r.picks, bankTenths: r.bank_tenths });
 
-/** The gameweek the user is CURRENTLY on = the earliest one they haven't
- *  finished (finalised). Advancing to the next week is an explicit action after
- *  seeing a result, so a just-scored week stays visible until they move on. */
+/** Which gameweek are we on?
+ *
+ *  LIVE: the gameweek belongs to the SEASON, not to you. Everyone is on the same
+ *  one and it moves at the deadline whether you opened the app or not — so it's
+ *  read off the calendar's own status, which the cron drives (season.ts).
+ *
+ *  REPLAY: the sandbox is single-player and self-paced, so it stays per-user —
+ *  the earliest gameweek you haven't finalised. A just-scored week stays put
+ *  until you choose to move on. */
 async function currentGw(db: Db, userId: string): Promise<GwRow> {
   const { data: gws, error } = await db.from("fantasy_gameweeks")
     .select("*").order("gw", { ascending: true });
   if (error) throw new HttpError(500, error.message);
   if (!gws?.length) throw new HttpError(409, "no gameweeks", "no-gw");
+
+  if ((gws[0] as GwRow).mode === "live") {
+    const current = gws.find((g: GwRow) => g.status !== "final") ?? gws[gws.length - 1];
+    return current as GwRow;
+  }
+
   const { data: entries } = await db.from("fantasy_entries")
     .select("gw, status").eq("user_id", userId);
   const finalOf = new Map((entries ?? []).map((e: { gw: number; status: string }) => [e.gw, e.status]));
@@ -240,6 +252,10 @@ export async function demoJump(db: Db, userId: string, phase: string) {
 // ── advance to the next gameweek (finalise the current, scored week) ─────────
 export async function advanceGw(db: Db, userId: string) {
   const gw = await currentGw(db, userId);
+  // In a live season you don't advance the gameweek — the season does, at the
+  // deadline, for everyone at once (season.ts). Letting a user step forward would
+  // put them on a different week from their own league.
+  if (gw.mode !== "replay") throw new HttpError(403, "the season advances at the deadline", "live");
   const entry = await getEntry(db, userId, gw.gw);
   if (!entry?.scored_at) throw new HttpError(409, "finish this gameweek first", "not-scored");
   await db.from("fantasy_entries").update({ status: "final" })
