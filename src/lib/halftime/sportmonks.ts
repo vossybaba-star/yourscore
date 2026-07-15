@@ -244,6 +244,83 @@ export async function getFinalScores(fixtureIds: number[]): Promise<Map<number, 
   return out;
 }
 
+// ── Standings (the PL table) ───────────────────────────────────────────────────
+
+export interface SmStandingRow {
+  position: number;
+  teamId: number;
+  team: string;
+  played: number;
+  won: number;
+  draw: number;
+  lost: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  goalDifference: number;
+  points: number;
+}
+
+interface SmStandingRaw {
+  position?: number;
+  points?: number;
+  participant_id?: number;
+  participant?: { id?: number; name?: string; short_code?: string } | null;
+  details?: Array<{ value?: number; type_id?: number; type?: { developer_name?: string } | null }> | null;
+}
+
+/**
+ * One detail value off a standing row, matched by the developer_name of its
+ * type. SportMonks scopes these as "overall-*" / "home-*" / "away-*"; we want the
+ * overall column, and we match loosely (contains) because the exact catalogue
+ * name is not verifiable off-season — this is a [LIVE] item, confirmed on the
+ * paid key once the 2026/27 table has real rows (season 28083 starts 2026-08-21).
+ */
+function detailValue(details: SmStandingRaw["details"], ...keywords: string[]): number {
+  for (const d of details ?? []) {
+    const name = String(d.type?.developer_name ?? "").toLowerCase();
+    if (!name.startsWith("overall")) continue;
+    if (keywords.every((k) => name.includes(k))) return Number(d.value ?? 0);
+  }
+  return 0;
+}
+
+/**
+ * The league table for a season. Empty until the season has been played (a
+ * pre-season call returns zero rows, which the Table tab renders as "not started
+ * yet"). Standings is a distinct SportMonks resource — assertStandings() lets the
+ * caller check the paid plan covers it before relying on this.
+ */
+export async function getStandings(seasonId: number): Promise<SmStandingRow[]> {
+  const rows = await smFetch<SmStandingRaw[]>(`/v3/football/standings/seasons/${seasonId}`, {
+    include: "participant;details.type",
+  });
+  const out: SmStandingRow[] = [];
+  for (const s of rows ?? []) {
+    const gf = detailValue(s.details, "goals", "for") || detailValue(s.details, "scored");
+    const ga = detailValue(s.details, "goals", "against") || detailValue(s.details, "conceded");
+    out.push({
+      position: Number(s.position ?? 0),
+      teamId: Number(s.participant?.id ?? s.participant_id ?? 0),
+      team: s.participant?.name ?? "—",
+      played: detailValue(s.details, "played") || detailValue(s.details, "games"),
+      won: detailValue(s.details, "won"),
+      draw: detailValue(s.details, "draw"),
+      lost: detailValue(s.details, "lost"),
+      goalsFor: gf,
+      goalsAgainst: ga,
+      goalDifference: detailValue(s.details, "goal", "difference") || gf - ga,
+      points: Number(s.points ?? 0),
+    });
+  }
+  return out.sort((a, b) => a.position - b.position);
+}
+
+/** Does the paid plan expose the standings resource? (assertEntitlements' sibling.) */
+export async function assertStandings(): Promise<boolean> {
+  const raw = await smFetch<unknown>("/v3/my/resources");
+  return JSON.stringify(raw ?? []).toLowerCase().includes("standing");
+}
+
 // ── Fixtures ─────────────────────────────────────────────────────────────────
 
 export interface SmParticipant {
