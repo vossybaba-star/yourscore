@@ -11,6 +11,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Pitch } from "@/components/draft/Pitch";
+import { SlateSkeleton } from "@/components/draft/SlateSkeleton";
 import { BackPill } from "@/components/ui/BackPill";
 import { Button } from "@/components/ui/Button";
 import { spin, allBuckets, ensurePool, isPoolReady, type Spin } from "@/lib/draft/pool";
@@ -41,6 +42,12 @@ export default function DraftPlay() {
   const [reel, setReel] = useState<{ club: string; season: string } | null>(null);
   const [selected, setSelected] = useState<PlayerSeason | null>(null);
   const reelTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  // True from the SPIN tap until the pick is placed. Gates the tray's reserved
+  // round box: set SYNCHRONOUSLY in the tap handler so the box (and its full
+  // height) mounts inside the 500ms input-exclusion window — the late reveal
+  // then lands inside already-reserved space instead of shifting the layout.
+  // That reveal shift was the #1 mobile CLS source on this screen (0.37/spin).
+  const [roundOpen, setRoundOpen] = useState(false);
   // Club-seasons already offered this draft ("club|season") — fed to spin() so the
   // same squad's options don't keep reappearing for position after position.
   const seenBuckets = useRef<Set<string>>(new Set());
@@ -59,6 +66,7 @@ export default function DraftPlay() {
 
   function doSpin() {
     if (!team || spinning) return;
+    setRoundOpen(true); // before the pool gate — the tray box must mount at the tap, not when the pool lands
     if (!isPoolReady()) { void ensurePool().then(() => doSpin()); return; }
     setSpinning(true);
     setCurrent(null);
@@ -88,6 +96,7 @@ export default function DraftPlay() {
     setCurrent(null);
     setReel(null);
     setSelected(null);
+    setRoundOpen(false); // tap-synchronous — collapsing the round box here is input-excluded
     if (isComplete(next)) setTimeout(() => router.push("/38-0/team"), 400);
   }
 
@@ -152,9 +161,14 @@ export default function DraftPlay() {
       {/* spin / squad tray */}
       <div className="fixed bottom-0 left-0 right-0" style={{ background: "linear-gradient(0deg,#0a0a0f 78%,transparent)", paddingBottom: "calc(env(safe-area-inset-bottom,0px) + 14px)" }}>
         <div className="max-w-lg mx-auto px-4 pt-3">
-          {/* CLUB × SEASON reels */}
-          {(spinning || reel) && (
-            <div className="mb-3 flex items-center gap-3 rounded-2xl px-4 py-3" style={{ background: "#0e1611", border: `1px solid ${spinning ? "rgba(255,184,0,0.4)" : "rgba(174,234,0,0.35)"}` }}>
+          {/* Round box — mounts at the SPIN tap (input-excluded) at its FINAL height and
+              holds it until the pick is placed. Reel, skeleton, slate and placement panel
+              swap INSIDE it, so the ~1s-late reveal (after the reel animation) can't move
+              the page. That reveal was the #1 mobile CLS source on this screen. */}
+          {roundOpen && (
+            <div className="mb-3 flex flex-col" style={{ height: 424 }}>
+            {/* CLUB × SEASON reel — constant height, ticks in place */}
+            <div className="flex items-center gap-3 rounded-2xl px-4 py-3 flex-shrink-0" style={{ height: 72, background: "#0e1611", border: `1px solid ${spinning ? "rgba(255,184,0,0.4)" : "rgba(174,234,0,0.35)"}` }}>
               {badge ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={badge} alt={reel?.club ?? ""} width={46} height={46}
@@ -167,11 +181,13 @@ export default function DraftPlay() {
                 </div>
               </div>
             </div>
-          )}
 
-          {/* placement panel */}
-          {selected && (
-            <div className="mb-3 rounded-2xl p-3" style={{ background: "#0e1611", border: "1px solid rgba(174,234,0,0.3)" }}>
+            {/* slate area — fills the rest of the box; contents swap in place */}
+            <div className="flex-1 min-h-0 mt-3">
+            {/* placement panel */}
+            {selected ? (
+            <div className="h-full flex flex-col justify-end">
+            <div className="rounded-2xl p-3 overflow-y-auto" style={{ background: "#0e1611", border: "1px solid rgba(174,234,0,0.3)" }}>
               <div className="flex items-center justify-between mb-2">
                 <span className="font-body" style={{ fontSize: 14, color: "#fff" }}>Place <b style={{ color: "#aeea00" }}>{selected.name}</b></span>
                 <button onClick={() => setSelected(null)} className="font-body" style={{ fontSize: 13, color: "#8a948f" }}>Cancel</button>
@@ -201,11 +217,9 @@ export default function DraftPlay() {
                 })}
               </div>
             </div>
-          )}
-
-          {/* squad list */}
-          {current && !spinning && !selected && (
-            <div className="mb-3 rounded-2xl overflow-hidden" style={{ background: "#080d0a", border: "1px solid rgba(255,255,255,0.07)", maxHeight: 340, overflowY: "auto" }}>
+            </div>
+            ) : current && !spinning ? (
+            <div className="rounded-2xl overflow-hidden" style={{ background: "#080d0a", border: "1px solid rgba(255,255,255,0.07)", height: "100%", overflowY: "auto" }}>
               <div className="px-3 py-2 font-body sticky top-0" style={{ fontSize: 11, color: "#8a948f", background: "#080d0a" }}>
                 Pick a player → choose their slot
               </div>
@@ -235,9 +249,17 @@ export default function DraftPlay() {
                 );
               })}
             </div>
+            ) : (
+              <SlateSkeleton />
+            )}
+            </div>
+            </div>
           )}
 
-          {/* spin button — once you've spun you must draft from that squad (no re-spin) */}
+          {/* spin button — once you've spun you must draft from that squad (no re-spin).
+              min-height matches the lg Button so the button↔hint swap at reveal time
+              (outside the input-exclusion window) doesn't nudge the tray (CLS). */}
+          <div className="flex flex-col justify-center" style={{ minHeight: 62 }}>
           {remaining > 0 ? (
             !current || spinning ? (
               <Button variant="primary" tone="lime" size="lg" fullWidth onClick={doSpin} disabled={spinning}>
@@ -253,6 +275,7 @@ export default function DraftPlay() {
               SEE YOUR RECORD →
             </Button>
           )}
+          </div>
         </div>
       </div>
     </div>
