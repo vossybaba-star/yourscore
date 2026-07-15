@@ -1,5 +1,6 @@
 import "server-only";
-import { classifyPhase, type MatchPhase } from "@/lib/halftime/shared";
+import { classifyPhase, isFinishedState, type MatchPhase } from "@/lib/halftime/shared";
+import { finalGoalsFromScores, type SmScoreEntry } from "@/lib/halftime/predict";
 
 /**
  * Thin SportMonks v3 client for the halftime pipeline.
@@ -204,12 +205,58 @@ export async function getPhasesForFixtures(
   return out;
 }
 
+// ── Final scores (prediction settlement) ──────────────────────────────────────
+
+/** A finished fixture and its final result — everything the settle path needs. */
+export interface SmFinalScore {
+  fixtureId: number;
+  home: number;
+  away: number;
+}
+
+/**
+ * Final scores for a KNOWN set of fixtures, by id — one call. Returns an entry
+ * ONLY for fixtures that have actually finished (FT / AET / FT_PEN) AND expose a
+ * complete CURRENT total; a match still in play, or one whose feed has not caught
+ * up, is simply absent from the map. The settle path treats "absent" as "not
+ * ready yet" and tries again on the next watchdog tick, so a half-read scoreline
+ * can never settle a prediction early.
+ */
+export async function getFinalScores(fixtureIds: number[]): Promise<Map<number, SmFinalScore>> {
+  const out = new Map<number, SmFinalScore>();
+  if (!fixtureIds.length) return out; // no call at all — keeps the idle path free
+
+  const [fixtures, states] = await Promise.all([
+    smFetch<SmFixtureWithScores[]>(`/v3/football/fixtures/multi/${fixtureIds.join(",")}`, {
+      include: "scores",
+    }),
+    getStates(),
+  ]);
+
+  for (const f of fixtures ?? []) {
+    const stateId = Number(f.state_id);
+    if (!Number.isFinite(stateId)) continue;
+    if (!isFinishedState(states.get(stateId)?.developer_name)) continue; // FT only
+    const goals = finalGoalsFromScores(f.scores);
+    if (!goals) continue; // finished but the score has not fully landed — wait
+    out.set(Number(f.id), { fixtureId: Number(f.id), home: goals.home, away: goals.away });
+  }
+  return out;
+}
+
 // ── Fixtures ─────────────────────────────────────────────────────────────────
 
 export interface SmParticipant {
   id: number;
   name: string;
   meta?: { location?: "home" | "away" };
+}
+
+/** A fixture with its `scores` array — the shape getFinalScores reads. */
+interface SmFixtureWithScores {
+  id: number;
+  state_id?: number;
+  scores?: SmScoreEntry[];
 }
 
 export interface SmFixture {

@@ -51,6 +51,8 @@ const TABLES = {
   profiles: [],
   quiz_attempts: [],
   club_supporters: [],
+  halftime_predictions: [],
+  halftime_prediction_results: [],
 };
 
 /** Primary/unique keys, so a duplicate insert fails the way Postgres fails. */
@@ -65,6 +67,9 @@ const KEYS = {
   // PK (user_id, season_id) — one club per user PER SEASON. A user_id-only key
   // would wrongly reject a returning fan declaring for a new season.
   club_supporters: ["user_id", "season_id"],
+  // One pick per fan per fixture — the DB lock the poll relies on.
+  halftime_predictions: ["user_id", "fixture_id"],
+  halftime_prediction_results: ["fixture_id"],
 };
 
 /**

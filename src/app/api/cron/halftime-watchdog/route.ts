@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServiceClient } from "@/lib/supabase/service";
 import { cancelFixture, releaseFixture, stageFixture } from "@/lib/halftime/release";
 import { getPhasesForFixtures } from "@/lib/halftime/sportmonks";
+import { settleFinishedFixtures } from "@/lib/halftime/settle";
 import {
   londonDayRange,
   londonMatchday,
@@ -52,6 +53,9 @@ const WINDOW_LEAD_MS = 80 * 60 * 1000;
 const WINDOW_TAIL_MS = 165 * 60 * 1000;
 
 const ACTIONABLE: HalftimeState[] = ["base_ready", "staged"];
+/** Already-live fixtures — nothing to release, but their predictions settle at FT. */
+const SETTLEABLE: HalftimeState[] = ["released", "released_late"];
+const WATCHED: HalftimeState[] = [...ACTIONABLE, ...SETTLEABLE];
 
 interface Row {
   fixture_id: number;
@@ -75,21 +79,32 @@ export async function GET(req: NextRequest) {
     .select("fixture_id, kickoff_at, state")
     .gte("kickoff_at", startUtc)
     .lt("kickoff_at", endUtc)
-    .in("state", ACTIONABLE);
+    .in("state", WATCHED);
 
   if (error) {
     console.error("[halftime-watchdog] query failed", error);
     return NextResponse.json({ error: "query failed" }, { status: 500 });
   }
 
-  const rows = (data ?? []) as Row[];
+  const allRows = (data ?? []) as Row[];
 
   // ── 1. Idle. No SportMonks call is made on this path. ─────────────────────
-  if (!rows.length) {
+  // Zero fixtures today (the common case: most days have no PL football) → a
+  // genuine no-op, which is the only thing that makes 288 runs a day cheap.
+  if (!allRows.length) {
     return NextResponse.json({ idle: true, matchday, checked: 0 });
   }
 
-  // ── 2. One call for the whole slate, BY FIXTURE ID. ───────────────────────
+  // Awaiting release vs already-live-and-awaiting-full-time. Only the first set
+  // needs a phase check; the second only settles predictions, and only if any
+  // are still ungraded (settleFinishedFixtures makes zero SportMonks calls when
+  // there is nothing to grade — so an all-settled matchday stays cheap too).
+  const rows = allRows.filter((r) => (ACTIONABLE as string[]).includes(r.state));
+  const settleableIds = allRows
+    .filter((r) => (SETTLEABLE as string[]).includes(r.state))
+    .map((r) => Number(r.fixture_id));
+
+  // ── 2. One call for the awaiting-release slate, BY FIXTURE ID. ────────────
   // Not /livescores/latest: that feed only carries fixtures updated in the last
   // ~10 seconds and drops them once they finish, so a 5-minute watchdog would
   // usually see an empty list and could never catch a half-time it had missed.
@@ -101,7 +116,7 @@ export async function GET(req: NextRequest) {
     // The poller is the primary path and may well be fine. Fail soft and let
     // the next tick (5 min) retry rather than mangling any state.
     return NextResponse.json(
-      { idle: false, matchday, error: "sportmonks unavailable", checked: rows.length },
+      { idle: false, matchday, error: "sportmonks unavailable", checked: allRows.length },
       { status: 200 },
     );
   }
@@ -155,8 +170,24 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // ── 4. Heartbeat staleness inside the match window. ───────────────────────
-  const heartbeat = await checkHeartbeat(db, rows, now);
+  // ── 4. Settle predictions for fixtures now at full time. ──────────────────
+  // Rides this same 5-minute cron: full time lands ~45 min after the pack was
+  // released, comfortably inside the cadence. settleFinishedFixtures short-
+  // circuits to zero SportMonks calls when nothing is ungraded, so this is free
+  // on a matchday whose predictions are all in. (The poller could settle faster
+  // one day, but the watchdog alone is correct and survives a dead poller.)
+  let settled: number[] = [];
+  let predictionsPending: number[] = [];
+  try {
+    const out = await settleFinishedFixtures(settleableIds);
+    settled = out.settled.map((s) => s.fixtureId);
+    predictionsPending = out.pending;
+  } catch (err) {
+    console.error("[halftime-watchdog] settlement failed", err);
+  }
+
+  // ── 5. Heartbeat staleness inside the match window. ───────────────────────
+  const heartbeat = await checkHeartbeat(db, allRows, now);
   if (heartbeat.stale) {
     // Sentry picks this up; Telegram alerting is the poller's own job (the VPS
     // owns those creds) — this is the always-on, dependency-free signal.
@@ -168,11 +199,13 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     idle: false,
     matchday,
-    checked: rows.length,
+    checked: allRows.length,
     released,
     releasedLate,
     cancelled,
     stagedBaseOnly,
+    settled,
+    predictionsPending,
     skipped,
     heartbeat,
   });

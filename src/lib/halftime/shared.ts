@@ -153,6 +153,20 @@ const PAST_HALFTIME_NAMES = new Set([
 ]);
 
 /**
+ * The match is over and has a final score. A strict subset of
+ * PAST_HALFTIME_NAMES: prediction settlement needs FULL TIME specifically —
+ * "past half-time" also covers the live second half, whose score is not final.
+ * Every name here is already in PAST_HALFTIME_NAMES, so it is covered by the
+ * catalogue assertion in shared.test.ts.
+ */
+const FINISHED_NAMES = new Set(["FT", "AET", "FT_PEN"]);
+
+/** True once a fixture has finished (FT / after extra time / after penalties). */
+export function isFinishedState(developerName?: string | null): boolean {
+  return FINISHED_NAMES.has(String(developerName ?? "").trim().toUpperCase());
+}
+
+/**
  * Terminal, no-match-happened states. These flip a staged fixture to
  * `cancelled` — no pack is ever inserted and no push ever fires.
  * SUSPENDED / INTERRUPTED / DELAYED are deliberately NOT here: they can resume,
