@@ -21,6 +21,7 @@ import { ClubTable } from "@/components/clubs/ClubTable";
 import { PlFixtures } from "@/components/matchweek/PlFixtures";
 import { PlTable } from "@/components/matchweek/PlTable";
 import { PlNews } from "@/components/matchweek/PlNews";
+import { GameweekSchedule } from "@/components/matchweek/GameweekSchedule";
 import { BottomNav } from "@/components/ui/BottomNav";
 
 const TEAL = "#00d8c0";
@@ -105,6 +106,7 @@ export default function MatchweekPage() {
           <HalftimeRail />
           <ClubPicker />
           <ClubTable />
+          <GameweekSchedule />
           <LiveQuizIntro />
         </div>
       )}

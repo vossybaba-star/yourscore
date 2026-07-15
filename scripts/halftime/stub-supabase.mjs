@@ -53,8 +53,8 @@ const TABLES = {
   club_supporters: [],
   halftime_predictions: [],
   halftime_prediction_results: [],
-  // fantasy news-hub feed doc (read by Matchweek → PL → News via /api/pl/news).
-  fantasy_news_feed: [],
+  // general PL news doc (read by Matchweek → PL → News via /api/pl/news).
+  pl_news_feed: [],
 };
 
 /** Primary/unique keys, so a duplicate insert fails the way Postgres fails. */
@@ -72,7 +72,7 @@ const KEYS = {
   // One pick per fan per fixture — the DB lock the poll relies on.
   halftime_predictions: ["user_id", "fixture_id"],
   halftime_prediction_results: ["fixture_id"],
-  fantasy_news_feed: ["gw"],
+  pl_news_feed: ["id"],
 };
 
 /**

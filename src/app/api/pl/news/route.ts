@@ -1,19 +1,18 @@
 import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServiceClient } from "@/lib/supabase/service";
-import type { NewsDoc } from "@/lib/fantasy/news-types";
+import type { PlNewsFeed } from "@/lib/pl/news";
 
 /**
- * GET /api/pl/news — PUBLIC. The feed doc for the Matchweek → PL → News tab.
+ * GET /api/pl/news — PUBLIC. The general football news feed for Matchweek →
+ * PL → News.
  *
- * Reads the latest `fantasy_news_feed.doc` — the SAME cron-built document the
- * fantasy news hub renders. There is ONE feed doc per gameweek, general (same
- * for everyone), so this is a single row read, no per-user work.
+ * Reads the singleton `pl_news_feed` doc (id=1) written by the RSS ingest
+ * (scripts/pl-news-ingest.mjs). One row, refreshed every ~20 min by cron, so
+ * this is a single-row read and edge-cached — SportMonks/DB load is negligible.
  *
- * The doc is written by the fantasy news-hub cron (/api/cron/fantasy-news),
- * which lands with the fantasy merge. Until then the table can be empty or
- * hold an authored doc; either way this returns `{ doc: null }` gracefully and
- * the tab renders its "nothing yet" state rather than an error.
+ * Soft-fails to an empty feed: the tab shows "nothing yet" rather than erroring
+ * if the ingest hasn't run.
  */
 
 export const dynamic = "force-dynamic";
@@ -24,21 +23,19 @@ export async function GET() {
 
   try {
     const { data } = await db
-      .from("fantasy_news_feed")
+      .from("pl_news_feed")
       .select("doc")
-      .order("gw", { ascending: false })
-      .limit(1)
+      .eq("id", 1)
       .maybeSingle();
 
-    const doc = ((data as { doc?: NewsDoc } | null)?.doc ?? null) as NewsDoc | null;
+    const doc = ((data as { doc?: PlNewsFeed } | null)?.doc ?? { items: [], updatedAt: null }) as PlNewsFeed;
     return NextResponse.json({ doc }, { headers: cache() });
   } catch (err) {
     console.error("[pl/news] feed read failed", err);
-    // Soft-fail: the tab shows "nothing yet", retries on the next visit.
-    return NextResponse.json({ doc: null, error: "unavailable" }, { status: 200, headers: cache() });
+    return NextResponse.json({ doc: { items: [], updatedAt: null }, error: "unavailable" }, { status: 200, headers: cache() });
   }
 }
 
 function cache(): Record<string, string> {
-  return { "Cache-Control": "public, s-maxage=120, stale-while-revalidate=300" };
+  return { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600" };
 }
