@@ -41,7 +41,7 @@ const PL_TABS: { key: PlTab; label: string }[] = [
 
 export default function MatchweekPage() {
   const [section, setSection] = useState<Section>("pl");
-  const [plTab, setPlTab] = useState<PlTab>("fixtures");
+  const [plTab, setPlTab] = useState<PlTab>("news");
 
   return (
     <div className="min-h-screen bg-bg" style={{ paddingBottom: 96 }}>
