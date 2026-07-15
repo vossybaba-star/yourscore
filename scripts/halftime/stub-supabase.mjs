@@ -55,6 +55,8 @@ const TABLES = {
   halftime_prediction_results: [],
   // general PL news doc (read by Matchweek → PL → News via /api/pl/news).
   pl_news_feed: [],
+  // quiz stat-highlight tiles (read by Matchweek → Live Quiz).
+  quiz_highlights: [],
 };
 
 /** Primary/unique keys, so a duplicate insert fails the way Postgres fails. */
@@ -73,6 +75,7 @@ const KEYS = {
   halftime_predictions: ["user_id", "fixture_id"],
   halftime_prediction_results: ["fixture_id"],
   pl_news_feed: ["id"],
+  quiz_highlights: ["id"],
 };
 
 /**

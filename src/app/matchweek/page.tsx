@@ -17,11 +17,12 @@
 import { useState } from "react";
 import { HalftimeRail } from "@/components/halftime/HalftimeRail";
 import { ClubPicker } from "@/components/clubs/ClubPicker";
-import { ClubTable } from "@/components/clubs/ClubTable";
+import { ClubTableTile } from "@/components/clubs/ClubTableTile";
 import { PlFixtures } from "@/components/matchweek/PlFixtures";
 import { PlTable } from "@/components/matchweek/PlTable";
 import { PlNews } from "@/components/matchweek/PlNews";
-import { GameweekSchedule } from "@/components/matchweek/GameweekSchedule";
+import { UpcomingQuizzes } from "@/components/matchweek/UpcomingQuizzes";
+import { QuizStatTiles } from "@/components/matchweek/QuizStatTiles";
 import { BottomNav } from "@/components/ui/BottomNav";
 
 const TEAL = "#00d8c0";
@@ -105,8 +106,9 @@ export default function MatchweekPage() {
         <div className="pt-1">
           <HalftimeRail />
           <ClubPicker />
-          <ClubTable />
-          <GameweekSchedule />
+          <UpcomingQuizzes />
+          <ClubTableTile />
+          <QuizStatTiles />
           <LiveQuizIntro />
         </div>
       )}

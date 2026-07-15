@@ -70,18 +70,21 @@ export function filterByCategory(
   category: PlNewsCategory,
   now: number,
 ): PlNewsItem[] {
-  const sorted = [...items].sort(
-    (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
-  );
+  const byRecency = (a: PlNewsItem, b: PlNewsItem) =>
+    new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
   switch (category) {
     case "all":
-      return sorted;
+      // Preserve the SERVER order — it's newest-first with our blog posts
+      // interleaved in. Re-sorting by date here would bury the evergreen blog
+      // cards at the bottom, undoing the plug.
+      return items;
     case "clubs":
-      return sorted.filter((i) => mentionsClub(i.title));
+      return items.filter((i) => mentionsClub(i.title));
     case "fixtures":
-      return sorted.filter((i) => FIXTURE_RE.test(i.title));
+      return items.filter((i) => FIXTURE_RE.test(i.title));
     case "trending":
-      return sorted
+      return [...items]
+        .sort(byRecency)
         .filter((i) => now - new Date(i.publishedAt).getTime() <= TRENDING_WINDOW_MS)
         .slice(0, TRENDING_MAX);
   }
