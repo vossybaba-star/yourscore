@@ -260,6 +260,16 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-15** — **Retention tracking: `ReturnPlay` event + durable device id** (analytics
+  plumbing, no user-facing surface). `ReturnPlay` fires once per device the first time a player
+  plays on a later calendar day than their first-ever play — the D2+ "they came back" signal,
+  fanned out to X/Meta/TikTok/Snapchat/GA4/Vercel/AppsFlyer so ad platforms can finally build
+  repeat-player audiences + lookalikes off retained users (they previously optimised for first
+  play/signup only). Pure logic in `src/lib/analytics/returnPlay.ts` (unit-tested); fan-out in
+  `trackGame.ts`; native arm `afReturnPlay`. Also: a durable anonymous `ys:did` device id, saved
+  to new `profiles.device_id` at signup (migration 81, first-touch) so guest activity can later
+  be linked to the account. X arm is gated on `NEXT_PUBLIC_X_RETURNPLAY_EVENT_ID` (unset →
+  no-op until the X event is created). Phase B (stamp device_id onto guest play rows) still TODO.
 - **2026-07-13 (pm)** — **UI-audit approved fixes** (docs/AUDIT-2026-07-13-ui-first-impressions.md;
   founder walkthrough): site tagline standardized to **"The Home of Football Gaming"** (root
   title/OG/twitter); /how-it-works scoring is **top-line only** (founder: no explicit point
