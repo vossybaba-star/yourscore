@@ -6,18 +6,15 @@ import { useUser } from "@/hooks/useUser";
 import { usePendingFriends } from "@/hooks/usePendingFriends";
 import { usePendingTurns } from "@/hooks/usePendingTurns";
 
-// Football-shirt icon for the Draft XI tab.
-function JerseyIcon({ active }: { active: boolean }) {
+// Football icon for the Matchweek tab — the live, fixture-synced surface.
+function FootballIcon({ active }: { active: boolean }) {
   return (
     <svg width="21" height="21" viewBox="0 0 22 22" fill="none">
-      <path
-        d="M8 2.5 3 5.5 5 9.5 7.3 8.3V19a1 1 0 0 0 1 1h5.4a1 1 0 0 0 1-1V8.3L17 9.5l2-4-5-3C14 4.4 12.7 5.6 11 5.6S8 4.4 8 2.5Z"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinejoin="round"
-        fill={active ? "currentColor" : "none"}
-        fillOpacity={active ? 0.15 : 0}
-      />
+      <circle cx="11" cy="11" r="8.2" stroke="currentColor" strokeWidth="1.7"
+        fill={active ? "currentColor" : "none"} fillOpacity={active ? 0.15 : 0} />
+      <path d="M11 6.6l3.2 2.3-1.2 3.8H9l-1.2-3.8z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+      <path d="M11 6.6V4M14.2 8.9l2-1M12.9 12.7l1.2 2M9.1 12.7l-1.2 2M7.8 8.9l-2-1"
+        stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
     </svg>
   );
 }
@@ -40,7 +37,10 @@ export function BottomNav() {
   const isChallenges =
     (pathname.startsWith("/play") || pathname.startsWith("/challenges") || pathname.startsWith("/h2h")) &&
     !pathname.startsWith("/38-0");
-  const isDraft = pathname.startsWith("/38-0");
+  // Matchweek is the fixture-synced tab. A halftime pack itself opens under
+  // /challenges (which holds the Quiz tab, so a pack played from anywhere reads
+  // consistently); Matchweek highlights on its own route.
+  const isMatchweek = pathname.startsWith("/matchweek");
   const isProfile = pathname === "/profile" || pathname.startsWith("/settings");
 
   // While auth state is resolving, show the full signed-in nav — signed-in users
@@ -76,23 +76,24 @@ export function BottomNav() {
             <span className="font-body text-xs">Versus</span>
           </Link>
 
+          {/* Matchweek — the flagship live surface, discoverable to guests. */}
+          <Link href="/matchweek" className="flex flex-col items-center gap-1 px-3 py-1 transition-colors" style={{ color: isMatchweek ? "#00d8c0" : "#8a948f" }}>
+            <FootballIcon active={isMatchweek} />
+            <span className="font-body text-xs">Matchweek</span>
+          </Link>
+
           <Link href="/play" className="flex flex-col items-center gap-1 px-3 py-1 transition-colors" style={{ color: isChallenges ? "#00d8c0" : "#8a948f" }}>
             <svg width="21" height="21" viewBox="0 0 22 22" fill="none">
               <path d="M11 2L13.5 8.5H20.5L14.9 12.5L17 19L11 15L5 19L7.1 12.5L1.5 8.5H8.5L11 2Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" fill={isChallenges ? "currentColor" : "none"} fillOpacity={isChallenges ? 0.15 : 0} />
             </svg>
             <span className="font-body text-xs">Quiz</span>
           </Link>
-
-          <Link href="/38-0" className="flex flex-col items-center gap-1 px-3 py-1 transition-colors" style={{ color: isDraft ? "#aeea00" : "#8a948f" }}>
-            <JerseyIcon active={isDraft} />
-            <span className="font-body text-xs">38-0</span>
-          </Link>
         </div>
       </div>
     );
   }
 
-  // Signed-in: full 6-tab nav.
+  // Signed-in: full 5-tab nav (Home · Versus · Matchweek · Quiz · Profile).
   return (
     <div
       className="fixed bottom-0 left-0 right-0 z-50"
@@ -140,18 +141,18 @@ export function BottomNav() {
           <span className="font-body text-xs">Versus</span>
         </Link>
 
+        {/* Matchweek — quizzes at half time + the club-fan leaderboard. */}
+        <Link href="/matchweek" className="flex flex-col items-center gap-1 px-2 py-1 transition-colors" style={{ color: isMatchweek ? "#00d8c0" : "#8a948f" }}>
+          <FootballIcon active={isMatchweek} />
+          <span className="font-body text-xs">Matchweek</span>
+        </Link>
+
         {/* Quiz */}
         <Link href="/play" className="flex flex-col items-center gap-1 px-2 py-1 transition-colors" style={{ color: isChallenges ? "#00d8c0" : "#8a948f" }}>
           <svg width="21" height="21" viewBox="0 0 22 22" fill="none">
             <path d="M11 2L13.5 8.5H20.5L14.9 12.5L17 19L11 15L5 19L7.1 12.5L1.5 8.5H8.5L11 2Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" fill={isChallenges ? "currentColor" : "none"} fillOpacity={isChallenges ? 0.15 : 0} />
           </svg>
           <span className="font-body text-xs">Quiz</span>
-        </Link>
-
-        {/* Draft XI */}
-        <Link href="/38-0" className="flex flex-col items-center gap-1 px-2 py-1 transition-colors" style={{ color: isDraft ? "#aeea00" : "#8a948f" }}>
-          <JerseyIcon active={isDraft} />
-          <span className="font-body text-xs">38-0</span>
         </Link>
 
         {/* Profile */}

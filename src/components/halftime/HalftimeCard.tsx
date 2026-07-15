@@ -30,7 +30,9 @@ export function HalftimeCard() {
   if (!f) return null;
 
   const live = isLive(f);
-  const href = (live ? packHref(f) : null) ?? "/play";
+  // Live → straight to the pack (fastest path to play). Not yet → the Matchweek
+  // tab, where the fixture is waiting and the club table lives.
+  const href = (live ? packHref(f) : null) ?? "/matchweek";
 
   return (
     <Link

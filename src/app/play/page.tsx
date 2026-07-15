@@ -13,9 +13,6 @@ import { slugify } from "@/lib/utils";
 import { coverUrl } from "@/lib/img";
 import { RECORDS_EMOJI } from "@/lib/theme";
 import { useYourTurns, type InboxChallenge } from "@/hooks/useYourTurns";
-import { HalftimeRail } from "@/components/halftime/HalftimeRail";
-import { ClubPicker } from "@/components/clubs/ClubPicker";
-import { ClubTable } from "@/components/clubs/ClubTable";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -842,12 +839,9 @@ function PlayPageInner() {
       {/* ── SOLO TAB ─────────────────────────────────────────────────── */}
       {mainTab === "solo" && (
         <>
-          {/* Halftime Quiz Packs rail — self-hides when there's no PL fixture today */}
-          <HalftimeRail />
-
-          {/* Club-Fan Leaderboard — declare card + gameweek table, both self-hide */}
-          <ClubPicker />
-          <ClubTable />
+          {/* Halftime packs and the club-fan leaderboard moved to their own
+              Matchweek tab (fixture-synced, live). /play stays the evergreen
+              quiz surface. */}
 
           {/* Game types — quick-play formats off the SportMonks player data */}
           <div className="max-w-lg mx-auto px-4 pt-4">
