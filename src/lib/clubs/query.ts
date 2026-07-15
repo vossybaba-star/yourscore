@@ -105,47 +105,98 @@ export async function defaultGameweek(): Promise<{ seasonId: number; roundName: 
   return completed.length > 0 ? { seasonId: completed[0].seasonId, roundName: completed[0].roundName } : null;
 }
 
+/** The distinct clubs that had a fixture in ONE round — not the whole season. */
+export async function clubsForRound(seasonId: number, roundName: string): Promise<string[]> {
+  const rows = await fetchReleaseRows();
+  const set = new Set<string>();
+  for (const r of rows) {
+    if (r.season_id !== seasonId || r.round_name !== roundName) continue;
+    set.add(r.home);
+    set.add(r.away);
+  }
+  return Array.from(set).sort();
+}
+
+const HOUR = 3_600_000;
+const MATCH_SETTLE_MS = 135 * 60_000; // a match ~115 min + cushion for stoppages
+
+/** The next 08:00 UTC strictly after t (~09:00 UK in summer, 08:00 in winter — "morning"). */
+function nextMorningAfter(t: number): number {
+  const d = new Date(t);
+  const at8 = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 8);
+  return at8 > t ? at8 : at8 + 24 * HOUR;
+}
+/** 08:00 UTC on the calendar day of t (football never kicks off before 08:00, so "day one, morning"). */
+function morningOfDay(t: number): number {
+  const d = new Date(t);
+  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 8);
+}
+
+export interface GameweekBeat {
+  seasonId: number;
+  roundName: string;
+  /** The 'results are in' send is due (gameweek finished + it's the morning after). */
+  resultsDue: boolean;
+  /** The 'new gameweek' re-engagement send is due (the next round's day one has arrived). */
+  newweekDue: boolean;
+}
+
 /**
- * Rounds that are FINISHED — i.e. whose last kickoff is at least `settleMinutes`
- * old — within the last `lookbackHours`. Drives the end-of-gameweek result push.
+ * Which club-gameweek sends are due right now. Two beats, per the founder's timing
+ * (2026-07-15): don't fire the instant the last match ends — hold to a high-attention
+ * moment. Beat 1 ('results') = the morning after the gameweek's final fixture, when
+ * fans are checking how their team ended in the league. Beat 2 ('newweek') = day one
+ * of the FOLLOWING gameweek, riding the fresh wave of football to pull non-players in.
  *
- * Stricter than defaultGameweek(), deliberately: that one only asks "has the last
- * match kicked off?" (good enough to SHOW a table, which keeps updating), but a
- * PUSH is irreversible — you cannot un-buzz someone's phone — so it must not fire
- * while a fixture is still being played into. A round is settled once its last
- * kickoff is ~2h15 old: a match runs ~115 minutes with the interval, and the rest
- * is cushion for stoppage time.
- *
- * The lookback is not a "have I sent this?" ledger — notification_log's PK is the
- * real exactly-once guarantee. It just stops us re-walking ancient rounds forever.
+ * A round is only ever considered once its last fixture is fully played (last kickoff
+ * + settle) — a message is irreversible, so it must never land mid-match. Exactly-once
+ * across channels and re-runs is notification_log's PK, not this function; the lookback
+ * just stops us re-walking ancient rounds forever.
  */
-export async function completedGameweeks(opts: {
-  settleMinutes: number;
-  lookbackHours: number;
-}): Promise<{ seasonId: number; roundName: string }[]> {
+export async function clubGameweekBeats(opts: { lookbackHours: number }): Promise<GameweekBeat[]> {
   const rows = await fetchReleaseRows();
   const now = Date.now();
-  const settleMs = opts.settleMinutes * 60_000;
-  const lookbackMs = opts.lookbackHours * 3_600_000;
+  const lookbackMs = opts.lookbackHours * HOUR;
 
-  const maxKickoffByRound = new Map<string, number>();
+  // First + last kickoff per (season, round).
+  const first = new Map<string, number>();
+  const last = new Map<string, number>();
   const meta = new Map<string, { seasonId: number; roundName: string }>();
   for (const r of rows) {
     if (r.season_id == null || !r.round_name) continue;
+    const ko = new Date(r.kickoff_at).getTime();
+    if (Number.isNaN(ko)) continue;
     const key = `${r.season_id}::${r.round_name}`;
-    const kickoff = new Date(r.kickoff_at).getTime();
-    if (Number.isNaN(kickoff)) continue;
-    maxKickoffByRound.set(key, Math.max(maxKickoffByRound.get(key) ?? -Infinity, kickoff));
+    first.set(key, Math.min(first.get(key) ?? Infinity, ko));
+    last.set(key, Math.max(last.get(key) ?? -Infinity, ko));
     meta.set(key, { seasonId: r.season_id, roundName: r.round_name });
   }
 
-  return Array.from(maxKickoffByRound.entries())
-    .filter(([, lastKickoff]) => {
-      const settledAt = lastKickoff + settleMs;
-      return settledAt <= now && now - settledAt <= lookbackMs;
-    })
-    .sort((a, b) => a[1] - b[1])
-    .map(([key]) => meta.get(key)!);
+  const beats: GameweekBeat[] = [];
+  for (const [key, lastKo] of Array.from(last.entries())) {
+    const { seasonId, roundName } = meta.get(key)!;
+    const settledAt = lastKo + MATCH_SETTLE_MS;
+    if (settledAt > now) continue; // gameweek not finished — never message into a live match
+
+    const resultsAt = nextMorningAfter(settledAt);
+
+    // The next round in the SAME season = the round whose first kickoff is the
+    // smallest one still after this round's last kickoff.
+    let nextFirst = Infinity;
+    for (const [k2, f2] of Array.from(first.entries())) {
+      const m2 = meta.get(k2)!;
+      if (m2.seasonId !== seasonId) continue;
+      if (f2 > lastKo && f2 < nextFirst) nextFirst = f2;
+    }
+    const hasNext = nextFirst !== Infinity;
+    const newweekAt = hasNext ? morningOfDay(nextFirst) : Infinity;
+
+    const resultsDue = now >= resultsAt && now - resultsAt <= lookbackMs;
+    const newweekDue = hasNext && now >= newweekAt && now - newweekAt <= lookbackMs;
+    if (resultsDue || newweekDue) beats.push({ seasonId, roundName, resultsDue, newweekDue });
+  }
+
+  return beats.sort((a, b) => a.roundName.localeCompare(b.roundName));
 }
 
 /**

@@ -103,13 +103,14 @@ const iso = (mins) => new Date(Date.now() + mins * 60_000).toISOString();
 const uuid = () => crypto.randomUUID();
 
 /**
- * How long ago the gameweek's first match kicked off. Default 260 minutes puts
- * every fixture comfortably past the cron's 135-minute settle window, so the
- * end-of-gameweek result push is due. Pass --live to bring them to ~2h ago
- * instead, which is INSIDE the window — the cron then correctly reports
- * {idle:true} and sends nothing, because a match might still be being played.
+ * GW1 kicked off ~46h ago (finished, and its morning-after has passed → the
+ * 'results' send is due). A GW2 is seeded kicking off later TODAY, so GW1's
+ * "day one of the following gameweek" has also arrived → the 'newweek' send is
+ * due too. So the demo fires BOTH beats. (Assumes it's after ~08:00 UTC now,
+ * which is when both morning triggers land.)
  */
-const KO_MINS_AGO = process.argv.includes("--live") ? 120 : 260;
+const GW1_KO_MINS_AGO = 46 * 60;
+const GW2_KO_MINS_AHEAD = 6 * 60;
 
 console.log(`\nCLUB DEMO — stub :${STUB_PORT}, app :${APP_PORT}\n`);
 
@@ -125,8 +126,8 @@ FIXTURES.forEach(([home, away], i) => {
   packIds[`${home}|${away}`] = packId;
   releases.push({
     id: uuid(), fixture_id: 910000 + i, season_id: SEASON, round_name: GW,
-    pack_id: packId, home, away, kickoff_at: iso(-KO_MINS_AGO + i),
-    state: "released", released_at: iso(-KO_MINS_AGO + 50 + i),
+    pack_id: packId, home, away, kickoff_at: iso(-GW1_KO_MINS_AGO + i),
+    state: "released", released_at: iso(-GW1_KO_MINS_AGO + 50 + i),
     base_questions: [], fresh_questions: [], pack_questions: [],
     fresh_state: "skipped", created_at: iso(-200), updated_at: iso(-70),
   });
@@ -136,9 +137,18 @@ FIXTURES.forEach(([home, away], i) => {
     rotation_active: true, featured: false, question_count: 10, questions: [],
   });
 });
-await seed("halftime_releases", releases);
+// GW2 — same fixtures, kicking off later today. Only its kickoff times matter
+// (they make GW1's "next gameweek" exist, so the newweek beat fires). No packs.
+const gw2 = FIXTURES.map(([home, away], i) => ({
+  id: uuid(), fixture_id: 920000 + i, season_id: SEASON, round_name: "2",
+  pack_id: null, home, away, kickoff_at: iso(GW2_KO_MINS_AHEAD + i),
+  state: "scheduled", base_questions: [], fresh_questions: [], pack_questions: [],
+  fresh_state: "none", created_at: iso(-200), updated_at: iso(-200),
+}));
+
+await seed("halftime_releases", [...releases, ...gw2]);
 await seed("quiz_packs", packs);
-console.log(`seeded ${releases.length} released halftime packs (GW${GW})`);
+console.log(`seeded ${releases.length} released GW1 packs + ${gw2.length} scheduled GW2 fixtures`);
 
 // 2. fans, their declarations, and their halftime scores
 const VIEWER = "11111111-1111-4111-8111-111111111111"; // signed-in Spurs fan

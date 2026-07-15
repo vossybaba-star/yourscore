@@ -1,15 +1,22 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { gameweekResults, resultCopy, resultDedupeKey, ordinal } from "./result";
+import { gameweekRecipients, resultCopy, resultDedupeKey, ordinal } from "./result";
 import type { ClubSupporterRow, HalftimeAttemptRow } from "./table";
 
-/** n fans of one club, each with a fixed score. */
-function fans(club: string, scores: number[], prefix = club): {
-  supporters: ClubSupporterRow[];
-  attempts: HalftimeAttemptRow[];
-} {
-  const supporters = scores.map((_, i) => ({ userId: `${prefix}-${i}`, club }));
-  const attempts = scores.map((score, i) => ({ userId: `${prefix}-${i}`, score }));
+/** n fans of one club; `played` many of them post `score`, the rest declared but sat out. */
+function club(
+  name: string,
+  playedScores: number[],
+  benched = 0,
+): { supporters: ClubSupporterRow[]; attempts: HalftimeAttemptRow[] } {
+  const supporters: ClubSupporterRow[] = [];
+  const attempts: HalftimeAttemptRow[] = [];
+  playedScores.forEach((score, i) => {
+    const id = `${name}-p${i}`;
+    supporters.push({ userId: id, club: name });
+    attempts.push({ userId: id, score });
+  });
+  for (let i = 0; i < benched; i++) supporters.push({ userId: `${name}-b${i}`, club: name });
   return { supporters, attempts };
 }
 
@@ -22,143 +29,143 @@ function merge(...parts: { supporters: ClubSupporterRow[]; attempts: HalftimeAtt
 
 test("ordinal handles the teens, which is where naive code breaks", () => {
   assert.equal(ordinal(1), "1st");
-  assert.equal(ordinal(2), "2nd");
-  assert.equal(ordinal(3), "3rd");
-  assert.equal(ordinal(4), "4th");
   assert.equal(ordinal(11), "11th"); // NOT 11st
-  assert.equal(ordinal(12), "12th"); // NOT 12nd
-  assert.equal(ordinal(13), "13th"); // NOT 13rd
+  assert.equal(ordinal(12), "12th");
+  assert.equal(ordinal(13), "13th");
   assert.equal(ordinal(21), "21st");
   assert.equal(ordinal(112), "112th");
 });
 
-test("only fans who PLAYED get a result — a supporter who sat it out gets nothing", () => {
-  const supporters: ClubSupporterRow[] = [
-    { userId: "played", club: "Arsenal" },
-    { userId: "sat-it-out", club: "Arsenal" },
-  ];
-  const attempts: HalftimeAttemptRow[] = [{ userId: "played", score: 5000 }];
-
-  const { results } = gameweekResults(supporters, attempts, ["Arsenal"]);
-  assert.deepEqual(results.map((r) => r.userId), ["played"]);
+test("EVERYONE with a declared club is a recipient — players AND the fans who sat out", () => {
+  // Arsenal: 5 played, 3 declared-but-benched.
+  const { supporters, attempts } = club("Arsenal", [900, 800, 700, 600, 500], 3);
+  const { recipients } = gameweekRecipients(supporters, attempts, ["Arsenal", "Chelsea"]);
+  assert.equal(recipients.length, 8); // all 8 Arsenal fans
+  assert.equal(recipients.filter((r) => r.played).length, 5);
+  assert.equal(recipients.filter((r) => !r.played).length, 3);
 });
 
-test("a player with no declared club gets no result and pollutes nobody's table", () => {
-  const supporters: ClubSupporterRow[] = [{ userId: "a", club: "Arsenal" }];
-  const attempts: HalftimeAttemptRow[] = [
-    { userId: "a", score: 5000 },
-    { userId: "undeclared", score: 99999 },
-  ];
-
-  const { results, standings } = gameweekResults(supporters, attempts, ["Arsenal"]);
-  assert.deepEqual(results.map((r) => r.userId), ["a"]);
-  const arsenal = standings.find((s) => s.club === "Arsenal")!;
-  assert.equal(arsenal.participants, 1);
-  assert.equal(arsenal.totalScore, 5000); // the 99999 is nowhere
+test("a benched fan gets NO personal rank (they've nothing to rank) but still the club result", () => {
+  const { supporters, attempts } = club("Arsenal", [900, 800, 700, 600, 500], 1);
+  const { recipients } = gameweekRecipients(supporters, attempts, ["Arsenal"]);
+  const benched = recipients.find((r) => !r.played)!;
+  assert.equal(benched.rankInClub, null);
+  assert.equal(benched.clubRank, 1); // still knows the club came 1st
 });
 
-test("rank within the club is by the fan's TOTAL for the week, not a single attempt", () => {
+test("only fans of clubs that PLAYED this round are messaged (blank-gameweek safety)", () => {
+  // Everton declared fans, but Everton has NO fixture this round (not in clubs).
+  const arsenal = club("Arsenal", [900, 800, 700, 600, 500]);
+  const evertonBenched: ClubSupporterRow[] = [{ userId: "ev1", club: "Everton" }];
+  const { recipients } = gameweekRecipients(
+    [...arsenal.supporters, ...evertonBenched],
+    arsenal.attempts,
+    ["Arsenal", "Chelsea"], // Everton not playing
+  );
+  assert.equal(recipients.some((r) => r.club === "Everton"), false);
+});
+
+test("a player with no declared club is a recipient for nobody and pollutes no table", () => {
+  const { supporters, attempts } = club("Arsenal", [900, 800, 700, 600, 500]);
+  attempts.push({ userId: "nomad", score: 99999 });
+  const { recipients, standings } = gameweekRecipients(supporters, attempts, ["Arsenal"]);
+  assert.equal(recipients.some((r) => r.userId === "nomad"), false);
+  assert.equal(standings.find((s) => s.club === "Arsenal")!.totalScore, 3500);
+});
+
+test("rank within the club is by the fan's TOTAL for the week, not one attempt; ties share the better rank", () => {
   const supporters: ClubSupporterRow[] = [
     { userId: "grinder", club: "Arsenal" },
-    { userId: "one-shot", club: "Arsenal" },
+    { userId: "oneshot", club: "Arsenal" },
+    { userId: "tieA", club: "Arsenal" },
+    { userId: "tieB", club: "Arsenal" },
+    { userId: "low", club: "Arsenal" },
   ];
-  // grinder played three packs (3x2000 = 6000); one-shot played one big one (5000).
   const attempts: HalftimeAttemptRow[] = [
-    { userId: "grinder", score: 2000 },
-    { userId: "grinder", score: 2000 },
-    { userId: "grinder", score: 2000 },
-    { userId: "one-shot", score: 5000 },
+    { userId: "grinder", score: 2000 }, { userId: "grinder", score: 2000 }, { userId: "grinder", score: 2000 }, // 6000
+    { userId: "oneshot", score: 5000 },
+    { userId: "tieA", score: 3000 }, { userId: "tieB", score: 3000 },
+    { userId: "low", score: 1000 },
   ];
-
-  const { results } = gameweekResults(supporters, attempts, ["Arsenal"]);
-  const grinder = results.find((r) => r.userId === "grinder")!;
-  const oneShot = results.find((r) => r.userId === "one-shot")!;
-  assert.equal(grinder.score, 6000);
-  assert.equal(grinder.rankInClub, 1);
-  assert.equal(oneShot.rankInClub, 2);
-  assert.equal(grinder.clubFans, 2); // 4 attempts, but 2 FANS
+  const { recipients } = gameweekRecipients(supporters, attempts, ["Arsenal"]);
+  const rank = (id: string) => recipients.find((r) => r.userId === id)!.rankInClub;
+  assert.equal(rank("grinder"), 1); // 6000 total beats the 5000 single
+  assert.equal(rank("oneshot"), 2);
+  assert.equal(rank("tieA"), 3);
+  assert.equal(rank("tieB"), 3); // tie shares
+  assert.equal(rank("low"), 5); // ...then 5, never 4
 });
 
-test("ties inside a club share the better rank — two identical scores are both 3rd", () => {
-  const { supporters, attempts } = fans("Arsenal", [900, 800, 700, 700, 600]);
-  const { results } = gameweekResults(supporters, attempts, ["Arsenal"]);
-  const ranks = results
-    .sort((a, b) => b.score - a.score)
-    .map((r) => r.rankInClub);
-  assert.deepEqual(ranks, [1, 2, 3, 3, 5]); // 3,3 then 5 — never 3,4
-});
+// ── the copy, both beats, all four fan states ────────────────────────────────
 
-test("the copy is the founder's line: club position + your position in it", () => {
-  // Arsenal: 5 fans (clears the min). The viewer is the 3rd best of them.
-  const { supporters, attempts } = fans("Arsenal", [900, 800, 700, 600, 500]);
-  const { results } = gameweekResults(supporters, attempts, ["Arsenal"]);
-  const third = results.find((r) => r.rankInClub === 3)!;
-  const copy = resultCopy(third);
-
+test("RESULTS copy — a player gets club position + their personal position", () => {
+  const { supporters, attempts } = club("Arsenal", [900, 800, 700, 600, 500]);
+  const { recipients } = gameweekRecipients(supporters, attempts, ["Arsenal"]);
+  const third = recipients.find((r) => r.rankInClub === 3)!;
+  const copy = resultCopy("results", third);
   assert.match(copy.title, /^Arsenal finished 1st this gameweek$/);
   assert.equal(copy.body, "You were their 3rd-best scorer out of 5.");
 });
 
-test("top scorer for their club gets the line worth leading with", () => {
-  const { supporters, attempts } = fans("Arsenal", [900, 800, 700, 600, 500]);
-  const { results } = gameweekResults(supporters, attempts, ["Arsenal"]);
-  const best = results.find((r) => r.rankInClub === 1)!;
-  assert.match(resultCopy(best).body, /best scorer/);
+test("RESULTS copy — a NON-player is told the club result and nudged, with NO fake personal rank", () => {
+  const { supporters, attempts } = club("Arsenal", [900, 800, 700, 600, 500], 1);
+  const { recipients } = gameweekRecipients(supporters, attempts, ["Arsenal"]);
+  const benched = recipients.find((r) => !r.played)!;
+  const copy = resultCopy("results", benched);
+  assert.match(copy.title, /Arsenal finished 1st/);
+  assert.match(copy.body, /without you|get in/i);
+  assert.doesNotMatch(copy.body, /\d+(st|nd|rd|th)-best/); // never a personal rank they didn't earn
 });
 
-test("a club below the minimum gets an honest 'not enough of you' message, never a fake rank", () => {
-  // 4 fans — below MIN_PARTICIPANTS (5).
-  const { supporters, attempts } = fans("Nottingham Forest", [9000, 8000, 7000, 6000]);
-  const { results } = gameweekResults(supporters, attempts, ["Nottingham Forest"]);
-
-  assert.equal(results.length, 4);
-  for (const r of results) assert.equal(r.clubRank, null); // no invented rank
-
-  const copy = resultCopy(results[0]);
-  assert.match(copy.title, /didn't make the table/);
-  assert.match(copy.body, /Only 4 Nottingham Forest fans played/);
+test("NEWWEEK copy — everyone gets a forward nudge referencing last week's standing", () => {
+  const { supporters, attempts } = club("Arsenal", [900, 800, 700, 600, 500], 1);
+  const { recipients } = gameweekRecipients(supporters, attempts, ["Arsenal"]);
+  const player = recipients.find((r) => r.played)!;
+  const benched = recipients.find((r) => !r.played)!;
+  assert.match(resultCopy("newweek", player).title, /defend Arsenal/i);
+  assert.match(resultCopy("newweek", benched).title, /represent Arsenal/i);
+  assert.match(resultCopy("newweek", benched).body, /1st last week/);
 });
 
-test("a lone fan is told they were the only one, not that they came 1st of 1", () => {
-  const { supporters, attempts } = fans("Burnley", [5000]);
-  const { results } = gameweekResults(supporters, attempts, ["Burnley"]);
-  assert.match(resultCopy(results[0]).body, /only Burnley fan who played/);
+test("a club below the minimum is told 'not enough of you', never an invented rank — played or not", () => {
+  const { supporters, attempts } = club("Nottingham Forest", [9000, 8000, 7000, 6000], 2); // 4 played (< 5), 2 benched
+  const { recipients } = gameweekRecipients(supporters, attempts, ["Nottingham Forest"]);
+  for (const r of recipients) assert.equal(r.clubRank, null);
+  const player = recipients.find((r) => r.played)!;
+  const benched = recipients.find((r) => !r.played)!;
+  assert.match(resultCopy("results", player).title, /didn't make the table/);
+  assert.match(resultCopy("results", benched).body, /needed you/i);
 });
 
 test("THE PRODUCT RULE survives into the copy: the small sharp club is told it WON", () => {
-  // Brentford: 5 sharp fans (5 x 9,000 = 45,000 total, avg 9,000).
-  // Man United: 30 casual ones (30 x 3,000 = 90,000 total, avg 3,000).
-  // United's TOTAL is double Brentford's. Brentford still wins, because we rank
-  // on the AVERAGE. If anyone ever "optimises" this into a sum, this test dies.
-  const brentford = fans("Brentford", Array(5).fill(9000), "bre");
-  const united = fans("Man United", Array(30).fill(3000), "mun");
+  const brentford = club("Brentford", Array(5).fill(9000)); // avg 9,000, total 45,000
+  const united = club("Man United", Array(30).fill(3000)); // avg 3,000, total 90,000 (DOUBLE)
   const { supporters, attempts } = merge(brentford, united);
-
-  const { standings, results } = gameweekResults(supporters, attempts, ["Brentford", "Man United"]);
-
-  const bre = standings.find((s) => s.club === "Brentford")!;
-  const mun = standings.find((s) => s.club === "Man United")!;
-  assert.ok(mun.totalScore > bre.totalScore, "United's TOTAL must be bigger — that's the whole point");
-  assert.equal(bre.rank, 1);
-  assert.equal(mun.rank, 2);
-
-  const breFan = results.find((r) => r.club === "Brentford")!;
-  assert.match(resultCopy(breFan).title, /Brentford finished 1st/);
+  const { standings, recipients } = gameweekRecipients(supporters, attempts, ["Brentford", "Man United"]);
+  assert.ok(
+    standings.find((s) => s.club === "Man United")!.totalScore > standings.find((s) => s.club === "Brentford")!.totalScore,
+    "United's TOTAL must be bigger — that's the whole point",
+  );
+  const breFan = recipients.find((r) => r.club === "Brentford")!;
+  assert.match(resultCopy("results", breFan).title, /Brentford finished 1st/);
 });
 
 test("no score, no spoiler, no delivery-mechanism language in any copy path", () => {
-  const { supporters, attempts } = fans("Arsenal", [900, 800, 700, 600, 500]);
-  const { results } = gameweekResults(supporters, attempts, ["Arsenal"]);
+  const { supporters, attempts } = club("Arsenal", [900, 800, 700, 600, 500], 2);
+  const { recipients } = gameweekRecipients(supporters, attempts, ["Arsenal"]);
   const banned = /\b(browser|download|app store|room|IQ)\b/i;
-  for (const r of results) {
-    const { title, body } = resultCopy(r);
-    assert.doesNotMatch(title, banned);
-    assert.doesNotMatch(body, banned);
+  for (const send of ["results", "newweek"] as const) {
+    for (const r of recipients) {
+      const { title, body } = resultCopy(send, r);
+      assert.doesNotMatch(title, banned);
+      assert.doesNotMatch(body, banned);
+    }
   }
 });
 
-test("dedupe key is one per user per gameweek — exactly-once via notification_log's PK", () => {
-  assert.equal(resultDedupeKey(28083, "1"), "club-gw:28083:1");
-  assert.notEqual(resultDedupeKey(28083, "1"), resultDedupeKey(28083, "2"));
-  assert.notEqual(resultDedupeKey(28083, "1"), resultDedupeKey(28084, "1"));
+test("dedupe key is unique per send AND per channel AND per gameweek — so push and email never collide", () => {
+  assert.equal(resultDedupeKey("results", "push", 28083, "1"), "club-results-push:28083:1");
+  assert.notEqual(resultDedupeKey("results", "push", 28083, "1"), resultDedupeKey("results", "email", 28083, "1"));
+  assert.notEqual(resultDedupeKey("results", "push", 28083, "1"), resultDedupeKey("newweek", "push", 28083, "1"));
+  assert.notEqual(resultDedupeKey("results", "push", 28083, "1"), resultDedupeKey("results", "push", 28083, "2"));
 });

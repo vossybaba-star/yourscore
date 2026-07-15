@@ -530,3 +530,48 @@ export async function sendFirstWcMastermindEmail(args: {
     ],
   });
 }
+
+/**
+ * 24 · Club-Fan Leaderboard — end-of-gameweek result / new-week nudge.
+ *
+ * Bulk-eligible (goes to every declared supporter of a club that played), so it is
+ * driven by the batched, suppression-aware job scripts/clubs/send-gameweek-email.mjs
+ * — NOT fired inline per event. The caller passes the fully-built copy (from
+ * src/lib/clubs/result.ts emailContent()), so email and push say the same thing.
+ */
+export async function sendClubGameweekEmail(args: {
+  userId: string;
+  email: string;
+  subject: string;
+  preheader: string;
+  badge: string;
+  headline: string;
+  subline: string;
+  personal: string;
+  ctaLabel: string;
+  ctaUrl: string;
+  refId: string;
+}) {
+  const html = await renderEmail("24-club-gameweek", {
+    PREHEADER: args.preheader,
+    BADGE: args.badge,
+    HEADLINE: args.headline,
+    SUBLINE: args.subline,
+    PERSONAL: args.personal,
+    CTA_LABEL: args.ctaLabel,
+    CTA_URL: args.ctaUrl,
+    ...buildFooterUrls(args.userId, "all"),
+  });
+  await sendOrLog("sendClubGameweekEmail", args.userId, {
+    from: FROM,
+    to: args.email,
+    replyTo: REPLY_TO,
+    subject: args.subject,
+    html,
+    headers: { "X-Entity-Ref-ID": args.refId },
+    tags: [
+      { name: "category", value: "lifecycle" },
+      { name: "template", value: "24-club-gameweek" },
+    ],
+  });
+}
