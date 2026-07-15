@@ -3,6 +3,7 @@
 import { track } from "@vercel/analytics";
 import { useEffect } from "react";
 import { afRegistration } from "@/lib/analytics/appsflyerEvents";
+import { getDeviceId } from "@/lib/analytics/deviceId";
 
 // Conversion IDs. Pixel base scripts live in app/layout.tsx; this only fires events.
 const X_SIGNUP_EVENT_ID = process.env.NEXT_PUBLIC_X_SIGNUP_EVENT_ID || "tw-p6vxh-p6vxj";
@@ -64,20 +65,25 @@ export function SignupPixel() {
 
     fireSignupConversions();
 
-    // Persist the visitor's first-touch acquisition source onto their new
-    // profile (captured on landing by AcquisitionCapture). Fire-and-forget.
+    // Persist the visitor's first-touch acquisition source AND their durable
+    // device id onto their new profile. The source is captured on landing by
+    // AcquisitionCapture; the device id survives the guest→signup transition so
+    // pre-signup guest activity can later be linked to the account. Both are
+    // first-touch on the server (written only while still null). Fire-and-forget.
     try {
       const acq = localStorage.getItem("ys:acq");
-      if (acq) {
+      const base = acq ? (JSON.parse(acq) as Record<string, unknown>) : {};
+      const deviceId = getDeviceId();
+      if (acq || deviceId) {
         void fetch("/api/profile/source", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: acq,
+          body: JSON.stringify({ ...base, device_id: deviceId }),
           keepalive: true,
         });
       }
     } catch {
-      /* storage blocked — skip */
+      /* storage blocked or bad JSON — skip */
     }
 
     params.delete("signup");

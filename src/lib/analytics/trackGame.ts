@@ -1,6 +1,7 @@
 import { track } from "@vercel/analytics";
 import { afLogEvent } from "@/lib/native/appsflyer";
-import { afGameComplete, afInviteSent, type InviteSurface } from "@/lib/analytics/appsflyerEvents";
+import { afGameComplete, afInviteSent, afReturnPlay, type InviteSurface } from "@/lib/analytics/appsflyerEvents";
+import { localDay, evaluateReturnPlay } from "@/lib/analytics/returnPlay";
 
 // Which game a Player is engaging with. Drives per-game ad audiences.
 export type GameId = "38-0" | "quiz";
@@ -36,6 +37,54 @@ const X_EVENT_IDS: Record<string, string | undefined> = {
 function eventName(event: GameEvent, game: GameId): string {
   const g = game === "38-0" ? "380" : "Quiz";
   return event === "play" ? `Play${g}` : `Complete${g}`;
+}
+
+// ── ReturnPlay: the D2+ retention milestone ──────────────────────────────────
+// Fires ONCE, the first time a Player plays on a *later calendar day* than their
+// first-ever play — i.e. they came back. This is the signal every acquisition
+// pixel currently lacks: it optimises toward first play/signup only, so it can't
+// build a "repeat player" audience or a lookalike off genuinely retained users.
+// ReturnPlay seeds exactly that. X needs a pre-created Events-Manager event id
+// (fires only once the env var is set); every other platform gets it immediately.
+// Existing players (no stored first-play day when this ships) are treated as
+// day-0 on their next play, so the audience warms up over ~a day — we can't
+// reconstruct pre-deploy history client-side.
+const X_RETURNPLAY_EVENT_ID = process.env.NEXT_PUBLIC_X_RETURNPLAY_EVENT_ID;
+const FIRST_PLAY_DAY_KEY = "ys:firstplayday";
+const RETURN_FIRED_KEY = "ys:returnfired";
+
+// Fan the ReturnPlay milestone out to every ad/analytics platform (mirrors the
+// play/complete fan-out; each call guarded so one blocked pixel never blocks the rest).
+function fireReturnPlay(game: GameId, daysSinceFirst: number): void {
+  const payload: Props = { game, days_since_first: daysSinceFirst };
+  if (X_RETURNPLAY_EVENT_ID) window.twq?.("event", X_RETURNPLAY_EVENT_ID, payload); // X (Twitter)
+  window.fbq?.("trackCustom", "ReturnPlay", payload);   // Meta
+  window.ttq?.track?.("ReturnPlay", payload);            // TikTok (custom, audience-eligible)
+  window.snaptr?.("track", "CUSTOM_EVENT_5", payload);  // Snapchat (1=play·2=complete·3=download·4=share·5=return)
+  window.gtag?.("event", "return_play", payload);        // Google Analytics 4 → audience + Google Ads import
+  track("return_play", payload);                         // Vercel Analytics
+  afReturnPlay(game, daysSinceFirst);                    // AppsFlyer (native only)
+}
+
+// Read storage, apply the pure decision, persist, and fire once when earned.
+function maybeTrackReturnPlay(game: GameId): void {
+  try {
+    const today = localDay(new Date());
+    const storedFirstDay = window.localStorage.getItem(FIRST_PLAY_DAY_KEY);
+    const alreadyFired = window.localStorage.getItem(RETURN_FIRED_KEY) === "1";
+    const { shouldFire, firstDay, daysSinceFirst } = evaluateReturnPlay(
+      storedFirstDay,
+      alreadyFired,
+      today,
+    );
+    if (!storedFirstDay) window.localStorage.setItem(FIRST_PLAY_DAY_KEY, firstDay);
+    if (shouldFire) {
+      window.localStorage.setItem(RETURN_FIRED_KEY, "1");
+      fireReturnPlay(game, daysSinceFirst);
+    }
+  } catch {
+    /* storage blocked — skip the milestone */
+  }
 }
 
 /**
@@ -90,6 +139,8 @@ function trackGameEvent(game: GameId, event: GameEvent, props: Props = {}): void
   // AppsFlyer (native only) — log plays so app-install campaigns can optimise toward players.
   if (event === "play") {
     void afLogEvent("play_game", { game });
+    // Retention milestone: did they come back on a later day? Fires once, all platforms.
+    maybeTrackReturnPlay(game);
   } else {
     // Rich completion event + one-time first_game_complete (the activation milestone
     // the SKAN schema + quality-CPI analysis key on). Map the loose call-site props.

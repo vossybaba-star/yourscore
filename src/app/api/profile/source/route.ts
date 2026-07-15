@@ -18,6 +18,7 @@ export async function POST(req: NextRequest) {
     utm_medium?: string;
     utm_campaign?: string;
     referrer?: string;
+    device_id?: string;
   };
   try {
     body = await req.json();
@@ -33,17 +34,34 @@ export async function POST(req: NextRequest) {
     utm_campaign: clip(body.utm_campaign),
     referrer: clip(body.referrer),
   };
-  if (!patch.source && !patch.utm_source && !patch.referrer) {
+  const deviceId = clip(body.device_id);
+  const hasSource = patch.source || patch.utm_source || patch.referrer;
+  if (!hasSource && !deviceId) {
     return NextResponse.json({ ok: true, skipped: "no signal" });
   }
 
   const db = createServiceClient();
-  const { error } = await db
-    .from("profiles")
-    .update(patch)
-    .eq("id", user.id)
-    .is("source", null); // first-touch: never overwrite an existing source
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  // First-touch acquisition source — written only while `source` is still null.
+  if (hasSource) {
+    const { error } = await db
+      .from("profiles")
+      .update(patch)
+      .eq("id", user.id)
+      .is("source", null);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  // Durable device id — written once, never overwritten, so it stably links this
+  // account to the device (and its guest activity). Independent of the source above.
+  if (deviceId) {
+    const { error } = await db
+      .from("profiles")
+      .update({ device_id: deviceId })
+      .eq("id", user.id)
+      .is("device_id", null);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
   return NextResponse.json({ ok: true });
 }

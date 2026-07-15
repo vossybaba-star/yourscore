@@ -1639,6 +1639,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string | null
+          device_id: string | null
           display_name: string | null
           games_played: number | null
           id: string
@@ -1651,6 +1652,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string | null
+          device_id?: string | null
           display_name?: string | null
           games_played?: number | null
           id: string
@@ -1663,6 +1665,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string | null
+          device_id?: string | null
           display_name?: string | null
           games_played?: number | null
           id?: string
