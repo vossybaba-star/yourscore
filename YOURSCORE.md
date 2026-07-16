@@ -34,7 +34,7 @@
 > a list drops daily, the back-catalogue stays playable) — `library` API action +
 > "Previous days" on the intro with PLAY / n-of-10 / score badges; `?list=` replays any
 > served list; drafts/future days unreachable (`isServed` gates state/guess/hint).
-> **Content live:** Jul 13–15 = PL library seeds (25/26 scorers · appearance makers ·
+> **RECALL WINDOW = the topic test (Jul 16, proven live):** the "last 10 WC Golden Boot winners" list was VETOED by the founder (40-year window) and the data agreed — 3 real players all scored 0 pts, 0/10 found. Pulled to status='vetoed'; the WC captains/Golden Ball lists were pulled to draft unreleased. A verifiable list is NOT a playable list — a casual fan must land 5–7. Topic titles get founder approval as TEXT BEFORE any generation spend. **Content live:** Jul 13–15 = PL library seeds (25/26 scorers · appearance makers ·
 > all-time scorers), Jul 16 = last 10 WC Golden Boot winners (Salenko added as an
 > accepted answer on the shared-1994 rung), Jul 17 = last 10 WC-winning captains —
 > founder wants WC-themed dailies while WC 2026 runs; Jul 18 = last 10 WC Golden Ball winners (Messi twice → the DOUBLE-WINNER fix same eve: solved names stay suggestible, grading skips to the next unsolved rung, all-solved returns alreadyFound with NO strike). Gate lessons (all drops were
