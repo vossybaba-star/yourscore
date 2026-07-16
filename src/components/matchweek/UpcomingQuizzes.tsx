@@ -41,16 +41,19 @@ export function UpcomingQuizzes() {
   if (!loaded || gws.length === 0 || !current) return null; // self-hide, like the rail
 
   return (
-    <div className="pt-5">
-      <div className="max-w-lg mx-auto px-4 flex items-center justify-between mb-2.5">
+    // Everything lives in the same max-w-lg column as the rest of Matchweek; the
+    // rail bleeds to the column edge with -mx-4 px-4 (the HalftimeRail pattern),
+    // so cards scroll within the column instead of across the whole viewport.
+    <div className="max-w-lg mx-auto px-4 pt-5">
+      <div className="flex items-center justify-between mb-2.5">
         <span className="font-display text-xs tracking-widest" style={{ color: "#586058" }}>UPCOMING QUIZZES</span>
         <span className="font-body text-xs" style={{ color: "#8a948f" }}>{current.fixtures.length} this gameweek</span>
       </div>
 
       {/* Gameweek switcher */}
       {gws.length > 1 && (
-        <div className="max-w-lg mx-auto px-4 mb-3">
-          <div className="flex gap-1.5 overflow-x-auto" style={{ paddingBottom: 2 }}>
+        <div className="mb-3">
+          <div className="flex gap-1.5 overflow-x-auto no-scrollbar" style={{ paddingBottom: 2, scrollbarWidth: "none" }}>
             {gws.map((g) => {
               const on = g.round === current.round;
               return (
@@ -71,9 +74,8 @@ export function UpcomingQuizzes() {
       )}
 
       {/* The carousel */}
-      <div className="flex gap-3 overflow-x-auto px-4 pb-2 snap-x"
+      <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2 snap-x -mx-4 px-4"
         style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}>
-        <style>{`.hq-rail::-webkit-scrollbar{display:none}`}</style>
         {current.fixtures.map((fx, i) => (
           <div key={i}
             className="flex-shrink-0 snap-start rounded-2xl p-4 flex flex-col justify-between"
@@ -108,7 +110,7 @@ export function UpcomingQuizzes() {
         ))}
       </div>
 
-      <p className="max-w-lg mx-auto px-4 font-body text-xs mt-2" style={{ color: "#586058" }}>
+      <p className="font-body text-xs mt-2" style={{ color: "#586058" }}>
         A quiz drops at each match&apos;s real half-time. Play solo or against friends.
       </p>
     </div>

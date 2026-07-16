@@ -30,12 +30,15 @@ export function QuizStatTiles() {
   if (!loaded || items.length === 0) return null; // self-hide
 
   return (
-    <div className="pt-5">
-      <div className="max-w-lg mx-auto px-4 mb-2.5">
+    // Same column + edge-bleed rail pattern as UpcomingQuizzes / HalftimeRail:
+    // the scroller must live inside max-w-lg or it runs the full viewport width.
+    <div className="max-w-lg mx-auto px-4 pt-5">
+      <div className="mb-2.5">
         <span className="font-display text-xs tracking-widest" style={{ color: "#586058" }}>HOW FANS DID</span>
       </div>
 
-      <div className="flex gap-3 overflow-x-auto px-4 pb-2 snap-x" style={{ scrollbarWidth: "none" }}>
+      <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2 snap-x -mx-4 px-4"
+        style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}>
         {items.map((h) => {
           const angle = angleFor(h.correctPct);
           const accent = angle.tone === "good" ? TEAL : WARN;
