@@ -14,7 +14,8 @@ function club(
   playedScores.forEach((score, i) => {
     const id = `${name}-p${i}`;
     supporters.push({ userId: id, club: name });
-    attempts.push({ userId: id, score });
+    // Own-club rule: a fan only scores off THEIR club's fixture.
+    attempts.push({ userId: id, score, home: name, away: "Opponent FC" });
   });
   for (let i = 0; i < benched; i++) supporters.push({ userId: `${name}-b${i}`, club: name });
   return { supporters, attempts };
@@ -67,7 +68,7 @@ test("only fans of clubs that PLAYED this round are messaged (blank-gameweek saf
 
 test("a player with no declared club is a recipient for nobody and pollutes no table", () => {
   const { supporters, attempts } = club("Arsenal", [900, 800, 700, 600, 500]);
-  attempts.push({ userId: "nomad", score: 99999 });
+  attempts.push({ userId: "nomad", score: 99999, home: "Arsenal", away: "Chelsea" });
   const { recipients, standings } = gameweekRecipients(supporters, attempts, ["Arsenal"]);
   assert.equal(recipients.some((r) => r.userId === "nomad"), false);
   assert.equal(standings.find((s) => s.club === "Arsenal")!.totalScore, 3500);
@@ -82,10 +83,14 @@ test("rank within the club is by the fan's TOTAL for the week, not one attempt; 
     { userId: "low", club: "Arsenal" },
   ];
   const attempts: HalftimeAttemptRow[] = [
-    { userId: "grinder", score: 2000 }, { userId: "grinder", score: 2000 }, { userId: "grinder", score: 2000 }, // 6000
-    { userId: "oneshot", score: 5000 },
-    { userId: "tieA", score: 3000 }, { userId: "tieB", score: 3000 },
-    { userId: "low", score: 1000 },
+    // Arsenal in a rare triple-fixture week; every row is an ARSENAL fixture,
+    // because only own-club packs score.
+    { userId: "grinder", score: 2000, home: "Arsenal", away: "Chelsea" },
+    { userId: "grinder", score: 2000, home: "Arsenal", away: "Everton" },
+    { userId: "grinder", score: 2000, home: "Arsenal", away: "Fulham" }, // 6000
+    { userId: "oneshot", score: 5000, home: "Arsenal", away: "Chelsea" },
+    { userId: "tieA", score: 3000, home: "Arsenal", away: "Chelsea" }, { userId: "tieB", score: 3000, home: "Arsenal", away: "Chelsea" },
+    { userId: "low", score: 1000, home: "Arsenal", away: "Chelsea" },
   ];
   const { recipients } = gameweekRecipients(supporters, attempts, ["Arsenal"]);
   const rank = (id: string) => recipients.find((r) => r.userId === id)!.rankInClub;

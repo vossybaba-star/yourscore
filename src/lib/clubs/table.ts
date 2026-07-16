@@ -2,6 +2,10 @@
  * Club-Fan Leaderboard tally logic — pure, DB-free (mirrors src/lib/halftime/shared.ts:
  * no imports, no Supabase client, so this runs with no bundler and no DB).
  *
+ * SCORING RULE (LOCKED — founder, 2026-07-16): a fan's points come ONLY from the
+ * halftime quiz of the club they actually support. Other fixtures' packs are
+ * playable but score nothing for the table — see ownClubFanTotals.
+ *
  * RANKING RULE (LOCKED — founder's decision #3, do not reopen): AVERAGE score per
  * participating fan, with a minimum of MIN_PARTICIPANTS fans. A raw total would
  * just rank fanbases by SIZE — the big six would win every week forever and
@@ -31,6 +35,43 @@ export interface ClubSupporterRow {
 export interface HalftimeAttemptRow {
   userId: string;
   score: number;
+  /** The fixture the attempt's pack belongs to — required to apply the
+   *  own-club rule below. Caller gets these from halftime_releases. */
+  home: string;
+  away: string;
+}
+
+/**
+ * Per-fan gameweek total, counting ONLY the halftime packs for their OWN club's
+ * fixture (LOCKED — founder, 2026-07-16).
+ *
+ * A fan's knowledge score is about THEIR club's match, not how many other packs
+ * they grind. Counting every fixture would let a fan farm ten packs a week and
+ * carry their club's average on volume, which makes the table a measure of
+ * appetite rather than knowledge — and would quietly punish the fan who only
+ * ever plays their own team's game (the exact person this is for).
+ *
+ * Shared by gameweekClubTable and result.ts's gameweekRecipients so the table
+ * and the end-of-gameweek message can never disagree about who counts.
+ *
+ * A fan with no declared club counts for nobody. An attempt on a fixture their
+ * club isn't in is simply ignored — they can still play it, it just doesn't score.
+ */
+export function ownClubFanTotals(
+  supporters: ClubSupporterRow[],
+  attempts: HalftimeAttemptRow[],
+): Map<string, number> {
+  const fanClub = new Map<string, string>();
+  for (const s of supporters) fanClub.set(s.userId, s.club);
+
+  const totals = new Map<string, number>();
+  for (const a of attempts) {
+    const club = fanClub.get(a.userId);
+    if (club === undefined) continue; // no declared club — counts for nobody
+    if (club !== a.home && club !== a.away) continue; // not their club's match
+    totals.set(a.userId, (totals.get(a.userId) ?? 0) + a.score);
+  }
+  return totals;
 }
 
 export interface ClubStanding {
@@ -59,19 +100,17 @@ export function gameweekClubTable(
   attempts: HalftimeAttemptRow[],
   clubs: string[],
 ): ClubStanding[] {
-  // One number per fan: sum every halftime attempt they completed this gameweek.
-  // A fan who played three packs this GW contributes ONE total, not three entries.
-  const fanTotals = new Map<string, number>();
-  for (const a of attempts) {
-    fanTotals.set(a.userId, (fanTotals.get(a.userId) ?? 0) + a.score);
-  }
+  // One number per fan: their OWN club's halftime pack(s) this gameweek. A fan
+  // who also played four other fixtures' packs contributes only their own club's
+  // score — see ownClubFanTotals for why.
+  const fanTotals = ownClubFanTotals(supporters, attempts);
 
   // A fan's club, from the season-locked supporter table.
   const fanClub = new Map<string, string>();
   for (const s of supporters) fanClub.set(s.userId, s.club);
 
   // Group participating fans' per-fan totals by club. "Participating" = supports
-  // the club AND has at least one halftime attempt this gameweek (any fixture).
+  // the club AND played that club's OWN halftime pack this gameweek.
   const byClub = new Map<string, number[]>();
   for (const club of clubs) byClub.set(club, []);
   for (const [userId, total] of Array.from(fanTotals.entries())) {

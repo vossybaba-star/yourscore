@@ -15,8 +15,8 @@
  * the sentence you were halfway through.
  */
 
-import { useEffect, useRef, useState } from "react";
-import { useClubMe } from "@/components/clubs/useClubData";
+import { useRef, useState } from "react";
+import { useViewerClub } from "@/components/clubs/useClubData";
 import { Crest } from "@/components/clubs/Crest";
 
 const TEAL = "#00d8c0";
@@ -91,21 +91,7 @@ export function LiveQuizIntro() {
   const [page, setPage] = useState(0);
 
   // The club they represent, if we know it — drives their crest on the badge page.
-  const { data: me } = useClubMe();
-  /**
-   * DEV-ONLY preview: ?club=Arsenal renders the badge page as an Arsenal fan
-   * would see it. Compiled out of production (NODE_ENV check) and read from
-   * window rather than useSearchParams so the page needn't be Suspense-wrapped.
-   * Exists because a signed-in club can't otherwise be seen off a real session.
-   */
-  const [previewClub, setPreviewClub] = useState<string | null>(null);
-  useEffect(() => {
-    if (process.env.NODE_ENV === "production") return;
-    const c = new URLSearchParams(window.location.search).get("club");
-    if (c) setPreviewClub(c);
-  }, []);
-
-  const club = me?.club ?? previewClub;
+  const club = useViewerClub();
 
   function onScroll() {
     const el = scroller.current;

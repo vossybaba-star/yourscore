@@ -17,7 +17,13 @@
  * pre-fetched rows so it can be unit-tested with no DB and no bundler.
  */
 
-import { gameweekClubTable, type ClubStanding, type ClubSupporterRow, type HalftimeAttemptRow } from "./table";
+import {
+  gameweekClubTable,
+  ownClubFanTotals,
+  type ClubStanding,
+  type ClubSupporterRow,
+  type HalftimeAttemptRow,
+} from "./table";
 
 export type SendType = "results" | "newweek";
 
@@ -67,10 +73,10 @@ export function gameweekRecipients(
   const clubsRanked = standings.filter((s) => s.eligible).length;
   const playingClubs = new Set(clubs);
 
-  // One total per fan (a fan who played three packs contributes one number),
-  // the same rule table.ts applies — so the two can never disagree.
-  const fanTotals = new Map<string, number>();
-  for (const a of attempts) fanTotals.set(a.userId, (fanTotals.get(a.userId) ?? 0) + a.score);
+  // One total per fan, counting ONLY their own club's halftime pack — the exact
+  // helper gameweekClubTable uses, so the message and the table can never
+  // disagree about who played and who counts.
+  const fanTotals = ownClubFanTotals(supporters, attempts);
 
   // Rank the players inside each club.
   const byClub = new Map<string, { userId: string; score: number }[]>();

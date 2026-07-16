@@ -212,27 +212,32 @@ export async function halftimeAttemptsForGameweek(
 ): Promise<HalftimeAttemptRow[]> {
   const { data: releases, error: relErr } = await db()
     .from("halftime_releases")
-    .select("pack_id")
+    .select("pack_id, home, away")
     .eq("season_id", seasonId)
     .eq("round_name", roundName)
     .not("pack_id", "is", null);
   if (relErr) throw relErr;
 
-  const packIds = ((releases ?? []) as { pack_id: string | null }[])
-    .map((r) => r.pack_id)
-    .filter((id): id is string => !!id);
+  // pack -> the fixture it belongs to. The own-club scoring rule needs the two
+  // clubs behind every attempt, so carry them through with each row.
+  const fixtureByPack = new Map<string, { home: string; away: string }>();
+  for (const r of (releases ?? []) as { pack_id: string | null; home: string; away: string }[]) {
+    if (r.pack_id) fixtureByPack.set(r.pack_id, { home: r.home, away: r.away });
+  }
+  const packIds = Array.from(fixtureByPack.keys());
   if (packIds.length === 0) return [];
 
   const { data: attempts, error: attErr } = await db()
     .from("quiz_attempts")
-    .select("user_id, score")
+    .select("user_id, score, pack_id")
     .in("pack_id", packIds);
   if (attErr) throw attErr;
 
-  return ((attempts ?? []) as { user_id: string; score: number | null }[]).map((a) => ({
-    userId: a.user_id,
-    score: a.score ?? 0,
-  }));
+  return ((attempts ?? []) as { user_id: string; score: number | null; pack_id: string }[]).flatMap((a) => {
+    const fx = fixtureByPack.get(a.pack_id);
+    if (!fx) return []; // pack vanished between the two reads — can't attribute it
+    return [{ userId: a.user_id, score: a.score ?? 0, home: fx.home, away: fx.away }];
+  });
 }
 
 /** Every declared supporter for a season. */

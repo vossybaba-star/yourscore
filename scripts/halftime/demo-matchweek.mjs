@@ -88,9 +88,15 @@ await run(process.execPath, [join(REPO, "scripts", "pl-news-ingest.mjs")], { PL_
 
 // ── 2. halftime_releases: GW1 played (past) + GW2/3/4 upcoming (real dates) ──
 const releases = [], packs = [], gw1PackIds = [];
+// club -> the pack for THEIR GW1 fixture. The own-club scoring rule means a fan
+// only scores off their own club's pack, so the seed has to hand each fan the
+// right one; a round-robin would score zero for almost everyone.
+const packByClub = new Map();
 // GW1 → shifted to ~2 days ago, released, with packs (feeds the leaderboard).
 gw1.forEach((fx, i) => {
   const packId = uuid(); gw1PackIds.push(packId);
+  packByClub.set(fx.home, packId);
+  packByClub.set(fx.away, packId);
   releases.push({
     id: uuid(), fixture_id: 700000 + i, season_id: SEASON, round_name: "1",
     pack_id: packId, home: fx.home, away: fx.away, kickoff_at: iso(-46 * 60 + i * 30),
@@ -129,7 +135,7 @@ gw1Clubs.forEach((club, ci) => {
     profiles.push({ id: userId, username: `${club.toLowerCase().replace(/\W/g, "")}_fan${f + 1}`, notifications_opt_in: true });
     supporters.push({ user_id: userId, club, season_id: SEASON, created_at: iso(-500) });
     const jitter = 1 + (((n * 37) % 50) - 25) / 100;
-    attempts.push({ id: uuid(), user_id: userId, pack_id: gw1PackIds[n % gw1PackIds.length], score: Math.round(avg * jitter), max_score: 12000, correct_count: 7, answers: [], completed_at: iso(-60) });
+    attempts.push({ id: uuid(), user_id: userId, pack_id: packByClub.get(club), score: Math.round(avg * jitter), max_score: 12000, correct_count: 7, answers: [], completed_at: iso(-60) });
     n++;
   }
 });

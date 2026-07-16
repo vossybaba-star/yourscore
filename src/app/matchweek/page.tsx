@@ -21,6 +21,7 @@ import { ClubTableTile } from "@/components/clubs/ClubTableTile";
 import { PlFixtures } from "@/components/matchweek/PlFixtures";
 import { PlTable } from "@/components/matchweek/PlTable";
 import { PlNews } from "@/components/matchweek/PlNews";
+import { NextClubQuiz } from "@/components/matchweek/NextClubQuiz";
 import { UpcomingQuizzes } from "@/components/matchweek/UpcomingQuizzes";
 import { QuizStatTiles } from "@/components/matchweek/QuizStatTiles";
 import { LiveQuizIntro } from "@/components/matchweek/LiveQuizIntro";
@@ -107,6 +108,8 @@ export default function MatchweekPage() {
         <div className="pt-1">
           {/* Headlines first: what Live Quiz IS, before anything it shows you. */}
           <LiveQuizIntro />
+          {/* Then THEIR game — the only fixture that scores for their club. */}
+          <NextClubQuiz />
           <HalftimeRail />
           <ClubPicker />
           <UpcomingQuizzes />

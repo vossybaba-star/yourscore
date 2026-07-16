@@ -48,6 +48,25 @@ export function useClubMe(): { user: ReturnType<typeof useUser>["user"]; data: C
   return { user, data, loaded: fetched && !userLoading, refresh };
 }
 
+/**
+ * The club the viewer represents, or null. Wraps useClubMe and adds a DEV-ONLY
+ * `?club=Arsenal` preview override (compiled out of production via NODE_ENV),
+ * because a signed-in club can't be seen without a real session — the demo has
+ * no auth. Shared so every surface that keys off "your club" agrees.
+ */
+export function useViewerClub(): string | null {
+  const { data: me } = useClubMe();
+  const [preview, setPreview] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    const c = new URLSearchParams(window.location.search).get("club");
+    if (c) setPreview(c);
+  }, []);
+
+  return me?.club ?? preview;
+}
+
 export interface ClubTableResponse {
   gw: string | null;
   standings: ClubStanding[];
