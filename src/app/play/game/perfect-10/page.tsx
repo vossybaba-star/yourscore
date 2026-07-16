@@ -409,12 +409,21 @@ export default function Perfect10Page() {
   const suggestions = useMemo(() => {
     if (query.length < 2 || playersIndex.length === 0) return [] as [number, string, string][];
     const solvedNorm = new Set(game.found.map((f) => normalizeName(f.display)));
+    // Rank: whole-name match > word (surname) match > prefix > substring —
+    // typing "salah" must offer Mohamed Salah before Salah Oulad M'Hand, or
+    // Enter hands out an unfair strike.
+    const tierOf = (norm: string): number => {
+      if (norm === query) return 0;
+      if (norm.split(" ").includes(query)) return 1;
+      if (norm.startsWith(query)) return 2;
+      return 3;
+    };
     return playersIndex
       .filter(([, name, norm]) => norm.includes(query) && !solvedNorm.has(norm))
       .sort((a, b) => {
-        const aStarts = a[2].startsWith(query) ? 0 : 1;
-        const bStarts = b[2].startsWith(query) ? 0 : 1;
-        if (aStarts !== bStarts) return aStarts - bStarts;
+        const at = tierOf(a[2]);
+        const bt = tierOf(b[2]);
+        if (at !== bt) return at - bt;
         return a[1].length - b[1].length;
       })
       .slice(0, 3);
