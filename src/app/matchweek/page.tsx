@@ -23,6 +23,7 @@ import { PlTable } from "@/components/matchweek/PlTable";
 import { PlNews } from "@/components/matchweek/PlNews";
 import { UpcomingQuizzes } from "@/components/matchweek/UpcomingQuizzes";
 import { QuizStatTiles } from "@/components/matchweek/QuizStatTiles";
+import { LiveQuizIntro } from "@/components/matchweek/LiveQuizIntro";
 import { BottomNav } from "@/components/ui/BottomNav";
 
 const TEAL = "#00d8c0";
@@ -104,12 +105,13 @@ export default function MatchweekPage() {
       {/* ── Live Quiz ───────────────────────────────────────────────────── */}
       {section === "live" && (
         <div className="pt-1">
+          {/* Headlines first: what Live Quiz IS, before anything it shows you. */}
+          <LiveQuizIntro />
           <HalftimeRail />
           <ClubPicker />
           <UpcomingQuizzes />
           <ClubTableTile />
           <QuizStatTiles />
-          <LiveQuizIntro />
         </div>
       )}
 
@@ -127,37 +129,6 @@ export default function MatchweekPage() {
       )}
 
       <BottomNav />
-    </div>
-  );
-}
-
-/** A short "what Live Quiz is" note under the rail — onboards a first-timer and
- *  keeps the section from ending abruptly on a quiet day. */
-function LiveQuizIntro() {
-  const steps = [
-    { n: "1", t: "A quiz at every half time", d: "One pack per fixture, dropping the moment the real whistle blows." },
-    { n: "2", t: "Call the second half", d: "Finish a pack and predict who wins — one pick, graded at full time." },
-    { n: "3", t: "Represent your club", d: "Your scores stack with every other fan of your club. Best average per fan tops the table." },
-  ];
-  return (
-    <div className="max-w-lg mx-auto px-4 pt-4">
-      <div className="rounded-2xl p-5 bg-surface" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
-        <p className="font-display text-xs tracking-widest mb-4" style={{ color: "#586058" }}>HOW LIVE QUIZ WORKS</p>
-        <div className="flex flex-col gap-4">
-          {steps.map((s) => (
-            <div key={s.n} className="flex gap-3.5">
-              <div className="flex-shrink-0 flex items-center justify-center font-display text-sm rounded-full"
-                style={{ width: 26, height: 26, background: `${TEAL}18`, color: TEAL, border: `1px solid ${TEAL}35` }}>
-                {s.n}
-              </div>
-              <div className="min-w-0">
-                <p className="font-body text-sm text-white font-semibold">{s.t}</p>
-                <p className="font-body text-xs mt-0.5" style={{ color: "#8a948f" }}>{s.d}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
