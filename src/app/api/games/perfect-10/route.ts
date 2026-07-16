@@ -182,6 +182,11 @@ export async function POST(req: NextRequest) {
         });
       }
 
+      if (result.alreadyFound) {
+        // Same name, all its rungs already solved — informational, no strike.
+        return NextResponse.json({ hit: false, alreadyFound: true, strikes: attempt.strikes, score: attempt.score, done: false });
+      }
+
       const strikes = attempt.strikes + 1;
       const done = strikes >= MAX_STRIKES;
       const updated: P10Attempt = { ...attempt, strikes, done };
@@ -220,6 +225,10 @@ export async function POST(req: NextRequest) {
         reveal: done ? revealRemaining(list, foundRanks) : undefined,
         guestEcho: guestState,
       });
+    }
+
+    if (result.alreadyFound) {
+      return NextResponse.json({ hit: false, alreadyFound: true, strikes: guestState.strikes ?? 0, score: guestState.score ?? 0, done: false, guestEcho: guestState });
     }
 
     const strikes = (guestState.strikes ?? 0) + 1;

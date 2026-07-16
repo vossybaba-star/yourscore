@@ -253,6 +253,9 @@ export interface GradeHit {
 }
 export interface GradeMiss {
   hit: false;
+  /** The guess matches an entry the player already solved (e.g. a double
+   * winner like Messi on a Golden Ball list, both rungs done) — costs no strike. */
+  alreadyFound?: boolean;
 }
 export type GradeResult = GradeHit | GradeMiss;
 
@@ -267,14 +270,19 @@ export function gradeGuess(list: P10List, guessRaw: string, solvedRanks: readonl
   const guess = normalizeName(guessRaw);
   if (!guess) return { hit: false };
   const solved = new Set(solvedRanks);
+  let matchedSolved = false;
   for (const e of list.entries) {
-    if (solved.has(e.rank)) continue;
     const candidates = [e.display, e.surname, ...(e.aliases ?? [])].map(normalizeName);
-    if (candidates.includes(guess)) {
-      return { hit: true, rank: e.rank, display: e.display, surname: e.surname };
+    if (!candidates.includes(guess)) continue;
+    if (solved.has(e.rank)) {
+      // Keep scanning — the same name may sit on another, unsolved rung
+      // (double winners on recency-ranked lists).
+      matchedSolved = true;
+      continue;
     }
+    return { hit: true, rank: e.rank, display: e.display, surname: e.surname };
   }
-  return { hit: false };
+  return matchedSolved ? { hit: false, alreadyFound: true } : { hit: false };
 }
 
 // ── Hints ────────────────────────────────────────────────────────────────

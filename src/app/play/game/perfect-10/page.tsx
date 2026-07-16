@@ -447,7 +447,9 @@ export default function Perfect10Page() {
   const query = normalizeName(guessInput);
   const suggestions = useMemo(() => {
     if (query.length < 2 || playersIndex.length === 0) return [] as [number, string, string][];
-    const solvedNorm = new Set(game.found.map((f) => normalizeName(f.display)));
+    // Solved names stay suggestible — double winners (Messi, twice a Golden
+    // Ball list answer) occupy two rungs; the server answers alreadyFound
+    // (no strike) when every rung for a name is done.
     // Rank: whole-name match > word (surname) match > prefix > substring —
     // typing "salah" must offer Mohamed Salah before Salah Oulad M'Hand, or
     // Enter hands out an unfair strike.
@@ -458,7 +460,7 @@ export default function Perfect10Page() {
       return 3;
     };
     return playersIndex
-      .filter(([, , norm]) => norm.includes(query) && !solvedNorm.has(norm))
+      .filter(([, , norm]) => norm.includes(query))
       .sort((a, b) => {
         const at = tierOf(a[2]);
         const bt = tierOf(b[2]);
@@ -505,6 +507,8 @@ export default function Perfect10Page() {
           done: Boolean(data.done),
           reveal: data.reveal ?? g.reveal,
         }));
+      } else if (data.alreadyFound) {
+        void haptic("select");
       } else {
         void haptic("wrong");
         setShaking(true);
