@@ -31,6 +31,17 @@ interface ClientListData {
   listId: string;
   title: string;
   rungs: ClientRung[];
+  day: string | null;
+}
+interface LibraryItem {
+  id: string;
+  title: string;
+  day: string;
+}
+interface LibraryMine {
+  score: number;
+  found: number;
+  done: boolean;
 }
 interface FoundEntry {
   rank: number;
@@ -83,6 +94,11 @@ function normalizeName(raw: string): string {
 
 function rungWidthPct(rank: number): number {
   return 62 + ((rank - 1) * 38) / 9;
+}
+
+function formatDay(iso: string): string {
+  const d = new Date(iso + "T12:00:00Z");
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 }
 
 function loadGuestState(listId: string): GameState {
@@ -310,6 +326,7 @@ export default function Perfect10Page() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const challengeToken = searchParams?.get("c") ?? null;
+  const listParam = searchParams?.get("list") ?? null;
 
   const [phase, setPhase] = useState<Phase>("loading");
   const [loadError, setLoadError] = useState(false);
@@ -321,6 +338,8 @@ export default function Perfect10Page() {
 
   const [guessInput, setGuessInput] = useState("");
   const [playersIndex, setPlayersIndex] = useState<[number, string, string][]>([]);
+  const [library, setLibrary] = useState<LibraryItem[]>([]);
+  const [libraryMine, setLibraryMine] = useState<Record<string, LibraryMine>>({});
   const [busy, setBusy] = useState(false);
   const [shaking, setShaking] = useState(false);
   const [poppedRank, setPoppedRank] = useState<number | null>(null);
@@ -341,6 +360,13 @@ export default function Perfect10Page() {
   useEffect(() => {
     let cancelled = false;
 
+    // Fresh load for the targeted list (initial, library replay, or challenge).
+    setPhase("loading");
+    setGame({ ...FRESH_GAME });
+    setChallenge(null);
+    setShareToken(null);
+    setLoadError(false);
+
     fetch("/perfect10/players.json")
       .then((r) => (r.ok ? r.json() : []))
       .then((rows) => {
@@ -348,13 +374,25 @@ export default function Perfect10Page() {
       })
       .catch(() => {});
 
+    callApi({ action: "library" })
+      .then(({ ok, data }) => {
+        if (cancelled || !ok) return;
+        setLibrary(Array.isArray(data.items) ? data.items : []);
+        setLibraryMine(data.mine && typeof data.mine === "object" ? data.mine : {});
+      })
+      .catch(() => {});
+
     (async () => {
       try {
-        const { ok, data } = await callApi({ action: "state", challenge: challengeToken ?? undefined });
+        const { ok, data } = await callApi({
+          action: "state",
+          challenge: challengeToken ?? undefined,
+          listId: listParam ?? undefined,
+        });
         if (cancelled) return;
         if (!ok || !data?.listId) throw new Error("no list");
 
-        const cl: ClientListData = { listId: data.listId, title: data.title, rungs: data.rungs ?? [] };
+        const cl: ClientListData = { listId: data.listId, title: data.title, rungs: data.rungs ?? [], day: data.day ?? null };
         setList(cl);
         if (data.challenge) setChallenge(data.challenge);
 
@@ -392,8 +430,9 @@ export default function Perfect10Page() {
     return () => {
       cancelled = true;
     };
+    // Re-runs when the URL targets a different list (library replay / challenge).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [challengeToken, listParam]);
 
   useEffect(() => {
     if (phase === "playing") setTimeout(() => inputRef.current?.focus(), 200);
@@ -591,7 +630,7 @@ export default function Perfect10Page() {
             style={{ background: "rgba(255,196,0,0.06)", border: `1px solid ${ACCENT}30`, maxWidth: 320 }}
           >
             <p className="font-body text-xs mb-1" style={{ color: "#9aa39d" }}>
-              TODAY&apos;S LIST
+              {listParam && list?.day ? formatDay(list.day).toUpperCase() : "TODAY'S LIST"}
             </p>
             <p className="font-display text-base" style={{ color: ACCENT }}>
               {list?.title ?? "…"}
@@ -620,6 +659,48 @@ export default function Perfect10Page() {
           <Button variant="primary" tone="gold" size="lg" fullWidth onClick={() => setPhase("playing")} disabled={!list}>
             START
           </Button>
+
+          {library.filter((i) => i.id !== list?.listId).length > 0 && (
+            <div className="rounded-2xl px-4 py-4 bg-surface" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
+              <p className="font-display text-sm text-white tracking-wide mb-2">Previous days</p>
+              <div className="flex flex-col gap-1.5">
+                {library
+                  .filter((i) => i.id !== list?.listId)
+                  .map((item) => {
+                    const mine: LibraryMine = !isGuest
+                      ? libraryMine[item.id] ?? { score: 0, found: 0, done: false }
+                      : (() => {
+                          const g = loadGuestState(item.id);
+                          return { score: g.score, found: g.found.length, done: g.done };
+                        })();
+                    const untouched = !mine.done && mine.found === 0;
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => router.push(`/play/game/perfect-10?list=${item.id}`)}
+                        className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-left"
+                        style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
+                      >
+                        <span className="font-body text-xs flex-shrink-0 w-12" style={{ color: "#8a948f" }}>
+                          {formatDay(item.day)}
+                        </span>
+                        <span className="font-body text-sm text-white flex-1 min-w-0 truncate">{item.title}</span>
+                        <span
+                          className="font-display text-xs px-2 py-1 rounded-lg flex-shrink-0"
+                          style={{
+                            background: untouched ? `${ACCENT}18` : "rgba(255,255,255,0.06)",
+                            color: untouched ? ACCENT : mine.done ? "#ffe082" : "#9aa39d",
+                          }}
+                        >
+                          {untouched ? "PLAY" : mine.done ? `${mine.score} PTS` : `${mine.found}/10`}
+                        </span>
+                      </button>
+                    );
+                  })}
+              </div>
+            </div>
+          )}
         </div>
 
         <BottomNav />

@@ -6,6 +6,8 @@ import {
   loadListForDay,
   loadListById,
   loadAttemptByShareToken,
+  loadLibrary,
+  loadAttemptsForLists,
   createOrLoadAttempt,
   saveAttempt,
   clientList,
@@ -13,6 +15,7 @@ import {
   hintFor,
   revealRemaining,
   pointsForHints,
+  isServed,
   MAX_STRIKES,
   MAX_HINT_TOKENS,
   type P10List,
@@ -108,17 +111,22 @@ export async function POST(req: NextRequest) {
   // ── state ──────────────────────────────────────────────────────────────
   if (action === "state") {
     const challengeToken = typeof body.challenge === "string" ? body.challenge : null;
+    const listIdParam = typeof body.listId === "string" ? body.listId : null;
 
     let list: P10List | null;
     if (challengeToken) {
       const challengerAttempt = await loadAttemptByShareToken(challengeToken);
       list = challengerAttempt ? await loadListById(challengerAttempt.list_id) : await loadListForDay();
+    } else if (listIdParam) {
+      // Library replay — only lists whose day has arrived are addressable.
+      list = await loadListById(listIdParam);
+      if (list && !isServed(list)) list = null;
     } else {
       list = await loadListForDay();
     }
     if (!list) return NextResponse.json({ error: "No list today" }, { status: 404 });
 
-    const payload: Record<string, unknown> = { ...clientList(list) };
+    const payload: Record<string, unknown> = { ...clientList(list), day: list.day };
 
     if (user) {
       const attempt = await createOrLoadAttempt(list.id, user.id);
@@ -141,7 +149,7 @@ export async function POST(req: NextRequest) {
     if (!listId || !guess) return NextResponse.json({ error: "Missing listId or guess" }, { status: 400 });
 
     const list = await loadListById(listId);
-    if (!list) return NextResponse.json({ error: "List not found" }, { status: 404 });
+    if (!list || !isServed(list)) return NextResponse.json({ error: "List not found" }, { status: 404 });
 
     if (user) {
       const attempt = await createOrLoadAttempt(list.id, user.id);
@@ -236,7 +244,7 @@ export async function POST(req: NextRequest) {
     }
 
     const list = await loadListById(listId);
-    if (!list) return NextResponse.json({ error: "List not found" }, { status: 404 });
+    if (!list || !isServed(list)) return NextResponse.json({ error: "List not found" }, { status: 404 });
 
     if (user) {
       const attempt = await createOrLoadAttempt(list.id, user.id);
@@ -274,6 +282,22 @@ export async function POST(req: NextRequest) {
     const text = hintFor(list, rank, tier);
     const tokensLeft = (guestState.tokensLeft ?? MAX_HINT_TOKENS) - 1;
     return NextResponse.json({ text, tokensLeft });
+  }
+
+  // ── library — the playable back-catalogue (title + day only, no answers) ──
+  if (action === "library") {
+    const items = await loadLibrary();
+    let mine: Record<string, { score: number; found: number; done: boolean }> = {};
+    if (user && items.length > 0) {
+      const attempts = await loadAttemptsForLists(
+        user.id,
+        items.map((i) => i.id)
+      );
+      mine = Object.fromEntries(
+        attempts.map((a) => [a.list_id, { score: a.score, found: (a.found ?? []).length, done: a.done }])
+      );
+    }
+    return NextResponse.json({ items, mine });
   }
 
   return NextResponse.json({ error: "Unknown action" }, { status: 400 });

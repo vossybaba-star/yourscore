@@ -133,6 +133,38 @@ export async function loadListById(id: string): Promise<P10List | null> {
   return (data as unknown as P10List) ?? null;
 }
 
+/** A list is playable once its day has arrived (Europe/London). Drafts (day null)
+ * and future-dated lists are never served, listed, or gradeable. */
+export function isServed(list: P10List, today: string = londonDateISO()): boolean {
+  return Boolean(list.day) && (list.day as string) <= today;
+}
+
+export interface LibraryItem {
+  id: string;
+  title: string;
+  day: string;
+}
+
+/** Past + today's lists, newest first — the playable back-catalogue. */
+export async function loadLibrary(limit = 60): Promise<LibraryItem[]> {
+  const db = createServiceClient();
+  const { data } = await db
+    .from("p10_lists")
+    .select("id, title, day")
+    .not("day", "is", null)
+    .lte("day", londonDateISO())
+    .order("day", { ascending: false })
+    .limit(limit);
+  return (data as unknown as LibraryItem[]) ?? [];
+}
+
+export async function loadAttemptsForLists(userId: string, listIds: string[]): Promise<P10Attempt[]> {
+  if (listIds.length === 0) return [];
+  const db = createServiceClient();
+  const { data } = await db.from("p10_attempts").select("*").eq("user_id", userId).in("list_id", listIds);
+  return (data as unknown as P10Attempt[]) ?? [];
+}
+
 export async function loadAttempt(listId: string, userId: string): Promise<P10Attempt | null> {
   const db = createServiceClient();
   const { data } = await db
