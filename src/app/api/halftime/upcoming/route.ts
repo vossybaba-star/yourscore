@@ -16,6 +16,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 export const revalidate = 300;
 
 interface Row {
+  fixture_id: number;
   round_name: string | null;
   home: string;
   away: string;
@@ -30,7 +31,7 @@ export async function GET() {
   const nowIso = new Date().toISOString();
   const { data, error } = await db
     .from("halftime_releases")
-    .select("round_name, home, away, kickoff_at, state, season_id")
+    .select("fixture_id, round_name, home, away, kickoff_at, state, season_id")
     .gte("kickoff_at", nowIso)
     .order("kickoff_at", { ascending: true })
     .limit(200);
@@ -42,11 +43,15 @@ export async function GET() {
 
   // Group by gameweek, preserving kickoff order. A Map keeps first-seen order,
   // which is chronological because the query is already sorted by kickoff.
-  const byGw = new Map<string, { round: string; kickoffFirst: string; fixtures: Array<{ home: string; away: string; kickoff: string; state: string }> }>();
+  const byGw = new Map<string, { round: string; kickoffFirst: string; fixtures: Array<{ fixtureId: number; home: string; away: string; kickoff: string; state: string }> }>();
   for (const r of (data ?? []) as Row[]) {
     const round = r.round_name ?? "TBC";
     if (!byGw.has(round)) byGw.set(round, { round, kickoffFirst: r.kickoff_at, fixtures: [] });
-    byGw.get(round)!.fixtures.push({ home: r.home, away: r.away, kickoff: r.kickoff_at, state: r.state });
+    // fixtureId is the key "Notify me" stores against — without it the client
+    // has no stable handle on a fixture.
+    byGw.get(round)!.fixtures.push({
+      fixtureId: Number(r.fixture_id), home: r.home, away: r.away, kickoff: r.kickoff_at, state: r.state,
+    });
   }
 
   const gameweeks = Array.from(byGw.values());

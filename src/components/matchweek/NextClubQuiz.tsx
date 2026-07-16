@@ -15,10 +15,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useViewerClub } from "@/components/clubs/useClubData";
 import { Crest } from "@/components/clubs/Crest";
+import { NotifyButton } from "./NotifyButton";
+import { useReminders } from "./useReminders";
 
 const TEAL = "#00d8c0";
 
-interface Fixture { home: string; away: string; kickoff: string; state: string }
+interface Fixture { fixtureId: number; home: string; away: string; kickoff: string; state: string }
 interface Gameweek { round: string; kickoffFirst: string; fixtures: Fixture[] }
 
 const dayLabel = (iso: string) =>
@@ -28,6 +30,7 @@ const timeLabel = (iso: string) =>
 
 export function NextClubQuiz() {
   const club = useViewerClub();
+  const reminders = useReminders();
   const [gws, setGws] = useState<Gameweek[]>([]);
   const [loaded, setLoaded] = useState(false);
 
@@ -91,13 +94,16 @@ export function NextClubQuiz() {
           </div>
         </div>
 
-        <div className="mt-3.5 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
-          <p className="font-body text-xs" style={{ color: "#8a948f" }}>
-            Drops at half time · {timeLabel(fx.kickoff)} kick-off
-          </p>
-          <p className="font-body text-xs mt-1" style={{ color: "#586058" }}>
-            This is the one that scores for {club} in the fan table.
-          </p>
+        <div className="mt-3.5 pt-3 flex items-end justify-between gap-3" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
+          <div className="min-w-0">
+            <p className="font-body text-xs" style={{ color: "#8a948f" }}>
+              Drops at half time · {timeLabel(fx.kickoff)} kick-off
+            </p>
+            <p className="font-body text-xs mt-1" style={{ color: "#586058" }}>
+              This is the one that scores for {club} in the fan table.
+            </p>
+          </div>
+          <NotifyButton fixtureId={fx.fixtureId} reminders={reminders} size="md" />
         </div>
       </div>
     </div>

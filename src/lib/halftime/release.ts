@@ -144,10 +144,23 @@ async function ensurePackRow(row: StoredRow, questions: QuizQuestion[]): Promise
 }
 
 /**
- * Push, once per user per fixture, and at most ONE halftime push per user per
- * day — a 5-fixture Saturday must not mean five notifications. First whistle of
- * the day wins; users already pushed for any of today's fixtures are excluded
- * before fan-out.
+ * Push, once per user per fixture, and at most ONE UNSOLICITED halftime push per
+ * user per day — a 5-fixture Saturday must not mean five notifications. First
+ * whistle of the day wins; users already pushed for any of today's fixtures are
+ * excluded before fan-out.
+ *
+ * "Notify me" changes who gets what, in two ways:
+ *   1. A user who ASKED for this fixture is pushed for it, always. The daily cap
+ *      exists to stop us spamming people with matches they didn't ask about; it
+ *      must not gag a notification they explicitly requested.
+ *   2. A user who asked for ANY of today's fixtures is dropped from the blanket
+ *      push. They've told us which match they care about — sending them a
+ *      different one would be the exact spam the cap is there to prevent, and
+ *      (before this) the cap would then have suppressed the one they wanted.
+ *
+ * requireOptIn stays true throughout: tapping "Notify me" is a request, not
+ * consent to be pushed at all. Someone who asked but never enabled notifications
+ * is skipped here — the UI tells them so rather than quietly dropping it.
  */
 async function pushForFixture(row: StoredRow, slug: string): Promise<number> {
   if (process.env.HALFTIME_PUSH_ENABLED !== "true") return 0;
@@ -177,15 +190,32 @@ async function pushForFixture(row: StoredRow, slug: string): Promise<number> {
     ((alreadyToday ?? []) as { user_id: string }[]).map((r) => r.user_id),
   );
 
+  const todayFixtureIds = ((todays ?? []) as { fixture_id: number }[]).map((r) => Number(r.fixture_id));
+
+  // Who explicitly asked for THIS fixture, and who asked for anything today.
+  const [{ data: askedThis }, { data: askedToday }] = await Promise.all([
+    raw.from("halftime_reminders").select("user_id").eq("fixture_id", row.fixture_id),
+    raw
+      .from("halftime_reminders")
+      .select("user_id")
+      .in("fixture_id", todayFixtureIds.length ? todayFixtureIds : [row.fixture_id]),
+  ]);
+
+  const requesters = ((askedThis ?? []) as { user_id: string }[]).map((r) => r.user_id);
+  const hasRequestToday = new Set(((askedToday ?? []) as { user_id: string }[]).map((r) => r.user_id));
+
   const { data: optedIn } = await raw
     .from("profiles")
     .select("id")
     .eq("notifications_opt_in", true);
 
-  const targets = ((optedIn ?? []) as { id: string }[])
+  const blanket = ((optedIn ?? []) as { id: string }[])
     .map((r) => r.id)
-    .filter((id) => !capped.has(id))
-    .slice(0, MAX_PUSH_PER_RUN);
+    .filter((id) => !capped.has(id) && !hasRequestToday.has(id));
+
+  // Requesters first, so a run that hits MAX_PUSH_PER_RUN truncates the blanket
+  // audience rather than the people who actually asked.
+  const targets = Array.from(new Set([...requesters, ...blanket])).slice(0, MAX_PUSH_PER_RUN);
 
   if (!targets.length) return 0;
 

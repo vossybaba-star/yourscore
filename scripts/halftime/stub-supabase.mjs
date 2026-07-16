@@ -53,6 +53,8 @@ const TABLES = {
   club_supporters: [],
   halftime_predictions: [],
   halftime_prediction_results: [],
+  // per-user "Notify me" requests for a specific fixture's halftime quiz.
+  halftime_reminders: [],
   // general PL news doc (read by Matchweek → PL → News via /api/pl/news).
   pl_news_feed: [],
   // quiz stat-highlight tiles (read by Matchweek → Live Quiz).
@@ -74,6 +76,7 @@ const KEYS = {
   // One pick per fan per fixture — the DB lock the poll relies on.
   halftime_predictions: ["user_id", "fixture_id"],
   halftime_prediction_results: ["fixture_id"],
+  halftime_reminders: ["user_id", "fixture_id"],
   pl_news_feed: ["id"],
   quiz_highlights: ["id"],
 };

@@ -12,10 +12,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Crest } from "@/components/clubs/Crest";
+import { NotifyButton } from "./NotifyButton";
+import { useReminders } from "./useReminders";
 
 const TEAL = "#00d8c0";
 
-interface Fixture { home: string; away: string; kickoff: string; state: string }
+interface Fixture { fixtureId: number; home: string; away: string; kickoff: string; state: string }
 interface Gameweek { round: string; kickoffFirst: string; fixtures: Fixture[] }
 
 const dayLabel = (iso: string) =>
@@ -27,6 +29,7 @@ export function UpcomingQuizzes() {
   const [gws, setGws] = useState<Gameweek[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [active, setActive] = useState<string | null>(null);
+  const reminders = useReminders();
 
   useEffect(() => {
     let live = true;
@@ -106,6 +109,10 @@ export function UpcomingQuizzes() {
             <span className="font-body text-[11px]" style={{ color: "#586058" }}>
               Drops at half-time · {timeLabel(fx.kickoff)} KO
             </span>
+
+            <div className="flex mt-2.5">
+              <NotifyButton fixtureId={fx.fixtureId} reminders={reminders} />
+            </div>
           </div>
         ))}
       </div>
