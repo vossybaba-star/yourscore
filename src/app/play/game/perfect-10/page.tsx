@@ -419,7 +419,7 @@ export default function Perfect10Page() {
       return 3;
     };
     return playersIndex
-      .filter(([, name, norm]) => norm.includes(query) && !solvedNorm.has(norm))
+      .filter(([, , norm]) => norm.includes(query) && !solvedNorm.has(norm))
       .sort((a, b) => {
         const at = tierOf(a[2]);
         const bt = tierOf(b[2]);
