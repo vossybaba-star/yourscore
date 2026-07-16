@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { getDeviceId } from "@/lib/analytics/deviceId";
 
 const KEY = "ys:acq";
 
@@ -33,9 +34,19 @@ function classify(utmSource: string, referrer: string): string {
  * signal, and only once (first touch wins). `SignupPixel` reads this at
  * registration and persists it to the user's profile, so retained players can
  * be attributed to the platform/campaign that acquired them. Never overwrites.
+ *
+ * Also mints the durable anonymous device id on landing (see below) — this is the
+ * only component guaranteed to run on every visitor's first page.
  */
 export function AcquisitionCapture() {
   useEffect(() => {
+    // Mint the device id on the FIRST landing, before any early return below.
+    // It must exist *before* the visitor plays: guest plays need to carry it so
+    // that pre-signup activity can be linked to the account when SignupPixel
+    // persists the same id at registration. Minting it at signup instead would be
+    // too late — the guest's earlier plays would already have no id to match on.
+    getDeviceId();
+
     try {
       if (localStorage.getItem(KEY)) return; // first touch already captured
 
