@@ -30,8 +30,19 @@
 > verification, any failed entry drops the WHOLE list → insert as draft; a list only
 > serves once it's assigned a `day`). Migration 85 applied to prod (tables RLS
 > deny-all/service-only). Hub tile on /play, gold #ffc400; typographic placeholder cover
-> pending approved key art. Launch-list batch generation running; days assigned after
-> founder veto. NOTE: `scripts/lib/anthropic.mjs` got its first git commit on this
+> pending approved key art. **Same day: the playable LIBRARY shipped** (founder model:
+> a list drops daily, the back-catalogue stays playable) — `library` API action +
+> "Previous days" on the intro with PLAY / n-of-10 / score badges; `?list=` replays any
+> served list; drafts/future days unreachable (`isServed` gates state/guess/hint).
+> **Content live:** Jul 13–15 = PL library seeds (25/26 scorers · appearance makers ·
+> all-time scorers), Jul 16 = last 10 WC Golden Boot winners (Salenko added as an
+> accepted answer on the shared-1994 rung), Jul 17 = last 10 WC-winning captains —
+> founder wants WC-themed dailies while WC 2026 runs. Gate lessons (all drops were
+> CORRECT): tie-bunched topics (all-time assists 94-94, clean sheets 132×3, mid-
+> tournament tallies) are structurally unshippable — pick recency-ranked or clean-order
+> topics; all-time WC scorers/appearances regenerate AFTER the Jul 19 final. ⚠️ NO
+> daily automation yet — someone must generate + assign `day` rows (founder decision
+> pending on a cron). NOTE: `scripts/lib/anthropic.mjs` got its first git commit on this
 > branch (was untracked WIP from the quiz-factory session) — reconcile if the factory
 > branch commits its own copy. Nav decision PENDING with founder: an "all games under
 > one Play tab incl. 38-0" restructure was floated 2026-07-16 — NOT built; §9 canon and
