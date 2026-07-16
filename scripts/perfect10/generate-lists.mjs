@@ -98,7 +98,7 @@ async function authorList(topic) {
     system: AUTHOR_SYSTEM,
     messages: [{ role: "user", content: `Topic: ${topic}\n\nAuthor the ranked top-10 list.` }],
     tools: [WEB_SEARCH_TOOL],
-    maxTokens: 4096,
+    maxTokens: 8192,
     stage: "p10-author",
   });
   const parsed = parseJson(resp);
@@ -132,16 +132,25 @@ async function verifyEntry(title, entry) {
       },
     ],
     tools: [WEB_SEARCH_TOOL],
-    maxTokens: 1024,
+    maxTokens: 2048,
     stage: "p10-verify",
   });
   let v;
   try {
     v = parseJson(resp);
   } catch {
-    return { confirmed: false, note: "verifier reply was not JSON", usage: usageOf(resp) };
+    return null; // caller retries once — a truncated/chatty reply is mechanical, not factual
   }
   return { confirmed: Boolean(v.confirmed), sourceUrl: v.source_url ?? null, note: v.note ?? null, usage: usageOf(resp) };
+}
+
+/** One retry on a malformed verifier reply before treating it as unconfirmed —
+ * a non-JSON reply is a mechanical failure and must not veto a whole list. */
+async function verifyEntryWithRetry(title, entry) {
+  const first = await verifyEntry(title, entry);
+  if (first) return first;
+  const second = await verifyEntry(title, entry);
+  return second ?? { confirmed: false, note: "verifier reply was not JSON (after retry)" };
 }
 
 // ── Player index force-upsert (so the 10 answers are always guessable) ────
@@ -239,7 +248,7 @@ async function main() {
     for (const e of entries) {
       let v;
       try {
-        v = await verifyEntry(title, e);
+        v = await verifyEntryWithRetry(title, e);
       } catch (err) {
         if (err instanceof CreditExhausted) {
           console.error(err.message);
