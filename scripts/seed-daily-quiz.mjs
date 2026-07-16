@@ -17,6 +17,7 @@
 
 import { readFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
+import { shufflePack } from "./lib/shuffle-options.mjs";
 
 const args = process.argv.slice(2);
 const COMMIT = args.includes("--commit");
@@ -33,58 +34,12 @@ if (COMMIT && !SERVICE_KEY) { console.error("SUPABASE_SERVICE_ROLE_KEY required 
 
 const quiz = JSON.parse(readFileSync(fileArg, "utf8"));
 
-const LETTERS = ["A", "B", "C", "D"];
-
-// ── Option shuffling ───────────────────────────────────────────────────────────
-// Authors tend to write the correct answer as option A every time, so a raw pack
-// has the answer sitting in slot A for all 15 questions — and the challenge page
-// renders options in fixed A→D order with no client shuffle, making the answer
-// always the first choice. We fix that here at publish time: randomise each
-// question's option positions and recompute the answer letter so the correct
-// answer is spread across A–D.
-//
-// Deterministic on purpose. The seed is derived from the date + question index +
-// question text, so re-publishing the same file yields the same shuffle — idempotent
-// with the upsert-by-name flow below, and stable for anyone who already saw the pack.
-function hashSeed(str) {
-  let h = 2166136261 >>> 0; // FNV-1a
-  for (let i = 0; i < str.length; i++) {
-    h ^= str.charCodeAt(i);
-    h = Math.imul(h, 16777619) >>> 0;
-  }
-  return h >>> 0;
-}
-
-function mulberry32(seed) {
-  let a = seed >>> 0;
-  return function () {
-    a |= 0;
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-function shuffleOptions(q, i) {
-  if (!q?.options || !LETTERS.every((k) => q.options[k]) || !LETTERS.includes(q.answer)) {
-    return q; // leave malformed questions untouched — validation will flag them
-  }
-  const rng = mulberry32(hashSeed(`${quiz.date ?? quiz.name}-${i}-${q.question}`));
-  const order = [...LETTERS];
-  for (let j = order.length - 1; j > 0; j--) {
-    const k = Math.floor(rng() * (j + 1));
-    [order[j], order[k]] = [order[k], order[j]];
-  }
-  // order[slot] = original letter now placed in that slot.
-  const options = {};
-  LETTERS.forEach((slot, idx) => { options[slot] = q.options[order[idx]]; });
-  const answer = LETTERS[order.indexOf(q.answer)];
-  return { ...q, options, answer };
-}
-
+// Option shuffling now lives in scripts/lib/shuffle-options.mjs so the quiz factory
+// shares one copy — a second implementation would reshuffle already-published packs.
+// The seed key is unchanged (date, falling back to name), so this is byte-identical to
+// the previous inline version and existing packs re-publish to the same shuffle.
 if (Array.isArray(quiz.questions)) {
-  quiz.questions = quiz.questions.map((q, i) => shuffleOptions(q, i));
+  quiz.questions = shufflePack(quiz.questions, quiz.date ?? quiz.name);
 }
 
 // ── Validation ───────────────────────────────────────────────────────────────

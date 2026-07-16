@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { rateLimitDistributed } from "@/lib/ratelimit";
 import { shuffle } from "@/lib/utils";
-import { dedupeByQuestionText } from "@/lib/questions";
+import { dedupeByQuestionText, pickDistinctFacts } from "@/lib/questions";
 
 type Difficulty = "easy" | "medium" | "hard";
 
@@ -24,6 +24,8 @@ interface BankQuestion {
   tags: string[];
   status: "active" | "review" | "retired";
   source_pack_id: string | null;
+  /** Stable id of the fact this question was built from (migration 81). Null for legacy rows. */
+  fact_key: string | null;
   times_answered: number;
   times_correct: number;
   created_at: string;
@@ -33,15 +35,22 @@ interface StartBody {
   entity?: string;
   tags?: string[];
   difficulty?: Difficulty;
+  /** Topic filter — the club hub's four categories (history-honours, legends, …). */
+  category?: string;
 }
 
+/**
+ * Fetch a POOL of candidates (deliberately more than needed) so the caller can select from it
+ * while enforcing the one-question-per-fact rule. Returns shuffled; the caller slices.
+ */
 async function fetchQuestions(
   supabase: ReturnType<typeof createServiceClient>,
   entity: string | undefined,
   tags: string[] | undefined,
   difficulty: Difficulty,
   seenIds: string[],
-  limit: number
+  limit: number,
+  category?: string
 ): Promise<BankQuestion[]> {
   let query = supabase
     .from("questions")
@@ -50,6 +59,9 @@ async function fetchQuestions(
     .eq("difficulty", difficulty)
     .order("created_at", { ascending: false }) // will be overridden by random below
     .limit(limit);
+
+  // Topic filter — a fan who picks "Arsenal → Legends" gets Legends questions only.
+  if (category) query = query.eq("category", category);
 
   // entity OR tags filter
   if (entity && tags && tags.length > 0) {
@@ -65,19 +77,19 @@ async function fetchQuestions(
     query = query.not("id", "in", `(${seenIds.join(",")})`);
   }
 
-  // random order via postgres trick — use rpc or raw filter; Supabase JS supports .order with ascending: false
-  // Use a workaround: fetch more rows and shuffle in JS when RANDOM() isn't directly available
-  // Actually Supabase supports .order('id', { ascending: false }) but not RANDOM() directly.
-  // We'll fetch limit * 3 and shuffle, then slice.
-  const fetchLimit = limit * 3;
+  // Postgres RANDOM() isn't reachable through the JS client, so fetch a wider pool and
+  // shuffle in JS. The pool is also the headroom the fact-key selection needs: skipping a
+  // question because its fact is already in this quiz means reaching further down the pool.
+  const fetchLimit = limit * 4;
   const { data, error } = await query.limit(fetchLimit);
 
   if (error) throw new Error(error.message);
   if (!data) return [];
 
   // options is a jsonb column (untyped), so cast at the DB boundary.
-  return shuffle(data as unknown as BankQuestion[]).slice(0, limit);
+  return shuffle(data as unknown as BankQuestion[]);
 }
+
 
 export async function POST(req: NextRequest) {
   // Authenticate: derive the user from the session, never from the body.
@@ -102,11 +114,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { entity, tags, difficulty } = body;
+  const { entity, tags, difficulty, category } = body;
 
   // Validate filter inputs that get interpolated into PostgREST filter strings.
   if (entity !== undefined && (typeof entity !== "string" || !FILTER_TOKEN_RE.test(entity))) {
     return NextResponse.json({ error: "Invalid entity" }, { status: 400 });
+  }
+  if (category !== undefined && (typeof category !== "string" || !FILTER_TOKEN_RE.test(category))) {
+    return NextResponse.json({ error: "Invalid category" }, { status: 400 });
   }
   if (tags !== undefined) {
     if (!Array.isArray(tags) || tags.length > 20 || !tags.every((t) => typeof t === "string" && FILTER_TOKEN_RE.test(t))) {
@@ -142,21 +157,28 @@ export async function POST(req: NextRequest) {
   let seenIds = (historyRows ?? []).map((r) => r.question_id);
 
   const runQueries = async (currentSeenIds: string[]): Promise<BankQuestion[]> => {
-    let results: BankQuestion[] = [];
+    // Shared across all three difficulty picks: two questions from one fact would otherwise
+    // slip through at different difficulties (the easy "who did they beat" and the hard
+    // "what was the score" come from the same final).
+    const usedFactKeys = new Set<string>();
 
     if (difficulty) {
-      const rows = await fetchQuestions(supabase, entity, tags, difficulty, currentSeenIds, 15);
-      results = rows;
-    } else {
-      const [easy, medium, hard] = await Promise.all([
-        fetchQuestions(supabase, entity, tags, "easy", currentSeenIds, 6),
-        fetchQuestions(supabase, entity, tags, "medium", currentSeenIds, 6),
-        fetchQuestions(supabase, entity, tags, "hard", currentSeenIds, 3),
-      ]);
-      results = [...easy, ...medium, ...hard];
+      const pool = await fetchQuestions(supabase, entity, tags, difficulty, currentSeenIds, 15, category);
+      return pickDistinctFacts(pool, 15, usedFactKeys);
     }
 
-    return results;
+    const [easyPool, mediumPool, hardPool] = await Promise.all([
+      fetchQuestions(supabase, entity, tags, "easy", currentSeenIds, 6, category),
+      fetchQuestions(supabase, entity, tags, "medium", currentSeenIds, 6, category),
+      fetchQuestions(supabase, entity, tags, "hard", currentSeenIds, 3, category),
+    ]);
+
+    // Sequential selection (not parallel) so each pick sees the facts already spent.
+    return [
+      ...pickDistinctFacts(easyPool, 6, usedFactKeys),
+      ...pickDistinctFacts(mediumPool, 6, usedFactKeys),
+      ...pickDistinctFacts(hardPool, 3, usedFactKeys),
+    ];
   };
 
   let questions = await runQueries(seenIds);

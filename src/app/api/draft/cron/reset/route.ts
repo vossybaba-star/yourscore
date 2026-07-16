@@ -4,7 +4,7 @@ import { settleExpiredPens } from "@/lib/draft/pens-resolve";
 
 // Daily leaderboard reset — zero wins_today for rows whose last win predates today
 // (UTC). Schedule at 00:00 UTC (Vercel cron / pg_cron) with the CRON_SECRET bearer,
-// same pattern as /api/cron/reclassify.
+// same pattern as the other cron routes.
 
 export async function GET(req: NextRequest) {
   const expected = `Bearer ${process.env.CRON_SECRET}`;

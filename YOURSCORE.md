@@ -260,6 +260,117 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-16 (pm3)** — **Legacy question-bank triage (APPLIED TO PROD).** The bank predates the
+  gate, so it was measured against it. Results: **2,823 active → 1,205 (43%) were tagged
+  expert/master and are UNREACHABLE** (`/api/quiz/start` is typed `"easy"|"medium"|"hard"` and
+  draws 6/6/3 — it can never ask for them). Re-rated the whole bank with the independent rater
+  ($0.86): **93% of the "unreachable" genuinely ARE hard** (only 84/1,145 recover), and **554 of
+  1,520 served questions (36%) were at the WRONG difficulty** — the old rating was self-declared
+  by the author. Applied: **525 difficulties fixed · 73 stranded recovered as easy/medium · 1,070
+  left stranded** (genuinely hard AND unverified — recovering them would add unverified questions
+  to our most oversupplied tier) · **158 rotting questions retired** (fail temporal/specificity:
+  "Reading's MOST RECENT PL season", "who IS the all-time CL scorer"). **The easy shortage is
+  STRUCTURAL, not mislabelling** — re-rating everything moves easy 5%→6%; only new authoring fixes
+  it. Deleted `/api/cron/reclassify`, which reclassified difficulty from `times_correct/times_answered`
+  — the thing the founder explicitly forbade (unscheduled, so harmless, but a landmine).
+  **`times_answered` IS incremented** — inside the Postgres RPC `record_quiz_results` (grepping
+  `src/` can't see it) — but it's starved, not missing: max 4 answers on any question, and
+  `user_question_history` holds 314 rows from ONE user, because `/quiz/create` COPIES bank
+  questions into a `quiz_packs` JSONB snapshot and pack plays never report back to the bank row.
+  New: `scripts/quiz-factory/{audit-live,rerate-live,clean-live}.mjs`.
+
+- **2026-07-16 (pm2)** — **Quiz factory rebuilt FACTS-FIRST** (founder's call; branch
+  `quiz/content-factory`, not on main). The old order was backwards: an author searched the web
+  and wrote 30 questions, then a verifier did 30 *more* web searches to check them. Now:
+  **gather verified facts → author ONLY from that sheet → cheap consistency check (no web) →
+  independent difficulty rating**. Web search happens ONCE per category instead of twice per
+  question, and a question derived from a verified fact can't be a hallucination — the worst
+  case is a misreading, which is caught without a search. Projection **$346 → ~$58** for the
+  full 20-club bank. Facts are reusable across categories and packs. The trade-off, accepted
+  knowingly: correlated failure (one bad fact poisons every question from it), mitigated by
+  **source tiering** (`scripts/quiz-factory/sources.mjs` — tier 1 governing bodies/official
+  club sites, tier 2 major press/Wikipedia/Transfermarkt, everything else = NO source, fact
+  dropped) and by the founder reviewing the ~30-fact sheet rather than 30 questions.
+  - **Difficulty model** (`scripts/quiz-factory/difficulty.mjs`): assigned **a priori**, never
+    from live player answers — club questions are answered by that club's fans, so accuracy
+    would measure fandom not difficulty, scores would stop being comparable, and a question
+    everyone fails is often *wrong* rather than hard. (`times_answered`/`times_correct` keep a
+    job as a **quality alarm**, not a difficulty knob.) **Three levels only** — `/api/quiz/start`
+    is typed `"easy"|"medium"|"hard"` and draws 6/6/3, so expert/master are **stranded: 1,101 of
+    2,447 club rows (45%) can never be served**. A separate rater (never the author, which drifts)
+    scores against a fixed **anchor set**, plus deterministic guards (tight numeric options ⇒
+    never easy; 10+ seasons old ⇒ never easy).
+  - **Specificity gate** (`checkSpecificity`): now that we hold league AND European data for the
+    same club+season, "Arsenal's top scorer in 2015/16" has two answers — every scope-dependent
+    question must name the competition.
+  - **Category swap: Transfers & Rivalries → European Nights.** Transfer fees aren't in
+    SportMonks at any tier (most expensive category, and fees are genuinely disputed — the gate
+    killed a Bellingham question over £88.5m-base vs £115m-with-add-ons). European Nights is
+    fully groundable off the finals index and is the better fan material.
+
+- **2026-07-16 (pm)** — **SportMonks subscription upgraded to European club tournaments.**
+  Accessible competitions are now exactly five: Premier League (8), Champions League (2),
+  Europa League (5), Europa Conference (2286), UEFA Super Cup (1328) — all back to 2000/01.
+  **No domestic cups** (FA/League Cup remain web-only). `scripts/lib/sportmonks.mjs` gained
+  `europeanFinalsIndex()` — every European final since 2000 (67 of them), built once (~200
+  calls) and cached, so a club's honours is a free lookup. Getting a cup winner needs two hops
+  (fixtures are paginated, the final is never on page 1): `/stages/seasons/{id}` → the stage
+  named `Final` → `/fixtures?filters=fixtureStages:{id}` → `participants[].meta.winner`.
+  Club fact sheets now carry European honours, so History & Honours grounds ~60% (was ~35%)
+  and the full 20-club bank projects at ~$207 (from ~$346 all-web). Spot-checked green: UCL
+  23/24 Real Madrid, 18/19 Liverpool, 20/21 Chelsea, UEL 18/19 Chelsea.
+
+- **2026-07-16** — **Quiz factory: SportMonks grounding (the cost fix) + club-bank runner**
+  (branch `quiz/content-factory`, NOT on main). `scripts/lib/sportmonks.mjs` builds a
+  disk-cached PL fact sheet per club (final tables + points + per-season top scorers, 2000/01→,
+  league 8). The fact-check gate now grounds BOTH authoring (`authorBankGrounded`, no web
+  search) and verification (`verifyAgainstFacts`, no web search) in that sheet wherever it
+  covers the question, with web fallback for what it doesn't. **Measured: Arsenal × Modern-Era
+  = $0.12 with zero web searches** (vs ~$4.32 all-web); full 20-club bank projection $346→$222.
+  `scripts/quiz-factory/run-bank.mjs` fills the club question BANK (`questions` rows, drawn per
+  play — NOT packs), 4 locked categories (History & Honours / Legends / Modern Era / Transfers
+  & Rivalries), easy-skewed; default mode is a zero-spend cost projection. `audit-bank.mjs`
+  audits the live bank — which turned up FABRICATED questions still active (e.g. "Haaland PL
+  goals for Man City 2010-11"), not just staleness, and a 5%-easy / 74%-hard difficulty skew.
+  Bank not filled yet — awaiting founder's go on scope.
+
+- **2026-07-14** — **Quiz content factory** (branch `quiz/content-factory`, ⚠️ NOT on main,
+  migration 80 NOT yet applied). Themed packs on a schedule, with approval decoupled from
+  release. **The pack lifecycle is now three states**: `draft` (invisible) → approved +
+  scheduled (`approved_at` + `release_at` set, still invisible) → `published` +
+  `rotation_active` (live). `status='draft'` was always permitted by the CHECK but nothing
+  ever wrote it — migration 80 activates it and adds `release_at` / `approved_at` /
+  `approved_by` / `theme`.
+  - **The factory** (`scripts/quiz-factory/`, weekly VPS cron): pick theme (calendar peg →
+    football news → evergreen backlog) → author OVERGENERATED grounded candidates → **the
+    gate** → select 15 → deterministic shuffle → write as a draft. Never publishes.
+  - **The gate** (`scripts/quiz-factory/verify.mjs`) is the load-bearing part. The bank holds
+    2,823 active questions and **31,541 retired** — every `source='generated'` question ever
+    written was binned, only `data-grounded` survived. So: Stage 0 (free) rejects temporal
+    claims, hedge/duplicate/mixed-type options, and near-dupes against the live bank; Stage 2
+    sends each survivor to an **independent** verifier in a fresh context that is NOT told the
+    author's answer and must derive it itself and cite a URL — disagreement, ambiguity, no
+    source, or an unconfirmed time-sensitive claim all DROP the question. The citation is
+    stored in `questions.verification_note`. **A high drop rate is the gate working.**
+  - **Review**: `/admin/quiz` — pack cards, every question with its source link. Approving is
+    the only way out; `scripts/release-packs.mjs` refuses to publish `approved_at IS NULL`.
+  - **Release** (`scripts/release-packs.mjs`, daily VPS cron): flips due+approved packs live,
+    pushes via `/api/internal/notify-release` → `notifyUsers()`, emails via `segments.mjs`.
+    Idempotent (the UPDATE is its own guard). **Approve nothing → ship nothing**, and it
+    Telegrams the drought rather than failing silently. Email self-throttles to ~1.75/week
+    per person via the existing frequency cap, so an every-other-day cadence can't burn the list.
+  - Lives on the VPS, not Vercel, because `RESEND_CAMPAIGNS_API_KEY` (campaign email) is
+    referenced nowhere in `src/` and transactional email is over quota.
+  - Also extracted: `scripts/lib/question-text.mjs` (was copy-pasted 4×; must stay in lockstep
+    with `src/lib/questions.ts` + migration 67's unique index), `scripts/lib/shuffle-options.mjs`
+    (byte-identical extraction from `seed-daily-quiz.mjs`), `scripts/lib/anthropic.mjs` (one
+    client + **per-call cost accounting** — web search is the dominant cost and was invisible).
+  - **Proven live** (migration 80 applied to prod): state machine 7/7 via
+    `scripts/verify-pack-release.mjs`; full 2-pack authoring run built 2/2 with a **23–31%
+    gate drop rate** (healthy — the gate is cutting, not rubber-stamping) at **~$3.66/pack**
+    (verification = 80% of cost). Registered in the content-dash `registry.json` (weekly
+    factory + daily release). ⚠️ VPS cron entries + git commit still pending.
+
 - **2026-07-13 (pm)** — **UI-audit approved fixes** (docs/AUDIT-2026-07-13-ui-first-impressions.md;
   founder walkthrough): site tagline standardized to **"The Home of Football Gaming"** (root
   title/OG/twitter); /how-it-works scoring is **top-line only** (founder: no explicit point

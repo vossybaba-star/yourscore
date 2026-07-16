@@ -64,5 +64,9 @@ emails/preview/
 # Health-check run artifacts (scorecards, screenshots, bot-seen history)
 scripts/data/health/
 
+# SportMonks fact cache (quiz factory). Derived data — past seasons are immutable so it's
+# fetched once and reused, but it rebuilds itself from the API on any machine. ~2MB.
+scripts/data/sportmonks-cache/
+
 # Never commit env backups (they carry prod secrets)
 .env.local.bak*
