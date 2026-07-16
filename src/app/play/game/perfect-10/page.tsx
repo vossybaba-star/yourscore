@@ -32,6 +32,7 @@ interface ClientListData {
   title: string;
   rungs: ClientRung[];
   day: string | null;
+  isToday: boolean;
 }
 interface LibraryItem {
   id: string;
@@ -392,7 +393,13 @@ export default function Perfect10Page() {
         if (cancelled) return;
         if (!ok || !data?.listId) throw new Error("no list");
 
-        const cl: ClientListData = { listId: data.listId, title: data.title, rungs: data.rungs ?? [], day: data.day ?? null };
+        const cl: ClientListData = {
+          listId: data.listId,
+          title: data.title,
+          rungs: data.rungs ?? [],
+          day: data.day ?? null,
+          isToday: Boolean(data.isToday),
+        };
         setList(cl);
         if (data.challenge) setChallenge(data.challenge);
 
@@ -634,7 +641,13 @@ export default function Perfect10Page() {
             style={{ background: "rgba(255,196,0,0.06)", border: `1px solid ${ACCENT}30`, maxWidth: 320 }}
           >
             <p className="font-body text-xs mb-1" style={{ color: "#9aa39d" }}>
-              {listParam && list?.day ? formatDay(list.day).toUpperCase() : "TODAY'S LIST"}
+              {listParam && list?.day
+                ? formatDay(list.day).toUpperCase()
+                : list?.isToday
+                  ? "TODAY'S LIST"
+                  : list?.day
+                    ? `LATEST — ${formatDay(list.day).toUpperCase()}`
+                    : "LATEST LIST"}
             </p>
             <p className="font-display text-base" style={{ color: ACCENT }}>
               {list?.title ?? "…"}

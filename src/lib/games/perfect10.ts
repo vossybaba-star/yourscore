@@ -133,6 +133,22 @@ export async function loadListById(id: string): Promise<P10List | null> {
   return (data as unknown as P10List) ?? null;
 }
 
+/** Newest released list — the featured game between releases. Releases are
+ * batched, not daily (founder call, Jul 16): a day without a new list features
+ * the latest one, with the back-catalogue below. */
+export async function loadLatestServed(): Promise<P10List | null> {
+  const db = createServiceClient();
+  const { data } = await db
+    .from("p10_lists")
+    .select("*")
+    .not("day", "is", null)
+    .lte("day", londonDateISO())
+    .order("day", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return (data as unknown as P10List) ?? null;
+}
+
 /** A list is playable once its day has arrived (Europe/London). Drafts (day null)
  * and future-dated lists are never served, listed, or gradeable. */
 export function isServed(list: P10List, today: string = londonDateISO()): boolean {

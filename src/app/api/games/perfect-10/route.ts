@@ -5,7 +5,9 @@ import { rateLimitDistributed } from "@/lib/ratelimit";
 import {
   loadListForDay,
   loadListById,
+  loadLatestServed,
   loadAttemptByShareToken,
+  londonDateISO,
   loadLibrary,
   loadAttemptsForLists,
   createOrLoadAttempt,
@@ -122,11 +124,12 @@ export async function POST(req: NextRequest) {
       list = await loadListById(listIdParam);
       if (list && !isServed(list)) list = null;
     } else {
-      list = await loadListForDay();
+      // Releases are batched, not daily — feature the newest released list.
+      list = (await loadListForDay()) ?? (await loadLatestServed());
     }
     if (!list) return NextResponse.json({ error: "No list today" }, { status: 404 });
 
-    const payload: Record<string, unknown> = { ...clientList(list), day: list.day };
+    const payload: Record<string, unknown> = { ...clientList(list), day: list.day, isToday: list.day === londonDateISO() };
 
     if (user) {
       const attempt = await createOrLoadAttempt(list.id, user.id);
