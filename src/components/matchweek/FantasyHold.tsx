@@ -12,9 +12,14 @@
  * spec doesn't (the credit curve and the exact deadline time stay out of the
  * copy — they're tuning, not the pitch).
  *
- * The lead is the differentiator: in every other fantasy game transfers are just
- * handed to you. Here you earn them by knowing your football, which is the whole
- * reason this game exists on THIS app.
+ * TRANSFERS, EXACTLY (founder, 2026-07-16 — an earlier draft got this wrong and
+ * said "transfers aren't free"): everyone gets ONE transfer a gameweek, like any
+ * fantasy game. The knowledge round earns you EXTRA ones on top. So the pitch is
+ * "One transfer. Earn the rest." — not that we withhold the baseline move.
+ *
+ * The lead is still the differentiator: everywhere else, extra moves are rationed
+ * or bought with a points hit. Here your football knowledge earns them, which is
+ * the whole reason this game exists on THIS app.
  *
  * CTA is the existing WaitlistCard (POSTs /api/waitlist → Resend "Fantasy
  * Waitlist") — the same funnel the blog posts feed, so the launch list stays in
@@ -54,8 +59,8 @@ const BEATS = [
   },
   {
     n: "02",
-    t: "Earn your transfers",
-    d: "Every gameweek there's a round of questions. Know your football, move your squad. Nobody hands you free transfers here.",
+    t: "Earn extra transfers",
+    d: "Everyone gets one transfer a gameweek. Answer the round to earn more — the better you know your football, the more moves you get.",
   },
   {
     n: "03",
@@ -84,11 +89,11 @@ export function FantasyHold() {
             FANTASY · FRIDAY 21 AUGUST
           </p>
           <p className="font-display text-white" style={{ fontSize: 40, lineHeight: 0.92, letterSpacing: "-0.015em" }}>
-            <span className="block">Transfers</span>
-            <span className="block">aren&apos;t free.</span>
+            <span className="block">One transfer.</span>
+            <span className="block">Earn the rest.</span>
           </p>
           <p className="font-body text-sm mt-3 max-w-[80%]" style={{ color: "#8a948f" }}>
-            Fantasy football where what you know moves your squad. Opening night, with the season.
+            Everyone gets a move each gameweek. What you know earns you more. Opening night, with the season.
           </p>
         </div>
       </div>
