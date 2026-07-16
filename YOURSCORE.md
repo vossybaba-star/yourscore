@@ -37,7 +37,7 @@
 > **Content live:** Jul 13–15 = PL library seeds (25/26 scorers · appearance makers ·
 > all-time scorers), Jul 16 = last 10 WC Golden Boot winners (Salenko added as an
 > accepted answer on the shared-1994 rung), Jul 17 = last 10 WC-winning captains —
-> founder wants WC-themed dailies while WC 2026 runs. Gate lessons (all drops were
+> founder wants WC-themed dailies while WC 2026 runs; Jul 18 = last 10 WC Golden Ball winners (Messi twice → the DOUBLE-WINNER fix same eve: solved names stay suggestible, grading skips to the next unsolved rung, all-solved returns alreadyFound with NO strike). Gate lessons (all drops were
 > CORRECT): tie-bunched topics (all-time assists 94-94, clean sheets 132×3, mid-
 > tournament tallies) are structurally unshippable — pick recency-ranked or clean-order
 > topics; all-time WC scorers/appearances regenerate AFTER the Jul 19 final. ⚠️ NO
