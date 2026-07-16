@@ -16,10 +16,15 @@ import { useRef, useState } from "react";
 
 const TEAL = "#00d8c0";
 
+/**
+ * Three headlines, not three descriptions. Each one is a claim with a rhythm to
+ * it — short enough to land in a glance, and the supporting line does the
+ * explaining so the headline never has to.
+ */
 const PAGES = [
-  { eyebrow: "HALF TIME", headline: "A quiz at every half time", line: "The real whistle blows, your pack drops. One for every fixture." },
-  { eyebrow: "PREDICT", headline: "Call the second half", line: "One pick before it restarts. Graded at full time." },
-  { eyebrow: "YOUR CLUB", headline: "Play for your club", line: "Every fan's score counts. Best average tops the table." },
+  { eyebrow: "HALF TIME", headline: "Half time. Your time.", line: "A quiz drops for every fixture the moment the real whistle blows." },
+  { eyebrow: "PREDICT", headline: "Call it before it happens.", line: "One pick on the second half. Settled at full time." },
+  { eyebrow: "YOUR CLUB", headline: "Play for the badge.", line: "Your score joins every other fan's. Best average tops the table." },
 ];
 
 export function LiveQuizIntro() {
@@ -48,10 +53,17 @@ export function LiveQuizIntro() {
           className="flex overflow-x-auto no-scrollbar snap-x snap-mandatory"
           style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}>
           {PAGES.map((p) => (
-            <div key={p.eyebrow} className="w-full flex-shrink-0 snap-center px-5 pt-5 pb-4" style={{ minHeight: 132 }}>
-              <p className="font-display text-[10px] tracking-widest mb-2" style={{ color: TEAL }}>{p.eyebrow}</p>
-              <p className="font-display text-xl text-white leading-tight">{p.headline}</p>
-              <p className="font-body text-sm mt-1.5" style={{ color: "#8a948f" }}>{p.line}</p>
+            <div key={p.eyebrow} className="w-full flex-shrink-0 snap-center px-5 pt-5 pb-4 flex flex-col justify-center" style={{ minHeight: 178 }}>
+              <p className="font-display text-[10px] tracking-widest mb-2.5" style={{ color: TEAL }}>{p.eyebrow}</p>
+              {/* The headline is the tile. Big, tight, and allowed to run to two
+                  lines — shrinking it to fit on one would be the weak version. */}
+              <p className="font-display text-white" style={{ fontSize: 34, lineHeight: 0.98, letterSpacing: "-0.01em" }}>
+                {p.headline}
+              </p>
+              {/* Sits under the headline, NOT pushed to the tile floor: pages
+                  whose headline fits on one line would otherwise open a hole in
+                  the middle of the tile. Equal minHeight keeps the dots steady. */}
+              <p className="font-body text-sm mt-3" style={{ color: "#8a948f" }}>{p.line}</p>
             </div>
           ))}
         </div>
