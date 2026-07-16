@@ -143,15 +143,15 @@ async function callApi(body: Record<string, unknown>) {
 
 function WordDots({ wordLens, filled }: { wordLens: number[]; filled: boolean }) {
   return (
-    <div className="flex items-center flex-wrap" style={{ gap: 10 }}>
+    <div className="flex items-center flex-wrap" style={{ gap: 8 }}>
       {wordLens.map((len, wi) => (
-        <div key={wi} className="flex items-center" style={{ gap: 4 }}>
+        <div key={wi} className="flex items-center" style={{ gap: 3 }}>
           {Array.from({ length: len }).map((_, li) => (
             <span
               key={li}
               style={{
-                width: 9,
-                height: 9,
+                width: 7,
+                height: 7,
                 borderRadius: "50%",
                 background: filled ? ACCENT : "rgba(255,196,0,0.16)",
                 border: filled ? "none" : "1px solid rgba(255,196,0,0.3)",
@@ -216,22 +216,22 @@ function Rung({
       }}
     >
       <div
-        className="rounded-2xl px-3.5 py-3 flex items-center gap-3"
+        className="rounded-lg px-2.5 py-1 flex items-center gap-2"
         style={{
           background: solved ? "#2a2410" : "rgba(255,196,0,0.05)",
-          border: `1.5px solid ${solved ? ACCENT : "rgba(255,196,0,0.16)"}`,
+          border: `1px solid ${solved ? ACCENT : "rgba(255,196,0,0.16)"}`,
         }}
       >
         <span
-          className="font-display text-sm flex-shrink-0 flex items-center justify-center rounded-full"
-          style={{ width: 26, height: 26, background: "rgba(255,196,0,0.14)", color: ACCENT }}
+          className="font-display text-[11px] flex-shrink-0 flex items-center justify-center rounded-full"
+          style={{ width: 18, height: 18, background: "rgba(255,196,0,0.14)", color: ACCENT }}
         >
           {rung.rank}
         </span>
 
         <div className="flex-1 min-w-0">
           {solved ? (
-            <span className="font-display text-base tracking-wide" style={{ color: "#ffe082" }}>
+            <span className="font-display text-sm tracking-wide" style={{ color: "#ffe082" }}>
               {solved.surname.toUpperCase()}
             </span>
           ) : (
@@ -241,13 +241,13 @@ function Rung({
 
         {solved ? (
           <span
-            className="font-display text-xs px-2 py-1 rounded-lg flex-shrink-0 flex items-center gap-1"
+            className="font-display text-[10px] px-1.5 py-0.5 rounded-md flex-shrink-0 flex items-center gap-1"
             style={{
               background: hintsUsed === 0 ? "rgba(174,234,0,0.14)" : "rgba(139,148,159,0.16)",
               color: hintsUsed === 0 ? "#aeea00" : "#8b949e",
             }}
           >
-            {hintsUsed > 0 && <BulbIcon color="#8b949e" size={11} />}+{solved.points}
+            {hintsUsed > 0 && <BulbIcon color="#8b949e" size={10} />}+{solved.points}
           </span>
         ) : (
           <button
@@ -255,26 +255,26 @@ function Rung({
             disabled={busy || tokensLeft <= 0 || Boolean(tier1)}
             onClick={() => onHint(1)}
             className="flex-shrink-0 flex items-center justify-center rounded-full disabled:opacity-40"
-            style={{ width: 30, height: 30, background: "rgba(138,109,26,0.25)" }}
+            style={{ width: 22, height: 22, background: "rgba(138,109,26,0.25)" }}
             aria-label="Use hint"
           >
-            <BulbIcon color="#8a6d1a" />
+            <BulbIcon color="#8a6d1a" size={12} />
           </button>
         )}
       </div>
 
       {/* Hint clue chips — stay visible until the rung is solved. */}
       {!solved && tier1 && (
-        <div className="flex flex-wrap gap-1.5 mt-1.5 px-1">
+        <div className="flex flex-wrap gap-1 mt-1 px-1">
           <span
-            className="font-body text-xs px-2.5 py-1 rounded-full"
+            className="font-body text-[10px] px-2 py-0.5 rounded-full"
             style={{ background: "#241f0e", color: "#d4af37", border: "1px solid rgba(212,175,55,0.3)" }}
           >
             {tier1.text}
           </span>
           {tier2 ? (
             <span
-              className="font-body text-xs px-2.5 py-1 rounded-full"
+              className="font-body text-[10px] px-2 py-0.5 rounded-full"
               style={{ background: "#241f0e", color: "#d4af37", border: "1px solid rgba(212,175,55,0.3)" }}
             >
               {tier2.text}
@@ -284,7 +284,7 @@ function Rung({
               type="button"
               disabled={busy || tokensLeft <= 0}
               onClick={() => onHint(2)}
-              className="font-body text-xs px-2.5 py-1 rounded-full disabled:opacity-40"
+              className="font-body text-[10px] px-2 py-0.5 rounded-full disabled:opacity-40"
               style={{ background: "transparent", color: "#8a6d1a", border: "1px dashed rgba(138,109,26,0.6)" }}
             >
               + Starts with…
@@ -735,7 +735,7 @@ export default function Perfect10Page() {
           className="sticky top-0 z-10 pt-safe"
           style={{ background: "rgba(10,10,15,0.98)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}
         >
-          <div className="px-5 py-3 flex items-center justify-between gap-3">
+          <div className="px-5 pt-2.5 pb-1.5 flex items-center justify-between gap-3">
             <button
               type="button"
               onClick={() => router.push(smartBackTarget("/play"))}
@@ -774,17 +774,21 @@ export default function Perfect10Page() {
             </div>
           </div>
 
-          {challenge && (
-            <div className="px-5 pb-2">
-              <span className="font-body text-xs" style={{ color: "#8a948f" }}>
+          {/* The topic is the game — always visible while playing. */}
+          <div className="px-5 pb-2">
+            <p className="font-display text-sm leading-tight truncate" style={{ color: ACCENT }}>
+              {list.title}
+            </p>
+            {challenge && (
+              <span className="font-body text-[11px]" style={{ color: "#8a948f" }}>
                 Beat <span style={{ color: ACCENT }}>{challenge.name}</span>&apos;s {challenge.score} pts
               </span>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
-        <div className={`flex-1 px-5 pb-4 pt-4 max-w-lg mx-auto w-full ${shaking ? "animate-p10-shake" : ""}`}>
-          <div className="flex flex-col gap-2.5">
+        <div className={`flex-1 flex flex-col justify-center px-5 pb-2 pt-2.5 max-w-lg mx-auto w-full ${shaking ? "animate-p10-shake" : ""}`}>
+          <div className="flex flex-col gap-1.5">
             {list.rungs.map((rung) => (
               <Rung
                 key={rung.rank}
@@ -799,14 +803,14 @@ export default function Perfect10Page() {
             ))}
           </div>
 
-          <div className="flex items-center justify-center gap-4 mt-4">
-            <span className="font-body text-sm" style={{ color: "#9aa39d" }}>
+          <div className="flex items-center justify-center gap-4 mt-2">
+            <span className="font-body text-xs" style={{ color: "#9aa39d" }}>
               <span className="font-display" style={{ color: ACCENT }}>
                 {foundCount}
               </span>{" "}
               of 10 found
             </span>
-            <span className="font-body text-sm" style={{ color: "#9aa39d" }}>
+            <span className="font-body text-xs" style={{ color: "#9aa39d" }}>
               <span className="font-display" style={{ color: ACCENT }}>
                 {game.score}
               </span>{" "}
@@ -855,8 +859,8 @@ export default function Perfect10Page() {
             autoComplete="off"
             autoCapitalize="words"
             spellCheck={false}
-            className="w-full rounded-2xl px-4 font-body text-base text-white outline-none disabled:opacity-50"
-            style={{ height: 52, background: "rgba(255,196,0,0.06)", border: `1px solid ${ACCENT}30`, caretColor: ACCENT }}
+            className="w-full rounded-xl px-4 font-body text-base text-white outline-none disabled:opacity-50"
+            style={{ height: 46, background: "rgba(255,196,0,0.06)", border: `1px solid ${ACCENT}30`, caretColor: ACCENT }}
           />
         </div>
 
