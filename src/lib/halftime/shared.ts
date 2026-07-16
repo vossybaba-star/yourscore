@@ -312,10 +312,21 @@ export function packDescription(row: Pick<HalftimeRow, "home" | "away">): string
 // ── Push ─────────────────────────────────────────────────────────────────────
 
 export const HALFTIME_PUSH_PREFIX = "halftime:";
+export const HALFTIME_EMAIL_PREFIX = "halftime-email:";
 
 /** Per-fixture, exactly-once push dedup key (notification_log.key). */
 export function pushDedupeKey(fixtureId: number): string {
   return `${HALFTIME_PUSH_PREFIX}${fixtureId}`;
+}
+
+/**
+ * Per-fixture, exactly-once EMAIL dedup key — deliberately a different key from
+ * the push one. The two channels dedupe independently, so a web user who's
+ * emailed and later installs the app is never re-notified about a fixture
+ * they've already been told about, and neither channel can double-send.
+ */
+export function emailDedupeKey(fixtureId: number): string {
+  return `${HALFTIME_EMAIL_PREFIX}${fixtureId}`;
 }
 
 /**

@@ -2,7 +2,9 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServiceClient } from "@/lib/supabase/service";
 import { notifyUsers } from "@/lib/notify";
+import { sendHalftimeLiveEmail } from "@/lib/email/senders";
 import { slugify } from "@/lib/utils";
+import { APP_STORE_URL } from "@/lib/appStore";
 import {
   assembleQuestions,
   isReleased,
@@ -11,6 +13,7 @@ import {
   packDescription,
   packName,
   packUrl,
+  emailDedupeKey,
   pushCopy,
   pushDedupeKey,
   questionsForRelease,
@@ -253,7 +256,82 @@ async function pushForFixture(row: StoredRow, slug: string): Promise<number> {
     dedupeKey: pushDedupeKey(row.fixture_id),
     requireOptIn: true,
   });
+
+  // Push is native-only, so anyone who ASKED but has no device token (i.e. they
+  // tapped Notify me on the web) gets an email instead. After the push, never
+  // before: nothing may delay the whistle. Best-effort — never throws.
+  await emailFallbackForFixture(row, slug, requesters).catch((err) =>
+    console.error("[halftime] email fallback failed", err),
+  );
+
   return targeted;
+}
+
+/**
+ * The WEB half of "Notify me": email the people who asked and can't be pushed.
+ *
+ * Scoped deliberately to tier 1 (explicit requesters) only. Club fans and the
+ * blanket audience are push-only — emailing everyone whose club is playing would
+ * be a mailshot nobody asked for, which is the opposite of what the reminder is.
+ *
+ * Exactly-once per (user, fixture) per CHANNEL: the dedupe key is distinct from
+ * the push key, so a user is never double-notified on one channel, and someone
+ * who later installs the app doesn't get a duplicate for a fixture already
+ * emailed.
+ */
+async function emailFallbackForFixture(row: StoredRow, slug: string, requesters: string[]): Promise<void> {
+  if (!requesters.length || !row.pack_id) return;
+
+  const raw = db();
+
+  // Who can actually be pushed? A device token is the whole difference.
+  const { data: tokens } = await raw.from("device_tokens").select("user_id").in("user_id", requesters);
+  const pushable = new Set(((tokens ?? []) as { user_id: string }[]).map((r) => r.user_id));
+  const needEmail = requesters.filter((id) => !pushable.has(id));
+  if (!needEmail.length) return;
+
+  const key = emailDedupeKey(row.fixture_id);
+
+  const [{ data: sentRows }, { data: suppressed }] = await Promise.all([
+    raw.from("notification_log").select("user_id").eq("key", key).in("user_id", needEmail),
+    raw.from("email_suppressions").select("user_id").in("user_id", needEmail),
+  ]);
+  const already = new Set(((sentRows ?? []) as { user_id: string }[]).map((r) => r.user_id));
+  const optedOut = new Set(((suppressed ?? []) as { user_id: string }[]).map((r) => r.user_id));
+
+  const fresh = needEmail.filter((id) => !already.has(id) && !optedOut.has(id)).slice(0, MAX_PUSH_PER_RUN);
+  if (!fresh.length) return;
+
+  // Log BEFORE sending — a retry after a partial failure must not double-mail.
+  const { error: logErr } = await raw.from("notification_log").insert(fresh.map((user_id) => ({ user_id, key })));
+  if (logErr) {
+    console.error("[halftime] email log insert failed — not sending", logErr);
+    return;
+  }
+
+  const svc = createServiceClient();
+  const url = packUrl(slug, row.pack_id);
+
+  await Promise.all(
+    fresh.map(async (userId) => {
+      const { data: u } = await svc.auth.admin.getUserById(userId).catch(() => ({ data: null }));
+      const email = u?.user?.email;
+      if (!email) return; // no address — nothing to send to
+      await sendHalftimeLiveEmail({
+        userId,
+        email,
+        subject: `Half time — ${row.home} v ${row.away}. Your quiz is live.`,
+        preheader: "It's live for the interval only.",
+        badge: "Half time",
+        headline: "HALF TIME.",
+        subline: `${row.home} v ${row.away} — your quiz is live now, for the interval only.`,
+        ctaLabel: "Play the quiz",
+        ctaUrl: url,
+        appUrl: APP_STORE_URL,
+        refId: `${key}:${userId}`,
+      });
+    }),
+  );
 }
 
 /**

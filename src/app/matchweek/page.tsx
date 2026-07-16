@@ -22,6 +22,8 @@ import { PlFixtures } from "@/components/matchweek/PlFixtures";
 import { PlTable } from "@/components/matchweek/PlTable";
 import { PlNews } from "@/components/matchweek/PlNews";
 import { NextClubQuiz } from "@/components/matchweek/NextClubQuiz";
+import { AppNudge } from "@/components/matchweek/AppNudge";
+import { useReminders } from "@/components/matchweek/useReminders";
 import { UpcomingQuizzes } from "@/components/matchweek/UpcomingQuizzes";
 import { QuizStatTiles } from "@/components/matchweek/QuizStatTiles";
 import { LiveQuizIntro } from "@/components/matchweek/LiveQuizIntro";
@@ -45,6 +47,9 @@ const PL_TABS: { key: PlTab; label: string }[] = [
 
 export default function MatchweekPage() {
   const [section, setSection] = useState<Section>("pl");
+  // One shared reminders store for the section — AppNudge reads the same state
+  // the buttons write, so the app pitch appears once, not once per card.
+  const reminders = useReminders();
   const [plTab, setPlTab] = useState<PlTab>("news");
 
   return (
@@ -108,6 +113,8 @@ export default function MatchweekPage() {
         <div className="pt-1">
           {/* Headlines first: what Live Quiz IS, before anything it shows you. */}
           <LiveQuizIntro />
+          {/* Web fan just set a reminder → lead with the app (email is the fallback). */}
+          <AppNudge reminders={reminders} />
           {/* Then THEIR game — the only fixture that scores for their club. */}
           <NextClubQuiz />
           <HalftimeRail />

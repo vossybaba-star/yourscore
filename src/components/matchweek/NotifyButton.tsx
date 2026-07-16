@@ -20,6 +20,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { isNative } from "@/lib/native";
 import type { RemindersState } from "./useReminders";
 
 const TEAL = "#00d8c0";
@@ -54,9 +55,12 @@ export function NotifyButton({
       return;
     }
 
-    // 2. Signed in but never consented → run the consent flow here and now,
+    // 2. Native, signed in, never consented → run the consent flow here and now,
     //    then apply the reminder (grantConsent finishes the pending intent).
-    if (!optedIn) {
+    //    Web is skipped deliberately: push doesn't exist there, so the reminder
+    //    is delivered by email and asking for push consent would gate a channel
+    //    it has nothing to do with.
+    if (isNative() && !optedIn) {
       setBusy(true);
       rememberIntent(fixtureId);
       const err = await grantConsent();

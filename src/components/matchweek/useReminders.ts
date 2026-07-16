@@ -16,6 +16,7 @@
 import { useCallback, useEffect, useSyncExternalStore } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { registerForPush } from "@/lib/push";
+import { isNative } from "@/lib/native";
 
 export interface RemindersState {
   /** Fixture ids the viewer has asked to be notified about. */
@@ -33,6 +34,9 @@ export interface RemindersState {
   rememberIntent: (fixtureId: number) => void;
   /** Ask for notification permission + consent, then apply any pending intent. */
   grantConsent: () => Promise<string | null>;
+  /** True when a web reminder was just set and we should pitch the app. */
+  nudge: boolean;
+  dismissNudge: () => void;
 }
 
 /**
@@ -66,9 +70,10 @@ interface Snap {
   optedIn: boolean;
   loaded: boolean;
   preview: boolean;
+  nudge: boolean;
 }
 
-const EMPTY: Snap = { ids: new Set(), signedIn: false, optedIn: false, loaded: false, preview: false };
+const EMPTY: Snap = { ids: new Set(), signedIn: false, optedIn: false, loaded: false, preview: false, nudge: false };
 let snap: Snap = EMPTY;
 
 const listeners = new Set<() => void>();
@@ -91,6 +96,16 @@ function devPreview(): boolean {
   if (process.env.NODE_ENV === "production") return false;
   if (typeof window === "undefined") return false;
   return new URLSearchParams(window.location.search).has("club");
+}
+
+/**
+ * Can we act on a reminder for this viewer right now?
+ * Native needs push consent (a push is the only channel there). Web does NOT:
+ * push is native-only, so a web reminder is delivered by email, and demanding
+ * push consent would block a channel it has nothing to do with.
+ */
+function canRemind(): boolean {
+  return snap.signedIn && (snap.optedIn || !isNative());
 }
 
 let started = false;
@@ -116,12 +131,12 @@ async function load() {
     // it — landing back with the button still saying "Notify me" is exactly the
     // dead end the redirect was meant to avoid.
     const pending = readPending();
-    if (pending && snap.signedIn && snap.optedIn && !snap.ids.has(pending)) {
-      await postToggle(pending, true);
+    if (pending && canRemind()) {
+      if (!snap.ids.has(pending)) await postToggle(pending, true);
+      writePending(null);
     }
-    // Consent still missing → keep the intent; NotifyButton walks them into the
-    // consent flow, which applies it on success.
-    if (pending && snap.signedIn && snap.optedIn) writePending(null);
+    // Native + no consent → keep the intent; the auto-resume below runs the
+    // consent flow and applies it on success.
   } catch {
     set({ loaded: true }); // transient — render the signed-out button, not a spinner forever
   }
@@ -129,6 +144,30 @@ async function load() {
 
 /** Guards the auto-resume so a declined OS prompt can't re-fire in a loop. */
 let consentResumed = false;
+
+/**
+ * The app pitch after a WEB reminder. Web can't be pushed (push is native-only),
+ * so the reminder falls back to email and we lead with the app — but a fan who
+ * sets six reminders shouldn't be pitched six times. Weekly, on its own key so it
+ * doesn't collide with AppMomentPrompt's cooldown.
+ */
+const NUDGE_KEY = "ys:notify-app-nudge";
+const NUDGE_COOLDOWN = 7 * 86_400_000;
+
+function nudgeDue(): boolean {
+  try {
+    return Date.now() - Number(window.localStorage.getItem(NUDGE_KEY) || 0) > NUDGE_COOLDOWN;
+  } catch {
+    return false; // storage blocked → fail closed, don't nag
+  }
+}
+function stampNudge() {
+  try {
+    window.localStorage.setItem(NUDGE_KEY, String(Date.now()));
+  } catch {
+    /* non-fatal */
+  }
+}
 
 /**
  * Turn notifications on, IN ORDER: OS permission + device token first
@@ -207,25 +246,41 @@ export function useReminders(): RemindersState {
    */
   useEffect(() => {
     if (!s.loaded || !s.signedIn || s.optedIn || consentResumed) return;
-    if (typeof window === "undefined" || !readPending()) return;
+    // Native only: on web there is no push to consent to — load() has already
+    // applied the pending reminder, and email delivers it.
+    if (typeof window === "undefined" || !isNative() || !readPending()) return;
     consentResumed = true;
     void resumeConsent();
   }, [s.loaded, s.signedIn, s.optedIn]);
 
   const toggle = useCallback(async (fixtureId: number): Promise<string | null> => {
     const wasOn = snap.ids.has(fixtureId);
+    const turningOn = !wasOn;
+
+    // Turning a reminder ON from the web: it'll be delivered by email (no push
+    // channel here), so lead with the app — the whistle is instant there and the
+    // pack only lives for the interval.
+    const pitchApp = turningOn && !isNative() && nudgeDue();
 
     if (snap.preview) {
       const next = new Set(snap.ids);
       if (wasOn) next.delete(fixtureId); else next.add(fixtureId);
-      set({ ids: next });
+      set({ ids: next, nudge: pitchApp });
       return null; // dev preview — nothing is written anywhere
     }
-    return postToggle(fixtureId, !wasOn);
+
+    const err = await postToggle(fixtureId, turningOn);
+    if (!err && pitchApp) set({ nudge: true });
+    return err;
   }, []);
 
   const rememberIntent = useCallback((fixtureId: number) => {
     writePending(fixtureId);
+  }, []);
+
+  const dismissNudge = useCallback(() => {
+    stampNudge();
+    set({ nudge: false });
   }, []);
 
   const grantConsent = useCallback(() => doGrantConsent(), []);
@@ -238,5 +293,7 @@ export function useReminders(): RemindersState {
     toggle,
     rememberIntent,
     grantConsent,
+    nudge: s.nudge,
+    dismissNudge,
   };
 }
