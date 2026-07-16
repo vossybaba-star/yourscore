@@ -144,23 +144,32 @@ async function ensurePackRow(row: StoredRow, questions: QuizQuestion[]): Promise
 }
 
 /**
- * Push, once per user per fixture, and at most ONE UNSOLICITED halftime push per
- * user per day — a 5-fixture Saturday must not mean five notifications. First
- * whistle of the day wins; users already pushed for any of today's fixtures are
- * excluded before fan-out.
+ * Who gets pushed when a pack drops. CONTEXTUAL, not a flat cap (founder,
+ * 2026-07-16): a blanket "one push per day" is silly when a fan has told us
+ * they want more. Relevance is the rate limiter; the counter only guards the
+ * people we know nothing about.
  *
- * "Notify me" changes who gets what, in two ways:
- *   1. A user who ASKED for this fixture is pushed for it, always. The daily cap
- *      exists to stop us spamming people with matches they didn't ask about; it
- *      must not gag a notification they explicitly requested.
- *   2. A user who asked for ANY of today's fixtures is dropped from the blanket
- *      push. They've told us which match they care about — sending them a
- *      different one would be the exact spam the cap is there to prevent, and
- *      (before this) the cap would then have suppressed the one they wanted.
+ * Three tiers, most-earned first:
+ *   1. ASKED — tapped "Notify me" on this fixture. Always pushed, never capped.
+ *      They asked for this exact match; a cap that gags it is just broken.
+ *   2. THEIR CLUB — supports one of the two clubs playing. Pushed, uncapped:
+ *      this is the personalised moment, it's the only fixture that scores for
+ *      them (own-club rule), and a club plays ~once a gameweek, so relevance
+ *      limits the volume by itself. No counter needed.
+ *   3. EVERYONE ELSE — no request, no club in this match: a genuinely
+ *      unsolicited push. THIS is where restraint belongs, so it keeps the
+ *      one-per-day cap. It's the "normal notification we send to everyone".
+ *
+ * A fan in tier 1 or 2 is never also blanket-pushed for a match they've no stake
+ * in — that was the old bug: the cap would spend their one daily push on a
+ * random early kick-off and then suppress the game they actually cared about.
+ *
+ * notification_log's PK (user_id, key) still makes it once per user per fixture,
+ * so no tier can double-push.
  *
  * requireOptIn stays true throughout: tapping "Notify me" is a request, not
- * consent to be pushed at all. Someone who asked but never enabled notifications
- * is skipped here — the UI tells them so rather than quietly dropping it.
+ * consent to be pushed at all. The UI walks them into the consent flow instead
+ * of us silently promoting a tap into permission.
  */
 async function pushForFixture(row: StoredRow, slug: string): Promise<number> {
   if (process.env.HALFTIME_PUSH_ENABLED !== "true") return 0;
@@ -170,52 +179,68 @@ async function pushForFixture(row: StoredRow, slug: string): Promise<number> {
   const matchday = londonMatchday(new Date(row.kickoff_at));
   const { startUtc, endUtc } = londonDayRange(matchday);
 
-  // Today's fixtures → the set of push keys that count against the daily cap.
+  // Today's fixtures — their push keys feed the (blanket-only) daily cap, and
+  // their clubs tell us who has a personal stake today.
   const { data: todays } = await raw
     .from("halftime_releases")
-    .select("fixture_id")
+    .select("fixture_id, home, away")
     .gte("kickoff_at", startUtc)
     .lt("kickoff_at", endUtc);
 
-  const todayKeys = ((todays ?? []) as { fixture_id: number }[]).map((r) =>
-    pushDedupeKey(Number(r.fixture_id)),
-  );
+  const todayRows = (todays ?? []) as { fixture_id: number; home: string; away: string }[];
+  const todayKeys = todayRows.map((r) => pushDedupeKey(Number(r.fixture_id)));
+  const todayFixtureIds = todayRows.map((r) => Number(r.fixture_id));
+  const clubsToday = Array.from(new Set(todayRows.flatMap((r) => [r.home, r.away])));
 
-  const { data: alreadyToday } = await raw
-    .from("notification_log")
-    .select("user_id")
-    .in("key", todayKeys.length ? todayKeys : [pushDedupeKey(row.fixture_id)]);
+  const [{ data: alreadyToday }, { data: askedThis }, { data: askedToday }, { data: fansOfThis }, { data: fansToday }] =
+    await Promise.all([
+      raw
+        .from("notification_log")
+        .select("user_id")
+        .in("key", todayKeys.length ? todayKeys : [pushDedupeKey(row.fixture_id)]),
+      // Tier 1: asked for THIS fixture.
+      raw.from("halftime_reminders").select("user_id").eq("fixture_id", row.fixture_id),
+      // Asked for anything today → has a stake, so never blanket-pushed.
+      raw
+        .from("halftime_reminders")
+        .select("user_id")
+        .in("fixture_id", todayFixtureIds.length ? todayFixtureIds : [row.fixture_id]),
+      // Tier 2: supports one of the two clubs in THIS match.
+      raw
+        .from("club_supporters")
+        .select("user_id")
+        .eq("season_id", row.season_id ?? 0)
+        .in("club", [row.home, row.away]),
+      // Supports any club playing today → has a stake, so never blanket-pushed
+      // (their own club's whistle is the push they should get).
+      raw
+        .from("club_supporters")
+        .select("user_id")
+        .eq("season_id", row.season_id ?? 0)
+        .in("club", clubsToday.length ? clubsToday : [row.home, row.away]),
+    ]);
 
-  const capped = new Set(
-    ((alreadyToday ?? []) as { user_id: string }[]).map((r) => r.user_id),
-  );
+  const ids = (rows: unknown) => ((rows ?? []) as { user_id: string }[]).map((r) => r.user_id);
 
-  const todayFixtureIds = ((todays ?? []) as { fixture_id: number }[]).map((r) => Number(r.fixture_id));
-
-  // Who explicitly asked for THIS fixture, and who asked for anything today.
-  const [{ data: askedThis }, { data: askedToday }] = await Promise.all([
-    raw.from("halftime_reminders").select("user_id").eq("fixture_id", row.fixture_id),
-    raw
-      .from("halftime_reminders")
-      .select("user_id")
-      .in("fixture_id", todayFixtureIds.length ? todayFixtureIds : [row.fixture_id]),
-  ]);
-
-  const requesters = ((askedThis ?? []) as { user_id: string }[]).map((r) => r.user_id);
-  const hasRequestToday = new Set(((askedToday ?? []) as { user_id: string }[]).map((r) => r.user_id));
+  const requesters = ids(askedThis); // tier 1 — uncapped
+  const clubFans = ids(fansOfThis); // tier 2 — uncapped
+  const capped = new Set(((alreadyToday ?? []) as { user_id: string }[]).map((r) => r.user_id));
+  const stakeToday = new Set([...ids(askedToday), ...ids(fansToday)]);
 
   const { data: optedIn } = await raw
     .from("profiles")
     .select("id")
     .eq("notifications_opt_in", true);
 
+  // Tier 3 — unsolicited. No request, no club in play today: this is the only
+  // audience the one-per-day cap is for.
   const blanket = ((optedIn ?? []) as { id: string }[])
     .map((r) => r.id)
-    .filter((id) => !capped.has(id) && !hasRequestToday.has(id));
+    .filter((id) => !capped.has(id) && !stakeToday.has(id));
 
-  // Requesters first, so a run that hits MAX_PUSH_PER_RUN truncates the blanket
-  // audience rather than the people who actually asked.
-  const targets = Array.from(new Set([...requesters, ...blanket])).slice(0, MAX_PUSH_PER_RUN);
+  // Earned first, so a run that hits MAX_PUSH_PER_RUN truncates the unsolicited
+  // audience rather than the people who asked or whose club is playing.
+  const targets = Array.from(new Set([...requesters, ...clubFans, ...blanket])).slice(0, MAX_PUSH_PER_RUN);
 
   if (!targets.length) return 0;
 

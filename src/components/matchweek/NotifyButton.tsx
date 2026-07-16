@@ -4,14 +4,21 @@
  * "Notify me" for one fixture's halftime quiz — used on the Your-next-quiz tile
  * and on every card in the upcoming carousel.
  *
- * Deliberately honest about the two ways this can't work:
- *  - signed out  → "Sign in to get notified" (we'd have nobody to push)
- *  - no consent  → "Turn notifications on" links to settings, because release
- *                  respects notifications_opt_in and would silently skip them.
- * Anything else would be a button that promises a push we never send.
+ * WORKS IN ORDER, never skips (founder, 2026-07-16). Whatever's missing, the tap
+ * starts the flow that fixes it and then finishes the job:
+ *
+ *   signed out   → remember the fixture → /auth/sign-in?next=/matchweek → on
+ *                  return, useReminders applies the pending intent, so they land
+ *                  back already notified rather than staring at "Notify me".
+ *   no consent   → remember the fixture → run the permission + opt-in flow
+ *                  in place → apply. No trip to Settings, no dead end.
+ *   ready        → plain toggle.
+ *
+ * The label always says "Notify me" — what's missing is our problem to solve,
+ * not a hoop to advertise on the button.
  */
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { RemindersState } from "./useReminders";
 
@@ -26,54 +33,62 @@ export function NotifyButton({
   reminders: RemindersState;
   size?: "sm" | "md";
 }) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { ids, signedIn, optedIn, loaded, toggle } = reminders;
+  const { ids, signedIn, optedIn, loaded, toggle, rememberIntent, grantConsent } = reminders;
 
   if (!loaded) return null;
 
+  const on = ids.has(fixtureId);
   const pad = size === "md" ? "px-3.5 py-2" : "px-2.5 py-1.5";
   const text = size === "md" ? "text-xs" : "text-[11px]";
-  const base = `flex-shrink-0 rounded-full font-body ${text} ${pad} transition-colors`;
 
-  if (!signedIn) {
-    return (
-      <Link href="/login" className={base}
-        style={{ background: "rgba(255,255,255,0.05)", color: "#8a948f", border: "1px solid rgba(255,255,255,0.1)" }}>
-        Sign in to get notified
-      </Link>
-    );
+  async function onClick() {
+    setError(null);
+
+    // 1. No account → keep the intent and go get one. They come back notified.
+    if (!signedIn) {
+      rememberIntent(fixtureId);
+      router.push(`/auth/sign-in?next=${encodeURIComponent("/matchweek")}`);
+      return;
+    }
+
+    // 2. Signed in but never consented → run the consent flow here and now,
+    //    then apply the reminder (grantConsent finishes the pending intent).
+    if (!optedIn) {
+      setBusy(true);
+      rememberIntent(fixtureId);
+      const err = await grantConsent();
+      setBusy(false);
+      if (err) setError(err);
+      return;
+    }
+
+    // 3. Everything in place → just toggle.
+    setBusy(true);
+    const err = await toggle(fixtureId);
+    setBusy(false);
+    if (err) setError(err);
   }
-
-  if (!optedIn) {
-    return (
-      <Link href="/settings" className={base}
-        style={{ background: "rgba(255,255,255,0.05)", color: "#8a948f", border: "1px solid rgba(255,255,255,0.1)" }}>
-        Turn notifications on
-      </Link>
-    );
-  }
-
-  const on = ids.has(fixtureId);
 
   return (
     <button
-      onClick={async () => {
-        setError(null);
-        const err = await toggle(fixtureId);
-        if (err) setError(err);
-      }}
+      onClick={onClick}
+      disabled={busy}
       aria-pressed={on}
       aria-label={on ? "Stop notifying me about this quiz" : "Notify me when this quiz drops"}
-      className={base}
+      className={`flex-shrink-0 rounded-full font-body ${text} ${pad} transition-colors`}
       style={{
         background: on ? "rgba(0,216,192,0.14)" : "transparent",
         color: on ? TEAL : "#8a948f",
         border: `1px solid ${on ? "rgba(0,216,192,0.45)" : "rgba(255,255,255,0.12)"}`,
         fontWeight: on ? 600 : 500,
+        opacity: busy ? 0.6 : 1,
       }}
       title={error ?? undefined}
     >
-      {error ? error : on ? "✓ Notifying you" : "Notify me"}
+      {error ? error : busy ? "…" : on ? "✓ Notifying you" : "Notify me"}
     </button>
   );
 }
