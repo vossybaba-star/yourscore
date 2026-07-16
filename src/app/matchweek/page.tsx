@@ -27,6 +27,7 @@ import { useReminders } from "@/components/matchweek/useReminders";
 import { UpcomingQuizzes } from "@/components/matchweek/UpcomingQuizzes";
 import { QuizStatTiles } from "@/components/matchweek/QuizStatTiles";
 import { LiveQuizIntro } from "@/components/matchweek/LiveQuizIntro";
+import { FantasyHold } from "@/components/matchweek/FantasyHold";
 import { BottomNav } from "@/components/ui/BottomNav";
 
 const TEAL = "#00d8c0";
@@ -125,18 +126,8 @@ export default function MatchweekPage() {
         </div>
       )}
 
-      {/* ── Fantasy (placeholder this pass) ─────────────────────────────── */}
-      {section === "fantasy" && (
-        <div className="max-w-lg mx-auto px-4 pt-6">
-          <div className="rounded-2xl p-8 bg-surface text-center" style={{ border: `1px solid ${TEAL}25` }}>
-            <div className="text-3xl mb-3">⚽️</div>
-            <p className="font-display text-lg text-white mb-1">Fantasy is coming</p>
-            <p className="font-body text-sm" style={{ color: "#8a948f" }}>
-              Pick your squad, join leagues, and track your points through the season — all here in Matchweek.
-            </p>
-          </div>
-        </div>
-      )}
+      {/* ── Fantasy — holding screen until the game opens with the season ─── */}
+      {section === "fantasy" && <FantasyHold />}
 
       <BottomNav />
     </div>
