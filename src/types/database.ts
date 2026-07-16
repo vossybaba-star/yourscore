@@ -1752,6 +1752,7 @@ export type Database = {
           created_at: string | null
           device_id: string | null
           display_name: string | null
+          first_play_at: string | null
           games_played: number | null
           id: string
           notifications_opt_in: boolean
@@ -1765,6 +1766,7 @@ export type Database = {
           created_at?: string | null
           device_id?: string | null
           display_name?: string | null
+          first_play_at?: string | null
           games_played?: number | null
           id: string
           notifications_opt_in?: boolean
@@ -1778,6 +1780,7 @@ export type Database = {
           created_at?: string | null
           device_id?: string | null
           display_name?: string | null
+          first_play_at?: string | null
           games_played?: number | null
           id?: string
           notifications_opt_in?: boolean

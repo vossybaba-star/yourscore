@@ -53,6 +53,18 @@ const X_RETURNPLAY_EVENT_ID = process.env.NEXT_PUBLIC_X_RETURNPLAY_EVENT_ID;
 const FIRST_PLAY_DAY_KEY = "ys:firstplayday";
 const RETURN_FIRED_KEY = "ys:returnfired";
 
+// Timestamp of this device's first-ever play. SignupPixel sends it at registration
+// and the server keeps it as profiles.first_play_at, so `first_play_at < created_at`
+// tells us the Player played BEFORE they signed up (and the gap says how long before) —
+// i.e. whether a campaign won a brand-new player or re-registered someone who was
+// already playing as a guest. Guest plays never reach the DB (they're client-side and
+// sign-up gated), so this localStorage stamp is the only way to see pre-signup play.
+// Set independently of the ReturnPlay keys above: players who already have a stored
+// first-play day (from the ReturnPlay ship) still get a timestamp on their next play.
+// For them it isn't their true first play, but they're already registered, so it lands
+// after their created_at and correctly reads as "not a pre-signup play" — no false positives.
+const FIRST_PLAY_AT_KEY = "ys:firstplayat";
+
 // Fan the ReturnPlay milestone out to every ad/analytics platform (mirrors the
 // play/complete fan-out; each call guarded so one blocked pixel never blocks the rest).
 function fireReturnPlay(game: GameId, daysSinceFirst: number): void {
@@ -66,10 +78,16 @@ function fireReturnPlay(game: GameId, daysSinceFirst: number): void {
   afReturnPlay(game, daysSinceFirst);                    // AppsFlyer (native only)
 }
 
-// Read storage, apply the pure decision, persist, and fire once when earned.
+// Read storage, apply the pure decision, persist, and fire once when earned. Also
+// stamps the first-play timestamp (see FIRST_PLAY_AT_KEY) — same try/catch, since
+// both are storage writes on the play path and a blocked store should skip both.
 function maybeTrackReturnPlay(game: GameId): void {
   try {
-    const today = localDay(new Date());
+    const now = new Date();
+    const today = localDay(now);
+    if (!window.localStorage.getItem(FIRST_PLAY_AT_KEY)) {
+      window.localStorage.setItem(FIRST_PLAY_AT_KEY, now.toISOString());
+    }
     const storedFirstDay = window.localStorage.getItem(FIRST_PLAY_DAY_KEY);
     const alreadyFired = window.localStorage.getItem(RETURN_FIRED_KEY) === "1";
     const { shouldFire, firstDay, daysSinceFirst } = evaluateReturnPlay(

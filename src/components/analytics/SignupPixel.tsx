@@ -65,20 +65,23 @@ export function SignupPixel() {
 
     fireSignupConversions();
 
-    // Persist the visitor's first-touch acquisition source AND their durable
-    // device id onto their new profile. The source is captured on landing by
-    // AcquisitionCapture; the device id survives the guest→signup transition so
-    // pre-signup guest activity can later be linked to the account. Both are
-    // first-touch on the server (written only while still null). Fire-and-forget.
+    // Persist onto the new profile: the visitor's first-touch acquisition source,
+    // their durable device id, and when this device first played. The source is
+    // captured on landing by AcquisitionCapture; the device id survives the
+    // guest→signup transition; first_play_at is stamped on the first play (see
+    // trackGame) and is the only record of pre-signup play, since guest plays are
+    // client-side and never reach the DB. All are first-touch on the server
+    // (written only while still null). Fire-and-forget.
     try {
       const acq = localStorage.getItem("ys:acq");
       const base = acq ? (JSON.parse(acq) as Record<string, unknown>) : {};
       const deviceId = getDeviceId();
-      if (acq || deviceId) {
+      const firstPlayAt = localStorage.getItem("ys:firstplayat");
+      if (acq || deviceId || firstPlayAt) {
         void fetch("/api/profile/source", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...base, device_id: deviceId }),
+          body: JSON.stringify({ ...base, device_id: deviceId, first_play_at: firstPlayAt }),
           keepalive: true,
         });
       }
