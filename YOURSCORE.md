@@ -6,7 +6,38 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-07-13 (**Product-audit fix batches A–C verified + merged with main** —
+> **Confirmed:** 2026-07-16 (**Perfect 10 — new standalone list game SHIPPED to prod.**
+> Third Quiz game-type ("name everyone in a ranked top-10 football list", e.g. all-time
+> PL top scorers): tapering "floodlit tower" of 10 rungs (#1 narrowest at the top) that
+> ignite gold as solved; free-text input with autocomplete chips (tap chip = submit, NO
+> submit button; word-exact/surname matches rank above prefix matches); 3 strikes
+> (wrong player = strike + tower shake); 3 hint tokens spent per-rung (tier 1 clubs clue
+> → tier 2 "starts with"; clue chips persist under the rung until solved, no rung
+> restyle); scoring +10 clean / +6 one hint / +3 two hints; dots per rung = one per
+> letter, grouped by word (server-sent lengths — answers NEVER reach the client
+> pre-solve; grading is server-side vs service-role-only `p10_lists.entries`). Daily
+> list by Europe/London date; win = tower-ignition cascade, 3 strikes = missed names
+> revealed in red. Signed-in attempts persist (`p10_attempts`, unique per list+user,
+> share_token drives the async challenge link `?c=` → same list, side-by-side compare);
+> guests play via localStorage (house guest pattern, sign-up nudge on results). Guess
+> pool = ALL PL history: `p10_players` + `public/perfect10/players.json` (4,669 names)
+> backfilled live from SportMonks league-8 season squads 2003/04→now
+> (`scripts/perfect10/build-player-index.mjs` — validates every season against the
+> verified "season id aliases to current squad" trap; SportMonks' topscorers endpoint is
+> UNRELIABLE for historical rankings, verified live, so lists are NOT SportMonks-ranked);
+> pre-2003 legends are force-inserted whenever a list ships. Lists are authored+verified
+> by `scripts/perfect10/generate-lists.mjs` (author → per-entry independent web-search
+> verification, any failed entry drops the WHOLE list → insert as draft; a list only
+> serves once it's assigned a `day`). Migration 85 applied to prod (tables RLS
+> deny-all/service-only). Hub tile on /play, gold #ffc400; typographic placeholder cover
+> pending approved key art. Launch-list batch generation running; days assigned after
+> founder veto. NOTE: `scripts/lib/anthropic.mjs` got its first git commit on this
+> branch (was untracked WIP from the quiz-factory session) — reconcile if the factory
+> branch commits its own copy. Nav decision PENDING with founder: an "all games under
+> one Play tab incl. 38-0" restructure was floated 2026-07-16 — NOT built; §9 canon and
+> the §12 "Play label retired" entry stand until he rules.)
+>
+> **Previously confirmed:** 2026-07-13 (**Product-audit fix batches A–C verified + merged with main** —
 > see Recently Shipped; audit docs at `docs/AUDIT-2026-07-11-*.md`. Verification was live:
 > room-watchdog e2e 12/12 against the real DB via two QA bots, the full guest 38-0 loop
 > played through win→swap and loss, h2h accept + guest game-link gate exercised in the
@@ -260,6 +291,12 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-16** — **Perfect 10 SHIPPED** — third Quiz game-type: name everyone in a ranked
+  top-10 list. Floodlit-tower UI at `/play/game/perfect-10`, daily list (Europe/London),
+  hints/strikes, async challenge links, all-PL-history typeahead (4,669 names). Server-only
+  answers (mig 85, RLS deny-all). Lists gate-verified before a `day` is assigned. See the
+  Confirmed preamble for the full mechanics + gotchas (SportMonks topscorers unreliable;
+  season-id alias trap; `scripts/lib/anthropic.mjs` first committed here).
 - **2026-07-15** — **Retention tracking: `ReturnPlay` event + durable device id** (analytics
   plumbing, no user-facing surface). `ReturnPlay` fires once per device the first time a player
   plays on a later calendar day than their first-ever play — the D2+ "they came back" signal,
