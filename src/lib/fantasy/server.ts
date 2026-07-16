@@ -11,7 +11,7 @@ import poolJson from "@/data/gates/pool.json";
 import { buildRound, clientView, grade, type Round } from "@/lib/gates/serve";
 import type { GateQuestion } from "@/lib/gates/types";
 import {
-  applyTransfer, bankCredits, CHIPS, creditsForRound, GAMEWEEKS_PER_CHIP, halfOf,
+  applyTransfer, cashOverflow, CHIPS, creditsForRound, GAMEWEEKS_PER_CHIP, halfOf,
   perfectRoundReward, scoreEntry, smartDefaults, transferCost, validateSelection, validateSquad,
   RuleError, type Chip, type LockedSelection, type Squad, type SquadPick,
 } from "./engine";
@@ -46,7 +46,7 @@ export interface EntryRow {
   user_id: string; gw: number; status: string;
   round_version: string | null; round_answers: (number | null)[];
   round_correct: number; round_credits: number; round_done_at: string | null;
-  transfers: unknown[]; hits: number; chip: Chip | null;
+  transfers: unknown[]; hits: number; chip: Chip | null; cash_points: number;
   picks: SquadPick[] | null; xi: number[] | null; bench: number[] | null;
   captain: number | null; vice: number | null; locked_at: string | null;
   points: number | null; points_breakdown: unknown | null;
@@ -306,7 +306,7 @@ async function completeRound(
   db: Db, userId: string, gw: GwRow, squad: SquadRow, correctCount: number, minted: number,
 ) {
   const patch: Record<string, unknown> = { updated_at: new Date().toISOString(), version: squad.version + 1 };
-  let credits = bankCredits(squad.credits, minted);
+  let toBank = minted;
 
   const half = halfOf(gw.gw);
   const reward = perfectRoundReward(correctCount, ROUND_LEN, squad.bonus_wildcard_half === half);
@@ -320,12 +320,25 @@ async function completeRound(
     patch.wildcard_half = half;
     patch.bonus_wildcard_half = half;
   } else if (reward.credits) {
-    credits = bankCredits(credits, reward.credits);
+    toBank += reward.credits;
   }
+
+  // Everything the round minted goes through ONE place, so nothing is silently
+  // lost: the bank takes what it can hold, the rest cashes out at 4 points each.
+  // That is what stops a perfect 11/11 paying zero to a manager at the cap who
+  // never wants a transfer.
+  const { credits, points } = cashOverflow(squad.credits, toBank);
   patch.credits = credits;
 
   const { error } = await db.from("fantasy_squads").update(patch).eq("user_id", userId);
   if (error) throw new HttpError(500, error.message);
+
+  if (points > 0) {
+    const { error: cashErr } = await db.from("fantasy_entries")
+      .update({ cash_points: points }).eq("user_id", userId).eq("gw", gw.gw);
+    if (cashErr) throw new HttpError(500, cashErr.message);
+  }
+  return points;
 }
 
 export async function stepRound(db: Db, userId: string, k: number, optionId: number | null) {
@@ -576,7 +589,7 @@ export async function lockAndScore(db: Db, userId: string) {
     }),
   );
   const form = await formFor(db, gw.gw);
-  const result = scoreEntry(sel, entry.hits, engineScores, form, entry.chip);
+  const result = scoreEntry(sel, entry.hits, engineScores, form, entry.chip, entry.cash_points ?? 0);
   await db.from("fantasy_entries").update({
     status: "scored", points: result.total, points_breakdown: result.breakdown,
     autosubs: result.subs, captain_used: result.captainUsed,

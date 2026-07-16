@@ -195,7 +195,7 @@ export async function scoreGameweek(db: Db, gw: SeasonGw, opts: { final: boolean
   if (!scores.size) return { scored: 0 }; // nothing ingested yet — hold
 
   const { data: entries } = await db.from("fantasy_entries")
-    .select("user_id, hits, picks, xi, bench, captain, vice, chip")
+    .select("user_id, hits, picks, xi, bench, captain, vice, chip, cash_points")
     .eq("gw", gw.gw).not("locked_at", "is", null).range(0, 9999);
 
   const form = await formFor(db, gw.gw);
@@ -205,6 +205,7 @@ export async function scoreGameweek(db: Db, gw: SeasonGw, opts: { final: boolean
   for (const e of (entries ?? []) as {
     user_id: string; hits: number; picks: SquadPick[];
     xi: number[]; bench: number[]; captain: number; vice: number; chip: Chip | null;
+    cash_points: number | null;
   }[]) {
     const sel: LockedSelection = {
       picks: e.picks, xi: e.xi, bench: e.bench, captain: e.captain, vice: e.vice,
@@ -217,7 +218,7 @@ export async function scoreGameweek(db: Db, gw: SeasonGw, opts: { final: boolean
     );
     // The chip is part of the locked snapshot: whatever was played before the
     // deadline, a re-score always re-applies it — never a different one.
-    const result = scoreEntry(sel, e.hits, engineScores, form, e.chip);
+    const result = scoreEntry(sel, e.hits, engineScores, form, e.chip, e.cash_points ?? 0);
     await db.from("fantasy_entries").update({
       // Provisional scores land while the football is still on; the entry only
       // becomes "scored" when the gameweek's matches are actually over.

@@ -15,6 +15,20 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "../..");
 const args = process.argv.slice(2);
 const MODE = args[0];
 const arg = (k, d) => { const i = args.indexOf(k); return i >= 0 ? args[i + 1] : d; };
+/** Points paid per unspent credit (0 = off) — the founder's knowledge→points
+ *  symmetry. Measured here so we can see what it does to CHEATING, which is the
+ *  thing that changes: a transfer is only worth something if you need one, but
+ *  points are worth something always. */
+const CONVERT = Number(arg("--convert", "0"));
+const RESERVE = Number(arg("--reserve", "1"));
+/** Max points one gameweek can earn from cashing credits (0 = uncapped).
+ *  The anti-cheat lever. Lookup is worthless today ONLY because the curve has a
+ *  flat top: 9, 10 and 11 correct all pay 4 credits, so the last two answers buy
+ *  nothing. Cashing credits for points removes that ceiling and lets accuracy pay
+ *  without limit — which is what turns cheating from -0.2% into +6%. Capping the
+ *  cash at a figure an honest round already reaches puts the flat top back. */
+const CAP = Number(arg("--cap", "0"));
+const capped = (p) => (CAP > 0 ? Math.min(CAP, p) : p);
 const OUT = arg("--out", "");
 
 function xfnv1a(s) { let h = 2166136261 >>> 0; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
@@ -146,7 +160,7 @@ function playWeek(m, gw, ctx, stats) {
   const away = (a.away && gw >= a.away[0] && gw <= a.away[1]) || (a.quitAt && gw >= a.quitAt) || (a.joinAt && gw < a.joinAt);
   const participates = !away && rng() < (a.playProb ?? 1);
   if (gw === 20) { m.wc = 1; m.bonusMinted = 0; }
-  let hitPts = 0, chip = null;
+  let hitPts = 0, convPts = 0, chip = null;
 
   if (participates) {
     m.played++;
@@ -183,6 +197,13 @@ function playWeek(m, gw, ctx, stats) {
         const inn = worst && bestReplacement(m, worst, gw, avail, form, cal);
         if (!inn || evNow(inn, gw, form, cal) < evNow(worst, gw, form, cal) + (a.hitBar ?? 4.5)) break;
         hitPts += HIT; m.hitsTaken++; spam++; applySwap(m, worst, inn);
+      }
+      // Cash what the transfer market didn't want — reached only when no swap
+      // cleared the EV bar, i.e. a settled squad.
+      if (CONVERT > 0 && m.credits > RESERVE) {
+        const cash = m.credits - RESERVE;
+        m.credits = RESERVE;
+        convPts = capped(convPts + cash * CONVERT);
       }
       // chip play (engaged managers, chaos mode only)
       if (cal && a.chips && m.tokens > 0) {
@@ -221,6 +242,7 @@ function playWeek(m, gw, ctx, stats) {
   const cap = active.sort(sorter)[0];
   if (cap) pts += scored.get(cap.id) * (chip === "TC" ? 2 : 1);
   pts -= hitPts;
+  pts += convPts; // knowledge cashed as points
   m.season += pts; m.deadSlots += deadSlots;
   const mo = GW_MONTH(gw);
   m.months[mo] = (m.months[mo] ?? 0) + pts;

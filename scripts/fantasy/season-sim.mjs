@@ -26,6 +26,29 @@ const args = process.argv.slice(2);
 const arg = (k, d) => { const i = args.indexOf(k); return i >= 0 ? args[i + 1] : d; };
 const SEASONS = Number(arg("--seasons", 60));
 const OUT = arg("--out", "");
+/** Points paid per unspent transfer credit (0 = the mechanic is off).
+ *  The founder's symmetry: a hit turns points into a transfer, so this turns a
+ *  transfer back into points — knowledge always pays, you just pick the form.
+ *  This flag exists to MEASURE the rate rather than pick it. */
+const CONVERT = Number(arg("--convert", "0"));
+/** Credits a manager keeps in hand rather than cashing (option value for next week). */
+const RESERVE = Number(arg("--reserve", "1"));
+/** Max points one gameweek can earn from cashing credits (0 = uncapped).
+ *  The anti-cheat lever. Lookup is worthless today ONLY because the curve has a
+ *  flat top: 9, 10 and 11 correct all pay 4 credits, so the last two answers buy
+ *  nothing. Cashing credits for points removes that ceiling and lets accuracy pay
+ *  without limit — which is what turns cheating from -0.2% into +6%. Capping the
+ *  cash at a figure an honest round already reaches puts the flat top back. */
+const CAP = Number(arg("--cap", "0"));
+const capped = (p) => (CAP > 0 ? Math.min(CAP, p) : p);
+/** WHICH credits cash out:
+ *   leftover — anything unspent above the reserve. Pays whoever has spare credits,
+ *              which turns out to be the elite as much as the settled.
+ *   overflow — ONLY credits the bank cap would have thrown away. Self-targeting:
+ *              you must be AT the cap to earn a point, and you only sit at the cap
+ *              if you are not spending. The design already uses this idiom — a
+ *              second perfect round overflows into credits (D:153-154). */
+const POLICY = arg("--policy", "leftover");
 
 // ── rng (repo pattern) ────────────────────────────────────────────────────────
 function xfnv1a(s) { let h = 2166136261 >>> 0; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
@@ -73,6 +96,9 @@ const ARCHETYPES = {
   lapser: { n: 10, acc: 7.5, sd: 1.5, playProb: 0.95, hits: false, upgrades: true, away: [10, 16] },
   quitter:{ n: 10, acc: 5.5, sd: 1.8, playProb: 0.70, hits: false, upgrades: false, quitAt: 12 },
   late:   { n: 10, acc: 7.5, sd: 1.5, playProb: 0.92, hits: true,  upgrades: true, joinAt: 8 },
+  // Knows their football, happy with their eleven, never chases form. The
+  // player the knowledge→points conversion exists for.
+  settled:{ n: 20, acc: 8.5, sd: 1.2, playProb: 0.92, hits: false, upgrades: false },
 };
 
 // ── per-season form drift (public, chaseable — the reason transfers have value)
@@ -178,13 +204,21 @@ function playWeek(m, gw, avail, form, curve, rng, stats) {
   const participates = !away && rng() < a.playProb;
   const half = gw <= 19 ? 0 : 1;
   if (gw === 20) { m.wc = 1; m.bonusMinted = 0; } // second-half wildcard issued
-  let hitPts = 0;
+  let hitPts = 0, convPts = 0;
 
   if (participates) {
     m.played++;
     const correct = Math.max(0, Math.min(11, Math.round(a.acc + (rng() + rng() + rng() - 1.5) * a.sd)));
     if (correct === 11 && m.bonusMinted < 1) { m.wc = Math.min(2, m.wc + 1); m.bonusMinted++; stats.bonusWc++; }
-    m.credits = Math.min(BANK_CAP, m.credits + curve(correct));
+    const minted = curve(correct);
+    if (POLICY === "overflow") {
+      const banked = Math.min(BANK_CAP - m.credits, minted);
+      m.credits += banked;
+      const spilled = minted - banked; // the cap used to silently bin these
+      if (CONVERT > 0 && spilled > 0) { convPts = capped(convPts + spilled * CONVERT); stats.converted += spilled; }
+    } else {
+      m.credits = Math.min(BANK_CAP, m.credits + curve(correct));
+    }
     m.accSum += correct;
 
     // problems = squad players flagged out this GW
@@ -209,6 +243,17 @@ function playWeek(m, gw, avail, form, curve, rng, stats) {
         if (!inn || evNow(inn, gw, form) < evNow(worst, gw, form) + 0.8) break;
         m.credits--; applySwap(m, worst, inn); stats.transfers++;
       }
+    }
+    // Cash whatever the transfer market didn't want. A manager only reaches here
+    // holding credits because no swap cleared the EV bar — i.e. they're settled.
+    // That's exactly the player this mechanic is for: their knowledge pays in
+    // points instead of forcing churn they don't want.
+    if (CONVERT > 0 && POLICY === "leftover" && m.credits > RESERVE) {
+      const cash = m.credits - RESERVE;
+      m.credits = RESERVE;
+      convPts = capped(convPts + cash * CONVERT);
+      stats.converted += cash;
+      stats.convertedBy[m.a.key] = (stats.convertedBy[m.a.key] ?? 0) + cash;
     }
   }
   // wildcard expiry at GW19 deadline
@@ -235,6 +280,7 @@ function playWeek(m, gw, avail, form, curve, rng, stats) {
   const cap = active.sort(sorter)[0];
   if (cap) pts += scored.get(cap.id);
   pts -= hitPts;
+  pts += convPts; // knowledge cashed as points — the other side of the hit
   m.season += pts;
   m.months[GW_MONTH(gw)] = (m.months[GW_MONTH(gw)] ?? 0) + pts;
   stats.gwCum[m.a.key][gw] += m.season;
@@ -245,7 +291,7 @@ function playWeek(m, gw, avail, form, curve, rng, stats) {
 // ── run ───────────────────────────────────────────────────────────────────────
 const results = {};
 for (const [curveName, curve] of Object.entries(CURVES)) {
-  const agg = { seasonPts: {}, monthWins: {}, hits: 0, transfers: 0, wcPlayed: {}, wcExpired: 0, bonusWc: 0, casualDeadSlots: 0, casualWeeks: 0, credits: {}, played: {}, gwCum: {}, gwCumN: {}, monthAvg: {}, monthAvgN: {} };
+  const agg = { seasonPts: {}, monthWins: {}, hits: 0, transfers: 0, converted: 0, convertedBy: {}, wcPlayed: {}, wcExpired: 0, bonusWc: 0, casualDeadSlots: 0, casualWeeks: 0, credits: {}, played: {}, gwCum: {}, gwCumN: {}, monthAvg: {}, monthAvgN: {} };
   for (const k of Object.keys(ARCHETYPES)) { agg.seasonPts[k] = []; agg.credits[k] = []; agg.played[k] = []; agg.gwCum[k] = new Float64Array(39); agg.gwCumN[k] = 0; agg.monthAvg[k] = {}; agg.monthAvgN[k] = 0; }
   let lapserTrace = null;
 

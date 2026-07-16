@@ -18,6 +18,9 @@ export const XI_SIZE = 11;
 export const MAX_PER_CLUB = 3;
 export const CREDIT_CAP = 5;
 export const HIT_POINTS = 4;
+/** Cashing a credit pays what buying a transfer costs — the economy is symmetric:
+ *  knowledge buys transfers or points, points buy transfers (founder, 14 Jul). */
+export const CASH_POINTS = HIT_POINTS;
 
 export interface PoolPlayer {
   id: number;        // pool id (= FPL element id)
@@ -96,6 +99,37 @@ export function creditsForRound(correct: number): number {
 export function bankCredits(current: number, minted: number): number {
   return Math.min(CREDIT_CAP, current + minted);
 }
+
+/** Credits the bank can't hold cash out as points — OVERFLOW ONLY (founder, 14 Jul).
+ *
+ *  The hole this fills: the round's only payoff was transfers, so a manager happy
+ *  with his team earned NOTHING from a perfect 11/11 — at the cap, literally zero.
+ *  The game's own differentiator was optional and unrewarding.
+ *
+ *  Overflow-only is what keeps the transfer the better deal: you never drain a bank
+ *  you might want, you just stop wasting what won't fit. Cashing is the consolation
+ *  prize, not the optimal play.
+ *
+ *  A CAP on the cash was tried and rejected — it restores cheat-resistance, but it
+ *  makes 3 correct pay the same as 11, and then there's no reason to answer the
+ *  other eight questions. The round has to reward knowing more. */
+export function cashOverflow(current: number, minted: number): { credits: number; points: number } {
+  const credits = bankCredits(current, minted);
+  const spilled = Math.max(0, current + minted - CREDIT_CAP);
+  return { credits, points: spilled * CASH_POINTS };
+}
+
+/** What you get for selling — FPL's own rule (founder-locked 14 Jul):
+ *  a rise pays you back HALF of it, rounded down to 0.1; a fall costs you the lot.
+ *
+ *  This is the parity mechanism, not a detail. Weekly prices with a sell-at-what-you-
+ *  paid rule is a slow squeeze — your fixed £100m buys less every week and you could
+ *  only ever downgrade. Half-the-rise lets team value climb with the market, exactly
+ *  as FPL managers already expect. */
+export function sellPrice(buyTenths: number, currentTenths: number): number {
+  if (currentTenths <= buyTenths) return currentTenths;
+  return buyTenths + Math.floor((currentTenths - buyTenths) / 2);
+}
 /** How the next transfer is paid: knowledge first, points after.
  *  On a wildcard week every move is free — that's the whole chip. */
 export function transferCost(creditsLeft: number, wildcard = false): { paid: "credit" | "hit" | "free" } {
@@ -157,7 +191,13 @@ export function applyTransfer(squad: Squad, outId: number, inId: number, pool: P
   for (const p of squad.picks) if (p.id !== outId) clubCount.set(p.clubId, (clubCount.get(p.clubId) ?? 0) + 1);
   if ((clubCount.get(inn.clubId) ?? 0) + 1 > MAX_PER_CLUB)
     throw new RuleError("club", `more than ${MAX_PER_CLUB} players from one club`);
-  const bank = squad.bankTenths + out.buyTenths - inn.priceTenths;
+  // Sell at FPL's rule against the CURRENT price, not at what you paid. Prices move
+  // weekly, so refunding buyTenths at par would squeeze you into downgrading forever.
+  // A player missing from the pool (left the league mid-season) can only be sold for
+  // what you paid — there is no current price to halve.
+  const outNow = index.get(outId);
+  const sold = outNow ? sellPrice(out.buyTenths, outNow.priceTenths) : out.buyTenths;
+  const bank = squad.bankTenths + sold - inn.priceTenths;
   if (bank < 0) throw new RuleError("budget", "not enough budget for that swap");
   return {
     picks: squad.picks.map((p) => p.id === outId
@@ -234,6 +274,9 @@ export interface EntryResult {
   subs: { out: number; in: number }[];
   breakdown: { id: number; points: number; captain: boolean; subbedIn: boolean; facts: MatchFacts }[];
   hitsDeducted: number;
+  /** Points from credits the bank couldn't hold — a line item on the result card,
+   *  so the round's contribution to the score is visible rather than baked in. */
+  cashPoints: number;
 }
 export function scoreEntry(
   sel: LockedSelection,
@@ -241,6 +284,7 @@ export function scoreEntry(
   scores: Map<number, PlayerScore>,
   form: Map<number, number> = new Map(),
   chip: Chip | null = null,
+  cashPoints = 0,
 ): EntryResult {
   const minutes = new Map<number, number>();
   for (const p of sel.picks) minutes.set(p.id, scores.get(p.id)?.facts.minutes ?? 0);
@@ -271,7 +315,11 @@ export function scoreEntry(
   // caller records 0 hits for that week, and this stays a pure sum either way.
   const hitsDeducted = hits * HIT_POINTS;
   total -= hitsDeducted;
-  return { total, captainUsed: cap, subs, breakdown, hitsDeducted };
+  // Credits the bank couldn't hold, cashed at the same rate a transfer costs.
+  // Passed in from the stored entry rather than recomputed, so a re-score can
+  // never drop them.
+  total += cashPoints;
+  return { total, captainUsed: cap, subs, breakdown, hitsDeducted, cashPoints };
 }
 
 export { pointsFor, type MatchFacts, type FantasyPos };

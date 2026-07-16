@@ -76,7 +76,7 @@ OVERHEAD, never the DECISIONS.**
   complain about the *chores* (daily price-site checks, deadline leak-camping, BPS
   disputes) and the lock-outs (dead teams). Meanwhile the decision surface IS the
   conversation economy (~80% of community talk). Cutting decisions cuts the talk.
-- So we delete the chores (no price changes, no leak-camping — bench + Insider, no BPS,
+- So we delete the chores (no NIGHTLY price-watching, no leak-camping — bench + Insider, no BPS,
   missed week = squad rolls over) and keep the decisions (transfers, captain, bench
   order, chip timing) as OPTIONAL depth — easy to learn, hard to master.
 - **The LOW FLOOR (founder-locked 10 Jul).** The floor = the minimum a player must do
@@ -198,6 +198,22 @@ OVERHEAD, never the DECISIONS.**
   stats; a **weekly price snapshot taken at gameweek open** sets that week's player prices
   (prices track form week to week — no daily updates, since users draft once a week). *Unofficial
   API — use the facts as input, never brand as FPL/official.*
+
+  > **PRICES — FOUNDER-LOCKED 14 Jul.** An earlier line in §2 read "no price changes", which
+  > contradicted this paragraph and misled a build session into freezing prices. Settled:
+  > **prices DO change, weekly, in line with FPL.** What we delete is FPL's *nightly* price
+  > chore (leak-camping, 2am rise alerts) — not the price economy itself. One snapshot at
+  > gameweek open, never daily.
+  >
+  > **Sell rule = FPL's own:** you sell at **purchase price + half the rise, rounded down to
+  > 0.1**; a fall costs you the full drop. This is not a detail — it is the PARITY MECHANISM.
+  > Moving prices with a sell-at-purchase-price rule is a slow squeeze: your fixed £100m buys
+  > less every week and you can only ever downgrade. Half-the-rise lets team value climb with
+  > the market, exactly as FPL managers already expect.
+  >
+  > **Consequence:** prices cannot live in `src/data/fantasy/pool.json`. It is a static import,
+  > frozen into the build — changing a price would mean a redeploy, tying the game's economy to
+  > shipping code. Prices move to a per-gameweek table, written by the gameweek-open snapshot.
 - **YourScore scoring engine** — own point values on the public match stats (pure, tested).
 - **Knowledge-round budget engine + free-allocation draft** — correct answers → one squad
   budget spent at FPL prices; live budget growth for momentum; anti-look-up timer (not scored).
@@ -341,6 +357,26 @@ knowledge-round performance.
 7. **Evidence on locked calls:** monthly competitions — in a 10-person league players
    are alive for the month 37–52% of all weeks and reset to alive monthly; chips —
    involved in ~19% of monthly titles (drama, not the decider; "let it ride" holds).
+7b. **CASH-OUT: credits → points (founder-locked 14 Jul).** The hole this fills: the round's
+   only payoff was transfers, so a manager happy with his team earned **nothing** from a perfect
+   11/11 — and at the credit cap, literally zero. The game's own differentiator was optional and
+   unrewarding. Now knowledge is always worth something; you just choose the form.
+   - **Uncapped, and OVERFLOW-ONLY**: credits cash out only when the round mints more than the
+     bank can hold. Nobody drains a bank they might want — the transfer stays the better deal
+     and cashing is the consolation, which is the point.
+   - **A cap was tried and rejected.** It restores cheat-resistance, but it makes 3 correct pay
+     the same as 11 — the round loses its reason to exist past the third question. The founder
+     killed it: *"then what's the point of completing the eleven questions?"*
+   - **Cheating goes positive and that is ACCEPTED (founder, 14 Jul):** measured +6.0% at rate 4.
+     The structural reason is worth knowing — the round is cheat-proof today *precisely because*
+     credits are worthless to someone who won't transfer. That is the same property that made the
+     round pointless for a settled manager. One coin, two faces: **any accuracy→points path pays
+     cheating.** Founder's call: *"People aren't gonna cheat every single week... It's too much
+     work."* 11 lookups × 38 weeks, with who-am-i measured at 2–3 min each.
+   - The cash-out is the garnish, **not** the answer for the settled manager. The **knowledge
+     rating** (§5) is: a real table, climbing on accuracy alone, that can't distort a fantasy
+     title no matter who cheats it.
+
 8. **Economy regression suite:** any change to any economy number re-runs
    `scripts/fantasy/season-sim.mjs` + `analysis.mjs` (redteam/chaos/sense/hope).
    Invariants: no strategy beats honest play (hoarding −12%, deliberate skipping −9%,

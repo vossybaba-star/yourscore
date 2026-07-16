@@ -1,11 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  accrueChip, applyTransfer, autoSubs, bankCredits, creditsForRound, effectiveCaptain,
-  halfOf, perfectRoundReward, scoreEntry, smartDefaults, transferCost,
-  validateSelection, validateSquad,
+  accrueChip, applyTransfer, autoSubs, bankCredits, cashOverflow, creditsForRound,
+  effectiveCaptain, halfOf, perfectRoundReward, scoreEntry, sellPrice, smartDefaults,
+  transferCost, validateSelection, validateSquad,
   type LockedSelection, type PoolPlayer, type Squad, RuleError, BUDGET_TENTHS,
-  CHIP_HOLD_CAP, GAMEWEEKS_PER_CHIP, HALF_SEASON_GW,
+  CHIP_HOLD_CAP, GAMEWEEKS_PER_CHIP, HALF_SEASON_GW, CASH_POINTS, CREDIT_CAP,
 } from "./engine";
 import { pointsFor, ZERO_FACTS, type MatchFacts } from "./values";
 
@@ -327,4 +327,60 @@ test("wildcard: an UNUSED half's wildcard must not survive into the next half", 
   const live = held.wildcard_half === half ? held.wildcards : 0;
   assert.equal(live, 0, "the first-half wildcard is dead the moment the half turns");
   assert.equal(live + 1, 1, "you hold exactly the one newly issued for this half");
+});
+
+// ── cash-out: credits → points, overflow only (founder-locked 14 Jul) ─────────
+test("cashOverflow: nothing spills until the bank is full", () => {
+  assert.deepEqual(cashOverflow(0, 4), { credits: 4, points: 0 });
+  assert.deepEqual(cashOverflow(1, 4), { credits: 5, points: 0 }, "exactly full = still nothing");
+});
+test("cashOverflow: only what the bank can't hold cashes out", () => {
+  // 4 banked + a perfect round's 4 = 8; the bank holds 5, so 3 spill at 4 pts each
+  assert.deepEqual(cashOverflow(4, 4), { credits: CREDIT_CAP, points: 3 * CASH_POINTS });
+  assert.deepEqual(cashOverflow(5, 4), { credits: CREDIT_CAP, points: 4 * CASH_POINTS },
+    "a settled manager at the cap cashes the whole round — 16 pts, never zero");
+});
+test("cashOverflow: a credit cashes for exactly what a transfer costs", () => {
+  // The symmetry the founder locked: a transfer costs 4 points, so a credit pays 4.
+  assert.equal(CASH_POINTS, 4);
+  assert.equal(cashOverflow(5, 1).points, 4, "one spilled credit = one transfer's worth");
+});
+test("cashOverflow: the round is NEVER worth zero to a settled manager", () => {
+  // This is the whole point of the mechanic. At the cap, every curve step still pays.
+  const atCap = [1, 2, 3, 4].map((m) => cashOverflow(CREDIT_CAP, m).points);
+  assert.deepEqual(atCap, [4, 8, 12, 16]);
+  // and more correct still pays more — the reason to answer all eleven
+  assert.ok(cashOverflow(CREDIT_CAP, creditsForRound(9)).points
+    > cashOverflow(CREDIT_CAP, creditsForRound(3)).points, "9 correct beats 3 correct");
+});
+
+// ── sell price: FPL's half-the-rise rule (founder-locked 14 Jul) ──────────────
+test("sellPrice: a rise pays back half of it, rounded DOWN to 0.1", () => {
+  assert.equal(sellPrice(85, 90), 87, "paid 8.5, now 9.0 → sell 8.7 (half of 0.5 rounds down)");
+  assert.equal(sellPrice(85, 95), 90, "paid 8.5, now 9.5 → sell 9.0");
+  assert.equal(sellPrice(85, 86), 85, "a 0.1 rise is worth nothing — half of 1 tenth rounds to 0");
+});
+test("sellPrice: a fall costs you the full drop", () => {
+  assert.equal(sellPrice(85, 75), 75, "paid 8.5, now 7.5 → sell 7.5, you eat all of it");
+});
+test("sellPrice: an unmoved price sells at par", () => {
+  assert.equal(sellPrice(85, 85), 85);
+});
+test("sellPrice: you can never profit more than the market moved", () => {
+  for (let buy = 40; buy <= 140; buy += 7)
+    for (let now = 40; now <= 140; now += 5) {
+      const got = sellPrice(buy, now);
+      assert.ok(got <= Math.max(buy, now), `sell ${got} must not exceed max(${buy}, ${now})`);
+      assert.ok(got >= Math.min(buy, now), `sell ${got} must not undercut min(${buy}, ${now})`);
+    }
+});
+test("applyTransfer: sells at the FPL rule, not at what you paid", () => {
+  const squad = validateSquad(legal15(), POOL);
+  const out = squad.picks.find((p) => p.pos === "DEF")!;
+  // the market has moved him up 1.0 since you bought him
+  const risen = POOL.map((p) => (p.id === out.id ? { ...p, priceTenths: out.buyTenths + 10 } : p));
+  const inn = risen.find((p) => p.pos === "DEF" && !squad.picks.some((q) => q.id === p.id) && p.clubId === 7)!;
+  const next = applyTransfer(squad, out.id, inn.id, risen);
+  assert.equal(next.bankTenths, squad.bankTenths + (out.buyTenths + 5) - inn.priceTenths,
+    "you keep half the 1.0 rise, not all of it and not none of it");
 });
