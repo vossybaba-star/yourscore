@@ -245,8 +245,10 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Rung already solved" }, { status: 400 });
       }
       const tier1Taken = attempt.hints.some((h) => h.rank === rank && h.tier === 1);
+      const tier2Taken = attempt.hints.some((h) => h.rank === rank && h.tier === 2);
       if (tier === 2 && !tier1Taken) return NextResponse.json({ error: "Tier 1 hint required first" }, { status: 400 });
       if (tier === 1 && tier1Taken) return NextResponse.json({ error: "Tier 1 already taken" }, { status: 400 });
+      if (tier === 2 && tier2Taken) return NextResponse.json({ error: "Tier 2 already taken" }, { status: 400 });
       if (attempt.tokens_left <= 0) return NextResponse.json({ error: "No hint tokens left" }, { status: 400 });
 
       const text = hintFor(list, rank, tier);
@@ -262,8 +264,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Rung already solved" }, { status: 400 });
     }
     const tier1Taken = (guestState.hints ?? []).some((h) => h.rank === rank && h.tier === 1);
+    const tier2Taken = (guestState.hints ?? []).some((h) => h.rank === rank && h.tier === 2);
     if (tier === 2 && !tier1Taken) return NextResponse.json({ error: "Tier 1 hint required first" }, { status: 400 });
     if (tier === 1 && tier1Taken) return NextResponse.json({ error: "Tier 1 already taken" }, { status: 400 });
+    if (tier === 2 && tier2Taken) return NextResponse.json({ error: "Tier 2 already taken" }, { status: 400 });
     if ((guestState.tokensLeft ?? MAX_HINT_TOKENS) <= 0) {
       return NextResponse.json({ error: "No hint tokens left" }, { status: 400 });
     }

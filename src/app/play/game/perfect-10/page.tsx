@@ -799,11 +799,13 @@ export default function Perfect10Page() {
             {allEntries.map((e) => (
               <div
                 key={e.rank}
-                className="mx-auto w-full rounded-xl px-3.5 py-2.5 flex items-center gap-3"
+                className={`mx-auto w-full rounded-xl px-3.5 py-2.5 flex items-center gap-3 ${won ? "animate-p10-ignite" : ""}`}
                 style={{
                   width: `${rungWidthPct(e.rank)}%`,
                   background: e.solved ? "#2a2410" : e.missed ? "rgba(141,90,90,0.1)" : "rgba(255,255,255,0.03)",
                   border: `1px solid ${e.solved ? ACCENT : e.missed ? "rgba(141,90,90,0.4)" : "rgba(255,255,255,0.06)"}`,
+                  // Win ignition: the tower relights top to bottom, one rung at a time.
+                  animationDelay: won ? `${(e.rank - 1) * 90}ms` : undefined,
                 }}
               >
                 <span className="font-display text-xs w-6 text-center flex-shrink-0" style={{ color: e.solved ? ACCENT : "#586058" }}>
@@ -873,6 +875,15 @@ export default function Perfect10Page() {
         </div>
 
         <BottomNav />
+
+        <style jsx global>{`
+          @keyframes p10-ignite {
+            0% { transform: scale(1); filter: brightness(1); }
+            45% { transform: scale(1.05); filter: brightness(1.6); }
+            100% { transform: scale(1); filter: brightness(1); }
+          }
+          .animate-p10-ignite { animation: p10-ignite 0.5s ease-out both; }
+        `}</style>
       </div>
     );
   }
