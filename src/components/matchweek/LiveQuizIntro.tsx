@@ -15,7 +15,9 @@
  * the sentence you were halfway through.
  */
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useClubMe } from "@/components/clubs/useClubData";
+import { Crest } from "@/components/clubs/Crest";
 
 const TEAL = "#00d8c0";
 
@@ -57,7 +59,21 @@ function BallArt() {
   );
 }
 
-/** Club badge, in line art. */
+/**
+ * The user's OWN crest, when we know which club they represent — the generic
+ * badge outline is what you show someone we can't name. Sits where the
+ * silhouette sat, at full strength: it's their club, not texture.
+ */
+function CrestArt({ club }: { club: string }) {
+  return (
+    <div aria-hidden="true"
+      style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", opacity: 0.92, pointerEvents: "none" }}>
+      <Crest name={club} size={116} />
+    </div>
+  );
+}
+
+/** Club badge, in line art. The fallback when we don't know their club yet. */
 function BadgeArt() {
   return (
     <svg viewBox="0 0 100 100" aria-hidden="true"
@@ -73,6 +89,23 @@ function BadgeArt() {
 export function LiveQuizIntro() {
   const scroller = useRef<HTMLDivElement>(null);
   const [page, setPage] = useState(0);
+
+  // The club they represent, if we know it — drives their crest on the badge page.
+  const { data: me } = useClubMe();
+  /**
+   * DEV-ONLY preview: ?club=Arsenal renders the badge page as an Arsenal fan
+   * would see it. Compiled out of production (NODE_ENV check) and read from
+   * window rather than useSearchParams so the page needn't be Suspense-wrapped.
+   * Exists because a signed-in club can't otherwise be seen off a real session.
+   */
+  const [previewClub, setPreviewClub] = useState<string | null>(null);
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    const c = new URLSearchParams(window.location.search).get("club");
+    if (c) setPreviewClub(c);
+  }, []);
+
+  const club = me?.club ?? previewClub;
 
   function onScroll() {
     const el = scroller.current;
@@ -109,7 +142,7 @@ export function LiveQuizIntro() {
           style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}>
           {PAGES.map((p) => (
             <div key={p.eyebrow} className="w-full flex-shrink-0 snap-center relative overflow-hidden px-5 pt-4 pb-3.5">
-              {p.art === "ball" ? <BallArt /> : <BadgeArt />}
+              {p.art === "ball" ? <BallArt /> : club ? <CrestArt club={club} /> : <BadgeArt />}
 
               {/* Text sits above the art. */}
               <div className="relative">
