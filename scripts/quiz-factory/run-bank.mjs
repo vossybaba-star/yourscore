@@ -103,8 +103,15 @@ const has = (flag) => process.argv.includes(flag);
 const CLUB = arg("--club", null);
 const CAT = arg("--cat", null);
 const ALL = has("--all");
-const COUNT = Number(arg("--count", 30));       // questions to author from the sheet
-const FACT_COUNT = Number(arg("--facts", 30));  // facts to research first (ONE call, not one per question)
+// 25, not 75. Founder's call (2026-07-17) after the Arsenal pilot, and the pilot earned it:
+// 30 questions/category came back 7% easy — no better than the bank we're replacing. There
+// simply aren't 30 famous facts per club per category; maybe ten. Ask for more and the
+// researcher exhausts the famous material and digs into trivia (Senderos inheriting Adams's
+// shirt number), which the rater then correctly calls hard. Depth and easiness fight, and
+// depth wins. A smaller ask keeps us in the range where the famous material actually lives —
+// the 16-question run hit 21% easy against the 30-question run's 7%.
+const COUNT = Number(arg("--count", 25));
+const FACT_COUNT = Number(arg("--facts", 25));  // facts to research first (ONE call, not one per question)
 const SHOW_FACTS = has("--show-facts");         // print the sheet for review
 const DRY = has("--dry-run");
 const COMMIT = has("--commit");

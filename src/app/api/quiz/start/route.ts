@@ -11,6 +11,27 @@ type Difficulty = "easy" | "medium" | "hard";
 // Rejecting anything else closes the .or()/.not(...in...) filter-injection vector.
 const FILTER_TOKEN_RE = /^[A-Za-z0-9 _'.&-]{1,60}$/;
 
+/**
+ * The 15-question mix, shaped to the bank we actually have rather than the one we'd like.
+ *
+ * This used to ask for 6 easy / 6 medium / 3 hard. The bank is 10% easy / 37% medium / 53%
+ * hard — Chelsea has FOUR easy questions in total, Man United five. So the old mix quietly
+ * under-delivered: it asked for six easy, got four, and returned a 13-question quiz skewed
+ * harder than intended. Asking for what doesn't exist doesn't create it.
+ *
+ * Why not just write more easy questions? We tried, and difficulty is a property of the
+ * AUDIENCE, not the question. Rated for a neutral fan — which is the founder's call, so that
+ * one scale means the same thing everywhere and leaderboards stay comparable — club questions
+ * are inherently medium-to-hard: you can't ask "who won the 2019 final?" in Liverpool's own
+ * category, because the answer is Liverpool. Club questions are forced onto details, and
+ * details aren't easy for a neutral.
+ *
+ * That's fine, because the labels are neutral but the PLAYERS aren't: a fan picks their own
+ * club. An Arsenal fan handed 2 easy / 5 medium / 8 hard (neutral-rated) experiences roughly
+ * 5 / 8 / 2. The label stays honest; the felt difficulty lands right.
+ */
+const MIX = { easy: 2, medium: 5, hard: 8 };
+
 interface BankQuestion {
   id: string;
   entity: string;
@@ -168,16 +189,16 @@ export async function POST(req: NextRequest) {
     }
 
     const [easyPool, mediumPool, hardPool] = await Promise.all([
-      fetchQuestions(supabase, entity, tags, "easy", currentSeenIds, 6, category),
-      fetchQuestions(supabase, entity, tags, "medium", currentSeenIds, 6, category),
-      fetchQuestions(supabase, entity, tags, "hard", currentSeenIds, 3, category),
+      fetchQuestions(supabase, entity, tags, "easy", currentSeenIds, MIX.easy, category),
+      fetchQuestions(supabase, entity, tags, "medium", currentSeenIds, MIX.medium, category),
+      fetchQuestions(supabase, entity, tags, "hard", currentSeenIds, MIX.hard, category),
     ]);
 
     // Sequential selection (not parallel) so each pick sees the facts already spent.
     return [
-      ...pickDistinctFacts(easyPool, 6, usedFactKeys),
-      ...pickDistinctFacts(mediumPool, 6, usedFactKeys),
-      ...pickDistinctFacts(hardPool, 3, usedFactKeys),
+      ...pickDistinctFacts(easyPool, MIX.easy, usedFactKeys),
+      ...pickDistinctFacts(mediumPool, MIX.medium, usedFactKeys),
+      ...pickDistinctFacts(hardPool, MIX.hard, usedFactKeys),
     ];
   };
 

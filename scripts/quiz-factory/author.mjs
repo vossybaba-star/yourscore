@@ -169,20 +169,35 @@ SPECIFICITY — this is the rule that matters most. Anyone could read these at a
 - Never write "they", "the club", "that season" or "the final" without saying which.
 - A question must be answerable by someone who has read nothing else.
 
+ONLY ABOUT THIS CLUB. Every question must be ABOUT the club named above, and its answer must be about that club. The facts you're given mention other clubs for context — league-wide top scorers, opponents, rivals. Never turn those into a question. "Which Manchester City player was the league's top scorer in 2023/24?" is a Manchester City question; it does not belong in an Arsenal set, no matter that the fact sheet mentions it.
+
 QUESTION SHAPE — read this carefully, it is the thing we most often get wrong.
 
 The same fact can make an easy question or a hard one depending on what you ask:
-- "Arsenal beat Chelsea 2-1 in the 2020 FA Cup final" → "Which club did Arsenal beat in the 2019/20 FA Cup final?" is EASY (recognition).
+- "Arsenal beat Chelsea 2-1 in the 2020 FA Cup final, Aubameyang scored both" → "Which club did Arsenal beat in the 2019/20 FA Cup final?" is EASY (recognition).
 - The same fact → "How many goals did Arsenal score in the 2019/20 FA Cup final?" is HARD (precise recall).
 
 A "how many" question is NEVER easy, however famous the event. Counting and exact numbers are precision tests.
 
-So write a spread of shapes:
-- Plenty of RECOGNITION questions — "which club…", "who scored…", "who did they beat…" — built on the MOST FAMOUS facts on the sheet. These are the questions we are badly short of: our bank is only 5% easy and new players bounce off it. Do not skip these because they feel too obvious. Obvious is the point.
-- Some DETAIL questions a fan who follows the club would get.
-- Only a FEW "how many"/exact-number questions. They are inherently hard, so a sheet turned entirely into number questions produces a brutal quiz.
+MINE THE FAMOUS FACTS HARDEST. This is the instruction that matters most.
 
-VARIETY: don't repeat one shape. Spread across the facts — trophies, finals, records, matches, milestones. Fifteen questions all of the form "who was top scorer in season X" is a bad pack.
+Our bank is 6% easy and the draw needs SIX easy questions per game — that shortage is the single biggest problem with the product. Famous facts are the only source of easy questions, and there are far fewer of them than you'd like. So don't spend one famous fact on one question:
+
+  "Arsenal beat Chelsea 2-1 in the 2020 FA Cup final, Aubameyang scored both"
+    → "Which club did Arsenal beat in the 2019/20 FA Cup final?"        (easy)
+    → "Who scored both of Arsenal's goals in that final?"               (easy/medium)
+    → "What was the score in the 2019/20 FA Cup final?"                 (medium)
+
+Take EVERY genuinely famous fact on the sheet and write 2-3 questions from it, leading with the simplest recognition question. Writing several questions from one fact is correct and wanted — we handle any overlap when a quiz is dealt, so it is not your concern.
+
+Obscure facts get ONE question, or none. A fact only an obsessive knows cannot produce an easy question, so don't stretch for it — a set of trivia nobody can answer is worse than a shorter set.
+
+So, in order of priority:
+1. RECOGNITION questions off the famous facts — "which club…", "who scored…", "who did they beat…". Do not skip these for feeling too obvious. Obvious IS the point.
+2. DETAIL questions a fan who follows the club would get.
+3. A FEW "how many"/exact-number questions. They're inherently hard; a sheet turned entirely into number questions produces a brutal quiz.
+
+VARIETY: don't repeat one shape. Spread across trophies, finals, records, matches, milestones. Fifteen questions all of the form "who was top scorer in season X" is a bad pack.
 
 For each question set "source_quote" to the numbered fact you used, and "source_url" to that fact's source.
 Write ${count} — some will still be rejected.`,
