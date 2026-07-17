@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServiceClient } from "@/lib/supabase/service";
-import { getAllPosts, SITE_URL } from "@/lib/blog";
+import { getAllPosts } from "@/lib/blog";
 import type { PlNewsFeed, PlNewsItem } from "@/lib/pl/news";
 
 /**
@@ -42,10 +42,14 @@ function blogAsNews(): PlNewsItem[] {
     return getAllPosts().map((p) => ({
       id: `blog-${p.slug}`,
       title: p.title,
-      url: `${SITE_URL}/blog/${p.slug}`,
+      // RELATIVE + internal: ours are read in the app. An absolute yourscore.app
+      // URL opened a browser tab and dumped the reader out of Matchweek — for
+      // our own writing, which the app already renders at /blog/[slug].
+      url: `/blog/${p.slug}`,
       source: "YourScore",
       image: p.ogImage ?? null,
       publishedAt: new Date(p.date).toISOString(),
+      internal: true,
     }));
   } catch {
     return [];

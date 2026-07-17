@@ -34,6 +34,48 @@ const strip = (s) =>
     .replace(/&quot;/g, '"').replace(/&#0?39;|&apos;/g, "'").replace(/&#8217;/g, "’")
     .replace(/<[^>]+>/g, "").trim();
 
+/**
+ * BBC serve the SAME image at any width via a path segment
+ * (…/ace/standard/240/cpsprodpb/…). The RSS only ever advertises the 240px
+ * thumbnail, which upscaled to a full-width card looked like a blurry mess.
+ * There's no signature in the URL, so bumping the segment is safe — verified:
+ * /240/ = 5KB, /976/ = 51KB, both 200.
+ *
+ * Guardian URLs are signed (`s=<hash>` covers the width param), so they must
+ * NEVER be rewritten — for those we pick the biggest variant the feed offers
+ * instead (see pickImage).
+ */
+const BBC_TARGET_WIDTH = 976;
+function upscale(url) {
+  if (!/ichef\.bbci\.co\.uk/.test(url)) return url;
+  return url.replace(/\/standard\/(\d+)\//, (m, w) =>
+    Number(w) < BBC_TARGET_WIDTH ? `/standard/${BBC_TARGET_WIDTH}/` : m,
+  );
+}
+
+/**
+ * The BIGGEST image the item advertises — not the first.
+ * Guardian publish three <media:content> per item (140 / 460 / 700) and taking
+ * the first handed us a 140px thumbnail for a 343px card.
+ */
+function pickImage(block) {
+  let best = null;
+  let bestW = -1;
+  for (const m of block.matchAll(/<(?:media:thumbnail|media:content|enclosure)\b([^>]*)\/?>/g)) {
+    const attrs = m[1];
+    const url = attrs.match(/\burl="([^"]+)"/)?.[1];
+    if (!url) continue;
+    // enclosure is also used for audio/video — only take images.
+    const type = attrs.match(/\btype="([^"]+)"/)?.[1] ?? "";
+    if (type && !type.startsWith("image")) continue;
+    const w = Number(attrs.match(/\bwidth="(\d+)"/)?.[1] ?? 0);
+    if (w > bestW) { bestW = w; best = url; }
+  }
+  // Entity-decode: feed URLs carry &amp;, and a raw &amp; in a query string is a
+  // different URL — Guardian's signed links 401'd and the images silently vanished.
+  return best ? upscale(strip(best)) : null;
+}
+
 function parseItems(xml, sourceName) {
   const items = [];
   for (const m of xml.matchAll(/<item>([\s\S]*?)<\/item>/g)) {
@@ -41,7 +83,6 @@ function parseItems(xml, sourceName) {
     const title = block.match(/<title>([\s\S]*?)<\/title>/);
     const link = block.match(/<link>([\s\S]*?)<\/link>/);
     const date = block.match(/<pubDate>([\s\S]*?)<\/pubDate>/);
-    const img = block.match(/(?:media:thumbnail|media:content|enclosure)[^>]*url="([^"]+)"/);
     if (!title || !link) continue;
     const url = strip(link[1]);
     const publishedAt = date ? new Date(strip(date[1])).toISOString() : new Date().toISOString();
@@ -50,7 +91,7 @@ function parseItems(xml, sourceName) {
       title: strip(title[1]),
       url,
       source: sourceName,
-      image: img ? img[1] : null,
+      image: pickImage(block),
       publishedAt,
     });
   }

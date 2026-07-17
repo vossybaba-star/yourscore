@@ -9,6 +9,7 @@
  * chip and the source name — restraint keeps it from looking like a casino.
  */
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import {
@@ -48,17 +49,33 @@ function Thumb({ src }: { src: string }) {
 }
 
 function Card({ item, now }: { item: PlNewsItem; now: number }) {
-  return (
-    <a href={item.url} target="_blank" rel="noopener noreferrer" style={cardBase} className="ys-plcard">
+  const body = (
+    <>
       {item.image && <Thumb src={item.image} />}
       <div style={{ padding: 13 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6, fontSize: 11, color: MUTED }}>
           <span style={{ color: TEAL, fontWeight: 600 }}>{item.source}</span>
           <span aria-hidden="true">·</span>
           <span>{ago(item.publishedAt, now)}</span>
+          {item.internal && <span style={{ color: "#3d453f" }}>· Read here</span>}
         </div>
         <div style={{ color: INK, fontSize: 14.5, lineHeight: 1.4, fontWeight: 600 }}>{item.title}</div>
       </div>
+    </>
+  );
+
+  // Ours → client-side route, stays in the app. An outlet's → new tab, since
+  // we're sending them to someone else's site.
+  if (item.internal) {
+    return (
+      <Link href={item.url} style={cardBase} className="ys-plcard">
+        {body}
+      </Link>
+    );
+  }
+  return (
+    <a href={item.url} target="_blank" rel="noopener noreferrer" style={cardBase} className="ys-plcard">
+      {body}
     </a>
   );
 }

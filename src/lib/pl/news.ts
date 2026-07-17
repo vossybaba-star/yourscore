@@ -18,12 +18,18 @@ export interface PlNewsItem {
    *  never duplicates it. */
   id: string;
   title: string;
+  /** Absolute for outlets; a relative app path (/blog/…) when internal. */
   url: string;
   /** Human source name, e.g. "BBC Sport". */
   source: string;
   image: string | null;
   /** ISO publish time from the feed. */
   publishedAt: string;
+  /**
+   * OUR OWN post — read it in the app, never punt the reader out to a browser
+   * tab. Only set for /blog links, which the app already renders.
+   */
+  internal?: boolean;
 }
 
 export interface PlNewsFeed {
