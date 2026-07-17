@@ -57,40 +57,40 @@ export function BottomNav() {
           paddingBottom: "env(safe-area-inset-bottom, 0px)",
         }}
       >
-        <div className="flex items-center justify-around max-w-lg mx-auto px-1 py-2">
-          <Link href="/" className="flex flex-col items-center gap-1 px-2 py-1 transition-colors" style={{ color: isHome ? "#aeea00" : "#8a948f" }}>
+        <div className="flex items-start justify-between max-w-lg mx-auto px-1 py-2">
+          <Link href="/" className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-1 transition-colors" style={{ color: isHome ? "#aeea00" : "#8a948f" }}>
             <svg width="21" height="21" viewBox="0 0 22 22" fill="none">
               <path d="M3 9.5L11 3l8 6.5V19a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill={isHome ? "currentColor" : "none"} fillOpacity={isHome ? 0.15 : 0} />
               <path d="M8 20v-8h6v8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            <span className="font-body text-xs">Home</span>
+            <span className="font-body text-xs text-center leading-tight">Home</span>
           </Link>
 
           {/* Play — the label now matches its route (/play). It was "Quiz". */}
-          <Link href="/play" className="flex flex-col items-center gap-1 px-2 py-1 transition-colors" style={{ color: isChallenges ? "#00d8c0" : "#8a948f" }}>
+          <Link href="/play" className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-1 transition-colors" style={{ color: isChallenges ? "#00d8c0" : "#8a948f" }}>
             <svg width="21" height="21" viewBox="0 0 22 22" fill="none">
               <path d="M11 2L13.5 8.5H20.5L14.9 12.5L17 19L11 15L5 19L7.1 12.5L1.5 8.5H8.5L11 2Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" fill={isChallenges ? "currentColor" : "none"} fillOpacity={isChallenges ? 0.15 : 0} />
             </svg>
-            <span className="font-body text-xs">Play</span>
+            <span className="font-body text-xs text-center leading-tight">Play</span>
           </Link>
 
           {/* Versus is discoverable to guests too — it renders a public preview. */}
-          <Link href="/versus" className="flex flex-col items-center gap-1 px-2 py-1 transition-colors" style={{ color: isVersus ? "#00d8c0" : "#8a948f" }}>
+          <Link href="/versus" className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-1 transition-colors" style={{ color: isVersus ? "#00d8c0" : "#8a948f" }}>
             <svg width="21" height="21" viewBox="0 0 22 22" fill="none">
               <path d="M3 3l8.5 8.5M3 3v3l7.5 7.5M3 3h3l7.5 7.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
               <path d="M19 3l-8.5 8.5M19 3v3l-7.5 7.5M19 3h-3L8.5 11.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
               <path d="M6.5 15.5l2 2M15.5 15.5l-2 2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
             </svg>
-            <span className="font-body text-xs">Versus</span>
+            <span className="font-body text-xs text-center leading-tight">Versus</span>
           </Link>
 
           {/* Premier League — the flagship live surface, discoverable to guests.
               Route stays /matchweek; everything under it IS the PL (halftime
               quizzes are PL fixtures, Fantasy is a PL squad), and "Matchweek"
               names the first section inside. */}
-          <Link href="/matchweek" className="flex flex-col items-center gap-1 px-2 py-1 transition-colors" style={{ color: isMatchweek ? "#00d8c0" : "#8a948f" }}>
+          <Link href="/matchweek" className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-1 transition-colors" style={{ color: isMatchweek ? "#00d8c0" : "#8a948f" }}>
             <FootballIcon active={isMatchweek} />
-            <span className="font-body text-xs whitespace-nowrap">Premier League</span>
+            <span className="font-body text-xs text-center leading-tight">Premier League</span>
           </Link>
         </div>
       </div>
@@ -109,26 +109,26 @@ export function BottomNav() {
         paddingBottom: "env(safe-area-inset-bottom, 0px)",
       }}
     >
-      <div className="flex items-center justify-around max-w-lg mx-auto px-1 py-2">
+      <div className="flex items-start justify-between max-w-lg mx-auto px-1 py-2">
         {/* Home */}
-        <Link href="/" className="flex flex-col items-center gap-1 px-2 py-1 transition-colors" style={{ color: isHome ? "#aeea00" : "#8a948f" }}>
+        <Link href="/" className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-1 transition-colors" style={{ color: isHome ? "#aeea00" : "#8a948f" }}>
           <svg width="21" height="21" viewBox="0 0 22 22" fill="none">
             <path d="M3 9.5L11 3l8 6.5V19a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill={isHome ? "currentColor" : "none"} fillOpacity={isHome ? 0.15 : 0} />
             <path d="M8 20v-8h6v8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          <span className="font-body text-xs">Home</span>
+          <span className="font-body text-xs text-center leading-tight">Home</span>
         </Link>
 
         {/* Play — the label now matches its route (/play). It was "Quiz". */}
-        <Link href="/play" className="flex flex-col items-center gap-1 px-2 py-1 transition-colors" style={{ color: isChallenges ? "#00d8c0" : "#8a948f" }}>
+        <Link href="/play" className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-1 transition-colors" style={{ color: isChallenges ? "#00d8c0" : "#8a948f" }}>
           <svg width="21" height="21" viewBox="0 0 22 22" fill="none">
             <path d="M11 2L13.5 8.5H20.5L14.9 12.5L17 19L11 15L5 19L7.1 12.5L1.5 8.5H8.5L11 2Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" fill={isChallenges ? "currentColor" : "none"} fillOpacity={isChallenges ? 0.15 : 0} />
           </svg>
-          <span className="font-body text-xs">Play</span>
+          <span className="font-body text-xs text-center leading-tight">Play</span>
         </Link>
 
         {/* Versus — the cross-game hub for playing other people. */}
-        <Link href="/versus" className="flex flex-col items-center gap-1 px-2 py-1 transition-colors" style={{ color: isVersus ? "#00d8c0" : "#8a948f" }}>
+        <Link href="/versus" className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-1 transition-colors" style={{ color: isVersus ? "#00d8c0" : "#8a948f" }}>
           <div className="relative">
             <svg width="21" height="21" viewBox="0 0 22 22" fill="none">
               <path d="M3 3l8.5 8.5M3 3v3l7.5 7.5M3 3h3l7.5 7.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
@@ -151,17 +151,17 @@ export function BottomNav() {
               </span>
             )}
           </div>
-          <span className="font-body text-xs">Versus</span>
+          <span className="font-body text-xs text-center leading-tight">Versus</span>
         </Link>
 
         {/* Premier League — quizzes at half time + the club-fan leaderboard. */}
-        <Link href="/matchweek" className="flex flex-col items-center gap-1 px-2 py-1 transition-colors" style={{ color: isMatchweek ? "#00d8c0" : "#8a948f" }}>
+        <Link href="/matchweek" className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-1 transition-colors" style={{ color: isMatchweek ? "#00d8c0" : "#8a948f" }}>
           <FootballIcon active={isMatchweek} />
-          <span className="font-body text-xs whitespace-nowrap">Premier League</span>
+          <span className="font-body text-xs text-center leading-tight">Premier League</span>
         </Link>
 
         {/* Profile */}
-        <Link href="/profile" className="flex flex-col items-center gap-1 px-2 py-1 transition-colors" style={{ color: isProfile ? "#aeea00" : "#8a948f" }}>
+        <Link href="/profile" className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-1 transition-colors" style={{ color: isProfile ? "#aeea00" : "#8a948f" }}>
           <div className="relative">
             <svg width="21" height="21" viewBox="0 0 22 22" fill="none">
               <circle cx="11" cy="7" r="4" stroke="currentColor" strokeWidth="1.8" fill={isProfile ? "currentColor" : "none"} fillOpacity={isProfile ? 0.15 : 0} />
@@ -183,7 +183,7 @@ export function BottomNav() {
               </span>
             )}
           </div>
-          <span className="font-body text-xs">Profile</span>
+          <span className="font-body text-xs text-center leading-tight">Profile</span>
         </Link>
       </div>
     </div>
