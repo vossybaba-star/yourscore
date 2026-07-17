@@ -19,34 +19,44 @@ const PL_LEAGUE_ID = 8;
 const GOALS_TYPE = 208; // topscorer type: goals (verified: Haaland 27 in 2023/24)
 
 /**
- * ⚠️ SportMonks topscorer data is NOT trustworthy before 2005/06. Verified against known
- * Golden Boot winners (2026-07-16):
+ * ⚠️ The /topscorers ENDPOINT under-counts before 2005/06. Verified against known Golden Boots:
  *
- *   2000/01–2002/03  no data at all
+ *   2000/01–2002/03  returns nothing
  *   2003/04          Henry 17   — he actually scored 30
  *   2004/05          Henry 7    — he actually scored 25
  *   2005/06 onward   correct (Henry 27, Drogba 20, Ronaldo 31, Salah 32, Haaland 36/27 …)
  *
- * The early rows are PARTIAL, not absent, which is the dangerous case: a plausible-looking
- * number that is simply wrong. It poisoned a verification sweep — the fact sheet claimed
- * Henry's ceiling for 2003/04 was 17, so a CORRECT question answering 30 was contradicted and
- * retired. Anything derived from a bad fact inherits the error (the correlated-failure risk of
- * facts-first), so bad facts must never reach the sheet in the first place.
+ * Be precise about WHY, because it dictates the fix. The raw data is COMPLETE: all 380 fixtures
+ * exist for every season 2000→, each with scores and goal events (checked 2026-07-17). It is not
+ * missing data, and not a subscription limit — both were theories, both were wrong. It's a gap
+ * in SportMonks' PRE-COMPUTED aggregate. The match records underneath are fine.
  *
- * A prior session hit this too — see the Perfect 10 work ("SportMonks topscorers UNRELIABLE").
- * Standings/points ARE reliable across the full range (Invincibles 90, City 100, Liverpool 99
- * all verified), so only topscorers are gated.
+ * So this constant is a guard, not a diagnosis. The proper fix, if pre-2005 history ever matters,
+ * is to compute top scorers ourselves by counting goal events across the fixtures we already have
+ * — same for standings (see PL_CLUBS_PER_SEASON below; /standings returns 0 rows for 2005/06
+ * despite all 380 of its fixtures being present).
+ *
+ * Why it matters: a PARTIAL number is worse than a missing one — it looks valid. This poisoned a
+ * verification sweep. The sheet published Henry's 2003/04 ceiling as 17, so a CORRECT question
+ * answering 30 was contradicted and retired. Everything derived from a bad fact inherits the
+ * error (the correlated-failure cost of facts-first), so bad facts must never reach the sheet.
+ *
+ * A prior session hit the same endpoint — see the Perfect 10 work ("SportMonks topscorers
+ * UNRELIABLE"). That note existed and I generalised from one good season anyway.
  */
 export const TOPSCORER_MIN_YEAR = 2005;
 
 /**
  * The Premier League has had exactly 20 clubs every season since 1995. A returned table with
- * any other row count is INCOMPLETE DATA, not a short league — treat the season as unknown.
+ * any other row count means the ENDPOINT gave us an incomplete answer — not that the league was
+ * short that year. Treat the season as unknown.
  *
- * This is not hypothetical: SportMonks returns ZERO rows for 2005/06. Silently dropping it made
- * a fact sheet list four Chelsea titles instead of five, and a verification sweep then used that
- * to "disprove" a correct question about their 2005/06 title. Same failure as the topscorers:
- * a gap in the data reads as a fact about the world.
+ * Not hypothetical: /standings returns ZERO rows for 2005/06, even though all 380 of that
+ * season's fixtures are present and carry scores (verified 2026-07-17 — so the table could be
+ * computed from results if we ever need it). Dropping the season silently made a fact sheet list
+ * four Chelsea titles instead of five, and a sweep then used that to "disprove" a correct
+ * question about their 2005/06 title. Same shape as the topscorer gap: an endpoint's silence
+ * read as a fact about the world.
  *
  * Lesson, learned twice in one session: spot-checking three seasons and generalising is not
  * verification. Validate EVERY season, and make the sheet declare what it doesn't know.
