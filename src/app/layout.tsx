@@ -8,6 +8,7 @@ import { NativeBootstrap } from "@/components/native/NativeBootstrap";
 import { NavTracker } from "@/components/ui/NavTracker";
 import { TouchGuards } from "@/components/ui/TouchGuards";
 import { UsernamePrompt } from "@/components/profile/UsernamePrompt";
+import { ClubPrompt } from "@/components/clubs/ClubPrompt";
 import { AppStoreBanner } from "@/components/app/AppStoreBanner";
 import { NativeOnboarding } from "@/components/native/onboarding/NativeOnboarding";
 import { PushPrePrompt } from "@/components/native/PushPrePrompt";
@@ -96,6 +97,7 @@ export default function RootLayout({
         <TouchGuards />
         <NativeBootstrap />
         <UsernamePrompt />
+        <ClubPrompt />
         <AppStoreBanner />
         <NativeOnboarding />
         <PushPrePrompt />

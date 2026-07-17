@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { ClubSetting } from "@/components/clubs/ClubSetting";
 import Link from "next/link";
 import { useUser } from "@/hooks/useUser";
 import { Button } from "@/components/ui/Button";
@@ -337,6 +338,9 @@ export default function SettingsPage() {
             </div>
           </div>
         </div>
+
+        {/* Your club — season-locked; see ClubSetting. */}
+        <ClubSetting />
 
         {/* Account */}
         <div>
