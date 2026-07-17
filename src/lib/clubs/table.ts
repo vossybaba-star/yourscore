@@ -32,17 +32,15 @@
  */
 
 /**
- * The bar to be RANKED at all. Was 5 (founder's original decision #3); dropped to
- * 1 on 2026-07-16 — a club is ranked as soon as one fan plays its game.
+ * How many fans must have played their club's game for that club to be RANKED.
+ * 5 → 2 (founder, 2026-07-16). Two fans and you're on the board.
  *
- * The 5 existed to stop a single fan topping the table on one good score. That
- * consequence is now live and accepted: with an average and no floor, a one-fan
- * club can lead the week. Kept as a named constant rather than deleted because
- * the floor is the thing most likely to be re-tuned, and `>= 1` still says
- * "someone has to have played" — a club with zero players has no average, so it
- * can't be ranked at all.
+ * Two, not one: a single fan IS the club's average, so one lucky score would top
+ * the table outright. Two is the smallest number that makes it a fanbase rather
+ * than an individual — while still being trivially reachable for a small club,
+ * which is what the 5 was blocking.
  */
-export const MIN_PARTICIPANTS = 1;
+export const MIN_PARTICIPANTS = 2;
 
 export interface ClubSupporterRow {
   userId: string;

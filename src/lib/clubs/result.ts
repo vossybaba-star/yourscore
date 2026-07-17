@@ -148,15 +148,24 @@ export function resultCopy(send: SendType, r: Recipient): { title: string; body:
   // send === "results" — the morning-after recap.
   if (!ranked) {
     /**
-     * With the minimum dropped to 1 (2026-07-16), a club is unranked ONLY when
-     * nobody played its game — one player is enough to rank. So the reader
-     * necessarily didn't play either, and the old "only N of you turned up, not
-     * enough to rank" copy is unreachable: it described a bar that no longer
-     * exists.
+     * The bar is 2 (MIN_PARTICIPANTS), so a club misses the table on exactly two
+     * counts: nobody played, or ONE fan did. Both are addressed, because "one
+     * played" is the interesting one — that fan turned up and got nothing for it,
+     * and they're one mate away from ranking.
      */
+    if (r.played) {
+      // We're unranked and you played, so you were the only one — by definition.
+      return {
+        title: `${r.club} didn't make the table`,
+        body: `You were the only ${r.club} fan who played. Two of you and they're on the board.`,
+      };
+    }
     return {
       title: `${r.club} didn't make the table`,
-      body: `Not one ${r.club} fan played this gameweek. Next week, be the one.`,
+      body:
+        r.clubFans === 1
+          ? `One lone ${r.club} fan played. They needed one more — you.`
+          : `Not one ${r.club} fan played this gameweek. Next week, be the one.`,
     };
   }
 

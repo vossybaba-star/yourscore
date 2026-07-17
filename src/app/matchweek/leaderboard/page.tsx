@@ -3,7 +3,7 @@
 /**
  * Matchweek → Live Quiz → the FULL club-fan leaderboard, reached from the tile.
  * Just a header + the whole ClubTable (which already renders the ranked clubs and
- * the "nobody played" tail). Kept off the Live Quiz screen itself so that
+ * the "not enough players" tail). Kept off the Live Quiz screen itself so that
  * screen stays a glanceable hub, not a wall of table.
  */
 

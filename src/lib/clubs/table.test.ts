@@ -41,11 +41,11 @@ function standingFor(rows: ReturnType<typeof gameweekClubTable>, club: string) {
 
 // ── the headline product rule ───────────────────────────────────────────────
 
-test("MIN_PARTICIPANTS is 1 — one fan puts a club on the board", () => {
-  assert.equal(MIN_PARTICIPANTS, 1);
+test("MIN_PARTICIPANTS is 2 — two fans put a club on the board", () => {
+  assert.equal(MIN_PARTICIPANTS, 2);
 });
 
-test("no minimum: a club with 4 fans is ranked (the old 5-fan floor is gone)", () => {
+test("a club with 4 fans is ranked (the old 5-fan floor is gone)", () => {
   const sup = supporters("Brentford", ["u1", "u2", "u3", "u4"]);
   const att = ["u1", "u2", "u3", "u4"].map((u) => attempt(u, 8, "Brentford"));
 
@@ -57,13 +57,27 @@ test("no minimum: a club with 4 fans is ranked (the old 5-fan floor is gone)", (
   assert.equal(brentford.rank, 1);
 });
 
-test("no minimum: ONE fan is enough to be ranked", () => {
-  const rows = gameweekClubTable(supporters("Brentford", ["u1"]), [attempt("u1", 8, "Brentford")], ["Brentford"]);
+test("ONE fan is NOT enough — a single fan would just be their own average", () => {
+  const rows = gameweekClubTable(supporters("Brentford", ["u1"]), [attempt("u1", 9999, "Brentford")], ["Brentford"]);
   const brentford = standingFor(rows, "Brentford");
 
   assert.equal(brentford.participants, 1);
+  assert.equal(brentford.eligible, false, "one lucky score must not top the table");
+  assert.equal(brentford.rank, null);
+});
+
+test("TWO fans clear the bar", () => {
+  const rows = gameweekClubTable(
+    supporters("Brentford", ["u1", "u2"]),
+    [attempt("u1", 8, "Brentford"), attempt("u2", 6, "Brentford")],
+    ["Brentford"],
+  );
+  const brentford = standingFor(rows, "Brentford");
+
+  assert.equal(brentford.participants, 2);
   assert.equal(brentford.eligible, true);
   assert.equal(brentford.rank, 1);
+  assert.equal(brentford.avgScore, 7, "average of the two who PLAYED");
 });
 
 test("a club with ZERO players is still not ranked — it has no average", () => {
@@ -253,8 +267,8 @@ test("ranking: eligible clubs are ordered by avgScore descending, tie-break by t
   assert.deepEqual(ranked.map((r) => r.rank), [1, 2, 3]);
 });
 
-test("THE CONSEQUENCE OF DROPPING THE FLOOR: two sharp fans now beat five casual ones", () => {
-  // The 5-fan minimum existed to stop exactly this. It's gone, deliberately.
+test("THE CONSEQUENCE OF THE LOW FLOOR: two sharp fans now beat five casual ones", () => {
+  // At the old 5-fan bar Tiny was excluded. At 2 they rank, and they win.
   const sup = [...supporters("Tiny", ["t1", "t2"]), ...supporters("Big", ["b1", "b2", "b3", "b4", "b5"])];
   const att = [
     attempt("t1", 10, "Tiny"),

@@ -140,6 +140,17 @@ test("no floor: 4 players now RANK — the old 'not enough of you' path is gone"
   assert.match(resultCopy("results", player).title, /finished 1st/);
 });
 
+test("ONE lone player misses the bar (2) — and is told they were on their own", () => {
+  const { supporters, attempts } = club("Nottingham Forest", [9000], 2); // 1 played, 2 benched
+  const { recipients } = gameweekRecipients(supporters, attempts, ["Nottingham Forest"]);
+  const player = recipients.find((r) => r.played)!;
+  const benched = recipients.find((r) => !r.played)!;
+
+  assert.equal(player.clubRank, null, "1 player is under the 2-fan bar");
+  assert.match(resultCopy("results", player).body, /only Nottingham Forest fan who played/);
+  assert.match(resultCopy("results", benched).body, /One lone Nottingham Forest fan played/);
+});
+
 test("a club NOBODY played for is unranked, and its fans are told exactly that", () => {
   // The only way to miss the table now: not a single fan played the club's game.
   const { supporters } = club("Nottingham Forest", [], 3); // 3 declared, 0 played

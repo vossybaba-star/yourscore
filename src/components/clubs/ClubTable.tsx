@@ -3,10 +3,10 @@
 /**
  * Club-Fan Leaderboard gameweek table. Ranked by AVERAGE halftime score per
  * participating fan (LOCKED DECISION #3 — never a raw total, or the big six
- * would just win on fanbase size every week). The 5-fan minimum was dropped
- * (founder, 2026-07-16): ONE player puts a club on the board. A club is only
- * unranked now if nobody played its game at all, and those are listed quietly
- * below — never ranked, because with no players they have no average.
+ * would just win on fanbase size every week). The minimum went 5 -> 2 (founder,
+ * 2026-07-16): two fans and you're on the board. Clubs with 0 or 1 player are
+ * listed quietly below, never ranked — one fan would simply BE their club's
+ * average, so a single lucky score would top the table.
  *
  * Self-hides: no gameweek data at all → renders nothing (mirrors HalftimeRail's
  * self-hide contract — never an empty box).
@@ -24,8 +24,8 @@ export function ClubTable() {
   if (!loaded || !data || !data.gw || data.standings.length === 0) return null;
 
   const ranked = data.standings.filter((s) => s.eligible);
-  // Unranked now means one thing only: nobody played this club's game.
-  const noPlayers = data.standings.filter((s) => !s.eligible);
+  // Under the 2-fan bar: nobody played, or exactly one did.
+  const shortHanded = data.standings.filter((s) => !s.eligible);
   const myClub = me?.club ?? null;
 
   return (
@@ -94,9 +94,9 @@ export function ClubTable() {
         </div>
       )}
 
-      {noPlayers.length > 0 && (
+      {shortHanded.length > 0 && (
         <p className="font-body text-[11px] mt-2 px-1" style={{ color: "#586058" }}>
-          Nobody played this week: {noPlayers.map((r) => r.club).join(", ")}
+          Not enough players this week: {shortHanded.map((r) => r.club).join(", ")}
         </p>
       )}
     </div>
