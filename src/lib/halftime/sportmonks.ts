@@ -275,11 +275,26 @@ interface SmStandingRaw {
  * name is not verifiable off-season — this is a [LIVE] item, confirmed on the
  * paid key once the 2026/27 table has real rows (season 28083 starts 2026-08-21).
  */
-function detailValue(details: SmStandingRaw["details"], ...keywords: string[]): number {
+/**
+ * Read one standings detail by its EXACT SportMonks developer_name.
+ *
+ * This used to fuzzy-match keywords ("played", "won") against any name starting
+ * with "overall". The real keys are OVERALL_MATCHES and OVERALL_WINS — neither
+ * contains "played" or "won" — so Played and Won silently resolved to 0 for
+ * every club, and would have stayed 0 all season while D/L/GF/GA/GD looked
+ * right. Pre-season it's undetectable: every value is legitimately 0.
+ *
+ * Exact names, verified against the live API for season 28083:
+ *   OVERALL_MATCHES · OVERALL_WINS · OVERALL_DRAWS · OVERALL_LOST
+ *   OVERALL_SCORED · OVERALL_CONCEDED · OVERALL_GOAL_DIFFERENCE · TOTAL_POINTS
+ * A rename upstream now yields 0 for that one column rather than a wrong table,
+ * and assertStandings() is the guard for the resource itself.
+ */
+function detailValue(details: SmStandingRaw["details"], developerName: string): number {
   for (const d of details ?? []) {
-    const name = String(d.type?.developer_name ?? "").toLowerCase();
-    if (!name.startsWith("overall")) continue;
-    if (keywords.every((k) => name.includes(k))) return Number(d.value ?? 0);
+    if (String(d.type?.developer_name ?? "").toUpperCase() === developerName) {
+      return Number(d.value ?? 0);
+    }
   }
   return 0;
 }
@@ -296,20 +311,22 @@ export async function getStandings(seasonId: number): Promise<SmStandingRow[]> {
   });
   const out: SmStandingRow[] = [];
   for (const s of rows ?? []) {
-    const gf = detailValue(s.details, "goals", "for") || detailValue(s.details, "scored");
-    const ga = detailValue(s.details, "goals", "against") || detailValue(s.details, "conceded");
+    const gf = detailValue(s.details, "OVERALL_SCORED");
+    const ga = detailValue(s.details, "OVERALL_CONCEDED");
     out.push({
       position: Number(s.position ?? 0),
       teamId: Number(s.participant?.id ?? s.participant_id ?? 0),
       team: s.participant?.name ?? "—",
-      played: detailValue(s.details, "played") || detailValue(s.details, "games"),
-      won: detailValue(s.details, "won"),
-      draw: detailValue(s.details, "draw"),
-      lost: detailValue(s.details, "lost"),
+      played: detailValue(s.details, "OVERALL_MATCHES"),
+      won: detailValue(s.details, "OVERALL_WINS"),
+      draw: detailValue(s.details, "OVERALL_DRAWS"),
+      lost: detailValue(s.details, "OVERALL_LOST"),
       goalsFor: gf,
       goalsAgainst: ga,
-      goalDifference: detailValue(s.details, "goal", "difference") || gf - ga,
-      points: Number(s.points ?? 0),
+      // Prefer SportMonks' own GD; fall back to the arithmetic if it's ever absent.
+      goalDifference: detailValue(s.details, "OVERALL_GOAL_DIFFERENCE") || gf - ga,
+      // `points` is on the row itself; TOTAL_POINTS is the detail-level twin.
+      points: Number(s.points ?? 0) || detailValue(s.details, "TOTAL_POINTS"),
     });
   }
   return out.sort((a, b) => a.position - b.position);

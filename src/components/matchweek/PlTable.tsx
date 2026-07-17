@@ -2,8 +2,21 @@
 
 /**
  * Matchweek → PL → Table. The live Premier League table from /api/pl/standings
- * (SportMonks, edge-cached 5 min). Pre-season the standings come back empty —
- * nothing has been played — so the tab says so rather than showing a blank grid.
+ * (SportMonks, edge-cached 5 min).
+ *
+ * ORDER (founder, 2026-07-16): alphabetical BEFORE a ball is kicked, by position
+ * once the season starts. SportMonks' pre-season "order" is really just row ids
+ * — it had Sunderland 1st and Spurs 2nd — which reads as a table that's already
+ * wrong. Alphabetical is the honest pre-season view. Locking it to alphabetical
+ * all season would be the opposite bug, so it flips the moment anyone has played.
+ *
+ * Pre-season the position column shows "–" rather than 1–20: nobody has a
+ * position yet, and numbering an alphabetical list invents one.
+ *
+ * Columns are the classic table — P W D L GD Pts — the same set the official PL
+ * app shows on a phone. GF/GA do come back from SportMonks (goalsFor /
+ * goalsAgainst) and are deliberately left out: eight numeric columns don't fit
+ * 375px without a horizontal scroller, and GD is the one people read.
  */
 
 import { useEffect, useState } from "react";
@@ -50,23 +63,36 @@ export function PlTable() {
     );
   }
 
+  // Has anyone actually played? That, not the calendar, decides the order.
+  const started = rows.some((r) => r.played > 0);
+  const ordered = started
+    ? [...rows].sort((a, b) => a.position - b.position)
+    : [...rows].sort((a, b) => a.team.localeCompare(b.team));
+
   return (
     <div className="max-w-lg mx-auto px-4 pt-4">
+      {!started && (
+        <p className="font-body text-xs mb-2 px-1" style={{ color: "#586058" }}>
+          Nothing played yet — listed A–Z until the first whistle.
+        </p>
+      )}
       <div className="rounded-2xl overflow-hidden bg-surface" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
         {/* Header */}
-        <div className="flex items-center gap-3 px-4 py-2.5" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
-          <span className="w-5 flex-shrink-0" />
-          <span className="flex-1 font-display text-[10px] tracking-widest" style={{ color: "#586058" }}>CLUB</span>
+        <div className="flex items-center gap-2 px-3 py-2.5" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+          <span className="w-4 flex-shrink-0" />
+          <span className="flex-1 font-display text-[10px] tracking-widest min-w-0" style={{ color: "#586058" }}>CLUB</span>
           <Cols />
         </div>
-        {rows.map((r) => (
-          <div key={r.position + r.team} className="flex items-center gap-3 px-4 py-2.5" style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
-            <span className="w-5 flex-shrink-0 font-display text-sm text-right" style={{ color: "#8a948f" }}>{r.position}</span>
+        {ordered.map((r) => (
+          <div key={r.team} className="flex items-center gap-2 px-3 py-2.5" style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+            <span className="w-4 flex-shrink-0 font-display text-xs text-right" style={{ color: "#8a948f" }}>
+              {started ? r.position : "–"}
+            </span>
             <div className="flex-1 flex items-center gap-2 min-w-0">
-              <Crest name={r.team} size={22} />
-              <span className="font-body text-sm text-white truncate">{r.team}</span>
+              <Crest name={r.team} size={20} />
+              <span className="font-body text-[13px] text-white truncate">{r.team}</span>
             </div>
-            <Cols played={r.played} gd={r.goalDifference} pts={r.points} />
+            <Cols row={r} />
           </div>
         ))}
       </div>
@@ -74,22 +100,34 @@ export function PlTable() {
   );
 }
 
-/** The three numeric columns (P · GD · Pts), header when values omitted. */
-function Cols({ played, gd, pts }: { played?: number; gd?: number; pts?: number } = {}) {
-  const header = played === undefined;
-  const cell = (v: string, bold = false) => (
+/** P · W · D · L · GD · Pts — header when no row is given. */
+function Cols({ row }: { row?: Row }) {
+  const header = !row;
+  const cell = (v: string, key: string, bold = false) => (
     <span
-      className={`w-8 text-right ${bold ? "font-display text-sm text-white" : "font-body text-xs"}`}
+      key={key}
+      className={`w-[26px] text-right ${bold ? "font-display text-[13px] text-white" : "font-body text-[11px]"}`}
       style={bold ? undefined : { color: header ? "#586058" : "#8a948f" }}
     >
       {v}
     </span>
   );
+  if (header) {
+    return (
+      <div className="flex items-center gap-0.5 flex-shrink-0">
+        {cell("P", "p")}{cell("W", "w")}{cell("D", "d")}{cell("L", "l")}{cell("GD", "gd")}{cell("PTS", "pts")}
+      </div>
+    );
+  }
+  const gd = row.goalDifference > 0 ? `+${row.goalDifference}` : String(row.goalDifference);
   return (
-    <div className="flex items-center gap-1 flex-shrink-0">
-      {cell(header ? "P" : String(played))}
-      {cell(header ? "GD" : (gd! > 0 ? `+${gd}` : String(gd)))}
-      {header ? cell("PTS") : cell(String(pts), true)}
+    <div className="flex items-center gap-0.5 flex-shrink-0">
+      {cell(String(row.played), "p")}
+      {cell(String(row.won), "w")}
+      {cell(String(row.draw), "d")}
+      {cell(String(row.lost), "l")}
+      {cell(gd, "gd")}
+      {cell(String(row.points), "pts", true)}
     </div>
   );
 }
