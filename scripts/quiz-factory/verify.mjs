@@ -289,14 +289,32 @@ const FACTS_VERIFY_SYSTEM = `You are a fact-checker for a football quiz. You are
 Work ONLY from the facts provided. Do not use outside knowledge. Reply with ONLY a JSON object:
 
 {
-  "derived_answer": "A" | "B" | "C" | "D" | "UNKNOWN",
+  "derived_answer": "A" | "B" | "C" | "D" | "UNKNOWN" | "IMPOSSIBLE",
   "source_quote": "the exact line from the facts that settles it, or null",
+  "reasoning": "one sentence, only when you answer IMPOSSIBLE",
   "covered": true | false
 }
 
 Rules:
-- If the facts do not clearly contain the answer, set "covered": false and "derived_answer": "UNKNOWN". Do NOT guess from general knowledge — say UNKNOWN and we will check elsewhere.
-- Only answer A/B/C/D when a specific line in the facts proves it. Quote that line.`;
+- Only answer A/B/C/D when the facts prove it. Quote the line that does.
+- If the facts simply don't address the question, set "covered": false and "derived_answer": "UNKNOWN". Do NOT guess from general knowledge — we'll check elsewhere.
+
+USE WHAT THE FACTS IMPLY, not only what they state word-for-word. The facts are a set of
+CONSTRAINTS, and a question can be disproved by them without being directly answered:
+
+- A season's top scorer and their tally is a CEILING for that club that season. If the facts say
+  "2010/2011: their top scorer Carlos Tevez (20)", then NOBODY at that club scored more than 20
+  that season. A question asking how many a player scored, where every option is 25+, cannot have
+  a correct answer — that is IMPOSSIBLE, not UNKNOWN.
+- If the facts name the club's top scorer for a season, a question premised on a different player
+  being top scorer that season is contradicted.
+- Final league position and points are exact. A question premised on a different position or tally
+  for that season is contradicted.
+
+Answer "IMPOSSIBLE" when the facts show that NO option can be right — the question's premise is
+false. This is how a fabricated question gets caught: it looks well-formed, but the facts make it
+unanswerable. Be rigorous, not imaginative: only say IMPOSSIBLE when a specific fact rules every
+option out, and quote it.`;
 
 /**
  * Verify one question against a fact sheet, no web search.
@@ -328,6 +346,26 @@ Using ONLY the facts above, which option is correct?`;
     v = parseJson(resp);
   } catch {
     return { outcome: "unknown", verdict: null, usage: usageOf(resp) };
+  }
+
+  // IMPOSSIBLE = the facts rule out EVERY option, so the question's premise is false. That's a
+  // fabrication, and it's the class the Haaland-2010 question belongs to: well-formed, specific,
+  // past-tense, and unanswerable ("how many did Haaland score for City in 2010-11?" — options all
+  // 25+, but City's top scorer that season managed 20). Treat it as a contradiction, not unknown.
+  if (v.derived_answer === "IMPOSSIBLE") {
+    return {
+      outcome: "disagree",
+      verdict: {
+        derived_answer: "IMPOSSIBLE",
+        confidence: "high",
+        source_url: "https://www.sportmonks.com/ (Premier League standings & scorers)",
+        source_quote: v.source_quote ?? v.reasoning ?? null,
+        still_true_today: "n/a",
+        ambiguity: null,
+        reasoning: v.reasoning ?? null,
+      },
+      usage: usageOf(resp),
+    };
   }
 
   if (v.covered === false || v.derived_answer === "UNKNOWN" || !LETTERS.includes(v.derived_answer)) {

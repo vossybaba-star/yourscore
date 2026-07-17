@@ -101,11 +101,18 @@ if (!VERIFY) {
   process.exit(0);
 }
 
-// Only club questions can be checked against a club fact sheet — AND only REACHABLE ones.
-// Verifying expert/master rows would be money spent on questions the draw can never ask for
-// (founder's call: leave them stranded). They're invisible; leave them invisible.
-const SERVED = ["easy", "medium", "hard"];
-const clubRows = survivors.filter((r) => r.entity_type === "club" && SERVED.includes(r.difficulty));
+// Only club questions can be checked against a club fact sheet.
+//
+// ⚠️ This used to filter to easy/medium/hard on the belief that expert/master were
+// unreachable. THAT WAS WRONG, and it was skipping the tier most likely to be fabricated.
+// `/api/quiz/start` is indeed typed "easy"|"medium"|"hard" — but that path has ~one user.
+// The path people actually use is `/api/quiz/generate-custom` (build-your-own), and its
+// Mixed mode explicitly draws 4 expert + 1 master out of every 15:
+//     fetchByDifficulty(..., "expert", 4), fetchByDifficulty(..., "master", 1)
+// It also accepts an explicit difficulty of "expert"/"master". So all 1,070 expert/master
+// rows ARE in live rotation — including the Haaland-2010 fabrication (active, data-grounded,
+// Manchester City). Sweep everything a player can be dealt.
+const clubRows = survivors.filter((r) => r.entity_type === "club");
 const entities = [...new Set(clubRows.map((r) => r.entity))];
 console.log(`PASS 2 — SportMonks sweep over ${clubRows.length} club questions across ${entities.length} clubs`);
 console.log(`   (no web search — a question SportMonks can't judge is LEFT ALONE, not retired)\n`);
@@ -114,33 +121,58 @@ const contradicted = [];
 const confirmed = [];
 const uncovered = [];
 
-// Checkpointed. This sweep is ~1,300 sequential API calls over ~45 minutes, and the first
-// attempt died 60% through on a single DNS blip (ENOTFOUND api.anthropic.com), losing the lot.
-// Progress is now written to disk per club and reloaded on restart, and a transient failure
-// on ONE question no longer kills the run.
+// Checkpointed PER QUESTION, keyed by question id → outcome.
+//
+// It was per-CLUB ("skip the whole club if it's in the file"), which broke the moment the
+// sweep's scope widened to include expert/master: the 14 clubs already marked done would have
+// skipped their expert rows — precisely the ones most likely to be fabricated. Keying on the
+// question id means a scope change naturally picks up whatever is new, and a re-run is always
+// safe.
+//
+// The old club-keyed file is migrated in rather than thrown away — it holds ~778 real checks.
 const CKPT = join(process.cwd(), "scripts/data/sportmonks-cache/sweep-checkpoint.json");
+/** @type {Record<string, "confirmed"|"contradicted"|"uncovered">} */
 let done = {};
 if (existsSync(CKPT)) {
-  done = JSON.parse(readFileSync(CKPT, "utf8"));
-  const already = Object.values(done).reduce((a, e) => a + e.confirmed.length + e.contradicted.length + e.uncovered.length, 0);
-  if (already) console.log(`   ↻ resuming — ${already} questions already checked in a previous run\n`);
+  const raw = JSON.parse(readFileSync(CKPT, "utf8"));
+  const isLegacy = Object.values(raw).some((v) => v && typeof v === "object" && Array.isArray(v.confirmed));
+  if (isLegacy) {
+    for (const e of Object.values(raw)) {
+      for (const outcome of ["confirmed", "contradicted", "uncovered"]) {
+        for (const id of e[outcome] ?? []) done[id] = outcome;
+      }
+    }
+    console.log(`   ↻ migrated the old per-club checkpoint → ${Object.keys(done).length} question-level entries`);
+  } else {
+    done = raw;
+  }
+  const already = Object.keys(done).length;
+  if (already) console.log(`   ↻ resuming — ${already} questions already checked\n`);
 }
 const saveCkpt = () => writeFileSync(CKPT, JSON.stringify(done));
 
+// A contradiction found in an EARLIER run was recorded in the checkpoint but never retired —
+// the retire step runs after the loop, and both previous attempts were killed before it. So
+// rebuild the retire list from the checkpoint, or those known-wrong questions stay live for ever.
+const carried = clubRows.filter((r) => done[r.id] === "contradicted");
+if (carried.length) {
+  contradicted.push(...carried.map((r) => ({ ...r, derived: null, quote: null })));
+  console.log(`   ↻ carried ${carried.length} contradiction(s) forward from an earlier run (never retired — the run was killed first)\n`);
+}
+
 try {
   for (const entity of entities) {
-    if (done[entity]) continue; // already swept in a previous run
-    const rows = clubRows.filter((r) => r.entity === entity);
-    const e = { confirmed: [], contradicted: [], uncovered: [] };
+    const rows = clubRows.filter((r) => r.entity === entity && !done[r.id]);
+    if (!rows.length) continue; // every question for this club already checked
 
     let sheet;
     try {
       const fs = await clubFactSheet(entity, { fromYear: 2000 });
-      if (!fs.seasons.length) { e.uncovered = rows.map((r) => r.id); done[entity] = e; saveCkpt(); continue; }
+      if (!fs.seasons.length) { rows.forEach((r) => { done[r.id] = "uncovered"; }); saveCkpt(); continue; }
       sheet = factSheetText(fs);
     } catch {
-      e.uncovered = rows.map((r) => r.id);
-      done[entity] = e; saveCkpt();
+      rows.forEach((r) => { done[r.id] = "uncovered"; });
+      saveCkpt();
       continue;
     }
 
@@ -149,20 +181,19 @@ try {
       try {
         const res = await verifyAgainstFacts({ question: r.question, options: r.options, answer: r.answer }, sheet);
         if (res.outcome === "disagree") {
-          e.contradicted.push(r.id);
+          done[r.id] = "contradicted";
           contradicted.push({ ...r, derived: res.verdict.derived_answer, quote: res.verdict.source_quote });
-        } else if (res.outcome === "verified") { e.confirmed.push(r.id); confirmed.push(r); }
-        else { e.uncovered.push(r.id); uncovered.push(r); }
+        } else if (res.outcome === "verified") { done[r.id] = "confirmed"; confirmed.push(r); }
+        else { done[r.id] = "uncovered"; uncovered.push(r); }
       } catch (err) {
         if (err instanceof CreditExhausted) throw err;  // out of credit ⇒ stop, don't burn on
         // A transient failure must not lose the run. Treat as uncovered (we never retire on
         // "unknown", so the safe default costs us nothing but a re-check later).
-        e.uncovered.push(r.id);
+        done[r.id] = "uncovered";
         uncovered.push(r);
       }
     }
-    done[entity] = e;
-    saveCkpt();   // per-club checkpoint — a crash costs at most one club, not the whole sweep
+    saveCkpt();   // per-club save — a crash costs at most one club's worth of re-checks
   }
 } catch (err) {
   if (err instanceof CreditExhausted) { console.error(`\n${err.message}`); saveCkpt(); process.exit(2); }
