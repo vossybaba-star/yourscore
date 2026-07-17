@@ -185,17 +185,37 @@ try {
     // Facts-first: everything downstream is derived from this sheet, so this is where the
     // rigour lives. SportMonks data is free and already verified; the web research pass is
     // ONE call (not one per question) and every fact must clear the source-tier gate.
-    let sheet = factsText ?? "";
+    //
+    // ⚠️ THE SHEET MUST MATCH THE CATEGORY. This guard exists because it once didn't:
+    // `sheet` starts as the SportMonks LEAGUE record, which is always populated. When the
+    // Rivalries research returned ZERO facts, the old check ("is the sheet empty?") passed —
+    // the league sheet was still there — so it authored 29 questions from league tables and
+    // top scorers under a RIVALRIES heading. The result was "How many goals did Manchester
+    // City's Erling Haaland score?" filed under Arsenal · Rivalries & Derbies.
+    //
+    // Facts-first was obeyed to the letter; the facts were simply the wrong ones. Having
+    // SOME facts is not the bar — having facts ABOUT THIS CATEGORY is.
+    const needsResearch = !cat.grounded || cat.factCoverage < 1;
+    let sheet = cat.grounded ? (factsText ?? "") : "";  // only a grounded category may lead with the league sheet
     let researched = [];
 
-    if (!cat.grounded || cat.factCoverage < 1) {
+    if (needsResearch) {
       const { facts, dropped: factsDropped } = await researchFacts({
         entity: CLUB, category: catKey, categoryBrief: cat.brief, count: FACT_COUNT,
       });
       researched = facts;
       console.log(`   researched ${facts.length} facts (${factsDropped.length} dropped: ${
         factsDropped.filter((d) => d.reason.startsWith("untrusted")).length} untrusted source)`);
-      if (facts.length) sheet = `${sheet}\n\nResearched facts:\n${renderFacts(facts)}`;
+
+      if (!facts.length) {
+        // Never fall back to the league sheet — that's how Rivalries got Haaland questions.
+        // No facts for this category means no questions for this category. Full stop.
+        console.log(`   ⚠️  research returned NO facts for "${cat.label}" — SKIPPING.`);
+        console.log(`      (refusing to author from the league sheet: it has no ${cat.label} content,`);
+        console.log(`       so it would produce questions about the wrong thing entirely.)`);
+        continue;
+      }
+      sheet = `${sheet}\n\nResearched facts:\n${renderFacts(facts)}`.trim();
     }
 
     if (!sheet.trim()) { console.log(`   ⚠️  no facts gathered — skipping`); continue; }
