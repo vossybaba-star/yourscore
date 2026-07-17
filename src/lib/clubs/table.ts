@@ -6,12 +6,19 @@
  * halftime quiz of the club they actually support. Other fixtures' packs are
  * playable but score nothing for the table — see ownClubFanTotals.
  *
- * RANKING RULE (LOCKED — founder's decision #3, do not reopen): AVERAGE score per
- * participating fan, with a minimum of MIN_PARTICIPANTS fans. A raw total would
- * just rank fanbases by SIZE — the big six would win every week forever and
- * small-club fans would stop looking. Average makes it "who actually knows their
- * football", so a handful of sharp small-club fans can beat a big casual fanbase.
- * The minimum stops one lucky fan (or a tiny clique) topping the table alone.
+ * RANKING RULE (founder's decision #3): AVERAGE score per PARTICIPATING fan — a
+ * fan who played their club's game this gameweek. A raw total would just rank
+ * fanbases by SIZE: the big six would win every week forever and small-club fans
+ * would stop looking. Average makes it "who actually knows their football", so a
+ * handful of sharp small-club fans can beat a big casual fanbase.
+ *
+ * The average is over WHO PLAYED, not over every declared supporter. Dividing by
+ * the whole fanbase would just re-introduce the size bias through the back door
+ * (a big club would need far more players to move the same average), and it would
+ * punish a club for having fans who sat the week out.
+ *
+ * MINIMUM: dropped from 5 to 1 (founder, 2026-07-16) — see MIN_PARTICIPANTS. One
+ * fan is enough to put a club on the board.
  *
  * Callers (the API routes) own every DB read:
  *   - who supports which club — club_supporters, season-locked
@@ -24,7 +31,18 @@
  * are summed on every read, from quiz_attempts, every time.
  */
 
-export const MIN_PARTICIPANTS = 5;
+/**
+ * The bar to be RANKED at all. Was 5 (founder's original decision #3); dropped to
+ * 1 on 2026-07-16 — a club is ranked as soon as one fan plays its game.
+ *
+ * The 5 existed to stop a single fan topping the table on one good score. That
+ * consequence is now live and accepted: with an average and no floor, a one-fan
+ * club can lead the week. Kept as a named constant rather than deleted because
+ * the floor is the thing most likely to be re-tuned, and `>= 1` still says
+ * "someone has to have played" — a club with zero players has no average, so it
+ * can't be ranked at all.
+ */
+export const MIN_PARTICIPANTS = 1;
 
 export interface ClubSupporterRow {
   userId: string;

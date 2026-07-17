@@ -132,14 +132,26 @@ test("NEWWEEK copy — everyone gets a forward nudge referencing last week's sta
   assert.match(resultCopy("newweek", benched).body, /1st last week/);
 });
 
-test("a club below the minimum is told 'not enough of you', never an invented rank — played or not", () => {
-  const { supporters, attempts } = club("Nottingham Forest", [9000, 8000, 7000, 6000], 2); // 4 played (< 5), 2 benched
+test("no floor: 4 players now RANK — the old 'not enough of you' path is gone", () => {
+  const { supporters, attempts } = club("Nottingham Forest", [9000, 8000, 7000, 6000], 2); // 4 played, 2 benched
   const { recipients } = gameweekRecipients(supporters, attempts, ["Nottingham Forest"]);
-  for (const r of recipients) assert.equal(r.clubRank, null);
+  for (const r of recipients) assert.equal(r.clubRank, 1, "one club, four players — it's ranked");
   const player = recipients.find((r) => r.played)!;
-  const benched = recipients.find((r) => !r.played)!;
-  assert.match(resultCopy("results", player).title, /didn't make the table/);
-  assert.match(resultCopy("results", benched).body, /needed you/i);
+  assert.match(resultCopy("results", player).title, /finished 1st/);
+});
+
+test("a club NOBODY played for is unranked, and its fans are told exactly that", () => {
+  // The only way to miss the table now: not a single fan played the club's game.
+  const { supporters } = club("Nottingham Forest", [], 3); // 3 declared, 0 played
+  const { recipients } = gameweekRecipients(supporters, [], ["Nottingham Forest"]);
+  assert.equal(recipients.length, 3);
+  for (const r of recipients) {
+    assert.equal(r.clubRank, null);
+    assert.equal(r.played, false);
+  }
+  const copy = resultCopy("results", recipients[0]);
+  assert.match(copy.title, /didn't make the table/);
+  assert.match(copy.body, /Not one Nottingham Forest fan played/);
 });
 
 test("THE PRODUCT RULE survives into the copy: the small sharp club is told it WON", () => {

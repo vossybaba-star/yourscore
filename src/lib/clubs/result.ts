@@ -147,19 +147,16 @@ export function resultCopy(send: SendType, r: Recipient): { title: string; body:
 
   // send === "results" — the morning-after recap.
   if (!ranked) {
-    // Club missed the minimum-participants bar — no rank to report.
-    if (r.played) {
-      return {
-        title: `${r.club} didn't make the table`,
-        body:
-          r.clubFans === 1
-            ? `You were the only ${r.club} fan who played. Round up some backup next week.`
-            : `Only ${r.clubFans} ${r.club} fans played — not enough to rank. Bring more next week.`,
-      };
-    }
+    /**
+     * With the minimum dropped to 1 (2026-07-16), a club is unranked ONLY when
+     * nobody played its game — one player is enough to rank. So the reader
+     * necessarily didn't play either, and the old "only N of you turned up, not
+     * enough to rank" copy is unreachable: it described a bar that no longer
+     * exists.
+     */
     return {
       title: `${r.club} didn't make the table`,
-      body: `Not enough ${r.club} fans played to make the leaderboard. They needed you.`,
+      body: `Not one ${r.club} fan played this gameweek. Next week, be the one.`,
     };
   }
 
