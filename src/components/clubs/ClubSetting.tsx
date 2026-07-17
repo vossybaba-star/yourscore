@@ -19,7 +19,7 @@
  * and that's exactly why it can't be swapped mid-season.
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useClubMe } from "./useClubData";
 import { Crest } from "./Crest";
 import { ClubGrid } from "./ClubGrid";
@@ -33,9 +33,36 @@ export function ClubSetting() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (!loaded || !user || !data) return null;
+  /**
+   * DEV-ONLY: `?preview=club-setting` renders the unset state without a session
+   * — Settings is signed-in-only, so this row can't otherwise be looked at.
+   * Compiled out of production; saving is a no-op in preview.
+   */
+  const [previewClubs, setPreviewClubs] = useState<string[] | null>(null);
+  const preview = previewClubs !== null;
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production" || typeof window === "undefined") return;
+    if (new URLSearchParams(window.location.search).get("preview") !== "club-setting") return;
+    fetch("/api/pl/standings")
+      .then((r) => r.json())
+      .then((j) => {
+        const clubs = (j.standings ?? []).map((x: { team: string }) => x.team).sort((a: string, b: string) => a.localeCompare(b));
+        if (clubs.length) setPreviewClubs(clubs);
+      })
+      .catch(() => { /* preview only */ });
+  }, []);
+
+  const view = preview
+    ? { club: null as string | null, clubs: previewClubs as string[] }
+    : data
+      ? { club: data.club, clubs: data.clubs }
+      : null;
+
+  if (!preview && (!loaded || !user || !data)) return null;
+  if (!view) return null;
 
   async function save(club: string) {
+    if (preview) { setPending(null); return; } // dev preview — never writes
     setSubmitting(true);
     setError(null);
     try {
@@ -62,23 +89,23 @@ export function ClubSetting() {
     <div>
       <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-3">Your club</p>
       <div className="rounded-2xl overflow-hidden bg-surface" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
-        {data.club ? (
+        {view.club ? (
           // Locked for the season — show it, and say why it can't change.
           <>
             <div className="px-5 py-4 flex items-center justify-between gap-3">
               <span className="font-body text-xs text-text-muted">Representing</span>
               <div className="flex items-center gap-2.5 min-w-0">
-                <Crest name={data.club} size={26} />
-                <span className="font-body text-sm text-white truncate">{data.club}</span>
+                <Crest name={view.club} size={26} />
+                <span className="font-body text-sm text-white truncate">{view.club}</span>
               </div>
             </div>
             <div className="px-5 py-3" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
               <p className="font-body text-xs" style={{ color: "#586058" }}>
-                Locked until the end of the season — your scores represent {shortClubName(data.club)}.
+                Locked until the end of the season — your scores represent {shortClubName(view.club)}.
               </p>
             </div>
           </>
-        ) : data.clubs.length === 0 ? (
+        ) : view.clubs.length === 0 ? (
           <div className="px-5 py-4">
             <p className="font-body text-sm text-white">Clubs open with the season</p>
             <p className="font-body text-xs mt-1" style={{ color: "#8a948f" }}>
@@ -92,7 +119,7 @@ export function ClubSetting() {
               Your scores represent them all season.
             </p>
 
-            <ClubGrid clubs={data.clubs} selected={pending} onSelect={setPending} disabled={submitting} />
+            <ClubGrid clubs={view.clubs} selected={pending} onSelect={setPending} disabled={submitting} />
 
             {pending && (
               <button
