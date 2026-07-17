@@ -19,7 +19,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { authorFromFacts } from "./author.mjs";
 import { runGate } from "./verify.mjs";
-import { researchFacts, factsText as renderFacts, factsReviewText } from "./facts.mjs";
+import { researchFacts, sportmonksFacts, buildAuthorSheet, factsText as renderFacts, factsReviewText } from "./facts.mjs";
 import { rateBatch } from "./difficulty.mjs";
 import { clubFactSheet, factSheetText } from "../lib/sportmonks.mjs";
 import { costReport, usage, CreditExhausted } from "../lib/anthropic.mjs";
@@ -157,16 +157,29 @@ const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
 console.log(`\n🏦 Bank fill — ${CLUB}${COMMIT ? "" : "  (DRY RUN — no writes)"}`);
 console.log(`   categories: ${cats.map((c) => CATEGORIES[c].label).join(", ")}\n`);
 
-// ── SportMonks fact sheet: built once per club, cached to disk ──────────────────
-// Handed to the verifier for EVERY category (cheap confirmation of anything it covers),
-// and used as the authoring source for `grounded` categories. If SportMonks is
-// unavailable, we fall back to web-only — the factory still works, just costs more.
+// ── SportMonks: built once per club, cached to disk ────────────────────────────
+// TWO products from one fetch, and the split matters:
+//
+//   factsText   — the full rendered record (league-wide top scorers and all), for the
+//                 VERIFIER. Breadth is right here: it's checking a claim, not writing one,
+//                 and the league context is what catches "Haaland scored 27 in 2010-11"
+//                 (Tevez got 20 that year, so nobody scored 27).
+//   leagueFacts — the same record as TYPED, per-category facts about THIS CLUB ONLY, for the
+//                 AUTHOR. Narrowness is right here: an author handed league-wide rows writes
+//                 about other clubs, which is how 6 of 25 "Arsenal" questions turned out to be
+//                 about City, United and Liverpool.
+//
+// Verification wants everything; authoring wants only what belongs. Same data, opposite needs.
 let factsText = null;
+let leagueFacts = [];
 try {
   const fs = await clubFactSheet(CLUB, { fromYear: 2000 });
   if (fs.seasons.length) {
     factsText = factSheetText(fs);
-    console.log(`   📊 SportMonks fact sheet: ${fs.seasons.length} PL seasons, ${fs.titles.length} title(s) — grounding verification.\n`);
+    leagueFacts = sportmonksFacts(fs);
+    const byCat = leagueFacts.reduce((a, f) => ({ ...a, [f.category]: (a[f.category] ?? 0) + 1 }), {});
+    console.log(`   📊 SportMonks: ${fs.seasons.length} PL seasons, ${fs.titles.length} title(s)`);
+    console.log(`      → ${leagueFacts.length} typed facts for authoring ${JSON.stringify(byCat)}; full record for verification.\n`);
   } else {
     console.log(`   ⚠️  no SportMonks PL record for "${CLUB}" — web-only for this club.\n`);
   }
@@ -186,17 +199,13 @@ try {
     // rigour lives. SportMonks data is free and already verified; the web research pass is
     // ONE call (not one per question) and every fact must clear the source-tier gate.
     //
-    // ⚠️ THE SHEET MUST MATCH THE CATEGORY. This guard exists because it once didn't:
-    // `sheet` starts as the SportMonks LEAGUE record, which is always populated. When the
-    // Rivalries research returned ZERO facts, the old check ("is the sheet empty?") passed —
-    // the league sheet was still there — so it authored 29 questions from league tables and
-    // top scorers under a RIVALRIES heading. The result was "How many goals did Manchester
-    // City's Erling Haaland score?" filed under Arsenal · Rivalries & Derbies.
-    //
-    // Facts-first was obeyed to the letter; the facts were simply the wrong ones. Having
-    // SOME facts is not the bar — having facts ABOUT THIS CATEGORY is.
+    // Facts stay TYPED until the moment of prompting. They are never concatenated into one
+    // blob, because a blob can't be filtered: that's how league tables ended up in front of a
+    // Rivalries author and produced "How many goals did Manchester City's Erling Haaland
+    // score?" under Arsenal · Rivalries. buildAuthorSheet hands over facts tagged for THIS
+    // club and THIS category and nothing else — contamination isn't guarded, it's unspeakable.
     const needsResearch = !cat.grounded || cat.factCoverage < 1;
-    let sheet = cat.grounded ? (factsText ?? "") : "";  // only a grounded category may lead with the league sheet
+    const pool = [...leagueFacts];               // already tagged per category by sportmonksFacts()
     let researched = [];
 
     if (needsResearch) {
@@ -204,21 +213,21 @@ try {
         entity: CLUB, category: catKey, categoryBrief: cat.brief, count: FACT_COUNT,
       });
       researched = facts;
+      pool.push(...facts);
       console.log(`   researched ${facts.length} facts (${factsDropped.length} dropped: ${
         factsDropped.filter((d) => d.reason.startsWith("untrusted")).length} untrusted source)`);
-
-      if (!facts.length) {
-        // Never fall back to the league sheet — that's how Rivalries got Haaland questions.
-        // No facts for this category means no questions for this category. Full stop.
-        console.log(`   ⚠️  research returned NO facts for "${cat.label}" — SKIPPING.`);
-        console.log(`      (refusing to author from the league sheet: it has no ${cat.label} content,`);
-        console.log(`       so it would produce questions about the wrong thing entirely.)`);
-        continue;
-      }
-      sheet = `${sheet}\n\nResearched facts:\n${renderFacts(facts)}`.trim();
     }
 
-    if (!sheet.trim()) { console.log(`   ⚠️  no facts gathered — skipping`); continue; }
+    let authorFacts;
+    try {
+      authorFacts = buildAuthorSheet({ entity: CLUB, category: catKey, facts: pool });
+    } catch (e) {
+      // No facts for this category ⇒ no questions for this category. Never a fallback.
+      console.log(`   ⚠️  ${e.message} — SKIPPING`);
+      continue;
+    }
+    const sheet = renderFacts(authorFacts);
+    console.log(`   author sheet: ${authorFacts.length} facts, all tagged ${CLUB} · ${cat.label}`);
 
     // ── 2. AUTHOR FROM THE SHEET ONLY (no web search) ──────────────────────
     let candidates;

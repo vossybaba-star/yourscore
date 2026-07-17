@@ -123,6 +123,13 @@ Report ${count} facts. Each needs its own source URL and a quote proving it.`,
     facts.push({
       fact: text,
       key: factKey(text),
+      // A fact must know WHAT IT'S ABOUT and WHAT IT'S FOR. Without these it's just a
+      // sentence, and once several sources are rendered into one prompt string nothing can
+      // tell a rivalry fact from a league table — which is exactly how "How many goals did
+      // Manchester City's Erling Haaland score?" got authored under Arsenal · Rivalries.
+      entity,
+      category,
+      origin: "web",
       competition: f?.competition ?? null,
       season: f?.season ?? null,
       source_url: f.source_url,
@@ -132,6 +139,73 @@ Report ${count} facts. Each needs its own source URL and a quote proving it.`,
   }
 
   return { facts, dropped, usage: usageOf(resp) };
+}
+
+/**
+ * Turn a SportMonks club record into tagged Facts — the same shape research produces.
+ *
+ * Two things this fixes. First, the club's OWN rows only: the raw sheet lists league-wide top
+ * scorers for context, and handing those to an author produced 6 of 25 "Arsenal" questions that
+ * were actually about City, United and Liverpool. A fact tagged `entity: "Arsenal"` can only be
+ * about Arsenal. Second, it lets league data live in the same typed pipeline as researched
+ * facts, so `buildAuthorSheet` can filter both by category instead of trusting a concatenation.
+ *
+ * Only emits `modern-era` (2015→) and `history-honours` (titles) — the two things a league
+ * record actually knows. It has nothing to say about rivalries or legends, so it stays silent
+ * rather than padding those categories with the wrong material.
+ */
+export function sportmonksFacts(fs, { fromYear = 2015 } = {}) {
+  const out = [];
+  const push = (text, category, extra = {}) =>
+    out.push({ fact: text, key: factKey(text), entity: fs.club, category, origin: "sportmonks",
+               source_url: "https://www.sportmonks.com/ (Premier League record)", tier: 1, ...extra });
+
+  for (const s of fs.seasons ?? []) {
+    const startYear = Number(String(s.season).slice(0, 4));
+    if (startYear < fromYear) continue;
+    push(`${fs.club} finished ${s.position} in the ${s.season} Premier League season with ${s.points} points.`,
+         "modern-era", { season: s.season, competition: "Premier League" });
+    // Their OWN top scorer only. The league's top scorer belongs to whoever's club that is.
+    if (s.clubTopScorer) {
+      push(`${fs.club}'s top scorer in the ${s.season} Premier League season was ${s.clubTopScorer.player} with ${s.clubTopScorer.goals} goals.`,
+           "modern-era", { season: s.season, competition: "Premier League" });
+    }
+  }
+
+  for (const t of fs.titles ?? []) {
+    push(`${fs.club} won the Premier League title in ${t}.`, "history-honours", { season: t, competition: "Premier League" });
+  }
+  for (const w of fs.european?.won ?? []) {
+    push(`${fs.club} won the ${w.competition} in ${w.season}, beating ${w.beat} in the final.`,
+         "history-honours", { season: w.season, competition: w.competition });
+  }
+  for (const l of fs.european?.lost ?? []) {
+    push(`${fs.club} reached the ${l.competition} final in ${l.season} but lost to ${l.lostTo}.`,
+         "history-honours", { season: l.season, competition: l.competition });
+  }
+  return out;
+}
+
+/**
+ * Assemble the facts an author may see for ONE category. This is the whole fix.
+ *
+ * The author gets facts tagged for its category and its club — nothing else. Contamination
+ * stops being something we guard against and becomes something we cannot express: there is no
+ * code path that puts a league table in front of a Rivalries author.
+ *
+ * Throws when there's nothing. A category with no facts produces no questions — never
+ * questions from whatever else happened to be lying around.
+ */
+export function buildAuthorSheet({ entity, category, facts }) {
+  const mine = (facts ?? []).filter((f) => f.category === category && f.entity === entity);
+  if (!mine.length) {
+    const other = (facts ?? []).length;
+    throw new Error(
+      `no facts for ${entity} · ${category}` +
+      (other ? ` (${other} facts exist but belong to other categories/clubs — refusing to use them)` : "")
+    );
+  }
+  return mine;
 }
 
 /**
