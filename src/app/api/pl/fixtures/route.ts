@@ -27,7 +27,20 @@ export const revalidate = 0;
 // A generous window either side of now catches the current gameweek plus the
 // next, even across an international break — without scanning the whole season.
 const LOOKBACK_MS = 4 * 24 * 60 * 60 * 1000;
-const LOOKAHEAD_MS = 12 * 24 * 60 * 60 * 1000;
+/**
+ * How far ahead to look for the NEXT gameweek.
+ *
+ * Was 12 days, which is fine mid-season (the next round is always days away) and
+ * silently empties the tab out of season: on 16 Jul the opener is 21 Aug — 36
+ * days out — so every fixture fell outside the window and Fixtures rendered "No
+ * fixtures scheduled" while the fixture list plainly existed.
+ *
+ * A season's break is ~10 weeks, so 90 days covers the pre-season gap and the
+ * winter/international breaks, while still bounding the query. The round picker
+ * below takes only the NEXT round out of whatever this returns, so a wider
+ * window never means a longer list — just one that isn't empty in July.
+ */
+const LOOKAHEAD_MS = 90 * 24 * 60 * 60 * 1000;
 const HIDDEN_STATES: HalftimeState[] = ["cancelled", "failed"];
 
 interface Row {

@@ -4,12 +4,14 @@
  *
  *   PL → News       real RSS headlines + our own blog posts plugged in
  *   PL → Table      the real 26/27 Premier League table (live SportMonks; 0 pts pre-season)
- *   Live Quiz       real fixtures — GW1 shown as just-played (the fan leaderboard),
- *                   GW2+ as the upcoming-quiz carousel — plus "how fans did" stat tiles
+ *   PL → Fixtures   real GW1+ fixtures, grouped by day
+ *   Live Quiz       the real pre-season state — every fixture upcoming, nothing played
  *
- * Real fixtures come straight from SportMonks (season 28083). GW1 is shifted into
- * the recent past so the leaderboard has a completed gameweek to rank; GW2/3/4
- * keep their real future dates so the carousel shows what's genuinely next.
+ * REAL, not staged (founder, 2026-07-16). Fixtures come straight from SportMonks
+ * (season 28083) with their true dates: the season starts 21 Aug, so nothing has
+ * kicked off, no packs exist, and the club leaderboard + "how fans did" tiles
+ * correctly self-hide. An earlier version shifted GW1 into the past to populate
+ * the leaderboard, which dressed the app up as a season already underway.
  * DB is the in-memory stub; standings are fetched from the REAL SportMonks API.
  *
  * Run:  node scripts/halftime/demo-matchweek.mjs   (app on :3404, Ctrl-C to stop)
@@ -86,28 +88,13 @@ await waitFor(`${STUB}/rest/v1/halftime_releases`);
 console.log("fetching live football news…");
 await run(process.execPath, [join(REPO, "scripts", "pl-news-ingest.mjs")], { PL_NEWS_TARGET: STUB });
 
-// ── 2. halftime_releases: GW1 played (past) + GW2/3/4 upcoming (real dates) ──
-const releases = [], packs = [], gw1PackIds = [];
-// club -> the pack for THEIR GW1 fixture. The own-club scoring rule means a fan
-// only scores off their own club's pack, so the seed has to hand each fan the
-// right one; a round-robin would score zero for almost everyone.
-const packByClub = new Map();
-// GW1 → shifted to ~2 days ago, released, with packs (feeds the leaderboard).
-gw1.forEach((fx, i) => {
-  const packId = uuid(); gw1PackIds.push(packId);
-  packByClub.set(fx.home, packId);
-  packByClub.set(fx.away, packId);
-  releases.push({
-    id: uuid(), fixture_id: 700000 + i, season_id: SEASON, round_name: "1",
-    pack_id: packId, home: fx.home, away: fx.away, kickoff_at: iso(-46 * 60 + i * 30),
-    state: "released", released_at: iso(-46 * 60 + 50 + i * 30),
-    base_questions: [], fresh_questions: [], pack_questions: [], fresh_state: "skipped",
-    created_at: iso(-5000), updated_at: iso(-3000),
-  });
-  packs.push({ id: packId, name: `Halftime: ${fx.home} v ${fx.away}`, type: "records", parameter: String(700000 + i), source: "system", status: "published", rotation_active: true, featured: false, question_count: 10, questions: [] });
-});
-// GW2/3/4 → real future kickoffs, scheduled (feeds the upcoming-quiz carousel).
-for (const round of rounds.slice(1, 4)) {
+// ── 2. halftime_releases: the REAL state — every fixture upcoming, none played ─
+// The season starts 21 Aug. Nothing has kicked off, so nothing is released and
+// there are no packs: a pack only exists from its own half-time whistle. An
+// earlier version of this demo shifted GW1 into the past to populate the
+// leaderboard, which made the app look like a season was underway.
+const releases = [];
+for (const round of rounds.slice(0, 4)) {
   for (const fx of byRound.get(round)) {
     releases.push({
       id: uuid(), fixture_id: fx.smId, season_id: SEASON, round_name: round,
@@ -118,45 +105,26 @@ for (const round of rounds.slice(1, 4)) {
   }
 }
 await seed("halftime_releases", releases);
-await seed("quiz_packs", packs);
-console.log(`seeded ${releases.length} real fixtures (GW1 played + GW${rounds.slice(1,4).join("/")} upcoming)`);
+console.log(`seeded ${releases.length} real fixtures — GW${rounds.slice(0,4).join("/")}, all upcoming, none played`);
 
-// ── 3. fans + attempts for GW1 → the leaderboard (real club names) ──────────
-// Fan counts/averages rigged so the AVERAGE rule shows: a small sharp fanbase
-// tops a big casual one; one club below the min-5 bar stays unranked.
+// ── 3. fans — declared clubs only. NO attempts: nothing has been played, so the
+// club-fan leaderboard correctly self-hides (there is no completed gameweek to
+// rank) and so do the "how fans did" tiles. That is the real pre-season state.
 const gw1Clubs = [...new Set(gw1.flatMap((f) => [f.home, f.away]))];
-const RIG = [[8, 9200], [11, 8400], [9, 7900], [42, 6100], [31, 5600], [38, 5400], [17, 5100], [14, 4800], [29, 4500], [26, 4300], [12, 4000], [13, 3800], [7, 3500], [6, 3300], [60, 3100], [5, 2900], [6, 2600], [5, 2300], [5, 2100], [4, 9900]];
-const profiles = [], supporters = [], attempts = [];
-let n = 0;
-gw1Clubs.forEach((club, ci) => {
-  const [fanCount, avg] = RIG[ci % RIG.length];
-  for (let f = 0; f < fanCount; f++) {
+const profiles = [], supporters = [];
+gw1Clubs.forEach((club) => {
+  for (let f = 0; f < 3; f++) {
     const userId = uuid();
     profiles.push({ id: userId, username: `${club.toLowerCase().replace(/\W/g, "")}_fan${f + 1}`, notifications_opt_in: true });
     supporters.push({ user_id: userId, club, season_id: SEASON, created_at: iso(-500) });
-    const jitter = 1 + (((n * 37) % 50) - 25) / 100;
-    attempts.push({ id: uuid(), user_id: userId, pack_id: packByClub.get(club), score: Math.round(avg * jitter), max_score: 12000, correct_count: 7, answers: [], completed_at: iso(-60) });
-    n++;
   }
 });
 await seed("profiles", profiles);
 await seed("club_supporters", supporters);
-await seed("quiz_attempts", attempts);
-console.log(`seeded ${profiles.length} fans + ${attempts.length} GW1 attempts across ${gw1Clubs.length} real clubs`);
+console.log(`seeded ${profiles.length} fans across ${gw1Clubs.length} real clubs (no attempts — nothing played yet)`);
 
-// ── 4. quiz stat-highlight tiles (illustrative until real games run) ────────
-const highlights = {
-  items: [
-    { id: "h1", question: "Which of these clubs has NEVER been relegated from the Premier League?", answer: "Arsenal", correctPct: 71, sampleSize: 1840, fixture: "Arsenal v Coventry City" },
-    { id: "h2", question: "Who was the Premier League's top scorer in the 2025/26 season?", answer: "Erling Haaland", correctPct: 63, sampleSize: 1520, fixture: "Man City v Bournemouth" },
-    { id: "h3", question: "Which club plays its home games at the City Ground?", answer: "Nottingham Forest", correctPct: 38, sampleSize: 1190, fixture: "Nottingham Forest v Leeds" },
-    { id: "h4", question: "How many times have Liverpool won the European Cup / Champions League?", answer: "Six", correctPct: 22, sampleSize: 1360, fixture: "Newcastle v Liverpool" },
-    { id: "h5", question: "Which manager has won the most Premier League titles?", answer: "Pep Guardiola", correctPct: 44, sampleSize: 1610 },
-  ],
-  updatedAt: iso(-30),
-};
-await seed("quiz_highlights", [{ id: 1, doc: highlights, updated_at: iso(-30) }]);
-console.log(`seeded ${highlights.items.length} quiz stat highlights`);
+// ── 4. quiz stat-highlights: NONE. "How fans did" before a ball is kicked would
+// be invented data on a live surface. The tiles self-hide until real answers exist.
 
 // ── 5. boot — DB = stub, but standings hit the REAL SportMonks API ──────────
 start("npx", ["next", "dev", "-p", String(APP_PORT)], {
