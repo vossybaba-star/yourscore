@@ -4,9 +4,15 @@
  * Matchweek — the football super-hub. Three top-level sections (design locked
  * with the founder, 2026-07-15):
  *
- *   PL         → sub-tabs News · Table · Fixtures  (the Premier League week)
+ *   Matchweek  → sub-tabs News · Table · Fixtures  (the Premier League week)
  *   Live Quiz  → halftime quiz packs + "call the second half" · club-fan ranks
- *   Fantasy    → the fantasy hub (placeholder this pass; wired when fantasy merges)
+ *   Fantasy    → the holding screen until the game opens with the season
+ *
+ * The TAB is "PL" (founder, 2026-07-16) — everything in here is the Premier
+ * League: the halftime quizzes are PL fixtures, Fantasy is a PL squad. The first
+ * section keeps the name "Matchweek" rather than "PL", which would have made the
+ * fixture list live at PL → PL. Route stays /matchweek; `section` key stays "pl"
+ * so no URL or state contract moves for a label change.
  *
  * Everything the sections render already self-hides when it's not its moment
  * (the halftime rail off-matchday, the club table with no gameweek), and the PL
@@ -36,7 +42,7 @@ type Section = "pl" | "live" | "fantasy";
 type PlTab = "news" | "table" | "fixtures";
 
 const SECTIONS: { key: Section; label: string }[] = [
-  { key: "pl", label: "PL" },
+  { key: "pl", label: "Matchweek" },
   { key: "live", label: "Live Quiz" },
   { key: "fantasy", label: "Fantasy" },
 ];
@@ -55,11 +61,13 @@ export default function MatchweekPage() {
 
   return (
     <div className="min-h-screen bg-bg" style={{ paddingBottom: 96 }}>
-      {/* Header */}
+      {/* Header — titled for the TAB, not the section. Leaving this as
+          "MATCHWEEK" would have re-created the collision one level down: a page
+          called Matchweek whose first section is also Matchweek. */}
       <div className="max-w-lg mx-auto px-4 pt-8 pb-3">
-        <h1 className="font-display text-3xl text-white leading-none">MATCHWEEK</h1>
+        <h1 className="font-display text-3xl text-white leading-none">PREMIER LEAGUE</h1>
         <p className="font-body text-sm mt-1.5" style={{ color: "#8a948f" }}>
-          The Premier League week · live quizzes · fantasy
+          The week · live quizzes · fantasy
         </p>
       </div>
 
@@ -82,7 +90,7 @@ export default function MatchweekPage() {
         </div>
       </div>
 
-      {/* ── PL ──────────────────────────────────────────────────────────── */}
+      {/* ── Matchweek (section key stays "pl") ──────────────────────────── */}
       {section === "pl" && (
         <>
           <div className="max-w-lg mx-auto px-4 pt-4">

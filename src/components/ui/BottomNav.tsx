@@ -76,10 +76,14 @@ export function BottomNav() {
             <span className="font-body text-xs">Versus</span>
           </Link>
 
-          {/* Matchweek — the flagship live surface, discoverable to guests. */}
+          {/* PL — the flagship live surface, discoverable to guests. The route
+              stays /matchweek; only the label changed (founder, 2026-07-16):
+              everything under it IS the Premier League — halftime quizzes are
+              PL fixtures, Fantasy is a PL squad. "Matchweek" moved down to name
+              the first section. */}
           <Link href="/matchweek" className="flex flex-col items-center gap-1 px-3 py-1 transition-colors" style={{ color: isMatchweek ? "#00d8c0" : "#8a948f" }}>
             <FootballIcon active={isMatchweek} />
-            <span className="font-body text-xs">Matchweek</span>
+            <span className="font-body text-xs">PL</span>
           </Link>
 
           <Link href="/play" className="flex flex-col items-center gap-1 px-3 py-1 transition-colors" style={{ color: isChallenges ? "#00d8c0" : "#8a948f" }}>
@@ -141,10 +145,10 @@ export function BottomNav() {
           <span className="font-body text-xs">Versus</span>
         </Link>
 
-        {/* Matchweek — quizzes at half time + the club-fan leaderboard. */}
+        {/* PL — quizzes at half time + the club-fan leaderboard. */}
         <Link href="/matchweek" className="flex flex-col items-center gap-1 px-2 py-1 transition-colors" style={{ color: isMatchweek ? "#00d8c0" : "#8a948f" }}>
           <FootballIcon active={isMatchweek} />
-          <span className="font-body text-xs">Matchweek</span>
+          <span className="font-body text-xs">PL</span>
         </Link>
 
         {/* Quiz */}
