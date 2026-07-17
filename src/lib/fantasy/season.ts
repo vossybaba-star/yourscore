@@ -33,7 +33,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { accrueChip, halfOf, scoreEntry, type Chip, type LockedSelection, type SquadPick } from "./engine";
 import { aggregateFixtures, fetchGwFixtures, toPlayerScores } from "./ingest";
-import { enginePool } from "./pool";
+import { enginePool, gwPrices } from "./pool";
 import { SCORING_VERSION, ZERO_FACTS, type MatchFacts } from "./values";
 
 // Same loose client type server.ts uses — the generated row types model jsonb as
@@ -126,6 +126,44 @@ async function issueWildcards(db: Db, half: 1 | 2): Promise<void> {
       .update({ wildcards: live + grant, wildcard_half: half, issued_half: half })
       .eq("user_id", s.user_id);
   }
+}
+
+// ── prices: FPL → fantasy_player_prices, once at gameweek open ───────────────
+/**
+ * Snapshot this gameweek's prices from FPL and freeze them for the week.
+ *
+ * Taken ONCE, at gameweek open: your transfer on Saturday costs what it cost on
+ * Tuesday. That is the design — keep FPL's price economy, delete its nightly
+ * price-watching chore. Idempotent: a gameweek that already has prices is left
+ * alone, so prices can never shift under a manager mid-week.
+ *
+ * FPL's `now_cost` is already in tenths, which is our internal unit — no
+ * conversion, so no rounding drift between their prices and ours.
+ */
+export async function ensurePrices(db: Db, gw: SeasonGw): Promise<{ priced: number; source: "existing" | "fpl" }> {
+  const existing = await gwPrices(db, gw.gw);
+  if (existing.size) return { priced: existing.size, source: "existing" };
+
+  const res = await fetch("https://fantasy.premierleague.com/api/bootstrap-static/");
+  if (!res.ok) throw new Error(`FPL bootstrap ${res.status}`);
+  const boot = (await res.json()) as { elements?: { id: number; now_cost: number }[] };
+  if (!boot.elements?.length) throw new Error("FPL bootstrap returned no players");
+
+  // Only players in our pool — FPL carries the whole league, we carry a filtered
+  // pool with SportMonks ids baked in.
+  const ours = new Set(enginePool().map((p) => p.id));
+  const rows = boot.elements
+    .filter((e) => ours.has(e.id) && Number.isInteger(e.now_cost) && e.now_cost > 0)
+    .map((e) => ({ gw: gw.gw, player_id: e.id, price_tenths: e.now_cost, updated_at: new Date().toISOString() }));
+
+  // A thin fetch is worse than none: writing a partial snapshot would price the
+  // missing half of the league at its seed and quietly corrupt a week of transfers.
+  if (rows.length < ours.size * 0.9)
+    throw new Error(`FPL priced only ${rows.length}/${ours.size} of the pool — holding`);
+
+  const { error } = await db.from("fantasy_player_prices").upsert(rows, { onConflict: "gw,player_id" });
+  if (error) throw new Error(`price snapshot: ${error.message}`);
+  return { priced: rows.length, source: "fpl" };
 }
 
 // ── ingest: SportMonks → fantasy_player_scores ───────────────────────────────
@@ -276,7 +314,7 @@ export async function finaliseGameweek(db: Db, gw: SeasonGw): Promise<{ finalise
 // ── the tick ─────────────────────────────────────────────────────────────────
 export interface TickReport {
   gw: number;
-  action: "locked" | "provisional" | "scored" | "finalised" | "held" | "waiting";
+  action: "locked" | "provisional" | "scored" | "finalised" | "held" | "waiting" | "priced";
   detail: string;
 }
 
@@ -299,8 +337,18 @@ export async function tickSeason(db: Db, now = Date.now()): Promise<TickReport[]
     if (gw.status === "final") continue;
     if (!gw.deadline) { out.push({ gw: gw.gw, action: "held", detail: "no deadline set" }); continue; }
     if (now < ms(gw.deadline)) {
+      // Still open. The one thing an open gameweek needs is its prices — taken
+      // once, at open, then frozen for the week. A failure here must NOT stop the
+      // season: last week's prices standing for another week is survivable, a
+      // stalled tick is not.
+      try {
+        const p = await ensurePrices(db, gw);
+        if (p.source === "fpl") out.push({ gw: gw.gw, action: "priced", detail: `${p.priced} players priced from FPL` });
+      } catch (e) {
+        out.push({ gw: gw.gw, action: "held", detail: `price snapshot failed, will retry: ${(e as Error).message}` });
+      }
       out.push({ gw: gw.gw, action: "waiting", detail: `deadline ${gw.deadline}` });
-      continue; // still open — nothing to do, and nothing may touch it
+      continue; // nothing else may touch an open gameweek
     }
 
     // 1. The deadline has passed and it's still open → lock. DB-only, so a dead

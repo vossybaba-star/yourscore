@@ -17,7 +17,7 @@ import {
 } from "./engine";
 import { aggregateFixtures, fetchGwFixtures, toPlayerScores } from "./ingest";
 import { SCORING_VERSION, ZERO_FACTS, type MatchFacts } from "./values";
-import { enginePool, fantasyPool } from "./pool";
+import { enginePool, fantasyPool, pricedPool } from "./pool";
 import { isOpenForEdits, type GwRow } from "./gameweeks";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -174,10 +174,11 @@ export async function createSquad(db: Db, userId: string, body: {
     throw new HttpError(409, "your season has started — change your team with transfers, not a rebuild", "started");
 
   let squad: Squad;
-  try { squad = validateSquad(body.pickIds, enginePool()); } catch (e) { asHttp(e); throw e; }
+  const priced = await pricedPool(db, gw.gw);
+  try { squad = validateSquad(body.pickIds, priced); } catch (e) { asHttp(e); throw e; }
   const sel = body.xi && body.bench && body.captain && body.vice
     ? (() => { try { return validateSelection(squad, body.xi!, body.bench!, body.captain!, body.vice!); } catch (e) { asHttp(e); throw e; } })()
-    : smartDefaults(squad, enginePool());
+    : smartDefaults(squad, priced);
 
   const row = {
     user_id: userId, picks: squad.picks, bank_tenths: squad.bankTenths,
@@ -396,7 +397,8 @@ export async function applyTransferTx(db: Db, userId: string, outId: number, inI
   if (!isOpenForEdits(gw, entry)) throw new HttpError(409, "gameweek is locked", "locked");
 
   let next: Squad;
-  try { next = applyTransfer(squadShape(squad), outId, inId, enginePool()); } catch (e) { asHttp(e); throw e; }
+  const priced = await pricedPool(db, gw.gw);
+  try { next = applyTransfer(squadShape(squad), outId, inId, priced); } catch (e) { asHttp(e); throw e; }
   // A wildcard week's transfers are free — unlimited moves, not unlimited money;
   // budget and the club cap above still hold.
   const { paid } = transferCost(squad.credits, entry.chip === "wildcard");
