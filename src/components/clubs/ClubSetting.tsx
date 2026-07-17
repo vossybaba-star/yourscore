@@ -22,6 +22,8 @@
 import { useState } from "react";
 import { useClubMe } from "./useClubData";
 import { Crest } from "./Crest";
+import { ClubGrid } from "./ClubGrid";
+import { shortClubName } from "@/lib/clubs/display";
 
 const TEAL = "#00d8c0";
 
@@ -72,7 +74,7 @@ export function ClubSetting() {
             </div>
             <div className="px-5 py-3" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
               <p className="font-body text-xs" style={{ color: "#586058" }}>
-                Locked until the end of the season — your halftime scores count for {data.club}.
+                Locked until the end of the season — your scores represent {shortClubName(data.club)}.
               </p>
             </div>
           </>
@@ -87,30 +89,10 @@ export function ClubSetting() {
           <div className="px-5 py-4">
             <p className="font-body text-sm text-white mb-1">Pick your club</p>
             <p className="font-body text-xs mb-3.5" style={{ color: "#8a948f" }}>
-              Your halftime scores count for them. You can only choose once this season.
+              Your scores represent them all season.
             </p>
 
-            <div className="flex flex-wrap gap-1.5">
-              {data.clubs.map((c) => {
-                const on = pending === c;
-                return (
-                  <button
-                    key={c}
-                    onClick={() => setPending(c)}
-                    disabled={submitting}
-                    className="flex items-center gap-1.5 rounded-full px-2.5 py-1.5 transition-colors"
-                    style={{
-                      background: on ? "rgba(0,216,192,0.14)" : "rgba(255,255,255,0.04)",
-                      border: `1px solid ${on ? TEAL : "rgba(255,255,255,0.08)"}`,
-                      color: on ? TEAL : "#8a948f",
-                    }}
-                  >
-                    <Crest name={c} size={16} />
-                    <span className="font-body text-[11px]">{c}</span>
-                  </button>
-                );
-              })}
-            </div>
+            <ClubGrid clubs={data.clubs} selected={pending} onSelect={setPending} disabled={submitting} />
 
             {pending && (
               <button
@@ -119,7 +101,7 @@ export function ClubSetting() {
                 className="w-full mt-4 rounded-xl py-2.5 font-display text-sm tracking-wide"
                 style={{ background: TEAL, color: "#062018", opacity: submitting ? 0.6 : 1 }}
               >
-                {submitting ? "Saving…" : `Represent ${pending}`}
+                {submitting ? "Saving…" : `Represent ${shortClubName(pending)}`}
               </button>
             )}
             {error && (

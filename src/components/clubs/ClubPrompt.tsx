@@ -27,7 +27,8 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useClubMe } from "./useClubData";
-import { Crest } from "./Crest";
+import { ClubGrid } from "./ClubGrid";
+import { shortClubName } from "@/lib/clubs/display";
 
 const SKIP_KEY = "ys:club-prompt:skipped"; // session-scoped: re-nudges next visit
 const TEAL = "#00d8c0";
@@ -117,33 +118,13 @@ export function ClubPrompt() {
             Pick your club.
           </p>
           <p className="font-body text-sm mt-2" style={{ color: "#8a948f" }}>
-            Your halftime scores count for them on the fan leaderboard. One club, all season — so choose the one you actually shout for.
+            Your scores represent them all season.
           </p>
         </div>
 
-        {/* The 20. Suggestion pre-selected when we have one. */}
-        <div className="px-5 pb-4 max-h-[38vh] overflow-y-auto no-scrollbar">
-          <div className="flex flex-wrap gap-1.5">
-            {clubs.map((c) => {
-              const on = choice === c;
-              return (
-                <button
-                  key={c}
-                  onClick={() => setChoice(c)}
-                  disabled={saving}
-                  className="flex items-center gap-1.5 rounded-full px-2.5 py-1.5 transition-colors"
-                  style={{
-                    background: on ? "rgba(0,216,192,0.16)" : "rgba(255,255,255,0.04)",
-                    border: `1px solid ${on ? TEAL : "rgba(255,255,255,0.08)"}`,
-                    color: on ? TEAL : "#8a948f",
-                  }}
-                >
-                  <Crest name={c} size={16} />
-                  <span className="font-body text-[11px] whitespace-nowrap">{c}</span>
-                </button>
-              );
-            })}
-          </div>
+        {/* The 20, as a game-style grid. Suggestion pre-selected when we have one. */}
+        <div className="px-5 pb-4 max-h-[46vh] overflow-y-auto no-scrollbar">
+          <ClubGrid clubs={clubs} selected={choice} onSelect={setChoice} disabled={saving} />
         </div>
 
         <div className="px-5 pb-5">
@@ -153,7 +134,7 @@ export function ClubPrompt() {
             className="w-full rounded-xl py-3 font-display text-sm tracking-wide transition-opacity"
             style={{ background: TEAL, color: "#062018", opacity: !choice || saving ? 0.5 : 1 }}
           >
-            {saving ? "Saving…" : choice ? `Represent ${choice}` : "Pick a club"}
+            {saving ? "Saving…" : choice ? `Represent ${shortClubName(choice)}` : "Pick a club"}
           </button>
           {error && <p className="font-body text-xs mt-2 text-center" style={{ color: "#e0a34a" }}>{error}</p>}
           <button onClick={skip} className="w-full mt-2.5 py-2 font-body text-xs" style={{ color: "#586058" }}>
