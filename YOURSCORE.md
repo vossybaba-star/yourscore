@@ -304,6 +304,11 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-18** — **38-0 competition tabs cleaned up (founder)** — same treatment as
+  the quiz filters: the emoji pill-box (🏆 WC Mastermind / ⚽ Premier League / 🇪🇸 La
+  Liga / Leaderboard ✓) is now clean underline text tabs, no emoji or badges, each
+  competition keeping its accent as the underline. The secondary action pills (Live
+  H2H / My Teams / H2H Ladder) are links, not filters — unchanged.
 - **2026-07-18** — **No back buttons on game sections (founder)** — games are tabs, so
   the switcher is the navigation: removed the 38-0 hub's "YourScore" BackPill and the
   three game intros' Back buttons; results CTAs relabelled "MORE GAMES" (the games
