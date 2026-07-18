@@ -307,6 +307,16 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-18** — **Perfect 10: official result card + spoiler-safe X share + back to
+  the picker (founder)** — the results screen is now a proper scorecard (topic title,
+  PERFECT 10 / TOWER FALLS verdict, big points, n/10 named, then the tower) with the
+  house "SHARE YOUR SCORECARD / Post it on 𝕏" CTA (guests included — their link points
+  at the game mode; signed-in posts carry the challenge link). **The share text names
+  only ~50% of the player's found answers** (every other one, spread down the tower;
+  the rest stay `•••` and missed rungs are NEVER revealed) so posting can't give the
+  list away — same text for X, native share and copy. New "PICK ANOTHER GAME MODE →"
+  button returns to the intro's Game-modes picker (whose primary button reads "SEE MY
+  RESULT" once that mode is done, since finished modes can't be replayed).
 - **2026-07-18** — **Versus instant match: real opponents before "CPU" + matched-lobby
   cleanup (founder: matching with "CPU" after Find an opponent "is not what should be
   happening")** — the quiz bot fallback now EXHAUSTS shadows before the literal CPU:

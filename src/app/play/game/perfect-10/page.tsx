@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { smartBackTarget } from "@/lib/nav";
 import { haptic } from "@/lib/haptics";
+import { trackShare } from "@/lib/analytics/trackGame";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { Button } from "@/components/ui/Button";
 import { useHideGamesNav } from "@/lib/gamesNav";
@@ -642,19 +643,55 @@ export default function Perfect10Page() {
       ? `${window.location.origin}/play/game/perfect-10?c=${shareToken}`
       : null;
 
+  // The link a share should open: the challenge link when the player has one
+  // (signed-in), otherwise the game mode itself — guests can still post.
+  const shareTarget =
+    shareUrl ??
+    (typeof window !== "undefined"
+      ? `${window.location.origin}/play/game/perfect-10${list ? `?list=${list.listId}` : ""}`
+      : "https://yourscore.app/play/game/perfect-10");
+
+  // Share text teases the tower without giving the list away (founder: name
+  // only ~50% of the answers). Every OTHER found answer is named — half,
+  // spread down the tower — and everything else stays masked. Missed rungs
+  // are never revealed: the player didn't earn those, and naming them would
+  // spoil the whole list for whoever sees the post.
+  function buildShareText(): string {
+    if (!list) return "";
+    const namedRanks = new Set(game.found.filter((_, i) => i % 2 === 0).map((f) => f.rank));
+    const lines = list.rungs
+      .map((r) => {
+        const f = solvedByRank.get(r.rank);
+        return `${r.rank} ${f && namedRanks.has(r.rank) ? f.surname.toUpperCase() : "•••"}`;
+      })
+      .join("\n");
+    const won = game.found.length >= TOTAL_RUNGS;
+    const headline = won ? "PERFECT 10 🏆" : `${game.found.length}/10`;
+    return `Perfect 10 — ${list.title} ⚽\n${headline} · ${game.score} pts\n\n${lines}\n\nCan you name them all? @yourscore_app_`;
+  }
+
+  function shareOnX() {
+    trackShare("perfect-10-x");
+    window.open(
+      `https://twitter.com/intent/tweet?text=${encodeURIComponent(buildShareText())}&url=${encodeURIComponent(shareTarget)}`,
+      "_blank",
+      "noopener"
+    );
+  }
+
   async function handleShare() {
-    if (!shareUrl) return;
-    const text = `Perfect 10 on YourScore — ${game.found.length}/10, ${game.score} pts`;
+    trackShare("perfect-10");
+    const text = buildShareText();
     try {
       if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
-        await navigator.share({ text, url: shareUrl });
+        await navigator.share({ text, url: shareTarget });
         return;
       }
     } catch {
       /* fall through to copy */
     }
     try {
-      await navigator.clipboard.writeText(`${text} ${shareUrl}`);
+      await navigator.clipboard.writeText(`${text} ${shareTarget}`);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
@@ -736,8 +773,17 @@ export default function Perfect10Page() {
             </p>
           )}
 
-          <Button variant="primary" tone="gold" size="lg" fullWidth onClick={() => setPhase("playing")} disabled={!list}>
-            START
+          {/* A finished mode can't be replayed — the picker below is the way
+              on; the primary button just goes back to the result card. */}
+          <Button
+            variant="primary"
+            tone="gold"
+            size="lg"
+            fullWidth
+            onClick={() => setPhase(game.done ? "results" : "playing")}
+            disabled={!list}
+          >
+            {game.done ? "SEE MY RESULT" : "START"}
           </Button>
 
           {/* Every list is a game mode (founder 2026-07-18 — "forget this daily
@@ -979,22 +1025,35 @@ export default function Perfect10Page() {
 
     return (
       <div className="min-h-screen bg-bg" style={{ paddingBottom: "calc(72px + env(safe-area-inset-bottom, 0px))" }}>
+        {/* Official result card: topic, verdict, the points — then the tower. */}
         <div
           className="relative flex flex-col items-center pt-16 pb-8 px-6"
           style={{ background: `linear-gradient(175deg, ${won ? ACCENT : "#ff4757"}14 0%, #16130a 60%, #0a0a0f 100%)` }}
         >
+          <p className="font-body text-[11px] font-bold uppercase tracking-[0.32em] mb-2" style={{ color: won ? ACCENT : "#ff6b78" }}>
+            Perfect 10 — Result
+          </p>
+          <p className="font-display text-xl text-white text-center leading-tight mb-4" style={{ maxWidth: 320 }}>
+            {list.title}
+          </p>
           <div
-            className="flex items-center gap-2 px-5 py-2.5 rounded-full mb-4"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-full mb-3"
             style={{
               background: won ? `${ACCENT}18` : "rgba(255,71,87,0.12)",
               border: `1px solid ${won ? ACCENT : "#ff4757"}50`,
             }}
           >
             <span className="font-display text-base tracking-wide" style={{ color: won ? ACCENT : "#ff4757" }}>
-              {won ? `PERFECT 10 — ${game.score} PTS` : "TOWER FALLS"}
+              {won ? "PERFECT 10" : "TOWER FALLS"}
             </span>
           </div>
-          {!won && <p className="font-body text-sm mb-2" style={{ color: "#9aa39d" }}>{game.score.toLocaleString()} pts</p>}
+          <p className="font-display text-5xl leading-none" style={{ color: won ? ACCENT : "#ffe082" }}>
+            {game.score.toLocaleString()}
+            <span className="font-display text-xl"> PTS</span>
+          </p>
+          <p className="font-body text-xs mt-2 mb-1" style={{ color: "#9aa39d" }}>
+            {game.found.length}/10 named
+          </p>
 
           <div className="w-full max-w-sm flex flex-col gap-1.5 mt-2">
             {allEntries.map((e) => (
@@ -1033,29 +1092,45 @@ export default function Perfect10Page() {
         </div>
 
         <div className="max-w-lg mx-auto px-5 flex flex-col gap-3 mt-5">
+          {/* Share on X — house scorecard CTA. The tweet names only ~50% of the
+              player's answers (buildShareText), so posting never spoils the list. */}
+          <button
+            type="button"
+            onClick={shareOnX}
+            className="w-full rounded-2xl overflow-hidden active:scale-[0.98] transition-transform"
+            style={{ background: "linear-gradient(135deg, #1c1400, #221900)", border: "2px solid rgba(255,196,0,0.55)" }}
+          >
+            <div className="flex items-center gap-4 px-5 py-4">
+              <div style={{ fontSize: 36, lineHeight: 1 }}>📣</div>
+              <div className="text-left flex-1 min-w-0">
+                <div className="font-display tracking-wide" style={{ fontSize: 20, color: ACCENT }}>SHARE YOUR SCORECARD</div>
+                <div className="font-body" style={{ fontSize: 13, color: "#a89060" }}>Post it on 𝕏 →</div>
+              </div>
+            </div>
+          </button>
+
+          <Button variant="primary" tone="gold" size="lg" fullWidth onClick={handleShare}>
+            {copied ? "COPIED ✓" : "SHARE"}
+          </Button>
+
           {!isGuest && shareUrl && (
-            <>
-              <Button variant="primary" tone="gold" size="lg" fullWidth onClick={handleShare}>
-                {copied ? "COPIED ✓" : "SHARE"}
-              </Button>
-              <Button
-                variant="ghost"
-                tone="gold"
-                size="lg"
-                fullWidth
-                onClick={async () => {
-                  try {
-                    await navigator.clipboard.writeText(shareUrl);
-                    setCopied(true);
-                    setTimeout(() => setCopied(false), 2000);
-                  } catch {
-                    /* ignore */
-                  }
-                }}
-              >
-                CHALLENGE A FRIEND
-              </Button>
-            </>
+            <Button
+              variant="ghost"
+              tone="gold"
+              size="lg"
+              fullWidth
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(shareUrl);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                } catch {
+                  /* ignore */
+                }
+              }}
+            >
+              CHALLENGE A FRIEND
+            </Button>
           )}
 
           {isGuest && (
@@ -1070,6 +1145,19 @@ export default function Perfect10Page() {
             </div>
           )}
 
+          {/* Straight back to the picker — the next game mode is one tap away. */}
+          <Button
+            variant="ghost"
+            tone="gold"
+            size="lg"
+            fullWidth
+            onClick={() => {
+              window.scrollTo(0, 0);
+              setPhase("intro");
+            }}
+          >
+            PICK ANOTHER GAME MODE →
+          </Button>
           <Button variant="ghost" tone="gold" size="lg" fullWidth onClick={() => router.push("/play")}>
             MORE GAMES
           </Button>
