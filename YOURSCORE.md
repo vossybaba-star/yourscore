@@ -6,7 +6,9 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-07-16 (**Perfect 10 — new standalone list game SHIPPED to prod.**
+> **Confirmed:** 2026-07-18 (**Nav: 38-0 now lives under the Play tab** — Quiz | 38-0
+> game switcher on both hubs, see §9 + Recently Shipped. Prior confirm 2026-07-16:
+> **Perfect 10 — new standalone list game SHIPPED to prod.**
 > Third Quiz game-type ("name everyone in a ranked top-10 football list", e.g. all-time
 > PL top scorers): tapering "floodlit tower" of 10 rungs (#1 narrowest at the top) that
 > ignite gold as solved; free-text input with autocomplete chips (tap chip = submit, NO
@@ -34,7 +36,7 @@
 > a list drops daily, the back-catalogue stays playable) — `library` API action +
 > "Previous days" on the intro with PLAY / n-of-10 / score badges; `?list=` replays any
 > served list; drafts/future days unreachable (`isServed` gates state/guess/hint).
-> **TIES ARE THE #1 GATE KILLER — and the unlock is a single-source anchor (Jul 17).** The verifier needs a source confirming an EXACT rank; most football top-10s are tie-bunched so none exists. 2026 WC top scorers DROPPED (Messi 8 = Mbappé 8, Kane 6 = Bellingham 6, Dembélé 5 = Oyarzabal 5, four players on 4) — **the final will not fix this, ties only grow.** Note **ties don't affect gameplay** (players type names; the rank is never needed) — the order only has to be defensible for display. Fix: anchor titles to ONE canonical source with published tiebreakers (FIFA Golden Boot = goals → assists → fewer minutes; Transfermarkt for fees) and verify against that source only. NOT built — needs founder sign-off. **TOPIC SHAPES THAT CANNOT SHIP (Jul 16–17):** (a) **fee-ranked lists** — all four transfer topics (most expensive PL / all-time / biggest PL sales / summer-2026 window) were DROPPED because no canonical ranking exists (Wirtz #7/#3/#2, Coutinho #4/#3/#11 across sources); shipping transfers needs the title anchored to ONE named source ("per Transfermarkt") + a gate change — NOT built. (b) **shared awards** — "last 10 PL Golden Boot winners" was factually CONFIRMED but 3/10 seasons were shared, giving untypeable rungs ("Salah, Mané & Aubameyang") → status='unplayable-shared-award', never released. **LIVE Jul 17: Last 10 Ballon d'Or Winners** (Messi ×4 / Ronaldo ×2 — double-winner grading verified on prod). **RECALL WINDOW = the topic test (Jul 16, proven live):** the "last 10 WC Golden Boot winners" list was VETOED by the founder (40-year window) and the data agreed — 3 real players all scored 0 pts, 0/10 found. Pulled to status='vetoed'; the WC captains/Golden Ball lists were pulled to draft unreleased. A verifiable list is NOT a playable list — a casual fan must land 5–7. Topic titles get founder approval as TEXT BEFORE any generation spend. **Content live:** Jul 13–15 = PL library seeds (25/26 scorers · appearance makers ·
+> **SINGLE-SOURCE ANCHOR SHIPPED (Jul 17) — the tie problem is SOLVED.** `generate-lists.mjs --anchor "<source + its tiebreak rules>"` switches the verifier from "find an article printing this exact numbering" (impossible for tied stats) to "verify the player's stat value per this source, and that the rank is defensible under its published tiebreakers" — stricter on FACTS, looser on editorial order. Rationale: **a tie never reaches the player** (they type names; the rank is display only). First run took the 2026 WC list from 0/10 to 7/10 confirmed, resolving Messi/Mbappé 8-8 (assists), Kane/Bellingham 6-6 (minutes) and Dembélé/Oyarzabal 5-5 (assists). Also withdrew `/tenable` (an earlier prototype under a name that is another party's registered trademark for this exact format) — 301s to Perfect 10; the LukePingu partner page now points at Perfect 10. **TIES WERE THE #1 GATE KILLER — and the unlock is a single-source anchor (Jul 17).** The verifier needs a source confirming an EXACT rank; most football top-10s are tie-bunched so none exists. 2026 WC top scorers DROPPED (Messi 8 = Mbappé 8, Kane 6 = Bellingham 6, Dembélé 5 = Oyarzabal 5, four players on 4) — **the final will not fix this, ties only grow.** Note **ties don't affect gameplay** (players type names; the rank is never needed) — the order only has to be defensible for display. Fix: anchor titles to ONE canonical source with published tiebreakers (FIFA Golden Boot = goals → assists → fewer minutes; Transfermarkt for fees) and verify against that source only. NOT built — needs founder sign-off. **TOPIC SHAPES THAT CANNOT SHIP (Jul 16–17):** (a) **fee-ranked lists** — all four transfer topics (most expensive PL / all-time / biggest PL sales / summer-2026 window) were DROPPED because no canonical ranking exists (Wirtz #7/#3/#2, Coutinho #4/#3/#11 across sources); shipping transfers needs the title anchored to ONE named source ("per Transfermarkt") + a gate change — NOT built. (b) **shared awards** — "last 10 PL Golden Boot winners" was factually CONFIRMED but 3/10 seasons were shared, giving untypeable rungs ("Salah, Mané & Aubameyang") → status='unplayable-shared-award', never released. **LIVE Jul 17: Last 10 Ballon d'Or Winners** (Messi ×4 / Ronaldo ×2 — double-winner grading verified on prod). **RECALL WINDOW = the topic test (Jul 16, proven live):** the "last 10 WC Golden Boot winners" list was VETOED by the founder (40-year window) and the data agreed — 3 real players all scored 0 pts, 0/10 found. Pulled to status='vetoed'; the WC captains/Golden Ball lists were pulled to draft unreleased. A verifiable list is NOT a playable list — a casual fan must land 5–7. Topic titles get founder approval as TEXT BEFORE any generation spend. **Content live:** Jul 13–15 = PL library seeds (25/26 scorers · appearance makers ·
 > all-time scorers), Jul 16 = last 10 WC Golden Boot winners (Salenko added as an
 > accepted answer on the shared-1994 rung), Jul 17 = last 10 WC-winning captains —
 > founder wants WC-themed dailies while WC 2026 runs; Jul 18 = last 10 WC Golden Ball winners (Messi twice → the DOUBLE-WINNER fix same eve: solved names stay suggestible, grading skips to the next unsolved rung, all-solved returns alreadyFound with NO strike). Gate lessons (all drops were
@@ -44,9 +46,9 @@
 > daily automation yet — someone must generate + assign `day` rows (founder decision
 > pending on a cron). NOTE: `scripts/lib/anthropic.mjs` got its first git commit on this
 > branch (was untracked WIP from the quiz-factory session) — reconcile if the factory
-> branch commits its own copy. Nav decision PENDING with founder: an "all games under
-> one Play tab incl. 38-0" restructure was floated 2026-07-16 — NOT built; §9 canon and
-> the §12 "Play label retired" entry stand until he rules.)
+> branch commits its own copy. Nav decision RULED 2026-07-18: founder ordered "all
+> games under one Play tab incl. 38-0" — SHIPPED same day (see §9 Navigation Canon +
+> Recently Shipped).)
 >
 > **Previously confirmed:** 2026-07-13 (**Product-audit fix batches A–C verified + merged with main** —
 > see Recently Shipped; audit docs at `docs/AUDIT-2026-07-11-*.md`. Verification was live:
@@ -302,6 +304,11 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-18** — **38-0 moved under the Play tab (founder ruling)** — the Play tab now
+  holds both games via a top **Quiz | 38-0 game switcher** (`GameSwitcher` component) on
+  both hubs (`/play`, `/38-0`); routes frozen, switcher navigates. Bottom nav unchanged
+  otherwise (Home · Play · Versus · Premier League · Profile); Play highlights on
+  `/38-0`. §9 Navigation Canon updated to current truth.
 - **2026-07-16** — **Perfect 10 SHIPPED** — third Quiz game-type: name everyone in a ranked
   top-10 list. Floodlit-tower UI at `/play/game/perfect-10`, daily list (Europe/London),
   hints/strikes, async challenge links, all-PL-history typeahead (4,669 names). Server-only
@@ -695,9 +702,16 @@ carry `List-Unsubscribe` + `List-Unsubscribe-Post` (RFC 8058 one-click) headers.
 
 ## 9. Navigation Canon
 
-**Bottom nav (signed-in, 5 tabs):** **Home · Versus · Quiz · 38-0 · Profile.**
-- **Home** (`/`) · **Versus** (`/versus`) · **Quiz** (`/play`; sub-tabs Solo + Multiplayer)
-  · **38-0** (`/38-0`; its own sub-nav: Live · Board · Leagues · Teams) · **Profile**.
+**Bottom nav (signed-in, 5 tabs, founder order 2026-07-16):** **Home · Play · Versus ·
+Premier League · Profile.**
+- **Home** (`/`) · **Play** (`/play`) · **Versus** (`/versus`) · **Premier League**
+  (`/matchweek`) · **Profile**.
+- **Play is the games tab (founder ruling 2026-07-18):** both games live under it via a
+  top **Quiz | 38-0 game switcher** (`GameSwitcher`) rendered on both hubs. Quiz =
+  `/play` (sub-tabs Solo + Leaderboards); 38-0 = `/38-0` (its own sub-nav: WC
+  Mastermind · Premier League · La Liga · Leaderboard). Routes are frozen — the
+  switcher navigates between them; the Play tab stays highlighted on `/38-0`. 38-0 is
+  no longer a bottom-nav tab.
 - **Versus** is the game-first cross-game hub for playing other people (the Leagues tab
   was replaced by it). Sub-nav: **Play** · **Friends** (`/friends`) · **Leagues**
   (`/leagues`, nested). The pending-turns badge lives on this tab. (The Leagues route
