@@ -304,6 +304,13 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-18** — **Perfect 10, Higher or Lower, Guess the Player are separate games
+  (founder ruling)** — the GameSwitcher is now five games (Quiz | 38-0 | Perfect 10 |
+  Higher or Lower | Guess the Player), each with its own section; the switcher renders
+  on each game's intro as its section header (never over gameplay), scrolls and
+  auto-centres the active tab. The GAME TYPES tile block was removed from the Quiz
+  hub. Higher or Lower recoloured to orange #ff7800, Guess the Player to blue #4fc3f7
+  (own identities — they'd been borrowing Quiz teal / 38-0 lime). §9 updated.
 - **2026-07-18** — **Perfect 10: intro/results scroll snap-back fixed** — the Jul-17
   "pin the board" fix registered its `window.scrollTo(0,0)` pin for the page's whole
   life, but mobile URL-bar collapse fires `resize` MID-SCROLL, so scrolling the intro
@@ -720,12 +727,19 @@ carry `List-Unsubscribe` + `List-Unsubscribe-Post` (RFC 8058 one-click) headers.
 Premier League · Profile.**
 - **Home** (`/`) · **Play** (`/play`) · **Versus** (`/versus`) · **Premier League**
   (`/matchweek`) · **Profile**.
-- **Play is the games tab (founder ruling 2026-07-18):** both games live under it via a
-  top **Quiz | 38-0 game switcher** (`GameSwitcher`) rendered on both hubs. Quiz =
+- **Play is the games tab (founder ruling 2026-07-18):** every game lives under it via a
+  top **Quiz | 38-0 | Perfect 10 | Higher or Lower | Guess the Player game switcher**
+  (`GameSwitcher`) — five separate games, each its own section (second founder ruling
+  same day: the three list/stat games are NOT tiles inside the Quiz hub anymore). Quiz =
   `/play` (sub-tabs Solo + Leaderboards); 38-0 = `/38-0` (its own sub-nav: WC
-  Mastermind · Premier League · La Liga · Leaderboard). Routes are frozen — the
-  switcher navigates between them; the Play tab stays highlighted on `/38-0`. 38-0 is
-  no longer a bottom-nav tab.
+  Mastermind · Premier League · La Liga · Leaderboard); Perfect 10 =
+  `/play/game/perfect-10` (gold #ffc400); Higher or Lower = `/play/game/higher-lower`
+  (orange #ff7800); Guess the Player = `/play/game/guess-the-player` (blue #4fc3f7 —
+  the last two were recoloured from Quiz teal / 38-0 lime when they became their own
+  sections). Routes are frozen — the switcher navigates between them, renders on the
+  two hubs and on each game's intro screen (never over gameplay), scrolls
+  horizontally and auto-centres the active tab; the Play tab stays highlighted on all
+  of them. 38-0 is no longer a bottom-nav tab.
 - **Versus** is the game-first cross-game hub for playing other people (the Leagues tab
   was replaced by it). Sub-nav: **Play** · **Friends** (`/friends`) · **Leagues**
   (`/leagues`, nested). The pending-turns badge lives on this tab. (The Leagues route

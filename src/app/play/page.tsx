@@ -373,40 +373,6 @@ function OpenRoomCard({ room, onJoin }: { room: OpenRoom; onJoin: () => void }) 
   );
 }
 
-// ── GameTypeTile ────────────────────────────────────────────────────────────
-// Standalone "game types" (Higher or Lower, Guess the Player) that sit alongside
-// the packs in the picker. They play at /play/game/[type] off the SportMonks pool.
-
-const GAME_TYPE_TILES = [
-  { type: "higher-lower", title: "Higher or Lower", tag: "Two players, one stat", accent: "#00d8c0" },
-  { type: "guess-the-player", title: "Guess the Player", tag: "Name the mystery player", accent: "#aeea00" },
-  { type: "perfect-10", title: "Perfect 10", tag: "Name the whole top ten", accent: "#ffc400" },
-] as const;
-
-function GameTypeTile({ tile }: { tile: (typeof GAME_TYPE_TILES)[number] }) {
-  return (
-    <Link
-      href={`/play/game/${tile.type}`}
-      className="block rounded-2xl overflow-hidden transition-all duration-150 active:scale-[0.97]"
-      style={{ background: "linear-gradient(150deg, #0e1611 0%, #15211a 100%)", border: `1px solid ${tile.accent}30` }}
-    >
-      <div className="relative">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={`/game-covers/${tile.type}.webp`} alt={tile.title} loading="eager" decoding="async"
-          className="block w-full h-auto" />
-        <span className="absolute bottom-2 right-2 font-display text-xs px-2 py-0.5 rounded-lg"
-          style={{ background: "rgba(0,0,0,0.55)", color: tile.accent, border: `1px solid ${tile.accent}40` }}>
-          PLAY →
-        </span>
-      </div>
-      <div className="px-3.5 py-3">
-        <p className="font-body text-sm font-bold text-white leading-snug">{tile.title}</p>
-        <p className="font-body text-xs mt-0.5" style={{ color: "#8a948f" }}>{tile.tag}</p>
-      </div>
-    </Link>
-  );
-}
-
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 type MainTab = "solo" | "multiplayer" | "leaderboards";
@@ -816,21 +782,9 @@ function PlayPageInner() {
         <>
           {/* Halftime packs and the club-fan leaderboard moved to their own
               Matchweek tab (fixture-synced, live). /play stays the evergreen
-              quiz surface. */}
-
-          {/* Game types — quick-play formats off the SportMonks player data */}
-          <div className="max-w-lg mx-auto px-4 pt-4">
-            <div className="flex items-center gap-2 mb-2.5">
-              <span className="font-display text-xs tracking-widest" style={{ color: "#586058" }}>GAME TYPES</span>
-              <span className="font-body text-xs px-2 py-0.5 rounded-full"
-                style={{ background: "rgba(0,216,192,0.1)", color: "#00d8c0", border: "1px solid rgba(0,216,192,0.25)" }}>
-                New
-              </span>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              {GAME_TYPE_TILES.map((tile) => <GameTypeTile key={tile.type} tile={tile} />)}
-            </div>
-          </div>
+              quiz surface. Perfect 10 / Higher or Lower / Guess the Player are
+              separate games in the GameSwitcher now (founder ruling 2026-07-18)
+              — no longer tiles inside the Quiz hub. */}
 
           {/* Build a Quiz banner */}
           <div className="max-w-lg mx-auto px-4 pt-4 pb-2">

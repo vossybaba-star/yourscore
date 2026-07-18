@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { smartBackTarget } from "@/lib/nav";
 import { haptic } from "@/lib/haptics";
 import { BottomNav } from "@/components/ui/BottomNav";
+import { GameSwitcher } from "@/components/ui/GameSwitcher";
 import { Button } from "@/components/ui/Button";
 import { useGameLoop } from "@/lib/useGameLoop";
 import {
@@ -25,16 +26,19 @@ const GAME_CONFIG: Record<GameType, {
   accent: string;
   how: string;
 }> = {
+  // Accents are each game's OWN section colour (founder ruling 2026-07-18:
+  // separate games next to Quiz and 38-0) — they match the GameSwitcher tabs,
+  // not Quiz teal / 38-0 lime as before.
   "higher-lower": {
     title: "Higher or Lower",
     tagline: "Two same-position players, one stat — pick the bigger number.",
-    accent: "#00d8c0",
+    accent: "#ff7800",
     how: "Each question shows two Premier League players in the same position. Tap the one with more — faster answers score more.",
   },
   "guess-the-player": {
     title: "Guess the Player",
     tagline: "Clues drip in — name the mystery footballer.",
-    accent: "#aeea00",
+    accent: "#4fc3f7",
     how: "Each question gives you clues (or a career path) and four players. Pick who it is — the quicker, the better.",
   },
 };
@@ -414,12 +418,23 @@ export default function GameTypePage() {
   if (phase === "intro") {
     return (
       <div className="min-h-screen bg-bg" style={{ paddingBottom: "calc(72px + env(safe-area-inset-bottom, 0px))" }}>
-        <div className="relative flex flex-col items-center pt-20 pb-8 px-6"
+        {/* Each game type is its own game section (founder ruling 2026-07-18) —
+            the switcher is its section header, same as /play and /38-0. */}
+        <div
+          className="sticky top-0 z-20 pt-safe"
+          style={{ background: "rgba(10,10,15,0.97)", backdropFilter: "blur(20px)" }}
+        >
+          <div className="max-w-lg mx-auto px-5 pt-3">
+            <GameSwitcher active={type} />
+          </div>
+        </div>
+
+        <div className="relative flex flex-col items-center pt-14 pb-8 px-6"
           style={{ background: `linear-gradient(175deg, ${accent}14 0%, #0e1611 55%, #0a0a0f 100%)` }}>
           <button
             type="button"
             onClick={() => router.push(smartBackTarget("/play"))}
-            className="absolute top-12 left-5 flex items-center gap-1.5 font-body text-xs z-10"
+            className="absolute top-3 left-5 flex items-center gap-1.5 font-body text-xs z-10"
             style={{ color: "rgba(255,255,255,0.5)" }}
           >
             <svg width="16" height="16" viewBox="0 0 18 18" fill="none">

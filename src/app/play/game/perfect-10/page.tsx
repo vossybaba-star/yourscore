@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { smartBackTarget } from "@/lib/nav";
 import { haptic } from "@/lib/haptics";
 import { BottomNav } from "@/components/ui/BottomNav";
+import { GameSwitcher } from "@/components/ui/GameSwitcher";
 import { Button } from "@/components/ui/Button";
 
 // "Perfect 10" — name everyone in a ranked top-10 football list. Third Quiz
@@ -678,14 +679,25 @@ export default function Perfect10Page() {
   if (phase === "intro") {
     return (
       <div className="min-h-screen bg-bg" style={{ paddingBottom: "calc(72px + env(safe-area-inset-bottom, 0px))" }}>
+        {/* Perfect 10 is its own game section (founder ruling 2026-07-18) — the
+            switcher is its section header, same as /play and /38-0. */}
         <div
-          className="relative flex flex-col items-center pt-20 pb-8 px-6"
+          className="sticky top-0 z-20 pt-safe"
+          style={{ background: "rgba(10,10,15,0.97)", backdropFilter: "blur(20px)" }}
+        >
+          <div className="max-w-lg mx-auto px-5 pt-3">
+            <GameSwitcher active="perfect10" />
+          </div>
+        </div>
+
+        <div
+          className="relative flex flex-col items-center pt-14 pb-8 px-6"
           style={{ background: `linear-gradient(175deg, ${ACCENT}14 0%, #16130a 55%, #0a0a0f 100%)` }}
         >
           <button
             type="button"
             onClick={() => router.push(smartBackTarget("/play"))}
-            className="absolute top-12 left-5 flex items-center gap-1.5 font-body text-xs z-10"
+            className="absolute top-3 left-5 flex items-center gap-1.5 font-body text-xs z-10"
             style={{ color: "rgba(255,255,255,0.5)" }}
           >
             <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
