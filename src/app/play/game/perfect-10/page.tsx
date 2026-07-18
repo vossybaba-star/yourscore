@@ -98,11 +98,6 @@ function rungWidthPct(rank: number): number {
   return 62 + ((rank - 1) * 38) / 9;
 }
 
-function formatDay(iso: string): string {
-  const d = new Date(iso + "T12:00:00Z");
-  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
-}
-
 function loadGuestState(listId: string): GameState {
   try {
     const raw = localStorage.getItem(STORAGE_PREFIX + listId);
@@ -710,19 +705,13 @@ export default function Perfect10Page() {
             </div>
           )}
 
+          {/* No daily framing (founder 2026-07-18): a list is a GAME MODE, not
+              "today's list" — dates never reach the player. */}
           <div
             className="rounded-2xl px-4 py-3 mt-4 text-center"
             style={{ background: "rgba(255,196,0,0.06)", border: `1px solid ${ACCENT}30`, maxWidth: 320 }}
           >
-            <p className="font-body text-xs mb-1" style={{ color: "#9aa39d" }}>
-              {listParam && list?.day
-                ? formatDay(list.day).toUpperCase()
-                : list?.isToday
-                  ? "TODAY'S LIST"
-                  : list?.day
-                    ? `LATEST — ${formatDay(list.day).toUpperCase()}`
-                    : "LATEST LIST"}
-            </p>
+            <p className="font-body text-xs mb-1" style={{ color: "#9aa39d" }}>TOPIC</p>
             <p className="font-display text-base" style={{ color: ACCENT }}>
               {list?.title ?? "…"}
             </p>
@@ -743,7 +732,7 @@ export default function Perfect10Page() {
 
           {loadError && (
             <p className="font-body text-sm text-center" style={{ color: "#ff6b78" }}>
-              Couldn&apos;t load today&apos;s list — try again.
+              Couldn&apos;t load this topic — try again.
             </p>
           )}
 
@@ -751,44 +740,52 @@ export default function Perfect10Page() {
             START
           </Button>
 
-          {library.filter((i) => i.id !== list?.listId).length > 0 && (
+          {/* Every list is a game mode (founder 2026-07-18 — "forget this daily
+              thing"): one picker, all topics, selected one highlighted, no
+              dates. `day` still gates release server-side; players never see it. */}
+          {library.length > 0 && (
             <div className="rounded-2xl px-4 py-4 bg-surface" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
-              <p className="font-display text-sm text-white tracking-wide mb-2">Previous days</p>
+              <p className="font-display text-sm text-white tracking-wide mb-2">Game modes</p>
               <div className="flex flex-col gap-1.5">
-                {library
-                  .filter((i) => i.id !== list?.listId)
-                  .map((item) => {
-                    const mine: LibraryMine = !isGuest
-                      ? libraryMine[item.id] ?? { score: 0, found: 0, done: false }
-                      : (() => {
-                          const g = loadGuestState(item.id);
-                          return { score: g.score, found: g.found.length, done: g.done };
-                        })();
-                    const untouched = !mine.done && mine.found === 0;
-                    return (
-                      <button
-                        key={item.id}
-                        type="button"
-                        onClick={() => router.push(`/play/game/perfect-10?list=${item.id}`)}
-                        className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-left"
-                        style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
+                {library.map((item) => {
+                  const selected = item.id === list?.listId;
+                  const mine: LibraryMine = !isGuest
+                    ? libraryMine[item.id] ?? { score: 0, found: 0, done: false }
+                    : (() => {
+                        const g = loadGuestState(item.id);
+                        return { score: g.score, found: g.found.length, done: g.done };
+                      })();
+                  const untouched = !mine.done && mine.found === 0;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      disabled={selected}
+                      onClick={() => router.push(`/play/game/perfect-10?list=${item.id}`)}
+                      className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-left"
+                      style={{
+                        background: selected ? `${ACCENT}12` : "rgba(255,255,255,0.03)",
+                        border: `1px solid ${selected ? `${ACCENT}55` : "rgba(255,255,255,0.06)"}`,
+                      }}
+                    >
+                      <span
+                        className="font-body text-sm flex-1 min-w-0 truncate"
+                        style={{ color: selected ? "#ffe082" : "#fff" }}
                       >
-                        <span className="font-body text-xs flex-shrink-0 w-12" style={{ color: "#8a948f" }}>
-                          {formatDay(item.day)}
-                        </span>
-                        <span className="font-body text-sm text-white flex-1 min-w-0 truncate">{item.title}</span>
-                        <span
-                          className="font-display text-xs px-2 py-1 rounded-lg flex-shrink-0"
-                          style={{
-                            background: untouched ? `${ACCENT}18` : "rgba(255,255,255,0.06)",
-                            color: untouched ? ACCENT : mine.done ? "#ffe082" : "#9aa39d",
-                          }}
-                        >
-                          {untouched ? "PLAY" : mine.done ? `${mine.score} PTS` : `${mine.found}/10`}
-                        </span>
-                      </button>
-                    );
-                  })}
+                        {item.title}
+                      </span>
+                      <span
+                        className="font-display text-xs px-2 py-1 rounded-lg flex-shrink-0"
+                        style={{
+                          background: untouched ? `${ACCENT}18` : "rgba(255,255,255,0.06)",
+                          color: untouched ? ACCENT : mine.done ? "#ffe082" : "#9aa39d",
+                        }}
+                      >
+                        {untouched ? "PLAY" : mine.done ? `${mine.score} PTS` : `${mine.found}/10`}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
