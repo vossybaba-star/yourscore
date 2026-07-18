@@ -2,7 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServiceClient } from "@/lib/supabase/service";
 import { scoreAnswer } from "@/lib/scoring";
-import { QUIZ_BOT_ID, QUIZ_BOT_NAME } from "@/lib/versus/quizBot";
+import { QUIZ_BOT_ID, QUIZ_BOT_NAME, INSTANT_MATCH_NAME } from "@/lib/versus/quizBot";
 import { findShadowRun, findRunOfUser, buildShadowInfo, shadowAnswerFor, type ShadowInfo, type ShadowRun } from "@/lib/versus/shadow";
 
 // Quiz Battle instant matchmaking — mirrors the proven 38-0 design
@@ -12,13 +12,14 @@ import { findShadowRun, findRunOfUser, buildShadowInfo, shadowAnswerFor, type Sh
 // the Lobby on their next poll via findInstantLobby. Both land in the standard
 // /play/[roomId] lobby → live flow.
 
-/** Lobby name doubles as the marker that a room was matchmade (vs hand-created),
- *  so polling waiters only ever get pulled into rooms this flow created. */
-export const INSTANT_MATCH_NAME = "Instant Match";
+// The Lobby name doubles as the marker that a room was matchmade (vs
+// hand-created), so polling waiters only ever get pulled into rooms this flow
+// created. Defined in quizBot.ts (client-safe); re-exported for server callers.
+export { INSTANT_MATCH_NAME };
 
 export interface InstantOpponent { id: string; name: string; avatarUrl: string | null }
 export type QuizQueueResult =
-  | { status: "matched"; roomId: string; code: string; opponent: InstantOpponent | null }
+  | { status: "matched"; roomId: string; code: string; opponent: InstantOpponent | null; kind?: "human" | "shadow" | "cpu" }
   | { status: "waiting" };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -40,11 +41,11 @@ async function profileOf(db: Db, userId: string | null): Promise<InstantOpponent
 /** The user's live instant-match Lobby (as either seat), or null. This is how a
  *  waiting player discovers they've been paired — the claimer created the room
  *  and seated them. Recency-bounded so stale lobbies never resurrect. */
-async function findInstantLobby(db: Db, userId: string): Promise<{ roomId: string; code: string; opponent: InstantOpponent | null } | null> {
+async function findInstantLobby(db: Db, userId: string): Promise<{ roomId: string; code: string; opponent: InstantOpponent | null; kind: "human" | "shadow" | "cpu" } | null> {
   const tenMinAgo = new Date(Date.now() - 10 * 60_000).toISOString();
   const { data: memberships } = await db
     .from("room_members")
-    .select("room_id, rooms!inner(id, code, name, status, room_mode, created_at)")
+    .select("room_id, rooms!inner(id, code, name, status, room_mode, created_at, shadow)")
     .eq("user_id", userId)
     .eq("rooms.room_mode", "h2h")
     .eq("rooms.name", INSTANT_MATCH_NAME)
@@ -52,11 +53,17 @@ async function findInstantLobby(db: Db, userId: string): Promise<{ roomId: strin
     .gte("rooms.created_at", tenMinAgo)
     .order("joined_at", { ascending: false })
     .limit(1);
-  const m = memberships?.[0] as { room_id: string; rooms: { code: string } } | undefined;
+  const m = memberships?.[0] as { room_id: string; rooms: { code: string; shadow: ShadowInfo | null } } | undefined;
   if (!m) return null;
   const { data: other } = await db
     .from("room_members").select("user_id").eq("room_id", m.room_id).neq("user_id", userId).limit(1);
-  return { roomId: m.room_id, code: m.rooms.code, opponent: await profileOf(db, other?.[0]?.user_id ?? null) };
+  const otherId = other?.[0]?.user_id ?? null;
+  // A resumed bot-seat room presents its shadow persona, never the bot profile.
+  const shadow = m.rooms.shadow;
+  if (otherId === QUIZ_BOT_ID && shadow) {
+    return { roomId: m.room_id, code: m.rooms.code, opponent: { id: shadow.userId, name: shadow.name, avatarUrl: shadow.avatarUrl }, kind: "shadow" };
+  }
+  return { roomId: m.room_id, code: m.rooms.code, opponent: await profileOf(db, otherId), kind: otherId === QUIZ_BOT_ID ? "cpu" : "human" };
 }
 
 /** Pick the quiz for an instant match. A caller-picked pack wins (the "find an
@@ -117,7 +124,7 @@ export async function queueOrPairQuiz(userId: string, preferredPackId?: string |
   ]);
   if (memberErr) throw new Error(memberErr.message);
 
-  return { status: "matched", roomId: room.id, code: room.code, opponent: await profileOf(db, oppId) };
+  return { status: "matched", roomId: room.id, code: room.code, opponent: await profileOf(db, oppId), kind: "human" };
 }
 
 export async function cancelQuizQueue(userId: string): Promise<void> {
@@ -204,11 +211,14 @@ async function createShadowLobby(db: Db, userId: string, run: ShadowRun): Promis
   return {
     status: "matched", roomId: room.id, code: room.code,
     opponent: { id: shadow.userId, name: shadow.name, avatarUrl: shadow.avatarUrl },
+    kind: "shadow",
   };
 }
 
-/** Leave the queue and start a fallback match now: a real player's shadow when
- *  one exists for the instant pack, else the CPU. */
+/** Leave the queue and start a fallback match now: a real player's shadow —
+ *  exhausting reruns and, when the caller didn't pin a quiz, other packs —
+ *  before the CPU seat. "Find an opponent" should land on a real player's run;
+ *  the literal CPU is a last resort for an empty pool (founder, 2026-07-18). */
 export async function createBotQuizLobby(userId: string, preferredPackId?: string | null): Promise<QuizQueueResult> {
   const db = createServiceClient();
 
@@ -220,9 +230,20 @@ export async function createBotQuizLobby(userId: string, preferredPackId?: strin
   const packId = await pickInstantPack(db, preferredPackId);
   if (!packId) throw new Error("No quiz available right now");
 
-  // Shadow first — CPU only when no real run exists for this pack yet.
   try {
-    const run = await findShadowRun(db, packId, userId);
+    let run = await findShadowRun(db, packId, userId);
+    if (!run && !preferredPackId) {
+      // This pack has no one else's runs at all. A real run on another
+      // published pack still beats a CPU seat — but a pinned find ("play THIS
+      // quiz") keeps its quiz, so only the generic flow roams.
+      const { data: packs } = await db
+        .from("quiz_packs").select("id").eq("status", "published").neq("id", packId)
+        .order("created_at", { ascending: false }).limit(5);
+      for (const p of packs ?? []) {
+        run = await findShadowRun(db, p.id, userId);
+        if (run) break;
+      }
+    }
     if (run) {
       const shadowMatch = await createShadowLobby(db, userId, run);
       if (shadowMatch) return shadowMatch;
@@ -230,7 +251,7 @@ export async function createBotQuizLobby(userId: string, preferredPackId?: strin
   } catch { /* shadow selection failing must never block the fallback */ }
 
   const room = await insertBotSeatLobby(db, userId, { packId, questionCount: 10 });
-  return { status: "matched", roomId: room.id, code: room.code, opponent: { id: QUIZ_BOT_ID, name: QUIZ_BOT_NAME, avatarUrl: null } };
+  return { status: "matched", roomId: room.id, code: room.code, opponent: { id: QUIZ_BOT_ID, name: QUIZ_BOT_NAME, avatarUrl: null }, kind: "cpu" };
 }
 
 /** Targeted revenge shadow: a specific player's run on a specific pack. */

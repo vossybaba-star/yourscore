@@ -307,6 +307,18 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-18** — **Versus instant match: real opponents before "CPU" + matched-lobby
+  cleanup (founder: matching with "CPU" after Find an opponent "is not what should be
+  happening")** — the quiz bot fallback now EXHAUSTS shadows before the literal CPU:
+  fresh shadow → least-recently-met RERUN (heavy players had emptied the fresh pool,
+  which is exactly why the founder kept landing on "CPU") → other published packs
+  (generic find only; a pinned find keeps its quiz) → CPU only for a truly empty pool.
+  Resumed bot-seat rooms surface their shadow persona (not the bot profile), and the
+  server tags matches `kind: human|shadow|cpu` so the AppsFlyer chain is measured, not
+  guessed. Matchmade "Instant Match" lobbies (and any full lobby) no longer show the
+  invite-code/QR block — you already have your opponent. Fix: `/play/[roomId]` headers
+  (lobby / live / completed) got `pt-safe` — on the wrapped iPhone build the back
+  control sat on top of the status-bar clock, leaving players stuck on the lobby page.
 - **2026-07-18** — **Perfect 10: topics are GAME MODES, daily framing dropped
   (founder: "forget this daily thing")** — the intro is now a topic picker: "Game
   modes" lists every served list (selected one highlighted, PLAY / n-of-10 / score

@@ -12,7 +12,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 import { useUser } from "@/hooks/useUser";
 import { REALTIME_ENABLED } from "@/lib/realtime";
-import { QUIZ_BOT_ID } from "@/lib/versus/quizBot";
+import { QUIZ_BOT_ID, INSTANT_MATCH_NAME } from "@/lib/versus/quizBot";
 import { smartBackTarget } from "@/lib/nav";
 
 // Lazy-loaded so the QR library stays out of the initial bundle (matches the
@@ -753,11 +753,16 @@ export default function RoomPage() {
   // ── LOBBY ─────────────────────────────────────────────────────────────────
 
   if (room.status === "lobby") {
+    // Matchmade rooms arrive with both seats filled — an invite code/QR there
+    // is noise (you already have your opponent). Same for any full lobby.
+    const showInvite = room.name !== INSTANT_MATCH_NAME && players.length < room.max_players;
     return (
       <main className="min-h-dvh pb-10 bg-bg">
         <GridBackground opacity={0.02} />
 
-        <nav className="relative z-10 flex items-center justify-between px-5 py-4 max-w-lg mx-auto">
+        {/* pt-safe: on the wrapped iPhone build the page runs under the status
+            bar — without it the back control sits on top of the clock. */}
+        <nav className="relative z-10 pt-safe flex items-center justify-between px-5 py-4 max-w-lg mx-auto">
           <button onClick={() => setShowLeaveModal(true)} className="flex items-center gap-2 font-body text-sm text-text-muted">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
             Play
@@ -782,6 +787,7 @@ export default function RoomPage() {
           </div>
 
           {/* Invite code + QR (Fix #5) */}
+          {showInvite && (
           <div className="rounded-2xl px-5 py-4" style={{ background: "rgba(0,216,192,0.05)", border: "1px solid rgba(0,216,192,0.2)" }}>
             <div className="flex items-center justify-between mb-3">
               <p className="font-body text-xs uppercase tracking-widest text-text-muted">Invite Code</p>
@@ -809,6 +815,7 @@ export default function RoomPage() {
               </div>
             )}
           </div>
+          )}
 
           {/* Players */}
           <div className="rounded-2xl overflow-hidden bg-surface border border-border">
@@ -916,7 +923,7 @@ export default function RoomPage() {
 
     return (
       <main className="min-h-dvh pb-20 bg-bg">
-        <nav className="flex items-center justify-between px-5 py-4 max-w-lg mx-auto">
+        <nav className="pt-safe flex items-center justify-between px-5 py-4 max-w-lg mx-auto">
           {/* h2h battles came from Versus — send them back there, not the quiz tab */}
           <BackPill fallback={room.room_mode === "h2h" ? "/versus" : "/play"} label="Back" tone="play" />
           <div className="flex items-center gap-2">
@@ -1118,7 +1125,7 @@ export default function RoomPage() {
       <GridBackground opacity={0.02} />
 
       {/* Game header */}
-      <div className="sticky top-0 z-30" style={{ background: "rgba(10,10,15,0.95)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+      <div className="sticky top-0 z-30 pt-safe" style={{ background: "rgba(10,10,15,0.95)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
         <div className="max-w-lg mx-auto px-5 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="font-body text-xs px-2.5 py-1 rounded-full font-semibold"

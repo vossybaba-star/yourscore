@@ -136,8 +136,12 @@ function FindInner() {
           const action = elapsed > quizBotAfter ? "bot" : "queue";
           const r = await fetch("/api/versus/queue", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action, ...(packId ? { packId } : {}) }) }).then((x) => x.json());
           if (r.status === "matched") {
+            // The server tags what actually filled the seat (bot action now
+            // resolves shadow-vs-cpu itself); the heuristic is just a fallback.
             const opponentType: OpponentType =
-              action === "bot" ? "cpu" : r.opponent?.shadow || r.shadow ? "shadow" : "human";
+              r.kind === "shadow" || r.kind === "cpu" || r.kind === "human"
+                ? r.kind
+                : action === "bot" ? "cpu" : "human";
             return finish({
               name: r.opponent?.name ?? "Your opponent", avatarUrl: r.opponent?.avatarUrl ?? null,
               seed: r.opponent?.id ?? r.roomId, href: `/play/${r.roomId}`,
