@@ -208,9 +208,14 @@ function Rung({
 
   return (
     <div
-      className="mx-auto transition-transform"
+      // flex 1 1 auto (basis = content, NOT 0): a rung carrying hint chips is
+      // taller than a bare one, so equal shares would clip it. This way each
+      // rung keeps the height it needs and only the LEFTOVER space is shared —
+      // filling tall screens without dead air, and never forcing a scroll.
+      className="mx-auto transition-transform min-h-0 flex flex-col justify-center"
       style={{
         width: `${width}%`,
+        flex: "1 1 auto",
         transform: popped ? "scale(1.04)" : "scale(1)",
         transition: "transform 0.25s ease-out",
       }}
@@ -263,11 +268,18 @@ function Rung({
         )}
       </div>
 
-      {/* Hint clue chips — stay visible until the rung is solved. */}
+      {/* Hint clue chips — stay visible until the rung is solved. Kept to ONE
+          line: a wrapped chip row doubles a hinted rung's height, which is what
+          pushed short screens into a scroll. */}
       {!solved && tier1 && (
-        <div className="flex flex-wrap gap-1 mt-1 px-1">
+        <div
+          className="flex flex-nowrap items-center gap-1 mt-0.5 px-1 min-w-0 mx-auto"
+          // The rung tapers toward #1, but a clue the player PAID for shouldn't
+          // get squeezed with it — scale the chip row back up to full tower width.
+          style={{ width: `${(100 / width) * 100}%` }}
+        >
           <span
-            className="font-body text-[10px] px-2 py-0.5 rounded-full"
+            className="font-body text-[10px] px-2 py-0.5 rounded-full truncate min-w-0"
             style={{ background: "#241f0e", color: "#d4af37", border: "1px solid rgba(212,175,55,0.3)" }}
           >
             {tier1.text}
@@ -284,10 +296,10 @@ function Rung({
               type="button"
               disabled={busy || tokensLeft <= 0}
               onClick={() => onHint(2)}
-              className="font-body text-[10px] px-2 py-0.5 rounded-full disabled:opacity-40"
+              className="font-body text-[10px] px-2 py-0.5 rounded-full disabled:opacity-40 shrink-0 whitespace-nowrap"
               style={{ background: "transparent", color: "#8a6d1a", border: "1px dashed rgba(138,109,26,0.6)" }}
             >
-              + Starts with…
+              + Letter
             </button>
           )}
         </div>
@@ -730,9 +742,12 @@ export default function Perfect10Page() {
     const foundCount = game.found.length;
 
     return (
-      <div className="min-h-screen flex flex-col bg-bg">
+      // 100dvh (not min-h-screen/100vh): vh ignores the mobile browser's own
+      // chrome, which is what pushed this into a scroll on shorter phones.
+      // overflow-hidden makes "never scroll during play" structural, not a hope.
+      <div className="flex flex-col bg-bg overflow-hidden" style={{ height: "100dvh" }}>
         <div
-          className="sticky top-0 z-10 pt-safe"
+          className="shrink-0 z-10 pt-safe"
           style={{ background: "rgba(10,10,15,0.98)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}
         >
           <div className="px-5 pt-2.5 pb-1.5 flex items-center justify-between gap-3">
@@ -787,8 +802,8 @@ export default function Perfect10Page() {
           </div>
         </div>
 
-        <div className={`flex-1 flex flex-col justify-center px-5 pb-2 pt-2.5 max-w-lg mx-auto w-full ${shaking ? "animate-p10-shake" : ""}`}>
-          <div className="flex flex-col gap-1.5">
+        <div className={`flex-1 min-h-0 flex flex-col px-5 pb-2 pt-2 max-w-lg mx-auto w-full ${shaking ? "animate-p10-shake" : ""}`}>
+          <div className="flex-1 min-h-0 flex flex-col gap-1">
             {list.rungs.map((rung) => (
               <Rung
                 key={rung.rank}
@@ -821,7 +836,7 @@ export default function Perfect10Page() {
 
         {/* Bottom input bar — no submit button; Enter or a chip tap submits. */}
         <div
-          className="sticky bottom-0 px-4 pt-2 max-w-lg mx-auto w-full"
+          className="shrink-0 px-4 pt-2 max-w-lg mx-auto w-full"
           style={{
             background: "rgba(10,10,15,0.98)",
             backdropFilter: "blur(20px)",
