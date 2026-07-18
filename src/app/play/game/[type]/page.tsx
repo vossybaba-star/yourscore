@@ -4,8 +4,8 @@ import { useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { haptic } from "@/lib/haptics";
 import { BottomNav } from "@/components/ui/BottomNav";
-import { GameSwitcher } from "@/components/ui/GameSwitcher";
 import { Button } from "@/components/ui/Button";
+import { useHideGamesNav } from "@/lib/gamesNav";
 import { useGameLoop } from "@/lib/useGameLoop";
 import {
   scoreAnswer,
@@ -236,6 +236,9 @@ export default function GameTypePage() {
   const config = GAME_CONFIG[type];
 
   const [phase, setPhase] = useState<Phase>("intro");
+  // "loading" here is the post-START deal — already part of the run, so the
+  // persistent GamesNav steps away for it too, not just for "playing".
+  useHideGamesNav(phase === "playing" || phase === "loading");
   const [topic, setTopic] = useState<string>("mixed"); // Higher-or-Lower topic
   const [seed, setSeed] = useState<string>("");
   const [windowMs, setWindowMs] = useState(25_000);
@@ -417,18 +420,8 @@ export default function GameTypePage() {
   if (phase === "intro") {
     return (
       <div className="min-h-screen bg-bg" style={{ paddingBottom: "calc(72px + env(safe-area-inset-bottom, 0px))" }}>
-        {/* Each game type is its own game section (founder ruling 2026-07-18) —
-            the switcher is its section header, same as /play and /38-0. */}
-        <div
-          className="sticky top-0 z-20 pt-safe"
-          style={{ background: "rgba(10,10,15,0.97)", backdropFilter: "blur(20px)" }}
-        >
-          <div className="max-w-lg mx-auto px-5 pt-3">
-            <GameSwitcher active={type} />
-          </div>
-        </div>
-
-        {/* No back button — the switcher above IS the navigation (founder
+        {/* The persistent GamesNav (root layout) is the section header. */}
+        {/* No back button — the nav above IS the navigation (founder
             2026-07-18: own tab, no back buttons on game sections). */}
         <div className="relative flex flex-col items-center pt-8 pb-8 px-6"
           style={{ background: `linear-gradient(175deg, ${accent}14 0%, #0e1611 55%, #0a0a0f 100%)` }}>

@@ -6,7 +6,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import { createClient } from "@/lib/supabase/client";
 import { BottomNav } from "@/components/ui/BottomNav";
-import { GameSwitcher } from "@/components/ui/GameSwitcher";
 import { Button } from "@/components/ui/Button";
 import { getTeamBadgeUrl } from "@/lib/teamImages";
 import { getCompetitionBadgeUrl } from "@/lib/competitionImages";
@@ -668,15 +667,11 @@ function PlayPageInner() {
   return (
     <div className="min-h-screen bg-bg" style={{ paddingBottom: "calc(72px + env(safe-area-inset-bottom, 0px))" }}>
 
-      {/* Sticky header */}
-      <div className="sticky top-0 z-20 pt-safe"
-        style={{ background: "rgba(10,10,15,0.97)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+      {/* Sticky header — sits under the persistent GamesNav (root layout),
+          so it sticks at the nav's height, not the viewport top. */}
+      <div className="sticky z-20"
+        style={{ top: "var(--games-nav-h, 0px)", background: "rgba(10,10,15,0.97)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
         <div className="max-w-lg mx-auto px-5 pt-3 pb-3">
-
-          {/* Game switcher — Quiz / 38-0 both live under the Play tab. */}
-          <div className="mb-3">
-            <GameSwitcher active="quiz" />
-          </div>
 
           {/* Title row */}
           <div className="flex items-center justify-between mb-4">

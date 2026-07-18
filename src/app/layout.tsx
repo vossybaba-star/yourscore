@@ -7,6 +7,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { NativeBootstrap } from "@/components/native/NativeBootstrap";
 import { NavTracker } from "@/components/ui/NavTracker";
 import { TouchGuards } from "@/components/ui/TouchGuards";
+import { GamesNav } from "@/components/ui/GamesNav";
 import { UsernamePrompt } from "@/components/profile/UsernamePrompt";
 import { ClubPrompt } from "@/components/clubs/ClubPrompt";
 import { AppStoreBanner } from "@/components/app/AppStoreBanner";
@@ -125,6 +126,9 @@ export default function RootLayout({
         <AcquisitionCapture />
         {/* No-op until NEXT_PUBLIC_POSTHOG_KEY is set — then route-change pageviews,
             identify-by-uuid, and masked session recording come on. */}
+        {/* THE games nav — one persistent bar for the five game sections;
+            pages render below it and must not mount their own switcher. */}
+        <GamesNav />
         <PostHogProvider>{children}</PostHogProvider>
         <Analytics />
         <SpeedInsights />

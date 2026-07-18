@@ -5,8 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { smartBackTarget } from "@/lib/nav";
 import { haptic } from "@/lib/haptics";
 import { BottomNav } from "@/components/ui/BottomNav";
-import { GameSwitcher } from "@/components/ui/GameSwitcher";
 import { Button } from "@/components/ui/Button";
+import { useHideGamesNav } from "@/lib/gamesNav";
 
 // "Perfect 10" — name everyone in a ranked top-10 football list. Third Quiz
 // game-type. This is the literal /play/game/perfect-10 folder, which Next.js
@@ -503,6 +503,10 @@ export default function Perfect10Page() {
     if (phase === "playing") setTimeout(() => inputRef.current?.focus(), 200);
   }, [phase]);
 
+  // The persistent GamesNav must never sit over the live board (it would
+  // outstack the fixed container and eat tower space).
+  useHideGamesNav(phase === "playing");
+
   // Belt and braces with the fixed board: stop the document itself scrolling
   // while a game is in progress, so nothing can drag the tower out of view.
   useEffect(() => {
@@ -679,18 +683,8 @@ export default function Perfect10Page() {
   if (phase === "intro") {
     return (
       <div className="min-h-screen bg-bg" style={{ paddingBottom: "calc(72px + env(safe-area-inset-bottom, 0px))" }}>
-        {/* Perfect 10 is its own game section (founder ruling 2026-07-18) — the
-            switcher is its section header, same as /play and /38-0. */}
-        <div
-          className="sticky top-0 z-20 pt-safe"
-          style={{ background: "rgba(10,10,15,0.97)", backdropFilter: "blur(20px)" }}
-        >
-          <div className="max-w-lg mx-auto px-5 pt-3">
-            <GameSwitcher active="perfect10" />
-          </div>
-        </div>
-
-        {/* No back button — the switcher above IS the navigation (founder
+        {/* The persistent GamesNav (root layout) is the section header. */}
+        {/* No back button — the nav above IS the navigation (founder
             2026-07-18: own tab, no back buttons on game sections). */}
         <div
           className="relative flex flex-col items-center pt-8 pb-8 px-6"

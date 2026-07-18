@@ -304,6 +304,12 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-18** — **Games nav is ONE persistent bar (founder: "it's a NAV, not a
+  page selector")** — `GamesNav` moved into the root layout: mounts once, shows on
+  the five game-section routes, pages swap below it with zero remount/flash
+  (verified: same DOM node across all five tab hops). Game pages hide it mid-run via
+  `useHideGamesNav`; height published as `--games-nav-h` for the Quiz hub's sticky
+  header. Active tab glides to centre on switch. Per-page switcher copies deleted.
 - **2026-07-18** — **38-0 competition tabs cleaned up (founder)** — same treatment as
   the quiz filters: the emoji pill-box (🏆 WC Mastermind / ⚽ Premier League / 🇪🇸 La
   Liga / Leaderboard ✓) is now clean underline text tabs, no emoji or badges, each
@@ -746,10 +752,15 @@ Premier League · Profile.**
   `/play/game/perfect-10` (gold #ffc400); Higher or Lower = `/play/game/higher-lower`
   (orange #ff7800); Guess the Player = `/play/game/guess-the-player` (blue #4fc3f7 —
   the last two were recoloured from Quiz teal / 38-0 lime when they became their own
-  sections). Routes are frozen — the switcher navigates between them, renders on the
-  two hubs and on each game's intro screen (never over gameplay), scrolls
-  horizontally and auto-centres the active tab; the Play tab stays highlighted on all
-  of them. 38-0 is no longer a bottom-nav tab. **No back buttons on game sections
+  sections). Routes are frozen — the switcher navigates between them. **The switcher
+  is ONE persistent bar** (founder 2026-07-18: "it's a NAV, not a page selector"):
+  `GamesNav` mounts once in the ROOT LAYOUT, shows on exactly the five section
+  routes, and never remounts on a tab switch — pages swap BELOW it and must NOT
+  render their own copy. Game pages hide it during a live run via
+  `useHideGamesNav` (`src/lib/gamesNav.ts`); it publishes its height as
+  `--games-nav-h` for anything sticking beneath it (the Quiz hub's header does).
+  It scrolls horizontally and glides the active tab to centre; the Play tab stays
+  highlighted on all of them. 38-0 is no longer a bottom-nav tab. **No back buttons on game sections
   (founder 2026-07-18):** each game is a tab, so the switcher IS the navigation — the
   38-0 hub's "YourScore" BackPill and the game intros' Back buttons are gone. The
   ONLY Back left is the in-game exit on an active Perfect 10 run (no other way out

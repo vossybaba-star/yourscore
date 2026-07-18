@@ -91,14 +91,19 @@ export type GameKey = (typeof GAMES)[number]["key"];
 
 export function GameSwitcher({ active }: { active: GameKey }) {
   const rowRef = useRef<HTMLDivElement>(null);
+  const mountedRef = useRef(false);
 
   // Five tabs overflow a phone — centre the active one so the current game is
-  // never parked off-screen when its own section loads.
+  // never parked off-screen. Instant on first paint; animated on tab change
+  // (the bar persists in the layout, so a switch is the SAME element gliding —
+  // part of what makes it read as one nav rather than a new page).
   useEffect(() => {
     const row = rowRef.current;
     const el = row?.querySelector<HTMLElement>(`[data-game="${active}"]`);
     if (!row || !el) return;
-    row.scrollLeft = el.offsetLeft - (row.clientWidth - el.clientWidth) / 2;
+    const left = el.offsetLeft - (row.clientWidth - el.clientWidth) / 2;
+    row.scrollTo({ left, behavior: mountedRef.current ? "smooth" : "auto" });
+    mountedRef.current = true;
   }, [active]);
 
   return (

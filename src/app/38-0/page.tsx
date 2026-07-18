@@ -10,7 +10,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BottomNav } from "@/components/ui/BottomNav";
-import { GameSwitcher } from "@/components/ui/GameSwitcher";
 import { Button } from "@/components/ui/Button";
 import { Pitch } from "@/components/draft/Pitch";
 import { WcHubHero, DraftHubHero } from "@/components/draft/WcHubHero";
@@ -83,13 +82,11 @@ export default function DraftHome() {
 
   return (
     <div className="min-h-[100dvh] pb-24" style={{ background: "#0a0a0f" }}>
-      <div className="max-w-lg mx-auto px-5 pt-safe">
-        {/* Game switcher IS the header — 38-0 is its own game tab (founder
-            2026-07-18), so no back button above it. */}
-        <div className="pt-3 mb-4">
-          <GameSwitcher active="draft" />
-        </div>
-
+      {/* pt-4, not pt-safe — the persistent GamesNav above already carries the
+          safe-area inset; doubling it left a dead band under the nav. */}
+      <div className="max-w-lg mx-auto px-5 pt-4">
+        {/* The persistent GamesNav (root layout) is the header — nothing above
+            the title here (founder 2026-07-18: it's a NAV; no back buttons). */}
         <h1 className="font-display tracking-wide leading-none mb-4" style={{ fontSize: 52, color: "#fff" }}>
           38<span style={{ color: "#aeea00" }}>-0</span>
         </h1>
