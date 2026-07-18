@@ -69,13 +69,15 @@ const ERA_OPTIONS = [
   { value: "2024-25",   label: "This Season",     short: "Now" },
 ];
 
+// Three tiers only. "Expert" and "Master" used to be offered here, but they're the residue of
+// the old free-authored cohort — never fact-checked, and the source of questions like "How many
+// PL goals did Haaland score for Man City in 2010-11?" (he was ten). The generator no longer
+// serves them, so offering them would just 400. Nothing new is written at those levels either.
 const DIFF_OPTIONS = [
   { value: "",       label: "Mixed",  dot: "#9aa39d" },
   { value: "easy",   label: "Easy",   dot: "#4ade80" },
   { value: "medium", label: "Medium", dot: "#00d8c0" },
   { value: "hard",   label: "Hard",   dot: "#f87171" },
-  { value: "expert", label: "Expert", dot: "#aeea00" },
-  { value: "master", label: "Master", dot: "#00c9ff" },
 ];
 
 // ── Step definitions ───────────────────────────────────────────────────────────
