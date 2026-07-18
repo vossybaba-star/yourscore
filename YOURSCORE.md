@@ -307,6 +307,13 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-18 (health)** — **Sentry client ignores injected in-app-browser bridge noise**
+  (`window.webkit.messageHandlers` — Instagram/TikTok-style webviews probing a bridge that
+  isn't there; ×123/6h on shared WC-run links, confirmed absent from our bundle & deps) —
+  and the **nav health checks now self-diagnose blocked clicks**: on a click timeout the
+  scorecard names the element covering the click point plus a screenshot in
+  `scripts/data/health/`, instead of a bare truncated timeout (the ClubPrompt class of
+  failure becomes a one-line read).
 - **2026-07-18** — **Perfect 10: topics are GAME MODES, daily framing dropped
   (founder: "forget this daily thing")** — the intro is now a topic picker: "Game
   modes" lists every served list (selected one highlighted, PLAY / n-of-10 / score

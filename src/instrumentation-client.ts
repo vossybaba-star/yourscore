@@ -20,6 +20,14 @@ const IGNORE_ERRORS: (string | RegExp)[] = [
   // Browser-extension messaging API leaking into the page.
   /runtime\.sendMessage/,
   /Extension context invalidated/,
+  // iOS in-app browsers (Instagram/Facebook/TikTok etc.) inject native-bridge
+  // probes that evaluate `window.webkit.messageHandlers` in contexts where the
+  // page isn't hosted in their webview, so it's undefined. Spikes wherever run
+  // links get shared (Jul 2026: ×123/6h on /38-0/wc/run/:id). Confirmed not
+  // ours: no unguarded access exists in src or any bundled dep (checked —
+  // @capacitor/core 8's only access is existence-guarded, in cordova.js which
+  // we never import).
+  /window\.webkit\.messageHandlers/,
   // Supabase auth tab-lock contention across multiple open tabs — benign, non-actionable.
   /Acquiring an exclusive Navigator LockManager lock/,
   // Generic interrupted-fetch noise: Safari's "Load failed" / Chrome's "Failed to

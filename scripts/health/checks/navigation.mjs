@@ -10,10 +10,18 @@
  *
  * Uses the signed-in bot (ctx.auth from journeys, else signs in itself) —
  * these flows only exist for authenticated players.
+ *
+ * NOTE (founder ruling 2026-07-18): the five GAME SECTIONS (/play, /38-0 and
+ * the three game intros) are tabs under the persistent games nav and have NO
+ * back buttons by design — never add back-retrace flows for them. The flows
+ * below all live outside the game sections and keep their Back pills.
  */
 
+import { mkdirSync } from "node:fs";
+import { join } from "node:path";
 import { BASE } from "../lib/http.mjs";
 import { signInBot } from "../lib/auth.mjs";
+import { DATA_DIR } from "../lib/report.mjs";
 
 const VIEWPORT = { width: 390, height: 844 };
 
@@ -59,11 +67,49 @@ export async function run(report, ctx) {
       await page.goto(`${BASE}${p}`, { waitUntil: "load", timeout: 45_000 });
       await page.waitForTimeout(2500);
     };
-    const back = async () => {
-      const el = page.locator('button:has-text("Back")').first();
-      await el.scrollIntoViewIfNeeded().catch(() => {});
+
+    // What actually sits on the target's click point? A blocked click almost
+    // always means an overlay (the Jul-18 ClubPrompt incident: a z-100 modal
+    // backdrop turned all four flows into bare timeouts that took a session to
+    // identify). Naming the covering element makes that a one-line read.
+    const describeClickPoint = async (el) => {
+      try {
+        const box = await el.boundingBox();
+        if (!box) return "target hidden or detached (no bounding box)";
+        return await page.evaluate(([x, y]) => {
+          const hit = document.elementFromPoint(x, y);
+          if (!hit) return "nothing at the click point";
+          const id = hit.id ? `#${hit.id}` : "";
+          const cls = typeof hit.className === "string" && hit.className.trim()
+            ? `.${hit.className.trim().split(/\s+/).slice(0, 3).join(".")}` : "";
+          const text = (hit.textContent ?? "").trim().replace(/\s+/g, " ").slice(0, 50);
+          return `click point hits <${hit.tagName.toLowerCase()}${id}${cls}>${text ? ` "${text}"` : ""}`;
+        }, [box.x + box.width / 2, box.y + box.height / 2]);
+      } catch (e) {
+        return `blocker probe failed: ${String(e.message).slice(0, 60)}`;
+      }
+    };
+
+    // Click with a diagnosis: on timeout the thrown error carries where we
+    // were, the real Playwright reason, what covers the click point, and a
+    // screenshot in scripts/data/health/ — instead of a truncated timeout.
+    const clickOrExplain = async (locator, what, timeout = 10_000) => {
+      const el = locator.first();
+      await el.scrollIntoViewIfNeeded({ timeout }).catch(() => {});
       await page.waitForTimeout(400);
-      await el.click({ timeout: 10_000 });
+      try {
+        await el.click({ timeout });
+      } catch (e) {
+        const shot = join(DATA_DIR, `nav-blocked-${what.replace(/[^a-z0-9]+/gi, "-")}.png`);
+        try { mkdirSync(DATA_DIR, { recursive: true }); await page.screenshot({ path: shot }); } catch { /* best effort */ }
+        const blocker = await describeClickPoint(el);
+        const reason = e.message.split("\n").map((l) => l.trim()).filter(Boolean).slice(0, 3).join(" · ").slice(0, 180);
+        throw new Error(`${what} at ${path()} — ${blocker} — ${reason} (screenshot: ${shot})`);
+      }
+    };
+
+    const back = async () => {
+      await clickOrExplain(page.locator('button:has-text("Back")'), "back control");
       await page.waitForTimeout(1800);
     };
     const assertFlow = (name, want) => {
@@ -77,14 +123,12 @@ export async function run(report, ctx) {
     // 1. Home → featured quiz → back retraces home (used to teleport to /play).
     try {
       await goto("/");
-      const featured = page.locator('a[href^="/challenges/"]').first();
-      await featured.scrollIntoViewIfNeeded();
-      await featured.click();
+      await clickOrExplain(page.locator('a[href^="/challenges/"]'), "featured quiz card", 30_000);
       await page.waitForTimeout(2500);
       await back();
       assertFlow("home → featured quiz → back", "/");
     } catch (e) {
-      report.add("nav", "home → featured quiz → back", false, { detail: e.message.slice(0, 120) });
+      report.add("nav", "home → featured quiz → back", false, { detail: e.message.slice(0, 350) });
     }
 
     // 2. Versus → quiz picker → back retraces to Versus.
@@ -94,26 +138,23 @@ export async function run(report, ctx) {
       await back();
       assertFlow("versus → quiz picker → back", "/versus");
     } catch (e) {
-      report.add("nav", "versus → quiz picker → back", false, { detail: e.message.slice(0, 120) });
+      report.add("nav", "versus → quiz picker → back", false, { detail: e.message.slice(0, 350) });
     }
 
     // 3+4. Versus Leagues → public league table → member profile → back →
     // league table → back → Versus Leagues (the exact founder complaint).
     try {
       await goto("/versus?view=leagues");
-      await page.locator("text=Discover").first().click();
+      await clickOrExplain(page.locator("text=Discover"), "Discover tab", 30_000);
       await page.waitForTimeout(2000);
       const card = page.locator('text=xG Deniers Club').first();
       if (!(await card.count())) {
         report.add("nav", "league retrace", true, { detail: "skipped — no public league card visible" });
       } else {
-        await card.scrollIntoViewIfNeeded();
-        await card.click();
+        await clickOrExplain(card, "public league card");
         await page.waitForTimeout(2500);
         const leaguePath = path();
-        const member = page.locator('a[href^="/profile/"]').first();
-        await member.scrollIntoViewIfNeeded();
-        await member.click();
+        await clickOrExplain(page.locator('a[href^="/profile/"]'), "league member profile");
         await page.waitForTimeout(2500);
         await back();
         assertFlow("league → profile → back", leaguePath);
@@ -121,7 +162,7 @@ export async function run(report, ctx) {
         assertFlow("league → back", "/versus?view=leagues");
       }
     } catch (e) {
-      report.add("nav", "league retrace", false, { detail: e.message.slice(0, 120) });
+      report.add("nav", "league retrace", false, { detail: e.message.slice(0, 350) });
     }
 
     // 5. Home → /debate → back retraces home.
@@ -131,7 +172,7 @@ export async function run(report, ctx) {
       await back();
       assertFlow("home → debate → back", "/");
     } catch (e) {
-      report.add("nav", "home → debate → back", false, { detail: e.message.slice(0, 120) });
+      report.add("nav", "home → debate → back", false, { detail: e.message.slice(0, 350) });
     }
   } finally {
     await browser.close().catch(() => {});
