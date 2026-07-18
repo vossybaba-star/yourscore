@@ -304,6 +304,14 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-18** — **Perfect 10: intro/results scroll snap-back fixed** — the Jul-17
+  "pin the board" fix registered its `window.scrollTo(0,0)` pin for the page's whole
+  life, but mobile URL-bar collapse fires `resize` MID-SCROLL, so scrolling the intro
+  ("Previous days") or results screen snapped back to the top. Pin now applies only in
+  the `playing` phase (gameplay still never scrolls); also reset the keyboard-detection
+  height baseline on `orientationchange` so rotating to landscape no longer reads as a
+  permanently-open keyboard. Repro + fix verified headless (Playwright: scrollY survives
+  a resize event; pre-fix build snapped 250→0).
 - **2026-07-18** — **38-0 moved under the Play tab (founder ruling)** — the Play tab now
   holds both games via a top **Quiz | 38-0 game switcher** (`GameSwitcher` component) on
   both hubs (`/play`, `/38-0`); routes frozen, switcher navigates. Bottom nav unchanged

@@ -379,21 +379,30 @@ export default function Perfect10Page() {
       setViewportH(h);
       // iOS scrolls the LAYOUT viewport to reveal the focused input, which drags
       // the board off-screen and exposes empty page beneath it. The board is
-      // position:fixed, so pinning the scroll back to 0 keeps it put.
-      if (window.scrollY !== 0) window.scrollTo(0, 0);
+      // position:fixed, so pinning the scroll back to 0 keeps it put — but ONLY
+      // while playing: intro/results are normal scrolling pages, and mobile
+      // URL-bar collapse fires resize MID-SCROLL, so pinning there snapped the
+      // page back to the top every time the player tried to scroll.
+      if (phase === "playing" && window.scrollY !== 0) window.scrollTo(0, 0);
+    };
+    const onOrientation = () => {
+      // The tallest-height-ever baseline is orientation-specific: portrait's max
+      // read against landscape's height looks like a permanent "keyboard up".
+      maxViewportRef.current = 0;
+      apply();
     };
     apply();
     vv?.addEventListener("resize", apply);
     vv?.addEventListener("scroll", apply);
     window.addEventListener("resize", apply);
-    window.addEventListener("orientationchange", apply);
+    window.addEventListener("orientationchange", onOrientation);
     return () => {
       vv?.removeEventListener("resize", apply);
       vv?.removeEventListener("scroll", apply);
       window.removeEventListener("resize", apply);
-      window.removeEventListener("orientationchange", apply);
+      window.removeEventListener("orientationchange", onOrientation);
     };
-  }, []);
+  }, [phase]);
 
   const listIdRef = useRef<string | null>(null);
   useEffect(() => {
