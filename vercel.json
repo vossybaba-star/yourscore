@@ -7,6 +7,7 @@
     { "path": "/api/cron/expire-challenges", "schedule": "0 3 * * *" },
     { "path": "/api/cron/wc-mastermind", "schedule": "0 * * * *" },
     { "path": "/api/cron/halftime-watchdog", "schedule": "*/5 * * * *" },
-    { "path": "/api/cron/club-gameweek", "schedule": "20 * * * *" }
+    { "path": "/api/cron/club-gameweek", "schedule": "20 * * * *" },
+    { "path": "/api/cron/pl-news", "schedule": "7,37 * * * *" }
   ]
 }

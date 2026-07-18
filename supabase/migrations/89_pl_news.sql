@@ -5,10 +5,9 @@
 -- A single-row upsert is all the write path needs and all the read path reads,
 -- so there is no per-article table to index or vacuum.
 --
--- NOTE (migration numbering): 77/78/79/80 are taken on prod by the parallel
--- fantasy + quiz-content-factory work; this file is 83 to sit above the
--- halftime (80) / club-fans (81) / predictions (82) migrations on this branch.
--- Re-check the number at merge time.
+-- NOTE (numbering): renumbered 83->89 on 2026-07-16 after verifying prod. The
+-- ledger stops at 53 (everything since was applied as raw SQL), so numbers are
+-- repo-file organisation; 86-92 clears every parallel branch's claimed range.
 
 create table if not exists public.pl_news_feed (
   id          smallint primary key default 1,

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { rateLimitDistributed } from "@/lib/ratelimit";
+import { createServiceClient } from "@/lib/supabase/service";
 
 // Blog waitlist capture (fantasy launch). Stores signups as contacts in a
 // dedicated Resend audience ("Fantasy Waitlist") so the launch email can go to
@@ -62,19 +64,39 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "That doesn't look like an email" }, { status: 400 });
   }
 
-  const audience = await getAudienceId();
-  if (!audience) return NextResponse.json({ error: "Try again in a minute" }, { status: 502 });
-
-  const add = await resend(`/audiences/${audience}/contacts`, {
-    method: "POST",
-    body: JSON.stringify({ email, unsubscribed: false }),
-  });
-  // A repeat signup is a success from the reader's point of view.
-  if (!add.ok && add.status !== 409) {
-    const detail = await add.text().catch(() => "");
-    if (!/exists/i.test(detail)) {
-      return NextResponse.json({ error: "Try again in a minute" }, { status: 502 });
-    }
+  /**
+   * DB FIRST, Resend second (2026-07-16). This route used to be Resend-or-502:
+   * without RESEND_CAMPAIGNS_API_KEY on Vercel (the base key 401s on
+   * /audiences) every signup errored AND was lost — a dead CTA on the launch
+   * surface. The table is now the ledger; the audience is best-effort sync,
+   * with `synced_at` marking rows that made it so a backfill can push the rest
+   * once the key exists. A signup is never lost to an email-vendor hiccup.
+   */
+  const db = createServiceClient() as unknown as SupabaseClient;
+  const { error: dbErr } = await db
+    .from("waitlist_emails")
+    .upsert({ email, source: "waitlist" }, { onConflict: "email", ignoreDuplicates: true });
+  if (dbErr) {
+    console.error("[waitlist] ledger write failed", dbErr);
+    return NextResponse.json({ error: "Try again in a minute" }, { status: 502 });
   }
+
+  // Best-effort audience sync — failure is logged, never surfaced.
+  try {
+    const audience = await getAudienceId();
+    if (audience) {
+      const add = await resend(`/audiences/${audience}/contacts`, {
+        method: "POST",
+        body: JSON.stringify({ email, unsubscribed: false }),
+      });
+      // A repeat signup counts as synced too (409 / already exists).
+      if (add.ok || add.status === 409 || /exists/i.test(await add.text().catch(() => ""))) {
+        await db.from("waitlist_emails").update({ synced_at: new Date().toISOString() }).eq("email", email);
+      }
+    }
+  } catch (err) {
+    console.error("[waitlist] audience sync failed (captured in DB)", err);
+  }
+
   return NextResponse.json({ ok: true });
 }

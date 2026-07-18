@@ -90,7 +90,7 @@ reference has been corrected (§1.4).
 
 ### 1.3 What is NEW
 
-- **Migration `supabase/migrations/80_halftime.sql`** — `halftime_releases`,
+- **Migration `supabase/migrations/86_halftime.sql`** — `halftime_releases`,
   `halftime_control`, `halftime_heartbeat` (§1.5). Number **verified against prod
   2026-07-14** via Management API: `schema_migrations` tops at "53" (known-incomplete),
   fantasy tables exist in prod. **RE-CHECKED 2026-07-14 (late): parallel sessions applied 77 (fantasy_news), 78 (fantasy_news_feed) and 79 (fantasy_leagues) to prod — 78 was CLAIMED after this spec was written. Renumbered to 80; verified no `halftime*` tables exist in prod.**
@@ -119,7 +119,7 @@ and Telegram helper `scripts/tg.mjs` (NOT `scripts/lib/tg.mjs` — that path doe
 (`matches`/`question_events`/`/admin/fire`) and
 `src/app/api/admin/generate-questions/route.ts`.
 
-### 1.5 DB — migration 80 (exact shape)
+### 1.5 DB — migration 86 (exact shape)
 
 ```sql
 create table halftime_releases (
@@ -685,7 +685,7 @@ matchday (2026-08-21/22) before the feature is declared measured (stage 8).
     cron; rank views (migration 30); `VALID_COUNTS` (`room/create/route.ts:7`);
     `quiz_packs` schema (no ALTERs — metadata-only usage); the fantasy hub + cron
     (not on this branch: verified by **zero file overlap** with the fantasy branch's
-    files and by claiming migration 80, leaving 76/77 untouched in prod).
+    files and by claiming migration 86, leaving 76/77 untouched in prod).
 34. A **real `next build`** passes (`NEXT_DIST_DIR=.next-verify`; ESLint
     unused-imports is the known tsc-passes/build-fails trap). No new
     service-role route ships without `fetchCache = "force-no-store"` (grep-checkable).
@@ -721,7 +721,7 @@ listed is out of bounds for that stream. `pnpm`/`package.json` untouched by all 
 
 ### W1 — Foundation (migration + API + watchdog + shared lib)
 ```
-supabase/migrations/80_halftime.sql
+supabase/migrations/86_halftime.sql
 src/lib/halftime/shared.ts
 src/lib/halftime/sportmonks.ts
 src/app/api/halftime/schedule/route.ts

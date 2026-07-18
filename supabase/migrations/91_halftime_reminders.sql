@@ -6,8 +6,7 @@
 -- (see pushForFixture in src/lib/halftime/release.ts) — a requested push is
 -- solicited, so it is exempt from the one-unsolicited-push-per-day cap.
 --
--- NOTE (numbering): 77-84 are taken across the parallel fantasy/quiz-factory work
--- and this branch. Re-check the number at merge time.
+-- NOTE (numbering): renumbered 85->91 on 2026-07-16 — see 89_pl_news.sql.
 
 create table if not exists public.halftime_reminders (
   user_id     uuid not null references auth.users(id) on delete cascade,

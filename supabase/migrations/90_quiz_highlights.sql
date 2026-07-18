@@ -5,7 +5,7 @@
 -- as jsonb. /api/pl/quiz-highlights reads it. Same singleton-doc pattern as
 -- pl_news_feed (migration 83).
 --
--- NOTE (numbering): see 83_pl_news.sql — re-check the number at merge time.
+-- NOTE (numbering): renumbered 84->90 on 2026-07-16 — see 89_pl_news.sql.
 
 create table if not exists public.quiz_highlights (
   id          smallint primary key default 1,
