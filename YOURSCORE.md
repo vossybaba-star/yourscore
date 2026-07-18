@@ -313,6 +313,9 @@ Confirmed preamble above and the referenced section.
   fresh shadow → least-recently-met RERUN (heavy players had emptied the fresh pool,
   which is exactly why the founder kept landing on "CPU") → other published packs
   (generic find only; a pinned find keeps its quiz) → CPU only for a truly empty pool.
+  **Same day (follow-up ruling): the CPU seat is never shown as "CPU" anymore** — it
+  presents as an imaginary player (deterministic per-room name + generated avatar,
+  `cpuPersona()`), across the found screen, lobby, live header and scorecard.
   Resumed bot-seat rooms surface their shadow persona (not the bot profile), and the
   server tags matches `kind: human|shadow|cpu` so the AppsFlyer chain is measured, not
   guessed. Matchmade "Instant Match" lobbies (and any full lobby) no longer show the
@@ -899,7 +902,12 @@ Premier League · Profile.**
   (3) **Beats open the push, holds never do** — holds only appear inside aggregate
   copy. (4) The named player + revenge link always point at an actual beater.
 - **CPU fallback** (when no shadow exists for the pack): one dedicated CPU auth user
-  (honestly named "CPU", keeper avatar) takes the second seat; its seeded answers
+  takes the second seat, **presented as an imaginary player persona** — name picked
+  deterministically from the room id (`cpuPersona()`, lib/versus/quizBot.ts), varied
+  avatar per match (founder 2026-07-18: "CPU should be an imaginary player profile
+  name — to make it seem like there are other players"; this REVERSED the original
+  honestly-named-"CPU" call). The disguise is display-only — friend prompts, global
+  rank, league stats and the activity feed still exclude the seat by id; its seeded answers
   (62% accuracy, 2.8–10.5s) are written server-side in `/api/answer` when the human
   answers — room scores only, NEVER global rank or league stats. Result screen offers
   one-tap "Rematch CPU" (no play-again voting vs the CPU).

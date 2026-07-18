@@ -12,7 +12,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 import { useUser } from "@/hooks/useUser";
 import { REALTIME_ENABLED } from "@/lib/realtime";
-import { QUIZ_BOT_ID, INSTANT_MATCH_NAME } from "@/lib/versus/quizBot";
+import { QUIZ_BOT_ID, INSTANT_MATCH_NAME, cpuPersona } from "@/lib/versus/quizBot";
 import { smartBackTarget } from "@/lib/nav";
 
 // Lazy-loaded so the QR library stays out of the initial bundle (matches the
@@ -192,16 +192,20 @@ export default function RoomPage() {
   useEffect(() => { hasBotRef.current = players.some((p) => p.user_id === QUIZ_BOT_ID); }, [players]);
   useEffect(() => () => { if (botTickTimerRef.current) clearTimeout(botTickTimerRef.current); }, []);
 
-  // Shadow persona: render the CPU seat as the real player whose run this is.
+  // Bot-seat persona: render the CPU seat as the shadow's real player, or —
+  // plain CPU rooms — as the room's imaginary player (founder: the seat should
+  // read like another player, never "CPU"). Exclusions (friends, rank, feed)
+  // still key off QUIZ_BOT_ID, so the disguise is display-only.
   const shadowRef = useRef<ShadowInfo | null>(null);
   useEffect(() => { shadowRef.current = room?.shadow ?? null; }, [room?.shadow]);
   const shadow = room?.shadow ?? null;
   const personaRows = useCallback(<T extends { user_id: string; display_name: string }>(rows: T[]): T[] => {
-    if (!shadow) return rows;
-    return rows.map((r) => r.user_id === QUIZ_BOT_ID
-      ? { ...r, display_name: shadow.name, ...("avatar_url" in r ? { avatar_url: shadow.avatarUrl } : {}) }
-      : r);
-  }, [shadow]);
+    return rows.map((r) => {
+      if (r.user_id !== QUIZ_BOT_ID) return r;
+      if (shadow) return { ...r, display_name: shadow.name, ...("avatar_url" in r ? { avatar_url: shadow.avatarUrl } : {}) };
+      return { ...r, display_name: cpuPersona(roomId).name };
+    });
+  }, [shadow, roomId]);
 
   // Build QR join URL (client-only)
   useEffect(() => {

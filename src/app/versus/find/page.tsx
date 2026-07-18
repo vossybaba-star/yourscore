@@ -14,7 +14,9 @@ import { afVersusMatchmake, type OpponentType } from "@/lib/analytics/appsflyerE
 //  • 38-0 rides the existing random queue (/api/draft/live) with its silent
 //    2-3s disguised-bot fallback, so it always resolves fast.
 //  • Quiz Battle uses the new quiz_queue (/api/versus/queue); after ~5s with
-//    no human it falls back to a CPU opponent (founder call — same as 38-0).
+//    no human it falls back to a shadow (a real player's recorded run), or as
+//    a last resort the CPU presented as a regular player persona (founder call
+//    — same disguise as 38-0).
 // ?game=quiz|38-0 skips the picker (deep-linked from quick-start pages).
 
 const TEAL = "#00d8c0";
@@ -131,7 +133,8 @@ function FindInner() {
       if (!searchingRef.current) return;
       try {
         if (g === "quiz") {
-          // Human first; past the fallback window, take a CPU opponent (like 38-0).
+          // Human first; past the fallback window, take a shadow/CPU opponent
+          // (the server names the CPU seat with the room's player persona).
           const elapsed = Date.now() - started;
           const action = elapsed > quizBotAfter ? "bot" : "queue";
           const r = await fetch("/api/versus/queue", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action, ...(packId ? { packId } : {}) }) }).then((x) => x.json());
@@ -144,7 +147,9 @@ function FindInner() {
                 : action === "bot" ? "cpu" : "human";
             return finish({
               name: r.opponent?.name ?? "Your opponent", avatarUrl: r.opponent?.avatarUrl ?? null,
-              seed: r.opponent?.id ?? r.roomId, href: `/play/${r.roomId}`,
+              // CPU seat: seed the generated avatar by room, not the shared bot
+              // id — each match should look like a different player.
+              seed: opponentType === "cpu" ? r.roomId : (r.opponent?.id ?? r.roomId), href: `/play/${r.roomId}`,
             }, opponentType);
           }
           if (r.error) throw new Error(r.error);

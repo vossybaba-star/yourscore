@@ -2,7 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServiceClient } from "@/lib/supabase/service";
 import { scoreAnswer } from "@/lib/scoring";
-import { QUIZ_BOT_ID, QUIZ_BOT_NAME, INSTANT_MATCH_NAME } from "@/lib/versus/quizBot";
+import { QUIZ_BOT_ID, INSTANT_MATCH_NAME, cpuPersona } from "@/lib/versus/quizBot";
 import { findShadowRun, findRunOfUser, buildShadowInfo, shadowAnswerFor, type ShadowInfo, type ShadowRun } from "@/lib/versus/shadow";
 
 // Quiz Battle instant matchmaking — mirrors the proven 38-0 design
@@ -58,12 +58,16 @@ async function findInstantLobby(db: Db, userId: string): Promise<{ roomId: strin
   const { data: other } = await db
     .from("room_members").select("user_id").eq("room_id", m.room_id).neq("user_id", userId).limit(1);
   const otherId = other?.[0]?.user_id ?? null;
-  // A resumed bot-seat room presents its shadow persona, never the bot profile.
+  // A resumed bot-seat room presents its shadow or CPU persona, never the raw
+  // bot profile.
   const shadow = m.rooms.shadow;
   if (otherId === QUIZ_BOT_ID && shadow) {
     return { roomId: m.room_id, code: m.rooms.code, opponent: { id: shadow.userId, name: shadow.name, avatarUrl: shadow.avatarUrl }, kind: "shadow" };
   }
-  return { roomId: m.room_id, code: m.rooms.code, opponent: await profileOf(db, otherId), kind: otherId === QUIZ_BOT_ID ? "cpu" : "human" };
+  if (otherId === QUIZ_BOT_ID) {
+    return { roomId: m.room_id, code: m.rooms.code, opponent: { id: QUIZ_BOT_ID, name: cpuPersona(m.room_id).name, avatarUrl: null }, kind: "cpu" };
+  }
+  return { roomId: m.room_id, code: m.rooms.code, opponent: await profileOf(db, otherId), kind: "human" };
 }
 
 /** Pick the quiz for an instant match. A caller-picked pack wins (the "find an
@@ -251,7 +255,7 @@ export async function createBotQuizLobby(userId: string, preferredPackId?: strin
   } catch { /* shadow selection failing must never block the fallback */ }
 
   const room = await insertBotSeatLobby(db, userId, { packId, questionCount: 10 });
-  return { status: "matched", roomId: room.id, code: room.code, opponent: { id: QUIZ_BOT_ID, name: QUIZ_BOT_NAME, avatarUrl: null }, kind: "cpu" };
+  return { status: "matched", roomId: room.id, code: room.code, opponent: { id: QUIZ_BOT_ID, name: cpuPersona(room.id).name, avatarUrl: null }, kind: "cpu" };
 }
 
 /** Targeted revenge shadow: a specific player's run on a specific pack. */
