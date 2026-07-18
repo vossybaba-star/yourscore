@@ -308,7 +308,13 @@ Confirmed preamble above and the referenced section.
   holds both games via a top **Quiz | 38-0 game switcher** (`GameSwitcher` component) on
   both hubs (`/play`, `/38-0`); routes frozen, switcher navigates. Bottom nav unchanged
   otherwise (Home · Play · Versus · Premier League · Profile); Play highlights on
-  `/38-0`. §9 Navigation Canon updated to current truth.
+  `/38-0`. §9 Navigation Canon updated to current truth. **Same day, v2 (founder
+  direction):** switcher restyled to Coral-style icon tabs (icon above label, per-game
+  colour + underline); the /play solo filter pills (emoji + caps + count badges)
+  replaced with clean underline text tabs (Featured / World Cup / Club / Records, no
+  counts); Featured tab now leads with a **full-width marketing hero tile** — the lead
+  featured pack's cover art with a FEATURED badge + PLAY, falling back to the plain
+  grid when the lead pack has no cover.
 - **2026-07-16** — **Perfect 10 SHIPPED** — third Quiz game-type: name everyone in a ranked
   top-10 list. Floodlit-tower UI at `/play/game/perfect-10`, daily list (Europe/London),
   hints/strikes, async challenge links, all-PL-history typeahead (4,669 names). Server-only
