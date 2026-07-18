@@ -212,7 +212,7 @@ function Rung({
       // taller than a bare one, so equal shares would clip it. This way each
       // rung keeps the height it needs and only the LEFTOVER space is shared —
       // filling tall screens without dead air, and never forcing a scroll.
-      className="mx-auto transition-transform min-h-0 flex flex-col justify-center"
+      className="mx-auto transition-transform min-h-0 flex flex-col"
       style={{
         width: `${width}%`,
         flex: "1 1 auto",
@@ -220,8 +220,10 @@ function Rung({
         transition: "transform 0.25s ease-out",
       }}
     >
+      {/* The PILL takes the spare height, not the space around it. Stretching
+          the wrapper instead left every tile padded by a gap as big as itself. */}
       <div
-        className="rounded-lg px-2.5 py-1 flex items-center gap-2"
+        className="rounded-lg px-2.5 flex-1 min-h-0 flex items-center gap-2"
         style={{
           background: solved ? "#2a2410" : "rgba(255,196,0,0.05)",
           border: `1px solid ${solved ? ACCENT : "rgba(255,196,0,0.16)"}`,
@@ -359,6 +361,36 @@ export default function Perfect10Page() {
   const [copied, setCopied] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // The on-screen keyboard does NOT shrink 100dvh on iOS Safari — the layout
+  // viewport stays put and the page scrolls under the keyboard instead. Only
+  // visualViewport reports the space actually left, so the board is sized to it.
+  const [viewportH, setViewportH] = useState<number | null>(null);
+  const maxViewportRef = useRef(0);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const vv = window.visualViewport;
+    // Read visualViewport when present (iOS reports the keyboard there and
+    // nowhere else), but listen on BOTH sources: some browsers fire only
+    // window.resize when the keyboard opens, and one listener alone left the
+    // board sized to the pre-keyboard height.
+    const apply = () => {
+      const h = vv?.height ?? window.innerHeight;
+      maxViewportRef.current = Math.max(maxViewportRef.current, h);
+      setViewportH(h);
+    };
+    apply();
+    vv?.addEventListener("resize", apply);
+    vv?.addEventListener("scroll", apply);
+    window.addEventListener("resize", apply);
+    window.addEventListener("orientationchange", apply);
+    return () => {
+      vv?.removeEventListener("resize", apply);
+      vv?.removeEventListener("scroll", apply);
+      window.removeEventListener("resize", apply);
+      window.removeEventListener("orientationchange", apply);
+    };
+  }, []);
+
   const listIdRef = useRef<string | null>(null);
   useEffect(() => {
     listIdRef.current = list?.listId ?? null;
@@ -456,6 +488,9 @@ export default function Perfect10Page() {
   useEffect(() => {
     if (phase === "playing") setTimeout(() => inputRef.current?.focus(), 200);
   }, [phase]);
+
+  // A big drop from the tallest viewport we've seen = the keyboard is up.
+  const keyboardUp = viewportH !== null && maxViewportRef.current - viewportH > 100;
 
   const solvedByRank = useMemo(() => {
     const m = new Map<number, FoundEntry>();
@@ -745,7 +780,7 @@ export default function Perfect10Page() {
       // 100dvh (not min-h-screen/100vh): vh ignores the mobile browser's own
       // chrome, which is what pushed this into a scroll on shorter phones.
       // overflow-hidden makes "never scroll during play" structural, not a hope.
-      <div className="flex flex-col bg-bg overflow-hidden" style={{ height: "100dvh" }}>
+      <div className="flex flex-col bg-bg overflow-hidden" style={{ height: viewportH ? `${viewportH}px` : "100dvh" }}>
         <div
           className="shrink-0 z-10 pt-safe"
           style={{ background: "rgba(10,10,15,0.98)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}
@@ -789,9 +824,18 @@ export default function Perfect10Page() {
             </div>
           </div>
 
-          {/* The topic is the game — always visible while playing. */}
-          <div className="px-5 pb-2">
-            <p className="font-display text-sm leading-tight truncate" style={{ color: ACCENT }}>
+          {/* The topic IS the game — it gets real estate, not a caption. While
+              the keyboard is up it steps back to one compact line so the tower
+              keeps the room (the player has already read it by then). */}
+          <div className={keyboardUp ? "px-5 pb-1.5" : "px-5 pb-3"}>
+            <p
+              className={
+                keyboardUp
+                  ? "font-display text-[13px] leading-tight truncate"
+                  : "font-display text-xl leading-[1.15]"
+              }
+              style={{ color: ACCENT }}
+            >
               {list.title}
             </p>
             {challenge && (
