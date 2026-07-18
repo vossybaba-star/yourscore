@@ -6,7 +6,9 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-07-16 (**Perfect 10 — new standalone list game SHIPPED to prod.**
+> **Confirmed:** 2026-07-18 (**Nav: 38-0 now lives under the Play tab** — Quiz | 38-0
+> game switcher on both hubs, see §9 + Recently Shipped. Prior confirm 2026-07-16:
+> **Perfect 10 — new standalone list game SHIPPED to prod.**
 > Third Quiz game-type ("name everyone in a ranked top-10 football list", e.g. all-time
 > PL top scorers): tapering "floodlit tower" of 10 rungs (#1 narrowest at the top) that
 > ignite gold as solved; free-text input with autocomplete chips (tap chip = submit, NO
@@ -44,9 +46,9 @@
 > daily automation yet — someone must generate + assign `day` rows (founder decision
 > pending on a cron). NOTE: `scripts/lib/anthropic.mjs` got its first git commit on this
 > branch (was untracked WIP from the quiz-factory session) — reconcile if the factory
-> branch commits its own copy. Nav decision PENDING with founder: an "all games under
-> one Play tab incl. 38-0" restructure was floated 2026-07-16 — NOT built; §9 canon and
-> the §12 "Play label retired" entry stand until he rules.)
+> branch commits its own copy. Nav decision RULED 2026-07-18: founder ordered "all
+> games under one Play tab incl. 38-0" — SHIPPED same day (see §9 Navigation Canon +
+> Recently Shipped).)
 >
 > **Previously confirmed:** 2026-07-13 (**Product-audit fix batches A–C verified + merged with main** —
 > see Recently Shipped; audit docs at `docs/AUDIT-2026-07-11-*.md`. Verification was live:
@@ -302,6 +304,11 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-18** — **38-0 moved under the Play tab (founder ruling)** — the Play tab now
+  holds both games via a top **Quiz | 38-0 game switcher** (`GameSwitcher` component) on
+  both hubs (`/play`, `/38-0`); routes frozen, switcher navigates. Bottom nav unchanged
+  otherwise (Home · Play · Versus · Premier League · Profile); Play highlights on
+  `/38-0`. §9 Navigation Canon updated to current truth.
 - **2026-07-16** — **Perfect 10 SHIPPED** — third Quiz game-type: name everyone in a ranked
   top-10 list. Floodlit-tower UI at `/play/game/perfect-10`, daily list (Europe/London),
   hints/strikes, async challenge links, all-PL-history typeahead (4,669 names). Server-only
@@ -695,9 +702,16 @@ carry `List-Unsubscribe` + `List-Unsubscribe-Post` (RFC 8058 one-click) headers.
 
 ## 9. Navigation Canon
 
-**Bottom nav (signed-in, 5 tabs):** **Home · Versus · Quiz · 38-0 · Profile.**
-- **Home** (`/`) · **Versus** (`/versus`) · **Quiz** (`/play`; sub-tabs Solo + Multiplayer)
-  · **38-0** (`/38-0`; its own sub-nav: Live · Board · Leagues · Teams) · **Profile**.
+**Bottom nav (signed-in, 5 tabs, founder order 2026-07-16):** **Home · Play · Versus ·
+Premier League · Profile.**
+- **Home** (`/`) · **Play** (`/play`) · **Versus** (`/versus`) · **Premier League**
+  (`/matchweek`) · **Profile**.
+- **Play is the games tab (founder ruling 2026-07-18):** both games live under it via a
+  top **Quiz | 38-0 game switcher** (`GameSwitcher`) rendered on both hubs. Quiz =
+  `/play` (sub-tabs Solo + Leaderboards); 38-0 = `/38-0` (its own sub-nav: WC
+  Mastermind · Premier League · La Liga · Leaderboard). Routes are frozen — the
+  switcher navigates between them; the Play tab stays highlighted on `/38-0`. 38-0 is
+  no longer a bottom-nav tab.
 - **Versus** is the game-first cross-game hub for playing other people (the Leagues tab
   was replaced by it). Sub-nav: **Play** · **Friends** (`/friends`) · **Leagues**
   (`/leagues`, nested). The pending-turns badge lives on this tab. (The Leagues route

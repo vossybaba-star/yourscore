@@ -34,9 +34,11 @@ export function BottomNav() {
     pathname.startsWith("/versus") || pathname.startsWith("/friends") ||
     pathname.startsWith("/leagues") || pathname.startsWith("/league") ||
     pathname.startsWith("/profile/");
+  // Play holds both games: Quiz (/play, /challenges, /h2h) and 38-0 (/38-0) —
+  // the 38-0 hub is a sub-surface of the Play tab, switched via GameSwitcher.
   const isChallenges =
-    (pathname.startsWith("/play") || pathname.startsWith("/challenges") || pathname.startsWith("/h2h")) &&
-    !pathname.startsWith("/38-0");
+    pathname.startsWith("/play") || pathname.startsWith("/challenges") ||
+    pathname.startsWith("/h2h") || pathname.startsWith("/38-0");
   // Matchweek is the fixture-synced tab. A halftime pack itself opens under
   // /challenges (which holds the Quiz tab, so a pack played from anywhere reads
   // consistently); Matchweek highlights on its own route.

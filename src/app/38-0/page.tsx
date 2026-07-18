@@ -11,6 +11,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { BackPill } from "@/components/ui/BackPill";
+import { GameSwitcher } from "@/components/ui/GameSwitcher";
 import { Button } from "@/components/ui/Button";
 import { Pitch } from "@/components/draft/Pitch";
 import { WcHubHero, DraftHubHero } from "@/components/draft/WcHubHero";
@@ -87,6 +88,11 @@ export default function DraftHome() {
         {/* header */}
         <div className="flex items-center justify-between pt-5 pb-3">
           <BackPill href="/" label="YourScore" tone="draft" />
+        </div>
+
+        {/* Game switcher — Quiz / 38-0 both live under the Play tab. */}
+        <div className="mb-4">
+          <GameSwitcher active="draft" />
         </div>
 
         <h1 className="font-display tracking-wide leading-none mb-4" style={{ fontSize: 52, color: "#fff" }}>
