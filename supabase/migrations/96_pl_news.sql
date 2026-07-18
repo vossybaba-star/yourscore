@@ -5,9 +5,9 @@
 -- A single-row upsert is all the write path needs and all the read path reads,
 -- so there is no per-article table to index or vacuum.
 --
--- NOTE (numbering): renumbered 83->89 on 2026-07-16 after verifying prod. The
+-- NOTE (numbering): renumbered 83->89->96 on 2026-07-16 (main's merge landed its own 86) after verifying prod. The
 -- ledger stops at 53 (everything since was applied as raw SQL), so numbers are
--- repo-file organisation; 86-92 clears every parallel branch's claimed range.
+-- repo-file organisation; 93-99 sits above everything merged or in flight.
 
 create table if not exists public.pl_news_feed (
   id          smallint primary key default 1,

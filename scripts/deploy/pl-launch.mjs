@@ -3,7 +3,7 @@
  * pl-launch.mjs — the PL-tab go-live runbook as ONE command per phase.
  *
  *   node --env-file=.env.local scripts/deploy/pl-launch.mjs --pre
- *       BEFORE the deploy. Applies migrations 86-92 to prod (additive only:
+ *       BEFORE the deploy. Applies migrations 93-99 to prod (additive only:
  *       new tables, own-table RLS/triggers — verified by grep before writing),
  *       seeds the first pl_news_feed doc directly via PostgREST, then asserts
  *       every table exists. Safe while old code is live: nothing deployed
@@ -38,13 +38,13 @@ const SUPA_URL = need("NEXT_PUBLIC_SUPABASE_URL");
 const SERVICE = need("SUPABASE_SERVICE_ROLE_KEY");
 
 const MIGRATIONS = [
-  "86_halftime.sql",
-  "87_club_fans.sql",
-  "88_halftime_predictions.sql",
-  "89_pl_news.sql",
-  "90_quiz_highlights.sql",
-  "91_halftime_reminders.sql",
-  "92_waitlist_emails.sql",
+  "93_halftime.sql",
+  "94_club_fans.sql",
+  "95_halftime_predictions.sql",
+  "96_pl_news.sql",
+  "97_quiz_highlights.sql",
+  "98_halftime_reminders.sql",
+  "99_waitlist_emails.sql",
 ];
 const TABLES = [
   "halftime_releases", "halftime_control", "halftime_heartbeat",

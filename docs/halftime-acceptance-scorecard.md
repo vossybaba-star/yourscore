@@ -68,7 +68,7 @@ session (commands run, code read, replay output observed) — not from build-age
 |---|---|---|
 | 33 existing surfaces untouched | ✅ | `git diff origin/main` empty on quiz/packs, challenges, room/create, scoring, migration 30; only 23 insertion-lines on 5 existing files (mounts + cron + gitignore + health registry) |
 | 34 real `next build` passes; force-no-store everywhere | ✅ | build green (`NEXT_DIST_DIR=.next-verify`); `grep -L force-no-store` over new routes = empty |
-| 35 migration 86: RLS deny-all, PUBLIC revoke | ✅ | read directly; also strips table grants as defense-in-depth; CHECK constraints on state machine |
+| 35 migration 93: RLS deny-all, PUBLIC revoke | ✅ | read directly; also strips table grants as defense-in-depth; CHECK constraints on state machine |
 | 36 on-ship docs | ⏳ | pending founder ship approval (YOURSCORE.md changelog + graphify + LOOP-STANDARD row) |
 
 ## Test totals
@@ -83,7 +83,7 @@ session (commands run, code read, replay output observed) — not from build-age
 
 ## Founder actions before 21 Aug (none block commit)
 1. SportMonks → paid before Jul 22; re-verify entitlements (`GET /v3/my/resources`)
-2. Apply `supabase/migrations/86_halftime.sql` to prod
+2. Apply `supabase/migrations/93_halftime.sql` to prod
 3. VPS: deploy poller per `scripts/halftime/README.md` (crontab + env)
 4. Vercel env: `HALFTIME_PUSH_ENABLED=true` (day-one decision) + `TELEGRAM_*` for alerts
 5. Decide YOURSCORE.md §5A.1 wording (new §5A.5 entry vs revised §5A.1)
