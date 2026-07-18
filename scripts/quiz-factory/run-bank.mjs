@@ -19,7 +19,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { authorFromFacts } from "./author.mjs";
 import { runGate } from "./verify.mjs";
-import { researchFacts, sportmonksFacts, buildAuthorSheet, factsText as renderFacts, factsReviewText } from "./facts.mjs";
+import { researchClubFacts, sportmonksFacts, buildAuthorSheet, factsText as renderFacts, factsReviewText } from "./facts.mjs";
 import { rateBatch } from "./difficulty.mjs";
 import { clubFactSheet, factSheetText } from "../lib/sportmonks.mjs";
 import { costReport, usage, CreditExhausted } from "../lib/anthropic.mjs";
@@ -187,6 +187,47 @@ try {
   console.log(`   ⚠️  SportMonks unavailable (${e.message.slice(0, 60)}) — web-only.\n`);
 }
 
+// ── ONE research call for the whole club, filling only the feed's gaps ─────────
+// Research is the only stage that touches web search, and it was ~72% of the cost — because
+// we ran it once PER CATEGORY, four passes over the same club, and ~28 of the ~100 facts it
+// returned duplicated what SportMonks had already given us free. Modern Era was the worst:
+// we paid to web-research a category the feed covers almost entirely.
+//
+// Now it's one pass that's told what we already hold and asked only for what a league feed
+// can't know — domestic cups, founding, appearance records, legends, rivalries.
+const factPool = [...leagueFacts];
+try {
+  const { facts, dropped, gaps } = await researchClubFacts({
+    entity: CLUB,
+    categories: cats.map((k) => ({ key: k, label: CATEGORIES[k].label, brief: CATEGORIES[k].brief, want: FACT_COUNT })),
+    have: leagueFacts,
+  });
+  if (gaps.length) {
+    console.log(`🔎 One research pass for ${CLUB} — gaps only:`);
+    for (const g of gaps) console.log(`     ${g.key.padEnd(20)} hold ${String(g.held).padStart(2)} · need ${g.need}`);
+  } else {
+    console.log(`🔎 No research needed — the feed already covers every category.`);
+  }
+  factPool.push(...facts);
+  const untrusted = dropped.filter((d) => d.reason.startsWith("untrusted")).length;
+  const badTag = dropped.filter((d) => d.reason.startsWith("bad category")).length;
+  console.log(`   → ${facts.length} facts kept (${dropped.length} dropped: ${untrusted} untrusted source, ${badTag} bad category tag)\n`);
+} catch (e) {
+  if (e instanceof CreditExhausted) { console.error(`\n${e.message}`); process.exit(2); }
+  // ABORT, don't degrade. Proceeding feed-only looks like it works and isn't: the feed only
+  // covers 2 of 4 categories, so Legends and Rivalries get skipped, and the two that survive
+  // are authored from far too few facts — a real run did History & Honours as 23 questions
+  // from SIX facts, and Modern Era's pass rate fell to 36% on duplicates. That's thin,
+  // repetitive content written into the bank because a laptop lost wifi for a minute.
+  // A club is all-or-nothing: re-run it when the network is back.
+  console.error(`\n✗ research failed for ${CLUB}: ${e.message.slice(0, 90)}`);
+  console.error(`  ABORTING this club rather than writing a half-researched one.`);
+  console.error(`  (the feed alone covers only Modern Era + part of History & Honours — the rest`);
+  console.error(`   would be skipped, and those two would be authored from too few facts.)`);
+  console.error(`  Nothing was written. Re-run the same command.\n`);
+  process.exit(3);
+}
+
 let totalWritten = 0;
 
 try {
@@ -204,30 +245,18 @@ try {
     // Rivalries author and produced "How many goals did Manchester City's Erling Haaland
     // score?" under Arsenal · Rivalries. buildAuthorSheet hands over facts tagged for THIS
     // club and THIS category and nothing else — contamination isn't guarded, it's unspeakable.
-    const needsResearch = !cat.grounded || cat.factCoverage < 1;
-    const pool = [...leagueFacts];               // already tagged per category by sportmonksFacts()
-    let researched = [];
-
-    if (needsResearch) {
-      const { facts, dropped: factsDropped } = await researchFacts({
-        entity: CLUB, category: catKey, categoryBrief: cat.brief, count: FACT_COUNT,
-      });
-      researched = facts;
-      pool.push(...facts);
-      console.log(`   researched ${facts.length} facts (${factsDropped.length} dropped: ${
-        factsDropped.filter((d) => d.reason.startsWith("untrusted")).length} untrusted source)`);
-    }
-
     let authorFacts;
     try {
-      authorFacts = buildAuthorSheet({ entity: CLUB, category: catKey, facts: pool });
+      authorFacts = buildAuthorSheet({ entity: CLUB, category: catKey, facts: factPool });
     } catch (e) {
       // No facts for this category ⇒ no questions for this category. Never a fallback.
       console.log(`   ⚠️  ${e.message} — SKIPPING`);
       continue;
     }
+    const researched = authorFacts.filter((f) => f.origin === "web");
     const sheet = renderFacts(authorFacts);
-    console.log(`   author sheet: ${authorFacts.length} facts, all tagged ${CLUB} · ${cat.label}`);
+    const fromFeed = authorFacts.length - researched.length;
+    console.log(`   author sheet: ${authorFacts.length} facts (${fromFeed} from the feed, ${researched.length} researched) — all tagged ${CLUB} · ${cat.label}`);
 
     // ── 2. AUTHOR FROM THE SHEET ONLY (no web search) ──────────────────────
     let candidates;

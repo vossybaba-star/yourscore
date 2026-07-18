@@ -46,11 +46,14 @@ Search the web, then report atomic, verifiable facts. Reply with ONLY a JSON arr
 
 [{
   "fact": "one complete, self-contained sentence stating the fact",
+  "category": "the exact category key this fact belongs to, from the list you were given",
   "competition": "Premier League" | "Champions League" | "Europa League" | "FA Cup" | "League Cup" | "UEFA Super Cup" | "Europa Conference League" | "other",
   "season": "2019/20" or a year like "1886", or null if genuinely timeless",
   "source_url": "the page you took it from",
   "source_quote": "the exact line from that page that proves it"
 }]
+
+"category" is REQUIRED and must be one of the keys you were given, spelled exactly. It decides which quiz the fact can be used for, so a mis-tagged fact ends up in the wrong quiz entirely. If a fact doesn't fit any category you were given, leave it out.
 
 RULES — a fact breaking any of these is thrown away, so don't collect it:
 - ATOMIC: one fact per entry. "Arsenal beat Chelsea 2-1 in the 2020 FA Cup final" is one fact. "Arsenal have won 14 FA Cups and were founded in 1886" is two.
@@ -60,6 +63,76 @@ RULES — a fact breaking any of these is thrown away, so don't collect it:
 - Prefer facts that are interesting to a fan: trophies, finals, records, famous matches, milestone signings, defining moments.
 
 ${TRUSTED_SOURCES_BRIEF}`;
+
+/**
+ * ONE research call for a whole club, filling only what SportMonks CAN'T give us.
+ *
+ * Research is ~72% of the factory's cost — it's the only stage that touches web search. We
+ * were running it once per category (four passes over the same club), and ~28 of the ~100
+ * facts it returned duplicated data we already held for free: SportMonks covers Modern Era
+ * almost entirely (22 of ~25 facts for Arsenal) and part of History & Honours (league titles,
+ * European finals). We were paying to re-research a category we already had.
+ *
+ * So: one pass, told what we already hold, asked only for the gaps — the domestic cups,
+ * founding, appearance records, legends and rivalries a league feed knows nothing about.
+ * Every fact comes back tagged with its category, which is what lets buildAuthorSheet keep
+ * them apart afterwards.
+ *
+ * `have` is the already-typed facts (from sportmonksFacts). `categories` is
+ * [{ key, label, brief, want }].
+ */
+export async function researchClubFacts({ entity, categories, have = [], model = MODELS.author } = {}) {
+  const haveByCat = {};
+  for (const f of have) (haveByCat[f.category] ??= []).push(f);
+
+  // Only ask for what's actually missing.
+  const gaps = categories
+    .map((c) => ({ ...c, held: (haveByCat[c.key] ?? []).length, need: Math.max(0, c.want - (haveByCat[c.key] ?? []).length) }))
+    .filter((c) => c.need > 0);
+
+  if (!gaps.length) return { facts: [], dropped: [], gaps: [], usage: { input: 0, output: 0 } };
+
+  const alreadyHave = Object.entries(haveByCat).length
+    ? Object.entries(haveByCat)
+        .map(([cat, fs]) => `  - ${cat}: ${fs.length} facts already held (${fs.slice(0, 2).map((f) => f.fact).join("; ")}${fs.length > 2 ? "; …" : ""})`)
+        .join("\n")
+    : "  (none)";
+
+  const asks = gaps
+    .map((c) => `  "${c.key}" — need ${c.need} facts.\n     ${c.brief}${c.held ? `\n     (we already hold ${c.held} here, from league data — don't repeat that ground.)` : ""}`)
+    .join("\n\n");
+
+  const resp = await callClaude({
+    model,
+    system: RESEARCH_SYSTEM,
+    messages: [{
+      role: "user",
+      content: `Club: ${entity}
+
+WE ALREADY HAVE these facts from our own football data feed. Do NOT gather them again — it wastes the search and we'll throw the duplicates away:
+${alreadyHave}
+
+Our feed covers league placings, points, that club's own top scorer per season, league titles and European finals. It knows NOTHING about domestic cups (FA Cup, League Cup), the club's founding, appearance records, individual legends, or rivalries. That's what we need from you.
+
+RESEARCH THESE GAPS — tag every fact with the exact "category" key shown:
+
+${asks}
+
+SPREAD BY FAME — the most important instruction. Questions inherit their difficulty from the facts behind them, so a sheet of obscure trivia can only produce a brutal quiz, and our bank is already short of easy questions. In EVERY category, roughly 40% should be facts ANY ${entity} fan knows — the headline trophies, the famous finals, the iconic names. They'll feel too obvious. Gather them anyway: they're the ones we're short of. Another 40% for a fan who properly follows the club, and only 20% deeper cuts.
+
+PREFER PRIMARY SOURCES: the club's own official site, premierleague.com, uefa.com, thefa.com. Fall back to Wikipedia or the press only where a primary source doesn't cover it.
+
+Return ${gaps.reduce((a, c) => a + c.need, 0)} facts total, each with its own "category", source URL and proving quote.`,
+    }],
+    tools: [WEB_SEARCH_TOOL],
+    maxTokens: 32000,
+    stage: "research",
+  });
+
+  const valid = new Set(categories.map((c) => c.key));
+  const { facts, dropped } = shapeFacts(parseJsonSafe(resp), { entity, validCategories: valid });
+  return { facts, dropped, gaps, usage: usageOf(resp) };
+}
 
 /**
  * Research atomic facts for an entity + category from the web.
@@ -94,27 +167,51 @@ Report ${count} facts. Each needs its own source URL and a quote proving it.`,
     stage: "research",
   });
 
-  let raw;
-  try {
-    raw = parseJson(resp);
-  } catch (e) {
-    return { facts: [], dropped: [{ fact: "(model reply unparseable)", reason: e.message.slice(0, 80) }], usage: usageOf(resp) };
-  }
+  const { facts, dropped } = shapeFacts(parseJsonSafe(resp), { entity, fixedCategory: category });
+  return { facts, dropped, usage: usageOf(resp) };
+}
 
+/** parseJson, but an unparseable reply is a dropped batch rather than a thrown run. */
+function parseJsonSafe(resp) {
+  try {
+    const raw = parseJson(resp);
+    return Array.isArray(raw) ? raw : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Validate + tag raw model facts. Shared by both research paths, so the tier gate, the dedupe
+ * and — critically — the category tagging can't drift apart between them.
+ *
+ * `fixedCategory` for a single-category call; `validCategories` for the consolidated one,
+ * where the model chooses and we police it.
+ */
+function shapeFacts(raw, { entity, fixedCategory = null, validCategories = null }) {
   const facts = [];
   const dropped = [];
   const seen = new Set();
 
-  for (const f of Array.isArray(raw) ? raw : []) {
+  for (const f of raw) {
     const text = String(f?.fact ?? "").trim();
     if (!text) continue;
 
-    // Untrusted source ⇒ the fact does not exist. This is the tier-1/2 gate, and it is
-    // deterministic and free — no model judgement involved.
+    // A fact must know WHAT IT'S ABOUT and WHAT IT'S FOR. An untagged or mis-tagged fact is
+    // how "How many goals did Manchester City's Erling Haaland score?" ended up authored under
+    // Arsenal · Rivalries — so a bad tag drops the fact rather than guessing at it.
+    const category = fixedCategory ?? String(f?.category ?? "").trim();
+    if (!category || (validCategories && !validCategories.has(category))) {
+      dropped.push({ fact: text.slice(0, 70), reason: `bad category tag: ${JSON.stringify(f?.category ?? null)}` });
+      continue;
+    }
+
+    // Untrusted source ⇒ the fact does not exist. Deterministic and free — no model judgement.
     if (!isTrustedSource(f?.source_url)) {
       dropped.push({ fact: text.slice(0, 70), reason: `untrusted source: ${f?.source_url ?? "none"}` });
       continue;
     }
+
     // Cheap in-batch dedupe so the sheet doesn't carry the same fact three times.
     const key = text.toLowerCase().replace(/[^a-z0-9 ]+/g, "").replace(/\s+/g, " ").trim();
     if (seen.has(key)) { dropped.push({ fact: text.slice(0, 70), reason: "duplicate fact" }); continue; }
@@ -123,10 +220,6 @@ Report ${count} facts. Each needs its own source URL and a quote proving it.`,
     facts.push({
       fact: text,
       key: factKey(text),
-      // A fact must know WHAT IT'S ABOUT and WHAT IT'S FOR. Without these it's just a
-      // sentence, and once several sources are rendered into one prompt string nothing can
-      // tell a rivalry fact from a league table — which is exactly how "How many goals did
-      // Manchester City's Erling Haaland score?" got authored under Arsenal · Rivalries.
       entity,
       category,
       origin: "web",
@@ -138,7 +231,7 @@ Report ${count} facts. Each needs its own source URL and a quote proving it.`,
     });
   }
 
-  return { facts, dropped, usage: usageOf(resp) };
+  return { facts, dropped };
 }
 
 /**

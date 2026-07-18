@@ -92,6 +92,9 @@ export async function callClaude({
   maxTokens = 4096,
   retries = 5,      // must outlast a short network/DNS outage — see the backoff note below
   stage = "misc",
+  // Generous, because a research call doing ~15 web searches legitimately takes minutes. But
+  // finite, because "for ever" is not a duration: past this, something is wrong, not slow.
+  timeoutMs = 5 * 60_000,
 } = {}) {
   const body = { model, max_tokens: maxTokens, messages };
   if (system) body.system = system;
@@ -109,6 +112,10 @@ export async function callClaude({
     }
     let res;
     try {
+      // ⚠️ A TIMEOUT IS NOT OPTIONAL. Without one, fetch waits for ever on a connection that
+      // opens and never answers — and it happened: a research call sat for 28 minutes with
+      // zero output, on a laptop whose wifi had dropped. The retry loop below is useless if
+      // attempt 1 never returns. Fail fast, then retry.
       res = await fetch(API, {
         method: "POST",
         headers: {
@@ -117,9 +124,14 @@ export async function callClaude({
           "content-type": "application/json",
         },
         body: JSON.stringify(body),
+        signal: AbortSignal.timeout(timeoutMs),
       });
     } catch (e) {
-      lastErr = e; // network blip — retry
+      // AbortError = we timed out; anything else is a network blip. Both retry.
+      lastErr = e.name === "TimeoutError" || e.name === "AbortError"
+        ? new Error(`timed out after ${Math.round(timeoutMs / 1000)}s (attempt ${attempt + 1}/${retries + 1})`)
+        : e;
+      console.warn(`   ⏱  ${lastErr.message} — retrying…`);
       continue;
     }
 
