@@ -64,23 +64,37 @@ export async function updateSession(request: NextRequest) {
     // Bound the auth round-trip so a slow/overloaded Supabase Auth can never hang
     // the middleware into a 25s timeout (that was the MIDDLEWARE_INVOCATION_TIMEOUT
     // 504 cascade during the incident).
-    const authResult = await Promise.race([
-      supabase.auth.getUser(),
-      new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("auth-timeout")), 3000)
-      ),
-    ]);
-    const user = authResult.data.user;
+    const withAuthTimeout = <T>(p: Promise<T>): Promise<T> =>
+      Promise.race([
+        p,
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("auth-timeout")), 3000)
+        ),
+      ]);
 
-    // Protect /admin — require an authenticated admin (app_metadata is
-    // service-role-only, not user-editable). Mirrors the is_admin RLS rule.
-    if (
-      request.nextUrl.pathname.startsWith("/admin") &&
-      user?.app_metadata?.is_admin !== true
-    ) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/";
-      return NextResponse.redirect(url);
+    if (request.nextUrl.pathname.startsWith("/admin")) {
+      // /admin needs the LIVE, authoritative is_admin: getUser() hits the Auth
+      // server, so a just-revoked admin is denied on the very next request.
+      // getClaims() would trust the JWT's app_metadata for up to the token's
+      // lifetime (~1h) — unacceptable for the admin gate. This path is rare, so
+      // the round-trip cost doesn't matter. (app_metadata is service-role-only,
+      // not user-editable; mirrors the is_admin RLS rule.)
+      const { data } = await withAuthTimeout(supabase.auth.getUser());
+      if (data.user?.app_metadata?.is_admin !== true) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/";
+        return NextResponse.redirect(url);
+      }
+    } else {
+      // Everything else (the 620ms-TTFB routes): getClaims() verifies the JWT
+      // LOCALLY via the project's asymmetric signing keys instead of a getUser()
+      // round-trip to Supabase Auth on every request. It still calls getSession()
+      // under the hood, which refreshes + rotates the session cookie when the
+      // access token is near expiry — so sessions stay alive exactly as before,
+      // the network hop just moves from every-request to once-per-token. Under the
+      // legacy HS256 secret getClaims() transparently falls back to getUser(), so
+      // this is behaviour-preserving until asymmetric signing keys are enabled.
+      await withAuthTimeout(supabase.auth.getClaims());
     }
 
     return supabaseResponse;

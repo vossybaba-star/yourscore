@@ -6,7 +6,49 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-07-13 (**Product-audit fix batches A–C verified + merged with main** —
+> **Confirmed:** 2026-07-16 (**Perfect 10 — new standalone list game SHIPPED to prod.**
+> Third Quiz game-type ("name everyone in a ranked top-10 football list", e.g. all-time
+> PL top scorers): tapering "floodlit tower" of 10 rungs (#1 narrowest at the top) that
+> ignite gold as solved; free-text input with autocomplete chips (tap chip = submit, NO
+> submit button; word-exact/surname matches rank above prefix matches); 3 strikes
+> (wrong player = strike + tower shake); 3 hint tokens spent per-rung (tier 1 clubs clue
+> → tier 2 "starts with"; clue chips persist under the rung until solved, no rung
+> restyle); scoring +10 clean / +6 one hint / +3 two hints; dots per rung = one per
+> letter, grouped by word (server-sent lengths — answers NEVER reach the client
+> pre-solve; grading is server-side vs service-role-only `p10_lists.entries`). Daily
+> list by Europe/London date; win = tower-ignition cascade, 3 strikes = missed names
+> revealed in red. Signed-in attempts persist (`p10_attempts`, unique per list+user,
+> share_token drives the async challenge link `?c=` → same list, side-by-side compare);
+> guests play via localStorage (house guest pattern, sign-up nudge on results). Guess
+> pool = ALL PL history: `p10_players` + `public/perfect10/players.json` (4,669 names)
+> backfilled live from SportMonks league-8 season squads 2003/04→now
+> (`scripts/perfect10/build-player-index.mjs` — validates every season against the
+> verified "season id aliases to current squad" trap; SportMonks' topscorers endpoint is
+> UNRELIABLE for historical rankings, verified live, so lists are NOT SportMonks-ranked);
+> pre-2003 legends are force-inserted whenever a list ships. Lists are authored+verified
+> by `scripts/perfect10/generate-lists.mjs` (author → per-entry independent web-search
+> verification, any failed entry drops the WHOLE list → insert as draft; a list only
+> serves once it's assigned a `day`). Migration 85 applied to prod (tables RLS
+> deny-all/service-only). Hub tile on /play, gold #ffc400; typographic placeholder cover
+> pending approved key art. **Same day: the playable LIBRARY shipped** (founder model:
+> a list drops daily, the back-catalogue stays playable) — `library` API action +
+> "Previous days" on the intro with PLAY / n-of-10 / score badges; `?list=` replays any
+> served list; drafts/future days unreachable (`isServed` gates state/guess/hint).
+> **TIES ARE THE #1 GATE KILLER — and the unlock is a single-source anchor (Jul 17).** The verifier needs a source confirming an EXACT rank; most football top-10s are tie-bunched so none exists. 2026 WC top scorers DROPPED (Messi 8 = Mbappé 8, Kane 6 = Bellingham 6, Dembélé 5 = Oyarzabal 5, four players on 4) — **the final will not fix this, ties only grow.** Note **ties don't affect gameplay** (players type names; the rank is never needed) — the order only has to be defensible for display. Fix: anchor titles to ONE canonical source with published tiebreakers (FIFA Golden Boot = goals → assists → fewer minutes; Transfermarkt for fees) and verify against that source only. NOT built — needs founder sign-off. **TOPIC SHAPES THAT CANNOT SHIP (Jul 16–17):** (a) **fee-ranked lists** — all four transfer topics (most expensive PL / all-time / biggest PL sales / summer-2026 window) were DROPPED because no canonical ranking exists (Wirtz #7/#3/#2, Coutinho #4/#3/#11 across sources); shipping transfers needs the title anchored to ONE named source ("per Transfermarkt") + a gate change — NOT built. (b) **shared awards** — "last 10 PL Golden Boot winners" was factually CONFIRMED but 3/10 seasons were shared, giving untypeable rungs ("Salah, Mané & Aubameyang") → status='unplayable-shared-award', never released. **LIVE Jul 17: Last 10 Ballon d'Or Winners** (Messi ×4 / Ronaldo ×2 — double-winner grading verified on prod). **RECALL WINDOW = the topic test (Jul 16, proven live):** the "last 10 WC Golden Boot winners" list was VETOED by the founder (40-year window) and the data agreed — 3 real players all scored 0 pts, 0/10 found. Pulled to status='vetoed'; the WC captains/Golden Ball lists were pulled to draft unreleased. A verifiable list is NOT a playable list — a casual fan must land 5–7. Topic titles get founder approval as TEXT BEFORE any generation spend. **Content live:** Jul 13–15 = PL library seeds (25/26 scorers · appearance makers ·
+> all-time scorers), Jul 16 = last 10 WC Golden Boot winners (Salenko added as an
+> accepted answer on the shared-1994 rung), Jul 17 = last 10 WC-winning captains —
+> founder wants WC-themed dailies while WC 2026 runs; Jul 18 = last 10 WC Golden Ball winners (Messi twice → the DOUBLE-WINNER fix same eve: solved names stay suggestible, grading skips to the next unsolved rung, all-solved returns alreadyFound with NO strike). Gate lessons (all drops were
+> CORRECT): tie-bunched topics (all-time assists 94-94, clean sheets 132×3, mid-
+> tournament tallies) are structurally unshippable — pick recency-ranked or clean-order
+> topics; all-time WC scorers/appearances regenerate AFTER the Jul 19 final. ⚠️ NO
+> daily automation yet — someone must generate + assign `day` rows (founder decision
+> pending on a cron). NOTE: `scripts/lib/anthropic.mjs` got its first git commit on this
+> branch (was untracked WIP from the quiz-factory session) — reconcile if the factory
+> branch commits its own copy. Nav decision PENDING with founder: an "all games under
+> one Play tab incl. 38-0" restructure was floated 2026-07-16 — NOT built; §9 canon and
+> the §12 "Play label retired" entry stand until he rules.)
+>
+> **Previously confirmed:** 2026-07-13 (**Product-audit fix batches A–C verified + merged with main** —
 > see Recently Shipped; audit docs at `docs/AUDIT-2026-07-11-*.md`. Verification was live:
 > room-watchdog e2e 12/12 against the real DB via two QA bots, the full guest 38-0 loop
 > played through win→swap and loss, h2h accept + guest game-link gate exercised in the
@@ -260,6 +302,22 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-16** — **Perfect 10 SHIPPED** — third Quiz game-type: name everyone in a ranked
+  top-10 list. Floodlit-tower UI at `/play/game/perfect-10`, daily list (Europe/London),
+  hints/strikes, async challenge links, all-PL-history typeahead (4,669 names). Server-only
+  answers (mig 85, RLS deny-all). Lists gate-verified before a `day` is assigned. See the
+  Confirmed preamble for the full mechanics + gotchas (SportMonks topscorers unreliable;
+  season-id alias trap; `scripts/lib/anthropic.mjs` first committed here).
+- **2026-07-15** — **Retention tracking: `ReturnPlay` event + durable device id** (analytics
+  plumbing, no user-facing surface). `ReturnPlay` fires once per device the first time a player
+  plays on a later calendar day than their first-ever play — the D2+ "they came back" signal,
+  fanned out to X/Meta/TikTok/Snapchat/GA4/Vercel/AppsFlyer so ad platforms can finally build
+  repeat-player audiences + lookalikes off retained users (they previously optimised for first
+  play/signup only). Pure logic in `src/lib/analytics/returnPlay.ts` (unit-tested); fan-out in
+  `trackGame.ts`; native arm `afReturnPlay`. Also: a durable anonymous `ys:did` device id, saved
+  to new `profiles.device_id` at signup (migration 81, first-touch) so guest activity can later
+  be linked to the account. X arm is gated on `NEXT_PUBLIC_X_RETURNPLAY_EVENT_ID` (unset →
+  no-op until the X event is created). Phase B (stamp device_id onto guest play rows) still TODO.
 - **2026-07-13 (pm)** — **UI-audit approved fixes** (docs/AUDIT-2026-07-13-ui-first-impressions.md;
   founder walkthrough): site tagline standardized to **"The Home of Football Gaming"** (root
   title/OG/twitter); /how-it-works scoring is **top-line only** (founder: no explicit point

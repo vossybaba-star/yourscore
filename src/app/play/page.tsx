@@ -348,6 +348,7 @@ function OpenRoomCard({ room, onJoin }: { room: OpenRoom; onJoin: () => void }) 
 const GAME_TYPE_TILES = [
   { type: "higher-lower", title: "Higher or Lower", tag: "Two players, one stat", accent: "#00d8c0" },
   { type: "guess-the-player", title: "Guess the Player", tag: "Name the mystery player", accent: "#aeea00" },
+  { type: "perfect-10", title: "Perfect 10", tag: "Name the whole top ten", accent: "#ffc400" },
 ] as const;
 
 function GameTypeTile({ tile }: { tile: (typeof GAME_TYPE_TILES)[number] }) {

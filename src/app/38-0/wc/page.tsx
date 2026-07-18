@@ -19,6 +19,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { BackPill } from "@/components/ui/BackPill";
 import { Pitch } from "@/components/draft/Pitch";
+import { SlateSkeleton } from "@/components/draft/SlateSkeleton";
 import { InviteMastermind } from "@/components/draft/InviteMastermind";
 import { WcEditionStrip, type EditionCell } from "@/components/draft/WcEditionStrip";
 import { DraftHubHero } from "@/components/draft/WcHubHero";
@@ -65,6 +66,9 @@ export default function WorldCupEntry() {
   const [spinning, setSpinning] = useState(false);
   const [reel, setReel] = useState<string | null>(null);
   const [selected, setSelected] = useState<PlayerSeason | null>(null);
+  // True from the SCOUT tap until the pick is placed — gates the tray's fixed-height
+  // round box (CLS: reserve space at the tap, reveal inside it). See /38-0/play.
+  const [roundOpen, setRoundOpen] = useState(false);
   // The pitch slot the next scout is aimed at (tap an empty slot to set, tap again to
   // clear). Null = scout across every open position, as before.
   const [targetSlotId, setTargetSlotId] = useState<string | null>(null);
@@ -114,6 +118,10 @@ export default function WorldCupEntry() {
     try { if (typeof window !== "undefined") { const c = localStorage.getItem("wc-editions"); if (c) return JSON.parse(c) as EditionCell[]; } } catch { /* ignore */ }
     return [];
   });
+  // True once the status fetch has answered (or failed) — until then, an empty `editions`
+  // means "unknown", and the hub reserves the strip's space with a skeleton so the strip
+  // mounting ~0.6s in doesn't shove everything below it (CLS on the busiest mobile route).
+  const [editionsResolved, setEditionsResolved] = useState(false);
   // While drafting a catch-up: the specific past edition date (YYYY-MM-DD) being played,
   // or null for the normal "today's run" flow. The string flows through the API as
   // `catchupDate` so any past edition the catch-up index page picked can be served.
@@ -201,11 +209,15 @@ export default function WorldCupEntry() {
   function startSpin() {
     if (!team || spinning || quiz) return;
     setFeedback(null);
+    // Reserve the tray's round box NOW, synchronously with the tap (input-excluded for
+    // CLS) — the reel/slate that land 0.8–1.8s later (reel animation, quiz handoff)
+    // render inside the already-reserved space instead of shifting the page.
+    setRoundOpen(true);
     // World Cup Run (open draft) has no quiz gate — spin straight away at full quality.
     if (!quizGated) { runSpin({ minOverall: 0, maxOverall: 99 }); return; }
     if (ranked) {
       const sq = serverQs.current[draftAnswers.current.length];
-      if (!sq) { setError("Couldn't load today's questions — refresh and retry."); return; }
+      if (!sq) { setRoundOpen(false); setError("Couldn't load today's questions — refresh and retry."); return; }
       setQuiz({ id: sq.id, prompt: sq.prompt, options: sq.options, correctIndex: -1, category: sq.category });
       setAnswered(null); setTimeLeft(QUESTION_SECONDS);
       return;
@@ -341,6 +353,7 @@ export default function WorldCupEntry() {
     if (ranked) draftPicks.current = [...draftPicks.current, { slot: slot.id, player_season_id: selected.id }];
     const next = placePlayer(team, selected, slot);
     setTeam(next); setSlate(null); setSelected(null);
+    setRoundOpen(false); // tap-synchronous — collapsing the round box is input-excluded (CLS)
     setTargetSlotId(null); // a scout target is per-pick — re-aim each round
   }
 
@@ -373,7 +386,8 @@ export default function WorldCupEntry() {
           setEditions(data.editions as EditionCell[]);
           try { localStorage.setItem("wc-editions", JSON.stringify(data.editions)); } catch { /* ignore */ }
         }
-      } catch { /* leave unlocked; the begin call still guards */ }
+        setEditionsResolved(true);
+      } catch { if (!off) setEditionsResolved(true); /* leave unlocked; the begin call still guards */ }
     })();
     return () => { off = true; };
   }, [user]);
@@ -504,15 +518,29 @@ export default function WorldCupEntry() {
           <WcFinaleStrip />
 
           {/* Edition strip — your ranked World Cup timeline: catch up on missed days, peek past
-              results, see at a glance whether you're up to date. (Signed-in; replaces /catch-up.) */}
-          {editions.length > 0 && (
+              results, see at a glance whether you're up to date. (Signed-in; replaces /catch-up.)
+              While the status fetch is in flight (no localStorage warm cache), a same-size
+              skeleton holds the strip's slot so the late mount doesn't shove the hub (CLS).
+              Resolved-empty collapses it — only that rare case shifts, instead of every load. */}
+          {editions.length > 0 ? (
             <WcEditionStrip
               editions={editions}
               onPlayToday={() => startRanked()}
               onCatchUp={(d) => startRanked(d)}
               onViewRun={(id) => router.push(`/38-0/wc/run/${id}`)}
             />
-          )}
+          ) : !editionsResolved ? (
+            <div className="mb-5 animate-pulse" aria-hidden>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="rounded" style={{ height: 16, width: 170, background: "rgba(255,255,255,0.06)" }} />
+              </div>
+              <div className="flex gap-2 overflow-hidden pb-1">
+                {Array.from({ length: 6 }, (_, i) => (
+                  <div key={i} className="rounded-2xl flex-shrink-0" style={{ width: 72, height: 84, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }} />
+                ))}
+              </div>
+            </div>
+          ) : null}
 
           <div className="flex flex-col gap-3 mb-5">
             {/* Today's Run (ranked). Locked once it's been played or drafted past pick 6. */}
@@ -697,20 +725,30 @@ export default function WorldCupEntry() {
 
       <div className="fixed bottom-0 left-0 right-0" style={{ background: "linear-gradient(0deg,#0a0a0f 78%,transparent)", paddingBottom: "calc(env(safe-area-inset-bottom,0px) + 14px)" }}>
         <div className="max-w-lg mx-auto px-4 pt-3">
-          {spinning && (
-            <div className="mb-3 flex items-center gap-3 rounded-2xl px-4 py-3" style={{ background: "#0e1611", border: "1px solid rgba(255,184,0,0.4)" }}>
+          {/* Round box — reserved at the SCOUT tap (input-excluded) at its final height;
+              reel, skeleton, slate and placement panel swap INSIDE it so the late reveal
+              (reel animation + quiz handoff, 0.8–1.8s after the tap) can't shift the page.
+              This route carries 11K of 29K mobile samples — it sets the aggregate CLS. */}
+          {roundOpen && (
+            <div className="mb-3 flex flex-col" style={{ height: 398 }}>
+            {/* reel row — constant height, ticks in place; idle label while the quiz is up */}
+            <div className="flex items-center gap-3 rounded-2xl px-4 flex-shrink-0" style={{ height: 66, background: "#0e1611", border: `1px solid ${spinning ? "rgba(255,184,0,0.4)" : "rgba(255,255,255,0.08)"}` }}>
               {teamCrest ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={teamCrest} alt="" width={40} height={40} style={{ width: 40, height: 40, objectFit: "contain", opacity: 0.85 }} />
               ) : (
                 <span style={{ fontSize: 34 }}>🌍</span>
               )}
-              <div className="font-display tracking-wide truncate" style={{ fontSize: 22, color: "#ffb800" }}>{reel ?? "Scouting…"}</div>
+              <div className="font-display tracking-wide truncate" style={{ fontSize: 22, color: spinning ? "#ffb800" : "#8a948f" }}>
+                {spinning ? (reel ?? "Scouting…") : slate ? "PICK A PLAYER" : "Scouting…"}
+              </div>
             </div>
-          )}
 
-          {selected && (
-            <div className="mb-3 rounded-2xl p-3" style={{ background: "#0e1611", border: "1px solid rgba(174,234,0,0.3)" }}>
+            {/* slate area — fills the rest of the box; contents swap in place */}
+            <div className="flex-1 min-h-0 mt-3">
+            {selected ? (
+            <div className="h-full flex flex-col justify-end">
+            <div className="rounded-2xl p-3 overflow-y-auto" style={{ background: "#0e1611", border: "1px solid rgba(174,234,0,0.3)" }}>
               <div className="flex items-center justify-between mb-2">
                 <span className="font-body" style={{ fontSize: 14, color: "#fff" }}>Place <b style={{ color: "#aeea00" }}>{selected.name}</b></span>
                 <button onClick={() => setSelected(null)} className="font-body" style={{ fontSize: 13, color: "#8a948f" }}>Cancel</button>
@@ -723,10 +761,9 @@ export default function WorldCupEntry() {
                 {available.length === 0 && <span className="font-body" style={{ fontSize: 12, color: "#ff8a3d" }}>No open slot fits — pick another player.</span>}
               </div>
             </div>
-          )}
-
-          {slate && !spinning && !selected && (
-            <div className="mb-3 rounded-2xl overflow-hidden" style={{ background: "#080d0a", border: "1px solid rgba(255,255,255,0.07)", maxHeight: 320, overflowY: "auto" }}>
+            </div>
+            ) : slate && !spinning ? (
+            <div className="rounded-2xl overflow-hidden" style={{ background: "#080d0a", border: "1px solid rgba(255,255,255,0.07)", height: "100%", overflowY: "auto" }}>
               {world && spunNation ? (
                 <div className="flex items-center gap-2 px-3 py-2.5 sticky top-0" style={{ background: "#080d0a", borderBottom: "1px solid rgba(255,184,0,0.25)" }}>
                   {spunNation.crest && (
@@ -762,10 +799,18 @@ export default function WorldCupEntry() {
                 );
               })}
             </div>
+            ) : (
+              <SlateSkeleton />
+            )}
+            </div>
+            </div>
           )}
 
           {error && <div className="mb-2 font-body text-center" style={{ fontSize: 13, color: "#ff8a3d" }}>{error}</div>}
 
+          {/* min-height matches the md Button so the button↔hint swap at reveal time
+              (outside the input-exclusion window) doesn't nudge the tray (CLS). */}
+          <div className="flex flex-col justify-center" style={{ minHeight: 56 }}>
           {remaining > 0 ? (
             !slate || spinning ? (
               <Button variant="primary" tone="lime" size="md" fullWidth onClick={startSpin} disabled={spinning || !!quiz}>
@@ -788,6 +833,7 @@ export default function WorldCupEntry() {
               )}
             </>
           )}
+          </div>
         </div>
       </div>
 

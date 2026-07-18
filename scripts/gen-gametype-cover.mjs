@@ -59,6 +59,13 @@ const GAME = {
     motif:
       "Central motif: one mysterious footballer rendered as a single bold solid silhouette bust (head and shoulders), lit dramatically from above by a geometric spotlight beam, with a large bold question-mark shape sitting over the silhouette; a single classic round soccer ball at the base; geometric spotlight rays.",
   },
+  "perfect-10": {
+    slug: "perfect-10",
+    title: "PERFECT 10",
+    palette: "near-black stadium night, radiant gold and warm cream",
+    motif:
+      "Central motif: a monumental tapering tower built of exactly ten stacked horizontal rung bars, widest at the base and narrowing toward the summit, the lower rungs glowing radiant gold as if freshly ignited and the top rungs still dark; geometric floodlight beams fanning up from behind the tower into the night sky; a single classic round soccer ball resting at the tower's base.",
+  },
 };
 
 const cfg = GAME[TYPE];

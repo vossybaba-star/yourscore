@@ -88,6 +88,14 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Ad/analytics pixel IDs (inlined at build). Each vendor renders only when its
+  // ID is set, so dev/preview never inject empty-ID pixels.
+  const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+  const googleAdsId = process.env.NEXT_PUBLIC_GOOGLE_ADS_CONVERSION_ID;
+  const tiktokId = process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID;
+  const xId = process.env.NEXT_PUBLIC_X_PIXEL_ID;
+  const metaId = process.env.NEXT_PUBLIC_META_PIXEL_ID;
+  const snapId = process.env.NEXT_PUBLIC_SNAP_PIXEL_ID;
   return (
     <html lang="en" className={`${bebasNeue.variable} ${dmSans.variable} ${dmMono.variable}`}>
       <body>
@@ -110,99 +118,90 @@ export default function RootLayout({
         <PostHogProvider>{children}</PostHogProvider>
         <Analytics />
         <SpeedInsights />
-        {/* Initialise dataLayer + gtag stub synchronously so useEffect callers
-            (SignupPixel etc.) can queue events before gtag.js loads. */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}`,
-          }}
-        />
-        {/* Google Analytics 4 */}
-        <Script
-          src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}`}
-          strategy="afterInteractive"
-        />
-        <Script
-          id="google-analytics"
-          strategy="afterInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-              gtag('config', '${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}');
-              ${process.env.NEXT_PUBLIC_GOOGLE_ADS_CONVERSION_ID ? `gtag('config', '${process.env.NEXT_PUBLIC_GOOGLE_ADS_CONVERSION_ID}');` : ''}
-            `,
-          }}
-        />
-        {/* TikTok Pixel */}
-        <Script
-          id="tiktok-pixel"
-          strategy="afterInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `
-              !function(w,d,t){w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];
-              ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie","holdConsent","revokeConsent","grantConsent"],
-              ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};
-              for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);
-              ttq.instance=function(t){for(var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e},
-              ttq.load=function(e,n){var r="https://analytics.tiktok.com/i18n/pixel/events.js",o=n&&n.partner;
-              ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=r,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};
-              n=document.createElement("script");n.type="text/javascript",n.async=!0,n.src=r+"?sdkid="+e+"&lib="+t;
-              e=document.getElementsByTagName("script")[0];e.parentNode.insertBefore(n,e)};
-              ttq.load('${process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID}');
-              ttq.page();
-              }(window,document,'ttq');
-            `,
-          }}
-        />
-        {/* Twitter/X Pixel */}
-        <Script
-          id="twitter-pixel"
-          strategy="afterInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `
-              !function(e,t,n,s,u,a){e.twq||(s=e.twq=function(){s.exe?s.exe.apply(s,arguments):s.queue.push(arguments);
-              },s.version='1.1',s.queue=[],u=t.createElement(n),u.async=!0,u.src='https://static.ads-twitter.com/uwt.js',
-              a=t.getElementsByTagName(n)[0],a.parentNode.insertBefore(u,a))}(window,document,'script');
-              twq('config','${process.env.NEXT_PUBLIC_X_PIXEL_ID}');
-            `,
-          }}
-        />
-        {/* Meta Pixel */}
-        <Script
-          id="meta-pixel"
-          strategy="afterInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `
-              !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-              n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
-              n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
-              t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}
-              (window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
-              fbq('init', '${process.env.NEXT_PUBLIC_META_PIXEL_ID}');
-              fbq('track', 'PageView');
-            `,
-          }}
-        />
-        {/* Snapchat Pixel — only loads once the pixel ID env var is set */}
-        {process.env.NEXT_PUBLIC_SNAP_PIXEL_ID && (
-          <Script
-            id="snap-pixel"
-            strategy="afterInteractive"
-            dangerouslySetInnerHTML={{
-              __html: `
-                (function(e,t,n){if(e.snaptr)return;var a=e.snaptr=function(){
-                a.handleRequest?a.handleRequest.apply(a,arguments):a.queue.push(arguments)};
-                a.queue=[];var s='script';var r=t.createElement(s);r.async=!0;
-                r.src=n;var u=t.getElementsByTagName(s)[0];
-                u.parentNode.insertBefore(r,u);})(window,document,
-                'https://sc-static.net/scevent.min.js');
-                snaptr('init', '${process.env.NEXT_PUBLIC_SNAP_PIXEL_ID}');
-                snaptr('track', 'PAGE_VIEW');
-              `,
-            }}
-          />
+        {/* ─── Ad/analytics pixels: STUBS-FIRST, heavy JS deferred ──────────────
+            Each vendor's queueing stub is installed SYNCHRONOUSLY (plain inline
+            <script>, runs during HTML parse) so window.gtag/ttq/twq/fbq/snaptr
+            exist before any React effect fires — conversion calls (SignupPixel,
+            trackGame: `window.fbq?.(...)`) then QUEUE instead of no-op-dropping,
+            which is what happened when the stub only appeared `afterInteractive`.
+            The heavy vendor libraries load `lazyOnload` (after the page is idle),
+            off the LCP/TBT path; on load each drains its queue, so no event is
+            lost — PageView/config just attribute a few seconds later. */}
+
+        {/* Google Analytics 4 (+ Google Ads) — stub + config queue now, lib later */}
+        {gaId && (
+          <>
+            <script
+              dangerouslySetInnerHTML={{
+                __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${gaId}');${googleAdsId ? `gtag('config','${googleAdsId}');` : ""}`,
+              }}
+            />
+            <Script src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`} strategy="lazyOnload" />
+          </>
+        )}
+
+        {/* TikTok — stub + page() queue now; ttq.load() (injects events.js) deferred */}
+        {tiktokId && (
+          <>
+            <script
+              dangerouslySetInnerHTML={{
+                __html: `
+                  !function(w,d,t){w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];
+                  ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie","holdConsent","revokeConsent","grantConsent"],
+                  ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};
+                  for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);
+                  ttq.instance=function(t){for(var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e},
+                  ttq.load=function(e,n){var r="https://analytics.tiktok.com/i18n/pixel/events.js";
+                  ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=r,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};
+                  n=document.createElement("script");n.type="text/javascript",n.async=!0,n.src=r+"?sdkid="+e+"&lib="+t;
+                  e=document.getElementsByTagName("script")[0];e.parentNode.insertBefore(n,e)};
+                  ttq.page();
+                  }(window,document,'ttq');
+                `,
+              }}
+            />
+            <Script
+              id="tiktok-pixel-load"
+              strategy="lazyOnload"
+              dangerouslySetInnerHTML={{ __html: `window.ttq&&window.ttq.load('${tiktokId}');` }}
+            />
+          </>
+        )}
+
+        {/* Twitter/X — stub + config queue now; uwt.js (drains queue) deferred */}
+        {xId && (
+          <>
+            <script
+              dangerouslySetInnerHTML={{
+                __html: `!function(e,t,n,s,u,a){e.twq||(s=e.twq=function(){s.exe?s.exe.apply(s,arguments):s.queue.push(arguments);},s.version='1.1',s.queue=[])}(window,document,'script');twq('config','${xId}');`,
+              }}
+            />
+            <Script src="https://static.ads-twitter.com/uwt.js" strategy="lazyOnload" />
+          </>
+        )}
+
+        {/* Meta — stub + init + PageView queue now; fbevents.js (drains queue) deferred */}
+        {metaId && (
+          <>
+            <script
+              dangerouslySetInnerHTML={{
+                __html: `!function(f,b,e,n){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[]}(window,document);fbq('init','${metaId}');fbq('track','PageView');`,
+              }}
+            />
+            <Script src="https://connect.facebook.net/en_US/fbevents.js" strategy="lazyOnload" />
+          </>
+        )}
+
+        {/* Snapchat — stub + init + PAGE_VIEW queue now; scevent.min.js (drains queue) deferred */}
+        {snapId && (
+          <>
+            <script
+              dangerouslySetInnerHTML={{
+                __html: `(function(e){if(e.snaptr)return;var a=e.snaptr=function(){a.handleRequest?a.handleRequest.apply(a,arguments):a.queue.push(arguments)};a.queue=[]})(window);snaptr('init','${snapId}');snaptr('track','PAGE_VIEW');`,
+              }}
+            />
+            <Script src="https://sc-static.net/scevent.min.js" strategy="lazyOnload" />
+          </>
         )}
       </body>
     </html>
