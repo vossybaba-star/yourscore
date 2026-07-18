@@ -10,7 +10,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BottomNav } from "@/components/ui/BottomNav";
-import { BackPill } from "@/components/ui/BackPill";
 import { GameSwitcher } from "@/components/ui/GameSwitcher";
 import { Button } from "@/components/ui/Button";
 import { Pitch } from "@/components/draft/Pitch";
@@ -85,13 +84,9 @@ export default function DraftHome() {
   return (
     <div className="min-h-[100dvh] pb-24" style={{ background: "#0a0a0f" }}>
       <div className="max-w-lg mx-auto px-5 pt-safe">
-        {/* header */}
-        <div className="flex items-center justify-between pt-5 pb-3">
-          <BackPill href="/" label="YourScore" tone="draft" />
-        </div>
-
-        {/* Game switcher — Quiz / 38-0 both live under the Play tab. */}
-        <div className="mb-4">
+        {/* Game switcher IS the header — 38-0 is its own game tab (founder
+            2026-07-18), so no back button above it. */}
+        <div className="pt-3 mb-4">
           <GameSwitcher active="draft" />
         </div>
 

@@ -304,6 +304,11 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-18** — **No back buttons on game sections (founder)** — games are tabs, so
+  the switcher is the navigation: removed the 38-0 hub's "YourScore" BackPill and the
+  three game intros' Back buttons; results CTAs relabelled "MORE GAMES" (the games
+  aren't Quiz anymore). The in-game exit Back on an active Perfect 10 run stays —
+  it's the only way out mid-game.
 - **2026-07-18** — **Perfect 10, Higher or Lower, Guess the Player are separate games
   (founder ruling)** — the GameSwitcher is now five games (Quiz | 38-0 | Perfect 10 |
   Higher or Lower | Guess the Player), each with its own section; the switcher renders
@@ -739,7 +744,11 @@ Premier League · Profile.**
   sections). Routes are frozen — the switcher navigates between them, renders on the
   two hubs and on each game's intro screen (never over gameplay), scrolls
   horizontally and auto-centres the active tab; the Play tab stays highlighted on all
-  of them. 38-0 is no longer a bottom-nav tab.
+  of them. 38-0 is no longer a bottom-nav tab. **No back buttons on game sections
+  (founder 2026-07-18):** each game is a tab, so the switcher IS the navigation — the
+  38-0 hub's "YourScore" BackPill and the game intros' Back buttons are gone. The
+  ONLY Back left is the in-game exit on an active Perfect 10 run (no other way out
+  mid-game); results screens say "MORE GAMES" (→ /play), not "BACK TO QUIZ".
 - **Versus** is the game-first cross-game hub for playing other people (the Leagues tab
   was replaced by it). Sub-nav: **Play** · **Friends** (`/friends`) · **Leagues**
   (`/leagues`, nested). The pending-turns badge lives on this tab. (The Leagues route

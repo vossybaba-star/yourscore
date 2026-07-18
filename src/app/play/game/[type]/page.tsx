@@ -2,7 +2,6 @@
 
 import { useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { smartBackTarget } from "@/lib/nav";
 import { haptic } from "@/lib/haptics";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { GameSwitcher } from "@/components/ui/GameSwitcher";
@@ -429,20 +428,10 @@ export default function GameTypePage() {
           </div>
         </div>
 
-        <div className="relative flex flex-col items-center pt-14 pb-8 px-6"
+        {/* No back button — the switcher above IS the navigation (founder
+            2026-07-18: own tab, no back buttons on game sections). */}
+        <div className="relative flex flex-col items-center pt-8 pb-8 px-6"
           style={{ background: `linear-gradient(175deg, ${accent}14 0%, #0e1611 55%, #0a0a0f 100%)` }}>
-          <button
-            type="button"
-            onClick={() => router.push(smartBackTarget("/play"))}
-            className="absolute top-3 left-5 flex items-center gap-1.5 font-body text-xs z-10"
-            style={{ color: "rgba(255,255,255,0.5)" }}
-          >
-            <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
-              <path d="M11 4L6 9l5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            Back
-          </button>
-
           <div className="w-full mb-5"
             style={{ maxWidth: 340, borderRadius: 18, overflow: "hidden", border: `1.5px solid ${accent}40`, boxShadow: `0 12px 40px ${accent}22` }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -683,7 +672,7 @@ export default function GameTypePage() {
             PLAY AGAIN →
           </Button>
           <Button variant="ghost" tone="teal" size="lg" fullWidth onClick={() => router.push("/play")}>
-            BACK TO QUIZ
+            MORE GAMES
           </Button>
           <p className="font-body text-xs text-center mt-1" style={{ color: "#586058" }}>
             Practice mode — these don&apos;t count on the leaderboard yet.

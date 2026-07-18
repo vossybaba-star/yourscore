@@ -690,22 +690,12 @@ export default function Perfect10Page() {
           </div>
         </div>
 
+        {/* No back button — the switcher above IS the navigation (founder
+            2026-07-18: own tab, no back buttons on game sections). */}
         <div
-          className="relative flex flex-col items-center pt-14 pb-8 px-6"
+          className="relative flex flex-col items-center pt-8 pb-8 px-6"
           style={{ background: `linear-gradient(175deg, ${ACCENT}14 0%, #16130a 55%, #0a0a0f 100%)` }}
         >
-          <button
-            type="button"
-            onClick={() => router.push(smartBackTarget("/play"))}
-            className="absolute top-3 left-5 flex items-center gap-1.5 font-body text-xs z-10"
-            style={{ color: "rgba(255,255,255,0.5)" }}
-          >
-            <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
-              <path d="M11 4L6 9l5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            Back
-          </button>
-
           <div
             className="w-full mb-5"
             style={{ maxWidth: 340, borderRadius: 18, overflow: "hidden", border: `1.5px solid ${ACCENT}40`, boxShadow: `0 12px 40px ${ACCENT}22` }}
@@ -1090,7 +1080,7 @@ export default function Perfect10Page() {
           )}
 
           <Button variant="ghost" tone="gold" size="lg" fullWidth onClick={() => router.push("/play")}>
-            BACK TO QUIZ
+            MORE GAMES
           </Button>
         </div>
 
