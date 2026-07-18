@@ -45,6 +45,22 @@ const has = (n) => args.includes(n);
 const TOPIC = flag("--topic");
 const DAY = flag("--day") || null;
 const JSON_OUT = flag("--json-out") || null;
+/**
+ * --anchor "<canonical source + its tiebreak rules>"
+ *
+ * WHY THIS EXISTS (founder call, Jul 17). Most football top-10s are tie-bunched
+ * (2026 WC: Messi 8 = Mbappé 8, Kane 6 = Bellingham 6, four players on 4), so no
+ * publisher ever prints the exact 1-10 numbering the verifier was demanding and
+ * every such list died — ~7 topics lost that way.
+ *
+ * The insight that unlocks it: **a tie never reaches the player.** They type a
+ * name, the rung fills; the rank is display only. So the order doesn't need to be
+ * the one true published numbering — it needs to be DEFENSIBLE. With an anchor we
+ * verify the things that actually determine the order (each player's stat value,
+ * and the anchor's own published tiebreakers) instead of hunting for a numbered
+ * article. That is stricter about FACTS and looser about EDITORIAL ORDER.
+ */
+const ANCHOR = flag("--anchor") || null;
 const FIXTURE = has("--fixture");
 
 if (!FIXTURE && !TOPIC) {
@@ -96,7 +112,14 @@ async function authorList(topic) {
   const resp = await callClaude({
     model: MODELS.author,
     system: AUTHOR_SYSTEM,
-    messages: [{ role: "user", content: `Topic: ${topic}\n\nAuthor the ranked top-10 list.` }],
+    messages: [
+      {
+        role: "user",
+        content: ANCHOR
+          ? `Topic: ${topic}\n\nCANONICAL SOURCE: ${ANCHOR}\n\nBuild the ranking strictly from THAT source's data and ITS published tiebreakers. Search it first. Where players are level on the headline stat, apply the source's stated tiebreak rules in order to produce a strict 1-10 with no ties. Include each player's headline stat value in "clue1" ONLY if it does not give the answer away — otherwise clubs as normal.\n\nAuthor the ranked top-10 list.`
+          : `Topic: ${topic}\n\nAuthor the ranked top-10 list.`,
+      },
+    ],
     tools: [WEB_SEARCH_TOOL],
     maxTokens: 8192,
     stage: "p10-author",
@@ -121,14 +144,42 @@ Rules:
 - If you cannot find a source that settles it, or the source disagrees, "confirmed" must be false.
 - Be strict. A ranked list is only as good as its weakest rung.`;
 
+/**
+ * Anchored verification. Checks the FACTS THAT DETERMINE the rank — the player's
+ * stat value per the named source, and whether the anchor's own tiebreakers put
+ * them in that slot — rather than requiring a publisher to have printed this
+ * exact numbering (which for tie-bunched stats nobody ever does).
+ */
+const verifySystemAnchored = (anchor) => `You are a fact-checker for a football trivia list whose ranking is defined by ONE canonical source.
+
+CANONICAL SOURCE: ${anchor}
+
+You will be told a claimed rank + player. You are NOT told how the list was produced.
+
+Use web search, prioritising the canonical source itself. Reply with ONLY a JSON object:
+{
+  "confirmed": true | false,
+  "source_url": "the single best URL supporting your verdict, or null",
+  "note": "a short line explaining your verdict, citing what the source says"
+}
+
+How to judge:
+- Verify the player's UNDERLYING STAT VALUE for this list per the canonical source (e.g. "8 goals"). If that value is wrong or unfindable, "confirmed" MUST be false.
+- Then verify the claimed rank is CONSISTENT with that value plus the canonical source's own tiebreak rules — i.e. exactly (rank - 1) players legitimately sit above them.
+- **Ties are expected and are NOT grounds to reject.** If players are level on the headline stat, apply the source's stated tiebreakers. A rank is confirmed when it is a defensible position under those rules — you do NOT need a published article that prints this exact numbering, and disagreement between other outlets' orderings is NOT grounds to reject.
+- Still reject: a wrong stat value, a player who does not belong on this list at all, or a rank that no tiebreak rule could justify (e.g. placed above someone with a clearly better stat).
+- The facts must be right. The editorial ordering only has to be defensible.`;
+
 async function verifyEntry(title, entry) {
   const resp = await callClaude({
     model: MODELS.verify,
-    system: VERIFY_SYSTEM,
+    system: ANCHOR ? verifySystemAnchored(ANCHOR) : VERIFY_SYSTEM,
     messages: [
       {
         role: "user",
-        content: `List: "${title}"\n\nClaim: #${entry.rank} is ${entry.display}.\n\nIs this genuinely ranked #${entry.rank} in "${title}"? Search and cite a source.`,
+        content: ANCHOR
+          ? `List: "${title}"\n\nClaim: #${entry.rank} is ${entry.display}.\n\nPer the canonical source: what is ${entry.display}'s stat value for this list, and is #${entry.rank} a defensible position for that value under the source's tiebreak rules? Search and cite.`
+          : `List: "${title}"\n\nClaim: #${entry.rank} is ${entry.display}.\n\nIs this genuinely ranked #${entry.rank} in "${title}"? Search and cite a source.`,
       },
     ],
     tools: [WEB_SEARCH_TOOL],
