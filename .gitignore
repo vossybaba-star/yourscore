@@ -74,3 +74,4 @@ scripts/data/halftime/
 
 # Never commit env backups (they carry prod secrets)
 .env.local.bak*
+.env*

@@ -78,7 +78,17 @@ export function generateMetadata(): Metadata {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  // Pinch-zoom stays enabled (WCAG 1.4.4) — low-vision users must be able to zoom.
+  /**
+   * Zoom DISABLED app-wide (founder, 2026-07-16). An accidental pinch on the
+   * PL tab left the app stuck zoomed-in with no way back — effectively frozen.
+   * This is the standard app-shell trade: we lose WCAG 1.4.4 pinch-zoom (the
+   * earlier comment here chose the opposite), which is why maximumScale is 1.
+   * Note iOS SAFARI ignores user-scalable for accessibility, so the web keeps
+   * pinch-zoom there regardless; the native WKWebView — where the freeze
+   * happened — respects it.
+   */
+  maximumScale: 1,
+  userScalable: false,
   themeColor: "#0a0a0f",
   viewportFit: "cover",
 };

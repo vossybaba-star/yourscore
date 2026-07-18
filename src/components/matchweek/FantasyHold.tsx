@@ -118,7 +118,7 @@ export function FantasyHold() {
       </div>
 
       {/* The one thing to do while it's not open yet. */}
-      <WaitlistCard />
+      <WaitlistCard source="fantasy-hold" />
     </div>
   );
 }

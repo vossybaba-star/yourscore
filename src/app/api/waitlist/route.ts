@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { rateLimitDistributed } from "@/lib/ratelimit";
+import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 
-// Blog waitlist capture (fantasy launch). Stores signups as contacts in a
-// dedicated Resend audience ("Fantasy Waitlist") so the launch email can go to
-// exactly this list — resolved by name at runtime (created on first use), so no
-// new env var is needed. RESEND_API_KEY already powers lifecycle email.
+// Fantasy waitlist (launch). SESSION-BASED as of 2026-07-16 (founder): asking a
+// signed-in user to type the email we already hold made no sense, and a
+// signed-out visitor should be pushed into creating an account, not leaving an
+// email. So POST reads the session and uses the account email; there is no
+// email in the request body at all. The DB (waitlist_emails) is the ledger,
+// written first; the Resend "Fantasy Waitlist" audience is best-effort sync
+// (resolved by name, created on first use), marked via synced_at.
 
 export const fetchCache = "force-no-store";
 
@@ -50,32 +54,47 @@ async function getAudienceId(): Promise<string | null> {
   return (audienceId = json?.id ?? null);
 }
 
+export async function GET() {
+  // "Is this account already on the list?" — keeps the button honest across
+  // visits. Signed out → trivially not saved.
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+  const email = data.user?.email?.toLowerCase();
+  if (!email) return NextResponse.json({ signedIn: false, saved: false });
+
+  const db = createServiceClient() as unknown as SupabaseClient;
+  const { data: row } = await db.from("waitlist_emails").select("email").eq("email", email).maybeSingle();
+  return NextResponse.json({ signedIn: true, saved: Boolean(row) });
+}
+
 export async function POST(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
   const { ok } = await rateLimitDistributed(`waitlist:${ip}`, 5, 60_000);
   if (!ok) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
 
-  let body: { email?: unknown };
-  try { body = await req.json(); } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
-  }
-  const email = String(body.email ?? "").trim().toLowerCase();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email) || email.length > 254) {
-    return NextResponse.json({ error: "That doesn't look like an email" }, { status: 400 });
-  }
+  // The email comes from the SESSION, never the body — a signed-in user
+  // shouldn't be asked for what we hold, and an unauthenticated caller has no
+  // business writing to the list (the UI sends them to create an account).
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+  const email = data.user?.email?.trim().toLowerCase();
+  if (!email) return NextResponse.json({ error: "Sign in to save your spot" }, { status: 401 });
+
+  const source = await req
+    .json()
+    .then((b: { source?: unknown }) => (typeof b.source === "string" ? b.source.slice(0, 40) : "waitlist"))
+    .catch(() => "waitlist");
 
   /**
-   * DB FIRST, Resend second (2026-07-16). This route used to be Resend-or-502:
-   * without RESEND_CAMPAIGNS_API_KEY on Vercel (the base key 401s on
-   * /audiences) every signup errored AND was lost — a dead CTA on the launch
-   * surface. The table is now the ledger; the audience is best-effort sync,
-   * with `synced_at` marking rows that made it so a backfill can push the rest
-   * once the key exists. A signup is never lost to an email-vendor hiccup.
+   * DB FIRST, Resend second. The table is the ledger; the audience is
+   * best-effort sync with synced_at marking successes (backfill:
+   * scripts/waitlist-backfill.mjs). A signup is never lost to a missing env
+   * var or a vendor hiccup.
    */
   const db = createServiceClient() as unknown as SupabaseClient;
   const { error: dbErr } = await db
     .from("waitlist_emails")
-    .upsert({ email, source: "waitlist" }, { onConflict: "email", ignoreDuplicates: true });
+    .upsert({ email, source }, { onConflict: "email", ignoreDuplicates: true });
   if (dbErr) {
     console.error("[waitlist] ledger write failed", dbErr);
     return NextResponse.json({ error: "Try again in a minute" }, { status: 502 });
@@ -89,7 +108,6 @@ export async function POST(req: NextRequest) {
         method: "POST",
         body: JSON.stringify({ email, unsubscribed: false }),
       });
-      // A repeat signup counts as synced too (409 / already exists).
       if (add.ok || add.status === 409 || /exists/i.test(await add.text().catch(() => ""))) {
         await db.from("waitlist_emails").update({ synced_at: new Date().toISOString() }).eq("email", email);
       }
