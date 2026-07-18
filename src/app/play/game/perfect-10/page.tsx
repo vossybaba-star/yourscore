@@ -377,6 +377,10 @@ export default function Perfect10Page() {
       const h = vv?.height ?? window.innerHeight;
       maxViewportRef.current = Math.max(maxViewportRef.current, h);
       setViewportH(h);
+      // iOS scrolls the LAYOUT viewport to reveal the focused input, which drags
+      // the board off-screen and exposes empty page beneath it. The board is
+      // position:fixed, so pinning the scroll back to 0 keeps it put.
+      if (window.scrollY !== 0) window.scrollTo(0, 0);
     };
     apply();
     vv?.addEventListener("resize", apply);
@@ -487,6 +491,24 @@ export default function Perfect10Page() {
 
   useEffect(() => {
     if (phase === "playing") setTimeout(() => inputRef.current?.focus(), 200);
+  }, [phase]);
+
+  // Belt and braces with the fixed board: stop the document itself scrolling
+  // while a game is in progress, so nothing can drag the tower out of view.
+  useEffect(() => {
+    if (phase !== "playing") return;
+    const html = document.documentElement;
+    const prevBody = document.body.style.overflow;
+    const prevHtml = html.style.overflow;
+    const prevOverscroll = html.style.overscrollBehavior;
+    document.body.style.overflow = "hidden";
+    html.style.overflow = "hidden";
+    html.style.overscrollBehavior = "none";
+    return () => {
+      document.body.style.overflow = prevBody;
+      html.style.overflow = prevHtml;
+      html.style.overscrollBehavior = prevOverscroll;
+    };
   }, [phase]);
 
   // A big drop from the tallest viewport we've seen = the keyboard is up.
@@ -777,15 +799,20 @@ export default function Perfect10Page() {
     const foundCount = game.found.length;
 
     return (
-      // 100dvh (not min-h-screen/100vh): vh ignores the mobile browser's own
-      // chrome, which is what pushed this into a scroll on shorter phones.
-      // overflow-hidden makes "never scroll during play" structural, not a hope.
-      <div className="flex flex-col bg-bg overflow-hidden" style={{ height: viewportH ? `${viewportH}px` : "100dvh" }}>
+      // Sized from visualViewport (not 100vh/min-h-screen — those ignore both the
+      // browser chrome AND the keyboard), and position:fixed so it's pinned to the
+      // visible area: in normal flow a parent's min-h-screen keeps the DOCUMENT
+      // tall, so tapping the input let iOS scroll the page down — tower off the
+      // top, dead space below.
+      <div
+        className="flex flex-col bg-bg overflow-hidden fixed inset-x-0 top-0"
+        style={{ height: viewportH ? `${viewportH}px` : "100dvh" }}
+      >
         <div
           className="shrink-0 z-10 pt-safe"
           style={{ background: "rgba(10,10,15,0.98)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}
         >
-          <div className="px-5 pt-2.5 pb-1.5 flex items-center justify-between gap-3">
+          <div className={`px-5 flex items-center justify-between gap-3 ${keyboardUp ? "pt-1 pb-0.5" : "pt-2.5 pb-1.5"}`}>
             <button
               type="button"
               onClick={() => router.push(smartBackTarget("/play"))}
@@ -862,7 +889,9 @@ export default function Perfect10Page() {
             ))}
           </div>
 
-          <div className="flex items-center justify-center gap-4 mt-2">
+          {/* Hidden while typing — the tiles need that height more than the
+              running total does, and the solved rungs already show progress. */}
+          <div className={`items-center justify-center gap-4 mt-2 ${keyboardUp ? "hidden" : "flex"}`}>
             <span className="font-body text-xs" style={{ color: "#9aa39d" }}>
               <span className="font-display" style={{ color: ACCENT }}>
                 {foundCount}
