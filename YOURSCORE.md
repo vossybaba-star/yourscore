@@ -6,7 +6,7 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-07-18 (**Nav: 38-0 now lives under the Play tab** — Quiz | 38-0
+> **Confirmed:** 2026-07-19 (**Nav: 38-0 now lives under the Play tab** — Quiz | 38-0
 > game switcher on both hubs, see §9 + Recently Shipped. Prior confirm 2026-07-16:
 > **Perfect 10 — new standalone list game SHIPPED to prod.**
 > Third Quiz game-type ("name everyone in a ranked top-10 football list", e.g. all-time
@@ -307,6 +307,11 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-19** — **Home link-preview card redesigned to sell the whole platform
+  (founder)** — `/api/og/home` (the og:image every yourscore.app unfurl shows) no longer
+  promotes only 38-0: "The Home of Football Gaming" headline + a fanned trio of mocked
+  game cards in the app's real design language (38-0 green / Perfect 10 gold with a real
+  list topic / Quiz teal). Bebas + DM Sans TTFs now bundled in the route for Satori.
 - **2026-07-18** — **Perfect 10: official result card + spoiler-safe X share + back to
   the picker (founder)** — the results screen is now a proper scorecard (topic title,
   PERFECT 10 / TOWER FALLS verdict, big points, n/10 named, then the tower) with the
