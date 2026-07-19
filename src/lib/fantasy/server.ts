@@ -70,9 +70,13 @@ async function currentGw(db: Db, userId: string): Promise<GwRow> {
   if (error) throw new HttpError(500, error.message);
   if (!gws?.length) throw new HttpError(409, "no gameweeks", "no-gw");
 
-  if ((gws[0] as GwRow).mode === "live") {
-    const current = gws.find((g: GwRow) => g.status !== "final") ?? gws[gws.length - 1];
-    return current as GwRow;
+  // A live season owns the game outright, so ANY live row wins — not just when the
+  // lowest-numbered gameweek happens to be live. Reading mode off gws[0] meant a
+  // single leftover replay demo row (which sorts first) silently put the whole game
+  // back in replay: every squad priced at seed, every sale refunded at what you paid.
+  const live = (gws as GwRow[]).filter((g) => g.mode === "live");
+  if (live.length) {
+    return (live.find((g) => g.status !== "final") ?? live[live.length - 1]) as GwRow;
   }
 
   const { data: entries } = await db.from("fantasy_entries")

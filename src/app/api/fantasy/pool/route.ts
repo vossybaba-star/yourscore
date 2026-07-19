@@ -7,6 +7,11 @@ import { clientPricedPool } from "@/lib/fantasy/pool";
 // to prevent. The CDN still caches it for an hour via the header below, which costs
 // nothing: a gameweek's prices are frozen at open anyway.
 export const dynamic = "force-dynamic";
+// And force-dynamic alone is NOT enough: the route re-runs, but Next still serves
+// the Supabase reads inside it from its Data Cache, so this went on quoting prices
+// for a gameweek that had been deleted from the database. Every other fantasy route
+// sets this for the same reason.
+export const fetchCache = "force-no-store";
 
 /**
  * The pool, priced for the gameweek that's currently open.

@@ -4,6 +4,7 @@
  *  shown unmissably. */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { sellPrice } from "@/lib/fantasy/engine";
 import {
   api, Btn, Card, Chip, Crest, fmtM, GOLD, Header, INK, LINE, MUTED, PITCH, page, PANEL,
   type ClientPoolPlayer, type FantasyState, type Pos,
@@ -51,19 +52,28 @@ export default function TransfersPage() {
   const formTotal = useCallback((id: number) => formOf(id).reduce((a, b) => a + b, 0), [formOf]);
   const hasForm = form.gws.length > 0;
 
+  /** What a player in your squad actually fetches: FPL's rule, against this
+   *  gameweek's price. Quoting `buyTenths` instead — what you paid — is wrong in
+   *  both directions now that prices move: it hides half of a rise, and worse, it
+   *  OVERSTATES a fallen player, so we'd offer a signing the server then refuses. */
+  const sellValue = useCallback((id: number): number => {
+    const paid = squad?.picks.find((p) => p.id === id)?.buyTenths ?? 0;
+    const now = byId.get(id)?.price;
+    return now === undefined ? paid : sellPrice(paid, Math.round(now * 10));
+  }, [squad, byId]);
+
   const candidates = useMemo(() => {
     if (!squad || !out) return [];
     const owned = new Set(squad.picks.map((p) => p.id));
     const clubCount = new Map<number, number>();
     for (const p of squad.picks) if (p.id !== out.id) clubCount.set(p.clubId, (clubCount.get(p.clubId) ?? 0) + 1);
-    const sellTenths = squad.picks.find((p) => p.id === out.id)?.buyTenths ?? 0;
-    const maxTenths = squad.bankTenths + sellTenths;
+    const maxTenths = squad.bankTenths + sellValue(out.id);
     return pool
       .filter((p) => p.pos === out.pos && !owned.has(p.id) &&
         Math.round(p.price * 10) <= maxTenths && (clubCount.get(p.clubId) ?? 0) < 3)
       // Best form first — price-descending buried the in-form bargains.
       .sort((a, b) => (formTotal(b.id) - formTotal(a.id)) || (b.price - a.price));
-  }, [squad, out, pool, formTotal]);
+  }, [squad, out, pool, formTotal, sellValue]);
 
   /** Prospective buys: in-form players you don't own and could actually fit —
    *  the "who should I even be looking at?" step that came before picking a
@@ -78,8 +88,11 @@ export default function TransfersPage() {
     const headroom = new Map<Pos, number>();
     for (const pos of POS_ROWS) {
       const mine = squad.picks.filter((p) => p.pos === pos);
-      const cheapest = Math.min(...mine.map((p) => p.buyTenths));
-      if (mine.length) headroom.set(pos, squad.bankTenths + cheapest);
+      if (!mine.length) continue;
+      // Worst case is the LEAST your cheapest sale would raise, at sale value —
+      // not at what you paid for him.
+      const cheapest = Math.min(...mine.map((p) => sellValue(p.id)));
+      headroom.set(pos, squad.bankTenths + cheapest);
     }
     return pool
       .filter((p) => !owned.has(p.id) &&
@@ -88,7 +101,7 @@ export default function TransfersPage() {
         (clubCount.get(p.clubId) ?? 0) < 3)
       .sort((a, b) => (formTotal(b.id) - formTotal(a.id)) || (a.price - b.price))
       .slice(0, 6);
-  }, [squad, pool, hasForm, formTotal]);
+  }, [squad, pool, hasForm, formTotal, sellValue]);
 
   /** "6 · 2 · 8" — the form guide, oldest gameweek first. */
   const FormLine = ({ id }: { id: number }) => {
@@ -224,11 +237,38 @@ export default function TransfersPage() {
 
       {out && (
         <>
-          <Card style={{ marginBottom: 10, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: 14, display: "flex", alignItems: "center", gap: 7 }}>
-              <Crest club={out.club} /> Selling <b>{out.name}</b> ({out.pos})
+          <Card style={{ marginBottom: 10 }}>
+            <span style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontSize: 14, display: "flex", alignItems: "center", gap: 7 }}>
+                <Crest club={out.club} /> Selling <b>{out.name}</b> ({out.pos})
+              </span>
+              <Btn small onClick={() => setSelling(null)}>Cancel</Btn>
             </span>
-            <Btn small onClick={() => setSelling(null)}>Cancel</Btn>
+            {/* What he actually raises, and why it isn't his price — a rise is only
+                half yours, so the number has to be shown or the budget looks wrong. */}
+            {(() => {
+              const paid = squad.picks.find((p) => p.id === out.id)?.buyTenths ?? 0;
+              const gets = sellValue(out.id);
+              const nowT = Math.round(out.price * 10);
+              return (
+                <div style={{ fontSize: 12.5, color: MUTED, marginTop: 8, lineHeight: 1.5 }}>
+                  Raises <b style={{ color: INK }}>{fmtM(gets)}</b> ·{" "}
+                  <span style={{ fontVariantNumeric: "tabular-nums" }}>
+                    {fmtM(squad.bankTenths)} bank → <b style={{ color: GOLD }}>{fmtM(squad.bankTenths + gets)}</b> to spend
+                  </span>
+                  {nowT > paid && (
+                    <div style={{ marginTop: 2 }}>
+                      He&apos;s risen to £{out.price.toFixed(1)}m since you paid {fmtM(paid)} — you keep half the rise.
+                    </div>
+                  )}
+                  {nowT < paid && (
+                    <div style={{ marginTop: 2 }}>
+                      He&apos;s dropped to £{out.price.toFixed(1)}m since you paid {fmtM(paid)}.
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </Card>
           <div style={{ fontSize: 12.5, marginBottom: 4 }}>
             Sign a replacement — this move is {wildcardActive
