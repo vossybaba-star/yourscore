@@ -58,7 +58,7 @@ export function generateMetadata(): Metadata {
       description: "Test your football knowledge with daily quizzes, head-to-head battles and private leagues. Build your XI and compete with your mates. Free on web and iOS.",
       type: "website",
       siteName: "YourScore",
-      images: [{ url: "https://yourscore.app/api/og/home", width: 1200, height: 630, alt: "YourScore · 38-0" }],
+      images: [{ url: "https://yourscore.app/api/og/home", width: 1200, height: 630, alt: "YourScore — The Home of Football Gaming" }],
     },
     twitter: {
       card: "summary_large_image",
