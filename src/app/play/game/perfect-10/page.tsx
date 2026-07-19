@@ -1027,39 +1027,41 @@ export default function Perfect10Page() {
       <div className="min-h-screen bg-bg" style={{ paddingBottom: "calc(72px + env(safe-area-inset-bottom, 0px))" }}>
         {/* Official result card: topic, verdict, the points — then the tower. */}
         <div
-          className="relative flex flex-col items-center pt-16 pb-8 px-6"
+          className="relative flex flex-col items-center pt-3 pb-5 px-6"
           style={{ background: `linear-gradient(175deg, ${won ? ACCENT : "#ff4757"}14 0%, #16130a 60%, #0a0a0f 100%)` }}
         >
-          <p className="font-body text-[11px] font-bold uppercase tracking-[0.32em] mb-2" style={{ color: won ? ACCENT : "#ff6b78" }}>
-            Perfect 10 — Result
-          </p>
-          <p className="font-display text-xl text-white text-center leading-tight mb-4" style={{ maxWidth: 320 }}>
+          <p className="font-display text-base text-white text-center leading-tight mb-2" style={{ maxWidth: 340 }}>
             {list.title}
           </p>
-          <div
-            className="flex items-center gap-2 px-5 py-2.5 rounded-full mb-3"
-            style={{
-              background: won ? `${ACCENT}18` : "rgba(255,71,87,0.12)",
-              border: `1px solid ${won ? ACCENT : "#ff4757"}50`,
-            }}
-          >
-            <span className="font-display text-base tracking-wide" style={{ color: won ? ACCENT : "#ff4757" }}>
+
+          {/* Verdict, score and count on ONE line. Stacked, they ate ~200px of
+              a phone screen and pushed the tower — the actual result — below
+              the fold. */}
+          <div className="flex items-center justify-center gap-2.5 mb-3 flex-wrap">
+            <span
+              className="font-display text-xs tracking-wide px-3 py-1 rounded-full"
+              style={{
+                background: won ? `${ACCENT}18` : "rgba(255,71,87,0.12)",
+                border: `1px solid ${won ? ACCENT : "#ff4757"}50`,
+                color: won ? ACCENT : "#ff4757",
+              }}
+            >
               {won ? "PERFECT 10" : "TOWER FALLS"}
             </span>
+            <span className="font-display text-2xl leading-none" style={{ color: won ? ACCENT : "#ffe082" }}>
+              {game.score.toLocaleString()}
+              <span className="font-display text-sm"> PTS</span>
+            </span>
+            <span className="font-body text-xs" style={{ color: "#9aa39d" }}>
+              {game.found.length}/10 named
+            </span>
           </div>
-          <p className="font-display text-5xl leading-none" style={{ color: won ? ACCENT : "#ffe082" }}>
-            {game.score.toLocaleString()}
-            <span className="font-display text-xl"> PTS</span>
-          </p>
-          <p className="font-body text-xs mt-2 mb-1" style={{ color: "#9aa39d" }}>
-            {game.found.length}/10 named
-          </p>
 
-          <div className="w-full max-w-sm flex flex-col gap-1.5 mt-2">
+          <div className="w-full max-w-sm flex flex-col gap-1">
             {allEntries.map((e) => (
               <div
                 key={e.rank}
-                className={`mx-auto w-full rounded-xl px-3.5 py-2.5 flex items-center gap-3 ${won ? "animate-p10-ignite" : ""}`}
+                className={`mx-auto w-full rounded-xl px-3.5 py-1.5 flex items-center gap-3 ${won ? "animate-p10-ignite" : ""}`}
                 style={{
                   width: `${rungWidthPct(e.rank)}%`,
                   background: e.solved ? "#2a2410" : e.missed ? "rgba(141,90,90,0.1)" : "rgba(255,255,255,0.03)",
