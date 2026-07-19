@@ -906,8 +906,8 @@ export default function Perfect10Page() {
             <p
               className={
                 keyboardUp
-                  ? "font-display text-[13px] leading-tight truncate"
-                  : "font-display text-xl leading-[1.15]"
+                  ? "font-display text-[20px] leading-tight truncate"
+                  : "font-display text-3xl leading-[1.15]"
               }
               style={{ color: ACCENT }}
             >
@@ -1030,7 +1030,7 @@ export default function Perfect10Page() {
           className="relative flex flex-col items-center pt-3 pb-5 px-6"
           style={{ background: `linear-gradient(175deg, ${won ? ACCENT : "#ff4757"}14 0%, #16130a 60%, #0a0a0f 100%)` }}
         >
-          <p className="font-display text-base text-white text-center leading-tight mb-2" style={{ maxWidth: 340 }}>
+          <p className="font-display text-2xl text-white text-center leading-tight mb-2" style={{ maxWidth: 360 }}>
             {list.title}
           </p>
 
