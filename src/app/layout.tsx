@@ -72,6 +72,14 @@ export function generateMetadata(): Metadata {
     },
     other: {
       ...Sentry.getTraceData(),
+      // Meta (Facebook) domain verification for yourscore.app, owned by the business
+      // portfolio that owns pixel 690844488412429. Without a verified domain Meta will
+      // not let us configure Aggregated Event Measurement, which is what cripples
+      // website custom audiences for iOS traffic (conversions still attribute, which is
+      // why this stayed hidden). Must be SERVER-RENDERED in <head> — Meta's check fails
+      // if the tag is injected by JavaScript, so it lives here and not in a client
+      // component. Do not remove: verification is re-checked periodically.
+      "facebook-domain-verification": "c1p9ippw7wnzrkydqj2vpsxfrmveyx",
     },
   };
 }

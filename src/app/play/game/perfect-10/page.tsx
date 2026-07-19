@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { smartBackTarget } from "@/lib/nav";
 import { haptic } from "@/lib/haptics";
-import { trackShare } from "@/lib/analytics/trackGame";
+import { trackShare, trackGamePlay, trackGameComplete } from "@/lib/analytics/trackGame";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { Button } from "@/components/ui/Button";
 import { useHideGamesNav } from "@/lib/gamesNav";
@@ -341,6 +341,19 @@ export default function Perfect10Page() {
   const listParam = searchParams?.get("list") ?? null;
 
   const [phase, setPhase] = useState<Phase>("loading");
+
+  // Ad/analytics play + complete signals, fired on phase TRANSITIONS so a replay in the
+  // same session counts as a new play. `complete` fires only on playing → results:
+  // a Player returning to a finished list lands straight on "results" from the load
+  // effect, which would otherwise report a completion they didn't just earn.
+  const prevPhaseRef = useRef<Phase | null>(null);
+  useEffect(() => {
+    const prev = prevPhaseRef.current;
+    prevPhaseRef.current = phase;
+    if (phase === prev) return;
+    if (phase === "playing") trackGamePlay("perfect10");
+    else if (phase === "results" && prev === "playing") trackGameComplete("perfect10");
+  }, [phase]);
   const [loadError, setLoadError] = useState(false);
   const [list, setList] = useState<ClientListData | null>(null);
   const [isGuest, setIsGuest] = useState(true);

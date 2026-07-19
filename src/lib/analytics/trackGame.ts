@@ -4,7 +4,7 @@ import { afGameComplete, afInviteSent, afReturnPlay, type InviteSurface } from "
 import { localDay, evaluateReturnPlay } from "@/lib/analytics/returnPlay";
 
 // Which game a Player is engaging with. Drives per-game ad audiences.
-export type GameId = "38-0" | "quiz";
+export type GameId = "38-0" | "quiz" | "perfect10" | "higher-lower" | "guess-the-player";
 
 const GOOGLE_ADS_PLAY_SEND_TO = process.env.NEXT_PUBLIC_GOOGLE_ADS_PLAY_SEND_TO;
 type GameEvent = "play" | "complete";
@@ -29,14 +29,47 @@ const X_EVENT_IDS: Record<string, string | undefined> = {
   "complete_38-0": process.env.NEXT_PUBLIC_X_COMPLETE_38_0_EVENT_ID,
   "play_quiz": process.env.NEXT_PUBLIC_X_PLAY_QUIZ_EVENT_ID,
   "complete_quiz": process.env.NEXT_PUBLIC_X_COMPLETE_QUIZ_EVENT_ID,
+  "play_perfect10": process.env.NEXT_PUBLIC_X_PLAY_P10_EVENT_ID,
+  "complete_perfect10": process.env.NEXT_PUBLIC_X_COMPLETE_P10_EVENT_ID,
+  "play_higher-lower": process.env.NEXT_PUBLIC_X_PLAY_HILO_EVENT_ID,
+  "complete_higher-lower": process.env.NEXT_PUBLIC_X_COMPLETE_HILO_EVENT_ID,
+  "play_guess-the-player": process.env.NEXT_PUBLIC_X_PLAY_GUESSPLAYER_EVENT_ID,
+  "complete_guess-the-player": process.env.NEXT_PUBLIC_X_COMPLETE_GUESSPLAYER_EVENT_ID,
+};
+
+// The X event ids for the cross-game PlayAny/CompleteAny events (see ANY_EVENT below).
+const X_ANY_EVENT_IDS: Record<GameEvent, string | undefined> = {
+  play: process.env.NEXT_PUBLIC_X_PLAY_ANY_EVENT_ID,
+  complete: process.env.NEXT_PUBLIC_X_COMPLETE_ANY_EVENT_ID,
+};
+
+// Per-game suffix for the platform event name. These names are effectively PERMANENT:
+// Meta/TikTok audiences and conversions are keyed on the event name, so renaming one
+// discards its accumulated history. Add a new game here, never rename an existing one.
+const GAME_SUFFIX: Record<GameId, string> = {
+  "38-0": "380",
+  "quiz": "Quiz",
+  "perfect10": "P10",
+  "higher-lower": "HiLo",
+  "guess-the-player": "GuessPlayer",
 };
 
 // Distinct custom-event names per (event, game) so every ad platform can define an
 // audience from the event name alone (Meta/TikTok), with `game` also in the payload
 // for platforms that segment on parameters (GA4).
 function eventName(event: GameEvent, game: GameId): string {
-  const g = game === "38-0" ? "380" : "Quiz";
+  const g = GAME_SUFFIX[game];
   return event === "play" ? `Play${g}` : `Complete${g}`;
+}
+
+// Cross-game event name. Meta and TikTok can only optimise/segment on the event NAME,
+// so a per-game name can never serve an app-level campaign ("play YourScore", no single
+// game named). PlayAny/CompleteAny fire on EVERY game alongside the specific event,
+// giving app-level creative a matching bid event with the full cross-game volume behind
+// it. GA4/Snapchat/Vercel already carry `game` as a parameter, so they're unified
+// already and don't need this.
+function anyEventName(event: GameEvent): string {
+  return event === "play" ? "PlayAny" : "CompleteAny";
 }
 
 // ── ReturnPlay: the D2+ retention milestone ──────────────────────────────────
@@ -127,6 +160,15 @@ function trackGameEvent(game: GameId, event: GameEvent, props: Props = {}): void
 
   // TikTok — custom event, distinct name per game.
   window.ttq?.track?.(name, payload);
+
+  // Cross-game twin of the above, fired on EVERY game so app-level campaigns have a
+  // single bid event that matches app-level creative. `game` stays in the payload, so
+  // this adds a dimension rather than losing one.
+  const anyName = anyEventName(event);
+  window.fbq?.("trackCustom", anyName, payload);
+  window.ttq?.track?.(anyName, payload);
+  const xAnyId = X_ANY_EVENT_IDS[event];
+  if (xAnyId) window.twq?.("event", xAnyId, payload);
 
   // TikTok ONLY optimises ad delivery toward its STANDARD events — custom events
   // (Play380/Complete380 etc.) are tracked + audience-eligible but NOT optimisable

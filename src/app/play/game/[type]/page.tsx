@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { haptic } from "@/lib/haptics";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { Button } from "@/components/ui/Button";
 import { useHideGamesNav } from "@/lib/gamesNav";
 import { useGameLoop } from "@/lib/useGameLoop";
+import { trackGamePlay, trackGameComplete } from "@/lib/analytics/trackGame";
 import {
   scoreAnswer,
   calculatePerfectRoundBonus,
@@ -260,6 +261,19 @@ export default function GameTypePage() {
   const [lastStreakBonus, setLastStreakBonus] = useState(0);
   const [revealPhoto, setRevealPhoto] = useState<string | null>(null);
   const [revealName, setRevealName] = useState<string | null>(null);
+
+  // Ad/analytics play + complete signals, fired on phase TRANSITIONS so replaying in the
+  // same session counts as a new play. `complete` fires only on playing → results, never
+  // on any other route into the results screen. `type` is the GameId, so Higher or Lower
+  // and Guess the Player report as distinct games (plus the cross-game PlayAny twin).
+  const prevPhaseRef = useRef<Phase | null>(null);
+  useEffect(() => {
+    const prev = prevPhaseRef.current;
+    prevPhaseRef.current = phase;
+    if (phase === prev) return;
+    if (phase === "playing") trackGamePlay(type, { topic });
+    else if (phase === "results" && prev === "playing") trackGameComplete(type, { score });
+  }, [phase, type, topic, score]);
 
   const advanceRef = useRef(false);
 
