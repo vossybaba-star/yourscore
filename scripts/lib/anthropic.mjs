@@ -81,8 +81,85 @@ function apiKey() {
 }
 
 /**
+ * Reassemble a streamed response into the same shape a non-streamed one has, so every caller
+ * (textOf / lastTextOf / parseJson / bill) keeps working unchanged.
+ */
+function applyEvent(acc, ev) {
+  switch (ev.type) {
+    case "message_start":
+      acc.model = ev.message?.model ?? acc.model;
+      acc.usage = { ...acc.usage, ...(ev.message?.usage ?? {}) };
+      break;
+    case "content_block_start":
+      // Keep the block as sent (text, server_tool_use, web_search_tool_result, …) and grow
+      // text into it as deltas arrive.
+      acc.content[ev.index] = { ...(ev.content_block ?? {}) };
+      if (acc.content[ev.index].type === "text") acc.content[ev.index].text ??= "";
+      break;
+    case "content_block_delta": {
+      const b = acc.content[ev.index];
+      if (b && ev.delta?.type === "text_delta") b.text = (b.text ?? "") + ev.delta.text;
+      break;
+    }
+    case "message_delta":
+      acc.stop_reason = ev.delta?.stop_reason ?? acc.stop_reason;
+      // Cumulative — output_tokens and server_tool_use only land here.
+      acc.usage = { ...acc.usage, ...(ev.usage ?? {}) };
+      break;
+    case "error":
+      throw new Error(`stream error: ${JSON.stringify(ev.error ?? {}).slice(0, 300)}`);
+  }
+}
+
+/**
+ * Read an SSE body, rebuilding the message. `onActivity` fires on every chunk so the caller
+ * can run an INACTIVITY timeout rather than a total-duration one — the distinction that
+ * matters here: a research call that streams for eight minutes is working, not hung.
+ */
+async function readStream(res, onActivity) {
+  const acc = { content: [], usage: {}, stop_reason: null, model: null };
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = "";
+
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    onActivity();
+    buf += decoder.decode(value, { stream: true });
+
+    // SSE frames are separated by a blank line; keep the trailing partial in the buffer.
+    const frames = buf.split("\n\n");
+    buf = frames.pop() ?? "";
+    for (const frame of frames) {
+      for (const line of frame.split("\n")) {
+        if (!line.startsWith("data:")) continue;
+        const payload = line.slice(5).trim();
+        if (!payload || payload === "[DONE]") continue;
+        let ev;
+        try { ev = JSON.parse(payload); } catch { continue; }
+        applyEvent(acc, ev);
+      }
+    }
+  }
+  acc.content = acc.content.filter(Boolean);
+  return acc;
+}
+
+/**
  * One Claude call with retry. Returns the full response body.
  * Throws CreditExhausted (never retried) if the key is out of credit.
+ *
+ * STREAMS BY DEFAULT, and that is a correctness fix rather than a nicety. A non-streamed call
+ * is invisible until it finishes, so the only timeout you can enforce is on TOTAL DURATION —
+ * and a big research call (80 facts, each with a source quote, plus web searches) legitimately
+ * runs past five minutes. A Newcastle run burned 30 minutes on six consecutive 300s timeouts
+ * and produced nothing: every attempt was killed while it was still working, and each one had
+ * almost certainly been billed server-side by the time we hung up. Retrying a call that is
+ * merely slow is the most expensive possible failure.
+ *
+ * Streaming makes the timeout an INACTIVITY timeout instead: fail when nothing has arrived for
+ * `timeoutMs`, which is the condition we actually mean by "hung". A slow call now completes.
  */
 export async function callClaude({
   model = MODELS.author,
@@ -92,13 +169,15 @@ export async function callClaude({
   maxTokens = 4096,
   retries = 5,      // must outlast a short network/DNS outage — see the backoff note below
   stage = "misc",
-  // Generous, because a research call doing ~15 web searches legitimately takes minutes. But
-  // finite, because "for ever" is not a duration: past this, something is wrong, not slow.
-  timeoutMs = 5 * 60_000,
+  // INACTIVITY, not total duration: how long we tolerate silence before calling it hung.
+  // 2 minutes of nothing arriving is a dead connection; 12 minutes of steady output is fine.
+  timeoutMs = 2 * 60_000,
+  stream = true,
 } = {}) {
   const body = { model, max_tokens: maxTokens, messages };
   if (system) body.system = system;
   if (tools) body.tools = tools;
+  if (stream) body.stream = true;
 
   let lastErr;
   for (let attempt = 0; attempt <= retries; attempt++) {
@@ -110,12 +189,17 @@ export async function callClaude({
       const wait = Math.min(1000 * 2 ** (attempt - 1), 20_000) + Math.floor(Math.random() * 500);
       await new Promise((r) => setTimeout(r, wait));
     }
+    // ⚠️ A TIMEOUT IS NOT OPTIONAL. Without one, fetch waits for ever on a connection that
+    // opens and never answers — and it happened: a research call sat for 28 minutes with zero
+    // output, on a laptop whose wifi had dropped. The retry loop is useless if attempt 1 never
+    // returns. But the clock must measure SILENCE, not elapsed time (see callClaude's note), so
+    // it's an idle timer we push forward on every byte rather than AbortSignal.timeout.
+    const ctl = new AbortController();
+    let idle = setTimeout(() => ctl.abort(), timeoutMs);
+    const keepAlive = () => { clearTimeout(idle); idle = setTimeout(() => ctl.abort(), timeoutMs); };
+
     let res;
     try {
-      // ⚠️ A TIMEOUT IS NOT OPTIONAL. Without one, fetch waits for ever on a connection that
-      // opens and never answers — and it happened: a research call sat for 28 minutes with
-      // zero output, on a laptop whose wifi had dropped. The retry loop below is useless if
-      // attempt 1 never returns. Fail fast, then retry.
       res = await fetch(API, {
         method: "POST",
         headers: {
@@ -124,22 +208,36 @@ export async function callClaude({
           "content-type": "application/json",
         },
         body: JSON.stringify(body),
-        signal: AbortSignal.timeout(timeoutMs),
+        signal: ctl.signal,
       });
     } catch (e) {
-      // AbortError = we timed out; anything else is a network blip. Both retry.
+      clearTimeout(idle);
+      // AbortError = nothing arrived for timeoutMs; anything else is a network blip. Both retry.
       lastErr = e.name === "TimeoutError" || e.name === "AbortError"
-        ? new Error(`timed out after ${Math.round(timeoutMs / 1000)}s (attempt ${attempt + 1}/${retries + 1})`)
+        ? new Error(`no response for ${Math.round(timeoutMs / 1000)}s (attempt ${attempt + 1}/${retries + 1})`)
         : e;
       console.warn(`   ⏱  ${lastErr.message} — retrying…`);
       continue;
     }
 
     if (res.ok) {
-      const json = await res.json();
-      bill(stage, model, json);
-      return json;
+      try {
+        const json = stream ? await readStream(res, keepAlive) : await res.json();
+        bill(stage, model, json);
+        return json;
+      } catch (e) {
+        // A stream that dies mid-flight is retryable — but say so, because a partial read
+        // looks like success from the outside.
+        lastErr = ctl.signal.aborted
+          ? new Error(`stream went silent for ${Math.round(timeoutMs / 1000)}s (attempt ${attempt + 1}/${retries + 1})`)
+          : e;
+        console.warn(`   ⏱  ${lastErr.message} — retrying…`);
+        continue;
+      } finally {
+        clearTimeout(idle);
+      }
     }
+    clearTimeout(idle);
 
     const text = await res.text().catch(() => "");
 

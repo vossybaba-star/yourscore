@@ -98,40 +98,65 @@ export async function researchClubFacts({ entity, categories, have = [], model =
         .join("\n")
     : "  (none)";
 
-  const asks = gaps
-    .map((c) => `  "${c.key}" — need ${c.need} facts.\n     ${c.brief}${c.held ? `\n     (we already hold ${c.held} here, from league data — don't repeat that ground.)` : ""}`)
-    .join("\n\n");
+  // ONE CALL PER GAP CATEGORY, not one call for all of them.
+  //
+  // The consolidated version asked a single call for up to 80 facts, each with a source quote,
+  // inside a 32k budget and a 6-search allowance. Newcastle proved it doesn't work: the reply
+  // was truncated mid-JSON and the entire $1.09 response was unusable. Even parsed it would
+  // have been poor — six searches cannot research a club's honours, its legends AND its
+  // derbies.
+  //
+  // The saving that mattered was never "one HTTP call". It was NOT RE-RESEARCHING WHAT THE FEED
+  // ALREADY HOLDS, and that lives in the `gaps` calculation above — it's preserved exactly.
+  // Modern Era still costs nothing when SportMonks covers it; we just stop cramming three
+  // genuinely different research jobs into one reply.
+  const valid = new Set(categories.map((c) => c.key));
+  const facts = [];
+  const dropped = [];
+  let inTok = 0, outTok = 0;
 
-  const resp = await callClaude({
-    model,
-    system: RESEARCH_SYSTEM,
-    messages: [{
-      role: "user",
-      content: `Club: ${entity}
+  for (const c of gaps) {
+    const resp = await callClaude({
+      model,
+      system: RESEARCH_SYSTEM,
+      messages: [{
+        role: "user",
+        content: `Club: ${entity}
+Category: "${c.key}" — ${c.label}
+${c.brief}
 
 WE ALREADY HAVE these facts from our own football data feed. Do NOT gather them again — it wastes the search and we'll throw the duplicates away:
 ${alreadyHave}
 
-Our feed covers league placings, points, that club's own top scorer per season, league titles and European finals. It knows NOTHING about domestic cups (FA Cup, League Cup), the club's founding, appearance records, individual legends, or rivalries. That's what we need from you.
+Our feed covers league placings, points, that club's own top scorer per season, league titles and European finals. It knows NOTHING about domestic cups (FA Cup, League Cup), the club's founding, appearance records, individual legends, or rivalries.${c.held ? `\n\nWe already hold ${c.held} facts in THIS category from league data — don't repeat that ground.` : ""}
 
-RESEARCH THESE GAPS — tag every fact with the exact "category" key shown:
+Research and report ${c.need} facts in this category ONLY. Tag every one with "category": "${c.key}".
 
-${asks}
-
-SPREAD BY FAME — the most important instruction. Questions inherit their difficulty from the facts behind them, so a sheet of obscure trivia can only produce a brutal quiz, and our bank is already short of easy questions. In EVERY category, roughly 40% should be facts ANY ${entity} fan knows — the headline trophies, the famous finals, the iconic names. They'll feel too obvious. Gather them anyway: they're the ones we're short of. Another 40% for a fan who properly follows the club, and only 20% deeper cuts.
+SPREAD BY FAME — the most important instruction. Questions inherit their difficulty from the facts behind them, so a sheet of obscure trivia can only produce a brutal quiz, and our bank is badly short of EASY questions — that shortage is the single biggest problem with the product. Roughly:
+- ${Math.round(c.need * 0.4)} facts ANY ${entity} fan knows — the headline trophies, the famous finals, the iconic names. They will feel too obvious. Gather them anyway: they are exactly the ones we are short of.
+- ${Math.round(c.need * 0.4)} for a fan who properly follows the club.
+- ${Math.round(c.need * 0.2)} deeper cuts, no more.
+A famous fact is worth more to us than a rare one.
 
 PREFER PRIMARY SOURCES: the club's own official site, premierleague.com, uefa.com, thefa.com. Fall back to Wikipedia or the press only where a primary source doesn't cover it.
 
-Return ${gaps.reduce((a, c) => a + c.need, 0)} facts total, each with its own "category", source URL and proving quote.`,
-    }],
-    tools: [WEB_SEARCH_TOOL],
-    maxTokens: 32000,
-    stage: "research",
-  });
+Return ${c.need} facts, each with its "category", source URL and proving quote.`,
+      }],
+      tools: [WEB_SEARCH_TOOL],
+      maxTokens: 16000,
+      stage: "research",
+    });
 
-  const valid = new Set(categories.map((c) => c.key));
-  const { facts, dropped } = shapeFacts(parseJsonSafe(resp), { entity, validCategories: valid });
-  return { facts, dropped, gaps, usage: usageOf(resp) };
+    const u = usageOf(resp);
+    inTok += u.input; outTok += u.output;
+
+    // A truncated or unparseable reply is now an error, not a silent zero — see parseFacts.
+    const shaped = shapeFacts(parseFacts(resp), { entity, validCategories: valid });
+    facts.push(...shaped.facts);
+    dropped.push(...shaped.dropped);
+  }
+
+  return { facts, dropped, gaps, usage: { input: inTok, output: outTok } };
 }
 
 /**
@@ -167,18 +192,24 @@ Report ${count} facts. Each needs its own source URL and a quote proving it.`,
     stage: "research",
   });
 
-  const { facts, dropped } = shapeFacts(parseJsonSafe(resp), { entity, fixedCategory: category });
+  const { facts, dropped } = shapeFacts(parseFacts(resp), { entity, fixedCategory: category });
   return { facts, dropped, usage: usageOf(resp) };
 }
 
-/** parseJson, but an unparseable reply is a dropped batch rather than a thrown run. */
-function parseJsonSafe(resp) {
-  try {
-    const raw = parseJson(resp);
-    return Array.isArray(raw) ? raw : [];
-  } catch {
-    return [];
-  }
+/**
+ * parseJson, but LOUD. This used to swallow every error and return [], which turned a $1.09
+ * research call truncated at max_tokens into the line "0 facts kept (0 dropped)" — reading as
+ * "the model found nothing" when what actually happened was "we paid for 80 facts, got them,
+ * and threw them away unparsed". A research pass that fails must fail visibly, because the
+ * whole club is built on it.
+ *
+ * Throws. The caller aborts the club (it already does for a failed research call) rather than
+ * proceeding with an empty sheet.
+ */
+function parseFacts(resp) {
+  const raw = parseJson(resp);   // throws with a specific reason on truncation / no JSON
+  if (!Array.isArray(raw)) throw new Error(`research returned ${typeof raw}, expected an array of facts`);
+  return raw;
 }
 
 /**
