@@ -307,6 +307,19 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-20** — **Perfect 10 gets its own share card (founder)** — a shared Perfect 10
+  link used to unfurl the platform-wide YourScore card, which said nothing about the game.
+  New `/api/og/perfect-10` renders **the tower itself**: ten tapering rungs, gold where the
+  player named the answer, dark where they didn't, plus topic title, PERFECT 10 / TOWER
+  FALLS verdict and points. **No names ever appear on the card** (rungs are lit/unlit only)
+  so a posted result cannot spoil the list — same rule `buildShareText` follows. Modes:
+  `?c=<share_token>` = verified scorecard · `?list=<id>&s=&f=` = **guest** scorecard
+  (guests have no attempt row, so their result rides in the link; self-reported and
+  forgeable, which is fine as nothing is scored off an image) · bare = promo card with an
+  **empty** tower (ten blanks to fill — a fully-lit promo read as somebody's 10/10).
+  `page.tsx` is now a thin server shell exporting `generateMetadata` (only a *page*
+  receives `searchParams`, which is what lets a challenge link unfurl that player's own
+  tower); the game moved unchanged to `Game.tsx`.
 - **2026-07-19** — **Home link-preview card redesigned to sell the whole platform
   (founder)** — `/api/og/home` (the og:image every yourscore.app unfurl shows) no longer
   promotes only 38-0: "The Home of Football Gaming" headline + a fanned trio of mocked

@@ -23,17 +23,23 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata({
   searchParams,
 }: {
-  searchParams: { c?: string; list?: string };
+  searchParams: { c?: string; list?: string; s?: string; f?: string };
 }): Promise<Metadata> {
+  // A signed-in share carries ?c=<token> (verified). A guest share carries the
+  // list plus their own result inline (&s=&f=) — forward those or the card
+  // falls back to the generic promo and the guest's tower is lost.
+  const guestResult = Boolean(searchParams.list && searchParams.s && searchParams.f);
   const qs = searchParams.c
     ? `?c=${encodeURIComponent(searchParams.c)}`
     : searchParams.list
-      ? `?list=${encodeURIComponent(searchParams.list)}`
+      ? `?list=${encodeURIComponent(searchParams.list)}` +
+        (guestResult ? `&s=${encodeURIComponent(searchParams.s!)}&f=${encodeURIComponent(searchParams.f!)}` : "")
       : "";
   const image = `${SITE}/api/og/perfect-10${qs}`;
 
-  const title = searchParams.c ? "I built my Perfect 10 tower — beat it" : "Perfect 10 — name the top 10";
-  const description = searchParams.c
+  const isResult = Boolean(searchParams.c) || guestResult;
+  const title = isResult ? "I built my Perfect 10 tower — beat it" : "Perfect 10 — name the top 10";
+  const description = isResult
     ? "Ten rungs, three lives, three hints. See the tower and take on the same list."
     : "Name everyone in the ranked top 10. Three lives, three hints — can you light up all ten rungs?";
 

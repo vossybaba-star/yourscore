@@ -42,7 +42,27 @@ async function db(pathAndQuery: string): Promise<unknown[] | null> {
   return (await res.json()) as unknown[];
 }
 
-async function resolve(token: string | null, listId: string | null): Promise<Card | null> {
+// Guests have no p10_attempts row (localStorage-only by design), so there is no
+// share token to resolve — their result travels in the link itself as
+// &s=<score>&f=<filled ranks>. These params are self-reported and forgeable;
+// that is acceptable because nothing is scored, ranked or awarded off this
+// image. A token-backed card (?c=) is the verified one and always wins.
+function fromParams(score: string | null, found: string | null): { found: number[]; score: number } | null {
+  if (score == null || found == null) return null;
+  const s = Number(score);
+  if (!Number.isFinite(s) || s < 0 || s > 1000) return null;
+  const ranks = found
+    .split(",")
+    .map((r) => Number(r))
+    .filter((r) => Number.isInteger(r) && r >= 1 && r <= TOTAL_RUNGS);
+  return { found: Array.from(new Set(ranks)), score: Math.round(s) };
+}
+
+async function resolve(
+  token: string | null,
+  listId: string | null,
+  self: { found: number[]; score: number } | null
+): Promise<Card | null> {
   if (token) {
     const rows = (await db(
       `p10_attempts?select=found,score,list_id&share_token=eq.${encodeURIComponent(token)}&limit=1`
@@ -64,6 +84,14 @@ async function resolve(token: string | null, listId: string | null): Promise<Car
     : `p10_lists?select=title,day&status=in.(live,live-manual-verify)&order=day.desc&limit=1`;
   const lists = (await db(q)) as { title: string }[] | null;
   if (!lists?.[0]) return null;
+  if (self) {
+    return {
+      title: lists[0].title,
+      found: self.found,
+      score: self.score,
+      won: self.found.length >= TOTAL_RUNGS,
+    };
+  }
   return { title: lists[0].title, found: null, score: 0, won: false };
 }
 
@@ -76,8 +104,9 @@ function rungWidth(rank: number): number {
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
+  const self = fromParams(searchParams.get("s"), searchParams.get("f"));
   const card =
-    (await resolve(searchParams.get("c"), searchParams.get("list")).catch(() => null)) ??
+    (await resolve(searchParams.get("c"), searchParams.get("list"), self).catch(() => null)) ??
     ({ title: "Name the top 10", found: null, score: 0, won: false } as Card);
 
   const isResult = card.found !== null;

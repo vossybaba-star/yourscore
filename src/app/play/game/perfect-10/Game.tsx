@@ -658,10 +658,21 @@ export default function Perfect10Game() {
 
   // The link a share should open: the challenge link when the player has one
   // (signed-in), otherwise the game mode itself — guests can still post.
+  //
+  // A guest has no attempt row and so no share token, which used to mean their
+  // post unfurled the generic promo card — the weakest card on the share that
+  // matters most for reach. So once they've finished, their score and filled
+  // rungs ride along in the link (&s=&f=) and /api/og/perfect-10 renders their
+  // real tower from those. Ranks only — never names, so it still can't spoil
+  // the list.
+  const guestResultQuery =
+    isGuest && list && game.done
+      ? `&s=${game.score}&f=${game.found.map((f) => f.rank).sort((a, b) => a - b).join(",")}`
+      : "";
   const shareTarget =
     shareUrl ??
     (typeof window !== "undefined"
-      ? `${window.location.origin}/play/game/perfect-10${list ? `?list=${list.listId}` : ""}`
+      ? `${window.location.origin}/play/game/perfect-10${list ? `?list=${list.listId}${guestResultQuery}` : ""}`
       : "https://yourscore.app/play/game/perfect-10");
 
   // Share text teases the tower without giving the list away (founder: name
