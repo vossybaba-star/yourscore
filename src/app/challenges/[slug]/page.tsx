@@ -16,6 +16,7 @@ import { StreakWindowTimer } from "@/components/quiz/StreakWindowTimer";
 import HalftimePredictionPoll from "@/components/halftime/HalftimePredictionPoll";
 import { useGameLoop } from "@/lib/useGameLoop";
 import { Button } from "@/components/ui/Button";
+import { BeatScoreRail } from "@/components/versus/BeatScoreRail";
 import { trackGamePlay, trackGameComplete, trackShare } from "@/lib/analytics/trackGame";
 import { getAcq } from "@/lib/analytics/acq";
 import {
@@ -1363,6 +1364,12 @@ export default function ChallengePage() {
               </Button>
             </div>
           )}
+
+          {/* The versus bridge — the result screen is the motivation peak.
+              Recommend quizzes OTHER players have scored on (never this one —
+              they've just seen its answers, which would rig the match); the
+              rail falls back to a plain find-an-opponent button when empty. */}
+          {userId && !groupId && <BeatScoreRail />}
 
           {userId && groupId ? (
             <Button variant="primary" tone="teal" size="lg" fullWidth onClick={() => router.push(`/g/${groupId}`)}>

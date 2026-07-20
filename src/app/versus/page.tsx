@@ -357,15 +357,27 @@ function VersusInner() {
             </>
           )}
 
-          {/* Your rivalries */}
-          {stats.rivalries.length > 0 && (
+          {/* Your rivalries — or, once they've played at all, the pull toward
+              the first one (an empty section teaches; a missing one doesn't). */}
+          {stats.rivalries.length > 0 ? (
             <>
               <SectionLabel action={<Link href="/versus?view=friends" className="font-body text-xs" style={{ color: TEAL }}>See all →</Link>}>Your rivalries</SectionLabel>
               <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1 -mx-5 px-5">
                 {stats.rivalries.slice(0, 6).map((r) => <RivalryCard key={r.opponentId} r={r} onChallenge={(id) => setSheet({ kind: "game", target: id })} />)}
               </div>
             </>
-          )}
+          ) : hasHistory ? (
+            <>
+              <SectionLabel>Your rivalries</SectionLabel>
+              <div className="rounded-2xl px-4 py-4 flex items-center gap-3" style={{ background: "#0e1611", border: "1px dashed rgba(255,255,255,0.14)" }}>
+                <div className="flex-1">
+                  <p className="font-body text-sm font-semibold text-white">Your first rivalry is one rematch away</p>
+                  <p className="font-body text-xs text-text-muted mt-1">Play the same player twice and your head-to-head record lives here.</p>
+                </div>
+                <button onClick={() => setSheet({ kind: "game" })} className="font-display text-xs tracking-wide px-3.5 py-2.5 rounded-lg flex-shrink-0" style={{ background: "rgba(0,216,192,0.1)", color: TEAL, border: `1px solid ${TEAL}33` }}>CHALLENGE</button>
+              </div>
+            </>
+          ) : null}
 
           {/* Community: live pulse, the results feed, public leagues, friends
               promo (debate card lives on the home page now; the full argument

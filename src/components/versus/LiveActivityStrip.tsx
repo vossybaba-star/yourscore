@@ -14,6 +14,7 @@ interface Activity {
   lookingForMatch: number;
   battlesToday: number;
   activeToday: number;
+  matches14d: number;
   openLobbies: number;
   trending: { packId: string; name: string; attempts: number } | null;
 }
@@ -41,6 +42,7 @@ export function LiveActivityStrip() {
   if (a.lookingForMatch >= 3) tiles.push({ value: a.lookingForMatch.toLocaleString(), label: "Looking for match", color: TEAL });
   if (a.battlesToday >= 3) tiles.push({ value: a.battlesToday.toLocaleString(), label: "Quiz Battles today", color: LIME });
   else if (a.activeToday >= 3) tiles.push({ value: a.activeToday.toLocaleString(), label: "Playing today", color: LIME });
+  else if (a.matches14d >= 3) tiles.push({ value: a.matches14d.toLocaleString(), label: "Matches this fortnight", color: LIME });
   if (tiles.length === 0) return null;
 
   return (

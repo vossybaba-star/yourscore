@@ -378,6 +378,32 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-20 (pm)** — **Versus psychology-audit fixes** (branch
+  `versus/hide-shadow-reveal`, MERGED to main 2026-07-20). Live numbers showed the constraint: 87 of 103
+  quiz h2h matches in 14d were shadows (9 human), 255 solo players vs 59 versus players,
+  20 new friendships. Fixes: **solo result screen ends on a "Beat someone's score" rail**
+  (`BeatScoreRail` + `/api/versus/recommended` + `lib/versus/recommend.ts`) — up to 3
+  quizzes the player has NOT attempted where other players' replayable runs are waiting
+  (same bar as the shadow pool: score>0, answers log ≥3), each card naming the top runner
+  + their score ("@x scored 4,850 · 12 others played"), hero card with faces + top/median;
+  tap → `/versus/find` pinned to that pack — fair (unseen questions) AND guaranteed to
+  match (those runs ARE the pool). Founder killed the first cut (same-quiz pin — "you'll
+  just get the same answers again"; rigged vs a blind shadow). Empty pool → plain
+  unpinned FIND AN OPPONENT fallback. Live pool check: top pack 101 players / 5,850 top
+  score, so recommendations exist for essentially everyone. Live-now strip's second tile
+  falls back to a real **"Matches this fortnight"** aggregate (`matches14d` on
+  `/api/versus/activity`) when today's counts are under the show-threshold; the empty
+  rivalries section now shows a **first-rivalry teaser** ("play the same player twice")
+  instead of vanishing; **shadow opponents get the standard add-friend card** on the
+  scorecard (consistent with "they played each other").
+- **2026-07-20** — **Shadow matches: the honest reveal is RETIRED** (branch
+  `versus/hide-shadow-reveal`, MERGED to main 2026-07-20). Founder call: never disclose the replay — the
+  scorecard now presents a shadow match as a normal head-to-head result ("they played each
+  other"). The reveal panel ("You just played X's real run from {date}" + PLAY THEIR RUNS /
+  CHALLENGE LIVE) is deleted from `/play/[roomId]`; matchmaking chain, persona overlay,
+  timing replay, keep-playing panel all unchanged. Owner-side revenge push + the
+  `/versus/shadow/[userId]` library still use "run" language — deliberately untouched
+  (founder gave no preference; revisit if inconsistent).
 - **2026-07-20** — **Perfect 10 gets its own share card (founder)** — a shared Perfect 10
   link used to unfurl the platform-wide YourScore card, which said nothing about the game.
   New `/api/og/perfect-10` renders **the tower itself**: ten tapering rungs, gold where the

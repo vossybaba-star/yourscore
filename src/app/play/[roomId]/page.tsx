@@ -22,7 +22,6 @@ import { QuestionCard, type ActiveQuestion } from "@/components/game/QuestionCar
 import { RankRewardCard } from "@/components/rank/RankRewardCard";
 import { Leaderboard, type LeaderboardEntry } from "@/components/game/Leaderboard";
 import { Spinner } from "@/components/ui/Spinner";
-import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { AddFriendCard, AddFriendInline } from "@/components/social/AddFriendCard";
 import { DebateCard } from "@/components/debate/DebateCard";
 import { DiscussionThread } from "@/components/debate/DiscussionThread";
@@ -31,7 +30,8 @@ import { DiscussionThread } from "@/components/debate/DiscussionThread";
 
 // Shadow matches: a real player's previous run replayed in the CPU seat. The
 // room row carries the persona + per-question times (rooms.shadow, mig 66);
-// identity is revealed honestly on the result screen.
+// the scorecard presents it as a normal head-to-head result (founder call,
+// 2026-07-20: never disclose the replay — they simply played each other).
 interface ShadowInfo {
   userId: string; name: string; avatarUrl: string | null;
   playedAt: string | null; times: (number | null)[]; originalScore: number;
@@ -966,7 +966,9 @@ export default function RoomPage() {
           {/* Post-game reward moment — points earned + position on the leaderboard */}
           <RankRewardCard />
 
-          {/* Friend prompts — show for all non-self, non-CPU opponents after game */}
+          {/* Friend prompts — show for all non-self, non-CPU opponents after game.
+              A shadow opponent gets one too (they're a real player, and "they
+              played each other" — the request reads like any other). */}
           {user && opponents.filter(o => o.user_id !== user.id && o.user_id !== QUIZ_BOT_ID).map(opp => (
             <AddFriendCard
               key={opp.user_id}
@@ -975,6 +977,13 @@ export default function RoomPage() {
               context={room.room_mode === "h2h" ? `Great game with ${opp.display_name}! 👏` : undefined}
             />
           ))}
+          {user && room.shadow && room.shadow.userId !== user.id && (
+            <AddFriendCard
+              userId={room.shadow.userId}
+              displayName={room.shadow.name}
+              context={`Great game with ${room.shadow.name}! 👏`}
+            />
+          )}
 
           {/* Shadow/CPU rooms: forward motion first — the scorecard's job is to
               get you into the next game, not to be an exit. */}
@@ -987,32 +996,6 @@ export default function RoomPage() {
               <Link href="/versus/quiz" className="block w-full text-center rounded-xl py-3 font-display text-sm tracking-wide" style={{ background: "rgba(255,255,255,0.05)", color: "#eef2f0", border: "1px solid rgba(255,255,255,0.14)" }}>
                 PICK A DIFFERENT QUIZ →
               </Link>
-            </div>
-          )}
-
-          {/* Shadow room: the honest reveal — you played a real player's past run */}
-          {room.shadow && (
-            <div className="rounded-2xl overflow-hidden" style={{ background: "linear-gradient(160deg, rgba(0,216,192,0.1), #0c1613)", border: "1px solid rgba(0,216,192,0.3)" }}>
-              <div className="px-5 pt-5 pb-4">
-                <p className="font-body text-[10px] font-bold uppercase tracking-[0.28em] mb-3" style={{ color: "#00d8c0" }}>The reveal</p>
-                <div className="flex items-center gap-3">
-                  <PlayerAvatar seed={room.shadow.userId} name={room.shadow.name} avatarUrl={room.shadow.avatarUrl} size={44} ring="#00d8c0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-body text-sm text-white leading-snug">
-                      You just played <span className="font-bold">{room.shadow.name}</span>&rsquo;s real run{room.shadow.playedAt ? ` from ${new Date(room.shadow.playedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}` : ""} — every answer, at their real speed.
-                    </p>
-                    <p className="font-body text-xs text-text-muted mt-1">Their run scored {room.shadow.originalScore.toLocaleString()} back then.</p>
-                  </div>
-                </div>
-              </div>
-              <div className="px-5 pb-5 flex gap-2">
-                <Link href={`/versus/shadow/${room.shadow.userId}`} className="flex-1 text-center rounded-xl py-3 font-display text-[12px] tracking-wide" style={{ background: "rgba(0,216,192,0.12)", color: "#00d8c0", border: "1px solid rgba(0,216,192,0.3)" }}>
-                  PLAY THEIR RUNS
-                </Link>
-                <Link href={`/versus/quiz?to=${room.shadow.userId}`} className="flex-1 text-center rounded-xl py-3 font-display text-[12px] tracking-wide" style={{ background: "rgba(255,255,255,0.05)", color: "#eef2f0", border: "1px solid rgba(255,255,255,0.14)" }}>
-                  CHALLENGE LIVE
-                </Link>
-              </div>
             </div>
           )}
 
