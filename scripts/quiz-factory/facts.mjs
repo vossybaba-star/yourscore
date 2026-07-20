@@ -23,6 +23,7 @@
 
 import { callClaude, parseJson, MODELS, WEB_SEARCH_TOOL, usageOf } from "../lib/anthropic.mjs";
 import { isTrustedSource, sourceTier, TRUSTED_SOURCES_BRIEF } from "./sources.mjs";
+import { editorialVerdict } from "./editorial.mjs";
 import { norm } from "../lib/question-text.mjs";
 
 /**
@@ -240,6 +241,15 @@ function shapeFacts(raw, { entity, fixedCategory = null, validCategories = null 
     // Untrusted source ⇒ the fact does not exist. Deterministic and free — no model judgement.
     if (!isTrustedSource(f?.source_url)) {
       dropped.push({ fact: text.slice(0, 70), reason: `untrusted source: ${f?.source_url ?? "none"}` });
+      continue;
+    }
+
+    // TRUE and TRUSTED is not the same as PUBLISHABLE. A true, well-sourced fact about hooligan
+    // firms being jailed cleared every check above — because none of them asks whether a fact
+    // belongs in a football quiz. See editorial.mjs.
+    const ed = editorialVerdict(text);
+    if (ed) {
+      dropped.push({ fact: text.slice(0, 70), reason: `editorial/${ed.label}: "${ed.term}"` });
       continue;
     }
 

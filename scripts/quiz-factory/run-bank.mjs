@@ -211,7 +211,12 @@ try {
   factPool.push(...facts);
   const untrusted = dropped.filter((d) => d.reason.startsWith("untrusted")).length;
   const badTag = dropped.filter((d) => d.reason.startsWith("bad category")).length;
-  console.log(`   → ${facts.length} facts kept (${dropped.length} dropped: ${untrusted} untrusted source, ${badTag} bad category tag)\n`);
+  const editorial = dropped.filter((d) => d.reason.startsWith("editorial"));
+  console.log(`   → ${facts.length} facts kept (${dropped.length} dropped: ${untrusted} untrusted source, ${badTag} bad category tag, ${editorial.length} editorial)`);
+  // Always show WHAT the editorial gate binned. It's the only gate making a taste judgement
+  // rather than a factual one, so it's the one that could quietly be wrong.
+  for (const d of editorial) console.log(`     ✂ ${d.reason} — ${d.fact}…`);
+  console.log();
 } catch (e) {
   if (e instanceof CreditExhausted) { console.error(`\n${e.message}`); process.exit(2); }
   // ABORT, don't degrade. Proceeding feed-only looks like it works and isn't: the feed only
