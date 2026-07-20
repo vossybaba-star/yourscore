@@ -144,7 +144,13 @@ PREFER PRIMARY SOURCES: the club's own official site, premierleague.com, uefa.co
 Return ${c.need} facts, each with its "category", source URL and proving quote.`,
       }],
       tools: [WEB_SEARCH_TOOL],
-      maxTokens: 16000,
+      // 16k was too tight and it failed asymmetrically — on exactly the clubs worth most.
+      // Leeds and Liverpool both truncated mid-JSON: a club with many rivals (Leeds have
+      // Man United, Chelsea, Millwall and Huddersfield; Liverpool have Everton and Man United)
+      // needs more room for 25 facts each carrying a source quote, and those big-rivalry clubs
+      // are precisely the ones whose derbies are famous enough to yield EASY questions. The
+      // budget was quietly selecting against the material we're shortest of.
+      maxTokens: 32000,
       stage: "research",
     });
 
