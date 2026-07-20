@@ -7,8 +7,7 @@
 > for detail this file points to, never as current scope.
 >
 > **Confirmed:** 2026-07-20 (**Club question bank: categories remapped + Rivalries filled 0→20 clubs.**
-> NOT player-visible yet — the four club categories still aren't wired into `/quiz/create`, which
-> is the next step. On branch `quiz/content-factory`, nothing on `main`.
+> On branch `quiz/content-factory`, nothing on `main`.
 > **The remap:** 2,207 verified questions across 44 clubs were invisible to the category flow
 > because they carried six legacy labels while only 69 (Arsenal) carried the new four. 2,213
 > questions rehomed deterministically (no API cost); Season Performance / Records & Milestones
@@ -18,12 +17,22 @@
 > Man City, Man United, Newcastle), not 20/20. Eleven clubs are blocked on `easy` alone; three
 > (Bournemouth 6, West Ham 7, Palace 11) are capped by distinct-fact supply — `fact_key` stops a
 > quiz reusing one fact, so **row count is not capacity**. See `scripts/quiz-factory/bank-status.mjs`.
-> ⚠️ **OPEN — the easy shortage looks like a CALIBRATION artefact, not a content gap.** Difficulty
+> **RESOLVED same day — 19/20 clubs now deal a full 15-question Rivalries quiz** (was 6/20;
+> was 0/20 before today). Two changes: (a) the difficulty mix is now a TARGET with top-up
+> rather than a hard floor (`fillToSize` in `src/lib/questions.ts`), and (b) a `--top-up`
+> research pass for the three fact-capped clubs — West Ham 7→28 distinct facts, Palace 11→33,
+> Bournemouth 6→14. **Bournemouth is the only club still short, by ONE fact**; 17 of its 25
+> researched facts were dropped as untrusted, so its rivalry material is genuinely scarce.
+> **The four topics are now LIVE in `/quiz/create`** (clubs only) and `/api/quiz/availability`
+> filters by category too — without that the builder would show a club's total count while
+> generating from one topic. Verified in-browser: Sunderland · Rivalries offers Generate,
+> Sunderland · Legends correctly refuses.
+> ⚠️ **The easy shortage was a CALIBRATION artefact, not a content gap.** Difficulty
 > is rated for a *neutral* fan, but only a club's own fans pick that club's quiz. Newcastle and
 > Sunderland from the same derby, same tier-1 sources, zero facts dropped: Newcastle 2/9/16,
 > Sunderland **0/1/27**. No research produces a neutral-easy Sunderland fact, so the supply the
 > threshold demands does not exist at any budget. Relaxing the easy requirement for club quizzes
-> would take 6/20 → 14/20 for £0. Not changed — it alters how every quiz is dealt.
+> was the fix, and it landed: the mix is now a target, not a floor.
 > **Also learned:** grounded Modern Era authoring (SportMonks league tables) produces
 > *structurally* zero easy questions — positions/points/top-scorers are precision recall. It is
 > the cheapest category to generate and it makes the easy shortage worse.
