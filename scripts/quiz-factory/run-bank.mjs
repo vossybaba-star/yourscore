@@ -274,8 +274,14 @@ try {
     // Map each question's fact_ref (the number it cited on OUR sheet) to that fact's stable
     // key, so the draw can avoid dealing two questions from the same fact in one quiz.
     // We resolve against our own numbering — never the model's paraphrase.
+    //
+    // ⚠️ Index into authorFacts, NOT `researched`. The sheet handed to the author is numbered
+    // over authorFacts (feed + researched); `researched` is only the web-sourced subset. Using
+    // it here silently mis-resolved every reference on a mixed sheet, and on Modern Era — where
+    // every fact comes from the feed and `researched` is empty — it nulled ALL of them, so the
+    // same-fact spoiler guard was inert on the one category that's fully grounded.
     for (const q of candidates) {
-      const f = q.fact_ref ? researched[q.fact_ref - 1] : null;
+      const f = q.fact_ref ? authorFacts[q.fact_ref - 1] : null;
       q.fact_key = f?.key ?? null;
     }
     const untracked = candidates.filter((q) => !q.fact_key).length;
