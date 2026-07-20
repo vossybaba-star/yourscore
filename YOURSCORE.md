@@ -310,9 +310,16 @@ Confirmed preamble above and the referenced section.
 - **2026-07-20 (pm)** — **Versus psychology-audit fixes** (same branch
   `versus/hide-shadow-reveal`, not merged). Live numbers showed the constraint: 87 of 103
   quiz h2h matches in 14d were shadows (9 human), 255 solo players vs 59 versus players,
-  20 new friendships. Fixes: **solo result screen leads with "PLAY SOMEONE ON THIS QUIZ"**
-  (`/versus/find` pinned to the pack — the motivation peak now has a zero-friction versus
-  bridge; own runs are already excluded from the shadow pool); Live-now strip's second tile
+  20 new friendships. Fixes: **solo result screen ends on a "Beat someone's score" rail**
+  (`BeatScoreRail` + `/api/versus/recommended` + `lib/versus/recommend.ts`) — up to 3
+  quizzes the player has NOT attempted where other players' replayable runs are waiting
+  (same bar as the shadow pool: score>0, answers log ≥3), each card naming the top runner
+  + their score ("@x scored 4,850 · 12 others played"), hero card with faces + top/median;
+  tap → `/versus/find` pinned to that pack — fair (unseen questions) AND guaranteed to
+  match (those runs ARE the pool). Founder killed the first cut (same-quiz pin — "you'll
+  just get the same answers again"; rigged vs a blind shadow). Empty pool → plain
+  unpinned FIND AN OPPONENT fallback. Live pool check: top pack 101 players / 5,850 top
+  score, so recommendations exist for essentially everyone. Live-now strip's second tile
   falls back to a real **"Matches this fortnight"** aggregate (`matches14d` on
   `/api/versus/activity`) when today's counts are under the show-threshold; the empty
   rivalries section now shows a **first-rivalry teaser** ("play the same player twice")
