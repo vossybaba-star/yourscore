@@ -6,7 +6,53 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-07-13 (**Product-audit fix batches A–C verified + merged with main** —
+> **Confirmed:** 2026-07-20 (**Club question bank: categories remapped + Rivalries filled 0→20 clubs.**
+> NOT player-visible yet — the four club categories still aren't wired into `/quiz/create`, which
+> is the next step. On branch `quiz/content-factory`, nothing on `main`.
+> **The remap:** 2,207 verified questions across 44 clubs were invisible to the category flow
+> because they carried six legacy labels while only 69 (Arsenal) carried the new four. 2,213
+> questions rehomed deterministically (no API cost); Season Performance / Records & Milestones
+> split by era (modern-era = 2015+). Backup + `--revert` on disk.
+> **Rivalries:** was zero for every club — 498 questions written across all 20 PL clubs, $21.49.
+> **The honest number is 6/20 dealable as a full 15-question quiz** (Arsenal, Chelsea, Liverpool,
+> Man City, Man United, Newcastle), not 20/20. Eleven clubs are blocked on `easy` alone; three
+> (Bournemouth 6, West Ham 7, Palace 11) are capped by distinct-fact supply — `fact_key` stops a
+> quiz reusing one fact, so **row count is not capacity**. See `scripts/quiz-factory/bank-status.mjs`.
+> ⚠️ **OPEN — the easy shortage looks like a CALIBRATION artefact, not a content gap.** Difficulty
+> is rated for a *neutral* fan, but only a club's own fans pick that club's quiz. Newcastle and
+> Sunderland from the same derby, same tier-1 sources, zero facts dropped: Newcastle 2/9/16,
+> Sunderland **0/1/27**. No research produces a neutral-easy Sunderland fact, so the supply the
+> threshold demands does not exist at any budget. Relaxing the easy requirement for club quizzes
+> would take 6/20 → 14/20 for £0. Not changed — it alters how every quiz is dealt.
+> **Also learned:** grounded Modern Era authoring (SportMonks league tables) produces
+> *structurally* zero easy questions — positions/points/top-scorers are precision recall. It is
+> the cheapest category to generate and it makes the easy shortage worse.
+> **New: an editorial gate** (`scripts/quiz-factory/editorial.mjs`). True + trusted ≠ publishable:
+> research surfaced hooligan-firm facts (West Ham's ICF, Millwall Bushwackers, Seaburn Casuals)
+> from tier-1/2 sources. Fired on 4 of 20 clubs. Drops violence/crime/tragedy/abuse at the FACT
+> stage; deliberately conservative about football idiom ("crushed 5-1", "fired a shot").)
+>
+> **Previously confirmed:** 2026-07-17 (**Profile page redesigned + a silent P1 fixed** — the page now
+> leads with a *ladder* (2 players above / you / 1 below, a progress bar and "one 38-0 win does
+> it"), a *trophy cabinet* of verified bests per game where an unplayed game is a dashed empty
+> slot, and a *"where your points come from"* band that says out loud which games earn nothing
+> toward Rank. Killed the Lobbies/Friends tiles and the dead solo-challenge block.
+> **The P1:** `/profile` selected `room_scores.created_at`, a column that does not exist — the
+> query errored, so **quiz accuracy, recent multiplayer and recently-played-with had rendered
+> empty for every user since launch**. Accuracy is now true lifetime across quiz + lobbies + WC
+> Mastermind (`get_profile_accuracy`); "Games" counts real rows because `profiles.games_played`
+> is 0 on all 9,400 profiles; best-quiz is questions-right, not score/max_score (score carries
+> speed bonuses, so it read "5950/4800"); best-WC-run is a real max, not an unordered
+> `.limit(50)` of 22k rows. Migration **82** adds `get_yourscore_ladder`, `get_profile_accuracy`,
+> `get_best_wc_run`, `get_best_quiz`; streak maths extracted to `src/lib/streak.ts` and shared
+> with the home dashboard. ⚠️ **OPEN — `yourscore_user_ratings` is wrong:** it joins
+> `draft_standings` on `league_id` only, ignoring `competition`, so 340 users get **two ranks**
+> and 280 have their 38-0 score **split across PL/WC and never summed** (worst case `goat1993`,
+> −114,000 pts). Every user's rank is inflated by 358 phantom rows. Not fixed — it changes real
+> ranks and was explicitly out of scope. See `challenge_attempts`: 0 rows, no writer, so the
+> `SUM(challenge_attempts.score)` half of `knowledge_score` is permanently 0.)
+>
+> **Previously confirmed:** 2026-07-13 (**Product-audit fix batches A–C verified + merged with main** —
 > see Recently Shipped; audit docs at `docs/AUDIT-2026-07-11-*.md`. Verification was live:
 > room-watchdog e2e 12/12 against the real DB via two QA bots, the full guest 38-0 loop
 > played through win→swap and loss, h2h accept + guest game-link gate exercised in the
