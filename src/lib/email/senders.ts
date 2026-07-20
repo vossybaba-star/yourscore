@@ -530,3 +530,93 @@ export async function sendFirstWcMastermindEmail(args: {
     ],
   });
 }
+
+/**
+ * 24 · Club-Fan Leaderboard — end-of-gameweek result / new-week nudge.
+ *
+ * Bulk-eligible (goes to every declared supporter of a club that played), so it is
+ * driven by the batched, suppression-aware job scripts/clubs/send-gameweek-email.mjs
+ * — NOT fired inline per event. The caller passes the fully-built copy (from
+ * src/lib/clubs/result.ts emailContent()), so email and push say the same thing.
+ */
+export async function sendClubGameweekEmail(args: {
+  userId: string;
+  email: string;
+  subject: string;
+  preheader: string;
+  badge: string;
+  headline: string;
+  subline: string;
+  personal: string;
+  ctaLabel: string;
+  ctaUrl: string;
+  refId: string;
+}) {
+  const html = await renderEmail("24-club-gameweek", {
+    PREHEADER: args.preheader,
+    BADGE: args.badge,
+    HEADLINE: args.headline,
+    SUBLINE: args.subline,
+    PERSONAL: args.personal,
+    CTA_LABEL: args.ctaLabel,
+    CTA_URL: args.ctaUrl,
+    ...buildFooterUrls(args.userId, "all"),
+  });
+  await sendOrLog("sendClubGameweekEmail", args.userId, {
+    from: FROM,
+    to: args.email,
+    replyTo: REPLY_TO,
+    subject: args.subject,
+    html,
+    headers: { "X-Entity-Ref-ID": args.refId },
+    tags: [
+      { name: "category", value: "lifecycle" },
+      { name: "template", value: "24-club-gameweek" },
+    ],
+  });
+}
+
+/**
+ * 28 · Halftime quiz is LIVE — the WEB fallback for "Notify me".
+ *
+ * Push is native-only (see notify.ts), so a web user who asked to be told about
+ * a fixture would otherwise get nothing. Sent ONLY to people who explicitly
+ * asked for this match and have no device token; the pack is live for about the
+ * length of the interval, so the CTA leads and the app nudge sits under it.
+ */
+export async function sendHalftimeLiveEmail(args: {
+  userId: string;
+  email: string;
+  subject: string;
+  preheader: string;
+  badge: string;
+  headline: string;
+  subline: string;
+  ctaLabel: string;
+  ctaUrl: string;
+  appUrl: string;
+  refId: string;
+}) {
+  const html = await renderEmail("28-halftime-live", {
+    PREHEADER: args.preheader,
+    BADGE: args.badge,
+    HEADLINE: args.headline,
+    SUBLINE: args.subline,
+    CTA_LABEL: args.ctaLabel,
+    CTA_URL: args.ctaUrl,
+    APP_URL: args.appUrl,
+    ...buildFooterUrls(args.userId, "all"),
+  });
+  await sendOrLog("sendHalftimeLiveEmail", args.userId, {
+    from: FROM,
+    to: args.email,
+    replyTo: REPLY_TO,
+    subject: args.subject,
+    html,
+    headers: { "X-Entity-Ref-ID": args.refId },
+    tags: [
+      { name: "category", value: "lifecycle" },
+      { name: "template", value: "28-halftime-live" },
+    ],
+  });
+}

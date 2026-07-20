@@ -1,0 +1,39 @@
+{
+  "name": "abandoned",
+  "notes": "Two abandonments, on opposite sides of the whistle, because they must end differently. F1 is abandoned in the FIRST half (floodlight failure) before half time is ever reached: no pack, no push, row cancelled. F2 is abandoned in the SECOND half, after the pack has already been released: the pack STAYS UP. Its ten questions were all set before kick-off, so nothing in it stopped being true when the match was called off. The watchdog is run once at minute 180 — after the second abandonment — to prove it does not reach back and cancel a pack that is already live.",
+  "harness": {
+    "watchdog_at_min": [180]
+  },
+  "fixtures": [
+    {
+      "id": 19427480,
+      "home": "Leeds United",
+      "away": "Wolverhampton Wanderers",
+      "season_id": 28083,
+      "round": "Round 1",
+      "kickoff_min": 90,
+      "lineups_at_min": 30,
+      "timeline": [
+        { "at_min": 0, "state": "NS" },
+        { "at_min": 90, "state": "INPLAY_1ST_HALF" },
+        { "at_min": 118, "state": "ABANDONED" }
+      ]
+    },
+    {
+      "id": 19427481,
+      "home": "Fulham",
+      "away": "Crystal Palace",
+      "season_id": 28083,
+      "round": "Round 1",
+      "kickoff_min": 90,
+      "lineups_at_min": 30,
+      "timeline": [
+        { "at_min": 0, "state": "NS" },
+        { "at_min": 90, "state": "INPLAY_1ST_HALF" },
+        { "at_min": 136, "state": "HT" },
+        { "at_min": 151, "state": "INPLAY_2ND_HALF" },
+        { "at_min": 174, "state": "ABANDONED" }
+      ]
+    }
+  ]
+}

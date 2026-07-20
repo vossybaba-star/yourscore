@@ -87,18 +87,22 @@ function seenKey(run: { sourceRoomId?: string | null; sourceAttemptId?: string |
   return run.sourceAttemptId ? `att:${run.sourceAttemptId}:${run.userId}` : `${run.sourceRoomId}:${run.userId}`;
 }
 
-async function alreadyShadowed(db: Db, userId: string): Promise<Set<string>> {
+/** Sources this player has shadowed → when they last met each (room created_at). */
+async function alreadyShadowed(db: Db, userId: string): Promise<Map<string, string>> {
   const { data } = await db
     .from("rooms")
-    .select("shadow")
+    .select("shadow, created_at")
     .eq("created_by", userId)
     .not("shadow", "is", null)
     .order("created_at", { ascending: false })
     .limit(100);
-  const seen = new Set<string>();
+  const seen = new Map<string, string>();
   for (const r of data ?? []) {
     const s = r.shadow as ShadowInfo | null;
-    if (s?.userId && (s.sourceRoomId || s.sourceAttemptId)) seen.add(seenKey(s));
+    // Newest-first, so the first sighting of a key is the most recent meeting.
+    if (s?.userId && (s.sourceRoomId || s.sourceAttemptId) && !seen.has(seenKey(s))) {
+      seen.set(seenKey(s), r.created_at ?? "");
+    }
   }
   return seen;
 }
@@ -142,7 +146,10 @@ async function allCandidates(db: Db, packId: string): Promise<ShadowRun[]> {
   return [...rooms, ...solos].sort((a, b) => (b.at ?? "").localeCompare(a.at ?? ""));
 }
 
-/** Most recent run on a pack by someone else this player hasn't shadowed. */
+/** Most recent run on a pack by someone else this player hasn't shadowed —
+ *  or, when they've shadowed everyone (heavy players exhaust the pool), the
+ *  rerun they met longest ago. A repeat real opponent still beats the CPU seat
+ *  (founder, 2026-07-18: "Find an opponent" must not land on "CPU"). */
 export async function findShadowRun(db: Db, packId: string, forUserId: string): Promise<ShadowRun | null> {
   const exclude = EXCLUDED_RUNNERS();
   exclude.add(forUserId);
@@ -152,7 +159,18 @@ export async function findShadowRun(db: Db, packId: string, forUserId: string): 
   ]);
   // score > 0: a shadow that got every question wrong feels broken, not like
   // an opponent. (Revenge via findRunOfUser has no floor — the target is explicit.)
-  return candidates.find((c) => c.score > 0 && !exclude.has(c.userId) && !seen.has(seenKey(c))) ?? null;
+  const eligible = candidates.filter((c) => c.score > 0 && !exclude.has(c.userId));
+  const fresh = eligible.find((c) => !seen.has(seenKey(c)));
+  if (fresh) return fresh;
+  // Rerun tier: least-recently-shadowed first, so repeats cycle the whole pool
+  // before anyone comes around twice.
+  let rerun: ShadowRun | null = null;
+  let rerunAt = "";
+  for (const c of eligible) {
+    const at = seen.get(seenKey(c)) ?? "";
+    if (!rerun || at < rerunAt) { rerun = c; rerunAt = at; }
+  }
+  return rerun;
 }
 
 /** A specific player's most recent run on a pack (revenge — reruns allowed). */

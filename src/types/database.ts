@@ -1635,11 +1635,124 @@ export type Database = {
         }
         Relationships: []
       }
+      p10_players: {
+        Row: {
+          id: number
+          name: string
+          normalized: string
+          source: string | null
+          created_at: string
+        }
+        Insert: {
+          id: number
+          name: string
+          normalized: string
+          source?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: number
+          name?: string
+          normalized?: string
+          source?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      p10_lists: {
+        Row: {
+          id: string
+          title: string
+          day: string | null
+          status: string
+          entries: Json
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          title: string
+          day?: string | null
+          status?: string
+          entries?: Json
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          title?: string
+          day?: string | null
+          status?: string
+          entries?: Json
+          created_at?: string
+        }
+        Relationships: []
+      }
+      p10_attempts: {
+        Row: {
+          id: string
+          list_id: string
+          user_id: string | null
+          found: Json
+          hints: Json
+          strikes: number
+          tokens_left: number
+          score: number
+          done: boolean
+          share_token: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          list_id: string
+          user_id?: string | null
+          found?: Json
+          hints?: Json
+          strikes?: number
+          tokens_left?: number
+          score?: number
+          done?: boolean
+          share_token?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          list_id?: string
+          user_id?: string | null
+          found?: Json
+          hints?: Json
+          strikes?: number
+          tokens_left?: number
+          score?: number
+          done?: boolean
+          share_token?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "p10_attempts_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "p10_lists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "p10_attempts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
           created_at: string | null
+          device_id: string | null
           display_name: string | null
+          first_play_at: string | null
           games_played: number | null
           id: string
           notifications_opt_in: boolean
@@ -1651,7 +1764,9 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string | null
+          device_id?: string | null
           display_name?: string | null
+          first_play_at?: string | null
           games_played?: number | null
           id: string
           notifications_opt_in?: boolean
@@ -1663,7 +1778,9 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string | null
+          device_id?: string | null
           display_name?: string | null
+          first_play_at?: string | null
           games_played?: number | null
           id?: string
           notifications_opt_in?: boolean

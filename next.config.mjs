@@ -39,6 +39,11 @@ const nextConfig = {
       { source: "/draft/:path*", destination: "/38-0/:path*", permanent: true },
       { source: "/xi", destination: "/38-0", permanent: true },
       { source: "/xi/:path*", destination: "/38-0/:path*", permanent: true },
+      // The name-the-top-10 game is "Perfect 10". An earlier prototype shipped
+      // under a name that is a registered trademark of another party for this
+      // exact game format — the route is withdrawn and points at Perfect 10 so
+      // shared links keep working.
+      { source: "/tenable", destination: "/play/game/perfect-10", permanent: true },
     ];
   },
   async headers() {

@@ -1,0 +1,23 @@
+{
+  "name": "delayed-kickoff",
+  "notes": "Kickoff slides +20 minutes at T-40 (crowd congestion outside the ground). starting_at moves from min 90 to min 110. The poller must pick the new kickoff up, recompute the assembly/veto deadline against it (T-10 = min 100, not min 80), and still release on the state flip rather than on any clock it computed earlier.",
+  "fixtures": [
+    {
+      "id": 19427468,
+      "home": "Newcastle United",
+      "away": "Nottingham Forest",
+      "season_id": 28083,
+      "round": "Round 1",
+      "kickoff_min": 90,
+      "lineups_at_min": 30,
+      "kickoff_shift": { "at_min": 50, "to_min": 110 },
+      "timeline": [
+        { "at_min": 0, "state": "NS" },
+        { "at_min": 110, "state": "INPLAY_1ST_HALF" },
+        { "at_min": 158, "state": "HT" },
+        { "at_min": 173, "state": "INPLAY_2ND_HALF" },
+        { "at_min": 220, "state": "FT" }
+      ]
+    }
+  ]
+}

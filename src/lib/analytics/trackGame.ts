@@ -1,14 +1,26 @@
 import { track } from "@vercel/analytics";
+import { isNative } from "@/lib/native";
 import { afLogEvent } from "@/lib/native/appsflyer";
-import { afGameComplete, afInviteSent, type InviteSurface } from "@/lib/analytics/appsflyerEvents";
+import { afGameComplete, afInviteSent, afReturnPlay, type InviteSurface } from "@/lib/analytics/appsflyerEvents";
+import { localDay, evaluateReturnPlay } from "@/lib/analytics/returnPlay";
 
 // Which game a Player is engaging with. Drives per-game ad audiences.
-export type GameId = "38-0" | "quiz";
+export type GameId = "38-0" | "quiz" | "perfect10" | "higher-lower" | "guess-the-player";
 
 const GOOGLE_ADS_PLAY_SEND_TO = process.env.NEXT_PUBLIC_GOOGLE_ADS_PLAY_SEND_TO;
 type GameEvent = "play" | "complete";
 
 type Props = Record<string, string | number | boolean>;
+
+// Every pixel event carries which surface fired it. The native app is a webview
+// wrapper of yourscore.app, so the SAME web pixels fire inside the app — without
+// this tag, app activity is indistinguishable from web activity on every ad
+// platform (web campaigns get credited with app plays, and no "app user" audience
+// can exist). `client` (not `platform` — trackDownload already uses `platform`
+// for the target store) splits them: "native" = inside the iOS/Android shell.
+function clientTag(): "native" | "web" {
+  return isNative() ? "native" : "web";
+}
 
 declare global {
   interface Window {
@@ -28,14 +40,150 @@ const X_EVENT_IDS: Record<string, string | undefined> = {
   "complete_38-0": process.env.NEXT_PUBLIC_X_COMPLETE_38_0_EVENT_ID,
   "play_quiz": process.env.NEXT_PUBLIC_X_PLAY_QUIZ_EVENT_ID,
   "complete_quiz": process.env.NEXT_PUBLIC_X_COMPLETE_QUIZ_EVENT_ID,
+  "play_perfect10": process.env.NEXT_PUBLIC_X_PLAY_P10_EVENT_ID,
+  "complete_perfect10": process.env.NEXT_PUBLIC_X_COMPLETE_P10_EVENT_ID,
+  "play_higher-lower": process.env.NEXT_PUBLIC_X_PLAY_HILO_EVENT_ID,
+  "complete_higher-lower": process.env.NEXT_PUBLIC_X_COMPLETE_HILO_EVENT_ID,
+  "play_guess-the-player": process.env.NEXT_PUBLIC_X_PLAY_GUESSPLAYER_EVENT_ID,
+  "complete_guess-the-player": process.env.NEXT_PUBLIC_X_COMPLETE_GUESSPLAYER_EVENT_ID,
+};
+
+// The X event ids for the cross-game PlayAny/CompleteAny events (see ANY_EVENT below).
+const X_ANY_EVENT_IDS: Record<GameEvent, string | undefined> = {
+  play: process.env.NEXT_PUBLIC_X_PLAY_ANY_EVENT_ID,
+  complete: process.env.NEXT_PUBLIC_X_COMPLETE_ANY_EVENT_ID,
+};
+
+// Per-game suffix for the platform event name. These names are effectively PERMANENT:
+// Meta/TikTok audiences and conversions are keyed on the event name, so renaming one
+// discards its accumulated history. Add a new game here, never rename an existing one.
+const GAME_SUFFIX: Record<GameId, string> = {
+  "38-0": "380",
+  "quiz": "Quiz",
+  "perfect10": "P10",
+  "higher-lower": "HiLo",
+  "guess-the-player": "GuessPlayer",
 };
 
 // Distinct custom-event names per (event, game) so every ad platform can define an
 // audience from the event name alone (Meta/TikTok), with `game` also in the payload
 // for platforms that segment on parameters (GA4).
 function eventName(event: GameEvent, game: GameId): string {
-  const g = game === "38-0" ? "380" : "Quiz";
+  const g = GAME_SUFFIX[game];
   return event === "play" ? `Play${g}` : `Complete${g}`;
+}
+
+// Cross-game event name. Meta and TikTok can only optimise/segment on the event NAME,
+// so a per-game name can never serve an app-level campaign ("play YourScore", no single
+// game named). PlayAny/CompleteAny fire on EVERY game alongside the specific event,
+// giving app-level creative a matching bid event with the full cross-game volume behind
+// it. GA4/Snapchat/Vercel already carry `game` as a parameter, so they're unified
+// already and don't need this.
+function anyEventName(event: GameEvent): string {
+  return event === "play" ? "PlayAny" : "CompleteAny";
+}
+
+// ── ReturnPlay: the D2+ retention milestone ──────────────────────────────────
+// Fires ONCE, the first time a Player plays on a *later calendar day* than their
+// first-ever play — i.e. they came back. This is the signal every acquisition
+// pixel currently lacks: it optimises toward first play/signup only, so it can't
+// build a "repeat player" audience or a lookalike off genuinely retained users.
+// ReturnPlay seeds exactly that. X needs a pre-created Events-Manager event id
+// (fires only once the env var is set); every other platform gets it immediately.
+// Existing players (no stored first-play day when this ships) are treated as
+// day-0 on their next play, so the audience warms up over ~a day — we can't
+// reconstruct pre-deploy history client-side.
+const X_RETURNPLAY_EVENT_ID = process.env.NEXT_PUBLIC_X_RETURNPLAY_EVENT_ID;
+const FIRST_PLAY_DAY_KEY = "ys:firstplayday";
+const RETURN_FIRED_KEY = "ys:returnfired";
+
+// Timestamp of this device's first-ever play. SignupPixel sends it at registration
+// and the server keeps it as profiles.first_play_at, so `first_play_at < created_at`
+// tells us the Player played BEFORE they signed up (and the gap says how long before) —
+// i.e. whether a campaign won a brand-new player or re-registered someone who was
+// already playing as a guest. Guest plays never reach the DB (they're client-side and
+// sign-up gated), so this localStorage stamp is the only way to see pre-signup play.
+// Set independently of the ReturnPlay keys above: players who already have a stored
+// first-play day (from the ReturnPlay ship) still get a timestamp on their next play.
+// For them it isn't their true first play, but they're already registered, so it lands
+// after their created_at and correctly reads as "not a pre-signup play" — no false positives.
+const FIRST_PLAY_AT_KEY = "ys:firstplayat";
+
+// Fan the ReturnPlay milestone out to every ad/analytics platform (mirrors the
+// play/complete fan-out; each call guarded so one blocked pixel never blocks the rest).
+function fireReturnPlay(game: GameId, daysSinceFirst: number): void {
+  const payload: Props = { game, days_since_first: daysSinceFirst, client: clientTag() };
+  if (X_RETURNPLAY_EVENT_ID) window.twq?.("event", X_RETURNPLAY_EVENT_ID, payload); // X (Twitter)
+  window.fbq?.("trackCustom", "ReturnPlay", payload);   // Meta
+  window.ttq?.track?.("ReturnPlay", payload);            // TikTok (custom, audience-eligible)
+  window.snaptr?.("track", "CUSTOM_EVENT_5", payload);  // Snapchat (1=play·2=complete·3=download·4=share·5=return)
+  window.gtag?.("event", "return_play", payload);        // Google Analytics 4 → audience + Google Ads import
+  track("return_play", payload);                         // Vercel Analytics
+  afReturnPlay(game, daysSinceFirst);                    // AppsFlyer (native only)
+}
+
+// Read storage, apply the pure decision, persist, and fire once when earned. Also
+// stamps the first-play timestamp (see FIRST_PLAY_AT_KEY) — same try/catch, since
+// both are storage writes on the play path and a blocked store should skip both.
+function maybeTrackReturnPlay(game: GameId): void {
+  try {
+    const now = new Date();
+    const today = localDay(now);
+    if (!window.localStorage.getItem(FIRST_PLAY_AT_KEY)) {
+      window.localStorage.setItem(FIRST_PLAY_AT_KEY, now.toISOString());
+    }
+    const storedFirstDay = window.localStorage.getItem(FIRST_PLAY_DAY_KEY);
+    const alreadyFired = window.localStorage.getItem(RETURN_FIRED_KEY) === "1";
+    const { shouldFire, firstDay, daysSinceFirst } = evaluateReturnPlay(
+      storedFirstDay,
+      alreadyFired,
+      today,
+    );
+    if (!storedFirstDay) window.localStorage.setItem(FIRST_PLAY_DAY_KEY, firstDay);
+    if (shouldFire) {
+      window.localStorage.setItem(RETURN_FIRED_KEY, "1");
+      fireReturnPlay(game, daysSinceFirst);
+    }
+    maybeTrackHabitFormed(game, today);
+  } catch {
+    /* storage blocked — skip the milestone */
+  }
+}
+
+// ── HabitFormed: the D3+ habit milestone ─────────────────────────────────────
+// Fires ONCE per device, on the play that makes it 3 DISTINCT calendar days of
+// playing. ReturnPlay (above) says "they came back"; HabitFormed says "they keep
+// coming back" — the highest-quality lookalike seed for retained-players-per-£.
+// Storage: `ys:playdays` holds up to 3 distinct local days; once fired, the set
+// stops growing. Same warm-up caveat as ReturnPlay: pre-existing players start
+// counting from ship day. Called only from maybeTrackReturnPlay's try{} (storage
+// already known-writable there).
+const PLAY_DAYS_KEY = "ys:playdays";
+const HABIT_FIRED_KEY = "ys:habitfired";
+const HABIT_DAYS = 3;
+const X_HABIT_EVENT_ID = process.env.NEXT_PUBLIC_X_HABIT_EVENT_ID;
+
+function maybeTrackHabitFormed(game: GameId, today: string): void {
+  if (window.localStorage.getItem(HABIT_FIRED_KEY) === "1") return;
+  let days: string[] = [];
+  try {
+    const raw = window.localStorage.getItem(PLAY_DAYS_KEY);
+    if (raw) days = (JSON.parse(raw) as string[]).filter((d) => typeof d === "string");
+  } catch {
+    /* corrupt store — restart the count rather than throw */
+  }
+  if (!days.includes(today)) days = [...days, today].slice(-HABIT_DAYS);
+  window.localStorage.setItem(PLAY_DAYS_KEY, JSON.stringify(days));
+  if (days.length < HABIT_DAYS) return;
+  window.localStorage.setItem(HABIT_FIRED_KEY, "1");
+
+  const payload: Props = { game, client: clientTag() };
+  if (X_HABIT_EVENT_ID) window.twq?.("event", X_HABIT_EVENT_ID, payload); // X (Twitter)
+  window.fbq?.("trackCustom", "HabitFormed", payload); // Meta
+  window.ttq?.track?.("HabitFormed", payload);          // TikTok
+  window.gtag?.("event", "habit_formed", payload);      // Google Analytics 4
+  track("habit_formed", payload);                       // Vercel Analytics
+  void afLogEvent("habit_formed", { game });            // AppsFlyer (native only)
 }
 
 /**
@@ -48,7 +196,7 @@ function eventName(event: GameEvent, game: GameId): string {
  */
 function trackGameEvent(game: GameId, event: GameEvent, props: Props = {}): void {
   if (typeof window === "undefined") return;
-  const payload: Props = { game, ...props };
+  const payload: Props = { game, client: clientTag(), ...props };
   const name = eventName(event, game);
 
   // X (Twitter) — only when an Events-Manager event ID is configured.
@@ -60,6 +208,15 @@ function trackGameEvent(game: GameId, event: GameEvent, props: Props = {}): void
 
   // TikTok — custom event, distinct name per game.
   window.ttq?.track?.(name, payload);
+
+  // Cross-game twin of the above, fired on EVERY game so app-level campaigns have a
+  // single bid event that matches app-level creative. `game` stays in the payload, so
+  // this adds a dimension rather than losing one.
+  const anyName = anyEventName(event);
+  window.fbq?.("trackCustom", anyName, payload);
+  window.ttq?.track?.(anyName, payload);
+  const xAnyId = X_ANY_EVENT_IDS[event];
+  if (xAnyId) window.twq?.("event", xAnyId, payload);
 
   // TikTok ONLY optimises ad delivery toward its STANDARD events — custom events
   // (Play380/Complete380 etc.) are tracked + audience-eligible but NOT optimisable
@@ -90,6 +247,8 @@ function trackGameEvent(game: GameId, event: GameEvent, props: Props = {}): void
   // AppsFlyer (native only) — log plays so app-install campaigns can optimise toward players.
   if (event === "play") {
     void afLogEvent("play_game", { game });
+    // Retention milestone: did they come back on a later day? Fires once, all platforms.
+    maybeTrackReturnPlay(game);
   } else {
     // Rich completion event + one-time first_game_complete (the activation milestone
     // the SKAN schema + quality-CPI analysis key on). Map the loose call-site props.
@@ -118,7 +277,7 @@ const X_DOWNLOAD_EVENT_ID = process.env.NEXT_PUBLIC_X_DOWNLOAD_EVENT_ID;
 
 export function trackDownload(props: Props = {}): void {
   if (typeof window === "undefined") return;
-  const payload: Props = { platform: "ios", ...props };
+  const payload: Props = { platform: "ios", client: clientTag(), ...props };
 
   if (X_DOWNLOAD_EVENT_ID) window.twq?.("event", X_DOWNLOAD_EVENT_ID, payload); // X (Twitter)
   window.fbq?.("trackCustom", "Download", payload);    // Meta
@@ -137,7 +296,7 @@ const X_SHARE_EVENT_ID = process.env.NEXT_PUBLIC_X_SHARE_EVENT_ID;
 
 export function trackShare(content: string, props: Props = {}): void {
   if (typeof window === "undefined") return;
-  const payload: Props = { content, ...props };
+  const payload: Props = { content, client: clientTag(), ...props };
 
   if (X_SHARE_EVENT_ID) window.twq?.("event", X_SHARE_EVENT_ID, payload); // X (Twitter)
   window.fbq?.("trackCustom", "Share", payload);        // Meta
@@ -160,4 +319,125 @@ export function trackShare(content: string, props: Props = {}): void {
     surface: surfaceMap[content] ?? "other",
     channel: typeof props.channel === "string" ? props.channel : undefined,
   });
+}
+
+// ── Once-guard for fire-once call sites ──────────────────────────────────────
+// In-memory refs lose state on refresh, so pages that fire on mount/phase-change
+// double-count when reloaded (and can lose a "complete" they still owed). This
+// sessionStorage guard survives refresh but not a new session — right for
+// "once per game/match/room": returns true only the first time a key is seen.
+// Storage-blocked browsers fall back to firing (over-count beats silence).
+export function firedOnce(key: string): boolean {
+  try {
+    const k = `ys:fired:${key}`;
+    if (window.sessionStorage.getItem(k)) return false;
+    window.sessionStorage.setItem(k, "1");
+    return true;
+  } catch {
+    return true;
+  }
+}
+
+/** Non-consuming read of the firedOnce guard — "did this key already fire?". */
+export function hasFired(key: string): boolean {
+  try {
+    return window.sessionStorage.getItem(`ys:fired:${key}`) === "1";
+  } catch {
+    return false;
+  }
+}
+
+// ── FantasyWaitlist (fantasy-intent, pre-launch) ─────────────────────────────
+// Fired when the Fantasy waitlist form SUCCEEDS (never on render or submit-attempt).
+// This is the declared "potential fantasy player" — the warm-up audience for the
+// 21 Aug launch. Uses each platform's STANDARD lead event where one exists so the
+// platform can optimise delivery toward it: Meta `Lead`, TikTok `SubmitForm`,
+// Snap `SIGN_UP`-adjacent SUBSCRIBE, GA4 `generate_lead`.
+const X_FANTASY_WAITLIST_EVENT_ID = process.env.NEXT_PUBLIC_X_FANTASY_WAITLIST_EVENT_ID;
+
+export function trackFantasyWaitlist(props: Props = {}): void {
+  if (typeof window === "undefined") return;
+  const payload: Props = { client: clientTag(), ...props };
+
+  if (X_FANTASY_WAITLIST_EVENT_ID) window.twq?.("event", X_FANTASY_WAITLIST_EVENT_ID, payload); // X
+  window.fbq?.("track", "Lead", payload);              // Meta (standard, optimisable)
+  window.ttq?.track?.("SubmitForm", payload);           // TikTok (standard, optimisable)
+  window.snaptr?.("track", "SUBSCRIBE", payload);       // Snapchat (standard; custom slots 1-5 are taken)
+  window.gtag?.("event", "generate_lead", payload);     // Google Analytics 4
+  track("fantasy_waitlist", payload);                   // Vercel Analytics
+  void afLogEvent("fantasy_waitlist", {});              // AppsFlyer (native only)
+}
+
+// ── ClubPick (fan identity → fantasy/matchday intent) ────────────────────────
+// Fired when a Player confirms the club they represent (a once-a-season pick).
+// `club` rides the payload so club-level audiences/reporting come free.
+const X_CLUBPICK_EVENT_ID = process.env.NEXT_PUBLIC_X_CLUBPICK_EVENT_ID;
+
+export function trackClubPick(club: string, props: Props = {}): void {
+  if (typeof window === "undefined") return;
+  const payload: Props = { club, client: clientTag(), ...props };
+
+  if (X_CLUBPICK_EVENT_ID) window.twq?.("event", X_CLUBPICK_EVENT_ID, payload); // X
+  window.fbq?.("trackCustom", "ClubPick", payload); // Meta
+  window.ttq?.track?.("ClubPick", payload);          // TikTok
+  window.gtag?.("event", "club_pick", payload);      // Google Analytics 4
+  track("club_pick", payload);                       // Vercel Analytics
+  void afLogEvent("club_pick", { club });            // AppsFlyer (native only)
+}
+
+// ── InviteAccepted (viral loop, receive side) ────────────────────────────────
+// Share (above) is the SEND side; this fires when an invite actually lands — a
+// visitor arrives via a friend's link/code and completes the join. Share tells us
+// who tries to spread YourScore; InviteAccepted tells us who succeeds (K-factor).
+// Fire at the join SUCCESS moment, never on merely viewing an invite link.
+const X_INVITE_ACCEPTED_EVENT_ID = process.env.NEXT_PUBLIC_X_INVITE_ACCEPTED_EVENT_ID;
+
+export function trackInviteAccepted(surface: string, props: Props = {}): void {
+  if (typeof window === "undefined") return;
+  const payload: Props = { surface, client: clientTag(), ...props };
+
+  if (X_INVITE_ACCEPTED_EVENT_ID) window.twq?.("event", X_INVITE_ACCEPTED_EVENT_ID, payload); // X
+  window.fbq?.("trackCustom", "InviteAccepted", payload); // Meta
+  window.ttq?.track?.("InviteAccepted", payload);          // TikTok
+  window.gtag?.("event", "invite_accepted", payload);      // Google Analytics 4
+  track("invite_accepted", payload);                       // Vercel Analytics
+  void afLogEvent("invite_accepted", { surface });         // AppsFlyer (native only)
+}
+
+// ── PushOptIn (owned-channel asset) ──────────────────────────────────────────
+// Web-pixel twin of the native afPushOptIn: fired when the Player grants push
+// permission. The audience that opted in is reachable for free — exclude it from
+// paid re-engagement; its inverse is the paid-retargeting pool.
+export function trackPushOptIn(): void {
+  if (typeof window === "undefined") return;
+  const payload: Props = { client: clientTag() };
+  window.fbq?.("trackCustom", "PushOptIn", payload); // Meta
+  window.ttq?.track?.("PushOptIn", payload);          // TikTok
+  window.gtag?.("event", "push_opt_in", payload);     // Google Analytics 4
+  track("push_opt_in", payload);                      // Vercel Analytics
+}
+
+// ── TeamDrafted (the IKEA moment) ────────────────────────────────────────────
+// Fired once a full XI is drafted — they BUILT something, before any match is
+// played. Sits between Play380 (draft started) and Complete380 (match result):
+// the funnel stage the guest signup gate hangs off, and the "your XI is waiting"
+// retarget audience. Reporting/audience event — not a bid event.
+export function trackTeamDrafted(props: Props = {}): void {
+  if (typeof window === "undefined") return;
+  const payload: Props = { client: clientTag(), ...props };
+  window.fbq?.("trackCustom", "TeamDrafted", payload); // Meta
+  window.ttq?.track?.("TeamDrafted", payload);          // TikTok
+  window.gtag?.("event", "team_drafted", payload);      // Google Analytics 4
+  track("team_drafted", payload);                       // Vercel Analytics
+}
+
+// ── Diagnostics (GA4/Vercel ONLY — never ad platforms) ───────────────────────
+// Funnel diagnostics that would only add noise to ad-platform event menus:
+// signup_prompt_shown, near_miss, redraft_used, … Sparse events starve delivery
+// optimisation, so these deliberately stay out of the pixel fan-outs.
+export function trackDiag(name: string, props: Props = {}): void {
+  if (typeof window === "undefined") return;
+  const payload: Props = { client: clientTag(), ...props };
+  window.gtag?.("event", name, payload); // Google Analytics 4
+  track(name, payload);                  // Vercel Analytics
 }

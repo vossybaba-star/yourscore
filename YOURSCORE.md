@@ -60,6 +60,69 @@
 > −114,000 pts). Every user's rank is inflated by 358 phantom rows. Not fixed — it changes real
 > ranks and was explicitly out of scope. See `challenge_attempts`: 0 rows, no writer, so the
 > `SUM(challenge_attempts.score)` half of `knowledge_score` is permanently 0.)
+> **Also confirmed:** 2026-07-20 (**Conversion-event schema completed for the ad relaunch** —
+> new pixel events: `FantasyWaitlist` (Meta `Lead`/TikTok `SubmitForm`, fires on waitlist
+> save success in WaitlistCard — blog + Matchweek fantasy tab), `ClubPick` (ClubPicker
+> confirm, `{club}` param), `InviteAccepted` (viral-loop RECEIVE side — league join,
+> 38-0 challenge accept, live-H2H code claim, WC-H2H join, group-challenge join; Share
+> remains the send side), `HabitFormed` (3rd distinct play-day, once per device — fired
+> from the ReturnPlay path in trackGame.ts), `TeamDrafted` (full XI complete on
+> /38-0/play — the pre-match IKEA moment), web `PushOptIn` twin in lib/push.ts, and
+> GA4-only `trackDiag` (`redraft_used`). EVERY pixel event now carries
+> `client: "native"|"web"` so app-webview activity is separable from web (the iOS app
+> wraps yourscore.app — pixels fire in both). Accuracy fixes: fire-once guards moved to
+> sessionStorage (`firedOnce`/`hasFired` in trackGame.ts) so refresh can't double-count —
+> 38-0 match result, live H2H, live-match quiz, multiplayer quiz; multiplayer quiz "play"
+> now fires on the player's FIRST ANSWER (room viewers no longer count); group-quiz
+> starts correctly tagged `mode:"group"`. X Events Manager audit same day: all events
+> code-defined, no URL rules. NEW-GAME RULE: a new quiz PACK needs nothing (tracking
+> lives in the page); a new game PAGE must call trackGamePlay/Complete + get a GameId.
+> Prior confirm 2026-07-19: **Nav: 38-0 now lives under the Play tab** — Quiz | 38-0
+> game switcher on both hubs, see §9 + Recently Shipped. Prior confirm 2026-07-16:
+> **Perfect 10 — new standalone list game SHIPPED to prod.**
+> Third Quiz game-type ("name everyone in a ranked top-10 football list", e.g. all-time
+> PL top scorers): tapering "floodlit tower" of 10 rungs (#1 narrowest at the top) that
+> ignite gold as solved; free-text input with autocomplete chips (tap chip = submit, NO
+> submit button; word-exact/surname matches rank above prefix matches); 3 strikes
+> (wrong player = strike + tower shake); 3 hint tokens spent per-rung (tier 1 clubs clue
+> → tier 2 "starts with"; clue chips persist under the rung until solved, no rung
+> restyle); scoring +10 clean / +6 one hint / +3 two hints; dots per rung = one per
+> letter, grouped by word (server-sent lengths — answers NEVER reach the client
+> pre-solve; grading is server-side vs service-role-only `p10_lists.entries`). Daily
+> list by Europe/London date; win = tower-ignition cascade, 3 strikes = missed names
+> revealed in red. Signed-in attempts persist (`p10_attempts`, unique per list+user,
+> share_token drives the async challenge link `?c=` → same list, side-by-side compare);
+> guests play via localStorage (house guest pattern, sign-up nudge on results). Guess
+> pool = ALL PL history: `p10_players` + `public/perfect10/players.json` (4,669 names)
+> backfilled live from SportMonks league-8 season squads 2003/04→now
+> (`scripts/perfect10/build-player-index.mjs` — validates every season against the
+> verified "season id aliases to current squad" trap; SportMonks' topscorers endpoint is
+> UNRELIABLE for historical rankings, verified live, so lists are NOT SportMonks-ranked);
+> pre-2003 legends are force-inserted whenever a list ships. Lists are authored+verified
+> by `scripts/perfect10/generate-lists.mjs` (author → per-entry independent web-search
+> verification, any failed entry drops the WHOLE list → insert as draft; a list only
+> serves once it's assigned a `day`). Migration 85 applied to prod (tables RLS
+> deny-all/service-only). Hub tile on /play, gold #ffc400; typographic placeholder cover
+> pending approved key art. **Same day: the playable LIBRARY shipped** (founder model:
+> a list drops daily, the back-catalogue stays playable) — `library` API action +
+> "Previous days" on the intro with PLAY / n-of-10 / score badges; `?list=` replays any
+> served list; drafts/future days unreachable (`isServed` gates state/guess/hint).
+> **(2026-07-18 pm: daily framing DROPPED from the UX — founder: "forget this daily
+> thing." Every list is a GAME MODE in one "Game modes" picker; dates/"today" never
+> reach the player. `day` remains the server-side release gate/order only.)**
+> **GAMEPLAY NEVER SCROLLS (Jul 17, founder requirement).** The play screen is `height:100dvh` + `overflow-hidden` (NOT `min-h-screen`/100vh — vh ignores mobile browser chrome, which is what caused 301px of overflow at 375x667); rungs are `flex: 1 1 auto` in a `min-h-0` column so tall screens fill without dead air and short ones compress; hint chips are one line and scale to full tower width so a paid clue isn't truncated. **Verify layout at 360x600 / 375x667 WITH hints spent — never at a bare 812 viewport.** **SINGLE-SOURCE ANCHOR SHIPPED (Jul 17) — the tie problem is SOLVED.** `generate-lists.mjs --anchor "<source + its tiebreak rules>"` switches the verifier from "find an article printing this exact numbering" (impossible for tied stats) to "verify the player's stat value per this source, and that the rank is defensible under its published tiebreakers" — stricter on FACTS, looser on editorial order. Rationale: **a tie never reaches the player** (they type names; the rank is display only). First run took the 2026 WC list from 0/10 to 7/10 confirmed, resolving Messi/Mbappé 8-8 (assists), Kane/Bellingham 6-6 (minutes) and Dembélé/Oyarzabal 5-5 (assists). Also withdrew `/tenable` (an earlier prototype under a name that is another party's registered trademark for this exact format) — 301s to Perfect 10; the LukePingu partner page now points at Perfect 10. **TIES WERE THE #1 GATE KILLER — and the unlock is a single-source anchor (Jul 17).** The verifier needs a source confirming an EXACT rank; most football top-10s are tie-bunched so none exists. 2026 WC top scorers DROPPED (Messi 8 = Mbappé 8, Kane 6 = Bellingham 6, Dembélé 5 = Oyarzabal 5, four players on 4) — **the final will not fix this, ties only grow.** Note **ties don't affect gameplay** (players type names; the rank is never needed) — the order only has to be defensible for display. Fix: anchor titles to ONE canonical source with published tiebreakers (FIFA Golden Boot = goals → assists → fewer minutes; Transfermarkt for fees) and verify against that source only. NOT built — needs founder sign-off. **TOPIC SHAPES THAT CANNOT SHIP (Jul 16–17):** (a) **fee-ranked lists** — all four transfer topics (most expensive PL / all-time / biggest PL sales / summer-2026 window) were DROPPED because no canonical ranking exists (Wirtz #7/#3/#2, Coutinho #4/#3/#11 across sources); shipping transfers needs the title anchored to ONE named source ("per Transfermarkt") + a gate change — NOT built. (b) **shared awards** — "last 10 PL Golden Boot winners" was factually CONFIRMED but 3/10 seasons were shared, giving untypeable rungs ("Salah, Mané & Aubameyang") → status='unplayable-shared-award', never released. **LIVE Jul 17: Last 10 Ballon d'Or Winners** (Messi ×4 / Ronaldo ×2 — double-winner grading verified on prod). **RECALL WINDOW = the topic test (Jul 16, proven live):** the "last 10 WC Golden Boot winners" list was VETOED by the founder (40-year window) and the data agreed — 3 real players all scored 0 pts, 0/10 found. Pulled to status='vetoed'; the WC captains/Golden Ball lists were pulled to draft unreleased. A verifiable list is NOT a playable list — a casual fan must land 5–7. Topic titles get founder approval as TEXT BEFORE any generation spend. **Content live:** Jul 13–15 = PL library seeds (25/26 scorers · appearance makers ·
+> all-time scorers), Jul 16 = last 10 WC Golden Boot winners (Salenko added as an
+> accepted answer on the shared-1994 rung), Jul 17 = last 10 WC-winning captains —
+> founder wants WC-themed dailies while WC 2026 runs; Jul 18 = last 10 WC Golden Ball winners (Messi twice → the DOUBLE-WINNER fix same eve: solved names stay suggestible, grading skips to the next unsolved rung, all-solved returns alreadyFound with NO strike). Gate lessons (all drops were
+> CORRECT): tie-bunched topics (all-time assists 94-94, clean sheets 132×3, mid-
+> tournament tallies) are structurally unshippable — pick recency-ranked or clean-order
+> topics; all-time WC scorers/appearances regenerate AFTER the Jul 19 final. ⚠️ NO
+> daily automation yet — someone must generate + assign `day` rows (founder decision
+> pending on a cron). NOTE: `scripts/lib/anthropic.mjs` got its first git commit on this
+> branch (was untracked WIP from the quiz-factory session) — reconcile if the factory
+> branch commits its own copy. Nav decision RULED 2026-07-18: founder ordered "all
+> games under one Play tab incl. 38-0" — SHIPPED same day (see §9 Navigation Canon +
+> Recently Shipped).)
 >
 > **Previously confirmed:** 2026-07-13 (**Product-audit fix batches A–C verified + merged with main** —
 > see Recently Shipped; audit docs at `docs/AUDIT-2026-07-11-*.md`. Verification was live:
@@ -315,6 +378,103 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-20** — **Perfect 10 gets its own share card (founder)** — a shared Perfect 10
+  link used to unfurl the platform-wide YourScore card, which said nothing about the game.
+  New `/api/og/perfect-10` renders **the tower itself**: ten tapering rungs, gold where the
+  player named the answer, dark where they didn't, plus topic title, PERFECT 10 / TOWER
+  FALLS verdict and points. **No names ever appear on the card** (rungs are lit/unlit only)
+  so a posted result cannot spoil the list — same rule `buildShareText` follows. Modes:
+  `?c=<share_token>` = verified scorecard · `?list=<id>&s=&f=` = **guest** scorecard
+  (guests have no attempt row, so their result rides in the link; self-reported and
+  forgeable, which is fine as nothing is scored off an image) · bare = promo card with an
+  **empty** tower (ten blanks to fill — a fully-lit promo read as somebody's 10/10).
+  `page.tsx` is now a thin server shell exporting `generateMetadata` (only a *page*
+  receives `searchParams`, which is what lets a challenge link unfurl that player's own
+  tower); the game moved unchanged to `Game.tsx`.
+- **2026-07-19** — **Home link-preview card redesigned to sell the whole platform
+  (founder)** — `/api/og/home` (the og:image every yourscore.app unfurl shows) no longer
+  promotes only 38-0: "The Home of Football Gaming" headline + a fanned trio of mocked
+  game cards in the app's real design language (38-0 green / Perfect 10 gold with a real
+  list topic / Quiz teal). Bebas + DM Sans TTFs now bundled in the route for Satori.
+- **2026-07-18** — **Perfect 10: official result card + spoiler-safe X share + back to
+  the picker (founder)** — the results screen is now a proper scorecard (topic title,
+  PERFECT 10 / TOWER FALLS verdict, big points, n/10 named, then the tower) with the
+  house "SHARE YOUR SCORECARD / Post it on 𝕏" CTA (guests included — their link points
+  at the game mode; signed-in posts carry the challenge link). **The share text names
+  only ~50% of the player's found answers** (every other one, spread down the tower;
+  the rest stay `•••` and missed rungs are NEVER revealed) so posting can't give the
+  list away — same text for X, native share and copy. New "PICK ANOTHER GAME MODE →"
+  button returns to the intro's Game-modes picker (whose primary button reads "SEE MY
+  RESULT" once that mode is done, since finished modes can't be replayed).
+- **2026-07-18** — **Versus instant match: real opponents before "CPU" + matched-lobby
+  cleanup (founder: matching with "CPU" after Find an opponent "is not what should be
+  happening")** — the quiz bot fallback now EXHAUSTS shadows before the literal CPU:
+  fresh shadow → least-recently-met RERUN (heavy players had emptied the fresh pool,
+  which is exactly why the founder kept landing on "CPU") → other published packs
+  (generic find only; a pinned find keeps its quiz) → CPU only for a truly empty pool.
+  **Same day (follow-up ruling): the CPU seat is never shown as "CPU" anymore** — it
+  presents as an imaginary player (deterministic per-room name + generated avatar,
+  `cpuPersona()`), across the found screen, lobby, live header and scorecard.
+  Resumed bot-seat rooms surface their shadow persona (not the bot profile), and the
+  server tags matches `kind: human|shadow|cpu` so the AppsFlyer chain is measured, not
+  guessed. Matchmade "Instant Match" lobbies (and any full lobby) no longer show the
+  invite-code/QR block — you already have your opponent. Fix: `/play/[roomId]` headers
+  (lobby / live / completed) got `pt-safe` — on the wrapped iPhone build the back
+  control sat on top of the status-bar clock, leaving players stuck on the lobby page.
+- **2026-07-18** — **Perfect 10: topics are GAME MODES, daily framing dropped
+  (founder: "forget this daily thing")** — the intro is now a topic picker: "Game
+  modes" lists every served list (selected one highlighted, PLAY / n-of-10 / score
+  badges), no dates anywhere, no "Previous days" / "today's list" / "latest" copy.
+  Server model unchanged: `day` still gates+orders what's served (ops concern only,
+  never shown); state/guess/hint/challenge APIs untouched.
+- **2026-07-18** — **Games nav is ONE persistent bar (founder: "it's a NAV, not a
+  page selector")** — `GamesNav` moved into the root layout: mounts once, shows on
+  the five game-section routes, pages swap below it with zero remount/flash
+  (verified: same DOM node across all five tab hops). Game pages hide it mid-run via
+  `useHideGamesNav`; height published as `--games-nav-h` for the Quiz hub's sticky
+  header. Active tab glides to centre on switch. Per-page switcher copies deleted.
+- **2026-07-18** — **38-0 competition tabs cleaned up (founder)** — same treatment as
+  the quiz filters: the emoji pill-box (🏆 WC Mastermind / ⚽ Premier League / 🇪🇸 La
+  Liga / Leaderboard ✓) is now clean underline text tabs, no emoji or badges, each
+  competition keeping its accent as the underline. The secondary action pills (Live
+  H2H / My Teams / H2H Ladder) are links, not filters — unchanged.
+- **2026-07-18** — **No back buttons on game sections (founder)** — games are tabs, so
+  the switcher is the navigation: removed the 38-0 hub's "YourScore" BackPill and the
+  three game intros' Back buttons; results CTAs relabelled "MORE GAMES" (the games
+  aren't Quiz anymore). The in-game exit Back on an active Perfect 10 run stays —
+  it's the only way out mid-game.
+- **2026-07-18** — **Perfect 10, Higher or Lower, Guess the Player are separate games
+  (founder ruling)** — the GameSwitcher is now five games (Quiz | 38-0 | Perfect 10 |
+  Higher or Lower | Guess the Player), each with its own section; the switcher renders
+  on each game's intro as its section header (never over gameplay), scrolls and
+  auto-centres the active tab. The GAME TYPES tile block was removed from the Quiz
+  hub. Higher or Lower recoloured to orange #ff7800, Guess the Player to blue #4fc3f7
+  (own identities — they'd been borrowing Quiz teal / 38-0 lime). §9 updated.
+- **2026-07-18** — **Perfect 10: intro/results scroll snap-back fixed** — the Jul-17
+  "pin the board" fix registered its `window.scrollTo(0,0)` pin for the page's whole
+  life, but mobile URL-bar collapse fires `resize` MID-SCROLL, so scrolling the intro
+  ("Previous days") or results screen snapped back to the top. Pin now applies only in
+  the `playing` phase (gameplay still never scrolls); also reset the keyboard-detection
+  height baseline on `orientationchange` so rotating to landscape no longer reads as a
+  permanently-open keyboard. Repro + fix verified headless (Playwright: scrollY survives
+  a resize event; pre-fix build snapped 250→0).
+- **2026-07-18** — **38-0 moved under the Play tab (founder ruling)** — the Play tab now
+  holds both games via a top **Quiz | 38-0 game switcher** (`GameSwitcher` component) on
+  both hubs (`/play`, `/38-0`); routes frozen, switcher navigates. Bottom nav unchanged
+  otherwise (Home · Play · Versus · Premier League · Profile); Play highlights on
+  `/38-0`. §9 Navigation Canon updated to current truth. **Same day, v2 (founder
+  direction):** switcher restyled to Coral-style icon tabs (icon above label, per-game
+  colour + underline); the /play solo filter pills (emoji + caps + count badges)
+  replaced with clean underline text tabs (Featured / World Cup / Club / Records, no
+  counts); Featured tab now leads with a **full-width marketing hero tile** — the lead
+  featured pack's cover art with a FEATURED badge + PLAY, falling back to the plain
+  grid when the lead pack has no cover.
+- **2026-07-16** — **Perfect 10 SHIPPED** — third Quiz game-type: name everyone in a ranked
+  top-10 list. Floodlit-tower UI at `/play/game/perfect-10`, daily list (Europe/London),
+  hints/strikes, async challenge links, all-PL-history typeahead (4,669 names). Server-only
+  answers (mig 85, RLS deny-all). Lists gate-verified before a `day` is assigned. See the
+  Confirmed preamble for the full mechanics + gotchas (SportMonks topscorers unreliable;
+  season-id alias trap; `scripts/lib/anthropic.mjs` first committed here).
 - **2026-07-16 (pm3)** — **Legacy question-bank triage (APPLIED TO PROD).** The bank predates the
   gate, so it was measured against it. Results: **2,823 active → 1,205 (43%) were tagged
   expert/master and are UNREACHABLE** (`/api/quiz/start` is typed `"easy"|"medium"|"hard"` and
@@ -389,6 +549,16 @@ Confirmed preamble above and the referenced section.
   goals for Man City 2010-11"), not just staleness, and a 5%-easy / 74%-hard difficulty skew.
   Bank not filled yet — awaiting founder's go on scope.
 
+- **2026-07-15** — **Retention tracking: `ReturnPlay` event + durable device id** (analytics
+  plumbing, no user-facing surface). `ReturnPlay` fires once per device the first time a player
+  plays on a later calendar day than their first-ever play — the D2+ "they came back" signal,
+  fanned out to X/Meta/TikTok/Snapchat/GA4/Vercel/AppsFlyer so ad platforms can finally build
+  repeat-player audiences + lookalikes off retained users (they previously optimised for first
+  play/signup only). Pure logic in `src/lib/analytics/returnPlay.ts` (unit-tested); fan-out in
+  `trackGame.ts`; native arm `afReturnPlay`. Also: a durable anonymous `ys:did` device id, saved
+  to new `profiles.device_id` at signup (migration 81, first-touch) so guest activity can later
+  be linked to the account. X arm is gated on `NEXT_PUBLIC_X_RETURNPLAY_EVENT_ID` (unset →
+  no-op until the X event is created). Phase B (stamp device_id onto guest play rows) still TODO.
 - **2026-07-14** — **Quiz content factory** (branch `quiz/content-factory`, ⚠️ NOT on main,
   migration 80 NOT yet applied). Themed packs on a schedule, with approval decoupled from
   release. **The pack lifecycle is now three states**: `draft` (invisible) → approved +
@@ -803,9 +973,32 @@ carry `List-Unsubscribe` + `List-Unsubscribe-Post` (RFC 8058 one-click) headers.
 
 ## 9. Navigation Canon
 
-**Bottom nav (signed-in, 5 tabs):** **Home · Versus · Quiz · 38-0 · Profile.**
-- **Home** (`/`) · **Versus** (`/versus`) · **Quiz** (`/play`; sub-tabs Solo + Multiplayer)
-  · **38-0** (`/38-0`; its own sub-nav: Live · Board · Leagues · Teams) · **Profile**.
+**Bottom nav (signed-in, 5 tabs, founder order 2026-07-16):** **Home · Play · Versus ·
+Premier League · Profile.**
+- **Home** (`/`) · **Play** (`/play`) · **Versus** (`/versus`) · **Premier League**
+  (`/matchweek`) · **Profile**.
+- **Play is the games tab (founder ruling 2026-07-18):** every game lives under it via a
+  top **Quiz | 38-0 | Perfect 10 | Higher or Lower | Guess the Player game switcher**
+  (`GameSwitcher`) — five separate games, each its own section (second founder ruling
+  same day: the three list/stat games are NOT tiles inside the Quiz hub anymore). Quiz =
+  `/play` (sub-tabs Solo + Leaderboards); 38-0 = `/38-0` (its own sub-nav: WC
+  Mastermind · Premier League · La Liga · Leaderboard); Perfect 10 =
+  `/play/game/perfect-10` (gold #ffc400); Higher or Lower = `/play/game/higher-lower`
+  (orange #ff7800); Guess the Player = `/play/game/guess-the-player` (blue #4fc3f7 —
+  the last two were recoloured from Quiz teal / 38-0 lime when they became their own
+  sections). Routes are frozen — the switcher navigates between them. **The switcher
+  is ONE persistent bar** (founder 2026-07-18: "it's a NAV, not a page selector"):
+  `GamesNav` mounts once in the ROOT LAYOUT, shows on exactly the five section
+  routes, and never remounts on a tab switch — pages swap BELOW it and must NOT
+  render their own copy. Game pages hide it during a live run via
+  `useHideGamesNav` (`src/lib/gamesNav.ts`); it publishes its height as
+  `--games-nav-h` for anything sticking beneath it (the Quiz hub's header does).
+  It scrolls horizontally and glides the active tab to centre; the Play tab stays
+  highlighted on all of them. 38-0 is no longer a bottom-nav tab. **No back buttons on game sections
+  (founder 2026-07-18):** each game is a tab, so the switcher IS the navigation — the
+  38-0 hub's "YourScore" BackPill and the game intros' Back buttons are gone. The
+  ONLY Back left is the in-game exit on an active Perfect 10 run (no other way out
+  mid-game); results screens say "MORE GAMES" (→ /play), not "BACK TO QUIZ".
 - **Versus** is the game-first cross-game hub for playing other people (the Leagues tab
   was replaced by it). Sub-nav: **Play** · **Friends** (`/friends`) · **Leagues**
   (`/leagues`, nested). The pending-turns badge lives on this tab. (The Leagues route
@@ -919,7 +1112,12 @@ carry `List-Unsubscribe` + `List-Unsubscribe-Post` (RFC 8058 one-click) headers.
   (3) **Beats open the push, holds never do** — holds only appear inside aggregate
   copy. (4) The named player + revenge link always point at an actual beater.
 - **CPU fallback** (when no shadow exists for the pack): one dedicated CPU auth user
-  (honestly named "CPU", keeper avatar) takes the second seat; its seeded answers
+  takes the second seat, **presented as an imaginary player persona** — name picked
+  deterministically from the room id (`cpuPersona()`, lib/versus/quizBot.ts), varied
+  avatar per match (founder 2026-07-18: "CPU should be an imaginary player profile
+  name — to make it seem like there are other players"; this REVERSED the original
+  honestly-named-"CPU" call). The disguise is display-only — friend prompts, global
+  rank, league stats and the activity feed still exclude the seat by id; its seeded answers
   (62% accuracy, 2.8–10.5s) are written server-side in `/api/answer` when the human
   answers — room scores only, NEVER global rank or league stats. Result screen offers
   one-tap "Rematch CPU" (no play-again voting vs the CPU).

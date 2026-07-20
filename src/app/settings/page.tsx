@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { ClubSetting } from "@/components/clubs/ClubSetting";
 import Link from "next/link";
 import { useUser } from "@/hooks/useUser";
 import { Button } from "@/components/ui/Button";
@@ -185,6 +186,24 @@ export default function SettingsPage() {
     );
   }
 
+  // DEV-ONLY: ?preview=club-setting renders the "Your club" row on this page
+  // without a session, so it can be reviewed. Compiled out of production.
+  const clubPreview =
+    process.env.NODE_ENV !== "production" &&
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("preview") === "club-setting";
+
+  if (!user && clubPreview) {
+    return (
+      <main className="min-h-dvh bg-bg px-6 py-10">
+        <div className="max-w-md mx-auto">
+          <h1 className="font-display text-3xl text-white mb-6">SETTINGS</h1>
+          <ClubSetting />
+        </div>
+      </main>
+    );
+  }
+
   if (!user) {
     return (
       <main className="min-h-dvh bg-bg flex items-center justify-center px-6">
@@ -337,6 +356,9 @@ export default function SettingsPage() {
             </div>
           </div>
         </div>
+
+        {/* Your club — season-locked; see ClubSetting. */}
+        <ClubSetting />
 
         {/* Account */}
         <div>

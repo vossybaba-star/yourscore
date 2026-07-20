@@ -27,7 +27,7 @@ import { loadTeam, saveTeam, clearTeam } from "@/lib/draft/local";
 import { AddFriendCard } from "@/components/social/AddFriendCard";
 import { RankRewardCard } from "@/components/rank/RankRewardCard";
 import { positionColor } from "@/lib/rank";
-import { trackGamePlay, trackGameComplete, trackShare } from "@/lib/analytics/trackGame";
+import { trackGamePlay, trackGameComplete, trackShare, firedOnce } from "@/lib/analytics/trackGame";
 import { asCompetition, type Competition, type Formation, type PlacedPlayer, type PlayerSeason } from "@/lib/draft/types";
 import type { DraftLiveMatchRow } from "@/types/draft-db";
 
@@ -84,13 +84,14 @@ export default function LiveMatchScreen() {
   }, [m?.phase]);
 
   // Per-game audience signals: "play" once on entering a live H2H match, "complete"
-  // once it reaches the result phase. Refs guard against re-firing on re-render.
-  const playedRef = useRef(false);
-  const completedRef = useRef(false);
+  // once it reaches the result phase. sessionStorage guard (keyed on the match id)
+  // so a mid-match refresh doesn't re-count the play.
   useEffect(() => {
     if (!m) return;
-    if (!playedRef.current) { playedRef.current = true; trackGamePlay("38-0", { mode: "live_h2h" }); }
-    if (m.phase === "result" && !completedRef.current) { completedRef.current = true; trackGameComplete("38-0", { mode: "live_h2h" }); }
+    if (firedOnce(`play380:live:${m.id}`)) trackGamePlay("38-0", { mode: "live_h2h" });
+    if (m.phase === "result" && firedOnce(`complete380:live:${m.id}`)) {
+      trackGameComplete("38-0", { mode: "live_h2h" });
+    }
   }, [m]);
 
   // Bot match: 2 s after the human taps Done in a swap window, mirror it for the bot

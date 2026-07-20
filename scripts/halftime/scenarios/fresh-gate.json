@@ -1,0 +1,42 @@
+{
+  "name": "fresh-gate",
+  "notes": "The Telegram veto gate, with the founder asleep. Both fixtures get a three-question fresh slice at T-58. F1: nobody touches it — at the deadline every still-pending question flips to approved and goes live automatically. Zero founder involvement, which is the whole point of veto-with-timeout. F2: question 2 is vetoed at T-40 — the released pack must contain exactly the other two fresh questions and eight base ones, and the vetoed question must appear nowhere in it.",
+  "harness": {
+    "seed_fresh": true,
+    "veto_at_min": [{ "fixture_index": 1, "question_index": 1, "at_min": 50 }]
+  },
+  "fixtures": [
+    {
+      "id": 19427540,
+      "home": "Liverpool",
+      "away": "Everton",
+      "season_id": 28083,
+      "round": "Round 5",
+      "kickoff_min": 90,
+      "lineups_at_min": 30,
+      "timeline": [
+        { "at_min": 0, "state": "NS" },
+        { "at_min": 90, "state": "INPLAY_1ST_HALF" },
+        { "at_min": 136, "state": "HT" },
+        { "at_min": 151, "state": "INPLAY_2ND_HALF" },
+        { "at_min": 199, "state": "FT" }
+      ]
+    },
+    {
+      "id": 19427541,
+      "home": "Brentford",
+      "away": "Arsenal",
+      "season_id": 28083,
+      "round": "Round 5",
+      "kickoff_min": 90,
+      "lineups_at_min": 30,
+      "timeline": [
+        { "at_min": 0, "state": "NS" },
+        { "at_min": 90, "state": "INPLAY_1ST_HALF" },
+        { "at_min": 138, "state": "HT" },
+        { "at_min": 153, "state": "INPLAY_2ND_HALF" },
+        { "at_min": 201, "state": "FT" }
+      ]
+    }
+  ]
+}

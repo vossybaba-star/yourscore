@@ -75,6 +75,11 @@ const LAYERS = [
   { key: "nav", module: "./checks/navigation.mjs", budgetMs: 180_000, needsBot: true },
   { key: "sentry", module: "./checks/sentry.mjs", budgetMs: 30_000 },
   { key: "jobs", module: "./checks/deadman.mjs", budgetMs: 10_000 },
+  // Asserts the halftime state machine itself (liveness ≠ correctness): on a
+  // matchday, that fixtures are in a sane state for the time of day and the
+  // poller heartbeat is fresh; off-matchday, that the watchdog is idling at zero
+  // SportMonks cost. Deliberately NOT an mtime deadman entry (LOOP-STANDARD P2).
+  { key: "halftime", module: "./checks/halftime.mjs", budgetMs: 30_000 },
   { key: "gamer", module: "./checks/experience.mjs", budgetMs: 30_000 },
   { key: "gamer", module: "./checks/gamer-review.mjs", budgetMs: 120_000, llm: true },
 ];

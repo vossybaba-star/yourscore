@@ -14,6 +14,7 @@ import { useUser } from "@/hooks/useUser";
 import { AuthProviders } from "@/components/auth/AuthButton";
 import { loadTeam, saveTeam, isComplete, recordWin, recordLoss, recordDraw, saveLastMatch } from "@/lib/draft/local";
 import { AddFriendCard } from "@/components/social/AddFriendCard";
+import { trackInviteAccepted } from "@/lib/analytics/trackGame";
 import { NotifyOptInCard } from "@/components/notify/NotifyOptInCard";
 import type { Formation, PlacedPlayer, Projected } from "@/lib/draft/types";
 
@@ -59,6 +60,8 @@ export default function AcceptChallenge() {
       const m = await r.json();
       if (!r.ok) { setErr(m.error ?? "Could not accept"); setBusy(false); return; }
 
+      // Viral-loop receive side: a friend's 38-0 challenge link, accepted.
+      trackInviteAccepted("challenge");
       saveLastMatch({
         id: m.matchId,
         you: { name: "You", formation: m.you.formation, squad: m.you.squad, strength: m.you.strength, projected: m.you.projected },

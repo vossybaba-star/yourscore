@@ -1,0 +1,25 @@
+{
+  "name": "gate-unsendable",
+  "notes": "Telegram is down. The fresh questions were generated and validated, but the veto message could not be confirmed sent — so the founder was never actually offered the chance to veto them. The fail-safe direction is the whole point: a gate that was never OFFERED counts as a veto. The fresh slice is DROPPED, not auto-released, and the fixture ships a base-only pack. The opposite behaviour — auto-releasing questions nobody was given the chance to stop — is the one thing the veto-with-timeout design must never do.",
+  "harness": {
+    "veto_send_fails": true
+  },
+  "fixtures": [
+    {
+      "id": 19427560,
+      "home": "Chelsea",
+      "away": "Aston Villa",
+      "season_id": 28083,
+      "round": "Round 7",
+      "kickoff_min": 90,
+      "lineups_at_min": 30,
+      "timeline": [
+        { "at_min": 0, "state": "NS" },
+        { "at_min": 90, "state": "INPLAY_1ST_HALF" },
+        { "at_min": 136, "state": "HT" },
+        { "at_min": 151, "state": "INPLAY_2ND_HALF" },
+        { "at_min": 199, "state": "FT" }
+      ]
+    }
+  ]
+}

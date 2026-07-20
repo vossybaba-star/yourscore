@@ -1,0 +1,29 @@
+{
+  "name": "poller-crash-early",
+  "notes": "The poller dies BEFORE assembly (SIGKILL at min 60, twenty nominal minutes before the T-10 freeze). The fixture is still base_ready with an approved fresh slice sitting in the row. The watchdog has to notice that kick-off has passed with nothing staged, assemble it BASE-ONLY, and release at the whistle. It must never ship the fresh questions: a dead poller means the veto ledger cannot be trusted end to end, so the conservative bound is the day-before, founder-approved base slate. The released pack must contain zero fresh questions.",
+  "harness": {
+    "kill_poller_at_min": 60,
+    "watchdog_at_min": [95, 137],
+    "seed_fresh": true,
+    "seed_fresh_status": "approved",
+    "seed_fresh_state": "approved"
+  },
+  "fixtures": [
+    {
+      "id": 19427530,
+      "home": "Arsenal",
+      "away": "Manchester City",
+      "season_id": 28083,
+      "round": "Round 4",
+      "kickoff_min": 90,
+      "lineups_at_min": 30,
+      "timeline": [
+        { "at_min": 0, "state": "NS" },
+        { "at_min": 90, "state": "INPLAY_1ST_HALF" },
+        { "at_min": 135, "state": "HT" },
+        { "at_min": 150, "state": "INPLAY_2ND_HALF" },
+        { "at_min": 200, "state": "FT" }
+      ]
+    }
+  ]
+}

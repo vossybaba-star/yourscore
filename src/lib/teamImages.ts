@@ -24,6 +24,8 @@ const BADGE_MAP: Record<string, string> = {
   "Cardiff City":               "/badges/cardiff-city.png",
   "Charlton Athletic":          "/badges/charlton-athletic.png",
   "Chelsea":                    "/badges/chelsea.png",
+  // Promoted for 2026/27 — official crest pulled from SportMonks (team 117).
+  "Coventry City":              "/badges/coventry-city.png",
   "Crystal Palace":             "/badges/crystal-palace.png",
   "Derby County":               "/badges/derby-county.png",
   "Everton":                    "/badges/everton.png",

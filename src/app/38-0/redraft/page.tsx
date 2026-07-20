@@ -16,6 +16,7 @@ import {
   loadTeam, saveTeam, isComplete, usedPlayerIds, usedPlayerNames, clearSlot, placePlayer, fittingOpenSlots,
   type LocalTeam,
 } from "@/lib/draft/local";
+import { trackDiag } from "@/lib/analytics/trackGame";
 import { slotsFor } from "@/lib/draft/formations";
 import { getTeamBadgeUrlSync } from "@/lib/teamImages";
 import type { PlayerSeason } from "@/lib/draft/types";
@@ -85,6 +86,8 @@ export default function RedraftScreen() {
       redraftedSlots: [...(team.redraftedSlots ?? []), slot.id],
     };
     saveTeam(next);
+    // Funnel diagnostic (GA4/Vercel only): post-loss recovery actually used.
+    trackDiag("redraft_used", { slot: slot.id });
     router.push("/38-0/team");
   }
 

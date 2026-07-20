@@ -20,7 +20,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { BackPill } from "@/components/ui/BackPill";
 import { useUser } from "@/hooks/useUser";
-import { trackShare } from "@/lib/analytics/trackGame";
+import { trackShare, trackInviteAccepted } from "@/lib/analytics/trackGame";
 import { buildInviteLink } from "@/lib/analytics/onelink";
 
 const COMPETITION = "WC" as const;
@@ -111,6 +111,8 @@ export default function WorldCupH2H() {
     setError(null);
     const r = await api({ action: "join", code: joinCode.trim().toUpperCase() });
     if (r.error || !r.match) { setError(r.error ?? "Couldn't join"); return; }
+    // Viral-loop receive side: a friend's WC H2H code, successfully joined.
+    trackInviteAccepted("wc-h2h");
     router.push(`/38-0/live/match/${r.match.id}`);
   }
 

@@ -1,6 +1,7 @@
 import { isNative, platform } from './native';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { afPushOptIn } from './analytics/appsflyerEvents';
+import { trackPushOptIn } from './analytics/trackGame';
 
 export async function registerForPush(supabase: SupabaseClient, userId: string) {
   if (!isNative()) return;
@@ -15,8 +16,17 @@ export async function registerForPush(supabase: SupabaseClient, userId: string) 
 
   // Permission is granted here (either already or just now). Log the opt-in once
   // per device for AppsFlyer (retention audience); guarded so the re-register on
-  // every launch/resume doesn't re-fire it.
+  // every launch/resume doesn't re-fire it. The web-pixel twin gets the same
+  // once-per-device guard (its own key — storage lifetimes differ).
   afPushOptIn();
+  try {
+    if (!window.localStorage.getItem('ys:pushoptin')) {
+      window.localStorage.setItem('ys:pushoptin', '1');
+      trackPushOptIn();
+    }
+  } catch {
+    /* storage blocked — skip rather than re-fire every launch */
+  }
 
   // Listeners MUST be attached BEFORE register(). When permission is already
   // granted, iOS returns the APNs token almost immediately, so a listener added

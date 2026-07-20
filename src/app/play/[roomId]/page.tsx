@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { trackGamePlay, trackGameComplete } from "@/lib/analytics/trackGame";
+import { trackGamePlay, trackGameComplete, firedOnce, hasFired } from "@/lib/analytics/trackGame";
 import { GridBackground } from "@/components/ui/GridBackground";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -12,7 +12,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 import { useUser } from "@/hooks/useUser";
 import { REALTIME_ENABLED } from "@/lib/realtime";
-import { QUIZ_BOT_ID } from "@/lib/versus/quizBot";
+import { QUIZ_BOT_ID, INSTANT_MATCH_NAME, cpuPersona } from "@/lib/versus/quizBot";
 import { smartBackTarget } from "@/lib/nav";
 
 // Lazy-loaded so the QR library stays out of the initial bundle (matches the
@@ -154,22 +154,17 @@ export default function RoomPage() {
   const supabaseRef       = useRef<DB | null>(null);
   // Foreground-restore listener (registered inside the async setup, removed on cleanup)
   const visibilityHandlerRef = useRef<(() => void) | null>(null);
-  // Per-game audience signals (Multiplayer quiz): "play" once the lobby goes live,
-  // "complete" once it finishes. Gated on having played so a cold viewer opening a
-  // finished room's link doesn't get counted. Fires for every player.
-  const gamePlayedRef     = useRef(false);
-  const gameCompletedRef  = useRef(false);
+  // Per-game audience signals (Multiplayer quiz): "play" fires on this player's
+  // FIRST ANSWER (in handleAnswer) — presence when the room goes live isn't
+  // playing, so viewers of a shared live-room link no longer count. "complete"
+  // fires once the room finishes, only for devices that answered. sessionStorage
+  // guards (keyed on the room) survive a mid-game refresh without double-firing.
   useEffect(() => {
-    const status = room?.status;
-    if (status === "live" && !gamePlayedRef.current) {
-      gamePlayedRef.current = true;
-      trackGamePlay("quiz", { mode: "multiplayer" });
-    }
-    if (status === "completed" && gamePlayedRef.current && !gameCompletedRef.current) {
-      gameCompletedRef.current = true;
+    if (room?.status === "completed" && hasFired(`playquiz:room:${roomId}`)
+      && firedOnce(`completequiz:room:${roomId}`)) {
       trackGameComplete("quiz", { mode: "multiplayer" });
     }
-  }, [room?.status]);
+  }, [room?.status, roomId]);
   // Realtime channel — kept so handleAnswer can broadcast an "answered" signal
   // (answers RLS is owner-only, so postgres_changes can't power the counter).
   const channelRef        = useRef<ReturnType<DB["channel"]> | null>(null);
@@ -192,16 +187,20 @@ export default function RoomPage() {
   useEffect(() => { hasBotRef.current = players.some((p) => p.user_id === QUIZ_BOT_ID); }, [players]);
   useEffect(() => () => { if (botTickTimerRef.current) clearTimeout(botTickTimerRef.current); }, []);
 
-  // Shadow persona: render the CPU seat as the real player whose run this is.
+  // Bot-seat persona: render the CPU seat as the shadow's real player, or —
+  // plain CPU rooms — as the room's imaginary player (founder: the seat should
+  // read like another player, never "CPU"). Exclusions (friends, rank, feed)
+  // still key off QUIZ_BOT_ID, so the disguise is display-only.
   const shadowRef = useRef<ShadowInfo | null>(null);
   useEffect(() => { shadowRef.current = room?.shadow ?? null; }, [room?.shadow]);
   const shadow = room?.shadow ?? null;
   const personaRows = useCallback(<T extends { user_id: string; display_name: string }>(rows: T[]): T[] => {
-    if (!shadow) return rows;
-    return rows.map((r) => r.user_id === QUIZ_BOT_ID
-      ? { ...r, display_name: shadow.name, ...("avatar_url" in r ? { avatar_url: shadow.avatarUrl } : {}) }
-      : r);
-  }, [shadow]);
+    return rows.map((r) => {
+      if (r.user_id !== QUIZ_BOT_ID) return r;
+      if (shadow) return { ...r, display_name: shadow.name, ...("avatar_url" in r ? { avatar_url: shadow.avatarUrl } : {}) };
+      return { ...r, display_name: cpuPersona(roomId).name };
+    });
+  }, [shadow, roomId]);
 
   // Build QR join URL (client-only)
   useEffect(() => {
@@ -614,6 +613,9 @@ export default function RoomPage() {
       body: JSON.stringify({ questionEventId: activeQuestion.eventId, selectedAnswer: letter }),
     });
     if (!res.ok) { const e = await res.json(); throw new Error(e.error); }
+    // First accepted answer = this player is PLAYING (see the audience-signal
+    // effect above for why play isn't counted on room-went-live).
+    if (firedOnce(`playquiz:room:${roomId}`)) trackGamePlay("quiz", { mode: "multiplayer" });
     // Tell the room this player answered (powers the live counter + early
     // advance) — broadcast avoids the owner-only RLS on the answers table.
     if (user) {
@@ -753,11 +755,16 @@ export default function RoomPage() {
   // ── LOBBY ─────────────────────────────────────────────────────────────────
 
   if (room.status === "lobby") {
+    // Matchmade rooms arrive with both seats filled — an invite code/QR there
+    // is noise (you already have your opponent). Same for any full lobby.
+    const showInvite = room.name !== INSTANT_MATCH_NAME && players.length < room.max_players;
     return (
       <main className="min-h-dvh pb-10 bg-bg">
         <GridBackground opacity={0.02} />
 
-        <nav className="relative z-10 flex items-center justify-between px-5 py-4 max-w-lg mx-auto">
+        {/* pt-safe: on the wrapped iPhone build the page runs under the status
+            bar — without it the back control sits on top of the clock. */}
+        <nav className="relative z-10 pt-safe flex items-center justify-between px-5 py-4 max-w-lg mx-auto">
           <button onClick={() => setShowLeaveModal(true)} className="flex items-center gap-2 font-body text-sm text-text-muted">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
             Play
@@ -782,6 +789,7 @@ export default function RoomPage() {
           </div>
 
           {/* Invite code + QR (Fix #5) */}
+          {showInvite && (
           <div className="rounded-2xl px-5 py-4" style={{ background: "rgba(0,216,192,0.05)", border: "1px solid rgba(0,216,192,0.2)" }}>
             <div className="flex items-center justify-between mb-3">
               <p className="font-body text-xs uppercase tracking-widest text-text-muted">Invite Code</p>
@@ -809,6 +817,7 @@ export default function RoomPage() {
               </div>
             )}
           </div>
+          )}
 
           {/* Players */}
           <div className="rounded-2xl overflow-hidden bg-surface border border-border">
@@ -916,7 +925,7 @@ export default function RoomPage() {
 
     return (
       <main className="min-h-dvh pb-20 bg-bg">
-        <nav className="flex items-center justify-between px-5 py-4 max-w-lg mx-auto">
+        <nav className="pt-safe flex items-center justify-between px-5 py-4 max-w-lg mx-auto">
           {/* h2h battles came from Versus — send them back there, not the quiz tab */}
           <BackPill fallback={room.room_mode === "h2h" ? "/versus" : "/play"} label="Back" tone="play" />
           <div className="flex items-center gap-2">
@@ -1118,7 +1127,7 @@ export default function RoomPage() {
       <GridBackground opacity={0.02} />
 
       {/* Game header */}
-      <div className="sticky top-0 z-30" style={{ background: "rgba(10,10,15,0.95)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+      <div className="sticky top-0 z-30 pt-safe" style={{ background: "rgba(10,10,15,0.95)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
         <div className="max-w-lg mx-auto px-5 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="font-body text-xs px-2.5 py-1 rounded-full font-semibold"

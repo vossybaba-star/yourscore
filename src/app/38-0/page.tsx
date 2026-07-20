@@ -10,7 +10,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BottomNav } from "@/components/ui/BottomNav";
-import { BackPill } from "@/components/ui/BackPill";
 import { Button } from "@/components/ui/Button";
 import { Pitch } from "@/components/draft/Pitch";
 import { WcHubHero, DraftHubHero } from "@/components/draft/WcHubHero";
@@ -83,32 +82,35 @@ export default function DraftHome() {
 
   return (
     <div className="min-h-[100dvh] pb-24" style={{ background: "#0a0a0f" }}>
-      <div className="max-w-lg mx-auto px-5 pt-safe">
-        {/* header */}
-        <div className="flex items-center justify-between pt-5 pb-3">
-          <BackPill href="/" label="YourScore" tone="draft" />
-        </div>
-
+      {/* pt-4, not pt-safe — the persistent GamesNav above already carries the
+          safe-area inset; doubling it left a dead band under the nav. */}
+      <div className="max-w-lg mx-auto px-5 pt-4">
+        {/* The persistent GamesNav (root layout) is the header — nothing above
+            the title here (founder 2026-07-18: it's a NAV; no back buttons). */}
         <h1 className="font-display tracking-wide leading-none mb-4" style={{ fontSize: 52, color: "#fff" }}>
           38<span style={{ color: "#aeea00" }}>-0</span>
         </h1>
 
-        {/* ── Main tab switcher (scrolls if 4 tabs overflow a narrow screen) ── */}
-        <div className="flex gap-1 p-1 rounded-2xl mb-4 overflow-x-auto"
-          style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", scrollbarWidth: "none" }}>
+        {/* ── Main tab switcher — clean underline text tabs, same treatment as
+            the quiz filters (founder 2026-07-18: no emoji pills, no badges);
+            each competition keeps its accent as the underline. ── */}
+        <div className="flex gap-5 mb-4 overflow-x-auto -mx-1 px-1"
+          style={{ scrollbarWidth: "none", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
           {([
-            { key: "wc" as DraftTab, label: "🏆 WC Mastermind", on: "#ffb800", onText: "#0a0a0f" },
-            { key: "pl" as DraftTab, label: "⚽ Premier League", on: "#aeea00", onText: "#062013" },
-            { key: "laliga" as DraftTab, label: "🇪🇸 La Liga", on: "#ff5b2e", onText: "#1c0702" },
-            { key: "board" as DraftTab, label: "Leaderboard ✓", on: "#aeea00", onText: "#06181c" },
+            { key: "wc" as DraftTab, label: "WC Mastermind", accent: "#ffb800" },
+            { key: "pl" as DraftTab, label: "Premier League", accent: "#aeea00" },
+            { key: "laliga" as DraftTab, label: "La Liga", accent: "#ff5b2e" },
+            { key: "board" as DraftTab, label: "Leaderboard", accent: "#aeea00" },
           ]).map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className="flex-1 py-2 px-2.5 rounded-xl font-body text-xs font-semibold transition-all whitespace-nowrap"
-              style={tab === t.key
-                ? { background: t.on, color: t.onText }
-                : { background: "transparent", color: "#8a948f" }}>
+              className="flex-shrink-0 pb-2 font-body text-sm font-semibold transition-colors whitespace-nowrap"
+              style={{
+                color: tab === t.key ? "#fff" : "#8a948f",
+                borderBottom: tab === t.key ? `2px solid ${t.accent}` : "2px solid transparent",
+                marginBottom: -1,
+              }}>
               {t.label}
             </button>
           ))}

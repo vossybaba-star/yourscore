@@ -20,8 +20,8 @@
 import { useEffect, useState } from "react";
 import { isNative } from "@/lib/native";
 
-const APP_STORE_URL = "https://apps.apple.com/gb/app/yourscore/id6773626424";
-const REVIEW_URL = "https://apps.apple.com/app/id6773626424?action=write-review";
+// Links live in lib/appStore so the server-side halftime email can share them.
+import { APP_STORE_URL, APP_STORE_REVIEW_URL as REVIEW_URL } from "@/lib/appStore";
 
 const RATE_KEY = "ys:rate-prompt:v1";
 const DL_KEY = "ys:dl-prompt:v1";

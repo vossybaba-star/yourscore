@@ -11,6 +11,9 @@
 
 # next.js
 /.next/
+# Verification builds (NEXT_DIST_DIR=.next-verify) — run so a prod build can be
+# checked without clobbering a running dev server's .next.
+/.next-verify/
 /out/
 
 # production
@@ -68,5 +71,11 @@ scripts/data/health/
 # fetched once and reused, but it rebuilds itself from the API on any machine. ~2MB.
 scripts/data/sportmonks-cache/
 
+# Halftime pipeline run artifacts: the veto/auto-release decision log (JSONL,
+# one file per matchday), generated slates, and poller run-state. The audit log
+# is the record of who approved what — it belongs on the VPS, not in git.
+scripts/data/halftime/
+
 # Never commit env backups (they carry prod secrets)
 .env.local.bak*
+.env*

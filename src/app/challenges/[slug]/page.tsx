@@ -13,6 +13,7 @@ import { AnswerButtons } from "@/components/game/AnswerButtons";
 import { RankRewardCard } from "@/components/rank/RankRewardCard";
 import { QuizNotifyPrompt } from "@/components/quiz/QuizNotifyPrompt";
 import { StreakWindowTimer } from "@/components/quiz/StreakWindowTimer";
+import HalftimePredictionPoll from "@/components/halftime/HalftimePredictionPoll";
 import { useGameLoop } from "@/lib/useGameLoop";
 import { Button } from "@/components/ui/Button";
 import { trackGamePlay, trackGameComplete, trackShare } from "@/lib/analytics/trackGame";
@@ -42,7 +43,16 @@ interface QuizPack {
   parameter: string;
   question_count: number;
   description?: string | null;
-  metadata?: { icon?: string; cover_image?: string; series?: string; daily?: boolean; date?: string } | null;
+  metadata?: {
+    icon?: string;
+    cover_image?: string;
+    series?: string;
+    daily?: boolean;
+    date?: string;
+    // Present only on halftime packs (release engine writes it) — the fixture
+    // linkage that powers the end-of-pack prediction poll.
+    halftime?: { fixture_id: number; home: string; away: string };
+  } | null;
 }
 
 interface RawQuestion {
@@ -980,7 +990,7 @@ export default function ChallengePage() {
                 tone="teal"
                 size="lg"
                 fullWidth
-                onClick={() => { window.scrollTo(0, 0); trackGamePlay("quiz", { mode: "solo" }); setPhase("playing"); }}
+                onClick={() => { window.scrollTo(0, 0); trackGamePlay("quiz", { mode: groupId ? "group" : "solo" }); setPhase("playing"); }}
                 className="mt-1"
               >
                 START · {questions.length} Qs
@@ -1234,6 +1244,13 @@ export default function ChallengePage() {
         </div>
 
         <div className="px-5 flex flex-col gap-4 mt-2">
+          {/* Halftime prediction poll — the second-half call. Sits first, above
+              sharing: it is time-sensitive (the match is live now) and it is the
+              hook that brings the player back for full time. Signed-in only. */}
+          {userId && pack.metadata?.halftime && (
+            <HalftimePredictionPoll packId={pack.id} accent={accent} />
+          )}
+
           {/* ── Share on X — no prize framing: there is no giveaway live ── */}
           <button
             onClick={shareX}

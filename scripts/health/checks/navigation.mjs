@@ -44,7 +44,14 @@ export async function run(report, ctx) {
     await context.addCookies(
       auth.cookies.map((c) => ({ name: c.name, value: c.value, domain: host, path: "/", secure: BASE.startsWith("https"), httpOnly: false, sameSite: "Lax" }))
     );
-    await context.addInitScript(() => sessionStorage.setItem("ys:username-prompt:skipped", "1"));
+    // Skip every session-scoped signup nudge the layout can pop over the page —
+    // the bot deliberately has no username AND no club (declaring a club would
+    // put a fake club on the supporters leaderboard), so without these skips a
+    // prompt modal covers the UI and every click below times out.
+    await context.addInitScript(() => {
+      sessionStorage.setItem("ys:username-prompt:skipped", "1");
+      sessionStorage.setItem("ys:club-prompt:skipped", "1");
+    });
     const page = await context.newPage();
 
     const path = () => new URL(page.url()).pathname + new URL(page.url()).search;

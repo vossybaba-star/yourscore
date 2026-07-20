@@ -51,6 +51,37 @@ function CoverImg({ src, alt }: { src: string; alt: string }) {
   );
 }
 
+// Full-width marketing tile for the top featured pack — the game tab sells the
+// game (founder direction 2026-07-18): the lead featured quiz gets hero billing
+// above the 2-col grid. Covers carry their own title art, so the overlay is
+// only a FEATURED badge + PLAY — no duplicated pack name.
+function HeroPackCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: string | null }) {
+  const slug = slugify(pack.name);
+  const cover = pack.metadata!.cover_image!;
+  return (
+    <Link
+      href={`/challenges/${slug}${challengeTo ? `?challenge=${challengeTo}` : ""}`}
+      className="relative block rounded-3xl overflow-hidden mb-3 transition-all duration-150 active:scale-[0.98]"
+      style={{ border: "1px solid rgba(0,216,192,0.3)" }}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={coverUrl(cover, 840) ?? cover} alt={pack.name}
+        loading="eager" decoding="async" fetchPriority="high" className="block w-full h-auto" />
+      <div className="absolute inset-x-0 bottom-0 flex items-end justify-between px-5 pb-4 pt-12"
+        style={{ background: "linear-gradient(180deg, transparent 0%, rgba(6,10,8,0.9) 80%)" }}>
+        <div>
+          <p className="font-display text-xs tracking-widest mb-1" style={{ color: "#00d8c0" }}>⭐ FEATURED</p>
+          <p className="font-body text-xs" style={{ color: "#aeb8b1" }}>{pack.question_count} questions</p>
+        </div>
+        <span className="font-display text-sm px-4 py-2 rounded-xl flex-shrink-0"
+          style={{ background: "#00d8c0", color: "#04231f" }}>
+          PLAY
+        </span>
+      </div>
+    </Link>
+  );
+}
+
 interface OpenRoom {
   id: string; name: string; code: string; room_mode: string;
   question_count: number; category_filter: string | null;
@@ -341,39 +372,6 @@ function OpenRoomCard({ room, onJoin }: { room: OpenRoom; onJoin: () => void }) 
   );
 }
 
-// ── GameTypeTile ────────────────────────────────────────────────────────────
-// Standalone "game types" (Higher or Lower, Guess the Player) that sit alongside
-// the packs in the picker. They play at /play/game/[type] off the SportMonks pool.
-
-const GAME_TYPE_TILES = [
-  { type: "higher-lower", title: "Higher or Lower", tag: "Two players, one stat", accent: "#00d8c0" },
-  { type: "guess-the-player", title: "Guess the Player", tag: "Name the mystery player", accent: "#aeea00" },
-] as const;
-
-function GameTypeTile({ tile }: { tile: (typeof GAME_TYPE_TILES)[number] }) {
-  return (
-    <Link
-      href={`/play/game/${tile.type}`}
-      className="block rounded-2xl overflow-hidden transition-all duration-150 active:scale-[0.97]"
-      style={{ background: "linear-gradient(150deg, #0e1611 0%, #15211a 100%)", border: `1px solid ${tile.accent}30` }}
-    >
-      <div className="relative">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={`/game-covers/${tile.type}.webp`} alt={tile.title} loading="eager" decoding="async"
-          className="block w-full h-auto" />
-        <span className="absolute bottom-2 right-2 font-display text-xs px-2 py-0.5 rounded-lg"
-          style={{ background: "rgba(0,0,0,0.55)", color: tile.accent, border: `1px solid ${tile.accent}40` }}>
-          PLAY →
-        </span>
-      </div>
-      <div className="px-3.5 py-3">
-        <p className="font-body text-sm font-bold text-white leading-snug">{tile.title}</p>
-        <p className="font-body text-xs mt-0.5" style={{ color: "#8a948f" }}>{tile.tag}</p>
-      </div>
-    </Link>
-  );
-}
-
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 type MainTab = "solo" | "multiplayer" | "leaderboards";
@@ -660,17 +658,19 @@ function PlayPageInner() {
       ? packs.filter((p) => p.type === "records" && p.parameter !== "2025/26 End of Season" && !p.featured && !isWorldCupPack(p))
       : packs.filter((p) => p.type === "club");
 
-  const clubCount = packs.filter((p) => p.type === "club").length;
-  const worldCupCount = worldCupPacks.length;
-  const recordsCount = packs.filter((p) => p.type === "records" && p.parameter !== "2025/26 End of Season" && !p.featured && !isWorldCupPack(p)).length;
-  const featuredCount = featuredTabPacks.length;
+  // Featured tab leads with a full-width marketing hero — only when the lead
+  // pack has cover art to sell with; otherwise the plain grid stands.
+  const heroPack =
+    soloTab === "featured" && filtered[0]?.metadata?.cover_image ? filtered[0] : null;
+  const gridPacks = heroPack ? filtered.slice(1) : filtered;
 
   return (
     <div className="min-h-screen bg-bg" style={{ paddingBottom: "calc(72px + env(safe-area-inset-bottom, 0px))" }}>
 
-      {/* Sticky header */}
-      <div className="sticky top-0 z-20 pt-safe"
-        style={{ background: "rgba(10,10,15,0.97)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+      {/* Sticky header — sits under the persistent GamesNav (root layout),
+          so it sticks at the nav's height, not the viewport top. */}
+      <div className="sticky z-20"
+        style={{ top: "var(--games-nav-h, 0px)", background: "rgba(10,10,15,0.97)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
         <div className="max-w-lg mx-auto px-5 pt-3 pb-3">
 
           {/* Title row */}
@@ -722,91 +722,27 @@ function PlayPageInner() {
           )}
 
           {mainTab === "solo" && (
-            <div className="flex gap-2 mb-3 overflow-x-auto -mx-1 px-1" style={{ scrollbarWidth: "none" }}>
-              <button
-                onClick={() => setSoloTab("featured")}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-full font-display text-xs tracking-wide transition-all flex-shrink-0 justify-center whitespace-nowrap"
-                style={{
-                  background: soloTab === "featured" ? "rgba(0,216,192,0.15)" : "rgba(255,255,255,0.04)",
-                  border: `1px solid ${soloTab === "featured" ? "rgba(0,216,192,0.5)" : "rgba(255,255,255,0.08)"}`,
-                  color: soloTab === "featured" ? "#00d8c0" : "#8a948f",
-                  boxShadow: soloTab === "featured" ? "0 0 16px rgba(0,216,192,0.12)" : "none",
-                }}
-              >
-                ⭐ FEATURED
-                <span
-                  className="px-1.5 py-0.5 rounded-full text-xs"
+            <div className="flex gap-5 mb-3 overflow-x-auto -mx-1 px-1"
+              style={{ scrollbarWidth: "none", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+              {([
+                { key: "featured", label: "Featured" },
+                { key: "worldcup", label: "World Cup" },
+                { key: "club", label: "Club" },
+                { key: "records", label: "Records" },
+              ] as { key: SoloTab; label: string }[]).map((t) => (
+                <button
+                  key={t.key}
+                  onClick={() => setSoloTab(t.key)}
+                  className="flex-shrink-0 pb-2 font-body text-sm font-semibold transition-colors whitespace-nowrap"
                   style={{
-                    background: soloTab === "featured" ? "rgba(0,216,192,0.25)" : "rgba(255,255,255,0.06)",
-                    color: soloTab === "featured" ? "#00d8c0" : "#5b645e",
+                    color: soloTab === t.key ? "#fff" : "#8a948f",
+                    borderBottom: soloTab === t.key ? "2px solid #00d8c0" : "2px solid transparent",
+                    marginBottom: -1,
                   }}
                 >
-                  {featuredCount}
-                </span>
-              </button>
-              <button
-                onClick={() => setSoloTab("worldcup")}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-full font-display text-xs tracking-wide transition-all flex-shrink-0 justify-center whitespace-nowrap"
-                style={{
-                  background: soloTab === "worldcup" ? "rgba(255,194,51,0.15)" : "rgba(255,255,255,0.04)",
-                  border: `1px solid ${soloTab === "worldcup" ? "rgba(255,194,51,0.5)" : "rgba(255,255,255,0.08)"}`,
-                  color: soloTab === "worldcup" ? "#ffc233" : "#8a948f",
-                  boxShadow: soloTab === "worldcup" ? "0 0 16px rgba(255,194,51,0.12)" : "none",
-                }}
-              >
-                🌍 WORLD CUP
-                <span
-                  className="px-1.5 py-0.5 rounded-full text-xs"
-                  style={{
-                    background: soloTab === "worldcup" ? "rgba(255,194,51,0.25)" : "rgba(255,255,255,0.06)",
-                    color: soloTab === "worldcup" ? "#ffc233" : "#5b645e",
-                  }}
-                >
-                  {worldCupCount}
-                </span>
-              </button>
-              <button
-                onClick={() => setSoloTab("club")}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-full font-display text-xs tracking-wide transition-all flex-shrink-0 justify-center whitespace-nowrap"
-                style={{
-                  background: soloTab === "club" ? "rgba(0,216,192,0.15)" : "rgba(255,255,255,0.04)",
-                  border: `1px solid ${soloTab === "club" ? "rgba(0,216,192,0.5)" : "rgba(255,255,255,0.08)"}`,
-                  color: soloTab === "club" ? "#00d8c0" : "#8a948f",
-                  boxShadow: soloTab === "club" ? "0 0 16px rgba(0,216,192,0.12)" : "none",
-                }}
-              >
-                ⚽ CLUB
-                <span
-                  className="px-1.5 py-0.5 rounded-full text-xs"
-                  style={{
-                    background: soloTab === "club" ? "rgba(0,216,192,0.25)" : "rgba(255,255,255,0.06)",
-                    color: soloTab === "club" ? "#00d8c0" : "#5b645e",
-                  }}
-                >
-                  {clubCount}
-                </span>
-              </button>
-              <button
-                onClick={() => setSoloTab("records")}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-full font-display text-xs tracking-wide transition-all flex-shrink-0 justify-center whitespace-nowrap"
-                style={{
-                  background: soloTab === "records" ? "rgba(0,216,192,0.15)" : "rgba(255,255,255,0.04)",
-                  border: `1px solid ${soloTab === "records" ? "rgba(0,216,192,0.5)" : "rgba(255,255,255,0.08)"}`,
-                  color: soloTab === "records" ? "#00d8c0" : "#8a948f",
-                  boxShadow: soloTab === "records" ? "0 0 16px rgba(0,216,192,0.12)" : "none",
-                }}
-              >
-                🏆 RECORDS
-                <span
-                  className="px-1.5 py-0.5 rounded-full text-xs"
-                  style={{
-                    background: soloTab === "records" ? "rgba(0,216,192,0.25)" : "rgba(255,255,255,0.06)",
-                    color: soloTab === "records" ? "#00d8c0" : "#5b645e",
-                  }}
-                >
-                  {recordsCount}
-                </span>
-              </button>
+                  {t.label}
+                </button>
+              ))}
             </div>
           )}
 
@@ -839,19 +775,11 @@ function PlayPageInner() {
       {/* ── SOLO TAB ─────────────────────────────────────────────────── */}
       {mainTab === "solo" && (
         <>
-          {/* Game types — quick-play formats off the SportMonks player data */}
-          <div className="max-w-lg mx-auto px-4 pt-4">
-            <div className="flex items-center gap-2 mb-2.5">
-              <span className="font-display text-xs tracking-widest" style={{ color: "#586058" }}>GAME TYPES</span>
-              <span className="font-body text-xs px-2 py-0.5 rounded-full"
-                style={{ background: "rgba(0,216,192,0.1)", color: "#00d8c0", border: "1px solid rgba(0,216,192,0.25)" }}>
-                New
-              </span>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              {GAME_TYPE_TILES.map((tile) => <GameTypeTile key={tile.type} tile={tile} />)}
-            </div>
-          </div>
+          {/* Halftime packs and the club-fan leaderboard moved to their own
+              Matchweek tab (fixture-synced, live). /play stays the evergreen
+              quiz surface. Perfect 10 / Higher or Lower / Guess the Player are
+              separate games in the GameSwitcher now (founder ruling 2026-07-18)
+              — no longer tiles inside the Quiz hub. */}
 
           {/* Build a Quiz banner */}
           <div className="max-w-lg mx-auto px-4 pt-4 pb-2">
@@ -891,8 +819,10 @@ function PlayPageInner() {
                 <p className="font-body text-sm text-text-muted">No games here yet</p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-3">
-                {filtered.map((pack) =>
+              <>
+                {heroPack && <HeroPackCard pack={heroPack} challengeTo={challengeTo} />}
+                <div className="grid grid-cols-2 gap-3">
+                  {gridPacks.map((pack) =>
                   pack.parameter === "2025/26 End of Season" ? (
                     <EndOfSeasonCard key={pack.id} pack={pack} challengeTo={challengeTo} />
                   ) : pack.type === "club" ? (
@@ -900,8 +830,9 @@ function PlayPageInner() {
                   ) : (
                     <RecordsCard key={pack.id} pack={pack} challengeTo={challengeTo} />
                   )
-                )}
-              </div>
+                  )}
+                </div>
+              </>
             )}
           </div>
         </>

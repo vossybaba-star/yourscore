@@ -1,0 +1,16 @@
+{
+  "title": "Premier League's All-Time Top 10 Goalscorers",
+  "fixture": true,
+  "entries": [
+    { "rank": 1, "display": "Alan Shearer", "surname": "Shearer", "aliases": ["shearer"], "clue1": "Southampton, then Blackburn Rovers, then Newcastle United", "clue2": "Starts with S" },
+    { "rank": 2, "display": "Harry Kane", "surname": "Kane", "aliases": ["kane"], "clue1": "Tottenham Hotspur, then Bayern Munich", "clue2": "Starts with K" },
+    { "rank": 3, "display": "Wayne Rooney", "surname": "Rooney", "aliases": ["rooney"], "clue1": "Everton, then Manchester United, then Everton again", "clue2": "Starts with R" },
+    { "rank": 4, "display": "Mohamed Salah", "surname": "Salah", "aliases": ["salah", "mo salah"], "clue1": "Chelsea, then Roma, then Liverpool", "clue2": "Starts with S" },
+    { "rank": 5, "display": "Andy Cole", "surname": "Cole", "aliases": ["cole", "andrew cole"], "clue1": "Newcastle United, then Manchester United, then several others", "clue2": "Starts with C" },
+    { "rank": 6, "display": "Sergio Agüero", "surname": "Agüero", "aliases": ["aguero", "kun aguero"], "clue1": "Manchester City only", "clue2": "Starts with A" },
+    { "rank": 7, "display": "Frank Lampard", "surname": "Lampard", "aliases": ["lampard"], "clue1": "West Ham United, then Chelsea, then Manchester City", "clue2": "Starts with L" },
+    { "rank": 8, "display": "Thierry Henry", "surname": "Henry", "aliases": ["henry"], "clue1": "Arsenal, then a spell back at Arsenal", "clue2": "Starts with H" },
+    { "rank": 9, "display": "Robbie Fowler", "surname": "Fowler", "aliases": ["fowler"], "clue1": "Liverpool, then Leeds United, then Manchester City, then back to Liverpool", "clue2": "Starts with F" },
+    { "rank": 10, "display": "Jermain Defoe", "surname": "Defoe", "aliases": ["defoe"], "clue1": "West Ham United, then Tottenham Hotspur, then Portsmouth, then Sunderland, then Bournemouth, then Rangers", "clue2": "Starts with D" }
+  ]
+}
