@@ -307,6 +307,14 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-20** — **Shadow matches: the honest reveal is RETIRED** (branch
+  `versus/hide-shadow-reveal`, not merged). Founder call: never disclose the replay — the
+  scorecard now presents a shadow match as a normal head-to-head result ("they played each
+  other"). The reveal panel ("You just played X's real run from {date}" + PLAY THEIR RUNS /
+  CHALLENGE LIVE) is deleted from `/play/[roomId]`; matchmaking chain, persona overlay,
+  timing replay, keep-playing panel all unchanged. Owner-side revenge push + the
+  `/versus/shadow/[userId]` library still use "run" language — deliberately untouched
+  (founder gave no preference; revisit if inconsistent).
 - **2026-07-19** — **Home link-preview card redesigned to sell the whole platform
   (founder)** — `/api/og/home` (the og:image every yourscore.app unfurl shows) no longer
   promotes only 38-0: "The Home of Football Gaming" headline + a fanned trio of mocked
