@@ -251,14 +251,20 @@ function VersusInner() {
   const stats = useVersusStats();
   const [sheet, setSheet] = useState<null | { kind: "game"; target?: string | null } | { kind: "code" }>(null);
 
+  // Guests keep the nav (they arrived via the guest BottomNav — removing it
+  // strands them here) and get a create-account path, not just sign-in.
+  // /auth/sign-in handles both; ?next brings them straight back.
   if (!loading && !user) {
     return (
-      <main className="min-h-dvh bg-bg grid place-items-center px-6">
-        <div className="text-center">
-          <p className="font-display text-2xl text-white mb-2">Versus</p>
-          <p className="font-body text-sm text-text-muted mb-5">Sign in to challenge your friends.</p>
-          <Link href="/auth/sign-in?next=/versus" className="inline-block rounded-2xl px-6 py-3 font-display tracking-wide" style={{ background: TEAL, color: "#04231f" }}>Sign in →</Link>
+      <main className="min-h-dvh bg-bg grid place-items-center px-6 pb-28">
+        <div className="text-center w-full max-w-sm">
+          <div className="mx-auto mb-5 w-fit"><GameGlyph game="38-0" size={40} /></div>
+          <p className="font-display text-3xl text-white mb-2">Challenge your friends</p>
+          <p className="font-body text-sm text-text-muted mb-6">Go head-to-head in 38-0 and Quiz Battle. Build rivalries, settle arguments, keep the score.</p>
+          <Link href="/auth/sign-in?next=/versus" className="block rounded-2xl px-6 py-3.5 font-display tracking-wide mb-3" style={{ background: TEAL, color: "#04231f" }}>CREATE FREE ACCOUNT →</Link>
+          <Link href="/auth/sign-in?next=/versus" className="block rounded-2xl px-6 py-3.5 font-display tracking-wide" style={{ background: "rgba(255,255,255,0.06)", color: "#cdeee7", border: "1px solid rgba(255,255,255,0.12)" }}>SIGN IN</Link>
         </div>
+        <BottomNav />
       </main>
     );
   }

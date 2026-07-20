@@ -378,6 +378,12 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-20 (pm)** — **Versus guest dead-end fixed** (`src/app/versus/page.tsx`, working
+  tree, not yet committed). Signed-out users hitting Versus got a bare sign-in gate with NO
+  BottomNav (guest nav vanished — trapped) and no create-account CTA. Now: guest BottomNav
+  stays, primary **CREATE FREE ACCOUNT →** + secondary **SIGN IN** (both to
+  `/auth/sign-in?next=/versus`, that page handles both), copy sells the mode. Verified in
+  browser desktop+mobile, no console errors.
 - **2026-07-20 (pm)** — **Versus psychology-audit fixes** (branch
   `versus/hide-shadow-reveal`, MERGED to main 2026-07-20). Live numbers showed the constraint: 87 of 103
   quiz h2h matches in 14d were shadows (9 human), 255 solo players vs 59 versus players,
