@@ -990,7 +990,7 @@ export default function ChallengePage() {
                 tone="teal"
                 size="lg"
                 fullWidth
-                onClick={() => { window.scrollTo(0, 0); trackGamePlay("quiz", { mode: "solo" }); setPhase("playing"); }}
+                onClick={() => { window.scrollTo(0, 0); trackGamePlay("quiz", { mode: groupId ? "group" : "solo" }); setPhase("playing"); }}
                 className="mt-1"
               >
                 START · {questions.length} Qs

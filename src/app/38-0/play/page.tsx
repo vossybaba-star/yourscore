@@ -19,6 +19,7 @@ import {
   loadTeam, saveTeam, openSlots, isComplete, usedPlayerIds, usedPlayerNames, placePlayer,
   type LocalTeam,
 } from "@/lib/draft/local";
+import { trackTeamDrafted } from "@/lib/analytics/trackGame";
 import { slotsFor } from "@/lib/draft/formations";
 import { canPlay, fitMultiplier, lineRatings, posCategory, CATEGORY_COLOR } from "@/lib/draft/score";
 import { getTeamBadgeUrlSync } from "@/lib/teamImages";
@@ -97,7 +98,13 @@ export default function DraftPlay() {
     setReel(null);
     setSelected(null);
     setRoundOpen(false); // tap-synchronous — collapsing the round box here is input-excluded
-    if (isComplete(next)) setTimeout(() => router.push("/38-0/team"), 400);
+    if (isComplete(next)) {
+      // The IKEA moment: a full XI exists. Sits between Play380 (draft started)
+      // and Complete380 (match result) — the audience for "your XI is waiting"
+      // retargeting and the stage the guest signup gate hangs off.
+      trackTeamDrafted({ board: next.league });
+      setTimeout(() => router.push("/38-0/team"), 400);
+    }
   }
 
   if (!team) {

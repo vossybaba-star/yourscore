@@ -4,6 +4,7 @@ import { track } from "@vercel/analytics";
 import { useEffect } from "react";
 import { afRegistration } from "@/lib/analytics/appsflyerEvents";
 import { getDeviceId } from "@/lib/analytics/deviceId";
+import { isNative } from "@/lib/native";
 
 // Conversion IDs. Pixel base scripts live in app/layout.tsx; this only fires events.
 const X_SIGNUP_EVENT_ID = process.env.NEXT_PUBLIC_X_SIGNUP_EVENT_ID || "tw-p6vxh-p6vxj";
@@ -27,15 +28,18 @@ declare global {
  * the respective Events Managers (no custom-event setup needed).
  */
 function fireSignupConversions() {
-  window.twq?.("event", X_SIGNUP_EVENT_ID, {}); // X (Twitter) — Lead / Sign-up
-  window.fbq?.("track", "CompleteRegistration"); // Meta
-  window.ttq?.track?.("CompleteRegistration"); // TikTok
-  window.snaptr?.("track", "SIGN_UP"); // Snapchat
-  window.gtag?.("event", "sign_up"); // Google Analytics 4
+  // `client` splits signups made inside the native app webview from true web
+  // signups — the same web pixels fire in both (see clientTag in trackGame).
+  const payload = { client: isNative() ? "native" : "web" };
+  window.twq?.("event", X_SIGNUP_EVENT_ID, payload); // X (Twitter) — Lead / Sign-up
+  window.fbq?.("track", "CompleteRegistration", payload); // Meta
+  window.ttq?.track?.("CompleteRegistration", payload); // TikTok
+  window.snaptr?.("track", "SIGN_UP", payload); // Snapchat
+  window.gtag?.("event", "sign_up", payload); // Google Analytics 4
   if (GOOGLE_ADS_SIGNUP_SEND_TO) {
     window.gtag?.("event", "conversion", { send_to: GOOGLE_ADS_SIGNUP_SEND_TO }); // Google Ads
   }
-  track("signup"); // Vercel Analytics
+  track("signup", payload); // Vercel Analytics
 
   // AppsFlyer (native only) — enriched: which sign-in method, and whether they
   // played as a guest before registering (converted_from_guest). Method comes off

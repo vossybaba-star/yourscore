@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { trackGamePlay, trackGameComplete } from "@/lib/analytics/trackGame";
+import { trackGamePlay, trackGameComplete, firedOnce, hasFired } from "@/lib/analytics/trackGame";
 import { GridBackground } from "@/components/ui/GridBackground";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -154,22 +154,17 @@ export default function RoomPage() {
   const supabaseRef       = useRef<DB | null>(null);
   // Foreground-restore listener (registered inside the async setup, removed on cleanup)
   const visibilityHandlerRef = useRef<(() => void) | null>(null);
-  // Per-game audience signals (Multiplayer quiz): "play" once the lobby goes live,
-  // "complete" once it finishes. Gated on having played so a cold viewer opening a
-  // finished room's link doesn't get counted. Fires for every player.
-  const gamePlayedRef     = useRef(false);
-  const gameCompletedRef  = useRef(false);
+  // Per-game audience signals (Multiplayer quiz): "play" fires on this player's
+  // FIRST ANSWER (in handleAnswer) — presence when the room goes live isn't
+  // playing, so viewers of a shared live-room link no longer count. "complete"
+  // fires once the room finishes, only for devices that answered. sessionStorage
+  // guards (keyed on the room) survive a mid-game refresh without double-firing.
   useEffect(() => {
-    const status = room?.status;
-    if (status === "live" && !gamePlayedRef.current) {
-      gamePlayedRef.current = true;
-      trackGamePlay("quiz", { mode: "multiplayer" });
-    }
-    if (status === "completed" && gamePlayedRef.current && !gameCompletedRef.current) {
-      gameCompletedRef.current = true;
+    if (room?.status === "completed" && hasFired(`playquiz:room:${roomId}`)
+      && firedOnce(`completequiz:room:${roomId}`)) {
       trackGameComplete("quiz", { mode: "multiplayer" });
     }
-  }, [room?.status]);
+  }, [room?.status, roomId]);
   // Realtime channel — kept so handleAnswer can broadcast an "answered" signal
   // (answers RLS is owner-only, so postgres_changes can't power the counter).
   const channelRef        = useRef<ReturnType<DB["channel"]> | null>(null);
@@ -618,6 +613,9 @@ export default function RoomPage() {
       body: JSON.stringify({ questionEventId: activeQuestion.eventId, selectedAnswer: letter }),
     });
     if (!res.ok) { const e = await res.json(); throw new Error(e.error); }
+    // First accepted answer = this player is PLAYING (see the audience-signal
+    // effect above for why play isn't counted on room-went-live).
+    if (firedOnce(`playquiz:room:${roomId}`)) trackGamePlay("quiz", { mode: "multiplayer" });
     // Tell the room this player answered (powers the live counter + early
     // advance) — broadcast avoids the owner-only RLS on the answers table.
     if (user) {

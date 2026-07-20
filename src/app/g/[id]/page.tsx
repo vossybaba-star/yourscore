@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { BackPill } from "@/components/ui/BackPill";
 import { Button } from "@/components/ui/Button";
 import { slugify } from "@/lib/utils";
-import { trackShare } from "@/lib/analytics/trackGame";
+import { trackShare, trackInviteAccepted } from "@/lib/analytics/trackGame";
 
 interface Challenge {
   id: string; quiz_pack_id: string; quiz_pack_name: string; creator_id: string;
@@ -62,6 +62,8 @@ export default function GroupBoardPage() {
     if (!ch || joining) return;
     setJoining(true);
     await fetch("/api/challenge/join", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ challengeId: id }) }).catch(() => {});
+    // Viral-loop receive side: a shared group-challenge board, joined to play.
+    trackInviteAccepted("group-challenge");
     window.location.href = playHref;
   }
 

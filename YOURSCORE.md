@@ -6,7 +6,24 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-07-19 (**Nav: 38-0 now lives under the Play tab** — Quiz | 38-0
+> **Confirmed:** 2026-07-20 (**Conversion-event schema completed for the ad relaunch** —
+> new pixel events: `FantasyWaitlist` (Meta `Lead`/TikTok `SubmitForm`, fires on waitlist
+> save success in WaitlistCard — blog + Matchweek fantasy tab), `ClubPick` (ClubPicker
+> confirm, `{club}` param), `InviteAccepted` (viral-loop RECEIVE side — league join,
+> 38-0 challenge accept, live-H2H code claim, WC-H2H join, group-challenge join; Share
+> remains the send side), `HabitFormed` (3rd distinct play-day, once per device — fired
+> from the ReturnPlay path in trackGame.ts), `TeamDrafted` (full XI complete on
+> /38-0/play — the pre-match IKEA moment), web `PushOptIn` twin in lib/push.ts, and
+> GA4-only `trackDiag` (`redraft_used`). EVERY pixel event now carries
+> `client: "native"|"web"` so app-webview activity is separable from web (the iOS app
+> wraps yourscore.app — pixels fire in both). Accuracy fixes: fire-once guards moved to
+> sessionStorage (`firedOnce`/`hasFired` in trackGame.ts) so refresh can't double-count —
+> 38-0 match result, live H2H, live-match quiz, multiplayer quiz; multiplayer quiz "play"
+> now fires on the player's FIRST ANSWER (room viewers no longer count); group-quiz
+> starts correctly tagged `mode:"group"`. X Events Manager audit same day: all events
+> code-defined, no URL rules. NEW-GAME RULE: a new quiz PACK needs nothing (tracking
+> lives in the page); a new game PAGE must call trackGamePlay/Complete + get a GameId.
+> Prior confirm 2026-07-19: **Nav: 38-0 now lives under the Play tab** — Quiz | 38-0
 > game switcher on both hubs, see §9 + Recently Shipped. Prior confirm 2026-07-16:
 > **Perfect 10 — new standalone list game SHIPPED to prod.**
 > Third Quiz game-type ("name everyone in a ranked top-10 football list", e.g. all-time
