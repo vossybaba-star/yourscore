@@ -71,7 +71,7 @@ async function resolve(token: string | null, listId: string | null): Promise<Car
 // same ramp the in-game tower uses, so the card and the game look like one thing.
 function rungWidth(rank: number): number {
   const t = (TOTAL_RUNGS - rank) / (TOTAL_RUNGS - 1); // 0 at rank 10 … 1 at rank 1
-  return 640 - t * 300;
+  return 470 - t * 210;
 }
 
 export async function GET(req: Request) {
@@ -94,7 +94,7 @@ export async function GET(req: Request) {
           background: "linear-gradient(150deg, #16130a 0%, #0d0c07 55%, #0a0a0f 100%)",
           fontFamily: "sans-serif",
           position: "relative",
-          padding: "44px 60px",
+          padding: "40px 54px",
         }}
       >
         {/* floodlight wash behind the tower */}
@@ -111,18 +111,18 @@ export async function GET(req: Request) {
         />
 
         {/* ── left column: brand, topic, result ─────────────────────────── */}
-        <div style={{ display: "flex", flexDirection: "column", width: 560, height: "100%", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", flexDirection: "column", width: 590, height: "100%", justifyContent: "space-between" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={LOGO_DATA_URI} width={196} height={52} alt="YourScore" style={{ display: "flex" }} />
+            <img src={LOGO_DATA_URI} width={176} height={47} alt="YourScore" style={{ display: "flex" }} />
             <div style={{ display: "flex", padding: "8px 20px", borderRadius: 999, background: "rgba(255,196,0,0.14)", border: `1px solid ${GOLD}80` }}>
               <span style={{ display: "flex", color: GOLD, fontSize: 22, fontWeight: 800, letterSpacing: 3 }}>PERFECT 10</span>
             </div>
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <div style={{ display: "flex", maxWidth: 540 }}>
-              <span style={{ color: "#ffffff", fontSize: 44, fontWeight: 800, lineHeight: 1.1, letterSpacing: -1 }}>{card.title}</span>
+            <div style={{ display: "flex", maxWidth: 570 }}>
+              <span style={{ color: "#ffffff", fontSize: 40, fontWeight: 800, lineHeight: 1.08, letterSpacing: -1 }}>{card.title}</span>
             </div>
 
             {isResult ? (
@@ -131,7 +131,7 @@ export async function GET(req: Request) {
                   {card.won ? "PERFECT 10 🏆" : "TOWER FALLS"}
                 </span>
                 <div style={{ display: "flex", alignItems: "flex-end", gap: 16 }}>
-                  <span style={{ display: "flex", color: GOLD, fontSize: 104, fontWeight: 900, lineHeight: 0.9 }}>{card.score.toLocaleString()}</span>
+                  <span style={{ display: "flex", color: GOLD, fontSize: 88, fontWeight: 900, lineHeight: 0.9 }}>{card.score.toLocaleString()}</span>
                   <span style={{ display: "flex", color: "#9aa39d", fontSize: 26, fontWeight: 700, letterSpacing: 3, paddingBottom: 10 }}>PTS</span>
                 </div>
                 <div style={{ display: "flex", padding: "9px 22px", borderRadius: 999, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.14)" }}>
@@ -158,11 +158,13 @@ export async function GET(req: Request) {
         </div>
 
         {/* ── right column: the tower ───────────────────────────────────── */}
-        <div style={{ display: "flex", flexDirection: "column", flex: 1, alignItems: "center", justifyContent: "center", gap: 7 }}>
+        <div style={{ display: "flex", flexDirection: "column", flex: 1, alignItems: "center", justifyContent: "center", gap: 6 }}>
           {Array.from({ length: TOTAL_RUNGS }, (_, i) => i + 1).map((rank) => {
-            // Promo card: the tower stands lit but nameless — it sells the shape
-            // of the game without implying anyone's result.
+            // Promo card: the tower is outlined in gold but every bar is EMPTY —
+            // ten blanks waiting to be named. A fully-filled promo tower would
+            // read as somebody's 10/10 result, which is the wrong invitation.
             const lit = isResult ? filled.has(rank) : true;
+            const barFilled = isResult ? lit : false;
             return (
               <div
                 key={rank}
@@ -170,7 +172,7 @@ export async function GET(req: Request) {
                   display: "flex",
                   alignItems: "center",
                   width: rungWidth(rank),
-                  height: 44,
+                  height: 40,
                   borderRadius: 9,
                   padding: "0 16px",
                   background: lit ? "rgba(255,196,0,0.17)" : "rgba(255,255,255,0.035)",
@@ -186,7 +188,7 @@ export async function GET(req: Request) {
                     flex: 1,
                     height: 8,
                     borderRadius: 4,
-                    background: lit ? "rgba(255,196,0,0.42)" : "rgba(255,255,255,0.07)",
+                    background: barFilled ? "rgba(255,196,0,0.42)" : "rgba(255,255,255,0.07)",
                   }}
                 />
               </div>
