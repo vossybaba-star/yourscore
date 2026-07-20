@@ -72,14 +72,16 @@ for (const category of cats) {
     const c = cell[`${club}||${category}`];
     if (!c) { console.log(club.padEnd(26) + "   —"); continue; }
     const cap = ceiling(c);
-    const mixOk = Object.entries(MIX).every(([d, n]) => c[d] >= n);
-    const capOk = cap >= NEED;
-    const ok = mixOk && capOk;
+    // Matches fillToSize in src/lib/questions.ts: the MIX is a TARGET, so the only hard limit
+    // is distinct facts. Reporting the old strict rule here would have said 6/20 while the
+    // live route happily deals 19/20 — a status tool that disagrees with the code is worse
+    // than none.
+    const ok = cap >= NEED;
     if (ok) dealable++;
-    const why = ok ? "FULL 15"
-      : !capOk && !mixOk ? `capped ${cap} · short ${Object.entries(MIX).filter(([d, n]) => c[d] < n).map(([d]) => d).join("+")}`
-      : !capOk ? `capped at ${cap} distinct facts`
-      : `short ${Object.entries(MIX).filter(([d, n]) => c[d] < n).map(([d, n]) => `${d} ${c[d]}/${n}`).join(", ")}`;
+    const shortOfTarget = Object.entries(MIX).filter(([d, n]) => c[d] < n).map(([d, n]) => `${d} ${c[d]}/${n}`);
+    const why = ok
+      ? `FULL 15${shortOfTarget.length ? `  (tops up: under target on ${shortOfTarget.map((s) => s.split(" ")[0]).join("+")})` : ""}`
+      : `capped at ${cap} distinct facts — needs ${NEED - cap} more`;
     console.log(
       club.padEnd(26) +
       String(c.total).padStart(4) + "   " +
