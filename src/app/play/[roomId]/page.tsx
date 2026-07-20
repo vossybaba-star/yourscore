@@ -968,7 +968,9 @@ export default function RoomPage() {
           {/* Post-game reward moment — points earned + position on the leaderboard */}
           <RankRewardCard />
 
-          {/* Friend prompts — show for all non-self, non-CPU opponents after game */}
+          {/* Friend prompts — show for all non-self, non-CPU opponents after game.
+              A shadow opponent gets one too (they're a real player, and "they
+              played each other" — the request reads like any other). */}
           {user && opponents.filter(o => o.user_id !== user.id && o.user_id !== QUIZ_BOT_ID).map(opp => (
             <AddFriendCard
               key={opp.user_id}
@@ -977,6 +979,13 @@ export default function RoomPage() {
               context={room.room_mode === "h2h" ? `Great game with ${opp.display_name}! 👏` : undefined}
             />
           ))}
+          {user && room.shadow && room.shadow.userId !== user.id && (
+            <AddFriendCard
+              userId={room.shadow.userId}
+              displayName={room.shadow.name}
+              context={`Great game with ${room.shadow.name}! 👏`}
+            />
+          )}
 
           {/* Shadow/CPU rooms: forward motion first — the scorecard's job is to
               get you into the next game, not to be an exit. */}

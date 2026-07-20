@@ -1364,6 +1364,15 @@ export default function ChallengePage() {
             </div>
           )}
 
+          {/* The versus bridge — the result screen is the motivation peak, and
+              find-an-opponent needs no friends (matchmaking always fills the
+              seat), so it leads; challenge-a-friend is the social secondary. */}
+          {userId && !groupId && (
+            <Button variant="primary" size="lg" fullWidth onClick={() => router.push(`/versus/find?game=quiz&pack=${pack.id}`)}>
+              ⚔️ PLAY SOMEONE ON THIS QUIZ →
+            </Button>
+          )}
+
           {userId && groupId ? (
             <Button variant="primary" tone="teal" size="lg" fullWidth onClick={() => router.push(`/g/${groupId}`)}>
               SEE THE LEADERBOARD →

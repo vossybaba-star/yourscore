@@ -307,6 +307,17 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-20 (pm)** — **Versus psychology-audit fixes** (same branch
+  `versus/hide-shadow-reveal`, not merged). Live numbers showed the constraint: 87 of 103
+  quiz h2h matches in 14d were shadows (9 human), 255 solo players vs 59 versus players,
+  20 new friendships. Fixes: **solo result screen leads with "PLAY SOMEONE ON THIS QUIZ"**
+  (`/versus/find` pinned to the pack — the motivation peak now has a zero-friction versus
+  bridge; own runs are already excluded from the shadow pool); Live-now strip's second tile
+  falls back to a real **"Matches this fortnight"** aggregate (`matches14d` on
+  `/api/versus/activity`) when today's counts are under the show-threshold; the empty
+  rivalries section now shows a **first-rivalry teaser** ("play the same player twice")
+  instead of vanishing; **shadow opponents get the standard add-friend card** on the
+  scorecard (consistent with "they played each other").
 - **2026-07-20** — **Shadow matches: the honest reveal is RETIRED** (branch
   `versus/hide-shadow-reveal`, not merged). Founder call: never disclose the replay — the
   scorecard now presents a shadow match as a normal head-to-head result ("they played each
