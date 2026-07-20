@@ -82,7 +82,7 @@ ${TRUSTED_SOURCES_BRIEF}`;
  * `have` is the already-typed facts (from sportmonksFacts). `categories` is
  * [{ key, label, brief, want }].
  */
-export async function researchClubFacts({ entity, categories, have = [], model = MODELS.author } = {}) {
+export async function researchClubFacts({ entity, categories, have = [], avoid = [], model = MODELS.author } = {}) {
   const haveByCat = {};
   for (const f of have) (haveByCat[f.category] ??= []).push(f);
 
@@ -132,6 +132,16 @@ ${alreadyHave}
 Our feed covers league placings, points, that club's own top scorer per season, league titles and European finals. It knows NOTHING about domestic cups (FA Cup, League Cup), the club's founding, appearance records, individual legends, or rivalries.${c.held ? `\n\nWe already hold ${c.held} facts in THIS category from league data — don't repeat that ground.` : ""}
 
 Research and report ${c.need} facts in this category ONLY. Tag every one with "category": "${c.key}".
+${avoid.length ? `
+⚠️ WE HAVE ALREADY WRITTEN QUESTIONS ON THIS GROUND. Every fact below is spent — return
+something we do NOT already have, or the work is wasted:
+${avoid.slice(0, 60).map((t) => `  · ${t}`).join("\n")}
+
+This is a TOP-UP pass. The obvious headline facts are gone, so go one layer out: different
+seasons, different opponents in the same rivalry, different competitions (domestic cups as
+well as league), club-record margins, memorable individual performances, and the rivalry's
+origin and history rather than only recent meetings.
+` : ""}
 
 SPREAD BY FAME — the most important instruction. Questions inherit their difficulty from the facts behind them, so a sheet of obscure trivia can only produce a brutal quiz, and our bank is badly short of EASY questions — that shortage is the single biggest problem with the product. Roughly:
 - ${Math.round(c.need * 0.4)} facts ANY ${entity} fan knows — the headline trophies, the famous finals, the iconic names. They will feel too obvious. Gather them anyway: they are exactly the ones we are short of.

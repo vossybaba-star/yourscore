@@ -115,6 +115,7 @@ const FACT_COUNT = Number(arg("--facts", 25));  // facts to research first (ONE 
 const SHOW_FACTS = has("--show-facts");         // print the sheet for review
 const DRY = has("--dry-run");
 const COMMIT = has("--commit");
+const TOP_UP = has("--top-up");                 // second pass: avoid ground already covered
 const PROJECT = !DRY && !COMMIT;                 // default mode = estimate only, no spend
 
 const cats = ALL ? Object.keys(CATEGORIES) : CAT ? [CAT] : Object.keys(CATEGORIES);
@@ -196,11 +197,28 @@ try {
 // Now it's one pass that's told what we already hold and asked only for what a league feed
 // can't know — domestic cups, founding, appearance records, legends, rivalries.
 const factPool = [...leagueFacts];
+
+// --top-up: tell the researcher what we've ALREADY written questions about for this club, so a
+// second pass goes one layer out instead of re-finding the same headline facts and having them
+// deduped away. Needed because a club can be rich in rows but poor in DISTINCT FACTS —
+// Bournemouth had 25 rivalries questions built on just 6 facts, capping its quiz at 6.
+let avoid = [];
+if (TOP_UP) {
+  const { data } = await supabase
+    .from("questions")
+    .select("question")
+    .eq("entity", CLUB).eq("status", "active").in("category", cats)
+    .limit(200);
+  avoid = (data ?? []).map((r) => r.question);
+  console.log(`♻️  TOP-UP: steering research away from ${avoid.length} questions already in the bank.\n`);
+}
+
 try {
   const { facts, dropped, gaps } = await researchClubFacts({
     entity: CLUB,
     categories: cats.map((k) => ({ key: k, label: CATEGORIES[k].label, brief: CATEGORIES[k].brief, want: FACT_COUNT })),
     have: leagueFacts,
+    avoid,
   });
   if (gaps.length) {
     console.log(`🔎 One research pass for ${CLUB} — gaps only:`);

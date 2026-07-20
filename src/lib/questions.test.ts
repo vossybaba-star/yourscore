@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 //   npx tsc src/lib/questions.ts src/lib/questions.test.ts --outDir /tmp/qt \
 //     --module commonjs --target es2022 --esModuleInterop --skipLibCheck \
 //     && node --test /tmp/qt/questions.test.js
-import { normalizeQuestionText, dedupeByQuestionText, pickDistinctFacts } from "./questions";
+import { normalizeQuestionText, dedupeByQuestionText, pickDistinctFacts, fillToSize } from "./questions";
 
 // ── The same-fact rule ────────────────────────────────────────────────────────
 // The factory writes several questions per researched fact (founder's call: volume beats
@@ -110,4 +110,63 @@ test("dedupeByQuestionText still drops repeated text", () => {
 
 test("normalizeQuestionText is unchanged (migration 67's index depends on it)", () => {
   assert.equal(normalizeQuestionText("Who won the 2020 FA Cup?!"), "who won the 2020 fa cup");
+});
+
+// ── fillToSize: the mix is a target, not a floor ──────────────────────────────
+// These two tests encode the decision that unblocked 8 clubs. If someone later makes the mix
+// strict again, the Sunderland case fails loudly and explains why.
+
+const q = (id: string, fact?: string) => ({ id, fact_key: fact ?? null });
+const MIX = { easy: 2, medium: 5, hard: 8 };
+
+test("fillToSize honours the mix when supply exists (Arsenal shape)", () => {
+  const out = fillToSize(
+    {
+      easy: [q("e1"), q("e2"), q("e3")],
+      medium: Array.from({ length: 11 }, (_, i) => q(`m${i}`)),
+      hard: Array.from({ length: 10 }, (_, i) => q(`h${i}`)),
+    },
+    MIX, 15
+  );
+  assert.equal(out.length, 15);
+  assert.equal(out.filter((x) => x.id.startsWith("e")).length, 2, "takes exactly the 2 easy asked for");
+  assert.equal(out.filter((x) => x.id.startsWith("m")).length, 5);
+  assert.equal(out.filter((x) => x.id.startsWith("h")).length, 8);
+});
+
+test("fillToSize still deals a FULL 15 with zero easy (Sunderland shape: 0/1/27)", () => {
+  const out = fillToSize(
+    {
+      easy: [],
+      medium: [q("m0")],
+      hard: Array.from({ length: 27 }, (_, i) => q(`h${i}`)),
+    },
+    MIX, 15
+  );
+  assert.equal(out.length, 15, "must not short-deal a club that has no easy questions");
+  assert.equal(new Set(out.map((x) => x.id)).size, 15, "no question dealt twice");
+});
+
+test("fillToSize never deals two questions built on the same fact, even when topping up", () => {
+  // Every hard question shares one fact — the top-up must not smuggle duplicates through.
+  const out = fillToSize(
+    {
+      easy: [],
+      medium: [q("m0", "factA")],
+      hard: Array.from({ length: 20 }, (_, i) => q(`h${i}`, "factA")),
+    },
+    MIX, 15
+  );
+  assert.equal(out.length, 1, "one fact can only ever yield one question in a quiz");
+});
+
+test("fillToSize tops up easiest-first", () => {
+  const out = fillToSize(
+    { easy: [q("e1")], medium: [q("m1"), q("m2")], hard: Array.from({ length: 20 }, (_, i) => q(`h${i}`)) },
+    MIX, 15
+  );
+  assert.equal(out.length, 15);
+  // e1 and both mediums should be in, despite easy being short of its target of 2.
+  assert.ok(out.some((x) => x.id === "e1"));
+  assert.ok(out.some((x) => x.id === "m2"));
 });

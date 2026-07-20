@@ -80,6 +80,21 @@ const DIFF_OPTIONS = [
   { value: "hard",   label: "Hard",   dot: "#f87171" },
 ];
 
+/**
+ * The four locked club topics. Values must match questions.category exactly.
+ *
+ * Clubs only: these categories are only populated for club entities. National teams and
+ * Records topics have no category tagging, so offering the filter there would just deal a
+ * 404 for every choice.
+ */
+const TOPIC_OPTIONS = [
+  { value: "",                  label: "Everything", emoji: "🎲" },
+  { value: "history-honours",   label: "History & Honours", emoji: "🏆" },
+  { value: "legends",           label: "Legends",           emoji: "⭐" },
+  { value: "modern-era",        label: "Modern Era",        emoji: "📅" },
+  { value: "rivalries-derbies", label: "Rivalries",         emoji: "⚔️" },
+];
+
 // ── Step definitions ───────────────────────────────────────────────────────────
 
 type FocusType = "club" | "national" | "records";
@@ -100,6 +115,7 @@ export default function CreateQuizPage() {
   const [focusType, setFocusType] = useState<FocusType | null>(null);
   const [selectedEntity, setSelectedEntity] = useState<string | null>(null);
   const [era, setEra] = useState("");
+  const [topic, setTopic] = useState("");
   const [difficulty, setDifficulty] = useState("");
   const [clubSearch, setClubSearch] = useState("");
   const [generating, setGenerating] = useState(false);
@@ -125,6 +141,7 @@ export default function CreateQuizPage() {
       try {
         const qs = new URLSearchParams({ entity: selectedEntity });
         if (era) qs.set("era", era);
+        if (topic) qs.set("category", topic);
         const res = await fetch(`/api/quiz/availability?${qs.toString()}`);
         const json = await res.json();
         if (!cancelled) setAvailability(res.ok ? (json.count ?? 0) : null);
@@ -135,7 +152,7 @@ export default function CreateQuizPage() {
       }
     }, 250);
     return () => { cancelled = true; clearTimeout(t); };
-  }, [selectedEntity, era]);
+  }, [selectedEntity, era, topic]);
 
   // Reset on category change
   useEffect(() => {
@@ -143,6 +160,7 @@ export default function CreateQuizPage() {
     setClubSearch("");
     setEra("");
     setDifficulty("");
+    setTopic("");
   }, [focusType]);
 
   // Auto-scroll to next step
@@ -190,6 +208,7 @@ export default function CreateQuizPage() {
           entityType: focusType,
           era: era || undefined,
           difficulty: difficulty || undefined,
+          category: topic || undefined,
         }),
       });
       const json = await res.json();
@@ -511,6 +530,33 @@ export default function CreateQuizPage() {
                 style={{ background: "none", border: "none", cursor: "pointer", color: "#586058", fontSize: 16 }}
               >×</button>
             </div>
+
+            {/* Topic — clubs only (the four categories are only tagged on club questions) */}
+            {focusType === "club" && (
+              <div style={{ marginBottom: 16 }}>
+                <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8a948f", marginBottom: 8 }}>Topic</p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {TOPIC_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setTopic(opt.value)}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 5,
+                        padding: "6px 13px", borderRadius: 999,
+                        fontFamily: "var(--font-body, sans-serif)", fontSize: 12, fontWeight: 600,
+                        cursor: "pointer", transition: "all 0.15s ease",
+                        background: topic === opt.value ? "rgba(174,234,0,0.14)" : "rgba(255,255,255,0.04)",
+                        border: `1px solid ${topic === opt.value ? "rgba(174,234,0,0.45)" : "rgba(255,255,255,0.08)"}`,
+                        color: topic === opt.value ? "#aeea00" : "#8a948f",
+                      }}
+                    >
+                      <span style={{ fontSize: 11 }}>{opt.emoji}</span>
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Era */}
             <div style={{ marginBottom: 16 }}>

@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { rateLimitDistributed } from "@/lib/ratelimit";
 import { slugify, shuffle } from "@/lib/utils";
-import { dedupeByQuestionText, pickDistinctFacts } from "@/lib/questions";
+import { dedupeByQuestionText, pickDistinctFacts, fillToSize } from "@/lib/questions";
 import type { Json } from "@/types/database";
 
 /**
@@ -32,6 +32,9 @@ type ServedDifficulty = "easy" | "medium" | "hard";
  * 5/8/2 as experienced.
  */
 const MIX: Record<ServedDifficulty, number> = { easy: 2, medium: 5, hard: 8 };
+
+/** Every quiz is 15 questions. The MIX above is how we'd LIKE to fill them — see fillToSize. */
+const QUIZ_SIZE = 15;
 type EntityType = "club" | "records" | "national";
 type Era = "all-time" | "early-pl" | "2010s" | "2020s" | "2024-25";
 
@@ -205,17 +208,20 @@ export async function POST(req: NextRequest) {
       const pool = await fetchByDifficulty(supabase, entity, era, difficulty, 15, { category, seenIds });
       questions = pickDistinctFacts(pool, 15, usedFactKeys);
     } else {
+      // Pools are fetched at full quiz width, not at the mix width: a club that's short on
+      // easy needs enough medium and hard on hand to top the quiz back up to 15.
       const [easyPool, mediumPool, hardPool] = await Promise.all([
-        fetchByDifficulty(supabase, entity, era, "easy",   MIX.easy,   { category, seenIds }),
-        fetchByDifficulty(supabase, entity, era, "medium", MIX.medium, { category, seenIds }),
-        fetchByDifficulty(supabase, entity, era, "hard",   MIX.hard,   { category, seenIds }),
+        fetchByDifficulty(supabase, entity, era, "easy",   QUIZ_SIZE, { category, seenIds }),
+        fetchByDifficulty(supabase, entity, era, "medium", QUIZ_SIZE, { category, seenIds }),
+        fetchByDifficulty(supabase, entity, era, "hard",   QUIZ_SIZE, { category, seenIds }),
       ]);
-      // Sequential, not parallel — each pick must see the facts already spent.
-      questions = [
-        ...pickDistinctFacts(easyPool, MIX.easy, usedFactKeys),
-        ...pickDistinctFacts(mediumPool, MIX.medium, usedFactKeys),
-        ...pickDistinctFacts(hardPool, MIX.hard, usedFactKeys),
-      ];
+      // Picks share one usedFactKeys set, so no two questions come off the same fact.
+      questions = fillToSize(
+        { easy: easyPool, medium: mediumPool, hard: hardPool },
+        MIX,
+        QUIZ_SIZE,
+        usedFactKeys
+      );
     }
   } catch (e) {
     return NextResponse.json(
