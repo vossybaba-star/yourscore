@@ -217,6 +217,25 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-19** — **Fantasy Football: the full game, completed** (branch `fantasy/season`,
+  migrations 84 applied; commits `50755c0…8460cb4`). Six ships in one run:
+  (1) **Season cutover, rehearsed** (`scripts/fantasy/cutover.mjs`): status/dry-run/apply — apply
+  REFUSES until FPL serves 26/27, gates pool coverage, seeds the calendar, wipes the demo behind
+  typed consent (keeping leagues). Ends in a commit+deploy: pool.json is baked into the build.
+  (2) **The knowledge rating** — working name **"The Knowledge"** (ONE constant in
+  `src/lib/fantasy/brand.ts`, founder may rename): weekly/monthly/season boards on round accuracy
+  alone, public at /fantasy/knowledge, and now the TIEBREAK on league tables (audit decision 6).
+  (3) **Share card**: a scored gameweek mints a short /s/ link with a gold-on-pitch OG card —
+  server-authoritative, a card can't claim an unearned score.
+  (4) **Emails + pushes**: gameweek-result and personal deadline emails (house skeleton, gated
+  FANTASY_EMAILS_ENABLED, 250/tick cap, suppression-checked, claimed-before-send); result push;
+  per-league MONTH-WINNER push when a month closes. All in `comms.ts`, outside the state machine.
+  (5) **View a friend's run**: tap a league-mate post-deadline → their round, right/wrong per
+  question. Rounds are deterministic per (gw,user) — nothing stored, rebuilt on demand.
+  (6) **Insight + Second Chance live**: seeded 50/50 (spend-once via round_hint_k) and
+  retry-one-wrong (exact credit delta granted once via CAS). **Exploit found and closed: undo
+  -after-use** — a chip whose effect fired (hint taken, retry used, free transfer funded) can no
+  longer be un-played for a refund. 19 E2E assertions against prod.
 - **2026-07-14** — **Fantasy Football Phase 2 — Leagues + tables** (branch `fantasy/leagues`,
   off `fantasy/news-hub`; migration **79 APPLIED to prod**). Private-by-default leagues with a
   public opt-in: create a league, share the link/code, friends join. Two tables on every league:
