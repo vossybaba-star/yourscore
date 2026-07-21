@@ -6,7 +6,18 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-07-20 (**Club question bank: categories remapped + Rivalries filled 0→20 clubs.**
+> **Confirmed:** 2026-07-21 (**WC Mastermind thank-you flow SHIPPED to prod** — migration 100
+> seeds `wc_thanks_prompts` with the 199 players who played >10 ranked WC days; on their next
+> signed-in visit they get a one-time "What would you like to see on YourScore?" modal (free
+> text → `product_feedback`, write-only mailbox RLS), then after ~600px of scrolling a one-time
+> App Store review ask (native star popup in the iOS app; card on iPhone web; desktop leaves the
+> ask unconsumed so it still fires on a later phone visit). `WcThanksPrompt` mounted globally;
+> dev previews `?preview=wc-thanks` / `?preview=wc-review`. Verified live: seed = exact cohort,
+> anon-curl returns nothing on both tables, test feedback row round-tripped. **Companion email
+> (copy LOCKED Jul 21) to the 190 non-suppressed cohort members is NOT yet sent — awaiting
+> founder go.**)
+>
+> **Previously confirmed:** 2026-07-20 (**Club question bank: categories remapped + Rivalries filled 0→20 clubs.**
 > On branch `quiz/content-factory`, nothing on `main`.
 > **The remap:** 2,207 verified questions across 44 clubs were invisible to the category flow
 > because they carried six legacy labels while only 69 (Arsenal) carried the new four. 2,213
