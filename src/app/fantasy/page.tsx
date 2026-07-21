@@ -7,6 +7,7 @@ import {
   type ChipName, type ClientPoolPlayer, type FantasyState, type Pos,
 } from "@/components/fantasy/shared";
 import { HALF_SEASON_GW } from "@/lib/fantasy/engine";
+import { KNOWLEDGE_NAME } from "@/lib/fantasy/brand";
 
 type Result = NonNullable<NonNullable<FantasyState["entry"]>["result"]>;
 
@@ -461,6 +462,16 @@ export default function FantasyHub() {
             {hasLeagues
               ? "See how you stack up this gameweek and this month."
               : "Create a league, share the code, see who really knows football."}
+          </p>
+        </Card>
+      </div>
+
+      {/* The knowledge board — the quiz's own competition, win or lose at the weekend */}
+      <div onClick={() => router.push("/fantasy/knowledge")} style={{ cursor: "pointer" }}>
+        <Card style={{ marginBottom: 12 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 3 }}>{KNOWLEDGE_NAME}</div>
+          <p style={{ fontSize: 12.5, color: MUTED, margin: 0, lineHeight: 1.45 }}>
+            The quiz table. Right answers count here even when your team lets you down.
           </p>
         </Card>
       </div>

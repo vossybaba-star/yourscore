@@ -40,14 +40,17 @@ export interface PublicLeagueSummary {
 }
 export interface LeagueRow {
   rank: number; userId: string; username: string | null; displayName: string | null;
-  avatarUrl: string | null; points: number; played: number; lastGwPoints: number | null; isMe: boolean;
+  avatarUrl: string | null; points: number; played: number;
+  /** Right answers over this table's gameweeks — the tiebreak (audit decision 6). */
+  knowledge: number;
+  lastGwPoints: number | null; isMe: boolean;
 }
 interface LeagueRecord {
   id: string; owner_id: string; name: string; join_code: string; is_public: boolean;
 }
 interface MemberRecord { user_id: string; joined_at: string }
 interface ProfileRecord { id: string; username: string | null; display_name: string | null; avatar_url: string | null }
-interface EntryRecord { user_id: string; gw: number; points: number | null }
+interface EntryRecord { user_id: string; gw: number; points: number | null; round_correct: number | null }
 
 function validateName(raw: unknown): string {
   const name = typeof raw === "string" ? raw.trim().slice(0, NAME_MAX) : "";
@@ -219,11 +222,12 @@ function buildRows(
   profiles: Map<string, ProfileRecord>,
   viewerId: string | null,
 ): LeagueRow[] {
-  const byUser = new Map<string, { sum: number; played: number; lastGw: number; lastPts: number }>();
+  const byUser = new Map<string, { sum: number; played: number; lastGw: number; lastPts: number; knowledge: number }>();
   for (const e of entries) {
-    const acc = byUser.get(e.user_id) ?? { sum: 0, played: 0, lastGw: -1, lastPts: 0 };
+    const acc = byUser.get(e.user_id) ?? { sum: 0, played: 0, lastGw: -1, lastPts: 0, knowledge: 0 };
     acc.sum += e.points ?? 0;
     acc.played += 1;
+    acc.knowledge += e.round_correct ?? 0;
     if (e.gw > acc.lastGw) { acc.lastGw = e.gw; acc.lastPts = e.points ?? 0; }
     byUser.set(e.user_id, acc);
   }
@@ -238,13 +242,16 @@ function buildRows(
       avatarUrl: p?.avatar_url ?? null,
       points: acc?.sum ?? 0,
       played: acc?.played ?? 0,
+      knowledge: acc?.knowledge ?? 0,
       lastGwPoints: acc && acc.lastGw >= 0 ? acc.lastPts : null,
       isMe: viewerId != null && m.user_id === viewerId,
       joinedAt: m.joined_at,
     };
   });
 
-  // points desc → lastGwPoints desc (nulls last) → joined_at asc (§5 LOCKED).
+  // points desc → KNOWLEDGE desc → lastGwPoints desc (nulls last) → joined_at asc.
+  // The design's audit decision (6): the tiebreak on a fantasy table is your
+  // knowledge-round performance — level on points, the sharper quizzer sits higher.
   const cmpLastGw = (a: number | null, b: number | null) => {
     if (a === b) return 0;
     if (a === null) return 1;
@@ -253,12 +260,14 @@ function buildRows(
   };
   withJoin.sort((a, b) =>
     b.points - a.points
+    || b.knowledge - a.knowledge
     || cmpLastGw(a.lastGwPoints, b.lastGwPoints)
     || Date.parse(a.joinedAt) - Date.parse(b.joinedAt));
 
   return withJoin.map((r, i) => ({
     rank: i + 1, userId: r.userId, username: r.username, displayName: r.displayName,
-    avatarUrl: r.avatarUrl, points: r.points, played: r.played, lastGwPoints: r.lastGwPoints, isMe: r.isMe,
+    avatarUrl: r.avatarUrl, points: r.points, played: r.played, knowledge: r.knowledge,
+    lastGwPoints: r.lastGwPoints, isMe: r.isMe,
   }));
 }
 
@@ -317,7 +326,7 @@ export async function leagueDetail(code: string, viewerId: string | null): Promi
   // = 1900 rows, and a silent truncation would drop whole gameweeks out of a
   // member's total with no error to show for it.
   const { data: entryRows } = ids.length
-    ? await svc.from("fantasy_entries").select("user_id, gw, points")
+    ? await svc.from("fantasy_entries").select("user_id, gw, points, round_correct")
         .in("user_id", ids).not("scored_at", "is", null).range(0, 9999)
     : { data: [] as EntryRecord[] };
   const entries = (entryRows ?? []) as EntryRecord[];
