@@ -76,13 +76,15 @@ export function WcThanksPrompt() {
 
   /**
    * DEV-ONLY: `?preview=wc-thanks` renders the feedback modal as the cohort
-   * would see it. Compiled out of production; nothing is ever written.
+   * would see it; `?preview=wc-review` renders the App Store review card.
+   * Compiled out of production; nothing is ever written.
    */
   const [preview, setPreview] = useState(false);
   useEffect(() => {
     if (process.env.NODE_ENV === "production" || typeof window === "undefined") return;
-    if (new URLSearchParams(window.location.search).get("preview") !== "wc-thanks") return;
-    setPreview(true);
+    const p = new URLSearchParams(window.location.search).get("preview");
+    if (p === "wc-thanks") setPreview(true);
+    if (p === "wc-review") { setPreview(true); setStage("review"); setReviewCard(true); }
   }, []);
 
   // One GET, once, for a signed-in user — no network at all while signed out.
@@ -144,15 +146,19 @@ export function WcThanksPrompt() {
     if (!scrolledEnough || reviewFiredRef.current || preview) return;
     reviewFiredRef.current = true;
     (async () => {
+      let shown = false;
       if (isNative()) {
         const fired = await fireNativeReview();
         if (!fired) setReviewCard(true);
+        shown = true;
       } else if (isAppleMobile()) {
         setReviewCard(true);
+        shown = true;
       }
-      // Desktop web: nothing visible. Stamped exactly once either way, so
-      // this never re-arms next session.
-      await postAction({ action: "review" });
+      // Desktop web can't leave an App Store review — leave the ask
+      // UNSTAMPED so it still fires on a future phone visit. Only an
+      // actually-shown ask consumes the once-ever.
+      if (shown) await postAction({ action: "review" });
     })();
   }, [scrolledEnough, preview]);
 
@@ -193,7 +199,7 @@ export function WcThanksPrompt() {
                   onChange={(e) => setText(e.target.value)}
                   maxLength={2000}
                   placeholder="I'd love to see…"
-                  disabled={preview || posting}
+                  disabled={posting}
                   rows={4}
                   className="w-full rounded-xl px-3.5 py-3 font-body text-sm text-white resize-none outline-none"
                   style={{ background: "#1a1a24", border: "1px solid rgba(255,255,255,0.08)" }}
