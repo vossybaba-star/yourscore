@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
-import { hasSeenTip, markTipSeen, resetTips, tipsEligible } from "@/lib/tips";
+import { hasSeenTip, markTipSeen, resetTips, tourEligible } from "@/lib/tips";
 
 interface Step {
   route: string;
@@ -217,8 +217,9 @@ export function SpotlightTour() {
     if (!HUB_PATHS.has(pathname)) return;
 
     const isForced = new URLSearchParams(window.location.search).get("tour") === "1";
-    const createdAt = user?.created_at ?? null;
-    const eligible = isForced || (tipsEligible(createdAt) && !hasSeenTip("app-tour"));
+    // New-users-only gate: post-epoch accounts, or fresh native installs —
+    // never current customers (see tourEligible in lib/tips).
+    const eligible = isForced || (tourEligible(user) && !hasSeenTip("app-tour"));
     if (!eligible) return;
 
     startedRef.current = true;
