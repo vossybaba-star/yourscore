@@ -6,6 +6,12 @@ import { MarketingLanding } from "@/components/home/MarketingLanding";
 import { resolveTodaysGame, type TodaysGame } from "@/lib/daily-game";
 import { loadListForDay, loadAttempt } from "@/lib/games/perfect10";
 import {
+  dayStreak as computeDayStreak,
+  playedDays,
+  streakCutoff as libStreakCutoff,
+  ukDay,
+} from "@/lib/streak";
+import {
   Dashboard,
   type DashboardData,
   type LeaguePosition,
@@ -117,9 +123,9 @@ export default async function RootPage({
 
   // Stale lobbies are hidden in the /play list after 3h — match that here.
   const lobbyCutoff = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString();
-  // One window for every streak source. NOTE: this caps the visible day streak
-  // at ~45 — raise all three streak queries together if longer streaks matter.
-  const streakCutoff = new Date(Date.now() - 45 * 86_400_000).toISOString();
+  // One window for every streak source, shared with /profile. NOTE: this caps
+  // the visible day streak at ~45 — raise STREAK_WINDOW_DAYS to change it.
+  const streakCutoff = libStreakCutoff();
 
   const [
     { data: profile },
@@ -211,27 +217,16 @@ export default async function RootPage({
     rankRow?.ahead_points != null ? Math.max(1, rankRow.ahead_points - overallScore) : null;
 
   // ── Day streak + this-week dots (UK days, quiz + 38-0 activity) ─────────────
+  // Streak maths lives in @/lib/streak so /profile counts days the same way.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const matches: any[] = recentMatches ?? [];
-  const ukDay = (iso: string) =>
-    new Date(iso).toLocaleDateString("en-CA", { timeZone: "Europe/London" });
-  const playedSet = new Set<string>();
-  for (const a of attemptDays ?? []) if (a.completed_at) playedSet.add(ukDay(a.completed_at));
-  for (const m of matches) if (m.played_at) playedSet.add(ukDay(m.played_at));
-  for (const r of wcRunDays ?? []) if (r.created_at) playedSet.add(ukDay(r.created_at));
-
+  const playedSet = playedDays([
+    ...((attemptDays ?? []) as { completed_at: string | null }[]).map((a) => a.completed_at),
+    ...matches.map((m) => m.played_at),
+    ...((wcRunDays ?? []) as { created_at: string | null }[]).map((r) => r.created_at),
+  ]);
   const todayKey = ukDay(new Date().toISOString());
-  // Walk back day by day (noon UTC cursor sidesteps DST edges). A streak is
-  // alive if it includes today OR ended yesterday (today's game not played yet).
-  let dayStreak = 0;
-  {
-    let cursor = Date.parse(`${todayKey}T12:00:00Z`);
-    if (!playedSet.has(todayKey)) cursor -= 86_400_000;
-    while (playedSet.has(new Date(cursor).toLocaleDateString("en-CA", { timeZone: "Europe/London" }))) {
-      dayStreak++;
-      cursor -= 86_400_000;
-    }
-  }
+  const dayStreak = computeDayStreak(playedSet);
   const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   const todayIdx = WEEKDAYS.indexOf(
     new Date().toLocaleDateString("en-GB", { weekday: "short", timeZone: "Europe/London" })

@@ -6,7 +6,38 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-07-21 late (**First-launch onboarding tour + guest Versus preview SHIPPED
+> **Confirmed:** 2026-07-21 (**Profile rebuilt around a FUT-style player card.**
+> Branch `feat/profile-player-card`, migration **82 APPLIED to prod**.
+> **The page:** a hero row — YourScore rank, accuracy, streak and Share on the left; the
+> **player card** on the right (rating, archetype, real club crest from `club_supporters`,
+> avatar, six attributes). Then the **ladder** (2 above / you / 1 below, progress bar, and a
+> concrete "18,150 pts overtakes tatty · a strong quiz run closes it"), the **medal shelf**,
+> **"where your points come from"** — which says out loud that daily quiz, World Cup and
+> seasons earn NOTHING toward Rank — and recent games.
+> **The card is rated on being a YourScore player, never one game:** KNO accuracy · PAC answer
+> speed · WIN record · CON streak · RNG breadth · SOC social. A new game feeds the existing six
+> rather than earning its own slot. Tiers Bronze/Silver/Gold/Icon; archetype = your leading
+> attribute, so two players on 84 read differently. **Nobody scores zero** — floor 38, a new
+> player is a real Bronze ROOKIE.
+> **25 medals** (`src/lib/medals.ts`), every threshold calibrated against the REAL distribution,
+> not instinct: 67% of players have a 38-0 win but only 0.7% have answered 100 quiz questions,
+> so the 38-0 ladder carries the volume and quiz tiers sit at 15/50/150. Rarity is the pride
+> mechanic and is printed on each medal. **Social medals deliberately absent — no player has 5
+> friends.** `Ever-Present` (30 days) has zero holders on purpose. Percentages are DATED
+> constants measured 2026-07-21; they drift, and a nightly job is the fix when wanted.
+> **Avatars:** 16 generated character portraits at `public/avatars/*.webp`
+> (`scripts/gen-avatars.mjs`), replacing the old object icons. Only 1 user had the old set.
+> **Gotchas:** a cross-origin URL in an SVG `<image href>` renders as a BROKEN TILE — 3,367 of
+> 9,786 profiles are Google account photos, so the card layers the photo as an HTML `<img>` over
+> the SVG (`foreignObject` is worse: blank). Readable content must clear the badge taper or it
+> reads off-centre when it isn't. Card size is a `width` prop so a share/OG render can use full
+> size. Also: `profiles.games_played` is 0 on all 9,400 rows — never read it.
+> ⚠️ **STILL OPEN — `yourscore_user_ratings` is wrong:** it joins `draft_standings` on
+> `league_id` only, ignoring `competition`, so **340 users get two ranks** and **280 have their
+> 38-0 score split across PL/WC and never summed** (worst: `goat1993`, −114,000 pts). Untouched
+> — it changes real ranks and needs a product call.)
+>
+> **Previously confirmed:** 2026-07-21 late (**First-launch onboarding tour + guest Versus preview SHIPPED
 > to prod.** A 5-step spotlight walkthrough (`SpotlightTour`, mounted in the root layout) that
 > navigates the real app: Play games row → Versus action cards → PL section bar → your rank
 > (signed-in only) → ends on Home spotlighting the Today's Game hero. Pulsing beacon on the
