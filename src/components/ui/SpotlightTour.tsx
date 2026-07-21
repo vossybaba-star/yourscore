@@ -134,6 +134,7 @@ export function SpotlightTour() {
   const forcedRef = useRef(false);
   const startedRef = useRef(false); // arms at most once per mount (once per app session)
   const runIdRef = useRef(0); // invalidates in-flight seek/poll loops on Skip/Next/finish
+  const lastAutoScrollRef = useRef(0); // throttles pull-back scrolls when a target leaves the viewport
 
   // Dev QA helper — wired unconditionally (not gated on eligibility) so a dev
   // whose flag is already set can still call it to replay the tour.
@@ -178,13 +179,16 @@ export function SpotlightTour() {
       }
 
       const deadline = Date.now() + TARGET_WAIT_MS;
-      const smooth = !reducedMotion();
 
       const poll = () => {
         if (runIdRef.current !== myRun) return; // superseded — abandon this loop
         const el = findTarget(step.selectors);
         if (el) {
-          el.scrollIntoView({ block: "center", behavior: smooth ? "smooth" : "auto" });
+          // "auto" (instant), never "smooth": smooth programmatic scrolls
+          // silently no-op in some webviews/automation contexts, leaving the
+          // spotlight measuring an off-screen target. The overlay dim + the
+          // spotlight's own 0.25s transition carry the polish instead.
+          el.scrollIntoView({ block: "center", behavior: "auto" });
           window.setTimeout(() => {
             if (runIdRef.current !== myRun) return;
             setRect(rectOf(el));
@@ -268,6 +272,15 @@ export function SpotlightTour() {
         return;
       }
       const next = rectOf(el);
+      // The page can scroll the target fully out of view after our initial
+      // scrollIntoView (e.g. a landing page resetting scroll on hydration) —
+      // a spotlight the user can't see is a broken step, so pull it back.
+      // Throttled so it can't fight a user actively scrolling mid-step.
+      const outOfView = next.top > window.innerHeight || next.top + next.height < 0;
+      if (outOfView && Date.now() - lastAutoScrollRef.current > 1500) {
+        lastAutoScrollRef.current = Date.now();
+        el.scrollIntoView({ block: "center", behavior: "auto" }); // instant on purpose — see seek()
+      }
       setRect((cur) => (cur && sameRect(cur, next) ? cur : next));
       const navEl = findNavTarget(step.navHref);
       if (navEl) {
