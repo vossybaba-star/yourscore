@@ -8,6 +8,8 @@ import { FlagImage } from "@/components/ui/FlagImage";
 import { getPlayerCutoutUrl } from "@/lib/playerImages";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { DownloadAppButton } from "@/components/app/DownloadAppButton";
+import { coverUrl } from "@/lib/img";
+import type { TodaysGame } from "@/lib/daily-game";
 
 export interface LiveMatch {
   id: string;
@@ -193,6 +195,50 @@ function LeagueHeroCard() {
   );
 }
 
+// ── Today's Game (guest acquisition surface) ─────────────────────────────────
+// Same hero content as the signed-in dashboard — one game a day, same for
+// everyone. Guests can already play quizzes solo, so this links straight
+// into the real game; no sign-in gate.
+
+const TODAYS_GAME_ACCENT: Record<TodaysGame["gameType"], string> = {
+  quiz: "#00d8c0",
+  "perfect-10": "#ffc233",
+  "higher-lower": "#ff7800",
+  "guess-the-player": "#4fc3f7",
+};
+
+function TodaysGameCard({ game }: { game: TodaysGame }) {
+  const accent = TODAYS_GAME_ACCENT[game.gameType];
+  return (
+    <section className="relative z-10 max-w-6xl mx-auto px-6 pb-10">
+      <p className="font-body text-xs uppercase tracking-widest mb-3" style={{ color: accent }}>Today&apos;s game</p>
+      <Link href={game.href}
+        className="relative flex items-center gap-4 rounded-2xl overflow-hidden transition-transform active:scale-[0.99] hover:opacity-95"
+        style={{ border: `1px solid ${accent}40`, minHeight: 110 }}>
+        {game.coverImage ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={coverUrl(game.coverImage, 440) ?? game.coverImage} alt="" loading="eager" decoding="async"
+            className="absolute inset-0 h-full w-full object-cover object-bottom" />
+        ) : (
+          <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${accent}30, #0c1613)` }} />
+        )}
+        <div className="absolute inset-0" style={{ background: "linear-gradient(90deg, rgba(6,10,8,0.92) 0%, rgba(6,10,8,0.55) 55%, rgba(6,10,8,0.15) 100%)" }} />
+        <div className="relative flex items-center gap-4 px-6 py-5 w-full">
+          <div className="flex-1 min-w-0">
+            <p className="font-display text-2xl sm:text-3xl text-white leading-tight" style={{ textShadow: "0 1px 12px rgba(0,0,0,0.6)" }}>{game.title}</p>
+            <p className="font-body text-sm mt-1" style={{ color: "#c4ccc6" }}>{game.sub} · play free, no sign-in needed</p>
+          </div>
+          <span className="flex items-center justify-center rounded-full flex-shrink-0" style={{ width: 44, height: 44, background: accent }}>
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ color: "#04231f" }}>
+              <path d="M6 3l6 6-6 6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
+        </div>
+      </Link>
+    </section>
+  );
+}
+
 // ── Upcoming fixtures (data fetched server-side, passed as prop) ──────────────
 
 function UpcomingFixturesSection({ matches }: { matches: LiveMatch[] }) {
@@ -237,7 +283,7 @@ function UpcomingFixturesSection({ matches }: { matches: LiveMatch[] }) {
 
 // ── Marketing landing (logged-out) ───────────────────────────────────────────
 
-export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
+export function MarketingLanding({ matches, todaysGame }: { matches: LiveMatch[]; todaysGame: TodaysGame }) {
   const [timerValue, setTimerValue] = useState(45);
   const [countdownLeftUrl, setCountdownLeftUrl] = useState<string | null>(null);
   const [countdownRightUrl, setCountdownRightUrl] = useState<string | null>(null);
@@ -484,6 +530,10 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
         </div>
         </div>
       </section>
+
+      {/* ── Today's Game — acquisition surface, no sign-in required. The
+          onboarding tour's final step points here for guests (data-tour). */}
+      <div data-tour="todays-game"><TodaysGameCard game={todaysGame} /></div>
 
       {/* ── 38-0 tile ────────────────────────────────────────────────────── */}
       <section className="relative z-10 max-w-6xl mx-auto px-6 pb-6">

@@ -3,15 +3,52 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getUserBounded } from "@/lib/supabase/bounded";
 import { MarketingLanding } from "@/components/home/MarketingLanding";
+import { resolveTodaysGame, type TodaysGame } from "@/lib/daily-game";
+import { loadListForDay, loadAttempt } from "@/lib/games/perfect10";
 import {
   Dashboard,
   type DashboardData,
-  type FeaturedPack,
   type LeaguePosition,
   type PlayNextInfo,
   type RivalryInfo,
   type RecommendedPack,
 } from "@/components/home/Dashboard";
+
+// Did the signed-in player already finish today's featured game? Only quiz
+// and Perfect 10 persist a per-day, per-player record to check against —
+// Higher or Lower / Guess the Player have no day-locked content (their
+// existing routes serve a fresh random round each time), so there's nothing
+// to compare "today's" attempt to; they're treated as never-done here.
+async function resolveTodaysCompletion(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  userId: string,
+  game: TodaysGame
+): Promise<{ done: boolean; score: number | null } | null> {
+  if (game.gameType === "quiz" && game.packId) {
+    const { data } = await supabase
+      .from("quiz_attempts")
+      .select("score, completed_at")
+      .eq("user_id", userId)
+      .eq("pack_id", game.packId)
+      .order("completed_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (data?.completed_at) {
+      const day = new Date(data.completed_at).toLocaleDateString("en-CA", { timeZone: "Europe/London" });
+      if (day === game.day) return { done: true, score: Number(data.score ?? 0) };
+    }
+    return { done: false, score: null };
+  }
+  if (game.gameType === "perfect-10") {
+    const list = await loadListForDay(game.day);
+    if (!list) return { done: false, score: null };
+    const attempt = await loadAttempt(list.id, userId);
+    if (attempt?.done) return { done: true, score: attempt.score };
+    return { done: false, score: null };
+  }
+  return { done: false, score: null };
+}
 
 export const metadata: Metadata = {
   title: "YourScore | The Home of Football Gaming",
@@ -61,9 +98,14 @@ export default async function RootPage({
   const supabase = await createClient();
   const user = await getUserBounded(supabase);
 
+  // Today's Game — one hero, same for every visitor on this London calendar
+  // day. Both `daily_games` and published `quiz_packs` are public-read, so
+  // this resolves identically whether or not `user` is set below.
+  const todaysGame = await resolveTodaysGame(supabase);
+
   // ── Logged-out: marketing landing ──────────────────────────────────────────
   if (!user) {
-    return <MarketingLanding matches={[]} />;
+    return <MarketingLanding matches={[]} todaysGame={todaysGame} />;
   }
 
   // ── Logged-in: dashboard ───────────────────────────────────────────────────
@@ -83,7 +125,6 @@ export default async function RootPage({
     { data: profile },
     { data: rankRows },
     { data: standingRows },
-    { data: featuredRaw },
     { data: recentMatches },
     { data: wcRunRows },
     { count: openLobbiesCount },
@@ -96,13 +137,6 @@ export default async function RootPage({
     // Unified rank (two-track) — same RPC the profile uses; gives rank + chase gap.
     sb.rpc("get_yourscore_rank", { p_user_id: userId }),
     supabase.rpc("get_my_league_standings", { p_user_id: userId, p_limit: 20 }),
-    sb
-      .from("quiz_packs")
-      .select("id, name, type, parameter, question_count, featured_order, metadata, created_at")
-      .eq("featured", true)
-      .eq("status", "published")
-      .order("featured_order", { ascending: true })
-      .limit(8),
     // 38-0 play days (45d) — feeds the day streak + week dots. Was limit(12)
     // with NO date floor: a busy day's 12 matches silently wiped every earlier
     // streak day from this source.
@@ -166,19 +200,6 @@ export default async function RootPage({
       .gte("created_at", streakCutoff)
       .limit(500),
   ]);
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const featuredPacks: FeaturedPack[] = ((featuredRaw as any) ?? []).map((p: any) => ({
-    id: String(p.id),
-    name: String(p.name),
-    type: String(p.type),
-    parameter: String(p.parameter ?? ""),
-    question_count: Number(p.question_count ?? 10),
-    icon: p.metadata?.icon ? String(p.metadata.icon) : undefined,
-    coverImage: p.metadata?.cover_image ? String(p.metadata.cover_image) : undefined,
-    publishedAt: p.created_at ? String(p.created_at) : undefined,
-    series: p.metadata?.series ? String(p.metadata.series) : undefined,
-  }));
 
   // ── Rank (from get_yourscore_rank) ──────────────────────────────────────────
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -313,16 +334,19 @@ export default async function RootPage({
   const openLobbies = openLobbiesCount ?? 0;
 
   // ── "Play next" — pick the single most relevant action by live state ────────
-  let playNext: PlayNextInfo;
+  // No generic quiz fallback here anymore — Today's Game is the hero now, so
+  // when there's no run to resume and no lobby to join, playNext is simply null.
+  let playNext: PlayNextInfo | null = null;
   if (wcRun) {
     // Sub is the stage only — never "<Nation> · <Stage>", which read as if the
     // player *represents* the nation. The run is theirs, not a country's.
     playNext = { kind: "wc", href: "/38-0/wc", title: "Resume your run", sub: `Pick up at the ${wcRun.stage}` };
   } else if (openLobbies > 0) {
     playNext = { kind: "lobby", href: "/play", title: "Join a lobby", sub: `${openLobbies} open right now — jump in` };
-  } else {
-    playNext = { kind: "quiz", href: "/play", title: "Jump into a quiz", sub: "Daily questions · climb your rank" };
   }
+
+  // ── Today's Game completion — score + share, not a replay nudge ─────────────
+  const todaysGameCompletion = await resolveTodaysCompletion(supabase, userId, todaysGame);
 
   // ── Leagues: my position + gap to the spot above, per league ────────────────
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -368,7 +392,8 @@ export default async function RootPage({
     playNext,
     openLobbies,
     leagues,
-    featuredPacks,
+    todaysGame,
+    todaysGameCompletion,
   };
 
   return <Dashboard data={data} />;

@@ -5,6 +5,7 @@ import { calculateBasePoints } from "@/lib/scoring";
 import {
   buildRound,
   clientRound,
+  dailySeed,
   gradeAnswer,
   revealFor,
   difficultyBand,
@@ -23,6 +24,12 @@ import {
 //
 //   { action: "draw" }                          → { seed, questions: [{idx,format,prompt,difficulty,options:[{id,label}]}] }
 //   { action: "answer", seed, idx, optionId, elapsedMs } → { correct, answerId, points }
+//
+// `daily: true` on a draw request asks for the pinned "Today's Game" round
+// (see src/lib/games/serve.ts dailySeed) instead of a fresh random one — the
+// seed is derived server-side from today's London date, so it can't be
+// spoofed into a different (e.g. future) day's round, and any client-sent
+// `topic` is ignored so a chosen topic can't break comparability.
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -40,7 +47,7 @@ export async function POST(req: NextRequest, { params }: { params: { type: strin
   const { ok } = await rateLimitDistributed(`games:${type}:${ip}`, 120, 60_000);
   if (!ok) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
 
-  let body: { action?: string; seed?: unknown; idx?: unknown; optionId?: unknown; elapsedMs?: unknown; topic?: unknown };
+  let body: { action?: string; seed?: unknown; idx?: unknown; optionId?: unknown; elapsedMs?: unknown; topic?: unknown; daily?: unknown };
   try {
     body = await req.json();
   } catch {
@@ -48,13 +55,19 @@ export async function POST(req: NextRequest, { params }: { params: { type: strin
   }
 
   if (body.action === "draw") {
+    const isDaily = body.daily === true;
     // Higher-or-Lower can be scoped to one topic; it's baked into the seed so
     // grading rebuilds the same round. Anything else (incl. undefined) = mixed.
+    // The pinned daily round always forces mixed — a client-chosen topic
+    // would make two players' "Today's Game" rounds diverge.
     const prefix =
-      type === "higher-lower" && typeof body.topic === "string" && isHlTopic(body.topic)
+      !isDaily && type === "higher-lower" && typeof body.topic === "string" && isHlTopic(body.topic)
         ? body.topic
         : "mixed";
-    const seed = `${prefix}:${randomUUID()}`;
+    // Daily round: seed comes from today's server-computed London date, not
+    // the client, so the pinned round can't be spoofed or scouted ahead of
+    // time. Everything else: a fresh random seed, same as before.
+    const seed = isDaily ? dailySeed() : `${prefix}:${randomUUID()}`;
     const round = buildRound(type, seed, ROUND_SIZE);
     return NextResponse.json({ seed, window: GAME_WINDOW_MS, questions: clientRound(round) });
   }

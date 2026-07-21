@@ -17,6 +17,7 @@
 
 import poolData from "@/data/games/pool.json";
 import { seededRng, shuffle } from "./rng";
+import { londonDateISO } from "./perfect10";
 
 export const GAME_TYPES = ["higher-lower", "guess-the-player"] as const;
 export type GameType = (typeof GAME_TYPES)[number];
@@ -104,6 +105,22 @@ export function poolSize(type: GameType): number {
  */
 export function topicFromSeed(seed: string): string {
   return seed.split(":", 1)[0] ?? "";
+}
+
+/**
+ * The "Today's Game" pinned-round seed — deterministic per London calendar
+ * date (`londonDateISO()`, reused from perfect10.ts) so every player who
+ * reaches Higher or Lower / Guess the Player via the daily hero link on the
+ * SAME date gets the SAME round in the SAME order. `prefix` is always
+ * "mixed" here: topic choice isn't offered for the pinned round (a player
+ * picking a topic would no longer be comparable to one who didn't), so the
+ * caller must not thread a user-selected Higher-or-Lower topic through.
+ * Outside the daily slot (buildRound called with a random-UUID seed instead)
+ * both games keep full topic choice + fresh rounds — this only affects the
+ * pinned path.
+ */
+export function dailySeed(date: string = londonDateISO()): string {
+  return `mixed:daily:${date}`;
 }
 
 /**

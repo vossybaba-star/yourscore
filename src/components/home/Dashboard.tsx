@@ -13,8 +13,8 @@ import { usePendingFriends } from "@/hooks/usePendingFriends";
 import { usePendingTurns } from "@/hooks/usePendingTurns";
 import { DebateCard } from "@/components/debate/DebateCard";
 import { HalftimeCard } from "@/components/halftime/HalftimeCard";
-
-const WORLD_CUP_START = new Date("2026-06-11T18:00:00Z");
+import { trackShare } from "@/lib/analytics/trackGame";
+import type { TodaysGame } from "@/lib/daily-game";
 
 const LIME = "#aeea00";
 const TEAL = "#00d8c0";
@@ -61,7 +61,7 @@ export interface WcRunInfo {
   groupPoints: number;
 }
 
-export type PlayNextKind = "wc" | "lobby" | "draft" | "quiz";
+export type PlayNextKind = "wc" | "lobby" | "draft";
 
 export interface PlayNextInfo {
   kind: PlayNextKind;
@@ -80,27 +80,6 @@ export interface LeaguePosition {
   aboveName: string | null;
 }
 
-export interface FeaturedPack {
-  id: string;
-  name: string;
-  type: string;
-  parameter: string;
-  question_count: number;
-  icon?: string;
-  coverImage?: string;
-  publishedAt?: string;
-  /** metadata.series — "wc2026" marks the daily World Cup quiz series. */
-  series?: string;
-}
-
-// Short "5 Jul" style date for the featured card.
-function shortDate(iso?: string): string | null {
-  if (!iso) return null;
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return null;
-  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
-}
-
 export interface DashboardData {
   userId: string;
   displayName: string;
@@ -111,30 +90,13 @@ export interface DashboardData {
   recommended: RecommendedPack[];
   played38: boolean;
   wcRun: WcRunInfo | null;
-  playNext: PlayNextInfo;
+  playNext: PlayNextInfo | null;
   openLobbies: number;
   leagues: LeaguePosition[];
-  featuredPacks: FeaturedPack[];
-}
-
-// ── World Cup countdown ───────────────────────────────────────────────────────
-
-function WorldCupCountdown() {
-  const [diff, setDiff] = useState<number | null>(null);
-  useEffect(() => {
-    setDiff(WORLD_CUP_START.getTime() - Date.now());
-    const iv = setInterval(() => setDiff(WORLD_CUP_START.getTime() - Date.now()), 1000);
-    return () => clearInterval(iv);
-  }, []);
-  if (diff === null || diff <= 0) return null;
-  const days = Math.floor(diff / 86400000);
-  const hours = Math.floor((diff % 86400000) / 3600000);
-  const mins = Math.floor((diff % 3600000) / 60000);
-  return (
-    <span className="font-display tabular-nums" style={{ color: GOLD }}>
-      {days}d {String(hours).padStart(2, "0")}h {String(mins).padStart(2, "0")}m
-    </span>
-  );
+  /** The single hero: today's featured game (Europe/London calendar day). */
+  todaysGame: TodaysGame;
+  /** null = not signed in / not yet checked; done=false = not played today. */
+  todaysGameCompletion: { done: boolean; score: number | null } | null;
 }
 
 const DASH_ANIM = `
@@ -304,27 +266,86 @@ function RivalryModule({ rivalry, meName, meId }: { rivalry: RivalryInfo | null;
   );
 }
 
-// ── 3. Featured quiz card ─────────────────────────────────────────────────────
-// The clear play-now moment: full-width art, name, question count, one chevron.
+// ── 3. Today's Game — THE single hero ───────────────────────────────────────
+// One featured game a day, same for everyone (see src/lib/daily-game.ts).
+// Playable → full-width art/accent card, one tap into the real game. Already
+// played today → a done state with the score + a share action, never a
+// replay nudge (founder call: the day is over, don't beg for a repeat).
 
-function FeaturedQuizCard({ pack }: { pack: FeaturedPack }) {
-  const isWcSeries = pack.series === "wc2026";
-  const posted = shortDate(pack.publishedAt);
+const GAME_ACCENT: Record<TodaysGame["gameType"], string> = {
+  quiz: TEAL,
+  "perfect-10": GOLD,
+  "higher-lower": "#ff7800",
+  "guess-the-player": "#4fc3f7",
+};
+
+function TodaysGameDone({ game, score }: { game: TodaysGame; score: number | null }) {
+  const [shared, setShared] = useState(false);
+  const accent = GAME_ACCENT[game.gameType];
+
+  async function handleShare() {
+    trackShare("todays-game");
+    const text = `I scored ${(score ?? 0).toLocaleString()} on today's ${game.title} on YourScore — can you beat it?`;
+    const url = "https://yourscore.app";
+    if (typeof navigator !== "undefined" && "share" in navigator) {
+      try {
+        await navigator.share({ text, url });
+        return;
+      } catch {
+        // cancelled — fall through to clipboard
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(`${text} ${url}`);
+      setShared(true);
+      setTimeout(() => setShared(false), 2500);
+    } catch { /* ignore */ }
+  }
+
   return (
     <div className="d-3">
-      <SectionHead title="Featured quiz" href="/play" />
-      <Link href={`/challenges/${slugify(pack.name)}`}
+      <SectionHead title="Today's game" />
+      <div className="relative rounded-2xl overflow-hidden px-5 py-5"
+        style={{ background: `linear-gradient(135deg, ${accent}26, #0c1613)`, border: `1px solid ${accent}40` }}>
+        <p className="font-body text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: accent }}>Done for today</p>
+        <p className="font-display text-2xl text-white leading-tight mt-1.5">{game.title}</p>
+        <p className="font-display text-4xl mt-2" style={{ color: accent }}>{(score ?? 0).toLocaleString()}<span className="font-body text-sm ml-1.5" style={{ color: "#8a948f" }}>points</span></p>
+        <button onClick={handleShare}
+          className="mt-4 flex items-center gap-2 px-4 py-2.5 rounded-xl font-body text-sm font-semibold transition-all active:scale-95"
+          style={{ background: `${accent}18`, color: shared ? accent : "#c4ccc6", border: `1px solid ${shared ? accent : "rgba(255,255,255,0.12)"}` }}>
+          {shared ? "✓ Copied!" : (
+            <>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Share your score
+            </>
+          )}
+        </button>
+        <p className="font-body text-xs mt-3" style={{ color: "#8a948f" }}>Tomorrow&apos;s game lands at midnight — come back for the next one.</p>
+      </div>
+    </div>
+  );
+}
+
+function TodaysGamePlayable({ game }: { game: TodaysGame }) {
+  const accent = GAME_ACCENT[game.gameType];
+  const isWcSeries = game.series === "wc2026";
+  return (
+    <div className="d-3">
+      <SectionHead title="Today's game" />
+      <Link href={game.href}
         className="relative block rounded-2xl overflow-hidden transition-transform active:scale-[0.99]"
-        style={{ border: "1px solid rgba(0,216,192,0.25)", minHeight: 118 }}>
-        {pack.coverImage ? (
+        style={{ border: `1px solid ${accent}40`, minHeight: 118 }}>
+        {game.coverImage ? (
           // Covers are designed cards with the title baked into the TOP; here the
           // image is a backdrop (HTML title on the left), so crop from the bottom —
           // pure art, never a half-sliced baked title.
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={coverUrl(pack.coverImage, 440) ?? pack.coverImage} alt="" loading="eager" decoding="async" fetchPriority="high"
+          <img src={coverUrl(game.coverImage, 440) ?? game.coverImage} alt="" loading="eager" decoding="async" fetchPriority="high"
             className="absolute inset-0 h-full w-full object-cover object-bottom" />
         ) : (
-          <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, rgba(0,216,192,0.25), #0c1613)" }} />
+          <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${accent}40, #0c1613)` }} />
         )}
         {/* left-anchored scrim keeps the title readable on any art */}
         <div className="absolute inset-0" style={{ background: "linear-gradient(90deg, rgba(6,10,8,0.92) 0%, rgba(6,10,8,0.55) 55%, rgba(6,10,8,0.15) 100%)" }} />
@@ -337,12 +358,10 @@ function FeaturedQuizCard({ pack }: { pack: FeaturedPack }) {
                 World Cup quiz series
               </span>
             )}
-            <p className="font-display text-2xl text-white leading-tight" style={{ textShadow: "0 1px 12px rgba(0,0,0,0.6)" }}>{pack.name}</p>
-            <p className="font-body text-xs mt-1" style={{ color: "#c4ccc6" }}>
-              {posted ? `Posted ${posted} · ` : ""}{pack.question_count} questions
-            </p>
+            <p className="font-display text-2xl text-white leading-tight" style={{ textShadow: "0 1px 12px rgba(0,0,0,0.6)" }}>{game.title}</p>
+            <p className="font-body text-xs mt-1" style={{ color: "#c4ccc6" }}>{game.sub}</p>
           </div>
-          <span className="flex items-center justify-center rounded-full flex-shrink-0" style={{ width: 36, height: 36, background: TEAL }}>
+          <span className="flex items-center justify-center rounded-full flex-shrink-0" style={{ width: 36, height: 36, background: accent }}>
             <svg width="15" height="15" viewBox="0 0 18 18" fill="none" style={{ color: "#04231f" }}>
               <path d="M6 3l6 6-6 6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
@@ -351,6 +370,11 @@ function FeaturedQuizCard({ pack }: { pack: FeaturedPack }) {
       </Link>
     </div>
   );
+}
+
+function TodaysGameHero({ game, completion }: { game: TodaysGame; completion: { done: boolean; score: number | null } | null }) {
+  if (completion?.done) return <TodaysGameDone game={game} score={completion.score} />;
+  return <TodaysGamePlayable game={game} />;
 }
 
 // ── 4. Behaviour-based discovery rail ─────────────────────────────────────────
@@ -471,11 +495,10 @@ function PendingTurnsNotice() {
 // ── Main ────────────────────────────────────────────────────────────────────────
 
 export function Dashboard({ data }: { data: DashboardData }) {
-  const { userId, displayName, rank, dayStreak, weekDots, rivalry, recommended, played38, wcRun, openLobbies, leagues, featuredPacks } = data;
+  const { userId, displayName, rank, dayStreak, weekDots, rivalry, recommended, played38, wcRun, openLobbies, leagues, todaysGame, todaysGameCompletion } = data;
 
-  const featured = featuredPacks[0] ?? null;
   // Don't recommend the pack that's already the hero.
-  const rail = recommended.filter((p) => p.id !== featured?.id).slice(0, 5);
+  const rail = recommended.filter((p) => p.id !== todaysGame.packId).slice(0, 5);
 
   return (
     <main className="min-h-dvh bg-bg pb-28">
@@ -488,7 +511,6 @@ export function Dashboard({ data }: { data: DashboardData }) {
         <nav className="flex items-center justify-between px-5 py-4 max-w-lg mx-auto">
           <Image src="/logo.png" alt="YourScore" width={95} height={28} priority style={{ height: 28, width: "auto" }} />
           <div className="flex items-center gap-3">
-            <span className="font-body text-xs" style={{ color: "#8a948f" }}>WC <WorldCupCountdown /></span>
             <Link href="/profile" className="w-9 h-9 rounded-full flex items-center justify-center font-body font-bold text-sm transition-opacity hover:opacity-80"
               style={{ background: "linear-gradient(135deg, #1a2f4a, #3a423d)", color: LIME, border: "1.5px solid rgba(174,234,0,0.25)" }}>
               {(displayName || "?")[0].toUpperCase()}
@@ -524,8 +546,9 @@ export function Dashboard({ data }: { data: DashboardData }) {
         {/* 2. Rivalry */}
         <RivalryModule rivalry={rivalry} meName={displayName ? displayName.split(" ")[0] : "You"} meId={userId} />
 
-        {/* 3. Featured quiz — the play-now moment */}
-        {featured && <div data-tour="todays-quiz"><FeaturedQuizCard pack={featured} /></div>}
+        {/* 3. Today's Game — THE single hero, playable or done+share. The
+            onboarding tour's final step points here (data-tour). */}
+        <div data-tour="todays-game"><TodaysGameHero game={todaysGame} completion={todaysGameCompletion} /></div>
 
         {/* Today's debate — one tap, daily habit (moved here from Versus) */}
         <div className="d-4">

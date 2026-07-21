@@ -59,11 +59,14 @@ const STEPS: Step[] = [
     signedInOnly: true,
   },
   {
-    route: "/play",
-    selectors: ['[data-tour="play-featured"]', '[data-tour="games"]'],
-    navHref: "/play",
+    // Ends on Home at the Today's Game hero — both audiences render it
+    // (Dashboard for signed-in, MarketingLanding's acquisition surface for
+    // guests), so "Let's go" leaves them one tap from today's game.
+    route: "/",
+    selectors: ['[data-tour="todays-game"]'],
+    navHref: "/",
     title: "Start here",
-    body: "Today's quiz is live — play it now and set your first score.",
+    body: "Today's game is live — play it now and set your first score.",
   },
 ];
 
