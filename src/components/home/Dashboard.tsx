@@ -525,7 +525,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
         <RivalryModule rivalry={rivalry} meName={displayName ? displayName.split(" ")[0] : "You"} meId={userId} />
 
         {/* 3. Featured quiz — the play-now moment */}
-        {featured && <FeaturedQuizCard pack={featured} />}
+        {featured && <div data-tour="todays-quiz"><FeaturedQuizCard pack={featured} /></div>}
 
         {/* Today's debate — one tap, daily habit (moved here from Versus) */}
         <div className="d-4">

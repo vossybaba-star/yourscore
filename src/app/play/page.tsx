@@ -63,6 +63,7 @@ function HeroPackCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: str
       href={`/challenges/${slug}${challengeTo ? `?challenge=${challengeTo}` : ""}`}
       className="relative block rounded-3xl overflow-hidden mb-3 transition-all duration-150 active:scale-[0.98]"
       style={{ border: "1px solid rgba(0,216,192,0.3)" }}
+      data-tour="play-featured"
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={coverUrl(cover, 840) ?? cover} alt={pack.name}

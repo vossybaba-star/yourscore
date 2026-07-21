@@ -201,7 +201,7 @@ export default async function ProfilePage() {
 
         {/* YourScore leaderboard hero — position first, one points currency */}
         {rank && overallRank !== null && (
-          <div className="rounded-2xl px-5 py-4"
+          <div className="rounded-2xl px-5 py-4" data-tour="rank"
             style={{ background: "linear-gradient(135deg, rgba(174,234,0,0.1), rgba(174,234,0,0.05))", border: `1px solid ${positionColor(overallRank)}33` }}>
             <div className="flex items-end justify-between">
               <div>

@@ -252,17 +252,33 @@ function VersusInner() {
   const [sheet, setSheet] = useState<null | { kind: "game"; target?: string | null } | { kind: "code" }>(null);
 
   // Guests keep the nav (they arrived via the guest BottomNav — removing it
-  // strands them here) and get a create-account path, not just sign-in.
-  // /auth/sign-in handles both; ?next brings them straight back.
+  // strands them here) and see the REAL Versus surface in preview: the actual
+  // action cards render (founder 2026-07-21 — show what the tab looks like,
+  // not a sign-in wall), but every tap inside the preview routes to sign-in
+  // via a capture handler, so nothing behind it ever fires for a guest.
+  // /auth/sign-in handles create-account too; ?next brings them straight back.
   if (!loading && !user) {
     return (
-      <main className="min-h-dvh bg-bg grid place-items-center px-6 pb-28">
-        <div className="text-center w-full max-w-sm">
-          <div className="mx-auto mb-5 w-fit"><GameGlyph game="38-0" size={40} /></div>
-          <p className="font-display text-3xl text-white mb-2">Challenge your friends</p>
-          <p className="font-body text-sm text-text-muted mb-6">Go head-to-head in 38-0 and Quiz Battle. Build rivalries, settle arguments, keep the score.</p>
-          <Link href="/auth/sign-in?next=/versus" className="block rounded-2xl px-6 py-3.5 font-display tracking-wide mb-3" style={{ background: TEAL, color: "#04231f" }}>CREATE FREE ACCOUNT →</Link>
-          <Link href="/auth/sign-in?next=/versus" className="block rounded-2xl px-6 py-3.5 font-display tracking-wide" style={{ background: "rgba(255,255,255,0.06)", color: "#cdeee7", border: "1px solid rgba(255,255,255,0.12)" }}>SIGN IN</Link>
+      <main className="min-h-dvh bg-bg px-5 pb-28 pt-7">
+        <div className="w-full max-w-lg mx-auto">
+          <div className="flex items-center gap-3 mb-1">
+            <GameGlyph game="38-0" size={28} />
+            <p className="font-display text-3xl text-white">Versus</p>
+          </div>
+          <p className="font-body text-sm text-text-muted mb-5">Go head-to-head in 38-0 and Quiz Battle. Build rivalries, settle arguments, keep the score.</p>
+          <div
+            data-tour="versus-actions"
+            onClickCapture={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              router.push("/auth/sign-in?next=/versus");
+            }}
+          >
+            <VersusActionCards onChallenge={() => {}} onJoinCode={() => {}} />
+          </div>
+          <p className="font-body text-xs text-center mt-5 mb-3" style={{ color: "#8a948f" }}>Free account, takes seconds — then challenge your friends.</p>
+          <Link href="/auth/sign-in?next=/versus" className="block rounded-2xl px-6 py-3.5 font-display tracking-wide text-center mb-3" style={{ background: TEAL, color: "#04231f" }}>CREATE FREE ACCOUNT →</Link>
+          <Link href="/auth/sign-in?next=/versus" className="block rounded-2xl px-6 py-3.5 font-display tracking-wide text-center" style={{ background: "rgba(255,255,255,0.06)", color: "#cdeee7", border: "1px solid rgba(255,255,255,0.12)" }}>SIGN IN</Link>
         </div>
         <BottomNav />
       </main>
@@ -328,7 +344,7 @@ function VersusInner() {
               </div>
             </div>
           )}
-          <div className="mt-2.5">
+          <div className="mt-2.5" data-tour="versus-actions">
             <VersusActionCards onChallenge={() => setSheet({ kind: "game" })} onJoinCode={() => setSheet({ kind: "code" })} />
           </div>
 

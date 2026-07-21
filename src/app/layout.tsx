@@ -14,6 +14,7 @@ import { AppStoreBanner } from "@/components/app/AppStoreBanner";
 import { NativeOnboarding } from "@/components/native/onboarding/NativeOnboarding";
 import { PushPrePrompt } from "@/components/native/PushPrePrompt";
 import { UpdateBanner } from "@/components/native/UpdateBanner";
+import { SpotlightTour } from "@/components/ui/SpotlightTour";
 import { TimezoneSync } from "@/components/TimezoneSync";
 import { SignupPixel } from "@/components/analytics/SignupPixel";
 import { AcquisitionCapture } from "@/components/analytics/AcquisitionCapture";
@@ -129,6 +130,10 @@ export default function RootLayout({
         <NativeOnboarding />
         <PushPrePrompt />
         <UpdateBanner />
+        {/* First-launch guided tour — mounted here (not in BottomNav) so it
+            survives client route changes instead of dying with whatever nav
+            component happened to render it. */}
+        <SpotlightTour />
         <TimezoneSync />
         <SignupPixel />
         <AcquisitionCapture />

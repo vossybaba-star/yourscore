@@ -72,7 +72,7 @@ export default function MatchweekPage() {
       </div>
 
       {/* Top-level section bar */}
-      <div className="max-w-lg mx-auto px-4">
+      <div className="max-w-lg mx-auto px-4" data-tour="pl-sections">
         <div className="flex gap-1.5 p-1 rounded-2xl" style={{ background: "rgba(255,255,255,0.04)" }}>
           {SECTIONS.map((s) => {
             const on = section === s.key;
