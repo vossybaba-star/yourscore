@@ -29,6 +29,12 @@ const RESERVE = Number(arg("--reserve", "1"));
  *  cash at a figure an honest round already reaches puts the flat top back. */
 const CAP = Number(arg("--cap", "0"));
 const capped = (p) => (CAP > 0 ? Math.min(CAP, p) : p);
+/** overflow = cash ONLY what the bank cap would have binned (the LOCKED design);
+ *  leftover = cash anything unspent above the reserve (the older, looser variant
+ *  the first cheat numbers were measured under). */
+const POLICY = arg("--policy", "leftover");
+/** 1 = weekly FPL-tracking prices + half-the-rise sell rule (see season-sim.mjs). */
+const PRICES = Number(arg("--prices", "0"));
 const OUT = arg("--out", "");
 
 function xfnv1a(s) { let h = 2166136261 >>> 0; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
@@ -97,6 +103,39 @@ function buildCalendar(rng) {
 }
 const fixturesOf = (cal, gw, club) => (cal ? (cal[gw].get(club) ?? 1) : 1);
 
+function buildPriceTrack(prng, form, avail) {
+  const out = new Map();
+  for (const p of players) {
+    const t = new Int16Array(39);
+    let cur = Math.round(p.price * 10);
+    t[1] = cur;
+    const f = form.get(p.id), av = avail.get(p.id);
+    const lo = Math.max(38, cur - 20), hi = cur + 25;
+    for (let g = 2; g <= 38; g++) {
+      const drive = f[g - 1];
+      const up = Math.min(0.3, Math.max(0, (drive - 1.05) * 0.35));
+      let dn = Math.min(0.3, Math.max(0, (0.95 - drive) * 0.35));
+      if (!av[g - 1]) dn = Math.min(0.45, dn + 0.15);
+      const r = prng();
+      if (r < up && cur < hi) cur += 1;
+      else if (r > 1 - dn && cur > lo) cur -= 1;
+      t[g] = cur;
+    }
+    out.set(p.id, t);
+  }
+  return out;
+}
+const priceAt = (track, p, gw) => (track ? track.get(p.id)[gw] : Math.round(p.price * 10));
+function sellVal(m, p, gw, track) {
+  const cur = priceAt(track, p, gw);
+  const buy = m.buy?.get(p.id) ?? Math.round(p.price * 10);
+  return cur <= buy ? cur : buy + Math.floor((cur - buy) / 2);
+}
+function adoptSquad(m, nb, gw, track) {
+  m.squad = nb.squad; m.bank = nb.bank;
+  m.buy = new Map(nb.squad.map((p) => [p.id, priceAt(track, p, gw)]));
+}
+
 function samplePoints(p, gw, form, rng, haulScale = 1) {
   const base = p.ppStart * form.get(p.id)[gw];
   if (rng() < Math.min(0.12, base / 45) * haulScale) return Math.max(2, Math.round(base * 2.2 + 4 + rng() * 8));
@@ -104,43 +143,49 @@ function samplePoints(p, gw, form, rng, haulScale = 1) {
 }
 const evNow = (p, gw, form, cal) => p.ev * form.get(p.id)[gw] * (cal ? Math.max(0.1, fixturesOf(cal, gw, p.club)) : 1);
 
-function buildSquad(rng, jitter = 4, style = "balanced") {
+function buildSquad(rng, jitter = 4, style = "balanced", priceOf = (p) => p.price, budget = BUDGET) {
   const squad = []; let spent = 0; const clubCount = new Map();
   const slots = [];
   for (const pos of ["GK", "DEF", "MID", "FWD"]) for (let i = 0; i < QUOTA[pos]; i++) slots.push(pos);
   for (let i = 0; i < slots.length; i++) {
     const pos = slots[i];
     const minRest = slots.slice(i + 1).reduce((s, ps) => s + MIN_PRICE[ps], 0);
-    const maxSpend = BUDGET - spent - minRest;
-    let cands = byPos[pos].filter((p) => !squad.includes(p) && p.price <= maxSpend && (clubCount.get(p.club) ?? 0) < 3);
+    const maxSpend = budget - spent - minRest;
+    let cands = byPos[pos].filter((p) => !squad.includes(p) && priceOf(p) <= maxSpend && (clubCount.get(p.club) ?? 0) < 3);
     if (style === "stars") {
       // 3 galácticos then pure fodder
-      const stars = squad.filter((p) => p.price >= 9.5).length;
+      const stars = squad.filter((p) => priceOf(p) >= 9.5).length;
       cands = stars < 3 && pos !== "GK"
-        ? cands.filter((p) => p.price >= 9.5).concat(cands).slice(0, cands.length || 1)
-        : [...cands].sort((a, b) => a.price - b.price);
+        ? cands.filter((p) => priceOf(p) >= 9.5).concat(cands).slice(0, cands.length || 1)
+        : [...cands].sort((a, b) => priceOf(a) - priceOf(b));
     }
     if (!cands.length) return null;
     const pick = cands[Math.min(cands.length - 1, Math.floor(rng() * jitter))];
-    squad.push(pick); spent += pick.price; clubCount.set(pick.club, (clubCount.get(pick.club) ?? 0) + 1);
+    squad.push(pick); spent += priceOf(pick); clubCount.set(pick.club, (clubCount.get(pick.club) ?? 0) + 1);
   }
-  return { squad, bank: Math.round((BUDGET - spent) * 10) / 10 };
+  return { squad, bank: Math.round((budget - spent) * 10) / 10 };
 }
 
-function bestReplacement(m, out, gw, avail, form, cal) {
+function bestReplacement(m, out, gw, avail, form, cal, track) {
   const owned = new Set(m.squad.map((p) => p.id));
   const clubCount = new Map();
   for (const p of m.squad) if (p !== out) clubCount.set(p.club, (clubCount.get(p.club) ?? 0) + 1);
-  const maxSpend = out.price + m.bank;
+  // budget = what the sale ACTUALLY raises (half the rise, all the fall) + bank
+  const maxSpendT = sellVal(m, out, gw, track) + Math.round(m.bank * 10);
   let best = null, bestEv = -1;
   for (const p of byPos[out.pos]) {
-    if (owned.has(p.id) || p.price > maxSpend || (clubCount.get(p.club) ?? 0) >= 3 || !avail.get(p.id)[gw]) continue;
+    if (owned.has(p.id) || priceAt(track, p, gw) > maxSpendT || (clubCount.get(p.club) ?? 0) >= 3 || !avail.get(p.id)[gw]) continue;
     const e = evNow(p, gw, form, cal);
     if (e > bestEv) { bestEv = e; best = p; }
   }
   return best;
 }
-function applySwap(m, out, inn) { m.squad[m.squad.indexOf(out)] = inn; m.bank = Math.round((m.bank + out.price - inn.price) * 10) / 10; }
+function applySwap(m, out, inn, gw, track) {
+  m.squad[m.squad.indexOf(out)] = inn;
+  const paid = priceAt(track, inn, gw);
+  m.bank = Math.round(m.bank * 10 + sellVal(m, out, gw, track) - paid) / 10;
+  if (m.buy) { m.buy.delete(out.id); m.buy.set(inn.id, paid); }
+}
 
 function pickXI(m, gw, avail, form, cal) {
   const evOf = (p) => (avail.get(p.id)[gw] && fixturesOf(cal, gw, p.club) > 0 ? evNow(p, gw, form, cal) : 0.1);
@@ -155,11 +200,16 @@ function pickXI(m, gw, avail, form, cal) {
 }
 
 function playWeek(m, gw, ctx, stats) {
-  const { avail, form, cal, curve, rng, haulScale } = ctx;
+  const { avail, form, cal, curve, rng, haulScale, track } = ctx;
   const a = m.a;
   const away = (a.away && gw >= a.away[0] && gw <= a.away[1]) || (a.quitAt && gw >= a.quitAt) || (a.joinAt && gw < a.joinAt);
   const participates = !away && rng() < (a.playProb ?? 1);
   if (gw === 20) { m.wc = 1; m.bonusMinted = 0; }
+  // Late join under moving prices: base budget at THIS week's prices.
+  if (track && a.joinAt && gw === a.joinAt) {
+    const nb = buildSquad(rng, 4, a.squadStyle ?? "balanced", (p) => priceAt(track, p, gw) / 10, BUDGET);
+    if (nb) adoptSquad(m, nb, gw, track);
+  }
   let hitPts = 0, convPts = 0, chip = null;
 
   if (participates) {
@@ -167,40 +217,51 @@ function playWeek(m, gw, ctx, stats) {
     if (m.played % 4 === 0) m.tokens = Math.min(3, m.tokens + 1); // generic chip token every 4 played GWs
     const correct = a.cheat ? 11 : Math.max(0, Math.min(11, Math.round(a.acc + (rng() + rng() + rng() - 1.5) * a.sd)));
     if (correct === 11 && m.bonusMinted < 1) { m.wc = Math.min(2, m.wc + 1); m.bonusMinted++; }
-    m.credits = Math.min(BANK_CAP, m.credits + curve(correct));
+    const minted = curve(correct);
+    if (POLICY === "overflow") {
+      // LOCKED design: only credits the bank cap would have binned cash out.
+      const banked = Math.min(BANK_CAP - m.credits, minted);
+      m.credits += banked;
+      const spilled = minted - banked;
+      if (CONVERT > 0 && spilled > 0) convPts = capped(convPts + spilled * CONVERT);
+    } else m.credits = Math.min(BANK_CAP, m.credits + minted);
 
     const problems = m.squad.filter((p) => !avail.get(p.id)[gw]);
     if (problems.length >= 3 && m.wc > 0) {
-      const nb = buildSquad(rng, 3, a.squadStyle ?? "balanced");
-      if (nb) { m.squad = nb.squad; m.bank = nb.bank; m.wc--; }
+      // Wildcard under moving prices: rebuild with TEAM VALUE at today's prices.
+      const budget = track
+        ? Math.round(m.squad.reduce((t, p) => t + sellVal(m, p, gw, track), 0) + m.bank * 10) / 10
+        : BUDGET;
+      const nb = buildSquad(rng, 3, a.squadStyle ?? "balanced", (p) => priceAt(track, p, gw) / 10, budget);
+      if (nb) { adoptSquad(m, nb, gw, track); m.wc--; }
     } else {
       for (const out of problems) {
         if (m.credits <= 0 && !(a.hits && out.ev > 3)) continue;
-        const inn = bestReplacement(m, out, gw, avail, form, cal);
+        const inn = bestReplacement(m, out, gw, avail, form, cal, track);
         if (!inn) continue;
         if (m.credits > 0) m.credits--; else { hitPts += HIT; m.hitsTaken++; }
-        applySwap(m, out, inn);
+        applySwap(m, out, inn, gw, track);
       }
       const thr = a.burnThreshold ?? 0.8;
       while ((a.upgrades ?? false) && m.credits > (a.spendPolicy === "hoard" ? 99 : 0)) {
         const { xi } = pickXI(m, gw, avail, form, cal);
         const worst = [...xi].sort((x, y) => evNow(x, gw, form, cal) - evNow(y, gw, form, cal)).find((p) => p.pos !== "GK");
-        const inn = worst && bestReplacement(m, worst, gw, avail, form, cal);
+        const inn = worst && bestReplacement(m, worst, gw, avail, form, cal, track);
         if (!inn || evNow(inn, gw, form, cal) < evNow(worst, gw, form, cal) + thr) break;
-        m.credits--; applySwap(m, worst, inn);
+        m.credits--; applySwap(m, worst, inn, gw, track);
       }
       // hit-spammer: chases form with -4s once credits are gone
       let spam = 0;
       while (a.hitAggr && m.credits === 0 && spam < (a.maxHitsWk ?? 2)) {
         const { xi } = pickXI(m, gw, avail, form, cal);
         const worst = [...xi].sort((x, y) => evNow(x, gw, form, cal) - evNow(y, gw, form, cal)).find((p) => p.pos !== "GK");
-        const inn = worst && bestReplacement(m, worst, gw, avail, form, cal);
+        const inn = worst && bestReplacement(m, worst, gw, avail, form, cal, track);
         if (!inn || evNow(inn, gw, form, cal) < evNow(worst, gw, form, cal) + (a.hitBar ?? 4.5)) break;
-        hitPts += HIT; m.hitsTaken++; spam++; applySwap(m, worst, inn);
+        hitPts += HIT; m.hitsTaken++; spam++; applySwap(m, worst, inn, gw, track);
       }
-      // Cash what the transfer market didn't want — reached only when no swap
-      // cleared the EV bar, i.e. a settled squad.
-      if (CONVERT > 0 && m.credits > RESERVE) {
+      // Cash what the transfer market didn't want (leftover policy only — the
+      // overflow policy already cashed at mint time, above).
+      if (CONVERT > 0 && POLICY === "leftover" && m.credits > RESERVE) {
         const cash = m.credits - RESERVE;
         m.credits = RESERVE;
         convPts = capped(convPts + cash * CONVERT);
@@ -253,7 +314,9 @@ function playWeek(m, gw, ctx, stats) {
 
 function newManager(key, a, rng) {
   const b = buildSquad(rng, 4, a.squadStyle ?? "balanced") ?? buildSquad(rng, 4);
-  return { a: { ...a, key }, squad: b.squad, bank: b.bank, credits: 0, wc: 1, bonusMinted: 0, tokens: 0,
+  return { a: { ...a, key }, squad: b.squad, bank: b.bank,
+           buy: new Map(b.squad.map((p) => [p.id, Math.round(p.price * 10)])),
+           credits: 0, wc: 1, bonusMinted: 0, tokens: 0,
            season: 0, months: {}, played: 0, hitsTaken: 0, deadSlots: 0 };
 }
 
@@ -265,9 +328,10 @@ function runPopulation(popDef, seasons, tag, { cal = false, afcon = false, amp =
     const avail = buildAvailability(rng, afcon);
     const form = buildForm(rng, amp);
     const calendar = cal ? buildCalendar(rng) : null;
+    const track = PRICES ? buildPriceTrack(rngFor(`${tag}:${s}:px`), form, avail) : null;
     const managers = [];
     for (const [key, def] of Object.entries(popDef)) for (let i = 0; i < def.n; i++) managers.push(newManager(key, def, rng));
-    const ctx = { avail, form, cal: calendar, curve, rng, haulScale };
+    const ctx = { avail, form, cal: calendar, curve, rng, haulScale, track };
     for (let gw = 1; gw <= 38; gw++) {
       for (const m of managers) playWeek(m, gw, ctx, stats);
       if (perGw) perGw(gw, managers, s, stats);
@@ -276,13 +340,15 @@ function runPopulation(popDef, seasons, tag, { cal = false, afcon = false, amp =
       const win = managers.filter((m) => m.months[mo]).sort((x, y) => y.months[mo] - x.months[mo])[0];
       if (win) { agg[win.a.key].monthWins++; if (win.chipMonths?.some((c) => c.mo === mo)) stats.chipMonthWins = (stats.chipMonthWins ?? 0) + 1; stats.monthTitles = (stats.monthTitles ?? 0) + 1; }
     }
-    for (const m of managers) { const g = agg[m.a.key]; g.pts.push(m.season); g.hits += m.hitsTaken; g.dead += m.deadSlots; g.played += m.played; g.n++; }
+    for (const m of managers) { const g = agg[m.a.key]; g.pts.push(m.season); g.hits += m.hitsTaken; g.dead += m.deadSlots; g.played += m.played; g.n++;
+      (g.tv ??= []).push(Math.round(m.squad.reduce((t, p) => t + sellVal(m, p, 38, track), 0) + m.bank * 10) / 10); }
   }
   const med = (a) => { const x = [...a].sort((p, q) => p - q); return x[Math.floor(x.length / 2)]; };
   const out = {};
   for (const [k, g] of Object.entries(agg)) out[k] = {
     median: med(g.pts), hitsPerSeason: +(g.hits / (g.n / (popDef[k].n))).toFixed(1) / popDef[k].n,
-    deadPerWk: +(g.dead / (g.n * 38)).toFixed(2), monthWins: g.monthWins, playedAvg: +(g.played / g.n).toFixed(1) };
+    deadPerWk: +(g.dead / (g.n * 38)).toFixed(2), monthWins: g.monthWins, playedAvg: +(g.played / g.n).toFixed(1),
+    teamValue: g.tv ? med(g.tv) : null };
   return { out, stats };
 }
 
@@ -310,7 +376,7 @@ if (MODE === "redteam") {
   console.log(`═══ RED TEAM (${S} seasons, curve B, vs honest solid) ═══`);
   const base = out.solid.median;
   for (const [k, v] of Object.entries(out))
-    console.log(`  ${k.padEnd(8)} median ${v.median} (${v.median >= base ? "+" : ""}${((v.median - base) / base * 100).toFixed(1)}% vs solid) · hits/season ${v.hitsPerSeason} · dead/wk ${v.deadPerWk} · month wins ${v.monthWins}`);
+    console.log(`  ${k.padEnd(8)} median ${v.median} (${v.median >= base ? "+" : ""}${((v.median - base) / base * 100).toFixed(1)}% vs solid) · hits/season ${v.hitsPerSeason} · dead/wk ${v.deadPerWk} · month wins ${v.monthWins}${PRICES ? ` · team value £${v.teamValue}` : ""}`);
   if (OUT) writeFileSync(OUT, JSON.stringify(out, null, 1));
 }
 

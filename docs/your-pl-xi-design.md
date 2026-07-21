@@ -376,6 +376,17 @@ knowledge-round performance.
    - The cash-out is the garnish, **not** the answer for the settled manager. The **knowledge
      rating** (§5) is: a real table, climbing on accuracy alone, that can't distort a fantasy
      title no matter who cheats it.
+   - **FULL-ECONOMY REGRESSION (measured 19 Jul, all three changes together — cash-out rate 4
+     overflow + weekly FPL prices + half-the-rise sell rule; the sim now models prices via
+     `--prices 1`):** effects compose cleanly, no interaction blowup. Edge 15.5%→22.5%; settled
+     +8.9%; **transfers/hits/dead-slots exactly at baseline** (8,571 / 11.6 / 0.13). Team values
+     stay healthy — everyone finishes £100.5–£101.9, engaged managers highest; **no squeeze, and
+     value-farming does not pay** (the churn-everything burner: −0.1%, same team value as honest).
+     Red team: hoarding −8.8%, skipping −9.7%, hit-spam 0.0%, late join always worse. **Cheating
+     = +6.9% and 2.5× the monthly-title rate of an equal honest player (27% of month titles from
+     8.6% of the population)** — the accepted trade, now stated in title terms. **Monthly-table
+     tilt (watch post-launch):** casual share of month titles falls 20.5%→13% because cash points
+     flow into monthly tables; the month resets the SCOREBOARD but not the knowledge advantage.
 
 8. **Economy regression suite:** any change to any economy number re-runs
    `scripts/fantasy/season-sim.mjs` + `analysis.mjs` (redteam/chaos/sense/hope).
@@ -405,6 +416,9 @@ knowledge-round performance.
 - **Balance targets (from simulation):** tune the premium-vs-standard scoring gap so knowledge
   is a **~10–15% season edge** (real, but any week still live); **Triple Captain on doubles =
   let it ride** (big dramatic swings allowed).
+  > **SUPERSEDED 14 Jul (founder):** choosing cash-out rate 4 knowingly moved the knowledge edge
+  > to **~22%** ("I'm actually kinda fine with that"). The 10–15% band no longer binds; the
+  > operative invariants are the red-team set (no strategy beats honest play) — which hold at 22%.
 - Formation options (fixed vs choosable); minimum batch sizes per position.
 - Weekly content authoring load (bespoke vs generated mix).
 - Branding kept visually distinct from the official PL (no official marks/colours), since
