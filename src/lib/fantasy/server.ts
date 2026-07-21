@@ -501,6 +501,20 @@ export async function removeChip(db: Db, userId: string) {
   if (!isOpenForEdits(gw, entry)) throw new HttpError(409, "gameweek is locked", "locked");
   const chip = entry.chip;
 
+  // A chip whose effect has already FIRED cannot be un-played — otherwise:
+  // take the 50/50, undo Insight, spend the refunded token on Triple Captain.
+  // Same for a retried answer, and for a wildcard that has already funded free
+  // transfers. Triple Captain / Bench Boost only act at scoring, so they stay
+  // freely undoable until the deadline.
+  const extras = entry as unknown as { round_hint_k: number | null; round_retry_k: number | null };
+  if (chip === "insight" && extras.round_hint_k !== null)
+    throw new HttpError(409, "Insight is already used this round — it can't be taken back", "consumed");
+  if (chip === "second_chance" && extras.round_retry_k !== null)
+    throw new HttpError(409, "your Second Chance is already used — it can't be taken back", "consumed");
+  if (chip === "wildcard" &&
+      (entry.transfers as { paid?: string }[]).some((t) => t?.paid === "free"))
+    throw new HttpError(409, "the wildcard has already funded free transfers — it can't be taken back", "consumed");
+
   const { data: cleared, error: eErr } = await db.from("fantasy_entries")
     .update({ chip: null }).eq("user_id", userId).eq("gw", gw.gw).eq("chip", chip).select("gw");
   if (eErr) throw new HttpError(500, eErr.message);
@@ -658,4 +672,125 @@ export async function viewRun(db: Db, viewerId: string, targetUserId: string, le
       right: answers[idx] === q.answerId,
     })),
   };
+}
+
+// ── the round chips: Insight + Second Chance (D:131) ─────────────────────────
+/**
+ * INSIGHT — a 50/50 on ONE question of your choosing. The chip must already be
+ * played (entry.chip = 'insight', spent through the normal chip slot), and the
+ * question it's spent on is stored: without round_hint_k, a "storage-free"
+ * deterministic hint could be requested on every question in turn.
+ * Eliminations are seeded, so a re-fetch of the same k returns the same two.
+ */
+export async function roundHint(db: Db, userId: string, k: number) {
+  const gw = await currentGw(db, userId);
+  const entry = await getEntry(db, userId, gw.gw);
+  if (!entry?.round_version) throw new HttpError(409, "round not started", "no-round");
+  if (entry.round_done_at) throw new HttpError(409, "round already complete", "done");
+  if (entry.chip !== "insight") throw new HttpError(409, "play the Insight chip first", "no-chip");
+  if (!isOpenForEdits(gw, entry)) throw new HttpError(409, "gameweek is locked", "locked");
+  if (k !== entry.round_answers.length) throw new HttpError(409, "hint is for the question in front of you", "order");
+  const hintK = (entry as unknown as { round_hint_k: number | null }).round_hint_k;
+  if (hintK !== null && hintK !== k) throw new HttpError(409, "your Insight is already spent this round", "used");
+
+  if (hintK === null) {
+    // CAS claim: two racing requests can't spend one hint on two questions.
+    const { data: claimed } = await db.from("fantasy_entries")
+      .update({ round_hint_k: k }).eq("user_id", userId).eq("gw", gw.gw)
+      .is("round_hint_k", null).select("gw");
+    if (!claimed?.length) throw new HttpError(409, "your Insight is already spent this round", "used");
+  }
+
+  const round = roundFor(gw.gw, userId);
+  const q = round.questions[k];
+  if (!q) throw new HttpError(500, "round shorter than expected");
+  const { seededRng, shuffle } = await import("@/lib/gates/rng");
+  const wrong = q.options.filter((o) => o.id !== q.answerId).map((o) => o.id);
+  const eliminated = shuffle(wrong, seededRng(`insight:${gw.gw}:${userId}:${k}`))
+    .slice(0, Math.max(0, q.options.length - 2));
+  return { k, eliminated };
+}
+
+/**
+ * SECOND CHANCE — retry ONE wrong answer after the round, before the deadline.
+ * The retry can change what the round minted (a credit step, even the
+ * perfect-round bonus), so the DELTA is granted explicitly: what the new
+ * correct-count earns minus what the old one already did, routed through the
+ * same overflow cash-out as everything else. round_retry_k is claimed by CAS,
+ * so the delta can only ever be granted once.
+ */
+export async function roundRetry(db: Db, userId: string, k: number, optionId: number | null) {
+  const gw = await currentGw(db, userId);
+  const entry = await getEntry(db, userId, gw.gw);
+  if (!entry?.round_done_at) throw new HttpError(409, "finish the round first", "not-done");
+  if (entry.chip !== "second_chance") throw new HttpError(409, "play the Second Chance chip first", "no-chip");
+  if (!isOpenForEdits(gw, entry)) throw new HttpError(409, "gameweek is locked", "locked");
+  const retryK = (entry as unknown as { round_retry_k: number | null }).round_retry_k;
+  if (retryK !== null) throw new HttpError(409, "your Second Chance is already used", "used");
+
+  const round = roundFor(gw.gw, userId);
+  // Phase 0 — no k: which questions went wrong? (the client can't know after a
+  // refresh; answers aren't exposed until the run opens up post-deadline)
+  if (!Number.isInteger(k)) {
+    const wrong = entry.round_answers
+      .map((a, idx) => ({ a, idx }))
+      .filter(({ a, idx }) => a !== round.questions[idx]?.answerId)
+      .map(({ idx }) => idx);
+    return { wrong };
+  }
+  if (k < 0 || k >= entry.round_answers.length) throw new HttpError(400, "no such question", "bad-k");
+
+  const q = round.questions[k];
+  const prior = entry.round_answers[k];
+  if (prior === q.answerId) throw new HttpError(409, "you got that one right", "was-right");
+
+  // Phase 1 — no answer yet: re-serve the question (options only, no timer; one
+  // retried question per ~4 played weeks is too small a surface to cheat-guard).
+  if (optionId === null) {
+    const served = clientView(round)[k];
+    return { k, question: served, prior };
+  }
+
+  const g = grade(round, k, optionId);
+  if (!g) throw new HttpError(400, "not one of the offered options", "bad-option");
+
+  // CAS: claim the retry before any effect lands.
+  const { data: claimed } = await db.from("fantasy_entries")
+    .update({ round_retry_k: k }).eq("user_id", userId).eq("gw", gw.gw)
+    .is("round_retry_k", null).select("gw");
+  if (!claimed?.length) throw new HttpError(409, "your Second Chance is already used", "used");
+
+  if (!g.correct) return { k, correct: false, answerId: q.answerId, correctCount: entry.round_correct, extraCredits: 0, cashPoints: 0 };
+
+  const oldCount = entry.round_correct;
+  const newCount = oldCount + 1;
+  const answers = [...entry.round_answers];
+  answers[k] = optionId;
+
+  // The delta: credits the new count earns beyond what the old one already minted,
+  // plus the perfect-round bonus if the retry made it 11/11.
+  const squad = await getSquad(db, userId);
+  if (!squad) throw new HttpError(409, "no squad", "no-squad");
+  let extra = Math.max(0, creditsForRound(newCount) - creditsForRound(oldCount));
+  let wildcardMinted = false;
+  const half = halfOf(gw.gw);
+  if (newCount === ROUND_LEN) {
+    const reward = perfectRoundReward(newCount, ROUND_LEN, squad.bonus_wildcard_half === half);
+    if (reward.wildcard) {
+      const live = squad.wildcard_half === half ? squad.wildcards : 0;
+      await db.from("fantasy_squads")
+        .update({ wildcards: live + 1, wildcard_half: half, bonus_wildcard_half: half })
+        .eq("user_id", userId);
+      wildcardMinted = true;
+    } else extra += reward.credits;
+  }
+  const { credits, points } = cashOverflow(squad.credits, extra);
+  await db.from("fantasy_squads").update({ credits, version: squad.version + 1 }).eq("user_id", userId);
+  await db.from("fantasy_entries").update({
+    round_answers: answers, round_correct: newCount,
+    round_credits: entry.round_credits + extra,
+    ...(points > 0 ? { cash_points: (entry.cash_points ?? 0) + points } : {}),
+  }).eq("user_id", userId).eq("gw", gw.gw);
+
+  return { k, correct: true, answerId: q.answerId, correctCount: newCount, extraCredits: extra, cashPoints: points, wildcardMinted };
 }

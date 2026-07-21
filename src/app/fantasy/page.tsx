@@ -13,14 +13,14 @@ type Result = NonNullable<NonNullable<FantasyState["entry"]>["result"]>;
 
 // Fungible tokens (triple_captain, bench_boost, insight, second_chance) all
 // spend from the same held count; the wildcard runs on its own separate track.
-// Insight and Second Chance are round mechanics that don't exist yet — shown so
+// Insight fires inside the round (a 50/50), Second Chance after it (retry one
 // the full chip set is legible, but never playable.
 const CHIP_META: { key: ChipName; label: string; blurb: string; comingSoon?: boolean }[] = [
   { key: "wildcard", label: "Wildcard", blurb: "Unlimited free transfers this gameweek" },
   { key: "triple_captain", label: "Triple Captain", blurb: "Your captain's points count ×3, not ×2" },
   { key: "bench_boost", label: "Bench Boost", blurb: "All 15 players score, bench included" },
-  { key: "insight", label: "Insight", blurb: "Coming soon", comingSoon: true },
-  { key: "second_chance", label: "Second Chance", blurb: "Coming soon", comingSoon: true },
+  { key: "insight", label: "Insight", blurb: "50/50 on one question of the round" },
+  { key: "second_chance", label: "Second Chance", blurb: "Retry one wrong answer after the round" },
 ];
 const CHIP_LABEL: Record<ChipName, string> = Object.fromEntries(CHIP_META.map((c) => [c.key, c.label])) as Record<ChipName, string>;
 

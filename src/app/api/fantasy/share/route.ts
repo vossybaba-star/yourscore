@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import { withFantasyUser } from "../_lib";
 import { HttpError } from "@/lib/fantasy/server";
 import { enginePool } from "@/lib/fantasy/pool";

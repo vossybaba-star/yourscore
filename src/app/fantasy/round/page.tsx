@@ -27,8 +27,18 @@ export default function RoundPage() {
   const [timedOut, setTimedOut] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const answering = useRef(false);
+  // Round chips. The chip is PLAYED on the hub (spends the token); here it fires.
+  const [chip, setChip] = useState<string | null>(null);
+  const [eliminated, setEliminated] = useState<number[]>([]);
+  const [hintSpent, setHintSpent] = useState(false);
+  const [wrongKs, setWrongKs] = useState<number[] | null>(null);
+  interface RetryQ { k: number; question: Served; prior: number | null }
+  const [retryQ, setRetryQ] = useState<RetryQ | null>(null);
+  const [retryDone, setRetryDone] = useState<{ correct: boolean; answerId: number; extraCredits: number; cashPoints: number; wildcardMinted?: boolean } | null>(null);
 
   useEffect(() => {
+    api<{ chips: { playedThisGw: string | null } | null }>("state")
+      .then((s) => setChip(s.chips?.playedThisGw ?? null)).catch(() => {});
     api<StartRes>("round/start").then((r) => {
       setRound(r); setK(r.answered); setCorrectCount(r.correct);
     }).catch((e) => {
@@ -75,7 +85,32 @@ export default function RoundPage() {
   const q = round.questions[k];
 
   const answer = (optionId: number) => void submit(optionId);
-  const next = () => { setReveal(null); setPicked(null); setTimedOut(false); setK(k + 1); };
+  const next = () => { setReveal(null); setPicked(null); setTimedOut(false); setEliminated([]); setK(k + 1); };
+
+  /** Insight: a seeded 50/50 on the question in front of you — once a round. */
+  const useInsight = async () => {
+    try {
+      const r = await api<{ eliminated: number[] }>("round/hint", { k });
+      setEliminated(r.eliminated); setHintSpent(true);
+    } catch (e) { setErr((e as Error).message); }
+  };
+
+  /** Second Chance, three steps: which went wrong → re-serve one → grade it. */
+  const loadWrongs = async () => {
+    try { setWrongKs((await api<{ wrong: number[] }>("round/retry", {})).wrong); }
+    catch (e) { setErr((e as Error).message); }
+  };
+  const pickRetry = async (rk: number) => {
+    try { setRetryQ(await api<RetryQ>("round/retry", { k: rk })); }
+    catch (e) { setErr((e as Error).message); }
+  };
+  const submitRetry = async (optionId: number) => {
+    if (!retryQ) return;
+    try {
+      const r = await api<{ correct: boolean; answerId: number; correctCount: number; extraCredits: number; cashPoints: number; wildcardMinted?: boolean }>("round/retry", { k: retryQ.k, optionId });
+      setRetryDone(r); setCorrectCount(r.correctCount ?? correctCount);
+    } catch (e) { setErr((e as Error).message); }
+  };
 
   // Did THIS answer just tip us over a credit threshold? That's a moment worth
   // marking — the founder shouldn't have to wait until the round ends to learn
@@ -107,6 +142,41 @@ export default function RoundPage() {
           <p style={{ fontSize: 11.5, color: MUTED, margin: "0 0 16px" }}>
             How it works: 3 correct = 1 transfer · 5 = 2 · 7 = 3 · 9 = 4. Transfers bank up to five.
           </p>
+          {/* SECOND CHANCE — retry one wrong answer, before the deadline */}
+          {chip === "second_chance" && !retryDone && got < 11 && (
+            <div style={{ textAlign: "left", background: PANEL, border: `1px solid ${GOLD}`, borderRadius: 12, padding: 13, marginBottom: 14 }}>
+              <div style={{ fontSize: 13.5, fontWeight: 700, color: GOLD, marginBottom: 6 }}>Second Chance is live</div>
+              {!wrongKs && !retryQ && (
+                <Btn small onClick={loadWrongs}>Retry one wrong answer</Btn>
+              )}
+              {wrongKs && !retryQ && (
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {wrongKs.map((wk) => (
+                    <Btn small key={wk} onClick={() => pickRetry(wk)}>Question {wk + 1}</Btn>
+                  ))}
+                  {!wrongKs.length && <span style={{ fontSize: 12.5, color: MUTED }}>Nothing to retry.</span>}
+                </div>
+              )}
+              {retryQ && (
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 600, whiteSpace: "pre-line", margin: "4px 0 10px" }}>{retryQ.question.prompt}</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {retryQ.question.options.map((o) => (
+                      <Btn small key={o.id} onClick={() => submitRetry(o.id)}
+                        >{o.label}{retryQ.prior === o.id ? "  (your first pick)" : ""}</Btn>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          {retryDone && (
+            <p style={{ fontSize: 13.5, fontWeight: 600, color: retryDone.correct ? GOLD : MUTED, margin: "0 0 14px" }}>
+              {retryDone.correct
+                ? `Redeemed. ${retryDone.wildcardMinted ? "That made it 11/11 — bonus wildcard minted." : retryDone.extraCredits > 0 ? `+${retryDone.extraCredits} transfer earned.` : retryDone.cashPoints > 0 ? `+${retryDone.cashPoints} points cashed.` : "Right answer — the count stands corrected."}`
+                : "Not this time either — the answer's revealed on your run after the deadline."}
+            </p>
+          )}
           <Btn gold onClick={() => router.push("/fantasy")}>Back to my squad</Btn>
         </Card>
       </main>
@@ -159,6 +229,11 @@ export default function RoundPage() {
       <h2 style={{ fontSize: 19, lineHeight: 1.4, margin: "0 0 16px", whiteSpace: "pre-line", fontWeight: 600 }}>
         {q.prompt}
       </h2>
+      {chip === "insight" && !hintSpent && !reveal && (
+        <div style={{ margin: "-6px 0 12px" }}>
+          <Btn small onClick={useInsight}>Use Insight — take two wrong answers away</Btn>
+        </div>
+      )}
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {q.options.map((o) => {
           const isPicked = picked === o.id;
@@ -167,14 +242,16 @@ export default function RoundPage() {
           const isAnswer = !!reveal && o.id === reveal.answerId;
           const isWrongPick = !!reveal && isPicked && !reveal.correct;
           const pendingPick = isPicked && !reveal;
+          const out = eliminated.includes(o.id) && !reveal; // Insight took it away
           return (
-            <button key={o.id} onClick={() => answer(o.id)} disabled={!!reveal} style={{
+            <button key={o.id} onClick={() => answer(o.id)} disabled={!!reveal || out} style={{
               padding: "13px 14px", borderRadius: 12, fontSize: 14.5, fontWeight: 600,
               textAlign: "left", cursor: reveal ? "default" : "pointer", color: INK,
               background: isAnswer ? "#1E3B2A" : isWrongPick ? "#3A2320" : pendingPick ? "#233B2C" : PANEL,
               border: `1.5px solid ${isAnswer ? GOLD : isWrongPick ? "#B85C38" : pendingPick ? GOLD : LINE}`,
-              opacity: reveal && !isAnswer && !isPicked ? 0.55 : 1,
-              transition: "background 120ms, border-color 120ms",
+              opacity: out ? 0.3 : reveal && !isAnswer && !isPicked ? 0.55 : 1,
+              textDecoration: out ? "line-through" : "none",
+              transition: "background 120ms, border-color 120ms, opacity 120ms",
             }}>
               {o.label}{isAnswer ? "  ✓" : isWrongPick ? "  ✕" : ""}
             </button>
