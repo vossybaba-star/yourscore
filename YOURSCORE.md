@@ -6,7 +6,26 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-07-21 (**WC Mastermind thank-you flow SHIPPED to prod** — migration 100
+> **Confirmed:** 2026-07-21 late (**First-launch onboarding tour + guest Versus preview SHIPPED
+> to prod.** A 5-step spotlight walkthrough (`SpotlightTour`, mounted in the root layout) that
+> navigates the real app: Play games row → Versus action cards → PL section bar → your rank
+> (signed-in only) → ends on Home spotlighting the Today's Game hero. Pulsing beacon on the
+> bottom-nav tab each step references; once-ever via `ys:tip:app-tour:v1`; Skip/Escape end it;
+> steps whose target can't be found in 3s skip silently; `?tour=1` = QA replay that never burns
+> the flag (dev also gets `window.__resetTips()`). **NEW USERS ONLY (founder-locked):**
+> signed-in requires `created_at >= 2026-07-22T00:00:00Z` (`TOUR_EPOCH` in `src/lib/tips.ts`)
+> — current customers never see it; guests only on a **fresh native install** (detected by
+> stamping `ys:tip:fresh-install:v1` at module load while `yourscore:onboarding:v1` is still
+> absent, i.e. before the first-run carousel marks itself) and only after that carousel
+> completes; web guests never. Storage errors fail closed in the safe direction per flag.
+> Gotcha shipped around: `scrollIntoView({behavior:"smooth"})` silently no-ops in some
+> webviews — all tour scrolls are `behavior:"auto"`, plus a throttled pull-back if the page
+> scroll-resets under an active step. **Also: guest `/versus` now mirrors the real first-time
+> hub** (welcome hero, action cards, choose-your-game, live activity/community/public-league
+> rails with real anon data; every tap capture-routed to `/auth/sign-in?next=/versus`; slim
+> create-account banner) — replaces the old sign-in wall so guests see the actual hub.)
+>
+> **Previously confirmed:** 2026-07-21 (**WC Mastermind thank-you flow SHIPPED to prod** — migration 100
 > seeds `wc_thanks_prompts` with the 199 players who played >10 ranked WC days; on their next
 > signed-in visit they get a one-time "What would you like to see on YourScore?" modal (free
 > text → `product_feedback`, write-only mailbox RLS), then after ~600px of scrolling a one-time
