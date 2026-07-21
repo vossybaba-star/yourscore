@@ -36,14 +36,15 @@ async function apiRaw<T>(path: string, init?: RequestInit): Promise<T> {
 const nameOf = (r: { username: string | null; displayName: string | null }) =>
   r.displayName ?? (r.username ? `@${r.username}` : "Player");
 
-function TableRows({ rows }: { rows: LeagueRow[] }) {
+function TableRows({ rows, onPeek }: { rows: LeagueRow[]; onPeek?: (r: LeagueRow) => void }) {
   if (!rows.length) return <p style={{ fontSize: 13, color: MUTED, margin: 0 }}>No members yet.</p>;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
       {rows.map((r) => (
-        <div key={r.userId} style={{
+        <div key={r.userId} onClick={() => onPeek?.(r)} style={{
           display: "flex", alignItems: "center", gap: 10, padding: "9px 11px", borderRadius: 10,
           background: r.isMe ? "rgba(227,181,76,0.12)" : PANEL, border: `1px solid ${r.isMe ? GOLD : LINE}`,
+          cursor: onPeek ? "pointer" : "default",
         }}>
           <span style={{
             width: 20, textAlign: "center", fontSize: 13, fontWeight: 700,
@@ -75,6 +76,12 @@ export default function LeaguePage() {
   const [renaming, setRenaming] = useState(false);
   const [newName, setNewName] = useState("");
   const [confirmLeave, setConfirmLeave] = useState(false);
+  interface Run {
+    gw: number; name: string; correct: number; total: number;
+    questions: { prompt: string; picked: string | null; answer: string; right: boolean }[];
+  }
+  const [run, setRun] = useState<Run | null>(null);
+  const [runNote, setRunNote] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -109,6 +116,18 @@ export default function LeaguePage() {
       else setErr((e as Error).message);
     }
     setBusy(false);
+  };
+
+  /** Tap a league-mate → their completed round, if the server says it's time.
+   *  The refusal message IS the feature copy ("runs open up after the deadline"). */
+  const peek = async (r: LeagueRow) => {
+    setRunNote(null); setRun(null);
+    try { setRun(await apiRaw<Run>(`leagues/${code}/run?user=${r.userId}`)); }
+    catch (e) {
+      const st = (e as { status?: number }).status;
+      if (st === 401) router.push(`/auth/sign-in?next=/fantasy/leagues/${code}`);
+      else setRunNote((e as Error).message);
+    }
   };
 
   const rename = async () => {
@@ -226,7 +245,41 @@ export default function LeaguePage() {
           </p>
         </Card>
       ) : (
-        <TableRows rows={rows} />
+        <TableRows rows={rows} onPeek={detail.league.isMember ? peek : undefined} />
+      )}
+
+      {runNote && <p style={{ fontSize: 12.5, color: MUTED, margin: "8px 0 0" }}>{runNote}</p>}
+
+      {/* A friend's run — right/wrong per question, after the deadline only */}
+      {run && (
+        <div onClick={() => setRun(null)} style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.72)", zIndex: 40,
+          display: "flex", alignItems: "flex-end", justifyContent: "center",
+        }}>
+          <div onClick={(e) => e.stopPropagation()} style={{
+            width: "100%", maxWidth: 560, maxHeight: "82dvh", overflowY: "auto",
+            background: "#132b1e", borderRadius: "16px 16px 0 0", border: `1px solid ${GOLD}`,
+            padding: 16,
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+              <span style={{ fontSize: 14.5, fontWeight: 700 }}>
+                {run.name} — {run.correct}/{run.total} in Gameweek {run.gw}
+              </span>
+              <Btn small onClick={() => setRun(null)}>Close</Btn>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {run.questions.map((q, i) => (
+                <div key={i} style={{ background: PANEL, border: `1px solid ${LINE}`, borderRadius: 10, padding: "9px 11px" }}>
+                  <div style={{ fontSize: 12.5, color: MUTED, whiteSpace: "pre-line", lineHeight: 1.4 }}>{q.prompt}</div>
+                  <div style={{ fontSize: 13, marginTop: 5, fontWeight: 600, color: q.right ? "#7BC98B" : "#E08A6B" }}>
+                    {q.right ? "✓" : "✗"} {q.picked ?? "ran out of time"}
+                    {!q.right && <span style={{ color: MUTED, fontWeight: 400 }}> — it was {q.answer}</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       )}
 
       {tab === "month" && lastMonth && (

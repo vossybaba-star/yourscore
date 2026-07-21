@@ -39,6 +39,7 @@ export default function FantasyHub() {
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [needsAuth, setNeedsAuth] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
   const [hasLeagues, setHasLeagues] = useState(false);
 
   const refresh = useCallback(async () => {
@@ -167,6 +168,21 @@ export default function FantasyHub() {
     setBusy(true); setErr(null);
     try { await api("advance"); await refresh(); }
     catch (e) { setErr((e as Error).message); }
+    setBusy(false);
+  };
+  /** Mint the short link server-side (the score is never trusted from the
+   *  client), then hand it to the share sheet — clipboard as the fallback. */
+  const shareResult = async () => {
+    if (busy) return;
+    setBusy(true); setErr(null);
+    try {
+      const r = await api<{ url: string }>("share");
+      const url = `${window.location.origin}${r.url}`;
+      if (navigator.share) await navigator.share({ url });
+      else { await navigator.clipboard.writeText(url); setNotice("Link copied — paste it in the group chat"); }
+    } catch (e) {
+      if ((e as Error).name !== "AbortError") setErr((e as Error).message);
+    }
     setBusy(false);
   };
 
@@ -440,13 +456,15 @@ export default function FantasyHub() {
               </tbody>
             </table>
           </div>
-          {gwN < total && (
-            <div style={{ marginTop: 14 }}>
+          {notice && <p style={{ fontSize: 12.5, color: GOLD, margin: "10px 0 0" }}>{notice}</p>}
+          <div style={{ marginTop: 14, display: "flex", gap: 8 }}>
+            <Btn disabled={busy} onClick={shareResult}>Share this gameweek</Btn>
+            {gwN < total && (
               <Btn gold disabled={busy} onClick={advance}>
                 {busy ? "…" : `Start Gameweek ${gwN + 1} →`}
               </Btn>
-            </div>
-          )}
+            )}
+          </div>
         </Card>
       )}
 

@@ -79,6 +79,21 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     const md = await matchOgMetadata(p.matchId);
     if (md) return md;
   }
+  // Fantasy gameweek share → the fantasy result card.
+  if (p.fgw) {
+    const qp = new URLSearchParams({ gw: p.fgw, pts: p.fpts ?? "0" });
+    if (p.fname) qp.set("name", p.fname);
+    if (p.fcap) qp.set("cap", p.fcap);
+    if (p.ftop) qp.set("top", p.ftop);
+    const image = `${BASE}/api/og/fantasy-gw?${qp.toString()}`;
+    const title = `${p.fpts ?? 0} points in Gameweek ${p.fgw} — YourScore Fantasy Football`;
+    const description = "Your knowledge earns your transfers. Build a squad and take mine on.";
+    return {
+      title, description,
+      openGraph: { title, description, images: [{ url: image, width: 1200, height: 630 }], type: "website" },
+      twitter: { card: "summary_large_image", title, description, images: [image] },
+    };
+  }
   // Quiz result share → a QUIZ scorecard (not the 38-0 season card).
   if (p.challengeSlug) {
     const qp = new URLSearchParams({ slug: p.challengeSlug });
@@ -116,6 +131,10 @@ export default async function SeasonShortSharePage({ params }: { params: { id: s
 
   // Quiz challenge share link — redirect to the challenge page.
   if (p?.challengeSlug) redirect(`/challenges/${p.challengeSlug}`);
+
+  // Fantasy gameweek share — the card's job is done in the unfurl; the click
+  // lands you in the game itself.
+  if (p?.fgw) redirect("/fantasy");
 
   if (!p) {
     return (

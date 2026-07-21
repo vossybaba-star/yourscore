@@ -604,3 +604,58 @@ export async function lockAndScore(db: Db, userId: string) {
   }).eq("user_id", userId).eq("gw", gw.gw);
   return { points: result.total, breakdown: result.breakdown, subs: result.subs, captainUsed: result.captainUsed, hitsDeducted: result.hitsDeducted };
 }
+
+// ── view a friend's run (D:222-224) ──────────────────────────────────────────
+/**
+ * A league-mate's completed round — their questions, their picks, right or
+ * wrong — visible AFTER their answers can no longer help you. The banter fuel:
+ * "you didn't know THAT?"
+ *
+ * Rounds are deterministic per (gameweek, user), so nothing extra is stored:
+ * we rebuild the target's round and read their answers off the entry.
+ *
+ * Gates, all server-side:
+ *   - viewer and target share a league (banter is league-scoped), or viewer IS target
+ *   - the target's round is done AND their entry is locked
+ *   - live: the gameweek is past its deadline; replay (self-paced): the VIEWER
+ *     has also finished their own round, so seeing answers can't help them.
+ */
+export async function viewRun(db: Db, viewerId: string, targetUserId: string, leagueCode: string) {
+  const { data: league } = await db.from("fantasy_leagues")
+    .select("id").eq("join_code", leagueCode.toUpperCase()).maybeSingle();
+  if (!league) throw new HttpError(404, "league not found");
+  if (viewerId !== targetUserId) {
+    const { data: both } = await db.from("fantasy_league_members")
+      .select("user_id").eq("league_id", league.id).in("user_id", [viewerId, targetUserId]);
+    if ((both ?? []).length < 2) throw new HttpError(403, "not in this league");
+  }
+
+  const gw = await currentGw(db, viewerId);
+  const target = await getEntry(db, targetUserId, gw.gw);
+  if (!target?.round_done_at || !target.locked_at)
+    throw new HttpError(409, "their round isn't finished and locked yet", "not-ready");
+  if (gw.mode === "replay") {
+    const mine = await getEntry(db, viewerId, gw.gw);
+    if (viewerId !== targetUserId && !mine?.round_done_at)
+      throw new HttpError(409, "finish your own round first", "play-first");
+  } else if (isOpenForEdits(gw, target)) {
+    throw new HttpError(409, "runs open up after the deadline", "not-ready");
+  }
+
+  const round = roundFor(gw.gw, targetUserId);
+  const answers = (target.round_answers ?? []) as (number | null)[];
+  const { data: prof } = await db.from("profiles")
+    .select("display_name, username").eq("id", targetUserId).maybeSingle();
+  return {
+    gw: gw.gw,
+    name: prof?.display_name ?? (prof?.username ? `@${prof.username}` : "Player"),
+    correct: target.round_correct,
+    total: round.questions.length,
+    questions: round.questions.map((q, idx) => ({
+      prompt: q.prompt,
+      picked: q.options.find((o) => o.id === answers[idx])?.label ?? null, // null = timed out
+      answer: q.options.find((o) => o.id === q.answerId)?.label ?? "",
+      right: answers[idx] === q.answerId,
+    })),
+  };
+}

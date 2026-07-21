@@ -35,6 +35,7 @@ import { accrueChip, halfOf, scoreEntry, type Chip, type LockedSelection, type S
 import { aggregateFixtures, fetchGwFixtures, toPlayerScores } from "./ingest";
 import { enginePool, gwPrices } from "./pool";
 import { SCORING_VERSION, ZERO_FACTS, type MatchFacts } from "./values";
+import { deadlineComms, monthWinnerComms, resultComms } from "./comms";
 
 // Same loose client type server.ts uses — the generated row types model jsonb as
 // `Json`, which fights every SquadPick/MatchFacts read and write in this file.
@@ -346,6 +347,15 @@ export async function tickSeason(db: Db, now = Date.now()): Promise<TickReport[]
         if (p.source === "fpl") out.push({ gw: gw.gw, action: "priced", detail: `${p.priced} players priced from FPL` });
       } catch (e) {
         out.push({ gw: gw.gw, action: "held", detail: `price snapshot failed, will retry: ${(e as Error).message}` });
+      }
+      // Inside 24h of the deadline: the personal nudge email (claimed once per
+      // user in notification_log, gated on FANTASY_EMAILS_ENABLED). Failure-soft
+      // — a mail outage must never hold the season.
+      if (ms(gw.deadline) - now < 24 * 60 * 60 * 1000) {
+        try {
+          const n = await deadlineComms(db, gw);
+          if (n) out.push({ gw: gw.gw, action: "waiting", detail: `deadline nudge emailed to ${n}` });
+        } catch (e) { console.error("[tick] deadline comms failed:", e); }
       }
       out.push({ gw: gw.gw, action: "waiting", detail: `deadline ${gw.deadline}` });
       continue; // nothing else may touch an open gameweek
