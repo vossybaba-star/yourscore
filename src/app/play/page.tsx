@@ -105,7 +105,7 @@ function ClubCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: string 
 
   return (
     <Link
-      href={`/challenges/${slug}${challengeTo ? `?challenge=${challengeTo}` : ""}`}
+      href={`/club/${slug}${challengeTo ? `?challenge=${challengeTo}` : ""}`}
       className="block rounded-3xl overflow-hidden transition-all duration-150 active:scale-[0.96]"
       style={{
         background: "linear-gradient(160deg, #0e1611 0%, #15211a 100%)",
@@ -146,18 +146,9 @@ function ClubCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: string 
             {pack.name[0]}
           </div>
         )}
-        <div
-          className={`absolute ${pack.metadata?.cover_image ? "bottom-3" : "top-3"} right-3 font-display text-xs px-2 py-0.5 rounded-lg text-teal`}
-          style={{ background: "rgba(0,0,0,0.5)", border: "1px solid rgba(0,216,192,0.3)" }}
-        >
-          {pack.question_count}Q
-        </div>
       </div>
       <div className="px-4 pb-4 pt-3">
         <p className="font-body text-sm font-bold text-white leading-snug mb-0.5">{pack.name}</p>
-        <p className="font-body text-xs mb-1.5" style={{ color: "#8a948f" }}>
-          2025/26 Season Game{packDate(pack.created_at) ? ` · ${packDate(pack.created_at)}` : ""}
-        </p>
         {pack.description && (
           <p className="font-body text-xs mb-2.5 line-clamp-2 leading-relaxed" style={{ color: "#7a857f" }}>{pack.description}</p>
         )}
@@ -168,7 +159,7 @@ function ClubCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: string 
             border: "1px solid rgba(0,216,192,0.3)",
           }}
         >
-          <span className="font-display text-xs tracking-widest text-teal">PLAY NOW →</span>
+          <span className="font-display text-xs tracking-widest text-teal">OPEN CLUB →</span>
         </div>
       </div>
     </Link>
@@ -389,7 +380,7 @@ function joinErrorMessage(raw: string): string {
   if (raw.includes("not found") || raw.includes("Lobby not found")) return "This lobby no longer exists. Go to Versus → Find an opponent to start a new match.";
   if (raw.includes("already started") || raw.includes("Game already")) return "This lobby has already started.";
   if (raw.includes("full") || raw.includes("Lobby is full")) return "This lobby is full.";
-  if (raw.includes("Invalid code")) return "That code isn't valid — double-check it.";
+  if (raw.includes("Invalid code")) return "That code isn't valid, double-check it.";
   return raw || "Could not join this lobby.";
 }
 
@@ -434,7 +425,7 @@ function InboxRow({ c, kind }: { c: InboxChallenge; kind: "play" | "waiting" | "
       <Link href={`/g/${c.id}`} className="flex items-center gap-3 rounded-2xl px-4 py-3.5 bg-surface transition-all active:scale-[0.99]" style={{ border: `1px solid ${isPlay ? "rgba(0,216,192,0.25)" : "rgba(255,255,255,0.08)"}` }}>
         <GroupGlyph />
         <div className="flex-1 min-w-0">
-          <p className="font-body text-sm font-semibold text-white truncate">{isPlay ? `${c.otherName} — your turn` : c.otherName}</p>
+          <p className="font-body text-sm font-semibold text-white truncate">{isPlay ? `${c.otherName}: your turn` : c.otherName}</p>
           <p className="font-body text-xs text-text-muted truncate">{c.packName} · {players} player{players === 1 ? "" : "s"}{!isPlay ? ` · you scored ${(c.myScore ?? 0).toLocaleString()}` : ""}</p>
         </div>
         <span className="font-display text-xs tracking-wide px-3 py-1.5 rounded-lg flex-shrink-0" style={{ background: isPlay ? "rgba(0,216,192,0.15)" : "transparent", color: isPlay ? teal : "#586058", border: isPlay ? "1px solid rgba(0,216,192,0.3)" : "none" }}>{isPlay ? "PLAY" : "BOARD"}</span>
@@ -643,7 +634,11 @@ function PlayPageInner() {
   const endOfSeasonPacks = packs.filter(
     (p) => p.parameter === "2025/26 End of Season" && !p.featured
   );
-  const featuredTabPacks = [...featuredPacks, ...endOfSeasonPacks];
+  // World Cup packs are excluded from Featured. The tournament finished on 20 Jul 2026 and
+  // the daily pipeline is retired, so a cold visitor was landing on a wall of dated
+  // "Bastille Day Semi Final" covers as the app's shop window. They keep their own tab,
+  // where a dated archive is exactly what a player expects.
+  const featuredTabPacks = [...featuredPacks, ...endOfSeasonPacks].filter((p) => !isWorldCupPack(p));
   // World Cup quizzes, newest first (auto-arranged by publish date).
   const worldCupPacks = packs
     .filter(isWorldCupPack)
@@ -679,7 +674,7 @@ function PlayPageInner() {
             <div>
               <h1 className="font-display text-2xl tracking-tight text-teal">QUIZ</h1>
               <p className="font-body text-xs mt-0.5 text-text-muted">
-                {mainTab === "solo" ? "Test your football knowledge" : mainTab === "multiplayer" ? "Challenge mates · play on your own time" : "YourScore verified competitions"}
+                {mainTab === "solo" ? "Test your football knowledge" : mainTab === "multiplayer" ? "Challenge friends · play on your own time" : "YourScore verified competitions"}
               </p>
             </div>
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl"
@@ -717,7 +712,7 @@ function PlayPageInner() {
             <div className="rounded-2xl px-4 py-3 mb-3 flex items-center gap-2.5" style={{ background: "rgba(0,216,192,0.1)", border: "1px solid rgba(0,216,192,0.3)" }}>
               <svg width="18" height="18" viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0 }}><path d="M10 2v16M2 10h16" stroke="#00d8c0" strokeWidth="2.2" strokeLinecap="round" /></svg>
               <p className="font-body text-sm text-white">
-                Challenging <b style={{ color: "#00d8c0" }}>{challengeName ?? "your friend"}</b> — pick a quiz to set the score
+                Challenging <b style={{ color: "#00d8c0" }}>{challengeName ?? "your friend"}</b>. Pick a quiz to set the score
               </p>
             </div>
           )}
@@ -852,7 +847,7 @@ function PlayPageInner() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-body text-sm font-bold text-white">Challenge a friend</p>
-              <p className="font-body text-xs text-text-muted">Pick a mate and a quiz — they play on their own time</p>
+              <p className="font-body text-xs text-text-muted">Pick a friend and a quiz, they play on their own time</p>
             </div>
             <svg width="16" height="16" viewBox="0 0 18 18" fill="none" style={{ color: "#00d8c0", flexShrink: 0 }}><path d="M6 3l6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </Link>
@@ -901,7 +896,7 @@ function PlayPageInner() {
                 </svg>
               </div>
               <p className="font-body text-sm font-bold text-teal">Create Game</p>
-              <p className="font-body text-xs text-center text-text-muted">Set mode, questions &amp; invite mates</p>
+              <p className="font-body text-xs text-center text-text-muted">Set mode, questions &amp; invite friends</p>
             </Link>
 
             <button onClick={() => setJoinSheetOpen(true)}
@@ -914,7 +909,7 @@ function PlayPageInner() {
                 </svg>
               </div>
               <p className="font-body text-sm font-bold text-white">Join with Code</p>
-              <p className="font-body text-xs text-text-muted">Enter invite code from a mate</p>
+              <p className="font-body text-xs text-text-muted">Enter invite code from a friend</p>
             </button>
           </div>
 
@@ -972,12 +967,12 @@ function PlayPageInner() {
             {/* Banner strip */}
             <div className="flex items-center justify-between px-5 py-4"
               style={{ background: "linear-gradient(90deg, rgba(174,234,0,0.12) 0%, rgba(0,216,192,0.08) 100%)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+              {/* Not LIVE. Spain won the final on 20 Jul 2026 and the daily series is retired;
+                  a pulsing LIVE dot over a finished tournament is the app telling a lie the
+                  player can check. This is the closing table now. */}
               <div className="flex items-center gap-2">
-                <span className="relative flex" style={{ width: 10, height: 10 }}>
-                  <span className="absolute inline-flex h-full w-full rounded-full opacity-75 animate-ping" style={{ background: "#aeea00" }} />
-                  <span className="relative inline-flex rounded-full" style={{ width: 10, height: 10, background: "#aeea00" }} />
-                </span>
-                <span className="font-display text-xs tracking-widest" style={{ color: "#aeea00" }}>LIVE</span>
+                <span className="relative inline-flex rounded-full" style={{ width: 10, height: 10, background: "#6aaa80" }} />
+                <span className="font-display text-xs tracking-widest" style={{ color: "#6aaa80" }}>FINAL STANDINGS</span>
               </div>
               <span className="text-2xl">🏆</span>
             </div>
@@ -985,7 +980,7 @@ function PlayPageInner() {
             {/* Title + stats */}
             <div className="px-5 pt-4 pb-2">
               <p className="font-display tracking-wide" style={{ fontSize: 22, color: "#fff", lineHeight: 1.2 }}>WORLD CUP 2026</p>
-              <p className="font-body mt-1" style={{ fontSize: 13, color: "#6aaa80" }}>Daily quiz series · 2026 FIFA World Cup</p>
+              <p className="font-body mt-1" style={{ fontSize: 13, color: "#6aaa80" }}>Daily quiz series · finished 20 Jul</p>
 
               <div className="flex items-center gap-3 mt-4">
                 <div className="flex-1 rounded-2xl px-4 py-3 text-center"
@@ -1014,7 +1009,7 @@ function PlayPageInner() {
               ) : wc2026Rows.length === 0 ? (
                 <div className="rounded-2xl px-4 py-5 text-center"
                   style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                  <p className="font-body text-sm" style={{ color: "#8a948f" }}>No scores yet — be first on the board</p>
+                  <p className="font-body text-sm" style={{ color: "#8a948f" }}>No scores yet. Be first on the board</p>
                   <p className="font-body text-xs mt-0.5" style={{ color: "#586058" }}>Play a World Cup 2026 daily quiz to enter</p>
                 </div>
               ) : (
@@ -1072,7 +1067,7 @@ function PlayPageInner() {
             <div className="flex items-center justify-between mb-5">
               <div>
                 <p className="font-display text-xl text-white tracking-wide">Join a game</p>
-                <p className="font-body text-xs mt-0.5 text-text-muted">Enter the code your mate shared</p>
+                <p className="font-body text-xs mt-0.5 text-text-muted">Enter the code your friend shared</p>
               </div>
               <button onClick={() => setJoinSheetOpen(false)}
                 className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "rgba(255,255,255,0.07)" }}>
