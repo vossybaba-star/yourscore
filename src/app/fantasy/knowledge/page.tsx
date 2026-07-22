@@ -10,6 +10,7 @@ import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import {
   Btn, Card, GOLD, Header, INK, LINE, MUTED, page, PANEL,
 } from "@/components/fantasy/shared";
+import { BottomNav } from "@/components/ui/BottomNav";
 
 type Cut = "week" | "month" | "season";
 interface Row {
@@ -37,6 +38,7 @@ export default function KnowledgePage() {
   useEffect(() => { load(cut); }, [cut, load]);
 
   return (
+    <>
     <main style={page}>
       <Header right={<Btn small onClick={() => router.push("/fantasy")}>← My team</Btn>} />
       <h1 style={{ fontSize: 22, margin: "0 0 4px", fontWeight: 700 }}>{KNOWLEDGE_NAME}</h1>
@@ -93,5 +95,7 @@ export default function KnowledgePage() {
         </>
       )}
     </main>
+      <BottomNav />
+    </>
   );
 }

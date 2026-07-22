@@ -15,11 +15,12 @@ import { NewsTabs } from "@/components/fantasy/NewsTabs";
 import {
   DIFF, GOLD, INK, MUTED, card, column, h2, loadFeedDoc, shell, ukTime,
 } from "@/components/fantasy/newsUi";
+import { BottomNav } from "@/components/ui/BottomNav";
 
 export const revalidate = 300;
 
 export const metadata = {
-  title: "Fantasy fixture ticker · YourScore",
+  title: "Fixture difficulty · YourScore",
   description:
     "Every Premier League club's next five fixtures, colour-coded by difficulty.",
 };
@@ -30,6 +31,7 @@ export default async function FantasyFixtures() {
   const runs = doc?.fixtures?.runs ?? [];
 
   return (
+    <>
     <main style={shell}>
       <div style={column}>
         <header>
@@ -138,5 +140,7 @@ export default async function FantasyFixtures() {
         )}
       </div>
     </main>
+      <BottomNav />
+    </>
   );
 }

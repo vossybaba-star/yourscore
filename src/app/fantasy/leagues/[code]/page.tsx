@@ -8,6 +8,7 @@ import {
   Btn, Card, Chip, GOLD, Header, INK, LINE, MUTED, page, PANEL,
 } from "@/components/fantasy/shared";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
+import { BottomNav } from "@/components/ui/BottomNav";
 
 interface LeagueRow {
   rank: number; userId: string; username: string | null; displayName: string | null;
@@ -204,6 +205,7 @@ export default function LeaguePage() {
   };
 
   if (notFound) return (
+    <>
     <main style={page}>
       <Header />
       <Card style={{ marginTop: 12 }}>
@@ -211,6 +213,8 @@ export default function LeaguePage() {
         <Btn onClick={() => router.push("/fantasy/leagues")}>← Back to leagues</Btn>
       </Card>
     </main>
+      <BottomNav />
+    </>
   );
   if (!detail) return <main style={page}><Header /><p style={{ color: MUTED }}>Loading…</p></main>;
 
@@ -220,6 +224,7 @@ export default function LeaguePage() {
   const firstGw = month.gws.length ? Math.min(...month.gws) : null;
 
   return (
+    <>
     <main style={page}>
       <Header right={<Btn small onClick={() => router.push("/fantasy/leagues")}>← Leagues</Btn>} />
 
@@ -430,5 +435,7 @@ export default function LeaguePage() {
         </div>
       )}
     </main>
+      <BottomNav />
+    </>
   );
 }

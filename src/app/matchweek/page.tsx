@@ -6,7 +6,7 @@
  *
  *   Matchweek  → sub-tabs News · Table · Fixtures  (the Premier League week)
  *   Live Quiz  → halftime quiz packs + "call the second half" · club-fan ranks
- *   Fantasy    → the holding screen until the game opens with the season
+ *   Fantasy    → the game itself: squad, round, transfers, leagues
  *
  * The TAB is "PL" (founder, 2026-07-16) — everything in here is the Premier
  * League: the halftime quizzes are PL fixtures, Fantasy is a PL squad. The first
@@ -33,7 +33,7 @@ import { useReminders } from "@/components/matchweek/useReminders";
 import { UpcomingQuizzes } from "@/components/matchweek/UpcomingQuizzes";
 import { QuizStatTiles } from "@/components/matchweek/QuizStatTiles";
 import { LiveQuizIntro } from "@/components/matchweek/LiveQuizIntro";
-import { FantasyHold } from "@/components/matchweek/FantasyHold";
+import { FantasyHub } from "@/components/fantasy/FantasyHub";
 import { BottomNav } from "@/components/ui/BottomNav";
 
 const TEAL = "#00d8c0";
@@ -135,7 +135,9 @@ export default function MatchweekPage() {
       )}
 
       {/* ── Fantasy — holding screen until the game opens with the season ─── */}
-      {section === "fantasy" && <FantasyHold />}
+      {/* The real game. FantasyHold was the pre-launch pitch for it and is
+          kept for reference only — the section now IS the squad. */}
+      {section === "fantasy" && <FantasyHub embedded />}
 
       <BottomNav />
     </div>

@@ -14,11 +14,12 @@
 import { NewsTabs } from "@/components/fantasy/NewsTabs";
 import { NewsFeed } from "@/components/fantasy/NewsFeed";
 import { GOLD, INK, MUTED, column, loadFeedDoc, shell, ukTime } from "@/components/fantasy/newsUi";
+import { BottomNav } from "@/components/ui/BottomNav";
 
 export const revalidate = 300;
 
 export const metadata = {
-  title: "Fantasy news & insights · YourScore",
+  title: "Fantasy tips · YourScore",
   description:
     "Team news, transfer talk and tips for your YourScore fantasy squad.",
 };
@@ -27,6 +28,7 @@ export default async function FantasyNews() {
   const doc = await loadFeedDoc();
 
   return (
+    <>
     <main style={shell}>
       <div style={column}>
         <header>
@@ -52,5 +54,7 @@ export default async function FantasyNews() {
         />
       </div>
     </main>
+      <BottomNav />
+    </>
   );
 }

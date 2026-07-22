@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import {
   api, Btn, Card, Chip, GOLD, Header, INK, LINE, MUTED, page, PANEL, TEAL, tint,
 } from "@/components/fantasy/shared";
+import { BottomNav } from "@/components/ui/BottomNav";
 
 interface MyLeague {
   id: string; name: string; code: string; memberCount: number; isPublic: boolean; isOwner: boolean;
@@ -80,6 +81,7 @@ export default function LeaguesHome() {
   };
 
   if (needsAuth) return (
+    <>
     <main style={page}>
       <Header />
       <Card style={{ marginTop: 12 }}>
@@ -90,9 +92,12 @@ export default function LeaguesHome() {
         <Btn gold onClick={() => router.push("/auth/sign-in?next=/fantasy/leagues")}>Sign in</Btn>
       </Card>
     </main>
+      <BottomNav />
+    </>
   );
 
   return (
+    <>
     <main style={page}>
       <Header right={<Btn small onClick={() => router.push("/fantasy")}>← My team</Btn>} />
       <h1 style={{ fontSize: 22, margin: "0 0 4px", fontWeight: 700 }}>Leagues</h1>
@@ -204,5 +209,7 @@ export default function LeaguesHome() {
         </div>
       </div>
     </main>
+      <BottomNav />
+    </>
   );
 }

@@ -18,8 +18,8 @@ const MUTED = "#9FB2A5";
 const LINE = "#2A4032";
 
 const TABS = [
-  { href: "/fantasy/news", label: "Feed" },
-  { href: "/fantasy/fixtures", label: "Fixtures" },
+  { href: "/fantasy/news", label: "Fantasy tips" },
+  { href: "/fantasy/fixtures", label: "Difficulty" },
 ] as const;
 
 export type NewsTab = (typeof TABS)[number]["href"];
