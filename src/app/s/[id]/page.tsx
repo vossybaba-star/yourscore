@@ -69,7 +69,7 @@ function ogUrl(id: string): string {
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
   const p = await loadPayload(params.id);
   if (!p) {
-    const title = "YourScore 38-0 — build your all-time XI";
+    const title = "YourScore 38-0 · build your all-time XI";
     return { title, description: "Build an all-time XI and simulate your season. Think you can beat it?" };
   }
   // Live H2H match share → the MATCH card (the page redirects there anyway).
@@ -86,7 +86,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     if (p.fcap) qp.set("cap", p.fcap);
     if (p.ftop) qp.set("top", p.ftop);
     const image = `${BASE}/api/og/fantasy-gw?${qp.toString()}`;
-    const title = `${p.fpts ?? 0} points in Gameweek ${p.fgw} — YourScore Fantasy Football`;
+    const title = `${p.fpts ?? 0} points in Gameweek ${p.fgw} · YourScore Fantasy Football`;
     const description = "Your knowledge earns your transfers. Build a squad and take mine on.";
     return {
       title, description,
@@ -113,7 +113,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   const pos = parseInt(p.pos || "10", 10);
   const title = `${p.w ?? 0}-${p.d ?? 0}-${p.l ?? 0} · finished ${ordinal(pos)} on ${p.pts ?? 0} pts | YourScore 38-0`;
   const description = p.xi
-    ? `${p.xi.split("|").slice(0, 3).map(c => c.split("~")[1]).join(", ")} and more — build your own XI and take them on.`
+    ? `${p.xi.split("|").slice(0, 3).map(c => c.split("~")[1]).join(", ")} and more. Build your own XI and take them on.`
     : "Build an all-time XI and simulate your season on YourScore. Think you can beat it?";
   const image = ogUrl(params.id);
   return {
@@ -132,9 +132,75 @@ export default async function SeasonShortSharePage({ params }: { params: { id: s
   // Quiz challenge share link — redirect to the challenge page.
   if (p?.challengeSlug) redirect(`/challenges/${p.challengeSlug}`);
 
-  // Fantasy gameweek share — the card's job is done in the unfurl; the click
-  // lands you in the game itself.
-  if (p?.fgw) redirect("/fantasy");
+  // Fantasy gameweek share. This used to redirect straight to /fantasy, which
+  // for a signed-out friend meant the unfurl promised "93 points in Gameweek 3"
+  // and the tap delivered a login form — the share loop leaked its whole
+  // audience at the door. Show the result being shared, THEN invite them in.
+  if (p?.fgw) {
+    const [capName, capPts] = (p.fcap ?? "").split("~");
+    const [topName, topPts] = (p.ftop ?? "").split("~");
+    const who = p.fname ? p.fname : "A YourScore manager";
+    return (
+      <div className="min-h-[100dvh] pb-10" style={{ background: "#080d0a" }}>
+        <div className="max-w-lg mx-auto px-5 pt-10">
+          <div className="font-body text-xs tracking-widest mb-6" style={{ color: "#586058" }}>
+            YOURSCORE FANTASY FOOTBALL
+          </div>
+
+          <div className="rounded-3xl p-6 mb-4 text-center"
+            style={{ background: "#0e1611", border: "1px solid rgba(255,194,51,0.35)" }}>
+            <div className="font-body text-xs tracking-widest" style={{ color: "#8a948f" }}>
+              {who.toUpperCase()} · GAMEWEEK {p.fgw}
+            </div>
+            <div className="font-display leading-none mt-3" style={{ fontSize: 72, color: "#ffc233" }}>
+              {p.fpts ?? 0}
+            </div>
+            <div className="font-display" style={{ fontSize: 20, color: "#ffc233", opacity: 0.85 }}>points</div>
+
+            {(capName || topName) && (
+              <div className="mt-5 space-y-2">
+                {capName && (
+                  <div className="flex items-center justify-between rounded-xl px-3 py-2.5"
+                    style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                    <span className="font-body text-xs" style={{ color: "#8a948f" }}>Captain</span>
+                    <span className="font-body text-sm text-white font-semibold">{capName}</span>
+                    <span className="font-display text-sm" style={{ color: "#ffc233" }}>{capPts} pts</span>
+                  </div>
+                )}
+                {topName && (
+                  <div className="flex items-center justify-between rounded-xl px-3 py-2.5"
+                    style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                    <span className="font-body text-xs" style={{ color: "#8a948f" }}>Top scorer</span>
+                    <span className="font-body text-sm text-white font-semibold">{topName}</span>
+                    <span className="font-display text-sm" style={{ color: "#ffc233" }}>{topPts} pts</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-3xl p-5 mb-4" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <p className="font-display text-white tracking-wide mb-2" style={{ fontSize: 20 }}>
+              Think you can beat that?
+            </p>
+            <p className="font-body text-sm mb-4" style={{ color: "#8a948f", lineHeight: 1.5 }}>
+              Pick fifteen Premier League players. Answer eleven football questions a week, and the
+              ones you get right earn the transfers that improve your squad.
+            </p>
+            {/* Teal, not the default lime: fantasy is the knowledge game, and
+                lime is 38-0's colour. */}
+            <Button href="/fantasy" variant="primary" tone="teal" size="lg" fullWidth>
+              BUILD YOUR SQUAD →
+            </Button>
+          </div>
+
+          <p className="text-center mt-4 font-body text-xs" style={{ color: "#3a423d" }}>
+            yourscore.app · Your football knowledge. Ranked.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (!p) {
     return (
@@ -215,7 +281,7 @@ export default async function SeasonShortSharePage({ params }: { params: { id: s
               </span>
               {gf && ga && (
                 <span className="font-body px-3 py-1.5 rounded-xl text-sm font-semibold" style={{ background: "rgba(255,255,255,0.06)", color: "#8a948f" }}>
-                  {gf} — {ga}
+                  {gf} / {ga}
                 </span>
               )}
               {verdict && (

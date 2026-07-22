@@ -136,7 +136,7 @@ export default function LeaguePage() {
 
   const invite = async () => {
     const url = `${window.location.origin}/fantasy/leagues/${code}`;
-    const text = `Join my YourScore Fantasy league "${detail?.league.name ?? ""}" — code ${code}`;
+    const text = `Join my YourScore Fantasy league "${detail?.league.name ?? ""}" · code ${code}`;
     if (navigator.share) { navigator.share({ title: "YourScore Fantasy league", text, url }).catch(() => {}); return; }
     try {
       await navigator.clipboard.writeText(`${text} ${url}`);
@@ -245,7 +245,9 @@ export default function LeaguePage() {
         <Chip gold>{code}</Chip>
         <Chip>{league.memberCount} member{league.memberCount === 1 ? "" : "s"}</Chip>
         {league.isPublic && <Chip>Public</Chip>}
-        <Btn small onClick={invite}>{copied ? "Link copied" : "Invite friends"}</Btn>
+        {/* Only a member can invite. Offering it to a stranger who hasn't joined
+            competes with the one thing we want them to do. */}
+        {league.isMember && <Btn small onClick={invite}>{copied ? "Link copied" : "Invite friends"}</Btn>}
       </div>
 
       {err && <p style={{ color: "#E08A6B", fontSize: 13, margin: "0 0 12px" }}>{err}</p>}
@@ -279,7 +281,7 @@ export default function LeaguePage() {
         <Card style={{ marginBottom: 12 }}>
           <p style={{ fontSize: 13, color: MUTED, margin: 0, lineHeight: 1.5 }}>
             {firstGw != null
-              ? `First deadline of ${month.label} is GW ${firstGw} — the table fills in once it's scored.`
+              ? `First deadline of ${month.label} is GW ${firstGw}. The table fills in once it's scored.`
               : "No gameweeks in this month yet."}
           </p>
         </Card>
@@ -302,7 +304,7 @@ export default function LeaguePage() {
           }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
               <span style={{ fontSize: 14.5, fontWeight: 700 }}>
-                {run.name} — {run.correct}/{run.total} in Gameweek {run.gw}
+                {run.name} got {run.correct}/{run.total} in Gameweek {run.gw}
               </span>
               <Btn small onClick={() => setRun(null)}>Close</Btn>
             </div>
@@ -312,7 +314,7 @@ export default function LeaguePage() {
                   <div style={{ fontSize: 12.5, color: MUTED, whiteSpace: "pre-line", lineHeight: 1.4 }}>{q.prompt}</div>
                   <div style={{ fontSize: 13, marginTop: 5, fontWeight: 600, color: q.right ? "#7BC98B" : "#E08A6B" }}>
                     {q.right ? "✓" : "✗"} {q.picked ?? "ran out of time"}
-                    {!q.right && <span style={{ color: MUTED, fontWeight: 400 }}> — it was {q.answer}</span>}
+                    {!q.right && <span style={{ color: MUTED, fontWeight: 400 }}> · it was {q.answer}</span>}
                   </div>
                 </div>
               ))}
@@ -323,7 +325,7 @@ export default function LeaguePage() {
 
       {tab === "month" && lastMonth && (
         <div style={{ marginTop: 10, fontSize: 12.5, color: MUTED }}>
-          {lastMonth.label} winner: <b style={{ color: GOLD }}>{nameOf(lastMonth.winner)}</b> — {lastMonth.winner.points} pts
+          {lastMonth.label} winner: <b style={{ color: GOLD }}>{nameOf(lastMonth.winner)}</b> with {lastMonth.winner.points} pts
         </div>
       )}
 
@@ -337,7 +339,7 @@ export default function LeaguePage() {
               {stakesDraft === null ? (
                 <>
                   <span style={{ flex: 1, fontSize: 12.5, color: chat.league.stakes ? INK : MUTED }}>
-                    {chat.league.stakes ? `Stakes: ${chat.league.stakes}` : "Set the stakes — what does the loser owe?"}
+                    {chat.league.stakes ? `Stakes: ${chat.league.stakes}` : "Set the stakes. What does the loser owe?"}
                   </span>
                   {chat.league.isOwner && (
                     <button onClick={() => setStakesDraft(chat.league.stakes ?? "")} style={{ fontSize: 11.5, color: MUTED, background: "none", border: "none", cursor: "pointer", textDecoration: "underline", padding: 0 }}>

@@ -30,6 +30,20 @@ async function apiRaw<T>(path: string, init?: RequestInit): Promise<T> {
   return json as T;
 }
 
+/** Squad shape in line art — same motif as the PL tab's fantasy tile.
+ *  Module scope so the signed-out hero can use it before the component's
+ *  own consts are initialised. */
+const FormationArt = () => (
+  <svg viewBox="0 0 100 100" aria-hidden="true"
+    style={{ position: "absolute", right: -16, bottom: -20, width: 150, height: 150, opacity: 0.09, pointerEvents: "none" }}>
+    <rect x="6" y="6" width="88" height="88" rx="4" fill="none" stroke={TEAL} strokeWidth="2" />
+    <line x1="6" y1="50" x2="94" y2="50" stroke={TEAL} strokeWidth="2" />
+    <circle cx="50" cy="50" r="12" fill="none" stroke={TEAL} strokeWidth="2" />
+    {[[50], [18, 39, 61, 82], [18, 39, 61, 82], [39, 61]].map((row, ri) =>
+      row.map((x) => <circle key={`${ri}-${x}`} cx={x} cy={16 + ri * 22} r="3.4" fill={TEAL} />))}
+  </svg>
+);
+
 export default function FantasyHub() {
   const router = useRouter();
   const [state, setState] = useState<FantasyState | null>(null);
@@ -40,6 +54,7 @@ export default function FantasyHub() {
   const [needsAuth, setNeedsAuth] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [hasLeagues, setHasLeagues] = useState(false);
+  const [confirmChip, setConfirmChip] = useState<ChipName | null>(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -106,12 +121,13 @@ export default function FantasyHub() {
     setBusy(false);
   };
 
-  // Playing a chip is the biggest call of the week — confirm before spending it.
-  const playChipAction = async (chip: ChipName, label: string) => {
-    if (!state?.chips) return;
-    const count = chip === "wildcard" ? state.chips.wildcards : state.chips.held;
-    const noun = chip === "wildcard" ? "wildcard" : `chip${count === 1 ? "" : "s"}`;
-    if (!window.confirm(`Play ${label} this gameweek? You hold ${count} ${noun}.`)) return;
+  // Playing a chip is the biggest call of the week, so it still confirms — but
+  // in the app's own language. window.confirm() put an OS dialog in the middle
+  // of a screen we'd just rebuilt, and on a phone it reads like a browser error.
+  const playChipAction = (chip: ChipName) => setConfirmChip(chip);
+
+  const commitChip = async (chip: ChipName) => {
+    setConfirmChip(null);
     setBusy(true); setErr(null);
     try { await api("chip", { chip }); await refresh(); }
     catch (e) { setErr((e as Error).message); }
@@ -126,16 +142,73 @@ export default function FantasyHub() {
   };
 
 
+  // A cold guest off an ad used to land on a bare "Sign in to play" card and
+  // learn nothing about the game before being asked for an account. Say what it
+  // is FIRST, then ask — and always leave a route back into the rest of YourScore.
   if (needsAuth) return (
     <main style={page}>
-      <Header />
-      <Card style={{ marginTop: 12 }}>
-        <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Sign in to play</div>
-        <p style={{ fontSize: 13.5, color: MUTED, margin: "0 0 12px", lineHeight: 1.5 }}>
-          Your squad is saved to your YourScore account, so you&apos;ll need to be signed in.
+      <div className="pointer-events-none fixed inset-0 bg-grid-pattern bg-grid" style={{ opacity: 0.5 }} />
+      <div className="relative">
+        <Header right={<Btn small onClick={() => router.push("/")}>All games</Btn>} />
+
+        {/* The hero and the numbered beats are lifted from the live PL-tab
+            holding screen (components/matchweek/FantasyHold.tsx), which the
+            founder rates over anything written for this page. Same headline,
+            same 01-04 structure; only the CTA differs, because the game now
+            exists and the ask is "sign in" rather than "join the waitlist". */}
+        <div className="rounded-2xl relative overflow-hidden px-5 pt-5 pb-5"
+          style={{
+            background: `linear-gradient(150deg, ${tint(TEAL, "1a")}, ${tint(TEAL, "05")})`,
+            border: `1px solid ${tint(TEAL, "38")}`, marginBottom: 14,
+          }}>
+          <FormationArt />
+          <div className="relative">
+            <p className="font-display tracking-widest" style={{ fontSize: 10, color: TEAL, marginBottom: 10 }}>
+              YOURSCORE FANTASY FOOTBALL
+            </p>
+            <p className="font-display text-white" style={{ fontSize: 40, lineHeight: 0.92, letterSpacing: "-0.015em" }}>
+              <span style={{ display: "block" }}>One transfer.</span>
+              <span style={{ display: "block" }}>Earn the rest.</span>
+            </p>
+            <p className="font-body" style={{ fontSize: 14, color: MUTED, marginTop: 12, maxWidth: "80%", lineHeight: 1.5 }}>
+              Everyone gets a move each gameweek. What you know earns you more.
+            </p>
+          </div>
+        </div>
+
+        <div className="rounded-2xl" style={{ background: PANEL, border: `1px solid ${LINE}`, padding: 20, marginBottom: 14 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {([
+              { n: "01", t: "Build it once",
+                d: "Fifteen players, £100m, no more than three from any one club. That's your squad." },
+              { n: "02", t: "Earn extra transfers",
+                d: "Everyone gets one transfer a gameweek. Answer the round to earn more, so the better you know your football, the more moves you get." },
+              { n: "03", t: "Real points, no mystery",
+                d: "Your score comes from what actually happened on the pitch. No bonus-point panel quietly deciding your week." },
+              { n: "04", t: "A fresh table every month",
+                d: "Months are their own competition, so a rough August doesn't bury your season." },
+            ] as const).map((b) => (
+              <div key={b.n} style={{ display: "flex", gap: 14 }}>
+                <div className="font-display rounded-full"
+                  style={{
+                    flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
+                    width: 26, height: 26, fontSize: 11,
+                    background: tint(TEAL, "18"), color: TEAL, border: `1px solid ${tint(TEAL, "35")}`,
+                  }}>{b.n}</div>
+                <div style={{ minWidth: 0 }}>
+                  <p className="font-body" style={{ fontSize: 14, color: INK, fontWeight: 600, margin: 0 }}>{b.t}</p>
+                  <p className="font-body" style={{ fontSize: 12.5, color: MUTED, margin: "3px 0 0", lineHeight: 1.55 }}>{b.d}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <Btn gold glow onClick={() => router.push("/auth/sign-in?next=/fantasy")}>Build my squad</Btn>
+        <p className="font-body" style={{ fontSize: 12, color: MUTED, marginTop: 10, textAlign: "center" }}>
+          Takes a minute. Your squad saves to your account, so it&apos;s there every week.
         </p>
-        <Btn gold onClick={() => router.push("/auth/sign-in?next=/fantasy")}>Sign in</Btn>
-      </Card>
+      </div>
     </main>
   );
   if (err) return (
@@ -178,7 +251,7 @@ export default function FantasyHub() {
       const r = await api<{ url: string }>("share");
       const url = `${window.location.origin}${r.url}`;
       if (navigator.share) await navigator.share({ url });
-      else { await navigator.clipboard.writeText(url); setNotice("Link copied — paste it in the group chat"); }
+      else { await navigator.clipboard.writeText(url); setNotice("Link copied. Paste it in the group chat"); }
     } catch (e) {
       if ((e as Error).name !== "AbortError") setErr((e as Error).message);
     }
@@ -191,28 +264,47 @@ export default function FantasyHub() {
   const BANNER: Record<typeof phase, { tag: string; head: string; sub: string }> = {
     open: preseason
       ? { tag: `PRE-SEASON · ${seasonPos.toUpperCase()}`, head: gwN === 1 ? "The season kicks off here" : `Gameweek ${gwN} is open`,
-          sub: "Your squad isn't committed yet — build and edit it freely, then lock it in for the gameweek. From next gameweek on, your knowledge round earns the transfers to improve it." }
+          sub: "Your squad isn't committed yet. Build and edit it freely, then lock it in for the gameweek. From next gameweek on, your knowledge round earns the transfers to improve it." }
       : { tag: `GAMEWEEK OPEN · ${seasonPos.toUpperCase()}`, head: `Gameweek ${gwN} is open`,
-          sub: "Play your round, make transfers, set your team — then lock it in. In the live game this closes at the Saturday deadline." },
+          sub: "Play your round, make transfers, set your team, then lock it in. In the live game this closes at the Saturday deadline." },
     locked: { tag: `LOCKED · ${seasonPos.toUpperCase()}`, head: `Gameweek ${gwN} is locked`,
       sub: "Your team is set and the matches are playing. Nothing changes now until the points land." },
-    result: { tag: `GAMEWEEK DONE · ${seasonPos.toUpperCase()}`, head: `Gameweek ${gwN} result`,
-      sub: gwN < total ? "Scored — here's how your team did. Move on to the next gameweek when you're ready; your squad and credits carry over."
-        : "That's the last gameweek of the demo season — here's your final result." },
+    result: {
+      tag: gwN < total ? `GAMEWEEK DONE · ${seasonPos.toUpperCase()}` : "SEASON COMPLETE",
+      head: gwN < total ? `Gameweek ${gwN} result` : "That's the season",
+      sub: gwN < total ? "Scored. Move on to the next gameweek when you're ready; your squad and credits carry over."
+        : "Your last gameweek of the season, scored. The tables are final.",
+    },
   };
   const b = BANNER[phase];
+  const seasonOver = phase === "result" && gwN >= total;
 
-  /** Squad shape in line art — same motif as the PL tab's fantasy tile. */
-  const FormationArt = () => (
-    <svg viewBox="0 0 100 100" aria-hidden="true"
-      style={{ position: "absolute", right: -16, bottom: -20, width: 150, height: 150, opacity: 0.09, pointerEvents: "none" }}>
-      <rect x="6" y="6" width="88" height="88" rx="4" fill="none" stroke={TEAL} strokeWidth="2" />
-      <line x1="6" y1="50" x2="94" y2="50" stroke={TEAL} strokeWidth="2" />
-      <circle cx="50" cy="50" r="12" fill="none" stroke={TEAL} strokeWidth="2" />
-      {[[50], [18, 39, 61, 82], [18, 39, 61, 82], [39, 61]].map((row, ri) =>
-        row.map((x) => <circle key={`${ri}-${x}`} cx={x} cy={16 + ri * 22} r="3.4" fill={TEAL} />))}
-    </svg>
-  );
+  /** One line of colour under the score: who carried the week, and what the
+   *  hits cost. Built from the same breakdown the table below renders. */
+  const topLine = (() => {
+    if (!result) return "";
+    const best = [...result.breakdown].sort((a, b2) => b2.points - a.points)[0];
+    const cap = result.breakdown.find((x) => x.captain);
+    const bits: string[] = [];
+    if (best) bits.push(`${nameOf(best.id)} top scored with ${best.points}`);
+    if (cap && cap.id !== best?.id) bits.push(`your captain ${nameOf(cap.id)} got ${cap.points}`);
+    if (entry && entry.hits > 0) bits.push(`includes −${entry.hits * 4} for extra transfers`);
+    return bits.length ? `${bits.join(", ")}.` : "Your eleven starters, scored off the real matches.";
+  })();
+
+  /** The one thing this screen wants you to do, hoisted above the fold. Mirrors
+   *  the detailed control further down rather than replacing it. */
+  const primary: { label: string; note?: string; onClick: () => void } | null =
+    seasonOver ? { label: "See where you finished", note: "Your league tables and Top Marks are final.", onClick: () => router.push("/fantasy/leagues") }
+    : phase === "result" ? { label: `Start Gameweek ${gwN + 1} →`, note: "Your squad, credits and chips carry over.", onClick: advance }
+    : phase === "locked" ? null
+    : preseason ? { label: "Lock in my squad", note: "You can still change it until you lock.", onClick: lock }
+    : !roundDone ? {
+        label: entry && entry.round.answered > 0 ? `Continue round (${entry.round.answered}/11)` : "Play this week's round",
+        note: "Eleven questions. Right answers earn transfers.",
+        onClick: () => router.push("/fantasy/round"),
+      }
+    : { label: `Lock team & play gameweek ${gwN}`, note: `${squad.credits} transfer${squad.credits === 1 ? "" : "s"} in hand.`, onClick: lock };
 
   const PlayerTile = ({ id, benchIdx }: { id: number; benchIdx?: number }) => {
     const p = pool.get(id);
@@ -274,14 +366,49 @@ export default function FantasyHub() {
           <p className="font-display tracking-widest" style={{ fontSize: 11.5, color: TEAL, marginBottom: 8 }}>
             {b.tag}
           </p>
-          <p className="font-display text-white" style={{ fontSize: 38, lineHeight: 0.92, letterSpacing: "-0.015em" }}>
-            {b.head}
-          </p>
-          <p className="font-body" style={{ fontSize: 13, color: MUTED, marginTop: 8, lineHeight: 1.5, maxWidth: "88%" }}>
-            {b.sub}
-          </p>
+          {/* THE SCORE IS THE HEADLINE once a gameweek lands. It used to sit
+              below the pitch, 1.6 screens down, while the top of the "result"
+              screen was pixel-identical to the "open" screen — you could finish
+              the week unsure anything had happened. */}
+          {result ? (
+            <>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                <span className="font-display" style={{ fontSize: 64, lineHeight: 0.86, color: GOLD, letterSpacing: "-0.02em" }}>
+                  {result.points}
+                </span>
+                <span className="font-display" style={{ fontSize: 22, color: GOLD, opacity: 0.85 }}>pts</span>
+              </div>
+              <p className="font-body" style={{ fontSize: 13, color: MUTED, marginTop: 8, lineHeight: 1.5, maxWidth: "92%" }}>
+                {topLine}
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="font-display text-white" style={{ fontSize: 38, lineHeight: 0.92, letterSpacing: "-0.015em" }}>
+                {b.head}
+              </p>
+              <p className="font-body" style={{ fontSize: 13, color: MUTED, marginTop: 8, lineHeight: 1.5, maxWidth: "88%" }}>
+                {b.sub}
+              </p>
+            </>
+          )}
         </div>
       </div>
+
+      {/* THE WEEK'S ACTION, above the fold. The pitch sits high by design, which
+          pushed every actual verb (play the round, transfers, lock) 1.6 to 2.5
+          screens down — you opened the app and couldn't reach the thing you came
+          to do. One primary button here, the detail still below. */}
+      {primary && (
+        <div style={{ marginBottom: 12 }}>
+          <Btn gold glow disabled={busy} onClick={primary.onClick}>{primary.label}</Btn>
+          {primary.note && (
+            <p className="font-body" style={{ fontSize: 12, color: MUTED, marginTop: 7, textAlign: "center" }}>
+              {primary.note}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* The three numbers that govern every decision, given their own weight. */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginBottom: 12 }}>
@@ -398,7 +525,7 @@ export default function FantasyHub() {
           </p>
           {chips.wildcards > 0 && (
             <p style={{ fontSize: 12.5, color: GOLD, margin: "0 0 8px" }}>
-              1 wildcard held — expires at the GW{chips.wildcardHalf === 1 ? HALF_SEASON_GW : state.season.total} deadline
+              1 wildcard held. Expires at the GW{chips.wildcardHalf === 1 ? HALF_SEASON_GW : state.season.total} deadline
             </p>
           )}
           {chips.playedThisGw ? (
@@ -417,7 +544,7 @@ export default function FantasyHub() {
                 const held = c.key === "wildcard" ? chips.wildcards > 0 : chips.held > 0;
                 const playable = held && !c.comingSoon;
                 return (
-                  <button key={c.key} disabled={!playable || busy} onClick={() => playChipAction(c.key, c.label)} style={{
+                  <button key={c.key} disabled={!playable || busy} onClick={() => playChipAction(c.key)} style={{
                     display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8,
                     padding: "9px 12px", borderRadius: 10, textAlign: "left",
                     background: PANEL, border: `1px solid ${LINE}`, color: playable ? INK : MUTED,
@@ -436,6 +563,37 @@ export default function FantasyHub() {
             </div>
           )}
         </Card>
+      )}
+
+      {/* Chip confirm, in the app's own voice. Anchored bottom on a phone so the
+          answer is under your thumb, not in the middle of the screen. */}
+      {confirmChip && chips && (
+        <div onClick={() => setConfirmChip(null)}
+          style={{
+            position: "fixed", inset: 0, zIndex: 40, background: "rgba(4,8,6,0.72)",
+            display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 14,
+          }}>
+          <div onClick={(e) => e.stopPropagation()} className="rounded-2xl"
+            style={{ background: PANEL, border: `1px solid ${tint(TEAL, "44")}`, padding: 18, width: "100%", maxWidth: 480 }}>
+            <div className="font-display" style={{ fontSize: 22, lineHeight: 1.05, marginBottom: 6 }}>
+              Play {CHIP_LABEL[confirmChip]}?
+            </div>
+            <p className="font-body" style={{ fontSize: 13, color: MUTED, margin: "0 0 6px", lineHeight: 1.45 }}>
+              {CHIP_META.find((c) => c.key === confirmChip)?.blurb}. It applies to gameweek {gwN} and
+              can be taken back until the matches start.
+            </p>
+            <p className="font-body" style={{ fontSize: 12.5, color: GOLD, margin: "0 0 14px" }}>
+              You hold {confirmChip === "wildcard" ? chips.wildcards : chips.held}{" "}
+              {confirmChip === "wildcard"
+                ? `wildcard${chips.wildcards === 1 ? "" : "s"}`
+                : `chip${chips.held === 1 ? "" : "s"}`}.
+            </p>
+            <div style={{ display: "flex", gap: 8 }}>
+              <div style={{ flex: 1 }}><Btn onClick={() => setConfirmChip(null)}>Not yet</Btn></div>
+              <div style={{ flex: 1 }}><Btn gold disabled={busy} onClick={() => commitChip(confirmChip)}>Play it</Btn></div>
+            </div>
+          </div>
+        </div>
       )}
 
       {result && (
@@ -482,7 +640,7 @@ export default function FantasyHub() {
                           {p && <Crest club={p.club} size={16} />}
                           <span style={{ fontWeight: 600, fontSize: 13 }}>
                             {nameOf(b.id)}
-                            {b.captain && <span style={{ color: GOLD }} title="Captain — points doubled"> ©</span>}
+                            {b.captain && <span style={{ color: GOLD }} title="Captain, points doubled"> ©</span>}
                             {b.subbedIn && <span style={{ color: GOLD }} title="Auto-subbed on"> ↑</span>}
                           </span>
                         </span>
@@ -572,7 +730,7 @@ export default function FantasyHub() {
         {!preseason && (
           <Btn onClick={() => router.push("/fantasy/transfers")}>
             {chips?.playedThisGw === "wildcard"
-              ? "Transfers (wildcard active — all free)"
+              ? "Transfers (wildcard active, all free)"
               : `Transfers (${squad.credits} free · extras −4 pts)`}
           </Btn>
         )}
@@ -584,7 +742,7 @@ export default function FantasyHub() {
           {" "}{state.gw.season}. In the live season this happens automatically at the deadline.
         </p>
       </div>}
-      {locked && !result && <p style={{ color: MUTED, fontSize: 13 }}>Locked — scoring…</p>}
+      {locked && !result && <p style={{ color: MUTED, fontSize: 13 }}>Locked. Scoring…</p>}
 
       {/* Demo stepper — walk the weekly journey (replay/prototype only) */}
       {isDemo && (
@@ -618,7 +776,7 @@ export default function FantasyHub() {
             fontSize: 12.5, color: MUTED, background: "none", border: "none",
             cursor: "pointer", textDecoration: "underline", padding: 0,
           }}>
-            Edit my squad — swap any players before the season starts
+            Edit my squad. Swap any players before the season starts
           </button>
         </div>
       )}

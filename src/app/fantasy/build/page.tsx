@@ -42,9 +42,9 @@ export default function BuildPage() {
   // Why a player can't be added (null = addable). Drives an explicit message
   // rather than a silently-greyed row — the founder hit the club cap blind.
   const blockReason = (p: ClientPoolPlayer): string | null => {
-    if (posCount(p.pos) >= QUOTA[p.pos]) return `You've got all ${QUOTA[p.pos]} ${p.pos} — remove one first.`;
-    if (clubCount(p.clubId) >= 3) return `Max 3 players from ${p.club} — you already have 3.`;
-    if (spent + Math.round(p.price * 10) > BUDGET) return `Not enough budget — ${fmtM(bank)} left.`;
+    if (posCount(p.pos) >= QUOTA[p.pos]) return `You've got all ${QUOTA[p.pos]} ${p.pos}. Remove one first.`;
+    if (clubCount(p.clubId) >= 3) return `Max 3 players from ${p.club}. You already have 3.`;
+    if (spent + Math.round(p.price * 10) > BUDGET) return `Not enough budget. ${fmtM(bank)} left.`;
     return null;
   };
   const clubFull = (clubId: number) => clubCount(clubId) >= 3;
@@ -74,8 +74,8 @@ export default function BuildPage() {
       </h1>
       <p style={{ fontSize: 13.5, color: MUTED, margin: "0 0 14px", lineHeight: 1.5 }}>
         {editing
-          ? "Change as many players as you like — you can rebuild freely until the season starts. Once your first gameweek locks, you'll change your team with transfers instead."
-          : "Fifteen players — two keepers, five defenders, five midfielders, three forwards. Max three from any club. Same £100.0m as everyone. This is your team all season: your knowledge round earns the transfers that improve it."}
+          ? "Change as many players as you like. You can rebuild freely until the season starts. Once your first gameweek locks, you'll change your team with transfers instead."
+          : "Fifteen players: two keepers, five defenders, five midfielders, three forwards. Max three from any club. Same £100.0m as everyone. This is your team all season: your knowledge round earns the transfers that improve it."}
       </p>
 
       <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
@@ -145,7 +145,7 @@ export default function BuildPage() {
           {complete ? (busy ? "Saving…" : editing ? "Save my squad" : "Confirm my squad") : `Pick ${15 - picks.length} more`}
         </Btn>
         <p style={{ fontSize: 11.5, color: MUTED, margin: "7px 0 0", lineHeight: 1.4, textAlign: "center" }}>
-          We&apos;ll pick your starting XI, captain and bench order — change any of it next.
+          We&apos;ll pick your starting XI, captain and bench order. Change any of it next.
         </p>
       </div>
     </main>

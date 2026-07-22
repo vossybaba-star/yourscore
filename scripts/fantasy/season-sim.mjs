@@ -66,6 +66,10 @@ const PRICES = Number(arg("--prices", "0"));
  *  gameweek, same bank + overflow as the round. Engaged managers who watch
  *  football quiz at halftime; modelled as playProb-weighted extra mint. */
 const HALFTIME = Number(arg("--halftime", "0"));
+/** The baseline transfer every manager gets each gameweek (founder-locked 22 Jul:
+ *  "One transfer. Earn the rest."). Set --baseline 0 to reproduce the pre-22-Jul
+ *  economy, where the round was the ONLY source of moves. */
+const BASELINE = Number(arg("--baseline", "1"));
 
 // ── rng (repo pattern) ────────────────────────────────────────────────────────
 function xfnv1a(s) { let h = 2166136261 >>> 0; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
@@ -273,6 +277,12 @@ function playWeek(m, gw, avail, form, curve, rng, stats, track) {
     if (nb) adoptSquad(m, nb, gw, track);
   }
   let hitPts = 0, convPts = 0;
+
+  // The baseline transfer everyone gets each gameweek (founder-locked 22 Jul).
+  // Outside the `participates` branch on purpose: it is granted for the gameweek,
+  // not for turning up, so the manager who skips the round still gets his move.
+  // Caps rather than cashing out — points for existing would be free points.
+  if (BASELINE > 0) m.credits = Math.min(BANK_CAP, m.credits + BASELINE);
 
   if (participates) {
     m.played++;

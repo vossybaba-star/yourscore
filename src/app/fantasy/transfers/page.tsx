@@ -163,9 +163,9 @@ export default function TransfersPage() {
       <h1 style={{ fontSize: 22, margin: "0 0 4px", fontWeight: 700 }}>Transfers</h1>
       <p style={{ fontSize: 13, color: MUTED, margin: "0 0 10px", lineHeight: 1.5 }}>
         {wildcardActive
-          ? <>Wildcard active — <b style={{ color: GOLD }}>transfers are free this week</b>, no limit and no points hit.</>
+          ? <>Wildcard active. <b style={{ color: GOLD }}>transfers are free this week</b>, no limit and no points hit.</>
           : <>Tap a player to swap him. You earned <b style={{ color: GOLD }}>{squad.credits} free move{squad.credits === 1 ? "" : "s"}</b> this
-            week — after that, every transfer costs <b style={{ color: "#E08A6B" }}>4 points</b>.</>}
+            week. After that, every transfer costs <b style={{ color: "#E08A6B" }}>4 points</b>.</>}
       </p>
 
       {/* Running cost — unmissable */}
@@ -203,6 +203,19 @@ export default function TransfersPage() {
               <p style={{ fontSize: 12, color: MUTED, margin: "0 0 8px", lineHeight: 1.45 }}>
                 In form, not in your squad, and affordable. Tap the player you&apos;d drop above to make the swap.
               </p>
+              {/* The four numbers on each row were unlabelled, so "26 9 46 81"
+                  read as four gameweeks when the last one is the total. */}
+              <div style={{
+                display: "flex", justifyContent: "flex-end", gap: 8, padding: "0 11px 5px",
+                fontSize: 10, letterSpacing: "0.08em", color: MUTED,
+              }}>
+                <span style={{ display: "flex", gap: 8 }}>
+                  {form.gws.map((g) => (
+                    <span key={g} style={{ width: 22, textAlign: "center" }}>GW{g}</span>
+                  ))}
+                </span>
+                <span style={{ width: 26, textAlign: "right", color: GOLD }}>TOTAL</span>
+              </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {prospects.map((p) => (
                   <div key={p.id} style={{
@@ -228,7 +241,7 @@ export default function TransfersPage() {
                 ))}
               </div>
               <p style={{ fontSize: 10.5, color: MUTED, margin: "7px 0 0", lineHeight: 1.4 }}>
-                Numbers are YourScore points from the last {form.gws.length === 1 ? "gameweek" : `${form.gws.length} gameweeks`} — not FPL&apos;s.
+                Numbers are YourScore points from the last {form.gws.length === 1 ? "gameweek" : `${form.gws.length} gameweeks`}, not FPL&apos;s.
               </p>
             </div>
           )}
@@ -258,7 +271,7 @@ export default function TransfersPage() {
                   </span>
                   {nowT > paid && (
                     <div style={{ marginTop: 2 }}>
-                      He&apos;s risen to £{out.price.toFixed(1)}m since you paid {fmtM(paid)} — you keep half the rise.
+                      He&apos;s risen to £{out.price.toFixed(1)}m since you paid {fmtM(paid)}, so you keep half the rise.
                     </div>
                   )}
                   {nowT < paid && (
@@ -271,7 +284,7 @@ export default function TransfersPage() {
             })()}
           </Card>
           <div style={{ fontSize: 12.5, marginBottom: 4 }}>
-            Sign a replacement — this move is {wildcardActive
+            Sign a replacement. This move is {wildcardActive
               ? <b style={{ color: GOLD }}>free (wildcard active)</b>
               : nextIsFree
                 ? <b style={{ color: GOLD }}>free (uses 1 credit)</b>
@@ -281,7 +294,7 @@ export default function TransfersPage() {
             <p style={{ fontSize: 11.5, color: MUTED, margin: "0 0 8px", lineHeight: 1.45 }}>
               Best form first. Numbers are YourScore points from the last{" "}
               {form.gws.length === 1 ? "gameweek" : `${form.gws.length} gameweeks`}
-              {out && <> — {out.name} has scored <b style={{ color: INK }}>{formTotal(out.id)}</b></>}.
+              {out && <>. {out.name} has scored <b style={{ color: INK }}>{formTotal(out.id)}</b></>}.
             </p>
           )}
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -308,14 +321,14 @@ export default function TransfersPage() {
                 </button>
               );
             })}
-            {!candidates.length && <p style={{ color: MUTED, fontSize: 13 }}>Nobody affordable in this position — sell someone pricier first.</p>}
+            {!candidates.length && <p style={{ color: MUTED, fontSize: 13 }}>Nobody affordable in this position. Sell someone pricier first.</p>}
           </div>
         </>
       )}
 
       {err && <p style={{ color: "#E08A6B", fontSize: 13, marginTop: 10 }}>{err}</p>}
       <div style={{ marginTop: 14 }}>
-        <Btn onClick={() => router.push("/fantasy")}>Done — back to my team</Btn>
+        <Btn onClick={() => router.push("/fantasy")}>Done, back to my team</Btn>
       </div>
     </main>
   );

@@ -100,6 +100,22 @@ export function bankCredits(current: number, minted: number): number {
   return Math.min(CREDIT_CAP, current + minted);
 }
 
+/** The baseline move everyone gets, every gameweek (founder-locked 22 Jul).
+ *
+ *  Why it exists: the pitch is "One transfer. Earn the rest." — the round earns
+ *  you EXTRA moves, it does not ration the basic one every fantasy game gives.
+ *  Without this, a manager who scored 2/11 had a squad he literally could not
+ *  touch, which is a punishment no other fantasy game hands out and not what the
+ *  knowledge hook was ever meant to mean.
+ *
+ *  It CAPS rather than cashing out. Round credits overflow into points because
+ *  you earned them by knowing things; a baseline credit is granted for existing,
+ *  and paying points for existing would be free points for ignoring the game. */
+export const BASELINE_CREDITS_PER_GW = 1;
+export function grantBaseline(current: number): number {
+  return Math.min(CREDIT_CAP, current + BASELINE_CREDITS_PER_GW);
+}
+
 /** Credits the bank can't hold cash out as points — OVERFLOW ONLY (founder, 14 Jul).
  *
  *  The hole this fills: the round's only payoff was transfers, so a manager happy

@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  accrueChip, applyTransfer, autoSubs, bankCredits, cashOverflow, creditsForRound,
+  accrueChip, applyTransfer, autoSubs, bankCredits, cashOverflow, creditsForRound, grantBaseline,
   effectiveCaptain, halfOf, perfectRoundReward, scoreEntry, sellPrice, smartDefaults,
   transferCost, validateSelection, validateSquad,
   type LockedSelection, type PoolPlayer, type Squad, RuleError, BUDGET_TENTHS,
@@ -383,4 +383,18 @@ test("applyTransfer: sells at the FPL rule, not at what you paid", () => {
   const next = applyTransfer(squad, out.id, inn.id, risen);
   assert.equal(next.bankTenths, squad.bankTenths + (out.buyTenths + 5) - inn.priceTenths,
     "you keep half the 1.0 rise, not all of it and not none of it");
+});
+
+test("grantBaseline: everyone gets one transfer a gameweek", () => {
+  assert.equal(grantBaseline(0), 1);
+  assert.equal(grantBaseline(2), 3);
+});
+test("grantBaseline: caps rather than cashing out (free points for existing would be wrong)", () => {
+  assert.equal(grantBaseline(CREDIT_CAP), CREDIT_CAP);
+  assert.equal(grantBaseline(CREDIT_CAP - 1), CREDIT_CAP);
+});
+test("grantBaseline: a bad round no longer means a squad you cannot touch", () => {
+  // 2/11 earns nothing from the curve, but the week is still playable.
+  assert.equal(creditsForRound(2), 0);
+  assert.equal(grantBaseline(bankCredits(0, creditsForRound(2))), 1);
 });

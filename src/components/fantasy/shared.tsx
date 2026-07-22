@@ -82,17 +82,31 @@ export const page: CSSProperties = {
   padding: "16px 16px 96px", maxWidth: 512, margin: "0 auto",
 };
 
-export function Header({ right }: { right?: ReactNode }) {
+export function Header({ right, exit }: { right?: ReactNode; exit?: { label: string; onClick: () => void } }) {
   // Wraps, because the right slot outgrew the row: on a 375px phone the hub's
   // three chips plus a button ran off the edge, taking the last chip and the
   // button off-screen entirely with no scrollbar to hint they were there.
+  //
+  // `exit` is the get-me-out control. Every screen that can trap you needs one:
+  // the native app has no URL bar and no browser back, so a screen without a
+  // visible way out is a screen you can only leave by killing the app.
   return (
     <div style={{
       display: "flex", justifyContent: "space-between", alignItems: "center",
       flexWrap: "wrap", gap: 8, marginBottom: 14,
     }}>
-      <span className="font-display tracking-widest" style={{ fontSize: 15, color: TEAL }}>
-        YOURSCORE FANTASY
+      <span style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+        {exit && (
+          <button onClick={exit.onClick} aria-label={exit.label}
+            className="font-body rounded-full"
+            style={{
+              background: PANEL_2, border: `1px solid ${LINE}`, color: MUTED,
+              fontSize: 12.5, fontWeight: 600, padding: "5px 12px", cursor: "pointer", flexShrink: 0,
+            }}>← {exit.label}</button>
+        )}
+        <span className="font-display tracking-widest" style={{ fontSize: 15, color: TEAL }}>
+          YOURSCORE FANTASY
+        </span>
       </span>
       <span style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>{right}</span>
     </div>

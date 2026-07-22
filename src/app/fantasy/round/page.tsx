@@ -116,7 +116,7 @@ export default function RoundPage() {
               ? "You need 3 right to earn your first transfer."
               : nextAt
                 ? `${nextAt - got} more next time would've earned another.`
-                : "Top of the curve — the most a round can earn."}
+                : "Top of the curve. The most a round can earn."}
           </p>
           <p style={{ fontSize: 11.5, color: MUTED, margin: "0 0 16px" }}>
             How it works: 3 correct = 1 transfer · 5 = 2 · 7 = 3 · 9 = 4. Transfers bank up to five.
@@ -129,13 +129,20 @@ export default function RoundPage() {
 
   return (
     <main style={page}>
-      <Header right={<>
+      {/* Every answer is banked server-side as you go, so leaving is safe and the
+          hub offers "Continue round". Without a visible exit this screen trapped
+          you: a running timer, no back, and no URL bar in the native app. */}
+      <Header exit={{ label: "My team", onClick: () => router.push("/fantasy") }} right={<>
         <Chip>Q {k + 1}/11</Chip>
         <Chip gold>✓ {correctCount}</Chip>
         <Chip>{secs}s</Chip>
       </>} />
+      {/* The old label read "{position} QUESTION", which named the SQUAD SLOT the
+          question feeds, not the answer's position — so "GK QUESTION" sat above
+          four outfielders and read as a bug. The slot is not information a player
+          can use; the question number is. */}
       <div style={{ fontSize: 11, letterSpacing: "0.12em", color: MUTED, marginBottom: 6 }}>
-        {q.position} QUESTION
+        QUESTION {k + 1} OF 11
       </div>
 
       {/* Who-am-I clue badges. The generator keeps nationality + shirt number OUT
@@ -175,7 +182,7 @@ export default function RoundPage() {
       </h2>
       {chip === "insight" && !hintSpent && !reveal && (
         <div style={{ margin: "-6px 0 12px" }}>
-          <Btn small onClick={useInsight}>Use Insight — take two wrong answers away</Btn>
+          <Btn small onClick={useInsight}>Use Insight: take two wrong answers away</Btn>
         </div>
       )}
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -218,7 +225,7 @@ export default function RoundPage() {
                 You&apos;ve earned a transfer
               </div>
               <div style={{ fontSize: 12.5, color: MUTED, marginTop: 2 }}>
-                {reveal.correctCount} correct — that&apos;s {creditsAt(reveal.correctCount)} transfer
+                {reveal.correctCount} correct, so that&apos;s {creditsAt(reveal.correctCount)} transfer
                 {creditsAt(reveal.correctCount) === 1 ? "" : "s"} this week.
                 {reveal.correctCount < 9 && ` Get to ${THRESHOLDS.find((t) => reveal.correctCount < t)} for another.`}
               </div>
@@ -229,7 +236,7 @@ export default function RoundPage() {
         </div>
       )}
       <p style={{ fontSize: 11.5, color: MUTED, marginTop: 16, lineHeight: 1.4 }}>
-        The timer is a guide, not a score — speed never earns anything here.
+        The timer is a guide, not a score. Speed never earns anything here.
       </p>
     </main>
   );

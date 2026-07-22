@@ -11,7 +11,7 @@ import poolJson from "@/data/gates/pool.json";
 import { buildRound, clientView, grade, type Round } from "@/lib/gates/serve";
 import type { GateQuestion } from "@/lib/gates/types";
 import {
-  applyTransfer, cashOverflow, CHIPS, creditsForRound, GAMEWEEKS_PER_CHIP, halfOf,
+  applyTransfer, cashOverflow, CHIPS, creditsForRound, GAMEWEEKS_PER_CHIP, grantBaseline, halfOf,
   perfectRoundReward, scoreEntry, smartDefaults, transferCost, validateSelection, validateSquad,
   RuleError, type Chip, type LockedSelection, type Squad, type SquadPick,
 } from "./engine";
@@ -270,8 +270,20 @@ export async function advanceGw(db: Db, userId: string) {
   if (gw.mode !== "replay") throw new HttpError(403, "the season advances at the deadline", "live");
   const entry = await getEntry(db, userId, gw.gw);
   if (!entry?.scored_at) throw new HttpError(409, "finish this gameweek first", "not-scored");
-  await db.from("fantasy_entries").update({ status: "final" })
-    .eq("user_id", userId).eq("gw", gw.gw);
+  // CAS on status so a double-tap can't grant two baseline transfers.
+  const { data: moved } = await db.from("fantasy_entries").update({ status: "final" })
+    .eq("user_id", userId).eq("gw", gw.gw).neq("status", "final").select("user_id");
+  if (moved?.length) {
+    // The baseline transfer for the week now opening — the replay twin of what
+    // finaliseGameweek does for the live season.
+    const squad = await getSquad(db, userId);
+    if (squad) {
+      const next = grantBaseline(squad.credits);
+      if (next !== squad.credits) {
+        await db.from("fantasy_squads").update({ credits: next }).eq("user_id", userId);
+      }
+    }
+  }
   return getState(db, userId); // currentGw now points at the next week
 }
 

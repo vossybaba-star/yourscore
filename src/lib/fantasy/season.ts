@@ -31,7 +31,7 @@ import "server-only";
  *      deadline is sacred."
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { accrueChip, halfOf, scoreEntry, type Chip, type LockedSelection, type SquadPick } from "./engine";
+import { accrueChip, grantBaseline, halfOf, scoreEntry, type Chip, type LockedSelection, type SquadPick } from "./engine";
 import { aggregateFixtures, fetchGwFixtures, toPlayerScores } from "./ingest";
 import { enginePool, gwPrices } from "./pool";
 import { SCORING_VERSION, ZERO_FACTS, type MatchFacts } from "./values";
@@ -287,15 +287,36 @@ export async function scoreGameweek(db: Db, gw: SeasonGw, opts: { final: boolean
  * rolled-over week (never played the round) is filtered out before accruing, so
  * it advances nobody's chip progress (D:91-93).
  */
-export async function finaliseGameweek(db: Db, gw: SeasonGw): Promise<{ finalised: number; chipsAccrued: number }> {
+export async function finaliseGameweek(db: Db, gw: SeasonGw): Promise<{ finalised: number; chipsAccrued: number; baselineGranted: number }> {
   const { data: transitioned, error } = await db.from("fantasy_entries")
     .update({ status: "final" }).eq("gw", gw.gw).eq("status", "scored")
     .select("user_id, round_done_at");
   if (error) throw new Error(`finalise: ${error.message}`);
   await db.from("fantasy_gameweeks").update({ status: "final" }).eq("gw", gw.gw);
 
-  const played = ((transitioned ?? []) as { user_id: string; round_done_at: string | null }[])
-    .filter((e) => e.round_done_at != null);
+  const all = (transitioned ?? []) as { user_id: string; round_done_at: string | null }[];
+
+  // The baseline transfer for the gameweek now opening. Granted to EVERYONE who
+  // had an entry, including the rolled-over manager who never opened the app —
+  // "everyone gets one" means everyone. Sits here because the scored → final
+  // transition is already a compare-and-swap, so a re-run of the tick can't hand
+  // out a second one.
+  let baselineGranted = 0;
+  if (all.length) {
+    const { data: squads, error: bErr } = await db.from("fantasy_squads")
+      .select("user_id, credits").in("user_id", all.map((e) => e.user_id));
+    if (bErr) throw new Error(`finalise baseline lookup: ${bErr.message}`);
+    for (const s of (squads ?? []) as { user_id: string; credits: number }[]) {
+      const next = grantBaseline(s.credits);
+      if (next === s.credits) continue; // already at the cap
+      const { error: gErr } = await db.from("fantasy_squads")
+        .update({ credits: next }).eq("user_id", s.user_id);
+      if (gErr) throw new Error(`finalise baseline grant: ${gErr.message}`);
+      baselineGranted++;
+    }
+  }
+
+  const played = all.filter((e) => e.round_done_at != null);
   let chipsAccrued = 0;
   if (played.length) {
     const { data: squads, error: sqErr } = await db.from("fantasy_squads")
@@ -310,7 +331,7 @@ export async function finaliseGameweek(db: Db, gw: SeasonGw): Promise<{ finalise
       if (next.minted) chipsAccrued++;
     }
   }
-  return { finalised: transitioned?.length ?? 0, chipsAccrued };
+  return { finalised: transitioned?.length ?? 0, chipsAccrued, baselineGranted };
 }
 
 // ── the tick ─────────────────────────────────────────────────────────────────

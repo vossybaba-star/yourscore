@@ -67,8 +67,8 @@ export default function KnowledgePage() {
           </div>
           {!board.rows.length && (
             <Card><p style={{ fontSize: 13, color: MUTED, margin: 0, lineHeight: 1.5 }}>
-              No rounds played yet {cut === "week" ? "this gameweek" : cut === "month" ? "this month" : "this season"} —
-              the board fills in as rounds are completed.
+              No rounds played yet {cut === "week" ? "this gameweek" : cut === "month" ? "this month" : "this season"}.
+              The board fills in as rounds are completed.
             </p></Card>
           )}
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>

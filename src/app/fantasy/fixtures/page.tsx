@@ -19,7 +19,7 @@ import {
 export const revalidate = 300;
 
 export const metadata = {
-  title: "Fantasy fixture ticker — YourScore",
+  title: "Fantasy fixture ticker · YourScore",
   description:
     "Every Premier League club's next five fixtures, colour-coded by difficulty.",
 };
@@ -86,7 +86,7 @@ export default async function FantasyFixtures() {
                             key={g}
                             style={{ color: MUTED, fontSize: 11, textAlign: "center", padding: "5px 0" }}
                           >
-                            —
+                            ·
                           </div>
                         );
                       const isDouble = cells.length > 1;
@@ -94,7 +94,7 @@ export default async function FantasyFixtures() {
                         <div
                           key={g}
                           title={cells
-                            .map((c) => `${c.home ? "vs" : "away to"} ${c.opponent} — ${DIFF[c.difficulty].label}`)
+                            .map((c) => `${c.home ? "vs" : "away to"} ${c.opponent}, ${DIFF[c.difficulty].label}`)
                             .join(" · ")}
                           style={{
                             display: "flex",

@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import {
-  api, Btn, Card, Chip, GOLD, Header, INK, LINE, MUTED, page, PANEL,
+  api, Btn, Card, Chip, GOLD, Header, INK, LINE, MUTED, page, PANEL, TEAL, tint,
 } from "@/components/fantasy/shared";
 
 interface MyLeague {
@@ -100,6 +100,31 @@ export default function LeaguesHome() {
         Create a league, share the code, see who really knows football.
       </p>
 
+      {/* A returning manager came to look at a table, not to fill in a form. When
+          they already have leagues, those go first and the setup cards drop
+          below; a newcomer still gets the form at the top. */}
+      {leagues.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 11, letterSpacing: "0.12em", color: MUTED, marginBottom: 6 }}>YOUR LEAGUES</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {leagues.map((l) => (
+              <button key={l.id} onClick={() => router.push(`/fantasy/leagues/${l.code}`)} style={rowStyle}>
+                <span style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
+                  <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ fontSize: 14, fontWeight: 700 }}>{l.name}</span>
+                    {l.isPublic && <Chip>Public</Chip>}
+                  </span>
+                  <span style={{ fontSize: 11.5, color: MUTED }}>
+                    {l.memberCount} member{l.memberCount === 1 ? "" : "s"}
+                  </span>
+                </span>
+                <span style={{ color: MUTED, fontSize: 18, flexShrink: 0 }}>›</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <Card style={{ marginBottom: 12 }}>
         <div style={{ fontSize: 12.5, fontWeight: 700, letterSpacing: "0.1em", color: GOLD, marginBottom: 8 }}>
           CREATE A LEAGUE
@@ -117,16 +142,16 @@ export default function LeaguesHome() {
             return (
               <button key={label} onClick={() => setIsPublic(wantsPublic)} style={{
                 flex: 1, padding: "8px 4px", borderRadius: 9, fontSize: 12.5, fontWeight: 700,
-                cursor: "pointer", background: active ? GOLD : PANEL, color: active ? "#2A1F00" : INK,
-                border: `1px solid ${active ? GOLD : LINE}`,
+                cursor: "pointer", background: active ? tint(TEAL, "22") : PANEL, color: active ? TEAL : MUTED,
+                border: `1px solid ${active ? tint(TEAL, "66") : LINE}`,
               }}>{label}</button>
             );
           })}
         </div>
         <p style={{ fontSize: 11, color: MUTED, margin: "0 0 10px", lineHeight: 1.4 }}>
           {isPublic
-            ? "Public — anyone can find and join this league."
-            : "Private — only people with your code can join."}
+            ? "Public: anyone can find and join this league."
+            : "Private: only people with your code can join."}
         </p>
         <Btn gold disabled={!name.trim() || busy} onClick={create}>
           {busy ? "…" : "Create league"}
@@ -150,35 +175,19 @@ export default function LeaguesHome() {
 
       {err && <p style={{ color: "#E08A6B", fontSize: 13, margin: "0 0 12px" }}>{err}</p>}
 
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 11, letterSpacing: "0.12em", color: MUTED, marginBottom: 6 }}>YOUR LEAGUES</div>
-        {loaded && leagues.length === 0 && (
+      {loaded && leagues.length === 0 && (
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ fontSize: 11, letterSpacing: "0.12em", color: MUTED, marginBottom: 6 }}>YOUR LEAGUES</div>
           <p style={{ fontSize: 13, color: MUTED, margin: 0 }}>
-            No leagues yet — create one and send your friends the code.
+            No leagues yet. Create one and send your friends the code.
           </p>
-        )}
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {leagues.map((l) => (
-            <button key={l.id} onClick={() => router.push(`/fantasy/leagues/${l.code}`)} style={rowStyle}>
-              <span style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
-                <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ fontSize: 14, fontWeight: 700 }}>{l.name}</span>
-                  {l.isPublic && <Chip>Public</Chip>}
-                </span>
-                <span style={{ fontSize: 11.5, color: MUTED }}>
-                  {l.memberCount} member{l.memberCount === 1 ? "" : "s"}
-                </span>
-              </span>
-              <span style={{ color: MUTED, fontSize: 18, flexShrink: 0 }}>›</span>
-            </button>
-          ))}
         </div>
-      </div>
+      )}
 
       <div>
         <div style={{ fontSize: 11, letterSpacing: "0.12em", color: MUTED, marginBottom: 6 }}>PUBLIC LEAGUES</div>
         {loaded && publicList.length === 0 && (
-          <p style={{ fontSize: 13, color: MUTED, margin: 0 }}>No public leagues yet — be the first.</p>
+          <p style={{ fontSize: 13, color: MUTED, margin: 0 }}>No public leagues yet. Be the first.</p>
         )}
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {publicList.map((l) => (

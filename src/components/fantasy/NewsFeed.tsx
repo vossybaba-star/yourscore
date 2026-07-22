@@ -189,7 +189,7 @@ export function NewsFeed({
           <div style={{ color: MUTED, fontSize: 13, marginTop: 6, lineHeight: 1.5 }}>
             {filter === "all"
               ? "Team news, transfer talk and tips land here as the gameweek builds."
-              : "Try another filter — there's news in the other tabs."}
+              : "Try another filter. There's news in the other tabs."}
           </div>
         </div>
       )}
@@ -246,7 +246,7 @@ export function NewsFeed({
               <span aria-hidden="true" style={{ color: WARN, fontSize: 15, lineHeight: 1.35 }}>!</span>
               <div style={{ color: INK, fontSize: 14, lineHeight: 1.45 }}>
                 <strong>{d.name}</strong>{" "}
-                <span style={{ color: MUTED }}>({d.club})</span> — {d.reason}
+                <span style={{ color: MUTED }}>({d.club})</span> · {d.reason}
               </div>
             </div>
           ))}
