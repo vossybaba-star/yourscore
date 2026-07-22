@@ -11,7 +11,7 @@ import { KNOWLEDGE_NAME } from "@/lib/fantasy/brand";
 
 type Result = NonNullable<NonNullable<FantasyState["entry"]>["result"]>;
 
-// Fungible tokens (triple_captain, bench_boost, insight, second_chance) all
+// Fungible tokens (triple_captain, bench_boost, insight) all
 // spend from the same held count; the wildcard runs on its own separate track.
 // Insight fires inside the round (a 50/50), Second Chance after it (retry one
 // the full chip set is legible, but never playable.
@@ -20,7 +20,6 @@ const CHIP_META: { key: ChipName; label: string; blurb: string; comingSoon?: boo
   { key: "triple_captain", label: "Triple Captain", blurb: "Your captain's points count ×3, not ×2" },
   { key: "bench_boost", label: "Bench Boost", blurb: "All 15 players score, bench included" },
   { key: "insight", label: "Insight", blurb: "50/50 on one question of the round" },
-  { key: "second_chance", label: "Second Chance", blurb: "Retry one wrong answer after the round" },
 ];
 const CHIP_LABEL: Record<ChipName, string> = Object.fromEntries(CHIP_META.map((c) => [c.key, c.label])) as Record<ChipName, string>;
 

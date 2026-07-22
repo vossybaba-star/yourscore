@@ -141,7 +141,9 @@ export function transferCost(creditsLeft: number, wildcard = false): { paid: "cr
 /** The chip token, spent as whichever chip you want. `wildcard` runs on its own
  *  track (issued, not earned) but is played through the same slot: one per week. */
 export type Chip = "triple_captain" | "bench_boost" | "insight" | "second_chance" | "wildcard";
-export const CHIPS: readonly Chip[] = ["triple_captain", "bench_boost", "insight", "second_chance", "wildcard"];
+// "second_chance" stays in the TYPE (historic entry rows may carry it) but is no
+// longer PLAYABLE — the founder cut it on 22 Jul ("remove the Second Chance").
+export const CHIPS: readonly Chip[] = ["triple_captain", "bench_boost", "insight", "wildcard"];
 
 /** Loyalty, not performance: a token every GAMEWEEKS_PER_CHIP gameweeks you
  *  actually PLAY. Miss a week and you accrue slower — no wipe, no grace needed

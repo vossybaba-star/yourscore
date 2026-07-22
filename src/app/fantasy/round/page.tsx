@@ -31,10 +31,6 @@ export default function RoundPage() {
   const [chip, setChip] = useState<string | null>(null);
   const [eliminated, setEliminated] = useState<number[]>([]);
   const [hintSpent, setHintSpent] = useState(false);
-  const [wrongKs, setWrongKs] = useState<number[] | null>(null);
-  interface RetryQ { k: number; question: Served; prior: number | null }
-  const [retryQ, setRetryQ] = useState<RetryQ | null>(null);
-  const [retryDone, setRetryDone] = useState<{ correct: boolean; answerId: number; extraCredits: number; cashPoints: number; wildcardMinted?: boolean } | null>(null);
 
   useEffect(() => {
     api<{ chips: { playedThisGw: string | null } | null }>("state")
@@ -95,24 +91,7 @@ export default function RoundPage() {
     } catch (e) { setErr((e as Error).message); }
   };
 
-  /** Second Chance, three steps: which went wrong → re-serve one → grade it. */
-  const loadWrongs = async () => {
-    try { setWrongKs((await api<{ wrong: number[] }>("round/retry", {})).wrong); }
-    catch (e) { setErr((e as Error).message); }
-  };
-  const pickRetry = async (rk: number) => {
-    try { setRetryQ(await api<RetryQ>("round/retry", { k: rk })); }
-    catch (e) { setErr((e as Error).message); }
-  };
-  const submitRetry = async (optionId: number) => {
-    if (!retryQ) return;
-    try {
-      const r = await api<{ correct: boolean; answerId: number; correctCount: number; extraCredits: number; cashPoints: number; wildcardMinted?: boolean }>("round/retry", { k: retryQ.k, optionId });
-      setRetryDone(r); setCorrectCount(r.correctCount ?? correctCount);
-    } catch (e) { setErr((e as Error).message); }
-  };
-
-  // Did THIS answer just tip us over a credit threshold? That's a moment worth
+// Did THIS answer just tip us over a credit threshold? That's a moment worth
   // marking — the founder shouldn't have to wait until the round ends to learn
   // he's earned a transfer.
   const justEarned = !!reveal && reveal.correct && THRESHOLDS.includes(reveal.correctCount);
@@ -142,41 +121,6 @@ export default function RoundPage() {
           <p style={{ fontSize: 11.5, color: MUTED, margin: "0 0 16px" }}>
             How it works: 3 correct = 1 transfer · 5 = 2 · 7 = 3 · 9 = 4. Transfers bank up to five.
           </p>
-          {/* SECOND CHANCE — retry one wrong answer, before the deadline */}
-          {chip === "second_chance" && !retryDone && got < 11 && (
-            <div style={{ textAlign: "left", background: PANEL, border: `1px solid ${GOLD}`, borderRadius: 12, padding: 13, marginBottom: 14 }}>
-              <div style={{ fontSize: 13.5, fontWeight: 700, color: GOLD, marginBottom: 6 }}>Second Chance is live</div>
-              {!wrongKs && !retryQ && (
-                <Btn small onClick={loadWrongs}>Retry one wrong answer</Btn>
-              )}
-              {wrongKs && !retryQ && (
-                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                  {wrongKs.map((wk) => (
-                    <Btn small key={wk} onClick={() => pickRetry(wk)}>Question {wk + 1}</Btn>
-                  ))}
-                  {!wrongKs.length && <span style={{ fontSize: 12.5, color: MUTED }}>Nothing to retry.</span>}
-                </div>
-              )}
-              {retryQ && (
-                <div>
-                  <div style={{ fontSize: 14, fontWeight: 600, whiteSpace: "pre-line", margin: "4px 0 10px" }}>{retryQ.question.prompt}</div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    {retryQ.question.options.map((o) => (
-                      <Btn small key={o.id} onClick={() => submitRetry(o.id)}
-                        >{o.label}{retryQ.prior === o.id ? "  (your first pick)" : ""}</Btn>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-          {retryDone && (
-            <p style={{ fontSize: 13.5, fontWeight: 600, color: retryDone.correct ? GOLD : MUTED, margin: "0 0 14px" }}>
-              {retryDone.correct
-                ? `Redeemed. ${retryDone.wildcardMinted ? "That made it 11/11 — bonus wildcard minted." : retryDone.extraCredits > 0 ? `+${retryDone.extraCredits} transfer earned.` : retryDone.cashPoints > 0 ? `+${retryDone.cashPoints} points cashed.` : "Right answer — the count stands corrected."}`
-                : "Not this time either — the answer's revealed on your run after the deadline."}
-            </p>
-          )}
           <Btn gold onClick={() => router.push("/fantasy")}>Back to my squad</Btn>
         </Card>
       </main>
