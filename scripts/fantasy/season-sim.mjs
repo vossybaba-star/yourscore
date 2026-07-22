@@ -61,6 +61,11 @@ const POLICY = arg("--policy", "leftover");
  *      not a fresh £100m — how FPL's wildcard actually works;
  *    - a late joiner builds at the prices of the week he joins (base £100m). */
 const PRICES = Number(arg("--prices", "0"));
+/** Max transfer credits per week earnable from HALFTIME quizzes (0 = link off).
+ *  Founder-locked 22 Jul: a good halftime score (>=7/10) banks a credit for next
+ *  gameweek, same bank + overflow as the round. Engaged managers who watch
+ *  football quiz at halftime; modelled as playProb-weighted extra mint. */
+const HALFTIME = Number(arg("--halftime", "0"));
 
 // ── rng (repo pattern) ────────────────────────────────────────────────────────
 function xfnv1a(s) { let h = 2166136261 >>> 0; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
@@ -273,7 +278,10 @@ function playWeek(m, gw, avail, form, curve, rng, stats, track) {
     m.played++;
     const correct = Math.max(0, Math.min(11, Math.round(a.acc + (rng() + rng() + rng() - 1.5) * a.sd)));
     if (correct === 11 && m.bonusMinted < 1) { m.wc = Math.min(2, m.wc + 1); m.bonusMinted++; stats.bonusWc++; }
-    const minted = curve(correct);
+    let minted = curve(correct);
+    // Halftime link: an engaged manager watching the weekend's football clears
+    // the 7/10 bar on ~60% of played weeks; a big Saturday sometimes yields two.
+    if (HALFTIME > 0 && rng() < 0.6) minted += Math.min(HALFTIME, 1 + (rng() < 0.35 ? 1 : 0));
     if (POLICY === "overflow") {
       const banked = Math.min(BANK_CAP - m.credits, minted);
       m.credits += banked;

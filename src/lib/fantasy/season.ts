@@ -36,6 +36,7 @@ import { aggregateFixtures, fetchGwFixtures, toPlayerScores } from "./ingest";
 import { enginePool, gwPrices } from "./pool";
 import { SCORING_VERSION, ZERO_FACTS, type MatchFacts } from "./values";
 import { deadlineComms, monthWinnerComms, resultComms } from "./comms";
+import { halftimeEarn } from "./halftime-link";
 
 // Same loose client type server.ts uses — the generated row types model jsonb as
 // `Json`, which fights every SquadPick/MatchFacts read and write in this file.
@@ -369,6 +370,16 @@ export async function tickSeason(db: Db, now = Date.now()): Promise<TickReport[]
       gw.status = "locked";
     }
 
+    // The halftime link sweeps while the weekend is in play: a good halftime
+    // quiz banks a credit for NEXT gameweek (this one is locked — nothing here
+    // can touch the week in play). It runs BEFORE ingest on purpose: quiz
+    // earnings must not hinge on the SportMonks feed being alive. Failure-soft,
+    // idempotent per attempt.
+    try {
+      const ht = await halftimeEarn(db, gw);
+      if (ht.minted) out.push({ gw: gw.gw, action: "provisional", detail: `halftime link minted ${ht.minted} credit(s)` });
+    } catch (e) { console.error("[tick] halftime link failed:", e); }
+
     // 2. Ingest + score. Any feed failure HOLDS the gameweek where it is — we
     //    never advance the state machine on data we don't trust.
     let lastKickoff: number | null = null;
@@ -394,6 +405,14 @@ export async function tickSeason(db: Db, now = Date.now()): Promise<TickReport[]
     if (lastKickoff !== null && now >= lastKickoff + MATCHES_DONE_AFTER_LAST_KICKOFF_MS + FINALISE_AFTER_MATCHES_DONE_MS) {
       const { finalised, chipsAccrued } = await finaliseGameweek(db, gw);
       out.push({ gw: gw.gw, action: "finalised", detail: `stat-correction window closed (${finalised} entries, ${chipsAccrued} chips accrued)` });
+      // The retention loop fires off the back of finality: your result lands, and
+      // if this gameweek closed its month, every league announces its winner.
+      // Failure-soft — comms must never hold the season (that's the tick's job).
+      try {
+        const r = await resultComms(db, gw);
+        const m = await monthWinnerComms(db, gw, (gws ?? []) as SeasonGw[]);
+        out.push({ gw: gw.gw, action: "finalised", detail: `comms: ${r.pushed} pushed · ${r.emailed} emailed${m ? ` · ${m} month titles announced` : ""}` });
+      } catch (e) { console.error("[tick] result comms failed:", e); }
     }
   }
   return out;
