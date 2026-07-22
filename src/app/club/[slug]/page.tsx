@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { BackPill } from "@/components/ui/BackPill";
+import { BottomNav } from "@/components/ui/BottomNav";
 import { getTeamBadgeUrlSync } from "@/lib/teamImages";
 
 // ── Types (mirrors the /api/club-page/[slug] response) ──────────────────────
@@ -167,7 +168,9 @@ export default function ClubPage() {
   }, [slug]);
 
   return (
-    <div className="min-h-screen bg-bg" style={{ paddingBottom: "calc(48px + env(safe-area-inset-bottom, 0px))" }}>
+    // 72px of bottom padding, not 48: the tab bar is rendered on this page (it is a hub, not a
+    // terminal screen), so the last row of topic cards has to clear it.
+    <div className="min-h-screen bg-bg" style={{ paddingBottom: "calc(72px + env(safe-area-inset-bottom, 0px))" }}>
       <div className="max-w-lg mx-auto px-4 pt-4">
         <BackPill fallback="/play" label="Back" tone="play" />
       </div>
@@ -221,6 +224,10 @@ export default function ClubPage() {
           </div>
         </div>
       )}
+
+      {/* The club page is a hub, so it keeps the tab bar. BottomNav already treats /club as a
+          Play route, but that highlight was dead until the bar was actually rendered here. */}
+      <BottomNav />
     </div>
   );
 }

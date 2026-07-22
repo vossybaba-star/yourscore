@@ -492,7 +492,7 @@ export function MarketingLanding({ matches, todaysGame }: { matches: LiveMatch[]
             </div>
 
             <p className="font-body text-xs text-text-muted">
-              Free · play in your browser or get the app ·{" "}
+              Free to play ·{" "}
               <Link href="/how-it-works" className="underline hover:text-white transition-colors">How it works →</Link>
             </p>
             </div>{/* end content wrapper */}

@@ -650,6 +650,15 @@ export default function ChallengePage() {
   // Max score: sum of Lightning-speed points per question by difficulty
   const maxScore = questions.reduce((s, q) => s + maxPointsForDifficulty(q.difficulty ?? "medium"), 0);
 
+  // Where sign-in sends the player back to. It MUST carry ?pid= when we have one: pack names
+  // are not unique (there are two published packs called "Brighton", the live 2025/26 one and
+  // a 2024/25 archive), and slug-only resolution scans published packs and is order-unstable
+  // on a duplicate name. A guest who played the right pack, tapped SIGN UP & SAVE SCORE and
+  // came back to the WRONG one would fail the `pending.packId === match.id` check, so their
+  // run would be silently dropped and they would be staring at a leaderboard they never played.
+  const returnPath = `/challenges/${slug}${pid ? `?pid=${encodeURIComponent(pid)}` : ""}`;
+  const signInHref = `/auth/sign-in?next=${encodeURIComponent(returnPath)}`;
+
   // ── Share helpers ─────────────────────────────────────────────────────────
 
   const fallbackUrl = typeof window !== "undefined"
@@ -1000,7 +1009,7 @@ export default function ChallengePage() {
               {!userId && (
                 <p className="font-body text-xs text-center" style={{ color: "#586058" }}>
                   Playing as guest —{" "}
-                  <Link href={`/auth/sign-in?next=/challenges/${slug}`}
+                  <Link href={signInHref}
                     style={{ color: "#aeea00", textDecoration: "underline" }}>sign in first</Link>
                   {" "}to save your score
                 </p>
@@ -1107,8 +1116,13 @@ export default function ChallengePage() {
             <p className="font-body text-base font-semibold text-white leading-relaxed">{currentQ.question}</p>
           </div>
 
-          {/* Answer buttons */}
+          {/* `key` forces a remount on every question. Without it the buttons keep their DOM
+              nodes across the change and `transition-all` animates the NEW option text out of
+              the OLD question's reveal colours: for a few hundred ms the new question shows a
+              wrong option glowing green as the correct answer. Remounting starts each question
+              from the neutral state with nothing to transition from. */}
           <AnswerButtons
+            key={currentIdx}
             options={currentQ.options}
             answer={currentQ.answer}
             selected={selected}
@@ -1157,7 +1171,11 @@ export default function ChallengePage() {
   if (phase === "results" && pack) {
     const correctCount = answerLog.filter((r) => r.correct).length;
     const perfectBonus = calculatePerfectRoundBonus(correctCount, questions.length);
-    const pct = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
+    // Accuracy is questions right, NOT score/maxScore. Score carries speed bonuses, so the
+    // points ratio sat next to "7/15 Correct" reading 41% and the two numbers disagreed.
+    // This matches the leaderboard's Accuracy sort (correct_count) and the profile's
+    // lifetime accuracy, so one word means one thing everywhere.
+    const pct = questions.length > 0 ? Math.round((correctCount / questions.length) * 100) : 0;
     const isRecords = pack.type === "records";
     const accent = isRecords ? "#aeea00" : "#00d8c0";
     const { emoji, label, color } = scoreData(score, maxScore);
@@ -1165,6 +1183,53 @@ export default function ChallengePage() {
       ? Math.round(answerLog.reduce((s, r) => s + r.elapsed_ms, 0) / answerLog.length)
       : 0;
     const fastestMs = answerLog.length ? Math.min(...answerLog.map(r => r.elapsed_ms)) : 0;
+
+    // Rendered high in the column, straight under PLAY ANOTHER: a guest's prompt to keep
+    // the score they just earned, or a signed-in player's confirmation that it stuck.
+    // A function, not a value: it reads guestRank/guestApprox, which are computed below.
+    const renderSaveScore = () => userId ? (
+      priorAttempt ? (
+        <div className="rounded-2xl px-5 py-4 flex items-center gap-3"
+          style={{ background: "rgba(0,216,192,0.07)", border: "1px solid rgba(0,216,192,0.2)" }}>
+          <span className="text-xl">🎯</span>
+          <div>
+            <p className="font-display text-sm tracking-wide text-teal">Practice run</p>
+            <p className="font-body text-xs text-text-muted">
+              Your leaderboard score is still{" "}
+              <span className="text-white font-semibold">{priorAttempt.score.toLocaleString()}</span> pts
+            </p>
+          </div>
+        </div>
+      ) : saved ? (
+        <div className="rounded-2xl px-5 py-4 flex items-center gap-3"
+          style={{ background: "rgba(174,234,0,0.07)", border: "1px solid rgba(174,234,0,0.2)" }}>
+          <span className="text-xl">✓</span>
+          <div>
+            <p className="font-display text-sm tracking-wide text-green">Score saved ✓</p>
+            <p className="font-body text-xs text-text-muted">You&apos;re on the leaderboard</p>
+          </div>
+        </div>
+      ) : null
+    ) : (
+      <div className="rounded-2xl p-5"
+        style={{ background: "rgba(174,234,0,0.07)", border: "1px solid rgba(174,234,0,0.22)" }}>
+        <div className="flex items-center gap-3 mb-4">
+          <div className="rounded-2xl px-3 py-2 font-display text-xl"
+            style={{ background: "rgba(174,234,0,0.15)", color: "#aeea00" }}>
+            {score.toLocaleString()}
+          </div>
+          <div>
+            <p className="font-body text-sm font-semibold text-white">
+              You&apos;d be #{guestRank}{guestApprox ? "+" : ""} on the leaderboard
+            </p>
+            <p className="font-body text-xs text-text-muted">Sign up to lock in your spot. This score is saved the moment you&apos;re in.</p>
+          </div>
+        </div>
+        <Button variant="primary" tone="teal" size="md" fullWidth href={signInHref}>
+          SIGN UP &amp; SAVE SCORE
+        </Button>
+      </div>
+    );
 
     const byDiff = (["easy", "medium", "hard"] as const).map((d) => {
       const dQs = questions.map((q, i) => ({ q, i })).filter(({ q }) => (q.difficulty?.toLowerCase() ?? "medium") === d);
@@ -1252,24 +1317,22 @@ export default function ChallengePage() {
             <HalftimePredictionPoll packId={pack.id} accent={accent} />
           )}
 
-          {/* ── Share on X — no prize framing: there is no giveaway live ── */}
-          <button
-            onClick={shareX}
-            className="w-full rounded-2xl overflow-hidden active:scale-[0.98] transition-transform"
-            style={{ background: "linear-gradient(135deg, #1c1400, #221900)", border: "2px solid rgba(0,216,192,0.55)" }}
-          >
-            <div className="flex items-center gap-4 px-5 py-4">
-              <div style={{ fontSize: 36, lineHeight: 1 }}>📣</div>
-              <div className="text-left flex-1 min-w-0">
-                <div className="font-display tracking-wide" style={{ fontSize: 20, color: "#00d8c0" }}>SHARE YOUR SCORECARD</div>
-                <div className="font-body" style={{ fontSize: 13, color: "#a89060" }}>Post it on 𝕏 →</div>
-              </div>
-            </div>
-          </button>
+          {/* The next loop is the primary action, not sharing. Two dominant share CTAs used
+              to sit here and the only route to another game was the last thing on the page,
+              four screens down. Play again leads; share is one secondary underneath (the
+              share sheet already offers link / X / image, so the standalone X card is gone). */}
+          <Button variant="primary" tone="teal" size="lg" fullWidth onClick={() => router.push("/play")}>
+            PLAY ANOTHER →
+          </Button>
 
-          <button onClick={openShare} className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "#aeea00", color: "#062013", fontSize: 22 }}>
+          {/* Save-your-score sits directly under the payoff, above the leaderboard it refers
+              to. It used to sit below the timing card, the rank card, the leaderboard and the
+              difficulty breakdown, which is where the conversion moment went to die. */}
+          {renderSaveScore()}
+
+          <Button variant="ghost" tone="teal" size="md" fullWidth onClick={openShare}>
             📸 SHARE YOUR RESULT
-          </button>
+          </Button>
 
           {/* Timing stats */}
           <div className="rounded-2xl p-5 bg-surface"
@@ -1319,51 +1382,6 @@ export default function ChallengePage() {
               ))}
             </div>
           </div>
-
-          {/* Sign-up / saved */}
-          {userId ? (
-            priorAttempt ? (
-              <div className="rounded-2xl px-5 py-4 flex items-center gap-3"
-                style={{ background: "rgba(0,216,192,0.07)", border: "1px solid rgba(0,216,192,0.2)" }}>
-                <span className="text-xl">🎯</span>
-                <div>
-                  <p className="font-display text-sm tracking-wide text-teal">Practice run</p>
-                  <p className="font-body text-xs text-text-muted">
-                    Your leaderboard score is still{" "}
-                    <span className="text-white font-semibold">{priorAttempt.score.toLocaleString()}</span> pts
-                  </p>
-                </div>
-              </div>
-            ) : saved ? (
-              <div className="rounded-2xl px-5 py-4 flex items-center gap-3"
-                style={{ background: "rgba(174,234,0,0.07)", border: "1px solid rgba(174,234,0,0.2)" }}>
-                <span className="text-xl">✓</span>
-                <div>
-                  <p className="font-display text-sm tracking-wide text-green">Score saved ✓</p>
-                  <p className="font-body text-xs text-text-muted">You&apos;re on the leaderboard</p>
-                </div>
-              </div>
-            ) : null
-          ) : (
-            <div className="rounded-2xl p-5"
-              style={{ background: "rgba(174,234,0,0.07)", border: "1px solid rgba(174,234,0,0.22)" }}>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="rounded-2xl px-3 py-2 font-display text-xl"
-                  style={{ background: "rgba(174,234,0,0.15)", color: "#aeea00" }}>
-                  {score.toLocaleString()}
-                </div>
-                <div>
-                  <p className="font-body text-sm font-semibold text-white">
-                    You&apos;d be #{guestRank}{guestApprox ? "+" : ""} on the leaderboard
-                  </p>
-                  <p className="font-body text-xs text-text-muted">Sign up to lock in your spot — this score is saved the moment you&apos;re in</p>
-                </div>
-              </div>
-              <Button variant="primary" tone="teal" size="md" fullWidth href={`/auth/sign-in?next=/challenges/${slug}`}>
-                SIGN UP &amp; SAVE SCORE
-              </Button>
-            </div>
-          )}
 
           {/* The versus bridge — the result screen is the motivation peak.
               Recommend quizzes OTHER players have scored on (never this one —

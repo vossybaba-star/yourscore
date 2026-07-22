@@ -26,7 +26,7 @@
  */
 
 import { createClient } from "@supabase/supabase-js";
-import { slugify } from "../../src/lib/utils.ts";
+import { slugify, shuffle } from "../../src/lib/utils.ts";
 import { fillToSize, pickDistinctFacts, dedupeByQuestionText } from "../../src/lib/questions.ts";
 
 const args = process.argv.slice(2);
@@ -85,7 +85,12 @@ async function fetchByDifficulty(club, category, difficulty) {
     .eq("category", category)
     .limit(QUIZ_SIZE * 4);
   if (error) throw new Error(`Fetch failed (${club}/${category}/${difficulty}): ${error.message}`);
-  return data ?? [];
+  // MUST shuffle, exactly as generate-custom does before returning its pool. Everything
+  // downstream (fillToSize, pickDistinctFacts) is greedy over pool order, so returning the
+  // rows in PostgREST's order would build every pack from the oldest-written questions in
+  // the bank and never deal the newest verified ones. These packs are permanent once they
+  // carry scores, so baking in that bias is not recoverable by a rerun.
+  return shuffle(data ?? []);
 }
 
 // Runs the REAL draw exactly as generate-custom does for the no-difficulty-filter

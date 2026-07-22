@@ -107,10 +107,10 @@ export function RankRewardCard() {
         </div>
         <p className="font-body text-[10px] mt-1.5" style={{ color: "#586058" }}>
           {isTop
-            ? "👑 Top of the table — defend it"
+            ? "👑 Top of the table. Defend it"
             : gap !== null
-              ? `${gap.toLocaleString()} pts behind ${row.ahead_name ?? "the player above"} (#${pos - 1}) — overtake them`
-              : "Every game adds points — keep climbing"}
+              ? `${gap.toLocaleString()} pts behind ${row.ahead_name ?? "the player above"} (#${pos - 1}). Overtake them`
+              : "Every game adds points. Keep climbing"}
         </p>
       </div>
     </Link>

@@ -31,15 +31,15 @@ const GAME_CONFIG: Record<GameType, {
   // not Quiz teal / 38-0 lime as before.
   "higher-lower": {
     title: "Higher or Lower",
-    tagline: "Two same-position players, one stat — pick the bigger number.",
+    tagline: "Two same-position players, one stat. Pick the bigger number.",
     accent: "#ff7800",
-    how: "Each question shows two Premier League players in the same position. Tap the one with more — faster answers score more.",
+    how: "Each question shows two Premier League players in the same position. Tap the one with more. Faster answers score more.",
   },
   "guess-the-player": {
     title: "Guess the Player",
-    tagline: "Clues drip in — name the mystery footballer.",
+    tagline: "Clues drip in. Name the mystery footballer.",
     accent: "#4fc3f7",
-    how: "Each question gives you clues (or a career path) and four players. Pick who it is — the quicker, the better.",
+    how: "Each question gives you clues (or a career path) and four players. Pick who it is. The quicker, the better.",
   },
 };
 
@@ -518,7 +518,7 @@ export default function GameTypePage() {
 
           {loadError && (
             <p className="font-body text-sm text-center" style={{ color: "#ff6b78" }}>
-              Couldn&apos;t load questions — try again.
+              Couldn&apos;t load questions, try again.
             </p>
           )}
 
@@ -708,7 +708,7 @@ export default function GameTypePage() {
             MORE GAMES
           </Button>
           <p className="font-body text-xs text-center mt-1" style={{ color: "#586058" }}>
-            Practice mode — these don&apos;t count on the leaderboard yet.
+            Practice mode: these don&apos;t count on the leaderboard yet.
           </p>
         </div>
 

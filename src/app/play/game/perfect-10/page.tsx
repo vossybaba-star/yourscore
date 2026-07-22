@@ -38,10 +38,10 @@ export async function generateMetadata({
   const image = `${SITE}/api/og/perfect-10${qs}`;
 
   const isResult = Boolean(searchParams.c) || guestResult;
-  const title = isResult ? "I built my Perfect 10 tower — beat it" : "Perfect 10 — name the top 10";
+  const title = isResult ? "I built my Perfect 10 tower, beat it" : "Perfect 10: name the top 10";
   const description = isResult
     ? "Ten rungs, three lives, three hints. See the tower and take on the same list."
-    : "Name everyone in the ranked top 10. Three lives, three hints — can you light up all ten rungs?";
+    : "Name everyone in the ranked top 10. Three lives, three hints. Can you light up all ten rungs?";
 
   return {
     title,

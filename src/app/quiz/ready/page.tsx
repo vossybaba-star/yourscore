@@ -118,7 +118,7 @@ function QuizReadyContent() {
                 Open a Lobby
               </p>
               <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: 12, color: "#9aa39d", margin: "2px 0 0" }}>
-                Play with your mates
+                Play with your friends
               </p>
             </div>
             <svg style={{ marginLeft: "auto", flexShrink: 0 }} width="16" height="16" viewBox="0 0 16 16" fill="none">
