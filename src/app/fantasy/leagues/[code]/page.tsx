@@ -83,6 +83,14 @@ export default function LeaguePage() {
   const [run, setRun] = useState<Run | null>(null);
   const [runNote, setRunNote] = useState<string | null>(null);
 
+  // League chat — polls while the page is open (15s; banter, not a trading floor).
+  interface ChatMsg { id: string; userId: string; name: string; avatarUrl: string | null; body: string; createdAt: string; isMe: boolean }
+  interface ChatData { league: { name: string; stakes: string | null; isOwner: boolean }; messages: ChatMsg[]; moments: { emoji: string; text: string; gw: number }[] }
+  const [chat, setChat] = useState<ChatData | null>(null);
+  const [draft, setDraft] = useState("");
+  const [stakesDraft, setStakesDraft] = useState<string | null>(null); // null = not editing
+  const [chatBusy, setChatBusy] = useState(false);
+
   const load = useCallback(async () => {
     try {
       const d = await apiRaw<LeagueDetail>(`leagues/${code}`);
@@ -94,6 +102,37 @@ export default function LeaguePage() {
   }, [code]);
 
   useEffect(() => { load(); }, [load]);
+
+  const loadChat = useCallback(async () => {
+    try { setChat(await apiRaw<ChatData>(`leagues/${code}/chat`)); }
+    catch { /* non-member or signed out — the section simply doesn't render */ }
+  }, [code]);
+  useEffect(() => {
+    if (!detail?.league.isMember) return;
+    loadChat();
+    const t = setInterval(loadChat, 15_000);
+    return () => clearInterval(t);
+  }, [detail?.league.isMember, loadChat]);
+
+  const send = async () => {
+    const text = draft.trim();
+    if (!text || chatBusy) return;
+    setChatBusy(true);
+    try {
+      await apiRaw(`leagues/${code}/chat`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ body: text }) });
+      setDraft(""); await loadChat();
+    } catch (e) { setErr((e as Error).message); }
+    setChatBusy(false);
+  };
+  const saveStakes = async () => {
+    if (stakesDraft === null || chatBusy) return;
+    setChatBusy(true);
+    try {
+      await apiRaw(`leagues/${code}/chat`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ stakes: stakesDraft }) });
+      setStakesDraft(null); await loadChat();
+    } catch (e) { setErr((e as Error).message); }
+    setChatBusy(false);
+  };
 
   const invite = async () => {
     const url = `${window.location.origin}/fantasy/leagues/${code}`;
@@ -285,6 +324,70 @@ export default function LeaguePage() {
       {tab === "month" && lastMonth && (
         <div style={{ marginTop: 10, fontSize: 12.5, color: MUTED }}>
           {lastMonth.label} winner: <b style={{ color: GOLD }}>{nameOf(lastMonth.winner)}</b> — {lastMonth.winner.points} pts
+        </div>
+      )}
+
+      {league.isMember && chat && (
+        <div style={{ marginTop: 18 }}>
+          <div style={{ fontSize: 11, letterSpacing: "0.12em", color: MUTED, marginBottom: 6 }}>LEAGUE CHAT</div>
+
+          {/* The stakes line — what the loser owes. Owner sets it; everyone sees it. */}
+          {(chat.league.stakes || chat.league.isOwner) && (
+            <div style={{ background: PANEL, border: `1px solid ${GOLD}`, borderRadius: 10, padding: "8px 11px", marginBottom: 8, display: "flex", alignItems: "center", gap: 8 }}>
+              {stakesDraft === null ? (
+                <>
+                  <span style={{ flex: 1, fontSize: 12.5, color: chat.league.stakes ? INK : MUTED }}>
+                    {chat.league.stakes ? `Stakes: ${chat.league.stakes}` : "Set the stakes — what does the loser owe?"}
+                  </span>
+                  {chat.league.isOwner && (
+                    <button onClick={() => setStakesDraft(chat.league.stakes ?? "")} style={{ fontSize: 11.5, color: MUTED, background: "none", border: "none", cursor: "pointer", textDecoration: "underline", padding: 0 }}>
+                      {chat.league.stakes ? "edit" : "set"}
+                    </button>
+                  )}
+                </>
+              ) : (
+                <>
+                  <input value={stakesDraft} maxLength={120} placeholder="e.g. loser buys the kebabs"
+                    onChange={(e) => setStakesDraft(e.target.value)}
+                    style={{ flex: 1, fontSize: 12.5, background: "transparent", border: "none", outline: "none", color: INK }} />
+                  <Btn small disabled={chatBusy} onClick={saveStakes}>Save</Btn>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* The week's talking points — derived, not stored; fresh each scored gameweek */}
+          {chat.moments.map((m, i) => (
+            <div key={i} style={{ fontSize: 12, color: MUTED, padding: "5px 2px", lineHeight: 1.45 }}>
+              {m.emoji} {m.text}
+            </div>
+          ))}
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, margin: "8px 0" }}>
+            {!chat.messages.length && (
+              <p style={{ fontSize: 12.5, color: MUTED, margin: "2px 0" }}>Nothing said yet. Someone has to start it.</p>
+            )}
+            {chat.messages.map((m) => (
+              <div key={m.id} style={{
+                alignSelf: m.isMe ? "flex-end" : "flex-start", maxWidth: "85%",
+                background: m.isMe ? "#233B2C" : PANEL, border: `1px solid ${m.isMe ? GOLD : LINE}`,
+                borderRadius: 12, padding: "7px 11px",
+              }}>
+                {!m.isMe && <div style={{ fontSize: 10.5, color: GOLD, fontWeight: 700, marginBottom: 1 }}>{m.name}</div>}
+                <div style={{ fontSize: 13.5, lineHeight: 1.4, overflowWrap: "anywhere" }}>{m.body}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: 6 }}>
+            <input value={draft} maxLength={280} placeholder="Say it in the group…"
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") send(); }}
+              style={{
+                flex: 1, fontSize: 13.5, padding: "10px 12px", borderRadius: 10,
+                background: PANEL, border: `1px solid ${LINE}`, color: INK, outline: "none",
+              }} />
+            <Btn gold disabled={chatBusy || !draft.trim()} onClick={send}>Send</Btn>
+          </div>
         </div>
       )}
 
