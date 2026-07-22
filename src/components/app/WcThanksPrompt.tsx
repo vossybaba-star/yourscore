@@ -14,6 +14,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
+import { useOnErrorRoute } from "@/components/app/errorRoute";
 import { useUser } from "@/hooks/useUser";
 import { isNative } from "@/lib/native";
 import { APP_STORE_REVIEW_URL } from "@/lib/appStore";
@@ -59,6 +60,7 @@ async function postAction(body: { action: string; body?: string }): Promise<void
 
 export function WcThanksPrompt() {
   const pathname = usePathname();
+  const onErrorRoute = useOnErrorRoute();
   const { user, loading: userLoading } = useUser();
 
   const [stage, setStage] = useState<Stage>(null);
@@ -101,7 +103,8 @@ export function WcThanksPrompt() {
   }, [preview, userLoading, user]);
 
   // Never over the auth screens or Settings — same exclusions as ClubPrompt.
-  const suppressed = pathname?.startsWith("/auth") || pathname?.startsWith("/settings");
+  const suppressed =
+    pathname?.startsWith("/auth") || pathname?.startsWith("/settings") || onErrorRoute;
 
   async function submitFeedback(withBody: boolean) {
     if (preview) {

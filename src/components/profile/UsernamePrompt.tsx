@@ -13,6 +13,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
+import { useOnErrorRoute } from "@/components/app/errorRoute";
 import { createClient } from "@/lib/supabase/client";
 
 const SKIP_KEY = "ys:username-prompt:skipped"; // session-scoped: re-nudges next visit
@@ -22,6 +23,7 @@ type Status = "idle" | "short" | "checking" | "available" | "taken" | "saving";
 
 export function UsernamePrompt() {
   const pathname = usePathname();
+  const onErrorRoute = useOnErrorRoute();
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState("");
   const [status, setStatus] = useState<Status>("idle");
@@ -31,6 +33,7 @@ export function UsernamePrompt() {
     if (typeof window === "undefined") return;
     if (sessionStorage.getItem(SKIP_KEY)) return;
     if (pathname?.startsWith("/auth") || pathname?.startsWith("/settings")) return;
+    if (onErrorRoute) return; // never over a 404 or a crash screen
     let alive = true;
     (async () => {
       const sb = createClient();
@@ -41,7 +44,7 @@ export function UsernamePrompt() {
       if (!((data?.username ?? "").trim())) setOpen(true); // only when none set
     })();
     return () => { alive = false; };
-  }, [pathname]);
+  }, [pathname, onErrorRoute]);
 
   // Debounced availability check.
   useEffect(() => {
@@ -76,7 +79,7 @@ export function UsernamePrompt() {
     } catch { setStatus("available"); }
   }
 
-  if (!open) return null;
+  if (!open || onErrorRoute) return null;
 
   const hint =
     status === "available" ? { t: "✓ available", c: "#00ff87" }

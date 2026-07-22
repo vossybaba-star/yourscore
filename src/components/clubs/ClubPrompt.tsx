@@ -26,6 +26,7 @@
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import { useOnErrorRoute } from "@/components/app/errorRoute";
 import { useClubMe } from "./useClubData";
 import { ClubGrid } from "./ClubGrid";
 import { shortClubName } from "@/lib/clubs/display";
@@ -35,6 +36,7 @@ const TEAL = "#00d8c0";
 
 export function ClubPrompt() {
   const pathname = usePathname();
+  const onErrorRoute = useOnErrorRoute();
   const { user, data, loaded, refresh } = useClubMe();
   const [open, setOpen] = useState(false);
   const [choice, setChoice] = useState<string | null>(null);
@@ -67,14 +69,15 @@ export function ClubPrompt() {
     if (sessionStorage.getItem(SKIP_KEY)) return;
     // Never over the auth screens or Settings (which has its own club row).
     if (pathname?.startsWith("/auth") || pathname?.startsWith("/settings")) return;
+    if (onErrorRoute) return; // never over a 404 or a crash screen
     if (!loaded || !user || !data) return;
     if (data.club || data.clubs.length === 0) return; // already locked, or no season yet
     setOpen(true);
     setChoice(data.suggestion ?? null); // offer, don't demand
-  }, [pathname, loaded, user, data, preview]);
+  }, [pathname, loaded, user, data, preview, onErrorRoute]);
 
   const clubs = previewClubs ?? data?.clubs ?? [];
-  if (!open || clubs.length === 0) return null;
+  if (!open || onErrorRoute || clubs.length === 0) return null;
 
   function skip() {
     try { sessionStorage.setItem(SKIP_KEY, "1"); } catch { /* private mode */ }

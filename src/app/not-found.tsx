@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ErrorRouteMarker } from "@/components/app/errorRoute";
 
 export const metadata: Metadata = {
   title: "Page not found",
@@ -24,6 +25,7 @@ export default function NotFound() {
         background: "#0a0a0f",
       }}
     >
+      <ErrorRouteMarker />
       <div style={{ maxWidth: 380, width: "100%", textAlign: "center" }}>
         <div style={{ fontSize: 30, marginBottom: 10 }}>⚽</div>
         <h1 className="font-display" style={{ fontSize: 20, color: "#ffffff", margin: 0 }}>
