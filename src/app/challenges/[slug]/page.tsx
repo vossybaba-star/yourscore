@@ -53,8 +53,20 @@ interface QuizPack {
     // Present only on halftime packs (release engine writes it) — the fixture
     // linkage that powers the end-of-pack prediction poll.
     halftime?: { fixture_id: number; home: string; away: string };
+    // Present only on the pre-generated club topic packs (the /club/[slug] hub).
+    // The category slug drives an honest label instead of "2025/26 Season Game".
+    club_topic?: string;
   } | null;
 }
+
+// The four club topics carry a category slug; show its real name on the pack
+// header. Anything without a club_topic keeps the generic season label.
+const CLUB_TOPIC_LABEL: Record<string, string> = {
+  "history-honours": "History & Honours",
+  "legends": "Legends",
+  "modern-era": "Modern Era",
+  "rivalries-derbies": "Rivalries",
+};
 
 interface RawQuestion {
   question: string;
@@ -917,7 +929,7 @@ export default function ChallengePage() {
             <div className="flex items-center gap-2 mt-1">
               <span className="font-body text-xs px-3 py-1 rounded-full"
                 style={{ background: accentDim, color: accent, border: `1px solid ${accentBorder}` }}>
-                {isRecords ? "All-Time Records" : "2025/26 Season Game"}
+                {isRecords ? "All-Time Records" : (pack.metadata?.club_topic ? (CLUB_TOPIC_LABEL[pack.metadata.club_topic] ?? "Club Quiz") : "2025/26 Season Game")}
               </span>
               <span className="font-body text-xs px-3 py-1 rounded-full"
                 style={{ background: "rgba(255,255,255,0.06)", color: "#9aa39d" }}>
