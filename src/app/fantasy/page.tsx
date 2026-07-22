@@ -256,6 +256,9 @@ export default function FantasyHub() {
 
   return (
     <main style={page} onClick={() => menuFor !== null && setMenuFor(null)}>
+      {/* Squared backdrop — the same fixed grid the 38-0 screens use. */}
+      <div className="pointer-events-none fixed inset-0 bg-grid-pattern bg-grid" style={{ opacity: 0.5 }} />
+      <div className="relative">
       <Header right={<Btn small onClick={() => router.push("/fantasy/leagues")}>Leagues</Btn>} />
 
       {/* HERO — the you-are-here, sold rather than announced. Gradient wash +
@@ -298,6 +301,51 @@ export default function FantasyHub() {
         ))}
       </div>
 
+      {/* THE PITCH — your team is the point of the page, so it sits at the top
+          in the shape you actually think about it in: lines, rows, the bench
+          on the touchline. Markings are drawn, not an image, so it stays sharp
+          and costs nothing. */}
+      <div className="rounded-2xl relative overflow-hidden" style={{ marginBottom: 12, border: `1px solid ${LINE}` }}>
+        {/* turf + markings */}
+        <div aria-hidden style={{
+          position: "absolute", inset: 0,
+          background: `linear-gradient(180deg, #0c1a13 0%, #0a1710 55%, #091510 100%)`,
+        }} />
+        <svg aria-hidden viewBox="0 0 100 140" preserveAspectRatio="none"
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0.16 }}>
+          <rect x="3" y="3" width="94" height="134" fill="none" stroke={TEAL} strokeWidth="0.5" />
+          <line x1="3" y1="70" x2="97" y2="70" stroke={TEAL} strokeWidth="0.5" />
+          <circle cx="50" cy="70" r="13" fill="none" stroke={TEAL} strokeWidth="0.5" />
+          <rect x="28" y="3" width="44" height="20" fill="none" stroke={TEAL} strokeWidth="0.5" />
+          <rect x="28" y="117" width="44" height="20" fill="none" stroke={TEAL} strokeWidth="0.5" />
+        </svg>
+        {/* mown stripes */}
+        <div aria-hidden style={{
+          position: "absolute", inset: 0, opacity: 0.35,
+          background: "repeating-linear-gradient(180deg, rgba(255,255,255,0.018) 0 26px, transparent 26px 52px)",
+        }} />
+
+        <div className="relative" style={{ padding: "14px 10px 12px" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {rows.map((row) => (
+              <div key={row.pos} style={{ display: "flex", justifyContent: "center", gap: 6, flexWrap: "wrap" }}>
+                {row.ids.map((id) => <PlayerTile key={id} id={id} />)}
+              </div>
+            ))}
+          </div>
+
+          {/* the touchline */}
+          <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px dashed ${tint(TEAL, "26")}` }}>
+            <div className="font-display tracking-widest" style={{ fontSize: 10.5, color: MUTED, marginBottom: 6, textAlign: "center" }}>
+              BENCH · AUTO-SUBS IN ORDER
+            </div>
+            <div style={{ display: "flex", justifyContent: "center", gap: 6, flexWrap: "wrap" }}>
+              {squad.bench.map((id, i) => <PlayerTile key={id} id={id} benchIdx={i} />)}
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Secondary destinations — quiet, one line each. */}
       <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
         {([
@@ -325,7 +373,7 @@ export default function FantasyHub() {
           <p style={{ fontSize: 13, color: MUTED, margin: "0 0 10px", lineHeight: 1.45 }}>
             Eleven questions. Right answers earn the transfer credits that improve this squad.
           </p>
-          <Btn gold onClick={() => router.push("/fantasy/round")}>
+          <Btn gold glow onClick={() => router.push("/fantasy/round")}>
             {entry && entry.round.answered > 0 ? `Continue round (${entry.round.answered}/11)` : "Play the round"}
           </Btn>
         </Card>
@@ -517,22 +565,6 @@ export default function FantasyHub() {
         </Card>
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 14 }}>
-        {rows.map((row) => (
-          <div key={row.pos}>
-            <div style={{ fontSize: 11, letterSpacing: "0.12em", color: MUTED, marginBottom: 4 }}>{row.pos}</div>
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              {row.ids.map((id) => <PlayerTile key={id} id={id} />)}
-            </div>
-          </div>
-        ))}
-        <div>
-          <div style={{ fontSize: 11, letterSpacing: "0.12em", color: MUTED, marginBottom: 4 }}>BENCH (auto-subs in order)</div>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            {squad.bench.map((id, i) => <PlayerTile key={id} id={id} benchIdx={i} />)}
-          </div>
-        </div>
-      </div>
 
       {err && <p style={{ color: "#E08A6B", fontSize: 13, margin: "0 0 10px" }}>{err}</p>}
 
@@ -590,6 +622,7 @@ export default function FantasyHub() {
           </button>
         </div>
       )}
+      </div>
     </main>
   );
 }

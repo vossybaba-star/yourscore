@@ -147,7 +147,20 @@ input, textarea, select {
   50%      { filter: drop-shadow(0 0 26px rgba(255,215,0,0.7)); }
 }
 
+/* Fantasy: the primary action breathes, so the thing to do next is obvious
+   without shouting. Teal because that's the knowledge accent. */
+@keyframes fantasyGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0,216,192,0.0), 0 6px 18px -6px rgba(0,216,192,0.45); }
+  50%      { box-shadow: 0 0 0 6px rgba(0,216,192,0.10), 0 8px 26px -6px rgba(0,216,192,0.75); }
+}
+
 @layer utilities {
+  /* Pulsing glow for the one action a screen wants you to take. */
+  .animate-fantasy-glow { animation: fantasyGlow 2.6s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce) {
+    .animate-fantasy-glow { animation: none; box-shadow: 0 6px 18px -6px rgba(0,216,192,0.5); }
+  }
+
   .text-balance {
     text-wrap: balance;
   }

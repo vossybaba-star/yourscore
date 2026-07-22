@@ -118,12 +118,15 @@ export function Chip({ children, gold = false, teal = false }: {
 /** `gold` = the screen's primary action. Kept as the prop name so every call
  *  site still reads right, but it paints TEAL — actions are knowledge-coloured
  *  here; gold is reserved for what you've won. */
-export function Btn({ children, onClick, gold = false, disabled = false, small = false }: {
+export function Btn({ children, onClick, gold = false, disabled = false, small = false, glow = false }: {
   children: ReactNode; onClick?: () => void; gold?: boolean; disabled?: boolean; small?: boolean;
+  /** Breathe. Reserve it for the ONE thing a screen wants you to do — if two
+   *  buttons pulse, neither reads as the answer. */
+  glow?: boolean;
 }) {
   return (
     <button onClick={onClick} disabled={disabled}
-      className="font-body rounded-xl transition-opacity"
+      className={`font-body rounded-xl transition-opacity${glow && !disabled ? " animate-fantasy-glow" : ""}`}
       style={{
         padding: small ? "9px 14px" : "14px 18px",
         fontSize: small ? 13 : 15, fontWeight: 600,
