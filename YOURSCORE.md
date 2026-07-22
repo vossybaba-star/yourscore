@@ -6,7 +6,39 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-07-21 (**Profile rebuilt around a FUT-style player card.**
+> **Confirmed:** 2026-07-22 (**Club pages + a batch of quiz-flow UX fixes shipped.**
+> Branch `fix/quiz-flow-ux`, merged to main.
+> **Club pages `/club/[slug]`:** the Quiz hub's Club tab used to send all 20 crest cards
+> straight into a single 2025/26 season-review quiz. It now opens a club page: crest, the
+> season-review pack, and four topic quizzes (History & Honours, Legends, Modern Era,
+> Rivalries) drawn from the verified club question bank. Built by pre-generating the topic
+> packs as real `quiz_packs` rows (`status='published'`, `rotation_active=false`,
+> `is_custom=false`, `created_by=null`, `metadata.club_topic=<slug>`) via
+> `scripts/club-pages/generate-topic-packs.mjs` (imports the draw from `src/lib/questions.ts`
+> so it can never drift from `/api/quiz/generate-custom`; dry-run by default, `--commit` to
+> write). **50 packs seeded to prod.** Real draw (fact_key distinctness) yields 50 of 80 club
+> x topic combos, not the 57 a raw row-count suggested: Arsenal / Liverpool / Man City / Man
+> Utd get all four topics, Forest gets one, most land at two or three; a topic that can't deal
+> 15 shows a disabled card with an honest reason. Nothing new to generate or auth: `/api/quiz/packs`
+> still filters `rotation_active=true` so the hub grid stays 20, while `/api/challenges/pack`
+> serves any published pack, so guests play these on the existing play screen with the sign-in
+> wall only at save-score. Club-page payload at `/api/club-page/[slug]` (named `-page` because
+> `/api/club/[slug]` already belongs to Club Leagues). Every topic link carries `?pid=` because
+> two published packs are named "Brighton" and slug-only resolution is order-unstable.
+> **Quiz-flow UX fixes (from a `/ux-walk`):** results screen leads with PLAY ANOTHER and moves
+> save-your-score up under it (was two stacked share CTAs with the next-game route buried last);
+> Accuracy on the results screen is now questions-right, not score/maxScore (it disagreed with
+> "7/15 Correct"); AnswerButtons gets a `key` per question in all three quiz players so
+> `transition-all` no longer flashes a wrong option green on the next question; the username
+> prompt no longer mounts over hubs and games (it ate the first tap) and skip is once-ever in
+> localStorage; Featured drops the finished World Cup packs and the verified-competition card
+> reads FINAL STANDINGS not a pulsing LIVE; the quiz builder club grid no longer clips two-line
+> names or loses Birmingham City. Copy gate: "mate" to "friend" in 8 places, em/en dashes
+> stripped from shipped strings, home hero stops naming the delivery mechanism. **STILL OPEN:**
+> user-built quizzes and guest scores still have no home surface (the "your quizzes" list and
+> guest score memory are the next two pieces).)
+>
+> **Previously confirmed:** 2026-07-21 (**Profile rebuilt around a FUT-style player card.**
 > Branch `feat/profile-player-card`, migration **82 APPLIED to prod**.
 > **The page:** a hero row — YourScore rank, accuracy, streak and Share on the left; the
 > **player card** on the right (rating, archetype, real club crest from `club_supporters`,
