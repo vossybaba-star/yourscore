@@ -1,7 +1,5 @@
-/** Fantasy vocabulary that isn't locked yet, kept in ONE place so a rename is a
- *  one-line change. The design fixes only what it is NOT called ("not IQ").
+/** Fantasy vocabulary, kept in ONE place so a rename is a one-line change.
  *
- *  WORKING NAME — founder to confirm or rename: "The Knowledge". Chosen because
- *  it's already how fans talk ("he's got the knowledge") and it needs no
- *  explanation next to a football quiz. */
-export const KNOWLEDGE_NAME = "The Knowledge";
+ *  "Top Marks" — FOUNDER-LOCKED 22 Jul. The accuracy board: right answers,
+ *  counted for their own sake. (Rejected: "The Knowledge", "IQ".) */
+export const KNOWLEDGE_NAME = "Top Marks";
