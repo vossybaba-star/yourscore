@@ -487,6 +487,10 @@ function PlayPageInner() {
   const [soloTab, setSoloTab] = useState<SoloTab>("featured");
   const [packs, setPacks] = useState<QuizPack[]>([]);
   const [packsLoading, setPacksLoading] = useState(true);
+  // The quizzes this user built themselves. They insert as rotation_active=false, so
+  // they never appear in the hub grid and had no home anywhere: you built one, played it
+  // once, and could never find it again. This is that home.
+  const [myPacks, setMyPacks] = useState<QuizPack[]>([]);
   const [openRooms, setOpenRooms] = useState<OpenRoom[]>([]);
   const [roomsLoading, setRoomsLoading] = useState(false);
   const [roomsFetched, setRoomsFetched] = useState(false);
@@ -501,6 +505,28 @@ function PlayPageInner() {
     createClient().from("profiles").select("display_name").eq("id", challengeTo).single()
       .then(({ data }: { data: { display_name: string | null } | null }) => setChallengeName(data?.display_name ?? null));
   }, [challengeTo]);
+  // Load the user's own built quizzes (client-side: it is per-user, so it can't be
+  // edge-cached like the shared pack list). is_custom + created_by = me, newest first.
+  useEffect(() => {
+    if (!user) { setMyPacks([]); return; }
+    let alive = true;
+    createClient()
+      .from("quiz_packs")
+      .select("id, name, type, parameter, question_count, status, description, featured, featured_order, metadata, created_at")
+      .eq("created_by", user.id)
+      .eq("is_custom", true)
+      .eq("status", "published")
+      .order("created_at", { ascending: false })
+      .limit(12)
+      .then(({ data }) => {
+        if (!alive) return;
+        // DB types question_count/metadata loosely (number|null, Json); coerce to the
+        // local QuizPack shape the cards expect.
+        setMyPacks((data ?? []).map((p) => ({ ...p, question_count: p.question_count ?? 0, metadata: (p.metadata as QuizPack["metadata"]) ?? null })));
+      });
+    return () => { alive = false; };
+  }, [user]);
+
   const [joinSheetOpen, setJoinSheetOpen] = useState(false);
   const [joinCode, setJoinCode] = useState("");
   const [joining, setJoining] = useState(false);
@@ -799,6 +825,31 @@ function PlayPageInner() {
               <span className="font-display text-lg text-green">→</span>
             </button>
           </div>
+
+          {/* Your quizzes — the ones this user built. Sits directly under the builder so
+              creating one and finding it again are the same place. Horizontal scroller so it
+              stays a slim strip above the main grid rather than pushing everything down. */}
+          {myPacks.length > 0 && (
+            <div className="max-w-lg mx-auto pt-2 pb-1">
+              <div className="px-4 flex items-center justify-between mb-2">
+                <p className="font-display text-xs tracking-widest" style={{ color: "#586058" }}>YOUR QUIZZES</p>
+              </div>
+              <div className="flex gap-3 overflow-x-auto px-4 pb-1" style={{ scrollbarWidth: "none" }}>
+                {myPacks.map((p) => (
+                  <Link
+                    key={p.id}
+                    href={`/challenges/${slugify(p.name)}?pid=${p.id}${challengeTo ? `&challenge=${challengeTo}` : ""}`}
+                    className="flex-shrink-0 rounded-2xl px-4 py-3 transition-all duration-150 active:scale-[0.97]"
+                    style={{ width: 190, background: "linear-gradient(160deg, #0e1611 0%, #15211a 100%)", border: "1px solid rgba(0,216,192,0.18)" }}
+                  >
+                    <p className="font-body text-sm font-bold text-white leading-snug line-clamp-2" style={{ minHeight: 36 }}>{p.name}</p>
+                    <p className="font-body text-xs mt-1" style={{ color: "#7a857f" }}>{p.question_count} questions</p>
+                    <span className="font-display text-xs tracking-widest text-teal">PLAY →</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Cards grid */}
           <div className="max-w-lg mx-auto px-4 pt-2">

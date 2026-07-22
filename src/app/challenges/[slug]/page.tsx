@@ -107,6 +107,37 @@ function loadGuestResult(): GuestResult | null {
 }
 function clearGuestResult() { try { localStorage.removeItem(GUEST_RESULT_KEY); } catch { /* ignore */ } }
 
+// ── Guest best score, per pack (the "beat it" memory) ─────────────────────
+// Separate from GUEST_RESULT above (that is a single-slot save-on-signup buffer).
+// This is a durable per-pack best a guest keeps across replays, so revisiting a
+// pack shows "you scored X here, beat it" instead of pretending it's their first
+// time. Signed-in players get the equivalent from the server (priorAttempt); this
+// is the guest's version, held locally because a guest has no server row.
+const GUEST_BEST_KEY = "quiz:guest-best:v1";
+type GuestBest = { score: number; correct: number; total: number; ts: number };
+function loadGuestBests(): Record<string, GuestBest> {
+  try {
+    const raw = localStorage.getItem(GUEST_BEST_KEY);
+    if (!raw) return {};
+    const v = JSON.parse(raw);
+    return v && typeof v === "object" ? v as Record<string, GuestBest> : {};
+  } catch { return {}; }
+}
+function loadGuestBest(packId: string): GuestBest | null {
+  return loadGuestBests()[packId] ?? null;
+}
+// Keep the higher score. A worse replay never overwrites a better best.
+function recordGuestBest(packId: string, next: GuestBest) {
+  try {
+    const all = loadGuestBests();
+    const prev = all[packId];
+    if (!prev || next.score > prev.score) {
+      all[packId] = next;
+      localStorage.setItem(GUEST_BEST_KEY, JSON.stringify(all));
+    }
+  } catch { /* ignore */ }
+}
+
 // Synthetic row id for the guest's own not-yet-saved score on the leaderboard.
 const GUEST_ROW_ID = "__guest__";
 
@@ -494,6 +525,8 @@ export default function ChallengePage() {
 
   const [userId, setUserId] = useState<string | null>(null);
   const [priorAttempt, setPriorAttempt] = useState<{ score: number; max_score: number; correct_count: number } | null>(null);
+  // Guest's own previous best on this pack (localStorage), shown on the intro as a "beat it".
+  const [guestBest, setGuestBest] = useState<GuestBest | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderEntry[]>([]);
   const [leaderLoading, setLeaderLoading] = useState(false);
 
@@ -585,6 +618,11 @@ export default function ChallengePage() {
 
       setPack(match);
       setQuestions(match.questions ?? []);
+
+      // Guest returning to a pack they've played before: surface their best so the
+      // intro reads "beat it" rather than pretending this is a first visit. Signed-in
+      // players get the server-backed priorAttempt instead, so skip it for them.
+      if (!uid) setGuestBest(loadGuestBest(match.id));
 
       if (match.type === "club" || match.type === "national") {
         // Custom packs store the entity name in `parameter` (e.g. "Arsenal", "France").
@@ -831,6 +869,9 @@ export default function ChallengePage() {
             answers: newLog.map((r) => ({ letter: r.selected, elapsedMs: r.elapsed_ms })),
             ts: Date.now(),
           });
+          // Durable per-pack best (kept only if it beats the previous), so a return
+          // visit shows "beat it". Independent of the save-on-signup buffer above.
+          recordGuestBest(pack.id, { score: finalScore, correct: correctCount, total: questions.length, ts: Date.now() });
         }
         // Playing into a group board → record server-graded score for the board.
         if (groupId && userId) {
@@ -957,6 +998,23 @@ export default function ChallengePage() {
                 <p className="font-body text-xs text-text-muted">
                   <span className="font-display text-base text-white">{priorAttempt.score.toLocaleString()}</span>
                   {" "}pts · {priorAttempt.correct_count}/{questions.length} correct
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Guest's own previous best on this pack. Signed-in players see priorAttempt
+              instead, so this only shows for a returning guest. It is the "beat it" nudge
+              that stops a replay pretending to be a first visit. */}
+          {!priorAttempt && guestBest && (
+            <div className="rounded-2xl px-4 py-3 flex items-center gap-3"
+              style={{ background: "rgba(0,216,192,0.07)", border: "1px solid rgba(0,216,192,0.2)" }}>
+              <span className="text-lg">🎯</span>
+              <div className="flex-1 min-w-0">
+                <p className="font-display text-xs tracking-widest mb-0.5 text-teal">YOUR BEST · BEAT IT</p>
+                <p className="font-body text-xs text-text-muted">
+                  <span className="font-display text-base text-white">{guestBest.score.toLocaleString()}</span>
+                  {" "}pts · {guestBest.correct}/{guestBest.total} correct
                 </p>
               </div>
             </div>
