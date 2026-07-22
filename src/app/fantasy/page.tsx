@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import {
-  api, Btn, Card, Chip, Crest, extrasLine, fmtM, GOLD, Header, INK, LINE, MUTED, page, PANEL,
+  api, Btn, Card, Crest, extrasLine, fmtM, GOLD, Header, INK, LINE, MUTED, page, PANEL, PANEL_2, TEAL, tint,
   type ChipName, type ClientPoolPlayer, type FantasyState, type Pos,
 } from "@/components/fantasy/shared";
 import { HALF_SEASON_GW } from "@/lib/fantasy/engine";
@@ -202,6 +202,18 @@ export default function FantasyHub() {
   };
   const b = BANNER[phase];
 
+  /** Squad shape in line art — same motif as the PL tab's fantasy tile. */
+  const FormationArt = () => (
+    <svg viewBox="0 0 100 100" aria-hidden="true"
+      style={{ position: "absolute", right: -16, bottom: -20, width: 150, height: 150, opacity: 0.09, pointerEvents: "none" }}>
+      <rect x="6" y="6" width="88" height="88" rx="4" fill="none" stroke={TEAL} strokeWidth="2" />
+      <line x1="6" y1="50" x2="94" y2="50" stroke={TEAL} strokeWidth="2" />
+      <circle cx="50" cy="50" r="12" fill="none" stroke={TEAL} strokeWidth="2" />
+      {[[50], [18, 39, 61, 82], [18, 39, 61, 82], [39, 61]].map((row, ri) =>
+        row.map((x) => <circle key={`${ri}-${x}`} cx={x} cy={16 + ri * 22} r="3.4" fill={TEAL} />))}
+    </svg>
+  );
+
   const PlayerTile = ({ id, benchIdx }: { id: number; benchIdx?: number }) => {
     const p = pool.get(id);
     const isCap = squad.captain === id, isVice = squad.vice === id;
@@ -244,59 +256,71 @@ export default function FantasyHub() {
 
   return (
     <main style={page} onClick={() => menuFor !== null && setMenuFor(null)}>
-      <Header right={<>
-        <Chip>GW {state.gw.gw} · {state.gw.season}</Chip>
-        <Chip gold>{squad.credits} credit{squad.credits === 1 ? "" : "s"}</Chip>
-        <Chip>{fmtM(squad.bankTenths)} bank</Chip>
-        <Btn small onClick={() => router.push("/fantasy/leagues")}>Leagues</Btn>
-      </>} />
+      <Header right={<Btn small onClick={() => router.push("/fantasy/leagues")}>Leagues</Btn>} />
 
-      {/* You-are-here phase banner */}
-      <div style={{ background: PANEL, border: `1px solid ${LINE}`, borderLeft: `3px solid ${GOLD}`, borderRadius: 12, padding: "12px 14px", marginBottom: 12 }}>
-        <div style={{ fontSize: 11, letterSpacing: "0.14em", color: GOLD, fontWeight: 700 }}>{b.tag}</div>
-        <div style={{ fontSize: 16, fontWeight: 700, margin: "2px 0 4px" }}>{b.head}</div>
-        <p style={{ fontSize: 12.5, color: MUTED, margin: 0, lineHeight: 1.45 }}>{b.sub}</p>
-      </div>
-
-      {/* News & insights — team news, form and tips for the week */}
-      <div
-        onClick={() => router.push("/fantasy/news")}
-        style={{ background: PANEL, border: `1px solid ${LINE}`, borderRadius: 12, padding: "10px 14px", marginBottom: 12, display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}
-      >
-        <span style={{ fontSize: 13, fontWeight: 600 }}>News &amp; insights</span>
-        <span style={{ fontSize: 12, color: MUTED }}>team news · form · tips →</span>
-      </div>
-
-      {/* Demo stepper — walk the weekly journey (replay/prototype only) */}
-      {isDemo && (
-        <div style={{ marginBottom: 14 }}>
-          <div style={{ fontSize: 10.5, letterSpacing: "0.12em", color: MUTED, marginBottom: 5 }}>
-            DEMO · JUMP TO A STAGE
-          </div>
-          <div style={{ display: "flex", gap: 6 }}>
-            {([
-              ["setup", "Squad setup", false],
-              ["open", "Gameweek open", phase === "open"],
-              ["result", "Result", phase === "result"],
-            ] as [string, string, boolean][]).map(([target, label, active]) => (
-              <button key={target} disabled={busy} onClick={() => demo(target)} style={{
-                flex: 1, padding: "8px 4px", borderRadius: 9, fontSize: 12, fontWeight: 700,
-                cursor: "pointer", background: active ? GOLD : PANEL, color: active ? "#2A1F00" : INK,
-                border: `1px solid ${active ? GOLD : LINE}`,
-              }}>{label}</button>
-            ))}
-          </div>
-          <p style={{ fontSize: 10.5, color: MUTED, margin: "5px 0 0", lineHeight: 1.4 }}>
-            Prototype control. In the real game the season moves you through these on its own; the
-            live &ldquo;locked, matches playing&rdquo; stage sits between open and result.
+      {/* HERO — the you-are-here, sold rather than announced. Gradient wash +
+          formation art bleeding off the tile, the house pattern from the PL tab. */}
+      <div className="rounded-2xl relative overflow-hidden"
+        style={{
+          background: `linear-gradient(150deg, ${tint(TEAL, "14")}, ${tint(TEAL, "03")})`,
+          border: `1px solid ${tint(TEAL, "22")}`,
+          padding: "18px 18px 18px", marginBottom: 12,
+        }}>
+        <FormationArt />
+        <div className="relative">
+          <p className="font-display tracking-widest" style={{ fontSize: 11.5, color: TEAL, marginBottom: 8 }}>
+            {b.tag}
+          </p>
+          <p className="font-display text-white" style={{ fontSize: 38, lineHeight: 0.92, letterSpacing: "-0.015em" }}>
+            {b.head}
+          </p>
+          <p className="font-body" style={{ fontSize: 13, color: MUTED, marginTop: 8, lineHeight: 1.5, maxWidth: "88%" }}>
+            {b.sub}
           </p>
         </div>
-      )}
+      </div>
+
+      {/* The three numbers that govern every decision, given their own weight. */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginBottom: 12 }}>
+        {([
+          { label: "Transfers", value: String(squad.credits), accent: squad.credits > 0 },
+          { label: "In the bank", value: fmtM(squad.bankTenths), accent: false },
+          { label: "Chips", value: String(state.chips?.held ?? 0), accent: (state.chips?.held ?? 0) > 0 },
+        ] as const).map((t) => (
+          <div key={t.label} className="rounded-2xl" style={{ background: PANEL, border: `1px solid ${LINE}`, padding: "12px 10px" }}>
+            <div className="font-display" style={{ fontSize: 26, lineHeight: 1, color: t.accent ? GOLD : INK }}>
+              {t.value}
+            </div>
+            <div className="font-body" style={{ fontSize: 10.5, color: MUTED, marginTop: 5, letterSpacing: "0.04em" }}>
+              {t.label}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Secondary destinations — quiet, one line each. */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+        {([
+          { label: "News & insights", to: "/fantasy/news" },
+          { label: KNOWLEDGE_NAME, to: "/fantasy/knowledge" },
+        ] as const).map((l) => (
+          <div key={l.to} onClick={() => router.push(l.to)}
+            className="rounded-2xl font-body"
+            style={{
+              flex: 1, background: PANEL, border: `1px solid ${LINE}`, padding: "11px 13px",
+              fontSize: 12.5, fontWeight: 600, cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6,
+            }}>
+            <span>{l.label}</span>
+            <span style={{ color: TEAL }}>→</span>
+          </div>
+        ))}
+      </div>
 
       {phase === "open" && !roundDone && !preseason && (
-        <Card style={{ marginBottom: 12, border: `1px solid ${GOLD}` }}>
-          <div style={{ fontSize: 14.5, fontWeight: 700, marginBottom: 4 }}>
-            This week&apos;s knowledge round is open
+        <Card style={{ marginBottom: 12, border: `1px solid ${tint(TEAL, "44")}`, background: `linear-gradient(150deg, ${tint(TEAL, "0e")}, ${PANEL})` }}>
+          <div className="font-display" style={{ fontSize: 22, lineHeight: 1.05, marginBottom: 6 }}>
+            THIS WEEK&apos;S ROUND IS OPEN
           </div>
           <p style={{ fontSize: 13, color: MUTED, margin: "0 0 10px", lineHeight: 1.45 }}>
             Eleven questions. Right answers earn the transfer credits that improve this squad.
@@ -529,6 +553,32 @@ export default function FantasyHub() {
         </p>
       </div>}
       {locked && !result && <p style={{ color: MUTED, fontSize: 13 }}>Locked — scoring…</p>}
+
+      {/* Demo stepper — walk the weekly journey (replay/prototype only) */}
+      {isDemo && (
+        <div style={{ marginTop: 22, paddingTop: 14, borderTop: `1px solid ${LINE}`, opacity: 0.75 }}>
+          <div style={{ fontSize: 10.5, letterSpacing: "0.12em", color: MUTED, marginBottom: 5 }}>
+            DEMO · JUMP TO A STAGE
+          </div>
+          <div style={{ display: "flex", gap: 6 }}>
+            {([
+              ["setup", "Squad setup", false],
+              ["open", "Gameweek open", phase === "open"],
+              ["result", "Result", phase === "result"],
+            ] as [string, string, boolean][]).map(([target, label, active]) => (
+              <button key={target} disabled={busy} onClick={() => demo(target)} style={{
+                flex: 1, padding: "8px 4px", borderRadius: 9, fontSize: 12, fontWeight: 700,
+                cursor: "pointer", background: active ? PANEL_2 : PANEL, color: active ? TEAL : MUTED,
+                border: `1px solid ${active ? tint(TEAL, "44") : LINE}`,
+              }}>{label}</button>
+            ))}
+          </div>
+          <p style={{ fontSize: 10.5, color: MUTED, margin: "5px 0 0", lineHeight: 1.4 }}>
+            Prototype control. In the real game the season moves you through these on its own; the
+            live &ldquo;locked, matches playing&rdquo; stage sits between open and result.
+          </p>
+        </div>
+      )}
 
       {state.canRebuild && (
         <div style={{ marginTop: 18, paddingTop: 12, borderTop: `1px solid ${LINE}` }}>

@@ -1,17 +1,34 @@
 "use client";
 /**
  * YourScore Fantasy Football — shared client theme + primitives + fetch helpers.
- * Visual identity: gold on deep pitch (same family as the warm-up game).
+ *
+ * ON THE HOUSE SYSTEM (rebuilt 22 Jul — founder: "it looks old and bland;
+ * follow the Premier League tab"). These screens had drifted onto a bespoke
+ * palette AND a bespoke font stack ('Avenir Next'), so Bebas/DM Sans never
+ * loaded here — which is most of why it read as a different, older app.
+ *
+ * Colour semantics come from tailwind.config.ts, not from taste:
+ *   lime = 38-0 / energy      teal = QUIZ + KNOWLEDGE      gold = WINS ONLY
+ * Fantasy is the knowledge game, so TEAL is its accent — the same choice the
+ * reference screen makes (components/matchweek/FantasyHold.tsx). Gold is
+ * rationed to things you WON: a gameweek total, top of a table, a month title.
+ * Spending gold on every button is what made it mean nothing.
  */
 import { type CSSProperties, type ReactNode } from "react";
 import { getTeamBadgeUrlSync } from "@/lib/teamImages";
 
-export const GOLD = "#E3B54C";
-export const PITCH = "#0E1F17";
-export const PANEL = "#16261C";
-export const LINE = "#2A4032";
-export const INK = "#EDEAE0";
-export const MUTED = "#9FB2A5";
+/** Reward only — a score, a winner, rank 1. Never a default button. */
+export const GOLD = "#ffc233";
+/** The fantasy accent: knowledge. Primary actions, live state, section marks. */
+export const TEAL = "#00d8c0";
+export const PITCH = "#080d0a";   // bg
+export const PANEL = "#0e1611";   // surface
+export const PANEL_2 = "#15211a"; // surface-2, for raised rows
+export const LINE = "rgba(255,255,255,0.07)";
+export const INK = "#eef2f0";
+export const MUTED = "#8a948f";
+/** Accent tint helpers — the reference's hex+alpha idiom (bg 12%, border 28%). */
+export const tint = (hex: string, a = "1e") => `${hex}${a}`;
 
 export type Pos = "GK" | "DEF" | "MID" | "FWD";
 export type ChipName = "triple_captain" | "bench_boost" | "insight" | "second_chance" | "wildcard";
@@ -58,10 +75,11 @@ export async function api<T>(path: string, body?: unknown): Promise<T> {
   return json as T;
 }
 
+/** No fontFamily here on purpose: the root layout's Bebas/DM Sans vars then
+ *  apply, which they never did while this set its own stack. */
 export const page: CSSProperties = {
   minHeight: "100dvh", background: PITCH, color: INK,
-  fontFamily: "'Avenir Next','Helvetica Neue',system-ui,sans-serif",
-  padding: "18px 16px 90px", maxWidth: 560, margin: "0 auto",
+  padding: "16px 16px 96px", maxWidth: 512, margin: "0 auto",
 };
 
 export function Header({ right }: { right?: ReactNode }) {
@@ -73,41 +91,67 @@ export function Header({ right }: { right?: ReactNode }) {
       display: "flex", justifyContent: "space-between", alignItems: "center",
       flexWrap: "wrap", gap: 8, marginBottom: 14,
     }}>
-      <span style={{ fontSize: 12.5, fontWeight: 700, letterSpacing: "0.14em", color: GOLD }}>
-        YOURSCORE FANTASY FOOTBALL
+      <span className="font-display tracking-widest" style={{ fontSize: 15, color: TEAL }}>
+        YOURSCORE FANTASY
       </span>
       <span style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>{right}</span>
     </div>
   );
 }
 
-export function Chip({ children, gold = false }: { children: ReactNode; gold?: boolean }) {
+/** Status pill. `gold` marks a REWARD (credits in hand, a win); default is quiet. */
+export function Chip({ children, gold = false, teal = false }: {
+  children: ReactNode; gold?: boolean; teal?: boolean;
+}) {
+  const accent = gold ? GOLD : teal ? TEAL : null;
   return (
-    <span style={{
-      fontSize: 12, fontWeight: 700, padding: "4px 10px", borderRadius: 999,
-      background: gold ? GOLD : PANEL, color: gold ? "#2A1F00" : MUTED,
-      border: `1px solid ${gold ? GOLD : LINE}`, whiteSpace: "nowrap",
-    }}>{children}</span>
+    <span className="font-body rounded-full whitespace-nowrap"
+      style={{
+        fontSize: 11.5, fontWeight: 600, padding: "4px 10px",
+        background: accent ? tint(accent) : PANEL_2,
+        color: accent ?? MUTED,
+        border: `1px solid ${accent ? tint(accent, "44") : LINE}`,
+      }}>{children}</span>
   );
 }
 
+/** `gold` = the screen's primary action. Kept as the prop name so every call
+ *  site still reads right, but it paints TEAL — actions are knowledge-coloured
+ *  here; gold is reserved for what you've won. */
 export function Btn({ children, onClick, gold = false, disabled = false, small = false }: {
   children: ReactNode; onClick?: () => void; gold?: boolean; disabled?: boolean; small?: boolean;
 }) {
   return (
-    <button onClick={onClick} disabled={disabled} style={{
-      padding: small ? "8px 12px" : "13px 16px", borderRadius: 12,
-      fontSize: small ? 13 : 14.5, fontWeight: 700, cursor: disabled ? "default" : "pointer",
-      background: gold ? GOLD : "transparent", color: gold ? "#2A1F00" : INK,
-      border: `1.5px solid ${gold ? GOLD : LINE}`, opacity: disabled ? 0.45 : 1,
-      width: small ? undefined : "100%",
-    }}>{children}</button>
+    <button onClick={onClick} disabled={disabled}
+      className="font-body rounded-xl transition-opacity"
+      style={{
+        padding: small ? "9px 14px" : "14px 18px",
+        fontSize: small ? 13 : 15, fontWeight: 600,
+        cursor: disabled ? "default" : "pointer",
+        background: gold ? TEAL : PANEL_2,
+        color: gold ? "#03211d" : INK,
+        border: `1px solid ${gold ? TEAL : LINE}`,
+        opacity: disabled ? 0.4 : 1,
+        width: small ? undefined : "100%",
+      }}>{children}</button>
   );
 }
 
-export function Card({ children, style }: { children: ReactNode; style?: CSSProperties }) {
+export function Card({ children, style, onClick }: {
+  children: ReactNode; style?: CSSProperties; onClick?: () => void;
+}) {
   return (
-    <div style={{ background: PANEL, border: `1px solid ${LINE}`, borderRadius: 14, padding: 14, ...style }}>
+    <div onClick={onClick} className="rounded-2xl"
+      style={{ background: PANEL, border: `1px solid ${LINE}`, padding: 16, ...style }}>
+      {children}
+    </div>
+  );
+}
+
+/** Section marker — the house pattern: tiny Bebas, wide tracking, dim. */
+export function SectionLabel({ children }: { children: ReactNode }) {
+  return (
+    <div className="font-display tracking-widest" style={{ fontSize: 12, color: "#586058", marginBottom: 8 }}>
       {children}
     </div>
   );
