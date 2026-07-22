@@ -8,7 +8,8 @@ import { withFantasyUser } from "../_lib";
 // POST: create a league (private by default, owner can opt public).
 // GET:  the signed-in user's leagues + public leagues they aren't already in.
 
-export const fetchCache = "force-no-store"; // service-role reads must never be data-cache-pinned
+export const fetchCache = "force-no-store";
+export const dynamic = "force-dynamic"; // service-role reads must never be data-cache-pinned
 
 export async function POST(req: NextRequest) {
   const auth = await createClient();

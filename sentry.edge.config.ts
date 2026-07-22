@@ -8,8 +8,11 @@ import * as Sentry from "@sentry/nextjs";
 Sentry.init({
   dsn: "https://83a65c03b79c00aec772d456da7e9785@o4511509752774656.ingest.de.sentry.io/4511509782986832",
 
-  // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
-  tracesSampleRate: 1,
+  // Middleware runs on every single request, so it dominates trace volume: 35k of the
+  // 53k transactions in a sample 24h, which exhausted the org's monthly span quota and
+  // made Sentry answer the ingest tunnel with 429 span_usage_exceeded. Its traces carry
+  // almost no diagnostic value (it only refreshes the auth cookie), so sample it thinly.
+  tracesSampleRate: process.env.NODE_ENV === "production" ? 0.02 : 1,
 
   // Enable logs to be sent to Sentry
   enableLogs: true,

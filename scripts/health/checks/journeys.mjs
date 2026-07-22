@@ -55,6 +55,23 @@ export async function run(report, ctx) {
 
   // ── 2. Quiz: start → complete ───────────────────────────────────────────────
   const entity = pickEntity();
+
+  // Snapshot the server's OWN dedup memory before the deal. quiz/start deletes the
+  // oldest 50% of user_question_history whenever a difficulty tier runs dry
+  // (src/app/api/quiz/start/route.ts), so it legitimately re-serves questions it has
+  // deliberately forgotten. Only a question still present in history at deal time
+  // proves the server ignored its own dedup.
+  const historyIds = async () => {
+    const { data } = await supa
+      .from("user_question_history")
+      .select("question_id")
+      .eq("user_id", auth.userId)
+      .eq("entity", entity);
+    return new Set((data ?? []).map((r) => r.question_id));
+  };
+  let preHistory = new Set();
+  try { preHistory = await historyIds(); } catch { /* context only */ }
+
   try {
     const start = await api("/api/quiz/start", { entity });
     if (start.status === 401) {
@@ -72,6 +89,15 @@ export async function run(report, ctx) {
     if (questions.length) {
       ctx.servedQuestions = questions;
       ctx.quizEntity = entity;
+      ctx.preHistoryIds = preHistory;
+      // Anything in history BEFORE the deal and gone AFTER it was deliberately
+      // forgotten by the recycle, so re-serving it is by design. The recycle drops
+      // ceil(n/2) rows and can re-serve at most 15, so with a non-trivial history
+      // some deleted row always stays missing — that's what we detect.
+      try {
+        const postHistory = await historyIds();
+        ctx.historyRecycled = [...preHistory].some((id) => !postHistory.has(id));
+      } catch { /* context only */ }
       // Bank-exhaustion context for the repeat-question check: if the bot has
       // seen nearly the whole bank, server-side history recycling is BY DESIGN.
       try {

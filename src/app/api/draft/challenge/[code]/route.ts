@@ -8,6 +8,8 @@ import { resolveMatch, flipReport } from "@/lib/draft/live-score";
 import { asLeague, type Formation, type PlacedPlayer, type Projected } from "@/lib/draft/types";
 import { createServiceClient } from "@/lib/supabase/service";
 import { sendH2HResultEmail } from "@/lib/email/senders";
+// Vercel data cache pins service-role GETs (constant cache key) — see CLAUDE.md §4.
+export const fetchCache = "force-no-store";
 
 // GET: show a friend challenge (challenger's snapshotted XI) so a friend can size
 // it up before accepting. POST: the friend resolves it with their own active XI.

@@ -1,0 +1,22 @@
+{
+  "name": "normal-match",
+  "notes": "The happy path. One fixture, NS -> 1H -> HT -> 2H -> FT. Half time arrives at KO+47', which is already enough to break a kickoff+45 timer.",
+  "fixtures": [
+    {
+      "id": 19427455,
+      "home": "Arsenal",
+      "away": "Coventry City",
+      "season_id": 28083,
+      "round": "Round 1",
+      "kickoff_min": 90,
+      "lineups_at_min": 30,
+      "timeline": [
+        { "at_min": 0, "state": "NS" },
+        { "at_min": 90, "state": "INPLAY_1ST_HALF" },
+        { "at_min": 137, "state": "HT" },
+        { "at_min": 152, "state": "INPLAY_2ND_HALF" },
+        { "at_min": 200, "state": "FT" }
+      ]
+    }
+  ]
+}

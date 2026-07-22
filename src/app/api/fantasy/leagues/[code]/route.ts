@@ -11,6 +11,7 @@ import { deleteLeague, leagueDetail, leaveLeague, renameLeague, setVisibility } 
 // DELETE ?mode=leave|delete.
 
 export const fetchCache = "force-no-store";
+export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest, { params }: { params: { code: string } }) {
   const auth = await createClient();

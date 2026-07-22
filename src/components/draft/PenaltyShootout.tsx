@@ -1,13 +1,13 @@
 "use client";
 
 /**
- * Interactive penalty shootout — controller + UI chrome over the 3D scene.
+ * Interactive penalty shootout — controller + UI chrome over the scene.
  *
- * Owns all game state; renders the real-time 3D stadium (PenaltyScene3D, lazy /
- * client-only) and overlays the game UI: round counter + score pips, a 9-zone aim
- * grid, a timed POWER meter, CHANGE AIM / TAKE PENALTY, dive controls, and the
- * GOAL/SAVED/MISS badges. Every kick arrives already resolved (PenKick) — this
- * component animates the reveal, it never computes an outcome.
+ * Owns all game state; renders the real-time 2D sprite scene (PenaltyScene2D —
+ * the R3F 3D scene was descoped) and overlays the game UI: round counter + score
+ * pips, a 9-zone aim grid, a timed POWER meter, CHANGE AIM / TAKE PENALTY, dive
+ * controls, and the GOAL/SAVED/MISS badges. Every kick arrives already resolved
+ * (PenKick) — this component animates the reveal, it never computes an outcome.
  *
  * Shared by the solo flow (alternating: you shoot AND dive) and live H2H
  * (simultaneous: you shoot, the opponent's kicks tick the scoreboard). Synthesized

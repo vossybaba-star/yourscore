@@ -10,7 +10,7 @@
 import { FORMATIONS, asLeague, type Formation, type League, type PlacedPlayer, type PlayerSeason, type Projected, type Slot, type TeamStatus } from "./types";
 import { slotsFor } from "./formations";
 import { fitMultiplier, canPlay, posCategory, scoreTeam, projectSeason, spineWeight, playerIdentity, type PosCategory } from "./score";
-import { getPlayer } from "./pool";
+import { getPlayer, isPoolReady } from "./pool";
 import type { SeasonResult } from "./season";
 import type { MatchReport, MatchSim } from "./live-score";
 import { resolveInteractiveShootout, type PenKick, type PenZone, type PenPower } from "./pens";
@@ -34,6 +34,9 @@ export type LocalTeam = {
   winStreak: number;
   /** A win grants exactly one swap (re-spin one slot). Consumed when used. */
   swapAvailable: boolean;
+  /** Post-loss recovery: slot ids that have used their ONE lifetime redraft.
+   *  Each position can be redrafted once over the team's life (/38-0/redraft). */
+  redraftedSlots?: string[];
   strength: number;
   projected: Projected | null;
   updatedAt: number;
@@ -64,10 +67,11 @@ export function emptyTeam(formation: Formation, mode: DraftMode = "classic", lea
   };
 }
 
-/** Post-win: streak up. The team stays active and keeps playing (no rebuild
- *  penalty — players tweak their XI via the pre-match swap instead). */
+/** Post-win: streak up and EARN one swap — the win reward the result screen's
+ *  "SWAP ONE PLAYER →" CTA and the team page's earned-swap banner advertise
+ *  (/38-0/swap consumes it and sets it back to false). The team stays active. */
 export function recordWin(team: LocalTeam): LocalTeam {
-  return { ...team, winStreak: team.winStreak + 1, status: "active", updatedAt: Date.now() };
+  return { ...team, winStreak: team.winStreak + 1, swapAvailable: true, status: "active", updatedAt: Date.now() };
 }
 
 /** Post-loss: reset the streak, but the team stays active and challengeable. */
@@ -233,7 +237,11 @@ export function loadTeam(): LocalTeam | null {
     // (e.g. a team saved before a data update). This keeps us from ever sending
     // unknown ids to the server — the XI just becomes incomplete and the player
     // is prompted to re-draft the empty slots instead of hitting a cryptic error.
-    const known = t.squad.filter((p) => getPlayer(p.player_season_id));
+    // ⚠️ ONLY when the on-demand pool is actually loaded: getPlayer() returns
+    // undefined for EVERY id while the pool is cold, so running this migration
+    // early filtered the whole squad to [] and PERSISTED the wipe — a cold hit
+    // on any loadTeam() caller (deep link, refresh) silently destroyed the team.
+    const known = isPoolReady() ? t.squad.filter((p) => getPlayer(p.player_season_id)) : t.squad;
     const cleaned = recompute({ ...t, squad: known });
     if (known.length !== t.squad.length) saveTeam(cleaned); // persist the migration
     return cleaned;

@@ -5,7 +5,7 @@ import { isNative } from "@/lib/native";
 import { useUser } from "@/hooks/useUser";
 import { createClient } from "@/lib/supabase/client";
 import { registerForPush } from "@/lib/push";
-import { hasPromptedPush, markPushPrompted } from "@/lib/onboarding";
+import { hasPromptedPush, markPushPrompted, snoozePushPrompt } from "@/lib/onboarding";
 
 // Apple Guideline 4.5.4 soft pre-prompt — our own UI; the OS permission dialog
 // only fires when the user taps Enable. Shown proactively the first time a real
@@ -65,7 +65,9 @@ function PushPrePromptInner() {
   }
 
   function later() {
-    markPushPrompted();
+    // Snooze, don't kill: writing the permanent flag here silenced every future
+    // push ask on the device forever (the "backup" NotifyOptInCard included).
+    snoozePushPrompt();
     setShow(false);
   }
 

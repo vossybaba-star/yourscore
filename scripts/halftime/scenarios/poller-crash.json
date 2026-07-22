@@ -1,0 +1,42 @@
+{
+  "name": "poller-crash",
+  "notes": "The poller dies mid-first-half (SIGKILL at min 100, after both packs are staged) and never comes back. The Vercel watchdog is the only thing left. F1's half time is at min 130 and the watchdog runs at 132 — released, with push, two minutes after the whistle, inside its 6-minute bound. F2's half time is at 150 but the watchdog does not run again until 170, by which time the second half is under way: it must still put the pack live, and it must NOT push (a notification after the restart is useless and a spoiler risk). That is the released_late path.",
+  "harness": {
+    "kill_poller_at_min": 100,
+    "watchdog_at_min": [132, 170]
+  },
+  "fixtures": [
+    {
+      "id": 19427520,
+      "home": "Tottenham Hotspur",
+      "away": "Manchester United",
+      "season_id": 28083,
+      "round": "Round 3",
+      "kickoff_min": 90,
+      "lineups_at_min": 30,
+      "timeline": [
+        { "at_min": 0, "state": "NS" },
+        { "at_min": 90, "state": "INPLAY_1ST_HALF" },
+        { "at_min": 130, "state": "HT" },
+        { "at_min": 145, "state": "INPLAY_2ND_HALF" },
+        { "at_min": 195, "state": "FT" }
+      ]
+    },
+    {
+      "id": 19427521,
+      "home": "Chelsea",
+      "away": "Liverpool",
+      "season_id": 28083,
+      "round": "Round 3",
+      "kickoff_min": 90,
+      "lineups_at_min": 30,
+      "timeline": [
+        { "at_min": 0, "state": "NS" },
+        { "at_min": 90, "state": "INPLAY_1ST_HALF" },
+        { "at_min": 150, "state": "HT" },
+        { "at_min": 165, "state": "INPLAY_2ND_HALF" },
+        { "at_min": 215, "state": "FT" }
+      ]
+    }
+  ]
+}

@@ -27,9 +27,12 @@
     "2026-07-05-england-world-cup-history.json",
     "2026-07-05-quarter-finals-take-shape.json",
     "2026-07-06-norway-stun-brazil.json",
-    "2026-07-07-ronaldo-bows-out.json"
+    "2026-07-07-ronaldo-bows-out.json",
+    "2026-07-08-the-last-eight-is-set.json",
+    "2026-07-09-france-morocco-rematch.json",
+    "2026-07-10-spain-belgium-quarter-final.json"
   ],
-  "count": 408,
+  "count": 453,
   "questions": [
     {
       "id": "2026-06-11-0",
@@ -5334,6 +5337,591 @@
       "answer": 0,
       "difficulty": "expert",
       "category": "records"
+    },
+    {
+      "id": "2026-07-08-0",
+      "q": "Which reigning world champions recovered from two goals down to beat Egypt 3-2 and reach the quarter-finals?",
+      "options": [
+        "Argentina",
+        "France",
+        "Spain",
+        "Brazil"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "argentina"
+    },
+    {
+      "id": "2026-07-08-1",
+      "q": "Norway reached their first-ever World Cup quarter-final by knocking out which five-time champions?",
+      "options": [
+        "Germany",
+        "Brazil",
+        "Italy",
+        "Uruguay"
+      ],
+      "answer": 1,
+      "difficulty": "easy",
+      "category": "norway"
+    },
+    {
+      "id": "2026-07-08-2",
+      "q": "England edged co-hosts Mexico 3-2 in the last 16 at which famous stadium?",
+      "options": [
+        "Maracana",
+        "Wembley",
+        "Estadio Azteca",
+        "MetLife Stadium"
+      ],
+      "answer": 2,
+      "difficulty": "easy",
+      "category": "england"
+    },
+    {
+      "id": "2026-07-08-3",
+      "q": "Who headed home in stoppage time to complete Argentina's comeback win over Egypt?",
+      "options": [
+        "Lautaro Martinez",
+        "Lionel Messi",
+        "Cristian Romero",
+        "Enzo Fernandez"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "argentina"
+    },
+    {
+      "id": "2026-07-08-4",
+      "q": "How did Switzerland claim the final quarter-final place at Colombia's expense?",
+      "options": [
+        "On penalties after a goalless draw",
+        "A comfortable 2-0 win",
+        "A late winner in extra time",
+        "A 3-2 thriller"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "switzerland"
+    },
+    {
+      "id": "2026-07-08-5",
+      "q": "Norway's reward for beating Brazil is a quarter-final against which side?",
+      "options": [
+        "France",
+        "Spain",
+        "England",
+        "Belgium"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "bracket"
+    },
+    {
+      "id": "2026-07-08-6",
+      "q": "Whose first-half double, struck inside two minutes, set England on their way past Mexico?",
+      "options": [
+        "Harry Kane",
+        "Jude Bellingham",
+        "Phil Foden",
+        "Bukayo Saka"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "england"
+    },
+    {
+      "id": "2026-07-08-7",
+      "q": "Which of these sides did NOT reach the 2026 World Cup quarter-finals?",
+      "options": [
+        "Switzerland",
+        "Morocco",
+        "Portugal",
+        "Norway"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "bracket"
+    },
+    {
+      "id": "2026-07-08-8",
+      "q": "Morocco, the only African side in the last eight, booked their place by beating which co-host 3-0?",
+      "options": [
+        "Canada",
+        "Mexico",
+        "United States",
+        "Costa Rica"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "morocco"
+    },
+    {
+      "id": "2026-07-08-9",
+      "q": "Six of the eight quarter-finalists are European and one, Morocco, is African. Which is the only side from South America?",
+      "options": [
+        "Brazil",
+        "Uruguay",
+        "Argentina",
+        "Colombia"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "bracket"
+    },
+    {
+      "id": "2026-07-08-10",
+      "q": "Argentina's fightback against Egypt began with a 79th-minute header from which defender?",
+      "options": [
+        "Nicolas Otamendi",
+        "Cristian Romero",
+        "Nahuel Molina",
+        "Nicolas Tagliafico"
+      ],
+      "answer": 1,
+      "difficulty": "hard",
+      "category": "argentina"
+    },
+    {
+      "id": "2026-07-08-11",
+      "q": "England spent more than 40 minutes with ten men against Mexico after a red card for which defender?",
+      "options": [
+        "Jarell Quansah",
+        "John Stones",
+        "Marc Guehi",
+        "Ezri Konsa"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "england"
+    },
+    {
+      "id": "2026-07-08-12",
+      "q": "Erling Haaland's brace sank Brazil at which New Jersey stadium, the venue for the 19 July final?",
+      "options": [
+        "SoFi Stadium",
+        "Gillette Stadium",
+        "MetLife Stadium",
+        "Hard Rock Stadium"
+      ],
+      "answer": 2,
+      "difficulty": "hard",
+      "category": "norway"
+    },
+    {
+      "id": "2026-07-08-13",
+      "q": "France's quarter-final against Morocco is a rematch of which stage of the 2022 World Cup?",
+      "options": [
+        "The final",
+        "The semi-final",
+        "The round of 16",
+        "The third-place playoff"
+      ],
+      "answer": 1,
+      "difficulty": "hard",
+      "category": "history"
+    },
+    {
+      "id": "2026-07-08-14",
+      "q": "Switzerland's run is their first to the last eight since 1954, when as hosts they lost 7-5 to Austria in a game that still holds which World Cup record?",
+      "options": [
+        "Most goals in a single match",
+        "Fastest goal ever scored",
+        "Most players sent off",
+        "Largest attendance"
+      ],
+      "answer": 0,
+      "difficulty": "expert",
+      "category": "records"
+    },
+    {
+      "id": "2026-07-09-0",
+      "q": "France meet Morocco in the 2026 quarter-finals. How many times have France won the World Cup?",
+      "options": [
+        "Twice (1998 and 2018)",
+        "Once (1998)",
+        "Three times",
+        "Four times"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "france"
+    },
+    {
+      "id": "2026-07-09-1",
+      "q": "Morocco are again the only African side in the last eight. At which World Cup did they become the first African nation to reach the semi-finals?",
+      "options": [
+        "2022 in Qatar",
+        "2018 in Russia",
+        "2010 in South Africa",
+        "1986 in Mexico"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "morocco"
+    },
+    {
+      "id": "2026-07-09-2",
+      "q": "Which France head coach, a World Cup winner as both captain and manager, leads them into the quarter-final?",
+      "options": [
+        "Didier Deschamps",
+        "Zinedine Zidane",
+        "Thierry Henry",
+        "Aime Jacquet"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "france"
+    },
+    {
+      "id": "2026-07-09-3",
+      "q": "France beat Morocco 2-0 in the 2022 semi-final. Which full-back opened the scoring inside the first five minutes with an acrobatic finish?",
+      "options": [
+        "Theo Hernandez",
+        "Jules Kounde",
+        "Benjamin Pavard",
+        "Achraf Hakimi"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "history"
+    },
+    {
+      "id": "2026-07-09-4",
+      "q": "France reached the 2026 quarter-final by beating Paraguay 1-0 in the last 16. Who scored the winning goal, from the penalty spot?",
+      "options": [
+        "Kylian Mbappe",
+        "Ousmane Dembele",
+        "Antoine Griezmann",
+        "Randal Kolo Muani"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "route"
+    },
+    {
+      "id": "2026-07-09-5",
+      "q": "How did Morocco knock Spain out in the 2022 round of 16, reaching the quarter-finals for the first time?",
+      "options": [
+        "On penalties after a goalless draw",
+        "A 1-0 win in extra time",
+        "A 2-1 victory",
+        "A 3-2 thriller"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "history"
+    },
+    {
+      "id": "2026-07-09-6",
+      "q": "France reached back-to-back finals in 2018 and 2022. Who beat them on penalties in the 2022 final?",
+      "options": [
+        "Argentina",
+        "Brazil",
+        "Croatia",
+        "Germany"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "france"
+    },
+    {
+      "id": "2026-07-09-7",
+      "q": "France's Kylian Mbappe and Morocco captain Achraf Hakimi spent three seasons as club team-mates at which side?",
+      "options": [
+        "Paris Saint-Germain",
+        "Real Madrid",
+        "Inter Milan",
+        "Bayern Munich"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "connections"
+    },
+    {
+      "id": "2026-07-09-8",
+      "q": "France's two World Cup triumphs came in 1998 and 2018. Which country did they beat 4-2 in the 2018 final?",
+      "options": [
+        "Croatia",
+        "Belgium",
+        "England",
+        "Argentina"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "france"
+    },
+    {
+      "id": "2026-07-09-9",
+      "q": "Morocco's 2022 quarter-final win over Portugal, which ended Cristiano Ronaldo's tournament, was settled by a header from which striker?",
+      "options": [
+        "Youssef En-Nesyri",
+        "Hakim Ziyech",
+        "Sofiane Boufal",
+        "Abderrazak Hamdallah"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "history"
+    },
+    {
+      "id": "2026-07-09-10",
+      "q": "Who sealed France's 2022 semi-final win over Morocco, scoring shortly after coming off the bench?",
+      "options": [
+        "Randal Kolo Muani",
+        "Kingsley Coman",
+        "Olivier Giroud",
+        "Marcus Thuram"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "history"
+    },
+    {
+      "id": "2026-07-09-11",
+      "q": "Achraf Hakimi settled Morocco's 2022 shootout win over Spain with what kind of decisive penalty?",
+      "options": [
+        "A Panenka chipped down the middle",
+        "A thunderous strike into the top corner",
+        "A low kick to the keeper's right",
+        "A rebound after his first effort was saved"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "history"
+    },
+    {
+      "id": "2026-07-09-12",
+      "q": "France's run to consecutive finals in 2018 and 2022 made them the first side to reach back-to-back finals since which country in 1958 and 1962?",
+      "options": [
+        "Brazil",
+        "Italy",
+        "West Germany",
+        "Netherlands"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "records"
+    },
+    {
+      "id": "2026-07-09-13",
+      "q": "After losing the 2022 semi-final to France, where did Morocco ultimately finish at that tournament?",
+      "options": [
+        "Fourth",
+        "Third",
+        "Runners-up",
+        "They shared third place"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "morocco"
+    },
+    {
+      "id": "2026-07-09-14",
+      "q": "Deschamps' France hope to become only the second European nation to contest three finals in a row. Which side managed it between 1982 and 1990?",
+      "options": [
+        "West Germany",
+        "Italy",
+        "Netherlands",
+        "France"
+      ],
+      "answer": 0,
+      "difficulty": "expert",
+      "category": "records"
+    },
+    {
+      "id": "2026-07-10-0",
+      "q": "Spain, who meet Belgium in the quarter-finals, won their only World Cup title in which year?",
+      "options": [
+        "2010",
+        "2006",
+        "1982",
+        "2014"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "spain"
+    },
+    {
+      "id": "2026-07-10-1",
+      "q": "Spain reached the last eight by winning 1-0 in the round of 16 against which side, ending Cristiano Ronaldo's final World Cup?",
+      "options": [
+        "Croatia",
+        "Portugal",
+        "Uruguay",
+        "Brazil"
+      ],
+      "answer": 1,
+      "difficulty": "easy",
+      "category": "route"
+    },
+    {
+      "id": "2026-07-10-2",
+      "q": "Belgium booked their quarter-final place with a 4-1 round-of-16 win over which co-host nation?",
+      "options": [
+        "Canada",
+        "Mexico",
+        "United States",
+        "Argentina"
+      ],
+      "answer": 2,
+      "difficulty": "easy",
+      "category": "route"
+    },
+    {
+      "id": "2026-07-10-3",
+      "q": "Spain won the 2010 World Cup final 1-0 against which opponent in Johannesburg?",
+      "options": [
+        "Germany",
+        "Netherlands",
+        "Italy",
+        "Portugal"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "spain"
+    },
+    {
+      "id": "2026-07-10-4",
+      "q": "Who scored Spain's extra-time winner in the 2010 World Cup final?",
+      "options": [
+        "David Villa",
+        "Xavi",
+        "Fernando Torres",
+        "Andres Iniesta"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "spain"
+    },
+    {
+      "id": "2026-07-10-5",
+      "q": "Spain arrive as the reigning European champions, having won which tournament in 2024?",
+      "options": [
+        "UEFA Euro 2024",
+        "UEFA Nations League",
+        "Copa America",
+        "FIFA Confederations Cup"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "spain"
+    },
+    {
+      "id": "2026-07-10-6",
+      "q": "Belgium have never won the World Cup. What is their best-ever finish?",
+      "options": [
+        "Runners-up in 1986",
+        "Third place in 2018",
+        "Fourth place in 2014",
+        "Semi-finalists in 1990"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "belgium"
+    },
+    {
+      "id": "2026-07-10-7",
+      "q": "Spain's 1-0 win over Portugal was settled by a late goal from which midfielder?",
+      "options": [
+        "Alvaro Morata",
+        "Nico Williams",
+        "Dani Olmo",
+        "Mikel Merino"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "route"
+    },
+    {
+      "id": "2026-07-10-8",
+      "q": "Which former club manager, in his first senior international job, leads Belgium at the 2026 World Cup?",
+      "options": [
+        "Rudi Garcia",
+        "Domenico Tedesco",
+        "Roberto Martinez",
+        "Marc Wilmots"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "belgium"
+    },
+    {
+      "id": "2026-07-10-9",
+      "q": "Which teenage Barcelona winger has become the standout attacker of Spain's recent run of success?",
+      "options": [
+        "Ferran Torres",
+        "Lamine Yamal",
+        "Alvaro Morata",
+        "Dani Olmo"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "spain"
+    },
+    {
+      "id": "2026-07-10-10",
+      "q": "The last time these sides met at a World Cup was the 1986 quarter-final. How did Belgium go through?",
+      "options": [
+        "On penalties after a 1-1 draw",
+        "A 2-1 win in normal time",
+        "A 3-2 win after extra time",
+        "A 1-0 win with a late goal"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "category": "history"
+    },
+    {
+      "id": "2026-07-10-11",
+      "q": "Belgium's run to the 1986 semi-finals ended in a 2-0 defeat, both goals scored by which player?",
+      "options": [
+        "Jorge Burruchaga",
+        "Diego Maradona",
+        "Jorge Valdano",
+        "Daniel Passarella"
+      ],
+      "answer": 1,
+      "difficulty": "hard",
+      "category": "history"
+    },
+    {
+      "id": "2026-07-10-12",
+      "q": "Belgium's golden generation finished third in 2018 after losing the semi-final 1-0 to France, decided by a header from which defender?",
+      "options": [
+        "Antoine Griezmann",
+        "Kylian Mbappe",
+        "Olivier Giroud",
+        "Samuel Umtiti"
+      ],
+      "answer": 3,
+      "difficulty": "hard",
+      "category": "belgium"
+    },
+    {
+      "id": "2026-07-10-13",
+      "q": "Belgium's 4-1 win over the USA featured a first-half brace from which attacking midfielder?",
+      "options": [
+        "Romelu Lukaku",
+        "Kevin De Bruyne",
+        "Charles De Ketelaere",
+        "Jeremy Doku"
+      ],
+      "answer": 2,
+      "difficulty": "hard",
+      "category": "route"
+    },
+    {
+      "id": "2026-07-10-14",
+      "q": "Belgium's 1986 shootout win over Spain was sealed by the decisive penalty from which player?",
+      "options": [
+        "Enzo Scifo",
+        "Jan Ceulemans",
+        "Jean-Marie Pfaff",
+        "Leo Van der Elst"
+      ],
+      "answer": 3,
+      "difficulty": "expert",
+      "category": "history"
     }
   ]
 }

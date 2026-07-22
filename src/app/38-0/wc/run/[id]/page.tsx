@@ -464,7 +464,7 @@ export default function WorldCupRun() {
       const resultBit = run.status === "champion"
         ? `and I won the whole thing 🏆 (${runRec})`
         : `— run ended in the ${RUN_STAGE_LABEL[run.stage]} (${runRec})`;
-      return `${quizBit} ${resultBit}. Entering the @yourscore_app_ daily £25 giveaway. Beat my score 👇`;
+      return `${quizBit} ${resultBit} @yourscore_app_. Beat my score 👇`;
     }
     const who = world ? "a World XI" : run.nation;
     return run.status === "champion"
@@ -579,14 +579,15 @@ export default function WorldCupRun() {
                   />
                 </div>
               )}
-              {/* £25 daily giveaway — the primary share; the tweet unfurls the Mastermind card. */}
+              {/* The primary share — the tweet unfurls the Mastermind card. No prize
+                  framing: there is no giveaway live. */}
               <a href={tweetHref()} target="_blank" rel="noopener noreferrer"
                 className="flex items-center gap-3 mt-3 rounded-2xl px-4 py-3 active:scale-[0.98] transition-transform"
                 style={{ background: "linear-gradient(135deg,#1c1400,#221900)", border: "2px solid rgba(255,215,0,0.6)" }}>
                 <span style={{ fontSize: 30, lineHeight: 1 }}>🏆</span>
                 <div className="text-left flex-1 min-w-0">
-                  <div className="font-display tracking-wide" style={{ fontSize: 18, color: "#ffd700" }}>WIN £25 TODAY</div>
-                  <div className="font-body" style={{ fontSize: 12, color: "#a89060" }}>Share your card on 𝕏 to enter the daily giveaway →</div>
+                  <div className="font-display tracking-wide" style={{ fontSize: 18, color: "#ffd700" }}>SHARE YOUR SCORECARD</div>
+                  <div className="font-body" style={{ fontSize: 12, color: "#a89060" }}>Post your card on 𝕏 →</div>
                 </div>
                 <span style={{ fontSize: 18, color: "#1d9bf0" }}>𝕏</span>
               </a>

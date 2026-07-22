@@ -24,15 +24,17 @@ export type DraftBand = { minOverall: number; maxOverall: number };
 export type QuizGrade = { correct: boolean; streak: number };
 
 // Tunables. The pool spans ~40–93 overall.
-export const QUIZ_BASE_FLOOR = 66;   // floor for a single correct answer (streak 1)
+export const QUIZ_BASE_FLOOR = 70;   // floor for a single correct answer (streak 1)
 export const QUIZ_STREAK_STEP = 3;   // floor gained per extra consecutive correct
 export const QUIZ_FLOOR_CAP = 84;    // floor never exceeds this (elite stays a spin, not a guarantee)
 export const QUIZ_WRONG_CEILING = 72; // a wrong answer can't deal an elite player
 // The CEILING also climbs with the streak, so elite players are gated behind a run of
 // correct answers (not available on the first correct pick). Tuned so the elite tier
-// (~88+) only opens once the streak reaches ~5 — i.e. toward the end of an 11-pick draft.
-export const QUIZ_BASE_CEILING = 76; // ceiling for a single correct answer (streak 1) — solid, not elite
-export const QUIZ_CEILING_STEP = 3;  // ceiling gained per extra consecutive correct (reaches 99 deep in a streak)
+// (~88+) opens exactly at streak 5 — i.e. toward the end of an 11-pick draft.
+// Re-tuned 2026-07-12 (founder: a first right answer felt too weak): the streak-1 band
+// rose 66–76 → 70–80, with a gentler ceiling step so elite still waits for streak 5.
+export const QUIZ_BASE_CEILING = 80; // ceiling for a single correct answer (streak 1) — solid, not elite
+export const QUIZ_CEILING_STEP = 2;  // ceiling gained per extra consecutive correct (88+ at streak 5)
 
 /** Advance a correct-streak: +1 on a correct answer, reset to 0 on a miss. */
 export function nextStreak(prev: number, correct: boolean): number {

@@ -681,7 +681,9 @@ export default function H2HPage({ params }: { params: { id: string } }) {
 
   // ── Sign in needed ─────────────────────────────────────────────────────
   if (pageState === "sign_in_needed" && challenge) {
-    const scoreBarPct = Math.round((challenge.challenger_score / (challenge.total_questions * 1000)) * 100);
+    // Real max for this pack (stored at creation) — total_questions×1000 overstated
+    // the ceiling ~2-5x, making decent runs read as 12%.
+    const scoreBarPct = Math.round((challenge.challenger_score / Math.max(1, challenge.max_score || challenge.total_questions * 600)) * 100);
 
     return (
       <div className="min-h-screen flex flex-col" style={gridBg}>
@@ -771,6 +773,15 @@ export default function H2HPage({ params }: { params: { id: string } }) {
               Free forever — takes 10 seconds
             </p>
             <SignInWithGoogle redirectTo={`/h2h/${id}`} />
+            {/* Apple/email users (most iPhone recipients) need a path too — the
+                full sign-in page carries every provider and returns here. */}
+            <a
+              href={`/auth/sign-in?next=${encodeURIComponent(`/h2h/${id}`)}`}
+              className="block text-center font-body text-xs mt-3 underline underline-offset-2"
+              style={{ color: "#8a948f" }}
+            >
+              Or continue with Apple / email
+            </a>
           </div>
 
           {/* Social proof nudge */}
@@ -784,7 +795,9 @@ export default function H2HPage({ params }: { params: { id: string } }) {
 
   // ── Ready to play ──────────────────────────────────────────────────────
   if (pageState === "ready_to_play" && challenge) {
-    const scoreBarPct = Math.round((challenge.challenger_score / (challenge.total_questions * 1000)) * 100);
+    // Real max for this pack (stored at creation) — total_questions×1000 overstated
+    // the ceiling ~2-5x, making decent runs read as 12%.
+    const scoreBarPct = Math.round((challenge.challenger_score / Math.max(1, challenge.max_score || challenge.total_questions * 600)) * 100);
 
     return (
       <div className="min-h-screen flex flex-col" style={gridBg}>

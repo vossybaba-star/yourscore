@@ -68,7 +68,7 @@ export default function Leaderboard() {
           ))}
         </div>
 
-        <Link href="/leagues" className="flex items-center justify-between rounded-xl px-4 py-3 mb-4 active:scale-[0.98] transition-transform"
+        <Link href="/38-0/leagues" className="flex items-center justify-between rounded-xl px-4 py-3 mb-4 active:scale-[0.98] transition-transform"
           style={{ background: "rgba(174,234,0,0.1)", border: "1px solid rgba(174,234,0,0.3)" }}>
           <span className="font-display tracking-wide" style={{ fontSize: 16, color: "#aeea00" }}>🏟️ MY LEAGUES</span>
           <span className="font-body" style={{ fontSize: 12, color: "#8a948f" }}>create or join a private board →</span>
@@ -84,7 +84,7 @@ export default function Leaderboard() {
             <p className="font-body mt-2" style={{ fontSize: 13, color: "#8a948f" }}>
               {ready
                 ? "Be the first on the board — win a ranked match."
-                : "Cloud leaderboards activate once the season is live. Play Quick Matches now."}
+                : "The board is warming up. Build an XI and be ready for it."}
             </p>
             <Button href="/38-0" variant="primary" tone="lime" size="md" className="inline-flex mt-4">
               BUILD YOUR XI →

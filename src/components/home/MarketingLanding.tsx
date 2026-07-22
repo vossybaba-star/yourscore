@@ -186,8 +186,8 @@ function LeagueHeroCard() {
 
       {/* Footer */}
       <div className="px-4 py-3 flex items-center justify-between" style={{ borderTop: "1px solid rgba(255,255,255,0.04)", background: "rgba(0,0,0,0.2)" }}>
-        <span className="font-body text-xs text-text-muted">🏴󠁧󠁢󠁥󠁮󠁧󠁿 England vs France · 67&apos;</span>
-        <span className="font-body text-xs font-semibold" style={{ color: "#aeea00" }}>2 watching →</span>
+        <span className="font-body text-xs text-text-muted">🔥 Marcus — 4 wins in a row</span>
+        <span className="font-body text-xs font-semibold" style={{ color: "#aeea00" }}>Full table →</span>
       </div>
     </div>
   );
@@ -281,13 +281,13 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
         <Image src="/logo.png" alt="YourScore" width={122} height={36} priority style={{ height: 36, width: "auto" }} />
         <div className="flex items-center gap-2">
           <Link href="/how-it-works" className="hidden sm:block font-body text-sm text-text-muted hover:text-white transition-colors px-3 py-2">How it works</Link>
-          <Link href="/challenges" className="hidden sm:block font-body text-sm hover:opacity-80 transition-colors px-3 py-2 text-amber">Challenges</Link>
+          <Link href="/challenges" className="hidden sm:block font-body text-sm hover:opacity-80 transition-colors px-3 py-2 text-amber">Quiz</Link>
           <Link href="/league/join" className="hidden sm:block font-body text-sm text-text-muted hover:text-white transition-colors px-3 py-2">Join league</Link>
-          <Link href="/auth/sign-in" className="font-body font-semibold text-sm px-4 py-2.5 rounded-xl hover:opacity-90 transition-all text-white"
+          <Link href="/auth/sign-in" className="hidden sm:block font-body font-semibold text-sm px-4 py-2.5 rounded-xl hover:opacity-90 transition-all text-white whitespace-nowrap"
             style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)" }}>
             Sign In
           </Link>
-          <Link href="/auth/sign-in" className="font-body font-bold text-sm px-4 py-2.5 rounded-xl hover:opacity-90 transition-all green-pulse text-green"
+          <Link href="/auth/sign-in" className="font-body font-bold text-sm px-4 py-2.5 rounded-xl hover:opacity-90 transition-all green-pulse text-green whitespace-nowrap"
             style={{ background: "rgba(174,234,0,0.12)", border: "1px solid rgba(174,234,0,0.35)" }}>
             Sign Up
           </Link>
@@ -353,7 +353,7 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
             {/* Nav links */}
             <nav className="px-4 pb-3">
               {[
-                { href: "/challenges", label: "Challenges", color: "#ffb800" },
+                { href: "/challenges", label: "Quiz", color: "#ffb800" },
                 { href: "/join", label: "Upcoming Matches", color: "#aeea00" },
                 { href: "/league/join", label: "Join league", color: "#c4ccc6" },
                 { href: "/how-it-works", label: "How it works", color: "#c4ccc6" },
@@ -416,7 +416,7 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
             </h1>
 
             <p className="font-body text-text-muted text-lg leading-relaxed mb-8 max-w-lg">
-              Draft your XI · Go head to head · Top your league.
+              Build an XI good enough to go 38 games unbeaten. Draft, go head to head, and top your league.
             </p>
 
             {/* Primary CTA — Draft your XI */}
@@ -437,14 +437,6 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1v14M1 8h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
                 Sign Up — Free
               </Link>
-              <Link href="/league/join"
-                className="flex-1 flex items-center justify-center gap-2 font-body font-semibold text-base px-6 py-4 rounded-xl transition-all hover:opacity-80 text-white"
-                style={{ border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.03)" }}>
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <path d="M13 3h3v3M16 3l-6 6M9 5H3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                Join a league
-              </Link>
               <DownloadAppButton
                 source="hero"
                 label="Get the app"
@@ -454,7 +446,7 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
             </div>
 
             <p className="font-body text-xs text-text-muted">
-              Free to play · No app needed ·{" "}
+              Free · play in your browser or get the app ·{" "}
               <Link href="/how-it-works" className="underline hover:text-white transition-colors">How it works →</Link>
             </p>
             </div>{/* end content wrapper */}
@@ -526,7 +518,7 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
               ⭐
             </div>
             <div>
-              <p className="font-body text-base font-bold text-white">Football Challenges</p>
+              <p className="font-body text-base font-bold text-white">Football Quiz</p>
               <p className="font-body text-sm text-text-muted">Test your knowledge · Solo games · Climb the global ranks</p>
             </div>
           </div>
@@ -557,7 +549,7 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
                 </p>
                 <div className="space-y-3 mb-8">
                   {[
-                    { icon: "👁", text: "See who's live in a match right now — and who's pulling ahead" },
+                    { icon: "⚔️", text: "Go head-to-head — challenge any mate to either game" },
                     { icon: "👑", text: "Raw points vs Pound for Pound accuracy — real debates built in" },
                     { icon: "🔥", text: "Streaks, badges and rankings across every competition" },
                     { icon: "📊", text: "Your league standing updates the moment a game ends" },
@@ -578,21 +570,20 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
               {/* Fixture cards */}
               <div className="space-y-3">
                 {[
-                  { fh: "🇧🇷", fa: "🇦🇷", home: "Brazil", away: "Argentina", date: "Jun 20", pts: "+340" },
-                  { fh: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", fa: "🇫🇷", home: "England", away: "France", date: "Jun 24", pts: "+280" },
-                  { fh: "🇩🇪", fa: "🇪🇸", home: "Germany", away: "Spain", date: "Jun 27", pts: "+210" },
+                  { flag: "🇧🇷", who: "Marcus", game: "Daily Quiz", detail: "9/10 correct", pts: "+340", col: "#00d8c0" },
+                  { flag: "🇮🇳", who: "Priya", game: "38-0", detail: "Beat Jamie head-to-head", pts: "+1,500", col: "#aeea00" },
+                  { flag: "🇳🇬", who: "Zach", game: "Quiz Battle", detail: "Won 4–2", pts: "+280", col: "#00d8c0" },
                 ].map((m, i) => (
                   <div key={i} className="flex items-center gap-4 px-5 py-4 rounded-2xl bg-surface"
                     style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
-                    <span className="text-2xl">{m.fh}</span>
-                    <div className="flex-1">
-                      <p className="font-body text-sm font-semibold text-white">{m.home} vs {m.away}</p>
-                      <p className="font-body text-xs text-text-muted">{m.date} · World Cup</p>
+                    <span className="text-2xl">{m.flag}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-body text-sm font-semibold text-white">{m.who} · {m.game}</p>
+                      <p className="font-body text-xs text-text-muted">{m.detail}</p>
                     </div>
-                    <span className="text-2xl">{m.fa}</span>
                     <div className="text-right">
-                      <p className="font-display text-base text-green">{m.pts}</p>
-                      <p className="font-body text-xs text-text-muted">pts earned</p>
+                      <p className="font-display text-base" style={{ color: m.col }}>{m.pts}</p>
+                      <p className="font-body text-xs text-text-muted">to the table</p>
                     </div>
                   </div>
                 ))}
@@ -614,7 +605,7 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
             { num: "01", col: "#aeea00", emoji: "⚽", title: "DRAFT YOUR XI", desc: "Spin a squad of real-rated legends and draft your best XI — the 38-0 team-builder." },
-            { num: "02", col: "#ffb800", emoji: "⚔️", title: "GO HEAD TO HEAD", desc: "Play your XI against the world. Win and swap a player, lose and rebuild — chase the perfect unbeaten season." },
+            { num: "02", col: "#ffb800", emoji: "⚔️", title: "GO HEAD TO HEAD", desc: "Play your XI against the world. Win and swap a player, lose and go again — chase the perfect unbeaten season." },
             { num: "03", col: "#00d8c0", emoji: "🧠", title: "TEST YOUR KNOWLEDGE", desc: "Daily World Cup quizzes, speed-scored. The more football you know, the higher you climb." },
             { num: "04", col: "#aeea00", emoji: "🏆", title: "TOP YOUR LEAGUE", desc: "Start a private league and invite your mates. One table, all season — settle who actually knows football." },
           ].map((step) => (
@@ -646,10 +637,10 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
             </p>
             <div className="space-y-3">
               {[
-                { col: "#aeea00", label: "Answer in 0–15s", pts: "+200 pts" },
-                { col: "#ffb800", label: "Answer in 15–30s", pts: "+150 pts" },
-                { col: "#ff9f43", label: "Answer in 30–45s", pts: "+100 pts" },
-                { col: "#aeea00", label: "3 correct in a row", pts: "×2 bonus" },
+                { col: "#aeea00", label: "Lightning — first 6 seconds", pts: "×2 points" },
+                { col: "#ffb800", label: "Fast — inside 12 seconds", pts: "×1.5 points" },
+                { col: "#ff9f43", label: "Slow answers taper off", pts: "down to ×0.5" },
+                { col: "#aeea00", label: "Back-to-back correct", pts: "+50 streak" },
               ].map(r => (
                 <div key={r.label} className="flex items-center justify-between py-2.5 px-4 rounded-xl"
                   style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
@@ -726,13 +717,13 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
           )}
 
           <div className="relative z-10 px-8 py-10 text-center">
-            <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-5">World Cup 2026 · Opening match</p>
+            <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-5">World Cup 2026</p>
             <WorldCupCountdown />
-            <p className="font-body text-sm text-text-muted mt-4 mb-6">June 11 · Mexico City. The first match to earn points on.</p>
+            <p className="font-body text-sm text-text-muted mt-4 mb-6">Every match earns points — all the way to the final.</p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link href="/league/new" className="inline-flex items-center gap-2 font-body font-bold text-sm px-6 py-3 rounded-xl transition-all hover:opacity-90 pulse-glow"
                 style={{ background: "#aeea00", color: "#0a0a0f" }}>
-                Create your league before Jun 11 →
+                Create your league →
               </Link>
               <Link href="/auth/sign-in" className="inline-flex items-center gap-2 font-body font-semibold text-sm px-6 py-3 rounded-xl transition-all hover:opacity-80 green-pulse text-green"
                 style={{ background: "rgba(174,234,0,0.1)", border: "1px solid rgba(174,234,0,0.2)" }}>
@@ -756,7 +747,7 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
               🇧🇷 🏴󠁧󠁢󠁥󠁮󠁧󠁿 🇫🇷 🇩🇪 🇦🇷
             </div>
             <h2 className="font-display text-5xl sm:text-6xl text-white mb-3">START YOUR LEAGUE</h2>
-            <p className="font-display text-2xl mb-6" style={{ color: "#aeea00" }}>World Cup 2026 · June 11</p>
+            <p className="font-display text-2xl mb-6" style={{ color: "#aeea00" }}>Free · you and your mates</p>
             <p className="font-body text-text-muted mb-8 max-w-md mx-auto">
               Invite your mates, pick your matches, and start building your score. Points stack all season.
             </p>
@@ -784,10 +775,13 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
           <Image src="/logo.png" alt="YourScore" width={75} height={22} style={{ height: 22, width: "auto", opacity: 0.5 }} />
           <div className="flex items-center gap-6 text-sm font-body text-text-muted">
             <Link href="/how-it-works" className="hover:text-white transition-colors">How it works</Link>
-            <Link href="/challenges" className="hover:opacity-80 transition-colors text-amber">Challenges</Link>
+            <Link href="/challenges" className="hover:opacity-80 transition-colors text-amber">Quiz</Link>
             <Link href="/league/join" className="hover:text-white transition-colors">Join a league</Link>
             <Link href="/league/new" className="hover:text-white transition-colors">Create a league</Link>
+            <Link href="/blog" className="hover:text-white transition-colors">Blog</Link>
             <a href="mailto:hello@yourscore.app" className="hover:text-white transition-colors">Contact</a>
+            <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>
+            <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
           </div>
         </div>
       </footer>

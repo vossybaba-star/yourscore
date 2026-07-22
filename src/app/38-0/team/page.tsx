@@ -173,7 +173,7 @@ export default function TeamScreen() {
   // row), then hand off to the live H2H entry to find/queue an opponent.
   async function goLive() {
     if (!team || matching) return;
-    if (!user) { router.push("/auth/sign-in"); return; }
+    if (!user) { router.push("/auth/sign-in?next=/38-0/team"); return; }
     setMatching(true);
     setErr(null);
     try {
@@ -198,7 +198,7 @@ export default function TeamScreen() {
   // sets it as your active team so it's immediately playable.
   function beginSave() {
     if (!team) return;
-    if (!user) { router.push("/auth/sign-in"); return; }
+    if (!user) { router.push("/auth/sign-in?next=/38-0/team"); return; }
     setTeamName(`${team.formation} · ${team.strength}`);
     setNaming(true);
   }
@@ -337,7 +337,7 @@ export default function TeamScreen() {
         ) : (
           /* Confirmed anonymous (auth resolved, no session) — sign-up gate */
           <Link
-            href="/auth/sign-in"
+            href="/auth/sign-in?next=/38-0/team"
             className="flex items-center justify-between w-full mb-4 rounded-2xl p-4 active:scale-[0.98] transition-transform"
             style={{ background: "rgba(0,201,255,0.06)", border: "1px solid rgba(0,201,255,0.25)" }}
           >
@@ -519,13 +519,13 @@ export default function TeamScreen() {
             : "Sign in to play live head-to-head & climb the global leaderboard."}
         </p>
 
-        {/* Practice vs CPU / fresh team — sits right at the bottom of the page */}
-        {user ? (
-          <Button variant="ghost" size="md" fullWidth className="mt-4" onClick={quickMatch} disabled={matching}>
-            Practice vs CPU
-          </Button>
-        ) : (
-          <Button variant="ghost" size="md" fullWidth className="mt-4" onClick={() => router.push("/38-0")}>
+        {/* Practice vs CPU — fully local (seeded engine + localStorage), so guests
+            get the full draft → match loop too; it's the acquisition hook. */}
+        <Button variant="ghost" size="md" fullWidth className="mt-4" onClick={quickMatch} disabled={matching}>
+          Practice vs CPU
+        </Button>
+        {!user && (
+          <Button variant="ghost" size="md" fullWidth className="mt-2" onClick={() => router.push("/38-0")}>
             Fresh team
           </Button>
         )}

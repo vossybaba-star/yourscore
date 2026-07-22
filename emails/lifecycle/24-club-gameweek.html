@@ -1,0 +1,115 @@
+<!--
+  Email 24 — Club-Fan Leaderboard: end-of-gameweek result / new-week nudge
+  Subject:    set per-send in senders.ts (sendClubGameweekEmail)
+  Preview:    {{PREHEADER}}
+  Typographic only — no generated brand artwork (contact-sheet-approval rule).
+  Serves BOTH sends (results / new week) and BOTH variants (played / not) via tokens.
+-->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="x-apple-disable-message-reformatting">
+  <meta name="color-scheme" content="dark">
+  <meta name="supported-color-schemes" content="dark">
+  <title>{{HEADLINE}}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body,table,td,p,a{margin:0;padding:0}
+    img{border:0;outline:none;text-decoration:none;display:block}
+    table{border-collapse:collapse}
+    a{text-decoration:none}
+    @media (max-width:620px){
+      .container{width:100%!important}
+      .px{padding-left:20px!important;padding-right:20px!important}
+      .hero{font-size:64px!important;line-height:58px!important}
+    }
+  </style>
+</head>
+
+<body style="margin:0;padding:0;background-color:#07070d;background-image:linear-gradient(rgba(0,216,192,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,216,192,0.025) 1px,transparent 1px);background-size:32px 32px;font-family:'DM Sans',Helvetica,Arial,sans-serif;color:#ffffff;">
+
+  <!-- Preheader -->
+  <div style="display:none;max-height:0;overflow:hidden;font-size:1px;line-height:1px;color:#07070d;">{{PREHEADER}}</div>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr><td align="center" style="padding:36px 16px 52px;">
+
+    <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
+
+      <!-- Logo -->
+      <tr><td align="center" style="padding:0 40px 44px;">
+        <a href="https://yourscore.app/play" style="display:inline-block;">
+          <img src="https://yourscore.app/logo.png" alt="YourScore" width="148" height="44" style="width:148px;height:44px;display:block;">
+        </a>
+      </td></tr>
+
+      <!-- Teal top rule -->
+      <tr><td style="padding:0 40px 30px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr><td style="height:2px;background:linear-gradient(90deg,#00d8c0 0%,rgba(0,216,192,0.3) 70%,transparent 100%);border-radius:2px;"></td></tr>
+        </table>
+      </td></tr>
+
+      <!-- Badge -->
+      <tr><td class="px" align="left" style="padding:0 40px 16px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+          <td style="background:rgba(0,216,192,0.1);border:1px solid rgba(0,216,192,0.28);border-radius:999px;padding:5px 16px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:2.5px;color:#00d8c0;font-weight:700;text-transform:uppercase;">&#9917;&nbsp; {{BADGE}}</td>
+        </tr></table>
+      </td></tr>
+
+      <!-- Hero headline (the club result / the call to represent) -->
+      <tr><td class="px" style="padding:0 40px 14px;">
+        <div class="hero" style="font-family:'Bebas Neue',Impact,Arial,sans-serif;font-size:76px;line-height:70px;color:#ffffff;letter-spacing:-0.5px;text-shadow:0 0 100px rgba(0,216,192,0.2);">{{HEADLINE}}</div>
+      </td></tr>
+
+      <!-- The club-table framing line -->
+      <tr><td class="px" style="padding:0 40px 30px;">
+        <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:18px;line-height:26px;color:#8a948f;font-weight:500;">{{SUBLINE}}</p>
+      </td></tr>
+
+      <!-- The personal line (players) / the nudge (non-players) -->
+      <tr><td class="px" style="padding:0 40px 36px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr><td style="background:rgba(0,216,192,0.06);border:1px solid rgba(0,216,192,0.18);border-radius:16px;padding:22px 24px;">
+            <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:17px;line-height:26px;color:#ffffff;font-weight:600;">{{PERSONAL}}</p>
+          </td></tr>
+        </table>
+      </td></tr>
+
+      <!-- CTA -->
+      <tr><td class="px" style="padding:0 40px 44px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+          <td style="background:linear-gradient(135deg,#00d8c0 0%,#00b8a0 100%);border-radius:14px;">
+            <a href="{{CTA_URL}}" style="display:inline-block;padding:16px 34px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:16px;font-weight:800;letter-spacing:0.3px;color:#07070d;">{{CTA_LABEL}}</a>
+          </td>
+        </tr></table>
+      </td></tr>
+
+      <!-- Footer -->
+      <tr><td style="padding:0 40px 0;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr><td style="border-top:1px solid rgba(255,255,255,0.05);padding:24px 0 32px;">
+            <p style="margin:0 0 14px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:13px;line-height:20px;color:#6b6b85;">
+              <a href="https://x.com/yourscore_app_" style="color:#8a948f;text-decoration:none;">&#120143; @yourscore_app_</a>
+              &nbsp;&nbsp;
+              <a href="https://instagram.com/yourscore.app" style="color:#8a948f;text-decoration:none;">&#x1F4F7; @yourscore.app</a>
+            </p>
+            <p style="margin:0 0 10px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:12px;line-height:18px;color:#6b6b85;">
+              <a href="{{PAUSE_URL}}" style="color:#8a948f;text-decoration:underline;">Pause emails</a> &nbsp;&middot;&nbsp;
+              <a href="{{UNSUB_URL}}" style="color:#8a948f;text-decoration:underline;">Unsubscribe</a> &nbsp;&middot;&nbsp;
+              <a href="https://yourscore.app/support" style="color:#8a948f;text-decoration:underline;">Support</a>
+            </p>
+            <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:1.5px;color:#6b6b85;text-transform:uppercase;font-weight:600;">YourScore &nbsp;&middot;&nbsp; Your football knowledge. Ranked.</p>
+          </td></tr>
+        </table>
+      </td></tr>
+
+    </table>
+
+  </td></tr>
+  </table>
+
+</body>
+</html>

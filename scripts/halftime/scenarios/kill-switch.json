@@ -1,0 +1,42 @@
+{
+  "name": "kill-switch",
+  "notes": "One message kills a whole matchday's fresh slices. Both fixtures have an approved three-question fresh slice. KILL is sent at min 85 — by which time F1 (15:00) is ALREADY STAGED with its fresh questions frozen into the pack, while F2 (16:00) has not been assembled yet. Both must end up base-only: F2 assembles without fresh, and F1's frozen pack is re-assembled base-only at the whistle. Neither released pack may contain a single fresh question.",
+  "harness": {
+    "seed_fresh": true,
+    "kill_at_min": 85
+  },
+  "fixtures": [
+    {
+      "id": 19427550,
+      "home": "Manchester City",
+      "away": "Newcastle United",
+      "season_id": 28083,
+      "round": "Round 6",
+      "kickoff_min": 90,
+      "lineups_at_min": 30,
+      "timeline": [
+        { "at_min": 0, "state": "NS" },
+        { "at_min": 90, "state": "INPLAY_1ST_HALF" },
+        { "at_min": 137, "state": "HT" },
+        { "at_min": 152, "state": "INPLAY_2ND_HALF" },
+        { "at_min": 200, "state": "FT" }
+      ]
+    },
+    {
+      "id": 19427551,
+      "home": "Wolverhampton Wanderers",
+      "away": "Burnley",
+      "season_id": 28083,
+      "round": "Round 6",
+      "kickoff_min": 150,
+      "lineups_at_min": 92,
+      "timeline": [
+        { "at_min": 0, "state": "NS" },
+        { "at_min": 150, "state": "INPLAY_1ST_HALF" },
+        { "at_min": 197, "state": "HT" },
+        { "at_min": 212, "state": "INPLAY_2ND_HALF" },
+        { "at_min": 260, "state": "FT" }
+      ]
+    }
+  ]
+}

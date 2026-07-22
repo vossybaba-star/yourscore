@@ -7,6 +7,12 @@ import { notifyShadowResult, type ShadowInfo } from "@/lib/versus/shadow";
 
 const QUESTION_DURATION_MS = 20_000;
 
+// How long past closes_at a non-host member must wait before they may advance
+// the room. Covers the host backgrounding their phone / refreshing / leaving —
+// which used to freeze the game for everyone, forever (question advance lived
+// only in a setTimeout on the host's device).
+const WATCHDOG_GRACE_MS = 3_000;
+
 export async function POST(req: NextRequest) {
   const auth = await createClient();
   const { data: { user } } = await auth.auth.getUser();
@@ -31,7 +37,6 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (roomErr || !room) return NextResponse.json({ error: "Lobby not found" }, { status: 404 });
-  if (room.created_by !== user.id) return NextResponse.json({ error: "Only host can advance" }, { status: 403 });
   if (room.status !== "live") return NextResponse.json({ error: "Lobby not live" }, { status: 409 });
 
   // Idempotency: only advance if we're still at the expected index
@@ -39,15 +44,54 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, skipped: true, currentIdx: room.current_question_idx });
   }
 
-  // ── Find the just-closed question event ─────────────────────────────────
+  // ── Find the in-flight question event (overdue check + close + penalties) ──
   const { data: closedEvent } = await sb
     .from("question_events")
-    .select("id")
+    .select("id, closes_at")
     .eq("room_id", roomId)
     .eq("sequence_number", expectedIdx + 1)
     .single();
 
-  // Close it
+  // The host advances on schedule. Any OTHER room member is a watchdog: they may
+  // advance only once the question is overdue (closes_at + grace), so a vanished
+  // host no longer stalls the game — the host gate is an optimisation, not a
+  // requirement.
+  if (room.created_by !== user.id) {
+    const { data: membership } = await sb
+      .from("room_members")
+      .select("user_id")
+      .eq("room_id", roomId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (!membership) return NextResponse.json({ error: "Not in this lobby" }, { status: 403 });
+    const overdue = !!closedEvent?.closes_at &&
+      Date.now() - new Date(closedEvent.closes_at as string).getTime() > WATCHDOG_GRACE_MS;
+    if (!overdue) return NextResponse.json({ error: "Only the host can advance before the question closes" }, { status: 403 });
+  }
+
+  const nextIdx = expectedIdx + 1;
+  const isDone = nextIdx >= room.question_count;
+
+  // ── Atomic claim ──────────────────────────────────────────────────────────
+  // Compare-and-swap on the room's index: of any concurrent advancers (host
+  // timer + member watchdogs racing on the same buzzer) exactly one gets the
+  // row back; the rest skip. There's no unique index on
+  // question_events(room_id, sequence_number), so this CAS is what prevents a
+  // double-fired question. It's also the rooms UPDATE clients already listen to.
+  const { data: claimed } = await sb
+    .from("rooms")
+    .update(isDone
+      ? { status: "completed", current_question_idx: nextIdx }
+      : { current_question_idx: nextIdx, question_started_at: new Date().toISOString() })
+    .eq("id", roomId)
+    .eq("current_question_idx", expectedIdx)
+    .eq("status", "live")
+    .select("id");
+  if (!claimed || claimed.length === 0) {
+    return NextResponse.json({ ok: true, skipped: true, currentIdx: nextIdx });
+  }
+
+  // Close the finished event (after the claim, so penalties below run once).
   await sb
     .from("question_events")
     .update({ status: "closed" })
@@ -77,9 +121,6 @@ export async function POST(req: NextRequest) {
       });
     }
   }
-
-  const nextIdx = expectedIdx + 1;
-  const isDone = nextIdx >= room.question_count;
 
   if (isDone) {
     // ── Perfect round bonus: +500 for players who got every question right ──
@@ -114,11 +155,7 @@ export async function POST(req: NextRequest) {
       })
     );
 
-    // Mark room completed
-    await sb
-      .from("rooms")
-      .update({ status: "completed", current_question_idx: nextIdx })
-      .eq("id", roomId);
+    // (Room already marked completed by the atomic claim above.)
 
     // Shadow match finished → tell the run's owner, under the anti-pestering
     // rules (max one push per rolling 24h; absorbed plays aggregate into the
@@ -169,13 +206,7 @@ export async function POST(req: NextRequest) {
 
   if (eventErr) return NextResponse.json({ error: eventErr.message }, { status: 500 });
 
-  await sb
-    .from("rooms")
-    .update({
-      current_question_idx: nextIdx,
-      question_started_at: now.toISOString(),
-    })
-    .eq("id", roomId);
-
+  // (Room index + question_started_at already advanced by the atomic claim above;
+  // clients get the new question via the question_events INSERT subscription.)
   return NextResponse.json({ ok: true, done: false, eventId: event.id, closesAt: closesAt.toISOString() });
 }

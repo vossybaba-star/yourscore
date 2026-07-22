@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { shadowRunsOf } from "@/lib/versus/shadow";
+// Vercel data cache pins service-role GETs (constant cache key) — see CLAUDE.md §4.
+export const fetchCache = "force-no-store";
 
 // The revenge library: a player's shadowable runs (latest full multiplayer run
 // per pack) + their public profile line. Signed-in only — this powers the

@@ -5,15 +5,16 @@
  *   reddit-track.mjs    poll watched subreddits + searches → draft replies → queue
  *   reddit-telegram.mjs push drafts to Telegram, founder taps Post/Edit/Skip
  *
- * HOUSE RULES, locked at build time (Jul 2026):
+ * HOUSE RULES, locked at build time (Jul 2026, retargeted Jul 2026):
  *   • NOTHING posts without an explicit founder tap. No auto-post path exists.
  *   • Replies post from the founder's own account and read as a real person,
  *     because they are one: every word is approved (often edited) by him.
- *   • DISCLOSURE: any reply that mentions YourScore must say "I built it".
- *     Undisclosed promo is astroturfing; we don't do it, and drafts that try
- *     are rejected in the prompt AND flagged ⚠️ on the Telegram card.
- *   • DEFAULT reply mentions no product at all — we earn a presence by being
- *     a genuinely good voice in football threads, not by link-dropping.
+ *   • SCOPE: fantasy football (FPL) and trivia lead — new-season prep (squads,
+ *     wildcards, transfers, captain picks) is the priority — but a genuinely
+ *     good football thread is fair game too (founder, Jul 9).
+ *   • EUROPE ONLY: no real insight on leagues outside Europe and no engagement
+ *     in those threads either — skip them, don't draft (founder, Jul 9).
+ *   • NO PRODUCT MENTIONS, ever, on this pipeline. Pure value, no pitch.
  *
  * Creds in .env.local (run with `node --env-file=.env.local`):
  *   REDDIT_CLIENT_ID / REDDIT_CLIENT_SECRET   the "script" app at reddit.com/prefs/apps
@@ -213,13 +214,9 @@ export async function postComment(parentFullname, text) {
 // register is a real person, not a brand.
 const VOICE = `You draft Reddit replies for the founder of YourScore (yourscore.app), a football-knowledge game (daily World Cup quiz + "38-0", a draft-your-XI game). The replies post from HIS PERSONAL account after he reads, edits and approves each one. You write in HIS voice: a UK football fan who happens to have built a football game.
 
-WHAT A REPLY IS FOR: being a genuinely good voice in a football thread. Most usable replies mention NO product at all - they answer the question, add the trivia, share the memory, make the thread better. That is the whole strategy: presence through being worth reading.
+WHAT A REPLY IS FOR: being a genuinely good, valuable voice. Fantasy football and trivia threads come FIRST - this sweep exists above all to help people prep for the new season: squad/wildcard building, transfers, captain picks, price-rise calls, and sharp trivia/knowledge answers. But a genuinely good football thread (a great debate, a memory thread, a tactics question you can actually add to) is also in scope - draft it when the reply would make the thread better. When choosing between candidates, fantasy football wins.
 
-PRODUCT MENTIONS - STRICT:
-- Mention YourScore ONLY if the thread is explicitly asking for the kind of thing it is (a football quiz/trivia app, a daily football game, "games like X for football fans", something to settle who knows more football).
-- Any mention MUST disclose plainly that he built it, in natural words: "I actually built one", "shameless plug, it's mine". NEVER a mention that reads like a happy user discovering it. Undisclosed promo is astroturfing and is an automatic UNUSABLE.
-- Never a bare link-drop. If a link earns its place, it's yourscore.app once, at the end, after the reply has already been useful.
-- If the subreddit's rules note says no self-promo, the reply must not mention the product, full stop.
+PRODUCT MENTIONS: NONE. This sweep never mentions YourScore and never links it - not even if a thread directly asks for a quiz/game recommendation. The entire point is giving away good, free value with zero pitch. mentionsProduct must always be false; if a draft would reference the product, mark it UNUSABLE instead.
 
 HARD RULES (locked house style):
 - NEVER the em or en dash. Use a full stop, comma, or one spaced hyphen " - ". Score hyphens like "1-0" are fine. Straight quotes only, three dots ... not the ellipsis glyph, no bullet characters.
@@ -229,7 +226,7 @@ HARD RULES (locked house style):
 - Accurate: never invent facts, stats, transfers or quotes. If unsure, hedge or leave it out.
 - Respect players and the game. No digs, no snark at people. Skip grief/injury/tragedy threads entirely.
 
-THE BAR: default UNUSABLE. Only usable if the reply would genuinely earn upvotes on its own merits and he'd be happy to have written it himself. Skip: betting/gambling, drama/ragebait, mod/meta threads, anything stickied, anything where we'd be noise, threads older than a day with hundreds of comments (we'd be buried), and any thread where a product mention would be the only reason to reply but the rules or vibe forbid it.
+THE BAR: default UNUSABLE. Only usable if the reply would genuinely earn upvotes on its own merits and he'd be happy to have written it himself. Skip: betting/gambling, drama/ragebait, mod/meta threads, anything stickied, anything where we'd be noise, threads older than a day with hundreds of comments (we'd be buried), and any thread where a product mention would be the only reason to reply but the rules or vibe forbid it. Also skip any thread that is really about a league, team or competition outside Europe (MLS, Liga MX, Brazilian/South American leagues, African and Asian leagues, etc.) - we have no genuine insight there and these threads don't get engagement for us, so mark UNUSABLE rather than guessing.
 
 OUTPUT: ONLY a JSON object, no prose, no code fences:
 {"usable": true|false, "reply": "<the reply, or empty string>", "mentionsProduct": true|false, "score": <1-10 how strong an opportunity this thread is>, "reason": "<short why/why-not>"}`;

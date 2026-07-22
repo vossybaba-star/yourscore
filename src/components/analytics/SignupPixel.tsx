@@ -3,6 +3,7 @@
 import { track } from "@vercel/analytics";
 import { useEffect } from "react";
 import { afRegistration } from "@/lib/analytics/appsflyerEvents";
+import { getDeviceId } from "@/lib/analytics/deviceId";
 
 // Conversion IDs. Pixel base scripts live in app/layout.tsx; this only fires events.
 const X_SIGNUP_EVENT_ID = process.env.NEXT_PUBLIC_X_SIGNUP_EVENT_ID || "tw-p6vxh-p6vxj";
@@ -64,20 +65,28 @@ export function SignupPixel() {
 
     fireSignupConversions();
 
-    // Persist the visitor's first-touch acquisition source onto their new
-    // profile (captured on landing by AcquisitionCapture). Fire-and-forget.
+    // Persist onto the new profile: the visitor's first-touch acquisition source,
+    // their durable device id, and when this device first played. The source is
+    // captured on landing by AcquisitionCapture; the device id survives the
+    // guest→signup transition; first_play_at is stamped on the first play (see
+    // trackGame) and is the only record of pre-signup play, since guest plays are
+    // client-side and never reach the DB. All are first-touch on the server
+    // (written only while still null). Fire-and-forget.
     try {
       const acq = localStorage.getItem("ys:acq");
-      if (acq) {
+      const base = acq ? (JSON.parse(acq) as Record<string, unknown>) : {};
+      const deviceId = getDeviceId();
+      const firstPlayAt = localStorage.getItem("ys:firstplayat");
+      if (acq || deviceId || firstPlayAt) {
         void fetch("/api/profile/source", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: acq,
+          body: JSON.stringify({ ...base, device_id: deviceId, first_play_at: firstPlayAt }),
           keepalive: true,
         });
       }
     } catch {
-      /* storage blocked — skip */
+      /* storage blocked or bad JSON — skip */
     }
 
     params.delete("signup");

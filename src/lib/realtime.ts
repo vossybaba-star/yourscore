@@ -6,6 +6,10 @@
  * instance's Disk IO budget was exhausted and it became unresponsive; thousands of
  * clients retrying realtime subscriptions piled reconnect load onto the dying box.
  * Disabling realtime removes that churn so the instance can recover / accept a
- * compute upgrade. Flip back to `true` (and redeploy) once compute is scaled up.
+ * compute upgrade.
+ *
+ * Env-backed so the lever can be pulled from Vercel env vars without a code
+ * change: set NEXT_PUBLIC_REALTIME_ENABLED=false and redeploy (still a deploy,
+ * but no commit under incident pressure). Defaults ON when unset.
  */
-export const REALTIME_ENABLED = true;
+export const REALTIME_ENABLED = process.env.NEXT_PUBLIC_REALTIME_ENABLED !== "false";

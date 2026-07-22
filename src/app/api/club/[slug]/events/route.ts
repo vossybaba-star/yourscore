@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { rateLimitDistributed } from "@/lib/ratelimit";
 import { getLeagueBySlug, getMembership } from "@/lib/club";
+// Vercel data cache pins service-role GETs (constant cache key) — see CLAUDE.md §4.
+export const fetchCache = "force-no-store";
 
 // GET  /api/club/[slug]/events — owner-only: the caller's published quiz packs,
 //      for the "create event" picker on the Manage tab.

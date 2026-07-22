@@ -532,7 +532,97 @@ export async function sendFirstWcMastermindEmail(args: {
 }
 
 /**
- * 22 · Fantasy gameweek result — fired by the season tick when a gameweek
+ * 24 · Club-Fan Leaderboard — end-of-gameweek result / new-week nudge.
+ *
+ * Bulk-eligible (goes to every declared supporter of a club that played), so it is
+ * driven by the batched, suppression-aware job scripts/clubs/send-gameweek-email.mjs
+ * — NOT fired inline per event. The caller passes the fully-built copy (from
+ * src/lib/clubs/result.ts emailContent()), so email and push say the same thing.
+ */
+export async function sendClubGameweekEmail(args: {
+  userId: string;
+  email: string;
+  subject: string;
+  preheader: string;
+  badge: string;
+  headline: string;
+  subline: string;
+  personal: string;
+  ctaLabel: string;
+  ctaUrl: string;
+  refId: string;
+}) {
+  const html = await renderEmail("24-club-gameweek", {
+    PREHEADER: args.preheader,
+    BADGE: args.badge,
+    HEADLINE: args.headline,
+    SUBLINE: args.subline,
+    PERSONAL: args.personal,
+    CTA_LABEL: args.ctaLabel,
+    CTA_URL: args.ctaUrl,
+    ...buildFooterUrls(args.userId, "all"),
+  });
+  await sendOrLog("sendClubGameweekEmail", args.userId, {
+    from: FROM,
+    to: args.email,
+    replyTo: REPLY_TO,
+    subject: args.subject,
+    html,
+    headers: { "X-Entity-Ref-ID": args.refId },
+    tags: [
+      { name: "category", value: "lifecycle" },
+      { name: "template", value: "24-club-gameweek" },
+    ],
+  });
+}
+
+/**
+ * 28 · Halftime quiz is LIVE — the WEB fallback for "Notify me".
+ *
+ * Push is native-only (see notify.ts), so a web user who asked to be told about
+ * a fixture would otherwise get nothing. Sent ONLY to people who explicitly
+ * asked for this match and have no device token; the pack is live for about the
+ * length of the interval, so the CTA leads and the app nudge sits under it.
+ */
+export async function sendHalftimeLiveEmail(args: {
+  userId: string;
+  email: string;
+  subject: string;
+  preheader: string;
+  badge: string;
+  headline: string;
+  subline: string;
+  ctaLabel: string;
+  ctaUrl: string;
+  appUrl: string;
+  refId: string;
+}) {
+  const html = await renderEmail("28-halftime-live", {
+    PREHEADER: args.preheader,
+    BADGE: args.badge,
+    HEADLINE: args.headline,
+    SUBLINE: args.subline,
+    CTA_LABEL: args.ctaLabel,
+    CTA_URL: args.ctaUrl,
+    APP_URL: args.appUrl,
+    ...buildFooterUrls(args.userId, "all"),
+  });
+  await sendOrLog("sendHalftimeLiveEmail", args.userId, {
+    from: FROM,
+    to: args.email,
+    replyTo: REPLY_TO,
+    subject: args.subject,
+    html,
+    headers: { "X-Entity-Ref-ID": args.refId },
+    tags: [
+      { name: "category", value: "lifecycle" },
+      { name: "template", value: "28-halftime-live" },
+    ],
+  });
+}
+
+/**
+ * 29 · Fantasy gameweek result — fired by the season tick when a gameweek
  * finalises. The one email a fantasy manager actually opens: your score, who
  * wore the armband, and what your knowledge round contributed.
  * Dedupe is the CALLER's job (claimed in notification_log before sending).
@@ -543,7 +633,7 @@ export async function sendFantasyGwResultEmail(args: {
   knowledgeLine: string;
 }) {
   const base = process.env.NEXT_PUBLIC_APP_URL ?? "https://yourscore.app";
-  const html = await renderEmail("22-fantasy-gw-result", {
+  const html = await renderEmail("29-fantasy-gw-result", {
     gw: args.gw, points: args.points,
     captain: args.captain, captain_pts: args.captainPts,
     top: args.top, top_pts: args.topPts,
@@ -560,13 +650,13 @@ export async function sendFantasyGwResultEmail(args: {
     headers: { "X-Entity-Ref-ID": `fantasy-result-${args.gw}-${args.userId}` },
     tags: [
       { name: "category", value: "fantasy" },
-      { name: "template", value: "22-fantasy-gw-result" },
+      { name: "template", value: "29-fantasy-gw-result" },
     ],
   });
 }
 
 /**
- * 23 · Fantasy deadline nudge — ~24h out, personal (says whether YOUR round is
+ * 30 · Fantasy deadline nudge — ~24h out, personal (says whether YOUR round is
  * played). The design's web-side stand-in for the mobile deadline push.
  */
 export async function sendFantasyDeadlineEmail(args: {
@@ -574,7 +664,7 @@ export async function sendFantasyDeadlineEmail(args: {
   deadlineDay: string; deadlineTime: string; statusLine: string;
 }) {
   const base = process.env.NEXT_PUBLIC_APP_URL ?? "https://yourscore.app";
-  const html = await renderEmail("23-fantasy-deadline", {
+  const html = await renderEmail("30-fantasy-deadline", {
     gw: args.gw, deadline_day: args.deadlineDay, deadline_time: args.deadlineTime,
     status_line: args.statusLine,
     cta_url: `${base}/fantasy`,
@@ -589,7 +679,7 @@ export async function sendFantasyDeadlineEmail(args: {
     headers: { "X-Entity-Ref-ID": `fantasy-deadline-${args.gw}-${args.userId}` },
     tags: [
       { name: "category", value: "fantasy" },
-      { name: "template", value: "23-fantasy-deadline" },
+      { name: "template", value: "30-fantasy-deadline" },
     ],
   });
 }

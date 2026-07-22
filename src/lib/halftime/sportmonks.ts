@@ -1,0 +1,416 @@
+import "server-only";
+import { classifyPhase, isFinishedState, type MatchPhase } from "@/lib/halftime/shared";
+import { finalGoalsFromScores, type SmScoreEntry } from "@/lib/halftime/predict";
+
+/**
+ * Thin SportMonks v3 client for the halftime pipeline.
+ *
+ * THE SEAM: every call goes through SPORTMONKS_BASE_URL. It defaults to the
+ * real API, and the off-season replay harness (scripts/halftime/replay-server.mjs)
+ * points it at localhost so the poller and watchdog run UNMODIFIED against a
+ * recorded matchday. This env var is the only reason this indirection exists —
+ * do not inline the base URL anywhere.
+ *
+ * Entitlements (verified 2026-07-14 via GET /v3/my/resources on the trial key):
+ * livescores, inplay, states, periods, lineups, fixtures, Historical Data.
+ * NOTE: the trial expires 2026-07-22. assertEntitlements() is the runtime guard
+ * — the poller calls it at startup so a lapsed plan fails loudly, not silently.
+ *
+ * No webhooks exist (the endpoint 404s), so polling is the only option.
+ * Observed rate limit: 2000/hr/entity.
+ */
+
+export const SPORTMONKS_BASE_URL =
+  process.env.SPORTMONKS_BASE_URL || "https://api.sportmonks.com";
+
+/** Premier League. */
+export const PL_LEAGUE_ID = 8;
+
+const MAX_ATTEMPTS = 3;
+const BASE_BACKOFF_MS = 400;
+
+export class SportmonksError extends Error {
+  readonly status: number;
+  readonly rateLimited: boolean;
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "SportmonksError";
+    this.status = status;
+    this.rateLimited = status === 429;
+  }
+}
+
+interface SmEnvelope<T> {
+  data?: T;
+  message?: string;
+}
+
+function apiToken(): string {
+  const token = process.env.SPORTMONKS_API_KEY;
+  if (!token) throw new SportmonksError("SPORTMONKS_API_KEY is not set", 0);
+  return token;
+}
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * GET a SportMonks path. Bounded retries (LOOP rule 3): 3 attempts with
+ * exponential backoff on 5xx / 429 / network error, then throw. 4xx other than
+ * 429 is a caller bug — fail fast, no retry.
+ *
+ * The token goes in the Authorization header, never the query string, so it
+ * cannot leak into logs or an error message.
+ */
+async function smFetch<T>(
+  path: string,
+  params: Record<string, string | number | undefined> = {},
+): Promise<T> {
+  const url = new URL(path.replace(/^\//, ""), `${SPORTMONKS_BASE_URL.replace(/\/$/, "")}/`);
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== undefined && v !== null && v !== "") url.searchParams.set(k, String(v));
+  }
+
+  let lastErr: Error | null = null;
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      const res = await fetch(url.toString(), {
+        headers: { Authorization: apiToken(), Accept: "application/json" },
+        cache: "no-store",
+      });
+
+      if (res.ok) {
+        const body = (await res.json()) as SmEnvelope<T>;
+        return (body.data ?? []) as T;
+      }
+
+      // Client errors (except rate limiting) are not worth retrying.
+      if (res.status >= 400 && res.status < 500 && res.status !== 429) {
+        throw new SportmonksError(`SportMonks ${res.status} on ${path}`, res.status);
+      }
+      lastErr = new SportmonksError(`SportMonks ${res.status} on ${path}`, res.status);
+    } catch (err) {
+      if (err instanceof SportmonksError && !err.rateLimited && err.status >= 400 && err.status < 500) {
+        throw err;
+      }
+      lastErr = err instanceof Error ? err : new Error(String(err));
+    }
+
+    if (attempt < MAX_ATTEMPTS) await sleep(BASE_BACKOFF_MS * 2 ** (attempt - 1));
+  }
+
+  throw lastErr ?? new SportmonksError(`SportMonks request failed: ${path}`, 0);
+}
+
+// ── States catalogue ─────────────────────────────────────────────────────────
+
+export interface SmState {
+  id: number;
+  state: string;
+  name: string;
+  developer_name: string;
+  short_name: string | null;
+}
+
+// States effectively never change. Cache per serverless instance so the
+// watchdog spends one call on the catalogue at most once every 6 hours.
+let statesCache: { at: number; byId: Map<number, SmState> } | null = null;
+const STATES_TTL_MS = 6 * 60 * 60 * 1000;
+
+export async function getStates(): Promise<Map<number, SmState>> {
+  if (statesCache && Date.now() - statesCache.at < STATES_TTL_MS) {
+    return statesCache.byId;
+  }
+  const rows = await smFetch<SmState[]>("/v3/football/states");
+  const byId = new Map<number, SmState>();
+  for (const s of rows ?? []) byId.set(Number(s.id), s);
+  statesCache = { at: Date.now(), byId };
+  return byId;
+}
+
+/** Test seam: drop the cached states catalogue. */
+export function __resetStatesCache(): void {
+  statesCache = null;
+}
+
+// ── Livescores ───────────────────────────────────────────────────────────────
+
+export interface SmLiveFixture {
+  id: number;
+  name?: string;
+  state_id: number;
+  starting_at?: string | null;
+  league_id?: number;
+}
+
+/**
+ * ONE call covers every in-play fixture — this is why a 6s poll of a 10-fixture
+ * Saturday slate still sits comfortably inside the 2000/hr limit.
+ */
+export async function getLivescores(): Promise<SmLiveFixture[]> {
+  const rows = await smFetch<SmLiveFixture[]>("/v3/football/livescores/latest");
+  return rows ?? [];
+}
+
+/**
+ * fixture_id → current match phase, resolved through the states catalogue.
+ * Only the halftime id (3) is hardcoded anywhere; every other state is matched
+ * by developer_name, so a SportMonks id renumbering cannot make us release a
+ * pack in the 78th minute.
+ *
+ * FOR THE 6s POLLER ONLY. /livescores/latest returns fixtures that received an
+ * update in the last ~10 seconds, which is exactly right at a 6s cadence and
+ * exactly wrong at any slower one — see getPhasesForFixtures().
+ */
+export async function getLivePhases(): Promise<Map<number, MatchPhase>> {
+  const [fixtures, states] = await Promise.all([getLivescores(), getStates()]);
+  const out = new Map<number, MatchPhase>();
+  for (const f of fixtures) {
+    const stateId = Number(f.state_id);
+    out.set(Number(f.id), classifyPhase(stateId, states.get(stateId)?.developer_name));
+  }
+  return out;
+}
+
+/**
+ * Current phase for a KNOWN set of fixtures — one call, by id.
+ *
+ * This is what the 5-minute watchdog must use. /livescores/latest is a
+ * recently-updated feed, not a "what is the state of these matches" query: a
+ * fixture only appears there if it changed in the last ~10 seconds, and it
+ * drops off the feed entirely once the match ends. A watchdog polling that feed
+ * every 5 minutes would usually see nothing, and a fixture whose half-time it
+ * missed would have vanished by the time it looked — so it could never issue
+ * the `released_late` catch-up that is the watchdog's whole reason to exist.
+ *
+ * Querying the fixtures by id returns their state whether they are in play,
+ * finished, or postponed. That is the property a backstop needs.
+ */
+export async function getPhasesForFixtures(
+  fixtureIds: number[],
+): Promise<Map<number, MatchPhase>> {
+  const out = new Map<number, MatchPhase>();
+  if (!fixtureIds.length) return out; // no call at all — the idle path stays free
+
+  const [fixtures, states] = await Promise.all([
+    smFetch<SmFixture[]>(`/v3/football/fixtures/multi/${fixtureIds.join(",")}`),
+    getStates(),
+  ]);
+
+  for (const f of fixtures ?? []) {
+    const stateId = Number(f.state_id);
+    if (!Number.isFinite(stateId)) continue;
+    out.set(Number(f.id), classifyPhase(stateId, states.get(stateId)?.developer_name));
+  }
+  return out;
+}
+
+// ── Final scores (prediction settlement) ──────────────────────────────────────
+
+/** A finished fixture and its final result — everything the settle path needs. */
+export interface SmFinalScore {
+  fixtureId: number;
+  home: number;
+  away: number;
+}
+
+/**
+ * Final scores for a KNOWN set of fixtures, by id — one call. Returns an entry
+ * ONLY for fixtures that have actually finished (FT / AET / FT_PEN) AND expose a
+ * complete CURRENT total; a match still in play, or one whose feed has not caught
+ * up, is simply absent from the map. The settle path treats "absent" as "not
+ * ready yet" and tries again on the next watchdog tick, so a half-read scoreline
+ * can never settle a prediction early.
+ */
+export async function getFinalScores(fixtureIds: number[]): Promise<Map<number, SmFinalScore>> {
+  const out = new Map<number, SmFinalScore>();
+  if (!fixtureIds.length) return out; // no call at all — keeps the idle path free
+
+  const [fixtures, states] = await Promise.all([
+    smFetch<SmFixtureWithScores[]>(`/v3/football/fixtures/multi/${fixtureIds.join(",")}`, {
+      include: "scores",
+    }),
+    getStates(),
+  ]);
+
+  for (const f of fixtures ?? []) {
+    const stateId = Number(f.state_id);
+    if (!Number.isFinite(stateId)) continue;
+    if (!isFinishedState(states.get(stateId)?.developer_name)) continue; // FT only
+    const goals = finalGoalsFromScores(f.scores);
+    if (!goals) continue; // finished but the score has not fully landed — wait
+    out.set(Number(f.id), { fixtureId: Number(f.id), home: goals.home, away: goals.away });
+  }
+  return out;
+}
+
+// ── Standings (the PL table) ───────────────────────────────────────────────────
+
+export interface SmStandingRow {
+  position: number;
+  teamId: number;
+  team: string;
+  played: number;
+  won: number;
+  draw: number;
+  lost: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  goalDifference: number;
+  points: number;
+}
+
+interface SmStandingRaw {
+  position?: number;
+  points?: number;
+  participant_id?: number;
+  participant?: { id?: number; name?: string; short_code?: string } | null;
+  details?: Array<{ value?: number; type_id?: number; type?: { developer_name?: string } | null }> | null;
+}
+
+/**
+ * One detail value off a standing row, matched by the developer_name of its
+ * type. SportMonks scopes these as "overall-*" / "home-*" / "away-*"; we want the
+ * overall column, and we match loosely (contains) because the exact catalogue
+ * name is not verifiable off-season — this is a [LIVE] item, confirmed on the
+ * paid key once the 2026/27 table has real rows (season 28083 starts 2026-08-21).
+ */
+/**
+ * Read one standings detail by its EXACT SportMonks developer_name.
+ *
+ * This used to fuzzy-match keywords ("played", "won") against any name starting
+ * with "overall". The real keys are OVERALL_MATCHES and OVERALL_WINS — neither
+ * contains "played" or "won" — so Played and Won silently resolved to 0 for
+ * every club, and would have stayed 0 all season while D/L/GF/GA/GD looked
+ * right. Pre-season it's undetectable: every value is legitimately 0.
+ *
+ * Exact names, verified against the live API for season 28083:
+ *   OVERALL_MATCHES · OVERALL_WINS · OVERALL_DRAWS · OVERALL_LOST
+ *   OVERALL_SCORED · OVERALL_CONCEDED · OVERALL_GOAL_DIFFERENCE · TOTAL_POINTS
+ * A rename upstream now yields 0 for that one column rather than a wrong table,
+ * and assertStandings() is the guard for the resource itself.
+ */
+function detailValue(details: SmStandingRaw["details"], developerName: string): number {
+  for (const d of details ?? []) {
+    if (String(d.type?.developer_name ?? "").toUpperCase() === developerName) {
+      return Number(d.value ?? 0);
+    }
+  }
+  return 0;
+}
+
+/**
+ * The league table for a season. Empty until the season has been played (a
+ * pre-season call returns zero rows, which the Table tab renders as "not started
+ * yet"). Standings is a distinct SportMonks resource — assertStandings() lets the
+ * caller check the paid plan covers it before relying on this.
+ */
+export async function getStandings(seasonId: number): Promise<SmStandingRow[]> {
+  const rows = await smFetch<SmStandingRaw[]>(`/v3/football/standings/seasons/${seasonId}`, {
+    include: "participant;details.type",
+  });
+  const out: SmStandingRow[] = [];
+  for (const s of rows ?? []) {
+    const gf = detailValue(s.details, "OVERALL_SCORED");
+    const ga = detailValue(s.details, "OVERALL_CONCEDED");
+    out.push({
+      position: Number(s.position ?? 0),
+      teamId: Number(s.participant?.id ?? s.participant_id ?? 0),
+      team: s.participant?.name ?? "—",
+      played: detailValue(s.details, "OVERALL_MATCHES"),
+      won: detailValue(s.details, "OVERALL_WINS"),
+      draw: detailValue(s.details, "OVERALL_DRAWS"),
+      lost: detailValue(s.details, "OVERALL_LOST"),
+      goalsFor: gf,
+      goalsAgainst: ga,
+      // Prefer SportMonks' own GD; fall back to the arithmetic if it's ever absent.
+      goalDifference: detailValue(s.details, "OVERALL_GOAL_DIFFERENCE") || gf - ga,
+      // `points` is on the row itself; TOTAL_POINTS is the detail-level twin.
+      points: Number(s.points ?? 0) || detailValue(s.details, "TOTAL_POINTS"),
+    });
+  }
+  return out.sort((a, b) => a.position - b.position);
+}
+
+/** Does the paid plan expose the standings resource? (assertEntitlements' sibling.) */
+export async function assertStandings(): Promise<boolean> {
+  const raw = await smFetch<unknown>("/v3/my/resources");
+  return JSON.stringify(raw ?? []).toLowerCase().includes("standing");
+}
+
+// ── Fixtures ─────────────────────────────────────────────────────────────────
+
+export interface SmParticipant {
+  id: number;
+  name: string;
+  meta?: { location?: "home" | "away" };
+}
+
+/** A fixture with its `scores` array — the shape getFinalScores reads. */
+interface SmFixtureWithScores {
+  id: number;
+  state_id?: number;
+  scores?: SmScoreEntry[];
+}
+
+export interface SmFixture {
+  id: number;
+  name?: string;
+  starting_at?: string | null;
+  state_id?: number;
+  season_id?: number | null;
+  league_id?: number;
+  round?: { id: number; name: string } | null;
+  participants?: SmParticipant[];
+}
+
+export async function getFixture(
+  fixtureId: number,
+  includes = "participants",
+): Promise<SmFixture | null> {
+  const row = await smFetch<SmFixture>(`/v3/football/fixtures/${fixtureId}`, {
+    include: includes,
+  });
+  return row && (row as SmFixture).id ? row : null;
+}
+
+/** PL fixtures in a date window — the weekly season sync (W3) reads this. */
+export async function getFixturesBetween(
+  from: string,
+  to: string,
+  leagueId: number = PL_LEAGUE_ID,
+): Promise<SmFixture[]> {
+  const rows = await smFetch<SmFixture[]>(`/v3/football/fixtures/between/${from}/${to}`, {
+    filters: `fixtureLeagues:${leagueId}`,
+    include: "participants;round",
+  });
+  return rows ?? [];
+}
+
+/** Home/away names from a fixture's participants (falls back to the "A vs B" name). */
+export function participantNames(fixture: SmFixture): { home: string; away: string } | null {
+  const parts = fixture.participants ?? [];
+  const home = parts.find((p) => p.meta?.location === "home")?.name;
+  const away = parts.find((p) => p.meta?.location === "away")?.name;
+  if (home && away) return { home, away };
+
+  const bits = String(fixture.name ?? "").split(/\s+vs?\.?\s+/i);
+  if (bits.length === 2) return { home: bits[0].trim(), away: bits[1].trim() };
+  return null;
+}
+
+// ── Entitlements ─────────────────────────────────────────────────────────────
+
+const REQUIRED_RESOURCES = ["livescores", "states", "lineups", "fixtures"];
+
+/**
+ * Assert the plan still covers what the pipeline needs. The poller calls this
+ * at startup so a lapsed subscription (the trial ends 2026-07-22) fails loudly
+ * on a quiet morning instead of silently at 15:47 on a Saturday.
+ */
+export async function assertEntitlements(): Promise<{ ok: boolean; missing: string[] }> {
+  const raw = await smFetch<unknown>("/v3/my/resources");
+  const blob = JSON.stringify(raw ?? []).toLowerCase();
+  const missing = REQUIRED_RESOURCES.filter((r) => !blob.includes(r));
+  return { ok: missing.length === 0, missing };
+}

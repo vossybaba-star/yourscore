@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getMembership, eventWindowState } from "@/lib/club";
 import type { Database } from "@/types/database";
+// Vercel data cache pins service-role GETs (constant cache key) — see CLAUDE.md §4.
+export const fetchCache = "force-no-store";
 
 // GET /api/club/events/[id] — member view of one event: meta + derived window
 // state + event board + the caller's attempt. While the window is LIVE and the

@@ -123,11 +123,18 @@ export function afLeagueJoin(opts: { leagueType?: string } = {}): void {
 
 // ── Retention / habit ────────────────────────────────────────────────────────
 
-// NOTE: a daily-habit "streak_day" event was considered but not wired — the only
-// streaks in the product today are in-session (WC answer streak / 38-0 win streak),
-// not consecutive-day counts. The daily habit is already derivable from
-// game_complete{mode:"world_cup_daily"} over time + AppsFlyer's native retention
-// cohorts, so a dedicated event would add noise without new signal.
+/** The player came back and played on a *later calendar day* than their first-ever
+ *  play — the D2+ retention milestone. Fires once per device. This is the "did they
+ *  return" signal ad pixels need to build repeat-player audiences and lookalikes off
+ *  genuinely retained users; the web fan-out lives in trackGame's fireReturnPlay, and
+ *  this is its native (AppsFlyer) arm. Once-guarded here too, belt-and-braces, since a
+ *  milestone must never double-count. `daysSinceFirst` = calendar days since first play.
+ *  (A finer-grained per-day streak_day event was considered and deliberately left out —
+ *  the one return milestone is the audience-defining signal; per-day counts add noise.) */
+export function afReturnPlay(game: Game, daysSinceFirst: number): void {
+  if (!onceKey("return_play")) return;
+  void afLogEvent("return_play", { game, days_since_first: daysSinceFirst });
+}
 
 /** User opted in to push. Retention lever + audience. Once-guarded because push
  *  registration re-runs on every launch/resume. */

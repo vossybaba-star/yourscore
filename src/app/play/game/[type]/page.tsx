@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { smartBackTarget } from "@/lib/nav";
 import { haptic } from "@/lib/haptics";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { Button } from "@/components/ui/Button";
+import { useHideGamesNav } from "@/lib/gamesNav";
 import { useGameLoop } from "@/lib/useGameLoop";
+import { trackGamePlay, trackGameComplete } from "@/lib/analytics/trackGame";
 import {
   scoreAnswer,
   calculatePerfectRoundBonus,
@@ -25,16 +26,19 @@ const GAME_CONFIG: Record<GameType, {
   accent: string;
   how: string;
 }> = {
+  // Accents are each game's OWN section colour (founder ruling 2026-07-18:
+  // separate games next to Quiz and 38-0) — they match the GameSwitcher tabs,
+  // not Quiz teal / 38-0 lime as before.
   "higher-lower": {
     title: "Higher or Lower",
     tagline: "Two same-position players, one stat — pick the bigger number.",
-    accent: "#00d8c0",
+    accent: "#ff7800",
     how: "Each question shows two Premier League players in the same position. Tap the one with more — faster answers score more.",
   },
   "guess-the-player": {
     title: "Guess the Player",
     tagline: "Clues drip in — name the mystery footballer.",
-    accent: "#aeea00",
+    accent: "#4fc3f7",
     how: "Each question gives you clues (or a career path) and four players. Pick who it is — the quicker, the better.",
   },
 };
@@ -233,6 +237,9 @@ export default function GameTypePage() {
   const config = GAME_CONFIG[type];
 
   const [phase, setPhase] = useState<Phase>("intro");
+  // "loading" here is the post-START deal — already part of the run, so the
+  // persistent GamesNav steps away for it too, not just for "playing".
+  useHideGamesNav(phase === "playing" || phase === "loading");
   const [topic, setTopic] = useState<string>("mixed"); // Higher-or-Lower topic
   const [seed, setSeed] = useState<string>("");
   const [windowMs, setWindowMs] = useState(25_000);
@@ -254,6 +261,19 @@ export default function GameTypePage() {
   const [lastStreakBonus, setLastStreakBonus] = useState(0);
   const [revealPhoto, setRevealPhoto] = useState<string | null>(null);
   const [revealName, setRevealName] = useState<string | null>(null);
+
+  // Ad/analytics play + complete signals, fired on phase TRANSITIONS so replaying in the
+  // same session counts as a new play. `complete` fires only on playing → results, never
+  // on any other route into the results screen. `type` is the GameId, so Higher or Lower
+  // and Guess the Player report as distinct games (plus the cross-game PlayAny twin).
+  const prevPhaseRef = useRef<Phase | null>(null);
+  useEffect(() => {
+    const prev = prevPhaseRef.current;
+    prevPhaseRef.current = phase;
+    if (phase === prev) return;
+    if (phase === "playing") trackGamePlay(type, { topic });
+    else if (phase === "results" && prev === "playing") trackGameComplete(type, { score });
+  }, [phase, type, topic, score]);
 
   const advanceRef = useRef(false);
 
@@ -414,20 +434,11 @@ export default function GameTypePage() {
   if (phase === "intro") {
     return (
       <div className="min-h-screen bg-bg" style={{ paddingBottom: "calc(72px + env(safe-area-inset-bottom, 0px))" }}>
-        <div className="relative flex flex-col items-center pt-20 pb-8 px-6"
+        {/* The persistent GamesNav (root layout) is the section header. */}
+        {/* No back button — the nav above IS the navigation (founder
+            2026-07-18: own tab, no back buttons on game sections). */}
+        <div className="relative flex flex-col items-center pt-8 pb-8 px-6"
           style={{ background: `linear-gradient(175deg, ${accent}14 0%, #0e1611 55%, #0a0a0f 100%)` }}>
-          <button
-            type="button"
-            onClick={() => router.push(smartBackTarget("/play"))}
-            className="absolute top-12 left-5 flex items-center gap-1.5 font-body text-xs z-10"
-            style={{ color: "rgba(255,255,255,0.5)" }}
-          >
-            <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
-              <path d="M11 4L6 9l5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            Back
-          </button>
-
           <div className="w-full mb-5"
             style={{ maxWidth: 340, borderRadius: 18, overflow: "hidden", border: `1.5px solid ${accent}40`, boxShadow: `0 12px 40px ${accent}22` }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -668,7 +679,7 @@ export default function GameTypePage() {
             PLAY AGAIN →
           </Button>
           <Button variant="ghost" tone="teal" size="lg" fullWidth onClick={() => router.push("/play")}>
-            BACK TO QUIZ
+            MORE GAMES
           </Button>
           <p className="font-body text-xs text-center mt-1" style={{ color: "#586058" }}>
             Practice mode — these don&apos;t count on the leaderboard yet.

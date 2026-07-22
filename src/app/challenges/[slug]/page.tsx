@@ -13,6 +13,7 @@ import { AnswerButtons } from "@/components/game/AnswerButtons";
 import { RankRewardCard } from "@/components/rank/RankRewardCard";
 import { QuizNotifyPrompt } from "@/components/quiz/QuizNotifyPrompt";
 import { StreakWindowTimer } from "@/components/quiz/StreakWindowTimer";
+import HalftimePredictionPoll from "@/components/halftime/HalftimePredictionPoll";
 import { useGameLoop } from "@/lib/useGameLoop";
 import { Button } from "@/components/ui/Button";
 import { trackGamePlay, trackGameComplete, trackShare } from "@/lib/analytics/trackGame";
@@ -42,7 +43,16 @@ interface QuizPack {
   parameter: string;
   question_count: number;
   description?: string | null;
-  metadata?: { icon?: string; cover_image?: string; series?: string; daily?: boolean; date?: string } | null;
+  metadata?: {
+    icon?: string;
+    cover_image?: string;
+    series?: string;
+    daily?: boolean;
+    date?: string;
+    // Present only on halftime packs (release engine writes it) — the fixture
+    // linkage that powers the end-of-pack prediction poll.
+    halftime?: { fixture_id: number; home: string; away: string };
+  } | null;
 }
 
 interface RawQuestion {
@@ -63,6 +73,29 @@ interface AnswerRecord {
 
 type Letter = "A" | "B" | "C" | "D";
 type Phase = "loading" | "intro" | "playing" | "results";
+
+// ── Guest result (save-your-score round trip) ─────────────────────────────
+// A guest's finished run, held locally so "SIGN UP & SAVE SCORE" actually saves it:
+// when they land back on this page signed in, the answers are submitted to
+// /api/quiz/solo-complete (server re-grades — the local copy is never trusted).
+// Mirrors the 38-0 pendingEnter pattern (wc/page.tsx).
+const GUEST_RESULT_KEY = "quiz:guest-result:v1";
+const GUEST_RESULT_TTL_MS = 48 * 60 * 60 * 1000;
+type GuestResult = { packId: string; answers: { letter: Letter; elapsedMs: number }[]; ts: number };
+function saveGuestResult(r: GuestResult) { try { localStorage.setItem(GUEST_RESULT_KEY, JSON.stringify(r)); } catch { /* ignore */ } }
+function loadGuestResult(): GuestResult | null {
+  try {
+    const raw = localStorage.getItem(GUEST_RESULT_KEY);
+    if (!raw) return null;
+    const r = JSON.parse(raw) as GuestResult;
+    if (!r?.packId || !Array.isArray(r.answers) || Date.now() - (r.ts ?? 0) > GUEST_RESULT_TTL_MS) { clearGuestResult(); return null; }
+    return r;
+  } catch { return null; }
+}
+function clearGuestResult() { try { localStorage.removeItem(GUEST_RESULT_KEY); } catch { /* ignore */ } }
+
+// Synthetic row id for the guest's own not-yet-saved score on the leaderboard.
+const GUEST_ROW_ID = "__guest__";
 
 // ── Timer helpers ─────────────────────────────────────────────────────────
 
@@ -288,12 +321,14 @@ interface LeaderRow {
   profiles: { display_name: string | null } | null;
 }
 
-function PackLeaderboard({ entries, userId, accent, loading, maxVisible = 10 }: {
+function PackLeaderboard({ entries, userId, accent, loading, maxVisible = 10, approxRank }: {
   entries: LeaderEntry[];
   userId: string | null;
   accent: string;
   loading?: boolean;
   maxVisible?: number;
+  /** The user's row sits below a full fetched page, so its true rank is "N or lower". */
+  approxRank?: boolean;
 }) {
   const [showAll, setShowAll] = useState(false);
   const [mode, setMode] = useState<"speed" | "accuracy">("speed");
@@ -317,6 +352,7 @@ function PackLeaderboard({ entries, userId, accent, loading, maxVisible = 10 }: 
 
   function EntryRow({ entry, rank }: { entry: LeaderEntry; rank: number }) {
     const isUser = entry.user_id === userId;
+    const rankLabel = isUser && approxRank ? `${rank}+` : rank;
     return (
       <div
         className="flex items-center gap-3 px-5 py-3 transition-colors"
@@ -326,7 +362,7 @@ function PackLeaderboard({ entries, userId, accent, loading, maxVisible = 10 }: 
         }}>
         <span className="font-display text-sm w-7 text-center flex-shrink-0"
           style={{ color: rank <= 3 ? RANK_COLORS[rank - 1] : "#586058" }}>
-          {rank <= 3 ? MEDALS[rank - 1] : rank}
+          {rank <= 3 ? MEDALS[rank - 1] : rankLabel}
         </span>
         <div className="flex-1 min-w-0">
           <p className="font-body text-sm truncate" style={{ color: isUser ? "#ffffff" : "#9aa39d" }}>
@@ -353,7 +389,7 @@ function PackLeaderboard({ entries, userId, accent, loading, maxVisible = 10 }: 
         {userRank > 0 && (
           <span className="font-display text-xs px-2 py-0.5 rounded-full"
             style={{ background: `${accent}18`, color: accent, border: `1px solid ${accent}30` }}>
-            YOU #{userRank}
+            YOU #{userRank}{approxRank ? "+" : ""}
           </span>
         )}
       </div>
@@ -462,9 +498,8 @@ export default function ChallengePage() {
   // ── Share state ──────────────────────────────────────────────────────────
   const [shortUrl, setShortUrl] = useState<string | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
-  const [giveawayOpen, setGiveawayOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  const giveawayShown = useRef(false);
+  const shortUrlMinted = useRef(false);
 
   // Streak tracking for bonuses
   const [correctStreak, setCorrectStreak] = useState(0);
@@ -506,29 +541,33 @@ export default function ChallengePage() {
     if (!slug) return;
     const supabase = createClient();
 
-    supabase.auth.getUser().then(async ({ data }) => {
-      const uid = data.user?.id ?? null;
-      setUserId(uid);
-      const sb = supabase;
-
+    (async () => {
       // Load pack content from the edge-cached route (/api/challenges/pack). It's
       // served from the nearest CDN region with no database hop — previously the
       // browser fetched EVERY published pack's full question set (110 packs) from
       // the eu-central-1 DB on every load, a transatlantic payload that tanked
       // Speed Insights for users far from the UK. Leaderboard/attempt below stay
       // client-side (user-specific, not cacheable).
-      let match: (QuizPack & { questions: RawQuestion[] }) | undefined;
-      try {
-        const packQuery = pid
-          ? `pid=${encodeURIComponent(pid)}`
-          : `slug=${encodeURIComponent(slug)}`;
-        const res = await fetch(`/api/challenges/pack?${packQuery}`);
-        if (!res.ok) { router.replace("/challenges"); return; }
-        const json = await res.json();
-        match = json.pack as (QuizPack & { questions: RawQuestion[] }) | undefined;
-      } catch {
-        router.replace("/challenges"); return;
-      }
+      //
+      // The pack fetch starts IMMEDIATELY — it needs no auth. The uid comes from
+      // getSession() (localStorage, no GoTrue roundtrip): it only scopes reads
+      // that RLS enforces anyway. Previously this was a serial 4-hop chain
+      // (auth → pack → attempt → leaderboard) — the measured ~1s picker→quiz lag.
+      const packQuery = pid
+        ? `pid=${encodeURIComponent(pid)}`
+        : `slug=${encodeURIComponent(slug)}`;
+      const packPromise: Promise<(QuizPack & { questions: RawQuestion[] }) | undefined> =
+        fetch(`/api/challenges/pack?${packQuery}`)
+          .then((res) => (res.ok ? res.json() : undefined))
+          .then((json) => json?.pack as (QuizPack & { questions: RawQuestion[] }) | undefined)
+          .catch(() => undefined);
+
+      const { data: { session } } = await supabase.auth.getSession();
+      const uid = session?.user?.id ?? null;
+      setUserId(uid);
+      const sb = supabase;
+
+      const match = await packPromise;
       if (!match) { router.replace("/challenges"); return; }
 
       setPack(match);
@@ -548,24 +587,50 @@ export default function ChallengePage() {
         getCompetitionBadgeUrl(match.name).then((u: string | null) => { if (u) setBadgeUrl(u); });
       }
 
+      // A guest score waiting to be claimed? (They played signed-out, tapped
+      // SIGN UP & SAVE SCORE, and are back with an account.) Submit it for
+      // server-side grading BEFORE the attempt/leaderboard reads below, so the
+      // page loads with their score already saved and on the board.
       if (uid) {
-        const { data: attempt } = await sb
-          .from("quiz_attempts")
-          .select("score, max_score, correct_count")
-          .eq("user_id", uid)
-          .eq("pack_id", match.id)
-          .single();
-        if (attempt) setPriorAttempt(attempt);
+        const pending = loadGuestResult();
+        if (pending && pending.packId === match.id) {
+          try {
+            const res = await fetch("/api/quiz/solo-complete", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ packId: pending.packId, answers: pending.answers, acq: getAcq() }),
+            });
+            if (res.ok) {
+              clearGuestResult();
+              const result = await res.json();
+              if (result.saved) setSaved(true);
+            } else if (res.status !== 429) {
+              clearGuestResult(); // unrecoverable (pack gone etc.) — don't retry forever
+            }
+          } catch { /* network blip — keep the pending result for the next visit */ }
+        }
       }
 
-      // Fetch leaderboard
+      // Prior attempt + leaderboard are independent — one parallel wave, not two hops.
       setLeaderLoading(true);
-      const { data: lbRows } = await sb
-        .from("quiz_attempts")
-        .select("user_id, score, correct_count, profiles(display_name)")
-        .eq("pack_id", match.id)
-        .order("score", { ascending: false })
-        .limit(100);
+      const [attemptRes, lbRes] = await Promise.all([
+        uid
+          ? sb
+              .from("quiz_attempts")
+              .select("score, max_score, correct_count")
+              .eq("user_id", uid)
+              .eq("pack_id", match.id)
+              .single()
+          : Promise.resolve({ data: null }),
+        sb
+          .from("quiz_attempts")
+          .select("user_id, score, correct_count, profiles(display_name)")
+          .eq("pack_id", match.id)
+          .order("score", { ascending: false })
+          .limit(100),
+      ]);
+      if (attemptRes.data) setPriorAttempt(attemptRes.data);
+      const lbRows = lbRes.data;
       if (lbRows) {
         setLeaderboard((lbRows as unknown as LeaderRow[]).map((r) => ({
           user_id: r.user_id,
@@ -577,7 +642,7 @@ export default function ChallengePage() {
       setLeaderLoading(false);
 
       setPhase("intro");
-    });
+    })();
   }, [slug, pid, router]);
 
   const currentQ = questions[currentIdx];
@@ -619,14 +684,6 @@ export default function ChallengePage() {
     if (isWc2026) return `I scored ${score.toLocaleString()} on the ${pack?.name ?? "YourScore Quiz"} @yourscore_app_ ⚽`;
     return `I scored ${score.toLocaleString()} on "${pack?.name ?? "YourScore Quiz"}" @yourscore_app_ 🧠`;
   }
-  function giveawayTweetText(): string {
-    if (isWc2026) return `I scored ${score.toLocaleString()} on the ${pack?.name ?? "YourScore Quiz"} @yourscore_app_ ⚽ Entering the daily £25 giveaway`;
-    return `I scored ${score.toLocaleString()} on "${pack?.name ?? "YourScore Quiz"}" @yourscore_app_ 🧠 Entering the daily £25 giveaway`;
-  }
-  function giveawayTweetUrl(): string {
-    const u = shortUrl ?? fallbackUrl;
-    return `https://twitter.com/intent/tweet?text=${encodeURIComponent(giveawayTweetText())}&url=${encodeURIComponent(u)}`;
-  }
   function openShare() { setShareOpen(true); void ensureShortUrl(); }
   async function nativeShare() {
     trackShare("challenge");
@@ -645,15 +702,12 @@ export default function ChallengePage() {
     try { await navigator.clipboard.writeText(`${quizBlurb()} ${url}`); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* blocked */ }
   }
 
-  // Auto-mint short URL + auto-open giveaway overlay when results first appear.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // Auto-mint the short URL when results first appear so sharing is instant.
   useEffect(() => {
     if (phase !== "results") return;
-    if (giveawayShown.current) return;
-    giveawayShown.current = true;
+    if (shortUrlMinted.current) return;
+    shortUrlMinted.current = true;
     void ensureShortUrl();
-    const t = setTimeout(() => setGiveawayOpen(true), 700);
-    return () => clearTimeout(t);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
 
@@ -746,6 +800,15 @@ export default function ChallengePage() {
           } catch {
             /* network error — keep the optimistic local score on screen */
           }
+        }
+        // Guest: hold the finished run locally so signing up can claim it —
+        // "SIGN UP & SAVE SCORE" then genuinely saves this exact run.
+        if (!userId && pack) {
+          saveGuestResult({
+            packId: pack.id,
+            answers: newLog.map((r) => ({ letter: r.selected, elapsedMs: r.elapsed_ms })),
+            ts: Date.now(),
+          });
         }
         // Playing into a group board → record server-graded score for the board.
         if (groupId && userId) {
@@ -893,10 +956,12 @@ export default function ChallengePage() {
                   <p className="font-display text-sm text-white tracking-wide">Speed scoring</p>
                 </div>
                 <div className="flex items-center justify-between gap-2">
+                  {/* Real engine shape (scoring.ts): points = base × speed multiplier;
+                      Lightning ×2 inside the first 20% of the 30s window. */}
                   {[
-                    { time: "Instant", pts: "1,000", color: "#aeea00" },
-                    { time: "~5s", pts: "775", color: "#00d8c0" },
-                    { time: "~10s", pts: "550", color: "#ff4757" },
+                    { time: "under 6s", pts: "×2", color: "#aeea00" },
+                    { time: "under 12s", pts: "×1.5", color: "#00d8c0" },
+                    { time: "slower", pts: "×1 ↓", color: "#ff4757" },
                   ].map(({ time, pts, color }) => (
                     <div key={time} className="flex-1 rounded-xl py-2.5 px-2 text-center"
                       style={{ background: `${color}10`, border: `1px solid ${color}25` }}>
@@ -1106,6 +1171,23 @@ export default function ChallengePage() {
       return { d, correct, total: dQs.length };
     }).filter(({ total }) => total > 0);
 
+    // Guest: splice this run into the board as a highlighted "You" row at its true
+    // position (ties rank below existing equal scores), so they SEE the spot they'd
+    // claim by signing up. If they'd fall below a full fetched page (25 rows), the
+    // exact rank is unknown — shown as "N+".
+    const guestIdx = !userId
+      ? (() => { const i = leaderboard.findIndex((e) => score > e.score); return i === -1 ? leaderboard.length : i; })()
+      : -1;
+    const guestRank = guestIdx + 1;
+    const guestApprox = !userId && guestIdx === leaderboard.length && leaderboard.length >= 25;
+    const lbEntries = !userId
+      ? [
+          ...leaderboard.slice(0, guestIdx),
+          { user_id: GUEST_ROW_ID, score, correct_count: correctCount, display_name: null },
+          ...leaderboard.slice(guestIdx),
+        ]
+      : leaderboard;
+
     return (
       <div className="min-h-screen flex flex-col bg-bg" style={{ paddingBottom: 40 }}>
         {/* Hero */}
@@ -1162,17 +1244,24 @@ export default function ChallengePage() {
         </div>
 
         <div className="px-5 flex flex-col gap-4 mt-2">
-          {/* ── Giveaway CTA ── */}
+          {/* Halftime prediction poll — the second-half call. Sits first, above
+              sharing: it is time-sensitive (the match is live now) and it is the
+              hook that brings the player back for full time. Signed-in only. */}
+          {userId && pack.metadata?.halftime && (
+            <HalftimePredictionPoll packId={pack.id} accent={accent} />
+          )}
+
+          {/* ── Share on X — no prize framing: there is no giveaway live ── */}
           <button
-            onClick={() => setGiveawayOpen(true)}
+            onClick={shareX}
             className="w-full rounded-2xl overflow-hidden active:scale-[0.98] transition-transform"
             style={{ background: "linear-gradient(135deg, #1c1400, #221900)", border: "2px solid rgba(0,216,192,0.55)" }}
           >
             <div className="flex items-center gap-4 px-5 py-4">
-              <div style={{ fontSize: 36, lineHeight: 1 }}>🏆</div>
+              <div style={{ fontSize: 36, lineHeight: 1 }}>📣</div>
               <div className="text-left flex-1 min-w-0">
-                <div className="font-display tracking-wide" style={{ fontSize: 20, color: "#00d8c0" }}>WIN £25 TODAY</div>
-                <div className="font-body" style={{ fontSize: 13, color: "#a89060" }}>Share on 𝕏 to enter the daily giveaway →</div>
+                <div className="font-display tracking-wide" style={{ fontSize: 20, color: "#00d8c0" }}>SHARE YOUR SCORECARD</div>
+                <div className="font-body" style={{ fontSize: 13, color: "#a89060" }}>Post it on 𝕏 →</div>
               </div>
             </div>
           </button>
@@ -1209,8 +1298,8 @@ export default function ChallengePage() {
             <QuizNotifyPrompt userId={userId} accent={accent} daily={Boolean(pack.metadata?.daily)} />
           )}
 
-          {/* Leaderboard */}
-          <PackLeaderboard entries={leaderboard} userId={userId} accent={accent} loading={leaderLoading} />
+          {/* Leaderboard — guests see their own run as a highlighted "You" row */}
+          <PackLeaderboard entries={lbEntries} userId={userId ?? GUEST_ROW_ID} accent={accent} loading={leaderLoading} approxRank={guestApprox} />
 
           {/* Difficulty breakdown */}
           <div className="rounded-2xl p-5 bg-surface"
@@ -1263,8 +1352,10 @@ export default function ChallengePage() {
                   {score.toLocaleString()}
                 </div>
                 <div>
-                  <p className="font-body text-sm font-semibold text-white">Save your score</p>
-                  <p className="font-body text-xs text-text-muted">See where you rank against everyone</p>
+                  <p className="font-body text-sm font-semibold text-white">
+                    You&apos;d be #{guestRank}{guestApprox ? "+" : ""} on the leaderboard
+                  </p>
+                  <p className="font-body text-xs text-text-muted">Sign up to lock in your spot — this score is saved the moment you&apos;re in</p>
                 </div>
               </div>
               <Button variant="primary" tone="teal" size="md" fullWidth href={`/auth/sign-in?next=/challenges/${slug}`}>
@@ -1320,38 +1411,7 @@ export default function ChallengePage() {
           </div>
         )}
 
-        {/* ── Giveaway overlay ── */}
-        {giveawayOpen && (
-          <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: "rgba(0,0,0,0.9)" }} onClick={() => setGiveawayOpen(false)}>
-            <div className="w-full max-w-lg px-4" style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 20px)" }} onClick={(e) => e.stopPropagation()}>
-              <div className="rounded-3xl overflow-hidden" style={{ background: "#080d0a", border: "2px solid rgba(0,216,192,0.4)" }}>
-                <div className="flex justify-center pt-3 pb-1">
-                  <div className="rounded-full" style={{ width: 40, height: 4, background: "rgba(255,255,255,0.18)" }} />
-                </div>
-                <div className="px-6 pt-4 pb-7 text-center">
-                  <div style={{ fontSize: 52, lineHeight: 1.1 }}>🏆</div>
-                  <div className="font-body mt-3" style={{ fontSize: 11, color: "#00d8c0", letterSpacing: 3 }}>DAILY GIVEAWAY</div>
-                  <div className="font-display tracking-wide leading-none mt-1" style={{ fontSize: 80, color: "#fff" }}>£25</div>
-                  <p className="font-body mt-3" style={{ fontSize: 15, color: "#c4ccc6", lineHeight: 1.6 }}>
-                    Share your result on 𝕏 to enter.<br />
-                    <span style={{ color: "#8a948f", fontSize: 13 }}>One winner drawn every 24 hours.</span>
-                  </p>
-                  <a href={giveawayTweetUrl()} target="_blank" rel="noopener noreferrer" onClick={() => setGiveawayOpen(false)}
-                    className="flex items-center justify-center gap-3 w-full rounded-2xl py-4 mt-6 font-display tracking-wide active:scale-[0.98] transition-transform"
-                    style={{ background: "#fff", color: "#000", fontSize: 20, textDecoration: "none", display: "flex" }}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="black">
-                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.741l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                    </svg>
-                    POST ON 𝕏 TO ENTER
-                  </a>
-                  <button onClick={() => setGiveawayOpen(false)} className="w-full mt-3 font-body" style={{ fontSize: 14, color: "#586058", background: "transparent", border: "none", cursor: "pointer" }}>
-                    Not now
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+
       </div>
     );
   }

@@ -12,6 +12,7 @@ import { getTeamBadgeUrlSync } from "@/lib/teamImages";
 import { usePendingFriends } from "@/hooks/usePendingFriends";
 import { usePendingTurns } from "@/hooks/usePendingTurns";
 import { DebateCard } from "@/components/debate/DebateCard";
+import { HalftimeCard } from "@/components/halftime/HalftimeCard";
 
 const WORLD_CUP_START = new Date("2026-06-11T18:00:00Z");
 
@@ -504,6 +505,9 @@ export function Dashboard({ data }: { data: DashboardData }) {
         {/* Anything waiting on you comes before discovery */}
         <PendingTurnsNotice />
         <PendingFriendsNotice />
+
+        {/* Live/upcoming halftime pack — self-hides off-matchday */}
+        <HalftimeCard />
 
         {/* Active Mastermind run — the one takeover-priority CTA when it exists */}
         {wcRun && (

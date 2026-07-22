@@ -46,13 +46,13 @@ const GAMES = [
     live: true,
   },
   {
-    key: "tenable",
+    key: "perfect-10",
     emoji: "🪜",
-    name: "Football Tenable",
+    name: "Perfect 10",
     tag: "LUKE'S FORMAT",
-    blurb: "Name the hidden top 10, 5 lives. Luke's signature format — beat his score, share your grid.",
-    cta: "Play this week's board",
-    href: "/tenable",
+    blurb: "Name the hidden top 10, 3 lives, 3 hints. Luke's signature format — get all ten and share your tower.",
+    cta: "Play the latest list",
+    href: "/play/game/perfect-10",
     live: true,
   },
   {
@@ -195,10 +195,10 @@ export default function LukePinguHub() {
           <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderRadius: 16, background: "var(--surface)", border: "1px solid var(--border)" }}>
             <span style={{ fontSize: 22 }}>🪜</span>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: "#fff" }}>Football Tenable <span style={{ fontSize: 11, color: BLUE, fontWeight: 700 }}>· LUKE&apos;S FORMAT</span></p>
-              <p style={{ margin: "2px 0 0", fontSize: 12.5, color: "var(--text-muted)" }}>This week&apos;s board is live — beat Luke&apos;s score.</p>
+              <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: "#fff" }}>Perfect 10 <span style={{ fontSize: 11, color: BLUE, fontWeight: 700 }}>· LUKE&apos;S FORMAT</span></p>
+              <p style={{ margin: "2px 0 0", fontSize: 12.5, color: "var(--text-muted)" }}>The latest list is live — can you name all ten?</p>
             </div>
-            <Link href="/tenable" style={{ fontSize: 13, fontWeight: 800, color: BRAND, textDecoration: "none", whiteSpace: "nowrap" }}>Play →</Link>
+            <Link href="/play/game/perfect-10" style={{ fontSize: 13, fontWeight: 800, color: BRAND, textDecoration: "none", whiteSpace: "nowrap" }}>Play →</Link>
           </div>
         </Section>
 
@@ -272,7 +272,7 @@ export default function LukePinguHub() {
             })}
           </div>
           <p style={{ textAlign: "center", fontSize: 11.5, color: "var(--text-muted)", marginTop: 12 }}>
-            Points = your daily 38-0 Mastermind + Tenable scores, added up over the campaign.
+            Points = your daily 38-0 Mastermind + Perfect 10 scores, added up over the campaign.
           </p>
         </Section>
 

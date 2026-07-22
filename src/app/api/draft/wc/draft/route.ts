@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
   const { ok } = await rateLimitDistributed(`draft-wc-draft:${user?.id ?? "anon"}`, 120, 60_000);
   if (!ok) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
 
-  let body: { action?: string; i?: number; answers?: unknown; picks?: unknown; catchup?: boolean; catchupDate?: string };
+  let body: { action?: string; i?: number; answers?: unknown; picks?: unknown; target?: unknown; catchup?: boolean; catchupDate?: string };
   try { body = await req.json(); } catch { return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 }); }
 
   const db = createWcDb();
@@ -147,7 +147,10 @@ export async function POST(req: NextRequest) {
       await db.from("draft_wc_daily_locks").upsert({ user_id: user.id, run_date: date, picks: i + 1 }, { onConflict: "user_id,run_date" });
     }
 
-    const step = rankedDraftStep(date, user?.id ?? "anon", answers, picks, i);
+    // Optional: the pitch slot the player is scouting FOR (narrows the spin to that
+    // position). Must be echoed in the submit payload's targets[i] to verify.
+    const target = typeof body.target === "string" && body.target ? body.target : null;
+    const step = rankedDraftStep(date, user?.id ?? "anon", answers, picks, i, target);
     return NextResponse.json({
       correct: step.correct,
       correctIndex: step.correctIndex,
