@@ -442,8 +442,14 @@ export function MarketingLanding({ matches, todaysGame }: { matches: LiveMatch[]
         </>
       )}
 
+      {/* ── Today's Game — acquisition surface, no sign-in required, so it goes
+          ABOVE the hero: it's the only thing here a guest can do without
+          committing, and below the hero it sat ~1280px down (ux-walk, 23 Jul).
+          The onboarding tour's final step points here for guests (data-tour). */}
+      <div data-tour="todays-game" className="pt-6"><TodaysGameCard game={todaysGame} /></div>
+
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
-      <section className="relative z-10 max-w-6xl mx-auto px-6 pt-6 pb-16 lg:pt-12" style={{ overflow: "hidden" }}>
+      <section className="relative z-10 max-w-6xl mx-auto px-6 pt-2 pb-16 lg:pt-6" style={{ overflow: "hidden" }}>
 
         <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
 
@@ -530,10 +536,6 @@ export function MarketingLanding({ matches, todaysGame }: { matches: LiveMatch[]
         </div>
         </div>
       </section>
-
-      {/* ── Today's Game — acquisition surface, no sign-in required. The
-          onboarding tour's final step points here for guests (data-tour). */}
-      <div data-tour="todays-game"><TodaysGameCard game={todaysGame} /></div>
 
       {/* ── 38-0 tile ────────────────────────────────────────────────────── */}
       <section className="relative z-10 max-w-6xl mx-auto px-6 pb-6">
