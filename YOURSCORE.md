@@ -378,6 +378,25 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-23 (pm)** — **Pro: coin-flip questions cut from the gate.** If all four options
+  are bare numbers the question can't be answered by knowing football: "How many goals did
+  Salah score in 2024-25?" [28/30/29/31] is a 1-in-4 guess however much you know. In Pro a
+  wrong answer caps the pick at 72 AND resets the streak, so a guess costs a player, which
+  directly contradicts the mode's premise. **213 questions cut; bundle 452 → 280, neutral
+  96 → 75** (still ~7 drafts before a repeat). No club is wiped out; Coventry was already 0,
+  Sunderland 4, Hull and Ipswich 2 each. A test now fails the build if one creeps back.
+  ⚠️ **The cut is deliberately blunt and takes good questions with it.** Forest's two
+  European Cups [2/1/3/0] is iconic and knowable; Manchester United's 13 FA Cups
+  [11/15/12/13] is not — and they are structurally identical, so no filter can tell them
+  apart. Everything removed is listed in `scripts/data/pl-quiz-cut-numeric.md` for hand
+  restoring (which means re-authoring the options, not just re-adding the row).
+  🐛 **Found incidentally: a wrong answer live in the bank.** `076f2b3d-bd51-40f6-ab49-0bdaf37d5b78`
+  ("How many European Cup / Champions League titles have Nottingham Forest won?") is `active`
+  and answers **1**. Forest won **two** (1979 Malmö, 1980 Hamburg) and dozens of *retired*
+  Forest questions in the same bank say so. Shown 0 times so far, so nobody has hit it. **Not
+  edited — a live-bank write is the founder's call.** It suggests the bank's fact-checking
+  isn't airtight, which is worth knowing before the question review.
+
 - **2026-07-23** — **38-0: EXPERT mode retired, Premier League leads, Pro's UX walk fixed**
   (branch `feat/38-0-pl-gated`, not on `main`).
   **Expert is gone.** 38-0 is classic only (founder). The DIFFICULTY switcher is removed and

@@ -5,8 +5,8 @@
     "AFC Bournemouth": "Bournemouth",
     "Brighton & Hove Albion": "Brighton"
   },
-  "count": 452,
-  "neutralCount": 96,
+  "count": 280,
+  "neutralCount": 75,
   "questions": [
     {
       "id": "0006e545-9452-46b8-a56d-80938652dbc2",
@@ -39,21 +39,6 @@
       "club": null
     },
     {
-      "id": "00db55a6-3474-49ab-8097-f1967dc05113",
-      "q": "How many FA Cup titles has Manchester United won?",
-      "options": [
-        "11",
-        "15",
-        "12",
-        "13"
-      ],
-      "answer": 3,
-      "difficulty": "easy",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Manchester United"
-    },
-    {
       "id": "03382ac2-8e56-48bd-8576-8859f86de20b",
       "q": "The Nottingham Forest v Derby County fixture is nicknamed 'El Cloughico', a reference to which other famous football derby name?",
       "options": [
@@ -67,21 +52,6 @@
       "category": "rivalries-derbies",
       "scope": "club",
       "club": "Nottingham Forest"
-    },
-    {
-      "id": "03e700b0-d048-4408-b64c-d17d9d41e700",
-      "q": "What is the capacity of Liverpool's Anfield stadium?",
-      "options": [
-        "59,409",
-        "61,276",
-        "63,200",
-        "62,500"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Liverpool"
     },
     {
       "id": "04521163-1be6-4a14-a23a-619364fa62a5",
@@ -144,21 +114,6 @@
       "club": "Arsenal"
     },
     {
-      "id": "05259bb0-768d-4f4d-b602-6ab774f8ca54",
-      "q": "In what year was Crystal Palace founded?",
-      "options": [
-        "1905",
-        "1915",
-        "1900",
-        "1920"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Crystal Palace"
-    },
-    {
       "id": "05de94ec-a53f-48b4-b067-869d8b2bd260",
       "q": "What was the scoreline when Brentford beat Chelsea away at Stamford Bridge in the 2021/22 Premier League season?",
       "options": [
@@ -219,21 +174,6 @@
       "club": "Fulham"
     },
     {
-      "id": "076f2b3d-bd51-40f6-ab49-0bdaf37d5b78",
-      "q": "How many European Cup / Champions League titles have Nottingham Forest won?",
-      "options": [
-        "2",
-        "1",
-        "3",
-        "0"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Nottingham Forest"
-    },
-    {
       "id": "07d9195e-935a-4569-a7ce-cb5841043d3d",
       "q": "What is Hull City's most widely recognised nickname?",
       "options": [
@@ -277,21 +217,6 @@
       "category": "modern-era",
       "scope": "club",
       "club": "Arsenal"
-    },
-    {
-      "id": "09412881-2a85-4bd8-bc92-6032af734325",
-      "q": "How many Premier League goals did Erling Haaland score in the 2022-23 season to claim the top scorer prize?",
-      "options": [
-        "34",
-        "36",
-        "38",
-        "32"
-      ],
-      "answer": 1,
-      "difficulty": "easy",
-      "category": "legends",
-      "scope": "neutral",
-      "club": null
     },
     {
       "id": "09505b81-fa3d-4b57-892d-8992a6303b7b",
@@ -399,36 +324,6 @@
       "club": "Crystal Palace"
     },
     {
-      "id": "0edd0576-28d0-46d8-95ec-c358c5a89df3",
-      "q": "How many League Cup (EFL Cup) titles has Chelsea won?",
-      "options": [
-        "4",
-        "6",
-        "5",
-        "3"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Chelsea"
-    },
-    {
-      "id": "0f1d2f0e-54c5-4c4f-9788-3a5abcd45402",
-      "q": "Manchester City's impressive 2013-14 campaign saw them score how many Premier League goals?",
-      "options": [
-        "98",
-        "105",
-        "99",
-        "102"
-      ],
-      "answer": 3,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Manchester City"
-    },
-    {
       "id": "0f59b1b7-0f7c-4956-a9db-5ebee0f30f49",
       "q": "Which manager, who took charge of Newcastle United in 2007, is one of only two men to have managed both Newcastle United and Sunderland?",
       "options": [
@@ -457,21 +352,6 @@
       "category": "history-honours",
       "scope": "club",
       "club": "Arsenal"
-    },
-    {
-      "id": "10a1e33d-527b-4ca2-b20c-e651d231da92",
-      "q": "How many seasons has Chelsea competed in the Premier League from 2001 to 2025?",
-      "options": [
-        "25",
-        "24",
-        "26",
-        "23"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "modern-era",
-      "scope": "club",
-      "club": "Chelsea"
     },
     {
       "id": "10b6c3ba-e0f0-45f2-8b05-b7a25bc56718",
@@ -549,21 +429,6 @@
       "club": "Manchester City"
     },
     {
-      "id": "139e9b7f-0d89-4070-bc70-e21748db0a58",
-      "q": "How many points did Chelsea accumulate in the 2023-24 Premier League season?",
-      "options": [
-        "66",
-        "60",
-        "63",
-        "69"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "modern-era",
-      "scope": "club",
-      "club": "Chelsea"
-    },
-    {
       "id": "13a9dd20-8646-4a54-a4bd-1620857b97bf",
       "q": "Which Midlands club made history in 2004/05 by being the first team to escape relegation after sitting bottom of the league on Christmas Day?",
       "options": [
@@ -577,21 +442,6 @@
       "category": "PL History",
       "scope": "neutral",
       "club": null
-    },
-    {
-      "id": "142fc37c-af5b-426a-b8fd-021a692558b7",
-      "q": "How many FA Cup titles has Arsenal won?",
-      "options": [
-        "12",
-        "15",
-        "13",
-        "14"
-      ],
-      "answer": 3,
-      "difficulty": "easy",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Arsenal"
     },
     {
       "id": "1433ebc2-a7c9-4103-bab5-52f9b662e020",
@@ -714,66 +564,6 @@
       "club": "Arsenal"
     },
     {
-      "id": "1b70fd5b-de62-4010-9aa8-ba413ba6bae1",
-      "q": "How many points did Tottenham Hotspur accumulate in the 2019-20 Premier League season?",
-      "options": [
-        "59",
-        "62",
-        "56",
-        "65"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "modern-era",
-      "scope": "club",
-      "club": "Tottenham Hotspur"
-    },
-    {
-      "id": "1bbaf058-e4de-43d5-9f05-7e4edda9275d",
-      "q": "How many seasons has Aston Villa played in the Premier League from 2001 to 2025?",
-      "options": [
-        "22",
-        "21",
-        "23",
-        "20"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "modern-era",
-      "scope": "club",
-      "club": "Aston Villa"
-    },
-    {
-      "id": "1bc037ca-9c27-4265-9269-a3f50f9aadc6",
-      "q": "What is Manchester City's record for most wins in a single Premier League season?",
-      "options": [
-        "30",
-        "32",
-        "31",
-        "33"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Manchester City"
-    },
-    {
-      "id": "1bd5e848-1469-4787-aba8-caa6154bf8f8",
-      "q": "How many Premier League goals did Cole Palmer score for Chelsea in 2023-24?",
-      "options": [
-        "20",
-        "24",
-        "19",
-        "22"
-      ],
-      "answer": 3,
-      "difficulty": "medium",
-      "category": "legends",
-      "scope": "club",
-      "club": "Chelsea"
-    },
-    {
       "id": "1c32146c-23c6-4e9b-943b-2a677d2b29dc",
       "q": "Who captained Arsenal's 'Invincibles' side during their unbeaten 2003/04 Premier League season?",
       "options": [
@@ -819,36 +609,6 @@
       "club": null
     },
     {
-      "id": "1dc2fc0d-54f4-4393-8772-7f61e3b0e99d",
-      "q": "How many League Cup (EFL Cup) titles has Manchester United won?",
-      "options": [
-        "6",
-        "8",
-        "5",
-        "7"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Manchester United"
-    },
-    {
-      "id": "1de8532a-6e1d-43c6-8a3f-1d770856a167",
-      "q": "How many Premier League goals did Erling Haaland score in 2023-24 to finish as the season's top scorer?",
-      "options": [
-        "29",
-        "25",
-        "27",
-        "31"
-      ],
-      "answer": 2,
-      "difficulty": "easy",
-      "category": "legends",
-      "scope": "neutral",
-      "club": null
-    },
-    {
       "id": "1e3f121f-d183-46b1-9c4f-0a8533a40470",
       "q": "Mohamed Salah scored 23 Premier League goals to top the charts in 2021-22 — which club did he play for?",
       "options": [
@@ -862,66 +622,6 @@
       "category": "legends",
       "scope": "neutral",
       "club": null
-    },
-    {
-      "id": "1fa28666-8566-43d3-ad34-fd792eae0dce",
-      "q": "In what year were Queens Park Rangers founded?",
-      "options": [
-        "1879",
-        "1882",
-        "1890",
-        "1895"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "neutral",
-      "club": null
-    },
-    {
-      "id": "1feaf8a3-a4d0-4229-85d3-aafb1001512f",
-      "q": "How many seasons has Arsenal competed in the Premier League from 2001 to 2025?",
-      "options": [
-        "26",
-        "23",
-        "24",
-        "25"
-      ],
-      "answer": 3,
-      "difficulty": "medium",
-      "category": "modern-era",
-      "scope": "club",
-      "club": "Arsenal"
-    },
-    {
-      "id": "204dcd17-3561-4a07-b96d-6a5e2fa451ba",
-      "q": "What is Tottenham's record Premier League points tally in a single season?",
-      "options": [
-        "82",
-        "86",
-        "89",
-        "84"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Tottenham Hotspur"
-    },
-    {
-      "id": "2103f31a-bca9-46f8-840d-300213444be4",
-      "q": "How many points did Aston Villa accumulate in the 2024-25 Premier League season?",
-      "options": [
-        "63",
-        "66",
-        "69",
-        "72"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "modern-era",
-      "scope": "club",
-      "club": "Aston Villa"
     },
     {
       "id": "212db225-adc0-4e7d-b51e-60177f9ff3e0",
@@ -954,36 +654,6 @@
       "club": "Bournemouth"
     },
     {
-      "id": "22230cad-1037-4b2c-aeff-662d05581c30",
-      "q": "How many Premier League goals did Harry Kane score for Tottenham in 2014-15?",
-      "options": [
-        "21",
-        "23",
-        "19",
-        "20"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "legends",
-      "scope": "club",
-      "club": "Tottenham Hotspur"
-    },
-    {
-      "id": "22eb1da1-d247-4ecb-8ea2-be88895f7250",
-      "q": "How many Premier League titles (including First Division) has Everton won?",
-      "options": [
-        "9",
-        "10",
-        "7",
-        "8"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Everton"
-    },
-    {
       "id": "22f151b7-ebfd-4e42-ad80-37b3aa85abbd",
       "q": "Which Aston Villa player scored the winning goal in a 1-0 Second City derby win at Birmingham City in March 2019, hours after being punched by a pitch invader?",
       "options": [
@@ -1008,51 +678,6 @@
         "Raheem Sterling"
       ],
       "answer": 0,
-      "difficulty": "medium",
-      "category": "legends",
-      "scope": "neutral",
-      "club": null
-    },
-    {
-      "id": "244a4c3f-0f7c-471a-9022-8fceee57ff1d",
-      "q": "What is Arsenal's record for most wins in a single Premier League season?",
-      "options": [
-        "26",
-        "30",
-        "28",
-        "27"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Arsenal"
-    },
-    {
-      "id": "24784140-3ee8-4108-8bbf-13e15a1ce58e",
-      "q": "How many points did Liverpool collect in the 2022-23 Premier League season?",
-      "options": [
-        "70",
-        "64",
-        "67",
-        "71"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "modern-era",
-      "scope": "club",
-      "club": "Liverpool"
-    },
-    {
-      "id": "249c4bde-7e4f-4549-ac9e-5abbd382faa7",
-      "q": "How many Premier League goals did Harry Kane score in 2015-16 to claim the top scorer prize?",
-      "options": [
-        "24",
-        "25",
-        "27",
-        "23"
-      ],
-      "answer": 1,
       "difficulty": "medium",
       "category": "legends",
       "scope": "neutral",
@@ -1134,21 +759,6 @@
       "club": null
     },
     {
-      "id": "27c34a46-3a53-42cd-b34c-d4eb9f6e2951",
-      "q": "Manchester City's record-breaking 2017-18 season saw them score how many league goals?",
-      "options": [
-        "112",
-        "98",
-        "106",
-        "115"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "modern-era",
-      "scope": "club",
-      "club": "Manchester City"
-    },
-    {
       "id": "28da2ab8-9ee6-4eaf-b176-3d4dfdf522a8",
       "q": "Which club was Thierry Henry at when he topped the Premier League scoring charts in 2001-02?",
       "options": [
@@ -1179,21 +789,6 @@
       "club": null
     },
     {
-      "id": "2a45ab5e-87b4-4620-a490-4d37c559d536",
-      "q": "How many goals did Arsenal score during the 2022-23 Premier League campaign?",
-      "options": [
-        "88",
-        "91",
-        "84",
-        "85"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "modern-era",
-      "scope": "club",
-      "club": "Arsenal"
-    },
-    {
       "id": "2bec4c02-977e-4c03-96c7-a00fbb0d60cd",
       "q": "What is the name of Brentford's home stadium?",
       "options": [
@@ -1207,36 +802,6 @@
       "category": "history-honours",
       "scope": "club",
       "club": "Brentford"
-    },
-    {
-      "id": "2c2b2433-1c39-489e-b60e-5c1daba48b4a",
-      "q": "How many Premier League goals did Thierry Henry score in 2001-02 to win the top scorer award?",
-      "options": [
-        "20",
-        "22",
-        "26",
-        "24"
-      ],
-      "answer": 3,
-      "difficulty": "medium",
-      "category": "legends",
-      "scope": "neutral",
-      "club": null
-    },
-    {
-      "id": "2caf62a8-53b9-4015-90c3-cfa5bcd33148",
-      "q": "How many UEFA Europa League titles has Chelsea won?",
-      "options": [
-        "1",
-        "3",
-        "4",
-        "2"
-      ],
-      "answer": 3,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Chelsea"
     },
     {
       "id": "2d323645-90a8-43c6-b1cb-65225396d677",
@@ -1284,51 +849,6 @@
       "club": null
     },
     {
-      "id": "2eb286d9-6ad3-4ed5-97e5-dec80c7f048a",
-      "q": "How many goals did Manchester United score in the 2022-23 Premier League season?",
-      "options": [
-        "61",
-        "54",
-        "58",
-        "65"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "modern-era",
-      "scope": "club",
-      "club": "Manchester United"
-    },
-    {
-      "id": "2ec4aef6-5a73-4fd9-a943-2ebd6c849d40",
-      "q": "How many points did Manchester City accumulate in the 2017-18 Premier League season?",
-      "options": [
-        "100",
-        "102",
-        "98",
-        "96"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "modern-era",
-      "scope": "club",
-      "club": "Manchester City"
-    },
-    {
-      "id": "2f22b762-e527-4a17-a480-7d9e7b49fb24",
-      "q": "Daniel Sturridge had a strong campaign for Liverpool in 2013-14 — how many Premier League goals did he score?",
-      "options": [
-        "19",
-        "21",
-        "23",
-        "18"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "legends",
-      "scope": "club",
-      "club": "Liverpool"
-    },
-    {
       "id": "2f759825-f3ad-4cc0-bd73-a294a3b897a6",
       "q": "How many times did Thierry Henry win the Premier League Golden Boot while at Arsenal?",
       "options": [
@@ -1344,51 +864,6 @@
       "club": "Arsenal"
     },
     {
-      "id": "2ff0140e-8a10-4951-87aa-80de9680eb9d",
-      "q": "How many goals did Liverpool score in the 2023-24 Premier League season?",
-      "options": [
-        "89",
-        "86",
-        "84",
-        "83"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "modern-era",
-      "scope": "club",
-      "club": "Liverpool"
-    },
-    {
-      "id": "304461dd-ca86-4044-8c36-369dee165a3d",
-      "q": "How many goals did Manchester City score in the 2020-21 Premier League campaign?",
-      "options": [
-        "81",
-        "83",
-        "87",
-        "85"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "modern-era",
-      "scope": "club",
-      "club": "Manchester City"
-    },
-    {
-      "id": "3074372a-0022-4968-8781-d681f0a59a8e",
-      "q": "How many European Cup / Champions League titles has Manchester United won?",
-      "options": [
-        "2",
-        "4",
-        "5",
-        "3"
-      ],
-      "answer": 3,
-      "difficulty": "easy",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Manchester United"
-    },
-    {
       "id": "316dcdfe-6a10-493c-ade2-56a1ae03c441",
       "q": "What nickname did Tottenham fans give Sol Campbell after his 2001 free transfer to Arsenal?",
       "options": [
@@ -1402,51 +877,6 @@
       "category": "rivalries-derbies",
       "scope": "club",
       "club": "Arsenal"
-    },
-    {
-      "id": "31ae5ab9-345d-4137-8b63-9102719db8d4",
-      "q": "How many points did Brighton & Hove Albion accumulate in the 2023-24 Premier League season?",
-      "options": [
-        "48",
-        "52",
-        "50",
-        "46"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "modern-era",
-      "scope": "club",
-      "club": "Brighton"
-    },
-    {
-      "id": "31d0aa2a-df71-445c-9882-6e0e2ba836d8",
-      "q": "How many goals did Chelsea score in the 2023-24 Premier League season?",
-      "options": [
-        "70",
-        "74",
-        "81",
-        "77"
-      ],
-      "answer": 3,
-      "difficulty": "medium",
-      "category": "modern-era",
-      "scope": "club",
-      "club": "Chelsea"
-    },
-    {
-      "id": "31f45bf5-29c5-4400-9483-780ea7eed11d",
-      "q": "What is Aston Villa's record for most wins in a Premier League season, set in 2023-24?",
-      "options": [
-        "18",
-        "20",
-        "19",
-        "22"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "modern-era",
-      "scope": "club",
-      "club": "Aston Villa"
     },
     {
       "id": "32af3b28-c42b-4d58-bc65-4adc483dd565",
@@ -1494,21 +924,6 @@
       "club": null
     },
     {
-      "id": "34b3868a-2fed-4096-adc8-6c337351a7d7",
-      "q": "How many points did Crystal Palace achieve in the 2023-24 Premier League season?",
-      "options": [
-        "52",
-        "46",
-        "55",
-        "49"
-      ],
-      "answer": 3,
-      "difficulty": "medium",
-      "category": "modern-era",
-      "scope": "club",
-      "club": "Crystal Palace"
-    },
-    {
       "id": "34bef8ad-74ff-4b16-9481-4a7efcc39387",
       "q": "Which Chelsea player scored a brace in the 4-1 win over Arsenal in the 2019 UEFA Europa League final?",
       "options": [
@@ -1522,36 +937,6 @@
       "category": "rivalries-derbies",
       "scope": "club",
       "club": "Chelsea"
-    },
-    {
-      "id": "35d662d7-5da8-4761-a107-fd24beb6c852",
-      "q": "How many points did Chelsea accumulate during their dominant 2005-06 Premier League campaign?",
-      "options": [
-        "92",
-        "91",
-        "89",
-        "88"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Chelsea"
-    },
-    {
-      "id": "361bddac-7f28-4c84-8a14-a1c9f4e86412",
-      "q": "How many goals did Liverpool score in the 2024-25 Premier League season?",
-      "options": [
-        "82",
-        "88",
-        "84",
-        "86"
-      ],
-      "answer": 3,
-      "difficulty": "medium",
-      "category": "modern-era",
-      "scope": "club",
-      "club": "Liverpool"
     },
     {
       "id": "362fceb9-2403-4be8-a9fb-91d7bb1fae58",
@@ -1584,36 +969,6 @@
       "club": "Arsenal"
     },
     {
-      "id": "3684c6d9-0d62-4187-8259-07ba1dfba248",
-      "q": "In which year did Dennis Bergkamp join Arsenal from Inter Milan?",
-      "options": [
-        "1993",
-        "1998",
-        "1997",
-        "1995"
-      ],
-      "answer": 3,
-      "difficulty": "medium",
-      "category": "legends",
-      "scope": "club",
-      "club": "Arsenal"
-    },
-    {
-      "id": "36fd0b41-3628-48c5-81f5-e047d66c2a36",
-      "q": "How many Premier League goals did Erling Haaland score for Man City in 2023-24?",
-      "options": [
-        "24",
-        "25",
-        "27",
-        "29"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "legends",
-      "scope": "club",
-      "club": "Manchester City"
-    },
-    {
       "id": "381df757-9e80-4b31-86df-26a0f5956873",
       "q": "Manchester City beat Manchester United 2-1 in 2023 in the first ever Manchester derby to be contested in a major final - which competition was this?",
       "options": [
@@ -1627,21 +982,6 @@
       "category": "rivalries-derbies",
       "scope": "club",
       "club": "Manchester City"
-    },
-    {
-      "id": "38385cc6-cc81-44c5-bb6f-a63875d20737",
-      "q": "Pierre-Emerick Aubameyang had a strong 2019-20 season for Arsenal — how many Premier League goals did he score?",
-      "options": [
-        "22",
-        "20",
-        "24",
-        "21"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "legends",
-      "scope": "club",
-      "club": "Arsenal"
     },
     {
       "id": "38685dc4-9c32-4595-9c60-5e6b82329acb",
@@ -1672,36 +1012,6 @@
       "category": "rivalries-derbies",
       "scope": "club",
       "club": "Manchester City"
-    },
-    {
-      "id": "3a4fc892-9e04-42b5-b634-33f7244c8e52",
-      "q": "How many Premier League titles (including First Division) have Chelsea won?",
-      "options": [
-        "5",
-        "6",
-        "8",
-        "7"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Chelsea"
-    },
-    {
-      "id": "3ac27ff5-f7e0-4c9c-b671-be1bdca93317",
-      "q": "How many points did Sunderland earn in their disastrous 2005-06 Premier League season?",
-      "options": [
-        "18",
-        "12",
-        "15",
-        "21"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Sunderland"
     },
     {
       "id": "3b72d3c5-e518-4481-81a9-4cdd5e6e4de7",
@@ -1749,21 +1059,6 @@
       "club": null
     },
     {
-      "id": "3ddb0df6-85da-4413-9a14-3dfa3b211c86",
-      "q": "How many points did Newcastle United accumulate in the 2022-23 Premier League season?",
-      "options": [
-        "71",
-        "68",
-        "74",
-        "75"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "modern-era",
-      "scope": "club",
-      "club": "Newcastle United"
-    },
-    {
       "id": "3ded5137-9b71-4f97-9aac-c96bbe9a8dee",
       "q": "Which Nottingham club, Forest's local rivals, is the oldest professional football club in the world, formed in 1862?",
       "options": [
@@ -1809,21 +1104,6 @@
       "club": "Chelsea"
     },
     {
-      "id": "3e76cd2a-be2a-4276-bc2a-0bced2de3ce6",
-      "q": "In 2008-09, Cristiano Ronaldo finished as the second-highest scorer in the Premier League. How many goals did he bag for Manchester United that season?",
-      "options": [
-        "20",
-        "16",
-        "22",
-        "18"
-      ],
-      "answer": 3,
-      "difficulty": "medium",
-      "category": "legends",
-      "scope": "club",
-      "club": "Manchester United"
-    },
-    {
       "id": "3f40e4cc-6513-42c2-8e9b-594258122330",
       "q": "At what age did the Liverpool striker Michael Owen become one of the youngest players to reach a century of Premier League goals, achieving this milestone at just 23 years and 133 days?",
       "options": [
@@ -1854,36 +1134,6 @@
       "club": "Tottenham Hotspur"
     },
     {
-      "id": "3fcbdb0f-6461-4c78-8e5d-30e8cd1dd589",
-      "q": "How many European Cup / Champions League titles has Aston Villa won?",
-      "options": [
-        "2",
-        "1",
-        "0",
-        "3"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Aston Villa"
-    },
-    {
-      "id": "4040250d-feb7-406f-908e-88d8969e3267",
-      "q": "How many League Cup (EFL Cup) titles has Manchester City won?",
-      "options": [
-        "8",
-        "10",
-        "9",
-        "7"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Manchester City"
-    },
-    {
       "id": "40522d63-e5ce-4bee-bd0f-a6f3c8313f56",
       "q": "What is the name of Ipswich Town's home stadium?",
       "options": [
@@ -1897,21 +1147,6 @@
       "category": "history-honours",
       "scope": "club",
       "club": "Ipswich Town"
-    },
-    {
-      "id": "40a946ef-ca51-457e-9d36-5e3645820927",
-      "q": "How many FA Cup titles have Tottenham Hotspur won?",
-      "options": [
-        "6",
-        "7",
-        "8",
-        "9"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Tottenham Hotspur"
     },
     {
       "id": "40de9522-c0a9-4b09-8fe8-f85b979b27b0",
@@ -1959,21 +1194,6 @@
       "club": "Crystal Palace"
     },
     {
-      "id": "41e6532b-7583-4541-b2b0-91df12352e6c",
-      "q": "How many Premier League titles have Arsenal won since the 2001-02 season?",
-      "options": [
-        "2",
-        "5",
-        "4",
-        "3"
-      ],
-      "answer": 3,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Arsenal"
-    },
-    {
       "id": "4268c5b4-8ff1-49fb-9c90-542e08c2e086",
       "q": "Name the Scotland international who netted two goals for Everton during the 1989 FA Cup final.",
       "options": [
@@ -1987,21 +1207,6 @@
       "category": "history-honours",
       "scope": "club",
       "club": "Everton"
-    },
-    {
-      "id": "42848f90-11a7-4df1-bed3-6295b9d9cd02",
-      "q": "Between 2001 and 2025, how many times have Manchester United finished in the Premier League top 4?",
-      "options": [
-        "16",
-        "15",
-        "20",
-        "18"
-      ],
-      "answer": 3,
-      "difficulty": "medium",
-      "category": "modern-era",
-      "scope": "club",
-      "club": "Manchester United"
     },
     {
       "id": "42e63205-cc57-4de6-9232-45ec31599942",
@@ -2064,51 +1269,6 @@
       "club": "Newcastle United"
     },
     {
-      "id": "4372301c-2105-458d-b6cd-8e2b897c579d",
-      "q": "How many Premier League goals did Thierry Henry score in 2005-06 to finish as the division's top scorer?",
-      "options": [
-        "27",
-        "29",
-        "25",
-        "30"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "legends",
-      "scope": "neutral",
-      "club": null
-    },
-    {
-      "id": "445fed98-689f-46eb-b11f-10f8dbdcb5be",
-      "q": "How many goals did Nottingham Forest score in the 2023-24 Premier League season?",
-      "options": [
-        "58",
-        "54",
-        "45",
-        "49"
-      ],
-      "answer": 3,
-      "difficulty": "medium",
-      "category": "modern-era",
-      "scope": "club",
-      "club": "Nottingham Forest"
-    },
-    {
-      "id": "4475d3aa-9ec3-4a37-955e-a8e8a4b2806a",
-      "q": "How many times have Hull City been relegated from the Premier League since 2001-02?",
-      "options": [
-        "4",
-        "2",
-        "3",
-        "1"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Hull City"
-    },
-    {
       "id": "4479d161-15e8-4646-b0d6-769416cb8693",
       "q": "Who was the leading Premier League goalscorer over the decade spanning 2012 through 2022?",
       "options": [
@@ -2137,21 +1297,6 @@
       "category": "history-honours",
       "scope": "club",
       "club": "Tottenham Hotspur"
-    },
-    {
-      "id": "45cf4a72-dfc3-4737-8009-037016730505",
-      "q": "In what year were Aston Villa founded?",
-      "options": [
-        "1870",
-        "1874",
-        "1882",
-        "1880"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Aston Villa"
     },
     {
       "id": "4ac345ca-d2d0-4b61-9713-e72234ad45f8",
@@ -2259,21 +1404,6 @@
       "club": "Brentford"
     },
     {
-      "id": "4eb9dc29-5f17-4d51-a138-a849d6613648",
-      "q": "How many Premier League goals did Mohamed Salah score in 2024-25 to claim the top scorer award?",
-      "options": [
-        "28",
-        "30",
-        "29",
-        "31"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "legends",
-      "scope": "neutral",
-      "club": null
-    },
-    {
       "id": "4ecb8ebd-688f-446b-bb22-d78eb034e5d3",
       "q": "In 2020, Crystal Palace brought in Eberechi Eze from which club, subsequently selling him for a club-record transfer fee in 2025?",
       "options": [
@@ -2319,21 +1449,6 @@
       "club": "Manchester City"
     },
     {
-      "id": "4f69233c-814c-4e7b-adbb-1b17763492d0",
-      "q": "How many goals did Manchester United score in the 2007-08 Premier League season when they finished top?",
-      "options": [
-        "78",
-        "82",
-        "80",
-        "76"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Manchester United"
-    },
-    {
       "id": "4f8532f6-2a7a-4a6f-936c-83fb45eff81e",
       "q": "Which Charlton Athletic player scored a late equaliser on 15 May 2005 that relegated Crystal Palace from the Premier League on the final day of the season?",
       "options": [
@@ -2362,21 +1477,6 @@
       "category": "rivalries-derbies",
       "scope": "club",
       "club": "Liverpool"
-    },
-    {
-      "id": "511d4fc7-b8af-4c4c-b1cd-2ceeea6c415f",
-      "q": "What is Arsenal's record points tally in a single Premier League season since 2001-02?",
-      "options": [
-        "87",
-        "88",
-        "92",
-        "90"
-      ],
-      "answer": 3,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Arsenal"
     },
     {
       "id": "514f1abf-a447-48ff-b277-2d1b83bd9ce7",
@@ -2409,36 +1509,6 @@
       "club": "Manchester City"
     },
     {
-      "id": "51f3e742-ef25-41b7-b9ca-d2499a9614a5",
-      "q": "How many European Cup / Champions League titles have Liverpool won?",
-      "options": [
-        "5",
-        "4",
-        "7",
-        "6"
-      ],
-      "answer": 3,
-      "difficulty": "easy",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Liverpool"
-    },
-    {
-      "id": "521455e6-9578-4df2-8bd9-b62abe00278b",
-      "q": "Manchester United earned how many points in the 2022-23 Premier League season?",
-      "options": [
-        "75",
-        "78",
-        "72",
-        "80"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "modern-era",
-      "scope": "club",
-      "club": "Manchester United"
-    },
-    {
       "id": "524c4b91-0fe4-4353-ba37-7c75d131d769",
       "q": "Erling Haaland was the Premier League's leading scorer in 2023-24 — which club was he playing for?",
       "options": [
@@ -2469,66 +1539,6 @@
       "club": "Crystal Palace"
     },
     {
-      "id": "5347aac9-dd5f-4bcb-b483-0a9ef7902ce6",
-      "q": "Diego Costa had a prolific first season at Chelsea in 2014-15 — how many Premier League goals did he bag?",
-      "options": [
-        "22",
-        "18",
-        "20",
-        "19"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "legends",
-      "scope": "club",
-      "club": "Chelsea"
-    },
-    {
-      "id": "5449aecb-73c8-4da6-8426-bdd644f41b37",
-      "q": "How many points did Manchester City accumulate during the 2021-22 Premier League campaign?",
-      "options": [
-        "91",
-        "93",
-        "95",
-        "89"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "modern-era",
-      "scope": "club",
-      "club": "Manchester City"
-    },
-    {
-      "id": "5499fdde-3818-4265-9e8a-8a15d1086e9a",
-      "q": "How many Premier League goals did Mohamed Salah score for Liverpool in the 2022-23 campaign?",
-      "options": [
-        "19",
-        "17",
-        "21",
-        "23"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "legends",
-      "scope": "club",
-      "club": "Liverpool"
-    },
-    {
-      "id": "556c7838-6c7c-4a12-9f49-1f49298ef215",
-      "q": "Bryan Mbeumo finished fourth in the Premier League scoring charts in 2024-25 — how many goals did the Brentford forward bag?",
-      "options": [
-        "19",
-        "22",
-        "21",
-        "20"
-      ],
-      "answer": 3,
-      "difficulty": "medium",
-      "category": "legends",
-      "scope": "club",
-      "club": "Brentford"
-    },
-    {
       "id": "5661bf3c-2c07-4bba-a61b-7e851aac18c4",
       "q": "What nickname was given to long-serving Arsenal captain Tony Adams?",
       "options": [
@@ -2542,21 +1552,6 @@
       "category": "legends",
       "scope": "club",
       "club": "Arsenal"
-    },
-    {
-      "id": "56dc8b94-eee9-4c39-8687-ad6971a30c10",
-      "q": "How many FA Cup titles has Manchester City won in total?",
-      "options": [
-        "7",
-        "8",
-        "6",
-        "9"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Manchester City"
     },
     {
       "id": "58967eea-6e86-4db2-bb9b-19bc5195318d",
@@ -2634,36 +1629,6 @@
       "club": "Tottenham Hotspur"
     },
     {
-      "id": "5aef991f-de9a-48af-934f-79b2e0665d45",
-      "q": "How many Premier League titles (including First Division) have Liverpool won?",
-      "options": [
-        "18",
-        "20",
-        "22",
-        "19"
-      ],
-      "answer": 1,
-      "difficulty": "easy",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Liverpool"
-    },
-    {
-      "id": "5b00ec3f-e8b9-4d31-aeae-eead94ccabf4",
-      "q": "Christian Benteke was prolific for Aston Villa in 2012-13 — how many Premier League goals did the Belgian striker score?",
-      "options": [
-        "19",
-        "22",
-        "25",
-        "17"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "legends",
-      "scope": "club",
-      "club": "Aston Villa"
-    },
-    {
       "id": "5c008fd7-d509-48c5-9706-6055a7fca06b",
       "q": "What was the score of Chelsea's record win over Arsenal, achieved at Stamford Bridge in the 2013/14 Premier League?",
       "options": [
@@ -2707,21 +1672,6 @@
       "category": "legends",
       "scope": "neutral",
       "club": null
-    },
-    {
-      "id": "5d039a49-2276-413e-bd25-625374d8b188",
-      "q": "How many League Cup (EFL Cup) titles have Liverpool won?",
-      "options": [
-        "8",
-        "11",
-        "9",
-        "10"
-      ],
-      "answer": 3,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Liverpool"
     },
     {
       "id": "5d1663c7-1a45-41b9-8277-32b9e4f560f0",
@@ -2769,21 +1719,6 @@
       "club": "Everton"
     },
     {
-      "id": "5f6698e7-90ee-4bc2-98a9-41af3e091cae",
-      "q": "How many Premier League goals did João Pedro score for Chelsea in 2023-24?",
-      "options": [
-        "17",
-        "13",
-        "15",
-        "11"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "legends",
-      "scope": "club",
-      "club": "Chelsea"
-    },
-    {
       "id": "5f6793b2-976d-4257-89ae-7cea2c7ac99f",
       "q": "Which club beat Liverpool 2-1 in the 2006-07 Champions League final in Athens, gaining revenge for the 2005 final?",
       "options": [
@@ -2814,21 +1749,6 @@
       "club": null
     },
     {
-      "id": "609a1684-9732-443c-9af0-5eed5d6cbcbf",
-      "q": "How many Premier League goals did Jamie Vardy score in 2019-20 to finish as the division's top scorer?",
-      "options": [
-        "21",
-        "23",
-        "25",
-        "22"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "legends",
-      "scope": "neutral",
-      "club": null
-    },
-    {
       "id": "626a1773-d9c7-43bc-bc63-8f9d9fef802d",
       "q": "What is the media nickname for the derby between Brighton & Hove Albion and Crystal Palace, named after the road connecting Sussex and south London?",
       "options": [
@@ -2844,66 +1764,6 @@
       "club": "Brighton"
     },
     {
-      "id": "6298a58e-cf5f-4e6b-87ef-880d43207c09",
-      "q": "How many points did Chelsea accumulate in the 2016-17 Premier League season when they won the title?",
-      "options": [
-        "89",
-        "93",
-        "95",
-        "91"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "modern-era",
-      "scope": "club",
-      "club": "Chelsea"
-    },
-    {
-      "id": "647b0834-4d8b-4f49-a972-d33ab4476bd7",
-      "q": "Between 2001 and 2025, how many times has Chelsea finished in the Premier League top four?",
-      "options": [
-        "16",
-        "17",
-        "19",
-        "18"
-      ],
-      "answer": 3,
-      "difficulty": "medium",
-      "category": "modern-era",
-      "scope": "club",
-      "club": "Chelsea"
-    },
-    {
-      "id": "66332401-dfbd-4ab1-8ee9-aa44d9954e1d",
-      "q": "How many European Cup / Champions League titles has Manchester City won?",
-      "options": [
-        "0",
-        "2",
-        "1",
-        "3"
-      ],
-      "answer": 2,
-      "difficulty": "easy",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Manchester City"
-    },
-    {
-      "id": "66d86c93-14cf-4e52-8c8f-574549905903",
-      "q": "Wayne Rooney was Manchester United's star performer in 2009-10, finishing second in the goal-scoring charts. How many Premier League goals did he score?",
-      "options": [
-        "26",
-        "24",
-        "28",
-        "22"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "legends",
-      "scope": "club",
-      "club": "Manchester United"
-    },
-    {
       "id": "67c83404-8df9-4b3f-b4a9-5c2c4fa22beb",
       "q": "Which club beat Arsenal in the 2005/06 Champions League final?",
       "options": [
@@ -2917,21 +1777,6 @@
       "category": "history-honours",
       "scope": "club",
       "club": "Arsenal"
-    },
-    {
-      "id": "67f562e9-f3eb-42bd-a3f7-f4f4fb993ba9",
-      "q": "What is Manchester United's record for most wins in a Premier League season, set in 2006-07?",
-      "options": [
-        "26",
-        "30",
-        "28",
-        "27"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Manchester United"
     },
     {
       "id": "69901196-8ab8-4a3f-a81b-7407a8b39b5c",
@@ -2994,21 +1839,6 @@
       "club": "Brentford"
     },
     {
-      "id": "6c94a3f0-3c89-4aa4-b542-831431d269ed",
-      "q": "How many points did Arsenal accumulate in the 2016-17 Premier League season?",
-      "options": [
-        "72",
-        "75",
-        "78",
-        "70"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "modern-era",
-      "scope": "club",
-      "club": "Arsenal"
-    },
-    {
       "id": "6e33e1f8-9f95-4763-8075-3b99e6050405",
       "q": "What is Nottingham Forest's home ground called?",
       "options": [
@@ -3039,21 +1869,6 @@
       "club": "Crystal Palace"
     },
     {
-      "id": "6eac037d-2671-4827-af5a-741bc39b440a",
-      "q": "How many European Cup / Champions League titles have Chelsea won?",
-      "options": [
-        "3",
-        "1",
-        "2",
-        "4"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Chelsea"
-    },
-    {
       "id": "6f959dbb-4a31-4be5-a88b-949510e86536",
       "q": "In the 1980-81 season, Aston Villa did the double over Birmingham City and went on to win which competition?",
       "options": [
@@ -3067,21 +1882,6 @@
       "category": "rivalries-derbies",
       "scope": "club",
       "club": "Aston Villa"
-    },
-    {
-      "id": "7224810c-f41c-4f6e-aabf-0276d1bb2121",
-      "q": "By how many points did Manchester City win the 2018/19 Premier League title ahead of Liverpool?",
-      "options": [
-        "1",
-        "5",
-        "2",
-        "3"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "rivalries-derbies",
-      "scope": "club",
-      "club": "Manchester City"
     },
     {
       "id": "7247657c-e949-4e93-bf11-589588c4f0a2",
@@ -3129,21 +1929,6 @@
       "club": "Leeds United"
     },
     {
-      "id": "75875f66-1390-4f8f-914c-ce29560336f8",
-      "q": "In the 2006-07 season, how many Premier League goals did Didier Drogba score to claim the top scorer award?",
-      "options": [
-        "17",
-        "22",
-        "18",
-        "20"
-      ],
-      "answer": 3,
-      "difficulty": "medium",
-      "category": "legends",
-      "scope": "neutral",
-      "club": null
-    },
-    {
       "id": "75d45d80-8c18-472d-aa7a-b7649844a695",
       "q": "Manchester United's 1978 signing of which two Leeds United favourites angered Leeds fans and fuelled the Roses rivalry?",
       "options": [
@@ -3157,36 +1942,6 @@
       "category": "rivalries-derbies",
       "scope": "club",
       "club": "Manchester United"
-    },
-    {
-      "id": "770e57b1-c928-469c-9038-fcc9f4ff183f",
-      "q": "How many Premier League goals did Pierre-Emerick Aubameyang score for Arsenal in 2018-19 to claim top scorer honours?",
-      "options": [
-        "20",
-        "19",
-        "24",
-        "22"
-      ],
-      "answer": 3,
-      "difficulty": "medium",
-      "category": "legends",
-      "scope": "club",
-      "club": "Arsenal"
-    },
-    {
-      "id": "77fbfed6-3b93-4911-bc47-771474685161",
-      "q": "How many Premier League goals did Mohamed Salah score in 2021-22 when he was the division's leading scorer?",
-      "options": [
-        "22",
-        "23",
-        "24",
-        "25"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "legends",
-      "scope": "neutral",
-      "club": null
     },
     {
       "id": "784e8655-2644-43fb-b18b-b21bc4f2f230",
@@ -3217,36 +1972,6 @@
       "category": "rivalries-derbies",
       "scope": "neutral",
       "club": null
-    },
-    {
-      "id": "7a7906c5-c4f4-468a-9747-33789ca0af8f",
-      "q": "How many points did Leeds United accumulate in the 2020-21 Premier League season?",
-      "options": [
-        "59",
-        "65",
-        "61",
-        "62"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "modern-era",
-      "scope": "club",
-      "club": "Leeds United"
-    },
-    {
-      "id": "7acc3877-cb41-4174-b4fd-64761f45279b",
-      "q": "How many wins did Arsenal register during their unbeaten 2003/04 Premier League season?",
-      "options": [
-        "22",
-        "28",
-        "24",
-        "26"
-      ],
-      "answer": 3,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Arsenal"
     },
     {
       "id": "7ae512c0-a6a6-43d7-8a51-d9cc074b1768",
@@ -3292,21 +2017,6 @@
       "category": "rivalries-derbies",
       "scope": "club",
       "club": "Everton"
-    },
-    {
-      "id": "7c250d26-d3ec-42c3-be09-b2e6acc7d2e7",
-      "q": "Newcastle United finished the 2024-25 Premier League season with how many points?",
-      "options": [
-        "66",
-        "68",
-        "64",
-        "70"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "modern-era",
-      "scope": "club",
-      "club": "Newcastle United"
     },
     {
       "id": "7c668942-2bb7-46bc-a213-d8aa7638d551",
@@ -3474,21 +2184,6 @@
       "club": "Brighton"
     },
     {
-      "id": "82be2932-7ffe-45e5-a03d-97dce72fecc4",
-      "q": "How many League Cup (EFL Cup) titles has Aston Villa won?",
-      "options": [
-        "6",
-        "4",
-        "7",
-        "5"
-      ],
-      "answer": 3,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Aston Villa"
-    },
-    {
       "id": "834172db-f5d7-4a33-b1a3-b56260e41d3a",
       "q": "Which Newcastle United player scored a hat-trick in the 'Demolition Derby' 5-1 win over Sunderland on Halloween, 31 October 2010?",
       "options": [
@@ -3504,36 +2199,6 @@
       "club": "Newcastle United"
     },
     {
-      "id": "834bca98-fe36-4502-ac7d-6e4a9349d675",
-      "q": "In their strong 2013-14 campaign, how many goals did Liverpool score in the Premier League?",
-      "options": [
-        "104",
-        "98",
-        "101",
-        "96"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Liverpool"
-    },
-    {
-      "id": "84c7edfd-2450-4c59-8476-c7b624f94660",
-      "q": "Arsenal secured how many points during the 2024-25 Premier League campaign?",
-      "options": [
-        "74",
-        "72",
-        "76",
-        "78"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "modern-era",
-      "scope": "club",
-      "club": "Arsenal"
-    },
-    {
       "id": "84ffc102-c2fb-43f2-9c9b-8656443bfc0f",
       "q": "Which club beat Brentford in the 2020 EFL Championship play-off final at Wembley Stadium?",
       "options": [
@@ -3547,21 +2212,6 @@
       "category": "rivalries-derbies",
       "scope": "club",
       "club": "Brentford"
-    },
-    {
-      "id": "85a4c991-1482-4b93-81c4-7a2b034fcae3",
-      "q": "What is Liverpool's record points tally in a single Premier League season?",
-      "options": [
-        "97",
-        "98",
-        "99",
-        "100"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Liverpool"
     },
     {
       "id": "8675940c-bf26-4174-98d2-99a3c0343816",
@@ -3594,66 +2244,6 @@
       "club": null
     },
     {
-      "id": "86d49960-a47c-45d7-822f-d858dcda3d15",
-      "q": "How many Premier League goals did Alexander Isak score for Newcastle United in 2023-24?",
-      "options": [
-        "19",
-        "21",
-        "23",
-        "20"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "legends",
-      "scope": "club",
-      "club": "Newcastle United"
-    },
-    {
-      "id": "86e4d283-e6e0-4800-a717-8dad07d6b5ff",
-      "q": "Gareth Bale had a brilliant 2012-13 season for Tottenham — how many Premier League goals did he notch that year?",
-      "options": [
-        "18",
-        "21",
-        "24",
-        "26"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "legends",
-      "scope": "club",
-      "club": "Tottenham Hotspur"
-    },
-    {
-      "id": "87fcdbc2-1824-4c43-aaa3-40d74fd8c0ba",
-      "q": "What is Liverpool's record for most Premier League goals scored in a single season?",
-      "options": [
-        "99",
-        "100",
-        "101",
-        "102"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Liverpool"
-    },
-    {
-      "id": "88e30e42-ac21-4bc0-8af4-14b33d447562",
-      "q": "How many Premier League titles (including First Division) have Arsenal won?",
-      "options": [
-        "13",
-        "14",
-        "16",
-        "12"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Arsenal"
-    },
-    {
       "id": "8a36edb7-6e4f-44d8-8c09-6d3d4eb43468",
       "q": "What is Leeds United's most widely recognised nickname?",
       "options": [
@@ -3667,36 +2257,6 @@
       "category": "history-honours",
       "scope": "club",
       "club": "Leeds United"
-    },
-    {
-      "id": "8a47d62c-f17b-485e-a976-5176422f56ff",
-      "q": "How many FA Cup titles have Leeds United won?",
-      "options": [
-        "2",
-        "0",
-        "3",
-        "1"
-      ],
-      "answer": 3,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Leeds United"
-    },
-    {
-      "id": "8ad4fe3e-6c57-4005-8135-aff568029002",
-      "q": "How many League Cup (EFL Cup) titles has Arsenal won?",
-      "options": [
-        "3",
-        "1",
-        "2",
-        "4"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Arsenal"
     },
     {
       "id": "8b01d70b-d028-44d1-b4e6-5c490e0941b3",
@@ -3774,36 +2334,6 @@
       "club": "Arsenal"
     },
     {
-      "id": "8cfc39f5-47d3-4d43-8f75-9b54fce608ff",
-      "q": "What is Tottenham Hotspur's record for most wins in a Premier League season, set in 2016-17?",
-      "options": [
-        "24",
-        "26",
-        "25",
-        "27"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "modern-era",
-      "scope": "club",
-      "club": "Tottenham Hotspur"
-    },
-    {
-      "id": "8d22932a-dde2-45cb-894b-0fa01ee0d666",
-      "q": "How many Premier League goals did Thierry Henry score in 2003-04 when he topped the scoring charts?",
-      "options": [
-        "28",
-        "32",
-        "26",
-        "30"
-      ],
-      "answer": 3,
-      "difficulty": "medium",
-      "category": "legends",
-      "scope": "neutral",
-      "club": null
-    },
-    {
       "id": "8dbaa33c-1e6e-47ba-aca9-4e2947292e3e",
       "q": "Which club was Mohamed Salah playing for when he won the Premier League top scorer award in 2017-18?",
       "options": [
@@ -3817,36 +2347,6 @@
       "category": "legends",
       "scope": "neutral",
       "club": null
-    },
-    {
-      "id": "8de4b9e9-7830-4e03-8c2f-47b85bef16cf",
-      "q": "How many Premier League goals did Harry Kane score for Tottenham in 2022-23?",
-      "options": [
-        "32",
-        "30",
-        "28",
-        "26"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "legends",
-      "scope": "club",
-      "club": "Tottenham Hotspur"
-    },
-    {
-      "id": "8e224301-7f52-41bf-837e-702efd954774",
-      "q": "How many Premier League goals did Luis Suárez score for Liverpool in 2012-13?",
-      "options": [
-        "23",
-        "21",
-        "20",
-        "25"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "legends",
-      "scope": "club",
-      "club": "Liverpool"
     },
     {
       "id": "8f8f6c8a-9078-403c-9d50-e9e71954c42e",
@@ -3877,21 +2377,6 @@
       "category": "legends",
       "scope": "neutral",
       "club": null
-    },
-    {
-      "id": "9046dc51-9481-457c-8b1b-2fafe60a54e9",
-      "q": "How many Premier League titles have Manchester United won since the 2001-02 season?",
-      "options": [
-        "5",
-        "6",
-        "7",
-        "8"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Manchester United"
     },
     {
       "id": "938ff3e2-5a6e-4c9b-951f-c9f73bca1721",
@@ -3954,21 +2439,6 @@
       "club": "Chelsea"
     },
     {
-      "id": "95360e9d-fd08-4273-94fe-b93409fbc0b9",
-      "q": "How many FA Cup titles has Arsenal won, the most of any club in the competition's history?",
-      "options": [
-        "14",
-        "12",
-        "13",
-        "15"
-      ],
-      "answer": 0,
-      "difficulty": "easy",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Arsenal"
-    },
-    {
       "id": "9564148f-1e3f-4e41-88a3-a7f24e6e8fd8",
       "q": "Which Manchester City player scored after just 12 seconds in the 2023 FA Cup final against Manchester United, the fastest goal in FA Cup final history?",
       "options": [
@@ -3997,21 +2467,6 @@
       "category": "history-honours",
       "scope": "club",
       "club": "Fulham"
-    },
-    {
-      "id": "962d0a79-efbf-4858-884d-4a0c0bb70230",
-      "q": "How many Premier League goals did Sergio Agüero score in 2014-15 to top the scoring charts?",
-      "options": [
-        "24",
-        "26",
-        "28",
-        "23"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "legends",
-      "scope": "neutral",
-      "club": null
     },
     {
       "id": "9630371b-94f6-47e3-b6e9-94220aaab72c",
@@ -4134,21 +2589,6 @@
       "club": "Tottenham Hotspur"
     },
     {
-      "id": "98388eb4-d956-4698-809c-ece3b1f8c437",
-      "q": "How many Premier League titles has Chelsea won since the 2001-02 season?",
-      "options": [
-        "7",
-        "4",
-        "6",
-        "5"
-      ],
-      "answer": 3,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Chelsea"
-    },
-    {
       "id": "996fea6a-561f-46ee-b44d-9852f631c8a7",
       "q": "In 2014, Harry Kane netted his inaugural Premier League goal under which manager's tenure? Kane would go on to score 213 goals in the competition.",
       "options": [
@@ -4209,21 +2649,6 @@
       "club": "Liverpool"
     },
     {
-      "id": "9c31c295-7b49-4907-b8d5-be3378956d3d",
-      "q": "How many Premier League goals did Harry Kane score for Tottenham in 2016-17 to win the top scorer award?",
-      "options": [
-        "29",
-        "27",
-        "31",
-        "32"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "legends",
-      "scope": "club",
-      "club": "Tottenham Hotspur"
-    },
-    {
       "id": "9c622f81-651e-4d95-8b70-61ca373090e2",
       "q": "Which Spanish international player became the first to achieve 300 Premier League appearances while playing for Manchester City in 2020?",
       "options": [
@@ -4239,21 +2664,6 @@
       "club": null
     },
     {
-      "id": "9dee113d-6c46-4af5-8bc9-4945b80f3588",
-      "q": "How many Premier League titles have Manchester City won since 2001-02?",
-      "options": [
-        "8",
-        "7",
-        "6",
-        "9"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Manchester City"
-    },
-    {
       "id": "9df81dbd-89e3-4fb3-b147-dccbfde1b3ef",
       "q": "The September 2003 Premier League brawl between Manchester United and Arsenal, sparked by anger over Ruud van Nistelrooy and Patrick Vieira's red card, is known by what name?",
       "options": [
@@ -4267,21 +2677,6 @@
       "category": "rivalries-derbies",
       "scope": "club",
       "club": "Manchester United"
-    },
-    {
-      "id": "a01f0b0e-3605-48ae-80b8-1b64041e5402",
-      "q": "In 2016-17, how many goals did Liverpool score in the Premier League?",
-      "options": [
-        "80",
-        "81",
-        "75",
-        "78"
-      ],
-      "answer": 3,
-      "difficulty": "medium",
-      "category": "modern-era",
-      "scope": "club",
-      "club": "Liverpool"
     },
     {
       "id": "a0fd4c33-4767-488a-a400-6f68017d22e3",
@@ -4314,21 +2709,6 @@
       "club": null
     },
     {
-      "id": "a3336bbf-dc09-4fe7-a433-78fa99000074",
-      "q": "How many Premier League goals did Harry Kane score in 2020-21 when he topped the scoring charts?",
-      "options": [
-        "21",
-        "25",
-        "23",
-        "24"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "legends",
-      "scope": "neutral",
-      "club": null
-    },
-    {
       "id": "a3f105d2-8734-43de-8ccf-e789b8bd1d11",
       "q": "What is the name of Brighton's home ground?",
       "options": [
@@ -4342,51 +2722,6 @@
       "category": "history-honours",
       "scope": "club",
       "club": "Brighton"
-    },
-    {
-      "id": "a412e510-0493-4f2a-8cf2-b1908da309dc",
-      "q": "How many points did Manchester City accumulate in the 2023-24 Premier League season?",
-      "options": [
-        "91",
-        "93",
-        "89",
-        "88"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "modern-era",
-      "scope": "club",
-      "club": "Manchester City"
-    },
-    {
-      "id": "a4c37758-44fb-4033-896c-af037024445e",
-      "q": "How many goals did Newcastle United score in the 2023-24 Premier League season?",
-      "options": [
-        "85",
-        "92",
-        "78",
-        "88"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "modern-era",
-      "scope": "club",
-      "club": "Newcastle United"
-    },
-    {
-      "id": "a560736c-4b3d-4b9c-a34d-a9cc620343e8",
-      "q": "How many League Cup (EFL Cup) titles have Newcastle United won?",
-      "options": [
-        "3",
-        "0",
-        "2",
-        "1"
-      ],
-      "answer": 3,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Newcastle United"
     },
     {
       "id": "a57bae1c-6f2b-4771-b95f-866836f7bb72",
@@ -4449,21 +2784,6 @@
       "club": "Leeds United"
     },
     {
-      "id": "a80a7156-0892-41e9-a0c3-9b0139f21815",
-      "q": "How many FA Cup titles have Everton won in their history?",
-      "options": [
-        "5",
-        "4",
-        "7",
-        "6"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Everton"
-    },
-    {
       "id": "a83d5ad4-6049-4cb1-867f-44d7231f99b7",
       "q": "In FA Cup final encounters, which club has defeated Crystal Palace on two distinct occasions?",
       "options": [
@@ -4477,21 +2797,6 @@
       "category": "history-honours",
       "scope": "club",
       "club": "Crystal Palace"
-    },
-    {
-      "id": "aab749f4-0063-4daa-a43f-0c06d9200d0b",
-      "q": "How many FA Cup titles has Aston Villa won?",
-      "options": [
-        "6",
-        "5",
-        "7",
-        "8"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Aston Villa"
     },
     {
       "id": "ac02853c-d944-4b6d-8ea8-7e79ff84bbc0",
@@ -4524,21 +2829,6 @@
       "club": "Crystal Palace"
     },
     {
-      "id": "ae80b4e3-cae3-4dc8-b7cb-0625f0b4e92c",
-      "q": "How many FA Cup titles have Newcastle United won?",
-      "options": [
-        "1",
-        "2",
-        "0",
-        "3"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Newcastle United"
-    },
-    {
       "id": "aec40c0d-5469-4566-b00f-1d19fd28247d",
       "q": "By what nickname are Liverpool commonly known?",
       "options": [
@@ -4549,21 +2839,6 @@
       ],
       "answer": 3,
       "difficulty": "easy",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Liverpool"
-    },
-    {
-      "id": "af4e35eb-3f9f-4896-b922-f089d802f58b",
-      "q": "How many Premier League titles have Liverpool won since 2001-02?",
-      "options": [
-        "3",
-        "4",
-        "1",
-        "2"
-      ],
-      "answer": 3,
-      "difficulty": "medium",
       "category": "history-honours",
       "scope": "club",
       "club": "Liverpool"
@@ -4614,21 +2889,6 @@
       "club": "Liverpool"
     },
     {
-      "id": "b3887042-9840-4f9c-87f8-bb593fc1d202",
-      "q": "How many Premier League titles (including First Division) have Manchester United won?",
-      "options": [
-        "18",
-        "22",
-        "19",
-        "20"
-      ],
-      "answer": 3,
-      "difficulty": "easy",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Manchester United"
-    },
-    {
       "id": "b3d4bcf6-103a-4a47-9946-ecbd40f450b5",
       "q": "What name is given to matches between Fulham and Chelsea, their biggest local rivals?",
       "options": [
@@ -4642,21 +2902,6 @@
       "category": "rivalries-derbies",
       "scope": "club",
       "club": "Fulham"
-    },
-    {
-      "id": "b3f053c0-bf4a-4d35-95b0-3b410c6e943e",
-      "q": "How many goals did Chelsea score in their record attacking Premier League season of 2009-10?",
-      "options": [
-        "100",
-        "105",
-        "102",
-        "103"
-      ],
-      "answer": 3,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Chelsea"
     },
     {
       "id": "b4250aa3-a51f-4c19-ae27-c1296edd5478",
@@ -4689,21 +2934,6 @@
       "club": "Fulham"
     },
     {
-      "id": "b56a67a3-3ab0-422c-8ed9-8db846aa5b97",
-      "q": "How many goals did Arsenal score in the 2001-02 Premier League season when they won the title?",
-      "options": [
-        "79",
-        "82",
-        "75",
-        "88"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Arsenal"
-    },
-    {
       "id": "b5a7ff41-2527-4fa3-b44c-c726f8c80f24",
       "q": "Which position did Ipswich Town occupy at the end of the 2024-25 Premier League season?",
       "options": [
@@ -4719,21 +2949,6 @@
       "club": "Ipswich Town"
     },
     {
-      "id": "b7258de9-ebf7-45bc-99e5-e000a3f5e5a2",
-      "q": "What is Tottenham's record for most Premier League goals scored in a single season?",
-      "options": [
-        "88",
-        "84",
-        "86",
-        "82"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Tottenham Hotspur"
-    },
-    {
       "id": "b7e15a53-e9b1-4f45-80ca-42a4344acaff",
       "q": "What is Chelsea's most famous nickname?",
       "options": [
@@ -4747,21 +2962,6 @@
       "category": "history-honours",
       "scope": "club",
       "club": "Chelsea"
-    },
-    {
-      "id": "b91be819-b61f-48bf-86cd-7398855370ca",
-      "q": "Mohamed Salah finished runner-up in the 2020-21 Premier League scoring race with how many goals for Liverpool?",
-      "options": [
-        "20",
-        "22",
-        "23",
-        "21"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "legends",
-      "scope": "club",
-      "club": "Liverpool"
     },
     {
       "id": "b920f586-2ab6-4368-a659-233e11974679",
@@ -4839,21 +3039,6 @@
       "club": null
     },
     {
-      "id": "ba4698b1-892c-41fa-b81b-a455cf70f581",
-      "q": "How many FA Cup titles have Liverpool won in total?",
-      "options": [
-        "7",
-        "9",
-        "8",
-        "6"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Liverpool"
-    },
-    {
       "id": "ba6c91e3-b86e-4fba-9317-60b345bf0d6f",
       "q": "The arrival of which manager at Arsenal in October 1996 intensified the club's rivalry with Sir Alex Ferguson's Manchester United?",
       "options": [
@@ -4884,21 +3069,6 @@
       "club": null
     },
     {
-      "id": "bb20bf63-4d69-4094-be5e-e8f8f4e402b0",
-      "q": "How many goals did Liverpool score in the 2019-20 Premier League season?",
-      "options": [
-        "82",
-        "88",
-        "85",
-        "79"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "modern-era",
-      "scope": "club",
-      "club": "Liverpool"
-    },
-    {
       "id": "bb5bb822-8704-49c6-b654-9499c36d9a09",
       "q": "What is Liverpool's most widely recognised nickname?",
       "options": [
@@ -4912,36 +3082,6 @@
       "category": "history-honours",
       "scope": "club",
       "club": "Liverpool"
-    },
-    {
-      "id": "bc41728b-8c52-4c82-9142-bd54cd301586",
-      "q": "How many Premier League goals did Cristiano Ronaldo score for Manchester United in 2007-08, when he claimed the top scorer award?",
-      "options": [
-        "29",
-        "31",
-        "33",
-        "28"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "legends",
-      "scope": "club",
-      "club": "Manchester United"
-    },
-    {
-      "id": "bc507506-d3eb-4ba4-957a-ea3d73d6e996",
-      "q": "How many times did Harry Kane claim the Premier League top scorer award at Tottenham?",
-      "options": [
-        "3",
-        "4",
-        "2",
-        "5"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "legends",
-      "scope": "club",
-      "club": "Tottenham Hotspur"
     },
     {
       "id": "bc8ac72f-266d-4497-8d75-263a40ae23e0",
@@ -5004,21 +3144,6 @@
       "club": "Manchester United"
     },
     {
-      "id": "be9c7454-fcd3-4cd2-8e6d-8937ce4c83c8",
-      "q": "During the ten-year period spanning 2002 through 2012, how many distinct clubs claimed the Premier League championship?",
-      "options": [
-        "4",
-        "5",
-        "3",
-        "6"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "PL History",
-      "scope": "neutral",
-      "club": null
-    },
-    {
       "id": "bfe15546-b3a2-4aa0-8836-4a606ce6a847",
       "q": "Who was Arsenal's top scorer in the 2018/19 Premier League season?",
       "options": [
@@ -5049,36 +3174,6 @@
       "club": "Manchester United"
     },
     {
-      "id": "c14f05db-250e-4378-96a0-a33b35c8b395",
-      "q": "How many Premier League goals did Robin van Persie score in 2012-13 to claim top scorer honours?",
-      "options": [
-        "28",
-        "24",
-        "26",
-        "25"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "legends",
-      "scope": "neutral",
-      "club": null
-    },
-    {
-      "id": "c1737f61-042d-46ed-ae51-6db044f3b9be",
-      "q": "How many Premier League goals did Luis Suárez score in 2013-14 to claim the top scorer award?",
-      "options": [
-        "28",
-        "33",
-        "29",
-        "31"
-      ],
-      "answer": 3,
-      "difficulty": "medium",
-      "category": "legends",
-      "scope": "neutral",
-      "club": null
-    },
-    {
       "id": "c17d76e6-87d5-4db5-aaed-d72fc3cc0114",
       "q": "What double did Arsenal complete after winning the league at Tottenham's White Hart Lane at the end of the 1970/71 season?",
       "options": [
@@ -5092,36 +3187,6 @@
       "category": "rivalries-derbies",
       "scope": "club",
       "club": "Arsenal"
-    },
-    {
-      "id": "c1a1d664-1684-440e-ab59-b7402f968673",
-      "q": "Manchester City scored how many goals in the 2011-12 Premier League season?",
-      "options": [
-        "89",
-        "91",
-        "95",
-        "93"
-      ],
-      "answer": 3,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Manchester City"
-    },
-    {
-      "id": "c1f467f9-1eac-4c85-bf7c-b0c753321f24",
-      "q": "How many points did Chelsea accumulate during their dominant 2004-05 Premier League season?",
-      "options": [
-        "92",
-        "98",
-        "95",
-        "89"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Chelsea"
     },
     {
       "id": "c25a1b3a-bc5d-4b33-8781-2231233c381a",
@@ -5154,36 +3219,6 @@
       "club": "Arsenal"
     },
     {
-      "id": "c4cf6b7b-a013-4cb1-843c-21162230413e",
-      "q": "How many Premier League goals did Mohamed Salah score in his first season with Liverpool in 2017-18?",
-      "options": [
-        "28",
-        "30",
-        "32",
-        "35"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "legends",
-      "scope": "club",
-      "club": "Liverpool"
-    },
-    {
-      "id": "c511a49c-2396-4229-9be3-50011b3dd3b5",
-      "q": "How many Premier League titles (including First Division) has Manchester City won?",
-      "options": [
-        "12",
-        "9",
-        "10",
-        "11"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Manchester City"
-    },
-    {
       "id": "c51b571b-b826-491e-a0bf-6ee546c860d7",
       "q": "Which club is Newcastle United's fiercest rival in the fixture known as the Tyne-Wear derby?",
       "options": [
@@ -5212,21 +3247,6 @@
       "category": "PL History",
       "scope": "neutral",
       "club": null
-    },
-    {
-      "id": "c59509c5-cd22-4c0e-b07e-16e98ae1c621",
-      "q": "How many times have Aston Villa been relegated from the Premier League since 2001-02?",
-      "options": [
-        "0",
-        "1",
-        "2",
-        "3"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Aston Villa"
     },
     {
       "id": "c5d54ee4-bb52-4f80-84c7-7de28eb4785d",
@@ -5259,19 +3279,19 @@
       "club": "Sunderland"
     },
     {
-      "id": "c6fa2763-9e3c-4a15-9348-aaa3352b690b",
-      "q": "How many points did Chelsea accumulate in the 2014-15 Premier League season?",
+      "id": "c746e6a0-b66d-47c9-9881-538dbca679b1",
+      "q": "What nickname is given to Arsenal's 2003/04 Premier League squad, who went the entire season unbeaten?",
       "options": [
-        "75",
-        "87",
-        "79",
-        "90"
+        "The Untouchables",
+        "The Invincibles",
+        "The Unbeatables",
+        "The Immortals"
       ],
       "answer": 1,
       "difficulty": "medium",
       "category": "history-honours",
       "scope": "club",
-      "club": "Chelsea"
+      "club": "Arsenal"
     },
     {
       "id": "c8774955-3c20-4802-aec4-66705f014e92",
@@ -5287,36 +3307,6 @@
       "category": "legends",
       "scope": "neutral",
       "club": null
-    },
-    {
-      "id": "c9473812-54e3-415c-9d26-90466545a5e2",
-      "q": "In what year was Manchester City Football Club founded?",
-      "options": [
-        "1880",
-        "1883",
-        "1875",
-        "1887"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Manchester City"
-    },
-    {
-      "id": "c9a93152-d79b-4c52-bbfc-1d4a80e06c16",
-      "q": "How many Premier League titles (including the old First Division) have Leeds United won?",
-      "options": [
-        "2",
-        "3",
-        "4",
-        "5"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Leeds United"
     },
     {
       "id": "ca51e732-b91d-4fe4-b7c7-0d9f11b88c80",
@@ -5349,21 +3339,6 @@
       "club": null
     },
     {
-      "id": "ce077300-f5ac-44a8-8b4d-bbfdefe423ec",
-      "q": "How many times did Thierry Henry finish as the Premier League's top scorer?",
-      "options": [
-        "5",
-        "4",
-        "6",
-        "3"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "legends",
-      "scope": "neutral",
-      "club": null
-    },
-    {
       "id": "ce10993e-0ae3-423f-bb7c-a5d4852acd11",
       "q": "Crystal Palace's rivalry with Brighton reached its height in the first round of the 1976-77 FA Cup, a tie Palace won after how many replays?",
       "options": [
@@ -5392,21 +3367,6 @@
       "category": "rivalries-derbies",
       "scope": "club",
       "club": "Crystal Palace"
-    },
-    {
-      "id": "ce307428-a05b-4c3e-80f1-c9fc6a66eb5b",
-      "q": "How many Premier League goals did Ruud van Nistelrooy score for Manchester United in 2002-03, finishing as the league's top scorer?",
-      "options": [
-        "23",
-        "27",
-        "25",
-        "22"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "legends",
-      "scope": "club",
-      "club": "Manchester United"
     },
     {
       "id": "cf09cc8c-269b-4fd8-b028-7727737b0b8b",
@@ -5484,21 +3444,6 @@
       "club": "Arsenal"
     },
     {
-      "id": "d16bbbf4-4c58-4b75-85b7-c1a6a64c9081",
-      "q": "How many Premier League goals did Harry Kane score for Tottenham in 2017-18?",
-      "options": [
-        "32",
-        "28",
-        "26",
-        "30"
-      ],
-      "answer": 3,
-      "difficulty": "medium",
-      "category": "legends",
-      "scope": "club",
-      "club": "Tottenham Hotspur"
-    },
-    {
       "id": "d17bfdbc-feea-4033-82f2-eb2269b34fd8",
       "q": "Which club were Arsenal playing when they clinched the 2003/04 Premier League 'Invincibles' title with a 2-2 draw at White Hart Lane?",
       "options": [
@@ -5529,21 +3474,6 @@
       "club": "Fulham"
     },
     {
-      "id": "d2d07ae9-8b04-499f-a81d-2c9a2f09a3b5",
-      "q": "How many Premier League goals did Robin van Persie score for Arsenal in 2010-11?",
-      "options": [
-        "20",
-        "18",
-        "16",
-        "17"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "legends",
-      "scope": "club",
-      "club": "Arsenal"
-    },
-    {
       "id": "d35216b3-75a3-4b20-a09d-93bc25291e74",
       "q": "Which club did Tottenham Hotspur beat 3-1 in the 1990/91 FA Cup semi-final at Wembley?",
       "options": [
@@ -5572,36 +3502,6 @@
       "category": "rivalries-derbies",
       "scope": "club",
       "club": "Liverpool"
-    },
-    {
-      "id": "d3af61b0-2274-4ef2-938b-fe418595499d",
-      "q": "What's the record for most goals scored in a single Premier League season?",
-      "options": [
-        "34",
-        "36",
-        "32",
-        "38"
-      ],
-      "answer": 1,
-      "difficulty": "easy",
-      "category": "history-honours",
-      "scope": "neutral",
-      "club": null
-    },
-    {
-      "id": "d3af65da-fc74-4c11-bcef-9be4aaaf89ff",
-      "q": "How many FA Cup titles have Sunderland won in their history?",
-      "options": [
-        "1",
-        "0",
-        "2",
-        "3"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Sunderland"
     },
     {
       "id": "d3d707a4-2638-49a2-8de8-528c109db8ac",
@@ -5647,21 +3547,6 @@
       "category": "rivalries-derbies",
       "scope": "club",
       "club": "Chelsea"
-    },
-    {
-      "id": "d443371c-5e26-438b-a1e3-47071c4ceecd",
-      "q": "How many Premier League goals did Thierry Henry score for Arsenal in 2004-05 to claim the top scorer award?",
-      "options": [
-        "28",
-        "25",
-        "23",
-        "26"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "legends",
-      "scope": "club",
-      "club": "Arsenal"
     },
     {
       "id": "d4449c97-1d53-4c6e-816e-6fb04302310d",
@@ -5799,36 +3684,6 @@
       "club": "Manchester United"
     },
     {
-      "id": "da51f6e2-34fe-43fc-9154-c4d4e5aca7f8",
-      "q": "How many Premier League goals did Manchester City score in their record-breaking 2017-18 season?",
-      "options": [
-        "98",
-        "112",
-        "106",
-        "95"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "modern-era",
-      "scope": "club",
-      "club": "Manchester City"
-    },
-    {
-      "id": "dac6accf-dfa7-42ad-b4f8-d64470c8e459",
-      "q": "What is Manchester City's record for fewest Premier League goals conceded in a single season?",
-      "options": [
-        "23",
-        "19",
-        "28",
-        "26"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Manchester City"
-    },
-    {
       "id": "db42b0ad-5927-4b65-95e6-6a6bf41ae510",
       "q": "Which Tottenham forward netted five goals during the club's 9-1 demolition of Wigan Athletic in 2009?",
       "options": [
@@ -5855,21 +3710,6 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "scope": "neutral",
-      "club": null
-    },
-    {
-      "id": "dd879a6c-f71b-4036-9601-7524b5f92cb5",
-      "q": "What is the seating capacity of Anfield?",
-      "options": [
-        "58,500",
-        "61,276",
-        "63,200",
-        "60,000"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "history-honours",
       "scope": "neutral",
       "club": null
     },
@@ -5902,36 +3742,6 @@
       "category": "rivalries-derbies",
       "scope": "club",
       "club": "Arsenal"
-    },
-    {
-      "id": "dfd301a9-1455-4d81-a8d6-4d4959a76978",
-      "q": "How many points did Manchester City accumulate in the 2018-19 Premier League season?",
-      "options": [
-        "100",
-        "95",
-        "98",
-        "92"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "modern-era",
-      "scope": "club",
-      "club": "Manchester City"
-    },
-    {
-      "id": "e18aa183-be89-4326-91b1-68c440bc0b9a",
-      "q": "What was the lowest points total ever recorded by a Premier League side in a single season, achieved by Derby County in 2007/08?",
-      "options": [
-        "11",
-        "9",
-        "15",
-        "8"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "PL History",
-      "scope": "neutral",
-      "club": null
     },
     {
       "id": "e231f810-623a-4a1f-942d-5c8bd77255f4",
@@ -5975,21 +3785,6 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "legends",
-      "scope": "club",
-      "club": "Arsenal"
-    },
-    {
-      "id": "e459e911-4ff8-4f54-b963-c867ef3aa0d3",
-      "q": "How many points did Arsenal accumulate in the 2021-22 Premier League season?",
-      "options": [
-        "67",
-        "69",
-        "73",
-        "71"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "modern-era",
       "scope": "club",
       "club": "Arsenal"
     },
@@ -6052,21 +3847,6 @@
       "category": "legends",
       "scope": "neutral",
       "club": null
-    },
-    {
-      "id": "e6eb751c-8909-422a-bf13-b061ca0d16ad",
-      "q": "How many Premier League goals did Erling Haaland score for Manchester City in 2024-25?",
-      "options": [
-        "20",
-        "23",
-        "22",
-        "24"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "legends",
-      "scope": "club",
-      "club": "Manchester City"
     },
     {
       "id": "e7a7eed1-81a0-43e5-9fec-9be7e5be229d",
@@ -6159,36 +3939,6 @@
       "club": "Chelsea"
     },
     {
-      "id": "ed7b792f-6584-492c-b423-a6d1754497ca",
-      "q": "How many FA Cup titles have Nottingham Forest won?",
-      "options": [
-        "2",
-        "1",
-        "0",
-        "3"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Nottingham Forest"
-    },
-    {
-      "id": "ed8c1112-0169-4c9e-8bb6-7bfb793c03a5",
-      "q": "Sergio Agüero had a fine 2015-16 season for Manchester City — how many Premier League goals did he score?",
-      "options": [
-        "26",
-        "22",
-        "25",
-        "24"
-      ],
-      "answer": 3,
-      "difficulty": "medium",
-      "category": "legends",
-      "scope": "club",
-      "club": "Manchester City"
-    },
-    {
       "id": "edf70a09-4704-4ce6-a992-8a46caf6bb33",
       "q": "In which Premier League season did Arsenal finish top with 90 points?",
       "options": [
@@ -6204,36 +3954,6 @@
       "club": "Arsenal"
     },
     {
-      "id": "ee93f42a-7564-4c5a-9200-08bf35c37bf9",
-      "q": "How many points did Arsenal accumulate in the 2023-24 Premier League season?",
-      "options": [
-        "85",
-        "87",
-        "89",
-        "91"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "modern-era",
-      "scope": "club",
-      "club": "Arsenal"
-    },
-    {
-      "id": "ef07dc20-d536-423d-ab01-f42d97911c5f",
-      "q": "How many Premier League goals did Sergio Agüero score for Manchester City in 2018-19?",
-      "options": [
-        "18",
-        "19",
-        "21",
-        "23"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "legends",
-      "scope": "club",
-      "club": "Manchester City"
-    },
-    {
       "id": "ef3ba75b-af12-4b4a-8091-91c316e1d095",
       "q": "Which Liverpool player has found the net in a Champions League final, an FA Cup final, a League Cup final, and a UEFA Cup final while playing for the club?",
       "options": [
@@ -6247,36 +3967,6 @@
       "category": "history-honours",
       "scope": "club",
       "club": "Liverpool"
-    },
-    {
-      "id": "ef7ccf8c-b6c1-45e4-81fc-04de35986c35",
-      "q": "How many UEFA Europa League titles has Aston Villa won?",
-      "options": [
-        "0",
-        "1",
-        "3",
-        "2"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Aston Villa"
-    },
-    {
-      "id": "ef99e76f-2fa8-441d-b7fb-60ea442ef9f9",
-      "q": "Arsenal scored how many goals in the 2018-19 Premier League season?",
-      "options": [
-        "80",
-        "76",
-        "69",
-        "73"
-      ],
-      "answer": 3,
-      "difficulty": "medium",
-      "category": "modern-era",
-      "scope": "club",
-      "club": "Arsenal"
     },
     {
       "id": "eff89a1f-2a67-400e-8268-90915bb65c4f",
@@ -6307,81 +3997,6 @@
       "category": "legends",
       "scope": "neutral",
       "club": null
-    },
-    {
-      "id": "f0af2923-2280-4458-aba4-2fe34f914417",
-      "q": "How many League Cup (EFL Cup) titles have Tottenham Hotspur won?",
-      "options": [
-        "3",
-        "4",
-        "5",
-        "6"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Tottenham Hotspur"
-    },
-    {
-      "id": "f16b3e63-9f4b-41f5-b938-33e2d3688442",
-      "q": "How many times have Leeds United been relegated from the Premier League since 2001-02?",
-      "options": [
-        "3",
-        "2",
-        "1",
-        "4"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Leeds United"
-    },
-    {
-      "id": "f1c9c77e-61cb-4dd2-951b-4362d0f60b9e",
-      "q": "How many goals did Manchester City score in the 2023-24 Premier League season?",
-      "options": [
-        "98",
-        "94",
-        "100",
-        "96"
-      ],
-      "answer": 3,
-      "difficulty": "medium",
-      "category": "modern-era",
-      "scope": "club",
-      "club": "Manchester City"
-    },
-    {
-      "id": "f4248a5f-6639-435b-8ffb-75ed60746ca4",
-      "q": "How many times have Tottenham Hotspur finished in the Premier League top 4 since 2001-02?",
-      "options": [
-        "5",
-        "6",
-        "8",
-        "7"
-      ],
-      "answer": 3,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Tottenham Hotspur"
-    },
-    {
-      "id": "f43abdd5-1437-434f-9688-77f939ea1498",
-      "q": "How many League Cup (EFL Cup) titles have Leeds United won?",
-      "options": [
-        "0",
-        "3",
-        "2",
-        "1"
-      ],
-      "answer": 3,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Leeds United"
     },
     {
       "id": "f4abd28c-335b-436e-9221-a66c9db760ae",
@@ -6429,21 +4044,6 @@
       "club": null
     },
     {
-      "id": "f6f281ce-7504-49c8-98d0-fd9dec96d2de",
-      "q": "How many UEFA Europa League titles has Manchester United won?",
-      "options": [
-        "2",
-        "0",
-        "1",
-        "3"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Manchester United"
-    },
-    {
       "id": "f86b89cd-d32e-46df-a955-0cc7015c9f8e",
       "q": "Who was both Arsenal's top scorer and the Premier League's top scorer in the 2011/12 season?",
       "options": [
@@ -6457,21 +4057,6 @@
       "category": "history-honours",
       "scope": "club",
       "club": "Arsenal"
-    },
-    {
-      "id": "f8988fc5-3b12-4171-a2ef-8170e496c943",
-      "q": "Newcastle United scored how many goals in the 2022-23 Premier League season?",
-      "options": [
-        "65",
-        "68",
-        "71",
-        "72"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "modern-era",
-      "scope": "club",
-      "club": "Newcastle United"
     },
     {
       "id": "f8a31ae0-ff0d-49e0-9732-9164a0a08de3",
@@ -6489,21 +4074,6 @@
       "club": "Manchester United"
     },
     {
-      "id": "f8af7379-67fb-4038-a212-e043f5e9c6d9",
-      "q": "How many FA Cup titles has Chelsea won in their history?",
-      "options": [
-        "6",
-        "8",
-        "9",
-        "7"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Chelsea"
-    },
-    {
       "id": "f8d5ff16-444f-4d73-94ab-5c7cbc86e822",
       "q": "In the 2019 Championship play-off semi-final against West Bromwich Albion, how did Aston Villa progress after a 2-2 aggregate draw?",
       "options": [
@@ -6519,36 +4089,6 @@
       "club": "Aston Villa"
     },
     {
-      "id": "f8d96d07-4329-4e14-aaf9-8fea645bedc9",
-      "q": "What is the seating capacity of Tottenham Hotspur's stadium?",
-      "options": [
-        "60,100",
-        "62,850",
-        "61,500",
-        "63,500"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Tottenham Hotspur"
-    },
-    {
-      "id": "f9b1afdc-540e-4567-a5a9-5ddfc08c43e9",
-      "q": "How many goals did Manchester City score in the 2022-23 Premier League season?",
-      "options": [
-        "92",
-        "96",
-        "90",
-        "94"
-      ],
-      "answer": 3,
-      "difficulty": "medium",
-      "category": "modern-era",
-      "scope": "club",
-      "club": "Manchester City"
-    },
-    {
       "id": "f9db6905-3944-407a-bac6-403b565ca806",
       "q": "In which season did Arsenal last finish 1st in the Premier League with 87 points?",
       "options": [
@@ -6562,21 +4102,6 @@
       "category": "history-honours",
       "scope": "club",
       "club": "Arsenal"
-    },
-    {
-      "id": "fac853f3-12ad-4cf4-8241-c1874c11840e",
-      "q": "Ivan Toney had a brilliant 2022-23 season for Brentford — how many Premier League goals did he bag?",
-      "options": [
-        "18",
-        "22",
-        "20",
-        "24"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "legends",
-      "scope": "club",
-      "club": "Brentford"
     },
     {
       "id": "fc0093b5-6284-4c7a-a259-55cd05089eaf",
@@ -6609,36 +4134,6 @@
       "club": "Manchester United"
     },
     {
-      "id": "fc50e52c-7c86-4d2f-8d0c-7b90fffd72d8",
-      "q": "How many points did Liverpool accumulate in the 2023-24 Premier League season?",
-      "options": [
-        "82",
-        "80",
-        "85",
-        "79"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "modern-era",
-      "scope": "club",
-      "club": "Liverpool"
-    },
-    {
-      "id": "fc68a81d-8fb8-4ecd-9b6a-9953afe261fa",
-      "q": "How many points did Liverpool rack up in the 2021-22 Premier League season?",
-      "options": [
-        "94",
-        "88",
-        "90",
-        "92"
-      ],
-      "answer": 3,
-      "difficulty": "medium",
-      "category": "modern-era",
-      "scope": "club",
-      "club": "Liverpool"
-    },
-    {
       "id": "fd12d4f7-aa3c-499b-b0e1-ca177a56abf7",
       "q": "In which season did Erling Haaland set the Premier League single-season scoring record?",
       "options": [
@@ -6652,21 +4147,6 @@
       "category": "history-honours",
       "scope": "neutral",
       "club": null
-    },
-    {
-      "id": "fd7b9cc5-22e7-4044-b421-bcf22f75756d",
-      "q": "What is Liverpool's record for most wins in a single Premier League season?",
-      "options": [
-        "30",
-        "31",
-        "32",
-        "29"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Liverpool"
     },
     {
       "id": "fd90c076-e4a5-44b7-a914-d301c61c5c10",
@@ -6699,36 +4179,6 @@
       "club": "Newcastle United"
     },
     {
-      "id": "fdb2c6aa-ef3e-41ac-b241-90f466d2c2fb",
-      "q": "How many Premier League titles (including First Division) have Tottenham Hotspur won?",
-      "options": [
-        "2",
-        "3",
-        "1",
-        "4"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Tottenham Hotspur"
-    },
-    {
-      "id": "fe2efa0a-a278-4870-9d76-644d4a267215",
-      "q": "How many Premier League goals did Raheem Sterling score for Manchester City in the 2019-20 season?",
-      "options": [
-        "20",
-        "22",
-        "17",
-        "18"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "legends",
-      "scope": "club",
-      "club": "Manchester City"
-    },
-    {
       "id": "ff2613dd-4c17-4dac-854f-82b71a4ad965",
       "q": "Which team was Thierry Henry playing for when he finished as the Premier League's top scorer in 2004-05?",
       "options": [
@@ -6757,36 +4207,6 @@
       "category": "PL Records",
       "scope": "neutral",
       "club": null
-    },
-    {
-      "id": "fff55cf4-bb4d-4b26-91b2-7966bb222f35",
-      "q": "How many Premier League goals did Dimitar Berbatov score in 2010-11 to claim the top scorer award?",
-      "options": [
-        "22",
-        "20",
-        "18",
-        "19"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "legends",
-      "scope": "neutral",
-      "club": null
-    },
-    {
-      "id": "fff59955-87f8-464b-88d0-0914c49c6e98",
-      "q": "Before their historic 1970 FA Cup final meeting with Chelsea, Leeds United had been beaten finalists in which year?",
-      "options": [
-        "1970",
-        "1963",
-        "1967",
-        "1965"
-      ],
-      "answer": 3,
-      "difficulty": "medium",
-      "category": "rivalries-derbies",
-      "scope": "club",
-      "club": "Leeds United"
     }
   ]
 }

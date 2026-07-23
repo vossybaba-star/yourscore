@@ -104,6 +104,18 @@ test("scope is coherent — neutral carries no club, club-scoped always names on
   assert.equal(bundle.neutralCount, NEUTRAL.length, "neutralCount disagrees with the questions it ships");
 });
 
+test("no coin flips — a question whose four options are all bare numbers", () => {
+  // "How many goals did Salah score in 2024-25?" [28/30/29/31] cannot be answered by knowing
+  // football; it's a 1-in-4 guess. In Pro that costs a player AND the streak, which is the
+  // opposite of the mode's premise. Scorelines ("2-2") and anything carrying a unit survive,
+  // since they aren't bare numbers and are recalled as events rather than tallies.
+  const numeric = POOL.filter((q) => q.options.every((o) => /^\d[\d,]*$/.test(String(o).trim())));
+  assert.equal(
+    numeric.length, 0,
+    `coin flips in the bundle: ${numeric.slice(0, 3).map((q) => `"${q.q}" [${q.options.join("/")}]`).join(" · ")}`,
+  );
+});
+
 test("the neutral pool can stand on its own — it is what a guest sees", () => {
   // A guest, and any player who hasn't picked a club, only ever draws from this. An
   // 11-question gate against a thin neutral pool means repeats inside a single draft.

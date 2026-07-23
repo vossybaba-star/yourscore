@@ -47,6 +47,7 @@ const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..")
 const OUT_BUNDLE = path.join(root, "src", "data", "draft", "pl-quiz.json");
 const OUT_COUNTS = path.join(root, "src", "data", "draft", "pl-quiz-clubs.json");
 const OUT_REVIEW = path.join(root, "scripts", "data", "pl-quiz-review.md");
+const OUT_CUT = path.join(root, "scripts", "data", "pl-quiz-cut-numeric.md");
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -174,7 +175,10 @@ const rows = await fetchAll((q) =>
     .in("entity_type", ["club", "records"]),
 );
 
-const stats = { fetched: rows.length, rejected: {}, malformed: 0, ambiguous: 0, dupText: 0, dupFact: 0, unsupportedClub: 0, nonPlRecords: 0 };
+const stats = { fetched: rows.length, rejected: {}, malformed: 0, ambiguous: 0, numeric: 0, dupText: 0, dupFact: 0, unsupportedClub: 0, nonPlRecords: 0 };
+/** Everything the all-numeric rule removed, written out so the founder can restore the
+ *  iconic ones by hand — see OUT_CUT. */
+const cutNumeric = [];
 
 const seenText = new Set();
 const seenFact = new Set();
@@ -203,6 +207,30 @@ for (const row of rows) {
     others.some((o) => typeof o === "string" && o.length > 3 && o !== answerText && answerText.includes(o)) ||
     /^The .+ The .+$/.test(answerText)
   ) { stats.ambiguous++; continue; }
+
+  // COIN FLIPS. If all four options are bare numbers they are, in practice, the same number
+  // four times: "How many goals did Salah score in 2024-25?" [28/30/29/31]. You can know
+  // Salah won the Golden Boot, know exactly how good he was, and still have no way to choose
+  // 29 over 30. There is nothing to reason from, so it's a 1-in-4 guess.
+  //
+  // That matters more in Pro than in a normal quiz, because a wrong answer caps the pick at
+  // 72 overall AND resets the streak. Being punished for a gap in your knowledge is the game;
+  // being punished for failing to guess 30 instead of 29 is not, and it directly contradicts
+  // the mode's premise that the more football you know, the stronger your XI.
+  //
+  // This removes ~38% of the candidates, and it DOES take good questions with it — Forest's
+  // two European Cups [2/1/3/0] is iconic and genuinely knowable, yet structurally identical
+  // to Man Utd's 13 FA Cups [11/15/12/13], which is not. No filter can tell those apart; the
+  // difference is whether the fact is famous. So the cut errs safe and every removed question
+  // is written to pl-quiz-cut-numeric.md for hand-restoring.
+  //
+  // Scorelines ("2-2") and anything with a unit survive — the hyphen/letters mean they aren't
+  // bare numbers, and they're recalled as events rather than tallies.
+  if (options.every((o) => /^\d[\d,]*$/.test(String(o).trim()))) {
+    stats.numeric++;
+    cutNumeric.push({ q: row.question.trim(), options, answer: opts[row.answer], entity: row.entity });
+    continue;
+  }
 
   // ── SCOPE ──
   const isNeutral = row.entity_type === "records" || !mentionsOwnClub(row);
@@ -309,6 +337,25 @@ for (const [club, qs] of Array.from(byClub).sort((a, b) => b[1].length - a[1].le
 fs.mkdirSync(path.dirname(OUT_REVIEW), { recursive: true });
 fs.writeFileSync(OUT_REVIEW, lines.join("\n"));
 
+// What the coin-flip rule removed, so nothing disappears silently.
+const cut = [
+  "# Cut by the coin-flip rule (all four options were bare numbers)",
+  "",
+  `**${cutNumeric.length} questions.** Every one of these gave four numbers in the same ballpark,`,
+  "so knowing the football couldn't help you choose between them. In Pro a wrong answer costs",
+  "you a player and your streak, so a guess is expensive.",
+  "",
+  "**A few of these are genuinely knowable** and worth restoring by hand: iconic totals like",
+  "Forest's two European Cups or Villa's one. No filter can tell those from Manchester United's",
+  "13 FA Cups, which nobody recalls exactly, because they look identical. Restoring means",
+  "re-authoring the options with a non-numeric answer, or accepting the guess.",
+  "",
+];
+for (const c of cutNumeric) {
+  cut.push(`- **${c.q}**`, `  - [${c.options.join(" / ")}] answer: ${c.answer}  · ${c.entity}`, "");
+}
+fs.writeFileSync(OUT_CUT, cut.join("\n"));
+
 // ── Report ───────────────────────────────────────────────────────────────────
 
 console.log(`Fetched (easy/medium, club+records): ${stats.fetched}`);
@@ -316,6 +363,7 @@ for (const [why, n] of Object.entries(stats.rejected)) console.log(`  − ${why}
 console.log(`  − non-PL records (CL/WC): ${stats.nonPlRecords}`);
 if (stats.malformed) console.log(`  − malformed (options/answer): ${stats.malformed}`);
 console.log(`  − ambiguous answer: ${stats.ambiguous}`);
+console.log(`  − coin flip (all options bare numbers): ${stats.numeric}   → ${path.relative(root, OUT_CUT)}`);
 console.log(`  − club nobody can support: ${stats.unsupportedClub}`);
 console.log(`  − duplicate text: ${stats.dupText}`);
 console.log(`  − duplicate fact_key: ${stats.dupFact}`);
