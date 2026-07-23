@@ -32,8 +32,14 @@ import { ClubGrid } from "@/components/clubs/ClubGrid";
 import { shortClubName } from "@/lib/clubs/display";
 import { loadGuestClub, saveGuestClub } from "@/lib/clubs/guestClub";
 import { trackClubPick } from "@/lib/analytics/trackGame";
+import CLUB_COUNTS from "@/data/draft/pl-quiz-clubs.json";
 
 const LIME = "#aeea00";
+
+/** How many questions Pro actually holds per club, keyed by the picker's own club names.
+ *  Answer-free (see scripts/draft/build-pl-quiz.mjs) so it's safe on the client. */
+const COUNTS = (CLUB_COUNTS as { clubs: Record<string, number> }).clubs;
+const questionsFor = (club: string): number => COUNTS[club] ?? 0;
 /** Session-scoped, and deliberately its OWN key — skipping the global club prompt must not
  *  silently skip this one, because this asks a different question for a different reason. */
 const SKIP_KEY = "ys:pro-club-prompt:skipped";
@@ -91,9 +97,47 @@ export function ProClubPrompt({ onClubSet }: { onClubSet?: (club: string) => voi
     return () => { off = true; };
   }, [user, userLoading]);
 
-  // Self-hide, mirroring the other club surfaces: nothing to ask, already answered, or
-  // skipped this session. Never an empty box.
-  if (!resolved || skipped || current || clubs.length === 0) return null;
+  // Nothing to ask with, or waved away this session.
+  if (!resolved || skipped || clubs.length === 0) return null;
+
+  // ALREADY HAS A CLUB → a compact status row, not nothing.
+  //
+  // This used to self-hide entirely, which a UX walk caught: the club was never named
+  // anywhere in the 38-0 flow and a guest who mis-tapped a crest had no route back. Worse
+  // for the three clubs Pro holds no questions for, where the silence looked like a bug.
+  // A guest can change theirs freely (it's a local preference); a signed-in player can't,
+  // because theirs is a season-locked competition entry, so they're told that instead.
+  if (current) {
+    const n = questionsFor(current);
+    return (
+      <div
+        className="rounded-2xl mt-3 px-4 py-3 flex items-center justify-between gap-3"
+        style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.08)" }}
+      >
+        <div className="min-w-0">
+          <p className="font-body" style={{ fontSize: 12, color: "#fff" }}>
+            Pro is asking about <b style={{ color: LIME }}>{shortClubName(current)}</b>
+          </p>
+          <p className="font-body mt-0.5" style={{ fontSize: 11, color: "#8a948f" }}>
+            {n === 0
+              ? "No questions for them yet, so you'll get Premier League ones."
+              : `${n} ${shortClubName(current)} questions, mixed in with Premier League ones.`}
+          </p>
+        </div>
+        {user ? (
+          <span className="font-body flex-shrink-0" style={{ fontSize: 11, color: "#8a948f" }}>Locked</span>
+        ) : (
+          <button
+            onClick={() => { setCurrent(null); setChoice(null); }}
+            className="flex-shrink-0 rounded-xl px-3 py-2 transition-opacity hover:opacity-80"
+            style={{ border: "1px solid rgba(255,255,255,0.14)" }}
+          >
+            <span className="font-body font-semibold" style={{ fontSize: 11, color: "#c4ccc6" }}>Change</span>
+          </button>
+        )}
+      </div>
+    );
+  }
 
   function skip() {
     try { sessionStorage.setItem(SKIP_KEY, "1"); } catch { /* private mode */ }
@@ -124,14 +168,14 @@ export function ProClubPrompt({ onClubSet }: { onClubSet?: (club: string) => voi
       });
       if (!res.ok) {
         const b = (await res.json().catch(() => ({}))) as { error?: string };
-        setError(b.error ?? "Couldn't save that — try again.");
+        setError(b.error ?? "Couldn't save that. Try again.");
         return;
       }
       trackClubPick(choice);
       setCurrent(choice);
       onClubSet?.(choice);
     } catch {
-      setError("Couldn't save that — try again.");
+      setError("Couldn't save that. Try again.");
     } finally {
       setSaving(false);
     }
@@ -158,14 +202,26 @@ export function ProClubPrompt({ onClubSet }: { onClubSet?: (club: string) => voi
       <div className="px-4 pb-4">
         <ClubGrid clubs={clubs} selected={choice} onSelect={setChoice} disabled={saving} />
 
-        {/* The lock is only real for a signed-in declaration — a guest's pick is a local
-            preference, so promising them a season-long commitment would be a lie. */}
+        {/* Two truths, both of which the card was getting wrong.
+            1. Pro holds no questions at all for some clubs (Coventry 0, Ipswich 2, Hull 3 at
+               time of writing). The headline promises "questions about your team", so a fan
+               of those clubs was being sold something that doesn't exist. Say it plainly at
+               the moment of choosing, while they can still pick something else.
+            2. The lock is only real for a signed-in declaration. A guest's pick writes
+               nothing, so telling them it's locked for the season would be false. */}
         {choice && (
-          <p className="font-body mt-3" style={{ fontSize: 11, color: "#8a948f" }}>
-            {user
-              ? `${shortClubName(choice)} — you're in for the season, you can't switch later.`
-              : `${shortClubName(choice)} — saved on this device. Make an account to keep it.`}
-          </p>
+          <div className="mt-3">
+            <p className="font-body" style={{ fontSize: 11, color: questionsFor(choice) === 0 ? "#ff8a3d" : "#8a948f" }}>
+              {questionsFor(choice) === 0
+                ? `No ${shortClubName(choice)} questions yet, so Pro will ask you Premier League ones.`
+                : `${questionsFor(choice)} ${shortClubName(choice)} questions, mixed in with Premier League ones.`}
+            </p>
+            <p className="font-body mt-1" style={{ fontSize: 11, color: "#8a948f" }}>
+              {user
+                ? "You're in for the season, you can't switch later."
+                : "Saved on this device. Make an account to keep it."}
+            </p>
+          </div>
         )}
 
         {error && (

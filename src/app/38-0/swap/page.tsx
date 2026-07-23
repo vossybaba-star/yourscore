@@ -130,14 +130,10 @@ export default function SwapScreen() {
                     className="flex-shrink-0 rounded-xl p-3 text-left active:scale-95 transition-transform"
                     style={{ width: 130, background: "#15211a", border: "1px solid rgba(255,184,0,0.3)" }}>
                     <div className="flex items-baseline justify-between">
-                      {team.mode === "expert" ? (
-                        <span className="font-display" style={{ fontSize: 26, color: "#ffb800" }}>{p.position}</span>
-                      ) : (
-                        <>
-                          <span className="font-display" style={{ fontSize: 26, color: "#ffb800" }}>{p.overall}</span>
-                          <span className="font-body px-1.5 py-0.5 rounded" style={{ fontSize: 10, color: "#1a1300", background: "#ffb800" }}>{p.position}</span>
-                        </>
-                      )}
+                      {/* Expert (ratings hidden) retired 2026-07-23: 38-0 is classic only.
+                          Legacy teams saved with mode:"expert" render like everyone else now. */}
+                      <span className="font-display" style={{ fontSize: 26, color: "#ffb800" }}>{p.overall}</span>
+                      <span className="font-body px-1.5 py-0.5 rounded" style={{ fontSize: 10, color: "#1a1300", background: "#ffb800" }}>{p.position}</span>
                     </div>
                     <div className="font-body mt-1 leading-tight" style={{ fontSize: 13, color: "#fff" }}>{p.name}</div>
                   </button>

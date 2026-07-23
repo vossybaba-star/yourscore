@@ -378,6 +378,38 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-23** — **38-0: EXPERT mode retired, Premier League leads, Pro's UX walk fixed**
+  (branch `feat/38-0-pl-gated`, not on `main`).
+  **Expert is gone.** 38-0 is classic only (founder). The DIFFICULTY switcher is removed and
+  nothing honours `mode:"expert"` on read any more — `redraft`, `swap`, `team` and `season`
+  all render legacy expert teams like everyone else, so nobody is stranded in a format with
+  no switch left to leave it. The `DraftMode` union and the field stay so saved localStorage
+  teams keep parsing. **Do not reintroduce a difficulty switch without asking.**
+  **Tab order is Premier League, La Liga, Leaderboard, WC Mastermind**, and PL is the default
+  tab. It's the year-round game and the one with Pro; the World Cup is over.
+  **A `/ux-walk` of Pro returned FAIL and all five crosses are fixed:**
+  1. **Copy gate** — em dashes had crept back into new copy. Cleared across the whole 38-0
+     hub, the draft loop, QuizGate and ProClubPrompt, including the pre-existing WC strings
+     on the same page. Placeholder glyphs (an empty OVERALL) are now "0", not a dash.
+  2. **The club grid promised what 3 clubs can't deliver.** Measured: over 22 draws a
+     Coventry fan got **0** own-club questions, Ipswich 0, Hull 1, against Arsenal's 11 —
+     while being told "Pro asks about your team". The picker now states the real number
+     before you commit ("No Coventry questions yet, so Pro will ask you Premier League
+     ones" / "62 Arsenal questions, mixed in"). Counts ship in a new answer-free
+     `src/data/draft/pl-quiz-clubs.json`, because `pl-quiz.json` carries every answer and
+     is server-only.
+  3. **The gate had no exit** — once open, the only ways out were answering or waiting out
+     the 25s clock, which grades as a miss anyway. There's now a "Skip this one (counts as a
+     miss)" that costs exactly what the timeout already cost. Verified: skipping deals a
+     squad capped at 70, inside the 72 wrong-answer ceiling.
+  4. **A guest's club was invisible and unchangeable.** ProClubPrompt used to self-hide once
+     set, so the club was never named in the flow and a mis-tapped crest was permanent. It
+     now shows a status row ("Pro is asking about Liverpool") with **Change** for guests;
+     signed-in players see "Locked", because theirs is a season-locked competition entry.
+  5. **Pro sat 344px below the fold** under a full pitch diagram while the sticky CTA
+     started the *other* mode. HOW YOU DRAFT now comes before PICK YOUR SHAPE: 1156px → 540px,
+     above the fold. Which game you're playing outranks which shape you play it in.
+
 - **2026-07-21** — **38-0 Premier League now has two modes: PRO and JUST DRAFT**
   (branch `feat/38-0-pl-gated`, not on `main`). **"Pro" is the locked player-facing name**
   (founder, 2026-07-22); the code says `gated` throughout because that's the mechanic —
@@ -923,11 +955,11 @@ A **separate game** (not a Quiz mode). Nav tab **"38-0"** (route `/38-0`). Core 
 pick a formation + difficulty → **Spin** a random legendary squad → **Draft** into best
 slots → see live **Strength** → **projected 38-game record + tier** → play a match → win
 → **earn a one-player swap** / lose → streak resets but the **team stays active — go
-again** (the old "stale team → forced rebuild" model is retired). **Classic vs Expert**
-mode (Expert hides ratings). On the **Premier League** tab there is a second, orthogonal
-choice — **Pro vs Just Draft**: Pro unlocks each spin with a Premier League question
-and lets your answers set the quality of the squads you're dealt (see §0, 2026-07-21).
-La Liga is Just Draft only. **Anonymous play is the deliberate hook** — guests get the full draft + Quick
+again** (the old "stale team → forced rebuild" model is retired). Ratings are always shown:
+**Expert mode was retired 2026-07-23** and 38-0 is one format now. The only mode choice is on
+the **Premier League** tab — **Pro vs Just Draft**: Pro unlocks each spin with a Premier
+League question and lets your answers set the quality of the squads you're dealt (see §0,
+2026-07-21). La Liga is Just Draft only. **Anonymous play is the deliberate hook** — guests get the full draft + Quick
 Match loop on `localStorage`; sign-in unlocks cloud save / ranked / social.
 
 **Match types — live status:**
@@ -1281,6 +1313,7 @@ pre-existing type errors).
 
 | Thing | Status |
 |---|---|
+| **38-0 Expert mode** (ratings hidden while drafting) | ❌ Retired 2026-07-23 — 38-0 is classic only, no difficulty switch. The `DraftMode` union and `LocalTeam.mode` survive so old saved teams still parse, but nothing offers or honours "expert". Don't rebuild the switcher without asking. |
 | **WhatsApp API notifications** | ❌ Discontinued (replaced by native push; share links unaffected). |
 | **Sponsored / branded rooms** | 🅿️ Shelved (vestigial DB columns only). |
 | **`yourscore.gg`** | ❌ Dead — domain is **yourscore.app**. |

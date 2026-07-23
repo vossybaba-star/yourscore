@@ -17,7 +17,7 @@ import { ProClubPrompt } from "@/components/draft/ProClubPrompt";
 import { FORMATIONS, LEAGUE_META } from "@/lib/draft/types";
 import type { Formation, League } from "@/lib/draft/types";
 import { FORMATION_NOTE } from "@/lib/draft/formations";
-import { emptyTeam, loadTeam, saveTeam, isComplete, type LocalTeam, type DraftMode } from "@/lib/draft/local";
+import { emptyTeam, loadTeam, saveTeam, isComplete, type LocalTeam } from "@/lib/draft/local";
 import { leagueCounts, ensurePool, isPoolReady } from "@/lib/draft/pool";
 import { trackGamePlay } from "@/lib/analytics/trackGame";
 import { useUser } from "@/hooks/useUser";
@@ -42,12 +42,11 @@ const LEAGUE_TABS: Record<"pl" | "laliga", { league: League; emoji: string; titl
 export default function DraftHome() {
   const router = useRouter();
   const { user, loading: authLoading } = useUser();
-  const [tab, setTab] = useState<DraftTab>("wc");
+  const [tab, setTab] = useState<DraftTab>("pl");
   // Player pool (~2.6MB) loads on demand; only used for the cosmetic count line below.
   const [poolReady, setPoolReady] = useState(isPoolReady());
   useEffect(() => { let off = false; ensurePool().then(() => { if (!off) setPoolReady(true); }).catch(() => {}); return () => { off = true; }; }, []);
   const [selected, setSelected] = useState<Formation>("4-3-3");
-  const [mode, setMode] = useState<DraftMode>("classic");
   // PRO (the locked user-facing name) = every pick unlocked by a Premier League question,
   // PL tab only. The code calls it `gated` throughout because that's the mechanic; "Pro" is
   // the label the player sees. Orthogonal to `mode` — Pro + Expert is legal.
@@ -65,9 +64,10 @@ export default function DraftHome() {
 
   function startNew() {
     if (!cfg) return;
-    // Pro is Premier League only — the question bank is PL clubs and PL moments.
+    // Pro is Premier League only: the question bank is PL clubs and PL moments.
     const isGated = tab === "pl" && gated;
-    const team = emptyTeam(selected, mode, cfg.league, isGated);
+    // Always classic. Expert (ratings hidden) was retired 2026-07-23 — 38-0 is one format now.
+    const team = emptyTeam(selected, "classic", cfg.league, isGated);
     saveTeam(team);
     trackGamePlay("38-0", { mode: isGated ? "draft-pro" : "draft", board: tab });
     router.push("/38-0/play");
@@ -103,11 +103,13 @@ export default function DraftHome() {
             each competition keeps its accent as the underline. ── */}
         <div className="flex gap-5 mb-4 overflow-x-auto -mx-1 px-1"
           style={{ scrollbarWidth: "none", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+          {/* Premier League leads (founder 2026-07-23). It's the year-round game and the one
+              with Pro; World Cup Mastermind goes last now the tournament is over. */}
           {([
-            { key: "wc" as DraftTab, label: "WC Mastermind", accent: "#ffb800" },
             { key: "pl" as DraftTab, label: "Premier League", accent: "#aeea00" },
             { key: "laliga" as DraftTab, label: "La Liga", accent: "#ff5b2e" },
             { key: "board" as DraftTab, label: "Leaderboard", accent: "#aeea00" },
+            { key: "wc" as DraftTab, label: "WC Mastermind", accent: "#ffb800" },
           ]).map((t) => (
             <button
               key={t.key}
@@ -219,7 +221,50 @@ export default function DraftHome() {
               </Link>
             )}
 
-            <h2 className="font-display tracking-wide mb-3" style={{ fontSize: 22, color: "#fff" }}>
+            {/* ── How you draft, FIRST. Premier League only: the gate's question bank is
+                Premier League clubs and moments, so La Liga stays open-draft.
+                Above the formation picker on purpose (UX walk 2026-07-23): it used to sit
+                344px below the fold, under a full pitch diagram, while the sticky lime CTA
+                started the OTHER mode — so a first-timer could draft without ever learning
+                Pro existed. Which game you're playing outranks which shape you play it in. ── */}
+            {tab === "pl" && (
+              <>
+                <h2 className="font-display tracking-wide mb-3" style={{ fontSize: 22, color: "#fff" }}>
+                  HOW YOU DRAFT
+                </h2>
+                <div className="grid grid-cols-2 gap-3">
+                  {([
+                    { key: true,  label: "PRO",        desc: "Answer to earn every pick. Right answers deal better players.", color: cfg.accent },
+                    { key: false, label: "JUST DRAFT", desc: "No questions. Spin and pick, every squad at full strength.",    color: "#8a948f" },
+                  ]).map((g) => {
+                    const active = gated === g.key;
+                    return (
+                      <button
+                        key={String(g.key)}
+                        onClick={() => setGated(g.key)}
+                        className="rounded-2xl p-4 text-left transition-all active:scale-95"
+                        style={{
+                          background: active ? `${g.color}14` : "#0e1611",
+                          border: `1px solid ${active ? `${g.color}88` : "rgba(255,255,255,0.08)"}`,
+                        }}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="font-display tracking-wide" style={{ fontSize: 22, color: active ? g.color : "#fff" }}>{g.label}</span>
+                          {g.key && <span style={{ fontSize: 14 }}>⚽</span>}
+                        </div>
+                        <div className="font-body mt-1" style={{ fontSize: 11, color: "#8a948f", lineHeight: 1.3 }}>{g.desc}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Only under PRO, because that's the only mode where a club changes
+                    anything. Never blocks: Pro plays fine on the neutral pool. */}
+                {gated && <ProClubPrompt />}
+              </>
+            )}
+
+            <h2 className="font-display tracking-wide mt-7 mb-3" style={{ fontSize: 22, color: "#fff" }}>
               PICK YOUR SHAPE
             </h2>
 
@@ -253,75 +298,6 @@ export default function DraftHome() {
               </p>
             </div>
 
-            {/* ── How you draft. Premier League only — the gate's question bank is
-                Premier League clubs and key moments, so La Liga stays open-draft. ── */}
-            {tab === "pl" && (
-              <>
-                <h2 className="font-display tracking-wide mt-7 mb-3" style={{ fontSize: 22, color: "#fff" }}>
-                  HOW YOU DRAFT
-                </h2>
-                <div className="grid grid-cols-2 gap-3">
-                  {([
-                    { key: true,  label: "PRO",        desc: "Answer to earn every pick — right answers deal better players", color: cfg.accent },
-                    { key: false, label: "JUST DRAFT", desc: "No questions — spin and pick, every squad at full strength",    color: "#8a948f" },
-                  ]).map((g) => {
-                    const active = gated === g.key;
-                    return (
-                      <button
-                        key={String(g.key)}
-                        onClick={() => setGated(g.key)}
-                        className="rounded-2xl p-4 text-left transition-all active:scale-95"
-                        style={{
-                          background: active ? `${g.color}14` : "#0e1611",
-                          border: `1px solid ${active ? `${g.color}88` : "rgba(255,255,255,0.08)"}`,
-                        }}
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="font-display tracking-wide" style={{ fontSize: 22, color: active ? g.color : "#fff" }}>{g.label}</span>
-                          {g.key && <span style={{ fontSize: 14 }}>⚽</span>}
-                        </div>
-                        <div className="font-body mt-1" style={{ fontSize: 11, color: "#8a948f", lineHeight: 1.3 }}>{g.desc}</div>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Only under PRO, because that's the only mode where a club changes
-                    anything — it asks you about your own team. Self-hides once they have
-                    a club, or if they've waved it away this session. Never blocks: Pro
-                    plays fine on the neutral pool. */}
-                {gated && <ProClubPrompt />}
-              </>
-            )}
-
-            <h2 className="font-display tracking-wide mt-7 mb-3" style={{ fontSize: 22, color: "#fff" }}>
-              DIFFICULTY
-            </h2>
-            <div className="grid grid-cols-2 gap-3">
-              {([
-                { key: "classic" as DraftMode, label: "CLASSIC", desc: "Ratings shown — draft the strongest XI", color: cfg.accent },
-                { key: "expert"  as DraftMode, label: "EXPERT",  desc: "Ratings hidden — for real fans",         color: "#ffb800" },
-              ]).map((m) => {
-                const active = mode === m.key;
-                return (
-                  <button
-                    key={m.key}
-                    onClick={() => setMode(m.key)}
-                    className="rounded-2xl p-4 text-left transition-all active:scale-95"
-                    style={{
-                      background: active ? `${m.color}14` : "#0e1611",
-                      border: `1px solid ${active ? `${m.color}88` : "rgba(255,255,255,0.08)"}`,
-                    }}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="font-display tracking-wide" style={{ fontSize: 22, color: active ? m.color : "#fff" }}>{m.label}</span>
-                      {m.key === "expert" && <span style={{ fontSize: 14 }}>🔒</span>}
-                    </div>
-                    <div className="font-body mt-1" style={{ fontSize: 11, color: "#8a948f", lineHeight: 1.3 }}>{m.desc}</div>
-                  </button>
-                );
-              })}
-            </div>
 
             {/* spacer so sticky button doesn't cover the last card */}
             <div className="h-28" />
@@ -348,7 +324,7 @@ export default function DraftHome() {
                   <span className="font-display tracking-wide" style={{ fontSize: 16, color: "#aeea00" }}>WORLD CUP RUN</span>
                   <span className="font-body rounded-full px-2 py-0.5" style={{ fontSize: 9, color: "#062013", background: "#aeea00", letterSpacing: 0.5 }}>FREE PLAY</span>
                 </div>
-                <div className="font-body" style={{ fontSize: 12, color: "#8a948f" }}>Spin a dream XI from any nation — no questions</div>
+                <div className="font-body" style={{ fontSize: 12, color: "#8a948f" }}>Spin a dream XI from any nation, no questions</div>
               </div>
               <span style={{ fontSize: 16, color: "#aeea00" }}>→</span>
             </Link>
@@ -376,15 +352,15 @@ export default function DraftHome() {
               </div>
               {(wcHow === "mastermind"
                 ? [
-                    ["①", "Answer to draft", "Each pick is unlocked by a World Cup question on a 25s clock — right answers (and streaks) deal stronger players."],
-                    ["②", "Play the World Cup", "A group, then the knockouts — vs real nations, tougher each round."],
+                    ["①", "Answer to draft", "Each pick is unlocked by a World Cup question on a 25s clock. Right answers (and streaks) deal stronger players."],
+                    ["②", "Play the World Cup", "A group, then the knockouts, vs real nations, tougher each round."],
                     ["③", "Group on the line", "4 pts go through; level on 3 → one sudden-death question to qualify; less and you're out."],
                     ["④", "Climb the season board", "One ranked run a day. Get closest to a perfect 8-0-0."],
                   ]
                 : [
-                    ["①", "Build your XI", "Spin & pick from any nation — pure luck of the draw, no questions."],
+                    ["①", "Build your XI", "Spin & pick from any nation. Pure luck of the draw, no questions."],
                     ["②", "Play the World Cup", "A group, then the knockouts, all the way to the final."],
-                    ["③", "Win to advance", "Survive the group, then it's win-or-go-home — free re-spins each round."],
+                    ["③", "Win to advance", "Survive the group, then it's win-or-go-home, with free re-spins each round."],
                     ["④", "Lift the trophy 🏆", "Reach the final and win it. Play as many runs as you like."],
                   ]
               ).map(([n, title, desc]) => (
@@ -476,7 +452,7 @@ function VerifiedBoard({ signedIn }: { signedIn: boolean }) {
           <div className="flex items-center justify-between">
             <div>
               <div className="font-display tracking-wide" style={{ fontSize: 20, color: "#fff" }}>CLAIM YOUR SPOT</div>
-              <div className="font-body" style={{ fontSize: 13, color: "#8a948f" }}>Sign in — every season you play enters the board automatically</div>
+              <div className="font-body" style={{ fontSize: 13, color: "#8a948f" }}>Sign in. Every season you play enters the board automatically</div>
             </div>
             <div className="font-display" style={{ fontSize: 28, color: "#aeea00" }}>→</div>
           </div>

@@ -45,6 +45,7 @@ import { fileURLToPath } from "node:url";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const OUT_BUNDLE = path.join(root, "src", "data", "draft", "pl-quiz.json");
+const OUT_COUNTS = path.join(root, "src", "data", "draft", "pl-quiz-clubs.json");
 const OUT_REVIEW = path.join(root, "scripts", "data", "pl-quiz-review.md");
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -265,6 +266,21 @@ fs.writeFileSync(
     questions: pool,
   }, null, 2) + "\n",
 );
+
+/**
+ * Per-club counts, keyed by the SUPPORTER-facing club name (what the picker shows), so the
+ * client can use it without re-deriving the alias map.
+ *
+ * A separate file because pl-quiz.json carries every ANSWER and so is server-only. The UI
+ * needs to know which clubs Pro can actually ask about — a UX walk found the picker offering
+ * all 20 while Coventry had 0 questions, Ipswich 0 and Hull 1, so fans of those clubs were
+ * promised "Pro asks about your team" and got nothing. Counts alone leak nothing.
+ */
+const countsBySupporterName = {};
+for (const [entity, supporterName] of supportable) {
+  countsBySupporterName[supporterName] = (byClub.get(entity) ?? []).length;
+}
+fs.writeFileSync(OUT_COUNTS, JSON.stringify({ seasonId: season, neutral: neutral.length, clubs: countsBySupporterName }, null, 2) + "\n");
 
 const lines = [
   "# PL Pro gate — question bank review sheet",

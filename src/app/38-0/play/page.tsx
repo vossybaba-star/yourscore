@@ -254,7 +254,6 @@ export default function DraftPlay() {
     return <div className="min-h-[100dvh] grid place-items-center" style={{ background: "#0a0a0f", color: "#8a948f" }}>Loading…</div>;
   }
 
-  const expert = team.mode === "expert";
   const remaining = 11 - team.squad.length;
   const lines = lineRatings(team.squad);
   const filledBySlot = new Map(team.squad.map((p) => [p.slot, p]));
@@ -278,9 +277,9 @@ export default function DraftPlay() {
             <div className="font-display tracking-wide" style={{ fontSize: 26, color: "#fff" }}>{team.formation}</div>
           </div>
           <div className="text-right">
-            <div className="font-body" style={{ fontSize: 11, color: "#8a948f", letterSpacing: 1 }}>{expert ? "EXPERT" : "OVERALL"}</div>
-            <div className="font-display" style={{ fontSize: 38, lineHeight: 1, color: expert ? "#ffb800" : "#aeea00" }}>
-              {expert ? "🔒" : team.squad.length ? team.strength : "—"}
+            <div className="font-body" style={{ fontSize: 11, color: "#8a948f", letterSpacing: 1 }}>OVERALL</div>
+            <div className="font-display" style={{ fontSize: 38, lineHeight: 1, color: "#aeea00" }}>
+              {team.squad.length ? team.strength : "0"}
             </div>
           </div>
         </div>
@@ -307,14 +306,14 @@ export default function DraftPlay() {
           </div>
         )}
 
-        <Pitch formation={team.formation} squad={team.squad} hideOverall={expert} compact />
+        <Pitch formation={team.formation} squad={team.squad} compact />
 
-        {/* live line ratings (hidden in expert) */}
-        {!expert && team.squad.length > 0 && (
+        {/* live line ratings */}
+        {team.squad.length > 0 && (
           <div className="grid grid-cols-4 gap-2 mt-3">
             {([["ATT", lines.attack, "att"], ["MID", lines.midfield, "mid"], ["DEF", lines.defence, "def"], ["GK", lines.gk, "gk"]] as const).map(([label, val, cat]) => (
               <div key={label} className="rounded-xl px-2 py-2 text-center" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.06)" }}>
-                <div className="font-display" style={{ fontSize: 20, color: val ? CATEGORY_COLOR[cat] : "#444" }}>{val || "—"}</div>
+                <div className="font-display" style={{ fontSize: 20, color: val ? CATEGORY_COLOR[cat] : "#444" }}>{val || "0"}</div>
                 <div className="font-body" style={{ fontSize: 9, color: "#8a948f", letterSpacing: 1 }}>{label}</div>
               </div>
             ))}
@@ -341,7 +340,7 @@ export default function DraftPlay() {
               <div className="flex-1 min-w-0">
                 <div className="font-body" style={{ fontSize: 9, color: "#8a948f", letterSpacing: 1 }}>CLUB × SEASON</div>
                 <div className="font-display tracking-wide leading-none truncate" style={{ fontSize: 24, color: spinning ? "#ffb800" : "#fff" }}>
-                  {reel?.club ?? "—"} {reel?.season && <span style={{ color: "#8a948f", fontSize: 18 }}>{reel.season}</span>}
+                  {reel?.club ?? "Spinning"} {reel?.season && <span style={{ color: "#8a948f", fontSize: 18 }}>{reel.season}</span>}
                 </div>
               </div>
             </div>
@@ -396,8 +395,8 @@ export default function DraftPlay() {
                     className="w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors"
                     style={{ borderTop: "1px solid rgba(255,255,255,0.04)", opacity: playable ? 1 : 0.4 }}>
                     <div className="flex items-center justify-center rounded-lg font-display flex-shrink-0"
-                      style={{ width: 38, height: 38, fontSize: expert ? 13 : 18, color: "#0a0a0f", background: c }}>
-                      {expert ? p.position : p.overall}
+                      style={{ width: 38, height: 38, fontSize: 18, color: "#0a0a0f", background: c }}>
+                      {p.overall}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="font-body truncate" style={{ fontSize: 14, color: "#fff" }}>

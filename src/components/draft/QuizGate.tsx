@@ -53,7 +53,7 @@ export function QuizGate({
         <div className="flex items-center justify-between mb-1">
           <span className="font-display tracking-wide" style={{ fontSize: 13, color: accent }}>⚽ ANSWER TO {verb}</span>
           <span className="font-body" style={{ fontSize: 11, color: "#8a948f" }}>
-            {streak >= 1 ? `🔥 Streak ×${streak} — keep it going` : "Get it right for better players"}
+            {streak >= 1 ? `🔥 Streak ×${streak}, keep it going` : "Get it right for better players"}
           </span>
         </div>
 
@@ -100,11 +100,27 @@ export function QuizGate({
           })}
         </div>
 
+        {/* A way out. The gate had none: once it opened, the only exits were answering or
+            letting the 25s clock run down, which grades as a miss anyway. Under the halftime
+            condition (pub, one hand, someone talking at you) that's a trap with a penalty
+            attached. This costs exactly what the timeout already cost, just without the wait,
+            and says so — so skipping is a choice rather than something you discover. */}
+        {!locked && (
+          <button
+            onClick={() => onAnswer(-1)}
+            className="w-full mt-3 py-2 text-center transition-opacity hover:opacity-80"
+          >
+            <span className="font-body" style={{ fontSize: 12, color: "#8a948f" }}>
+              Skip this one (counts as a miss)
+            </span>
+          </button>
+        )}
+
         {feedback && (
           <p className="mt-3 text-center font-body" style={{ fontSize: 13, color: feedback.correct ? "#00ff87" : "#ff8a3d" }}>
             {feedback.correct
-              ? feedback.streak >= 2 ? `🔥 Correct — streak ×${feedback.streak}! Elite players unlocked.` : "✅ Correct — strong players unlocked."
-              : "❌ Not quite — a thinner pool this pick. Streak reset."}
+              ? feedback.streak >= 2 ? `🔥 Correct. Streak ×${feedback.streak}, elite players unlocked.` : "✅ Correct. Strong players unlocked."
+              : "❌ Not quite. A thinner pool this pick, streak reset."}
           </p>
         )}
       </div>

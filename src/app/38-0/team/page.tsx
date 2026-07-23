@@ -288,11 +288,8 @@ export default function TeamScreen() {
         <div className="flex items-center justify-between pt-4 pb-2">
           <BackPill href="/38-0" label="Draft XI" tone="draft" />
           <div className="flex items-center gap-2">
-            {team.mode === "expert" && (
-              <span className="font-body text-xs px-2.5 py-1 rounded-full" style={{ color: "#ffb800", background: "rgba(255,184,0,0.12)" }}>
-                🔒 EXPERT
-              </span>
-            )}
+            {/* The EXPERT badge went with the mode (retired 2026-07-23) — a badge for a
+                format that no longer exists only puzzles whoever still has one saved. */}
             <span
               className="font-body text-xs px-2.5 py-1 rounded-full"
               style={{ color: "#aeea00", background: "rgba(174,234,0,0.12)" }}

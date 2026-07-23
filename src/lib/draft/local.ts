@@ -17,9 +17,10 @@ import { resolveInteractiveShootout, type PenKick, type PenZone, type PenPower }
 
 const STORAGE_KEY = "draftxi:team:v1";
 
-/** Classic shows overalls while drafting; Expert hides them (names + positions
- *  only) until the XI is complete — draft on football knowledge, big reveal at the
- *  end. The signature 38-0 "for real fans" mode. */
+/** RETIRED 2026-07-23 (founder): 38-0 is classic only, so nothing offers "expert" any more
+ *  and nothing honours it on read. The union and the field are kept because saved teams in
+ *  localStorage still carry mode:"expert" and must keep parsing — they simply render like
+ *  every other team now. Do not reintroduce a difficulty switch without asking. */
 export type DraftMode = "classic" | "expert";
 
 export type LocalTeam = {
