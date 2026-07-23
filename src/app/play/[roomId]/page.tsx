@@ -65,6 +65,46 @@ interface QuestionEvent {
 
 type DB = SupabaseClient<Database>;
 
+/** The live scoreline. Rendered in the room header, which sits ABOVE the
+ *  question overlay — mid-question you used to be able to see the timer and the
+ *  answered count but not a single score, so you never knew who was winning
+ *  until the round ended. With more than two players this reads you vs the
+ *  current leader, with a +n for everyone else. */
+function LiveScoreline({ entries, currentUserId }: { entries: LeaderboardEntry[]; currentUserId?: string }) {
+  const me = entries.find((e) => e.user_id === currentUserId);
+  const rival = entries.find((e) => e.user_id !== currentUserId); // entries are score-ordered
+  if (!me || !rival) return null;
+  const mine = me.total_score ?? 0;
+  const theirs = rival.total_score ?? 0;
+  const level = mine === theirs;
+  const ahead = mine > theirs;
+  const meColor = level ? "#ffc233" : ahead ? "#aeea00" : "#8a948f";
+  const themColor = level ? "#ffc233" : ahead ? "#8a948f" : "#ff6b78";
+  const others = entries.length - 2;
+  return (
+    <div className="max-w-lg mx-auto px-5 pb-2.5 flex items-center justify-between gap-3">
+      <span className="flex items-baseline gap-1.5 min-w-0">
+        <span className="font-body text-xs font-semibold text-white">You</span>
+        <span className="font-display text-lg leading-none" style={{ color: meColor }}>{mine.toLocaleString()}</span>
+      </span>
+      <span className="font-body text-[10px] font-bold uppercase tracking-widest flex-shrink-0" style={{ color: "#586058" }}>
+        {level ? "level" : ahead ? "ahead" : "behind"}
+      </span>
+      <span className="flex items-baseline gap-1.5 min-w-0">
+        <span className="font-display text-lg leading-none" style={{ color: themColor }}>{theirs.toLocaleString()}</span>
+        <span className="font-body text-xs font-semibold text-white truncate max-w-[84px]">{rival.display_name}</span>
+        {others > 0 && <span className="font-body text-[10px] flex-shrink-0" style={{ color: "#586058" }}>+{others}</span>}
+      </span>
+    </div>
+  );
+}
+
+/** How long the question card stays up after the last player answers, so the
+ *  CORRECT/WRONG verdict is actually readable before the next question lands. */
+const REVEAL_HOLD_MS = 1400;
+/** Beat between a matchmade lobby filling up and the game starting itself. */
+const AUTO_START_MS = 3000;
+
 const MODE_LABEL: Record<string, string> = { h2h: "1v1", group: "Private", open: "Public" };
 const MODE_COLOR: Record<string, string> = { h2h: "#f87171", group: "#aeea00", open: "#aeea00" };
 const QUESTION_DURATION_MS = 20_000;
@@ -177,6 +217,26 @@ export default function RoomPage() {
   // Keep refs in sync
   useEffect(() => { isHostRef.current = isHost; }, [isHost]);
   useEffect(() => { playersCountRef.current = players.length; }, [players]);
+
+  // ── Instant matches start themselves ──────────────────────────────────────
+  // Matchmaking has already found the opponent and seated them, so the lobby
+  // was asking the player to confirm a thing they'd just confirmed on the
+  // "opponent found" screen. Hand-made lobbies (share code, public) keep the
+  // Start button — there you genuinely are waiting for somebody.
+  const [autoStartIn, setAutoStartIn] = useState<number | null>(null);
+  const startRef = useRef<() => void>(() => {});
+  startRef.current = () => { void handleStart(); };
+  const autoStartArmed = !!room && room.status === "lobby" && room.name === INSTANT_MATCH_NAME
+    && isHost && players.length >= 2;
+
+  useEffect(() => {
+    if (!autoStartArmed) { setAutoStartIn(null); return; }
+    let left = Math.round(AUTO_START_MS / 1000);
+    setAutoStartIn(left);
+    const tick = setInterval(() => { left -= 1; setAutoStartIn(left > 0 ? left : 0); }, 1000);
+    const go = setTimeout(() => startRef.current(), AUTO_START_MS);
+    return () => { clearInterval(tick); clearTimeout(go); };
+  }, [autoStartArmed]);
 
   // CPU room? (instant-match fallback seats the dedicated CPU user as p2). The
   // CPU's real answer is written server-side when the human answers; this ref
@@ -377,6 +437,12 @@ export default function RoomPage() {
     if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current);
     advanceTimerRef.current = null;
     const expectedIdx = currentSeqRef.current - 1;
+    // Hold the card open long enough to read the verdict. Everyone has answered
+    // by now, so this used to tear the overlay down the instant the last tap
+    // landed — against a shadow (which always answered first) the CORRECT/WRONG
+    // panel never got a single frame of screen time.
+    await new Promise((r) => setTimeout(r, REVEAL_HOLD_MS));
+    if (currentSeqRef.current - 1 !== expectedIdx) return; // already moved on
     setActiveQuestion(null);
     setClosesAt(null);
     await fetch("/api/room/next", {
@@ -598,7 +664,9 @@ export default function RoomPage() {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ roomId }),
     });
-    if (!res.ok) { setStarting(false); return; }
+    // Failed start: drop the auto-start countdown too, or the button sits on
+    // "Starting in 0…" forever instead of offering the tap that recovers it.
+    if (!res.ok) { setStarting(false); setAutoStartIn(null); return; }
     // Optimistically leave the lobby on first tap — don't wait for our own
     // realtime echo. Other players transition via the rooms UPDATE event.
     setRoom((r) => (r ? { ...r, status: "live", current_question_idx: 0 } : r));
@@ -857,7 +925,10 @@ export default function RoomPage() {
           {/* Start / waiting */}
           {isHost ? (
             <Button variant="primary" tone="teal" size="lg" fullWidth onClick={handleStart} disabled={starting || players.length < 1}>
-              {starting ? "Starting…" : players.length < 2 ? `Waiting for players (${players.length}/2 min)` : `Start Game →`}
+              {starting ? "Starting…"
+                : autoStartIn !== null ? `Starting in ${autoStartIn}…`
+                : players.length < 2 ? `Waiting for players (${players.length}/2 min)`
+                : `Start Game →`}
             </Button>
           ) : (
             <div className="rounded-2xl px-5 py-4 flex items-center gap-3" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
@@ -866,7 +937,9 @@ export default function RoomPage() {
                   <span key={i} className="w-2 h-2 rounded-full bg-teal" style={{ animation: `pulse 1.4s ease-in-out ${i * 0.25}s infinite` }} />
                 ))}
               </div>
-              <p className="font-body text-sm text-white">Waiting for host to start the game…</p>
+              <p className="font-body text-sm text-white">
+                {room.name === INSTANT_MATCH_NAME ? "Starting in a moment…" : "Waiting for host to start the game…"}
+              </p>
             </div>
           )}
         </div>
@@ -1110,8 +1183,9 @@ export default function RoomPage() {
     <main className="min-h-dvh pb-10 bg-bg">
       <GridBackground opacity={0.02} />
 
-      {/* Game header */}
-      <div className="sticky top-0 z-30 pt-safe" style={{ background: "rgba(10,10,15,0.95)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+      {/* Game header — z above the question overlay (z-50) so the scoreline
+          stays readable while a question is up, not blurred out behind it. */}
+      <div className="sticky top-0 z-[60] pt-safe" style={{ background: "rgba(10,10,15,0.95)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
         <div className="max-w-lg mx-auto px-5 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="font-body text-xs px-2.5 py-1 rounded-full font-semibold"
@@ -1138,6 +1212,7 @@ export default function RoomPage() {
             {closesAt && <CountdownRing closesAt={closesAt} />}
           </div>
         </div>
+        <LiveScoreline entries={personaRows(leaderboard)} currentUserId={user?.id} />
       </div>
 
       <div className="relative z-0 max-w-lg mx-auto px-5 space-y-4 pt-4">

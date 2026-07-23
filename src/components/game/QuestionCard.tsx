@@ -29,6 +29,9 @@ type RevealState = {
   isCorrect: boolean;
   points: number;
   correctAnswer: "a" | "b" | "c" | "d";
+  /** How long the answer took. Speed decides most head-to-heads, so the reveal
+   *  says it out loud — two players can both be 100% and finish 200-100. */
+  elapsedMs: number;
 } | null;
 
 const LABELS = ["A", "B", "C", "D"] as const;
@@ -53,9 +56,10 @@ export function QuestionCard({ question, onAnswer, onExpire }: QuestionCardProps
     // player never learned whether they scored. Terminal states ("Question
     // closed", "Already answered") get told straight; anything else (network
     // blip, rate limit) is retried once, then surfaced.
+    const askedAt = question.startTime.getTime();
     try {
       const result = await onAnswer(letter);
-      setReveal({ selected: letter, ...result });
+      setReveal({ selected: letter, ...result, elapsedMs: Date.now() - askedAt });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "";
       const terminal = /closed|already answered/i.test(msg);
@@ -63,7 +67,7 @@ export function QuestionCard({ question, onAnswer, onExpire }: QuestionCardProps
         try {
           await new Promise((r) => setTimeout(r, 600));
           const result = await onAnswer(letter);
-          setReveal({ selected: letter, ...result });
+          setReveal({ selected: letter, ...result, elapsedMs: Date.now() - askedAt });
           setSubmitting(false);
           return;
         } catch { /* fall through to the error state */ }
@@ -88,11 +92,14 @@ export function QuestionCard({ question, onAnswer, onExpire }: QuestionCardProps
   function optionStyle(letter: "a" | "b" | "c" | "d") {
     if (!reveal && !expired) {
       if (selected === letter) {
+        // Neutral white, never lime: lime is reserved for "this was correct".
+        // They used to be the same colour, so a locked-in pick looked exactly
+        // like a right answer and the player couldn't tell which they'd got.
         return {
-          bg: "rgba(174,234,0,0.08)",
-          border: "rgba(174,234,0,0.5)",
+          bg: "rgba(255,255,255,0.10)",
+          border: "rgba(255,255,255,0.45)",
           text: "#ffffff",
-          labelBg: "rgba(174,234,0,0.2)",
+          labelBg: "rgba(255,255,255,0.22)",
         };
       }
       return {
@@ -146,7 +153,9 @@ export function QuestionCard({ question, onAnswer, onExpire }: QuestionCardProps
           border: "1px solid rgba(255,255,255,0.08)",
           borderBottom: "none",
           animation: "slideUp 0.35s cubic-bezier(0.16,1,0.3,1) forwards",
-          maxHeight: "92dvh",
+          // Leaves the live scoreline in the room header uncovered — it now
+          // sits above this overlay and has to stay readable mid-question.
+          maxHeight: "84dvh",
           overflowY: "auto",
         }}
       >
@@ -183,6 +192,72 @@ export function QuestionCard({ question, onAnswer, onExpire }: QuestionCardProps
           </p>
         </div>
 
+        {/* Verdict — ABOVE the options, never below them. Sat under all four
+            answers it fell past the fold on a phone, so a player who'd just
+            tapped had no idea whether they'd scored. */}
+        {reveal && (
+          <div
+            className="mx-4 mb-3 rounded-2xl p-4"
+            style={{
+              background: reveal.isCorrect ? "rgba(174,234,0,0.08)" : "rgba(255,71,87,0.08)",
+              border: `1px solid ${reveal.isCorrect ? "rgba(174,234,0,0.2)" : "rgba(255,71,87,0.2)"}`,
+            }}
+          >
+            <div className="flex items-center justify-between gap-3 mb-2">
+              <span
+                className="font-display text-2xl"
+                style={{ color: reveal.isCorrect ? "#aeea00" : "#ff4757" }}
+              >
+                {reveal.isCorrect ? "CORRECT!" : "WRONG"}
+              </span>
+              <span className="flex items-baseline gap-2 flex-shrink-0">
+                {reveal.points > 0 && (
+                  <span className="font-display text-2xl" style={{ color: "#aeea00" }}>
+                    +{reveal.points}
+                  </span>
+                )}
+                <span className="font-body text-xs" style={{ color: "#8a948f" }}>
+                  {(reveal.elapsedMs / 1000).toFixed(1)}s
+                </span>
+              </span>
+            </div>
+            {question.explanation && (
+              <p className="font-body text-sm text-text-muted leading-relaxed">
+                {question.explanation}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Submit failure — the player must know their answer didn't land */}
+        {submitError && !reveal && !expired && (
+          <div
+            className="mx-4 mb-3 rounded-2xl p-4"
+            style={{ background: "rgba(255,184,0,0.06)", border: "1px solid rgba(255,184,0,0.2)" }}
+          >
+            <p className="font-body text-sm font-semibold" style={{ color: "#ffb800" }}>
+              {submitError}
+            </p>
+          </div>
+        )}
+
+        {/* Expired with no answer */}
+        {expired && !reveal && (
+          <div
+            className="mx-4 mb-3 rounded-2xl p-4"
+            style={{ background: "rgba(255,184,0,0.06)", border: "1px solid rgba(255,184,0,0.15)" }}
+          >
+            <p className="font-display text-xl" style={{ color: "#ffb800" }}>
+              TIME&apos;S UP
+            </p>
+            {question.explanation && (
+              <p className="font-body text-sm text-text-muted mt-1 leading-relaxed">
+                {question.explanation}
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Options */}
         <div className="px-4 pb-4 space-y-2.5">
           {LETTERS.map((letter, i) => {
@@ -216,68 +291,6 @@ export function QuestionCard({ question, onAnswer, onExpire }: QuestionCardProps
             );
           })}
         </div>
-
-        {/* Result reveal */}
-        {reveal && (
-          <div
-            className="mx-4 mb-6 rounded-2xl p-4"
-            style={{
-              background: reveal.isCorrect ? "rgba(174,234,0,0.08)" : "rgba(255,71,87,0.08)",
-              border: `1px solid ${reveal.isCorrect ? "rgba(174,234,0,0.2)" : "rgba(255,71,87,0.2)"}`,
-            }}
-          >
-            <div className="flex items-center justify-between mb-2">
-              <span
-                className="font-display text-2xl"
-                style={{ color: reveal.isCorrect ? "#aeea00" : "#ff4757" }}
-              >
-                {reveal.isCorrect ? "CORRECT!" : "WRONG"}
-              </span>
-              {reveal.points > 0 && (
-                <span
-                  className="font-display text-2xl"
-                  style={{ color: "#aeea00" }}
-                >
-                  +{reveal.points}
-                </span>
-              )}
-            </div>
-            {question.explanation && (
-              <p className="font-body text-sm text-text-muted leading-relaxed">
-                {question.explanation}
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* Submit failure — the player must know their answer didn't land */}
-        {submitError && !reveal && !expired && (
-          <div
-            className="mx-4 mb-6 rounded-2xl p-4"
-            style={{ background: "rgba(255,184,0,0.06)", border: "1px solid rgba(255,184,0,0.2)" }}
-          >
-            <p className="font-body text-sm font-semibold" style={{ color: "#ffb800" }}>
-              {submitError}
-            </p>
-          </div>
-        )}
-
-        {/* Expired with no answer */}
-        {expired && !reveal && (
-          <div
-            className="mx-4 mb-6 rounded-2xl p-4"
-            style={{ background: "rgba(255,184,0,0.06)", border: "1px solid rgba(255,184,0,0.15)" }}
-          >
-            <p className="font-display text-xl" style={{ color: "#ffb800" }}>
-              TIME&apos;S UP
-            </p>
-            {question.explanation && (
-              <p className="font-body text-sm text-text-muted mt-1 leading-relaxed">
-                {question.explanation}
-              </p>
-            )}
-          </div>
-        )}
       </div>
     </div>
   );

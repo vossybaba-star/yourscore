@@ -30,6 +30,46 @@
 > not in the rec strip is unreachable and unplayed, and club packs still fall back to crests
 > instead of real covers.)
 >
+> **Also confirmed:** 2026-07-23 (**Quiz Battle match feel: live scoreline, self-starting
+> matches, a verdict you can actually read.** Branch `fix/quiz-flow-ux`, committed, **not on
+> main**. Four fixes, from a `/ux-walk` of Versus plus the founder's own play-test, all inside
+> the live match rather than the surrounding menus.
+> **1. The scoreline is always on.** `LiveScoreline` in `src/app/play/[roomId]/page.tsx` renders
+> in the room header, which moved `z-30` → `z-[60]` so it paints ABOVE the question overlay
+> (`QuestionCard` is `fixed inset-0 z-50`) instead of being blurred out behind it; the sheet
+> dropped to `84dvh` to leave it clear. Reads `You 150 · BEHIND · 375 king126` — leader lime, you
+> red when trailing, gold when level; 3+ players reads you vs the current leader with a `+n`.
+> Mid-question you could previously see the timer and the answered-count but not a single score.
+> **2. Instant matches start themselves.** Matchmaking had already found and seated the opponent,
+> so the lobby asked you to confirm what you'd just confirmed on the "opponent found" screen. A
+> 3s countdown auto-fires `handleStart`, still tappable to skip, scoped to `INSTANT_MATCH_NAME`
+> rooms only — share-code and public lobbies keep the manual Start, because there you genuinely
+> are waiting for somebody. A failed start clears the countdown so it can't strand on
+> "Starting in 0…".
+> **3. The verdict lands.** The CORRECT/WRONG panel moved ABOVE the four options (it sat below
+> them, under the fold on a phone) and `triggerEarlyAdvance` holds the card open
+> `REVEAL_HOLD_MS = 1400` before advancing. **The hold is the real fix:** early-advance fires as
+> soon as every seat has answered and a shadow has always already answered, so the panel got ZERO
+> frames. Measured live: visible **1,439ms** answering last, **2,040ms** answering first, **0ms**
+> before.
+> **4. Speed is visible.** The verdict reads `CORRECT! +100 2.7s` — two players can both be 100%
+> and finish 200-100 on answer time alone. Also: a selected-but-unrevealed option went lime →
+> neutral white, so lime now only ever means "this was correct" (they were the same colour, so a
+> locked-in pick looked exactly like a right answer).
+> **Verified in a live shadow match** on the Newcastle United pack, not merely built.
+> ⚠️ **Never run `next build` while a dev server is up** — they share `.next/`, the prod build
+> clobbers the dev chunk graph, and the symptoms are 404s on real routes, "missing required error
+> components, refreshing…", and a game that freezes mid-round. `rm -rf .next` and restart.
+> **STILL OPEN from the same walk:** Versus Featured is **12/12 World Cup, 0 club**, with 9 tied
+> on `featured_order = 0` so the hero is an unstable `created_at` tiebreak — and `pickInstantPack`
+> falls back to `featured = true`, so an unpicked instant match always deals a World Cup quiz.
+> Founder's rule (2026-07-23): **featured order = club popularity among our users**
+> (`club_supporters`: Man Utd 133, Liverpool 123, Arsenal 77, Chelsea 48, Spurs 41, Man City 26,
+> Newcastle 23, Leeds 20, Everton 19, Villa 16). Also open: the Quiz Battle club grid launches one
+> pack instead of opening the club, so **98 published club-topic packs are unreachable from
+> Versus**; Versus can battle only **79 of 428** published packs; and guests can play nothing on
+> the Versus tab — every tap is capture-routed to sign-in.)
+>
 > **Previously confirmed:** 2026-07-22 (**Club pages + a batch of quiz-flow UX fixes shipped.**
 > Branch `fix/quiz-flow-ux`, merged to main.
 > **Club pages `/club/[slug]`:** the Quiz hub's Club tab used to send all 20 crest cards
