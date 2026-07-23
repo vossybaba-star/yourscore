@@ -27,6 +27,19 @@ type Row = any;
 type Cat = "all" | "featured" | "worldcup" | "club" | "records";
 
 function initial(n: string) { return (n[0] ?? "?").toUpperCase(); }
+
+/** Squash a club name to a form both sides agree on. `club_supporters` and the
+ *  pack names don't match exactly ("Brighton & Hove Albion" vs "Brighton",
+ *  "AFC Bournemouth" vs "Bournemouth"). A club that still doesn't match just
+ *  ranks last instead of breaking the order. */
+function clubKey(name: string) {
+  return name.toLowerCase()
+    .replace(/^afc\s+/, "")
+    .replace(/\s*&\s*hove albion\b/, "")
+    .replace(/\s+(fc|afc)$/, "")
+    .trim();
+}
+const UNRANKED = 9_999;
 function bucket(qc: number) { return qc <= 5 ? 5 : qc <= 10 ? 10 : 20; }
 function isWC(p: Pack) { return p.series.startsWith("wc") || /world cup/i.test(p.name) || /world cup/i.test(p.parameter ?? ""); }
 function catOf(p: Pack): Exclude<Cat, "all"> {
@@ -51,6 +64,19 @@ export default function QuizBattlePage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  // club key → 0-based popularity rank among our own players. Versus-only: the
+  // shared quiz_packs.featured flag is left alone so the home hero and the solo
+  // Quiz hub keep their current order (founder call, 2026-07-23).
+  const [clubRank, setClubRank] = useState<Map<string, number>>(new Map());
+
+  useEffect(() => {
+    fetch("/api/clubs/popularity")
+      .then((r) => r.json())
+      .then((d: { clubs?: { club: string }[] }) => {
+        setClubRank(new Map((d.clubs ?? []).map((c, i) => [clubKey(c.club), i])));
+      })
+      .catch(() => { /* leave empty — the picker falls back to its old order */ });
+  }, []);
 
   useEffect(() => { setPreTo(new URLSearchParams(window.location.search).get("to")); }, []);
 
@@ -106,16 +132,28 @@ export default function QuizBattlePage() {
       (a.featuredOrder - b.featuredOrder) || (Number(a.played) - Number(b.played)) || b.createdAt.localeCompare(a.createdAt));
   }, [packs, cat]);
 
-  // Carousel-mockup hero + rail: the lead featured pack and the next few picks.
+  // Lead with clubs, most-supported first (founder rule, 2026-07-23). A club
+  // pack outranks everything else; anything unranked keeps the old ordering
+  // behind it, so an empty/failed popularity fetch degrades to the previous
+  // featured-then-newest behaviour rather than to nothing.
+  const rankOf = useCallback((p: Pack) => (
+    p.type === "club" ? (clubRank.get(clubKey(p.name)) ?? UNRANKED) : UNRANKED
+  ), [clubRank]);
+
   const featuredHero = useMemo(() => {
+    const byRank = (packs ?? []).slice().sort((a, b) => rankOf(a) - rankOf(b));
+    if (byRank[0] && rankOf(byRank[0]) < UNRANKED) return byRank[0];
     const featured = (packs ?? []).filter((p) => p.featured).sort((a, b) => a.featuredOrder - b.featuredOrder);
     return featured[0] ?? (packs ?? []).slice().sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0] ?? null;
-  }, [packs]);
+  }, [packs, rankOf]);
+
   const popular = useMemo(() => {
     const pool = (packs ?? []).filter((p) => p.id !== featuredHero?.id);
     return pool.sort((a, b) =>
-      (a.featuredOrder - b.featuredOrder) || b.createdAt.localeCompare(a.createdAt)).slice(0, 6);
-  }, [packs, featuredHero]);
+      (rankOf(a) - rankOf(b))
+      || (a.featuredOrder - b.featuredOrder)
+      || b.createdAt.localeCompare(a.createdAt)).slice(0, 6);
+  }, [packs, featuredHero, rankOf]);
 
   async function playLive(friend: Friend | null) {
     if (!picked || busy) return;
@@ -247,7 +285,10 @@ export default function QuizBattlePage() {
                       <img src={coverUrl(featuredHero.cover, 480) ?? featuredHero.cover} alt="" className="absolute inset-0 w-full h-full object-cover object-bottom" />
                     )}
                     <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(8,13,10,0) 30%, rgba(8,13,10,0.9) 100%)" }} />
-                    <span className="absolute top-2.5 left-2.5 font-body text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded-md" style={{ background: TEAL, color: "#04231f" }}>New</span>
+                    {/* "New" means you haven't played it, same as the grid cards.
+                        It used to be hardcoded, so the hero claimed New even for
+                        a quiz you'd already played. */}
+                    {!featuredHero.played && <span className="absolute top-2.5 left-2.5 font-body text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded-md" style={{ background: TEAL, color: "#04231f" }}>New</span>}
                     <span className="absolute top-2.5 right-2.5 font-display text-[11px] px-2 py-0.5 rounded-lg" style={{ background: "rgba(0,0,0,0.55)", color: TEAL, border: "1px solid rgba(0,216,192,0.3)" }}>{featuredHero.questionCount}Q</span>
                     <div className="absolute bottom-0 left-0 right-0 p-4 flex items-end justify-between gap-3">
                       <p className="font-body text-[15px] font-bold text-white leading-snug min-w-0">{featuredHero.name}</p>

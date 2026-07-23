@@ -60,12 +60,27 @@
 > ⚠️ **Never run `next build` while a dev server is up** — they share `.next/`, the prod build
 > clobbers the dev chunk graph, and the symptoms are 404s on real routes, "missing required error
 > components, refreshing…", and a game that freezes mid-round. `rm -rf .next` and restart.
-> **STILL OPEN from the same walk:** Versus Featured is **12/12 World Cup, 0 club**, with 9 tied
-> on `featured_order = 0` so the hero is an unstable `created_at` tiebreak — and `pickInstantPack`
-> falls back to `featured = true`, so an unpicked instant match always deals a World Cup quiz.
-> Founder's rule (2026-07-23): **featured order = club popularity among our users**
-> (`club_supporters`: Man Utd 133, Liverpool 123, Arsenal 77, Chelsea 48, Spurs 41, Man City 26,
-> Newcastle 23, Leeds 20, Everton 19, Villa 16). Also open: the Quiz Battle club grid launches one
+> **DONE same day — Versus Quiz Battle now leads with clubs, most-supported first.** Founder's
+> rule: featured order = club popularity among our own players. **Deliberately NOT done by
+> flipping `quiz_packs.featured`** — that flag is shared with the home hero
+> (`src/lib/daily-game.ts:211`) and the solo Quiz hub (`/api/quiz/packs`), and the founder chose
+> (2026-07-23, given both options) to leave the home page exactly as it is. So the ordering is
+> local to `/versus/quiz`: new public route **`/api/clubs/popularity`** (service-role read,
+> `fetchCache = "force-no-store"` or Vercel pins it forever, CDN `s-maxage=3600`) counts DISTINCT
+> `user_id` per club — rows would double-count a fan who declared in two seasons, since the PK is
+> `(user_id, season_id)`. Live: Man Utd 133, Liverpool 123, Arsenal 77, Chelsea 49, Spurs 41,
+> Man City 26, Newcastle 23, Everton 20, Leeds 20, Villa 16. Ties break alphabetically so the
+> order is stable request to request. **Name mismatch is real and handled:** `club_supporters`
+> says "Brighton & Hove Albion" and "AFC Bournemouth" where the packs say "Brighton" and
+> "Bournemouth", so both sides go through `clubKey()`; an unmatched club ranks last rather than
+> breaking the list, and an empty/failed fetch degrades to the old featured-then-newest order.
+> Verified: hero = Manchester United, rail = Liverpool, Arsenal, Chelsea, Spurs, Man City, and
+> the home hero is untouched. Also fixed: the Featured hero's "New" chip was hardcoded, so it
+> claimed New for a quiz you'd already played.
+> ⚠️ **Still World-Cup-led everywhere else:** 12/12 `featured` packs are World Cup with 9 tied on
+> `featured_order = 0`, and `pickInstantPack` (`quiz-matchmaking.ts:84`) falls back to
+> `featured = true` ordered by `created_at`, so an unpicked instant match still deals a World Cup
+> quiz. Left alone on purpose — changing it moves the home hero. Also open: the Quiz Battle club grid launches one
 > pack instead of opening the club, so **98 published club-topic packs are unreachable from
 > Versus**; Versus can battle only **79 of 428** published packs; and guests can play nothing on
 > the Versus tab — every tap is capture-routed to sign-in.)
