@@ -154,10 +154,19 @@ if (UPLOAD && !args.includes("--i-have-approval")) {
 const cats = ONE ? [ONE] : Object.keys(CATEGORIES);
 const made = [];
 for (const cat of cats) {
+  const file = path.join(OUT, `category-${cat}.png`);
+  // NEVER regenerate art that already exists. The whole point of the review gate is that
+  // the founder approves a SPECIFIC image; the model is non-deterministic, so regenerating
+  // on the upload run would ship art nobody signed off (it did exactly that once). Pass
+  // --regenerate to deliberately paint a new one.
+  if (fs.existsSync(file) && !args.includes("--regenerate")) {
+    made.push({ cat, file });
+    console.log(`  ${cat}… reusing reviewed art`);
+    continue;
+  }
   process.stdout.write(`  ${cat}… `);
   try {
     const png = await buildCover(cat);
-    const file = path.join(OUT, `category-${cat}.png`);
     fs.writeFileSync(file, png);
     made.push({ cat, file });
     console.log("ok");
