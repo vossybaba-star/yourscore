@@ -138,12 +138,19 @@ async function ensurePackRow(row: GamedayRow, questions: QuizQuestion[]): Promis
 }
 
 /**
- * Who gets pushed — personalised by club (§4.3). Each user gets the pack for
- * the club they support, if that club has a pack publishing today. No
- * fallback to a random fixture: a user with no club_supporters row gets no
- * gameday push at all (AC14). Per-user daily cap = 1, a backstop for double
- * gameweeks (a club plays once a gameweek in the normal case, so the cap
- * should almost never bind).
+ * Who gets pushed (§4.3), from TWO opt-in sources, unioned and deduped:
+ *   1. Club supporters — each fan gets the pack for the club they support, if
+ *      that club has a pack publishing today.
+ *   2. Per-fixture reminder subscribers — anyone who tapped "Notify me" on this
+ *      specific fixture (halftime_reminders). This is the finer-grained opt-in:
+ *      it is not tied to which club you support, so a neutral who wants THIS
+ *      match's pack still gets told. Founder decision 2026-07-23: wire the
+ *      matchweek "Notify me" toggle into the day-before publish rather than
+ *      leave it writing rows nothing reads.
+ * No fallback to a random fixture: a user in NEITHER source gets no gameday
+ * push (AC14). Per-user daily cap = 1 (a backstop for double gameweeks); the
+ * union cannot double-push because notifyUsers dedupes on notification_log by
+ * (user, fixture) and the cap excludes anyone already pushed today.
  */
 async function pushForFixture(row: GamedayRow, slug: string): Promise<number> {
   if (!row.pack_id) return 0;
@@ -152,12 +159,17 @@ async function pushForFixture(row: GamedayRow, slug: string): Promise<number> {
   const matchday = londonMatchday(new Date(row.kickoff_at));
   const { startUtc, endUtc } = londonDayRange(matchday);
 
-  const [{ data: fans }, { data: alreadyToday }] = await Promise.all([
+  const [{ data: fans }, { data: reminderSubs }, { data: alreadyToday }] = await Promise.all([
     raw
       .from("club_supporters")
       .select("user_id")
       .eq("season_id", row.season_id ?? 0)
       .in("club", [row.home, row.away]),
+    // Per-fixture reminder opt-in — the "Notify me" toggle on the matchweek page.
+    raw
+      .from("halftime_reminders")
+      .select("user_id")
+      .eq("fixture_id", row.fixture_id),
     // Per-user daily cap: anyone already holding ANY gameday:% notification_log
     // row sent today has had their one gameday push already.
     raw
@@ -170,7 +182,10 @@ async function pushForFixture(row: GamedayRow, slug: string): Promise<number> {
 
   const capped = new Set(((alreadyToday ?? []) as { user_id: string }[]).map((r) => r.user_id));
   const targets = Array.from(
-    new Set(((fans ?? []) as { user_id: string }[]).map((r) => r.user_id)),
+    new Set([
+      ...((fans ?? []) as { user_id: string }[]).map((r) => r.user_id),
+      ...((reminderSubs ?? []) as { user_id: string }[]).map((r) => r.user_id),
+    ]),
   )
     .filter((id) => !capped.has(id))
     .slice(0, MAX_PUSH_PER_RUN);
