@@ -79,3 +79,6 @@ scripts/data/halftime/
 # Never commit env backups (they carry prod secrets)
 .env.local.bak*
 .env*
+
+# verification run logs (results live in pl-quiz-verify.jsonl)
+scripts/data/pl-quiz-verify.log

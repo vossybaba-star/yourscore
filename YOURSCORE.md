@@ -378,6 +378,39 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-23 (eve)** — **Every Pro question is now independently verified, and three wrong
+  answers were retired from the live bank.** Founder's bar: zero wrong answers.
+  **The three retired in prod** (all `status=retired`, each shown 0 times, so no player ever
+  saw one): Forest's European Cups answered 1 (they won two, 1979 and 1980); West Ham's
+  answered 1 (they have won none — Cup Winners' Cup 1965 and Conference League 2023 are
+  different competitions); AFC Bournemouth's nickname given as "The Cherries Boscombe", two
+  names concatenated, with the correct answer not among the options. **Retired, not re-keyed** —
+  re-keying means writing answer keys from recall, which is the exact failure that produced
+  them. Reversible, and it matches what `clean-live.mjs` already does.
+  **Every one of the 278 then went through the factory's real Stage 2 gate**
+  (`scripts/draft/verify-pl-quiz.mjs` → `verify.mjs verifyQuestion`): a fresh context, never
+  told the author's answer, must search, derive it independently and cite a URL. Disagreement,
+  no source, low confidence or any flagged ambiguity fails. **216 passed, 62 failed.**
+  Verification is now a **hard, fail-closed gate on the build** — a question absent from
+  `scripts/data/pl-quiz-verify.jsonl` does not ship, so adding questions later *requires*
+  re-running the verifier. Results are checkpointed per question and the run resumes.
+  **It found 4 more wrong answers no filter could have caught:** both Spurs nickname questions
+  offer "The Spurs" AND "The Lilywhites" (both real, so whichever is keyed a correct player is
+  marked wrong); Bournemouth's stadium offers "Dean Court" and "The Vitality Stadium" (same
+  ground, traditional vs sponsored name); and a Brentford/Chelsea/Fulham season the verifier
+  resolves differently. 56 more failed as ambiguous — about half genuine (the 1970 FA Cup
+  question lists both the final score 2-2 and the replay 2-1; Salah has since tied Gerrard's
+  Everton record so "who holds it" now has two answers), about half conservative over-flags.
+  **Kept the conservative ones as failures** — the bar is zero wrong answers, and every failure
+  is recoverable from the checkpoint.
+  **Bundle 278 → 216, neutral 74 → 66.** Coventry still 0; Ipswich 1, Hull 2, and Sunderland,
+  Forest, Leeds, Bournemouth 3 each. ⚠️ **Neutral 66 is thin** — that's the pool a guest or
+  no-club player draws from, so repeats start around 6 drafts. Growing it needs new questions,
+  and they must pass the verifier to ship.
+  ⚠️ Filter ORDER matters in the build: the content gates (denylist, verification) run LAST.
+  Putting them first made every shape filter report zero and blanked the coin-flip cut sheet,
+  destroying the record of what was removed. Diagnostics first, gates last.
+
 - **2026-07-23 (pm)** — **Pro: coin-flip questions cut from the gate.** If all four options
   are bare numbers the question can't be answered by knowing football: "How many goals did
   Salah score in 2024-25?" [28/30/29/31] is a 1-in-4 guess however much you know. In Pro a

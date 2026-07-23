@@ -138,9 +138,10 @@ const REJECT = [
  * fact. When a bad answer is found, its id goes here and it can never ship again, whatever
  * the filters think of it.
  *
- * This list is the only durable record that a specific question is wrong, because the bank
- * row itself is untouched (retiring it there is a production write and the founder's call).
- * Keep the reason: it's what stops someone "fixing" the filter and letting it back in.
+ * All three were also RETIRED in the live bank on 2026-07-23 (founder go-ahead), so they no
+ * longer reach the Quiz game either. This list is belt-and-braces: it keeps the bundle clean
+ * even if a row is ever un-retired, and it records WHY, which is what stops someone "fixing"
+ * a filter and quietly letting one back in.
  */
 const DENY = new Map([
   ["09505b81-fa3d-4b57-892d-8992a6303b7b",
@@ -150,6 +151,32 @@ const DENY = new Map([
   ["0d7f90d1-6d37-409c-a25a-0a2408550fbb",
    "Says West Ham have won 1 European Cup / Champions League. They have won none (Cup Winners' Cup 1965, Conference League 2023). Already excluded by the coin-flip rule; listed so it can never return."],
 ]);
+
+/**
+ * INDEPENDENT VERIFICATION, as a hard gate.
+ *
+ * Everything above judges SHAPE. None of it can tell whether a question states a true fact —
+ * three wrong answers got through and were only caught by a human reading them. So the
+ * bundle is additionally restricted to questions that passed scripts/draft/verify-pl-quiz.mjs:
+ * a fresh model context, never shown the author's answer, that had to search, derive the
+ * answer itself and cite a URL. Disagreement, no source, low confidence or any flagged
+ * ambiguity fails.
+ *
+ * Deliberately fail-OPEN when the file is missing (first run, fresh clone) but fail-CLOSED
+ * per question once it exists: a question absent from the results has not been checked, so
+ * it does not ship. That means adding new questions requires re-running the verifier — which
+ * is the point, not an inconvenience.
+ */
+const VERIFIED = (() => {
+  const p = path.join(root, "scripts", "data", "pl-quiz-verify.jsonl");
+  if (!fs.existsSync(p)) return null;
+  const ok = new Set();
+  for (const line of fs.readFileSync(p, "utf8").split("\n")) {
+    if (!line.trim()) continue;
+    try { const r = JSON.parse(line); if (r.verified) ok.add(r.id); } catch { /* skip partial line */ }
+  }
+  return ok;
+})();
 
 const LETTERS = ["A", "B", "C", "D"];
 const PAGE = 1000; // PostgREST caps a read at 1000 rows — always page, never assume one call.
@@ -198,7 +225,7 @@ const rows = await fetchAll((q) =>
     .in("entity_type", ["club", "records"]),
 );
 
-const stats = { fetched: rows.length, rejected: {}, denied: 0, malformed: 0, ambiguous: 0, numeric: 0, dupText: 0, dupFact: 0, unsupportedClub: 0, nonPlRecords: 0 };
+const stats = { fetched: rows.length, rejected: {}, denied: 0, unverified: 0, malformed: 0, ambiguous: 0, numeric: 0, dupText: 0, dupFact: 0, unsupportedClub: 0, nonPlRecords: 0 };
 /** Everything the all-numeric rule removed, written out so the founder can restore the
  *  iconic ones by hand — see OUT_CUT. */
 const cutNumeric = [];
@@ -208,9 +235,6 @@ const seenFact = new Set();
 const pool = [];
 
 for (const row of rows) {
-  // Known-wrong, found by reading. Nothing below can rescue these.
-  if (DENY.has(row.id)) { stats.denied++; continue; }
-
   // Records that aren't Premier League records (Champions League, World Cup) aren't a PL gate.
   if (row.entity_type === "records" && !/premier league/i.test(row.entity)) { stats.nonPlRecords++; continue; }
 
@@ -257,6 +281,17 @@ for (const row of rows) {
     cutNumeric.push({ q: row.question.trim(), options, answer: opts[row.answer], entity: row.entity });
     continue;
   }
+
+  // The two content gates run LAST of the exclusions, deliberately. Putting them first made
+  // every shape filter above report zero and blanked the coin-flip cut sheet, because nothing
+  // unverified ever reached them — which destroyed the record of what was removed and why.
+  // Diagnostics first, gates last.
+
+  // Known-wrong, found by reading. Nothing can rescue these.
+  if (DENY.has(row.id)) { stats.denied++; continue; }
+
+  // Not independently verified (or verified and failed) — it does not ship.
+  if (VERIFIED && !VERIFIED.has(row.id)) { stats.unverified++; continue; }
 
   // ── SCOPE ──
   const isNeutral = row.entity_type === "records" || !mentionsOwnClub(row);
