@@ -9,6 +9,7 @@ import { getPlayerCutoutUrl } from "@/lib/playerImages";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { DownloadAppButton } from "@/components/app/DownloadAppButton";
 import { GAMES } from "@/components/ui/GameSwitcher";
+import { GAME_VISUALS } from "@/components/games/GameVisuals";
 import { coverUrl } from "@/lib/img";
 import type { TodaysGame } from "@/lib/daily-game";
 
@@ -249,6 +250,10 @@ function GamesExplainer() {
   const game = GAMES[active];
   const detail = GAME_DETAIL[game.key];
   const { color, Icon, label, href, blurb } = game;
+  // Perfect 10 / Higher or Lower / Guess the Player each have a mock-screen
+  // graphic (shared with the /games page); Quiz and 38-0 do not, and stay
+  // bullets-only. undefined for those two, so the panel just skips the picture.
+  const visual = GAME_VISUALS[game.key];
 
   return (
     <section className="relative z-10 max-w-6xl mx-auto px-6 pb-16">
@@ -290,13 +295,19 @@ function GamesExplainer() {
             </div>
           </div>
 
-          <div className="space-y-3 mb-8">
-            {(detail?.points ?? [blurb]).map((p) => (
-              <div key={p} className="flex items-start gap-3">
-                <span className="flex-shrink-0 mt-1.5 rounded-full" style={{ width: 6, height: 6, background: color }} />
-                <p className="font-body text-sm sm:text-base text-white/80 leading-relaxed">{p}</p>
-              </div>
-            ))}
+          {/* When the game has a mock (the three §5C games), show it beside the
+              bullets from sm up, stacked above them on a phone with the picture
+              first. Quiz and 38-0 have no mock and render bullets full width. */}
+          <div className={`mb-8 ${visual ? "grid sm:grid-cols-2 gap-6 sm:gap-8 items-start" : ""}`}>
+            {visual && <div className="order-1 sm:order-2">{visual}</div>}
+            <div className={`space-y-3 ${visual ? "order-2 sm:order-1" : ""}`}>
+              {(detail?.points ?? [blurb]).map((p) => (
+                <div key={p} className="flex items-start gap-3">
+                  <span className="flex-shrink-0 mt-1.5 rounded-full" style={{ width: 6, height: 6, background: color }} />
+                  <p className="font-body text-sm sm:text-base text-white/80 leading-relaxed">{p}</p>
+                </div>
+              ))}
+            </div>
           </div>
 
           <Link href={href}
