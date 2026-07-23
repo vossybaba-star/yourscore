@@ -435,6 +435,27 @@ Confirmed preamble above and the referenced section.
   as a plain value would let a wrong answer be re-graded against each club in turn until one
   matched (~25% a go). The draw HMACs (seed, club) with the server secret and the grade call
   verifies it — swapped club, forged sig and omitted sig all return 400 (verified).
+  **Pro asks for a club itself, and GUESTS are asked too** (founder, 2026-07-22).
+  `ClubPrompt` (global, layout.tsx) already asks new signed-in accounts, but a skip there
+  sticks for the session and it never explains what a club does in 38-0. So Pro has its own
+  `ProClubPrompt` (`src/components/draft/ProClubPrompt.tsx`), shown under the PL tab only
+  when **Pro** is selected, with its own skip key so an earlier skip doesn't silence it. It
+  leads with the concrete reason — *"Get asked about your team"* — and never blocks: Pro
+  plays fine on the neutral pool.
+  **A guest's pick is local, and that's the conversion hook** — they can't have a
+  `club_supporters` row (no `profiles` row), so it lives in localStorage
+  (`src/lib/clubs/guestClub.ts`), flavours their questions immediately, and gives them a
+  reason to make an account: to keep it. `ClubPrompt` then pre-selects that pick after
+  sign-up and clears the local copy once the real row is written.
+  ⚠️ **The two picks are NOT the same promise and the copy must never blur them.** A
+  signed-in declaration is a season-LOCKED competition entry ("you're in for the season");
+  a guest's is a changeable device-local preference ("saved on this device — make an account
+  to keep it"). Never tell a guest their pick is locked.
+  **Trust boundary:** on `draw`, a `club` in the request body is honoured **only when signed
+  out**. A signed-in player's club always comes from `club_supporters`, so a locked entry
+  can't be overridden from the client (verified: bot locked to Sunderland, sent Arsenal, got
+  Sunderland + zero Arsenal questions). Guest clubs are validated against the bundle, so a
+  bogus one ("Real Madrid") falls back to neutral rather than erroring.
   ⚠️ **The bundle is NOT founder-reviewed yet** — `pl-quiz-review.md` is the gate before
   ship. It now splits **Neutral** (read these hardest — they go to everybody) from
   **Club-scoped** (only ever seen by that club's own fans, so they can be as parochial as

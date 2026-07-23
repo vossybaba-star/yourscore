@@ -13,6 +13,7 @@ import { BottomNav } from "@/components/ui/BottomNav";
 import { Button } from "@/components/ui/Button";
 import { Pitch } from "@/components/draft/Pitch";
 import { WcHubHero, DraftHubHero } from "@/components/draft/WcHubHero";
+import { ProClubPrompt } from "@/components/draft/ProClubPrompt";
 import { FORMATIONS, LEAGUE_META } from "@/lib/draft/types";
 import type { Formation, League } from "@/lib/draft/types";
 import { FORMATION_NOTE } from "@/lib/draft/formations";
@@ -284,6 +285,12 @@ export default function DraftHome() {
                     );
                   })}
                 </div>
+
+                {/* Only under PRO, because that's the only mode where a club changes
+                    anything — it asks you about your own team. Self-hides once they have
+                    a club, or if they've waved it away this session. Never blocks: Pro
+                    plays fine on the neutral pool. */}
+                {gated && <ProClubPrompt />}
               </>
             )}
 

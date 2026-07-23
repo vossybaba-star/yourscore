@@ -24,6 +24,7 @@ import { SlateSkeleton } from "@/components/draft/SlateSkeleton";
 import { BackPill } from "@/components/ui/BackPill";
 import { Button } from "@/components/ui/Button";
 import { gradeAnswer, type DraftBand } from "@/lib/draft/draft-quiz";
+import { loadGuestClub } from "@/lib/clubs/guestClub";
 import type { ServedQuestion } from "@/lib/draft/wc-quiz-public";
 import { spin, allBuckets, ensurePool, isPoolReady, type Spin } from "@/lib/draft/pool";
 import {
@@ -135,7 +136,14 @@ export default function DraftPlay() {
     try {
       const res = await fetch("/api/draft/pl/gate-quiz", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "draw", exclude: Array.from(askedIds.current) }),
+        body: JSON.stringify({
+          action: "draw",
+          exclude: Array.from(askedIds.current),
+          // A guest's club lives only on this device, so the server can't look it up —
+          // it's sent here and honoured only while signed out. A signed-in player's club
+          // comes from club_supporters and this field is ignored.
+          club: loadGuestClub(),
+        }),
       });
       const data = await res.json();
       if (!res.ok || !data.question) { spinAsMiss(); return; }

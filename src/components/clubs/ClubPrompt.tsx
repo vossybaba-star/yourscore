@@ -29,6 +29,7 @@ import { usePathname } from "next/navigation";
 import { useClubMe } from "./useClubData";
 import { ClubGrid } from "./ClubGrid";
 import { shortClubName } from "@/lib/clubs/display";
+import { clearGuestClub, loadGuestClub } from "@/lib/clubs/guestClub";
 
 const SKIP_KEY = "ys:club-prompt:skipped"; // session-scoped: re-nudges next visit
 const TEAL = "#00d8c0";
@@ -70,7 +71,11 @@ export function ClubPrompt() {
     if (!loaded || !user || !data) return;
     if (data.club || data.clubs.length === 0) return; // already locked, or no season yet
     setOpen(true);
-    setChoice(data.suggestion ?? null); // offer, don't demand
+    // Offer, don't demand. A club they already picked as a GUEST (38-0 Pro's prompt, held
+    // in localStorage) wins over the played-quizzes suggestion — they've told us outright,
+    // and carrying it over is what makes "make an account to keep it" true. They still
+    // confirm: the account version locks for the season, the guest one didn't.
+    setChoice(loadGuestClub(data.clubs) ?? data.suggestion ?? null);
   }, [pathname, loaded, user, data, preview]);
 
   const clubs = previewClubs ?? data?.clubs ?? [];
@@ -97,6 +102,9 @@ export function ClubPrompt() {
         setError((b as { error?: string }).error ?? "Couldn't save that");
         return;
       }
+      // The account row is now the authority — drop the guest copy so the two can't
+      // disagree (and so a later sign-out doesn't resurrect a stale pick).
+      clearGuestClub();
       await refresh();
       setOpen(false);
     } catch {

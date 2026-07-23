@@ -13,8 +13,11 @@ import { pensSeed } from "@/lib/draft/pens-server";
 // deterministic per seed), the client gets it answer-free alongside the seed, and grading
 // re-derives the same question from that seed. Nothing is persisted.
 //
-//   { action: "draw", exclude?: string[] } → { seed, sig, club, question }
+//   { action: "draw", exclude?: string[], club? } → { seed, sig, club, question }
 //   { action: "answer", seed, sig, club, choice } → { correct, correctIndex }
+//
+// `club` on a DRAW is a guest's locally-held pick and is honoured only when signed out; a
+// signed-in player's club is read from club_supporters and the field is ignored.
 //
 // ── WHY THE SIGNATURE ────────────────────────────────────────────────────────
 // A player is only asked neutral questions plus ones about their OWN club, so the pool a
@@ -44,12 +47,22 @@ function sigValid(expected: string, given: unknown): boolean {
   return timingSafeEqual(Buffer.from(expected), Buffer.from(given));
 }
 
-/** The signed-in player's club, in the question bank's spelling — or null for a guest, a
- *  player who hasn't picked one, or a club the bank has no questions for. */
-async function currentClubEntity(): Promise<string | null> {
+/**
+ * Whose club questions this request may be served, in the bank's spelling.
+ *
+ * Signed in → club_supporters is the ONLY authority. A signed-in player's club is a
+ *   season-locked competition entry, so it must never be settable from the request body.
+ * Guest     → there is no row to read (no profiles row exists), so their pick arrives from
+ *   the client and is validated against the bank here. That is safe: every club's questions
+ *   are the same easy/medium tier, so claiming a club wins nothing — it only changes which
+ *   flavour you get. `resolveClubEntity` rejects anything that isn't a real, stocked club.
+ */
+async function currentClubEntity(requested: unknown): Promise<string | null> {
   const auth = await createClient();
   const { data: { user } } = await auth.auth.getUser();
-  if (!user) return null;
+  if (!user) {
+    return resolveClubEntity(typeof requested === "string" ? requested : null);
+  }
 
   // club_supporters (migration 94) postdates the generated Database types, so the typed
   // client rejects the table name. Same cast the clubs routes use — see /api/clubs/me.
@@ -83,7 +96,9 @@ export async function POST(req: NextRequest) {
   try { body = await req.json(); } catch { return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 }); }
 
   if (body.action === "draw") {
-    const club = await currentClubEntity();
+    // `club` on a draw is a GUEST's local pick and is honoured only when signed out —
+    // see currentClubEntity. A signed-in player's club always comes from the database.
+    const club = await currentClubEntity(body.club);
     const exclude = new Set(
       Array.isArray(body.exclude)
         ? body.exclude.filter((v): v is string => typeof v === "string").slice(0, MAX_EXCLUDE)
