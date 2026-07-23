@@ -464,9 +464,107 @@ function StepCards({ steps, activeStep, setActiveStep }: {
 // framing (§1.3) on a page called THE GAMES.
 type Tab = (typeof GAMES)[number]["key"];
 
+// ── Mock game visuals for the three detail-panel games ──────────────────────
+// Same idiom as the Quiz / 38-0 step visuals: a small, honest mock of the real
+// screen, built from divs. Each one mirrors how the game actually plays, so the
+// picture teaches the mechanic the bullets describe.
+
+// Perfect 10's tower: rank 1 at the top, each rung wider than the last
+// (rungWidthPct in the real game runs 62% at rank 1 to 100% at rank 10).
+function Perfect10Visual() {
+  const rungs = [
+    { rank: 1, name: "Alan Shearer", solved: true },
+    { rank: 2, name: "Harry Kane", solved: true },
+    { rank: 3, name: null, solved: false },
+    { rank: 4, name: "Wayne Rooney", solved: true },
+    { rank: 5, name: null, solved: false },
+  ];
+  return (
+    <div className="rounded-2xl px-4 py-4" style={{ background: "#080d0a", border: "1px solid rgba(255,196,0,0.15)" }}>
+      <div className="flex items-center justify-between mb-3">
+        <p className="font-body text-xs uppercase tracking-widest" style={{ color: "#8a948f" }}>PL all time scorers</p>
+        <div className="flex items-center gap-1">
+          {[0, 1, 2].map((i) => (
+            <span key={i} className="rounded-full" style={{ width: 6, height: 6, background: i < 1 ? "#ff4757" : "rgba(255,255,255,0.12)" }} />
+          ))}
+        </div>
+      </div>
+      <div className="space-y-1.5">
+        {rungs.map((r, i) => (
+          <div key={r.rank} className="mx-auto flex items-center gap-2 rounded-lg px-2.5 py-2"
+            style={{
+              width: `${62 + (i * 38) / 4}%`,
+              background: r.solved ? "rgba(255,196,0,0.12)" : "rgba(255,255,255,0.03)",
+              border: `1px solid ${r.solved ? "rgba(255,196,0,0.35)" : "rgba(255,255,255,0.07)"}`,
+            }}>
+            <span className="font-display text-xs flex-shrink-0" style={{ color: r.solved ? "#ffc400" : "#586058", width: 12 }}>{r.rank}</span>
+            {r.solved
+              ? <span className="font-body text-xs text-white truncate">{r.name}</span>
+              : <span className="rounded-full" style={{ height: 5, width: "55%", background: "rgba(255,255,255,0.08)" }} />}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Higher or Lower: two same-position players, one stat, tap the bigger. The
+// real game reveals one number and hides the other.
+function HigherLowerVisual() {
+  return (
+    <div className="rounded-2xl px-4 py-4" style={{ background: "#080d0a", border: "1px solid rgba(255,120,0,0.15)" }}>
+      <p className="font-body text-xs text-center uppercase tracking-widest mb-3" style={{ color: "#8a948f" }}>Premier League goals · forwards</p>
+      <div className="flex items-stretch gap-2">
+        {[
+          { name: "Mohamed Salah", val: "186", known: true },
+          { name: "Sergio Agüero", val: "?", known: false },
+        ].map((p, i) => (
+          <div key={p.name} className="flex-1 rounded-xl px-3 py-3 text-center"
+            style={{ background: p.known ? "rgba(255,255,255,0.03)" : "rgba(255,120,0,0.1)", border: `1px solid ${p.known ? "rgba(255,255,255,0.07)" : "rgba(255,120,0,0.4)"}` }}>
+            <p className="font-body text-xs text-white/80 leading-tight mb-1.5">{p.name}</p>
+            <p className="font-display text-2xl" style={{ color: p.known ? "#fff" : "#ff7800" }}>{p.val}</p>
+            {!p.known && <p className="font-body text-xs mt-1" style={{ color: "#ff7800" }}>tap if more</p>}
+            {i === 0 && <p className="font-body text-xs mt-1" style={{ color: "#586058" }}>goals</p>}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Guess the Player: clues arrive one at a time (the real game shows a
+// nationality flag and shirt number as visual clues), then four options.
+function GuessThePlayerVisual() {
+  return (
+    <div className="rounded-2xl px-4 py-4" style={{ background: "#080d0a", border: "1px solid rgba(79,195,247,0.15)" }}>
+      <div className="flex items-center gap-2 mb-3">
+        {["🏴󠁧󠁢󠁥󠁮󠁧󠁿 England", "#7", "Winger"].map((c) => (
+          <span key={c} className="font-body text-xs px-2 py-1 rounded-md"
+            style={{ background: "rgba(79,195,247,0.12)", border: "1px solid rgba(79,195,247,0.3)", color: "#4fc3f7" }}>{c}</span>
+        ))}
+        <span className="font-body text-xs px-2 py-1 rounded-md" style={{ background: "rgba(255,255,255,0.03)", color: "#586058" }}>+2</span>
+      </div>
+      <div className="space-y-1.5">
+        {[
+          { l: "A", t: "Jack Grealish", on: false },
+          { l: "B", t: "Phil Foden", on: true },
+          { l: "C", t: "Bukayo Saka", on: false },
+        ].map((o) => (
+          <div key={o.l} className="flex items-center gap-2.5 rounded-lg px-2.5 py-2"
+            style={{ background: o.on ? "rgba(79,195,247,0.1)" : "rgba(255,255,255,0.03)", border: `1px solid ${o.on ? "rgba(79,195,247,0.4)" : "rgba(255,255,255,0.07)"}` }}>
+            <span className="w-5 h-5 rounded flex items-center justify-center font-display text-xs flex-shrink-0"
+              style={{ background: o.on ? "rgba(79,195,247,0.2)" : "rgba(255,255,255,0.05)", color: o.on ? "#4fc3f7" : "#8a948f" }}>{o.l}</span>
+            <span className="font-body text-xs text-white">{o.t}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // Quiz and 38-0 carry the most mechanics (§5A, §5B) and keep their step
 // carousels. The other three are documented in §5C and get a detail panel.
-const DETAIL: Partial<Record<Tab, { headline: string; points: string[] }>> = {
+const DETAIL: Partial<Record<Tab, { headline: string; points: string[]; visual: React.ReactNode }>> = {
   perfect10: {
     headline: "Name a ranked top ten",
     points: [
@@ -475,6 +573,7 @@ const DETAIL: Partial<Record<Tab, { headline: string; points: string[] }>> = {
       "Three strikes and the run ends. Stuck on one, take a hint and score less for it.",
       "The same list for everyone that day, so scores compare directly. Challenge a friend with a link.",
     ],
+    visual: <Perfect10Visual />,
   },
   "higher-lower": {
     headline: "Two players, one stat",
@@ -484,6 +583,7 @@ const DETAIL: Partial<Record<Tab, { headline: string; points: string[] }>> = {
       "Choose the stat you want: goals, assists, appearances and more.",
       "Ten a round, and faster answers score more.",
     ],
+    visual: <HigherLowerVisual />,
   },
   "guess-the-player": {
     headline: "Name the mystery footballer",
@@ -492,6 +592,7 @@ const DETAIL: Partial<Record<Tab, { headline: string; points: string[] }>> = {
       "Four options, and the sooner you call it the more it scores.",
       "Ten a round, fresh players every time.",
     ],
+    visual: <GuessThePlayerVisual />,
   },
 };
 
@@ -706,13 +807,19 @@ export default function GamesPage() {
                   <h2 className="font-display text-2xl sm:text-3xl text-white leading-tight">{detail.headline}</h2>
                 </div>
               </div>
-              <div className="space-y-3 mb-8">
-                {detail.points.map((p) => (
-                  <div key={p} className="flex items-start gap-3">
-                    <span className="flex-shrink-0 mt-1.5 rounded-full" style={{ width: 6, height: 6, background: game.color }} />
-                    <p className="font-body text-sm sm:text-base text-white/80 leading-relaxed">{p}</p>
-                  </div>
-                ))}
+              {/* Bullets and a mock of the real screen. Two columns from sm up;
+                  stacked on a phone with the picture first, because the picture
+                  explains the game faster than the list does. */}
+              <div className="grid sm:grid-cols-2 gap-6 sm:gap-8 items-start mb-8">
+                <div className="order-2 sm:order-1 space-y-3">
+                  {detail.points.map((p) => (
+                    <div key={p} className="flex items-start gap-3">
+                      <span className="flex-shrink-0 mt-1.5 rounded-full" style={{ width: 6, height: 6, background: game.color }} />
+                      <p className="font-body text-sm sm:text-base text-white/80 leading-relaxed">{p}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="order-1 sm:order-2">{detail.visual}</div>
               </div>
               <Link href={game.href}
                 className="inline-flex items-center gap-2 font-body font-bold text-base px-7 py-3.5 rounded-xl transition-all active:scale-95"
