@@ -22,7 +22,13 @@ const DRAW_TRIES = 25; // then repeats are allowed — a long session never dead
 
 export async function POST(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-  const { ok } = await rateLimitDistributed(`pl-gate-quiz:${ip}`, 60, 60_000);
+  // One gated draft is 11 questions x 2 calls = 22 requests, so 60/min left no room for
+  // players sharing an IP (pub wifi, office, carrier NAT) — three drafting at once would
+  // trip it. That matters more than it used to: a refused gate is now graded as a MISS
+  // (see drawGateQuestion), so rate-limiting a legitimate player actively costs them
+  // picks. 120 fits ~5 concurrent drafts per IP. There's nothing to farm here anyway —
+  // the route is stateless and failing it no longer pays.
+  const { ok } = await rateLimitDistributed(`pl-gate-quiz:${ip}`, 120, 60_000);
   if (!ok) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
 
   let body: { action?: string; exclude?: unknown; seed?: unknown; choice?: unknown };

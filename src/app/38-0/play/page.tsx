@@ -111,9 +111,21 @@ export default function DraftPlay() {
     void drawGateQuestion();
   }
 
+  // A gate we couldn't serve must never be BETTER than answering one. The first version
+  // fell back to an unbanded spin (0–99) so a draft couldn't dead-end on a network blip —
+  // but that made failure the best move in the game: trip the endpoint's rate limit and
+  // every remaining pick came through ungated at full quality. So a failed gate is graded
+  // as a MISS instead: the draft still never dead-ends, the streak resets, and the pick is
+  // capped exactly as a wrong answer would be. Costly enough not to farm, mild enough that
+  // a genuine blip only costs you one pick.
+  function spinAsMiss() {
+    const { streak: newStreak, band } = gradeAnswer(streak, false);
+    setStreak(newStreak);
+    runSpin(band);
+  }
+
   // Pull the next gate question from the server ANSWER-FREE (the pool + answers are
-  // server-only). Any failure falls back to an ungated spin so a draft can never
-  // dead-end on a network blip.
+  // server-only).
   async function drawGateQuestion() {
     try {
       const res = await fetch("/api/draft/pl/gate-quiz", {
@@ -121,14 +133,14 @@ export default function DraftPlay() {
         body: JSON.stringify({ action: "draw", exclude: Array.from(askedIds.current) }),
       });
       const data = await res.json();
-      if (!res.ok || !data.question) { runSpin({}); return; }
+      if (!res.ok || !data.question) { spinAsMiss(); return; }
       gateSeed.current = data.seed as string;
       setQuiz({ ...data.question, correctIndex: -1 });
       setAnswered(null);
       setFeedback(null);
       setTimeLeft(QUESTION_SECONDS);
     } catch {
-      runSpin({});
+      spinAsMiss();
     }
   }
 

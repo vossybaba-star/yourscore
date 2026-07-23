@@ -401,6 +401,14 @@ Confirmed preamble above and the referenced section.
   rows — they make a distractor correct too). **Note `Premier League Records` files under its
   own categories** (`PL Records`, `PL History`, `PL 2024-25`) so the script queries it
   separately — miss that and the 32 most on-brief questions in the bank vanish.
+  **A failed gate is graded as a MISS, never a free pass.** The first cut fell back to an
+  unbanded spin (0–99) so a draft couldn't dead-end on a network blip — which made failure
+  the strongest move in the game: trip the endpoint's rate limit and every remaining pick
+  came through ungated at full quality. Now a refused/failed gate resets the streak and caps
+  the pick exactly as a wrong answer does (verified: forced 429 deals a squad topping out at
+  72, not 99). The limit also went 60→120 req/min per IP, because one draft is 22 requests
+  and punishing a rate-limited player makes shared IPs (pub wifi, carrier NAT) a real UX
+  problem rather than just an abuse control.
   ⚠️ **The bundle is NOT founder-reviewed yet** — `pl-quiz-review.md` is the gate before ship.
 
 - **2026-07-20 (pm)** — **Versus guest dead-end fixed** (`src/app/versus/page.tsx`, working
