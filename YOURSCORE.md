@@ -378,6 +378,20 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-23 (late)** — **Pro's club ask is a POP-UP, not a section** (founder). A 20-crest
+  grid sitting inline pushed the formation picker and the draft button off the screen and read
+  as another form to fill in before you could play. It's now a sheet on the same pattern as the
+  global `ClubPrompt`, dismissible by **Not now** or by tapping the backdrop.
+  What stays inline is a **one-line status row** once they have a club — *"Pro is asking about
+  Arsenal · 35 questions"* with **Change** for guests, **Locked** for signed-in players. That
+  row is the fix for the UX-walk cross where the club was invisible with no way to change it,
+  so it is not a section and must not be removed.
+  ⚠️ **`picking` is held separately from `current`** in `ProClubPrompt`. Conflating them was a
+  real bug: **Change** cleared the saved club to reveal the picker, so cancelling left a club
+  still saved and nothing on screen saying so — the exact problem the status row exists to
+  solve. Cancelling an edit is not the same as waving the question away, so it also does not
+  burn the session skip.
+
 - **2026-07-23 (eve)** — **Every Pro question is now independently verified, and three wrong
   answers were retired from the live bank.** Founder's bar: zero wrong answers.
   **The three retired in prod** (all `status=retired`, each shown 0 times, so no player ever
@@ -926,7 +940,10 @@ Use these words, with these meanings, everywhere. No synonyms.
 - **Draft** — place spun players into your formation's best-fit slots to build your XI.
 - **Strength** — your XI's computed rating (~40–99).
 - **Projected season** — Strength mapped to a 38-game record + tier (the "could it go 38-0?" projection).
-- **Classic / Expert** — Expert mode hides player ratings during the draft (names + positions only).
+- **Classic / Expert** — ❌ RETIRED 2026-07-23. Expert (ratings hidden during the draft) is
+  gone and the difficulty switch with it; 38-0 is one format now. The `mode` field survives
+  only so teams saved as `"expert"` still parse, and nothing honours the value on read.
+  **Do not reintroduce a difficulty switch without asking.**
 - **Match types** — **Quick Match** (guest/practice, local) · **Ranked** (signed-in, feeds leaderboards — *building*) · **Live H2H** (simultaneous two-half match you watch play out) · **Challenge** (snapshot your XI → friend resolves via share code) · **World Cup Run** (solo WC2026 campaign).
 - **Stale team** — ❌ RETIRED concept: a loss now resets the streak but the team stays active (win → earn a one-player swap).
 

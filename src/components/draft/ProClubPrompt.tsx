@@ -53,6 +53,14 @@ export function ProClubPrompt({ onClubSet }: { onClubSet?: (club: string) => voi
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [skipped, setSkipped] = useState(false);
+  /**
+   * Is the picker open, held SEPARATELY from `current` (the club they actually have).
+   * Conflating the two was a bug: "Change" cleared `current` to reveal the picker, so
+   * dismissing afterwards left them with a club still saved and nothing on screen saying
+   * so — the exact "club invisible, no way to change it" problem the status row exists to
+   * fix. What club you have and whether the picker is open are different questions.
+   */
+  const [picking, setPicking] = useState(false);
 
   useEffect(() => {
     try { if (sessionStorage.getItem(SKIP_KEY)) setSkipped(true); } catch { /* private mode */ }
@@ -107,7 +115,7 @@ export function ProClubPrompt({ onClubSet }: { onClubSet?: (club: string) => voi
   // for the three clubs Pro holds no questions for, where the silence looked like a bug.
   // A guest can change theirs freely (it's a local preference); a signed-in player can't,
   // because theirs is a season-locked competition entry, so they're told that instead.
-  if (current) {
+  if (current && !picking) {
     const n = questionsFor(current);
     return (
       <div
@@ -128,7 +136,7 @@ export function ProClubPrompt({ onClubSet }: { onClubSet?: (club: string) => voi
           <span className="font-body flex-shrink-0" style={{ fontSize: 11, color: "#8a948f" }}>Locked</span>
         ) : (
           <button
-            onClick={() => { setCurrent(null); setChoice(null); }}
+            onClick={() => { setChoice(current); setPicking(true); }}
             className="flex-shrink-0 rounded-xl px-3 py-2 transition-opacity hover:opacity-80"
             style={{ border: "1px solid rgba(255,255,255,0.14)" }}
           >
@@ -139,7 +147,14 @@ export function ProClubPrompt({ onClubSet }: { onClubSet?: (club: string) => voi
     );
   }
 
+  /** Dismiss the sheet. Only counts as "skipped for the session" when they have no club to
+   *  fall back to — someone who opened the picker via Change and thought better of it is
+   *  cancelling an edit, not waving away the question, and must land back on their status
+   *  row rather than on nothing. */
   function skip() {
+    setPicking(false);
+    setChoice(null);
+    if (current) return;
     try { sessionStorage.setItem(SKIP_KEY, "1"); } catch { /* private mode */ }
     setSkipped(true);
   }
@@ -154,6 +169,7 @@ export function ProClubPrompt({ onClubSet }: { onClubSet?: (club: string) => voi
       saveGuestClub(choice);
       trackClubPick(choice);
       setCurrent(choice);
+      setPicking(false);
       onClubSet?.(choice);
       return;
     }
@@ -173,6 +189,7 @@ export function ProClubPrompt({ onClubSet }: { onClubSet?: (club: string) => voi
       }
       trackClubPick(choice);
       setCurrent(choice);
+      setPicking(false);
       onClubSet?.(choice);
     } catch {
       setError("Couldn't save that. Try again.");
@@ -181,71 +198,86 @@ export function ProClubPrompt({ onClubSet }: { onClubSet?: (club: string) => voi
     }
   }
 
+  // A POP-UP, not a section (founder, 2026-07-23). A 20-crest grid sitting inline pushed the
+  // formation picker and the draft button off the screen and read as another thing to fill in
+  // before you could play. As a sheet it asks once, takes the answer or the shrug, and gets
+  // out of the way. Same shape as the global ClubPrompt so the two feel like one decision.
   return (
     <div
-      className="rounded-2xl overflow-hidden mt-3"
-      style={{ background: "#0e1611", border: `1px solid ${LIME}59` }}
+      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center px-4"
+      style={{ background: "rgba(0,0,0,0.72)" }}
+      // Tapping the backdrop is the same as "Not now" — a modal you can't dismiss by
+      // tapping away reads as a demand, and this is explicitly not one.
+      onClick={skip}
     >
-      <div className="px-4 pt-4 pb-3">
-        <p className="font-display tracking-widest" style={{ fontSize: 10, color: LIME }}>
-          PRO · YOUR CLUB
-        </p>
-        <p className="font-display text-white leading-tight mt-1" style={{ fontSize: 20 }}>
-          Get asked about your team
-        </p>
-        <p className="font-body mt-1" style={{ fontSize: 12, color: "#8a948f", lineHeight: 1.4 }}>
-          Pick your club and Pro mixes in questions about them. Otherwise you get Premier
-          League questions only.
-        </p>
-      </div>
+      <div
+        className="w-full max-w-md rounded-3xl overflow-hidden mb-4 sm:mb-0"
+        style={{ background: "#0e1611", border: `1px solid ${LIME}59` }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="px-5 pt-5 pb-3">
+          <p className="font-display tracking-widest" style={{ fontSize: 10, color: LIME }}>
+            PRO · YOUR CLUB
+          </p>
+          <p className="font-display text-white leading-tight mt-1" style={{ fontSize: 26, letterSpacing: "-0.015em" }}>
+            Get asked about your team
+          </p>
+          <p className="font-body mt-2" style={{ fontSize: 13, color: "#8a948f", lineHeight: 1.4 }}>
+            Pick your club and Pro mixes in questions about them. Otherwise you get Premier
+            League questions only.
+          </p>
+        </div>
 
-      <div className="px-4 pb-4">
-        <ClubGrid clubs={clubs} selected={choice} onSelect={setChoice} disabled={saving} />
-
-        {/* Two truths, both of which the card was getting wrong.
-            1. Pro holds no questions at all for some clubs (Coventry 0, Ipswich 2, Hull 3 at
-               time of writing). The headline promises "questions about your team", so a fan
-               of those clubs was being sold something that doesn't exist. Say it plainly at
-               the moment of choosing, while they can still pick something else.
-            2. The lock is only real for a signed-in declaration. A guest's pick writes
-               nothing, so telling them it's locked for the season would be false. */}
-        {choice && (
-          <div className="mt-3">
-            <p className="font-body" style={{ fontSize: 11, color: questionsFor(choice) === 0 ? "#ff8a3d" : "#8a948f" }}>
-              {questionsFor(choice) === 0
-                ? `No ${shortClubName(choice)} questions yet, so Pro will ask you Premier League ones.`
-                : `${questionsFor(choice)} ${shortClubName(choice)} questions, mixed in with Premier League ones.`}
-            </p>
-            <p className="font-body mt-1" style={{ fontSize: 11, color: "#8a948f" }}>
-              {user
-                ? "You're in for the season, you can't switch later."
-                : "Saved on this device. Make an account to keep it."}
-            </p>
+        <div className="px-5 pb-4">
+          <div className="max-h-[42vh] overflow-y-auto no-scrollbar">
+            <ClubGrid clubs={clubs} selected={choice} onSelect={setChoice} disabled={saving} />
           </div>
-        )}
 
-        {error && (
-          <p className="font-body mt-2" style={{ fontSize: 11, color: "#ff6b6b" }}>{error}</p>
-        )}
+          {/* Two truths, both of which the card was getting wrong.
+              1. Pro holds no questions at all for some clubs (Coventry 0, Ipswich 1, Hull 2 at
+                 time of writing). The headline promises "questions about your team", so a fan
+                 of those clubs was being sold something that doesn't exist. Say it plainly at
+                 the moment of choosing, while they can still pick something else.
+              2. The lock is only real for a signed-in declaration. A guest's pick writes
+                 nothing, so telling them it's locked for the season would be false. */}
+          {choice && (
+            <div className="mt-3">
+              <p className="font-body" style={{ fontSize: 12, color: questionsFor(choice) === 0 ? "#ff8a3d" : "#8a948f" }}>
+                {questionsFor(choice) === 0
+                  ? `No ${shortClubName(choice)} questions yet, so Pro will ask you Premier League ones.`
+                  : `${questionsFor(choice)} ${shortClubName(choice)} questions, mixed in with Premier League ones.`}
+              </p>
+              <p className="font-body mt-1" style={{ fontSize: 12, color: "#8a948f" }}>
+                {user
+                  ? "You're in for the season, you can't switch later."
+                  : "Saved on this device. Make an account to keep it."}
+              </p>
+            </div>
+          )}
 
-        <div className="flex gap-2 mt-3">
+          {error && (
+            <p className="font-body mt-2" style={{ fontSize: 12, color: "#ff6b6b" }}>{error}</p>
+          )}
+        </div>
+
+        <div className="px-5 pb-5 flex gap-2">
           <button
             onClick={save}
             disabled={!choice || saving}
-            className="flex-1 rounded-xl py-2.5 text-center transition-opacity active:scale-[0.98] disabled:opacity-40"
+            className="flex-1 rounded-xl py-3 text-center transition-opacity active:scale-[0.98] disabled:opacity-40"
             style={{ background: choice ? LIME : "rgba(255,255,255,0.06)", border: `1px solid ${LIME}66` }}
           >
-            <span className="font-display tracking-wide" style={{ fontSize: 13, color: choice ? "#062013" : "#8a948f" }}>
+            <span className="font-display tracking-wide" style={{ fontSize: 14, color: choice ? "#062013" : "#8a948f" }}>
               {saving ? "SAVING…" : "USE THIS CLUB"}
             </span>
           </button>
           <button
             onClick={skip}
             disabled={saving}
-            className="rounded-xl px-4 py-2.5 text-center transition-opacity hover:opacity-80 disabled:opacity-50"
+            className="rounded-xl px-5 py-3 text-center transition-opacity hover:opacity-80 disabled:opacity-50"
             style={{ border: "1px solid rgba(255,255,255,0.14)" }}
           >
-            <span className="font-body font-semibold" style={{ fontSize: 12, color: "#c4ccc6" }}>
+            <span className="font-body font-semibold" style={{ fontSize: 13, color: "#c4ccc6" }}>
               Not now
             </span>
           </button>
