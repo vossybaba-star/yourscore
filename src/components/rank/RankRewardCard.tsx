@@ -76,7 +76,10 @@ export function RankRewardCard() {
     <>
     <Link href="/leaderboard" className="block rounded-2xl px-4 py-3.5 transition-opacity hover:opacity-90"
       style={{ background: "linear-gradient(135deg, rgba(174,234,0,0.10), rgba(174,234,0,0.05))", border: `1px solid ${accent}33` }}>
-      <div className="flex items-center justify-between">
+      {/* gap-3: at 375px the two columns previously butted together with zero space,
+          so the left label sat flush against "Keep playing to climb" and read as one
+          collided block. */}
+      <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5 min-w-0">
           <span className="text-lg flex-shrink-0">{badge?.emoji ?? "🏅"}</span>
           <div className="min-w-0">
@@ -84,7 +87,10 @@ export function RankRewardCard() {
               #{pos.toLocaleString()}
               <span className="font-body text-xs ml-1.5" style={{ color: "#8a948f" }}>{row.overall_score.toLocaleString()} pts</span>
             </p>
-            <p className="font-body text-[10px] uppercase tracking-widest mt-1" style={{ color: "#586058" }}>
+            {/* truncate: "YourScore leaderboard · GOLD" at tracking-widest wrapped to three
+                lines at 375px, stacking under the right-hand column. One line, ellipsis if
+                it still will not fit. */}
+            <p className="font-body text-[10px] uppercase tracking-widest mt-1 truncate" style={{ color: "#586058" }}>
               YourScore leaderboard{badge ? ` · ${badge.label}` : ""}
             </p>
           </div>
