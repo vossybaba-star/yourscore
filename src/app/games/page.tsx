@@ -4,6 +4,7 @@ import Link from "next/link";
 import { GridBackground } from "@/components/ui/GridBackground";
 import { useState, useEffect } from "react";
 import { BottomNav } from "@/components/ui/BottomNav";
+import { GAMES } from "@/components/ui/GameSwitcher";
 
 const ANIM_CSS = `
   @keyframes pulseGlow {
@@ -455,7 +456,44 @@ function StepCards({ steps, activeStep, setActiveStep }: {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
-type Tab = "quiz" | "draft";
+// Tabs are the five live games, keyed to the GAMES registry in GameSwitcher.
+// YOURSCORE.md §1.1 makes that registry the single source of truth for the game
+// list and says the marketing pages render from it, so adding a game is one
+// edit there and this page grows a tab on its own. This page previously had two
+// tabs, Quiz and 38-0, which was the retired "two games, 38-0 is the flagship"
+// framing (§1.3) on a page called THE GAMES.
+type Tab = (typeof GAMES)[number]["key"];
+
+// Quiz and 38-0 carry the most mechanics (§5A, §5B) and keep their step
+// carousels. The other three are documented in §5C and get a detail panel.
+const DETAIL: Partial<Record<Tab, { headline: string; points: string[] }>> = {
+  perfect10: {
+    headline: "Name a ranked top ten",
+    points: [
+      "One ranked list, ten rungs. Premier League all time scorers, club records, that sort of thing.",
+      "Type a name and it lands on the rung it belongs on.",
+      "Three strikes and the run ends. Stuck on one, take a hint and score less for it.",
+      "The same list for everyone that day, so scores compare directly. Challenge a friend with a link.",
+    ],
+  },
+  "higher-lower": {
+    headline: "Two players, one stat",
+    points: [
+      "Two Premier League players in the same position. Pick whoever has the bigger number.",
+      "Never a keeper against a striker, so it is a fair call every time.",
+      "Choose the stat you want: goals, assists, appearances and more.",
+      "Ten a round, and faster answers score more.",
+    ],
+  },
+  "guess-the-player": {
+    headline: "Name the mystery footballer",
+    points: [
+      "Clues drip in one at a time, or a career path unfolds club by club.",
+      "Four options, and the sooner you call it the more it scores.",
+      "Ten a round, fresh players every time.",
+    ],
+  },
+};
 
 // ── Landing with the season ─────────────────────────────────────────────────
 // Premier League GW1 is Fri 21 Aug 2026, and both of these open with it. Dates
@@ -472,7 +510,7 @@ const FANTASY_POINTS = [
 ];
 
 const HALFTIME_POINTS = [
-  { n: "01", t: "One pack per fixture", d: "Every Premier League match gets its own quiz pack, built for that game." },
+  { n: "01", t: "One pack per fixture", d: "Every Premier League match gets its own quiz pack, built for that game, every week of the season." },
   { n: "02", t: "It drops at the whistle", d: "Not on a timer, not an estimate. The real half time whistle releases it." },
   { n: "03", t: "Ten questions, fifteen minutes", d: "The length of the interval. Play it before the players come back out." },
   { n: "04", t: "Play it against your friends", d: "Same pack, same window, so there is one right answer to who knew more." },
@@ -563,16 +601,21 @@ export default function GamesPage() {
     setOpenFaq(null);
   };
 
-  const steps = tab === "quiz" ? QUIZ_STEPS : DRAFT_STEPS;
-  const faqs  = tab === "quiz" ? QUIZ_FAQS  : DRAFT_FAQS;
+  const game = GAMES.find((g) => g.key === tab) ?? GAMES[0];
+  const steps = tab === "quiz" ? QUIZ_STEPS : tab === "draft" ? DRAFT_STEPS : null;
+  const faqs  = tab === "quiz" ? QUIZ_FAQS  : tab === "draft" ? DRAFT_FAQS  : null;
+  const detail = DETAIL[tab];
 
   useEffect(() => {
+    if (!steps) return;
     const iv = setInterval(() => setActiveStep(s => (s + 1) % steps.length), 4000);
     return () => clearInterval(iv);
-  }, [tab, steps.length]);
+  }, [tab, steps]);
 
-  const accentColor = tab === "quiz" ? "#aeea00" : "#aeea00";
-  const accentRgba  = tab === "quiz" ? "174,234,0" : "174,234,0";
+  // Each game owns its section colour (§5C: "not Quiz teal / 38-0 lime"), so the
+  // page tints to whichever game is being read about.
+  const accentColor = game.color;
+  const accentRgba = [1, 3, 5].map((i) => parseInt(game.color.slice(i, i + 2), 16)).join(",");
 
   return (
     <main className="min-h-dvh bg-bg pb-28">
@@ -586,10 +629,12 @@ export default function GamesPage() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo.png" alt="YourScore" height={28} style={{ height: 28, width: "auto" }} />
         </Link>
-        <Link href="/38-0/play"
+        {/* Was "Draft Your XI" into 38-0. That is the retired flagship framing
+            (§1.3: the five games are peers) on a page about all of them. */}
+        <Link href="/play"
           className="font-body font-bold text-sm px-5 py-2.5 rounded-xl transition-all hover:opacity-90 green-pulse-glow"
           style={{ background: "#aeea00", color: "#0a0a0f" }}>
-          Draft Your XI →
+          Play a game →
         </Link>
       </nav>
 
@@ -600,54 +645,83 @@ export default function GamesPage() {
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6 font-body text-xs uppercase tracking-widest text-green"
             style={{ background: "rgba(174,234,0,0.08)", border: "1px solid rgba(174,234,0,0.15)" }}>
             <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "#aeea00" }} />
-            Quizzes · Gameday · Fantasy · Versus
+            Five live games · Halftime Quiz and Fantasy from 21 August
           </div>
           <h1 className="font-display text-6xl sm:text-7xl text-white leading-none mb-5">
             THE<br /><span style={{ color: accentColor }}>GAMES</span>
           </h1>
           <p className="font-body text-text-muted text-lg max-w-xl mx-auto leading-relaxed">
-            {tab === "quiz"
-              ? "Four steps from zero to bragging rights. Start a league with your friends, race through the daily quiz, and build your score all season."
-              : "Draft a squad of 11, challenge your friends head to head, and chase the dream: 38 games, 0 losses."}
+            Five games, one score, one rank. Versus, leagues and your YourScore rank tie them together.
           </p>
         </div>
 
-        {/* ── Tab switcher ──────────────────────────────────────────────── */}
-        <div className="flex gap-2 p-1 rounded-2xl mx-auto mb-10 max-w-xs"
-          style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-          <button
-            onClick={() => switchTab("quiz")}
-            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-body text-sm font-semibold transition-all"
-            style={{
-              background: tab === "quiz" ? "rgba(174,234,0,0.18)" : "transparent",
-              color: tab === "quiz" ? "#aeea00" : "#8a948f",
-              border: tab === "quiz" ? "1px solid rgba(174,234,0,0.3)" : "1px solid transparent",
-            }}>
-            <span>⭐</span> Quiz
-          </button>
-          <button
-            onClick={() => switchTab("draft")}
-            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-body text-sm font-semibold transition-all"
-            style={{
-              background: tab === "draft" ? "rgba(174,234,0,0.15)" : "transparent",
-              color: tab === "draft" ? "#aeea00" : "#8a948f",
-              border: tab === "draft" ? "1px solid rgba(174,234,0,0.3)" : "1px solid transparent",
-            }}>
-            <span>👕</span> 38-0
-          </button>
+        {/* ── Tab switcher ──────────────────────────────────────────────────
+            Rendered from GAMES, never hand-listed. Horizontally scrollable:
+            five labels do not fit at 375px and wrapping reads as a broken
+            grid. ── */}
+        <div className="flex gap-2 overflow-x-auto pb-2 mb-8 -mx-1 px-1" style={{ scrollbarWidth: "none" }}>
+          {GAMES.map((g) => {
+            const on = g.key === tab;
+            return (
+              <button key={g.key} onClick={() => switchTab(g.key)}
+                className="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-full font-body text-sm font-semibold whitespace-nowrap transition-all active:scale-95"
+                style={{
+                  background: on ? `${g.color}1f` : "rgba(255,255,255,0.04)",
+                  border: `1px solid ${on ? `${g.color}66` : "rgba(255,255,255,0.08)"}`,
+                  color: on ? g.color : "#8a948f",
+                }}>
+                {g.label}
+              </button>
+            );
+          })}
         </div>
 
-        {/* Step cards */}
-        <StepCards steps={steps} activeStep={activeStep} setActiveStep={setActiveStep} />
+        {/* One line on the game being read about, from the registry. */}
+        <p className="font-body text-center text-text-muted mb-8">{game.blurb}</p>
 
-        {/* Step progress pills */}
-        <div className="flex justify-center gap-2 mb-16">
-          {steps.map((step, i) => (
-            <button key={i} onClick={() => setActiveStep(i)}
-              className="h-1.5 rounded-full transition-all"
-              style={{ width: activeStep === i ? 32 : 8, background: activeStep === i ? step.color : "rgba(255,255,255,0.15)" }} />
-          ))}
-        </div>
+        {/* Quiz and 38-0 carry enough mechanics to earn a step carousel. The
+            other three say what they are and get out of the way. */}
+        {steps ? (
+          <>
+            <StepCards steps={steps} activeStep={activeStep} setActiveStep={setActiveStep} />
+            <div className="flex justify-center gap-2 mb-16">
+              {steps.map((step, i) => (
+                <button key={i} onClick={() => setActiveStep(i)}
+                  className="h-1.5 rounded-full transition-all"
+                  style={{ width: activeStep === i ? 32 : 8, background: activeStep === i ? step.color : "rgba(255,255,255,0.15)" }} />
+              ))}
+            </div>
+          </>
+        ) : detail ? (
+          <div className="rounded-3xl overflow-hidden mb-16"
+            style={{ background: `linear-gradient(150deg, ${game.color}14, rgba(10,10,15,1) 60%)`, border: `1px solid ${game.color}33` }}>
+            <div className="px-6 py-8 sm:px-10 sm:py-10">
+              <div className="flex items-center gap-3 mb-6">
+                <span className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
+                  style={{ background: `${game.color}1f`, border: `1px solid ${game.color}40`, color: game.color }}>
+                  <game.Icon active />
+                </span>
+                <div>
+                  <p className="font-body text-xs uppercase tracking-widest" style={{ color: game.color }}>{game.label}</p>
+                  <h2 className="font-display text-2xl sm:text-3xl text-white leading-tight">{detail.headline}</h2>
+                </div>
+              </div>
+              <div className="space-y-3 mb-8">
+                {detail.points.map((p) => (
+                  <div key={p} className="flex items-start gap-3">
+                    <span className="flex-shrink-0 mt-1.5 rounded-full" style={{ width: 6, height: 6, background: game.color }} />
+                    <p className="font-body text-sm sm:text-base text-white/80 leading-relaxed">{p}</p>
+                  </div>
+                ))}
+              </div>
+              <Link href={game.href}
+                className="inline-flex items-center gap-2 font-body font-bold text-base px-7 py-3.5 rounded-xl transition-all active:scale-95"
+                style={{ background: game.color, color: "#0a0a0f", textDecoration: "none" }}>
+                Play {game.label} →
+              </Link>
+            </div>
+          </div>
+        ) : null}
 
         {/* Scoring breakdown — quiz only */}
         {tab === "quiz" && (
@@ -698,8 +772,9 @@ export default function GamesPage() {
           </div>
         )}
 
-        {/* Stats strip */}
-        {(() => {
+        {/* Stats strip — only for the two games that have a step carousel; the
+            other three already said their numbers in the panel above. */}
+        {steps && (() => {
           const statsItems = tab === "quiz"
             ? [
                 { n: "Daily", label: "fresh quiz, every day" },
@@ -723,7 +798,9 @@ export default function GamesPage() {
           );
         })()}
 
-        {/* FAQ */}
+        {/* FAQ — Quiz and 38-0 only; the other three have no questions worth a
+            panel yet, and an empty accordion is worse than none. */}
+        {faqs && (
         <div className="mb-14">
           <h3 className="font-display text-3xl text-white mb-5">FAQ</h3>
           <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
@@ -748,6 +825,7 @@ export default function GamesPage() {
             ))}
           </div>
         </div>
+        )}
 
         {/* ── Landing with the season ───────────────────────────────────────
             Fantasy and the gameday quiz get their own sections rather than a
@@ -767,20 +845,17 @@ export default function GamesPage() {
             <p className="font-display text-4xl sm:text-5xl text-white mb-3">READY TO PLAY?</p>
             <p className="font-body text-text-muted mb-8">Pick a game, get a score, and start climbing.</p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link href="/38-0/play"
+              {/* Three CTAs, two of them 38-0 and league specific. Now: play
+                  whichever game you have just read about, or start a league. */}
+              <Link href={game.href}
                 className="flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-body font-bold text-base transition-all hover:opacity-90 green-pulse-glow"
-                style={{ background: "#aeea00", color: "#0a0a0f" }}>
-                Draft Your XI →
+                style={{ background: game.color, color: "#0a0a0f" }}>
+                Play {game.label} →
               </Link>
               <Link href="/league/new"
-                className="flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-body font-bold text-base transition-all hover:opacity-90"
-                style={{ background: "#aeea00", color: "#0a0a0f" }}>
-                Create a Quiz League →
-              </Link>
-              <Link href="/challenges"
                 className="flex items-center justify-center px-8 py-4 rounded-xl font-body font-semibold text-base text-white transition-colors hover:opacity-70"
                 style={{ border: "1px solid rgba(255,255,255,0.12)" }}>
-                Try a challenge
+                Start a league
               </Link>
             </div>
           </div>
