@@ -50,8 +50,8 @@ export default function BlogLayout({ children }: { children: React.ReactNode }) 
             </Link>
           </div>
           <div className="flex items-center justify-center gap-5 mt-8 font-body text-xs text-text-muted">
-            <Link href="/how-it-works" className="hover:text-text-primary transition">
-              How it works
+            <Link href="/games" className="hover:text-text-primary transition">
+              Games
             </Link>
             <Link href="/privacy" className="hover:text-text-primary transition">
               Privacy

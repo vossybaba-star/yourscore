@@ -10,7 +10,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${SITE_URL}/`, priority: 1 },
     { url: `${SITE_URL}/play`, priority: 0.9 },
     { url: `${SITE_URL}/38-0`, priority: 0.9 },
-    { url: `${SITE_URL}/how-it-works`, priority: 0.8 },
+    { url: `${SITE_URL}/games`, priority: 0.8 },
     { url: `${SITE_URL}/debate`, priority: 0.7 },
     { url: `${SITE_URL}/leaderboard`, priority: 0.6 },
     { url: `${SITE_URL}/blog`, priority: 0.8 },

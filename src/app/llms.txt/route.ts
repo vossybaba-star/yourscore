@@ -22,7 +22,7 @@ leagues for groups of friends.
 - [Play](${SITE_URL}/play): the daily football quiz and trivia packs
 - [38-0](${SITE_URL}/38-0): build your all-time XI and go head-to-head
 - [Daily debate](${SITE_URL}/debate): today's fan debate, open to everyone
-- [How it works](${SITE_URL}/how-it-works): what YourScore is and how to play
+- [The games](${SITE_URL}/games): every game on YourScore and how each one scores
 
 ## Feeds
 

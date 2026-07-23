@@ -519,7 +519,7 @@ export function MarketingLanding({ matches, todaysGame }: { matches: LiveMatch[]
       <nav className="flex items-center justify-between px-6 py-4 max-w-6xl mx-auto">
         <Image src="/logo.png" alt="YourScore" width={122} height={36} priority style={{ height: 36, width: "auto" }} />
         <div className="flex items-center gap-2">
-          <Link href="/how-it-works" className="hidden sm:block font-body text-sm text-text-muted hover:text-white transition-colors px-3 py-2">How it works</Link>
+          <Link href="/games" className="hidden sm:block font-body text-sm text-text-muted hover:text-white transition-colors px-3 py-2">Games</Link>
           <Link href="/challenges" className="hidden sm:block font-body text-sm hover:opacity-80 transition-colors px-3 py-2 text-amber">Quiz</Link>
           <Link href="/league/join" className="hidden sm:block font-body text-sm text-text-muted hover:text-white transition-colors px-3 py-2">Join league</Link>
           <Link href="/auth/sign-in" className="hidden sm:block font-body font-semibold text-sm px-4 py-2.5 rounded-xl hover:opacity-90 transition-all text-white whitespace-nowrap"
@@ -595,7 +595,7 @@ export function MarketingLanding({ matches, todaysGame }: { matches: LiveMatch[]
                 { href: "/challenges", label: "Quiz", color: "#ffb800" },
                 { href: "/join", label: "Upcoming Matches", color: "#aeea00" },
                 { href: "/league/join", label: "Join league", color: "#c4ccc6" },
-                { href: "/how-it-works", label: "How it works", color: "#c4ccc6" },
+                { href: "/games", label: "Games", color: "#c4ccc6" },
                 { href: "/auth/sign-in", label: "Sign in", color: "#8a948f" },
               ].map(item => (
                 <Link
@@ -702,7 +702,7 @@ export function MarketingLanding({ matches, todaysGame }: { matches: LiveMatch[]
 
             <p className="font-body text-xs text-text-muted">
               Free to play ·{" "}
-              <Link href="/how-it-works" className="underline hover:text-white transition-colors">How it works →</Link>
+              <Link href="/games" className="underline hover:text-white transition-colors">The games →</Link>
             </p>
             </div>{/* end content wrapper */}
           </div>
@@ -901,7 +901,7 @@ export function MarketingLanding({ matches, todaysGame }: { matches: LiveMatch[]
         <div className="max-w-6xl mx-auto px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <Image src="/logo.png" alt="YourScore" width={75} height={22} style={{ height: 22, width: "auto", opacity: 0.5 }} />
           <div className="flex items-center gap-6 text-sm font-body text-text-muted">
-            <Link href="/how-it-works" className="hover:text-white transition-colors">How it works</Link>
+            <Link href="/games" className="hover:text-white transition-colors">Games</Link>
             <Link href="/challenges" className="hover:opacity-80 transition-colors text-amber">Quiz</Link>
             <Link href="/league/join" className="hover:text-white transition-colors">Join a league</Link>
             <Link href="/league/new" className="hover:text-white transition-colors">Create a league</Link>
