@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServiceClient } from "@/lib/supabase/service";
 import { slugify } from "@/lib/utils";
-import { isReleased, packName, type HalftimeState } from "@/lib/halftime/shared";
+import { packName } from "@/lib/gameday/shared";
 
 /**
  * GET /api/pl/fixtures — PUBLIC. This gameweek's Premier League fixtures for the
@@ -41,16 +41,17 @@ const LOOKBACK_MS = 4 * 24 * 60 * 60 * 1000;
  * window never means a longer list — just one that isn't empty in July.
  */
 const LOOKAHEAD_MS = 90 * 24 * 60 * 60 * 1000;
-const HIDDEN_STATES: HalftimeState[] = ["cancelled", "failed"];
+const HIDDEN_STATES = ["cancelled", "failed"];
 
 interface Row {
   fixture_id: number;
   home: string;
   away: string;
   kickoff_at: string;
-  state: HalftimeState;
+  state: string;
   pack_id: string | null;
   round_name: string | null;
+  second_half_started_at: string | null;
 }
 
 export async function GET() {
@@ -58,9 +59,13 @@ export async function GET() {
     const db = createServiceClient() as unknown as SupabaseClient;
     const now = Date.now();
 
+    // kind='fixture' excludes any future Recap-pack row (§6, not built yet) —
+    // this tab is fixture-by-fixture, a recap row has no single kickoff to sit
+    // in the list next to.
     const { data, error } = await db
       .from("halftime_releases")
-      .select("fixture_id, home, away, kickoff_at, state, pack_id, round_name")
+      .select("fixture_id, home, away, kickoff_at, state, pack_id, round_name, second_half_started_at")
+      .eq("kind", "fixture")
       .gte("kickoff_at", new Date(now - LOOKBACK_MS).toISOString())
       .lt("kickoff_at", new Date(now + LOOKAHEAD_MS).toISOString())
       .order("kickoff_at", { ascending: true });
@@ -81,14 +86,19 @@ export async function GET() {
     const fixtures = rows
       .filter((r) => r.round_name === round)
       .map((r) => {
-        const live = isReleased(r.state);
+        // Playable now means state='published' (AC10/AC29) — the new Gameday
+        // state machine, not the old released/released_late whistle states.
+        const live = r.state === "published";
         return {
           fixture_id: r.fixture_id,
           home: r.home,
           away: r.away,
           kickoff_at: r.kickoff_at,
           state: r.state,
-          // Quiz linkage: withheld until the whistle (same rule as /halftime/today).
+          // Whistle marker for the standalone halftime prediction poll (§0.6)
+          // — decoupled from quiz publish state on purpose.
+          second_half_started_at: r.second_half_started_at,
+          // Quiz linkage: withheld until published (same rule as /gameday/today).
           quiz: live && r.pack_id
             ? { live: true, pack_id: r.pack_id, slug: slugify(packName(r)) }
             : { live: false, pack_id: null, slug: null },

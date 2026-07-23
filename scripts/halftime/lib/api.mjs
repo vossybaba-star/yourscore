@@ -44,26 +44,38 @@ export function schedule(date) {
   return call(`/api/gameday/schedule${q}`);
 }
 
+// KNOWN GAP (flagged in the W0/W1 build report): /api/halftime/fresh was the
+// single content-write route for the retired staged/released quiz pipeline
+// and is deleted (§0.1). Its replacement, /api/gameday/content, only
+// implements the two ops the Gameday gate actually needs (base, approve) —
+// see that route's own header. op() below now targets it, which keeps
+// putBase() working for the surviving gen-base.mjs. dedupCheck/putFresh/
+// putVeto/putKickoff/kill/unkill call ops that do not exist on the new route
+// and are DEAD until W2 rebuilds scripts/gameday/gate.mjs against the new
+// pipeline (fresh/veto/kickoff/kill were fresh-slice-only anyway; dedupCheck
+// needs a real replacement — the new content route has no dedup op yet).
 export function op(body) {
-  return call("/api/halftime/fresh", { method: "POST", body: JSON.stringify(body) });
+  return call("/api/gameday/content", { method: "POST", body: JSON.stringify(body) });
 }
 
-/** Persist the approved base slate. scheduled → base_ready. */
+/** Persist the generated base slate. scheduled|base_ready → base_ready. */
 export const putBase = (fixtureId, questions) => op({ op: "base", fixtureId, questions });
 
-/** Persist the validated fresh slice + its veto deadline and Telegram message id. */
+/** The gate: write the approved questions, pre-assign pack_id, freeze
+ * publish_at. base_ready → approved. */
+export const putApprove = (fixtureId, questions) => op({ op: "approve", fixtureId, questions });
+
+/** @deprecated fresh-slice op, no longer implemented server-side. */
 export const putFresh = (fixtureId, questions, state, extra = {}) =>
   op({ op: "fresh", fixtureId, questions, state, ...extra });
 
-/** One founder tap. Idempotent; honoured right up to release-copy time. */
+/** @deprecated fresh-slice veto op, no longer implemented server-side. */
 export const putVeto = (fixtureId, index, status = "vetoed", all = false) =>
   op({ op: "veto", fixtureId, index, status, all });
 
 /**
- * Season-wide duplicate check (AC6): which of these question texts already
- * exist in the active bank or in any halftime pack this season? Returns the
- * indexes that collide. Normalization happens server-side with the canonical
- * normalizeQuestionText, so the generators never re-implement it.
+ * Season-wide duplicate check (AC6). DEAD pending W2 — the new content route
+ * has no `dedup` op yet.
  */
 export const dedupCheck = async (texts, excludeFixtureId) => {
   if (!texts.length) return [];
@@ -71,15 +83,11 @@ export const dedupCheck = async (texts, excludeFixtureId) => {
   return res.collisions ?? [];
 };
 
-/**
- * Persist a moved kickoff. The row is the single clock: the watchdog reads
- * kickoff_at from the DB, so a kickoff the poller followed only in its own
- * memory would leave the watchdog acting on a stale time if the poller died.
- */
+/** @deprecated kickoff-drift-persist op, no longer implemented server-side. */
 export const putKickoff = (fixtureId, kickoffAt, extra = {}) =>
   op({ op: "kickoff", fixtureId, kickoffAt, ...extra });
 
-/** The slate kill switch. One message, whole matchday. */
+/** @deprecated the fresh-slice kill switch, no longer implemented server-side. */
 export const kill = (matchday) => op({ op: "kill", matchday });
 export const unkill = (matchday) => op({ op: "unkill", matchday });
 

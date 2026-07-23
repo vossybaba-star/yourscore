@@ -13,13 +13,16 @@ import {
 } from "@/lib/halftime/predict";
 
 /**
- * The second-half call, shown at the end of a halftime pack.
+ * A prediction poll for ONE phase of ONE fixture (§0.6) — keys on the fixture,
+ * never a quiz pack. Two call sites, two phases:
+ *   - end of a Gameday pack attempt, phase="prematch" (challenges/[slug]/page.tsx)
+ *   - standalone on the matchweek page, phase="halftime", shown to every
+ *     player whether or not they played the quiz
  *
- * A halftime pack can never ask about the half it is played during (the hard
- * content rule), so this is the live stake instead: one tap on who wins, graded
- * at full time. It talks only to /api/halftime/predict — the server owns the
- * fixture, the tally and whether the poll is still open; this component just
- * renders what comes back and posts a pick.
+ * SELF-HIDES when its phase is not open, the player has not already picked,
+ * and nothing is settled yet — i.e. there is genuinely nothing to show. Once
+ * a pick exists (even after the window has since closed for new picks) or the
+ * result has settled, it keeps rendering so the fan sees their call graded.
  *
  * Signed-in only: a pick has to belong to someone to be graded, and POST needs
  * auth. Guests on the results screen already get their own sign-up nudge.
@@ -28,6 +31,8 @@ import {
 interface PollState {
   home: string;
   away: string;
+  phase: "prematch" | "halftime";
+  open: boolean;
   closed: boolean;
   myPick: Pick | null;
   result: Pick | null;
@@ -35,10 +40,12 @@ interface PollState {
 }
 
 export default function HalftimePredictionPoll({
-  packId,
+  fixtureId,
+  phase,
   accent,
 }: {
-  packId: string;
+  fixtureId: number;
+  phase: "prematch" | "halftime";
   accent: string;
 }) {
   const [state, setState] = useState<PollState | null>(null);
@@ -49,8 +56,8 @@ export default function HalftimePredictionPoll({
     let live = true;
     (async () => {
       try {
-        const res = await fetch(`/api/halftime/predict?pack=${encodeURIComponent(packId)}`);
-        if (!res.ok) return; // not a halftime pack, or nothing to show — render nothing
+        const res = await fetch(`/api/halftime/predict?fixture=${fixtureId}&phase=${phase}`);
+        if (!res.ok) return; // no such fixture — render nothing
         const body = (await res.json()) as PollState;
         if (live) setState(body);
       } catch {
@@ -62,10 +69,10 @@ export default function HalftimePredictionPoll({
     return () => {
       live = false;
     };
-  }, [packId]);
+  }, [fixtureId, phase]);
 
   async function pickIt(pick: Pick) {
-    if (submitting || !state || state.myPick || state.closed) return;
+    if (submitting || !state || state.myPick || !state.open) return;
     setSubmitting(true);
     // Optimistic: show their choice immediately; reconcile with the server tally.
     setState((s) => (s ? { ...s, myPick: pick } : s));
@@ -73,7 +80,7 @@ export default function HalftimePredictionPoll({
       const res = await fetch("/api/halftime/predict", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ packId, pick }),
+        body: JSON.stringify({ fixtureId, phase, pick }),
       });
       if (res.ok || res.status === 409) {
         const body = (await res.json()) as PollState;
@@ -89,6 +96,10 @@ export default function HalftimePredictionPoll({
   if (loading || !state) return null;
 
   const { home, away, closed, myPick, result, tally } = state;
+
+  // Nothing to show: the phase hasn't opened, nobody picked, nothing settled.
+  if (!state.open && !closed && myPick === null) return null;
+
   const decided = myPick !== null || closed;
   const statusLine = closed
     ? settledLine(myPick, result as Pick, home, away)
@@ -104,7 +115,7 @@ export default function HalftimePredictionPoll({
       <div className="flex items-center gap-2 mb-1">
         <span className="text-base">🔮</span>
         <p className="font-display text-xs tracking-widest" style={{ color: accent }}>
-          {closed ? "YOUR CALL" : "CALL THE SECOND HALF"}
+          {closed ? "YOUR CALL" : phase === "prematch" ? "CALL THE FULL TIME" : "CALL THE SECOND HALF"}
         </p>
       </div>
       <p className="font-body text-sm text-text-muted mb-4">{pollPrompt(home, away)}</p>
@@ -115,8 +126,6 @@ export default function HalftimePredictionPoll({
           const pct = tallyPercent(tally, p);
           const isMine = myPick === p;
           const isResult = closed && result === p;
-          // Once a call is made (or the poll is closed) every row becomes a
-          // result bar showing the share of fans on each side.
           const border = isMine
             ? `1.5px solid ${accent}`
             : isResult
@@ -126,7 +135,7 @@ export default function HalftimePredictionPoll({
             <button
               key={p}
               onClick={() => pickIt(p)}
-              disabled={decided || submitting}
+              disabled={decided || submitting || !state.open}
               className="relative w-full overflow-hidden rounded-xl text-left active:scale-[0.99] transition-transform"
               style={{ border, background: "rgba(255,255,255,0.03)", cursor: decided ? "default" : "pointer" }}
             >

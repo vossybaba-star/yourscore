@@ -51,8 +51,14 @@ interface QuizPack {
     daily?: boolean;
     date?: string;
     // Present only on halftime packs (release engine writes it) — the fixture
-    // linkage that powers the end-of-pack prediction poll.
+    // linkage that powers the end-of-pack prediction poll. Only the Halftime
+    // Prediction poll's own settlement bookkeeping still reads this key.
     halftime?: { fixture_id: number; home: string; away: string };
+    // Present only on Gameday packs (publish engine writes it) — the fixture
+    // linkage for the PRE-MATCH prediction poll shown at the end of an
+    // attempt made before kickoff (§0.6). kickoff_at drives the "has this
+    // fixture already kicked off" check.
+    gameday?: { fixture_id: number; home: string; away: string; kickoff_at: string };
     // Present only on the pre-generated club topic packs (the /club/[slug] hub).
     // The category slug drives an honest label instead of "2025/26 Season Game".
     club_topic?: string;
@@ -1385,11 +1391,13 @@ export default function ChallengePage() {
         </div>
 
         <div className="px-5 flex flex-col gap-4 mt-2">
-          {/* Halftime prediction poll — the second-half call. Sits first, above
-              sharing: it is time-sensitive (the match is live now) and it is the
-              hook that brings the player back for full time. Signed-in only. */}
-          {userId && pack.metadata?.halftime && (
-            <HalftimePredictionPoll packId={pack.id} accent={accent} />
+          {/* Pre-match prediction poll — appended to a Gameday pack attempt,
+              shown only when the fixture has not kicked off yet (§0.6). The
+              halftime (second-half) poll never renders here — it stands alone
+              on the matchweek page for every player, whether or not they
+              played the quiz. Signed-in only. */}
+          {userId && pack.metadata?.gameday && Date.now() < new Date(pack.metadata.gameday.kickoff_at).getTime() && (
+            <HalftimePredictionPoll fixtureId={pack.metadata.gameday.fixture_id} phase="prematch" accent={accent} />
           )}
 
           {/* The next loop is the primary action, not sharing. Two dominant share CTAs used

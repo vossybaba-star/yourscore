@@ -31,6 +31,7 @@ import { NextClubQuiz } from "@/components/matchweek/NextClubQuiz";
 import { AppNudge } from "@/components/matchweek/AppNudge";
 import { useReminders } from "@/components/matchweek/useReminders";
 import { UpcomingQuizzes } from "@/components/matchweek/UpcomingQuizzes";
+import { StandaloneHalftimePoll } from "@/components/matchweek/StandaloneHalftimePoll";
 import { QuizStatTiles } from "@/components/matchweek/QuizStatTiles";
 import { LiveQuizIntro } from "@/components/matchweek/LiveQuizIntro";
 import { FantasyHold } from "@/components/matchweek/FantasyHold";
@@ -126,6 +127,7 @@ export default function MatchweekPage() {
           <AppNudge reminders={reminders} />
           {/* Then THEIR game — the only fixture that scores for their club. */}
           <NextClubQuiz />
+          <StandaloneHalftimePoll />
           <GamedayRail />
           <ClubPicker />
           <UpcomingQuizzes />

@@ -20,6 +20,7 @@ import {
   optionLabel,
   pendingLine,
   resultFromGoals,
+  secondHalfGoalsFromScores,
   settledLine,
   tallyPercent,
   tallyPicks,
@@ -79,6 +80,33 @@ test("finalGoalsFromScores returns null when a side is missing or input is junk"
   assert.equal(
     finalGoalsFromScores([{ description: "1ST_HALF", score: { goals: 1, participant: "home" } }]),
     null, // no CURRENT at all
+  );
+});
+
+test("secondHalfGoalsFromScores reads only the 2ND_HALF split, ignoring CURRENT and 1ST_HALF", () => {
+  // Same realistic payload: 1-0 first half, 1-1 second half, 2-1 final. The
+  // halftime prediction phase (§0.6) grades against the second-half-only
+  // split, which is neither of the other two numbers.
+  const scores: SmScoreEntry[] = [
+    { description: "1ST_HALF", score: { goals: 1, participant: "home" } },
+    { description: "1ST_HALF", score: { goals: 0, participant: "away" } },
+    { description: "2ND_HALF", score: { goals: 1, participant: "home" } },
+    { description: "2ND_HALF", score: { goals: 1, participant: "away" } },
+    { description: "CURRENT", score: { goals: 2, participant: "home" } },
+    { description: "CURRENT", score: { goals: 1, participant: "away" } },
+  ];
+  assert.deepEqual(secondHalfGoalsFromScores(scores), { home: 1, away: 1 });
+  assert.equal(resultFromGoals(1, 1), "draw");
+  // The full-time result and the second-half-only result can legitimately
+  // disagree — that is the whole point of the second prediction phase.
+  assert.notDeepEqual(finalGoalsFromScores(scores), secondHalfGoalsFromScores(scores));
+});
+
+test("secondHalfGoalsFromScores returns null when the split is not present", () => {
+  assert.equal(secondHalfGoalsFromScores(null), null);
+  assert.equal(
+    secondHalfGoalsFromScores([{ description: "CURRENT", score: { goals: 2, participant: "home" } }]),
+    null,
   );
 });
 

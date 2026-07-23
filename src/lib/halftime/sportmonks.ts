@@ -1,6 +1,6 @@
 import "server-only";
 import { classifyPhase, isFinishedState, type MatchPhase } from "@/lib/halftime/shared";
-import { finalGoalsFromScores, type SmScoreEntry } from "@/lib/halftime/predict";
+import { finalGoalsFromScores, secondHalfGoalsFromScores, type SmScoreEntry } from "@/lib/halftime/predict";
 
 /**
  * Thin SportMonks v3 client for the halftime pipeline.
@@ -207,11 +207,20 @@ export async function getPhasesForFixtures(
 
 // ── Final scores (prediction settlement) ──────────────────────────────────────
 
-/** A finished fixture and its final result — everything the settle path needs. */
+/**
+ * A finished fixture and its final result — everything the settle path needs.
+ * `secondHalf` is the SECOND-HALF-ONLY split (added for the two-phase
+ * prediction poll, §0.6: the halftime-phase pick grades against this, not
+ * the full match score). Optional because a fixture can finish without a
+ * complete 2ND_HALF entry ever landing on the feed — the prematch phase must
+ * still be gradeable in that case, so `secondHalf` degrades independently of
+ * `home`/`away`.
+ */
 export interface SmFinalScore {
   fixtureId: number;
   home: number;
   away: number;
+  secondHalf?: { home: number; away: number };
 }
 
 /**
@@ -220,7 +229,8 @@ export interface SmFinalScore {
  * complete CURRENT total; a match still in play, or one whose feed has not caught
  * up, is simply absent from the map. The settle path treats "absent" as "not
  * ready yet" and tries again on the next watchdog tick, so a half-read scoreline
- * can never settle a prediction early.
+ * can never settle a prediction early. `secondHalf` is read from the SAME
+ * already-fetched `scores` payload — no extra SportMonks call.
  */
 export async function getFinalScores(fixtureIds: number[]): Promise<Map<number, SmFinalScore>> {
   const out = new Map<number, SmFinalScore>();
@@ -239,7 +249,8 @@ export async function getFinalScores(fixtureIds: number[]): Promise<Map<number, 
     if (!isFinishedState(states.get(stateId)?.developer_name)) continue; // FT only
     const goals = finalGoalsFromScores(f.scores);
     if (!goals) continue; // finished but the score has not fully landed — wait
-    out.set(Number(f.id), { fixtureId: Number(f.id), home: goals.home, away: goals.away });
+    const secondHalf = secondHalfGoalsFromScores(f.scores) ?? undefined;
+    out.set(Number(f.id), { fixtureId: Number(f.id), home: goals.home, away: goals.away, secondHalf });
   }
   return out;
 }

@@ -1,0 +1,209 @@
+/**
+ * Unit tests for the gameday pure logic.
+ *
+ * shared.ts is deliberately import-free, so this runs with no bundler and no
+ * DB, same pattern as src/lib/halftime/shared.test.ts:
+ *
+ *   npx tsc src/lib/gameday/shared.ts src/lib/gameday/shared.test.ts \
+ *     --outDir /tmp/gd-test --module commonjs --target es2022 \
+ *     --moduleResolution node --skipLibCheck --strict --esModuleInterop
+ *   node --test /tmp/gd-test
+ */
+
+import test from "node:test";
+import assert from "node:assert/strict";
+
+import {
+  assembleQuestions,
+  canTransition,
+  isPublishable,
+  isPublished,
+  londonMatchday,
+  packName,
+  publishAtFor,
+  pushCopy,
+  pushDedupeKey,
+  questionsForPublish,
+  shuffleOptions,
+  validatePackQuestions,
+  type GamedayState,
+  type QuizQuestion,
+} from "./shared";
+
+// ── helpers ──────────────────────────────────────────────────────────────────
+
+function q(n: number, difficulty: "easy" | "medium" | "hard" = "medium"): QuizQuestion {
+  return {
+    question: `Base question ${n}?`,
+    options: { A: `correct-${n}`, B: `wrong-${n}-b`, C: `wrong-${n}-c`, D: `wrong-${n}-d` },
+    answer: "A",
+    difficulty,
+  };
+}
+
+const BASE_10 = Array.from({ length: 10 }, (_, i) => q(i + 1));
+const FIXTURE = 19134567;
+
+// ── state machine ────────────────────────────────────────────────────────────
+
+test("state machine: the happy path is the only way to a published pack", () => {
+  assert.ok(canTransition("scheduled", "base_ready"));
+  assert.ok(canTransition("base_ready", "approved"));
+  assert.ok(canTransition("approved", "published"));
+});
+
+test("state machine: a pack cannot skip the gates", () => {
+  assert.equal(canTransition("scheduled", "approved"), false);
+  assert.equal(canTransition("base_ready", "published"), false);
+  assert.equal(canTransition("scheduled", "published"), false);
+});
+
+test("state machine: published and cancelled are terminal", () => {
+  const terminal: GamedayState[] = ["published", "cancelled"];
+  const all: GamedayState[] = ["scheduled", "base_ready", "approved", "published", "cancelled", "failed"];
+  for (const from of terminal) {
+    for (const to of all) {
+      assert.equal(canTransition(from, to), false, `${from} → ${to} must be refused`);
+    }
+  }
+});
+
+test("state machine: any pre-publish state can be cancelled", () => {
+  for (const s of ["scheduled", "base_ready", "approved"] as GamedayState[]) {
+    assert.ok(canTransition(s, "cancelled"), `${s} → cancelled`);
+  }
+});
+
+test("state machine: only an approved fixture is publishable", () => {
+  assert.ok(isPublishable("approved"));
+  for (const s of ["scheduled", "base_ready", "published", "cancelled", "failed"] as GamedayState[]) {
+    assert.equal(isPublishable(s), false, `${s} must not be publishable`);
+  }
+  assert.ok(isPublished("published"));
+  assert.equal(isPublished("approved"), false);
+});
+
+test("state machine: failed can be repaired back to scheduled (weekly-sync path)", () => {
+  assert.ok(canTransition("failed", "scheduled"));
+});
+
+// ── publish_at derivation ─────────────────────────────────────────────────────
+
+test("publishAtFor: 09:00 London the day before a BST kickoff", () => {
+  // Sat 22 Aug 2026, 15:00 BST kickoff (14:00 UTC) → publish Fri 21 Aug 09:00
+  // BST = 08:00 UTC.
+  const publishAt = publishAtFor("2026-08-22T14:00:00Z");
+  assert.equal(publishAt, "2026-08-21T08:00:00.000Z");
+});
+
+test("publishAtFor: 09:00 London the day before a GMT kickoff", () => {
+  // Sat 10 Jan 2026, 15:00 GMT kickoff (15:00 UTC) → publish Fri 9 Jan 09:00
+  // GMT = 09:00 UTC.
+  const publishAt = publishAtFor("2026-01-10T15:00:00Z");
+  assert.equal(publishAt, "2026-01-09T09:00:00.000Z");
+});
+
+test("publishAtFor: a late-evening kickoff still belongs to its own London day", () => {
+  // 22:30 UTC on 21 Aug is 23:30 BST — still the 21st in London, so publish is
+  // the 20th at 09:00 BST = 08:00 UTC.
+  const publishAt = publishAtFor("2026-08-21T22:30:00Z");
+  assert.equal(publishAt, "2026-08-20T08:00:00.000Z");
+});
+
+test("publishAtFor: a kickoff just after London midnight moves the publish day too", () => {
+  // 23:30 UTC on 21 Aug is 00:30 BST on the 22nd — kickoff's London day is the
+  // 22nd, so publish is the 21st at 09:00 BST = 08:00 UTC.
+  const publishAt = publishAtFor("2026-08-21T23:30:00Z");
+  assert.equal(publishAt, "2026-08-21T08:00:00.000Z");
+});
+
+test("londonMatchday sanity check (shared with the derivation above)", () => {
+  assert.equal(londonMatchday(new Date("2026-08-21T22:30:00Z")), "2026-08-21");
+  assert.equal(londonMatchday(new Date("2026-08-21T23:30:00Z")), "2026-08-22");
+});
+
+// ── answer shuffle ───────────────────────────────────────────────────────────
+
+test("shuffleOptions: the answer letter still points at the correct option text", () => {
+  for (let i = 0; i < 40; i++) {
+    const original = q(i);
+    const correctText = original.options[original.answer];
+    const shuffled = shuffleOptions(original, i, FIXTURE);
+    assert.equal(shuffled.options[shuffled.answer], correctText);
+    assert.deepEqual(
+      Object.values(shuffled.options).sort(),
+      Object.values(original.options).sort(),
+    );
+  }
+});
+
+test("shuffleOptions: deterministic per fixture, and it actually moves the answer", () => {
+  const once = BASE_10.map((x, i) => shuffleOptions(x, i, FIXTURE));
+  const twice = BASE_10.map((x, i) => shuffleOptions(x, i, FIXTURE));
+  assert.deepEqual(once, twice, "same fixture must reproduce the same pack");
+  const stillA = once.filter((x) => x.answer === "A").length;
+  assert.ok(stillA < 10, "the shuffle must actually spread the answer across A-D");
+});
+
+// ── assembly ─────────────────────────────────────────────────────────────────
+
+test("assemble: a full base slate yields exactly 10 questions", () => {
+  const pack = assembleQuestions(BASE_10, FIXTURE);
+  assert.equal(pack.length, 10);
+});
+
+test("assemble: no base slate at all yields an empty pack", () => {
+  assert.equal(assembleQuestions([], FIXTURE).length, 0);
+  assert.equal(assembleQuestions(null, FIXTURE).length, 0);
+});
+
+test("questionsForPublish: the frozen snapshot wins, byte for byte", () => {
+  const frozen = assembleQuestions(BASE_10, FIXTURE);
+  const out = questionsForPublish({ fixture_id: FIXTURE, base_questions: BASE_10, questions: frozen });
+  assert.deepEqual(out, frozen);
+});
+
+test("questionsForPublish: no frozen snapshot falls back to assembling from base", () => {
+  const out = questionsForPublish({ fixture_id: FIXTURE, base_questions: BASE_10, questions: null });
+  assert.equal(out.length, 10);
+});
+
+// ── pack validation ──────────────────────────────────────────────────────────
+
+test("validate: a good pack passes", () => {
+  assert.deepEqual(validatePackQuestions(assembleQuestions(BASE_10, FIXTURE)), []);
+});
+
+test("validate: a short pack is rejected", () => {
+  const errs = validatePackQuestions(BASE_10.slice(0, 9));
+  assert.ok(errs.some((e) => e.includes("expected 10")));
+});
+
+test("validate: rubbish input is rejected, not thrown on", () => {
+  assert.ok(validatePackQuestions(null).length > 0);
+  assert.ok(validatePackQuestions("nope").length > 0);
+  assert.ok(validatePackQuestions([{}]).length > 0);
+});
+
+// ── push copy + keys ─────────────────────────────────────────────────────────
+
+test("push: the dedupe key is per fixture, namespaced to gameday", () => {
+  assert.equal(pushDedupeKey(19134567), "gameday:19134567");
+  assert.notEqual(pushDedupeKey(1), pushDedupeKey(2));
+});
+
+test("push: copy never mentions how the game is delivered, and locked vocabulary holds", () => {
+  const copy = pushCopy({ home: "Arsenal", away: "Coventry" });
+  const text = `${copy.title} ${copy.body}`.toLowerCase();
+  for (const banned of ["browser", "download", "no download", "app store", "install"]) {
+    assert.equal(text.includes(banned), false, `push copy must not contain "${banned}"`);
+  }
+  assert.equal(text.includes(" iq"), false);
+});
+
+test("pack name: carries the date so a reverse fixture cannot collide on slug", () => {
+  const a = packName({ home: "Arsenal", away: "Coventry", kickoff_at: "2026-08-22T14:00:00Z" });
+  const b = packName({ home: "Arsenal", away: "Coventry", kickoff_at: "2027-01-16T15:00:00Z" });
+  assert.notEqual(a, b);
+  assert.ok(a.includes("Arsenal v Coventry"));
+});
