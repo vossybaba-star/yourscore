@@ -6,6 +6,7 @@ import Link from "next/link";
 import { BackPill } from "@/components/ui/BackPill";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { getTeamBadgeUrlSync } from "@/lib/teamImages";
+import { coverUrl } from "@/lib/img";
 
 // ── Types (mirrors the /api/club-page/[slug] response) ──────────────────────
 
@@ -21,6 +22,8 @@ interface TopicPack {
   slug: string;
   name: string;
   question_count: number;
+  /** Poster art (scripts/club-pages/gen-topic-covers.mjs). Null → emoji fallback. */
+  cover_image?: string | null;
 }
 
 interface Topic {
@@ -129,8 +132,16 @@ function TopicCard({
   }
 
   const inner = (
-    <div className="px-4 py-5 flex flex-col items-center text-center">
-      <span className="text-3xl mb-2">{emoji}</span>
+    <div className="flex flex-col">
+      {/* Poster art when it exists; the emoji is the fallback, never both. Covers are
+          square (1080), CDN-resized via coverUrl so a grid never ships the original PNG. */}
+      {pack?.cover_image ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={coverUrl(pack.cover_image, 220) ?? pack.cover_image} alt={heading}
+          loading="lazy" decoding="async" className="block w-full h-auto" />
+      ) : null}
+      <div className="px-4 py-5 flex flex-col items-center text-center">
+      {!pack?.cover_image && <span className="text-3xl mb-2">{emoji}</span>}
       <p className="font-body text-sm font-bold text-white mb-1">{heading}</p>
       <p className="font-body text-xs mb-3" style={{ color: "#8a948f" }}>{subLabel}</p>
       <div
@@ -141,6 +152,7 @@ function TopicCard({
         }}
       >
         <span className="font-display text-xs tracking-widest text-teal">{count > 1 ? "CHOOSE →" : "PLAY →"}</span>
+      </div>
       </div>
     </div>
   );

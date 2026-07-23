@@ -76,6 +76,7 @@ export async function GET(_req: NextRequest, { params }: { params: { slug: strin
         name: p.name,
         question_count: p.question_count,
         volume: (p.metadata as { club_topic_volume?: number } | null)?.club_topic_volume ?? 1,
+        cover_image: (p.metadata as { cover_image?: string } | null)?.cover_image ?? null,
       }))
       .sort((a, b) => a.volume - b.volume);
     return {
