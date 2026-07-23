@@ -90,13 +90,24 @@ function SeasonCard({ club, pack, challengeTo }: { club: string; pack: SeasonPac
 
 // ── Topic card ────────────────────────────────────────────────────────────
 
-const ROMAN: Record<number, string> = { 2: "II", 3: "III", 4: "IV" };
-
-function TopicCard({ topic, pack, challengeTo }: { topic: Topic; pack?: TopicPack & { volume?: number }; challengeTo: string | null }) {
+/**
+ * ONE card per topic, always four cards. Rendering a card per volume looked fine at two
+ * packs and broke down at eleven: Arsenal's page became four identical gold trophies in a
+ * row with Legends, Modern Era and Rivalries pushed under two screens of scrolling. Depth
+ * is a number on the card now, and the volumes live one tap away in a sheet.
+ */
+function TopicCard({
+  topic, pack, count = 1, onOpenVolumes, challengeTo,
+}: {
+  topic: Topic;
+  pack?: TopicPack & { volume?: number };
+  count?: number;
+  onOpenVolumes?: () => void;
+  challengeTo: string | null;
+}) {
   const emoji = TOPIC_EMOJI[topic.category] ?? "🎲";
-  // A topic can render several cards (one per volume); the card shows the volume it is.
-  const vol = pack?.volume ?? 1;
-  const heading = vol > 1 ? `${topic.label} ${ROMAN[vol] ?? vol}` : topic.label;
+  const heading = topic.label;
+  const subLabel = count > 1 ? `${count} quizzes` : `${pack?.question_count ?? 15} questions`;
 
   if (!pack) {
     return (
@@ -117,29 +128,41 @@ function TopicCard({ topic, pack, challengeTo }: { topic: Topic; pack?: TopicPac
     );
   }
 
-  return (
-    <Link
-      href={withChallenge(`/challenges/${pack.slug}?pid=${pack.id}`, challengeTo)}
-      className="block rounded-3xl overflow-hidden transition-all duration-150 active:scale-[0.96]"
-      style={{
-        background: "linear-gradient(160deg, #0e1611 0%, #15211a 100%)",
-        border: "1px solid rgba(0,216,192,0.18)",
-      }}
-    >
-      <div className="px-4 py-5 flex flex-col items-center text-center">
-        <span className="text-3xl mb-2">{emoji}</span>
-        <p className="font-body text-sm font-bold text-white mb-1">{heading}</p>
-        <p className="font-body text-xs mb-3" style={{ color: "#8a948f" }}>{pack.question_count} questions</p>
-        <div
-          className="rounded-xl py-1.5 px-3 text-center"
-          style={{
-            background: "linear-gradient(135deg, rgba(0,216,192,0.18) 0%, rgba(255,120,0,0.12) 100%)",
-            border: "1px solid rgba(0,216,192,0.3)",
-          }}
-        >
-          <span className="font-display text-xs tracking-widest text-teal">PLAY →</span>
-        </div>
+  const inner = (
+    <div className="px-4 py-5 flex flex-col items-center text-center">
+      <span className="text-3xl mb-2">{emoji}</span>
+      <p className="font-body text-sm font-bold text-white mb-1">{heading}</p>
+      <p className="font-body text-xs mb-3" style={{ color: "#8a948f" }}>{subLabel}</p>
+      <div
+        className="rounded-xl py-1.5 px-3 text-center"
+        style={{
+          background: "linear-gradient(135deg, rgba(0,216,192,0.18) 0%, rgba(255,120,0,0.12) 100%)",
+          border: "1px solid rgba(0,216,192,0.3)",
+        }}
+      >
+        <span className="font-display text-xs tracking-widest text-teal">{count > 1 ? "CHOOSE →" : "PLAY →"}</span>
       </div>
+    </div>
+  );
+
+  const shell = "block w-full rounded-3xl overflow-hidden transition-all duration-150 active:scale-[0.96]";
+  const shellStyle = {
+    background: "linear-gradient(160deg, #0e1611 0%, #15211a 100%)",
+    border: "1px solid rgba(0,216,192,0.18)",
+  };
+
+  // More than one quiz in this topic: pick which one, rather than guessing for them.
+  if (count > 1) {
+    return (
+      <button type="button" onClick={onOpenVolumes} className={shell} style={shellStyle}>
+        {inner}
+      </button>
+    );
+  }
+
+  return (
+    <Link href={withChallenge(`/challenges/${pack.slug}?pid=${pack.id}`, challengeTo)} className={shell} style={shellStyle}>
+      {inner}
     </Link>
   );
 }
@@ -154,6 +177,8 @@ export default function ClubPage() {
   const [data, setData] = useState<ClubPageData | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [loading, setLoading] = useState(true);
+  // Which topic's volume list is open in the sheet (null = closed).
+  const [sheetTopic, setSheetTopic] = useState<Topic | null>(null);
 
   useEffect(() => {
     if (!slug) return;
@@ -225,16 +250,62 @@ export default function ClubPage() {
             Topics
           </p>
           <div className="grid grid-cols-2 gap-3">
-            {data.topics.flatMap((topic) => {
+            {data.topics.map((topic) => {
               const volumes = topic.packs?.length ? topic.packs : (topic.pack ? [topic.pack] : []);
-              // No pack at all: one disabled card carrying the honest reason.
-              if (volumes.length === 0) {
-                return [<TopicCard key={topic.category} topic={topic} challengeTo={challengeTo} />];
-              }
-              return volumes.map((p) => (
-                <TopicCard key={p.id} topic={topic} pack={p} challengeTo={challengeTo} />
-              ));
+              return (
+                <TopicCard
+                  key={topic.category}
+                  topic={topic}
+                  pack={volumes[0]}
+                  count={volumes.length}
+                  onOpenVolumes={() => setSheetTopic(topic)}
+                  challengeTo={challengeTo}
+                />
+              );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* Volume picker. Only reachable from a topic holding more than one quiz. */}
+      {sheetTopic && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center"
+          style={{ background: "rgba(0,0,0,0.7)" }}
+          onClick={() => setSheetTopic(null)}
+        >
+          <div
+            className="w-full max-w-lg rounded-t-3xl px-4 pt-3"
+            style={{ background: "#080d0a", borderTop: "1px solid rgba(255,255,255,0.1)", paddingBottom: "calc(env(safe-area-inset-bottom,0px) + 16px)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mx-auto mb-3 rounded-full" style={{ width: 40, height: 4, background: "rgba(255,255,255,0.2)" }} />
+            <p className="font-display text-base text-white text-center mb-1">
+              {TOPIC_EMOJI[sheetTopic.category] ?? "🎲"} {sheetTopic.label}
+            </p>
+            <p className="font-body text-xs text-center mb-4" style={{ color: "#7a857f" }}>
+              {(sheetTopic.packs ?? []).length} quizzes. Each one is a different set of questions.
+            </p>
+            <div className="flex flex-col gap-2 max-h-[50vh] overflow-y-auto pb-1">
+              {(sheetTopic.packs ?? []).map((p, i) => (
+                <Link
+                  key={p.id}
+                  href={withChallenge(`/challenges/${p.slug}?pid=${p.id}`, challengeTo)}
+                  className="flex items-center justify-between rounded-2xl px-4 py-3.5 active:scale-[0.98] transition-transform"
+                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(0,216,192,0.2)" }}
+                >
+                  <span className="font-body text-sm font-bold text-white">Quiz {i + 1}</span>
+                  <span className="font-body text-xs" style={{ color: "#8a948f" }}>{p.question_count} questions</span>
+                </Link>
+              ))}
+            </div>
+            <button
+              onClick={() => setSheetTopic(null)}
+              className="w-full mt-3 py-3 font-body"
+              style={{ fontSize: 13, color: "#8a948f" }}
+            >
+              Close
+            </button>
           </div>
         </div>
       )}
