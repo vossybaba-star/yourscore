@@ -112,24 +112,9 @@ function TopicCard({
   const heading = topic.label;
   const subLabel = count > 1 ? `${count} quizzes` : `${pack?.question_count ?? 15} questions`;
 
-  if (!pack) {
-    return (
-      <div
-        className="rounded-3xl overflow-hidden px-4 py-5 flex flex-col items-center text-center"
-        style={{
-          background: "linear-gradient(160deg, #0e1611 0%, #15211a 100%)",
-          border: "1px solid rgba(255,255,255,0.06)",
-          opacity: 0.45,
-        }}
-      >
-        <span className="text-3xl mb-2">{emoji}</span>
-        <p className="font-body text-sm font-bold text-white mb-1">{heading}</p>
-        <p className="font-body text-xs leading-relaxed" style={{ color: "#7a857f" }}>
-          Not enough verified questions yet for a full quiz. More are on the way.
-        </p>
-      </div>
-    );
-  }
+  // A topic with no pack is not rendered at all — the page only offers what it can deal.
+  // The caller filters these out; this is a defensive guard, not a visible state.
+  if (!pack) return null;
 
   const inner = (
     <div className="flex flex-col">
@@ -237,7 +222,16 @@ export default function ClubPage() {
         </div>
       )}
 
-      {!loading && data && (
+      {!loading && data && (() => {
+      // Topics this club can actually deal, paired with their volumes. Everything else is
+      // dropped before render, so no card ever promises a quiz that does not exist.
+      const availableTopics = data.topics
+        .map((topic) => ({
+          topic,
+          volumes: topic.packs?.length ? topic.packs : (topic.pack ? [topic.pack] : []),
+        }))
+        .filter(({ volumes }) => volumes.length > 0);
+      return (
         <div className="max-w-lg mx-auto px-4 pt-4">
           {/* Hero */}
           <div className="flex flex-col items-center text-center mb-6">
@@ -258,26 +252,31 @@ export default function ClubPage() {
 
           <SeasonCard club={data.club.name} pack={data.seasonPack} challengeTo={challengeTo} />
 
+          {/* Only topics this club can actually deal. A card promising a quiz that does not
+              exist is clutter, and with cover art on every card an empty one is worse. The
+              heading goes too when nothing qualifies, rather than leaving a bare label. */}
+          {availableTopics.length > 0 && (
+          <>
           <p className="font-body text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "#586058" }}>
             Topics
           </p>
           <div className="grid grid-cols-2 gap-3">
-            {data.topics.map((topic) => {
-              const volumes = topic.packs?.length ? topic.packs : (topic.pack ? [topic.pack] : []);
-              return (
-                <TopicCard
-                  key={topic.category}
-                  topic={topic}
-                  pack={volumes[0]}
-                  count={volumes.length}
-                  onOpenVolumes={() => setSheetTopic(topic)}
-                  challengeTo={challengeTo}
-                />
-              );
-            })}
+            {availableTopics.map(({ topic, volumes }) => (
+              <TopicCard
+                key={topic.category}
+                topic={topic}
+                pack={volumes[0]}
+                count={volumes.length}
+                onOpenVolumes={() => setSheetTopic(topic)}
+                challengeTo={challengeTo}
+              />
+            ))}
           </div>
+          </>
+          )}
         </div>
-      )}
+      );
+      })()}
 
       {/* Volume picker. Only reachable from a topic holding more than one quiz. */}
       {sheetTopic && (
