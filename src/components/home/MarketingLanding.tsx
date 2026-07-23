@@ -787,31 +787,12 @@ export function MarketingLanding({ matches, todaysGame }: { matches: LiveMatch[]
               {/* The league table card lives here now, next to the section that
                   actually explains leagues. It was the hero visual, where it
                   sold a private table to a guest who has nobody to add to it. */}
-              <div className="space-y-3">
-                <div className="flex justify-center lg:justify-start mb-6">
-                  <LeagueHeroCard />
-                </div>
-                {[
-                  { flag: "🇧🇷", who: "Marcus", game: "Daily Quiz", detail: "9/10 correct", pts: "+340", col: "#00d8c0" },
-                  { flag: "🇮🇳", who: "Priya", game: "38-0", detail: "Beat Jamie head-to-head", pts: "+1,500", col: "#aeea00" },
-                  { flag: "🇳🇬", who: "Zach", game: "Quiz Battle", detail: "Won 4-2", pts: "+280", col: "#00d8c0" },
-                ].map((m, i) => (
-                  <div key={i} className="flex items-center gap-4 px-5 py-4 rounded-2xl bg-surface"
-                    style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
-                    <span className="text-2xl">{m.flag}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-body text-sm font-semibold text-white">{m.who} · {m.game}</p>
-                      <p className="font-body text-xs text-text-muted">{m.detail}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-display text-base" style={{ color: m.col }}>{m.pts}</p>
-                      <p className="font-body text-xs text-text-muted">to the table</p>
-                    </div>
-                  </div>
-                ))}
-                <div className="px-5 py-3 rounded-2xl text-center" style={{ background: "rgba(174,234,0,0.04)", border: "1px dashed rgba(174,234,0,0.2)" }}>
-                  <p className="font-body text-xs" style={{ color: "#aeea00" }}>Every game you play adds to your league table</p>
-                </div>
+              {/* Just the table. The three invented activity rows underneath it
+                  (Marcus +340, Priya +1,500, Zach +280) restated what the table
+                  already shows, and the dashed caption restated the bullets on
+                  the left. The card says it on its own. */}
+              <div className="flex justify-center lg:justify-start">
+                <LeagueHeroCard />
               </div>
             </div>
           </div>
