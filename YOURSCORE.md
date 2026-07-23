@@ -6,7 +6,41 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-07-23 (**Home hero rebuilt: Today's Game shows its topic + crowd stats,
+> **Confirmed:** 2026-07-23 (**Signed-out home page rewritten around the rank, and a batch of
+> guest-flow fixes.** Shipped to prod as `b024193`.
+> **Positioning:** the landing page led with 38-0 and a World Cup that finished on 19 Jul. It now
+> leads with **YOUR FOOTBALL KNOWLEDGE. RANKED.** The rank is the product: quizzes, gameday,
+> fantasy and Versus all feed one score, so the promise has no upper bound and absorbs new
+> features without a rewrite. Breadth moved to the eyebrow (`Quizzes · Gameday · Fantasy ·
+> Versus`), which keeps the headline to one promise and the fold to one decision. An earlier cut
+> said "FIVE FOOTBALL GAMES" and was rejected: **never put a count of games in the headline** —
+> it reads as a ceiling and goes stale the day a game ships.
+> **New components** in `MarketingLanding.tsx`: `GamesHeroCard` (the animated what-feeds-your-score
+> card) and `GamesExplainer` (a tab per game). Both read `GAMES`, now **exported from
+> `GameSwitcher.tsx`** with a per-game `blurb`, so the marketing page cannot describe a game the
+> app doesn't have, and a new game gets a row and a tab with no copy written. Every line in the
+> explainer is drawn from the game's own code (`ROUND_SIZE`, `MAX_STRIKES`, `HL_TOPICS`, the quiz
+> speed bands), not from memory.
+> **Removed:** the "HOW IT WORKS" 01-04 steps (they walked the 38-0 arc as if it were the app),
+> the "SPEED SCORED" demo-question section (quiz scoring given its own section; it now lives in
+> the Quiz tab) and its 45s countdown interval that ran on every signed-out load, the duplicate
+> 38-0 / Football Quiz tiles, and the invented league activity rows.
+> **World Cup framing retired:** `WorldCupCountdown` → `SeasonCountdown`, counting to PL GW1 on
+> **21 Aug**. The old one passed zero on 11 Jun and had rendered "THE CUP IS LIVE" every day
+> since, including the four days after the final. Fantasy and gameday quizzes are written as
+> landing **with the season**, never as playable today.
+> **Guest-flow fixes from a `/ux-walk`:** Today's Game moved above the hero (it sat 1280px down,
+> 1.6 screens below the fold); `/38-0` lands on Premier League, not a finished World Cup; the WC
+> edition strip is signed-in only (a guest's first visit opened with "34 days to catch up" and 35
+> CATCH UP chips); guests are no longer told "your first score counts on the leaderboard" 40px
+> above "sign in first to save your score", which contradicted it and was false for them.
+> **Copy gate:** "mates" → "friends" (8 more the 22 Jul sweep missed, because that grep was case
+> sensitive and the headline was uppercase), every em/en dash out, and the OG image no longer
+> calls Perfect 10 a **daily** list.
+> **STILL OPEN:** recommended packs have no browse surface; club packs still fall back to crests
+> instead of real covers; the games card sits ~1000px down on mobile, below the fold.)
+>
+> **Previously confirmed:** 2026-07-23 (**Home hero rebuilt: Today's Game shows its topic + crowd stats,
 > debate comments open to all, Mastermind resume prompt removed.** Branch `fix/quiz-flow-ux`,
 > migration **102 APPLIED to prod**.
 > **Today's Game tile** is now two halves: cover art on top, a live stats strip underneath —
