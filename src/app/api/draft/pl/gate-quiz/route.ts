@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { rateLimitDistributed } from "@/lib/ratelimit";
 import { gateQuestion } from "@/lib/draft/pl-quiz";
 
-// The 38-0 PL GATED draft's quiz, server-graded. The question pool + answers are
+// The 38-0 PL Pro draft's quiz, server-graded. The question pool + answers are
 // server-only (audit C1), so the client can't grade locally. Same stateless shape as the
 // WC practice quiz: a question is DERIVED from a random seed (gateQuestion is
 // deterministic per seed), the client gets it answer-free alongside the seed, and grading
@@ -12,7 +12,7 @@ import { gateQuestion } from "@/lib/draft/pl-quiz";
 //   { action: "draw", exclude?: string[] } → { seed, question: {id,prompt,options,category} }
 //   { action: "answer", seed, choice }     → { correct, correctIndex }
 //
-// Anonymous is fine — 38-0 drafting has always worked signed-out, and PL Gated is
+// Anonymous is fine — 38-0 drafting has always worked signed-out, and PL Pro is
 // replayable rather than ranked, so there's nothing here to farm. Revealing correctIndex
 // after the answer matches the UI (it highlights the right option) and leaks exactly as
 // much as playing the question would.

@@ -3,7 +3,7 @@
 /**
  * The quiz gate — the question a player answers to unlock a pick in a gated draft.
  *
- * Lifted from the World Cup Mastermind draft (/38-0/wc) so 38-0's PL Gated mode shows the
+ * Lifted from the World Cup Mastermind draft (/38-0/wc) so 38-0's PL Pro mode shows the
  * identical thing: same clock, same reveal, same streak language. Parametrised only by
  * accent colour and the verb on the header ("SCOUT" for the WC's nation slates, "SPIN" for
  * the league draft's club-season reel).

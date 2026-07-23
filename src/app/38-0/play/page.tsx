@@ -7,9 +7,10 @@
  * which OPEN slot to put them in (Available vs Unavailable, with reasons). A live
  * OVERALL + Attack/Mid/Def/GK breakdown builds as you draft. Repeat x11.
  *
- * Two modes (team.gated):
+ * Two modes, Premier League only. `team.gated` is the flag; **PRO** is the name the player
+ * sees (the code says "gated" because that's the mechanic):
  *   Just Draft — spin straight away, every squad dealt at full quality.
- *   Gated      — every spin is unlocked by a Premier League question. A correct answer
+ *   Pro        — every spin is unlocked by a Premier League question. A correct answer
  *                (and a correct STREAK) raises the quality band the squad is dealt from;
  *                a wrong one caps it below elite. The more football you know, the stronger
  *                your XI. Same band maths as WC Mastermind (lib/draft/draft-quiz.ts).
@@ -45,7 +46,7 @@ function eligiblePositions(player: PlayerSeason, formation: LocalTeam["formation
     .filter((p) => (seen.has(p) ? false : (seen.add(p), true)));
 }
 
-const QUESTION_SECONDS = 25; // per-question clock in Gated mode (timeout = wrong answer)
+const QUESTION_SECONDS = 25; // per-question clock in Pro mode (timeout = wrong answer)
 
 export default function DraftPlay() {
   const router = useRouter();
@@ -65,7 +66,7 @@ export default function DraftPlay() {
   // same squad's options don't keep reappearing for position after position.
   const seenBuckets = useRef<Set<string>>(new Set());
 
-  // ── Gated mode: the question that unlocks each spin ────────────────────────
+  // ── Pro mode: the question that unlocks each spin ────────────────────────
   const [quiz, setQuiz] = useState<ServedQuestion | null>(null);
   const [answered, setAnswered] = useState<number | null>(null); // locked option index (-1 = timeout)
   const [timeLeft, setTimeLeft] = useState(QUESTION_SECONDS);
@@ -105,7 +106,7 @@ export default function DraftPlay() {
     if (!team || spinning || quiz) return;
     setRoundOpen(true); // before the pool gate — the tray box must mount at the tap, not when the pool lands
     if (!isPoolReady()) { void ensurePool().then(() => doSpin()); return; }
-    // Just Draft (and every La Liga draft) spins immediately at full quality. Gated asks
+    // Just Draft (and every La Liga draft) spins immediately at full quality. Pro asks
     // first, and the answer decides the band the squad is dealt from.
     if (!team.gated) { runSpin({}); return; }
     void drawGateQuestion();
@@ -272,7 +273,7 @@ export default function DraftPlay() {
           <span className="font-body" style={{ fontSize: 12, color: "#8a948f" }}>{team.squad.length}/11</span>
         </div>
 
-        {/* Gated: the reward loop, made visible — how many you've earned and the live streak. */}
+        {/* Pro: the reward loop, made visible — how many you've earned and the live streak. */}
         {team.gated && askedCount > 0 && (
           <div className="flex items-center gap-2 mb-3">
             <span className="rounded-full px-2.5 py-1 font-body" style={{ fontSize: 11, color: "#aeea00", background: "rgba(174,234,0,0.12)", border: "1px solid rgba(174,234,0,0.3)" }}>

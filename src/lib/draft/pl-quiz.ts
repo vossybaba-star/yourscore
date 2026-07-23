@@ -1,5 +1,5 @@
 /**
- * Premier League quiz pool — the questions that gate draft quality in 38-0's PL Gated mode.
+ * Premier League quiz pool — the questions that gate draft quality in 38-0's PL Pro mode.
  *
  * The pool is bundled at build time from an approved slice of the `questions` bank
  * (src/data/draft/pl-quiz.json, produced by scripts/draft/build-pl-quiz.mjs) so there are
@@ -12,7 +12,7 @@
  * were just asked. Clients get questions through /api/draft/pl/gate-quiz; the types they
  * need live in wc-quiz-public.ts (shared — the shape is identical).
  *
- * Unlike the World Cup gate there is NO `dailyQuestions` here. PL Gated is replayable, not
+ * Unlike the World Cup gate there is NO `dailyQuestions` here. PL Pro is replayable, not
  * a dated daily competition, so there is no same-test-for-everyone rule to honour.
  */
 

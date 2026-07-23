@@ -47,8 +47,9 @@ export default function DraftHome() {
   useEffect(() => { let off = false; ensurePool().then(() => { if (!off) setPoolReady(true); }).catch(() => {}); return () => { off = true; }; }, []);
   const [selected, setSelected] = useState<Formation>("4-3-3");
   const [mode, setMode] = useState<DraftMode>("classic");
-  // Gated = every pick unlocked by a Premier League question (PL tab only). Orthogonal to
-  // `mode` — gated + expert is legal.
+  // PRO (the locked user-facing name) = every pick unlocked by a Premier League question,
+  // PL tab only. The code calls it `gated` throughout because that's the mechanic; "Pro" is
+  // the label the player sees. Orthogonal to `mode` — Pro + Expert is legal.
   const [gated, setGated] = useState(false);
   const [existing, setExisting] = useState<LocalTeam | null>(null);
   // Which mode the World Cup "How it works" panel is explaining.
@@ -63,11 +64,11 @@ export default function DraftHome() {
 
   function startNew() {
     if (!cfg) return;
-    // Gated is Premier League only — the question bank is PL clubs and PL moments.
+    // Pro is Premier League only — the question bank is PL clubs and PL moments.
     const isGated = tab === "pl" && gated;
     const team = emptyTeam(selected, mode, cfg.league, isGated);
     saveTeam(team);
-    trackGamePlay("38-0", { mode: isGated ? "draft-gated" : "draft", board: tab });
+    trackGamePlay("38-0", { mode: isGated ? "draft-pro" : "draft", board: tab });
     router.push("/38-0/play");
   }
 
@@ -260,7 +261,7 @@ export default function DraftHome() {
                 </h2>
                 <div className="grid grid-cols-2 gap-3">
                   {([
-                    { key: true,  label: "GATED",      desc: "Answer to earn every pick — right answers deal better players", color: cfg.accent },
+                    { key: true,  label: "PRO",        desc: "Answer to earn every pick — right answers deal better players", color: cfg.accent },
                     { key: false, label: "JUST DRAFT", desc: "No questions — spin and pick, every squad at full strength",    color: "#8a948f" },
                   ]).map((g) => {
                     const active = gated === g.key;

@@ -378,8 +378,13 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
-- **2026-07-21** — **38-0 Premier League now has two modes: GATED and JUST DRAFT**
-  (branch `feat/38-0-pl-gated`, not on `main`). Gated brings the World Cup Mastermind
+- **2026-07-21** — **38-0 Premier League now has two modes: PRO and JUST DRAFT**
+  (branch `feat/38-0-pl-gated`, not on `main`). **"Pro" is the locked player-facing name**
+  (founder, 2026-07-22); the code says `gated` throughout because that's the mechanic —
+  don't rename the flag, and don't call the mode "Gated" in any copy. Pro is a *difficulty*,
+  never a paid tier: the app promises "Free forever — no subscription, no catch", so Pro
+  copy must always read as skill, and the card carries a ⚽ not a padlock.
+  Pro brings the World Cup Mastermind
   mechanic to the PL tab: every spin is unlocked by a Premier League question, and a
   correct **streak** raises both the floor and ceiling of the quality band the squad is
   dealt from — a wrong answer caps the pick at 72 overall, ~streak 5 opens the elite tier.
@@ -780,6 +785,12 @@ Use these words, with these meanings, everywhere. No synonyms.
 - **Lobby type** — **Private** (invite, ≤8) · **Public** (anyone w/ link, ≤20) · **1v1** (you vs one). *(1v1 = code's `h2h`.)*
 
 **38-0 terms**
+- **Pro** — the Premier League draft mode where every Spin is unlocked by a Premier League
+  question and your answers set the quality of the squads dealt. Say **"Pro"**, never
+  "Gated" (the code's `gated` flag is the mechanic, not the name). It is a **difficulty, not
+  a paid tier** — YourScore is free forever, so never dress Pro in padlock/upgrade language.
+- **Just Draft** — the open Premier League/La Liga draft: no questions, every squad at full
+  quality. The counterpart to Pro, and what 38-0 has always done.
 - **Spin** — deal a random squad of real-rated legends (drawn across FIFA editions/eras).
 - **Draft** — place spun players into your formation's best-fit slots to build your XI.
 - **Strength** — your XI's computed rating (~40–99).
@@ -867,7 +878,7 @@ slots → see live **Strength** → **projected 38-game record + tier** → play
 → **earn a one-player swap** / lose → streak resets but the **team stays active — go
 again** (the old "stale team → forced rebuild" model is retired). **Classic vs Expert**
 mode (Expert hides ratings). On the **Premier League** tab there is a second, orthogonal
-choice — **Gated vs Just Draft**: Gated unlocks each spin with a Premier League question
+choice — **Pro vs Just Draft**: Pro unlocks each spin with a Premier League question
 and lets your answers set the quality of the squads you're dealt (see §0, 2026-07-21).
 La Liga is Just Draft only. **Anonymous play is the deliberate hook** — guests get the full draft + Quick
 Match loop on `localStorage`; sign-in unlocks cloud save / ranked / social.

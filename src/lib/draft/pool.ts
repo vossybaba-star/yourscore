@@ -155,7 +155,7 @@ export function spin(
   seen: Set<string> = new Set(),
   /** Which competition's squads to deal from. */
   league: League = "PL",
-  /** The quiz-gated quality band for PL Gated mode (see draft-quiz.ts) — a soft rating
+  /** The quiz-gated quality band for PL Pro mode (see draft-quiz.ts) — a soft rating
    *  window the dealt squad is filtered to, so a wrong answer deals a squad WITHOUT its
    *  stars and a correct streak opens the elite tier. Relaxed (ceiling up first, then
    *  floor down) if no squad can field anyone inside it, so a pick never dead-ends.

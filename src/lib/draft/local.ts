@@ -29,9 +29,9 @@ export type LocalTeam = {
   league: League;
   formation: Formation;
   mode: DraftMode;
-  /** PL Gated: every pick is unlocked by a Premier League question, and how well you
+  /** PL Pro: every pick is unlocked by a Premier League question, and how well you
    *  answer sets the quality of the squad you're dealt (see draft-quiz.ts). Undefined on
-   *  every team saved before Gated shipped — read as false, so legacy drafts stay open.
+   *  every team saved before Pro shipped — read as false, so legacy drafts stay open.
    *  Orthogonal to `mode`: gated + expert is legal (and brutal). */
   gated?: boolean;
   squad: PlacedPlayer[];
