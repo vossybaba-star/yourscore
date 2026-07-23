@@ -154,27 +154,55 @@ export function spin(
    *  stays a fun surprise. Same club via a different season is unrestricted. */
   seen: Set<string> = new Set(),
   /** Which competition's squads to deal from. */
-  league: League = "PL"
+  league: League = "PL",
+  /** The quiz-gated quality band for PL Gated mode (see draft-quiz.ts) — a soft rating
+   *  window the dealt squad is filtered to, so a wrong answer deals a squad WITHOUT its
+   *  stars and a correct streak opens the elite tier. Relaxed (ceiling up first, then
+   *  floor down) if no squad can field anyone inside it, so a pick never dead-ends.
+   *  Omitted (Just Draft, La Liga, every pre-existing caller) = unbounded, and the
+   *  behaviour below is then identical to before the band existed. */
+  band: { minOverall?: number; maxOverall?: number } = {}
 ): Spin {
   const buckets = bucketsFor(league);
-  const draftable = (b: Bucket) =>
-    getBucketPlayers(b).filter(
+  // MEMOISED per call. getBucketPlayers sorts the squad every time, and the band search
+  // below can sample the same bucket many times over its relax rounds — without this the
+  // gated draft re-sorted squads thousands of times per spin and took seconds on mobile.
+  // A bucket's draftable set doesn't change within one spin, so compute it at most once.
+  const draftableCache = new Map<string, PlayerSeason[]>();
+  const draftable = (b: Bucket) => {
+    const key = `${b.club}|${b.season}`;
+    const hit = draftableCache.get(key);
+    if (hit) return hit;
+    const players = getBucketPlayers(b).filter(
       (p) =>
         !usedPlayerIds.has(p.id) &&
         !usedIdentities.has(playerIdentity(p.name)) && // no player twice, even across editions
         openSlotPositions.some((slotPos) => canPlay(p.position, slotPos))
     );
+    draftableCache.set(key, players);
+    return players;
+  };
 
   // Already-offered squads slip through only ~15% of the time, so unseen squads are
   // strongly preferred but a repeat is still possible (a rare double), not banned.
   const REOFFER_SUPPRESS = 0.85;
-  for (let attempt = 0; attempt < 80; attempt++) {
-    const b = buckets[Math.floor(rng() * buckets.length)];
-    if (seen.has(`${b.club}|${b.season}`) && rng() < REOFFER_SUPPRESS) continue;
-    const players = draftable(b);
-    if (players.length > 0) {
-      return { club: b.club, clubSlug: b.clubSlug, season: b.season, players };
+  let floor = band.minOverall ?? 0;
+  let cap = band.maxOverall ?? 99;
+  // Outer loop widens the band; inner loop is the original squad hunt. With no band
+  // (floor 0 / cap 99) the widen step breaks immediately, so this collapses to exactly
+  // the pre-band single pass — same rng draws, same result.
+  for (let relax = 0; relax < 40; relax++) {
+    for (let attempt = 0; attempt < 80; attempt++) {
+      const b = buckets[Math.floor(rng() * buckets.length)];
+      if (seen.has(`${b.club}|${b.season}`) && rng() < REOFFER_SUPPRESS) continue;
+      const players = draftable(b).filter((p) => p.overall >= floor && p.overall <= cap);
+      if (players.length > 0) {
+        return { club: b.club, clubSlug: b.clubSlug, season: b.season, players };
+      }
     }
+    if (cap < 99) cap = Math.min(99, cap + 5);
+    else if (floor > 0) floor = Math.max(0, floor - 5);
+    else break;
   }
 
   // Extremely unlikely fallback: any bucket, still excluding already-used players.

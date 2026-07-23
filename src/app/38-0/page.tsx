@@ -47,6 +47,9 @@ export default function DraftHome() {
   useEffect(() => { let off = false; ensurePool().then(() => { if (!off) setPoolReady(true); }).catch(() => {}); return () => { off = true; }; }, []);
   const [selected, setSelected] = useState<Formation>("4-3-3");
   const [mode, setMode] = useState<DraftMode>("classic");
+  // Gated = every pick unlocked by a Premier League question (PL tab only). Orthogonal to
+  // `mode` — gated + expert is legal.
+  const [gated, setGated] = useState(false);
   const [existing, setExisting] = useState<LocalTeam | null>(null);
   // Which mode the World Cup "How it works" panel is explaining.
   const [wcHow, setWcHow] = useState<"mastermind" | "run">("mastermind");
@@ -60,9 +63,11 @@ export default function DraftHome() {
 
   function startNew() {
     if (!cfg) return;
-    const team = emptyTeam(selected, mode, cfg.league);
+    // Gated is Premier League only — the question bank is PL clubs and PL moments.
+    const isGated = tab === "pl" && gated;
+    const team = emptyTeam(selected, mode, cfg.league, isGated);
     saveTeam(team);
-    trackGamePlay("38-0", { mode: "draft", board: tab });
+    trackGamePlay("38-0", { mode: isGated ? "draft-gated" : "draft", board: tab });
     router.push("/38-0/play");
   }
 
@@ -245,6 +250,41 @@ export default function DraftHome() {
                 {FORMATION_NOTE[selected]}
               </p>
             </div>
+
+            {/* ── How you draft. Premier League only — the gate's question bank is
+                Premier League clubs and key moments, so La Liga stays open-draft. ── */}
+            {tab === "pl" && (
+              <>
+                <h2 className="font-display tracking-wide mt-7 mb-3" style={{ fontSize: 22, color: "#fff" }}>
+                  HOW YOU DRAFT
+                </h2>
+                <div className="grid grid-cols-2 gap-3">
+                  {([
+                    { key: true,  label: "GATED",      desc: "Answer to earn every pick — right answers deal better players", color: cfg.accent },
+                    { key: false, label: "JUST DRAFT", desc: "No questions — spin and pick, every squad at full strength",    color: "#8a948f" },
+                  ]).map((g) => {
+                    const active = gated === g.key;
+                    return (
+                      <button
+                        key={String(g.key)}
+                        onClick={() => setGated(g.key)}
+                        className="rounded-2xl p-4 text-left transition-all active:scale-95"
+                        style={{
+                          background: active ? `${g.color}14` : "#0e1611",
+                          border: `1px solid ${active ? `${g.color}88` : "rgba(255,255,255,0.08)"}`,
+                        }}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="font-display tracking-wide" style={{ fontSize: 22, color: active ? g.color : "#fff" }}>{g.label}</span>
+                          {g.key && <span style={{ fontSize: 14 }}>⚽</span>}
+                        </div>
+                        <div className="font-body mt-1" style={{ fontSize: 11, color: "#8a948f", lineHeight: 1.3 }}>{g.desc}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
 
             <h2 className="font-display tracking-wide mt-7 mb-3" style={{ fontSize: 22, color: "#fff" }}>
               DIFFICULTY

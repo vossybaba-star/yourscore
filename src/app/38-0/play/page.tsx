@@ -6,14 +6,24 @@
  * Spin a CLUB × SEASON, see the whole squad as a list, pick any player, then choose
  * which OPEN slot to put them in (Available vs Unavailable, with reasons). A live
  * OVERALL + Attack/Mid/Def/GK breakdown builds as you draft. Repeat x11.
+ *
+ * Two modes (team.gated):
+ *   Just Draft — spin straight away, every squad dealt at full quality.
+ *   Gated      — every spin is unlocked by a Premier League question. A correct answer
+ *                (and a correct STREAK) raises the quality band the squad is dealt from;
+ *                a wrong one caps it below elite. The more football you know, the stronger
+ *                your XI. Same band maths as WC Mastermind (lib/draft/draft-quiz.ts).
  */
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Pitch } from "@/components/draft/Pitch";
+import { QuizGate } from "@/components/draft/QuizGate";
 import { SlateSkeleton } from "@/components/draft/SlateSkeleton";
 import { BackPill } from "@/components/ui/BackPill";
 import { Button } from "@/components/ui/Button";
+import { gradeAnswer, type DraftBand } from "@/lib/draft/draft-quiz";
+import type { ServedQuestion } from "@/lib/draft/wc-quiz-public";
 import { spin, allBuckets, ensurePool, isPoolReady, type Spin } from "@/lib/draft/pool";
 import {
   loadTeam, saveTeam, openSlots, isComplete, usedPlayerIds, usedPlayerNames, placePlayer,
@@ -35,6 +45,8 @@ function eligiblePositions(player: PlayerSeason, formation: LocalTeam["formation
     .filter((p) => (seen.has(p) ? false : (seen.add(p), true)));
 }
 
+const QUESTION_SECONDS = 25; // per-question clock in Gated mode (timeout = wrong answer)
+
 export default function DraftPlay() {
   const router = useRouter();
   const [team, setTeam] = useState<LocalTeam | null>(null);
@@ -53,6 +65,20 @@ export default function DraftPlay() {
   // same squad's options don't keep reappearing for position after position.
   const seenBuckets = useRef<Set<string>>(new Set());
 
+  // ── Gated mode: the question that unlocks each spin ────────────────────────
+  const [quiz, setQuiz] = useState<ServedQuestion | null>(null);
+  const [answered, setAnswered] = useState<number | null>(null); // locked option index (-1 = timeout)
+  const [timeLeft, setTimeLeft] = useState(QUESTION_SECONDS);
+  const [streak, setStreak] = useState(0);
+  const [correctCount, setCorrectCount] = useState(0);
+  const [askedCount, setAskedCount] = useState(0);
+  const [feedback, setFeedback] = useState<{ correct: boolean; streak: number } | null>(null);
+  // Questions already asked this draft — sent to the server so it doesn't re-deal them.
+  const askedIds = useRef<Set<string>>(new Set());
+  // The seed the current question was derived from. The server re-derives (and grades)
+  // from it, so the answer never reaches the client until the answer is locked.
+  const gateSeed = useRef<string | null>(null);
+
   useEffect(() => {
     void ensurePool(); // preload the on-demand player pool for the spin
     const t = loadTeam();
@@ -65,28 +91,112 @@ export default function DraftPlay() {
 
   useEffect(() => () => { if (reelTimer.current) clearInterval(reelTimer.current); }, []);
 
+  // Per-question 25s clock. Hitting zero locks in a timeout as a wrong answer (idx -1),
+  // so you can't sit on a question looking the answer up.
+  useEffect(() => {
+    if (!quiz || answered !== null) return;
+    if (timeLeft <= 0) { answerQuiz(-1); return; }
+    const t = setTimeout(() => setTimeLeft((s) => s - 1), 1000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quiz, answered, timeLeft]);
+
   function doSpin() {
-    if (!team || spinning) return;
+    if (!team || spinning || quiz) return;
     setRoundOpen(true); // before the pool gate — the tray box must mount at the tap, not when the pool lands
     if (!isPoolReady()) { void ensurePool().then(() => doSpin()); return; }
+    // Just Draft (and every La Liga draft) spins immediately at full quality. Gated asks
+    // first, and the answer decides the band the squad is dealt from.
+    if (!team.gated) { runSpin({}); return; }
+    void drawGateQuestion();
+  }
+
+  // Pull the next gate question from the server ANSWER-FREE (the pool + answers are
+  // server-only). Any failure falls back to an ungated spin so a draft can never
+  // dead-end on a network blip.
+  async function drawGateQuestion() {
+    try {
+      const res = await fetch("/api/draft/pl/gate-quiz", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "draw", exclude: Array.from(askedIds.current) }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.question) { runSpin({}); return; }
+      gateSeed.current = data.seed as string;
+      setQuiz({ ...data.question, correctIndex: -1 });
+      setAnswered(null);
+      setFeedback(null);
+      setTimeLeft(QUESTION_SECONDS);
+    } catch {
+      runSpin({});
+    }
+  }
+
+  // Lock the answer, let the server grade it (it alone knows the answer), reveal the
+  // correct option, then spin the band that answer earned.
+  function answerQuiz(idx: number) {
+    if (!quiz || answered !== null) return;
+    setAnswered(idx);
+    void (async () => {
+      const qid = quiz.id;
+      try {
+        const res = await fetch("/api/draft/pl/gate-quiz", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "answer", seed: gateSeed.current, choice: idx }),
+        });
+        const data = await res.json();
+        if (!res.ok) { setAnswered(null); return; }
+        const correct = !!data.correct;
+        const { streak: newStreak, band } = gradeAnswer(streak, correct);
+        askedIds.current.add(qid);
+        setQuiz((q) => (q ? { ...q, correctIndex: data.correctIndex } : q)); // reveal now (post-answer)
+        setStreak(newStreak);
+        setAskedCount((n) => n + 1);
+        if (correct) setCorrectCount((n) => n + 1);
+        setFeedback({ correct, streak: newStreak });
+        setTimeout(() => { setQuiz(null); setAnswered(null); runSpin(band); }, 900);
+      } catch {
+        setAnswered(null);
+      }
+    })();
+  }
+
+  // The reel + deal. `band` is the quality window the answer earned — empty in Just
+  // Draft, where every squad is dealt whole.
+  function runSpin(band: DraftBand | Record<string, never>) {
+    if (!team) return;
     setSpinning(true);
     setCurrent(null);
     setSelected(null);
     const buckets = allBuckets(team.league);
     let ticks = 0;
-    reelTimer.current = setInterval(() => {
+    // Never leave a reel running. Each interval clears ITS OWN id (captured in `mine`),
+    // not whatever `reelTimer.current` happens to point at — the old code cleared the ref,
+    // so if a second spin ever started, the first tick-out clobbered the NEW timer's id and
+    // orphaned itself, leaving the reel ticking forever with the tray stuck on SPINNING.
+    if (reelTimer.current) clearInterval(reelTimer.current);
+    const mine = setInterval(() => {
       const b = buckets[Math.floor(Math.random() * buckets.length)];
       setReel({ club: b.club, season: b.season });
       if (++ticks > 13) {
-        if (reelTimer.current) clearInterval(reelTimer.current);
-        const open = openSlots(team).map((s) => s.pos);
-        const result = spin(open, usedPlayerIds(team), usedPlayerNames(team), Math.random, seenBuckets.current, team.league);
-        seenBuckets.current.add(`${result.club}|${result.season}`);
-        setReel({ club: result.club, season: result.season });
-        setCurrent(result);
-        setSpinning(false);
+        clearInterval(mine);
+        if (reelTimer.current === mine) reelTimer.current = null;
+        try {
+          const open = openSlots(team).map((s) => s.pos);
+          const result = spin(open, usedPlayerIds(team), usedPlayerNames(team), Math.random, seenBuckets.current, team.league, band);
+          seenBuckets.current.add(`${result.club}|${result.season}`);
+          setReel({ club: result.club, season: result.season });
+          setCurrent(result);
+        } catch (err) {
+          // A throw here used to leave the tray stuck on SPINNING forever (the interval is
+          // already cleared, so nothing ever retries). Always release the button.
+          console.error("[38-0] spin failed", err);
+        } finally {
+          setSpinning(false);
+        }
       }
     }, 65);
+    reelTimer.current = mine;
   }
 
   function placeAt(slot: Slot) {
@@ -149,6 +259,20 @@ export default function DraftPlay() {
           </div>
           <span className="font-body" style={{ fontSize: 12, color: "#8a948f" }}>{team.squad.length}/11</span>
         </div>
+
+        {/* Gated: the reward loop, made visible — how many you've earned and the live streak. */}
+        {team.gated && askedCount > 0 && (
+          <div className="flex items-center gap-2 mb-3">
+            <span className="rounded-full px-2.5 py-1 font-body" style={{ fontSize: 11, color: "#aeea00", background: "rgba(174,234,0,0.12)", border: "1px solid rgba(174,234,0,0.3)" }}>
+              {correctCount}/{askedCount} correct
+            </span>
+            {streak >= 2 && (
+              <span className="rounded-full px-2.5 py-1 font-body" style={{ fontSize: 11, color: "#ffb800", background: "rgba(255,184,0,0.12)", border: "1px solid rgba(255,184,0,0.3)" }}>
+                🔥 Streak ×{streak}
+              </span>
+            )}
+          </div>
+        )}
 
         <Pitch formation={team.formation} squad={team.squad} hideOverall={expert} compact />
 
@@ -269,8 +393,8 @@ export default function DraftPlay() {
           <div className="flex flex-col justify-center" style={{ minHeight: 62 }}>
           {remaining > 0 ? (
             !current || spinning ? (
-              <Button variant="primary" tone="lime" size="lg" fullWidth onClick={doSpin} disabled={spinning}>
-                {spinning ? "SPINNING…" : "🎰 SPIN THE WHEEL"}
+              <Button variant="primary" tone="lime" size="lg" fullWidth onClick={doSpin} disabled={spinning || !!quiz}>
+                {spinning ? "SPINNING…" : team.gated ? "⚽ ANSWER TO SPIN" : "🎰 SPIN THE WHEEL"}
               </Button>
             ) : (
               <div className="text-center font-body py-2" style={{ fontSize: 13, color: "#8a948f" }}>
@@ -285,6 +409,20 @@ export default function DraftPlay() {
           </div>
         </div>
       </div>
+
+      {quiz && (
+        <QuizGate
+          question={quiz}
+          answered={answered}
+          timeLeft={timeLeft}
+          totalSeconds={QUESTION_SECONDS}
+          streak={streak}
+          feedback={feedback}
+          onAnswer={answerQuiz}
+          accent="#aeea00"
+          verb="SPIN"
+        />
+      )}
     </div>
   );
 }

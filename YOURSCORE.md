@@ -378,6 +378,31 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-21** — **38-0 Premier League now has two modes: GATED and JUST DRAFT**
+  (branch `feat/38-0-pl-gated`, not on `main`). Gated brings the World Cup Mastermind
+  mechanic to the PL tab: every spin is unlocked by a Premier League question, and a
+  correct **streak** raises both the floor and ceiling of the quality band the squad is
+  dealt from — a wrong answer caps the pick at 72 overall, ~streak 5 opens the elite tier.
+  Same band maths as WC (`src/lib/draft/draft-quiz.ts`, untouched). **Replayable, not a
+  daily ranked competition** — no locks, no new board, no new tables; it feeds the existing
+  team → season → H2H flow. **La Liga is deliberately excluded** (the question bank is PL
+  clubs and PL moments), and Just Draft is byte-identical to the old behaviour.
+  New: `src/lib/draft/pl-quiz.ts` (server-only — it carries every answer),
+  `/api/draft/pl/gate-quiz` (stateless, seed-graded, anonymous-OK — cloned from the WC
+  practice-quiz route), `src/components/draft/QuizGate.tsx` (shared gate UI; **the WC page
+  still renders its own inline copy — migrating it is a deliberate follow-up**), and an
+  optional band argument on `spin()` in `pool.ts`.
+  **The question bank (357) is a snapshot of the live `questions` bank**, built by
+  `scripts/draft/build-pl-quiz.mjs` → `src/data/draft/pl-quiz.json`, with a review sheet at
+  `scripts/data/pl-quiz-review.md`. Inclusion rule is the founder's: *if it involves a
+  Premier League club, it's in* — tallies, cup competitions and pre-1992 all stay. Only two
+  shapes are cut: finishing-position recall (105 rows — verifiable but a neutral fan lands
+  none of them) and answers that are two answers concatenated ("The Villans The Lions", 5
+  rows — they make a distractor correct too). **Note `Premier League Records` files under its
+  own categories** (`PL Records`, `PL History`, `PL 2024-25`) so the script queries it
+  separately — miss that and the 32 most on-brief questions in the bank vanish.
+  ⚠️ **The bundle is NOT founder-reviewed yet** — `pl-quiz-review.md` is the gate before ship.
+
 - **2026-07-20 (pm)** — **Versus guest dead-end fixed** (`src/app/versus/page.tsx`, working
   tree, not yet committed). Signed-out users hitting Versus got a bare sign-in gate with NO
   BottomNav (guest nav vanished — trapped) and no create-account CTA. Now: guest BottomNav
@@ -833,7 +858,10 @@ pick a formation + difficulty → **Spin** a random legendary squad → **Draft*
 slots → see live **Strength** → **projected 38-game record + tier** → play a match → win
 → **earn a one-player swap** / lose → streak resets but the **team stays active — go
 again** (the old "stale team → forced rebuild" model is retired). **Classic vs Expert**
-mode (Expert hides ratings). **Anonymous play is the deliberate hook** — guests get the full draft + Quick
+mode (Expert hides ratings). On the **Premier League** tab there is a second, orthogonal
+choice — **Gated vs Just Draft**: Gated unlocks each spin with a Premier League question
+and lets your answers set the quality of the squads you're dealt (see §0, 2026-07-21).
+La Liga is Just Draft only. **Anonymous play is the deliberate hook** — guests get the full draft + Quick
 Match loop on `localStorage`; sign-in unlocks cloud save / ranked / social.
 
 **Match types — live status:**

@@ -1,0 +1,5021 @@
+{
+  "generatedFrom": "questions bank (status=active, source=data-grounded, difficulty in easy|medium)",
+  "entities": [
+    "Premier League Records",
+    "Arsenal",
+    "Liverpool",
+    "Manchester City",
+    "Manchester United",
+    "Chelsea",
+    "Tottenham Hotspur",
+    "Leicester City",
+    "Newcastle United",
+    "Everton",
+    "Aston Villa",
+    "West Ham United",
+    "Blackburn Rovers",
+    "Nottingham Forest",
+    "Leeds United"
+  ],
+  "count": 357,
+  "questions": [
+    {
+      "id": "12504ff1-f4a8-4253-a93e-0c5dbe732018",
+      "q": "What club remarkably featured in 10 of their 13 overall Premier League campaigns during the 2002-2012 period?",
+      "options": [
+        "Bolton Wanderers",
+        "Fulham",
+        "Wigan Athletic",
+        "Blackburn Rovers"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "PL History",
+      "entity": "Premier League Records"
+    },
+    {
+      "id": "13a9dd20-8646-4a54-a4bd-1620857b97bf",
+      "q": "Which Midlands club made history in 2004/05 by being the first team to escape relegation after sitting bottom of the league on Christmas Day?",
+      "options": [
+        "Birmingham City",
+        "Aston Villa",
+        "West Bromwich Albion",
+        "Wolverhampton Wanderers"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "PL History",
+      "entity": "Premier League Records"
+    },
+    {
+      "id": "1433ebc2-a7c9-4103-bab5-52f9b662e020",
+      "q": "Between 2002 and 2012, Thierry Henry captured the Golden Boot on three occasions. What other French forward secured the award during this same timeframe?",
+      "options": [
+        "Nicolas Anelka",
+        "David Trezeguet",
+        "Franck Ribéry",
+        "Djibril Cissé"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "PL History",
+      "entity": "Premier League Records"
+    },
+    {
+      "id": "15c44164-603b-4155-ade0-f2a077f97cb0",
+      "q": "Who was the Leeds United striker that scored the Premier League's inaugural hat-trick, which also turned out to be his sole treble in the competition?",
+      "options": [
+        "Rod Wallace",
+        "Mark Hateley",
+        "Eric Cantona",
+        "Lee Chapman"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "PL History",
+      "entity": "Premier League Records"
+    },
+    {
+      "id": "17080f76-517d-4288-9786-f7315d2a2bcf",
+      "q": "Wayne Rooney broke the record as the Premier League's youngest goalscorer when he found the net against Arsenal while playing for Everton in 2002. Who was the Arsenal goalkeeper he scored past?",
+      "options": [
+        "Shaka Hislop",
+        "Nigel Martyn",
+        "Peter Schmeichel",
+        "David Seaman"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "PL History",
+      "entity": "Premier League Records"
+    },
+    {
+      "id": "274d1ba6-c7e7-4b09-8750-60b507759284",
+      "q": "Sadio Mane holds the Premier League record for the quickest hat-trick, completing it in less than three minutes. What team was he playing for during this remarkable feat?",
+      "options": [
+        "Liverpool",
+        "Crystal Palace",
+        "Southampton",
+        "Tottenham Hotspur"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "PL Records",
+      "entity": "Premier League Records"
+    },
+    {
+      "id": "2d632025-be4a-45aa-9b29-5a146f107eca",
+      "q": "Which Republic of Ireland international is the sole player to reach the milestone of 100 Premier League goals?",
+      "options": [
+        "Tony Dunne",
+        "Niall Quinn",
+        "Robbie Keane",
+        "Cillian Sheridan"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "PL Records",
+      "entity": "Premier League Records"
+    },
+    {
+      "id": "3d945e4a-ae9c-430e-b826-6639c0631661",
+      "q": "What player ended their Premier League career with exactly 100 goals, having scored every one of them for a single club during the 1992-2001 period?",
+      "options": [
+        "Alan Shearer",
+        "Matt Le Tissier",
+        "Teddy Sheringham",
+        "Robbie Fowler"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "PL Records",
+      "entity": "Premier League Records"
+    },
+    {
+      "id": "3f40e4cc-6513-42c2-8e9b-594258122330",
+      "q": "At what age did the Liverpool striker Michael Owen become one of the youngest players to reach a century of Premier League goals, achieving this milestone at just 23 years and 133 days?",
+      "options": [
+        "Kenny Dalglish",
+        "Michael Owen",
+        "Ian Rush",
+        "Robbie Fowler"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "PL Records",
+      "entity": "Premier League Records"
+    },
+    {
+      "id": "40de9522-c0a9-4b09-8fe8-f85b979b27b0",
+      "q": "Which Premier League club did Peter Schmeichel represent when he made history as the first goalkeeper to score a goal in the competition?",
+      "options": [
+        "Aston Villa",
+        "Everton",
+        "Coventry City",
+        "Manchester United"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "PL History",
+      "entity": "Premier League Records"
+    },
+    {
+      "id": "4479d161-15e8-4646-b0d6-769416cb8693",
+      "q": "Who was the leading Premier League goalscorer over the decade spanning 2012 through 2022?",
+      "options": [
+        "Sergio Agüero",
+        "Cristiano Ronaldo",
+        "Harry Kane",
+        "Jamie Vardy"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "PL History",
+      "entity": "Premier League Records"
+    },
+    {
+      "id": "4f27908a-dcdb-4a34-96ec-27c6d3230d5b",
+      "q": "Which non-English player became the first to achieve 100 Premier League goals, reaching this milestone with Manchester United in November 2000?",
+      "options": [
+        "Eric Cantona",
+        "Mark Hughes",
+        "Dwight Yorke",
+        "Teddy Sheringham"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "PL Records",
+      "entity": "Premier League Records"
+    },
+    {
+      "id": "7247657c-e949-4e93-bf11-589588c4f0a2",
+      "q": "The 2011 Copa América champion who netted six Premier League hat-tricks during the 2012-2022 period, with three of those coming against a single opponent, was which player?",
+      "options": [
+        "Sergio Aguero",
+        "Cristiano Ronaldo",
+        "Robin van Persie",
+        "Luis Suarez"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "PL History",
+      "entity": "Premier League Records"
+    },
+    {
+      "id": "7ff3f3ea-ae08-4d1a-add5-eb298e62ba9b",
+      "q": "James Milner possesses the Premier League record for most appearances across his career. Identify the sole club where he accumulated over 200 top-flight appearances.",
+      "options": [
+        "Liverpool",
+        "Manchester City",
+        "Leeds United",
+        "Aston Villa"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "PL Records",
+      "entity": "Premier League Records"
+    },
+    {
+      "id": "8b55b04e-63f7-4049-ab58-430a695c33fc",
+      "q": "Who accumulated the most playing time in Premier League history with a total of 54,439 minutes across his career?",
+      "options": [
+        "Ryan Giggs",
+        "Cristiano Ronaldo",
+        "Frank Lampard",
+        "Gareth Barry"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "PL Records",
+      "entity": "Premier League Records"
+    },
+    {
+      "id": "938ff3e2-5a6e-4c9b-951f-c9f73bca1721",
+      "q": "Who was the Premier League's most prolific assist provider from 2012 to 2022, and also captured four top-flight titles during that span?",
+      "options": [
+        "David Silva",
+        "Cesc Fàbregas",
+        "Kevin De Bruyne",
+        "Mesut Özil"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "PL History",
+      "entity": "Premier League Records"
+    },
+    {
+      "id": "996fea6a-561f-46ee-b44d-9852f631c8a7",
+      "q": "In 2014, Harry Kane netted his inaugural Premier League goal under which manager's tenure? Kane would go on to score 213 goals in the competition.",
+      "options": [
+        "Tim Sherwood",
+        "André Villas-Boas",
+        "Harry Redknapp",
+        "Mauricio Pochettino"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "PL Records",
+      "entity": "Premier League Records"
+    },
+    {
+      "id": "9c622f81-651e-4d95-8b70-61ca373090e2",
+      "q": "Which Spanish international player became the first to achieve 300 Premier League appearances while playing for Manchester City in 2020?",
+      "options": [
+        "Sergio Agüero",
+        "David Silva",
+        "Gérard Piqué",
+        "Juan Mata"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "PL Records",
+      "entity": "Premier League Records"
+    },
+    {
+      "id": "a6c04e0c-f0e8-4d1e-a8e7-d2575c87e4ae",
+      "q": "In the 2024/25 Premier League campaign, which club had the best defensive record with the lowest number of goals conceded?",
+      "options": [
+        "Arsenal",
+        "Liverpool",
+        "Manchester City",
+        "Chelsea"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "PL 2024-25",
+      "entity": "Premier League Records"
+    },
+    {
+      "id": "b4250aa3-a51f-4c19-ae27-c1296edd5478",
+      "q": "In the 2024-25 season, which club set an unfortunate English football record by suffering nine straight home defeats while failing to score in any of those matches?",
+      "options": [
+        "Southampton",
+        "Leicester City",
+        "Wolverhampton Wanderers",
+        "Ipswich Town"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "PL 2024-25",
+      "entity": "Premier League Records"
+    },
+    {
+      "id": "ba791697-4866-4022-97cc-234799e603ab",
+      "q": "At the conclusion of the 2010/11 season, which Dutch striker netted in nine straight Premier League away fixtures—a record achievement?",
+      "options": [
+        "Jan Vertonghen",
+        "Arjen Robben",
+        "Robin van Persie",
+        "Dirk Kuyt"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "PL History",
+      "entity": "Premier League Records"
+    },
+    {
+      "id": "bc8ac72f-266d-4497-8d75-263a40ae23e0",
+      "q": "Before Erling Haaland reached 100 Premier League goals for Manchester City, which player was the first to achieve this milestone for the club?",
+      "options": [
+        "Carlos Tevez",
+        "David Silva",
+        "Yaya Toure",
+        "Sergio Aguero"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "PL Records",
+      "entity": "Premier League Records"
+    },
+    {
+      "id": "bdb541af-4f81-4360-8691-0f01c291d847",
+      "q": "What team holds the unfortunate Premier League record for the longest losing streak, going through 20 straight defeats spanning from January 2003 to September 2005?",
+      "options": [
+        "Leeds United",
+        "Sunderland",
+        "Nottingham Forest",
+        "Derby County"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "PL History",
+      "entity": "Premier League Records"
+    },
+    {
+      "id": "be9c7454-fcd3-4cd2-8e6d-8937ce4c83c8",
+      "q": "During the ten-year period spanning 2002 through 2012, how many distinct clubs claimed the Premier League championship?",
+      "options": [
+        "4",
+        "5",
+        "3",
+        "6"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "PL History",
+      "entity": "Premier League Records"
+    },
+    {
+      "id": "c55413dd-fffa-4400-985c-412284cea19b",
+      "q": "Which shot-stopper appeared in more than 300 consecutive Premier League matches across his time at Blackburn, Aston Villa and Tottenham?",
+      "options": [
+        "Edwin van der Sar",
+        "Brad Friedel",
+        "Petr Cech",
+        "Mark Schwarzer"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "PL History",
+      "entity": "Premier League Records"
+    },
+    {
+      "id": "ca9ba2bc-d49a-4c93-bfa0-61fb83039f23",
+      "q": "Which player is the sole footballer to surpass 600 Premier League appearances while playing for just one club?",
+      "options": [
+        "Ryan Giggs",
+        "Frank Lampard",
+        "Gareth Barry",
+        "Patrick Vieira"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "PL Records",
+      "entity": "Premier League Records"
+    },
+    {
+      "id": "d66559e7-0c8e-4ee5-8abd-3c13a4f4a95b",
+      "q": "During the 2016 season, Newcastle United and which other ex-Premier League finalist were both relegated from the top flight?",
+      "options": [
+        "Aston Villa",
+        "Norwich City",
+        "Sunderland",
+        "Hull City"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "PL History",
+      "entity": "Premier League Records"
+    },
+    {
+      "id": "d7a4ffe6-9172-4e43-8334-e2100ca09862",
+      "q": "Fill in the missing manager from Chelsea's sequence of playing bosses: Glenn Hoddle → ? → Gianluca Vialli",
+      "options": [
+        "Mark Hughes",
+        "Frank Lampard",
+        "Ruud Gullit",
+        "Didier Drogba"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "PL History",
+      "entity": "Premier League Records"
+    },
+    {
+      "id": "e18aa183-be89-4326-91b1-68c440bc0b9a",
+      "q": "What was the lowest points total ever recorded by a Premier League side in a single season, achieved by Derby County in 2007/08?",
+      "options": [
+        "11",
+        "9",
+        "15",
+        "8"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "PL History",
+      "entity": "Premier League Records"
+    },
+    {
+      "id": "e5c6fb9f-fcd9-45b0-8279-d92b110974ed",
+      "q": "In the Premier League's opening decade, which club achieved a sequence of 10th, 4th, 12th, 5th, 3rd, 1st, 2nd, 2nd, 2nd, 1st place finishes?",
+      "options": [
+        "Liverpool",
+        "Manchester United",
+        "Blackburn Rovers",
+        "Arsenal"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "PL History",
+      "entity": "Premier League Records"
+    },
+    {
+      "id": "f664735e-b270-444b-9197-76ec5d45a961",
+      "q": "Which English player finished as the Premier League's leading goalscorer during the 2024-25 campaign?",
+      "options": [
+        "Harry Kane",
+        "Bukayo Saka",
+        "Ollie Watkins",
+        "Phil Foden"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "PL 2024-25",
+      "entity": "Premier League Records"
+    },
+    {
+      "id": "ffd723db-358c-4b1a-a26e-a6f5471a80ec",
+      "q": "Who holds the record for the most Premier League hat-tricks, with all of them achieved while playing for Manchester City?",
+      "options": [
+        "Alan Shearer",
+        "Sergio Aguero",
+        "Harry Kane",
+        "Thierry Henry"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "PL Records",
+      "entity": "Premier League Records"
+    },
+    {
+      "id": "0006e545-9452-46b8-a56d-80938652dbc2",
+      "q": "Which club beat Arsenal in the 2018/19 Europa League final?",
+      "options": [
+        "Sevilla",
+        "Manchester United",
+        "Chelsea",
+        "Villarreal"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "entity": "Arsenal"
+    },
+    {
+      "id": "0096560b-d057-40ec-9013-e4e2969e44d4",
+      "q": "Which club was Harry Kane playing for when he won the Premier League's top scorer award in 2015-16?",
+      "options": [
+        "Arsenal",
+        "Manchester United",
+        "Chelsea",
+        "Tottenham Hotspur"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Tottenham Hotspur"
+    },
+    {
+      "id": "00db55a6-3474-49ab-8097-f1967dc05113",
+      "q": "How many FA Cup titles has Manchester United won?",
+      "options": [
+        "11",
+        "15",
+        "12",
+        "13"
+      ],
+      "answer": 3,
+      "difficulty": "easy",
+      "category": "history-honours",
+      "entity": "Manchester United"
+    },
+    {
+      "id": "03382ac2-8e56-48bd-8576-8859f86de20b",
+      "q": "The Nottingham Forest v Derby County fixture is nicknamed 'El Cloughico', a reference to which other famous football derby name?",
+      "options": [
+        "El Clásico",
+        "Der Klassiker",
+        "The Old Firm",
+        "The Superclásico"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Nottingham Forest"
+    },
+    {
+      "id": "03e700b0-d048-4408-b64c-d17d9d41e700",
+      "q": "What is the capacity of Liverpool's Anfield stadium?",
+      "options": [
+        "59,409",
+        "61,276",
+        "63,200",
+        "62,500"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Liverpool"
+    },
+    {
+      "id": "04521163-1be6-4a14-a23a-619364fa62a5",
+      "q": "Which Aston Villa goalkeeper was involved in an infamous error during the 2002-03 Second City derby when a goal was scored directly from an Olof Mellberg throw-in?",
+      "options": [
+        "David James",
+        "Thomas Sorensen",
+        "Peter Enckelman",
+        "Brad Friedel"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Aston Villa"
+    },
+    {
+      "id": "04ba9c1c-826d-4fee-a029-c8bd8de1fcd2",
+      "q": "Erling Haaland was the Premier League's leading scorer in 2025-26 — which club was he playing for?",
+      "options": [
+        "Manchester City",
+        "Liverpool",
+        "Chelsea",
+        "Arsenal"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "legends",
+      "entity": "Manchester City"
+    },
+    {
+      "id": "05194d10-e0e3-4e21-baa1-65ca7e562b64",
+      "q": "Who was Arsenal's top scorer with 24 goals in the 2016/17 Premier League season?",
+      "options": [
+        "Theo Walcott",
+        "Alexis Sanchez",
+        "Olivier Giroud",
+        "Mesut Ozil"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "entity": "Arsenal"
+    },
+    {
+      "id": "06212eb3-e85d-4650-b733-77dafb031747",
+      "q": "Which club did Tottenham Hotspur beat in the 2007/08 Football League Cup final?",
+      "options": [
+        "Chelsea",
+        "Liverpool",
+        "Arsenal",
+        "Manchester United"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Tottenham Hotspur"
+    },
+    {
+      "id": "0666d754-0fc1-4db4-8417-b009e593b160",
+      "q": "What is the name of Chelsea's home stadium?",
+      "options": [
+        "Chelsea Ground",
+        "Fulham Park",
+        "Stamford Bridge",
+        "Kings Road Stadium"
+      ],
+      "answer": 2,
+      "difficulty": "easy",
+      "category": "history-honours",
+      "entity": "Chelsea"
+    },
+    {
+      "id": "07537ba2-cb7e-4c8c-84f6-c0286fbf56af",
+      "q": "How many times have West Ham United been relegated from the Premier League since 2001-02?",
+      "options": [
+        "2",
+        "4",
+        "3",
+        "1"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "West Ham United"
+    },
+    {
+      "id": "076f2b3d-bd51-40f6-ab49-0bdaf37d5b78",
+      "q": "How many European Cup / Champions League titles have Nottingham Forest won?",
+      "options": [
+        "2",
+        "1",
+        "3",
+        "0"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Nottingham Forest"
+    },
+    {
+      "id": "080f2750-ecf5-4a2e-8711-a4e3e7537372",
+      "q": "Which club did Arsenal sign Patrick Vieira from in 1996?",
+      "options": [
+        "Inter Milan",
+        "AC Milan",
+        "Juventus",
+        "Cannes"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Arsenal"
+    },
+    {
+      "id": "08385ea1-5958-4b26-8c10-236258a8fb82",
+      "q": "Who was Arsenal's top scorer in the 2023/24 Premier League season?",
+      "options": [
+        "Bukayo Saka",
+        "Kai Havertz",
+        "Martin Odegaard",
+        "Gabriel Jesus"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "entity": "Arsenal"
+    },
+    {
+      "id": "09412881-2a85-4bd8-bc92-6032af734325",
+      "q": "How many Premier League goals did Erling Haaland score in the 2022-23 season to claim the top scorer prize?",
+      "options": [
+        "34",
+        "36",
+        "38",
+        "32"
+      ],
+      "answer": 1,
+      "difficulty": "easy",
+      "category": "legends",
+      "entity": "Manchester City"
+    },
+    {
+      "id": "0a4d6d86-5efc-4817-aab0-d0ff4f94ab42",
+      "q": "What is the name of Liverpool's home stadium?",
+      "options": [
+        "Anfield",
+        "Goodison Park",
+        "Kop Stadium",
+        "Old Trafford"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "history-honours",
+      "entity": "Liverpool"
+    },
+    {
+      "id": "0a9d1b3c-6597-4154-8303-f7a4fd38308a",
+      "q": "Which two players share the record for most Premier League Merseyside derby goals scored against Everton, with nine each?",
+      "options": [
+        "Kenny Dalglish and Michael Owen",
+        "Steven Gerrard and Mohamed Salah",
+        "Luis Suarez and Sadio Mane",
+        "Ian Rush and Robbie Fowler"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Everton"
+    },
+    {
+      "id": "0aec1714-acc8-44cd-a264-9b49d2928583",
+      "q": "Manchester City's 6-3 win over Manchester United in October 2022, the highest-scoring Manchester derby ever, came in which competition?",
+      "options": [
+        "Premier League",
+        "FA Cup",
+        "League Cup",
+        "Champions League"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "rivalries-derbies",
+      "entity": "Manchester City"
+    },
+    {
+      "id": "0d529c19-6178-4db2-9833-997b0caa8045",
+      "q": "Which Tottenham outfield player holds the club record for most Premier League appearances, having made 333 appearances between 2015 and 2025?",
+      "options": [
+        "Harry Kane",
+        "Dele Alli",
+        "Heung-Min Son",
+        "Kieran Trippier"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Tottenham Hotspur"
+    },
+    {
+      "id": "0d7f90d1-6d37-409c-a25a-0a2408550fbb",
+      "q": "How many European Cup/Champions League titles have West Ham United won?",
+      "options": [
+        "2",
+        "3",
+        "0",
+        "1"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "West Ham United"
+    },
+    {
+      "id": "0de701fc-abac-427a-852a-dd226531725b",
+      "q": "What is the name of West Ham United's home ground?",
+      "options": [
+        "London Stadium",
+        "Hammers Arena",
+        "Thames Dock",
+        "Upton Park"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "history-honours",
+      "entity": "West Ham United"
+    },
+    {
+      "id": "0ea6ff3c-bc70-46b1-bbe2-f9ac29ef9e20",
+      "q": "In 2021, which Zambian striker netted four goals during Leicester City's match against Spartak Moscow?",
+      "options": [
+        "Enoch Mwepu",
+        "Patson Daka",
+        "Fashion Sakala",
+        "Kelvin Kampamba"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Leicester City"
+    },
+    {
+      "id": "0edd0576-28d0-46d8-95ec-c358c5a89df3",
+      "q": "How many League Cup (EFL Cup) titles has Chelsea won?",
+      "options": [
+        "4",
+        "6",
+        "5",
+        "3"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Chelsea"
+    },
+    {
+      "id": "0f1d2f0e-54c5-4c4f-9788-3a5abcd45402",
+      "q": "Manchester City's impressive 2013-14 campaign saw them score how many Premier League goals?",
+      "options": [
+        "98",
+        "105",
+        "99",
+        "102"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Manchester City"
+    },
+    {
+      "id": "0f59b1b7-0f7c-4956-a9db-5ebee0f30f49",
+      "q": "Which manager, who took charge of Newcastle United in 2007, is one of only two men to have managed both Newcastle United and Sunderland?",
+      "options": [
+        "Steve Bruce",
+        "Kevin Keegan",
+        "Sam Allardyce",
+        "Bobby Robson"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Newcastle United"
+    },
+    {
+      "id": "1078b3f1-66d1-4771-abd4-050ca23bd0d3",
+      "q": "Which club ended Arsenal's record 49-match unbeaten league run that began during the Invincibles era?",
+      "options": [
+        "Chelsea",
+        "Manchester City",
+        "Liverpool",
+        "Manchester United"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Arsenal"
+    },
+    {
+      "id": "10a1e33d-527b-4ca2-b20c-e651d231da92",
+      "q": "How many seasons has Chelsea competed in the Premier League from 2001 to 2025?",
+      "options": [
+        "25",
+        "24",
+        "26",
+        "23"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "entity": "Chelsea"
+    },
+    {
+      "id": "10b6c3ba-e0f0-45f2-8b05-b7a25bc56718",
+      "q": "What are Tottenham Hotspur nicknamed?",
+      "options": [
+        "The Spurs",
+        "The Whites",
+        "The North Londoners",
+        "The Lilywhites"
+      ],
+      "answer": 3,
+      "difficulty": "easy",
+      "category": "history-honours",
+      "entity": "Tottenham Hotspur"
+    },
+    {
+      "id": "1175f775-37a6-4da4-a29e-45d5adaa4330",
+      "q": "Which player holds Liverpool's record for the most Premier League goals scored against Everton, with nine?",
+      "options": [
+        "Steven Gerrard",
+        "Robbie Fowler",
+        "Michael Owen",
+        "Luis Suarez"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Liverpool"
+    },
+    {
+      "id": "11afe9b0-3576-4946-948c-58dae3661f69",
+      "q": "In 2008, Tottenham Hotspur captured the League Cup trophy in the inaugural final held at the newly constructed Wembley Stadium. Which team did they overcome in that match?",
+      "options": [
+        "Manchester United",
+        "Arsenal",
+        "Liverpool",
+        "Chelsea"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Tottenham Hotspur"
+    },
+    {
+      "id": "12529e83-d0b1-4324-b61e-c7f4c29d267c",
+      "q": "What nickname do Manchester City fans use for Old Trafford, Manchester United's home ground?",
+      "options": [
+        "The Bridge",
+        "Fortress",
+        "The Swamp",
+        "The Cathedral"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Manchester City"
+    },
+    {
+      "id": "139e9b7f-0d89-4070-bc70-e21748db0a58",
+      "q": "How many points did Chelsea accumulate in the 2023-24 Premier League season?",
+      "options": [
+        "66",
+        "60",
+        "63",
+        "69"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "entity": "Chelsea"
+    },
+    {
+      "id": "142fc37c-af5b-426a-b8fd-021a692558b7",
+      "q": "How many FA Cup titles has Arsenal won?",
+      "options": [
+        "12",
+        "15",
+        "13",
+        "14"
+      ],
+      "answer": 3,
+      "difficulty": "easy",
+      "category": "history-honours",
+      "entity": "Arsenal"
+    },
+    {
+      "id": "14d457da-9bc5-43a1-b4ea-61a3ed5ca3f3",
+      "q": "Which club did Tottenham Hotspur beat in the 1966/67 FA Cup final?",
+      "options": [
+        "Fulham",
+        "Chelsea",
+        "Arsenal",
+        "West Ham United"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Tottenham Hotspur"
+    },
+    {
+      "id": "17750d71-1d71-4e27-bc8f-a3a1b1644909",
+      "q": "Which striker was the Premier League's top scorer in 2023-24 with 27 goals?",
+      "options": [
+        "Erling Haaland",
+        "Cole Palmer",
+        "Alexander Isak",
+        "Harry Kane"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "legends",
+      "entity": "Manchester City"
+    },
+    {
+      "id": "186ca179-6638-4991-86a1-1dd24df5eb6e",
+      "q": "What was the final score of the 1970 FA Cup final between Chelsea and Leeds United at Wembley?",
+      "options": [
+        "2-2",
+        "3-3",
+        "1-1",
+        "2-1"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Leeds United"
+    },
+    {
+      "id": "1a0e66b8-d9c7-48c5-b335-2108764ec5cb",
+      "q": "Leicester City paid a club-record transfer fee in 2019 to bring which midfielder in from Monaco?",
+      "options": [
+        "Jean-Michaël Seri",
+        "Aleksandr Kokorin",
+        "Sofiane Boufal",
+        "Youri Tielemans"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Leicester City"
+    },
+    {
+      "id": "1a1de44d-5c5d-400f-9e53-6ee7cd7eee1d",
+      "q": "Who was Arsenal's top scorer in the 2024/25 Premier League season?",
+      "options": [
+        "Bukayo Saka",
+        "Martin Odegaard",
+        "Kai Havertz",
+        "Viktor Gyokeres"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "entity": "Arsenal"
+    },
+    {
+      "id": "1b70fd5b-de62-4010-9aa8-ba413ba6bae1",
+      "q": "How many points did Tottenham Hotspur accumulate in the 2019-20 Premier League season?",
+      "options": [
+        "59",
+        "62",
+        "56",
+        "65"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "entity": "Tottenham Hotspur"
+    },
+    {
+      "id": "1ba28ced-99d3-4490-b92a-40868b8aff44",
+      "q": "What is the name of Blackburn Rovers' home ground?",
+      "options": [
+        "Ewood Park",
+        "Turf Moor",
+        "The Hawthorns",
+        "Deepdale"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Blackburn Rovers"
+    },
+    {
+      "id": "1bbaf058-e4de-43d5-9f05-7e4edda9275d",
+      "q": "How many seasons has Aston Villa played in the Premier League from 2001 to 2025?",
+      "options": [
+        "22",
+        "21",
+        "23",
+        "20"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "entity": "Aston Villa"
+    },
+    {
+      "id": "1bc037ca-9c27-4265-9269-a3f50f9aadc6",
+      "q": "What is Manchester City's record for most wins in a single Premier League season?",
+      "options": [
+        "30",
+        "32",
+        "31",
+        "33"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Manchester City"
+    },
+    {
+      "id": "1bd5e848-1469-4787-aba8-caa6154bf8f8",
+      "q": "How many Premier League goals did Cole Palmer score for Chelsea in 2023-24?",
+      "options": [
+        "20",
+        "24",
+        "19",
+        "22"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Chelsea"
+    },
+    {
+      "id": "1c32146c-23c6-4e9b-943b-2a677d2b29dc",
+      "q": "Who captained Arsenal's 'Invincibles' side during their unbeaten 2003/04 Premier League season?",
+      "options": [
+        "Tony Adams",
+        "Sol Campbell",
+        "Patrick Vieira",
+        "Thierry Henry"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Arsenal"
+    },
+    {
+      "id": "1d609ed9-0485-486d-9363-5aae709c92bb",
+      "q": "Which club did Liverpool beat to win the 2018-19 Champions League final, their sixth European Cup?",
+      "options": [
+        "Manchester City",
+        "AC Milan",
+        "Tottenham Hotspur",
+        "Real Madrid"
+      ],
+      "answer": 2,
+      "difficulty": "easy",
+      "category": "rivalries-derbies",
+      "entity": "Liverpool"
+    },
+    {
+      "id": "1d8c71d9-e2b4-46e1-9661-1be3c3c9964e",
+      "q": "Pierre-Emerick Aubameyang was the Premier League's top scorer in 2018-19 — which club did he play for?",
+      "options": [
+        "Chelsea",
+        "Arsenal",
+        "Tottenham Hotspur",
+        "Manchester United"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Arsenal"
+    },
+    {
+      "id": "1dc2fc0d-54f4-4393-8772-7f61e3b0e99d",
+      "q": "How many League Cup (EFL Cup) titles has Manchester United won?",
+      "options": [
+        "6",
+        "8",
+        "5",
+        "7"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Manchester United"
+    },
+    {
+      "id": "1de8532a-6e1d-43c6-8a3f-1d770856a167",
+      "q": "How many Premier League goals did Erling Haaland score in 2023-24 to finish as the season's top scorer?",
+      "options": [
+        "29",
+        "25",
+        "27",
+        "31"
+      ],
+      "answer": 2,
+      "difficulty": "easy",
+      "category": "legends",
+      "entity": "Manchester City"
+    },
+    {
+      "id": "1e3f121f-d183-46b1-9c4f-0a8533a40470",
+      "q": "Mohamed Salah scored 23 Premier League goals to top the charts in 2021-22 — which club did he play for?",
+      "options": [
+        "Arsenal",
+        "Liverpool",
+        "Manchester City",
+        "Chelsea"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Liverpool"
+    },
+    {
+      "id": "1feaf8a3-a4d0-4229-85d3-aafb1001512f",
+      "q": "How many seasons has Arsenal competed in the Premier League from 2001 to 2025?",
+      "options": [
+        "26",
+        "23",
+        "24",
+        "25"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "entity": "Arsenal"
+    },
+    {
+      "id": "204dcd17-3561-4a07-b96d-6a5e2fa451ba",
+      "q": "What is Tottenham's record Premier League points tally in a single season?",
+      "options": [
+        "82",
+        "86",
+        "89",
+        "84"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Tottenham Hotspur"
+    },
+    {
+      "id": "2103f31a-bca9-46f8-840d-300213444be4",
+      "q": "How many points did Aston Villa accumulate in the 2024-25 Premier League season?",
+      "options": [
+        "63",
+        "66",
+        "69",
+        "72"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "entity": "Aston Villa"
+    },
+    {
+      "id": "212db225-adc0-4e7d-b51e-60177f9ff3e0",
+      "q": "Who finished as the Premier League's top scorer in 2001-02 with 24 goals?",
+      "options": [
+        "Thierry Henry",
+        "Ruud van Nistelrooy",
+        "Alan Shearer",
+        "Teddy Sheringham"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Arsenal"
+    },
+    {
+      "id": "22230cad-1037-4b2c-aeff-662d05581c30",
+      "q": "How many Premier League goals did Harry Kane score for Tottenham in 2014-15?",
+      "options": [
+        "21",
+        "23",
+        "19",
+        "20"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Tottenham Hotspur"
+    },
+    {
+      "id": "22eb1da1-d247-4ecb-8ea2-be88895f7250",
+      "q": "How many Premier League titles (including First Division) has Everton won?",
+      "options": [
+        "9",
+        "10",
+        "7",
+        "8"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Everton"
+    },
+    {
+      "id": "22f151b7-ebfd-4e42-ad80-37b3aa85abbd",
+      "q": "Which Aston Villa player scored the winning goal in a 1-0 Second City derby win at Birmingham City in March 2019, hours after being punched by a pitch invader?",
+      "options": [
+        "Tammy Abraham",
+        "Jack Grealish",
+        "John McGinn",
+        "Conor Hourihane"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Aston Villa"
+    },
+    {
+      "id": "233a27aa-62d9-4ca2-bc08-6b77df5e87dc",
+      "q": "Who was the Premier League's top scorer in the 2018-19 season with 22 goals?",
+      "options": [
+        "Pierre-Emerick Aubameyang",
+        "Harry Kane",
+        "Sergio Agüero",
+        "Raheem Sterling"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Arsenal"
+    },
+    {
+      "id": "244a4c3f-0f7c-471a-9022-8fceee57ff1d",
+      "q": "What is Arsenal's record for most wins in a single Premier League season?",
+      "options": [
+        "26",
+        "30",
+        "28",
+        "27"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Arsenal"
+    },
+    {
+      "id": "24784140-3ee8-4108-8bbf-13e15a1ce58e",
+      "q": "How many points did Liverpool collect in the 2022-23 Premier League season?",
+      "options": [
+        "70",
+        "64",
+        "67",
+        "71"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "entity": "Liverpool"
+    },
+    {
+      "id": "249c4bde-7e4f-4549-ac9e-5abbd382faa7",
+      "q": "How many Premier League goals did Harry Kane score in 2015-16 to claim the top scorer prize?",
+      "options": [
+        "24",
+        "25",
+        "27",
+        "23"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Tottenham Hotspur"
+    },
+    {
+      "id": "24b59257-ba70-4d77-b621-a32e75d3078b",
+      "q": "Harry Kane was the Premier League's top scorer in 2020-21 with 23 goals — which club did he play for?",
+      "options": [
+        "Arsenal",
+        "Everton",
+        "Chelsea",
+        "Tottenham Hotspur"
+      ],
+      "answer": 3,
+      "difficulty": "easy",
+      "category": "legends",
+      "entity": "Tottenham Hotspur"
+    },
+    {
+      "id": "256b7f33-d948-4064-be32-5c016d3eafa4",
+      "q": "In 2022, Tottenham Hotspur acquired which Brazilian international as their record transfer signing?",
+      "options": [
+        "Vinícius Júnior",
+        "Richarlison",
+        "Philippe Coutinho",
+        "Neymar"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Tottenham Hotspur"
+    },
+    {
+      "id": "27b9dc91-a083-4ca6-be79-19232b0bafed",
+      "q": "Who was the Premier League's top scorer in 2003-04 with 30 goals?",
+      "options": [
+        "Ruud van Nistelrooy",
+        "Thierry Henry",
+        "Cristiano Ronaldo",
+        "Wayne Rooney"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Arsenal"
+    },
+    {
+      "id": "27c34a46-3a53-42cd-b34c-d4eb9f6e2951",
+      "q": "Manchester City's record-breaking 2017-18 season saw them score how many league goals?",
+      "options": [
+        "112",
+        "98",
+        "106",
+        "115"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "entity": "Manchester City"
+    },
+    {
+      "id": "28da2ab8-9ee6-4eaf-b176-3d4dfdf522a8",
+      "q": "Which club was Thierry Henry at when he topped the Premier League scoring charts in 2001-02?",
+      "options": [
+        "AS Monaco",
+        "Barcelona",
+        "Juventus",
+        "Arsenal"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Arsenal"
+    },
+    {
+      "id": "28e581c2-69fc-4790-b27d-b6d812f7efd9",
+      "q": "Didier Drogba won the Premier League's top scorer award in 2006-07. Which team was he representing?",
+      "options": [
+        "Arsenal",
+        "Chelsea",
+        "Liverpool",
+        "Manchester United"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Chelsea"
+    },
+    {
+      "id": "2a45ab5e-87b4-4620-a490-4d37c559d536",
+      "q": "How many goals did Arsenal score during the 2022-23 Premier League campaign?",
+      "options": [
+        "88",
+        "91",
+        "84",
+        "85"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "entity": "Arsenal"
+    },
+    {
+      "id": "2c2b2433-1c39-489e-b60e-5c1daba48b4a",
+      "q": "How many Premier League goals did Thierry Henry score in 2001-02 to win the top scorer award?",
+      "options": [
+        "20",
+        "22",
+        "26",
+        "24"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Arsenal"
+    },
+    {
+      "id": "2caf62a8-53b9-4015-90c3-cfa5bcd33148",
+      "q": "How many UEFA Europa League titles has Chelsea won?",
+      "options": [
+        "1",
+        "3",
+        "4",
+        "2"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Chelsea"
+    },
+    {
+      "id": "2e8ec956-f29d-4183-b2f8-27c227674019",
+      "q": "West Ham United's 'Champions' statue outside their ground was boarded up for protection ahead of a League Cup visit from which club on 25 August 2009?",
+      "options": [
+        "Tottenham Hotspur",
+        "Chelsea",
+        "Sheffield United",
+        "Millwall"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "West Ham United"
+    },
+    {
+      "id": "2eb286d9-6ad3-4ed5-97e5-dec80c7f048a",
+      "q": "How many goals did Manchester United score in the 2022-23 Premier League season?",
+      "options": [
+        "61",
+        "54",
+        "58",
+        "65"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "entity": "Manchester United"
+    },
+    {
+      "id": "2ec4aef6-5a73-4fd9-a943-2ebd6c849d40",
+      "q": "How many points did Manchester City accumulate in the 2017-18 Premier League season?",
+      "options": [
+        "100",
+        "102",
+        "98",
+        "96"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "entity": "Manchester City"
+    },
+    {
+      "id": "2f22b762-e527-4a17-a480-7d9e7b49fb24",
+      "q": "Daniel Sturridge had a strong campaign for Liverpool in 2013-14 — how many Premier League goals did he score?",
+      "options": [
+        "19",
+        "21",
+        "23",
+        "18"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Liverpool"
+    },
+    {
+      "id": "2f759825-f3ad-4cc0-bd73-a294a3b897a6",
+      "q": "How many times did Thierry Henry win the Premier League Golden Boot while at Arsenal?",
+      "options": [
+        "Three",
+        "Four",
+        "Five",
+        "Two"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Arsenal"
+    },
+    {
+      "id": "2ff0140e-8a10-4951-87aa-80de9680eb9d",
+      "q": "How many goals did Liverpool score in the 2023-24 Premier League season?",
+      "options": [
+        "89",
+        "86",
+        "84",
+        "83"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "entity": "Liverpool"
+    },
+    {
+      "id": "304461dd-ca86-4044-8c36-369dee165a3d",
+      "q": "How many goals did Manchester City score in the 2020-21 Premier League campaign?",
+      "options": [
+        "81",
+        "83",
+        "87",
+        "85"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "entity": "Manchester City"
+    },
+    {
+      "id": "3074372a-0022-4968-8781-d681f0a59a8e",
+      "q": "How many European Cup / Champions League titles has Manchester United won?",
+      "options": [
+        "2",
+        "4",
+        "5",
+        "3"
+      ],
+      "answer": 3,
+      "difficulty": "easy",
+      "category": "history-honours",
+      "entity": "Manchester United"
+    },
+    {
+      "id": "316dcdfe-6a10-493c-ade2-56a1ae03c441",
+      "q": "What nickname did Tottenham fans give Sol Campbell after his 2001 free transfer to Arsenal?",
+      "options": [
+        "Turncoat",
+        "Traitor",
+        "Deserter",
+        "Judas"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Arsenal"
+    },
+    {
+      "id": "31d0aa2a-df71-445c-9882-6e0e2ba836d8",
+      "q": "How many goals did Chelsea score in the 2023-24 Premier League season?",
+      "options": [
+        "70",
+        "74",
+        "81",
+        "77"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "entity": "Chelsea"
+    },
+    {
+      "id": "31f45bf5-29c5-4400-9483-780ea7eed11d",
+      "q": "What is Aston Villa's record for most wins in a Premier League season, set in 2023-24?",
+      "options": [
+        "18",
+        "20",
+        "19",
+        "22"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "entity": "Aston Villa"
+    },
+    {
+      "id": "3216dfef-ea41-4ea4-aded-98fa8c774f44",
+      "q": "Which player led Leicester City's goal-scoring charts during their incredible 2015/16 Premier League championship campaign?",
+      "options": [
+        "N'Golo Kanté",
+        "Riyad Mahrez",
+        "Shinji Okazaki",
+        "Jamie Vardy"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Leicester City"
+    },
+    {
+      "id": "32af3b28-c42b-4d58-bc65-4adc483dd565",
+      "q": "Who topped the Premier League scoring charts in 2021-22 with 23 goals for Liverpool?",
+      "options": [
+        "Sadio Mané",
+        "Diogo Jota",
+        "Roberto Firmino",
+        "Mohamed Salah"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Liverpool"
+    },
+    {
+      "id": "344f5ca2-ee6a-4a5b-87b3-1c9a3a937953",
+      "q": "In which round of the FA Cup did Newcastle United beat Sunderland 3-0 away on 6 January 2024?",
+      "options": [
+        "Fifth round",
+        "Third round",
+        "Second round",
+        "Fourth round"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Newcastle United"
+    },
+    {
+      "id": "346aae07-9959-4f0a-9a59-8acbfe6a9bcd",
+      "q": "Nicolas Anelka was the Premier League's leading scorer in 2008-09 — which club was he at?",
+      "options": [
+        "Chelsea",
+        "Arsenal",
+        "Bolton Wanderers",
+        "West Bromwich Albion"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Chelsea"
+    },
+    {
+      "id": "34bef8ad-74ff-4b16-9481-4a7efcc39387",
+      "q": "Which Chelsea player scored a brace in the 4-1 win over Arsenal in the 2019 UEFA Europa League final?",
+      "options": [
+        "Olivier Giroud",
+        "Pedro",
+        "Eden Hazard",
+        "N'Golo Kante"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Chelsea"
+    },
+    {
+      "id": "361bddac-7f28-4c84-8a14-a1c9f4e86412",
+      "q": "How many goals did Liverpool score in the 2024-25 Premier League season?",
+      "options": [
+        "82",
+        "88",
+        "84",
+        "86"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "entity": "Liverpool"
+    },
+    {
+      "id": "367264c1-c765-4898-b7db-ceee52a6eb9b",
+      "q": "Which club did Arsenal beat in the 2019/20 FA Cup final at Wembley to win their 14th FA Cup?",
+      "options": [
+        "Chelsea",
+        "Manchester City",
+        "Liverpool",
+        "Watford"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "rivalries-derbies",
+      "entity": "Arsenal"
+    },
+    {
+      "id": "3684c6d9-0d62-4187-8259-07ba1dfba248",
+      "q": "In which year did Dennis Bergkamp join Arsenal from Inter Milan?",
+      "options": [
+        "1993",
+        "1998",
+        "1997",
+        "1995"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Arsenal"
+    },
+    {
+      "id": "36fd0b41-3628-48c5-81f5-e047d66c2a36",
+      "q": "How many Premier League goals did Erling Haaland score for Man City in 2023-24?",
+      "options": [
+        "24",
+        "25",
+        "27",
+        "29"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Manchester City"
+    },
+    {
+      "id": "381df757-9e80-4b31-86df-26a0f5956873",
+      "q": "Manchester City beat Manchester United 2-1 in 2023 in the first ever Manchester derby to be contested in a major final - which competition was this?",
+      "options": [
+        "Champions League final",
+        "League Cup final",
+        "Community Shield",
+        "FA Cup final"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Manchester City"
+    },
+    {
+      "id": "38385cc6-cc81-44c5-bb6f-a63875d20737",
+      "q": "Pierre-Emerick Aubameyang had a strong 2019-20 season for Arsenal — how many Premier League goals did he score?",
+      "options": [
+        "22",
+        "20",
+        "24",
+        "21"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Arsenal"
+    },
+    {
+      "id": "38685dc4-9c32-4595-9c60-5e6b82329acb",
+      "q": "Which club was Robin van Persie playing for when he won the Premier League's top scorer award in 2012-13 with 26 goals?",
+      "options": [
+        "Liverpool",
+        "Arsenal",
+        "Chelsea",
+        "Manchester United"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Manchester United"
+    },
+    {
+      "id": "38b49b84-e897-435c-b991-319ff9c98697",
+      "q": "In which Premier League season did Manchester City beat Manchester United 6-1 at Old Trafford, their biggest ever derby win?",
+      "options": [
+        "2009/10",
+        "2011/12",
+        "2012/13",
+        "2013/14"
+      ],
+      "answer": 1,
+      "difficulty": "easy",
+      "category": "rivalries-derbies",
+      "entity": "Manchester City"
+    },
+    {
+      "id": "39187788-df0b-4cff-aeb1-956c7230b673",
+      "q": "West Ham United's deadline-day signings of Carlos Tevez and Javier Mascherano on 31 August 2006 sparked a rivalry with which club?",
+      "options": [
+        "Wigan Athletic",
+        "Sheffield United",
+        "Fulham",
+        "Charlton Athletic"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "West Ham United"
+    },
+    {
+      "id": "3a4fc892-9e04-42b5-b634-33f7244c8e52",
+      "q": "How many Premier League titles (including First Division) have Chelsea won?",
+      "options": [
+        "5",
+        "6",
+        "8",
+        "7"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Chelsea"
+    },
+    {
+      "id": "3b72d3c5-e518-4481-81a9-4cdd5e6e4de7",
+      "q": "Which former Arsenal manager is honoured with a bronze statue outside the Emirates Stadium alongside Thierry Henry and Tony Adams?",
+      "options": [
+        "Arsène Wenger",
+        "George Graham",
+        "Bertie Mee",
+        "Terry Neill"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "legends",
+      "entity": "Arsenal"
+    },
+    {
+      "id": "3c0c5e32-fbaf-4378-babd-6041a9fd18c9",
+      "q": "Which teenage Liverpool forward netted all five goals during a 5-0 victory against Fulham in 1993?",
+      "options": [
+        "Stan Collymore",
+        "David Thompson",
+        "Jamie Carragher",
+        "Robbie Fowler"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Liverpool"
+    },
+    {
+      "id": "3ddb0df6-85da-4413-9a14-3dfa3b211c86",
+      "q": "How many points did Newcastle United accumulate in the 2022-23 Premier League season?",
+      "options": [
+        "71",
+        "68",
+        "74",
+        "75"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "entity": "Newcastle United"
+    },
+    {
+      "id": "3ded5137-9b71-4f97-9aac-c96bbe9a8dee",
+      "q": "Which Nottingham club, Forest's local rivals, is the oldest professional football club in the world, formed in 1862?",
+      "options": [
+        "Chesterfield",
+        "Derby County",
+        "Notts County",
+        "Mansfield Town"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Nottingham Forest"
+    },
+    {
+      "id": "3df1887a-d26e-4ad7-aaee-8de0841742a8",
+      "q": "Who finished as the Premier League's top scorer in 2015-16?",
+      "options": [
+        "Sergio Agüero",
+        "Harry Kane",
+        "Diego Costa",
+        "Alexis Sánchez"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Tottenham Hotspur"
+    },
+    {
+      "id": "3e350ada-5c10-4d86-acd4-a01ab129c30a",
+      "q": "What is Chelsea's record for most wins in a Premier League season, and in which year was it set?",
+      "options": [
+        "29 wins in 2014-15",
+        "32 wins in 2018-19",
+        "30 wins in 2016-17",
+        "28 wins in 2012-13"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Chelsea"
+    },
+    {
+      "id": "3e76cd2a-be2a-4276-bc2a-0bced2de3ce6",
+      "q": "In 2008-09, Cristiano Ronaldo finished as the second-highest scorer in the Premier League. How many goals did he bag for Manchester United that season?",
+      "options": [
+        "20",
+        "16",
+        "22",
+        "18"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Manchester United"
+    },
+    {
+      "id": "3f4d62fe-f01d-40a0-8923-7d8af3a1b24a",
+      "q": "By what nickname are Tottenham Hotspur commonly known?",
+      "options": [
+        "The Spurs",
+        "The North Londoners",
+        "The Cockerels",
+        "The Lilywhites"
+      ],
+      "answer": 3,
+      "difficulty": "easy",
+      "category": "history-honours",
+      "entity": "Tottenham Hotspur"
+    },
+    {
+      "id": "3fcbdb0f-6461-4c78-8e5d-30e8cd1dd589",
+      "q": "How many European Cup / Champions League titles has Aston Villa won?",
+      "options": [
+        "2",
+        "1",
+        "0",
+        "3"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Aston Villa"
+    },
+    {
+      "id": "4040250d-feb7-406f-908e-88d8969e3267",
+      "q": "How many League Cup (EFL Cup) titles has Manchester City won?",
+      "options": [
+        "8",
+        "10",
+        "9",
+        "7"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Manchester City"
+    },
+    {
+      "id": "40a946ef-ca51-457e-9d36-5e3645820927",
+      "q": "How many FA Cup titles have Tottenham Hotspur won?",
+      "options": [
+        "6",
+        "7",
+        "8",
+        "9"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Tottenham Hotspur"
+    },
+    {
+      "id": "40e9f54e-1381-4f5c-b047-5d15e5fff0a1",
+      "q": "Sunderland's promotion in 2025 returned the Tyne-Wear derby to the Premier League for the first time since which season?",
+      "options": [
+        "2013/14",
+        "2019/20",
+        "2015/16",
+        "2017/18"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Newcastle United"
+    },
+    {
+      "id": "41e6532b-7583-4541-b2b0-91df12352e6c",
+      "q": "How many Premier League titles have Arsenal won since the 2001-02 season?",
+      "options": [
+        "2",
+        "5",
+        "4",
+        "3"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Arsenal"
+    },
+    {
+      "id": "4220d20f-f6c4-4a0b-b196-43b2dea6fa30",
+      "q": "How many times have Blackburn Rovers been relegated from the Premier League since 2001-02?",
+      "options": [
+        "2",
+        "3",
+        "1",
+        "0"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Blackburn Rovers"
+    },
+    {
+      "id": "4268c5b4-8ff1-49fb-9c90-542e08c2e086",
+      "q": "Name the Scotland international who netted two goals for Everton during the 1989 FA Cup final.",
+      "options": [
+        "Gary Stevens",
+        "Stuart McCall",
+        "Pat Nevin",
+        "Ian Snodin"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Everton"
+    },
+    {
+      "id": "42848f90-11a7-4df1-bed3-6295b9d9cd02",
+      "q": "Between 2001 and 2025, how many times have Manchester United finished in the Premier League top 4?",
+      "options": [
+        "16",
+        "15",
+        "20",
+        "18"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "entity": "Manchester United"
+    },
+    {
+      "id": "42e63205-cc57-4de6-9232-45ec31599942",
+      "q": "Which club was Erling Haaland playing for when he won the Premier League top scorer award in 2022-23?",
+      "options": [
+        "Manchester City",
+        "Manchester United",
+        "Liverpool",
+        "Arsenal"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "legends",
+      "entity": "Manchester City"
+    },
+    {
+      "id": "42f72256-d087-4fc1-aad3-db6161a6bc92",
+      "q": "According to players, fans and the media, which club is considered Manchester United's biggest rival, above even Manchester City?",
+      "options": [
+        "Chelsea",
+        "Arsenal",
+        "Leeds United",
+        "Liverpool"
+      ],
+      "answer": 3,
+      "difficulty": "easy",
+      "category": "rivalries-derbies",
+      "entity": "Manchester United"
+    },
+    {
+      "id": "430baf0d-15b5-421b-9a57-e2f7ca688898",
+      "q": "Approximately how far apart are Newcastle United's St James' Park and Sunderland's Stadium of Light?",
+      "options": [
+        "40 miles",
+        "10 miles",
+        "60 miles",
+        "25 miles"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Newcastle United"
+    },
+    {
+      "id": "431faf6e-a50e-447f-90ed-798b71901d51",
+      "q": "Newcastle United scored a record 85 Premier League goals in which season since 2001-02?",
+      "options": [
+        "2023-24",
+        "2024-25",
+        "2022-23",
+        "2021-22"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Newcastle United"
+    },
+    {
+      "id": "4372301c-2105-458d-b6cd-8e2b897c579d",
+      "q": "How many Premier League goals did Thierry Henry score in 2005-06 to finish as the division's top scorer?",
+      "options": [
+        "27",
+        "29",
+        "25",
+        "30"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Arsenal"
+    },
+    {
+      "id": "445fed98-689f-46eb-b11f-10f8dbdcb5be",
+      "q": "How many goals did Nottingham Forest score in the 2023-24 Premier League season?",
+      "options": [
+        "58",
+        "54",
+        "45",
+        "49"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "entity": "Nottingham Forest"
+    },
+    {
+      "id": "44dcb830-9caa-4421-85bc-21589785e44b",
+      "q": "Which manager took over Leicester City's top job following Claudio Ranieri's departure in 2017?",
+      "options": [
+        "Nigel Pearson",
+        "Claude Puel",
+        "Brendan Rodgers",
+        "Craig Shakespeare"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Leicester City"
+    },
+    {
+      "id": "44edc64a-4c4d-45fd-a27b-08072bd2077c",
+      "q": "What is Tottenham Hotspur's home ground called?",
+      "options": [
+        "The Spur",
+        "Tottenham Park",
+        "White Hart Lane",
+        "Tottenham Hotspur Stadium"
+      ],
+      "answer": 3,
+      "difficulty": "easy",
+      "category": "history-honours",
+      "entity": "Tottenham Hotspur"
+    },
+    {
+      "id": "45cf4a72-dfc3-4737-8009-037016730505",
+      "q": "In what year were Aston Villa founded?",
+      "options": [
+        "1870",
+        "1874",
+        "1882",
+        "1880"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Aston Villa"
+    },
+    {
+      "id": "468ef506-6a19-4ce4-9c54-21b708099cc1",
+      "q": "What is the name of Leicester City's home stadium?",
+      "options": [
+        "Filbert Street",
+        "King Power Stadium",
+        "Walkers Stadium",
+        "Belvoir Drive"
+      ],
+      "answer": 1,
+      "difficulty": "easy",
+      "category": "history-honours",
+      "entity": "Leicester City"
+    },
+    {
+      "id": "472cf74c-ebdf-4a39-8d5c-6bee173677ad",
+      "q": "When Leicester City's relegation from the Premier League was confirmed in 2023, who was their manager?",
+      "options": [
+        "Steve Cooper",
+        "Dean Smith",
+        "Craig Shakespeare",
+        "Brendan Rodgers"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Leicester City"
+    },
+    {
+      "id": "4ac345ca-d2d0-4b61-9713-e72234ad45f8",
+      "q": "Which park separates Liverpool's Anfield and Everton's Goodison Park, less than a mile apart?",
+      "options": [
+        "Sefton Park",
+        "Stanley Park",
+        "Prince's Park",
+        "Wavertree Park"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Liverpool"
+    },
+    {
+      "id": "4aea34e8-600c-4a62-b562-b92428600017",
+      "q": "Which manager captured his last silverware with Liverpool in 2012, more than a quarter-century after claiming his initial trophy with the Reds?",
+      "options": [
+        "Roy Evans",
+        "Graeme Souness",
+        "Kenny Dalglish",
+        "Joe Fagan"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Liverpool"
+    },
+    {
+      "id": "4b92b41d-618d-4fca-81fa-734aca7e3cf8",
+      "q": "What was the score when Arsenal beat Chelsea in the 2019/20 FA Cup final?",
+      "options": [
+        "1-0",
+        "2-1",
+        "3-1",
+        "2-0"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Chelsea"
+    },
+    {
+      "id": "4c9dc57b-c186-4286-9899-34fb77c7bb5d",
+      "q": "Who was the Premier League's top scorer in 2022-23 with a record-breaking 36 goals for Manchester City?",
+      "options": [
+        "Jack Grealish",
+        "Kevin De Bruyne",
+        "Phil Foden",
+        "Erling Haaland"
+      ],
+      "answer": 3,
+      "difficulty": "easy",
+      "category": "legends",
+      "entity": "Manchester City"
+    },
+    {
+      "id": "4d87f4d4-ccf3-4fdb-838c-22f96bb00bf8",
+      "q": "Two players in Liverpool's history have netted more goals than Mohamed Salah. Roger Hunt is one of them — name the other.",
+      "options": [
+        "Kenny Dalglish",
+        "Harry Chambers",
+        "Robbie Fowler",
+        "Ian Rush"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Liverpool"
+    },
+    {
+      "id": "4eb9dc29-5f17-4d51-a138-a849d6613648",
+      "q": "How many Premier League goals did Mohamed Salah score in 2024-25 to claim the top scorer award?",
+      "options": [
+        "28",
+        "30",
+        "29",
+        "31"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Liverpool"
+    },
+    {
+      "id": "4f587697-faef-439b-b7c5-5423ef9de7d1",
+      "q": "Who finished as the Premier League's leading scorer in 2014-15 with 26 goals for Manchester City?",
+      "options": [
+        "Edin Dzeko",
+        "Yaya Touré",
+        "Sergio Agüero",
+        "David Silva"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Manchester City"
+    },
+    {
+      "id": "50ac0f63-0d96-4c83-b532-86c8e79706da",
+      "q": "What was the scoreline when Liverpool recorded their biggest-ever victory over Manchester United, at Anfield in March 2023?",
+      "options": [
+        "4-0",
+        "6-1",
+        "7-0",
+        "5-0"
+      ],
+      "answer": 2,
+      "difficulty": "easy",
+      "category": "rivalries-derbies",
+      "entity": "Liverpool"
+    },
+    {
+      "id": "511d4fc7-b8af-4c4c-b1cd-2ceeea6c415f",
+      "q": "What is Arsenal's record points tally in a single Premier League season since 2001-02?",
+      "options": [
+        "87",
+        "88",
+        "92",
+        "90"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Arsenal"
+    },
+    {
+      "id": "514f1abf-a447-48ff-b277-2d1b83bd9ce7",
+      "q": "Chelsea's rivalry with which London club is the most contested derby in English football, first meeting in the First Division in 1907?",
+      "options": [
+        "Fulham",
+        "Tottenham Hotspur",
+        "West Ham United",
+        "Arsenal"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Chelsea"
+    },
+    {
+      "id": "51a12931-82a6-4d90-a450-a45a3caf47e8",
+      "q": "Manchester City won the 2011/12 Premier League title on goal difference ahead of which rival club?",
+      "options": [
+        "Arsenal",
+        "Manchester United",
+        "Liverpool",
+        "Chelsea"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Manchester City"
+    },
+    {
+      "id": "51f3e742-ef25-41b7-b9ca-d2499a9614a5",
+      "q": "How many European Cup / Champions League titles have Liverpool won?",
+      "options": [
+        "5",
+        "4",
+        "7",
+        "6"
+      ],
+      "answer": 3,
+      "difficulty": "easy",
+      "category": "history-honours",
+      "entity": "Liverpool"
+    },
+    {
+      "id": "521455e6-9578-4df2-8bd9-b62abe00278b",
+      "q": "Manchester United earned how many points in the 2022-23 Premier League season?",
+      "options": [
+        "75",
+        "78",
+        "72",
+        "80"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "entity": "Manchester United"
+    },
+    {
+      "id": "524c4b91-0fe4-4353-ba37-7c75d131d769",
+      "q": "Erling Haaland was the Premier League's leading scorer in 2023-24 — which club was he playing for?",
+      "options": [
+        "Arsenal",
+        "Liverpool",
+        "Chelsea",
+        "Manchester City"
+      ],
+      "answer": 3,
+      "difficulty": "easy",
+      "category": "legends",
+      "entity": "Manchester City"
+    },
+    {
+      "id": "5347aac9-dd5f-4bcb-b483-0a9ef7902ce6",
+      "q": "Diego Costa had a prolific first season at Chelsea in 2014-15 — how many Premier League goals did he bag?",
+      "options": [
+        "22",
+        "18",
+        "20",
+        "19"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Chelsea"
+    },
+    {
+      "id": "5449aecb-73c8-4da6-8426-bdd644f41b37",
+      "q": "How many points did Manchester City accumulate during the 2021-22 Premier League campaign?",
+      "options": [
+        "91",
+        "93",
+        "95",
+        "89"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "entity": "Manchester City"
+    },
+    {
+      "id": "5499fdde-3818-4265-9e8a-8a15d1086e9a",
+      "q": "How many Premier League goals did Mohamed Salah score for Liverpool in the 2022-23 campaign?",
+      "options": [
+        "19",
+        "17",
+        "21",
+        "23"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Liverpool"
+    },
+    {
+      "id": "5661bf3c-2c07-4bba-a61b-7e851aac18c4",
+      "q": "What nickname was given to long-serving Arsenal captain Tony Adams?",
+      "options": [
+        "The Iceman",
+        "Captain Fantastic",
+        "Mr. Arsenal",
+        "The Rock"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Arsenal"
+    },
+    {
+      "id": "56dc8b94-eee9-4c39-8687-ad6971a30c10",
+      "q": "How many FA Cup titles has Manchester City won in total?",
+      "options": [
+        "7",
+        "8",
+        "6",
+        "9"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Manchester City"
+    },
+    {
+      "id": "58967eea-6e86-4db2-bb9b-19bc5195318d",
+      "q": "Which club beat Tottenham Hotspur 2-0 in the 2014/15 Football League Cup final?",
+      "options": [
+        "Arsenal",
+        "Liverpool",
+        "Manchester United",
+        "Chelsea"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Tottenham Hotspur"
+    },
+    {
+      "id": "58e92803-52f8-415f-8ef5-d034558fc790",
+      "q": "Which manager was in charge of Everton when they lifted the FA Cup trophy in 1995?",
+      "options": [
+        "Howard Kendall",
+        "Joe Royle",
+        "Mike Walker",
+        "Walter Smith"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Everton"
+    },
+    {
+      "id": "59c4149d-972f-456f-813f-5abc56e98aa6",
+      "q": "Which Manchester City player opened the scoring in the 22nd minute of the 6-1 derby win at Old Trafford in October 2011, revealing his 'Why Always Me?' t-shirt?",
+      "options": [
+        "Mario Balotelli",
+        "Sergio Agüero",
+        "Edin Džeko",
+        "David Silva"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Manchester City"
+    },
+    {
+      "id": "5a958bc0-63c6-4cda-92fd-ea424bb2bef1",
+      "q": "Thierry Henry was the Premier League's leading scorer in 2005-06 — which club was he playing for?",
+      "options": [
+        "Manchester United",
+        "Arsenal",
+        "Chelsea",
+        "Everton"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Arsenal"
+    },
+    {
+      "id": "5aa99256-bc0d-467d-aa01-318651f9c5b1",
+      "q": "What was the final score of the 2015/16 Premier League match at Stamford Bridge nicknamed the 'Battle of the Bridge', which ended Tottenham Hotspur's title challenge?",
+      "options": [
+        "3-2",
+        "2-2",
+        "2-1",
+        "1-1"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Tottenham Hotspur"
+    },
+    {
+      "id": "5aef991f-de9a-48af-934f-79b2e0665d45",
+      "q": "How many Premier League titles (including First Division) have Liverpool won?",
+      "options": [
+        "18",
+        "20",
+        "22",
+        "19"
+      ],
+      "answer": 1,
+      "difficulty": "easy",
+      "category": "history-honours",
+      "entity": "Liverpool"
+    },
+    {
+      "id": "5b00ec3f-e8b9-4d31-aeae-eead94ccabf4",
+      "q": "Christian Benteke was prolific for Aston Villa in 2012-13 — how many Premier League goals did the Belgian striker score?",
+      "options": [
+        "19",
+        "22",
+        "25",
+        "17"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Aston Villa"
+    },
+    {
+      "id": "5c008fd7-d509-48c5-9706-6055a7fca06b",
+      "q": "What was the score of Chelsea's record win over Arsenal, achieved at Stamford Bridge in the 2013/14 Premier League?",
+      "options": [
+        "5-1",
+        "4-0",
+        "6-1",
+        "6-0"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Chelsea"
+    },
+    {
+      "id": "5c480742-63ab-43f2-8be3-67b09033dd66",
+      "q": "What is Chelsea's most widely recognised nickname?",
+      "options": [
+        "The Pensioners",
+        "The Blues",
+        "The Whites",
+        "The Lions"
+      ],
+      "answer": 1,
+      "difficulty": "easy",
+      "category": "history-honours",
+      "entity": "Chelsea"
+    },
+    {
+      "id": "5c4c7a8f-3301-460e-b603-a0e8215ebd69",
+      "q": "Who was the Premier League's leading scorer in 2019-20?",
+      "options": [
+        "Raheem Sterling",
+        "Dominic Calvert-Lewin",
+        "Jamie Vardy",
+        "Pierre-Emerick Aubameyang"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Leicester City"
+    },
+    {
+      "id": "5d039a49-2276-413e-bd25-625374d8b188",
+      "q": "How many League Cup (EFL Cup) titles have Liverpool won?",
+      "options": [
+        "8",
+        "11",
+        "9",
+        "10"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Liverpool"
+    },
+    {
+      "id": "5d1e059a-0977-4ba9-b0b8-35d893c2f8b8",
+      "q": "What is the name of Blackburn Rovers's home stadium?",
+      "options": [
+        "Goodison Park",
+        "Ewood Park",
+        "The Hawthorns",
+        "Turf Moor"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Blackburn Rovers"
+    },
+    {
+      "id": "5d6563de-a837-4664-b969-0c0b686a2e48",
+      "q": "West Ham United and Millwall met 60 times in the 16 years before which conflict?",
+      "options": [
+        "The Crimean War",
+        "The First World War",
+        "The Second World War",
+        "The Falklands War"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "West Ham United"
+    },
+    {
+      "id": "5e9972be-8291-421e-96c8-2c9c8b31a1f8",
+      "q": "Which Spanish midfielder earned the Premier League Goal of the Month award in September 2025 and received a Player of the Month nomination?",
+      "options": [
+        "Martin Zubimendi",
+        "Mikel Merino",
+        "Pedri González",
+        "Gavi Páez"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Arsenal"
+    },
+    {
+      "id": "5efa8287-fab7-4060-9cad-c0b498b97de2",
+      "q": "Which player holds the distinction of being Everton's leading Premier League goal scorer with 68 goals scored during his time at the club from 2013 to 2017?",
+      "options": [
+        "Romelu Lukaku",
+        "Richarlison",
+        "Sylvain Distin",
+        "Duncan Ferguson"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Everton"
+    },
+    {
+      "id": "5f6698e7-90ee-4bc2-98a9-41af3e091cae",
+      "q": "How many Premier League goals did João Pedro score for Chelsea in 2023-24?",
+      "options": [
+        "17",
+        "13",
+        "15",
+        "11"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Chelsea"
+    },
+    {
+      "id": "5f6793b2-976d-4257-89ae-7cea2c7ac99f",
+      "q": "Which club beat Liverpool 2-1 in the 2006-07 Champions League final in Athens, gaining revenge for the 2005 final?",
+      "options": [
+        "Manchester United",
+        "Real Madrid",
+        "Chelsea",
+        "AC Milan"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Liverpool"
+    },
+    {
+      "id": "602f1b27-7cf8-4f1a-8272-3db6bedbcbb1",
+      "q": "Which club was Harry Kane playing for when he topped the Premier League scoring charts in 2016-17?",
+      "options": [
+        "Arsenal",
+        "Chelsea",
+        "Tottenham Hotspur",
+        "Manchester United"
+      ],
+      "answer": 2,
+      "difficulty": "easy",
+      "category": "legends",
+      "entity": "Tottenham Hotspur"
+    },
+    {
+      "id": "609a1684-9732-443c-9af0-5eed5d6cbcbf",
+      "q": "How many Premier League goals did Jamie Vardy score in 2019-20 to finish as the division's top scorer?",
+      "options": [
+        "21",
+        "23",
+        "25",
+        "22"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Leicester City"
+    },
+    {
+      "id": "60d48e4a-52dd-49c6-be4a-f5bdd7b09509",
+      "q": "What is Leicester City's record for most wins in a single Premier League season, set in 2015-16?",
+      "options": [
+        "20",
+        "25",
+        "23",
+        "21"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "entity": "Leicester City"
+    },
+    {
+      "id": "6298a58e-cf5f-4e6b-87ef-880d43207c09",
+      "q": "How many points did Chelsea accumulate in the 2016-17 Premier League season when they won the title?",
+      "options": [
+        "89",
+        "93",
+        "95",
+        "91"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "entity": "Chelsea"
+    },
+    {
+      "id": "66332401-dfbd-4ab1-8ee9-aa44d9954e1d",
+      "q": "How many European Cup / Champions League titles has Manchester City won?",
+      "options": [
+        "0",
+        "2",
+        "1",
+        "3"
+      ],
+      "answer": 2,
+      "difficulty": "easy",
+      "category": "history-honours",
+      "entity": "Manchester City"
+    },
+    {
+      "id": "66d86c93-14cf-4e52-8c8f-574549905903",
+      "q": "Wayne Rooney was Manchester United's star performer in 2009-10, finishing second in the goal-scoring charts. How many Premier League goals did he score?",
+      "options": [
+        "26",
+        "24",
+        "28",
+        "22"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Manchester United"
+    },
+    {
+      "id": "67c83404-8df9-4b3f-b4a9-5c2c4fa22beb",
+      "q": "Which club beat Arsenal in the 2005/06 Champions League final?",
+      "options": [
+        "Real Madrid",
+        "AC Milan",
+        "Liverpool",
+        "FC Barcelona"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Arsenal"
+    },
+    {
+      "id": "67f562e9-f3eb-42bd-a3f7-f4f4fb993ba9",
+      "q": "What is Manchester United's record for most wins in a Premier League season, set in 2006-07?",
+      "options": [
+        "26",
+        "30",
+        "28",
+        "27"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Manchester United"
+    },
+    {
+      "id": "69d4647d-ff55-42c4-b33c-d312883880c0",
+      "q": "Which striker won the Premier League top scorer award in 2009-10 with an impressive 29 goals?",
+      "options": [
+        "Didier Drogba",
+        "Wayne Rooney",
+        "Carlos Tévez",
+        "Dimitar Berbatov"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Chelsea"
+    },
+    {
+      "id": "6b060415-30be-4ff8-aac8-9524a01565f0",
+      "q": "The 2004 Premier League clash between Manchester United and Arsenal, in which a slice of pizza was thrown at Sir Alex Ferguson, is nicknamed what?",
+      "options": [
+        "The Pizza Brawl",
+        "The Battle of Old Trafford",
+        "The Battle of the Buffet",
+        "The Highbury Incident"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Manchester United"
+    },
+    {
+      "id": "6c9482e1-3027-46ef-b65c-6c75a9b5dd3b",
+      "q": "What was the final score when West Ham United beat Millwall in their League Cup tie in August 2009, their first victory over the Lions in seven meetings?",
+      "options": [
+        "2-1",
+        "3-1",
+        "4-2",
+        "1-0"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "West Ham United"
+    },
+    {
+      "id": "6c94a3f0-3c89-4aa4-b542-831431d269ed",
+      "q": "How many points did Arsenal accumulate in the 2016-17 Premier League season?",
+      "options": [
+        "72",
+        "75",
+        "78",
+        "70"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "entity": "Arsenal"
+    },
+    {
+      "id": "6e33e1f8-9f95-4763-8075-3b99e6050405",
+      "q": "What is Nottingham Forest's home ground called?",
+      "options": [
+        "City Ground",
+        "The City Stadium",
+        "Nottingham Park",
+        "Forest Field"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "history-honours",
+      "entity": "Nottingham Forest"
+    },
+    {
+      "id": "6eac037d-2671-4827-af5a-741bc39b440a",
+      "q": "How many European Cup / Champions League titles have Chelsea won?",
+      "options": [
+        "3",
+        "1",
+        "2",
+        "4"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Chelsea"
+    },
+    {
+      "id": "6f959dbb-4a31-4be5-a88b-949510e86536",
+      "q": "In the 1980-81 season, Aston Villa did the double over Birmingham City and went on to win which competition?",
+      "options": [
+        "The First Division title",
+        "The European Cup",
+        "The League Cup",
+        "The FA Cup"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Aston Villa"
+    },
+    {
+      "id": "71f663bc-3d21-473a-989f-e7feb2a32b6a",
+      "q": "How many Premier League goals did Jamie Vardy bag for Leicester City in 2018-19?",
+      "options": [
+        "18",
+        "20",
+        "16",
+        "17"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Leicester City"
+    },
+    {
+      "id": "7224810c-f41c-4f6e-aabf-0276d1bb2121",
+      "q": "By how many points did Manchester City win the 2018/19 Premier League title ahead of Liverpool?",
+      "options": [
+        "1",
+        "5",
+        "2",
+        "3"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Manchester City"
+    },
+    {
+      "id": "72c48c6e-7a9e-4f52-9699-878527cd5cf2",
+      "q": "Jamie Vardy claimed the Premier League's top scorer award in 2019-20 — which club was he playing for?",
+      "options": [
+        "Leicester City",
+        "Arsenal",
+        "Manchester United",
+        "Tottenham Hotspur"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "legends",
+      "entity": "Leicester City"
+    },
+    {
+      "id": "74f2ce45-c018-458a-b046-0282a55271b8",
+      "q": "Alongside Huddersfield Town, which other West Yorkshire club is a local rival of Leeds United?",
+      "options": [
+        "Halifax Town",
+        "Barnsley",
+        "Wakefield Trinity",
+        "Bradford City"
+      ],
+      "answer": 3,
+      "difficulty": "easy",
+      "category": "rivalries-derbies",
+      "entity": "Leeds United"
+    },
+    {
+      "id": "75875f66-1390-4f8f-914c-ce29560336f8",
+      "q": "In the 2006-07 season, how many Premier League goals did Didier Drogba score to claim the top scorer award?",
+      "options": [
+        "17",
+        "22",
+        "18",
+        "20"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Chelsea"
+    },
+    {
+      "id": "75d45d80-8c18-472d-aa7a-b7649844a695",
+      "q": "Manchester United's 1978 signing of which two Leeds United favourites angered Leeds fans and fuelled the Roses rivalry?",
+      "options": [
+        "Joe Jordan and Gordon McQueen",
+        "Billy Bremner and Allan Clarke",
+        "Peter Lorimer and Terry Cooper",
+        "Norman Hunter and Paul Madeley"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Manchester United"
+    },
+    {
+      "id": "770e57b1-c928-469c-9038-fcc9f4ff183f",
+      "q": "How many Premier League goals did Pierre-Emerick Aubameyang score for Arsenal in 2018-19 to claim top scorer honours?",
+      "options": [
+        "20",
+        "19",
+        "24",
+        "22"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Arsenal"
+    },
+    {
+      "id": "77fbfed6-3b93-4911-bc47-771474685161",
+      "q": "How many Premier League goals did Mohamed Salah score in 2021-22 when he was the division's leading scorer?",
+      "options": [
+        "22",
+        "23",
+        "24",
+        "25"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Liverpool"
+    },
+    {
+      "id": "792f5094-5187-4a8a-a8db-276f237a2d78",
+      "q": "In front of which club's fans did Manchester United's Gary Neville celebrate at Old Trafford in 2006, earning him an FA fine and two-match ban?",
+      "options": [
+        "Chelsea",
+        "Everton",
+        "Manchester City",
+        "Liverpool"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Liverpool"
+    },
+    {
+      "id": "7a7906c5-c4f4-468a-9747-33789ca0af8f",
+      "q": "How many points did Leeds United accumulate in the 2020-21 Premier League season?",
+      "options": [
+        "59",
+        "65",
+        "61",
+        "62"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "entity": "Leeds United"
+    },
+    {
+      "id": "7acc3877-cb41-4174-b4fd-64761f45279b",
+      "q": "How many wins did Arsenal register during their unbeaten 2003/04 Premier League season?",
+      "options": [
+        "22",
+        "28",
+        "24",
+        "26"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Arsenal"
+    },
+    {
+      "id": "7ae512c0-a6a6-43d7-8a51-d9cc074b1768",
+      "q": "By what scoreline did Arsenal need to win at Liverpool on the final day of the 1988/89 season to claim the title?",
+      "options": [
+        "1-0",
+        "2-0",
+        "3-1",
+        "2-1"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Arsenal"
+    },
+    {
+      "id": "7b84b81a-c5d6-48b6-93ee-00792adc7b4f",
+      "q": "Which former Birmingham City manager took charge of Aston Villa in June 2011, a switch that shocked and angered fans of both clubs?",
+      "options": [
+        "Martin O'Neill",
+        "Alex McLeish",
+        "Gerard Houllier",
+        "Steve Bruce"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Aston Villa"
+    },
+    {
+      "id": "7baa0406-71cd-4339-a2da-67dd21233a44",
+      "q": "In which season did West Ham United and Millwall last meet in a competitive fixture?",
+      "options": [
+        "2011–12",
+        "2018–19",
+        "2005–06",
+        "2015–16"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "West Ham United"
+    },
+    {
+      "id": "7c044e88-f4f4-43f4-8693-1905896a9dd9",
+      "q": "Which club beat Everton in the 1986 FA Cup final at Wembley?",
+      "options": [
+        "Manchester United",
+        "Liverpool",
+        "Watford",
+        "Wimbledon"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Everton"
+    },
+    {
+      "id": "7c250d26-d3ec-42c3-be09-b2e6acc7d2e7",
+      "q": "Newcastle United finished the 2024-25 Premier League season with how many points?",
+      "options": [
+        "66",
+        "68",
+        "64",
+        "70"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "entity": "Newcastle United"
+    },
+    {
+      "id": "7d1d8776-12a5-4534-b02c-cbffb2715fad",
+      "q": "Aston Villa's fiercest rivalry, the Second City derby, is contested against which club?",
+      "options": [
+        "West Bromwich Albion",
+        "Wolverhampton Wanderers",
+        "Coventry City",
+        "Birmingham City"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Aston Villa"
+    },
+    {
+      "id": "7e586233-ee59-4615-b90d-0ba3c278db37",
+      "q": "Who scored both Arsenal goals in their 2-1 win over Chelsea in the 2019/20 FA Cup final?",
+      "options": [
+        "Alexandre Lacazette",
+        "Nicolas Pépé",
+        "Pierre-Emerick Aubameyang",
+        "Mesut Özil"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Arsenal"
+    },
+    {
+      "id": "7e6eb4a7-f4ee-41f8-9bb4-e14c5259bed9",
+      "q": "What is the name of Everton's home stadium?",
+      "options": [
+        "Goodison Park",
+        "Hill Dickinson Stadium",
+        "Merseyside Stadium",
+        "The Old Park"
+      ],
+      "answer": 1,
+      "difficulty": "easy",
+      "category": "history-honours",
+      "entity": "Everton"
+    },
+    {
+      "id": "7eb338d9-3d6c-4b7e-90b0-e6edc8b06754",
+      "q": "Which Liverpool captain scored the equalising goal in the final minute to level the 2004-05 Champions League final at 3-3, before Liverpool won on penalties?",
+      "options": [
+        "Steven Gerrard",
+        "Vladimir Smicer",
+        "Djibril Cisse",
+        "Xabi Alonso"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Liverpool"
+    },
+    {
+      "id": "7f25d2e2-995a-4b5f-8f81-2248c5204551",
+      "q": "Who bagged 30 Premier League goals to win the top scorer prize in 2011-12?",
+      "options": [
+        "Wayne Rooney",
+        "Sergio Agüero",
+        "Robin van Persie",
+        "Dimitar Berbatov"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Arsenal"
+    },
+    {
+      "id": "7fa4d940-b3f5-4089-b4ad-d717435cf6c7",
+      "q": "Who was the Premier League's top scorer in 2020-21 with 23 goals playing for Tottenham Hotspur?",
+      "options": [
+        "Harry Kane",
+        "Son Heung-min",
+        "Dele Alli",
+        "Lucas Moura"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Tottenham Hotspur"
+    },
+    {
+      "id": "81ba6859-e204-4ab9-8c75-53a4e71a0112",
+      "q": "What was Leicester City's record points total in their sensational 2015-16 Premier League title-winning season?",
+      "options": [
+        "81",
+        "78",
+        "84",
+        "87"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "entity": "Leicester City"
+    },
+    {
+      "id": "82310a89-a8dd-4c5e-b30d-d02b55018785",
+      "q": "Tony Adams is unique among Arsenal captains for having led the club to league titles in how many different decades?",
+      "options": [
+        "Two",
+        "Four",
+        "Three",
+        "One"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Arsenal"
+    },
+    {
+      "id": "82be2932-7ffe-45e5-a03d-97dce72fecc4",
+      "q": "How many League Cup (EFL Cup) titles has Aston Villa won?",
+      "options": [
+        "6",
+        "4",
+        "7",
+        "5"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Aston Villa"
+    },
+    {
+      "id": "8304f9bb-3816-4a99-8ae4-08c62c1171c3",
+      "q": "In the 2020/21 season, Leicester City claimed the FA Cup trophy by defeating which club in the final?",
+      "options": [
+        "Chelsea",
+        "Manchester City",
+        "Manchester United",
+        "Liverpool"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "history-honours",
+      "entity": "Leicester City"
+    },
+    {
+      "id": "834172db-f5d7-4a33-b1a3-b56260e41d3a",
+      "q": "Which Newcastle United player scored a hat-trick in the 'Demolition Derby' 5-1 win over Sunderland on Halloween, 31 October 2010?",
+      "options": [
+        "Peter Beardsley",
+        "Kevin Nolan",
+        "Andy Carroll",
+        "Shola Ameobi"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Newcastle United"
+    },
+    {
+      "id": "834bca98-fe36-4502-ac7d-6e4a9349d675",
+      "q": "In their strong 2013-14 campaign, how many goals did Liverpool score in the Premier League?",
+      "options": [
+        "104",
+        "98",
+        "101",
+        "96"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Liverpool"
+    },
+    {
+      "id": "84c7edfd-2450-4c59-8476-c7b624f94660",
+      "q": "Arsenal secured how many points during the 2024-25 Premier League campaign?",
+      "options": [
+        "74",
+        "72",
+        "76",
+        "78"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "entity": "Arsenal"
+    },
+    {
+      "id": "85a4c991-1482-4b93-81c4-7a2b034fcae3",
+      "q": "What is Liverpool's record points tally in a single Premier League season?",
+      "options": [
+        "97",
+        "98",
+        "99",
+        "100"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Liverpool"
+    },
+    {
+      "id": "8675940c-bf26-4174-98d2-99a3c0343816",
+      "q": "In the 1985 European Cup Winners' Cup final, Everton defeated an Austrian side with goals from Andy Gray, Trevor Steven, and Kevin Sheedy. Which team from Austria did they beat?",
+      "options": [
+        "Austria Vienna",
+        "Rapid Vienna",
+        "Salzburg",
+        "Sturm Graz"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Everton"
+    },
+    {
+      "id": "86d49960-a47c-45d7-822f-d858dcda3d15",
+      "q": "How many Premier League goals did Alexander Isak score for Newcastle United in 2023-24?",
+      "options": [
+        "19",
+        "21",
+        "23",
+        "20"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Newcastle United"
+    },
+    {
+      "id": "86e4d283-e6e0-4800-a717-8dad07d6b5ff",
+      "q": "Gareth Bale had a brilliant 2012-13 season for Tottenham — how many Premier League goals did he notch that year?",
+      "options": [
+        "18",
+        "21",
+        "24",
+        "26"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Tottenham Hotspur"
+    },
+    {
+      "id": "87fcdbc2-1824-4c43-aaa3-40d74fd8c0ba",
+      "q": "What is Liverpool's record for most Premier League goals scored in a single season?",
+      "options": [
+        "99",
+        "100",
+        "101",
+        "102"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Liverpool"
+    },
+    {
+      "id": "889308ec-e23c-48e1-b0d3-d1555a09320e",
+      "q": "What is Leicester City's most widely recognised nickname?",
+      "options": [
+        "The Tigers",
+        "The Royals",
+        "The Foxes",
+        "The Imps"
+      ],
+      "answer": 2,
+      "difficulty": "easy",
+      "category": "history-honours",
+      "entity": "Leicester City"
+    },
+    {
+      "id": "88e30e42-ac21-4bc0-8af4-14b33d447562",
+      "q": "How many Premier League titles (including First Division) have Arsenal won?",
+      "options": [
+        "13",
+        "14",
+        "16",
+        "12"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Arsenal"
+    },
+    {
+      "id": "8a36edb7-6e4f-44d8-8c09-6d3d4eb43468",
+      "q": "What is Leeds United's most widely recognised nickname?",
+      "options": [
+        "The Whites",
+        "The Peacocks",
+        "The Eagles",
+        "The Lions"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "history-honours",
+      "entity": "Leeds United"
+    },
+    {
+      "id": "8a47d62c-f17b-485e-a976-5176422f56ff",
+      "q": "How many FA Cup titles have Leeds United won?",
+      "options": [
+        "2",
+        "0",
+        "3",
+        "1"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Leeds United"
+    },
+    {
+      "id": "8ad4fe3e-6c57-4005-8135-aff568029002",
+      "q": "How many League Cup (EFL Cup) titles has Arsenal won?",
+      "options": [
+        "3",
+        "1",
+        "2",
+        "4"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Arsenal"
+    },
+    {
+      "id": "8bb5285d-7f5e-47e5-9b76-75ec8ebedff3",
+      "q": "Which striker claimed the Premier League top scorer award in 2025-26 with 27 goals for Manchester City?",
+      "options": [
+        "Harry Kane",
+        "Bukayo Saka",
+        "Son Heung-min",
+        "Erling Haaland"
+      ],
+      "answer": 3,
+      "difficulty": "easy",
+      "category": "legends",
+      "entity": "Manchester City"
+    },
+    {
+      "id": "8cfc39f5-47d3-4d43-8f75-9b54fce608ff",
+      "q": "What is Tottenham Hotspur's record for most wins in a Premier League season, set in 2016-17?",
+      "options": [
+        "24",
+        "26",
+        "25",
+        "27"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "entity": "Tottenham Hotspur"
+    },
+    {
+      "id": "8dbaa33c-1e6e-47ba-aca9-4e2947292e3e",
+      "q": "Which club was Mohamed Salah playing for when he won the Premier League top scorer award in 2017-18?",
+      "options": [
+        "Liverpool",
+        "Roma",
+        "Fiorentina",
+        "Chelsea"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "legends",
+      "entity": "Liverpool"
+    },
+    {
+      "id": "8de4b9e9-7830-4e03-8c2f-47b85bef16cf",
+      "q": "How many Premier League goals did Harry Kane score for Tottenham in 2022-23?",
+      "options": [
+        "32",
+        "30",
+        "28",
+        "26"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Tottenham Hotspur"
+    },
+    {
+      "id": "8e224301-7f52-41bf-837e-702efd954774",
+      "q": "How many Premier League goals did Luis Suárez score for Liverpool in 2012-13?",
+      "options": [
+        "23",
+        "21",
+        "20",
+        "25"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Liverpool"
+    },
+    {
+      "id": "8f476c68-640d-44d8-a311-f14a54676441",
+      "q": "Which club beat West Ham United 4-1 at The Den on Mothering Sunday, 21 March 2004, the largest winning margin recorded between the two clubs in the Football League?",
+      "options": [
+        "Millwall",
+        "Chelsea",
+        "Tottenham Hotspur",
+        "Sheffield United"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "West Ham United"
+    },
+    {
+      "id": "8f8f6c8a-9078-403c-9d50-e9e71954c42e",
+      "q": "Who finished as the Premier League's top scorer in 2024-25 with 29 goals?",
+      "options": [
+        "Erling Haaland",
+        "Harry Kane",
+        "Bukayo Saka",
+        "Mohamed Salah"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Liverpool"
+    },
+    {
+      "id": "9009ccc0-ca3b-4ef4-9092-986919b1d96e",
+      "q": "Who was the Premier League's top scorer in 2012-13 with 26 goals?",
+      "options": [
+        "Wayne Rooney",
+        "Robin van Persie",
+        "Sergio Agüero",
+        "Luis Suárez"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Manchester United"
+    },
+    {
+      "id": "9046dc51-9481-457c-8b1b-2fafe60a54e9",
+      "q": "How many Premier League titles have Manchester United won since the 2001-02 season?",
+      "options": [
+        "5",
+        "6",
+        "7",
+        "8"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Manchester United"
+    },
+    {
+      "id": "93fb0f18-ad72-4543-9c38-dddba2a7d3e8",
+      "q": "What is the nickname given to the Leeds United v Manchester United rivalry, referencing the historic Wars of the Roses?",
+      "options": [
+        "M62 derby",
+        "Roses rivalry",
+        "White Rose derby",
+        "Pennine derby"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Leeds United"
+    },
+    {
+      "id": "94a0cf95-e17e-4910-82f2-ca6dbf4c219d",
+      "q": "How many Premier League goals did Jamie Vardy score for Leicester City in 2017-18?",
+      "options": [
+        "22",
+        "18",
+        "16",
+        "20"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Leicester City"
+    },
+    {
+      "id": "95123721-886c-4f8d-80fa-f96c00b9742b",
+      "q": "Which club won the 2015/16 Premier League title as a result of the 'Battle of the Bridge' draw between Chelsea and Tottenham Hotspur?",
+      "options": [
+        "Leicester City",
+        "Arsenal",
+        "Tottenham Hotspur",
+        "Manchester City"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Chelsea"
+    },
+    {
+      "id": "9564148f-1e3f-4e41-88a3-a7f24e6e8fd8",
+      "q": "Which Manchester City player scored after just 12 seconds in the 2023 FA Cup final against Manchester United, the fastest goal in FA Cup final history?",
+      "options": [
+        "Ilkay Gündoğan",
+        "Kevin De Bruyne",
+        "Erling Haaland",
+        "Riyad Mahrez"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Manchester City"
+    },
+    {
+      "id": "962d0a79-efbf-4858-884d-4a0c0bb70230",
+      "q": "How many Premier League goals did Sergio Agüero score in 2014-15 to top the scoring charts?",
+      "options": [
+        "24",
+        "26",
+        "28",
+        "23"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Manchester City"
+    },
+    {
+      "id": "96751f2d-be68-4358-ad1b-ff58a064f18f",
+      "q": "What was the final score of the first Premier League meeting between Leeds United and Manchester United in the 2020/21 season, following Leeds' promotion?",
+      "options": [
+        "6-2 to Leeds United",
+        "6-2 to Manchester United",
+        "3-0 to Manchester United",
+        "4-1 to Manchester United"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Leeds United"
+    },
+    {
+      "id": "96c30884-b825-496b-9e60-fb21f7032b02",
+      "q": "Ruud van Nistelrooy claimed the Premier League's top scorer award in 2002-03. Which club was he playing for at the time?",
+      "options": [
+        "Manchester United",
+        "Arsenal",
+        "Chelsea",
+        "Liverpool"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Manchester United"
+    },
+    {
+      "id": "96e354e6-a06f-4dcf-b6a2-366ac9fa408f",
+      "q": "What is the name of Aston Villa's home ground?",
+      "options": [
+        "Birmingham Park",
+        "Perry Barr",
+        "Villa Park",
+        "St. Andrews"
+      ],
+      "answer": 2,
+      "difficulty": "easy",
+      "category": "history-honours",
+      "entity": "Aston Villa"
+    },
+    {
+      "id": "970b6131-98ca-4895-926b-d54b918c7d7c",
+      "q": "The Merseyside derby is traditionally known by what nickname, reflecting its history of not enforcing total fan segregation?",
+      "options": [
+        "Toffee Derby",
+        "Friendly Derby",
+        "Merseyside Classico",
+        "Bitter Rivalry"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Everton"
+    },
+    {
+      "id": "9736f775-8012-4236-af88-cf53144e11fd",
+      "q": "During the 1990s, Tottenham Hotspur signed which World Cup-winning player in two different transfer periods?",
+      "options": [
+        "Gheorghe Hagi",
+        "Gianluca Vialli",
+        "Ilie Dumitrescu",
+        "Jurgen Klinsmann"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Tottenham Hotspur"
+    },
+    {
+      "id": "98388eb4-d956-4698-809c-ece3b1f8c437",
+      "q": "How many Premier League titles has Chelsea won since the 2001-02 season?",
+      "options": [
+        "7",
+        "4",
+        "6",
+        "5"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Chelsea"
+    },
+    {
+      "id": "9a5dbe53-7e30-4b3e-acac-385c8cb6d02a",
+      "q": "Which club was Mohamed Salah playing for when he finished as the Premier League's leading scorer in 2024-25?",
+      "options": [
+        "Chelsea",
+        "Liverpool",
+        "Manchester United",
+        "Arsenal"
+      ],
+      "answer": 1,
+      "difficulty": "easy",
+      "category": "legends",
+      "entity": "Liverpool"
+    },
+    {
+      "id": "9b797edd-84f4-4483-aed6-1c73e64fa0fc",
+      "q": "Which club did Liverpool face in the 2015-16 League Cup final?",
+      "options": [
+        "Manchester United",
+        "Manchester City",
+        "Chelsea",
+        "Arsenal"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Liverpool"
+    },
+    {
+      "id": "9bdd86e5-8573-48c5-83a5-d0690ae11db1",
+      "q": "Which club beat Liverpool in the 1976-77 FA Cup final?",
+      "options": [
+        "Manchester United",
+        "Arsenal",
+        "Everton",
+        "Manchester City"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Liverpool"
+    },
+    {
+      "id": "9c31c295-7b49-4907-b8d5-be3378956d3d",
+      "q": "How many Premier League goals did Harry Kane score for Tottenham in 2016-17 to win the top scorer award?",
+      "options": [
+        "29",
+        "27",
+        "31",
+        "32"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Tottenham Hotspur"
+    },
+    {
+      "id": "9dee113d-6c46-4af5-8bc9-4945b80f3588",
+      "q": "How many Premier League titles have Manchester City won since 2001-02?",
+      "options": [
+        "8",
+        "7",
+        "6",
+        "9"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Manchester City"
+    },
+    {
+      "id": "9df81dbd-89e3-4fb3-b147-dccbfde1b3ef",
+      "q": "The September 2003 Premier League brawl between Manchester United and Arsenal, sparked by anger over Ruud van Nistelrooy and Patrick Vieira's red card, is known by what name?",
+      "options": [
+        "The Highbury Brawl",
+        "The Battle of the Buffet",
+        "The Old Trafford Melee",
+        "The Battle of Old Trafford"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Manchester United"
+    },
+    {
+      "id": "9eddc9d0-5191-4cd9-aab3-ed0eb1e1e1d0",
+      "q": "How many FA Cup titles have West Ham United won?",
+      "options": [
+        "2",
+        "0",
+        "1",
+        "3"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "West Ham United"
+    },
+    {
+      "id": "a01f0b0e-3605-48ae-80b8-1b64041e5402",
+      "q": "In 2016-17, how many goals did Liverpool score in the Premier League?",
+      "options": [
+        "80",
+        "81",
+        "75",
+        "78"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "entity": "Liverpool"
+    },
+    {
+      "id": "a2abce24-1d74-4d0c-aee2-93231e689f06",
+      "q": "Didier Drogba finished as the Premier League's leading scorer in 2009-10 — which team was he playing for?",
+      "options": [
+        "Arsenal",
+        "Chelsea",
+        "Manchester United",
+        "Liverpool"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Chelsea"
+    },
+    {
+      "id": "a3336bbf-dc09-4fe7-a433-78fa99000074",
+      "q": "How many Premier League goals did Harry Kane score in 2020-21 when he topped the scoring charts?",
+      "options": [
+        "21",
+        "25",
+        "23",
+        "24"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Tottenham Hotspur"
+    },
+    {
+      "id": "a412e510-0493-4f2a-8cf2-b1908da309dc",
+      "q": "How many points did Manchester City accumulate in the 2023-24 Premier League season?",
+      "options": [
+        "91",
+        "93",
+        "89",
+        "88"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "entity": "Manchester City"
+    },
+    {
+      "id": "a4c37758-44fb-4033-896c-af037024445e",
+      "q": "How many goals did Newcastle United score in the 2023-24 Premier League season?",
+      "options": [
+        "85",
+        "92",
+        "78",
+        "88"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "entity": "Newcastle United"
+    },
+    {
+      "id": "a560736c-4b3d-4b9c-a34d-a9cc620343e8",
+      "q": "How many League Cup (EFL Cup) titles have Newcastle United won?",
+      "options": [
+        "3",
+        "0",
+        "2",
+        "1"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Newcastle United"
+    },
+    {
+      "id": "a785c7aa-f3a0-4002-8809-c9ecaeef9f26",
+      "q": "What is the name of Leeds United's home ground?",
+      "options": [
+        "Leeds Park",
+        "White Hart Lane",
+        "Elland Road",
+        "Headingley Stadium"
+      ],
+      "answer": 2,
+      "difficulty": "easy",
+      "category": "history-honours",
+      "entity": "Leeds United"
+    },
+    {
+      "id": "a80a7156-0892-41e9-a0c3-9b0139f21815",
+      "q": "How many FA Cup titles have Everton won in their history?",
+      "options": [
+        "5",
+        "4",
+        "7",
+        "6"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Everton"
+    },
+    {
+      "id": "aab749f4-0063-4daa-a43f-0c06d9200d0b",
+      "q": "How many FA Cup titles has Aston Villa won?",
+      "options": [
+        "6",
+        "5",
+        "7",
+        "8"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Aston Villa"
+    },
+    {
+      "id": "ac02853c-d944-4b6d-8ea8-7e79ff84bbc0",
+      "q": "Who was the Premier League's top scorer in 2007-08 with 31 goals for Manchester United?",
+      "options": [
+        "Cristiano Ronaldo",
+        "Carlos Tevez",
+        "Wayne Rooney",
+        "Ryan Giggs"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Manchester United"
+    },
+    {
+      "id": "ad81106e-f664-4088-908b-4d4425652cd2",
+      "q": "By what nickname is Leicester City commonly known?",
+      "options": [
+        "The Lions",
+        "The Royals",
+        "The Foxes",
+        "The Wildcats"
+      ],
+      "answer": 2,
+      "difficulty": "easy",
+      "category": "history-honours",
+      "entity": "Leicester City"
+    },
+    {
+      "id": "ae80b4e3-cae3-4dc8-b7cb-0625f0b4e92c",
+      "q": "How many FA Cup titles have Newcastle United won?",
+      "options": [
+        "1",
+        "2",
+        "0",
+        "3"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Newcastle United"
+    },
+    {
+      "id": "aec40c0d-5469-4566-b00f-1d19fd28247d",
+      "q": "By what nickname are Liverpool commonly known?",
+      "options": [
+        "The Kop",
+        "The Liverbirds",
+        "The Merseysiders",
+        "The Reds"
+      ],
+      "answer": 3,
+      "difficulty": "easy",
+      "category": "history-honours",
+      "entity": "Liverpool"
+    },
+    {
+      "id": "af4e35eb-3f9f-4896-b922-f089d802f58b",
+      "q": "How many Premier League titles have Liverpool won since 2001-02?",
+      "options": [
+        "3",
+        "4",
+        "1",
+        "2"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Liverpool"
+    },
+    {
+      "id": "b2d745ef-e992-4722-a457-73e2854e6939",
+      "q": "Which club were Liverpool's opponents in the first official Merseyside derby, played on 13 October 1894?",
+      "options": [
+        "Tottenham Hotspur",
+        "Manchester City",
+        "Everton",
+        "Manchester United"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Liverpool"
+    },
+    {
+      "id": "b3887042-9840-4f9c-87f8-bb593fc1d202",
+      "q": "How many Premier League titles (including First Division) have Manchester United won?",
+      "options": [
+        "18",
+        "22",
+        "19",
+        "20"
+      ],
+      "answer": 3,
+      "difficulty": "easy",
+      "category": "history-honours",
+      "entity": "Manchester United"
+    },
+    {
+      "id": "b3f053c0-bf4a-4d35-95b0-3b410c6e943e",
+      "q": "How many goals did Chelsea score in their record attacking Premier League season of 2009-10?",
+      "options": [
+        "100",
+        "105",
+        "102",
+        "103"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Chelsea"
+    },
+    {
+      "id": "b7258de9-ebf7-45bc-99e5-e000a3f5e5a2",
+      "q": "What is Tottenham's record for most Premier League goals scored in a single season?",
+      "options": [
+        "88",
+        "84",
+        "86",
+        "82"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Tottenham Hotspur"
+    },
+    {
+      "id": "b7e15a53-e9b1-4f45-80ca-42a4344acaff",
+      "q": "What is Chelsea's most famous nickname?",
+      "options": [
+        "The Royals",
+        "The Pensioners",
+        "The Blues",
+        "The West Londoners"
+      ],
+      "answer": 2,
+      "difficulty": "easy",
+      "category": "history-honours",
+      "entity": "Chelsea"
+    },
+    {
+      "id": "b91be819-b61f-48bf-86cd-7398855370ca",
+      "q": "Mohamed Salah finished runner-up in the 2020-21 Premier League scoring race with how many goals for Liverpool?",
+      "options": [
+        "20",
+        "22",
+        "23",
+        "21"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Liverpool"
+    },
+    {
+      "id": "b920f586-2ab6-4368-a659-233e11974679",
+      "q": "In 2001, which Liverpool footballer claimed the Ballon d'Or award, a quarter-century prior to the 2026 ceremony?",
+      "options": [
+        "Robbie Fowler",
+        "Stan Collymore",
+        "Jamie Carragher",
+        "Michael Owen"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Liverpool"
+    },
+    {
+      "id": "b9cce3e4-f397-42e7-aee9-ea53f57faebf",
+      "q": "Alongside the Tyne-Wear derby against Sunderland, Newcastle United also contests the Tyne-Tees derby against which club?",
+      "options": [
+        "Blackburn Rovers",
+        "Hull City",
+        "Leeds United",
+        "Middlesbrough"
+      ],
+      "answer": 3,
+      "difficulty": "easy",
+      "category": "rivalries-derbies",
+      "entity": "Newcastle United"
+    },
+    {
+      "id": "ba29f359-c559-47ed-9708-6dfa519b1088",
+      "q": "Luis Suárez won the Premier League's top scorer award in 2013-14 — which club did he play for?",
+      "options": [
+        "Liverpool",
+        "Arsenal",
+        "Atlético Madrid",
+        "Barcelona"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Liverpool"
+    },
+    {
+      "id": "ba6c91e3-b86e-4fba-9317-60b345bf0d6f",
+      "q": "The arrival of which manager at Arsenal in October 1996 intensified the club's rivalry with Sir Alex Ferguson's Manchester United?",
+      "options": [
+        "George Graham",
+        "Bruce Rioch",
+        "Terry Neill",
+        "Arsene Wenger"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Manchester United"
+    },
+    {
+      "id": "bc41728b-8c52-4c82-9142-bd54cd301586",
+      "q": "How many Premier League goals did Cristiano Ronaldo score for Manchester United in 2007-08, when he claimed the top scorer award?",
+      "options": [
+        "29",
+        "31",
+        "33",
+        "28"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Manchester United"
+    },
+    {
+      "id": "bc507506-d3eb-4ba4-957a-ea3d73d6e996",
+      "q": "How many times did Harry Kane claim the Premier League top scorer award at Tottenham?",
+      "options": [
+        "3",
+        "4",
+        "2",
+        "5"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Tottenham Hotspur"
+    },
+    {
+      "id": "bdfe4df9-3dbf-48bc-a57e-645e8247d37f",
+      "q": "Manchester United's rivalry with which club is known as the 'Northwest Derby'?",
+      "options": [
+        "Everton",
+        "Leeds United",
+        "Liverpool",
+        "Manchester City"
+      ],
+      "answer": 2,
+      "difficulty": "easy",
+      "category": "rivalries-derbies",
+      "entity": "Manchester United"
+    },
+    {
+      "id": "bff217cd-9f62-4215-993b-99ce3bef31c5",
+      "q": "Manchester United scored a record 89 Premier League goals in which season since 2001-02?",
+      "options": [
+        "2011-12",
+        "2012-13",
+        "2010-11",
+        "2009-10"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Manchester United"
+    },
+    {
+      "id": "c00d55c5-26ef-4ac4-954e-35ab0e8137f5",
+      "q": "How many FA Cup titles has Leicester City won?",
+      "options": [
+        "2",
+        "0",
+        "3",
+        "1"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Leicester City"
+    },
+    {
+      "id": "c14f05db-250e-4378-96a0-a33b35c8b395",
+      "q": "How many Premier League goals did Robin van Persie score in 2012-13 to claim top scorer honours?",
+      "options": [
+        "28",
+        "24",
+        "26",
+        "25"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Manchester United"
+    },
+    {
+      "id": "c1a1d664-1684-440e-ab59-b7402f968673",
+      "q": "Manchester City scored how many goals in the 2011-12 Premier League season?",
+      "options": [
+        "89",
+        "91",
+        "95",
+        "93"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Manchester City"
+    },
+    {
+      "id": "c511a49c-2396-4229-9be3-50011b3dd3b5",
+      "q": "How many Premier League titles (including First Division) has Manchester City won?",
+      "options": [
+        "12",
+        "9",
+        "10",
+        "11"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Manchester City"
+    },
+    {
+      "id": "c51b571b-b826-491e-a0bf-6ee546c860d7",
+      "q": "Which club is Newcastle United's fiercest rival in the fixture known as the Tyne-Wear derby?",
+      "options": [
+        "Middlesbrough",
+        "Leeds United",
+        "Sunderland",
+        "Aston Villa"
+      ],
+      "answer": 2,
+      "difficulty": "easy",
+      "category": "rivalries-derbies",
+      "entity": "Newcastle United"
+    },
+    {
+      "id": "c59509c5-cd22-4c0e-b07e-16e98ae1c621",
+      "q": "How many times have Aston Villa been relegated from the Premier League since 2001-02?",
+      "options": [
+        "0",
+        "1",
+        "2",
+        "3"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Aston Villa"
+    },
+    {
+      "id": "c6fa2763-9e3c-4a15-9348-aaa3352b690b",
+      "q": "How many points did Chelsea accumulate in the 2014-15 Premier League season?",
+      "options": [
+        "75",
+        "87",
+        "79",
+        "90"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Chelsea"
+    },
+    {
+      "id": "c8774955-3c20-4802-aec4-66705f014e92",
+      "q": "Who was the Premier League's top scorer in 2016-17 with 29 goals?",
+      "options": [
+        "Sergio Agüero",
+        "Alexis Sánchez",
+        "Harry Kane",
+        "Romelu Lukaku"
+      ],
+      "answer": 2,
+      "difficulty": "easy",
+      "category": "legends",
+      "entity": "Tottenham Hotspur"
+    },
+    {
+      "id": "c9473812-54e3-415c-9d26-90466545a5e2",
+      "q": "In what year was Manchester City Football Club founded?",
+      "options": [
+        "1880",
+        "1883",
+        "1875",
+        "1887"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Manchester City"
+    },
+    {
+      "id": "c9a93152-d79b-4c52-bbfc-1d4a80e06c16",
+      "q": "How many Premier League titles (including the old First Division) have Leeds United won?",
+      "options": [
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Leeds United"
+    },
+    {
+      "id": "cbeb97e1-6c49-4e32-906b-9cca2b835129",
+      "q": "How many points did Leicester City accumulate in their title-winning 2015-16 Premier League campaign?",
+      "options": [
+        "78",
+        "81",
+        "82",
+        "79"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "entity": "Leicester City"
+    },
+    {
+      "id": "ce307428-a05b-4c3e-80f1-c9fc6a66eb5b",
+      "q": "How many Premier League goals did Ruud van Nistelrooy score for Manchester United in 2002-03, finishing as the league's top scorer?",
+      "options": [
+        "23",
+        "27",
+        "25",
+        "22"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Manchester United"
+    },
+    {
+      "id": "cf09cc8c-269b-4fd8-b028-7727737b0b8b",
+      "q": "Sergio Agüero was the Premier League's top scorer in 2014-15 — which club was he playing for?",
+      "options": [
+        "Manchester United",
+        "Manchester City",
+        "Chelsea",
+        "Arsenal"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Manchester City"
+    },
+    {
+      "id": "d0a998be-2002-45f3-9be1-84527b358971",
+      "q": "How many Premier League titles have Leicester City won since 2001-02?",
+      "options": [
+        "0",
+        "2",
+        "3",
+        "1"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Leicester City"
+    },
+    {
+      "id": "d16bbbf4-4c58-4b75-85b7-c1a6a64c9081",
+      "q": "How many Premier League goals did Harry Kane score for Tottenham in 2017-18?",
+      "options": [
+        "32",
+        "28",
+        "26",
+        "30"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Tottenham Hotspur"
+    },
+    {
+      "id": "d35216b3-75a3-4b20-a09d-93bc25291e74",
+      "q": "Which club did Tottenham Hotspur beat 3-1 in the 1990/91 FA Cup semi-final at Wembley?",
+      "options": [
+        "Chelsea",
+        "West Ham United",
+        "Nottingham Forest",
+        "Arsenal"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Tottenham Hotspur"
+    },
+    {
+      "id": "d3af61b0-2274-4ef2-938b-fe418595499d",
+      "q": "What's the record for most goals scored in a single Premier League season?",
+      "options": [
+        "34",
+        "36",
+        "32",
+        "38"
+      ],
+      "answer": 1,
+      "difficulty": "easy",
+      "category": "history-honours",
+      "entity": "Manchester City"
+    },
+    {
+      "id": "d43d43c9-8eb6-468f-bee1-34335dd38aa9",
+      "q": "Which club did Chelsea draw 2-2 with in the 1969/70 FA Cup final at Wembley before winning the replay?",
+      "options": [
+        "Tottenham Hotspur",
+        "Leeds United",
+        "Arsenal",
+        "Everton"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Chelsea"
+    },
+    {
+      "id": "d4449c97-1d53-4c6e-816e-6fb04302310d",
+      "q": "Manchester United's rivalry with Leeds United, rooted in the historic Lancashire-Yorkshire rivalry, is nicknamed what?",
+      "options": [
+        "The Steel City derby",
+        "The Pennine derby",
+        "The Roses rivalry",
+        "The White Rose war"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Manchester United"
+    },
+    {
+      "id": "d5ca8101-f4e4-4e3c-832a-c4083adf9133",
+      "q": "Which club is Nottingham Forest's fiercest rival, with the two clubs contesting the East Midlands Derby?",
+      "options": [
+        "Sheffield United",
+        "Leicester City",
+        "Notts County",
+        "Derby County"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Nottingham Forest"
+    },
+    {
+      "id": "d974d58b-3b7c-4ab3-9c71-e20195d952b1",
+      "q": "Who topped the Premier League scoring charts in 2006-07 with 20 goals while playing for Chelsea?",
+      "options": [
+        "Andriy Shevchenko",
+        "Didier Drogba",
+        "Frank Lampard",
+        "Mateja Kežman"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Chelsea"
+    },
+    {
+      "id": "d9f6e4c2-7ab6-42c5-99c7-624df5589cc6",
+      "q": "Which club have historically been described as Aston Villa's greatest rivals, with fixtures known as the West Midlands derby?",
+      "options": [
+        "Coventry City",
+        "Birmingham City",
+        "Wolverhampton Wanderers",
+        "West Bromwich Albion"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Aston Villa"
+    },
+    {
+      "id": "da49d26b-c367-42c8-9a8e-ad9a982fb92b",
+      "q": "Who was the Premier League's top scorer in the 2002-03 season with 25 goals for Manchester United?",
+      "options": [
+        "Ole Gunnar Solskjaer",
+        "Wayne Rooney",
+        "Paul Scholes",
+        "Ruud van Nistelrooy"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Manchester United"
+    },
+    {
+      "id": "da51f6e2-34fe-43fc-9154-c4d4e5aca7f8",
+      "q": "How many Premier League goals did Manchester City score in their record-breaking 2017-18 season?",
+      "options": [
+        "98",
+        "112",
+        "106",
+        "95"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "entity": "Manchester City"
+    },
+    {
+      "id": "db42b0ad-5927-4b65-95e6-6a6bf41ae510",
+      "q": "Which Tottenham forward netted five goals during the club's 9-1 demolition of Wigan Athletic in 2009?",
+      "options": [
+        "Peter Crouch",
+        "Darren Bent",
+        "Jermain Defoe",
+        "Roman Pavlyuchenko"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Tottenham Hotspur"
+    },
+    {
+      "id": "dcb58ded-b5cc-45ca-abf2-1c50faf30acf",
+      "q": "Against which club did Liverpool have their longest ever unbeaten run against a single opponent, spanning 23 matches between 2011 and 2020?",
+      "options": [
+        "Arsenal",
+        "Everton",
+        "Manchester United",
+        "Chelsea"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Everton"
+    },
+    {
+      "id": "ddb322c1-4c07-46c4-958b-985dfc96fc94",
+      "q": "By what nickname are Leeds United commonly known?",
+      "options": [
+        "The Blues",
+        "The Peacocks",
+        "The Whites",
+        "The Elland Reds"
+      ],
+      "answer": 2,
+      "difficulty": "easy",
+      "category": "history-honours",
+      "entity": "Leeds United"
+    },
+    {
+      "id": "dfd301a9-1455-4d81-a8d6-4d4959a76978",
+      "q": "How many points did Manchester City accumulate in the 2018-19 Premier League season?",
+      "options": [
+        "100",
+        "95",
+        "98",
+        "92"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "entity": "Manchester City"
+    },
+    {
+      "id": "e6ad729a-bd6c-41cb-9bcb-6c13d6ae826d",
+      "q": "Which club was Cristiano Ronaldo playing for when he won the Premier League top scorer award in 2007-08 with 31 goals?",
+      "options": [
+        "Chelsea",
+        "Manchester United",
+        "Arsenal",
+        "Liverpool"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Manchester United"
+    },
+    {
+      "id": "e6eb751c-8909-422a-bf13-b061ca0d16ad",
+      "q": "How many Premier League goals did Erling Haaland score for Manchester City in 2024-25?",
+      "options": [
+        "20",
+        "23",
+        "22",
+        "24"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Manchester City"
+    },
+    {
+      "id": "e7a7eed1-81a0-43e5-9fec-9be7e5be229d",
+      "q": "The East Midlands Derby rivalry intensified in the late 1970s after which manager was appointed at Nottingham Forest, having previously managed Derby County?",
+      "options": [
+        "Brian Clough",
+        "Peter Taylor",
+        "Frank Clark",
+        "Dave Mackay"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Nottingham Forest"
+    },
+    {
+      "id": "e8559512-69b3-4024-a011-7c1e66698913",
+      "q": "Chelsea's 2-1 win over Tottenham Hotspur on 20 August 2017 was played at which stadium, being Tottenham's first-ever home Premier League match there?",
+      "options": [
+        "White Hart Lane",
+        "Emirates Stadium",
+        "Wembley Stadium",
+        "Tottenham Hotspur Stadium"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Tottenham Hotspur"
+    },
+    {
+      "id": "ecb062af-50e1-41da-a8b5-39f20f8ccf65",
+      "q": "How many League Cup (EFL Cup) titles have Blackburn Rovers won?",
+      "options": [
+        "2",
+        "1",
+        "0",
+        "3"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Blackburn Rovers"
+    },
+    {
+      "id": "ed4299a0-9107-4e12-8907-8022ea70ab01",
+      "q": "What was the score of Chelsea's record defeat to Arsenal, suffered at Emirates Stadium in the 2023/24 Premier League season?",
+      "options": [
+        "3-0",
+        "4-1",
+        "6-0",
+        "5-0"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Chelsea"
+    },
+    {
+      "id": "ed7b792f-6584-492c-b423-a6d1754497ca",
+      "q": "How many FA Cup titles have Nottingham Forest won?",
+      "options": [
+        "2",
+        "1",
+        "0",
+        "3"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Nottingham Forest"
+    },
+    {
+      "id": "ed8c1112-0169-4c9e-8bb6-7bfb793c03a5",
+      "q": "Sergio Agüero had a fine 2015-16 season for Manchester City — how many Premier League goals did he score?",
+      "options": [
+        "26",
+        "22",
+        "25",
+        "24"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Manchester City"
+    },
+    {
+      "id": "ef07dc20-d536-423d-ab01-f42d97911c5f",
+      "q": "How many Premier League goals did Sergio Agüero score for Manchester City in 2018-19?",
+      "options": [
+        "18",
+        "19",
+        "21",
+        "23"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Manchester City"
+    },
+    {
+      "id": "ef7ccf8c-b6c1-45e4-81fc-04de35986c35",
+      "q": "How many UEFA Europa League titles has Aston Villa won?",
+      "options": [
+        "0",
+        "1",
+        "3",
+        "2"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Aston Villa"
+    },
+    {
+      "id": "f0af2923-2280-4458-aba4-2fe34f914417",
+      "q": "How many League Cup (EFL Cup) titles have Tottenham Hotspur won?",
+      "options": [
+        "3",
+        "4",
+        "5",
+        "6"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Tottenham Hotspur"
+    },
+    {
+      "id": "f158dbd3-d6bf-422d-a6ea-5202ecb78da0",
+      "q": "In which season did Leicester City win the Premier League with an incredible points tally of 81?",
+      "options": [
+        "2017-18",
+        "2014-15",
+        "2016-17",
+        "2015-16"
+      ],
+      "answer": 3,
+      "difficulty": "easy",
+      "category": "history-honours",
+      "entity": "Leicester City"
+    },
+    {
+      "id": "f16b3e63-9f4b-41f5-b938-33e2d3688442",
+      "q": "How many times have Leeds United been relegated from the Premier League since 2001-02?",
+      "options": [
+        "3",
+        "2",
+        "1",
+        "4"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Leeds United"
+    },
+    {
+      "id": "f4248a5f-6639-435b-8ffb-75ed60746ca4",
+      "q": "How many times have Tottenham Hotspur finished in the Premier League top 4 since 2001-02?",
+      "options": [
+        "5",
+        "6",
+        "8",
+        "7"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Tottenham Hotspur"
+    },
+    {
+      "id": "f43abdd5-1437-434f-9688-77f939ea1498",
+      "q": "How many League Cup (EFL Cup) titles have Leeds United won?",
+      "options": [
+        "0",
+        "3",
+        "2",
+        "1"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Leeds United"
+    },
+    {
+      "id": "f4abd28c-335b-436e-9221-a66c9db760ae",
+      "q": "Which former Sunderland manager became the second man (after Sam Allardyce) to manage both Newcastle United and Sunderland, taking charge of Newcastle in the summer of 2019?",
+      "options": [
+        "Alan Pardew",
+        "Steve Bruce",
+        "Rafael Benitez",
+        "Chris Hughton"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Newcastle United"
+    },
+    {
+      "id": "f6f281ce-7504-49c8-98d0-fd9dec96d2de",
+      "q": "How many UEFA Europa League titles has Manchester United won?",
+      "options": [
+        "2",
+        "0",
+        "1",
+        "3"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Manchester United"
+    },
+    {
+      "id": "f8988fc5-3b12-4171-a2ef-8170e496c943",
+      "q": "Newcastle United scored how many goals in the 2022-23 Premier League season?",
+      "options": [
+        "65",
+        "68",
+        "71",
+        "72"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "entity": "Newcastle United"
+    },
+    {
+      "id": "f8a31ae0-ff0d-49e0-9732-9164a0a08de3",
+      "q": "Manchester United's rivalry with Arsenal only became fierce during which period, as the two clubs regularly competed for the Premier League title and FA Cup?",
+      "options": [
+        "The early 1990s",
+        "The late 1990s and early 2000s",
+        "The mid-2000s",
+        "The 2010s"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Manchester United"
+    },
+    {
+      "id": "f8af7379-67fb-4038-a212-e043f5e9c6d9",
+      "q": "How many FA Cup titles has Chelsea won in their history?",
+      "options": [
+        "6",
+        "8",
+        "9",
+        "7"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Chelsea"
+    },
+    {
+      "id": "f8d5ff16-444f-4d73-94ab-5c7cbc86e822",
+      "q": "In the 2019 Championship play-off semi-final against West Bromwich Albion, how did Aston Villa progress after a 2-2 aggregate draw?",
+      "options": [
+        "They won in extra time",
+        "They won on penalties",
+        "A replay was played",
+        "They won on away goals"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Aston Villa"
+    },
+    {
+      "id": "f8d96d07-4329-4e14-aaf9-8fea645bedc9",
+      "q": "What is the seating capacity of Tottenham Hotspur's stadium?",
+      "options": [
+        "60,100",
+        "62,850",
+        "61,500",
+        "63,500"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Tottenham Hotspur"
+    },
+    {
+      "id": "fc0093b5-6284-4c7a-a259-55cd05089eaf",
+      "q": "Who was Chelsea's star striker that topped the Premier League scoring charts in 2008-09?",
+      "options": [
+        "Frank Lampard",
+        "Didier Drogba",
+        "Nicolas Anelka",
+        "Andriy Shevchenko"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Chelsea"
+    },
+    {
+      "id": "fc2efbed-da9b-468e-8e46-d25c51cb1f99",
+      "q": "What is the name of Manchester United's home ground?",
+      "options": [
+        "Maine Road",
+        "The Etihad Stadium",
+        "Old Trafford",
+        "The Theatre of Dreams"
+      ],
+      "answer": 2,
+      "difficulty": "easy",
+      "category": "history-honours",
+      "entity": "Manchester United"
+    },
+    {
+      "id": "fd3224c0-d832-460e-83be-2b3c269e108e",
+      "q": "Which West Ham United player scored the only goal in their 1-0 win over champions Manchester United on the final day of the 2006/07 Premier League season, a result that sent Sheffield United down instead?",
+      "options": [
+        "Javier Mascherano",
+        "Bobby Zamora",
+        "Dean Ashton",
+        "Carlos Tevez"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "West Ham United"
+    },
+    {
+      "id": "fd90c076-e4a5-44b7-a914-d301c61c5c10",
+      "q": "Which club beat Leeds United 2-1 after extra time in the replayed 1970 FA Cup final at Old Trafford?",
+      "options": [
+        "Everton",
+        "Arsenal",
+        "Chelsea",
+        "Liverpool"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Leeds United"
+    },
+    {
+      "id": "fdaddcb8-2e82-477a-8192-5143fb4705ef",
+      "q": "What is the name of Newcastle United's home ground?",
+      "options": [
+        "Gallowgate Park",
+        "Kingston Park",
+        "St. James' Park",
+        "St. Andrew's"
+      ],
+      "answer": 2,
+      "difficulty": "easy",
+      "category": "history-honours",
+      "entity": "Newcastle United"
+    },
+    {
+      "id": "fdb2c6aa-ef3e-41ac-b241-90f466d2c2fb",
+      "q": "How many Premier League titles (including First Division) have Tottenham Hotspur won?",
+      "options": [
+        "2",
+        "3",
+        "1",
+        "4"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "entity": "Tottenham Hotspur"
+    },
+    {
+      "id": "fff55cf4-bb4d-4b26-91b2-7966bb222f35",
+      "q": "How many Premier League goals did Dimitar Berbatov score in 2010-11 to claim the top scorer award?",
+      "options": [
+        "22",
+        "20",
+        "18",
+        "19"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "legends",
+      "entity": "Manchester United"
+    },
+    {
+      "id": "fff59955-87f8-464b-88d0-0914c49c6e98",
+      "q": "Before their historic 1970 FA Cup final meeting with Chelsea, Leeds United had been beaten finalists in which year?",
+      "options": [
+        "1970",
+        "1963",
+        "1967",
+        "1965"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "entity": "Leeds United"
+    }
+  ]
+}
