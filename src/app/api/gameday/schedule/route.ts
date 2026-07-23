@@ -4,11 +4,11 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { londonDayRange, londonMatchday } from "@/lib/halftime/shared";
 
 /**
- * GET /api/halftime/schedule?date=YYYY-MM-DD — the pipeline's read of a matchday.
+ * GET /api/gameday/schedule?date=YYYY-MM-DD — the pipeline's read of a matchday.
  *
  * Full detail (questions, fresh slice, veto state) — the poller and the
  * generation scripts read this. Service-role only; never expose it publicly.
- * The public projection is /api/halftime/today.
+ * The public projection is /api/gameday/today.
  *
  * `date` defaults to today (Europe/London). Returns the matchday's kill-switch
  * state alongside the fixtures so the poller can honour it without a second call.
@@ -21,8 +21,7 @@ export const dynamic = "force-dynamic";
 
 const COLS =
   "id, fixture_id, season_id, round_name, pack_id, home, away, kickoff_at, state, " +
-  "base_questions, fresh_questions, pack_questions, fresh_state, veto_deadline_at, " +
-  "telegram_message_id, released_at, created_at, updated_at";
+  "base_questions, pack_questions, released_at, created_at, updated_at";
 
 export async function GET(req: NextRequest) {
   const auth = req.headers.get("authorization");
@@ -39,15 +38,12 @@ export async function GET(req: NextRequest) {
 
   const db = createServiceClient() as unknown as SupabaseClient;
 
-  const [{ data: fixtures, error }, { data: control }] = await Promise.all([
-    db
-      .from("halftime_releases")
-      .select(COLS)
-      .gte("kickoff_at", startUtc)
-      .lt("kickoff_at", endUtc)
-      .order("kickoff_at", { ascending: true }),
-    db.from("halftime_control").select("fresh_kill").eq("matchday", matchday).maybeSingle(),
-  ]);
+  const { data: fixtures, error } = await db
+    .from("halftime_releases")
+    .select(COLS)
+    .gte("kickoff_at", startUtc)
+    .lt("kickoff_at", endUtc)
+    .order("kickoff_at", { ascending: true });
 
   if (error) {
     console.error("[halftime/schedule] query failed", error);
@@ -56,7 +52,6 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({
     matchday,
-    freshKill: Boolean((control as { fresh_kill?: boolean } | null)?.fresh_kill),
     fixtures: fixtures ?? [],
   });
 }

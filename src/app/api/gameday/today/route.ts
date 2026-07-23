@@ -11,7 +11,7 @@ import {
 } from "@/lib/halftime/shared";
 
 /**
- * GET /api/halftime/today — PUBLIC. The /play rail and the Home card read this.
+ * GET /api/gameday/today — PUBLIC. The /play rail and the Home card read this.
  *
  * Deliberately UNCACHED. Every other pack surface is edge-cached (/api/quiz/packs
  * at s-maxage=120, /api/challenges/pack at s-maxage=3600) and is therefore

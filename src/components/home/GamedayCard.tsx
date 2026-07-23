@@ -5,12 +5,12 @@
  * Dashboard.tsx "RESUME YOUR RUN" wcRun banner (same shape/classes) so it
  * reads as part of the same takeover-priority-CTA family, not a bolt-on.
  *
- * Self-fetching (useHalftimeToday) so mounting this needed zero changes to
+ * Self-fetching (useGamedayToday) so mounting this needed zero changes to
  * the server-built DashboardData contract — see Dashboard.tsx.
  */
 
 import Link from "next/link";
-import { useHalftimeToday, kickoffLabel, hasKickedOff, isLive, packHref, type HalftimeFixture } from "./useHalftimeToday";
+import { useGamedayToday, kickoffLabel, hasKickedOff, isLive, packHref, type HalftimeFixture } from "@/components/halftime/useGamedayToday";
 
 const TEAL = "#00d8c0";
 
@@ -23,7 +23,7 @@ function pickFixture(fixtures: HalftimeFixture[]): HalftimeFixture | null {
 }
 
 export function HalftimeCard() {
-  const { fixtures, loaded } = useHalftimeToday();
+  const { fixtures, loaded } = useGamedayToday();
   if (!loaded) return null;
 
   const f = pickFixture(fixtures);

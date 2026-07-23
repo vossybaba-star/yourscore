@@ -66,8 +66,7 @@ const MAX_PUSH_PER_RUN = 2000;
 
 const HALFTIME_COLS =
   "id, fixture_id, season_id, round_name, pack_id, home, away, kickoff_at, state, " +
-  "base_questions, fresh_questions, pack_questions, fresh_state, veto_deadline_at, " +
-  "telegram_message_id, released_at";
+  "base_questions, pack_questions, released_at";
 
 /** halftime_* tables are not in the generated DB types — untyped handle. */
 function db(): SupabaseClient {
@@ -379,14 +378,8 @@ export async function releaseFixture(
   }
 
   // Content gate. A pack that fails validation must never reach a player.
-  let questions = questionsForRelease(row);
-  let errs = validatePackQuestions(questions);
-  if (errs.length) {
-    // Fall back to the base slate before giving up — a broken fresh slice must
-    // not cost the fixture its pack.
-    questions = assembleQuestions(row.base_questions, [], row.fixture_id, { baseOnly: true });
-    errs = validatePackQuestions(questions);
-  }
+  const questions = questionsForRelease(row);
+  const errs = validatePackQuestions(questions);
   if (errs.length) {
     console.error("[halftime] pack failed validation, marking failed", fixtureId, errs);
     await raw
@@ -452,13 +445,9 @@ export async function releaseFixture(
 
 /**
  * Freeze a fixture's final 10 and stage it (base_ready → staged, CAS).
- * Called at the veto deadline by the poller, and by the watchdog with
- * `baseOnly` when the poller died before assembly — the watchdog NEVER ships
- * fresh questions, because a dead poller means the veto ledger can't be trusted.
  */
 export async function stageFixture(
   fixtureId: number,
-  opts: { baseOnly?: boolean } = {},
 ): Promise<{ staged: boolean; packId: string | null; state: string; reason?: string }> {
   const raw = db();
   const row = await getFixtureRow(fixtureId);
@@ -471,8 +460,7 @@ export async function stageFixture(
     return { staged: false, packId: row.pack_id, state: row.state, reason: `not base_ready (state=${row.state})` };
   }
 
-  const baseOnly = opts.baseOnly || row.fresh_state === "killed";
-  const questions = assembleQuestions(row.base_questions, row.fresh_questions, row.fixture_id, { baseOnly });
+  const questions = assembleQuestions(row.base_questions, row.fixture_id);
 
   const errs = validatePackQuestions(questions);
   if (errs.length) {

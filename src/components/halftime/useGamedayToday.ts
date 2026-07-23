@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Client hook + small pure helpers wrapping GET /api/halftime/today.
+ * Client hook + small pure helpers wrapping GET /api/gameday/today.
  *
  * This is the ONLY halftime data source W4 touches. The route is public,
  * uncached (no-store) and deliberately withholds pack_id/slug/questions
@@ -38,7 +38,7 @@ interface TodayResponse {
 
 const POLL_MS = 20_000;
 
-export function useHalftimeToday(): { fixtures: HalftimeFixture[]; loaded: boolean } {
+export function useGamedayToday(): { fixtures: HalftimeFixture[]; loaded: boolean } {
   const [fixtures, setFixtures] = useState<HalftimeFixture[]>([]);
   const [loaded, setLoaded] = useState(false);
 
@@ -48,7 +48,7 @@ export function useHalftimeToday(): { fixtures: HalftimeFixture[]; loaded: boole
 
     async function tick() {
       try {
-        const res = await fetch("/api/halftime/today", { cache: "no-store" });
+        const res = await fetch("/api/gameday/today", { cache: "no-store" });
         if (res.ok && !cancelled) {
           const json = (await res.json()) as TodayResponse;
           setFixtures(Array.isArray(json.fixtures) ? json.fixtures : []);

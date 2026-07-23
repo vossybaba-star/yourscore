@@ -24,13 +24,13 @@
  */
 
 import { writeFileSync, mkdirSync, existsSync, readFileSync } from "node:fs";
-import * as sm from "./lib/sm.mjs";
-import * as api from "./lib/api.mjs";
-import { mineBaseFacts } from "./lib/history.mjs";
-import { writeQuestions, modelId } from "./lib/llm.mjs";
+import * as sm from "../halftime/lib/sm.mjs";
+import * as api from "../halftime/lib/api.mjs";
+import { mineBaseFacts } from "../halftime/lib/history.mjs";
+import { writeQuestions, modelId } from "../halftime/lib/llm.mjs";
 import { validateQuestions, makeContext } from "./validate.mjs";
-import { audit } from "./lib/audit.mjs";
-import { loadEnvFile, flag, has } from "./lib/env.mjs";
+import { audit } from "../halftime/lib/audit.mjs";
+import { loadEnvFile, flag, has } from "../halftime/lib/env.mjs";
 
 const PACK = 10;
 const MIX = { easy: 3, medium: 4, hard: 3 };

@@ -34,15 +34,15 @@
  */
 
 import { readFileSync } from "node:fs";
-import * as sm from "./lib/sm.mjs";
-import { loadFifa, fifaClubFor } from "./lib/history.mjs";
+import * as sm from "../halftime/lib/sm.mjs";
+import { loadFifa, fifaClubFor } from "../halftime/lib/history.mjs";
 import {
   textViolations,
   buildNameIndex,
   normName,
   knownClaimType,
-} from "./lib/claims.mjs";
-import { loadEnvFile, flag, has } from "./lib/env.mjs";
+} from "../halftime/lib/claims.mjs";
+import { loadEnvFile, flag, has } from "../halftime/lib/env.mjs";
 
 // ── Claim resolvers ──────────────────────────────────────────────────────────
 // Each returns { ok: boolean, why?: string }. Anything that throws, returns

@@ -134,7 +134,7 @@ start("npx", ["next", "dev", "-p", String(APP_PORT)], {
     NEXT_TELEMETRY_DISABLED: "1",
   },
 });
-await waitFor(`${APP}/api/halftime/today`, 120000);
+await waitFor(`${APP}/api/gameday/today`, 120000);
 
 // Release Arsenal v Chelsea through the REAL route — the app inserts the
 // quiz_packs row and flips the state exactly as it would at a live whistle.
@@ -147,8 +147,8 @@ for (const f of FIXTURES.filter((x) => x.release)) {
   console.log(`released ${f.home} v ${f.away} → ${res.status} ${JSON.stringify(await res.json())}`);
 }
 
-const today = await (await fetch(`${APP}/api/halftime/today`)).json();
-console.log(`\n/api/halftime/today →`, JSON.stringify(today, null, 1));
+const today = await (await fetch(`${APP}/api/gameday/today`)).json();
+console.log(`\n/api/gameday/today →`, JSON.stringify(today, null, 1));
 console.log(`\nOPEN:  ${APP}/play   (the Halftime rail)`);
 console.log(`       ${APP}/        (the Home card)`);
 console.log(`\nCtrl-C to stop.\n`);

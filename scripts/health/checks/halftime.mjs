@@ -47,7 +47,7 @@ export async function run(report, ctx) {
     const end = new Date(start.getTime() + 26 * 60 * MIN); // generous; London ≠ UTC
     const { data, error } = await supa
       .from("halftime_releases")
-      .select("fixture_id, home, away, kickoff_at, state, fresh_state, pack_id, released_at")
+      .select("fixture_id, home, away, kickoff_at, state, pack_id, released_at")
       .gte("kickoff_at", new Date(start.getTime() - 2 * 60 * MIN).toISOString())
       .lt("kickoff_at", end.toISOString())
       .order("kickoff_at", { ascending: true });
@@ -164,17 +164,6 @@ export async function run(report, ctx) {
       hint: "re-POST /api/halftime/release for the fixture — it is idempotent and repairs a missing pack row",
     });
   }
-
-  // ── 5. the fresh slice, for information ──────────────────────────────────
-  const freshStates = rows.reduce((acc, r) => {
-    acc[r.fresh_state] = (acc[r.fresh_state] ?? 0) + 1;
-    return acc;
-  }, {});
-  const killed = rows.some((r) => r.fresh_state === "killed");
-  report.add("halftime", "fresh slice", true, {
-    warn: killed,
-    detail: Object.entries(freshStates).map(([k, v]) => `${k}:${v}`).join(" ") + (killed ? " (SLATE KILLED)" : ""),
-  });
 
   ctx.halftime = { fixtures: rows.length, released: released.length };
 }

@@ -3,11 +3,11 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServiceClient } from "@/lib/supabase/service";
 
 /**
- * GET /api/halftime/upcoming — PUBLIC. The forward schedule for Matchweek →
+ * GET /api/gameday/upcoming — PUBLIC. The forward schedule for Matchweek →
  * Live Quiz: the gameweeks coming up and the quizzes (one per fixture) that
  * will drop at each half-time.
  *
- * Unlike /api/halftime/schedule (CRON_SECRET, single day, full pack detail),
+ * Unlike /api/gameday/schedule (CRON_SECRET, single day, full pack detail),
  * this is a lean public projection — fixtures grouped by gameweek, no question
  * content — so the schedule renders before a ball is kicked. It shows the whole
  * synced future (kickoff >= now), grouped and ordered by gameweek.

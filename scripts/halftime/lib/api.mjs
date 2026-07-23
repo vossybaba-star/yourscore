@@ -38,10 +38,10 @@ async function call(path, init = {}) {
   return body;
 }
 
-/** GET /api/halftime/schedule?date= — today's rows + the matchday kill-switch state. */
+/** GET /api/gameday/schedule?date= — today's rows + the matchday kill-switch state. */
 export function schedule(date) {
   const q = date ? `?date=${date}` : "";
-  return call(`/api/halftime/schedule${q}`);
+  return call(`/api/gameday/schedule${q}`);
 }
 
 export function op(body) {

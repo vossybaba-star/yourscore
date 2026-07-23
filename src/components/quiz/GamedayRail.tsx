@@ -5,7 +5,7 @@
  * today (AC27) — one card per PL fixture, showing "quiz pack drops at half
  * time" pre-whistle and flipping to a live, playable state at the release.
  *
- * Data + gating come entirely from useHalftimeToday()/isLive() — this
+ * Data + gating come entirely from useGamedayToday()/isLive() — this
  * component has zero opinions about SportMonks states or the release
  * pipeline, it just renders what the public projection gives it.
  */
@@ -14,14 +14,14 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getTeamBadgeUrl } from "@/lib/teamImages";
 import {
-  useHalftimeToday,
+  useGamedayToday,
   kickoffLabel,
   hasKickedOff,
   isLive,
   packHref,
   lobbyHref,
   type HalftimeFixture,
-} from "./useHalftimeToday";
+} from "@/components/halftime/useGamedayToday";
 
 const TEAL = "#00d8c0";
 
@@ -170,7 +170,7 @@ function FixtureCard({ f }: { f: HalftimeFixture }) {
 }
 
 export function HalftimeRail() {
-  const { fixtures, loaded } = useHalftimeToday();
+  const { fixtures, loaded } = useGamedayToday();
   if (!loaded || fixtures.length === 0) return null;
 
   const liveCount = fixtures.filter((f) => isLive(f)).length;

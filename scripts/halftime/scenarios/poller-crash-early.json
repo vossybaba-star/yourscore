@@ -1,12 +1,9 @@
 {
   "name": "poller-crash-early",
-  "notes": "The poller dies BEFORE assembly (SIGKILL at min 60, twenty nominal minutes before the T-10 freeze). The fixture is still base_ready with an approved fresh slice sitting in the row. The watchdog has to notice that kick-off has passed with nothing staged, assemble it BASE-ONLY, and release at the whistle. It must never ship the fresh questions: a dead poller means the veto ledger cannot be trusted end to end, so the conservative bound is the day-before, founder-approved base slate. The released pack must contain zero fresh questions.",
+  "notes": "The poller dies BEFORE assembly (SIGKILL at min 60, twenty nominal minutes before the T-10 freeze). The fixture is still base_ready. The watchdog has to notice that kick-off has passed with nothing staged, assemble it from the base slate, and release at the whistle.",
   "harness": {
     "kill_poller_at_min": 60,
-    "watchdog_at_min": [95, 137],
-    "seed_fresh": true,
-    "seed_fresh_status": "approved",
-    "seed_fresh_state": "approved"
+    "watchdog_at_min": [95, 137]
   },
   "fixtures": [
     {

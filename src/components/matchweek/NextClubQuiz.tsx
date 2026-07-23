@@ -36,14 +36,14 @@ export function NextClubQuiz() {
 
   useEffect(() => {
     let live = true;
-    fetch("/api/halftime/upcoming")
+    fetch("/api/gameday/upcoming")
       .then((r) => r.json())
       .then((j) => { if (live) { setGws(j.gameweeks ?? []); setLoaded(true); } })
       .catch(() => { if (live) setLoaded(true); });
     return () => { live = false; };
   }, []);
 
-  // The soonest upcoming fixture their club is in. /api/halftime/upcoming already
+  // The soonest upcoming fixture their club is in. /api/gameday/upcoming already
   // returns gameweeks in kickoff order with fixtures sorted inside, so the first
   // match down the list is the next one.
   const next = useMemo(() => {

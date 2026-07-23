@@ -1,6 +1,6 @@
 {
   "name": "delayed-kickoff",
-  "notes": "Kickoff slides +20 minutes at T-40 (crowd congestion outside the ground). starting_at moves from min 90 to min 110. The poller must pick the new kickoff up, recompute the assembly/veto deadline against it (T-10 = min 100, not min 80), and still release on the state flip rather than on any clock it computed earlier.",
+  "notes": "Kickoff slides +20 minutes at T-40 (crowd congestion outside the ground). starting_at moves from min 90 to min 110. The poller must pick the new kickoff up, recompute the assembly deadline against it (T-10 = min 100, not min 80), and still release on the state flip rather than on any clock it computed earlier.",
   "fixtures": [
     {
       "id": 19427468,

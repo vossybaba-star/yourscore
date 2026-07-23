@@ -33,7 +33,7 @@ export function UpcomingQuizzes() {
 
   useEffect(() => {
     let live = true;
-    fetch("/api/halftime/upcoming")
+    fetch("/api/gameday/upcoming")
       .then((r) => r.json())
       .then((j) => { if (live) { const g = j.gameweeks ?? []; setGws(g); setActive(g[0]?.round ?? null); setLoaded(true); } })
       .catch(() => { if (live) setLoaded(true); });

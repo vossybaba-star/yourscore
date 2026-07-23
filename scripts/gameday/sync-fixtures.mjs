@@ -28,9 +28,9 @@
  *   sync-fixtures.mjs --dry-run
  */
 
-import * as sm from "./lib/sm.mjs";
-import * as api from "./lib/api.mjs";
-import { loadEnvFile, flag, has } from "./lib/env.mjs";
+import * as sm from "../halftime/lib/sm.mjs";
+import * as api from "../halftime/lib/api.mjs";
+import { loadEnvFile, flag, has } from "../halftime/lib/env.mjs";
 
 const ymd = (d) => d.toISOString().slice(0, 10);
 

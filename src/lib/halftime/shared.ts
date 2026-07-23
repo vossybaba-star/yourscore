@@ -23,14 +23,6 @@ export type HalftimeState =
   | "cancelled"
   | "failed";
 
-export type FreshState =
-  | "none"
-  | "pending_veto"
-  | "approved"
-  | "vetoed"
-  | "killed"
-  | "skipped";
-
 export type Difficulty = "easy" | "medium" | "hard";
 export type Letter = "A" | "B" | "C" | "D";
 
@@ -42,18 +34,15 @@ export interface QuizQuestion {
   difficulty: Difficulty;
 }
 
-export type FreshStatus = "pending" | "approved" | "vetoed" | "dropped";
-
-/** A fresh-slice question: a quiz question plus its grounding + gate status. */
-export interface FreshQuestion extends QuizQuestion {
-  status: FreshStatus;
-  /** Machine-checkable claims the validator re-resolves against SportMonks. */
-  claims?: unknown[];
-  /** The dossier line this question was written from (shown in the veto message). */
-  fact?: string;
-}
-
-/** A halftime_releases row (the table is not in the generated DB types). */
+/**
+ * A halftime_releases row (the table is not in the generated DB types).
+ *
+ * The fresh-slice columns (fresh_questions, fresh_state, veto_deadline_at,
+ * telegram_message_id) are retired with the pivot — no confirmed lineups exist
+ * the day before a Gameday pack publishes. They still exist as DB columns
+ * (dropping them is a later, separate migration) but this module no longer
+ * reads or writes them.
+ */
 export interface HalftimeRow {
   id: string;
   fixture_id: number;
@@ -65,19 +54,13 @@ export interface HalftimeRow {
   kickoff_at: string;
   state: HalftimeState;
   base_questions: QuizQuestion[] | null;
-  fresh_questions: FreshQuestion[] | null;
   /** The final 10, frozen at assembly (T-10) and copied verbatim at the whistle. */
   pack_questions: QuizQuestion[] | null;
-  fresh_state: FreshState;
-  veto_deadline_at: string | null;
-  telegram_message_id: number | null;
   released_at: string | null;
 }
 
 export const LETTERS: Letter[] = ["A", "B", "C", "D"];
 export const PACK_QUESTION_COUNT = 10;
-/** Fresh questions REPLACE base questions, never extend the pack past 10. */
-export const MAX_FRESH_QUESTIONS = 3;
 
 // ── State machine ────────────────────────────────────────────────────────────
 
@@ -411,32 +394,16 @@ function toPackQuestion(q: QuizQuestion): QuizQuestion {
 /**
  * Freeze a fixture's final 10 questions.
  *
- * Approved fresh questions lead the pack (they are the "how did they know
- * that" hook), then base questions fill to exactly 10 in authored order. Fresh
- * REPLACES base — it never extends the pack past 10.
- *
- * `baseOnly` is the degraded path: no lineups, validator dropped everything,
- * founder vetoed all, kill switch, Telegram down, or the watchdog assembling
- * after the poller died. A base-only pack is a completely normal outcome.
+ * Base-only now — the fresh slice (confirmed-lineup questions) retired with
+ * the whistle-release pivot: a Gameday pack publishes the day before the
+ * fixture, when no lineup exists yet. Questions are taken in authored order,
+ * up to exactly 10.
  */
 export function assembleQuestions(
   base: QuizQuestion[] | null | undefined,
-  fresh: FreshQuestion[] | null | undefined,
   fixtureId: number,
-  opts: { baseOnly?: boolean } = {},
 ): QuizQuestion[] {
-  const approvedFresh = opts.baseOnly
-    ? []
-    : (fresh ?? [])
-        .filter((q) => q.status === "approved")
-        .slice(0, MAX_FRESH_QUESTIONS);
-
-  const need = PACK_QUESTION_COUNT - approvedFresh.length;
-  const chosen = [
-    ...approvedFresh.map(toPackQuestion),
-    ...(base ?? []).slice(0, Math.max(0, need)).map(toPackQuestion),
-  ];
-
+  const chosen = (base ?? []).slice(0, PACK_QUESTION_COUNT).map(toPackQuestion);
   return chosen.map((q, i) => shuffleOptions(q, i, fixtureId));
 }
 
@@ -444,33 +411,15 @@ export function assembleQuestions(
  * The 10 questions a fixture releases with.
  *
  * Normally the EXACT snapshot frozen at assembly — release is a copy, not a
- * generation, which is what makes first-half contamination impossible by
- * construction (AC3b: the released pack is byte-identical to the T-10 snapshot).
- *
- * Two deviations, both of which only ever REMOVE content or substitute in
- * already-approved, day-before base questions — never author anything new:
- *   - a founder veto landing after the deadline but before the whistle;
- *   - the matchday kill switch (fresh_state = 'killed').
- * And one fallback: no frozen snapshot at all (the poller died before assembly)
- * → base-only, never fresh.
+ * generation (AC3b: the released pack is byte-identical to the T-10 snapshot).
+ * Fallback: no frozen snapshot at all (assembly never ran) → assemble from base.
  */
 export function questionsForRelease(
-  row: Pick<HalftimeRow, "fixture_id" | "base_questions" | "fresh_questions" | "pack_questions" | "fresh_state">,
+  row: Pick<HalftimeRow, "fixture_id" | "base_questions" | "pack_questions">,
 ): QuizQuestion[] {
   const frozen = row.pack_questions ?? null;
-  const fresh: FreshQuestion[] = row.fresh_questions ?? [];
-  const baseOnly = row.fresh_state === "killed";
-
-  if (!frozen || frozen.length === 0) {
-    return assembleQuestions(row.base_questions, fresh, row.fixture_id, { baseOnly: true });
-  }
-
-  const vetoed = new Set(fresh.filter((q) => q.status === "vetoed").map((q) => q.question));
-  const lateVeto = vetoed.size > 0 && frozen.some((q) => vetoed.has(q.question));
-
-  if (!lateVeto && !baseOnly) return frozen;
-
-  return assembleQuestions(row.base_questions, fresh, row.fixture_id, { baseOnly });
+  if (frozen && frozen.length > 0) return frozen;
+  return assembleQuestions(row.base_questions, row.fixture_id);
 }
 
 /**

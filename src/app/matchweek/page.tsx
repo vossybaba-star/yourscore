@@ -21,7 +21,7 @@
  */
 
 import { useState } from "react";
-import { HalftimeRail } from "@/components/halftime/HalftimeRail";
+import { GamedayRail } from "@/components/quiz/GamedayRail";
 import { ClubPicker } from "@/components/clubs/ClubPicker";
 import { ClubTableTile } from "@/components/clubs/ClubTableTile";
 import { PlFixtures } from "@/components/matchweek/PlFixtures";
@@ -126,7 +126,7 @@ export default function MatchweekPage() {
           <AppNudge reminders={reminders} />
           {/* Then THEIR game — the only fixture that scores for their club. */}
           <NextClubQuiz />
-          <HalftimeRail />
+          <GamedayRail />
           <ClubPicker />
           <UpcomingQuizzes />
           <ClubTableTile />
