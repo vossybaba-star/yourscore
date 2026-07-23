@@ -113,10 +113,13 @@ const PALETTES = [
 ];
 
 // ── Games hero card ──────────────────────────────────────────────────────────
-// The signed-out hero's visual: the five games, one lighting up at a time in
-// its own accent, same animated-card idiom as LeagueHeroCard below it. The list
-// is imported from GameSwitcher (the nav's own source), never retyped here, so
-// the marketing page cannot describe a game the app doesn't have.
+// The signed-out hero's visual: what feeds your score, one row lighting up at a
+// time in its own accent, same animated-card idiom as LeagueHeroCard below it.
+// The list is imported from GameSwitcher (the nav's own source), never retyped
+// here, so the marketing page cannot describe a game the app doesn't have.
+//
+// Deliberately NOT framed as a count. Fantasy and the gameday quizzes become
+// rows here when they land on 21 Aug, and nothing above them has to change.
 
 function GamesHeroCard() {
   const [tick, setTick] = useState(0);
@@ -134,7 +137,7 @@ function GamesHeroCard() {
       <div className="px-5 py-4 flex items-center justify-between"
         style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(174,234,0,0.04)" }}>
         <div>
-          <p className="font-body text-xs font-semibold text-white">Five games</p>
+          <p className="font-body text-xs font-semibold text-white">What feeds your score</p>
           <p className="font-body text-xs text-text-muted">Free, no account needed</p>
         </div>
         <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
@@ -176,7 +179,7 @@ function GamesHeroCard() {
       {/* Footer */}
       <div className="px-4 py-3 flex items-center justify-between"
         style={{ borderTop: "1px solid rgba(255,255,255,0.04)", background: "rgba(0,0,0,0.2)" }}>
-        <span className="font-body text-xs text-text-muted">One score across all five</span>
+        <span className="font-body text-xs text-text-muted">It all adds up to one rank</span>
         <span className="font-body text-xs font-semibold" style={{ color: "#aeea00" }}>See them all →</span>
       </div>
     </div>
@@ -524,7 +527,7 @@ export function MarketingLanding({ matches, todaysGame }: { matches: LiveMatch[]
           ABOVE the hero: it's the only thing here a guest can do without
           committing, and below the hero it sat ~1280px down (ux-walk, 23 Jul).
           The onboarding tour's final step points here for guests (data-tour). */}
-      <div data-tour="todays-game" className="pt-6"><TodaysGameCard game={todaysGame} /></div>
+      <div data-tour="todays-game" className="pt-3"><TodaysGameCard game={todaysGame} /></div>
 
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <section className="relative z-10 max-w-6xl mx-auto px-6 pt-2 pb-16 lg:pt-6" style={{ overflow: "hidden" }}>
@@ -534,27 +537,37 @@ export function MarketingLanding({ matches, todaysGame }: { matches: LiveMatch[]
           {/* Left: copy + CTAs */}
           <div>
             <div style={{ position: "relative", zIndex: 1 }}>
-            <div className="inline-flex items-center gap-2.5 rounded-full px-4 py-2 mb-7"
+            <div className="inline-flex items-center gap-2.5 rounded-full px-4 py-2 mb-5"
               style={{ background: "rgba(174,234,0,0.08)", border: "1px solid rgba(174,234,0,0.18)" }}>
               <span className="w-2 h-2 rounded-full animate-pulse flex-shrink-0" style={{ background: "#aeea00" }} />
-              <span className="font-body text-xs text-text-muted uppercase tracking-widest">Five games · one score · free to play</span>
+              {/* Breadth goes here, in the cheapest place on the page: read in a
+                  second, no decision asked for. The headline stays one promise. */}
+              <span className="font-body text-xs text-text-muted uppercase tracking-widest">Quizzes · Gameday · Fantasy · Versus</span>
             </div>
 
-            <h1 className="font-display text-6xl sm:text-7xl lg:text-8xl text-white leading-none mb-6">
-              <span className="text-green" style={{ textShadow: "0 0 50px rgba(174,234,0,0.35)" }}>FIVE</span><br />
-              FOOTBALL<br />GAMES.
+            {/* Never a count of games. A number is a ceiling the reader tests
+                against alternatives, and it goes stale the day a game ships.
+                The rank is the product and it has no upper bound. */}
+            <h1 className="font-display text-6xl sm:text-7xl lg:text-8xl text-white leading-none mb-5">
+              YOUR FOOTBALL<br />KNOWLEDGE.<br />
+              <span className="text-green" style={{ textShadow: "0 0 50px rgba(174,234,0,0.35)" }}>RANKED.</span>
             </h1>
 
-            <p className="font-body text-text-muted text-lg leading-relaxed mb-8 max-w-lg">
-              Five ways to prove you know football. All free, all scored, all adding up to one number.
+            {/* One sentence. The "play one now" nudge that used to close this
+                was redundant with the button directly beneath it, and the extra
+                line pushed that button under the fixed bottom nav on a phone. */}
+            <p className="font-body text-text-muted text-lg leading-relaxed mb-6 max-w-lg">
+              Every game you play feeds one score and one rank against every other fan.
             </p>
 
             {/* Primary CTA — into the games, not into one game */}
             <Link href="/play"
               className="w-full sm:w-auto inline-flex items-center justify-center gap-3 font-body font-bold text-lg px-10 py-5 rounded-2xl hover:opacity-90 transition-all mb-3 pulse-glow"
               style={{ background: "#aeea00", color: "#062013", display: "flex" }}>
-              <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-                <path d="M8 2.5 3 5.5 5 9.5 7.3 8.3V19a1 1 0 0 0 1 1h5.4a1 1 0 0 0 1-1V8.3L17 9.5l2-4-5-3C14 4.4 12.7 5.6 11 5.6S8 4.4 8 2.5Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" fill="rgba(0,0,0,0.1)"/>
+              {/* A play triangle, not the 38-0 shirt: this button stopped being
+                  "Draft your XI" and now opens the games, not one of them. */}
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
+                <path d="M6 3.5l10 6.5-10 6.5z" fill="currentColor" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
               </svg>
               Play a game
             </Link>
@@ -818,7 +831,10 @@ export function MarketingLanding({ matches, todaysGame }: { matches: LiveMatch[]
           <div className="relative z-10 px-8 py-10 text-center">
             <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-5">Premier League</p>
             <SeasonCountdown />
-            <p className="font-body text-sm text-text-muted mt-4 mb-6">Gameday quizzes drop at half time, one per fixture. Play the five games until then.</p>
+            {/* The eyebrow lists fantasy and gameday flat, as things the brand
+                does. This is where the honest specifics live: both land on
+                21 Aug with the season, and this section says so. */}
+            <p className="font-body text-sm text-text-muted mt-4 mb-6">Fantasy and gameday quizzes land with the season. A quiz pack at the half time whistle of every fixture, and a squad that scores all year. Everything else is playable now.</p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link href="/play" className="inline-flex items-center gap-2 font-body font-bold text-sm px-6 py-3 rounded-xl transition-all hover:opacity-90 pulse-glow"
                 style={{ background: "#aeea00", color: "#0a0a0f" }}>
@@ -847,16 +863,19 @@ export function MarketingLanding({ matches, todaysGame }: { matches: LiveMatch[]
             <div className="flex items-center justify-center gap-4 mb-6 text-5xl">
               ⚽ 🏆 👕 🧠 🔥
             </div>
-            <h2 className="font-display text-5xl sm:text-6xl text-white mb-3">START YOUR LEAGUE</h2>
-            <p className="font-display text-2xl mb-6" style={{ color: "#aeea00" }}>Free · you and your friends</p>
+            {/* Closes on the same promise the headline opened with. Starting a
+                league was the old ending: it asks a guest who arrived alone to
+                go and organise their friends. That is the second visit's ask. */}
+            <h2 className="font-display text-5xl sm:text-6xl text-white mb-3">FIND OUT WHERE YOU RANK</h2>
+            <p className="font-display text-2xl mb-6" style={{ color: "#aeea00" }}>Free · no account needed</p>
             <p className="font-body text-text-muted mb-8 max-w-md mx-auto">
-              Invite your friends, pick your matches, and start building your score. Points stack all season.
+              One game is enough to get a score. Play a few and you get a rank, a streak, and something to argue about.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
-              <Link href="/league/new"
+              <Link href="/play"
                 className="inline-flex items-center gap-2 font-body font-bold text-lg px-10 py-5 rounded-2xl hover:opacity-90 transition-all pulse-glow"
                 style={{ background: "#aeea00", color: "#0a0a0f" }}>
-                Create a league →
+                Play a game →
               </Link>
               <Link href="/auth/sign-in"
                 className="inline-flex items-center gap-2 font-body font-bold text-base px-8 py-4 rounded-2xl hover:opacity-90 transition-all green-pulse text-green"
