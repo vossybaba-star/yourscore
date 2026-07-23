@@ -186,6 +186,132 @@ function GamesHeroCard() {
   );
 }
 
+// ── Games explainer ──────────────────────────────────────────────────────────
+// One tab per game, each explaining that game on its own terms. Replaces the
+// old numbered "HOW IT WORKS" steps, which walked through the 38-0 arc and so
+// described one game as though it were the whole app.
+//
+// Keyed off GAMES so a new game gets a tab automatically; a key with no entry
+// here falls back to its GAMES blurb rather than rendering an empty panel.
+// Every line below is drawn from the game's own code, not from imagination:
+// round sizes from ROUND_SIZE, speed bands from GAME_WINDOW_MS, the Perfect 10
+// strike limit from MAX_STRIKES, the Higher or Lower topics from HL_TOPICS.
+
+const GAME_DETAIL: Record<string, { headline: string; points: string[] }> = {
+  quiz: {
+    headline: "Football questions, on the clock",
+    points: [
+      "Packs of 15 or 20 across clubs, competitions and eras",
+      "Answer inside 6 seconds for double points, inside 12 for one and a half",
+      "Back to back correct answers build a streak bonus",
+      "Every pack keeps its own leaderboard",
+    ],
+  },
+  draft: {
+    headline: "Draft an XI and go unbeaten",
+    points: [
+      "Spin for real rated players and build your best eleven",
+      "Put it up against the world head to head",
+      "Win and swap a player, lose and go again",
+      "The target is 38 games without a defeat",
+    ],
+  },
+  perfect10: {
+    headline: "Name a ranked top ten",
+    points: [
+      "Ten rungs, one list, from all time scorers to club records",
+      "Type a name and it climbs to the rung it belongs on",
+      "Three strikes and the run ends",
+      "Stuck on one? Take a hint and score less for it",
+    ],
+  },
+  "higher-lower": {
+    headline: "Two players, one stat",
+    points: [
+      "Ten rounds, pick whoever has the bigger number",
+      "Choose the stat: goals, assists, appearances and more",
+      "Same position only, so a keeper is never up against a striker",
+      "25 seconds a question, and faster is worth more",
+    ],
+  },
+  "guess-the-player": {
+    headline: "Name the mystery footballer",
+    points: [
+      "Clues arrive one at a time: nationality, shirt number, career path",
+      "Ten a round, and the sooner you call it the more it scores",
+      "Fresh players every time you play",
+    ],
+  },
+};
+
+function GamesExplainer() {
+  const [active, setActive] = useState(0);
+  const game = GAMES[active];
+  const detail = GAME_DETAIL[game.key];
+  const { color, Icon, label, href, blurb } = game;
+
+  return (
+    <section className="relative z-10 max-w-6xl mx-auto px-6 pb-16">
+      <div className="text-center mb-8">
+        <h2 className="font-display text-5xl text-white mb-3">THE GAMES</h2>
+        <p className="font-body text-text-muted">Different games, one score. Pick one and see how it works.</p>
+      </div>
+
+      {/* Tabs. Horizontally scrollable on a phone: five labels never fit at
+          375px, and wrapping them into two rows reads as a broken grid. */}
+      <div className="flex gap-2 overflow-x-auto pb-2 mb-5 -mx-1 px-1" style={{ scrollbarWidth: "none" }}>
+        {GAMES.map((g, i) => {
+          const on = i === active;
+          return (
+            <button key={g.key} onClick={() => setActive(i)}
+              className="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-full font-body text-sm font-semibold whitespace-nowrap transition-all active:scale-95"
+              style={{
+                background: on ? `${g.color}1f` : "rgba(255,255,255,0.04)",
+                border: `1px solid ${on ? `${g.color}66` : "rgba(255,255,255,0.08)"}`,
+                color: on ? g.color : "#8a948f",
+              }}>
+              {g.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Panel */}
+      <div className="rounded-3xl overflow-hidden" style={{ background: `linear-gradient(135deg, ${color}0f 0%, rgba(10,10,15,1) 60%)`, border: `1px solid ${color}33` }}>
+        <div className="px-6 py-8 sm:px-10 sm:py-10">
+          <div className="flex items-center gap-3 mb-5">
+            <span className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
+              style={{ background: `${color}1f`, border: `1px solid ${color}40`, color }}>
+              <Icon active />
+            </span>
+            <div>
+              <p className="font-body text-xs uppercase tracking-widest" style={{ color }}>{label}</p>
+              <h3 className="font-display text-2xl sm:text-3xl text-white leading-tight">{detail?.headline ?? blurb}</h3>
+            </div>
+          </div>
+
+          <div className="space-y-3 mb-8">
+            {(detail?.points ?? [blurb]).map((p) => (
+              <div key={p} className="flex items-start gap-3">
+                <span className="flex-shrink-0 mt-1.5 rounded-full" style={{ width: 6, height: 6, background: color }} />
+                <p className="font-body text-sm sm:text-base text-white/80 leading-relaxed">{p}</p>
+              </div>
+            ))}
+          </div>
+
+          <Link href={href}
+            className="inline-flex items-center gap-2 font-body font-bold text-base px-7 py-3.5 rounded-xl transition-all active:scale-95"
+            style={{ background: color, color: "#0a0a0f", textDecoration: "none" }}>
+            Play {label} →
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── Animated league card ─────────────────────────────────────────────────────
+
 function LeagueHeroCard() {
   const [tick, setTick] = useState(0);
   useEffect(() => {
@@ -365,7 +491,6 @@ function UpcomingFixturesSection({ matches }: { matches: LiveMatch[] }) {
 // ── Marketing landing (logged-out) ───────────────────────────────────────────
 
 export function MarketingLanding({ matches, todaysGame }: { matches: LiveMatch[]; todaysGame: TodaysGame }) {
-  const [timerValue, setTimerValue] = useState(45);
   const [countdownLeftUrl, setCountdownLeftUrl] = useState<string | null>(null);
   const [countdownRightUrl, setCountdownRightUrl] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -376,22 +501,9 @@ export function MarketingLanding({ matches, todaysGame }: { matches: LiveMatch[]
     getPlayerCutoutUrl("Jude Bellingham").then(url => { if (url) setCountdownRightUrl(url); });
   }, []);
 
-  useEffect(() => {
-    const loop = () => {
-      setTimerValue(45);
-      let t = 45;
-      const iv = setInterval(() => {
-        t -= 1; setTimerValue(t);
-        if (t <= 0) { clearInterval(iv); setTimeout(loop, 1500); }
-      }, 120);
-      return iv;
-    };
-    const iv = loop();
-    return () => clearInterval(iv);
-  }, []);
-
-  const timerColor = timerValue <= 5 ? "#ff4757" : timerValue <= 15 ? "#ffb800" : "#aeea00";
-  const dashOffset = 282 * (1 - timerValue / 45);
+  // The countdown-ring timer that used to live here drove the demo question
+  // card in the "SPEED SCORED" section. That section is gone, so the ticking
+  // 45-second interval it ran on every signed-out page load is gone with it.
 
   return (
     <main className="min-h-dvh bg-bg" style={{ paddingBottom: "calc(60px + env(safe-area-inset-bottom, 0px))" }}>
@@ -706,100 +818,13 @@ export function MarketingLanding({ matches, todaysGame }: { matches: LiveMatch[]
         </div>
       </section>
 
-      {/* ── How it works (condensed) ──────────────────────────────────────── */}
-      <section className="relative z-10 max-w-6xl mx-auto px-6 pb-16">
-        <div className="text-center mb-10">
-          <h2 className="font-display text-5xl text-white mb-3">HOW IT WORKS</h2>
-          <p className="font-body text-text-muted">Two games, one score. Draft your XI, test your football knowledge, climb the table with your friends.</p>
-        </div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[
-            { num: "01", col: "#aeea00", emoji: "⚽", title: "DRAFT YOUR XI", desc: "Spin a squad of real-rated legends and draft your best XI. The 38-0 team-builder." },
-            { num: "02", col: "#ffb800", emoji: "⚔️", title: "GO HEAD TO HEAD", desc: "Play your XI against the world. Win and swap a player, lose and go again. Chase the perfect unbeaten season." },
-            { num: "03", col: "#00d8c0", emoji: "🧠", title: "TEST YOUR KNOWLEDGE", desc: "A new quiz every day, speed scored. The more football you know, the higher you climb." },
-            { num: "04", col: "#aeea00", emoji: "🏆", title: "TOP YOUR LEAGUE", desc: "Start a private league and invite your friends. One table, all season. Settle who actually knows football." },
-          ].map((step) => (
-            <div key={step.num} className="rounded-2xl p-6 relative overflow-hidden group bg-surface" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
-              <div className="font-display text-9xl absolute -top-4 -right-2 opacity-[0.06] group-hover:opacity-[0.1] transition-opacity select-none" style={{ color: step.col }}>{step.num}</div>
-              <div className="relative z-10">
-                <div className="w-11 h-11 rounded-2xl flex items-center justify-center mb-5 text-2xl" style={{ background: `${step.col}15`, border: `1px solid ${step.col}25` }}>{step.emoji}</div>
-                <h3 className="font-display text-xl text-white mb-3">{step.title}</h3>
-                <p className="font-body text-text-muted text-base leading-relaxed">{step.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="text-center mt-6">
-          <Link href="/how-it-works" className="font-body text-sm font-semibold transition-colors hover:opacity-80 text-green">
-            Full breakdown → scoring, streaks, FAQs
-          </Link>
-        </div>
-      </section>
-
-      {/* ── Live question preview ─────────────────────────────────────────── */}
-      <section className="relative z-10 max-w-6xl mx-auto px-6 pb-16">
-        <div className="grid lg:grid-cols-2 gap-10 items-center">
-          <div>
-            <p className="font-body text-xs uppercase tracking-widest mb-3 text-amber">Speed scored</p>
-            <h2 className="font-display text-4xl sm:text-5xl text-white mb-4">THE FASTER<br />YOU KNOW.</h2>
-            <p className="font-body text-text-muted text-base leading-relaxed mb-6">
-              Every question is pure football: players, records, history, the lot. The faster you answer, the more you score, and a streak multiplies it. Play the daily quiz solo or go head to head with your friends.
-            </p>
-            <div className="space-y-3">
-              {[
-                { col: "#aeea00", label: "Lightning · first 6 seconds", pts: "×2 points" },
-                { col: "#ffb800", label: "Fast · inside 12 seconds", pts: "×1.5 points" },
-                { col: "#ff9f43", label: "Slow answers taper off", pts: "down to ×0.5" },
-                { col: "#aeea00", label: "Back-to-back correct", pts: "+50 streak" },
-              ].map(r => (
-                <div key={r.label} className="flex items-center justify-between py-2.5 px-4 rounded-xl"
-                  style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                  <span className="font-body text-sm text-white/80">{r.label}</span>
-                  <span className="font-display text-base" style={{ color: r.col }}>{r.pts}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Animated question card */}
-          <div className="flex items-center justify-center">
-            <div className="float-card-2 w-full max-w-sm rounded-3xl overflow-hidden bg-surface border border-border"
-              style={{ boxShadow: "0 0 0 1px rgba(174,234,0,0.08), 0 32px 64px rgba(0,0,0,0.6)" }}>
-              <div className="flex items-center justify-between px-6 pt-6 pb-4">
-                <div>
-                  <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-1">Question 3 of 8</p>
-                  <p className="font-body text-xs text-text-muted">🏆 Champions League · Daily Quiz</p>
-                </div>
-                <div className="relative w-14 h-14">
-                  <svg className="w-14 h-14 -rotate-90" viewBox="0 0 100 100">
-                    <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="6" />
-                    <circle cx="50" cy="50" r="45" fill="none" stroke={timerColor} strokeWidth="6" strokeLinecap="round" strokeDasharray="282" strokeDashoffset={dashOffset} style={{ transition: "stroke 0.3s, stroke-dashoffset 0.1s linear" }} />
-                  </svg>
-                  <span className="absolute inset-0 flex items-center justify-center font-display text-xl" style={{ color: timerColor }}>{Math.max(0, timerValue)}</span>
-                </div>
-              </div>
-              <div className="px-6 pb-5">
-                <p className="font-body text-white text-base font-medium leading-snug">Which club has won the Champions League the most times?</p>
-              </div>
-              <div className="px-4 pb-6 space-y-2">
-                {/* Answer b is the one the card flashes green, so b must be the
-                    real answer. Real Madrid are the record holders by a distance. */}
-                {[{ letter: "a", text: "AC Milan" }, { letter: "b", text: "Real Madrid" }, { letter: "c", text: "Bayern Munich" }, { letter: "d", text: "Liverpool" }].map((opt) => {
-                  const isCorrect = timerValue <= 0 && opt.letter === "b";
-                  return (
-                    <div key={opt.letter} className="w-full flex items-center gap-3 rounded-xl px-4 py-3"
-                      style={{ background: isCorrect ? "rgba(174,234,0,0.12)" : "rgba(255,255,255,0.04)", border: `1px solid ${isCorrect ? "#aeea00" : "rgba(255,255,255,0.08)"}`, color: isCorrect ? "#aeea00" : "#ffffff" }}>
-                      <span className="w-7 h-7 rounded-lg flex items-center justify-center font-display text-sm flex-shrink-0"
-                        style={{ background: isCorrect ? "#aeea00" : "rgba(255,255,255,0.06)", color: isCorrect ? "#0a0a0f" : "inherit" }}>{opt.letter.toUpperCase()}</span>
-                      <span className="font-body text-sm">{opt.text}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* ── The games ─────────────────────────────────────────────────────
+          Replaces the old "HOW IT WORKS" 01-04 steps and the "SPEED SCORED"
+          question preview. Both described one game as if it were the product:
+          the steps were the 38-0 arc, the speed panel was quiz scoring. This
+          section is per game instead, one tab each, driven by GAMES so a new
+          game gets a tab without anyone editing marketing copy. ── */}
+      <GamesExplainer />
 
       {/* ── Countdown strip ───────────────────────────────────────────────── */}
       <section className="relative z-10 max-w-6xl mx-auto px-6 pb-16">
@@ -848,6 +873,7 @@ export function MarketingLanding({ matches, todaysGame }: { matches: LiveMatch[]
           </div>
         </div>
       </section>
+
 
       {/* ── Upcoming fixtures ────────────────────────────────────────────── */}
       <UpcomingFixturesSection matches={matches} />
