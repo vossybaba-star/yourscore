@@ -1003,7 +1003,8 @@ export default function RoomPage() {
           {room.pack_id && (
             <DiscussionThread subjectType="pack" subjectId={room.pack_id} title="Talk about this quiz" signInNext={`/play/${room.id}`} />
           )}
-          <DebateCard signInNext={`/play/${room.id}`} />
+          {/* No second thread here — the quiz's own discussion above owns comments */}
+          <DebateCard withDiscussion={false} withSignUpPitch={false} signInNext={`/play/${room.id}`} />
 
           {/* ── Play Again voting panel (human rooms) ─────────────────────── */}
           {!lobbyExpired && !players.some((p) => p.user_id === QUIZ_BOT_ID) && (

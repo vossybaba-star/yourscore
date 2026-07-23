@@ -6,7 +6,31 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-07-22 (**Club pages + a batch of quiz-flow UX fixes shipped.**
+> **Confirmed:** 2026-07-23 (**Home hero rebuilt: Today's Game shows its topic + crowd stats,
+> debate comments open to all, Mastermind resume prompt removed.** Branch `fix/quiz-flow-ux`,
+> migration **102 APPLIED to prod**.
+> **Today's Game tile** is now two halves: cover art on top, a live stats strip underneath —
+> players / average score / % who got the hardest question. Numbers come from two new SQL
+> aggregates (`get_daily_pack_stats`, `get_daily_p10_stats`, migration 102, `security definer`,
+> anon-executable so the logged-out hero can use them too). The strip shows the hardest
+> question's PERCENTAGE only, never its text, so the tile can't spoil a question the player is
+> one tap from being asked; zero plays shows "Nobody has played it yet" rather than three zeros.
+> **Perfect 10 tiles lead with the list title, not the mode name** ("Perfect 10" alone read as a
+> menu entry). Root cause was real: P10 lists release in BATCHES, not daily, so most P10 days
+> have no row of their own — `src/lib/daily-game.ts` read only `day` and came up empty. It now
+> mirrors what `/api/games/perfect-10` actually serves (`loadListForDay ?? loadLatestServed`).
+> Same bug was silently breaking the Perfect 10 **done state** on every non-release day; fixed.
+> **Today's debate:** the comment thread is now INSIDE the debate card (one tile, not two) and
+> is readable by everyone, voted or not — posting is what voting buys you (`canPost` on
+> `DiscussionThread`, plus an `embedded` mode that drops its own frame). "DRAG A FRIEND IN" and
+> "THE ARGUMENT" buttons are gone. The sign-up pitch is now opt-in (`withSignUpPitch`) and OFF
+> inside the app, where it was flashing in before the client session resolved.
+> **Home no longer surfaces an active Mastermind run at all** (founder call) — the mode tile is
+> the only way back in. **STILL OPEN:** recommended packs have no browse surface, so anything
+> not in the rec strip is unreachable and unplayed, and club packs still fall back to crests
+> instead of real covers.)
+>
+> **Previously confirmed:** 2026-07-22 (**Club pages + a batch of quiz-flow UX fixes shipped.**
 > Branch `fix/quiz-flow-ux`, merged to main.
 > **Club pages `/club/[slug]`:** the Quiz hub's Club tab used to send all 20 crest cards
 > straight into a single 2025/26 season-review quiz. It now opens a club page: crest, the

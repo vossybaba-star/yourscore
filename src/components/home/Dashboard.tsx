@@ -14,7 +14,7 @@ import { usePendingTurns } from "@/hooks/usePendingTurns";
 import { DebateCard } from "@/components/debate/DebateCard";
 import { HalftimeCard } from "@/components/halftime/HalftimeCard";
 import { trackShare } from "@/lib/analytics/trackGame";
-import type { TodaysGame } from "@/lib/daily-game";
+import type { TodaysGame, TodaysGameStats } from "@/lib/daily-game";
 
 const LIME = "#aeea00";
 const TEAL = "#00d8c0";
@@ -328,6 +328,38 @@ function TodaysGameDone({ game, score }: { game: TodaysGame; score: number | nul
   );
 }
 
+function StatCell({ value, label, accent, divider }: { value: string; label: string; accent: string; divider: boolean }) {
+  return (
+    <div className="flex-1 min-w-0 px-2 py-2.5 text-center"
+      style={divider ? { borderLeft: "1px solid rgba(255,255,255,0.07)" } : undefined}>
+      <p className="font-display text-lg leading-none tabular-nums" style={{ color: accent }}>{value}</p>
+      {/* Wraps rather than truncates — "GOT THE HARDEST" clipped to
+          "GOT THE HARDE…" at 390px, which reads as a rendering fault. */}
+      <p className="font-body text-[9px] font-bold uppercase tracking-[0.12em] mt-1 leading-[1.25]" style={{ color: "#8a948f" }}>{label}</p>
+    </div>
+  );
+}
+
+// The stats half. Deliberately NOT the hardest question's text — that would
+// spoil a question the player is one tap away from being asked. The number on
+// its own is the hook: "only 9% got it" is a dare, the wording would be a leak.
+function TodaysGameStatsStrip({ stats, accent }: { stats: TodaysGameStats; accent: string }) {
+  if (stats.players === 0) {
+    return (
+      <div className="px-4 py-3 text-center" style={{ borderTop: "1px solid rgba(255,255,255,0.08)", background: "rgba(0,0,0,0.28)" }}>
+        <p className="font-body text-[11px]" style={{ color: "#8a948f" }}>Nobody has played it yet. First score on the board is yours.</p>
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-stretch" style={{ borderTop: "1px solid rgba(255,255,255,0.08)", background: "rgba(0,0,0,0.28)" }}>
+      <StatCell divider={false} accent={accent} value={stats.players.toLocaleString()} label={stats.players === 1 ? "player" : "players"} />
+      <StatCell divider accent={accent} value={stats.avgScore !== null ? stats.avgScore.toLocaleString() : "—"} label="avg score" />
+      <StatCell divider accent={accent} value={stats.hardestPct !== null ? `${stats.hardestPct}%` : "—"} label="got the hardest" />
+    </div>
+  );
+}
+
 function TodaysGamePlayable({ game }: { game: TodaysGame }) {
   const accent = GAME_ACCENT[game.gameType];
   const isWcSeries = game.series === "wc2026";
@@ -335,38 +367,44 @@ function TodaysGamePlayable({ game }: { game: TodaysGame }) {
     <div className="d-3">
       <SectionHead title="Today's game" />
       <Link href={game.href}
-        className="relative block rounded-2xl overflow-hidden transition-transform active:scale-[0.99]"
-        style={{ border: `1px solid ${accent}40`, minHeight: 118 }}>
-        {game.coverImage ? (
-          // Covers are designed cards with the title baked into the TOP; here the
-          // image is a backdrop (HTML title on the left), so crop from the bottom —
-          // pure art, never a half-sliced baked title.
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={coverUrl(game.coverImage, 440) ?? game.coverImage} alt="" loading="eager" decoding="async" fetchPriority="high"
-            className="absolute inset-0 h-full w-full object-cover object-bottom" />
-        ) : (
-          <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${accent}40, #0c1613)` }} />
-        )}
-        {/* left-anchored scrim keeps the title readable on any art */}
-        <div className="absolute inset-0" style={{ background: "linear-gradient(90deg, rgba(6,10,8,0.92) 0%, rgba(6,10,8,0.55) 55%, rgba(6,10,8,0.15) 100%)" }} />
-        <div className="relative flex items-center gap-3 px-4 py-4" style={{ minHeight: 118 }}>
-          <div className="flex-1 min-w-0">
-            {/* Series identity: this is today's entry in the daily World Cup run */}
-            {isWcSeries && (
-              <span className="inline-block font-body text-[9px] font-bold uppercase tracking-[0.2em] px-2 py-1 rounded-md mb-1.5"
-                style={{ background: "rgba(255,194,51,0.16)", color: GOLD, border: `1px solid ${GOLD}55` }}>
-                World Cup quiz series
-              </span>
-            )}
-            <p className="font-display text-2xl text-white leading-tight" style={{ textShadow: "0 1px 12px rgba(0,0,0,0.6)" }}>{game.title}</p>
-            <p className="font-body text-xs mt-1" style={{ color: "#c4ccc6" }}>{game.sub}</p>
+        className="block rounded-2xl overflow-hidden transition-transform active:scale-[0.99]"
+        style={{ border: `1px solid ${accent}40`, background: "#0c1613" }}>
+        {/* Top half — the cover art, with the game's identity over it */}
+        <div className="relative" style={{ minHeight: 146 }}>
+          {game.coverImage ? (
+            // Covers are designed cards with the title baked into the TOP; here the
+            // image is a backdrop (HTML title on the left), so crop from the bottom —
+            // pure art, never a half-sliced baked title.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={coverUrl(game.coverImage, 440) ?? game.coverImage} alt="" loading="eager" decoding="async" fetchPriority="high"
+              className="absolute inset-0 h-full w-full object-cover object-bottom" />
+          ) : (
+            <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${accent}40, #0c1613)` }} />
+          )}
+          {/* left-anchored scrim keeps the title readable on any art */}
+          <div className="absolute inset-0" style={{ background: "linear-gradient(90deg, rgba(6,10,8,0.92) 0%, rgba(6,10,8,0.55) 55%, rgba(6,10,8,0.15) 100%)" }} />
+          <div className="relative flex items-center gap-3 px-4 py-4" style={{ minHeight: 146 }}>
+            <div className="flex-1 min-w-0">
+              {/* Series identity: this is today's entry in the daily World Cup run */}
+              {isWcSeries && (
+                <span className="inline-block font-body text-[9px] font-bold uppercase tracking-[0.2em] px-2 py-1 rounded-md mb-1.5"
+                  style={{ background: "rgba(255,194,51,0.16)", color: GOLD, border: `1px solid ${GOLD}55` }}>
+                  World Cup quiz series
+                </span>
+              )}
+              <p className="font-display text-2xl text-white leading-tight" style={{ textShadow: "0 1px 12px rgba(0,0,0,0.6)" }}>{game.title}</p>
+              <p className="font-body text-xs mt-1" style={{ color: "#c4ccc6" }}>{game.sub}</p>
+            </div>
+            <span className="flex items-center justify-center rounded-full flex-shrink-0" style={{ width: 36, height: 36, background: accent }}>
+              <svg width="15" height="15" viewBox="0 0 18 18" fill="none" style={{ color: "#04231f" }}>
+                <path d="M6 3l6 6-6 6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
           </div>
-          <span className="flex items-center justify-center rounded-full flex-shrink-0" style={{ width: 36, height: 36, background: accent }}>
-            <svg width="15" height="15" viewBox="0 0 18 18" fill="none" style={{ color: "#04231f" }}>
-              <path d="M6 3l6 6-6 6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </span>
         </div>
+
+        {/* Bottom half — how everyone else has done on it */}
+        {game.stats && <TodaysGameStatsStrip stats={game.stats} accent={accent} />}
       </Link>
     </div>
   );
@@ -495,7 +533,7 @@ function PendingTurnsNotice() {
 // ── Main ────────────────────────────────────────────────────────────────────────
 
 export function Dashboard({ data }: { data: DashboardData }) {
-  const { userId, displayName, rank, dayStreak, weekDots, rivalry, recommended, played38, wcRun, openLobbies, leagues, todaysGame, todaysGameCompletion } = data;
+  const { userId, displayName, rank, dayStreak, weekDots, rivalry, recommended, played38, openLobbies, leagues, todaysGame, todaysGameCompletion } = data;
 
   // Don't recommend the pack that's already the hero.
   const rail = recommended.filter((p) => p.id !== todaysGame.packId).slice(0, 5);
@@ -531,18 +569,6 @@ export function Dashboard({ data }: { data: DashboardData }) {
         {/* Live/upcoming halftime pack — self-hides off-matchday */}
         <HalftimeCard />
 
-        {/* Active Mastermind run — the one takeover-priority CTA when it exists */}
-        {wcRun && (
-          <Link href="/38-0/wc" className="d-2 flex items-center justify-between rounded-2xl px-4 py-3.5 transition-transform active:scale-[0.99]"
-            style={{ background: "linear-gradient(120deg, rgba(255,194,51,0.14), rgba(255,194,51,0.04))", border: "1px solid rgba(255,194,51,0.35)" }}>
-            <div className="min-w-0">
-              <p className="font-display text-lg text-white leading-none">RESUME YOUR RUN</p>
-              <p className="font-body text-xs mt-1" style={{ color: GOLD }}>Pick up at the {wcRun.stage}</p>
-            </div>
-            <span className="font-display text-xl flex-shrink-0" style={{ color: GOLD }}>→</span>
-          </Link>
-        )}
-
         {/* 2. Rivalry */}
         <RivalryModule rivalry={rivalry} meName={displayName ? displayName.split(" ")[0] : "You"} meId={userId} />
 
@@ -552,7 +578,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
 
         {/* Today's debate — one tap, daily habit (moved here from Versus) */}
         <div className="d-4">
-          <DebateCard signInNext="/" />
+          <DebateCard signInNext="/" withSignUpPitch={false} />
         </div>
 
         {/* 4. Behaviour-based discovery */}

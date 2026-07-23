@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getUserBounded } from "@/lib/supabase/bounded";
 import { MarketingLanding } from "@/components/home/MarketingLanding";
 import { resolveTodaysGame, type TodaysGame } from "@/lib/daily-game";
-import { loadListForDay, loadAttempt } from "@/lib/games/perfect10";
+import { loadAttempt } from "@/lib/games/perfect10";
 import {
   dayStreak as computeDayStreak,
   playedDays,
@@ -47,9 +47,12 @@ async function resolveTodaysCompletion(
     return { done: false, score: null };
   }
   if (game.gameType === "perfect-10") {
-    const list = await loadListForDay(game.day);
-    if (!list) return { done: false, score: null };
-    const attempt = await loadAttempt(list.id, userId);
+    // `game.listId` is the list the Perfect 10 route will actually serve —
+    // today's if one was released, otherwise the newest one (releases are
+    // batched). Resolving it here off `game.day` alone used to come up empty on
+    // every non-release day, so a finished run never showed as done.
+    if (!game.listId) return { done: false, score: null };
+    const attempt = await loadAttempt(game.listId, userId);
     if (attempt?.done) return { done: true, score: attempt.score };
     return { done: false, score: null };
   }
@@ -331,12 +334,11 @@ export default async function RootPage({
   // ── "Play next" — pick the single most relevant action by live state ────────
   // No generic quiz fallback here anymore — Today's Game is the hero now, so
   // when there's no run to resume and no lobby to join, playNext is simply null.
+  // Mastermind runs are deliberately NOT resurfaced here (founder, Jul 23):
+  // no "resume your run" prompt anywhere on home. The Mastermind mode tile is
+  // the only way back in.
   let playNext: PlayNextInfo | null = null;
-  if (wcRun) {
-    // Sub is the stage only — never "<Nation> · <Stage>", which read as if the
-    // player *represents* the nation. The run is theirs, not a country's.
-    playNext = { kind: "wc", href: "/38-0/wc", title: "Resume your run", sub: `Pick up at the ${wcRun.stage}` };
-  } else if (openLobbies > 0) {
+  if (openLobbies > 0) {
     playNext = { kind: "lobby", href: "/play", title: "Join a lobby", sub: `${openLobbies} open right now — jump in` };
   }
 
