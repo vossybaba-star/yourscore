@@ -1,238 +1,201 @@
 /**
- * gen-topic-covers.mjs — cover art for the club TOPIC packs, built deterministically.
+ * gen-topic-covers.mjs — the FOUR category covers for club topic quizzes.
  *
- * The 98 club topic packs (History & Honours / Legends / Modern Era / Rivalries, plus their
- * volumes) ship with no cover, so the club page falls back to an emoji. The 20 club SEASON
- * packs already have hand-made poster art, and this matches that language: flat vector,
- * club-coloured sunburst, floodlights, stadium silhouette, crowd dots, grain, crest centred,
- * title top-left over a black bar with a labelled strip underneath.
+ * One artwork per category (History & Honours / Legends / Rivalries / Modern Era), shared by
+ * every club. These are CATEGORY cards, not club cards: no crest, no club colour, no club
+ * name. All 98 club topic packs point at whichever of the four matches their category, so a
+ * new club or a new volume needs no new art at all.
  *
- * Reusable per club, which is the whole point: ONE artwork per club x topic is generated from
- * parameters (crest + club colour + topic), so a new club or a new volume costs nothing and
- * every card stays consistent. Volumes share their topic's art — a volume is the same subject,
- * not a different one.
+ * Pipeline mirrors scripts/gen-quiz-images.mjs, which is the house standard:
+ *   1. gpt-image-1 paints the art only — no text, clean negative space top-left.
+ *      Conditioned on scripts/assets/references/ so it matches the established look.
+ *   2. A deterministic satori→resvg overlay stamps the category title, so type is
+ *      pixel-perfect and never drifts or misspells.
+ *   3. sharp composites the two at 1080x1080 (the in-app cover size).
  *
- * NO image model is used. The house look is flat vector, so it is drawn as SVG and rasterised.
- * That means zero API cost, zero generation variance, and instant regeneration. The club colour
- * is sampled from the crest itself, so nothing is hardcoded per club.
+ *   node --env-file=.env.local scripts/club-pages/gen-topic-covers.mjs            # generate 4 + contact sheet
+ *   node --env-file=.env.local scripts/club-pages/gen-topic-covers.mjs --category legends
+ *   node --env-file=.env.local scripts/club-pages/gen-topic-covers.mjs --upload --i-have-approval
  *
- *   node --env-file=.env.local scripts/club-pages/gen-topic-covers.mjs --contact-sheet
- *       → renders a review grid to /tmp and writes NOTHING. Start here.
- *   node --env-file=.env.local scripts/club-pages/gen-topic-covers.mjs --club Arsenal
- *       → renders one club's four topics to /tmp for a closer look.
- *   node --env-file=.env.local scripts/club-pages/gen-topic-covers.mjs --upload
- *       → uploads to the quiz-share bucket and sets metadata.cover_image. FOUNDER APPROVAL ONLY.
+ * Creative assets never ship without a contact-sheet review first — plumbing ships, pixels
+ * wait. --upload refuses to run without the explicit approval flag.
  *
- * Creative assets are never shipped without a contact-sheet review first — plumbing ships,
- * pixels wait.
+ * Env: OPENAI_API_KEY, NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY.
  */
 
 import fs from "node:fs";
 import path from "node:path";
 import sharp from "sharp";
+import satori from "satori";
 import { Resvg } from "@resvg/resvg-js";
 import { createClient } from "@supabase/supabase-js";
 
 const args = process.argv.slice(2);
-const CONTACT = args.includes("--contact-sheet");
 const UPLOAD = args.includes("--upload");
-const ONE_CLUB = args.includes("--club") ? args[args.indexOf("--club") + 1] : null;
+const ONE = args.includes("--category") ? args[args.indexOf("--category") + 1] : null;
+const QUALITY = args.includes("--quality") ? args[args.indexOf("--quality") + 1] : "high";
 const OUT = "/tmp/topic-covers";
 
+const KEY = process.env.OPENAI_API_KEY;
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-if (!SUPABASE_URL || !SERVICE_KEY) { console.error("Missing Supabase env — run with --env-file=.env.local"); process.exit(1); }
-const db = createClient(SUPABASE_URL, SERVICE_KEY);
+if (!KEY) { console.error("Missing OPENAI_API_KEY — run with --env-file=.env.local"); process.exit(1); }
 
 const SIZE = 1080;
 const MINT = "#aeea00";
 const FONT_DIR = path.join(process.cwd(), "scripts", "assets", "fonts");
+const REF_DIR = path.join(process.cwd(), "scripts", "assets", "references");
 
-const TOPICS = {
-  "history-honours": { label: "History & Honours", strip: "HISTORY & HONOURS" },
-  legends: { label: "Legends", strip: "CLUB LEGENDS" },
-  "modern-era": { label: "Modern Era", strip: "THE MODERN ERA" },
-  "rivalries-derbies": { label: "Rivalries", strip: "RIVALRIES & DERBIES" },
+/**
+ * The four categories. `art` describes the SUBJECT only — the house style preamble carries
+ * the look, and the title is stamped afterwards, so these prompts never mention text.
+ * No club is identifiable in any of them: one card serves all 20.
+ */
+const CATEGORIES = {
+  "history-honours": {
+    title: "HISTORY & HONOURS",
+    art: "A trophy cabinet as a stadium shrine: a tall silver league trophy centre stage on a plinth, older cups and pennants ranked behind it, dust and shafts of light, a wall of honours boards fading into shadow. Reverent, museum-like, the weight of decades.",
+  },
+  legends: {
+    title: "CLUB LEGENDS",
+    art: "The silhouette of a single iconic footballer seen from behind, arms raised to a packed stand, captain's armband, floodlights flaring behind so the outline glows. Anonymous and mythic: no recognisable face, no readable number, no club colours. Statue-like and heroic.",
+  },
+  "rivalries-derbies": {
+    title: "RIVALRIES & DERBIES",
+    art: "Derby day: two opposing terraces facing each other across a hard diagonal split down the centre of the frame, scarves held aloft on both sides, smoke and flare light, floodlights above. Tension and noise, two halves of one image, neither side identifiable.",
+  },
+  "modern-era": {
+    title: "THE MODERN ERA",
+    art: "A contemporary league night: a sleek modern stadium bowl seen from the touchline, LED perimeter boards streaking with light, sharp floodlight glare, a football on the turf in the foreground. Clean, high-tech, present day.",
+  },
 };
 
-// ── Club colour, sampled from the crest ────────────────────────────────────
-/**
- * sharp's `dominant` is useless here: it returned the SAME muted red for Arsenal, Chelsea,
- * Wolves, Everton and Newcastle, because the modal bucket on a crest is the dark outline,
- * not the club colour. The contact sheet caught it — six clubs, one colour.
- *
- * Instead: walk the raw pixels, throw away anything transparent, near-grey, near-black or
- * near-white (outlines, text, white fields), bucket the remaining HUES weighted by
- * saturation, and take the modal bucket. That is the club's actual colour, and it works for
- * any crest without a hardcoded palette.
- */
-async function clubColour(crestBuf) {
-  const { data, info } = await sharp(crestBuf).resize(160, 160, { fit: "inside" }).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
-  const ch = info.channels;
-  const BUCKETS = 36;
-  const weight = new Array(BUCKETS).fill(0);
-  const satSum = new Array(BUCKETS).fill(0);
-  const litSum = new Array(BUCKETS).fill(0);
-  for (let i = 0; i < data.length; i += ch) {
-    const a = ch === 4 ? data[i + 3] : 255;
-    if (a < 200) continue; // transparent crest background
-    const r = data[i] / 255, g = data[i + 1] / 255, b = data[i + 2] / 255;
-    const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
-    const l = (max + min) / 2;
-    if (l < 0.12 || l > 0.92) continue;      // outline black / white field
-    const sat = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
-    if (sat < 0.35) continue;                 // grey, silver, off-white
-    let h = 0;
-    if (max === r) h = ((g - b) / d) % 6;
-    else if (max === g) h = (b - r) / d + 2;
-    else h = (r - g) / d + 4;
-    h *= 60; if (h < 0) h += 360;
-    const bIdx = Math.floor(h / (360 / BUCKETS)) % BUCKETS;
-    weight[bIdx] += sat;
-    satSum[bIdx] += sat;
-    litSum[bIdx] += l;
+const STYLE = `Flat vector sports-poster illustration, bold graphic shapes, limited palette of deep black, warm cream, burnt orange and gold, heavy grain and halftone dot texture, high contrast, screen-print feel, dramatic and premium. Square composition. IMPORTANT: absolutely NO text, NO letters, NO numbers, NO logos, NO club badges anywhere in the image. Leave the upper-left third visually calm and uncluttered so a title can be placed there afterwards.`;
+
+function refFiles() {
+  if (!fs.existsSync(REF_DIR)) return [];
+  return fs.readdirSync(REF_DIR)
+    .filter((f) => /\.(png|jpe?g|webp)$/i.test(f) && !f.startsWith("."))
+    .sort().slice(0, 3)
+    .map((f) => path.join(REF_DIR, f));
+}
+
+async function genArt(cat) {
+  const subject = CATEGORIES[cat].art;
+  const refs = refFiles();
+  if (refs.length) {
+    const fd = new FormData();
+    fd.append("model", "gpt-image-1");
+    fd.append("prompt", `Use the attached reference image(s) ONLY as a style guide — match their colour grade, texture, mood and finish — but create a BRAND NEW image with a different composition. ${subject} ${STYLE}`);
+    fd.append("size", "1024x1024");
+    fd.append("quality", QUALITY);
+    fd.append("n", "1");
+    fd.append("input_fidelity", "low"); // anchor the STYLE, not a pixel copy
+    for (const p of refs) {
+      const buf = fs.readFileSync(p);
+      const type = /\.png$/i.test(p) ? "image/png" : /\.webp$/i.test(p) ? "image/webp" : "image/jpeg";
+      fd.append("image[]", new Blob([buf], { type }), path.basename(p));
+    }
+    const res = await fetch("https://api.openai.com/v1/images/edits", { method: "POST", headers: { Authorization: `Bearer ${KEY}` }, body: fd });
+    const j = await res.json();
+    if (!res.ok || !j.data?.[0]?.b64_json) throw new Error(`gpt-image-1 edits ${res.status}: ${JSON.stringify(j.error || j).slice(0, 260)}`);
+    return Buffer.from(j.data[0].b64_json, "base64");
   }
-  let best = -1, bestW = 0, count = 0;
-  for (let i = 0; i < BUCKETS; i++) { if (weight[i] > bestW) { bestW = weight[i]; best = i; } count += weight[i]; }
-  // A crest with no saturated colour at all (pure black/white, e.g. some monochrome marks):
-  // fall back to a warm red rather than rendering a grey card.
-  if (best < 0 || count === 0) return "rgb(196,54,46)";
-  const h = best * (360 / BUCKETS) + (360 / BUCKETS) / 2;
-  // Force a consistent, poster-grade saturation/lightness so every club reads equally strong.
-  const s = 0.74, lightness = 0.47;
-  const c = (1 - Math.abs(2 * lightness - 1)) * s;
-  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
-  const m = lightness - c / 2;
-  const seg = [[c, x, 0], [x, c, 0], [0, c, x], [0, x, c], [x, 0, c], [c, 0, x]][Math.floor(h / 60) % 6];
-  const to = (v) => Math.round((v + m) * 255);
-  return `rgb(${to(seg[0])},${to(seg[1])},${to(seg[2])})`;
+  const res = await fetch("https://api.openai.com/v1/images/generations", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${KEY}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ model: "gpt-image-1", prompt: `${subject} ${STYLE}`, size: "1024x1024", quality: QUALITY, n: 1 }),
+  });
+  const j = await res.json();
+  if (!res.ok || !j.data?.[0]?.b64_json) throw new Error(`gpt-image-1 ${res.status}: ${JSON.stringify(j.error || j).slice(0, 260)}`);
+  return Buffer.from(j.data[0].b64_json, "base64");
 }
 
-const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+// ── Title overlay: deterministic, so type never drifts or misspells ────────
+const h = (type, props, ...children) => ({ type, props: { ...props, children: children.flat() } });
 
-/** The poster, as SVG. Flat vector so it rasterises identically every time. */
-function posterSvg({ club, strip, colour }) {
-  const cx = SIZE / 2, cy = SIZE / 2 + 40;
-  // Sunburst
-  const rays = Array.from({ length: 24 }, (_, i) => {
-    const a0 = (i * 15 - 90) * (Math.PI / 180), a1 = ((i * 15) + 7 - 90) * (Math.PI / 180);
-    const R = SIZE * 1.1;
-    return `<path d="M${cx},${cy} L${cx + Math.cos(a0) * R},${cy + Math.sin(a0) * R} L${cx + Math.cos(a1) * R},${cy + Math.sin(a1) * R} Z" fill="${colour}" opacity="${i % 2 ? 0.30 : 0.52}"/>`;
-  }).join("");
-  // Crowd dots
-  const dots = Array.from({ length: 320 }, (_, i) => {
-    const row = Math.floor(i / 80); const x = (i % 80) * 13.5 + (row % 2 ? 7 : 0);
-    const y = SIZE - 104 + row * 24;
-    return `<circle cx="${x}" cy="${y}" r="4.2" fill="${colour}" opacity="0.5"/>`;
-  }).join("");
-  const floodlight = (x, flip) => `
-    <g transform="translate(${x},250) ${flip ? `scale(-1,1)` : ""}">
-      <rect x="-8" y="60" width="16" height="330" fill="#0d0d0d"/>
-      <rect x="-62" y="-6" width="124" height="86" rx="8" fill="#0d0d0d"/>
-      ${Array.from({ length: 12 }, (_, i) => `<circle cx="${-46 + (i % 4) * 31}" cy="${14 + Math.floor(i / 4) * 26}" r="10" fill="#e8c66a" opacity="0.9"/>`).join("")}
-    </g>`;
-  const clubUpper = esc(club.toUpperCase());
-  const titleSize = clubUpper.length > 16 ? 62 : clubUpper.length > 12 ? 76 : 92;
-
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${SIZE}" height="${SIZE}" viewBox="0 0 ${SIZE} ${SIZE}">
-  <rect width="${SIZE}" height="${SIZE}" fill="#0b0b0b"/>
-  ${rays}
-  ${floodlight(118, false)}
-  ${floodlight(SIZE - 118, true)}
-  <path d="M0,${SIZE - 150} Q${cx},${SIZE - 265} ${SIZE},${SIZE - 150} L${SIZE},${SIZE} L0,${SIZE} Z" fill="#0d0d0d"/>
-  ${dots}
-  <rect x="0" y="0" width="${SIZE}" height="${SIZE}" fill="url(#vig)"/>
-  <defs>
-    <radialGradient id="vig" cx="50%" cy="46%" r="72%">
-      <stop offset="55%" stop-color="#000" stop-opacity="0"/>
-      <stop offset="100%" stop-color="#000" stop-opacity="0.55"/>
-    </radialGradient>
-  </defs>
-  <rect x="44" y="52" width="${Math.min(SIZE - 88, clubUpper.length * titleSize * 0.62 + 44)}" height="${titleSize + 26}" fill="#000"/>
-  <text x="66" y="${52 + titleSize + 2}" font-family="Bebas Neue" font-size="${titleSize}" fill="${MINT}" letter-spacing="2">${clubUpper}</text>
-  <rect x="44" y="${52 + titleSize + 40}" width="${esc(strip).length * 15 + 62}" height="42" fill="#000"/>
-  <text x="66" y="${52 + titleSize + 70}" font-family="DM Sans" font-weight="700" font-size="21" fill="${MINT}" letter-spacing="4">— ${esc(strip)}</text>
-</svg>`;
+async function overlay(title) {
+  const fonts = [
+    { name: "Bebas Neue", data: fs.readFileSync(path.join(FONT_DIR, "BebasNeue-Regular.ttf")), weight: 400, style: "normal" },
+    { name: "DM Sans", data: fs.readFileSync(path.join(FONT_DIR, "DMSans-Bold.ttf")), weight: 700, style: "normal" },
+  ];
+  const tree = h("div", { style: { display: "flex", flexDirection: "column", width: SIZE, height: SIZE, padding: 52, justifyContent: "flex-start" } },
+    h("div", { style: { display: "flex" } },
+      h("div", { style: { display: "flex", background: "#000", padding: "10px 22px 18px 22px" } },
+        h("div", { style: { display: "flex", fontFamily: "Bebas Neue", fontSize: title.length > 16 ? 72 : 92, color: MINT, letterSpacing: 2, lineHeight: 1 } }, title),
+      ),
+    ),
+    h("div", { style: { display: "flex", marginTop: 12 } },
+      h("div", { style: { display: "flex", background: "#000", padding: "9px 18px" } },
+        h("div", { style: { display: "flex", fontFamily: "DM Sans", fontWeight: 700, fontSize: 20, color: MINT, letterSpacing: 5 } }, "CLUB QUIZ"),
+      ),
+    ),
+  );
+  const svg = await satori(tree, { width: SIZE, height: SIZE, fonts });
+  return new Resvg(svg, { fitTo: { mode: "width", value: SIZE }, background: "rgba(0,0,0,0)" }).render().asPng();
 }
 
-async function renderCover({ club, topicSlug, crestBuf }) {
-  const colour = await clubColour(crestBuf);
-  const svg = posterSvg({ club, strip: TOPICS[topicSlug].strip, colour });
-  const base = new Resvg(svg, {
-    fitTo: { mode: "width", value: SIZE },
-    font: { fontDirs: [FONT_DIR], loadSystemFonts: false, defaultFontFamily: "DM Sans" },
-  }).render().asPng();
-
-  // Crest, centred and generously sized — it is the subject of the card.
-  const crest = await sharp(crestBuf).resize(430, 430, { fit: "inside", background: { r: 0, g: 0, b: 0, alpha: 0 } }).png().toBuffer();
-  const meta = await sharp(crest).metadata();
-  return sharp(base)
-    .composite([{ input: crest, left: Math.round((SIZE - (meta.width ?? 430)) / 2), top: Math.round(SIZE / 2 + 40 - (meta.height ?? 430) / 2) }])
-    .png()
-    .toBuffer();
-}
-
-/**
- * Crests are LOCAL files (public/badges/{slug}.png), per src/lib/teamImages.ts — not a bucket.
- * Reading them off disk keeps this script offline-capable and guarantees the same crest the
- * app renders. No remote fallback: a wrong image is worse than a skipped club (the first pass
- * fell through to the season cover and composited an entire poster as the "crest").
- */
-function crestFor(club) {
-  const slug = club.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-  const file = path.join(process.cwd(), "public", "badges", `${slug}.png`);
-  if (!fs.existsSync(file)) return null;
-  return { buf: fs.readFileSync(file), from: file };
-}
-
-async function inRotationClubs() {
-  const { data, error } = await db.from("quiz_packs").select("name")
-    .eq("type", "club").eq("status", "published").eq("rotation_active", true).order("name");
-  if (error) throw new Error(error.message);
-  return (data ?? []).map((r) => r.name);
+async function buildCover(cat) {
+  const art = await genArt(cat);
+  const base = await sharp(art).resize(SIZE, SIZE, { fit: "cover" }).png().toBuffer();
+  const ov = await overlay(CATEGORIES[cat].title);
+  return sharp(base).composite([{ input: ov, left: 0, top: 0 }]).png().toBuffer();
 }
 
 // ── Main ───────────────────────────────────────────────────────────────────
 fs.mkdirSync(OUT, { recursive: true });
-const clubs = ONE_CLUB ? [ONE_CLUB] : await inRotationClubs();
 
-if (UPLOAD) {
+if (UPLOAD && !args.includes("--i-have-approval")) {
   console.error("Refusing to upload: generated art needs a contact-sheet review first.");
-  console.error("Run --contact-sheet, get sign-off, then re-run with --upload --i-have-approval");
-  if (!args.includes("--i-have-approval")) process.exit(1);
+  console.error("Review /tmp/topic-covers/_contact-sheet.png, get sign-off, then add --i-have-approval.");
+  process.exit(1);
 }
 
-const sheetTiles = [];
-// Deliberately colour-diverse for review: red, blue, gold, black/white, claret, navy.
-// Alphabetical order would show six near-identical reds and prove nothing.
-const REVIEW_SET = ["Arsenal", "Chelsea", "Wolverhampton Wanderers", "Newcastle United", "Aston Villa", "Everton"];
-const picked = ONE_CLUB ? clubs : REVIEW_SET.filter((c) => clubs.includes(c));
-for (const club of picked) {
-  const crest = crestFor(club);
-  if (!crest) { console.log(`  no crest for ${club} — skipped`); continue; }
-  for (const slug of Object.keys(TOPICS)) {
-    const png = await renderCover({ club, topicSlug: slug, crestBuf: crest.buf });
-    const file = path.join(OUT, `${club.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${slug}.png`);
+const cats = ONE ? [ONE] : Object.keys(CATEGORIES);
+const made = [];
+for (const cat of cats) {
+  process.stdout.write(`  ${cat}… `);
+  try {
+    const png = await buildCover(cat);
+    const file = path.join(OUT, `category-${cat}.png`);
     fs.writeFileSync(file, png);
-    sheetTiles.push({ file, club, slug });
-    console.log(`  ${path.basename(file)}`);
+    made.push({ cat, file });
+    console.log("ok");
+  } catch (e) {
+    console.log(`FAILED: ${e.message}`);
   }
 }
 
-if (CONTACT || !ONE_CLUB) {
-  const COLS = 4, TILE = 300;
-  const rows = Math.ceil(sheetTiles.length / COLS);
-  const sheet = sharp({ create: { width: COLS * TILE, height: rows * TILE, channels: 4, background: { r: 8, g: 8, b: 8, alpha: 1 } } });
+if (made.length > 1) {
+  const TILE = 460, COLS = 2;
+  const rows = Math.ceil(made.length / COLS);
   const comps = [];
-  for (let i = 0; i < sheetTiles.length; i++) {
-    comps.push({
-      input: await sharp(sheetTiles[i].file).resize(TILE - 8, TILE - 8).png().toBuffer(),
-      left: (i % COLS) * TILE + 4, top: Math.floor(i / COLS) * TILE + 4,
-    });
+  for (let i = 0; i < made.length; i++) {
+    comps.push({ input: await sharp(made[i].file).resize(TILE - 10, TILE - 10).png().toBuffer(), left: (i % COLS) * TILE + 5, top: Math.floor(i / COLS) * TILE + 5 });
   }
-  const sheetPath = path.join(OUT, "_contact-sheet.png");
-  await sheet.composite(comps).png().toFile(sheetPath);
-  console.log(`\nContact sheet: ${sheetPath}  (${sheetTiles.length} covers)`);
+  const sheet = path.join(OUT, "_contact-sheet.png");
+  await sharp({ create: { width: COLS * TILE, height: rows * TILE, channels: 4, background: { r: 8, g: 8, b: 8, alpha: 1 } } }).composite(comps).png().toFile(sheet);
+  console.log(`\nContact sheet: ${sheet}`);
 }
 
-console.log("\nNothing uploaded. Review the contact sheet first.");
+if (!UPLOAD) {
+  console.log("\nNothing uploaded. Review the contact sheet, then re-run with --upload --i-have-approval.");
+  process.exit(0);
+}
+
+// ── Upload, and point every pack of that category at its cover ─────────────
+const db = createClient(SUPABASE_URL, SERVICE_KEY);
+for (const { cat, file } of made) {
+  const objectName = `category-${cat}-cover.png`;
+  const { error: upErr } = await db.storage.from("quiz-share").upload(objectName, fs.readFileSync(file), { contentType: "image/png", upsert: true });
+  if (upErr) { console.error(`upload failed ${objectName}: ${upErr.message}`); continue; }
+  const url = `${SUPABASE_URL}/storage/v1/object/public/quiz-share/${objectName}?v=${Date.now()}`;
+
+  const { data: packs } = await db.from("quiz_packs").select("id, metadata").eq("metadata->>club_topic", cat);
+  let n = 0;
+  for (const p of packs ?? []) {
+    const { error } = await db.from("quiz_packs").update({ metadata: { ...(p.metadata ?? {}), cover_image: url } }).eq("id", p.id);
+    if (!error) n++;
+  }
+  console.log(`${cat}: uploaded, ${n} pack(s) now point at it`);
+}
