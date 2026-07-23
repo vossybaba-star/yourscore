@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServiceClient } from "@/lib/supabase/service";
+import { rankClubs, type ClubPopularity } from "@/lib/clubs/popularity";
 
 /**
  * GET /api/clubs/popularity — PUBLIC, no auth needed.
@@ -26,32 +27,14 @@ import { createServiceClient } from "@/lib/supabase/service";
 export const fetchCache = "force-no-store";
 export const dynamic = "force-dynamic";
 
-export interface ClubPopularity {
-  club: string;
-  fans: number;
-}
-
 export async function GET() {
   try {
     const db = createServiceClient() as unknown as SupabaseClient;
+    // Tallied in memory rather than via a new SQL aggregate — the table is
+    // hundreds of rows, and rankClubs() is the same code the matchmaker uses.
     const { data, error } = await db.from("club_supporters").select("user_id, club");
     if (error) throw error;
-
-    // Distinct users per club, tallied in memory — the table is small (hundreds
-    // of rows) and this avoids needing a new SQL function for one aggregate.
-    const seen = new Map<string, Set<string>>();
-    for (const row of (data ?? []) as { user_id: string; club: string }[]) {
-      if (!row.club || !row.user_id) continue;
-      const set = seen.get(row.club) ?? new Set<string>();
-      set.add(row.user_id);
-      seen.set(row.club, set);
-    }
-
-    const clubs: ClubPopularity[] = Array.from(seen.entries())
-      .map(([club, users]) => ({ club, fans: users.size }))
-      // Ties broken alphabetically so the order is stable between requests
-      // rather than reshuffling on whatever order Postgres returned.
-      .sort((a, b) => b.fans - a.fans || a.club.localeCompare(b.club));
+    const clubs = rankClubs((data ?? []) as { user_id: string | null; club: string | null }[]);
 
     return NextResponse.json({ clubs }, {
       headers: { "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400" },

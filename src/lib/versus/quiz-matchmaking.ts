@@ -4,6 +4,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { scoreAnswer } from "@/lib/scoring";
 import { QUIZ_BOT_ID, INSTANT_MATCH_NAME, cpuPersona } from "@/lib/versus/quizBot";
 import { findShadowRun, findRunOfUser, buildShadowInfo, shadowAnswerFor, type ShadowInfo, type ShadowRun } from "@/lib/versus/shadow";
+import { clubKey, clubRankMap, rankClubs, UNRANKED } from "@/lib/clubs/popularity";
 
 // Quiz Battle instant matchmaking — mirrors the proven 38-0 design
 // (lib/draft/live-server.ts queueOrPair): the `quiz_pair` RPC atomically claims
@@ -70,16 +71,43 @@ async function findInstantLobby(db: Db, userId: string): Promise<{ roomId: strin
   return { roomId: m.room_id, code: m.rooms.code, opponent: await profileOf(db, otherId), kind: "human" };
 }
 
+/** Published, rotating club packs ranked by how many of our players support that
+ *  club — most-supported first. Shared shape with the Versus picker so "Find an
+ *  opponent" and the quiz grid can't disagree about which club leads. */
+async function clubPacksByPopularity(db: Db): Promise<string[]> {
+  const [supporters, packs] = await Promise.all([
+    db.from("club_supporters").select("user_id, club"),
+    db.from("quiz_packs").select("id, name")
+      .eq("status", "published").eq("rotation_active", true).eq("type", "club"),
+  ]);
+  const rows = (packs.data ?? []) as { id: string; name: string }[];
+  if (rows.length === 0) return [];
+  const rank = clubRankMap(rankClubs((supporters.data ?? []) as { user_id: string | null; club: string | null }[]));
+  return rows
+    .map((p) => ({ id: p.id, rank: rank.get(clubKey(p.name)) ?? UNRANKED }))
+    .filter((p) => p.rank < UNRANKED) // never lead with a club nobody supports
+    .sort((a, b) => a.rank - b.rank)
+    .map((p) => p.id);
+}
+
 /** Pick the quiz for an instant match. A caller-picked pack wins (the "find an
  *  opponent on THIS quiz" flow) as long as it's really published; otherwise the
- *  newest featured pack, falling back to the newest published pack. Both players
- *  get the same questions — that's the whole game. */
+ *  most-supported club's pack (founder rule, 2026-07-23: lead with club stuff,
+ *  not World Cup stuff), then the newest featured pack, then the newest
+ *  published pack. Both players get the same questions — that's the whole game.
+ *
+ *  Note this deliberately does NOT read quiz_packs.featured for the club step:
+ *  that flag is shared with the home hero and the solo Quiz hub, which the
+ *  founder chose to leave alone. */
 async function pickInstantPack(db: Db, preferredPackId?: string | null): Promise<string | null> {
   if (preferredPackId) {
     const { data: preferred } = await db
       .from("quiz_packs").select("id").eq("id", preferredPackId).eq("status", "published").maybeSingle();
     if (preferred) return preferred.id;
   }
+  // Club popularity failing must never block a match — fall through to featured.
+  const clubs = await clubPacksByPopularity(db).catch(() => [] as string[]);
+  if (clubs[0]) return clubs[0];
   const { data: featured } = await db
     .from("quiz_packs").select("id").eq("status", "published").eq("featured", true)
     .order("created_at", { ascending: false }).limit(1);
@@ -240,11 +268,18 @@ export async function createBotQuizLobby(userId: string, preferredPackId?: strin
       // This pack has no one else's runs at all. A real run on another
       // published pack still beats a CPU seat — but a pinned find ("play THIS
       // quiz") keeps its quiz, so only the generic flow roams.
-      const { data: packs } = await db
+      // Roam down the club order first: falling straight to "newest published"
+      // is what used to drop an unpicked match back onto a World Cup quiz.
+      const clubs = await clubPacksByPopularity(db).catch(() => [] as string[]);
+      const { data: newest } = await db
         .from("quiz_packs").select("id").eq("status", "published").neq("id", packId)
         .order("created_at", { ascending: false }).limit(5);
-      for (const p of packs ?? []) {
-        run = await findShadowRun(db, p.id, userId);
+      const candidates = [
+        ...clubs.filter((id) => id !== packId),
+        ...(newest ?? []).map((p) => p.id),
+      ].slice(0, 8);
+      for (const id of candidates) {
+        run = await findShadowRun(db, id, userId);
         if (run) break;
       }
     }

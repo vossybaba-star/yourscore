@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { coverUrl } from "@/lib/img";
 import { BackPill } from "@/components/ui/BackPill";
+import { clubKey, clubRankMap, UNRANKED, type ClubPopularity } from "@/lib/clubs/popularity";
 
 // Quiz Battle — quiz-first. Step 1: browse the quiz library (rich cover cards +
 // category filters, mirroring the solo quiz view). Step 2: pick a friend + how
@@ -27,19 +28,6 @@ type Row = any;
 type Cat = "all" | "featured" | "worldcup" | "club" | "records";
 
 function initial(n: string) { return (n[0] ?? "?").toUpperCase(); }
-
-/** Squash a club name to a form both sides agree on. `club_supporters` and the
- *  pack names don't match exactly ("Brighton & Hove Albion" vs "Brighton",
- *  "AFC Bournemouth" vs "Bournemouth"). A club that still doesn't match just
- *  ranks last instead of breaking the order. */
-function clubKey(name: string) {
-  return name.toLowerCase()
-    .replace(/^afc\s+/, "")
-    .replace(/\s*&\s*hove albion\b/, "")
-    .replace(/\s+(fc|afc)$/, "")
-    .trim();
-}
-const UNRANKED = 9_999;
 function bucket(qc: number) { return qc <= 5 ? 5 : qc <= 10 ? 10 : 20; }
 function isWC(p: Pack) { return p.series.startsWith("wc") || /world cup/i.test(p.name) || /world cup/i.test(p.parameter ?? ""); }
 function catOf(p: Pack): Exclude<Cat, "all"> {
@@ -72,9 +60,7 @@ export default function QuizBattlePage() {
   useEffect(() => {
     fetch("/api/clubs/popularity")
       .then((r) => r.json())
-      .then((d: { clubs?: { club: string }[] }) => {
-        setClubRank(new Map((d.clubs ?? []).map((c, i) => [clubKey(c.club), i])));
-      })
+      .then((d: { clubs?: ClubPopularity[] }) => setClubRank(clubRankMap(d.clubs ?? [])))
       .catch(() => { /* leave empty — the picker falls back to its old order */ });
   }, []);
 

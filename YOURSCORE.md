@@ -77,10 +77,20 @@
 > Verified: hero = Manchester United, rail = Liverpool, Arsenal, Chelsea, Spurs, Man City, and
 > the home hero is untouched. Also fixed: the Featured hero's "New" chip was hardcoded, so it
 > claimed New for a quiz you'd already played.
-> ⚠️ **Still World-Cup-led everywhere else:** 12/12 `featured` packs are World Cup with 9 tied on
-> `featured_order = 0`, and `pickInstantPack` (`quiz-matchmaking.ts:84`) falls back to
-> `featured = true` ordered by `created_at`, so an unpicked instant match still deals a World Cup
-> quiz. Left alone on purpose — changing it moves the home hero. Also open: the Quiz Battle club grid launches one
+> **"Find an opponent" with no quiz picked now deals a club quiz too.** `pickInstantPack` used to
+> fall straight to `featured = true` ordered by `created_at`, so an unpicked instant match always
+> served World Cup. It now tries `clubPacksByPopularity()` first (published + `rotation_active` +
+> `type='club'`, ranked by the same `rankClubs`/`clubKey` the picker uses — the pure logic lives in
+> **`src/lib/clubs/popularity.ts`** precisely so the two surfaces can't drift), then the old
+> featured-then-newest chain. The shadow ROAM was fixed with it: when the chosen pack has no
+> shadow run, it used to fall to the 5 newest published packs, which are all World Cup, so an
+> unpicked match landed back on the thing we were trying to move away from; it now roams the club
+> order first. A club nobody supports is filtered out rather than led with, and any failure here
+> falls through instead of blocking the match. Verified live: `/versus/find?game=quiz` with no
+> pack produced a **Manchester United** room (`type='club'`, `featured=false`).
+> ⚠️ **`quiz_packs.featured` itself is untouched and still 12/12 World Cup** with 9 tied on
+> `featured_order = 0` — deliberately, because that flag drives the home hero and the solo Quiz
+> hub. Anything else reading `featured` still leads with the World Cup. Also open: the Quiz Battle club grid launches one
 > pack instead of opening the club, so **98 published club-topic packs are unreachable from
 > Versus**; Versus can battle only **79 of 428** published packs; and guests can play nothing on
 > the Versus tab — every tap is capture-routed to sign-in.)
