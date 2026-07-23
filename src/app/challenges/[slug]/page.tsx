@@ -1052,18 +1052,23 @@ export default function ChallengePage() {
                 </div>
               </div>
 
-              <div className="flex items-start gap-3 px-4 py-3 rounded-xl"
-                style={{ background: "rgba(255,183,0,0.08)", border: "1px solid rgba(255,183,0,0.25)" }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="flex-shrink-0 mt-0.5">
-                  <path d="M12 2a7 7 0 0 1 3.93 12.8c-.37.26-.58.67-.58 1.1V17a1 1 0 0 1-1 1h-4.7a1 1 0 0 1-1-1v-1.1c0-.43-.21-.84-.58-1.1A7 7 0 0 1 12 2z" stroke="#ffb700" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M9.5 21h5" stroke="#ffb700" strokeWidth="1.5" strokeLinecap="round"/>
-                </svg>
-                <p className="font-body text-sm font-semibold" style={{ color: "#ffb700" }}>
-                  {priorAttempt
-                    ? "You’re playing for practice — your leaderboard score is locked in."
-                    : "Heads up: your first score counts on the leaderboard."}
-                </p>
-              </div>
+              {/* Signed-in only. A guest's score never reaches the leaderboard, so telling them
+                  "your first score counts" contradicted the "sign in first to save your score"
+                  line 40px below it (ux-walk, 23 Jul). For guests that line says it all. */}
+              {userId && (
+                <div className="flex items-start gap-3 px-4 py-3 rounded-xl"
+                  style={{ background: "rgba(255,183,0,0.08)", border: "1px solid rgba(255,183,0,0.25)" }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="flex-shrink-0 mt-0.5">
+                    <path d="M12 2a7 7 0 0 1 3.93 12.8c-.37.26-.58.67-.58 1.1V17a1 1 0 0 1-1 1h-4.7a1 1 0 0 1-1-1v-1.1c0-.43-.21-.84-.58-1.1A7 7 0 0 1 12 2z" stroke="#ffb700" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M9.5 21h5" stroke="#ffb700" strokeWidth="1.5" strokeLinecap="round"/>
+                  </svg>
+                  <p className="font-body text-sm font-semibold" style={{ color: "#ffb700" }}>
+                    {priorAttempt
+                      ? "You’re playing for practice. Your leaderboard score is locked in."
+                      : "Heads up: your first score counts on the leaderboard."}
+                  </p>
+                </div>
+              )}
 
               <Button
                 variant="primary"
@@ -1078,9 +1083,9 @@ export default function ChallengePage() {
 
               {!userId && (
                 <p className="font-body text-xs text-center" style={{ color: "#586058" }}>
-                  Playing as guest —{" "}
+                  Playing as guest.{" "}
                   <Link href={signInHref}
-                    style={{ color: "#aeea00", textDecoration: "underline" }}>sign in first</Link>
+                    style={{ color: "#aeea00", textDecoration: "underline" }}>Sign in first</Link>
                   {" "}to save your score
                 </p>
               )}
