@@ -1,6 +1,6 @@
 # Cut by the coin-flip rule (all four options were bare numbers)
 
-**213 questions.** Every one of these gave four numbers in the same ballpark,
+**211 questions.** Every one of these gave four numbers in the same ballpark,
 so knowing the football couldn't help you choose between them. In Pro a wrong answer costs
 you a player and your streak, so a guess is expensive.
 
@@ -21,14 +21,8 @@ re-authoring the options with a non-numeric answer, or accepting the guess.
 - **How many times have West Ham United been relegated from the Premier League since 2001-02?**
   - [2 / 4 / 3 / 1] answer: 3  · West Ham United
 
-- **How many European Cup / Champions League titles have Nottingham Forest won?**
-  - [2 / 1 / 3 / 0] answer: 1  · Nottingham Forest
-
 - **How many Premier League goals did Erling Haaland score in the 2022-23 season to claim the top scorer prize?**
   - [34 / 36 / 38 / 32] answer: 36  · Manchester City
-
-- **How many European Cup/Champions League titles have West Ham United won?**
-  - [2 / 3 / 0 / 1] answer: 1  · West Ham United
 
 - **How many League Cup (EFL Cup) titles has Chelsea won?**
   - [4 / 6 / 5 / 3] answer: 5  · Chelsea

@@ -5,8 +5,8 @@
     "AFC Bournemouth": "Bournemouth",
     "Brighton & Hove Albion": "Brighton"
   },
-  "count": 280,
-  "neutralCount": 75,
+  "count": 278,
+  "neutralCount": 74,
   "questions": [
     {
       "id": "0006e545-9452-46b8-a56d-80938652dbc2",
@@ -217,21 +217,6 @@
       "category": "modern-era",
       "scope": "club",
       "club": "Arsenal"
-    },
-    {
-      "id": "09505b81-fa3d-4b57-892d-8992a6303b7b",
-      "q": "What is AFC Bournemouth's most widely recognised nickname?",
-      "options": [
-        "The Seasiders",
-        "The Red and Blacks",
-        "The South Coast United",
-        "The Cherries Boscombe"
-      ],
-      "answer": 3,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "scope": "club",
-      "club": "Bournemouth"
     },
     {
       "id": "0a1bd0d7-a324-43b0-82e9-a760f06cff12",
@@ -2227,21 +2212,6 @@
       "category": "history-honours",
       "scope": "club",
       "club": "Everton"
-    },
-    {
-      "id": "86ba8b5e-c590-4405-b5fc-e462f0f19b4f",
-      "q": "What is the name of Queens Park Rangers' home stadium?",
-      "options": [
-        "The Hawthorns",
-        "Craven Cottage",
-        "White Hart Lane",
-        "Loftus Road Stadium"
-      ],
-      "answer": 3,
-      "difficulty": "easy",
-      "category": "history-honours",
-      "scope": "neutral",
-      "club": null
     },
     {
       "id": "8a36edb7-6e4f-44d8-8c09-6d3d4eb43468",

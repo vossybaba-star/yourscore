@@ -104,7 +104,11 @@ const ENTITY_MENTIONS = {
   "Swansea City": ["Swansea"],
   "Birmingham City": ["Birmingham"],
   "Charlton Athletic": ["Charlton"],
-  "Queens Park Rangers": ["QPR", "Queens Park Rangers"],
+  // The bank files this club as the literal string "QPR", so the key must be "QPR" — keying
+  // it "Queens Park Rangers" meant the lookup missed, the question never matched its own
+  // club, and "What is the name of Queens Park Rangers' home stadium?" was classified
+  // NEUTRAL and served to every player, for a club that isn't even in the league.
+  "QPR": ["QPR", "Queens Park Rangers", "Rangers"],
 };
 const mentionsOwnClub = (row) =>
   (ENTITY_MENTIONS[row.entity] ?? [row.entity]).some((t) => row.question.includes(t));
@@ -127,6 +131,25 @@ const REJECT = [
   },
   { why: "leaked prompt artifact", re: /according to the (facts|data)|per the facts/i },
 ];
+
+/**
+ * WRONG ANSWERS, found by reading. The founder's bar is zero (2026-07-23), and the filters
+ * above can only catch SHAPES — a question can be perfectly formed and still state a false
+ * fact. When a bad answer is found, its id goes here and it can never ship again, whatever
+ * the filters think of it.
+ *
+ * This list is the only durable record that a specific question is wrong, because the bank
+ * row itself is untouched (retiring it there is a production write and the founder's call).
+ * Keep the reason: it's what stops someone "fixing" the filter and letting it back in.
+ */
+const DENY = new Map([
+  ["09505b81-fa3d-4b57-892d-8992a6303b7b",
+   'AFC Bournemouth nickname answered "The Cherries Boscombe" — two names concatenated. The club is "The Cherries"; the correct answer isn\'t among the options, so the question is unsalvageable rather than mis-keyed.'],
+  ["076f2b3d-bd51-40f6-ab49-0bdaf37d5b78",
+   "Says Nottingham Forest won 1 European Cup. They won two, 1979 and 1980. Already excluded by the coin-flip rule; listed so it can never return."],
+  ["0d7f90d1-6d37-409c-a25a-0a2408550fbb",
+   "Says West Ham have won 1 European Cup / Champions League. They have won none (Cup Winners' Cup 1965, Conference League 2023). Already excluded by the coin-flip rule; listed so it can never return."],
+]);
 
 const LETTERS = ["A", "B", "C", "D"];
 const PAGE = 1000; // PostgREST caps a read at 1000 rows — always page, never assume one call.
@@ -175,7 +198,7 @@ const rows = await fetchAll((q) =>
     .in("entity_type", ["club", "records"]),
 );
 
-const stats = { fetched: rows.length, rejected: {}, malformed: 0, ambiguous: 0, numeric: 0, dupText: 0, dupFact: 0, unsupportedClub: 0, nonPlRecords: 0 };
+const stats = { fetched: rows.length, rejected: {}, denied: 0, malformed: 0, ambiguous: 0, numeric: 0, dupText: 0, dupFact: 0, unsupportedClub: 0, nonPlRecords: 0 };
 /** Everything the all-numeric rule removed, written out so the founder can restore the
  *  iconic ones by hand — see OUT_CUT. */
 const cutNumeric = [];
@@ -185,6 +208,9 @@ const seenFact = new Set();
 const pool = [];
 
 for (const row of rows) {
+  // Known-wrong, found by reading. Nothing below can rescue these.
+  if (DENY.has(row.id)) { stats.denied++; continue; }
+
   // Records that aren't Premier League records (Champions League, World Cup) aren't a PL gate.
   if (row.entity_type === "records" && !/premier league/i.test(row.entity)) { stats.nonPlRecords++; continue; }
 
@@ -362,6 +388,7 @@ console.log(`Fetched (easy/medium, club+records): ${stats.fetched}`);
 for (const [why, n] of Object.entries(stats.rejected)) console.log(`  − ${why}: ${n}`);
 console.log(`  − non-PL records (CL/WC): ${stats.nonPlRecords}`);
 if (stats.malformed) console.log(`  − malformed (options/answer): ${stats.malformed}`);
+console.log(`  − known-wrong (denylist): ${stats.denied}`);
 console.log(`  − ambiguous answer: ${stats.ambiguous}`);
 console.log(`  − coin flip (all options bare numbers): ${stats.numeric}   → ${path.relative(root, OUT_CUT)}`);
 console.log(`  − club nobody can support: ${stats.unsupportedClub}`);

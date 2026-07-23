@@ -116,6 +116,20 @@ test("no coin flips — a question whose four options are all bare numbers", () 
   );
 });
 
+test("known-wrong questions never ship", () => {
+  // Found by reading, not by any filter — a question can be perfectly formed and still state
+  // a false fact. These are pinned by id so no amount of filter-tweaking can let them back.
+  const banned = [
+    "09505b81-fa3d-4b57-892d-8992a6303b7b", // Bournemouth nickname "The Cherries Boscombe"
+    "076f2b3d-bd51-40f6-ab49-0bdaf37d5b78", // Forest "1" European Cup; they won two
+    "0d7f90d1-6d37-409c-a25a-0a2408550fbb", // West Ham "1" European Cup; they won none
+    "86ba8b5e-c590-4405-b5fc-e462f0f19b4f", // QPR stadium, mis-scoped neutral for a non-PL club
+  ];
+  for (const id of banned) {
+    assert.ok(!POOL.some((q) => q.id === id), `banned question ${id} is back in the bundle`);
+  }
+});
+
 test("the neutral pool can stand on its own — it is what a guest sees", () => {
   // A guest, and any player who hasn't picked a club, only ever draws from this. An
   // 11-question gate against a thin neutral pool means repeats inside a single draft.
