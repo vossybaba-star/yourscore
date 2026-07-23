@@ -127,7 +127,7 @@ function LeagueHeroCard() {
             </svg>
           </div>
           <div>
-            <p className="font-body text-xs font-semibold text-white">The Mates 🏆</p>
+            <p className="font-body text-xs font-semibold text-white">The Group Chat 🏆</p>
             <p className="font-body text-xs text-text-muted">6 games played</p>
           </div>
         </div>
@@ -188,7 +188,7 @@ function LeagueHeroCard() {
 
       {/* Footer */}
       <div className="px-4 py-3 flex items-center justify-between" style={{ borderTop: "1px solid rgba(255,255,255,0.04)", background: "rgba(0,0,0,0.2)" }}>
-        <span className="font-body text-xs text-text-muted">🔥 Marcus — 4 wins in a row</span>
+        <span className="font-body text-xs text-text-muted">🔥 Marcus · 4 wins in a row</span>
         <span className="font-body text-xs font-semibold" style={{ color: "#aeea00" }}>Full table →</span>
       </div>
     </div>
@@ -261,7 +261,7 @@ function UpcomingFixturesSection({ matches }: { matches: LiveMatch[] }) {
                 <div className="flex items-center justify-between">
                   <FlagImage team={m.home_team} size={28} />
                   {isLive
-                    ? <span className="font-display text-sm text-white">{m.home_score}–{m.away_score}</span>
+                    ? <span className="font-display text-sm text-white">{m.home_score}-{m.away_score}</span>
                     : <span className="font-body text-xs text-text-muted">vs</span>}
                   <FlagImage team={m.away_team} size={28} />
                 </div>
@@ -487,7 +487,7 @@ export function MarketingLanding({ matches, todaysGame }: { matches: LiveMatch[]
                 className="flex-1 flex items-center justify-center gap-2 font-body font-semibold text-base px-6 py-4 rounded-xl transition-all hover:opacity-90 green-pulse text-green"
                 style={{ background: "rgba(174,234,0,0.1)", border: "1px solid rgba(174,234,0,0.3)" }}>
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1v14M1 8h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
-                Sign Up — Free
+                Sign Up Free
               </Link>
               <DownloadAppButton
                 source="hero"
@@ -597,12 +597,12 @@ export function MarketingLanding({ matches, todaysGame }: { matches: LiveMatch[]
                 </div>
                 <h2 className="font-display text-4xl sm:text-5xl text-white mb-4">YOUR MATES.<br />ONE TABLE.</h2>
                 <p className="font-body text-text-muted text-base leading-relaxed mb-6">
-                  Your whole group, one table. Every match any of you plays feeds the standings — live, automatically, all season.
+                  Your whole group, one table. Every match any of you plays feeds the standings. Live, automatically, all season.
                 </p>
                 <div className="space-y-3 mb-8">
                   {[
-                    { icon: "⚔️", text: "Go head-to-head — challenge any mate to either game" },
-                    { icon: "👑", text: "Raw points vs Pound for Pound accuracy — real debates built in" },
+                    { icon: "⚔️", text: "Go head to head. Challenge any friend to either game" },
+                    { icon: "👑", text: "Raw points vs Pound for Pound accuracy. Real debates built in" },
                     { icon: "🔥", text: "Streaks, badges and rankings across every competition" },
                     { icon: "📊", text: "Your league standing updates the moment a game ends" },
                   ].map(f => (
@@ -624,7 +624,7 @@ export function MarketingLanding({ matches, todaysGame }: { matches: LiveMatch[]
                 {[
                   { flag: "🇧🇷", who: "Marcus", game: "Daily Quiz", detail: "9/10 correct", pts: "+340", col: "#00d8c0" },
                   { flag: "🇮🇳", who: "Priya", game: "38-0", detail: "Beat Jamie head-to-head", pts: "+1,500", col: "#aeea00" },
-                  { flag: "🇳🇬", who: "Zach", game: "Quiz Battle", detail: "Won 4–2", pts: "+280", col: "#00d8c0" },
+                  { flag: "🇳🇬", who: "Zach", game: "Quiz Battle", detail: "Won 4-2", pts: "+280", col: "#00d8c0" },
                 ].map((m, i) => (
                   <div key={i} className="flex items-center gap-4 px-5 py-4 rounded-2xl bg-surface"
                     style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
@@ -652,14 +652,14 @@ export function MarketingLanding({ matches, todaysGame }: { matches: LiveMatch[]
       <section className="relative z-10 max-w-6xl mx-auto px-6 pb-16">
         <div className="text-center mb-10">
           <h2 className="font-display text-5xl text-white mb-3">HOW IT WORKS</h2>
-          <p className="font-body text-text-muted">Two games, one score. Draft your XI, test your football knowledge, climb the table with your mates.</p>
+          <p className="font-body text-text-muted">Two games, one score. Draft your XI, test your football knowledge, climb the table with your friends.</p>
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { num: "01", col: "#aeea00", emoji: "⚽", title: "DRAFT YOUR XI", desc: "Spin a squad of real-rated legends and draft your best XI — the 38-0 team-builder." },
-            { num: "02", col: "#ffb800", emoji: "⚔️", title: "GO HEAD TO HEAD", desc: "Play your XI against the world. Win and swap a player, lose and go again — chase the perfect unbeaten season." },
+            { num: "01", col: "#aeea00", emoji: "⚽", title: "DRAFT YOUR XI", desc: "Spin a squad of real-rated legends and draft your best XI. The 38-0 team-builder." },
+            { num: "02", col: "#ffb800", emoji: "⚔️", title: "GO HEAD TO HEAD", desc: "Play your XI against the world. Win and swap a player, lose and go again. Chase the perfect unbeaten season." },
             { num: "03", col: "#00d8c0", emoji: "🧠", title: "TEST YOUR KNOWLEDGE", desc: "Daily World Cup quizzes, speed-scored. The more football you know, the higher you climb." },
-            { num: "04", col: "#aeea00", emoji: "🏆", title: "TOP YOUR LEAGUE", desc: "Start a private league and invite your mates. One table, all season — settle who actually knows football." },
+            { num: "04", col: "#aeea00", emoji: "🏆", title: "TOP YOUR LEAGUE", desc: "Start a private league and invite your friends. One table, all season. Settle who actually knows football." },
           ].map((step) => (
             <div key={step.num} className="rounded-2xl p-6 relative overflow-hidden group bg-surface" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
               <div className="font-display text-9xl absolute -top-4 -right-2 opacity-[0.06] group-hover:opacity-[0.1] transition-opacity select-none" style={{ color: step.col }}>{step.num}</div>
@@ -685,12 +685,12 @@ export function MarketingLanding({ matches, todaysGame }: { matches: LiveMatch[]
             <p className="font-body text-xs uppercase tracking-widest mb-3 text-amber">Speed scored</p>
             <h2 className="font-display text-4xl sm:text-5xl text-white mb-4">THE FASTER<br />YOU KNOW.</h2>
             <p className="font-body text-text-muted text-base leading-relaxed mb-6">
-              Every question is pure football — players, records, history, the World Cup. The faster you answer, the more you score, and a streak multiplies it. Play the daily quiz solo or go head-to-head with your mates.
+              Every question is pure football: players, records, history, the World Cup. The faster you answer, the more you score, and a streak multiplies it. Play the daily quiz solo or go head to head with your friends.
             </p>
             <div className="space-y-3">
               {[
-                { col: "#aeea00", label: "Lightning — first 6 seconds", pts: "×2 points" },
-                { col: "#ffb800", label: "Fast — inside 12 seconds", pts: "×1.5 points" },
+                { col: "#aeea00", label: "Lightning · first 6 seconds", pts: "×2 points" },
+                { col: "#ffb800", label: "Fast · inside 12 seconds", pts: "×1.5 points" },
                 { col: "#ff9f43", label: "Slow answers taper off", pts: "down to ×0.5" },
                 { col: "#aeea00", label: "Back-to-back correct", pts: "+50 streak" },
               ].map(r => (
@@ -771,7 +771,7 @@ export function MarketingLanding({ matches, todaysGame }: { matches: LiveMatch[]
           <div className="relative z-10 px-8 py-10 text-center">
             <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-5">World Cup 2026</p>
             <WorldCupCountdown />
-            <p className="font-body text-sm text-text-muted mt-4 mb-6">Every match earns points — all the way to the final.</p>
+            <p className="font-body text-sm text-text-muted mt-4 mb-6">Every match earns points, all the way to the final.</p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link href="/league/new" className="inline-flex items-center gap-2 font-body font-bold text-sm px-6 py-3 rounded-xl transition-all hover:opacity-90 pulse-glow"
                 style={{ background: "#aeea00", color: "#0a0a0f" }}>
@@ -799,9 +799,9 @@ export function MarketingLanding({ matches, todaysGame }: { matches: LiveMatch[]
               🇧🇷 🏴󠁧󠁢󠁥󠁮󠁧󠁿 🇫🇷 🇩🇪 🇦🇷
             </div>
             <h2 className="font-display text-5xl sm:text-6xl text-white mb-3">START YOUR LEAGUE</h2>
-            <p className="font-display text-2xl mb-6" style={{ color: "#aeea00" }}>Free · you and your mates</p>
+            <p className="font-display text-2xl mb-6" style={{ color: "#aeea00" }}>Free · you and your friends</p>
             <p className="font-body text-text-muted mb-8 max-w-md mx-auto">
-              Invite your mates, pick your matches, and start building your score. Points stack all season.
+              Invite your friends, pick your matches, and start building your score. Points stack all season.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
               <Link href="/league/new"
