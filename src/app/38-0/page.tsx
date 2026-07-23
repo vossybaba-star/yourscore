@@ -42,6 +42,10 @@ const LEAGUE_TABS: Record<"pl" | "laliga", { league: League; emoji: string; titl
 export default function DraftHome() {
   const router = useRouter();
   const { user, loading: authLoading } = useUser();
+  // Premier League is the landing tab, not WC Mastermind. The home hero's
+  // "Draft your XI" points here, and WC opened on a finished tournament with a
+  // month of catch-up days behind it (ux-walk, 23 Jul). PL is live and is an
+  // actual draft, which is what the CTA promised — and it's the tab Pro lives on.
   const [tab, setTab] = useState<DraftTab>("pl");
   // Player pool (~2.6MB) loads on demand; only used for the cosmetic count line below.
   const [poolReady, setPoolReady] = useState(isPoolReady());

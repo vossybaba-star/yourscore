@@ -58,7 +58,7 @@ export function GamesNav() {
       className="sticky top-0 z-30 pt-safe"
       style={{ background: "rgba(10,10,15,0.97)", backdropFilter: "blur(20px)" }}
     >
-      <div className="max-w-lg mx-auto px-5 pt-3">
+      <div className="max-w-lg mx-auto px-5 pt-3" data-tour="games">
         <GameSwitcher active={active} />
       </div>
     </div>

@@ -13,15 +13,24 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
+import { useOnErrorRoute } from "@/components/app/errorRoute";
 import { createClient } from "@/lib/supabase/client";
 
-const SKIP_KEY = "ys:username-prompt:skipped"; // session-scoped: re-nudges next visit
+// Once-ever, not once-per-session. Session scoping meant a skipper got asked again on
+// every visit; the ask is worth making once and then leaving alone (Settings still has it).
+const SKIP_KEY = "ys:username-prompt:asked";
 const clean = (s: string) => s.toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 20);
+
+// Surfaces the prompt must never appear over. It mounts a few hundred ms after the page
+// settles, so on a hub or a game it lands on top of a tap already in flight and eats it
+// (seen on /play: the first tap on a sub-tab did nothing). Ask on the quiet pages only.
+const NEVER_ON = ["/auth", "/settings", "/play", "/challenges", "/quiz", "/38-0", "/versus", "/g/", "/h2h", "/match"];
 
 type Status = "idle" | "short" | "checking" | "available" | "taken" | "saving";
 
 export function UsernamePrompt() {
   const pathname = usePathname();
+  const onErrorRoute = useOnErrorRoute();
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState("");
   const [status, setStatus] = useState<Status>("idle");
@@ -29,8 +38,9 @@ export function UsernamePrompt() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (sessionStorage.getItem(SKIP_KEY)) return;
-    if (pathname?.startsWith("/auth") || pathname?.startsWith("/settings")) return;
+    try { if (localStorage.getItem(SKIP_KEY)) return; } catch { return; } // storage blocked → never nag
+    if (NEVER_ON.some((p) => pathname?.startsWith(p))) return;
+    if (onErrorRoute) return; // never over a 404 or a crash screen
     let alive = true;
     (async () => {
       const sb = createClient();
@@ -41,7 +51,7 @@ export function UsernamePrompt() {
       if (!((data?.username ?? "").trim())) setOpen(true); // only when none set
     })();
     return () => { alive = false; };
-  }, [pathname]);
+  }, [pathname, onErrorRoute]);
 
   // Debounced availability check.
   useEffect(() => {
@@ -60,7 +70,7 @@ export function UsernamePrompt() {
     return () => clearTimeout(t);
   }, [value]);
 
-  function skip() { try { sessionStorage.setItem(SKIP_KEY, "1"); } catch { /* ignore */ } setOpen(false); }
+  function skip() { try { localStorage.setItem(SKIP_KEY, "1"); } catch { /* ignore */ } setOpen(false); }
 
   async function save() {
     if (status !== "available") return;
@@ -71,16 +81,16 @@ export function UsernamePrompt() {
       if (!user) { skip(); return; }
       const { error } = await sb.from("profiles").update({ username: value, display_name: value }).eq("id", user.id);
       if (error) { setStatus("taken"); return; } // unique-index race → taken
-      try { sessionStorage.setItem(SKIP_KEY, "1"); } catch { /* ignore */ }
+      try { localStorage.setItem(SKIP_KEY, "1"); } catch { /* ignore */ }
       setOpen(false);
     } catch { setStatus("available"); }
   }
 
-  if (!open) return null;
+  if (!open || onErrorRoute) return null;
 
   const hint =
     status === "available" ? { t: "✓ available", c: "#00ff87" }
-    : status === "taken" ? { t: "✗ taken — try another", c: "#ff7a88" }
+    : status === "taken" ? { t: "✗ taken, try another", c: "#ff7a88" }
     : status === "short" ? { t: "at least 3 characters", c: "#8888aa" }
     : status === "checking" ? { t: "checking…", c: "#8888aa" }
     : null;
@@ -92,7 +102,7 @@ export function UsernamePrompt() {
           <div style={{ fontSize: 34 }}>🎮</div>
           <h2 className="font-display tracking-wide mt-1" style={{ fontSize: 22, color: "#fff" }}>PICK YOUR USERNAME</h2>
           <p className="font-body mt-2" style={{ fontSize: 13.5, color: "#9a9ab0", lineHeight: 1.5 }}>
-            This is your name across YourScore — leaderboards, leagues and shared cards. Pick a handle (no spaces); you can change it later in Settings.
+            This is your name across YourScore: leaderboards, leagues and shared cards. Pick a handle (no spaces); you can change it later in Settings.
           </p>
         </div>
         <div className="flex items-center gap-1 mt-5 rounded-xl px-4 py-3" style={{ background: "#0a0a0f", border: `1px solid ${status === "taken" ? "rgba(255,71,87,0.5)" : status === "available" ? "rgba(0,255,135,0.5)" : "rgba(255,255,255,0.14)"}` }}>

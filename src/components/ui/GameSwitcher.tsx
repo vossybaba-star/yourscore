@@ -79,12 +79,21 @@ function MysteryIcon({ active }: { active: boolean }) {
   );
 }
 
-const GAMES = [
-  { key: "quiz" as const, href: "/play", label: "Quiz", color: "#00d8c0", Icon: QuizIcon },
-  { key: "draft" as const, href: "/38-0", label: "38-0", color: "#aeea00", Icon: JerseyIcon },
-  { key: "perfect10" as const, href: "/play/game/perfect-10", label: "Perfect 10", color: "#ffc400", Icon: TowerIcon },
-  { key: "higher-lower" as const, href: "/play/game/higher-lower", label: "Higher or Lower", color: "#ff7800", Icon: ArrowsIcon },
-  { key: "guess-the-player" as const, href: "/play/game/guess-the-player", label: "Guess the Player", color: "#4fc3f7", Icon: MysteryIcon },
+// Exported so the signed-out landing's games card reads the SAME five games as
+// the nav: label, route, accent and icon in one place, so a sixth game (or a
+// renamed one) can never leave the marketing page describing a product that
+// isn't there. `blurb` is landing-page only; the nav shows label alone.
+export const GAMES = [
+  { key: "quiz" as const, href: "/play", label: "Quiz", color: "#00d8c0", Icon: QuizIcon,
+    blurb: "Speed scored football questions" },
+  { key: "draft" as const, href: "/38-0", label: "38-0", color: "#aeea00", Icon: JerseyIcon,
+    blurb: "Draft an XI and go unbeaten" },
+  { key: "perfect10" as const, href: "/play/game/perfect-10", label: "Perfect 10", color: "#ffc400", Icon: TowerIcon,
+    blurb: "Name a ranked top ten" },
+  { key: "higher-lower" as const, href: "/play/game/higher-lower", label: "Higher or Lower", color: "#ff7800", Icon: ArrowsIcon,
+    blurb: "Pick the bigger number" },
+  { key: "guess-the-player" as const, href: "/play/game/guess-the-player", label: "Guess the Player", color: "#4fc3f7", Icon: MysteryIcon,
+    blurb: "Clues drip in, name the footballer" },
 ];
 
 export type GameKey = (typeof GAMES)[number]["key"];

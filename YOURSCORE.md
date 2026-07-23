@@ -6,7 +6,158 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-07-20 (**Club question bank: categories remapped + Rivalries filled 0→20 clubs.**
+> **Confirmed:** 2026-07-23 (**Signed-out home page rewritten around the rank, and a batch of
+> guest-flow fixes.** Shipped to prod as `b024193`.
+> **Positioning:** the landing page led with 38-0 and a World Cup that finished on 19 Jul. It now
+> leads with **YOUR FOOTBALL KNOWLEDGE. RANKED.** The rank is the product: quizzes, gameday,
+> fantasy and Versus all feed one score, so the promise has no upper bound and absorbs new
+> features without a rewrite. Breadth moved to the eyebrow (`Quizzes · Gameday · Fantasy ·
+> Versus`), which keeps the headline to one promise and the fold to one decision. An earlier cut
+> said "FIVE FOOTBALL GAMES" and was rejected: **never put a count of games in the headline** —
+> it reads as a ceiling and goes stale the day a game ships.
+> **New components** in `MarketingLanding.tsx`: `GamesHeroCard` (the animated what-feeds-your-score
+> card) and `GamesExplainer` (a tab per game). Both read `GAMES`, now **exported from
+> `GameSwitcher.tsx`** with a per-game `blurb`, so the marketing page cannot describe a game the
+> app doesn't have, and a new game gets a row and a tab with no copy written. Every line in the
+> explainer is drawn from the game's own code (`ROUND_SIZE`, `MAX_STRIKES`, `HL_TOPICS`, the quiz
+> speed bands), not from memory.
+> **Removed:** the "HOW IT WORKS" 01-04 steps (they walked the 38-0 arc as if it were the app),
+> the "SPEED SCORED" demo-question section (quiz scoring given its own section; it now lives in
+> the Quiz tab) and its 45s countdown interval that ran on every signed-out load, the duplicate
+> 38-0 / Football Quiz tiles, and the invented league activity rows.
+> **World Cup framing retired:** `WorldCupCountdown` → `SeasonCountdown`, counting to PL GW1 on
+> **21 Aug**. The old one passed zero on 11 Jun and had rendered "THE CUP IS LIVE" every day
+> since, including the four days after the final. Fantasy and gameday quizzes are written as
+> landing **with the season**, never as playable today.
+> **Guest-flow fixes from a `/ux-walk`:** Today's Game moved above the hero (it sat 1280px down,
+> 1.6 screens below the fold); `/38-0` lands on Premier League, not a finished World Cup; the WC
+> edition strip is signed-in only (a guest's first visit opened with "34 days to catch up" and 35
+> CATCH UP chips); guests are no longer told "your first score counts on the leaderboard" 40px
+> above "sign in first to save your score", which contradicted it and was false for them.
+> **Copy gate:** "mates" → "friends" (8 more the 22 Jul sweep missed, because that grep was case
+> sensitive and the headline was uppercase), every em/en dash out, and the OG image no longer
+> calls Perfect 10 a **daily** list.
+> **STILL OPEN:** recommended packs have no browse surface; club packs still fall back to crests
+> instead of real covers; the games card sits ~1000px down on mobile, below the fold.)
+>
+> **Previously confirmed:** 2026-07-23 (**Home hero rebuilt: Today's Game shows its topic + crowd stats,
+> debate comments open to all, Mastermind resume prompt removed.** Branch `fix/quiz-flow-ux`,
+> migration **102 APPLIED to prod**.
+> **Today's Game tile** is now two halves: cover art on top, a live stats strip underneath —
+> players / average score / % who got the hardest question. Numbers come from two new SQL
+> aggregates (`get_daily_pack_stats`, `get_daily_p10_stats`, migration 102, `security definer`,
+> anon-executable so the logged-out hero can use them too). The strip shows the hardest
+> question's PERCENTAGE only, never its text, so the tile can't spoil a question the player is
+> one tap from being asked; zero plays shows "Nobody has played it yet" rather than three zeros.
+> **Perfect 10 tiles lead with the list title, not the mode name** ("Perfect 10" alone read as a
+> menu entry). Root cause was real: P10 lists release in BATCHES, not daily, so most P10 days
+> have no row of their own — `src/lib/daily-game.ts` read only `day` and came up empty. It now
+> mirrors what `/api/games/perfect-10` actually serves (`loadListForDay ?? loadLatestServed`).
+> Same bug was silently breaking the Perfect 10 **done state** on every non-release day; fixed.
+> **Today's debate:** the comment thread is now INSIDE the debate card (one tile, not two) and
+> is readable by everyone, voted or not — posting is what voting buys you (`canPost` on
+> `DiscussionThread`, plus an `embedded` mode that drops its own frame). "DRAG A FRIEND IN" and
+> "THE ARGUMENT" buttons are gone. The sign-up pitch is now opt-in (`withSignUpPitch`) and OFF
+> inside the app, where it was flashing in before the client session resolved.
+> **Home no longer surfaces an active Mastermind run at all** (founder call) — the mode tile is
+> the only way back in. **STILL OPEN:** recommended packs have no browse surface, so anything
+> not in the rec strip is unreachable and unplayed, and club packs still fall back to crests
+> instead of real covers.)
+>
+> **Previously confirmed:** 2026-07-22 (**Club pages + a batch of quiz-flow UX fixes shipped.**
+> Branch `fix/quiz-flow-ux`, merged to main.
+> **Club pages `/club/[slug]`:** the Quiz hub's Club tab used to send all 20 crest cards
+> straight into a single 2025/26 season-review quiz. It now opens a club page: crest, the
+> season-review pack, and four topic quizzes (History & Honours, Legends, Modern Era,
+> Rivalries) drawn from the verified club question bank. Built by pre-generating the topic
+> packs as real `quiz_packs` rows (`status='published'`, `rotation_active=false`,
+> `is_custom=false`, `created_by=null`, `metadata.club_topic=<slug>`) via
+> `scripts/club-pages/generate-topic-packs.mjs` (imports the draw from `src/lib/questions.ts`
+> so it can never drift from `/api/quiz/generate-custom`; dry-run by default, `--commit` to
+> write). **50 packs seeded to prod.** Real draw (fact_key distinctness) yields 50 of 80 club
+> x topic combos, not the 57 a raw row-count suggested: Arsenal / Liverpool / Man City / Man
+> Utd get all four topics, Forest gets one, most land at two or three; a topic that can't deal
+> 15 shows a disabled card with an honest reason. Nothing new to generate or auth: `/api/quiz/packs`
+> still filters `rotation_active=true` so the hub grid stays 20, while `/api/challenges/pack`
+> serves any published pack, so guests play these on the existing play screen with the sign-in
+> wall only at save-score. Club-page payload at `/api/club-page/[slug]` (named `-page` because
+> `/api/club/[slug]` already belongs to Club Leagues). Every topic link carries `?pid=` because
+> two published packs are named "Brighton" and slug-only resolution is order-unstable.
+> **Quiz-flow UX fixes (from a `/ux-walk`):** results screen leads with PLAY ANOTHER and moves
+> save-your-score up under it (was two stacked share CTAs with the next-game route buried last);
+> Accuracy on the results screen is now questions-right, not score/maxScore (it disagreed with
+> "7/15 Correct"); AnswerButtons gets a `key` per question in all three quiz players so
+> `transition-all` no longer flashes a wrong option green on the next question; the username
+> prompt no longer mounts over hubs and games (it ate the first tap) and skip is once-ever in
+> localStorage; Featured drops the finished World Cup packs and the verified-competition card
+> reads FINAL STANDINGS not a pulsing LIVE; the quiz builder club grid no longer clips two-line
+> names or loses Birmingham City. Copy gate: "mate" to "friend" in 8 places, em/en dashes
+> stripped from shipped strings, home hero stops naming the delivery mechanism. **STILL OPEN:**
+> user-built quizzes and guest scores still have no home surface (the "your quizzes" list and
+> guest score memory are the next two pieces).)
+>
+> **Previously confirmed:** 2026-07-21 (**Profile rebuilt around a FUT-style player card.**
+> Branch `feat/profile-player-card`, migration **82 APPLIED to prod**.
+> **The page:** a hero row — YourScore rank, accuracy, streak and Share on the left; the
+> **player card** on the right (rating, archetype, real club crest from `club_supporters`,
+> avatar, six attributes). Then the **ladder** (2 above / you / 1 below, progress bar, and a
+> concrete "18,150 pts overtakes tatty · a strong quiz run closes it"), the **medal shelf**,
+> **"where your points come from"** — which says out loud that daily quiz, World Cup and
+> seasons earn NOTHING toward Rank — and recent games.
+> **The card is rated on being a YourScore player, never one game:** KNO accuracy · PAC answer
+> speed · WIN record · CON streak · RNG breadth · SOC social. A new game feeds the existing six
+> rather than earning its own slot. Tiers Bronze/Silver/Gold/Icon; archetype = your leading
+> attribute, so two players on 84 read differently. **Nobody scores zero** — floor 38, a new
+> player is a real Bronze ROOKIE.
+> **25 medals** (`src/lib/medals.ts`), every threshold calibrated against the REAL distribution,
+> not instinct: 67% of players have a 38-0 win but only 0.7% have answered 100 quiz questions,
+> so the 38-0 ladder carries the volume and quiz tiers sit at 15/50/150. Rarity is the pride
+> mechanic and is printed on each medal. **Social medals deliberately absent — no player has 5
+> friends.** `Ever-Present` (30 days) has zero holders on purpose. Percentages are DATED
+> constants measured 2026-07-21; they drift, and a nightly job is the fix when wanted.
+> **Avatars:** 16 generated character portraits at `public/avatars/*.webp`
+> (`scripts/gen-avatars.mjs`), replacing the old object icons. Only 1 user had the old set.
+> **Gotchas:** a cross-origin URL in an SVG `<image href>` renders as a BROKEN TILE — 3,367 of
+> 9,786 profiles are Google account photos, so the card layers the photo as an HTML `<img>` over
+> the SVG (`foreignObject` is worse: blank). Readable content must clear the badge taper or it
+> reads off-centre when it isn't. Card size is a `width` prop so a share/OG render can use full
+> size. Also: `profiles.games_played` is 0 on all 9,400 rows — never read it.
+> ⚠️ **STILL OPEN — `yourscore_user_ratings` is wrong:** it joins `draft_standings` on
+> `league_id` only, ignoring `competition`, so **340 users get two ranks** and **280 have their
+> 38-0 score split across PL/WC and never summed** (worst: `goat1993`, −114,000 pts). Untouched
+> — it changes real ranks and needs a product call.)
+>
+> **Previously confirmed:** 2026-07-21 late (**First-launch onboarding tour + guest Versus preview SHIPPED
+> to prod.** A 5-step spotlight walkthrough (`SpotlightTour`, mounted in the root layout) that
+> navigates the real app: Play games row → Versus action cards → PL section bar → your rank
+> (signed-in only) → ends on Home spotlighting the Today's Game hero. Pulsing beacon on the
+> bottom-nav tab each step references; once-ever via `ys:tip:app-tour:v1`; Skip/Escape end it;
+> steps whose target can't be found in 3s skip silently; `?tour=1` = QA replay that never burns
+> the flag (dev also gets `window.__resetTips()`). **NEW USERS ONLY (founder-locked):**
+> signed-in requires `created_at >= 2026-07-22T00:00:00Z` (`TOUR_EPOCH` in `src/lib/tips.ts`)
+> — current customers never see it; guests only on a **fresh native install** (detected by
+> stamping `ys:tip:fresh-install:v1` at module load while `yourscore:onboarding:v1` is still
+> absent, i.e. before the first-run carousel marks itself) and only after that carousel
+> completes; web guests never. Storage errors fail closed in the safe direction per flag.
+> Gotcha shipped around: `scrollIntoView({behavior:"smooth"})` silently no-ops in some
+> webviews — all tour scrolls are `behavior:"auto"`, plus a throttled pull-back if the page
+> scroll-resets under an active step. **Also: guest `/versus` now mirrors the real first-time
+> hub** (welcome hero, action cards, choose-your-game, live activity/community/public-league
+> rails with real anon data; every tap capture-routed to `/auth/sign-in?next=/versus`; slim
+> create-account banner) — replaces the old sign-in wall so guests see the actual hub.)
+>
+> **Previously confirmed:** 2026-07-21 (**WC Mastermind thank-you flow SHIPPED to prod** — migration 100
+> seeds `wc_thanks_prompts` with the 199 players who played >10 ranked WC days; on their next
+> signed-in visit they get a one-time "What would you like to see on YourScore?" modal (free
+> text → `product_feedback`, write-only mailbox RLS), then after ~600px of scrolling a one-time
+> App Store review ask (native star popup in the iOS app; card on iPhone web; desktop leaves the
+> ask unconsumed so it still fires on a later phone visit). `WcThanksPrompt` mounted globally;
+> dev previews `?preview=wc-thanks` / `?preview=wc-review`. Verified live: seed = exact cohort,
+> anon-curl returns nothing on both tables, test feedback row round-tripped. **Companion email
+> (copy LOCKED Jul 21) to the 190 non-suppressed cohort members is NOT yet sent — awaiting
+> founder go.**)
+>
+> **Previously confirmed:** 2026-07-20 (**Club question bank: categories remapped + Rivalries filled 0→20 clubs.**
 > On branch `quiz/content-factory`, nothing on `main`.
 > **The remap:** 2,207 verified questions across 44 clubs were invisible to the category flow
 > because they carried six legacy labels while only 69 (Arsenal) carried the new four. 2,213

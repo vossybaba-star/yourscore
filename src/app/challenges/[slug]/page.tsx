@@ -53,8 +53,20 @@ interface QuizPack {
     // Present only on halftime packs (release engine writes it) — the fixture
     // linkage that powers the end-of-pack prediction poll.
     halftime?: { fixture_id: number; home: string; away: string };
+    // Present only on the pre-generated club topic packs (the /club/[slug] hub).
+    // The category slug drives an honest label instead of "2025/26 Season Game".
+    club_topic?: string;
   } | null;
 }
+
+// The four club topics carry a category slug; show its real name on the pack
+// header. Anything without a club_topic keeps the generic season label.
+const CLUB_TOPIC_LABEL: Record<string, string> = {
+  "history-honours": "History & Honours",
+  "legends": "Legends",
+  "modern-era": "Modern Era",
+  "rivalries-derbies": "Rivalries",
+};
 
 interface RawQuestion {
   question: string;
@@ -94,6 +106,37 @@ function loadGuestResult(): GuestResult | null {
   } catch { return null; }
 }
 function clearGuestResult() { try { localStorage.removeItem(GUEST_RESULT_KEY); } catch { /* ignore */ } }
+
+// ── Guest best score, per pack (the "beat it" memory) ─────────────────────
+// Separate from GUEST_RESULT above (that is a single-slot save-on-signup buffer).
+// This is a durable per-pack best a guest keeps across replays, so revisiting a
+// pack shows "you scored X here, beat it" instead of pretending it's their first
+// time. Signed-in players get the equivalent from the server (priorAttempt); this
+// is the guest's version, held locally because a guest has no server row.
+const GUEST_BEST_KEY = "quiz:guest-best:v1";
+type GuestBest = { score: number; correct: number; total: number; ts: number };
+function loadGuestBests(): Record<string, GuestBest> {
+  try {
+    const raw = localStorage.getItem(GUEST_BEST_KEY);
+    if (!raw) return {};
+    const v = JSON.parse(raw);
+    return v && typeof v === "object" ? v as Record<string, GuestBest> : {};
+  } catch { return {}; }
+}
+function loadGuestBest(packId: string): GuestBest | null {
+  return loadGuestBests()[packId] ?? null;
+}
+// Keep the higher score. A worse replay never overwrites a better best.
+function recordGuestBest(packId: string, next: GuestBest) {
+  try {
+    const all = loadGuestBests();
+    const prev = all[packId];
+    if (!prev || next.score > prev.score) {
+      all[packId] = next;
+      localStorage.setItem(GUEST_BEST_KEY, JSON.stringify(all));
+    }
+  } catch { /* ignore */ }
+}
 
 // Synthetic row id for the guest's own not-yet-saved score on the leaderboard.
 const GUEST_ROW_ID = "__guest__";
@@ -482,6 +525,8 @@ export default function ChallengePage() {
 
   const [userId, setUserId] = useState<string | null>(null);
   const [priorAttempt, setPriorAttempt] = useState<{ score: number; max_score: number; correct_count: number } | null>(null);
+  // Guest's own previous best on this pack (localStorage), shown on the intro as a "beat it".
+  const [guestBest, setGuestBest] = useState<GuestBest | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderEntry[]>([]);
   const [leaderLoading, setLeaderLoading] = useState(false);
 
@@ -574,6 +619,11 @@ export default function ChallengePage() {
       setPack(match);
       setQuestions(match.questions ?? []);
 
+      // Guest returning to a pack they've played before: surface their best so the
+      // intro reads "beat it" rather than pretending this is a first visit. Signed-in
+      // players get the server-backed priorAttempt instead, so skip it for them.
+      if (!uid) setGuestBest(loadGuestBest(match.id));
+
       if (match.type === "club" || match.type === "national") {
         // Custom packs store the entity name in `parameter` (e.g. "Arsenal", "France").
         // Pre-built club packs have no parameter so fall back to the pack name itself.
@@ -649,6 +699,15 @@ export default function ChallengePage() {
   const currentQ = questions[currentIdx];
   // Max score: sum of Lightning-speed points per question by difficulty
   const maxScore = questions.reduce((s, q) => s + maxPointsForDifficulty(q.difficulty ?? "medium"), 0);
+
+  // Where sign-in sends the player back to. It MUST carry ?pid= when we have one: pack names
+  // are not unique (there are two published packs called "Brighton", the live 2025/26 one and
+  // a 2024/25 archive), and slug-only resolution scans published packs and is order-unstable
+  // on a duplicate name. A guest who played the right pack, tapped SIGN UP & SAVE SCORE and
+  // came back to the WRONG one would fail the `pending.packId === match.id` check, so their
+  // run would be silently dropped and they would be staring at a leaderboard they never played.
+  const returnPath = `/challenges/${slug}${pid ? `?pid=${encodeURIComponent(pid)}` : ""}`;
+  const signInHref = `/auth/sign-in?next=${encodeURIComponent(returnPath)}`;
 
   // ── Share helpers ─────────────────────────────────────────────────────────
 
@@ -810,6 +869,9 @@ export default function ChallengePage() {
             answers: newLog.map((r) => ({ letter: r.selected, elapsedMs: r.elapsed_ms })),
             ts: Date.now(),
           });
+          // Durable per-pack best (kept only if it beats the previous), so a return
+          // visit shows "beat it". Independent of the save-on-signup buffer above.
+          recordGuestBest(pack.id, { score: finalScore, correct: correctCount, total: questions.length, ts: Date.now() });
         }
         // Playing into a group board → record server-graded score for the board.
         if (groupId && userId) {
@@ -908,7 +970,7 @@ export default function ChallengePage() {
             <div className="flex items-center gap-2 mt-1">
               <span className="font-body text-xs px-3 py-1 rounded-full"
                 style={{ background: accentDim, color: accent, border: `1px solid ${accentBorder}` }}>
-                {isRecords ? "All-Time Records" : "2025/26 Season Game"}
+                {isRecords ? "All-Time Records" : (pack.metadata?.club_topic ? (CLUB_TOPIC_LABEL[pack.metadata.club_topic] ?? "Club Quiz") : "2025/26 Season Game")}
               </span>
               <span className="font-body text-xs px-3 py-1 rounded-full"
                 style={{ background: "rgba(255,255,255,0.06)", color: "#9aa39d" }}>
@@ -936,6 +998,23 @@ export default function ChallengePage() {
                 <p className="font-body text-xs text-text-muted">
                   <span className="font-display text-base text-white">{priorAttempt.score.toLocaleString()}</span>
                   {" "}pts · {priorAttempt.correct_count}/{questions.length} correct
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Guest's own previous best on this pack. Signed-in players see priorAttempt
+              instead, so this only shows for a returning guest. It is the "beat it" nudge
+              that stops a replay pretending to be a first visit. */}
+          {!priorAttempt && guestBest && (
+            <div className="rounded-2xl px-4 py-3 flex items-center gap-3"
+              style={{ background: "rgba(0,216,192,0.07)", border: "1px solid rgba(0,216,192,0.2)" }}>
+              <span className="text-lg">🎯</span>
+              <div className="flex-1 min-w-0">
+                <p className="font-display text-xs tracking-widest mb-0.5 text-teal">YOUR BEST · BEAT IT</p>
+                <p className="font-body text-xs text-text-muted">
+                  <span className="font-display text-base text-white">{guestBest.score.toLocaleString()}</span>
+                  {" "}pts · {guestBest.correct}/{guestBest.total} correct
                 </p>
               </div>
             </div>
@@ -973,18 +1052,23 @@ export default function ChallengePage() {
                 </div>
               </div>
 
-              <div className="flex items-start gap-3 px-4 py-3 rounded-xl"
-                style={{ background: "rgba(255,183,0,0.08)", border: "1px solid rgba(255,183,0,0.25)" }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="flex-shrink-0 mt-0.5">
-                  <path d="M12 2a7 7 0 0 1 3.93 12.8c-.37.26-.58.67-.58 1.1V17a1 1 0 0 1-1 1h-4.7a1 1 0 0 1-1-1v-1.1c0-.43-.21-.84-.58-1.1A7 7 0 0 1 12 2z" stroke="#ffb700" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M9.5 21h5" stroke="#ffb700" strokeWidth="1.5" strokeLinecap="round"/>
-                </svg>
-                <p className="font-body text-sm font-semibold" style={{ color: "#ffb700" }}>
-                  {priorAttempt
-                    ? "You’re playing for practice — your leaderboard score is locked in."
-                    : "Heads up: your first score counts on the leaderboard."}
-                </p>
-              </div>
+              {/* Signed-in only. A guest's score never reaches the leaderboard, so telling them
+                  "your first score counts" contradicted the "sign in first to save your score"
+                  line 40px below it (ux-walk, 23 Jul). For guests that line says it all. */}
+              {userId && (
+                <div className="flex items-start gap-3 px-4 py-3 rounded-xl"
+                  style={{ background: "rgba(255,183,0,0.08)", border: "1px solid rgba(255,183,0,0.25)" }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="flex-shrink-0 mt-0.5">
+                    <path d="M12 2a7 7 0 0 1 3.93 12.8c-.37.26-.58.67-.58 1.1V17a1 1 0 0 1-1 1h-4.7a1 1 0 0 1-1-1v-1.1c0-.43-.21-.84-.58-1.1A7 7 0 0 1 12 2z" stroke="#ffb700" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M9.5 21h5" stroke="#ffb700" strokeWidth="1.5" strokeLinecap="round"/>
+                  </svg>
+                  <p className="font-body text-sm font-semibold" style={{ color: "#ffb700" }}>
+                    {priorAttempt
+                      ? "You’re playing for practice. Your leaderboard score is locked in."
+                      : "Heads up: your first score counts on the leaderboard."}
+                  </p>
+                </div>
+              )}
 
               <Button
                 variant="primary"
@@ -999,9 +1083,9 @@ export default function ChallengePage() {
 
               {!userId && (
                 <p className="font-body text-xs text-center" style={{ color: "#586058" }}>
-                  Playing as guest —{" "}
-                  <Link href={`/auth/sign-in?next=/challenges/${slug}`}
-                    style={{ color: "#aeea00", textDecoration: "underline" }}>sign in first</Link>
+                  Playing as guest.{" "}
+                  <Link href={signInHref}
+                    style={{ color: "#aeea00", textDecoration: "underline" }}>Sign in first</Link>
                   {" "}to save your score
                 </p>
               )}
@@ -1107,8 +1191,13 @@ export default function ChallengePage() {
             <p className="font-body text-base font-semibold text-white leading-relaxed">{currentQ.question}</p>
           </div>
 
-          {/* Answer buttons */}
+          {/* `key` forces a remount on every question. Without it the buttons keep their DOM
+              nodes across the change and `transition-all` animates the NEW option text out of
+              the OLD question's reveal colours: for a few hundred ms the new question shows a
+              wrong option glowing green as the correct answer. Remounting starts each question
+              from the neutral state with nothing to transition from. */}
           <AnswerButtons
+            key={currentIdx}
             options={currentQ.options}
             answer={currentQ.answer}
             selected={selected}
@@ -1157,7 +1246,11 @@ export default function ChallengePage() {
   if (phase === "results" && pack) {
     const correctCount = answerLog.filter((r) => r.correct).length;
     const perfectBonus = calculatePerfectRoundBonus(correctCount, questions.length);
-    const pct = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
+    // Accuracy is questions right, NOT score/maxScore. Score carries speed bonuses, so the
+    // points ratio sat next to "7/15 Correct" reading 41% and the two numbers disagreed.
+    // This matches the leaderboard's Accuracy sort (correct_count) and the profile's
+    // lifetime accuracy, so one word means one thing everywhere.
+    const pct = questions.length > 0 ? Math.round((correctCount / questions.length) * 100) : 0;
     const isRecords = pack.type === "records";
     const accent = isRecords ? "#aeea00" : "#00d8c0";
     const { emoji, label, color } = scoreData(score, maxScore);
@@ -1165,6 +1258,53 @@ export default function ChallengePage() {
       ? Math.round(answerLog.reduce((s, r) => s + r.elapsed_ms, 0) / answerLog.length)
       : 0;
     const fastestMs = answerLog.length ? Math.min(...answerLog.map(r => r.elapsed_ms)) : 0;
+
+    // Rendered high in the column, straight under PLAY ANOTHER: a guest's prompt to keep
+    // the score they just earned, or a signed-in player's confirmation that it stuck.
+    // A function, not a value: it reads guestRank/guestApprox, which are computed below.
+    const renderSaveScore = () => userId ? (
+      priorAttempt ? (
+        <div className="rounded-2xl px-5 py-4 flex items-center gap-3"
+          style={{ background: "rgba(0,216,192,0.07)", border: "1px solid rgba(0,216,192,0.2)" }}>
+          <span className="text-xl">🎯</span>
+          <div>
+            <p className="font-display text-sm tracking-wide text-teal">Practice run</p>
+            <p className="font-body text-xs text-text-muted">
+              Your leaderboard score is still{" "}
+              <span className="text-white font-semibold">{priorAttempt.score.toLocaleString()}</span> pts
+            </p>
+          </div>
+        </div>
+      ) : saved ? (
+        <div className="rounded-2xl px-5 py-4 flex items-center gap-3"
+          style={{ background: "rgba(174,234,0,0.07)", border: "1px solid rgba(174,234,0,0.2)" }}>
+          <span className="text-xl">✓</span>
+          <div>
+            <p className="font-display text-sm tracking-wide text-green">Score saved ✓</p>
+            <p className="font-body text-xs text-text-muted">You&apos;re on the leaderboard</p>
+          </div>
+        </div>
+      ) : null
+    ) : (
+      <div className="rounded-2xl p-5"
+        style={{ background: "rgba(174,234,0,0.07)", border: "1px solid rgba(174,234,0,0.22)" }}>
+        <div className="flex items-center gap-3 mb-4">
+          <div className="rounded-2xl px-3 py-2 font-display text-xl"
+            style={{ background: "rgba(174,234,0,0.15)", color: "#aeea00" }}>
+            {score.toLocaleString()}
+          </div>
+          <div>
+            <p className="font-body text-sm font-semibold text-white">
+              You&apos;d be #{guestRank}{guestApprox ? "+" : ""} on the leaderboard
+            </p>
+            <p className="font-body text-xs text-text-muted">Sign up to lock in your spot. This score is saved the moment you&apos;re in.</p>
+          </div>
+        </div>
+        <Button variant="primary" tone="teal" size="md" fullWidth href={signInHref}>
+          SIGN UP &amp; SAVE SCORE
+        </Button>
+      </div>
+    );
 
     const byDiff = (["easy", "medium", "hard"] as const).map((d) => {
       const dQs = questions.map((q, i) => ({ q, i })).filter(({ q }) => (q.difficulty?.toLowerCase() ?? "medium") === d);
@@ -1252,24 +1392,22 @@ export default function ChallengePage() {
             <HalftimePredictionPoll packId={pack.id} accent={accent} />
           )}
 
-          {/* ── Share on X — no prize framing: there is no giveaway live ── */}
-          <button
-            onClick={shareX}
-            className="w-full rounded-2xl overflow-hidden active:scale-[0.98] transition-transform"
-            style={{ background: "linear-gradient(135deg, #1c1400, #221900)", border: "2px solid rgba(0,216,192,0.55)" }}
-          >
-            <div className="flex items-center gap-4 px-5 py-4">
-              <div style={{ fontSize: 36, lineHeight: 1 }}>📣</div>
-              <div className="text-left flex-1 min-w-0">
-                <div className="font-display tracking-wide" style={{ fontSize: 20, color: "#00d8c0" }}>SHARE YOUR SCORECARD</div>
-                <div className="font-body" style={{ fontSize: 13, color: "#a89060" }}>Post it on 𝕏 →</div>
-              </div>
-            </div>
-          </button>
+          {/* The next loop is the primary action, not sharing. Two dominant share CTAs used
+              to sit here and the only route to another game was the last thing on the page,
+              four screens down. Play again leads; share is one secondary underneath (the
+              share sheet already offers link / X / image, so the standalone X card is gone). */}
+          <Button variant="primary" tone="teal" size="lg" fullWidth onClick={() => router.push("/play")}>
+            PLAY ANOTHER →
+          </Button>
 
-          <button onClick={openShare} className="w-full rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "#aeea00", color: "#062013", fontSize: 22 }}>
+          {/* Save-your-score sits directly under the payoff, above the leaderboard it refers
+              to. It used to sit below the timing card, the rank card, the leaderboard and the
+              difficulty breakdown, which is where the conversion moment went to die. */}
+          {renderSaveScore()}
+
+          <Button variant="ghost" tone="teal" size="md" fullWidth onClick={openShare}>
             📸 SHARE YOUR RESULT
-          </button>
+          </Button>
 
           {/* Timing stats */}
           <div className="rounded-2xl p-5 bg-surface"
@@ -1319,51 +1457,6 @@ export default function ChallengePage() {
               ))}
             </div>
           </div>
-
-          {/* Sign-up / saved */}
-          {userId ? (
-            priorAttempt ? (
-              <div className="rounded-2xl px-5 py-4 flex items-center gap-3"
-                style={{ background: "rgba(0,216,192,0.07)", border: "1px solid rgba(0,216,192,0.2)" }}>
-                <span className="text-xl">🎯</span>
-                <div>
-                  <p className="font-display text-sm tracking-wide text-teal">Practice run</p>
-                  <p className="font-body text-xs text-text-muted">
-                    Your leaderboard score is still{" "}
-                    <span className="text-white font-semibold">{priorAttempt.score.toLocaleString()}</span> pts
-                  </p>
-                </div>
-              </div>
-            ) : saved ? (
-              <div className="rounded-2xl px-5 py-4 flex items-center gap-3"
-                style={{ background: "rgba(174,234,0,0.07)", border: "1px solid rgba(174,234,0,0.2)" }}>
-                <span className="text-xl">✓</span>
-                <div>
-                  <p className="font-display text-sm tracking-wide text-green">Score saved ✓</p>
-                  <p className="font-body text-xs text-text-muted">You&apos;re on the leaderboard</p>
-                </div>
-              </div>
-            ) : null
-          ) : (
-            <div className="rounded-2xl p-5"
-              style={{ background: "rgba(174,234,0,0.07)", border: "1px solid rgba(174,234,0,0.22)" }}>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="rounded-2xl px-3 py-2 font-display text-xl"
-                  style={{ background: "rgba(174,234,0,0.15)", color: "#aeea00" }}>
-                  {score.toLocaleString()}
-                </div>
-                <div>
-                  <p className="font-body text-sm font-semibold text-white">
-                    You&apos;d be #{guestRank}{guestApprox ? "+" : ""} on the leaderboard
-                  </p>
-                  <p className="font-body text-xs text-text-muted">Sign up to lock in your spot — this score is saved the moment you&apos;re in</p>
-                </div>
-              </div>
-              <Button variant="primary" tone="teal" size="md" fullWidth href={`/auth/sign-in?next=/challenges/${slug}`}>
-                SIGN UP &amp; SAVE SCORE
-              </Button>
-            </div>
-          )}
 
           {/* The versus bridge — the result screen is the motivation peak.
               Recommend quizzes OTHER players have scored on (never this one —

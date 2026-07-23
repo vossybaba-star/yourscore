@@ -63,7 +63,7 @@ const RECORD_TOPICS: { label: string; emoji: string; comingSoon?: boolean }[] = 
 
 const ERA_OPTIONS = [
   { value: "",          label: "All Time",       short: "All" },
-  { value: "early-pl",  label: "Classic 90s–00s", short: "90s" },
+  { value: "early-pl",  label: "Classic 90s/00s", short: "90s" },
   { value: "2010s",     label: "2010s",           short: "10s" },
   { value: "2020s",     label: "Modern 2020s",    short: "20s" },
   { value: "2024-25",   label: "This Season",     short: "Now" },
@@ -401,7 +401,11 @@ export default function CreateQuizPage() {
                         style={{
                           display: "flex", flexDirection: "column", alignItems: "center",
                           justifyContent: "center", gap: 5,
-                          padding: "10px 4px", borderRadius: 12, height: 76,
+                          // minHeight, not height: at font-size 9 / line-height 1.2 a two-line
+                          // clamp needs ~22px, which a fixed 76px box could not give it, so
+                          // "Charlton Athletic", "Nottingham Forest" and friends were sliced
+                          // through the middle of their second line.
+                          padding: "10px 4px", borderRadius: 12, minHeight: 84,
                           cursor: "pointer", transition: "all 0.15s ease",
                           background: isSelected ? "rgba(0,216,192,0.12)" : "rgba(255,255,255,0.03)",
                           border: `1px solid ${isSelected ? "rgba(0,216,192,0.55)" : "rgba(255,255,255,0.07)"}`,
@@ -409,8 +413,12 @@ export default function CreateQuizPage() {
                         }}
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
+                        {/* width/height in CSS, not just the attributes: Tailwind preflight sets
+                            `img { height: auto }`, which beat the height attribute and let tall
+                            crests (Birmingham City) grow and shove the club name out of the card
+                            entirely — that card rendered with no name at all. */}
                         {badge && <img src={badge} alt={club} width={34} height={34}
-                          style={{ objectFit: "contain", filter: isSelected ? "drop-shadow(0 1px 6px rgba(0,216,192,0.4))" : "none" }} />}
+                          style={{ width: 34, height: 34, flexShrink: 0, objectFit: "contain", filter: isSelected ? "drop-shadow(0 1px 6px rgba(0,216,192,0.4))" : "none" }} />}
                         <span style={{
                           fontFamily: "var(--font-body, sans-serif)", fontSize: 9,
                           color: isSelected ? "#00d8c0" : "#9aa39d", fontWeight: 600,
@@ -444,7 +452,7 @@ export default function CreateQuizPage() {
                       style={{
                         display: "flex", flexDirection: "column", alignItems: "center",
                         justifyContent: "center", gap: 5,
-                        padding: "12px 4px", borderRadius: 12, height: 76,
+                        padding: "12px 4px", borderRadius: 12, minHeight: 84,
                         cursor: "pointer", transition: "all 0.15s ease",
                         background: isSelected ? "rgba(0,201,255,0.12)" : "rgba(255,255,255,0.03)",
                         border: `1px solid ${isSelected ? "rgba(0,201,255,0.55)" : "rgba(255,255,255,0.07)"}`,
@@ -453,7 +461,7 @@ export default function CreateQuizPage() {
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       {badge && <img src={badge} alt={name} width={34} height={34}
-                        style={{ objectFit: "contain", filter: isSelected ? "drop-shadow(0 1px 6px rgba(0,201,255,0.4))" : "none" }} />}
+                        style={{ width: 34, height: 34, flexShrink: 0, objectFit: "contain", filter: isSelected ? "drop-shadow(0 1px 6px rgba(0,201,255,0.4))" : "none" }} />}
                       <span style={{
                         fontFamily: "var(--font-body, sans-serif)", fontSize: 9, fontWeight: 600,
                         color: isSelected ? "#00c9ff" : "#9aa39d",

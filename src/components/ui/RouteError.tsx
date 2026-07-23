@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import * as Sentry from "@sentry/nextjs";
+import { ErrorRouteMarker } from "@/components/app/errorRoute";
 
 /**
  * Shared fallback UI for App Router error boundaries (`error.tsx`). A thrown error
@@ -27,6 +28,7 @@ export function RouteError({
 
   return (
     <div style={{ minHeight: "60dvh", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, background: "#0a0a0f" }}>
+      <ErrorRouteMarker />
       <div style={{ maxWidth: 380, width: "100%", textAlign: "center" }}>
         <div style={{ fontSize: 30, marginBottom: 10 }}>⚠️</div>
         <h1 className="font-display" style={{ fontSize: 20, color: "#ffffff", margin: 0 }}>{title}</h1>

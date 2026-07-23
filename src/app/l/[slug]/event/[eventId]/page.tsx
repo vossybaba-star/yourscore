@@ -236,7 +236,10 @@ export default function ClubEventPage() {
             style={{ background: "linear-gradient(145deg, #0e1611 0%, #15211a 100%)", border: "1px solid rgba(255,255,255,0.08)", minHeight: 100 }}>
             <p className="font-body text-base font-semibold text-white leading-relaxed">{q.question}</p>
           </div>
+          {/* `key` per question so the selected-state colours don't transition across
+              questions (answers stay server-side here, so there is no reveal to bleed). */}
           <AnswerButtons
+            key={idx}
             options={q.options}
             answer="" /* answers stay server-side for event integrity */
             selected={selected}

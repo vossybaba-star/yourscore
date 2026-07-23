@@ -54,17 +54,23 @@ interface TodayPayload {
 }
 
 export function DebateCard({
-  withDiscussion = false,
+  withDiscussion = true,
   signInNext = "/debate",
   initialPick = null,
+  withSignUpPitch = true,
 }: {
-  /** Render the debate's own discussion thread beneath the card. */
+  /** Render the debate's own comment thread beneath the card. On by default —
+   * pass false only where another thread already owns the page (quiz room). */
   withDiscussion?: boolean;
   signInNext?: string;
   /** Share-link pre-pick (/debate?pick=N): auto-casts once signed in and
    * unvoted; signed-out visitors see the option highlighted, and their tap
    * rides through sign-in via signInNext. */
   initialPick?: number | null;
+  /** The "prove it, play on YourScore" footer. Only earns its place where the
+   * card is the whole visit (the public /debate landing). Pass false inside the
+   * app — they're already here, and it would flash while the session loads. */
+  withSignUpPitch?: boolean;
 }) {
   const { user } = useUser();
   const [data, setData] = useState<TodayPayload | null>(null);
@@ -126,13 +132,6 @@ export function DebateCard({
     } finally {
       setPending(null);
     }
-  }
-
-  async function share() {
-    const url = "https://yourscore.app/debate";
-    const text = `${debate!.question} — settle it on YourScore`;
-    if (navigator.share) await navigator.share({ title: "Today's debate", text, url }).catch(() => {});
-    else await navigator.clipboard?.writeText(`${text} ${url}`).catch(() => {});
   }
 
   const card = (
@@ -210,47 +209,36 @@ export function DebateCard({
         })}
       </div>
 
-      {voted && (
-        <div className="px-5 pb-4">
-          <div className="flex gap-2">
-            <button
-              onClick={share}
-              className="flex-1 rounded-xl py-3 font-display text-[12px] tracking-widest active:scale-[0.99] transition-transform"
-              style={{ background: `${GOLD}14`, color: GOLD, border: `1px solid ${GOLD}44` }}
-            >
-              DRAG A FRIEND IN →
-            </button>
-            {/* When the thread isn't rendered right below, offer the way in */}
-            {!withDiscussion && (
-              <Link href="/debate"
-                className="flex-1 text-center rounded-xl py-3 font-display text-[12px] tracking-widest active:scale-[0.99] transition-transform"
-                style={{ background: "rgba(255,255,255,0.05)", color: "#eef2f0", border: "1px solid rgba(255,255,255,0.14)" }}
-              >
-                THE ARGUMENT →
-              </Link>
-            )}
-          </div>
-          {/* Voting is free; the pitch after it is the games. */}
-          {!user && (
-            <p className="font-body text-[11px] text-center mt-2.5" style={{ color: "#8a948f" }}>
-              Vote counted. Reckon you actually know your football?{" "}
-              <Link href="/" className="font-bold" style={{ color: GOLD }}>
-                Prove it — play on YourScore →
-              </Link>
-            </p>
-          )}
+      {/* Comments live INSIDE the debate card, not in a card of their own —
+          they're the same conversation, so they read as one block. */}
+      {withDiscussion && (
+        <DiscussionThread
+          embedded
+          subjectType="debate"
+          subjectId={debate.id}
+          title="Comments"
+          accent={GOLD}
+          signInNext={signInNext}
+          canPost={voted}
+          lockedHint="Vote first, then have your say"
+        />
+      )}
+
+      {/* Voting is free; the pitch after it is the games. */}
+      {withSignUpPitch && voted && !user && (
+        <div className="px-5 py-3.5" style={{ borderTop: "1px solid rgba(255,255,255,0.08)", background: "rgba(0,0,0,0.2)" }}>
+          <p className="font-body text-[11px] text-center" style={{ color: "#8a948f" }}>
+            Vote counted. Reckon you actually know your football?{" "}
+            <Link href="/" className="font-bold" style={{ color: GOLD }}>
+              Prove it, play on YourScore →
+            </Link>
+          </p>
         </div>
       )}
     </div>
   );
 
-  // The argument only opens once you've picked a side — voting is the entry
-  // fee, commenting is optional (vote and move on is a fine outcome).
-  if (!withDiscussion || !voted) return card;
-  return (
-    <div className="space-y-2.5">
-      {card}
-      <DiscussionThread subjectType="debate" subjectId={debate.id} title="The argument" accent={GOLD} signInNext={signInNext} />
-    </div>
-  );
+  // Comments are PUBLIC to read whether you voted or not (founder, Jul 23) —
+  // seeing the argument is the draw. Posting is what voting buys you.
+  return card;
 }

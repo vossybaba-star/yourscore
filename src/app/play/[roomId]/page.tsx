@@ -724,7 +724,7 @@ export default function RoomPage() {
       <main className="min-h-dvh bg-bg flex flex-col items-center justify-center px-6 gap-4 text-center">
         <p className="font-display text-5xl">⚽</p>
         <p className="font-display text-2xl text-white">You&apos;ve been invited to a quiz lobby</p>
-        <p className="font-body text-sm" style={{ color: "#8a948f" }}>Sign in to take your seat — free, takes 10 seconds.</p>
+        <p className="font-body text-sm" style={{ color: "#8a948f" }}>Sign in to take your seat. Free, takes 10 seconds.</p>
         <Button variant="primary" tone="teal" size="lg" href={`/auth/sign-in?next=${encodeURIComponent(`/play/${roomId}`)}`}>
           Sign in to join →
         </Button>
@@ -991,7 +991,7 @@ export default function RoomPage() {
             <div className="rounded-2xl px-5 py-4 space-y-2" style={{ background: "rgba(0,216,192,0.06)", border: "1px solid rgba(0,216,192,0.2)" }}>
               <p className="font-body text-[10px] font-bold uppercase tracking-[0.28em] mb-1" style={{ color: "#00d8c0" }}>Keep playing</p>
               <Link href={`/versus/find?game=quiz${room.pack_id ? `&pack=${room.pack_id}` : ""}`} className="block w-full text-center rounded-xl py-3.5 font-display text-base tracking-wide active:scale-[0.99] transition-transform" style={{ background: "#00d8c0", color: "#04231f" }}>
-                PLAY AGAIN — NEW OPPONENT →
+                PLAY AGAIN, NEW OPPONENT →
               </Link>
               <Link href="/versus/quiz" className="block w-full text-center rounded-xl py-3 font-display text-sm tracking-wide" style={{ background: "rgba(255,255,255,0.05)", color: "#eef2f0", border: "1px solid rgba(255,255,255,0.14)" }}>
                 PICK A DIFFERENT QUIZ →
@@ -1003,7 +1003,8 @@ export default function RoomPage() {
           {room.pack_id && (
             <DiscussionThread subjectType="pack" subjectId={room.pack_id} title="Talk about this quiz" signInNext={`/play/${room.id}`} />
           )}
-          <DebateCard signInNext={`/play/${room.id}`} />
+          {/* No second thread here — the quiz's own discussion above owns comments */}
+          <DebateCard withDiscussion={false} withSignUpPitch={false} signInNext={`/play/${room.id}`} />
 
           {/* ── Play Again voting panel (human rooms) ─────────────────────── */}
           {!lobbyExpired && !players.some((p) => p.user_id === QUIZ_BOT_ID) && (
@@ -1181,7 +1182,7 @@ export default function RoomPage() {
       {/* Sign in prompt if unauthenticated during live game */}
       {activeQuestion && !user && (
         <div className="fixed inset-x-0 bottom-0 z-50 p-4" style={{ background: "rgba(10,10,15,0.97)", backdropFilter: "blur(16px)", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-          <p className="font-body text-sm font-bold text-white mb-3">Question is live — sign in to answer</p>
+          <p className="font-body text-sm font-bold text-white mb-3">Question is live. Sign in to answer</p>
           <Button variant="primary" tone="teal" size="md" fullWidth href="/auth/sign-in">Sign in to play →</Button>
         </div>
       )}

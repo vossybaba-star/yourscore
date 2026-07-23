@@ -251,24 +251,10 @@ function VersusInner() {
   const stats = useVersusStats();
   const [sheet, setSheet] = useState<null | { kind: "game"; target?: string | null } | { kind: "code" }>(null);
 
-  // Guests keep the nav (they arrived via the guest BottomNav — removing it
-  // strands them here) and get a create-account path, not just sign-in.
-  // /auth/sign-in handles both; ?next brings them straight back.
-  if (!loading && !user) {
-    return (
-      <main className="min-h-dvh bg-bg grid place-items-center px-6 pb-28">
-        <div className="text-center w-full max-w-sm">
-          <div className="mx-auto mb-5 w-fit"><GameGlyph game="38-0" size={40} /></div>
-          <p className="font-display text-3xl text-white mb-2">Challenge your friends</p>
-          <p className="font-body text-sm text-text-muted mb-6">Go head-to-head in 38-0 and Quiz Battle. Build rivalries, settle arguments, keep the score.</p>
-          <Link href="/auth/sign-in?next=/versus" className="block rounded-2xl px-6 py-3.5 font-display tracking-wide mb-3" style={{ background: TEAL, color: "#04231f" }}>CREATE FREE ACCOUNT →</Link>
-          <Link href="/auth/sign-in?next=/versus" className="block rounded-2xl px-6 py-3.5 font-display tracking-wide" style={{ background: "rgba(255,255,255,0.06)", color: "#cdeee7", border: "1px solid rgba(255,255,255,0.12)" }}>SIGN IN</Link>
-        </div>
-        <BottomNav />
-      </main>
-    );
-  }
-
+  // Hoisted above the guest/signed-in branch so both render from the exact
+  // same derived values — useYourTurns/useVersusStats already no-op safely
+  // for a guest (no uid → they resolve to empty/zeroed, same as a genuine
+  // brand-new signed-in account with no games played yet).
   const only1v1 = (list: InboxChallenge[]) => list.filter((c) => c.kind !== "group");
   const yourTurn = only1v1(turns.yourTurn), waiting = only1v1(turns.waiting), results = only1v1(turns.results);
   const activeMatches = [...yourTurn, ...waiting];
@@ -277,6 +263,125 @@ function VersusInner() {
   const PILLS: { key: View; label: string }[] = [
     { key: "play", label: "Play" }, { key: "friends", label: "Friends" }, { key: "leagues", label: "Leagues" },
   ];
+
+  // Guests keep the nav (they arrived via the guest BottomNav — removing it
+  // strands them here) and see the REAL first-time Versus hub — the exact
+  // sections, order and visual rhythm a brand-new signed-in user with zero
+  // matches/rivalries gets below, not a marketing block (founder round 3,
+  // 2026-07-21: the previous version only showed the action cards and read
+  // as a promo, not an actual hub). Community sections (LiveActivityStrip,
+  // CommunityHighlights, PublicLeaguesRail) fetch real public/seeded data
+  // over unauthenticated routes — verified each API route has no auth gate
+  // — so guests see the same real content a signed-in visitor would.
+  // VersusDiscovery(promoOnly) needs a known friend count to decide what to
+  // show; a guest's is never resolved, so it naturally renders nothing (its
+  // own component logic, not a guest special-case). Active matches / recent
+  // results / your record / your rivalries all require the user's own
+  // history and have no empty state for the zero-games case — a genuine
+  // first-time signed-in user doesn't see them either, so they're omitted
+  // here rather than faked.
+  //
+  // Every tap in the preview routes to sign-in via one capture wrapper
+  // around the whole thing; only the BottomNav sits outside it and stays
+  // fully functional. /auth/sign-in handles create-account too; ?next
+  // brings them straight back to /versus once they're in.
+  if (!loading && !user) {
+    return (
+      <main className="min-h-dvh bg-bg pb-28">
+        <div
+          onClickCapture={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            router.push("/auth/sign-in?next=/versus");
+          }}
+        >
+          <div className="sticky top-0 z-20 pt-safe" style={{ background: "rgba(8,13,10,0.95)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+            <div className="max-w-lg mx-auto px-5 py-4 flex items-center gap-2">
+              <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                <path d="M3 3l8.5 8.5M3 3v3l7.5 7.5M3 3h3l7.5 7.5" stroke={TEAL} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M19 3l-8.5 8.5M19 3v3l-7.5 7.5M19 3h-3L8.5 11.5" stroke={TEAL} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <h1 className="font-display text-2xl text-white" style={{ letterSpacing: "-0.01em" }}>Versus</h1>
+            </div>
+            {/* Guests always preview the Play view — Friends/Leagues are the
+                user's own data, so the pills are visual rhythm only here;
+                tapping any of them (including Play) hits the capture wrapper. */}
+            <div className="flex max-w-lg mx-auto px-5 pb-3 gap-2">
+              {PILLS.map((p) => {
+                const active = p.key === "play";
+                return (
+                  <button key={p.key} className="flex-1 font-body text-sm font-semibold py-2 rounded-lg transition-all text-center"
+                    style={{ background: active ? "rgba(0,216,192,0.15)" : "rgba(255,255,255,0.04)", color: active ? TEAL : "#8a948f", border: `1px solid ${active ? "rgba(0,216,192,0.3)" : "transparent"}` }}>
+                    {p.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="max-w-lg mx-auto px-5">
+            {/* Create-account path stays visible without dominating: one slim
+                banner, not two giant buttons stacked under the hub. */}
+            <Link href="/auth/sign-in?next=/versus" className="flex items-center justify-between gap-3 rounded-2xl px-4 py-3 mt-4 active:scale-[0.99] transition-transform"
+              style={{ background: "linear-gradient(135deg, rgba(0,216,192,0.14), rgba(0,216,192,0.05))", border: "1px solid rgba(0,216,192,0.3)" }}>
+              <p className="font-body text-xs text-white pr-2">Free account, takes seconds — then challenge your friends.</p>
+              <span className="font-display text-[11px] tracking-wide px-3 py-2 rounded-lg flex-shrink-0" style={{ background: TEAL, color: "#04231f" }}>CREATE FREE ACCOUNT →</span>
+            </Link>
+
+            {/* Priority: an action waiting on you always outranks discovery —
+                never true for a guest (mirrored for parity with the real
+                first-time hub; yourTurn is always empty here). */}
+            {yourTurn.length > 0 && (
+              <div className="pt-4"><YourTurnCard c={yourTurn[0]} /></div>
+            )}
+
+            {/* Hero — full-size welcome when nothing is urgent, exactly as a
+                first-time signed-in user sees it. */}
+            {yourTurn.length === 0 && (
+              <div className="pt-4">
+                <div className="relative rounded-3xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+                  <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, #101d16 0%, #0b1511 100%)" }} />
+                  <VersusHeroArt />
+                  <div className="absolute inset-0" style={{ background: "linear-gradient(110deg, rgba(8,13,10,0.78) 38%, rgba(8,13,10,0.28) 82%, rgba(8,13,10,0.05) 100%)" }} />
+                  <div className="relative p-5 pt-7 pb-6">
+                    <p className="font-body text-[11px] font-bold uppercase tracking-[0.32em] mb-2.5" style={{ color: LIME }}>Welcome to Versus</p>
+                    <p className="font-display text-white leading-[0.85]" style={{ fontSize: 46 }}>TIME TO PLAY.<br /><span style={{ color: LIME }}>LET&rsquo;S FIND YOU</span><br />A RIVAL.</p>
+                    <p className="font-body text-xs mt-3" style={{ color: "#cdeee7" }}>Play someone now, challenge a friend or join a match.</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="mt-2.5" data-tour="versus-actions">
+              <VersusActionCards onChallenge={() => {}} onJoinCode={() => {}} />
+            </div>
+
+            {/* Choose your game */}
+            <SectionLabel>Choose your game</SectionLabel>
+            <div className="flex gap-2.5">
+              <GameTile game="38-0" href="/versus/38-0" title="38-0" sub="Build your XI team from scratch." />
+              <GameTile game="quiz" href="/versus/quiz" title="Quiz Battle" sub="Score questions. Beat your rival." />
+            </div>
+
+            {/* Active matches / Recent results / Your record / Your rivalries
+                all require the user's own history and have no empty state
+                for the zero-games case — a genuine first-time signed-in user
+                doesn't see them either (see comment above the guest branch),
+                so they're correctly absent here too. */}
+
+            {/* Community: live pulse, the results feed, public leagues, friends
+                promo — every source here is public/seeded and reads real for
+                a guest exactly as it does signed-in. */}
+            <LiveActivityStrip />
+            <CommunityHighlights />
+            <PublicLeaguesRail limit={2} />
+            <VersusDiscovery promoOnly />
+          </div>
+        </div>
+        <BottomNav />
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-dvh bg-bg pb-28">
@@ -328,7 +433,7 @@ function VersusInner() {
               </div>
             </div>
           )}
-          <div className="mt-2.5">
+          <div className="mt-2.5" data-tour="versus-actions">
             <VersusActionCards onChallenge={() => setSheet({ kind: "game" })} onJoinCode={() => setSheet({ kind: "code" })} />
           </div>
 
