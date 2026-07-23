@@ -63,21 +63,27 @@ export async function GET(_req: NextRequest, { params }: { params: { slug: strin
     .eq("status", "published")
     .eq("parameter", clubName);
 
+  // A topic can hold more than one pack: where a club has enough distinct facts left
+  // over, the seed deals a II/III/IV. `.find()` here would return one and silently
+  // orphan the rest, which is the exact defect the club page exists to fix, so return
+  // every volume in order.
   const topics = TOPICS.map(({ category, label }) => {
-    const pack = (topicPacks ?? []).find(
-      (p) => (p.metadata as { club_topic?: string } | null)?.club_topic === category,
-    );
+    const packs = (topicPacks ?? [])
+      .filter((p) => (p.metadata as { club_topic?: string } | null)?.club_topic === category)
+      .map((p) => ({
+        id: p.id,
+        slug: slugify(p.name),
+        name: p.name,
+        question_count: p.question_count,
+        volume: (p.metadata as { club_topic_volume?: number } | null)?.club_topic_volume ?? 1,
+      }))
+      .sort((a, b) => a.volume - b.volume);
     return {
       category,
       label,
-      pack: pack
-        ? {
-            id: pack.id,
-            slug: slugify(pack.name),
-            name: pack.name,
-            question_count: pack.question_count,
-          }
-        : null,
+      // `pack` stays for the single-volume case so nothing downstream has to special-case it.
+      pack: packs[0] ?? null,
+      packs,
     };
   });
 

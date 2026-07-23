@@ -27,6 +27,8 @@ interface Topic {
   category: string;
   label: string;
   pack: TopicPack | null;
+  /** Every volume for this topic (I, II, III…). One card is rendered per entry. */
+  packs?: (TopicPack & { volume?: number })[];
 }
 
 interface ClubPageData {
@@ -88,10 +90,15 @@ function SeasonCard({ club, pack, challengeTo }: { club: string; pack: SeasonPac
 
 // ── Topic card ────────────────────────────────────────────────────────────
 
-function TopicCard({ topic, challengeTo }: { topic: Topic; challengeTo: string | null }) {
-  const emoji = TOPIC_EMOJI[topic.category] ?? "🎲";
+const ROMAN: Record<number, string> = { 2: "II", 3: "III", 4: "IV" };
 
-  if (!topic.pack) {
+function TopicCard({ topic, pack, challengeTo }: { topic: Topic; pack?: TopicPack & { volume?: number }; challengeTo: string | null }) {
+  const emoji = TOPIC_EMOJI[topic.category] ?? "🎲";
+  // A topic can render several cards (one per volume); the card shows the volume it is.
+  const vol = pack?.volume ?? 1;
+  const heading = vol > 1 ? `${topic.label} ${ROMAN[vol] ?? vol}` : topic.label;
+
+  if (!pack) {
     return (
       <div
         className="rounded-3xl overflow-hidden px-4 py-5 flex flex-col items-center text-center"
@@ -102,7 +109,7 @@ function TopicCard({ topic, challengeTo }: { topic: Topic; challengeTo: string |
         }}
       >
         <span className="text-3xl mb-2">{emoji}</span>
-        <p className="font-body text-sm font-bold text-white mb-1">{topic.label}</p>
+        <p className="font-body text-sm font-bold text-white mb-1">{heading}</p>
         <p className="font-body text-xs leading-relaxed" style={{ color: "#7a857f" }}>
           Not enough verified questions yet for a full quiz. More are on the way.
         </p>
@@ -112,7 +119,7 @@ function TopicCard({ topic, challengeTo }: { topic: Topic; challengeTo: string |
 
   return (
     <Link
-      href={withChallenge(`/challenges/${topic.pack.slug}?pid=${topic.pack.id}`, challengeTo)}
+      href={withChallenge(`/challenges/${pack.slug}?pid=${pack.id}`, challengeTo)}
       className="block rounded-3xl overflow-hidden transition-all duration-150 active:scale-[0.96]"
       style={{
         background: "linear-gradient(160deg, #0e1611 0%, #15211a 100%)",
@@ -121,8 +128,8 @@ function TopicCard({ topic, challengeTo }: { topic: Topic; challengeTo: string |
     >
       <div className="px-4 py-5 flex flex-col items-center text-center">
         <span className="text-3xl mb-2">{emoji}</span>
-        <p className="font-body text-sm font-bold text-white mb-1">{topic.label}</p>
-        <p className="font-body text-xs mb-3" style={{ color: "#8a948f" }}>{topic.pack.question_count} questions</p>
+        <p className="font-body text-sm font-bold text-white mb-1">{heading}</p>
+        <p className="font-body text-xs mb-3" style={{ color: "#8a948f" }}>{pack.question_count} questions</p>
         <div
           className="rounded-xl py-1.5 px-3 text-center"
           style={{
@@ -218,9 +225,16 @@ export default function ClubPage() {
             Topics
           </p>
           <div className="grid grid-cols-2 gap-3">
-            {data.topics.map((topic) => (
-              <TopicCard key={topic.category} topic={topic} challengeTo={challengeTo} />
-            ))}
+            {data.topics.flatMap((topic) => {
+              const volumes = topic.packs?.length ? topic.packs : (topic.pack ? [topic.pack] : []);
+              // No pack at all: one disabled card carrying the honest reason.
+              if (volumes.length === 0) {
+                return [<TopicCard key={topic.category} topic={topic} challengeTo={challengeTo} />];
+              }
+              return volumes.map((p) => (
+                <TopicCard key={p.id} topic={topic} pack={p} challengeTo={challengeTo} />
+              ));
+            })}
           </div>
         </div>
       )}

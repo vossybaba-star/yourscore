@@ -33,6 +33,18 @@ const args = process.argv.slice(2);
 // Dry run is the DEFAULT. --commit is the only way to write anything.
 const COMMIT = args.includes("--commit");
 
+// --volumes[=category] mines a topic beyond its first pack: where a club has enough
+// DISTINCT facts left over, it deals a second/third/fourth pack (II, III, IV) drawn
+// only from facts no existing volume already used. Without the flag the script keeps
+// its original behaviour of exactly one pack per club/topic.
+const volumesArg = args.find((a) => a === "--volumes" || a.startsWith("--volumes="));
+const VOLUMES = Boolean(volumesArg);
+const VOLUMES_CATEGORY = volumesArg && volumesArg.includes("=") ? volumesArg.split("=")[1] : null;
+// Beyond IV a club page turns into a wall of numbered packs; the supply doesn't reach
+// that far today (Arsenal, the deepest, tops out at 4).
+const MAX_VOLUMES = 4;
+const ROMAN = { 1: "", 2: " II", 3: " III", 4: " IV" };
+
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -83,7 +95,9 @@ async function fetchByDifficulty(club, category, difficulty) {
     .eq("source", "data-grounded")
     .eq("difficulty", difficulty)
     .eq("category", category)
-    .limit(QUIZ_SIZE * 4);
+    // Volume mode has to see the WHOLE pool: it excludes everything earlier volumes
+    // already used, so a 60-row window would hide the remaining facts entirely.
+    .limit(VOLUMES ? 500 : QUIZ_SIZE * 4);
   if (error) throw new Error(`Fetch failed (${club}/${category}/${difficulty}): ${error.message}`);
   // MUST shuffle, exactly as generate-custom does before returning its pool. Everything
   // downstream (fillToSize, pickDistinctFacts) is greedy over pool order, so returning the
@@ -96,12 +110,18 @@ async function fetchByDifficulty(club, category, difficulty) {
 // Runs the REAL draw exactly as generate-custom does for the no-difficulty-filter
 // path: pools fetched at full quiz width, fillToSize + shared usedFactKeys, then
 // a text dedupe pass.
-async function runRealDraw(club, category) {
-  const [easyRows, mediumRows, hardRows] = await Promise.all([
+async function runRealDraw(club, category, excludeTexts = new Set()) {
+  const [easyRowsAll, mediumRowsAll, hardRowsAll] = await Promise.all([
     fetchByDifficulty(club, category, "easy"),
     fetchByDifficulty(club, category, "medium"),
     fetchByDifficulty(club, category, "hard"),
   ]);
+  // Drop anything an earlier volume already used. Existing packs embed their questions
+  // with no id or fact_key (see PACK_COLS), so question TEXT is the only join we have.
+  const keep = (rows) => rows.filter((r) => !excludeTexts.has(normText(r.question)));
+  const easyRows = keep(easyRowsAll);
+  const mediumRows = keep(mediumRowsAll);
+  const hardRows = keep(hardRowsAll);
   const rawCount = easyRows.length + mediumRows.length + hardRows.length;
 
   const usedFactKeys = new Set();
@@ -116,15 +136,20 @@ async function runRealDraw(club, category) {
   return { rawCount, questions };
 }
 
-function buildPackName(club, topicLabel) {
-  // MIDDOT separator, never a dash.
-  return `${club} · ${topicLabel}`;
+// Text is the only stable join between the bank and a pack's embedded questions.
+const normText = (s) => (s ?? "").toLowerCase().replace(/\s+/g, " ").trim();
+
+function buildPackName(club, topicLabel, volume = 1) {
+  // MIDDOT separator, never a dash. Volume I carries no suffix so the pack that is
+  // already live keeps its exact name, slug and leaderboard.
+  return `${club} · ${topicLabel}${ROMAN[volume] ?? ` ${volume}`}`;
 }
 
 async function fetchExistingTopicPacks() {
   const { data, error } = await supabase
     .from("quiz_packs")
-    .select("id, name, status, metadata")
+    // `questions` too: volume mode must know which facts earlier volumes already spent.
+    .select("id, name, status, metadata, questions")
     .eq("type", "club")
     .not("metadata->>club_topic", "is", null);
   if (error) throw new Error(`Failed to fetch existing topic packs: ${error.message}`);
@@ -165,59 +190,97 @@ async function main() {
 
   for (const club of clubs) {
     for (const topic of TOPICS) {
-      const packName = buildPackName(club, topic.label);
-      const packSlug = slugify(packName);
+      // Packs already live for this club+topic, and the question texts they spent.
+      const priorPacks = existingTopicPacks.filter(
+        (p) => p.metadata?.club === club && p.metadata?.club_topic === topic.slug,
+      );
+      const spentTexts = new Set(
+        priorPacks.flatMap((p) => (p.questions ?? []).map((q) => normText(q.question))),
+      );
 
-      if (existingKey(club, topic.slug)) {
-        rows.push({ club, topic: topic.label, rawCount: "—", drawOk: "—", action: "skip existing" });
+      // Without --volumes: one pack per club/topic, unchanged behaviour.
+      if (!VOLUMES) {
+        if (priorPacks.length > 0) {
+          rows.push({ club, topic: topic.label, rawCount: "—", drawOk: "—", action: "skip existing" });
+          continue;
+        }
+      } else if (VOLUMES_CATEGORY && topic.slug !== VOLUMES_CATEGORY) {
+        // Targeting one category: leave every other topic completely alone.
         continue;
       }
 
-      let rawCount = 0;
-      let questions = [];
-      try {
-        const draw = await runRealDraw(club, topic.slug);
-        rawCount = draw.rawCount;
-        questions = draw.questions;
-      } catch (e) {
-        rows.push({ club, topic: topic.label, rawCount: "err", drawOk: "no", action: `cannot deal (${e.message})` });
-        continue;
+      // Volume mode keeps dealing until the leftover facts can't fill a pack.
+      let volume = priorPacks.length + 1;
+      let addedForThisTopic = 0;
+
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        if (volume > MAX_VOLUMES) break;
+
+        const packName = buildPackName(club, topic.label, volume);
+        const packSlug = slugify(packName);
+
+        let rawCount = 0;
+        let questions = [];
+        try {
+          const draw = await runRealDraw(club, topic.slug, spentTexts);
+          rawCount = draw.rawCount;
+          questions = draw.questions;
+        } catch (e) {
+          rows.push({ club, topic: topic.label, rawCount: "err", drawOk: "no", action: `cannot deal (${e.message})` });
+          break;
+        }
+
+        if (questions.length !== QUIZ_SIZE) {
+          // Only report the miss when nothing was added; otherwise the topic is simply exhausted.
+          if (addedForThisTopic === 0 && priorPacks.length === 0) {
+            rows.push({ club, topic: topic.label, rawCount, drawOk: "no", action: "cannot deal" });
+          } else if (VOLUMES && addedForThisTopic === 0) {
+            rows.push({ club, topic: `${topic.label} ${ROMAN[volume]?.trim() || volume}`, rawCount, drawOk: "no", action: "no leftover facts" });
+          }
+          break;
+        }
+
+        if (existingSlugs.has(packSlug)) {
+          console.warn(`WARNING: slug collision for "${packName}" (slug "${packSlug}") — skipping insert to avoid ambiguity.`);
+          break;
+        }
+        existingSlugs.add(packSlug);
+
+        dealableTotal++;
+        addedForThisTopic++;
+        rows.push({
+          club,
+          topic: volume === 1 ? topic.label : `${topic.label}${ROMAN[volume] ?? ` ${volume}`}`,
+          rawCount,
+          drawOk: "yes",
+          action: "would insert",
+        });
+
+        toInsert.push({
+          name: packName,
+          type: "club",
+          parameter: club,
+          questions: questions.map((q) => ({
+            question: q.question,
+            options: q.options,
+            answer: q.answer,
+            difficulty: q.difficulty,
+            category: q.category,
+          })),
+          status: "published",
+          rotation_active: false,
+          is_custom: false,
+          created_by: null,
+          metadata: { club_page: true, club, club_topic: topic.slug, club_topic_volume: volume },
+        });
+
+        // Everything this volume used is off the table for the next one.
+        for (const q of questions) spentTexts.add(normText(q.question));
+
+        if (!VOLUMES) break; // single-pack mode never loops
+        volume++;
       }
-
-      const drawOk = questions.length === QUIZ_SIZE;
-
-      if (!drawOk) {
-        rows.push({ club, topic: topic.label, rawCount, drawOk: "no", action: "cannot deal" });
-        continue;
-      }
-
-      dealableTotal++;
-      rows.push({ club, topic: topic.label, rawCount, drawOk: "yes", action: "would insert" });
-
-      // Slug collision check across ALL published packs (existing + ones we're about to add).
-      if (existingSlugs.has(packSlug)) {
-        console.warn(`WARNING: slug collision for "${packName}" (slug "${packSlug}") — skipping insert to avoid ambiguity.`);
-        continue;
-      }
-      existingSlugs.add(packSlug);
-
-      toInsert.push({
-        name: packName,
-        type: "club",
-        parameter: club,
-        questions: questions.map((q) => ({
-          question: q.question,
-          options: q.options,
-          answer: q.answer,
-          difficulty: q.difficulty,
-          category: q.category,
-        })),
-        status: "published",
-        rotation_active: false,
-        is_custom: false,
-        created_by: null,
-        metadata: { club_page: true, club, club_topic: topic.slug },
-      });
     }
   }
 
