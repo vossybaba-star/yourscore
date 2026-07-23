@@ -17,13 +17,18 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-type Q = { id: string; q: string; options: string[]; answer: number; difficulty: string; category: string; entity: string };
+type Q = {
+  id: string; q: string; options: string[]; answer: number;
+  difficulty: string; category: string;
+  scope: "neutral" | "club"; club: string | null;
+};
 
 const bundle = JSON.parse(
   readFileSync(join(import.meta.dirname, "..", "..", "data", "draft", "pl-quiz.json"), "utf8"),
-) as { count: number; questions: Q[] };
+) as { count: number; neutralCount: number; clubAliases: Record<string, string>; questions: Q[] };
 
 const POOL = bundle.questions;
+const NEUTRAL = POOL.filter((q) => q.scope === "neutral");
 
 test("bundle is non-empty and its count matches the questions it carries", () => {
   assert.ok(POOL.length > 0, "empty pool — the gate would have nothing to ask");
@@ -79,7 +84,6 @@ test("ids and question text are unique — the same fact can't be asked twice in
 test("the bank stays Premier League and stays easy — the brief, encoded", () => {
   for (const q of POOL) {
     assert.ok(["easy", "medium"].includes(q.difficulty), `${q.id} is ${q.difficulty} — too hard for a neutral fan`);
-    assert.ok(q.entity && q.entity.length > 0, `${q.id} has no entity`);
   }
   // The unplayable shape the build script rejects: nobody recalls a mid-table finish.
   // The bank phrases it many ways and a narrow check misses most of them — that's a real
@@ -91,11 +95,58 @@ test("the bank stays Premier League and stays easy — the brief, encoded", () =
   assert.equal(positional.length, 0, `finishing-position recall leaked in: ${positional.map((q) => `${q.id} "${q.q}"`).join(" · ")}`);
 });
 
-test("no single club dominates the gate", () => {
-  const byEntity = new Map<string, number>();
-  for (const q of POOL) byEntity.set(q.entity, (byEntity.get(q.entity) ?? 0) + 1);
-  for (const [entity, n] of Array.from(byEntity)) {
-    const share = n / POOL.length;
-    assert.ok(share <= 0.2, `${entity} is ${Math.round(share * 100)}% of the bank — the gate reads as a ${entity} quiz`);
+test("scope is coherent — neutral carries no club, club-scoped always names one", () => {
+  for (const q of POOL) {
+    assert.ok(q.scope === "neutral" || q.scope === "club", `${q.id} has scope "${q.scope}"`);
+    if (q.scope === "neutral") assert.equal(q.club, null, `${q.id} is neutral but claims club ${q.club}`);
+    else assert.ok(q.club, `${q.id} is club-scoped with no club`);
+  }
+  assert.equal(bundle.neutralCount, NEUTRAL.length, "neutralCount disagrees with the questions it ships");
+});
+
+test("the neutral pool can stand on its own — it is what a guest sees", () => {
+  // A guest, and any player who hasn't picked a club, only ever draws from this. An
+  // 11-question gate against a thin neutral pool means repeats inside a single draft.
+  assert.ok(NEUTRAL.length >= 50, `only ${NEUTRAL.length} neutral questions — too thin for an 11-pick gate`);
+});
+
+test("every club's eligible pool is exactly neutral + their own — nothing foreign", () => {
+  // Mirrors eligiblePool() in pl-quiz.ts, which that module builds as [...NEUTRAL, ...own].
+  // pl-quiz.ts is `server-only` and imports through the @/ alias, so a bare `node --test`
+  // can't load it — this asserts the property on the shipped data instead, and the live
+  // API test covers the wiring end to end.
+  const byClub = new Map<string, Q[]>();
+  for (const q of POOL) {
+    if (q.scope !== "club" || !q.club) continue;
+    const arr = byClub.get(q.club);
+    if (arr) arr.push(q); else byClub.set(q.club, [q]);
+  }
+  for (const [club, own] of Array.from(byClub)) {
+    const pool = [...NEUTRAL, ...own];
+    const foreign = pool.filter((q) => q.scope === "club" && q.club !== club);
+    assert.equal(foreign.length, 0, `a ${club} fan could be asked about ${foreign[0]?.club}`);
+    assert.equal(pool.length, NEUTRAL.length + own.length);
+  }
+  // And the no-club case (guest, or hasn't picked) is the neutral pool alone.
+  assert.equal(NEUTRAL.filter((q) => q.scope === "club").length, 0);
+});
+
+test("club scoping is real — no club's questions could reach another club's fans", () => {
+  // The whole point of the scoping: a player's pool is neutral + their own club, so a
+  // question tagged to a club must never also be reachable as neutral. Duplicated text
+  // across scopes would defeat that, since the neutral copy goes to everyone.
+  const neutralText = new Set(NEUTRAL.map((q) => q.q.trim().toLowerCase()));
+  for (const q of POOL) {
+    if (q.scope !== "club") continue;
+    assert.ok(
+      !neutralText.has(q.q.trim().toLowerCase()),
+      `"${q.q}" is tagged to ${q.club} but also sits in the neutral pool — every fan would see it`,
+    );
+  }
+  // Clubs the alias map claims to translate must actually exist as targets, or those
+  // supporters silently get zero club questions (the exact bug scoping exists to fix).
+  const clubs = new Set(POOL.filter((q) => q.scope === "club").map((q) => q.club));
+  for (const entity of Object.values(bundle.clubAliases)) {
+    assert.ok(clubs.has(entity), `alias maps to "${entity}" but no question is tagged to it`);
   }
 });

@@ -1,472 +1,13 @@
 {
-  "generatedFrom": "questions bank (status=active, source=data-grounded, difficulty in easy|medium)",
-  "entities": [
-    "Premier League Records",
-    "Arsenal",
-    "Liverpool",
-    "Manchester City",
-    "Manchester United",
-    "Chelsea",
-    "Tottenham Hotspur",
-    "Leicester City",
-    "Newcastle United",
-    "Everton",
-    "Aston Villa",
-    "West Ham United",
-    "Blackburn Rovers",
-    "Nottingham Forest",
-    "Leeds United"
-  ],
-  "count": 357,
+  "generatedFrom": "questions bank (status=active, source=data-grounded, difficulty in easy|medium, entity_type in club|records)",
+  "seasonId": 28083,
+  "clubAliases": {
+    "AFC Bournemouth": "Bournemouth",
+    "Brighton & Hove Albion": "Brighton"
+  },
+  "count": 452,
+  "neutralCount": 96,
   "questions": [
-    {
-      "id": "12504ff1-f4a8-4253-a93e-0c5dbe732018",
-      "q": "What club remarkably featured in 10 of their 13 overall Premier League campaigns during the 2002-2012 period?",
-      "options": [
-        "Bolton Wanderers",
-        "Fulham",
-        "Wigan Athletic",
-        "Blackburn Rovers"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "PL History",
-      "entity": "Premier League Records"
-    },
-    {
-      "id": "13a9dd20-8646-4a54-a4bd-1620857b97bf",
-      "q": "Which Midlands club made history in 2004/05 by being the first team to escape relegation after sitting bottom of the league on Christmas Day?",
-      "options": [
-        "Birmingham City",
-        "Aston Villa",
-        "West Bromwich Albion",
-        "Wolverhampton Wanderers"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "PL History",
-      "entity": "Premier League Records"
-    },
-    {
-      "id": "1433ebc2-a7c9-4103-bab5-52f9b662e020",
-      "q": "Between 2002 and 2012, Thierry Henry captured the Golden Boot on three occasions. What other French forward secured the award during this same timeframe?",
-      "options": [
-        "Nicolas Anelka",
-        "David Trezeguet",
-        "Franck Ribéry",
-        "Djibril Cissé"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "PL History",
-      "entity": "Premier League Records"
-    },
-    {
-      "id": "15c44164-603b-4155-ade0-f2a077f97cb0",
-      "q": "Who was the Leeds United striker that scored the Premier League's inaugural hat-trick, which also turned out to be his sole treble in the competition?",
-      "options": [
-        "Rod Wallace",
-        "Mark Hateley",
-        "Eric Cantona",
-        "Lee Chapman"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "PL History",
-      "entity": "Premier League Records"
-    },
-    {
-      "id": "17080f76-517d-4288-9786-f7315d2a2bcf",
-      "q": "Wayne Rooney broke the record as the Premier League's youngest goalscorer when he found the net against Arsenal while playing for Everton in 2002. Who was the Arsenal goalkeeper he scored past?",
-      "options": [
-        "Shaka Hislop",
-        "Nigel Martyn",
-        "Peter Schmeichel",
-        "David Seaman"
-      ],
-      "answer": 3,
-      "difficulty": "medium",
-      "category": "PL History",
-      "entity": "Premier League Records"
-    },
-    {
-      "id": "274d1ba6-c7e7-4b09-8750-60b507759284",
-      "q": "Sadio Mane holds the Premier League record for the quickest hat-trick, completing it in less than three minutes. What team was he playing for during this remarkable feat?",
-      "options": [
-        "Liverpool",
-        "Crystal Palace",
-        "Southampton",
-        "Tottenham Hotspur"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "PL Records",
-      "entity": "Premier League Records"
-    },
-    {
-      "id": "2d632025-be4a-45aa-9b29-5a146f107eca",
-      "q": "Which Republic of Ireland international is the sole player to reach the milestone of 100 Premier League goals?",
-      "options": [
-        "Tony Dunne",
-        "Niall Quinn",
-        "Robbie Keane",
-        "Cillian Sheridan"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "PL Records",
-      "entity": "Premier League Records"
-    },
-    {
-      "id": "3d945e4a-ae9c-430e-b826-6639c0631661",
-      "q": "What player ended their Premier League career with exactly 100 goals, having scored every one of them for a single club during the 1992-2001 period?",
-      "options": [
-        "Alan Shearer",
-        "Matt Le Tissier",
-        "Teddy Sheringham",
-        "Robbie Fowler"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "PL Records",
-      "entity": "Premier League Records"
-    },
-    {
-      "id": "3f40e4cc-6513-42c2-8e9b-594258122330",
-      "q": "At what age did the Liverpool striker Michael Owen become one of the youngest players to reach a century of Premier League goals, achieving this milestone at just 23 years and 133 days?",
-      "options": [
-        "Kenny Dalglish",
-        "Michael Owen",
-        "Ian Rush",
-        "Robbie Fowler"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "PL Records",
-      "entity": "Premier League Records"
-    },
-    {
-      "id": "40de9522-c0a9-4b09-8fe8-f85b979b27b0",
-      "q": "Which Premier League club did Peter Schmeichel represent when he made history as the first goalkeeper to score a goal in the competition?",
-      "options": [
-        "Aston Villa",
-        "Everton",
-        "Coventry City",
-        "Manchester United"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "PL History",
-      "entity": "Premier League Records"
-    },
-    {
-      "id": "4479d161-15e8-4646-b0d6-769416cb8693",
-      "q": "Who was the leading Premier League goalscorer over the decade spanning 2012 through 2022?",
-      "options": [
-        "Sergio Agüero",
-        "Cristiano Ronaldo",
-        "Harry Kane",
-        "Jamie Vardy"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "PL History",
-      "entity": "Premier League Records"
-    },
-    {
-      "id": "4f27908a-dcdb-4a34-96ec-27c6d3230d5b",
-      "q": "Which non-English player became the first to achieve 100 Premier League goals, reaching this milestone with Manchester United in November 2000?",
-      "options": [
-        "Eric Cantona",
-        "Mark Hughes",
-        "Dwight Yorke",
-        "Teddy Sheringham"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "PL Records",
-      "entity": "Premier League Records"
-    },
-    {
-      "id": "7247657c-e949-4e93-bf11-589588c4f0a2",
-      "q": "The 2011 Copa América champion who netted six Premier League hat-tricks during the 2012-2022 period, with three of those coming against a single opponent, was which player?",
-      "options": [
-        "Sergio Aguero",
-        "Cristiano Ronaldo",
-        "Robin van Persie",
-        "Luis Suarez"
-      ],
-      "answer": 3,
-      "difficulty": "medium",
-      "category": "PL History",
-      "entity": "Premier League Records"
-    },
-    {
-      "id": "7ff3f3ea-ae08-4d1a-add5-eb298e62ba9b",
-      "q": "James Milner possesses the Premier League record for most appearances across his career. Identify the sole club where he accumulated over 200 top-flight appearances.",
-      "options": [
-        "Liverpool",
-        "Manchester City",
-        "Leeds United",
-        "Aston Villa"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "PL Records",
-      "entity": "Premier League Records"
-    },
-    {
-      "id": "8b55b04e-63f7-4049-ab58-430a695c33fc",
-      "q": "Who accumulated the most playing time in Premier League history with a total of 54,439 minutes across his career?",
-      "options": [
-        "Ryan Giggs",
-        "Cristiano Ronaldo",
-        "Frank Lampard",
-        "Gareth Barry"
-      ],
-      "answer": 3,
-      "difficulty": "medium",
-      "category": "PL Records",
-      "entity": "Premier League Records"
-    },
-    {
-      "id": "938ff3e2-5a6e-4c9b-951f-c9f73bca1721",
-      "q": "Who was the Premier League's most prolific assist provider from 2012 to 2022, and also captured four top-flight titles during that span?",
-      "options": [
-        "David Silva",
-        "Cesc Fàbregas",
-        "Kevin De Bruyne",
-        "Mesut Özil"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "PL History",
-      "entity": "Premier League Records"
-    },
-    {
-      "id": "996fea6a-561f-46ee-b44d-9852f631c8a7",
-      "q": "In 2014, Harry Kane netted his inaugural Premier League goal under which manager's tenure? Kane would go on to score 213 goals in the competition.",
-      "options": [
-        "Tim Sherwood",
-        "André Villas-Boas",
-        "Harry Redknapp",
-        "Mauricio Pochettino"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "PL Records",
-      "entity": "Premier League Records"
-    },
-    {
-      "id": "9c622f81-651e-4d95-8b70-61ca373090e2",
-      "q": "Which Spanish international player became the first to achieve 300 Premier League appearances while playing for Manchester City in 2020?",
-      "options": [
-        "Sergio Agüero",
-        "David Silva",
-        "Gérard Piqué",
-        "Juan Mata"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "PL Records",
-      "entity": "Premier League Records"
-    },
-    {
-      "id": "a6c04e0c-f0e8-4d1e-a8e7-d2575c87e4ae",
-      "q": "In the 2024/25 Premier League campaign, which club had the best defensive record with the lowest number of goals conceded?",
-      "options": [
-        "Arsenal",
-        "Liverpool",
-        "Manchester City",
-        "Chelsea"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "PL 2024-25",
-      "entity": "Premier League Records"
-    },
-    {
-      "id": "b4250aa3-a51f-4c19-ae27-c1296edd5478",
-      "q": "In the 2024-25 season, which club set an unfortunate English football record by suffering nine straight home defeats while failing to score in any of those matches?",
-      "options": [
-        "Southampton",
-        "Leicester City",
-        "Wolverhampton Wanderers",
-        "Ipswich Town"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "PL 2024-25",
-      "entity": "Premier League Records"
-    },
-    {
-      "id": "ba791697-4866-4022-97cc-234799e603ab",
-      "q": "At the conclusion of the 2010/11 season, which Dutch striker netted in nine straight Premier League away fixtures—a record achievement?",
-      "options": [
-        "Jan Vertonghen",
-        "Arjen Robben",
-        "Robin van Persie",
-        "Dirk Kuyt"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "PL History",
-      "entity": "Premier League Records"
-    },
-    {
-      "id": "bc8ac72f-266d-4497-8d75-263a40ae23e0",
-      "q": "Before Erling Haaland reached 100 Premier League goals for Manchester City, which player was the first to achieve this milestone for the club?",
-      "options": [
-        "Carlos Tevez",
-        "David Silva",
-        "Yaya Toure",
-        "Sergio Aguero"
-      ],
-      "answer": 3,
-      "difficulty": "medium",
-      "category": "PL Records",
-      "entity": "Premier League Records"
-    },
-    {
-      "id": "bdb541af-4f81-4360-8691-0f01c291d847",
-      "q": "What team holds the unfortunate Premier League record for the longest losing streak, going through 20 straight defeats spanning from January 2003 to September 2005?",
-      "options": [
-        "Leeds United",
-        "Sunderland",
-        "Nottingham Forest",
-        "Derby County"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "PL History",
-      "entity": "Premier League Records"
-    },
-    {
-      "id": "be9c7454-fcd3-4cd2-8e6d-8937ce4c83c8",
-      "q": "During the ten-year period spanning 2002 through 2012, how many distinct clubs claimed the Premier League championship?",
-      "options": [
-        "4",
-        "5",
-        "3",
-        "6"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "PL History",
-      "entity": "Premier League Records"
-    },
-    {
-      "id": "c55413dd-fffa-4400-985c-412284cea19b",
-      "q": "Which shot-stopper appeared in more than 300 consecutive Premier League matches across his time at Blackburn, Aston Villa and Tottenham?",
-      "options": [
-        "Edwin van der Sar",
-        "Brad Friedel",
-        "Petr Cech",
-        "Mark Schwarzer"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "PL History",
-      "entity": "Premier League Records"
-    },
-    {
-      "id": "ca9ba2bc-d49a-4c93-bfa0-61fb83039f23",
-      "q": "Which player is the sole footballer to surpass 600 Premier League appearances while playing for just one club?",
-      "options": [
-        "Ryan Giggs",
-        "Frank Lampard",
-        "Gareth Barry",
-        "Patrick Vieira"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "PL Records",
-      "entity": "Premier League Records"
-    },
-    {
-      "id": "d66559e7-0c8e-4ee5-8abd-3c13a4f4a95b",
-      "q": "During the 2016 season, Newcastle United and which other ex-Premier League finalist were both relegated from the top flight?",
-      "options": [
-        "Aston Villa",
-        "Norwich City",
-        "Sunderland",
-        "Hull City"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "PL History",
-      "entity": "Premier League Records"
-    },
-    {
-      "id": "d7a4ffe6-9172-4e43-8334-e2100ca09862",
-      "q": "Fill in the missing manager from Chelsea's sequence of playing bosses: Glenn Hoddle → ? → Gianluca Vialli",
-      "options": [
-        "Mark Hughes",
-        "Frank Lampard",
-        "Ruud Gullit",
-        "Didier Drogba"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "PL History",
-      "entity": "Premier League Records"
-    },
-    {
-      "id": "e18aa183-be89-4326-91b1-68c440bc0b9a",
-      "q": "What was the lowest points total ever recorded by a Premier League side in a single season, achieved by Derby County in 2007/08?",
-      "options": [
-        "11",
-        "9",
-        "15",
-        "8"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "PL History",
-      "entity": "Premier League Records"
-    },
-    {
-      "id": "e5c6fb9f-fcd9-45b0-8279-d92b110974ed",
-      "q": "In the Premier League's opening decade, which club achieved a sequence of 10th, 4th, 12th, 5th, 3rd, 1st, 2nd, 2nd, 2nd, 1st place finishes?",
-      "options": [
-        "Liverpool",
-        "Manchester United",
-        "Blackburn Rovers",
-        "Arsenal"
-      ],
-      "answer": 3,
-      "difficulty": "medium",
-      "category": "PL History",
-      "entity": "Premier League Records"
-    },
-    {
-      "id": "f664735e-b270-444b-9197-76ec5d45a961",
-      "q": "Which English player finished as the Premier League's leading goalscorer during the 2024-25 campaign?",
-      "options": [
-        "Harry Kane",
-        "Bukayo Saka",
-        "Ollie Watkins",
-        "Phil Foden"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "PL 2024-25",
-      "entity": "Premier League Records"
-    },
-    {
-      "id": "ffd723db-358c-4b1a-a26e-a6f5471a80ec",
-      "q": "Who holds the record for the most Premier League hat-tricks, with all of them achieved while playing for Manchester City?",
-      "options": [
-        "Alan Shearer",
-        "Sergio Aguero",
-        "Harry Kane",
-        "Thierry Henry"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "PL Records",
-      "entity": "Premier League Records"
-    },
     {
       "id": "0006e545-9452-46b8-a56d-80938652dbc2",
       "q": "Which club beat Arsenal in the 2018/19 Europa League final?",
@@ -479,7 +20,8 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "modern-era",
-      "entity": "Arsenal"
+      "scope": "club",
+      "club": "Arsenal"
     },
     {
       "id": "0096560b-d057-40ec-9013-e4e2969e44d4",
@@ -493,7 +35,8 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Tottenham Hotspur"
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "00db55a6-3474-49ab-8097-f1967dc05113",
@@ -507,7 +50,8 @@
       "answer": 3,
       "difficulty": "easy",
       "category": "history-honours",
-      "entity": "Manchester United"
+      "scope": "club",
+      "club": "Manchester United"
     },
     {
       "id": "03382ac2-8e56-48bd-8576-8859f86de20b",
@@ -521,7 +65,8 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Nottingham Forest"
+      "scope": "club",
+      "club": "Nottingham Forest"
     },
     {
       "id": "03e700b0-d048-4408-b64c-d17d9d41e700",
@@ -535,7 +80,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Liverpool"
+      "scope": "club",
+      "club": "Liverpool"
     },
     {
       "id": "04521163-1be6-4a14-a23a-619364fa62a5",
@@ -549,7 +95,8 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Aston Villa"
+      "scope": "club",
+      "club": "Aston Villa"
     },
     {
       "id": "04ba9c1c-826d-4fee-a029-c8bd8de1fcd2",
@@ -563,7 +110,23 @@
       "answer": 0,
       "difficulty": "easy",
       "category": "legends",
-      "entity": "Manchester City"
+      "scope": "neutral",
+      "club": null
+    },
+    {
+      "id": "04bf18d9-470c-4211-ba62-9e52635c3bf8",
+      "q": "Harry Wilson scored 10 Premier League goals for which club in 2022-23?",
+      "options": [
+        "Fulham",
+        "Bournemouth",
+        "Liverpool",
+        "Nottingham Forest"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "legends",
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "05194d10-e0e3-4e21-baa1-65ca7e562b64",
@@ -577,7 +140,38 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "modern-era",
-      "entity": "Arsenal"
+      "scope": "club",
+      "club": "Arsenal"
+    },
+    {
+      "id": "05259bb0-768d-4f4d-b602-6ab774f8ca54",
+      "q": "In what year was Crystal Palace founded?",
+      "options": [
+        "1905",
+        "1915",
+        "1900",
+        "1920"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "scope": "club",
+      "club": "Crystal Palace"
+    },
+    {
+      "id": "05de94ec-a53f-48b4-b067-869d8b2bd260",
+      "q": "What was the scoreline when Brentford beat Chelsea away at Stamford Bridge in the 2021/22 Premier League season?",
+      "options": [
+        "3-0",
+        "5-2",
+        "2-1",
+        "4-1"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "scope": "club",
+      "club": "Brentford"
     },
     {
       "id": "06212eb3-e85d-4650-b733-77dafb031747",
@@ -591,7 +185,8 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Tottenham Hotspur"
+      "scope": "club",
+      "club": "Tottenham Hotspur"
     },
     {
       "id": "0666d754-0fc1-4db4-8417-b009e593b160",
@@ -605,21 +200,23 @@
       "answer": 2,
       "difficulty": "easy",
       "category": "history-honours",
-      "entity": "Chelsea"
+      "scope": "club",
+      "club": "Chelsea"
     },
     {
-      "id": "07537ba2-cb7e-4c8c-84f6-c0286fbf56af",
-      "q": "How many times have West Ham United been relegated from the Premier League since 2001-02?",
+      "id": "069fa51f-9498-4ebb-9dde-6a77e27193c2",
+      "q": "Which club did Fulham beat in the 2019/20 Championship play-off final to secure promotion to the Premier League?",
       "options": [
-        "2",
-        "4",
-        "3",
-        "1"
+        "Cardiff City",
+        "Brentford",
+        "Reading",
+        "Queens Park Rangers"
       ],
-      "answer": 2,
+      "answer": 1,
       "difficulty": "medium",
-      "category": "history-honours",
-      "entity": "West Ham United"
+      "category": "rivalries-derbies",
+      "scope": "club",
+      "club": "Fulham"
     },
     {
       "id": "076f2b3d-bd51-40f6-ab49-0bdaf37d5b78",
@@ -633,7 +230,23 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Nottingham Forest"
+      "scope": "club",
+      "club": "Nottingham Forest"
+    },
+    {
+      "id": "07d9195e-935a-4569-a7ce-cb5841043d3d",
+      "q": "What is Hull City's most widely recognised nickname?",
+      "options": [
+        "The Tigers",
+        "The Lions",
+        "The Amber and Blacks",
+        "The Panthers"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "history-honours",
+      "scope": "club",
+      "club": "Hull City"
     },
     {
       "id": "080f2750-ecf5-4a2e-8711-a4e3e7537372",
@@ -647,7 +260,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Arsenal"
+      "scope": "club",
+      "club": "Arsenal"
     },
     {
       "id": "08385ea1-5958-4b26-8c10-236258a8fb82",
@@ -661,7 +275,8 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "modern-era",
-      "entity": "Arsenal"
+      "scope": "club",
+      "club": "Arsenal"
     },
     {
       "id": "09412881-2a85-4bd8-bc92-6032af734325",
@@ -675,7 +290,38 @@
       "answer": 1,
       "difficulty": "easy",
       "category": "legends",
-      "entity": "Manchester City"
+      "scope": "neutral",
+      "club": null
+    },
+    {
+      "id": "09505b81-fa3d-4b57-892d-8992a6303b7b",
+      "q": "What is AFC Bournemouth's most widely recognised nickname?",
+      "options": [
+        "The Seasiders",
+        "The Red and Blacks",
+        "The South Coast United",
+        "The Cherries Boscombe"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "scope": "club",
+      "club": "Bournemouth"
+    },
+    {
+      "id": "0a1bd0d7-a324-43b0-82e9-a760f06cff12",
+      "q": "The Brighton-Crystal Palace derby on 18 October 2020 at Selhurst Park was notable for what unprecedented circumstance in the fixture's history?",
+      "options": [
+        "Being played on a neutral ground",
+        "Being postponed twice",
+        "No fans in attendance due to COVID-19",
+        "Being abandoned at half-time"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "scope": "club",
+      "club": "Brighton"
     },
     {
       "id": "0a4d6d86-5efc-4817-aab0-d0ff4f94ab42",
@@ -689,7 +335,8 @@
       "answer": 0,
       "difficulty": "easy",
       "category": "history-honours",
-      "entity": "Liverpool"
+      "scope": "club",
+      "club": "Liverpool"
     },
     {
       "id": "0a9d1b3c-6597-4154-8303-f7a4fd38308a",
@@ -703,7 +350,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Everton"
+      "scope": "club",
+      "club": "Everton"
     },
     {
       "id": "0aec1714-acc8-44cd-a264-9b49d2928583",
@@ -717,7 +365,8 @@
       "answer": 0,
       "difficulty": "easy",
       "category": "rivalries-derbies",
-      "entity": "Manchester City"
+      "scope": "club",
+      "club": "Manchester City"
     },
     {
       "id": "0d529c19-6178-4db2-9833-997b0caa8045",
@@ -731,49 +380,23 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Tottenham Hotspur"
+      "scope": "club",
+      "club": "Tottenham Hotspur"
     },
     {
-      "id": "0d7f90d1-6d37-409c-a25a-0a2408550fbb",
-      "q": "How many European Cup/Champions League titles have West Ham United won?",
+      "id": "0da27fe3-3a15-4e1e-8777-591001397eff",
+      "q": "Crystal Palace's biggest rivalry, known as the M23 (or A23) derby, is with which club?",
       "options": [
-        "2",
-        "3",
-        "0",
-        "1"
+        "Charlton Athletic",
+        "West Ham United",
+        "Millwall",
+        "Brighton & Hove Albion"
       ],
       "answer": 3,
       "difficulty": "medium",
-      "category": "history-honours",
-      "entity": "West Ham United"
-    },
-    {
-      "id": "0de701fc-abac-427a-852a-dd226531725b",
-      "q": "What is the name of West Ham United's home ground?",
-      "options": [
-        "London Stadium",
-        "Hammers Arena",
-        "Thames Dock",
-        "Upton Park"
-      ],
-      "answer": 0,
-      "difficulty": "easy",
-      "category": "history-honours",
-      "entity": "West Ham United"
-    },
-    {
-      "id": "0ea6ff3c-bc70-46b1-bbe2-f9ac29ef9e20",
-      "q": "In 2021, which Zambian striker netted four goals during Leicester City's match against Spartak Moscow?",
-      "options": [
-        "Enoch Mwepu",
-        "Patson Daka",
-        "Fashion Sakala",
-        "Kelvin Kampamba"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "entity": "Leicester City"
+      "category": "rivalries-derbies",
+      "scope": "club",
+      "club": "Crystal Palace"
     },
     {
       "id": "0edd0576-28d0-46d8-95ec-c358c5a89df3",
@@ -787,7 +410,8 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Chelsea"
+      "scope": "club",
+      "club": "Chelsea"
     },
     {
       "id": "0f1d2f0e-54c5-4c4f-9788-3a5abcd45402",
@@ -801,7 +425,8 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Manchester City"
+      "scope": "club",
+      "club": "Manchester City"
     },
     {
       "id": "0f59b1b7-0f7c-4956-a9db-5ebee0f30f49",
@@ -815,7 +440,8 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Newcastle United"
+      "scope": "club",
+      "club": "Newcastle United"
     },
     {
       "id": "1078b3f1-66d1-4771-abd4-050ca23bd0d3",
@@ -829,7 +455,8 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Arsenal"
+      "scope": "club",
+      "club": "Arsenal"
     },
     {
       "id": "10a1e33d-527b-4ca2-b20c-e651d231da92",
@@ -843,7 +470,8 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "modern-era",
-      "entity": "Chelsea"
+      "scope": "club",
+      "club": "Chelsea"
     },
     {
       "id": "10b6c3ba-e0f0-45f2-8b05-b7a25bc56718",
@@ -857,7 +485,8 @@
       "answer": 3,
       "difficulty": "easy",
       "category": "history-honours",
-      "entity": "Tottenham Hotspur"
+      "scope": "club",
+      "club": "Tottenham Hotspur"
     },
     {
       "id": "1175f775-37a6-4da4-a29e-45d5adaa4330",
@@ -871,7 +500,8 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Liverpool"
+      "scope": "club",
+      "club": "Liverpool"
     },
     {
       "id": "11afe9b0-3576-4946-948c-58dae3661f69",
@@ -885,7 +515,23 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Tottenham Hotspur"
+      "scope": "club",
+      "club": "Tottenham Hotspur"
+    },
+    {
+      "id": "12504ff1-f4a8-4253-a93e-0c5dbe732018",
+      "q": "What club remarkably featured in 10 of their 13 overall Premier League campaigns during the 2002-2012 period?",
+      "options": [
+        "Bolton Wanderers",
+        "Fulham",
+        "Wigan Athletic",
+        "Blackburn Rovers"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "PL History",
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "12529e83-d0b1-4324-b61e-c7f4c29d267c",
@@ -899,7 +545,8 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Manchester City"
+      "scope": "club",
+      "club": "Manchester City"
     },
     {
       "id": "139e9b7f-0d89-4070-bc70-e21748db0a58",
@@ -913,7 +560,23 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "modern-era",
-      "entity": "Chelsea"
+      "scope": "club",
+      "club": "Chelsea"
+    },
+    {
+      "id": "13a9dd20-8646-4a54-a4bd-1620857b97bf",
+      "q": "Which Midlands club made history in 2004/05 by being the first team to escape relegation after sitting bottom of the league on Christmas Day?",
+      "options": [
+        "Birmingham City",
+        "Aston Villa",
+        "West Bromwich Albion",
+        "Wolverhampton Wanderers"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "PL History",
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "142fc37c-af5b-426a-b8fd-021a692558b7",
@@ -927,7 +590,23 @@
       "answer": 3,
       "difficulty": "easy",
       "category": "history-honours",
-      "entity": "Arsenal"
+      "scope": "club",
+      "club": "Arsenal"
+    },
+    {
+      "id": "1433ebc2-a7c9-4103-bab5-52f9b662e020",
+      "q": "Between 2002 and 2012, Thierry Henry captured the Golden Boot on three occasions. What other French forward secured the award during this same timeframe?",
+      "options": [
+        "Nicolas Anelka",
+        "David Trezeguet",
+        "Franck Ribéry",
+        "Djibril Cissé"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "PL History",
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "14d457da-9bc5-43a1-b4ea-61a3ed5ca3f3",
@@ -941,7 +620,38 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Tottenham Hotspur"
+      "scope": "club",
+      "club": "Tottenham Hotspur"
+    },
+    {
+      "id": "15c44164-603b-4155-ade0-f2a077f97cb0",
+      "q": "Who was the Leeds United striker that scored the Premier League's inaugural hat-trick, which also turned out to be his sole treble in the competition?",
+      "options": [
+        "Rod Wallace",
+        "Mark Hateley",
+        "Eric Cantona",
+        "Lee Chapman"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "PL History",
+      "scope": "neutral",
+      "club": null
+    },
+    {
+      "id": "17080f76-517d-4288-9786-f7315d2a2bcf",
+      "q": "Wayne Rooney broke the record as the Premier League's youngest goalscorer when he found the net against Arsenal while playing for Everton in 2002. Who was the Arsenal goalkeeper he scored past?",
+      "options": [
+        "Shaka Hislop",
+        "Nigel Martyn",
+        "Peter Schmeichel",
+        "David Seaman"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "PL History",
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "17750d71-1d71-4e27-bc8f-a3a1b1644909",
@@ -955,7 +665,23 @@
       "answer": 0,
       "difficulty": "easy",
       "category": "legends",
-      "entity": "Manchester City"
+      "scope": "neutral",
+      "club": null
+    },
+    {
+      "id": "181d13bd-9114-4f1f-b5a8-581d9150fd89",
+      "q": "Which club eliminated Bournemouth in the 2020/21 FA Cup quarter-final?",
+      "options": [
+        "Chelsea",
+        "Leicester City",
+        "Everton",
+        "Southampton"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "scope": "club",
+      "club": "Bournemouth"
     },
     {
       "id": "186ca179-6638-4991-86a1-1dd24df5eb6e",
@@ -969,21 +695,8 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Leeds United"
-    },
-    {
-      "id": "1a0e66b8-d9c7-48c5-b335-2108764ec5cb",
-      "q": "Leicester City paid a club-record transfer fee in 2019 to bring which midfielder in from Monaco?",
-      "options": [
-        "Jean-Michaël Seri",
-        "Aleksandr Kokorin",
-        "Sofiane Boufal",
-        "Youri Tielemans"
-      ],
-      "answer": 3,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "entity": "Leicester City"
+      "scope": "club",
+      "club": "Leeds United"
     },
     {
       "id": "1a1de44d-5c5d-400f-9e53-6ee7cd7eee1d",
@@ -997,7 +710,8 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "modern-era",
-      "entity": "Arsenal"
+      "scope": "club",
+      "club": "Arsenal"
     },
     {
       "id": "1b70fd5b-de62-4010-9aa8-ba413ba6bae1",
@@ -1011,21 +725,8 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "modern-era",
-      "entity": "Tottenham Hotspur"
-    },
-    {
-      "id": "1ba28ced-99d3-4490-b92a-40868b8aff44",
-      "q": "What is the name of Blackburn Rovers' home ground?",
-      "options": [
-        "Ewood Park",
-        "Turf Moor",
-        "The Hawthorns",
-        "Deepdale"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "entity": "Blackburn Rovers"
+      "scope": "club",
+      "club": "Tottenham Hotspur"
     },
     {
       "id": "1bbaf058-e4de-43d5-9f05-7e4edda9275d",
@@ -1039,7 +740,8 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "modern-era",
-      "entity": "Aston Villa"
+      "scope": "club",
+      "club": "Aston Villa"
     },
     {
       "id": "1bc037ca-9c27-4265-9269-a3f50f9aadc6",
@@ -1053,7 +755,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Manchester City"
+      "scope": "club",
+      "club": "Manchester City"
     },
     {
       "id": "1bd5e848-1469-4787-aba8-caa6154bf8f8",
@@ -1067,7 +770,8 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Chelsea"
+      "scope": "club",
+      "club": "Chelsea"
     },
     {
       "id": "1c32146c-23c6-4e9b-943b-2a677d2b29dc",
@@ -1081,7 +785,8 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Arsenal"
+      "scope": "club",
+      "club": "Arsenal"
     },
     {
       "id": "1d609ed9-0485-486d-9363-5aae709c92bb",
@@ -1095,7 +800,8 @@
       "answer": 2,
       "difficulty": "easy",
       "category": "rivalries-derbies",
-      "entity": "Liverpool"
+      "scope": "club",
+      "club": "Liverpool"
     },
     {
       "id": "1d8c71d9-e2b4-46e1-9661-1be3c3c9964e",
@@ -1109,7 +815,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Arsenal"
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "1dc2fc0d-54f4-4393-8772-7f61e3b0e99d",
@@ -1123,7 +830,8 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Manchester United"
+      "scope": "club",
+      "club": "Manchester United"
     },
     {
       "id": "1de8532a-6e1d-43c6-8a3f-1d770856a167",
@@ -1137,7 +845,8 @@
       "answer": 2,
       "difficulty": "easy",
       "category": "legends",
-      "entity": "Manchester City"
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "1e3f121f-d183-46b1-9c4f-0a8533a40470",
@@ -1151,7 +860,23 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Liverpool"
+      "scope": "neutral",
+      "club": null
+    },
+    {
+      "id": "1fa28666-8566-43d3-ad34-fd792eae0dce",
+      "q": "In what year were Queens Park Rangers founded?",
+      "options": [
+        "1879",
+        "1882",
+        "1890",
+        "1895"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "1feaf8a3-a4d0-4229-85d3-aafb1001512f",
@@ -1165,7 +890,8 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "modern-era",
-      "entity": "Arsenal"
+      "scope": "club",
+      "club": "Arsenal"
     },
     {
       "id": "204dcd17-3561-4a07-b96d-6a5e2fa451ba",
@@ -1179,7 +905,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Tottenham Hotspur"
+      "scope": "club",
+      "club": "Tottenham Hotspur"
     },
     {
       "id": "2103f31a-bca9-46f8-840d-300213444be4",
@@ -1193,7 +920,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "modern-era",
-      "entity": "Aston Villa"
+      "scope": "club",
+      "club": "Aston Villa"
     },
     {
       "id": "212db225-adc0-4e7d-b51e-60177f9ff3e0",
@@ -1207,7 +935,23 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Arsenal"
+      "scope": "neutral",
+      "club": null
+    },
+    {
+      "id": "216d18bd-645e-4252-b862-10f13e8bd4c5",
+      "q": "Which Southampton striker scored the winning goal against Bournemouth at the Vitality Stadium in the Premier League in October 2022?",
+      "options": [
+        "Danny Ings",
+        "Adam Armstrong",
+        "Che Adams",
+        "James Ward-Prowse"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "scope": "club",
+      "club": "Bournemouth"
     },
     {
       "id": "22230cad-1037-4b2c-aeff-662d05581c30",
@@ -1221,7 +965,8 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Tottenham Hotspur"
+      "scope": "club",
+      "club": "Tottenham Hotspur"
     },
     {
       "id": "22eb1da1-d247-4ecb-8ea2-be88895f7250",
@@ -1235,7 +980,8 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Everton"
+      "scope": "club",
+      "club": "Everton"
     },
     {
       "id": "22f151b7-ebfd-4e42-ad80-37b3aa85abbd",
@@ -1249,7 +995,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Aston Villa"
+      "scope": "club",
+      "club": "Aston Villa"
     },
     {
       "id": "233a27aa-62d9-4ca2-bc08-6b77df5e87dc",
@@ -1263,7 +1010,8 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Arsenal"
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "244a4c3f-0f7c-471a-9022-8fceee57ff1d",
@@ -1277,7 +1025,8 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Arsenal"
+      "scope": "club",
+      "club": "Arsenal"
     },
     {
       "id": "24784140-3ee8-4108-8bbf-13e15a1ce58e",
@@ -1291,7 +1040,8 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "modern-era",
-      "entity": "Liverpool"
+      "scope": "club",
+      "club": "Liverpool"
     },
     {
       "id": "249c4bde-7e4f-4549-ac9e-5abbd382faa7",
@@ -1305,7 +1055,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Tottenham Hotspur"
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "24b59257-ba70-4d77-b621-a32e75d3078b",
@@ -1319,7 +1070,23 @@
       "answer": 3,
       "difficulty": "easy",
       "category": "legends",
-      "entity": "Tottenham Hotspur"
+      "scope": "neutral",
+      "club": null
+    },
+    {
+      "id": "250ee596-1413-44c9-9df9-5351938f9172",
+      "q": "Which club did Fulham beat 3-2 at Craven Cottage in August 2022, in the first ever Premier League meeting between the two West London rivals?",
+      "options": [
+        "Watford",
+        "Chelsea",
+        "Brentford",
+        "Queens Park Rangers"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "scope": "club",
+      "club": "Fulham"
     },
     {
       "id": "256b7f33-d948-4064-be32-5c016d3eafa4",
@@ -1333,7 +1100,23 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Tottenham Hotspur"
+      "scope": "club",
+      "club": "Tottenham Hotspur"
+    },
+    {
+      "id": "274d1ba6-c7e7-4b09-8750-60b507759284",
+      "q": "Sadio Mane holds the Premier League record for the quickest hat-trick, completing it in less than three minutes. What team was he playing for during this remarkable feat?",
+      "options": [
+        "Liverpool",
+        "Crystal Palace",
+        "Southampton",
+        "Tottenham Hotspur"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "PL Records",
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "27b9dc91-a083-4ca6-be79-19232b0bafed",
@@ -1347,7 +1130,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Arsenal"
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "27c34a46-3a53-42cd-b34c-d4eb9f6e2951",
@@ -1361,7 +1145,8 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "modern-era",
-      "entity": "Manchester City"
+      "scope": "club",
+      "club": "Manchester City"
     },
     {
       "id": "28da2ab8-9ee6-4eaf-b176-3d4dfdf522a8",
@@ -1375,7 +1160,8 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Arsenal"
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "28e581c2-69fc-4790-b27d-b6d812f7efd9",
@@ -1389,7 +1175,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Chelsea"
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "2a45ab5e-87b4-4620-a490-4d37c559d536",
@@ -1403,7 +1190,23 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "modern-era",
-      "entity": "Arsenal"
+      "scope": "club",
+      "club": "Arsenal"
+    },
+    {
+      "id": "2bec4c02-977e-4c03-96c7-a00fbb0d60cd",
+      "q": "What is the name of Brentford's home stadium?",
+      "options": [
+        "Griffin Park",
+        "Thames Valley Park",
+        "West London Stadium",
+        "Brentford Community Stadium"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "scope": "club",
+      "club": "Brentford"
     },
     {
       "id": "2c2b2433-1c39-489e-b60e-5c1daba48b4a",
@@ -1417,7 +1220,8 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Arsenal"
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "2caf62a8-53b9-4015-90c3-cfa5bcd33148",
@@ -1431,21 +1235,53 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Chelsea"
+      "scope": "club",
+      "club": "Chelsea"
     },
     {
-      "id": "2e8ec956-f29d-4183-b2f8-27c227674019",
-      "q": "West Ham United's 'Champions' statue outside their ground was boarded up for protection ahead of a League Cup visit from which club on 25 August 2009?",
+      "id": "2d323645-90a8-43c6-b1cb-65225396d677",
+      "q": "In which competition did Bournemouth beat Southampton 3-1 at the Vitality Stadium in October 2024?",
       "options": [
-        "Tottenham Hotspur",
-        "Chelsea",
-        "Sheffield United",
-        "Millwall"
+        "FA Cup",
+        "Europa League",
+        "League Cup",
+        "Premier League"
       ],
       "answer": 3,
-      "difficulty": "medium",
+      "difficulty": "easy",
       "category": "rivalries-derbies",
-      "entity": "West Ham United"
+      "scope": "club",
+      "club": "Bournemouth"
+    },
+    {
+      "id": "2d450e71-81c0-4d35-a73a-4968399319de",
+      "q": "What is the name of Sunderland's home stadium?",
+      "options": [
+        "Stadium of Light",
+        "St James' Park",
+        "The Riverside",
+        "Kingston Park"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "history-honours",
+      "scope": "club",
+      "club": "Sunderland"
+    },
+    {
+      "id": "2d632025-be4a-45aa-9b29-5a146f107eca",
+      "q": "Which Republic of Ireland international is the sole player to reach the milestone of 100 Premier League goals?",
+      "options": [
+        "Tony Dunne",
+        "Niall Quinn",
+        "Robbie Keane",
+        "Cillian Sheridan"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "PL Records",
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "2eb286d9-6ad3-4ed5-97e5-dec80c7f048a",
@@ -1459,7 +1295,8 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "modern-era",
-      "entity": "Manchester United"
+      "scope": "club",
+      "club": "Manchester United"
     },
     {
       "id": "2ec4aef6-5a73-4fd9-a943-2ebd6c849d40",
@@ -1473,7 +1310,8 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "modern-era",
-      "entity": "Manchester City"
+      "scope": "club",
+      "club": "Manchester City"
     },
     {
       "id": "2f22b762-e527-4a17-a480-7d9e7b49fb24",
@@ -1487,7 +1325,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Liverpool"
+      "scope": "club",
+      "club": "Liverpool"
     },
     {
       "id": "2f759825-f3ad-4cc0-bd73-a294a3b897a6",
@@ -1501,7 +1340,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Arsenal"
+      "scope": "club",
+      "club": "Arsenal"
     },
     {
       "id": "2ff0140e-8a10-4951-87aa-80de9680eb9d",
@@ -1515,7 +1355,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "modern-era",
-      "entity": "Liverpool"
+      "scope": "club",
+      "club": "Liverpool"
     },
     {
       "id": "304461dd-ca86-4044-8c36-369dee165a3d",
@@ -1529,7 +1370,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "modern-era",
-      "entity": "Manchester City"
+      "scope": "club",
+      "club": "Manchester City"
     },
     {
       "id": "3074372a-0022-4968-8781-d681f0a59a8e",
@@ -1543,7 +1385,8 @@
       "answer": 3,
       "difficulty": "easy",
       "category": "history-honours",
-      "entity": "Manchester United"
+      "scope": "club",
+      "club": "Manchester United"
     },
     {
       "id": "316dcdfe-6a10-493c-ade2-56a1ae03c441",
@@ -1557,7 +1400,23 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Arsenal"
+      "scope": "club",
+      "club": "Arsenal"
+    },
+    {
+      "id": "31ae5ab9-345d-4137-8b63-9102719db8d4",
+      "q": "How many points did Brighton & Hove Albion accumulate in the 2023-24 Premier League season?",
+      "options": [
+        "48",
+        "52",
+        "50",
+        "46"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "scope": "club",
+      "club": "Brighton"
     },
     {
       "id": "31d0aa2a-df71-445c-9882-6e0e2ba836d8",
@@ -1571,7 +1430,8 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "modern-era",
-      "entity": "Chelsea"
+      "scope": "club",
+      "club": "Chelsea"
     },
     {
       "id": "31f45bf5-29c5-4400-9483-780ea7eed11d",
@@ -1585,21 +1445,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "modern-era",
-      "entity": "Aston Villa"
-    },
-    {
-      "id": "3216dfef-ea41-4ea4-aded-98fa8c774f44",
-      "q": "Which player led Leicester City's goal-scoring charts during their incredible 2015/16 Premier League championship campaign?",
-      "options": [
-        "N'Golo Kanté",
-        "Riyad Mahrez",
-        "Shinji Okazaki",
-        "Jamie Vardy"
-      ],
-      "answer": 3,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "entity": "Leicester City"
+      "scope": "club",
+      "club": "Aston Villa"
     },
     {
       "id": "32af3b28-c42b-4d58-bc65-4adc483dd565",
@@ -1613,7 +1460,8 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Liverpool"
+      "scope": "club",
+      "club": "Liverpool"
     },
     {
       "id": "344f5ca2-ee6a-4a5b-87b3-1c9a3a937953",
@@ -1627,7 +1475,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Newcastle United"
+      "scope": "club",
+      "club": "Newcastle United"
     },
     {
       "id": "346aae07-9959-4f0a-9a59-8acbfe6a9bcd",
@@ -1641,7 +1490,23 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Chelsea"
+      "scope": "neutral",
+      "club": null
+    },
+    {
+      "id": "34b3868a-2fed-4096-adc8-6c337351a7d7",
+      "q": "How many points did Crystal Palace achieve in the 2023-24 Premier League season?",
+      "options": [
+        "52",
+        "46",
+        "55",
+        "49"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "scope": "club",
+      "club": "Crystal Palace"
     },
     {
       "id": "34bef8ad-74ff-4b16-9481-4a7efcc39387",
@@ -1655,7 +1520,23 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Chelsea"
+      "scope": "club",
+      "club": "Chelsea"
+    },
+    {
+      "id": "35d662d7-5da8-4761-a107-fd24beb6c852",
+      "q": "How many points did Chelsea accumulate during their dominant 2005-06 Premier League campaign?",
+      "options": [
+        "92",
+        "91",
+        "89",
+        "88"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "scope": "club",
+      "club": "Chelsea"
     },
     {
       "id": "361bddac-7f28-4c84-8a14-a1c9f4e86412",
@@ -1669,7 +1550,23 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "modern-era",
-      "entity": "Liverpool"
+      "scope": "club",
+      "club": "Liverpool"
+    },
+    {
+      "id": "362fceb9-2403-4be8-a9fb-91d7bb1fae58",
+      "q": "What is the name of Brighton & Hove Albion's home stadium?",
+      "options": [
+        "The Goldstone Ground",
+        "Amex Arena",
+        "Sussex Park",
+        "Falmer Stadium"
+      ],
+      "answer": 3,
+      "difficulty": "easy",
+      "category": "history-honours",
+      "scope": "club",
+      "club": "Brighton"
     },
     {
       "id": "367264c1-c765-4898-b7db-ceee52a6eb9b",
@@ -1683,7 +1580,8 @@
       "answer": 0,
       "difficulty": "easy",
       "category": "rivalries-derbies",
-      "entity": "Arsenal"
+      "scope": "club",
+      "club": "Arsenal"
     },
     {
       "id": "3684c6d9-0d62-4187-8259-07ba1dfba248",
@@ -1697,7 +1595,8 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Arsenal"
+      "scope": "club",
+      "club": "Arsenal"
     },
     {
       "id": "36fd0b41-3628-48c5-81f5-e047d66c2a36",
@@ -1711,7 +1610,8 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Manchester City"
+      "scope": "club",
+      "club": "Manchester City"
     },
     {
       "id": "381df757-9e80-4b31-86df-26a0f5956873",
@@ -1725,7 +1625,8 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Manchester City"
+      "scope": "club",
+      "club": "Manchester City"
     },
     {
       "id": "38385cc6-cc81-44c5-bb6f-a63875d20737",
@@ -1739,7 +1640,8 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Arsenal"
+      "scope": "club",
+      "club": "Arsenal"
     },
     {
       "id": "38685dc4-9c32-4595-9c60-5e6b82329acb",
@@ -1753,7 +1655,8 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Manchester United"
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "38b49b84-e897-435c-b991-319ff9c98697",
@@ -1767,21 +1670,8 @@
       "answer": 1,
       "difficulty": "easy",
       "category": "rivalries-derbies",
-      "entity": "Manchester City"
-    },
-    {
-      "id": "39187788-df0b-4cff-aeb1-956c7230b673",
-      "q": "West Ham United's deadline-day signings of Carlos Tevez and Javier Mascherano on 31 August 2006 sparked a rivalry with which club?",
-      "options": [
-        "Wigan Athletic",
-        "Sheffield United",
-        "Fulham",
-        "Charlton Athletic"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "rivalries-derbies",
-      "entity": "West Ham United"
+      "scope": "club",
+      "club": "Manchester City"
     },
     {
       "id": "3a4fc892-9e04-42b5-b634-33f7244c8e52",
@@ -1795,7 +1685,23 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Chelsea"
+      "scope": "club",
+      "club": "Chelsea"
+    },
+    {
+      "id": "3ac27ff5-f7e0-4c9c-b671-be1bdca93317",
+      "q": "How many points did Sunderland earn in their disastrous 2005-06 Premier League season?",
+      "options": [
+        "18",
+        "12",
+        "15",
+        "21"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "scope": "club",
+      "club": "Sunderland"
     },
     {
       "id": "3b72d3c5-e518-4481-81a9-4cdd5e6e4de7",
@@ -1809,7 +1715,8 @@
       "answer": 0,
       "difficulty": "easy",
       "category": "legends",
-      "entity": "Arsenal"
+      "scope": "club",
+      "club": "Arsenal"
     },
     {
       "id": "3c0c5e32-fbaf-4378-babd-6041a9fd18c9",
@@ -1823,7 +1730,23 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Liverpool"
+      "scope": "club",
+      "club": "Liverpool"
+    },
+    {
+      "id": "3d945e4a-ae9c-430e-b826-6639c0631661",
+      "q": "What player ended their Premier League career with exactly 100 goals, having scored every one of them for a single club during the 1992-2001 period?",
+      "options": [
+        "Alan Shearer",
+        "Matt Le Tissier",
+        "Teddy Sheringham",
+        "Robbie Fowler"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "PL Records",
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "3ddb0df6-85da-4413-9a14-3dfa3b211c86",
@@ -1837,7 +1760,8 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "modern-era",
-      "entity": "Newcastle United"
+      "scope": "club",
+      "club": "Newcastle United"
     },
     {
       "id": "3ded5137-9b71-4f97-9aac-c96bbe9a8dee",
@@ -1851,7 +1775,8 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Nottingham Forest"
+      "scope": "club",
+      "club": "Nottingham Forest"
     },
     {
       "id": "3df1887a-d26e-4ad7-aaee-8de0841742a8",
@@ -1865,7 +1790,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Tottenham Hotspur"
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "3e350ada-5c10-4d86-acd4-a01ab129c30a",
@@ -1879,7 +1805,8 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Chelsea"
+      "scope": "club",
+      "club": "Chelsea"
     },
     {
       "id": "3e76cd2a-be2a-4276-bc2a-0bced2de3ce6",
@@ -1893,7 +1820,23 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Manchester United"
+      "scope": "club",
+      "club": "Manchester United"
+    },
+    {
+      "id": "3f40e4cc-6513-42c2-8e9b-594258122330",
+      "q": "At what age did the Liverpool striker Michael Owen become one of the youngest players to reach a century of Premier League goals, achieving this milestone at just 23 years and 133 days?",
+      "options": [
+        "Kenny Dalglish",
+        "Michael Owen",
+        "Ian Rush",
+        "Robbie Fowler"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "PL Records",
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "3f4d62fe-f01d-40a0-8923-7d8af3a1b24a",
@@ -1907,7 +1850,8 @@
       "answer": 3,
       "difficulty": "easy",
       "category": "history-honours",
-      "entity": "Tottenham Hotspur"
+      "scope": "club",
+      "club": "Tottenham Hotspur"
     },
     {
       "id": "3fcbdb0f-6461-4c78-8e5d-30e8cd1dd589",
@@ -1921,7 +1865,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Aston Villa"
+      "scope": "club",
+      "club": "Aston Villa"
     },
     {
       "id": "4040250d-feb7-406f-908e-88d8969e3267",
@@ -1935,7 +1880,23 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Manchester City"
+      "scope": "club",
+      "club": "Manchester City"
+    },
+    {
+      "id": "40522d63-e5ce-4bee-bd0f-a6f3c8313f56",
+      "q": "What is the name of Ipswich Town's home stadium?",
+      "options": [
+        "Roots Hall",
+        "Carrow Road",
+        "London Road",
+        "Portman Road"
+      ],
+      "answer": 3,
+      "difficulty": "easy",
+      "category": "history-honours",
+      "scope": "club",
+      "club": "Ipswich Town"
     },
     {
       "id": "40a946ef-ca51-457e-9d36-5e3645820927",
@@ -1949,7 +1910,23 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Tottenham Hotspur"
+      "scope": "club",
+      "club": "Tottenham Hotspur"
+    },
+    {
+      "id": "40de9522-c0a9-4b09-8fe8-f85b979b27b0",
+      "q": "Which Premier League club did Peter Schmeichel represent when he made history as the first goalkeeper to score a goal in the competition?",
+      "options": [
+        "Aston Villa",
+        "Everton",
+        "Coventry City",
+        "Manchester United"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "PL History",
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "40e9f54e-1381-4f5c-b047-5d15e5fff0a1",
@@ -1963,7 +1940,23 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Newcastle United"
+      "scope": "neutral",
+      "club": null
+    },
+    {
+      "id": "41bd813c-887e-4065-a96a-19648b0adf41",
+      "q": "What is the name of Crystal Palace's home ground?",
+      "options": [
+        "Croydon Park",
+        "Nene Park",
+        "The Valley",
+        "Selhurst Park"
+      ],
+      "answer": 3,
+      "difficulty": "easy",
+      "category": "history-honours",
+      "scope": "club",
+      "club": "Crystal Palace"
     },
     {
       "id": "41e6532b-7583-4541-b2b0-91df12352e6c",
@@ -1977,21 +1970,8 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Arsenal"
-    },
-    {
-      "id": "4220d20f-f6c4-4a0b-b196-43b2dea6fa30",
-      "q": "How many times have Blackburn Rovers been relegated from the Premier League since 2001-02?",
-      "options": [
-        "2",
-        "3",
-        "1",
-        "0"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "entity": "Blackburn Rovers"
+      "scope": "club",
+      "club": "Arsenal"
     },
     {
       "id": "4268c5b4-8ff1-49fb-9c90-542e08c2e086",
@@ -2005,7 +1985,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Everton"
+      "scope": "club",
+      "club": "Everton"
     },
     {
       "id": "42848f90-11a7-4df1-bed3-6295b9d9cd02",
@@ -2019,7 +2000,8 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "modern-era",
-      "entity": "Manchester United"
+      "scope": "club",
+      "club": "Manchester United"
     },
     {
       "id": "42e63205-cc57-4de6-9232-45ec31599942",
@@ -2033,7 +2015,8 @@
       "answer": 0,
       "difficulty": "easy",
       "category": "legends",
-      "entity": "Manchester City"
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "42f72256-d087-4fc1-aad3-db6161a6bc92",
@@ -2047,7 +2030,8 @@
       "answer": 3,
       "difficulty": "easy",
       "category": "rivalries-derbies",
-      "entity": "Manchester United"
+      "scope": "club",
+      "club": "Manchester United"
     },
     {
       "id": "430baf0d-15b5-421b-9a57-e2f7ca688898",
@@ -2061,7 +2045,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Newcastle United"
+      "scope": "club",
+      "club": "Newcastle United"
     },
     {
       "id": "431faf6e-a50e-447f-90ed-798b71901d51",
@@ -2075,7 +2060,8 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Newcastle United"
+      "scope": "club",
+      "club": "Newcastle United"
     },
     {
       "id": "4372301c-2105-458d-b6cd-8e2b897c579d",
@@ -2089,7 +2075,8 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Arsenal"
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "445fed98-689f-46eb-b11f-10f8dbdcb5be",
@@ -2103,21 +2090,38 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "modern-era",
-      "entity": "Nottingham Forest"
+      "scope": "club",
+      "club": "Nottingham Forest"
     },
     {
-      "id": "44dcb830-9caa-4421-85bc-21589785e44b",
-      "q": "Which manager took over Leicester City's top job following Claudio Ranieri's departure in 2017?",
+      "id": "4475d3aa-9ec3-4a37-955e-a8e8a4b2806a",
+      "q": "How many times have Hull City been relegated from the Premier League since 2001-02?",
       "options": [
-        "Nigel Pearson",
-        "Claude Puel",
-        "Brendan Rodgers",
-        "Craig Shakespeare"
+        "4",
+        "2",
+        "3",
+        "1"
       ],
-      "answer": 3,
+      "answer": 2,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Leicester City"
+      "scope": "club",
+      "club": "Hull City"
+    },
+    {
+      "id": "4479d161-15e8-4646-b0d6-769416cb8693",
+      "q": "Who was the leading Premier League goalscorer over the decade spanning 2012 through 2022?",
+      "options": [
+        "Sergio Agüero",
+        "Cristiano Ronaldo",
+        "Harry Kane",
+        "Jamie Vardy"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "PL History",
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "44edc64a-4c4d-45fd-a27b-08072bd2077c",
@@ -2131,7 +2135,8 @@
       "answer": 3,
       "difficulty": "easy",
       "category": "history-honours",
-      "entity": "Tottenham Hotspur"
+      "scope": "club",
+      "club": "Tottenham Hotspur"
     },
     {
       "id": "45cf4a72-dfc3-4737-8009-037016730505",
@@ -2145,35 +2150,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Aston Villa"
-    },
-    {
-      "id": "468ef506-6a19-4ce4-9c54-21b708099cc1",
-      "q": "What is the name of Leicester City's home stadium?",
-      "options": [
-        "Filbert Street",
-        "King Power Stadium",
-        "Walkers Stadium",
-        "Belvoir Drive"
-      ],
-      "answer": 1,
-      "difficulty": "easy",
-      "category": "history-honours",
-      "entity": "Leicester City"
-    },
-    {
-      "id": "472cf74c-ebdf-4a39-8d5c-6bee173677ad",
-      "q": "When Leicester City's relegation from the Premier League was confirmed in 2023, who was their manager?",
-      "options": [
-        "Steve Cooper",
-        "Dean Smith",
-        "Craig Shakespeare",
-        "Brendan Rodgers"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "entity": "Leicester City"
+      "scope": "club",
+      "club": "Aston Villa"
     },
     {
       "id": "4ac345ca-d2d0-4b61-9713-e72234ad45f8",
@@ -2187,7 +2165,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Liverpool"
+      "scope": "club",
+      "club": "Liverpool"
     },
     {
       "id": "4aea34e8-600c-4a62-b562-b92428600017",
@@ -2201,7 +2180,8 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Liverpool"
+      "scope": "club",
+      "club": "Liverpool"
     },
     {
       "id": "4b92b41d-618d-4fca-81fa-734aca7e3cf8",
@@ -2215,7 +2195,23 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Chelsea"
+      "scope": "club",
+      "club": "Chelsea"
+    },
+    {
+      "id": "4b9402ff-d652-4ea4-97f1-ed3654b91329",
+      "q": "What is Hull City's nickname?",
+      "options": [
+        "The Wildcats",
+        "The Tigers",
+        "The Stripers",
+        "The Panthers"
+      ],
+      "answer": 1,
+      "difficulty": "easy",
+      "category": "history-honours",
+      "scope": "club",
+      "club": "Hull City"
     },
     {
       "id": "4c9dc57b-c186-4286-9899-34fb77c7bb5d",
@@ -2229,7 +2225,8 @@
       "answer": 3,
       "difficulty": "easy",
       "category": "legends",
-      "entity": "Manchester City"
+      "scope": "club",
+      "club": "Manchester City"
     },
     {
       "id": "4d87f4d4-ccf3-4fdb-838c-22f96bb00bf8",
@@ -2243,7 +2240,23 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Liverpool"
+      "scope": "club",
+      "club": "Liverpool"
+    },
+    {
+      "id": "4dde8179-4b1f-4c71-a455-99b7b8fc2447",
+      "q": "What was the aggregate score when Brentford beat Swansea in the 2020 Championship play-off semi-final to reach the derby final against Fulham?",
+      "options": [
+        "4-2",
+        "2-1",
+        "3-2",
+        "3-1"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "scope": "club",
+      "club": "Brentford"
     },
     {
       "id": "4eb9dc29-5f17-4d51-a138-a849d6613648",
@@ -2257,7 +2270,38 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Liverpool"
+      "scope": "neutral",
+      "club": null
+    },
+    {
+      "id": "4ecb8ebd-688f-446b-bb22-d78eb034e5d3",
+      "q": "In 2020, Crystal Palace brought in Eberechi Eze from which club, subsequently selling him for a club-record transfer fee in 2025?",
+      "options": [
+        "Reading",
+        "Millwall",
+        "Charlton Athletic",
+        "Queens Park Rangers"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "scope": "club",
+      "club": "Crystal Palace"
+    },
+    {
+      "id": "4f27908a-dcdb-4a34-96ec-27c6d3230d5b",
+      "q": "Which non-English player became the first to achieve 100 Premier League goals, reaching this milestone with Manchester United in November 2000?",
+      "options": [
+        "Eric Cantona",
+        "Mark Hughes",
+        "Dwight Yorke",
+        "Teddy Sheringham"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "PL Records",
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "4f587697-faef-439b-b7c5-5423ef9de7d1",
@@ -2271,7 +2315,38 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Manchester City"
+      "scope": "club",
+      "club": "Manchester City"
+    },
+    {
+      "id": "4f69233c-814c-4e7b-adbb-1b17763492d0",
+      "q": "How many goals did Manchester United score in the 2007-08 Premier League season when they finished top?",
+      "options": [
+        "78",
+        "82",
+        "80",
+        "76"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "scope": "club",
+      "club": "Manchester United"
+    },
+    {
+      "id": "4f8532f6-2a7a-4a6f-936c-83fb45eff81e",
+      "q": "Which Charlton Athletic player scored a late equaliser on 15 May 2005 that relegated Crystal Palace from the Premier League on the final day of the season?",
+      "options": [
+        "Jason Euell",
+        "Dennis Rommedahl",
+        "Darren Bent",
+        "Jonathan Fortune"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "scope": "club",
+      "club": "Crystal Palace"
     },
     {
       "id": "50ac0f63-0d96-4c83-b532-86c8e79706da",
@@ -2285,7 +2360,8 @@
       "answer": 2,
       "difficulty": "easy",
       "category": "rivalries-derbies",
-      "entity": "Liverpool"
+      "scope": "club",
+      "club": "Liverpool"
     },
     {
       "id": "511d4fc7-b8af-4c4c-b1cd-2ceeea6c415f",
@@ -2299,7 +2375,8 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Arsenal"
+      "scope": "club",
+      "club": "Arsenal"
     },
     {
       "id": "514f1abf-a447-48ff-b277-2d1b83bd9ce7",
@@ -2313,7 +2390,8 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Chelsea"
+      "scope": "club",
+      "club": "Chelsea"
     },
     {
       "id": "51a12931-82a6-4d90-a450-a45a3caf47e8",
@@ -2327,7 +2405,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Manchester City"
+      "scope": "club",
+      "club": "Manchester City"
     },
     {
       "id": "51f3e742-ef25-41b7-b9ca-d2499a9614a5",
@@ -2341,7 +2420,8 @@
       "answer": 3,
       "difficulty": "easy",
       "category": "history-honours",
-      "entity": "Liverpool"
+      "scope": "club",
+      "club": "Liverpool"
     },
     {
       "id": "521455e6-9578-4df2-8bd9-b62abe00278b",
@@ -2355,7 +2435,8 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "modern-era",
-      "entity": "Manchester United"
+      "scope": "club",
+      "club": "Manchester United"
     },
     {
       "id": "524c4b91-0fe4-4353-ba37-7c75d131d769",
@@ -2369,7 +2450,23 @@
       "answer": 3,
       "difficulty": "easy",
       "category": "legends",
-      "entity": "Manchester City"
+      "scope": "neutral",
+      "club": null
+    },
+    {
+      "id": "52bd0537-37d5-475f-a67a-f0eea9ebca4a",
+      "q": "Which club were forced to share Selhurst Park as tenants of Crystal Palace for six years starting in the 1985-86 season?",
+      "options": [
+        "Brighton & Hove Albion",
+        "AFC Wimbledon",
+        "Charlton Athletic",
+        "Millwall"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "scope": "club",
+      "club": "Crystal Palace"
     },
     {
       "id": "5347aac9-dd5f-4bcb-b483-0a9ef7902ce6",
@@ -2383,7 +2480,8 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Chelsea"
+      "scope": "club",
+      "club": "Chelsea"
     },
     {
       "id": "5449aecb-73c8-4da6-8426-bdd644f41b37",
@@ -2397,7 +2495,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "modern-era",
-      "entity": "Manchester City"
+      "scope": "club",
+      "club": "Manchester City"
     },
     {
       "id": "5499fdde-3818-4265-9e8a-8a15d1086e9a",
@@ -2411,7 +2510,23 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Liverpool"
+      "scope": "club",
+      "club": "Liverpool"
+    },
+    {
+      "id": "556c7838-6c7c-4a12-9f49-1f49298ef215",
+      "q": "Bryan Mbeumo finished fourth in the Premier League scoring charts in 2024-25 — how many goals did the Brentford forward bag?",
+      "options": [
+        "19",
+        "22",
+        "21",
+        "20"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "legends",
+      "scope": "club",
+      "club": "Brentford"
     },
     {
       "id": "5661bf3c-2c07-4bba-a61b-7e851aac18c4",
@@ -2425,7 +2540,8 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Arsenal"
+      "scope": "club",
+      "club": "Arsenal"
     },
     {
       "id": "56dc8b94-eee9-4c39-8687-ad6971a30c10",
@@ -2439,7 +2555,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Manchester City"
+      "scope": "club",
+      "club": "Manchester City"
     },
     {
       "id": "58967eea-6e86-4db2-bb9b-19bc5195318d",
@@ -2453,7 +2570,8 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Tottenham Hotspur"
+      "scope": "club",
+      "club": "Tottenham Hotspur"
     },
     {
       "id": "58e92803-52f8-415f-8ef5-d034558fc790",
@@ -2467,7 +2585,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Everton"
+      "scope": "club",
+      "club": "Everton"
     },
     {
       "id": "59c4149d-972f-456f-813f-5abc56e98aa6",
@@ -2481,7 +2600,8 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Manchester City"
+      "scope": "club",
+      "club": "Manchester City"
     },
     {
       "id": "5a958bc0-63c6-4cda-92fd-ea424bb2bef1",
@@ -2495,7 +2615,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Arsenal"
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "5aa99256-bc0d-467d-aa01-318651f9c5b1",
@@ -2509,7 +2630,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Tottenham Hotspur"
+      "scope": "club",
+      "club": "Tottenham Hotspur"
     },
     {
       "id": "5aef991f-de9a-48af-934f-79b2e0665d45",
@@ -2523,7 +2645,8 @@
       "answer": 1,
       "difficulty": "easy",
       "category": "history-honours",
-      "entity": "Liverpool"
+      "scope": "club",
+      "club": "Liverpool"
     },
     {
       "id": "5b00ec3f-e8b9-4d31-aeae-eead94ccabf4",
@@ -2537,7 +2660,8 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Aston Villa"
+      "scope": "club",
+      "club": "Aston Villa"
     },
     {
       "id": "5c008fd7-d509-48c5-9706-6055a7fca06b",
@@ -2551,7 +2675,8 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Chelsea"
+      "scope": "club",
+      "club": "Chelsea"
     },
     {
       "id": "5c480742-63ab-43f2-8be3-67b09033dd66",
@@ -2565,7 +2690,8 @@
       "answer": 1,
       "difficulty": "easy",
       "category": "history-honours",
-      "entity": "Chelsea"
+      "scope": "club",
+      "club": "Chelsea"
     },
     {
       "id": "5c4c7a8f-3301-460e-b603-a0e8215ebd69",
@@ -2579,7 +2705,8 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Leicester City"
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "5d039a49-2276-413e-bd25-625374d8b188",
@@ -2593,35 +2720,23 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Liverpool"
+      "scope": "club",
+      "club": "Liverpool"
     },
     {
-      "id": "5d1e059a-0977-4ba9-b0b8-35d893c2f8b8",
-      "q": "What is the name of Blackburn Rovers's home stadium?",
+      "id": "5d1663c7-1a45-41b9-8277-32b9e4f560f0",
+      "q": "Which of these teams finished 18th in the 2021-22 Premier League season?",
       "options": [
-        "Goodison Park",
-        "Ewood Park",
-        "The Hawthorns",
-        "Turf Moor"
+        "Leeds United",
+        "Watford",
+        "Burnley",
+        "Norwich City"
       ],
-      "answer": 1,
+      "answer": 2,
       "difficulty": "medium",
-      "category": "history-honours",
-      "entity": "Blackburn Rovers"
-    },
-    {
-      "id": "5d6563de-a837-4664-b969-0c0b686a2e48",
-      "q": "West Ham United and Millwall met 60 times in the 16 years before which conflict?",
-      "options": [
-        "The Crimean War",
-        "The First World War",
-        "The Second World War",
-        "The Falklands War"
-      ],
-      "answer": 1,
-      "difficulty": "medium",
-      "category": "rivalries-derbies",
-      "entity": "West Ham United"
+      "category": "modern-era",
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "5e9972be-8291-421e-96c8-2c9c8b31a1f8",
@@ -2635,7 +2750,8 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Arsenal"
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "5efa8287-fab7-4060-9cad-c0b498b97de2",
@@ -2649,7 +2765,8 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Everton"
+      "scope": "club",
+      "club": "Everton"
     },
     {
       "id": "5f6698e7-90ee-4bc2-98a9-41af3e091cae",
@@ -2663,7 +2780,8 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Chelsea"
+      "scope": "club",
+      "club": "Chelsea"
     },
     {
       "id": "5f6793b2-976d-4257-89ae-7cea2c7ac99f",
@@ -2677,7 +2795,8 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Liverpool"
+      "scope": "club",
+      "club": "Liverpool"
     },
     {
       "id": "602f1b27-7cf8-4f1a-8272-3db6bedbcbb1",
@@ -2691,7 +2810,8 @@
       "answer": 2,
       "difficulty": "easy",
       "category": "legends",
-      "entity": "Tottenham Hotspur"
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "609a1684-9732-443c-9af0-5eed5d6cbcbf",
@@ -2705,21 +2825,23 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Leicester City"
+      "scope": "neutral",
+      "club": null
     },
     {
-      "id": "60d48e4a-52dd-49c6-be4a-f5bdd7b09509",
-      "q": "What is Leicester City's record for most wins in a single Premier League season, set in 2015-16?",
+      "id": "626a1773-d9c7-43bc-bc63-8f9d9fef802d",
+      "q": "What is the media nickname for the derby between Brighton & Hove Albion and Crystal Palace, named after the road connecting Sussex and south London?",
       "options": [
-        "20",
-        "25",
-        "23",
-        "21"
+        "A1 derby",
+        "M25 derby",
+        "A23 derby",
+        "M1 derby"
       ],
       "answer": 2,
       "difficulty": "medium",
-      "category": "modern-era",
-      "entity": "Leicester City"
+      "category": "rivalries-derbies",
+      "scope": "club",
+      "club": "Brighton"
     },
     {
       "id": "6298a58e-cf5f-4e6b-87ef-880d43207c09",
@@ -2733,7 +2855,23 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "modern-era",
-      "entity": "Chelsea"
+      "scope": "club",
+      "club": "Chelsea"
+    },
+    {
+      "id": "647b0834-4d8b-4f49-a972-d33ab4476bd7",
+      "q": "Between 2001 and 2025, how many times has Chelsea finished in the Premier League top four?",
+      "options": [
+        "16",
+        "17",
+        "19",
+        "18"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "scope": "club",
+      "club": "Chelsea"
     },
     {
       "id": "66332401-dfbd-4ab1-8ee9-aa44d9954e1d",
@@ -2747,7 +2885,8 @@
       "answer": 2,
       "difficulty": "easy",
       "category": "history-honours",
-      "entity": "Manchester City"
+      "scope": "club",
+      "club": "Manchester City"
     },
     {
       "id": "66d86c93-14cf-4e52-8c8f-574549905903",
@@ -2761,7 +2900,8 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Manchester United"
+      "scope": "club",
+      "club": "Manchester United"
     },
     {
       "id": "67c83404-8df9-4b3f-b4a9-5c2c4fa22beb",
@@ -2775,7 +2915,8 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Arsenal"
+      "scope": "club",
+      "club": "Arsenal"
     },
     {
       "id": "67f562e9-f3eb-42bd-a3f7-f4f4fb993ba9",
@@ -2789,7 +2930,23 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Manchester United"
+      "scope": "club",
+      "club": "Manchester United"
+    },
+    {
+      "id": "69901196-8ab8-4a3f-a81b-7407a8b39b5c",
+      "q": "What was the score when Fulham beat QPR at Loftus Road in October 2011, in the sides' first ever Premier League meeting?",
+      "options": [
+        "3-1",
+        "5-0",
+        "4-0",
+        "6-0"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "scope": "club",
+      "club": "Fulham"
     },
     {
       "id": "69d4647d-ff55-42c4-b33c-d312883880c0",
@@ -2803,7 +2960,8 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Chelsea"
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "6b060415-30be-4ff8-aac8-9524a01565f0",
@@ -2817,21 +2975,23 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Manchester United"
+      "scope": "club",
+      "club": "Manchester United"
     },
     {
-      "id": "6c9482e1-3027-46ef-b65c-6c75a9b5dd3b",
-      "q": "What was the final score when West Ham United beat Millwall in their League Cup tie in August 2009, their first victory over the Lions in seven meetings?",
+      "id": "6c8a42dd-a93c-4f2b-a4dd-4571e80fa8a6",
+      "q": "In which Premier League season did Brentford, Chelsea and Fulham compete together in the top flight for only the second time?",
       "options": [
-        "2-1",
-        "3-1",
-        "4-2",
-        "1-0"
+        "2022/23",
+        "2019/20",
+        "2021/22",
+        "2023/24"
       ],
-      "answer": 1,
+      "answer": 0,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "West Ham United"
+      "scope": "club",
+      "club": "Brentford"
     },
     {
       "id": "6c94a3f0-3c89-4aa4-b542-831431d269ed",
@@ -2845,7 +3005,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "modern-era",
-      "entity": "Arsenal"
+      "scope": "club",
+      "club": "Arsenal"
     },
     {
       "id": "6e33e1f8-9f95-4763-8075-3b99e6050405",
@@ -2859,7 +3020,23 @@
       "answer": 0,
       "difficulty": "easy",
       "category": "history-honours",
-      "entity": "Nottingham Forest"
+      "scope": "club",
+      "club": "Nottingham Forest"
+    },
+    {
+      "id": "6e81c550-cd3a-47e9-9363-1cadfaeb14db",
+      "q": "An incident nicknamed 'poo-gate' by fans occurred in May 2013 when human excrement was found in Crystal Palace's dressing room at which stadium?",
+      "options": [
+        "The Den",
+        "The Amex Stadium",
+        "The Valley",
+        "Selhurst Park"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "scope": "club",
+      "club": "Crystal Palace"
     },
     {
       "id": "6eac037d-2671-4827-af5a-741bc39b440a",
@@ -2873,7 +3050,8 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Chelsea"
+      "scope": "club",
+      "club": "Chelsea"
     },
     {
       "id": "6f959dbb-4a31-4be5-a88b-949510e86536",
@@ -2887,21 +3065,8 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Aston Villa"
-    },
-    {
-      "id": "71f663bc-3d21-473a-989f-e7feb2a32b6a",
-      "q": "How many Premier League goals did Jamie Vardy bag for Leicester City in 2018-19?",
-      "options": [
-        "18",
-        "20",
-        "16",
-        "17"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "legends",
-      "entity": "Leicester City"
+      "scope": "club",
+      "club": "Aston Villa"
     },
     {
       "id": "7224810c-f41c-4f6e-aabf-0276d1bb2121",
@@ -2915,7 +3080,23 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Manchester City"
+      "scope": "club",
+      "club": "Manchester City"
+    },
+    {
+      "id": "7247657c-e949-4e93-bf11-589588c4f0a2",
+      "q": "The 2011 Copa América champion who netted six Premier League hat-tricks during the 2012-2022 period, with three of those coming against a single opponent, was which player?",
+      "options": [
+        "Sergio Aguero",
+        "Cristiano Ronaldo",
+        "Robin van Persie",
+        "Luis Suarez"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "PL History",
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "72c48c6e-7a9e-4f52-9699-878527cd5cf2",
@@ -2929,7 +3110,8 @@
       "answer": 0,
       "difficulty": "easy",
       "category": "legends",
-      "entity": "Leicester City"
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "74f2ce45-c018-458a-b046-0282a55271b8",
@@ -2943,7 +3125,8 @@
       "answer": 3,
       "difficulty": "easy",
       "category": "rivalries-derbies",
-      "entity": "Leeds United"
+      "scope": "club",
+      "club": "Leeds United"
     },
     {
       "id": "75875f66-1390-4f8f-914c-ce29560336f8",
@@ -2957,7 +3140,8 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Chelsea"
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "75d45d80-8c18-472d-aa7a-b7649844a695",
@@ -2971,7 +3155,8 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Manchester United"
+      "scope": "club",
+      "club": "Manchester United"
     },
     {
       "id": "770e57b1-c928-469c-9038-fcc9f4ff183f",
@@ -2985,7 +3170,8 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Arsenal"
+      "scope": "club",
+      "club": "Arsenal"
     },
     {
       "id": "77fbfed6-3b93-4911-bc47-771474685161",
@@ -2999,7 +3185,23 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Liverpool"
+      "scope": "neutral",
+      "club": null
+    },
+    {
+      "id": "784e8655-2644-43fb-b18b-b21bc4f2f230",
+      "q": "Which three clubs are Brentford's West London derby rivals?",
+      "options": [
+        "Fulham, QPR and West Ham",
+        "Chelsea, Fulham and QPR",
+        "Arsenal, Chelsea and Fulham",
+        "Chelsea, QPR and Millwall"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "scope": "club",
+      "club": "Brentford"
     },
     {
       "id": "792f5094-5187-4a8a-a8db-276f237a2d78",
@@ -3013,7 +3215,8 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Liverpool"
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "7a7906c5-c4f4-468a-9747-33789ca0af8f",
@@ -3027,7 +3230,8 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "modern-era",
-      "entity": "Leeds United"
+      "scope": "club",
+      "club": "Leeds United"
     },
     {
       "id": "7acc3877-cb41-4174-b4fd-64761f45279b",
@@ -3041,7 +3245,8 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Arsenal"
+      "scope": "club",
+      "club": "Arsenal"
     },
     {
       "id": "7ae512c0-a6a6-43d7-8a51-d9cc074b1768",
@@ -3055,7 +3260,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Arsenal"
+      "scope": "club",
+      "club": "Arsenal"
     },
     {
       "id": "7b84b81a-c5d6-48b6-93ee-00792adc7b4f",
@@ -3069,21 +3275,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Aston Villa"
-    },
-    {
-      "id": "7baa0406-71cd-4339-a2da-67dd21233a44",
-      "q": "In which season did West Ham United and Millwall last meet in a competitive fixture?",
-      "options": [
-        "2011–12",
-        "2018–19",
-        "2005–06",
-        "2015–16"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "rivalries-derbies",
-      "entity": "West Ham United"
+      "scope": "club",
+      "club": "Aston Villa"
     },
     {
       "id": "7c044e88-f4f4-43f4-8693-1905896a9dd9",
@@ -3097,7 +3290,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Everton"
+      "scope": "club",
+      "club": "Everton"
     },
     {
       "id": "7c250d26-d3ec-42c3-be09-b2e6acc7d2e7",
@@ -3111,7 +3305,23 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "modern-era",
-      "entity": "Newcastle United"
+      "scope": "club",
+      "club": "Newcastle United"
+    },
+    {
+      "id": "7c668942-2bb7-46bc-a213-d8aa7638d551",
+      "q": "Which Dutch coach was dismissed from his Crystal Palace managerial position in 2017 after managing only five games?",
+      "options": [
+        "Frank Rijkaard",
+        "Marco van Basten",
+        "Frank de Boer",
+        "Guus Hiddink"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "scope": "club",
+      "club": "Crystal Palace"
     },
     {
       "id": "7d1d8776-12a5-4534-b02c-cbffb2715fad",
@@ -3125,7 +3335,8 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Aston Villa"
+      "scope": "club",
+      "club": "Aston Villa"
     },
     {
       "id": "7e586233-ee59-4615-b90d-0ba3c278db37",
@@ -3139,7 +3350,8 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Arsenal"
+      "scope": "club",
+      "club": "Arsenal"
     },
     {
       "id": "7e6eb4a7-f4ee-41f8-9bb4-e14c5259bed9",
@@ -3153,7 +3365,8 @@
       "answer": 1,
       "difficulty": "easy",
       "category": "history-honours",
-      "entity": "Everton"
+      "scope": "club",
+      "club": "Everton"
     },
     {
       "id": "7eb338d9-3d6c-4b7e-90b0-e6edc8b06754",
@@ -3167,7 +3380,8 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Liverpool"
+      "scope": "club",
+      "club": "Liverpool"
     },
     {
       "id": "7f25d2e2-995a-4b5f-8f81-2248c5204551",
@@ -3181,7 +3395,23 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Arsenal"
+      "scope": "neutral",
+      "club": null
+    },
+    {
+      "id": "7f435c8c-8be0-456c-adf5-b6bee3ba91c2",
+      "q": "What is Brentford's most widely recognised nickname?",
+      "options": [
+        "The Bees",
+        "The Yellow and Blacks",
+        "The West London Wasps",
+        "The Hive"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "history-honours",
+      "scope": "club",
+      "club": "Brentford"
     },
     {
       "id": "7fa4d940-b3f5-4089-b4ad-d717435cf6c7",
@@ -3195,21 +3425,23 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Tottenham Hotspur"
+      "scope": "club",
+      "club": "Tottenham Hotspur"
     },
     {
-      "id": "81ba6859-e204-4ab9-8c75-53a4e71a0112",
-      "q": "What was Leicester City's record points total in their sensational 2015-16 Premier League title-winning season?",
+      "id": "7ff3f3ea-ae08-4d1a-add5-eb298e62ba9b",
+      "q": "James Milner possesses the Premier League record for most appearances across his career. Identify the sole club where he accumulated over 200 top-flight appearances.",
       "options": [
-        "81",
-        "78",
-        "84",
-        "87"
+        "Liverpool",
+        "Manchester City",
+        "Leeds United",
+        "Aston Villa"
       ],
       "answer": 0,
       "difficulty": "medium",
-      "category": "modern-era",
-      "entity": "Leicester City"
+      "category": "PL Records",
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "82310a89-a8dd-4c5e-b30d-d02b55018785",
@@ -3223,7 +3455,23 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Arsenal"
+      "scope": "club",
+      "club": "Arsenal"
+    },
+    {
+      "id": "823d7459-77c3-499f-9766-d584b7f27b99",
+      "q": "When did Brighton & Hove Albion finish 6th with 62 points, their best Premier League season?",
+      "options": [
+        "2021-22",
+        "2020-21",
+        "2022-23",
+        "2023-24"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "scope": "club",
+      "club": "Brighton"
     },
     {
       "id": "82be2932-7ffe-45e5-a03d-97dce72fecc4",
@@ -3237,21 +3485,8 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Aston Villa"
-    },
-    {
-      "id": "8304f9bb-3816-4a99-8ae4-08c62c1171c3",
-      "q": "In the 2020/21 season, Leicester City claimed the FA Cup trophy by defeating which club in the final?",
-      "options": [
-        "Chelsea",
-        "Manchester City",
-        "Manchester United",
-        "Liverpool"
-      ],
-      "answer": 0,
-      "difficulty": "easy",
-      "category": "history-honours",
-      "entity": "Leicester City"
+      "scope": "club",
+      "club": "Aston Villa"
     },
     {
       "id": "834172db-f5d7-4a33-b1a3-b56260e41d3a",
@@ -3265,7 +3500,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Newcastle United"
+      "scope": "club",
+      "club": "Newcastle United"
     },
     {
       "id": "834bca98-fe36-4502-ac7d-6e4a9349d675",
@@ -3279,7 +3515,8 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Liverpool"
+      "scope": "club",
+      "club": "Liverpool"
     },
     {
       "id": "84c7edfd-2450-4c59-8476-c7b624f94660",
@@ -3293,7 +3530,23 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "modern-era",
-      "entity": "Arsenal"
+      "scope": "club",
+      "club": "Arsenal"
+    },
+    {
+      "id": "84ffc102-c2fb-43f2-9c9b-8656443bfc0f",
+      "q": "Which club beat Brentford in the 2020 EFL Championship play-off final at Wembley Stadium?",
+      "options": [
+        "QPR",
+        "Chelsea",
+        "Swansea",
+        "Fulham"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "scope": "club",
+      "club": "Brentford"
     },
     {
       "id": "85a4c991-1482-4b93-81c4-7a2b034fcae3",
@@ -3307,7 +3560,8 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Liverpool"
+      "scope": "club",
+      "club": "Liverpool"
     },
     {
       "id": "8675940c-bf26-4174-98d2-99a3c0343816",
@@ -3321,7 +3575,23 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Everton"
+      "scope": "club",
+      "club": "Everton"
+    },
+    {
+      "id": "86ba8b5e-c590-4405-b5fc-e462f0f19b4f",
+      "q": "What is the name of Queens Park Rangers' home stadium?",
+      "options": [
+        "The Hawthorns",
+        "Craven Cottage",
+        "White Hart Lane",
+        "Loftus Road Stadium"
+      ],
+      "answer": 3,
+      "difficulty": "easy",
+      "category": "history-honours",
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "86d49960-a47c-45d7-822f-d858dcda3d15",
@@ -3335,7 +3605,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Newcastle United"
+      "scope": "club",
+      "club": "Newcastle United"
     },
     {
       "id": "86e4d283-e6e0-4800-a717-8dad07d6b5ff",
@@ -3349,7 +3620,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Tottenham Hotspur"
+      "scope": "club",
+      "club": "Tottenham Hotspur"
     },
     {
       "id": "87fcdbc2-1824-4c43-aaa3-40d74fd8c0ba",
@@ -3363,21 +3635,8 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Liverpool"
-    },
-    {
-      "id": "889308ec-e23c-48e1-b0d3-d1555a09320e",
-      "q": "What is Leicester City's most widely recognised nickname?",
-      "options": [
-        "The Tigers",
-        "The Royals",
-        "The Foxes",
-        "The Imps"
-      ],
-      "answer": 2,
-      "difficulty": "easy",
-      "category": "history-honours",
-      "entity": "Leicester City"
+      "scope": "club",
+      "club": "Liverpool"
     },
     {
       "id": "88e30e42-ac21-4bc0-8af4-14b33d447562",
@@ -3391,7 +3650,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Arsenal"
+      "scope": "club",
+      "club": "Arsenal"
     },
     {
       "id": "8a36edb7-6e4f-44d8-8c09-6d3d4eb43468",
@@ -3405,7 +3665,8 @@
       "answer": 0,
       "difficulty": "easy",
       "category": "history-honours",
-      "entity": "Leeds United"
+      "scope": "club",
+      "club": "Leeds United"
     },
     {
       "id": "8a47d62c-f17b-485e-a976-5176422f56ff",
@@ -3419,7 +3680,8 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Leeds United"
+      "scope": "club",
+      "club": "Leeds United"
     },
     {
       "id": "8ad4fe3e-6c57-4005-8135-aff568029002",
@@ -3433,7 +3695,38 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Arsenal"
+      "scope": "club",
+      "club": "Arsenal"
+    },
+    {
+      "id": "8b01d70b-d028-44d1-b4e6-5c490e0941b3",
+      "q": "The 2004-05 season remains the only campaign in which Crystal Palace have played in the Premier League alongside which rival club?",
+      "options": [
+        "AFC Wimbledon",
+        "Charlton Athletic",
+        "Millwall",
+        "Brighton & Hove Albion"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "scope": "club",
+      "club": "Crystal Palace"
+    },
+    {
+      "id": "8b55b04e-63f7-4049-ab58-430a695c33fc",
+      "q": "Who accumulated the most playing time in Premier League history with a total of 54,439 minutes across his career?",
+      "options": [
+        "Ryan Giggs",
+        "Cristiano Ronaldo",
+        "Frank Lampard",
+        "Gareth Barry"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "PL Records",
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "8bb5285d-7f5e-47e5-9b76-75ec8ebedff3",
@@ -3447,7 +3740,38 @@
       "answer": 3,
       "difficulty": "easy",
       "category": "legends",
-      "entity": "Manchester City"
+      "scope": "club",
+      "club": "Manchester City"
+    },
+    {
+      "id": "8be83322-8f53-47ce-a045-e5b7e4044a75",
+      "q": "Who topped the Premier League scoring charts in 2005-06 with 27 goals for Arsenal?",
+      "options": [
+        "Gilberto Silva",
+        "Thierry Henry",
+        "Robert Pires",
+        "Patrick Vieira"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "legends",
+      "scope": "club",
+      "club": "Arsenal"
+    },
+    {
+      "id": "8c0a75e4-3bf0-48b1-9fee-6f7851d82eec",
+      "q": "Who is Arsenal's all-time record goalscorer?",
+      "options": [
+        "Ian Wright",
+        "Pierre-Emerick Aubameyang",
+        "Robin van Persie",
+        "Thierry Henry"
+      ],
+      "answer": 3,
+      "difficulty": "easy",
+      "category": "legends",
+      "scope": "club",
+      "club": "Arsenal"
     },
     {
       "id": "8cfc39f5-47d3-4d43-8f75-9b54fce608ff",
@@ -3461,7 +3785,23 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "modern-era",
-      "entity": "Tottenham Hotspur"
+      "scope": "club",
+      "club": "Tottenham Hotspur"
+    },
+    {
+      "id": "8d22932a-dde2-45cb-894b-0fa01ee0d666",
+      "q": "How many Premier League goals did Thierry Henry score in 2003-04 when he topped the scoring charts?",
+      "options": [
+        "28",
+        "32",
+        "26",
+        "30"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "legends",
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "8dbaa33c-1e6e-47ba-aca9-4e2947292e3e",
@@ -3475,7 +3815,8 @@
       "answer": 0,
       "difficulty": "easy",
       "category": "legends",
-      "entity": "Liverpool"
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "8de4b9e9-7830-4e03-8c2f-47b85bef16cf",
@@ -3489,7 +3830,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Tottenham Hotspur"
+      "scope": "club",
+      "club": "Tottenham Hotspur"
     },
     {
       "id": "8e224301-7f52-41bf-837e-702efd954774",
@@ -3503,21 +3845,8 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Liverpool"
-    },
-    {
-      "id": "8f476c68-640d-44d8-a311-f14a54676441",
-      "q": "Which club beat West Ham United 4-1 at The Den on Mothering Sunday, 21 March 2004, the largest winning margin recorded between the two clubs in the Football League?",
-      "options": [
-        "Millwall",
-        "Chelsea",
-        "Tottenham Hotspur",
-        "Sheffield United"
-      ],
-      "answer": 0,
-      "difficulty": "medium",
-      "category": "rivalries-derbies",
-      "entity": "West Ham United"
+      "scope": "club",
+      "club": "Liverpool"
     },
     {
       "id": "8f8f6c8a-9078-403c-9d50-e9e71954c42e",
@@ -3531,7 +3860,8 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Liverpool"
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "9009ccc0-ca3b-4ef4-9092-986919b1d96e",
@@ -3545,7 +3875,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Manchester United"
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "9046dc51-9481-457c-8b1b-2fafe60a54e9",
@@ -3559,7 +3890,23 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Manchester United"
+      "scope": "club",
+      "club": "Manchester United"
+    },
+    {
+      "id": "938ff3e2-5a6e-4c9b-951f-c9f73bca1721",
+      "q": "Who was the Premier League's most prolific assist provider from 2012 to 2022, and also captured four top-flight titles during that span?",
+      "options": [
+        "David Silva",
+        "Cesc Fàbregas",
+        "Kevin De Bruyne",
+        "Mesut Özil"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "PL History",
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "93fb0f18-ad72-4543-9c38-dddba2a7d3e8",
@@ -3573,21 +3920,23 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Leeds United"
+      "scope": "club",
+      "club": "Leeds United"
     },
     {
-      "id": "94a0cf95-e17e-4910-82f2-ca6dbf4c219d",
-      "q": "How many Premier League goals did Jamie Vardy score for Leicester City in 2017-18?",
+      "id": "94675f22-105d-4510-9044-56ad0b95f259",
+      "q": "Brighton finished fourth in the 2012-13 Championship season but were eliminated in the play-off semi-finals by which club?",
       "options": [
-        "22",
-        "18",
-        "16",
-        "20"
+        "Crystal Palace",
+        "Watford",
+        "Leicester City",
+        "Nottingham Forest"
       ],
-      "answer": 3,
+      "answer": 0,
       "difficulty": "medium",
-      "category": "legends",
-      "entity": "Leicester City"
+      "category": "rivalries-derbies",
+      "scope": "club",
+      "club": "Brighton"
     },
     {
       "id": "95123721-886c-4f8d-80fa-f96c00b9742b",
@@ -3601,7 +3950,23 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Chelsea"
+      "scope": "club",
+      "club": "Chelsea"
+    },
+    {
+      "id": "95360e9d-fd08-4273-94fe-b93409fbc0b9",
+      "q": "How many FA Cup titles has Arsenal won, the most of any club in the competition's history?",
+      "options": [
+        "14",
+        "12",
+        "13",
+        "15"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "history-honours",
+      "scope": "club",
+      "club": "Arsenal"
     },
     {
       "id": "9564148f-1e3f-4e41-88a3-a7f24e6e8fd8",
@@ -3615,7 +3980,23 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Manchester City"
+      "scope": "club",
+      "club": "Manchester City"
+    },
+    {
+      "id": "95f811a9-de5c-480c-9355-3fc113504795",
+      "q": "What is Fulham's most widely recognised nickname?",
+      "options": [
+        "The Whites",
+        "The Lilywhites",
+        "The Riverside Reds",
+        "The Cottagers"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "scope": "club",
+      "club": "Fulham"
     },
     {
       "id": "962d0a79-efbf-4858-884d-4a0c0bb70230",
@@ -3629,7 +4010,23 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Manchester City"
+      "scope": "neutral",
+      "club": null
+    },
+    {
+      "id": "9630371b-94f6-47e3-b6e9-94220aaab72c",
+      "q": "Under which manager did Arsenal win their second League and FA Cup Double, in the 1997/98 season?",
+      "options": [
+        "George Graham",
+        "Arsene Wenger",
+        "Bruce Rioch",
+        "Terry Neill"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "scope": "club",
+      "club": "Arsenal"
     },
     {
       "id": "96751f2d-be68-4358-ad1b-ff58a064f18f",
@@ -3643,7 +4040,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Leeds United"
+      "scope": "club",
+      "club": "Leeds United"
     },
     {
       "id": "96c30884-b825-496b-9e60-fb21f7032b02",
@@ -3657,7 +4055,23 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Manchester United"
+      "scope": "neutral",
+      "club": null
+    },
+    {
+      "id": "96c7d4dc-90b5-469a-b16e-76c394e8da9f",
+      "q": "Which player's £100m transfer in July 2023 is Arsenal's record fee paid for a player?",
+      "options": [
+        "Ben White",
+        "Declan Rice",
+        "Kai Havertz",
+        "Martin Ødegaard"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "legends",
+      "scope": "club",
+      "club": "Arsenal"
     },
     {
       "id": "96e354e6-a06f-4dcf-b6a2-366ac9fa408f",
@@ -3671,7 +4085,23 @@
       "answer": 2,
       "difficulty": "easy",
       "category": "history-honours",
-      "entity": "Aston Villa"
+      "scope": "club",
+      "club": "Aston Villa"
+    },
+    {
+      "id": "96fa4b14-7e42-4536-917f-04f1b2a408f2",
+      "q": "What is Sunderland commonly nicknamed?",
+      "options": [
+        "The Seagulls",
+        "The Robins",
+        "The Magpies",
+        "The Black Cats"
+      ],
+      "answer": 3,
+      "difficulty": "easy",
+      "category": "history-honours",
+      "scope": "club",
+      "club": "Sunderland"
     },
     {
       "id": "970b6131-98ca-4895-926b-d54b918c7d7c",
@@ -3685,7 +4115,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Everton"
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "9736f775-8012-4236-af88-cf53144e11fd",
@@ -3699,7 +4130,8 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Tottenham Hotspur"
+      "scope": "club",
+      "club": "Tottenham Hotspur"
     },
     {
       "id": "98388eb4-d956-4698-809c-ece3b1f8c437",
@@ -3713,7 +4145,23 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Chelsea"
+      "scope": "club",
+      "club": "Chelsea"
+    },
+    {
+      "id": "996fea6a-561f-46ee-b44d-9852f631c8a7",
+      "q": "In 2014, Harry Kane netted his inaugural Premier League goal under which manager's tenure? Kane would go on to score 213 goals in the competition.",
+      "options": [
+        "Tim Sherwood",
+        "André Villas-Boas",
+        "Harry Redknapp",
+        "Mauricio Pochettino"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "PL Records",
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "9a5dbe53-7e30-4b3e-acac-385c8cb6d02a",
@@ -3727,7 +4175,8 @@
       "answer": 1,
       "difficulty": "easy",
       "category": "legends",
-      "entity": "Liverpool"
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "9b797edd-84f4-4483-aed6-1c73e64fa0fc",
@@ -3741,7 +4190,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Liverpool"
+      "scope": "club",
+      "club": "Liverpool"
     },
     {
       "id": "9bdd86e5-8573-48c5-83a5-d0690ae11db1",
@@ -3755,7 +4205,8 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Liverpool"
+      "scope": "club",
+      "club": "Liverpool"
     },
     {
       "id": "9c31c295-7b49-4907-b8d5-be3378956d3d",
@@ -3769,7 +4220,23 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Tottenham Hotspur"
+      "scope": "club",
+      "club": "Tottenham Hotspur"
+    },
+    {
+      "id": "9c622f81-651e-4d95-8b70-61ca373090e2",
+      "q": "Which Spanish international player became the first to achieve 300 Premier League appearances while playing for Manchester City in 2020?",
+      "options": [
+        "Sergio Agüero",
+        "David Silva",
+        "Gérard Piqué",
+        "Juan Mata"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "PL Records",
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "9dee113d-6c46-4af5-8bc9-4945b80f3588",
@@ -3783,7 +4250,8 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Manchester City"
+      "scope": "club",
+      "club": "Manchester City"
     },
     {
       "id": "9df81dbd-89e3-4fb3-b147-dccbfde1b3ef",
@@ -3797,21 +4265,8 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Manchester United"
-    },
-    {
-      "id": "9eddc9d0-5191-4cd9-aab3-ed0eb1e1e1d0",
-      "q": "How many FA Cup titles have West Ham United won?",
-      "options": [
-        "2",
-        "0",
-        "1",
-        "3"
-      ],
-      "answer": 2,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "entity": "West Ham United"
+      "scope": "club",
+      "club": "Manchester United"
     },
     {
       "id": "a01f0b0e-3605-48ae-80b8-1b64041e5402",
@@ -3825,7 +4280,23 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "modern-era",
-      "entity": "Liverpool"
+      "scope": "club",
+      "club": "Liverpool"
+    },
+    {
+      "id": "a0fd4c33-4767-488a-a400-6f68017d22e3",
+      "q": "Which club ended Arsenal's record 49-match unbeaten Premier League run in October 2004, in a match dubbed the 'Battle of the Buffet'?",
+      "options": [
+        "Tottenham Hotspur",
+        "Liverpool",
+        "Manchester United",
+        "Chelsea"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "scope": "club",
+      "club": "Arsenal"
     },
     {
       "id": "a2abce24-1d74-4d0c-aee2-93231e689f06",
@@ -3839,7 +4310,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Chelsea"
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "a3336bbf-dc09-4fe7-a433-78fa99000074",
@@ -3853,7 +4325,23 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Tottenham Hotspur"
+      "scope": "neutral",
+      "club": null
+    },
+    {
+      "id": "a3f105d2-8734-43de-8ccf-e789b8bd1d11",
+      "q": "What is the name of Brighton's home ground?",
+      "options": [
+        "Falmer Stadium",
+        "The Amex",
+        "Sussex Stadium",
+        "Brighton Park"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "scope": "club",
+      "club": "Brighton"
     },
     {
       "id": "a412e510-0493-4f2a-8cf2-b1908da309dc",
@@ -3867,7 +4355,8 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "modern-era",
-      "entity": "Manchester City"
+      "scope": "club",
+      "club": "Manchester City"
     },
     {
       "id": "a4c37758-44fb-4033-896c-af037024445e",
@@ -3881,7 +4370,8 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "modern-era",
-      "entity": "Newcastle United"
+      "scope": "club",
+      "club": "Newcastle United"
     },
     {
       "id": "a560736c-4b3d-4b9c-a34d-a9cc620343e8",
@@ -3895,7 +4385,53 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Newcastle United"
+      "scope": "club",
+      "club": "Newcastle United"
+    },
+    {
+      "id": "a57bae1c-6f2b-4771-b95f-866836f7bb72",
+      "q": "What was the score when Newcastle beat Sunderland in the FA Cup on 6 January 2024, the first Tyne-Wear derby since 2016?",
+      "options": [
+        "3-0",
+        "2-0",
+        "1-0",
+        "4-1"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "scope": "club",
+      "club": "Sunderland"
+    },
+    {
+      "id": "a603d38d-935e-4ff1-bf87-2b2a2ab0ae98",
+      "q": "Which club beat Arsenal 4-1 in the 2018/19 UEFA Europa League final in Baku?",
+      "options": [
+        "Chelsea",
+        "Atletico Madrid",
+        "Sevilla",
+        "Valencia"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "rivalries-derbies",
+      "scope": "club",
+      "club": "Arsenal"
+    },
+    {
+      "id": "a6c04e0c-f0e8-4d1e-a8e7-d2575c87e4ae",
+      "q": "In the 2024/25 Premier League campaign, which club had the best defensive record with the lowest number of goals conceded?",
+      "options": [
+        "Arsenal",
+        "Liverpool",
+        "Manchester City",
+        "Chelsea"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "PL 2024-25",
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "a785c7aa-f3a0-4002-8809-c9ecaeef9f26",
@@ -3909,7 +4445,8 @@
       "answer": 2,
       "difficulty": "easy",
       "category": "history-honours",
-      "entity": "Leeds United"
+      "scope": "club",
+      "club": "Leeds United"
     },
     {
       "id": "a80a7156-0892-41e9-a0c3-9b0139f21815",
@@ -3923,7 +4460,23 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Everton"
+      "scope": "club",
+      "club": "Everton"
+    },
+    {
+      "id": "a83d5ad4-6049-4cb1-867f-44d7231f99b7",
+      "q": "In FA Cup final encounters, which club has defeated Crystal Palace on two distinct occasions?",
+      "options": [
+        "Manchester United",
+        "Liverpool",
+        "Arsenal",
+        "Tottenham Hotspur"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "scope": "club",
+      "club": "Crystal Palace"
     },
     {
       "id": "aab749f4-0063-4daa-a43f-0c06d9200d0b",
@@ -3937,7 +4490,8 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Aston Villa"
+      "scope": "club",
+      "club": "Aston Villa"
     },
     {
       "id": "ac02853c-d944-4b6d-8ea8-7e79ff84bbc0",
@@ -3951,21 +4505,23 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Manchester United"
+      "scope": "club",
+      "club": "Manchester United"
     },
     {
-      "id": "ad81106e-f664-4088-908b-4d4425652cd2",
-      "q": "By what nickname is Leicester City commonly known?",
+      "id": "ad3e5701-f215-4772-84b5-b05f7e2663bc",
+      "q": "What milestone did Crystal Palace achieve against Brighton in April 2025 for the first time in the top flight?",
       "options": [
-        "The Lions",
-        "The Royals",
-        "The Foxes",
-        "The Wildcats"
+        "Promotion at Brighton's expense",
+        "A 5-0 win over Brighton",
+        "Their first ever win at Selhurst Park against Brighton",
+        "A league double over Brighton"
       ],
-      "answer": 2,
-      "difficulty": "easy",
-      "category": "history-honours",
-      "entity": "Leicester City"
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "scope": "club",
+      "club": "Crystal Palace"
     },
     {
       "id": "ae80b4e3-cae3-4dc8-b7cb-0625f0b4e92c",
@@ -3979,7 +4535,8 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Newcastle United"
+      "scope": "club",
+      "club": "Newcastle United"
     },
     {
       "id": "aec40c0d-5469-4566-b00f-1d19fd28247d",
@@ -3993,7 +4550,8 @@
       "answer": 3,
       "difficulty": "easy",
       "category": "history-honours",
-      "entity": "Liverpool"
+      "scope": "club",
+      "club": "Liverpool"
     },
     {
       "id": "af4e35eb-3f9f-4896-b922-f089d802f58b",
@@ -4007,7 +4565,38 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Liverpool"
+      "scope": "club",
+      "club": "Liverpool"
+    },
+    {
+      "id": "af9af9c7-a3ba-4b66-b11d-52a0703c0d21",
+      "q": "What is the name of Arsenal's home ground?",
+      "options": [
+        "Highbury",
+        "Ashburton Grove",
+        "The Grove",
+        "Emirates Stadium"
+      ],
+      "answer": 3,
+      "difficulty": "easy",
+      "category": "history-honours",
+      "scope": "club",
+      "club": "Arsenal"
+    },
+    {
+      "id": "b099d866-64f2-4267-83b2-8a2753e547f6",
+      "q": "Which club did Arsenal beat in the 2004/05 FA Cup final?",
+      "options": [
+        "Tottenham Hotspur",
+        "Chelsea",
+        "Liverpool",
+        "Manchester United"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "scope": "club",
+      "club": "Arsenal"
     },
     {
       "id": "b2d745ef-e992-4722-a457-73e2854e6939",
@@ -4021,7 +4610,8 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Liverpool"
+      "scope": "club",
+      "club": "Liverpool"
     },
     {
       "id": "b3887042-9840-4f9c-87f8-bb593fc1d202",
@@ -4035,7 +4625,23 @@
       "answer": 3,
       "difficulty": "easy",
       "category": "history-honours",
-      "entity": "Manchester United"
+      "scope": "club",
+      "club": "Manchester United"
+    },
+    {
+      "id": "b3d4bcf6-103a-4a47-9946-ecbd40f450b5",
+      "q": "What name is given to matches between Fulham and Chelsea, their biggest local rivals?",
+      "options": [
+        "The Thames derby",
+        "The Cottage derby",
+        "The South West London derby",
+        "The West London derby"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "scope": "club",
+      "club": "Fulham"
     },
     {
       "id": "b3f053c0-bf4a-4d35-95b0-3b410c6e943e",
@@ -4049,7 +4655,68 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Chelsea"
+      "scope": "club",
+      "club": "Chelsea"
+    },
+    {
+      "id": "b4250aa3-a51f-4c19-ae27-c1296edd5478",
+      "q": "In the 2024-25 season, which club set an unfortunate English football record by suffering nine straight home defeats while failing to score in any of those matches?",
+      "options": [
+        "Southampton",
+        "Leicester City",
+        "Wolverhampton Wanderers",
+        "Ipswich Town"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "PL 2024-25",
+      "scope": "neutral",
+      "club": null
+    },
+    {
+      "id": "b562eb1e-3886-4e49-8832-1596d6c715f6",
+      "q": "Alongside Chelsea and Fulham, which other West London club completed the first trio of West London clubs to play in the top flight in the same season, in 2011/12?",
+      "options": [
+        "Queens Park Rangers",
+        "Brentford",
+        "West Ham United",
+        "Watford"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "scope": "club",
+      "club": "Fulham"
+    },
+    {
+      "id": "b56a67a3-3ab0-422c-8ed9-8db846aa5b97",
+      "q": "How many goals did Arsenal score in the 2001-02 Premier League season when they won the title?",
+      "options": [
+        "79",
+        "82",
+        "75",
+        "88"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "scope": "club",
+      "club": "Arsenal"
+    },
+    {
+      "id": "b5a7ff41-2527-4fa3-b44c-c726f8c80f24",
+      "q": "Which position did Ipswich Town occupy at the end of the 2024-25 Premier League season?",
+      "options": [
+        "18th",
+        "19th",
+        "17th",
+        "20th"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "scope": "club",
+      "club": "Ipswich Town"
     },
     {
       "id": "b7258de9-ebf7-45bc-99e5-e000a3f5e5a2",
@@ -4063,7 +4730,8 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Tottenham Hotspur"
+      "scope": "club",
+      "club": "Tottenham Hotspur"
     },
     {
       "id": "b7e15a53-e9b1-4f45-80ca-42a4344acaff",
@@ -4077,7 +4745,8 @@
       "answer": 2,
       "difficulty": "easy",
       "category": "history-honours",
-      "entity": "Chelsea"
+      "scope": "club",
+      "club": "Chelsea"
     },
     {
       "id": "b91be819-b61f-48bf-86cd-7398855370ca",
@@ -4091,7 +4760,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Liverpool"
+      "scope": "club",
+      "club": "Liverpool"
     },
     {
       "id": "b920f586-2ab6-4368-a659-233e11974679",
@@ -4105,7 +4775,8 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Liverpool"
+      "scope": "club",
+      "club": "Liverpool"
     },
     {
       "id": "b9cce3e4-f397-42e7-aee9-ea53f57faebf",
@@ -4119,7 +4790,38 @@
       "answer": 3,
       "difficulty": "easy",
       "category": "rivalries-derbies",
-      "entity": "Newcastle United"
+      "scope": "club",
+      "club": "Newcastle United"
+    },
+    {
+      "id": "b9d2f0cd-dd5d-4786-b43c-e5fe6205f119",
+      "q": "Crystal Palace's 3-1 win at the Amex Stadium in December 2024 made them the first team to do what to Fabian Hürzeler's Brighton side?",
+      "options": [
+        "Score four goals against them",
+        "Keep a clean sheet against them",
+        "Beat them at home",
+        "Beat them by three or more goals"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "scope": "club",
+      "club": "Crystal Palace"
+    },
+    {
+      "id": "ba274556-a338-4370-bd6b-eb9c0dbb75ff",
+      "q": "Which Tottenham player scored a famous 30-yard free-kick against Arsenal in the 1990/91 FA Cup semi-final?",
+      "options": [
+        "Gary Lineker",
+        "Chris Waddle",
+        "Paul Gascoigne",
+        "Steve Hodge"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "scope": "club",
+      "club": "Arsenal"
     },
     {
       "id": "ba29f359-c559-47ed-9708-6dfa519b1088",
@@ -4133,7 +4835,23 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Liverpool"
+      "scope": "neutral",
+      "club": null
+    },
+    {
+      "id": "ba4698b1-892c-41fa-b81b-a455cf70f581",
+      "q": "How many FA Cup titles have Liverpool won in total?",
+      "options": [
+        "7",
+        "9",
+        "8",
+        "6"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "scope": "club",
+      "club": "Liverpool"
     },
     {
       "id": "ba6c91e3-b86e-4fba-9317-60b345bf0d6f",
@@ -4147,7 +4865,53 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Manchester United"
+      "scope": "club",
+      "club": "Manchester United"
+    },
+    {
+      "id": "ba791697-4866-4022-97cc-234799e603ab",
+      "q": "At the conclusion of the 2010/11 season, which Dutch striker netted in nine straight Premier League away fixtures—a record achievement?",
+      "options": [
+        "Jan Vertonghen",
+        "Arjen Robben",
+        "Robin van Persie",
+        "Dirk Kuyt"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "PL History",
+      "scope": "neutral",
+      "club": null
+    },
+    {
+      "id": "bb20bf63-4d69-4094-be5e-e8f8f4e402b0",
+      "q": "How many goals did Liverpool score in the 2019-20 Premier League season?",
+      "options": [
+        "82",
+        "88",
+        "85",
+        "79"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "scope": "club",
+      "club": "Liverpool"
+    },
+    {
+      "id": "bb5bb822-8704-49c6-b654-9499c36d9a09",
+      "q": "What is Liverpool's most widely recognised nickname?",
+      "options": [
+        "The Merseysiders",
+        "The Shankly Boys",
+        "The Reds",
+        "The Anfield Giants"
+      ],
+      "answer": 2,
+      "difficulty": "easy",
+      "category": "history-honours",
+      "scope": "club",
+      "club": "Liverpool"
     },
     {
       "id": "bc41728b-8c52-4c82-9142-bd54cd301586",
@@ -4161,7 +4925,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Manchester United"
+      "scope": "club",
+      "club": "Manchester United"
     },
     {
       "id": "bc507506-d3eb-4ba4-957a-ea3d73d6e996",
@@ -4175,7 +4940,53 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Tottenham Hotspur"
+      "scope": "club",
+      "club": "Tottenham Hotspur"
+    },
+    {
+      "id": "bc8ac72f-266d-4497-8d75-263a40ae23e0",
+      "q": "Before Erling Haaland reached 100 Premier League goals for Manchester City, which player was the first to achieve this milestone for the club?",
+      "options": [
+        "Carlos Tevez",
+        "David Silva",
+        "Yaya Toure",
+        "Sergio Aguero"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "PL Records",
+      "scope": "neutral",
+      "club": null
+    },
+    {
+      "id": "bd927d65-c92d-475a-8e16-2b90847afc4c",
+      "q": "Why was the 2020 Championship play-off final derby between Fulham and Brentford played behind closed doors?",
+      "options": [
+        "A broadcasting dispute",
+        "The COVID-19 pandemic",
+        "Crowd trouble in the semi-final",
+        "A stadium safety issue"
+      ],
+      "answer": 1,
+      "difficulty": "easy",
+      "category": "rivalries-derbies",
+      "scope": "club",
+      "club": "Brentford"
+    },
+    {
+      "id": "bdb541af-4f81-4360-8691-0f01c291d847",
+      "q": "What team holds the unfortunate Premier League record for the longest losing streak, going through 20 straight defeats spanning from January 2003 to September 2005?",
+      "options": [
+        "Leeds United",
+        "Sunderland",
+        "Nottingham Forest",
+        "Derby County"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "PL History",
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "bdfe4df9-3dbf-48bc-a57e-645e8247d37f",
@@ -4189,7 +5000,38 @@
       "answer": 2,
       "difficulty": "easy",
       "category": "rivalries-derbies",
-      "entity": "Manchester United"
+      "scope": "club",
+      "club": "Manchester United"
+    },
+    {
+      "id": "be9c7454-fcd3-4cd2-8e6d-8937ce4c83c8",
+      "q": "During the ten-year period spanning 2002 through 2012, how many distinct clubs claimed the Premier League championship?",
+      "options": [
+        "4",
+        "5",
+        "3",
+        "6"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "PL History",
+      "scope": "neutral",
+      "club": null
+    },
+    {
+      "id": "bfe15546-b3a2-4aa0-8836-4a606ce6a847",
+      "q": "Who was Arsenal's top scorer in the 2018/19 Premier League season?",
+      "options": [
+        "Alexandre Lacazette",
+        "Pierre-Emerick Aubameyang",
+        "Mesut Ozil",
+        "Aaron Ramsey"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "scope": "club",
+      "club": "Arsenal"
     },
     {
       "id": "bff217cd-9f62-4215-993b-99ce3bef31c5",
@@ -4203,21 +5045,8 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Manchester United"
-    },
-    {
-      "id": "c00d55c5-26ef-4ac4-954e-35ab0e8137f5",
-      "q": "How many FA Cup titles has Leicester City won?",
-      "options": [
-        "2",
-        "0",
-        "3",
-        "1"
-      ],
-      "answer": 3,
-      "difficulty": "medium",
-      "category": "history-honours",
-      "entity": "Leicester City"
+      "scope": "club",
+      "club": "Manchester United"
     },
     {
       "id": "c14f05db-250e-4378-96a0-a33b35c8b395",
@@ -4231,7 +5060,38 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Manchester United"
+      "scope": "neutral",
+      "club": null
+    },
+    {
+      "id": "c1737f61-042d-46ed-ae51-6db044f3b9be",
+      "q": "How many Premier League goals did Luis Suárez score in 2013-14 to claim the top scorer award?",
+      "options": [
+        "28",
+        "33",
+        "29",
+        "31"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "legends",
+      "scope": "neutral",
+      "club": null
+    },
+    {
+      "id": "c17d76e6-87d5-4db5-aaed-d72fc3cc0114",
+      "q": "What double did Arsenal complete after winning the league at Tottenham's White Hart Lane at the end of the 1970/71 season?",
+      "options": [
+        "League and Europa League",
+        "FA Cup and Charity Shield",
+        "League and League Cup",
+        "League and FA Cup"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "scope": "club",
+      "club": "Arsenal"
     },
     {
       "id": "c1a1d664-1684-440e-ab59-b7402f968673",
@@ -4245,7 +5105,68 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Manchester City"
+      "scope": "club",
+      "club": "Manchester City"
+    },
+    {
+      "id": "c1f467f9-1eac-4c85-bf7c-b0c753321f24",
+      "q": "How many points did Chelsea accumulate during their dominant 2004-05 Premier League season?",
+      "options": [
+        "92",
+        "98",
+        "95",
+        "89"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "scope": "club",
+      "club": "Chelsea"
+    },
+    {
+      "id": "c25a1b3a-bc5d-4b33-8781-2231233c381a",
+      "q": "Which Arsenal player scored the stoppage-time goal at Anfield that won the First Division title on the final day of the 1988/89 season?",
+      "options": [
+        "Ian Wright",
+        "David Rocastle",
+        "Alan Smith",
+        "Michael Thomas"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "scope": "club",
+      "club": "Arsenal"
+    },
+    {
+      "id": "c26a4be8-21a3-4485-bb3e-54a4bc6b08b0",
+      "q": "Which club did Arsenal beat in the 2016/17 FA Cup final at Wembley to win a record-extending 13th FA Cup?",
+      "options": [
+        "Chelsea",
+        "Manchester City",
+        "Aston Villa",
+        "Hull City"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "rivalries-derbies",
+      "scope": "club",
+      "club": "Arsenal"
+    },
+    {
+      "id": "c4cf6b7b-a013-4cb1-843c-21162230413e",
+      "q": "How many Premier League goals did Mohamed Salah score in his first season with Liverpool in 2017-18?",
+      "options": [
+        "28",
+        "30",
+        "32",
+        "35"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "legends",
+      "scope": "club",
+      "club": "Liverpool"
     },
     {
       "id": "c511a49c-2396-4229-9be3-50011b3dd3b5",
@@ -4259,7 +5180,8 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Manchester City"
+      "scope": "club",
+      "club": "Manchester City"
     },
     {
       "id": "c51b571b-b826-491e-a0bf-6ee546c860d7",
@@ -4273,7 +5195,23 @@
       "answer": 2,
       "difficulty": "easy",
       "category": "rivalries-derbies",
-      "entity": "Newcastle United"
+      "scope": "club",
+      "club": "Newcastle United"
+    },
+    {
+      "id": "c55413dd-fffa-4400-985c-412284cea19b",
+      "q": "Which shot-stopper appeared in more than 300 consecutive Premier League matches across his time at Blackburn, Aston Villa and Tottenham?",
+      "options": [
+        "Edwin van der Sar",
+        "Brad Friedel",
+        "Petr Cech",
+        "Mark Schwarzer"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "PL History",
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "c59509c5-cd22-4c0e-b07e-16e98ae1c621",
@@ -4287,7 +5225,38 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Aston Villa"
+      "scope": "club",
+      "club": "Aston Villa"
+    },
+    {
+      "id": "c5d54ee4-bb52-4f80-84c7-7de28eb4785d",
+      "q": "Which club is described as Brighton & Hove Albion's fiercest and longest-standing rivalry, according to the club's own Wikipedia page?",
+      "options": [
+        "Crystal Palace",
+        "Portsmouth",
+        "Fulham",
+        "Southampton"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "scope": "club",
+      "club": "Brighton"
+    },
+    {
+      "id": "c6a7ef5a-e58c-4880-b757-5b4e90579607",
+      "q": "What nickname are Sunderland commonly known by?",
+      "options": [
+        "The Black Cats",
+        "The Wearsiders",
+        "The Red and Whites",
+        "The Striped Army"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "category": "history-honours",
+      "scope": "club",
+      "club": "Sunderland"
     },
     {
       "id": "c6fa2763-9e3c-4a15-9348-aaa3352b690b",
@@ -4301,7 +5270,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Chelsea"
+      "scope": "club",
+      "club": "Chelsea"
     },
     {
       "id": "c8774955-3c20-4802-aec4-66705f014e92",
@@ -4315,7 +5285,8 @@
       "answer": 2,
       "difficulty": "easy",
       "category": "legends",
-      "entity": "Tottenham Hotspur"
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "c9473812-54e3-415c-9d26-90466545a5e2",
@@ -4329,7 +5300,8 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Manchester City"
+      "scope": "club",
+      "club": "Manchester City"
     },
     {
       "id": "c9a93152-d79b-4c52-bbfc-1d4a80e06c16",
@@ -4343,21 +5315,83 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Leeds United"
+      "scope": "club",
+      "club": "Leeds United"
     },
     {
-      "id": "cbeb97e1-6c49-4e32-906b-9cca2b835129",
-      "q": "How many points did Leicester City accumulate in their title-winning 2015-16 Premier League campaign?",
+      "id": "ca51e732-b91d-4fe4-b7c7-0d9f11b88c80",
+      "q": "Which club did Brentford play in their final ever match at Griffin Park before moving to the Brentford Community Stadium?",
       "options": [
-        "78",
-        "81",
-        "82",
-        "79"
+        "Fulham",
+        "Chelsea",
+        "Swansea City",
+        "QPR"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "scope": "club",
+      "club": "Brentford"
+    },
+    {
+      "id": "ca9ba2bc-d49a-4c93-bfa0-61fb83039f23",
+      "q": "Which player is the sole footballer to surpass 600 Premier League appearances while playing for just one club?",
+      "options": [
+        "Ryan Giggs",
+        "Frank Lampard",
+        "Gareth Barry",
+        "Patrick Vieira"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "PL Records",
+      "scope": "neutral",
+      "club": null
+    },
+    {
+      "id": "ce077300-f5ac-44a8-8b4d-bbfdefe423ec",
+      "q": "How many times did Thierry Henry finish as the Premier League's top scorer?",
+      "options": [
+        "5",
+        "4",
+        "6",
+        "3"
       ],
       "answer": 1,
       "difficulty": "medium",
-      "category": "modern-era",
-      "entity": "Leicester City"
+      "category": "legends",
+      "scope": "neutral",
+      "club": null
+    },
+    {
+      "id": "ce10993e-0ae3-423f-bb7c-a5d4852acd11",
+      "q": "Crystal Palace's rivalry with Brighton reached its height in the first round of the 1976-77 FA Cup, a tie Palace won after how many replays?",
+      "options": [
+        "Three",
+        "One",
+        "Two",
+        "None, it was won on penalties"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "scope": "club",
+      "club": "Crystal Palace"
+    },
+    {
+      "id": "ce22275a-8ca2-4a1a-a565-e20c61206747",
+      "q": "Which club shared Selhurst Park as tenants of Crystal Palace from 1991 until their controversial relocation to Milton Keynes in 2003?",
+      "options": [
+        "Millwall",
+        "AFC Wimbledon",
+        "Brighton & Hove Albion",
+        "Charlton Athletic"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "scope": "club",
+      "club": "Crystal Palace"
     },
     {
       "id": "ce307428-a05b-4c3e-80f1-c9fc6a66eb5b",
@@ -4371,7 +5405,8 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Manchester United"
+      "scope": "club",
+      "club": "Manchester United"
     },
     {
       "id": "cf09cc8c-269b-4fd8-b028-7727737b0b8b",
@@ -4385,21 +5420,68 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Manchester City"
+      "scope": "neutral",
+      "club": null
     },
     {
-      "id": "d0a998be-2002-45f3-9be1-84527b358971",
-      "q": "How many Premier League titles have Leicester City won since 2001-02?",
+      "id": "cf524004-849b-4a02-83e3-8702421dbb32",
+      "q": "What is the name of AFC Bournemouth's home stadium?",
       "options": [
-        "0",
-        "2",
-        "3",
-        "1"
+        "The Vitality Stadium",
+        "Dean Court",
+        "King's Park",
+        "Cherry Hill"
       ],
-      "answer": 3,
-      "difficulty": "medium",
+      "answer": 1,
+      "difficulty": "easy",
       "category": "history-honours",
-      "entity": "Leicester City"
+      "scope": "club",
+      "club": "Bournemouth"
+    },
+    {
+      "id": "cf976d53-e245-4de6-b9b1-ddd3bb0abcf2",
+      "q": "In which Premier League season did Brentford finish above rivals Chelsea in the table for the first time since 1939?",
+      "options": [
+        "2022/23",
+        "2020/21",
+        "2021/22",
+        "2023/24"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "scope": "club",
+      "club": "Brentford"
+    },
+    {
+      "id": "d005a5dd-3f14-49de-8800-5e95d21f31d8",
+      "q": "What nickname are Arsenal commonly known by?",
+      "options": [
+        "The Reds",
+        "The Cannons",
+        "The Gunners",
+        "The Gooners"
+      ],
+      "answer": 2,
+      "difficulty": "easy",
+      "category": "history-honours",
+      "scope": "club",
+      "club": "Arsenal"
+    },
+    {
+      "id": "d166067e-6c0d-46a1-931e-861ade48acc7",
+      "q": "Which club did Arsenal sign Ian Wright from in September 1991?",
+      "options": [
+        "Southampton",
+        "Queens Park Rangers",
+        "Crystal Palace",
+        "Chelsea"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "legends",
+      "scope": "club",
+      "club": "Arsenal"
     },
     {
       "id": "d16bbbf4-4c58-4b75-85b7-c1a6a64c9081",
@@ -4413,7 +5495,53 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Tottenham Hotspur"
+      "scope": "club",
+      "club": "Tottenham Hotspur"
+    },
+    {
+      "id": "d17bfdbc-feea-4033-82f2-eb2269b34fd8",
+      "q": "Which club were Arsenal playing when they clinched the 2003/04 Premier League 'Invincibles' title with a 2-2 draw at White Hart Lane?",
+      "options": [
+        "Chelsea",
+        "Liverpool",
+        "Manchester United",
+        "Tottenham Hotspur"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "scope": "club",
+      "club": "Arsenal"
+    },
+    {
+      "id": "d1e3558a-7421-4747-8ae8-24dc6d31d1ec",
+      "q": "What is the name of Fulham's home stadium?",
+      "options": [
+        "Loftus Road",
+        "The Den",
+        "Craven Cottage",
+        "Stamford Bridge"
+      ],
+      "answer": 2,
+      "difficulty": "easy",
+      "category": "history-honours",
+      "scope": "club",
+      "club": "Fulham"
+    },
+    {
+      "id": "d2d07ae9-8b04-499f-a81d-2c9a2f09a3b5",
+      "q": "How many Premier League goals did Robin van Persie score for Arsenal in 2010-11?",
+      "options": [
+        "20",
+        "18",
+        "16",
+        "17"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "legends",
+      "scope": "club",
+      "club": "Arsenal"
     },
     {
       "id": "d35216b3-75a3-4b20-a09d-93bc25291e74",
@@ -4427,7 +5555,23 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Tottenham Hotspur"
+      "scope": "club",
+      "club": "Tottenham Hotspur"
+    },
+    {
+      "id": "d365afd7-b8b6-495e-ad9a-91b7e4244410",
+      "q": "Which Liverpool forward scored a stoppage-time winner against Everton in the December 2018 Merseyside derby?",
+      "options": [
+        "Sadio Mane",
+        "Divock Origi",
+        "Mohamed Salah",
+        "Roberto Firmino"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "scope": "club",
+      "club": "Liverpool"
     },
     {
       "id": "d3af61b0-2274-4ef2-938b-fe418595499d",
@@ -4441,7 +5585,53 @@
       "answer": 1,
       "difficulty": "easy",
       "category": "history-honours",
-      "entity": "Manchester City"
+      "scope": "neutral",
+      "club": null
+    },
+    {
+      "id": "d3af65da-fc74-4c11-bcef-9be4aaaf89ff",
+      "q": "How many FA Cup titles have Sunderland won in their history?",
+      "options": [
+        "1",
+        "0",
+        "2",
+        "3"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "scope": "club",
+      "club": "Sunderland"
+    },
+    {
+      "id": "d3d707a4-2638-49a2-8de8-528c109db8ac",
+      "q": "Who was the Premier League's leading scorer in 2004-05 with 25 goals for Arsenal?",
+      "options": [
+        "Thierry Henry",
+        "Dennis Bergkamp",
+        "Robin van Persie",
+        "Nwankwo Kanu"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "legends",
+      "scope": "club",
+      "club": "Arsenal"
+    },
+    {
+      "id": "d3f0ee66-ef3a-4e06-871f-8cc9c0dd7e89",
+      "q": "Which club won the first ever Premier League West London derby against Brentford, played on 16 October 2021?",
+      "options": [
+        "Arsenal",
+        "QPR",
+        "Chelsea",
+        "Fulham"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "scope": "club",
+      "club": "Brentford"
     },
     {
       "id": "d43d43c9-8eb6-468f-bee1-34335dd38aa9",
@@ -4455,7 +5645,23 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Chelsea"
+      "scope": "club",
+      "club": "Chelsea"
+    },
+    {
+      "id": "d443371c-5e26-438b-a1e3-47071c4ceecd",
+      "q": "How many Premier League goals did Thierry Henry score for Arsenal in 2004-05 to claim the top scorer award?",
+      "options": [
+        "28",
+        "25",
+        "23",
+        "26"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "legends",
+      "scope": "club",
+      "club": "Arsenal"
     },
     {
       "id": "d4449c97-1d53-4c6e-816e-6fb04302310d",
@@ -4469,7 +5675,8 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Manchester United"
+      "scope": "club",
+      "club": "Manchester United"
     },
     {
       "id": "d5ca8101-f4e4-4e3c-832a-c4083adf9133",
@@ -4483,7 +5690,53 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Nottingham Forest"
+      "scope": "club",
+      "club": "Nottingham Forest"
+    },
+    {
+      "id": "d66559e7-0c8e-4ee5-8abd-3c13a4f4a95b",
+      "q": "During the 2016 season, Newcastle United and which other ex-Premier League finalist were both relegated from the top flight?",
+      "options": [
+        "Aston Villa",
+        "Norwich City",
+        "Sunderland",
+        "Hull City"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "PL History",
+      "scope": "neutral",
+      "club": null
+    },
+    {
+      "id": "d7a4ffe6-9172-4e43-8334-e2100ca09862",
+      "q": "Fill in the missing manager from Chelsea's sequence of playing bosses: Glenn Hoddle → ? → Gianluca Vialli",
+      "options": [
+        "Mark Hughes",
+        "Frank Lampard",
+        "Ruud Gullit",
+        "Didier Drogba"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "PL History",
+      "scope": "neutral",
+      "club": null
+    },
+    {
+      "id": "d956f771-91d2-4586-8c9c-672ca1ba1b96",
+      "q": "In the 2013/14 Premier League season, which Liverpool striker finished as the league's top scorer with 31 goals across 33 matches?",
+      "options": [
+        "Cristiano Ronaldo",
+        "Luis Suarez",
+        "Daniel Sturridge",
+        "Sergio Agüero"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "scope": "club",
+      "club": "Liverpool"
     },
     {
       "id": "d974d58b-3b7c-4ab3-9c71-e20195d952b1",
@@ -4497,7 +5750,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Chelsea"
+      "scope": "club",
+      "club": "Chelsea"
     },
     {
       "id": "d9f6e4c2-7ab6-42c5-99c7-624df5589cc6",
@@ -4511,7 +5765,23 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Aston Villa"
+      "scope": "club",
+      "club": "Aston Villa"
+    },
+    {
+      "id": "d9fa493e-9eee-450e-9190-d8f6c9369a9c",
+      "q": "What is the traditional nickname for the Liverpool v Everton Merseyside derby?",
+      "options": [
+        "The Old Firm Derby",
+        "The Bitter Derby",
+        "The Steel City Derby",
+        "The Friendly Derby"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "scope": "club",
+      "club": "Liverpool"
     },
     {
       "id": "da49d26b-c367-42c8-9a8e-ad9a982fb92b",
@@ -4525,7 +5795,8 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Manchester United"
+      "scope": "club",
+      "club": "Manchester United"
     },
     {
       "id": "da51f6e2-34fe-43fc-9154-c4d4e5aca7f8",
@@ -4539,7 +5810,23 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "modern-era",
-      "entity": "Manchester City"
+      "scope": "club",
+      "club": "Manchester City"
+    },
+    {
+      "id": "dac6accf-dfa7-42ad-b4f8-d64470c8e459",
+      "q": "What is Manchester City's record for fewest Premier League goals conceded in a single season?",
+      "options": [
+        "23",
+        "19",
+        "28",
+        "26"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "scope": "club",
+      "club": "Manchester City"
     },
     {
       "id": "db42b0ad-5927-4b65-95e6-6a6bf41ae510",
@@ -4553,7 +5840,8 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Tottenham Hotspur"
+      "scope": "club",
+      "club": "Tottenham Hotspur"
     },
     {
       "id": "dcb58ded-b5cc-45ca-abf2-1c50faf30acf",
@@ -4567,7 +5855,23 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Everton"
+      "scope": "neutral",
+      "club": null
+    },
+    {
+      "id": "dd879a6c-f71b-4036-9601-7524b5f92cb5",
+      "q": "What is the seating capacity of Anfield?",
+      "options": [
+        "58,500",
+        "61,276",
+        "63,200",
+        "60,000"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "ddb322c1-4c07-46c4-958b-985dfc96fc94",
@@ -4581,7 +5885,23 @@
       "answer": 2,
       "difficulty": "easy",
       "category": "history-honours",
-      "entity": "Leeds United"
+      "scope": "club",
+      "club": "Leeds United"
+    },
+    {
+      "id": "df9a595e-b752-4164-8b67-9aeb060be5e5",
+      "q": "What is the name of the day Arsenal fans celebrate each season marking when Tottenham can no longer finish above them in the Premier League table?",
+      "options": [
+        "North London Day",
+        "Gunners' Day",
+        "St Totteringham's Day",
+        "St Arsenal's Day"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "scope": "club",
+      "club": "Arsenal"
     },
     {
       "id": "dfd301a9-1455-4d81-a8d6-4d4959a76978",
@@ -4595,7 +5915,128 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "modern-era",
-      "entity": "Manchester City"
+      "scope": "club",
+      "club": "Manchester City"
+    },
+    {
+      "id": "e18aa183-be89-4326-91b1-68c440bc0b9a",
+      "q": "What was the lowest points total ever recorded by a Premier League side in a single season, achieved by Derby County in 2007/08?",
+      "options": [
+        "11",
+        "9",
+        "15",
+        "8"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "PL History",
+      "scope": "neutral",
+      "club": null
+    },
+    {
+      "id": "e231f810-623a-4a1f-942d-5c8bd77255f4",
+      "q": "Who holds Arsenal's all-time first-team appearance record?",
+      "options": [
+        "David Seaman",
+        "Tony Adams",
+        "David O'Leary",
+        "Pat Rice"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "legends",
+      "scope": "club",
+      "club": "Arsenal"
+    },
+    {
+      "id": "e29e8422-d632-446c-a638-fffcf27b995c",
+      "q": "Who was the Premier League's top scorer in 2013-14 with an impressive 31 goals for Liverpool?",
+      "options": [
+        "Luis Suárez",
+        "Sergio Agüero",
+        "Daniel Sturridge",
+        "Robin van Persie"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "legends",
+      "scope": "club",
+      "club": "Liverpool"
+    },
+    {
+      "id": "e3ad4a51-b7e2-4046-b822-bc6c8303d55c",
+      "q": "Which Italian club did Dennis Bergkamp join Arsenal from in June 1995?",
+      "options": [
+        "AC Milan",
+        "Juventus",
+        "Inter Milan",
+        "Roma"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "legends",
+      "scope": "club",
+      "club": "Arsenal"
+    },
+    {
+      "id": "e459e911-4ff8-4f54-b963-c867ef3aa0d3",
+      "q": "How many points did Arsenal accumulate in the 2021-22 Premier League season?",
+      "options": [
+        "67",
+        "69",
+        "73",
+        "71"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "scope": "club",
+      "club": "Arsenal"
+    },
+    {
+      "id": "e4673c60-1f4e-4470-9ded-1fae32fafdd4",
+      "q": "Who finished as the Premier League's top scorer in 2017-18 with 32 goals?",
+      "options": [
+        "Harry Kane",
+        "Pierre-Emerick Aubameyang",
+        "Sergio Agüero",
+        "Mohamed Salah"
+      ],
+      "answer": 3,
+      "difficulty": "easy",
+      "category": "legends",
+      "scope": "neutral",
+      "club": null
+    },
+    {
+      "id": "e4960edc-e03a-4959-ba42-4140c01f99b2",
+      "q": "Which club ended Liverpool's 23-game unbeaten Merseyside derby run by winning 2-0 at Anfield on 20 February 2021?",
+      "options": [
+        "Everton",
+        "Manchester United",
+        "Chelsea",
+        "Manchester City"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "scope": "club",
+      "club": "Liverpool"
+    },
+    {
+      "id": "e5c6fb9f-fcd9-45b0-8279-d92b110974ed",
+      "q": "In the Premier League's opening decade, which club achieved a sequence of 10th, 4th, 12th, 5th, 3rd, 1st, 2nd, 2nd, 2nd, 1st place finishes?",
+      "options": [
+        "Liverpool",
+        "Manchester United",
+        "Blackburn Rovers",
+        "Arsenal"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "PL History",
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "e6ad729a-bd6c-41cb-9bcb-6c13d6ae826d",
@@ -4609,7 +6050,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Manchester United"
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "e6eb751c-8909-422a-bf13-b061ca0d16ad",
@@ -4623,7 +6065,8 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Manchester City"
+      "scope": "club",
+      "club": "Manchester City"
     },
     {
       "id": "e7a7eed1-81a0-43e5-9fec-9be7e5be229d",
@@ -4637,7 +6080,8 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Nottingham Forest"
+      "scope": "club",
+      "club": "Nottingham Forest"
     },
     {
       "id": "e8559512-69b3-4024-a011-7c1e66698913",
@@ -4651,21 +6095,53 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Tottenham Hotspur"
+      "scope": "club",
+      "club": "Tottenham Hotspur"
     },
     {
-      "id": "ecb062af-50e1-41da-a8b5-39f20f8ccf65",
-      "q": "How many League Cup (EFL Cup) titles have Blackburn Rovers won?",
+      "id": "e99829e1-7e68-4c5d-bb75-494cae2f50f6",
+      "q": "Which Liverpool striker scored the winning goal in a 2-1 Merseyside derby victory at Anfield in the 1993-94 season, just before turning 19?",
       "options": [
-        "2",
-        "1",
-        "0",
-        "3"
+        "Ian Rush",
+        "Michael Owen",
+        "Steven Gerrard",
+        "Robbie Fowler"
       ],
-      "answer": 1,
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "rivalries-derbies",
+      "scope": "club",
+      "club": "Liverpool"
+    },
+    {
+      "id": "e9ab0d47-d6d4-46e9-8a6a-ac8aa5f5d039",
+      "q": "In which season did Arsenal complete their third League and FA Cup Double?",
+      "options": [
+        "2003/04",
+        "1997/98",
+        "1970/71",
+        "2001/02"
+      ],
+      "answer": 3,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Blackburn Rovers"
+      "scope": "club",
+      "club": "Arsenal"
+    },
+    {
+      "id": "ed314f66-463d-49fb-b886-5d52524cb4f9",
+      "q": "Which player holds the record for most Premier League goals scored for Crystal Palace across all seasons?",
+      "options": [
+        "Christian Benteke",
+        "Ian Wright",
+        "Andrew Johnson",
+        "Wilfried Zaha"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "scope": "club",
+      "club": "Crystal Palace"
     },
     {
       "id": "ed4299a0-9107-4e12-8907-8022ea70ab01",
@@ -4679,7 +6155,8 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Chelsea"
+      "scope": "club",
+      "club": "Chelsea"
     },
     {
       "id": "ed7b792f-6584-492c-b423-a6d1754497ca",
@@ -4693,7 +6170,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Nottingham Forest"
+      "scope": "club",
+      "club": "Nottingham Forest"
     },
     {
       "id": "ed8c1112-0169-4c9e-8bb6-7bfb793c03a5",
@@ -4707,7 +6185,38 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Manchester City"
+      "scope": "club",
+      "club": "Manchester City"
+    },
+    {
+      "id": "edf70a09-4704-4ce6-a992-8a46caf6bb33",
+      "q": "In which Premier League season did Arsenal finish top with 90 points?",
+      "options": [
+        "2001/2002",
+        "2003/2004",
+        "2002/2003",
+        "2004/2005"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "scope": "club",
+      "club": "Arsenal"
+    },
+    {
+      "id": "ee93f42a-7564-4c5a-9200-08bf35c37bf9",
+      "q": "How many points did Arsenal accumulate in the 2023-24 Premier League season?",
+      "options": [
+        "85",
+        "87",
+        "89",
+        "91"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "scope": "club",
+      "club": "Arsenal"
     },
     {
       "id": "ef07dc20-d536-423d-ab01-f42d97911c5f",
@@ -4721,7 +6230,23 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Manchester City"
+      "scope": "club",
+      "club": "Manchester City"
+    },
+    {
+      "id": "ef3ba75b-af12-4b4a-8091-91c316e1d095",
+      "q": "Which Liverpool player has found the net in a Champions League final, an FA Cup final, a League Cup final, and a UEFA Cup final while playing for the club?",
+      "options": [
+        "Steven Gerrard",
+        "John Barnes",
+        "Ian Callaghan",
+        "Kenny Dalglish"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "scope": "club",
+      "club": "Liverpool"
     },
     {
       "id": "ef7ccf8c-b6c1-45e4-81fc-04de35986c35",
@@ -4735,7 +6260,53 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Aston Villa"
+      "scope": "club",
+      "club": "Aston Villa"
+    },
+    {
+      "id": "ef99e76f-2fa8-441d-b7fb-60ea442ef9f9",
+      "q": "Arsenal scored how many goals in the 2018-19 Premier League season?",
+      "options": [
+        "80",
+        "76",
+        "69",
+        "73"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "scope": "club",
+      "club": "Arsenal"
+    },
+    {
+      "id": "eff89a1f-2a67-400e-8268-90915bb65c4f",
+      "q": "Which club did Thierry Henry play for when he won the Premier League's top scorer award in 2003-04 with 30 goals?",
+      "options": [
+        "Arsenal",
+        "Liverpool",
+        "Chelsea",
+        "Manchester United"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "legends",
+      "scope": "neutral",
+      "club": null
+    },
+    {
+      "id": "f05fad10-8cf0-41a0-9393-3811d71989db",
+      "q": "Which club did Robin van Persie play for when he won the Premier League's top scorer award in 2011-12 with 30 goals?",
+      "options": [
+        "Arsenal",
+        "Manchester United",
+        "Chelsea",
+        "Tottenham Hotspur"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "legends",
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "f0af2923-2280-4458-aba4-2fe34f914417",
@@ -4749,21 +6320,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Tottenham Hotspur"
-    },
-    {
-      "id": "f158dbd3-d6bf-422d-a6ea-5202ecb78da0",
-      "q": "In which season did Leicester City win the Premier League with an incredible points tally of 81?",
-      "options": [
-        "2017-18",
-        "2014-15",
-        "2016-17",
-        "2015-16"
-      ],
-      "answer": 3,
-      "difficulty": "easy",
-      "category": "history-honours",
-      "entity": "Leicester City"
+      "scope": "club",
+      "club": "Tottenham Hotspur"
     },
     {
       "id": "f16b3e63-9f4b-41f5-b938-33e2d3688442",
@@ -4777,7 +6335,23 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Leeds United"
+      "scope": "club",
+      "club": "Leeds United"
+    },
+    {
+      "id": "f1c9c77e-61cb-4dd2-951b-4362d0f60b9e",
+      "q": "How many goals did Manchester City score in the 2023-24 Premier League season?",
+      "options": [
+        "98",
+        "94",
+        "100",
+        "96"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "scope": "club",
+      "club": "Manchester City"
     },
     {
       "id": "f4248a5f-6639-435b-8ffb-75ed60746ca4",
@@ -4791,7 +6365,8 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Tottenham Hotspur"
+      "scope": "club",
+      "club": "Tottenham Hotspur"
     },
     {
       "id": "f43abdd5-1437-434f-9688-77f939ea1498",
@@ -4805,7 +6380,8 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Leeds United"
+      "scope": "club",
+      "club": "Leeds United"
     },
     {
       "id": "f4abd28c-335b-436e-9221-a66c9db760ae",
@@ -4819,7 +6395,38 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Newcastle United"
+      "scope": "club",
+      "club": "Newcastle United"
+    },
+    {
+      "id": "f5359676-5126-49d0-847e-39224b9faa98",
+      "q": "Which player's move from West Ham United in July 2023 became Arsenal's record transfer fee paid, at £100m plus £5m in add-ons?",
+      "options": [
+        "Ben White",
+        "Kai Havertz",
+        "Declan Rice",
+        "Jorginho"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "scope": "club",
+      "club": "Arsenal"
+    },
+    {
+      "id": "f664735e-b270-444b-9197-76ec5d45a961",
+      "q": "Which English player finished as the Premier League's leading goalscorer during the 2024-25 campaign?",
+      "options": [
+        "Harry Kane",
+        "Bukayo Saka",
+        "Ollie Watkins",
+        "Phil Foden"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "PL 2024-25",
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "f6f281ce-7504-49c8-98d0-fd9dec96d2de",
@@ -4833,7 +6440,23 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Manchester United"
+      "scope": "club",
+      "club": "Manchester United"
+    },
+    {
+      "id": "f86b89cd-d32e-46df-a955-0cc7015c9f8e",
+      "q": "Who was both Arsenal's top scorer and the Premier League's top scorer in the 2011/12 season?",
+      "options": [
+        "Didier Drogba",
+        "Sergio Aguero",
+        "Wayne Rooney",
+        "Robin van Persie"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "scope": "club",
+      "club": "Arsenal"
     },
     {
       "id": "f8988fc5-3b12-4171-a2ef-8170e496c943",
@@ -4847,7 +6470,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "modern-era",
-      "entity": "Newcastle United"
+      "scope": "club",
+      "club": "Newcastle United"
     },
     {
       "id": "f8a31ae0-ff0d-49e0-9732-9164a0a08de3",
@@ -4861,7 +6485,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Manchester United"
+      "scope": "club",
+      "club": "Manchester United"
     },
     {
       "id": "f8af7379-67fb-4038-a212-e043f5e9c6d9",
@@ -4875,7 +6500,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Chelsea"
+      "scope": "club",
+      "club": "Chelsea"
     },
     {
       "id": "f8d5ff16-444f-4d73-94ab-5c7cbc86e822",
@@ -4889,7 +6515,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Aston Villa"
+      "scope": "club",
+      "club": "Aston Villa"
     },
     {
       "id": "f8d96d07-4329-4e14-aaf9-8fea645bedc9",
@@ -4903,7 +6530,53 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Tottenham Hotspur"
+      "scope": "club",
+      "club": "Tottenham Hotspur"
+    },
+    {
+      "id": "f9b1afdc-540e-4567-a5a9-5ddfc08c43e9",
+      "q": "How many goals did Manchester City score in the 2022-23 Premier League season?",
+      "options": [
+        "92",
+        "96",
+        "90",
+        "94"
+      ],
+      "answer": 3,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "scope": "club",
+      "club": "Manchester City"
+    },
+    {
+      "id": "f9db6905-3944-407a-bac6-403b565ca806",
+      "q": "In which season did Arsenal last finish 1st in the Premier League with 87 points?",
+      "options": [
+        "2001-02",
+        "2000-01",
+        "2002-03",
+        "2003-04"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "scope": "club",
+      "club": "Arsenal"
+    },
+    {
+      "id": "fac853f3-12ad-4cf4-8241-c1874c11840e",
+      "q": "Ivan Toney had a brilliant 2022-23 season for Brentford — how many Premier League goals did he bag?",
+      "options": [
+        "18",
+        "22",
+        "20",
+        "24"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "legends",
+      "scope": "club",
+      "club": "Brentford"
     },
     {
       "id": "fc0093b5-6284-4c7a-a259-55cd05089eaf",
@@ -4917,7 +6590,8 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Chelsea"
+      "scope": "club",
+      "club": "Chelsea"
     },
     {
       "id": "fc2efbed-da9b-468e-8e46-d25c51cb1f99",
@@ -4931,21 +6605,68 @@
       "answer": 2,
       "difficulty": "easy",
       "category": "history-honours",
-      "entity": "Manchester United"
+      "scope": "club",
+      "club": "Manchester United"
     },
     {
-      "id": "fd3224c0-d832-460e-83be-2b3c269e108e",
-      "q": "Which West Ham United player scored the only goal in their 1-0 win over champions Manchester United on the final day of the 2006/07 Premier League season, a result that sent Sheffield United down instead?",
+      "id": "fc50e52c-7c86-4d2f-8d0c-7b90fffd72d8",
+      "q": "How many points did Liverpool accumulate in the 2023-24 Premier League season?",
       "options": [
-        "Javier Mascherano",
-        "Bobby Zamora",
-        "Dean Ashton",
-        "Carlos Tevez"
+        "82",
+        "80",
+        "85",
+        "79"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "modern-era",
+      "scope": "club",
+      "club": "Liverpool"
+    },
+    {
+      "id": "fc68a81d-8fb8-4ecd-9b6a-9953afe261fa",
+      "q": "How many points did Liverpool rack up in the 2021-22 Premier League season?",
+      "options": [
+        "94",
+        "88",
+        "90",
+        "92"
       ],
       "answer": 3,
       "difficulty": "medium",
-      "category": "rivalries-derbies",
-      "entity": "West Ham United"
+      "category": "modern-era",
+      "scope": "club",
+      "club": "Liverpool"
+    },
+    {
+      "id": "fd12d4f7-aa3c-499b-b0e1-ca177a56abf7",
+      "q": "In which season did Erling Haaland set the Premier League single-season scoring record?",
+      "options": [
+        "2024-25",
+        "2023-24",
+        "2022-23",
+        "2021-22"
+      ],
+      "answer": 2,
+      "difficulty": "easy",
+      "category": "history-honours",
+      "scope": "neutral",
+      "club": null
+    },
+    {
+      "id": "fd7b9cc5-22e7-4044-b421-bcf22f75756d",
+      "q": "What is Liverpool's record for most wins in a single Premier League season?",
+      "options": [
+        "30",
+        "31",
+        "32",
+        "29"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "category": "history-honours",
+      "scope": "club",
+      "club": "Liverpool"
     },
     {
       "id": "fd90c076-e4a5-44b7-a914-d301c61c5c10",
@@ -4959,7 +6680,8 @@
       "answer": 2,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Leeds United"
+      "scope": "club",
+      "club": "Leeds United"
     },
     {
       "id": "fdaddcb8-2e82-477a-8192-5143fb4705ef",
@@ -4973,7 +6695,8 @@
       "answer": 2,
       "difficulty": "easy",
       "category": "history-honours",
-      "entity": "Newcastle United"
+      "scope": "club",
+      "club": "Newcastle United"
     },
     {
       "id": "fdb2c6aa-ef3e-41ac-b241-90f466d2c2fb",
@@ -4987,7 +6710,53 @@
       "answer": 0,
       "difficulty": "medium",
       "category": "history-honours",
-      "entity": "Tottenham Hotspur"
+      "scope": "club",
+      "club": "Tottenham Hotspur"
+    },
+    {
+      "id": "fe2efa0a-a278-4870-9d76-644d4a267215",
+      "q": "How many Premier League goals did Raheem Sterling score for Manchester City in the 2019-20 season?",
+      "options": [
+        "20",
+        "22",
+        "17",
+        "18"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "legends",
+      "scope": "club",
+      "club": "Manchester City"
+    },
+    {
+      "id": "ff2613dd-4c17-4dac-854f-82b71a4ad965",
+      "q": "Which team was Thierry Henry playing for when he finished as the Premier League's top scorer in 2004-05?",
+      "options": [
+        "Arsenal",
+        "Liverpool",
+        "Chelsea",
+        "Manchester United"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "category": "legends",
+      "scope": "neutral",
+      "club": null
+    },
+    {
+      "id": "ffd723db-358c-4b1a-a26e-a6f5471a80ec",
+      "q": "Who holds the record for the most Premier League hat-tricks, with all of them achieved while playing for Manchester City?",
+      "options": [
+        "Alan Shearer",
+        "Sergio Aguero",
+        "Harry Kane",
+        "Thierry Henry"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "category": "PL Records",
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "fff55cf4-bb4d-4b26-91b2-7966bb222f35",
@@ -5001,7 +6770,8 @@
       "answer": 1,
       "difficulty": "medium",
       "category": "legends",
-      "entity": "Manchester United"
+      "scope": "neutral",
+      "club": null
     },
     {
       "id": "fff59955-87f8-464b-88d0-0914c49c6e98",
@@ -5015,7 +6785,8 @@
       "answer": 3,
       "difficulty": "medium",
       "category": "rivalries-derbies",
-      "entity": "Leeds United"
+      "scope": "club",
+      "club": "Leeds United"
     }
   ]
 }

@@ -76,9 +76,13 @@ export default function DraftPlay() {
   const [feedback, setFeedback] = useState<{ correct: boolean; streak: number } | null>(null);
   // Questions already asked this draft — sent to the server so it doesn't re-deal them.
   const askedIds = useRef<Set<string>>(new Set());
-  // The seed the current question was derived from. The server re-derives (and grades)
-  // from it, so the answer never reaches the client until the answer is locked.
+  // What the server needs back to re-derive (and grade) the current question: the seed, the
+  // club whose pool it was drawn from, and the server's signature over that pair. We hand
+  // all three back untouched — the signature is what stops a client re-grading against a
+  // different club's question until one marks their answer correct.
   const gateSeed = useRef<string | null>(null);
+  const gateSig = useRef<string | null>(null);
+  const gateClub = useRef<string | null>(null);
 
   useEffect(() => {
     void ensurePool(); // preload the on-demand player pool for the spin
@@ -136,6 +140,8 @@ export default function DraftPlay() {
       const data = await res.json();
       if (!res.ok || !data.question) { spinAsMiss(); return; }
       gateSeed.current = data.seed as string;
+      gateSig.current = data.sig as string;
+      gateClub.current = (data.club ?? null) as string | null;
       setQuiz({ ...data.question, correctIndex: -1 });
       setAnswered(null);
       setFeedback(null);
@@ -155,7 +161,13 @@ export default function DraftPlay() {
       try {
         const res = await fetch("/api/draft/pl/gate-quiz", {
           method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "answer", seed: gateSeed.current, choice: idx }),
+          body: JSON.stringify({
+            action: "answer",
+            seed: gateSeed.current,
+            sig: gateSig.current,
+            club: gateClub.current,
+            choice: idx,
+          }),
         });
         const data = await res.json();
         if (!res.ok) { setAnswered(null); return; }

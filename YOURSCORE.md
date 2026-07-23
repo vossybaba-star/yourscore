@@ -414,7 +414,31 @@ Confirmed preamble above and the referenced section.
   72, not 99). The limit also went 60→120 req/min per IP, because one draft is 22 requests
   and punishing a rate-limited player makes shared IPs (pub wifi, carrier NAT) a real UX
   problem rather than just an abuse control.
-  ⚠️ **The bundle is NOT founder-reviewed yet** — `pl-quiz-review.md` is the gate before ship.
+  **SCOPED to who's asking (founder review, 2026-07-22).** The first bundle read as club
+  trivia — 274 of 357 questions needed one club's internal history, so a Liverpool fan got
+  asked about Aston Villa's honours. Now every question carries a `scope` and a player is
+  only ever asked two kinds: **neutral** (Premier League records, history, league-wide
+  moments — everyone) and **their own club's** (from `club_supporters`, season-locked). A
+  guest, or anyone who hasn't picked a club, draws the neutral pool alone — no special case.
+  Bundle is now **452 questions: 96 neutral + 356 club-scoped across 19 clubs.** Mix is
+  uncapped by choice: an Arsenal fan draws from 158, a Sunderland fan from 102, a guest 96,
+  so how often you meet your own club just follows how much material it has.
+  Two traps worth knowing. (1) Two thirds of the neutral pool is *club-filed but
+  league-wide in framing* ("Which club was Harry Kane at when he won the Golden Boot?") —
+  without that reclassification the neutral pool is 32, not 96. (2) `club_supporters.club`
+  and `questions.entity` are different name spaces: "AFC Bournemouth"→"Bournemouth",
+  "Brighton & Hove Albion"→"Brighton", and **Coventry City has no entity at all** (11 fans →
+  neutral only). A missed alias doesn't error, it silently gives those fans zero club
+  questions, so the map ships inside the bundle.
+  **The club is signed, not trusted.** The pool a seed draws from depends on the club, so
+  the same seed with a different club derives a different question. Sending the club back
+  as a plain value would let a wrong answer be re-graded against each club in turn until one
+  matched (~25% a go). The draw HMACs (seed, club) with the server secret and the grade call
+  verifies it — swapped club, forged sig and omitted sig all return 400 (verified).
+  ⚠️ **The bundle is NOT founder-reviewed yet** — `pl-quiz-review.md` is the gate before
+  ship. It now splits **Neutral** (read these hardest — they go to everybody) from
+  **Club-scoped** (only ever seen by that club's own fans, so they can be as parochial as
+  you like).
 
 - **2026-07-20 (pm)** — **Versus guest dead-end fixed** (`src/app/versus/page.tsx`, working
   tree, not yet committed). Signed-out users hitting Versus got a bare sign-in gate with NO
@@ -789,6 +813,8 @@ Use these words, with these meanings, everywhere. No synonyms.
   question and your answers set the quality of the squads dealt. Say **"Pro"**, never
   "Gated" (the code's `gated` flag is the mechanic, not the name). It is a **difficulty, not
   a paid tier** — YourScore is free forever, so never dress Pro in padlock/upgrade language.
+  A player is only ever asked **neutral** questions or ones about **their own club** — never
+  another club's trivia. That rule is the feature, not an implementation detail.
 - **Just Draft** — the open Premier League/La Liga draft: no questions, every squad at full
   quality. The counterpart to Pro, and what 38-0 has always done.
 - **Spin** — deal a random squad of real-rated legends (drawn across FIFA editions/eras).
