@@ -218,22 +218,24 @@ function str(v: unknown): string | undefined {
   return typeof v === "string" && v.length > 0 ? v : undefined;
 }
 
-// Official Premier League headshots, resolved at build time by
-// scripts/games/build-player-photos.mjs and keyed by normalised option label.
+// Official Premier League headshots, resolved AND verified-loadable at build
+// time by scripts/games/build-player-photos.mjs, keyed by normalised option
+// label. The value is the full URL the builder confirmed returns a real image,
+// so a code whose headshot 403s (Boscagli, Van Dijk at 250x250) is simply
+// absent here — never a URL that renders as a broken image.
 // Safe to send pre-answer for Higher or Lower ONLY: there the two options are
-// simply the two players, and the question is which number is bigger, so a face
+// just the two players and the question is which number is bigger, so a face
 // gives nothing away. Never attach these to who-am-i, where the photo IS the
 // answer.
-const PHOTO_CODES = (photoData as { photos: Record<string, number> }).photos ?? {};
+const PHOTO_URLS = (photoData as { photos: Record<string, string> }).photos ?? {};
 
 function photoKey(label: string): string {
   return label.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z]/g, "");
 }
 
-/** Headshot for a Higher or Lower option label, or undefined if unresolved. */
+/** A verified headshot URL for a Higher or Lower option label, or undefined. */
 export function photoForLabel(label: string): string | undefined {
-  const code = PHOTO_CODES[photoKey(label)];
-  return code ? `https://resources.premierleague.com/premierleague/photos/players/250x250/p${code}.png` : undefined;
+  return PHOTO_URLS[photoKey(label)] || undefined;
 }
 
 export function clientRound(round: readonly PoolQuestion[]): ServedQuestion[] {

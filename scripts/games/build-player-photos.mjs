@@ -84,7 +84,7 @@ async function main() {
     }
   }
 
-  const photos = {};
+  const resolved = new Map(); // normalised label -> FPL code (before image verify)
   const missed = [];
   const ambiguous = [];
   for (const [label, ids] of labels) {
@@ -109,9 +109,49 @@ async function main() {
       break;
     }
 
-    if (picked) photos[norm(label)] = picked.code;
+    if (picked) resolved.set(norm(label), picked.code);
     else missed.push(label);
   }
+
+  // A resolved FPL code is NOT a guarantee the headshot exists. The PL CDN does
+  // not generate every size for every player: Van Dijk (p97032) has a 110x140
+  // but no 250x250, and newer signings (Boscagli, Wirtz, Woltemade) have
+  // neither. Shipped once with 250x250 assumed-present, which put a real face
+  // next to a broken image on the daily tile (Van de Ven v Boscagli, 2026-07-24).
+  //
+  // So VERIFY. Try the sharp size first, fall back to the small one, and store
+  // the URL that actually loads. A code whose image 403s at both sizes is
+  // dropped, and the "both faces or neither" gate then falls the pair back to
+  // plain names — never a broken image.
+  const SIZES = ["250x250", "110x140"];
+  const urlFor = (size, code) =>
+    `https://resources.premierleague.com/premierleague/photos/players/${size}/p${code}.png`;
+
+  async function firstLoadable(code) {
+    for (const size of SIZES) {
+      try {
+        const r = await fetch(urlFor(size, code));
+        if (r.status === 200 && (r.headers.get("content-type") || "").includes("image")) {
+          return urlFor(size, code);
+        }
+      } catch { /* network blip — treat as absent */ }
+    }
+    return null;
+  }
+
+  const photos = {};
+  const dead = [];
+  const entries = [...resolved.entries()];
+  const queue = [...entries];
+  async function worker() {
+    while (queue.length) {
+      const [key, code] = queue.shift();
+      const url = await firstLoadable(code);
+      if (url) photos[key] = url;
+      else dead.push(`${key}:${code}`);
+    }
+  }
+  await Promise.all(Array.from({ length: 10 }, worker)); // bounded concurrency
 
   // Per-question coverage is the number that decides the UI: a tile with one
   // face and one blank is worse than a tile with neither.
@@ -122,12 +162,15 @@ async function main() {
   }
 
   console.log(`players named in Higher or Lower: ${labels.size}`);
-  console.log(`resolved to a PL headshot:        ${Object.keys(photos).length}`);
+  console.log(`resolved to an FPL code:          ${resolved.size}`);
+  console.log(`code has a LOADABLE headshot:     ${Object.keys(photos).length}`);
+  console.log(`code but NO image (dropped):      ${dead.length}`);
   console.log(`questions with BOTH faces:        ${both}/${hl.length} (${(100 * both / hl.length).toFixed(1)}%)`);
   console.log(`               one face:          ${one}`);
   console.log(`               no faces:          ${none}`);
   if (missed.length) console.log(`\nunresolved (${missed.length}): ${missed.join(", ")}`);
   if (ambiguous.length) console.log(`\nambiguous, skipped (${ambiguous.length}): ${ambiguous.join(" · ")}`);
+  if (dead.length) console.log(`\nno image at any size (${dead.length}): ${dead.join(", ")}`);
 
   if (DRY) { console.log("\n--dry: nothing written"); return; }
 
@@ -137,7 +180,7 @@ async function main() {
       {
         builtAt: new Date().toISOString(),
         source: "fantasy.premierleague.com/api/bootstrap-static",
-        note: "key = normalised pool option label, value = FPL player code",
+        note: "key = normalised pool option label, value = a VERIFIED-loadable PL headshot URL",
         photos,
       },
       null,
