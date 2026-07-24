@@ -93,10 +93,11 @@ export function AppMomentPrompt() {
 
     (async () => {
       if (isNative()) {
-        // Server owns the whole schedule and the record.
+        // Server owns the whole schedule and the record. This call also counts
+        // the Game that just finished, so it must fire once per game-end mount.
         let decision: { ask?: boolean } = {};
         try {
-          decision = await (await fetch("/api/review-prompt")).json();
+          decision = await (await fetch("/api/review-prompt", { cache: "no-store" })).json();
         } catch {
           return; // offline or signed out — say nothing
         }

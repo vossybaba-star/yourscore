@@ -19,16 +19,25 @@ import { createServiceClient } from "@/lib/supabase/service";
 // happens inline in two taps, but it is unobservable and Apple caps it at three
 // per user per year. We chose the surface we can actually honour a promise on.
 //
-// THE SCHEDULE. Keen early, backing off once someone is clearly not interested:
+// THE SCHEDULE IS COUNTED IN GAMES PLAYED, NOT DAYS. Somebody who opens the
+// app twice a week and somebody who plays ten Games a night should not be on
+// the same clock; the second has seen far more of the product and has far more
+// to say about it. Games come from player_game_counts (migration 103), which
+// this route increments on each game-end screen and which was seeded from every
+// existing play record so a veteran is not treated as new.
 //
-//   day 0    signs up, downloads, plays          nothing
-//   day 1+   first finished Game on a RETURN     ask 1
-//            visit (account at least a day old)
-//   +7d      ignored                             ask 2
-//   +14d     ignored                             ask 3
-//   +30d     ignored                             ask 4
-//   +90d     ignored, and every 90 after         ask 5, 6, ...
-//   any time they tap Rate us                    never again
+//   3 Games played      ask 1   (and account at least a day old, so it is a
+//                                return visit rather than mid first session)
+//   +7 Games            ask 2
+//   +15 Games           ask 3
+//   +25 Games           ask 4
+//   +50 Games, repeating ask 5, 6, ...
+//   taps Rate us        never again
+//
+// Gaps are measured from the play count AT the previous ask, not cumulative
+// totals. Cumulative would misfire for every seeded veteran: a player sitting
+// on 500 Games clears every threshold at once and would take the whole run of
+// asks back to back.
 //
 // review_prompts isn't in the generated Database type yet (types lag the
 // migration), so the service client is cast the same way /api/wc-thanks does.
@@ -36,14 +45,19 @@ function service(): SupabaseClient {
   return createServiceClient() as unknown as SupabaseClient;
 }
 
-// Days to wait before the Nth ask, indexed by how many they have already had.
-// Past the end of the list the last value repeats, so ask 5 onwards is quarterly.
-const ASK_GAP_DAYS = [7, 14, 30, 90];
+// Service-role reads in a route handler get pinned by Vercel's data cache on a
+// constant key, which would freeze one player's answer and serve it to everyone
+// forever. Per-user and side-effecting: never cache it.
+export const fetchCache = "force-no-store";
+
+// Games before the FIRST ask.
+const MIN_GAMES = 3;
+// Games since the previous ask, indexed by how many they have already had. Past
+// the end of the list the last value repeats, so it settles at every 50 Games.
+const ASK_GAP_GAMES = [7, 15, 25, 50];
 // Don't ask someone on their very first day — the ask is for players who came
 // back, not for a stranger mid-first-session.
 const MIN_ACCOUNT_AGE_HOURS = 24;
-
-const DAY_MS = 86_400_000;
 
 export async function GET() {
   try {
@@ -61,12 +75,20 @@ export async function GET() {
     }
 
     const db = service();
+
+    // This request IS a finished Game: the card only mounts on a game-end
+    // screen. Count it first, then decide, so the count is never behind.
+    const { data: counted } = await db
+      .rpc("bump_player_games", { p_user: user.id })
+      .single<number>();
+    const games = counted ?? 0;
+
     // Lifetime, not a rolling window — "they already rated" has no expiry.
     // 'download' rows are the web nudge, not a review ask: acting on one means
     // they installed the app, which must never suppress a rating ask.
     const { data: recent } = await db
       .from("review_prompts")
-      .select("variant, outcome, created_at")
+      .select("variant, outcome, created_at, games_at")
       .eq("user_id", user.id)
       .in("variant", ["native", "card"])
       .order("created_at", { ascending: false });
@@ -79,14 +101,17 @@ export async function GET() {
     }
 
     const last = asks[0];
-    if (last) {
-      const gap = ASK_GAP_DAYS[Math.min(asks.length - 1, ASK_GAP_DAYS.length - 1)];
-      if (Date.now() - Date.parse(last.created_at) < gap * DAY_MS) {
-        return NextResponse.json({ ask: false });
-      }
+    if (!last) {
+      // Never asked: the only bar is having played enough to have a view.
+      return NextResponse.json({ ask: games >= MIN_GAMES, variant: "card" });
     }
 
-    return NextResponse.json({ ask: true, variant: "card" });
+    const gap = ASK_GAP_GAMES[Math.min(asks.length - 1, ASK_GAP_GAMES.length - 1)];
+    // games_at is null for rows written before migration 103 (the WC backfill).
+    // Treating those as "asked at their current count" is the cautious read: it
+    // waits a full gap rather than firing immediately on deploy.
+    const since = games - (last.games_at ?? games);
+    return NextResponse.json({ ask: since >= gap, variant: "card" });
   } catch {
     // Never let a broken prompt break a game-end screen.
     return NextResponse.json({ ask: false });
@@ -129,9 +154,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false }, { status: 400 });
     }
 
+    // Stamp the play count at the moment of asking — the schedule is measured
+    // in Games since the previous ask, so this is what the next one reads.
+    const { data: gc } = await db
+      .from("player_game_counts")
+      .select("games")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
     const { data } = await db
       .from("review_prompts")
-      .insert({ user_id: user.id, surface, variant })
+      .insert({ user_id: user.id, surface, variant, games_at: gc?.games ?? 0 })
       .select("id")
       .maybeSingle();
 
