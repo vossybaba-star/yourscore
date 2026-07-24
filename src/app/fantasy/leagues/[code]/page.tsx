@@ -12,7 +12,8 @@ import { BottomNav } from "@/components/ui/BottomNav";
 
 interface LeagueRow {
   rank: number; userId: string; username: string | null; displayName: string | null;
-  avatarUrl: string | null; points: number; played: number; lastGwPoints: number | null; isMe: boolean;
+  avatarUrl: string | null; points: number; played: number; lastGwPoints: number | null;
+  isMe: boolean; movement: number | null;
 }
 interface LeagueDetail {
   league: {
@@ -37,6 +38,21 @@ async function apiRaw<T>(path: string, init?: RequestInit): Promise<T> {
 const nameOf = (r: { username: string | null; displayName: string | null }) =>
   r.displayName ?? (r.username ? `@${r.username}` : "Player");
 
+/** The rank arrow. Null (no prior gameweek to compare) shows nothing rather than
+ *  a misleading "held". A held position gets a quiet dash so the column doesn't
+ *  jump around as rows gain and lose arrows. */
+function Movement({ m }: { m: number | null }) {
+  if (m === null) return null;
+  if (m === 0) return <span aria-label="held position" style={{ fontSize: 9, color: "#4b534e" }}>▬</span>;
+  const up = m > 0;
+  return (
+    <span aria-label={`${up ? "up" : "down"} ${Math.abs(m)}`}
+      style={{ fontSize: 9, color: up ? "#5fce8f" : "#E08A6B", display: "inline-flex", alignItems: "center", gap: 1 }}>
+      {up ? "▲" : "▼"}{Math.abs(m) > 1 ? <span style={{ fontSize: 9, fontVariantNumeric: "tabular-nums" }}>{Math.abs(m)}</span> : null}
+    </span>
+  );
+}
+
 function TableRows({ rows, onPeek }: { rows: LeagueRow[]; onPeek?: (r: LeagueRow) => void }) {
   if (!rows.length) return <p style={{ fontSize: 13, color: MUTED, margin: 0 }}>No members yet.</p>;
   return (
@@ -47,16 +63,28 @@ function TableRows({ rows, onPeek }: { rows: LeagueRow[]; onPeek?: (r: LeagueRow
           background: r.isMe ? "rgba(227,181,76,0.12)" : PANEL, border: `1px solid ${r.isMe ? GOLD : LINE}`,
           cursor: onPeek ? "pointer" : "default",
         }}>
-          <span style={{
-            width: 20, textAlign: "center", fontSize: 13, fontWeight: 700,
-            color: r.rank === 1 ? GOLD : MUTED, fontVariantNumeric: "tabular-nums", flexShrink: 0,
-          }}>{r.rank}</span>
+          <span style={{ display: "flex", alignItems: "center", gap: 3, width: 34, flexShrink: 0, justifyContent: "flex-end" }}>
+            <span style={{
+              fontSize: 13, fontWeight: 700,
+              color: r.rank === 1 ? GOLD : MUTED, fontVariantNumeric: "tabular-nums",
+            }}>{r.rank}</span>
+            <Movement m={r.movement} />
+          </span>
           <PlayerAvatar seed={r.userId} name={nameOf(r)} avatarUrl={r.avatarUrl} size={30} />
           <span style={{ flex: 1, minWidth: 0, fontSize: 13.5, fontWeight: 600, color: INK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {nameOf(r)}{r.isMe ? " (you)" : ""}
           </span>
-          <span style={{ fontSize: 13, fontWeight: 700, color: r.played === 0 ? MUTED : INK, textAlign: "right", flexShrink: 0 }}>
-            {r.played === 0 ? "0 · no gameweek scored yet" : `${r.points} pts`}
+          <span style={{ textAlign: "right", flexShrink: 0 }}>
+            <span style={{ display: "block", fontSize: 13, fontWeight: 700, color: r.played === 0 ? MUTED : INK }}>
+              {r.played === 0 ? "0 · not scored yet" : `${r.points} pts`}
+            </span>
+            {/* What they put on the board in the gameweek that just moved the
+                table — the "why did I move" behind the arrow. */}
+            {r.lastGwPoints !== null && (
+              <span style={{ display: "block", fontSize: 10.5, color: MUTED, marginTop: 1 }}>
+                +{r.lastGwPoints} last GW
+              </span>
+            )}
           </span>
         </div>
       ))}

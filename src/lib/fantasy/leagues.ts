@@ -44,6 +44,11 @@ export interface LeagueRow {
   /** Right answers over this table's gameweeks — the tiebreak (audit decision 6). */
   knowledge: number;
   lastGwPoints: number | null; isMe: boolean;
+  /** Places gained since the previous scored gameweek. Positive = climbed, negative
+   *  = dropped, 0 = held. Null when there's no earlier gameweek to compare — a
+   *  table showing its first ever result has no movement to report yet, and a "–"
+   *  is honest where a "0" would falsely claim you held a position you never had. */
+  movement: number | null;
 }
 interface LeagueRecord {
   id: string; owner_id: string; name: string; join_code: string; is_public: boolean;
@@ -221,6 +226,10 @@ function buildRows(
   members: MemberRecord[],
   profiles: Map<string, ProfileRecord>,
   viewerId: string | null,
+  /** userId → their rank on this same table BEFORE the latest scored gameweek,
+   *  so each row can report how many places it moved. Omitted for a table that
+   *  has no earlier state to compare against. */
+  priorRank?: Map<string, number>,
 ): LeagueRow[] {
   const byUser = new Map<string, { sum: number; played: number; lastGw: number; lastPts: number; knowledge: number }>();
   for (const e of entries) {
@@ -264,11 +273,25 @@ function buildRows(
     || cmpLastGw(a.lastGwPoints, b.lastGwPoints)
     || Date.parse(a.joinedAt) - Date.parse(b.joinedAt));
 
-  return withJoin.map((r, i) => ({
-    rank: i + 1, userId: r.userId, username: r.username, displayName: r.displayName,
-    avatarUrl: r.avatarUrl, points: r.points, played: r.played, knowledge: r.knowledge,
-    lastGwPoints: r.lastGwPoints, isMe: r.isMe,
-  }));
+  return withJoin.map((r, i) => {
+    const before = priorRank?.get(r.userId);
+    return {
+      rank: i + 1, userId: r.userId, username: r.username, displayName: r.displayName,
+      avatarUrl: r.avatarUrl, points: r.points, played: r.played, knowledge: r.knowledge,
+      lastGwPoints: r.lastGwPoints, isMe: r.isMe,
+      // A lower prior rank number means they were higher up, so gaining places is
+      // (before − now). Null when we have no prior rank for them.
+      movement: before === undefined ? null : before - (i + 1),
+    };
+  });
+}
+
+/** Rank-by-user for a set of entries — the ordering only, for computing movement. */
+function rankMap(
+  entries: EntryRecord[], members: MemberRecord[], profiles: Map<string, ProfileRecord>,
+): Map<string, number> {
+  const rows = buildRows(entries, members, profiles, null);
+  return new Map(rows.map((r) => [r.userId, r.rank]));
 }
 
 /** "Current month" = the viewer's current GW when signed-in-and-member, else the
@@ -343,12 +366,25 @@ export async function leagueDetail(code: string, viewerId: string | null): Promi
   const monthGwSet = new Set(monthGws);
   const monthEntries = entries.filter((e) => monthGwSet.has(e.gw));
 
-  const season = buildRows(entries, members, profiles, viewerId);
+  // Rank movement: compare each table to how it stood BEFORE its latest scored
+  // gameweek. The season table compares to all-but-the-latest scored gameweek;
+  // the month table to all-but-the-latest WITHIN the month, so early in a month
+  // it correctly reports no movement rather than borrowing last month's order.
+  const latestScoredGw = entries.reduce((max, e) => Math.max(max, e.gw), -1);
+  const seasonPrior = latestScoredGw >= 0
+    ? rankMap(entries.filter((e) => e.gw < latestScoredGw), members, profiles)
+    : undefined;
+  const latestMonthGw = monthEntries.reduce((max, e) => Math.max(max, e.gw), -1);
+  const monthPrior = latestMonthGw >= 0
+    ? rankMap(monthEntries.filter((e) => e.gw < latestMonthGw), members, profiles)
+    : undefined;
+
+  const season = buildRows(entries, members, profiles, viewerId, seasonPrior);
   const month = {
     key: currentMonthKey,
     label: monthLabel(currentMonthKey),
     gws: monthGws,
-    rows: buildRows(monthEntries, members, profiles, viewerId),
+    rows: buildRows(monthEntries, members, profiles, viewerId, monthPrior),
   };
 
   // Most recent COMPLETED month (strictly before the current one) that has at
