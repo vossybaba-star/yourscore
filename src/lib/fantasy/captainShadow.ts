@@ -98,10 +98,13 @@ export async function isGameweekFinal(gw: number, events?: EventRow[]): Promise<
   return !!(e?.finished && e?.data_checked);
 }
 
-async function upcoming(db: Db): Promise<{ gw: number | null; deadline: string | null }> {
+async function upcoming(db: Db, isRehearsal = false): Promise<{ gw: number | null; deadline: string | null }> {
+  // A rehearsal row must never become production's "latest", and the
+  // rehearsal harness must only ever see its own rows.
   const { data } = await db
     .from("fantasy_fpl_snapshot")
     .select("next_event, next_deadline, captured_at")
+    .eq("is_rehearsal", isRehearsal)
     .order("captured_at", { ascending: false })
     .limit(1);
   return { gw: data?.[0]?.next_event ?? null, deadline: data?.[0]?.next_deadline ?? null };
@@ -144,7 +147,7 @@ export type ShadowOpts = {
 export async function freezeShadow(db: Db, opts: ShadowOpts = {}): Promise<FreezeReport> {
   if (opts.override) assertRehearsalAllowed("freezeShadow.override");
   if (opts.onlyUserIds) assertRehearsalAllowed("freezeShadow.onlyUserIds");
-  const { gw, deadline } = opts.override ?? (await upcoming(db));
+  const { gw, deadline } = opts.override ?? (await upcoming(db, !!opts.isRehearsal));
   const report: FreezeReport = { gameweek: gw, considered: 0, written: 0, errors: 0 };
   if (gw === null) return report;
   // Never freeze after the deadline — that is not evidence of anything.
