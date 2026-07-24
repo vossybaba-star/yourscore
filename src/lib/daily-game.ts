@@ -88,9 +88,9 @@ export function gameTypeForDay(dateISO: string = londonDateISO()): DailyGameType
 // src/app/api/games/[type]/route.ts). Perfect 10 and quiz are already pinned
 // by date via their own tables, so no flag needed there.
 const FIXED_GAME_META: Record<Exclude<DailyGameType, "quiz">, { href: string; title: string; sub: string }> = {
-  "perfect-10": { href: "/play/game/perfect-10", title: "Perfect 10", sub: "Name the ranked top 10 — today's list" },
-  "higher-lower": { href: "/play/game/higher-lower?daily=1", title: "Higher or Lower", sub: "Two players, one stat — pick the bigger number" },
-  "guess-the-player": { href: "/play/game/guess-the-player?daily=1", title: "Guess the Player", sub: "Clues drip in — name the mystery footballer" },
+  "perfect-10": { href: "/play/game/perfect-10", title: "Perfect 10", sub: "Name the ranked top 10, today's list" },
+  "higher-lower": { href: "/play/game/higher-lower?daily=1", title: "Higher or Lower", sub: "Two players, one stat. Pick the bigger number" },
+  "guess-the-player": { href: "/play/game/guess-the-player?daily=1", title: "Guess the Player", sub: "Clues drip in. Name the mystery footballer" },
 };
 
 // `daily_games` isn't in the generated Database types (see src/types/database.ts

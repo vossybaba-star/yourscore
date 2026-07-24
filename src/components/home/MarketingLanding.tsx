@@ -533,13 +533,14 @@ export function MarketingLanding({ matches, todaysGame }: { matches: LiveMatch[]
           <Link href="/games" className="hidden sm:block font-body text-sm text-text-muted hover:text-white transition-colors px-3 py-2">Games</Link>
           <Link href="/challenges" className="hidden sm:block font-body text-sm hover:opacity-80 transition-colors px-3 py-2 text-amber">Quiz</Link>
           <Link href="/league/join" className="hidden sm:block font-body text-sm text-text-muted hover:text-white transition-colors px-3 py-2">Join league</Link>
-          <Link href="/auth/sign-in" className="hidden sm:block font-body font-semibold text-sm px-4 py-2.5 rounded-xl hover:opacity-90 transition-all text-white whitespace-nowrap"
-            style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)" }}>
-            Sign In
-          </Link>
+          {/* One button, both jobs. There used to be a separate "Sign In" here
+              that was `hidden sm:block`, so on a phone the only thing a guest
+              ever saw was "Sign Up" — a returning player reinstalling the app
+              had nothing that looked like a way back in. /auth/sign-in handles
+              both and its own heading says "SIGN IN OR SIGN UP". */}
           <Link href="/auth/sign-in" className="font-body font-bold text-sm px-4 py-2.5 rounded-xl hover:opacity-90 transition-all green-pulse text-green whitespace-nowrap"
             style={{ background: "rgba(174,234,0,0.12)", border: "1px solid rgba(174,234,0,0.35)" }}>
-            Sign Up
+            Sign In/Up
           </Link>
           <Link href="/league/new" className="hidden sm:block font-body font-bold text-sm px-5 py-2.5 rounded-xl hover:opacity-90 transition-all pulse-glow"
             style={{ background: "#aeea00", color: "#0a0a0f" }}>
@@ -631,7 +632,7 @@ export function MarketingLanding({ matches, todaysGame }: { matches: LiveMatch[]
                 className="flex items-center justify-center py-3 rounded-xl font-body font-bold text-sm green-pulse text-green"
                 style={{ background: "rgba(174,234,0,0.1)", border: "1px solid rgba(174,234,0,0.28)" }}
               >
-                Sign Up Free
+                Sign In/Up
               </Link>
               <Link
                 href="/league/new"
