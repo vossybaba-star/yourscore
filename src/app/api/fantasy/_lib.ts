@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { rateLimitDistributed } from "@/lib/ratelimit";
+import { fantasyAllowed } from "@/lib/fantasy/flag";
 import { HttpError } from "@/lib/fantasy/server";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -16,6 +17,11 @@ export async function withFantasyUser(
     const auth = await createClient();
     const { data: { user } } = await auth.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // Founder-only while the game is gated: hiding the tab keeps others from
+    // SEEING fantasy, this keeps them from CREATING anything in it by URL — no
+    // stray squads or entries land in the live season before it opens. 404 rather
+    // than 403, so the feature doesn't announce itself to someone poking around.
+    if (!fantasyAllowed(user.id)) return NextResponse.json({ error: "Not found" }, { status: 404 });
     const { ok } = await rateLimitDistributed(`fantasy:${op}:${user.id}`, 30, 60_000);
     if (!ok) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     const db = createServiceClient();

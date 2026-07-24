@@ -35,6 +35,7 @@ import { QuizStatTiles } from "@/components/matchweek/QuizStatTiles";
 import { LiveQuizIntro } from "@/components/matchweek/LiveQuizIntro";
 import { FantasyHub } from "@/components/fantasy/FantasyHub";
 import { fantasyVisible } from "@/lib/fantasy/flag";
+import { useUser } from "@/hooks/useUser";
 import { BottomNav } from "@/components/ui/BottomNav";
 
 const TEAL = "#00d8c0";
@@ -60,7 +61,11 @@ export default function MatchweekPage() {
   // and reading those while rendering would mismatch the server HTML and blow up
   // hydration on every page load.
   const [showFantasy, setShowFantasy] = useState(false);
-  useEffect(() => { setShowFantasy(fantasyVisible()); }, []);
+  // Resolved after the signed-in user is known: while gated, the tab shows only
+  // for the founder allowlist (or a ?fantasy=preview session), and stays hidden
+  // for everyone else.
+  const { user } = useUser();
+  useEffect(() => { setShowFantasy(fantasyVisible(user?.id)); }, [user]);
   // One shared reminders store for the section — AppNudge reads the same state
   // the buttons write, so the app pitch appears once, not once per card.
   const reminders = useReminders();

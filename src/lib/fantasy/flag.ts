@@ -18,14 +18,38 @@
  */
 const PREVIEW_KEY = "ys-fantasy-preview";
 
+/**
+ * The founder-preview allowlist: accounts that get fantasy in the REAL app while
+ * the global gate is still shut, so it can be lived-in on production before it
+ * opens to everyone (founder, 24 Jul).
+ *
+ * A user id is not a secret — it's already in that user's own browser session —
+ * so hard-coding it ships the preview with the build and needs no env step or
+ * redeploy to change who's in. When fantasy opens to everyone the global env
+ * flag goes true and this list stops mattering.
+ */
+export const FANTASY_ALLOWLIST: readonly string[] = [
+  "4050ec90-5323-46aa-8dc0-811e0aac701a", // vossybaba — founder
+];
+
 /** Env answer only. Safe on the server; ignores the preview escape hatch. */
 export function fantasyEnabledByEnv(): boolean {
   return process.env.NEXT_PUBLIC_FANTASY_ENABLED === "true";
 }
 
-/** Client answer: the env flag, or a preview session the user opted into. */
-export function fantasyVisible(): boolean {
+/** The authoritative answer for a KNOWN user — env-on, or on the allowlist. Used
+ *  on both sides: the client hides the tab from everyone else, the server refuses
+ *  their API calls, so "for me only" is real, not just a hidden button. */
+export function fantasyAllowed(userId: string | null | undefined): boolean {
   if (fantasyEnabledByEnv()) return true;
+  return !!userId && FANTASY_ALLOWLIST.includes(userId);
+}
+
+/** Client answer: allowed for this user, or a preview session they opted into
+ *  with `?fantasy=preview`. Pass the signed-in user's id so the allowlist can
+ *  apply; without it, only the env flag and the preview hatch are considered. */
+export function fantasyVisible(userId?: string | null): boolean {
+  if (fantasyAllowed(userId)) return true;
   if (typeof window === "undefined") return false;
   try {
     if (new URLSearchParams(window.location.search).get("fantasy") === "preview") {

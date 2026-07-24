@@ -18,6 +18,7 @@ import { useRouter } from "next/navigation";
 import { FantasyHub } from "@/components/fantasy/FantasyHub";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { fantasyVisible } from "@/lib/fantasy/flag";
+import { useUser } from "@/hooks/useUser";
 
 export default function FantasyPage() {
   const router = useRouter();
@@ -25,12 +26,16 @@ export default function FantasyPage() {
   // server can't see, so committing to either branch during SSR would mismatch
   // the server HTML and break hydration.
   const [allowed, setAllowed] = useState<boolean | null>(null);
+  const { user, loading } = useUser();
 
   useEffect(() => {
-    const ok = fantasyVisible();
+    // Wait for the signed-in user before deciding, or an allowlisted founder
+    // could be bounced on the split-second before their session resolves.
+    if (loading) return;
+    const ok = fantasyVisible(user?.id);
     setAllowed(ok);
     if (!ok) router.replace("/matchweek");
-  }, [router]);
+  }, [router, user, loading]);
 
   if (!allowed) return null; // deciding, or redirecting
 
