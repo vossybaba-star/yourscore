@@ -6,7 +6,39 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-07-24 (**Signed-out home page rewritten around the rank, and a batch of
+> **Confirmed:** 2026-07-24 late (**Higher or Lower and Guess the Player now keep a score, and the
+> daily Higher or Lower tile IS the question.** Shipped to prod as `49f7f11`.
+> **The leak this closed:** a `/ux-walk` found those two games told every player "Practice mode:
+> these don't count on the leaderboard yet" — accurate, because they persisted **nothing**. A guest
+> finished a round owning nothing and was asked for nothing.
+> **Scores now persist** (`game_scores`, mig 112; board + rank functions, mig 113 — both already on
+> prod). Rows are written only from a **server-side re-grade**: the client posts its seed and its
+> taps, the round is rebuilt from that seed and rescored on the server, so a client cannot post a
+> score. One banked run per seed per player.
+> **The results screen** gets the Quiz's guest block — score, the rank it would take, `SIGN UP &
+> SAVE SCORE`, share. A guest run is parked locally and **claimed on the way back in**, so signing
+> up genuinely banks the score it promised. Each game gets a **leaderboard on its own intro screen**
+> (best per player, not per run) rather than a route nobody would find.
+> **Sign in** takes the fifth **guest** nav slot: every other route to it was reactive (trip a gate,
+> get bounced), so someone with an account on a new phone could not *choose* to sign in.
+> **Today's Game tile** for Higher or Lower now renders today's **actual first question with both
+> players' faces**, rebuilt from the same London-date seed the round uses; tapping opens that exact
+> question, unanswered ("opens", not "counts").
+> **The question pool was a season stale** — its ids were 2025/26 FPL elements, reassigned every
+> summer, and ~40 players it named had left the league, capping headshots at 65%. New generator
+> `scripts/games/build-pool.mjs` rebuilds it from live FPL (plus SportMonks for ages, which FPL does
+> not publish); official PL headshots now resolve for **240/240** questions. Difficulty is fitted
+> from the old pool (0.904 correlation with closeness) so rounds keep their feel. `who-am-i`,
+> `career-path` and `classic-trivia` are copied through untouched.
+> **FPL points** joins Higher or Lower as a pickable topic (`HL_TOPICS`), held to **at most one
+> question in ~a quarter of mixed rounds** — a fantasy-manager question, not a football-knowledge
+> one, so pickable but never pushed.
+> **STILL OPEN:** Guess the Player's tile is still text-only (its clues and single photo belong to
+> the answer, so nothing there is safe to preview); the `price` questions (60) remain generated but
+> unserved; the pool's prompts still say "2025/26" and the generator warns to bump `SEASON_LABEL`
+> the first time it runs after a gameweek is actually played.)
+>
+> **Previously confirmed:** 2026-07-24 (**Signed-out home page rewritten around the rank, and a batch of
 > guest-flow fixes.** Shipped to prod as `b024193`.
 > **Positioning:** the landing page led with 38-0 and a World Cup that finished on 19 Jul. It now
 > leads with **YOUR FOOTBALL KNOWLEDGE. RANKED.** The rank is the product: quizzes, gameday,
