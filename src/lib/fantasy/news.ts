@@ -273,6 +273,15 @@ export function formLine(pos: string, agg: MatchFacts, games: number): string {
   return `${bits.join(" + ")} in his last ${games}`;
 }
 
+/** How many gameweeks the form section aggregates over. `NewsFormRow.points` is
+ *  a SUM across this many gameweeks, NOT a per-gameweek rate — exported because
+ *  anything converting that total into a per-gameweek number must divide by
+ *  exactly this. Getting it wrong is not cosmetic: feeding the five-gameweek
+ *  total to the transfer optimiser as if it were one week made every gain look
+ *  ~5x bigger than it was, and the optimiser then traded constantly. Same
+ *  scale-mismatch shape as the bugs catalogued in ppg.ts. */
+export const FORM_WINDOW_GWS = 5;
+
 export function aggregateForm(
   scores: { player_id: number; points: number; facts: MatchFacts }[],
   games: number,

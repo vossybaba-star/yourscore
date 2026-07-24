@@ -11,10 +11,10 @@
  *  fantasy_fpl_snapshot.ep_next only, which is a forward projection, not a
  *  historical total, and is already correctly labelled Beta in the UI.
  *
- *  This file will gain a second export in Phase 2: `seasonAverageScores`,
- *  which divides a player's total points by GAMEWEEKS ELAPSED rather than by
- *  APPEARANCES. Both definitions are deliberate and both are correct — for
- *  their own job:
+ *  TWO EXPORTS LIVE HERE, and that is the whole point of the file.
+ *  `pointsPerAppearance` divides by APPEARANCES; `seasonAverageScores` divides
+ *  by GAMEWEEKS ELAPSED. Both definitions are deliberate and both are correct —
+ *  for their own job:
  *    - pointsPerAppearance answers "when he actually plays, what does he do?"
  *      (captaincy: you only care about output in games he starts)
  *    - seasonAverageScores answers "what has this squad slot returned?"
@@ -50,4 +50,37 @@ export function pointsPerAppearance(rows: ScoreRow[]): Map<number, number> {
   // forEach rather than for..of: this tsconfig target cannot iterate a Map directly.
   agg.forEach((a, id) => result.set(id, a.apps ? a.pts / a.apps : 0));
   return result;
+}
+
+/** Season-to-date average points per GAMEWEEK ELAPSED, per player — the ranking
+ *  basis the transfer planner uses.
+ *
+ *  Divides by `gwsElapsed`, NOT by appearances, and that difference is the
+ *  entire reason this function is not `pointsPerAppearance`. The planner is
+ *  valuing a SQUAD SLOT: a player who was injured, benched or rotated returned
+ *  nothing to the manager those weeks, and a slot that returns nothing is
+ *  exactly what the planner exists to surface. Excluding his blank weeks would
+ *  flatter him precisely when the tool should be flagging him.
+ *
+ *  Returns NULL when no gameweek has been scored yet (`gwsElapsed <= 0`). That
+ *  null is load-bearing, not defensive: it is what drives the planner's
+ *  `basis: "no-history-yet"` cold-start path, where every player projects flat,
+ *  the search finds nothing, and the screen says so. A zero-filled map would be
+ *  indistinguishable from "everyone is genuinely averaging zero" and would let
+ *  the planner present a confident ordering built on no evidence at all.
+ *
+ *  A player with no rows averages 0, which is correct: he has not scored. Pure —
+ *  callers query `fantasy_player_scores` (NEVER `fantasy_fpl_snapshot`, whose
+ *  `total_points`/`minutes` hold last season) and pass the rows in.
+ *
+ *  `playerIds` fixes the key set so every pool player is present in the result
+ *  even with no rows — the planner builds a projection map over the whole pool
+ *  and a missing key would read as a hole rather than as a zero. */
+export function seasonAverageScores(
+  rows: ScoreRow[], gwsElapsed: number, playerIds: number[],
+): Map<number, number> | null {
+  if (gwsElapsed <= 0) return null;
+  const sum = new Map<number, number>();
+  for (const r of rows) sum.set(r.player_id, (sum.get(r.player_id) ?? 0) + (r.points ?? 0));
+  return new Map(playerIds.map((id) => [id, (sum.get(id) ?? 0) / gwsElapsed]));
 }

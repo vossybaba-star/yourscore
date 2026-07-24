@@ -147,11 +147,35 @@ export function sellPrice(buyTenths: number, currentTenths: number): number {
   return buyTenths + Math.floor((currentTenths - buyTenths) / 2);
 }
 /** How the next transfer is paid: knowledge first, points after.
- *  On a wildcard week every move is free — that's the whole chip. */
-export function transferCost(creditsLeft: number, wildcard = false): { paid: "credit" | "hit" | "free" } {
+ *  On a wildcard week every move is free — that's the whole chip.
+ *
+ *  `weeklyFreeLeft` DEFAULTS TO 0 and every caller in this repo leaves it there.
+ *  It exists only so the transfer planner can price a hypothetical run of moves
+ *  under a "you also have N free ones" assumption without re-deriving the
+ *  credit/hit rule itself — the planner must never own a second copy of this
+ *  decision. On the real charging path (`applyTransferTx`) the baseline move
+ *  everyone gets is granted as a CREDIT by `grantBaseline` at gameweek rollover,
+ *  so it is already inside `creditsLeft` and must not be counted twice here. */
+export function transferCost(
+  creditsLeft: number, wildcard = false, weeklyFreeLeft = 0,
+): { paid: "credit" | "hit" | "free" } {
   if (wildcard) return { paid: "free" };
+  if (weeklyFreeLeft > 0) return { paid: "free" };
   return { paid: creditsLeft > 0 ? "credit" : "hit" };
 }
+
+/** What one kind (or tough) fixture in a club's run is worth, in points — THE
+ *  definition, read by `moveScore` in advice.ts. It lives here because engine.ts
+ *  is the only pure module advice.ts is allowed to value-import (advice.ts must
+ *  stay client-safe, so it may not touch anything that pulls in "server-only").
+ *
+ *  3 on THIS repo's scoring scale (values.ts v1, ≈2.6x FPL, where a 60-minute
+ *  appearance is 6): about half an appearance per kind fixture — the right order
+ *  of magnitude for the real effect, and small enough that a fixture run can
+ *  never outweigh actual form. If values.ts is ever moved onto FPL's own scale
+ *  this number moves with it (it would be 1 there); see the scale-mismatch note
+ *  in ppg.ts for why that pairing is not optional. */
+export const FIXTURE_BONUS = 3;
 
 // ── Chips (D:123-156) ────────────────────────────────────────────────────────
 /** The chip token, spent as whichever chip you want. `wildcard` runs on its own
