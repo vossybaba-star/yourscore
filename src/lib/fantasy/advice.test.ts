@@ -626,13 +626,13 @@ test("buildAdvicePayload: a move whose OUT player was bought by an earlier move 
   assert.ok(b, "fixture: at least one further same-position swap out of `a` must be legal");
 
   // Hand-built — never produced by optimiseTransfers itself. `consideredCombinations`
-  // is a search-diagnostics field buildAdvicePayload never reads; 0 is fine here.
+  // and `oneOffCost` are fields buildAdvicePayload never reads; 0 is fine here.
   const optimised = {
     moves: [
       { outId: owned, inId: a.id, paid: "credit" as const, gain: 5 },
       { outId: a.id, inId: b!.id, paid: "credit" as const, gain: 8 },
     ],
-    totalGain: 13, hitsTaken: 0, hold: false, consideredCombinations: 0,
+    totalGain: 13, oneOffCost: 0, hitsTaken: 0, hold: false, consideredCombinations: 0,
   };
 
   const scores = scorePool(pool, [], []);

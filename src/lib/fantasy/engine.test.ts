@@ -233,19 +233,23 @@ test("scoreEntry: benched captain's double goes to vice; auto-sub scores", () =>
 
 // ── values golden table ───────────────────────────────────────────────────────
 test("pointsFor: golden per-position values", () => {
+  // FPL's own scale (values.ts v2-fpl): 60+ min = 2, goal DEF/GK 6 / MID 5 /
+  // FWD 4, assist 3, clean sheet DEF/GK 4, save block (÷3) = 1, pen save 5,
+  // conceded (÷2) −1, pen miss −2, yellow −1, red −3, own goal −2, DC bonus +2.
   const f = (o: Partial<MatchFacts>): MatchFacts => ({ ...ZERO_FACTS, minutes: 90, ...o });
-  assert.equal(pointsFor("FWD", f({ goals: 1 })), 6 + 11);
-  assert.equal(pointsFor("MID", f({ goals: 1 })), 6 + 13);
-  assert.equal(pointsFor("DEF", f({ goals: 1, cleanSheet: 1 })), 6 + 15 + 10);
-  assert.equal(pointsFor("GK", f({ saves: 7, cleanSheet: 1 })), 6 + 4 + 10);
-  assert.equal(pointsFor("GK", f({ pensSaved: 1, conceded: 2 })), 6 + 12 - 2);
-  assert.equal(pointsFor("MID", f({ assists: 2, yellows: 1 })), 6 + 16 - 3);
-  assert.equal(pointsFor("DEF", f({ dc: 10 })), 6 + 5);
-  assert.equal(pointsFor("MID", f({ dcRec: 12 })), 6 + 5);
-  assert.equal(pointsFor("MID", f({ dc: 11, dcRec: 11 })), 6); // non-DEF needs dcRec ≥ 12
-  assert.equal(pointsFor("FWD", { ...ZERO_FACTS, minutes: 30 }), 3);
+  assert.equal(pointsFor("FWD", f({ goals: 1 })), 2 + 4);
+  assert.equal(pointsFor("MID", f({ goals: 1 })), 2 + 5);
+  assert.equal(pointsFor("DEF", f({ goals: 1, cleanSheet: 1 })), 2 + 6 + 4);
+  assert.equal(pointsFor("GK", f({ saves: 7, cleanSheet: 1 })), 2 + 2 + 4);
+  assert.equal(pointsFor("GK", f({ pensSaved: 1, conceded: 2 })), 2 + 5 - 1);
+  assert.equal(pointsFor("MID", f({ assists: 2, yellows: 1 })), 2 + 6 - 1);
+  assert.equal(pointsFor("DEF", f({ dc: 10 })), 2 + 2);
+  assert.equal(pointsFor("MID", f({ dcRec: 12 })), 2 + 2);
+  assert.equal(pointsFor("MID", f({ dc: 11, dcRec: 11 })), 2); // non-DEF needs dcRec ≥ 12
+  assert.equal(pointsFor("GK", f({ dcRec: 15 })), 2); // GK is never eligible for the DC bonus
+  assert.equal(pointsFor("FWD", { ...ZERO_FACTS, minutes: 30 }), 1);
   assert.equal(pointsFor("FWD", ZERO_FACTS), 0);
-  assert.equal(pointsFor("DEF", f({ reds: 1, ownGoals: 1, conceded: 4 })), 6 - 8 - 5 - 4);
+  assert.equal(pointsFor("DEF", f({ reds: 1, ownGoals: 1, conceded: 4 })), 2 - 3 - 2 - 2);
 });
 test("RuleError carries a machine-readable code", () => {
   try { validateSquad([], POOL); assert.fail("should throw"); }

@@ -169,13 +169,12 @@ export function transferCost(
  *  is the only pure module advice.ts is allowed to value-import (advice.ts must
  *  stay client-safe, so it may not touch anything that pulls in "server-only").
  *
- *  3 on THIS repo's scoring scale (values.ts v1, ≈2.6x FPL, where a 60-minute
- *  appearance is 6): about half an appearance per kind fixture — the right order
- *  of magnitude for the real effect, and small enough that a fixture run can
- *  never outweigh actual form. If values.ts is ever moved onto FPL's own scale
- *  this number moves with it (it would be 1 there); see the scale-mismatch note
- *  in ppg.ts for why that pairing is not optional. */
-export const FIXTURE_BONUS = 3;
+ *  1 on FPL's scoring scale (values.ts v2-fpl, where a 60-minute appearance is
+ *  2): about half an appearance per kind fixture — the right order of magnitude
+ *  for the real effect, and small enough that a fixture run can never outweigh
+ *  actual form. This number is paired to values.ts's scale; see the
+ *  scale-mismatch note in ppg.ts for why that pairing is not optional. */
+export const FIXTURE_BONUS = 1;
 
 // ── Chips (D:123-156) ────────────────────────────────────────────────────────
 /** The chip token, spent as whichever chip you want. `wildcard` runs on its own

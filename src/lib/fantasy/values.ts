@@ -1,11 +1,32 @@
 /**
  * YourScore Fantasy Football — THE scoring values. One source, zero imports.
  *
- * Deterministic, no BPS-style judged bonus (design §3, founder-locked): every
- * point traces to a public match fact. Validated at the familiarity ceiling on
- * real gameweeks (Spearman 0.99 vs FPL actual, GW30+GW15 25/26) — any change to
- * these numbers must re-pass `bash scripts/fantasy/familiarity.sh` (≥ 0.98).
- * Scale ≈ 2.6× FPL so the numbers read as ours.
+ * These ARE Fantasy Premier League's scoring values (founder-locked, 23 Jul
+ * 2026). Not "inspired by", not "calibrated against" — identical, with exactly
+ * one deliberate omission: FPL's BPS bonus, which is a judged ranking rather
+ * than a public match fact, and would break our promise that a player can audit
+ * every point they scored.
+ *
+ * Why copy rather than invent (the reasoning, so nobody re-opens it):
+ *  - FPL has balanced goals against appearances against the -4 hit over twenty
+ *    years of live play. Inventing our own numbers put every one of those
+ *    ratios back in play, and we got several of them wrong — see
+ *    [[feedback-scale-mismatch-bug-class]]. Using their table makes a whole
+ *    class of scale bugs impossible by construction.
+ *  - It costs us nothing distinctive. Our old values ranked players at Spearman
+ *    0.99 against FPL, so this changes the numbers on the screen, not who is
+ *    good. YourScore's differentiation lives in the ECONOMY — quiz-earned
+ *    transfers, cash-out, the weekly free — not in what a goal is worth.
+ *  - A user can now compare their week to their FPL week and see the same
+ *    shape, which makes us legible to the millions who already play that game.
+ *
+ * VERIFIED, not asserted: this table reproduces `total_points - bonus` EXACTLY
+ * on 4,836 real per-fixture rows across six 2025/26 gameweeks (GW5, 12, 19, 25,
+ * 30, 36). Every rule below is exercised by that data, including 30 goalkeeper
+ * appearances above the defensive-contribution threshold, which is what proves
+ * keepers are NOT eligible for it. Re-run with
+ * `bash scripts/fantasy/familiarity.sh` — the bar is 100% exact, not a
+ * correlation. Any change to these numbers must re-pass it.
  */
 
 export type FantasyPos = "GK" | "DEF" | "MID" | "FWD";
@@ -32,7 +53,9 @@ export interface MatchFacts {
   dcRec: number;
 }
 
-export const SCORING_VERSION = "v1";
+/** Bumped from "v1" when the scoring table moved to FPL's own values. Rows
+ *  written under "v1" used the old ~2.6x scale and are NOT comparable. */
+export const SCORING_VERSION = "v2-fpl";
 
 export const ZERO_FACTS: MatchFacts = {
   minutes: 0, goals: 0, assists: 0, cleanSheet: 0, conceded: 0, saves: 0,
@@ -42,14 +65,16 @@ export const ZERO_FACTS: MatchFacts = {
 /** YourScore points for one player's gameweek. Pure; total is the only output. */
 export function pointsFor(pos: FantasyPos, f: MatchFacts): number {
   let p = 0;
-  p += f.minutes >= 60 ? 6 : f.minutes > 0 ? 3 : 0;
-  p += f.goals * (pos === "GK" || pos === "DEF" ? 15 : pos === "MID" ? 13 : 11);
-  p += f.assists * 8;
-  if (f.minutes >= 60 && f.cleanSheet) p += pos === "GK" || pos === "DEF" ? 10 : pos === "MID" ? 3 : 0;
-  if (pos === "GK") p += Math.floor(f.saves / 3) * 2 + f.pensSaved * 12;
-  if (pos === "GK" || pos === "DEF") p -= Math.floor(f.conceded / 2) * 2;
-  p -= f.pensMissed * 5 + f.yellows * 3 + f.reds * 8 + f.ownGoals * 5;
-  // Defensive contribution — our own award (deterministic threshold, no judging)
-  if (pos === "DEF" ? f.dc >= 10 : f.dcRec >= 12) p += 5;
+  p += f.minutes >= 60 ? 2 : f.minutes > 0 ? 1 : 0;
+  p += f.goals * (pos === "GK" || pos === "DEF" ? 6 : pos === "MID" ? 5 : 4);
+  p += f.assists * 3;
+  if (f.minutes >= 60 && f.cleanSheet) p += pos === "GK" || pos === "DEF" ? 4 : pos === "MID" ? 1 : 0;
+  if (pos === "GK") p += Math.floor(f.saves / 3) + f.pensSaved * 5;
+  if (pos === "GK" || pos === "DEF") p -= Math.floor(f.conceded / 2);
+  p -= f.pensMissed * 2 + f.yellows + f.reds * 3 + f.ownGoals * 2;
+  // Defensive contribution. Defenders clear 10 CBIT; midfielders and forwards
+  // need 12 but may count ball recoveries too. Goalkeepers are NOT eligible —
+  // 30 keeper appearances in the sample clear 12 CBIRT and FPL paid them zero.
+  if (pos === "DEF" ? f.dc >= 10 : pos !== "GK" && f.dcRec >= 12) p += 2;
   return p;
 }
