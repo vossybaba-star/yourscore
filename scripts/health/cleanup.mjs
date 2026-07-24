@@ -22,6 +22,9 @@ export async function purgeBotRows() {
     // [table, user column] — draft_wc_matches goes via ON DELETE CASCADE from runs.
     // The user column doubles as the returning column (daily_locks has no id).
     ["quiz_attempts", "user_id"],
+    // Higher or Lower / Guess the Player runs (mig 112). These feed a public
+    // board, so a bot row left behind is a fake name on a real leaderboard.
+    ["game_scores", "user_id"],
     ["draft_wc_runs", "user_id"],
     ["draft_wc_daily_locks", "user_id"], // defensive: ranked probe stops before any lock
     ["h2h_challenges", "challenger_id"],

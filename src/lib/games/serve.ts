@@ -16,6 +16,7 @@
  */
 
 import poolData from "@/data/games/pool.json";
+import photoData from "@/data/games/player-photos.json";
 import { seededRng, shuffle } from "./rng";
 import { londonDateISO } from "./perfect10";
 
@@ -59,7 +60,19 @@ export const HL_TOPICS = [
   { key: "assists", label: "Assists", emoji: "🅰️" },
   { key: "appearances", label: "Appearances", emoji: "👕" },
   { key: "age", label: "Age", emoji: "🎂" },
+  { key: "points", label: "FPL points", emoji: "📈" },
 ] as const;
+
+/**
+ * Topics that are pickable but deliberately rare in a mixed round. FPL points
+ * is a fantasy-manager question, not a football-knowledge one: someone who
+ * doesn't play FPL can't reason about it, they can only guess. So it's there
+ * for anyone who wants it, and capped to MIXED_RARE_MAX when the round spans
+ * every topic (founder 2026-07-24: "don't push them all the time").
+ */
+const RARE_IN_MIXED: readonly string[] = ["points"];
+const MIXED_RARE_MAX = 1; // never more than one in a round
+const MIXED_RARE_CHANCE = 0.25; // and most rounds have none at all
 
 export type HlTopic = (typeof HL_TOPICS)[number]["key"];
 const HL_TOPIC_KEYS = HL_TOPICS.map((t) => t.key) as readonly string[];
@@ -84,7 +97,12 @@ const POSITION_LABEL: Record<string, string> = {
  *   Premier League career path).
  */
 const BELONGS: Record<GameType, (q: PoolQuestion) => boolean> = {
-  "higher-lower": (q) => q.format === "higher-lower" && typeof q.stat === "string" && isHlTopic(q.stat),
+  // FPL points questions carry their own legacy format ("this-season-form")
+  // rather than "higher-lower", so both are admitted — the stat is what decides
+  // whether a question is a Higher or Lower topic, not the format string.
+  "higher-lower": (q) =>
+    (q.format === "higher-lower" || q.format === "this-season-form") &&
+    typeof q.stat === "string" && isHlTopic(q.stat),
   "guess-the-player": (q) => q.format === "who-am-i" || q.format === "career-path",
 };
 
@@ -140,7 +158,25 @@ export function buildRound(type: GameType, seed: string, count = ROUND_SIZE): Po
     }
   }
   const rand = seededRng(`games:${type}:${seed}`);
-  const picked = shuffle(use, rand).slice(0, Math.min(count, use.length));
+  const shuffled = shuffle(use, rand);
+
+  // Mixed rounds hold the rare topics back (see RARE_IN_MIXED). Applied to the
+  // already-seeded shuffle so the round stays reproducible: grading rebuilds it
+  // from the same seed and must land on the identical questions.
+  const scopedToOneTopic = type === "higher-lower" && isHlTopic(topicFromSeed(seed));
+  // One draw per round, taken after the shuffle so the sequence is fixed by the
+  // seed: most mixed rounds allow no rare topic at all, the rest allow one.
+  const rareAllowed = rand() < MIXED_RARE_CHANCE ? MIXED_RARE_MAX : 0;
+  const picked: PoolQuestion[] = [];
+  let rareUsed = 0;
+  for (const q of shuffled) {
+    if (picked.length >= count) break;
+    const rare = !scopedToOneTopic && typeof q.stat === "string" && RARE_IN_MIXED.includes(q.stat);
+    if (rare && rareUsed >= rareAllowed) continue;
+    if (rare) rareUsed++;
+    picked.push(q);
+  }
+
   picked.sort((a, b) => a.difficulty - b.difficulty);
   return picked;
 }
@@ -182,6 +218,26 @@ function str(v: unknown): string | undefined {
   return typeof v === "string" && v.length > 0 ? v : undefined;
 }
 
+// Official Premier League headshots, resolved AND verified-loadable at build
+// time by scripts/games/build-player-photos.mjs, keyed by normalised option
+// label. The value is the full URL the builder confirmed returns a real image,
+// so a code whose headshot 403s (Boscagli, Van Dijk at 250x250) is simply
+// absent here — never a URL that renders as a broken image.
+// Safe to send pre-answer for Higher or Lower ONLY: there the two options are
+// just the two players and the question is which number is bigger, so a face
+// gives nothing away. Never attach these to who-am-i, where the photo IS the
+// answer.
+const PHOTO_URLS = (photoData as { photos: Record<string, string> }).photos ?? {};
+
+function photoKey(label: string): string {
+  return label.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z]/g, "");
+}
+
+/** A verified headshot URL for a Higher or Lower option label, or undefined. */
+export function photoForLabel(label: string): string | undefined {
+  return PHOTO_URLS[photoKey(label)] || undefined;
+}
+
 export function clientRound(round: readonly PoolQuestion[]): ServedQuestion[] {
   return round.map((q, idx) => {
     const base: ServedQuestion = {
@@ -197,7 +253,10 @@ export function clientRound(round: readonly PoolQuestion[]): ServedQuestion[] {
       base.clue = { nationality: str(q.meta.nationality), flagUrl: str(q.meta.flag), jersey };
     }
     // Higher-or-Lower carries its topic + the shared position (same-position pair).
-    if (q.format === "higher-lower") {
+    // Keyed off the stat, not the format: FPL points questions are a Higher or
+    // Lower topic but carry the legacy "this-season-form" format, and matching
+    // on format alone silently dropped their position chip.
+    if (typeof q.stat === "string" && isHlTopic(q.stat)) {
       base.topic = q.stat;
       base.position = POSITION_LABEL[q.positions[0]] ?? undefined;
     }
