@@ -21,12 +21,10 @@
  *  response always has a single frozen data cutoff.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { pointsPerAppearance, type ScoreRow } from "./ppg";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = SupabaseClient<any, "public", any>;
-
-/** Rows from fantasy_player_scores, narrowed to what the PPG signal needs. */
-type ScoreRow = { gw: number; player_id: number; points: number | null; minutes: number | null };
 
 /** Explicit model identities. The GW6 switch must be visible in every frozen
  *  recommendation, so the identity encodes WHICH model produced it — never a
@@ -247,18 +245,8 @@ export async function getCaptainAssist(
   const scoreRows = (scored ?? []) as ScoreRow[];
   const usePpg = new Set(scoreRows.map((s) => s.gw)).size >= MIN_GW_FOR_PPG;
 
-  const scoreById = new Map<number, number>();
-  if (usePpg) {
-    const agg = new Map<number, { pts: number; apps: number }>();
-    for (const s of scoreRows) {
-      const cur = agg.get(s.player_id) ?? { pts: 0, apps: 0 };
-      cur.pts += s.points ?? 0;
-      if ((s.minutes ?? 0) > 0) cur.apps += 1;
-      agg.set(s.player_id, cur);
-    }
-    // forEach rather than for..of: this tsconfig target cannot iterate a Map directly.
-    agg.forEach((a, id) => scoreById.set(id, a.apps ? a.pts / a.apps : 0));
-  } else {
+  const scoreById = usePpg ? pointsPerAppearance(scoreRows) : new Map<number, number>();
+  if (!usePpg) {
     for (const r of pool) scoreById.set(r.player_id, Number(r.ep_next ?? 0));
     warnings.push({
       kind: "early_season",
