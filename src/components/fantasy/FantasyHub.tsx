@@ -105,6 +105,7 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [needsAuth, setNeedsAuth] = useState(false);
+  const [noSquad, setNoSquad] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [hasLeagues, setHasLeagues] = useState(false);
   const [ctx, setCtx] = useState<FantasyContext>(EMPTY_CONTEXT);
@@ -116,7 +117,11 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
   const refresh = useCallback(async () => {
     try {
       const s = await api<FantasyState>("state");
-      if (!s.squad) { router.replace("/fantasy/build"); return; }
+      // No squad yet → the intro, not a silent jump into the builder. A first-time
+      // manager should read what the game IS and choose to start, not be dropped
+      // mid-flow into a 500-player list with no idea why (founder, 25 Jul).
+      if (!s.squad) { setNoSquad(true); return; }
+      setNoSquad(false);
       setState(s);
     } catch (e) {
       // Show an explicit sign-in prompt instead of a silent redirect — an
@@ -226,10 +231,12 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
   };
 
 
-  // A cold guest off an ad used to land on a bare "Sign in to play" card and
-  // learn nothing about the game before being asked for an account. Say what it
-  // is FIRST, then ask — and always leave a route back into the rest of YourScore.
-  if (needsAuth) return (
+  // The intro — shown to anyone who hasn't got a squad yet, signed in or not.
+  // Say what the game IS, then invite them to start. A cold guest off an ad used
+  // to land on a bare "Sign in" card; a signed-in newcomer used to be dropped
+  // straight into the builder with no explanation. Same screen for both now —
+  // only the button differs (sign in, versus start building).
+  const intro = (cta: { label: string; onClick: () => void; note: string }) => (
     <main style={embedded ? EMBEDDED_PAGE : page}>
       <div className="pointer-events-none fixed inset-0 bg-grid-pattern bg-grid" style={{ opacity: 0.5 }} />
       <div className="relative">
@@ -237,10 +244,7 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
 
         {/* The hero and the numbered beats are lifted from the live PL-tab
             holding screen, which the founder rated over anything written for
-            this page. Same headline, same 01-04 structure; only the CTA differs,
-            because the game now exists and the ask is "sign in" rather than
-            "join the waitlist". (That holding screen is deleted — this IS the
-            Fantasy section now.) */}
+            this page. Same headline, same 01-04 structure. */}
         <div className="rounded-2xl relative overflow-hidden px-5 pt-5 pb-5"
           style={{
             background: `linear-gradient(150deg, ${tint(TEAL, "1a")}, ${tint(TEAL, "05")})`,
@@ -287,15 +291,35 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
               </div>
             ))}
           </div>
+          {/* The four beats are the gist; the full scoring, chips and transfer
+              rules are one tap away for anyone who wants them before they start. */}
+          <button onClick={() => router.push("/fantasy/rules")} className="font-body"
+            style={{
+              marginTop: 16, background: "none", border: "none", padding: 0, cursor: "pointer",
+              color: TEAL, fontSize: 12.5, fontWeight: 600,
+            }}>
+            Read the full rules →
+          </button>
         </div>
 
-        <Btn gold glow onClick={() => router.push("/auth/sign-in?next=/fantasy")}>Build my squad</Btn>
+        <Btn gold glow onClick={cta.onClick}>{cta.label}</Btn>
         <p className="font-body" style={{ fontSize: 12, color: MUTED, marginTop: 10, textAlign: "center" }}>
-          Takes a minute. Your squad saves to your account, so it&apos;s there every week.
+          {cta.note}
         </p>
       </div>
     </main>
   );
+
+  if (needsAuth) return intro({
+    label: "Build my squad",
+    onClick: () => router.push("/auth/sign-in?next=/fantasy"),
+    note: "Takes a minute. Your squad saves to your account, so it's there every week.",
+  });
+  if (noSquad) return intro({
+    label: "Build your squad",
+    onClick: () => router.push("/fantasy/build"),
+    note: "Fifteen players, one budget. You can change it freely until the season starts.",
+  });
   if (err) return (
     <main style={embedded ? EMBEDDED_PAGE : page}>
       {!embedded && <Header />}
