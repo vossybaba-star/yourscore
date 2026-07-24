@@ -1686,6 +1686,48 @@ export type Database = {
         }
         Relationships: []
       }
+      game_scores: {
+        Row: {
+          id: string
+          user_id: string
+          game: string
+          topic: string
+          seed: string
+          score: number
+          max_score: number
+          correct_count: number
+          total_questions: number
+          fastest_ms: number | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          game: string
+          topic?: string
+          seed: string
+          score: number
+          max_score: number
+          correct_count: number
+          total_questions: number
+          fastest_ms?: number | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          game?: string
+          topic?: string
+          seed?: string
+          score?: number
+          max_score?: number
+          correct_count?: number
+          total_questions?: number
+          fastest_ms?: number | null
+          created_at?: string
+        }
+        Relationships: []
+      }
       p10_attempts: {
         Row: {
           id: string
@@ -2395,6 +2437,29 @@ export type Database = {
       apply_timeout_penalty: {
         Args: { p_penalty: number; p_room_id: string; p_user_ids: string[] }
         Returns: undefined
+      }
+      game_board: {
+        Args: { p_game: string; p_limit?: number }
+        Returns: {
+          user_id: string
+          username: string | null
+          avatar_url: string | null
+          best: number
+          plays: number
+          best_at: string
+        }[]
+      }
+      game_my_standing: {
+        Args: { p_game: string; p_user: string }
+        Returns: {
+          best: number | null
+          plays: number
+          rank: number | null
+        }[]
+      }
+      game_rank: {
+        Args: { p_game: string; p_score: number }
+        Returns: number
       }
       quiz_pair: {
         Args: { p_user: string }

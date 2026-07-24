@@ -10,6 +10,7 @@ import { BottomNav } from "@/components/ui/BottomNav";
 import { DownloadAppButton } from "@/components/app/DownloadAppButton";
 import { GAMES } from "@/components/ui/GameSwitcher";
 import { coverUrl } from "@/lib/img";
+import { TodaysQuestionPreview } from "@/components/home/TodaysQuestionPreview";
 import type { TodaysGame } from "@/lib/daily-game";
 
 export interface LiveMatch {
@@ -420,8 +421,9 @@ function TodaysGameCard({ game }: { game: TodaysGame }) {
     <section className="relative z-10 max-w-6xl mx-auto px-6 pb-10">
       <p className="font-body text-xs uppercase tracking-widest mb-3" style={{ color: accent }}>Today&apos;s game</p>
       <Link href={game.href}
-        className="relative flex items-center gap-4 rounded-2xl overflow-hidden transition-transform active:scale-[0.99] hover:opacity-95"
-        style={{ border: `1px solid ${accent}40`, minHeight: 110 }}>
+        className="relative block rounded-2xl overflow-hidden transition-transform active:scale-[0.99] hover:opacity-95"
+        style={{ border: `1px solid ${accent}40` }}>
+        <div className="relative flex items-center gap-4" style={{ minHeight: 110 }}>
         {game.coverImage ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={coverUrl(game.coverImage, 440) ?? game.coverImage} alt="" loading="eager" decoding="async"
@@ -441,6 +443,10 @@ function TodaysGameCard({ game }: { game: TodaysGame }) {
             </svg>
           </span>
         </div>
+        </div>
+        {game.firstQuestion && (
+          <TodaysQuestionPreview question={game.firstQuestion} accent={accent} />
+        )}
       </Link>
     </section>
   );

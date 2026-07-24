@@ -12,6 +12,7 @@
  */
 
 import { createServiceClient } from "@/lib/supabase/service";
+import { londonDateISO } from "./londonDate";
 import type { Json } from "@/types/database";
 
 // ── Types ────────────────────────────────────────────────────────────────
@@ -102,19 +103,11 @@ export function wordLens(display: string): number[] {
 }
 
 // ── Europe/London "today" ───────────────────────────────────────────────
-// Daily lists are assigned by the London calendar date, not UTC — compute via
-// Intl so a UTC-midnight rollover doesn't run a day early/late for UK players.
+// Lives in its own leaf module (londonDate.ts) so edge code can have the date
+// without this file's Supabase import. Re-exported here because every existing
+// caller reaches for it via perfect10.
 
-export function londonDateISO(d: Date = new Date()): string {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Europe/London",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(d);
-  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "";
-  return `${get("year")}-${get("month")}-${get("day")}`;
-}
+export { londonDateISO };
 
 // ── Loading ──────────────────────────────────────────────────────────────
 
