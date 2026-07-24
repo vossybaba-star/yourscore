@@ -394,7 +394,11 @@ function TodaysGamePlayable({ game }: { game: TodaysGame }) {
                 </span>
               )}
               <p className="font-display text-2xl text-white leading-tight" style={{ textShadow: "0 1px 12px rgba(0,0,0,0.6)" }}>{game.title}</p>
-              <p className="font-body text-xs mt-1" style={{ color: "#c4ccc6" }}>{game.sub}</p>
+              {/* The question card below is the explanation — drop the redundant
+                  "what it is" sub when it's shown (founder 2026-07-24). */}
+              {!game.firstQuestion && (
+                <p className="font-body text-xs mt-1" style={{ color: "#c4ccc6" }}>{game.sub}</p>
+              )}
             </div>
             <span className="flex items-center justify-center rounded-full flex-shrink-0" style={{ width: 36, height: 36, background: accent }}>
               <svg width="15" height="15" viewBox="0 0 18 18" fill="none" style={{ color: "#04231f" }}>

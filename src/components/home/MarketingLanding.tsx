@@ -446,7 +446,12 @@ function TodaysGameCard({ game }: { game: TodaysGame }) {
         <div className="relative flex items-center gap-4 px-6 py-5 w-full">
           <div className="flex-1 min-w-0">
             <p className="font-display text-2xl sm:text-3xl text-white leading-tight" style={{ textShadow: "0 1px 12px rgba(0,0,0,0.6)" }}>{game.title}</p>
-            <p className="font-body text-sm mt-1" style={{ color: "#c4ccc6" }}>{game.sub} · play free, no sign-in needed</p>
+            {/* When the question card is shown below, it explains the game far
+                better than a sentence can — so drop the "what it is" line and
+                keep only the access nudge (founder 2026-07-24). */}
+            <p className="font-body text-sm mt-1" style={{ color: "#c4ccc6" }}>
+              {game.firstQuestion ? "Play free, no sign-in needed" : `${game.sub} · play free, no sign-in needed`}
+            </p>
           </div>
           <span className="flex items-center justify-center rounded-full flex-shrink-0" style={{ width: 44, height: 44, background: accent }}>
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ color: "#04231f" }}>
