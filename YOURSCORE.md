@@ -6,7 +6,7 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-07-23 (**Signed-out home page rewritten around the rank, and a batch of
+> **Confirmed:** 2026-07-24 (**Signed-out home page rewritten around the rank, and a batch of
 > guest-flow fixes.** Shipped to prod as `b024193`.
 > **Positioning:** the landing page led with 38-0 and a World Cup that finished on 19 Jul. It now
 > leads with **YOUR FOOTBALL KNOWLEDGE. RANKED.** The rank is the product: quizzes, gameday,
@@ -528,6 +528,25 @@
 
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
+
+- **2026-07-24** — **App Store rating asks are counted, and paced by Games played** (migrations
+  104 + 105). We could not previously answer "how many review requests have we made?" for any
+  surface, ever: the post-game ask was gated by a localStorage stamp that left no server-side
+  trace and reset on reinstall, so 7 GB ratings had no denominator. `review_prompts` now logs
+  every ask shown, with surface, variant and outcome. Three behaviour changes with it. **The ask
+  no longer requires a win** — it needed a points increase measured against an on-device rank
+  snapshot, so it skipped anyone on a bad run and could never fire on a returning player's first
+  Game on a new phone. **Apple's native star popup is gone**: it converts better, but Apple never
+  reports who rated through it, so "once they rate we stop asking" could not be honoured there.
+  Every ask is now our own card, which is observable, and acting on it is terminal and lifetime.
+  **The schedule counts Games, not days** — asks land on Games 3, 6, 10, 15, then the gap widens
+  by one each time (21, 28, 36…). `profiles.games_played` was the obvious home for the count and
+  is dead (0 across all 10,001 rows, written by nothing); `player_game_counts` replaces it, seeded
+  from every real play record across all games and both sides of 38-0 (7,146 players, 70,104
+  Games) so veterans are not treated as new. Card copy rewritten to lead with the ask and give a
+  reason the player benefits. ⚠️ The copy names the Premier League and **needs swapping on
+  2026-08-21**. Related: the iOS app is delisted across all 27 EU storefronts (Ireland 404s),
+  which caps ratings far harder than prompt frequency does.
 
 - **2026-07-24** — **Club page: back button reachable, and back retraces your steps** (founder).
   `/club/[slug]` has no GamesNav above it, so the back pill sat at the very top of the viewport —
