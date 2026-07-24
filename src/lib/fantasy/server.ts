@@ -11,8 +11,9 @@ import poolJson from "@/data/gates/pool.json";
 import { buildRound, clientView, grade, type Round } from "@/lib/gates/serve";
 import type { GateQuestion } from "@/lib/gates/types";
 import {
-  applyTransfer, cashOverflow, CHIPS, creditsForRound, GAMEWEEKS_PER_CHIP, grantBaseline, halfOf,
-  perfectRoundReward, scoreEntry, smartDefaults, transferCost, validateSelection, validateSquad,
+  applyTransfer, BASELINE_CREDITS_PER_GW, cashOverflow, CHIPS, creditsForRound, GAMEWEEKS_PER_CHIP,
+  grantBaseline, halfOf, perfectRoundReward, scoreEntry, smartDefaults, transferCost,
+  validateSelection, validateSquad,
   RuleError, type Chip, type LockedSelection, type Squad, type SquadPick,
 } from "./engine";
 import { aggregateFixtures, fetchGwFixtures, toPlayerScores } from "./ingest";
@@ -129,10 +130,38 @@ async function ensureEntry(db: Db, userId: string, gw: number): Promise<EntryRow
 }
 
 // ── state (the one-call hub payload) ─────────────────────────────────────────
+/**
+ * Which of a manager's players the feed has actually reported on yet.
+ *
+ * A row in `fantasy_player_scores` exists only once the player's fixture has been
+ * ingested, so its presence is what separates the three live states the result
+ * card could not previously tell apart:
+ *
+ *   row + minutes > 0  → played (or playing)
+ *   row + minutes = 0  → in the squad, didn't get on
+ *   no row             → their match hasn't been ingested yet, still to come
+ *
+ * Without this the breakdown fills missing players in with ZERO_FACTS, so a
+ * Sunday-evening kickoff was indistinguishable from an unused substitute — both
+ * rendered "Didn't play" while the points were still to come.
+ */
+async function reportedPlayers(db: Db, gw: number, ids: number[]): Promise<number[]> {
+  if (!ids.length) return [];
+  const { data, error } = await db.from("fantasy_player_scores")
+    .select("player_id").eq("gw", gw).in("player_id", ids);
+  if (error) throw new HttpError(500, error.message);
+  return ((data ?? []) as { player_id: number }[]).map((r) => r.player_id);
+}
+
 export async function getState(db: Db, userId: string) {
   const gw = await currentGw(db, userId);
   const squad = await getSquad(db, userId);
   const entry = squad ? await getEntry(db, userId, gw.gw) : null;
+  // Only while a score exists — one extra read on the live/result screens, none
+  // on the open ones.
+  const reported = entry?.scored_at && squad
+    ? await reportedPlayers(db, gw.gw, squad.picks.map((p) => p.id))
+    : [];
   return {
     gw,
     season: await seasonProgress(db, userId, gw),
@@ -159,6 +188,15 @@ export async function getState(db: Db, userId: string) {
       result: entry.scored_at ? {
         points: entry.points, breakdown: entry.points_breakdown,
         autosubs: entry.autosubs, captainUsed: entry.captain_used,
+        /** PROVISIONAL while the entry is still `locked` — the tick re-scores every
+         *  10 minutes through the weekend and only promotes the status once the
+         *  matches are actually over. Without this flag the hub read `scored_at`
+         *  as "finished" and headlined a Saturday-lunchtime total as the final
+         *  result, three fixtures into a ten-fixture gameweek. */
+        provisional: entry.status === "locked",
+        scoredAt: entry.scored_at,
+        /** Players whose fixture the feed has reported. See reportedPlayers(). */
+        reported: reported,
       } : null,
     },
     canRebuild: squad ? await canRebuild(db, userId, gw) : true,
@@ -186,7 +224,14 @@ export async function createSquad(db: Db, userId: string, body: {
 
   const row = {
     user_id: userId, picks: squad.picks, bank_tenths: squad.bankTenths,
-    credits: 0, xi: sel.xi, bench: sel.bench, captain: sel.captain, vice: sel.vice,
+    // The baseline transfer for the gameweek you're joining. Everywhere else it
+    // is granted when the PREVIOUS gameweek finalises, which means the very first
+    // week of a season handed out nothing — a manager built a squad and had zero
+    // moves while the screen above it read "everyone gets a move each gameweek",
+    // and the only way to change anything was a −4 hit. A fixed value, not an
+    // increment, so a pre-season rebuild resets it rather than farming it.
+    credits: BASELINE_CREDITS_PER_GW,
+    xi: sel.xi, bench: sel.bench, captain: sel.captain, vice: sel.vice,
     created_gw: gw.gw, updated_at: new Date().toISOString(),
   };
   // Upsert so a rebuild replaces the row in place (credits reset — you're pre-season).

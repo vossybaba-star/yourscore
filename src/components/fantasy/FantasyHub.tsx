@@ -11,8 +11,9 @@
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import {
-  api, Btn, Card, Crest, extrasLine, fmtM, GOLD, Header, INK, LINE, MUTED, page, PANEL, PANEL_2, TEAL, tint,
-  type ChipName, type ClientPoolPlayer, type FantasyState, type Pos,
+  api, Btn, Card, Crest, Deadline, EMPTY_CONTEXT, extrasLine, fmtM, GOLD, Header, INK,
+  LINE, MUTED, page, PANEL, PANEL_2, Sheet, TEAL, tint,
+  type ChipName, type ClientPoolPlayer, type FantasyContext, type FantasyState, type Pos,
 } from "@/components/fantasy/shared";
 import { HALF_SEASON_GW } from "@/lib/fantasy/engine";
 import { KNOWLEDGE_NAME } from "@/lib/fantasy/brand";
@@ -59,11 +60,19 @@ function pitchName(full: string): string {
 // spend from the same held count; the wildcard runs on its own separate track.
 // Insight fires inside the round (a 50/50), Second Chance after it (retry one
 // the full chip set is legible, but never playable.
-const CHIP_META: { key: ChipName; label: string; blurb: string; comingSoon?: boolean }[] = [
-  { key: "wildcard", label: "Wildcard", blurb: "Unlimited free transfers this gameweek" },
-  { key: "triple_captain", label: "Triple Captain", blurb: "Your captain's points count ×3, not ×2" },
-  { key: "bench_boost", label: "Bench Boost", blurb: "All 15 players score, bench included" },
-  { key: "insight", label: "Insight", blurb: "50/50 on one question of the round" },
+/** `earn` is the half the card was missing. A manager who has never held a chip
+ *  saw four names, four effects and four "None held" labels, with no way to learn
+ *  how any of them arrives — so the whole mechanic read as something the game
+ *  might give you one day for reasons of its own. */
+const CHIP_META: { key: ChipName; label: string; blurb: string; earn: string; comingSoon?: boolean }[] = [
+  { key: "wildcard", label: "Wildcard", blurb: "Unlimited free transfers this gameweek",
+    earn: "One per half-season, plus one for a perfect round. Use it or lose it at the halfway deadline" },
+  { key: "triple_captain", label: "Triple Captain", blurb: "Your captain's points count ×3, not ×2",
+    earn: "Costs one chip token" },
+  { key: "bench_boost", label: "Bench Boost", blurb: "All 15 players score, bench included",
+    earn: "Costs one chip token" },
+  { key: "insight", label: "Insight", blurb: "50/50 on one question of the round",
+    earn: "Costs one chip token" },
 ];
 const CHIP_LABEL: Record<ChipName, string> = Object.fromEntries(CHIP_META.map((c) => [c.key, c.label])) as Record<ChipName, string>;
 
@@ -98,6 +107,7 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
   const [needsAuth, setNeedsAuth] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [hasLeagues, setHasLeagues] = useState(false);
+  const [ctx, setCtx] = useState<FantasyContext>(EMPTY_CONTEXT);
   const [confirmChip, setConfirmChip] = useState<ChipName | null>(null);
   /** The result table defaults to the players who contributed; the full eleven
    *  is opt-in. */
@@ -126,7 +136,23 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
       .then((r) => (r.ok ? r.json() : null))
       .then((j: { leagues?: unknown[] } | null) => { if (j?.leagues?.length) setHasLeagues(true); })
       .catch(() => {});
+    // Fixtures + doubts, for the pre-deadline checks below. Failure-soft.
+    fetch("/api/fantasy/context")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((c: FantasyContext | null) => { if (c) setCtx(c); })
+      .catch(() => {});
   }, [refresh]);
+
+  /** While the matches are on, the screen keeps itself current. The tick re-scores
+   *  every ten minutes, so a minute's polling is plenty and stops the "is this
+   *  number stale?" doubt that a manual refresh button leaves behind. Only while
+   *  a provisional score exists — the rest of the week this does nothing. */
+  const livePolling = !!state?.entry?.result?.provisional && state.gw.mode !== "replay";
+  useEffect(() => {
+    if (!livePolling) return;
+    const t = setInterval(() => { refresh(); }, 60_000);
+    return () => clearInterval(t);
+  }, [livePolling, refresh]);
 
   const squad = state?.squad;
   const nameOf = useCallback((id: number) => pool.get(id)?.name ?? `#${id}`, [pool]);
@@ -273,8 +299,15 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
   const result = entry?.result as Result | undefined | null;
   const locked = !state.openForEdits;
   const roundDone = !!entry?.round.done;
-  const phase: "open" | "locked" | "result" = result ? "result" : locked ? "locked" : "open";
   const isDemo = state.gw.mode === "replay";
+  /** A provisional score is NOT a result. The tick re-scores every ten minutes
+   *  from the deadline onwards, so `result` appears on Saturday lunchtime with
+   *  three fixtures played — and the hub used to read that as "gameweek done",
+   *  headline the running total in gold, and offer "Start Gameweek 2". Replay
+   *  scores in one shot, so it never has a live phase. */
+  const isLive = !isDemo && !!result?.provisional;
+  const phase: "open" | "locked" | "live" | "result" =
+    isLive ? "live" : result ? "result" : locked ? "locked" : "open";
 
   const demo = async (target: string) => {
     setBusy(true); setErr(null);
@@ -292,36 +325,57 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
     setBusy(false);
   };
   /** Mint the short link server-side (the score is never trusted from the
-   *  client), then hand it to the share sheet — clipboard as the fallback. */
-  const shareResult = async () => {
+   *  client), then hand it to the share sheet — clipboard as the fallback.
+   *
+   *  `kind: "squad"` forces the pre-season card even once results exist, because
+   *  "here's my team" and "here's what I scored" are different things to say. */
+  const share = async (kind?: "squad") => {
     if (busy) return;
     setBusy(true); setErr(null);
     try {
-      const r = await api<{ url: string }>("share");
+      const r = await api<{ url: string }>("share", kind ? { kind } : undefined);
       const url = `${window.location.origin}${r.url}`;
       if (navigator.share) await navigator.share({ url });
-      else { await navigator.clipboard.writeText(url); setNotice("Link copied. Paste it in the group chat"); }
+      else {
+        await navigator.clipboard.writeText(url);
+        setNotice("Link copied. Paste it in the group chat");
+      }
     } catch (e) {
       if ((e as Error).name !== "AbortError") setErr((e as Error).message);
     }
     setBusy(false);
   };
+  const shareResult = () => share();
 
   const gwN = state.gw.gw, total = state.season.total;
   const preseason = state.canRebuild && !roundDone && !locked; // never locked, week not started
   const seasonPos = `Week ${gwN} of ${total}`;
+  // Copy branches on MODE, not just phase. Every sub-line below used to describe
+  // the replay sandbox, where the user drove the clock: "lock it in", "move on to
+  // the next gameweek when you're ready", "the Saturday deadline". In a live
+  // season the season drives the clock, nothing is submitted, and gameweek 1's
+  // deadline is a Friday — so the live copy says what is actually true.
   const BANNER: Record<typeof phase, { tag: string; head: string; sub: string }> = {
     open: preseason
       ? { tag: `PRE-SEASON · ${seasonPos.toUpperCase()}`, head: gwN === 1 ? "The season kicks off here" : `Gameweek ${gwN} is open`,
-          sub: "Your squad isn't committed yet. Build and edit it freely, then lock it in for the gameweek. From next gameweek on, your knowledge round earns the transfers to improve it." }
+          sub: isDemo
+            ? "Your squad isn't committed yet. Build and edit it freely, then lock it in for the gameweek."
+            : "Your squad is already entered — there's nothing to submit. Change it as often as you like until the deadline, and play the round to earn extra transfers." }
       : { tag: `GAMEWEEK OPEN · ${seasonPos.toUpperCase()}`, head: `Gameweek ${gwN} is open`,
-          sub: "Play your round, make transfers, set your team, then lock it in. In the live game this closes at the Saturday deadline." },
+          sub: isDemo
+            ? "Play your round, make transfers, set your team, then lock it in."
+            : "Play your round, make your transfers and pick your captain. Whatever your team looks like at the deadline is what plays." },
     locked: { tag: `LOCKED · ${seasonPos.toUpperCase()}`, head: `Gameweek ${gwN} is locked`,
-      sub: "Your team is set and the matches are playing. Nothing changes now until the points land." },
+      sub: "Your team is set and the matches are about to start. The first points land as they're played." },
+    live: { tag: `LIVE · ${seasonPos.toUpperCase()}`, head: `Gameweek ${gwN} is live`,
+      sub: "Points are landing as the matches are played. Everything here is provisional until the gameweek finishes." },
     result: {
       tag: gwN < total ? `GAMEWEEK DONE · ${seasonPos.toUpperCase()}` : "SEASON COMPLETE",
       head: gwN < total ? `Gameweek ${gwN} result` : "That's the season",
-      sub: gwN < total ? "Scored. Move on to the next gameweek when you're ready; your squad and credits carry over."
+      sub: gwN < total
+        ? (isDemo
+          ? "Scored. Move on to the next gameweek when you're ready; your squad and credits carry over."
+          : "Scored. Your squad, credits and chips carry into the next gameweek on their own.")
         : "Your last gameweek of the season, scored. The tables are final.",
     },
   };
@@ -342,43 +396,194 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
     const best = [...result.breakdown].sort((a, b2) => b2.points - a.points)[0];
     const cap = result.breakdown.find((x) => x.captain);
     const bits: string[] = [];
-    if (best) bits.push(`${nameOf(best.id)} top scored with ${best.points}`);
-    if (cap && cap.id !== best?.id) bits.push(`your captain ${nameOf(cap.id)} got ${cap.points}`);
+    if (best) bits.push(`${nameOf(best.id)} ${isLive ? "leads with" : "top scored with"} ${best.points}`);
+    if (cap && cap.id !== best?.id) bits.push(`your captain ${nameOf(cap.id)} ${isLive ? "is on" : "got"} ${cap.points}`);
     if (entry && entry.hits > 0) bits.push(`includes −${entry.hits * 4} for extra transfers`);
     return bits.length ? `${bits.join(", ")}.` : "Your eleven starters, scored off the real matches.";
   })();
 
+  /** THE LIVE SPLIT — who has been reported on and who hasn't.
+   *
+   *  `reported` is the set of picks whose fixture the feed has ingested. A player
+   *  with no row yet has a Sunday kickoff still to come; a player with a row and
+   *  no minutes was in the squad and didn't get on. Those are completely different
+   *  facts and the old card rendered both as "Didn't play", which on a Saturday
+   *  afternoon is simply wrong. */
+  const live = (() => {
+    if (!result) return null;
+    const reported = new Set(result.reported ?? []);
+    const rows = result.breakdown;
+    const played = rows.filter((r) => reported.has(r.id) && (r.facts?.minutes ?? 0) > 0);
+    const benched = rows.filter((r) => reported.has(r.id) && (r.facts?.minutes ?? 0) === 0);
+    const toCome = rows.filter((r) => !reported.has(r.id));
+    return { played, benched, toCome, total: rows.length };
+  })();
+
   /** The one thing this screen wants you to do, hoisted above the fold. Mirrors
    *  the detailed control further down rather than replacing it. */
+  /** `preseason` means "has never locked a gameweek" — which in a LIVE season is
+   *  true for the whole of gameweek 1, because the first lock only happens at the
+   *  first deadline. Gating the round on it therefore hid the round for all of
+   *  gameweek 1, so a new manager could never earn a transfer credit or make any
+   *  chip progress in their opening week. Replay is genuinely self-paced and keeps
+   *  the old behaviour; live opens the round with the gameweek. */
+  const roundOpen = !isDemo || !preseason;
+
+  /** THE PRE-DEADLINE CHECK.
+   *
+   *  Everything the game knew about your team going wrong, it kept to itself: a
+   *  captain with no fixture, a starter flagged as a doubt, an unplayed round
+   *  worth up to four transfers. All of it was discoverable only by going and
+   *  looking. These are the things worth interrupting someone for, and nothing
+   *  else — a warnings list that cries wolf gets scrolled past.
+   *
+   *  Silent once the gameweek locks: there is nothing left to act on. */
+  const warnings = (() => {
+    if (locked || !squad) return [] as { tone: "warn" | "info"; text: string; action?: { label: string; onClick: () => void } }[];
+    const out: { tone: "warn" | "info"; text: string; action?: { label: string; onClick: () => void } }[] = [];
+    const hasFixtures = Object.keys(ctx.fixtures).length > 0;
+    const thisGw = ctx.gw;
+
+    const fixtureFor = (id: number) => {
+      const clubId = pool.get(id)?.clubId;
+      if (clubId === undefined) return undefined;
+      return ctx.fixtures[clubId]?.find((c) => c.gw === thisGw);
+    };
+
+    // The captain is the single biggest points decision of the week.
+    const capName = nameOf(squad.captain);
+    if (ctx.doubts[squad.captain]) {
+      out.push({
+        tone: "warn",
+        text: `${capName} is your captain and is a doubt for this gameweek.`,
+        action: { label: "Change captain", onClick: () => setMenuFor(squad.captain) },
+      });
+    } else if (hasFixtures && thisGw > 0 && !fixtureFor(squad.captain)) {
+      out.push({
+        tone: "warn",
+        text: `${capName} is your captain and has no fixture this gameweek. If he doesn't play, the armband passes to your vice.`,
+        action: { label: "Change captain", onClick: () => setMenuFor(squad.captain) },
+      });
+    }
+
+    // Starters who might not start. Named, not counted — "3 doubts" makes you
+    // go looking; the names let you decide from here.
+    const doubtful = squad.xi.filter((id) => id !== squad.captain && ctx.doubts[id]).map(nameOf);
+    if (doubtful.length) {
+      out.push({
+        tone: "warn",
+        text: doubtful.length === 1
+          ? `${doubtful[0]} is in your starting eleven and is a doubt.`
+          : `${doubtful.length} of your starters are doubts: ${doubtful.join(", ")}.`,
+        action: { label: "Transfers", onClick: () => router.push("/fantasy/transfers") },
+      });
+    }
+
+    // Blank gameweek for a starter — free points left on the bench.
+    if (hasFixtures && thisGw > 0) {
+      const blanks = squad.xi.filter((id) => id !== squad.captain && !fixtureFor(id)).map(nameOf);
+      if (blanks.length) {
+        out.push({
+          tone: "warn",
+          text: blanks.length === 1
+            ? `${blanks[0]} has no fixture this gameweek and will score nothing.`
+            : `${blanks.length} of your starters have no fixture this gameweek: ${blanks.join(", ")}.`,
+        });
+      }
+    }
+
+    // The round is the game's own differentiator, and it expires with the deadline.
+    if (!roundDone && roundOpen) {
+      out.push({
+        tone: "info",
+        text: entry && entry.round.answered > 0
+          ? `Your round is unfinished at ${entry.round.answered} of 11. Right answers earn transfers.`
+          : "You haven't played this week's round. Right answers earn transfers.",
+        action: { label: "Play the round", onClick: () => router.push("/fantasy/round") },
+      });
+    }
+    return out;
+  })();
+
+  const playRound = {
+    label: entry && entry.round.answered > 0 ? `Continue round (${entry.round.answered}/11)` : "Play this week's round",
+    note: "Eleven questions. Right answers earn transfers.",
+    onClick: () => router.push("/fantasy/round"),
+  };
+
+  /** The one thing this screen wants you to do.
+   *
+   *  In a LIVE season it must never be `lock` or `advance`. Both of those are the
+   *  season's job now — `/api/fantasy/lock` answers 403 "live gameweeks lock at
+   *  the deadline" and `/api/fantasy/advance` answers 403 "the season advances at
+   *  the deadline" — so the hub was leading with a button that could not succeed
+   *  in any live gameweek, and offering a second one the moment a score landed.
+   *  Worse than the error: it taught managers they had to submit or their team
+   *  wouldn't count, which is the exact opposite of the roll-over rule.
+   *
+   *  Replay keeps the old ladder — in the sandbox the user really does drive the
+   *  clock, and the demo stepper depends on it. */
   const primary: { label: string; note?: string; onClick: () => void } | null =
     seasonOver ? { label: "See where you finished", note: "Your league tables and Top Marks are final.", onClick: () => router.push("/fantasy/leagues") }
-    : phase === "result" ? { label: `Start Gameweek ${gwN + 1} →`, note: "Your squad, credits and chips carry over.", onClick: advance }
-    : phase === "locked" ? null
-    : preseason ? { label: "Lock in my squad", note: "You can still change it until you lock.", onClick: lock }
-    : !roundDone ? {
-        label: entry && entry.round.answered > 0 ? `Continue round (${entry.round.answered}/11)` : "Play this week's round",
-        note: "Eleven questions. Right answers earn transfers.",
-        onClick: () => router.push("/fantasy/round"),
-      }
-    : { label: `Lock team & play gameweek ${gwN}`, note: `${squad.credits} transfer${squad.credits === 1 ? "" : "s"} in hand.`, onClick: lock };
+    : phase === "result" ? (isDemo
+        ? { label: `Start Gameweek ${gwN + 1} →`, note: "Your squad, credits and chips carry over.", onClick: advance }
+        : { label: "See your league tables", note: `Gameweek ${gwN + 1} opens on its own. Nothing to do here.`, onClick: () => router.push("/fantasy/leagues") })
+    // Live and locked both have exactly one honest answer: nothing. There is no
+    // action left this week, so offering one would be an invitation to break
+    // something. The live panel below carries the interest instead.
+    : phase === "live" || phase === "locked" ? null
+    : !roundDone && roundOpen ? playRound
+    : isDemo
+      ? (preseason
+        ? { label: "Lock in my squad", note: "You can still change it until you lock.", onClick: lock }
+        : { label: `Lock team & play gameweek ${gwN}`, note: `${squad.credits} transfer${squad.credits === 1 ? "" : "s"} in hand.`, onClick: lock })
+    : state.canRebuild
+      ? { label: "Edit my squad", note: "Free to change any player until the season starts.", onClick: () => router.push("/fantasy/build") }
+      : { label: "Make a transfer", note: `${squad.credits} free move${squad.credits === 1 ? "" : "s"} in hand. Extras cost 4 points.`, onClick: () => router.push("/fantasy/transfers") };
 
-  const PlayerTile = ({ id, benchIdx }: { id: number; benchIdx?: number }) => {
+  /** `crowd` = how many players share this row. A five-across row gets a smaller
+   *  tile than a two-across one, the same adaptive trick the dugout already uses,
+   *  so a busy midfield stays readable instead of just narrower. */
+  const PlayerTile = ({ id, benchIdx, crowd = 1 }: { id: number; benchIdx?: number; crowd?: number }) => {
     const p = pool.get(id);
     const isCap = squad.captain === id, isVice = squad.vice === id;
     const onBench = benchIdx !== undefined;
     const label = p ? pitchName(p.name) : `#${id}`;
     return (
       <div style={{ position: "relative" }}>
-        <button onClick={() => !locked && setMenuFor(menuFor === id ? null : id)} style={{
+        <button
+          onClick={() => !locked && setMenuFor(menuFor === id ? null : id)}
+          aria-expanded={menuFor === id}
+          aria-label={p
+            ? [
+                p.name,
+                onBench ? `bench ${benchIdx! + 1}` : p.pos,
+                p.club,
+                `£${p.price.toFixed(1)} million`,
+                isCap ? "captain" : isVice ? "vice captain" : null,
+                ctx.doubts[id] ? "a doubt to play" : null,
+                locked ? null : "tap to change",
+              ].filter(Boolean).join(", ")
+            : undefined}
+          style={{
           background: onBench ? "rgba(255,255,255,0.03)" : "rgba(9,21,16,0.72)",
           border: `1px solid ${isCap || isVice ? GOLD : onBench ? "transparent" : LINE}`,
           color: onBench ? MUTED : INK,
           borderRadius: 8, padding: onBench ? "5px 2px" : "5px 4px",
-          fontSize: onBench ? benchFontSize(label) : 10.5, fontWeight: 600, cursor: "pointer",
+          fontSize: onBench ? benchFontSize(label) : crowd >= 5 ? 9 : crowd === 4 ? 9.8 : 10.5,
+          fontWeight: 600, cursor: "pointer",
           display: "flex", flexDirection: "column", alignItems: "center", gap: 1,
-          width: onBench ? "100%" : 62, minWidth: 0, lineHeight: 1.15,
+          // FLUID, not fixed. At 62px a five-across row needs 326px of pitch and
+          // has about 253px on a 375px phone — inside overflow:hidden, so the
+          // fifth player was simply cut off the screen. Five defenders or five
+          // midfielders is an ordinary shape, and smartDefaults produces rows of
+          // five unprompted. Flexing means a busy row compresses instead.
+          width: onBench ? "100%" : undefined,
+          flex: onBench ? undefined : "1 1 0",
+          maxWidth: onBench ? undefined : 62,
+          minWidth: 0, lineHeight: 1.15,
         }}>
-          {p && <Crest club={p.club} size={onBench ? 15 : 17} />}
+          {p && <Crest club={p.club} size={onBench ? 15 : crowd >= 5 ? 14 : 17} />}
           <span style={onBench ? {
             // Wrap rather than truncate: a name you can't read is worse than a
             // two-line tile, and hyphenated names break at the hyphen anyway.
@@ -387,6 +592,9 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
             maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
           }}>
             {label}{isCap ? " ©" : isVice ? " ⓥ" : ""}
+            {/* A doubt, at tile scale. The full DOUBT pill from the transfer
+                screen would be wider than the tile it sits in. */}
+            {ctx.doubts[id] && <span title={ctx.doubts[id]} style={{ color: "#E08A6B" }}> !</span>}
           </span>
           <span style={{ color: onBench ? "#5b645e" : MUTED, fontSize: 9 }}>
             {onBench ? `${benchIdx! + 1}` : `£${p?.price.toFixed(1)}`}
@@ -422,7 +630,7 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
   };
 
   return (
-    <main style={embedded ? EMBEDDED_PAGE : page} onClick={() => menuFor !== null && setMenuFor(null)}>
+    <main data-fantasy style={embedded ? EMBEDDED_PAGE : page} onClick={() => menuFor !== null && setMenuFor(null)}>
       {/* Squared backdrop — the same fixed grid the 38-0 screens use. */}
       <div className="pointer-events-none fixed inset-0 bg-grid-pattern bg-grid" style={{ opacity: 0.5 }} />
       <div className="relative">
@@ -447,11 +655,25 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
               the week unsure anything had happened. */}
           {result ? (
             <>
+              {/* GOLD IS FOR WHAT YOU'VE WON (house rule), and a running total
+                  hasn't been won yet — it can still go down on a stat
+                  correction. Live totals are teal and labelled; only a settled
+                  gameweek gets the gold. */}
               <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                <span className="font-display" style={{ fontSize: 64, lineHeight: 0.86, color: GOLD, letterSpacing: "-0.02em" }}>
+                <span className="font-display" style={{
+                  fontSize: 64, lineHeight: 0.86, letterSpacing: "-0.02em",
+                  color: isLive ? TEAL : GOLD,
+                }}>
                   {result.points}
                 </span>
-                <span className="font-display" style={{ fontSize: 22, color: GOLD, opacity: 0.85 }}>pts</span>
+                <span className="font-display" style={{ fontSize: 22, color: isLive ? TEAL : GOLD, opacity: 0.85 }}>pts</span>
+                {isLive && (
+                  <span className="font-body" style={{
+                    fontSize: 10.5, letterSpacing: "0.08em", color: TEAL, fontWeight: 700,
+                    border: `1px solid ${tint(TEAL, "55")}`, borderRadius: 999, padding: "3px 9px",
+                    marginLeft: 2, whiteSpace: "nowrap",
+                  }}>SO FAR</span>
+                )}
               </div>
               <p className="font-body" style={{ fontSize: 13, color: MUTED, marginTop: 8, lineHeight: 1.5, maxWidth: "92%" }}>
                 {topLine}
@@ -469,6 +691,95 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
           )}
         </div>
       </div>
+
+      {/* When it closes. Directly under the hero, above the week's action, so the
+          answer to "how long have I got?" is never more than a glance away.
+          Replay is self-paced and has no deadline to show, and once points exist
+          the deadline is history — the live panel takes over. */}
+      {!isDemo && !result && <Deadline iso={state.gw.deadline} />}
+
+      {/* WHAT NEEDS ATTENTION, before it's too late to act on it. Sits between
+          the deadline and the week's action because that's the order the
+          questions arrive in: how long have I got, what's wrong, what do I do. */}
+      {warnings.length > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 12 }}>
+          {warnings.map((w, i) => (
+            <div key={i} className="rounded-xl" style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10,
+              padding: "10px 13px",
+              background: w.tone === "warn" ? "rgba(184,92,56,0.10)" : PANEL,
+              border: `1px solid ${w.tone === "warn" ? "#B85C38" : LINE}`,
+            }}>
+              <span className="font-body" style={{
+                fontSize: 12.5, lineHeight: 1.45, color: w.tone === "warn" ? "#E08A6B" : MUTED, minWidth: 0,
+              }}>{w.text}</span>
+              {w.action && (
+                <button onClick={w.action.onClick} className="font-body"
+                  style={{
+                    flexShrink: 0, background: "none", border: "none", padding: 0, cursor: "pointer",
+                    color: w.tone === "warn" ? "#E08A6B" : TEAL, fontSize: 12, fontWeight: 700,
+                    textDecoration: "underline",
+                  }}>{w.action.label}</button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* THE LIVE PANEL — the weekend hook. What's counted, what's still to come,
+          and an honest label on a number that can still move. */}
+      {live && result && (
+        <div className="rounded-2xl" style={{
+          background: `linear-gradient(150deg, ${tint(TEAL, "12")}, ${PANEL})`,
+          border: `1px solid ${tint(TEAL, isLive ? "44" : "22")}`,
+          padding: "14px 16px", marginBottom: 12,
+        }}>
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, marginBottom: 10 }}>
+            <span className="font-display tracking-widest" style={{ fontSize: 10.5, color: isLive ? TEAL : MUTED }}>
+              {isLive ? "LIVE THIS GAMEWEEK" : "FINAL THIS GAMEWEEK"}
+            </span>
+            {isLive && (
+              <button onClick={() => refresh()} disabled={busy}
+                className="font-body"
+                style={{
+                  background: "none", border: "none", color: TEAL, fontSize: 11.5,
+                  fontWeight: 600, cursor: "pointer", padding: 0,
+                }}>Refresh</button>
+            )}
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+            {([
+              { label: "Counted", value: live.played.length, accent: true },
+              { label: isLive ? "Still to play" : "Didn't feature", value: isLive ? live.toCome.length : live.benched.length, accent: false },
+              { label: "Your captain", value: result.breakdown.find((r) => r.captain)?.points ?? 0, accent: true },
+            ] as const).map((t) => (
+              <div key={t.label}>
+                <div className="font-display" style={{ fontSize: 24, lineHeight: 1, color: t.accent ? INK : MUTED }}>
+                  {t.value}
+                </div>
+                <div className="font-body" style={{ fontSize: 10.5, color: MUTED, marginTop: 4 }}>{t.label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Auto-subs, named. They are the one thing that changes your team
+              without you touching it, so they cannot be silent. */}
+          {result.autosubs?.length > 0 && (
+            <p className="font-body" style={{ fontSize: 12, color: MUTED, margin: "12px 0 0", lineHeight: 1.5 }}>
+              {result.autosubs.map((s) => `${nameOf(s.in)} came on for ${nameOf(s.out)}`).join(". ")}.
+            </p>
+          )}
+
+          {isLive && (
+            <p className="font-body" style={{ fontSize: 11.5, color: MUTED, margin: "10px 0 0", lineHeight: 1.45 }}>
+              Provisional. Bonus and stat corrections can still move this, and your bench only
+              counts if a starter doesn&apos;t play. Last updated{" "}
+              {new Date(result.scoredAt).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}.
+            </p>
+          )}
+        </div>
+      )}
 
       {/* THE WEEK'S ACTION, above the fold. The pitch sits high by design, which
           pushed every actual verb (play the round, transfers, lock) 1.6 to 2.5
@@ -550,7 +861,7 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
             }}>
               {rows.map((row) => (
                 <div key={row.pos} style={{ display: "flex", justifyContent: "center", gap: 4, flexWrap: "nowrap" }}>
-                  {row.ids.map((id) => <PlayerTile key={id} id={id} />)}
+                  {row.ids.map((id) => <PlayerTile key={id} id={id} crowd={row.ids.length} />)}
                 </div>
               ))}
             </div>
@@ -571,6 +882,24 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
           </div>
         </div>
       </div>
+
+      {/* SHARE THE SQUAD. Before a gameweek has scored there is nothing else to
+          send anyone, and between signing up and the first deadline that is the
+          only loop the product has. Sits directly under the pitch, because the
+          pitch is the thing being shared. Hidden once a result exists — the
+          result card carries its own, better share. */}
+      {!result && (
+        <div style={{ marginBottom: 12 }}>
+          <Btn disabled={busy} onClick={() => share("squad")}>
+            {busy ? "…" : "Share my squad"}
+          </Btn>
+          {notice && (
+            <p className="font-body" style={{ fontSize: 12, color: GOLD, margin: "7px 0 0", textAlign: "center" }}>
+              {notice}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Secondary destinations — quiet, one line each. */}
       <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
@@ -594,7 +923,7 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
         ))}
       </div>
 
-      {phase === "open" && !roundDone && !preseason && (
+      {phase === "open" && !roundDone && roundOpen && (
         <Card style={{ marginBottom: 12, border: `1px solid ${tint(TEAL, "44")}`, background: `linear-gradient(150deg, ${tint(TEAL, "0e")}, ${PANEL})` }}>
           <div className="font-display" style={{ fontSize: 22, lineHeight: 1.05, marginBottom: 6 }}>
             THIS WEEK&apos;S ROUND IS OPEN
@@ -616,15 +945,36 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
         </Card>
       )}
 
-      {/* Chips — only once the gameweek is live and your squad is committed;
-          pre-season there's nothing yet to spend a chip protecting. */}
-      {phase === "open" && !preseason && chips && (
+      {/* Chips — shown from the first visit in a live season, even at zero held.
+          Hiding the card until a manager had committed a squad meant the whole
+          mechanic (and the wildcard, and its half-season expiry) was invisible
+          through onboarding and all of gameweek 1. A locked card that names the
+          chips and shows progress teaches the game; an absent one doesn't. */}
+      {phase === "open" && roundOpen && chips && (
         <Card style={{ marginBottom: 12 }}>
           <div style={{ fontSize: 14.5, fontWeight: 700, marginBottom: 4 }}>Chips</div>
-          <p style={{ fontSize: 12.5, color: MUTED, margin: "0 0 4px", lineHeight: 1.45 }}>
+          <p style={{ fontSize: 12.5, color: MUTED, margin: "0 0 6px", lineHeight: 1.45 }}>
             {chips.held} chip{chips.held === 1 ? "" : "s"} held · {chips.progress} of {chips.gameweeksPerChip} gameweeks
             played toward the next one
           </p>
+          {/* Progress made visible. "0 of 4 gameweeks played" is a fact; a bar is
+              a reason to come back next week. */}
+          <div aria-hidden style={{
+            height: 4, borderRadius: 999, background: PANEL_2, overflow: "hidden", marginBottom: 8,
+          }}>
+            <div style={{
+              width: `${Math.round((chips.progress / chips.gameweeksPerChip) * 100)}%`,
+              height: "100%", background: TEAL, borderRadius: 999,
+            }} />
+          </div>
+          {/* The earning rule, stated once, for the manager who holds nothing yet
+              and has no other way to find out. */}
+          {chips.held === 0 && chips.wildcards === 0 && (
+            <p style={{ fontSize: 12, color: MUTED, margin: "0 0 8px", lineHeight: 1.45 }}>
+              You earn a chip token for every {chips.gameweeksPerChip} gameweeks you actually play, and
+              spend it on any one of these. A wildcard arrives separately, once per half-season.
+            </p>
+          )}
           {chips.wildcards > 0 && (
             <p style={{ fontSize: 12.5, color: GOLD, margin: "0 0 8px" }}>
               1 wildcard held. Expires at the GW{chips.wildcardHalf === 1 ? HALF_SEASON_GW : state.season.total} deadline
@@ -654,7 +1004,14 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
                   }}>
                     <span>
                       <span style={{ fontSize: 13.5, fontWeight: 700, display: "block" }}>{c.label}</span>
-                      <span style={{ fontSize: 11.5 }}>{c.comingSoon ? "Coming soon" : c.blurb}</span>
+                      <span style={{ fontSize: 11.5, display: "block" }}>{c.comingSoon ? "Coming soon" : c.blurb}</span>
+                      {/* How it's earned, shown only while you don't hold it —
+                          once you do, the effect is the only thing that matters. */}
+                      {!held && !c.comingSoon && (
+                        <span style={{ fontSize: 11, color: "#5b645e", display: "block", marginTop: 2, lineHeight: 1.4 }}>
+                          {c.earn}
+                        </span>
+                      )}
                     </span>
                     {!c.comingSoon && (
                       <span style={{ fontSize: 11, color: MUTED, flexShrink: 0 }}>{held ? "Play" : "None held"}</span>
@@ -670,39 +1027,32 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
       {/* Chip confirm, in the app's own voice. Anchored bottom on a phone so the
           answer is under your thumb, not in the middle of the screen. */}
       {confirmChip && chips && (
-        <div onClick={() => setConfirmChip(null)}
-          style={{
-            position: "fixed", inset: 0, zIndex: 40, background: "rgba(4,8,6,0.72)",
-            display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 14,
-          }}>
-          <div onClick={(e) => e.stopPropagation()} className="rounded-2xl"
-            style={{ background: PANEL, border: `1px solid ${tint(TEAL, "44")}`, padding: 18, width: "100%", maxWidth: 480 }}>
-            <div className="font-display" style={{ fontSize: 22, lineHeight: 1.05, marginBottom: 6 }}>
-              Play {CHIP_LABEL[confirmChip]}?
-            </div>
-            <p className="font-body" style={{ fontSize: 13, color: MUTED, margin: "0 0 6px", lineHeight: 1.45 }}>
-              {CHIP_META.find((c) => c.key === confirmChip)?.blurb}. It applies to gameweek {gwN} and
-              can be taken back until the matches start.
-            </p>
-            <p className="font-body" style={{ fontSize: 12.5, color: GOLD, margin: "0 0 14px" }}>
-              You hold {confirmChip === "wildcard" ? chips.wildcards : chips.held}{" "}
-              {confirmChip === "wildcard"
-                ? `wildcard${chips.wildcards === 1 ? "" : "s"}`
-                : `chip${chips.held === 1 ? "" : "s"}`}.
-            </p>
-            <div style={{ display: "flex", gap: 8 }}>
-              <div style={{ flex: 1 }}><Btn onClick={() => setConfirmChip(null)}>Not yet</Btn></div>
-              <div style={{ flex: 1 }}><Btn gold disabled={busy} onClick={() => commitChip(confirmChip)}>Play it</Btn></div>
-            </div>
+        <Sheet onClose={() => setConfirmChip(null)} labelledBy="chip-confirm-title">
+          <div id="chip-confirm-title" className="font-display" style={{ fontSize: 22, lineHeight: 1.05, marginBottom: 6 }}>
+            Play {CHIP_LABEL[confirmChip]}?
           </div>
-        </div>
+          <p className="font-body" style={{ fontSize: 13, color: MUTED, margin: "0 0 6px", lineHeight: 1.45 }}>
+            {CHIP_META.find((c) => c.key === confirmChip)?.blurb}. It applies to gameweek {gwN} and
+            can be taken back until the matches start.
+          </p>
+          <p className="font-body" style={{ fontSize: 12.5, color: GOLD, margin: "0 0 14px" }}>
+            You hold {confirmChip === "wildcard" ? chips.wildcards : chips.held}{" "}
+            {confirmChip === "wildcard"
+              ? `wildcard${chips.wildcards === 1 ? "" : "s"}`
+              : `chip${chips.held === 1 ? "" : "s"}`}.
+          </p>
+          <div style={{ display: "flex", gap: 8 }}>
+            <div style={{ flex: 1 }}><Btn onClick={() => setConfirmChip(null)}>Not yet</Btn></div>
+            <div style={{ flex: 1 }}><Btn gold disabled={busy} onClick={() => commitChip(confirmChip)}>Play it</Btn></div>
+          </div>
+        </Sheet>
       )}
 
       {result && (
-        <Card style={{ marginBottom: 12, border: `1px solid ${GOLD}` }}>
+        <Card style={{ marginBottom: 12, border: `1px solid ${isLive ? tint(TEAL, "44") : GOLD}` }}>
           <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
-            <div style={{ fontSize: 12, letterSpacing: "0.1em", color: GOLD, fontWeight: 700 }}>
-              WHERE THE POINTS CAME FROM
+            <div style={{ fontSize: 12, letterSpacing: "0.1em", color: isLive ? TEAL : GOLD, fontWeight: 700 }}>
+              {isLive ? "WHERE THE POINTS ARE COMING FROM" : "WHERE THE POINTS CAME FROM"}
             </div>
             <button onClick={() => setFullSheet((v) => !v)}
               className="font-body"
@@ -712,8 +1062,10 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
           </div>
           <p style={{ fontSize: 12, color: MUTED, margin: "4px 0 10px" }}>
             {fullSheet
-              ? "Every starter, including the ones who didn't play."
-              : `${scorers.length} of your 11 scored.`}{entry!.hits > 0
+              ? isLive ? "Every starter, including the ones still to play." : "Every starter, including the ones who didn't play."
+              : isLive
+                ? `${scorers.length} of your 11 on the board${live && live.toCome.length ? `, ${live.toCome.length} still to play` : ""}.`
+                : `${scorers.length} of your 11 scored.`}{entry!.hits > 0
               ? ` Includes −${entry!.hits * 4} for ${entry!.hits} extra transfer${entry!.hits === 1 ? "" : "s"}.`
               : ""}
           </p>
@@ -754,9 +1106,19 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
                             {b.subbedIn && <span style={{ color: GOLD }} title="Auto-subbed on"> ↑</span>}
                           </span>
                         </span>
+                        {/* "Didn't play" and "hasn't kicked off yet" are different
+                            facts. A player with no score row has a fixture still
+                            to come; one with a row and no minutes was in the
+                            squad and stayed on the bench. Calling the first one
+                            "Didn't play" on a Saturday afternoon is just wrong. */}
                         {(extras || !played) && (
-                          <span style={{ display: "block", fontSize: 11, color: MUTED, marginTop: 2, paddingLeft: 22 }}>
-                            {played ? extras : "Didn't play"}
+                          <span style={{
+                            display: "block", fontSize: 11, marginTop: 2, paddingLeft: 22,
+                            color: !played && !(result.reported ?? []).includes(b.id) ? TEAL : MUTED,
+                          }}>
+                            {played
+                              ? extras
+                              : (result.reported ?? []).includes(b.id) ? "Didn't play" : "Still to play"}
                           </span>
                         )}
                       </td>
@@ -787,8 +1149,13 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
                   </tr>
                 )}
                 <tr>
-                  <td colSpan={5} style={{ padding: "9px 4px", borderTop: `1.5px solid ${GOLD}`, fontWeight: 700 }}>Total</td>
-                  <td style={{ textAlign: "right", padding: "9px 4px", borderTop: `1.5px solid ${GOLD}`, fontWeight: 700, color: GOLD }}>
+                  <td colSpan={5} style={{ padding: "9px 4px", borderTop: `1.5px solid ${isLive ? TEAL : GOLD}`, fontWeight: 700 }}>
+                    {isLive ? "So far" : "Total"}
+                  </td>
+                  <td style={{
+                    textAlign: "right", padding: "9px 4px", fontWeight: 700,
+                    borderTop: `1.5px solid ${isLive ? TEAL : GOLD}`, color: isLive ? TEAL : GOLD,
+                  }}>
                     {result.points}
                   </td>
                 </tr>
@@ -796,14 +1163,19 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
             </table>
           </div>
           {notice && <p style={{ fontSize: 12.5, color: GOLD, margin: "10px 0 0" }}>{notice}</p>}
-          <div style={{ marginTop: 14, display: "flex", gap: 8 }}>
-            <Btn disabled={busy} onClick={shareResult}>Share this gameweek</Btn>
-            {gwN < total && (
-              <Btn gold disabled={busy} onClick={advance}>
-                {busy ? "…" : `Start Gameweek ${gwN + 1} →`}
-              </Btn>
-            )}
-          </div>
+          {/* Nothing to share and nowhere to advance while the football is still
+              on — a shared "I got 34" that becomes 41 an hour later is worse than
+              no share at all, and advance answers 403 in a live season anyway. */}
+          {!isLive && (
+            <div style={{ marginTop: 14, display: "flex", gap: 8 }}>
+              <Btn disabled={busy} onClick={shareResult}>Share this gameweek</Btn>
+              {isDemo && gwN < total && (
+                <Btn gold disabled={busy} onClick={advance}>
+                  {busy ? "…" : `Start Gameweek ${gwN + 1} →`}
+                </Btn>
+              )}
+            </div>
+          )}
         </Card>
       )}
 
@@ -837,20 +1209,35 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
       {err && <p style={{ color: "#E08A6B", fontSize: 13, margin: "0 0 10px" }}>{err}</p>}
 
       {!locked && <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {!preseason && (
+        {/* Free rebuild sits ABOVE transfers while it's still available. It used
+            to be a small underlined link at the very bottom of the page, under a
+            prominent "Transfers (0 free · extras −4 pts)" button — so the paid
+            route was the obvious one and the free route was the hidden one. */}
+        {state.canRebuild && !isDemo && (
+          <Btn onClick={() => router.push("/fantasy/build")}>
+            Edit my squad (free until the season starts)
+          </Btn>
+        )}
+        {(!preseason || !isDemo) && (
           <Btn onClick={() => router.push("/fantasy/transfers")}>
             {chips?.playedThisGw === "wildcard"
               ? "Transfers (wildcard active, all free)"
               : `Transfers (${squad.credits} free · extras −4 pts)`}
           </Btn>
         )}
-        <Btn gold disabled={busy} onClick={lock}>
-          {busy ? "Locking…" : `Lock team & play gameweek ${state.gw.gw}`}
-        </Btn>
-        <p style={{ fontSize: 11.5, color: MUTED, margin: 0, lineHeight: 1.4 }}>
-          Replay mode: this scores your XI against the real results of gameweek {state.gw.gw},
-          {" "}{state.gw.season}. In the live season this happens automatically at the deadline.
-        </p>
+        {/* Locking is the SEASON's job in a live gameweek — this button answers
+            403 there, and the paragraph under it told live managers they were in
+            replay mode. Both are replay-only now; the deadline strip at the top
+            of the screen is what a live manager needs instead. */}
+        {isDemo && <>
+          <Btn gold disabled={busy} onClick={lock}>
+            {busy ? "Locking…" : `Lock team & play gameweek ${state.gw.gw}`}
+          </Btn>
+          <p style={{ fontSize: 11.5, color: MUTED, margin: 0, lineHeight: 1.4 }}>
+            Replay mode: this scores your XI against the real results of gameweek {state.gw.gw},
+            {" "}{state.gw.season}. In the live season this happens automatically at the deadline.
+          </p>
+        </>}
       </div>}
       {locked && !result && <p style={{ color: MUTED, fontSize: 13 }}>Locked. Scoring…</p>}
 
@@ -880,7 +1267,9 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
         </div>
       )}
 
-      {state.canRebuild && (
+      {/* Live already offers the rebuild as a proper button above; this quiet
+          link is the replay sandbox's version. */}
+      {state.canRebuild && isDemo && (
         <div style={{ marginTop: 18, paddingTop: 12, borderTop: `1px solid ${LINE}` }}>
           <button onClick={() => router.push("/fantasy/build")} style={{
             fontSize: 12.5, color: MUTED, background: "none", border: "none",

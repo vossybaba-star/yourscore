@@ -6,8 +6,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { sellPrice } from "@/lib/fantasy/engine";
 import {
-  api, Btn, Card, Chip, Crest, fmtM, GOLD, Header, INK, LINE, MUTED, PITCH, page, PANEL,
-  type ClientPoolPlayer, type FantasyState, type Pos,
+  api, Btn, Card, Chip, Crest, Deadline, DoubtFlag, EMPTY_CONTEXT, FixtureRun, fmtM, GOLD, Header,
+  INK, LINE, MUTED, PITCH, page, PANEL,
+  type ClientPoolPlayer, type FantasyContext, type FantasyState, type Pos,
 } from "@/components/fantasy/shared";
 
 const POS_ROWS: Pos[] = ["GK", "DEF", "MID", "FWD"];
@@ -20,6 +21,8 @@ export default function TransfersPage() {
   const [pool, setPool] = useState<ClientPoolPlayer[]>([]);
   const [form, setForm] = useState<Form>({ gws: [], points: {} });
   const [selling, setSelling] = useState<number | null>(null);
+  const [q, setQ] = useState("");
+  const [ctx, setCtx] = useState<FantasyContext>(EMPTY_CONTEXT);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -29,7 +32,9 @@ export default function TransfersPage() {
       throw e;
     });
     if (!s.squad) { router.replace("/fantasy/build"); return; }
-    if (!s.openForEdits) { router.replace("/fantasy"); return; }
+    // A closed gameweek used to bounce you silently back to the hub, so there was
+    // no way to see what you'd done, what it cost, or who you sold — exactly the
+    // things you want on Saturday afternoon. It renders read-only instead.
     setState(s);
   }, [router]);
 
@@ -38,12 +43,20 @@ export default function TransfersPage() {
     api<{ players: ClientPoolPlayer[] }>("pool").then((p) =>
       setPool(p.players.sort((a, b) => b.price - a.price)));
     api<Form>("form").then(setForm).catch(() => {});
+    // Fixtures + doubts, the two things a transfer decision needs and never had.
+    fetch("/api/fantasy/context")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((c: FantasyContext | null) => { if (c) setCtx(c); })
+      .catch(() => {});
   }, [refresh]);
 
   const byId = useMemo(() => new Map(pool.map((p) => [p.id, p])), [pool]);
   const squad = state?.squad;
   const out = selling !== null ? byId.get(selling) : null;
   const hits = state?.entry?.hits ?? 0;
+  const made = state?.entry?.transfers ?? 0;
+  /** Past the deadline: everything reads, nothing writes. */
+  const closed = !!state && !state.openForEdits;
   const wildcardActive = state?.chips?.playedThisGw === "wildcard";
   const nextIsFree = wildcardActive || (squad?.credits ?? 0) > 0;
 
@@ -62,6 +75,12 @@ export default function TransfersPage() {
     return now === undefined ? paid : sellPrice(paid, Math.round(now * 10));
   }, [squad, byId]);
 
+  /** Everyone you could legally sign for this player. Search matches name or
+   *  club: the list is ordered by form, and before a gameweek has scored there IS
+   *  no form, so it falls back to price-descending — which without a search box
+   *  meant the only players you could reach were the most expensive ones you
+   *  could afford. */
+  const needle = q.trim().toLowerCase();
   const candidates = useMemo(() => {
     if (!squad || !out) return [];
     const owned = new Set(squad.picks.map((p) => p.id));
@@ -71,9 +90,11 @@ export default function TransfersPage() {
     return pool
       .filter((p) => p.pos === out.pos && !owned.has(p.id) &&
         Math.round(p.price * 10) <= maxTenths && (clubCount.get(p.clubId) ?? 0) < 3)
+      .filter((p) => !needle ||
+        p.name.toLowerCase().includes(needle) || p.club.toLowerCase().includes(needle))
       // Best form first — price-descending buried the in-form bargains.
       .sort((a, b) => (formTotal(b.id) - formTotal(a.id)) || (b.price - a.price));
-  }, [squad, out, pool, formTotal, sellValue]);
+  }, [squad, out, pool, formTotal, sellValue, needle]);
 
   /** Prospective buys: in-form players you don't own and could actually fit —
    *  the "who should I even be looking at?" step that came before picking a
@@ -122,15 +143,19 @@ export default function TransfersPage() {
     );
   };
 
+  /** Pick (or clear) the player being sold. Clears the search with it — a needle
+   *  left over from the last swap would silently filter the new candidate list. */
+  const choose = (id: number | null) => { setSelling(id); setQ(""); };
+
   const buy = async (inId: number) => {
     if (busy || selling === null) return;
     setBusy(true); setErr(null);
-    try { await api("transfer", { out: selling, in: inId }); setSelling(null); await refresh(); }
+    try { await api("transfer", { out: selling, in: inId }); choose(null); await refresh(); }
     catch (e) { setErr((e as Error).message); }
     setBusy(false);
   };
 
-  if (!state || !squad) return <main style={page}><Header /><p style={{ color: MUTED }}>Loading…</p></main>;
+  if (!state || !squad) return <main data-fantasy style={page}><Header /><p style={{ color: MUTED }}>Loading…</p></main>;
 
   const rowsByPos = (ids: number[]) =>
     POS_ROWS.map((pos) => ({ pos, ids: ids.filter((id) => byId.get(id)?.pos === pos) }));
@@ -139,11 +164,14 @@ export default function TransfersPage() {
     const p = byId.get(id);
     const active = selling === id;
     return (
-      <button onClick={() => setSelling(active ? null : id)} style={{
+      <button onClick={() => !closed && choose(active ? null : id)}
+        disabled={closed}
+        aria-label={p ? `${p.name}, ${p.pos}, £${p.price.toFixed(1)}m${closed ? ", gameweek closed" : ", tap to replace"}` : undefined}
+        style={{
         display: "flex", flexDirection: "column", alignItems: "center", gap: 2, minWidth: 72,
-        padding: "7px 8px", borderRadius: 10, cursor: "pointer",
+        padding: "7px 8px", borderRadius: 10, cursor: closed ? "default" : "pointer",
         background: active ? "#233B2C" : PANEL, color: INK,
-        border: `1px solid ${active ? GOLD : LINE}`,
+        border: `1px solid ${active ? GOLD : LINE}`, opacity: closed ? 0.75 : 1,
       }}>
         {p && <Crest club={p.club} size={20} />}
         <span style={{ fontSize: 12, fontWeight: 600, textAlign: "center", lineHeight: 1.1 }}>{p?.name ?? id}</span>
@@ -153,20 +181,41 @@ export default function TransfersPage() {
   };
 
   return (
-    <main style={page}>
+    <main data-fantasy style={page}>
       <Header right={<>
         {wildcardActive
           ? <Chip gold>Wildcard active</Chip>
           : <Chip gold>{squad.credits} free</Chip>}
         <Chip>{fmtM(squad.bankTenths)} bank</Chip>
       </>} />
-      <h1 style={{ fontSize: 22, margin: "0 0 4px", fontWeight: 700 }}>Transfers</h1>
+      <h1 style={{ fontSize: 22, margin: "0 0 4px", fontWeight: 700 }}>
+        {closed ? `Gameweek ${state.gw.gw} transfers` : "Transfers"}
+      </h1>
       <p style={{ fontSize: 13, color: MUTED, margin: "0 0 10px", lineHeight: 1.5 }}>
-        {wildcardActive
-          ? <>Wildcard active. <b style={{ color: GOLD }}>transfers are free this week</b>, no limit and no points hit.</>
-          : <>Tap a player to swap him. You earned <b style={{ color: GOLD }}>{squad.credits} free move{squad.credits === 1 ? "" : "s"}</b> this
-            week. After that, every transfer costs <b style={{ color: "#E08A6B" }}>4 points</b>.</>}
+        {closed
+          ? <>This gameweek is closed, so nothing here can change. It&apos;s the record of what you did:{" "}
+            <b style={{ color: INK }}>{made} transfer{made === 1 ? "" : "s"}</b>
+            {hits > 0
+              ? <>, <b style={{ color: "#E08A6B" }}>{hits} paid</b> for −{hits * 4} points.</>
+              : made > 0 ? ", all free." : "."}</>
+          : wildcardActive
+            ? <>Wildcard active. <b style={{ color: GOLD }}>transfers are free this week</b>, no limit and no points hit.</>
+            : <>Tap a player to swap him. You earned <b style={{ color: GOLD }}>{squad.credits} free move{squad.credits === 1 ? "" : "s"}</b> this
+              week. After that, every transfer costs <b style={{ color: "#E08A6B" }}>4 points</b>.</>}
       </p>
+
+      {state.gw.mode !== "replay" && <Deadline iso={state.gw.deadline} compact />}
+
+      {closed && (
+        <div style={{
+          background: PANEL, border: `1px solid ${LINE}`, borderRadius: 10,
+          padding: "10px 12px", marginBottom: 12,
+        }}>
+          <span style={{ fontSize: 12.5, color: MUTED, lineHeight: 1.5 }}>
+            Your next free move lands when this gameweek finishes. Play the round to earn more.
+          </span>
+        </div>
+      )}
 
       {/* Running cost — unmissable */}
       {hits > 0 && (
@@ -194,8 +243,9 @@ export default function TransfersPage() {
           </div>
 
           {/* Who should you even be looking at? Ranked on what they've actually
-              scored in OUR scoring, and filtered to players you could really fit. */}
-          {prospects.length > 0 && (
+              scored in OUR scoring, and filtered to players you could really fit.
+              Pointless once the gameweek is shut — you can't act on it. */}
+          {prospects.length > 0 && !closed && (
             <div style={{ marginTop: 16 }}>
               <div style={{ fontSize: 11, letterSpacing: "0.12em", color: MUTED, marginBottom: 2 }}>
                 WORTH A LOOK
@@ -225,9 +275,15 @@ export default function TransfersPage() {
                     <span style={{ display: "flex", alignItems: "center", gap: 7, minWidth: 0 }}>
                       <Crest club={p.club} />
                       <span style={{ minWidth: 0 }}>
-                        <span style={{ fontSize: 13.5, fontWeight: 600 }}>{p.name}</span>
-                        <span style={{ display: "block", fontSize: 11, color: MUTED }}>
-                          {p.pos} · {p.club} · £{p.price.toFixed(1)}m
+                        <span style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                          <span style={{ fontSize: 13.5, fontWeight: 600 }}>{p.name}</span>
+                          <DoubtFlag reason={ctx.doubts[p.id]} />
+                        </span>
+                        <span style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
+                          <span style={{ fontSize: 11, color: MUTED }}>
+                            {p.pos} · {p.club} · £{p.price.toFixed(1)}m
+                          </span>
+                          <FixtureRun cells={ctx.fixtures[p.clubId]} max={2} />
                         </span>
                       </span>
                     </span>
@@ -252,10 +308,12 @@ export default function TransfersPage() {
         <>
           <Card style={{ marginBottom: 10 }}>
             <span style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: 14, display: "flex", alignItems: "center", gap: 7 }}>
+              <span style={{ fontSize: 14, display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}>
                 <Crest club={out.club} /> Selling <b>{out.name}</b> ({out.pos})
+                <DoubtFlag reason={ctx.doubts[out.id]} />
+                <FixtureRun cells={ctx.fixtures[out.clubId]} />
               </span>
-              <Btn small onClick={() => setSelling(null)}>Cancel</Btn>
+              <Btn small onClick={() => choose(null)}>Cancel</Btn>
             </span>
             {/* What he actually raises, and why it isn't his price — a rise is only
                 half yours, so the number has to be shown or the budget looks wrong. */}
@@ -297,8 +355,22 @@ export default function TransfersPage() {
               {out && <>. {out.name} has scored <b style={{ color: INK }}>{formTotal(out.id)}</b></>}.
             </p>
           )}
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search by name or club"
+            aria-label="Search replacements"
+            style={{
+              width: "100%", boxSizing: "border-box", padding: "11px 12px", borderRadius: 10,
+              fontSize: 14, background: PANEL, color: INK, border: `1px solid ${LINE}`,
+              outline: "none", marginBottom: 8,
+            }}
+          />
+          <div style={{ fontSize: 11.5, color: MUTED, marginBottom: 8 }}>
+            {candidates.length} you can afford{needle ? ` matching "${q.trim()}"` : ""}
+          </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            {candidates.slice(0, 40).map((p) => {
+            {candidates.map((p) => {
               const better = hasForm && formTotal(p.id) > formTotal(out!.id);
               return (
                 <button key={p.id} disabled={busy} onClick={() => buy(p.id)} style={{
@@ -310,8 +382,14 @@ export default function TransfersPage() {
                   <span style={{ display: "flex", alignItems: "center", gap: 7, minWidth: 0 }}>
                     <Crest club={p.club} />
                     <span style={{ minWidth: 0 }}>
-                      <span>{p.name}</span>
-                      <span style={{ display: "block", color: MUTED, fontSize: 11.5, fontWeight: 400 }}>{p.club}</span>
+                      <span style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                        <span>{p.name}</span>
+                        <DoubtFlag reason={ctx.doubts[p.id]} />
+                      </span>
+                      <span style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
+                        <span style={{ color: MUTED, fontSize: 11.5, fontWeight: 400 }}>{p.club}</span>
+                        <FixtureRun cells={ctx.fixtures[p.clubId]} />
+                      </span>
                     </span>
                   </span>
                   <span style={{ display: "flex", alignItems: "center", gap: 9, flexShrink: 0 }}>
@@ -321,14 +399,22 @@ export default function TransfersPage() {
                 </button>
               );
             })}
-            {!candidates.length && <p style={{ color: MUTED, fontSize: 13 }}>Nobody affordable in this position. Sell someone pricier first.</p>}
+            {!candidates.length && (
+              <p style={{ color: MUTED, fontSize: 13 }}>
+                {needle
+                  ? `Nobody matching "${q.trim()}" that you can afford in this position.`
+                  : "Nobody affordable in this position. Sell someone pricier first."}
+              </p>
+            )}
           </div>
         </>
       )}
 
       {err && <p style={{ color: "#E08A6B", fontSize: 13, marginTop: 10 }}>{err}</p>}
       <div style={{ marginTop: 14 }}>
-        <Btn onClick={() => router.push("/fantasy")}>Done, back to my team</Btn>
+        <Btn onClick={() => router.push("/fantasy")}>
+          {closed ? "Back to my team" : "Done, back to my team"}
+        </Btn>
       </div>
     </main>
   );

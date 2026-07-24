@@ -82,7 +82,7 @@ export default function LeaguesHome() {
 
   if (needsAuth) return (
     <>
-    <main style={page}>
+    <main data-fantasy style={page}>
       <Header />
       <Card style={{ marginTop: 12 }}>
         <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Sign in to play with friends</div>
@@ -98,7 +98,7 @@ export default function LeaguesHome() {
 
   return (
     <>
-    <main style={page}>
+    <main data-fantasy style={page}>
       <Header right={<Btn small onClick={() => router.push("/fantasy")}>← My team</Btn>} />
       <h1 style={{ fontSize: 22, margin: "0 0 4px", fontWeight: 700 }}>Leagues</h1>
       <p style={{ fontSize: 13, color: MUTED, margin: "0 0 14px", lineHeight: 1.5 }}>

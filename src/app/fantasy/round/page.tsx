@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  api, Btn, Card, Chip, GOLD, Header, INK, LINE, MUTED, page, PANEL,
+  api, Btn, Card, Chip, Deadline, GOLD, Header, INK, LINE, MUTED, page, PANEL,
 } from "@/components/fantasy/shared";
 
 interface Clues { nationality?: string; flag?: string; jersey?: number }
@@ -29,12 +29,16 @@ export default function RoundPage() {
   const answering = useRef(false);
   // Round chips. The chip is PLAYED on the hub (spends the token); here it fires.
   const [chip, setChip] = useState<string | null>(null);
+  const [deadline, setDeadline] = useState<string | null>(null);
   const [eliminated, setEliminated] = useState<number[]>([]);
   const [hintSpent, setHintSpent] = useState(false);
 
   useEffect(() => {
-    api<{ chips: { playedThisGw: string | null } | null }>("state")
-      .then((s) => setChip(s.chips?.playedThisGw ?? null)).catch(() => {});
+    api<{ chips: { playedThisGw: string | null } | null; gw: { mode: string; deadline: string | null } }>("state")
+      .then((s) => {
+        setChip(s.chips?.playedThisGw ?? null);
+        if (s.gw.mode !== "replay") setDeadline(s.gw.deadline);
+      }).catch(() => {});
     api<StartRes>("round/start").then((r) => {
       setRound(r); setK(r.answered); setCorrectCount(r.correct);
     }).catch((e) => {
@@ -74,8 +78,8 @@ export default function RoundPage() {
     answering.current = false;
   };
 
-  if (err) return <main style={page}><Header /><p style={{ color: "#E08A6B" }}>{err}</p></main>;
-  if (!round) return <main style={page}><Header /><p style={{ color: MUTED }}>Loading…</p></main>;
+  if (err) return <main data-fantasy style={page}><Header /><p style={{ color: "#E08A6B" }}>{err}</p></main>;
+  if (!round) return <main data-fantasy style={page}><Header /><p style={{ color: MUTED }}>Loading…</p></main>;
 
   const finished = round.done || k >= round.questions.length;
   const q = round.questions[k];
@@ -103,7 +107,7 @@ export default function RoundPage() {
     const THRESHOLDS = [3, 5, 7, 9];
     const nextAt = THRESHOLDS.find((t) => got < t);
     return (
-      <main style={page}>
+      <main data-fantasy style={page}>
         <Header right={<Chip gold>✓ {got}/11</Chip>} />
         <Card style={{ border: `1px solid ${GOLD}`, textAlign: "center", padding: 24 }}>
           <div style={{ fontSize: 13, letterSpacing: "0.1em", color: GOLD, fontWeight: 700 }}>ROUND COMPLETE</div>
@@ -128,19 +132,31 @@ export default function RoundPage() {
   }
 
   return (
-    <main style={page}>
+    <main data-fantasy style={page}>
       {/* Every answer is banked server-side as you go, so leaving is safe and the
           hub offers "Continue round". Without a visible exit this screen trapped
           you: a running timer, no back, and no URL bar in the native app. */}
       <Header exit={{ label: "My team", onClick: () => router.push("/fantasy") }} right={<>
         <Chip>Q {k + 1}/11</Chip>
         <Chip gold>✓ {correctCount}</Chip>
-        <Chip>{secs}s</Chip>
+        {/* The countdown is decoration for a screen reader — it would read every
+            second aloud. The question number is the useful announcement, and it
+            fires once per question via the live region below. */}
+        <span aria-hidden><Chip>{secs}s</Chip></span>
       </>} />
+      {/* One polite live region for the whole round: the question you're on, then
+          whether your answer was right. Without it, answering a question changed
+          the entire screen and announced nothing at all. */}
+      <div aria-live="polite" className="sr-only">
+        {reveal
+          ? `${reveal.correct ? "Correct" : timedOut ? "Out of time" : "Wrong"}. ${correctCount} of ${k + 1} right so far.`
+          : `Question ${k + 1} of 11.`}
+      </div>
       {/* The old label read "{position} QUESTION", which named the SQUAD SLOT the
           question feeds, not the answer's position — so "GK QUESTION" sat above
           four outfielders and read as a bug. The slot is not information a player
           can use; the question number is. */}
+      <Deadline iso={deadline} compact />
       <div style={{ fontSize: 11, letterSpacing: "0.12em", color: MUTED, marginBottom: 6 }}>
         QUESTION {k + 1} OF 11
       </div>
@@ -195,7 +211,9 @@ export default function RoundPage() {
           const pendingPick = isPicked && !reveal;
           const out = eliminated.includes(o.id) && !reveal; // Insight took it away
           return (
-            <button key={o.id} onClick={() => answer(o.id)} disabled={!!reveal || out} style={{
+            <button key={o.id} onClick={() => answer(o.id)} disabled={!!reveal || out}
+              aria-label={out ? `${o.label}, removed by Insight` : o.label}
+              style={{
               padding: "13px 14px", borderRadius: 12, fontSize: 14.5, fontWeight: 600,
               textAlign: "left", cursor: reveal ? "default" : "pointer", color: INK,
               background: isAnswer ? "#1E3B2A" : isWrongPick ? "#3A2320" : pendingPick ? "#233B2C" : PANEL,

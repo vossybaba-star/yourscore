@@ -5,7 +5,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
-  Btn, Card, Chip, GOLD, Header, INK, LINE, MUTED, page, PANEL,
+  Btn, Card, Chip, GOLD, Header, INK, LINE, MUTED, page, PANEL, Sheet,
 } from "@/components/fantasy/shared";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { BottomNav } from "@/components/ui/BottomNav";
@@ -206,7 +206,7 @@ export default function LeaguePage() {
 
   if (notFound) return (
     <>
-    <main style={page}>
+    <main data-fantasy style={page}>
       <Header />
       <Card style={{ marginTop: 12 }}>
         <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>League not found</div>
@@ -216,7 +216,7 @@ export default function LeaguePage() {
       <BottomNav />
     </>
   );
-  if (!detail) return <main style={page}><Header /><p style={{ color: MUTED }}>Loading…</p></main>;
+  if (!detail) return <main data-fantasy style={page}><Header /><p style={{ color: MUTED }}>Loading…</p></main>;
 
   const { league, season, month, lastMonth } = detail;
   const rows = tab === "season" ? season : month.rows;
@@ -225,7 +225,7 @@ export default function LeaguePage() {
 
   return (
     <>
-    <main style={page}>
+    <main data-fantasy style={page}>
       <Header right={<Btn small onClick={() => router.push("/fantasy/leagues")}>← Leagues</Btn>} />
 
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10, marginBottom: 6 }}>
@@ -298,17 +298,9 @@ export default function LeaguePage() {
 
       {/* A friend's run — right/wrong per question, after the deadline only */}
       {run && (
-        <div onClick={() => setRun(null)} style={{
-          position: "fixed", inset: 0, background: "rgba(0,0,0,0.72)", zIndex: 40,
-          display: "flex", alignItems: "flex-end", justifyContent: "center",
-        }}>
-          <div onClick={(e) => e.stopPropagation()} style={{
-            width: "100%", maxWidth: 560, maxHeight: "82dvh", overflowY: "auto",
-            background: "#132b1e", borderRadius: "16px 16px 0 0", border: `1px solid ${GOLD}`,
-            padding: 16,
-          }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-              <span style={{ fontSize: 14.5, fontWeight: 700 }}>
+        <Sheet onClose={() => setRun(null)} labelledBy="run-sheet-title">
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, gap: 10 }}>
+              <span id="run-sheet-title" style={{ fontSize: 14.5, fontWeight: 700 }}>
                 {run.name} got {run.correct}/{run.total} in Gameweek {run.gw}
               </span>
               <Btn small onClick={() => setRun(null)}>Close</Btn>
@@ -324,8 +316,7 @@ export default function LeaguePage() {
                 </div>
               ))}
             </div>
-          </div>
-        </div>
+        </Sheet>
       )}
 
       {tab === "month" && lastMonth && (

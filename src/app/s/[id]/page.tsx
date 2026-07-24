@@ -79,6 +79,25 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     const md = await matchOgMetadata(p.matchId);
     if (md) return md;
   }
+  // Fantasy SQUAD share → the pre-season card. Checked before the gameweek one
+  // because a squad payload has no `fgw` and would otherwise fall through to the
+  // 38-0 season card, unfurling a season record the sharer never played.
+  if (p.fsq) {
+    const qp = new URLSearchParams({ xi: p.fxi ?? "" });
+    if (p.fcapn) qp.set("cap", p.fcapn);
+    if (p.fval) qp.set("val", p.fval);
+    if (p.fname) qp.set("name", p.fname);
+    if (p.fgw1) qp.set("gw", p.fgw1);
+    const image = `${BASE}/api/og/fantasy-squad?${qp.toString()}`;
+    const who = p.fname ? `${p.fname}'s` : "My";
+    const title = `${who} YourScore Fantasy squad`;
+    const description = "Fifteen Premier League players, £100m. Your football knowledge earns your transfers.";
+    return {
+      title, description,
+      openGraph: { title, description, images: [{ url: image, width: 1200, height: 630 }], type: "website" },
+      twitter: { card: "summary_large_image", title, description, images: [image] },
+    };
+  }
   // Fantasy gameweek share → the fantasy result card.
   if (p.fgw) {
     const qp = new URLSearchParams({ gw: p.fgw, pts: p.fpts ?? "0" });
@@ -131,6 +150,97 @@ export default async function SeasonShortSharePage({ params }: { params: { id: s
 
   // Quiz challenge share link — redirect to the challenge page.
   if (p?.challengeSlug) redirect(`/challenges/${p.challengeSlug}`);
+
+  // Fantasy SQUAD share — the pre-season half of the loop. Same principle as the
+  // gameweek card below: show what was shared FIRST, invite them in second. A
+  // stranger who taps this has never heard of the game, so the squad has to do
+  // the explaining before the CTA asks for anything.
+  if (p?.fsq) {
+    const posRank: Record<string, number> = { GK: 0, DEF: 1, MID: 2, FWD: 3 };
+    const xi = (p.fxi ?? "").split("|").map((chunk) => {
+      const [pos, name, club] = chunk.split("~");
+      return { pos: pos ?? "", name: name ?? "", club: club ?? "" };
+    }).filter((x) => x.name);
+    const rows = (["GK", "DEF", "MID", "FWD"] as const)
+      .map((pos) => ({ pos, players: xi.filter((x) => x.pos === pos) }))
+      .filter((r) => r.players.length > 0)
+      .sort((a, b) => posRank[a.pos] - posRank[b.pos]);
+    const who = p.fname ? p.fname : "A YourScore manager";
+    const valTenths = Number(p.fval ?? "0");
+    const spent = valTenths <= 0 ? null
+      : valTenths >= 1000
+        ? "Every penny of the £100.0m spent. Same budget as everyone."
+        : `£${(valTenths / 10).toFixed(1)}m of £100.0m spent. Same budget as everyone.`;
+
+    return (
+      <div className="min-h-[100dvh] pb-10" style={{ background: "#080d0a" }}>
+        <div className="max-w-lg mx-auto px-5 pt-10">
+          <div className="font-body text-xs tracking-widest mb-6" style={{ color: "#586058" }}>
+            YOURSCORE FANTASY FOOTBALL
+          </div>
+
+          <div className="rounded-3xl p-6 mb-4"
+            style={{ background: "#0e1611", border: "1px solid rgba(0,216,192,0.30)" }}>
+            <div className="font-body text-xs tracking-widest" style={{ color: "#8a948f" }}>
+              {who.toUpperCase()}{p.fgw1 ? ` · GAMEWEEK ${p.fgw1}` : ""}
+            </div>
+            <p className="font-display text-white mt-2 mb-5" style={{ fontSize: 32, lineHeight: 1.05 }}>
+              This is my eleven.
+            </p>
+
+            <div className="space-y-3">
+              {rows.map((row) => (
+                <div key={row.pos} className="flex items-start gap-3">
+                  <span className="font-body text-xs flex-shrink-0 rounded-lg px-2 py-1"
+                    style={{ background: "rgba(255,255,255,0.06)", color: "#8a948f", letterSpacing: 1, minWidth: 44, textAlign: "center" }}>
+                    {row.pos}
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {row.players.map((pl, i) => {
+                      const isCap = !!p.fcapn && pl.name === p.fcapn;
+                      return (
+                        <span key={i} className="font-body text-sm rounded-lg px-2.5 py-1"
+                          style={{
+                            background: isCap ? "rgba(255,194,51,0.12)" : "rgba(255,255,255,0.04)",
+                            border: `1px solid ${isCap ? "rgba(255,194,51,0.45)" : "rgba(255,255,255,0.06)"}`,
+                            color: isCap ? "#ffc233" : "#eef2f0",
+                          }}>
+                          {pl.name}{isCap ? " ©" : ""}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {spent && (
+              <p className="font-body text-xs mt-5" style={{ color: "#5b645e" }}>
+                {spent}
+              </p>
+            )}
+          </div>
+
+          <div className="rounded-3xl p-5 mb-4" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <p className="font-display text-white tracking-wide mb-2" style={{ fontSize: 20 }}>
+              Think you can pick better?
+            </p>
+            <p className="font-body text-sm mb-4" style={{ color: "#8a948f", lineHeight: 1.5 }}>
+              Pick fifteen Premier League players with the same £100m. Answer eleven football
+              questions a week, and the ones you get right earn the transfers that improve your squad.
+            </p>
+            <Button href="/fantasy" variant="primary" tone="teal" size="lg" fullWidth>
+              BUILD YOUR SQUAD →
+            </Button>
+          </div>
+
+          <p className="text-center mt-4 font-body text-xs" style={{ color: "#3a423d" }}>
+            yourscore.app · Your football knowledge. Ranked.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   // Fantasy gameweek share. This used to redirect straight to /fantasy, which
   // for a signed-out friend meant the unfurl promised "93 points in Gameweek 3"

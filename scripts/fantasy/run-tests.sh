@@ -12,6 +12,8 @@ npx tsc \
   src/lib/fantasy/engine.test.ts \
   src/lib/fantasy/months.ts \
   src/lib/fantasy/months.test.ts \
+  src/lib/fantasy/clubKey.ts \
+  src/lib/fantasy/context.test.ts \
   --rootDir src --outDir .tmp-fantasy-test \
   --module commonjs --moduleResolution node --target es2022 \
   --esModuleInterop --skipLibCheck --types node

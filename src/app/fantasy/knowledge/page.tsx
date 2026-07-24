@@ -39,7 +39,7 @@ export default function KnowledgePage() {
 
   return (
     <>
-    <main style={page}>
+    <main data-fantasy style={page}>
       <Header right={<Btn small onClick={() => router.push("/fantasy")}>← My team</Btn>} />
       <h1 style={{ fontSize: 22, margin: "0 0 4px", fontWeight: 700 }}>{KNOWLEDGE_NAME}</h1>
       <p style={{ fontSize: 13, color: MUTED, margin: "0 0 12px", lineHeight: 1.5 }}>

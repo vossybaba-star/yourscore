@@ -367,3 +367,15 @@ input, textarea, select {
   0% { transform: translateY(3px); opacity: 0; }
   100% { transform: translateY(0); opacity: 1; }
 }
+
+/* ── Fantasy: a focus ring you can actually see ──────────────────────────────
+   Every control on the fantasy surfaces is an inline-styled <button>, so nothing
+   sets a focus style and the browser default (a thin blue-black outline) is
+   invisible on the #080d0a ground. A keyboard user could tab through the whole
+   squad screen with no idea where they were. Scoped to fantasy so it can't
+   surprise the rest of the app. */
+[data-fantasy] :focus-visible {
+  outline: 2px solid #00d8c0;
+  outline-offset: 2px;
+  border-radius: 4px;
+}

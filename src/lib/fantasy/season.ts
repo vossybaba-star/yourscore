@@ -57,8 +57,46 @@ export interface SeasonGw {
 const MATCHES_DONE_AFTER_LAST_KICKOFF_MS = 3 * 60 * 60 * 1000;
 /** Stat corrections land within a day; after that the gameweek is closed for good. */
 const FINALISE_AFTER_MATCHES_DONE_MS = 24 * 60 * 60 * 1000;
+/**
+ * How close to its deadline a gameweek has to be before we freeze its prices.
+ *
+ * "Price at gameweek open" reads fine until you notice the whole calendar is
+ * seeded `open` months in advance: on that rule the very first tick of the
+ * season would stamp July's FPL prices onto gameweek 1 and — because
+ * `ensurePrices` is deliberately idempotent — they would still be July's prices
+ * when it actually kicked off in August. A gameweek is "open" for pricing only
+ * once it is the week being played. Seven days covers the normal in-season case
+ * (the previous gameweek finalises about five days before the next deadline)
+ * without pricing anything a month early.
+ */
+const PRICE_WITHIN_MS = 7 * 24 * 60 * 60 * 1000;
 
 const ms = (iso: string) => new Date(iso).getTime();
+
+/** PostgREST caps an unbounded select at 1000 rows and says nothing about it.
+ *  Every read in this file is over "all managers", so an unbounded one silently
+ *  stops locking, scoring or paying the 1001st person — with no error anywhere.
+ *  `.range(0, 9999)` only moves the cliff, so the season's own reads page. */
+const PAGE = 1000;
+async function pageAll<T>(
+  query: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>,
+  label: string,
+): Promise<T[]> {
+  const out: T[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await query(from, from + PAGE - 1);
+    if (error) throw new Error(`${label}: ${error.message}`);
+    if (!data?.length) break;
+    out.push(...data);
+    if (data.length < PAGE) break;
+  }
+  return out;
+}
+
+/** Split ids into batches small enough that an UPDATE … RETURNING can hand every
+ *  changed row back inside PostgREST's cap. */
+const chunk = <T>(xs: T[], n: number): T[][] =>
+  Array.from({ length: Math.ceil(xs.length / n) }, (_, i) => xs.slice(i * n, i * n + n));
 
 // ── lock: the missing snapshot ───────────────────────────────────────────────
 /**
@@ -66,18 +104,24 @@ const ms = (iso: string) => new Date(iso).getTime();
  * this gameweek is left alone, so a re-tick can never overwrite a real lock.
  */
 export async function lockGameweek(db: Db, gw: SeasonGw): Promise<{ locked: number; rolledOver: number }> {
-  const { data: squads, error } = await db.from("fantasy_squads")
-    .select("user_id, picks, xi, bench, captain, vice");
-  if (error) throw new Error(`lock: ${error.message}`);
+  // Both reads page: this is the one moment in the week where missing a manager
+  // costs them the whole gameweek, and an unbounded select would drop everyone
+  // past the thousandth silently.
+  const squads = await pageAll<{ user_id: string; picks: SquadPick[]; xi: number[]; bench: number[]; captain: number; vice: number }>(
+    (from, to) => db.from("fantasy_squads").select("user_id, picks, xi, bench, captain, vice").range(from, to),
+    "lock squads",
+  );
 
-  const { data: existing } = await db.from("fantasy_entries")
-    .select("user_id, locked_at, round_done_at").eq("gw", gw.gw);
-  const entryOf = new Map((existing ?? []).map((e: { user_id: string; locked_at: string | null; round_done_at: string | null }) => [e.user_id, e]));
+  const existing = await pageAll<{ user_id: string; locked_at: string | null; round_done_at: string | null }>(
+    (from, to) => db.from("fantasy_entries").select("user_id, locked_at, round_done_at").eq("gw", gw.gw).range(from, to),
+    "lock entries",
+  );
+  const entryOf = new Map(existing.map((e) => [e.user_id, e]));
 
   const lockedAt = new Date().toISOString();
   const rows = [];
   let rolledOver = 0;
-  for (const s of (squads ?? []) as { user_id: string; picks: SquadPick[]; xi: number[]; bench: number[]; captain: number; vice: number }[]) {
+  for (const s of squads) {
     const prior = entryOf.get(s.user_id);
     if (prior?.locked_at) continue; // already locked — never re-snapshot
     // No round played this week = the roll-over. The squad still plays.
@@ -88,9 +132,11 @@ export async function lockGameweek(db: Db, gw: SeasonGw): Promise<{ locked: numb
       locked_at: lockedAt,
     });
   }
-  if (rows.length) {
+  // Chunked so a big league doesn't post one enormous body — and so a partial
+  // failure still leaves every earlier batch locked rather than nobody.
+  for (const batch of chunk(rows, 500)) {
     const { error: upErr } = await db.from("fantasy_entries")
-      .upsert(rows, { onConflict: "user_id,gw" });
+      .upsert(batch, { onConflict: "user_id,gw" });
     if (upErr) throw new Error(`lock upsert: ${upErr.message}`);
   }
   await db.from("fantasy_gameweeks").update({ status: "locked" }).eq("gw", gw.gw);
@@ -113,20 +159,37 @@ export async function lockGameweek(db: Db, gw: SeasonGw): Promise<{ locked: numb
  * punished for a perfect round. `issued_half` is what makes it idempotent.
  */
 async function issueWildcards(db: Db, half: 1 | 2): Promise<void> {
-  const { data: squads, error } = await db.from("fantasy_squads")
-    .select("user_id, wildcards, wildcard_half, issued_half").range(0, 9999);
-  if (error) throw new Error(`wildcard issuance: ${error.message}`);
-
-  for (const s of (squads ?? []) as {
+  const squads = await pageAll<{
     user_id: string; wildcards: number; wildcard_half: number | null; issued_half: number | null;
-  }[]) {
+  }>(
+    (from, to) => db.from("fantasy_squads")
+      .select("user_id, wildcards, wildcard_half, issued_half").range(from, to),
+    "wildcard issuance",
+  );
+
+  // Grouped by the balance each manager should END on, so this is a handful of
+  // updates rather than one per manager. The per-row loop was a thousand
+  // sequential round-trips inside a 60-second cron — the lock would time out
+  // long before it finished handing wildcards out.
+  const byTarget = new Map<number, string[]>();
+  for (const s of squads) {
     if (s.issued_half === half && s.wildcard_half === half) continue; // already settled for this half
     // Anything held for a previous half is dead. Expire, then issue.
     const live = s.wildcard_half === half ? s.wildcards : 0;
     const grant = s.issued_half === half ? 0 : 1;
-    await db.from("fantasy_squads")
-      .update({ wildcards: live + grant, wildcard_half: half, issued_half: half })
-      .eq("user_id", s.user_id);
+    const target = live + grant;
+    const bucket = byTarget.get(target) ?? [];
+    bucket.push(s.user_id);
+    byTarget.set(target, bucket);
+  }
+
+  for (const [wildcards, ids] of Array.from(byTarget)) {
+    for (const batch of chunk(ids, 500)) {
+      const { error } = await db.from("fantasy_squads")
+        .update({ wildcards, wildcard_half: half, issued_half: half })
+        .in("user_id", batch);
+      if (error) throw new Error(`wildcard issuance: ${error.message}`);
+    }
   }
 }
 
@@ -288,13 +351,28 @@ export async function scoreGameweek(db: Db, gw: SeasonGw, opts: { final: boolean
  * it advances nobody's chip progress (D:91-93).
  */
 export async function finaliseGameweek(db: Db, gw: SeasonGw): Promise<{ finalised: number; chipsAccrued: number; baselineGranted: number }> {
-  const { data: transitioned, error } = await db.from("fantasy_entries")
-    .update({ status: "final" }).eq("gw", gw.gw).eq("status", "scored")
-    .select("user_id, round_done_at");
-  if (error) throw new Error(`finalise: ${error.message}`);
-  await db.from("fantasy_gameweeks").update({ status: "final" }).eq("gw", gw.gw);
+  // Find who is moving, then move them in batches. A single UPDATE … RETURNING
+  // over the whole gameweek hands back at most 1000 rows, so past a thousand
+  // managers the rest would transition without ever being paid their baseline
+  // transfer or their chip progress. Each batch still filters on
+  // status = 'scored', so the compare-and-swap — and the idempotency it buys —
+  // is unchanged: a second run finds nothing left to move.
+  const pending = await pageAll<{ user_id: string }>(
+    (from, to) => db.from("fantasy_entries")
+      .select("user_id").eq("gw", gw.gw).eq("status", "scored").range(from, to),
+    "finalise scan",
+  );
 
-  const all = (transitioned ?? []) as { user_id: string; round_done_at: string | null }[];
+  const all: { user_id: string; round_done_at: string | null }[] = [];
+  for (const batch of chunk(pending.map((p) => p.user_id), 500)) {
+    const { data, error } = await db.from("fantasy_entries")
+      .update({ status: "final" }).eq("gw", gw.gw).eq("status", "scored")
+      .in("user_id", batch)
+      .select("user_id, round_done_at");
+    if (error) throw new Error(`finalise: ${error.message}`);
+    all.push(...((data ?? []) as { user_id: string; round_done_at: string | null }[]));
+  }
+  await db.from("fantasy_gameweeks").update({ status: "final" }).eq("gw", gw.gw);
 
   // The baseline transfer for the gameweek now opening. Granted to EVERYONE who
   // had an entry, including the rolled-over manager who never opened the app —
@@ -303,35 +381,63 @@ export async function finaliseGameweek(db: Db, gw: SeasonGw): Promise<{ finalise
   // out a second one.
   let baselineGranted = 0;
   if (all.length) {
-    const { data: squads, error: bErr } = await db.from("fantasy_squads")
-      .select("user_id, credits").in("user_id", all.map((e) => e.user_id));
-    if (bErr) throw new Error(`finalise baseline lookup: ${bErr.message}`);
-    for (const s of (squads ?? []) as { user_id: string; credits: number }[]) {
+    const squads: { user_id: string; credits: number }[] = [];
+    for (const batch of chunk(all.map((e) => e.user_id), 500)) {
+      const { data, error: bErr } = await db.from("fantasy_squads")
+        .select("user_id, credits").in("user_id", batch);
+      if (bErr) throw new Error(`finalise baseline lookup: ${bErr.message}`);
+      squads.push(...((data ?? []) as { user_id: string; credits: number }[]));
+    }
+    // Grouped by the balance each manager lands on — there are only six possible
+    // values — so this is a few updates rather than one per manager.
+    const byCredits = new Map<number, string[]>();
+    for (const s of squads) {
       const next = grantBaseline(s.credits);
       if (next === s.credits) continue; // already at the cap
-      const { error: gErr } = await db.from("fantasy_squads")
-        .update({ credits: next }).eq("user_id", s.user_id);
-      if (gErr) throw new Error(`finalise baseline grant: ${gErr.message}`);
+      const bucket = byCredits.get(next) ?? [];
+      bucket.push(s.user_id);
+      byCredits.set(next, bucket);
       baselineGranted++;
+    }
+    for (const [credits, ids] of Array.from(byCredits)) {
+      for (const batch of chunk(ids, 500)) {
+        const { error: gErr } = await db.from("fantasy_squads")
+          .update({ credits }).in("user_id", batch);
+        if (gErr) throw new Error(`finalise baseline grant: ${gErr.message}`);
+      }
     }
   }
 
   const played = all.filter((e) => e.round_done_at != null);
   let chipsAccrued = 0;
   if (played.length) {
-    const { data: squads, error: sqErr } = await db.from("fantasy_squads")
-      .select("user_id, chips, chip_progress").in("user_id", played.map((e) => e.user_id));
-    if (sqErr) throw new Error(`finalise chip lookup: ${sqErr.message}`);
-    for (const s of (squads ?? []) as { user_id: string; chips: number; chip_progress: number }[]) {
+    const squads: { user_id: string; chips: number; chip_progress: number }[] = [];
+    for (const batch of chunk(played.map((e) => e.user_id), 500)) {
+      const { data, error: sqErr } = await db.from("fantasy_squads")
+        .select("user_id, chips, chip_progress").in("user_id", batch);
+      if (sqErr) throw new Error(`finalise chip lookup: ${sqErr.message}`);
+      squads.push(...((data ?? []) as { user_id: string; chips: number; chip_progress: number }[]));
+    }
+    // Only sixteen reachable (progress, held) states, so grouping collapses a
+    // per-manager loop into a handful of updates.
+    const byState = new Map<string, { progress: number; held: number; ids: string[] }>();
+    for (const s of squads) {
       const next = accrueChip(s.chip_progress, s.chips);
-      const { error: chErr } = await db.from("fantasy_squads")
-        .update({ chip_progress: next.progress, chips: next.held })
-        .eq("user_id", s.user_id);
-      if (chErr) throw new Error(`finalise chip accrual: ${chErr.message}`);
+      const key = `${next.progress}:${next.held}`;
+      const bucket = byState.get(key) ?? { progress: next.progress, held: next.held, ids: [] };
+      bucket.ids.push(s.user_id);
+      byState.set(key, bucket);
       if (next.minted) chipsAccrued++;
     }
+    for (const { progress, held, ids } of Array.from(byState.values())) {
+      for (const batch of chunk(ids, 500)) {
+        const { error: chErr } = await db.from("fantasy_squads")
+          .update({ chip_progress: progress, chips: held }).in("user_id", batch);
+        if (chErr) throw new Error(`finalise chip accrual: ${chErr.message}`);
+      }
+    }
   }
-  return { finalised: transitioned?.length ?? 0, chipsAccrued, baselineGranted };
+  return { finalised: all.length, chipsAccrued, baselineGranted };
 }
 
 // ── the tick ─────────────────────────────────────────────────────────────────
@@ -355,20 +461,32 @@ export async function tickSeason(db: Db, now = Date.now()): Promise<TickReport[]
     .select("*").eq("mode", "live").order("gw", { ascending: true });
   if (error) throw new Error(`tick: ${error.message}`);
 
+  const live = (gws ?? []) as SeasonGw[];
+  // The gameweek being PLAYED right now — the lowest-numbered one that hasn't
+  // closed. Only this one gets prices and a deadline nudge. Without that test,
+  // the first tick of the season walks all 38 future gameweeks and snapshots
+  // today's FPL prices into every one of them; because `ensurePrices` is
+  // idempotent, gameweek 38 would then keep its July prices for the whole
+  // season. Prices are taken at a gameweek's OWN open, not in advance.
+  const current = live.find((g) => g.status !== "final");
+
   const out: TickReport[] = [];
-  for (const gw of (gws ?? []) as SeasonGw[]) {
+  for (const gw of live) {
     if (gw.status === "final") continue;
     if (!gw.deadline) { out.push({ gw: gw.gw, action: "held", detail: "no deadline set" }); continue; }
     if (now < ms(gw.deadline)) {
+      if (gw.gw !== current?.gw) continue; // a future gameweek needs nothing yet
       // Still open. The one thing an open gameweek needs is its prices — taken
-      // once, at open, then frozen for the week. A failure here must NOT stop the
-      // season: last week's prices standing for another week is survivable, a
-      // stalled tick is not.
-      try {
-        const p = await ensurePrices(db, gw);
-        if (p.source === "fpl") out.push({ gw: gw.gw, action: "priced", detail: `${p.priced} players priced from FPL` });
-      } catch (e) {
-        out.push({ gw: gw.gw, action: "held", detail: `price snapshot failed, will retry: ${(e as Error).message}` });
+      // once, when it comes into range, then frozen for the week. A failure here
+      // must NOT stop the season: last week's prices standing for another week is
+      // survivable, a stalled tick is not.
+      if (ms(gw.deadline) - now <= PRICE_WITHIN_MS) {
+        try {
+          const p = await ensurePrices(db, gw);
+          if (p.source === "fpl") out.push({ gw: gw.gw, action: "priced", detail: `${p.priced} players priced from FPL` });
+        } catch (e) {
+          out.push({ gw: gw.gw, action: "held", detail: `price snapshot failed, will retry: ${(e as Error).message}` });
+        }
       }
       // Inside 24h of the deadline: the personal nudge email (claimed once per
       // user in notification_log, gated on FANTASY_EMAILS_ENABLED). Failure-soft

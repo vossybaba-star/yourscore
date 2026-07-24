@@ -14,7 +14,7 @@
  * rationed to things you WON: a gameweek total, top of a table, a month title.
  * Spending gold on every button is what made it mean nothing.
  */
-import { type CSSProperties, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, type CSSProperties, type ReactNode } from "react";
 import { getTeamBadgeUrlSync } from "@/lib/teamImages";
 
 /** Reward only — a score, a winner, rank 1. Never a default button. */
@@ -58,6 +58,11 @@ export interface FantasyState {
       points: number;
       breakdown: { id: number; points: number; captain: boolean; subbedIn: boolean; facts?: MatchFacts }[];
       autosubs: { out: number; in: number }[]; captainUsed: number;
+      /** True while the matches are still on and the tick is re-scoring. */
+      provisional: boolean;
+      scoredAt: string;
+      /** Pool ids whose fixture the feed has reported — everyone else is still to come. */
+      reported: number[];
     } | null;
   } | null;
 }
@@ -110,6 +115,193 @@ export function Header({ right, exit }: { right?: ReactNode; exit?: { label: str
       </span>
       <span style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>{right}</span>
     </div>
+  );
+}
+
+/** THE number in a fantasy game: when this gameweek stops accepting changes.
+ *
+ *  It was returned by /api/fantasy/state from the first day and rendered nowhere
+ *  — the squad home, the builder, the transfer screen and the round all left it
+ *  out, and the only copy that gestured at it hard-coded "the Saturday deadline"
+ *  (gameweek 1's is a Friday). Without a date, a time and a zone there is no
+ *  urgency, and urgency is the whole loop.
+ *
+ *  Rendered in the VIEWER's timezone with the zone named, not London's: a
+ *  manager in Lagos or New York needs to know when it closes for them. It only
+ *  renders once the deadline has been fetched, so there is no server/client
+ *  formatting mismatch to hydrate around. */
+export function Deadline({ iso, compact = false }: { iso: string | null; compact?: boolean }) {
+  if (!iso) return null;
+  const at = new Date(iso).getTime();
+  if (Number.isNaN(at)) return null;
+  const left = at - Date.now();
+  const past = left <= 0;
+  const hours = left / 3_600_000;
+  // Escalate only inside the last six hours — a countdown that shouts for a
+  // fortnight teaches you to ignore it.
+  const urgent = !past && hours <= 6;
+
+  // `hour: "numeric"` not "2-digit" — "6:30 PM" reads like a kickoff time,
+  // "06:30 PM" reads like a train timetable.
+  const when = new Date(at).toLocaleString(undefined, {
+    weekday: "short", day: "numeric", month: "short",
+    hour: "numeric", minute: "2-digit", timeZoneName: "short",
+  });
+  const away = past
+    ? "closed"
+    : hours < 1 ? `in ${Math.max(1, Math.round(left / 60_000))} min`
+    : hours < 24 ? `in ${Math.round(hours)} hour${Math.round(hours) === 1 ? "" : "s"}`
+    : `in ${Math.round(hours / 24)} day${Math.round(hours / 24) === 1 ? "" : "s"}`;
+
+  const accent = urgent ? GOLD : past ? MUTED : TEAL;
+  return (
+    <div className="font-body rounded-xl" style={{
+      display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap",
+      padding: compact ? "7px 11px" : "9px 13px",
+      marginBottom: compact ? 10 : 12,
+      background: PANEL, border: `1px solid ${urgent ? tint(GOLD, "55") : LINE}`,
+      fontSize: compact ? 12 : 12.5,
+    }}>
+      <span className="font-display tracking-widest" style={{ fontSize: 10.5, color: accent }}>
+        {past ? "DEADLINE PASSED" : "DEADLINE"}
+      </span>
+      <span style={{ color: INK, fontWeight: 600 }}>{when}</span>
+      <span style={{ color: urgent ? GOLD : MUTED, fontWeight: urgent ? 700 : 400 }}>{away}</span>
+    </div>
+  );
+}
+
+/**
+ * A bottom sheet that assistive technology can actually see.
+ *
+ * The chip confirm and the friend's-run overlay were both plain `<div>`s: no
+ * dialog role, no `aria-modal`, no focus trap, no Escape, and no focus
+ * restoration. A screen reader announced nothing when they opened, and a
+ * keyboard user tabbed straight past the dialog into the page behind it — which
+ * on the chip sheet meant tabbing into controls that were meant to be blocked by
+ * a decision they hadn't made yet.
+ *
+ * `labelledBy` points at the id of the sheet's own heading, so the announcement
+ * is the question being asked rather than the word "dialog".
+ */
+export function Sheet({ onClose, labelledBy, children }: {
+  onClose: () => void; labelledBy: string; children: ReactNode;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const returnTo = useRef<HTMLElement | null>(null);
+
+  const focusables = useCallback((): HTMLElement[] => {
+    if (!ref.current) return [];
+    return Array.from(ref.current.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), [href], input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])',
+    )).filter((el) => el.offsetParent !== null);
+  }, []);
+
+  useEffect(() => {
+    returnTo.current = document.activeElement as HTMLElement | null;
+    // Focus the first real control, or the sheet itself if it has none.
+    const first = focusables()[0] ?? ref.current;
+    first?.focus();
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { e.preventDefault(); onClose(); return; }
+      if (e.key !== "Tab") return;
+      const items = focusables();
+      if (!items.length) return;
+      const firstEl = items[0], lastEl = items[items.length - 1];
+      // Wrap at both ends — that IS the trap.
+      if (e.shiftKey && document.activeElement === firstEl) { e.preventDefault(); lastEl.focus(); }
+      else if (!e.shiftKey && document.activeElement === lastEl) { e.preventDefault(); firstEl.focus(); }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      // Put focus back where the user left it, not at the top of the document.
+      returnTo.current?.focus?.();
+    };
+  }, [focusables, onClose]);
+
+  return (
+    <div onClick={onClose}
+      style={{
+        position: "fixed", inset: 0, zIndex: 40, background: "rgba(4,8,6,0.72)",
+        display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 14,
+      }}>
+      <div
+        ref={ref}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={labelledBy}
+        tabIndex={-1}
+        onClick={(e) => e.stopPropagation()}
+        className="rounded-2xl"
+        style={{
+          background: PANEL, border: `1px solid ${tint(TEAL, "44")}`, padding: 18,
+          width: "100%", maxWidth: 480, maxHeight: "82dvh", overflowY: "auto",
+        }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ── decision context: fixtures + availability ────────────────────────────────
+export type Difficulty = "kind" | "medium" | "tough";
+export interface ContextFixture {
+  gw: number; opp: string; oppShort: string; home: boolean; difficulty: Difficulty;
+}
+export interface FantasyContext {
+  gw: number;
+  fixtures: Record<number, ContextFixture[]>;
+  doubts: Record<number, string>;
+  teamNewsAt: string | null;
+}
+export const EMPTY_CONTEXT: FantasyContext = { gw: 0, fixtures: {}, doubts: {}, teamNewsAt: null };
+
+/** Difficulty as colour. Deliberately desaturated: this sits behind three-letter
+ *  opponent codes on a dark ground, and a saturated traffic-light row would shout
+ *  louder than the player's own name. */
+const DIFF_BG: Record<Difficulty, string> = {
+  kind: "rgba(0,216,192,0.16)",
+  medium: "rgba(255,255,255,0.06)",
+  tough: "rgba(227,82,64,0.18)",
+};
+const DIFF_FG: Record<Difficulty, string> = { kind: TEAL, medium: MUTED, tough: "#E08A6B" };
+
+/** A player's next fixtures: "ARS · bou · WHU", caps for home, tinted by how hard
+ *  it is for THEM. Empty when the club has no fixture in range — a blank gameweek
+ *  says so by being blank, which is the honest rendering. */
+export function FixtureRun({ cells, max = 3 }: { cells?: ContextFixture[]; max?: number }) {
+  if (!cells?.length) return null;
+  return (
+    <span style={{ display: "inline-flex", gap: 3, alignItems: "center" }}>
+      {cells.slice(0, max).map((c, i) => (
+        <span key={`${c.gw}-${i}`}
+          title={`GW${c.gw}: ${c.home ? "home to" : "away at"} ${c.opp} (${c.difficulty})`}
+          style={{
+            fontSize: 9.5, fontWeight: 700, letterSpacing: "0.02em",
+            padding: "2px 4px", borderRadius: 3, minWidth: 26, textAlign: "center",
+            background: DIFF_BG[c.difficulty], color: DIFF_FG[c.difficulty],
+            // Caps = home, lower = away. The ticker's own convention, kept.
+            textTransform: c.home ? "uppercase" : "lowercase",
+          }}>{c.oppShort}</span>
+      ))}
+    </span>
+  );
+}
+
+/** The availability flag. Worded as a DOUBT, never as an injury: the source is a
+ *  predicted-lineup diff, not a medical report, and overstating it would be the
+ *  kind of confident wrongness the tips layer exists to avoid. */
+export function DoubtFlag({ reason }: { reason?: string }) {
+  if (!reason) return null;
+  return (
+    <span title={reason}
+      style={{
+        fontSize: 9.5, fontWeight: 700, letterSpacing: "0.04em",
+        padding: "1px 5px", borderRadius: 3, whiteSpace: "nowrap",
+        color: "#E08A6B", border: "1px solid #B85C38",
+      }}>DOUBT</span>
   );
 }
 
