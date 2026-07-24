@@ -1,4 +1,4 @@
--- 106_fantasy_cash_points.sql — the round's cashed-out credits, as points.
+-- 206_fantasy_cash_points.sql — the round's cashed-out credits, as points.
 --
 -- Credits the bank can't hold cash out at 4 points each — the same 4 points an
 -- extra transfer costs, so the economy is symmetric: knowledge buys transfers or

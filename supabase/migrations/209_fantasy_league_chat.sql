@@ -1,4 +1,4 @@
--- 109_fantasy_league_chat.sql — league banter on the existing comments rails.
+-- 209_fantasy_league_chat.sql — league banter on the existing comments rails.
 --
 -- The design's launch commitment (D:105-107): a chat/wall per friend league.
 -- Reuses the polymorphic comments table (subject_type + subject_id) that already

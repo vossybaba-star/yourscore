@@ -1,4 +1,4 @@
--- 105_fantasy_chips.sql — chips + the wildcard (design §4b, D:123-156).
+-- 205_fantasy_chips.sql — chips + the wildcard (design §4b, D:123-156).
 --
 -- Chips are LOYALTY, not performance: a token every 4 gameweeks you actually PLAY
 -- (a rolled-over week earns nothing — D:91-93). Hold up to 3, spend one per week.
