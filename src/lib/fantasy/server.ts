@@ -22,7 +22,7 @@ import { enginePool, fantasyPool, pricedPool } from "./pool";
 import { currentLiveGw, isOpenForEdits, type GwRow } from "./gameweeks";
 import { planTransfers, type OptimisedMove, type PlanResult, type PlayerVerdict, type ProjectedPoints } from "./optimiser";
 import {
-  flagSquad, resolveAvailability, unwrapRead, buildPlayerProfile,
+  flagSquad, resolveAvailability, unwrapRead, buildPlayerProfile, fetchAllPaged,
   BENCH_WINDOW_GWS, type AvailabilityInfo, type SquadFlag, type ProfileGw,
 } from "./advice";
 // THE single permitted points-per-game module. Neither export may be
@@ -816,10 +816,18 @@ const unavailableFrom = (av: Map<number, AvailabilityInfo> | null): Set<number> 
 async function seasonAverageFor(db: Db, gw: number, pool: PoolPlayer[]): Promise<Map<number, number> | null> {
   const gwsElapsed = gw - 1;
   if (gwsElapsed <= 0) return null; // ppg.ts would also return null; skip the read entirely
-  const result = await db.from("fantasy_player_scores")
-    .select("gw, player_id, points, minutes").lt("gw", gw).range(0, 49999);
-  const rows = (unwrapRead(result, "fantasy_player_scores season-to-date read failed") ?? []) as
-    { gw: number; player_id: number; points: number | null; minutes: number | null }[];
+  type ScoreRow = { gw: number; player_id: number; points: number | null; minutes: number | null };
+  const { rows } = await fetchAllPaged<ScoreRow>(async (from, to) => {
+    const result = await db.from("fantasy_player_scores")
+      .select("gw, player_id, points, minutes", { count: "exact" })
+      .lt("gw", gw)
+      .order("gw", { ascending: true }).order("player_id", { ascending: true })
+      .range(from, to);
+    return {
+      rows: (unwrapRead(result, "fantasy_player_scores season-to-date read failed") ?? []) as ScoreRow[],
+      count: result.count,
+    };
+  });
   return seasonAverageScores(rows, gwsElapsed, pool.map((p) => p.id));
 }
 
@@ -928,10 +936,18 @@ export async function squadFlags(db: Db, userId: string): Promise<SquadFlagsResu
   const from = Math.max(1, gw.gw - BENCH_WINDOW_GWS);
   if (gw.gw > 1) {
     try {
-      const result = await db.from("fantasy_player_scores")
-        .select("player_id, gw, minutes").gte("gw", from).lt("gw", gw.gw).range(0, 49999);
-      const rows = (unwrapRead(result, "fantasy_player_scores minutes read failed") ?? []) as
-        { player_id: number; gw: number; minutes: number }[];
+      type MinutesRow = { player_id: number; gw: number; minutes: number };
+      const { rows } = await fetchAllPaged<MinutesRow>(async (rangeFrom, rangeTo) => {
+        const result = await db.from("fantasy_player_scores")
+          .select("player_id, gw, minutes", { count: "exact" })
+          .gte("gw", from).lt("gw", gw.gw)
+          .order("gw", { ascending: true }).order("player_id", { ascending: true })
+          .range(rangeFrom, rangeTo);
+        return {
+          rows: (unwrapRead(result, "fantasy_player_scores minutes read failed") ?? []) as MinutesRow[],
+          count: result.count,
+        };
+      });
       const byPlayer = new Map<number, { gw: number; minutes: number }[]>();
       for (const r of rows) {
         if (!byPlayer.has(r.player_id)) byPlayer.set(r.player_id, []);
