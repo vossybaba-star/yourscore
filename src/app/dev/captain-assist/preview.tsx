@@ -19,10 +19,10 @@ const base = {
   headline: "The strongest combination of scoring rate and playing time in your XI.",
   evidence: [
     { label: "Season scoring", value: "6.8 points per appearance this season" },
-    { label: "Expected to play", value: "High availability" },
+    { label: "Availability", value: "High availability" },
     { label: "Fixture", value: "Home to Everton" },
   ],
-  viceReason: "Saka is the safest backup: high availability.",
+  viceReason: "Saka is the second-highest score in your XI: high availability.",
   alternatives: [
     { id: 3, name: "Haaland", label: "Higher upside", reason: "6.2 points per appearance · High availability" },
     { id: 4, name: "Palmer", label: "Safer alternative", reason: "5.4 points per appearance · Likely to play" },
@@ -47,9 +47,10 @@ const withWarnings = {
 
 const earlySeason = {
   ...base, earlySeason: true, confidence: "Low" as Conf,
+  headline: "FPL's projection and current availability are the strongest in your XI for this gameweek.",
   evidence: [
-    { label: "Season scoring", value: "4.0 projected points this gameweek" },
-    { label: "Expected to play", value: "High availability" },
+    { label: "FPL's projection", value: "4.0 for this gameweek" },
+    { label: "Availability", value: "High availability" },
     { label: "Fixture", value: "Away at Fulham" },
   ],
   warnings: [{ kind: "early_season" as const, text: "There is not enough current-season data yet, so this uses FPL's projection and current availability information." }],

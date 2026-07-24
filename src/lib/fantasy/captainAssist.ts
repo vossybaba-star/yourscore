@@ -296,7 +296,11 @@ export async function getCaptainAssist(
     });
   }
 
-  const unit = usePpg ? "points per appearance this season" : "projected points this gameweek";
+  // Season PPG is our own measured fact and is stated plainly. The cold-start
+  // number is a FORECAST — GW1-5 genuinely cannot be past-tensed — so it is
+  // attributed to FPL rather than voiced as ours, per the founder's ruling.
+  const scoringLabel = usePpg ? "Season scoring" : "FPL's projection";
+  const unit = usePpg ? "points per appearance this season" : "for this gameweek";
   const fixtureUnknown = !fixtureSet.complete;
   if (fixtureUnknown) {
     warnings.push({ kind: "stale", text: "Fixture information is temporarily unavailable." });
@@ -305,8 +309,8 @@ export async function getCaptainAssist(
   const capFixtures = cap.team !== null ? fixturesByTeam.get(cap.team) : undefined;
   const viceFixtures = vice.team !== null ? fixturesByTeam.get(vice.team) : undefined;
   const evidence: Evidence[] = [
-    { label: "Season scoring", value: `${cap.score.toFixed(1)} ${unit}` },
-    { label: "Expected to play", value: availabilityLabel(cap.chance, cap.status) },
+    { label: scoringLabel, value: `${cap.score.toFixed(1)} ${unit}` },
+    { label: "Availability", value: availabilityLabel(cap.chance, cap.status) },
   ];
   if (fixtureSet.complete) evidence.push({ label: "Fixture", value: fixtureLabel(capFixtures) });
 
@@ -381,9 +385,11 @@ export async function getCaptainAssist(
     vice: { id: vice.id, name: vice.name },
     headline: usePpg
       ? "The strongest combination of scoring rate and playing time in your XI."
-      : "The strongest projection and availability in your XI for this gameweek.",
+      : "FPL's projection and current availability are the strongest in your XI for this gameweek.",
     evidence,
-    viceReason: `${vice.name} is the safest backup: ${availabilityLabel(vice.chance, vice.status).toLowerCase()}.`,
+    // Fact, not a superlative: the vice is simply rank two by score, and can be
+    // a flagged player in the all-flagged fallback — never call it "safest".
+    viceReason: `${vice.name} is the second-highest score in your XI: ${availabilityLabel(vice.chance, vice.status).toLowerCase()}.`,
     alternatives,
     confidence,
     confidenceReason:
