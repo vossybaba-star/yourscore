@@ -8,32 +8,27 @@ import { createServiceClient } from "@/lib/supabase/service";
 // localStorage because a device stamp is invisible to us and resets on every
 // reinstall — we could not previously count our own asks.
 //
-// ONCE THEY RATE, WE STOP FOREVER — with a caveat worth knowing, because it
-// shapes everything below. Apple never tells us that a player rated: no
-// callback, no API, no field on the app record. The one moment we can observe
-// is a player tapping through our own soft card to the App Store, which we
-// record as outcome 'acted'. That is treated as terminal and they are never
-// asked again.
+// ONCE THEY RATE, WE STOP FOREVER. That is the whole point of this file, and
+// it is the reason we ask on our own card rather than through Apple's native
+// star popup. Apple never tells us anyone rated: no callback, no API, no field
+// on the app record. A player who rates inside the native popup is invisible to
+// us and would go on being asked forever. A player who taps through our card is
+// not — we record outcome 'acted' and never ask again, lifetime, no expiry.
 //
-// A player who rates inside Apple's native popup is invisible to us, so they
-// would keep getting asked. Two things blunt that: iOS itself declines to draw
-// the popup again for someone who has already rated the current version, and
-// BACKOFF_AFTER_ASKS below stretches the gap right out once someone has been
-// asked repeatedly without ever responding.
+// The trade is deliberate. The native popup converts better because rating
+// happens inline in two taps, but it is unobservable and Apple caps it at three
+// per user per year. We chose the surface we can actually honour a promise on.
 //
-// The limits, and whose they are:
+// THE SCHEDULE. Keen early, backing off once someone is clearly not interested:
 //
-//   NATIVE_CAP_PER_YEAR — Apple's, not ours. SKStoreReviewController shows at
-//     most 3 popups per user per 365 days and silently does nothing beyond
-//     that: no popup, no error, no way to detect it. So past 3 we stop asking
-//     for the popup and serve the soft card instead, which has no such cap.
-//     Without this we would log "asked" for prompts Apple never drew.
-//
-//   COOLDOWN_DAYS — ours. How often an ask may reappear for someone who has
-//     not responded.
-//
-//   BACKOFF_AFTER_ASKS / BACKOFF_DAYS — ours. The protection against nagging
-//     someone we cannot tell has already rated.
+//   day 0    signs up, downloads, plays          nothing
+//   day 1+   first finished Game on a RETURN     ask 1
+//            visit (account at least a day old)
+//   +7d      ignored                             ask 2
+//   +14d     ignored                             ask 3
+//   +30d     ignored                             ask 4
+//   +90d     ignored, and every 90 after         ask 5, 6, ...
+//   any time they tap Rate us                    never again
 //
 // review_prompts isn't in the generated Database type yet (types lag the
 // migration), so the service client is cast the same way /api/wc-thanks does.
@@ -41,17 +36,12 @@ function service(): SupabaseClient {
   return createServiceClient() as unknown as SupabaseClient;
 }
 
-const NATIVE_CAP_PER_YEAR = 3;
-const COOLDOWN_DAYS = 7;
+// Days to wait before the Nth ask, indexed by how many they have already had.
+// Past the end of the list the last value repeats, so ask 5 onwards is quarterly.
+const ASK_GAP_DAYS = [7, 14, 30, 90];
 // Don't ask someone on their very first day — the ask is for players who came
 // back, not for a stranger mid-first-session.
 const MIN_ACCOUNT_AGE_HOURS = 24;
-
-// We are blind to whether anyone actually rated (see below), so a player who
-// rated via Apple's popup would otherwise be asked every 7 days forever. After
-// this many asks with no response, back right off.
-const BACKOFF_AFTER_ASKS = 4;
-const BACKOFF_DAYS = 60;
 
 const DAY_MS = 86_400_000;
 
@@ -88,20 +78,15 @@ export async function GET() {
       return NextResponse.json({ ask: false });
     }
 
-    const cooldownDays = asks.length >= BACKOFF_AFTER_ASKS ? BACKOFF_DAYS : COOLDOWN_DAYS;
     const last = asks[0];
-    if (last && Date.now() - Date.parse(last.created_at) < cooldownDays * DAY_MS) {
-      return NextResponse.json({ ask: false });
+    if (last) {
+      const gap = ASK_GAP_DAYS[Math.min(asks.length - 1, ASK_GAP_DAYS.length - 1)];
+      if (Date.now() - Date.parse(last.created_at) < gap * DAY_MS) {
+        return NextResponse.json({ ask: false });
+      }
     }
 
-    const yearAgo = Date.now() - 365 * DAY_MS;
-    const nativeThisYear = asks.filter(
-      (a) => a.variant === "native" && Date.parse(a.created_at) >= yearAgo,
-    ).length;
-    return NextResponse.json({
-      ask: true,
-      variant: nativeThisYear < NATIVE_CAP_PER_YEAR ? "native" : "card",
-    });
+    return NextResponse.json({ ask: true, variant: "card" });
   } catch {
     // Never let a broken prompt break a game-end screen.
     return NextResponse.json({ ask: false });

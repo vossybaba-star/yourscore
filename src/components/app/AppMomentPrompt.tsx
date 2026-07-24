@@ -19,10 +19,11 @@
  *     SHOWN is recorded. A device stamp left no trace and reset on reinstall,
  *     so we could not count our own asks at all.
  *
- * The server picks the variant: Apple's inline star popup while the player is
- * under Apple's 3-per-365-days cap, our soft card after that (past the cap the
- * popup is a silent no-op, so asking again would show nothing and still look
- * like an ask).
+ * The rating ask is ALWAYS our own card, never Apple's native star popup. The
+ * popup converts better, but Apple never reports who rated through it, so a
+ * player who rated would be asked forever. A tap on our card is observable, so
+ * "once they rate we stop" is a promise we can actually keep. The server owns
+ * the schedule; see /api/review-prompt.
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -51,22 +52,6 @@ function stamp(key: string): void {
   try { localStorage.setItem(key, String(Date.now())); } catch { /* ignore */ }
 }
 
-// Fire Apple's inline review popup (SKStoreReviewController) via the native
-// plugin. Guarded with isPluginAvailable so a build predating the plugin doesn't
-// throw — it reports back that it didn't fire and we fall back to the soft card.
-// NOTE: true means we CALLED it, not that Apple drew anything; Apple gives us no
-// way to know. The server-side cap is what keeps that distinction honest.
-async function fireNativeReview(): Promise<boolean> {
-  try {
-    const { Capacitor } = await import("@capacitor/core");
-    if (!Capacitor.isPluginAvailable("InAppReview")) return false;
-    const { InAppReview } = await import("@capacitor-community/in-app-review");
-    await InAppReview.requestReview();
-    return true;
-  } catch {
-    return false;
-  }
-}
 function openReviewPage(): void {
   try { window.open(REVIEW_URL, "_blank", "noopener"); } catch { /* ignore */ }
 }
@@ -108,24 +93,14 @@ export function AppMomentPrompt() {
 
     (async () => {
       if (isNative()) {
-        // Server owns the cooldown, the yearly native cap and the record.
-        let decision: { ask?: boolean; variant?: string } = {};
+        // Server owns the whole schedule and the record.
+        let decision: { ask?: boolean } = {};
         try {
           decision = await (await fetch("/api/review-prompt")).json();
         } catch {
           return; // offline or signed out — say nothing
         }
         if (!decision.ask || cancelled) return;
-
-        if (decision.variant === "native") {
-          const fired = await fireNativeReview();
-          if (cancelled) return;
-          // No plugin means the popup never happened — record and show what the
-          // player actually got, which is the card.
-          promptIdRef.current = await logShown(fired ? "native" : "card");
-          if (!fired) setMode("rate");
-          return;
-        }
 
         promptIdRef.current = await logShown("card");
         if (!cancelled) setMode("rate");
