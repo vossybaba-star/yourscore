@@ -74,7 +74,9 @@ function buildSquadWithClubCap(rng: () => number, pool: PoolPlayer[], clubId: nu
   const byPos: Record<FantasyPos, PoolPlayer[]> = { GK: [], DEF: [], MID: [], FWD: [] };
   for (const p of pool) if (!forced.has(p.id)) byPos[p.pos].push(p);
   const clubCount = new Map<number, number>([[clubId, MAX_PER_CLUB]]);
-  const picks: number[] = [...forced];
+  // Array.from, not [...forced]: this tsconfig sets no `target`, so tsc defaults
+  // to ES5 and refuses to spread a Set. Same reason ppg.ts uses Map#forEach.
+  const picks: number[] = Array.from(forced);
   const remaining = { ...QUOTA, [pos]: QUOTA[pos] - MAX_PER_CLUB };
   (Object.keys(remaining) as FantasyPos[]).forEach((p) => {
     const n = remaining[p];

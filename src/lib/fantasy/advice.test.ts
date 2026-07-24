@@ -84,7 +84,9 @@ function buildSquadWithClubCap(rng: () => number, pool: PoolPlayer[], clubId: nu
   const byPos: Record<FantasyPos, PoolPlayer[]> = { GK: [], DEF: [], MID: [], FWD: [] };
   for (const p of pool) if (!forced.has(p.id)) byPos[p.pos].push(p);
   const clubCount = new Map<number, number>([[clubId, MAX_PER_CLUB]]);
-  const picks: number[] = [...forced];
+  // Array.from, not [...forced]: this tsconfig sets no `target`, so tsc defaults
+  // to ES5 and refuses to spread a Set. Same reason ppg.ts uses Map#forEach.
+  const picks: number[] = Array.from(forced);
   const remaining = { ...QUOTA, [pos]: QUOTA[pos] - MAX_PER_CLUB };
   (Object.keys(remaining) as FantasyPos[]).forEach((p) => {
     const n = remaining[p];
@@ -224,21 +226,43 @@ test("buildCandidates: never proposes an 'in' player marked i, s, or u", () => {
   }
 });
 
-// ── criterion 6: resolveAvailability season-epoch guard ──────────────────────
-test("resolveAvailability: empty rows, wrong season, and matching season", () => {
-  assert.equal(resolveAvailability([], "2026/27"), null);
+// ── criterion 6: resolveAvailability, and its no-availability mode ───────────
+// The season-epoch parameter is GONE. Its old source (fantasy_player_status)
+// accumulated rows across seasons, so this function had to filter on fpl_season.
+// Availability now comes from fantasy_fpl_snapshot, which is immutable and keyed
+// on captured_at, and the caller passes only the newest capture — so the epoch
+// guard is the read and there is no mixed-epoch row left to filter here.
+test("resolveAvailability: no rows means NO-FILTER mode, not a clean bill of health", () => {
+  // null, not an empty Map. An empty Map reads as "FPL says nobody is injured"
+  // and would let the planner buy a player who is out for the season.
+  assert.equal(resolveAvailability([]), null);
+});
 
-  const wrongSeason = [{ playerId: 1, status: "a" as const, chance: 100, news: "", fplSeason: "2025/26" }];
-  assert.equal(resolveAvailability(wrongSeason, "2026/27"), null);
-
-  const matching = [
-    { playerId: 1, status: "i" as const, chance: 0, news: "Knee injury", fplSeason: "2026/27" },
-    { playerId: 2, status: "a" as const, chance: 100, news: "", fplSeason: "2026/27" },
-  ];
-  const map = resolveAvailability(matching, "2026/27");
+test("resolveAvailability: passes FPL's own status, chance and words straight through", () => {
+  const map = resolveAvailability([
+    { playerId: 1, status: "i", chance: 0, news: "Knee injury" },
+    { playerId: 2, status: "a", chance: 100, news: "" },
+    { playerId: 3, status: "d", chance: 25, news: "Knock" },
+  ]);
   assert.ok(map);
   assert.deepEqual(map!.get(1), { status: "i", chance: 0, news: "Knee injury" });
   assert.deepEqual(map!.get(2), { status: "a", chance: 100, news: "" });
+  assert.deepEqual(map!.get(3), { status: "d", chance: 25, news: "Knock" });
+});
+
+test("resolveAvailability: an unreadable status resolves to unavailable, never to available", () => {
+  // The snapshot columns are nullable. Treating an unknown status as 'a' would
+  // mean a missing fact silently reads as good news — the wrong direction to err.
+  const map = resolveAvailability([
+    { playerId: 1, status: null, chance: null, news: null },
+    { playerId: 2, status: "wat", chance: null, news: null },
+    { playerId: 3, status: "A", chance: 100, news: null },
+  ]);
+  assert.ok(map);
+  assert.equal(map!.get(1)!.status, "u", "a null status must not read as available");
+  assert.equal(map!.get(2)!.status, "u", "an unrecognised status must not read as available");
+  assert.equal(map!.get(3)!.status, "a", "case is normalised — 'A' is FPL's 'a'");
+  assert.equal(map!.get(1)!.news, "", "a null news string becomes empty, never the literal 'null'");
 });
 
 // ── criterion 10: adversarial pass, deterministic — 3-from-one-club ──────────
