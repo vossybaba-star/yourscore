@@ -26,13 +26,17 @@ import { createServiceClient } from "@/lib/supabase/service";
 // this route increments on each game-end screen and which was seeded from every
 // existing play record so a veteran is not treated as new.
 //
-//   3 Games played      ask 1   (and account at least a day old, so it is a
-//                                return visit rather than mid first session)
-//   +7 Games            ask 2
-//   +15 Games           ask 3
-//   +25 Games           ask 4
-//   +50 Games, repeating ask 5, 6, ...
+//   game 3    ask 1   (and account at least a day old, so it lands on a return
+//                      visit rather than mid first session)
+//   game 6    ask 2
+//   game 10   ask 3
+//   game 15   ask 4
+//   game 21   ask 5, then 28, 36, 45, 55 ...
 //   taps Rate us        never again
+//
+// The gap widens by one Game each time: 3, then 4, then 5, then 6. Somebody
+// who has ignored ten asks is down to one every twelve Games, which backs off
+// on its own without a special case for it.
 //
 // Gaps are measured from the play count AT the previous ask, not cumulative
 // totals. Cumulative would misfire for every seeded veteran: a player sitting
@@ -52,9 +56,9 @@ export const fetchCache = "force-no-store";
 
 // Games before the FIRST ask.
 const MIN_GAMES = 3;
-// Games since the previous ask, indexed by how many they have already had. Past
-// the end of the list the last value repeats, so it settles at every 50 Games.
-const ASK_GAP_GAMES = [7, 15, 25, 50];
+// Games since the previous ask. It widens by one each time, so asks land on
+// Games 3, 6, 10, 15, 21, 28 and so on.
+const askGapGames = (priorAsks: number) => priorAsks + 2;
 // Don't ask someone on their very first day — the ask is for players who came
 // back, not for a stranger mid-first-session.
 const MIN_ACCOUNT_AGE_HOURS = 24;
@@ -106,7 +110,7 @@ export async function GET() {
       return NextResponse.json({ ask: games >= MIN_GAMES, variant: "card" });
     }
 
-    const gap = ASK_GAP_GAMES[Math.min(asks.length - 1, ASK_GAP_GAMES.length - 1)];
+    const gap = askGapGames(asks.length);
     // games_at is null for rows written before migration 103 (the WC backfill).
     // Treating those as "asked at their current count" is the cautious read: it
     // waits a full gap rather than firing immediately on deploy.
