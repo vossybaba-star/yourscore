@@ -535,12 +535,21 @@ test("buildAdvicePayload: an optimiser result becomes payload.recommended — po
   assert.equal(m.out.sellTenths, squad.picks.find((p) => p.id === owned)!.buyTenths, "at par, sellTenths == buyTenths");
   assert.equal(m.in.id, candidatePlayer.id);
   assert.equal(m.in.priceTenths, candidatePlayer.priceTenths);
-  // Everyone now gets a free transfer each gameweek, and it is spent BEFORE any
-  // credit (it expires and cannot be cashed, so saving it banks nothing). So the
-  // FIRST move of a plan is "free", not "credit" — and the payload must copy
-  // whatever the optimiser decided rather than re-deriving it.
+  // The baseline move everyone gets each gameweek is granted as a CREDIT at
+  // gameweek rollover (engine.ts::grantBaseline), so by the time the optimiser
+  // sees it, it is already inside `credits` — the fixture above passes
+  // `credits: 1` precisely to represent "you have this week's baseline move".
+  // It is therefore labelled "credit", not "free".
+  //
+  // The archive branch modelled the same move as a separate perishable
+  // `weeklyFree` counter spent ahead of credits, and asserted "free" here.
+  // Porting that on top of grantBaseline would have granted it twice, so
+  // `weeklyFree` now defaults to 0 and this expectation moves with it. "free" is
+  // reserved for a wildcard week, where the move genuinely costs nothing at all.
+  //
+  // What the user pays is unchanged either way: this move costs them nothing.
   assert.equal(m.paid, optimised.moves[0].paid, "payload copies the optimiser's own label");
-  assert.equal(m.paid, "free", "first move of the week spends the perishable free transfer");
+  assert.equal(m.paid, "credit", "the baseline move arrives as a credit, and is spent as one");
   assert.equal(m.gain, 10);
   assert.equal(payload.recommended.totalGain, optimised.totalGain);
   assert.equal(payload.recommended.hitsTaken, optimised.hitsTaken);

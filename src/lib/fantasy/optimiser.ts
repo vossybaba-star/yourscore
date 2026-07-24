@@ -56,9 +56,22 @@ import {
 } from "./engine";
 
 // ── The contract ──────────────────────────────────────────────────────────────
-/** From projection.ts (built in parallel by another agent) — declared locally
- *  per the brief so this module never depends on a file that may not exist
- *  yet. playerId -> [gw+0, gw+1, gw+2] expected YourScore points. */
+/** playerId -> [gw+0, gw+1, gw+2] points per gameweek, best first.
+ *
+ *  DECLARED LOCALLY, ON PURPOSE, AND THIS IS THE LOAD-BEARING SEAM. This module
+ *  never learns what produced these numbers — it only ranks them. That is what
+ *  let the xP model die without taking the planner with it: an expected-points
+ *  model originally filled this map, it was measured against a plain most-owned
+ *  template and lost (1757 template, 1457 for the ML arm), and it was deleted.
+ *  The planner needed no change, because the contract is a map of numbers.
+ *
+ *  Today it is filled from `seasonAverageScores` (ppg.ts) — season-to-date
+ *  points per gameweek elapsed, a PAST-TENSE fact. Whatever fills it next must
+ *  also arrive on one consistent scale for every player: mixing two differently
+ *  measured groups in this map is the single failure shape this codebase keeps
+ *  reproducing. Do not put odds-derived signal here — measured at −58
+ *  points/season (p=0.0001), and our odds are pre-kickoff rather than
+ *  pre-deadline, so they leak information a real user would never have had. */
 export type ProjectedPoints = Map<number, number[]>;
 
 export interface OptimiseInput {
