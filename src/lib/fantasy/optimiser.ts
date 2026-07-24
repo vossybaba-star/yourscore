@@ -149,10 +149,13 @@ const HORIZON_WEIGHTS = [1.0];
  *  BEHIND a greedy baseline that simply spent them. Small now, and honest about
  *  what it is.
  *
- *  0.75 on FPL's scale (was 2.0 on the old ~2.6x one — same size floor, new
- *  units). Deliberately not a whole number: a whole point is a real chunk of an
- *  FPL projection, and this is only meant to swallow rounding. */
-export const MOVE_MARGIN = 0.75;
+ *  2.0 on THIS repo's scoring scale (values.ts v1, ≈2.6x FPL, where a
+ *  60-minute appearance is 6, not FPL's 2). If values.ts is ever moved onto
+ *  FPL's own scale this number moves with it (it would be 0.75 there — a
+ *  whole point is a real chunk of an FPL projection, and this is only meant
+ *  to swallow rounding); see the scale-mismatch note in ppg.ts for why that
+ *  pairing is not optional. */
+export const MOVE_MARGIN = 2.0;
 
 // ── Internal move representation (before payment is assigned) ────────────────
 interface RawMove { outId: number; inId: number; rawGain: number }
