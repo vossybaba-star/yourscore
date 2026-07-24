@@ -933,6 +933,7 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
           ...(embedded ? [{ label: "Leagues", to: "/fantasy/leagues" }] : []),
           { label: "Fantasy tips", to: "/fantasy/news" },
           { label: KNOWLEDGE_NAME, to: "/fantasy/knowledge" },
+          { label: "Plan ahead", to: "/fantasy/plan" },
           { label: "My history", to: "/fantasy/history" },
           { label: "How it works", to: "/fantasy/rules" },
         ] as const).map((l) => (
