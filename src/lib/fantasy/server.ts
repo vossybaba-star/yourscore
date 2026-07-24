@@ -8,7 +8,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import poolJson from "@/data/gates/pool.json";
-import { buildRound, clientView, grade, type Round } from "@/lib/gates/serve";
+import { buildRound, clientView, grade, questionKey, type Round } from "@/lib/gates/serve";
 import type { GateQuestion } from "@/lib/gates/types";
 import {
   applyTransfer, BASELINE_CREDITS_PER_GW, cashOverflow, CHIPS, creditsForRound, GAMEWEEKS_PER_CHIP,
@@ -333,8 +333,35 @@ export async function advanceGw(db: Db, userId: string) {
 }
 
 // ── knowledge round ───────────────────────────────────────────────────────────
-const roundFor = (gw: number, userId: string): Round =>
-  buildRound(GATES.questions, { gameweek: `fantasy:${gw}`, userId, formation: "4-3-3" });
+/** The questions a user has already met this season, so a round can avoid them.
+ *
+ *  Derived, not stored: rounds are deterministic per (gameweek, user), so
+ *  replaying every prior gameweek the user actually STARTED reproduces exactly
+ *  what they were served — no seen-questions table to keep in step, and nothing
+ *  that could disagree with the round they answered. Stable by construction: the
+ *  set of started gameweeks below `gw` is frozen (a locked gameweek's round never
+ *  changes), so rebuilding an old round always yields the same eleven, which is
+ *  the property grading and viewRun depend on.
+ *
+ *  Replayed FORWARD, each round excluding the ones before it, so the reproduced
+ *  exclusion matches the one that was live when the round was first served. */
+async function seenBefore(db: Db, userId: string, gw: number): Promise<Set<string>> {
+  const { data } = await db.from("fantasy_entries")
+    .select("gw").eq("user_id", userId).lt("gw", gw)
+    .not("round_version", "is", null).order("gw", { ascending: true });
+  const priorGws = ((data ?? []) as { gw: number }[]).map((r) => r.gw);
+  const seen = new Set<string>();
+  for (const g of priorGws) {
+    const r = buildRound(GATES.questions, { gameweek: `fantasy:${g}`, userId, formation: "4-3-3", exclude: seen });
+    for (const q of r.questions) seen.add(questionKey(q));
+  }
+  return seen;
+}
+
+async function roundFor(db: Db, gw: number, userId: string): Promise<Round> {
+  const exclude = await seenBefore(db, userId, gw);
+  return buildRound(GATES.questions, { gameweek: `fantasy:${gw}`, userId, formation: "4-3-3", exclude });
+}
 
 export async function startRound(db: Db, userId: string) {
   const gw = await currentGw(db, userId);
@@ -347,7 +374,7 @@ export async function startRound(db: Db, userId: string) {
   }
   if (entry.round_version !== GATES.version)
     throw new HttpError(409, "question pool changed — round restarted", "stale-pool");
-  const round = roundFor(gw.gw, userId);
+  const round = await roundFor(db, gw.gw, userId);
   return {
     gw: gw.gw,
     questions: clientView(round),
@@ -413,7 +440,7 @@ export async function stepRound(db: Db, userId: string, k: number, optionId: num
     throw new HttpError(409, `expected question ${entry.round_answers.length}`, "order");
   if (!isOpenForEdits(gw, entry)) throw new HttpError(409, "gameweek is locked", "locked");
 
-  const round = roundFor(gw.gw, userId);
+  const round = await roundFor(db, gw.gw, userId);
   const q = round.questions[k];
   if (!q) throw new HttpError(500, "round shorter than expected");
   let correct = false;
@@ -711,7 +738,7 @@ export async function viewRun(db: Db, viewerId: string, targetUserId: string, le
     throw new HttpError(409, "runs open up after the deadline", "not-ready");
   }
 
-  const round = roundFor(gw.gw, targetUserId);
+  const round = await roundFor(db, gw.gw, targetUserId);
   const answers = (target.round_answers ?? []) as (number | null)[];
   const { data: prof } = await db.from("profiles")
     .select("display_name, username").eq("id", targetUserId).maybeSingle();
@@ -756,7 +783,7 @@ export async function roundHint(db: Db, userId: string, k: number) {
     if (!claimed?.length) throw new HttpError(409, "your Insight is already spent this round", "used");
   }
 
-  const round = roundFor(gw.gw, userId);
+  const round = await roundFor(db, gw.gw, userId);
   const q = round.questions[k];
   if (!q) throw new HttpError(500, "round shorter than expected");
   const { seededRng, shuffle } = await import("@/lib/gates/rng");

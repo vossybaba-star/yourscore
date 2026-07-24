@@ -65,13 +65,29 @@ export function formationSlots(formation: string): Position[] {
  * reused as an answer across the round, difficulty mixed easy→hard within each
  * position so early picks warm the user up.
  */
+/** A stable identity for a question, for the season seen-set.
+ *
+ *  NOT the prompt alone. Most of the pool is higher-lower, whose prompt is a
+ *  TEMPLATE — "Who costs more in fantasy football?" appears on 60 different
+ *  questions, each comparing a different pair of players. Keying on the prompt
+ *  collapsed 424 real questions to 131 distinct ones, so a user "ran out" of
+ *  questions a third of the way through the pool and started repeating at
+ *  gameweek 12 instead of the ~38 the pool can actually sustain. The players in
+ *  the options ARE the question, so they belong in the key. Sorted, so option
+ *  order (which is itself shuffled per user) can't split one question into two. */
+export function questionKey(q: GateQuestion): string {
+  const opts = q.options.map((o) => o.label).sort().join("|");
+  return `${q.prompt}|${opts}`;
+}
+
 export function buildRound(
   pool: readonly GateQuestion[],
-  opts: { gameweek: string; userId: string; formation?: string },
+  opts: { gameweek: string; userId: string; formation?: string; exclude?: ReadonlySet<string> },
 ): Round {
   const positions = formationSlots(opts.formation ?? "4-3-3");
   const seed = `${opts.gameweek}:${opts.userId}`;
   const rand = seededRng(seed);
+  const exclude = opts.exclude ?? EMPTY_SET;
 
   // Group + shuffle the pool per position (a question tagged with several
   // positions is eligible for each).
@@ -90,13 +106,25 @@ export function buildRound(
   for (const [pos, n] of Array.from(slotCount.entries())) {
     const eligible = byPos.get(pos) ?? [];
     const chosen: GateQuestion[] = [];
-    for (const q of eligible) {
-      if (chosen.length >= n) break;
-      if (usedAnswers.has(q.answerId) || usedPrompts.has(q.prompt)) continue;
-      chosen.push(q);
-      usedAnswers.add(q.answerId);
-      usedPrompts.add(q.prompt);
-    }
+    // TWO PASSES over the same seeded order. First take only questions the user
+    // hasn't seen this season; only if a position can't be filled from unseen
+    // ones do we fall back to repeats. Measured, this is the difference between a
+    // 72% season-long repeat rate (a repeat every gameweek from GW2) and near
+    // zero until the pool is genuinely exhausted. The seeded order is identical
+    // in both passes, so the round stays reproducible — grading and viewRun index
+    // into it and must never shift.
+    const take = (allowSeen: boolean) => {
+      for (const q of eligible) {
+        if (chosen.length >= n) break;
+        if (usedAnswers.has(q.answerId) || usedPrompts.has(q.prompt)) continue;
+        if (!allowSeen && exclude.has(questionKey(q))) continue;
+        chosen.push(q);
+        usedAnswers.add(q.answerId);
+        usedPrompts.add(q.prompt);
+      }
+    };
+    take(false);
+    if (chosen.length < n) take(true); // pool exhausted for this position — allow a repeat
     // Within a position, serve easiest first (warm-up curve).
     chosen.sort((a, b) => a.difficulty - b.difficulty);
     for (const q of chosen) picked.push({ q, pos });
@@ -106,6 +134,8 @@ export function buildRound(
   // grouping above already yields; flatten to the final list.
   return { seed, questions: picked.map((p) => p.q), positions };
 }
+
+const EMPTY_SET: ReadonlySet<string> = new Set();
 
 /** Client-safe view of a round — answers + meta stripped. */
 export function clientView(round: Round): ServedQuestion[] {

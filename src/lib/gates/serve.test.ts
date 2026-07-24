@@ -11,8 +11,10 @@ import {
   clientView,
   formationSlots,
   grade,
+  questionKey,
   roundBudget,
 } from "./serve";
+import poolJson from "../../data/gates/pool.json";
 
 /** A synthetic pool: `n` questions per position, unique answers/prompts. */
 function pool(perPos: number): GateQuestion[] {
@@ -153,4 +155,73 @@ test("clientView: non who-am-i formats carry no clues", () => {
   for (const s of clientView(round)) {
     if (s.format !== "who-am-i") assert.equal(s.clues, undefined);
   }
+});
+
+// ── seen-question exclusion (Gate 3) ─────────────────────────────────────────
+// Measured before this existed: a user met a repeat every gameweek from GW2, and
+// saw only ~115 unique questions across a season (72% repeats). The exclusion has
+// to fix that WITHOUT ever making a round non-reproducible — grading indexes
+// stored answers into the round, and viewRun rebuilds a league-mate's round from
+// scratch, so the same (gameweek, user, exclusion) must always give the same
+// eleven in the same order.
+const REAL_POOL = (poolJson as unknown as { questions: GateQuestion[] }).questions;
+
+/** Replay a whole season the way the server does: forward, each gameweek
+ *  excluding everything seen in the ones before it. */
+function season(userId: string, weeks = 38) {
+  const seen = new Set<string>();
+  const rounds: string[][] = [];
+  let repeats = 0, served = 0, firstRepeat: number | null = null;
+  for (let gw = 1; gw <= weeks; gw++) {
+    const r = buildRound(REAL_POOL, { gameweek: `fantasy:${gw}`, userId, formation: "4-3-3", exclude: seen });
+    const keys = r.questions.map(questionKey);
+    for (const k of keys) {
+      served++;
+      if (seen.has(k)) { repeats++; if (firstRepeat === null) firstRepeat = gw; }
+    }
+    keys.forEach((k) => seen.add(k));
+    rounds.push(keys);
+  }
+  return { seen, rounds, repeats, served, firstRepeat };
+}
+
+test("exclusion: every round is still exactly 11, deep into a season", () => {
+  const s = season("user-a");
+  s.rounds.forEach((r, i) => assert.equal(r.length, 11, `gameweek ${i + 1} served ${r.length}`));
+});
+
+test("exclusion: ~18 fresh gameweeks before any repeat (was a repeat at GW2)", () => {
+  const s = season("user-a");
+  assert.ok(
+    s.firstRepeat === null || s.firstRepeat >= 18,
+    `first repeat at gameweek ${s.firstRepeat}, expected none before 18`,
+  );
+});
+
+test("exclusion: season repeat rate is a third of the unfixed 72%", () => {
+  // The residual (~22%) is pool EXHAUSTION, not a serving flaw: a 38-week season
+  // needs 418 questions and only ~324 are reachable per user (DEF slots alone want
+  // 152 and the pool has 151 DEF-eligible). Closing it fully is a content task —
+  // more questions — not an engine one. The engine's job is to serve every
+  // available question before repeating any, which it now does.
+  const s = season("user-a");
+  const rate = s.repeats / s.served;
+  assert.ok(rate < 0.30, `repeat rate ${(rate * 100).toFixed(1)}% should be well under 30% (was 72%)`);
+});
+
+test("exclusion: REPRODUCIBLE — same (gw, user, exclusion) → identical eleven", () => {
+  const exclude = season("user-c", 6).seen;
+  const a = buildRound(REAL_POOL, { gameweek: "fantasy:7", userId: "user-c", formation: "4-3-3", exclude });
+  const b = buildRound(REAL_POOL, { gameweek: "fantasy:7", userId: "user-c", formation: "4-3-3", exclude });
+  assert.deepEqual(a.questions.map((q) => q.answerId), b.questions.map((q) => q.answerId));
+  assert.deepEqual(a.questions.map(questionKey), b.questions.map(questionKey));
+});
+
+test("exclusion: STABLE — replaying a past round later gives the same questions", () => {
+  // The property viewRun relies on: a user on GW10 rebuilding their GW3 round
+  // must get exactly what was served at GW3. GW3's exclusion is the started
+  // gameweeks before it, which are frozen, so the two replays must agree.
+  const early = season("user-d", 3).rounds[2];
+  const later = season("user-d", 10).rounds[2];
+  assert.deepEqual(later, early, "GW3's questions shifted when rebuilt from a later point");
 });

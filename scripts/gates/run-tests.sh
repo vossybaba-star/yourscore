@@ -24,7 +24,7 @@ npx tsc \
   src/lib/gates/history.test.ts \
   --rootDir src --outDir .tmp-gates-test \
   --module commonjs --moduleResolution node --target es2022 \
-  --esModuleInterop --skipLibCheck --types node
+  --esModuleInterop --skipLibCheck --resolveJsonModule --types node
 
 node --test .tmp-gates-test/lib/gates/*.test.js
 status=$?
