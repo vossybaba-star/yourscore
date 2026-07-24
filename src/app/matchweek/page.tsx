@@ -135,8 +135,8 @@ export default function MatchweekPage() {
       )}
 
       {/* ── Fantasy — holding screen until the game opens with the season ─── */}
-      {/* The real game. FantasyHold was the pre-launch pitch for it and is
-          kept for reference only — the section now IS the squad. */}
+      {/* The real game. This section used to be a pre-launch holding screen;
+          it is now the squad itself. */}
       {section === "fantasy" && <FantasyHub embedded />}
 
       <BottomNav />

@@ -10,7 +10,7 @@
  * Colour semantics come from tailwind.config.ts, not from taste:
  *   lime = 38-0 / energy      teal = QUIZ + KNOWLEDGE      gold = WINS ONLY
  * Fantasy is the knowledge game, so TEAL is its accent — the same choice the
- * reference screen makes (components/matchweek/FantasyHold.tsx). Gold is
+ * reference screen made (the PL tab's fantasy pitch). Gold is
  * rationed to things you WON: a gameweek total, top of a table, a month title.
  * Spending gold on every button is what made it mean nothing.
  */

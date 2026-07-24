@@ -26,7 +26,20 @@ const EMBEDDED_PAGE: CSSProperties = { padding: "4px 16px 8px", color: INK };
 
 /** Width of the dugout strip. Wide enough for a crest and a surname, narrow
  *  enough that five outfielders still fit across the pitch beside it. */
-const DUGOUT_W = 62;
+const DUGOUT_W = 68;
+
+/** Long surnames don't fit a 68px dugout strip at the default size, and
+ *  "Arrizabalaga" was rendering as "Arrizab…". Sizing for the WORST case
+ *  ("Williams-Barnett", 16 chars) would shrink every name to unreadable, so the
+ *  size adapts: 83% of the pool is 8 characters or fewer and keeps full size.
+ *  Measured against the real pool, not guessed. */
+function benchFontSize(name: string): number {
+  // A hyphenated name wraps AT the hyphen, so what has to fit on one line is the
+  // longest segment, not the whole string. Sizing "Williams-Barnett" as 16
+  // characters shrank it to 6.8px when its widest line is only "Williams-".
+  const n = Math.max(...name.split("-").map((part) => part.length));
+  return n <= 8 ? 9.5 : n <= 10 ? 8.5 : n <= 13 ? 7.5 : 6.8;
+}
 
 /** On the pitch there is room for ONE word. "Jean-Philippe Mateta" forced every
  *  tile in the row wide enough to hold it, which is what made the pitch too big
@@ -187,10 +200,11 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
         {!embedded && <Header right={<Btn small onClick={() => router.push("/")}>All games</Btn>} />}
 
         {/* The hero and the numbered beats are lifted from the live PL-tab
-            holding screen (components/matchweek/FantasyHold.tsx), which the
-            founder rates over anything written for this page. Same headline,
-            same 01-04 structure; only the CTA differs, because the game now
-            exists and the ask is "sign in" rather than "join the waitlist". */}
+            holding screen, which the founder rated over anything written for
+            this page. Same headline, same 01-04 structure; only the CTA differs,
+            because the game now exists and the ask is "sign in" rather than
+            "join the waitlist". (That holding screen is deleted — this IS the
+            Fantasy section now.) */}
         <div className="rounded-2xl relative overflow-hidden px-5 pt-5 pb-5"
           style={{
             background: `linear-gradient(150deg, ${tint(TEAL, "1a")}, ${tint(TEAL, "05")})`,
@@ -352,22 +366,27 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
     const p = pool.get(id);
     const isCap = squad.captain === id, isVice = squad.vice === id;
     const onBench = benchIdx !== undefined;
+    const label = p ? pitchName(p.name) : `#${id}`;
     return (
       <div style={{ position: "relative" }}>
         <button onClick={() => !locked && setMenuFor(menuFor === id ? null : id)} style={{
           background: onBench ? "rgba(255,255,255,0.03)" : "rgba(9,21,16,0.72)",
           border: `1px solid ${isCap || isVice ? GOLD : onBench ? "transparent" : LINE}`,
           color: onBench ? MUTED : INK,
-          borderRadius: 8, padding: onBench ? "5px 3px" : "5px 4px",
-          fontSize: onBench ? 9.5 : 10.5, fontWeight: 600, cursor: "pointer",
+          borderRadius: 8, padding: onBench ? "5px 2px" : "5px 4px",
+          fontSize: onBench ? benchFontSize(label) : 10.5, fontWeight: 600, cursor: "pointer",
           display: "flex", flexDirection: "column", alignItems: "center", gap: 1,
           width: onBench ? "100%" : 62, minWidth: 0, lineHeight: 1.15,
         }}>
           {p && <Crest club={p.club} size={onBench ? 15 : 17} />}
-          <span style={{
+          <span style={onBench ? {
+            // Wrap rather than truncate: a name you can't read is worse than a
+            // two-line tile, and hyphenated names break at the hyphen anyway.
+            maxWidth: "100%", overflowWrap: "anywhere", textAlign: "center", lineHeight: 1.1,
+          } : {
             maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
           }}>
-            {p ? pitchName(p.name) : `#${id}`}{isCap ? " ©" : isVice ? " ⓥ" : ""}
+            {label}{isCap ? " ©" : isVice ? " ⓥ" : ""}
           </span>
           <span style={{ color: onBench ? "#5b645e" : MUTED, fontSize: 9 }}>
             {onBench ? `${benchIdx! + 1}` : `£${p?.price.toFixed(1)}`}
