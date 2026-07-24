@@ -245,6 +245,99 @@ export function Sheet({ onClose, labelledBy, children }: {
   );
 }
 
+/** The player card — who they are and everything a pick turns on, in one place.
+ *
+ *  The audit's gap was that a squad was picked on price alone. Tapping a player
+ *  now opens this: position, club, price, availability, their next fixtures and,
+ *  where a gameweek has scored, what they've actually returned in OUR points. It's
+ *  a Sheet (not a route) so it opens over the pick surface without losing your
+ *  place mid-decision, and it closes back to exactly where you were. */
+export function PlayerDetailSheet({
+  player, fixtures, doubt, form, formGws, ownership, action, onClose,
+}: {
+  player: { id: number; name: string; club: string; clubId: number; pos: Pos; price: number };
+  fixtures?: ContextFixture[];
+  doubt?: string;
+  /** Recent YourScore points, oldest gameweek first. Empty pre-season. */
+  form?: number[];
+  formGws?: number[];
+  /** The player's relationship to the viewer's squad, for the honest CTA. */
+  ownership?: "owned" | "affordable" | "too-expensive";
+  action?: { label: string; onClick: () => void };
+  onClose: () => void;
+}) {
+  const total = (form ?? []).reduce((a, b) => a + b, 0);
+  return (
+    <Sheet onClose={onClose} labelledBy="player-detail-title">
+      <div style={{ display: "flex", alignItems: "center", gap: 11, marginBottom: 14 }}>
+        <Crest club={player.club} size={34} />
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div id="player-detail-title" className="font-display" style={{ fontSize: 22, lineHeight: 1.05 }}>
+            {player.name}
+          </div>
+          <div className="font-body" style={{ fontSize: 12.5, color: MUTED, marginTop: 2 }}>
+            {player.pos} · {player.club} · £{player.price.toFixed(1)}m
+          </div>
+        </div>
+        {doubt && <DoubtFlag reason={doubt} />}
+      </div>
+
+      {doubt && (
+        <div style={{ background: "rgba(184,92,56,0.10)", border: "1px solid #B85C38", borderRadius: 10, padding: "9px 12px", marginBottom: 12 }}>
+          <span style={{ fontSize: 12.5, color: "#E08A6B", lineHeight: 1.45 }}>{doubt}</span>
+        </div>
+      )}
+
+      {/* Next fixtures — the thing you plan around. */}
+      <div style={{ marginBottom: fixtures?.length ? 14 : 0 }}>
+        <div className="font-body" style={{ fontSize: 10.5, letterSpacing: "0.1em", color: "#586058", marginBottom: 6 }}>
+          NEXT FIXTURES
+        </div>
+        {fixtures?.length
+          ? <FixtureRun cells={fixtures} max={5} />
+          : <span style={{ fontSize: 12.5, color: MUTED }}>No fixtures scheduled in range.</span>}
+      </div>
+
+      {/* What they've actually returned, once anything has scored. */}
+      {form && form.length > 0 && (
+        <div style={{ marginBottom: 4 }}>
+          <div className="font-body" style={{ fontSize: 10.5, letterSpacing: "0.1em", color: "#586058", marginBottom: 6 }}>
+            RECENT RETURNS · {total} PTS
+          </div>
+          <div style={{ display: "flex", gap: 6 }}>
+            {form.map((pts, i) => (
+              <div key={i} style={{ textAlign: "center" }}>
+                <div style={{
+                  minWidth: 30, padding: "5px 0", borderRadius: 6, fontSize: 13, fontWeight: 700,
+                  fontVariantNumeric: "tabular-nums",
+                  background: pts >= 8 ? GOLD : pts >= 4 ? "#2E4A38" : PANEL_2,
+                  color: pts >= 8 ? "#2A1F00" : pts >= 4 ? INK : MUTED,
+                  border: `1px solid ${pts >= 8 ? GOLD : LINE}`,
+                }}>{pts}</div>
+                {formGws?.[i] !== undefined && (
+                  <div style={{ fontSize: 9, color: "#586058", marginTop: 3 }}>GW{formGws[i]}</div>
+                )}
+              </div>
+            ))}
+          </div>
+          <p style={{ fontSize: 10.5, color: MUTED, margin: "8px 0 0" }}>YourScore points, not FPL&apos;s.</p>
+        </div>
+      )}
+
+      {ownership && (
+        <p style={{ fontSize: 12.5, color: ownership === "owned" ? TEAL : MUTED, margin: "12px 0 0", fontWeight: ownership === "owned" ? 600 : 400 }}>
+          {ownership === "owned" ? "In your squad." : ownership === "affordable" ? "You can afford this player." : "Out of your budget right now."}
+        </p>
+      )}
+
+      <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
+        {action && <div style={{ flex: 1 }}><Btn gold onClick={action.onClick}>{action.label}</Btn></div>}
+        <div style={{ flex: action ? "0 0 auto" : 1 }}><Btn onClick={onClose}>Close</Btn></div>
+      </div>
+    </Sheet>
+  );
+}
+
 // ── decision context: fixtures + availability ────────────────────────────────
 export type Difficulty = "kind" | "medium" | "tough";
 export interface ContextFixture {

@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { sellPrice } from "@/lib/fantasy/engine";
 import {
   api, Btn, Card, Chip, Crest, Deadline, DoubtFlag, EMPTY_CONTEXT, FixtureRun, fmtM, GOLD, Header,
-  INK, LINE, Loading, MUTED, PITCH, page, PANEL, Skel,
+  INK, LINE, Loading, MUTED, PITCH, page, PANEL, PlayerDetailSheet, Skel,
   type ClientPoolPlayer, type FantasyContext, type FantasyState, type Pos,
 } from "@/components/fantasy/shared";
 
@@ -23,6 +23,7 @@ export default function TransfersPage() {
   const [selling, setSelling] = useState<number | null>(null);
   const [q, setQ] = useState("");
   const [ctx, setCtx] = useState<FantasyContext>(EMPTY_CONTEXT);
+  const [detailFor, setDetailFor] = useState<number | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -323,6 +324,8 @@ export default function TransfersPage() {
                 <Crest club={out.club} /> Selling <b>{out.name}</b> ({out.pos})
                 <DoubtFlag reason={ctx.doubts[out.id]} />
                 <FixtureRun cells={ctx.fixtures[out.clubId]} />
+                <button onClick={() => setDetailFor(out.id)} aria-label={`${out.name} details`}
+                  style={{ background: "none", border: "none", color: MUTED, fontSize: 14, cursor: "pointer", padding: "0 2px" }}>ⓘ</button>
               </span>
               <Btn small onClick={() => choose(null)}>Cancel</Btn>
             </span>
@@ -384,30 +387,40 @@ export default function TransfersPage() {
             {candidates.map((p) => {
               const better = hasForm && formTotal(p.id) > formTotal(out!.id);
               return (
-                <button key={p.id} disabled={busy} onClick={() => buy(p.id)} style={{
-                  display: "flex", justifyContent: "space-between", alignItems: "center", padding: "11px 12px",
-                  borderRadius: 10, background: PANEL, color: INK,
-                  border: `1px solid ${better ? "#3C5C46" : LINE}`,
-                  cursor: "pointer", fontSize: 14, fontWeight: 600, textAlign: "left",
+                <div key={p.id} style={{
+                  display: "flex", alignItems: "stretch", gap: 0, borderRadius: 10,
+                  background: PANEL, border: `1px solid ${better ? "#3C5C46" : LINE}`, overflow: "hidden",
                 }}>
-                  <span style={{ display: "flex", alignItems: "center", gap: 7, minWidth: 0 }}>
-                    <Crest club={p.club} />
-                    <span style={{ minWidth: 0 }}>
-                      <span style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                        <span>{p.name}</span>
-                        <DoubtFlag reason={ctx.doubts[p.id]} />
-                      </span>
-                      <span style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
-                        <span style={{ color: MUTED, fontSize: 11.5, fontWeight: 400 }}>{p.club}</span>
-                        <FixtureRun cells={ctx.fixtures[p.clubId]} />
+                  <button disabled={busy} onClick={() => buy(p.id)} style={{
+                    flex: 1, minWidth: 0, display: "flex", justifyContent: "space-between", alignItems: "center",
+                    padding: "11px 12px", background: "transparent", color: INK, border: "none",
+                    cursor: "pointer", fontSize: 14, fontWeight: 600, textAlign: "left",
+                  }}>
+                    <span style={{ display: "flex", alignItems: "center", gap: 7, minWidth: 0 }}>
+                      <Crest club={p.club} />
+                      <span style={{ minWidth: 0 }}>
+                        <span style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                          <span>{p.name}</span>
+                          <DoubtFlag reason={ctx.doubts[p.id]} />
+                        </span>
+                        <span style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
+                          <span style={{ color: MUTED, fontSize: 11.5, fontWeight: 400 }}>{p.club}</span>
+                          <FixtureRun cells={ctx.fixtures[p.clubId]} />
+                        </span>
                       </span>
                     </span>
-                  </span>
-                  <span style={{ display: "flex", alignItems: "center", gap: 9, flexShrink: 0 }}>
-                    <FormLine id={p.id} />
-                    <span style={{ fontWeight: 700, minWidth: 52, textAlign: "right" }}>£{p.price.toFixed(1)}m</span>
-                  </span>
-                </button>
+                    <span style={{ display: "flex", alignItems: "center", gap: 9, flexShrink: 0 }}>
+                      <FormLine id={p.id} />
+                      <span style={{ fontWeight: 700, minWidth: 52, textAlign: "right" }}>£{p.price.toFixed(1)}m</span>
+                    </span>
+                  </button>
+                  {/* Details, separate from the buy tap so a look never signs
+                      anyone by accident. */}
+                  <button onClick={() => setDetailFor(p.id)} aria-label={`${p.name} details`} style={{
+                    flexShrink: 0, width: 40, background: "transparent", border: "none",
+                    borderLeft: `1px solid ${LINE}`, color: MUTED, fontSize: 15, cursor: "pointer",
+                  }}>ⓘ</button>
+                </div>
               );
             })}
             {!candidates.length && (
@@ -427,6 +440,29 @@ export default function TransfersPage() {
           {closed ? "Back to my team" : "Done, back to my team"}
         </Btn>
       </div>
+
+      {/* The player card — opened from the ⓘ on a candidate, or by tapping the
+          player you're selling. Everything a pick turns on, without leaving the
+          transfer you're in the middle of. */}
+      {(() => {
+        if (detailFor === null) return null;
+        const p = byId.get(detailFor);
+        if (!p) return null;
+        const owned = squad.picks.some((x) => x.id === p.id);
+        const canBuy = !owned && !closed && candidates.some((c) => c.id === p.id);
+        return (
+          <PlayerDetailSheet
+            player={p}
+            fixtures={ctx.fixtures[p.clubId]}
+            doubt={ctx.doubts[p.id]}
+            form={formOf(p.id)}
+            formGws={form.gws}
+            ownership={owned ? "owned" : canBuy ? "affordable" : "too-expensive"}
+            action={canBuy ? { label: "Sign him", onClick: () => { const id = p.id; setDetailFor(null); buy(id); } } : undefined}
+            onClose={() => setDetailFor(null)}
+          />
+        );
+      })()}
     </main>
   );
 }
