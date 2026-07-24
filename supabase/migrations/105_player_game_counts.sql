@@ -1,4 +1,4 @@
--- 103 — count Games played, so the rating ask can be paced by play rather than
+-- 105 — count Games played, so the rating ask can be paced by play rather than
 -- by the calendar. A player who opens the app twice a week and one who grinds
 -- ten Games a night should not be on the same schedule.
 --

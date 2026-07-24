@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 
 // Decides whether to ask this player for a rating, and records every ask that
-// actually gets shown (migration 102). The decision lives here rather than in
+// actually gets shown (migration 104). The decision lives here rather than in
 // localStorage because a device stamp is invisible to us and resets on every
 // reinstall — we could not previously count our own asks.
 //
@@ -22,7 +22,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 // THE SCHEDULE IS COUNTED IN GAMES PLAYED, NOT DAYS. Somebody who opens the
 // app twice a week and somebody who plays ten Games a night should not be on
 // the same clock; the second has seen far more of the product and has far more
-// to say about it. Games come from player_game_counts (migration 103), which
+// to say about it. Games come from player_game_counts (migration 105), which
 // this route increments on each game-end screen and which was seeded from every
 // existing play record so a veteran is not treated as new.
 //
@@ -111,7 +111,7 @@ export async function GET() {
     }
 
     const gap = askGapGames(asks.length);
-    // games_at is null for rows written before migration 103 (the WC backfill).
+    // games_at is null for rows written before migration 105 (the WC backfill).
     // Treating those as "asked at their current count" is the cautious read: it
     // waits a full gap rather than firing immediately on deploy.
     const since = games - (last.games_at ?? games);

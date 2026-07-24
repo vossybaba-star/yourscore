@@ -1,4 +1,4 @@
--- 102 — review_prompts: a server-side record of every rating ask we make.
+-- 104 — review_prompts: a server-side record of every rating ask we make.
 --
 -- Until now the post-game rate ask was gated purely by a localStorage stamp,
 -- so it left no trace anywhere: we could not answer "how many review requests
