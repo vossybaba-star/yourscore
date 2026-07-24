@@ -11,8 +11,8 @@
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import {
-  api, Btn, Card, Crest, Deadline, EMPTY_CONTEXT, extrasLine, fmtM, GOLD, Header, INK,
-  LINE, MUTED, page, PANEL, PANEL_2, Sheet, TEAL, tint,
+  api, Btn, Card, Crest, Deadline, EMPTY_CONTEXT, ErrorState, extrasLine, fmtM, GOLD, Header, INK,
+  LINE, Loading, MUTED, page, PANEL, PANEL_2, Sheet, Skel, TEAL, tint,
   type ChipName, type ClientPoolPlayer, type FantasyContext, type FantasyState, type Pos,
 } from "@/components/fantasy/shared";
 import { HALF_SEASON_GW } from "@/lib/fantasy/engine";
@@ -125,6 +125,16 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
       else setErr((e as Error).message);
     }
   }, [router]);
+
+  // Come back from an outage automatically. A user who lost signal mid-session
+  // and regained it shouldn't have to guess that a manual reload is the fix — the
+  // moment the browser reports it's back online, we re-fetch. Only retries when
+  // we're actually in an error state, so it's a no-op on a healthy screen.
+  useEffect(() => {
+    const onOnline = () => { if (err) { setErr(null); refresh(); } };
+    window.addEventListener("online", onOnline);
+    return () => window.removeEventListener("online", onOnline);
+  }, [err, refresh]);
 
   useEffect(() => {
     refresh();
@@ -289,11 +299,24 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
   if (err) return (
     <main style={embedded ? EMBEDDED_PAGE : page}>
       {!embedded && <Header />}
-      <Card style={{ marginTop: 12 }}><p style={{ color: "#E08A6B", fontSize: 13.5, margin: 0 }}>{err}</p></Card>
-      <div style={{ marginTop: 10 }}><Btn onClick={() => { setErr(null); refresh(); }}>Try again</Btn></div>
+      <ErrorState message={err} onRetry={() => { setErr(null); refresh(); }} />
     </main>
   );
-  if (!state || !squad) return <main style={embedded ? EMBEDDED_PAGE : page}>{!embedded && <Header />}<p style={{ color: MUTED }}>Loading…</p></main>;
+  if (!state || !squad) return (
+    <main style={embedded ? EMBEDDED_PAGE : page}>
+      {!embedded && <Header />}
+      <Loading label="Loading your team">
+        {/* Shaped like the hub: hero, the three numbers, the pitch. */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <Skel h={128} r={16} />
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+            <Skel h={66} r={16} /><Skel h={66} r={16} /><Skel h={66} r={16} />
+          </div>
+          <Skel h={240} r={16} />
+        </div>
+      </Loading>
+    </main>
+  );
   const entry = state.entry;
   const chips = state.chips;
   const result = entry?.result as Result | undefined | null;

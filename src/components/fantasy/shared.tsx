@@ -305,6 +305,63 @@ export function DoubtFlag({ reason }: { reason?: string }) {
   );
 }
 
+/** A loading placeholder shaped like the thing that's coming.
+ *
+ *  Every fantasy screen used to render the bare string "Loading…", so the layout
+ *  jumped once when content arrived and the wait read as a stall rather than
+ *  progress. A skeleton the size of the real content holds the space and shimmers,
+ *  so the screen looks like it's filling in, not frozen. Honours reduced-motion:
+ *  the shimmer is decoration, and some people it makes ill. */
+export function Skel({ w = "100%", h = 14, r = 6, style }: {
+  w?: number | string; h?: number; r?: number; style?: CSSProperties;
+}) {
+  return (
+    <span
+      aria-hidden
+      className="ys-skel"
+      style={{ display: "block", width: w, height: h, borderRadius: r, background: PANEL_2, ...style }}
+    />
+  );
+}
+
+/** Full-screen loading state for a fantasy route. `label` is announced to screen
+ *  readers (which can't see a skeleton) via an off-screen live region. */
+export function Loading({ label = "Loading", children }: { label?: string; children?: ReactNode }) {
+  return (
+    <div>
+      <span role="status" aria-live="polite" className="sr-only">{label}…</span>
+      {children ?? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <Skel h={120} r={16} />
+          <Skel h={64} r={16} />
+          <Skel w="60%" />
+          <Skel w="80%" />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** The consistent error state: what went wrong, and a way to try again. Replaces
+ *  a raw server string that only the hub bothered to make retryable. Distinguishes
+ *  "you're offline" from a real server error, because the fix is different. */
+export function ErrorState({ message, onRetry }: { message: string; onRetry?: () => void }) {
+  const offline = typeof navigator !== "undefined" && navigator.onLine === false;
+  return (
+    <Card style={{ marginTop: 12 }}>
+      <div className="font-body" style={{ fontSize: 14, fontWeight: 700, marginBottom: 6, color: INK }}>
+        {offline ? "You're offline" : "That didn't load"}
+      </div>
+      <p className="font-body" style={{ fontSize: 13, color: MUTED, margin: "0 0 12px", lineHeight: 1.5 }}>
+        {offline
+          ? "Check your connection and try again — nothing you've done is lost."
+          : message || "Something went wrong on our side."}
+      </p>
+      {onRetry && <Btn onClick={onRetry}>Try again</Btn>}
+    </Card>
+  );
+}
+
 /** Status pill. `gold` marks a REWARD (credits in hand, a win); default is quiet. */
 export function Chip({ children, gold = false, teal = false }: {
   children: ReactNode; gold?: boolean; teal?: boolean;

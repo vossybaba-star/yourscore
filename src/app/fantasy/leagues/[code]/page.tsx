@@ -5,7 +5,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
-  Btn, Card, Chip, GOLD, Header, INK, LINE, MUTED, page, PANEL, Sheet,
+  Btn, Card, Chip, GOLD, Header, INK, LINE, Loading, MUTED, page, PANEL, Sheet, Skel,
 } from "@/components/fantasy/shared";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { BottomNav } from "@/components/ui/BottomNav";
@@ -244,7 +244,17 @@ export default function LeaguePage() {
       <BottomNav />
     </>
   );
-  if (!detail) return <main data-fantasy style={page}><Header /><p style={{ color: MUTED }}>Loading…</p></main>;
+  if (!detail) return (
+    <main data-fantasy style={page}>
+      <Header />
+      <Loading label="Loading the table">
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <Skel w="55%" h={22} /><Skel w="70%" h={12} style={{ marginBottom: 6 }} />
+          <Skel h={54} r={10} /><Skel h={54} r={10} /><Skel h={54} r={10} /><Skel h={54} r={10} />
+        </div>
+      </Loading>
+    </main>
+  );
 
   const { league, season, month, lastMonth } = detail;
   const rows = tab === "season" ? season : month.rows;

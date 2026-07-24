@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  api, Btn, Card, Chip, Deadline, GOLD, Header, INK, LINE, MUTED, page, PANEL,
+  api, Btn, Card, Chip, Deadline, ErrorState, GOLD, Header, INK, LINE, Loading, MUTED, page, PANEL, Skel,
 } from "@/components/fantasy/shared";
 
 interface Clues { nationality?: string; flag?: string; jersey?: number }
@@ -78,8 +78,25 @@ export default function RoundPage() {
     answering.current = false;
   };
 
-  if (err) return <main data-fantasy style={page}><Header /><p style={{ color: "#E08A6B" }}>{err}</p></main>;
-  if (!round) return <main data-fantasy style={page}><Header /><p style={{ color: MUTED }}>Loading…</p></main>;
+  // A round is banked server-side as you go, so a reload is safe and resumes
+  // where you left off — the honest "try again" for a load that failed.
+  if (err) return (
+    <main data-fantasy style={page}>
+      <Header exit={{ label: "My team", onClick: () => router.push("/fantasy") }} />
+      <ErrorState message={err} onRetry={() => window.location.reload()} />
+    </main>
+  );
+  if (!round) return (
+    <main data-fantasy style={page}>
+      <Header />
+      <Loading label="Loading this week\u2019s round">
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <Skel w="35%" h={11} /><Skel h={26} /><Skel w="80%" h={26} style={{ marginBottom: 8 }} />
+          <Skel h={48} r={12} /><Skel h={48} r={12} /><Skel h={48} r={12} /><Skel h={48} r={12} />
+        </div>
+      </Loading>
+    </main>
+  );
 
   const finished = round.done || k >= round.questions.length;
   const q = round.questions[k];

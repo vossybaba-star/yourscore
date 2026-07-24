@@ -379,3 +379,26 @@ input, textarea, select {
   outline-offset: 2px;
   border-radius: 4px;
 }
+
+/* ── Fantasy loading skeletons ───────────────────────────────────────────────
+   A shimmer that reads as "filling in" rather than "frozen". Decoration only —
+   reduced-motion users get a static block, which is still a correctly-sized
+   placeholder, just without the sweep. */
+.ys-skel {
+  position: relative;
+  overflow: hidden;
+}
+.ys-skel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+  animation: ys-skel-sweep 1.4s ease-in-out infinite;
+}
+@keyframes ys-skel-sweep {
+  100% { transform: translateX(100%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ys-skel::after { animation: none; content: none; }
+}

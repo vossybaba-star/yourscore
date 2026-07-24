@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { sellPrice } from "@/lib/fantasy/engine";
 import {
   api, Btn, Card, Chip, Crest, Deadline, DoubtFlag, EMPTY_CONTEXT, FixtureRun, fmtM, GOLD, Header,
-  INK, LINE, MUTED, PITCH, page, PANEL,
+  INK, LINE, Loading, MUTED, PITCH, page, PANEL, Skel,
   type ClientPoolPlayer, type FantasyContext, type FantasyState, type Pos,
 } from "@/components/fantasy/shared";
 
@@ -155,7 +155,18 @@ export default function TransfersPage() {
     setBusy(false);
   };
 
-  if (!state || !squad) return <main data-fantasy style={page}><Header /><p style={{ color: MUTED }}>Loading…</p></main>;
+  if (!state || !squad) return (
+    <main data-fantasy style={page}>
+      <Header />
+      <Loading label="Loading transfers">
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <Skel h={200} r={14} />
+          <Skel w="40%" h={11} />
+          <Skel h={54} r={10} /><Skel h={54} r={10} /><Skel h={54} r={10} />
+        </div>
+      </Loading>
+    </main>
+  );
 
   const rowsByPos = (ids: number[]) =>
     POS_ROWS.map((pos) => ({ pos, ids: ids.filter((id) => byId.get(id)?.pos === pos) }));
