@@ -14,6 +14,7 @@ import { usePendingTurns } from "@/hooks/usePendingTurns";
 import { DebateCard } from "@/components/debate/DebateCard";
 import { HalftimeCard } from "@/components/halftime/HalftimeCard";
 import { trackShare } from "@/lib/analytics/trackGame";
+import { TodaysQuestionPreview } from "@/components/home/TodaysQuestionPreview";
 import type { TodaysGame, TodaysGameStats } from "@/lib/daily-game";
 
 const LIME = "#aeea00";
@@ -402,6 +403,12 @@ function TodaysGamePlayable({ game }: { game: TodaysGame }) {
             </span>
           </div>
         </div>
+
+        {/* Today's actual question 1, when the format has one that's safe to
+            show before anyone answers (Higher or Lower). */}
+        {game.firstQuestion && (
+          <TodaysQuestionPreview question={game.firstQuestion} accent={accent} compact />
+        )}
 
         {/* Bottom half — how everyone else has done on it */}
         {game.stats && <TodaysGameStatsStrip stats={game.stats} accent={accent} />}

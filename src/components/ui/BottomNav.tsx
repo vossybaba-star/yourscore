@@ -1,7 +1,8 @@
 "use client";
 
+import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import { usePendingFriends } from "@/hooks/usePendingFriends";
 import { usePendingTurns } from "@/hooks/usePendingTurns";
@@ -19,32 +20,128 @@ function FootballIcon({ active }: { active: boolean }) {
   );
 }
 
+/** How long a tapped tab stays highlighted if the navigation never lands. */
+const PENDING_TIMEOUT_MS = 12_000;
+
+/** Thin sweeping bar along the top edge of the nav while a route is in flight. */
+function NavProgress({ show }: { show: boolean }) {
+  if (!show) return null;
+  return (
+    <div
+      aria-hidden
+      style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, overflow: "hidden" }}
+    >
+      <div
+        style={{
+          width: "33%",
+          height: "100%",
+          background: "linear-gradient(90deg, transparent, #00d8c0, transparent)",
+          animation: "navSweep 1.1s ease-in-out infinite",
+        }}
+      />
+    </div>
+  );
+}
+
 export function BottomNav() {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, loading } = useUser();
   const pendingFriends = usePendingFriends();
   const pendingTurns = usePendingTurns();
 
-  const isHome = pathname === "/";
+  // Every screen is fetched from the server (the native app is a webview onto the
+  // live site), so a tab tap on a cold connection can sit for seconds before the
+  // new route arrives — and the App Router holds the OLD screen on display the
+  // whole time. Worst on back/forward, where Next skips loading.tsx entirely. So
+  // the tap reads as "nothing happened" and gets tapped again.
+  //
+  // Recording the tapped href and treating it as the active tab moves the
+  // highlight the instant a finger lands, before any network work. The bar below
+  // then shows that something is in flight. Purely cosmetic — it never blocks or
+  // changes the navigation itself.
+  const [pending, setPending] = useState<string | null>(null);
+
+  // `usePathname` flips as soon as the transition COMMITS, not when the new screen
+  // is actually ready, so it can't tell us a fetch is still in flight. Driving the
+  // push through a transition ourselves gives us `isPending`, which stays true for
+  // the whole wait — that's what the bar is hung off.
+  const [isPending, startTransition] = useTransition();
+
+  // The route landed (or the user went somewhere else entirely) — stop pretending.
+  useEffect(() => setPending(null), [pathname]);
+
+  // Safety net: a navigation that fails or is abandoned would otherwise leave the
+  // wrong tab lit for the rest of the session.
+  useEffect(() => {
+    if (!pending) return;
+    const t = setTimeout(() => setPending(null), PENDING_TIMEOUT_MS);
+    return () => clearTimeout(t);
+  }, [pending]);
+
+  const hrefOf = (e: React.SyntheticEvent) => {
+    const link = (e.target as HTMLElement).closest("a[href]") as HTMLAnchorElement | null;
+    return link ? new URL(link.href).pathname : null;
+  };
+
+  // The highlight is set on pointer DOWN, in its own event, and deliberately not
+  // alongside the push below. React entangles a state update made in the same event
+  // as a transition: it renders but does not commit until the transition resolves,
+  // so a highlight set next to the push simply never paints during the wait — which
+  // is the entire window it exists for. Verified with a delayed RSC fetch.
+  //
+  // Pointer-down is also the earlier signal, so the tab lights on touch rather than
+  // on release. That's the whole point: something has to move under the finger.
+  const onNavPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    const href = hrefOf(e);
+    if (href) setPending(href);
+  };
+
+  // Finger slid off the bar, or the browser took the gesture for a scroll — the tap
+  // is never coming, so drop the highlight rather than leave the wrong tab lit.
+  const onNavPointerCancel = () => setPending(null);
+
+  // One capture-phase handler covers every Link in the bar — no per-tab wiring.
+  // The Links stay Links so they keep prefetching on viewport entry and still work
+  // with a keyboard or a modifier-click; we only take over the plain left-tap.
+  const onNavTap = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const href = hrefOf(e);
+    if (!href) return;
+    // Keyboard activation never fires pointerdown, so set it here too.
+    setPending(href);
+    // Capture phase, so this lands before Link's own handler — Link sees
+    // defaultPrevented and stands down, leaving the push to the transition.
+    e.preventDefault();
+    startTransition(() => router.push(href));
+  };
+
+  // The tapped tab wins over the current URL until the new route lands.
+  const active = pending ?? pathname;
+
+  const isHome = active === "/";
   // Versus is the hub: its sub-sections (Friends, Leagues) keep the tab active.
   // A viewed player's profile (/profile/<id>) is a social detail page reached
   // from here, so it holds the Versus tab too — the Profile tab is only YOUR own
   // profile (exact /profile) + settings.
   const isVersus =
-    pathname.startsWith("/versus") || pathname.startsWith("/friends") ||
-    pathname.startsWith("/leagues") || pathname.startsWith("/league") ||
-    pathname.startsWith("/profile/");
+    active.startsWith("/versus") || active.startsWith("/friends") ||
+    active.startsWith("/leagues") || active.startsWith("/league") ||
+    active.startsWith("/profile/");
   // Play holds both games: Quiz (/play, /challenges, /h2h) and 38-0 (/38-0) —
   // the 38-0 hub is a sub-surface of the Play tab, switched via GameSwitcher.
   const isChallenges =
-    pathname.startsWith("/play") || pathname.startsWith("/challenges") ||
-    pathname.startsWith("/h2h") || pathname.startsWith("/38-0") ||
-    pathname.startsWith("/club");
+    active.startsWith("/play") || active.startsWith("/challenges") ||
+    active.startsWith("/h2h") || active.startsWith("/38-0") ||
+    active.startsWith("/club");
   // Matchweek is the fixture-synced tab. A halftime pack itself opens under
   // /challenges (which holds the Quiz tab, so a pack played from anywhere reads
   // consistently); Matchweek highlights on its own route.
-  const isMatchweek = pathname.startsWith("/matchweek");
-  const isProfile = pathname === "/profile" || pathname.startsWith("/settings");
+  const isMatchweek = active.startsWith("/matchweek");
+  const isProfile = active === "/profile" || active.startsWith("/settings");
+  // Guest-only tab. Highlights on the auth routes it owns, so a guest who taps it
+  // and lands on sign-in still sees where they are in the bar.
+  const isSignIn = active.startsWith("/auth");
 
   // While auth state is resolving, show the full signed-in nav — signed-in users
   // must never flash down to the 3-tab guest nav. Guests see the extra tabs briefly
@@ -60,7 +157,8 @@ export function BottomNav() {
           paddingBottom: "env(safe-area-inset-bottom, 0px)",
         }}
       >
-        <div className="flex items-start justify-between max-w-lg mx-auto px-1 py-2">
+        <NavProgress show={isPending} />
+        <div className="flex items-start justify-between max-w-lg mx-auto px-1 py-2" onPointerDownCapture={onNavPointerDown} onPointerCancelCapture={onNavPointerCancel} onClickCapture={onNavTap}>
           <Link href="/" className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-1 transition-colors" style={{ color: isHome ? "#aeea00" : "#8a948f" }}>
             <svg width="21" height="21" viewBox="0 0 22 22" fill="none">
               <path d="M3 9.5L11 3l8 6.5V19a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill={isHome ? "currentColor" : "none"} fillOpacity={isHome ? 0.15 : 0} />
@@ -95,6 +193,20 @@ export function BottomNav() {
             <FootballIcon active={isMatchweek} />
             <span className="font-body text-xs text-center leading-tight">Premier League</span>
           </Link>
+
+          {/* Sign in — the guest's own door, in the slot a signed-in user sees as
+              Profile. Every other route to /auth/sign-in in the app is reactive: you
+              trip a gated action and get bounced. Someone who already has an account
+              on a new phone had no way to CHOOSE to sign in outside the marketing
+              home's hamburger (founder 2026-07-24). Sign-up keeps its own louder CTAs
+              on the surfaces that sell; this is the quiet way back in. */}
+          <Link href="/auth/sign-in" className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-1 transition-colors" style={{ color: isSignIn ? "#aeea00" : "#8a948f" }}>
+            <svg width="21" height="21" viewBox="0 0 22 22" fill="none">
+              <path d="M9 3H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M13.5 7.5L17 11l-3.5 3.5M17 11H9" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <span className="font-body text-xs text-center leading-tight">Sign in</span>
+          </Link>
         </div>
       </div>
     );
@@ -112,7 +224,8 @@ export function BottomNav() {
         paddingBottom: "env(safe-area-inset-bottom, 0px)",
       }}
     >
-      <div className="flex items-start justify-between max-w-lg mx-auto px-1 py-2">
+      <NavProgress show={isPending} />
+      <div className="flex items-start justify-between max-w-lg mx-auto px-1 py-2" onPointerDownCapture={onNavPointerDown} onPointerCancelCapture={onNavPointerCancel} onClickCapture={onNavTap}>
         {/* Home */}
         <Link href="/" className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-1 transition-colors" style={{ color: isHome ? "#aeea00" : "#8a948f" }}>
           <svg width="21" height="21" viewBox="0 0 22 22" fill="none">

@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { haptic } from "@/lib/haptics";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { Button } from "@/components/ui/Button";
+import { useUser } from "@/hooks/useUser";
 import { useHideGamesNav } from "@/lib/gamesNav";
 import { useGameLoop } from "@/lib/useGameLoop";
 import { trackGamePlay, trackGameComplete } from "@/lib/analytics/trackGame";
@@ -63,6 +64,9 @@ const HL_TOPICS = [
   { key: "assists", label: "Assists" },
   { key: "appearances", label: "Appearances" },
   { key: "age", label: "Age" },
+  // Pickable, but held back in Mixed rounds (RARE_IN_MIXED in serve.ts): it's a
+  // fantasy-manager question, not a football-knowledge one.
+  { key: "points", label: "FPL points" },
 ] as const;
 
 /** Small SVG glyph per topic — no emojis (founder Jul 11). */
@@ -86,6 +90,10 @@ function TopicGlyph({ topic, size = 15 }: { topic?: string; size?: number }) {
       return (
         <svg {...c} strokeWidth={1.35}><circle cx="8" cy="9.2" r="4.8" /><path d="M8 9.2 V6.3" /><path d="M6.4 2.6 h3.2" /><path d="M8 2.6 V4.4" /></svg>
       );
+    case "points": // a rising form line
+      return (
+        <svg {...c} strokeWidth={1.4}><path d="M2 12 L6 8 L9 10 L14 4" /><path d="M10.6 4 H14 V7.4" /></svg>
+      );
     default: // mixed / shuffle
       return (
         <svg {...c} strokeWidth={1.4}><path d="M2 5 h7 l-2 -2 M9 5 l-2 2" /><path d="M14 11 h-7 l2 -2 M7 11 l2 2" /></svg>
@@ -95,9 +103,38 @@ function TopicGlyph({ topic, size = 15 }: { topic?: string; size?: number }) {
 
 interface AnswerRecord {
   idx: number;
+  // The option actually tapped. Kept so the finished run can be re-graded
+  // server-side from its seed; -1 is a timeout (nothing picked).
+  optionId: number;
   correct: boolean;
   points: number;
   elapsedMs: number;
+}
+
+// ── Guest run, held for the sign-up round trip ────────────────────────────
+// A finished guest run parked locally so SIGN UP & SAVE SCORE actually saves
+// something: when they come back signed in, the seed and answers are posted to
+// /api/games/<type> for server-side re-grading. The local copy is evidence of
+// what was tapped, never a score — the server derives that itself.
+// Mirrors the Quiz's GUEST_RESULT pattern in challenges/[slug].
+const GUEST_RUN_KEY = "games:guest-run:v1";
+const GUEST_RUN_TTL_MS = 48 * 60 * 60 * 1000;
+type GuestRun = { game: string; seed: string; answers: { idx: number; optionId: number; elapsedMs: number }[]; ts: number };
+
+function saveGuestRun(r: GuestRun) {
+  try { localStorage.setItem(GUEST_RUN_KEY, JSON.stringify(r)); } catch { /* ignore */ }
+}
+function loadGuestRun(): GuestRun | null {
+  try {
+    const raw = localStorage.getItem(GUEST_RUN_KEY);
+    if (!raw) return null;
+    const r = JSON.parse(raw) as GuestRun;
+    if (!r?.seed || !Array.isArray(r.answers) || Date.now() - (r.ts ?? 0) > GUEST_RUN_TTL_MS) { clearGuestRun(); return null; }
+    return r;
+  } catch { return null; }
+}
+function clearGuestRun() {
+  try { localStorage.removeItem(GUEST_RUN_KEY); } catch { /* ignore */ }
 }
 
 type Phase = "intro" | "loading" | "playing" | "results";
@@ -230,17 +267,193 @@ function RevealPhoto({ url, name }: { url: string; name?: string }) {
 
 // ── Page ─────────────────────────────────────────────────────────────────
 
-export default function GameTypePage() {
+// ── The board ─────────────────────────────────────────────────────────────
+// Lives on the game's own intro screen rather than a route of its own. These
+// games already had a page nobody could reach; a /leaderboard URL would have
+// been a second one. Here it sits where a player already lands, and it doubles
+// as the "beat this" that a game with no board was missing.
+interface BoardEntry { userId: string; username: string | null; avatarUrl: string | null; best: number; plays: number }
+interface MyStanding { best: number; plays: number; rank: number | null }
+
+function BoardRow({ entry, rank, isYou, accent }: { entry: BoardEntry; rank: number; isYou: boolean; accent: string }) {
+  const name = entry.username ?? "Player";
+  const medal = rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : null;
+  return (
+    <div className="flex items-center gap-3 px-5 py-2.5"
+      style={isYou ? { background: `${accent}10` } : undefined}>
+      <span className="font-display text-sm w-7 flex-shrink-0 text-center"
+        style={{ color: rank <= 3 ? accent : "#586058" }}>
+        {medal ?? `#${rank}`}
+      </span>
+      {entry.avatarUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={entry.avatarUrl} alt="" className="w-7 h-7 rounded-full flex-shrink-0 object-cover" />
+      ) : (
+        <span className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center font-display text-xs"
+          style={{ background: "rgba(255,255,255,0.07)", color: "#9aa39d" }}>
+          {name.charAt(0).toUpperCase()}
+        </span>
+      )}
+      <div className="min-w-0 flex-1">
+        <p className="font-body text-sm text-white truncate">{name}{isYou ? " (you)" : ""}</p>
+        <p className="font-body text-xs" style={{ color: "#586058" }}>
+          {entry.plays} {entry.plays === 1 ? "round" : "rounds"}
+        </p>
+      </div>
+      <span className="font-display text-lg flex-shrink-0" style={{ color: isYou ? accent : "#fff" }}>
+        {entry.best.toLocaleString()}
+      </span>
+    </div>
+  );
+}
+
+function GameBoard({ type, accent, userId, refreshKey }: { type: GameType; accent: string; userId: string | null; refreshKey: number }) {
+  const [entries, setEntries] = useState<BoardEntry[]>([]);
+  const [you, setYou] = useState<MyStanding | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [showAll, setShowAll] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    fetch(`/api/games/${type}?limit=25`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (cancelled || !d) return;
+        setEntries(Array.isArray(d.entries) ? d.entries : []);
+        setYou(d.you ?? null);
+      })
+      .catch(() => { /* a board that won't load must not break the game */ })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [type, refreshKey]);
+
+  const TOP = 10;
+  const visible = showAll ? entries : entries.slice(0, TOP);
+  // Their row is already on screen if it's in the slice — only pin a second
+  // copy when it isn't.
+  const youInVisible = you !== null && you.rank !== null && you.rank <= visible.length;
+
+  return (
+    <div className="rounded-2xl overflow-hidden bg-surface" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
+      <div className="px-5 pt-5 pb-3 flex items-center justify-between">
+        <p className="font-display text-xs tracking-widest" style={{ color: "#586058" }}>LEADERBOARD</p>
+        {you?.rank != null && (
+          <span className="font-display text-xs px-2 py-0.5 rounded-full"
+            style={{ background: `${accent}18`, color: accent, border: `1px solid ${accent}30` }}>
+            YOU #{you.rank}
+          </span>
+        )}
+      </div>
+
+      {loading ? (
+        <div className="px-5 pb-5"><p className="font-body text-xs" style={{ color: "#586058" }}>Loading…</p></div>
+      ) : entries.length === 0 ? (
+        <div className="px-5 pb-5">
+          <p className="font-body text-sm text-white mb-1">No scores yet</p>
+          <p className="font-body text-xs" style={{ color: "#586058" }}>
+            {userId ? "Play a round and the top spot is yours." : "Play a round and sign up to take the top spot."}
+          </p>
+        </div>
+      ) : (
+        <div className="pb-2">
+          {visible.map((e, i) => (
+            <BoardRow key={e.userId} entry={e} rank={i + 1} isYou={e.userId === userId} accent={accent} />
+          ))}
+          {you !== null && you.rank !== null && !youInVisible && (
+            <>
+              <div className="px-5 py-1 text-center">
+                <span className="font-body text-xs" style={{ color: "#586058" }}>···</span>
+              </div>
+              <BoardRow
+                entry={{ userId: userId ?? "you", username: null, avatarUrl: null, best: you.best, plays: you.plays }}
+                rank={you.rank}
+                isYou
+                accent={accent}
+              />
+            </>
+          )}
+          {!showAll && entries.length > TOP && (
+            <button onClick={() => setShowAll(true)}
+              className="w-full py-3 font-body text-xs text-center transition-colors"
+              style={{ color: accent, borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+              View full leaderboard ({entries.length} players) ↓
+            </button>
+          )}
+          {showAll && entries.length > TOP && (
+            <button onClick={() => setShowAll(false)}
+              className="w-full py-3 font-body text-xs text-center"
+              style={{ color: "#586058", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+              Show less ↑
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function GameTypeGame() {
   const params = useParams<{ type: string }>();
   const router = useRouter();
   const type = params.type as GameType;
   const config = GAME_CONFIG[type];
+
+  // Guest vs signed-in only changes the results screen (the run itself never
+  // gates). `loading` matters: treating a resolving session as a guest would
+  // flash the sign-up block at someone who already has an account.
+  const { user, loading: userLoading } = useUser();
+  const isGuest = !user && !userLoading;
+
+  // A guest run waiting to be claimed: they played signed out, tapped SIGN UP &
+  // SAVE SCORE, and have landed back here with an account. Post it before they
+  // do anything else so the score is genuinely on the board, which is what the
+  // sign-up ask promised. The server re-grades from the seed, so a tampered
+  // local copy buys nothing.
+  useEffect(() => {
+    if (!user) return;
+    const pending = loadGuestRun();
+    if (!pending || pending.game !== type) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/games/${type}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "complete", seed: pending.seed, answers: pending.answers }),
+        });
+        if (res.ok) {
+          const d = await res.json();
+          clearGuestRun();
+          if (!cancelled && d.saved) {
+            setClaimed(typeof d.score === "number" ? d.score : 0);
+            setBoardKey((k) => k + 1);
+          }
+        } else if (res.status !== 429) {
+          clearGuestRun(); // unrecoverable — don't retry this forever
+        }
+      } catch {
+        /* offline: the run keeps its TTL and the next visit tries again */
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user, type]);
 
   const [phase, setPhase] = useState<Phase>("intro");
   // "loading" here is the post-START deal — already part of the run, so the
   // persistent GamesNav steps away for it too, not just for "playing".
   useHideGamesNav(phase === "playing" || phase === "loading");
   const [topic, setTopic] = useState<string>("mixed"); // Higher-or-Lower topic
+  const [copied, setCopied] = useState(false); // results share confirmation
+  // Set from the server's own re-grade of the finished run. `rank` is the
+  // position this score takes (signed in) or would take (guest); `saved` is
+  // true once the row is actually on the board.
+  const [rank, setRank] = useState<number | null>(null);
+  const [saved, setSaved] = useState(false);
+  const [claimed, setClaimed] = useState<number | null>(null); // guest run banked on return
+  // Bumped whenever a score lands, so the board on the intro screen refetches
+  // instead of showing the standings from before the round just played.
+  const [boardKey, setBoardKey] = useState(0);
 
   // Today's Game hero links here with `?daily=1` — the ONE pinned round for
   // today's London date, identical for every player (comparable scores).
@@ -319,6 +532,8 @@ export default function GameTypePage() {
     setRevealAnswerId(null);
     setAdvancing(false);
     setScore(0);
+    setRank(null);
+    setSaved(false);
     setAnswerLog([]);
     setCorrectStreak(0);
     setWrongStreak(0);
@@ -328,6 +543,78 @@ export default function GameTypePage() {
     setRevealPhoto(null);
     setRevealName(null);
     setTimerMs(0);
+  }
+
+  // Bank the finished run. The server rebuilds the round from the seed and
+  // re-grades every answer, so what goes on the board is its number, not ours.
+  // A guest's run is parked locally FIRST: the request still goes out (it comes
+  // back with the rank the score would take, which is what the sign-up ask
+  // shows), but nothing is saved until there is an account to save it against.
+  async function bankRun(log: AnswerRecord[]) {
+    if (!seed) return;
+    const answers = log.map((r) => ({ idx: r.idx, optionId: r.optionId, elapsedMs: r.elapsedMs }));
+    if (isGuest) saveGuestRun({ game: type, seed, answers, ts: Date.now() });
+    try {
+      const res = await fetch(`/api/games/${type}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "complete", seed, answers }),
+      });
+      if (!res.ok) return;
+      const d = await res.json();
+      if (typeof d.rank === "number") setRank(d.rank);
+      if (d.saved) { setSaved(true); clearGuestRun(); setBoardKey((k) => k + 1); }
+    } catch {
+      /* offline — the guest copy is already parked, and a signed-in player can
+         replay. Never block the results screen on this. */
+    }
+  }
+
+  // Share the result as text plus the game link. These two games have no OG card
+  // route (unlike quiz and perfect-10), so there is no image to share — keep the
+  // copy plain and let the link do the work.
+  async function handleShareResult() {
+    const text = `I scored ${score.toLocaleString()} on ${config.title}. Beat that.`;
+    const url = `${window.location.origin}/play/game/${type}`;
+    const payload = `${text} ${url}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: config.title, text, url });
+        return;
+      } catch {
+        /* sheet dismissed — fall through to copy rather than dead-ending */
+      }
+    }
+
+    // navigator.clipboard throws NotAllowedError in a few real contexts (an
+    // embedded webview, a page that lost focus mid-tap). Falling back to the
+    // legacy execCommand path keeps the button from doing visibly nothing,
+    // which is the exact friction this screen was rebuilt to remove.
+    let ok = false;
+    try {
+      await navigator.clipboard.writeText(payload);
+      ok = true;
+    } catch {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = payload;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+      } catch {
+        ok = false;
+      }
+    }
+
+    if (ok) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   }
 
   async function startRound() {
@@ -410,7 +697,7 @@ export default function GameTypePage() {
     setLastStreakBonus(streakBonus + comebackBonus);
     if (correct) setScore((s) => s + pts);
 
-    const record: AnswerRecord = { idx: currentIdx, correct, points: correct ? pts : 0, elapsedMs: elapsed };
+    const record: AnswerRecord = { idx: currentIdx, optionId, correct, points: correct ? pts : 0, elapsedMs: elapsed };
     const newLog = [...answerLog, record];
     setAnswerLog(newLog);
 
@@ -423,6 +710,7 @@ export default function GameTypePage() {
         const perfectBonus = calculatePerfectRoundBonus(correctCount, questions.length);
         setScore((s) => s + perfectBonus);
         setPhase("results");
+        void bankRun(newLog);
       } else {
         setCurrentIdx((i) => i + 1);
         setSelectedId(null);
@@ -483,6 +771,21 @@ export default function GameTypePage() {
         </div>
 
         <div className="max-w-lg mx-auto px-5 py-6 flex flex-col gap-4">
+          {/* They played as a guest, signed up, and landed back here. Close the
+              loop out loud: the whole ask was that this score would be kept. */}
+          {claimed !== null && (
+            <div className="rounded-2xl px-5 py-4 flex items-center gap-3"
+              style={{ background: "rgba(174,234,0,0.07)", border: "1px solid rgba(174,234,0,0.2)" }}>
+              <span className="text-xl">✓</span>
+              <div>
+                <p className="font-display text-sm tracking-wide text-green">Score saved</p>
+                <p className="font-body text-xs text-text-muted">
+                  Your {claimed.toLocaleString()} is on the board.
+                </p>
+              </div>
+            </div>
+          )}
+
           <div className="rounded-2xl px-4 py-4 bg-surface" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
             <p className="font-display text-sm text-white tracking-wide mb-1.5">How it works</p>
             <p className="font-body text-sm" style={{ color: "#9aa39d", lineHeight: 1.6 }}>{config.how}</p>
@@ -525,6 +828,8 @@ export default function GameTypePage() {
           <Button variant="primary" tone="teal" size="lg" fullWidth onClick={startRound}>
             START · 10 Qs
           </Button>
+
+          <GameBoard type={type} accent={accent} userId={user?.id ?? null} refreshKey={boardKey} />
         </div>
 
         <BottomNav />
@@ -704,12 +1009,69 @@ export default function GameTypePage() {
           <Button variant="primary" tone="teal" size="lg" fullWidth onClick={startRound}>
             PLAY AGAIN →
           </Button>
+
+          {/* The guest's whole reason to open an account, at the one moment they
+              have something worth keeping. Same block the Quiz result ships
+              (challenges/[slug]) — minus its "You'd be #N on the leaderboard"
+              line, because these two games have no board to project a rank
+              against yet. Everything else is the Quiz's approved wording. */}
+          {isGuest && (
+            <div className="rounded-2xl p-5"
+              style={{ background: "rgba(174,234,0,0.07)", border: "1px solid rgba(174,234,0,0.22)" }}>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="rounded-2xl px-3 py-2 font-display text-xl"
+                  style={{ background: "rgba(174,234,0,0.15)", color: "#aeea00" }}>
+                  {score.toLocaleString()}
+                </div>
+                <div>
+                  {/* The rank comes from the server's own re-grade, so it is the
+                      real position this score takes. Before it lands (or if the
+                      request failed) the ask still stands on the score alone. */}
+                  <p className="font-body text-sm font-semibold text-white">
+                    {rank !== null ? `You'd be #${rank} on the board` : "Sign up to lock in your spot"}
+                  </p>
+                  <p className="font-body text-xs text-text-muted">
+                    {rank !== null
+                      ? "Sign up to lock in your spot. This score is saved the moment you're in."
+                      : "This score is saved the moment you're in."}
+                  </p>
+                </div>
+              </div>
+              <Button variant="primary" tone="teal" size="md" fullWidth href={`/auth/sign-in?next=/play/game/${type}`}>
+                SIGN UP &amp; SAVE SCORE
+              </Button>
+            </div>
+          )}
+
+          {/* Signed in: say plainly that it counted, and where it put them. The
+              screen used to end on "these don't count on the leaderboard yet". */}
+          {!isGuest && saved && (
+            <div className="rounded-2xl px-5 py-4 flex items-center gap-3"
+              style={{ background: "rgba(174,234,0,0.07)", border: "1px solid rgba(174,234,0,0.2)" }}>
+              <span className="text-xl">✓</span>
+              <div>
+                <p className="font-display text-sm tracking-wide text-green">Score saved</p>
+                <p className="font-body text-xs text-text-muted">
+                  {rank !== null ? `You're #${rank} on the board` : "You're on the board"}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* No OG card exists for these two games, so this shares text plus the
+              game link rather than an image. navigator.share on native, clipboard
+              everywhere else. */}
+          <Button variant="ghost" tone="teal" size="lg" fullWidth onClick={handleShareResult}>
+            {copied ? "COPIED ✓" : "SHARE YOUR RESULT"}
+          </Button>
+          {/* The board lives on the intro screen, so "see it" is a return to
+              the game's own front page rather than a route of its own. */}
+          <Button variant="ghost" tone="teal" size="lg" fullWidth onClick={() => setPhase("intro")}>
+            SEE THE LEADERBOARD →
+          </Button>
           <Button variant="ghost" tone="teal" size="lg" fullWidth onClick={() => router.push("/play")}>
             MORE GAMES
           </Button>
-          <p className="font-body text-xs text-center mt-1" style={{ color: "#586058" }}>
-            Practice mode: these don&apos;t count on the leaderboard yet.
-          </p>
         </div>
 
         <BottomNav />
