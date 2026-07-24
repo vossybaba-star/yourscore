@@ -8,6 +8,7 @@ import { NativeBootstrap } from "@/components/native/NativeBootstrap";
 import { NavTracker } from "@/components/ui/NavTracker";
 import { TouchGuards } from "@/components/ui/TouchGuards";
 import { GamesNav } from "@/components/ui/GamesNav";
+import { GuestAuthButton } from "@/components/auth/GuestAuthButton";
 import { UsernamePrompt } from "@/components/profile/UsernamePrompt";
 import { ClubPrompt } from "@/components/clubs/ClubPrompt";
 import { WcThanksPrompt } from "@/components/app/WcThanksPrompt";
@@ -153,6 +154,10 @@ export default function RootLayout({
         {/* THE games nav — one persistent bar for the five game sections;
             pages render below it and must not mount their own switcher. */}
         <GamesNav />
+        {/* Signed-out only: a Sign In/Up pill top-right on every tab. Play and
+            Premier League had no auth entry point at all, so app installs could
+            not find sign in. */}
+        <GuestAuthButton />
         <PostHogProvider>{children}</PostHogProvider>
         <Analytics />
         <SpeedInsights />

@@ -400,7 +400,7 @@ function JoinLeagueInner({ code }: { code: string }) {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/logo.png" alt="YourScore" height={20} style={{ height: 20, width: "auto", opacity: 0.45 }} />
         <div className="flex items-center gap-5 font-body text-xs" style={{ color: "#586058" }}>
-          <Link href="/how-it-works" className="hover:text-white transition-colors">How it works</Link>
+          <Link href="/games" className="hover:text-white transition-colors">Games</Link>
           <Link href="/challenges" className="hover:text-white transition-colors">Challenges</Link>
           <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
           <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>

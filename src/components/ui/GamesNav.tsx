@@ -4,6 +4,7 @@ import { useLayoutEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { GameSwitcher, type GameKey } from "@/components/ui/GameSwitcher";
 import { useGamesNavHidden } from "@/lib/gamesNav";
+import { useUser } from "@/hooks/useUser";
 
 // THE games nav. Mounted once in the root layout so it is one persistent bar —
 // switching game is a client navigation that swaps the page BELOW it; the bar
@@ -26,6 +27,10 @@ const GAME_ROUTES: Record<string, GameKey> = {
 export function GamesNav() {
   const pathname = usePathname();
   const hidden = useGamesNavHidden();
+  // Mirrors GuestAuthButton: while auth resolves, assume signed in so the row
+  // never jumps width under a returning player.
+  const { user, loading } = useUser();
+  const guest = !loading && !user;
   const barRef = useRef<HTMLDivElement>(null);
   const active = GAME_ROUTES[pathname ?? ""];
   const show = Boolean(active) && !hidden;
@@ -58,7 +63,10 @@ export function GamesNav() {
       className="sticky top-0 z-30 pt-safe"
       style={{ background: "rgba(10,10,15,0.97)", backdropFilter: "blur(20px)" }}
     >
-      <div className="max-w-lg mx-auto px-5 pt-3" data-tour="games">
+      {/* Extra right padding for signed-out users: the Sign In/Up pill is fixed
+          in the top-right corner, and this row is a horizontal scroller, so
+          without it the tabs slide underneath the button. */}
+      <div className="max-w-lg mx-auto px-5 pt-3" data-tour="games" style={guest ? { paddingRight: 108 } : undefined}>
         <GameSwitcher active={active} />
       </div>
     </div>

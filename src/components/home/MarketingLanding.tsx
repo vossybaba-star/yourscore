@@ -9,6 +9,7 @@ import { getPlayerCutoutUrl } from "@/lib/playerImages";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { DownloadAppButton } from "@/components/app/DownloadAppButton";
 import { GAMES } from "@/components/ui/GameSwitcher";
+import { GAME_VISUALS } from "@/components/games/GameVisuals";
 import { coverUrl } from "@/lib/img";
 import type { TodaysGame } from "@/lib/daily-game";
 
@@ -249,6 +250,10 @@ function GamesExplainer() {
   const game = GAMES[active];
   const detail = GAME_DETAIL[game.key];
   const { color, Icon, label, href, blurb } = game;
+  // Perfect 10 / Higher or Lower / Guess the Player each have a mock-screen
+  // graphic (shared with the /games page); Quiz and 38-0 do not, and stay
+  // bullets-only. undefined for those two, so the panel just skips the picture.
+  const visual = GAME_VISUALS[game.key];
 
   return (
     <section className="relative z-10 max-w-6xl mx-auto px-6 pb-16">
@@ -290,13 +295,19 @@ function GamesExplainer() {
             </div>
           </div>
 
-          <div className="space-y-3 mb-8">
-            {(detail?.points ?? [blurb]).map((p) => (
-              <div key={p} className="flex items-start gap-3">
-                <span className="flex-shrink-0 mt-1.5 rounded-full" style={{ width: 6, height: 6, background: color }} />
-                <p className="font-body text-sm sm:text-base text-white/80 leading-relaxed">{p}</p>
-              </div>
-            ))}
+          {/* When the game has a mock (the three §5C games), show it beside the
+              bullets from sm up, stacked above them on a phone with the picture
+              first. Quiz and 38-0 have no mock and render bullets full width. */}
+          <div className={`mb-8 ${visual ? "grid sm:grid-cols-2 gap-6 sm:gap-8 items-start" : ""}`}>
+            {visual && <div className="order-1 sm:order-2">{visual}</div>}
+            <div className={`space-y-3 ${visual ? "order-2 sm:order-1" : ""}`}>
+              {(detail?.points ?? [blurb]).map((p) => (
+                <div key={p} className="flex items-start gap-3">
+                  <span className="flex-shrink-0 mt-1.5 rounded-full" style={{ width: 6, height: 6, background: color }} />
+                  <p className="font-body text-sm sm:text-base text-white/80 leading-relaxed">{p}</p>
+                </div>
+              ))}
+            </div>
           </div>
 
           <Link href={href}
@@ -519,16 +530,17 @@ export function MarketingLanding({ matches, todaysGame }: { matches: LiveMatch[]
       <nav className="flex items-center justify-between px-6 py-4 max-w-6xl mx-auto">
         <Image src="/logo.png" alt="YourScore" width={122} height={36} priority style={{ height: 36, width: "auto" }} />
         <div className="flex items-center gap-2">
-          <Link href="/how-it-works" className="hidden sm:block font-body text-sm text-text-muted hover:text-white transition-colors px-3 py-2">How it works</Link>
+          <Link href="/games" className="hidden sm:block font-body text-sm text-text-muted hover:text-white transition-colors px-3 py-2">Games</Link>
           <Link href="/challenges" className="hidden sm:block font-body text-sm hover:opacity-80 transition-colors px-3 py-2 text-amber">Quiz</Link>
           <Link href="/league/join" className="hidden sm:block font-body text-sm text-text-muted hover:text-white transition-colors px-3 py-2">Join league</Link>
-          <Link href="/auth/sign-in" className="hidden sm:block font-body font-semibold text-sm px-4 py-2.5 rounded-xl hover:opacity-90 transition-all text-white whitespace-nowrap"
-            style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)" }}>
-            Sign In
-          </Link>
+          {/* One button, both jobs. There used to be a separate "Sign In" here
+              that was `hidden sm:block`, so on a phone the only thing a guest
+              ever saw was "Sign Up" — a returning player reinstalling the app
+              had nothing that looked like a way back in. /auth/sign-in handles
+              both and its own heading says "SIGN IN OR SIGN UP". */}
           <Link href="/auth/sign-in" className="font-body font-bold text-sm px-4 py-2.5 rounded-xl hover:opacity-90 transition-all green-pulse text-green whitespace-nowrap"
             style={{ background: "rgba(174,234,0,0.12)", border: "1px solid rgba(174,234,0,0.35)" }}>
-            Sign Up
+            Sign In/Up
           </Link>
           <Link href="/league/new" className="hidden sm:block font-body font-bold text-sm px-5 py-2.5 rounded-xl hover:opacity-90 transition-all pulse-glow"
             style={{ background: "#aeea00", color: "#0a0a0f" }}>
@@ -595,7 +607,7 @@ export function MarketingLanding({ matches, todaysGame }: { matches: LiveMatch[]
                 { href: "/challenges", label: "Quiz", color: "#ffb800" },
                 { href: "/join", label: "Upcoming Matches", color: "#aeea00" },
                 { href: "/league/join", label: "Join league", color: "#c4ccc6" },
-                { href: "/how-it-works", label: "How it works", color: "#c4ccc6" },
+                { href: "/games", label: "Games", color: "#c4ccc6" },
                 { href: "/auth/sign-in", label: "Sign in", color: "#8a948f" },
               ].map(item => (
                 <Link
@@ -620,7 +632,7 @@ export function MarketingLanding({ matches, todaysGame }: { matches: LiveMatch[]
                 className="flex items-center justify-center py-3 rounded-xl font-body font-bold text-sm green-pulse text-green"
                 style={{ background: "rgba(174,234,0,0.1)", border: "1px solid rgba(174,234,0,0.28)" }}
               >
-                Sign Up Free
+                Sign In/Up
               </Link>
               <Link
                 href="/league/new"
@@ -702,7 +714,7 @@ export function MarketingLanding({ matches, todaysGame }: { matches: LiveMatch[]
 
             <p className="font-body text-xs text-text-muted">
               Free to play ·{" "}
-              <Link href="/how-it-works" className="underline hover:text-white transition-colors">How it works →</Link>
+              <Link href="/games" className="underline hover:text-white transition-colors">The games →</Link>
             </p>
             </div>{/* end content wrapper */}
           </div>
@@ -901,7 +913,7 @@ export function MarketingLanding({ matches, todaysGame }: { matches: LiveMatch[]
         <div className="max-w-6xl mx-auto px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <Image src="/logo.png" alt="YourScore" width={75} height={22} style={{ height: 22, width: "auto", opacity: 0.5 }} />
           <div className="flex items-center gap-6 text-sm font-body text-text-muted">
-            <Link href="/how-it-works" className="hover:text-white transition-colors">How it works</Link>
+            <Link href="/games" className="hover:text-white transition-colors">Games</Link>
             <Link href="/challenges" className="hover:opacity-80 transition-colors text-amber">Quiz</Link>
             <Link href="/league/join" className="hover:text-white transition-colors">Join a league</Link>
             <Link href="/league/new" className="hover:text-white transition-colors">Create a league</Link>

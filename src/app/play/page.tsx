@@ -604,6 +604,28 @@ function PlayPageInner() {
     if (tab === "leaderboards") setMainTab("leaderboards");
   }, [searchParams]);
 
+  // The solo sub-tab (Featured / World Cup / Club / Records) is mirrored in the URL
+  // (?solo=club) so that returning here — e.g. tapping back from a club page — lands on
+  // the tab the player left, not a reset to Featured. Without this the sub-tab is local
+  // state the nav trail can't see, so smart-back retraced to a bare /play (founder:
+  // "users prefer to work their way back"). Read on mount and whenever the param changes.
+  useEffect(() => {
+    const solo = searchParams?.get("solo");
+    if (solo === "featured" || solo === "worldcup" || solo === "club" || solo === "records") {
+      setSoloTab(solo);
+    }
+  }, [searchParams]);
+
+  // Switch sub-tab AND reflect it in the URL (replace, not push, so tab-hopping doesn't
+  // stack history entries). The URL change is what the nav trail records, so back from a
+  // downstream page (a club hub) can retrace to this exact tab.
+  function selectSoloTab(key: SoloTab) {
+    setSoloTab(key);
+    const params = new URLSearchParams(searchParams?.toString() ?? "");
+    params.set("solo", key);
+    router.replace(`/play?${params.toString()}`, { scroll: false });
+  }
+
   // Fetch WC 2026 leaderboard (lazy, once per session)
   useEffect(() => {
     if (mainTab !== "leaderboards" || wc2026Fetched.current) return;
@@ -754,7 +776,7 @@ function PlayPageInner() {
               ] as { key: SoloTab; label: string }[]).map((t) => (
                 <button
                   key={t.key}
-                  onClick={() => setSoloTab(t.key)}
+                  onClick={() => selectSoloTab(t.key)}
                   className="flex-shrink-0 pb-2 font-body text-sm font-semibold transition-colors whitespace-nowrap"
                   style={{
                     color: soloTab === t.key ? "#fff" : "#8a948f",
