@@ -30,10 +30,23 @@ import path from "node:path";
 const POOL = path.join(process.cwd(), "src/data/games/pool.json");
 const OUT = path.join(process.cwd(), "src/data/games/player-photos.json");
 const DRY = process.argv.includes("--dry");
+const SM_KEY = process.env.SPORTMONKS_API_KEY;
+const SM_SEASON = 28083; // Premier League 2026/27 (matches build-pool.mjs)
+
+// FPL short club names → SportMonks full names, for the fallback join below.
+const CLUB_ALIASES = {
+  "Man City": "Manchester City",
+  "Man Utd": "Manchester United",
+  "Nott'm Forest": "Nottingham Forest",
+  Spurs: "Tottenham Hotspur",
+};
 
 /** Strip accents/punctuation so "Enes Ünal" and "Enes Unal" are one key. */
 const norm = (s) =>
   s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z]/g, "");
+
+/** Surname key: last token, minus an initial like "M." or "J.". */
+const surnameKey = (label) => norm(label.split(" ").pop().replace(/^[A-Z]\.?$/, "") || label);
 
 /**
  * Pool labels that are abbreviations or club-disambiguated forms of an FPL
@@ -53,9 +66,41 @@ const ALIASES = {
   "Virgil": "Van Dijk",
 };
 
+/**
+ * SportMonks squad images, keyed club → surname → [{name, image}]. The FALLBACK
+ * source for players the PL CDN has no headshot for (newer signings, mostly).
+ * Matched club-constrained by surname, exactly like the age join in
+ * build-pool.mjs, so a match is one of ~25 players at that club, not a global
+ * name search — that is what keeps it from putting the wrong face on a name.
+ */
+async function sportmonksImages() {
+  if (!SM_KEY) { console.warn("! SPORTMONKS_API_KEY missing — no image fallback, coverage will be lower"); return new Map(); }
+  const teams = (await (await fetch(`https://api.sportmonks.com/v3/football/teams/seasons/${SM_SEASON}?api_token=${SM_KEY}`)).json()).data ?? [];
+  const byClub = new Map();
+  for (const t of teams) {
+    const sq = (await (await fetch(`https://api.sportmonks.com/v3/football/squads/seasons/${SM_SEASON}/teams/${t.id}?api_token=${SM_KEY}&include=player`)).json()).data ?? [];
+    const m = new Map();
+    for (const row of sq) {
+      const p = row.player ?? {};
+      // SportMonks serves a generic silhouette (placeholder.png) for players
+      // with no real photo. It returns 200, so the image-load check can't catch
+      // it — reject by name. A silhouette next to a real name is as wrong as a
+      // broken image (Cardines, Yohanna both got it, 2026-07-24).
+      if (!p.display_name || !p.image_path || p.image_path.includes("placeholder")) continue;
+      const k = norm(p.display_name.split(" ").pop());
+      if (!m.has(k)) m.set(k, []);
+      m.get(k).push({ name: p.display_name, image: p.image_path });
+    }
+    byClub.set(norm(t.name), m);
+  }
+  return byClub;
+}
+
 async function main() {
   const pool = JSON.parse(fs.readFileSync(POOL, "utf8"));
-  const hl = pool.questions.filter((q) => q.format === "higher-lower");
+  // Every Higher or Lower topic, including FPL points (legacy "this-season-form"
+  // format) — those players can headline the daily tile too.
+  const hl = pool.questions.filter((q) => q.format === "higher-lower" || q.stat === "points");
 
   const res = await fetch("https://fantasy.premierleague.com/api/bootstrap-static/");
   if (!res.ok) throw new Error(`FPL bootstrap failed: ${res.status}`);
@@ -85,12 +130,16 @@ async function main() {
   }
 
   const resolved = new Map(); // normalised label -> FPL code (before image verify)
+  const labelClub = new Map(); // normalised label -> club, for the SportMonks fallback
+  const labelText = new Map(); // normalised label -> original text, for surname matching
   const missed = [];
   const ambiguous = [];
   for (const [label, ids] of labels) {
     // The club the pool believes this player is at, when it knows one. It is
     // the only thing that separates Cole Palmer from Liam Palmer.
     const club = ids.map((id) => roster.get(id)?.club).find(Boolean) ?? null;
+    labelClub.set(norm(label), club);
+    labelText.set(norm(label), label);
     const candidates = [
       ALIASES[label] ?? label,
       label,
@@ -153,6 +202,40 @@ async function main() {
   }
   await Promise.all(Array.from({ length: 10 }, worker)); // bounded concurrency
 
+  // FALLBACK: for players the PL CDN has no headshot for, use SportMonks' own
+  // image. Matched club-constrained by surname (a name repeated across clubs
+  // can't collide) and — same lesson as above — only kept if the image loads.
+  const smByClub = await sportmonksImages();
+  // FPL and SportMonks spell some clubs differently ("Newcastle" vs "Newcastle
+  // United", "Wolves" vs "Wolverhampton Wanderers"). Resolve exact first, then
+  // by containment either way — the same tolerant match build-pool.mjs uses for
+  // ages, without which every Newcastle/Wolves/West Ham player was lost.
+  const smClubKeys = [...smByClub.keys()];
+  const smSquadFor = (fplClub) => {
+    const want = norm(CLUB_ALIASES[fplClub] ?? fplClub);
+    if (smByClub.has(want)) return smByClub.get(want);
+    const hit = smClubKeys.find((k) => k.includes(want) || want.includes(k));
+    return hit ? smByClub.get(hit) : null;
+  };
+
+  const labelsWithoutPhoto = [...resolved.keys()].filter((k) => !photos[k]);
+  let recovered = 0, smAmbiguous = 0, smDead = 0;
+  await Promise.all(labelsWithoutPhoto.map(async (key) => {
+    const club = labelClub.get(key);
+    if (!club) return;
+    const cands = smSquadFor(club)?.get(surnameKey(labelText.get(key) ?? key));
+    if (!cands?.length) return;
+    if (cands.length > 1) { smAmbiguous++; return; } // two same-surname at one club — don't guess
+    const img = cands[0].image;
+    try {
+      const r = await fetch(img);
+      if (r.status === 200 && (r.headers.get("content-type") || "").includes("image")) {
+        photos[key] = img;
+        recovered++;
+      } else smDead++;
+    } catch { smDead++; }
+  }));
+
   // Per-question coverage is the number that decides the UI: a tile with one
   // face and one blank is worse than a tile with neither.
   let both = 0, one = 0, none = 0;
@@ -163,8 +246,9 @@ async function main() {
 
   console.log(`players named in Higher or Lower: ${labels.size}`);
   console.log(`resolved to an FPL code:          ${resolved.size}`);
-  console.log(`code has a LOADABLE headshot:     ${Object.keys(photos).length}`);
-  console.log(`code but NO image (dropped):      ${dead.length}`);
+  console.log(`PL headshot loads:                ${Object.keys(photos).length - recovered}`);
+  console.log(`recovered via SportMonks:         ${recovered} (ambiguous ${smAmbiguous}, no/broken img ${smDead})`);
+  console.log(`total with a LOADABLE image:      ${Object.keys(photos).length}`);
   console.log(`questions with BOTH faces:        ${both}/${hl.length} (${(100 * both / hl.length).toFixed(1)}%)`);
   console.log(`               one face:          ${one}`);
   console.log(`               no faces:          ${none}`);
