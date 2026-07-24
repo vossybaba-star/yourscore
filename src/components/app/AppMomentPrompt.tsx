@@ -1,31 +1,37 @@
 "use client";
 
 /**
- * AppMomentPrompt — the right ask at the right moment, fired only after a GOOD
- * game (the player gained points), so it lands when they've just had a positive
- * experience. Two mutually-exclusive asks, by surface:
+ * AppMomentPrompt — the right ask at the right moment, shown when a player
+ * finishes a Game. Two mutually-exclusive asks, by surface:
  *   • Native app user  → ask them to RATE YourScore on the App Store.
  *   • Web on an iPhone → nudge them to DOWNLOAD the app.
  * (Web non-Apple / desktop → nothing.)
  *
- * Frequency-gated per device so we ask sparingly. Renders nothing unless it's a
- * good moment AND the cooldown has passed.
+ * It used to fire only after a WIN (points gained), gated on a localStorage
+ * stamp with a 45-day cooldown. Both are gone:
  *
- * Upgrade path: for the native rate ask we currently open the App Store review
- * page (works in the live build, opt-in tap). Adding @capacitor-community/
- * in-app-review in a future native build lets us swap this for the in-app star
- * popup (SKStoreReviewController) — see requestRate().
+ *   • Any finished Game counts now. Requiring a win skipped anyone having a bad
+ *     run, and — because "gained" needs a prior on-device rank snapshot — it
+ *     could never fire on a returning player's first Game back on a new phone,
+ *     which is exactly who we most want to ask.
+ *
+ *   • Eligibility is decided server-side (/api/review-prompt) and every ask
+ *     SHOWN is recorded. A device stamp left no trace and reset on reinstall,
+ *     so we could not count our own asks at all.
+ *
+ * The server picks the variant: Apple's inline star popup while the player is
+ * under Apple's 3-per-365-days cap, our soft card after that (past the cap the
+ * popup is a silent no-op, so asking again would show nothing and still look
+ * like an ask).
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { isNative } from "@/lib/native";
 
 // Links live in lib/appStore so the server-side halftime email can share them.
 import { APP_STORE_URL, APP_STORE_REVIEW_URL as REVIEW_URL } from "@/lib/appStore";
 
-const RATE_KEY = "ys:rate-prompt:v1";
 const DL_KEY = "ys:dl-prompt:v1";
-const RATE_COOLDOWN = 45 * 86_400_000; // ask to rate at most every ~45 days
 const DL_COOLDOWN = 7 * 86_400_000; // nudge a download at most weekly
 
 function isAppleMobile(): boolean {
@@ -46,10 +52,10 @@ function stamp(key: string): void {
 }
 
 // Fire Apple's inline review popup (SKStoreReviewController) via the native
-// plugin. Guarded with isPluginAvailable so a build that predates the plugin
-// (i.e. the current live one, until the next rebuild) doesn't throw — it just
-// reports back that it didn't fire, and we fall back to the soft card.
-// Returns whether the native popup was shown.
+// plugin. Guarded with isPluginAvailable so a build predating the plugin doesn't
+// throw — it reports back that it didn't fire and we fall back to the soft card.
+// NOTE: true means we CALLED it, not that Apple drew anything; Apple gives us no
+// way to know. The server-side cap is what keeps that distinction honest.
 async function fireNativeReview(): Promise<boolean> {
   try {
     const { Capacitor } = await import("@capacitor/core");
@@ -65,33 +71,96 @@ function openReviewPage(): void {
   try { window.open(REVIEW_URL, "_blank", "noopener"); } catch { /* ignore */ }
 }
 
-export function AppMomentPrompt({ success }: { success: boolean }) {
+async function logShown(variant: string): Promise<string | null> {
+  try {
+    const res = await fetch("/api/review-prompt", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ surface: "post-game", variant }),
+    });
+    const { id } = (await res.json()) as { id?: string };
+    return id ?? null;
+  } catch {
+    return null; // best-effort — a missed log must never break a game-end screen
+  }
+}
+
+function logOutcome(id: string | null, outcome: "acted" | "dismissed"): void {
+  if (!id) return;
+  try {
+    void fetch("/api/review-prompt", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ id, outcome }),
+    });
+  } catch { /* ignore */ }
+}
+
+export function AppMomentPrompt() {
   const [mode, setMode] = useState<null | "rate" | "download">(null);
+  const promptIdRef = useRef<string | null>(null);
+  const firedRef = useRef(false);
 
   useEffect(() => {
-    if (!success) return;
+    if (firedRef.current) return;
+    firedRef.current = true;
     let cancelled = false;
-    if (isNative()) {
-      if (recently(RATE_KEY, RATE_COOLDOWN)) return;
-      stamp(RATE_KEY); // asked once — respect the cooldown whether native popup or card
-      // Prefer Apple's inline star popup; if this build predates the plugin,
-      // fall back to a soft card that links to the review page.
-      fireNativeReview().then((fired) => { if (!fired && !cancelled) setMode("rate"); });
-    } else if (isAppleMobile()) {
-      if (recently(DL_KEY, DL_COOLDOWN)) return;
-      stamp(DL_KEY);
-      setMode("download");
-    }
+
+    (async () => {
+      if (isNative()) {
+        // Server owns the cooldown, the yearly native cap and the record.
+        let decision: { ask?: boolean; variant?: string } = {};
+        try {
+          decision = await (await fetch("/api/review-prompt")).json();
+        } catch {
+          return; // offline or signed out — say nothing
+        }
+        if (!decision.ask || cancelled) return;
+
+        if (decision.variant === "native") {
+          const fired = await fireNativeReview();
+          if (cancelled) return;
+          // No plugin means the popup never happened — record and show what the
+          // player actually got, which is the card.
+          promptIdRef.current = await logShown(fired ? "native" : "card");
+          if (!fired) setMode("rate");
+          return;
+        }
+
+        promptIdRef.current = await logShown("card");
+        if (!cancelled) setMode("rate");
+        return;
+      }
+
+      if (isAppleMobile()) {
+        // The download nudge keeps its light device-local cooldown — it isn't a
+        // review ask and Apple's cap doesn't apply — but it's logged now so the
+        // whole prompt surface is countable.
+        if (recently(DL_KEY, DL_COOLDOWN)) return;
+        stamp(DL_KEY);
+        promptIdRef.current = await logShown("download");
+        if (!cancelled) setMode("download");
+      }
+    })();
+
     return () => { cancelled = true; };
-  }, [success]);
+  }, []);
 
   if (!mode) return null;
 
   const rate = mode === "rate";
-  const key = rate ? RATE_KEY : DL_KEY;
 
-  function act() { stamp(key); }
-  function dismiss(e: React.MouseEvent) { e.preventDefault(); e.stopPropagation(); stamp(key); setMode(null); }
+  function act() {
+    if (!rate) stamp(DL_KEY);
+    logOutcome(promptIdRef.current, "acted");
+  }
+  function dismiss(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!rate) stamp(DL_KEY);
+    logOutcome(promptIdRef.current, "dismissed");
+    setMode(null);
+  }
 
   return (
     <div className="rounded-2xl p-4 mt-3" style={{ background: "linear-gradient(135deg, rgba(174,234,0,0.12), rgba(10,10,15,0.5))", border: "1px solid rgba(174,234,0,0.35)" }}>
@@ -101,11 +170,11 @@ export function AppMomentPrompt({ success }: { success: boolean }) {
         </div>
         <div className="min-w-0 flex-1">
           <p className="font-display text-base tracking-wide text-white leading-tight">
-            {rate ? "Enjoying YourScore?" : "Get the app"}
+            {rate ? "Help us before the Premier League starts" : "Get the app"}
           </p>
           <p className="font-body text-xs text-text-muted mt-1 leading-relaxed">
             {rate
-              ? "A quick rating on the App Store genuinely helps us out — takes 10 seconds."
+              ? "We'd really appreciate a rating. It puts YourScore in front of more football fans, and more players means better competition for you."
               : "Faster, full-screen, and notifications when it's your turn."}
           </p>
         </div>
