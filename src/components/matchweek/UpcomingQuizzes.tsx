@@ -2,8 +2,9 @@
 
 /**
  * Matchweek → Live Quiz → the upcoming quizzes, as a horizontal carousel
- * (the format the halftime rail used) — one card per fixture, each a quiz that
- * drops at that match's real half-time.
+ * (the format the Gameday rail uses) — one card per fixture, each a quiz pack
+ * that publishes the day before that match kicks off (§0.1 — the pivot off
+ * the whistle-release model).
  *
  * Shows the soonest gameweek's fixtures as swipeable cards, with chips to flick
  * between the gameweeks ahead. A full season shouldn't be one endless scroll;
@@ -45,7 +46,7 @@ export function UpcomingQuizzes() {
 
   return (
     // Everything lives in the same max-w-lg column as the rest of Matchweek; the
-    // rail bleeds to the column edge with -mx-4 px-4 (the HalftimeRail pattern),
+    // rail bleeds to the column edge with -mx-4 px-4 (the GamedayRail pattern),
     // so cards scroll within the column instead of across the whole viewport.
     <div className="max-w-lg mx-auto px-4 pt-5">
       <div className="flex items-center justify-between mb-2.5">
@@ -79,7 +80,9 @@ export function UpcomingQuizzes() {
       {/* The carousel */}
       <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2 snap-x -mx-4 px-4"
         style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}>
-        {current.fixtures.map((fx, i) => (
+        {current.fixtures.map((fx, i) => {
+          const live = fx.state === "published";
+          return (
           <div key={i}
             className="flex-shrink-0 snap-start rounded-2xl p-4 flex flex-col justify-between"
             style={{
@@ -90,7 +93,7 @@ export function UpcomingQuizzes() {
             <div className="flex items-center justify-between">
               <span className="font-body text-[10px] px-2 py-0.5 rounded-full"
                 style={{ background: "rgba(0,216,192,0.12)", color: TEAL, border: "1px solid rgba(0,216,192,0.25)" }}>
-                HT QUIZ
+                GAMEDAY QUIZ
               </span>
               <span className="font-body text-[11px]" style={{ color: "#8a948f" }}>{dayLabel(fx.kickoff)}</span>
             </div>
@@ -107,18 +110,19 @@ export function UpcomingQuizzes() {
             </div>
 
             <span className="font-body text-[11px]" style={{ color: "#586058" }}>
-              Drops at half-time · {timeLabel(fx.kickoff)} KO
+              {live ? "Playable now" : "Published day before"} · {timeLabel(fx.kickoff)} KO
             </span>
 
             <div className="flex mt-2.5">
               <NotifyButton fixtureId={fx.fixtureId} reminders={reminders} />
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
 
       <p className="font-body text-xs mt-2" style={{ color: "#586058" }}>
-        A quiz drops at each match&apos;s real half-time. Play solo or against friends.
+        A quiz pack publishes the day before each match. Play solo or against friends.
       </p>
     </div>
   );
