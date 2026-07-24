@@ -111,6 +111,10 @@ export interface OptimisedMove { outId: number; inId: number; paid: "credit" | "
 export interface OptimiseResult {
   moves: OptimisedMove[];
   totalGain: number;
+  /** The one-off cost of the whole plan, in points, paid ONCE (hits plus the
+   *  cash value forgone on any credit spent). Kept as its own field so the UI
+   *  can state it as a one-time fact and never fold it into a per-week rate. */
+  oneOffCost: number;
   hitsTaken: number;
   hold: boolean;
   consideredCombinations: number;
@@ -383,12 +387,14 @@ export function optimiseTransfers(input: OptimiseInput): OptimiseResult {
     return { outId: m.outId, inId: m.inId, paid, gain: m.rawGain };
   });
 
-  // Net of what the moves actually cost — hits AND the cash value forgone on
-  // every credit spent. Counting only hits overstated the gain of a
-  // credit-funded move, which is the same hoarding blind spot in another form.
-  const totalGain = moves.reduce((s, m) => s + m.gain, 0) - costOf(moves.length);
+  // The one-off cost of this plan — hits AND the cash value forgone on every
+  // credit spent — held as its own value. totalGain nets it against the weekly
+  // upside for internal ranking; the UI reports the two separately so a cost
+  // paid once is never presented as a per-week rate.
+  const oneOffCost = costOf(moves.length);
+  const totalGain = moves.reduce((s, m) => s + m.gain, 0) - oneOffCost;
 
-  return { moves, totalGain, hitsTaken, hold: moves.length === 0, consideredCombinations: considered };
+  return { moves, totalGain, oneOffCost, hitsTaken, hold: moves.length === 0, consideredCombinations: considered };
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -485,7 +491,7 @@ export function planTransfers(input: PlanInput): PlanResult {
   // not an error.
   if (marked.length === 0) {
     return {
-      moves: [], totalGain: 0, hitsTaken: 0, hold: true, consideredCombinations: 0,
+      moves: [], totalGain: 0, oneOffCost: 0, hitsTaken: 0, hold: true, consideredCombinations: 0,
       perPlayer: [], ignored,
     };
   }

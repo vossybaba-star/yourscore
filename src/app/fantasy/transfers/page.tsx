@@ -28,6 +28,10 @@ interface PlanResponse {
   perPlayer: { outId: number; bestInId: number | null; gain: number; inPlan: boolean; outAvg: number; inAvg: number | null }[];
   ignored: number[];
   totalGain: number;
+  /** The plan's one-off cost in points, paid ONCE (hits plus the cash value
+   *  forgone on any credit spent). Stated as a one-time fact, never as a rate;
+   *  zero on a wildcard or an all-free week, when the cost line is dropped. */
+  oneOffCost: number;
   hitsTaken: number;
   hold: boolean;
   /** "no-history-yet" is the cold start (gameweeks 1-5, before anything has been
@@ -470,15 +474,30 @@ export default function TransfersPage() {
                       </span>
                     </div>
                   ))}
-                  <div style={{ marginTop: 8, fontSize: 12.5, color: MUTED, lineHeight: 1.45 }}>
-                    Together they have averaged{" "}
-                    <b style={{ color: plan.totalGain > 0 ? GOLD : "#E08A6B" }}>
-                      {plan.totalGain > 0 ? "+" : ""}{plan.totalGain.toFixed(1)} a week
-                    </b>{" "}
-                    more than the players they&apos;d replace, after what the moves cost
-                    {plan.hitsTaken > 0 && <> (including {plan.hitsTaken} paid transfer{plan.hitsTaken === 1 ? "" : "s"})</>}.
-                    Past form, not a forecast.
-                  </div>
+                  {/* TWO facts, never blended. The weekly figure is the pure
+                      season-average delta (matches the per-move lines above); the
+                      one-off cost is stated once, as a known cost, not a rate.
+                      Both past tense — nothing here is a forecast. */}
+                  {(() => {
+                    const weekly = plan.moves.reduce((s, m) => s + (m.inAvg - m.outAvg), 0);
+                    return (
+                      <div style={{ marginTop: 8, fontSize: 12.5, color: MUTED, lineHeight: 1.45 }}>
+                        The players you&apos;d bring in have averaged{" "}
+                        <b style={{ color: weekly >= 0 ? GOLD : "#E08A6B" }}>
+                          {weekly >= 0 ? "+" : ""}{weekly.toFixed(1)} a week
+                        </b>{" "}
+                        more this season.
+                        {plan.oneOffCost > 0 && (
+                          <>
+                            {" "}These moves cost{" "}
+                            <b style={{ color: INK }}>
+                              {plan.oneOffCost} point{plan.oneOffCost === 1 ? "" : "s"}
+                            </b>, once.
+                          </>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </>
               )}
 
