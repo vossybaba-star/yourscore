@@ -529,6 +529,13 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-24** — **Club page: back button reachable, and back retraces your steps** (founder).
+  `/club/[slug]` has no GamesNav above it, so the back pill sat at the very top of the viewport —
+  under the iOS status bar / Dynamic Island — and couldn't be tapped; it now takes the safe-area
+  inset (`pt-safe`). Separately, the Quiz hub's solo sub-tab (Featured / World Cup / **Club** /
+  Records) was local state the nav trail couldn't see, so tapping back from a club landed on a
+  reset-to-Featured `/play`. The sub-tab is mirrored in the URL now (`/play?solo=club`), so
+  smart-back retraces to the exact tab the player left.
 - **2026-07-23 (late)** — **Pro's club ask is a POP-UP, not a section** (founder). A 20-crest
   grid sitting inline pushed the formation picker and the draft button off the screen and read
   as another form to fill in before you could play. It's now a sheet on the same pattern as the
