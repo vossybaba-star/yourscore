@@ -750,7 +750,15 @@ export function buildPlayerProfile(args: {
   const dcStat = (): ProfileStat => ({
     label: "Defensive returns",
     value: apps ? `${dcHits} in ${apps} games` : "no games yet",
-    note: apps >= 3 && dcHits / apps >= 0.5 ? "reliable 2 points even without a clean sheet" : null,
+    // NO POINTS FIGURE IN THIS STRING. It used to read "reliable 2 points",
+    // which was FPL's award written into copy on a branch whose values.ts had
+    // been moved onto FPL's scale. This repo's values.ts has not: a defensive
+    // return pays 5 here, so that sentence shipped a number that was wrong by
+    // more than double. Stating the fact without the figure is true on either
+    // scale — and a scoring value quoted in prose is exactly how the
+    // scale-mismatch bugs in this codebase keep happening. If a number is ever
+    // wanted here it must be read from values.ts, never typed out.
+    note: apps >= 3 && dcHits / apps >= 0.5 ? "reliable returns even without a clean sheet" : null,
   });
   const attackStat = (): ProfileStat => ({
     label: "Goals and assists", value: `${goals}G ${assists}A`, note: null,
@@ -758,7 +766,8 @@ export function buildPlayerProfile(args: {
 
   if (pos === "GK") {
     // No xG line: keepers do not shoot, and a goal is not part of the case for
-    // owning one. Saves are, because three of them pay a point.
+    // owning one. Saves are, because every third save pays out (see values.ts
+    // for the amount — deliberately not repeated here, it is scale-dependent).
     stats.push(csStat());
     stats.push({
       label: "Saves", value: apps ? `${saves} (${(saves / apps).toFixed(1)} a game)` : "no games yet",
