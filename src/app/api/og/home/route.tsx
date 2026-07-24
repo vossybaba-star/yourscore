@@ -107,7 +107,7 @@ export async function GET() {
 
         {/* Perfect 10 card (gold) */}
         <div style={{ display: "flex", flexDirection: "column", position: "absolute", left: 836, top: 180, width: 330, borderRadius: 20, padding: "20px 22px", background: "linear-gradient(180deg, #17140b 0%, #100e08 100%)", border: "1px solid rgba(255,196,0,0.30)", boxShadow: "0 24px 60px rgba(0,0,0,0.55)", transform: "rotate(4deg)" }}>
-          <span style={{ display: "flex", color: GOLD, fontSize: 12, fontWeight: 700, letterSpacing: 2.5 }}>PERFECT 10 · DAILY LIST</span>
+          <span style={{ display: "flex", color: GOLD, fontSize: 12, fontWeight: 700, letterSpacing: 2.5 }}>PERFECT 10 · RANKED LIST</span>
           <span style={{ display: "flex", fontFamily: "Bebas", color: GOLD, fontSize: 22, letterSpacing: 0.6, marginTop: 7, lineHeight: 1.08 }}>Premier League&apos;s All-Time Top 10 Goalscorers</span>
           <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 11 }}>
             <SolvedRung rank={1} name="SHEARER" />

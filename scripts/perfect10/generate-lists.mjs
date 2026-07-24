@@ -30,7 +30,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { callClaude, parseJson, MODELS, WEB_SEARCH_TOOL, usageOf, CreditExhausted, costReport } from "../lib/anthropic.mjs";
+import { callClaude, parseJson, lastTextOf, textOf, MODELS, WEB_SEARCH_TOOL, usageOf, CreditExhausted, costReport } from "../lib/anthropic.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..", "..");
@@ -62,10 +62,15 @@ const JSON_OUT = flag("--json-out") || null;
  */
 const ANCHOR = flag("--anchor") || null;
 const FIXTURE = has("--fixture");
+/** --verify-one "<rank>@<Player Name>" (with --topic as the list title): run the
+ * Stage B verifier on ONE claim and exit. Cheap probe for the verifier/salvage
+ * path — one Sonnet call (+Haiku salvage if needed) instead of a full list. */
+const VERIFY_ONE = flag("--verify-one") || null;
 
 if (!FIXTURE && !TOPIC) {
   console.error("Usage: generate-lists.mjs --topic \"<list topic>\" [--day YYYY-MM-DD] [--json-out path.json]");
   console.error("   or: generate-lists.mjs --fixture [--day YYYY-MM-DD] [--json-out path.json]");
+  console.error("   or: generate-lists.mjs --topic \"<list title>\" --verify-one \"<rank>@<Player Name>\"");
   process.exit(1);
 }
 
@@ -190,18 +195,62 @@ async function verifyEntry(title, entry) {
   try {
     v = parseJson(resp);
   } catch {
-    return null; // caller retries once — a truncated/chatty reply is mechanical, not factual
+    // The verdict is usually IN the reply, just prose-shaped (both incidents — Jul 17,
+    // Jul 20 — were mechanical: facts fine, shape wrong). Salvage before burning
+    // another full web-search call.
+    const salvaged = await reshapeVerdict(lastTextOf(resp) || textOf(resp)).catch(() => null);
+    if (salvaged) return { ...salvaged, usage: usageOf(resp) };
+    return null; // caller retries — a truncated/chatty reply is mechanical, not factual
   }
   return { confirmed: Boolean(v.confirmed), sourceUrl: v.source_url ?? null, note: v.note ?? null, usage: usageOf(resp) };
 }
 
-/** One retry on a malformed verifier reply before treating it as unconfirmed —
- * a non-JSON reply is a mechanical failure and must not veto a whole list. */
+/**
+ * Salvage pass for a chatty verifier reply: a cheap no-tools call re-emits the
+ * verdict as JSON. The assistant prefill "{" makes a non-JSON reply structurally
+ * impossible — the model can only continue the object. Returns null when the
+ * reply genuinely contains no verdict (that stays a mechanical failure → retry);
+ * it must never judge the claim itself.
+ */
+async function reshapeVerdict(raw) {
+  if (!raw || raw.trim().length < 40) return null; // nothing to salvage
+  const resp = await callClaude({
+    model: MODELS.cheap,
+    system: `You extract a fact-check verdict from a verifier's reply. Output ONLY JSON:
+{"has_verdict": true | false, "confirmed": true | false, "source_url": "url or null", "note": "short line"}
+
+Rules:
+- "has_verdict" is true ONLY if the text clearly states whether the claim was confirmed or rejected. Report what the text concluded — NEVER judge the claim yourself.
+- If has_verdict is false: confirmed false, source_url null, note "no verdict in reply".
+- "source_url": the single best supporting URL the text cites, else null.`,
+    messages: [
+      { role: "user", content: `Verifier reply:\n\n${raw.slice(0, 8000)}` },
+      { role: "assistant", content: "{" },
+    ],
+    maxTokens: 300,
+    stage: "p10-reshape",
+  });
+  let v;
+  try {
+    v = parseJson("{" + lastTextOf(resp));
+  } catch {
+    return null;
+  }
+  if (!v.has_verdict) return null;
+  return { confirmed: Boolean(v.confirmed), sourceUrl: v.source_url ?? null, note: `[salvaged] ${v.note ?? ""}`.trim() };
+}
+
+/** Up to THREE full attempts (each with its own salvage pass) before treating a
+ * malformed verifier reply as unconfirmed — a non-JSON reply is a mechanical
+ * failure and must not veto a whole list. One retry wasn't enough twice
+ * (Jul 17: 2/10, Jul 20: 3/10 — all mechanical, facts were fine). */
 async function verifyEntryWithRetry(title, entry) {
-  const first = await verifyEntry(title, entry);
-  if (first) return first;
-  const second = await verifyEntry(title, entry);
-  return second ?? { confirmed: false, note: "verifier reply was not JSON (after retry)" };
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const v = await verifyEntry(title, entry);
+    if (v) return v;
+    if (attempt < 3) console.warn(`    ↻ verifier reply not JSON for #${entry.rank} ${entry.display} (attempt ${attempt}/3) — retrying`);
+  }
+  return { confirmed: false, note: "verifier reply was not JSON (after 3 attempts + salvage)" };
 }
 
 // ── Player index force-upsert (so the 10 answers are always guessable) ────
@@ -265,6 +314,21 @@ async function forceUpsertAnswers(entries) {
 // ── main ─────────────────────────────────────────────────────────────────
 
 async function main() {
+  if (VERIFY_ONE) {
+    const at = VERIFY_ONE.indexOf("@");
+    const rank = Number(VERIFY_ONE.slice(0, at));
+    const display = VERIFY_ONE.slice(at + 1).trim();
+    if (!Number.isInteger(rank) || rank < 1 || rank > 10 || !display) {
+      console.error(`--verify-one wants "<rank>@<Player Name>", got: ${VERIFY_ONE}`);
+      process.exit(1);
+    }
+    console.log(`Verify-one probe — "${TOPIC}" #${rank} ${display}...`);
+    const v = await verifyEntryWithRetry(TOPIC, { rank, display });
+    console.log(`  ${v.confirmed ? "CONFIRMED" : "UNCONFIRMED"} — ${v.note ?? ""}${v.sourceUrl ? `\n  source: ${v.sourceUrl}` : ""}`);
+    console.log("\n" + costReport());
+    process.exit(0);
+  }
+
   let title, entries, isFixture = FIXTURE;
 
   if (FIXTURE) {

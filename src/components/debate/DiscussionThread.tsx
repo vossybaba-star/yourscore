@@ -33,12 +33,23 @@ export function DiscussionThread({
   title = "The discussion",
   accent = "#00d8c0",
   signInNext = "/versus",
+  canPost = true,
+  lockedHint = "Have your say once you've voted",
+  embedded = false,
 }: {
   subjectType: "pack" | "debate";
   subjectId: string;
   title?: string;
   accent?: string;
   signInNext?: string;
+  /** false = read-only composer. Everyone still READS the thread; posting is
+   * what's gated (on the debate card, by having voted first). */
+  canPost?: boolean;
+  /** Placeholder shown in place of the composer prompt when `canPost` is false. */
+  lockedHint?: string;
+  /** Render as a section INSIDE a parent card (no own frame, just a divider)
+   * rather than as its own standalone card. */
+  embedded?: boolean;
 }) {
   const { user } = useUser();
   const router = useRouter();
@@ -60,7 +71,7 @@ export function DiscussionThread({
 
   async function post() {
     const body = draft.trim();
-    if (!body || posting) return;
+    if (!body || posting || !canPost) return;
     if (!user) { router.push(`/auth/sign-in?next=${encodeURIComponent(signInNext)}`); return; }
     setPosting(true);
     setError(null);
@@ -94,7 +105,12 @@ export function DiscussionThread({
   }
 
   return (
-    <div className="rounded-2xl overflow-hidden" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.08)" }}>
+    <div
+      className={embedded ? "" : "rounded-2xl overflow-hidden"}
+      style={embedded
+        ? { borderTop: "1px solid rgba(255,255,255,0.08)" }
+        : { background: "#0e1611", border: "1px solid rgba(255,255,255,0.08)" }}
+    >
       <div className="px-5 py-3 flex items-center justify-between" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
         <p className="font-body text-[10px] font-bold uppercase tracking-[0.28em]" style={{ color: accent }}>{title}</p>
         <p className="font-body text-[10px]" style={{ color: "#586058" }}>{total > 0 ? `${total} comment${total === 1 ? "" : "s"}` : "Start it off"}</p>
@@ -107,13 +123,14 @@ export function DiscussionThread({
             value={draft}
             onChange={(e) => setDraft(e.target.value.slice(0, 280))}
             onKeyDown={(e) => { if (e.key === "Enter") post(); }}
-            placeholder={user ? "Say your piece…" : "Sign in to join in…"}
-            className="flex-1 min-w-0 rounded-xl px-4 py-3 font-body text-sm text-white placeholder:text-[#586058] outline-none"
+            disabled={!canPost}
+            placeholder={!canPost ? lockedHint : user ? "Say your piece…" : "Sign in to join in…"}
+            className="flex-1 min-w-0 rounded-xl px-4 py-3 font-body text-sm text-white placeholder:text-[#586058] outline-none disabled:opacity-60"
             style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }}
           />
           <button
             onClick={post}
-            disabled={posting || !draft.trim()}
+            disabled={posting || !canPost || !draft.trim()}
             className="rounded-xl px-4 font-display text-[12px] tracking-wide active:scale-[0.97] transition-transform disabled:opacity-40"
             style={{ background: accent, color: "#04231f" }}
           >

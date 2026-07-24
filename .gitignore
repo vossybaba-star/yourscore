@@ -67,6 +67,10 @@ emails/preview/
 # Health-check run artifacts (scorecards, screenshots, bot-seen history)
 scripts/data/health/
 
+# SportMonks fact cache (quiz factory). Derived data — past seasons are immutable so it's
+# fetched once and reused, but it rebuilds itself from the API on any machine. ~2MB.
+scripts/data/sportmonks-cache/
+
 # Halftime pipeline run artifacts: the veto/auto-release decision log (JSONL,
 # one file per matchday), generated slates, and poller run-state. The audit log
 # is the record of who approved what — it belongs on the VPS, not in git.
@@ -75,3 +79,6 @@ scripts/data/halftime/
 # Never commit env backups (they carry prod secrets)
 .env.local.bak*
 .env*
+
+# verification run logs (results live in pl-quiz-verify.jsonl)
+scripts/data/pl-quiz-verify.log

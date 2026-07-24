@@ -63,19 +63,36 @@ const RECORD_TOPICS: { label: string; emoji: string; comingSoon?: boolean }[] = 
 
 const ERA_OPTIONS = [
   { value: "",          label: "All Time",       short: "All" },
-  { value: "early-pl",  label: "Classic 90s–00s", short: "90s" },
+  { value: "early-pl",  label: "Classic 90s/00s", short: "90s" },
   { value: "2010s",     label: "2010s",           short: "10s" },
   { value: "2020s",     label: "Modern 2020s",    short: "20s" },
   { value: "2024-25",   label: "This Season",     short: "Now" },
 ];
 
+// Three tiers only. "Expert" and "Master" used to be offered here, but they're the residue of
+// the old free-authored cohort — never fact-checked, and the source of questions like "How many
+// PL goals did Haaland score for Man City in 2010-11?" (he was ten). The generator no longer
+// serves them, so offering them would just 400. Nothing new is written at those levels either.
 const DIFF_OPTIONS = [
   { value: "",       label: "Mixed",  dot: "#9aa39d" },
   { value: "easy",   label: "Easy",   dot: "#4ade80" },
   { value: "medium", label: "Medium", dot: "#00d8c0" },
   { value: "hard",   label: "Hard",   dot: "#f87171" },
-  { value: "expert", label: "Expert", dot: "#aeea00" },
-  { value: "master", label: "Master", dot: "#00c9ff" },
+];
+
+/**
+ * The four locked club topics. Values must match questions.category exactly.
+ *
+ * Clubs only: these categories are only populated for club entities. National teams and
+ * Records topics have no category tagging, so offering the filter there would just deal a
+ * 404 for every choice.
+ */
+const TOPIC_OPTIONS = [
+  { value: "",                  label: "Everything", emoji: "🎲" },
+  { value: "history-honours",   label: "History & Honours", emoji: "🏆" },
+  { value: "legends",           label: "Legends",           emoji: "⭐" },
+  { value: "modern-era",        label: "Modern Era",        emoji: "📅" },
+  { value: "rivalries-derbies", label: "Rivalries",         emoji: "⚔️" },
 ];
 
 // ── Step definitions ───────────────────────────────────────────────────────────
@@ -98,6 +115,7 @@ export default function CreateQuizPage() {
   const [focusType, setFocusType] = useState<FocusType | null>(null);
   const [selectedEntity, setSelectedEntity] = useState<string | null>(null);
   const [era, setEra] = useState("");
+  const [topic, setTopic] = useState("");
   const [difficulty, setDifficulty] = useState("");
   const [clubSearch, setClubSearch] = useState("");
   const [generating, setGenerating] = useState(false);
@@ -123,6 +141,7 @@ export default function CreateQuizPage() {
       try {
         const qs = new URLSearchParams({ entity: selectedEntity });
         if (era) qs.set("era", era);
+        if (topic) qs.set("category", topic);
         const res = await fetch(`/api/quiz/availability?${qs.toString()}`);
         const json = await res.json();
         if (!cancelled) setAvailability(res.ok ? (json.count ?? 0) : null);
@@ -133,7 +152,7 @@ export default function CreateQuizPage() {
       }
     }, 250);
     return () => { cancelled = true; clearTimeout(t); };
-  }, [selectedEntity, era]);
+  }, [selectedEntity, era, topic]);
 
   // Reset on category change
   useEffect(() => {
@@ -141,6 +160,7 @@ export default function CreateQuizPage() {
     setClubSearch("");
     setEra("");
     setDifficulty("");
+    setTopic("");
   }, [focusType]);
 
   // Auto-scroll to next step
@@ -188,6 +208,7 @@ export default function CreateQuizPage() {
           entityType: focusType,
           era: era || undefined,
           difficulty: difficulty || undefined,
+          category: topic || undefined,
         }),
       });
       const json = await res.json();
@@ -380,7 +401,11 @@ export default function CreateQuizPage() {
                         style={{
                           display: "flex", flexDirection: "column", alignItems: "center",
                           justifyContent: "center", gap: 5,
-                          padding: "10px 4px", borderRadius: 12, height: 76,
+                          // minHeight, not height: at font-size 9 / line-height 1.2 a two-line
+                          // clamp needs ~22px, which a fixed 76px box could not give it, so
+                          // "Charlton Athletic", "Nottingham Forest" and friends were sliced
+                          // through the middle of their second line.
+                          padding: "10px 4px", borderRadius: 12, minHeight: 84,
                           cursor: "pointer", transition: "all 0.15s ease",
                           background: isSelected ? "rgba(0,216,192,0.12)" : "rgba(255,255,255,0.03)",
                           border: `1px solid ${isSelected ? "rgba(0,216,192,0.55)" : "rgba(255,255,255,0.07)"}`,
@@ -388,8 +413,12 @@ export default function CreateQuizPage() {
                         }}
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
+                        {/* width/height in CSS, not just the attributes: Tailwind preflight sets
+                            `img { height: auto }`, which beat the height attribute and let tall
+                            crests (Birmingham City) grow and shove the club name out of the card
+                            entirely — that card rendered with no name at all. */}
                         {badge && <img src={badge} alt={club} width={34} height={34}
-                          style={{ objectFit: "contain", filter: isSelected ? "drop-shadow(0 1px 6px rgba(0,216,192,0.4))" : "none" }} />}
+                          style={{ width: 34, height: 34, flexShrink: 0, objectFit: "contain", filter: isSelected ? "drop-shadow(0 1px 6px rgba(0,216,192,0.4))" : "none" }} />}
                         <span style={{
                           fontFamily: "var(--font-body, sans-serif)", fontSize: 9,
                           color: isSelected ? "#00d8c0" : "#9aa39d", fontWeight: 600,
@@ -423,7 +452,7 @@ export default function CreateQuizPage() {
                       style={{
                         display: "flex", flexDirection: "column", alignItems: "center",
                         justifyContent: "center", gap: 5,
-                        padding: "12px 4px", borderRadius: 12, height: 76,
+                        padding: "12px 4px", borderRadius: 12, minHeight: 84,
                         cursor: "pointer", transition: "all 0.15s ease",
                         background: isSelected ? "rgba(0,201,255,0.12)" : "rgba(255,255,255,0.03)",
                         border: `1px solid ${isSelected ? "rgba(0,201,255,0.55)" : "rgba(255,255,255,0.07)"}`,
@@ -432,7 +461,7 @@ export default function CreateQuizPage() {
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       {badge && <img src={badge} alt={name} width={34} height={34}
-                        style={{ objectFit: "contain", filter: isSelected ? "drop-shadow(0 1px 6px rgba(0,201,255,0.4))" : "none" }} />}
+                        style={{ width: 34, height: 34, flexShrink: 0, objectFit: "contain", filter: isSelected ? "drop-shadow(0 1px 6px rgba(0,201,255,0.4))" : "none" }} />}
                       <span style={{
                         fontFamily: "var(--font-body, sans-serif)", fontSize: 9, fontWeight: 600,
                         color: isSelected ? "#00c9ff" : "#9aa39d",
@@ -509,6 +538,33 @@ export default function CreateQuizPage() {
                 style={{ background: "none", border: "none", cursor: "pointer", color: "#586058", fontSize: 16 }}
               >×</button>
             </div>
+
+            {/* Topic — clubs only (the four categories are only tagged on club questions) */}
+            {focusType === "club" && (
+              <div style={{ marginBottom: 16 }}>
+                <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8a948f", marginBottom: 8 }}>Topic</p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {TOPIC_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setTopic(opt.value)}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 5,
+                        padding: "6px 13px", borderRadius: 999,
+                        fontFamily: "var(--font-body, sans-serif)", fontSize: 12, fontWeight: 600,
+                        cursor: "pointer", transition: "all 0.15s ease",
+                        background: topic === opt.value ? "rgba(174,234,0,0.14)" : "rgba(255,255,255,0.04)",
+                        border: `1px solid ${topic === opt.value ? "rgba(174,234,0,0.45)" : "rgba(255,255,255,0.08)"}`,
+                        color: topic === opt.value ? "#aeea00" : "#8a948f",
+                      }}
+                    >
+                      <span style={{ fontSize: 11 }}>{opt.emoji}</span>
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Era */}
             <div style={{ marginBottom: 16 }}>

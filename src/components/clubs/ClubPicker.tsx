@@ -16,6 +16,7 @@
 import { useState } from "react";
 import { useClubMe } from "./useClubData";
 import { Crest } from "./Crest";
+import { trackClubPick } from "@/lib/analytics/trackGame";
 
 const TEAL = "#00d8c0";
 
@@ -45,6 +46,8 @@ export function ClubPicker() {
         setSubmitting(false);
         return;
       }
+      // Fan-identity conversion — only after the server confirms the lock.
+      trackClubPick(club);
       setPending(null);
       await refresh();
     } catch {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { trackGamePlay, trackGameComplete, trackShare } from "@/lib/analytics/trackGame";
+import { trackGamePlay, trackGameComplete, trackShare, firedOnce, hasFired } from "@/lib/analytics/trackGame";
 import Link from "next/link";
 import type { RealtimeChannel, SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
@@ -218,8 +218,8 @@ export default function MatchPage({ params }: { params: { id: string } }) {
   const supabaseRef = useRef<SupabaseClient<Database> | null>(null);
   // Per-game audience signals (Live-match quiz): "play" on the player's first answer
   // (so passive viewers don't count), "complete" once the match has ended.
-  const livePlayedRef = useRef(false);
-  const liveCompletedRef = useRef(false);
+  // sessionStorage guards (keyed on the match) so a refresh after answering
+  // neither re-counts the play nor loses the complete.
 
   const matchId = params.id;
 
@@ -339,7 +339,7 @@ export default function MatchPage({ params }: { params: { id: string } }) {
       body: JSON.stringify({ questionEventId: activeQuestion.eventId, selectedAnswer: letter }),
     });
     if (!res.ok) { const err = await res.json(); throw new Error(err.error); }
-    if (!livePlayedRef.current) { livePlayedRef.current = true; trackGamePlay("quiz", { mode: "live_match" }); }
+    if (firedOnce(`playquiz:live:${matchId}`)) trackGamePlay("quiz", { mode: "live_match" });
     return res.json();
   }, [activeQuestion]);
 
@@ -349,9 +349,11 @@ export default function MatchPage({ params }: { params: { id: string } }) {
 
   // "complete" once a played live match has ended (no longer live, kickoff in the past).
   useEffect(() => {
-    if (!match || !livePlayedRef.current || liveCompletedRef.current) return;
+    if (!match || !hasFired(`playquiz:live:${matchId}`)) return;
     const ended = match.status !== "live" && new Date(match.match_date) <= new Date();
-    if (ended) { liveCompletedRef.current = true; trackGameComplete("quiz", { mode: "live_match" }); }
+    if (ended && firedOnce(`completequiz:live:${matchId}`)) {
+      trackGameComplete("quiz", { mode: "live_match" });
+    }
   }, [match]);
 
   // ── Loading ───────────────────────────────────────────────────────────────

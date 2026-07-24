@@ -17,6 +17,10 @@ export interface VersusActivity {
   battlesToday: number;
   /** Distinct players who played anything today. Real. */
   activeToday: number;
+  /** Matches across both games in the last 14 days. Real — the fallback tile
+   *  when today's counts are too small to show (a big true number beats a
+   *  hidden one). */
+  matches14d: number;
   /** Open public Lobbies joinable right now. Real. */
   openLobbies: number;
   /** Most-attempted quiz of the last 24h. Real (null if nothing qualifies). */
@@ -73,6 +77,10 @@ export async function getVersusActivity(): Promise<VersusActivity> {
       .not("resolved_at", "is", null).gte("resolved_at", hoursAgoIso(48))
       .order("resolved_at", { ascending: false }).limit(10),
   ]);
+  const [rooms14d, matches14dCount] = await Promise.all([
+    db.from("rooms").select("id", { count: "exact", head: true }).eq("status", "completed").eq("room_mode", "h2h").gte("created_at", hoursAgoIso(14 * 24)),
+    db.from("draft_live_matches").select("id", { count: "exact", head: true }).not("resolved_at", "is", null).gte("resolved_at", hoursAgoIso(14 * 24)),
+  ]);
 
   // Trending = the pack with the most attempts in 24h; active = distinct
   // players; mostActive = the busiest human of the last 24h (bots excluded).
@@ -113,6 +121,7 @@ export async function getVersusActivity(): Promise<VersusActivity> {
     lookingForMatch: Math.max(realLooking, dailyBaseline("looking", 24, 68)),
     battlesToday: (h2hToday.count ?? 0) + (roomsToday.count ?? 0),
     activeToday: users.size,
+    matches14d: (rooms14d.count ?? 0) + (matches14dCount.count ?? 0),
     openLobbies: openLobbies.count ?? 0,
     trending,
     mostActive,

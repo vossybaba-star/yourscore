@@ -40,7 +40,7 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
     post.ogImage ?? `${SITE_URL}/api/og/blog?title=${encodeURIComponent(post.title)}`;
 
   return {
-    title: `${post.title} — YourScore`,
+    title: `${post.title} | YourScore`,
     description: post.description,
     alternates: { canonical: url },
     openGraph: {
@@ -60,6 +60,64 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
       images: [ogImage],
     },
   };
+}
+
+/**
+ * Tables in posts are authored as <DataTable head={[...]} rows={[[...]]} />.
+ *
+ * Two things force this: GitHub pipe tables need remark-gfm (npm currently can't
+ * add a dependency to this tree), and the `components` map does NOT reach raw
+ * <table> HTML written into MDX — only capitalised components and
+ * markdown-generated elements get mapped, so hand-written HTML renders unstyled.
+ * The wrapper scrolls horizontally so a wide table never makes the page scroll.
+ */
+function DataTable({ data }: { data: string }) {
+  // Data arrives as a JSON STRING attribute, not {expression} props: this MDX
+  // pipeline evaluates plain string attributes (same as <Tweet id="…" />) but not
+  // braced expressions, which silently arrive as undefined.
+  let head: string[] = [];
+  let rows: string[][] = [];
+  try {
+    const parsed = JSON.parse(data) as { head?: string[]; rows?: string[][] };
+    head = parsed.head ?? [];
+    rows = parsed.rows ?? [];
+  } catch {
+    return null;
+  }
+  if (head.length === 0 || rows.length === 0) return null;
+
+  return (
+    <div className="my-6 overflow-x-auto rounded-xl border border-border bg-surface-1">
+      <table className="w-full border-collapse font-body text-[15px] text-[#c4ccc6]">
+        <thead>
+          <tr className="bg-white/[0.04]">
+            {head.map((cell) => (
+              <th
+                key={cell}
+                className="border-b border-border px-4 py-3 text-left font-display text-sm tracking-wide text-text-primary"
+              >
+                {cell}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, i) => (
+            <tr key={i} className="border-b border-border/50 last:border-b-0">
+              {row.map((cell, j) => (
+                <td
+                  key={j}
+                  className={`px-4 py-3 align-top leading-6 ${j === 0 ? "font-semibold text-text-primary whitespace-nowrap" : ""}`}
+                >
+                  {cell}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
 }
 
 // Editorial styling for MDX output — the app has no typography plugin, so each
@@ -96,6 +154,7 @@ const mdxComponents: MDXRemoteProps["components"] = {
     <code className="font-mono text-[13px] px-1.5 py-0.5 rounded bg-surface-2 text-teal" {...props} />
   ),
   hr: () => <hr className="border-border my-8" />,
+  DataTable,
   img: (props) => (
     // Author-supplied images in MDX come with unknown dimensions; plain <img> keeps it simple.
     // eslint-disable-next-line @next/next/no-img-element
@@ -128,6 +187,7 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
     headline: post.title,
     description: post.description,
     datePublished: post.date,
+    dateModified: post.updated ?? post.date,
     url: `${SITE_URL}/blog/${post.slug}`,
     image:
       post.ogImage ?? `${SITE_URL}/api/og/blog?title=${encodeURIComponent(post.title)}`,
@@ -142,11 +202,32 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
     ...(post.tags.length > 0 ? { keywords: post.tags.join(", ") } : {}),
   };
 
+  // Breadcrumbs give Google the Home > Blog > Post trail it shows under the result
+  // instead of a bare URL. Mirrors the "← All posts" link that's actually on the page.
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "YourScore", item: SITE_URL },
+      { "@type": "ListItem", position: 2, name: "Blog", item: `${SITE_URL}/blog` },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: post.title,
+        item: `${SITE_URL}/blog/${post.slug}`,
+      },
+    ],
+  };
+
   return (
     <article className="pt-10">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       {faqJsonLd && (
         <script

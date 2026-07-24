@@ -31,15 +31,15 @@ const GAME_CONFIG: Record<GameType, {
   // not Quiz teal / 38-0 lime as before.
   "higher-lower": {
     title: "Higher or Lower",
-    tagline: "Two same-position players, one stat — pick the bigger number.",
+    tagline: "Two same-position players, one stat. Pick the bigger number.",
     accent: "#ff7800",
-    how: "Each question shows two Premier League players in the same position. Tap the one with more — faster answers score more.",
+    how: "Each question shows two Premier League players in the same position. Tap the one with more. Faster answers score more.",
   },
   "guess-the-player": {
     title: "Guess the Player",
-    tagline: "Clues drip in — name the mystery footballer.",
+    tagline: "Clues drip in. Name the mystery footballer.",
     accent: "#4fc3f7",
-    how: "Each question gives you clues (or a career path) and four players. Pick who it is — the quicker, the better.",
+    how: "Each question gives you clues (or a career path) and four players. Pick who it is. The quicker, the better.",
   },
 };
 
@@ -241,6 +241,26 @@ export default function GameTypePage() {
   // persistent GamesNav steps away for it too, not just for "playing".
   useHideGamesNav(phase === "playing" || phase === "loading");
   const [topic, setTopic] = useState<string>("mixed"); // Higher-or-Lower topic
+
+  // Today's Game hero links here with `?daily=1` — the ONE pinned round for
+  // today's London date, identical for every player (comparable scores).
+  // Read from the URL after mount (not useSearchParams) so server/client
+  // markup match on first paint; the effect runs before a user could click
+  // START, so there's no race.
+  const [isDailyMode, setIsDailyMode] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (new URLSearchParams(window.location.search).get("daily") === "1") setIsDailyMode(true);
+  }, []);
+  // Whether the pinned round has been drawn yet in THIS session — consumed
+  // on the first draw, so "Play Again" (and any later visit to the intro
+  // screen via Quit) falls back to normal random rounds. Pinning is for the
+  // ONE daily play, not every replay.
+  const dailyConsumedRef = useRef(false);
+  // The pinned round is always "mixed" (server-enforced too) — a chosen
+  // topic would make two players' daily rounds diverge — so the topic
+  // picker is hidden until the pinned round has been consumed.
+  const showTopicPicker = type === "higher-lower" && (!isDailyMode || dailyConsumedRef.current);
   const [seed, setSeed] = useState<string>("");
   const [windowMs, setWindowMs] = useState(25_000);
   const [questions, setQuestions] = useState<ServedQuestion[]>([]);
@@ -313,11 +333,15 @@ export default function GameTypePage() {
   async function startRound() {
     setPhase("loading");
     setLoadError(false);
+    // Only the FIRST draw in a daily-mode session asks for the pinned round —
+    // once consumed, "Play Again" is normal random practice.
+    const useDaily = isDailyMode && !dailyConsumedRef.current;
+    if (useDaily) dailyConsumedRef.current = true;
     try {
       const res = await fetch(`/api/games/${type}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "draw", topic }),
+        body: JSON.stringify({ action: "draw", topic, daily: useDaily }),
       });
       if (!res.ok) throw new Error("draw failed");
       const data = await res.json();
@@ -464,8 +488,10 @@ export default function GameTypePage() {
             <p className="font-body text-sm" style={{ color: "#9aa39d", lineHeight: 1.6 }}>{config.how}</p>
           </div>
 
-          {/* Topic picker (Higher or Lower). Mixed = a few topics across the round. */}
-          {type === "higher-lower" && (
+          {/* Topic picker (Higher or Lower). Mixed = a few topics across the round.
+              Hidden for the pinned "Today's Game" round — no topic choice
+              until the pinned round has been played. */}
+          {showTopicPicker && (
             <div>
               <p className="font-display text-xs tracking-widest mb-2.5" style={{ color: "#586058" }}>CHOOSE A TOPIC</p>
               <div className="flex flex-wrap gap-2">
@@ -492,7 +518,7 @@ export default function GameTypePage() {
 
           {loadError && (
             <p className="font-body text-sm text-center" style={{ color: "#ff6b78" }}>
-              Couldn&apos;t load questions — try again.
+              Couldn&apos;t load questions, try again.
             </p>
           )}
 
@@ -682,7 +708,7 @@ export default function GameTypePage() {
             MORE GAMES
           </Button>
           <p className="font-body text-xs text-center mt-1" style={{ color: "#586058" }}>
-            Practice mode — these don&apos;t count on the leaderboard yet.
+            Practice mode: these don&apos;t count on the leaderboard yet.
           </p>
         </div>
 

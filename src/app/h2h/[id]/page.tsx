@@ -1052,8 +1052,10 @@ export default function H2HPage({ params }: { params: { id: string } }) {
             </p>
           </div>
 
-          {/* Answer buttons */}
+          {/* `key` per question: without it `transition-all` animates the new question's
+              options out of the previous one's reveal colours, flashing a wrong option green. */}
           <AnswerButtons
+            key={currentIdx}
             options={currentQ.options}
             answer={currentQ.answer}
             selected={selected}

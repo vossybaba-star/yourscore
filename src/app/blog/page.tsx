@@ -6,7 +6,7 @@ import { getAllPosts, formatPostDate, SITE_URL } from "@/lib/blog";
 export const dynamic = "force-static";
 
 export const metadata: Metadata = {
-  title: "Blog — YourScore",
+  title: "Blog | YourScore",
   description:
     "Football knowledge, quizzes and fan debates from YourScore — the football competition platform. Prove what you know, then put a score on it.",
   alternates: {

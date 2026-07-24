@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { trackGamePlay, trackGameComplete } from "@/lib/analytics/trackGame";
+import { trackGamePlay, trackGameComplete, firedOnce, hasFired } from "@/lib/analytics/trackGame";
 import { GridBackground } from "@/components/ui/GridBackground";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -22,7 +22,6 @@ import { QuestionCard, type ActiveQuestion } from "@/components/game/QuestionCar
 import { RankRewardCard } from "@/components/rank/RankRewardCard";
 import { Leaderboard, type LeaderboardEntry } from "@/components/game/Leaderboard";
 import { Spinner } from "@/components/ui/Spinner";
-import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { AddFriendCard, AddFriendInline } from "@/components/social/AddFriendCard";
 import { DebateCard } from "@/components/debate/DebateCard";
 import { DiscussionThread } from "@/components/debate/DiscussionThread";
@@ -31,7 +30,8 @@ import { DiscussionThread } from "@/components/debate/DiscussionThread";
 
 // Shadow matches: a real player's previous run replayed in the CPU seat. The
 // room row carries the persona + per-question times (rooms.shadow, mig 66);
-// identity is revealed honestly on the result screen.
+// the scorecard presents it as a normal head-to-head result (founder call,
+// 2026-07-20: never disclose the replay — they simply played each other).
 interface ShadowInfo {
   userId: string; name: string; avatarUrl: string | null;
   playedAt: string | null; times: (number | null)[]; originalScore: number;
@@ -154,22 +154,17 @@ export default function RoomPage() {
   const supabaseRef       = useRef<DB | null>(null);
   // Foreground-restore listener (registered inside the async setup, removed on cleanup)
   const visibilityHandlerRef = useRef<(() => void) | null>(null);
-  // Per-game audience signals (Multiplayer quiz): "play" once the lobby goes live,
-  // "complete" once it finishes. Gated on having played so a cold viewer opening a
-  // finished room's link doesn't get counted. Fires for every player.
-  const gamePlayedRef     = useRef(false);
-  const gameCompletedRef  = useRef(false);
+  // Per-game audience signals (Multiplayer quiz): "play" fires on this player's
+  // FIRST ANSWER (in handleAnswer) — presence when the room goes live isn't
+  // playing, so viewers of a shared live-room link no longer count. "complete"
+  // fires once the room finishes, only for devices that answered. sessionStorage
+  // guards (keyed on the room) survive a mid-game refresh without double-firing.
   useEffect(() => {
-    const status = room?.status;
-    if (status === "live" && !gamePlayedRef.current) {
-      gamePlayedRef.current = true;
-      trackGamePlay("quiz", { mode: "multiplayer" });
-    }
-    if (status === "completed" && gamePlayedRef.current && !gameCompletedRef.current) {
-      gameCompletedRef.current = true;
+    if (room?.status === "completed" && hasFired(`playquiz:room:${roomId}`)
+      && firedOnce(`completequiz:room:${roomId}`)) {
       trackGameComplete("quiz", { mode: "multiplayer" });
     }
-  }, [room?.status]);
+  }, [room?.status, roomId]);
   // Realtime channel — kept so handleAnswer can broadcast an "answered" signal
   // (answers RLS is owner-only, so postgres_changes can't power the counter).
   const channelRef        = useRef<ReturnType<DB["channel"]> | null>(null);
@@ -618,6 +613,9 @@ export default function RoomPage() {
       body: JSON.stringify({ questionEventId: activeQuestion.eventId, selectedAnswer: letter }),
     });
     if (!res.ok) { const e = await res.json(); throw new Error(e.error); }
+    // First accepted answer = this player is PLAYING (see the audience-signal
+    // effect above for why play isn't counted on room-went-live).
+    if (firedOnce(`playquiz:room:${roomId}`)) trackGamePlay("quiz", { mode: "multiplayer" });
     // Tell the room this player answered (powers the live counter + early
     // advance) — broadcast avoids the owner-only RLS on the answers table.
     if (user) {
@@ -726,7 +724,7 @@ export default function RoomPage() {
       <main className="min-h-dvh bg-bg flex flex-col items-center justify-center px-6 gap-4 text-center">
         <p className="font-display text-5xl">⚽</p>
         <p className="font-display text-2xl text-white">You&apos;ve been invited to a quiz lobby</p>
-        <p className="font-body text-sm" style={{ color: "#8a948f" }}>Sign in to take your seat — free, takes 10 seconds.</p>
+        <p className="font-body text-sm" style={{ color: "#8a948f" }}>Sign in to take your seat. Free, takes 10 seconds.</p>
         <Button variant="primary" tone="teal" size="lg" href={`/auth/sign-in?next=${encodeURIComponent(`/play/${roomId}`)}`}>
           Sign in to join →
         </Button>
@@ -968,7 +966,9 @@ export default function RoomPage() {
           {/* Post-game reward moment — points earned + position on the leaderboard */}
           <RankRewardCard />
 
-          {/* Friend prompts — show for all non-self, non-CPU opponents after game */}
+          {/* Friend prompts — show for all non-self, non-CPU opponents after game.
+              A shadow opponent gets one too (they're a real player, and "they
+              played each other" — the request reads like any other). */}
           {user && opponents.filter(o => o.user_id !== user.id && o.user_id !== QUIZ_BOT_ID).map(opp => (
             <AddFriendCard
               key={opp.user_id}
@@ -977,6 +977,13 @@ export default function RoomPage() {
               context={room.room_mode === "h2h" ? `Great game with ${opp.display_name}! 👏` : undefined}
             />
           ))}
+          {user && room.shadow && room.shadow.userId !== user.id && (
+            <AddFriendCard
+              userId={room.shadow.userId}
+              displayName={room.shadow.name}
+              context={`Great game with ${room.shadow.name}! 👏`}
+            />
+          )}
 
           {/* Shadow/CPU rooms: forward motion first — the scorecard's job is to
               get you into the next game, not to be an exit. */}
@@ -984,7 +991,7 @@ export default function RoomPage() {
             <div className="rounded-2xl px-5 py-4 space-y-2" style={{ background: "rgba(0,216,192,0.06)", border: "1px solid rgba(0,216,192,0.2)" }}>
               <p className="font-body text-[10px] font-bold uppercase tracking-[0.28em] mb-1" style={{ color: "#00d8c0" }}>Keep playing</p>
               <Link href={`/versus/find?game=quiz${room.pack_id ? `&pack=${room.pack_id}` : ""}`} className="block w-full text-center rounded-xl py-3.5 font-display text-base tracking-wide active:scale-[0.99] transition-transform" style={{ background: "#00d8c0", color: "#04231f" }}>
-                PLAY AGAIN — NEW OPPONENT →
+                PLAY AGAIN, NEW OPPONENT →
               </Link>
               <Link href="/versus/quiz" className="block w-full text-center rounded-xl py-3 font-display text-sm tracking-wide" style={{ background: "rgba(255,255,255,0.05)", color: "#eef2f0", border: "1px solid rgba(255,255,255,0.14)" }}>
                 PICK A DIFFERENT QUIZ →
@@ -992,37 +999,12 @@ export default function RoomPage() {
             </div>
           )}
 
-          {/* Shadow room: the honest reveal — you played a real player's past run */}
-          {room.shadow && (
-            <div className="rounded-2xl overflow-hidden" style={{ background: "linear-gradient(160deg, rgba(0,216,192,0.1), #0c1613)", border: "1px solid rgba(0,216,192,0.3)" }}>
-              <div className="px-5 pt-5 pb-4">
-                <p className="font-body text-[10px] font-bold uppercase tracking-[0.28em] mb-3" style={{ color: "#00d8c0" }}>The reveal</p>
-                <div className="flex items-center gap-3">
-                  <PlayerAvatar seed={room.shadow.userId} name={room.shadow.name} avatarUrl={room.shadow.avatarUrl} size={44} ring="#00d8c0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-body text-sm text-white leading-snug">
-                      You just played <span className="font-bold">{room.shadow.name}</span>&rsquo;s real run{room.shadow.playedAt ? ` from ${new Date(room.shadow.playedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}` : ""} — every answer, at their real speed.
-                    </p>
-                    <p className="font-body text-xs text-text-muted mt-1">Their run scored {room.shadow.originalScore.toLocaleString()} back then.</p>
-                  </div>
-                </div>
-              </div>
-              <div className="px-5 pb-5 flex gap-2">
-                <Link href={`/versus/shadow/${room.shadow.userId}`} className="flex-1 text-center rounded-xl py-3 font-display text-[12px] tracking-wide" style={{ background: "rgba(0,216,192,0.12)", color: "#00d8c0", border: "1px solid rgba(0,216,192,0.3)" }}>
-                  PLAY THEIR RUNS
-                </Link>
-                <Link href={`/versus/quiz?to=${room.shadow.userId}`} className="flex-1 text-center rounded-xl py-3 font-display text-[12px] tracking-wide" style={{ background: "rgba(255,255,255,0.05)", color: "#eef2f0", border: "1px solid rgba(255,255,255,0.14)" }}>
-                  CHALLENGE LIVE
-                </Link>
-              </div>
-            </div>
-          )}
-
           {/* While the result's fresh: the quiz's own discussion + today's debate */}
           {room.pack_id && (
             <DiscussionThread subjectType="pack" subjectId={room.pack_id} title="Talk about this quiz" signInNext={`/play/${room.id}`} />
           )}
-          <DebateCard signInNext={`/play/${room.id}`} />
+          {/* No second thread here — the quiz's own discussion above owns comments */}
+          <DebateCard withDiscussion={false} withSignUpPitch={false} signInNext={`/play/${room.id}`} />
 
           {/* ── Play Again voting panel (human rooms) ─────────────────────── */}
           {!lobbyExpired && !players.some((p) => p.user_id === QUIZ_BOT_ID) && (
@@ -1200,7 +1182,7 @@ export default function RoomPage() {
       {/* Sign in prompt if unauthenticated during live game */}
       {activeQuestion && !user && (
         <div className="fixed inset-x-0 bottom-0 z-50 p-4" style={{ background: "rgba(10,10,15,0.97)", backdropFilter: "blur(16px)", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-          <p className="font-body text-sm font-bold text-white mb-3">Question is live — sign in to answer</p>
+          <p className="font-body text-sm font-bold text-white mb-3">Question is live. Sign in to answer</p>
           <Button variant="primary" tone="teal" size="md" fullWidth href="/auth/sign-in">Sign in to play →</Button>
         </div>
       )}

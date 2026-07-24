@@ -8,6 +8,9 @@ import { FlagImage } from "@/components/ui/FlagImage";
 import { getPlayerCutoutUrl } from "@/lib/playerImages";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { DownloadAppButton } from "@/components/app/DownloadAppButton";
+import { GAMES } from "@/components/ui/GameSwitcher";
+import { coverUrl } from "@/lib/img";
+import type { TodaysGame } from "@/lib/daily-game";
 
 export interface LiveMatch {
   id: string;
@@ -20,7 +23,9 @@ export interface LiveMatch {
   away_score: number;
 }
 
-const WORLD_CUP_START = new Date("2026-06-11T18:00:00Z");
+// Premier League 2026/27 GW1 kick-off. Same date the halftime quiz packs go
+// live, so one countdown covers both promises on this page.
+const SEASON_START = new Date("2026-08-21T18:30:00Z");
 
 // ── Animations ────────────────────────────────────────────────────────────────
 
@@ -56,19 +61,23 @@ const ANIM_CSS = `
   .score-in { animation: scoreUp 0.4s ease-out forwards; }
 `;
 
-// ── World Cup countdown ───────────────────────────────────────────────────────
+// ── Season countdown ─────────────────────────────────────────────────────────
+// Counts to Premier League GW1. Replaces the World Cup countdown, which passed
+// zero on 11 Jun and had been rendering "THE CUP IS LIVE" ever since, including
+// the four days after the final. Past kick-off this one says the season is on,
+// which stays true for nine months rather than going stale the same week.
 
-function WorldCupCountdown() {
+function SeasonCountdown() {
   const [diff, setDiff] = useState<number | null>(null);
 
   useEffect(() => {
-    setDiff(WORLD_CUP_START.getTime() - Date.now());
-    const iv = setInterval(() => setDiff(WORLD_CUP_START.getTime() - Date.now()), 1000);
+    setDiff(SEASON_START.getTime() - Date.now());
+    const iv = setInterval(() => setDiff(SEASON_START.getTime() - Date.now()), 1000);
     return () => clearInterval(iv);
   }, []);
 
   if (diff === null) return null;
-  if (diff <= 0) return <span className="font-display text-3xl text-green">THE CUP IS LIVE</span>;
+  if (diff <= 0) return <span className="font-display text-3xl text-green">THE SEASON IS ON</span>;
 
   const days = Math.floor(diff / 86400000);
   const hours = Math.floor((diff % 86400000) / 3600000);
@@ -103,6 +112,206 @@ const PALETTES = [
   { bg: "#4a2a1a", text: "#fb923c" },
 ];
 
+// ── Games hero card ──────────────────────────────────────────────────────────
+// The signed-out hero's visual: what feeds your score, one row lighting up at a
+// time in its own accent, same animated-card idiom as LeagueHeroCard below it.
+// The list is imported from GameSwitcher (the nav's own source), never retyped
+// here, so the marketing page cannot describe a game the app doesn't have.
+//
+// Deliberately NOT framed as a count. Fantasy and the gameday quizzes become
+// rows here when they land on 21 Aug, and nothing above them has to change.
+
+function GamesHeroCard() {
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const iv = setInterval(() => setTick((t) => t + 1), 2400);
+    return () => clearInterval(iv);
+  }, []);
+
+  const lit = tick % GAMES.length;
+
+  return (
+    <div className="float-card w-full max-w-[340px] bg-surface"
+      style={{ border: "1px solid rgba(255,255,255,0.1)", borderRadius: 24, overflow: "hidden", boxShadow: "0 32px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(174,234,0,0.08)" }}>
+      {/* Header */}
+      <div className="px-5 py-4 flex items-center justify-between"
+        style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(174,234,0,0.04)" }}>
+        <div>
+          <p className="font-body text-xs font-semibold text-white">What feeds your score</p>
+          <p className="font-body text-xs text-text-muted">Free, no account needed</p>
+        </div>
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
+          style={{ background: "rgba(174,234,0,0.1)", border: "1px solid rgba(174,234,0,0.2)" }}>
+          <span className="relative flex h-1.5 w-1.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: "#aeea00" }} />
+            <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: "#aeea00" }} />
+          </span>
+          <span className="font-body text-xs font-semibold text-green">Play now</span>
+        </div>
+      </div>
+
+      {/* One row per game; the lit one takes its own accent. */}
+      {GAMES.map(({ key, href, label, color, Icon, blurb }, i) => {
+        const isLit = i === lit;
+        return (
+          <Link key={key} href={href}
+            className="flex items-center gap-3 px-4 py-3 transition-all"
+            style={{
+              background: isLit ? `${color}14` : i % 2 === 0 ? "rgba(255,255,255,0.01)" : "transparent",
+              borderBottom: i < GAMES.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
+              borderLeft: `2px solid ${isLit ? color : "transparent"}`,
+              textDecoration: "none",
+            }}>
+            <span className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-all"
+              style={{ background: isLit ? `${color}26` : "rgba(255,255,255,0.04)", color: isLit ? color : "#586058" }}>
+              <Icon active={isLit} />
+            </span>
+            <div className="flex-1 min-w-0">
+              <p className="font-body text-sm font-medium transition-colors" style={{ color: isLit ? "#fff" : "#c4ccc6" }}>{label}</p>
+              <p className="font-body text-xs truncate" style={{ color: "#586058" }}>{blurb}</p>
+            </div>
+            <span className="font-body text-xs font-semibold flex-shrink-0 transition-opacity"
+              style={{ color, opacity: isLit ? 1 : 0 }}>Play →</span>
+          </Link>
+        );
+      })}
+
+      {/* Footer */}
+      <div className="px-4 py-3 flex items-center justify-between"
+        style={{ borderTop: "1px solid rgba(255,255,255,0.04)", background: "rgba(0,0,0,0.2)" }}>
+        <span className="font-body text-xs text-text-muted">It all adds up to one rank</span>
+        <span className="font-body text-xs font-semibold" style={{ color: "#aeea00" }}>See them all →</span>
+      </div>
+    </div>
+  );
+}
+
+// ── Games explainer ──────────────────────────────────────────────────────────
+// One tab per game, each explaining that game on its own terms. Replaces the
+// old numbered "HOW IT WORKS" steps, which walked through the 38-0 arc and so
+// described one game as though it were the whole app.
+//
+// Keyed off GAMES so a new game gets a tab automatically; a key with no entry
+// here falls back to its GAMES blurb rather than rendering an empty panel.
+// Every line below is drawn from the game's own code, not from imagination:
+// round sizes from ROUND_SIZE, speed bands from GAME_WINDOW_MS, the Perfect 10
+// strike limit from MAX_STRIKES, the Higher or Lower topics from HL_TOPICS.
+
+const GAME_DETAIL: Record<string, { headline: string; points: string[] }> = {
+  quiz: {
+    headline: "Football questions, on the clock",
+    points: [
+      "Packs of 15 or 20 across clubs, competitions and eras",
+      "Answer inside 6 seconds for double points, inside 12 for one and a half",
+      "Back to back correct answers build a streak bonus",
+      "Every pack keeps its own leaderboard",
+    ],
+  },
+  draft: {
+    headline: "Draft an XI and go unbeaten",
+    points: [
+      "Spin for real rated players and build your best eleven",
+      "Put it up against the world head to head",
+      "Win and swap a player, lose and go again",
+      "The target is 38 games without a defeat",
+    ],
+  },
+  perfect10: {
+    headline: "Name a ranked top ten",
+    points: [
+      "Ten rungs, one list, from all time scorers to club records",
+      "Type a name and it climbs to the rung it belongs on",
+      "Three strikes and the run ends",
+      "Stuck on one? Take a hint and score less for it",
+    ],
+  },
+  "higher-lower": {
+    headline: "Two players, one stat",
+    points: [
+      "Ten rounds, pick whoever has the bigger number",
+      "Choose the stat: goals, assists, appearances and more",
+      "Same position only, so a keeper is never up against a striker",
+      "25 seconds a question, and faster is worth more",
+    ],
+  },
+  "guess-the-player": {
+    headline: "Name the mystery footballer",
+    points: [
+      "Clues arrive one at a time: nationality, shirt number, career path",
+      "Ten a round, and the sooner you call it the more it scores",
+      "Fresh players every time you play",
+    ],
+  },
+};
+
+function GamesExplainer() {
+  const [active, setActive] = useState(0);
+  const game = GAMES[active];
+  const detail = GAME_DETAIL[game.key];
+  const { color, Icon, label, href, blurb } = game;
+
+  return (
+    <section className="relative z-10 max-w-6xl mx-auto px-6 pb-16">
+      <div className="text-center mb-8">
+        <h2 className="font-display text-5xl text-white mb-3">THE GAMES</h2>
+        <p className="font-body text-text-muted">Different games, one score. Pick one and see how it works.</p>
+      </div>
+
+      {/* Tabs. Horizontally scrollable on a phone: five labels never fit at
+          375px, and wrapping them into two rows reads as a broken grid. */}
+      <div className="flex gap-2 overflow-x-auto pb-2 mb-5 -mx-1 px-1" style={{ scrollbarWidth: "none" }}>
+        {GAMES.map((g, i) => {
+          const on = i === active;
+          return (
+            <button key={g.key} onClick={() => setActive(i)}
+              className="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-full font-body text-sm font-semibold whitespace-nowrap transition-all active:scale-95"
+              style={{
+                background: on ? `${g.color}1f` : "rgba(255,255,255,0.04)",
+                border: `1px solid ${on ? `${g.color}66` : "rgba(255,255,255,0.08)"}`,
+                color: on ? g.color : "#8a948f",
+              }}>
+              {g.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Panel */}
+      <div className="rounded-3xl overflow-hidden" style={{ background: `linear-gradient(135deg, ${color}0f 0%, rgba(10,10,15,1) 60%)`, border: `1px solid ${color}33` }}>
+        <div className="px-6 py-8 sm:px-10 sm:py-10">
+          <div className="flex items-center gap-3 mb-5">
+            <span className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
+              style={{ background: `${color}1f`, border: `1px solid ${color}40`, color }}>
+              <Icon active />
+            </span>
+            <div>
+              <p className="font-body text-xs uppercase tracking-widest" style={{ color }}>{label}</p>
+              <h3 className="font-display text-2xl sm:text-3xl text-white leading-tight">{detail?.headline ?? blurb}</h3>
+            </div>
+          </div>
+
+          <div className="space-y-3 mb-8">
+            {(detail?.points ?? [blurb]).map((p) => (
+              <div key={p} className="flex items-start gap-3">
+                <span className="flex-shrink-0 mt-1.5 rounded-full" style={{ width: 6, height: 6, background: color }} />
+                <p className="font-body text-sm sm:text-base text-white/80 leading-relaxed">{p}</p>
+              </div>
+            ))}
+          </div>
+
+          <Link href={href}
+            className="inline-flex items-center gap-2 font-body font-bold text-base px-7 py-3.5 rounded-xl transition-all active:scale-95"
+            style={{ background: color, color: "#0a0a0f", textDecoration: "none" }}>
+            Play {label} →
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── Animated league card ─────────────────────────────────────────────────────
+
 function LeagueHeroCard() {
   const [tick, setTick] = useState(0);
   useEffect(() => {
@@ -125,7 +334,7 @@ function LeagueHeroCard() {
             </svg>
           </div>
           <div>
-            <p className="font-body text-xs font-semibold text-white">The Mates 🏆</p>
+            <p className="font-body text-xs font-semibold text-white">The Group Chat 🏆</p>
             <p className="font-body text-xs text-text-muted">6 games played</p>
           </div>
         </div>
@@ -186,10 +395,54 @@ function LeagueHeroCard() {
 
       {/* Footer */}
       <div className="px-4 py-3 flex items-center justify-between" style={{ borderTop: "1px solid rgba(255,255,255,0.04)", background: "rgba(0,0,0,0.2)" }}>
-        <span className="font-body text-xs text-text-muted">🔥 Marcus — 4 wins in a row</span>
+        <span className="font-body text-xs text-text-muted">🔥 Marcus · 4 wins in a row</span>
         <span className="font-body text-xs font-semibold" style={{ color: "#aeea00" }}>Full table →</span>
       </div>
     </div>
+  );
+}
+
+// ── Today's Game (guest acquisition surface) ─────────────────────────────────
+// Same hero content as the signed-in dashboard — one game a day, same for
+// everyone. Guests can already play quizzes solo, so this links straight
+// into the real game; no sign-in gate.
+
+const TODAYS_GAME_ACCENT: Record<TodaysGame["gameType"], string> = {
+  quiz: "#00d8c0",
+  "perfect-10": "#ffc233",
+  "higher-lower": "#ff7800",
+  "guess-the-player": "#4fc3f7",
+};
+
+function TodaysGameCard({ game }: { game: TodaysGame }) {
+  const accent = TODAYS_GAME_ACCENT[game.gameType];
+  return (
+    <section className="relative z-10 max-w-6xl mx-auto px-6 pb-10">
+      <p className="font-body text-xs uppercase tracking-widest mb-3" style={{ color: accent }}>Today&apos;s game</p>
+      <Link href={game.href}
+        className="relative flex items-center gap-4 rounded-2xl overflow-hidden transition-transform active:scale-[0.99] hover:opacity-95"
+        style={{ border: `1px solid ${accent}40`, minHeight: 110 }}>
+        {game.coverImage ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={coverUrl(game.coverImage, 440) ?? game.coverImage} alt="" loading="eager" decoding="async"
+            className="absolute inset-0 h-full w-full object-cover object-bottom" />
+        ) : (
+          <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${accent}30, #0c1613)` }} />
+        )}
+        <div className="absolute inset-0" style={{ background: "linear-gradient(90deg, rgba(6,10,8,0.92) 0%, rgba(6,10,8,0.55) 55%, rgba(6,10,8,0.15) 100%)" }} />
+        <div className="relative flex items-center gap-4 px-6 py-5 w-full">
+          <div className="flex-1 min-w-0">
+            <p className="font-display text-2xl sm:text-3xl text-white leading-tight" style={{ textShadow: "0 1px 12px rgba(0,0,0,0.6)" }}>{game.title}</p>
+            <p className="font-body text-sm mt-1" style={{ color: "#c4ccc6" }}>{game.sub} · play free, no sign-in needed</p>
+          </div>
+          <span className="flex items-center justify-center rounded-full flex-shrink-0" style={{ width: 44, height: 44, background: accent }}>
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ color: "#04231f" }}>
+              <path d="M6 3l6 6-6 6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
+        </div>
+      </Link>
+    </section>
   );
 }
 
@@ -215,7 +468,7 @@ function UpcomingFixturesSection({ matches }: { matches: LiveMatch[] }) {
                 <div className="flex items-center justify-between">
                   <FlagImage team={m.home_team} size={28} />
                   {isLive
-                    ? <span className="font-display text-sm text-white">{m.home_score}–{m.away_score}</span>
+                    ? <span className="font-display text-sm text-white">{m.home_score}-{m.away_score}</span>
                     : <span className="font-body text-xs text-text-muted">vs</span>}
                   <FlagImage team={m.away_team} size={28} />
                 </div>
@@ -237,8 +490,7 @@ function UpcomingFixturesSection({ matches }: { matches: LiveMatch[] }) {
 
 // ── Marketing landing (logged-out) ───────────────────────────────────────────
 
-export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
-  const [timerValue, setTimerValue] = useState(45);
+export function MarketingLanding({ matches, todaysGame }: { matches: LiveMatch[]; todaysGame: TodaysGame }) {
   const [countdownLeftUrl, setCountdownLeftUrl] = useState<string | null>(null);
   const [countdownRightUrl, setCountdownRightUrl] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -249,22 +501,9 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
     getPlayerCutoutUrl("Jude Bellingham").then(url => { if (url) setCountdownRightUrl(url); });
   }, []);
 
-  useEffect(() => {
-    const loop = () => {
-      setTimerValue(45);
-      let t = 45;
-      const iv = setInterval(() => {
-        t -= 1; setTimerValue(t);
-        if (t <= 0) { clearInterval(iv); setTimeout(loop, 1500); }
-      }, 120);
-      return iv;
-    };
-    const iv = loop();
-    return () => clearInterval(iv);
-  }, []);
-
-  const timerColor = timerValue <= 5 ? "#ff4757" : timerValue <= 15 ? "#ffb800" : "#aeea00";
-  const dashOffset = 282 * (1 - timerValue / 45);
+  // The countdown-ring timer that used to live here drove the demo question
+  // card in the "SPEED SCORED" section. That section is gone, so the ticking
+  // 45-second interval it ran on every signed-out page load is gone with it.
 
   return (
     <main className="min-h-dvh bg-bg" style={{ paddingBottom: "calc(60px + env(safe-area-inset-bottom, 0px))" }}>
@@ -396,37 +635,53 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
         </>
       )}
 
+      {/* ── Today's Game — acquisition surface, no sign-in required, so it goes
+          ABOVE the hero: it's the only thing here a guest can do without
+          committing, and below the hero it sat ~1280px down (ux-walk, 23 Jul).
+          The onboarding tour's final step points here for guests (data-tour). */}
+      <div data-tour="todays-game" className="pt-3"><TodaysGameCard game={todaysGame} /></div>
+
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
-      <section className="relative z-10 max-w-6xl mx-auto px-6 pt-6 pb-16 lg:pt-12" style={{ overflow: "hidden" }}>
+      <section className="relative z-10 max-w-6xl mx-auto px-6 pt-2 pb-16 lg:pt-6" style={{ overflow: "hidden" }}>
 
         <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
 
           {/* Left: copy + CTAs */}
           <div>
             <div style={{ position: "relative", zIndex: 1 }}>
-            <div className="inline-flex items-center gap-2.5 rounded-full px-4 py-2 mb-7"
+            <div className="inline-flex items-center gap-2.5 rounded-full px-4 py-2 mb-5"
               style={{ background: "rgba(174,234,0,0.08)", border: "1px solid rgba(174,234,0,0.18)" }}>
               <span className="w-2 h-2 rounded-full animate-pulse flex-shrink-0" style={{ background: "#aeea00" }} />
-              <span className="font-body text-xs text-text-muted uppercase tracking-widest">World Cup · Euros · Champions League</span>
+              {/* Breadth goes here, in the cheapest place on the page: read in a
+                  second, no decision asked for. The headline stays one promise. */}
+              <span className="font-body text-xs text-text-muted uppercase tracking-widest">Quizzes · Gameday · Fantasy · Versus</span>
             </div>
 
-            <h1 className="font-display text-6xl sm:text-7xl lg:text-8xl text-white leading-none mb-6">
-              <span className="text-green" style={{ textShadow: "0 0 50px rgba(174,234,0,0.35)" }}>38-0.</span><br />
-              DRAFT YOUR<br />BEST XI.
+            {/* Never a count of games. A number is a ceiling the reader tests
+                against alternatives, and it goes stale the day a game ships.
+                The rank is the product and it has no upper bound. */}
+            <h1 className="font-display text-6xl sm:text-7xl lg:text-8xl text-white leading-none mb-5">
+              YOUR FOOTBALL<br />KNOWLEDGE.<br />
+              <span className="text-green" style={{ textShadow: "0 0 50px rgba(174,234,0,0.35)" }}>RANKED.</span>
             </h1>
 
-            <p className="font-body text-text-muted text-lg leading-relaxed mb-8 max-w-lg">
-              Build an XI good enough to go 38 games unbeaten. Draft, go head to head, and top your league.
+            {/* One sentence. The "play one now" nudge that used to close this
+                was redundant with the button directly beneath it, and the extra
+                line pushed that button under the fixed bottom nav on a phone. */}
+            <p className="font-body text-text-muted text-lg leading-relaxed mb-6 max-w-lg">
+              Every game you play feeds one score and one rank against every other fan.
             </p>
 
-            {/* Primary CTA — Draft your XI */}
-            <Link href="/38-0"
+            {/* Primary CTA — into the games, not into one game */}
+            <Link href="/play"
               className="w-full sm:w-auto inline-flex items-center justify-center gap-3 font-body font-bold text-lg px-10 py-5 rounded-2xl hover:opacity-90 transition-all mb-3 pulse-glow"
               style={{ background: "#aeea00", color: "#062013", display: "flex" }}>
-              <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-                <path d="M8 2.5 3 5.5 5 9.5 7.3 8.3V19a1 1 0 0 0 1 1h5.4a1 1 0 0 0 1-1V8.3L17 9.5l2-4-5-3C14 4.4 12.7 5.6 11 5.6S8 4.4 8 2.5Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" fill="rgba(0,0,0,0.1)"/>
+              {/* A play triangle, not the 38-0 shirt: this button stopped being
+                  "Draft your XI" and now opens the games, not one of them. */}
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
+                <path d="M6 3.5l10 6.5-10 6.5z" fill="currentColor" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
               </svg>
-              Draft your XI
+              Play a game
             </Link>
 
             {/* Secondary CTAs */}
@@ -435,7 +690,7 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
                 className="flex-1 flex items-center justify-center gap-2 font-body font-semibold text-base px-6 py-4 rounded-xl transition-all hover:opacity-90 green-pulse text-green"
                 style={{ background: "rgba(174,234,0,0.1)", border: "1px solid rgba(174,234,0,0.3)" }}>
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1v14M1 8h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
-                Sign Up — Free
+                Sign Up Free
               </Link>
               <DownloadAppButton
                 source="hero"
@@ -446,7 +701,7 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
             </div>
 
             <p className="font-body text-xs text-text-muted">
-              Free · play in your browser or get the app ·{" "}
+              Free to play ·{" "}
               <Link href="/how-it-works" className="underline hover:text-white transition-colors">How it works →</Link>
             </p>
             </div>{/* end content wrapper */}
@@ -458,25 +713,28 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
               {/* Glow behind card */}
               <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(circle at 50% 50%, rgba(174,234,0,0.15) 0%, transparent 70%)", transform: "scale(1.3)", zIndex: 1 }} />
               <div className="relative" style={{ zIndex: 2 }}>
-              <LeagueHeroCard />
+              <GamesHeroCard />
 
-              {/* Floating badge: "Pound for Pound" */}
-              <div className="float-card-2 absolute -bottom-4 -left-4 flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-surface"
+              {/* Floating badges — both now say something about the games card
+                  they hang off, not about a league the guest hasn't joined.
+                  Desktop only: on a phone the card is full width, so these sat
+                  on top of it and covered two rows. */}
+              <div className="float-card-2 absolute -bottom-4 -left-4 hidden lg:flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-surface"
                 style={{ border: "1px solid rgba(174,234,0,0.25)", boxShadow: "0 8px 24px rgba(0,0,0,0.4)" }}>
-                <span className="font-body text-base">👑</span>
+                <span className="font-body text-base">⚡</span>
                 <div>
-                  <p className="font-body text-xs font-bold text-white">P4P #1</p>
-                  <p className="font-body text-xs text-text-muted">Marcus · 91%</p>
+                  <p className="font-body text-xs font-bold text-white">Answer fast</p>
+                  <p className="font-body text-xs text-text-muted">Score double</p>
                 </div>
               </div>
 
               {/* Floating badge: streak */}
-              <div className="float-card absolute -top-4 -right-4 flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-surface"
+              <div className="float-card absolute -top-4 -right-4 hidden lg:flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-surface"
                 style={{ border: "1px solid rgba(251,146,60,0.3)", boxShadow: "0 8px 24px rgba(0,0,0,0.4)" }}>
                 <span className="font-body text-base">🔥</span>
                 <div>
-                  <p className="font-body text-xs font-bold text-white">4 in a row</p>
-                  <p className="font-body text-xs text-text-muted">Marcus</p>
+                  <p className="font-body text-xs font-bold text-white">Play daily</p>
+                  <p className="font-body text-xs text-text-muted">Build a streak</p>
                 </div>
               </div>
             </div>
@@ -485,52 +743,11 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
         </div>
       </section>
 
-      {/* ── 38-0 tile ────────────────────────────────────────────────────── */}
-      <section className="relative z-10 max-w-6xl mx-auto px-6 pb-6">
-        <Link href="/38-0"
-          className="flex items-center justify-between px-5 py-4 rounded-2xl transition-all hover:opacity-90 green-pulse"
-          style={{ background: "linear-gradient(135deg, rgba(174,234,0,0.08) 0%, rgba(174,234,0,0.06) 100%)", border: "1px solid rgba(174,234,0,0.18)" }}>
-          <div className="flex items-center gap-4">
-            <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 text-xl"
-              style={{ background: "rgba(174,234,0,0.12)", border: "1px solid rgba(174,234,0,0.22)" }}>
-              👕
-            </div>
-            <div>
-              <p className="font-body text-base font-bold text-white">38-0</p>
-              <p className="font-body text-xs text-text-muted">Pick your XI · Play friends · Go unbeaten</p>
-            </div>
-          </div>
-          <span className="font-body text-xs font-bold px-3 py-1.5 rounded-lg flex-shrink-0 text-green"
-            style={{ background: "rgba(174,234,0,0.12)", border: "1px solid rgba(174,234,0,0.22)" }}>
-            Play now
-          </span>
-        </Link>
-      </section>
-
-      {/* ── Challenges promo strip ───────────────────────────────────────── */}
-      <section className="relative z-10 max-w-6xl mx-auto px-6 pb-10">
-        <Link href="/challenges"
-          className="flex items-center justify-between px-5 py-4 rounded-2xl transition-all hover:opacity-90"
-          style={{ background: "linear-gradient(135deg, rgba(255,184,0,0.1) 0%, rgba(255,71,87,0.06) 100%)", border: "1px solid rgba(255,184,0,0.2)" }}>
-          <div className="flex items-center gap-4">
-            <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 text-xl"
-              style={{ background: "rgba(255,184,0,0.15)", border: "1px solid rgba(255,184,0,0.25)" }}>
-              ⭐
-            </div>
-            <div>
-              <p className="font-body text-base font-bold text-white">Football Quiz</p>
-              <p className="font-body text-sm text-text-muted">Test your knowledge · Solo games · Climb the global ranks</p>
-            </div>
-          </div>
-          <span className="font-body text-sm font-bold px-4 py-2 rounded-xl flex-shrink-0 hidden sm:block text-amber"
-            style={{ background: "rgba(255,184,0,0.15)", border: "1px solid rgba(255,184,0,0.25)" }}>
-            Play now →
-          </span>
-          <svg className="sm:hidden text-amber" width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ flexShrink: 0 }}>
-            <path d="M5 3l8 6-8 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </Link>
-      </section>
+      {/* The 38-0 and Football Quiz tiles used to live here. The games card in
+          the hero now lists all five games with the same links, so these two
+          were the old two-game framing repeated a screen later. Removed 23 Jul.
+          Anything that needs a mid-page game entry should use GAMES, not a
+          hand-written tile that drifts. */}
 
       {/* ── What a league gets you ────────────────────────────────────────── */}
       <section className="relative z-10 max-w-6xl mx-auto px-6 pb-16">
@@ -543,14 +760,14 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
                   <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 1.5h7v3L6 8l-3.5-3.5z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/><path d="M3 4.5v4a3 3 0 0 0 6 0v-4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>
                   Leagues
                 </div>
-                <h2 className="font-display text-4xl sm:text-5xl text-white mb-4">YOUR MATES.<br />ONE TABLE.</h2>
+                <h2 className="font-display text-4xl sm:text-5xl text-white mb-4">YOUR FRIENDS.<br />ONE TABLE.</h2>
                 <p className="font-body text-text-muted text-base leading-relaxed mb-6">
-                  Your whole group, one table. Every match any of you plays feeds the standings — live, automatically, all season.
+                  Your whole group, one table. Every game any of you plays feeds the standings. Live, automatically, all season.
                 </p>
                 <div className="space-y-3 mb-8">
                   {[
-                    { icon: "⚔️", text: "Go head-to-head — challenge any mate to either game" },
-                    { icon: "👑", text: "Raw points vs Pound for Pound accuracy — real debates built in" },
+                    { icon: "⚔️", text: "Go head to head. Challenge any friend to any game" },
+                    { icon: "👑", text: "Raw points vs Pound for Pound accuracy. Real debates built in" },
                     { icon: "🔥", text: "Streaks, badges and rankings across every competition" },
                     { icon: "📊", text: "Your league standing updates the moment a game ends" },
                   ].map(f => (
@@ -567,127 +784,28 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
                 </Link>
               </div>
 
-              {/* Fixture cards */}
-              <div className="space-y-3">
-                {[
-                  { flag: "🇧🇷", who: "Marcus", game: "Daily Quiz", detail: "9/10 correct", pts: "+340", col: "#00d8c0" },
-                  { flag: "🇮🇳", who: "Priya", game: "38-0", detail: "Beat Jamie head-to-head", pts: "+1,500", col: "#aeea00" },
-                  { flag: "🇳🇬", who: "Zach", game: "Quiz Battle", detail: "Won 4–2", pts: "+280", col: "#00d8c0" },
-                ].map((m, i) => (
-                  <div key={i} className="flex items-center gap-4 px-5 py-4 rounded-2xl bg-surface"
-                    style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
-                    <span className="text-2xl">{m.flag}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-body text-sm font-semibold text-white">{m.who} · {m.game}</p>
-                      <p className="font-body text-xs text-text-muted">{m.detail}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-display text-base" style={{ color: m.col }}>{m.pts}</p>
-                      <p className="font-body text-xs text-text-muted">to the table</p>
-                    </div>
-                  </div>
-                ))}
-                <div className="px-5 py-3 rounded-2xl text-center" style={{ background: "rgba(174,234,0,0.04)", border: "1px dashed rgba(174,234,0,0.2)" }}>
-                  <p className="font-body text-xs" style={{ color: "#aeea00" }}>Every game you play adds to your league table</p>
-                </div>
+              {/* The league table card lives here now, next to the section that
+                  actually explains leagues. It was the hero visual, where it
+                  sold a private table to a guest who has nobody to add to it. */}
+              {/* Just the table. The three invented activity rows underneath it
+                  (Marcus +340, Priya +1,500, Zach +280) restated what the table
+                  already shows, and the dashed caption restated the bullets on
+                  the left. The card says it on its own. */}
+              <div className="flex justify-center lg:justify-start">
+                <LeagueHeroCard />
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── How it works (condensed) ──────────────────────────────────────── */}
-      <section className="relative z-10 max-w-6xl mx-auto px-6 pb-16">
-        <div className="text-center mb-10">
-          <h2 className="font-display text-5xl text-white mb-3">HOW IT WORKS</h2>
-          <p className="font-body text-text-muted">Two games, one score. Draft your XI, test your football knowledge, climb the table with your mates.</p>
-        </div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[
-            { num: "01", col: "#aeea00", emoji: "⚽", title: "DRAFT YOUR XI", desc: "Spin a squad of real-rated legends and draft your best XI — the 38-0 team-builder." },
-            { num: "02", col: "#ffb800", emoji: "⚔️", title: "GO HEAD TO HEAD", desc: "Play your XI against the world. Win and swap a player, lose and go again — chase the perfect unbeaten season." },
-            { num: "03", col: "#00d8c0", emoji: "🧠", title: "TEST YOUR KNOWLEDGE", desc: "Daily World Cup quizzes, speed-scored. The more football you know, the higher you climb." },
-            { num: "04", col: "#aeea00", emoji: "🏆", title: "TOP YOUR LEAGUE", desc: "Start a private league and invite your mates. One table, all season — settle who actually knows football." },
-          ].map((step) => (
-            <div key={step.num} className="rounded-2xl p-6 relative overflow-hidden group bg-surface" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
-              <div className="font-display text-9xl absolute -top-4 -right-2 opacity-[0.06] group-hover:opacity-[0.1] transition-opacity select-none" style={{ color: step.col }}>{step.num}</div>
-              <div className="relative z-10">
-                <div className="w-11 h-11 rounded-2xl flex items-center justify-center mb-5 text-2xl" style={{ background: `${step.col}15`, border: `1px solid ${step.col}25` }}>{step.emoji}</div>
-                <h3 className="font-display text-xl text-white mb-3">{step.title}</h3>
-                <p className="font-body text-text-muted text-base leading-relaxed">{step.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="text-center mt-6">
-          <Link href="/how-it-works" className="font-body text-sm font-semibold transition-colors hover:opacity-80 text-green">
-            Full breakdown → scoring, streaks, FAQs
-          </Link>
-        </div>
-      </section>
-
-      {/* ── Live question preview ─────────────────────────────────────────── */}
-      <section className="relative z-10 max-w-6xl mx-auto px-6 pb-16">
-        <div className="grid lg:grid-cols-2 gap-10 items-center">
-          <div>
-            <p className="font-body text-xs uppercase tracking-widest mb-3 text-amber">Speed scored</p>
-            <h2 className="font-display text-4xl sm:text-5xl text-white mb-4">THE FASTER<br />YOU KNOW.</h2>
-            <p className="font-body text-text-muted text-base leading-relaxed mb-6">
-              Every question is pure football — players, records, history, the World Cup. The faster you answer, the more you score, and a streak multiplies it. Play the daily quiz solo or go head-to-head with your mates.
-            </p>
-            <div className="space-y-3">
-              {[
-                { col: "#aeea00", label: "Lightning — first 6 seconds", pts: "×2 points" },
-                { col: "#ffb800", label: "Fast — inside 12 seconds", pts: "×1.5 points" },
-                { col: "#ff9f43", label: "Slow answers taper off", pts: "down to ×0.5" },
-                { col: "#aeea00", label: "Back-to-back correct", pts: "+50 streak" },
-              ].map(r => (
-                <div key={r.label} className="flex items-center justify-between py-2.5 px-4 rounded-xl"
-                  style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                  <span className="font-body text-sm text-white/80">{r.label}</span>
-                  <span className="font-display text-base" style={{ color: r.col }}>{r.pts}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Animated question card */}
-          <div className="flex items-center justify-center">
-            <div className="float-card-2 w-full max-w-sm rounded-3xl overflow-hidden bg-surface border border-border"
-              style={{ boxShadow: "0 0 0 1px rgba(174,234,0,0.08), 0 32px 64px rgba(0,0,0,0.6)" }}>
-              <div className="flex items-center justify-between px-6 pt-6 pb-4">
-                <div>
-                  <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-1">Question 3 of 8</p>
-                  <p className="font-body text-xs text-text-muted">🏆 World Cup · Daily Quiz</p>
-                </div>
-                <div className="relative w-14 h-14">
-                  <svg className="w-14 h-14 -rotate-90" viewBox="0 0 100 100">
-                    <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="6" />
-                    <circle cx="50" cy="50" r="45" fill="none" stroke={timerColor} strokeWidth="6" strokeLinecap="round" strokeDasharray="282" strokeDashoffset={dashOffset} style={{ transition: "stroke 0.3s, stroke-dashoffset 0.1s linear" }} />
-                  </svg>
-                  <span className="absolute inset-0 flex items-center justify-center font-display text-xl" style={{ color: timerColor }}>{Math.max(0, timerValue)}</span>
-                </div>
-              </div>
-              <div className="px-6 pb-5">
-                <p className="font-body text-white text-base font-medium leading-snug">How many World Cup goals has Kylian Mbappé scored for France?</p>
-              </div>
-              <div className="px-4 pb-6 space-y-2">
-                {[{ letter: "a", text: "9 goals" }, { letter: "b", text: "12 goals" }, { letter: "c", text: "7 goals" }, { letter: "d", text: "15 goals" }].map((opt) => {
-                  const isCorrect = timerValue <= 0 && opt.letter === "b";
-                  return (
-                    <div key={opt.letter} className="w-full flex items-center gap-3 rounded-xl px-4 py-3"
-                      style={{ background: isCorrect ? "rgba(174,234,0,0.12)" : "rgba(255,255,255,0.04)", border: `1px solid ${isCorrect ? "#aeea00" : "rgba(255,255,255,0.08)"}`, color: isCorrect ? "#aeea00" : "#ffffff" }}>
-                      <span className="w-7 h-7 rounded-lg flex items-center justify-center font-display text-sm flex-shrink-0"
-                        style={{ background: isCorrect ? "#aeea00" : "rgba(255,255,255,0.06)", color: isCorrect ? "#0a0a0f" : "inherit" }}>{opt.letter.toUpperCase()}</span>
-                      <span className="font-body text-sm">{opt.text}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* ── The games ─────────────────────────────────────────────────────
+          Replaces the old "HOW IT WORKS" 01-04 steps and the "SPEED SCORED"
+          question preview. Both described one game as if it were the product:
+          the steps were the 38-0 arc, the speed panel was quiz scoring. This
+          section is per game instead, one tab each, driven by GAMES so a new
+          game gets a tab without anyone editing marketing copy. ── */}
+      <GamesExplainer />
 
       {/* ── Countdown strip ───────────────────────────────────────────────── */}
       <section className="relative z-10 max-w-6xl mx-auto px-6 pb-16">
@@ -717,13 +835,16 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
           )}
 
           <div className="relative z-10 px-8 py-10 text-center">
-            <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-5">World Cup 2026</p>
-            <WorldCupCountdown />
-            <p className="font-body text-sm text-text-muted mt-4 mb-6">Every match earns points — all the way to the final.</p>
+            <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-5">Premier League</p>
+            <SeasonCountdown />
+            {/* The eyebrow lists fantasy and gameday flat, as things the brand
+                does. This is where the honest specifics live: both land on
+                21 Aug with the season, and this section says so. */}
+            <p className="font-body text-sm text-text-muted mt-4 mb-6">Fantasy and gameday quizzes land with the season. A quiz pack at the half time whistle of every fixture, and a squad that scores all year. Everything else is playable now.</p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link href="/league/new" className="inline-flex items-center gap-2 font-body font-bold text-sm px-6 py-3 rounded-xl transition-all hover:opacity-90 pulse-glow"
+              <Link href="/play" className="inline-flex items-center gap-2 font-body font-bold text-sm px-6 py-3 rounded-xl transition-all hover:opacity-90 pulse-glow"
                 style={{ background: "#aeea00", color: "#0a0a0f" }}>
-                Create your league →
+                Play a game →
               </Link>
               <Link href="/auth/sign-in" className="inline-flex items-center gap-2 font-body font-semibold text-sm px-6 py-3 rounded-xl transition-all hover:opacity-80 green-pulse text-green"
                 style={{ background: "rgba(174,234,0,0.1)", border: "1px solid rgba(174,234,0,0.2)" }}>
@@ -734,6 +855,7 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
         </div>
       </section>
 
+
       {/* ── Upcoming fixtures ────────────────────────────────────────────── */}
       <UpcomingFixturesSection matches={matches} />
 
@@ -743,19 +865,24 @@ export function MarketingLanding({ matches }: { matches: LiveMatch[] }) {
           style={{ background: "linear-gradient(135deg, rgba(174,234,0,0.1) 0%, rgba(174,234,0,0.06) 100%)", border: "1px solid rgba(174,234,0,0.2)" }}>
           <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.015) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.015) 1px,transparent 1px)", backgroundSize: "30px 30px" }} />
           <div className="relative z-10">
+            {/* Was five national flags, which was World Cup dressing on a page
+                that is no longer about the World Cup. */}
             <div className="flex items-center justify-center gap-4 mb-6 text-5xl">
-              🇧🇷 🏴󠁧󠁢󠁥󠁮󠁧󠁿 🇫🇷 🇩🇪 🇦🇷
+              ⚽ 🏆 👕 🧠 🔥
             </div>
-            <h2 className="font-display text-5xl sm:text-6xl text-white mb-3">START YOUR LEAGUE</h2>
-            <p className="font-display text-2xl mb-6" style={{ color: "#aeea00" }}>Free · you and your mates</p>
+            {/* Closes on the same promise the headline opened with. Starting a
+                league was the old ending: it asks a guest who arrived alone to
+                go and organise their friends. That is the second visit's ask. */}
+            <h2 className="font-display text-5xl sm:text-6xl text-white mb-3">FIND OUT WHERE YOU RANK</h2>
+            <p className="font-display text-2xl mb-6" style={{ color: "#aeea00" }}>Free · no account needed</p>
             <p className="font-body text-text-muted mb-8 max-w-md mx-auto">
-              Invite your mates, pick your matches, and start building your score. Points stack all season.
+              One game is enough to get a score. Play a few and you get a rank, a streak, and something to argue about.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
-              <Link href="/league/new"
+              <Link href="/play"
                 className="inline-flex items-center gap-2 font-body font-bold text-lg px-10 py-5 rounded-2xl hover:opacity-90 transition-all pulse-glow"
                 style={{ background: "#aeea00", color: "#0a0a0f" }}>
-                Create a league →
+                Play a game →
               </Link>
               <Link href="/auth/sign-in"
                 className="inline-flex items-center gap-2 font-body font-bold text-base px-8 py-4 rounded-2xl hover:opacity-90 transition-all green-pulse text-green"

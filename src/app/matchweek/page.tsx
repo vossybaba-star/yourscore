@@ -20,7 +20,7 @@
  * blank screen.
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { HalftimeRail } from "@/components/halftime/HalftimeRail";
 import { ClubPicker } from "@/components/clubs/ClubPicker";
 import { ClubTableTile } from "@/components/clubs/ClubTableTile";
@@ -34,6 +34,7 @@ import { UpcomingQuizzes } from "@/components/matchweek/UpcomingQuizzes";
 import { QuizStatTiles } from "@/components/matchweek/QuizStatTiles";
 import { LiveQuizIntro } from "@/components/matchweek/LiveQuizIntro";
 import { FantasyHub } from "@/components/fantasy/FantasyHub";
+import { fantasyVisible } from "@/lib/fantasy/flag";
 import { BottomNav } from "@/components/ui/BottomNav";
 
 const TEAL = "#00d8c0";
@@ -54,6 +55,12 @@ const PL_TABS: { key: PlTab; label: string }[] = [
 
 export default function MatchweekPage() {
   const [section, setSection] = useState<Section>("pl");
+  // Fantasy is built but not open to users yet (founder, 24 Jul). Resolved after
+  // mount, not during render: the answer depends on sessionStorage and the URL,
+  // and reading those while rendering would mismatch the server HTML and blow up
+  // hydration on every page load.
+  const [showFantasy, setShowFantasy] = useState(false);
+  useEffect(() => { setShowFantasy(fantasyVisible()); }, []);
   // One shared reminders store for the section — AppNudge reads the same state
   // the buttons write, so the app pitch appears once, not once per card.
   const reminders = useReminders();
@@ -72,9 +79,9 @@ export default function MatchweekPage() {
       </div>
 
       {/* Top-level section bar */}
-      <div className="max-w-lg mx-auto px-4">
+      <div className="max-w-lg mx-auto px-4" data-tour="pl-sections">
         <div className="flex gap-1.5 p-1 rounded-2xl" style={{ background: "rgba(255,255,255,0.04)" }}>
-          {SECTIONS.map((s) => {
+          {SECTIONS.filter((s) => s.key !== "fantasy" || showFantasy).map((s) => {
             const on = section === s.key;
             return (
               <button
@@ -137,7 +144,7 @@ export default function MatchweekPage() {
       {/* ── Fantasy — holding screen until the game opens with the season ─── */}
       {/* The real game. This section used to be a pre-launch holding screen;
           it is now the squad itself. */}
-      {section === "fantasy" && <FantasyHub embedded />}
+      {section === "fantasy" && showFantasy && <FantasyHub embedded />}
 
       <BottomNav />
     </div>

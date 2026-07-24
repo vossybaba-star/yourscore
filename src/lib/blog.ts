@@ -19,6 +19,12 @@ export type BlogPost = {
   description: string;
   /** ISO date (YYYY-MM-DD) — used for sorting, display, JSON-LD and RSS. */
   date: string;
+  /**
+   * Optional frontmatter `updated:` (YYYY-MM-DD). Feeds JSON-LD dateModified so
+   * living posts (the transfer tracker) signal freshness to Google instead of
+   * looking untouched since publish. Falls back to `date` when absent.
+   */
+  updated?: string;
   tags: string[];
   ogImage?: string;
   /**
@@ -57,6 +63,7 @@ export function getAllPosts(): BlogPost[] {
       title: String(data.title),
       description: String(data.description ?? ""),
       date: toIsoDate(data.date),
+      updated: data.updated ? toIsoDate(data.updated) : undefined,
       tags: Array.isArray(data.tags) ? data.tags.map(String) : [],
       ogImage: data.ogImage ? String(data.ogImage) : undefined,
       faq: Array.isArray(data.faq)

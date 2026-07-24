@@ -6,7 +6,229 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-07-19 (**Nav: 38-0 now lives under the Play tab** — Quiz | 38-0
+> **Confirmed:** 2026-07-23 (**Signed-out home page rewritten around the rank, and a batch of
+> guest-flow fixes.** Shipped to prod as `b024193`.
+> **Positioning:** the landing page led with 38-0 and a World Cup that finished on 19 Jul. It now
+> leads with **YOUR FOOTBALL KNOWLEDGE. RANKED.** The rank is the product: quizzes, gameday,
+> fantasy and Versus all feed one score, so the promise has no upper bound and absorbs new
+> features without a rewrite. Breadth moved to the eyebrow (`Quizzes · Gameday · Fantasy ·
+> Versus`), which keeps the headline to one promise and the fold to one decision. An earlier cut
+> said "FIVE FOOTBALL GAMES" and was rejected: **never put a count of games in the headline** —
+> it reads as a ceiling and goes stale the day a game ships.
+> **New components** in `MarketingLanding.tsx`: `GamesHeroCard` (the animated what-feeds-your-score
+> card) and `GamesExplainer` (a tab per game). Both read `GAMES`, now **exported from
+> `GameSwitcher.tsx`** with a per-game `blurb`, so the marketing page cannot describe a game the
+> app doesn't have, and a new game gets a row and a tab with no copy written. Every line in the
+> explainer is drawn from the game's own code (`ROUND_SIZE`, `MAX_STRIKES`, `HL_TOPICS`, the quiz
+> speed bands), not from memory.
+> **Removed:** the "HOW IT WORKS" 01-04 steps (they walked the 38-0 arc as if it were the app),
+> the "SPEED SCORED" demo-question section (quiz scoring given its own section; it now lives in
+> the Quiz tab) and its 45s countdown interval that ran on every signed-out load, the duplicate
+> 38-0 / Football Quiz tiles, and the invented league activity rows.
+> **World Cup framing retired:** `WorldCupCountdown` → `SeasonCountdown`, counting to PL GW1 on
+> **21 Aug**. The old one passed zero on 11 Jun and had rendered "THE CUP IS LIVE" every day
+> since, including the four days after the final. Fantasy and gameday quizzes are written as
+> landing **with the season**, never as playable today.
+> **Guest-flow fixes from a `/ux-walk`:** Today's Game moved above the hero (it sat 1280px down,
+> 1.6 screens below the fold); `/38-0` lands on Premier League, not a finished World Cup; the WC
+> edition strip is signed-in only (a guest's first visit opened with "34 days to catch up" and 35
+> CATCH UP chips); guests are no longer told "your first score counts on the leaderboard" 40px
+> above "sign in first to save your score", which contradicted it and was false for them.
+> **Copy gate:** "mates" → "friends" (8 more the 22 Jul sweep missed, because that grep was case
+> sensitive and the headline was uppercase), every em/en dash out, and the OG image no longer
+> calls Perfect 10 a **daily** list.
+> **STILL OPEN:** recommended packs have no browse surface; club packs still fall back to crests
+> instead of real covers; the games card sits ~1000px down on mobile, below the fold.)
+>
+> **Previously confirmed:** 2026-07-23 (**Home hero rebuilt: Today's Game shows its topic + crowd stats,
+> debate comments open to all, Mastermind resume prompt removed.** Branch `fix/quiz-flow-ux`,
+> migration **102 APPLIED to prod**.
+> **Today's Game tile** is now two halves: cover art on top, a live stats strip underneath —
+> players / average score / % who got the hardest question. Numbers come from two new SQL
+> aggregates (`get_daily_pack_stats`, `get_daily_p10_stats`, migration 102, `security definer`,
+> anon-executable so the logged-out hero can use them too). The strip shows the hardest
+> question's PERCENTAGE only, never its text, so the tile can't spoil a question the player is
+> one tap from being asked; zero plays shows "Nobody has played it yet" rather than three zeros.
+> **Perfect 10 tiles lead with the list title, not the mode name** ("Perfect 10" alone read as a
+> menu entry). Root cause was real: P10 lists release in BATCHES, not daily, so most P10 days
+> have no row of their own — `src/lib/daily-game.ts` read only `day` and came up empty. It now
+> mirrors what `/api/games/perfect-10` actually serves (`loadListForDay ?? loadLatestServed`).
+> Same bug was silently breaking the Perfect 10 **done state** on every non-release day; fixed.
+> **Today's debate:** the comment thread is now INSIDE the debate card (one tile, not two) and
+> is readable by everyone, voted or not — posting is what voting buys you (`canPost` on
+> `DiscussionThread`, plus an `embedded` mode that drops its own frame). "DRAG A FRIEND IN" and
+> "THE ARGUMENT" buttons are gone. The sign-up pitch is now opt-in (`withSignUpPitch`) and OFF
+> inside the app, where it was flashing in before the client session resolved.
+> **Home no longer surfaces an active Mastermind run at all** (founder call) — the mode tile is
+> the only way back in. **STILL OPEN:** recommended packs have no browse surface, so anything
+> not in the rec strip is unreachable and unplayed, and club packs still fall back to crests
+> instead of real covers.)
+>
+> **Previously confirmed:** 2026-07-22 (**Club pages + a batch of quiz-flow UX fixes shipped.**
+> Branch `fix/quiz-flow-ux`, merged to main.
+> **Club pages `/club/[slug]`:** the Quiz hub's Club tab used to send all 20 crest cards
+> straight into a single 2025/26 season-review quiz. It now opens a club page: crest, the
+> season-review pack, and four topic quizzes (History & Honours, Legends, Modern Era,
+> Rivalries) drawn from the verified club question bank. Built by pre-generating the topic
+> packs as real `quiz_packs` rows (`status='published'`, `rotation_active=false`,
+> `is_custom=false`, `created_by=null`, `metadata.club_topic=<slug>`) via
+> `scripts/club-pages/generate-topic-packs.mjs` (imports the draw from `src/lib/questions.ts`
+> so it can never drift from `/api/quiz/generate-custom`; dry-run by default, `--commit` to
+> write). **50 packs seeded to prod.** Real draw (fact_key distinctness) yields 50 of 80 club
+> x topic combos, not the 57 a raw row-count suggested: Arsenal / Liverpool / Man City / Man
+> Utd get all four topics, Forest gets one, most land at two or three; a topic that can't deal
+> 15 shows a disabled card with an honest reason. Nothing new to generate or auth: `/api/quiz/packs`
+> still filters `rotation_active=true` so the hub grid stays 20, while `/api/challenges/pack`
+> serves any published pack, so guests play these on the existing play screen with the sign-in
+> wall only at save-score. Club-page payload at `/api/club-page/[slug]` (named `-page` because
+> `/api/club/[slug]` already belongs to Club Leagues). Every topic link carries `?pid=` because
+> two published packs are named "Brighton" and slug-only resolution is order-unstable.
+> **Quiz-flow UX fixes (from a `/ux-walk`):** results screen leads with PLAY ANOTHER and moves
+> save-your-score up under it (was two stacked share CTAs with the next-game route buried last);
+> Accuracy on the results screen is now questions-right, not score/maxScore (it disagreed with
+> "7/15 Correct"); AnswerButtons gets a `key` per question in all three quiz players so
+> `transition-all` no longer flashes a wrong option green on the next question; the username
+> prompt no longer mounts over hubs and games (it ate the first tap) and skip is once-ever in
+> localStorage; Featured drops the finished World Cup packs and the verified-competition card
+> reads FINAL STANDINGS not a pulsing LIVE; the quiz builder club grid no longer clips two-line
+> names or loses Birmingham City. Copy gate: "mate" to "friend" in 8 places, em/en dashes
+> stripped from shipped strings, home hero stops naming the delivery mechanism. **STILL OPEN:**
+> user-built quizzes and guest scores still have no home surface (the "your quizzes" list and
+> guest score memory are the next two pieces).)
+>
+> **Previously confirmed:** 2026-07-21 (**Profile rebuilt around a FUT-style player card.**
+> Branch `feat/profile-player-card`, migration **82 APPLIED to prod**.
+> **The page:** a hero row — YourScore rank, accuracy, streak and Share on the left; the
+> **player card** on the right (rating, archetype, real club crest from `club_supporters`,
+> avatar, six attributes). Then the **ladder** (2 above / you / 1 below, progress bar, and a
+> concrete "18,150 pts overtakes tatty · a strong quiz run closes it"), the **medal shelf**,
+> **"where your points come from"** — which says out loud that daily quiz, World Cup and
+> seasons earn NOTHING toward Rank — and recent games.
+> **The card is rated on being a YourScore player, never one game:** KNO accuracy · PAC answer
+> speed · WIN record · CON streak · RNG breadth · SOC social. A new game feeds the existing six
+> rather than earning its own slot. Tiers Bronze/Silver/Gold/Icon; archetype = your leading
+> attribute, so two players on 84 read differently. **Nobody scores zero** — floor 38, a new
+> player is a real Bronze ROOKIE.
+> **25 medals** (`src/lib/medals.ts`), every threshold calibrated against the REAL distribution,
+> not instinct: 67% of players have a 38-0 win but only 0.7% have answered 100 quiz questions,
+> so the 38-0 ladder carries the volume and quiz tiers sit at 15/50/150. Rarity is the pride
+> mechanic and is printed on each medal. **Social medals deliberately absent — no player has 5
+> friends.** `Ever-Present` (30 days) has zero holders on purpose. Percentages are DATED
+> constants measured 2026-07-21; they drift, and a nightly job is the fix when wanted.
+> **Avatars:** 16 generated character portraits at `public/avatars/*.webp`
+> (`scripts/gen-avatars.mjs`), replacing the old object icons. Only 1 user had the old set.
+> **Gotchas:** a cross-origin URL in an SVG `<image href>` renders as a BROKEN TILE — 3,367 of
+> 9,786 profiles are Google account photos, so the card layers the photo as an HTML `<img>` over
+> the SVG (`foreignObject` is worse: blank). Readable content must clear the badge taper or it
+> reads off-centre when it isn't. Card size is a `width` prop so a share/OG render can use full
+> size. Also: `profiles.games_played` is 0 on all 9,400 rows — never read it.
+> ⚠️ **STILL OPEN — `yourscore_user_ratings` is wrong:** it joins `draft_standings` on
+> `league_id` only, ignoring `competition`, so **340 users get two ranks** and **280 have their
+> 38-0 score split across PL/WC and never summed** (worst: `goat1993`, −114,000 pts). Untouched
+> — it changes real ranks and needs a product call.)
+>
+> **Previously confirmed:** 2026-07-21 late (**First-launch onboarding tour + guest Versus preview SHIPPED
+> to prod.** A 5-step spotlight walkthrough (`SpotlightTour`, mounted in the root layout) that
+> navigates the real app: Play games row → Versus action cards → PL section bar → your rank
+> (signed-in only) → ends on Home spotlighting the Today's Game hero. Pulsing beacon on the
+> bottom-nav tab each step references; once-ever via `ys:tip:app-tour:v1`; Skip/Escape end it;
+> steps whose target can't be found in 3s skip silently; `?tour=1` = QA replay that never burns
+> the flag (dev also gets `window.__resetTips()`). **NEW USERS ONLY (founder-locked):**
+> signed-in requires `created_at >= 2026-07-22T00:00:00Z` (`TOUR_EPOCH` in `src/lib/tips.ts`)
+> — current customers never see it; guests only on a **fresh native install** (detected by
+> stamping `ys:tip:fresh-install:v1` at module load while `yourscore:onboarding:v1` is still
+> absent, i.e. before the first-run carousel marks itself) and only after that carousel
+> completes; web guests never. Storage errors fail closed in the safe direction per flag.
+> Gotcha shipped around: `scrollIntoView({behavior:"smooth"})` silently no-ops in some
+> webviews — all tour scrolls are `behavior:"auto"`, plus a throttled pull-back if the page
+> scroll-resets under an active step. **Also: guest `/versus` now mirrors the real first-time
+> hub** (welcome hero, action cards, choose-your-game, live activity/community/public-league
+> rails with real anon data; every tap capture-routed to `/auth/sign-in?next=/versus`; slim
+> create-account banner) — replaces the old sign-in wall so guests see the actual hub.)
+>
+> **Previously confirmed:** 2026-07-21 (**WC Mastermind thank-you flow SHIPPED to prod** — migration 100
+> seeds `wc_thanks_prompts` with the 199 players who played >10 ranked WC days; on their next
+> signed-in visit they get a one-time "What would you like to see on YourScore?" modal (free
+> text → `product_feedback`, write-only mailbox RLS), then after ~600px of scrolling a one-time
+> App Store review ask (native star popup in the iOS app; card on iPhone web; desktop leaves the
+> ask unconsumed so it still fires on a later phone visit). `WcThanksPrompt` mounted globally;
+> dev previews `?preview=wc-thanks` / `?preview=wc-review`. Verified live: seed = exact cohort,
+> anon-curl returns nothing on both tables, test feedback row round-tripped. **Companion email
+> (copy LOCKED Jul 21) to the 190 non-suppressed cohort members is NOT yet sent — awaiting
+> founder go.**)
+>
+> **Previously confirmed:** 2026-07-20 (**Club question bank: categories remapped + Rivalries filled 0→20 clubs.**
+> On branch `quiz/content-factory`, nothing on `main`.
+> **The remap:** 2,207 verified questions across 44 clubs were invisible to the category flow
+> because they carried six legacy labels while only 69 (Arsenal) carried the new four. 2,213
+> questions rehomed deterministically (no API cost); Season Performance / Records & Milestones
+> split by era (modern-era = 2015+). Backup + `--revert` on disk.
+> **Rivalries:** was zero for every club — 498 questions written across all 20 PL clubs, $21.49.
+> **The honest number is 6/20 dealable as a full 15-question quiz** (Arsenal, Chelsea, Liverpool,
+> Man City, Man United, Newcastle), not 20/20. Eleven clubs are blocked on `easy` alone; three
+> (Bournemouth 6, West Ham 7, Palace 11) are capped by distinct-fact supply — `fact_key` stops a
+> quiz reusing one fact, so **row count is not capacity**. See `scripts/quiz-factory/bank-status.mjs`.
+> **RESOLVED same day — 19/20 clubs now deal a full 15-question Rivalries quiz** (was 6/20;
+> was 0/20 before today). Two changes: (a) the difficulty mix is now a TARGET with top-up
+> rather than a hard floor (`fillToSize` in `src/lib/questions.ts`), and (b) a `--top-up`
+> research pass for the three fact-capped clubs — West Ham 7→28 distinct facts, Palace 11→33,
+> Bournemouth 6→14. **Bournemouth is the only club still short, by ONE fact**; 17 of its 25
+> researched facts were dropped as untrusted, so its rivalry material is genuinely scarce.
+> **The four topics are now LIVE in `/quiz/create`** (clubs only) and `/api/quiz/availability`
+> filters by category too — without that the builder would show a club's total count while
+> generating from one topic. Verified in-browser: Sunderland · Rivalries offers Generate,
+> Sunderland · Legends correctly refuses.
+> ⚠️ **The easy shortage was a CALIBRATION artefact, not a content gap.** Difficulty
+> is rated for a *neutral* fan, but only a club's own fans pick that club's quiz. Newcastle and
+> Sunderland from the same derby, same tier-1 sources, zero facts dropped: Newcastle 2/9/16,
+> Sunderland **0/1/27**. No research produces a neutral-easy Sunderland fact, so the supply the
+> threshold demands does not exist at any budget. Relaxing the easy requirement for club quizzes
+> was the fix, and it landed: the mix is now a target, not a floor.
+> **Also learned:** grounded Modern Era authoring (SportMonks league tables) produces
+> *structurally* zero easy questions — positions/points/top-scorers are precision recall. It is
+> the cheapest category to generate and it makes the easy shortage worse.
+> **New: an editorial gate** (`scripts/quiz-factory/editorial.mjs`). True + trusted ≠ publishable:
+> research surfaced hooligan-firm facts (West Ham's ICF, Millwall Bushwackers, Seaburn Casuals)
+> from tier-1/2 sources. Fired on 4 of 20 clubs. Drops violence/crime/tragedy/abuse at the FACT
+> stage; deliberately conservative about football idiom ("crushed 5-1", "fired a shot").)
+>
+> **Previously confirmed:** 2026-07-17 (**Profile page redesigned + a silent P1 fixed** — the page now
+> leads with a *ladder* (2 players above / you / 1 below, a progress bar and "one 38-0 win does
+> it"), a *trophy cabinet* of verified bests per game where an unplayed game is a dashed empty
+> slot, and a *"where your points come from"* band that says out loud which games earn nothing
+> toward Rank. Killed the Lobbies/Friends tiles and the dead solo-challenge block.
+> **The P1:** `/profile` selected `room_scores.created_at`, a column that does not exist — the
+> query errored, so **quiz accuracy, recent multiplayer and recently-played-with had rendered
+> empty for every user since launch**. Accuracy is now true lifetime across quiz + lobbies + WC
+> Mastermind (`get_profile_accuracy`); "Games" counts real rows because `profiles.games_played`
+> is 0 on all 9,400 profiles; best-quiz is questions-right, not score/max_score (score carries
+> speed bonuses, so it read "5950/4800"); best-WC-run is a real max, not an unordered
+> `.limit(50)` of 22k rows. Migration **82** adds `get_yourscore_ladder`, `get_profile_accuracy`,
+> `get_best_wc_run`, `get_best_quiz`; streak maths extracted to `src/lib/streak.ts` and shared
+> with the home dashboard. ⚠️ **OPEN — `yourscore_user_ratings` is wrong:** it joins
+> `draft_standings` on `league_id` only, ignoring `competition`, so 340 users get **two ranks**
+> and 280 have their 38-0 score **split across PL/WC and never summed** (worst case `goat1993`,
+> −114,000 pts). Every user's rank is inflated by 358 phantom rows. Not fixed — it changes real
+> ranks and was explicitly out of scope. See `challenge_attempts`: 0 rows, no writer, so the
+> `SUM(challenge_attempts.score)` half of `knowledge_score` is permanently 0.)
+> **Also confirmed:** 2026-07-20 (**Conversion-event schema completed for the ad relaunch** —
+> new pixel events: `FantasyWaitlist` (Meta `Lead`/TikTok `SubmitForm`, fires on waitlist
+> save success in WaitlistCard — blog + Matchweek fantasy tab), `ClubPick` (ClubPicker
+> confirm, `{club}` param), `InviteAccepted` (viral-loop RECEIVE side — league join,
+> 38-0 challenge accept, live-H2H code claim, WC-H2H join, group-challenge join; Share
+> remains the send side), `HabitFormed` (3rd distinct play-day, once per device — fired
+> from the ReturnPlay path in trackGame.ts), `TeamDrafted` (full XI complete on
+> /38-0/play — the pre-match IKEA moment), web `PushOptIn` twin in lib/push.ts, and
+> GA4-only `trackDiag` (`redraft_used`). EVERY pixel event now carries
+> `client: "native"|"web"` so app-webview activity is separable from web (the iOS app
+> wraps yourscore.app — pixels fire in both). Accuracy fixes: fire-once guards moved to
+> sessionStorage (`firedOnce`/`hasFired` in trackGame.ts) so refresh can't double-count —
+> 38-0 match result, live H2H, live-match quiz, multiplayer quiz; multiplayer quiz "play"
+> now fires on the player's FIRST ANSWER (room viewers no longer count); group-quiz
+> starts correctly tagged `mode:"group"`. X Events Manager audit same day: all events
+> code-defined, no URL rules. NEW-GAME RULE: a new quiz PACK needs nothing (tracking
+> lives in the page); a new game PAGE must call trackGamePlay/Complete + get a GameId.
+> Prior confirm 2026-07-19: **Nav: 38-0 now lives under the Play tab** — Quiz | 38-0
 > game switcher on both hubs, see §9 + Recently Shipped. Prior confirm 2026-07-16:
 > **Perfect 10 — new standalone list game SHIPPED to prod.**
 > Third Quiz game-type ("name everyone in a ranked top-10 football list", e.g. all-time
@@ -307,23 +529,247 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
-- **2026-07-22** — **Fantasy Football: NOT ON MAIN — lives on branch `fantasy/season`.**
-  The full game is built (15-man squad, weekly knowledge round earning transfer credits,
-  live season engine that locks/ingests/scores/finalises on a cron, chips + wildcard,
-  private/public leagues with monthly mini-seasons and chat, the "Top Marks" accuracy
-  board, share cards and result emails). **It is NOT in this branch's product surface** —
-  read it as building, not shipped, until it merges.
-  Two things a future session must not re-derive:
-  **(1) THE BASELINE TRANSFER.** Everyone gets one transfer per gameweek, granted at
-  gameweek finalise to every entry including rolled-over managers; the round earns EXTRA
-  ones on top. This makes the live PL-tab pitch ("One transfer. Earn the rest.") literally
-  true — before 22 Jul the engine gave no baseline at all, so a 2/11 round meant a squad
-  you could not touch. It caps rather than cashing out.
-  **(2) FANTASY IS A PL SECTION, NOT A TAB.** Per the nav canon (§9) fantasy belongs under
-  Premier League. The branch still builds it as a standalone `/fantasy` route with its own
-  header and back buttons, which the new nav removed — **reconciling that is open work.**
-  Also open: the pool is still built for season 25583 and must be rebuilt for 28083, and
-  the 28083 calendar cutover is blocked on FPL publishing its 26/27 bootstrap.
+- **2026-07-23 (late)** — **Pro's club ask is a POP-UP, not a section** (founder). A 20-crest
+  grid sitting inline pushed the formation picker and the draft button off the screen and read
+  as another form to fill in before you could play. It's now a sheet on the same pattern as the
+  global `ClubPrompt`, dismissible by **Not now** or by tapping the backdrop.
+  What stays inline is a **one-line status row** once they have a club — *"Pro is asking about
+  Arsenal · 35 questions"* with **Change** for guests, **Locked** for signed-in players. That
+  row is the fix for the UX-walk cross where the club was invisible with no way to change it,
+  so it is not a section and must not be removed.
+  ⚠️ **`picking` is held separately from `current`** in `ProClubPrompt`. Conflating them was a
+  real bug: **Change** cleared the saved club to reveal the picker, so cancelling left a club
+  still saved and nothing on screen saying so — the exact problem the status row exists to
+  solve. Cancelling an edit is not the same as waving the question away, so it also does not
+  burn the session skip.
+
+- **2026-07-23 (eve)** — **Every Pro question is now independently verified, and three wrong
+  answers were retired from the live bank.** Founder's bar: zero wrong answers.
+  **The three retired in prod** (all `status=retired`, each shown 0 times, so no player ever
+  saw one): Forest's European Cups answered 1 (they won two, 1979 and 1980); West Ham's
+  answered 1 (they have won none — Cup Winners' Cup 1965 and Conference League 2023 are
+  different competitions); AFC Bournemouth's nickname given as "The Cherries Boscombe", two
+  names concatenated, with the correct answer not among the options. **Retired, not re-keyed** —
+  re-keying means writing answer keys from recall, which is the exact failure that produced
+  them. Reversible, and it matches what `clean-live.mjs` already does.
+  **Every one of the 278 then went through the factory's real Stage 2 gate**
+  (`scripts/draft/verify-pl-quiz.mjs` → `verify.mjs verifyQuestion`): a fresh context, never
+  told the author's answer, must search, derive it independently and cite a URL. Disagreement,
+  no source, low confidence or any flagged ambiguity fails. **216 passed, 62 failed.**
+  Verification is now a **hard, fail-closed gate on the build** — a question absent from
+  `scripts/data/pl-quiz-verify.jsonl` does not ship, so adding questions later *requires*
+  re-running the verifier. Results are checkpointed per question and the run resumes.
+  **It found 4 more wrong answers no filter could have caught:** both Spurs nickname questions
+  offer "The Spurs" AND "The Lilywhites" (both real, so whichever is keyed a correct player is
+  marked wrong); Bournemouth's stadium offers "Dean Court" and "The Vitality Stadium" (same
+  ground, traditional vs sponsored name); and a Brentford/Chelsea/Fulham season the verifier
+  resolves differently. 56 more failed as ambiguous — about half genuine (the 1970 FA Cup
+  question lists both the final score 2-2 and the replay 2-1; Salah has since tied Gerrard's
+  Everton record so "who holds it" now has two answers), about half conservative over-flags.
+  **Kept the conservative ones as failures** — the bar is zero wrong answers, and every failure
+  is recoverable from the checkpoint.
+  **Bundle 278 → 216, neutral 74 → 66.** Coventry still 0; Ipswich 1, Hull 2, and Sunderland,
+  Forest, Leeds, Bournemouth 3 each. ⚠️ **Neutral 66 is thin** — that's the pool a guest or
+  no-club player draws from, so repeats start around 6 drafts. Growing it needs new questions,
+  and they must pass the verifier to ship.
+  ⚠️ Filter ORDER matters in the build: the content gates (denylist, verification) run LAST.
+  Putting them first made every shape filter report zero and blanked the coin-flip cut sheet,
+  destroying the record of what was removed. Diagnostics first, gates last.
+
+- **2026-07-23 (pm)** — **Pro: coin-flip questions cut from the gate.** If all four options
+  are bare numbers the question can't be answered by knowing football: "How many goals did
+  Salah score in 2024-25?" [28/30/29/31] is a 1-in-4 guess however much you know. In Pro a
+  wrong answer caps the pick at 72 AND resets the streak, so a guess costs a player, which
+  directly contradicts the mode's premise. **213 questions cut; bundle 452 → 280, neutral
+  96 → 75** (still ~7 drafts before a repeat). No club is wiped out; Coventry was already 0,
+  Sunderland 4, Hull and Ipswich 2 each. A test now fails the build if one creeps back.
+  ⚠️ **The cut is deliberately blunt and takes good questions with it.** Forest's two
+  European Cups [2/1/3/0] is iconic and knowable; Manchester United's 13 FA Cups
+  [11/15/12/13] is not — and they are structurally identical, so no filter can tell them
+  apart. Everything removed is listed in `scripts/data/pl-quiz-cut-numeric.md` for hand
+  restoring (which means re-authoring the options, not just re-adding the row).
+  🐛 **Found incidentally: a wrong answer live in the bank.** `076f2b3d-bd51-40f6-ab49-0bdaf37d5b78`
+  ("How many European Cup / Champions League titles have Nottingham Forest won?") is `active`
+  and answers **1**. Forest won **two** (1979 Malmö, 1980 Hamburg) and dozens of *retired*
+  Forest questions in the same bank say so. Shown 0 times so far, so nobody has hit it. **Not
+  edited — a live-bank write is the founder's call.** It suggests the bank's fact-checking
+  isn't airtight, which is worth knowing before the question review.
+
+- **2026-07-23** — **38-0: EXPERT mode retired, Premier League leads, Pro's UX walk fixed**
+  (branch `feat/38-0-pl-gated`, not on `main`).
+  **Expert is gone.** 38-0 is classic only (founder). The DIFFICULTY switcher is removed and
+  nothing honours `mode:"expert"` on read any more — `redraft`, `swap`, `team` and `season`
+  all render legacy expert teams like everyone else, so nobody is stranded in a format with
+  no switch left to leave it. The `DraftMode` union and the field stay so saved localStorage
+  teams keep parsing. **Do not reintroduce a difficulty switch without asking.**
+  **Tab order is Premier League, La Liga, Leaderboard, WC Mastermind**, and PL is the default
+  tab. It's the year-round game and the one with Pro; the World Cup is over.
+  **A `/ux-walk` of Pro returned FAIL and all five crosses are fixed:**
+  1. **Copy gate** — em dashes had crept back into new copy. Cleared across the whole 38-0
+     hub, the draft loop, QuizGate and ProClubPrompt, including the pre-existing WC strings
+     on the same page. Placeholder glyphs (an empty OVERALL) are now "0", not a dash.
+  2. **The club grid promised what 3 clubs can't deliver.** Measured: over 22 draws a
+     Coventry fan got **0** own-club questions, Ipswich 0, Hull 1, against Arsenal's 11 —
+     while being told "Pro asks about your team". The picker now states the real number
+     before you commit ("No Coventry questions yet, so Pro will ask you Premier League
+     ones" / "62 Arsenal questions, mixed in"). Counts ship in a new answer-free
+     `src/data/draft/pl-quiz-clubs.json`, because `pl-quiz.json` carries every answer and
+     is server-only.
+  3. **The gate had no exit** — once open, the only ways out were answering or waiting out
+     the 25s clock, which grades as a miss anyway. There's now a "Skip this one (counts as a
+     miss)" that costs exactly what the timeout already cost. Verified: skipping deals a
+     squad capped at 70, inside the 72 wrong-answer ceiling.
+  4. **A guest's club was invisible and unchangeable.** ProClubPrompt used to self-hide once
+     set, so the club was never named in the flow and a mis-tapped crest was permanent. It
+     now shows a status row ("Pro is asking about Liverpool") with **Change** for guests;
+     signed-in players see "Locked", because theirs is a season-locked competition entry.
+  5. **Pro sat 344px below the fold** under a full pitch diagram while the sticky CTA
+     started the *other* mode. HOW YOU DRAFT now comes before PICK YOUR SHAPE: 1156px → 540px,
+     above the fold. Which game you're playing outranks which shape you play it in.
+
+- **2026-07-21** — **38-0 Premier League now has two modes: PRO and JUST DRAFT**
+  (branch `feat/38-0-pl-gated`, not on `main`). **"Pro" is the locked player-facing name**
+  (founder, 2026-07-22); the code says `gated` throughout because that's the mechanic —
+  don't rename the flag, and don't call the mode "Gated" in any copy. Pro is a *difficulty*,
+  never a paid tier: the app promises "Free forever — no subscription, no catch", so Pro
+  copy must always read as skill, and the card carries a ⚽ not a padlock.
+  Pro brings the World Cup Mastermind
+  mechanic to the PL tab: every spin is unlocked by a Premier League question, and a
+  correct **streak** raises both the floor and ceiling of the quality band the squad is
+  dealt from — a wrong answer caps the pick at 72 overall, ~streak 5 opens the elite tier.
+  Same band maths as WC (`src/lib/draft/draft-quiz.ts`, untouched). **Replayable, not a
+  daily ranked competition** — no locks, no new board, no new tables; it feeds the existing
+  team → season → H2H flow. **La Liga is deliberately excluded** (the question bank is PL
+  clubs and PL moments), and Just Draft is byte-identical to the old behaviour.
+  New: `src/lib/draft/pl-quiz.ts` (server-only — it carries every answer),
+  `/api/draft/pl/gate-quiz` (stateless, seed-graded, anonymous-OK — cloned from the WC
+  practice-quiz route), `src/components/draft/QuizGate.tsx` (shared gate UI; **the WC page
+  still renders its own inline copy — migrating it is a deliberate follow-up**), and an
+  optional band argument on `spin()` in `pool.ts`.
+  **The question bank (357) is a snapshot of the live `questions` bank**, built by
+  `scripts/draft/build-pl-quiz.mjs` → `src/data/draft/pl-quiz.json`, with a review sheet at
+  `scripts/data/pl-quiz-review.md`. Inclusion rule is the founder's: *if it involves a
+  Premier League club, it's in* — tallies, cup competitions and pre-1992 all stay. Only two
+  shapes are cut: finishing-position recall (105 rows — verifiable but a neutral fan lands
+  none of them) and answers that are two answers concatenated ("The Villans The Lions", 5
+  rows — they make a distractor correct too). **Note `Premier League Records` files under its
+  own categories** (`PL Records`, `PL History`, `PL 2024-25`) so the script queries it
+  separately — miss that and the 32 most on-brief questions in the bank vanish.
+  **A failed gate is graded as a MISS, never a free pass.** The first cut fell back to an
+  unbanded spin (0–99) so a draft couldn't dead-end on a network blip — which made failure
+  the strongest move in the game: trip the endpoint's rate limit and every remaining pick
+  came through ungated at full quality. Now a refused/failed gate resets the streak and caps
+  the pick exactly as a wrong answer does (verified: forced 429 deals a squad topping out at
+  72, not 99). The limit also went 60→120 req/min per IP, because one draft is 22 requests
+  and punishing a rate-limited player makes shared IPs (pub wifi, carrier NAT) a real UX
+  problem rather than just an abuse control.
+  **SCOPED to who's asking (founder review, 2026-07-22).** The first bundle read as club
+  trivia — 274 of 357 questions needed one club's internal history, so a Liverpool fan got
+  asked about Aston Villa's honours. Now every question carries a `scope` and a player is
+  only ever asked two kinds: **neutral** (Premier League records, history, league-wide
+  moments — everyone) and **their own club's** (from `club_supporters`, season-locked). A
+  guest, or anyone who hasn't picked a club, draws the neutral pool alone — no special case.
+  Bundle is now **452 questions: 96 neutral + 356 club-scoped across 19 clubs.** Mix is
+  uncapped by choice: an Arsenal fan draws from 158, a Sunderland fan from 102, a guest 96,
+  so how often you meet your own club just follows how much material it has.
+  Two traps worth knowing. (1) Two thirds of the neutral pool is *club-filed but
+  league-wide in framing* ("Which club was Harry Kane at when he won the Golden Boot?") —
+  without that reclassification the neutral pool is 32, not 96. (2) `club_supporters.club`
+  and `questions.entity` are different name spaces: "AFC Bournemouth"→"Bournemouth",
+  "Brighton & Hove Albion"→"Brighton", and **Coventry City has no entity at all** (11 fans →
+  neutral only). A missed alias doesn't error, it silently gives those fans zero club
+  questions, so the map ships inside the bundle.
+  **The club is signed, not trusted.** The pool a seed draws from depends on the club, so
+  the same seed with a different club derives a different question. Sending the club back
+  as a plain value would let a wrong answer be re-graded against each club in turn until one
+  matched (~25% a go). The draw HMACs (seed, club) with the server secret and the grade call
+  verifies it — swapped club, forged sig and omitted sig all return 400 (verified).
+  **Pro asks for a club itself, and GUESTS are asked too** (founder, 2026-07-22).
+  `ClubPrompt` (global, layout.tsx) already asks new signed-in accounts, but a skip there
+  sticks for the session and it never explains what a club does in 38-0. So Pro has its own
+  `ProClubPrompt` (`src/components/draft/ProClubPrompt.tsx`), shown under the PL tab only
+  when **Pro** is selected, with its own skip key so an earlier skip doesn't silence it. It
+  leads with the concrete reason — *"Get asked about your team"* — and never blocks: Pro
+  plays fine on the neutral pool.
+  **A guest's pick is local, and that's the conversion hook** — they can't have a
+  `club_supporters` row (no `profiles` row), so it lives in localStorage
+  (`src/lib/clubs/guestClub.ts`), flavours their questions immediately, and gives them a
+  reason to make an account: to keep it. `ClubPrompt` then pre-selects that pick after
+  sign-up and clears the local copy once the real row is written.
+  ⚠️ **The two picks are NOT the same promise and the copy must never blur them.** A
+  signed-in declaration is a season-LOCKED competition entry ("you're in for the season");
+  a guest's is a changeable device-local preference ("saved on this device — make an account
+  to keep it"). Never tell a guest their pick is locked.
+  **Trust boundary:** on `draw`, a `club` in the request body is honoured **only when signed
+  out**. A signed-in player's club always comes from `club_supporters`, so a locked entry
+  can't be overridden from the client (verified: bot locked to Sunderland, sent Arsenal, got
+  Sunderland + zero Arsenal questions). Guest clubs are validated against the bundle, so a
+  bogus one ("Real Madrid") falls back to neutral rather than erroring.
+  ⚠️ **The bundle is NOT founder-reviewed yet** — `pl-quiz-review.md` is the gate before
+  ship. It now splits **Neutral** (read these hardest — they go to everybody) from
+  **Club-scoped** (only ever seen by that club's own fans, so they can be as parochial as
+  you like).
+
+- **2026-07-20 (pm)** — **Versus guest dead-end fixed** (`src/app/versus/page.tsx`, working
+  tree, not yet committed). Signed-out users hitting Versus got a bare sign-in gate with NO
+  BottomNav (guest nav vanished — trapped) and no create-account CTA. Now: guest BottomNav
+  stays, primary **CREATE FREE ACCOUNT →** + secondary **SIGN IN** (both to
+  `/auth/sign-in?next=/versus`, that page handles both), copy sells the mode. Verified in
+  browser desktop+mobile, no console errors.
+- **2026-07-20 (pm)** — **Versus psychology-audit fixes** (branch
+  `versus/hide-shadow-reveal`, MERGED to main 2026-07-20). Live numbers showed the constraint: 87 of 103
+  quiz h2h matches in 14d were shadows (9 human), 255 solo players vs 59 versus players,
+  20 new friendships. Fixes: **solo result screen ends on a "Beat someone's score" rail**
+  (`BeatScoreRail` + `/api/versus/recommended` + `lib/versus/recommend.ts`) — up to 3
+  quizzes the player has NOT attempted where other players' replayable runs are waiting
+  (same bar as the shadow pool: score>0, answers log ≥3), each card naming the top runner
+  + their score ("@x scored 4,850 · 12 others played"), hero card with faces + top/median;
+  tap → `/versus/find` pinned to that pack — fair (unseen questions) AND guaranteed to
+  match (those runs ARE the pool). Founder killed the first cut (same-quiz pin — "you'll
+  just get the same answers again"; rigged vs a blind shadow). Empty pool → plain
+  unpinned FIND AN OPPONENT fallback. Live pool check: top pack 101 players / 5,850 top
+  score, so recommendations exist for essentially everyone. Live-now strip's second tile
+  falls back to a real **"Matches this fortnight"** aggregate (`matches14d` on
+  `/api/versus/activity`) when today's counts are under the show-threshold; the empty
+  rivalries section now shows a **first-rivalry teaser** ("play the same player twice")
+  instead of vanishing; **shadow opponents get the standard add-friend card** on the
+  scorecard (consistent with "they played each other").
+- **2026-07-20** — **Shadow matches: the honest reveal is RETIRED** (branch
+  `versus/hide-shadow-reveal`, MERGED to main 2026-07-20). Founder call: never disclose the replay — the
+  scorecard now presents a shadow match as a normal head-to-head result ("they played each
+  other"). The reveal panel ("You just played X's real run from {date}" + PLAY THEIR RUNS /
+  CHALLENGE LIVE) is deleted from `/play/[roomId]`; matchmaking chain, persona overlay,
+  timing replay, keep-playing panel all unchanged. Owner-side revenge push + the
+  `/versus/shadow/[userId]` library still use "run" language — deliberately untouched
+  (founder gave no preference; revisit if inconsistent).
+- **2026-07-24** — **Fantasy Football: STILL NOT LIVE TO USERS — branch `fantasy/season`.**
+  The game is built and the 26/27 season is cut over, but it is deliberately gated: read it
+  as *ready to test*, not shipped, until the founder opens it.
+  **What changed on 24 Jul:**
+  **(1) THE 26/27 CUTOVER IS DONE.** FPL published its 26/27 bootstrap, so the pool was rebuilt
+  (season 25583 → 28083, 522 players, 20 clubs, 100% smId coverage among regulars: Coventry,
+  Hull and Ipswich in; Burnley, West Ham and Wolves out) and the real 38-gameweek calendar was
+  seeded. GW1 deadline **2026-08-21 17:30Z**. The demo was wiped — squads, entries and
+  player-scores are zero — **leagues and their members were kept on purpose**.
+  ⚠️ `fantasy_gameweeks` is keyed on `gw` alone so it holds ONE season: a single leftover
+  replay row puts the whole game back into replay and prices every squad at seed. Verified
+  zero replay rows after the cutover.
+  ⚠️ `pool.json` is a static import baked into the build, so the pool only reaches users on
+  DEPLOY, and `/api/fantasy/pool` sets `s-maxage=3600` — expect up to an hour of the old pool
+  from the CDN after a ship unless it is purged.
+  **(2) THE BASELINE TRANSFER.** Everyone gets one transfer per gameweek, granted at gameweek
+  finalise to every entry including rolled-over managers; the round earns EXTRA ones on top.
+  This makes the PL-tab pitch ("One transfer. Earn the rest.") literally true — before 22 Jul
+  the engine gave no baseline, so a 2/11 round meant a squad you could not touch. It caps
+  rather than cashing out, and the grant rides the scored → final compare-and-swap so a
+  double-tap cannot mint two (verified under a real concurrent request).
+  **(3) FANTASY IS A PL SECTION, NOT A STANDALONE ROUTE** — reconciled with the nav canon (§9).
+  It renders inside the Premier League tab; `/fantasy` survives only as a deep-link target for
+  share cards, result emails and the deadline push, and renders the bottom nav so it is not a
+  dead end.
+  **Still open before it can face users:** no live gameweek has ever run itself end to end
+  (the engine is drilled but no real deadline has locked → ingested → scored → finalised on
+  its own), and replay-mode testing is no longer available now that the season is live.
 
 - **2026-07-20** — **Perfect 10 gets its own share card (founder)** — a shared Perfect 10
   link used to unfurl the platform-wide YourScore card, which said nothing about the game.
@@ -422,6 +868,80 @@ Confirmed preamble above and the referenced section.
   answers (mig 85, RLS deny-all). Lists gate-verified before a `day` is assigned. See the
   Confirmed preamble for the full mechanics + gotchas (SportMonks topscorers unreliable;
   season-id alias trap; `scripts/lib/anthropic.mjs` first committed here).
+- **2026-07-16 (pm3)** — **Legacy question-bank triage (APPLIED TO PROD).** The bank predates the
+  gate, so it was measured against it. Results: **2,823 active → 1,205 (43%) were tagged
+  expert/master and are UNREACHABLE** (`/api/quiz/start` is typed `"easy"|"medium"|"hard"` and
+  draws 6/6/3 — it can never ask for them). Re-rated the whole bank with the independent rater
+  ($0.86): **93% of the "unreachable" genuinely ARE hard** (only 84/1,145 recover), and **554 of
+  1,520 served questions (36%) were at the WRONG difficulty** — the old rating was self-declared
+  by the author. Applied: **525 difficulties fixed · 73 stranded recovered as easy/medium · 1,070
+  left stranded** (genuinely hard AND unverified — recovering them would add unverified questions
+  to our most oversupplied tier) · **158 rotting questions retired** (fail temporal/specificity:
+  "Reading's MOST RECENT PL season", "who IS the all-time CL scorer"). **The easy shortage is
+  STRUCTURAL, not mislabelling** — re-rating everything moves easy 5%→6%; only new authoring fixes
+  it. Deleted `/api/cron/reclassify`, which reclassified difficulty from `times_correct/times_answered`
+  — the thing the founder explicitly forbade (unscheduled, so harmless, but a landmine).
+  **`times_answered` IS incremented** — inside the Postgres RPC `record_quiz_results` (grepping
+  `src/` can't see it) — but it's starved, not missing: max 4 answers on any question, and
+  `user_question_history` holds 314 rows from ONE user, because `/quiz/create` COPIES bank
+  questions into a `quiz_packs` JSONB snapshot and pack plays never report back to the bank row.
+  New: `scripts/quiz-factory/{audit-live,rerate-live,clean-live}.mjs`.
+
+- **2026-07-16 (pm2)** — **Quiz factory rebuilt FACTS-FIRST** (founder's call; branch
+  `quiz/content-factory`, not on main). The old order was backwards: an author searched the web
+  and wrote 30 questions, then a verifier did 30 *more* web searches to check them. Now:
+  **gather verified facts → author ONLY from that sheet → cheap consistency check (no web) →
+  independent difficulty rating**. Web search happens ONCE per category instead of twice per
+  question, and a question derived from a verified fact can't be a hallucination — the worst
+  case is a misreading, which is caught without a search. Projection **$346 → ~$58** for the
+  full 20-club bank. Facts are reusable across categories and packs. The trade-off, accepted
+  knowingly: correlated failure (one bad fact poisons every question from it), mitigated by
+  **source tiering** (`scripts/quiz-factory/sources.mjs` — tier 1 governing bodies/official
+  club sites, tier 2 major press/Wikipedia/Transfermarkt, everything else = NO source, fact
+  dropped) and by the founder reviewing the ~30-fact sheet rather than 30 questions.
+  - **Difficulty model** (`scripts/quiz-factory/difficulty.mjs`): assigned **a priori**, never
+    from live player answers — club questions are answered by that club's fans, so accuracy
+    would measure fandom not difficulty, scores would stop being comparable, and a question
+    everyone fails is often *wrong* rather than hard. (`times_answered`/`times_correct` keep a
+    job as a **quality alarm**, not a difficulty knob.) **Three levels only** — `/api/quiz/start`
+    is typed `"easy"|"medium"|"hard"` and draws 6/6/3, so expert/master are **stranded: 1,101 of
+    2,447 club rows (45%) can never be served**. A separate rater (never the author, which drifts)
+    scores against a fixed **anchor set**, plus deterministic guards (tight numeric options ⇒
+    never easy; 10+ seasons old ⇒ never easy).
+  - **Specificity gate** (`checkSpecificity`): now that we hold league AND European data for the
+    same club+season, "Arsenal's top scorer in 2015/16" has two answers — every scope-dependent
+    question must name the competition.
+  - **Category swap: Transfers & Rivalries → European Nights.** Transfer fees aren't in
+    SportMonks at any tier (most expensive category, and fees are genuinely disputed — the gate
+    killed a Bellingham question over £88.5m-base vs £115m-with-add-ons). European Nights is
+    fully groundable off the finals index and is the better fan material.
+
+- **2026-07-16 (pm)** — **SportMonks subscription upgraded to European club tournaments.**
+  Accessible competitions are now exactly five: Premier League (8), Champions League (2),
+  Europa League (5), Europa Conference (2286), UEFA Super Cup (1328) — all back to 2000/01.
+  **No domestic cups** (FA/League Cup remain web-only). `scripts/lib/sportmonks.mjs` gained
+  `europeanFinalsIndex()` — every European final since 2000 (67 of them), built once (~200
+  calls) and cached, so a club's honours is a free lookup. Getting a cup winner needs two hops
+  (fixtures are paginated, the final is never on page 1): `/stages/seasons/{id}` → the stage
+  named `Final` → `/fixtures?filters=fixtureStages:{id}` → `participants[].meta.winner`.
+  Club fact sheets now carry European honours, so History & Honours grounds ~60% (was ~35%)
+  and the full 20-club bank projects at ~$207 (from ~$346 all-web). Spot-checked green: UCL
+  23/24 Real Madrid, 18/19 Liverpool, 20/21 Chelsea, UEL 18/19 Chelsea.
+
+- **2026-07-16** — **Quiz factory: SportMonks grounding (the cost fix) + club-bank runner**
+  (branch `quiz/content-factory`, NOT on main). `scripts/lib/sportmonks.mjs` builds a
+  disk-cached PL fact sheet per club (final tables + points + per-season top scorers, 2000/01→,
+  league 8). The fact-check gate now grounds BOTH authoring (`authorBankGrounded`, no web
+  search) and verification (`verifyAgainstFacts`, no web search) in that sheet wherever it
+  covers the question, with web fallback for what it doesn't. **Measured: Arsenal × Modern-Era
+  = $0.12 with zero web searches** (vs ~$4.32 all-web); full 20-club bank projection $346→$222.
+  `scripts/quiz-factory/run-bank.mjs` fills the club question BANK (`questions` rows, drawn per
+  play — NOT packs), 4 locked categories (History & Honours / Legends / Modern Era / Transfers
+  & Rivalries), easy-skewed; default mode is a zero-spend cost projection. `audit-bank.mjs`
+  audits the live bank — which turned up FABRICATED questions still active (e.g. "Haaland PL
+  goals for Man City 2010-11"), not just staleness, and a 5%-easy / 74%-hard difficulty skew.
+  Bank not filled yet — awaiting founder's go on scope.
+
 - **2026-07-15** — **Retention tracking: `ReturnPlay` event + durable device id** (analytics
   plumbing, no user-facing surface). `ReturnPlay` fires once per device the first time a player
   plays on a later calendar day than their first-ever play — the D2+ "they came back" signal,
@@ -432,6 +952,43 @@ Confirmed preamble above and the referenced section.
   to new `profiles.device_id` at signup (migration 81, first-touch) so guest activity can later
   be linked to the account. X arm is gated on `NEXT_PUBLIC_X_RETURNPLAY_EVENT_ID` (unset →
   no-op until the X event is created). Phase B (stamp device_id onto guest play rows) still TODO.
+- **2026-07-14** — **Quiz content factory** (branch `quiz/content-factory`, ⚠️ NOT on main,
+  migration 80 NOT yet applied). Themed packs on a schedule, with approval decoupled from
+  release. **The pack lifecycle is now three states**: `draft` (invisible) → approved +
+  scheduled (`approved_at` + `release_at` set, still invisible) → `published` +
+  `rotation_active` (live). `status='draft'` was always permitted by the CHECK but nothing
+  ever wrote it — migration 80 activates it and adds `release_at` / `approved_at` /
+  `approved_by` / `theme`.
+  - **The factory** (`scripts/quiz-factory/`, weekly VPS cron): pick theme (calendar peg →
+    football news → evergreen backlog) → author OVERGENERATED grounded candidates → **the
+    gate** → select 15 → deterministic shuffle → write as a draft. Never publishes.
+  - **The gate** (`scripts/quiz-factory/verify.mjs`) is the load-bearing part. The bank holds
+    2,823 active questions and **31,541 retired** — every `source='generated'` question ever
+    written was binned, only `data-grounded` survived. So: Stage 0 (free) rejects temporal
+    claims, hedge/duplicate/mixed-type options, and near-dupes against the live bank; Stage 2
+    sends each survivor to an **independent** verifier in a fresh context that is NOT told the
+    author's answer and must derive it itself and cite a URL — disagreement, ambiguity, no
+    source, or an unconfirmed time-sensitive claim all DROP the question. The citation is
+    stored in `questions.verification_note`. **A high drop rate is the gate working.**
+  - **Review**: `/admin/quiz` — pack cards, every question with its source link. Approving is
+    the only way out; `scripts/release-packs.mjs` refuses to publish `approved_at IS NULL`.
+  - **Release** (`scripts/release-packs.mjs`, daily VPS cron): flips due+approved packs live,
+    pushes via `/api/internal/notify-release` → `notifyUsers()`, emails via `segments.mjs`.
+    Idempotent (the UPDATE is its own guard). **Approve nothing → ship nothing**, and it
+    Telegrams the drought rather than failing silently. Email self-throttles to ~1.75/week
+    per person via the existing frequency cap, so an every-other-day cadence can't burn the list.
+  - Lives on the VPS, not Vercel, because `RESEND_CAMPAIGNS_API_KEY` (campaign email) is
+    referenced nowhere in `src/` and transactional email is over quota.
+  - Also extracted: `scripts/lib/question-text.mjs` (was copy-pasted 4×; must stay in lockstep
+    with `src/lib/questions.ts` + migration 67's unique index), `scripts/lib/shuffle-options.mjs`
+    (byte-identical extraction from `seed-daily-quiz.mjs`), `scripts/lib/anthropic.mjs` (one
+    client + **per-call cost accounting** — web search is the dominant cost and was invisible).
+  - **Proven live** (migration 80 applied to prod): state machine 7/7 via
+    `scripts/verify-pack-release.mjs`; full 2-pack authoring run built 2/2 with a **23–31%
+    gate drop rate** (healthy — the gate is cutting, not rubber-stamping) at **~$3.66/pack**
+    (verification = 80% of cost). Registered in the content-dash `registry.json` (weekly
+    factory + daily release). ⚠️ VPS cron entries + git commit still pending.
+
 - **2026-07-13 (pm)** — **UI-audit approved fixes** (docs/AUDIT-2026-07-13-ui-first-impressions.md;
   founder walkthrough): site tagline standardized to **"The Home of Football Gaming"** (root
   title/OG/twitter); /how-it-works scoring is **top-line only** (founder: no explicit point
@@ -551,11 +1108,22 @@ Use these words, with these meanings, everywhere. No synonyms.
 - **Lobby type** — **Private** (invite, ≤8) · **Public** (anyone w/ link, ≤20) · **1v1** (you vs one). *(1v1 = code's `h2h`.)*
 
 **38-0 terms**
+- **Pro** — the Premier League draft mode where every Spin is unlocked by a Premier League
+  question and your answers set the quality of the squads dealt. Say **"Pro"**, never
+  "Gated" (the code's `gated` flag is the mechanic, not the name). It is a **difficulty, not
+  a paid tier** — YourScore is free forever, so never dress Pro in padlock/upgrade language.
+  A player is only ever asked **neutral** questions or ones about **their own club** — never
+  another club's trivia. That rule is the feature, not an implementation detail.
+- **Just Draft** — the open Premier League/La Liga draft: no questions, every squad at full
+  quality. The counterpart to Pro, and what 38-0 has always done.
 - **Spin** — deal a random squad of real-rated legends (drawn across FIFA editions/eras).
 - **Draft** — place spun players into your formation's best-fit slots to build your XI.
 - **Strength** — your XI's computed rating (~40–99).
 - **Projected season** — Strength mapped to a 38-game record + tier (the "could it go 38-0?" projection).
-- **Classic / Expert** — Expert mode hides player ratings during the draft (names + positions only).
+- **Classic / Expert** — ❌ RETIRED 2026-07-23. Expert (ratings hidden during the draft) is
+  gone and the difficulty switch with it; 38-0 is one format now. The `mode` field survives
+  only so teams saved as `"expert"` still parse, and nothing honours the value on read.
+  **Do not reintroduce a difficulty switch without asking.**
 - **Match types** — **Quick Match** (guest/practice, local) · **Ranked** (signed-in, feeds leaderboards — *building*) · **Live H2H** (simultaneous two-half match you watch play out) · **Challenge** (snapshot your XI → friend resolves via share code) · **World Cup Run** (solo WC2026 campaign).
 - **Stale team** — ❌ RETIRED concept: a loss now resets the streak but the team stays active (win → earn a one-player swap).
 
@@ -636,8 +1204,11 @@ A **separate game** (not a Quiz mode). Nav tab **"38-0"** (route `/38-0`). Core 
 pick a formation + difficulty → **Spin** a random legendary squad → **Draft** into best
 slots → see live **Strength** → **projected 38-game record + tier** → play a match → win
 → **earn a one-player swap** / lose → streak resets but the **team stays active — go
-again** (the old "stale team → forced rebuild" model is retired). **Classic vs Expert**
-mode (Expert hides ratings). **Anonymous play is the deliberate hook** — guests get the full draft + Quick
+again** (the old "stale team → forced rebuild" model is retired). Ratings are always shown:
+**Expert mode was retired 2026-07-23** and 38-0 is one format now. The only mode choice is on
+the **Premier League** tab — **Pro vs Just Draft**: Pro unlocks each spin with a Premier
+League question and lets your answers set the quality of the squads you're dealt (see §0,
+2026-07-21). La Liga is Just Draft only. **Anonymous play is the deliberate hook** — guests get the full draft + Quick
 Match loop on `localStorage`; sign-in unlocks cloud save / ranked / social.
 
 **Match types — live status:**
@@ -991,6 +1562,7 @@ pre-existing type errors).
 
 | Thing | Status |
 |---|---|
+| **38-0 Expert mode** (ratings hidden while drafting) | ❌ Retired 2026-07-23 — 38-0 is classic only, no difficulty switch. The `DraftMode` union and `LocalTeam.mode` survive so old saved teams still parse, but nothing offers or honours "expert". Don't rebuild the switcher without asking. |
 | **WhatsApp API notifications** | ❌ Discontinued (replaced by native push; share links unaffected). |
 | **Sponsored / branded rooms** | 🅿️ Shelved (vestigial DB columns only). |
 | **`yourscore.gg`** | ❌ Dead — domain is **yourscore.app**. |

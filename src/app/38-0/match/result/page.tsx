@@ -16,7 +16,7 @@ import { BackPill } from "@/components/ui/BackPill";
 import { loadLastMatch, type LocalMatch } from "@/lib/draft/local";
 import { liveOgQuery } from "@/lib/draft/share";
 import { AddFriendCard } from "@/components/social/AddFriendCard";
-import { trackGameComplete, trackShare } from "@/lib/analytics/trackGame";
+import { trackGameComplete, trackShare, firedOnce } from "@/lib/analytics/trackGame";
 
 export default function MatchResult() {
   const router = useRouter();
@@ -30,7 +30,10 @@ export default function MatchResult() {
     // A drawn match still owes its shootout — settle it before showing a result.
     if (lm.pensPending) { router.replace("/38-0/match/pens"); return; }
     setM(lm);
-    trackGameComplete("38-0", { mode: "match", outcome: lm.outcome });
+    // Once per match — a refresh/revisit of this page must not recount the completion.
+    if (firedOnce(`complete380:${lm.id}`)) {
+      trackGameComplete("38-0", { mode: "match", outcome: lm.outcome });
+    }
   }, [router]);
 
   function shareText(): string {

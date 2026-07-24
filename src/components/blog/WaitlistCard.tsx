@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
+import { trackFantasyWaitlist } from "@/lib/analytics/trackGame";
 
 /**
  * Fantasy waitlist CTA — ONE button, two paths (founder, 2026-07-16).
@@ -45,6 +46,10 @@ export function WaitlistCard({ source = "blog" }: { source?: string }) {
         setState("error");
         return;
       }
+      // The "potential fantasy player" conversion — only on a confirmed save
+      // (the resume-after-signup path lands here too, which is exactly right:
+      // that's when the join actually happened).
+      trackFantasyWaitlist({ surface: source });
       setState("done");
     } catch {
       setError("Network hiccup — try again");

@@ -10,10 +10,12 @@ import { TouchGuards } from "@/components/ui/TouchGuards";
 import { GamesNav } from "@/components/ui/GamesNav";
 import { UsernamePrompt } from "@/components/profile/UsernamePrompt";
 import { ClubPrompt } from "@/components/clubs/ClubPrompt";
+import { WcThanksPrompt } from "@/components/app/WcThanksPrompt";
 import { AppStoreBanner } from "@/components/app/AppStoreBanner";
 import { NativeOnboarding } from "@/components/native/onboarding/NativeOnboarding";
 import { PushPrePrompt } from "@/components/native/PushPrePrompt";
 import { UpdateBanner } from "@/components/native/UpdateBanner";
+import { SpotlightTour } from "@/components/ui/SpotlightTour";
 import { TimezoneSync } from "@/components/TimezoneSync";
 import { SignupPixel } from "@/components/analytics/SignupPixel";
 import { AcquisitionCapture } from "@/components/analytics/AcquisitionCapture";
@@ -114,6 +116,15 @@ export default function RootLayout({
   const tiktokId = process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID;
   const xId = process.env.NEXT_PUBLIC_X_PIXEL_ID;
   const metaId = process.env.NEXT_PUBLIC_META_PIXEL_ID;
+  // Second Meta pixel, fired in parallel with the first. We are migrating off the
+  // reused 2020 Mabel's Lashes pixel (690844488412429) onto a pixel owned by the real
+  // YourScore business portfolio, because website custom audiences have NEVER populated
+  // on the old one (verified 2026-07-23: even a brand-new audience built purely on
+  // post-domain-verification traffic would not size). Pixel history does not transfer,
+  // so the new pixel has to season on live traffic BEFORE spend moves — hence both fire
+  // at once rather than a cutover. fbq broadcasts every `track` to all initialised
+  // pixels, so only the extra `init` is needed; no event call sites change.
+  const metaId2 = process.env.NEXT_PUBLIC_META_PIXEL_ID_2;
   const snapId = process.env.NEXT_PUBLIC_SNAP_PIXEL_ID;
   return (
     <html lang="en" className={`${bebasNeue.variable} ${dmSans.variable} ${dmMono.variable}`}>
@@ -125,10 +136,15 @@ export default function RootLayout({
         <NativeBootstrap />
         <UsernamePrompt />
         <ClubPrompt />
+        <WcThanksPrompt />
         <AppStoreBanner />
         <NativeOnboarding />
         <PushPrePrompt />
         <UpdateBanner />
+        {/* First-launch guided tour — mounted here (not in BottomNav) so it
+            survives client route changes instead of dying with whatever nav
+            component happened to render it. */}
+        <SpotlightTour />
         <TimezoneSync />
         <SignupPixel />
         <AcquisitionCapture />
@@ -207,7 +223,7 @@ export default function RootLayout({
           <>
             <script
               dangerouslySetInnerHTML={{
-                __html: `!function(f,b,e,n){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[]}(window,document);fbq('init','${metaId}');fbq('track','PageView');`,
+                __html: `!function(f,b,e,n){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[]}(window,document);fbq('init','${metaId}');${metaId2 ? `fbq('init','${metaId2}');` : ""}fbq('track','PageView');`,
               }}
             />
             <Script src="https://connect.facebook.net/en_US/fbevents.js" strategy="lazyOnload" />

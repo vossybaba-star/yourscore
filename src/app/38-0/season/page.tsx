@@ -90,7 +90,7 @@ export default function SeasonSim() {
     return new URLSearchParams({
       w: String(result.wins), d: String(result.draws), l: String(result.losses),
       pts: String(result.points), pos: String(result.position), ovr: String(team.strength),
-      mode: team.mode === "expert" ? "Expert" : "Normal",
+      mode: "Normal", // Expert retired 2026-07-23; every 38-0 season is the one format now.
       inv: result.invincible ? "1" : "",
       boot: result.goldenBoot ? `${result.goldenBoot.name}~${result.goldenBoot.goals}` : "",
       pots: result.playerOfTheSeason ? `${result.playerOfTheSeason.name}~${result.playerOfTheSeason.goals}~${result.playerOfTheSeason.assists}` : "",

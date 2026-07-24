@@ -691,7 +691,7 @@ export default function Perfect10Game() {
       .join("\n");
     const won = game.found.length >= TOTAL_RUNGS;
     const headline = won ? "PERFECT 10 🏆" : `${game.found.length}/10`;
-    return `Perfect 10 — ${list.title} ⚽\n${headline} · ${game.score} pts\n\n${lines}\n\nCan you name them all? @yourscore_app_`;
+    return `Perfect 10: ${list.title} ⚽\n${headline} · ${game.score} pts\n\n${lines}\n\nCan you name them all? @yourscore_app_`;
   }
 
   function shareOnX() {
@@ -761,7 +761,7 @@ export default function Perfect10Game() {
               style={{ background: `${ACCENT}14`, border: `1px solid ${ACCENT}40` }}
             >
               <span className="font-body text-xs" style={{ color: ACCENT }}>
-                {challenge.name} scored {challenge.score} pts — beat it
+                {challenge.name} scored {challenge.score} pts. Beat it
               </span>
             </div>
           )}
@@ -783,17 +783,17 @@ export default function Perfect10Game() {
           <div className="rounded-2xl px-4 py-4 bg-surface" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
             <p className="font-display text-sm text-white tracking-wide mb-1.5">How it works</p>
             <p className="font-body text-sm" style={{ color: "#9aa39d", lineHeight: 1.8 }}>
-              Fill the tower — name all 10, top to bottom.
+              Fill the tower. Name all 10, top to bottom.
               <br />
               3 strikes and the tower falls.
               <br />
-              3 hints — clubs first, then a starting letter.
+              3 hints: clubs first, then a starting letter.
             </p>
           </div>
 
           {loadError && (
             <p className="font-body text-sm text-center" style={{ color: "#ff6b78" }}>
-              Couldn&apos;t load this topic — try again.
+              Couldn&apos;t load this topic, try again.
             </p>
           )}
 
@@ -1110,7 +1110,7 @@ export default function Perfect10Game() {
           {challenge && (
             <div className="w-full max-w-sm mt-6 rounded-2xl px-4 py-4" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
               <p className="font-body text-xs text-center mb-2" style={{ color: "#8a948f" }}>
-                {challenge.name} — {challenge.score} pts
+                {challenge.name}: {challenge.score} pts
               </p>
               <CompareDots foundRanks={challenge.foundRanks} />
             </div>

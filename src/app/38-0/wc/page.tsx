@@ -518,18 +518,21 @@ export default function WorldCupEntry() {
           <WcFinaleStrip />
 
           {/* Edition strip — your ranked World Cup timeline: catch up on missed days, peek past
-              results, see at a glance whether you're up to date. (Signed-in; replaces /catch-up.)
+              results, see at a glance whether you're up to date. Signed-in ONLY: a guest has no
+              timeline, so the strip greeted them with a month of "CATCH UP" chips and "34 days to
+              catch up" on their first ever visit (ux-walk, 23 Jul). This reverses the earlier
+              choice to fetch status for guests as sign-up-gated catch-ups.
               While the status fetch is in flight (no localStorage warm cache), a same-size
               skeleton holds the strip's slot so the late mount doesn't shove the hub (CLS).
               Resolved-empty collapses it — only that rare case shifts, instead of every load. */}
-          {editions.length > 0 ? (
+          {user && editions.length > 0 ? (
             <WcEditionStrip
               editions={editions}
               onPlayToday={() => startRanked()}
               onCatchUp={(d) => startRanked(d)}
               onViewRun={(id) => router.push(`/38-0/wc/run/${id}`)}
             />
-          ) : !editionsResolved ? (
+          ) : user && !editionsResolved ? (
             <div className="mb-5 animate-pulse" aria-hidden>
               <div className="flex items-center gap-2 mb-2">
                 <div className="rounded" style={{ height: 16, width: 170, background: "rgba(255,255,255,0.06)" }} />

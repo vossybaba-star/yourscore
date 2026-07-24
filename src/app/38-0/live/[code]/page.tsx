@@ -11,6 +11,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { AuthProviders } from "@/components/auth/AuthButton";
 import { hydrateSavedTeam, saveTeam } from "@/lib/draft/local";
+import { trackInviteAccepted } from "@/lib/analytics/trackGame";
 import { asLeague, type Formation, type PlacedPlayer, type Projected } from "@/lib/draft/types";
 
 export default function LiveJoin() {
@@ -71,6 +72,8 @@ export default function LiveJoin() {
         setPhase("joining");
         return;
       }
+      // Viral-loop receive side: a friend's live-H2H code, successfully claimed.
+      trackInviteAccepted("live-h2h");
       router.replace(`/38-0/live/match/${json.match.id}`);
     })();
     return () => { cancelled = true; };
