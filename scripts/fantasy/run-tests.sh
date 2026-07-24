@@ -46,7 +46,8 @@ cat > .tmp-fantasy-tsconfig.json <<'EOF'
     "src/lib/fantasy/months.ts", "src/lib/fantasy/months.test.ts",
     "src/lib/fantasy/advice.ts", "src/lib/fantasy/advice.test.ts",
     "src/lib/fantasy/optimiser.ts", "src/lib/fantasy/optimiser.test.ts",
-    "src/lib/fantasy/ppg.ts", "src/lib/fantasy/ppg.test.ts"
+    "src/lib/fantasy/ppg.ts", "src/lib/fantasy/ppg.test.ts",
+    "src/lib/fantasy/coldstart.test.ts"
   ]
 }
 EOF
