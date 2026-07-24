@@ -223,7 +223,7 @@ export type DeadlineReport = { gameweek: number | null; captured: number; finali
 export async function captureDeadlineSquads(db: Db, opts: ShadowOpts = {}): Promise<DeadlineReport> {
   if (opts.override) assertRehearsalAllowed("captureDeadlineSquads.override");
   if (opts.onlyUserIds) assertRehearsalAllowed("captureDeadlineSquads.onlyUserIds");
-  const { gw, deadline } = opts.override ?? (await upcoming(db));
+  const { gw, deadline } = opts.override ?? (await upcoming(db, !!opts.isRehearsal));
   const out: DeadlineReport = { gameweek: gw, captured: 0, finalised: 0, skipped: 0 };
   // Only once the deadline has actually passed — and `upcoming` still points at
   // this gameweek until the collector sees the next one.
@@ -238,22 +238,40 @@ export async function captureDeadlineSquads(db: Db, opts: ShadowOpts = {}): Prom
   const already = new Set((done ?? []).map((d: { user_id: string }) => d.user_id));
 
   for (const s of rows) {
-    if (already.has(s.user_id)) { out.skipped++; continue; }
+    const alreadyCaptured = already.has(s.user_id);
+
+    // `followed` is decided from the immutable deadline squad — never from the
+    // confirmation click, because a user can confirm and then reverse it.
+    const { data: shadow } = await db.from("fantasy_captain_shadow")
+      .select("recommended_captain, recommendation_id, status").eq("user_id", s.user_id).eq("gameweek", gw).maybeSingle();
+
+    // Skip ONLY once this user is fully done: the deadline squad is written
+    // AND the shadow row has already been flipped to final_frozen (or there
+    // was never a shadow row to flip). If a previous tick died between the
+    // insert and the flip, `alreadyCaptured` is true but the shadow row is
+    // still `provisional` — that must NOT be skipped, or it is never scored.
+    // Previously this skipped on `alreadyCaptured` alone, so a tick that died
+    // between the insert and the flip (below) left that user's shadow row
+    // `provisional` forever, and it was never picked up by scoreShadow.
+    if (alreadyCaptured && (!shadow || shadow.status === "final_frozen")) {
+      out.skipped++;
+      continue;
+    }
+
     const xi = s.xi ?? [];
-    const fp = `${[...xi].sort((a, b) => a - b).join(",")}|${s.captain ?? ""}|${s.vice ?? ""}`;
-    const { error } = await db.from("fantasy_deadline_squad").insert({
-      user_id: s.user_id, gameweek: gw, xi, bench: s.bench ?? [],
-      captain: s.captain, vice: s.vice, squad_fingerprint: fp,
-      is_rehearsal: !!opts.isRehearsal,
-    });
-    if (!error) out.captured++;
+    if (!alreadyCaptured) {
+      const fp = `${[...xi].sort((a, b) => a - b).join(",")}|${s.captain ?? ""}|${s.vice ?? ""}`;
+      const { error } = await db.from("fantasy_deadline_squad").insert({
+        user_id: s.user_id, gameweek: gw, xi, bench: s.bench ?? [],
+        captain: s.captain, vice: s.vice, squad_fingerprint: fp,
+        is_rehearsal: !!opts.isRehearsal,
+      });
+      if (!error) out.captured++;
+    }
 
     // Flip the official shadow record to final and attach the ACTUAL choice.
-    // `followed` is decided HERE, from the immutable deadline squad — never from
-    // the confirmation click, because a user can confirm and then reverse it.
-    const { data: shadow } = await db.from("fantasy_captain_shadow")
-      .select("recommended_captain, recommendation_id").eq("user_id", s.user_id).eq("gameweek", gw).maybeSingle();
-    // The last eligible pre-deadline recommendation is the official one.
+    // Runs independently of whether the insert above ran THIS tick — a rerun
+    // must always be able to complete a half-finished user.
     if (shadow?.recommendation_id) {
       await db.from("fantasy_captain_recommendation")
         .update({ status: "final_frozen" }).eq("id", shadow.recommendation_id);
