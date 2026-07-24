@@ -99,8 +99,8 @@ export type FixtureCtx = { fixture_id: number; opponent_id: number; opponent: st
 /** Fixture context for a gameweek, keyed by FPL team id.
  *  EXPLANATION ONLY — it never feeds the ranking. A fixture-adjusted model would
  *  be a different model, needing its own version and its own evaluation. */
-async function loadFixtures(db: Db, gw: number, cutoff?: string): Promise<Map<number, FixtureCtx[]>> {
-  return (await loadFixtureSet(db, gw, cutoff)).byTeam;
+async function loadFixtures(db: Db, gw: number, cutoff?: string, isRehearsal = false): Promise<Map<number, FixtureCtx[]>> {
+  return (await loadFixtureSet(db, gw, cutoff, isRehearsal)).byTeam;
 }
 
 export type FixtureSet = {
@@ -117,10 +117,13 @@ export type FixtureSet = {
  *  fixture" — that would recommend a captain in a blank gameweek whenever
  *  collection failed. Absence of data and absence of a fixture are different
  *  facts and are reported as such. */
-async function loadFixtureSet(db: Db, gw: number, cutoff?: string): Promise<FixtureSet> {
+async function loadFixtureSet(db: Db, gw: number, cutoff?: string, isRehearsal = false): Promise<FixtureSet> {
   const byTeam = new Map<number, FixtureCtx[]>();
+  // Rehearsal rows must never leak into a real read, and the rehearsal harness
+  // must only ever see its own — never hardcode `false` here.
   let q = db.from("fantasy_fixture_snapshot").select("captured_at")
-    .eq("event", gw).order("captured_at", { ascending: false }).limit(1);
+    .eq("event", gw).eq("is_rehearsal", isRehearsal)
+    .order("captured_at", { ascending: false }).limit(1);
   // The fixture snapshot must predate the recommendation cutoff, or the
   // explanation would be built from data the recommendation never saw.
   if (cutoff) q = q.lte("captured_at", cutoff);
@@ -130,7 +133,7 @@ async function loadFixtureSet(db: Db, gw: number, cutoff?: string): Promise<Fixt
   const { data: fx } = await db
     .from("fantasy_fixture_snapshot")
     .select("fixture_id, team_h, team_a, team_h_name, team_a_name")
-    .eq("event", gw).eq("captured_at", cap);
+    .eq("event", gw).eq("captured_at", cap).eq("is_rehearsal", isRehearsal);
   for (const f of (fx ?? []) as { fixture_id: number; team_h: number; team_a: number; team_h_name: string | null; team_a_name: string | null }[]) {
     const home = byTeam.get(f.team_h) ?? [];
     home.push({ fixture_id: f.fixture_id, opponent_id: f.team_a, opponent: f.team_a_name, home: true });
@@ -187,9 +190,13 @@ export async function getCaptainAssist(
   const xi: number[] = (squad?.xi ?? []) as number[];
   if (!xi.length) return { enabled: true, available: false, reason: "no squad yet" };
 
+  // A rehearsal row must never become production's "latest" — and the
+  // rehearsal harness, which passes isRehearsal explicitly, must only ever see
+  // its own rows, never real ones.
   const { data: latest } = await db
     .from("fantasy_fpl_snapshot")
     .select("captured_at")
+    .eq("is_rehearsal", !!opts.isRehearsal)
     .order("captured_at", { ascending: false })
     .limit(1);
   const cutoff: string | undefined = latest?.[0]?.captured_at;
@@ -199,6 +206,7 @@ export async function getCaptainAssist(
     .from("fantasy_fpl_snapshot")
     .select("player_id, web_name, position, team, ep_next, form, status, news, chance_of_playing_next_round, next_event")
     .eq("captured_at", cutoff)
+    .eq("is_rehearsal", !!opts.isRehearsal)
     .in("player_id", xi);
   const snap = (rows ?? []) as SnapRow[];
   if (!snap.length) return { enabled: true, available: false, reason: "squad not present in latest snapshot" };
@@ -223,7 +231,7 @@ export async function getCaptainAssist(
   }
   const gwForFixtures = snap[0]?.next_event ?? null;
   const fixtureSet: FixtureSet = gwForFixtures !== null
-    ? await loadFixtureSet(db, gwForFixtures, cutoff)
+    ? await loadFixtureSet(db, gwForFixtures, cutoff, !!opts.isRehearsal)
     : { byTeam: new Map<number, FixtureCtx[]>(), complete: false, clubs: 0, fixtures: 0 };
   const fixturesByTeam = fixtureSet.byTeam;
   // Only a CONFIRMED blank excludes a player. Unknown never does — but it costs
@@ -422,6 +430,10 @@ export async function applyCaptainRecommendation(
     .eq("user_id", userId)
     .maybeSingle();
   if (!rec) return { ok: false, code: "not_found", message: "That recommendation could not be found." };
+  // Every read below must stay on the same side of the rehearsal line as the
+  // recommendation itself — a real recommendation must never be revalidated
+  // against a rehearsal snapshot, and vice versa.
+  const isRehearsal = !!rec.is_rehearsal;
 
   const { data: squad } = await db
     .from("fantasy_squads")
@@ -446,6 +458,7 @@ export async function applyCaptainRecommendation(
   const { data: latest } = await db
     .from("fantasy_fpl_snapshot")
     .select("captured_at")
+    .eq("is_rehearsal", isRehearsal)
     .order("captured_at", { ascending: false })
     .limit(1);
   const newest = latest?.[0]?.captured_at as string | undefined;
@@ -454,6 +467,7 @@ export async function applyCaptainRecommendation(
       .from("fantasy_fpl_snapshot")
       .select("player_id, status, chance_of_playing_next_round")
       .eq("captured_at", newest)
+      .eq("is_rehearsal", isRehearsal)
       .in("player_id", [rec.recommended_captain, rec.recommended_vice]);
     const nowDoubtful = (fresher ?? []).some(
       (r: { status: string | null; chance_of_playing_next_round: number | null }) =>
@@ -483,10 +497,11 @@ export async function applyCaptainRecommendation(
   // refused rather than applied under a stale explanation. Compared on fixture
   // IDS — the frozen names are display-only.
   if (rec.gameweek !== null && rec.gameweek !== undefined && rec.fixture_context) {
-    const current = await loadFixtures(db, rec.gameweek);
+    const current = await loadFixtures(db, rec.gameweek, undefined, isRehearsal);
     const { data: capRow } = await db
       .from("fantasy_fpl_snapshot").select("team")
-      .eq("player_id", rec.recommended_captain).order("captured_at", { ascending: false }).limit(1);
+      .eq("player_id", rec.recommended_captain).eq("is_rehearsal", isRehearsal)
+      .order("captured_at", { ascending: false }).limit(1);
     const team: number | null = capRow?.[0]?.team ?? null;
     const nowIds = team === null ? [] : (current.get(team) ?? []).map((f) => f.fixture_id).sort();
     const frozen = ((rec.fixture_context as { captain?: { fixtures?: { fixture_id: number }[] } })
