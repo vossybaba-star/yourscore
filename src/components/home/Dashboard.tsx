@@ -9,6 +9,7 @@ import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { slugify } from "@/lib/utils";
 import { coverUrl } from "@/lib/img";
 import { getTeamBadgeUrlSync } from "@/lib/teamImages";
+import { getCompetitionBadgeUrlSync } from "@/lib/competitionImages";
 import { usePendingFriends } from "@/hooks/usePendingFriends";
 import { usePendingTurns } from "@/hooks/usePendingTurns";
 import { DebateCard } from "@/components/debate/DebateCard";
@@ -440,9 +441,12 @@ function DiscoveryRail({ packs, played38 }: { packs: RecommendedPack[]; played38
       <SectionHead title={played38 ? "Because you played 38-0" : "Picked for you"} href="/play" />
       <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1 -mx-5 px-5">
         {packs.map((p) => {
-          // Club packs ("Liverpool · All Time · Mixed") without a cover show
-          // the real crest — founder call: club crests are fine to use.
-          const crest = p.cover ? null : getTeamBadgeUrlSync(p.name.split(" ·")[0]);
+          // Packs without a cover show a real badge instead of a bare letter:
+          // a club crest for club packs, a competition badge for records packs
+          // ("Champions League Records · ...", "Premier League Records · ...").
+          // Both are local /badges/*.png (founder call: crests are fine to use).
+          const seg = p.name.split(" ·")[0];
+          const crest = p.cover ? null : (getTeamBadgeUrlSync(seg) ?? getCompetitionBadgeUrlSync(seg));
           return (
           <Link key={p.id} href={`/challenges/${slugify(p.name)}`}
             className="flex-shrink-0 rounded-xl overflow-hidden flex flex-col transition-transform active:scale-[0.98]"
