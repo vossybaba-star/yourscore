@@ -766,3 +766,102 @@ export async function roundHint(db: Db, userId: string, k: number) {
   return { k, eliminated };
 }
 
+// ── the ledger: where did my transfer go? (Gate 3 trust) ─────────────────────
+/**
+ * A plain-English history of everything that touched your credits, chips and
+ * transfers, newest first.
+ *
+ * DERIVED, not stored — every fact is already on the entry rows (`transfers`,
+ * `round_credits`, `cash_points`, `chip`, `hits`, `points`), so there is no new
+ * table to keep in step and no accumulation that could drift from the tables the
+ * league standings sum on read. A manager asking "where did my transfer go?" or
+ * "when did I earn that credit?" now has an answer that is, by construction, the
+ * same data the game scored from.
+ *
+ * The baseline transfer is the one grant that isn't on the entry — it's applied
+ * to the squad when the previous gameweek finalises. It's reconstructed here as
+ * a line rather than left invisible: every finalised gameweek granted one (up to
+ * the cap), and "everyone gets one" is exactly the promise a ledger should make
+ * checkable.
+ */
+export interface LedgerItem {
+  gw: number;
+  kind: "round" | "cash" | "transfer" | "hit" | "chip" | "baseline";
+  text: string;
+  /** Signed where it means something: +2 credits, −4 points. Absent for prose. */
+  delta?: string;
+  at: string | null;
+}
+
+export async function getLedger(db: Db, userId: string): Promise<{ items: LedgerItem[] }> {
+  const [{ data: rows }, nameMap] = await Promise.all([
+    db.from("fantasy_entries")
+      .select("gw, status, round_correct, round_credits, round_done_at, transfers, hits, chip, cash_points, points, scored_at, locked_at")
+      .eq("user_id", userId).order("gw", { ascending: false }).range(0, 999),
+    Promise.resolve(new Map(enginePool().map((p) => [p.id, p.name]))),
+  ]);
+  const nameOf = (id: number) => nameMap.get(id) ?? `#${id}`;
+  const CHIP_LABEL: Record<string, string> = {
+    wildcard: "Wildcard", triple_captain: "Triple Captain",
+    bench_boost: "Bench Boost", insight: "Insight", second_chance: "Second Chance",
+  };
+
+  const items: LedgerItem[] = [];
+  for (const e of (rows ?? []) as {
+    gw: number; status: string; round_correct: number; round_credits: number;
+    round_done_at: string | null; transfers: { out: number; in: number; paid: string }[];
+    hits: number; chip: string | null; cash_points: number | null;
+    points: number | null; scored_at: string | null; locked_at: string | null;
+  }[]) {
+    // A gameweek reads top to bottom in the order things happened: play the
+    // round, spend on transfers, take the hits, play a chip, then it scores.
+    if (e.round_done_at) {
+      items.push({
+        gw: e.gw, kind: "round", at: e.round_done_at,
+        text: `Round: ${e.round_correct}/11 correct`,
+        delta: e.round_credits > 0 ? `+${e.round_credits} transfer${e.round_credits === 1 ? "" : "s"}` : undefined,
+      });
+    }
+    if ((e.cash_points ?? 0) > 0) {
+      items.push({
+        gw: e.gw, kind: "cash", at: e.round_done_at,
+        text: "Credits over the cap cashed out",
+        delta: `+${e.cash_points} pts`,
+      });
+    }
+    for (const t of e.transfers ?? []) {
+      const cost = t.paid === "hit" ? "−4 pts" : t.paid === "free" ? "free (wildcard)" : "used a transfer";
+      items.push({
+        gw: e.gw, kind: t.paid === "hit" ? "hit" : "transfer", at: e.locked_at,
+        text: `${nameOf(t.out)} → ${nameOf(t.in)}`,
+        delta: cost,
+      });
+    }
+    if (e.chip) {
+      items.push({
+        gw: e.gw, kind: "chip", at: e.locked_at,
+        text: `Played ${CHIP_LABEL[e.chip] ?? e.chip}`,
+      });
+    }
+    // The baseline lands as the NEXT gameweek opens, i.e. when this one finalised.
+    if (e.status === "final") {
+      items.push({
+        gw: e.gw + 1, kind: "baseline", at: e.scored_at,
+        text: "Free transfer for the new gameweek",
+        delta: "+1 transfer",
+      });
+    }
+  }
+
+  // A baseline is tagged with the gameweek it OPENS, which is one past the entry
+  // it came from, so the flat list isn't in gameweek order by construction. Sort
+  // it globally — newest gameweek first, and within a gameweek in the order the
+  // week actually unfolds — so any consumer gets a sensible sequence, not just
+  // the page that happens to regroup.
+  const ORDER: Record<LedgerItem["kind"], number> = {
+    baseline: 0, round: 1, cash: 2, transfer: 3, hit: 3, chip: 4,
+  };
+  items.sort((x, y) => (y.gw - x.gw) || (ORDER[x.kind] - ORDER[y.kind]));
+  return { items };
+}
+

@@ -901,19 +901,22 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
         </div>
       )}
 
-      {/* Secondary destinations — quiet, one line each. */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+      {/* Secondary destinations — quiet, one line each. Two per row on a phone:
+          four across at 375px squeezed "How it works" to one letter per line. */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 14 }}>
         {([
           // Embedded, the header is gone, so Leagues joins the destinations
           // rather than floating on a row of its own.
           ...(embedded ? [{ label: "Leagues", to: "/fantasy/leagues" }] : []),
           { label: "Fantasy tips", to: "/fantasy/news" },
           { label: KNOWLEDGE_NAME, to: "/fantasy/knowledge" },
+          { label: "My history", to: "/fantasy/history" },
+          { label: "How it works", to: "/fantasy/rules" },
         ] as const).map((l) => (
           <div key={l.to} onClick={() => router.push(l.to)}
             className="rounded-2xl font-body"
             style={{
-              flex: 1, background: PANEL, border: `1px solid ${LINE}`, padding: "11px 13px",
+              background: PANEL, border: `1px solid ${LINE}`, padding: "11px 13px",
               fontSize: 12.5, fontWeight: 600, cursor: "pointer",
               display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6,
             }}>
