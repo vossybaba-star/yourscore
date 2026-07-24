@@ -216,19 +216,90 @@ export async function freezeShadow(db: Db, opts: ShadowOpts = {}): Promise<Freez
   return report;
 }
 
-export type DeadlineReport = { gameweek: number | null; captured: number; finalised: number; skipped: number };
+export type DeadlineReport = {
+  gameweek: number | null; captured: number; finalised: number; skipped: number;
+  /** Every gameweek actually processed this tick — normally just [gameweek],
+   *  but the missed-gameweek sweep can add more. */
+  gameweeks: number[];
+};
 
-/** THE critical safeguard: snapshot what the user actually took into the
- *  gameweek, immutably, at the deadline. */
-export async function captureDeadlineSquads(db: Db, opts: ShadowOpts = {}): Promise<DeadlineReport> {
-  if (opts.override) assertRehearsalAllowed("captureDeadlineSquads.override");
-  if (opts.onlyUserIds) assertRehearsalAllowed("captureDeadlineSquads.onlyUserIds");
-  const { gw, deadline } = opts.override ?? (await upcoming(db, !!opts.isRehearsal));
-  const out: DeadlineReport = { gameweek: gw, captured: 0, finalised: 0, skipped: 0 };
-  // Only once the deadline has actually passed — and `upcoming` still points at
-  // this gameweek until the collector sees the next one.
-  if (gw === null || !deadline || Date.now() < new Date(deadline).getTime()) return out;
+/** The freshest snapshot whose OWN reported deadline has already passed, found
+ *  from history rather than trusting "the latest row overall".
+ *
+ *  FPL flips `next_event` to GW+1 around the deadline, and the collector
+ *  deliberately keeps collecting after it. If a post-flip snapshot lands
+ *  before this runs, "latest row" would report GW+1 with a FUTURE deadline,
+ *  and the gameweek that just closed would never be captured — every one of
+ *  its shadow rows stays `provisional` forever, with no error anywhere.
+ *  Filtering on `next_deadline <= now` instead finds the last snapshot that
+ *  was still reporting the gameweek whose deadline we are now past — a
+ *  post-flip row pointing at GW+1's (still-future) deadline is excluded by
+ *  construction, regardless of how recently it was captured. */
+async function lastPassedDeadline(db: Db, isRehearsal: boolean): Promise<{ gw: number; deadline: string } | null> {
+  const nowIso = new Date().toISOString();
+  const { data } = await db
+    .from("fantasy_fpl_snapshot")
+    .select("next_event, next_deadline")
+    .eq("is_rehearsal", isRehearsal)
+    .not("next_event", "is", null)
+    .not("next_deadline", "is", null)
+    .lte("next_deadline", nowIso)
+    .order("captured_at", { ascending: false })
+    .limit(1);
+  const row = data?.[0] as { next_event: number | null; next_deadline: string | null } | undefined;
+  if (!row || row.next_event === null || row.next_deadline === null) return null;
+  return { gw: row.next_event, deadline: row.next_deadline };
+}
 
+/** Safety net for the case `lastPassedDeadline` cannot cover alone: a gap in
+ *  cron ticks long enough that TWO gameweeks' deadlines pass between reads
+ *  leaves the earlier one behind (only the latest is ever "the latest").
+ *  Finds any gameweek that still has `provisional` shadow rows, whose deadline
+ *  has passed, and that has no `fantasy_deadline_squad` rows yet at all — late
+ *  is acceptable, missing is not. */
+async function sweepMissedGameweeks(db: Db, isRehearsal: boolean, exclude: number[]): Promise<number[]> {
+  const { data: provisional } = await db
+    .from("fantasy_captain_shadow")
+    .select("gameweek")
+    .eq("status", "provisional")
+    .eq("is_rehearsal", isRehearsal);
+  const candidates = Array.from(new Set(
+    (provisional ?? []).map((r: { gameweek: number }) => r.gameweek),
+  )).filter((gw) => !exclude.includes(gw));
+  if (!candidates.length) return [];
+
+  // Gameweeks only move forward, so anything strictly behind the most recent
+  // one we know about has necessarily had its deadline pass, even without a
+  // usable historical snapshot row for it.
+  const { data: newest } = await db
+    .from("fantasy_fpl_snapshot")
+    .select("next_event")
+    .eq("is_rehearsal", isRehearsal)
+    .not("next_event", "is", null)
+    .order("captured_at", { ascending: false })
+    .limit(1);
+  const currentGw: number | null = newest?.[0]?.next_event ?? null;
+
+  const due: number[] = [];
+  for (const gw of candidates) {
+    if (currentGw !== null && gw < currentGw) { due.push(gw); continue; }
+    const { data: snap } = await db
+      .from("fantasy_fpl_snapshot")
+      .select("next_deadline")
+      .eq("is_rehearsal", isRehearsal)
+      .eq("next_event", gw)
+      .not("next_deadline", "is", null)
+      .order("captured_at", { ascending: false })
+      .limit(1);
+    const gwDeadline = snap?.[0]?.next_deadline as string | undefined;
+    if (gwDeadline && Date.now() >= new Date(gwDeadline).getTime()) due.push(gw);
+  }
+  return due;
+}
+
+/** Captures every squad's deadline choice for ONE gameweek, and accumulates
+ *  into `out`. */
+async function captureForGameweek(db: Db, gw: number, opts: ShadowOpts, out: DeadlineReport): Promise<void> {
   let dq = db.from("fantasy_squads").select("user_id, xi, bench, captain, vice");
   if (opts.onlyUserIds?.length) dq = dq.in("user_id", opts.onlyUserIds);
   const { data: squads } = await dq;
@@ -297,6 +368,39 @@ export async function captureDeadlineSquads(db: Db, opts: ShadowOpts = {}): Prom
         .update({ recommendation_followed_at_deadline: followed, eligible, updated_at: new Date().toISOString() })
         .eq("user_id", s.user_id).eq("gameweek", gw);
     }
+  }
+}
+
+/** THE critical safeguard: snapshot what the user actually took into the
+ *  gameweek, immutably, at the deadline. Never trusts a single "latest
+ *  snapshot" read alone for WHICH gameweek to capture — see
+ *  `lastPassedDeadline` and `sweepMissedGameweeks` above — because a
+ *  gameweek captured late is fine, but one silently skipped corrupts the
+ *  experiment with no error anywhere. */
+export async function captureDeadlineSquads(db: Db, opts: ShadowOpts = {}): Promise<DeadlineReport> {
+  if (opts.override) assertRehearsalAllowed("captureDeadlineSquads.override");
+  if (opts.onlyUserIds) assertRehearsalAllowed("captureDeadlineSquads.onlyUserIds");
+  const out: DeadlineReport = { gameweek: null, captured: 0, finalised: 0, skipped: 0, gameweeks: [] };
+
+  if (opts.override) {
+    const { gw, deadline } = opts.override;
+    out.gameweek = gw;
+    if (Date.now() < new Date(deadline).getTime()) return out;
+    await captureForGameweek(db, gw, opts, out);
+    out.gameweeks.push(gw);
+    return out;
+  }
+
+  const isRehearsal = !!opts.isRehearsal;
+  const passed = await lastPassedDeadline(db, isRehearsal);
+  const targets: number[] = passed ? [passed.gw] : [];
+  const swept = await sweepMissedGameweeks(db, isRehearsal, targets);
+  targets.push(...swept);
+
+  out.gameweek = targets[0] ?? null;
+  for (const gw of targets) {
+    await captureForGameweek(db, gw, opts, out);
+    out.gameweeks.push(gw);
   }
   return out;
 }
