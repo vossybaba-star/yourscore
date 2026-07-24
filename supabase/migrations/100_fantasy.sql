@@ -1,4 +1,4 @@
--- 76_fantasy.sql — YourScore Fantasy Football Phase 1 (persistent squads,
+-- 100_fantasy.sql — YourScore Fantasy Football Phase 1 (persistent squads,
 -- weekly knowledge round → transfer credits, gameweek scoring).
 -- RLS posture (per 61_group_challenges precedent): owner/public SELECT only;
 -- ALL writes go through service-role API routes — no client write policies.

@@ -1,4 +1,4 @@
--- 79_fantasy_leagues.sql — Fantasy Phase 2: leagues (private by default, public opt-in).
+-- 103_fantasy_leagues.sql — Fantasy Phase 2: leagues (private by default, public opt-in).
 -- RLS posture per 76_fantasy: member/public SELECT only; ALL writes via service role.
 begin;
 

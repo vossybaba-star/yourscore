@@ -2,7 +2,7 @@
  * Fantasy leagues — server orchestration (Phase 2). Mirrors the Draft XI league
  * shape (src/lib/draft/server.ts, src/app/api/draft/league/*) but with the
  * migration-76 security posture: own-row/public SELECT only, ALL writes via
- * service role. See supabase/migrations/79_fantasy_leagues.sql.
+ * service role. See supabase/migrations/103_fantasy_leagues.sql.
  *
  * Table math lives HERE, read-time only: fantasy_entries.points is the single
  * source of truth. Scoring recomputes from the locked snapshot and never

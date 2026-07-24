@@ -1,4 +1,4 @@
--- 84_fantasy_round_chips.sql — the two ROUND-side chips (design D:131).
+-- 108_fantasy_round_chips.sql — the two ROUND-side chips (design D:131).
 --
 -- Insight: a 50/50 on one question of your choosing. Which question you spent
 -- it on must be stored, or a "deterministic, storage-free" hint could be

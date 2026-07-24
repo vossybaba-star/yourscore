@@ -1,4 +1,4 @@
--- 80_fantasy_scoring_version.sql — stamp the scoring values a gameweek was scored under.
+-- 104_fantasy_scoring_version.sql — stamp the scoring values a gameweek was scored under.
 --
 -- values.ts exports SCORING_VERSION and nothing ever read it. If we ever tune the
 -- point values mid-season (the defensive-contribution award is the live dial), old

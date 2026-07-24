@@ -1,4 +1,4 @@
--- 83_fantasy_player_prices.sql — the weekly price snapshot (design §7, founder-locked 14 Jul).
+-- 107_fantasy_player_prices.sql — the weekly price snapshot (design §7, founder-locked 14 Jul).
 --
 -- Prices track FPL and change weekly. They CANNOT live in src/data/fantasy/pool.json:
 -- that file is a static import, frozen into the build, so moving a price would mean
