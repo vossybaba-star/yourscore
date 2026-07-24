@@ -99,6 +99,15 @@ input, textarea, select {
   to { transform: rotate(360deg); }
 }
 
+/* Indeterminate sweep for the BottomNav route-transition bar. Every screen is
+   fetched from the server, so a tab tap on a cold connection can sit for seconds
+   while the App Router keeps the old screen on display. This is the proof that
+   the tap registered. Indeterminate because we have no idea how long it'll be. */
+@keyframes navSweep {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(300%);  }
+}
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0);   }
