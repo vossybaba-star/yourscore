@@ -2,7 +2,7 @@
 //
 // Replaces the laptop cron. Captures deadline-correct FPL projections/injuries/
 // prices and SportMonks pre-match odds into the append-only tables from
-// migration 103, and records every tick (including skips) in
+// migration 210, and records every tick (including skips) in
 // fantasy_collection_run so a silently dead collector is detectable.
 //
 // Throttle is deadline-relative and mirrors src/collect/schedule.py:

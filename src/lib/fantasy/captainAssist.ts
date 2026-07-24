@@ -6,7 +6,7 @@
  *  Full best-XI selection did NOT beat that template, so it is absent here and
  *  this never claims an optimal team.
  *
- *  Every recommendation is FROZEN to a row (migration 104) and returned with its
+ *  Every recommendation is FROZEN to a row (migration 211) and returned with its
  *  id. Applying a change must quote that id, and apply() revalidates against it:
  *  a stale card — squad changed, new injury news, deadline passed, snapshot gone
  *  cold — is refused rather than silently applied, and the proposed player can
@@ -16,7 +16,7 @@
  *  gameweeks, so before MIN_GW_FOR_PPG we fall back to FPL's own ep_next and say
  *  so, at reduced confidence.
  *
- *  Reads only the append-only snapshot tables (migration 103) that the hosted
+ *  Reads only the append-only snapshot tables (migration 210) that the hosted
  *  collector fills — never live third-party APIs at request time, so one
  *  response always has a single frozen data cutoff.
  */
