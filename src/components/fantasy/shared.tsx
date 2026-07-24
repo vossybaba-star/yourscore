@@ -64,11 +64,15 @@ export interface FantasyState {
 
 /** Routes that read rather than mutate. Everything else defaults to POST — a GET
  *  route missing from this set silently 405s. */
-const GET_PATHS = new Set(["pool", "state", "form"]);
+const GET_PATHS = new Set(["pool", "state", "form", "wildcard-value"]);
+/** Dynamic GET routes, matched by prefix since the full path (e.g. `player/7`)
+ *  is never a fixed string. */
+const GET_PREFIXES = ["player/"];
+const isGetPath = (path: string) => GET_PATHS.has(path) || GET_PREFIXES.some((p) => path.startsWith(p));
 
 export async function api<T>(path: string, body?: unknown): Promise<T> {
   const res = await fetch(`/api/fantasy/${path}`, body === undefined
-    ? { method: GET_PATHS.has(path) ? "GET" : "POST" }
+    ? { method: isGetPath(path) ? "GET" : "POST" }
     : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   const json = await res.json().catch(() => ({}));
   if (!res.ok) throw Object.assign(new Error(json.error ?? `HTTP ${res.status}`), { status: res.status, code: json.code });
