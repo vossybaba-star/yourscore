@@ -16,6 +16,7 @@ import {
 } from "@/components/fantasy/shared";
 import { HALF_SEASON_GW } from "@/lib/fantasy/engine";
 import { KNOWLEDGE_NAME } from "@/lib/fantasy/brand";
+import CaptainAssistCard from "@/components/fantasy/CaptainAssistCard";
 
 type Result = NonNullable<NonNullable<FantasyState["entry"]>["result"]>;
 
@@ -615,6 +616,13 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
           </span>
         </Card>
       )}
+
+      {/* Captain Assist — captaincy guidance only, the one recommendation the
+          backtests actually validated (it beat a most-owned template captain in
+          two independent seasons). Full-XI advice is deliberately absent because
+          it did NOT beat that template. Renders nothing unless the server flag
+          is on, and never writes without an explicit confirm. */}
+      <CaptainAssistCard onApplied={refresh} />
 
       {/* Chips — only once the gameweek is live and your squad is committed;
           pre-season there's nothing yet to spend a chip protecting. */}
