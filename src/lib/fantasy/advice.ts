@@ -750,14 +750,12 @@ export function buildPlayerProfile(args: {
   const dcStat = (): ProfileStat => ({
     label: "Defensive returns",
     value: apps ? `${dcHits} in ${apps} games` : "no games yet",
-    // NO POINTS FIGURE IN THIS STRING. It used to read "reliable 2 points",
-    // which was FPL's award written into copy on a branch whose values.ts had
-    // been moved onto FPL's scale. This repo's values.ts has not: a defensive
-    // return pays 5 here, so that sentence shipped a number that was wrong by
-    // more than double. Stating the fact without the figure is true on either
-    // scale — and a scoring value quoted in prose is exactly how the
-    // scale-mismatch bugs in this codebase keep happening. If a number is ever
-    // wanted here it must be read from values.ts, never typed out.
+    // NO POINTS FIGURE IN THIS STRING. A scoring value quoted in prose is
+    // exactly how the scale-mismatch bugs in this codebase keep happening: this
+    // once read "reliable 2 points", a hardcoded award that was wrong whenever
+    // the table and the copy drifted apart. Stating the fact without the figure
+    // is true regardless of the scale in values.ts. If a number is ever wanted
+    // here it must be read from values.ts, never typed out.
     note: apps >= 3 && dcHits / apps >= 0.5 ? "reliable returns even without a clean sheet" : null,
   });
   const attackStat = (): ProfileStat => ({

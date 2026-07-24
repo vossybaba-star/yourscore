@@ -20,13 +20,16 @@
  *  - A user can now compare their week to their FPL week and see the same
  *    shape, which makes us legible to the millions who already play that game.
  *
- * VERIFIED, not asserted: this table reproduces `total_points - bonus` EXACTLY
- * on 4,836 real per-fixture rows across six 2025/26 gameweeks (GW5, 12, 19, 25,
- * 30, 36). Every rule below is exercised by that data, including 30 goalkeeper
- * appearances above the defensive-contribution threshold, which is what proves
- * keepers are NOT eligible for it. Re-run with
- * `bash scripts/fantasy/familiarity.sh` — the bar is 100% exact, not a
- * correlation. Any change to these numbers must re-pass it.
+ * These are FPL's own per-event values, so `pointsFor` is meant to reproduce
+ * `total_points - bonus` exactly (YourScore does not award FPL's judged bonus).
+ * The keeper exclusion from the defensive-contribution award mirrors FPL, which
+ * pays goalkeepers nothing for it. The golden assertions in engine.test.ts pin
+ * every rule below, including that exclusion; keep them as the guard.
+ *
+ * NOTE: `scripts/fantasy/familiarity.mjs` currently checks Spearman rank on a
+ * single gameweek, NOT the row-by-row exact match this table now aims for. An
+ * exact-match harness over real fixture rows would be a stronger guard and does
+ * not yet exist — do not cite a 100%-exact result until it does.
  */
 
 export type FantasyPos = "GK" | "DEF" | "MID" | "FWD";
