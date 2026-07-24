@@ -8,7 +8,20 @@ import { createServiceClient } from "@/lib/supabase/service";
 // localStorage because a device stamp is invisible to us and resets on every
 // reinstall — we could not previously count our own asks.
 //
-// Two limits, for two different reasons:
+// ONCE THEY RATE, WE STOP FOREVER — with a caveat worth knowing, because it
+// shapes everything below. Apple never tells us that a player rated: no
+// callback, no API, no field on the app record. The one moment we can observe
+// is a player tapping through our own soft card to the App Store, which we
+// record as outcome 'acted'. That is treated as terminal and they are never
+// asked again.
+//
+// A player who rates inside Apple's native popup is invisible to us, so they
+// would keep getting asked. Two things blunt that: iOS itself declines to draw
+// the popup again for someone who has already rated the current version, and
+// BACKOFF_AFTER_ASKS below stretches the gap right out once someone has been
+// asked repeatedly without ever responding.
+//
+// The limits, and whose they are:
 //
 //   NATIVE_CAP_PER_YEAR — Apple's, not ours. SKStoreReviewController shows at
 //     most 3 popups per user per 365 days and silently does nothing beyond
@@ -16,7 +29,11 @@ import { createServiceClient } from "@/lib/supabase/service";
 //     for the popup and serve the soft card instead, which has no such cap.
 //     Without this we would log "asked" for prompts Apple never drew.
 //
-//   COOLDOWN_DAYS — ours. How often any ask may reappear.
+//   COOLDOWN_DAYS — ours. How often an ask may reappear for someone who has
+//     not responded.
+//
+//   BACKOFF_AFTER_ASKS / BACKOFF_DAYS — ours. The protection against nagging
+//     someone we cannot tell has already rated.
 //
 // review_prompts isn't in the generated Database type yet (types lag the
 // migration), so the service client is cast the same way /api/wc-thanks does.
@@ -25,10 +42,16 @@ function service(): SupabaseClient {
 }
 
 const NATIVE_CAP_PER_YEAR = 3;
-const COOLDOWN_DAYS = 14;
+const COOLDOWN_DAYS = 7;
 // Don't ask someone on their very first day — the ask is for players who came
 // back, not for a stranger mid-first-session.
 const MIN_ACCOUNT_AGE_HOURS = 24;
+
+// We are blind to whether anyone actually rated (see below), so a player who
+// rated via Apple's popup would otherwise be asked every 7 days forever. After
+// this many asks with no response, back right off.
+const BACKOFF_AFTER_ASKS = 4;
+const BACKOFF_DAYS = 60;
 
 const DAY_MS = 86_400_000;
 
@@ -48,22 +71,33 @@ export async function GET() {
     }
 
     const db = service();
+    // Lifetime, not a rolling window — "they already rated" has no expiry.
+    // 'download' rows are the web nudge, not a review ask: acting on one means
+    // they installed the app, which must never suppress a rating ask.
     const { data: recent } = await db
       .from("review_prompts")
-      .select("variant, created_at")
+      .select("variant, outcome, created_at")
       .eq("user_id", user.id)
       .in("variant", ["native", "card"])
-      .gte("created_at", new Date(Date.now() - 365 * DAY_MS).toISOString())
       .order("created_at", { ascending: false });
 
     const asks = recent ?? [];
 
-    const last = asks[0];
-    if (last && Date.now() - Date.parse(last.created_at) < COOLDOWN_DAYS * DAY_MS) {
+    // Terminal: they went to the App Store off our card. Never ask again.
+    if (asks.some((a) => a.outcome === "acted")) {
       return NextResponse.json({ ask: false });
     }
 
-    const nativeThisYear = asks.filter((a) => a.variant === "native").length;
+    const cooldownDays = asks.length >= BACKOFF_AFTER_ASKS ? BACKOFF_DAYS : COOLDOWN_DAYS;
+    const last = asks[0];
+    if (last && Date.now() - Date.parse(last.created_at) < cooldownDays * DAY_MS) {
+      return NextResponse.json({ ask: false });
+    }
+
+    const yearAgo = Date.now() - 365 * DAY_MS;
+    const nativeThisYear = asks.filter(
+      (a) => a.variant === "native" && Date.parse(a.created_at) >= yearAgo,
+    ).length;
     return NextResponse.json({
       ask: true,
       variant: nativeThisYear < NATIVE_CAP_PER_YEAR ? "native" : "card",
