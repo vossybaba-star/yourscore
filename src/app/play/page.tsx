@@ -31,6 +31,19 @@ interface QuizPack {
   created_at?: string | null;
 }
 
+// A club pack's THEME for the card headline (Featured tab only — the Club tab
+// shows clubs as quiz hubs, no theme). Names are "Team · Theme"
+// (e.g. "Chelsea · Modern Era II"); featured season packs put the club in `name`
+// and the season in `parameter` ("2025/26"). Split eyebrow from the main line so
+// "2025/26" stays prominent and never gets clamped off a long single string.
+function clubThemeParts(pack: QuizPack): { eyebrow: string | null; main: string } {
+  const parts = (pack.name ?? "").split("·").map((s) => s.trim()).filter(Boolean);
+  if (parts.length > 1) return { eyebrow: null, main: parts.slice(1).join(" · ") };
+  const p = pack.parameter ?? "";
+  if (/^\d{4}\/\d{2}$/.test(p)) return { eyebrow: "Premier League", main: p };
+  return { eyebrow: null, main: p || pack.name || "" };
+}
+
 // "Jun 18" style published date for quiz cards.
 function packDate(iso?: string | null): string | null {
   if (!iso) return null;
@@ -96,7 +109,7 @@ const END_OF_SEASON_EMOJI: Record<string, string> = { "The Farewell Tour": "👋
 
 // ── ClubCard ──────────────────────────────────────────────────────────────────
 
-function ClubCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: string | null }) {
+function ClubCard({ pack, challengeTo, showTheme }: { pack: QuizPack; challengeTo?: string | null; showTheme?: boolean }) {
   const [badgeUrl, setBadgeUrl] = useState<string | null>(null);
   const slug = slugify(pack.name);
 
@@ -148,10 +161,21 @@ function ClubCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: string 
           </div>
         )}
       </div>
-      {/* A ClubCard opens the club's quiz HUB (a group of quizzes), not one
-          specific quiz — so it carries no quiz title/theme, just the crest and
-          an OPEN action. The team is identified by its crest / cover art. */}
+      {/* On the Club tab a ClubCard opens the club's quiz HUB (a group of
+          quizzes), so it shows no theme — just crest + OPEN. On Featured it
+          represents the season quiz, so it keeps the theme headline. */}
       <div className="px-2 pb-2.5 pt-2">
+        {showTheme && (() => {
+          const { eyebrow, main } = clubThemeParts(pack);
+          return (
+            <div className="mb-1.5" style={{ minHeight: 34 }}>
+              {eyebrow && (
+                <p className="font-display text-[9px] uppercase tracking-wider mb-0.5 line-clamp-1" style={{ color: "#00d8c0" }}>{eyebrow}</p>
+              )}
+              <p className="font-body text-sm font-bold text-white leading-tight line-clamp-2">{main}</p>
+            </div>
+          );
+        })()}
         <div
           className="rounded-md py-0.5 text-center"
           style={{
@@ -887,7 +911,7 @@ function PlayPageInner() {
                   pack.parameter === "2025/26 End of Season" ? (
                     <EndOfSeasonCard key={pack.id} pack={pack} challengeTo={challengeTo} />
                   ) : pack.type === "club" ? (
-                    <ClubCard key={pack.id} pack={pack} challengeTo={challengeTo} />
+                    <ClubCard key={pack.id} pack={pack} challengeTo={challengeTo} showTheme={soloTab !== "club"} />
                   ) : (
                     <RecordsCard key={pack.id} pack={pack} challengeTo={challengeTo} />
                   )
