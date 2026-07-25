@@ -34,6 +34,7 @@ import { StandaloneHalftimePoll } from "@/components/matchweek/StandaloneHalftim
 import { QuizStatTiles } from "@/components/matchweek/QuizStatTiles";
 import { LiveQuizIntro } from "@/components/matchweek/LiveQuizIntro";
 import { HowItWorksTile } from "@/components/matchweek/HowItWorksTile";
+import { GamedayNotifyPrompt } from "@/components/matchweek/GamedayNotifyPrompt";
 import { BottomNav } from "@/components/ui/BottomNav";
 
 const TEAL = "#00d8c0";
@@ -156,6 +157,9 @@ export default function MatchweekPage() {
           <UpcomingQuizzes />
           <ClubTableTile />
           <QuizStatTiles />
+          {/* Landed here (usually from the home Gameday tile)? Nudge a reminder
+              for their club's first pack. Once, until they act. */}
+          <GamedayNotifyPrompt reminders={reminders} />
         </div>
       )}
 
