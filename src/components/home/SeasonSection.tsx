@@ -77,12 +77,12 @@ function FixtureCrests({ fixture }: { fixture: GamedayFixture }) {
   const away = getTeamBadgeUrlSync(fixture.away);
   if (!home || !away) return null;
   return (
-    <div className="flex items-center gap-1.5 mt-2 mb-1.5">
+    <div className="flex items-center gap-2.5 mb-1.5">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={home} alt={fixture.home} width={24} height={24} style={{ objectFit: "contain", filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.5))" }} />
-      <span className="font-display text-sm" style={{ color: "#7ff2e4" }}>v</span>
+      <img src={home} alt={fixture.home} width={44} height={44} style={{ objectFit: "contain", filter: "drop-shadow(0 2px 5px rgba(0,0,0,0.55))" }} />
+      <span className="font-display text-xl" style={{ color: "#7ff2e4" }}>v</span>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={away} alt={fixture.away} width={24} height={24} style={{ objectFit: "contain", filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.5))" }} />
+      <img src={away} alt={fixture.away} width={44} height={44} style={{ objectFit: "contain", filter: "drop-shadow(0 2px 5px rgba(0,0,0,0.55))" }} />
     </div>
   );
 }
@@ -96,14 +96,20 @@ function GamedayTile({ fixture }: { fixture: GamedayFixture }) {
       <svg viewBox="0 0 160 200" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 w-full h-full" style={{ opacity: 0.5 }}>
         <path d="M92 24 55 108h30l-8 70 60-92h-33l14-64Z" fill={`${TEAL}44`} stroke={TEAL} strokeWidth="1.4" strokeLinejoin="round" />
       </svg>
-      {/* top scrim keeps the title crisp; content sits up top like Fantasy */}
-      <div className="absolute inset-x-0 top-0" style={{ height: "62%", background: "linear-gradient(to bottom, #06110f 30%, rgba(6,17,15,0.4) 78%, transparent)" }} />
+      {/* top scrim keeps the title crisp; a bottom scrim keeps the crests +
+          tagline legible now they sit low and fill the square */}
+      <div className="absolute inset-x-0 top-0" style={{ height: "52%", background: "linear-gradient(to bottom, #06110f 30%, rgba(6,17,15,0.4) 78%, transparent)" }} />
+      <div className="absolute inset-x-0 bottom-0" style={{ height: "46%", background: "linear-gradient(to top, #06110f 12%, rgba(6,17,15,0.72) 55%, transparent)" }} />
       <span className="season-shine" style={{ animationDelay: "1.4s" }} />
-      <div className="relative z-[5] p-3.5 flex flex-col gap-1">
+      <div className="relative z-[5] px-3.5 pt-3 pb-3 flex flex-col h-full">
         <ComingSoon accent={TEAL} text="#7ff2e4" />
-        <p className="font-display text-2xl text-white leading-[0.92] mt-1">Gameday<br />Quizzes</p>
-        <FixtureCrests fixture={fixture} />
-        <p className="font-body text-[11px]" style={{ color: "#a8ede4" }}>A quiz pack for every fixture. Rep your fanbase.</p>
+        <p className="font-display text-2xl text-white leading-[0.92] mt-0.5">Gameday<br />Quizzes</p>
+        {/* push the fixture + tagline to the foot of the tile so the content
+            fills the square rather than clustering at the top (founder, 25 Jul) */}
+        <div className="mt-auto">
+          <FixtureCrests fixture={fixture} />
+          <p className="font-body text-[13px] leading-snug font-semibold" style={{ color: "#a8ede4" }}>A quiz pack for every fixture. Rep your fanbase.</p>
+        </div>
       </div>
     </Link>
   );
