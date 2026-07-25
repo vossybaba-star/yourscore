@@ -15,7 +15,7 @@ import {
   LINE, Loading, MUTED, page, PANEL, PANEL_2, Sheet, Skel, TEAL, tint,
   type ChipName, type ClientPoolPlayer, type FantasyContext, type FantasyState, type Pos,
 } from "@/components/fantasy/shared";
-import { HALF_SEASON_GW } from "@/lib/fantasy/engine";
+import { BUDGET_TENTHS, HALF_SEASON_GW, MAX_PER_CLUB, SQUAD_SIZE } from "@/lib/fantasy/engine";
 import { KNOWLEDGE_NAME } from "@/lib/fantasy/brand";
 
 type Result = NonNullable<NonNullable<FantasyState["entry"]>["result"]>;
@@ -180,6 +180,22 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
     }));
   }, [squad]);
 
+  // Anchor picks for the intro's "where to start" — the priciest name in each
+  // line. "Most expensive" is a fact we can read straight off the pool (no form
+  // claim we'd have to stand behind), and the premiums are where a new manager
+  // sensibly builds a spine before filling in value. Recomputes only when the
+  // pool arrives; empty until then, and the tile simply hides.
+  const starterPicks = useMemo(() => {
+    const best: Partial<Record<Pos, ClientPoolPlayer>> = {};
+    for (const p of Array.from(pool.values())) {
+      const cur = best[p.pos as Pos];
+      if (!cur || p.price > cur.price) best[p.pos as Pos] = p;
+    }
+    return (["FWD", "MID", "DEF", "GK"] as Pos[])
+      .map((pos) => best[pos])
+      .filter((p): p is ClientPoolPlayer => Boolean(p));
+  }, [pool]);
+
   const setSel = async (patch: Partial<{ xi: number[]; bench: number[]; captain: number; vice: number }>) => {
     if (!squad) return;
     setBusy(true); setErr(null);
@@ -242,20 +258,21 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
       <div className="relative">
         {!embedded && <Header right={<Btn small onClick={() => router.push("/")}>All games</Btn>} />}
 
-        {/* The hero and the numbered beats are lifted from the live PL-tab
-            holding screen, which the founder rated over anything written for
-            this page. Same headline, same 01-04 structure. */}
+        {/* Hero — the headline the founder rated over anything written for the
+            page. The 01-04 explainer that used to sit here moved behind the
+            "How it works" tile below: the landing is a set of doors now, not a
+            wall of rules (founder, 25 Jul). */}
         <div className="rounded-2xl relative overflow-hidden px-5 pt-5 pb-5"
           style={{
             background: `linear-gradient(150deg, ${tint(TEAL, "1a")}, ${tint(TEAL, "05")})`,
-            border: `1px solid ${tint(TEAL, "38")}`, marginBottom: 14,
+            border: `1px solid ${tint(TEAL, "38")}`, marginBottom: 12,
           }}>
           <FormationArt />
           <div className="relative">
             <p className="font-display tracking-widest" style={{ fontSize: 10, color: TEAL, marginBottom: 10 }}>
               YOURSCORE FANTASY FOOTBALL
             </p>
-            <p className="font-display text-white" style={{ fontSize: 40, lineHeight: 0.92, letterSpacing: "-0.015em" }}>
+            <p className="font-display text-white" style={{ fontSize: 38, lineHeight: 0.92, letterSpacing: "-0.015em" }}>
               <span style={{ display: "block" }}>One transfer.</span>
               <span style={{ display: "block" }}>Earn the rest.</span>
             </p>
@@ -265,47 +282,85 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
           </div>
         </div>
 
-        <div className="rounded-2xl" style={{ background: PANEL, border: `1px solid ${LINE}`, padding: 20, marginBottom: 14 }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {([
-              { n: "01", t: "Build it once",
-                d: "Fifteen players, £100m, no more than three from any one club. That's your squad." },
-              { n: "02", t: "Earn extra transfers",
-                d: "Everyone gets one transfer a gameweek. Answer the round to earn more, so the better you know your football, the more moves you get." },
-              { n: "03", t: "Real points, no mystery",
-                d: "Your score comes from what actually happened on the pitch. No bonus-point panel quietly deciding your week." },
-              { n: "04", t: "A fresh table every month",
-                d: "Months are their own competition, so a rough August doesn't bury your season." },
-            ] as const).map((b) => (
-              <div key={b.n} style={{ display: "flex", gap: 14 }}>
-                <div className="font-display rounded-full"
-                  style={{
-                    flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
-                    width: 26, height: 26, fontSize: 11,
-                    background: tint(TEAL, "18"), color: TEAL, border: `1px solid ${tint(TEAL, "35")}`,
-                  }}>{b.n}</div>
-                <div style={{ minWidth: 0 }}>
-                  <p className="font-body" style={{ fontSize: 14, color: INK, fontWeight: 600, margin: 0 }}>{b.t}</p>
-                  <p className="font-body" style={{ fontSize: 12.5, color: MUTED, margin: "3px 0 0", lineHeight: 1.55 }}>{b.d}</p>
-                </div>
+        {/* How it works — a tile, not a wall. Full-width tap into the rules. */}
+        <button onClick={() => router.push("/fantasy/rules")}
+          className="w-full flex items-center gap-3 rounded-2xl active:scale-[0.99] transition-transform"
+          style={{
+            background: `linear-gradient(150deg, ${tint(TEAL, "12")}, ${tint(TEAL, "03")})`,
+            border: `1px solid ${tint(TEAL, "2a")}`, padding: "14px 16px", marginBottom: 12, textAlign: "left",
+          }}>
+          <div className="font-display rounded-full flex items-center justify-center"
+            style={{ flexShrink: 0, width: 34, height: 34, fontSize: 16, background: tint(TEAL, "16"), color: TEAL, border: `1px solid ${tint(TEAL, "34")}` }}>?</div>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <p className="font-display text-white" style={{ fontSize: 15, lineHeight: 1.15 }}>How it works</p>
+            <p className="font-body" style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>
+              Squad, transfers, scoring and chips. The full rules.
+            </p>
+          </div>
+          <span aria-hidden style={{ color: TEAL, fontSize: 18, flexShrink: 0 }}>→</span>
+        </button>
+
+        {/* The one action the page is for. */}
+        <Btn gold glow onClick={cta.onClick}>{cta.label}</Btn>
+        <p className="font-body" style={{ fontSize: 12, color: MUTED, margin: "10px 0 14px", textAlign: "center" }}>
+          {cta.note}
+        </p>
+
+        {/* Where to start — premium anchors read live off the pool, plus a few
+            tips drawn from the game's own rules (all verifiable, no form claims). */}
+        <div className="rounded-2xl" style={{ background: PANEL, border: `1px solid ${LINE}`, padding: 18, marginBottom: 12 }}>
+          <p className="font-display tracking-widest" style={{ fontSize: 10, color: TEAL, marginBottom: 12 }}>WHERE TO START</p>
+          {starterPicks.length > 0 && (
+            <>
+              <p className="font-body" style={{ fontSize: 13, color: INK, marginBottom: 10, lineHeight: 1.5 }}>
+                Build a spine around a big name or two, then fill in value. The
+                headline picks in each line:
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
+                {starterPicks.map((p) => (
+                  <div key={p.id} className="flex items-center gap-3 rounded-xl"
+                    style={{ background: PANEL_2, border: `1px solid ${LINE}`, padding: "10px 13px" }}>
+                    <span className="font-display" style={{ fontSize: 10, color: TEAL, width: 34, flexShrink: 0, letterSpacing: "0.04em" }}>{p.pos}</span>
+                    <span className="min-w-0 flex-1" style={{ overflow: "hidden" }}>
+                      <span className="font-body block" style={{ fontSize: 13.5, color: INK, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>
+                      <span className="font-body block" style={{ fontSize: 11, color: MUTED }}>{p.club}</span>
+                    </span>
+                    <span className="font-display" style={{ fontSize: 13, color: GOLD, flexShrink: 0 }}>£{p.price}m</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+          <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+            {[
+              `${SQUAD_SIZE} players, £${(BUDGET_TENTHS / 10).toFixed(0)}m to spend. Use all of it, an unused million scores nothing.`,
+              `No more than ${MAX_PER_CLUB} from any one club, so spread the risk across the league.`,
+              "Your captain scores double every week, so give the armband to a nailed-on starter.",
+              "Nothing's locked: rebuild as often as you like right up to the first deadline.",
+            ].map((tip) => (
+              <div key={tip} style={{ display: "flex", gap: 10 }}>
+                <span aria-hidden style={{ color: TEAL, fontSize: 13, lineHeight: "1.5", flexShrink: 0 }}>›</span>
+                <p className="font-body" style={{ fontSize: 12.5, color: MUTED, margin: 0, lineHeight: 1.5 }}>{tip}</p>
               </div>
             ))}
           </div>
-          {/* The four beats are the gist; the full scoring, chips and transfer
-              rules are one tap away for anyone who wants them before they start. */}
-          <button onClick={() => router.push("/fantasy/rules")} className="font-body"
-            style={{
-              marginTop: 16, background: "none", border: "none", padding: 0, cursor: "pointer",
-              color: TEAL, fontSize: 12.5, fontWeight: 600,
-            }}>
-            Read the full rules →
-          </button>
         </div>
 
-        <Btn gold glow onClick={cta.onClick}>{cta.label}</Btn>
-        <p className="font-body" style={{ fontSize: 12, color: MUTED, marginTop: 10, textAlign: "center" }}>
-          {cta.note}
-        </p>
+        {/* From YourScore — the editorial river (team news, transfers, tips). One
+            door into /fantasy/news; no headlines faked when the feed is empty. */}
+        <button onClick={() => router.push("/fantasy/news")}
+          className="w-full flex items-center gap-3 rounded-2xl active:scale-[0.99] transition-transform"
+          style={{ background: PANEL, border: `1px solid ${LINE}`, padding: "14px 16px", textAlign: "left" }}>
+          <div className="font-display rounded-full flex items-center justify-center"
+            style={{ flexShrink: 0, width: 34, height: 34, fontSize: 15, background: tint(GOLD, "14"), color: GOLD, border: `1px solid ${tint(GOLD, "30")}` }}>✎</div>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <p className="font-display text-white" style={{ fontSize: 15, lineHeight: 1.15 }}>From YourScore</p>
+            <p className="font-body" style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>
+              Team news, transfer talk and tips before every deadline.
+            </p>
+          </div>
+          <span aria-hidden style={{ color: MUTED, fontSize: 18, flexShrink: 0 }}>→</span>
+        </button>
       </div>
     </main>
   );
