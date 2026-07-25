@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { GridBackground } from "@/components/ui/GridBackground";
 import Link from "next/link";
 import Image from "next/image";
 import { BottomNav } from "@/components/ui/BottomNav";
-import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { slugify } from "@/lib/utils";
 import { coverUrl } from "@/lib/img";
 import { getTeamBadgeUrlSync } from "@/lib/teamImages";
@@ -198,72 +197,63 @@ function ProgressCard({ rank, dayStreak, weekDots }: { rank: RankInfo; dayStreak
   );
 }
 
-// ── 2. Rivalry module ─────────────────────────────────────────────────────────
-// A live challenge counts down for real (h2h expiry); otherwise the all-time
-// head-to-head record with their most-played opponent. No rival yet → a quiet
-// "start one" prompt keeps the slot earning its place.
 
-function endsIn(iso: string): string {
-  const ms = Date.parse(iso) - Date.now();
-  if (ms <= 0) return "any minute";
-  const d = Math.floor(ms / 86400000);
-  const h = Math.floor((ms % 86400000) / 3600000);
-  if (d > 0) return `${d}d ${h}h`;
-  const m = Math.floor((ms % 3600000) / 60000);
-  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+// ── 2b. Get set for the season — the two PL-launch features ─────────────────
+// Replaces Rivalries on the home (founder 2026-07-25): one section, split into
+// two square tiles that each open a launch feature. Both land with the season
+// (21 Aug), so each carries a date tag — the tap opens a real page (a teaser /
+// holding screen), never a dead end.
+//   Fantasy League → /fantasy (its own tab, public teaser)
+//   Gameday Quiz   → /matchweek?section=live (the Live Quiz section)
+function SeasonTile({
+  href, accent, rgba, title, sub, icon,
+}: { href: string; accent: string; rgba: string; title: React.ReactNode; sub: string; icon: React.ReactNode }) {
+  return (
+    <Link href={href}
+      className="relative flex flex-col justify-between rounded-2xl p-3.5 overflow-hidden transition-transform active:scale-[0.98]"
+      style={{ aspectRatio: "1 / 1", background: `radial-gradient(ellipse at 30% 0%, rgba(${rgba},0.14), #0c1613 72%)`, border: `1px solid ${accent}55` }}>
+      <div className="flex items-start justify-between">
+        <span className="flex items-center justify-center rounded-xl" style={{ width: 42, height: 42, background: `${accent}26` }}>
+          {icon}
+        </span>
+        <span className="font-body text-[9px] font-bold uppercase tracking-[0.12em] px-2 py-1 rounded-full flex-shrink-0"
+          style={{ background: `${accent}26`, color: accent, border: `1px solid ${accent}55` }}>
+          21 Aug
+        </span>
+      </div>
+      <div>
+        <p className="font-display text-xl text-white leading-none">{title}</p>
+        <p className="font-body text-[11px] mt-1.5" style={{ color: "#9aa79f" }}>{sub}</p>
+      </div>
+    </Link>
+  );
 }
 
-function RivalryModule({ rivalry, meName, meId }: { rivalry: RivalryInfo | null; meName: string; meId: string }) {
-  const [tick, setTick] = useState(0);
-  useEffect(() => {
-    const iv = setInterval(() => setTick((t) => t + 1), 60_000);
-    return () => clearInterval(iv);
-  }, []);
-  void tick;
-
+function SeasonSection() {
   return (
     <div className="d-2">
-      <SectionHead title="Rivalries" href="/versus?view=friends" />
-      {rivalry ? (
-        <Link href={rivalry.live ? "/versus" : rivalry.opponentId ? `/profile/${rivalry.opponentId}` : "/versus"}
-          className="block rounded-2xl px-4 py-4 transition-transform active:scale-[0.99]"
-          style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.08)" }}>
-          <div className="flex items-center">
-            {/* Me */}
-            <div className="flex-1 flex flex-col items-center gap-1.5 min-w-0">
-              <PlayerAvatar seed={meId} name={meName} avatarUrl={null} size={44} ring={LIME} />
-              <p className="font-body text-[11px] font-bold text-white truncate max-w-full">{meName || "You"}</p>
-              <p className="font-display text-base leading-none tabular-nums" style={{ color: LIME }}>
-                {rivalry.myScore !== null ? rivalry.myScore.toLocaleString() : "—"}
-                <span className="font-body text-[9px] uppercase ml-1" style={{ color: "#8a948f" }}>{rivalry.live ? "pts" : "wins"}</span>
-              </p>
-            </div>
-
-            <p className="font-display text-2xl px-2 flex-shrink-0" style={{ color: GOLD }}>VS</p>
-
-            {/* Them */}
-            <div className="flex-1 flex flex-col items-center gap-1.5 min-w-0">
-              <PlayerAvatar seed={rivalry.opponentId ?? rivalry.opponentName} name={rivalry.opponentName} avatarUrl={null} size={44} ring="rgba(255,255,255,0.2)" />
-              <p className="font-body text-[11px] font-bold text-white truncate max-w-full">{rivalry.opponentName}</p>
-              <p className="font-display text-base leading-none tabular-nums text-white">
-                {rivalry.theirScore !== null ? rivalry.theirScore.toLocaleString() : "—"}
-                <span className="font-body text-[9px] uppercase ml-1" style={{ color: "#8a948f" }}>{rivalry.live ? "pts" : "wins"}</span>
-              </p>
-            </div>
-          </div>
-          <p className="font-body text-[11px] text-center mt-2.5" style={{ color: "#8a948f" }}>
-            {rivalry.live
-              ? `${rivalry.packName ?? "Quiz battle"}${rivalry.expiresAt ? ` · Ends in ${endsIn(rivalry.expiresAt)}` : ""}`
-              : "All-time head-to-head — settle it again"}
-          </p>
-        </Link>
-      ) : (
-        <Link href="/versus" className="flex items-center justify-between rounded-2xl px-4 py-3.5 transition-transform active:scale-[0.99]"
-          style={{ background: "rgba(0,216,192,0.05)", border: "1px dashed rgba(0,216,192,0.3)" }}>
-          <p className="font-body text-sm text-white">No rival yet — challenge someone and start one</p>
-          <span className="font-display text-sm flex-shrink-0" style={{ color: TEAL }}>VS →</span>
-        </Link>
-      )}
+      <SectionHead title="Get set for the season" href="/matchweek" hrefLabel="Premier League →" />
+      <div className="grid grid-cols-2 gap-2.5">
+        <SeasonTile
+          href="/fantasy" accent={LIME} rgba="174,234,0"
+          title={<>Fantasy<br />League</>} sub="Build your XI"
+          icon={
+            <svg width="23" height="23" viewBox="0 0 22 22" fill="none">
+              <path d="M6 3.5 3 5 2 8l2.6.8V18h12.8V8.8L20 8l-1-3-3-1.5-1.4 1.2Q11 6.3 8.4 4.7Z"
+                stroke={LIME} strokeWidth="1.5" strokeLinejoin="round" />
+            </svg>
+          }
+        />
+        <SeasonTile
+          href="/matchweek?section=live" accent={TEAL} rgba="0,216,192"
+          title={<>Gameday<br />Quiz</>} sub="A pack every fixture"
+          icon={
+            <svg width="23" height="23" viewBox="0 0 22 22" fill="none">
+              <path d="M12 2 4 12h6l-1 8 8-10h-6l1-8Z" stroke={TEAL} strokeWidth="1.5" strokeLinejoin="round" />
+            </svg>
+          }
+        />
+      </div>
     </div>
   );
 }
@@ -575,7 +565,7 @@ function PendingTurnsNotice() {
 // ── Main ────────────────────────────────────────────────────────────────────────
 
 export function Dashboard({ data }: { data: DashboardData }) {
-  const { userId, displayName, rank, dayStreak, weekDots, rivalry, recommended, played38, openLobbies, leagues, todaysGame, todaysGameCompletion } = data;
+  const { displayName, rank, dayStreak, weekDots, recommended, played38, openLobbies, leagues, todaysGame, todaysGameCompletion } = data;
 
   // Don't recommend the pack that's already the hero.
   const rail = recommended.filter((p) => p.id !== todaysGame.packId).slice(0, 5);
@@ -611,8 +601,9 @@ export function Dashboard({ data }: { data: DashboardData }) {
         {/* Live/upcoming halftime pack — self-hides off-matchday */}
         <GamedayCard />
 
-        {/* 2. Rivalry */}
-        <RivalryModule rivalry={rivalry} meName={displayName ? displayName.split(" ")[0] : "You"} meId={userId} />
+        {/* 2. Get set for the season — Fantasy + Gameday Quiz (replaced Rivalries,
+              founder 2026-07-25). */}
+        <SeasonSection />
 
         {/* 3. Today's Game — THE single hero, playable or done+share. The
             onboarding tour's final step points here (data-tour). */}

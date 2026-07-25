@@ -19,7 +19,7 @@
  * blank screen.
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { GamedayRail } from "@/components/quiz/GamedayRail";
 import { ClubPicker } from "@/components/clubs/ClubPicker";
 import { ClubTableTile } from "@/components/clubs/ClubTableTile";
@@ -55,6 +55,15 @@ const PL_TABS: { key: PlTab; label: string }[] = [
 
 export default function MatchweekPage() {
   const [section, setSection] = useState<Section>("pl");
+
+  // Deep-link to a section: /matchweek?section=live lands on Live Quiz. Read
+  // after mount (not at init) so the server and first client render agree on
+  // the default and there's no hydration mismatch — the switch is one frame.
+  // The home "Get set for the season" tiles use this to reach Gameday Quiz.
+  useEffect(() => {
+    const s = new URLSearchParams(window.location.search).get("section");
+    if (s === "live" || s === "pl") setSection(s);
+  }, []);
   // One shared reminders store for the section — AppNudge reads the same state
   // the buttons write, so the app pitch appears once, not once per card.
   const reminders = useReminders();
