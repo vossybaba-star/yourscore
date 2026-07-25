@@ -5,12 +5,12 @@
  * have not yet locked a club (GET /api/clubs/me → { locked: false }).
  *
  * LOCKED DECISION #4: leads with the competition — "Pick your club" / "Your
- * halftime scores count for them" — never "what team do you support?". The
+ * gameday scores count for them" — never "what team do you support?". The
  * leaderboard is the reason to declare, not a profile question.
  *
  * Self-hides: not signed in, still loading, already locked, or no clubs to pick
- * from yet (no halftime data this season) → renders nothing. Never an empty box
- * (mirrors HalftimeRail's self-hide contract).
+ * from yet (no gameday data this season) → renders nothing. Never an empty box
+ * (mirrors GamedayRail's self-hide contract).
  */
 
 import { useState } from "react";
@@ -77,7 +77,7 @@ export function ClubPicker() {
           </span>
           <p className="font-display text-xl text-white leading-tight mt-1">Pick your club</p>
           <p className="font-body text-xs" style={{ color: "#8a948f" }}>
-            Your halftime scores count for them.
+            Your gameday scores count for them.
           </p>
         </div>
 

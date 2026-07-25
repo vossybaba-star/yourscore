@@ -24,6 +24,13 @@ import {
  * a pick exists (even after the window has since closed for new picks) or the
  * result has settled, it keeps rendering so the fan sees their call graded.
  *
+ * FIX P4/P2-d: polls its own endpoint on an interval while the result hasn't
+ * landed yet, so a fan sitting on an open poll (halftime, standalone) or a
+ * settled-but-not-yet-refreshed poll (prematch, on the results screen) sees
+ * the state change — phase opening, or the result grading their pick —
+ * without a manual reload. Stops scheduling further polls the moment `closed`
+ * comes back true, so a settled poll never keeps hitting the endpoint.
+ *
  * Signed-in only: a pick has to belong to someone to be graded, and POST needs
  * auth. Guests on the results screen already get their own sign-up nudge.
  */
@@ -38,6 +45,8 @@ interface PollState {
   result: Pick | null;
   tally: Tally;
 }
+
+const POLL_MS = 30_000;
 
 export default function HalftimePredictionPoll({
   fixtureId,
@@ -54,20 +63,31 @@ export default function HalftimePredictionPoll({
 
   useEffect(() => {
     let live = true;
-    (async () => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    async function tick() {
       try {
-        const res = await fetch(`/api/halftime/predict?fixture=${fixtureId}&phase=${phase}`);
-        if (!res.ok) return; // no such fixture — render nothing
+        const res = await fetch(`/api/halftime/predict?fixture=${fixtureId}&phase=${phase}`, { cache: "no-store" });
+        if (!res.ok) return; // no such fixture — render nothing, don't reschedule
         const body = (await res.json()) as PollState;
-        if (live) setState(body);
+        if (!live) return;
+        setState(body);
+        // Keep polling while there's something that could still change (the
+        // phase hasn't opened yet, or it's open with no result); stop the
+        // moment it settles so a graded poll never keeps hitting the endpoint.
+        if (!body.closed) timer = setTimeout(tick, POLL_MS);
       } catch {
-        /* offline / transient — the poll just doesn't appear */
+        /* offline / transient — the poll just doesn't appear this tick; retry */
+        if (live) timer = setTimeout(tick, POLL_MS);
       } finally {
         if (live) setLoading(false);
       }
-    })();
+    }
+
+    tick();
     return () => {
       live = false;
+      if (timer) clearTimeout(timer);
     };
   }, [fixtureId, phase]);
 

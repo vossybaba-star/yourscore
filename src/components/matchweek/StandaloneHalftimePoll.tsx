@@ -8,9 +8,22 @@
  * the poll must be decoupled from quiz-pack state entirely (a cancelled or
  * never-generated pack must not hide it).
  *
+ * FIX P4: this used to fetch once on mount, so a fan already sitting on the
+ * matchweek page when the real whistle blew never saw the poll appear —
+ * second_half_started_at flips server-side with no client event to react to.
+ * Polls /api/pl/fixtures on a fixed interval instead, so any fixture that
+ * reaches the whistle while this page is open surfaces within one poll tick
+ * (POLL_MS, well under a minute). The endpoint is already force-no-store and
+ * cheap (one indexed query on the halftime_releases gameweek window — the
+ * same query /api/gameday/today's rail already runs on the same cadence
+ * family), so a single fixed interval is enough; no backoff/stop condition is
+ * needed here because there is always a next gameweek to watch for.
+ *
  * Self-hides via the existing contract: this container renders nothing when
  * there is no candidate fixture, and each HalftimePredictionPoll instance
- * self-hides when its own phase isn't open yet and nothing is decided.
+ * self-hides when its own phase isn't open yet and nothing is decided — and
+ * that component polls its own endpoint independently to pick up a result
+ * landing (see its header), stopping once settled.
  */
 
 import { useEffect, useState } from "react";
@@ -24,6 +37,7 @@ interface PlFixtureRow {
 }
 
 const TEAL = "#00d8c0";
+const POLL_MS = 30_000;
 
 export function StandaloneHalftimePoll() {
   const [fixtures, setFixtures] = useState<PlFixtureRow[]>([]);
@@ -31,20 +45,29 @@ export function StandaloneHalftimePoll() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/pl/fixtures")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((json) => {
-        if (cancelled || !json) return;
-        setFixtures(Array.isArray(json.fixtures) ? json.fixtures : []);
-      })
-      .catch(() => {
-        /* transient — render nothing */
-      })
-      .finally(() => {
-        if (!cancelled) setLoaded(true);
-      });
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    async function tick() {
+      try {
+        const res = await fetch("/api/pl/fixtures", { cache: "no-store" });
+        if (res.ok && !cancelled) {
+          const json = await res.json();
+          setFixtures(Array.isArray(json.fixtures) ? json.fixtures : []);
+        }
+      } catch {
+        /* transient — keep the last good list, retry next tick */
+      } finally {
+        if (!cancelled) {
+          setLoaded(true);
+          timer = setTimeout(tick, POLL_MS);
+        }
+      }
+    }
+
+    tick();
     return () => {
       cancelled = true;
+      if (timer) clearTimeout(timer);
     };
   }, []);
 

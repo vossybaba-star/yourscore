@@ -1391,12 +1391,23 @@ export default function ChallengePage() {
         </div>
 
         <div className="px-5 flex flex-col gap-4 mt-2">
-          {/* Pre-match prediction poll — appended to a Gameday pack attempt,
-              shown only when the fixture has not kicked off yet (§0.6). The
-              halftime (second-half) poll never renders here — it stands alone
-              on the matchweek page for every player, whether or not they
-              played the quiz. Signed-in only. */}
-          {userId && pack.metadata?.gameday && Date.now() < new Date(pack.metadata.gameday.kickoff_at).getTime() && (
+          {/* Pre-match prediction poll — appended to a Gameday pack attempt
+              (§0.6). The halftime (second-half) poll never renders here — it
+              stands alone on the matchweek page for every player, whether or
+              not they played the quiz. Signed-in only.
+
+              FIX P2-d: this used to gate on `Date.now() < kickoff_at`, so the
+              poll — and a fan's own pick made minutes earlier — vanished the
+              instant kickoff passed while they were still looking at their
+              results screen. The mount is unconditional on kickoff now; the
+              component's own self-hide contract (already correct — see its
+              header) reads the fixture's server truth instead: it renders
+              nothing only when the window is closed AND this player never
+              picked AND nothing has settled. A player who finished before
+              kickoff keeps seeing their pick, then the graded result once it
+              settles; a player who finishes after kickoff with no pick on
+              record sees nothing, exactly as §0.6 specifies. */}
+          {userId && pack.metadata?.gameday && (
             <HalftimePredictionPoll fixtureId={pack.metadata.gameday.fixture_id} phase="prematch" accent={accent} />
           )}
 
