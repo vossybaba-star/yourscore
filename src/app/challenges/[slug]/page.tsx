@@ -638,10 +638,22 @@ export default function ChallengePage() {
         getCompetitionBadgeUrl(match.name).then((u: string | null) => { if (u) setBadgeUrl(u); });
       }
 
+      // Show the playable intro NOW — the pack + questions above are everything
+      // you need to start. The reads below (guest-score claim, prior attempt,
+      // top-100 leaderboard) are browser→Supabase round-trips (~1s) that used to
+      // be awaited BEFORE this line, so the game sat spinning for ~1s after it was
+      // ready to play (measured: pack ready ~740ms, intro blocked until ~2000ms by
+      // the leaderboard read). They're progressive: the intro renders immediately
+      // and they fill in behind its own `leaderLoading` spinner. setPhase before
+      // the awaits is the whole fix — the tail no longer gates the UI.
+      setLeaderLoading(true);
+      setPhase("intro");
+
       // A guest score waiting to be claimed? (They played signed-out, tapped
       // SIGN UP & SAVE SCORE, and are back with an account.) Submit it for
       // server-side grading BEFORE the attempt/leaderboard reads below, so the
-      // page loads with their score already saved and on the board.
+      // page loads with their score already saved and on the board. (If it races
+      // the leaderboard read, the `saved`→refetch effect corrects the board.)
       if (uid) {
         const pending = loadGuestResult();
         if (pending && pending.packId === match.id) {
@@ -663,7 +675,6 @@ export default function ChallengePage() {
       }
 
       // Prior attempt + leaderboard are independent — one parallel wave, not two hops.
-      setLeaderLoading(true);
       const [attemptRes, lbRes] = await Promise.all([
         uid
           ? sb
@@ -691,8 +702,6 @@ export default function ChallengePage() {
         })));
       }
       setLeaderLoading(false);
-
-      setPhase("intro");
     })();
   }, [slug, pid, router]);
 
@@ -1054,8 +1063,12 @@ export default function ChallengePage() {
 
               {/* Signed-in only. A guest's score never reaches the leaderboard, so telling them
                   "your first score counts" contradicted the "sign in first to save your score"
-                  line 40px below it (ux-walk, 23 Jul). For guests that line says it all. */}
-              {userId && (
+                  line 40px below it (ux-walk, 23 Jul). For guests that line says it all.
+                  Gated on !leaderLoading: the intro now renders before the prior-attempt read
+                  resolves, so until it does we don't yet know first-play vs practice — showing
+                  this banner early would flash "your first score counts" at a returning player
+                  who is actually in practice mode. It pops in (correct) the moment we know. */}
+              {userId && !leaderLoading && (
                 <div className="flex items-start gap-3 px-4 py-3 rounded-xl"
                   style={{ background: "rgba(255,183,0,0.08)", border: "1px solid rgba(255,183,0,0.25)" }}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="flex-shrink-0 mt-0.5">
