@@ -149,7 +149,7 @@ function ClubCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: string 
         )}
       </div>
       <div className="px-2 pb-2.5 pt-2">
-        <p className="font-body text-[12px] font-bold text-white leading-tight mb-1.5 line-clamp-2" style={{ minHeight: 30 }}>{pack.name}</p>
+        <p className="font-body text-sm font-bold text-white leading-tight mb-1.5 line-clamp-2" style={{ minHeight: 34 }}>{pack.name}</p>
         <div
           className="rounded-lg py-1.5 text-center"
           style={{
@@ -221,7 +221,7 @@ function RecordsCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: stri
         </div>
       </div>
       <div className="px-2 pb-2.5 pt-2">
-        <p className="font-body text-[12px] font-bold text-white leading-tight mb-1 line-clamp-2" style={{ minHeight: 30 }}>{pack.name}</p>
+        <p className="font-body text-sm font-bold text-white leading-tight mb-1 line-clamp-2" style={{ minHeight: 34 }}>{pack.name}</p>
         <p className="font-body text-[10px] mb-1.5 line-clamp-1" style={{ color: "#8a948f" }}>
           {isWorldCupPack(pack) ? "World Cup 2026" : "All-Time Records"}{packDate(pack.created_at) ? ` · ${packDate(pack.created_at)}` : ""}
         </p>
@@ -306,7 +306,7 @@ function EndOfSeasonCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: 
         </div>
       </div>
       <div className="px-2 pb-2.5 pt-2">
-        <p className="font-body text-[12px] font-bold text-white leading-tight mb-1 line-clamp-2" style={{ minHeight: 30 }}>{pack.name}</p>
+        <p className="font-body text-sm font-bold text-white leading-tight mb-1 line-clamp-2" style={{ minHeight: 34 }}>{pack.name}</p>
         <p className="font-body text-[10px] mb-1.5" style={{ color: "#8a948f" }}>End of Season</p>
         <div
           className="rounded-lg py-1.5 text-center"
