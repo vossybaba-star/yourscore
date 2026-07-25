@@ -6,8 +6,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import { createClient } from "@/lib/supabase/client";
 import { BottomNav } from "@/components/ui/BottomNav";
-import { GameSwitcher } from "@/components/ui/GameSwitcher";
-import { VersusHub } from "@/app/versus/VersusHub";
 import { Button } from "@/components/ui/Button";
 import { getTeamBadgeUrl } from "@/lib/teamImages";
 import { getCompetitionBadgeUrl } from "@/lib/competitionImages";
@@ -369,7 +367,7 @@ function OpenRoomCard({ room, onJoin }: { room: OpenRoom; onJoin: () => void }) 
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
-type MainTab = "solo" | "multiplayer" | "leaderboards" | "versus";
+type MainTab = "solo" | "multiplayer" | "leaderboards";
 type SoloTab = "featured" | "worldcup" | "club" | "records";
 
 // A World Cup quiz: tagged via metadata.series (the daily seed sets series:"wc2026")
@@ -481,12 +479,7 @@ function InboxRow({ c, kind }: { c: InboxChallenge; kind: "play" | "waiting" | "
 }
 
 function PlayPageInner() {
-  const { user, loading: userLoading } = useUser();
-  // Guests get a fixed "Sign In/Up" pill in the top-right corner. The Solo|Versus
-  // toggle now sits at the very top, so it must clear that pill or "Versus" slides
-  // under it. Assume signed-in while auth resolves (matches GuestAuthButton), so
-  // the toggle never jumps width under a returning user.
-  const guest = !userLoading && !user;
+  const { user } = useUser();
   const router = useRouter();
   const searchParams = useSearchParams();
   const challengeTo = searchParams?.get("challenge") ?? null; // targeting a friend
@@ -719,57 +712,30 @@ function PlayPageInner() {
   return (
     <div className="min-h-screen bg-bg" style={{ paddingBottom: "calc(72px + env(safe-area-inset-bottom, 0px))" }}>
 
-      {/* Sticky header. The global GamesNav is suppressed on /play (the Solo/
-          Versus toggle + game switcher live in here instead), so this owns the
-          notch inset now — pt-safe, and it sticks at the viewport top. */}
-      <div className="sticky z-20 pt-safe"
-        style={{ top: 0, background: "rgba(10,10,15,0.97)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+      {/* Sticky header — sits under the persistent GamesNav (root layout), which
+          now carries the Solo|Versus toggle + game switcher, so this sticks at
+          the nav's height, not the viewport top. */}
+      <div className="sticky z-20"
+        style={{ top: "var(--games-nav-h, 0px)", background: "rgba(10,10,15,0.97)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
         <div className="max-w-lg mx-auto px-5 pt-3 pb-3">
-
-          {/* Solo / Versus — the top-level Play mode, ABOVE the game switcher
-              (founder, 25 Jul: Solo at the top, the games nav underneath).
-              Versus folded in from its old bottom tab; leaderboards moved off. */}
-          <div className="flex gap-1 p-1 rounded-2xl mb-3"
-            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", marginRight: guest ? 92 : undefined }}>
-            <button onClick={() => setMainTab("solo")}
-              className="flex-1 py-2 rounded-xl font-body text-xs font-semibold transition-all"
-              style={mainTab === "solo" ? { background: "#00d8c0", color: "#0a0a0f" } : { background: "transparent", color: "#8a948f" }}>
-              Solo
-            </button>
-            <button onClick={() => setMainTab("versus")}
-              className="flex-1 py-2 rounded-xl font-body text-xs font-semibold transition-all"
-              style={mainTab === "versus" ? { background: "#00d8c0", color: "#0a0a0f" } : { background: "transparent", color: "#8a948f" }}>
-              Versus
-            </button>
-          </div>
-
-          {/* The game switcher (Quiz · 38-0 · Perfect 10 · …) lives on the Play
-              tab under the toggle now — the global GamesNav is suppressed on
-              /play (see GamesNav). Hidden on Versus, which has its own hub. */}
-          {mainTab === "solo" && (
-            <div className="mb-3"><GameSwitcher active="quiz" /></div>
-          )}
 
           {/* Title row */}
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="font-display text-2xl tracking-tight text-teal">{mainTab === "versus" ? "VERSUS" : "QUIZ"}</h1>
+              <h1 className="font-display text-2xl tracking-tight text-teal">QUIZ</h1>
               <p className="font-body text-xs mt-0.5 text-text-muted">
                 {mainTab === "solo" ? "Test your football knowledge"
-                  : mainTab === "versus" ? "Play someone head to head"
                   : mainTab === "multiplayer" ? "Challenge friends · play on your own time"
                   : "YourScore verified competitions"}
               </p>
             </div>
-            {mainTab !== "versus" && (
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl"
-                style={{ background: "rgba(0,216,192,0.08)", border: "1px solid rgba(0,216,192,0.2)" }}>
-                <span className="text-xs">⚡</span>
-                <span className="font-display text-xs text-teal">
-                  {packsLoading ? "…" : `${packs.length} GAMES`}
-                </span>
-              </div>
-            )}
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl"
+              style={{ background: "rgba(0,216,192,0.08)", border: "1px solid rgba(0,216,192,0.2)" }}>
+              <span className="text-xs">⚡</span>
+              <span className="font-display text-xs text-teal">
+                {packsLoading ? "…" : `${packs.length} GAMES`}
+              </span>
+            </div>
           </div>
 
           {/* Solo sub-tabs (Featured / World Cup / Club / Records) — scrollable so
@@ -833,10 +799,6 @@ function PlayPageInner() {
           )}
         </div>
       </div>
-
-      {/* ── VERSUS TAB (the head-to-head hub, folded in from its old bottom
-          tab — founder 25 Jul). VersusHub brings its own containers + pills. ── */}
-      {mainTab === "versus" && <VersusHub />}
 
       {/* ── SOLO TAB ─────────────────────────────────────────────────── */}
       {mainTab === "solo" && (

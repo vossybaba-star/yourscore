@@ -7,6 +7,7 @@ import { useUser } from "@/hooks/useUser";
 import { useYourTurns, type InboxChallenge } from "@/hooks/useYourTurns";
 import { useVersusStats, type Rivalry } from "@/hooks/useVersusStats";
 import { BottomNav } from "@/components/ui/BottomNav";
+import { SoloVersusToggle } from "@/components/ui/SoloVersusToggle";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { PitchArt, QuizArt, VersusHeroArt } from "@/components/versus/GameTileArt";
 import { VersusDiscovery } from "@/components/versus/VersusDiscovery";
@@ -399,13 +400,11 @@ function VersusInner({ embedded = false }: { embedded?: boolean }) {
           so the standalone Versus title + sticky bar are dropped; only the
           Play/Friends/Leagues sub-pills stay. */}
       <div className={embedded ? "" : "sticky top-0 z-20 pt-safe"} style={embedded ? undefined : { background: "rgba(8,13,10,0.95)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+        {/* The Solo|Versus mode switch takes the header slot the "Versus" title
+            used to hold, so it's in the same place as on the game routes. */}
         {!embedded && (
-          <div className="max-w-lg mx-auto px-5 py-4 flex items-center gap-2">
-            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-              <path d="M3 3l8.5 8.5M3 3v3l7.5 7.5M3 3h3l7.5 7.5" stroke={TEAL} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M19 3l-8.5 8.5M19 3v3l-7.5 7.5M19 3h-3L8.5 11.5" stroke={TEAL} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            <h1 className="font-display text-2xl text-white" style={{ letterSpacing: "-0.01em" }}>Versus</h1>
+          <div className="max-w-lg mx-auto px-5 pt-3 pb-1">
+            <SoloVersusToggle mode="versus" />
           </div>
         )}
         {/* Full-width segmented tabs (founder call: the three tabs span the screen) */}

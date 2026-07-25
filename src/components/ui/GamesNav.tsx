@@ -3,6 +3,7 @@
 import { useLayoutEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { GameSwitcher, type GameKey } from "@/components/ui/GameSwitcher";
+import { SoloVersusToggle } from "@/components/ui/SoloVersusToggle";
 import { useGamesNavHidden } from "@/lib/gamesNav";
 import { useUser } from "@/hooks/useUser";
 
@@ -33,10 +34,7 @@ export function GamesNav() {
   const guest = !loading && !user;
   const barRef = useRef<HTMLDivElement>(null);
   const active = GAME_ROUTES[pathname ?? ""];
-  // /play renders its OWN game switcher in-page, beneath the Solo|Versus toggle
-  // (founder 2026-07-25: Solo at the top, the games nav underneath), so the
-  // global bar stands down there. It still owns every other game route.
-  const show = Boolean(active) && !hidden && pathname !== "/play";
+  const show = Boolean(active) && !hidden;
 
   // Pages that stack their own sticky header under the bar (the Quiz hub's
   // title + filters) need its height as an offset — published as a CSS var so
@@ -70,6 +68,9 @@ export function GamesNav() {
           in the top-right corner, and this row is a horizontal scroller, so
           without it the tabs slide underneath the button. */}
       <div className="max-w-lg mx-auto px-5 pt-3" data-tour="games" style={guest ? { paddingRight: 108 } : undefined}>
+        {/* Solo | Versus sits ABOVE the game switcher and rides on every game
+            route (founder, 25 Jul), so the mode switch is always in reach. */}
+        <div className="mb-2.5"><SoloVersusToggle mode="solo" /></div>
         <GameSwitcher active={active} />
       </div>
     </div>
