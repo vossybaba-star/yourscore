@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * "Notify me" for one fixture's halftime quiz — used on the Your-next-quiz tile
- * and on every card in the upcoming carousel.
+ * "Notify me" for one fixture's Gameday Quiz pack — used on the Your-next-quiz
+ * tile and on every card in the upcoming carousel.
  *
  * WORKS IN ORDER, never skips (founder, 2026-07-16). Whatever's missing, the tap
  * starts the flow that fixes it and then finishes the job:

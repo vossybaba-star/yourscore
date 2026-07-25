@@ -15,6 +15,7 @@ import { slugify } from "@/lib/utils";
 import { coverUrl } from "@/lib/img";
 import { RECORDS_EMOJI } from "@/lib/theme";
 import { useYourTurns, type InboxChallenge } from "@/hooks/useYourTurns";
+import { GamedayRail } from "@/components/quiz/GamedayRail";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -840,11 +841,17 @@ function PlayPageInner() {
       {/* ── SOLO TAB ─────────────────────────────────────────────────── */}
       {mainTab === "solo" && (
         <>
-          {/* Halftime packs and the club-fan leaderboard moved to their own
-              Matchweek tab (fixture-synced, live). /play stays the evergreen
-              quiz surface. Perfect 10 / Higher or Lower / Guess the Player are
-              separate games in the GameSwitcher now (founder ruling 2026-07-18)
-              — no longer tiles inside the Quiz hub. */}
+          {/* Gameday rail (AC29) — every PL fixture with a published pack, playable
+              now (day-before model, §0.1). Self-hides via useGamedayToday when
+              /api/gameday/today has no rows, so an off-matchday /play looks
+              exactly as it did before this mount. The club-fan leaderboard and
+              the two prediction polls stay on their own Matchweek tab
+              (fixture-synced); this is just the quiz packs, in the evergreen
+              quiz surface where players already look for a game. Perfect 10 /
+              Higher or Lower / Guess the Player are separate games in the
+              GameSwitcher now (founder ruling 2026-07-18) — no longer tiles
+              inside the Quiz hub. */}
+          <GamedayRail />
 
           {/* Build a Quiz banner */}
           <div className="max-w-lg mx-auto px-4 pt-4 pb-2">

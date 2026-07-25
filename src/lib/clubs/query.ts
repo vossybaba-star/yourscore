@@ -28,9 +28,13 @@ interface ReleaseRow {
 }
 
 async function fetchReleaseRows(): Promise<ReleaseRow[]> {
+  // kind='fixture' — a future Recap-pack row (§6, one row per GAMEWEEK, not
+  // per fixture) must never be counted into the club-fan leaderboard, which
+  // is built entirely from per-fixture home/away/kickoff data.
   const { data, error } = await db()
     .from("halftime_releases")
-    .select("season_id, round_name, home, away, kickoff_at, pack_id");
+    .select("season_id, round_name, home, away, kickoff_at, pack_id")
+    .eq("kind", "fixture");
   if (error) throw error;
   return (data ?? []) as ReleaseRow[];
 }
@@ -213,6 +217,7 @@ export async function halftimeAttemptsForGameweek(
   const { data: releases, error: relErr } = await db()
     .from("halftime_releases")
     .select("pack_id, home, away")
+    .eq("kind", "fixture")
     .eq("season_id", seasonId)
     .eq("round_name", roundName)
     .not("pack_id", "is", null);

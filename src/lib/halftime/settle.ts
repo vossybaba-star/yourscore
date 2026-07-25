@@ -5,38 +5,53 @@ import { getFinalScores } from "@/lib/halftime/sportmonks";
 import { resultFromGoals, type Pick } from "@/lib/halftime/predict";
 
 /**
- * Prediction settlement — grade every fan's second-half call once the match is
- * over.
+ * Prediction settlement — grade every fan's call once the match is over, for
+ * BOTH phases (§0.6):
+ *   prematch  graded against the FULL-TIME result.
+ *   halftime  graded against the SECOND-HALF-ONLY result.
+ * A PL fixture has no extra time, so both phases become gradeable at the same
+ * SportMonks signal (full time) — they simply read a different split of the
+ * same already-fetched `scores` payload (see getFinalScores).
  *
- * Idempotent by construction, so both the watchdog (its primary caller, every 5
- * minutes) and the poller (if we ever wire it) can invoke it freely and a re-run
+ * Idempotent by construction, so both the watchdog (its primary caller, every
+ * 5 minutes) and a future poller hook can invoke it freely and a re-run
  * changes nothing:
- *   - a fixture with a result row is already settled → skipped;
- *   - grading is a pair of set-to-constant updates, so writing them twice is a
- *     no-op;
+ *   - a (fixture, phase) with a result row is already settled → skipped;
+ *   - grading is a pair of set-to-constant updates, so writing them twice is
+ *     a no-op;
  *   - the result row upsert ignores conflicts.
  *
- * The whole path is service-role: halftime_predictions is deny-all RLS, and the
- * tally / grading must read every fan's pick, which no single client may do.
+ * settlement no longer depends on any quiz pack state (AC37) — candidates are
+ * whatever fixtures the caller thinks have reached kickoff, full stop.
+ *
+ * The whole path is service-role: halftime_predictions is deny-all RLS, and
+ * the tally/grading must read every fan's pick, which no single client may do.
  */
 
-// halftime_predictions / _results are not in the generated DB types (same as
-// halftime_releases). One untyped handle, one place, documented.
 function svc(): SupabaseClient {
   return createServiceClient() as unknown as SupabaseClient;
 }
 
+type PredictionPhase = "prematch" | "halftime";
+
 interface SettleOutcome {
   fixtureId: number;
+  phase: PredictionPhase;
   result: Pick;
   graded: number;
 }
 
+interface PendingRow {
+  fixture_id: number;
+  phase: PredictionPhase;
+}
+
 /**
- * Given candidate fixture ids (today's released fixtures), settle the ones that
- * (a) still have ungraded predictions and (b) SportMonks now reports finished
- * with a complete final score. Returns what it settled; fixtures not yet
- * finished are simply left for the next tick.
+ * Given candidate fixture ids (today's fixtures whose kickoff has passed),
+ * settle every (fixture, phase) pair that still has ungraded predictions and
+ * whose result SportMonks can now supply. Fixtures not yet finished, or
+ * finished without a complete second-half split yet, are simply left for the
+ * next tick.
  */
 export async function settleFinishedFixtures(
   candidateFixtureIds: number[],
@@ -46,11 +61,9 @@ export async function settleFinishedFixtures(
 
   if (!candidateFixtureIds.length) return { settled, pending: [] };
 
-  // Which candidates still have an ungraded pick? (correct IS NULL). No point
-  // calling SportMonks for a fixture whose predictions are all already graded.
   const { data: ungraded, error } = await db
     .from("halftime_predictions")
-    .select("fixture_id")
+    .select("fixture_id, phase")
     .in("fixture_id", candidateFixtureIds)
     .is("correct", null);
 
@@ -59,58 +72,94 @@ export async function settleFinishedFixtures(
     return { settled, pending: [] };
   }
 
-  const pending = Array.from(
-    new Set(((ungraded ?? []) as { fixture_id: number }[]).map((r) => Number(r.fixture_id))),
-  );
-  if (!pending.length) return { settled, pending: [] };
+  const rows = (ungraded ?? []) as PendingRow[];
+  const pendingFixtureIds = Array.from(new Set(rows.map((r) => Number(r.fixture_id))));
+  if (!pendingFixtureIds.length) return { settled, pending: [] };
 
   // One SportMonks call for the whole set; finished-only entries come back.
-  const scores = await getFinalScores(pending);
+  const scores = await getFinalScores(pendingFixtureIds);
 
-  for (const fixtureId of pending) {
+  const stillPendingFixtures = new Set<number>();
+
+  for (const fixtureId of pendingFixtureIds) {
     const final = scores.get(fixtureId);
-    if (!final) continue; // not finished yet — try again next tick
-    const result = resultFromGoals(final.home, final.away);
-
-    // Record the fixture result first (also the "predictions closed" flag the
-    // POST /predict route checks). Ignore-conflict so a re-run is a no-op.
-    const { error: resErr } = await db
-      .from("halftime_prediction_results")
-      .upsert(
-        { fixture_id: fixtureId, home_goals: final.home, away_goals: final.away, result },
-        { onConflict: "fixture_id", ignoreDuplicates: true },
-      );
-    if (resErr) {
-      console.error("[halftime-settle] result upsert failed", fixtureId, resErr);
-      continue;
+    if (!final) {
+      stillPendingFixtures.add(fixtureId);
+      continue; // not finished yet — try again next tick
     }
 
-    // Grade: two set-to-constant updates, no per-row loop. Scoped to ungraded
-    // rows so a late-inserted pick (see the predict route's close check) is not
-    // clobbered — though the result row now blocks new picks anyway.
-    const { error: hitErr, count: hits } = await db
-      .from("halftime_predictions")
-      .update({ correct: true }, { count: "exact" })
-      .eq("fixture_id", fixtureId)
-      .eq("pick", result)
-      .is("correct", null);
-    const { error: missErr, count: misses } = await db
-      .from("halftime_predictions")
-      .update({ correct: false }, { count: "exact" })
-      .eq("fixture_id", fixtureId)
-      .neq("pick", result)
-      .is("correct", null);
+    const phasesForFixture = new Set(
+      rows.filter((r) => Number(r.fixture_id) === fixtureId).map((r) => r.phase),
+    );
 
-    if (hitErr || missErr) {
-      console.error("[halftime-settle] grade failed", fixtureId, hitErr ?? missErr);
-      continue;
+    if (phasesForFixture.has("prematch")) {
+      const result = resultFromGoals(final.home, final.away);
+      const graded = await settlePhase(db, fixtureId, "prematch", result, final.home, final.away);
+      if (graded !== null) settled.push({ fixtureId, phase: "prematch", result, graded });
+      else stillPendingFixtures.add(fixtureId);
     }
 
-    const graded = (hits ?? 0) + (misses ?? 0);
-    settled.push({ fixtureId, result, graded });
-    console.log(`[halftime-settle] ${fixtureId} → ${result} (graded ${graded})`);
+    if (phasesForFixture.has("halftime")) {
+      if (!final.secondHalf) {
+        // Finished, but the 2ND_HALF split has not landed on the feed yet.
+        stillPendingFixtures.add(fixtureId);
+      } else {
+        const result = resultFromGoals(final.secondHalf.home, final.secondHalf.away);
+        const graded = await settlePhase(db, fixtureId, "halftime", result, final.secondHalf.home, final.secondHalf.away);
+        if (graded !== null) settled.push({ fixtureId, phase: "halftime", result, graded });
+        else stillPendingFixtures.add(fixtureId);
+      }
+    }
   }
 
-  const stillPending = pending.filter((id) => !scores.has(id));
-  return { settled, pending: stillPending };
+  return { settled, pending: Array.from(stillPendingFixtures) };
+}
+
+/**
+ * Settle one (fixture, phase): write the result row (ignore-conflict, so a
+ * re-run is a no-op) and grade every still-ungraded pick for that phase.
+ * Returns the number graded, or null on a hard failure (left pending).
+ */
+async function settlePhase(
+  db: SupabaseClient,
+  fixtureId: number,
+  phase: "prematch" | "halftime",
+  result: Pick,
+  homeGoals: number,
+  awayGoals: number,
+): Promise<number | null> {
+  const { error: resErr } = await db
+    .from("halftime_prediction_results")
+    .upsert(
+      { fixture_id: fixtureId, phase, home_goals: homeGoals, away_goals: awayGoals, result },
+      { onConflict: "fixture_id,phase", ignoreDuplicates: true },
+    );
+  if (resErr) {
+    console.error("[halftime-settle] result upsert failed", fixtureId, phase, resErr);
+    return null;
+  }
+
+  const { error: hitErr, count: hits } = await db
+    .from("halftime_predictions")
+    .update({ correct: true }, { count: "exact" })
+    .eq("fixture_id", fixtureId)
+    .eq("phase", phase)
+    .eq("pick", result)
+    .is("correct", null);
+  const { error: missErr, count: misses } = await db
+    .from("halftime_predictions")
+    .update({ correct: false }, { count: "exact" })
+    .eq("fixture_id", fixtureId)
+    .eq("phase", phase)
+    .neq("pick", result)
+    .is("correct", null);
+
+  if (hitErr || missErr) {
+    console.error("[halftime-settle] grade failed", fixtureId, phase, hitErr ?? missErr);
+    return null;
+  }
+
+  const graded = (hits ?? 0) + (misses ?? 0);
+  console.log(`[halftime-settle] ${fixtureId} ${phase} → ${result} (graded ${graded})`);
+  return graded;
 }

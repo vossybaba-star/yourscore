@@ -51,8 +51,14 @@ interface QuizPack {
     daily?: boolean;
     date?: string;
     // Present only on halftime packs (release engine writes it) — the fixture
-    // linkage that powers the end-of-pack prediction poll.
+    // linkage that powers the end-of-pack prediction poll. Only the Halftime
+    // Prediction poll's own settlement bookkeeping still reads this key.
     halftime?: { fixture_id: number; home: string; away: string };
+    // Present only on Gameday packs (publish engine writes it) — the fixture
+    // linkage for the PRE-MATCH prediction poll shown at the end of an
+    // attempt made before kickoff (§0.6). kickoff_at drives the "has this
+    // fixture already kicked off" check.
+    gameday?: { fixture_id: number; home: string; away: string; kickoff_at: string };
     // Present only on the pre-generated club topic packs (the /club/[slug] hub).
     // The category slug drives an honest label instead of "2025/26 Season Game".
     club_topic?: string;
@@ -638,10 +644,22 @@ export default function ChallengePage() {
         getCompetitionBadgeUrl(match.name).then((u: string | null) => { if (u) setBadgeUrl(u); });
       }
 
+      // Show the playable intro NOW — the pack + questions above are everything
+      // you need to start. The reads below (guest-score claim, prior attempt,
+      // top-100 leaderboard) are browser→Supabase round-trips (~1s) that used to
+      // be awaited BEFORE this line, so the game sat spinning for ~1s after it was
+      // ready to play (measured: pack ready ~740ms, intro blocked until ~2000ms by
+      // the leaderboard read). They're progressive: the intro renders immediately
+      // and they fill in behind its own `leaderLoading` spinner. setPhase before
+      // the awaits is the whole fix — the tail no longer gates the UI.
+      setLeaderLoading(true);
+      setPhase("intro");
+
       // A guest score waiting to be claimed? (They played signed-out, tapped
       // SIGN UP & SAVE SCORE, and are back with an account.) Submit it for
       // server-side grading BEFORE the attempt/leaderboard reads below, so the
-      // page loads with their score already saved and on the board.
+      // page loads with their score already saved and on the board. (If it races
+      // the leaderboard read, the `saved`→refetch effect corrects the board.)
       if (uid) {
         const pending = loadGuestResult();
         if (pending && pending.packId === match.id) {
@@ -663,7 +681,6 @@ export default function ChallengePage() {
       }
 
       // Prior attempt + leaderboard are independent — one parallel wave, not two hops.
-      setLeaderLoading(true);
       const [attemptRes, lbRes] = await Promise.all([
         uid
           ? sb
@@ -691,8 +708,6 @@ export default function ChallengePage() {
         })));
       }
       setLeaderLoading(false);
-
-      setPhase("intro");
     })();
   }, [slug, pid, router]);
 
@@ -1054,8 +1069,12 @@ export default function ChallengePage() {
 
               {/* Signed-in only. A guest's score never reaches the leaderboard, so telling them
                   "your first score counts" contradicted the "sign in first to save your score"
-                  line 40px below it (ux-walk, 23 Jul). For guests that line says it all. */}
-              {userId && (
+                  line 40px below it (ux-walk, 23 Jul). For guests that line says it all.
+                  Gated on !leaderLoading: the intro now renders before the prior-attempt read
+                  resolves, so until it does we don't yet know first-play vs practice — showing
+                  this banner early would flash "your first score counts" at a returning player
+                  who is actually in practice mode. It pops in (correct) the moment we know. */}
+              {userId && !leaderLoading && (
                 <div className="flex items-start gap-3 px-4 py-3 rounded-xl"
                   style={{ background: "rgba(255,183,0,0.08)", border: "1px solid rgba(255,183,0,0.25)" }}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="flex-shrink-0 mt-0.5">
@@ -1385,11 +1404,24 @@ export default function ChallengePage() {
         </div>
 
         <div className="px-5 flex flex-col gap-4 mt-2">
-          {/* Halftime prediction poll — the second-half call. Sits first, above
-              sharing: it is time-sensitive (the match is live now) and it is the
-              hook that brings the player back for full time. Signed-in only. */}
-          {userId && pack.metadata?.halftime && (
-            <HalftimePredictionPoll packId={pack.id} accent={accent} />
+          {/* Pre-match prediction poll — appended to a Gameday pack attempt
+              (§0.6). The halftime (second-half) poll never renders here — it
+              stands alone on the matchweek page for every player, whether or
+              not they played the quiz. Signed-in only.
+
+              FIX P2-d: this used to gate on `Date.now() < kickoff_at`, so the
+              poll — and a fan's own pick made minutes earlier — vanished the
+              instant kickoff passed while they were still looking at their
+              results screen. The mount is unconditional on kickoff now; the
+              component's own self-hide contract (already correct — see its
+              header) reads the fixture's server truth instead: it renders
+              nothing only when the window is closed AND this player never
+              picked AND nothing has settled. A player who finished before
+              kickoff keeps seeing their pick, then the graded result once it
+              settles; a player who finishes after kickoff with no pick on
+              record sees nothing, exactly as §0.6 specifies. */}
+          {userId && pack.metadata?.gameday && (
+            <HalftimePredictionPoll fixtureId={pack.metadata.gameday.fixture_id} phase="prematch" accent={accent} />
           )}
 
           {/* The next loop is the primary action, not sharing. Two dominant share CTAs used

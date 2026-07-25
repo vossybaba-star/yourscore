@@ -13,7 +13,7 @@ import { getCompetitionBadgeUrlSync } from "@/lib/competitionImages";
 import { usePendingFriends } from "@/hooks/usePendingFriends";
 import { usePendingTurns } from "@/hooks/usePendingTurns";
 import { DebateCard } from "@/components/debate/DebateCard";
-import { HalftimeCard } from "@/components/halftime/HalftimeCard";
+import { GamedayCard } from "@/components/home/GamedayCard";
 import { trackShare } from "@/lib/analytics/trackGame";
 import { TodaysQuestionPreview } from "@/components/home/TodaysQuestionPreview";
 import type { TodaysGame, TodaysGameStats } from "@/lib/daily-game";
@@ -281,6 +281,18 @@ const GAME_ACCENT: Record<TodaysGame["gameType"], string> = {
   "guess-the-player": "#4fc3f7",
 };
 
+// The game category, shown as an eyebrow above the title so a pack like
+// "Iconic Managers" reads as a game you play, not a mystery. Only surfaced when
+// it adds something: a quiz pack's title is the pack name, so "Quiz" is news;
+// the other games' titles already ARE the type, so the label is suppressed
+// there (see TodaysGamePlayable) to avoid saying it twice.
+const GAME_TYPE_LABEL: Record<TodaysGame["gameType"], string> = {
+  quiz: "Quiz",
+  "perfect-10": "Perfect 10",
+  "higher-lower": "Higher or Lower",
+  "guess-the-player": "Guess the Player",
+};
+
 function TodaysGameDone({ game, score }: { game: TodaysGame; score: number | null }) {
   const [shared, setShared] = useState(false);
   const accent = GAME_ACCENT[game.gameType];
@@ -364,6 +376,7 @@ function TodaysGameStatsStrip({ stats, accent }: { stats: TodaysGameStats; accen
 
 function TodaysGamePlayable({ game }: { game: TodaysGame }) {
   const accent = GAME_ACCENT[game.gameType];
+  const typeLabel = GAME_TYPE_LABEL[game.gameType];
   const isWcSeries = game.series === "wc2026";
   return (
     <div className="d-3">
@@ -389,13 +402,21 @@ function TodaysGamePlayable({ game }: { game: TodaysGame }) {
           <div className="absolute inset-0" style={{ background: "linear-gradient(90deg, rgba(6,10,8,0.92) 0%, rgba(6,10,8,0.55) 55%, rgba(6,10,8,0.15) 100%)" }} />
           <div className={`relative flex items-center gap-3 px-4 ${game.firstQuestion ? "py-3" : "py-4"}`} style={{ minHeight: game.firstQuestion ? 0 : 146 }}>
             <div className="flex-1 min-w-0">
-              {/* Series identity: this is today's entry in the daily World Cup run */}
-              {isWcSeries && (
+              {/* Game category. The WC series badge already says "quiz series",
+                  so it wins; otherwise show the plain type, but only when it
+                  isn't just repeating the title (a fixed game like Higher or
+                  Lower is its own title). */}
+              {isWcSeries ? (
                 <span className="inline-block font-body text-[9px] font-bold uppercase tracking-[0.2em] px-2 py-1 rounded-md mb-1.5"
                   style={{ background: "rgba(255,194,51,0.16)", color: GOLD, border: `1px solid ${GOLD}55` }}>
                   World Cup quiz series
                 </span>
-              )}
+              ) : typeLabel && typeLabel !== game.title ? (
+                <span className="inline-block font-body text-[9px] font-bold uppercase tracking-[0.2em] px-2 py-1 rounded-md mb-1.5"
+                  style={{ background: `${accent}1f`, color: accent, border: `1px solid ${accent}66` }}>
+                  {typeLabel}
+                </span>
+              ) : null}
               <p className="font-display text-2xl text-white leading-tight" style={{ textShadow: "0 1px 12px rgba(0,0,0,0.6)" }}>{game.title}</p>
               {/* The question card below is the explanation — drop the redundant
                   "what it is" sub when it's shown (founder 2026-07-24). */}
@@ -403,9 +424,13 @@ function TodaysGamePlayable({ game }: { game: TodaysGame }) {
                 <p className="font-body text-xs mt-1" style={{ color: "#c4ccc6" }}>{game.sub}</p>
               )}
             </div>
-            <span className="flex items-center justify-center rounded-full flex-shrink-0" style={{ width: 36, height: 36, background: accent }}>
-              <svg width="15" height="15" viewBox="0 0 18 18" fill="none" style={{ color: "#04231f" }}>
-                <path d="M6 3l6 6-6 6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+            {/* A named CTA, not a bare arrow: "PLAY NOW" reads as an action, so
+                the tile is obviously a game you start (founder 2026-07-25). */}
+            <span className="flex-shrink-0 inline-flex items-center gap-1.5 rounded-full font-display text-sm tracking-wide px-4 py-2"
+              style={{ background: accent, color: "#04231f" }}>
+              PLAY NOW
+              <svg width="13" height="13" viewBox="0 0 18 18" fill="none">
+                <path d="M6 3l6 6-6 6" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </span>
           </div>
@@ -584,7 +609,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
         <PendingFriendsNotice />
 
         {/* Live/upcoming halftime pack — self-hides off-matchday */}
-        <HalftimeCard />
+        <GamedayCard />
 
         {/* 2. Rivalry */}
         <RivalryModule rivalry={rivalry} meName={displayName ? displayName.split(" ")[0] : "You"} meId={userId} />

@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * "Notify me" state for halftime quizzes.
+ * "Notify me" state for Gameday Quiz packs.
  *
  * ONE module-level store, read through useSyncExternalStore — NOT per-component
  * useState. The same fixture appears on two surfaces at once (the Your-next-quiz

@@ -38,32 +38,51 @@ async function call(path, init = {}) {
   return body;
 }
 
-/** GET /api/halftime/schedule?date= — today's rows + the matchday kill-switch state. */
+/** GET /api/gameday/schedule?date= — today's rows + the matchday kill-switch state. */
 export function schedule(date) {
   const q = date ? `?date=${date}` : "";
-  return call(`/api/halftime/schedule${q}`);
+  return call(`/api/gameday/schedule${q}`);
 }
 
+// FIX P2-c (W2): /api/halftime/fresh was the single content-write route for
+// the retired staged/released quiz pipeline and is deleted (§0.1). Its
+// replacement, /api/gameday/content, implements the ops the Gameday
+// pipeline actually needs — base, approve, dedup, cancel — one code path per
+// side effect, same discipline as the route it replaced. op() targets it.
+// putFresh/putVeto/putKickoff/kill/unkill below are fresh-slice-only leftovers
+// with no server-side implementation and stay marked @deprecated — nothing
+// in the Gameday pipeline calls them.
 export function op(body) {
-  return call("/api/halftime/fresh", { method: "POST", body: JSON.stringify(body) });
+  return call("/api/gameday/content", { method: "POST", body: JSON.stringify(body) });
 }
 
-/** Persist the approved base slate. scheduled → base_ready. */
+/** Persist the generated base slate. scheduled|base_ready → base_ready. */
 export const putBase = (fixtureId, questions) => op({ op: "base", fixtureId, questions });
 
-/** Persist the validated fresh slice + its veto deadline and Telegram message id. */
+/** The gate: write the approved questions, pre-assign pack_id, freeze
+ * publish_at. base_ready → approved. */
+export const putApprove = (fixtureId, questions) => op({ op: "approve", fixtureId, questions });
+
+/**
+ * The gate's deadline path (AC7 / spec §3.3): a pack unapproved by its
+ * publish_at → cancelled, no pack, no push. Also used for postponements
+ * gate.mjs learns about directly. Any pre-publish state → cancelled.
+ */
+export const putCancel = (fixtureId, reason) => op({ op: "cancel", fixtureId, reason });
+
+/** @deprecated fresh-slice op, no longer implemented server-side. */
 export const putFresh = (fixtureId, questions, state, extra = {}) =>
   op({ op: "fresh", fixtureId, questions, state, ...extra });
 
-/** One founder tap. Idempotent; honoured right up to release-copy time. */
+/** @deprecated fresh-slice veto op, no longer implemented server-side. */
 export const putVeto = (fixtureId, index, status = "vetoed", all = false) =>
   op({ op: "veto", fixtureId, index, status, all });
 
 /**
- * Season-wide duplicate check (AC6): which of these question texts already
- * exist in the active bank or in any halftime pack this season? Returns the
- * indexes that collide. Normalization happens server-side with the canonical
- * normalizeQuestionText, so the generators never re-implement it.
+ * Season-wide duplicate check (AC6 / FIX P2-c). Returns the INDICES into
+ * `texts` that collide with the `questions` bank, any other gameday pack
+ * this season, or any Recap pack this season — normalizeQuestionText,
+ * server-side, same normalization the bank's own uniqueness guard uses.
  */
 export const dedupCheck = async (texts, excludeFixtureId) => {
   if (!texts.length) return [];
@@ -71,15 +90,11 @@ export const dedupCheck = async (texts, excludeFixtureId) => {
   return res.collisions ?? [];
 };
 
-/**
- * Persist a moved kickoff. The row is the single clock: the watchdog reads
- * kickoff_at from the DB, so a kickoff the poller followed only in its own
- * memory would leave the watchdog acting on a stale time if the poller died.
- */
+/** @deprecated kickoff-drift-persist op, no longer implemented server-side. */
 export const putKickoff = (fixtureId, kickoffAt, extra = {}) =>
   op({ op: "kickoff", fixtureId, kickoffAt, ...extra });
 
-/** The slate kill switch. One message, whole matchday. */
+/** @deprecated the fresh-slice kill switch, no longer implemented server-side. */
 export const kill = (matchday) => op({ op: "kill", matchday });
 export const unkill = (matchday) => op({ op: "unkill", matchday });
 
@@ -121,6 +136,30 @@ export async function readFixtures({ fromUtc, toUtc }) {
     order: "kickoff_at.asc",
   });
   q.append("kickoff_at", `lt.${toUtc}`);
+  const res = await fetch(`${url}/rest/v1/halftime_releases?${q}`, {
+    headers: { apikey: key, Authorization: `Bearer ${key}` },
+  });
+  if (!res.ok) throw new Error(`read failed ${res.status}`);
+  return res.json();
+}
+
+/**
+ * Read existing rows by fixture_id, whatever date their CURRENT kickoff_at
+ * says (which may be far from the incoming one for a postponed fixture).
+ * FIX P2-a: sync-fixtures.mjs needs this BEFORE the upsert to detect "this
+ * fixture_id already exists, was cancelled, and its kickoff has moved" —
+ * readFixtures() alone can't see it if the old kickoff_at falls outside the
+ * date range being synced. Same direct-REST exception as upsertFixtures,
+ * confined to sync-fixtures.mjs (read-only here, so lower-risk than the write).
+ */
+export async function readFixturesByIds(fixtureIds) {
+  if (!fixtureIds.length) return [];
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const q = new URLSearchParams({
+    select: "fixture_id,home,away,kickoff_at,state,round_name",
+    fixture_id: `in.(${fixtureIds.join(",")})`,
+  });
   const res = await fetch(`${url}/rest/v1/halftime_releases?${q}`, {
     headers: { apikey: key, Authorization: `Bearer ${key}` },
   });

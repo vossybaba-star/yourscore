@@ -25,8 +25,8 @@ export interface LiveMatch {
   away_score: number;
 }
 
-// Premier League 2026/27 GW1 kick-off. Same date the halftime quiz packs go
-// live, so one countdown covers both promises on this page.
+// Premier League 2026/27 GW1 kick-off. Gameday quiz packs start publishing
+// the day before, so one countdown covers both promises on this page.
 const SEASON_START = new Date("2026-08-21T18:30:00Z");
 
 // ── Animations ────────────────────────────────────────────────────────────────
@@ -426,8 +426,19 @@ const TODAYS_GAME_ACCENT: Record<TodaysGame["gameType"], string> = {
   "guess-the-player": "#4fc3f7",
 };
 
+// Mirrors GAME_TYPE_LABEL in Dashboard.tsx — the game category shown above the
+// title so a quiz pack reads as a game to play. Suppressed for games whose
+// title already is their type (see TodaysGameCard).
+const TODAYS_GAME_TYPE_LABEL: Record<TodaysGame["gameType"], string> = {
+  quiz: "Quiz",
+  "perfect-10": "Perfect 10",
+  "higher-lower": "Higher or Lower",
+  "guess-the-player": "Guess the Player",
+};
+
 function TodaysGameCard({ game }: { game: TodaysGame }) {
   const accent = TODAYS_GAME_ACCENT[game.gameType];
+  const typeLabel = TODAYS_GAME_TYPE_LABEL[game.gameType];
   return (
     <section className="relative z-10 max-w-6xl mx-auto px-6 pb-10">
       <p className="font-body text-xs uppercase tracking-widest mb-3" style={{ color: accent }}>Today&apos;s game</p>
@@ -445,6 +456,14 @@ function TodaysGameCard({ game }: { game: TodaysGame }) {
         <div className="absolute inset-0" style={{ background: "linear-gradient(90deg, rgba(6,10,8,0.92) 0%, rgba(6,10,8,0.55) 55%, rgba(6,10,8,0.15) 100%)" }} />
         <div className="relative flex items-center gap-4 px-6 py-5 w-full">
           <div className="flex-1 min-w-0">
+            {/* Game category — suppressed when it just repeats the title (a
+                fixed game like Higher or Lower is its own name). */}
+            {typeLabel && typeLabel !== game.title && (
+              <span className="inline-block font-body text-[10px] font-bold uppercase tracking-[0.2em] px-2 py-1 rounded-md mb-1.5"
+                style={{ background: `${accent}1f`, color: accent, border: `1px solid ${accent}66` }}>
+                {typeLabel}
+              </span>
+            )}
             <p className="font-display text-2xl sm:text-3xl text-white leading-tight" style={{ textShadow: "0 1px 12px rgba(0,0,0,0.6)" }}>{game.title}</p>
             {/* When the question card is shown below, it explains the game far
                 better than a sentence can — so drop the "what it is" line and
@@ -453,9 +472,13 @@ function TodaysGameCard({ game }: { game: TodaysGame }) {
               {game.firstQuestion ? "Play free, no sign-in needed" : `${game.sub} · play free, no sign-in needed`}
             </p>
           </div>
-          <span className="flex items-center justify-center rounded-full flex-shrink-0" style={{ width: 44, height: 44, background: accent }}>
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ color: "#04231f" }}>
-              <path d="M6 3l6 6-6 6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+          {/* Named CTA, matching the signed-in tile — a bare arrow didn't read
+              as "start a game". */}
+          <span className="flex-shrink-0 inline-flex items-center gap-1.5 rounded-full font-display text-sm sm:text-base tracking-wide px-4 sm:px-5 py-2.5"
+            style={{ background: accent, color: "#04231f" }}>
+            PLAY NOW
+            <svg width="14" height="14" viewBox="0 0 18 18" fill="none">
+              <path d="M6 3l6 6-6 6" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </span>
         </div>
@@ -863,7 +886,7 @@ export function MarketingLanding({ matches, todaysGame }: { matches: LiveMatch[]
             {/* The eyebrow lists fantasy and gameday flat, as things the brand
                 does. This is where the honest specifics live: both land on
                 21 Aug with the season, and this section says so. */}
-            <p className="font-body text-sm text-text-muted mt-4 mb-6">Fantasy and gameday quizzes land with the season. A quiz pack at the half time whistle of every fixture, and a squad that scores all year. Everything else is playable now.</p>
+            <p className="font-body text-sm text-text-muted mt-4 mb-6">Fantasy and Gameday Quiz land with the season. A quiz pack the day before every fixture, and a squad that scores all year. Everything else is playable now.</p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link href="/play" className="inline-flex items-center gap-2 font-body font-bold text-sm px-6 py-3 rounded-xl transition-all hover:opacity-90 pulse-glow"
                 style={{ background: "#aeea00", color: "#0a0a0f" }}>

@@ -15,7 +15,8 @@
  *       days — pre-season GW1 is ~36 days out), then smoke-checks the public
  *       endpoints: standings has 20 clubs, fixtures returns GW1, news has
  *       items. Fixtures must wait for the deploy because the sync script
- *       writes through /api/halftime/fresh, which doesn't exist on prod yet.
+ *       writes through the live app's own gameday content route, which
+ *       doesn't exist on prod yet.
  *
  * Every step asserts its result (LOOP rule 1) and the script stops on the
  * first failure — a half-applied launch should look failed, not shipped.
@@ -47,7 +48,7 @@ const MIGRATIONS = [
   "99_waitlist_emails.sql",
 ];
 const TABLES = [
-  "halftime_releases", "halftime_control", "halftime_heartbeat",
+  "halftime_releases", "halftime_heartbeat",
   "club_supporters", "halftime_predictions", "halftime_prediction_results",
   "pl_news_feed", "quiz_highlights", "halftime_reminders", "waitlist_emails",
 ];
