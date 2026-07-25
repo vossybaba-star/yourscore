@@ -1,47 +1,42 @@
 "use client";
 /**
- * /fantasy — the deep-link route for the squad home.
+ * /fantasy — the Fantasy tab.
  *
- * Fantasy's HOME is the Fantasy section of the Premier League tab; this route
- * exists because things outside the app point straight here: the gameweek share
- * link's CTA, the result email, the deadline push, and any bookmark from before
- * the section existed. It renders the same component the tab does, with the
- * bottom nav attached — the walk found this page rendering NO nav at all, so a
- * deep link stranded you with no way into the rest of YourScore.
- *
- * While the release gate is shut this route has to stay shut too, or it is the
- * open back door around the hidden tab. Those visitors go to the PL tab rather
- * than a dead end.
+ * Public now (founder, 25 Jul): everyone can open it, but until launch the
+ * allowlist decides what they get —
+ *   allowlisted / ?fantasy=preview → the real game (FantasyHub: build, round,
+ *                                    transfers, leagues).
+ *   everyone else                  → a teaser: what we're building + a one-tap
+ *                                    waitlist opt-in (FantasyTeaser).
+ * Deep links (share cards, result emails, the deadline push) all land here and
+ * resolve to whichever the visitor is entitled to — no dead ends.
  */
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { FantasyHub } from "@/components/fantasy/FantasyHub";
+import { FantasyTeaser } from "@/components/fantasy/FantasyTeaser";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { fantasyVisible } from "@/lib/fantasy/flag";
 import { useUser } from "@/hooks/useUser";
 
 export default function FantasyPage() {
-  const router = useRouter();
-  // null until mounted: the flag reads sessionStorage and the URL, which the
+  // null until mounted: the flag reads sessionStorage + the URL, which the
   // server can't see, so committing to either branch during SSR would mismatch
   // the server HTML and break hydration.
-  const [allowed, setAllowed] = useState<boolean | null>(null);
+  const [full, setFull] = useState<boolean | null>(null);
   const { user, loading } = useUser();
 
   useEffect(() => {
     // Wait for the signed-in user before deciding, or an allowlisted founder
-    // could be bounced on the split-second before their session resolves.
+    // could get the teaser on the split-second before their session resolves.
     if (loading) return;
-    const ok = fantasyVisible(user?.id);
-    setAllowed(ok);
-    if (!ok) router.replace("/matchweek");
-  }, [router, user, loading]);
+    setFull(fantasyVisible(user?.id));
+  }, [user, loading]);
 
-  if (!allowed) return null; // deciding, or redirecting
+  if (full === null) return null; // deciding
 
   return (
     <>
-      <FantasyHub />
+      {full ? <FantasyHub /> : <FantasyTeaser />}
       <BottomNav />
     </>
   );
