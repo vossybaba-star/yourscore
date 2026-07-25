@@ -112,8 +112,8 @@ export function WaitlistCard({ source = "blog" }: { source?: string }) {
         FANTASY FOOTBALL IS COMING
       </p>
       <p className="font-body text-sm text-text-muted mt-2 leading-6">
-        YourScore Fantasy Football launches mid-August: your football knowledge earns your
-        transfers. Save your spot and you&apos;ll get gameweek-1 access the moment it opens.
+        YourScore Fantasy Football launches Friday 21 August: your football knowledge earns your
+        transfers. Save your spot and you&apos;ll get gameweek 1 access the moment it opens.
       </p>
       <button
         onClick={onClick}
@@ -127,7 +127,7 @@ export function WaitlistCard({ source = "blog" }: { source?: string }) {
       <p className="font-body text-[11px] text-text-muted mt-3">
         {user
           ? "One launch email, no spam. Unsubscribe any time."
-          : "Takes one tap once you're signed in — one launch email, no spam."}
+          : "Takes one tap once you're signed in. One launch email, no spam."}
       </p>
     </div>
   );
