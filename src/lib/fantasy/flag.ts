@@ -28,9 +28,11 @@ const PREVIEW_KEY = "ys-fantasy-preview";
  * redeploy to change who's in. When fantasy opens to everyone the global env
  * flag goes true and this list stops mattering.
  */
-export const FANTASY_ALLOWLIST: readonly string[] = [
-  "4050ec90-5323-46aa-8dc0-811e0aac701a", // vossybaba — founder
-];
+// Emptied 25 Jul (founder): "make my version the same as all users." With no
+// one on the list and the env gate still off, EVERY account — the founder's
+// included — sees the public Fantasy teaser, not the full build. Re-add an id
+// here to preview the real game on prod again without opening it to everyone.
+export const FANTASY_ALLOWLIST: readonly string[] = [];
 
 /** Env answer only. Safe on the server; ignores the preview escape hatch. */
 export function fantasyEnabledByEnv(): boolean {
