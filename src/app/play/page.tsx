@@ -118,7 +118,7 @@ function ClubCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: string 
         // With a designed cover the image sets the zone's height (shown whole);
         // the fixed 110px banner only applies to the badge/initial fallbacks.
         style={pack.metadata?.cover_image ? undefined : {
-          height: 110,
+          height: 88,
           background:
             "radial-gradient(ellipse at 50% 80%, rgba(0,216,192,0.12) 0%, transparent 70%), linear-gradient(180deg, rgba(0,216,192,0.05) 0%, transparent 100%)",
         }}
@@ -130,8 +130,8 @@ function ClubCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: string 
           <img
             src={badgeUrl}
             alt={pack.name}
-            width={82}
-            height={82}
+            width={58}
+            height={58}
             style={{
               objectFit: "contain",
               filter: "drop-shadow(0 6px 16px rgba(0,216,192,0.35))",
@@ -141,26 +141,23 @@ function ClubCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: string 
           />
         ) : (
           <div
-            className="flex items-center justify-center rounded-2xl font-display text-3xl text-white"
-            style={{ width: 68, height: 68, background: "rgba(0,216,192,0.1)", border: "1px solid rgba(0,216,192,0.2)" }}
+            className="flex items-center justify-center rounded-xl font-display text-xl text-white"
+            style={{ width: 48, height: 48, background: "rgba(0,216,192,0.1)", border: "1px solid rgba(0,216,192,0.2)" }}
           >
             {pack.name[0]}
           </div>
         )}
       </div>
-      <div className="px-4 pb-4 pt-3">
-        <p className="font-body text-sm font-bold text-white leading-snug mb-0.5">{pack.name}</p>
-        {pack.description && (
-          <p className="font-body text-xs mb-2.5 line-clamp-2 leading-relaxed" style={{ color: "#7a857f" }}>{pack.description}</p>
-        )}
+      <div className="px-2 pb-2.5 pt-2">
+        <p className="font-body text-[12px] font-bold text-white leading-tight mb-1.5 line-clamp-2" style={{ minHeight: 30 }}>{pack.name}</p>
         <div
-          className="rounded-xl py-2 text-center"
+          className="rounded-lg py-1.5 text-center"
           style={{
             background: "linear-gradient(135deg, rgba(0,216,192,0.18) 0%, rgba(255,120,0,0.12) 100%)",
             border: "1px solid rgba(0,216,192,0.3)",
           }}
         >
-          <span className="font-display text-xs tracking-widest text-teal">OPEN CLUB →</span>
+          <span className="font-display text-[10px] tracking-wide text-teal">OPEN →</span>
         </div>
       </div>
     </Link>
@@ -190,7 +187,7 @@ function RecordsCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: stri
       <div
         className="relative flex items-center justify-center"
         style={pack.metadata?.cover_image ? undefined : {
-          height: 110,
+          height: 88,
           background:
             "radial-gradient(ellipse at 50% 80%, rgba(0,216,192,0.14) 0%, transparent 70%), linear-gradient(180deg, rgba(0,216,192,0.06) 0%, transparent 100%)",
         }}
@@ -202,8 +199,8 @@ function RecordsCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: stri
           <img
             src={logoUrl}
             alt={pack.name}
-            width={64}
-            height={64}
+            width={48}
+            height={48}
             style={{
               objectFit: "contain",
               filter: "drop-shadow(0 6px 16px rgba(0,216,192,0.45))",
@@ -212,35 +209,30 @@ function RecordsCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: stri
             }}
           />
         ) : (
-          <span className="text-5xl" style={{ filter: "drop-shadow(0 4px 12px rgba(0,216,192,0.4))" }}>
+          <span className="text-4xl" style={{ filter: "drop-shadow(0 4px 12px rgba(0,216,192,0.4))" }}>
             {emoji ?? "📊"}
           </span>
         )}
         <div
-          className={`absolute ${pack.metadata?.cover_image ? "bottom-3" : "top-3"} right-3 font-display text-xs px-2 py-0.5 rounded-lg`}
+          className={`absolute ${pack.metadata?.cover_image ? "bottom-2" : "top-2"} right-2 font-display text-[10px] px-1.5 py-0.5 rounded-md`}
           style={{ background: "rgba(0,0,0,0.5)", color: "#00d8c0", border: "1px solid rgba(0,216,192,0.3)" }}
         >
           {pack.question_count}Q
         </div>
       </div>
-      <div className="px-4 pb-4 pt-3">
-        <p className="font-body text-sm font-bold text-white leading-tight mb-0.5">{pack.name}</p>
-        <p className="font-body text-xs mb-1.5" style={{ color: "#8a948f" }}>
-          {/* Was hardcoded "All-Time Records" for every pack — mislabeled the daily
-              World Cup quizzes (audit 13 Jul). Derive from the pack instead. */}
+      <div className="px-2 pb-2.5 pt-2">
+        <p className="font-body text-[12px] font-bold text-white leading-tight mb-1 line-clamp-2" style={{ minHeight: 30 }}>{pack.name}</p>
+        <p className="font-body text-[10px] mb-1.5 line-clamp-1" style={{ color: "#8a948f" }}>
           {isWorldCupPack(pack) ? "World Cup 2026" : "All-Time Records"}{packDate(pack.created_at) ? ` · ${packDate(pack.created_at)}` : ""}
         </p>
-        {pack.description && (
-          <p className="font-body text-xs mb-2.5 line-clamp-2 leading-relaxed" style={{ color: "#7a857f" }}>{pack.description}</p>
-        )}
         <div
-          className="rounded-xl py-2 text-center"
+          className="rounded-lg py-1.5 text-center"
           style={{
             background: "linear-gradient(135deg, rgba(0,216,192,0.18) 0%, rgba(0,216,192,0.05) 100%)",
             border: "1px solid rgba(0,216,192,0.3)",
           }}
         >
-          <span className="font-display text-xs tracking-widest" style={{ color: "#00d8c0" }}>PLAY NOW →</span>
+          <span className="font-display text-[10px] tracking-wide" style={{ color: "#00d8c0" }}>PLAY →</span>
         </div>
       </div>
     </Link>
@@ -274,7 +266,7 @@ function EndOfSeasonCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: 
       <div
         className="relative flex items-center justify-center"
         style={pack.metadata?.cover_image ? undefined : {
-          height: 110,
+          height: 88,
           background:
             "radial-gradient(ellipse at 50% 80%, rgba(0,216,192,0.14) 0%, transparent 70%), linear-gradient(180deg, rgba(0,216,192,0.06) 0%, transparent 100%)",
         }}
@@ -286,8 +278,8 @@ function EndOfSeasonCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: 
           <img
             src={imageUrl}
             alt={pack.name}
-            width={64}
-            height={64}
+            width={48}
+            height={48}
             style={{
               objectFit: "contain",
               filter: "drop-shadow(0 6px 16px rgba(0,216,192,0.45))",
@@ -296,37 +288,34 @@ function EndOfSeasonCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: 
             }}
           />
         ) : (
-          <span className="text-5xl" style={{ filter: "drop-shadow(0 4px 12px rgba(0,216,192,0.4))" }}>
+          <span className="text-4xl" style={{ filter: "drop-shadow(0 4px 12px rgba(0,216,192,0.4))" }}>
             {emoji ?? "🏁"}
           </span>
         )}
         <div
-          className={`absolute ${pack.metadata?.cover_image ? "bottom-3" : "top-3"} right-3 font-display text-xs px-2 py-0.5 rounded-lg`}
+          className={`absolute ${pack.metadata?.cover_image ? "bottom-2" : "top-2"} right-2 font-display text-[10px] px-1.5 py-0.5 rounded-md`}
           style={{ background: "rgba(0,0,0,0.5)", color: "#00d8c0", border: "1px solid rgba(0,216,192,0.3)" }}
         >
           {pack.question_count}Q
         </div>
         <div
-          className={`absolute ${pack.metadata?.cover_image ? "bottom-3" : "top-3"} left-3 font-body text-xs px-2 py-0.5 rounded-full font-semibold`}
+          className={`absolute ${pack.metadata?.cover_image ? "bottom-2" : "top-2"} left-2 font-body text-[10px] px-1.5 py-0.5 rounded-full font-semibold`}
           style={{ background: "rgba(0,216,192,0.15)", color: "#00d8c0", border: "1px solid rgba(0,216,192,0.3)" }}
         >
           25/26
         </div>
       </div>
-      <div className="px-4 pb-4 pt-3">
-        <p className="font-body text-sm font-bold text-white leading-tight mb-0.5">{pack.name}</p>
-        <p className="font-body text-xs mb-1.5" style={{ color: "#8a948f" }}>End of Season</p>
-        {pack.description && (
-          <p className="font-body text-xs mb-2.5 line-clamp-2 leading-relaxed" style={{ color: "#7a857f" }}>{pack.description}</p>
-        )}
+      <div className="px-2 pb-2.5 pt-2">
+        <p className="font-body text-[12px] font-bold text-white leading-tight mb-1 line-clamp-2" style={{ minHeight: 30 }}>{pack.name}</p>
+        <p className="font-body text-[10px] mb-1.5" style={{ color: "#8a948f" }}>End of Season</p>
         <div
-          className="rounded-xl py-2 text-center"
+          className="rounded-lg py-1.5 text-center"
           style={{
             background: "linear-gradient(135deg, rgba(0,216,192,0.18) 0%, rgba(6,182,212,0.12) 100%)",
             border: "1px solid rgba(0,216,192,0.3)",
           }}
         >
-          <span className="font-display text-xs tracking-widest" style={{ color: "#00d8c0" }}>PLAY NOW →</span>
+          <span className="font-display text-[10px] tracking-wide" style={{ color: "#00d8c0" }}>PLAY →</span>
         </div>
       </div>
     </Link>
@@ -877,10 +866,10 @@ function PlayPageInner() {
           {soloTab !== "build" && (
           <div className="max-w-lg mx-auto px-4 pt-2">
             {packsLoading ? (
-              <div className="grid grid-cols-2 gap-3">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="rounded-3xl bg-surface"
-                    style={{ border: "1px solid rgba(255,255,255,0.06)", height: 200, opacity: 0.3 }} />
+              <div className="grid grid-cols-3 gap-2.5">
+                {Array.from({ length: 9 }).map((_, i) => (
+                  <div key={i} className="rounded-2xl bg-surface"
+                    style={{ border: "1px solid rgba(255,255,255,0.06)", height: 150, opacity: 0.3 }} />
                 ))}
               </div>
             ) : filtered.length === 0 ? (
@@ -891,7 +880,7 @@ function PlayPageInner() {
             ) : (
               <>
                 {heroPack && <HeroPackCard pack={heroPack} challengeTo={challengeTo} />}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-3 gap-2.5">
                   {gridPacks.map((pack) =>
                   pack.parameter === "2025/26 End of Season" ? (
                     <EndOfSeasonCard key={pack.id} pack={pack} challengeTo={challengeTo} />

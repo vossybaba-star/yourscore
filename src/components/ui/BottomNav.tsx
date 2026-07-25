@@ -170,9 +170,12 @@ export function BottomNav() {
 
           {/* Play — the label now matches its route (/play). It was "Quiz". */}
           <Link href="/play" className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-1 transition-colors" style={{ color: isChallenges ? "#00d8c0" : "#8a948f" }}>
-            <svg width="21" height="21" viewBox="0 0 22 22" fill="none">
-              <path d="M11 2L13.5 8.5H20.5L14.9 12.5L17 19L11 15L5 19L7.1 12.5L1.5 8.5H8.5L11 2Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" fill={isChallenges ? "currentColor" : "none"} fillOpacity={isChallenges ? 0.15 : 0} />
-            </svg>
+            <span className="relative inline-flex items-center justify-center">
+              <span className="nav-glow" aria-hidden />
+              <svg width="21" height="21" viewBox="0 0 22 22" fill="none" style={{ position: "relative", zIndex: 1 }}>
+                <path d="M11 2L13.5 8.5H20.5L14.9 12.5L17 19L11 15L5 19L7.1 12.5L1.5 8.5H8.5L11 2Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" fill={isChallenges ? "currentColor" : "none"} fillOpacity={isChallenges ? 0.15 : 0} />
+              </svg>
+            </span>
             <span className="font-body text-xs text-center leading-tight">Play</span>
           </Link>
 
@@ -191,10 +194,13 @@ export function BottomNav() {
           {/* Fantasy — public now (founder 2026-07-25). The tab is a teaser +
               waitlist opt-in until launch; the real game stays allowlisted inside. */}
           <Link href="/fantasy" className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-1 transition-colors" style={{ color: isFantasy ? "#00d8c0" : "#8a948f" }}>
-            <svg width="21" height="21" viewBox="0 0 22 22" fill="none">
-              <path d="M8 3L3.5 5.5 5.5 9 8 7.7V19a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V7.7L16.5 9l2-3.5L14 3a3 3 0 0 1-6 0z"
-                stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" fill={isFantasy ? "currentColor" : "none"} fillOpacity={isFantasy ? 0.15 : 0} />
-            </svg>
+            <span className="relative inline-flex items-center justify-center">
+              <span className="nav-glow" aria-hidden />
+              <svg width="21" height="21" viewBox="0 0 22 22" fill="none" style={{ position: "relative", zIndex: 1 }}>
+                <path d="M8 3L3.5 5.5 5.5 9 8 7.7V19a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V7.7L16.5 9l2-3.5L14 3a3 3 0 0 1-6 0z"
+                  stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" fill={isFantasy ? "currentColor" : "none"} fillOpacity={isFantasy ? 0.15 : 0} />
+              </svg>
+            </span>
             <span className="font-body text-xs text-center leading-tight">Fantasy</span>
           </Link>
 
@@ -244,7 +250,8 @@ export function BottomNav() {
             open Play. */}
         <Link href="/play" className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-1 transition-colors" style={{ color: isChallenges ? "#00d8c0" : "#8a948f" }}>
           <div className="relative">
-            <svg width="21" height="21" viewBox="0 0 22 22" fill="none">
+            <span className="nav-glow" aria-hidden />
+            <svg width="21" height="21" viewBox="0 0 22 22" fill="none" style={{ position: "relative", zIndex: 1 }}>
               <path d="M11 2L13.5 8.5H20.5L14.9 12.5L17 19L11 15L5 19L7.1 12.5L1.5 8.5H8.5L11 2Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" fill={isChallenges ? "currentColor" : "none"} fillOpacity={isChallenges ? 0.15 : 0} />
             </svg>
             {pendingTurns > 0 && (
@@ -275,10 +282,13 @@ export function BottomNav() {
         {/* Fantasy — its own tab, public now (founder 2026-07-25). A teaser +
             waitlist opt-in until launch; the real game stays allowlisted inside. */}
         <Link href="/fantasy" className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-1 transition-colors" style={{ color: isFantasy ? "#00d8c0" : "#8a948f" }}>
-          <svg width="21" height="21" viewBox="0 0 22 22" fill="none">
-            <path d="M8 3L3.5 5.5 5.5 9 8 7.7V19a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V7.7L16.5 9l2-3.5L14 3a3 3 0 0 1-6 0z"
-              stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" fill={isFantasy ? "currentColor" : "none"} fillOpacity={isFantasy ? 0.15 : 0} />
-          </svg>
+          <span className="relative inline-flex items-center justify-center">
+            <span className="nav-glow" aria-hidden />
+            <svg width="21" height="21" viewBox="0 0 22 22" fill="none" style={{ position: "relative", zIndex: 1 }}>
+              <path d="M8 3L3.5 5.5 5.5 9 8 7.7V19a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V7.7L16.5 9l2-3.5L14 3a3 3 0 0 1-6 0z"
+                stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" fill={isFantasy ? "currentColor" : "none"} fillOpacity={isFantasy ? 0.15 : 0} />
+            </svg>
+          </span>
           <span className="font-body text-xs text-center leading-tight">Fantasy</span>
         </Link>
 
