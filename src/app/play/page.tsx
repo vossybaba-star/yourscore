@@ -367,7 +367,7 @@ function OpenRoomCard({ room, onJoin }: { room: OpenRoom; onJoin: () => void }) 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 type MainTab = "solo" | "multiplayer" | "leaderboards";
-type SoloTab = "featured" | "worldcup" | "club" | "records";
+type SoloTab = "featured" | "worldcup" | "club" | "records" | "build";
 
 // A World Cup quiz: tagged via metadata.series (the daily seed sets series:"wc2026")
 // or named/parametered for the World Cup. These are the daily £100-series packs.
@@ -751,6 +751,7 @@ function PlayPageInner() {
                 { key: "worldcup", label: "World Cup" },
                 { key: "club", label: "Club" },
                 { key: "records", label: "Records" },
+                { key: "build", label: "Build a Quiz" },
               ] as { key: SoloTab; label: string }[]).map((t) => (
                 <button
                   key={t.key}
@@ -803,55 +804,65 @@ function PlayPageInner() {
               separate games in the GameSwitcher now (founder ruling 2026-07-18)
               — no longer tiles inside the Quiz hub. */}
 
-          {/* Build a Quiz banner */}
-          <div className="max-w-lg mx-auto px-4 pt-4 pb-2">
-            <button
-              onClick={() => router.push("/quiz/create")}
-              className="w-full rounded-2xl overflow-hidden transition-all duration-150 active:scale-[0.98]"
-              style={{
-                background: "linear-gradient(135deg, rgba(174,234,0,0.12) 0%, rgba(0,200,100,0.06) 100%)",
-                border: "1px solid rgba(174,234,0,0.3)",
-                padding: "16px 20px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                boxShadow: "0 0 24px rgba(174,234,0,0.06)",
-              }}
-            >
-              <div style={{ textAlign: "left" }}>
-                <p className="font-display text-sm tracking-wide text-green">✨ BUILD YOUR OWN QUIZ</p>
-                <p className="font-body text-xs mt-0.5 text-text-muted">Pick a team or topic · choose your era · challenge a friend</p>
+          {/* ── Build a Quiz tab — the builder entry point plus the quizzes
+              this user has already built. ────────────────────────────────── */}
+          {soloTab === "build" && (
+            <>
+              <div className="max-w-lg mx-auto px-4 pt-4 pb-2">
+                <button
+                  onClick={() => router.push("/quiz/create")}
+                  className="w-full rounded-2xl overflow-hidden transition-all duration-150 active:scale-[0.98]"
+                  style={{
+                    background: "linear-gradient(135deg, rgba(174,234,0,0.12) 0%, rgba(0,200,100,0.06) 100%)",
+                    border: "1px solid rgba(174,234,0,0.3)",
+                    padding: "16px 20px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    boxShadow: "0 0 24px rgba(174,234,0,0.06)",
+                  }}
+                >
+                  <div style={{ textAlign: "left" }}>
+                    <p className="font-display text-sm tracking-wide text-green">✨ BUILD YOUR OWN QUIZ</p>
+                    <p className="font-body text-xs mt-0.5 text-text-muted">Pick a team or topic · choose your era · challenge a friend</p>
+                  </div>
+                  <span className="font-display text-lg text-green">→</span>
+                </button>
               </div>
-              <span className="font-display text-lg text-green">→</span>
-            </button>
-          </div>
 
-          {/* Your quizzes — the ones this user built. Sits directly under the builder so
-              creating one and finding it again are the same place. Horizontal scroller so it
-              stays a slim strip above the main grid rather than pushing everything down. */}
-          {myPacks.length > 0 && (
-            <div className="max-w-lg mx-auto pt-2 pb-1">
-              <div className="px-4 flex items-center justify-between mb-2">
-                <p className="font-display text-xs tracking-widest" style={{ color: "#586058" }}>YOUR QUIZZES</p>
-              </div>
-              <div className="flex gap-3 overflow-x-auto px-4 pb-1" style={{ scrollbarWidth: "none" }}>
-                {myPacks.map((p) => (
-                  <Link
-                    key={p.id}
-                    href={`/challenges/${slugify(p.name)}?pid=${p.id}${challengeTo ? `&challenge=${challengeTo}` : ""}`}
-                    className="flex-shrink-0 rounded-2xl px-4 py-3 transition-all duration-150 active:scale-[0.97]"
-                    style={{ width: 190, background: "linear-gradient(160deg, #0e1611 0%, #15211a 100%)", border: "1px solid rgba(0,216,192,0.18)" }}
-                  >
-                    <p className="font-body text-sm font-bold text-white leading-snug line-clamp-2" style={{ minHeight: 36 }}>{p.name}</p>
-                    <p className="font-body text-xs mt-1" style={{ color: "#7a857f" }}>{p.question_count} questions</p>
-                    <span className="font-display text-xs tracking-widest text-teal">PLAY →</span>
-                  </Link>
-                ))}
-              </div>
-            </div>
+              {/* Your quizzes — the ones this user built. Lives here in the Build
+                  tab so creating one and finding it again are the same place. */}
+              {myPacks.length > 0 ? (
+                <div className="max-w-lg mx-auto pt-2 pb-1">
+                  <div className="px-4 flex items-center justify-between mb-2">
+                    <p className="font-display text-xs tracking-widest" style={{ color: "#586058" }}>YOUR QUIZZES</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 px-4">
+                    {myPacks.map((p) => (
+                      <Link
+                        key={p.id}
+                        href={`/challenges/${slugify(p.name)}?pid=${p.id}${challengeTo ? `&challenge=${challengeTo}` : ""}`}
+                        className="rounded-2xl px-4 py-3 transition-all duration-150 active:scale-[0.97]"
+                        style={{ background: "linear-gradient(160deg, #0e1611 0%, #15211a 100%)", border: "1px solid rgba(0,216,192,0.18)" }}
+                      >
+                        <p className="font-body text-sm font-bold text-white leading-snug line-clamp-2" style={{ minHeight: 36 }}>{p.name}</p>
+                        <p className="font-body text-xs mt-1" style={{ color: "#7a857f" }}>{p.question_count} questions</p>
+                        <span className="font-display text-xs tracking-widest text-teal">PLAY →</span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="max-w-lg mx-auto px-4 flex flex-col items-center justify-center py-16 text-center">
+                  <p className="text-4xl mb-4">✏️</p>
+                  <p className="font-body text-sm text-text-muted">You haven&apos;t built a quiz yet — tap above to make one.</p>
+                </div>
+              )}
+            </>
           )}
 
           {/* Cards grid */}
+          {soloTab !== "build" && (
           <div className="max-w-lg mx-auto px-4 pt-2">
             {packsLoading ? (
               <div className="grid grid-cols-2 gap-3">
@@ -882,6 +893,7 @@ function PlayPageInner() {
               </>
             )}
           </div>
+          )}
         </>
       )}
 
