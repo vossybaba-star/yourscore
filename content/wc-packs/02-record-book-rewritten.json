@@ -1,0 +1,34 @@
+{
+  "name": "Record Book Rewritten: The Milestones of 2026",
+  "parameter": "World Cup 2026 Records",
+  "type": "records",
+  "icon": "📖",
+  "theme": "records",
+  "angle": "World Cup 2026 was a records tournament beyond Messi: Mbappe became France's all-time scorer on his 100th cap, 41-year-old Ronaldo became the oldest outfield player to start a World Cup match and the first to score at six tournaments, Kane drew level with Lineker, and Tielemans scored the latest goal in World Cup history. Curated and de-duplicated from the daily World Cup quiz series.",
+  "curated_from": [
+    "2026-06-16-first-round-shocks.json",
+    "2026-06-17-the-giants-arrive.json",
+    "2026-06-18-record-book-rewritten.json",
+    "2026-06-19-statement-round.json",
+    "2026-06-23-messi-makes-history.json",
+    "2026-06-25-group-stage-finale.json",
+    "2026-07-02-comeback-wednesday.json"
+  ],
+  "questions": [
+    { "difficulty": "easy",   "category": "mbappe", "question": "Kylian Mbappe became which nation's all-time leading scorer during their opening 3-1 win over Senegal?", "options": { "A": "France", "B": "Belgium", "C": "Portugal", "D": "Spain" }, "answer": "A" },
+    { "difficulty": "medium", "category": "mbappe", "question": "Mbappe's brace against Senegal saw him overtake which striker as France's all-time leading scorer?", "options": { "A": "Olivier Giroud", "B": "Thierry Henry", "C": "Antoine Griezmann", "D": "Karim Benzema" }, "answer": "A" },
+    { "difficulty": "medium", "category": "mbappe", "question": "Mbappe drew level with Klose on 16 World Cup goals with a brace against Iraq, on what landmark occasion for the France captain?", "options": { "A": "His 100th cap for France", "B": "His 30th birthday", "C": "His first match as captain", "D": "His 50th World Cup appearance" }, "answer": "A" },
+    { "difficulty": "medium", "category": "ronaldo", "question": "Cristiano Ronaldo's brace against Uzbekistan made him the first player ever to score at how many different World Cups?", "options": { "A": "Six", "B": "Five", "C": "Seven", "D": "Four" }, "answer": "A" },
+    { "difficulty": "medium", "category": "records", "question": "Messi and Ronaldo shared a new distinction in 2026, becoming the first players ever to do what?", "options": { "A": "Appear at six different World Cups", "B": "Score at six different World Cups", "C": "Captain a side at six World Cups", "D": "Win the Golden Boot twice" }, "answer": "A" },
+    { "difficulty": "hard",   "category": "ronaldo", "question": "By starting against DR Congo at 41 years old, Ronaldo set which World Cup record?", "options": { "A": "Oldest outfield player to start a World Cup match", "B": "Oldest goalscorer in World Cup history", "C": "Oldest captain at a World Cup", "D": "Oldest player ever to appear at a World Cup" }, "answer": "A" },
+    { "difficulty": "hard",   "category": "ronaldo", "question": "Ronaldo, scoring at 41, became the second-oldest goalscorer in World Cup history. Who remains the oldest, having struck for Cameroon at USA 94?", "options": { "A": "Roger Milla", "B": "Rigobert Song", "C": "Samuel Eto'o", "D": "Thomas N'Kono" }, "answer": "A" },
+    { "difficulty": "hard",   "category": "england", "question": "Harry Kane's opener against Croatia was his 10th World Cup goal, drawing him level with England's tournament record holder. Who is that?", "options": { "A": "Gary Lineker", "B": "Geoff Hurst", "C": "Bobby Charlton", "D": "Wayne Rooney" }, "answer": "A" },
+    { "difficulty": "hard",   "category": "belgium", "question": "Youri Tielemans' penalty against Senegal, timed at 124 minutes and 44 seconds, set what World Cup record?", "options": { "A": "The latest goal ever scored in a World Cup match", "B": "The fastest penalty in a World Cup match", "C": "The first successful extra-time penalty in a shootout", "D": "The latest red card in a World Cup match" }, "answer": "A" },
+    { "difficulty": "hard",   "category": "canada", "question": "Canada's 6-0 win over Qatar was the biggest in men's World Cup history by a team from which confederation?", "options": { "A": "CONCACAF", "B": "CAF", "C": "AFC", "D": "OFC" }, "answer": "A" },
+    { "difficulty": "hard",   "category": "minnows", "question": "Curacao are the smallest nation by population ever to reach a men's World Cup. Whose record did they take?", "options": { "A": "Iceland", "B": "Trinidad and Tobago", "C": "Wales", "D": "Slovenia" }, "answer": "A" },
+    { "difficulty": "hard",   "category": "mbappe", "question": "Mbappe broke Just Fontaine's France record of 13 goals at a single World Cup, a tally Fontaine set in which year?", "options": { "A": "1958", "B": "1954", "C": "1966", "D": "1982" }, "answer": "A" },
+    { "difficulty": "expert", "category": "goalkeepers", "question": "Vozinha's clean sheet for Cabo Verde made him the third-oldest goalkeeper to keep one in a men's World Cup match. He trails only which two greats?", "options": { "A": "Peter Shilton and Dino Zoff", "B": "Gianluigi Buffon and Pat Jennings", "C": "Dino Zoff and Iker Casillas", "D": "Peter Shilton and Gianluigi Buffon" }, "answer": "A" },
+    { "difficulty": "expert", "category": "england", "question": "Jude Bellingham's strike against Croatia made him only the third man to score at two different World Cups before turning 23. Which two legends were already in that group?", "options": { "A": "Pele and Michael Owen", "B": "Pele and Kylian Mbappe", "C": "Diego Maradona and Michael Owen", "D": "Pele and Wayne Rooney" }, "answer": "A" },
+    { "difficulty": "expert", "category": "brazil", "question": "Vinicius Junior became only the fifth Brazilian to score in all three group matches at a World Cup. Which forward set the benchmark by scoring in every match of Brazil's victorious 1970 campaign?", "options": { "A": "Jairzinho", "B": "Pele", "C": "Tostao", "D": "Gerson" }, "answer": "A" }
+  ]
+}

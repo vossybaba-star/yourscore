@@ -1,0 +1,34 @@
+{
+  "name": "Fairytales and First Timers: The Minnows of 2026",
+  "parameter": "World Cup 2026 Debutants",
+  "type": "records",
+  "icon": "🐣",
+  "theme": "debutants",
+  "angle": "The expanded 48-team World Cup was a stage for the smallest nations: Curacao's record-breaking debut and Eloy Room's 15-save wall, Cabo Verde reaching the knockouts as the smallest nation ever to do so, and first-ever knockout runs for Ivory Coast and DR Congo. Curated and de-duplicated from the daily World Cup quiz series.",
+  "curated_from": [
+    "2026-06-16-first-round-shocks.json",
+    "2026-06-16-wild-matchday-four.json",
+    "2026-06-17-the-giants-arrive.json",
+    "2026-06-21-matchday-two-heroics.json",
+    "2026-06-26-giants-stumble.json",
+    "2026-06-28-round-of-32-begins.json",
+    "2026-07-01-knockout-blows.json"
+  ],
+  "questions": [
+    { "difficulty": "easy",   "category": "curacao", "question": "World Cup debutants Curacao earned their first ever point with a goalless draw. Which side did they hold?", "options": { "A": "Ecuador", "B": "Colombia", "C": "Uruguay", "D": "Paraguay" }, "answer": "A" },
+    { "difficulty": "medium", "category": "curacao", "question": "Germany began their campaign with a 7-1 win over which World Cup debutants?", "options": { "A": "Curacao", "B": "Jamaica", "C": "Panama", "D": "Haiti" }, "answer": "A" },
+    { "difficulty": "medium", "category": "curacao", "question": "Curacao goalkeeper Eloy Room kept Ecuador out almost single-handedly. How many saves did he make in the 0-0 draw, one short of the World Cup single-match record?", "options": { "A": "15", "B": "11", "C": "18", "D": "9" }, "answer": "A" },
+    { "difficulty": "medium", "category": "curacao", "question": "Curacao were beaten 7-1 by Germany but still made history in the match. Why?", "options": { "A": "They scored their first ever World Cup goal", "B": "They became the smallest nation to win a point", "C": "They conceded the fastest goal in tournament history", "D": "Their captain saved a penalty" }, "answer": "A" },
+    { "difficulty": "medium", "category": "cape_verde", "question": "Reaching the last 32 on their tournament debut, which side became the smallest nation by population ever to make a World Cup knockout stage?", "options": { "A": "Cape Verde", "B": "Curacao", "C": "New Zealand", "D": "Panama" }, "answer": "A" },
+    { "difficulty": "medium", "category": "cape_verde", "question": "Cape Verde's reward for finishing runners-up in Group H was a Round of 32 tie in Miami against which opponent?", "options": { "A": "Argentina", "B": "Brazil", "C": "France", "D": "Spain" }, "answer": "A" },
+    { "difficulty": "medium", "category": "ivory_coast", "question": "Ivory Coast reached a World Cup knockout stage for the first time in their history, advancing as runners-up behind which group winners?", "options": { "A": "Germany", "B": "Brazil", "C": "Spain", "D": "France" }, "answer": "A" },
+    { "difficulty": "medium", "category": "dr_congo", "question": "DR Congo reached the knockout rounds for the first time ever with a 3-1 comeback over Uzbekistan. Who awaited them in the Round of 32?", "options": { "A": "England", "B": "Belgium", "C": "France", "D": "Portugal" }, "answer": "A" },
+    { "difficulty": "medium", "category": "debutants", "question": "Austria opened with a 2-1 win on a night that marked their opponents' first-ever World Cup appearance. Which debutants did they beat?", "options": { "A": "Jordan", "B": "Uzbekistan", "C": "Cabo Verde", "D": "Qatar" }, "answer": "A" },
+    { "difficulty": "medium", "category": "qatar", "question": "Qatar claimed the first World Cup point in their history with a 1-1 draw against which European side?", "options": { "A": "Switzerland", "B": "Belgium", "C": "Croatia", "D": "Uruguay" }, "answer": "A" },
+    { "difficulty": "medium", "category": "curacao", "question": "From which confederation did Curacao, a Caribbean island side, qualify for the World Cup?", "options": { "A": "CONCACAF", "B": "CONMEBOL", "C": "CAF", "D": "UEFA" }, "answer": "A" },
+    { "difficulty": "medium", "category": "norway", "question": "Norway's Round of 32 win over Ivory Coast was a landmark because it was the nation's first ever World Cup what?", "options": { "A": "Knockout-stage win", "B": "Goal", "C": "Clean sheet", "D": "Appearance" }, "answer": "A" },
+    { "difficulty": "hard",   "category": "curacao", "question": "Room finished a save short of the World Cup single-game record of 16, set in the 2014 round of 16 against Belgium. Which goalkeeper holds that record?", "options": { "A": "Tim Howard", "B": "Guillermo Ochoa", "C": "Keylor Navas", "D": "Manuel Neuer" }, "answer": "A" },
+    { "difficulty": "hard",   "category": "curacao", "question": "Curacao's historic first World Cup was masterminded by which much-travelled Dutch head coach?", "options": { "A": "Dick Advocaat", "B": "Guus Hiddink", "C": "Louis van Gaal", "D": "Ronald Koeman" }, "answer": "A" },
+    { "difficulty": "hard",   "category": "dr_congo", "question": "Which forward scored twice in DR Congo's comeback win over Uzbekistan?", "options": { "A": "Yoane Wissa", "B": "Cedric Bakambu", "C": "Silas Katompa", "D": "Theo Bongonda" }, "answer": "A" }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "name": "Shock Troops: The Upsets of World Cup 2026",
+  "parameter": "World Cup 2026 Upsets",
+  "type": "records",
+  "icon": "😱",
+  "theme": "upsets",
+  "angle": "The giant-killings of World Cup 2026: debutants Cabo Verde held European champions Spain, Ecuador and Turkiye downed the hosts, and both Germany and the Netherlands were dumped out on penalties in the Round of 32. Curated and de-duplicated from the daily World Cup quiz series.",
+  "curated_from": [
+    "2026-06-15-opening-matchday-verdicts.json",
+    "2026-06-16-first-round-shocks.json",
+    "2026-06-26-giants-stumble.json",
+    "2026-06-30-giants-fall.json",
+    "2026-07-01-knockout-blows.json"
+  ],
+  "questions": [
+    { "difficulty": "easy",   "category": "debutants", "question": "World Cup debutants held the reigning European champions to a goalless draw in the group stage. Which nation pulled off the shock against Spain?", "options": { "A": "Cabo Verde", "B": "Uzbekistan", "C": "Curacao", "D": "Jordan" }, "answer": "A" },
+    { "difficulty": "easy",   "category": "upsets", "question": "Australia produced one of the opening round's biggest upsets, beating which side 2-0?", "options": { "A": "Turkiye", "B": "Germany", "C": "Croatia", "D": "Japan" }, "answer": "A" },
+    { "difficulty": "easy",   "category": "upsets", "question": "Germany lost their final group game 2-1 to which South American side, who still squeezed into the round of 32?", "options": { "A": "Ecuador", "B": "Colombia", "C": "Uruguay", "D": "Paraguay" }, "answer": "A" },
+    { "difficulty": "easy",   "category": "upsets", "question": "Brazil were held to a shock 1-1 draw in their opening match by which African side?", "options": { "A": "Morocco", "B": "Egypt", "C": "Senegal", "D": "Ivory Coast" }, "answer": "A" },
+    { "difficulty": "easy",   "category": "knockouts", "question": "Paraguay eliminated four-time champions Germany in the Round of 32. How was the tie settled?", "options": { "A": "A penalty shootout", "B": "A golden goal", "C": "A 90th-minute winner", "D": "An own goal in extra time" }, "answer": "A" },
+    { "difficulty": "medium", "category": "debutants", "question": "Cabo Verde's man of the match against Spain was their 40-year-old goalkeeper. By what name is he known?", "options": { "A": "Vozinha", "B": "Bebe", "C": "Ryan Mendes", "D": "Marco Soares" }, "answer": "A" },
+    { "difficulty": "medium", "category": "upsets", "question": "Who scored Ecuador's 78th-minute winner to complete the comeback against Germany?", "options": { "A": "Gonzalo Plata", "B": "Enner Valencia", "C": "Moises Caicedo", "D": "Kendry Paez" }, "answer": "A" },
+    { "difficulty": "medium", "category": "upsets", "question": "On the same night Germany went out, Morocco eliminated which European heavyweight on penalties?", "options": { "A": "Netherlands", "B": "Belgium", "C": "Portugal", "D": "Croatia" }, "answer": "A" },
+    { "difficulty": "medium", "category": "shootouts", "question": "Morocco knocked the Netherlands out on penalties. Which goalkeeper made the decisive save in the shootout?", "options": { "A": "Yassine Bounou", "B": "Andries Noppert", "C": "Munir El Kajoui", "D": "Ahmed Reda Tagnaouti" }, "answer": "A" },
+    { "difficulty": "medium", "category": "upsets", "question": "Turkiye's equaliser in their shock win over the hosts USA was finished off by which 21-year-old Real Madrid playmaker?", "options": { "A": "Arda Guler", "B": "Kenan Yildiz", "C": "Hakan Calhanoglu", "D": "Orkun Kokcu" }, "answer": "A" },
+    { "difficulty": "medium", "category": "upsets", "question": "Which manager saw his Germany side dumped out of the World Cup at the Round of 32?", "options": { "A": "Julian Nagelsmann", "B": "Hansi Flick", "C": "Rudi Voller", "D": "Jurgen Klinsmann" }, "answer": "A" },
+    { "difficulty": "medium", "category": "upsets", "question": "Sweden made a huge statement in Group F, thrashing which side 5-1?", "options": { "A": "Tunisia", "B": "Japan", "C": "Senegal", "D": "South Africa" }, "answer": "A" },
+    { "difficulty": "hard",   "category": "hosts", "question": "Hosts USA were beaten 3-2 by Turkiye with a goal deep in stoppage time. Who scored that last-gasp winner?", "options": { "A": "Kaan Ayhan", "B": "Arda Guler", "C": "Orkun Kokcu", "D": "Hakan Calhanoglu" }, "answer": "A" },
+    { "difficulty": "hard",   "category": "shootouts", "question": "Paraguay's shootout hero saved twice to knock out Germany. Which goalkeeper was it?", "options": { "A": "Orlando Gill", "B": "Antony Silva", "C": "Roberto Fernandez", "D": "Carlos Coronel" }, "answer": "A" },
+    { "difficulty": "hard",   "category": "shootouts", "question": "Who slotted home the winning penalty as Morocco knocked the Netherlands out of the World Cup?", "options": { "A": "Ismael Saibari", "B": "Achraf Hakimi", "C": "Hakim Ziyech", "D": "Brahim Diaz" }, "answer": "A" }
+  ]
+}

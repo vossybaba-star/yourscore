@@ -561,6 +561,19 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-25** — **World Cup daily quizzes reviewed and repackaged into 7 evergreen theme
+  packs** (branch `claude/world-cup-quiz-review-packs-8czwuy`, NOT yet seeded). Reviewed every
+  committed daily quiz question — 22 files, 330 questions, `content/daily-quizzes/` — spanning
+  11 Jun → 2 Jul (opening day to the Round of 32). Real-world anchors and the internal
+  tournament narrative both check out; no corrections needed. Distilled and de-duplicated into
+  7 curated 15-question theme packs in `content/wc-packs/` (Messi's records, the milestones,
+  the upsets, the hosts, opening-day chaos, the Round of 32, the minnows) so the World Cup
+  content survives as a browsable back-catalogue instead of 22 dated dailies. New seeder
+  `scripts/seed-wc-packs.mjs` (dry-run default, name-keyed option shuffle, metadata merge).
+  Deliberately **not** tagged `series: "wc2026"` (that board was a closed competition). ⚠️ The
+  committed dailies **stop at the Round of 32 (2 Jul)** — the R16→final days were authored
+  straight to `quiz_packs`, not committed, and this env has no `.env.local` to pull them, so a
+  "Road to the Final" pack is deferred. Review write-up: `docs/WC2026-QUIZ-REVIEW.md`.
 - **2026-07-24** — **App Store rating asks are counted, and paced by Games played** (migrations
   104 + 105). We could not previously answer "how many review requests have we made?" for any
   surface, ever: the post-game ask was gated by a localStorage stamp that left no server-side

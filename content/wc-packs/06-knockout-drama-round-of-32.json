@@ -1,0 +1,30 @@
+{
+  "name": "Knockout Drama: The Round of 32",
+  "parameter": "World Cup 2026 Round of 32",
+  "type": "records",
+  "icon": "⚔️",
+  "theme": "knockouts",
+  "angle": "The 2026 World Cup's brand-new Round of 32 was carnage: Kane's late double rescued England, Belgium roared back from 2-0 down to sink Senegal on the latest goal in World Cup history, Brazil edged Japan and France cruised past Sweden. Curated and de-duplicated from the daily World Cup quiz series.",
+  "curated_from": [
+    "2026-06-30-giants-fall.json",
+    "2026-07-01-knockout-blows.json",
+    "2026-07-02-comeback-wednesday.json"
+  ],
+  "questions": [
+    { "difficulty": "easy",   "category": "knockouts", "question": "Harry Kane struck twice late on to rescue England in a 2-1 comeback win over which nation in the Round of 32?", "options": { "A": "DR Congo", "B": "Ghana", "C": "Senegal", "D": "Cameroon" }, "answer": "A" },
+    { "difficulty": "easy",   "category": "knockouts", "question": "Belgium came from 2-0 down to win 3-2 after extra time against which side in the Round of 32?", "options": { "A": "Senegal", "B": "Morocco", "C": "Ivory Coast", "D": "Ghana" }, "answer": "A" },
+    { "difficulty": "easy",   "category": "knockouts", "question": "France eased past Sweden 3-0 in the Round of 32, with which forward scoring twice?", "options": { "A": "Kylian Mbappe", "B": "Ousmane Dembele", "C": "Bradley Barcola", "D": "Randal Kolo Muani" }, "answer": "A" },
+    { "difficulty": "easy",   "category": "knockouts", "question": "Which striker struck a late winner to send Norway past Ivory Coast and into the last 16?", "options": { "A": "Erling Haaland", "B": "Martin Odegaard", "C": "Antonio Nusa", "D": "Alexander Sorloth" }, "answer": "A" },
+    { "difficulty": "medium", "category": "belgium", "question": "Who converted the extra-time penalty, the latest goal in World Cup history, that completed Belgium's comeback over Senegal?", "options": { "A": "Youri Tielemans", "B": "Kevin De Bruyne", "C": "Romelu Lukaku", "D": "Jeremy Doku" }, "answer": "A" },
+    { "difficulty": "medium", "category": "belgium", "question": "Which substitute pulled a goal back late on to ignite Belgium's fightback against Senegal?", "options": { "A": "Romelu Lukaku", "B": "Michy Batshuayi", "C": "Lois Openda", "D": "Charles De Ketelaere" }, "answer": "A" },
+    { "difficulty": "medium", "category": "brazil", "question": "Trailing Japan at half-time, Brazil turned it around late. Who scored their stoppage-time winner?", "options": { "A": "Gabriel Martinelli", "B": "Vinicius Junior", "C": "Rodrygo", "D": "Raphinha" }, "answer": "A" },
+    { "difficulty": "medium", "category": "england", "question": "England's win over DR Congo set up a Round of 16 tie, at the Azteca, with which host nation?", "options": { "A": "Mexico", "B": "United States", "C": "Canada", "D": "Brazil" }, "answer": "A" },
+    { "difficulty": "medium", "category": "usa", "question": "Which forward scored the USA's opener against Bosnia before being sent off in the second half?", "options": { "A": "Folarin Balogun", "B": "Christian Pulisic", "C": "Ricardo Pepi", "D": "Josh Sargent" }, "answer": "A" },
+    { "difficulty": "medium", "category": "germany", "question": "Germany's exit made them the first of the tournament's traditional heavyweights to fall. At which stage were they knocked out?", "options": { "A": "Round of 32", "B": "Group stage", "C": "Round of 16", "D": "Quarter-finals" }, "answer": "A" },
+    { "difficulty": "hard",   "category": "brazil", "question": "Japan led Brazil for much of the game thanks to a first-half opener. Which midfielder put them ahead?", "options": { "A": "Kaishu Sano", "B": "Takefusa Kubo", "C": "Daichi Kamada", "D": "Kaoru Mitoma" }, "answer": "A" },
+    { "difficulty": "hard",   "category": "morocco", "question": "Morocco forced extra time with a stoppage-time equaliser against the Netherlands. Who headed it in?", "options": { "A": "Issa Diop", "B": "Achraf Hakimi", "C": "Romain Saiss", "D": "Nayef Aguerd" }, "answer": "A" },
+    { "difficulty": "hard",   "category": "england", "question": "DR Congo stunned England with a seventh-minute opener in Atlanta. Which forward scored it?", "options": { "A": "Brian Cipenga", "B": "Cedric Bakambu", "C": "Yoane Wissa", "D": "Silas Katompa" }, "answer": "A" },
+    { "difficulty": "hard",   "category": "france", "question": "Which winger supplied two assists as France dismantled Sweden 3-0 to reach the last 16?", "options": { "A": "Michael Olise", "B": "Bradley Barcola", "C": "Ousmane Dembele", "D": "Kingsley Coman" }, "answer": "A" },
+    { "difficulty": "hard",   "category": "norway", "question": "Antonio Nusa opened the scoring for Norway against Ivory Coast, teed up by which captain and playmaker?", "options": { "A": "Martin Odegaard", "B": "Sander Berge", "C": "Erling Haaland", "D": "Alexander Sorloth" }, "answer": "A" }
+  ]
+}

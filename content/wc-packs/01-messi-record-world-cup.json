@@ -1,0 +1,32 @@
+{
+  "name": "Messi Rewrites the World Cup Record Book",
+  "parameter": "World Cup 2026 Messi",
+  "type": "records",
+  "icon": "🐐",
+  "theme": "messi",
+  "angle": "The single biggest story of World Cup 2026: at his sixth and final tournament, Lionel Messi passed Miroslav Klose to become the men's all-time leading World Cup scorer, and passed Marta's overall mark of 17. Curated and de-duplicated from the daily World Cup quiz series (11 Jun to 2 Jul 2026).",
+  "curated_from": [
+    "2026-06-17-the-giants-arrive.json",
+    "2026-06-18-record-book-rewritten.json",
+    "2026-06-19-statement-round.json",
+    "2026-06-23-messi-makes-history.json",
+    "2026-06-24-messi-record-book.json"
+  ],
+  "questions": [
+    { "difficulty": "easy",   "category": "messi", "question": "Lionel Messi scored a hat-trick as Argentina opened their 2026 World Cup campaign. What was the final score against Algeria?", "options": { "A": "3-0", "B": "2-1", "C": "4-2", "D": "1-0" }, "answer": "A" },
+    { "difficulty": "easy",   "category": "messi", "question": "Messi, the all-time leading goalscorer in men's World Cup history, captains which nation?", "options": { "A": "Argentina", "B": "Brazil", "C": "Uruguay", "D": "Spain" }, "answer": "A" },
+    { "difficulty": "easy",   "category": "records", "question": "By taking the field against Algeria, Messi became the first man ever to appear at how many different World Cups?", "options": { "A": "Six", "B": "Five", "C": "Seven", "D": "Four" }, "answer": "A" },
+    { "difficulty": "medium", "category": "records", "question": "Messi's milestone goal moved him clear of which Germany striker, the previous men's World Cup record scorer?", "options": { "A": "Miroslav Klose", "B": "Gerd Muller", "C": "Thomas Muller", "D": "Jurgen Klinsmann" }, "answer": "A" },
+    { "difficulty": "medium", "category": "records", "question": "By the knockout stage of 2026, how many career World Cup goals did Messi have, a new men's record?", "options": { "A": "18", "B": "16", "C": "21", "D": "15" }, "answer": "A" },
+    { "difficulty": "medium", "category": "messi", "question": "Messi broke the all-time record with a brace in a 2-0 group-stage win over which European side?", "options": { "A": "Austria", "B": "Switzerland", "C": "Croatia", "D": "Czechia" }, "answer": "A" },
+    { "difficulty": "medium", "category": "messi", "question": "Before his record-breaking double against Austria, Messi missed an early chance to make the night even more emphatic. What happened?", "options": { "A": "He missed a penalty", "B": "He was shown a yellow card", "C": "He scored an own goal", "D": "He limped off injured" }, "answer": "A" },
+    { "difficulty": "medium", "category": "records", "question": "At 38, Messi became the oldest player ever to do what at a World Cup?", "options": { "A": "Score a hat-trick", "B": "Captain a side in the final", "C": "Score in a knockout match", "D": "Be named player of the match" }, "answer": "A" },
+    { "difficulty": "medium", "category": "records", "question": "Messi and Cristiano Ronaldo made history in 2026 as the first players ever to do what?", "options": { "A": "Appear at six different World Cups", "B": "Score at six different World Cups", "C": "Captain a side at six World Cups", "D": "Win the Golden Boot twice" }, "answer": "A" },
+    { "difficulty": "hard",   "category": "records", "question": "Messi's tally also passed the overall World Cup goal record across the men's and women's tournaments. That mark of 17 was held by which player?", "options": { "A": "Marta", "B": "Birgit Prinz", "C": "Abby Wambach", "D": "Christine Sinclair" }, "answer": "A" },
+    { "difficulty": "hard",   "category": "golden_boot", "question": "Midway through the group stage, who led the 2026 Golden Boot race with five goals, one clear of Mbappe and Haaland?", "options": { "A": "Lionel Messi", "B": "Harry Kane", "C": "Erling Haaland", "D": "Kylian Mbappe" }, "answer": "A" },
+    { "difficulty": "hard",   "category": "records", "question": "Messi arrived at the 2026 World Cup needing a strong run to reach the top. How many World Cup goals had he scored across all his previous tournaments combined?", "options": { "A": "13", "B": "11", "C": "16", "D": "9" }, "answer": "A" },
+    { "difficulty": "hard",   "category": "history", "question": "Klose had set the previous men's record of 16 by surpassing a Brazilian striker who had scored 15. Who was that?", "options": { "A": "Ronaldo Nazario", "B": "Romario", "C": "Rivaldo", "D": "Pele" }, "answer": "A" },
+    { "difficulty": "expert", "category": "records", "question": "Messi's treble against Algeria made him both the youngest and oldest goalscorer in Argentina's World Cup history. In which tournament did an 18-year-old Messi score his first World Cup goal?", "options": { "A": "2006", "B": "2010", "C": "2014", "D": "2018" }, "answer": "A" },
+    { "difficulty": "expert", "category": "messi", "question": "Messi's record run saw him score in how many consecutive World Cup matches, dating back to 2022?", "options": { "A": "Six", "B": "Three", "C": "Ten", "D": "Four" }, "answer": "A" }
+  ]
+}

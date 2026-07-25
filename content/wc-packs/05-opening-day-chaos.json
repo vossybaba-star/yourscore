@@ -1,0 +1,30 @@
+{
+  "name": "Opening Day Chaos: Kickoff, Mascots and Mayhem",
+  "parameter": "World Cup 2026 Opening",
+  "type": "records",
+  "icon": "🎉",
+  "theme": "opening",
+  "angle": "The made-for-casuals opening-weekend pack: the record three red cards in Mexico's opener, three official animal mascots upstaged by a viral plush toy, FIFA hiding sponsor names on the Azteca and MetLife, and Haiti's banned kit. Curated and de-duplicated from the daily World Cup quiz series.",
+  "curated_from": [
+    "2026-06-11-opening-day.json",
+    "2026-06-12-mascots.json",
+    "2026-06-14-kickoff-carnage.json"
+  ],
+  "questions": [
+    { "difficulty": "easy",   "category": "opening_day", "question": "Which country played in the opening match of the 2026 World Cup?", "options": { "A": "Mexico", "B": "United States", "C": "Canada", "D": "Brazil" }, "answer": "A" },
+    { "difficulty": "easy",   "category": "opening_day", "question": "Mexico opened the 2026 World Cup against which nation?", "options": { "A": "South Africa", "B": "Nigeria", "C": "Egypt", "D": "Ghana" }, "answer": "A" },
+    { "difficulty": "easy",   "category": "red_cards", "question": "The opening game set an unwanted record. How many players were sent off in Mexico v South Africa?", "options": { "A": "3", "B": "1", "C": "0", "D": "2" }, "answer": "A" },
+    { "difficulty": "easy",   "category": "mascots", "question": "The 2026 World Cup has three official mascots. The USA's mascot, Clutch, is which animal?", "options": { "A": "A bald eagle", "B": "A grizzly bear", "C": "A bison", "D": "A rattlesnake" }, "answer": "A" },
+    { "difficulty": "easy",   "category": "mascots", "question": "Canada's official World Cup mascot, Maple, is which animal?", "options": { "A": "A moose", "B": "A beaver", "C": "A polar bear", "D": "A goose" }, "answer": "A" },
+    { "difficulty": "easy",   "category": "format", "question": "How many teams are at the 2026 World Cup, the most ever?", "options": { "A": "48", "B": "32", "C": "24", "D": "64" }, "answer": "A" },
+    { "difficulty": "easy",   "category": "venues", "question": "Players often struggle in Mexico City because its stadium sits at an extreme...?", "options": { "A": "Altitude", "B": "Humidity", "C": "Cold", "D": "Sea level" }, "answer": "A" },
+    { "difficulty": "medium", "category": "red_cards", "question": "After all those red cards, how many players did South Africa finish the opening match with?", "options": { "A": "9", "B": "10", "C": "8", "D": "11" }, "answer": "A" },
+    { "difficulty": "medium", "category": "scorers", "question": "Who scored the very first goal of the 2026 World Cup, inside ten minutes of the opener?", "options": { "A": "Julian Quinones", "B": "Raul Jimenez", "C": "Lionel Messi", "D": "Santiago Gimenez" }, "answer": "A" },
+    { "difficulty": "medium", "category": "mascots", "question": "Mexico's official World Cup mascot is a jaguar. What is it called?", "options": { "A": "Zayu", "B": "Pique", "C": "Juanito", "D": "Gol" }, "answer": "A" },
+    { "difficulty": "medium", "category": "irony", "question": "Despite the three official animal mascots, a wide-eyed plush toy became an unlikely viral star after FIFA made it an official 2026 World Cup partner. What is it called?", "options": { "A": "Labubu", "B": "Sonny Angel", "C": "Furby", "D": "Tamagotchi" }, "answer": "A" },
+    { "difficulty": "medium", "category": "irony", "question": "A bank paid a fortune to rename Mexico City's famous stadium 'Estadio Banorte', but FIFA bans sponsor names at the World Cup. What is that stadium's famous original name?", "options": { "A": "Estadio Azteca", "B": "Maracana", "C": "Camp Nou", "D": "Wembley" }, "answer": "A" },
+    { "difficulty": "medium", "category": "haiti", "question": "FIFA made Haiti change their shirt just before the tournament because the design showed what kind of image?", "options": { "A": "A historic battle scene", "B": "A betting sponsor's logo", "C": "A cartoon character", "D": "A rude gesture" }, "answer": "A" },
+    { "difficulty": "medium", "category": "opening_ceremony", "question": "Which Colombian pop superstar performed at the World Cup opening ceremony in Mexico City?", "options": { "A": "Shakira", "B": "Dua Lipa", "C": "Rihanna", "D": "Taylor Swift" }, "answer": "A" },
+    { "difficulty": "easy",   "category": "final", "question": "Where will the 2026 World Cup final be played, just outside New York?", "options": { "A": "New Jersey (MetLife Stadium)", "B": "Los Angeles", "C": "Miami", "D": "Toronto" }, "answer": "A" }
+  ]
+}
