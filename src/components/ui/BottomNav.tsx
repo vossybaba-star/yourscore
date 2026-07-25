@@ -130,20 +130,18 @@ export function BottomNav() {
   const active = pending ?? pathname;
 
   const isHome = active === "/";
-  // Versus is the hub: its sub-sections (Friends, Leagues) keep the tab active.
-  // A viewed player's profile (/profile/<id>) is a social detail page reached
-  // from here, so it holds the Versus tab too — the Profile tab is only YOUR own
-  // profile (exact /profile) + settings.
-  const isVersus =
-    active.startsWith("/versus") || active.startsWith("/friends") ||
-    active.startsWith("/leagues") || active.startsWith("/league") ||
-    active.startsWith("/profile/");
-  // Play holds both games: Quiz (/play, /challenges, /h2h) and 38-0 (/38-0) —
-  // the 38-0 hub is a sub-surface of the Play tab, switched via GameSwitcher.
+  // Play now holds everything you PLAY: the solo games (Quiz /play·/challenges·
+  // /h2h, 38-0 /38-0, club) AND Versus, which folded in from its own bottom tab
+  // (founder 2026-07-25) as the Solo|Versus toggle. So Versus and its
+  // sub-surfaces — Friends, Leagues, and a viewed player's profile (/profile/<id>,
+  // reached from Versus) — all keep the Play tab lit. The Profile tab is only
+  // YOUR own profile (exact /profile) + settings.
   const isChallenges =
     active.startsWith("/play") || active.startsWith("/challenges") ||
     active.startsWith("/h2h") || active.startsWith("/38-0") ||
-    active.startsWith("/club");
+    active.startsWith("/club") || active.startsWith("/versus") ||
+    active.startsWith("/friends") || active.startsWith("/leagues") ||
+    active.startsWith("/league") || active.startsWith("/profile/");
   // Matchweek is the fixture-synced tab. A halftime pack itself opens under
   // /challenges (which holds the Quiz tab, so a pack played from anywhere reads
   // consistently); Matchweek highlights on its own route.
@@ -188,15 +186,8 @@ export function BottomNav() {
             <span className="font-body text-xs text-center leading-tight">Play</span>
           </Link>
 
-          {/* Versus is discoverable to guests too — it renders a public preview. */}
-          <Link href="/versus" className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-1 transition-colors" style={{ color: isVersus ? "#00d8c0" : "#8a948f" }}>
-            <svg width="21" height="21" viewBox="0 0 22 22" fill="none">
-              <path d="M3 3l8.5 8.5M3 3v3l7.5 7.5M3 3h3l7.5 7.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M19 3l-8.5 8.5M19 3v3l-7.5 7.5M19 3h-3L8.5 11.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M6.5 15.5l2 2M15.5 15.5l-2 2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-            </svg>
-            <span className="font-body text-xs text-center leading-tight">Versus</span>
-          </Link>
+          {/* Versus folded into the Play tab (founder 2026-07-25) — no longer its
+              own bottom-nav tab. */}
 
           {/* Premier League — the flagship live surface, discoverable to guests.
               Route stays /matchweek; everything under it IS the PL (halftime
@@ -260,21 +251,13 @@ export function BottomNav() {
           <span className="font-body text-xs text-center leading-tight">Home</span>
         </Link>
 
-        {/* Play — the label now matches its route (/play). It was "Quiz". */}
+        {/* Play — the solo games AND Versus (folded in, founder 2026-07-25). The
+            your-turn badge lives here now: a waiting Versus match is a reason to
+            open Play. */}
         <Link href="/play" className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-1 transition-colors" style={{ color: isChallenges ? "#00d8c0" : "#8a948f" }}>
-          <svg width="21" height="21" viewBox="0 0 22 22" fill="none">
-            <path d="M11 2L13.5 8.5H20.5L14.9 12.5L17 19L11 15L5 19L7.1 12.5L1.5 8.5H8.5L11 2Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" fill={isChallenges ? "currentColor" : "none"} fillOpacity={isChallenges ? 0.15 : 0} />
-          </svg>
-          <span className="font-body text-xs text-center leading-tight">Play</span>
-        </Link>
-
-        {/* Versus — the cross-game hub for playing other people. */}
-        <Link href="/versus" className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-1 transition-colors" style={{ color: isVersus ? "#00d8c0" : "#8a948f" }}>
           <div className="relative">
             <svg width="21" height="21" viewBox="0 0 22 22" fill="none">
-              <path d="M3 3l8.5 8.5M3 3v3l7.5 7.5M3 3h3l7.5 7.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M19 3l-8.5 8.5M19 3v3l-7.5 7.5M19 3h-3L8.5 11.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M6.5 15.5l2 2M15.5 15.5l-2 2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+              <path d="M11 2L13.5 8.5H20.5L14.9 12.5L17 19L11 15L5 19L7.1 12.5L1.5 8.5H8.5L11 2Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" fill={isChallenges ? "currentColor" : "none"} fillOpacity={isChallenges ? 0.15 : 0} />
             </svg>
             {pendingTurns > 0 && (
               <span
@@ -292,7 +275,7 @@ export function BottomNav() {
               </span>
             )}
           </div>
-          <span className="font-body text-xs text-center leading-tight">Versus</span>
+          <span className="font-body text-xs text-center leading-tight">Play</span>
         </Link>
 
         {/* Premier League — quizzes at half time + the club-fan leaderboard. */}

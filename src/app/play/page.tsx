@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import { createClient } from "@/lib/supabase/client";
 import { BottomNav } from "@/components/ui/BottomNav";
+import { VersusHub } from "@/app/versus/page";
 import { Button } from "@/components/ui/Button";
 import { getTeamBadgeUrl } from "@/lib/teamImages";
 import { getCompetitionBadgeUrl } from "@/lib/competitionImages";
@@ -366,7 +367,7 @@ function OpenRoomCard({ room, onJoin }: { room: OpenRoom; onJoin: () => void }) 
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
-type MainTab = "solo" | "multiplayer" | "leaderboards";
+type MainTab = "solo" | "multiplayer" | "leaderboards" | "versus";
 type SoloTab = "featured" | "worldcup" | "club" | "records";
 
 // A World Cup quiz: tagged via metadata.series (the daily seed sets series:"wc2026")
@@ -720,21 +721,27 @@ function PlayPageInner() {
           {/* Title row */}
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="font-display text-2xl tracking-tight text-teal">QUIZ</h1>
+              <h1 className="font-display text-2xl tracking-tight text-teal">{mainTab === "versus" ? "VERSUS" : "QUIZ"}</h1>
               <p className="font-body text-xs mt-0.5 text-text-muted">
-                {mainTab === "solo" ? "Test your football knowledge" : mainTab === "multiplayer" ? "Challenge friends · play on your own time" : "YourScore verified competitions"}
+                {mainTab === "solo" ? "Test your football knowledge"
+                  : mainTab === "versus" ? "Play someone head to head"
+                  : mainTab === "multiplayer" ? "Challenge friends · play on your own time"
+                  : "YourScore verified competitions"}
               </p>
             </div>
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl"
-              style={{ background: "rgba(0,216,192,0.08)", border: "1px solid rgba(0,216,192,0.2)" }}>
-              <span className="text-xs">⚡</span>
-              <span className="font-display text-xs text-teal">
-                {packsLoading ? "…" : `${packs.length} GAMES`}
-              </span>
-            </div>
+            {mainTab !== "versus" && (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl"
+                style={{ background: "rgba(0,216,192,0.08)", border: "1px solid rgba(0,216,192,0.2)" }}>
+                <span className="text-xs">⚡</span>
+                <span className="font-display text-xs text-teal">
+                  {packsLoading ? "…" : `${packs.length} GAMES`}
+                </span>
+              </div>
+            )}
           </div>
 
-          {/* Solo / Leaderboards toggle (Multiplayer moved to the Versus tab). */}
+          {/* Solo / Versus toggle (founder, 25 Jul: Versus folded into Play from
+              its own bottom tab; leaderboards moved off the Play tab). */}
           <div className="flex gap-1 p-1 rounded-2xl mb-3"
             style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
             <button onClick={() => setMainTab("solo")}
@@ -742,15 +749,10 @@ function PlayPageInner() {
               style={mainTab === "solo" ? { background: "#00d8c0", color: "#0a0a0f" } : { background: "transparent", color: "#8a948f" }}>
               Solo
             </button>
-            <button onClick={() => setMainTab("leaderboards")}
-              className="flex-1 flex items-center justify-center gap-1 py-2 rounded-xl font-body text-xs font-semibold transition-all"
-              style={mainTab === "leaderboards"
-                ? { background: "#aeea00", color: "#062013" }
-                : { background: "transparent", color: "#8a948f" }}>
-              Leaderboards
-              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ flexShrink: 0 }}>
-                <path d="M2 5.2l2 2L8 3" stroke={mainTab === "leaderboards" ? "#062013" : "#586058"} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
+            <button onClick={() => setMainTab("versus")}
+              className="flex-1 py-2 rounded-xl font-body text-xs font-semibold transition-all"
+              style={mainTab === "versus" ? { background: "#00d8c0", color: "#0a0a0f" } : { background: "transparent", color: "#8a948f" }}>
+              Versus
             </button>
           </div>
 
@@ -815,6 +817,10 @@ function PlayPageInner() {
           )}
         </div>
       </div>
+
+      {/* ── VERSUS TAB (the head-to-head hub, folded in from its old bottom
+          tab — founder 25 Jul). VersusHub brings its own containers + pills. ── */}
+      {mainTab === "versus" && <VersusHub />}
 
       {/* ── SOLO TAB ─────────────────────────────────────────────────── */}
       {mainTab === "solo" && (

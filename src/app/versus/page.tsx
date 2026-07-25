@@ -242,11 +242,19 @@ function RivalryCard({ r, onChallenge }: { r: Rivalry; onChallenge: (id: string)
   );
 }
 
-function VersusInner() {
+function VersusInner({ embedded = false }: { embedded?: boolean }) {
   const { user, loading } = useUser();
   const router = useRouter();
   const params = useSearchParams();
-  const view = ((params.get("view") as View) ?? "play");
+  // Inside the Play tab the Play/Friends/Leagues view is LOCAL state — there's no
+  // /versus URL to hang ?view= off. Standalone it stays URL-driven, so deep links
+  // (/versus?view=friends) and back/forward keep working.
+  const [localView, setLocalView] = useState<View>("play");
+  const view = embedded ? localView : ((params.get("view") as View) ?? "play");
+  const goView = (v: View) => { if (embedded) setLocalView(v); else router.push(`/versus?view=${v}`); };
+  // Embedded, Play owns the page frame + bottom nav; standalone we own them.
+  const Wrap = embedded ? "div" : "main";
+  const wrapClass = embedded ? "" : "min-h-dvh bg-bg pb-28";
   const turns = useYourTurns();
   const stats = useVersusStats();
   const [sheet, setSheet] = useState<null | { kind: "game"; target?: string | null } | { kind: "code" }>(null);
@@ -287,7 +295,7 @@ function VersusInner() {
   // brings them straight back to /versus once they're in.
   if (!loading && !user) {
     return (
-      <main className="min-h-dvh bg-bg pb-28">
+      <Wrap className={wrapClass}>
         <div
           onClickCapture={(e) => {
             e.preventDefault();
@@ -295,18 +303,20 @@ function VersusInner() {
             router.push("/auth/sign-in?next=/versus");
           }}
         >
-          <div className="sticky top-0 z-20 pt-safe" style={{ background: "rgba(8,13,10,0.95)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
-            <div className="max-w-lg mx-auto px-5 py-4 flex items-center gap-2">
-              <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-                <path d="M3 3l8.5 8.5M3 3v3l7.5 7.5M3 3h3l7.5 7.5" stroke={TEAL} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M19 3l-8.5 8.5M19 3v3l-7.5 7.5M19 3h-3L8.5 11.5" stroke={TEAL} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              <h1 className="font-display text-2xl text-white" style={{ letterSpacing: "-0.01em" }}>Versus</h1>
-            </div>
+          <div className={embedded ? "" : "sticky top-0 z-20 pt-safe"} style={embedded ? undefined : { background: "rgba(8,13,10,0.95)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+            {!embedded && (
+              <div className="max-w-lg mx-auto px-5 py-4 flex items-center gap-2">
+                <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                  <path d="M3 3l8.5 8.5M3 3v3l7.5 7.5M3 3h3l7.5 7.5" stroke={TEAL} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M19 3l-8.5 8.5M19 3v3l-7.5 7.5M19 3h-3L8.5 11.5" stroke={TEAL} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <h1 className="font-display text-2xl text-white" style={{ letterSpacing: "-0.01em" }}>Versus</h1>
+              </div>
+            )}
             {/* Guests always preview the Play view — Friends/Leagues are the
                 user's own data, so the pills are visual rhythm only here;
                 tapping any of them (including Play) hits the capture wrapper. */}
-            <div className="flex max-w-lg mx-auto px-5 pb-3 gap-2">
+            <div className="flex max-w-lg mx-auto px-5 pb-3 gap-2" style={embedded ? { paddingTop: 12 } : undefined}>
               {PILLS.map((p) => {
                 const active = p.key === "play";
                 return (
@@ -378,27 +388,32 @@ function VersusInner() {
             <VersusDiscovery promoOnly />
           </div>
         </div>
-        <BottomNav />
-      </main>
+        {!embedded && <BottomNav />}
+      </Wrap>
     );
   }
 
   return (
-    <main className="min-h-dvh bg-bg pb-28">
-      <div className="sticky top-0 z-20 pt-safe" style={{ background: "rgba(8,13,10,0.95)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
-        <div className="max-w-lg mx-auto px-5 py-4 flex items-center gap-2">
-          <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-            <path d="M3 3l8.5 8.5M3 3v3l7.5 7.5M3 3h3l7.5 7.5" stroke={TEAL} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M19 3l-8.5 8.5M19 3v3l-7.5 7.5M19 3h-3L8.5 11.5" stroke={TEAL} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          <h1 className="font-display text-2xl text-white" style={{ letterSpacing: "-0.01em" }}>Versus</h1>
-        </div>
+    <Wrap className={wrapClass}>
+      {/* Embedded in the Play tab, Play owns the header + the Solo|Versus toggle,
+          so the standalone Versus title + sticky bar are dropped; only the
+          Play/Friends/Leagues sub-pills stay. */}
+      <div className={embedded ? "" : "sticky top-0 z-20 pt-safe"} style={embedded ? undefined : { background: "rgba(8,13,10,0.95)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+        {!embedded && (
+          <div className="max-w-lg mx-auto px-5 py-4 flex items-center gap-2">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+              <path d="M3 3l8.5 8.5M3 3v3l7.5 7.5M3 3h3l7.5 7.5" stroke={TEAL} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M19 3l-8.5 8.5M19 3v3l-7.5 7.5M19 3h-3L8.5 11.5" stroke={TEAL} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <h1 className="font-display text-2xl text-white" style={{ letterSpacing: "-0.01em" }}>Versus</h1>
+          </div>
+        )}
         {/* Full-width segmented tabs (founder call: the three tabs span the screen) */}
-        <div className="flex max-w-lg mx-auto px-5 pb-3 gap-2">
+        <div className="flex max-w-lg mx-auto px-5 pb-3 gap-2" style={embedded ? { paddingTop: 12 } : undefined}>
           {PILLS.map((p) => {
             const active = p.key === view;
             return (
-              <button key={p.key} onClick={() => router.push(`/versus?view=${p.key}`)} className="flex-1 font-body text-sm font-semibold py-2 rounded-lg transition-all text-center"
+              <button key={p.key} onClick={() => goView(p.key)} className="flex-1 font-body text-sm font-semibold py-2 rounded-lg transition-all text-center"
                 style={{ background: active ? "rgba(0,216,192,0.15)" : "rgba(255,255,255,0.04)", color: active ? TEAL : "#8a948f", border: `1px solid ${active ? "rgba(0,216,192,0.3)" : "transparent"}` }}>
                 {p.label}
               </button>
@@ -447,7 +462,7 @@ function VersusInner() {
           {/* Active matches (beyond the pinned your-turn) */}
           {activeMatches.length > (yourTurn.length > 0 ? 1 : 0) && (
             <>
-              <SectionLabel action={<Link href="/versus?view=friends" className="font-body text-xs" style={{ color: TEAL }}>See all →</Link>}>Active matches</SectionLabel>
+              <SectionLabel action={<button onClick={() => goView("friends")} className="font-body text-xs" style={{ color: TEAL }}>See all →</button>}>Active matches</SectionLabel>
               <div className="space-y-2">{activeMatches.slice(yourTurn.length > 0 ? 1 : 0).map((c) => <MatchRow key={c.id} c={c} />)}</div>
             </>
           )}
@@ -472,7 +487,7 @@ function VersusInner() {
               the first one (an empty section teaches; a missing one doesn't). */}
           {stats.rivalries.length > 0 ? (
             <>
-              <SectionLabel action={<Link href="/versus?view=friends" className="font-body text-xs" style={{ color: TEAL }}>See all →</Link>}>Your rivalries</SectionLabel>
+              <SectionLabel action={<button onClick={() => goView("friends")} className="font-body text-xs" style={{ color: TEAL }}>See all →</button>}>Your rivalries</SectionLabel>
               <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1 -mx-5 px-5">
                 {stats.rivalries.slice(0, 6).map((r) => <RivalryCard key={r.opponentId} r={r} onChallenge={(id) => setSheet({ kind: "game", target: id })} />)}
               </div>
@@ -503,8 +518,18 @@ function VersusInner() {
       {sheet?.kind === "game" && <GameSheet target={sheet.target} onClose={() => setSheet(null)} />}
       {sheet?.kind === "code" && <CodeSheet onClose={() => setSheet(null)} />}
 
-      <BottomNav />
-    </main>
+      {!embedded && <BottomNav />}
+    </Wrap>
+  );
+}
+
+/** Versus rendered inside the Play tab — chrome stripped, view held in local
+ *  state (no /versus URL). The Solo|Versus toggle above it is Play's. */
+export function VersusHub() {
+  return (
+    <Suspense fallback={<div />}>
+      <VersusInner embedded />
+    </Suspense>
   );
 }
 
