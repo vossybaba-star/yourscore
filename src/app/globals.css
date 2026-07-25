@@ -163,11 +163,25 @@ input, textarea, select {
   50%      { box-shadow: 0 0 0 6px rgba(0,216,192,0.10), 0 8px 26px -6px rgba(0,216,192,0.75); }
 }
 
+/* An expanding lime ring for a lime CTA (the fantasy waitlist "Save my spot").
+   A ring, not an opacity pulse — the button never dims (that reads as disabled),
+   and no transform, so it won't fight the button's active:scale tap feedback. */
+@keyframes saveSpotPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(174,234,0,0.55); }
+  70%  { box-shadow: 0 0 0 14px rgba(174,234,0,0); }
+  100% { box-shadow: 0 0 0 0 rgba(174,234,0,0); }
+}
+
 @layer utilities {
   /* Pulsing glow for the one action a screen wants you to take. */
   .animate-fantasy-glow { animation: fantasyGlow 2.6s ease-in-out infinite; }
   @media (prefers-reduced-motion: reduce) {
     .animate-fantasy-glow { animation: none; box-shadow: 0 6px 18px -6px rgba(0,216,192,0.5); }
+  }
+
+  .animate-save-pulse { animation: saveSpotPulse 2s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce) {
+    .animate-save-pulse { animation: none; }
   }
 
   .text-balance {

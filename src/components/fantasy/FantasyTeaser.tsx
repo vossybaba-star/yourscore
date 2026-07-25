@@ -25,6 +25,8 @@
 import type { CSSProperties, ReactNode } from "react";
 import { Header, LINE, MUTED, page, PANEL, PANEL_2, TEAL, tint } from "@/components/fantasy/shared";
 import { WaitlistCard } from "@/components/blog/WaitlistCard";
+import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
+import { faceFor } from "@/lib/fantasy/faces";
 
 const INKISH = "#cfd6d2";
 const DIM = "#6b746f";
@@ -62,6 +64,30 @@ const PitchArt = () => (
   </svg>
 );
 
+/** A curated cluster of recognisable Premier League faces — a squad you'd build.
+ *  Reuses the shipped, licensed HoL headshots via faceFor; PlayerAvatar draws a
+ *  stable monogram for any that miss, so the row never blanks. Decorative, so the
+ *  stack is aria-hidden. Spread across clubs on purpose (City, Arsenal, Chelsea,
+ *  United) so it reads as "the league", not one team. */
+const STARS = ["Erling Haaland", "Bukayo Saka", "Cole Palmer", "Declan Rice", "Phil Foden"];
+
+function PortraitStack() {
+  return (
+    <div style={{ marginTop: 20 }}>
+      <div style={{ display: "flex" }} aria-hidden>
+        {STARS.map((name, i) => (
+          <div key={name} style={{ marginLeft: i === 0 ? 0 : -14, position: "relative", zIndex: STARS.length - i, borderRadius: "50%", boxShadow: "0 2px 10px rgba(0,0,0,0.5)" }}>
+            <PlayerAvatar name={name} avatarUrl={faceFor(name)} size={46} ring={TEAL} />
+          </div>
+        ))}
+      </div>
+      <p className="font-body" style={{ fontSize: 12, color: MUTED, marginTop: 11 }}>
+        Pick from the Premier League&apos;s best.
+      </p>
+    </div>
+  );
+}
+
 export function FantasyTeaser() {
   return (
     <main data-fantasy style={{ ...page, padding: "calc(env(safe-area-inset-top, 0px) + 16px) 16px calc(96px + env(safe-area-inset-bottom, 0px))" }}>
@@ -84,11 +110,12 @@ export function FantasyTeaser() {
             <p className="font-body" style={{ fontSize: 14, color: "#9aa39e", marginTop: 14, maxWidth: "94%", lineHeight: 1.5 }}>
               The fantasy game where your football brain earns you more transfers.
             </p>
+            <PortraitStack />
           </div>
         </div>
 
         {/* Opt-in — high up, the shipped waitlist card tagged to this surface. */}
-        <WaitlistCard source="fantasy-tab" />
+        <WaitlistCard source="fantasy-tab" pulse />
 
         {/* THE DIFFERENCE */}
         <p className="font-display tracking-widest" style={{ textAlign: "center", fontSize: 13, color: TEAL, margin: "24px 0 4px" }}>THE DIFFERENCE</p>

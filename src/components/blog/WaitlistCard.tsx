@@ -24,7 +24,7 @@ import { trackFantasyWaitlist } from "@/lib/analytics/trackGame";
 
 const INTENT_KEY = "ys:waitlist-intent";
 
-export function WaitlistCard({ source = "blog" }: { source?: string }) {
+export function WaitlistCard({ source = "blog", pulse = false }: { source?: string; pulse?: boolean }) {
   const { user, loading } = useUser();
   const router = useRouter();
   const pathname = usePathname();
@@ -118,7 +118,7 @@ export function WaitlistCard({ source = "blog" }: { source?: string }) {
       <button
         onClick={onClick}
         disabled={state === "busy" || loading}
-        className="mt-4 w-full sm:w-auto rounded-xl px-6 py-3 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-60"
+        className={`mt-4 w-full sm:w-auto rounded-xl px-6 py-3 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-60${pulse && !loading && state === "idle" ? " animate-save-pulse" : ""}`}
         style={{ background: "#aeea00", color: "#062013", fontSize: 15 }}
       >
         {state === "busy" ? "SAVING…" : "SAVE MY SPOT"}
