@@ -21,7 +21,10 @@
  * scheduled -> base_ready -> approved -> published, single direction.
  * Any pre-publish state can go to cancelled (postponement, or unapproved by
  * its publish_at deadline) or failed (bounded-retry exhaustion). Nothing
- * leaves published/cancelled except manual founder action.
+ * leaves published except manual founder action. `cancelled` is terminal for
+ * everything EXCEPT the one automatic reschedule path: a postponed fixture
+ * that reappears in the sync window on a new date re-enters at `scheduled`
+ * (FIX P2-a) — see sync-fixtures.mjs, the only caller of that transition.
  *
  * 'staged' / 'released' / 'released_late' are NOT part of this machine — they
  * remain in the halftime_releases.state CHECK constraint only because the
@@ -82,7 +85,12 @@ const TRANSITIONS: Record<GamedayState, readonly GamedayState[]> = {
   base_ready: ["approved", "scheduled", "cancelled", "failed"],
   approved: ["published", "cancelled", "failed"],
   published: [],
-  cancelled: [],
+  // NOT fully terminal (FIX P2-a): a fixture cancelled for postponement can
+  // reappear in the sync window on a new date and must re-enter the pipeline
+  // — sync-fixtures.mjs is the only caller of this transition, gated on the
+  // incoming kickoff actually differing from the cancelled row's kickoff.
+  // Nothing else may leave `cancelled`.
+  cancelled: ["scheduled"],
   failed: ["scheduled"],
 };
 
@@ -200,6 +208,33 @@ export function packName(row: Pick<GamedayRow, "home" | "away" | "kickoff_at">):
 
 export function packDescription(row: Pick<GamedayRow, "home" | "away">): string {
   return `Ten questions on ${row.home} v ${row.away}. Set the day before kick-off.`;
+}
+
+// ── Recap Quiz (§6) ──────────────────────────────────────────────────────────
+//
+// One pack per completed gameweek, built from that gameweek's match events.
+// `fixture_id` is `not null unique` on halftime_releases (migration 93), so a
+// recap row — which has no real fixture — still needs a value there. The spec
+// (§6, open item 3) leaves the choice between a synthetic id and a `kind`
+// column to the build; migration 110 already added `kind` (`'fixture'|
+// 'recap'`), so this is BOTH: kind='recap' discriminates it for every reader
+// that filters on kind, and the sentinel below satisfies the unique
+// constraint and is deterministic, so re-running gen-recap.mjs for the same
+// gameweek resolves to the same row rather than creating a duplicate.
+// Negative and season/gameweek-derived so it can never collide with a real
+// SportMonks fixture id (always positive).
+
+/** Deterministic, collision-free placeholder fixture_id for a recap row. */
+export function recapSentinelFixtureId(seasonId: number, gameweek: number): number {
+  return -(Number(seasonId) * 1000 + Number(gameweek));
+}
+
+export function recapPackName(row: { gameweek: number | null; season_id: number | null }): string {
+  return `Gameday Recap: Gameweek ${row.gameweek ?? "?"}`;
+}
+
+export function recapPackDescription(row: { gameweek: number | null }): string {
+  return `Ten questions on what actually happened in Gameweek ${row.gameweek ?? "?"} — goals, cards, records, milestones.`;
 }
 
 // ── Push ─────────────────────────────────────────────────────────────────────

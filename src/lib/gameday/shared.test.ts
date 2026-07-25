@@ -24,6 +24,8 @@ import {
   pushCopy,
   pushDedupeKey,
   questionsForPublish,
+  recapPackName,
+  recapSentinelFixtureId,
   shuffleOptions,
   validatePackQuestions,
   type GamedayState,
@@ -58,13 +60,21 @@ test("state machine: a pack cannot skip the gates", () => {
   assert.equal(canTransition("scheduled", "published"), false);
 });
 
-test("state machine: published and cancelled are terminal", () => {
-  const terminal: GamedayState[] = ["published", "cancelled"];
+test("state machine: published is fully terminal", () => {
   const all: GamedayState[] = ["scheduled", "base_ready", "approved", "published", "cancelled", "failed"];
-  for (const from of terminal) {
-    for (const to of all) {
-      assert.equal(canTransition(from, to), false, `${from} → ${to} must be refused`);
-    }
+  for (const to of all) {
+    assert.equal(canTransition("published", to), false, `published → ${to} must be refused`);
+  }
+});
+
+test("state machine: a cancelled fixture can re-enter the pipeline if rescheduled (FIX P2-a)", () => {
+  // The one automatic exception: a postponed fixture reappearing in the sync
+  // window on a new date must re-enter at 'scheduled', not stay stranded.
+  assert.ok(canTransition("cancelled", "scheduled"), "cancelled → scheduled must be allowed");
+  // Nothing else may leave cancelled — it cannot skip straight back into the
+  // gate or publish without going through sync + the base slate + the gate again.
+  for (const to of ["base_ready", "approved", "published", "cancelled", "failed"] as GamedayState[]) {
+    assert.equal(canTransition("cancelled", to), false, `cancelled → ${to} must be refused`);
   }
 });
 
@@ -206,4 +216,28 @@ test("pack name: carries the date so a reverse fixture cannot collide on slug", 
   const b = packName({ home: "Arsenal", away: "Coventry", kickoff_at: "2027-01-16T15:00:00Z" });
   assert.notEqual(a, b);
   assert.ok(a.includes("Arsenal v Coventry"));
+});
+
+// ── Recap Quiz (§6) ──────────────────────────────────────────────────────────
+
+test("recapSentinelFixtureId: deterministic, negative, never collides with a real fixture id", () => {
+  const a = recapSentinelFixtureId(28083, 7);
+  const b = recapSentinelFixtureId(28083, 7);
+  assert.equal(a, b, "same season+gameweek must resolve to the same sentinel every run");
+  assert.ok(a < 0, "must be negative — real SportMonks fixture ids are always positive");
+});
+
+test("recapSentinelFixtureId: different gameweeks/seasons never collide", () => {
+  const ids = new Set([
+    recapSentinelFixtureId(28083, 1),
+    recapSentinelFixtureId(28083, 2),
+    recapSentinelFixtureId(28083, 38),
+    recapSentinelFixtureId(28001, 1),
+  ]);
+  assert.equal(ids.size, 4);
+});
+
+test("recapPackName: names the gameweek, not a fixture", () => {
+  const name = recapPackName({ gameweek: 7, season_id: 28083 });
+  assert.ok(name.includes("Gameweek 7"));
 });
