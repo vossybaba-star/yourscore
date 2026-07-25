@@ -21,6 +21,7 @@ const LAYER_LABELS = {
   sentry: "Sentry",
   jobs: "Jobs",
   gamer: "Gamer",
+  gameday: "Gameday",
 };
 
 export function createReport() {
