@@ -6,7 +6,33 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-07-24 late (**Higher or Lower and Guess the Player now keep a score, and the
+> **Confirmed:** 2026-07-25 (**The Halftime Quiz shipped as the GAMEDAY QUIZ — published the day
+> BEFORE each fixture, not at the halftime whistle.** Merged to `main` as `c8b4488`; migration
+> `110_gameday.sql` applied to prod.
+> **What changed and why:** a pack per PL fixture now publishes from a daily Vercel cron
+> (`/api/cron/gameday-publish`, `0 8,9 * * *` — both hours cover 09:00 London across BST/GMT) the
+> day before kick-off, against questions approved on Telegram two days out. This retires the whole
+> live-timing surface — no halftime-whistle detection, no 15-minute assembly window, no
+> confirmed-lineup "fresh" slice — so a dead VPS can no longer stop a pack going live. The physical
+> table keeps the name `halftime_releases` (renaming it would touch the live PL tab and club-fan
+> leaderboard for no user benefit; same precedent as `rooms*` tables staying "Lobbies").
+> **Two prediction polls, both keyed on the fixture (never a quiz pack):** a **pre-match** poll at
+> the end of a Gameday attempt if you finish before kick-off (predicts full time), and a standalone
+> **halftime** poll at the real whistle (predicts the second half) that every player sees whether or
+> not they played the quiz. `halftime_predictions`/`_results` gained a `phase` column; settlement
+> grades pre-match against the full-time score and halftime against `2ND_HALF_ONLY` (the
+> second-half split — `2ND_HALF` is cumulative, a trap that would have mis-graded every pick).
+> **A gameweek Recap Quiz** (`kind='recap'`) publishes after each gameweek from that week's match
+> events — the only quiz that can be *this* week's football.
+> **Verified post-deploy:** the two live readers of `halftime_releases` (`/api/pl/fixtures`,
+> `/api/clubs/table`) both 200 with unchanged shapes; `/api/gameday/today` 200. Build green, 137 tests.
+> **STILL TO DO:** VPS crontab for the generation scripts; one real Telegram send from `gate.mjs`
+> (only dry-run tested so far); the `111` drop-migration for the retired fresh-slice columns +
+> `halftime_control`, days later once a grep proves zero readers. **The fantasy transfer bridge
+> (a club pack feeding transfer credits) is DEFERRED** until the fantasy game is finished — founder's
+> call. Spec: `docs/gameday-quiz-spec.md`; deploy steps: `docs/gameday-deploy-runbook.md`.)
+>
+> **Previously confirmed:** 2026-07-24 late (**Higher or Lower and Guess the Player now keep a score, and the
 > daily Higher or Lower tile IS the question.** Shipped to prod as `49f7f11`.
 > **The leak this closed:** a `/ux-walk` found those two games told every player "Practice mode:
 > these don't count on the leaderboard yet" — accurate, because they persisted **nothing**. A guest
