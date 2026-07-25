@@ -68,6 +68,16 @@ export const CLAIM_TYPES = {
    * checkable as the answer.
    */
   fifa_absent: { mutable: false },
+  /**
+   * {fixture_id, player_id, name, team_id, goals} — the Recap Quiz (gen-recap.mjs,
+   * §6). This player scored exactly `goals` goal(s) IN THIS ONE FIXTURE — not an
+   * opponent-history tally like player_goals_vs, a single completed match's
+   * events. Only counts GOAL/PENALTY events (own goals excluded — crediting a
+   * player with a goal "scored" against his own side is not what a recap
+   * question means by "who scored"). Immutable by the time gen-recap.mjs runs:
+   * the gameweek is over.
+   */
+  fixture_scorer: { mutable: false },
 };
 
 export function isMutable(claim) {
@@ -168,6 +178,10 @@ const NON_PERSON_WORDS = new Set(
     "who whom whose which what when where why how many much more most least fewest first last " +
     "before after during since between against versus vs than then this that these those " +
     "premier league championship cup fa efl carabao uefa champions europa conference world " +
+    // Recap Quiz vocabulary (§6) — "Gameweek 7", "Matchday 12" are ordinary
+    // football terms, not people, and would otherwise flag on every recap
+    // question that names the gameweek it's about.
+    "gameweek gameweeks matchday matchdays fixture fixtures round rounds " +
     "monday tuesday wednesday thursday friday saturday sunday " +
     "january february march april may june july august september october november december " +
     "england english britain british europe european united kingdom " +

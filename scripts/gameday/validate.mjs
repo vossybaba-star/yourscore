@@ -156,6 +156,28 @@ async function resolveFormation(c, ctx) {
     : { ok: false, why: `formation: claimed ${c.formation}, team sheet says ${actual ?? "none"}` };
 }
 
+/**
+ * Recap-only resolver (§6): re-fetches ONE fixture's events and recomputes
+ * how many goals this player scored IN THAT MATCH — never trusted from the
+ * miner. Own goals excluded (same rule as history.mjs's scorerTally): a goal
+ * scored into your own net is not "he scored" in the sense a recap question
+ * means it.
+ */
+async function resolveFixtureScorer(c, ctx) {
+  const fx = await sm.fixture(c.fixture_id, "events;participants");
+  if (!fx) return { ok: false, why: `fixture ${c.fixture_id} not found` };
+  let goals = 0;
+  for (const e of fx.events ?? []) {
+    if (e.type_id !== sm.EVENT_TYPE.GOAL && e.type_id !== sm.EVENT_TYPE.PENALTY) continue;
+    const byId = c.player_id != null && Number(e.player_id) === Number(c.player_id);
+    const byName = c.player_id == null && normName(e.player_name) === normName(c.name);
+    if (byId || byName) goals++;
+  }
+  return goals === c.goals
+    ? { ok: true }
+    : { ok: false, why: `${c.name} in fixture ${c.fixture_id}: claimed ${c.goals} goal(s), recomputed ${goals}` };
+}
+
 async function resolveH2hResult(c, ctx) {
   const fx = await sm.fixture(c.fixture_id, "participants;scores");
   if (!fx) return { ok: false, why: `fixture ${c.fixture_id} not found` };
@@ -255,6 +277,7 @@ const RESOLVERS = {
   formation: resolveFormation,
   h2h_result: resolveH2hResult,
   h2h_tally: resolveH2hTally,
+  fixture_scorer: resolveFixtureScorer,
   fifa_rating: async (c) => resolveFifaRating(c),
   fifa_top: async (c) => resolveFifaTop(c),
   fifa_absent: async (c) => resolveFifaAbsent(c),
@@ -282,7 +305,13 @@ export function makeContext({ fixtureId, kickoff, homeId, awayId }) {
  * what the slate report and the veto message show.
  *
  * @param {object[]} questions  each with .claims (attached from the dossier)
- * @param {'base'|'fresh'} pass
+ * @param {'base'|'fresh'|'recap'} pass  'fresh' is a vestigial value from the
+ *   retired lineup-slice pipeline — nothing in the Gameday pipeline passes it
+ *   any more, kept only because claims.mjs's textViolations() branches on
+ *   `pass === 'base'` and treats anything else the same way. 'recap' (§6)
+ *   takes that same non-base path: current-affairs language ("this season",
+ *   league position, "currently") is exactly what a Recap Quiz needs to say,
+ *   since it is deliberately about what just happened.
  */
 export async function validateQuestions(questions, { pass, whitelist, clubs, ctx }) {
   const nameIndex = buildNameIndex(whitelist, clubs);
