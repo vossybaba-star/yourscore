@@ -103,6 +103,10 @@ export interface DashboardData {
 const DASH_ANIM = `
   @keyframes dashSlide { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
   @keyframes flameFlick { 0%,100% { transform: scale(1) rotate(-2deg); } 50% { transform: scale(1.12) rotate(2deg); } }
+  @keyframes seasonSweep { 0%,72% { transform: translateX(-130%); } 100% { transform: translateX(130%); } }
+  @keyframes seasonDot { 0%,100% { opacity: .35; transform: scale(.8); } 50% { opacity: 1; transform: scale(1.15); } }
+  .season-shine { position:absolute; inset:0; z-index:4; pointer-events:none; background:linear-gradient(115deg, transparent 32%, rgba(255,255,255,0.13) 47%, transparent 60%); transform:translateX(-130%); animation: seasonSweep 4s ease-in-out infinite; }
+  .season-dot { animation: seasonDot 1.4s ease-in-out infinite; }
   .d-1 { animation: dashSlide 0.35s ease-out 0.04s both; }
   .d-2 { animation: dashSlide 0.35s ease-out 0.1s both; }
   .d-3 { animation: dashSlide 0.35s ease-out 0.16s both; }
@@ -199,31 +203,86 @@ function ProgressCard({ rank, dayStreak, weekDots }: { rank: RankInfo; dayStreak
 
 
 // ── 2b. Get set for the season — the two PL-launch features ─────────────────
-// Replaces Rivalries on the home (founder 2026-07-25): one section, split into
-// two square tiles that each open a launch feature. Both land with the season
-// (21 Aug), so each carries a date tag — the tap opens a real page (a teaser /
-// holding screen), never a dead end.
-//   Fantasy League → /fantasy (its own tab, public teaser)
-//   Gameday Quiz   → /matchweek?section=live (the Live Quiz section)
-function SeasonTile({
-  href, accent, rgba, title, sub, icon,
-}: { href: string; accent: string; rgba: string; title: React.ReactNode; sub: string; icon: React.ReactNode }) {
+// Replaces Rivalries on the home (founder 2026-07-25). One section, two hype
+// tiles that sell the launches landing with the season: Fantasy fronted by real
+// star cutouts, Gameday by a lightning/quiz-card motif. "COMING SOON" not a
+// date (founder 2026-07-25 "this is advertising"). Each opens a real page:
+//   Fantasy League  → /fantasy (its own public teaser tab)
+//   Gameday Quizzes  → /matchweek?section=live (the Gameday Quiz section)
+
+function ComingSoon({ accent, text }: { accent: string; text: string }) {
   return (
-    <Link href={href}
-      className="relative flex flex-col justify-between rounded-2xl p-3.5 overflow-hidden transition-transform active:scale-[0.98]"
-      style={{ aspectRatio: "1 / 1", background: `radial-gradient(ellipse at 30% 0%, rgba(${rgba},0.14), #0c1613 72%)`, border: `1px solid ${accent}55` }}>
-      <div className="flex items-start justify-between">
-        <span className="flex items-center justify-center rounded-xl" style={{ width: 42, height: 42, background: `${accent}26` }}>
-          {icon}
-        </span>
-        <span className="font-body text-[9px] font-bold uppercase tracking-[0.12em] px-2 py-1 rounded-full flex-shrink-0"
-          style={{ background: `${accent}26`, color: accent, border: `1px solid ${accent}55` }}>
-          21 Aug
-        </span>
+    <span className="relative z-[5] font-body text-[9.5px] font-bold uppercase tracking-[0.16em] px-2.5 py-1.5 rounded-full inline-flex items-center gap-1.5 self-start"
+      style={{ background: `${accent}22`, color: text, border: `1px solid ${accent}80` }}>
+      <span className="season-dot rounded-full" style={{ width: 6, height: 6, background: accent }} />
+      COMING SOON
+    </span>
+  );
+}
+
+// The star faces on the Fantasy tile. Local /public cutouts (transparent PL
+// headshots), verified to load — no external call on the home hero. Centre
+// player sits forward and largest; the two flankers tuck behind.
+const FANTASY_FACES = [
+  { src: "/players/saka.png", style: { left: "-14%", width: "58%", bottom: "-6%", zIndex: 1 } },
+  { src: "/players/palmer.png", style: { right: "-14%", width: "58%", bottom: "-6%", zIndex: 1 } },
+  { src: "/players/haaland.png", style: { left: "50%", width: "66%", bottom: "-10%", transform: "translateX(-50%)", zIndex: 2 } },
+] as const;
+
+function FantasyTile() {
+  return (
+    <Link href="/fantasy"
+      className="relative flex flex-col rounded-2xl overflow-hidden transition-transform active:scale-[0.98]"
+      style={{ aspectRatio: "0.82", background: "#0c1908", border: `1px solid ${LIME}80` }}>
+      {/* glow + faint pitch */}
+      <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at 50% 22%, ${LIME}44, rgba(12,25,8,0.15) 62%), #0c1908` }} />
+      <svg viewBox="0 0 160 200" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 w-full h-full" style={{ opacity: 0.28 }}>
+        <g stroke={LIME} strokeWidth="1.1" fill="none">
+          <rect x="8" y="8" width="144" height="184" rx="2" /><line x1="8" y1="100" x2="152" y2="100" /><circle cx="80" cy="100" r="24" />
+        </g>
+      </svg>
+      {/* star cutouts */}
+      {FANTASY_FACES.map((f) => (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img key={f.src} src={f.src} alt="" loading="lazy" decoding="async" aria-hidden="true"
+          className="absolute pointer-events-none select-none" style={f.style} />
+      ))}
+      {/* scrims: top keeps the title crisp, bottom seats the players */}
+      <div className="absolute inset-x-0 top-0" style={{ height: "58%", background: "linear-gradient(to bottom, #0c1908 34%, rgba(12,25,8,0.35) 75%, transparent)" }} />
+      <div className="absolute inset-x-0 bottom-0" style={{ height: "26%", background: "linear-gradient(to top, rgba(10,20,6,0.85), transparent)" }} />
+      <span className="season-shine" />
+      {/* copy */}
+      <div className="relative z-[5] p-3.5 flex flex-col gap-2">
+        <ComingSoon accent={LIME} text="#d4ff4d" />
+        <div>
+          <p className="font-display text-2xl text-white leading-[0.92]">Fantasy<br />League</p>
+          <p className="font-body text-[11px] mt-1.5 font-semibold" style={{ color: "#cfe6a8" }}>Pick your XI.</p>
+        </div>
       </div>
-      <div>
-        <p className="font-display text-xl text-white leading-none">{title}</p>
-        <p className="font-body text-[11px] mt-1.5" style={{ color: "#9aa79f" }}>{sub}</p>
+    </Link>
+  );
+}
+
+function GamedayTile() {
+  return (
+    <Link href="/matchweek?section=live"
+      className="relative flex flex-col justify-end rounded-2xl overflow-hidden transition-transform active:scale-[0.98]"
+      style={{ aspectRatio: "0.82", background: "#06110f", border: `1px solid ${TEAL}80` }}>
+      <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at 50% 22%, ${TEAL}48, rgba(6,17,15,0.15) 62%), #06110f` }} />
+      <svg viewBox="0 0 160 200" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 w-full h-full" style={{ opacity: 0.5 }}>
+        <path d="M92 24 55 108h30l-8 70 60-92h-33l14-64Z" fill={`${TEAL}44`} stroke={TEAL} strokeWidth="1.4" strokeLinejoin="round" />
+        <g stroke={TEAL} strokeWidth="1" fill="none" opacity="0.35">
+          <rect x="12" y="150" width="42" height="54" rx="5" /><rect x="24" y="140" width="42" height="54" rx="5" />
+        </g>
+      </svg>
+      <div className="absolute inset-x-0 bottom-0" style={{ height: "62%", background: "linear-gradient(to top, #06110f 42%, transparent)" }} />
+      <span className="season-shine" style={{ animationDelay: "1.4s" }} />
+      <div className="relative z-[5] p-3.5 flex flex-col gap-2">
+        <ComingSoon accent={TEAL} text="#7ff2e4" />
+        <div>
+          <p className="font-display text-2xl text-white leading-[0.92]">Gameday<br />Quizzes</p>
+          <p className="font-body text-[11px] mt-1.5" style={{ color: "#a8ede4" }}>A quiz pack for every fixture. Play on game day and rep your fanbase.</p>
+        </div>
       </div>
     </Link>
   );
@@ -234,25 +293,8 @@ function SeasonSection() {
     <div className="d-2">
       <SectionHead title="Get set for the season" href="/matchweek" hrefLabel="Premier League →" />
       <div className="grid grid-cols-2 gap-2.5">
-        <SeasonTile
-          href="/fantasy" accent={LIME} rgba="174,234,0"
-          title={<>Fantasy<br />League</>} sub="Build your XI"
-          icon={
-            <svg width="23" height="23" viewBox="0 0 22 22" fill="none">
-              <path d="M6 3.5 3 5 2 8l2.6.8V18h12.8V8.8L20 8l-1-3-3-1.5-1.4 1.2Q11 6.3 8.4 4.7Z"
-                stroke={LIME} strokeWidth="1.5" strokeLinejoin="round" />
-            </svg>
-          }
-        />
-        <SeasonTile
-          href="/matchweek?section=live" accent={TEAL} rgba="0,216,192"
-          title={<>Gameday<br />Quiz</>} sub="A pack every fixture"
-          icon={
-            <svg width="23" height="23" viewBox="0 0 22 22" fill="none">
-              <path d="M12 2 4 12h6l-1 8 8-10h-6l1-8Z" stroke={TEAL} strokeWidth="1.5" strokeLinejoin="round" />
-            </svg>
-          }
-        />
+        <FantasyTile />
+        <GamedayTile />
       </div>
     </div>
   );
