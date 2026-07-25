@@ -14,10 +14,21 @@ import {
   pushCopy,
   pushDedupeKey,
   questionsForPublish,
+  recapPackDescription,
+  recapPackName,
   validatePackQuestions,
   type GamedayRow,
   type QuizQuestion,
 } from "@/lib/gameday/shared";
+
+/** A recap pack has no fixture — it names/describes/links by gameweek, not home v away. */
+function isRecap(row: Pick<GamedayRow, "kind">): boolean {
+  return row.kind === "recap";
+}
+/** Kind-aware pack name (recap = "Gameday Recap: Gameweek N", fixture = "Gameday: H v A, date"). */
+function nameFor(row: GamedayRow): string {
+  return isRecap(row) ? recapPackName(row) : packName(row);
+}
 
 /**
  * The Gameday publish engine — pack insert + push fan-out, salvaged from
@@ -75,11 +86,15 @@ export async function getGamedayRow(fixtureId: number): Promise<GamedayRow | nul
 
 /** Every row due for publish: state='approved' and publish_at <= now. */
 export async function getDueRows(now: Date = new Date()): Promise<GamedayRow[]> {
+  // Both a fixture pack (day before its match) and a recap pack (after its
+  // gameweek finishes) publish by the SAME rule: approved and past publish_at.
+  // The two kinds differ only in naming/metadata/push below, never in the
+  // due-and-publish mechanism.
   const { data, error } = await db()
     .from("halftime_releases")
     .select(GAMEDAY_COLS)
     .eq("state", "approved")
-    .eq("kind", "fixture")
+    .in("kind", ["fixture", "recap"])
     .lte("publish_at", now.toISOString());
   if (error) {
     console.error("[gameday/publish] getDueRows failed", error);
@@ -96,8 +111,28 @@ export async function getDueRows(now: Date = new Date()): Promise<GamedayRow[]> 
 async function ensurePackRow(row: GamedayRow, questions: QuizQuestion[]): Promise<boolean> {
   if (!row.pack_id) return false;
 
-  const name = packName(row);
+  const recap = isRecap(row);
+  const name = nameFor(row);
   const matchday = londonMatchday(new Date(row.kickoff_at));
+
+  // Fixture packs carry metadata.gameday (the fixture pointer the pre-match
+  // prediction poll and the club-fan leaderboard read); recap packs carry
+  // metadata.recap (gameweek only — no fixture, no home/away, so nothing that
+  // reads metadata.gameday ever mistakes a recap for a playable fixture pack).
+  const metadata = recap
+    ? { recap: { season_id: row.season_id, gameweek: row.gameweek } }
+    : {
+        gameday: {
+          fixture_id: row.fixture_id,
+          season_id: row.season_id,
+          round_name: row.round_name,
+          gameweek: row.gameweek,
+          matchday,
+          kickoff_at: row.kickoff_at,
+          home: row.home,
+          away: row.away,
+        },
+      };
 
   const { error } = await db()
     .from("quiz_packs")
@@ -113,19 +148,8 @@ async function ensurePackRow(row: GamedayRow, questions: QuizQuestion[]): Promis
         featured: false,
         question_count: questions.length,
         questions,
-        description: packDescription(row),
-        metadata: {
-          gameday: {
-            fixture_id: row.fixture_id,
-            season_id: row.season_id,
-            round_name: row.round_name,
-            gameweek: row.gameweek,
-            matchday,
-            kickoff_at: row.kickoff_at,
-            home: row.home,
-            away: row.away,
-          },
-        },
+        description: recap ? recapPackDescription(row) : packDescription(row),
+        metadata,
       },
       { onConflict: "id", ignoreDuplicates: true },
     );
@@ -154,6 +178,12 @@ async function ensurePackRow(row: GamedayRow, questions: QuizQuestion[]): Promis
  */
 async function pushForFixture(row: GamedayRow, slug: string): Promise<number> {
   if (!row.pack_id) return 0;
+  // A recap pack belongs to no club and points at no fixture, so neither push
+  // source applies. It publishes and is playable (and scores to Rank), but the
+  // personalised day-before push is a fixture-pack mechanism only — a recap's
+  // own push audience is a separate, unspecced product decision (§6), so we do
+  // not invent one here. It simply surfaces in-app.
+  if (isRecap(row)) return 0;
 
   const raw = db();
   const matchday = londonMatchday(new Date(row.kickoff_at));
@@ -221,7 +251,7 @@ export async function publishFixture(fixtureId: number): Promise<PublishOutcome>
     };
   }
 
-  const slug = slugify(packName(row));
+  const slug = slugify(nameFor(row));
 
   // Already published. Re-invocation must never push again or change state —
   // but it IS the repair path for a crash between the CAS and the pack insert.

@@ -47,10 +47,17 @@ export async function GET(req: NextRequest) {
   const cancelledPostponed: number[] = [];
   const failed: Array<{ fixtureId: number; reason?: string }> = [];
 
+  // Recap packs are exempt from steps 2 and 3, which are fixture-only concepts:
+  // a recap publishes AFTER its gameweek finishes, so its (nominal) kickoff is
+  // always in the past — the "kickoff already passed" cancel would kill every
+  // recap — and a recap has no real SportMonks fixture to be "still scheduled".
+  // A recap that is approved and past its publish_at simply publishes (step 4).
+  const isFixtureKind = (r: (typeof due)[number]) => r.kind !== "recap";
+
   // ── 2. Kickoff already passed while still approved → cancelled. ──────────
   const stillDue = [];
   for (const row of due) {
-    if (new Date(row.kickoff_at).getTime() <= now.getTime()) {
+    if (isFixtureKind(row) && new Date(row.kickoff_at).getTime() <= now.getTime()) {
       const res = await cancelStaleFixture(row.fixture_id, "kickoff already passed while approved");
       if (res.cancelled) cancelledKickedOff.push(row.fixture_id);
       continue;
@@ -60,19 +67,20 @@ export async function GET(req: NextRequest) {
 
   // ── 3. Postponement check — one call, best-effort. ────────────────────────
   // Never blocks a legitimate publish: a SportMonks hiccup here must not stop
-  // otherwise-healthy fixtures going live.
-  if (stillDue.length) {
+  // otherwise-healthy fixtures going live. Fixture rows only (recaps skipped).
+  const stillDueFixtures = stillDue.filter(isFixtureKind);
+  if (stillDueFixtures.length) {
     try {
       const kickoffDates = Array.from(
         new Set(
-          stillDue.map((r) => new Intl.DateTimeFormat("en-CA", { timeZone: "UTC" }).format(new Date(r.kickoff_at))),
+          stillDueFixtures.map((r) => new Intl.DateTimeFormat("en-CA", { timeZone: "UTC" }).format(new Date(r.kickoff_at))),
         ),
       );
       const scheduledIds = new Set<number>();
       for (const date of kickoffDates) {
         for (const id of Array.from(await getScheduledFixtureIds(date))) scheduledIds.add(id);
       }
-      for (const row of [...stillDue]) {
+      for (const row of [...stillDueFixtures]) {
         if (!scheduledIds.has(row.fixture_id)) {
           const res = await cancelStaleFixture(row.fixture_id, "no longer on SportMonks' schedule");
           if (res.cancelled) {
