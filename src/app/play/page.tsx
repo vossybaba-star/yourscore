@@ -153,7 +153,7 @@ function ClubCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: string 
           an OPEN action. The team is identified by its crest / cover art. */}
       <div className="px-2 pb-2.5 pt-2">
         <div
-          className="rounded-lg py-1.5 text-center"
+          className="rounded-md py-1 text-center"
           style={{
             background: "linear-gradient(135deg, rgba(0,216,192,0.18) 0%, rgba(255,120,0,0.12) 100%)",
             border: "1px solid rgba(0,216,192,0.3)",
@@ -228,7 +228,7 @@ function RecordsCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: stri
           {isWorldCupPack(pack) ? "World Cup 2026" : "All-Time Records"}{packDate(pack.created_at) ? ` · ${packDate(pack.created_at)}` : ""}
         </p>
         <div
-          className="rounded-lg py-1.5 text-center"
+          className="rounded-md py-1 text-center"
           style={{
             background: "linear-gradient(135deg, rgba(0,216,192,0.18) 0%, rgba(0,216,192,0.05) 100%)",
             border: "1px solid rgba(0,216,192,0.3)",
@@ -311,7 +311,7 @@ function EndOfSeasonCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: 
         <p className="font-body text-xs font-bold text-white leading-tight mb-1 line-clamp-2" style={{ minHeight: 30 }}>{pack.name}</p>
         <p className="font-body text-[10px] mb-1.5" style={{ color: "#8a948f" }}>End of Season</p>
         <div
-          className="rounded-lg py-1.5 text-center"
+          className="rounded-md py-1 text-center"
           style={{
             background: "linear-gradient(135deg, rgba(0,216,192,0.18) 0%, rgba(6,182,212,0.12) 100%)",
             border: "1px solid rgba(0,216,192,0.3)",
