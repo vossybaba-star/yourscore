@@ -6,7 +6,20 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-07-25 (**The Halftime Quiz shipped as the GAMEDAY QUIZ — published the day
+> **Confirmed:** 2026-07-25 (**Duplicate-rank bug FIXED — every player has one rank again.**
+> Migration **211 APPLIED to prod**, recorded on `main`. `yourscore_user_ratings` joined
+> `draft_standings` on `league_id` alone, ignoring `competition` — so anyone active in more than
+> one competition (PL/WC/LaLiga) got a SEPARATE row per competition. Result: **340 users had two
+> overall_ranks** (one appeared at both #45 and #4,895), **280 had their 38-0 score split and
+> never summed** (goat1993 saw 143,000 instead of 257,000), and every rank was inflated by ~358
+> phantom rows. Fix: aggregate `draft_standings` per user (sum wins/draws/losses across all
+> competitions) BEFORE the join. Verified live: 0 duplicate users, view rows == profiles ==
+> 10,046, 10,046 distinct contiguous ranks, `get_yourscore_rank`/`get_yourscore_ladder` return
+> one correct row per user, goat1993 now at #23 with the full 257,000. Column list unchanged, so
+> the dependent RPCs needed no drop/recreate. This closes the ⚠️ flag from the 2026-07-21
+> profile-card entry below.)
+>
+> **Previously confirmed:** 2026-07-25 (**The Halftime Quiz shipped as the GAMEDAY QUIZ — published the day
 > BEFORE each fixture, not at the halftime whistle.** Merged to `main` as `c8b4488`; migration
 > `110_gameday.sql` applied to prod.
 > **What changed and why:** a pack per PL fixture now publishes from a daily Vercel cron
