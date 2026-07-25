@@ -144,7 +144,7 @@ export function FantasyTeaser() {
           <div style={{ padding: "8px 18px 18px", textAlign: "center" }}>
             <p className="font-display tracking-wide text-white" style={{ fontSize: 18, margin: "8px 0 4px" }}>KNOW YOUR FOOTBALL, MOVE YOUR TEAM</p>
             <p className="font-body" style={{ fontSize: 12.5, color: "#9aa39e", margin: 0, lineHeight: 1.55 }}>
-              Answer the Gameday Quiz and each round&apos;s questions. Correct answers earn transfers. Everywhere else you pay for extra moves. Here you earn them.
+              Answer the Gameday Quiz and each round&apos;s questions. Correct answers earn transfers. Everywhere else you pay for extra moves on YourScore, you earn them.
             </p>
           </div>
         </div>
