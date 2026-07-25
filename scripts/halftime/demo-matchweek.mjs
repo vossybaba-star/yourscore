@@ -133,7 +133,7 @@ start("npx", ["next", "dev", "-p", String(APP_PORT)], {
 });
 await waitFor(`${APP}/api/pl/news`, 180000);
 const news = await (await fetch(`${APP}/api/pl/news`)).json();
-const up = await (await fetch(`${APP}/api/halftime/upcoming`)).json();
+const up = await (await fetch(`${APP}/api/gameday/upcoming`)).json();
 const tbl = await (await fetch(`${APP}/api/clubs/table`)).json();
 const std = await (await fetch(`${APP}/api/pl/standings`)).json();
 const hl = await (await fetch(`${APP}/api/pl/quiz-highlights`)).json();

@@ -72,8 +72,11 @@ export async function POST(req: NextRequest) {
   const db = createServiceClient() as unknown as SupabaseClient;
 
   // Only allow reminders for a fixture we actually know about, and only before
-  // it has released — "notify me" about a quiz that already dropped is a no-op
-  // that would sit in the table forever.
+  // its pack has published — "notify me" about a quiz that is already live is a
+  // no-op that would sit in the table forever. Post-pivot the pack drops the day
+  // before the fixture and the reminder push fires AT publish (§4.3), so the
+  // "already dropped" state is 'published' (the retired 'released'/'released_late'
+  // states are no longer written for gameday packs).
   const { data: fixture } = await db
     .from("halftime_releases")
     .select("fixture_id, state")
@@ -84,8 +87,8 @@ export async function POST(req: NextRequest) {
 
   if (on) {
     const state = (fixture as { state?: string }).state;
-    if (state === "released" || state === "released_late") {
-      return NextResponse.json({ error: "that quiz has already dropped" }, { status: 409 });
+    if (state === "published") {
+      return NextResponse.json({ error: "that quiz is already live" }, { status: 409 });
     }
     // Idempotent: tapping twice must not 23505 the user.
     const { error } = await db

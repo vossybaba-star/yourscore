@@ -35,7 +35,6 @@ import {
   questionsForRelease,
   shuffleOptions,
   validatePackQuestions,
-  type FreshQuestion,
   type HalftimeState,
   type QuizQuestion,
 } from "./shared";
@@ -49,17 +48,6 @@ function q(n: number, difficulty: "easy" | "medium" | "hard" = "medium"): QuizQu
     options: { A: `correct-${n}`, B: `wrong-${n}-b`, C: `wrong-${n}-c`, D: `wrong-${n}-d` },
     answer: "A",
     difficulty,
-  };
-}
-
-function fresh(n: number, status: FreshQuestion["status"]): FreshQuestion {
-  return {
-    question: `Fresh question ${n}?`,
-    options: { A: `fresh-correct-${n}`, B: `f-b-${n}`, C: `f-c-${n}`, D: `f-d-${n}` },
-    answer: "A",
-    difficulty: "hard",
-    status,
-    fact: `dossier fact ${n}`,
   };
 }
 
@@ -218,55 +206,24 @@ test("shuffleOptions: deterministic per fixture, and it actually moves the answe
 
 // ── assembly ─────────────────────────────────────────────────────────────────
 
-test("assemble: fresh questions lead and base fills to exactly 10", () => {
-  const slice = [fresh(1, "approved"), fresh(2, "approved")];
-  const pack = assembleQuestions(BASE_10, slice, FIXTURE);
-
+test("assemble: a full base slate yields exactly 10 questions", () => {
+  const pack = assembleQuestions(BASE_10, FIXTURE);
   assert.equal(pack.length, 10);
-  assert.ok(pack[0].question.startsWith("Fresh question 1"));
-  assert.ok(pack[1].question.startsWith("Fresh question 2"));
-  // Fresh REPLACES base — the last two base questions drop off, not extend it.
-  assert.equal(pack.filter((x) => x.question.startsWith("Base")).length, 8);
+  assert.equal(pack.filter((x) => x.question.startsWith("Base")).length, 10);
 });
 
-test("assemble: only approved fresh questions make the pack", () => {
-  const slice = [
-    fresh(1, "approved"),
-    fresh(2, "vetoed"),
-    fresh(3, "pending"),
-    fresh(4, "dropped"),
-  ];
-  const pack = assembleQuestions(BASE_10, slice, FIXTURE);
-  const freshInPack = pack.filter((x) => x.question.startsWith("Fresh"));
-
-  assert.equal(pack.length, 10);
-  assert.equal(freshInPack.length, 1);
-  assert.ok(freshInPack[0].question.startsWith("Fresh question 1"));
+test("assemble: a short base slate yields fewer than 10 (caller must validate)", () => {
+  const pack = assembleQuestions(BASE_10.slice(0, 7), FIXTURE);
+  assert.equal(pack.length, 7);
 });
 
-test("assemble: the fresh slice can never exceed 3", () => {
-  const slice = [1, 2, 3, 4, 5].map((n) => fresh(n, "approved"));
-  const pack = assembleQuestions(BASE_10, slice, FIXTURE);
-  assert.equal(pack.length, 10);
-  assert.equal(pack.filter((x) => x.question.startsWith("Fresh")).length, 3);
-});
-
-test("assemble: baseOnly is a complete 10-question pack (the degraded path)", () => {
-  const slice = [fresh(1, "approved"), fresh(2, "approved")];
-  const pack = assembleQuestions(BASE_10, slice, FIXTURE, { baseOnly: true });
-
-  assert.equal(pack.length, 10);
-  assert.equal(pack.filter((x) => x.question.startsWith("Fresh")).length, 0);
-  assert.ok(validatePackQuestions(pack).length === 0);
-});
-
-test("assemble: no fresh slice at all still yields a full pack", () => {
-  assert.equal(assembleQuestions(BASE_10, [], FIXTURE).length, 10);
-  assert.equal(assembleQuestions(BASE_10, null, FIXTURE).length, 10);
+test("assemble: no base slate at all yields an empty pack", () => {
+  assert.equal(assembleQuestions([], FIXTURE).length, 0);
+  assert.equal(assembleQuestions(null, FIXTURE).length, 0);
 });
 
 test("assemble: gate metadata never leaks into the played pack", () => {
-  const pack = assembleQuestions(BASE_10, [fresh(1, "approved")], FIXTURE);
+  const pack = assembleQuestions(BASE_10, FIXTURE);
   for (const item of pack) {
     assert.deepEqual(Object.keys(item).sort(), ["answer", "difficulty", "options", "question"]);
   }
@@ -274,68 +231,32 @@ test("assemble: gate metadata never leaks into the played pack", () => {
 
 // ── release-time content selection ───────────────────────────────────────────
 
-const frozenPack = assembleQuestions(
-  BASE_10,
-  [fresh(1, "approved"), fresh(2, "approved")],
-  FIXTURE,
-);
+const frozenPack = assembleQuestions(BASE_10, FIXTURE);
 
-test("release: with no late veto the pack is the frozen snapshot, byte for byte", () => {
+test("release: the pack is the frozen snapshot, byte for byte", () => {
   const out = questionsForRelease({
     fixture_id: FIXTURE,
     base_questions: BASE_10,
-    fresh_questions: [fresh(1, "approved"), fresh(2, "approved")],
     pack_questions: frozenPack,
-    fresh_state: "approved",
   });
   // AC3b: release copies, it never regenerates.
   assert.deepEqual(out, frozenPack);
 });
 
-test("release: a veto landing after the deadline still pulls the question", () => {
+test("release: no frozen snapshot falls back to assembling from base", () => {
   const out = questionsForRelease({
     fixture_id: FIXTURE,
     base_questions: BASE_10,
-    fresh_questions: [fresh(1, "approved"), fresh(2, "vetoed")],
-    pack_questions: frozenPack,
-    fresh_state: "approved",
-  });
-
-  assert.equal(out.length, 10);
-  assert.equal(out.filter((x) => x.question.startsWith("Fresh question 2")).length, 0);
-  assert.equal(out.filter((x) => x.question.startsWith("Fresh question 1")).length, 1);
-  // Backfilled from the day-before base slate, so still 10.
-  assert.equal(out.filter((x) => x.question.startsWith("Base")).length, 9);
-});
-
-test("release: the kill switch forces base-only even on a staged pack", () => {
-  const out = questionsForRelease({
-    fixture_id: FIXTURE,
-    base_questions: BASE_10,
-    fresh_questions: [fresh(1, "approved"), fresh(2, "approved")],
-    pack_questions: frozenPack,
-    fresh_state: "killed",
-  });
-  assert.equal(out.length, 10);
-  assert.equal(out.filter((x) => x.question.startsWith("Fresh")).length, 0);
-});
-
-test("release: no frozen snapshot (poller died) falls back to base-only, never fresh", () => {
-  const out = questionsForRelease({
-    fixture_id: FIXTURE,
-    base_questions: BASE_10,
-    fresh_questions: [fresh(1, "approved")],
     pack_questions: null,
-    fresh_state: "approved",
   });
   assert.equal(out.length, 10);
-  assert.equal(out.filter((x) => x.question.startsWith("Fresh")).length, 0);
+  assert.deepEqual(out, frozenPack);
 });
 
 // ── pack validation ──────────────────────────────────────────────────────────
 
 test("validate: a good pack passes", () => {
-  assert.deepEqual(validatePackQuestions(assembleQuestions(BASE_10, [], FIXTURE)), []);
+  assert.deepEqual(validatePackQuestions(assembleQuestions(BASE_10, FIXTURE)), []);
 });
 
 test("validate: a short pack is rejected", () => {

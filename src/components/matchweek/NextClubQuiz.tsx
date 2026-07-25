@@ -36,14 +36,14 @@ export function NextClubQuiz() {
 
   useEffect(() => {
     let live = true;
-    fetch("/api/halftime/upcoming")
+    fetch("/api/gameday/upcoming")
       .then((r) => r.json())
       .then((j) => { if (live) { setGws(j.gameweeks ?? []); setLoaded(true); } })
       .catch(() => { if (live) setLoaded(true); });
     return () => { live = false; };
   }, []);
 
-  // The soonest upcoming fixture their club is in. /api/halftime/upcoming already
+  // The soonest upcoming fixture their club is in. /api/gameday/upcoming already
   // returns gameweeks in kickoff order with fixtures sorted inside, so the first
   // match down the list is the next one.
   const next = useMemo(() => {
@@ -97,7 +97,7 @@ export function NextClubQuiz() {
         <div className="mt-3.5 pt-3 flex items-end justify-between gap-3" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
           <div className="min-w-0">
             <p className="font-body text-xs" style={{ color: "#8a948f" }}>
-              Drops at half time · {timeLabel(fx.kickoff)} kick-off
+              {fx.state === "published" ? "Playable now" : "Published day before"} · {timeLabel(fx.kickoff)} kick-off
             </p>
             <p className="font-body text-xs mt-1" style={{ color: "#586058" }}>
               This is the one that scores for {club} in the fan table.

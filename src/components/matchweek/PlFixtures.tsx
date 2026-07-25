@@ -2,18 +2,20 @@
 
 /**
  * Matchweek → PL → Fixtures. This gameweek's Premier League matches, each with
- * its halftime quiz attached (the same data powers the Live Quiz rail). Reads
+ * its Gameday Quiz pack attached (the same data powers the Gameday rail). Reads
  * /api/pl/fixtures, which projects halftime_releases — so a fixture and its quiz
- * are never out of sync, and the quiz link only appears once the pack is live.
+ * are never out of sync, and the quiz link only appears once the pack is
+ * published.
  *
  * Grouped by DAY under the gameweek (founder, 2026-07-16). A gameweek is not one
  * block of matches — it's a Friday night, a Saturday, a Sunday — and a flat list
  * of ten hid that entirely.
  *
- * The action is "Notify me", not "Play": a pack only exists from its own
- * half-time whistle, so for every fixture that hasn't kicked off there is nothing
- * to play, and offering it would be a dead button. PLAY appears on a row the
- * moment that match's pack goes live.
+ * The action is "Notify me", not "Play": a pack only exists from the day
+ * before its fixture (§0.1 — published the day before, not at the whistle),
+ * so for a fixture whose pack hasn't published yet there is nothing to play,
+ * and offering it would be a dead button. PLAY appears on a row the moment
+ * that match's pack goes live.
  */
 
 import Link from "next/link";
@@ -134,7 +136,7 @@ export function PlFixtures() {
       </div>
 
       <p className="font-body text-xs mt-3 px-1" style={{ color: "#586058" }}>
-        A quiz drops for each match at the half-time whistle.
+        A quiz pack publishes the day before each match.
       </p>
     </div>
   );

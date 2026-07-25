@@ -48,7 +48,7 @@ const STEPS: Step[] = [
     selectors: ['[data-tour="pl-sections"]'],
     navHref: "/matchweek",
     title: "Premier League",
-    body: "Your PL week in one place — fixtures, the live table, and halftime quizzes while the matches are on.",
+    body: "Your PL week in one place — fixtures, the live table, and a Gameday Quiz pack for every match.",
   },
   {
     route: "/profile",

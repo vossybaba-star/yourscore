@@ -6,52 +6,62 @@ import { rateLimitDistributed } from "@/lib/ratelimit";
 import { isPick, tallyPicks, type Pick, type Tally } from "@/lib/halftime/predict";
 
 /**
- * The halftime prediction poll — one call on the second half, per fan per
- * fixture.
+ * The prediction polls — TWO phases per fixture (§0.6), rewritten off the pack
+ * entirely:
  *
- *   GET  ?pack=<packId>   → { closed, myPick, result, tally }
- *   POST { packId, pick } → record this fan's pick (once; then locked)
+ *   GET  ?fixture=<fixtureId>&phase=<prematch|halftime>  → { closed, myPick, result, tally }
+ *   POST { fixtureId, phase, pick }                      → record this fan's pick
  *
- * Server-authoritative, like /api/quiz/solo-complete: the client sends only the
- * pack id and a pick. The fixture, the two team names and whether the poll is
- * still open are all resolved here from the pack's own metadata and the result
- * table — the browser is never trusted with any of it. The tally is counted
- * under the service role because halftime_predictions is deny-all RLS, so no
- * client can read another fan's pick directly.
+ * Both key on the FIXTURE, never on a quiz_packs row or its metadata — the
+ * bug class this closes (E1/E2/E3) all came from reading the poll's context
+ * off a pack. There is no packContext lookup here at all.
+ *
+ *   prematch  open only while now() < kickoff_at. Predicts the FULL-TIME result.
+ *   halftime  open only once second_half_started_at IS NOT NULL and no result
+ *             row exists yet for that phase. Predicts the SECOND-HALF result.
+ *
+ * A pick for a closed phase is refused with 409. One pick per user per
+ * fixture PER PHASE (migration 110: PK (user_id, fixture_id, phase)).
+ *
+ * Server-authoritative, like /api/quiz/solo-complete: the client sends only
+ * the fixture id, phase and a pick. The tally is counted under the service
+ * role because halftime_predictions is deny-all RLS.
  */
 
 export const fetchCache = "force-no-store";
 export const dynamic = "force-dynamic";
 
-// halftime_* tables are not in the generated DB types — one untyped handle.
 function svc(): SupabaseClient {
   return createServiceClient() as unknown as SupabaseClient;
 }
 
-interface PackContext {
-  fixtureId: number;
-  home: string;
-  away: string;
+type Phase = "prematch" | "halftime";
+function isPhase(v: unknown): v is Phase {
+  return v === "prematch" || v === "halftime";
 }
 
-/**
- * The fixture a halftime pack belongs to, from its own metadata. Returns null
- * for a pack that is not a released halftime pack — you cannot predict on
- * anything else. `status='published'` is the release gate (an unreleased pack is
- * not published), so a pre-whistle pack id resolves to null here too.
- */
-async function packContext(db: SupabaseClient, packId: string): Promise<PackContext | null> {
-  const { data, error } = await db
-    .from("quiz_packs")
-    .select("metadata, status")
-    .eq("id", packId)
+interface FixtureRow {
+  fixture_id: number;
+  home: string;
+  away: string;
+  kickoff_at: string;
+  second_half_started_at: string | null;
+}
+
+async function fixtureRow(db: SupabaseClient, fixtureId: number): Promise<FixtureRow | null> {
+  const { data } = await db
+    .from("halftime_releases")
+    .select("fixture_id, home, away, kickoff_at, second_half_started_at")
+    .eq("fixture_id", fixtureId)
     .maybeSingle();
-  if (error || !data) return null;
-  const row = data as { metadata: { halftime?: { fixture_id?: number; home?: string; away?: string } } | null; status: string };
-  if (row.status !== "published") return null;
-  const ht = row.metadata?.halftime;
-  if (!ht || typeof ht.fixture_id !== "number" || !ht.home || !ht.away) return null;
-  return { fixtureId: ht.fixture_id, home: ht.home, away: ht.away };
+  return (data as FixtureRow | null) ?? null;
+}
+
+/** Is this phase currently open to a NEW pick, for this fixture, right now? */
+function phaseOpen(row: FixtureRow, phase: Phase, resultExists: boolean): boolean {
+  if (resultExists) return false; // already settled — never re-opens
+  if (phase === "prematch") return Date.now() < new Date(row.kickoff_at).getTime();
+  return row.second_half_started_at !== null; // halftime
 }
 
 interface FixtureState {
@@ -59,45 +69,54 @@ interface FixtureState {
   result: Pick | null;
 }
 
-/** Tally + settled result for a fixture — the shared read both verbs return. */
-async function fixtureState(db: SupabaseClient, fixtureId: number): Promise<FixtureState> {
+async function fixtureState(db: SupabaseClient, fixtureId: number, phase: Phase): Promise<FixtureState> {
   const [{ data: picks }, { data: res }] = await Promise.all([
-    db.from("halftime_predictions").select("pick").eq("fixture_id", fixtureId),
-    db.from("halftime_prediction_results").select("result").eq("fixture_id", fixtureId).maybeSingle(),
+    db.from("halftime_predictions").select("pick").eq("fixture_id", fixtureId).eq("phase", phase),
+    db
+      .from("halftime_prediction_results")
+      .select("result")
+      .eq("fixture_id", fixtureId)
+      .eq("phase", phase)
+      .maybeSingle(),
   ]);
   const tally = tallyPicks(((picks ?? []) as { pick: Pick }[]).filter((p) => isPick(p.pick)));
   const result = (res as { result?: Pick } | null)?.result ?? null;
   return { tally, result };
 }
 
-async function myPickFor(db: SupabaseClient, userId: string, fixtureId: number): Promise<Pick | null> {
+async function myPickFor(db: SupabaseClient, userId: string, fixtureId: number, phase: Phase): Promise<Pick | null> {
   const { data } = await db
     .from("halftime_predictions")
     .select("pick")
     .eq("user_id", userId)
     .eq("fixture_id", fixtureId)
+    .eq("phase", phase)
     .maybeSingle();
   return (data as { pick?: Pick } | null)?.pick ?? null;
 }
 
 export async function GET(req: NextRequest) {
-  const packId = req.nextUrl.searchParams.get("pack");
-  if (!packId) return NextResponse.json({ error: "pack required" }, { status: 400 });
+  const fixtureId = Number(req.nextUrl.searchParams.get("fixture"));
+  const phase = req.nextUrl.searchParams.get("phase");
+  if (!Number.isInteger(fixtureId)) return NextResponse.json({ error: "fixture required" }, { status: 400 });
+  if (!isPhase(phase)) return NextResponse.json({ error: "phase must be prematch|halftime" }, { status: 400 });
 
   const db = svc();
-  const ctx = await packContext(db, packId);
-  if (!ctx) return NextResponse.json({ error: "not a halftime pack" }, { status: 404 });
+  const row = await fixtureRow(db, fixtureId);
+  if (!row) return NextResponse.json({ error: "no such fixture" }, { status: 404 });
 
-  // A signed-in fan sees their own pick; a guest just sees the tally + result.
   const auth = await createClient();
   const { data: { user } } = await auth.auth.getUser();
 
-  const state = await fixtureState(db, ctx.fixtureId);
-  const myPick = user ? await myPickFor(db, user.id, ctx.fixtureId) : null;
+  const state = await fixtureState(db, fixtureId, phase);
+  const myPick = user ? await myPickFor(db, user.id, fixtureId, phase) : null;
+  const open = phaseOpen(row, phase, state.result !== null);
 
   return NextResponse.json({
-    home: ctx.home,
-    away: ctx.away,
+    home: row.home,
+    away: row.away,
+    phase,
+    open,
     closed: state.result !== null,
     myPick,
     result: state.result,
@@ -113,37 +132,49 @@ export async function POST(req: NextRequest) {
   const { ok } = await rateLimitDistributed(`ht-predict:${user.id}`, 20, 60_000);
   if (!ok) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
 
-  let body: { packId?: unknown; pick?: unknown };
+  let body: { fixtureId?: unknown; phase?: unknown; pick?: unknown };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
-  const packId = typeof body.packId === "string" ? body.packId : "";
-  if (!packId) return NextResponse.json({ error: "packId required" }, { status: 400 });
+  const fixtureId = Number(body.fixtureId);
+  if (!Number.isInteger(fixtureId)) return NextResponse.json({ error: "fixtureId required" }, { status: 400 });
+  if (!isPhase(body.phase)) return NextResponse.json({ error: "phase must be prematch|halftime" }, { status: 400 });
+  const phase = body.phase;
   if (!isPick(body.pick)) return NextResponse.json({ error: "pick must be home|draw|away" }, { status: 400 });
   const pick = body.pick;
 
   const db = svc();
-  const ctx = await packContext(db, packId);
-  if (!ctx) return NextResponse.json({ error: "not a halftime pack" }, { status: 404 });
+  const row = await fixtureRow(db, fixtureId);
+  if (!row) return NextResponse.json({ error: "no such fixture" }, { status: 404 });
 
-  // Poll closes the moment the fixture is settled — you cannot predict a result
-  // that is already known.
-  const preState = await fixtureState(db, ctx.fixtureId);
-  if (preState.result !== null) {
+  // Poll closes the moment the phase's window is over — reject a pick for a
+  // closed phase with 409, never accept it silently.
+  const preState = await fixtureState(db, fixtureId, phase);
+  const open = phaseOpen(row, phase, preState.result !== null);
+  if (!open) {
     return NextResponse.json(
-      { closed: true, myPick: await myPickFor(db, user.id, ctx.fixtureId), result: preState.result, tally: preState.tally, home: ctx.home, away: ctx.away },
+      {
+        closed: true,
+        open: false,
+        myPick: await myPickFor(db, user.id, fixtureId, phase),
+        result: preState.result,
+        tally: preState.tally,
+        home: row.home,
+        away: row.away,
+        phase,
+      },
       { status: 409 },
     );
   }
 
-  // One pick per fan per fixture, and it is LOCKED: on a second attempt the
-  // insert conflicts on the PK and we simply return the pick already on record,
-  // never the new one. No update path exists — not in RLS, not here.
+  // One pick per fan per fixture per phase, LOCKED: on a second attempt the
+  // insert conflicts on the PK and we simply return the pick already on
+  // record, never the new one.
   const { error } = await db
     .from("halftime_predictions")
-    .insert({ user_id: user.id, fixture_id: ctx.fixtureId, pack_id: packId, pick })
+    .insert({ user_id: user.id, fixture_id: fixtureId, phase, pick })
     .select()
     .single();
 
@@ -153,11 +184,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "could not record prediction" }, { status: 500 });
   }
 
-  const state = await fixtureState(db, ctx.fixtureId);
-  const myPick = await myPickFor(db, user.id, ctx.fixtureId);
+  const state = await fixtureState(db, fixtureId, phase);
+  const myPick = await myPickFor(db, user.id, fixtureId, phase);
   return NextResponse.json({
-    home: ctx.home,
-    away: ctx.away,
+    home: row.home,
+    away: row.away,
+    phase,
+    open: phaseOpen(row, phase, state.result !== null),
     closed: state.result !== null,
     locked: conflict, // true = you had already picked; we kept the original
     myPick,

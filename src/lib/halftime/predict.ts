@@ -48,11 +48,37 @@ export interface SmScoreEntry {
 export function finalGoalsFromScores(
   scores: SmScoreEntry[] | null | undefined,
 ): { home: number; away: number } | null {
+  return goalsForDescription(scores, "CURRENT");
+}
+
+/**
+ * Second-half-only goals from a fixture's `scores` array — the SECOND_HALF
+ * prediction phase (§0.6) grades against this, not the full match total.
+ *
+ * The correct entry is "2ND_HALF_ONLY", NOT "2ND_HALF". Verified against a real
+ * finished fixture on the paid key (Leeds 3-1 Burnley, 2026-07-23):
+ *   1ST_HALF        home 1 / away 0
+ *   2ND_HALF        home 3 / away 1   ← CUMULATIVE — this is the full-time score
+ *   2ND_HALF_ONLY   home 2 / away 1   ← the actual second-half split
+ * Grading against "2ND_HALF" would score the halftime pick against the full-time
+ * result and be wrong for every fixture with a first-half goal. Same
+ * null-if-incomplete contract as finalGoalsFromScores.
+ */
+export function secondHalfGoalsFromScores(
+  scores: SmScoreEntry[] | null | undefined,
+): { home: number; away: number } | null {
+  return goalsForDescription(scores, "2ND_HALF_ONLY");
+}
+
+function goalsForDescription(
+  scores: SmScoreEntry[] | null | undefined,
+  description: string,
+): { home: number; away: number } | null {
   if (!Array.isArray(scores)) return null;
   let home: number | null = null;
   let away: number | null = null;
   for (const s of scores) {
-    if (s?.description !== "CURRENT") continue;
+    if (s?.description !== description) continue;
     const goals = s.score?.goals;
     const side = s.score?.participant;
     if (typeof goals !== "number") continue;

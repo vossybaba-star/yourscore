@@ -13,7 +13,7 @@ import { getCompetitionBadgeUrlSync } from "@/lib/competitionImages";
 import { usePendingFriends } from "@/hooks/usePendingFriends";
 import { usePendingTurns } from "@/hooks/usePendingTurns";
 import { DebateCard } from "@/components/debate/DebateCard";
-import { HalftimeCard } from "@/components/halftime/HalftimeCard";
+import { GamedayCard } from "@/components/home/GamedayCard";
 import { trackShare } from "@/lib/analytics/trackGame";
 import { TodaysQuestionPreview } from "@/components/home/TodaysQuestionPreview";
 import type { TodaysGame, TodaysGameStats } from "@/lib/daily-game";
@@ -609,7 +609,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
         <PendingFriendsNotice />
 
         {/* Live/upcoming halftime pack — self-hides off-matchday */}
-        <HalftimeCard />
+        <GamedayCard />
 
         {/* 2. Rivalry */}
         <RivalryModule rivalry={rivalry} meName={displayName ? displayName.split(" ")[0] : "You"} meId={userId} />

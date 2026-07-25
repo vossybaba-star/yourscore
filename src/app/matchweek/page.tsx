@@ -21,7 +21,7 @@
  */
 
 import { useEffect, useState } from "react";
-import { HalftimeRail } from "@/components/halftime/HalftimeRail";
+import { GamedayRail } from "@/components/quiz/GamedayRail";
 import { ClubPicker } from "@/components/clubs/ClubPicker";
 import { ClubTableTile } from "@/components/clubs/ClubTableTile";
 import { PlFixtures } from "@/components/matchweek/PlFixtures";
@@ -31,6 +31,7 @@ import { NextClubQuiz } from "@/components/matchweek/NextClubQuiz";
 import { AppNudge } from "@/components/matchweek/AppNudge";
 import { useReminders } from "@/components/matchweek/useReminders";
 import { UpcomingQuizzes } from "@/components/matchweek/UpcomingQuizzes";
+import { StandaloneHalftimePoll } from "@/components/matchweek/StandaloneHalftimePoll";
 import { QuizStatTiles } from "@/components/matchweek/QuizStatTiles";
 import { LiveQuizIntro } from "@/components/matchweek/LiveQuizIntro";
 import { HowItWorksTile } from "@/components/matchweek/HowItWorksTile";
@@ -153,7 +154,8 @@ export default function MatchweekPage() {
           <AppNudge reminders={reminders} />
           {/* Then THEIR game — the only fixture that scores for their club. */}
           <NextClubQuiz />
-          <HalftimeRail />
+          <StandaloneHalftimePoll />
+          <GamedayRail />
           <ClubPicker />
           <UpcomingQuizzes />
           <ClubTableTile />

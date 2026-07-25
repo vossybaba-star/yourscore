@@ -1,6 +1,19 @@
 /**
  * halftime.mjs — is the halftime pipeline actually doing its job?
  *
+ * STALE (flagged in the W0/W1 Gameday build report): checks 2 and 4 below
+ * assert the RETIRED quiz state machine (scheduled/base_ready/staged/
+ * released against kickoff-relative deadlines). The Gameday pipeline uses a
+ * different machine on a different clock entirely (scheduled/base_ready/
+ * approved/published, gated on publish_at the day before kickoff, not on
+ * kickoff itself) — so those two checks will now read every fixture as
+ * "wrong for the hour" even when the pipeline is working correctly. Check 3
+ * (poller heartbeat) is still accurate — the poller still runs, just for
+ * whistle detection only. scripts/health/checks/gameday.mjs (W2, not built in
+ * this workstream) is meant to own the Gameday-specific assertions; this file
+ * needs its checks 2/4 either removed or rewritten against the new machine
+ * once that lands. Left as-is rather than guessed at here.
+ *
  * The trap this avoids: liveness is not correctness. "The poller process is
  * running" and "the packs are going live at the whistle" are different claims,
  * and only the second one matters. So every check below asserts the CONTENT of
@@ -47,7 +60,7 @@ export async function run(report, ctx) {
     const end = new Date(start.getTime() + 26 * 60 * MIN); // generous; London ≠ UTC
     const { data, error } = await supa
       .from("halftime_releases")
-      .select("fixture_id, home, away, kickoff_at, state, fresh_state, pack_id, released_at")
+      .select("fixture_id, home, away, kickoff_at, state, pack_id, released_at")
       .gte("kickoff_at", new Date(start.getTime() - 2 * 60 * MIN).toISOString())
       .lt("kickoff_at", end.toISOString())
       .order("kickoff_at", { ascending: true });
@@ -161,20 +174,9 @@ export async function run(report, ctx) {
       detail: broken.length
         ? `${broken.join(", ")} — the app says the quiz is live and the link is broken`
         : `${released.length} pack(s) live, 10 questions each`,
-      hint: "re-POST /api/halftime/release for the fixture — it is idempotent and repairs a missing pack row",
+      hint: "re-run the fixture through /api/cron/gameday-publish — it is idempotent and repairs a missing pack row",
     });
   }
-
-  // ── 5. the fresh slice, for information ──────────────────────────────────
-  const freshStates = rows.reduce((acc, r) => {
-    acc[r.fresh_state] = (acc[r.fresh_state] ?? 0) + 1;
-    return acc;
-  }, {});
-  const killed = rows.some((r) => r.fresh_state === "killed");
-  report.add("halftime", "fresh slice", true, {
-    warn: killed,
-    detail: Object.entries(freshStates).map(([k, v]) => `${k}:${v}`).join(" ") + (killed ? " (SLATE KILLED)" : ""),
-  });
 
   ctx.halftime = { fixtures: rows.length, released: released.length };
 }

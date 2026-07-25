@@ -47,14 +47,13 @@ const SECRET = "replay-cron-secret";
 
 const STATE_DIR = mkdtempSync(join(tmpdir(), "halftime-poller-"));
 
+// fresh-gate, gate-unsendable, kill-switch and late-lineups exercised the
+// fresh slice and its veto gate, both retired with the Gameday pivot — their
+// scenario files and assertions are gone (§0.1).
 const SCENARIOS = [
   "normal-match",
   "long-first-half",
   "delayed-kickoff",
-  "late-lineups",
-  "fresh-gate",
-  "gate-unsendable",
-  "kill-switch",
   "postponement",
   "abandoned",
   "poller-crash",
@@ -158,17 +157,6 @@ const baseQuestions = (home, away) =>
     difficulty: i < 3 ? "easy" : i < 7 ? "medium" : "hard",
   }));
 
-const freshQuestions = (home) =>
-  Array.from({ length: 3 }, (_, i) => ({
-    question: `FRESH ${i + 1}: Which ${home} starter is making his debut today?`,
-    options: { A: `Player ${i + 1}`, B: "Player X", C: "Player Y", D: "Player Z" },
-    answer: "A",
-    difficulty: "medium",
-    status: "pending",
-    fact: `Dossier line ${i + 1}: starter with zero prior appearances for ${home}.`,
-    claims: [{ type: "player_in_lineup", player_id: 1000 + i }],
-  }));
-
 const TEST_USERS = ["11111111-1111-4111-8111-111111111111", "22222222-2222-4222-8222-222222222222"];
 
 // ── boot ─────────────────────────────────────────────────────────────────────
@@ -195,7 +183,7 @@ async function startApp() {
     },
   });
   pipe(appChild, "next", appLog);
-  await waitFor(async () => (await j(`${APP}/api/halftime/today`)).status === 200, {
+  await waitFor(async () => (await j(`${APP}/api/gameday/today`)).status === 200, {
     timeoutMs: 180_000,
     what: "next dev (first compile is slow)",
   });
@@ -232,7 +220,7 @@ async function safetyProbe() {
  * that was interrupted is re-run from a clean database anyway.
  */
 async function ensureApp() {
-  if ((await j(`${APP}/api/halftime/today`)).status === 200) return;
+  if ((await j(`${APP}/api/gameday/today`)).status === 200) return;
   console.log("   \x1b[33m…\x1b[0m the dev server died — restarting it");
   try { appChild?.kill("SIGKILL"); } catch { /* already gone */ }
   await sleep(500);
@@ -264,7 +252,17 @@ const pushes = async () => (await j(`${STUB}/_stub/pushes`)).body?.pushes ?? [];
 const clock = async () => (await j(`${SM}/_replay/clock`)).body;
 const smStats = async () => (await j(`${SM}/_replay/stats`)).body?.calls ?? {};
 
-async function seed(manifest, { seedFresh }) {
+// KNOWN GAP (flagged in the W0/W1 build report): this harness still seeds the
+// base slate through POST /api/halftime/fresh (op=base) and its remaining
+// scenarios assert against the staged/released quiz-release path
+// (/api/halftime/release, the watchdog's old release loop). W1 deletes that
+// route and that release path entirely (src/lib/halftime/release.ts,
+// /api/halftime/{assemble,release}). Per spec §0.1 this harness's quiz-release
+// assertions are meant to be repointed at prediction settlement instead — a
+// full rewrite, out of scope for the W0/W1 brief this file was touched under.
+// It is left runnable-but-stale rather than deleted; do not trust a green run
+// of this file until it is repointed.
+async function seed(manifest) {
   await j(`${STUB}/_stub/seed`, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -291,11 +289,7 @@ async function seed(manifest, { seedFresh }) {
         kickoff_at: f.kickoff_at,
         state: "scheduled",
         base_questions: null,
-        fresh_questions: null,
         pack_questions: null,
-        fresh_state: "none",
-        veto_deadline_at: null,
-        telegram_message_id: null,
         released_at: null,
         created_at: new Date().toISOString(),
       })),
@@ -311,25 +305,6 @@ async function seed(manifest, { seedFresh }) {
       body: JSON.stringify({ op: "base", fixtureId: f.fixture_id, questions: baseQuestions(f.home, f.away) }),
     });
     if (r.status !== 200) throw new Error(`base slate write failed: ${r.status} ${JSON.stringify(r.body)}`);
-  }
-
-  // What gen-fresh + veto.mjs send (W3) would have written, when a scenario
-  // needs a fresh slice to exist without W3 being built yet.
-  if (seedFresh) {
-    for (const f of manifest.fixtures) {
-      const r = await j(`${APP}/api/halftime/fresh`, {
-        method: "POST",
-        headers: authed(),
-        body: JSON.stringify({
-          op: "fresh",
-          fixtureId: f.fixture_id,
-          questions: freshQuestions(f.home).map((q) => ({ ...q, status: seedFresh.status })),
-          state: seedFresh.state,
-          telegramMessageId: 4242,
-        }),
-      });
-      if (r.status !== 200) throw new Error(`fresh slice write failed: ${r.status} ${JSON.stringify(r.body)}`);
-    }
   }
 }
 
@@ -390,14 +365,10 @@ async function runScenario(name) {
     return;
   }
 
-  await seed(manifest, {
-    seedFresh: harness.seed_fresh
-      ? { status: harness.seed_fresh_status ?? "pending", state: harness.seed_fresh_state ?? "pending_veto" }
-      : null,
-  });
+  await seed(manifest);
 
   // Before the whistle the pack must not exist in any form.
-  const early = await j(`${APP}/api/halftime/today`);
+  const early = await j(`${APP}/api/gameday/today`);
   const earlyRows = early.body?.fixtures ?? [];
   check(
     "pre-release: pack is invisible (no pack_id, no slug, no quiz_packs row)",
@@ -421,12 +392,6 @@ async function runScenario(name) {
       SPORTMONKS_API_KEY: "replay-key",
       HALFTIME_SCALE: String(SCALE),
       HALFTIME_STATE_DIR: STATE_DIR,
-      // Deterministic stand-ins for gen-fresh / veto. Without this the poller
-      // would shell out to the real generators — which call Anthropic and the
-      // live API, cost money on every run, and would make a red mean something
-      // different each time.
-      HALFTIME_GEN_DIR: join(HERE, "replay-generators"),
-      ...(harness.veto_send_fails ? { HALFTIME_REPLAY_VETO_FAIL: "1" } : {}),
     },
   });
   pipe(poller, "poller", pollerLog);
@@ -458,34 +423,8 @@ async function runScenario(name) {
     );
   }
 
-  for (const v of harness.veto_at_min ?? []) {
-    script.push(
-      atMin(v.at_min).then(async () => {
-        const f = manifest.fixtures[v.fixture_index];
-        const out = await j(`${APP}/api/halftime/fresh`, {
-          method: "POST",
-          headers: authed(),
-          body: JSON.stringify({ op: "veto", fixtureId: f.fixture_id, index: v.question_index, status: "vetoed" }),
-        });
-        console.log(`   \x1b[2m… founder vetoes q${v.question_index + 1} of ${f.home} at minute ${v.at_min}: ${JSON.stringify(out.body)}\x1b[0m`);
-      }),
-    );
-  }
-
-  if (harness.kill_at_min != null) {
-    script.push(
-      atMin(harness.kill_at_min).then(async () => {
-        const matchday = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }).format(new Date());
-        const out = await j(`${APP}/api/halftime/fresh`, {
-          method: "POST",
-          headers: authed(),
-          body: JSON.stringify({ op: "kill", matchday }),
-        });
-        console.log(`   \x1b[2m… KILL at minute ${harness.kill_at_min}: ${(out.body?.affected ?? []).length} fixture(s)\x1b[0m`);
-        current.killAffected = out.body?.affected ?? [];
-      }),
-    );
-  }
+  // veto_at_min / kill_at_min harness directives were the fresh-slice veto gate
+  // and matchday kill switch — both retired with the Gameday pivot (§0.1).
 
   // ── when to assert ────────────────────────────────────────────────────────
   // ALWAYS wait for the whole timeline to play out, even if the poller has
@@ -512,7 +451,7 @@ async function runScenario(name) {
     packs: await dump("quiz_packs"),
     notifications: await dump("notification_log"),
     pushes: await pushes(),
-    today: (await j(`${APP}/api/halftime/today`)).body,
+    today: (await j(`${APP}/api/gameday/today`)).body,
     pollerLog: pollerLog.join(""),
     smCalls: await smStats(),
     pollerKilled,
@@ -534,7 +473,6 @@ async function runScenario(name) {
 
 const row = (ctx, id) => ctx.rows.find((r) => Number(r.fixture_id) === Number(id));
 const packOf = (ctx, r) => ctx.packs.find((p) => p.id === r.pack_id);
-const freshInPack = (pack) => (pack?.questions ?? []).filter((q) => q.question.startsWith("FRESH")).length;
 const baseInPack = (pack) => (pack?.questions ?? []).filter((q) => q.question.startsWith("BASE")).length;
 
 /** Every released pack, every scenario: ten questions, and not one of them can
@@ -558,10 +496,7 @@ function assertPackIntegrity(ctx) {
     // T-10, not something regenerated at the whistle.
     const frozen = JSON.stringify(r.pack_questions);
     const shipped = JSON.stringify(pack.questions);
-    const killedOrVetoed =
-      r.fresh_state === "killed" ||
-      (r.fresh_questions ?? []).some((q) => q.status === "vetoed");
-    if (!killedOrVetoed && frozen !== shipped) {
+    if (frozen !== shipped) {
       bad.push(`${r.fixture_id}: released pack differs from the T-10 snapshot`);
     }
   }
@@ -593,15 +528,8 @@ async function assertions(name, ctx) {
       check("quiz_packs row exists and is published", !!pack);
       check("release fired on the state flip, not on a timer",
         /HALF TIME .* → releasing/.test(ctx.pollerLog));
-
-      // The whole pre-match pipeline, driven by the poller and nothing else:
-      // sheets land → questions written → gate armed → deadline → auto-approve.
-      check("full fresh pipeline ran: confirmed XIs → generate → arm the gate → auto-approve",
-        /confirmed XIs/.test(ctx.pollerLog) &&
-        /at the veto gate/.test(ctx.pollerLog) &&
-        /veto deadline passed/.test(ctx.pollerLog) &&
-        freshInPack(pack) === 3 && baseInPack(pack) === 7,
-        `${freshInPack(pack)} fresh + ${baseInPack(pack)} base`);
+      check("pack assembled from the base slate only (no fresh slice — retired with the pivot)",
+        baseInPack(pack) === 10, `${baseInPack(pack)} base`);
       check("push delivered to opted-in users, exactly once each",
         ctx.pushes.length === 1 && ctx.pushes[0].userIds.length === TEST_USERS.length &&
         ctx.notifications.filter((n) => n.key === `halftime:${f(0).fixture_id}`).length === TEST_USERS.length,
@@ -613,7 +541,7 @@ async function assertions(name, ctx) {
         !/browser|download|app store|no download/i.test(`${ctx.pushes[0]?.title} ${ctx.pushes[0]?.body}`));
       check("deep link points at the pack", /^\/challenges\/.+\?pid=/.test(ctx.pushes[0]?.url ?? ""),
         ctx.pushes[0]?.url);
-      check("pack is now playable from /api/halftime/today",
+      check("pack is now playable from /api/gameday/today",
         (ctx.today.fixtures ?? []).some((x) => x.state === "released" && x.pack_id && x.slug));
 
       // AC18 — three concurrent re-releases must change nothing.
@@ -676,71 +604,6 @@ async function assertions(name, ctx) {
       break;
     }
 
-    case "late-lineups": {
-      const a = row(ctx, f(0).fixture_id); // sheets at T-30
-      const b = row(ctx, f(1).fixture_id); // no sheets at all
-      check("late sheets: fixture still released", a.state === "released", `state=${a.state}`);
-      check("no sheets at all: fresh skipped, base-only pack still released",
-        b.state === "released" && b.fresh_state === "skipped" && baseInPack(packOf(ctx, b)) === 10,
-        `state=${b.state} fresh_state=${b.fresh_state} base=${baseInPack(packOf(ctx, b))}/10`);
-      check("the poller said so, rather than silently doing nothing",
-        /no confirmed XIs by T-25/.test(ctx.pollerLog));
-      check("a missing fresh slice is a normal outcome, not a failure",
-        b.state !== "failed" && a.state !== "failed");
-      break;
-    }
-
-    case "fresh-gate": {
-      const auto = row(ctx, f(0).fixture_id);
-      const vetoed = row(ctx, f(1).fixture_id);
-      const autoPack = packOf(ctx, auto);
-      const vetoPack = packOf(ctx, vetoed);
-
-      check("no founder response → unvetoed fresh questions auto-released at the deadline",
-        auto.state === "released" && freshInPack(autoPack) === 3 && baseInPack(autoPack) === 7,
-        `${freshInPack(autoPack)} fresh + ${baseInPack(autoPack)} base`);
-      check("the timeout needed no human at all",
-        /veto deadline passed .*→ approved/.test(ctx.pollerLog),
-        (ctx.pollerLog.match(/veto deadline passed[^\n]*/) ?? [""])[0]);
-
-      check("Veto 2 removed exactly question 2 from the pack",
-        vetoed.state === "released" && freshInPack(vetoPack) === 2 && baseInPack(vetoPack) === 8,
-        `${freshInPack(vetoPack)} fresh + ${baseInPack(vetoPack)} base`);
-      const vetoedText = (vetoed.fresh_questions ?? []).find((q) => q.status === "vetoed")?.question;
-      check("the vetoed question appears nowhere in the released pack",
-        !!vetoedText && !(vetoPack?.questions ?? []).some((q) => q.question === vetoedText),
-        vetoedText?.slice(0, 40));
-      break;
-    }
-
-    case "gate-unsendable": {
-      const r = row(ctx, f(0).fixture_id);
-      const pack = packOf(ctx, r);
-      check("questions were generated, then the gate could not be offered",
-        /fresh slice DROPPED|gate-unsendable/.test(ctx.pollerLog) || r.fresh_state === "skipped",
-        `fresh_state=${r.fresh_state}`);
-      check("the fresh slice was DROPPED, not auto-released",
-        freshInPack(pack) === 0 && baseInPack(pack) === 10,
-        `${freshInPack(pack)} fresh + ${baseInPack(pack)} base`);
-      check("the fixture still got its pack", r.state === "released", `state=${r.state}`);
-      break;
-    }
-
-    case "kill-switch": {
-      const staged = row(ctx, f(0).fixture_id);   // already frozen when KILL landed
-      const later = row(ctx, f(1).fixture_id);    // not yet assembled
-      check("KILL flipped every unreleased fixture of the matchday",
-        (current.killAffected ?? []).length === 2, `${(current.killAffected ?? []).length} affected`);
-      check("an already-STAGED pack is re-assembled base-only at the whistle",
-        staged.state === "released" && freshInPack(packOf(ctx, staged)) === 0 &&
-          baseInPack(packOf(ctx, staged)) === 10,
-        `fresh_state=${staged.fresh_state}, fresh in pack=${freshInPack(packOf(ctx, staged))}`);
-      check("a not-yet-assembled fixture ships base-only",
-        later.state === "released" && freshInPack(packOf(ctx, later)) === 0,
-        `fresh_state=${later.fresh_state}`);
-      break;
-    }
-
     case "postponement": {
       const r = row(ctx, f(0).fixture_id);
       check("postponed → cancelled", r.state === "cancelled", `state=${r.state}`);
@@ -800,12 +663,7 @@ async function assertions(name, ctx) {
         (current.watchdog ?? []).some((w) => (w.out?.stagedBaseOnly ?? []).includes(r.fixture_id)),
         JSON.stringify((current.watchdog ?? []).map((w) => w.out?.stagedBaseOnly)));
       check("watchdog released it at the whistle", r.state === "released", `state=${r.state}`);
-      check("the watchdog shipped BASE ONLY — it never ships fresh questions",
-        freshInPack(pack) === 0 && baseInPack(pack) === 10,
-        `${freshInPack(pack)} fresh + ${baseInPack(pack)} base`);
-      check("…even though three APPROVED fresh questions were sitting in the row",
-        (r.fresh_questions ?? []).filter((q) => q.status === "approved").length === 3,
-        `${(r.fresh_questions ?? []).length} fresh questions left unused`);
+      check("the watchdog shipped the base slate", baseInPack(pack) === 10, `${baseInPack(pack)} base`);
       break;
     }
 

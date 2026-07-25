@@ -25,8 +25,8 @@ export interface LiveMatch {
   away_score: number;
 }
 
-// Premier League 2026/27 GW1 kick-off. Same date the halftime quiz packs go
-// live, so one countdown covers both promises on this page.
+// Premier League 2026/27 GW1 kick-off. Gameday quiz packs start publishing
+// the day before, so one countdown covers both promises on this page.
 const SEASON_START = new Date("2026-08-21T18:30:00Z");
 
 // ── Animations ────────────────────────────────────────────────────────────────
@@ -863,7 +863,7 @@ export function MarketingLanding({ matches, todaysGame }: { matches: LiveMatch[]
             {/* The eyebrow lists fantasy and gameday flat, as things the brand
                 does. This is where the honest specifics live: both land on
                 21 Aug with the season, and this section says so. */}
-            <p className="font-body text-sm text-text-muted mt-4 mb-6">Fantasy and gameday quizzes land with the season. A quiz pack at the half time whistle of every fixture, and a squad that scores all year. Everything else is playable now.</p>
+            <p className="font-body text-sm text-text-muted mt-4 mb-6">Fantasy and Gameday Quiz land with the season. A quiz pack the day before every fixture, and a squad that scores all year. Everything else is playable now.</p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link href="/play" className="inline-flex items-center gap-2 font-body font-bold text-sm px-6 py-3 rounded-xl transition-all hover:opacity-90 pulse-glow"
                 style={{ background: "#aeea00", color: "#0a0a0f" }}>

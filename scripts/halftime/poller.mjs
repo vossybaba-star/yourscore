@@ -2,19 +2,23 @@
 /**
  * poller.mjs — the halftime daemon. One Node process, one matchday.
  *
- * It exists for one reason: a pack must go live at the REAL half-time whistle,
- * not at kickoff+45. Those are not the same moment. A first half with a serious
- * injury and a VAR check runs 55 minutes; a timer would have published the pack
- * ten minutes into the game, while people were still watching the first half.
- * So the trigger is SportMonks' own state flip to HT (state_id 3) and nothing
- * else. There is no timer anywhere in this file that can release a pack.
+ * REWORKED for the Gameday pivot (§0.1/§0.5): this file no longer stages,
+ * assembles or releases any quiz pack — that entire pipeline moved off the
+ * whistle path onto the daily /api/cron/gameday-publish cron, which runs the
+ * day before kickoff against already-approved content. The pack no longer
+ * depends on this process at all.
+ *
+ * What is left is the Halftime Prediction poll's own machinery: this process
+ * is the fast, primary way the app learns the real second-half whistle has
+ * blown (SportMonks state flip to HT, state_id 3), which is what opens the
+ * halftime (second-half) prediction phase (§0.6). The watchdog
+ * (/api/cron/halftime-watchdog) is the 5-minute backstop for a poller that
+ * missed it or wasn't running.
  *
  * THE DAY
  *   07:00  launched by cron. No PL fixtures today → log, exit 0. Zero API calls.
- *   T-75   lineup watch opens. Confirmed XIs → fresh slice → Telegram veto gate.
- *   T-10   veto deadline. Unvetoed questions auto-approve. Pack is FROZEN.
  *   KO     6s poll of /livescores/latest begins.
- *   HT     state_id == 3 → POST /api/halftime/release → pack live + push.
+ *   HT     state_id == 3 → POST /api/halftime/whistle → second_half_started_at set.
  *   FT     all fixtures terminal → day summary → exit 0.
  *
  * TWO LANES, and it needs both:
@@ -22,29 +26,24 @@
  *   slow (60s) /fixtures/multi/{ids}     — catches what the live feed cannot.
  *              A postponed match is not "live", so it never appears in
  *              /livescores at all; an abandoned one drops off it within
- *              seconds. Without the by-id sweep the poller would sit waiting
- *              for a half-time whistle that is never going to be blown.
+ *              seconds.
  *
  * LOOP-STANDARD (the four rules every automated loop here must satisfy)
- *   1 assert success, not existence — after every release it re-reads
- *     /api/halftime/today and confirms the fixture actually says `released`.
- *     A 200 from the release POST is not evidence that anything happened.
- *   2 gate every outward action — releases only ever fire on a real state flip;
- *     the fresh slice only ships through the veto gate, and if the gate could
- *     not be OFFERED (Telegram down, veto script absent) the fresh slice is
- *     DROPPED rather than auto-released. A gate that was never shown counts as
- *     a veto.
+ *   1 assert success, not existence — after every whistle POST it re-reads
+ *     /api/gameday/today (kickoff drift) or the poll route itself for
+ *     confirmation the flag actually landed, not just that the POST 200'd.
+ *   2 gate every outward action — the whistle only ever fires on a real
+ *     SportMonks state flip, never on a timer.
  *   3 bound the retry path — 3 attempts with backoff on every call; poll
  *     cadence degrades 6s→12s→30s on 429; hard wall-clock exit.
- *   4 one persistent dedup key per side effect — release is the server-side
- *     `staged→released` compare-and-set (not a flag in this process's memory);
- *     assembly is the `base_ready→staged` CAS; push dedups on notification_log;
- *     Telegram alerts dedup through the on-disk run-state file, so a restart
- *     does not re-alert.
+ *   4 one persistent dedup key per side effect — the whistle write is a CAS
+ *     on second_half_started_at IS NULL (server-side, not a flag in this
+ *     process's memory); Telegram alerts dedup through the on-disk run-state
+ *     file, so a restart does not re-alert.
  *
- * The poller NEVER touches the database. Every write goes through an API route,
- * so there is exactly one code path per side effect and the watchdog cannot
- * disagree with it.
+ * The poller NEVER touches the database. Every write goes through an API
+ * route, so there is exactly one code path per side effect and the watchdog
+ * cannot disagree with it.
  *
  * ENV
  *   CRON_SECRET            required — bearer for the halftime routes
@@ -58,10 +57,9 @@
  *   node --env-file=.env.local scripts/halftime/poller.mjs
  *   --date YYYY-MM-DD   override the matchday
  *   --no-telegram       never message the founder (replay / dry runs)
- *   --dry-run           do everything except POST release/assemble/fresh
+ *   --dry-run           do everything except POST whistle
  */
 
-import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -100,9 +98,9 @@ function die(msg, code = 1) {
 
 /**
  * Env + the SAFETY INTERLOCK. A replay SportMonks feeding a production app
- * would mean fabricated half-times releasing real packs and sending real pushes
- * to real people. It is the one combination that must be impossible, so it is
- * checked before anything else runs.
+ * would mean fabricated half-times firing on real fixtures. It is the one
+ * combination that must be impossible, so it is checked before anything else
+ * runs.
  *
  * (Inside a function, not at module scope, so the unit test can import this
  * file's classifier without the module trying to run a matchday.)
@@ -136,12 +134,6 @@ const SLOW_MS = scaled(60_000, 250);                          // by-id sweep, in
 const IDLE_SWEEP_MS = scaled(5 * 60_000, 500);                // by-id sweep, pre-match
 const HEARTBEAT_MS = scaled(60_000, 500);
 const SCHEDULE_MS = scaled(30_000, 250);
-const LINEUP_LEAD_MS = scaled(75 * 60_000);                   // T-75: watch opens
-const LINEUP_GIVEUP_MS = scaled(25 * 60_000);                 // T-25: no sheets → skip
-const LINEUP_POLL_MS = scaled(60_000, 250);
-const ASSEMBLE_LEAD_MS = scaled(10 * 60_000);                 // T-10: freeze
-const VETO_WINDOW_MS = scaled(15 * 60_000);                   // ≥15 min to respond
-const VETO_FLOOR_MS = scaled(5 * 60_000);                     // never later than T-5
 const HARD_EXIT_MS = scaled(165 * 60_000);                    // last KO + 2h45
 const SINGLE_INSTANCE_S = 90;                                 // real seconds, not scaled
 
@@ -275,13 +267,6 @@ const sm = (path) =>
 // live catalogue, so drift fails a test instead of a Saturday.
 //
 // Names come from the real GET /v3/football/states (scenarios/states.json).
-//
-// This file used to carry two extra spellings — "INPLAY_ET_2ND_HALF" and
-// "AWAITING_PENALTIES" — to stay bug-compatible with shared.ts, which named two
-// states SportMonks does not have. shared.ts was fixed at integration (the real
-// extra-time second half is INPLAY_ET_SECOND_HALF, id 23; there is no
-// AWAITING_PENALTIES at all), so the compat spellings are gone and BOTH
-// classifiers now name only states that exist. poller.test.mjs asserts that.
 
 export const HALFTIME_STATE_ID = 3; // verified first-hand against the live API
 
@@ -315,7 +300,7 @@ async function loadStates() {
   if (!ht || ht.developer_name !== "HT") {
     throw new Error(
       `state_id ${HALFTIME_STATE_ID} is "${ht?.developer_name ?? "missing"}", not HT — ` +
-        `SportMonks renumbered its states and the release trigger is no longer trustworthy`,
+        `SportMonks renumbered its states and the whistle trigger is no longer trustworthy`,
     );
   }
   log(`states catalogue loaded (${STATES.size}); HT = ${HALFTIME_STATE_ID} ✓`);
@@ -328,41 +313,33 @@ const phaseOf = (stateId) => classifyPhase(stateId, STATES.get(Number(stateId))?
 async function assertEntitlements() {
   const raw = await sm("/v3/my/resources");
   const blob = JSON.stringify(raw ?? []).toLowerCase();
-  const missing = ["livescores", "states", "lineups", "fixtures"].filter((r) => !blob.includes(r));
+  // 'lineups' dropped — only needed by the retired fresh-slice pipeline.
+  const missing = ["livescores", "states", "fixtures"].filter((r) => !blob.includes(r));
   if (missing.length) {
     await alertOnce(
       "entitlements",
-      `SportMonks plan is missing ${missing.join(", ")} — the halftime pipeline cannot run. ` +
+      `SportMonks plan is missing ${missing.join(", ")} — whistle detection cannot run. ` +
         `(The trial expired 2026-07-22; check the paid subscription.)`,
     );
     die(`missing SportMonks entitlements: ${missing.join(", ")}`, 2);
   }
-  log("entitlements ✓ livescores, states, lineups, fixtures");
+  log("entitlements ✓ livescores, states, fixtures");
 }
 
 // ── the schedule (our DB, through the API) ───────────────────────────────────
+//
+// The poller only needs fixture identity + kickoff time now — it has no
+// interest in the Gameday quiz's own state, which /api/gameday/schedule also
+// carries but this file never reads.
 
-const TERMINAL = new Set(["released", "released_late", "cancelled", "failed"]);
-
-let slate = { matchday: matchdayKey(), freshKill: false, fixtures: [] };
+let slate = { matchday: matchdayKey(), fixtures: [] };
 
 async function refreshSchedule() {
   const q = DATE_OVERRIDE ? `?date=${DATE_OVERRIDE}` : "";
-  slate = await api(`/api/halftime/schedule${q}`);
+  slate = await api(`/api/gameday/schedule${q}`);
 
-  // ── kickoff drift overlay ─────────────────────────────────────────────────
-  // When SportMonks moves a kickoff, the poller has nowhere to write it: there
-  // is no route that updates halftime_releases.kickoff_at (see README, "known
-  // gaps"). So the observed kickoff is held in the run-state file and re-applied
-  // over every schedule read. This keeps the POLLER's decisions — veto deadline,
-  // T-10 freeze, when to start the live poll — anchored to the real kickoff, and
-  // it survives a restart.
-  //
-  // It does NOT fix the watchdog, which reads kickoff_at straight from the
-  // database. A kickoff pushed back 30 minutes leaves the watchdog believing the
-  // match has started, and a `base_ready` fixture past its (stale) kickoff is one
-  // it will stage BASE-ONLY — throwing away a fresh slice that was still inside
-  // its veto window. That needs a route. It is written up in the report.
+  // Kickoff drift overlay, held locally only (no route writes it back to the
+  // row — a known limitation, unchanged from before this pivot).
   for (const f of slate.fixtures) {
     const ov = state.fixtures[f.fixture_id]?.kickoffOverride;
     if (ov && ov !== f.kickoff_at) f.kickoff_at = ov;
@@ -370,7 +347,9 @@ async function refreshSchedule() {
   return slate;
 }
 
-const tracked = () => slate.fixtures.filter((f) => !TERMINAL.has(f.state));
+/** Fixtures still worth watching for a whistle today. */
+const tracked = () =>
+  slate.fixtures.filter((f) => !fx(f.fixture_id).whistled && !fx(f.fixture_id).cancelNudged);
 const ko = (f) => new Date(f.kickoff_at).getTime();
 
 // ── heartbeat (LOOP: staleness must be observable from outside) ──────────────
@@ -400,299 +379,47 @@ async function assertSoleInstance() {
   }
 }
 
-// ── the generation scripts, invoked as child processes (never imported) ──────
-//
-// HALFTIME_GEN_DIR is a seam, like SPORTMONKS_BASE_URL. In production it is
-// unset and these resolve to the real gen-fresh/veto scripts sitting next to
-// this file. The replay harness points it at a directory of deterministic stubs
-// instead, so a test run cannot reach out to Anthropic or the real API and a
-// replay's outcome does not depend on what an LLM felt like writing that day.
-const GEN_DIR = process.env.HALFTIME_GEN_DIR || HERE;
+// ── the whistle (the whole point now) ─────────────────────────────────────────
 
-/**
- * Resolve a generation script by name.
- *
- * (The veto script was briefly built as `veto-gate.mjs` while the spec's CLI
- * contract called it `veto.mjs`, and the poller tolerated both. At integration
- * the file was renamed to the contract name; the multi-name lookup is kept
- * because the replay harness supplies its own stub filenames through GEN_DIR.)
- */
-function w3(...names) {
-  for (const n of names) {
-    const p = join(GEN_DIR, n);
-    if (existsSync(p)) return p;
-  }
-  return null;
-}
-
-function run(scriptPath, args, timeoutMs) {
-  return new Promise((resolve) => {
-    const child = spawn(process.execPath, [scriptPath, ...args], {
-      cwd: REPO,
-      env: process.env,
-      stdio: ["ignore", "pipe", "pipe"],
-    });
-    let out = "";
-    let errOut = "";
-    child.stdout.on("data", (d) => { out += d; });
-    child.stderr.on("data", (d) => { errOut += d; });
-    const t = setTimeout(() => child.kill("SIGKILL"), timeoutMs);
-    child.on("close", (code) => {
-      clearTimeout(t);
-      resolve({ code, out, err: errOut });
-    });
-    child.on("error", (e) => {
-      clearTimeout(t);
-      resolve({ code: -1, out, err: e.message });
-    });
-  });
-}
-
-// ── content writes (all through the single content-write route) ──────────────
-
-async function writeFresh(fixtureId, questions, freshState, extra = {}) {
-  if (DRY_RUN) return log(`[dry-run] fresh ${fixtureId} → ${freshState} (${questions.length})`);
-  return api("/api/halftime/fresh", {
-    method: "POST",
-    body: { op: "fresh", fixtureId, questions, state: freshState, ...extra },
-  });
-}
-
-/**
- * Persist a moved kickoff to the row.
- *
- * The poller used to hold a moved kickoff ONLY in its run-state file, because no
- * route could write it. The watchdog reads kickoff_at from the database, so the
- * two disagreed the moment a kickoff slipped — and if the poller then died, the
- * watchdog acted on the stale time and staged the pack base-only, discarding a
- * fresh slice still inside its veto window. The `kickoff` op closed that gap;
- * the row is now the single clock and the overlay is just a local cache of it.
- */
-async function writeKickoff(fixtureId, kickoffAt, extra = {}) {
-  if (DRY_RUN) return log(`[dry-run] kickoff ${fixtureId} → ${kickoffAt}`);
-  return api("/api/halftime/fresh", {
-    method: "POST",
-    body: { op: "kickoff", fixtureId, kickoffAt, ...extra },
-  });
-}
-
-// ── the fresh slice (pass 2) ─────────────────────────────────────────────────
-//
-// Everything here happens BEFORE kickoff, by construction. Nothing in this file
-// generates or edits content after the kickoff whistle — the release step is a
-// copy of an already-frozen snapshot. That, not prompt discipline, is what makes
-// "no question may depend on a first-half event" a structural guarantee.
-
-async function lineupsConfirmed(fixtureId) {
-  const f = await sm(`/v3/football/fixtures/${fixtureId}?include=lineups`);
-  const rows = f?.lineups ?? [];
-  if (!rows.length) return false;
-  const starters = rows.filter((r) => Number(r.type_id) === 11);
-  const byTeam = new Map();
-  for (const s of starters) byTeam.set(s.team_id, (byTeam.get(s.team_id) ?? 0) + 1);
-  const sides = [...byTeam.values()];
-  return sides.length >= 2 && sides.every((n) => n >= 11);
-}
-
-async function runFreshPipeline(f) {
+async function whistle(f, { late = false } = {}) {
   const s = fx(f.fixture_id);
-  if (s.freshDone) return;
-
-  const gen = w3("gen-fresh.mjs");
-  const veto = w3("veto.mjs");
-
-  // W3 not built yet (or deliberately absent). Degrade to base-only — a pack
-  // with no fresh slice is a completely normal outcome, not a failure.
-  if (!gen || !veto) {
-    await alertOnce(
-      "w3-missing",
-      `gen-fresh.mjs / veto.mjs not present — every pack today ships base-only.`,
-    );
-    s.freshDone = true;
-    s.freshOutcome = "no-generator";
-    saveState();
-    await writeFresh(f.fixture_id, [], "skipped");
-    return;
-  }
-
-  log(`fresh: generating for ${f.fixture_id} (${f.home} v ${f.away})`);
-  const g = await run(gen, ["--fixture", String(f.fixture_id)], scaled(4 * 60_000, 5_000));
-  if (g.code !== 0) {
-    warn(`gen-fresh exited ${g.code} for ${f.fixture_id}: ${g.err.slice(0, 300)}`);
-    s.freshDone = true;
-    s.freshOutcome = `gen-failed(${g.code})`;
-    saveState();
-    await writeFresh(f.fixture_id, [], "skipped");
-    return;
-  }
-
-  const after = (await refreshSchedule()).fixtures.find((x) => x.fixture_id === f.fixture_id);
-  const count = (after?.fresh_questions ?? []).length;
-  if (!count) {
-    log(`fresh: nothing worth asking for ${f.fixture_id} — base-only`);
-    s.freshDone = true;
-    s.freshOutcome = "empty";
-    saveState();
-    return;
-  }
-
-  // The gate. If the veto message cannot be CONFIRMED sent, the slice is
-  // dropped — a gate that was never offered counts as a veto (LOOP rule 2).
-  const v = await run(veto, ["send", "--fixture", String(f.fixture_id)], scaled(2 * 60_000, 5_000));
-  if (v.code !== 0) {
-    await alertOnce(
-      `veto-send-${f.fixture_id}`,
-      `could not send the veto message for ${f.home} v ${f.away} — fresh slice DROPPED, base-only pack.`,
-    );
-    s.freshDone = true;
-    s.freshOutcome = "gate-unsendable";
-    saveState();
-    await writeFresh(f.fixture_id, [], "skipped");
-    return;
-  }
-
-  s.freshDone = true;
-  s.freshOutcome = `pending_veto(${count})`;
-  saveState();
-  log(`fresh: ${count} question(s) at the veto gate for ${f.fixture_id}`);
-}
-
-/** The auto-release clock: max(sent + 15min, KO − 10min), never later than KO − 5min. */
-function vetoDeadline(f, sentAt = Date.now()) {
-  const kickoff = ko(f);
-  const target = Math.max(sentAt + VETO_WINDOW_MS, kickoff - ASSEMBLE_LEAD_MS);
-  return new Date(Math.min(target, kickoff - VETO_FLOOR_MS));
-}
-
-async function ensureVetoDeadline(f) {
-  if (f.fresh_state !== "pending_veto" || f.veto_deadline_at) return;
-  const dl = vetoDeadline(f);
-  log(`veto deadline for ${f.fixture_id}: ${dl.toISOString()} (auto-release, no response needed)`);
-  await writeFresh(f.fixture_id, f.fresh_questions ?? [], "pending_veto", {
-    vetoDeadlineAt: dl.toISOString(),
-  });
-}
-
-/**
- * The timeout. Every question still `pending` at the deadline becomes
- * `approved` and goes live. This is the founder's explicit decision — no
- * response is required, ever, and there is deliberately no blocking wait here.
- */
-async function autoApprove(f) {
-  const pending = (f.fresh_questions ?? []).filter((q) => q.status === "pending");
-  if (!pending.length) return;
-  const questions = f.fresh_questions.map((q) => (q.status === "pending" ? { ...q, status: "approved" } : q));
-  const kept = questions.filter((q) => q.status === "approved").length;
-  log(`veto deadline passed for ${f.fixture_id}: ${pending.length} unvetoed → approved (${kept} fresh in pack)`);
-  await writeFresh(f.fixture_id, questions, "approved");
-}
-
-// ── assembly (T-10) ──────────────────────────────────────────────────────────
-
-function assembleAt(f) {
-  if (f.fresh_state === "pending_veto" && f.veto_deadline_at) return new Date(f.veto_deadline_at).getTime();
-  return ko(f) - ASSEMBLE_LEAD_MS;
-}
-
-async function assemble(f) {
-  const s = fx(f.fixture_id);
-  if (s.assembled) return;
-
-  if (f.fresh_state === "pending_veto") await autoApprove(f);
-
-  if (DRY_RUN) { log(`[dry-run] assemble ${f.fixture_id}`); return; }
-
-  const out = await api("/api/halftime/assemble", {
-    method: "POST",
-    body: { fixtureId: f.fixture_id },
-  });
-
-  // LOOP rule 1: the 200 is not the evidence. The row saying `staged` is.
-  const after = (await refreshSchedule()).fixtures.find((x) => x.fixture_id === f.fixture_id);
-  if (after?.state !== "staged") {
-    await alertOnce(
-      `assemble-${f.fixture_id}`,
-      `assembly did not stage ${f.home} v ${f.away} (state=${after?.state}, reason=${out?.reason ?? "?"}). ` +
-        `The watchdog will assemble base-only after kickoff.`,
-    );
-    return;
-  }
-
-  s.assembled = true;
-  s.packId = after.pack_id;
-  s.freshInPack = (after.fresh_questions ?? []).filter((q) => q.status === "approved").length;
-  saveState();
-  log(
-    `staged ${f.fixture_id} ${f.home} v ${f.away} · pack ${after.pack_id} · ` +
-      `${s.freshInPack} fresh + ${10 - s.freshInPack} base · frozen until the whistle`,
-  );
-}
-
-// ── release (the whole point) ────────────────────────────────────────────────
-
-async function release(f, { late = false } = {}) {
-  const s = fx(f.fixture_id);
-  if (s.released) return;
+  if (s.whistled) return;
 
   const label = `${f.home} v ${f.away}`;
-  log(`${late ? "LATE " : ""}HALF TIME ${f.fixture_id} ${label} → releasing`);
+  log(`${late ? "LATE " : ""}HALF TIME ${f.fixture_id} ${label} → whistle`);
 
-  if (DRY_RUN) { log(`[dry-run] release ${f.fixture_id}`); return; }
+  if (DRY_RUN) { log(`[dry-run] whistle ${f.fixture_id}`); return; }
 
   let out;
   try {
-    out = await api("/api/halftime/release", { method: "POST", body: { fixtureId: f.fixture_id, late } });
+    out = await api("/api/halftime/whistle", { method: "POST", body: { fixtureId: f.fixture_id } });
   } catch (e) {
-    await alertOnce(`release-${f.fixture_id}`, `release call failed for ${label}: ${e.message}. Watchdog will retry.`);
+    await alertOnce(`whistle-${f.fixture_id}`, `whistle call failed for ${label}: ${e.message}. Watchdog will retry.`);
     return;
   }
 
-  // ── LOOP rule 1 ───────────────────────────────────────────────────────────
-  // Do not believe the response. Read the pack back from the PUBLIC projection
-  // — the same endpoint a player's browser hits — and confirm it is actually
-  // live. If it is not, this fixture is not released, whatever the POST said.
-  let confirmed = null;
-  for (let i = 0; i < 3 && !confirmed; i++) {
-    if (i) await sleep(scaled(1_000, 200));
-    try {
-      const today = await api("/api/halftime/today");
-      const row = (today.fixtures ?? []).find((x) => x.fixture_id === f.fixture_id);
-      if (row && (row.state === "released" || row.state === "released_late") && row.pack_id && row.slug) {
-        confirmed = row;
-      }
-    } catch (e) {
-      warn(`release read-back failed (${i + 1}/3): ${e.message}`);
-    }
-  }
-
-  if (!confirmed) {
+  // LOOP rule 1: the 200 is not the evidence. Believe the route's own
+  // confirmation of the timestamp it actually wrote (or found already set).
+  if (!out?.secondHalfStartedAt) {
     await alertOnce(
-      `release-unconfirmed-${f.fixture_id}`,
-      `released ${label} but /api/halftime/today does not show it live ` +
-        `(api said state=${out?.state}, released=${out?.released}). Watchdog will retry.`,
+      `whistle-unconfirmed-${f.fixture_id}`,
+      `whistled ${label} but the route reported no second_half_started_at. Watchdog will retry.`,
     );
     return;
   }
 
-  s.released = true;
-  s.releasedAt = new Date().toISOString();
-  s.releasedState = confirmed.state;
-  s.pushTargeted = out?.pushTargeted ?? 0;
-  s.slug = confirmed.slug;
+  s.whistled = true;
+  s.whistledAt = out.secondHalfStartedAt;
   saveState();
 
-  log(
-    `LIVE ${label} · /challenges/${confirmed.slug}?pid=${confirmed.pack_id} · ` +
-      `state=${confirmed.state} · push targeted ${out?.pushTargeted ?? 0}` +
-      (out?.already ? " (another caller won the race — no double push)" : ""),
-  );
+  log(`WHISTLE ${label} · second_half_started_at=${out.secondHalfStartedAt}${out.set ? "" : " (already set)"}`);
 }
 
 /**
- * Postponed / abandoned. The poller has no cancel route of its own: cancellation
- * lives in the release engine and the watchdog is the only caller of it, so we
- * nudge the watchdog rather than growing a second code path for the same side
- * effect. Bounded to one nudge per fixture.
+ * Postponed / abandoned. Nudge the watchdog, whose own row selection is
+ * time-based now (no quiz-state coupling) — it settles predictions and, in a
+ * future workstream, could cancel the fixture's own Gameday pack. Bounded to
+ * one nudge per fixture.
  */
 async function cancelViaWatchdog(f, phaseName) {
   const s = fx(f.fixture_id);
@@ -700,21 +427,15 @@ async function cancelViaWatchdog(f, phaseName) {
   s.cancelNudged = true;
   saveState();
 
-  warn(`${f.fixture_id} ${f.home} v ${f.away} is ${phaseName} — no pack will be released`);
+  warn(`${f.fixture_id} ${f.home} v ${f.away} is ${phaseName}`);
   if (DRY_RUN) return;
 
   try {
     await api("/api/cron/halftime-watchdog");
-    const after = (await refreshSchedule()).fixtures.find((x) => x.fixture_id === f.fixture_id);
-    if (after?.state === "cancelled") {
-      log(`cancelled ${f.fixture_id} (${phaseName}) — no pack, no push`);
-    } else if (after && !TERMINAL.has(after.state)) {
-      warn(`${f.fixture_id} still ${after.state} after cancel nudge; watchdog will pick it up`);
-    }
   } catch (e) {
     warn(`cancel nudge failed for ${f.fixture_id}: ${e.message}`);
   }
-  await telegram(`ℹ️ Halftime — ${f.home} v ${f.away} is ${phaseName}. No quiz pack today.`);
+  await telegram(`ℹ️ Halftime — ${f.home} v ${f.away} is ${phaseName}.`);
 }
 
 // ── the two lanes ────────────────────────────────────────────────────────────
@@ -745,13 +466,10 @@ async function slowLane() {
     const hit = byId.get(Number(f.fixture_id));
     if (!hit) continue;
 
-    // Kickoff drift. SportMonks is the truth; our view follows it.
-    //
-    // NOTE the threshold is scaled. It is "a minute of match time", not "a
-    // minute of wall clock" — an unscaled 60_000 here would be a bug that only
-    // ever showed up in replay, where a 20-minute delay compresses to 10 real
-    // seconds and would slip under the threshold unnoticed. (It did. That is how
-    // this comment came to be here.)
+    // Kickoff drift, held locally only (no route writes it back to the row —
+    // that gap is a known limitation, unchanged from before this pivot). NOTE
+    // the threshold is scaled: it is "a minute of match time", not "a minute
+    // of wall clock".
     const smKo = hit.starting_at_timestamp ? hit.starting_at_timestamp * 1000 : null;
     if (smKo && Math.abs(smKo - ko(f)) > scaled(60_000, 200)) {
       log(
@@ -761,30 +479,11 @@ async function slowLane() {
       f.kickoff_at = new Date(smKo).toISOString();
       const s = fx(f.fixture_id);
       s.kickoffOverride = f.kickoff_at; // local cache; the DB row is the truth
-
-      // The veto deadline was computed against the old kickoff — recompute it,
-      // and push BOTH the new kickoff and the new deadline to the row in one op.
-      // The watchdog reads kickoff_at from the DB: if we only kept this in our
-      // own head (as we used to), a poller death here would leave the watchdog
-      // acting on the old time and staging the pack base-only.
-      const pendingVeto = f.fresh_state === "pending_veto" && !s.assembled;
-      let dl = null;
-      if (pendingVeto) {
-        dl = vetoDeadline(f, Date.now());
-        f.veto_deadline_at = dl.toISOString();
-      }
-      await writeKickoff(
-        f.fixture_id,
-        f.kickoff_at,
-        dl ? { vetoDeadlineAt: dl.toISOString() } : {},
-      );
       saveState();
 
       await alertOnce(
         `kickoff-moved-${f.fixture_id}`,
-        `${f.home} v ${f.away} kickoff moved to ${new Date(smKo).toISOString().slice(11, 16)}Z. ` +
-          `Poller and halftime_releases.kickoff_at both updated` +
-          (dl ? `; veto deadline recomputed to ${dl.toISOString().slice(11, 16)}Z.` : `.`),
+        `${f.home} v ${f.away} kickoff moved to ${new Date(smKo).toISOString().slice(11, 16)}Z.`,
       );
     }
 
@@ -801,117 +500,25 @@ async function onPhase(f, phase, lane) {
   }
 
   if (phase === "abnormal") return cancelViaWatchdog(f, "postponed/abandoned");
-
-  if (f.state !== "staged") {
-    // Kickoff has come and gone and nothing is staged: the pre-match pipeline
-    // did not finish. Freeze the base slate NOW rather than wait for the
-    // watchdog — it is the same base-only outcome, five minutes sooner.
-    if (phase !== "pre" && f.state === "base_ready" && !s.assembled) {
-      warn(`${f.fixture_id} is in play but not staged — assembling base-only`);
-      await assemble(f);
-      await refreshSchedule();
-    }
-    return;
-  }
-
-  if (phase === "halftime") return release(f);
+  if (phase === "halftime") return whistle(f);
   if (phase === "past_halftime") {
-    // We never saw the whistle (feed hiccup, or we were restarted). The pack is
-    // still true — its questions were frozen before kickoff — so it goes live.
-    // But NO push: a notification after the restart is useless and a spoiler.
-    await alertOnce(
-      `late-${f.fixture_id}`,
-      `missed the half-time flip for ${f.home} v ${f.away} — releasing late, no push.`,
-    );
-    return release(f, { late: true });
-  }
-}
-
-// ── pre-match work ───────────────────────────────────────────────────────────
-
-async function preMatch() {
-  const now = Date.now();
-  for (const f of tracked()) {
-    const s = fx(f.fixture_id);
-    const kickoff = ko(f);
-
-    if (f.state === "scheduled") {
-      // No approved base slate by T-60 → this fixture has no pack. That is the
-      // gate doing its job: nothing reaches a player ungated.
-      if (now >= kickoff - scaled(60 * 60_000) && !s.noBaseWarned) {
-        s.noBaseWarned = true;
-        saveState();
-        await alertOnce(
-          `nobase-${f.fixture_id}`,
-          `${f.home} v ${f.away} has no approved base slate at T-60 — no pack for this fixture.`,
-        );
-      }
-      continue;
-    }
-    if (f.state !== "base_ready") continue;
-
-    // 1. lineup watch → fresh slice → veto gate
-    const inLineupWindow = now >= kickoff - LINEUP_LEAD_MS && now < kickoff - LINEUP_GIVEUP_MS;
-    if (inLineupWindow && !s.freshDone && !slate.freshKill && f.fresh_state === "none") {
-      if (!s.lastLineupPoll || now - s.lastLineupPoll >= LINEUP_POLL_MS) {
-        s.lastLineupPoll = now;
-        try {
-          if (await lineupsConfirmed(f.fixture_id)) {
-            log(`confirmed XIs for ${f.fixture_id} ${f.home} v ${f.away}`);
-            await runFreshPipeline(f);
-            await refreshSchedule();
-          }
-        } catch (e) {
-          warn(`lineup check failed for ${f.fixture_id}: ${e.message}`);
-        }
-      }
-    }
-
-    // 2. sheets never landed → skip fresh, ship base-only. Normal outcome.
-    if (!s.freshDone && now >= kickoff - LINEUP_GIVEUP_MS && f.fresh_state === "none") {
-      s.freshDone = true;
-      s.freshOutcome = "no-lineups";
-      saveState();
-      log(`no confirmed XIs by T-25 for ${f.fixture_id} — base-only`);
-      await writeFresh(f.fixture_id, [], "skipped");
-      await refreshSchedule();
-    }
-
-    // 3. the veto clock
-    if (f.fresh_state === "pending_veto" && !f.veto_deadline_at) {
-      await ensureVetoDeadline(f);
-      await refreshSchedule();
-    }
-
-    // 4. freeze
-    if (!s.assembled && now >= assembleAt(f)) {
-      await assemble(f);
-      await refreshSchedule();
-    }
+    // We never saw the exact HT flip (feed hiccup, or we were restarted). The
+    // second half has clearly started, so record it late — better late than
+    // never for the prediction poll's own opening.
+    return whistle(f, { late: true });
   }
 }
 
 // ── day summary ──────────────────────────────────────────────────────────────
 
 async function summary() {
-  await refreshSchedule();
   const rows = slate.fixtures;
-  const by = (st) => rows.filter((r) => r.state === st);
-  const freshShipped = rows.reduce(
-    (n, r) => n + (r.fresh_questions ?? []).filter((q) => q.status === "approved").length,
-    0,
-  );
-  const vetoed = rows.reduce(
-    (n, r) => n + (r.fresh_questions ?? []).filter((q) => q.status === "vetoed").length,
-    0,
-  );
+  const whistled = rows.filter((r) => fx(r.fixture_id).whistled).length;
 
   const lines = [
-    `🕐 Halftime packs — ${slate.matchday}`,
-    `released: ${by("released").length} · late: ${by("released_late").length} · ` +
-      `cancelled: ${by("cancelled").length} · failed: ${by("failed").length}`,
-    `fresh questions live: ${freshShipped} · vetoed: ${vetoed}` + (slate.freshKill ? " · SLATE KILLED" : ""),
-    ...rows.map((r) => `  ${r.state === "released" ? "✅" : r.state === "released_late" ? "🕓" : "—"} ${r.home} v ${r.away} (${r.state})`),
+    `🕐 Halftime whistle detection — ${slate.matchday}`,
+    `${whistled}/${rows.length} fixture(s) whistled`,
+    ...rows.map((r) => `  ${fx(r.fixture_id).whistled ? "✅" : "—"} ${r.home} v ${r.away}`),
   ];
 
   log(lines.join("\n"));
@@ -944,9 +551,9 @@ async function main() {
 
   log(
     `${slate.fixtures.length} fixture(s) · first KO ${new Date(firstKo).toISOString()} · ` +
-      `last KO ${new Date(lastKo).toISOString()}` + (slate.freshKill ? " · FRESH KILLED FOR TODAY" : ""),
+      `last KO ${new Date(lastKo).toISOString()}`,
   );
-  for (const f of slate.fixtures) log(`  ${f.fixture_id} ${f.home} v ${f.away} (${f.state})`);
+  for (const f of slate.fixtures) log(`  ${f.fixture_id} ${f.home} v ${f.away}`);
 
   let lastSchedule = Date.now();
   let lastSlow = 0;
@@ -955,8 +562,8 @@ async function main() {
     const now = Date.now();
 
     if (now > hardExit) {
-      await alertOnce("hard-exit", `wall-clock limit reached with fixtures unreleased: ` +
-        `${tracked().map((f) => `${f.home} v ${f.away} (${f.state})`).join(", ") || "none"}`);
+      await alertOnce("hard-exit", `wall-clock limit reached with fixtures unwhistled: ` +
+        `${tracked().map((f) => `${f.home} v ${f.away}`).join(", ") || "none"}`);
       break;
     }
 
@@ -972,14 +579,8 @@ async function main() {
     }
 
     if (!tracked().length) {
-      log("every fixture is terminal");
+      log("every fixture whistled or otherwise done");
       break;
-    }
-
-    try {
-      await preMatch();
-    } catch (e) {
-      warn("pre-match pass failed:", e.message);
     }
 
     // Before anyone has kicked off there is nothing for the live feed to say.
