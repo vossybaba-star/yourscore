@@ -31,20 +31,6 @@ interface QuizPack {
   created_at?: string | null;
 }
 
-// The quiz's THEME, not the club — the crest already identifies the team, so the
-// card headline should name what the quiz is ABOUT. Club pack names are
-// "Team · Theme" (e.g. "Chelsea · Modern Era II"); the featured season packs put
-// the club in `name` and the season in `parameter` ("2025/26"). Returns an
-// optional eyebrow (e.g. "Premier League") + the main line so "2025/26" stays
-// prominent and never gets clamped off the end of a long single string.
-function clubThemeParts(pack: QuizPack): { eyebrow: string | null; main: string } {
-  const parts = (pack.name ?? "").split("·").map((s) => s.trim()).filter(Boolean);
-  if (parts.length > 1) return { eyebrow: null, main: parts.slice(1).join(" · ") };
-  const p = pack.parameter ?? "";
-  if (/^\d{4}\/\d{2}$/.test(p)) return { eyebrow: "Premier League", main: p };
-  return { eyebrow: null, main: p || pack.name || "" };
-}
-
 // "Jun 18" style published date for quiz cards.
 function packDate(iso?: string | null): string | null {
   if (!iso) return null;
@@ -162,18 +148,10 @@ function ClubCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: string 
           </div>
         )}
       </div>
+      {/* A ClubCard opens the club's quiz HUB (a group of quizzes), not one
+          specific quiz — so it carries no quiz title/theme, just the crest and
+          an OPEN action. The team is identified by its crest / cover art. */}
       <div className="px-2 pb-2.5 pt-2">
-        {(() => {
-          const { eyebrow, main } = clubThemeParts(pack);
-          return (
-            <div className="mb-1.5" style={{ minHeight: 34 }}>
-              {eyebrow && (
-                <p className="font-display text-[9px] uppercase tracking-wider mb-0.5 line-clamp-1" style={{ color: "#00d8c0" }}>{eyebrow}</p>
-              )}
-              <p className="font-body text-sm font-bold text-white leading-tight line-clamp-2">{main}</p>
-            </div>
-          );
-        })()}
         <div
           className="rounded-lg py-1.5 text-center"
           style={{
