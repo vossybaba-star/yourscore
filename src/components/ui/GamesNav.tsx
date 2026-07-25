@@ -33,7 +33,10 @@ export function GamesNav() {
   const guest = !loading && !user;
   const barRef = useRef<HTMLDivElement>(null);
   const active = GAME_ROUTES[pathname ?? ""];
-  const show = Boolean(active) && !hidden;
+  // /play renders its OWN game switcher in-page, beneath the Solo|Versus toggle
+  // (founder 2026-07-25: Solo at the top, the games nav underneath), so the
+  // global bar stands down there. It still owns every other game route.
+  const show = Boolean(active) && !hidden && pathname !== "/play";
 
   // Pages that stack their own sticky header under the bar (the Quiz hub's
   // title + filters) need its height as an offset — published as a CSS var so

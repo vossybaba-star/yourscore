@@ -6,7 +6,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import { createClient } from "@/lib/supabase/client";
 import { BottomNav } from "@/components/ui/BottomNav";
-import { VersusHub } from "@/app/versus/page";
+import { GameSwitcher } from "@/components/ui/GameSwitcher";
+import { VersusHub } from "@/app/versus/VersusHub";
 import { Button } from "@/components/ui/Button";
 import { getTeamBadgeUrl } from "@/lib/teamImages";
 import { getCompetitionBadgeUrl } from "@/lib/competitionImages";
@@ -479,7 +480,12 @@ function InboxRow({ c, kind }: { c: InboxChallenge; kind: "play" | "waiting" | "
 }
 
 function PlayPageInner() {
-  const { user } = useUser();
+  const { user, loading: userLoading } = useUser();
+  // Guests get a fixed "Sign In/Up" pill in the top-right corner. The Solo|Versus
+  // toggle now sits at the very top, so it must clear that pill or "Versus" slides
+  // under it. Assume signed-in while auth resolves (matches GuestAuthButton), so
+  // the toggle never jumps width under a returning user.
+  const guest = !userLoading && !user;
   const router = useRouter();
   const searchParams = useSearchParams();
   const challengeTo = searchParams?.get("challenge") ?? null; // targeting a friend
@@ -712,11 +718,36 @@ function PlayPageInner() {
   return (
     <div className="min-h-screen bg-bg" style={{ paddingBottom: "calc(72px + env(safe-area-inset-bottom, 0px))" }}>
 
-      {/* Sticky header — sits under the persistent GamesNav (root layout),
-          so it sticks at the nav's height, not the viewport top. */}
-      <div className="sticky z-20"
-        style={{ top: "var(--games-nav-h, 0px)", background: "rgba(10,10,15,0.97)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+      {/* Sticky header. The global GamesNav is suppressed on /play (the Solo/
+          Versus toggle + game switcher live in here instead), so this owns the
+          notch inset now — pt-safe, and it sticks at the viewport top. */}
+      <div className="sticky z-20 pt-safe"
+        style={{ top: 0, background: "rgba(10,10,15,0.97)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
         <div className="max-w-lg mx-auto px-5 pt-3 pb-3">
+
+          {/* Solo / Versus — the top-level Play mode, ABOVE the game switcher
+              (founder, 25 Jul: Solo at the top, the games nav underneath).
+              Versus folded in from its old bottom tab; leaderboards moved off. */}
+          <div className="flex gap-1 p-1 rounded-2xl mb-3"
+            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", marginRight: guest ? 92 : undefined }}>
+            <button onClick={() => setMainTab("solo")}
+              className="flex-1 py-2 rounded-xl font-body text-xs font-semibold transition-all"
+              style={mainTab === "solo" ? { background: "#00d8c0", color: "#0a0a0f" } : { background: "transparent", color: "#8a948f" }}>
+              Solo
+            </button>
+            <button onClick={() => setMainTab("versus")}
+              className="flex-1 py-2 rounded-xl font-body text-xs font-semibold transition-all"
+              style={mainTab === "versus" ? { background: "#00d8c0", color: "#0a0a0f" } : { background: "transparent", color: "#8a948f" }}>
+              Versus
+            </button>
+          </div>
+
+          {/* The game switcher (Quiz · 38-0 · Perfect 10 · …) lives on the Play
+              tab under the toggle now — the global GamesNav is suppressed on
+              /play (see GamesNav). Hidden on Versus, which has its own hub. */}
+          {mainTab === "solo" && (
+            <div className="mb-3"><GameSwitcher active="quiz" /></div>
+          )}
 
           {/* Title row */}
           <div className="flex items-center justify-between mb-4">
@@ -738,22 +769,6 @@ function PlayPageInner() {
                 </span>
               </div>
             )}
-          </div>
-
-          {/* Solo / Versus toggle (founder, 25 Jul: Versus folded into Play from
-              its own bottom tab; leaderboards moved off the Play tab). */}
-          <div className="flex gap-1 p-1 rounded-2xl mb-3"
-            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-            <button onClick={() => setMainTab("solo")}
-              className="flex-1 py-2 rounded-xl font-body text-xs font-semibold transition-all"
-              style={mainTab === "solo" ? { background: "#00d8c0", color: "#0a0a0f" } : { background: "transparent", color: "#8a948f" }}>
-              Solo
-            </button>
-            <button onClick={() => setMainTab("versus")}
-              className="flex-1 py-2 rounded-xl font-body text-xs font-semibold transition-all"
-              style={mainTab === "versus" ? { background: "#00d8c0", color: "#0a0a0f" } : { background: "transparent", color: "#8a948f" }}>
-              Versus
-            </button>
           </div>
 
           {/* Solo sub-tabs (Featured / World Cup / Club / Records) — scrollable so
