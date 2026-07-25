@@ -6,7 +6,25 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-07-25 (**Duplicate-rank bug FIXED — every player has one rank again.**
+> **Confirmed:** 2026-07-25 (**The public Fantasy tab teaser (`/fantasy` → `FantasyTeaser`) rebuilt as
+> a landing page and shipped to prod.** The lead flipped from "One transfer. Earn the rest." to the
+> differentiator itself — headline **"The more you know, the more you move."**, subhead "the fantasy
+> game where your football brain earns you more transfers." The old numbered rulebook became a
+> landing page: an **earn showpiece** (a correct Gameday Quiz answer → transfers earned, drawn not
+> asserted), two supporting cards (**your starting lineup** / **rules you already know**), a
+> **monthly-table block** selling join-any-time, and a closer. The opt-in (the shipped `WaitlistCard`,
+> `source="fantasy-tab"`) moved **high, right under the hero**, and now **pulses** — an expanding lime
+> ring (`animate-save-pulse`, reduced-motion safe), added via a scoped `pulse` prop so the blog
+> waitlist is unaffected. The hero gained a cluster of **licensed PL star portraits** (Haaland, Saka,
+> Palmer, Rice, Foden — reusing the Higher-or-Lower headshots via `faceFor` + `PlayerAvatar`, monogram
+> fallback so it never blanks). Copy rules held: "correct answers earn transfers" (never
+> every-answer-banks-one), zero dashes; `WaitlistCard` launch date corrected "mid-August" → "Friday 21
+> August". Also fixed an **iPhone safe-area bug** on the teaser — the header sat under the status bar
+> and the closing tile was clipped by the bottom nav; padding now uses `env(safe-area-inset-*)`.
+> Commits on `main`: `7417d49`, `fab0dc5`, `b6fd9cf`, `fc20106`. FantasyHub and the game itself are
+> unchanged and still allowlist-gated.)
+>
+> **Previously confirmed:** 2026-07-25 (**Duplicate-rank bug FIXED — every player has one rank again.**
 > Migration **211 APPLIED to prod**, recorded on `main`. `yourscore_user_ratings` joined
 > `draft_standings` on `league_id` alone, ignoring `competition` — so anyone active in more than
 > one competition (PL/WC/LaLiga) got a SEPARATE row per competition. Result: **340 users had two
