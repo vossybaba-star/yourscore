@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import { usePendingFriends } from "@/hooks/usePendingFriends";
 import { usePendingTurns } from "@/hooks/usePendingTurns";
+import { fantasyVisible } from "@/lib/fantasy/flag";
 
 // Football icon for the Matchweek tab — the live, fixture-synced surface.
 function FootballIcon({ active }: { active: boolean }) {
@@ -62,6 +63,12 @@ export function BottomNav() {
   // changes the navigation itself.
   const [pending, setPending] = useState<string | null>(null);
 
+  // Fantasy is its own tab now, but gated: it shows only for the founder allowlist
+  // (or a ?fantasy=preview session) until launch. Resolved after mount, not during
+  // render — the answer reads sessionStorage + the signed-in id, and doing that
+  // while rendering would mismatch the server HTML and blow up hydration.
+  const [showFantasy, setShowFantasy] = useState(false);
+
   // `usePathname` flips as soon as the transition COMMITS, not when the new screen
   // is actually ready, so it can't tell us a fetch is still in flight. Driving the
   // push through a transition ourselves gives us `isPending`, which stays true for
@@ -70,6 +77,9 @@ export function BottomNav() {
 
   // The route landed (or the user went somewhere else entirely) — stop pretending.
   useEffect(() => setPending(null), [pathname]);
+
+  // Resolve Fantasy-tab visibility once the signed-in id is known.
+  useEffect(() => { setShowFantasy(fantasyVisible(user?.id)); }, [user]);
 
   // Safety net: a navigation that fails or is abandoned would otherwise leave the
   // wrong tab lit for the rest of the session.
@@ -138,6 +148,9 @@ export function BottomNav() {
   // /challenges (which holds the Quiz tab, so a pack played from anywhere reads
   // consistently); Matchweek highlights on its own route.
   const isMatchweek = active.startsWith("/matchweek");
+  // Fantasy is its own tab now (founder 2026-07-25) — its squad, build, round,
+  // transfers, leagues and news all live under /fantasy.
+  const isFantasy = active.startsWith("/fantasy");
   const isProfile = active === "/profile" || active.startsWith("/settings");
   // Guest-only tab. Highlights on the auth routes it owns, so a guest who taps it
   // and lands on sign-in still sees where they are in the bar.
@@ -193,6 +206,18 @@ export function BottomNav() {
             <FootballIcon active={isMatchweek} />
             <span className="font-body text-xs text-center leading-tight">Premier League</span>
           </Link>
+
+          {/* Fantasy — visible to a guest only under the preview hatch (a tester);
+              a normal guest never has showFantasy true, so this stays hidden. */}
+          {showFantasy && (
+            <Link href="/fantasy" className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-1 transition-colors" style={{ color: isFantasy ? "#00d8c0" : "#8a948f" }}>
+              <svg width="21" height="21" viewBox="0 0 22 22" fill="none">
+                <path d="M8 3L3.5 5.5 5.5 9 8 7.7V19a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V7.7L16.5 9l2-3.5L14 3a3 3 0 0 1-6 0z"
+                  stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" fill={isFantasy ? "currentColor" : "none"} fillOpacity={isFantasy ? 0.15 : 0} />
+              </svg>
+              <span className="font-body text-xs text-center leading-tight">Fantasy</span>
+            </Link>
+          )}
 
           {/* Sign in — the guest's own door, in the slot a signed-in user sees as
               Profile. Every other route to /auth/sign-in in the app is reactive: you
@@ -275,6 +300,18 @@ export function BottomNav() {
           <FootballIcon active={isMatchweek} />
           <span className="font-body text-xs text-center leading-tight">Premier League</span>
         </Link>
+
+        {/* Fantasy — its own tab (founder 2026-07-25). Gated: shows for the
+            founder allowlist / ?fantasy=preview until launch, hidden otherwise. */}
+        {showFantasy && (
+          <Link href="/fantasy" className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-1 transition-colors" style={{ color: isFantasy ? "#00d8c0" : "#8a948f" }}>
+            <svg width="21" height="21" viewBox="0 0 22 22" fill="none">
+              <path d="M8 3L3.5 5.5 5.5 9 8 7.7V19a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V7.7L16.5 9l2-3.5L14 3a3 3 0 0 1-6 0z"
+                stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" fill={isFantasy ? "currentColor" : "none"} fillOpacity={isFantasy ? 0.15 : 0} />
+            </svg>
+            <span className="font-body text-xs text-center leading-tight">Fantasy</span>
+          </Link>
+        )}
 
         {/* Profile */}
         <Link href="/profile" className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-1 transition-colors" style={{ color: isProfile ? "#aeea00" : "#8a948f" }}>

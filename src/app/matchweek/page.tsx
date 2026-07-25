@@ -1,15 +1,14 @@
 "use client";
 
 /**
- * Matchweek — the football super-hub. Three top-level sections (design locked
- * with the founder, 2026-07-15):
+ * Matchweek — the football super-hub. Two top-level sections (Fantasy moved out
+ * to its own bottom-nav tab, founder 2026-07-25):
  *
- *   Matchweek  → sub-tabs News · Table · Fixtures  (the Premier League week)
- *   Live Quiz  → halftime quiz packs + "call the second half" · club-fan ranks
- *   Fantasy    → the game itself: squad, round, transfers, leagues
+ *   Matchweek     → sub-tabs News · Table · Fixtures  (the Premier League week)
+ *   Gameday Quiz  → quiz packs per fixture · club-fan ranks
  *
  * The TAB is "PL" (founder, 2026-07-16) — everything in here is the Premier
- * League: the halftime quizzes are PL fixtures, Fantasy is a PL squad. The first
+ * League: the gameday quizzes are PL fixtures. The first
  * section keeps the name "Matchweek" rather than "PL", which would have made the
  * fixture list live at PL → PL. Route stays /matchweek; `section` key stays "pl"
  * so no URL or state contract moves for a label change.
@@ -20,7 +19,7 @@
  * blank screen.
  */
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { HalftimeRail } from "@/components/halftime/HalftimeRail";
 import { ClubPicker } from "@/components/clubs/ClubPicker";
 import { ClubTableTile } from "@/components/clubs/ClubTableTile";
@@ -34,20 +33,18 @@ import { UpcomingQuizzes } from "@/components/matchweek/UpcomingQuizzes";
 import { QuizStatTiles } from "@/components/matchweek/QuizStatTiles";
 import { LiveQuizIntro } from "@/components/matchweek/LiveQuizIntro";
 import { HowItWorksTile } from "@/components/matchweek/HowItWorksTile";
-import { FantasyHub } from "@/components/fantasy/FantasyHub";
-import { fantasyVisible } from "@/lib/fantasy/flag";
-import { useUser } from "@/hooks/useUser";
 import { BottomNav } from "@/components/ui/BottomNav";
 
 const TEAL = "#00d8c0";
 
-type Section = "pl" | "live" | "fantasy";
+type Section = "pl" | "live";
 type PlTab = "news" | "table" | "fixtures";
 
+// Fantasy moved to its OWN bottom-nav tab (founder, 25 Jul), so the PL tab is
+// just the week + the gameday quiz now.
 const SECTIONS: { key: Section; label: string }[] = [
   { key: "pl", label: "Matchweek" },
   { key: "live", label: "Gameday Quiz" },
-  { key: "fantasy", label: "Fantasy" },
 ];
 const PL_TABS: { key: PlTab; label: string }[] = [
   { key: "news", label: "News" },
@@ -57,16 +54,6 @@ const PL_TABS: { key: PlTab; label: string }[] = [
 
 export default function MatchweekPage() {
   const [section, setSection] = useState<Section>("pl");
-  // Fantasy is built but not open to users yet (founder, 24 Jul). Resolved after
-  // mount, not during render: the answer depends on sessionStorage and the URL,
-  // and reading those while rendering would mismatch the server HTML and blow up
-  // hydration on every page load.
-  const [showFantasy, setShowFantasy] = useState(false);
-  // Resolved after the signed-in user is known: while gated, the tab shows only
-  // for the founder allowlist (or a ?fantasy=preview session), and stays hidden
-  // for everyone else.
-  const { user } = useUser();
-  useEffect(() => { setShowFantasy(fantasyVisible(user?.id)); }, [user]);
   // One shared reminders store for the section — AppNudge reads the same state
   // the buttons write, so the app pitch appears once, not once per card.
   const reminders = useReminders();
@@ -88,14 +75,14 @@ export default function MatchweekPage() {
       >
         <h1 className="font-display text-3xl text-white leading-none">PREMIER LEAGUE</h1>
         <p className="font-body text-sm mt-1.5" style={{ color: "#8a948f" }}>
-          The week · gameday quiz · fantasy
+          The week · gameday quiz
         </p>
       </div>
 
       {/* Top-level section bar */}
       <div className="max-w-lg mx-auto px-4" data-tour="pl-sections">
         <div className="flex gap-1.5 p-1 rounded-2xl" style={{ background: "rgba(255,255,255,0.04)" }}>
-          {SECTIONS.filter((s) => s.key !== "fantasy" || showFantasy).map((s) => {
+          {SECTIONS.map((s) => {
             const on = section === s.key;
             return (
               <button
@@ -161,10 +148,7 @@ export default function MatchweekPage() {
         </div>
       )}
 
-      {/* ── Fantasy — holding screen until the game opens with the season ─── */}
-      {/* The real game. This section used to be a pre-launch holding screen;
-          it is now the squad itself. */}
-      {section === "fantasy" && showFantasy && <FantasyHub embedded />}
+      {/* Fantasy now lives in its own bottom-nav tab (/fantasy), not here. */}
 
       <BottomNav />
     </div>
