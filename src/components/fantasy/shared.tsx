@@ -27,6 +27,12 @@ export const PANEL_2 = "#15211a"; // surface-2, for raised rows
 export const LINE = "rgba(255,255,255,0.07)";
 export const INK = "#eef2f0";
 export const MUTED = "#8a948f";
+// Role colours for the Fantasy identity (founder, 25 Jul): lime = the ONE
+// primary action + live positive; gold (above) = earned power / captaincy;
+// teal = structure. Amber = doubts, coral = unavailable / negative.
+export const LIME = "#aeea00";
+export const AMBER = "#f4a63a";
+export const CORAL = "#e0653c";
 /** Accent tint helpers — the reference's hex+alpha idiom (bg 12%, border 28%). */
 export const tint = (hex: string, a = "1e") => `${hex}${a}`;
 
@@ -474,8 +480,12 @@ export function Chip({ children, gold = false, teal = false }: {
 /** `gold` = the screen's primary action. Kept as the prop name so every call
  *  site still reads right, but it paints TEAL — actions are knowledge-coloured
  *  here; gold is reserved for what you've won. */
-export function Btn({ children, onClick, gold = false, disabled = false, small = false, glow = false }: {
-  children: ReactNode; onClick?: () => void; gold?: boolean; disabled?: boolean; small?: boolean;
+export function Btn({ children, onClick, gold = false, lime = false, disabled = false, small = false, glow = false }: {
+  children: ReactNode; onClick?: () => void; gold?: boolean;
+  /** The Fantasy primary. `lime` is the ONE action a screen is for; it wins over
+   *  `gold` (kept for back-compat callers that pass it as "the filled button"). */
+  lime?: boolean;
+  disabled?: boolean; small?: boolean;
   /** Breathe. Reserve it for the ONE thing a screen wants you to do — if two
    *  buttons pulse, neither reads as the answer. */
   glow?: boolean;
@@ -487,9 +497,9 @@ export function Btn({ children, onClick, gold = false, disabled = false, small =
         padding: small ? "9px 14px" : "14px 18px",
         fontSize: small ? 13 : 15, fontWeight: 600,
         cursor: disabled ? "default" : "pointer",
-        background: gold ? TEAL : PANEL_2,
-        color: gold ? "#03211d" : INK,
-        border: `1px solid ${gold ? TEAL : LINE}`,
+        background: lime ? LIME : gold ? TEAL : PANEL_2,
+        color: lime ? "#12200a" : gold ? "#03211d" : INK,
+        border: `1px solid ${lime ? LIME : gold ? TEAL : LINE}`,
         opacity: disabled ? 0.4 : 1,
         width: small ? undefined : "100%",
       }}>{children}</button>

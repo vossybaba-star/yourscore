@@ -15,7 +15,10 @@ import {
   LINE, Loading, MUTED, page, PANEL, PANEL_2, Sheet, Skel, TEAL, tint,
   type ChipName, type ClientPoolPlayer, type FantasyContext, type FantasyState, type Pos,
 } from "@/components/fantasy/shared";
-import { BUDGET_TENTHS, HALF_SEASON_GW, MAX_PER_CLUB, SQUAD_SIZE } from "@/lib/fantasy/engine";
+import { PlayerMarker } from "@/components/fantasy/PlayerMarker";
+import { MovesBank } from "@/components/fantasy/MovesBank";
+import { faceFor } from "@/lib/fantasy/faces";
+import { BUDGET_TENTHS, CREDIT_CAP, HALF_SEASON_GW, MAX_PER_CLUB, SQUAD_SIZE } from "@/lib/fantasy/engine";
 import { KNOWLEDGE_NAME } from "@/lib/fantasy/brand";
 
 type Result = NonNullable<NonNullable<FantasyState["entry"]>["result"]>;
@@ -28,19 +31,6 @@ const EMBEDDED_PAGE: CSSProperties = { padding: "4px 16px 8px", color: INK };
 /** Width of the dugout strip. Wide enough for a crest and a surname, narrow
  *  enough that five outfielders still fit across the pitch beside it. */
 const DUGOUT_W = 68;
-
-/** Long surnames don't fit a 68px dugout strip at the default size, and
- *  "Arrizabalaga" was rendering as "Arrizab…". Sizing for the WORST case
- *  ("Williams-Barnett", 16 chars) would shrink every name to unreadable, so the
- *  size adapts: 83% of the pool is 8 characters or fewer and keeps full size.
- *  Measured against the real pool, not guessed. */
-function benchFontSize(name: string): number {
-  // A hyphenated name wraps AT the hyphen, so what has to fit on one line is the
-  // longest segment, not the whole string. Sizing "Williams-Barnett" as 16
-  // characters shrank it to 6.8px when its widest line is only "Williams-".
-  const n = Math.max(...name.split("-").map((part) => part.length));
-  return n <= 8 ? 9.5 : n <= 10 ? 8.5 : n <= 13 ? 7.5 : 6.8;
-}
 
 /** On the pitch there is room for ONE word. "Jean-Philippe Mateta" forced every
  *  tile in the row wide enough to hold it, which is what made the pitch too big
@@ -643,6 +633,12 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
       ? { label: "Edit my squad", note: "Free to change any player until the season starts.", onClick: () => router.push("/fantasy/build") }
       : { label: "Make a transfer", note: `${squad.credits} free move${squad.credits === 1 ? "" : "s"} in hand. Extras cost 4 points.`, onClick: () => router.push("/fantasy/transfers") };
 
+  /** Team value = what the fifteen are priced at right now, in tenths (fmtM's
+   *  unit). Read off the same pool the pitch draws from; blank until it loads so
+   *  the header never flashes £0.0m. */
+  const valueKnown = pool.size > 0;
+  const teamValueTenths = squad.picks.reduce((s, pk) => s + Math.round((pool.get(pk.id)?.price ?? 0) * 10), 0);
+
   /** `crowd` = how many players share this row. A five-across row gets a smaller
    *  tile than a two-across one, the same adaptive trick the dugout already uses,
    *  so a busy midfield stays readable instead of just narrower. */
@@ -668,39 +664,29 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
               ].filter(Boolean).join(", ")
             : undefined}
           style={{
-          background: onBench ? "rgba(255,255,255,0.03)" : "rgba(9,21,16,0.72)",
-          border: `1px solid ${isCap || isVice ? GOLD : onBench ? "transparent" : LINE}`,
-          color: onBench ? MUTED : INK,
-          borderRadius: 8, padding: onBench ? "5px 2px" : "5px 4px",
-          fontSize: onBench ? benchFontSize(label) : crowd >= 5 ? 9 : crowd === 4 ? 9.8 : 10.5,
-          fontWeight: 600, cursor: "pointer",
-          display: "flex", flexDirection: "column", alignItems: "center", gap: 1,
-          // FLUID, not fixed. At 62px a five-across row needs 326px of pitch and
-          // has about 253px on a 375px phone — inside overflow:hidden, so the
-          // fifth player was simply cut off the screen. Five defenders or five
-          // midfielders is an ordinary shape, and smartDefaults produces rows of
-          // five unprompted. Flexing means a busy row compresses instead.
-          width: onBench ? "100%" : undefined,
-          flex: onBench ? undefined : "1 1 0",
-          maxWidth: onBench ? undefined : 62,
-          minWidth: 0, lineHeight: 1.15,
-        }}>
-          {p && <Crest club={p.club} size={onBench ? 15 : crowd >= 5 ? 14 : 17} />}
-          <span style={onBench ? {
-            // Wrap rather than truncate: a name you can't read is worse than a
-            // two-line tile, and hyphenated names break at the hyphen anyway.
-            maxWidth: "100%", overflowWrap: "anywhere", textAlign: "center", lineHeight: 1.1,
-          } : {
-            maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+            background: "transparent", border: "none",
+            padding: onBench ? "2px 0" : "2px 1px", cursor: locked ? "default" : "pointer",
+            // FLUID, not fixed. A five-across row must compress, not overflow the
+            // pitch (which is overflow:hidden). The portrait sits in the same flex
+            // box the text tiles used, so a busy midfield still fits a 375px phone.
+            width: onBench ? "100%" : undefined,
+            flex: onBench ? undefined : "1 1 0",
+            maxWidth: onBench ? undefined : 66,
+            minWidth: 0,
           }}>
-            {label}{isCap ? " ©" : isVice ? " ⓥ" : ""}
-            {/* A doubt, at tile scale. The full DOUBT pill from the transfer
-                screen would be wider than the tile it sits in. */}
-            {ctx.doubts[id] && <span title={ctx.doubts[id]} style={{ color: "#E08A6B" }}> !</span>}
-          </span>
-          <span style={{ color: onBench ? "#5b645e" : MUTED, fontSize: 9 }}>
-            {onBench ? `${benchIdx! + 1}` : `£${p?.price.toFixed(1)}`}
-          </span>
+          {/* Portrait marker (founder, 25 Jul). Captain reads as a gold ring +
+              armband, a doubt as an amber dot — no text glyphs on a face. */}
+          <PlayerMarker
+            name={p?.name ?? `#${id}`}
+            label={label}
+            avatarUrl={p ? faceFor(p.name) : undefined}
+            size={onBench ? 26 : crowd >= 5 ? 26 : crowd === 4 ? 30 : 34}
+            isCaptain={isCap}
+            isVice={isVice}
+            doubt={ctx.doubts[id]}
+            datum={p ? `£${p.price.toFixed(1)}` : undefined}
+            dim={onBench}
+          />
         </button>
         {menuFor === id && !locked && (
           <div style={{
@@ -889,7 +875,7 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
           to do. One primary button here, the detail still below. */}
       {primary && (
         <div style={{ marginBottom: 12 }}>
-          <Btn gold glow disabled={busy} onClick={primary.onClick}>{primary.label}</Btn>
+          <Btn lime glow disabled={busy} onClick={primary.onClick}>{primary.label}</Btn>
           {primary.note && (
             <p className="font-body" style={{ fontSize: 12, color: MUTED, marginTop: 7, textAlign: "center" }}>
               {primary.note}
@@ -898,22 +884,23 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
         </div>
       )}
 
-      {/* The three numbers that govern every decision, given their own weight. */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginBottom: 12 }}>
-        {([
-          { label: "Transfers", value: String(squad.credits), accent: squad.credits > 0 },
-          { label: "In the bank", value: fmtM(squad.bankTenths), accent: false },
-          { label: "Chips", value: String(state.chips?.held ?? 0), accent: (state.chips?.held ?? 0) > 0 },
-        ] as const).map((t) => (
-          <div key={t.label} className="rounded-2xl" style={{ background: PANEL, border: `1px solid ${LINE}`, padding: "12px 10px" }}>
-            <div className="font-display" style={{ fontSize: 26, lineHeight: 1, color: t.accent ? GOLD : INK }}>
-              {t.value}
+      {/* The Moves Bank leads, because knowledge-earned moves are the product's
+          whole story — a bare "Transfers: 3" tile buried the one thing that makes
+          this fantasy game ours. The two money figures sit beside it. */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
+        <MovesBank held={squad.credits} cap={CREDIT_CAP}
+          roundEarns={!roundDone && roundOpen} chipsHeld={state.chips?.held ?? 0} />
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
+          {([
+            { label: "In the bank", value: fmtM(squad.bankTenths) },
+            { label: "Team value", value: valueKnown ? fmtM(teamValueTenths) : "—" },
+          ] as const).map((t) => (
+            <div key={t.label} className="rounded-2xl" style={{ background: PANEL, border: `1px solid ${LINE}`, padding: "12px 12px" }}>
+              <div className="font-display" style={{ fontSize: 22, lineHeight: 1, color: INK }}>{t.value}</div>
+              <div className="font-body" style={{ fontSize: 10.5, color: MUTED, marginTop: 5, letterSpacing: "0.04em" }}>{t.label}</div>
             </div>
-            <div className="font-body" style={{ fontSize: 10.5, color: MUTED, marginTop: 5, letterSpacing: "0.04em" }}>
-              {t.label}
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
       {/* THE PITCH — your team in the shape you actually picture it: forwards
