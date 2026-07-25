@@ -51,8 +51,12 @@ function FantasyTile() {
         </g>
       </svg>
       {FANTASY_FACES.map((f) => (
+        // These faces ARE the tile — load them eagerly, not lazily. As lazy
+        // images they were missing on the first (cold) render and only appeared
+        // after a scroll/reload (founder, 25 Jul). Same eager/high pattern the
+        // home game covers use.
         // eslint-disable-next-line @next/next/no-img-element
-        <img key={f.src} src={f.src} alt="" loading="lazy" decoding="async" aria-hidden="true"
+        <img key={f.src} src={f.src} alt="" loading="eager" decoding="async" fetchPriority="high" aria-hidden="true"
           className="absolute pointer-events-none select-none" style={f.style} />
       ))}
       <div className="absolute inset-x-0 top-0" style={{ height: "58%", background: "linear-gradient(to bottom, #0c1908 34%, rgba(12,25,8,0.35) 75%, transparent)" }} />

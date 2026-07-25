@@ -77,7 +77,7 @@ function PortraitStack() {
       <div style={{ display: "flex" }} aria-hidden>
         {STARS.map((name, i) => (
           <div key={name} style={{ marginLeft: i === 0 ? 0 : -14, position: "relative", zIndex: STARS.length - i, borderRadius: "50%", boxShadow: "0 2px 10px rgba(0,0,0,0.5)" }}>
-            <PlayerAvatar name={name} avatarUrl={faceFor(name)} size={46} ring={TEAL} />
+            <PlayerAvatar name={name} avatarUrl={faceFor(name)} size={46} ring={TEAL} priority />
           </div>
         ))}
       </div>
