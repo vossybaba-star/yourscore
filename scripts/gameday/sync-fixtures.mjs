@@ -14,8 +14,25 @@
  *                             matchday re-sync catches it before any content work
  *
  * Idempotent by construction: upsert on the unique fixture_id. Running it twice
- * changes nothing (AC29). Kick-off changes overwrite kickoff_at, which is exactly
- * what the veto-deadline recomputation depends on.
+ * changes nothing (AC29). Kick-off changes overwrite kickoff_at.
+ *
+ * FIX P2-b (publish_at): computed HERE, at sync, from the gameday shared
+ * derivation (09:00 Europe/London the day before kickoff's London date) — and
+ * RECOMPUTED on every sync, so a moved kickoff moves the publish time even for
+ * a fixture that already has a row. The approve gate (content/route.ts
+ * opApprove) recomputes it again at approval time from whatever kickoff_at is
+ * current then, so the two never disagree as long as nothing moves the
+ * kickoff between sync and gate.
+ *
+ * FIX P2-a (reschedule re-entry): a fixture that was `cancelled` (postponed)
+ * and reappears in the window on a NEW kickoff date must re-enter the
+ * pipeline rather than sit cancelled forever. Detected by reading existing
+ * rows for this batch's fixture_ids BEFORE the upsert (readFixturesByIds —
+ * readFixtures()'s kickoff_at range can't see a row whose OLD kickoff falls
+ * outside today's window). If an existing row is `cancelled` and the incoming
+ * kickoff differs, the upsert resets it to `scheduled` — legal per the
+ * TRANSITIONS map in src/lib/gameday/shared.ts (cancelled → scheduled, the
+ * one exception carved out for exactly this case).
  *
  * The upsert is ASSERTED, not assumed (LOOP rule 1): we re-read the window and
  * compare counts. A silent filter/entitlement break — the failure that would
@@ -31,6 +48,33 @@
 import * as sm from "../halftime/lib/sm.mjs";
 import * as api from "../halftime/lib/api.mjs";
 import { loadEnvFile, flag, has } from "../halftime/lib/env.mjs";
+import { publishAtFor } from "../../src/lib/gameday/shared.ts";
+
+/** SportMonks round.name is a plain integer string ("1") — verified 2026-07-23. */
+export function parseGameweek(roundName) {
+  const n = Number.parseInt(String(roundName ?? ""), 10);
+  return Number.isFinite(n) ? n : null;
+}
+
+/**
+ * FIX P2-a, pure decision: which incoming rows need their existing DB row
+ * reset from cancelled back to scheduled? Extracted so the reschedule logic
+ * is unit-testable (node --test) without a live Supabase round trip.
+ *
+ * @param {Array<{fixture_id:number, kickoff_at:string}>} rows        incoming, this sync
+ * @param {Map<number, {state:string, kickoff_at:string}>} existingById  keyed by fixture_id
+ * @returns {Array<{fixture_id:number, state:'scheduled'}>}
+ */
+export function decideReentries(rows, existingById) {
+  const out = [];
+  for (const r of rows) {
+    const existing = existingById.get(Number(r.fixture_id));
+    if (existing?.state === "cancelled" && existing.kickoff_at !== r.kickoff_at) {
+      out.push({ fixture_id: r.fixture_id, state: "scheduled" });
+    }
+  }
+  return out;
+}
 
 const ymd = (d) => d.toISOString().slice(0, 10);
 
@@ -96,26 +140,61 @@ async function main() {
       console.error(`  ! fixture ${f.id} has no participants — skipped`);
       continue;
     }
+    const kickoffAt = new Date(`${String(f.starting_at).replace(" ", "T")}Z`).toISOString();
     rows.push({
       fixture_id: f.id,
       season_id: f.season_id ?? null,
       round_name: f.round?.name ?? null,
+      gameweek: parseGameweek(f.round?.name),
       home: p.home.name,
       away: p.away.name,
-      kickoff_at: new Date(`${String(f.starting_at).replace(" ", "T")}Z`).toISOString(),
+      kickoff_at: kickoffAt,
+      // FIX P2-b: recomputed every sync from the CURRENT kickoff, always.
+      publish_at: publishAtFor(kickoffAt),
     });
   }
 
+  // FIX P2-a: read what's already there for these exact fixture_ids BEFORE
+  // upserting, so a cancelled row whose kickoff has moved can be reset.
+  // readFixtures()'s date-range read can't see it — the old kickoff_at may
+  // fall well outside this sync's window (that's exactly what postponement
+  // to a new date looks like).
+  const existingById = new Map();
+  if (!dryRun) {
+    const existing = await api.readFixturesByIds(rows.map((r) => r.fixture_id));
+    for (const e of existing) existingById.set(Number(e.fixture_id), e);
+  }
+
+  // Deliberately NOT put on the `rows` objects themselves: PostgREST's bulk
+  // upsert builds ONE insert statement whose column list is the union of keys
+  // across the whole JSON array. A `state` key present on only SOME rows
+  // would still apply to every row in that same call (missing ⇒ NULL in the
+  // VALUES tuple for that row), which would silently wipe every other
+  // fixture's state on every sync that happens to contain one reschedule.
+  // So the reset is a SEPARATE, second, small upsert — uniform shape, only
+  // the rows that need it.
+  const reentries = decideReentries(rows, existingById);
+  for (const r of reentries) {
+    const existing = existingById.get(r.fixture_id);
+    console.error(
+      `  ↻ fixture ${r.fixture_id} was cancelled, kickoff moved (${existing.kickoff_at} → ${rows.find((x) => x.fixture_id === r.fixture_id)?.kickoff_at}) — re-entering at 'scheduled'`,
+    );
+  }
+
   for (const r of rows) {
-    console.error(`  ${r.fixture_id}  ${r.kickoff_at}  ${r.home} v ${r.away}  (GW ${r.round_name ?? "?"})`);
+    console.error(`  ${r.fixture_id}  ${r.kickoff_at}  ${r.home} v ${r.away}  (GW ${r.gameweek ?? "?"})`);
   }
 
   if (dryRun) {
-    console.log(JSON.stringify(rows, null, 2));
+    console.log(JSON.stringify({ rows, reentries }, null, 2));
     process.exit(0);
   }
 
   await api.upsertFixtures(rows);
+  if (reentries.length) {
+    await api.upsertFixtures(reentries);
+    console.error(`· ${reentries.length} cancelled fixture(s) re-entered the pipeline (rescheduled)`);
+  }
 
   // ASSERT. The upsert returning 200 is not evidence the rows are there.
   const { startUtc } = londonDayRange(from);
@@ -123,6 +202,19 @@ async function main() {
   const back = await api.readFixtures({ fromUtc: startUtc, toUtc: endUtc });
   const got = new Set(back.map((r) => Number(r.fixture_id)));
   const missing = rows.filter((r) => !got.has(Number(r.fixture_id)));
+
+  // Re-verify the re-entries specifically: state really flipped back.
+  if (reentries.length) {
+    const reentryIds = reentries.map((r) => r.fixture_id);
+    const backReentries = await api.readFixturesByIds(reentryIds);
+    const stillCancelled = backReentries.filter((r) => r.state === "cancelled");
+    if (stillCancelled.length) {
+      console.error(
+        `✗ ${stillCancelled.length} re-entry(ies) did not take: ${stillCancelled.map((r) => r.fixture_id).join(", ")}`,
+      );
+      process.exit(2);
+    }
+  }
 
   if (missing.length) {
     console.error(`✗ ${missing.length} fixture(s) did not land: ${missing.map((r) => r.fixture_id).join(", ")}`);
@@ -133,7 +225,12 @@ async function main() {
   process.exit(0);
 }
 
-main().catch((err) => {
-  console.error(`✗ ${err.message}`);
-  process.exit(2);
-});
+// CLI-only entrypoint: `main()` reaches out to SportMonks/Supabase, so it must
+// not fire on a plain `import` (sync-fixtures.test.mjs imports parseGameweek/
+// decideReentries for unit testing and must not trigger a live sync).
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main().catch((err) => {
+    console.error(`✗ ${err.message}`);
+    process.exit(2);
+  });
+}
