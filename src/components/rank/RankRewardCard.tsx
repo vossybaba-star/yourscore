@@ -67,10 +67,12 @@ export function RankRewardCard() {
   // Catch-up bar: how close you are to the player above (their score = full bar).
   const chasePct = gap !== null && row.ahead_points ? Math.min(1, row.overall_score / row.ahead_points) : 1;
 
-  // A "good moment": they just finished a game and earned points (so never on a
-  // brand-new player's first game — gained needs a prior snapshot). This is when
-  // we ask a native user to rate, or nudge a web iPhone user to download.
-  const success = !!(gained && gained.points > 0);
+  // The moment: this card only mounts on a game-end screen for a signed-in
+  // player, so reaching here IS "they just finished a Game". AppMomentPrompt no
+  // longer takes a success flag — it used to fire only when points were gained,
+  // which skipped anyone on a bad run and could never fire on a returning
+  // player's first Game back (the delta needs a prior on-device snapshot).
+  // Who to ask and how often is now decided server-side.
 
   return (
     <>
@@ -120,7 +122,7 @@ export function RankRewardCard() {
         </p>
       </div>
     </Link>
-    <AppMomentPrompt success={success} />
+    <AppMomentPrompt />
     </>
   );
 }

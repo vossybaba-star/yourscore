@@ -9,11 +9,13 @@ import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { slugify } from "@/lib/utils";
 import { coverUrl } from "@/lib/img";
 import { getTeamBadgeUrlSync } from "@/lib/teamImages";
+import { getCompetitionBadgeUrlSync } from "@/lib/competitionImages";
 import { usePendingFriends } from "@/hooks/usePendingFriends";
 import { usePendingTurns } from "@/hooks/usePendingTurns";
 import { DebateCard } from "@/components/debate/DebateCard";
 import { GamedayCard } from "@/components/home/GamedayCard";
 import { trackShare } from "@/lib/analytics/trackGame";
+import { TodaysQuestionPreview } from "@/components/home/TodaysQuestionPreview";
 import type { TodaysGame, TodaysGameStats } from "@/lib/daily-game";
 
 const LIME = "#aeea00";
@@ -369,8 +371,10 @@ function TodaysGamePlayable({ game }: { game: TodaysGame }) {
       <Link href={game.href}
         className="block rounded-2xl overflow-hidden transition-transform active:scale-[0.99]"
         style={{ border: `1px solid ${accent}40`, background: "#0c1613" }}>
-        {/* Top half — the cover art, with the game's identity over it */}
-        <div className="relative" style={{ minHeight: 146 }}>
+        {/* Top half — the cover art, with the game's identity over it. When the
+            question card is shown below, this shrinks to sit snug against it: the
+            146px art height left the lone title floating in dead space. */}
+        <div className="relative" style={{ minHeight: game.firstQuestion ? 0 : 146 }}>
           {game.coverImage ? (
             // Covers are designed cards with the title baked into the TOP; here the
             // image is a backdrop (HTML title on the left), so crop from the bottom —
@@ -383,7 +387,7 @@ function TodaysGamePlayable({ game }: { game: TodaysGame }) {
           )}
           {/* left-anchored scrim keeps the title readable on any art */}
           <div className="absolute inset-0" style={{ background: "linear-gradient(90deg, rgba(6,10,8,0.92) 0%, rgba(6,10,8,0.55) 55%, rgba(6,10,8,0.15) 100%)" }} />
-          <div className="relative flex items-center gap-3 px-4 py-4" style={{ minHeight: 146 }}>
+          <div className={`relative flex items-center gap-3 px-4 ${game.firstQuestion ? "py-3" : "py-4"}`} style={{ minHeight: game.firstQuestion ? 0 : 146 }}>
             <div className="flex-1 min-w-0">
               {/* Series identity: this is today's entry in the daily World Cup run */}
               {isWcSeries && (
@@ -393,7 +397,11 @@ function TodaysGamePlayable({ game }: { game: TodaysGame }) {
                 </span>
               )}
               <p className="font-display text-2xl text-white leading-tight" style={{ textShadow: "0 1px 12px rgba(0,0,0,0.6)" }}>{game.title}</p>
-              <p className="font-body text-xs mt-1" style={{ color: "#c4ccc6" }}>{game.sub}</p>
+              {/* The question card below is the explanation — drop the redundant
+                  "what it is" sub when it's shown (founder 2026-07-24). */}
+              {!game.firstQuestion && (
+                <p className="font-body text-xs mt-1" style={{ color: "#c4ccc6" }}>{game.sub}</p>
+              )}
             </div>
             <span className="flex items-center justify-center rounded-full flex-shrink-0" style={{ width: 36, height: 36, background: accent }}>
               <svg width="15" height="15" viewBox="0 0 18 18" fill="none" style={{ color: "#04231f" }}>
@@ -402,6 +410,12 @@ function TodaysGamePlayable({ game }: { game: TodaysGame }) {
             </span>
           </div>
         </div>
+
+        {/* Today's actual question 1, when the format has one that's safe to
+            show before anyone answers (Higher or Lower). */}
+        {game.firstQuestion && (
+          <TodaysQuestionPreview question={game.firstQuestion} accent={accent} compact />
+        )}
 
         {/* Bottom half — how everyone else has done on it */}
         {game.stats && <TodaysGameStatsStrip stats={game.stats} accent={accent} />}
@@ -427,9 +441,12 @@ function DiscoveryRail({ packs, played38 }: { packs: RecommendedPack[]; played38
       <SectionHead title={played38 ? "Because you played 38-0" : "Picked for you"} href="/play" />
       <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1 -mx-5 px-5">
         {packs.map((p) => {
-          // Club packs ("Liverpool · All Time · Mixed") without a cover show
-          // the real crest — founder call: club crests are fine to use.
-          const crest = p.cover ? null : getTeamBadgeUrlSync(p.name.split(" ·")[0]);
+          // Packs without a cover show a real badge instead of a bare letter:
+          // a club crest for club packs, a competition badge for records packs
+          // ("Champions League Records · ...", "Premier League Records · ...").
+          // Both are local /badges/*.png (founder call: crests are fine to use).
+          const seg = p.name.split(" ·")[0];
+          const crest = p.cover ? null : (getTeamBadgeUrlSync(seg) ?? getCompetitionBadgeUrlSync(seg));
           return (
           <Link key={p.id} href={`/challenges/${slugify(p.name)}`}
             className="flex-shrink-0 rounded-xl overflow-hidden flex flex-col transition-transform active:scale-[0.98]"

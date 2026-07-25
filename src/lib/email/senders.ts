@@ -620,3 +620,66 @@ export async function sendHalftimeLiveEmail(args: {
     ],
   });
 }
+
+/**
+ * 29 · Fantasy gameweek result — fired by the season tick when a gameweek
+ * finalises. The one email a fantasy manager actually opens: your score, who
+ * wore the armband, and what your knowledge round contributed.
+ * Dedupe is the CALLER's job (claimed in notification_log before sending).
+ */
+export async function sendFantasyGwResultEmail(args: {
+  userId: string; email: string; gw: number; points: number;
+  captain: string; captainPts: number; top: string; topPts: number;
+  knowledgeLine: string;
+}) {
+  const base = process.env.NEXT_PUBLIC_APP_URL ?? "https://yourscore.app";
+  const html = await renderEmail("29-fantasy-gw-result", {
+    gw: args.gw, points: args.points,
+    captain: args.captain, captain_pts: args.captainPts,
+    top: args.top, top_pts: args.topPts,
+    knowledge_line: args.knowledgeLine,
+    cta_url: `${base}/fantasy`,
+    ...buildFooterUrls(args.userId, "all"),
+  });
+  await sendOrLog("sendFantasyGwResultEmail", args.userId, {
+    from: FROM,
+    to: args.email,
+    replyTo: REPLY_TO,
+    subject: `${args.points} points in Gameweek ${args.gw}`,
+    html,
+    headers: { "X-Entity-Ref-ID": `fantasy-result-${args.gw}-${args.userId}` },
+    tags: [
+      { name: "category", value: "fantasy" },
+      { name: "template", value: "29-fantasy-gw-result" },
+    ],
+  });
+}
+
+/**
+ * 30 · Fantasy deadline nudge — ~24h out, personal (says whether YOUR round is
+ * played). The design's web-side stand-in for the mobile deadline push.
+ */
+export async function sendFantasyDeadlineEmail(args: {
+  userId: string; email: string; gw: number;
+  deadlineDay: string; deadlineTime: string; statusLine: string;
+}) {
+  const base = process.env.NEXT_PUBLIC_APP_URL ?? "https://yourscore.app";
+  const html = await renderEmail("30-fantasy-deadline", {
+    gw: args.gw, deadline_day: args.deadlineDay, deadline_time: args.deadlineTime,
+    status_line: args.statusLine,
+    cta_url: `${base}/fantasy`,
+    ...buildFooterUrls(args.userId, "all"),
+  });
+  await sendOrLog("sendFantasyDeadlineEmail", args.userId, {
+    from: FROM,
+    to: args.email,
+    replyTo: REPLY_TO,
+    subject: `Gameweek ${args.gw} locks ${args.deadlineDay} ${args.deadlineTime}`,
+    html,
+    headers: { "X-Entity-Ref-ID": `fantasy-deadline-${args.gw}-${args.userId}` },
+    tags: [
+      { name: "category", value: "fantasy" },
+      { name: "template", value: "30-fantasy-deadline" },
+    ],
+  });
+}

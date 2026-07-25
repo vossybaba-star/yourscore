@@ -17,6 +17,7 @@
 // the current featured pack so the hero is never empty or broken.
 
 import { londonDateISO, loadListForDay, loadLatestServed } from "@/lib/games/perfect10";
+import { buildRound, clientRound, dailySeed, photoForLabel, ROUND_SIZE } from "@/lib/games/serve";
 import { slugify } from "@/lib/utils";
 
 export { londonDateISO };
@@ -32,6 +33,17 @@ export interface TodaysGameStats {
   avgScore: number | null;
   /** % who got the single hardest question/rung right. null until anyone has played. */
   hardestPct: number | null;
+}
+
+/** The answer-free shape of one question, as the hero tile renders it. */
+export interface TodaysFirstQuestion {
+  prompt: string;
+  /** Shared position of the pair ("MID"), when the format carries one. */
+  position: string | null;
+  options: { id: number; label: string; photoUrl: string | null }[];
+  /** True only when BOTH players resolved to a headshot. One face and one blank
+   * looks broken, so the tile shows faces all-or-nothing. */
+  hasFaces: boolean;
 }
 
 export interface TodaysGame {
@@ -51,6 +63,12 @@ export interface TodaysGame {
   /** Crowd stats for the tile. null when the game type keeps no per-day record
    * (Higher or Lower, Guess the Player) or when the aggregate is unavailable. */
   stats: TodaysGameStats | null;
+  /** Higher or Lower only: today's ACTUAL first question, so the hero tile can
+   * BE the question instead of describing the game. Answer-free — for this
+   * format the two option labels are just the two players, and which of them
+   * has the bigger number is what the round asks. Tapping either one opens the
+   * round at question 1, still unanswered (founder 2026-07-24: "opens"). */
+  firstQuestion: TodaysFirstQuestion | null;
   /** true when today had no `daily_games` row and we fell back to the
    *  featured pack (schedule not filled yet, or fill-schedule hasn't run). */
   isFallback: boolean;
@@ -88,9 +106,11 @@ export function gameTypeForDay(dateISO: string = londonDateISO()): DailyGameType
 // src/app/api/games/[type]/route.ts). Perfect 10 and quiz are already pinned
 // by date via their own tables, so no flag needed there.
 const FIXED_GAME_META: Record<Exclude<DailyGameType, "quiz">, { href: string; title: string; sub: string }> = {
-  "perfect-10": { href: "/play/game/perfect-10", title: "Perfect 10", sub: "Name the ranked top 10 — today's list" },
-  "higher-lower": { href: "/play/game/higher-lower?daily=1", title: "Higher or Lower", sub: "Two players, one stat — pick the bigger number" },
-  "guess-the-player": { href: "/play/game/guess-the-player?daily=1", title: "Guess the Player", sub: "Clues drip in — name the mystery footballer" },
+  // No trailing full stops: the signed-out tile appends "· play free, no
+  // sign-in needed", and "bigger number. · play free" reads like a typo.
+  "perfect-10": { href: "/play/game/perfect-10", title: "Perfect 10", sub: "Name the ranked top 10, today's list" },
+  "higher-lower": { href: "/play/game/higher-lower?daily=1", title: "Higher or Lower", sub: "Two players, one stat, pick the bigger number" },
+  "guess-the-player": { href: "/play/game/guess-the-player?daily=1", title: "Guess the Player", sub: "Clues drip in, name the mystery footballer" },
 };
 
 // `daily_games` isn't in the generated Database types (see src/types/database.ts
@@ -114,8 +134,36 @@ function packToGame(day: string, gameType: "quiz", pack: any, isFallback: boolea
     series: pack.metadata?.series ? String(pack.metadata.series) : null,
     listId: null,
     stats: null,
+    firstQuestion: null, // quiz tiles lead with their cover art, not a question
     isFallback,
   };
+}
+
+/** Today's pinned Higher or Lower question 1, rebuilt from the same London-date
+ * seed the game route uses for `?daily=1`, so the tile and the round cannot
+ * disagree. Pure + local (the pool is bundled JSON) — no extra round trip on
+ * the home render. Only Higher or Lower: the other formats' single photo and
+ * drip-fed clues belong to the ANSWER, so nothing there is safe to preview. */
+function firstQuestionFor(gameType: DailyGameType, day: string): TodaysFirstQuestion | null {
+  if (gameType !== "higher-lower") return null;
+  try {
+    const q = clientRound(buildRound("higher-lower", dailySeed(day), ROUND_SIZE))[0];
+    if (!q || q.options.length < 2) return null;
+    const options = q.options.map((o) => ({
+      id: o.id,
+      label: o.label,
+      photoUrl: photoForLabel(o.label) ?? null,
+    }));
+    return {
+      prompt: q.prompt,
+      position: q.position ?? null,
+      options,
+      hasFaces: options.every((o) => o.photoUrl !== null),
+    };
+  } catch {
+    // A tile that can't build its question still has a title and a sub.
+    return null;
+  }
 }
 
 function fixedGame(day: string, gameType: Exclude<DailyGameType, "quiz">, isFallback: boolean): TodaysGame {
@@ -133,6 +181,7 @@ function fixedGame(day: string, gameType: Exclude<DailyGameType, "quiz">, isFall
     series: null,
     listId: null,
     stats: null,
+    firstQuestion: firstQuestionFor(gameType, day),
     isFallback,
   };
 }
@@ -274,6 +323,7 @@ export async function resolveTodaysGame(sb: AnySupabase, day: string = londonDat
     series: null,
     listId: null,
     stats: null,
+    firstQuestion: null,
     isFallback: true,
   };
 }

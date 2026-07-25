@@ -1,0 +1,25 @@
+{
+  "_readme": "Sources for the fantasy news hub (/fantasy/news). These are VERIFIED SOURCES surfaced to users as-is — we do NOT reword them (that's the x-track/social pipeline's job, and a different product). We link out and credit. Keep the list tight: the feed is judged on signal, not volume.",
+  "tweets": {
+    "perAccount": 3,
+    "accounts": [
+      { "username": "FabrizioRomano", "topic": "transfer", "note": "transfer breaking news" },
+      { "username": "David_Ornstein", "topic": "transfer", "note": "the other trusted transfer source" },
+      { "username": "OptaJoe", "topic": "general", "note": "records + milestones, good fantasy context" },
+      { "username": "PhysioRoomCom", "topic": "team-news", "note": "injury news — closest thing we have to an injuries feed" },
+      { "username": "OfficialFPL", "topic": "team-news", "note": "official fantasy announcements" }
+    ]
+  },
+  "articles": {
+    "perFeed": 4,
+    "feeds": [
+      { "url": "https://feeds.bbci.co.uk/sport/football/premier-league/rss.xml", "source": "BBC Sport", "topic": "general" },
+      { "url": "https://www.theguardian.com/football/premierleague/rss", "source": "The Guardian", "topic": "general" },
+      { "url": "https://www.fantasyfootballscout.co.uk/feed/", "source": "Fantasy Football Scout", "topic": "team-news" }
+    ]
+  },
+  "relevance": {
+    "_note": "An item must mention a Premier League club (or an obvious fantasy term) to reach the feed. The hub is PL-only, like our SportMonks plan — a Serie A transfer rumour is noise to a fantasy manager.",
+    "fantasyTerms": ["fpl", "fantasy", "gameweek", "captain", "clean sheet", "injury", "injured", "doubt", "ruled out", "returns", "fitness"]
+  }
+}

@@ -200,8 +200,13 @@ export default function ClubPage() {
     // 72px of bottom padding, not 48: the tab bar is rendered on this page (it is a hub, not a
     // terminal screen), so the last row of topic cards has to clear it.
     <div className="min-h-screen bg-bg" style={{ paddingBottom: "calc(72px + env(safe-area-inset-bottom, 0px))" }}>
-      <div className="max-w-lg mx-auto px-4 pt-4">
-        <BackPill fallback="/play" label="Back" tone="play" />
+      {/* pt-safe: /club has no GamesNav above it, so the pill sits at the very top of
+          the viewport — without the safe-area inset it lands under the iOS status bar /
+          Dynamic Island and can't be tapped (founder report, back button unclickable). */}
+      <div className="max-w-lg mx-auto px-4 pt-safe">
+        <div className="pt-4">
+          <BackPill fallback="/play" label="Back" tone="play" />
+        </div>
       </div>
 
       {loading && (

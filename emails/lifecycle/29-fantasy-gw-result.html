@@ -1,0 +1,72 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="x-apple-disable-message-reformatting">
+  <meta name="color-scheme" content="dark">
+  <meta name="supported-color-schemes" content="dark">
+  <title>Your gameweek result — YourScore Fantasy Football</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    body, table, td { margin:0; padding:0; }
+    img { border:0; line-height:100%; outline:none; text-decoration:none; }
+    table { border-collapse:collapse; }
+    a { color:#00ff87; text-decoration:none; }
+    .btn { transition:transform .1s ease; }
+    .btn:hover { transform:translateY(-1px); }
+    @media (max-width: 600px) {
+      .container { width:100% !important; }
+      .px { padding-left:24px !important; padding-right:24px !important; }
+      .headline { font-size:32px !important; line-height:36px !important; }
+      .stat-num { font-size:32px !important; }
+      .stat-cell { display:block !important; width:100% !important; padding:12px 0 !important; }
+    }
+  </style>
+</head>
+<body style="margin:0; padding:0; background:#0a0a0f; font-family:'DM Sans', Helvetica, Arial, sans-serif; color:#ffffff;">
+  <div style="display:none; max-height:0; overflow:hidden; mso-hide:all; font-size:1px; line-height:1px; color:#0a0a0f; opacity:0;">{{points}} points in Gameweek {{gw}}. {{captain}} wore the armband.</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0a0a0f;">
+    <tr><td align="center" style="padding:32px 16px;">
+      <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px; max-width:600px;">
+        <tr><td class="px" style="padding:0 40px 24px;">
+          <div style="font-family:'Bebas Neue', Impact, sans-serif; font-size:28px; letter-spacing:2px; color:#ffffff;">YOURSCORE</div>
+        </td></tr>
+        <tr><td class="px" style="padding:0 40px;">
+          <div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:2px;color:#8888aa;text-transform:uppercase;">YourScore Fantasy Football &middot; Gameweek {{gw}}</div>
+          <div class="headline" style="font-family:'Bebas Neue',Impact,sans-serif;font-size:40px;line-height:44px;color:#ffffff;margin-top:10px;">Your team scored.</div>
+        </td></tr>
+        <tr><td class="px" style="padding:24px 40px 0;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#12121e;border:1px solid rgba(255,255,255,0.08);border-radius:16px;">
+            <tr><td style="padding:24px 28px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+                <td class="stat-cell" align="left" style="padding:0;width:34%;"><div class="stat-num" style="font-family:'Bebas Neue',Impact,sans-serif;font-size:44px;line-height:1;color:#ffb800;">{{points}}</div><div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;color:#8888aa;letter-spacing:1.5px;text-transform:uppercase;margin-top:6px;">Points</div></td>
+                <td class="stat-cell" align="center" style="padding:0;width:33%;"><div class="stat-num" style="font-family:'Bebas Neue',Impact,sans-serif;font-size:28px;line-height:1;color:#ffffff;">{{captain}}</div><div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;color:#8888aa;letter-spacing:1.5px;text-transform:uppercase;margin-top:6px;">Captain &middot; {{captain_pts}} pts</div></td>
+                <td class="stat-cell" align="right" style="padding:0;width:33%;"><div class="stat-num" style="font-family:'Bebas Neue',Impact,sans-serif;font-size:28px;line-height:1;color:#00ff87;">{{top}}</div><div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;color:#8888aa;letter-spacing:1.5px;text-transform:uppercase;margin-top:6px;">Top scorer &middot; {{top_pts}} pts</div></td>
+              </tr></table>
+            </td></tr>
+          </table>
+        </td></tr>
+        <tr><td class="px" style="padding:20px 40px 0;">
+          <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:15px;line-height:23px;color:#ccccdd;">{{knowledge_line}} The next round is open now &mdash; right answers earn the transfers that improve this team.</p>
+        </td></tr>
+        <tr><td class="px" align="left" style="padding:28px 40px 8px;">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td class="btn" style="background:#ffb800;border-radius:12px;">
+            <a href="{{cta_url}}" style="display:inline-block;color:#0a0a0f;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;letter-spacing:0.5px;padding:18px 36px;border-radius:12px;">See the full breakdown &nbsp;&rarr;</a>
+          </td></tr></table>
+        </td></tr>
+        <tr><td class="px" style="padding:48px 40px 24px; border-top:1px solid rgba(255,255,255,0.08);">
+          <p style="margin:0 0 8px; font-family:'DM Sans', Helvetica, Arial, sans-serif; font-size:12px; line-height:18px; color:#8888aa;">
+            <a href="{{PAUSE_URL}}" style="color:#8888aa; text-decoration:underline;">Pause emails</a> &nbsp;·&nbsp;
+            <a href="{{UNSUB_URL}}" style="color:#8888aa; text-decoration:underline;">Unsubscribe</a> &nbsp;·&nbsp;
+            <a href="https://yourscore.app/support" style="color:#8888aa; text-decoration:underline;">Support</a>
+          </p>
+          <p style="margin:0; font-family:'Bebas Neue', Impact, sans-serif; font-size:14px; letter-spacing:1.5px; color:#8888aa;">YOURSCORE · YOUR FOOTBALL KNOWLEDGE. RANKED.</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>

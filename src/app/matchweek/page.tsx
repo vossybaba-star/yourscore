@@ -6,7 +6,7 @@
  *
  *   Matchweek  → sub-tabs News · Table · Fixtures  (the Premier League week)
  *   Live Quiz  → halftime quiz packs + "call the second half" · club-fan ranks
- *   Fantasy    → the holding screen until the game opens with the season
+ *   Fantasy    → the game itself: squad, round, transfers, leagues
  *
  * The TAB is "PL" (founder, 2026-07-16) — everything in here is the Premier
  * League: the halftime quizzes are PL fixtures, Fantasy is a PL squad. The first
@@ -20,7 +20,7 @@
  * blank screen.
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { GamedayRail } from "@/components/quiz/GamedayRail";
 import { ClubPicker } from "@/components/clubs/ClubPicker";
 import { ClubTableTile } from "@/components/clubs/ClubTableTile";
@@ -34,7 +34,10 @@ import { UpcomingQuizzes } from "@/components/matchweek/UpcomingQuizzes";
 import { StandaloneHalftimePoll } from "@/components/matchweek/StandaloneHalftimePoll";
 import { QuizStatTiles } from "@/components/matchweek/QuizStatTiles";
 import { LiveQuizIntro } from "@/components/matchweek/LiveQuizIntro";
-import { FantasyHold } from "@/components/matchweek/FantasyHold";
+import { HowItWorksTile } from "@/components/matchweek/HowItWorksTile";
+import { FantasyHub } from "@/components/fantasy/FantasyHub";
+import { fantasyVisible } from "@/lib/fantasy/flag";
+import { useUser } from "@/hooks/useUser";
 import { BottomNav } from "@/components/ui/BottomNav";
 
 const TEAL = "#00d8c0";
@@ -44,7 +47,7 @@ type PlTab = "news" | "table" | "fixtures";
 
 const SECTIONS: { key: Section; label: string }[] = [
   { key: "pl", label: "Matchweek" },
-  { key: "live", label: "Live Quiz" },
+  { key: "live", label: "Gameday Quiz" },
   { key: "fantasy", label: "Fantasy" },
 ];
 const PL_TABS: { key: PlTab; label: string }[] = [
@@ -55,6 +58,16 @@ const PL_TABS: { key: PlTab; label: string }[] = [
 
 export default function MatchweekPage() {
   const [section, setSection] = useState<Section>("pl");
+  // Fantasy is built but not open to users yet (founder, 24 Jul). Resolved after
+  // mount, not during render: the answer depends on sessionStorage and the URL,
+  // and reading those while rendering would mismatch the server HTML and blow up
+  // hydration on every page load.
+  const [showFantasy, setShowFantasy] = useState(false);
+  // Resolved after the signed-in user is known: while gated, the tab shows only
+  // for the founder allowlist (or a ?fantasy=preview session), and stays hidden
+  // for everyone else.
+  const { user } = useUser();
+  useEffect(() => { setShowFantasy(fantasyVisible(user?.id)); }, [user]);
   // One shared reminders store for the section — AppNudge reads the same state
   // the buttons write, so the app pitch appears once, not once per card.
   const reminders = useReminders();
@@ -64,18 +77,26 @@ export default function MatchweekPage() {
     <div className="min-h-screen bg-bg" style={{ paddingBottom: 96 }}>
       {/* Header — titled for the TAB, not the section. Leaving this as
           "MATCHWEEK" would have re-created the collision one level down: a page
-          called Matchweek whose first section is also Matchweek. */}
-      <div className="max-w-lg mx-auto px-4 pt-8 pb-3">
+          called Matchweek whose first section is also Matchweek.
+
+          /matchweek is the one main tab with no GamesNav above it, so nothing
+          else supplies the notch inset — without it the title sat under the iOS
+          status-bar clock (founder, 25 Jul). Clear the inset here so this tab
+          starts where every other tab starts. */}
+      <div
+        className="max-w-lg mx-auto px-4 pb-3"
+        style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 22px)" }}
+      >
         <h1 className="font-display text-3xl text-white leading-none">PREMIER LEAGUE</h1>
         <p className="font-body text-sm mt-1.5" style={{ color: "#8a948f" }}>
-          The week · live quizzes · fantasy
+          The week · gameday quiz · fantasy
         </p>
       </div>
 
       {/* Top-level section bar */}
       <div className="max-w-lg mx-auto px-4" data-tour="pl-sections">
         <div className="flex gap-1.5 p-1 rounded-2xl" style={{ background: "rgba(255,255,255,0.04)" }}>
-          {SECTIONS.map((s) => {
+          {SECTIONS.filter((s) => s.key !== "fantasy" || showFantasy).map((s) => {
             const on = section === s.key;
             return (
               <button
@@ -118,10 +139,16 @@ export default function MatchweekPage() {
         </>
       )}
 
-      {/* ── Live Quiz ───────────────────────────────────────────────────── */}
+      {/* ── Gameday Quiz ────────────────────────────────────────────────── */}
       {section === "live" && (
         <div className="pt-1">
-          {/* Headlines first: what Live Quiz IS, before anything it shows you. */}
+          {/* A one-tap door to the full explainer, before the headline. */}
+          <HowItWorksTile
+            href="/gameday-quiz"
+            title="How Gameday Quiz works"
+            sub="Packs, scoring and playing for your club, in short."
+          />
+          {/* Headlines first: what Gameday Quiz IS, before anything it shows you. */}
           <LiveQuizIntro />
           {/* Web fan just set a reminder → lead with the app (email is the fallback). */}
           <AppNudge reminders={reminders} />
@@ -137,7 +164,9 @@ export default function MatchweekPage() {
       )}
 
       {/* ── Fantasy — holding screen until the game opens with the season ─── */}
-      {section === "fantasy" && <FantasyHold />}
+      {/* The real game. This section used to be a pre-launch holding screen;
+          it is now the squad itself. */}
+      {section === "fantasy" && showFantasy && <FantasyHub embedded />}
 
       <BottomNav />
     </div>

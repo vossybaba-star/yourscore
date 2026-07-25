@@ -99,6 +99,15 @@ input, textarea, select {
   to { transform: rotate(360deg); }
 }
 
+/* Indeterminate sweep for the BottomNav route-transition bar. Every screen is
+   fetched from the server, so a tab tap on a cold connection can sit for seconds
+   while the App Router keeps the old screen on display. This is the proof that
+   the tap registered. Indeterminate because we have no idea how long it'll be. */
+@keyframes navSweep {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(300%);  }
+}
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0);   }
@@ -147,7 +156,20 @@ input, textarea, select {
   50%      { filter: drop-shadow(0 0 26px rgba(255,215,0,0.7)); }
 }
 
+/* Fantasy: the primary action breathes, so the thing to do next is obvious
+   without shouting. Teal because that's the knowledge accent. */
+@keyframes fantasyGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0,216,192,0.0), 0 6px 18px -6px rgba(0,216,192,0.45); }
+  50%      { box-shadow: 0 0 0 6px rgba(0,216,192,0.10), 0 8px 26px -6px rgba(0,216,192,0.75); }
+}
+
 @layer utilities {
+  /* Pulsing glow for the one action a screen wants you to take. */
+  .animate-fantasy-glow { animation: fantasyGlow 2.6s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce) {
+    .animate-fantasy-glow { animation: none; box-shadow: 0 6px 18px -6px rgba(0,216,192,0.5); }
+  }
+
   .text-balance {
     text-wrap: balance;
   }
@@ -353,4 +375,39 @@ input, textarea, select {
 @keyframes ten-pop {
   0% { transform: translateY(3px); opacity: 0; }
   100% { transform: translateY(0); opacity: 1; }
+}
+
+/* ── Fantasy: a focus ring you can actually see ──────────────────────────────
+   Every control on the fantasy surfaces is an inline-styled <button>, so nothing
+   sets a focus style and the browser default (a thin blue-black outline) is
+   invisible on the #080d0a ground. A keyboard user could tab through the whole
+   squad screen with no idea where they were. Scoped to fantasy so it can't
+   surprise the rest of the app. */
+[data-fantasy] :focus-visible {
+  outline: 2px solid #00d8c0;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── Fantasy loading skeletons ───────────────────────────────────────────────
+   A shimmer that reads as "filling in" rather than "frozen". Decoration only —
+   reduced-motion users get a static block, which is still a correctly-sized
+   placeholder, just without the sweep. */
+.ys-skel {
+  position: relative;
+  overflow: hidden;
+}
+.ys-skel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+  animation: ys-skel-sweep 1.4s ease-in-out infinite;
+}
+@keyframes ys-skel-sweep {
+  100% { transform: translateX(100%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ys-skel::after { animation: none; content: none; }
 }

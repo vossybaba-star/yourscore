@@ -6,7 +6,39 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-07-23 (**Signed-out home page rewritten around the rank, and a batch of
+> **Confirmed:** 2026-07-24 late (**Higher or Lower and Guess the Player now keep a score, and the
+> daily Higher or Lower tile IS the question.** Shipped to prod as `49f7f11`.
+> **The leak this closed:** a `/ux-walk` found those two games told every player "Practice mode:
+> these don't count on the leaderboard yet" — accurate, because they persisted **nothing**. A guest
+> finished a round owning nothing and was asked for nothing.
+> **Scores now persist** (`game_scores`, mig 112; board + rank functions, mig 113 — both already on
+> prod). Rows are written only from a **server-side re-grade**: the client posts its seed and its
+> taps, the round is rebuilt from that seed and rescored on the server, so a client cannot post a
+> score. One banked run per seed per player.
+> **The results screen** gets the Quiz's guest block — score, the rank it would take, `SIGN UP &
+> SAVE SCORE`, share. A guest run is parked locally and **claimed on the way back in**, so signing
+> up genuinely banks the score it promised. Each game gets a **leaderboard on its own intro screen**
+> (best per player, not per run) rather than a route nobody would find.
+> **Sign in** takes the fifth **guest** nav slot: every other route to it was reactive (trip a gate,
+> get bounced), so someone with an account on a new phone could not *choose* to sign in.
+> **Today's Game tile** for Higher or Lower now renders today's **actual first question with both
+> players' faces**, rebuilt from the same London-date seed the round uses; tapping opens that exact
+> question, unanswered ("opens", not "counts").
+> **The question pool was a season stale** — its ids were 2025/26 FPL elements, reassigned every
+> summer, and ~40 players it named had left the league, capping headshots at 65%. New generator
+> `scripts/games/build-pool.mjs` rebuilds it from live FPL (plus SportMonks for ages, which FPL does
+> not publish); official PL headshots now resolve for **240/240** questions. Difficulty is fitted
+> from the old pool (0.904 correlation with closeness) so rounds keep their feel. `who-am-i`,
+> `career-path` and `classic-trivia` are copied through untouched.
+> **FPL points** joins Higher or Lower as a pickable topic (`HL_TOPICS`), held to **at most one
+> question in ~a quarter of mixed rounds** — a fantasy-manager question, not a football-knowledge
+> one, so pickable but never pushed.
+> **STILL OPEN:** Guess the Player's tile is still text-only (its clues and single photo belong to
+> the answer, so nothing there is safe to preview); the `price` questions (60) remain generated but
+> unserved; the pool's prompts still say "2025/26" and the generator warns to bump `SEASON_LABEL`
+> the first time it runs after a gameweek is actually played.)
+>
+> **Previously confirmed:** 2026-07-24 (**Signed-out home page rewritten around the rank, and a batch of
 > guest-flow fixes.** Shipped to prod as `b024193`.
 > **Positioning:** the landing page led with 38-0 and a World Cup that finished on 19 Jul. It now
 > leads with **YOUR FOOTBALL KNOWLEDGE. RANKED.** The rank is the product: quizzes, gameday,
@@ -529,6 +561,32 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-24** — **App Store rating asks are counted, and paced by Games played** (migrations
+  104 + 105). We could not previously answer "how many review requests have we made?" for any
+  surface, ever: the post-game ask was gated by a localStorage stamp that left no server-side
+  trace and reset on reinstall, so 7 GB ratings had no denominator. `review_prompts` now logs
+  every ask shown, with surface, variant and outcome. Three behaviour changes with it. **The ask
+  no longer requires a win** — it needed a points increase measured against an on-device rank
+  snapshot, so it skipped anyone on a bad run and could never fire on a returning player's first
+  Game on a new phone. **Apple's native star popup is gone**: it converts better, but Apple never
+  reports who rated through it, so "once they rate we stop asking" could not be honoured there.
+  Every ask is now our own card, which is observable, and acting on it is terminal and lifetime.
+  **The schedule counts Games, not days** — asks land on Games 3, 6, 10, 15, then the gap widens
+  by one each time (21, 28, 36…). `profiles.games_played` was the obvious home for the count and
+  is dead (0 across all 10,001 rows, written by nothing); `player_game_counts` replaces it, seeded
+  from every real play record across all games and both sides of 38-0 (7,146 players, 70,104
+  Games) so veterans are not treated as new. Card copy rewritten to lead with the ask and give a
+  reason the player benefits. ⚠️ The copy names the Premier League and **needs swapping on
+  2026-08-21**. Related: the iOS app is delisted across all 27 EU storefronts (Ireland 404s),
+  which caps ratings far harder than prompt frequency does.
+
+- **2026-07-24** — **Club page: back button reachable, and back retraces your steps** (founder).
+  `/club/[slug]` has no GamesNav above it, so the back pill sat at the very top of the viewport —
+  under the iOS status bar / Dynamic Island — and couldn't be tapped; it now takes the safe-area
+  inset (`pt-safe`). Separately, the Quiz hub's solo sub-tab (Featured / World Cup / **Club** /
+  Records) was local state the nav trail couldn't see, so tapping back from a club landed on a
+  reset-to-Featured `/play`. The sub-tab is mirrored in the URL now (`/play?solo=club`), so
+  smart-back retraces to the exact tab the player left.
 - **2026-07-23 (late)** — **Pro's club ask is a POP-UP, not a section** (founder). A 20-crest
   grid sitting inline pushed the formation picker and the draft button off the screen and read
   as another form to fill in before you could play. It's now a sheet on the same pattern as the
@@ -742,6 +800,35 @@ Confirmed preamble above and the referenced section.
   timing replay, keep-playing panel all unchanged. Owner-side revenge push + the
   `/versus/shadow/[userId]` library still use "run" language — deliberately untouched
   (founder gave no preference; revisit if inconsistent).
+- **2026-07-24** — **Fantasy Football: STILL NOT LIVE TO USERS — branch `fantasy/season`.**
+  The game is built and the 26/27 season is cut over, but it is deliberately gated: read it
+  as *ready to test*, not shipped, until the founder opens it.
+  **What changed on 24 Jul:**
+  **(1) THE 26/27 CUTOVER IS DONE.** FPL published its 26/27 bootstrap, so the pool was rebuilt
+  (season 25583 → 28083, 522 players, 20 clubs, 100% smId coverage among regulars: Coventry,
+  Hull and Ipswich in; Burnley, West Ham and Wolves out) and the real 38-gameweek calendar was
+  seeded. GW1 deadline **2026-08-21 17:30Z**. The demo was wiped — squads, entries and
+  player-scores are zero — **leagues and their members were kept on purpose**.
+  ⚠️ `fantasy_gameweeks` is keyed on `gw` alone so it holds ONE season: a single leftover
+  replay row puts the whole game back into replay and prices every squad at seed. Verified
+  zero replay rows after the cutover.
+  ⚠️ `pool.json` is a static import baked into the build, so the pool only reaches users on
+  DEPLOY, and `/api/fantasy/pool` sets `s-maxage=3600` — expect up to an hour of the old pool
+  from the CDN after a ship unless it is purged.
+  **(2) THE BASELINE TRANSFER.** Everyone gets one transfer per gameweek, granted at gameweek
+  finalise to every entry including rolled-over managers; the round earns EXTRA ones on top.
+  This makes the PL-tab pitch ("One transfer. Earn the rest.") literally true — before 22 Jul
+  the engine gave no baseline, so a 2/11 round meant a squad you could not touch. It caps
+  rather than cashing out, and the grant rides the scored → final compare-and-swap so a
+  double-tap cannot mint two (verified under a real concurrent request).
+  **(3) FANTASY IS A PL SECTION, NOT A STANDALONE ROUTE** — reconciled with the nav canon (§9).
+  It renders inside the Premier League tab; `/fantasy` survives only as a deep-link target for
+  share cards, result emails and the deadline push, and renders the bottom nav so it is not a
+  dead end.
+  **Still open before it can face users:** no live gameweek has ever run itself end to end
+  (the engine is drilled but no real deadline has locked → ingested → scored → finalised on
+  its own), and replay-mode testing is no longer available now that the season is live.
+
 - **2026-07-20** — **Perfect 10 gets its own share card (founder)** — a shared Perfect 10
   link used to unfurl the platform-wide YourScore card, which said nothing about the game.
   New `/api/og/perfect-10` renders **the tower itself**: ten tapering rungs, gold where the
