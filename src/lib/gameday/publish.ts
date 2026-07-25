@@ -2,6 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServiceClient } from "@/lib/supabase/service";
 import { notifyUsers } from "@/lib/notify";
+import { sendHalftimeLiveEmail } from "@/lib/email/senders";
 import { slugify } from "@/lib/utils";
 import {
   GAMEDAY_PUSH_PREFIX,
@@ -72,8 +73,16 @@ export interface PublishOutcome {
   packId: string | null;
   slug: string | null;
   pushTargeted: number;
+  /** Web fallback: reminder-setters with no device token who were emailed.
+   *  Optional — only the successful-publish path sets it; treat absent as 0. */
+  emailTargeted?: number;
   reason?: string;
 }
+
+/** notification_log key prefix for the email fallback. Deliberately NOT a
+ *  "gameday:" prefix so it can't collide with the push daily-cap query
+ *  (`like 'gameday:%'`) — email is a separate channel with its own once-claim. */
+const GAMEDAY_EMAIL_PREFIX = "gameday-email:";
 
 export async function getGamedayRow(fixtureId: number): Promise<GamedayRow | null> {
   const { data } = await db()
@@ -236,6 +245,104 @@ async function pushForFixture(row: GamedayRow, slug: string): Promise<number> {
 }
 
 /**
+ * The WEB fallback for "Notify me" (founder, 2026-07-25). Push is native-only
+ * (notify.ts), so a web fan who tapped "Notify me" on this fixture would get a
+ * saved row and NOTHING delivered. This closes that: at publish, email the
+ * reminder-setters who have no device token — the web majority — with the same
+ * "pack is live" message the push carries.
+ *
+ * Deliberately narrow, so it keeps a promise without becoming a blast:
+ *   • ONLY explicit reminder-setters (halftime_reminders) — never club fans at
+ *     large. We email the people who asked for THIS match, nobody else.
+ *   • ONLY those with no device_tokens row — email is a fallback, not a second
+ *     copy for someone the push already reached.
+ *   • Suppression-aware (email_suppressions) and once-per-(user,fixture) via a
+ *     notification_log claim inserted BEFORE send, so a cron re-run can't
+ *     double-email. Best-effort: never throws, never blocks publish.
+ */
+async function emailForFixture(row: GamedayRow, slug: string): Promise<number> {
+  try {
+    if (!row.pack_id || isRecap(row)) return 0;
+    const raw = db();
+
+    const { data: subs } = await raw
+      .from("halftime_reminders")
+      .select("user_id")
+      .eq("fixture_id", row.fixture_id);
+    let ids = Array.from(new Set(((subs ?? []) as { user_id: string }[]).map((r) => r.user_id)));
+    if (!ids.length) return 0;
+
+    // Email is the fallback — anyone with a device token is a push target, not
+    // an email one. Skip them so nobody gets both.
+    const { data: toks } = await raw.from("device_tokens").select("user_id").in("user_id", ids);
+    const hasToken = new Set(((toks ?? []) as { user_id: string }[]).map((r) => r.user_id));
+    ids = ids.filter((id) => !hasToken.has(id));
+    if (!ids.length) return 0;
+
+    // Once-per-(user,fixture): drop anyone already claimed on a prior run.
+    const key = `${GAMEDAY_EMAIL_PREFIX}${row.fixture_id}`;
+    const { data: sent } = await raw
+      .from("notification_log")
+      .select("user_id")
+      .eq("key", key)
+      .in("user_id", ids);
+    const already = new Set(((sent ?? []) as { user_id: string }[]).map((r) => r.user_id));
+    ids = ids.filter((id) => !already.has(id)).slice(0, MAX_PUSH_PER_RUN);
+    if (!ids.length) return 0;
+
+    // Resolve emails (they live in auth), then drop suppressed addresses.
+    const emails = new Map<string, string>();
+    for (const id of ids) {
+      const { data } = await raw.auth.admin.getUserById(id);
+      const email = data?.user?.email;
+      if (email) emails.set(id, email);
+    }
+    if (!emails.size) return 0;
+    const { data: sup } = await raw
+      .from("email_suppressions")
+      .select("email")
+      .in("email", Array.from(emails.values()));
+    const suppressed = new Set(((sup ?? []) as { email: string }[]).map((r) => r.email));
+    for (const [id, email] of Array.from(emails)) if (suppressed.has(email)) emails.delete(id);
+    if (!emails.size) return 0;
+
+    // Claim BEFORE sending — a retry after a partial failure won't double-send.
+    const { error: logErr } = await raw
+      .from("notification_log")
+      .insert(Array.from(emails.keys()).map((user_id) => ({ user_id, key })));
+    if (logErr) {
+      console.error("[gameday/publish] email claim insert failed", row.fixture_id, logErr);
+      return 0;
+    }
+
+    const base = process.env.NEXT_PUBLIC_APP_URL ?? "https://yourscore.app";
+    const ctaUrl = `${base}${packUrl(slug, row.pack_id)}`;
+    let count = 0;
+    for (const [userId, email] of Array.from(emails)) {
+      await sendHalftimeLiveEmail({
+        userId,
+        email,
+        subject: `${row.home} v ${row.away} — your quiz pack is live`,
+        preheader: "Ten questions, set the day before kick-off. Play now.",
+        badge: "Gameday Quiz · Live",
+        headline: `${row.home} v ${row.away}`,
+        subline:
+          "Your quiz pack just dropped. Ten questions, set the day before kick-off — play it before the match.",
+        ctaLabel: "Play the pack",
+        ctaUrl,
+        appUrl: base,
+        refId: `gameday-email-${row.fixture_id}-${userId}`,
+      });
+      count++;
+    }
+    return count;
+  } catch (err) {
+    console.error("[gameday/publish] emailForFixture failed", row.fixture_id, err);
+    return 0;
+  }
+}
+
+/**
  * Publish a fixture's pack. Idempotent and safe to call concurrently, though
  * the daily cron is its only caller in production (AC9 exercises it 3x
  * concurrently anyway).
@@ -320,10 +427,12 @@ export async function publishFixture(fixtureId: number): Promise<PublishOutcome>
   }
 
   const pushTargeted = await pushForFixture(row, slug);
+  // Web fallback: email the reminder-setters a push can't reach (no device token).
+  const emailTargeted = await emailForFixture(row, slug);
 
   return {
     fixtureId, state: "published", published: true, already: false,
-    packId: row.pack_id, slug, pushTargeted,
+    packId: row.pack_id, slug, pushTargeted, emailTargeted,
   };
 }
 
