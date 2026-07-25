@@ -12,14 +12,16 @@ nobody can find after the final.
 All **22 daily quiz files** in `content/daily-quizzes/`, **330 questions**, spanning
 **11 June → 2 July 2026** (opening day through the Round of 32).
 
-### ⚠️ Coverage gap — the committed content stops at the Round of 32
-The tournament ran to the **19 July final**, but the committed daily files end on
-**2 July**. The Round of 16, quarter-finals, semis and final dailies are **not in the
-repo** — they were almost certainly authored straight into `quiz_packs` via the Telegram
-gate and never committed as `content/` files. This review and these packs therefore cover
-only what is committed. There is **no `.env.local` in this environment**, so the later
-days could not be pulled from the database to fold in. To extend the packs (a "Road to the
-Final" / "Champions" pack), re-run this review with DB access.
+### ⚠️ Coverage gap — the reachable content stops at the quarter-finals
+The tournament ran to the **19 July final**. The committed daily files
+(`content/daily-quizzes/`) end on **2 July** (Round of 32). A further nine days of
+knockout content — **Round of 16 through the quarter-final line-ups, 3–10 July** — survive
+inside `src/data/draft/wc-quiz.json` (the Mastermind question bank, `generatedFrom` lists
+them), and were reviewed here. But the **semi-finals and final (11–19 July) are nowhere in
+the repo**, and there is **no `.env.local`/service-role key in this environment** to pull
+them from the database. A "Road to the Final" / champions pack was therefore **skipped by
+the founder** rather than built on invented results — it can be added once the 11–19 July
+content is reachable.
 
 ## Quality verdict
 
@@ -63,14 +65,17 @@ from the dailies (every pack lists its `curated_from` source files):
 | Hosts With the Most: USA, Canada and Mexico | `hosts` | Canada's first knockout run, Mexico's perfect group |
 | Opening Day Chaos: Kickoff, Mascots and Mayhem | `opening` | Three red cards, the mascots, Labubu, hidden sponsor names |
 | Knockout Drama: The Round of 32 | `knockouts` | Kane's rescue, Belgium's comeback, Brazil edge Japan |
-| Fairytales and First Timers: The Minnows of 2026 | `debutants` | Curaçao's debut, Eloy Room's 15 saves, Cape Verde in the last 32 |
+| Small Nations, Big Nights | `debutants` | Curaçao's debut, Eloy Room's 15 saves, Cape Verde in the last 32 |
 
 Each pack keeps a spread of easy → expert questions and slug-safe names (no apostrophes,
 no intra-word hyphens) so the `[slug]` challenge route resolves.
 
 ## Publishing
 
-Not seeded (this environment has no `.env.local` / service-role key). To publish when ready:
+**Not yet live.** Publishing a pack is a write to `quiz_packs`, which needs the
+service-role key — and this environment has **no `.env.local` and no injected secrets**, so
+the packs cannot be seeded from here. They are validated and seed-ready; run the seeder from
+somewhere the secret exists:
 
 ```bash
 node scripts/seed-wc-packs.mjs            # DRY RUN — validates, previews, writes nothing

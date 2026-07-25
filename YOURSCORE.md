@@ -567,13 +567,16 @@ Confirmed preamble above and the referenced section.
   11 Jun → 2 Jul (opening day to the Round of 32). Real-world anchors and the internal
   tournament narrative both check out; no corrections needed. Distilled and de-duplicated into
   7 curated 15-question theme packs in `content/wc-packs/` (Messi's records, the milestones,
-  the upsets, the hosts, opening-day chaos, the Round of 32, the minnows) so the World Cup
-  content survives as a browsable back-catalogue instead of 22 dated dailies. New seeder
-  `scripts/seed-wc-packs.mjs` (dry-run default, name-keyed option shuffle, metadata merge).
-  Deliberately **not** tagged `series: "wc2026"` (that board was a closed competition). ⚠️ The
-  committed dailies **stop at the Round of 32 (2 Jul)** — the R16→final days were authored
-  straight to `quiz_packs`, not committed, and this env has no `.env.local` to pull them, so a
-  "Road to the Final" pack is deferred. Review write-up: `docs/WC2026-QUIZ-REVIEW.md`.
+  the upsets, the hosts, opening-day chaos, the Round of 32, and **Small Nations, Big
+  Nights**) so the World Cup content survives as a browsable back-catalogue instead of 22
+  dated dailies. New seeder `scripts/seed-wc-packs.mjs` (dry-run default, name-keyed option
+  shuffle, metadata merge). Deliberately **not** tagged `series: "wc2026"` (that board was a
+  closed competition). ⚠️ **NOT yet seeded — this env has no `.env.local`/service-role key, so
+  the DB write can't run here.** Run `node scripts/seed-wc-packs.mjs --commit` where the secret
+  exists. ⚠️ A "Road to the Final" pack was **skipped** (founder): the reachable content stops
+  at the **quarter-final line-ups (10 Jul)** — R16→QF survives in `src/data/draft/wc-quiz.json`,
+  but the semis/final (11–19 Jul) are nowhere in the repo, so it can't be built without
+  inventing results. Review write-up: `docs/WC2026-QUIZ-REVIEW.md`.
 - **2026-07-24** — **App Store rating asks are counted, and paced by Games played** (migrations
   104 + 105). We could not previously answer "how many review requests have we made?" for any
   surface, ever: the post-game ask was gated by a localStorage stamp that left no server-side
