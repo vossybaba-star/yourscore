@@ -1,4 +1,5 @@
-import { PlayerCard, type Attributes } from "@/components/profile/PlayerCard";
+import { type Attributes } from "@/components/profile/PlayerCard";
+import { PlayerCardExpand } from "@/components/profile/PlayerCardExpand";
 import { ShareStatsButton } from "@/components/ui/ShareStatsButton";
 import { positionBadge, positionColor } from "@/lib/rank";
 import { Button } from "@/components/ui/Button";
@@ -98,7 +99,7 @@ export function ProfileHero({
       </div>
 
       <div className="flex-shrink-0" style={{ width: cardWidth }}>
-        <PlayerCard
+        <PlayerCardExpand
           width={cardWidth}
           userId={userId}
           name={name}
