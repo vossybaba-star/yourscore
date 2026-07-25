@@ -37,6 +37,7 @@ import { enginePool, gwPrices } from "./pool";
 import { SCORING_VERSION, ZERO_FACTS, type MatchFacts } from "./values";
 import { deadlineComms, monthWinnerComms, resultComms } from "./comms";
 import { halftimeEarn } from "./halftime-link";
+import { interpretHoldRead } from "./ops-diff";
 
 // Same loose client type server.ts uses — the generated row types model jsonb as
 // `Json`, which fights every SquadPick/MatchFacts read and write in this file.
@@ -350,7 +351,24 @@ export async function scoreGameweek(db: Db, gw: SeasonGw, opts: { final: boolean
  * rolled-over week (never played the round) is filtered out before accruing, so
  * it advances nobody's chip progress (D:91-93).
  */
-export async function finaliseGameweek(db: Db, gw: SeasonGw): Promise<{ finalised: number; chipsAccrued: number; baselineGranted: number }> {
+export async function finaliseGameweek(db: Db, gw: SeasonGw): Promise<{ finalised: number; chipsAccrued: number; baselineGranted: number; held?: boolean }> {
+  // fantasy-ops' veto (Guard B red on this gw's facts). A FRESH point-read, not
+  // the `gw` object the caller is holding — that may be stale by however long
+  // this tick has been running, and a hold set moments ago must be honoured
+  // immediately, not on the next tick. This is the only thing that can stop a
+  // scored → final transition; lock/ingest/scoring above this point are untouched.
+  //
+  // FAIL OPEN on the read itself: a watchdog that can crash the season it's
+  // protecting (migration 210 not yet applied, a transient DB blip) is worse
+  // than no watchdog at all. `interpretHoldRead` treats any read error as
+  // "not held" — only an explicit ops_hold=true row ever vetoes.
+  const { data: holdRow, error: holdErr } = await db
+    .from("fantasy_gameweeks").select("ops_hold").eq("gw", gw.gw).maybeSingle();
+  if (holdErr) console.error(`[finalise] ops_hold read failed for gw ${gw.gw} — failing OPEN (finalise proceeds): ${holdErr.message}`);
+  if (interpretHoldRead(holdRow as { ops_hold: boolean } | null, holdErr)) {
+    return { finalised: 0, chipsAccrued: 0, baselineGranted: 0, held: true };
+  }
+
   // Find who is moving, then move them in batches. A single UPDATE … RETURNING
   // over the whole gameweek hands back at most 1000 rows, so past a thousand
   // managers the rest would transition without ever being paid their baseline
@@ -542,7 +560,11 @@ export async function tickSeason(db: Db, now = Date.now()): Promise<TickReport[]
 
     // 3. Once the corrections window has passed, close it.
     if (lastKickoff !== null && now >= lastKickoff + MATCHES_DONE_AFTER_LAST_KICKOFF_MS + FINALISE_AFTER_MATCHES_DONE_MS) {
-      const { finalised, chipsAccrued } = await finaliseGameweek(db, gw);
+      const { finalised, chipsAccrued, held } = await finaliseGameweek(db, gw);
+      if (held) {
+        out.push({ gw: gw.gw, action: "held", detail: "ops_hold set — finalise vetoed" });
+        continue; // vetoed — no comms for a gameweek that didn't actually close
+      }
       out.push({ gw: gw.gw, action: "finalised", detail: `stat-correction window closed (${finalised} entries, ${chipsAccrued} chips accrued)` });
       // The retention loop fires off the back of finality: your result lands, and
       // if this gameweek closed its month, every league announces its winner.
