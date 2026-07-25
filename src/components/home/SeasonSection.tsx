@@ -1,4 +1,11 @@
 import Link from "next/link";
+import { getTeamBadgeUrlSync } from "@/lib/teamImages";
+
+/** The gameday fixture shown on the tile. Defaults to the season opener,
+ * Arsenal v Coventry; a signed-in supporter of a known club gets THEIR round-1
+ * fixture instead (resolved server-side in page.tsx). */
+export interface GamedayFixture { home: string; away: string }
+const DEFAULT_FIXTURE: GamedayFixture = { home: "Arsenal", away: "Coventry City" };
 
 // "Get set for the season" — the two PL-launch teasers (Fantasy + Gameday
 // Quizzes), shown on BOTH the signed-in dashboard and the signed-out marketing
@@ -62,32 +69,47 @@ function FantasyTile() {
   );
 }
 
-function GamedayTile() {
+// The fixture crests, between the title and the sub. The nudge: "here's YOUR
+// team's first quiz". Falls back to no crests (never a broken image) if either
+// badge is missing.
+function FixtureCrests({ fixture }: { fixture: GamedayFixture }) {
+  const home = getTeamBadgeUrlSync(fixture.home);
+  const away = getTeamBadgeUrlSync(fixture.away);
+  if (!home || !away) return null;
+  return (
+    <div className="flex items-center gap-1.5 mt-2 mb-1.5">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={home} alt={fixture.home} width={24} height={24} style={{ objectFit: "contain", filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.5))" }} />
+      <span className="font-display text-sm" style={{ color: "#7ff2e4" }}>v</span>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={away} alt={fixture.away} width={24} height={24} style={{ objectFit: "contain", filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.5))" }} />
+    </div>
+  );
+}
+
+function GamedayTile({ fixture }: { fixture: GamedayFixture }) {
   return (
     <Link href="/matchweek?section=live"
-      className="relative flex flex-col justify-end rounded-2xl overflow-hidden transition-transform active:scale-[0.98]"
+      className="relative flex flex-col rounded-2xl overflow-hidden transition-transform active:scale-[0.98]"
       style={{ aspectRatio: "0.82", background: "#06110f", border: `1px solid ${TEAL}80` }}>
       <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at 50% 22%, ${TEAL}48, rgba(6,17,15,0.15) 62%), #06110f` }} />
       <svg viewBox="0 0 160 200" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 w-full h-full" style={{ opacity: 0.5 }}>
         <path d="M92 24 55 108h30l-8 70 60-92h-33l14-64Z" fill={`${TEAL}44`} stroke={TEAL} strokeWidth="1.4" strokeLinejoin="round" />
-        <g stroke={TEAL} strokeWidth="1" fill="none" opacity="0.35">
-          <rect x="12" y="150" width="42" height="54" rx="5" /><rect x="24" y="140" width="42" height="54" rx="5" />
-        </g>
       </svg>
-      <div className="absolute inset-x-0 bottom-0" style={{ height: "62%", background: "linear-gradient(to top, #06110f 42%, transparent)" }} />
+      {/* top scrim keeps the title crisp; content sits up top like Fantasy */}
+      <div className="absolute inset-x-0 top-0" style={{ height: "62%", background: "linear-gradient(to bottom, #06110f 30%, rgba(6,17,15,0.4) 78%, transparent)" }} />
       <span className="season-shine" style={{ animationDelay: "1.4s" }} />
-      <div className="relative z-[5] p-3.5 flex flex-col gap-2">
+      <div className="relative z-[5] p-3.5 flex flex-col gap-1">
         <ComingSoon accent={TEAL} text="#7ff2e4" />
-        <div>
-          <p className="font-display text-2xl text-white leading-[0.92]">Gameday<br />Quizzes</p>
-          <p className="font-body text-[11px] mt-1.5" style={{ color: "#a8ede4" }}>A quiz pack for every fixture. Play on game day and rep your fanbase.</p>
-        </div>
+        <p className="font-display text-2xl text-white leading-[0.92] mt-1">Gameday<br />Quizzes</p>
+        <FixtureCrests fixture={fixture} />
+        <p className="font-body text-[11px]" style={{ color: "#a8ede4" }}>A quiz pack for every fixture. Rep your fanbase.</p>
       </div>
     </Link>
   );
 }
 
-export function SeasonSection({ className = "" }: { className?: string }) {
+export function SeasonSection({ className = "", fixture }: { className?: string; fixture?: GamedayFixture | null }) {
   return (
     <div className={className}>
       <div className="flex items-center justify-between mb-2.5">
@@ -96,7 +118,7 @@ export function SeasonSection({ className = "" }: { className?: string }) {
       </div>
       <div className="grid grid-cols-2 gap-2.5">
         <FantasyTile />
-        <GamedayTile />
+        <GamedayTile fixture={fixture ?? DEFAULT_FIXTURE} />
       </div>
     </div>
   );

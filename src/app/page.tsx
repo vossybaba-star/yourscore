@@ -85,6 +85,37 @@ export const metadata: Metadata = {
 // of the supabase GETs (constant-key service reads go permanently stale).
 export const fetchCache = "force-no-store";
 
+// The Gameday tile's fixture. A supporter of a club we know sees THEIR round-1
+// fixture (the crests of it) as a personal nudge; everyone else (signed out, or
+// no club picked) gets the default season opener, Arsenal v Coventry, baked
+// into SeasonSection. Round 1 is 10 fixtures, so the club match is done in JS
+// to sidestep escaping club names with "&" (Brighton & Hove Albion) in a filter.
+const CURRENT_SEASON = 28083;
+async function resolveGamedayFixture(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  userId: string,
+): Promise<{ home: string; away: string } | null> {
+  const { data: sup } = await supabase
+    .from("club_supporters")
+    .select("club")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const club: string | undefined = sup?.club;
+  if (!club) return null;
+  const { data: fixtures } = await supabase
+    .from("halftime_releases")
+    .select("home, away")
+    .eq("round_name", "1")
+    .eq("season_id", CURRENT_SEASON);
+  const fx = (fixtures ?? []).find(
+    (f: { home: string; away: string }) => f.home === club || f.away === club,
+  );
+  return fx ? { home: fx.home, away: fx.away } : null;
+}
+
 // Home / dashboard. Server Component: reads the session from cookies (refreshed by
 // middleware) and fetches all server-fetchable data in parallel before render —
 // no client waterfall. Interactive pieces (countdown ticker, mobile menu, league
@@ -344,6 +375,7 @@ export default async function RootPage({
 
   // ── Today's Game completion — score + share, not a replay nudge ─────────────
   const todaysGameCompletion = await resolveTodaysCompletion(supabase, userId, todaysGame);
+  const gamedayFixture = await resolveGamedayFixture(supabase, userId);
 
   // ── Leagues: my position + gap to the spot above, per league ────────────────
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -391,6 +423,7 @@ export default async function RootPage({
     leagues,
     todaysGame,
     todaysGameCompletion,
+    gamedayFixture,
   };
 
   return <Dashboard data={data} />;

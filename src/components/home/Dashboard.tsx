@@ -99,6 +99,9 @@ export interface DashboardData {
   todaysGame: TodaysGame;
   /** null = not signed in / not yet checked; done=false = not played today. */
   todaysGameCompletion: { done: boolean; score: number | null } | null;
+  /** The Gameday tile's fixture — a known supporter's round-1 fixture, else null
+   *  (SeasonSection defaults to Arsenal v Coventry). */
+  gamedayFixture: { home: string; away: string } | null;
 }
 
 const DASH_ANIM = `
@@ -506,7 +509,7 @@ function PendingTurnsNotice() {
 // ── Main ────────────────────────────────────────────────────────────────────────
 
 export function Dashboard({ data }: { data: DashboardData }) {
-  const { displayName, rank, dayStreak, weekDots, recommended, played38, openLobbies, leagues, todaysGame, todaysGameCompletion } = data;
+  const { displayName, rank, dayStreak, weekDots, recommended, played38, openLobbies, leagues, todaysGame, todaysGameCompletion, gamedayFixture } = data;
 
   // Don't recommend the pack that's already the hero.
   const rail = recommended.filter((p) => p.id !== todaysGame.packId).slice(0, 5);
@@ -544,7 +547,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
 
         {/* 2. Get set for the season — Fantasy + Gameday Quiz (replaced Rivalries,
               founder 2026-07-25). */}
-        <SeasonSection className="d-2" />
+        <SeasonSection className="d-2" fixture={gamedayFixture} />
 
         {/* 3. Today's Game — THE single hero, playable or done+share. The
             onboarding tour's final step points here (data-tour). */}
