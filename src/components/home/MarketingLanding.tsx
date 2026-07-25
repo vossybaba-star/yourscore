@@ -12,6 +12,7 @@ import { GAMES } from "@/components/ui/GameSwitcher";
 import { GAME_VISUALS } from "@/components/games/GameVisuals";
 import { coverUrl } from "@/lib/img";
 import { TodaysQuestionPreview } from "@/components/home/TodaysQuestionPreview";
+import { SeasonSection } from "@/components/home/SeasonSection";
 import type { TodaysGame } from "@/lib/daily-game";
 
 export interface LiveMatch {
@@ -113,80 +114,6 @@ const PALETTES = [
   { bg: "#1a4a2a", text: "#4ade80" },
   { bg: "#4a2a1a", text: "#fb923c" },
 ];
-
-// ── Games hero card ──────────────────────────────────────────────────────────
-// The signed-out hero's visual: what feeds your score, one row lighting up at a
-// time in its own accent, same animated-card idiom as LeagueHeroCard below it.
-// The list is imported from GameSwitcher (the nav's own source), never retyped
-// here, so the marketing page cannot describe a game the app doesn't have.
-//
-// Deliberately NOT framed as a count. Fantasy and the gameday quizzes become
-// rows here when they land on 21 Aug, and nothing above them has to change.
-
-function GamesHeroCard() {
-  const [tick, setTick] = useState(0);
-  useEffect(() => {
-    const iv = setInterval(() => setTick((t) => t + 1), 2400);
-    return () => clearInterval(iv);
-  }, []);
-
-  const lit = tick % GAMES.length;
-
-  return (
-    <div className="float-card w-full max-w-[340px] bg-surface"
-      style={{ border: "1px solid rgba(255,255,255,0.1)", borderRadius: 24, overflow: "hidden", boxShadow: "0 32px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(174,234,0,0.08)" }}>
-      {/* Header */}
-      <div className="px-5 py-4 flex items-center justify-between"
-        style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(174,234,0,0.04)" }}>
-        <div>
-          <p className="font-body text-xs font-semibold text-white">What feeds your score</p>
-          <p className="font-body text-xs text-text-muted">Free, no account needed</p>
-        </div>
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
-          style={{ background: "rgba(174,234,0,0.1)", border: "1px solid rgba(174,234,0,0.2)" }}>
-          <span className="relative flex h-1.5 w-1.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: "#aeea00" }} />
-            <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: "#aeea00" }} />
-          </span>
-          <span className="font-body text-xs font-semibold text-green">Play now</span>
-        </div>
-      </div>
-
-      {/* One row per game; the lit one takes its own accent. */}
-      {GAMES.map(({ key, href, label, color, Icon, blurb }, i) => {
-        const isLit = i === lit;
-        return (
-          <Link key={key} href={href}
-            className="flex items-center gap-3 px-4 py-3 transition-all"
-            style={{
-              background: isLit ? `${color}14` : i % 2 === 0 ? "rgba(255,255,255,0.01)" : "transparent",
-              borderBottom: i < GAMES.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
-              borderLeft: `2px solid ${isLit ? color : "transparent"}`,
-              textDecoration: "none",
-            }}>
-            <span className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-all"
-              style={{ background: isLit ? `${color}26` : "rgba(255,255,255,0.04)", color: isLit ? color : "#586058" }}>
-              <Icon active={isLit} />
-            </span>
-            <div className="flex-1 min-w-0">
-              <p className="font-body text-sm font-medium transition-colors" style={{ color: isLit ? "#fff" : "#c4ccc6" }}>{label}</p>
-              <p className="font-body text-xs truncate" style={{ color: "#586058" }}>{blurb}</p>
-            </div>
-            <span className="font-body text-xs font-semibold flex-shrink-0 transition-opacity"
-              style={{ color, opacity: isLit ? 1 : 0 }}>Play →</span>
-          </Link>
-        );
-      })}
-
-      {/* Footer */}
-      <div className="px-4 py-3 flex items-center justify-between"
-        style={{ borderTop: "1px solid rgba(255,255,255,0.04)", background: "rgba(0,0,0,0.2)" }}>
-        <span className="font-body text-xs text-text-muted">It all adds up to one rank</span>
-        <span className="font-body text-xs font-semibold" style={{ color: "#aeea00" }}>See them all →</span>
-      </div>
-    </div>
-  );
-}
 
 // ── Games explainer ──────────────────────────────────────────────────────────
 // One tab per game, each explaining that game on its own terms. Replaces the
@@ -690,7 +617,7 @@ export function MarketingLanding({ matches, todaysGame }: { matches: LiveMatch[]
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <section className="relative z-10 max-w-6xl mx-auto px-6 pt-2 pb-16 lg:pt-6" style={{ overflow: "hidden" }}>
 
-        <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+        <div className="max-w-2xl">
 
           {/* Left: copy + CTAs */}
           <div>
@@ -753,41 +680,20 @@ export function MarketingLanding({ matches, todaysGame }: { matches: LiveMatch[]
             </div>{/* end content wrapper */}
           </div>
 
-          {/* Right: league card */}
-          <div className="flex items-center justify-center lg:justify-end">
-            <div className="relative">
-              {/* Glow behind card */}
-              <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(circle at 50% 50%, rgba(174,234,0,0.15) 0%, transparent 70%)", transform: "scale(1.3)", zIndex: 1 }} />
-              <div className="relative" style={{ zIndex: 2 }}>
-              <GamesHeroCard />
-
-              {/* Floating badges — both now say something about the games card
-                  they hang off, not about a league the guest hasn't joined.
-                  Desktop only: on a phone the card is full width, so these sat
-                  on top of it and covered two rows. */}
-              <div className="float-card-2 absolute -bottom-4 -left-4 hidden lg:flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-surface"
-                style={{ border: "1px solid rgba(174,234,0,0.25)", boxShadow: "0 8px 24px rgba(0,0,0,0.4)" }}>
-                <span className="font-body text-base">⚡</span>
-                <div>
-                  <p className="font-body text-xs font-bold text-white">Answer fast</p>
-                  <p className="font-body text-xs text-text-muted">Score double</p>
-                </div>
-              </div>
-
-              {/* Floating badge: streak */}
-              <div className="float-card absolute -top-4 -right-4 hidden lg:flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-surface"
-                style={{ border: "1px solid rgba(251,146,60,0.3)", boxShadow: "0 8px 24px rgba(0,0,0,0.4)" }}>
-                <span className="font-body text-base">🔥</span>
-                <div>
-                  <p className="font-body text-xs font-bold text-white">Play daily</p>
-                  <p className="font-body text-xs text-text-muted">Build a streak</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
         </div>
       </section>
+
+      {/* Get set for the season — under the ranked headline (founder 2026-07-25),
+          same hype tiles as the signed-in home so every visitor sees the two
+          PL-launch teasers. */}
+      <section className="relative z-10 max-w-6xl mx-auto px-6 pb-16">
+        <div className="max-w-lg mx-auto lg:max-w-none">
+          <SeasonSection />
+        </div>
+      </section>
+
+      {/* THE GAMES — moved directly under the season tiles (founder 2026-07-25). */}
+      <GamesExplainer />
 
       {/* The 38-0 and Football Quiz tiles used to live here. The games card in
           the hero now lists all five games with the same links, so these two
@@ -850,8 +756,8 @@ export function MarketingLanding({ matches, todaysGame }: { matches: LiveMatch[]
           question preview. Both described one game as if it were the product:
           the steps were the 38-0 arc, the speed panel was quiz scoring. This
           section is per game instead, one tab each, driven by GAMES so a new
-          game gets a tab without anyone editing marketing copy. ── */}
-      <GamesExplainer />
+          game gets a tab without anyone editing marketing copy. Now rendered
+          directly under the season tiles (founder 2026-07-25). ── */}
 
       {/* ── Countdown strip ───────────────────────────────────────────────── */}
       <section className="relative z-10 max-w-6xl mx-auto px-6 pb-16">
