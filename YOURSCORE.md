@@ -618,6 +618,10 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-25** — **38-0 promo tile on the app home** (`Play38Tile` in `Dashboard.tsx`, under
+  Today's debate). Sells the viral team-builder with a mini 4-3-3 pitch graphic + "38-0"
+  scoreboard chip; links to `/38-0`. App home only — deliberately NOT on `MarketingLanding`
+  (the signed-out web homepage). (§7)
 - **2026-07-24** — **App Store rating asks are counted, and paced by Games played** (migrations
   104 + 105). We could not previously answer "how many review requests have we made?" for any
   surface, ever: the post-game ask was gated by a localStorage stamp that left no server-side
