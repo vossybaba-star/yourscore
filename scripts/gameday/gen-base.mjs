@@ -34,7 +34,7 @@ import { loadEnvFile, flag, has } from "../halftime/lib/env.mjs";
 
 const PACK = 10;
 const MIX = { easy: 3, medium: 4, hard: 3 };
-const PROMPT = "scripts/halftime/prompts/base.md";
+const PROMPT = "scripts/gameday/prompts/base.md";
 const MAX_ROUNDS = 2; // bounded retry (LOOP rule 3)
 
 const londonDay = (iso) =>

@@ -75,13 +75,11 @@ const LAYERS = [
   { key: "nav", module: "./checks/navigation.mjs", budgetMs: 180_000, needsBot: true },
   { key: "sentry", module: "./checks/sentry.mjs", budgetMs: 30_000 },
   { key: "jobs", module: "./checks/deadman.mjs", budgetMs: 10_000 },
-  // UNREGISTERED pending W2 (Gameday pivot, 2026-07-23). checks/halftime.mjs
-  // asserts the RETIRED quiz state machine (staged/released), which nothing
-  // writes any more — post-pivot a healthy pack is 'published', which these
-  // checks are blind to, so they misreport rather than help. W2 replaces this
-  // with checks/gameday.mjs (publish-cron + content states) and slims
-  // halftime.mjs to prediction-poll assertions only. Re-register then.
-  // { key: "halftime", module: "./checks/halftime.mjs", budgetMs: 30_000 },
+  // checks/halftime.mjs stays UNREGISTERED — it asserts the RETIRED
+  // staged/released quiz state machine (see its own file header). Its
+  // quiz-state role AND its still-accurate poller-heartbeat assertion are
+  // both replaced/absorbed by checks/gameday.mjs below (W2).
+  { key: "gameday", module: "./checks/gameday.mjs", budgetMs: 30_000 },
   { key: "gamer", module: "./checks/experience.mjs", budgetMs: 30_000 },
   { key: "gamer", module: "./checks/gamer-review.mjs", budgetMs: 120_000, llm: true },
 ];

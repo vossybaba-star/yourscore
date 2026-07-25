@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServiceClient } from "@/lib/supabase/service";
-import { getGamedayRow } from "@/lib/gameday/publish";
+import { getGamedayRow, cancelStaleFixture } from "@/lib/gameday/publish";
 import { publishAtFor, validatePackQuestions } from "@/lib/gameday/shared";
+import { normalizeQuestionText } from "@/lib/questions";
 
 /**
  * POST /api/gameday/content — the single content-write route for the
@@ -17,9 +18,20 @@ import { publishAtFor, validatePackQuestions } from "@/lib/gameday/shared";
  *                                         that freezes content (§3.1) — nothing
  *                                         generates or mutates a pack's
  *                                         questions after this call.
+ *   dedup    { texts[], excludeFixtureId? }  FIX P2-c: season-wide duplicate
+ *                                         check (AC6). Returns the INDICES
+ *                                         into `texts` that collide with the
+ *                                         `questions` bank, any other gameday
+ *                                         pack this season, or any Recap pack
+ *                                         this season. Read-only.
+ *   cancel   { fixtureId, reason? }       gate.mjs's deadline path (AC7): a
+ *                                         pack unapproved by its publish_at,
+ *                                         or a postponement gate.mjs learns
+ *                                         about directly. Any pre-publish
+ *                                         state → cancelled.
  *
- * CONTENT MUTATION IS IMPOSSIBLE AFTER APPROVAL: both ops refuse a fixture
- * already `approved` or `published`.
+ * CONTENT MUTATION IS IMPOSSIBLE AFTER APPROVAL: base/approve both refuse a
+ * fixture already `approved` or `published`.
  *
  * Auth: Bearer CRON_SECRET (the VPS generation/gate scripts, HTTP only).
  */
@@ -52,8 +64,12 @@ export async function POST(req: NextRequest) {
         return await opBase(body);
       case "approve":
         return await opApprove(body);
+      case "dedup":
+        return await opDedup(body);
+      case "cancel":
+        return await opCancel(body);
       default:
-        return NextResponse.json({ error: "op must be one of: base, approve" }, { status: 400 });
+        return NextResponse.json({ error: "op must be one of: base, approve, dedup, cancel" }, { status: 400 });
     }
   } catch (err) {
     console.error("[gameday/content] op failed", op, err);
@@ -135,4 +151,96 @@ async function opApprove(body: Record<string, unknown>) {
   }
 
   return NextResponse.json({ ok: true, fixtureId, state: "approved", packId, publishAt });
+}
+
+/**
+ * FIX P2-c: the season-wide duplicate check (AC6), server-side, using the
+ * SAME normalization the bank's own uniqueness guard uses. Read-only —
+ * writes nothing. Checked against three sources:
+ *   (a) the `questions` bank, active rows only
+ *   (b) every prior gameday pack THIS SEASON (base_ready or later — reverse
+ *       fixtures recur and the H2H facts don't change, so a question already
+ *       drafted for another fixture this season is still out even before
+ *       it's approved)
+ *   (c) every Recap pack this season (kind='recap')
+ * excludeFixtureId lets a fixture regenerate its own slate without its own
+ * prior draft counting as a collision against itself.
+ *
+ * Returns INDICES into `texts` (not the text itself) — gen-base.mjs's caller
+ * (scripts/halftime/lib/api.mjs dedupCheck) filters candidates by position.
+ */
+async function opDedup(body: Record<string, unknown>) {
+  const texts = Array.isArray(body.texts) ? body.texts.map((t) => String(t)) : null;
+  if (!texts) return NextResponse.json({ error: "texts[] required" }, { status: 400 });
+  if (!texts.length) return NextResponse.json({ collisions: [] });
+
+  const excludeFixtureId =
+    body.excludeFixtureId != null && Number.isInteger(Number(body.excludeFixtureId))
+      ? Number(body.excludeFixtureId)
+      : null;
+
+  // Scope to the fixture's own season when we can derive one — narrower is
+  // faster and still correct (reverse fixtures recur WITHIN a season; a
+  // question from three seasons ago is not the collision risk this guards).
+  // With no fixture context at all, fall back to season-unscoped: dedupe
+  // wider rather than risk missing a real collision.
+  let seasonId: number | null = null;
+  if (excludeFixtureId != null) {
+    const row = await getGamedayRow(excludeFixtureId);
+    seasonId = row?.season_id ?? null;
+  }
+
+  const seen = new Set<string>();
+
+  const { data: bankRows, error: bankErr } = await db()
+    .from("questions")
+    .select("question")
+    .eq("status", "active");
+  if (bankErr) return NextResponse.json({ error: bankErr.message }, { status: 500 });
+  for (const r of (bankRows ?? []) as Array<{ question: string }>) {
+    const t = normalizeQuestionText(r.question);
+    if (t) seen.add(t);
+  }
+
+  let packsQuery = db()
+    .from("halftime_releases")
+    .select("fixture_id, season_id, base_questions, questions");
+  if (seasonId != null) packsQuery = packsQuery.eq("season_id", seasonId);
+  const { data: packRows, error: packErr } = await packsQuery;
+  if (packErr) return NextResponse.json({ error: packErr.message }, { status: 500 });
+
+  type PackRow = { fixture_id: number; base_questions: Array<{ question?: string }> | null; questions: Array<{ question?: string }> | null };
+  for (const r of (packRows ?? []) as PackRow[]) {
+    if (excludeFixtureId != null && Number(r.fixture_id) === excludeFixtureId) continue;
+    for (const q of [...(r.questions ?? []), ...(r.base_questions ?? [])]) {
+      const t = normalizeQuestionText(q?.question);
+      if (t) seen.add(t);
+    }
+  }
+
+  const collisions: number[] = [];
+  texts.forEach((t, i) => {
+    if (seen.has(normalizeQuestionText(t))) collisions.push(i);
+  });
+
+  return NextResponse.json({ collisions });
+}
+
+/**
+ * gate.mjs's deadline path (AC7 / spec §3.3): a pack unapproved by its
+ * publish_at, or a postponement gate.mjs learns about directly, is cancelled.
+ * Reuses cancelStaleFixture (publish.ts) — the same function the publish cron
+ * uses for the kickoff-already-passed case — so there is exactly one place
+ * that decides which states may become cancelled (CAS: scheduled|base_ready|
+ * approved|failed → cancelled; a no-op, not an error, on an already-terminal
+ * row).
+ */
+async function opCancel(body: Record<string, unknown>) {
+  const fixtureId = Number(body.fixtureId);
+  if (!Number.isInteger(fixtureId)) {
+    return NextResponse.json({ error: "fixtureId required" }, { status: 400 });
+  }
+  const reason = typeof body.reason === "string" && body.reason ? body.reason : "gate.mjs cancel";
+  const result = await cancelStaleFixture(fixtureId, reason);
+  return NextResponse.json({ ok: true, fixtureId, ...result });
 }
