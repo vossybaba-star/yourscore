@@ -10,16 +10,19 @@ import { slugify } from "@/lib/utils";
 // quiz" server-side and 302s straight to its challenge, where the first START fires
 // PlayQuiz. Ads point here once and the link never goes stale.
 //
-// Resolution (mirrors what /play surfaces as the hero, with a daily override):
+// Resolution (built to land COLD ad traffic on a NEUTRAL quiz, not a club-specific one):
 //   1. a pack explicitly flagged metadata.daily (the true "quiz of the day"), newest first
-//   2. else the lead FEATURED pack /play already shows (lowest featured_order, non-World-Cup)
-//   3. else fall back to /play, so the link is never a dead end
+//   2. else the lead featured NON-CLUB pack — an evergreen general quiz (e.g. "Premier League
+//      Records"), so a cold PL fan of any club lands somewhere neutral rather than a rival's club quiz
+//   3. else the lead featured pack /play shows (lowest featured_order) — club packs, last resort
+//   4. else fall back to /play, so the link is never a dead end
 export const fetchCache = "force-no-store";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 interface PackRow {
   name: string;
+  type: string | null;
   featured: boolean | null;
   featured_order: number | null;
   parameter: string | null;
@@ -40,10 +43,12 @@ export default async function PlayTodayPage() {
     const db = createServiceClient();
     const { data } = await db
       .from("quiz_packs")
-      .select("name, featured, featured_order, parameter, created_at, metadata")
+      .select("name, type, featured, featured_order, parameter, created_at, metadata")
       .eq("status", "published")
       .eq("rotation_active", true);
     const packs = ((data ?? []) as PackRow[]).filter((p) => !isWorldCupPack(p));
+
+    const byOrder = (a: PackRow, b: PackRow) => (a.featured_order ?? 99) - (b.featured_order ?? 99);
 
     // 1) explicit "quiz of the day", newest first
     const daily = packs
@@ -51,12 +56,12 @@ export default async function PlayTodayPage() {
       .sort((a, b) =>
         (b.metadata?.date ?? b.created_at ?? "").localeCompare(a.metadata?.date ?? a.created_at ?? ""),
       );
-    // 2) else the lead featured pack /play shows as its hero
-    const featured = packs
-      .filter((p) => p.featured)
-      .sort((a, b) => (a.featured_order ?? 99) - (b.featured_order ?? 99));
+    // 2) lead featured NON-CLUB pack — the neutral, club-agnostic landing (e.g. "Premier League Records")
+    const neutral = packs.filter((p) => p.featured && p.type !== "club").sort(byOrder);
+    // 3) lead featured pack /play shows (club packs) — last resort
+    const featured = packs.filter((p) => p.featured).sort(byOrder);
 
-    const lead = daily[0] ?? featured[0];
+    const lead = daily[0] ?? neutral[0] ?? featured[0];
     if (lead?.name) target = `/challenges/${slugify(lead.name)}`;
   } catch {
     // keep the /play fallback
