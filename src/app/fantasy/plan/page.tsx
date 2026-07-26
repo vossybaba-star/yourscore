@@ -25,12 +25,14 @@ import {
 } from "@/lib/fantasy/engine";
 import {
   api, Btn, Card, Crest, Deadline, DoubtFlag, EMPTY_CONTEXT, ErrorState, FixtureRun, fmtM,
-  GOLD, Header, INK, LINE, Loading, MUTED, page, PANEL, PANEL_2, Skel, TEAL, tint,
-  type ClientPoolPlayer, type FantasyContext, type FantasyState, type Pos,
+  GOLD, Header, INK, LINE, Loading, MUTED, page, PANEL, Skel, TEAL,
+  type ClientPoolPlayer, type FantasyContext, type FantasyState,
 } from "@/components/fantasy/shared";
+import { SquadBoard } from "@/components/fantasy/SquadBoard";
+import { pitchName, type BoardPlayer } from "@/lib/fantasy/board";
+import { faceFor } from "@/lib/fantasy/faces";
 import { BottomNav } from "@/components/ui/BottomNav";
 
-const POS_ROWS: Pos[] = ["GK", "DEF", "MID", "FWD"];
 const PLAN_KEY = "ys-fantasy-plan";
 
 interface Move { out: number; in: number }
@@ -143,9 +145,15 @@ export default function PlanPage() {
     return cur;
   };
   const plannedXi = squad.xi.map(plannedId);
-
-  const rowsByPos = (ids: number[]) =>
-    POS_ROWS.map((pos) => ({ pos, ids: ids.filter((id) => byId.get(id)?.pos === pos) }));
+  const plannedBench = squad.bench.map(plannedId);
+  // The projected squad on the shared board — same pitch as everywhere else.
+  const boardPlayers: BoardPlayer[] = planned.squad.picks.map((pk) => {
+    const p = byId.get(pk.id);
+    return {
+      id: pk.id, name: p?.name ?? `#${pk.id}`, label: pitchName(p?.name ?? `#${pk.id}`),
+      pos: p?.pos ?? pk.pos, club: p?.club, avatarUrl: p ? faceFor(p.name) : undefined, price: p?.price,
+    };
+  });
 
   // Candidates to swap in for the player being picked: same position, not already
   // in the planned squad, affordable against the planned bank + this player's value.
@@ -173,26 +181,6 @@ export default function PlanPage() {
   };
   const undoLast = () => setMoves((m) => m.slice(0, -1));
   const clearPlan = () => setMoves([]);
-
-  const PlanTile = ({ id }: { id: number }) => {
-    const p = byId.get(id);
-    const active = picking === id;
-    const isCap = squad.captain === id || plannedId(squad.captain) === id;
-    return (
-      <button onClick={() => { setPicking(active ? null : id); setQ(""); }} style={{
-        display: "flex", flexDirection: "column", alignItems: "center", gap: 2, minWidth: 66, flex: "1 1 0", maxWidth: 76,
-        padding: "6px 4px", borderRadius: 10, cursor: "pointer",
-        background: active ? "#233B2C" : PANEL, color: INK,
-        border: `1px solid ${active ? GOLD : isCap ? tint(GOLD, "55") : LINE}`,
-      }}>
-        {p && <Crest club={p.club} size={17} />}
-        <span style={{ fontSize: 10.5, fontWeight: 600, textAlign: "center", lineHeight: 1.1, overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%", whiteSpace: "nowrap" }}>
-          {p?.name.split(" ").slice(-1)[0] ?? id}
-        </span>
-        <span style={{ fontSize: 9, color: MUTED }}>£{p?.price.toFixed(1)}</span>
-      </button>
-    );
-  };
 
   return (
     <main data-fantasy style={page}>
@@ -226,21 +214,22 @@ export default function PlanPage() {
         </p>
       )}
 
-      {/* The planned pitch. Tap a player to swap him in the plan. */}
+      {/* The projected squad on the shared board. Tap a player to swap him in the
+          plan; the replacement list opens below. */}
       {picking === null ? (
-        <>
-          <div style={{ background: PANEL_2, border: `1px solid ${LINE}`, borderRadius: 14, padding: 12, marginBottom: 12, display: "flex", flexDirection: "column", gap: 10 }}>
-            {rowsByPos(plannedXi).map((row) => (
-              <div key={row.pos} style={{ display: "flex", gap: 6, justifyContent: "center", flexWrap: "nowrap" }}>
-                {row.ids.map((id) => <PlanTile key={id} id={id} />)}
-              </div>
-            ))}
-          </div>
-          <div style={{ fontSize: 11, letterSpacing: "0.12em", color: MUTED, marginBottom: 4 }}>BENCH</div>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
-            {squad.bench.map(plannedId).map((id) => <PlanTile key={id} id={id} />)}
-          </div>
-        </>
+        <div style={{ marginBottom: 12 }}>
+          <SquadBoard
+            mode="plan"
+            players={boardPlayers}
+            xi={plannedXi}
+            bench={plannedBench}
+            captain={plannedId(squad.captain)}
+            vice={plannedId(squad.vice)}
+            doubts={ctx.doubts}
+            selectedId={picking}
+            onSlot={(id) => { setPicking(picking === id ? null : id); setQ(""); }}
+          />
+        </div>
       ) : (
         <Card style={{ marginBottom: 12 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 8 }}>
