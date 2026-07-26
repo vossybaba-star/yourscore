@@ -10,6 +10,10 @@ npx tsc \
   src/lib/fantasy/values.ts \
   src/lib/fantasy/engine.ts \
   src/lib/fantasy/engine.test.ts \
+  src/lib/fantasy/board.ts \
+  src/lib/fantasy/board.test.ts \
+  src/lib/fantasy/liveEvents.ts \
+  src/lib/fantasy/liveEvents.test.ts \
   src/lib/fantasy/months.ts \
   src/lib/fantasy/months.test.ts \
   src/lib/fantasy/clubKey.ts \

@@ -97,7 +97,9 @@ export async function fetchGwFixtures(
   const out: SmFixture[] = [];
   for (const f of list) {
     const res = await fetch(
-      `https://api.sportmonks.com/v3/football/fixtures/${f.id}?include=lineups.details.type;participants;scores&api_token=${apiKey}`,
+      // `events` carries timed goals/assists (minute + scorer + assist) for the
+      // live ticker; it does not affect scoring, which reads the stat totals.
+      `https://api.sportmonks.com/v3/football/fixtures/${f.id}?include=lineups.details.type;participants;scores;events&api_token=${apiKey}`,
     );
     if (!res.ok) throw new Error(`SM fixture ${f.id} ${res.status}`);
     out.push(((await res.json()) as { data: SmFixture }).data);

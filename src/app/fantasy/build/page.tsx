@@ -17,25 +17,15 @@ import {
   INK, LINE, MUTED, page, PANEL, PITCH, POS_ORDER, QUOTA, TEAL, tint,
   type ClientPoolPlayer, type FantasyContext, type FantasyState, type Pos,
 } from "@/components/fantasy/shared";
-import { PlayerMarker } from "@/components/fantasy/PlayerMarker";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
+import { SquadBoard } from "@/components/fantasy/SquadBoard";
+import { pitchName, type BoardPlayer } from "@/lib/fantasy/board";
 import { faceFor } from "@/lib/fantasy/faces";
 import { BottomNav } from "@/components/ui/BottomNav";
 
 const BUDGET = 1000;
 const DRAFT_KEY = "ys-fantasy-draft";
-/** Pitch order runs attack → defence, top to bottom. */
-const PITCH_ORDER: Pos[] = ["FWD", "MID", "DEF", "GK"];
 const POS_WORD: Record<Pos, string> = { GK: "keepers", DEF: "defenders", MID: "midfielders", FWD: "forwards" };
-
-/** Surname for the pitch marker — keeps "van Dijk"/"de Bruyne" two words. */
-function surname(n: string): string {
-  const parts = n.trim().split(/\s+/);
-  if (parts.length > 1 && /^(de|van|von|da|dos|del|di|el|al|mc|le)$/i.test(parts[parts.length - 2])) {
-    return `${parts[parts.length - 2]} ${parts[parts.length - 1]}`;
-  }
-  return parts[parts.length - 1];
-}
 
 export default function BuildPage() {
   const router = useRouter();
@@ -90,6 +80,13 @@ export default function BuildPage() {
   const complete = POS_ORDER.every((pos) => posCount(pos) === QUOTA[pos]);
   const clubFull = (clubId: number) => clubCount(clubId) >= 3;
 
+  // The picks mapped onto the shared SquadBoard's shape. Derived from `picked`,
+  // so every add/remove re-renders the board, budget and progress together.
+  const boardPlayers: BoardPlayer[] = picks.map((p) => ({
+    id: p.id, name: p.name, label: pitchName(p.name), pos: p.pos,
+    club: p.club, avatarUrl: faceFor(p.name), price: p.price,
+  }));
+
   const blockReason = (p: ClientPoolPlayer): string | null => {
     if (posCount(p.pos) >= QUOTA[p.pos]) return `You've got all ${QUOTA[p.pos]} ${p.pos}. Remove one first.`;
     if (clubCount(p.clubId) >= 3) return `Max 3 players from ${p.club}. You already have 3.`;
@@ -128,22 +125,6 @@ export default function BuildPage() {
       p.name.toLowerCase().includes(needle) || p.club.toLowerCase().includes(needle));
   }, [pool, tab, needle]);
 
-  // ---- Squad view: a slot per squad place, filled or empty, on a pitch ----
-  const Slot = ({ p, pos }: { p?: ClientPoolPlayer; pos: Pos }) =>
-    p ? (
-      <button onClick={() => remove(p.id)} aria-label={`${p.name}, £${p.price.toFixed(1)}m — tap to remove`}
-        style={{ background: "transparent", border: "none", padding: "2px 1px", cursor: "pointer", flex: "1 1 0", maxWidth: 66, minWidth: 0 }}>
-        <PlayerMarker name={p.name} label={surname(p.name)} avatarUrl={faceFor(p.name)}
-          size={pos === "GK" ? 36 : 34} doubt={ctx.doubts[p.id]} datum={`£${p.price.toFixed(1)}`} />
-      </button>
-    ) : (
-      <button onClick={() => openAdd(pos)} aria-label={`Add a ${pos}`}
-        style={{ background: "transparent", border: "none", padding: "2px 1px", cursor: "pointer", flex: "1 1 0", maxWidth: 66, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-        <span style={{ width: pos === "GK" ? 36 : 34, height: pos === "GK" ? 36 : 34, borderRadius: "50%", border: `1px dashed ${tint(TEAL, "55")}`, background: "rgba(255,255,255,0.03)", display: "flex", alignItems: "center", justifyContent: "center", color: tint(TEAL, "bb"), fontSize: 18, lineHeight: 1 }}>+</span>
-        <span style={{ fontSize: 9.5, color: MUTED, fontWeight: 700 }}>{pos}</span>
-      </button>
-    );
-
   const squadView = (
     <>
       {/* Budget + progress, connected to the squad that's forming below it. */}
@@ -172,22 +153,16 @@ export default function BuildPage() {
         })}
       </div>
 
-      {/* The team, forming. A slot per squad place; tap an empty one to fill it. */}
-      <div className="rounded-2xl relative overflow-hidden" style={{ border: `1px solid ${LINE}`, marginBottom: 14 }}>
-        <div aria-hidden style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, #0c1a13 0%, #0a1710 55%, #091510 100%)" }} />
-        <div aria-hidden style={{ position: "absolute", inset: 0, opacity: 0.26, background: "repeating-linear-gradient(180deg, rgba(255,255,255,0.02) 0 22px, transparent 22px 44px)" }} />
-        <div style={{ position: "relative", display: "flex", flexDirection: "column", gap: 12, padding: "16px 8px" }}>
-          {PITCH_ORDER.map((pos) => {
-            const inPos = picks.filter((p) => p.pos === pos);
-            return (
-              <div key={pos} style={{ display: "flex", justifyContent: "center", gap: 6, flexWrap: "wrap" }}>
-                {Array.from({ length: QUOTA[pos] }).map((_, i) => (
-                  <Slot key={i} p={inPos[i]} pos={pos} />
-                ))}
-              </div>
-            );
-          })}
-        </div>
+      {/* The team, forming — the shared SquadBoard. Tap a filled shirt to remove,
+          an empty slot to add for that line. */}
+      <div style={{ marginBottom: 14 }}>
+        <SquadBoard
+          mode="build"
+          players={boardPlayers}
+          doubts={ctx.doubts}
+          onSlot={(id) => remove(id)}
+          onEmpty={(pos) => openAdd(pos as Pos)}
+        />
       </div>
     </>
   );

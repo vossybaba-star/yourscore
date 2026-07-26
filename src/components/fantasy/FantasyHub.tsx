@@ -11,12 +11,15 @@
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import {
-  api, Btn, Card, Crest, Deadline, EMPTY_CONTEXT, ErrorState, extrasLine, fmtM, GOLD, Header, INK,
+  api, Btn, Card, Deadline, EMPTY_CONTEXT, ErrorState, fmtM, GOLD, Header, INK,
   LINE, Loading, MUTED, page, PANEL, PANEL_2, Sheet, Skel, TEAL, tint,
   type ChipName, type ClientPoolPlayer, type FantasyContext, type FantasyState, type Pos,
 } from "@/components/fantasy/shared";
-import { PlayerMarker } from "@/components/fantasy/PlayerMarker";
 import { MovesBank } from "@/components/fantasy/MovesBank";
+import { SquadBoard } from "@/components/fantasy/SquadBoard";
+import { GameweekBreakdown } from "@/components/fantasy/GameweekBreakdown";
+import { FinalStory } from "@/components/fantasy/FinalStory";
+import { pitchName, type BoardPlayer, type LiveDatum } from "@/lib/fantasy/board";
 import { faceFor } from "@/lib/fantasy/faces";
 import { BUDGET_TENTHS, CREDIT_CAP, HALF_SEASON_GW, MAX_PER_CLUB, SQUAD_SIZE } from "@/lib/fantasy/engine";
 import { KNOWLEDGE_NAME } from "@/lib/fantasy/brand";
@@ -27,24 +30,6 @@ type Result = NonNullable<NonNullable<FantasyState["entry"]>["result"]>;
  *  max-width and the bottom padding for the nav — only the horizontal gutter is
  *  ours, and it must match the sibling sections. */
 const EMBEDDED_PAGE: CSSProperties = { padding: "4px 16px 8px", color: INK };
-
-/** Width of the dugout strip. Wide enough for a crest and a surname, narrow
- *  enough that five outfielders still fit across the pitch beside it. */
-const DUGOUT_W = 68;
-
-/** On the pitch there is room for ONE word. "Jean-Philippe Mateta" forced every
- *  tile in the row wide enough to hold it, which is what made the pitch too big
- *  and the rows wrap. The crest disambiguates two players sharing a surname, and
- *  the full name is still used everywhere it fits (menus, tables, transfers). */
-function pitchName(full: string): string {
-  const parts = full.trim().split(/\s+/);
-  const last = parts[parts.length - 1];
-  // Keep two words for "de Bruyne" / "van Dijk" style names, which read wrong alone.
-  if (parts.length > 1 && /^(de|van|von|da|dos|del|di|el|al|mc|le)$/i.test(parts[parts.length - 2])) {
-    return `${parts[parts.length - 2]} ${last}`;
-  }
-  return last;
-}
 
 // Fungible tokens (triple_captain, bench_boost, insight) all
 // spend from the same held count; the wildcard runs on its own separate track.
@@ -102,7 +87,6 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
   const [confirmChip, setConfirmChip] = useState<ChipName | null>(null);
   /** The result table defaults to the players who contributed; the full eleven
    *  is opt-in. */
-  const [fullSheet, setFullSheet] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
@@ -161,14 +145,6 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
 
   const squad = state?.squad;
   const nameOf = useCallback((id: number) => pool.get(id)?.name ?? `#${id}`, [pool]);
-  const rows = useMemo(() => {
-    if (!squad) return [];
-    const posOf = new Map(squad.picks.map((p) => [p.id, p.pos]));
-    // Top of the screen is the opposition goal: FWD → MID → DEF → GK.
-    return (["FWD", "MID", "DEF", "GK"] as Pos[]).map((pos) => ({
-      pos, ids: squad.xi.filter((id) => posOf.get(id) === pos),
-    }));
-  }, [squad]);
 
   // Anchor picks for the intro's "where to start" — the priciest name in each
   // line. "Most expensive" is a fact we can read straight off the pool (no form
@@ -476,11 +452,6 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
 
   /** Who actually did something. Best first, so the week reads as a story rather
    *  than a squad list: a 25-point haul at the top, the blanks folded away. */
-  const scorers = result ? result.breakdown.filter((b) => b.points !== 0) : [];
-  const shownRows = result
-    ? (fullSheet ? result.breakdown : [...scorers].sort((a, b) => b.points - a.points))
-    : [];
-
   /** One line of colour under the score: who carried the week, and what the
    *  hits cost. Built from the same breakdown the table below renders. */
   const topLine = (() => {
@@ -639,83 +610,57 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
   const valueKnown = pool.size > 0;
   const teamValueTenths = squad.picks.reduce((s, pk) => s + Math.round((pool.get(pk.id)?.price ?? 0) * 10), 0);
 
-  /** `crowd` = how many players share this row. A five-across row gets a smaller
-   *  tile than a two-across one, the same adaptive trick the dugout already uses,
-   *  so a busy midfield stays readable instead of just narrower. */
-  const PlayerTile = ({ id, benchIdx, crowd = 1 }: { id: number; benchIdx?: number; crowd?: number }) => {
-    const p = pool.get(id);
-    const isCap = squad.captain === id, isVice = squad.vice === id;
-    const onBench = benchIdx !== undefined;
-    const label = p ? pitchName(p.name) : `#${id}`;
-    return (
-      <div style={{ position: "relative" }}>
-        <button
-          onClick={() => !locked && setMenuFor(menuFor === id ? null : id)}
-          aria-expanded={menuFor === id}
-          aria-label={p
-            ? [
-                p.name,
-                onBench ? `bench ${benchIdx! + 1}` : p.pos,
-                p.club,
-                `£${p.price.toFixed(1)} million`,
-                isCap ? "captain" : isVice ? "vice captain" : null,
-                ctx.doubts[id] ? "a doubt to play" : null,
-                locked ? null : "tap to change",
-              ].filter(Boolean).join(", ")
-            : undefined}
-          style={{
-            background: "transparent", border: "none",
-            padding: onBench ? "2px 0" : "2px 1px", cursor: locked ? "default" : "pointer",
-            // FLUID, not fixed. A five-across row must compress, not overflow the
-            // pitch (which is overflow:hidden). The portrait sits in the same flex
-            // box the text tiles used, so a busy midfield still fits a 375px phone.
-            width: onBench ? "100%" : undefined,
-            flex: onBench ? undefined : "1 1 0",
-            maxWidth: onBench ? undefined : 66,
-            minWidth: 0,
-          }}>
-          {/* Portrait marker (founder, 25 Jul). Captain reads as a gold ring +
-              armband, a doubt as an amber dot — no text glyphs on a face. */}
-          <PlayerMarker
-            name={p?.name ?? `#${id}`}
-            label={label}
-            avatarUrl={p ? faceFor(p.name) : undefined}
-            size={onBench ? 26 : crowd >= 5 ? 26 : crowd === 4 ? 30 : 34}
-            isCaptain={isCap}
-            isVice={isVice}
-            doubt={ctx.doubts[id]}
-            datum={p ? `£${p.price.toFixed(1)}` : undefined}
-            dim={onBench}
-          />
-        </button>
-        {menuFor === id && !locked && (
-          <div style={{
-            // Anchored to the RIGHT for a sub: the dugout sits against the screen
-            // edge, so a 170px menu opening leftwards from a 62px tile would run
-            // ~100px off a 375px phone.
-            position: "absolute", zIndex: 5, top: "105%",
-            ...(onBench ? { right: 0 } : { left: 0 }),
-            background: PANEL,
-            border: `1px solid ${GOLD}`, borderRadius: 10, padding: 8, minWidth: 170,
-            display: "flex", flexDirection: "column", gap: 6,
-          }}>
-            {benchIdx === undefined && <>
-              <Btn small onClick={() => setSel({ captain: id })}>Make captain</Btn>
-              <Btn small onClick={() => setSel({ vice: id })}>Make vice</Btn>
-              {squad.bench.filter((b) => pool.get(b)?.pos === pool.get(id)?.pos || (pool.get(b)?.pos !== "GK" && pool.get(id)?.pos !== "GK")).map((b) => (
-                <Btn small key={b} onClick={() => swapWithBench(id, b)}>↔ {nameOf(b)}</Btn>
-              ))}
-            </>}
-            {benchIdx !== undefined && squad.xi
-              .filter((s) => (pool.get(s)?.pos === "GK") === (pool.get(id)?.pos === "GK"))
-              .slice(0, 6).map((s) => (
-                <Btn small key={s} onClick={() => swapWithBench(s, id)}>↔ {nameOf(s)}</Btn>
-              ))}
-          </div>
-        )}
-      </div>
-    );
-  };
+  /** The squad mapped onto the shared SquadBoard's shape — the SAME board the
+   *  builder and the live/result views draw, so there is one pitch, not three. */
+  const boardPlayers: BoardPlayer[] = squad.picks.map((pk) => {
+    const p = pool.get(pk.id);
+    return {
+      id: pk.id, name: p?.name ?? `#${pk.id}`, label: pitchName(p?.name ?? `#${pk.id}`),
+      pos: pk.pos, club: p?.club, avatarUrl: p ? faceFor(p.name) : undefined, price: p?.price,
+    };
+  });
+
+  /** Per-player live/final standing for the board, straight off the real point
+   *  breakdown. State drives the dim: a player still to play is dimmed and reads
+   *  "to play"; a scorer shows their points. No fabricated match minute — the
+   *  feed gives points and whether a fixture has been reported, not a live clock. */
+  const boardMode = isLive ? "live" : result ? "final" : "complete";
+  const liveData: Record<number, LiveDatum> = {};
+  if (result) {
+    const reportedSet = new Set(result.reported ?? []);
+    const bd = new Map(result.breakdown.map((b) => [b.id, b]));
+    for (const id of [...squad.xi, ...squad.bench]) {
+      const played = reportedSet.has(id);
+      const b = bd.get(id);
+      liveData[id] = {
+        points: b?.points ?? 0,
+        minute: null,
+        state: !played ? "tocome" : isLive ? "live" : "done",
+      };
+    }
+  }
+
+  /** The per-player menu the board anchors under a tapped shirt. The board owns
+   *  the layout; this owns the actions (captain, vice, swap with the bench). */
+  const renderPlayerMenu = (id: number, { onBench }: { onBench: boolean }) => (
+    <div style={{
+      background: PANEL, border: `1px solid ${GOLD}`, borderRadius: 10, padding: 8, minWidth: 170,
+      display: "flex", flexDirection: "column", gap: 6,
+    }}>
+      {!onBench && <>
+        <Btn small onClick={() => setSel({ captain: id })}>Make captain</Btn>
+        <Btn small onClick={() => setSel({ vice: id })}>Make vice</Btn>
+        {squad.bench.filter((b) => pool.get(b)?.pos === pool.get(id)?.pos || (pool.get(b)?.pos !== "GK" && pool.get(id)?.pos !== "GK")).map((b) => (
+          <Btn small key={b} onClick={() => swapWithBench(id, b)}>↔ {nameOf(b)}</Btn>
+        ))}
+      </>}
+      {onBench && squad.xi
+        .filter((s) => (pool.get(s)?.pos === "GK") === (pool.get(id)?.pos === "GK"))
+        .slice(0, 6).map((s) => (
+          <Btn small key={s} onClick={() => swapWithBench(s, id)}>↔ {nameOf(s)}</Btn>
+        ))}
+    </div>
+  );
 
   return (
     <main data-fantasy style={embedded ? EMBEDDED_PAGE : page} onClick={() => menuFor !== null && setMenuFor(null)}>
@@ -915,61 +860,20 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
           attacking box, the halfway line falls between midfield and defence, and
           the keeper stands in his own six-yard box. The viewBox is square too, so
           nothing is stretched. */}
-      <div className="rounded-2xl relative overflow-hidden" style={{ marginBottom: 12, border: `1px solid ${LINE}` }}>
-        <div style={{ display: "flex", alignItems: "stretch" }}>
-          {/* the eleven, on a square field */}
-          <div style={{ flex: 1, minWidth: 0, position: "relative", aspectRatio: "1 / 1" }}>
-            <div aria-hidden style={{
-              position: "absolute", inset: 0,
-              background: "linear-gradient(180deg, #0c1a13 0%, #0a1710 55%, #091510 100%)",
-            }} />
-            <div aria-hidden style={{
-              position: "absolute", inset: 0, opacity: 0.28,
-              background: "repeating-linear-gradient(180deg, rgba(255,255,255,0.02) 0 24px, transparent 24px 48px)",
-            }} />
-            <svg aria-hidden viewBox="0 0 100 100"
-              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0.2 }}>
-              {/* touchlines */}
-              <rect x="2" y="2" width="96" height="96" fill="none" stroke={TEAL} strokeWidth="0.7" />
-              {/* halfway line + centre circle, dead centre — the rows straddle it */}
-              <line x1="2" y1="50" x2="98" y2="50" stroke={TEAL} strokeWidth="0.7" />
-              <circle cx="50" cy="50" r="13" fill="none" stroke={TEAL} strokeWidth="0.7" />
-              <circle cx="50" cy="50" r="1.2" fill={TEAL} />
-              {/* attacking box (top) — the forwards' row sits inside it */}
-              <rect x="25" y="2" width="50" height="16" fill="none" stroke={TEAL} strokeWidth="0.7" />
-              <rect x="37" y="2" width="26" height="7" fill="none" stroke={TEAL} strokeWidth="0.7" />
-              {/* own box (bottom) — the keeper stands in the six-yard */}
-              <rect x="25" y="82" width="50" height="16" fill="none" stroke={TEAL} strokeWidth="0.7" />
-              <rect x="37" y="91" width="26" height="7" fill="none" stroke={TEAL} strokeWidth="0.7" />
-            </svg>
-
-            {/* Rows spread across the square so each lands on its marking. */}
-            <div style={{
-              position: "absolute", inset: 0, display: "flex", flexDirection: "column",
-              justifyContent: "space-between", padding: "5% 4%",
-            }}>
-              {rows.map((row) => (
-                <div key={row.pos} style={{ display: "flex", justifyContent: "center", gap: 4, flexWrap: "nowrap" }}>
-                  {row.ids.map((id) => <PlayerTile key={id} id={id} crowd={row.ids.length} />)}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* the dugout — off the field, down the touchline */}
-          <div style={{
-            width: DUGOUT_W, flexShrink: 0, padding: "8px 5px",
-            borderLeft: `1px dashed ${tint(TEAL, "26")}`,
-            background: "rgba(0,0,0,0.28)",
-            display: "flex", flexDirection: "column", gap: 5,
-          }}>
-            <div className="font-display tracking-widest"
-              style={{ fontSize: 8, color: "#5b645e", textAlign: "center", lineHeight: 1.2 }}>
-              DUGOUT
-            </div>
-            {squad.bench.map((id, i) => <PlayerTile key={id} id={id} benchIdx={i} />)}
-          </div>
-        </div>
+      <div style={{ marginBottom: 12 }}>
+        <SquadBoard
+          mode={boardMode}
+          players={boardPlayers}
+          xi={squad.xi}
+          bench={squad.bench}
+          captain={squad.captain}
+          vice={squad.vice}
+          doubts={ctx.doubts}
+          live={liveData}
+          menuFor={locked ? null : menuFor}
+          onSlot={locked ? undefined : (id) => setMenuFor(menuFor === id ? null : id)}
+          renderMenu={locked ? undefined : renderPlayerMenu}
+        />
       </div>
 
       {/* SHARE THE SQUAD. Before a gameweek has scored there is nothing else to
@@ -1141,135 +1045,35 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
         </Sheet>
       )}
 
+      {/* THE FINAL STORY — a settled gameweek as a gold, shareable cover: star
+          man, captain, biggest regret, moves earned. Only once the football is
+          over (a provisional total can still move). The full table sits below. */}
+      {result && !isLive && (
+        <FinalStory
+          gw={gwN}
+          points={result.points}
+          breakdown={result.breakdown}
+          xi={squad.xi}
+          pool={pool}
+          nameOf={nameOf}
+          movesEarned={entry?.round.creditsEarned ?? 0}
+          busy={busy}
+          onShare={shareResult}
+        />
+      )}
+
       {result && (
-        <Card style={{ marginBottom: 12, border: `1px solid ${isLive ? tint(TEAL, "44") : GOLD}` }}>
-          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
-            <div style={{ fontSize: 12, letterSpacing: "0.1em", color: isLive ? TEAL : GOLD, fontWeight: 700 }}>
-              {isLive ? "WHERE THE POINTS ARE COMING FROM" : "WHERE THE POINTS CAME FROM"}
-            </div>
-            <button onClick={() => setFullSheet((v) => !v)}
-              className="font-body"
-              style={{ background: "none", border: "none", color: TEAL, fontSize: 12, fontWeight: 600, cursor: "pointer", padding: 0 }}>
-              {fullSheet ? "Show less" : "Show all 11"}
-            </button>
-          </div>
-          <p style={{ fontSize: 12, color: MUTED, margin: "4px 0 10px" }}>
-            {fullSheet
-              ? isLive ? "Every starter, including the ones still to play." : "Every starter, including the ones who didn't play."
-              : isLive
-                ? `${scorers.length} of your 11 on the board${live && live.toCome.length ? `, ${live.toCome.length} still to play` : ""}.`
-                : `${scorers.length} of your 11 scored.`}{entry!.hits > 0
-              ? ` Includes −${entry!.hits * 4} for ${entry!.hits} extra transfer${entry!.hits === 1 ? "" : "s"}.`
-              : ""}
-          </p>
-          {/* Point drivers as columns — so you can scan WHY a player scored, not
-              just what he scored. Extras (saves, cards, conceded) sit under the
-              name; they'd need six more columns nobody could read on a phone. */}
-          <div style={{ overflowX: "auto", margin: "0 -4px" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-              <thead>
-                <tr style={{ fontSize: 10.5, letterSpacing: "0.08em", color: MUTED }}>
-                  <th style={{ textAlign: "left", padding: "0 4px 6px", fontWeight: 600 }}>PLAYER</th>
-                  {(["MIN", "G", "A", "CS"] as const).map((h) => (
-                    <th key={h} style={{ textAlign: "center", padding: "0 4px 6px", fontWeight: 600 }}>{h}</th>
-                  ))}
-                  <th style={{ textAlign: "right", padding: "0 4px 6px", fontWeight: 600 }}>PTS</th>
-                </tr>
-              </thead>
-              <tbody>
-                {shownRows.map((b) => {
-                  const p = pool.get(b.id);
-                  const pos = p?.pos ?? "MID";
-                  const f = b.facts;
-                  const played = !!f && f.minutes > 0;
-                  const extras = extrasLine(pos, f);
-                  const csEligible = pos === "GK" || pos === "DEF" || pos === "MID";
-                  const cell: CSSProperties = {
-                    textAlign: "center", padding: "7px 4px", borderTop: `1px solid ${LINE}`,
-                    color: played ? INK : MUTED, fontVariantNumeric: "tabular-nums",
-                  };
-                  return (
-                    <tr key={b.id}>
-                      <td style={{ padding: "7px 4px", borderTop: `1px solid ${LINE}`, minWidth: 0 }}>
-                        <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                          {p && <Crest club={p.club} size={16} />}
-                          <span style={{ fontWeight: 600, fontSize: 13 }}>
-                            {nameOf(b.id)}
-                            {b.captain && <span style={{ color: GOLD }} title="Captain, points doubled"> ©</span>}
-                            {b.subbedIn && <span style={{ color: GOLD }} title="Auto-subbed on"> ↑</span>}
-                          </span>
-                        </span>
-                        {/* "Didn't play" and "hasn't kicked off yet" are different
-                            facts. A player with no score row has a fixture still
-                            to come; one with a row and no minutes was in the
-                            squad and stayed on the bench. Calling the first one
-                            "Didn't play" on a Saturday afternoon is just wrong. */}
-                        {(extras || !played) && (
-                          <span style={{
-                            display: "block", fontSize: 11, marginTop: 2, paddingLeft: 22,
-                            color: !played && !(result.reported ?? []).includes(b.id) ? TEAL : MUTED,
-                          }}>
-                            {played
-                              ? extras
-                              : (result.reported ?? []).includes(b.id) ? "Didn't play" : "Still to play"}
-                          </span>
-                        )}
-                      </td>
-                      <td style={cell}>{played ? f!.minutes : "–"}</td>
-                      <td style={{ ...cell, color: played && f!.goals ? GOLD : cell.color, fontWeight: played && f!.goals ? 700 : 400 }}>
-                        {played ? (f!.goals || "–") : "–"}
-                      </td>
-                      <td style={{ ...cell, color: played && f!.assists ? GOLD : cell.color, fontWeight: played && f!.assists ? 700 : 400 }}>
-                        {played ? (f!.assists || "–") : "–"}
-                      </td>
-                      <td style={cell}>{played && csEligible ? (f!.cleanSheet ? "✓" : "–") : "–"}</td>
-                      <td style={{
-                        textAlign: "right", padding: "7px 4px", borderTop: `1px solid ${LINE}`,
-                        fontWeight: 700, fontVariantNumeric: "tabular-nums",
-                        color: b.points >= 10 ? GOLD : INK,
-                      }}>{b.points}</td>
-                    </tr>
-                  );
-                })}
-                {entry!.hits > 0 && (
-                  <tr>
-                    <td colSpan={5} style={{ padding: "7px 4px", borderTop: `1px solid ${LINE}`, color: "#E08A6B", fontSize: 12.5 }}>
-                      {entry!.hits} extra transfer{entry!.hits === 1 ? "" : "s"}
-                    </td>
-                    <td style={{ textAlign: "right", padding: "7px 4px", borderTop: `1px solid ${LINE}`, color: "#E08A6B", fontWeight: 700 }}>
-                      −{entry!.hits * 4}
-                    </td>
-                  </tr>
-                )}
-                <tr>
-                  <td colSpan={5} style={{ padding: "9px 4px", borderTop: `1.5px solid ${isLive ? TEAL : GOLD}`, fontWeight: 700 }}>
-                    {isLive ? "So far" : "Total"}
-                  </td>
-                  <td style={{
-                    textAlign: "right", padding: "9px 4px", fontWeight: 700,
-                    borderTop: `1.5px solid ${isLive ? TEAL : GOLD}`, color: isLive ? TEAL : GOLD,
-                  }}>
-                    {result.points}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          {notice && <p style={{ fontSize: 12.5, color: GOLD, margin: "10px 0 0" }}>{notice}</p>}
-          {/* Nothing to share and nowhere to advance while the football is still
-              on — a shared "I got 34" that becomes 41 an hour later is worse than
-              no share at all, and advance answers 403 in a live season anyway. */}
-          {!isLive && (
-            <div style={{ marginTop: 14, display: "flex", gap: 8 }}>
-              <Btn disabled={busy} onClick={shareResult}>Share this gameweek</Btn>
-              {isDemo && gwN < total && (
-                <Btn gold disabled={busy} onClick={advance}>
-                  {busy ? "…" : `Start Gameweek ${gwN + 1} →`}
-                </Btn>
-              )}
-            </div>
-          )}
-        </Card>
+        <GameweekBreakdown
+          result={result}
+          isLive={isLive}
+          hits={entry?.hits ?? 0}
+          pool={pool}
+          nameOf={nameOf}
+          busy={busy}
+          notice={notice}
+          onShare={shareResult}
+          advance={isDemo && gwN < total ? { label: `Start Gameweek ${gwN + 1} \u2192`, onClick: advance } : undefined}
+        />
       )}
 
       {/* Leagues — a nudge into leagues, or a shortcut back once you're already in one */}

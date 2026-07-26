@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  api, Btn, Card, Chip, Deadline, ErrorState, GOLD, Header, INK, LINE, Loading, MUTED, page, PANEL, Skel,
+  api, Btn, Card, Chip, Deadline, ErrorState, GOLD, Header, INK, LINE, Loading, MUTED, page, PANEL, Skel, TEAL, tint,
 } from "@/components/fantasy/shared";
+import { CREDIT_CAP } from "@/lib/fantasy/engine";
 
 interface Clues { nationality?: string; flag?: string; jersey?: number }
 interface Served { idx: number; format: string; prompt: string; options: { id: number; label: string }[]; position: string; clues?: Clues }
@@ -32,11 +33,15 @@ export default function RoundPage() {
   const [deadline, setDeadline] = useState<string | null>(null);
   const [eliminated, setEliminated] = useState<number[]>([]);
   const [hintSpent, setHintSpent] = useState(false);
+  // Moves already banked (engine `squad.credits`) — shown live so the round's
+  // reward is visible while you play, not just at the end.
+  const [banked, setBanked] = useState(0);
 
   useEffect(() => {
-    api<{ chips: { playedThisGw: string | null } | null; gw: { mode: string; deadline: string | null } }>("state")
+    api<{ chips: { playedThisGw: string | null } | null; gw: { mode: string; deadline: string | null }; squad: { credits: number } | null }>("state")
       .then((s) => {
         setChip(s.chips?.playedThisGw ?? null);
+        setBanked(s.squad?.credits ?? 0);
         if (s.gw.mode !== "replay") setDeadline(s.gw.deadline);
       }).catch(() => {});
     api<StartRes>("round/start").then((r) => {
@@ -148,6 +153,16 @@ export default function RoundPage() {
     );
   }
 
+  // Live reward state — the whole point of the round, kept in view WHILE you
+  // play. Every number is real: the credit curve, the cap, the banked total.
+  const answeredSoFar = reveal ? k + 1 : k;
+  const earnedThisRound = creditsAt(correctCount);
+  const nextThreshold = THRESHOLDS.find((t) => correctCount < t);
+  const prevThreshold = THRESHOLDS.filter((t) => correctCount >= t).pop() ?? 0;
+  const toNext = nextThreshold ? nextThreshold - correctCount : 0;
+  const questionsLeft = round.questions.length - answeredSoFar;
+  const perfectOn = answeredSoFar === correctCount && correctCount < round.questions.length;
+
   return (
     <main data-fantasy style={page}>
       {/* Every answer is banked server-side as you go, so leaving is safe and the
@@ -174,6 +189,45 @@ export default function RoundPage() {
           four outfielders and read as a bug. The slot is not information a player
           can use; the question number is. */}
       <Deadline iso={deadline} compact />
+
+      {/* THE REWARD, IN VIEW WHILE YOU PLAY. Knowledge mode is teal-led and
+          progress-focused; gold is reserved for a move actually earned/banked. */}
+      <div style={{
+        background: `linear-gradient(150deg, ${tint(TEAL, "12")}, ${tint(TEAL, "03")})`,
+        border: `1px solid ${tint(TEAL, "30")}`, borderRadius: 14, padding: "12px 14px", marginBottom: 14,
+      }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 9 }}>
+          <span className="font-display" style={{ letterSpacing: "0.12em", fontSize: 11.5, color: TEAL }}>
+            EARN YOUR NEXT MOVE
+          </span>
+          <span className="font-body" style={{ fontSize: 11.5, color: MUTED, whiteSpace: "nowrap" }}>
+            Banked <b style={{ color: GOLD, fontWeight: 700 }}>{Math.min(CREDIT_CAP, banked)}</b>
+            {earnedThisRound > 0 && <> · this round <b style={{ color: GOLD, fontWeight: 700 }}>+{earnedThisRound}</b></>}
+          </span>
+        </div>
+        {nextThreshold ? (
+          <>
+            <div role="img" aria-label={`${toNext} more correct to earn your next move`}
+              style={{ height: 8, borderRadius: 5, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
+              <div style={{
+                height: "100%",
+                width: `${Math.round(((correctCount - prevThreshold) / (nextThreshold - prevThreshold)) * 100)}%`,
+                background: `linear-gradient(90deg, ${tint(TEAL, "cc")}, ${TEAL})`, borderRadius: 5,
+                transition: "width 220ms cubic-bezier(.22,1,.36,1)",
+              }} />
+            </div>
+            <p className="font-body" style={{ fontSize: 12, color: MUTED, margin: "8px 0 0", lineHeight: 1.4 }}>
+              <b style={{ color: INK, fontWeight: 600 }}>{toNext} more correct</b> earns your next move.
+              {" "}{questionsLeft} left{perfectOn ? " · perfect round still on" : ""}.
+            </p>
+          </>
+        ) : (
+          <p className="font-body" style={{ fontSize: 12, color: MUTED, margin: 0, lineHeight: 1.4 }}>
+            <b style={{ color: GOLD, fontWeight: 700 }}>Top of the curve</b> — the most a round can earn. {questionsLeft} left.
+          </p>
+        )}
+      </div>
+
       <div style={{ fontSize: 11, letterSpacing: "0.12em", color: MUTED, marginBottom: 6 }}>
         QUESTION {k + 1} OF 11
       </div>

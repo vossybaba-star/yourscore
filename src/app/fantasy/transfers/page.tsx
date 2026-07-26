@@ -7,9 +7,12 @@ import { useRouter } from "next/navigation";
 import { sellPrice } from "@/lib/fantasy/engine";
 import {
   api, Btn, Card, Chip, Crest, Deadline, DoubtFlag, EMPTY_CONTEXT, FixtureRun, fmtM, GOLD, Header,
-  INK, LINE, Loading, MUTED, PITCH, page, PANEL, PlayerDetailSheet, Skel,
+  INK, LINE, Loading, MUTED, page, PANEL, PlayerDetailSheet, Skel,
   type ClientPoolPlayer, type FantasyContext, type FantasyState, type Pos,
 } from "@/components/fantasy/shared";
+import { SquadBoard } from "@/components/fantasy/SquadBoard";
+import { pitchName, type BoardPlayer } from "@/lib/fantasy/board";
+import { faceFor } from "@/lib/fantasy/faces";
 
 const POS_ROWS: Pos[] = ["GK", "DEF", "MID", "FWD"];
 
@@ -53,6 +56,15 @@ export default function TransfersPage() {
 
   const byId = useMemo(() => new Map(pool.map((p) => [p.id, p])), [pool]);
   const squad = state?.squad;
+  // The squad mapped onto the shared SquadBoard — the same pitch the hub and
+  // builder draw. Tapping a shirt selects the player to sell (ringed).
+  const boardPlayers: BoardPlayer[] = useMemo(() => (squad?.picks ?? []).map((pk) => {
+    const p = byId.get(pk.id);
+    return {
+      id: pk.id, name: p?.name ?? `#${pk.id}`, label: pitchName(p?.name ?? `#${pk.id}`),
+      pos: p?.pos ?? pk.pos, club: p?.club, avatarUrl: p ? faceFor(p.name) : undefined, price: p?.price,
+    };
+  }), [squad, byId]);
   const out = selling !== null ? byId.get(selling) : null;
   const hits = state?.entry?.hits ?? 0;
   const made = state?.entry?.transfers ?? 0;
@@ -169,29 +181,6 @@ export default function TransfersPage() {
     </main>
   );
 
-  const rowsByPos = (ids: number[]) =>
-    POS_ROWS.map((pos) => ({ pos, ids: ids.filter((id) => byId.get(id)?.pos === pos) }));
-
-  const Tile = ({ id }: { id: number }) => {
-    const p = byId.get(id);
-    const active = selling === id;
-    return (
-      <button onClick={() => !closed && choose(active ? null : id)}
-        disabled={closed}
-        aria-label={p ? `${p.name}, ${p.pos}, £${p.price.toFixed(1)}m${closed ? ", gameweek closed" : ", tap to replace"}` : undefined}
-        style={{
-        display: "flex", flexDirection: "column", alignItems: "center", gap: 2, minWidth: 72,
-        padding: "7px 8px", borderRadius: 10, cursor: closed ? "default" : "pointer",
-        background: active ? "#233B2C" : PANEL, color: INK,
-        border: `1px solid ${active ? GOLD : LINE}`, opacity: closed ? 0.75 : 1,
-      }}>
-        {p && <Crest club={p.club} size={20} />}
-        <span style={{ fontSize: 12, fontWeight: 600, textAlign: "center", lineHeight: 1.1 }}>{p?.name ?? id}</span>
-        <span style={{ fontSize: 10.5, color: MUTED }}>£{p?.price.toFixed(1)}</span>
-      </button>
-    );
-  };
-
   return (
     <main data-fantasy style={page}>
       <Header right={<>
@@ -238,26 +227,26 @@ export default function TransfersPage() {
         </div>
       )}
 
-      {selling === null && (
-        <>
-          {/* the pitch */}
-          <div style={{ background: PITCH, border: `1px solid ${LINE}`, borderRadius: 14, padding: 12, marginBottom: 12,
-            display: "flex", flexDirection: "column", gap: 12 }}>
-            {rowsByPos(squad.xi).map((row) => (
-              <div key={row.pos} style={{ display: "flex", gap: 6, justifyContent: "center", flexWrap: "wrap" }}>
-                {row.ids.map((id) => <Tile key={id} id={id} />)}
-              </div>
-            ))}
-          </div>
-          <div style={{ fontSize: 11, letterSpacing: "0.12em", color: MUTED, marginBottom: 4 }}>BENCH</div>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 6 }}>
-            {squad.bench.map((id) => <Tile key={id} id={id} />)}
-          </div>
+      {/* THE BOARD, always in view. Tap a shirt to sell that player (ringed) —
+          the IN candidates then appear below: OUT on the pitch, IN in the list. */}
+      <div style={{ marginBottom: 12 }}>
+        <SquadBoard
+          mode="transfer"
+          players={boardPlayers}
+          xi={squad.xi}
+          bench={squad.bench}
+          captain={squad.captain}
+          vice={squad.vice}
+          doubts={ctx.doubts}
+          selectedId={selling}
+          onSlot={closed ? undefined : (id) => choose(selling === id ? null : id)}
+        />
+      </div>
 
-          {/* Who should you even be looking at? Ranked on what they've actually
-              scored in OUR scoring, and filtered to players you could really fit.
-              Pointless once the gameweek is shut — you can't act on it. */}
-          {prospects.length > 0 && !closed && (
+      {/* Who should you even be looking at? Ranked on what they've actually
+          scored in OUR scoring, filtered to players you could fit. Only while
+          nothing is selected and the gameweek is open. */}
+      {selling === null && !closed && prospects.length > 0 && (
             <div style={{ marginTop: 16 }}>
               <div style={{ fontSize: 11, letterSpacing: "0.12em", color: MUTED, marginBottom: 2 }}>
                 WORTH A LOOK
@@ -312,8 +301,6 @@ export default function TransfersPage() {
                 Numbers are YourScore points from the last {form.gws.length === 1 ? "gameweek" : `${form.gws.length} gameweeks`}, not FPL&apos;s.
               </p>
             </div>
-          )}
-        </>
       )}
 
       {out && (
