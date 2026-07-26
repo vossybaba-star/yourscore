@@ -19,12 +19,34 @@ import type { NewsDoubt, NewsInsight, NewsItem, NewsTips } from "@/lib/fantasy/n
 
 // Shared fantasy tokens (mirrored, not imported — shared.tsx is "use client").
 const GOLD = "#ffc233";
+const TEAL = "#00d8c0";
 const PANEL = "#0e1611";
-const PANEL_2 = "#15211a";
 const LINE = "rgba(255,255,255,0.07)";
 const INK = "#eef2f0";
 const MUTED = "#8a948f";
-const WARN = "#ffb800";
+const CORAL = "#e0653c";
+
+/**
+ * One editorial card — a named format (Captaincy Call, The Differential, Fixture
+ * Swing, The Risk, Worth Knowing) rather than a wall of text. Eyebrow label in
+ * the format's colour, then the subject and a one-line read. Every card is built
+ * from a real field; nothing here is invented.
+ */
+function EditorialCard({
+  label, accent, heading, sub, body,
+}: { label: string; accent: string; heading: string; sub?: string; body: string }) {
+  return (
+    <section style={{ background: PANEL, border: `1px solid ${accent}55`, borderRadius: 12, padding: 13 }}>
+      <div className="font-display" style={{ color: accent, fontSize: 10.5, fontWeight: 700, letterSpacing: "0.11em", marginBottom: 7 }}>
+        {label}
+      </div>
+      <div style={{ color: INK, fontSize: 15, fontWeight: 700, lineHeight: 1.3 }}>
+        {heading}{sub && <span style={{ color: MUTED, fontWeight: 400, fontSize: 12.5 }}>  {sub}</span>}
+      </div>
+      <p style={{ color: INK, fontSize: 13.5, margin: "5px 0 0", lineHeight: 1.5 }}>{body}</p>
+    </section>
+  );
+}
 
 type Filter = "all" | "team-news" | "transfers" | "tips";
 
@@ -196,80 +218,34 @@ export function NewsFeed({
         </div>
       )}
 
-      {/* Tip first: the only thing on the page that tells you what to DO, so it
-          gets the accent and the top slot. */}
-      {show.tips && (
-        <section
-          style={{
-            background: PANEL_2, border: `1px solid ${GOLD}66`,
-            borderRadius: 12, padding: 14,
-          }}
-        >
-          <div
-            style={{
-              color: GOLD, fontSize: 11, fontWeight: 700,
-              letterSpacing: "0.02em", marginBottom: 8,
-            }}
-          >
-            THE MOVE · GW{tips && "gw" in tips ? (tips as { gw?: number }).gw : ""}
-          </div>
-          {tips?.captain && (
-            <p style={{ color: INK, fontSize: 14, margin: "0 0 8px", lineHeight: 1.5 }}>
-              <strong>Captain {tips.captain.player}.</strong> {tips.captain.why}
-            </p>
-          )}
-          {tips?.differential && (
-            <p style={{ color: INK, fontSize: 14, margin: "0 0 8px", lineHeight: 1.5 }}>
-              <strong>Differential: {tips.differential.player}.</strong> {tips.differential.why}
-            </p>
-          )}
-          {tips?.note && (
-            <p style={{ color: MUTED, fontSize: 13, margin: 0, lineHeight: 1.5 }}>{tips.note}</p>
-          )}
-          {tips?.draftedAt && (
-            <div style={{ color: MUTED, fontSize: 11, marginTop: 8 }}>
-              {draftedLabel(tips.draftedAt)}
-            </div>
-          )}
-        </section>
+      {/* THE ANALYSIS — named editorial formats, the accented top slot. Each is
+          one real field: the LLM-grounded tips, the form/fixture insights. */}
+      {show.tips && tips?.captain && (
+        <EditorialCard label="CAPTAINCY CALL" accent={GOLD}
+          heading={tips.captain.player} body={tips.captain.why} />
+      )}
+      {show.tips && tips?.differential && (
+        <EditorialCard label="THE DIFFERENTIAL" accent={TEAL}
+          heading={tips.differential.player} body={tips.differential.why} />
+      )}
+      {show.insights && insights.filter((n) => n.kind === "fixture-swing").map((n, i) => (
+        <EditorialCard key={`sw${i}`} label="FIXTURE SWING" accent={TEAL} heading={n.title} body={n.body} />
+      ))}
+      {show.insights && insights.filter((n) => n.kind === "form").map((n, i) => (
+        <EditorialCard key={`fm${i}`} label="WORTH KNOWING" accent={MUTED} heading={n.title} body={n.body} />
+      ))}
+      {show.tips && (tips?.note || tips?.draftedAt) && (
+        <div style={{ color: MUTED, fontSize: 12, lineHeight: 1.5, padding: "0 2px" }}>
+          {tips?.note}
+          {tips?.draftedAt && <div style={{ marginTop: tips?.note ? 6 : 0 }}>{draftedLabel(tips.draftedAt)}</div>}
+        </div>
       )}
 
-      {show.doubts && (
-        <section style={{ display: "grid", gap: 8 }}>
-          <h2 style={{ color: INK, fontSize: 13, fontWeight: 600, margin: 0 }}>Doubts</h2>
-          {doubts.map((d) => (
-            <div
-              key={d.smId}
-              style={{
-                background: PANEL, border: `1px solid ${WARN}44`, borderRadius: 12,
-                padding: 12, display: "flex", gap: 10, alignItems: "flex-start",
-              }}
-            >
-              <span aria-hidden="true" style={{ color: WARN, fontSize: 15, lineHeight: 1.35 }}>!</span>
-              <div style={{ color: INK, fontSize: 14, lineHeight: 1.45 }}>
-                <strong>{d.name}</strong>{" "}
-                <span style={{ color: MUTED }}>({d.club})</span> · {d.reason}
-              </div>
-            </div>
-          ))}
-        </section>
-      )}
-
-      {show.insights && (
-        <section style={{ display: "grid", gap: 8 }}>
-          <h2 style={{ color: INK, fontSize: 13, fontWeight: 600, margin: 0 }}>Worth knowing</h2>
-          {insights.map((n, i) => (
-            <div key={i} style={{ ...cardBase, padding: 12 }}>
-              <div style={{ color: INK, fontSize: 14, fontWeight: 600, lineHeight: 1.4 }}>
-                {n.title}
-              </div>
-              <div style={{ color: MUTED, fontSize: 13, marginTop: 4, lineHeight: 1.45 }}>
-                {n.body}
-              </div>
-            </div>
-          ))}
-        </section>
-      )}
+      {/* THE RISK — a flagged doubt is a risk to plan around, in the same format. */}
+      {show.doubts && doubts.map((d) => (
+        <EditorialCard key={d.smId} label="THE RISK" accent={CORAL}
+          heading={d.name} sub={`(${d.club})`} body={d.reason} />
+      ))}
 
       {show.team && (
         <section style={{ display: "grid", gap: 10 }}>
