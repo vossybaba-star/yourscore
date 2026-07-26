@@ -37,12 +37,13 @@
 > the dependent RPCs needed no drop/recreate. This closes the ⚠️ flag from the 2026-07-21
 > profile-card entry below.)
 >
-> **Previously confirmed:** 2026-07-25 (**The Halftime Quiz shipped as the GAMEDAY QUIZ — published the day
-> BEFORE each fixture, not at the halftime whistle.** Merged to `main` as `c8b4488`; migration
-> `110_gameday.sql` applied to prod.
+> **Previously confirmed:** 2026-07-25 (**The Halftime Quiz shipped as the GAMEDAY QUIZ — published at
+> 09:00 the MORNING OF each fixture, not at the halftime whistle.** Merged to `main` as `c8b4488`; migration
+> `110_gameday.sql` applied to prod. *(Publish timing corrected 2026-07-25 from day-before to
+> day-of-9am per founder — see the newer entry above.)*
 > **What changed and why:** a pack per PL fixture now publishes from a daily Vercel cron
-> (`/api/cron/gameday-publish`, `0 8,9 * * *` — both hours cover 09:00 London across BST/GMT) the
-> day before kick-off, against questions approved on Telegram two days out. This retires the whole
+> (`/api/cron/gameday-publish`, `0 8,9 * * *` — both hours cover 09:00 London across BST/GMT) on the
+> morning of the match, against questions approved on Telegram the day before. This retires the whole
 > live-timing surface — no halftime-whistle detection, no 15-minute assembly window, no
 > confirmed-lineup "fresh" slice — so a dead VPS can no longer stop a pack going live. The physical
 > table keeps the name `halftime_releases` (renaming it would touch the live PL tab and club-fan

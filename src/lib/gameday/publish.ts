@@ -323,11 +323,11 @@ async function emailForFixture(row: GamedayRow, slug: string): Promise<number> {
         userId,
         email,
         subject: `${row.home} v ${row.away} — your quiz pack is live`,
-        preheader: "Ten questions, set the day before kick-off. Play now.",
+        preheader: "Ten questions. Play it before kick-off.",
         badge: "Gameday Quiz · Live",
         headline: `${row.home} v ${row.away}`,
         subline:
-          "Your quiz pack just dropped. Ten questions, set the day before kick-off — play it before the match.",
+          "Your quiz pack just dropped, the morning of the match. Ten questions — play it before kick-off.",
         ctaLabel: "Play the pack",
         ctaUrl,
         appUrl: base,
