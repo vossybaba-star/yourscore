@@ -97,7 +97,7 @@ export function WaitlistCard({ source = "blog", pulse = false }: { source?: stri
       <div className="rounded-2xl bg-surface border border-border px-6 py-6 text-center">
         <p className="font-display text-2xl tracking-wide text-green">YOU&apos;RE ON THE LIST ✓</p>
         <p className="font-body text-sm text-text-muted mt-2">
-          We&apos;ll email you when gameweek 1 opens. Until then, the daily quiz and 38-0 are live.
+          We&apos;ll email you the moment squads open on 1 August. Until then, the daily quiz and 38-0 are live.
         </p>
       </div>
     );
@@ -112,8 +112,8 @@ export function WaitlistCard({ source = "blog", pulse = false }: { source?: stri
         FANTASY FOOTBALL IS COMING
       </p>
       <p className="font-body text-sm text-text-muted mt-2 leading-6">
-        YourScore Fantasy Football launches Friday 21 August: your football knowledge earns your
-        transfers. Save your spot and you&apos;ll get gameweek 1 access the moment it opens.
+        YourScore Fantasy Football squads open 1 August, so you have time to plan your team
+        before the season. Save your spot and you&apos;ll get in the moment they open.
       </p>
       <button
         onClick={onClick}

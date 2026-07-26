@@ -571,14 +571,14 @@ function SeasonFeatures() {
       <div className="text-center mb-8">
         <h2 className="font-display text-4xl sm:text-5xl text-white mb-3">LANDING WITH THE SEASON</h2>
         <p className="font-body text-text-muted max-w-lg mx-auto">
-          Two more ways to score, both opening on Friday 21 August with the first Premier League whistle of the season.
+          Two more ways to score with the new season. Fantasy squads open 1 August so you can plan, and the gameday quiz lands with the first Premier League whistle on Friday 21 August.
         </p>
       </div>
 
       <FeatureSection
-        eyebrow="FANTASY · FRIDAY 21 AUGUST"
+        eyebrow="FANTASY · SQUADS OPEN 1 AUGUST"
         title={<>One transfer.<br />Earn the rest.</>}
-        sub="Everyone gets a move each gameweek. What you know earns you more. Opening night, with the season."
+        sub="Everyone gets a move each gameweek. What you know earns you more. Squads open 1 August so you can plan your team before the season."
         points={FANTASY_POINTS}
         accent={TEAL}
         href="/matchweek"
@@ -654,7 +654,7 @@ export default function GamesPage() {
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6 font-body text-xs uppercase tracking-widest text-green"
             style={{ background: "rgba(174,234,0,0.08)", border: "1px solid rgba(174,234,0,0.15)" }}>
             <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "#aeea00" }} />
-            Five live games · Halftime Quiz and Fantasy from 21 August
+            Five live games · Fantasy squads open 1 August
           </div>
           <h1 className="font-display text-6xl sm:text-7xl text-white leading-none mb-5">
             THE<br /><span style={{ color: accentColor }}>GAMES</span>
@@ -845,7 +845,8 @@ export default function GamesPage() {
         {/* ── Landing with the season ───────────────────────────────────────
             Fantasy and the gameday quiz get their own sections rather than a
             tab each: neither is playable yet, so they can't sit in a tab strip
-            whose other entries all say "play now". Both land on 21 Aug.
+            whose other entries all say "play now". Fantasy squads open 1 Aug;
+            the gameday quiz lands 21 Aug with the season.
 
             The copy is lifted from the surfaces that already ship it, not
             reinvented: FantasyHold (matchweek → Fantasy) and HalftimeRail.

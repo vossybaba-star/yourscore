@@ -618,6 +618,10 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-26** — **Fantasy squads open 1 August** (three weeks before the season, so players
+  can plan). Copy updated on the "Save my spot" card (`WaitlistCard`), the `/fantasy` teaser
+  tab (`FantasyTeaser`), and the games page; season/first-whistle references stay 21 August.
+  Also removed the "COMING SOON" pills from the two `SeasonSection` squares (Fantasy + Gameday).
 - **2026-07-25** — **38-0 promo tile on the app home** (`Play38Tile` in `Dashboard.tsx`, under
   Today's debate). Sells the viral team-builder with a mini 4-3-3 pitch graphic + "38-0"
   scoreboard chip; links to `/38-0`. App home only — deliberately NOT on `MarketingLanding`

@@ -193,7 +193,7 @@ export function FantasyTeaser() {
         <div className="rounded-2xl" style={{ padding: "22px 18px", textAlign: "center", background: `radial-gradient(120% 100% at 50% 0%, ${tint(TEAL, "26")}, transparent 65%)`, border: `1px solid ${tint(TEAL, "38")}` }}>
           <p className="font-display tracking-wide text-white" style={{ fontSize: 22, margin: "0 0 4px" }}>GET IN BEFORE THE FIRST WHISTLE</p>
           <p className="font-body" style={{ fontSize: 12.5, color: "#9aa39e", margin: 0, lineHeight: 1.5 }}>
-            Squads open Friday 21 August, with the season. Opt in above and we&apos;ll tell you the moment it&apos;s live.
+            Squads open 1 August, three weeks before the first whistle, so you have time to plan your team. Opt in above and we&apos;ll tell you the moment they&apos;re live.
           </p>
         </div>
       </div>
