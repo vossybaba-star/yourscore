@@ -23,14 +23,14 @@ const TEAL = "#00d8c0";
 
 /**
  * Line breaks are AUTHORED, not left to wrapping. At this size the break is part
- * of the typography — "Half time. / Your time." lands; "Half time. Your / time."
+ * of the typography — "Game day. / Your quiz." lands; "Game day. Your / quiz."
  * doesn't. Splitting also lets the type run much bigger than a single line could.
  */
 const PAGES = [
   {
-    eyebrow: "HALF TIME",
-    lines: ["Half time.", "Your time."],
-    line: "A quiz for every fixture, the moment the real whistle blows.",
+    eyebrow: "EVERY FIXTURE",
+    lines: ["Game day.", "Your quiz."],
+    line: "A ten-question pack for every Premier League fixture, out the day before kick-off.",
     art: "ball" as const,
   },
   {

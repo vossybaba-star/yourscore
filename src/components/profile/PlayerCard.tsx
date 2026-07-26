@@ -25,6 +25,23 @@ export const ATTRIBUTE_LABELS: Record<keyof Attributes, string> = {
   SOC: "Social",
 };
 
+/**
+ * Plain-English meaning of each attribute, for the expanded card. The card face
+ * only has room for a three-letter code; this is where a player learns what the
+ * number actually rewards, so every line names the behaviour, not the metric.
+ */
+export const ATTRIBUTE_META: Record<keyof Attributes, { label: string; blurb: string }> = {
+  KNO: { label: "Knowledge", blurb: "How often your answers are right" },
+  PAC: { label: "Pace", blurb: "How quickly you lock in an answer" },
+  WIN: { label: "Winning", blurb: "Your record against other players" },
+  CON: { label: "Consistency", blurb: "How many days in a row you play" },
+  RNG: { label: "Range", blurb: "How many of our games you play" },
+  SOC: { label: "Social", blurb: "Playing friends, not just strangers" },
+};
+
+/** Attribute keys in card-reading order (left column then right). */
+export const ATTRIBUTE_ORDER: (keyof Attributes)[] = ["KNO", "PAC", "WIN", "RNG", "CON", "SOC"];
+
 type Tier = { key: string; label: string; from: string; to: string; edge: string; ink: string; dim: string };
 
 // Four rungs. The jump between them is the thing worth chasing, so the palettes

@@ -417,6 +417,22 @@ export function trackPushOptIn(): void {
   track("push_opt_in", payload);                      // Vercel Analytics
 }
 
+// ── ReminderSet (gameday matchday intent) ────────────────────────────────────
+// Fired when a Player taps "Notify me" for a fixture's Gameday Quiz pack and the
+// server confirms it. Distinct from ClubPick (season-long identity) and PushOptIn
+// (channel consent): this is a per-fixture matchday-intent signal — the audience
+// that asked to be pulled back for a specific game. `fixtureId` rides the payload
+// so fixture-level reporting/audiences come free.
+export function trackReminderSet(fixtureId: number, props: Props = {}): void {
+  if (typeof window === "undefined") return;
+  const payload: Props = { fixtureId, client: clientTag(), ...props };
+  window.fbq?.("trackCustom", "ReminderSet", payload); // Meta
+  window.ttq?.track?.("ReminderSet", payload);          // TikTok
+  window.gtag?.("event", "reminder_set", payload);      // Google Analytics 4
+  track("reminder_set", payload);                       // Vercel Analytics
+  void afLogEvent("reminder_set", { fixtureId });       // AppsFlyer (native only)
+}
+
 // ── TeamDrafted (the IKEA moment) ────────────────────────────────────────────
 // Fired once a full XI is drafted — they BUILT something, before any match is
 // played. Sits between Play380 (draft started) and Complete380 (match result):

@@ -31,6 +31,19 @@ interface QuizPack {
   created_at?: string | null;
 }
 
+// A club pack's THEME for the card headline (Featured tab only — the Club tab
+// shows clubs as quiz hubs, no theme). Names are "Team · Theme"
+// (e.g. "Chelsea · Modern Era II"); featured season packs put the club in `name`
+// and the season in `parameter` ("2025/26"). Split eyebrow from the main line so
+// "2025/26" stays prominent and never gets clamped off a long single string.
+function clubThemeParts(pack: QuizPack): { eyebrow: string | null; main: string } {
+  const parts = (pack.name ?? "").split("·").map((s) => s.trim()).filter(Boolean);
+  if (parts.length > 1) return { eyebrow: null, main: parts.slice(1).join(" · ") };
+  const p = pack.parameter ?? "";
+  if (/^\d{4}\/\d{2}$/.test(p)) return { eyebrow: "Premier League", main: p };
+  return { eyebrow: null, main: p || pack.name || "" };
+}
+
 // "Jun 18" style published date for quiz cards.
 function packDate(iso?: string | null): string | null {
   if (!iso) return null;
@@ -96,7 +109,7 @@ const END_OF_SEASON_EMOJI: Record<string, string> = { "The Farewell Tour": "👋
 
 // ── ClubCard ──────────────────────────────────────────────────────────────────
 
-function ClubCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: string | null }) {
+function ClubCard({ pack, challengeTo, showTheme }: { pack: QuizPack; challengeTo?: string | null; showTheme?: boolean }) {
   const [badgeUrl, setBadgeUrl] = useState<string | null>(null);
   const slug = slugify(pack.name);
 
@@ -118,7 +131,7 @@ function ClubCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: string 
         // With a designed cover the image sets the zone's height (shown whole);
         // the fixed 110px banner only applies to the badge/initial fallbacks.
         style={pack.metadata?.cover_image ? undefined : {
-          height: 110,
+          height: 88,
           background:
             "radial-gradient(ellipse at 50% 80%, rgba(0,216,192,0.12) 0%, transparent 70%), linear-gradient(180deg, rgba(0,216,192,0.05) 0%, transparent 100%)",
         }}
@@ -130,8 +143,8 @@ function ClubCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: string 
           <img
             src={badgeUrl}
             alt={pack.name}
-            width={82}
-            height={82}
+            width={58}
+            height={58}
             style={{
               objectFit: "contain",
               filter: "drop-shadow(0 6px 16px rgba(0,216,192,0.35))",
@@ -141,26 +154,36 @@ function ClubCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: string 
           />
         ) : (
           <div
-            className="flex items-center justify-center rounded-2xl font-display text-3xl text-white"
-            style={{ width: 68, height: 68, background: "rgba(0,216,192,0.1)", border: "1px solid rgba(0,216,192,0.2)" }}
+            className="flex items-center justify-center rounded-xl font-display text-xl text-white"
+            style={{ width: 48, height: 48, background: "rgba(0,216,192,0.1)", border: "1px solid rgba(0,216,192,0.2)" }}
           >
             {pack.name[0]}
           </div>
         )}
       </div>
-      <div className="px-4 pb-4 pt-3">
-        <p className="font-body text-sm font-bold text-white leading-snug mb-0.5">{pack.name}</p>
-        {pack.description && (
-          <p className="font-body text-xs mb-2.5 line-clamp-2 leading-relaxed" style={{ color: "#7a857f" }}>{pack.description}</p>
-        )}
+      {/* On the Club tab a ClubCard opens the club's quiz HUB (a group of
+          quizzes), so it shows no theme — just crest + OPEN. On Featured it
+          represents the season quiz, so it keeps the theme headline. */}
+      <div className="px-2 pb-2.5 pt-2">
+        {showTheme && (() => {
+          const { eyebrow, main } = clubThemeParts(pack);
+          return (
+            <div className="mb-1.5" style={{ minHeight: 34 }}>
+              {eyebrow && (
+                <p className="font-display text-[9px] uppercase tracking-wider mb-0.5 line-clamp-1" style={{ color: "#00d8c0" }}>{eyebrow}</p>
+              )}
+              <p className="font-body text-sm font-bold text-white leading-tight line-clamp-2">{main}</p>
+            </div>
+          );
+        })()}
         <div
-          className="rounded-xl py-2 text-center"
+          className="rounded-md py-0.5 text-center"
           style={{
             background: "linear-gradient(135deg, rgba(0,216,192,0.18) 0%, rgba(255,120,0,0.12) 100%)",
             border: "1px solid rgba(0,216,192,0.3)",
           }}
         >
-          <span className="font-display text-xs tracking-widest text-teal">OPEN CLUB →</span>
+          <span className="font-display text-[10px] tracking-wide text-teal">OPEN →</span>
         </div>
       </div>
     </Link>
@@ -190,7 +213,7 @@ function RecordsCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: stri
       <div
         className="relative flex items-center justify-center"
         style={pack.metadata?.cover_image ? undefined : {
-          height: 110,
+          height: 88,
           background:
             "radial-gradient(ellipse at 50% 80%, rgba(0,216,192,0.14) 0%, transparent 70%), linear-gradient(180deg, rgba(0,216,192,0.06) 0%, transparent 100%)",
         }}
@@ -202,8 +225,8 @@ function RecordsCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: stri
           <img
             src={logoUrl}
             alt={pack.name}
-            width={64}
-            height={64}
+            width={48}
+            height={48}
             style={{
               objectFit: "contain",
               filter: "drop-shadow(0 6px 16px rgba(0,216,192,0.45))",
@@ -212,35 +235,30 @@ function RecordsCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: stri
             }}
           />
         ) : (
-          <span className="text-5xl" style={{ filter: "drop-shadow(0 4px 12px rgba(0,216,192,0.4))" }}>
+          <span className="text-4xl" style={{ filter: "drop-shadow(0 4px 12px rgba(0,216,192,0.4))" }}>
             {emoji ?? "📊"}
           </span>
         )}
         <div
-          className={`absolute ${pack.metadata?.cover_image ? "bottom-3" : "top-3"} right-3 font-display text-xs px-2 py-0.5 rounded-lg`}
+          className={`absolute ${pack.metadata?.cover_image ? "bottom-2" : "top-2"} right-2 font-display text-[10px] px-1.5 py-0.5 rounded-md`}
           style={{ background: "rgba(0,0,0,0.5)", color: "#00d8c0", border: "1px solid rgba(0,216,192,0.3)" }}
         >
           {pack.question_count}Q
         </div>
       </div>
-      <div className="px-4 pb-4 pt-3">
-        <p className="font-body text-sm font-bold text-white leading-tight mb-0.5">{pack.name}</p>
-        <p className="font-body text-xs mb-1.5" style={{ color: "#8a948f" }}>
-          {/* Was hardcoded "All-Time Records" for every pack — mislabeled the daily
-              World Cup quizzes (audit 13 Jul). Derive from the pack instead. */}
+      <div className="px-2 pb-2.5 pt-2">
+        <p className="font-body text-xs font-bold text-white leading-tight mb-1 line-clamp-2" style={{ minHeight: 30 }}>{pack.name}</p>
+        <p className="font-body text-[10px] mb-1.5 line-clamp-1" style={{ color: "#8a948f" }}>
           {isWorldCupPack(pack) ? "World Cup 2026" : "All-Time Records"}{packDate(pack.created_at) ? ` · ${packDate(pack.created_at)}` : ""}
         </p>
-        {pack.description && (
-          <p className="font-body text-xs mb-2.5 line-clamp-2 leading-relaxed" style={{ color: "#7a857f" }}>{pack.description}</p>
-        )}
         <div
-          className="rounded-xl py-2 text-center"
+          className="rounded-md py-0.5 text-center"
           style={{
             background: "linear-gradient(135deg, rgba(0,216,192,0.18) 0%, rgba(0,216,192,0.05) 100%)",
             border: "1px solid rgba(0,216,192,0.3)",
           }}
         >
-          <span className="font-display text-xs tracking-widest" style={{ color: "#00d8c0" }}>PLAY NOW →</span>
+          <span className="font-display text-[10px] tracking-wide" style={{ color: "#00d8c0" }}>PLAY →</span>
         </div>
       </div>
     </Link>
@@ -274,7 +292,7 @@ function EndOfSeasonCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: 
       <div
         className="relative flex items-center justify-center"
         style={pack.metadata?.cover_image ? undefined : {
-          height: 110,
+          height: 88,
           background:
             "radial-gradient(ellipse at 50% 80%, rgba(0,216,192,0.14) 0%, transparent 70%), linear-gradient(180deg, rgba(0,216,192,0.06) 0%, transparent 100%)",
         }}
@@ -286,8 +304,8 @@ function EndOfSeasonCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: 
           <img
             src={imageUrl}
             alt={pack.name}
-            width={64}
-            height={64}
+            width={48}
+            height={48}
             style={{
               objectFit: "contain",
               filter: "drop-shadow(0 6px 16px rgba(0,216,192,0.45))",
@@ -296,37 +314,34 @@ function EndOfSeasonCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: 
             }}
           />
         ) : (
-          <span className="text-5xl" style={{ filter: "drop-shadow(0 4px 12px rgba(0,216,192,0.4))" }}>
+          <span className="text-4xl" style={{ filter: "drop-shadow(0 4px 12px rgba(0,216,192,0.4))" }}>
             {emoji ?? "🏁"}
           </span>
         )}
         <div
-          className={`absolute ${pack.metadata?.cover_image ? "bottom-3" : "top-3"} right-3 font-display text-xs px-2 py-0.5 rounded-lg`}
+          className={`absolute ${pack.metadata?.cover_image ? "bottom-2" : "top-2"} right-2 font-display text-[10px] px-1.5 py-0.5 rounded-md`}
           style={{ background: "rgba(0,0,0,0.5)", color: "#00d8c0", border: "1px solid rgba(0,216,192,0.3)" }}
         >
           {pack.question_count}Q
         </div>
         <div
-          className={`absolute ${pack.metadata?.cover_image ? "bottom-3" : "top-3"} left-3 font-body text-xs px-2 py-0.5 rounded-full font-semibold`}
+          className={`absolute ${pack.metadata?.cover_image ? "bottom-2" : "top-2"} left-2 font-body text-[10px] px-1.5 py-0.5 rounded-full font-semibold`}
           style={{ background: "rgba(0,216,192,0.15)", color: "#00d8c0", border: "1px solid rgba(0,216,192,0.3)" }}
         >
           25/26
         </div>
       </div>
-      <div className="px-4 pb-4 pt-3">
-        <p className="font-body text-sm font-bold text-white leading-tight mb-0.5">{pack.name}</p>
-        <p className="font-body text-xs mb-1.5" style={{ color: "#8a948f" }}>End of Season</p>
-        {pack.description && (
-          <p className="font-body text-xs mb-2.5 line-clamp-2 leading-relaxed" style={{ color: "#7a857f" }}>{pack.description}</p>
-        )}
+      <div className="px-2 pb-2.5 pt-2">
+        <p className="font-body text-xs font-bold text-white leading-tight mb-1 line-clamp-2" style={{ minHeight: 30 }}>{pack.name}</p>
+        <p className="font-body text-[10px] mb-1.5" style={{ color: "#8a948f" }}>End of Season</p>
         <div
-          className="rounded-xl py-2 text-center"
+          className="rounded-md py-0.5 text-center"
           style={{
             background: "linear-gradient(135deg, rgba(0,216,192,0.18) 0%, rgba(6,182,212,0.12) 100%)",
             border: "1px solid rgba(0,216,192,0.3)",
           }}
         >
-          <span className="font-display text-xs tracking-widest" style={{ color: "#00d8c0" }}>PLAY NOW →</span>
+          <span className="font-display text-[10px] tracking-wide" style={{ color: "#00d8c0" }}>PLAY →</span>
         </div>
       </div>
     </Link>
@@ -368,7 +383,7 @@ function OpenRoomCard({ room, onJoin }: { room: OpenRoom; onJoin: () => void }) 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 type MainTab = "solo" | "multiplayer" | "leaderboards";
-type SoloTab = "featured" | "worldcup" | "club" | "records";
+type SoloTab = "featured" | "worldcup" | "club" | "records" | "build";
 
 // A World Cup quiz: tagged via metadata.series (the daily seed sets series:"wc2026")
 // or named/parametered for the World Cup. These are the daily £100-series packs.
@@ -757,6 +772,7 @@ function PlayPageInner() {
                 { key: "worldcup", label: "World Cup" },
                 { key: "club", label: "Club" },
                 { key: "records", label: "Records" },
+                { key: "build", label: "Build a Quiz" },
               ] as { key: SoloTab; label: string }[]).map((t) => (
                 <button
                   key={t.key}
@@ -815,61 +831,71 @@ function PlayPageInner() {
               inside the Quiz hub. */}
           <GamedayRail />
 
-          {/* Build a Quiz banner */}
-          <div className="max-w-lg mx-auto px-4 pt-4 pb-2">
-            <button
-              onClick={() => router.push("/quiz/create")}
-              className="w-full rounded-2xl overflow-hidden transition-all duration-150 active:scale-[0.98]"
-              style={{
-                background: "linear-gradient(135deg, rgba(174,234,0,0.12) 0%, rgba(0,200,100,0.06) 100%)",
-                border: "1px solid rgba(174,234,0,0.3)",
-                padding: "16px 20px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                boxShadow: "0 0 24px rgba(174,234,0,0.06)",
-              }}
-            >
-              <div style={{ textAlign: "left" }}>
-                <p className="font-display text-sm tracking-wide text-green">✨ BUILD YOUR OWN QUIZ</p>
-                <p className="font-body text-xs mt-0.5 text-text-muted">Pick a team or topic · choose your era · challenge a friend</p>
+          {/* ── Build a Quiz tab — the builder entry point plus the quizzes
+              this user has already built. ────────────────────────────────── */}
+          {soloTab === "build" && (
+            <>
+              <div className="max-w-lg mx-auto px-4 pt-4 pb-2">
+                <button
+                  onClick={() => router.push("/quiz/create")}
+                  className="w-full rounded-2xl overflow-hidden transition-all duration-150 active:scale-[0.98]"
+                  style={{
+                    background: "linear-gradient(135deg, rgba(174,234,0,0.12) 0%, rgba(0,200,100,0.06) 100%)",
+                    border: "1px solid rgba(174,234,0,0.3)",
+                    padding: "16px 20px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    boxShadow: "0 0 24px rgba(174,234,0,0.06)",
+                  }}
+                >
+                  <div style={{ textAlign: "left" }}>
+                    <p className="font-display text-sm tracking-wide text-green">✨ BUILD YOUR OWN QUIZ</p>
+                    <p className="font-body text-xs mt-0.5 text-text-muted">Pick a team or topic · choose your era · challenge a friend</p>
+                  </div>
+                  <span className="font-display text-lg text-green">→</span>
+                </button>
               </div>
-              <span className="font-display text-lg text-green">→</span>
-            </button>
-          </div>
 
-          {/* Your quizzes — the ones this user built. Sits directly under the builder so
-              creating one and finding it again are the same place. Horizontal scroller so it
-              stays a slim strip above the main grid rather than pushing everything down. */}
-          {myPacks.length > 0 && (
-            <div className="max-w-lg mx-auto pt-2 pb-1">
-              <div className="px-4 flex items-center justify-between mb-2">
-                <p className="font-display text-xs tracking-widest" style={{ color: "#586058" }}>YOUR QUIZZES</p>
-              </div>
-              <div className="flex gap-3 overflow-x-auto px-4 pb-1" style={{ scrollbarWidth: "none" }}>
-                {myPacks.map((p) => (
-                  <Link
-                    key={p.id}
-                    href={`/challenges/${slugify(p.name)}?pid=${p.id}${challengeTo ? `&challenge=${challengeTo}` : ""}`}
-                    className="flex-shrink-0 rounded-2xl px-4 py-3 transition-all duration-150 active:scale-[0.97]"
-                    style={{ width: 190, background: "linear-gradient(160deg, #0e1611 0%, #15211a 100%)", border: "1px solid rgba(0,216,192,0.18)" }}
-                  >
-                    <p className="font-body text-sm font-bold text-white leading-snug line-clamp-2" style={{ minHeight: 36 }}>{p.name}</p>
-                    <p className="font-body text-xs mt-1" style={{ color: "#7a857f" }}>{p.question_count} questions</p>
-                    <span className="font-display text-xs tracking-widest text-teal">PLAY →</span>
-                  </Link>
-                ))}
-              </div>
-            </div>
+              {/* Your quizzes — the ones this user built. Lives here in the Build
+                  tab so creating one and finding it again are the same place. */}
+              {myPacks.length > 0 ? (
+                <div className="max-w-lg mx-auto pt-2 pb-1">
+                  <div className="px-4 flex items-center justify-between mb-2">
+                    <p className="font-display text-xs tracking-widest" style={{ color: "#586058" }}>YOUR QUIZZES</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 px-4">
+                    {myPacks.map((p) => (
+                      <Link
+                        key={p.id}
+                        href={`/challenges/${slugify(p.name)}?pid=${p.id}${challengeTo ? `&challenge=${challengeTo}` : ""}`}
+                        className="rounded-2xl px-4 py-3 transition-all duration-150 active:scale-[0.97]"
+                        style={{ background: "linear-gradient(160deg, #0e1611 0%, #15211a 100%)", border: "1px solid rgba(0,216,192,0.18)" }}
+                      >
+                        <p className="font-body text-sm font-bold text-white leading-snug line-clamp-2" style={{ minHeight: 36 }}>{p.name}</p>
+                        <p className="font-body text-xs mt-1" style={{ color: "#7a857f" }}>{p.question_count} questions</p>
+                        <span className="font-display text-xs tracking-widest text-teal">PLAY →</span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="max-w-lg mx-auto px-4 flex flex-col items-center justify-center py-16 text-center">
+                  <p className="text-4xl mb-4">✏️</p>
+                  <p className="font-body text-sm text-text-muted">You haven&apos;t built a quiz yet — tap above to make one.</p>
+                </div>
+              )}
+            </>
           )}
 
           {/* Cards grid */}
+          {soloTab !== "build" && (
           <div className="max-w-lg mx-auto px-4 pt-2">
             {packsLoading ? (
-              <div className="grid grid-cols-2 gap-3">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="rounded-3xl bg-surface"
-                    style={{ border: "1px solid rgba(255,255,255,0.06)", height: 200, opacity: 0.3 }} />
+              <div className="grid grid-cols-3 gap-2.5">
+                {Array.from({ length: 9 }).map((_, i) => (
+                  <div key={i} className="rounded-2xl bg-surface"
+                    style={{ border: "1px solid rgba(255,255,255,0.06)", height: 150, opacity: 0.3 }} />
                 ))}
               </div>
             ) : filtered.length === 0 ? (
@@ -880,12 +906,12 @@ function PlayPageInner() {
             ) : (
               <>
                 {heroPack && <HeroPackCard pack={heroPack} challengeTo={challengeTo} />}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-3 gap-2.5">
                   {gridPacks.map((pack) =>
                   pack.parameter === "2025/26 End of Season" ? (
                     <EndOfSeasonCard key={pack.id} pack={pack} challengeTo={challengeTo} />
                   ) : pack.type === "club" ? (
-                    <ClubCard key={pack.id} pack={pack} challengeTo={challengeTo} />
+                    <ClubCard key={pack.id} pack={pack} challengeTo={challengeTo} showTheme={soloTab !== "club"} />
                   ) : (
                     <RecordsCard key={pack.id} pack={pack} challengeTo={challengeTo} />
                   )
@@ -894,6 +920,7 @@ function PlayPageInner() {
               </>
             )}
           </div>
+          )}
         </>
       )}
 

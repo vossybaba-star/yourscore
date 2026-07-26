@@ -17,6 +17,7 @@ import { useCallback, useEffect, useSyncExternalStore } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { registerForPush } from "@/lib/push";
 import { isNative } from "@/lib/native";
+import { trackReminderSet } from "@/lib/analytics/trackGame";
 
 export interface RemindersState {
   /** Fixture ids the viewer has asked to be notified about. */
@@ -226,6 +227,11 @@ async function postToggle(fixtureId: number, on: boolean): Promise<string | null
       set({ ids: before }); // roll back — never claim a reminder the server refused
       return (body as { error?: string }).error ?? "Couldn't save that";
     }
+    // Confirmed turn-on is the single matchday-intent moment worth tracking, and
+    // this is the one choke point every path funnels through (button tap, resume
+    // after sign-in, resume after consent) — so it fires once, only on success,
+    // never on a toggle-off or a rolled-back write.
+    if (on) trackReminderSet(fixtureId);
     return null;
   } catch {
     set({ ids: before });

@@ -6,7 +6,38 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-07-25 (**The Halftime Quiz shipped as the GAMEDAY QUIZ — published the day
+> **Confirmed:** 2026-07-25 (**The public Fantasy tab teaser (`/fantasy` → `FantasyTeaser`) rebuilt as
+> a landing page and shipped to prod.** The lead flipped from "One transfer. Earn the rest." to the
+> differentiator itself — headline **"The more you know, the more you move."**, subhead "the fantasy
+> game where your football brain earns you more transfers." The old numbered rulebook became a
+> landing page: an **earn showpiece** (a correct Gameday Quiz answer → transfers earned, drawn not
+> asserted), two supporting cards (**your starting lineup** / **rules you already know**), a
+> **monthly-table block** selling join-any-time, and a closer. The opt-in (the shipped `WaitlistCard`,
+> `source="fantasy-tab"`) moved **high, right under the hero**, and now **pulses** — an expanding lime
+> ring (`animate-save-pulse`, reduced-motion safe), added via a scoped `pulse` prop so the blog
+> waitlist is unaffected. The hero gained a cluster of **licensed PL star portraits** (Haaland, Saka,
+> Palmer, Rice, Foden — reusing the Higher-or-Lower headshots via `faceFor` + `PlayerAvatar`, monogram
+> fallback so it never blanks). Copy rules held: "correct answers earn transfers" (never
+> every-answer-banks-one), zero dashes; `WaitlistCard` launch date corrected "mid-August" → "Friday 21
+> August". Also fixed an **iPhone safe-area bug** on the teaser — the header sat under the status bar
+> and the closing tile was clipped by the bottom nav; padding now uses `env(safe-area-inset-*)`.
+> Commits on `main`: `7417d49`, `fab0dc5`, `b6fd9cf`, `fc20106`. FantasyHub and the game itself are
+> unchanged and still allowlist-gated.)
+>
+> **Previously confirmed:** 2026-07-25 (**Duplicate-rank bug FIXED — every player has one rank again.**
+> Migration **211 APPLIED to prod**, recorded on `main`. `yourscore_user_ratings` joined
+> `draft_standings` on `league_id` alone, ignoring `competition` — so anyone active in more than
+> one competition (PL/WC/LaLiga) got a SEPARATE row per competition. Result: **340 users had two
+> overall_ranks** (one appeared at both #45 and #4,895), **280 had their 38-0 score split and
+> never summed** (goat1993 saw 143,000 instead of 257,000), and every rank was inflated by ~358
+> phantom rows. Fix: aggregate `draft_standings` per user (sum wins/draws/losses across all
+> competitions) BEFORE the join. Verified live: 0 duplicate users, view rows == profiles ==
+> 10,046, 10,046 distinct contiguous ranks, `get_yourscore_rank`/`get_yourscore_ladder` return
+> one correct row per user, goat1993 now at #23 with the full 257,000. Column list unchanged, so
+> the dependent RPCs needed no drop/recreate. This closes the ⚠️ flag from the 2026-07-21
+> profile-card entry below.)
+>
+> **Previously confirmed:** 2026-07-25 (**The Halftime Quiz shipped as the GAMEDAY QUIZ — published the day
 > BEFORE each fixture, not at the halftime whistle.** Merged to `main` as `c8b4488`; migration
 > `110_gameday.sql` applied to prod.
 > **What changed and why:** a pack per PL fixture now publishes from a daily Vercel cron
@@ -587,6 +618,14 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-26** — **Fantasy squads open 1 August** (three weeks before the season, so players
+  can plan). Copy updated on the "Save my spot" card (`WaitlistCard`), the `/fantasy` teaser
+  tab (`FantasyTeaser`), and the games page; season/first-whistle references stay 21 August.
+  Also removed the "COMING SOON" pills from the two `SeasonSection` squares (Fantasy + Gameday).
+- **2026-07-25** — **38-0 promo tile on the app home** (`Play38Tile` in `Dashboard.tsx`, under
+  Today's debate). Sells the viral team-builder with a mini 4-3-3 pitch graphic + "38-0"
+  scoreboard chip; links to `/38-0`. App home only — deliberately NOT on `MarketingLanding`
+  (the signed-out web homepage). (§7)
 - **2026-07-24** — **App Store rating asks are counted, and paced by Games played** (migrations
   104 + 105). We could not previously answer "how many review requests have we made?" for any
   surface, ever: the post-game ask was gated by a localStorage stamp that left no server-side

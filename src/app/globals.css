@@ -108,6 +108,25 @@ input, textarea, select {
   100% { transform: translateX(300%);  }
 }
 
+/* Soft pulsing halo behind the Play + Fantasy nav icons — draws the eye to the
+   two games surfaces without moving layout. Purely decorative. */
+@keyframes navGlow {
+  0%, 100% { opacity: 0.3;  transform: scale(0.82); }
+  50%      { opacity: 0.85; transform: scale(1.18); }
+}
+.nav-glow {
+  position: absolute;
+  inset: -7px;
+  border-radius: 9999px;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(circle, rgba(0,216,192,0.55) 0%, rgba(0,216,192,0) 70%);
+  animation: navGlow 2.6s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-glow { animation: none; opacity: 0.45; }
+}
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0);   }
@@ -163,11 +182,25 @@ input, textarea, select {
   50%      { box-shadow: 0 0 0 6px rgba(0,216,192,0.10), 0 8px 26px -6px rgba(0,216,192,0.75); }
 }
 
+/* An expanding lime ring for a lime CTA (the fantasy waitlist "Save my spot").
+   A ring, not an opacity pulse — the button never dims (that reads as disabled),
+   and no transform, so it won't fight the button's active:scale tap feedback. */
+@keyframes saveSpotPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(174,234,0,0.55); }
+  70%  { box-shadow: 0 0 0 14px rgba(174,234,0,0); }
+  100% { box-shadow: 0 0 0 0 rgba(174,234,0,0); }
+}
+
 @layer utilities {
   /* Pulsing glow for the one action a screen wants you to take. */
   .animate-fantasy-glow { animation: fantasyGlow 2.6s ease-in-out infinite; }
   @media (prefers-reduced-motion: reduce) {
     .animate-fantasy-glow { animation: none; box-shadow: 0 6px 18px -6px rgba(0,216,192,0.5); }
+  }
+
+  .animate-save-pulse { animation: saveSpotPulse 2s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce) {
+    .animate-save-pulse { animation: none; }
   }
 
   .text-balance {
@@ -411,3 +444,12 @@ input, textarea, select {
 @media (prefers-reduced-motion: reduce) {
   .ys-skel::after { animation: none; content: none; }
 }
+
+/* "Get set for the season" hype tiles — shared by the signed-in and signed-out
+   homes (SeasonSection.tsx), so the keyframes live globally not in a per-page
+   <style> block. */
+@keyframes seasonSweep { 0%,72% { transform: translateX(-130%); } 100% { transform: translateX(130%); } }
+@keyframes seasonDot { 0%,100% { opacity: .35; transform: scale(.8); } 50% { opacity: 1; transform: scale(1.15); } }
+.season-shine { position: absolute; inset: 0; z-index: 4; pointer-events: none; background: linear-gradient(115deg, transparent 32%, rgba(255,255,255,0.13) 47%, transparent 60%); transform: translateX(-130%); animation: seasonSweep 4s ease-in-out infinite; }
+.season-dot { animation: seasonDot 1.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .season-shine, .season-dot { animation: none; } }

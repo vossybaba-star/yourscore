@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { GridBackground } from "@/components/ui/GridBackground";
 import Link from "next/link";
 import Image from "next/image";
 import { BottomNav } from "@/components/ui/BottomNav";
-import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { slugify } from "@/lib/utils";
 import { coverUrl } from "@/lib/img";
 import { getTeamBadgeUrlSync } from "@/lib/teamImages";
@@ -16,6 +15,7 @@ import { DebateCard } from "@/components/debate/DebateCard";
 import { GamedayCard } from "@/components/home/GamedayCard";
 import { trackShare } from "@/lib/analytics/trackGame";
 import { TodaysQuestionPreview } from "@/components/home/TodaysQuestionPreview";
+import { SeasonSection } from "@/components/home/SeasonSection";
 import type { TodaysGame, TodaysGameStats } from "@/lib/daily-game";
 
 const LIME = "#aeea00";
@@ -99,6 +99,9 @@ export interface DashboardData {
   todaysGame: TodaysGame;
   /** null = not signed in / not yet checked; done=false = not played today. */
   todaysGameCompletion: { done: boolean; score: number | null } | null;
+  /** The Gameday tile's fixture — a known supporter's round-1 fixture, else null
+   *  (SeasonSection defaults to Arsenal v Coventry). */
+  gamedayFixture: { home: string; away: string } | null;
 }
 
 const DASH_ANIM = `
@@ -198,75 +201,6 @@ function ProgressCard({ rank, dayStreak, weekDots }: { rank: RankInfo; dayStreak
   );
 }
 
-// ── 2. Rivalry module ─────────────────────────────────────────────────────────
-// A live challenge counts down for real (h2h expiry); otherwise the all-time
-// head-to-head record with their most-played opponent. No rival yet → a quiet
-// "start one" prompt keeps the slot earning its place.
-
-function endsIn(iso: string): string {
-  const ms = Date.parse(iso) - Date.now();
-  if (ms <= 0) return "any minute";
-  const d = Math.floor(ms / 86400000);
-  const h = Math.floor((ms % 86400000) / 3600000);
-  if (d > 0) return `${d}d ${h}h`;
-  const m = Math.floor((ms % 3600000) / 60000);
-  return h > 0 ? `${h}h ${m}m` : `${m}m`;
-}
-
-function RivalryModule({ rivalry, meName, meId }: { rivalry: RivalryInfo | null; meName: string; meId: string }) {
-  const [tick, setTick] = useState(0);
-  useEffect(() => {
-    const iv = setInterval(() => setTick((t) => t + 1), 60_000);
-    return () => clearInterval(iv);
-  }, []);
-  void tick;
-
-  return (
-    <div className="d-2">
-      <SectionHead title="Rivalries" href="/versus?view=friends" />
-      {rivalry ? (
-        <Link href={rivalry.live ? "/versus" : rivalry.opponentId ? `/profile/${rivalry.opponentId}` : "/versus"}
-          className="block rounded-2xl px-4 py-4 transition-transform active:scale-[0.99]"
-          style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.08)" }}>
-          <div className="flex items-center">
-            {/* Me */}
-            <div className="flex-1 flex flex-col items-center gap-1.5 min-w-0">
-              <PlayerAvatar seed={meId} name={meName} avatarUrl={null} size={44} ring={LIME} />
-              <p className="font-body text-[11px] font-bold text-white truncate max-w-full">{meName || "You"}</p>
-              <p className="font-display text-base leading-none tabular-nums" style={{ color: LIME }}>
-                {rivalry.myScore !== null ? rivalry.myScore.toLocaleString() : "—"}
-                <span className="font-body text-[9px] uppercase ml-1" style={{ color: "#8a948f" }}>{rivalry.live ? "pts" : "wins"}</span>
-              </p>
-            </div>
-
-            <p className="font-display text-2xl px-2 flex-shrink-0" style={{ color: GOLD }}>VS</p>
-
-            {/* Them */}
-            <div className="flex-1 flex flex-col items-center gap-1.5 min-w-0">
-              <PlayerAvatar seed={rivalry.opponentId ?? rivalry.opponentName} name={rivalry.opponentName} avatarUrl={null} size={44} ring="rgba(255,255,255,0.2)" />
-              <p className="font-body text-[11px] font-bold text-white truncate max-w-full">{rivalry.opponentName}</p>
-              <p className="font-display text-base leading-none tabular-nums text-white">
-                {rivalry.theirScore !== null ? rivalry.theirScore.toLocaleString() : "—"}
-                <span className="font-body text-[9px] uppercase ml-1" style={{ color: "#8a948f" }}>{rivalry.live ? "pts" : "wins"}</span>
-              </p>
-            </div>
-          </div>
-          <p className="font-body text-[11px] text-center mt-2.5" style={{ color: "#8a948f" }}>
-            {rivalry.live
-              ? `${rivalry.packName ?? "Quiz battle"}${rivalry.expiresAt ? ` · Ends in ${endsIn(rivalry.expiresAt)}` : ""}`
-              : "All-time head-to-head — settle it again"}
-          </p>
-        </Link>
-      ) : (
-        <Link href="/versus" className="flex items-center justify-between rounded-2xl px-4 py-3.5 transition-transform active:scale-[0.99]"
-          style={{ background: "rgba(0,216,192,0.05)", border: "1px dashed rgba(0,216,192,0.3)" }}>
-          <p className="font-body text-sm text-white">No rival yet — challenge someone and start one</p>
-          <span className="font-display text-sm flex-shrink-0" style={{ color: TEAL }}>VS →</span>
-        </Link>
-      )}
-    </div>
-  );
-}
 
 // ── 3. Today's Game — THE single hero ───────────────────────────────────────
 // One featured game a day, same for everyone (see src/lib/daily-game.ts).
@@ -530,6 +464,93 @@ function ModeTiles() {
   );
 }
 
+// ── 38-0 promo tile — sits under Today's debate on the app home only (not the
+//    marketing web homepage). Sells the viral team-builder, one tap into a game.
+//    Decorative pitch graphic shows the XI you draft (4-3-3), lime on turf.
+
+// A mini pitch with the eleven laid out in a 4-3-3 — the thing you build in 38-0.
+function PitchGraphic() {
+  const dots = [
+    { x: 60, y: 120 },                                             // GK
+    { x: 16, y: 92 }, { x: 45, y: 96 }, { x: 75, y: 96 }, { x: 104, y: 92 }, // DEF
+    { x: 30, y: 62 }, { x: 60, y: 66 }, { x: 90, y: 62 },          // MID
+    { x: 24, y: 30 }, { x: 60, y: 24 }, { x: 96, y: 30 },          // FWD
+  ];
+  return (
+    <svg viewBox="0 0 120 138" className="absolute right-0 top-0 h-full w-auto pointer-events-none"
+      style={{ opacity: 0.9 }} aria-hidden="true">
+      <defs>
+        <radialGradient id="p38-turf" cx="70%" cy="0%" r="90%">
+          <stop offset="0%" stopColor="#aeea00" stopOpacity="0.22" />
+          <stop offset="100%" stopColor="#0c1410" stopOpacity="0" />
+        </radialGradient>
+        <filter id="p38-glow" x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="2.2" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+      </defs>
+      <rect x="0" y="0" width="120" height="138" fill="url(#p38-turf)" />
+      {/* pitch markings */}
+      <g stroke="#aeea00" strokeOpacity="0.28" strokeWidth="1" fill="none">
+        <rect x="8" y="6" width="104" height="126" rx="4" />
+        <line x1="8" y1="69" x2="112" y2="69" />
+        <circle cx="60" cy="69" r="16" />
+        <rect x="36" y="6" width="48" height="20" />
+        <rect x="36" y="112" width="48" height="20" />
+      </g>
+      {/* the eleven */}
+      {dots.map((d, i) => (
+        <circle key={i} cx={d.x} cy={d.y} r="4.5" fill="#aeea00"
+          filter="url(#p38-glow)" stroke="#0a0a0f" strokeWidth="0.75" />
+      ))}
+    </svg>
+  );
+}
+
+function Play38Tile() {
+  return (
+    <Link
+      href="/38-0"
+      className="d-4 relative block overflow-hidden rounded-2xl px-5 py-4 transition-transform active:scale-[0.99]"
+      style={{
+        background: `linear-gradient(115deg, rgba(174,234,0,0.18), #0c1410 62%)`,
+        border: `1px solid rgba(174,234,0,0.32)`,
+      }}
+    >
+      {/* corner glow + pitch on the right, content sits over a scrim so it stays legible */}
+      <div className="absolute top-0 right-0 w-[200px] h-[200px] pointer-events-none"
+        style={{ background: "radial-gradient(circle at 100% 0%, rgba(174,234,0,0.16) 0%, transparent 60%)" }} />
+      <PitchGraphic />
+      <div className="absolute inset-y-0 left-0 w-3/4 pointer-events-none"
+        style={{ background: "linear-gradient(90deg, #0c1410 55%, transparent)" }} />
+
+      <div className="relative flex items-center gap-4">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="font-body text-[9px] font-bold uppercase tracking-[0.22em] px-2 py-0.5 rounded-full"
+              style={{ color: "#0a0a0f", background: LIME }}>
+              The viral game
+            </span>
+            {/* the perfect scoreline, as a little scoreboard chip */}
+            <span className="font-display text-[11px] tracking-[0.14em] px-2 py-0.5 rounded"
+              style={{ color: LIME, border: "1px solid rgba(174,234,0,0.4)", background: "rgba(174,234,0,0.08)" }}>
+              38&ndash;0
+            </span>
+          </div>
+          <p className="font-display text-[26px] leading-none text-white tracking-wide">Build your XI</p>
+          <p className="font-body text-xs text-text-muted mt-1.5 leading-snug">
+            Draft the perfect team, chase a flawless 38&ndash;0 season, and see how you rank.
+          </p>
+          <span className="inline-flex items-center gap-1.5 mt-3 rounded-xl px-4 py-2 font-display text-sm tracking-wide"
+            style={{ background: LIME, color: "#0a0a0f" }}>
+            PLAY 38&ndash;0 →
+          </span>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
 // ── Notices (unchanged behavior) ──────────────────────────────────────────────
 
 function PendingFriendsNotice() {
@@ -575,7 +596,7 @@ function PendingTurnsNotice() {
 // ── Main ────────────────────────────────────────────────────────────────────────
 
 export function Dashboard({ data }: { data: DashboardData }) {
-  const { userId, displayName, rank, dayStreak, weekDots, rivalry, recommended, played38, openLobbies, leagues, todaysGame, todaysGameCompletion } = data;
+  const { displayName, rank, dayStreak, weekDots, recommended, played38, openLobbies, leagues, todaysGame, todaysGameCompletion, gamedayFixture } = data;
 
   // Don't recommend the pack that's already the hero.
   const rail = recommended.filter((p) => p.id !== todaysGame.packId).slice(0, 5);
@@ -611,8 +632,9 @@ export function Dashboard({ data }: { data: DashboardData }) {
         {/* Live/upcoming halftime pack — self-hides off-matchday */}
         <GamedayCard />
 
-        {/* 2. Rivalry */}
-        <RivalryModule rivalry={rivalry} meName={displayName ? displayName.split(" ")[0] : "You"} meId={userId} />
+        {/* 2. Get set for the season — Fantasy + Gameday Quiz (replaced Rivalries,
+              founder 2026-07-25). */}
+        <SeasonSection className="d-2" fixture={gamedayFixture} />
 
         {/* 3. Today's Game — THE single hero, playable or done+share. The
             onboarding tour's final step points here (data-tour). */}
@@ -622,6 +644,9 @@ export function Dashboard({ data }: { data: DashboardData }) {
         <div className="d-4">
           <DebateCard signInNext="/" withSignUpPitch={false} />
         </div>
+
+        {/* 38-0 promo — under the debate, app home only (not MarketingLanding) */}
+        <Play38Tile />
 
         {/* 4. Behaviour-based discovery */}
         <DiscoveryRail packs={rail} played38={played38} />

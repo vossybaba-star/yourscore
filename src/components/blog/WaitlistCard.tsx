@@ -24,7 +24,7 @@ import { trackFantasyWaitlist } from "@/lib/analytics/trackGame";
 
 const INTENT_KEY = "ys:waitlist-intent";
 
-export function WaitlistCard({ source = "blog" }: { source?: string }) {
+export function WaitlistCard({ source = "blog", pulse = false }: { source?: string; pulse?: boolean }) {
   const { user, loading } = useUser();
   const router = useRouter();
   const pathname = usePathname();
@@ -97,7 +97,7 @@ export function WaitlistCard({ source = "blog" }: { source?: string }) {
       <div className="rounded-2xl bg-surface border border-border px-6 py-6 text-center">
         <p className="font-display text-2xl tracking-wide text-green">YOU&apos;RE ON THE LIST ✓</p>
         <p className="font-body text-sm text-text-muted mt-2">
-          We&apos;ll email you when gameweek 1 opens. Until then, the daily quiz and 38-0 are live.
+          We&apos;ll email you the moment squads open on 1 August. Until then, the daily quiz and 38-0 are live.
         </p>
       </div>
     );
@@ -112,13 +112,13 @@ export function WaitlistCard({ source = "blog" }: { source?: string }) {
         FANTASY FOOTBALL IS COMING
       </p>
       <p className="font-body text-sm text-text-muted mt-2 leading-6">
-        YourScore Fantasy Football launches mid-August: your football knowledge earns your
-        transfers. Save your spot and you&apos;ll get gameweek-1 access the moment it opens.
+        YourScore Fantasy Football squads open 1 August, so you have time to plan your team
+        before the season. Save your spot and you&apos;ll get in the moment they open.
       </p>
       <button
         onClick={onClick}
         disabled={state === "busy" || loading}
-        className="mt-4 w-full sm:w-auto rounded-xl px-6 py-3 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-60"
+        className={`mt-4 w-full sm:w-auto rounded-xl px-6 py-3 font-display tracking-wide active:scale-[0.98] transition-transform disabled:opacity-60${pulse && !loading && state === "idle" ? " animate-save-pulse" : ""}`}
         style={{ background: "#aeea00", color: "#062013", fontSize: 15 }}
       >
         {state === "busy" ? "SAVING…" : "SAVE MY SPOT"}
@@ -127,7 +127,7 @@ export function WaitlistCard({ source = "blog" }: { source?: string }) {
       <p className="font-body text-[11px] text-text-muted mt-3">
         {user
           ? "One launch email, no spam. Unsubscribe any time."
-          : "Takes one tap once you're signed in — one launch email, no spam."}
+          : "Takes one tap once you're signed in. One launch email, no spam."}
       </p>
     </div>
   );
