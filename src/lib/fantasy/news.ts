@@ -236,7 +236,7 @@ export function buildInsights(
     out.push({
       kind: "form",
       title: `${r.name} is quietly racking up points`,
-      body: `${r.points} points for ${r.club} — ${r.line}.`,
+      body: `${r.points} points for ${r.club}, ${r.line}.`,
     });
   }
 

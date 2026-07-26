@@ -13,7 +13,7 @@
  */
 import { NewsTabs } from "@/components/fantasy/NewsTabs";
 import { NewsFeed } from "@/components/fantasy/NewsFeed";
-import { GOLD, INK, MUTED, column, loadFeedDoc, shell, ukTime } from "@/components/fantasy/newsUi";
+import { FantasyMasthead, GOLD, column, loadFeedDoc, shell, ukTime } from "@/components/fantasy/newsUi";
 import { BottomNav } from "@/components/ui/BottomNav";
 
 export const revalidate = 300;
@@ -31,17 +31,12 @@ export default async function FantasyNews() {
     <>
     <main style={shell}>
       <div style={column}>
-        <header>
-          <div style={{ color: MUTED, fontSize: 12 }}>Fantasy</div>
-          <h1 style={{ color: INK, fontSize: 22, fontWeight: 700, margin: "2px 0 0" }}>
-            News &amp; insights
-          </h1>
-          {doc?.deadline && new Date(doc.deadline).getTime() > Date.now() && (
-            <div style={{ color: GOLD, fontSize: 12, marginTop: 6 }}>
-              GW{doc.gw} deadline · {ukTime(doc.deadline)}
-            </div>
-          )}
-        </header>
+        <FantasyMasthead title="News & insights" />
+        {doc?.deadline && new Date(doc.deadline).getTime() > Date.now() && (
+          <div style={{ color: GOLD, fontSize: 12, marginTop: -4 }}>
+            GW{doc.gw} deadline · {ukTime(doc.deadline)}
+          </div>
+        )}
 
         <NewsTabs active="/fantasy/news" />
 

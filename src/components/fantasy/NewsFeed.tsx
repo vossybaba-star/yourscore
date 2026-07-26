@@ -17,12 +17,14 @@ import { useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import type { NewsDoubt, NewsInsight, NewsItem, NewsTips } from "@/lib/fantasy/news";
 
-const GOLD = "#E3B54C";
-const PANEL = "#16261C";
-const LINE = "#2A4032";
-const INK = "#EDEAE0";
-const MUTED = "#9FB2A5";
-const WARN = "#E0A34A";
+// Shared fantasy tokens (mirrored, not imported — shared.tsx is "use client").
+const GOLD = "#ffc233";
+const PANEL = "#0e1611";
+const PANEL_2 = "#15211a";
+const LINE = "rgba(255,255,255,0.07)";
+const INK = "#eef2f0";
+const MUTED = "#8a948f";
+const WARN = "#ffb800";
 
 type Filter = "all" | "team-news" | "transfers" | "tips";
 
@@ -66,7 +68,7 @@ const cardBase: CSSProperties = {
 
 function Thumb({ src, alt }: { src: string; alt: string }) {
   return (
-    <div style={{ aspectRatio: "16 / 9", background: "#0B1712", overflow: "hidden" }}>
+    <div style={{ aspectRatio: "16 / 9", background: "#080d0a", overflow: "hidden" }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={src}
@@ -171,7 +173,7 @@ export function NewsFeed({
                 borderRadius: 999,
                 border: `1px solid ${on ? GOLD : LINE}`,
                 background: on ? GOLD : "transparent",
-                color: on ? "#12200F" : MUTED,
+                color: on ? "#0a0a0f" : MUTED,
                 fontSize: 12.5,
                 fontWeight: on ? 600 : 500,
                 cursor: "pointer",
@@ -199,7 +201,7 @@ export function NewsFeed({
       {show.tips && (
         <section
           style={{
-            background: "#1B2A1E", border: `1px solid ${GOLD}66`,
+            background: PANEL_2, border: `1px solid ${GOLD}66`,
             borderRadius: 12, padding: 14,
           }}
         >

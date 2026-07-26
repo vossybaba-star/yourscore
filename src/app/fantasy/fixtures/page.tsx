@@ -13,7 +13,7 @@
 import { Fragment } from "react";
 import { NewsTabs } from "@/components/fantasy/NewsTabs";
 import {
-  DIFF, GOLD, INK, MUTED, card, column, h2, loadFeedDoc, shell, ukTime,
+  DIFF, FantasyMasthead, GOLD, INK, MUTED, card, column, h2, loadFeedDoc, shell, ukTime,
 } from "@/components/fantasy/newsUi";
 import { BottomNav } from "@/components/ui/BottomNav";
 
@@ -34,12 +34,7 @@ export default async function FantasyFixtures() {
     <>
     <main style={shell}>
       <div style={column}>
-        <header>
-          <div style={{ color: MUTED, fontSize: 12 }}>Fantasy</div>
-          <h1 style={{ color: INK, fontSize: 22, fontWeight: 700, margin: "2px 0 0" }}>
-            News &amp; insights
-          </h1>
-        </header>
+        <FantasyMasthead title="News & insights" />
 
         <NewsTabs active="/fantasy/fixtures" />
 

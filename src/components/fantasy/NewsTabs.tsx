@@ -12,10 +12,11 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
 
-const GOLD = "#E3B54C";
-const INK = "#EDEAE0";
-const MUTED = "#9FB2A5";
-const LINE = "#2A4032";
+// Shared fantasy tokens (mirrored, not imported — shared.tsx is "use client").
+const TEAL = "#00d8c0";
+const INK = "#eef2f0";
+const MUTED = "#8a948f";
+const LINE = "rgba(255,255,255,0.07)";
 
 const TABS = [
   { href: "/fantasy/news", label: "Fantasy tips" },
@@ -36,9 +37,9 @@ export function NewsTabs({ active }: { active: NewsTab }) {
           padding: "8px 14px",
           fontSize: 13,
           fontWeight: on ? 600 : 400,
-          color: on ? GOLD : MUTED,
+          color: on ? INK : MUTED,
           textDecoration: "none",
-          borderBottom: `2px solid ${on ? GOLD : "transparent"}`,
+          borderBottom: `2px solid ${on ? TEAL : "transparent"}`,
           marginBottom: -1,
         };
         return (

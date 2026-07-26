@@ -7,15 +7,22 @@
  * server components (ISR, SEO-indexable, zero client JS).
  */
 import type { CSSProperties } from "react";
+import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 import type { Difficulty, NewsDoc } from "@/lib/fantasy/news";
 
-export const GOLD = "#E3B54C";
-export const PITCH = "#0E1F17";
-export const PANEL = "#16261C";
-export const LINE = "#2A4032";
-export const INK = "#EDEAE0";
-export const MUTED = "#9FB2A5";
+// These MUST mirror the shared fantasy tokens in shared.tsx. They're re-declared
+// (not imported) because shared.tsx is "use client" and these surfaces are server
+// components — but the VALUES are the app's, so the news hub stops being a
+// green-tinted island and reads as the same game as every other Fantasy screen.
+export const TEAL = "#00d8c0";
+export const GOLD = "#ffc233";
+export const PITCH = "#080d0a";
+export const PANEL = "#0e1611";
+export const PANEL_2 = "#15211a";
+export const LINE = "rgba(255,255,255,0.07)";
+export const INK = "#eef2f0";
+export const MUTED = "#8a948f";
 
 export const DIFF: Record<Difficulty, { bg: string; label: string }> = {
   kind: { bg: "#1D5A3A", label: "kind" },
@@ -33,8 +40,33 @@ export const shell: CSSProperties = {
   minHeight: "100dvh", background: PITCH, padding: "16px 14px 40px",
 };
 export const column: CSSProperties = {
-  maxWidth: 560, margin: "0 auto", display: "grid", gap: 14,
+  maxWidth: 512, margin: "0 auto", display: "grid", gap: 14,
 };
+
+/** Server-safe twin of shared.tsx's <Header>: the same teal "YOURSCORE FANTASY"
+ *  wordmark and a back pill, so the news surfaces wear the exact fantasy masthead
+ *  every other screen wears. A <Link> instead of an onClick, so it stays a server
+ *  component (ISR + SEO). `title` renders as the section heading beneath it. */
+export function FantasyMasthead({ title }: { title: string }) {
+  return (
+    <header style={{ marginBottom: 14 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+        <Link href="/fantasy" aria-label="Back to Fantasy"
+          style={{
+            background: PANEL_2, border: `1px solid ${LINE}`, color: MUTED,
+            fontSize: 12.5, fontWeight: 600, padding: "5px 12px", borderRadius: 999,
+            textDecoration: "none", whiteSpace: "nowrap", flexShrink: 0,
+          }}>&larr; Fantasy</Link>
+        <span className="font-display tracking-widest" style={{ fontSize: 15, color: TEAL }}>
+          YOURSCORE FANTASY
+        </span>
+      </div>
+      <h1 className="font-display" style={{
+        color: INK, fontSize: 26, fontWeight: 700, letterSpacing: "-0.01em", margin: "12px 0 0",
+      }}>{title}</h1>
+    </header>
+  );
+}
 
 export const ukTime = (iso: string) =>
   new Date(iso).toLocaleString("en-GB", {
