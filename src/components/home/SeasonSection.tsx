@@ -32,7 +32,7 @@ function FantasyTile() {
   return (
     <Link href="/fantasy"
       className="relative flex flex-col rounded-2xl overflow-hidden transition-transform active:scale-[0.98]"
-      style={{ aspectRatio: "0.82", background: "#0c1908", border: `1px solid ${LIME}80` }}>
+      style={{ aspectRatio: "0.95", background: "#0c1908", border: `1px solid ${LIME}80` }}>
       <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at 50% 22%, ${LIME}44, rgba(12,25,8,0.15) 62%), #0c1908` }} />
       <svg viewBox="0 0 160 200" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 w-full h-full" style={{ opacity: 0.28 }}>
         <g stroke={LIME} strokeWidth="1.1" fill="none">
@@ -83,7 +83,7 @@ function GamedayTile({ fixture }: { fixture: GamedayFixture }) {
   return (
     <Link href="/matchweek?section=live"
       className="relative flex flex-col rounded-2xl overflow-hidden transition-transform active:scale-[0.98]"
-      style={{ aspectRatio: "0.82", background: "#06110f", border: `1px solid ${TEAL}80` }}>
+      style={{ aspectRatio: "0.95", background: "#06110f", border: `1px solid ${TEAL}80` }}>
       <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at 50% 22%, ${TEAL}48, rgba(6,17,15,0.15) 62%), #06110f` }} />
       <svg viewBox="0 0 160 200" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 w-full h-full" style={{ opacity: 0.5 }}>
         <path d="M92 24 55 108h30l-8 70 60-92h-33l14-64Z" fill={`${TEAL}44`} stroke={TEAL} strokeWidth="1.4" strokeLinejoin="round" />
