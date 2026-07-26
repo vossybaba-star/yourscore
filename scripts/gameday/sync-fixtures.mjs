@@ -17,7 +17,7 @@
  * changes nothing (AC29). Kick-off changes overwrite kickoff_at.
  *
  * FIX P2-b (publish_at): computed HERE, at sync, from the gameday shared
- * derivation (09:00 Europe/London the day before kickoff's London date) — and
+ * derivation (09:00 Europe/London the morning of kickoff's London date) — and
  * RECOMPUTED on every sync, so a moved kickoff moves the publish time even for
  * a fixture that already has a row. The approve gate (content/route.ts
  * opApprove) recomputes it again at approval time from whatever kickoff_at is

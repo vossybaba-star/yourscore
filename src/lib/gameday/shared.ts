@@ -175,17 +175,17 @@ function londonWallClockToUtc(matchday: string, hour: number, minute = 0): Date 
 }
 
 /**
- * publish_at = 09:00 Europe/London on the calendar day BEFORE kickoff_at's
+ * publish_at = 09:00 Europe/London on the MORNING OF kickoff_at's
  * Europe/London date. Recomputed whenever kickoff_at moves (§2.2) — a fixture
  * whose kickoff moves to a different day gets a new publish_at.
  */
 export function publishAtFor(kickoffAtIso: string): string {
+  // 09:00 Europe/London on the MORNING OF the fixture (founder 2026-07-25: the
+  // pack drops at 9am on match day itself, not the day before). PL kickoffs are
+  // never before ~12:30, so 09:00 is always safely ahead of kick-off, giving a
+  // several-hour play window in the run-up to the game.
   const kickoffDay = londonMatchday(new Date(kickoffAtIso));
-  const [y, m, d] = kickoffDay.split("-").map(Number);
-  // Date.UTC normalises day-1 underflow (e.g. day 0 of a month) correctly.
-  const dayBefore = new Date(Date.UTC(y, m - 1, d - 1));
-  const dayBeforeKey = londonMatchday(dayBefore);
-  return londonWallClockToUtc(dayBeforeKey, 9, 0).toISOString();
+  return londonWallClockToUtc(kickoffDay, 9, 0).toISOString();
 }
 
 // ── Pack naming ──────────────────────────────────────────────────────────────
@@ -207,7 +207,7 @@ export function packName(row: Pick<GamedayRow, "home" | "away" | "kickoff_at">):
 }
 
 export function packDescription(row: Pick<GamedayRow, "home" | "away">): string {
-  return `Ten questions on ${row.home} v ${row.away}. Set the day before kick-off.`;
+  return `Ten questions on ${row.home} v ${row.away}. Live the morning of the match.`;
 }
 
 // ── Recap Quiz (§6) ──────────────────────────────────────────────────────────
@@ -257,7 +257,7 @@ export function pushCopy(row: Pick<GamedayRow, "home" | "away">): {
 } {
   return {
     title: `${row.home} v ${row.away}`,
-    body: "Your quiz pack is live. Ten questions, set the day before kick-off.",
+    body: "Your quiz pack is live. Ten questions, play it before kick-off.",
   };
 }
 

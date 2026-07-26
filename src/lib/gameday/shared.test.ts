@@ -99,32 +99,32 @@ test("state machine: failed can be repaired back to scheduled (weekly-sync path)
 
 // ── publish_at derivation ─────────────────────────────────────────────────────
 
-test("publishAtFor: 09:00 London the day before a BST kickoff", () => {
-  // Sat 22 Aug 2026, 15:00 BST kickoff (14:00 UTC) → publish Fri 21 Aug 09:00
-  // BST = 08:00 UTC.
+test("publishAtFor: 09:00 London the morning of a BST kickoff", () => {
+  // Sat 22 Aug 2026, 15:00 BST kickoff (14:00 UTC) → publish SAME DAY, Sat 22
+  // Aug 09:00 BST = 08:00 UTC (day-of, founder 2026-07-25).
   const publishAt = publishAtFor("2026-08-22T14:00:00Z");
-  assert.equal(publishAt, "2026-08-21T08:00:00.000Z");
+  assert.equal(publishAt, "2026-08-22T08:00:00.000Z");
 });
 
-test("publishAtFor: 09:00 London the day before a GMT kickoff", () => {
-  // Sat 10 Jan 2026, 15:00 GMT kickoff (15:00 UTC) → publish Fri 9 Jan 09:00
-  // GMT = 09:00 UTC.
+test("publishAtFor: 09:00 London the morning of a GMT kickoff", () => {
+  // Sat 10 Jan 2026, 15:00 GMT kickoff (15:00 UTC) → publish SAME DAY, Sat 10
+  // Jan 09:00 GMT = 09:00 UTC.
   const publishAt = publishAtFor("2026-01-10T15:00:00Z");
-  assert.equal(publishAt, "2026-01-09T09:00:00.000Z");
+  assert.equal(publishAt, "2026-01-10T09:00:00.000Z");
 });
 
-test("publishAtFor: a late-evening kickoff still belongs to its own London day", () => {
+test("publishAtFor: a late-evening kickoff publishes the morning of its own London day", () => {
   // 22:30 UTC on 21 Aug is 23:30 BST — still the 21st in London, so publish is
-  // the 20th at 09:00 BST = 08:00 UTC.
+  // the 21st at 09:00 BST = 08:00 UTC (~14.5h before an evening kickoff).
   const publishAt = publishAtFor("2026-08-21T22:30:00Z");
-  assert.equal(publishAt, "2026-08-20T08:00:00.000Z");
+  assert.equal(publishAt, "2026-08-21T08:00:00.000Z");
 });
 
-test("publishAtFor: a kickoff just after London midnight moves the publish day too", () => {
+test("publishAtFor: a kickoff just after London midnight publishes that morning", () => {
   // 23:30 UTC on 21 Aug is 00:30 BST on the 22nd — kickoff's London day is the
-  // 22nd, so publish is the 21st at 09:00 BST = 08:00 UTC.
+  // 22nd, so publish is the 22nd at 09:00 BST = 08:00 UTC.
   const publishAt = publishAtFor("2026-08-21T23:30:00Z");
-  assert.equal(publishAt, "2026-08-21T08:00:00.000Z");
+  assert.equal(publishAt, "2026-08-22T08:00:00.000Z");
 });
 
 test("londonMatchday sanity check (shared with the derivation above)", () => {

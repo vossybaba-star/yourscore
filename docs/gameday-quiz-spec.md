@@ -80,7 +80,11 @@ Prediction poll.** Three coherent options, in §10.6.
 ## 0. FOUNDER DECISIONS (locked — the build implements these, it does not reopen them)
 
 1. **Scope = B.** Season-long: a pack for every PL fixture, ~10/week, sustained.
-2. **Published the day before that fixture.** Not at halftime, not on matchday morning.
+2. **Published at 09:00 the MORNING OF that fixture.** Not at halftime.
+   *(CORRECTED 2026-07-25: originally locked as "the day before"; the founder confirmed the
+   pack drops at 9am on match day itself — matching the original first-message intent, "goes
+   live on the morning of the game day". `publishAtFor` returns 09:00 London on the kickoff's
+   own date; generation/approval still happen ahead of the match, publish is day-of.)*
 3. **Content = base only.** Historic and static facts about the fixture. The confirmed-lineup
    "fresh" slice is retired with the whistle — lineups do not exist the day before.
 4. **A gameweek Recap Quiz** ships alongside it: one pack per gameweek, built from what
@@ -334,10 +338,11 @@ keys on full time from SportMonks rather than on any of them (AC37).
 
 ### 2.2 `publish_at` derivation
 
-`publish_at = 09:00 Europe/London on the calendar day before `kickoff_at`'s Europe/London
-date`. Computed at sync and recomputed whenever `kickoff_at` moves. A fixture whose kickoff
-moves to a different day gets a new `publish_at`; if that day has already passed, the pack
-publishes at the next cron tick rather than never (§4.1 step 3).
+`publish_at = 09:00 Europe/London on the SAME calendar day as `kickoff_at`'s Europe/London
+date` (day-of, corrected 2026-07-25 — see §0.2). PL kickoffs are never before ~12:30, so 09:00
+is always ahead of kick-off. Computed at sync and recomputed whenever `kickoff_at` moves. A
+fixture whose kickoff moves to a different day gets a new `publish_at`; if that day has already
+passed, the pack publishes at the next cron tick rather than never (§4.1 step 3).
 
 ---
 

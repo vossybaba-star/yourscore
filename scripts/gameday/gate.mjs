@@ -92,7 +92,7 @@ export function slateMessage(matchday, fixtures) {
     lines.join("\n"),
     otherLines.length ? `\n${otherLines.join("\n")}` : ``,
     ``,
-    `Unapproved packs are cancelled automatically at their own publish time (09:00 the day before kick-off) — there is no auto-release.`,
+    `Unapproved packs are cancelled automatically at their own publish time (09:00 on match day) — there is no auto-release.`,
   ]
     .filter(Boolean)
     .join("\n");
