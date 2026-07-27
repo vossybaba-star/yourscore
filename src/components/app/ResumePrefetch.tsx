@@ -25,6 +25,21 @@ import { isNative } from "@/lib/native";
 /** Tab routes a player is most likely to reach for when they come back. */
 const WARM_ROUTES = ["/", "/play", "/versus", "/matchweek"];
 
+/**
+ * Screens whose CURRENT view we refresh on resume so new content actually shows
+ * (a new daily game, updated scores, fresh Matchweek data) instead of the player
+ * having to kill and relaunch the app. Warming (prefetch) only readies OTHER
+ * routes; it never updates the page you are looking at — router.refresh() does.
+ *
+ * EXACT match only, and only the hub tabs. That deliberately excludes every
+ * interactive sub-route (/play/<room> live game, /38-0/wc/run/<id>, /38-0/match,
+ * a quiz mid-run) so a refresh can never re-render a game out from under someone.
+ * router.refresh() re-fetches server data while preserving client state, but on
+ * game screens we do not even risk the re-render — staleness there isn't the
+ * complaint anyway.
+ */
+const REFRESH_ON_RESUME = new Set(["/", "/play", "/versus", "/matchweek", "/leaderboard"]);
+
 /** A quick app-switch leaves the sockets alive — only warm after a real absence. */
 const AWAY_MS = 15_000;
 
@@ -46,6 +61,12 @@ export function ResumePrefetch() {
       const now = Date.now();
       if (now - lastWarmRef.current < THROTTLE_MS) return;
       lastWarmRef.current = now;
+
+      // Refresh the screen the player is actually on FIRST — that is the one they
+      // are looking at as the app comes back. Read the live path (not a captured
+      // closure) and only refresh the hub tabs, never a game sub-route.
+      const path = typeof window !== "undefined" ? window.location.pathname : "";
+      if (REFRESH_ON_RESUME.has(path)) router.refresh();
 
       for (const route of WARM_ROUTES) {
         if (cancelled) return;
