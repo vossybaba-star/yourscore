@@ -6,7 +6,31 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-07-25 (**The public Fantasy tab teaser (`/fantasy` → `FantasyTeaser`) rebuilt as
+> **Confirmed:** 2026-07-27 (**Fantasy "Manager's Matchday" redesign shipped to prod — one reusable
+> Squad Board is now the spine of every Fantasy screen, plus the screen upgrades built on it. New
+> `SquadBoard` (portrait pitch with build / complete / plan / transfer / live / final modes) + pure,
+> tested `lib/fantasy/board.ts` replaced three divergent inline pitches; **Builder, Command Centre,
+> Transfer Room and Planner all draw the same board**, and the hub's captain/vice/bench menu is
+> preserved through a `renderMenu` hook. **Transfer Room is board-first** — tap a shirt and the OUT
+> player is ringed, IN candidates open below (factual data only; **no projections**). **Weekly Round**
+> now shows the reward WHILE you play: banked moves + a live progress bar to the next move, off the
+> real credit curve. **Live** markers show points (yet-to-play dimmed); the point-driver table was
+> extracted to its own `GameweekBreakdown.tsx` (FantasyHub 1,378→~1,160 lines), and a gold,
+> portrait-led `FinalStory.tsx` cover (star man / captain / biggest regret / moves earned / Share)
+> sits above it — every figure from the real breakdown. **News** became named editorial cards
+> (Captaincy Call / The Differential / Fixture Swing / Worth Knowing / The Risk), each mapped to a
+> real doc field. **Fixtures** is squad-first: a client `FixturesGrid` (My clubs / All clubs toggle,
+> owned-club highlight, difficulty legend) fed by the server-rendered doc, which still lists all clubs
+> for SEO. Tested live-event core: `liveEvents.ts` (SportMonks goal/assist events → a squad's own
+> moments) plus the `events` include added to the fantasy ingest — scoring untouched. **No
+> scoring/engine changes, no global-nav change, portraits-only imagery, no invented data.** `flag.ts`:
+> founder id restored to `FANTASY_ALLOWLIST` so the redesign is visible on his account while everyone
+> else still gets the teaser. Tests 93/93, real `next build` green on every ship. Commits on `main`:
+> `5f8030d` (core), `70eb7c7` (news), `9b2e6ac` (fixtures + planner). **Still pending, gated on live
+> matches (21–22 Aug):** the Leagues rivalry/live-battle strip and the on-screen live event ticker
+> ("GOAL, 34'"); minor: the Planner's GW1–5 timeline selector and a systematic empty-states pass.)
+>
+> **Previously confirmed:** 2026-07-25 (**The public Fantasy tab teaser (`/fantasy` → `FantasyTeaser`) rebuilt as
 > a landing page and shipped to prod.** The lead flipped from "One transfer. Earn the rest." to the
 > differentiator itself — headline **"The more you know, the more you move."**, subhead "the fantasy
 > game where your football brain earns you more transfers." The old numbered rulebook became a
