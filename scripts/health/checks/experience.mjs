@@ -137,23 +137,27 @@ export async function run(report, ctx) {
       hint: "user_question_history dedup regressed — real users are seeing repeats",
     });
 
-    // Content depth: thin banks make heavy players hit recycling fast.
-    // quiz/start draws 6 easy per game, so easy < 18 = repeats within ~3 games.
-    if (ctx.entitySupply > 0) {
-      const thinEasy = (ctx.entityEasySupply ?? 99) < 18;
-      const thinTotal = ctx.entitySupply < 45; // < 3 full games
-      report.add("gamer", "question bank depth", true, {
-        warn: thinEasy || thinTotal,
-        detail: thinEasy || thinTotal
-          ? `${ctx.quizEntity}: ${ctx.entitySupply} servable questions (easy: ${ctx.entityEasySupply}) — a fan playing daily hits repeats within days; generate more (esp. easy)`
-          : "",
-      });
-    }
     try {
       mkdirSync(DATA_DIR, { recursive: true });
       const fresh = ctx.servedQuestions.filter((q) => q.id && !seenBefore.has(q.id));
       if (fresh.length) appendFileSync(seenFile, fresh.map((q) => JSON.stringify({ id: q.id, ts: Date.now() })).join("\n") + "\n");
     } catch { /* best-effort */ }
+  }
+
+  // ── Content depth (independent of an actual deal) ──────────────────────────
+  // The journeys layer sets entitySupply/entityEasySupply from a read-only count,
+  // so this runs even in Phase 1 where the bot doesn't play a full quiz. A thin
+  // easy tier means a regular fan of this club hits repeats fast (generate-custom
+  // targets a 6-easy mix per 15-question pack, so easy < 18 = repeats within days).
+  if (ctx.entitySupply > 0) {
+    const thinEasy = (ctx.entityEasySupply ?? 99) < 18;
+    const thinTotal = ctx.entitySupply < 45; // < 3 full games
+    report.add("gamer", "question bank depth", true, {
+      warn: thinEasy || thinTotal,
+      detail: thinEasy || thinTotal
+        ? `${ctx.quizEntity}: ${ctx.entitySupply} servable questions (easy: ${ctx.entityEasySupply}) — a fan playing daily hits repeats within days; generate more (esp. easy)`
+        : "",
+    });
   }
 
   // ── Draft slate variety: same pick-0 slate two days running = stale content ─

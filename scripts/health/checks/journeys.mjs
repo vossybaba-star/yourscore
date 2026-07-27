@@ -16,9 +16,8 @@ import { purgeBotRows } from "../cleanup.mjs";
 
 const LETTERS = ["A", "B", "C", "D"];
 
-// Rotate the quiz entity by day AND run slot so each club's bank is drawn at
-// most ~once a day (dedup history is deliberately kept, so wear accumulates —
-// quiz/start pulls 15 questions per game and small banks recycle fast).
+// Rotate the probed club by day AND run slot so bank-depth context is sampled
+// across all seven clubs over time rather than always Arsenal.
 const ENTITIES = ["Arsenal", "Liverpool", "Manchester United", "Chelsea", "Manchester City", "Tottenham Hotspur", "Newcastle United"];
 const pickEntity = () => {
   const d = new Date();
@@ -53,76 +52,48 @@ export async function run(report, ctx) {
   const api = (path, body, opts = {}) =>
     req(path, { method: "POST", body, cookie: auth.cookieHeader, timeoutMs: 15_000, ...opts });
 
-  // ── 2. Quiz: start → complete ───────────────────────────────────────────────
+  // ── 2. Quiz loop liveness (read-only) ────────────────────────────────────────
+  // The old POST /api/quiz/start was deleted in the pivot (its draw logic merged
+  // into /api/quiz/generate-custom, which WRITES a persisted pack + history on
+  // every call). To probe the loop without littering custom packs we split it:
+  //   • auth canary — POST /api/quiz/complete {results:[]} returns 401 when
+  //     unauthed, so a non-401 proves the bot's cookie is valid; empty results
+  //     record nothing (no leaderboard write either).
+  //   • bank liveness — GET /api/quiz/availability?entity=X (anon, read-only)
+  //     returns {count} of verified questions, i.e. what generate-custom draws
+  //     from. count>0 means a player CAN build a quiz for this club.
+  // (A full generate-custom play + cross-session repeat check is Phase 2 — it
+  //  needs custom-pack cleanup plumbing.)
   const entity = pickEntity();
-
-  // Snapshot the server's OWN dedup memory before the deal. quiz/start deletes the
-  // oldest 50% of user_question_history whenever a difficulty tier runs dry
-  // (src/app/api/quiz/start/route.ts), so it legitimately re-serves questions it has
-  // deliberately forgotten. Only a question still present in history at deal time
-  // proves the server ignored its own dedup.
-  const historyIds = async () => {
-    const { data } = await supa
-      .from("user_question_history")
-      .select("question_id")
-      .eq("user_id", auth.userId)
-      .eq("entity", entity);
-    return new Set((data ?? []).map((r) => r.question_id));
-  };
-  let preHistory = new Set();
-  try { preHistory = await historyIds(); } catch { /* context only */ }
-
   try {
-    const start = await api("/api/quiz/start", { entity });
-    if (start.status === 401) {
-      report.add("journeys", "auth", false, { detail: "cookie rejected (401) — session cookie format may have changed", hint: "re-verify scripts/health/lib/auth.mjs after any @supabase/ssr upgrade" });
-      return;
-    }
-    report.add("journeys", "auth", true, {});
-    const questions = start.json?.questions ?? [];
-    report.add("journeys", `quiz start (${entity})`, start.status === 200 && questions.length >= 8, {
-      ms: start.ms,
-      detail: `status ${start.status}, ${questions.length} questions`,
-      hint: "quiz/start broken or question bank too thin for this entity",
+    const authProbe = await api("/api/quiz/complete", { results: [] });
+    const authed = authProbe.status !== 401 && authProbe.status !== 403;
+    report.add("journeys", "auth", authed, {
+      ms: authProbe.ms,
+      detail: authed ? "" : `authed call returned ${authProbe.status} — cookie rejected`,
+      hint: "bot cookie rejected — re-verify scripts/health/lib/auth.mjs after any @supabase/ssr upgrade; every signed-in user may be affected",
+    });
+    if (!authed) return;
+
+    const avail = await req(`/api/quiz/availability?entity=${encodeURIComponent(entity)}`);
+    const count = avail.json?.count ?? 0;
+    report.add("journeys", `quiz bank (${entity})`, avail.status === 200 && count > 0, {
+      ms: avail.ms,
+      detail: `status ${avail.status}, ${count} verified questions`,
+      hint: "quiz builder dead or this club's bank is empty (generate-custom draws from here)",
     });
 
-    if (questions.length) {
-      ctx.servedQuestions = questions;
+    // Bank-depth context for experience.mjs's "question bank depth" warn — a thin
+    // easy tier means a regular fan of this club hits repeats fast. Read-only.
+    try {
       ctx.quizEntity = entity;
-      ctx.preHistoryIds = preHistory;
-      // Anything in history BEFORE the deal and gone AFTER it was deliberately
-      // forgotten by the recycle, so re-serving it is by design. The recycle drops
-      // ceil(n/2) rows and can re-serve at most 15, so with a non-trivial history
-      // some deleted row always stays missing — that's what we detect.
-      try {
-        const postHistory = await historyIds();
-        ctx.historyRecycled = [...preHistory].some((id) => !postHistory.has(id));
-      } catch { /* context only */ }
-      // Bank-exhaustion context for the repeat-question check: if the bot has
-      // seen nearly the whole bank, server-side history recycling is BY DESIGN.
-      try {
-        // Usable supply = only the difficulties quiz/start actually draws
-        // (easy 6 / medium 6 / hard 3) — expert/master rows never get served.
-        const [{ count: supply }, { count: easySupply }, { count: seen }] = await Promise.all([
-          supa.from("questions").select("id", { count: "exact", head: true }).eq("status", "active").eq("entity", entity).in("difficulty", ["easy", "medium", "hard"]),
-          supa.from("questions").select("id", { count: "exact", head: true }).eq("status", "active").eq("entity", entity).eq("difficulty", "easy"),
-          supa.from("user_question_history").select("question_id", { count: "exact", head: true }).eq("user_id", auth.userId).eq("entity", entity),
-        ]);
-        ctx.entitySupply = supply ?? 0;
-        ctx.entityEasySupply = easySupply ?? 0;
-        ctx.entityHistory = seen ?? 0;
-      } catch { /* context only */ }
-
-      // Answer honestly from the bank's answer key (~all correct is fine — the
-      // bot's user_question_history is not a leaderboard input).
-      const results = questions.map((q) => ({ questionId: q.id, correct: true })).slice(0, 60);
-      const done = await api("/api/quiz/complete", { results });
-      report.add("journeys", "quiz complete", done.status === 200, {
-        ms: done.ms,
-        detail: done.status === 200 ? "" : `status ${done.status}: ${JSON.stringify(done.json)?.slice(0, 120)}`,
-        hint: "players can play but scores aren't being recorded",
-      });
-    }
+      const [{ count: supply }, { count: easySupply }] = await Promise.all([
+        supa.from("questions").select("id", { count: "exact", head: true }).eq("status", "active").eq("entity", entity).in("difficulty", ["easy", "medium", "hard"]),
+        supa.from("questions").select("id", { count: "exact", head: true }).eq("status", "active").eq("entity", entity).eq("difficulty", "easy"),
+      ]);
+      ctx.entitySupply = supply ?? 0;
+      ctx.entityEasySupply = easySupply ?? 0;
+    } catch { /* context only */ }
   } catch (e) {
     report.add("journeys", "quiz", false, { detail: e.message, hint: "quiz flow unreachable" });
   }

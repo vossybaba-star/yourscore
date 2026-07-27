@@ -65,6 +65,20 @@ const PAGES = [
     ready: async (page) => page.waitForSelector("button, [class*=pack], [class*=quiz]", { timeout: 20_000 }),
   },
   {
+    // The PL / Matchweek hub — the surface the whole product pivoted to (PL table,
+    // fixtures, news, the Gameday live quiz, and the Fantasy holding screen all
+    // live here). This is the page that matters most for the 2026-08-21 launch.
+    path: "/matchweek",
+    name: "matchweek",
+    ready: async (page) => {
+      await page.waitForFunction(
+        () => /premier league|fixtures|table|fantasy/i.test(document.body.innerText) &&
+              document.querySelectorAll("button").length > 0,
+        { timeout: 20_000 },
+      );
+    },
+  },
+  {
     path: "/leaderboard",
     name: "leaderboard",
     // Rows are client-fetched divs — "ready" = a ranked list with numbers on screen.

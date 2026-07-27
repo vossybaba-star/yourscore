@@ -14,53 +14,18 @@ export async function run(report, ctx) {
   const today = todayUK();
   const hour = hourUK();
 
-  // ── Today's WC Mastermind daily pack ────────────────────────────────────────
-  // launch-daily fires ~07:06 but sits behind Telegram approval gates, so before
-  // 09:30 we accept yesterday's pack with a warn instead of a red.
+  // ── WC Mastermind daily pack + ranked edition: RETIRED 2026-07-27 ────────────
+  // The World Cup daily-quiz launcher and wc-roll cron were both retired after the
+  // tournament (the product pivoted to PL/Gameday, live 2026-08-21). So there is no
+  // new daily pack and the ranked edition is frozen on its last tournament day — by
+  // design, not a break. The WC ranked GAME itself still works (the journeys layer
+  // plays it end-to-end), so we still read the edition into ctx for the draft-slate
+  // variety check, but we no longer assert either rolls today. Current daily-content
+  // health lives in the `gameday` layer + the pl/* liveness probes (Layer 1).
   try {
-    const { data, error } = await supa
-      .from("quiz_packs")
-      .select("id, name, questions, metadata, status, created_at")
-      .eq("status", "published")
-      .filter("metadata->>daily", "eq", "true")
-      .order("created_at", { ascending: false })
-      .limit(8);
-    if (error) throw new Error(error.message);
-
-    const packs = data ?? [];
-    const todays = packs.find((p) => p.metadata?.date === today);
-    if (todays) {
-      report.add("fresh", "daily pack", true, { detail: `"${todays.name}"` });
-      ctx.todayPack = todays;
-      ctx.recentDailyPacks = packs;
-    } else {
-      const lenient = hour < 9 || (hour === 9 && new Date().getMinutes() < 30);
-      report.add("fresh", "daily pack", lenient, {
-        warn: lenient,
-        detail: `no published daily pack dated ${today}${lenient ? " yet (pre-09:30, gates pending)" : ""}`,
-        hint: "run: node --env-file=.env.local scripts/launch-daily.mjs",
-      });
-      ctx.recentDailyPacks = packs;
-    }
-  } catch (e) {
-    report.add("fresh", "daily pack", false, { detail: e.message, hint: "quiz_packs query failed — check Supabase" });
-  }
-
-  // ── WC Mastermind ranked edition rolled ─────────────────────────────────────
-  // wc-roll launchd job fires 08:00; give it until 08:15.
-  try {
-    const { data, error } = await supa.from("wc_ranked_edition").select("edition, published_at").single();
-    if (error) throw new Error(error.message);
-    const ok = data.edition === today || hour < 8 || (hour === 8 && new Date().getMinutes() < 15);
-    report.add("fresh", "wc edition", ok, {
-      warn: ok && data.edition !== today,
-      detail: data.edition === today ? "" : `edition still ${data.edition}`,
-      hint: "run: bash scripts/wc-roll.sh (edition didn't roll)",
-    });
-    ctx.edition = data.edition;
-  } catch (e) {
-    report.add("fresh", "wc edition", false, { detail: e.message, hint: "wc_ranked_edition unreadable" });
-  }
+    const { data } = await supa.from("wc_ranked_edition").select("edition, published_at").single();
+    ctx.edition = data?.edition;
+  } catch { /* legacy table may be gone; slate-variety check will just skip */ }
 
   // ── Vercel cron inference: stale lobbies ────────────────────────────────────
   // cleanup-lobbies (hourly) expires player lobbies older than 3h; anything

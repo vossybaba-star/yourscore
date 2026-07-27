@@ -6,7 +6,7 @@
  * leaderboard payload — the £100 prize board must never show the bot.
  */
 
-import { req, BASE } from "../lib/http.mjs";
+import { req } from "../lib/http.mjs";
 
 const BOT_ID = process.env.HEALTH_BOT_USER_ID || "";
 // Opt-in: club_leagues is empty until a partner league goes live in the DB
@@ -70,6 +70,38 @@ export async function run(report, ctx) {
       pass: (r) => r.status === 200 && r.json !== null,
       detail: (r) => `status ${r.status}`,
       hint: "38-0 classic leaderboard route broken",
+    },
+    // Pivoted product (the PL/Matchweek hub, live at /matchweek). These edge-cached
+    // reads are the heartbeat of the surface launching 2026-08-21. NOTE: we do NOT
+    // probe /api/halftime/today — it legitimately 404s out of season (no fixture),
+    // so it would false-red until the season opens.
+    {
+      name: "pl/standings",
+      path: "/api/pl/standings",
+      pass: (r) => r.status === 200,
+      detail: (r) => `status ${r.status}`,
+      hint: "PL standings feed down — Matchweek 'Table' tab is broken",
+    },
+    {
+      name: "pl/fixtures",
+      path: "/api/pl/fixtures",
+      pass: (r) => r.status === 200,
+      detail: (r) => `status ${r.status}`,
+      hint: "PL fixtures feed down — Matchweek 'Fixtures' tab is broken",
+    },
+    {
+      name: "pl/news",
+      path: "/api/pl/news",
+      pass: (r) => r.status === 200,
+      detail: (r) => `status ${r.status}`,
+      hint: "PL news feed down — Matchweek 'News' tab is broken (news cron?)",
+    },
+    {
+      name: "quiz/availability",
+      path: "/api/quiz/availability?entity=Arsenal",
+      pass: (r) => r.status === 200 && (r.json?.count ?? 0) > 0,
+      detail: (r) => `status ${r.status}, count=${r.json?.count ?? "?"}`,
+      hint: "custom-quiz builder can't see the bank — generate-custom will 404 for players",
     },
     ...(CLUB_SLUG
       ? [{

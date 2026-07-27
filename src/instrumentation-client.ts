@@ -13,6 +13,15 @@ import * as Sentry from "@sentry/nextjs";
 const IGNORE_ERRORS: (string | RegExp)[] = [
   // Snapchat in-app browser bridge (injected, not our code).
   /SCDynimacBridge/,
+  // Instagram / iOS in-app-webview native bridge (injected by the host app, not
+  // ours). Confirmed 2026-07: 59/61 events came from browser "Instagram", 0 users,
+  // failing fns sendDataToNative/sendPageHideMessage/IOS_BRIDGE_NO_REPLY — none of
+  // which exist in our source. It was spiking the Sentry sweep with zero signal.
+  /webkit\.messageHandlers/,
+  /IOS_BRIDGE_NO_REPLY/,
+  /sendPageHideMessage/,
+  /window\.__firefox__/,
+  /__firefox__ is not defined/,
   // Bogus global from an injected ad/sticky-footer script — its frames are
   // updateGapFiller / updateFooterPositions, neither of which exists in our source.
   /Can't find variable: CONFIG/,

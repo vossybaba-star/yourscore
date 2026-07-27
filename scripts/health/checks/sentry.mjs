@@ -19,6 +19,13 @@ const WARN_COUNT = 10;
 // it paged every run at ×100 while affecting nobody.
 const NOISE = [
   /__firefox__/,
+  // Instagram / iOS in-app-webview native bridge (host app injects it, not ours).
+  // Confirmed 2026-07: browser "Instagram", 0 users, fns sendDataToNative /
+  // sendPageHideMessage — absent from our source. Also suppressed at source in
+  // instrumentation-client.ts, but keep it here so old grouped issues stay quiet.
+  /webkit\.messageHandlers/,
+  /IOS_BRIDGE_NO_REPLY/,
+  /sendPageHideMessage/,
   /Java object is gone/, // Android WebView teardown race
   /ResizeObserver loop/,
   /Loading chunk .* after logout/,
