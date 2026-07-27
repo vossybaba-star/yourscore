@@ -423,9 +423,14 @@ export function trackPushOptIn(): void {
 // (channel consent): this is a per-fixture matchday-intent signal — the audience
 // that asked to be pulled back for a specific game. `fixtureId` rides the payload
 // so fixture-level reporting/audiences come free.
+// X arm: needs a pre-created Events-Manager event id (the "Gameday Reminder" event),
+// so it fires only once its env var is set; the other platforms fire unconditionally.
+const X_GAMEDAY_REMINDER_EVENT_ID = process.env.NEXT_PUBLIC_X_GAMEDAY_REMINDER_EVENT_ID;
+
 export function trackReminderSet(fixtureId: number, props: Props = {}): void {
   if (typeof window === "undefined") return;
   const payload: Props = { fixtureId, client: clientTag(), ...props };
+  if (X_GAMEDAY_REMINDER_EVENT_ID) window.twq?.("event", X_GAMEDAY_REMINDER_EVENT_ID, payload); // X
   window.fbq?.("trackCustom", "ReminderSet", payload); // Meta
   window.ttq?.track?.("ReminderSet", payload);          // TikTok
   window.gtag?.("event", "reminder_set", payload);      // Google Analytics 4
