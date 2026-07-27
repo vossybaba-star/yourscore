@@ -488,6 +488,17 @@ Condition 3 is enforced by the table's primary key, not by application logic. Be
 plays once per gameweek, conditions 1–2 already yield at most one eligible pack per user per
 gameweek in the normal case; the PK covers double gameweeks and any race.
 
+**DOUBLE GAMEWEEKS — best pack counts (LOCKED, founder 2026-07-26).** When a club plays twice
+in one gameweek, its fan can play two packs but still earns **one** credit for the gameweek
+(mirroring FPL: a double gameweek scales *points*, never *transfers* — one free transfer per GW
+regardless). The credit is derived from the fan's **best** of that gameweek's own-club packs,
+not the sum or the last. This is the **same best-of rule the club-fan leaderboard uses**
+(`ownClubFanTotals` in `src/lib/clubs/table.ts` — already shipped), so the leaderboard and the
+transfer credit can never disagree about a double gameweek. The `gameday_fantasy_awards` PK
+`(user_id, season_id, gameweek)` already guarantees the single credit; W3's `claim` route must
+recompute the credit from the fan's highest-scoring eligible `quiz_attempts` row for the
+gameweek, not the triggering attempt.
+
 Club choice is **locked for the season** at the DB layer (`club_supporters` has no update or
 delete policy for anon/authenticated), so nobody can hop clubs to farm an easier pack. No
 extra guard is needed.

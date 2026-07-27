@@ -131,9 +131,11 @@ test("THE PRODUCT RULE: average beats total — a small sharp club beats a big c
   assert.equal(united.rank, 2, "the big casual club must rank behind it");
 });
 
-test("a fan with multiple OWN-CLUB attempts (double gameweek) contributes ONE entry, not several", () => {
+test("DOUBLE GAMEWEEK: a fan's BEST own-club pack counts, not the sum (founder 2026-07-26)", () => {
   // Arsenal have two fixtures this gameweek (a double GW), and u1 played both
-  // halftime packs: 6 and 7.
+  // gameday packs: 6 and 7. Best-of takes 7, NOT the sum 13 — so a two-game
+  // club can't post a per-fan score above the same 0–max scale as a one-game
+  // club. u1 still counts once.
   const sup = supporters("Arsenal", ["u1", "u2", "u3", "u4", "u5"]);
   const att = [
     attempt("u1", 6, "Arsenal", "Chelsea"),
@@ -150,9 +152,8 @@ test("a fan with multiple OWN-CLUB attempts (double gameweek) contributes ONE en
   // Five fans participated — u1 counts once, not twice.
   assert.equal(arsenal.participants, 5);
 
-  // u1's contribution is their TOTAL across both own-club packs (6+7=13), not
-  // two separate entries diluting the average.
-  const expectedTotal = 13 + 4 + 4 + 4 + 4;
+  // u1 contributes their BEST own-club pack (max(6,7)=7), never the sum (13).
+  const expectedTotal = 7 + 4 + 4 + 4 + 4;
   assert.equal(arsenal.totalScore, expectedTotal);
   assert.equal(arsenal.avgScore, expectedTotal / 5);
 });

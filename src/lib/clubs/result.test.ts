@@ -74,7 +74,7 @@ test("a player with no declared club is a recipient for nobody and pollutes no t
   assert.equal(standings.find((s) => s.club === "Arsenal")!.totalScore, 3500);
 });
 
-test("rank within the club is by the fan's TOTAL for the week, not one attempt; ties share the better rank", () => {
+test("rank within the club is by the fan's BEST pack for the week, not the sum; ties share the better rank", () => {
   const supporters: ClubSupporterRow[] = [
     { userId: "grinder", club: "Arsenal" },
     { userId: "oneshot", club: "Arsenal" },
@@ -84,21 +84,22 @@ test("rank within the club is by the fan's TOTAL for the week, not one attempt; 
   ];
   const attempts: HalftimeAttemptRow[] = [
     // Arsenal in a rare triple-fixture week; every row is an ARSENAL fixture,
-    // because only own-club packs score.
+    // because only own-club packs score. BEST-OF (founder 2026-07-26): playing
+    // three packs does NOT out-rank a single higher score.
     { userId: "grinder", score: 2000, home: "Arsenal", away: "Chelsea" },
     { userId: "grinder", score: 2000, home: "Arsenal", away: "Everton" },
-    { userId: "grinder", score: 2000, home: "Arsenal", away: "Fulham" }, // 6000
+    { userId: "grinder", score: 2000, home: "Arsenal", away: "Fulham" }, // best 2000, not 6000
     { userId: "oneshot", score: 5000, home: "Arsenal", away: "Chelsea" },
     { userId: "tieA", score: 3000, home: "Arsenal", away: "Chelsea" }, { userId: "tieB", score: 3000, home: "Arsenal", away: "Chelsea" },
     { userId: "low", score: 1000, home: "Arsenal", away: "Chelsea" },
   ];
   const { recipients } = gameweekRecipients(supporters, attempts, ["Arsenal"]);
   const rank = (id: string) => recipients.find((r) => r.userId === id)!.rankInClub;
-  assert.equal(rank("grinder"), 1); // 6000 total beats the 5000 single
-  assert.equal(rank("oneshot"), 2);
-  assert.equal(rank("tieA"), 3);
-  assert.equal(rank("tieB"), 3); // tie shares
-  assert.equal(rank("low"), 5); // ...then 5, never 4
+  assert.equal(rank("oneshot"), 1); // one 5000 beats grinder's three 2000s
+  assert.equal(rank("tieA"), 2);
+  assert.equal(rank("tieB"), 2); // tie shares
+  assert.equal(rank("grinder"), 4); // best 2000, ranked after the tie at 2 (never 3)
+  assert.equal(rank("low"), 5);
 });
 
 // ── the copy, both beats, all four fan states ────────────────────────────────

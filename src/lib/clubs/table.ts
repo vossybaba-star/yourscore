@@ -58,14 +58,26 @@ export interface HalftimeAttemptRow {
 }
 
 /**
- * Per-fan gameweek total, counting ONLY the halftime packs for their OWN club's
- * fixture (LOCKED — founder, 2026-07-16).
+ * Per-fan gameweek score, from ONLY the gameday packs for their OWN club's
+ * fixture (LOCKED — founder, 2026-07-16), taking their BEST pack when the club
+ * plays more than once in a gameweek (BEST-OF, founder 2026-07-26).
  *
  * A fan's knowledge score is about THEIR club's match, not how many other packs
  * they grind. Counting every fixture would let a fan farm ten packs a week and
  * carry their club's average on volume, which makes the table a measure of
  * appetite rather than knowledge — and would quietly punish the fan who only
  * ever plays their own team's game (the exact person this is for).
+ *
+ * DOUBLE GAMEWEEKS: when a club plays twice in one gameweek there are two of its
+ * packs, and we take the fan's BEST, not the sum. Summing would let two-game
+ * clubs post a per-fan score up to double a one-game club's, ranking the table
+ * on the fixture list rather than on knowledge — the same scale-mismatch the
+ * across-fans averaging already guards against. Best-of keeps every club on the
+ * same 0–max scale however many games it has, still rewards playing both (two
+ * attempts = a better shot at a high score), and matches the transfer-credit
+ * rule (best club pack earns the one per-gameweek credit) so the leaderboard and
+ * the fantasy bridge never disagree. A normal single-game gameweek is one pack,
+ * so best == that pack — this changes nothing outside a double gameweek.
  *
  * Shared by gameweekClubTable and result.ts's gameweekRecipients so the table
  * and the end-of-gameweek message can never disagree about who counts.
@@ -80,23 +92,25 @@ export function ownClubFanTotals(
   const fanClub = new Map<string, string>();
   for (const s of supporters) fanClub.set(s.userId, s.club);
 
-  const totals = new Map<string, number>();
+  const best = new Map<string, number>();
   for (const a of attempts) {
     const club = fanClub.get(a.userId);
     if (club === undefined) continue; // no declared club — counts for nobody
     if (club !== a.home && club !== a.away) continue; // not their club's match
-    totals.set(a.userId, (totals.get(a.userId) ?? 0) + a.score);
+    // BEST-OF, not sum: a fan's score is their strongest own-club pack this
+    // gameweek, so a double gameweek can't inflate a club above the 0–max scale.
+    best.set(a.userId, Math.max(best.get(a.userId) ?? 0, a.score));
   }
-  return totals;
+  return best;
 }
 
 export interface ClubStanding {
   club: string;
   /** Distinct fans who support this club AND completed >= 1 halftime attempt this gameweek. */
   participants: number;
-  /** Mean of each participating fan's TOTAL halftime score this gameweek. */
+  /** Mean of each participating fan's BEST own-club pack score this gameweek. */
   avgScore: number;
-  /** Sum of each participating fan's TOTAL halftime score this gameweek. */
+  /** Sum, across participating fans, of each fan's BEST own-club pack score this gameweek. */
   totalScore: number;
   /** 1-based rank among eligible (participants >= MIN_PARTICIPANTS) clubs; null if not eligible. */
   rank: number | null;
