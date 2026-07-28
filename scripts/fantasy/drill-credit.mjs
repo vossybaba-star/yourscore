@@ -142,74 +142,60 @@ check(built.status === 200, "test squad built", built.status === 200 ? "" : JSON
 if (built.status !== 200) process.exit(1);
 
 // ── A. round → tray ──────────────────────────────────────────────────────────
+// The round API operates on the user's CURRENT gameweek — the real GW1 here, not
+// the staged 900 (currentGw takes the lowest live gw). That's fine: the round→tray
+// wiring is gameweek-agnostic, so we play it and read the result straight off
+// getState (same gameweek + the squad's tray), rather than a hardcoded gw row.
 console.log("\n── A. round → tray ──");
 const start = await call("round/start", {});
 const questions = start.json?.questions ?? [];
 if (!Array.isArray(questions) || !questions.length) {
-  bad("round did not start — cannot test the round→tray path", JSON.stringify(start.json).slice(0, 120));
+  bad("round did not start — skipping the round→tray check", JSON.stringify(start.json).slice(0, 160));
 } else {
   for (let k = 0; k < questions.length; k++) {
     const optionId = questions[k]?.options?.[0]?.id ?? questions[k]?.options?.[0] ?? 0;
     await call("round/step", { k, optionId });
   }
-  const entry = (await db.from("fantasy_entries").select("round_correct, round_done_at").eq("gw", GW).eq("user_id", userId).single()).data;
-  const sq = await squadOf(userId);
-  const expected = creditsForRound(entry.round_correct ?? 0);
-  check(!!entry.round_done_at, "the round completed through the real API", `${entry.round_correct}/11`);
-  check(sq.pending_credits === expected,
-    `the round fed the tray = creditsForRound(${entry.round_correct}) = ${expected}`, `tray=${sq.pending_credits}`);
-  check(expected === 0 || sq.pending_source === "round", "and the tray's source reads 'round'", `source=${sq.pending_source}`);
+  const st = (await call("state")).json;
+  const rc = st?.entry?.round?.correct ?? 0;
+  const earned = st?.squad?.earnedForNextGw;
+  if (!st?.entry?.round?.done) {
+    bad("round did not complete via the API — skipping the round→tray check", JSON.stringify(st?.entry ?? {}).slice(0, 160));
+  } else {
+    check(earned === creditsForRound(rc), `the round fed the tray = creditsForRound(${rc}) = ${creditsForRound(rc)}`, `tray=${earned}`);
+    check(creditsForRound(rc) === 0 || st?.squad?.earnedSource === "round", "the tray's source reads 'round'", `source=${st?.squad?.earnedSource}`);
+  }
 }
 
-// ── B. gameday sweep → tray (bridge fix + first-only) ─────────────────────────
-// Control the starting tray so the assertion is deterministic regardless of the
-// round score above: a modest 0 to start, then a LOWER gameday quiz first and a
-// HIGHER one second. First-only means the tray takes the first, never the second.
-console.log("\n── B. gameday sweep (bridge + first-only) ──");
+// ── B. gameday sweep → settled into the bank (end-to-end, in the real tick) ───
+// first-only / bridge / override-upward are already proven on the REAL gamedayEarn
+// by the in-memory gameday-credit test; here we prove the sweep runs in the REAL
+// tick against the REAL db and its result settles into the spendable bank at
+// finalise. The Nov-2025 window means one tick runs lock → gamedayEarn → ingest →
+// score → finalise in order, so the seeded quiz is swept into the tray and then
+// settled, all in flight.
+console.log("\n── B. gameday quiz → settled credits ──");
+// Reset the tray so only the gameday quiz below counts (Test A's round fed GW1).
 await db.from("fantasy_squads").update({ pending_credits: 0, pending_gameday_done: false, pending_source: null }).eq("user_id", userId);
+// question_count is a GENERATED column (from questions) — don't set it.
 const { error: packErr } = await db.from("quiz_packs").insert({
-  id: PACK_ID, name: "DRILL gameday", type: "club", parameter: "900", source: "drill",
-  status: "published", rotation_active: false, featured: false, question_count: 11, questions: [],
+  id: PACK_ID, name: "DRILL gameday", type: "records", parameter: "900", source: "system",
+  status: "published", rotation_active: false, featured: false, questions: [],
   description: "drill", metadata: { gameday: { fixture_id: 900, season_id: SM_SEASON, gameweek: GW, home: "A", away: "B" } },
 });
 check(!packErr, "a gameday pack (metadata.gameday) was seeded", packErr?.message ?? "");
-const t0 = new Date(new Date(`${WINDOW_START}T12:00:00Z`).getTime());
-const FIRST = 6, SECOND = 11; // creditsForRound: 6→2, 11→4
-await db.from("quiz_attempts").insert([
-  { user_id: userId, pack_id: PACK_ID, score: FIRST, max_score: 11, correct_count: FIRST, answers: [], completed_at: t0.toISOString() },
-  { user_id: userId, pack_id: PACK_ID, score: SECOND, max_score: 11, correct_count: SECOND, answers: [], completed_at: new Date(t0.getTime() + 60_000).toISOString() },
-]);
-ok(`two gameday attempts seeded — first ${FIRST}/11 (→${creditsForRound(FIRST)}), then ${SECOND}/11 (→${creditsForRound(SECOND)})`);
+const GDAY = 6; // 6/11 → 2 credits
+await db.from("quiz_attempts").insert({
+  user_id: userId, pack_id: PACK_ID, score: GDAY, max_score: 11, correct_count: GDAY, answers: [],
+  completed_at: new Date(`${WINDOW_START}T12:00:00Z`).toISOString(),
+});
+ok(`a gameday quiz seeded — ${GDAY}/11 (→ ${creditsForRound(GDAY)} credits)`);
 
-// mute, then move the deadline into the past AND blank the feed season (sm 0 → no
-// fixtures → ingest holds). One tick then locks the gw and runs the gameday sweep
-// (which fires BEFORE ingest), but HOLDS at `locked` instead of racing on to
-// finalise — so we can observe the tray at its post-sweep value before Test C
-// settles it. Nov-2025 is far enough in the past that a live feed would otherwise
-// lock→score→finalise in a single tick.
-const claims = await muteComms(db, { gw: GW, deadline, userIds: [userId] });
-await db.from("fantasy_gameweeks")
-  .update({ deadline: new Date(Date.now() - 60_000).toISOString(), sm_season_id: 0 }).eq("gw", GW);
 const secret = process.env.CRON_SECRET;
-await fetch(`${BASE}/api/cron/fantasy-tick`, { headers: { Authorization: `Bearer ${secret}` } });
-const afterSweep = await squadOf(userId);
-check((await db.from("fantasy_gameweeks").select("status").eq("gw", GW).single()).data?.status === "locked",
-  "the gameweek held at 'locked' (feed blanked) so the tray is observable pre-settlement");
-check(afterSweep.pending_gameday_done === true, "the gameday slot locked (a quiz counted this cycle)");
-check(afterSweep.pending_credits === creditsForRound(FIRST),
-  `the tray took the FIRST quiz (${creditsForRound(FIRST)}), not the higher second (${creditsForRound(SECOND)})`,
-  `tray=${afterSweep.pending_credits}`);
-check(afterSweep.pending_source === "gameday", "the tray's source reads 'gameday'", `source=${afterSweep.pending_source}`);
-const creditsBefore = afterSweep.credits;
-const trayBefore = afterSweep.pending_credits;
+const claims = await muteComms(db, { gw: GW, deadline, userIds: [userId] });
+const creditsBefore = (await squadOf(userId)).credits;
+await db.from("fantasy_gameweeks").update({ deadline: new Date(Date.now() - 60_000).toISOString() }).eq("gw", GW);
 
-// ── C. settlement — restore the feed, tick to final ──────────────────────────
-// Point the gameweek back at the real completed Nov-2025 weekend so ingest +
-// scoring do real work and the state machine reaches finalise, where the tray
-// settles. The gameday sweep runs again but finds the slot locked, so nothing
-// double-counts.
-console.log("\n── C. settlement ──");
-await db.from("fantasy_gameweeks").update({ sm_season_id: SM_SEASON }).eq("gw", GW);
 let status = (await db.from("fantasy_gameweeks").select("status").eq("gw", GW).single()).data?.status;
 for (let i = 1; i <= MAX_TICKS && status !== "final"; i++) {
   const res = await fetch(`${BASE}/api/cron/fantasy-tick`, { headers: { Authorization: `Bearer ${secret}` } });
@@ -219,10 +205,12 @@ for (let i = 1; i <= MAX_TICKS && status !== "final"; i++) {
   status = (await db.from("fantasy_gameweeks").select("status").eq("gw", GW).single()).data?.status;
 }
 check(status === "final", "the gameweek finalised", `status=${status}`);
+
 const afterSettle = await squadOf(userId);
-const expectedCredits = Math.min(5, creditsBefore + 1 + trayBefore); // +1 baseline, + tray
+const gd = creditsForRound(GDAY);
+const expectedCredits = Math.min(5, creditsBefore + 1 + gd); // +1 baseline, + the gameday tray
 check(afterSettle.credits === expectedCredits,
-  `settled into the bank: ${creditsBefore} + 1 baseline + ${trayBefore} tray → ${expectedCredits}`, `credits=${afterSettle.credits}`);
+  `the gameday quiz settled into the bank: ${creditsBefore} + 1 baseline + ${gd} gameday → ${expectedCredits}`, `credits=${afterSettle.credits}`);
 check(afterSettle.pending_credits === 0, "the tray reset to zero for the new cycle", `tray=${afterSettle.pending_credits}`);
 check(afterSettle.pending_gameday_done === false, "and the gameday slot reopened");
 
