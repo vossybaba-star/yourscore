@@ -21,7 +21,7 @@ import { GameweekBreakdown } from "@/components/fantasy/GameweekBreakdown";
 import { FinalStory } from "@/components/fantasy/FinalStory";
 import { pitchName, type BoardPlayer, type LiveDatum } from "@/lib/fantasy/board";
 import { faceFor } from "@/lib/fantasy/faces";
-import { BUDGET_TENTHS, CREDIT_CAP, HALF_SEASON_GW, MAX_PER_CLUB, SQUAD_SIZE } from "@/lib/fantasy/engine";
+import { BUDGET_TENTHS, CREDIT_CAP, MAX_PER_CLUB, SQUAD_SIZE } from "@/lib/fantasy/engine";
 import { KNOWLEDGE_NAME } from "@/lib/fantasy/brand";
 
 type Result = NonNullable<NonNullable<FantasyState["entry"]>["result"]>;
@@ -31,17 +31,13 @@ type Result = NonNullable<NonNullable<FantasyState["entry"]>["result"]>;
  *  ours, and it must match the sibling sections. */
 const EMBEDDED_PAGE: CSSProperties = { padding: "4px 16px 8px", color: INK };
 
-// Fungible tokens (triple_captain, bench_boost, insight) all
-// spend from the same held count; the wildcard runs on its own separate track.
-// Insight fires inside the round (a 50/50), Second Chance after it (retry one
-// the full chip set is legible, but never playable.
+// The three chips (triple_captain, bench_boost, insight) all spend from the same
+// held count. Insight fires inside the round (a 50/50); the others act at scoring.
 /** `earn` is the half the card was missing. A manager who has never held a chip
- *  saw four names, four effects and four "None held" labels, with no way to learn
- *  how any of them arrives — so the whole mechanic read as something the game
- *  might give you one day for reasons of its own. */
+ *  saw three names, three effects and three "None held" labels, with no way to
+ *  learn how any of them arrives — so the whole mechanic read as something the
+ *  game might give you one day for reasons of its own. */
 const CHIP_META: { key: ChipName; label: string; blurb: string; earn: string; comingSoon?: boolean }[] = [
-  { key: "wildcard", label: "Wildcard", blurb: "Unlimited free transfers this gameweek",
-    earn: "One per half-season, plus one for a perfect round. Use it or lose it at the halfway deadline" },
   { key: "triple_captain", label: "Triple Captain", blurb: "Your captain's points count ×3, not ×2",
     earn: "Costs one chip token" },
   { key: "bench_boost", label: "Bench Boost", blurb: "All 15 players score, bench included",
@@ -944,7 +940,7 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
 
       {/* Chips — shown from the first visit in a live season, even at zero held.
           Hiding the card until a manager had committed a squad meant the whole
-          mechanic (and the wildcard, and its half-season expiry) was invisible
+          mechanic was invisible
           through onboarding and all of gameweek 1. A locked card that names the
           chips and shows progress teaches the game; an absent one doesn't. */}
       {phase === "open" && roundOpen && chips && (
@@ -966,15 +962,10 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
           </div>
           {/* The earning rule, stated once, for the manager who holds nothing yet
               and has no other way to find out. */}
-          {chips.held === 0 && chips.wildcards === 0 && (
+          {chips.held === 0 && (
             <p style={{ fontSize: 12, color: MUTED, margin: "0 0 8px", lineHeight: 1.45 }}>
               You earn a chip token for every {chips.gameweeksPerChip} gameweeks you actually play, and
-              spend it on any one of these. A wildcard arrives separately, once per half-season.
-            </p>
-          )}
-          {chips.wildcards > 0 && (
-            <p style={{ fontSize: 12.5, color: GOLD, margin: "0 0 8px" }}>
-              1 wildcard held. Expires at the GW{chips.wildcardHalf === 1 ? HALF_SEASON_GW : state.season.total} deadline
+              spend it on any one of these.
             </p>
           )}
           {chips.playedThisGw ? (
@@ -990,7 +981,7 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 6 }}>
               {CHIP_META.map((c) => {
-                const held = c.key === "wildcard" ? chips.wildcards > 0 : chips.held > 0;
+                const held = chips.held > 0;
                 const playable = held && !c.comingSoon;
                 return (
                   <button key={c.key} disabled={!playable || busy} onClick={() => playChipAction(c.key)} style={{
@@ -1033,10 +1024,7 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
             can be taken back until the matches start.
           </p>
           <p className="font-body" style={{ fontSize: 12.5, color: GOLD, margin: "0 0 14px" }}>
-            You hold {confirmChip === "wildcard" ? chips.wildcards : chips.held}{" "}
-            {confirmChip === "wildcard"
-              ? `wildcard${chips.wildcards === 1 ? "" : "s"}`
-              : `chip${chips.held === 1 ? "" : "s"}`}.
+            You hold {chips.held} chip{chips.held === 1 ? "" : "s"}.
           </p>
           <div style={{ display: "flex", gap: 8 }}>
             <div style={{ flex: 1 }}><Btn onClick={() => setConfirmChip(null)}>Not yet</Btn></div>
@@ -1117,9 +1105,7 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
         )}
         {(!preseason || !isDemo) && (
           <Btn onClick={() => router.push("/fantasy/transfers")}>
-            {chips?.playedThisGw === "wildcard"
-              ? "Transfers (wildcard active, all free)"
-              : `Transfers (${squad.credits} free · extras −4 pts)`}
+            {`Transfers (${squad.credits} free · extras −4 pts)`}
           </Btn>
         )}
         {/* Locking is the SEASON's job in a live gameweek — this button answers

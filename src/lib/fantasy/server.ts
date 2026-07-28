@@ -12,7 +12,7 @@ import { buildRound, clientView, grade, questionKey, type Round } from "@/lib/ga
 import type { GateQuestion } from "@/lib/gates/types";
 import {
   applyTransfer, BASELINE_CREDITS_PER_GW, cashOverflow, CHIPS, creditsForRound, GAMEWEEKS_PER_CHIP,
-  grantBaseline, halfOf, perfectRoundReward, scoreEntry, smartDefaults, transferCost,
+  grantBaseline, scoreEntry, smartDefaults, transferCost,
   validateSelection, validateSquad,
   RuleError, type Chip, type LockedSelection, type Squad, type SquadPick,
 } from "./engine";
@@ -40,8 +40,7 @@ export interface SquadRow {
   user_id: string; picks: SquadPick[]; bank_tenths: number; credits: number;
   xi: number[]; bench: number[]; captain: number; vice: number; version: number;
   created_gw: number;
-  chips: number; chip_progress: number; wildcards: number;
-  wildcard_half: number | null; bonus_wildcard_half: number | null;
+  chips: number; chip_progress: number;
 }
 export interface EntryRow {
   user_id: string; gw: number; status: string;
@@ -174,7 +173,6 @@ export async function getState(db: Db, userId: string) {
     },
     chips: squad && {
       held: squad.chips, progress: squad.chip_progress, gameweeksPerChip: GAMEWEEKS_PER_CHIP,
-      wildcards: squad.wildcards, wildcardHalf: squad.wildcard_half,
       playedThisGw: entry?.chip ?? null,
     },
     entry: entry && {
@@ -385,32 +383,16 @@ export async function startRound(db: Db, userId: string) {
   };
 }
 
-/** Round-completion side effects: bank the round's transfer credits, and on a
- *  PERFECT round mint the bonus reward — a wildcard (the first perfect round of
- *  the half) or one more banked credit (any perfect round after that, so elite
- *  quizzers can't stockpile wildcards weekly — D:150-154). Called at most once
- *  per round: stepRound only reaches here after winning the round's own
- *  idempotency guard, so this never has to protect against running twice. */
+/** Round-completion side effects: bank the round's transfer credits. Called at
+ *  most once per round: stepRound only reaches here after winning the round's own
+ *  idempotency guard, so this never has to protect against running twice.
+ *  (Quizzes earn transfers ONLY — the perfect-round wildcard was removed 28 Jul,
+ *  so a perfect 11/11 is rewarded purely by its 4 credits via creditsForRound.) */
 async function completeRound(
-  db: Db, userId: string, gw: GwRow, squad: SquadRow, correctCount: number, minted: number,
+  db: Db, userId: string, gw: GwRow, squad: SquadRow, minted: number,
 ) {
   const patch: Record<string, unknown> = { updated_at: new Date().toISOString(), version: squad.version + 1 };
-  let toBank = minted;
-
-  const half = halfOf(gw.gw);
-  const reward = perfectRoundReward(correctCount, ROUND_LEN, squad.bonus_wildcard_half === half);
-  if (reward.wildcard) {
-    // Expire first, THEN add. Wildcards held for the previous half are dead
-    // (use-it-or-lose-it), and adding to them would quietly convert an unused
-    // first-half wildcard into a live second-half one — i.e. reward you for not
-    // using it, which is the exact opposite of the rule.
-    const live = squad.wildcard_half === half ? squad.wildcards : 0;
-    patch.wildcards = live + 1;
-    patch.wildcard_half = half;
-    patch.bonus_wildcard_half = half;
-  } else if (reward.credits) {
-    toBank += reward.credits;
-  }
+  const toBank = minted;
 
   // Everything the round minted goes through ONE place, so nothing is silently
   // lost: the bank takes what it can hold, the rest cashes out at 4 points each.
@@ -467,7 +449,7 @@ export async function stepRound(db: Db, userId: string, k: number, optionId: num
   if (error) throw new HttpError(500, error.message);
   if (isLast && written?.length) {
     const squad = (await getSquad(db, userId))!;
-    await completeRound(db, userId, gw, squad, correctCount, minted);
+    await completeRound(db, userId, gw, squad, minted);
   }
   return {
     correct, answerId: q.answerId, correctCount,
@@ -487,9 +469,7 @@ export async function applyTransferTx(db: Db, userId: string, outId: number, inI
   let next: Squad;
   const priced = await pricedPool(db, gw.gw);
   try { next = applyTransfer(squadShape(squad), outId, inId, priced); } catch (e) { asHttp(e); throw e; }
-  // A wildcard week's transfers are free — unlimited moves, not unlimited money;
-  // budget and the club cap above still hold.
-  const { paid } = transferCost(squad.credits, entry.chip === "wildcard");
+  const { paid } = transferCost(squad.credits);
   const swap = (arr: number[]) => arr.map((id) => (id === outId ? inId : id));
   const patch = {
     picks: next.picks, bank_tenths: next.bankTenths,
@@ -546,21 +526,14 @@ export async function playChip(db: Db, userId: string, chip: Chip) {
   if (!isOpenForEdits(gw, entry)) throw new HttpError(409, "gameweek is locked", "locked");
   if (entry.chip) throw new HttpError(409, "you've already played a chip this gameweek", "chip-played");
 
-  if (chip === "wildcard") {
-    if (squad.wildcards <= 0 || squad.wildcard_half !== halfOf(gw.gw))
-      throw new HttpError(409, "no wildcard to play", "no-wildcard");
-  } else if (squad.chips <= 0) {
-    throw new HttpError(409, "no chips to play", "no-chip");
-  }
+  if (squad.chips <= 0) throw new HttpError(409, "no chips to play", "no-chip");
 
   const { data: claimed, error: eErr } = await db.from("fantasy_entries")
     .update({ chip }).eq("user_id", userId).eq("gw", gw.gw).is("chip", null).select("gw");
   if (eErr) throw new HttpError(500, eErr.message);
   if (!claimed?.length) throw new HttpError(409, "you've already played a chip this gameweek", "chip-played");
 
-  const spendPatch = chip === "wildcard"
-    ? { wildcards: squad.wildcards - 1, version: squad.version + 1 }
-    : { chips: squad.chips - 1, version: squad.version + 1 };
+  const spendPatch = { chips: squad.chips - 1, version: squad.version + 1 };
   const { data: spent, error: sErr } = await db.from("fantasy_squads").update(spendPatch)
     .eq("user_id", userId).eq("version", squad.version).select("version");
   if (sErr) throw new HttpError(500, sErr.message);
@@ -585,26 +558,20 @@ export async function removeChip(db: Db, userId: string) {
   if (!isOpenForEdits(gw, entry)) throw new HttpError(409, "gameweek is locked", "locked");
   const chip = entry.chip;
 
-  // A chip whose effect has already FIRED cannot be un-played — otherwise:
-  // take the 50/50, undo Insight, spend the refunded token on Triple Captain.
-  // Same for a retried answer, and for a wildcard that has already funded free
-  // transfers. Triple Captain / Bench Boost only act at scoring, so they stay
+  // A chip whose effect has already FIRED cannot be un-played — otherwise you
+  // could take the 50/50, undo Insight, and spend the refunded token on Triple
+  // Captain. Triple Captain / Bench Boost only act at scoring, so they stay
   // freely undoable until the deadline.
   const extras = entry as unknown as { round_hint_k: number | null };
   if (chip === "insight" && extras.round_hint_k !== null)
     throw new HttpError(409, "Insight is already used this round — it can't be taken back", "consumed");
-  if (chip === "wildcard" &&
-      (entry.transfers as { paid?: string }[]).some((t) => t?.paid === "free"))
-    throw new HttpError(409, "the wildcard has already funded free transfers — it can't be taken back", "consumed");
 
   const { data: cleared, error: eErr } = await db.from("fantasy_entries")
     .update({ chip: null }).eq("user_id", userId).eq("gw", gw.gw).eq("chip", chip).select("gw");
   if (eErr) throw new HttpError(500, eErr.message);
   if (!cleared?.length) throw new HttpError(409, "no chip played this gameweek", "no-chip-played");
 
-  const refundPatch = chip === "wildcard"
-    ? { wildcards: squad.wildcards + 1, version: squad.version + 1 }
-    : { chips: squad.chips + 1, version: squad.version + 1 };
+  const refundPatch = { chips: squad.chips + 1, version: squad.version + 1 };
   const { data: refunded, error: sErr } = await db.from("fantasy_squads").update(refundPatch)
     .eq("user_id", userId).eq("version", squad.version).select("version");
   if (sErr) throw new HttpError(500, sErr.message);
@@ -829,7 +796,7 @@ export async function getLedger(db: Db, userId: string): Promise<{ items: Ledger
   ]);
   const nameOf = (id: number) => nameMap.get(id) ?? `#${id}`;
   const CHIP_LABEL: Record<string, string> = {
-    wildcard: "Wildcard", triple_captain: "Triple Captain",
+    triple_captain: "Triple Captain",
     bench_boost: "Bench Boost", insight: "Insight", second_chance: "Second Chance",
   };
 
@@ -857,7 +824,7 @@ export async function getLedger(db: Db, userId: string): Promise<{ items: Ledger
       });
     }
     for (const t of e.transfers ?? []) {
-      const cost = t.paid === "hit" ? "−4 pts" : t.paid === "free" ? "free (wildcard)" : "used a transfer";
+      const cost = t.paid === "hit" ? "−4 pts" : "used a transfer";
       items.push({
         gw: e.gw, kind: t.paid === "hit" ? "hit" : "transfer", at: e.locked_at,
         text: `${nameOf(t.out)} → ${nameOf(t.in)}`,

@@ -37,7 +37,7 @@ export const CORAL = "#e0653c";
 export const tint = (hex: string, a = "1e") => `${hex}${a}`;
 
 export type Pos = "GK" | "DEF" | "MID" | "FWD";
-export type ChipName = "triple_captain" | "bench_boost" | "insight" | "second_chance" | "wildcard";
+export type ChipName = "triple_captain" | "bench_boost" | "insight" | "second_chance";
 export interface ClientPoolPlayer {
   id: number; name: string; club: string; clubId: number; pos: Pos; price: number;
 }
@@ -54,7 +54,7 @@ export interface FantasyState {
   } | null;
   chips: {
     held: number; progress: number; gameweeksPerChip: number;
-    wildcards: number; wildcardHalf: number | null; playedThisGw: ChipName | null;
+    playedThisGw: ChipName | null;
   } | null;
   entry: {
     status: string;

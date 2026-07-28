@@ -2,10 +2,10 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   accrueChip, applyTransfer, autoSubs, bankCredits, cashOverflow, creditsForRound, grantBaseline,
-  effectiveCaptain, halfOf, perfectRoundReward, scoreEntry, sellPrice, smartDefaults,
+  effectiveCaptain, scoreEntry, sellPrice, smartDefaults,
   transferCost, validateSelection, validateSquad,
   type LockedSelection, type PoolPlayer, type Squad, RuleError, BUDGET_TENTHS,
-  CHIP_HOLD_CAP, GAMEWEEKS_PER_CHIP, HALF_SEASON_GW, CASH_POINTS, CREDIT_CAP,
+  CHIP_HOLD_CAP, GAMEWEEKS_PER_CHIP, CASH_POINTS, CREDIT_CAP,
 } from "./engine";
 import { pointsFor, ZERO_FACTS, type MatchFacts } from "./values";
 
@@ -109,8 +109,8 @@ test("validateSelection: rejects 2 GKs in XI, <3 DEF, 0 FWD, captain=vice, outsi
 });
 
 // ── credits ───────────────────────────────────────────────────────────────────
-test("creditsForRound: full curve table (3→1, 5→2, 7→3, 9→4)", () => {
-  const want = [0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 4];
+test("creditsForRound: full curve table (3→1, 6→2, 9→3, 11→4 — the 4th needs a perfect round)", () => {
+  const want = [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 4];
   for (let c = 0; c <= 11; c++) assert.equal(creditsForRound(c), want[c], `correct=${c}`);
 });
 test("bankCredits caps at 5; transferCost credit-then-hit", () => {
@@ -269,23 +269,6 @@ test("accrueChip: progress stops dead at the hold cap — no stockpiling", () =>
   const at = accrueChip(3, CHIP_HOLD_CAP);
   assert.deepEqual(at, { progress: 3, held: CHIP_HOLD_CAP, minted: false });
 });
-test("halfOf: the wildcard's use-it-or-lose-it boundary", () => {
-  assert.equal(halfOf(1), 1);
-  assert.equal(halfOf(HALF_SEASON_GW), 1);
-  assert.equal(halfOf(HALF_SEASON_GW + 1), 2);
-  assert.equal(halfOf(38), 2);
-});
-test("perfectRoundReward: 11/11 mints a wildcard, but only one per half", () => {
-  assert.deepEqual(perfectRoundReward(11, 11, false), { wildcard: true, credits: 0 });
-  // the second perfect round of the same half overflows into credits instead
-  assert.deepEqual(perfectRoundReward(11, 11, true), { wildcard: false, credits: 1 });
-  assert.deepEqual(perfectRoundReward(10, 11, false), { wildcard: false, credits: 0 });
-});
-test("transferCost: every move is free on a wildcard week", () => {
-  assert.deepEqual(transferCost(0, true), { paid: "free" });
-  assert.deepEqual(transferCost(0, false), { paid: "hit" });
-  assert.deepEqual(transferCost(2, false), { paid: "credit" });
-});
 test("scoreEntry: Triple Captain triples instead of doubling", () => {
   const sel = lockedSel();
   const scores = new Map(sel.picks.map((p) => [p.id, { points: 10, facts: { ...ZERO_FACTS, minutes: 90 } }]));
@@ -317,16 +300,6 @@ test("scoreEntry: chips never break the pure-recompute contract", () => {
     const b = scoreEntry(sel, 1, scores, new Map(), chip);
     assert.deepEqual(a, b, `${chip}: same input twice → identical output`);
   }
-});
-test("wildcard: an UNUSED half's wildcard must not survive into the next half", () => {
-  // The rule is use-it-or-lose-it. Expire, THEN add — otherwise a player who sat on
-  // their first-half wildcard would carry it into the second half and end up with
-  // two, i.e. be rewarded for not using it.
-  const held = { wildcards: 1, wildcard_half: 1 as 1 | 2 };
-  const half = halfOf(HALF_SEASON_GW + 1); // now in the second half
-  const live = held.wildcard_half === half ? held.wildcards : 0;
-  assert.equal(live, 0, "the first-half wildcard is dead the moment the half turns");
-  assert.equal(live + 1, 1, "you hold exactly the one newly issued for this half");
 });
 
 // ── cash-out: credits → points, overflow only (founder-locked 14 Jul) ─────────
