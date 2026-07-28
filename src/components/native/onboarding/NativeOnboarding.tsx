@@ -13,7 +13,6 @@ import { afOnboardingComplete } from "@/lib/analytics/appsflyerEvents";
 import { OnboardingShell } from "./OnboardingShell";
 import { OnboardingPanel } from "./OnboardingPanel";
 import { PanelCarousel } from "./PanelCarousel";
-import { OnboardingAuthStep } from "./OnboardingAuthStep";
 
 const LIME = "#aeea00";
 const TEAL = "#00d8c0";
@@ -21,63 +20,71 @@ const GOLD = "#ffc233";
 
 // ── Panel visuals (zero new assets — built from existing primitives) ──────────
 
-function CountdownRing({ color }: { color: string }) {
-  const r = 14;
-  const circ = 2 * Math.PI * r;
-  return (
-    <svg width="34" height="34" viewBox="0 0 34 34" className="-rotate-90">
-      <circle cx="17" cy="17" r={r} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="3" />
-      <circle
-        cx="17"
-        cy="17"
-        r={r}
-        fill="none"
-        stroke={color}
-        strokeWidth="3"
-        strokeLinecap="round"
-        strokeDasharray={circ}
-        strokeDashoffset={circ * 0.32}
-      />
-    </svg>
-  );
-}
-
+// Slide 1's card is a REAL taste, not a mockup: the new user answers one
+// question and sees it land before the flow asks anything of them. A single
+// canned question, all client-side — no pack fetch, no scoring, no backend.
 function QuizVisual() {
   const opts = [
     { k: "A", t: "Cannavaro" },
-    { k: "B", t: "Zidane", on: true },
+    { k: "B", t: "Zidane", correct: true },
     { k: "C", t: "Pirlo" },
     { k: "D", t: "Buffon" },
   ];
+  const [picked, setPicked] = useState<string | null>(null);
+  const answered = picked !== null;
+  const gotIt = picked === "B";
   return (
     <div className="card-raised w-full p-5 text-left">
       <div className="flex items-center justify-between mb-3">
         <span className="font-body text-[11px] uppercase tracking-widest text-text-muted">
-          Question 3 / 8
+          Warm-up
         </span>
-        <CountdownRing color={TEAL} />
+        {answered && (
+          <span
+            className="font-body text-[11px] font-semibold"
+            style={{ color: gotIt ? TEAL : "#ff7a7a" }}
+          >
+            {gotIt ? "Nice." : "It's Zidane."}
+          </span>
+        )}
       </div>
       <p className="font-body text-sm text-white mb-4 leading-snug">
         Who won the 2006 World Cup Golden Ball?
       </p>
       <div className="space-y-2">
-        {opts.map((o) => (
-          <div
-            key={o.k}
-            className="flex items-center gap-3 rounded-lg px-3 py-2"
-            style={{
-              background: o.on ? "rgba(0,216,192,0.14)" : "rgba(255,255,255,0.03)",
-              border: `1px solid ${o.on ? "rgba(0,216,192,0.5)" : "rgba(255,255,255,0.06)"}`,
-            }}
-          >
-            <span className="font-body text-xs font-semibold" style={{ color: o.on ? TEAL : "#8a948f" }}>
-              {o.k}
-            </span>
-            <span className="font-body text-[13px]" style={{ color: o.on ? "#fff" : "#c7cdca" }}>
-              {o.t}
-            </span>
-          </div>
-        ))}
+        {opts.map((o) => {
+          const showCorrect = answered && o.correct;
+          const showWrong = answered && picked === o.k && !o.correct;
+          const bg = showCorrect
+            ? "rgba(0,216,192,0.14)"
+            : showWrong
+            ? "rgba(255,90,90,0.12)"
+            : "rgba(255,255,255,0.03)";
+          const border = showCorrect
+            ? "rgba(0,216,192,0.5)"
+            : showWrong
+            ? "rgba(255,90,90,0.45)"
+            : "rgba(255,255,255,0.06)";
+          const keyColor = showCorrect ? TEAL : showWrong ? "#ff7a7a" : "#8a948f";
+          const txtColor = showCorrect || showWrong ? "#fff" : "#c7cdca";
+          return (
+            <button
+              key={o.k}
+              type="button"
+              disabled={answered}
+              onClick={() => setPicked(o.k)}
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors"
+              style={{ background: bg, border: `1px solid ${border}` }}
+            >
+              <span className="font-body text-xs font-semibold" style={{ color: keyColor }}>
+                {o.k}
+              </span>
+              <span className="font-body text-[13px]" style={{ color: txtColor }}>
+                {o.t}
+              </span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -186,7 +193,7 @@ const PANELS: PanelDef[] = [
     accent: LIME,
     headline: ["Build your XI.", "Go 38-0."],
     subcopy:
-      "Draft eleven real players, go head-to-head with your mates, and chase the dream: 38 games, zero losses.",
+      "Draft eleven real players, go head-to-head with your friends, and chase the dream: 38 games, zero losses.",
     visual: <DraftVisual />,
   },
   {
@@ -194,7 +201,7 @@ const PANELS: PanelDef[] = [
     accent: GOLD,
     headline: ["Climb the", "rankings."],
     subcopy:
-      "Every game feeds your YourScore Rank. See exactly where you stand against your mates.",
+      "Every game feeds your YourScore Rank. See exactly where you stand against your friends.",
     visual: <RankVisual />,
   },
 ];
@@ -247,12 +254,10 @@ function Splash() {
 
 // ── Flow (mounted only when native + first-run) ───────────────────────────────
 
-type Phase = { kind: "panels"; index: number } | { kind: "auth" };
-
 function OnboardingFlow() {
   const { user, loading } = useUser();
   const [done, setDone] = useState(false);
-  const [phase, setPhase] = useState<Phase>({ kind: "panels", index: 0 });
+  const [index, setIndex] = useState(0);
 
   // Returning user already has a session → never onboard; mark seen and bail.
   useEffect(() => {
@@ -267,78 +272,71 @@ function OnboardingFlow() {
   if (user) return null; // teardown imminent (effect above)
 
   const last = PANELS.length - 1;
-  const accent = phase.kind === "panels" ? PANELS[phase.index].accent : LIME;
-  const isQuizPanel = phase.kind === "panels" && phase.index === 0;
+  const accent = PANELS[index].accent;
+  const isQuizPanel = index === 0;
 
-  // Commit point: reaching the auth step marks onboarding seen *before* any OAuth
-  // detour, so the post-auth deep-link reload can't re-trigger the carousel.
-  function goToAuth() {
+  // Finish the carousel → straight into a real game as a guest. No cold account
+  // wall anymore: a finished guest game already surfaces "Sign up & save score"
+  // (see Game.tsx), so the account ask lands AFTER the payoff, not before a
+  // brand-new user has played a thing. Mark seen first so a later reload can't
+  // re-trigger the carousel.
+  function finishToGame() {
     markOnboardingSeen();
-    afOnboardingComplete(); // finished the first-run carousel (→ auth)
-    setPhase({ kind: "auth" });
+    afOnboardingComplete(); // finished the first-run carousel
+    window.location.href = "/play"; // the quiz hub — same low-friction start slide 1 sells
   }
 
-  function continueAsGuest() {
+  // Returning players (reinstall / new phone) have no session, so they land in
+  // this flow too. Without the old wall there'd be no way to say "I already have
+  // an account" — this is that door. Non-blocking: new users just ignore it.
+  function goSignIn() {
     markOnboardingSeen();
-    afOnboardingComplete(); // finished the first-run carousel (→ guest)
-    window.location.href = "/38-0"; // straight into the playable game, not the web page
+    window.location.href = "/auth/sign-in";
   }
 
   return (
     <OnboardingShell accent={accent}>
-      {phase.kind === "panels" ? (
-        <>
-          <div className="pt-safe flex justify-end px-5 pt-3">
-            <button
-              onClick={goToAuth}
-              className="font-body text-xs text-text-muted py-2 px-2 hover:text-white transition-colors"
-            >
-              Skip
-            </button>
-          </div>
+      <div className="pt-safe flex items-center justify-between px-5 pt-3">
+        <button
+          onClick={goSignIn}
+          className="font-body text-xs text-text-muted py-2 px-2 hover:text-white transition-colors"
+        >
+          Sign in
+        </button>
+        <button
+          onClick={finishToGame}
+          className="font-body text-xs text-text-muted py-2 px-2 hover:text-white transition-colors"
+        >
+          Skip
+        </button>
+      </div>
 
-          <PanelCarousel
-            index={phase.index}
-            onIndex={(i) => setPhase({ kind: "panels", index: i })}
+      <PanelCarousel index={index} onIndex={setIndex}>
+        {PANELS.map((p) => (
+          <OnboardingPanel
+            key={p.tag}
+            tag={p.tag}
+            accent={p.accent}
+            headline={p.headline}
+            subcopy={p.subcopy}
           >
-            {PANELS.map((p) => (
-              <OnboardingPanel
-                key={p.tag}
-                tag={p.tag}
-                accent={p.accent}
-                headline={p.headline}
-                subcopy={p.subcopy}
-              >
-                {p.visual}
-              </OnboardingPanel>
-            ))}
-          </PanelCarousel>
+            {p.visual}
+          </OnboardingPanel>
+        ))}
+      </PanelCarousel>
 
-          <div
-            className="px-7 pt-2 space-y-5"
-            style={{ paddingBottom: "max(env(safe-area-inset-bottom), 18px)" }}
-          >
-            <Dots
-              count={PANELS.length}
-              index={phase.index}
-              accent={accent}
-              onSelect={(i) => setPhase({ kind: "panels", index: i })}
-            />
-            <button
-              onClick={() =>
-                phase.index < last
-                  ? setPhase({ kind: "panels", index: phase.index + 1 })
-                  : goToAuth()
-              }
-              className={`${isQuizPanel ? "btn-ticket btn-ticket--teal" : "btn-ticket"} w-full justify-center py-4 text-lg`}
-            >
-              {phase.index < last ? "Next" : "Get started"}
-            </button>
-          </div>
-        </>
-      ) : (
-        <OnboardingAuthStep onGuest={continueAsGuest} />
-      )}
+      <div
+        className="px-7 pt-2 space-y-5"
+        style={{ paddingBottom: "max(env(safe-area-inset-bottom), 18px)" }}
+      >
+        <Dots count={PANELS.length} index={index} accent={accent} onSelect={setIndex} />
+        <button
+          onClick={() => (index < last ? setIndex(index + 1) : finishToGame())}
+          className={`${isQuizPanel ? "btn-ticket btn-ticket--teal" : "btn-ticket"} w-full justify-center py-4 text-lg`}
+        >
+          {index < last ? "Next" : "Get started"}
+        </button>
+      </div>
     </OnboardingShell>
   );
 }
