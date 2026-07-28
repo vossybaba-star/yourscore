@@ -1,11 +1,12 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  accrueChip, applyTransfer, autoSubs, bankCredits, cashOverflow, creditsForRound, grantBaseline,
-  effectiveCaptain, halfOf, perfectRoundReward, scoreEntry, sellPrice, smartDefaults,
+  applyTransfer, autoSubs, availableChips, bankCredits, cashOverflow, chipPlayable, chipSetUsed,
+  creditsForRound, grantBaseline, playedChipThisMonth,
+  effectiveCaptain, raisePending, scoreEntry, sellPrice, smartDefaults,
   transferCost, validateSelection, validateSquad,
-  type LockedSelection, type PoolPlayer, type Squad, RuleError, BUDGET_TENTHS,
-  CHIP_HOLD_CAP, GAMEWEEKS_PER_CHIP, HALF_SEASON_GW, CASH_POINTS, CREDIT_CAP,
+  type ChipPlay, type LockedSelection, type PoolPlayer, type Squad, RuleError, BUDGET_TENTHS,
+  CASH_POINTS, CREDIT_CAP,
 } from "./engine";
 import { pointsFor, ZERO_FACTS, type MatchFacts } from "./values";
 
@@ -109,8 +110,8 @@ test("validateSelection: rejects 2 GKs in XI, <3 DEF, 0 FWD, captain=vice, outsi
 });
 
 // ── credits ───────────────────────────────────────────────────────────────────
-test("creditsForRound: full curve table (3→1, 5→2, 7→3, 9→4)", () => {
-  const want = [0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 4];
+test("creditsForRound: full curve table (3→1, 6→2, 9→3, 11→4 — the 4th needs a perfect round)", () => {
+  const want = [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 4];
   for (let c = 0; c <= 11; c++) assert.equal(creditsForRound(c), want[c], `correct=${c}`);
 });
 test("bankCredits caps at 5; transferCost credit-then-hit", () => {
@@ -118,6 +119,13 @@ test("bankCredits caps at 5; transferCost credit-then-hit", () => {
   assert.equal(bankCredits(0, 2), 2);
   assert.equal(transferCost(1).paid, "credit");
   assert.equal(transferCost(0).paid, "hit");
+});
+test("raisePending: the 'earned for next week' tray only ever RISES (override-upward)", () => {
+  assert.equal(raisePending(0, 3), 3); // first result sets the tray
+  assert.equal(raisePending(3, 2), 3); // a worse round / extra quiz never lowers it
+  assert.equal(raisePending(2, 4), 4); // a better result raises it
+  assert.equal(raisePending(4, 4), 4); // a tie holds
+  assert.equal(raisePending(0, 0), 0); // a bombed first quiz banks nothing
 });
 
 // ── transfers ─────────────────────────────────────────────────────────────────
@@ -253,38 +261,31 @@ test("RuleError carries a machine-readable code", () => {
 });
 
 // ── chips (D:123-156) ─────────────────────────────────────────────────────────
-test("accrueChip: a token every 4 PLAYED gameweeks, cumulative not consecutive", () => {
-  let s = { progress: 0, held: 0, minted: false };
-  for (let i = 1; i < GAMEWEEKS_PER_CHIP; i++) {
-    s = accrueChip(s.progress, s.held);
-    assert.equal(s.minted, false, `no token yet at ${i} played weeks`);
-    assert.equal(s.held, 0);
-  }
-  s = accrueChip(s.progress, s.held);
-  assert.equal(s.minted, true, "4th played gameweek mints the token");
-  assert.equal(s.held, 1);
-  assert.equal(s.progress, 0, "progress resets after minting");
+test("chips: one a month, and use all three before any repeats (monthly rotation)", () => {
+  // A fresh manager: all three available, nothing used, nothing played this month.
+  assert.deepEqual(availableChips([], "2026-08"), ["triple_captain", "bench_boost", "insight"]);
+  assert.equal(playedChipThisMonth([], "2026-08"), false);
+
+  // Play Triple Captain in August → this month's chip is spent; none available in August.
+  const aug: ChipPlay[] = [{ chip: "triple_captain", month: "2026-08" }];
+  assert.equal(playedChipThisMonth(aug, "2026-08"), true);
+  assert.deepEqual(availableChips(aug, "2026-08"), []);
+  assert.equal(chipPlayable(aug, "bench_boost", "2026-08").reason, "month", "one a month");
+
+  // September (new month): TC is in the current set so it can't come back yet;
+  // the other two can.
+  assert.deepEqual(availableChips(aug, "2026-09"), ["bench_boost", "insight"]);
+  assert.equal(chipPlayable(aug, "triple_captain", "2026-09").reason, "set", "use the other two first");
+  assert.equal(chipPlayable(aug, "bench_boost", "2026-09").ok, true);
 });
-test("accrueChip: progress stops dead at the hold cap — no stockpiling", () => {
-  const at = accrueChip(3, CHIP_HOLD_CAP);
-  assert.deepEqual(at, { progress: 3, held: CHIP_HOLD_CAP, minted: false });
-});
-test("halfOf: the wildcard's use-it-or-lose-it boundary", () => {
-  assert.equal(halfOf(1), 1);
-  assert.equal(halfOf(HALF_SEASON_GW), 1);
-  assert.equal(halfOf(HALF_SEASON_GW + 1), 2);
-  assert.equal(halfOf(38), 2);
-});
-test("perfectRoundReward: 11/11 mints a wildcard, but only one per half", () => {
-  assert.deepEqual(perfectRoundReward(11, 11, false), { wildcard: true, credits: 0 });
-  // the second perfect round of the same half overflows into credits instead
-  assert.deepEqual(perfectRoundReward(11, 11, true), { wildcard: false, credits: 1 });
-  assert.deepEqual(perfectRoundReward(10, 11, false), { wildcard: false, credits: 0 });
-});
-test("transferCost: every move is free on a wildcard week", () => {
-  assert.deepEqual(transferCost(0, true), { paid: "free" });
-  assert.deepEqual(transferCost(0, false), { paid: "hit" });
-  assert.deepEqual(transferCost(2, false), { paid: "credit" });
+test("chips: the set refreshes once all three are used", () => {
+  const three: ChipPlay[] = [
+    { chip: "triple_captain", month: "2026-08" },
+    { chip: "bench_boost", month: "2026-09" },
+    { chip: "insight", month: "2026-10" },
+  ];
+  assert.deepEqual(chipSetUsed(three), [], "a full set is empty again — a fresh set");
+  assert.deepEqual(availableChips(three, "2026-11"), ["triple_captain", "bench_boost", "insight"]);
 });
 test("scoreEntry: Triple Captain triples instead of doubling", () => {
   const sel = lockedSel();
@@ -317,16 +318,6 @@ test("scoreEntry: chips never break the pure-recompute contract", () => {
     const b = scoreEntry(sel, 1, scores, new Map(), chip);
     assert.deepEqual(a, b, `${chip}: same input twice → identical output`);
   }
-});
-test("wildcard: an UNUSED half's wildcard must not survive into the next half", () => {
-  // The rule is use-it-or-lose-it. Expire, THEN add — otherwise a player who sat on
-  // their first-half wildcard would carry it into the second half and end up with
-  // two, i.e. be rewarded for not using it.
-  const held = { wildcards: 1, wildcard_half: 1 as 1 | 2 };
-  const half = halfOf(HALF_SEASON_GW + 1); // now in the second half
-  const live = held.wildcard_half === half ? held.wildcards : 0;
-  assert.equal(live, 0, "the first-half wildcard is dead the moment the half turns");
-  assert.equal(live + 1, 1, "you hold exactly the one newly issued for this half");
 });
 
 // ── cash-out: credits → points, overflow only (founder-locked 14 Jul) ─────────

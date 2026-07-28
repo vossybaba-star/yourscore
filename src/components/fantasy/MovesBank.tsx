@@ -55,7 +55,7 @@ export function MovesBank({
           border: `1px solid ${tint(GOLD, "33")}`, borderRadius: 999, padding: "4px 10px" }}>
           <span style={{ width: 6, height: 6, borderRadius: "50%", background: GOLD }} />
           <span className="font-body" style={{ fontSize: 11, color: MUTED }}>
-            {chipsHeld} chip{chipsHeld === 1 ? "" : "s"} held
+            {chipsHeld} chip{chipsHeld === 1 ? "" : "s"} to play
           </span>
         </div>
       )}

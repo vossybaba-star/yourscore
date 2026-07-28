@@ -43,7 +43,7 @@ function q(n: number, difficulty: "easy" | "medium" | "hard" = "medium"): QuizQu
   };
 }
 
-const BASE_10 = Array.from({ length: 10 }, (_, i) => q(i + 1));
+const BASE_11 = Array.from({ length: 11 }, (_, i) => q(i + 1));
 const FIXTURE = 19134567;
 
 // ── state machine ────────────────────────────────────────────────────────────
@@ -148,18 +148,18 @@ test("shuffleOptions: the answer letter still points at the correct option text"
 });
 
 test("shuffleOptions: deterministic per fixture, and it actually moves the answer", () => {
-  const once = BASE_10.map((x, i) => shuffleOptions(x, i, FIXTURE));
-  const twice = BASE_10.map((x, i) => shuffleOptions(x, i, FIXTURE));
+  const once = BASE_11.map((x, i) => shuffleOptions(x, i, FIXTURE));
+  const twice = BASE_11.map((x, i) => shuffleOptions(x, i, FIXTURE));
   assert.deepEqual(once, twice, "same fixture must reproduce the same pack");
   const stillA = once.filter((x) => x.answer === "A").length;
-  assert.ok(stillA < 10, "the shuffle must actually spread the answer across A-D");
+  assert.ok(stillA < 11, "the shuffle must actually spread the answer across A-D");
 });
 
 // ── assembly ─────────────────────────────────────────────────────────────────
 
-test("assemble: a full base slate yields exactly 10 questions", () => {
-  const pack = assembleQuestions(BASE_10, FIXTURE);
-  assert.equal(pack.length, 10);
+test("assemble: a full base slate yields exactly 11 questions", () => {
+  const pack = assembleQuestions(BASE_11, FIXTURE);
+  assert.equal(pack.length, 11);
 });
 
 test("assemble: no base slate at all yields an empty pack", () => {
@@ -168,25 +168,25 @@ test("assemble: no base slate at all yields an empty pack", () => {
 });
 
 test("questionsForPublish: the frozen snapshot wins, byte for byte", () => {
-  const frozen = assembleQuestions(BASE_10, FIXTURE);
-  const out = questionsForPublish({ fixture_id: FIXTURE, base_questions: BASE_10, questions: frozen });
+  const frozen = assembleQuestions(BASE_11, FIXTURE);
+  const out = questionsForPublish({ fixture_id: FIXTURE, base_questions: BASE_11, questions: frozen });
   assert.deepEqual(out, frozen);
 });
 
 test("questionsForPublish: no frozen snapshot falls back to assembling from base", () => {
-  const out = questionsForPublish({ fixture_id: FIXTURE, base_questions: BASE_10, questions: null });
-  assert.equal(out.length, 10);
+  const out = questionsForPublish({ fixture_id: FIXTURE, base_questions: BASE_11, questions: null });
+  assert.equal(out.length, 11);
 });
 
 // ── pack validation ──────────────────────────────────────────────────────────
 
 test("validate: a good pack passes", () => {
-  assert.deepEqual(validatePackQuestions(assembleQuestions(BASE_10, FIXTURE)), []);
+  assert.deepEqual(validatePackQuestions(assembleQuestions(BASE_11, FIXTURE)), []);
 });
 
 test("validate: a short pack is rejected", () => {
-  const errs = validatePackQuestions(BASE_10.slice(0, 9));
-  assert.ok(errs.some((e) => e.includes("expected 10")));
+  const errs = validatePackQuestions(BASE_11.slice(0, 9));
+  assert.ok(errs.some((e) => e.includes("expected 11")));
 });
 
 test("validate: rubbish input is rejected, not thrown on", () => {

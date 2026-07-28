@@ -1,17 +1,19 @@
 #!/usr/bin/env node
 /**
- * gen-base.mjs — the base slate. Ten questions per fixture, written the DAY
+ * gen-base.mjs — the base slate. Eleven questions per fixture, written the DAY
  * BEFORE from historic/static facts, and therefore incapable of going stale.
+ * (Eleven, not ten — the pack now shares the fantasy round's 11-question scale
+ *  so a gameday quiz can earn transfers on the same 3/6/9/11 curve, founder 28 Jul.)
  *
  * Base is a COMPLETE pack, not a partial. If everything downstream fails — no
  * lineups, validator drops the whole fresh slice, founder vetoes all, kill
- * switch, Telegram down — the fixture still releases a full ten-question pack at
- * the whistle with zero founder involvement. That graceful degradation is the
+ * switch, Telegram down — the fixture still releases a full eleven-question pack
+ * at the whistle with zero founder involvement. That graceful degradation is the
  * backbone of a season-long feature; the fresh slice is the topping.
  *
  * NEVER PADS. If the fixture's history and our datasets only support seven
  * grounded questions, this writes seven and says so. It does not ask the model to
- * make up the other three. A fixture that cannot reach ten by the slate gate is
+ * make up the other four. A fixture that cannot reach eleven by the slate gate is
  * the founder's call to make, not the generator's.
  *
  * CLI (spec §5):
@@ -32,8 +34,8 @@ import { validateQuestions, makeContext } from "./validate.mjs";
 import { audit } from "../halftime/lib/audit.mjs";
 import { loadEnvFile, flag, has } from "../halftime/lib/env.mjs";
 
-const PACK = 10;
-const MIX = { easy: 3, medium: 4, hard: 3 };
+const PACK = 11;
+const MIX = { easy: 4, medium: 4, hard: 3 };
 const PROMPT = "scripts/gameday/prompts/base.md";
 const MAX_ROUNDS = 2; // bounded retry (LOOP rule 3)
 
@@ -191,7 +193,7 @@ async function buildOne(fixtureId, { dryRun, outDir }) {
 
   if (!dryRun) {
     if (kept.length !== PACK) {
-      // The content-write route enforces exactly 10 (validatePackQuestions). A short
+      // The content-write route enforces exactly 11 (validatePackQuestions). A short
       // slate is a real outcome — it goes to the gate as short, it does not go to
       // the DB as fake.
       console.error(`  ! ${kept.length}/${PACK} grounded — NOT persisted; the slate gate must decide`);

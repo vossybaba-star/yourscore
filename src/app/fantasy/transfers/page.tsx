@@ -70,8 +70,7 @@ export default function TransfersPage() {
   const made = state?.entry?.transfers ?? 0;
   /** Past the deadline: everything reads, nothing writes. */
   const closed = !!state && !state.openForEdits;
-  const wildcardActive = state?.chips?.playedThisGw === "wildcard";
-  const nextIsFree = wildcardActive || (squad?.credits ?? 0) > 0;
+  const nextIsFree = (squad?.credits ?? 0) > 0;
 
   // Recent YourScore points — the evidence a transfer decision should rest on.
   const formOf = useCallback((id: number): number[] => form.points[id] ?? [], [form]);
@@ -184,9 +183,7 @@ export default function TransfersPage() {
   return (
     <main data-fantasy style={page}>
       <Header right={<>
-        {wildcardActive
-          ? <Chip gold>Wildcard active</Chip>
-          : <Chip gold>{squad.credits} free</Chip>}
+        <Chip gold>{squad.credits} free</Chip>
         <Chip>{fmtM(squad.bankTenths)} bank</Chip>
       </>} />
       <h1 style={{ fontSize: 22, margin: "0 0 4px", fontWeight: 700 }}>
@@ -199,9 +196,7 @@ export default function TransfersPage() {
             {hits > 0
               ? <>, <b style={{ color: "#E08A6B" }}>{hits} paid</b> for −{hits * 4} points.</>
               : made > 0 ? ", all free." : "."}</>
-          : wildcardActive
-            ? <>Wildcard active. <b style={{ color: GOLD }}>transfers are free this week</b>, no limit and no points hit.</>
-            : <>Tap a player to swap him. You earned <b style={{ color: GOLD }}>{squad.credits} free move{squad.credits === 1 ? "" : "s"}</b> this
+          : <>Tap a player to swap him. You earned <b style={{ color: GOLD }}>{squad.credits} free move{squad.credits === 1 ? "" : "s"}</b> this
               week. After that, every transfer costs <b style={{ color: "#E08A6B" }}>4 points</b>.</>}
       </p>
 
@@ -343,11 +338,9 @@ export default function TransfersPage() {
             })()}
           </Card>
           <div style={{ fontSize: 12.5, marginBottom: 4 }}>
-            Sign a replacement. This move is {wildcardActive
-              ? <b style={{ color: GOLD }}>free (wildcard active)</b>
-              : nextIsFree
-                ? <b style={{ color: GOLD }}>free (uses 1 credit)</b>
-                : <b style={{ color: "#E08A6B" }}>−4 points</b>}:
+            Sign a replacement. This move is {nextIsFree
+              ? <b style={{ color: GOLD }}>free (uses 1 credit)</b>
+              : <b style={{ color: "#E08A6B" }}>−4 points</b>}:
           </div>
           {hasForm && (
             <p style={{ fontSize: 11.5, color: MUTED, margin: "0 0 8px", lineHeight: 1.45 }}>

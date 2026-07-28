@@ -31,12 +31,12 @@ import "server-only";
  *      deadline is sacred."
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { accrueChip, grantBaseline, halfOf, scoreEntry, type Chip, type LockedSelection, type SquadPick } from "./engine";
+import { cashOverflow, grantBaseline, scoreEntry, type Chip, type LockedSelection, type SquadPick } from "./engine";
 import { aggregateFixtures, fetchGwFixtures, toPlayerScores } from "./ingest";
 import { enginePool, gwPrices } from "./pool";
 import { SCORING_VERSION, ZERO_FACTS, type MatchFacts } from "./values";
 import { deadlineComms, monthWinnerComms, resultComms } from "./comms";
-import { halftimeEarn } from "./halftime-link";
+import { gamedayEarn } from "./gameday-credit";
 import { interpretHoldRead } from "./ops-diff";
 
 // Same loose client type server.ts uses — the generated row types model jsonb as
@@ -141,57 +141,7 @@ export async function lockGameweek(db: Db, gw: SeasonGw): Promise<{ locked: numb
     if (upErr) throw new Error(`lock upsert: ${upErr.message}`);
   }
   await db.from("fantasy_gameweeks").update({ status: "locked" }).eq("gw", gw.gw);
-
-  await issueWildcards(db, halfOf(gw.gw));
   return { locked: rows.length, rolledOver };
-}
-
-/**
- * One issued wildcard per half, use-it-or-lose-it (D:147-149).
- *
- * Two separate questions, and they need two separate columns — collapsing them
- * into one is a bug that would only surface in December:
- *   - `wildcard_half`: the half the wildcards you HOLD are valid in. Crossing into
- *     a new half kills them (that IS the expiry).
- *   - `issued_half`:   the half we last handed out the standard wildcard for.
- * A bonus wildcard from a perfect round also sets `wildcard_half`. If the issuer
- * keyed off that, a player who quizzed 11/11 in the first week of a half would
- * look "already issued" and would silently never receive their own wildcard —
- * punished for a perfect round. `issued_half` is what makes it idempotent.
- */
-async function issueWildcards(db: Db, half: 1 | 2): Promise<void> {
-  const squads = await pageAll<{
-    user_id: string; wildcards: number; wildcard_half: number | null; issued_half: number | null;
-  }>(
-    (from, to) => db.from("fantasy_squads")
-      .select("user_id, wildcards, wildcard_half, issued_half").range(from, to),
-    "wildcard issuance",
-  );
-
-  // Grouped by the balance each manager should END on, so this is a handful of
-  // updates rather than one per manager. The per-row loop was a thousand
-  // sequential round-trips inside a 60-second cron — the lock would time out
-  // long before it finished handing wildcards out.
-  const byTarget = new Map<number, string[]>();
-  for (const s of squads) {
-    if (s.issued_half === half && s.wildcard_half === half) continue; // already settled for this half
-    // Anything held for a previous half is dead. Expire, then issue.
-    const live = s.wildcard_half === half ? s.wildcards : 0;
-    const grant = s.issued_half === half ? 0 : 1;
-    const target = live + grant;
-    const bucket = byTarget.get(target) ?? [];
-    bucket.push(s.user_id);
-    byTarget.set(target, bucket);
-  }
-
-  for (const [wildcards, ids] of Array.from(byTarget)) {
-    for (const batch of chunk(ids, 500)) {
-      const { error } = await db.from("fantasy_squads")
-        .update({ wildcards, wildcard_half: half, issued_half: half })
-        .in("user_id", batch);
-      if (error) throw new Error(`wildcard issuance: ${error.message}`);
-    }
-  }
 }
 
 // ── prices: FPL → fantasy_player_prices, once at gameweek open ───────────────
@@ -351,7 +301,7 @@ export async function scoreGameweek(db: Db, gw: SeasonGw, opts: { final: boolean
  * rolled-over week (never played the round) is filtered out before accruing, so
  * it advances nobody's chip progress (D:91-93).
  */
-export async function finaliseGameweek(db: Db, gw: SeasonGw): Promise<{ finalised: number; chipsAccrued: number; baselineGranted: number; held?: boolean }> {
+export async function finaliseGameweek(db: Db, gw: SeasonGw): Promise<{ finalised: number; baselineGranted: number; held?: boolean }> {
   // fantasy-ops' veto (Guard B red on this gw's facts). A FRESH point-read, not
   // the `gw` object the caller is holding — that may be stale by however long
   // this tick has been running, and a hold set moments ago must be honoured
@@ -366,7 +316,7 @@ export async function finaliseGameweek(db: Db, gw: SeasonGw): Promise<{ finalise
     .from("fantasy_gameweeks").select("ops_hold").eq("gw", gw.gw).maybeSingle();
   if (holdErr) console.error(`[finalise] ops_hold read failed for gw ${gw.gw} — failing OPEN (finalise proceeds): ${holdErr.message}`);
   if (interpretHoldRead(holdRow as { ops_hold: boolean } | null, holdErr)) {
-    return { finalised: 0, chipsAccrued: 0, baselineGranted: 0, held: true };
+    return { finalised: 0, baselineGranted: 0, held: true };
   }
 
   // Find who is moving, then move them in batches. A single UPDATE … RETURNING
@@ -392,70 +342,64 @@ export async function finaliseGameweek(db: Db, gw: SeasonGw): Promise<{ finalise
   }
   await db.from("fantasy_gameweeks").update({ status: "final" }).eq("gw", gw.gw);
 
-  // The baseline transfer for the gameweek now opening. Granted to EVERYONE who
-  // had an entry, including the rolled-over manager who never opened the app —
-  // "everyone gets one" means everyone. Sits here because the scored → final
-  // transition is already a compare-and-swap, so a re-run of the tick can't hand
-  // out a second one.
+  // Settlement — the N → N+1 hand-off. For the gameweek now opening, every
+  // manager who had an entry gets: their baseline transfer (everyone, including
+  // the rolled-over manager who never opened the app), PLUS their "earned for
+  // next week" tray poured in on top. Baseline caps; the tray's overflow past the
+  // bank cap cashes to points; then the tray resets to zero so this week's and
+  // next week's earnings never mix. Sits here because the scored → final
+  // transition is already a compare-and-swap, so a re-run can't settle twice.
   let baselineGranted = 0;
   if (all.length) {
-    const squads: { user_id: string; credits: number }[] = [];
+    const squads: { user_id: string; credits: number; pending_credits: number }[] = [];
     for (const batch of chunk(all.map((e) => e.user_id), 500)) {
       const { data, error: bErr } = await db.from("fantasy_squads")
-        .select("user_id, credits").in("user_id", batch);
-      if (bErr) throw new Error(`finalise baseline lookup: ${bErr.message}`);
-      squads.push(...((data ?? []) as { user_id: string; credits: number }[]));
+        .select("user_id, credits, pending_credits").in("user_id", batch);
+      if (bErr) throw new Error(`finalise settle lookup: ${bErr.message}`);
+      squads.push(...((data ?? []) as { user_id: string; credits: number; pending_credits: number }[]));
     }
-    // Grouped by the balance each manager lands on — there are only six possible
-    // values — so this is a few updates rather than one per manager.
+    // Grouped by the balance each manager lands on — only six possible values —
+    // so this is a handful of updates. Every settled squad is written (even a
+    // no-op on credits) so the tray fields always reset for the new cycle.
     const byCredits = new Map<number, string[]>();
+    const cashByUser: { user_id: string; points: number }[] = [];
     for (const s of squads) {
-      const next = grantBaseline(s.credits);
-      if (next === s.credits) continue; // already at the cap
-      const bucket = byCredits.get(next) ?? [];
+      const afterBaseline = grantBaseline(s.credits);
+      if (afterBaseline > s.credits) baselineGranted++;
+      const { credits, points } = cashOverflow(afterBaseline, s.pending_credits);
+      const bucket = byCredits.get(credits) ?? [];
       bucket.push(s.user_id);
-      byCredits.set(next, bucket);
-      baselineGranted++;
+      byCredits.set(credits, bucket);
+      if (points > 0) cashByUser.push({ user_id: s.user_id, points });
     }
     for (const [credits, ids] of Array.from(byCredits)) {
       for (const batch of chunk(ids, 500)) {
         const { error: gErr } = await db.from("fantasy_squads")
-          .update({ credits }).in("user_id", batch);
-        if (gErr) throw new Error(`finalise baseline grant: ${gErr.message}`);
+          .update({ credits, pending_credits: 0, pending_gameday_done: false, pending_source: null })
+          .in("user_id", batch);
+        if (gErr) throw new Error(`finalise settle: ${gErr.message}`);
       }
+    }
+    // Overflow: the tray couldn't fit the bank, so it cashes as points on the
+    // gameweek just finalised (the week the knowledge was earned). Rare — only a
+    // manager sitting at the credit cap — so a per-user read/add is fine. Adds
+    // (never sets) so it composes with any cash already on the entry, and stays
+    // re-score-safe: cash_points is what scoreEntry reads back.
+    for (const { user_id, points } of cashByUser) {
+      const { data: e } = await db.from("fantasy_entries")
+        .select("points, cash_points").eq("user_id", user_id).eq("gw", gw.gw).maybeSingle();
+      const row = e as { points: number | null; cash_points: number | null } | null;
+      await db.from("fantasy_entries").update({
+        cash_points: (row?.cash_points ?? 0) + points,
+        points: (row?.points ?? 0) + points,
+      }).eq("user_id", user_id).eq("gw", gw.gw);
     }
   }
 
-  const played = all.filter((e) => e.round_done_at != null);
-  let chipsAccrued = 0;
-  if (played.length) {
-    const squads: { user_id: string; chips: number; chip_progress: number }[] = [];
-    for (const batch of chunk(played.map((e) => e.user_id), 500)) {
-      const { data, error: sqErr } = await db.from("fantasy_squads")
-        .select("user_id, chips, chip_progress").in("user_id", batch);
-      if (sqErr) throw new Error(`finalise chip lookup: ${sqErr.message}`);
-      squads.push(...((data ?? []) as { user_id: string; chips: number; chip_progress: number }[]));
-    }
-    // Only sixteen reachable (progress, held) states, so grouping collapses a
-    // per-manager loop into a handful of updates.
-    const byState = new Map<string, { progress: number; held: number; ids: string[] }>();
-    for (const s of squads) {
-      const next = accrueChip(s.chip_progress, s.chips);
-      const key = `${next.progress}:${next.held}`;
-      const bucket = byState.get(key) ?? { progress: next.progress, held: next.held, ids: [] };
-      bucket.ids.push(s.user_id);
-      byState.set(key, bucket);
-      if (next.minted) chipsAccrued++;
-    }
-    for (const { progress, held, ids } of Array.from(byState.values())) {
-      for (const batch of chunk(ids, 500)) {
-        const { error: chErr } = await db.from("fantasy_squads")
-          .update({ chip_progress: progress, chips: held }).in("user_id", batch);
-        if (chErr) throw new Error(`finalise chip accrual: ${chErr.message}`);
-      }
-    }
-  }
-  return { finalised: all.length, chipsAccrued, baselineGranted };
+  // Chips are no longer accrued here: the monthly rotation (founder 28 Jul) means
+  // you always simply HAVE the current set-of-three, throttled to one a month —
+  // there's nothing to earn per gameweek, so finalise doesn't touch chips at all.
+  return { finalised: all.length, baselineGranted };
 }
 
 // ── the tick ─────────────────────────────────────────────────────────────────
@@ -527,15 +471,15 @@ export async function tickSeason(db: Db, now = Date.now()): Promise<TickReport[]
       gw.status = "locked";
     }
 
-    // The halftime link sweeps while the weekend is in play: a good halftime
-    // quiz banks a credit for NEXT gameweek (this one is locked — nothing here
-    // can touch the week in play). It runs BEFORE ingest on purpose: quiz
-    // earnings must not hinge on the SportMonks feed being alive. Failure-soft,
-    // idempotent per attempt.
+    // The gameday-credit sweep runs while the weekend is in play: your FIRST
+    // gameday quiz raises the "earned for next week" tray (this gameweek is
+    // locked — nothing here can touch the week in play). It runs BEFORE ingest on
+    // purpose: quiz earnings must not hinge on the SportMonks feed being alive.
+    // Failure-soft; the tray is settled into spendable credits at finalise.
     try {
-      const ht = await halftimeEarn(db, gw);
-      if (ht.minted) out.push({ gw: gw.gw, action: "provisional", detail: `halftime link minted ${ht.minted} credit(s)` });
-    } catch (e) { console.error("[tick] halftime link failed:", e); }
+      const gd = await gamedayEarn(db, gw);
+      if (gd.updated) out.push({ gw: gw.gw, action: "provisional", detail: `gameday quizzes raised ${gd.updated} pending tray(s)` });
+    } catch (e) { console.error("[tick] gameday-credit sweep failed:", e); }
 
     // 2. Ingest + score. Any feed failure HOLDS the gameweek where it is — we
     //    never advance the state machine on data we don't trust.
@@ -560,12 +504,12 @@ export async function tickSeason(db: Db, now = Date.now()): Promise<TickReport[]
 
     // 3. Once the corrections window has passed, close it.
     if (lastKickoff !== null && now >= lastKickoff + MATCHES_DONE_AFTER_LAST_KICKOFF_MS + FINALISE_AFTER_MATCHES_DONE_MS) {
-      const { finalised, chipsAccrued, held } = await finaliseGameweek(db, gw);
+      const { finalised, held } = await finaliseGameweek(db, gw);
       if (held) {
         out.push({ gw: gw.gw, action: "held", detail: "ops_hold set — finalise vetoed" });
         continue; // vetoed — no comms for a gameweek that didn't actually close
       }
-      out.push({ gw: gw.gw, action: "finalised", detail: `stat-correction window closed (${finalised} entries, ${chipsAccrued} chips accrued)` });
+      out.push({ gw: gw.gw, action: "finalised", detail: `stat-correction window closed (${finalised} entries)` });
       // The retention loop fires off the back of finality: your result lands, and
       // if this gameweek closed its month, every league announces its winner.
       // Failure-soft — comms must never hold the season (that's the tick's job).

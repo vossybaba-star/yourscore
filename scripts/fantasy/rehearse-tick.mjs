@@ -126,8 +126,8 @@ const take = (pos, n) => {
 const built = await call("squad", { pickIds: [...take("GK", 2), ...take("DEF", 5), ...take("MID", 5), ...take("FWD", 3)] });
 check(built.status === 200, "test squad built for the rehearsal manager", built.status === 200 ? "" : JSON.stringify(built.json));
 if (built.status !== 200) process.exit(1);
-const before = (await db.from("fantasy_squads").select("credits, chip_progress, chips").eq("user_id", userId).single()).data;
-console.log(`    starting balances: credits=${before.credits} chip_progress=${before.chip_progress} chips=${before.chips}`);
+const before = (await db.from("fantasy_squads").select("credits, chip_log").eq("user_id", userId).single()).data;
+console.log(`    starting balances: credits=${before.credits} chips_played=${(before.chip_log ?? []).length}`);
 
 // ── 2. mute every notification this run would emit ───────────────────────────
 console.log("\n── 2. mute ──");
@@ -174,11 +174,12 @@ const { count: scoreRows } = await db.from("fantasy_player_scores")
   .select("*", { count: "exact", head: true }).eq("gw", GW);
 check((scoreRows ?? 0) > 0, "player stats were ingested from SportMonks", `${scoreRows} players`);
 
-const after = (await db.from("fantasy_squads").select("credits, chip_progress, chips").eq("user_id", userId).single()).data;
+const after = (await db.from("fantasy_squads").select("credits, chip_log").eq("user_id", userId).single()).data;
 check(after.credits > before.credits || after.credits === 5,
   "the baseline transfer for the next gameweek was granted", `credits ${before.credits} → ${after.credits}`);
-check(after.chip_progress === before.chip_progress,
-  "a rolled-over week advanced NO chip progress", `progress ${before.chip_progress} → ${after.chip_progress}`);
+check((after.chip_log ?? []).length === (before.chip_log ?? []).length,
+  "a rolled-over week played no chip (monthly rotation is untouched by finalise)",
+  `chips_played ${(before.chip_log ?? []).length} → ${(after.chip_log ?? []).length}`);
 
 // Idempotency: the whole point of pure-recompute scoring.
 const pointsBefore = entry.points;

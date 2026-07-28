@@ -37,7 +37,7 @@ export const CORAL = "#e0653c";
 export const tint = (hex: string, a = "1e") => `${hex}${a}`;
 
 export type Pos = "GK" | "DEF" | "MID" | "FWD";
-export type ChipName = "triple_captain" | "bench_boost" | "insight" | "second_chance" | "wildcard";
+export type ChipName = "triple_captain" | "bench_boost" | "insight" | "second_chance";
 export interface ClientPoolPlayer {
   id: number; name: string; club: string; clubId: number; pos: Pos; price: number;
 }
@@ -51,10 +51,15 @@ export interface FantasyState {
     picks: { id: number; pos: Pos; clubId: number; buyTenths: number }[];
     bankTenths: number; credits: number; xi: number[]; bench: number[];
     captain: number; vice: number; version: number;
+    /** The pending tray: transfers earned THIS gameweek for NEXT gameweek.
+     *  Visible now, spendable when the next gameweek opens. */
+    earnedForNextGw: number; earnedSource: string | null;
   } | null;
   chips: {
-    held: number; progress: number; gameweeksPerChip: number;
-    wildcards: number; wildcardHalf: number | null; playedThisGw: ChipName | null;
+    /** The chips playable right now (monthly rotation): the current set-of-three
+     *  minus what's used, or empty once this month's one chip is spent. */
+    available: ChipName[]; playedThisMonth: boolean;
+    playedThisGw: ChipName | null;
   } | null;
   entry: {
     status: string;

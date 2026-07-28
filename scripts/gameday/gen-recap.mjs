@@ -67,8 +67,8 @@ import { loadEnvFile, flag, has } from "../halftime/lib/env.mjs";
 import { parseGameweek } from "./sync-fixtures.mjs";
 import { recapSentinelFixtureId } from "../../src/lib/gameday/shared.ts";
 
-const PACK = 10;
-const MIX = { easy: 3, medium: 4, hard: 3 };
+const PACK = 11;
+const MIX = { easy: 4, medium: 4, hard: 3 };
 const PROMPT = "scripts/gameday/prompts/recap.md";
 const MAX_ROUNDS = 2; // bounded retry (LOOP rule 3), same bound as gen-base.mjs
 

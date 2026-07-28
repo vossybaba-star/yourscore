@@ -91,10 +91,12 @@ export function validateSelection(squad: Squad, xi: number[], bench: number[], c
 }
 
 // ── Credits (founder-locked 11 Jul — kinder floor after playtest) ─────────────
-// 3 correct earns your first transfer, then +1 every 2 correct up to 4 at 9/11.
-// (FPL gives 1 free transfer/week; a great round here still out-earns that.)
+// Thresholds 3/6/9/11 (founder 28 Jul): 3 correct earns your first transfer,
+// then a step every three — but the FOURTH transfer needs a flawless 11/11. A
+// perfect round is the only way to the full slate. (FPL gives 1 free/week; a
+// great round here still out-earns that.)
 export function creditsForRound(correct: number): number {
-  return correct >= 9 ? 4 : correct >= 7 ? 3 : correct >= 5 ? 2 : correct >= 3 ? 1 : 0;
+  return correct >= 11 ? 4 : correct >= 9 ? 3 : correct >= 6 ? 2 : correct >= 3 ? 1 : 0;
 }
 export function bankCredits(current: number, minted: number): number {
   return Math.min(CREDIT_CAP, current + minted);
@@ -135,6 +137,18 @@ export function cashOverflow(current: number, minted: number): { credits: number
   return { credits, points: spilled * CASH_POINTS };
 }
 
+/** The "earned for next week" tray only ever RISES (founder 28 Jul). What you do
+ *  this gameweek — the neutral round and your FIRST gameday quiz — earns
+ *  transfers for next gameweek, and your earned figure is the BEST of those:
+ *  the round can raise it any time, only the first gameday quiz is ever counted,
+ *  and a worse round or an extra quiz can never lower it. This is the override-
+ *  upward rule in one place; both surfaces call it. Settlement (finaliseGameweek)
+ *  pours the tray into the spendable bank when the next gameweek opens, then
+ *  resets it to zero so this week's and next week's earnings never mix. */
+export function raisePending(current: number, earned: number): number {
+  return Math.max(current, earned);
+}
+
 /** What you get for selling — FPL's own rule (founder-locked 14 Jul):
  *  a rise pays you back HALF of it, rounded down to 0.1; a fall costs you the lot.
  *
@@ -146,54 +160,70 @@ export function sellPrice(buyTenths: number, currentTenths: number): number {
   if (currentTenths <= buyTenths) return currentTenths;
   return buyTenths + Math.floor((currentTenths - buyTenths) / 2);
 }
-/** How the next transfer is paid: knowledge first, points after.
- *  On a wildcard week every move is free — that's the whole chip. */
-export function transferCost(creditsLeft: number, wildcard = false): { paid: "credit" | "hit" | "free" } {
-  if (wildcard) return { paid: "free" };
+/** How the next transfer is paid: knowledge first, points after. */
+export function transferCost(creditsLeft: number): { paid: "credit" | "hit" } {
   return { paid: creditsLeft > 0 ? "credit" : "hit" };
 }
 
-// ── Chips (D:123-156) ────────────────────────────────────────────────────────
-/** The chip token, spent as whichever chip you want. `wildcard` runs on its own
- *  track (issued, not earned) but is played through the same slot: one per week. */
-export type Chip = "triple_captain" | "bench_boost" | "insight" | "second_chance" | "wildcard";
+// ── Chips (monthly, founder 28 Jul) ──────────────────────────────────────────
+/** The three chips. The WILDCARD was removed entirely: a free full-rebuild
+ *  contradicts the earn-your-transfers economy, and in a monthly competition a
+ *  bad squad isn't a season-wrecker — the fix is already the knowledge loop. Its
+ *  half-season issue/expiry machinery and the perfect-round bonus went with it. */
+export type Chip = "triple_captain" | "bench_boost" | "insight" | "second_chance";
 // "second_chance" stays in the TYPE (historic entry rows may carry it) but is no
 // longer PLAYABLE — the founder cut it on 22 Jul ("remove the Second Chance").
-export const CHIPS: readonly Chip[] = ["triple_captain", "bench_boost", "insight", "wildcard"];
+export const CHIPS: readonly Chip[] = ["triple_captain", "bench_boost", "insight"];
 
-/** Loyalty, not performance: a token every GAMEWEEKS_PER_CHIP gameweeks you
- *  actually PLAY. Miss a week and you accrue slower — no wipe, no grace needed
- *  (D:123-127). A week your squad merely rolled over does NOT count: skipping the
- *  round earns "no transfer credits or chip progress that week" (D:91-93). */
-export const GAMEWEEKS_PER_CHIP = 4;
-export const CHIP_HOLD_CAP = 3;
+/** Chips run on the MONTHLY competition clock, not the season (founder 28 Jul).
+ *  Two rules, and one append-only log carries both:
+ *    - ONE chip a month. Every month is a fresh, level shot — the pitch of a
+ *      monthly game — so you can't stack two big weeks in one month's contest.
+ *    - USE ALL THREE BEFORE REPEATING. Think of it as a fresh set of three each
+ *      quarter: play one a month in any order, and a chip can't come back until
+ *      the other two have been used. Stops Triple Captain (the strongest) being
+ *      spammed every month and keeps Bench Boost + Insight alive.
+ *
+ *  `chip_log` is an ordered list of every chip played, newest last, each stamped
+ *  with the month it was played in. Append on play, pop on un-play (only the
+ *  current gameweek's chip is ever un-playable, so removal is always LIFO) — so
+ *  the whole rule surface below is a pure function of the log. */
+export interface ChipPlay { chip: Chip; month: string }
 
-/** Advance chip accrual by one PLAYED gameweek. Returns the new progress and
- *  whether a token was minted. At the hold cap, progress simply stops — you can't
- *  bank a fifth week of credit toward a chip you're not allowed to hold. */
-export function accrueChip(
-  progress: number, held: number,
-): { progress: number; held: number; minted: boolean } {
-  if (held >= CHIP_HOLD_CAP) return { progress, held, minted: false };
-  const next = progress + 1;
-  if (next < GAMEWEEKS_PER_CHIP) return { progress: next, held, minted: false };
-  return { progress: 0, held: held + 1, minted: true };
+/** The chips spent in the CURRENT set-of-three: everything since the last
+ *  complete set. Once three have been played the set is full, so the slice is
+ *  empty and all three are available again — the "fresh set" refresh, derived
+ *  rather than stored (which is what makes un-play a clean pop). */
+export function chipSetUsed(log: ChipPlay[]): Chip[] {
+  return log.slice(Math.floor(log.length / 3) * 3).map((p) => p.chip);
 }
 
-/** Season halves — the wildcard is use-it-or-lose-it at the halfway deadline
- *  (D:147-149), FPL's Christmas spike. GW1-19 then GW20-38. */
-export const HALF_SEASON_GW = 19;
-export const halfOf = (gw: number): 1 | 2 => (gw <= HALF_SEASON_GW ? 1 : 2);
-
-/** A PERFECT round mints one bonus wildcard — the marquee earned moment — but at
- *  most ONE bonus per half, so elite quizzers can't stockpile them weekly. Further
- *  perfect rounds overflow into banked transfer credits instead (D:150-154). */
-export function perfectRoundReward(
-  correct: number, total: number, bonusUsedThisHalf: boolean,
-): { wildcard: boolean; credits: number } {
-  if (correct < total) return { wildcard: false, credits: 0 };
-  return bonusUsedThisHalf ? { wildcard: false, credits: 1 } : { wildcard: true, credits: 0 };
+/** Has a chip already been played in this calendar month? (Month keys are unique,
+ *  and one-a-month is enforced, so a month appears at most once in the log.) */
+export function playedChipThisMonth(log: ChipPlay[], month: string): boolean {
+  return log.some((p) => p.month === month);
 }
+
+/** The chips a manager may play right now: none if they've used this month's one,
+ *  otherwise the three minus whatever's already in the current set. */
+export function availableChips(log: ChipPlay[], month: string): Chip[] {
+  if (playedChipThisMonth(log, month)) return [];
+  const used = chipSetUsed(log);
+  return CHIPS.filter((c) => !used.includes(c));
+}
+
+/** Can this specific chip be played this month? The reason code drives the API's
+ *  409 message: 'month' (already used this month) vs 'set' (owe the other two). */
+export function chipPlayable(log: ChipPlay[], chip: Chip, month: string): { ok: boolean; reason?: "month" | "set" } {
+  if (playedChipThisMonth(log, month)) return { ok: false, reason: "month" };
+  if (chipSetUsed(log).includes(chip)) return { ok: false, reason: "set" };
+  return { ok: true };
+}
+
+// Wildcards are gone (founder 28 Jul), and with them the season-half machinery:
+// HALF_SEASON_GW / halfOf (which existed only to expire wildcards) and
+// perfectRoundReward (a perfect round no longer mints a chip — quizzes earn
+// transfers ONLY). A perfect 11/11 is now rewarded purely by creditsForRound = 4.
 
 // ── Transfers ────────────────────────────────────────────────────────────────
 /** Swap `outId` → `inId` (same position, club cap holds, bank stays ≥ 0). */
@@ -329,8 +359,6 @@ export function scoreEntry(
     return { id, points: pts, captain: isCap, subbedIn: subbedIn.has(id), facts: scores.get(id)?.facts ?? ZERO_FACTS };
   });
 
-  // A wildcard week's transfers were free, so there is nothing to deduct — the
-  // caller records 0 hits for that week, and this stays a pure sum either way.
   const hitsDeducted = hits * HIT_POINTS;
   total -= hitsDeducted;
   // Credits the bank couldn't hold, cashed at the same rate a transfer costs.
