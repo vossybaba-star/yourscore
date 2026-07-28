@@ -39,8 +39,8 @@ export default function BlogLayout({ children }: { children: React.ReactNode }) 
               THINK YOU KNOW YOUR FOOTBALL?
             </h2>
             <p className="font-body text-sm text-text-muted mt-2">
-              Put a score on it. Daily quizzes, 38-0, and head-to-head games with your friends —
-              free at yourscore.app.
+              Put a score on it. Daily quizzes, 38-0, and head-to-head games with your friends.
+              Free at yourscore.app.
             </p>
             <Link
               href="/"
