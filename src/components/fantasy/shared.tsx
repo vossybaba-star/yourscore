@@ -51,6 +51,9 @@ export interface FantasyState {
     picks: { id: number; pos: Pos; clubId: number; buyTenths: number }[];
     bankTenths: number; credits: number; xi: number[]; bench: number[];
     captain: number; vice: number; version: number;
+    /** The pending tray: transfers earned THIS gameweek for NEXT gameweek.
+     *  Visible now, spendable when the next gameweek opens. */
+    earnedForNextGw: number; earnedSource: string | null;
   } | null;
   chips: {
     held: number; progress: number; gameweeksPerChip: number;

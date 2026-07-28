@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   accrueChip, applyTransfer, autoSubs, bankCredits, cashOverflow, creditsForRound, grantBaseline,
-  effectiveCaptain, scoreEntry, sellPrice, smartDefaults,
+  effectiveCaptain, raisePending, scoreEntry, sellPrice, smartDefaults,
   transferCost, validateSelection, validateSquad,
   type LockedSelection, type PoolPlayer, type Squad, RuleError, BUDGET_TENTHS,
   CHIP_HOLD_CAP, GAMEWEEKS_PER_CHIP, CASH_POINTS, CREDIT_CAP,
@@ -118,6 +118,13 @@ test("bankCredits caps at 5; transferCost credit-then-hit", () => {
   assert.equal(bankCredits(0, 2), 2);
   assert.equal(transferCost(1).paid, "credit");
   assert.equal(transferCost(0).paid, "hit");
+});
+test("raisePending: the 'earned for next week' tray only ever RISES (override-upward)", () => {
+  assert.equal(raisePending(0, 3), 3); // first result sets the tray
+  assert.equal(raisePending(3, 2), 3); // a worse round / extra quiz never lowers it
+  assert.equal(raisePending(2, 4), 4); // a better result raises it
+  assert.equal(raisePending(4, 4), 4); // a tie holds
+  assert.equal(raisePending(0, 0), 0); // a bombed first quiz banks nothing
 });
 
 // ── transfers ─────────────────────────────────────────────────────────────────

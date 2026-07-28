@@ -137,6 +137,18 @@ export function cashOverflow(current: number, minted: number): { credits: number
   return { credits, points: spilled * CASH_POINTS };
 }
 
+/** The "earned for next week" tray only ever RISES (founder 28 Jul). What you do
+ *  this gameweek — the neutral round and your FIRST gameday quiz — earns
+ *  transfers for next gameweek, and your earned figure is the BEST of those:
+ *  the round can raise it any time, only the first gameday quiz is ever counted,
+ *  and a worse round or an extra quiz can never lower it. This is the override-
+ *  upward rule in one place; both surfaces call it. Settlement (finaliseGameweek)
+ *  pours the tray into the spendable bank when the next gameweek opens, then
+ *  resets it to zero so this week's and next week's earnings never mix. */
+export function raisePending(current: number, earned: number): number {
+  return Math.max(current, earned);
+}
+
 /** What you get for selling — FPL's own rule (founder-locked 14 Jul):
  *  a rise pays you back HALF of it, rounded down to 0.1; a fall costs you the lot.
  *

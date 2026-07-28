@@ -31,12 +31,12 @@ import "server-only";
  *      deadline is sacred."
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { accrueChip, grantBaseline, scoreEntry, type Chip, type LockedSelection, type SquadPick } from "./engine";
+import { accrueChip, cashOverflow, grantBaseline, scoreEntry, type Chip, type LockedSelection, type SquadPick } from "./engine";
 import { aggregateFixtures, fetchGwFixtures, toPlayerScores } from "./ingest";
 import { enginePool, gwPrices } from "./pool";
 import { SCORING_VERSION, ZERO_FACTS, type MatchFacts } from "./values";
 import { deadlineComms, monthWinnerComms, resultComms } from "./comms";
-import { halftimeEarn } from "./halftime-link";
+import { gamedayEarn } from "./gameday-credit";
 import { interpretHoldRead } from "./ops-diff";
 
 // Same loose client type server.ts uses — the generated row types model jsonb as
@@ -342,37 +342,57 @@ export async function finaliseGameweek(db: Db, gw: SeasonGw): Promise<{ finalise
   }
   await db.from("fantasy_gameweeks").update({ status: "final" }).eq("gw", gw.gw);
 
-  // The baseline transfer for the gameweek now opening. Granted to EVERYONE who
-  // had an entry, including the rolled-over manager who never opened the app —
-  // "everyone gets one" means everyone. Sits here because the scored → final
-  // transition is already a compare-and-swap, so a re-run of the tick can't hand
-  // out a second one.
+  // Settlement — the N → N+1 hand-off. For the gameweek now opening, every
+  // manager who had an entry gets: their baseline transfer (everyone, including
+  // the rolled-over manager who never opened the app), PLUS their "earned for
+  // next week" tray poured in on top. Baseline caps; the tray's overflow past the
+  // bank cap cashes to points; then the tray resets to zero so this week's and
+  // next week's earnings never mix. Sits here because the scored → final
+  // transition is already a compare-and-swap, so a re-run can't settle twice.
   let baselineGranted = 0;
   if (all.length) {
-    const squads: { user_id: string; credits: number }[] = [];
+    const squads: { user_id: string; credits: number; pending_credits: number }[] = [];
     for (const batch of chunk(all.map((e) => e.user_id), 500)) {
       const { data, error: bErr } = await db.from("fantasy_squads")
-        .select("user_id, credits").in("user_id", batch);
-      if (bErr) throw new Error(`finalise baseline lookup: ${bErr.message}`);
-      squads.push(...((data ?? []) as { user_id: string; credits: number }[]));
+        .select("user_id, credits, pending_credits").in("user_id", batch);
+      if (bErr) throw new Error(`finalise settle lookup: ${bErr.message}`);
+      squads.push(...((data ?? []) as { user_id: string; credits: number; pending_credits: number }[]));
     }
-    // Grouped by the balance each manager lands on — there are only six possible
-    // values — so this is a few updates rather than one per manager.
+    // Grouped by the balance each manager lands on — only six possible values —
+    // so this is a handful of updates. Every settled squad is written (even a
+    // no-op on credits) so the tray fields always reset for the new cycle.
     const byCredits = new Map<number, string[]>();
+    const cashByUser: { user_id: string; points: number }[] = [];
     for (const s of squads) {
-      const next = grantBaseline(s.credits);
-      if (next === s.credits) continue; // already at the cap
-      const bucket = byCredits.get(next) ?? [];
+      const afterBaseline = grantBaseline(s.credits);
+      if (afterBaseline > s.credits) baselineGranted++;
+      const { credits, points } = cashOverflow(afterBaseline, s.pending_credits);
+      const bucket = byCredits.get(credits) ?? [];
       bucket.push(s.user_id);
-      byCredits.set(next, bucket);
-      baselineGranted++;
+      byCredits.set(credits, bucket);
+      if (points > 0) cashByUser.push({ user_id: s.user_id, points });
     }
     for (const [credits, ids] of Array.from(byCredits)) {
       for (const batch of chunk(ids, 500)) {
         const { error: gErr } = await db.from("fantasy_squads")
-          .update({ credits }).in("user_id", batch);
-        if (gErr) throw new Error(`finalise baseline grant: ${gErr.message}`);
+          .update({ credits, pending_credits: 0, pending_gameday_done: false, pending_source: null })
+          .in("user_id", batch);
+        if (gErr) throw new Error(`finalise settle: ${gErr.message}`);
       }
+    }
+    // Overflow: the tray couldn't fit the bank, so it cashes as points on the
+    // gameweek just finalised (the week the knowledge was earned). Rare — only a
+    // manager sitting at the credit cap — so a per-user read/add is fine. Adds
+    // (never sets) so it composes with any cash already on the entry, and stays
+    // re-score-safe: cash_points is what scoreEntry reads back.
+    for (const { user_id, points } of cashByUser) {
+      const { data: e } = await db.from("fantasy_entries")
+        .select("points, cash_points").eq("user_id", user_id).eq("gw", gw.gw).maybeSingle();
+      const row = e as { points: number | null; cash_points: number | null } | null;
+      await db.from("fantasy_entries").update({
+        cash_points: (row?.cash_points ?? 0) + points,
+        points: (row?.points ?? 0) + points,
+      }).eq("user_id", user_id).eq("gw", gw.gw);
     }
   }
 
@@ -477,15 +497,15 @@ export async function tickSeason(db: Db, now = Date.now()): Promise<TickReport[]
       gw.status = "locked";
     }
 
-    // The halftime link sweeps while the weekend is in play: a good halftime
-    // quiz banks a credit for NEXT gameweek (this one is locked — nothing here
-    // can touch the week in play). It runs BEFORE ingest on purpose: quiz
-    // earnings must not hinge on the SportMonks feed being alive. Failure-soft,
-    // idempotent per attempt.
+    // The gameday-credit sweep runs while the weekend is in play: your FIRST
+    // gameday quiz raises the "earned for next week" tray (this gameweek is
+    // locked — nothing here can touch the week in play). It runs BEFORE ingest on
+    // purpose: quiz earnings must not hinge on the SportMonks feed being alive.
+    // Failure-soft; the tray is settled into spendable credits at finalise.
     try {
-      const ht = await halftimeEarn(db, gw);
-      if (ht.minted) out.push({ gw: gw.gw, action: "provisional", detail: `halftime link minted ${ht.minted} credit(s)` });
-    } catch (e) { console.error("[tick] halftime link failed:", e); }
+      const gd = await gamedayEarn(db, gw);
+      if (gd.updated) out.push({ gw: gw.gw, action: "provisional", detail: `gameday quizzes raised ${gd.updated} pending tray(s)` });
+    } catch (e) { console.error("[tick] gameday-credit sweep failed:", e); }
 
     // 2. Ingest + score. Any feed failure HOLDS the gameweek where it is — we
     //    never advance the state machine on data we don't trust.

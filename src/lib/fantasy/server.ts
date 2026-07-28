@@ -11,8 +11,8 @@ import poolJson from "@/data/gates/pool.json";
 import { buildRound, clientView, grade, questionKey, type Round } from "@/lib/gates/serve";
 import type { GateQuestion } from "@/lib/gates/types";
 import {
-  applyTransfer, BASELINE_CREDITS_PER_GW, cashOverflow, CHIPS, creditsForRound, GAMEWEEKS_PER_CHIP,
-  grantBaseline, scoreEntry, smartDefaults, transferCost,
+  applyTransfer, BASELINE_CREDITS_PER_GW, CHIPS, creditsForRound, GAMEWEEKS_PER_CHIP,
+  grantBaseline, raisePending, scoreEntry, smartDefaults, transferCost,
   validateSelection, validateSquad,
   RuleError, type Chip, type LockedSelection, type Squad, type SquadPick,
 } from "./engine";
@@ -41,6 +41,7 @@ export interface SquadRow {
   xi: number[]; bench: number[]; captain: number; vice: number; version: number;
   created_gw: number;
   chips: number; chip_progress: number;
+  pending_credits: number; pending_gameday_done: boolean; pending_source: string | null;
 }
 export interface EntryRow {
   user_id: string; gw: number; status: string;
@@ -170,6 +171,9 @@ export async function getState(db: Db, userId: string) {
       picks: squad.picks, bankTenths: squad.bank_tenths, credits: squad.credits,
       xi: squad.xi, bench: squad.bench, captain: squad.captain, vice: squad.vice,
       version: squad.version,
+      // "Earned for next week": the pending tray. Visible now, spendable when the
+      // next gameweek opens (finaliseGameweek pours it into `credits`).
+      earnedForNextGw: squad.pending_credits, earnedSource: squad.pending_source,
     },
     chips: squad && {
       held: squad.chips, progress: squad.chip_progress, gameweeksPerChip: GAMEWEEKS_PER_CHIP,
@@ -383,33 +387,30 @@ export async function startRound(db: Db, userId: string) {
   };
 }
 
-/** Round-completion side effects: bank the round's transfer credits. Called at
- *  most once per round: stepRound only reaches here after winning the round's own
- *  idempotency guard, so this never has to protect against running twice.
- *  (Quizzes earn transfers ONLY — the perfect-round wildcard was removed 28 Jul,
- *  so a perfect 11/11 is rewarded purely by its 4 credits via creditsForRound.) */
-async function completeRound(
-  db: Db, userId: string, gw: GwRow, squad: SquadRow, minted: number,
-) {
-  const patch: Record<string, unknown> = { updated_at: new Date().toISOString(), version: squad.version + 1 };
-  const toBank = minted;
-
-  // Everything the round minted goes through ONE place, so nothing is silently
-  // lost: the bank takes what it can hold, the rest cashes out at 4 points each.
-  // That is what stops a perfect 11/11 paying zero to a manager at the cap who
-  // never wants a transfer.
-  const { credits, points } = cashOverflow(squad.credits, toBank);
-  patch.credits = credits;
+/** Round-completion side effects: the round earns for NEXT gameweek. Raise the
+ *  pending "earned for next week" tray to the better of what's there and what
+ *  this round scored (override-upward — a worse round never lowers it). It never
+ *  touches the spendable bank; settlement (finaliseGameweek) pours the tray into
+ *  `credits` when the next gameweek opens, then resets it.
+ *
+ *  Called at most once per round: stepRound only reaches here after winning the
+ *  round's own idempotency guard, so this never has to protect against running
+ *  twice. (Quizzes earn transfers ONLY — the perfect-round wildcard was removed
+ *  28 Jul, so a perfect 11/11 is rewarded purely by its 4 credits.) */
+async function completeRound(db: Db, userId: string, squad: SquadRow, minted: number) {
+  const pending = raisePending(squad.pending_credits, minted);
+  const patch: Record<string, unknown> = {
+    updated_at: new Date().toISOString(),
+    version: squad.version + 1,
+    pending_credits: pending,
+  };
+  // Source is display-only. The round leads whenever it reaches (or ties) the top
+  // of the tray — "the round can override the first gameday quiz, but only if it
+  // scores at least as well."
+  if (minted >= squad.pending_credits) patch.pending_source = "round";
 
   const { error } = await db.from("fantasy_squads").update(patch).eq("user_id", userId);
   if (error) throw new HttpError(500, error.message);
-
-  if (points > 0) {
-    const { error: cashErr } = await db.from("fantasy_entries")
-      .update({ cash_points: points }).eq("user_id", userId).eq("gw", gw.gw);
-    if (cashErr) throw new HttpError(500, cashErr.message);
-  }
-  return points;
 }
 
 export async function stepRound(db: Db, userId: string, k: number, optionId: number | null) {
@@ -449,7 +450,7 @@ export async function stepRound(db: Db, userId: string, k: number, optionId: num
   if (error) throw new HttpError(500, error.message);
   if (isLast && written?.length) {
     const squad = (await getSquad(db, userId))!;
-    await completeRound(db, userId, gw, squad, minted);
+    await completeRound(db, userId, squad, minted);
   }
   return {
     correct, answerId: q.answerId, correctCount,

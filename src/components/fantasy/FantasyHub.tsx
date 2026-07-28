@@ -932,8 +932,23 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
       {phase === "open" && roundDone && entry && (
         <Card style={{ marginBottom: 12 }}>
           <span style={{ fontSize: 13.5 }}>
-            Round done: <b style={{ color: GOLD }}>{entry.round.correct}/11</b> → {entry.round.creditsEarned} transfer
-            credit{entry.round.creditsEarned === 1 ? "" : "s"} earned
+            Round done: <b style={{ color: GOLD }}>{entry.round.correct}/11</b> → earned{" "}
+            {entry.round.creditsEarned} transfer{entry.round.creditsEarned === 1 ? "" : "s"} for next week
+          </span>
+        </Card>
+      )}
+
+      {/* The pending tray — what you've earned THIS gameweek for NEXT. Shows the
+          best of your round and your first gameday quiz (it only ever rises), and
+          lands in your bank when the gameweek opens. This is the final-day rush:
+          play a gameday quiz on Sunday and watch it tick up. */}
+      {squad && squad.earnedForNextGw > 0 && (
+        <Card style={{ marginBottom: 12 }}>
+          <span style={{ fontSize: 13.5 }}>
+            <b style={{ color: GOLD }}>{squad.earnedForNextGw} transfer{squad.earnedForNextGw === 1 ? "" : "s"}</b>{" "}
+            earned for next week
+            {squad.earnedSource === "gameday" ? " (your gameday quiz)" : squad.earnedSource === "round" ? " (the round)" : ""}.
+            {" "}Lands in your bank when the gameweek opens.
           </span>
         </Card>
       )}
