@@ -51,8 +51,8 @@ What is still not fine:
 
 ## What makes one of these good
 
-Ten questions about the gameweek that just happened — goals, scorelines,
-records, and any milestone the dossier surfaces. The mix should be 3 easy, 4
+Eleven questions about the gameweek that just happened — goals, scorelines,
+records, and any milestone the dossier surfaces. The mix should be 4 easy, 4
 medium, 3 hard. Prefer the games and moments most fans will have seen or
 heard about; a dossier with a heavy result (a big win, a hat-trick) usually
 gives you the best hard question.

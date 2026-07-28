@@ -69,14 +69,14 @@ export interface GamedayRow {
   state: GamedayState;
   kind: GamedayKind;
   base_questions: QuizQuestion[] | null;
-  /** The approved, frozen 10 — written at the gate, copied verbatim at publish. */
+  /** The approved, frozen 11 — written at the gate, copied verbatim at publish. */
   questions: QuizQuestion[] | null;
   published_at: string | null;
   second_half_started_at: string | null;
 }
 
 export const LETTERS: Letter[] = ["A", "B", "C", "D"];
-export const PACK_QUESTION_COUNT = 10;
+export const PACK_QUESTION_COUNT = 11;
 
 // ── State machine ────────────────────────────────────────────────────────────
 
@@ -207,7 +207,7 @@ export function packName(row: Pick<GamedayRow, "home" | "away" | "kickoff_at">):
 }
 
 export function packDescription(row: Pick<GamedayRow, "home" | "away">): string {
-  return `Ten questions on ${row.home} v ${row.away}. Live the morning of the match.`;
+  return `Eleven questions on ${row.home} v ${row.away}. Live the morning of the match.`;
 }
 
 // ── Recap Quiz (§6) ──────────────────────────────────────────────────────────
@@ -234,7 +234,7 @@ export function recapPackName(row: { gameweek: number | null; season_id: number 
 }
 
 export function recapPackDescription(row: { gameweek: number | null }): string {
-  return `Ten questions on what actually happened in Gameweek ${row.gameweek ?? "?"} — goals, cards, records, milestones.`;
+  return `Eleven questions on what actually happened in Gameweek ${row.gameweek ?? "?"} — goals, cards, records, milestones.`;
 }
 
 // ── Push ─────────────────────────────────────────────────────────────────────
@@ -257,7 +257,7 @@ export function pushCopy(row: Pick<GamedayRow, "home" | "away">): {
 } {
   return {
     title: `${row.home} v ${row.away}`,
-    body: "Your quiz pack is live. Ten questions, play it before kick-off.",
+    body: "Your quiz pack is live. Eleven questions, play it before kick-off.",
   };
 }
 
@@ -322,7 +322,7 @@ function toPackQuestion(q: QuizQuestion): QuizQuestion {
 }
 
 /**
- * Freeze a fixture's final 10 questions from the approved base slate. Base
+ * Freeze a fixture's final 11 questions from the approved base slate. Base
  * only — there is no fresh/lineup slice in the Gameday pipeline (§0.1: no
  * lineups exist the day before).
  */
@@ -335,7 +335,7 @@ export function assembleQuestions(
 }
 
 /**
- * The 10 questions a fixture publishes with — the exact snapshot frozen at
+ * The 11 questions a fixture publishes with — the exact snapshot frozen at
  * the approve gate (row.questions), never regenerated at publish. Publish is
  * a copy, not a generation (AC5).
  */

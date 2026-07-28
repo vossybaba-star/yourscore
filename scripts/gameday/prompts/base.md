@@ -52,8 +52,8 @@ A WHITELIST: the only people you may name.
 
 ## What makes one of these good
 
-Ten questions about THIS fixture — the two clubs, their history against each
-other, the players who have worn those shirts. The mix should be 3 easy, 4
+Eleven questions about THIS fixture — the two clubs, their history against each
+other, the players who have worn those shirts. The mix should be 4 easy, 4
 medium, 3 hard, and a good hard question is one where a real fan pauses and
 smiles rather than one that is simply obscure.
 

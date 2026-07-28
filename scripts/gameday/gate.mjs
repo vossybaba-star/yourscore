@@ -77,7 +77,7 @@ export function slateMessage(matchday, fixtures) {
   const other = fixtures.filter((f) => f.state !== "base_ready");
   const lines = pending.map((f, i) => {
     const n = f.base_questions?.length ?? 0;
-    return `${i + 1}. <b>${tgh.esc(f.home)} v ${tgh.esc(f.away)}</b> — ${fmtKO(f.kickoff_at)} · ${n}/10 questions`;
+    return `${i + 1}. <b>${tgh.esc(f.home)} v ${tgh.esc(f.away)}</b> — ${fmtKO(f.kickoff_at)} · ${n}/11 questions`;
   });
   const otherLines = other.map(
     (f) => `• ${tgh.esc(f.home)} v ${tgh.esc(f.away)} — already ${f.state}`,
