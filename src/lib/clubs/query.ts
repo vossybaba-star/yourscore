@@ -258,16 +258,24 @@ export async function supportersForSeason(seasonId: number): Promise<ClubSupport
   }));
 }
 
-/** This user's own declared club for a season, or null if not yet set. */
-export async function supporterRow(userId: string, seasonId: number): Promise<{ club: string } | null> {
+/**
+ * This user's own declared club for a season, or null if not yet set. Carries
+ * changed_at (migration 212) so callers can measure the 30-day change cooldown
+ * from the last time the club was set or changed.
+ */
+export async function supporterRow(
+  userId: string,
+  seasonId: number,
+): Promise<{ club: string; changedAt: string } | null> {
   const { data, error } = await db()
     .from("club_supporters")
-    .select("club")
+    .select("club, changed_at")
     .eq("user_id", userId)
     .eq("season_id", seasonId)
     .maybeSingle();
   if (error) throw error;
-  return (data as { club: string } | null) ?? null;
+  const row = data as { club: string; changed_at: string } | null;
+  return row ? { club: row.club, changedAt: row.changed_at } : null;
 }
 
 /**

@@ -643,6 +643,16 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-28** — **A supported club can now be changed, once every 30 days** (migration 212).
+  Supersedes the old season-long lock: a fan may switch their `club_supporters` club at most once
+  per 30 days, measured from a new `changed_at` column. The first pick is free and starts the first
+  30-day window. Enforced in the DB (a BEFORE UPDATE cooldown trigger re-stamps the clock and
+  rejects a change inside the window; the validity trigger now covers updates too) and reflected in
+  the UI: `ClubPicker` warns "you won't be able to change your club for 30 days" on first pick, and
+  Settings' `ClubSetting` shows the next-eligible date while cooling then a **Change club** action
+  once it is up. `/api/clubs/me` GET returns `canChangeNow`/`canChangeAt`; POST allows the change
+  but 409s with the date if still inside the window. The anti-hopping intent survives in softer
+  form (once a month, not never). (§ club-fan leaderboard)
 - **2026-07-26** — **Fantasy squads open 1 August** (three weeks before the season, so players
   can plan). Copy updated on the "Save my spot" card (`WaitlistCard`), the `/fantasy` teaser
   tab (`FantasyTeaser`), and the games page; season/first-whistle references stay 21 August.
@@ -845,9 +855,9 @@ Confirmed preamble above and the referenced section.
   reason to make an account: to keep it. `ClubPrompt` then pre-selects that pick after
   sign-up and clears the local copy once the real row is written.
   ⚠️ **The two picks are NOT the same promise and the copy must never blur them.** A
-  signed-in declaration is a season-LOCKED competition entry ("you're in for the season");
-  a guest's is a changeable device-local preference ("saved on this device — make an account
-  to keep it"). Never tell a guest their pick is locked.
+  signed-in declaration is a competition entry, changeable at most once every 30 days ("locked
+  for 30 days"; migration 212); a guest's is a freely changeable device-local preference ("saved
+  on this device — make an account to keep it"). Never tell a guest their pick is locked.
   **Trust boundary:** on `draw`, a `club` in the request body is honoured **only when signed
   out**. A signed-in player's club always comes from `club_supporters`, so a locked entry
   can't be overridden from the client (verified: bot locked to Sunderland, sent Arsenal, got

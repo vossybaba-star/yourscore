@@ -1,22 +1,21 @@
 "use client";
 
 /**
- * Settings → "Your club". Where a signed-in fan sets, or checks, the club they
- * represent (founder, 2026-07-16).
+ * Settings → "Your club". Where a signed-in fan sets, checks, or changes the club
+ * they represent (founder, 2026-07-16; 30-day cooldown added 2026-07-27).
  *
- * Two states, because the club is LOCKED FOR THE SEASON (locked decision #3:
- * club_supporters' PK is (user_id, season_id) and there is no update or delete
- * policy — the lock is enforced by the database, not by this UI):
+ * Three states, because a club can now be CHANGED, but only once every 30 days
+ * (migration 212 — the cooldown is enforced in the DB, this UI just reflects it):
  *
- *   not set  → pick one. This is the same declaration the Live Quiz ClubPicker
- *              makes, so it POSTs the same /api/clubs/me.
- *   set      → show it, and say plainly that it's theirs until the season ends.
- *              A settings row that looks editable but silently refuses would be
- *              worse than one that tells you why.
+ *   not set     → pick one. Same declaration the Live Quiz ClubPicker makes, so it
+ *                 POSTs the same /api/clubs/me. Warns that it locks for 30 days.
+ *   set, cooling → show it, and the date they can next change it.
+ *   set, free    → show it with a "Change club" option; changing warns and re-locks
+ *                  for another 30 days.
  *
- * Deliberately NOT a "favourite team" field. It decides whose leaderboard your
- * halftime scores count for, which is a competition entry, not a preference —
- * and that's exactly why it can't be swapped mid-season.
+ * Still the competition entry (whose leaderboard your gameday scores count for),
+ * not a cosmetic favourite-team field — which is why a change is rate-limited
+ * rather than free.
  */
 
 import { useEffect, useState } from "react";
@@ -27,9 +26,15 @@ import { shortClubName } from "@/lib/clubs/display";
 
 const TEAL = "#00d8c0";
 
+/** "27 August" style — the date a fan may next change their club. */
+function formatChangeDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "long" });
+}
+
 export function ClubSetting() {
   const { user, data, loaded, refresh } = useClubMe();
   const [pending, setPending] = useState<string | null>(null);
+  const [changing, setChanging] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -53,9 +58,9 @@ export function ClubSetting() {
   }, []);
 
   const view = preview
-    ? { club: null as string | null, clubs: previewClubs as string[] }
+    ? { club: null as string | null, clubs: previewClubs as string[], canChangeNow: true, canChangeAt: null as string | null }
     : data
-      ? { club: data.club, clubs: data.clubs }
+      ? { club: data.club, clubs: data.clubs, canChangeNow: data.canChangeNow, canChangeAt: data.canChangeAt }
       : null;
 
   if (!preview && (!loaded || !user || !data)) return null;
@@ -78,6 +83,7 @@ export function ClubSetting() {
       }
       await refresh();
       setPending(null);
+      setChanging(false);
     } catch {
       setError("Couldn't save that");
     } finally {
@@ -85,12 +91,36 @@ export function ClubSetting() {
     }
   }
 
+  // The pick-a-club grid, shared by the not-set state and the change flow. Both
+  // warn that the choice locks for 30 days before the confirm button appears.
+  const picker = (
+    <>
+      <ClubGrid clubs={view.clubs} selected={pending} onSelect={setPending} disabled={submitting} />
+      <p className="font-body text-xs mt-3" style={{ color: "#8a948f" }}>
+        Make sure this is right. You won&apos;t be able to change your club for 30 days.
+      </p>
+      {pending && (
+        <button
+          onClick={() => save(pending)}
+          disabled={submitting}
+          className="w-full mt-3 rounded-xl py-2.5 font-display text-sm tracking-wide"
+          style={{ background: TEAL, color: "#062018", opacity: submitting ? 0.6 : 1 }}
+        >
+          {submitting ? "Saving…" : `Represent ${shortClubName(pending)}`}
+        </button>
+      )}
+      {error && (
+        <p className="font-body text-xs mt-2" style={{ color: "#e0a34a" }}>{error}</p>
+      )}
+    </>
+  );
+
   return (
     <div>
       <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-3">Your club</p>
       <div className="rounded-2xl overflow-hidden bg-surface" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
         {view.club ? (
-          // Locked for the season — show it, and say why it can't change.
+          // Set. Show it; let them change it once the 30-day cooldown is up.
           <>
             <div className="px-5 py-4 flex items-center justify-between gap-3">
               <span className="font-body text-xs text-text-muted">Representing</span>
@@ -100,9 +130,39 @@ export function ClubSetting() {
               </div>
             </div>
             <div className="px-5 py-3" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-              <p className="font-body text-xs" style={{ color: "#586058" }}>
-                Locked until the end of the season — your scores represent {shortClubName(view.club)}.
-              </p>
+              {changing ? (
+                <>
+                  {picker}
+                  <button
+                    onClick={() => { setChanging(false); setPending(null); setError(null); }}
+                    disabled={submitting}
+                    className="w-full mt-2 rounded-xl py-2 font-body text-xs"
+                    style={{ color: "#8a948f" }}
+                  >
+                    Keep {shortClubName(view.club)}
+                  </button>
+                </>
+              ) : view.canChangeNow ? (
+                <div className="flex items-center justify-between gap-3">
+                  <p className="font-body text-xs" style={{ color: "#586058" }}>
+                    Your scores represent {shortClubName(view.club)}.
+                  </p>
+                  <button
+                    onClick={() => setChanging(true)}
+                    className="shrink-0 font-body text-xs font-semibold"
+                    style={{ color: TEAL }}
+                  >
+                    Change club
+                  </button>
+                </div>
+              ) : (
+                <p className="font-body text-xs" style={{ color: "#586058" }}>
+                  Your scores represent {shortClubName(view.club)}.
+                  {view.canChangeAt
+                    ? ` You can change club again on ${formatChangeDate(view.canChangeAt)}.`
+                    : ""}
+                </p>
+              )}
             </div>
           </>
         ) : view.clubs.length === 0 ? (
@@ -116,24 +176,9 @@ export function ClubSetting() {
           <div className="px-5 py-4">
             <p className="font-body text-sm text-white mb-1">Pick your club</p>
             <p className="font-body text-xs mb-3.5" style={{ color: "#8a948f" }}>
-              Your scores represent them all season.
+              Your scores represent them on the club leaderboard.
             </p>
-
-            <ClubGrid clubs={view.clubs} selected={pending} onSelect={setPending} disabled={submitting} />
-
-            {pending && (
-              <button
-                onClick={() => save(pending)}
-                disabled={submitting}
-                className="w-full mt-4 rounded-xl py-2.5 font-display text-sm tracking-wide"
-                style={{ background: TEAL, color: "#062018", opacity: submitting ? 0.6 : 1 }}
-              >
-                {submitting ? "Saving…" : `Represent ${shortClubName(pending)}`}
-              </button>
-            )}
-            {error && (
-              <p className="font-body text-xs mt-2" style={{ color: "#e0a34a" }}>{error}</p>
-            )}
+            {picker}
           </div>
         )}
       </div>

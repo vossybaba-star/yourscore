@@ -14,8 +14,15 @@ import type { ClubStanding } from "@/lib/clubs/table";
 export interface ClubMeResponse {
   club: string | null;
   suggestion: string | null;
+  /** True when a club is set and still inside the 30-day change cooldown. */
   locked: boolean;
   clubs: string[];
+  /** When the club was last set/changed (ISO), or null if never. */
+  changedAt: string | null;
+  /** When the club may next be changed (ISO), or null if never set. */
+  canChangeAt: string | null;
+  /** True if a change is allowed right now (no club yet, or cooldown elapsed). */
+  canChangeNow: boolean;
 }
 
 /** GET /api/clubs/me — the signed-in user's own club state. null user → no fetch. */

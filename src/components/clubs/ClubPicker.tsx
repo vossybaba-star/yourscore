@@ -2,15 +2,17 @@
 
 /**
  * Club-Fan Leaderboard declare-your-club card. Shown ONLY to signed-in users who
- * have not yet locked a club (GET /api/clubs/me → { locked: false }).
+ * have not yet picked a club (GET /api/clubs/me → { club: null }). Once a club is
+ * set, changing it lives in Settings, gated by the 30-day cooldown (migration
+ * 212) — this card is purely the first-time declaration.
  *
  * LOCKED DECISION #4: leads with the competition — "Pick your club" / "Your
  * gameday scores count for them" — never "what team do you support?". The
  * leaderboard is the reason to declare, not a profile question.
  *
- * Self-hides: not signed in, still loading, already locked, or no clubs to pick
- * from yet (no gameday data this season) → renders nothing. Never an empty box
- * (mirrors GamedayRail's self-hide contract).
+ * Self-hides: not signed in, still loading, a club is already set, or no clubs to
+ * pick from yet (no gameday data this season) → renders nothing. Never an empty
+ * box (mirrors GamedayRail's self-hide contract).
  */
 
 import { useState } from "react";
@@ -27,7 +29,7 @@ export function ClubPicker() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (!loaded || !user || !data || data.locked || data.clubs.length === 0) return null;
+  if (!loaded || !user || !data || data.club || data.clubs.length === 0) return null;
 
   const { suggestion, clubs } = data;
 
@@ -42,7 +44,7 @@ export function ClubPicker() {
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}) as { error?: string });
-        setError(body.error ?? "Could not lock in that club — try again.");
+        setError(body.error ?? "Could not lock in that club. Try again.");
         setSubmitting(false);
         return;
       }
@@ -51,7 +53,7 @@ export function ClubPicker() {
       setPending(null);
       await refresh();
     } catch {
-      setError("Could not lock in that club — try again.");
+      setError("Could not lock in that club. Try again.");
       setSubmitting(false);
     }
   }
@@ -147,7 +149,7 @@ function ConfirmStep({
         <p className="font-body text-sm font-semibold text-white">{club}</p>
       </div>
       <p className="font-body text-xs" style={{ color: "#8a948f" }}>
-        You&apos;re in for the season — you can&apos;t switch later.
+        Make sure this is right. You won&apos;t be able to change your club for 30 days.
       </p>
       {error && (
         <p className="font-body text-xs" style={{ color: "#ff6b6b" }}>
