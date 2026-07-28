@@ -16,6 +16,8 @@ interface CommentRow {
   avatarUrl: string | null;
   body: string;
   createdAt: string;
+  likeCount: number;
+  likedByMe: boolean;
 }
 
 function timeAgo(iso: string): string {
@@ -85,7 +87,7 @@ export function DiscussionThread({
       if (!res.ok) { setError(out.error ?? "Could not post"); return; }
       setDraft("");
       setComments((prev) => [
-        { id: out.id, userId: user.id, name: user.user_metadata?.display_name ?? "You", avatarUrl: user.user_metadata?.avatar_url ?? null, body, createdAt: out.createdAt },
+        { id: out.id, userId: user.id, name: user.user_metadata?.display_name ?? "You", avatarUrl: user.user_metadata?.avatar_url ?? null, body, createdAt: out.createdAt, likeCount: 0, likedByMe: false },
         ...prev,
       ]);
       setTotal((t) => t + 1);
@@ -102,6 +104,19 @@ export function DiscussionThread({
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ id }),
     }).catch(() => {});
+  }
+
+  async function toggleLike(c: CommentRow) {
+    if (!user) { router.push(`/auth/sign-in?next=${encodeURIComponent(signInNext)}`); return; }
+    setComments((prev) => prev.map((x) => x.id === c.id ? { ...x, likedByMe: !x.likedByMe, likeCount: x.likeCount + (x.likedByMe ? -1 : 1) } : x));
+    const res = await fetch("/api/comments/like", {
+      method: c.likedByMe ? "DELETE" : "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ commentId: c.id }),
+    }).catch(() => null);
+    if (!res || !res.ok) {
+      setComments((prev) => prev.map((x) => x.id === c.id ? { ...x, likedByMe: !x.likedByMe, likeCount: x.likeCount + (x.likedByMe ? -1 : 1) } : x));
+    }
   }
 
   return (
@@ -164,6 +179,18 @@ export function DiscussionThread({
                 )}
               </div>
               <p className="font-body text-sm text-text-muted leading-snug break-words">{c.body}</p>
+              <button
+                onClick={() => toggleLike(c)}
+                aria-label={c.likedByMe ? "Unlike" : "Like"}
+                className="flex items-center gap-1 mt-1 active:scale-[0.97] transition-transform"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill={c.likedByMe ? accent : "none"} stroke={c.likedByMe ? accent : "#586058"} strokeWidth="2">
+                  <path d="M12 21s-6.716-4.35-9.428-8.06C.9 10.42 1.2 6.9 4.05 5.25c2.4-1.39 4.9-.62 6.35 1.2.5.62.9 1.3 1.6 1.3s1.1-.68 1.6-1.3c1.45-1.82 3.95-2.59 6.35-1.2 2.85 1.65 3.15 5.17 1.48 7.69C18.716 16.65 12 21 12 21z" />
+                </svg>
+                {c.likeCount > 0 && (
+                  <span className="font-body text-[10px]" style={{ color: c.likedByMe ? accent : "#586058" }}>{c.likeCount}</span>
+                )}
+              </button>
             </div>
           </div>
         ))}

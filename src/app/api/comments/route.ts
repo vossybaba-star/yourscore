@@ -19,6 +19,8 @@ export interface CommentRow {
   avatarUrl: string | null;
   body: string;
   createdAt: string;
+  likeCount: number;
+  likedByMe: boolean;
 }
 
 /** GET /api/comments?type=pack|debate&id=<uuid> — newest 50 + total. */
@@ -37,6 +39,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
 
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
   const svc = createServiceClient();
   const { data: rows, count } = await svc
     .from("comments")
@@ -53,6 +58,32 @@ export async function GET(req: NextRequest) {
     : { data: [] };
   const byId = new Map((profiles ?? []).map((p) => [p.id, p]));
 
+  const commentIds = (rows ?? []).map((r) => r.id);
+  const countById = new Map<string, number>();
+  const likedIds = new Set<string>();
+  if (commentIds.length) {
+    // Known scale ceiling: capped at 5000 like rows per response — fine for a
+    // 50-comment page today, but if per-comment likes get huge this tally
+    // should move to a count RPC instead of pulling raw rows.
+    const { data: likeRows } = await svc
+      .from("comment_likes")
+      .select("comment_id")
+      .in("comment_id", commentIds)
+      .limit(5000);
+    for (const l of likeRows ?? []) {
+      countById.set(l.comment_id, (countById.get(l.comment_id) ?? 0) + 1);
+    }
+    if (user) {
+      const { data: mine } = await svc
+        .from("comment_likes")
+        .select("comment_id")
+        .in("comment_id", commentIds)
+        .eq("user_id", user.id)
+        .limit(5000);
+      for (const l of mine ?? []) likedIds.add(l.comment_id);
+    }
+  }
+
   const comments: CommentRow[] = (rows ?? []).map((r) => ({
     id: r.id,
     userId: r.user_id,
@@ -60,12 +91,14 @@ export async function GET(req: NextRequest) {
     avatarUrl: byId.get(r.user_id)?.avatar_url ?? null,
     body: r.body,
     createdAt: r.created_at,
+    likeCount: countById.get(r.id) ?? 0,
+    likedByMe: likedIds.has(r.id),
   }));
-  // Threads tolerate seconds of staleness; the client optimistically appends
-  // the poster's own new comment, so a short CDN cache is invisible to users.
+  // likedByMe is per-user, so this response must never be shared across
+  // users by an edge/CDN cache (which keys on URL, not cookie).
   return NextResponse.json(
     { comments, total: count ?? comments.length },
-    { headers: { "cache-control": "public, s-maxage=15, stale-while-revalidate=30" } },
+    { headers: { "cache-control": "private, no-store" } },
   );
 }
 
