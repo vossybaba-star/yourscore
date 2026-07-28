@@ -56,7 +56,9 @@ export interface FantasyState {
     earnedForNextGw: number; earnedSource: string | null;
   } | null;
   chips: {
-    held: number; progress: number; gameweeksPerChip: number;
+    /** The chips playable right now (monthly rotation): the current set-of-three
+     *  minus what's used, or empty once this month's one chip is spent. */
+    available: ChipName[]; playedThisMonth: boolean;
     playedThisGw: ChipName | null;
   } | null;
   entry: {

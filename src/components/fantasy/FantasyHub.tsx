@@ -39,11 +39,11 @@ const EMBEDDED_PAGE: CSSProperties = { padding: "4px 16px 8px", color: INK };
  *  game might give you one day for reasons of its own. */
 const CHIP_META: { key: ChipName; label: string; blurb: string; earn: string; comingSoon?: boolean }[] = [
   { key: "triple_captain", label: "Triple Captain", blurb: "Your captain's points count ×3, not ×2",
-    earn: "Costs one chip token" },
+    earn: "One a month — use the other two before it comes back" },
   { key: "bench_boost", label: "Bench Boost", blurb: "All 15 players score, bench included",
-    earn: "Costs one chip token" },
+    earn: "One a month — use the other two before it comes back" },
   { key: "insight", label: "Insight", blurb: "50/50 on one question of the round",
-    earn: "Costs one chip token" },
+    earn: "One a month — use the other two before it comes back" },
 ];
 const CHIP_LABEL: Record<ChipName, string> = Object.fromEntries(CHIP_META.map((c) => [c.key, c.label])) as Record<ChipName, string>;
 
@@ -830,7 +830,7 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
           this fantasy game ours. The two money figures sit beside it. */}
       <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
         <MovesBank held={squad.credits} cap={CREDIT_CAP}
-          roundEarns={!roundDone && roundOpen} chipsHeld={state.chips?.held ?? 0} />
+          roundEarns={!roundDone && roundOpen} chipsHeld={state.chips?.available.length ?? 0} />
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
           {([
             { label: "In the bank", value: fmtM(squad.bankTenths) },
@@ -961,28 +961,15 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
       {phase === "open" && roundOpen && chips && (
         <Card style={{ marginBottom: 12 }}>
           <div style={{ fontSize: 14.5, fontWeight: 700, marginBottom: 4 }}>Chips</div>
-          <p style={{ fontSize: 12.5, color: MUTED, margin: "0 0 6px", lineHeight: 1.45 }}>
-            {chips.held} chip{chips.held === 1 ? "" : "s"} held · {chips.progress} of {chips.gameweeksPerChip} gameweeks
-            played toward the next one
+          {/* Monthly rotation: one a month, a fresh set of three once all three
+              are used. No progress bar — nothing accrues, you simply have the set. */}
+          <p style={{ fontSize: 12.5, color: MUTED, margin: "0 0 8px", lineHeight: 1.45 }}>
+            {chips.playedThisMonth
+              ? "You've played this month's chip. A fresh pick opens next month."
+              : chips.available.length >= CHIP_META.length
+                ? "One chip a month, your pick. Use all three before any comes back."
+                : `One chip a month. ${chips.available.length} left in this set before it refreshes.`}
           </p>
-          {/* Progress made visible. "0 of 4 gameweeks played" is a fact; a bar is
-              a reason to come back next week. */}
-          <div aria-hidden style={{
-            height: 4, borderRadius: 999, background: PANEL_2, overflow: "hidden", marginBottom: 8,
-          }}>
-            <div style={{
-              width: `${Math.round((chips.progress / chips.gameweeksPerChip) * 100)}%`,
-              height: "100%", background: TEAL, borderRadius: 999,
-            }} />
-          </div>
-          {/* The earning rule, stated once, for the manager who holds nothing yet
-              and has no other way to find out. */}
-          {chips.held === 0 && (
-            <p style={{ fontSize: 12, color: MUTED, margin: "0 0 8px", lineHeight: 1.45 }}>
-              You earn a chip token for every {chips.gameweeksPerChip} gameweeks you actually play, and
-              spend it on any one of these.
-            </p>
-          )}
           {chips.playedThisGw ? (
             <div style={{
               display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8,
@@ -996,7 +983,7 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 6 }}>
               {CHIP_META.map((c) => {
-                const held = chips.held > 0;
+                const held = chips.available.includes(c.key);
                 const playable = held && !c.comingSoon;
                 return (
                   <button key={c.key} disabled={!playable || busy} onClick={() => playChipAction(c.key)} style={{
@@ -1017,7 +1004,9 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
                       )}
                     </span>
                     {!c.comingSoon && (
-                      <span style={{ fontSize: 11, color: MUTED, flexShrink: 0 }}>{held ? "Play" : "None held"}</span>
+                      <span style={{ fontSize: 11, color: MUTED, flexShrink: 0 }}>
+                        {held ? "Play" : chips.playedThisMonth ? "Next month" : "Used this set"}
+                      </span>
                     )}
                   </button>
                 );
@@ -1039,7 +1028,7 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
             can be taken back until the matches start.
           </p>
           <p className="font-body" style={{ fontSize: 12.5, color: GOLD, margin: "0 0 14px" }}>
-            You hold {chips.held} chip{chips.held === 1 ? "" : "s"}.
+            This is your one chip for the month.
           </p>
           <div style={{ display: "flex", gap: 8 }}>
             <div style={{ flex: 1 }}><Btn onClick={() => setConfirmChip(null)}>Not yet</Btn></div>

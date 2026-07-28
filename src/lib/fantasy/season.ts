@@ -31,7 +31,7 @@ import "server-only";
  *      deadline is sacred."
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { accrueChip, cashOverflow, grantBaseline, scoreEntry, type Chip, type LockedSelection, type SquadPick } from "./engine";
+import { cashOverflow, grantBaseline, scoreEntry, type Chip, type LockedSelection, type SquadPick } from "./engine";
 import { aggregateFixtures, fetchGwFixtures, toPlayerScores } from "./ingest";
 import { enginePool, gwPrices } from "./pool";
 import { SCORING_VERSION, ZERO_FACTS, type MatchFacts } from "./values";
@@ -301,7 +301,7 @@ export async function scoreGameweek(db: Db, gw: SeasonGw, opts: { final: boolean
  * rolled-over week (never played the round) is filtered out before accruing, so
  * it advances nobody's chip progress (D:91-93).
  */
-export async function finaliseGameweek(db: Db, gw: SeasonGw): Promise<{ finalised: number; chipsAccrued: number; baselineGranted: number; held?: boolean }> {
+export async function finaliseGameweek(db: Db, gw: SeasonGw): Promise<{ finalised: number; baselineGranted: number; held?: boolean }> {
   // fantasy-ops' veto (Guard B red on this gw's facts). A FRESH point-read, not
   // the `gw` object the caller is holding — that may be stale by however long
   // this tick has been running, and a hold set moments ago must be honoured
@@ -316,7 +316,7 @@ export async function finaliseGameweek(db: Db, gw: SeasonGw): Promise<{ finalise
     .from("fantasy_gameweeks").select("ops_hold").eq("gw", gw.gw).maybeSingle();
   if (holdErr) console.error(`[finalise] ops_hold read failed for gw ${gw.gw} — failing OPEN (finalise proceeds): ${holdErr.message}`);
   if (interpretHoldRead(holdRow as { ops_hold: boolean } | null, holdErr)) {
-    return { finalised: 0, chipsAccrued: 0, baselineGranted: 0, held: true };
+    return { finalised: 0, baselineGranted: 0, held: true };
   }
 
   // Find who is moving, then move them in batches. A single UPDATE … RETURNING
@@ -396,36 +396,10 @@ export async function finaliseGameweek(db: Db, gw: SeasonGw): Promise<{ finalise
     }
   }
 
-  const played = all.filter((e) => e.round_done_at != null);
-  let chipsAccrued = 0;
-  if (played.length) {
-    const squads: { user_id: string; chips: number; chip_progress: number }[] = [];
-    for (const batch of chunk(played.map((e) => e.user_id), 500)) {
-      const { data, error: sqErr } = await db.from("fantasy_squads")
-        .select("user_id, chips, chip_progress").in("user_id", batch);
-      if (sqErr) throw new Error(`finalise chip lookup: ${sqErr.message}`);
-      squads.push(...((data ?? []) as { user_id: string; chips: number; chip_progress: number }[]));
-    }
-    // Only sixteen reachable (progress, held) states, so grouping collapses a
-    // per-manager loop into a handful of updates.
-    const byState = new Map<string, { progress: number; held: number; ids: string[] }>();
-    for (const s of squads) {
-      const next = accrueChip(s.chip_progress, s.chips);
-      const key = `${next.progress}:${next.held}`;
-      const bucket = byState.get(key) ?? { progress: next.progress, held: next.held, ids: [] };
-      bucket.ids.push(s.user_id);
-      byState.set(key, bucket);
-      if (next.minted) chipsAccrued++;
-    }
-    for (const { progress, held, ids } of Array.from(byState.values())) {
-      for (const batch of chunk(ids, 500)) {
-        const { error: chErr } = await db.from("fantasy_squads")
-          .update({ chip_progress: progress, chips: held }).in("user_id", batch);
-        if (chErr) throw new Error(`finalise chip accrual: ${chErr.message}`);
-      }
-    }
-  }
-  return { finalised: all.length, chipsAccrued, baselineGranted };
+  // Chips are no longer accrued here: the monthly rotation (founder 28 Jul) means
+  // you always simply HAVE the current set-of-three, throttled to one a month —
+  // there's nothing to earn per gameweek, so finalise doesn't touch chips at all.
+  return { finalised: all.length, baselineGranted };
 }
 
 // ── the tick ─────────────────────────────────────────────────────────────────
@@ -530,12 +504,12 @@ export async function tickSeason(db: Db, now = Date.now()): Promise<TickReport[]
 
     // 3. Once the corrections window has passed, close it.
     if (lastKickoff !== null && now >= lastKickoff + MATCHES_DONE_AFTER_LAST_KICKOFF_MS + FINALISE_AFTER_MATCHES_DONE_MS) {
-      const { finalised, chipsAccrued, held } = await finaliseGameweek(db, gw);
+      const { finalised, held } = await finaliseGameweek(db, gw);
       if (held) {
         out.push({ gw: gw.gw, action: "held", detail: "ops_hold set — finalise vetoed" });
         continue; // vetoed — no comms for a gameweek that didn't actually close
       }
-      out.push({ gw: gw.gw, action: "finalised", detail: `stat-correction window closed (${finalised} entries, ${chipsAccrued} chips accrued)` });
+      out.push({ gw: gw.gw, action: "finalised", detail: `stat-correction window closed (${finalised} entries)` });
       // The retention loop fires off the back of finality: your result lands, and
       // if this gameweek closed its month, every league announces its winner.
       // Failure-soft — comms must never hold the season (that's the tick's job).

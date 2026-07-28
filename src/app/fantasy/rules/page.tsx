@@ -17,7 +17,7 @@
  */
 import { useRouter } from "next/navigation";
 import {
-  BUDGET_TENTHS, CASH_POINTS, CHIP_HOLD_CAP, CREDIT_CAP, GAMEWEEKS_PER_CHIP,
+  BUDGET_TENTHS, CASH_POINTS, CREDIT_CAP,
   HIT_POINTS, MAX_PER_CLUB, SQUAD_QUOTA, SQUAD_SIZE, XI_SIZE,
   BASELINE_CREDITS_PER_GW, creditsForRound,
 } from "@/lib/fantasy/engine";
@@ -224,8 +224,8 @@ export default function RulesPage() {
             listStyleType: "disc", display: "flex", flexDirection: "column", gap: 5,
           }}>
             <li>
-              A chip token for every <b style={{ color: INK }}>{GAMEWEEKS_PER_CHIP}</b> gameweeks you play.
-              Hold up to <b style={{ color: INK }}>{CHIP_HOLD_CAP}</b>, spend one per gameweek
+              <b style={{ color: INK }}>One chip a month</b>, your pick of the three. A chip can&apos;t come
+              back until you&apos;ve used the other two — a fresh set of three roughly every quarter
             </li>
             <li><b style={{ color: INK }}>Triple Captain</b> — your captain counts ×3 instead of ×2</li>
             <li><b style={{ color: INK }}>Bench Boost</b> — all {SQUAD_SIZE} players score, bench included</li>

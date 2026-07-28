@@ -11,11 +11,12 @@ import poolJson from "@/data/gates/pool.json";
 import { buildRound, clientView, grade, questionKey, type Round } from "@/lib/gates/serve";
 import type { GateQuestion } from "@/lib/gates/types";
 import {
-  applyTransfer, BASELINE_CREDITS_PER_GW, CHIPS, creditsForRound, GAMEWEEKS_PER_CHIP,
-  grantBaseline, raisePending, scoreEntry, smartDefaults, transferCost,
+  applyTransfer, availableChips, BASELINE_CREDITS_PER_GW, CHIPS, chipPlayable, creditsForRound,
+  grantBaseline, playedChipThisMonth, raisePending, scoreEntry, smartDefaults, transferCost,
   validateSelection, validateSquad,
-  RuleError, type Chip, type LockedSelection, type Squad, type SquadPick,
+  RuleError, type Chip, type ChipPlay, type LockedSelection, type Squad, type SquadPick,
 } from "./engine";
+import { monthKeyOf } from "./months";
 import { aggregateFixtures, fetchGwFixtures, toPlayerScores } from "./ingest";
 import { SCORING_VERSION, ZERO_FACTS, type MatchFacts } from "./values";
 import { enginePool, fantasyPool, pricedPool } from "./pool";
@@ -40,7 +41,7 @@ export interface SquadRow {
   user_id: string; picks: SquadPick[]; bank_tenths: number; credits: number;
   xi: number[]; bench: number[]; captain: number; vice: number; version: number;
   created_gw: number;
-  chips: number; chip_progress: number;
+  chip_log: ChipPlay[];
   pending_credits: number; pending_gameday_done: boolean; pending_source: string | null;
 }
 export interface EntryRow {
@@ -176,7 +177,10 @@ export async function getState(db: Db, userId: string) {
       earnedForNextGw: squad.pending_credits, earnedSource: squad.pending_source,
     },
     chips: squad && {
-      held: squad.chips, progress: squad.chip_progress, gameweeksPerChip: GAMEWEEKS_PER_CHIP,
+      // Monthly rotation: what you can play right now, and whether this month's
+      // one is already spent. No "held count" — you simply have the current set.
+      available: availableChips(squad.chip_log, monthKeyOf(gw)),
+      playedThisMonth: playedChipThisMonth(squad.chip_log, monthKeyOf(gw)),
       playedThisGw: entry?.chip ?? null,
     },
     entry: entry && {
@@ -512,12 +516,13 @@ export async function setSelection(db: Db, userId: string, sel: {
   return { ok: true };
 }
 
-// ── chips ────────────────────────────────────────────────────────────────────
-/** Play a chip for the current gameweek. One per gameweek, spent the moment it's
- *  played — not when the gameweek scores — so held/progress in getState is always
- *  the truth, never a promise. The entry write is the gate (CAS on chip IS NULL):
- *  only the request that wins it may go on to spend a token, so a double-tap can
- *  never spend two. */
+// ── chips (monthly rotation) ─────────────────────────────────────────────────
+/** Play a chip for the current gameweek. The rules are monthly (founder 28 Jul):
+ *  ONE chip a month, and a chip can't come back until the other two have been
+ *  used (a fresh set of three each quarter). Both are derived from the append-only
+ *  chip_log; playing appends {chip, month}. The entry write is the gate (CAS on
+ *  chip IS NULL): only the request that wins it may go on to append, so a
+ *  double-tap can never play two. */
 export async function playChip(db: Db, userId: string, chip: Chip) {
   if (!CHIPS.includes(chip)) throw new HttpError(400, "unknown chip", "unknown-chip");
   const gw = await currentGw(db, userId);
@@ -527,29 +532,35 @@ export async function playChip(db: Db, userId: string, chip: Chip) {
   if (!isOpenForEdits(gw, entry)) throw new HttpError(409, "gameweek is locked", "locked");
   if (entry.chip) throw new HttpError(409, "you've already played a chip this gameweek", "chip-played");
 
-  if (squad.chips <= 0) throw new HttpError(409, "no chips to play", "no-chip");
+  const month = monthKeyOf(gw);
+  const { ok, reason } = chipPlayable(squad.chip_log, chip, month);
+  if (!ok) {
+    if (reason === "month") throw new HttpError(409, "you've already played a chip this month", "chip-month");
+    throw new HttpError(409, "use your other chips before this one comes back", "chip-set");
+  }
 
   const { data: claimed, error: eErr } = await db.from("fantasy_entries")
     .update({ chip }).eq("user_id", userId).eq("gw", gw.gw).is("chip", null).select("gw");
   if (eErr) throw new HttpError(500, eErr.message);
   if (!claimed?.length) throw new HttpError(409, "you've already played a chip this gameweek", "chip-played");
 
-  const spendPatch = { chips: squad.chips - 1, version: squad.version + 1 };
+  // Append this play to the log (newest last). CAS on version so a concurrent
+  // change can't clobber it; on a lost race, undo the entry claim.
+  const spendPatch = { chip_log: [...squad.chip_log, { chip, month }], version: squad.version + 1 };
   const { data: spent, error: sErr } = await db.from("fantasy_squads").update(spendPatch)
     .eq("user_id", userId).eq("version", squad.version).select("version");
   if (sErr) throw new HttpError(500, sErr.message);
   if (!spent?.length) {
-    // Squad moved under us (a concurrent transfer bumped its version) — undo the
-    // claim rather than strand a spent token nobody actually holds.
     await db.from("fantasy_entries").update({ chip: null }).eq("user_id", userId).eq("gw", gw.gw);
     throw new HttpError(409, "squad changed elsewhere — retry", "conflict");
   }
   return getState(db, userId);
 }
 
-/** Un-play before the deadline and refund exactly what was spent. Playing a chip
- *  is the biggest call of the week, so a mis-tap must be reversible — same gate,
- *  mirrored: CAS on the entry still holding this exact chip, then refund. */
+/** Un-play before the deadline. A mis-tap must be reversible — same gate,
+ *  mirrored: CAS on the entry still holding this exact chip, then POP the log.
+ *  Only the current gameweek's chip is ever un-playable and it's always the most
+ *  recent play, so removal is a clean last-in-first-out pop. */
 export async function removeChip(db: Db, userId: string) {
   const gw = await currentGw(db, userId);
   const squad = await getSquad(db, userId);
@@ -560,7 +571,7 @@ export async function removeChip(db: Db, userId: string) {
   const chip = entry.chip;
 
   // A chip whose effect has already FIRED cannot be un-played — otherwise you
-  // could take the 50/50, undo Insight, and spend the refunded token on Triple
+  // could take the 50/50, undo Insight, and spend the refunded chip on Triple
   // Captain. Triple Captain / Bench Boost only act at scoring, so they stay
   // freely undoable until the deadline.
   const extras = entry as unknown as { round_hint_k: number | null };
@@ -572,7 +583,7 @@ export async function removeChip(db: Db, userId: string) {
   if (eErr) throw new HttpError(500, eErr.message);
   if (!cleared?.length) throw new HttpError(409, "no chip played this gameweek", "no-chip-played");
 
-  const refundPatch = { chips: squad.chips + 1, version: squad.version + 1 };
+  const refundPatch = { chip_log: squad.chip_log.slice(0, -1), version: squad.version + 1 };
   const { data: refunded, error: sErr } = await db.from("fantasy_squads").update(refundPatch)
     .eq("user_id", userId).eq("version", squad.version).select("version");
   if (sErr) throw new HttpError(500, sErr.message);

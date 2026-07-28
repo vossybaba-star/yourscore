@@ -1,11 +1,12 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  accrueChip, applyTransfer, autoSubs, bankCredits, cashOverflow, creditsForRound, grantBaseline,
+  applyTransfer, autoSubs, availableChips, bankCredits, cashOverflow, chipPlayable, chipSetUsed,
+  creditsForRound, grantBaseline, playedChipThisMonth,
   effectiveCaptain, raisePending, scoreEntry, sellPrice, smartDefaults,
   transferCost, validateSelection, validateSquad,
-  type LockedSelection, type PoolPlayer, type Squad, RuleError, BUDGET_TENTHS,
-  CHIP_HOLD_CAP, GAMEWEEKS_PER_CHIP, CASH_POINTS, CREDIT_CAP,
+  type ChipPlay, type LockedSelection, type PoolPlayer, type Squad, RuleError, BUDGET_TENTHS,
+  CASH_POINTS, CREDIT_CAP,
 } from "./engine";
 import { pointsFor, ZERO_FACTS, type MatchFacts } from "./values";
 
@@ -260,21 +261,31 @@ test("RuleError carries a machine-readable code", () => {
 });
 
 // ── chips (D:123-156) ─────────────────────────────────────────────────────────
-test("accrueChip: a token every 4 PLAYED gameweeks, cumulative not consecutive", () => {
-  let s = { progress: 0, held: 0, minted: false };
-  for (let i = 1; i < GAMEWEEKS_PER_CHIP; i++) {
-    s = accrueChip(s.progress, s.held);
-    assert.equal(s.minted, false, `no token yet at ${i} played weeks`);
-    assert.equal(s.held, 0);
-  }
-  s = accrueChip(s.progress, s.held);
-  assert.equal(s.minted, true, "4th played gameweek mints the token");
-  assert.equal(s.held, 1);
-  assert.equal(s.progress, 0, "progress resets after minting");
+test("chips: one a month, and use all three before any repeats (monthly rotation)", () => {
+  // A fresh manager: all three available, nothing used, nothing played this month.
+  assert.deepEqual(availableChips([], "2026-08"), ["triple_captain", "bench_boost", "insight"]);
+  assert.equal(playedChipThisMonth([], "2026-08"), false);
+
+  // Play Triple Captain in August → this month's chip is spent; none available in August.
+  const aug: ChipPlay[] = [{ chip: "triple_captain", month: "2026-08" }];
+  assert.equal(playedChipThisMonth(aug, "2026-08"), true);
+  assert.deepEqual(availableChips(aug, "2026-08"), []);
+  assert.equal(chipPlayable(aug, "bench_boost", "2026-08").reason, "month", "one a month");
+
+  // September (new month): TC is in the current set so it can't come back yet;
+  // the other two can.
+  assert.deepEqual(availableChips(aug, "2026-09"), ["bench_boost", "insight"]);
+  assert.equal(chipPlayable(aug, "triple_captain", "2026-09").reason, "set", "use the other two first");
+  assert.equal(chipPlayable(aug, "bench_boost", "2026-09").ok, true);
 });
-test("accrueChip: progress stops dead at the hold cap — no stockpiling", () => {
-  const at = accrueChip(3, CHIP_HOLD_CAP);
-  assert.deepEqual(at, { progress: 3, held: CHIP_HOLD_CAP, minted: false });
+test("chips: the set refreshes once all three are used", () => {
+  const three: ChipPlay[] = [
+    { chip: "triple_captain", month: "2026-08" },
+    { chip: "bench_boost", month: "2026-09" },
+    { chip: "insight", month: "2026-10" },
+  ];
+  assert.deepEqual(chipSetUsed(three), [], "a full set is empty again — a fresh set");
+  assert.deepEqual(availableChips(three, "2026-11"), ["triple_captain", "bench_boost", "insight"]);
 });
 test("scoreEntry: Triple Captain triples instead of doubling", () => {
   const sel = lockedSel();
