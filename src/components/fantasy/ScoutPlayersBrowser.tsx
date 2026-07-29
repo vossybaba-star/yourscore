@@ -14,15 +14,42 @@
  * a player. Tapping a row opens the existing <PlayerProfile> in a bottom Sheet —
  * the same modal idiom the transfer screen uses for player detail.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  api, Crest, DoubtFlag, EMPTY_CONTEXT, FixtureRun, INK, LINE, MUTED, PANEL,
+  api, Crest, DoubtFlag, EMPTY_CONTEXT, FixtureRun, GOLD, INK, LINE, MUTED, PANEL,
   TEAL, tint, Sheet, Loading, ErrorState,
   type ClientPoolPlayer, type FantasyContext, type Difficulty, type Pos,
 } from "@/components/fantasy/shared";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { faceFor } from "@/lib/fantasy/faces";
 import { PlayerProfile } from "@/components/fantasy/PlayerProfile";
+import { useShortlist } from "@/components/fantasy/useShortlist";
+
+/** The shortlist star: outline when unsaved, filled GOLD when saved. A button in
+ *  its own right, sitting BESIDE the row's open-profile button (not inside it) —
+ *  a star that toggles a save must never also open the profile. */
+export function StarButton({ saved, onToggle }: { saved: boolean; onToggle: () => void }) {
+  return (
+    <button
+      onClick={onToggle}
+      aria-pressed={saved}
+      aria-label={saved ? "Remove from shortlist" : "Add to shortlist"}
+      title={saved ? "On your shortlist" : "Save to shortlist"}
+      style={{
+        flexShrink: 0, width: 38, height: 38, borderRadius: 10, cursor: "pointer",
+        display: "grid", placeItems: "center",
+        background: saved ? tint(GOLD, "1e") : "transparent",
+        border: `1px solid ${saved ? tint(GOLD, "66") : LINE}`,
+      }}
+    >
+      <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden
+        fill={saved ? GOLD : "none"} stroke={saved ? GOLD : MUTED} strokeWidth="1.8"
+        strokeLinecap="round" strokeLinejoin="round">
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+      </svg>
+    </button>
+  );
+}
 
 interface Form { gws: number[]; points: Record<number, number[]> }
 
@@ -66,6 +93,24 @@ export function ScoutPlayersBrowser() {
   const [maxPrice, setMaxPrice] = useState<number>(999);
   const [sort, setSort] = useState<SortKey>("priceHigh");
   const [detailFor, setDetailFor] = useState<number | null>(null);
+
+  // Shortlist star state, shared with the Shortlist tab + Briefing via the store.
+  const shortlist = useShortlist();
+  const [toast, setToast] = useState<string | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (toastTimer.current) clearTimeout(toastTimer.current); }, []);
+
+  const toggleStar = (id: number) => {
+    if (shortlist.has(id)) {
+      void shortlist.remove(id);
+    } else {
+      void shortlist.add(id);
+      // A quiet confirmation, not a celebration — one line, gone in ~1.8s.
+      setToast("Added to your shortlist");
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+      toastTimer.current = setTimeout(() => setToast(null), 1800);
+    }
+  };
 
   useEffect(() => {
     let live = true;
@@ -248,37 +293,47 @@ export function ScoutPlayersBrowser() {
         {rows.map((p) => {
           const doubtful = !!ctx.doubts[p.id];
           return (
-            <button key={p.id} onClick={() => setDetailFor(p.id)}
-              aria-label={`${p.name} — view profile`}
+            // Row is a flex CONTAINER (not itself a button) so the profile button
+            // and the star button can sit side by side — no nested buttons.
+            <div key={p.id}
               style={{
-                display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8,
-                padding: "9px 12px", borderRadius: 12, cursor: "pointer", textAlign: "left",
-                background: PANEL, color: INK, border: `1px solid ${LINE}`, width: "100%",
+                display: "flex", alignItems: "center", gap: 8,
+                padding: "9px 12px", borderRadius: 12,
+                background: PANEL, color: INK, border: `1px solid ${LINE}`,
               }}>
-              <span style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-                <PlayerAvatar name={p.name} avatarUrl={faceFor(p.name)} size={36} />
-                <span style={{ minWidth: 0 }}>
-                  <span style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                    <span style={{ fontSize: 14, fontWeight: 600 }}>{p.name}</span>
-                    <DoubtFlag reason={ctx.doubts[p.id]} />
-                  </span>
-                  <span style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3 }}>
-                    <Crest club={p.club} size={13} />
-                    <span style={{ fontSize: 11.5, color: MUTED }}>{p.club} · {p.pos}</span>
-                    <FixtureRun cells={ctx.fixtures[p.clubId]} max={2} />
+              <button onClick={() => setDetailFor(p.id)}
+                aria-label={`${p.name} — view profile`}
+                style={{
+                  display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8,
+                  cursor: "pointer", textAlign: "left", flex: 1, minWidth: 0,
+                  background: "transparent", color: "inherit", border: "none", padding: 0,
+                }}>
+                <span style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+                  <PlayerAvatar name={p.name} avatarUrl={faceFor(p.name)} size={36} />
+                  <span style={{ minWidth: 0 }}>
+                    <span style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                      <span style={{ fontSize: 14, fontWeight: 600 }}>{p.name}</span>
+                      <DoubtFlag reason={ctx.doubts[p.id]} />
+                    </span>
+                    <span style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3 }}>
+                      <Crest club={p.club} size={13} />
+                      <span style={{ fontSize: 11.5, color: MUTED }}>{p.club} · {p.pos}</span>
+                      <FixtureRun cells={ctx.fixtures[p.clubId]} max={2} />
+                    </span>
                   </span>
                 </span>
-              </span>
-              <span style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flexShrink: 0 }}>
-                <span style={{ fontSize: 13.5, fontWeight: 700 }}>£{p.price.toFixed(1)}m</span>
-                <span style={{
-                  fontSize: 9.5, fontWeight: 700, letterSpacing: "0.04em", padding: "1px 6px", borderRadius: 999,
-                  color: doubtful ? "#E08A6B" : TEAL,
-                  border: `1px solid ${doubtful ? "#B85C38" : tint(TEAL, "55")}`,
-                  background: doubtful ? "rgba(184,92,56,0.10)" : tint(TEAL, "12"),
-                }}>{doubtful ? "DOUBT" : "FIT"}</span>
-              </span>
-            </button>
+                <span style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flexShrink: 0 }}>
+                  <span style={{ fontSize: 13.5, fontWeight: 700 }}>£{p.price.toFixed(1)}m</span>
+                  <span style={{
+                    fontSize: 9.5, fontWeight: 700, letterSpacing: "0.04em", padding: "1px 6px", borderRadius: 999,
+                    color: doubtful ? "#E08A6B" : TEAL,
+                    border: `1px solid ${doubtful ? "#B85C38" : tint(TEAL, "55")}`,
+                    background: doubtful ? "rgba(184,92,56,0.10)" : tint(TEAL, "12"),
+                  }}>{doubtful ? "DOUBT" : "FIT"}</span>
+                </span>
+              </button>
+              <StarButton saved={shortlist.has(p.id)} onToggle={() => toggleStar(p.id)} />
+            </div>
           );
         })}
       </div>
@@ -290,6 +345,21 @@ export function ScoutPlayersBrowser() {
         <Sheet onClose={() => setDetailFor(null)} labelledBy="fantasy-player-profile-name">
           <PlayerProfile playerId={detailFor} onClose={() => setDetailFor(null)} />
         </Sheet>
+      )}
+
+      {/* Quiet save confirmation — a single line, self-dismissing. Announced to
+          screen readers via the live region, not just shown. */}
+      {toast && (
+        <div role="status" aria-live="polite"
+          style={{
+            position: "fixed", left: "50%", bottom: 88, transform: "translateX(-50%)",
+            zIndex: 50, background: PANEL, border: `1px solid ${tint(GOLD, "66")}`,
+            color: INK, fontSize: 12.5, fontWeight: 600, padding: "8px 14px",
+            borderRadius: 999, whiteSpace: "nowrap", pointerEvents: "none",
+            boxShadow: "0 6px 20px rgba(0,0,0,0.4)",
+          }}>
+          {toast}
+        </div>
       )}
     </div>
   );

@@ -1,10 +1,14 @@
 /**
- * Scout · Shortlist — stage-1 placeholder. The tab exists and is reachable; the
- * shortlist contents land in a later stage. Same Scout chrome (masthead + tabs)
- * so it reads as a real, if empty, room — not a dead link.
+ * Scout · Shortlist (Stage 3a) — the real list.
+ *
+ * Same Scout chrome as the Briefing and Players tabs (masthead + tabs + BottomNav),
+ * a server shell so metadata + chrome stay static; the saved players themselves
+ * render in the client <ShortlistView> (it reads the per-user shortlist + the
+ * priced pool). Research only — no buy/sell here.
  */
 import { ScoutTabs } from "@/components/fantasy/ScoutTabs";
-import { FantasyMasthead, MUTED, INK, card, column, shell } from "@/components/fantasy/newsUi";
+import { FantasyMasthead, column, shell } from "@/components/fantasy/newsUi";
+import { ShortlistView } from "@/components/fantasy/ShortlistView";
 import { BottomNav } from "@/components/ui/BottomNav";
 
 export const metadata = { title: "Scout · Shortlist · YourScore" };
@@ -16,14 +20,7 @@ export default function ScoutShortlist() {
         <div style={column}>
           <FantasyMasthead title="Scout" />
           <ScoutTabs active="/fantasy/scout/shortlist" />
-          <div style={{ ...card, textAlign: "center", padding: "28px 16px" }}>
-            <div className="font-display tracking-widest" style={{ color: INK, fontSize: 15 }}>
-              SHORTLIST · COMING SOON
-            </div>
-            <p className="font-body" style={{ color: MUTED, fontSize: 13, lineHeight: 1.5, margin: "8px 0 0" }}>
-              Your saved players will gather here soon.
-            </p>
-          </div>
+          <ShortlistView />
         </div>
       </main>
       <BottomNav />
