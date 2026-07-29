@@ -22,6 +22,12 @@ import type { MatchFacts } from "./values";
 import { fantasyPool } from "./pool";
 import { generateTips } from "./tips";
 
+/** The form window, in gameweeks. A player's recent-form line and the profile's
+ *  "recent" slice are both the last this-many scored gameweeks. Canonical home
+ *  so anything converting a five-gameweek total into a per-gameweek number
+ *  divides by exactly this. */
+export const FORM_WINDOW_GWS = 5;
+
 // ---------------------------------------------------------------- doc shape
 
 export type Difficulty = "kind" | "medium" | "tough";

@@ -80,7 +80,7 @@ export interface FantasyState {
 
 /** Routes that read rather than mutate. Everything else defaults to POST — a GET
  *  route missing from this set silently 405s. */
-const GET_PATHS = new Set(["pool", "state", "form", "ledger"]);
+const GET_PATHS = new Set(["pool", "state", "form", "ledger", "squad-update"]);
 
 export async function api<T>(path: string, body?: unknown): Promise<T> {
   const res = await fetch(`/api/fantasy/${path}`, body === undefined

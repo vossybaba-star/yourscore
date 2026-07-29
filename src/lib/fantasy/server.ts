@@ -21,6 +21,11 @@ import { aggregateFixtures, fetchGwFixtures, toPlayerScores } from "./ingest";
 import { SCORING_VERSION, ZERO_FACTS, type MatchFacts } from "./values";
 import { enginePool, fantasyPool, pricedPool } from "./pool";
 import { isOpenForEdits, type GwRow } from "./gameweeks";
+import { FORM_WINDOW_GWS, type NewsClubRun, type NewsTickerCell, type NewsDoc } from "./news";
+import {
+  flagSquad, resolveAvailability, unwrapRead, buildPlayerProfile,
+  type AvailabilityInfo, type ProfileGw, type SquadUpdateItem, type SquadUpdateStatus,
+} from "./advice";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = SupabaseClient<any, "public", any>;
@@ -871,3 +876,206 @@ export async function getLedger(db: Db, userId: string): Promise<{ items: Ledger
   return { items };
 }
 
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Player decision profile (read-only). Grafted from the advisor merge — the
+// injury/availability read, the club fixture look-up, and the profile builder.
+// Kept minimal: the transfer planner and wildcard valuer are intentionally NOT
+// brought over, so nothing here is wired into a transfer screen.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Latest non-rehearsal FPL availability snapshot, resolved to per-player info.
+ *  Null (not empty) when nothing has been collected yet, so a missing feed and
+ *  a clean bill of health never look the same. */
+async function availabilityFor(db: Db): Promise<Map<number, AvailabilityInfo> | null> {
+  try {
+    const latest = await db.from("fantasy_fpl_snapshot")
+      .select("captured_at").eq("is_rehearsal", false)
+      .order("captured_at", { ascending: false }).limit(1);
+    const cutoff: string | undefined = (unwrapRead(latest, "snapshot cutoff read failed") ?? [])[0]?.captured_at;
+    if (!cutoff) return null; // nothing collected yet — not "nobody is injured"
+
+    const result = await db.from("fantasy_fpl_snapshot")
+      .select("player_id, status, chance_of_playing_next_round, news")
+      .eq("captured_at", cutoff).eq("is_rehearsal", false).range(0, 9999);
+    const rows = (unwrapRead(result, "fantasy_fpl_snapshot availability read failed") ?? []) as {
+      player_id: number; status: string | null;
+      chance_of_playing_next_round: number | null; news: string | null;
+    }[];
+    return resolveAvailability(rows.map((r) => ({
+      playerId: r.player_id, status: r.status,
+      chance: r.chance_of_playing_next_round, news: r.news,
+    })));
+  } catch (e) {
+    console.error("[fantasy] availability read failed — continuing without the injury filter", e);
+    return null;
+  }
+}
+
+/** This club's next few fixtures with difficulty, read from the cached news
+ *  ticker. Empty array if the news doc hasn't been built — the profile just
+ *  doesn't show a fixture row. */
+async function upcomingFor(db: Db, clubId: number) {
+  try {
+    const result = await db.from("fantasy_news").select("doc").order("created_at", { ascending: false }).limit(1);
+    const rows = (unwrapRead(result, "news read failed") ?? []) as { doc: unknown }[];
+    const doc = rows[0]?.doc as { fixtures?: { runs?: NewsClubRun[] } } | undefined;
+    const run = doc?.fixtures?.runs?.find((r) => r.clubId === clubId);
+    return (run?.cells ?? []).slice(0, 3);
+  } catch (e) {
+    console.error("[fantasy] fixtures read failed — profile will omit them", e);
+    return [];
+  }
+}
+
+/** One player's profile — the questions a manager asks before keeping or selling
+ *  him. Reads only the past; a gameweek in progress has no row yet. */
+export async function playerProfile(db: Db, userId: string, playerId: number) {
+  const gw = await currentGw(db, userId);
+  const pool = await pricedPool(db, gw.gw);
+  const p = pool.find((x) => x.id === playerId);
+  if (!p) throw new HttpError(404, "player not in the pool", "unknown-player");
+
+  // Every scored gameweek so far. Ranged explicitly — PostgREST silently caps
+  // an unranged read at 1,000 rows.
+  const result = await db.from("fantasy_player_scores")
+    .select("gw, points, facts, minutes")
+    .eq("player_id", playerId).lt("gw", gw.gw).order("gw").range(0, 49999);
+  const rows = (unwrapRead(result, "player scores read failed") ?? []) as
+    { gw: number; points: number; facts: MatchFacts; minutes: number }[];
+
+  // Zero-fill: a player who didn't feature has NO row, and leaving a hole would
+  // hide exactly the "stopped playing" signal the screen exists to show.
+  const byGw = new Map(rows.map((r) => [r.gw, r]));
+  const season: ProfileGw[] = [];
+  for (let g = 1; g < gw.gw; g++) {
+    const r = byGw.get(g);
+    season.push(r
+      ? { gw: g, facts: r.facts as never, points: r.points }
+      : { gw: g, facts: { ...ZERO_FACTS } as never, points: 0 });
+  }
+  const recent = season.slice(-FORM_WINDOW_GWS);
+
+  const availability = await availabilityFor(db);
+  const squad = await getSquad(db, userId);
+  const owned = squad?.picks?.some((x: { id: number }) => x.id === playerId) ?? false;
+  const flag = owned && squad
+    ? flagSquad({
+        squad: squadShape(squad), availability,
+        recentMinutes: new Map([[playerId, recent.map((r) => r.facts.minutes)]]),
+      }).find((f) => f.playerId === playerId) ?? null
+    : null;
+
+  return {
+    name: p.name, club: p.club, priceTenths: p.priceTenths,
+    profile: buildPlayerProfile({
+      playerId, pos: p.pos, recent, season,
+      flag,
+      fixtures: await upcomingFor(db, p.clubId),
+    }),
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Squad Update — the personalised head of the Scout Briefing.
+//
+// For each of the fifteen a manager already OWNS, the one fact that changes how
+// they read the week: an availability flag from FPL's own feed (injury,
+// suspension, doubt), or a blank gameweek for one of their starters. Facts only.
+// It never suggests a replacement and never uses sell/bench/buy/avoid language —
+// the manager reads the fact and decides. Composes the same private helpers the
+// rest of this file uses (currentGw / getSquad / availabilityFor / flagSquad) and
+// reads fixtures from the SAME feed doc the Briefing renders, so nothing here can
+// disagree with the page around it.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Normalise a factual reason to house style: FPL writes "Knee injury - Expected
+ *  back 01 Apr" with a hyphen separator; the app's own idiom is " · ". Words are
+ *  untouched — only the separator — so the fact is preserved verbatim. */
+const factualReason = (s: string): string => s.trim().replace(/\s[-–—]\s/g, " · ");
+
+/** Club → its upcoming fixture cells, from the newest feed doc (the same table
+ *  and shape /fantasy/news renders). Empty map when the doc isn't built yet, which
+ *  the caller treats as "we can't claim a blank gameweek", never as "everyone is
+ *  blank" — missing data must not read as a fact. */
+async function fixtureRunsByClub(db: Db): Promise<Map<number, NewsTickerCell[]>> {
+  try {
+    const result = await db.from("fantasy_news_feed").select("doc")
+      .order("gw", { ascending: false }).limit(1);
+    const rows = (unwrapRead(result, "news feed read failed") ?? []) as { doc: NewsDoc }[];
+    const runs = rows[0]?.doc?.fixtures?.runs ?? [];
+    return new Map(runs.map((r) => [r.clubId, r.cells]));
+  } catch (e) {
+    console.error("[fantasy] squad-update fixtures read failed — omitting blank-GW flags", e);
+    return new Map();
+  }
+}
+
+export async function squadUpdate(db: Db, userId: string): Promise<{ items: SquadUpdateItem[] }> {
+  const gw = await currentGw(db, userId);
+  const squad = await getSquad(db, userId);
+  if (!squad || !squad.picks.length) return { items: [] };
+
+  const pool = await pricedPool(db, gw.gw);
+  const poolById = new Map(pool.map((p) => [p.id, p]));
+
+  const availability = await availabilityFor(db);
+  // Availability-only: the minutes ("hasn't played") signal that flagSquad can
+  // also raise is deliberately NOT fed in here — it reads as "bench him", and
+  // this surface states facts, it never tells you to bench anyone.
+  const flags = flagSquad({
+    squad: { picks: squad.picks, bankTenths: squad.bank_tenths }, availability,
+  });
+
+  const runsByClub = await fixtureRunsByClub(db);
+  const cellsOf = (clubId: number) => runsByClub.get(clubId) ?? [];
+  const nextFixtureOf = (clubId: number): string | null => {
+    const c = cellsOf(clubId).filter((x) => x.gw >= gw.gw).sort((a, b) => a.gw - b.gw)[0];
+    return c ? `${c.home ? "vs" : "@"} ${c.oppShort.toUpperCase()}` : null;
+  };
+
+  const items: SquadUpdateItem[] = [];
+  const flagged = new Set<number>();
+
+  for (const f of flags) {
+    const p = poolById.get(f.playerId);
+    if (!p) continue;
+    flagged.add(f.playerId);
+    const av = availability?.get(f.playerId);
+    // flagSquad collapses injured / unavailable / suspended into kind "out"; split
+    // them back by FPL's own status letter so the pill names the real category.
+    // A rare 'u' (unavailable, e.g. left the club) has no status of its own here
+    // and reads under Injured — the explanation string still carries the true fact.
+    const status: SquadUpdateStatus =
+      f.kind === "doubt" ? "Doubt"
+      : av?.status === "s" ? "Suspended"
+      : "Injured";
+    items.push({
+      playerId: p.id, name: p.name, club: p.club, position: p.pos,
+      status, explanation: factualReason(f.reason), nextFixture: nextFixtureOf(p.clubId),
+    });
+  }
+
+  // Blank gameweek — a STARTER whose club simply has no fixture this week. Guarded
+  // twice against false positives: only when the doc actually covers this gameweek
+  // (some club has a cell at gw.gw), and only for a club with none of its own.
+  const coversThisGw = Array.from(runsByClub.values()).some((cells) => cells.some((c) => c.gw === gw.gw));
+  if (coversThisGw) {
+    for (const id of squad.xi) {
+      if (flagged.has(id)) continue;
+      const p = poolById.get(id);
+      if (!p) continue;
+      const hasFixture = cellsOf(p.clubId).some((c) => c.gw === gw.gw);
+      if (!hasFixture) {
+        items.push({
+          playerId: p.id, name: p.name, club: p.club, position: p.pos,
+          status: "No fixture",
+          explanation: `No Premier League fixture in gameweek ${gw.gw}.`,
+          nextFixture: nextFixtureOf(p.clubId),
+        });
+      }
+    }
+  }
+
+  return { items };
+}

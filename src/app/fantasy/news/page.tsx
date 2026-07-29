@@ -1,45 +1,52 @@
 /**
- * Fantasy news feed — GENERAL, same for everyone (spec §1), so it's a server
- * component reading the cron-built fantasy_news_feed row directly: no client
- * fetch, ISR keeps it cheap, and it's SEO-indexable (unlike the game pages).
+ * YourScore Scout — the Briefing.
  *
- * This is a FEED, not a dashboard. Every block is a content card you scroll and
- * tap into. Reference data (the fixture ticker) lives on its own tab: it's a grid
- * you CONSULT, not content you browse, and when it sat at the top of this page it
- * buried what people came for.
+ * Reskin of the old fantasy news hub. The general Scout Report (the cron-built
+ * feed) is unchanged and still renders from the fantasy_news_feed doc as a server
+ * component (ISR, SEO-indexable). What's new is the head of the page: SquadUpdate,
+ * a client block about the fifteen players YOU own — the one personalised, facts-
+ * only read that the general feed can't give.
  *
- * The stream itself is a client component (the filter chips hold state) but it's
- * fed entirely by props from here — so the page still prerenders.
+ * The route is deliberately still /fantasy/news (nothing that links here breaks);
+ * the surface is now branded Scout.
  */
-import { NewsTabs } from "@/components/fantasy/NewsTabs";
+import { ScoutTabs } from "@/components/fantasy/ScoutTabs";
+import { SquadUpdate } from "@/components/fantasy/SquadUpdate";
 import { NewsFeed } from "@/components/fantasy/NewsFeed";
-import { FantasyMasthead, GOLD, column, loadFeedDoc, shell, ukTime } from "@/components/fantasy/newsUi";
+import { FantasyMasthead, GOLD, MUTED, column, loadFeedDoc, shell, ukTime } from "@/components/fantasy/newsUi";
 import { BottomNav } from "@/components/ui/BottomNav";
 
 export const revalidate = 300;
 
 export const metadata = {
-  title: "Fantasy tips · YourScore",
+  title: "Scout · YourScore",
   description:
-    "Team news, transfer talk and tips for your YourScore fantasy squad.",
+    "Facts, not noise, for your YourScore fantasy squad: team news, availability and the moves worth knowing.",
 };
 
-export default async function FantasyNews() {
+export default async function ScoutBriefing() {
   const doc = await loadFeedDoc();
 
   return (
     <>
     <main style={shell}>
       <div style={column}>
-        <FantasyMasthead title="News & insights" />
+        <FantasyMasthead title="Scout" />
+        <div style={{ color: MUTED, fontSize: 12.5, marginTop: -6 }}>
+          Facts. Not noise. Make better moves.
+        </div>
         {doc?.deadline && new Date(doc.deadline).getTime() > Date.now() && (
           <div style={{ color: GOLD, fontSize: 12, marginTop: -4 }}>
             GW{doc.gw} deadline · {ukTime(doc.deadline)}
           </div>
         )}
 
-        <NewsTabs active="/fantasy/news" />
+        <ScoutTabs active="/fantasy/news" />
 
+        {/* Personalised, facts-only: YOUR squad first. */}
+        <SquadUpdate />
+
+        {/* The general Scout Report — same for everyone, straight from the feed doc. */}
         <NewsFeed
           tips={doc?.tips}
           doubts={doc?.teamNews?.doubts ?? []}
