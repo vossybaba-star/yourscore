@@ -174,7 +174,7 @@ function buildSummary(a: Side, b: Side): string[] {
     if (ra.goals !== null && ra.assists !== null && rb.goals !== null && rb.assists !== null) {
       const sa = ra.goals + ra.assists, sb = rb.goals + rb.assists;
       if (sa !== sb) {
-        const [hn, hg, ha, ln, lg, la] = sa > sb
+        const [hn, hg, ha, , lg, la] = sa > sb
           ? [an, ra.goals, ra.assists, bn, rb.goals, rb.assists]
           : [bn, rb.goals, rb.assists, an, ra.goals, ra.assists];
         out.push(`${hn} has more goals and assists (${hg}G ${ha}A vs ${lg}G ${la}A).`);

@@ -256,8 +256,16 @@ const ALLOWLIST = new Set([
 
 /** Walk the tipFacts() payload and collect every word and every integer that
  *  appears anywhere in it — this IS the "only football facts that exist" set,
- *  used to validate prose, not just names. Pure. */
-function collectPayloadTokens(facts: unknown): { words: Set<string>; numbers: Set<string> } {
+ *  used to validate prose, not just names. Pure.
+ *
+ *  Exported for scoutPicks.ts — it walks its OWN closed payload (pickFacts(),
+ *  not tipFacts()) through this same collector, so a name/number is grounded
+ *  by the identical rule in both places rather than a hand-copied one that can
+ *  drift. Note the number handling truncates to an integer (`Math.trunc`), so a
+ *  decimal like "5.7" only grounds its whole-number part unless the fractional
+ *  digits happen to appear elsewhere in the payload — inherited behaviour, not
+ *  changed here. */
+export function collectPayloadTokens(facts: unknown): { words: Set<string>; numbers: Set<string> } {
   const words = new Set<string>();
   const numbers = new Set<string>();
   const visit = (v: unknown): void => {
@@ -288,8 +296,12 @@ function collectPayloadTokens(facts: unknown): { words: Set<string>; numbers: Se
  *  number-grounding can't catch these: "he's back from his hamstring injury"
  *  has no proper noun and no integer in it, so it sailed through until this
  *  gate existed. Any of these words in a tip must trace back to our own data
- *  (e.g. the player really is in `doubts`), or the field is dropped. */
-const CLAIM_TERMS = new Set([
+ *  (e.g. the player really is in `doubts`), or the field is dropped.
+ *
+ *  Exported: scoutPicks.ts (Scout's Four Picks, stage 4) reuses this exact set
+ *  rather than defining its own — one claim-term vocabulary, not two that can
+ *  drift apart. */
+export const CLAIM_TERMS = new Set([
   // fitness / availability
   "injury", "injured", "injuries", "knock", "strain", "hamstring", "groin",
   "calf", "ankle", "knee", "thigh", "muscle", "fitness", "fit", "unfit",
@@ -315,8 +327,10 @@ function allowedClaimWords(inp: TipInputs, tokens: { words: Set<string> }): Set<
   return allowed;
 }
 
-/** True if `text` asserts a fact our data doesn't support. */
-function hasUngroundedClaim(text: string, allowed: Set<string>): boolean {
+/** True if `text` asserts a fact our data doesn't support.
+ *  Exported — see CLAIM_TERMS / collectPayloadTokens above: scoutPicks.ts calls
+ *  this directly rather than re-implementing the claim-term gate. */
+export function hasUngroundedClaim(text: string, allowed: Set<string>): boolean {
   for (const w of text.toLowerCase().match(/[a-z]+/g) ?? []) {
     if (CLAIM_TERMS.has(w) && !allowed.has(w)) return true;
   }
@@ -324,8 +338,11 @@ function hasUngroundedClaim(text: string, allowed: Set<string>): boolean {
 }
 
 /** True iff every proper-noun-shaped word (capitalised) and every integer in
- *  `text` traces back to the payload tokens or the ALLOWLIST. Pure. */
-function isProseGrounded(text: string, tokens: { words: Set<string>; numbers: Set<string> }): boolean {
+ *  `text` traces back to the payload tokens or the ALLOWLIST. Pure.
+ *  Exported — see CLAIM_TERMS above. Uses THIS file's ALLOWLIST (pronouns,
+ *  football-generic terms, days) for both tips and Scout picks, since neither
+ *  domain wants a proper noun the ALLOWLIST doesn't already cover. */
+export function isProseGrounded(text: string, tokens: { words: Set<string>; numbers: Set<string> }): boolean {
   const capWords = text.match(/\b[A-Z][a-zA-Z]*\b/g) ?? [];
   for (const w of capWords) {
     const lw = w.toLowerCase();

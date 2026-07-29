@@ -12,6 +12,7 @@
  */
 import { ScoutTabs } from "@/components/fantasy/ScoutTabs";
 import { SquadUpdate } from "@/components/fantasy/SquadUpdate";
+import { FourPicks } from "@/components/fantasy/FourPicks";
 import { ShortlistPreview } from "@/components/fantasy/ShortlistPreview";
 import { CompareEntry } from "@/components/fantasy/CompareEntry";
 import { NewsFeed } from "@/components/fantasy/NewsFeed";
@@ -47,6 +48,9 @@ export default async function ScoutBriefing() {
 
         {/* Personalised, facts-only: YOUR squad first. */}
         <SquadUpdate />
+
+        {/* The Scout's four picks for the gameweek — published only, renders nothing until approved. */}
+        <FourPicks />
 
         {/* A compact peek at your saved players — renders nothing when empty. */}
         <ShortlistPreview />
