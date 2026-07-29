@@ -832,6 +832,23 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
         </div>
       )}
 
+      {/* The Scout — the research hub. Squad-holders only had it as one tile in
+          the destinations grid (buried, low-signal); a real door belongs up here
+          with the week's action. Same card the no-squad intro shows. */}
+      <button onClick={() => router.push("/fantasy/news")}
+        className="w-full flex items-center gap-3 rounded-2xl active:scale-[0.99] transition-transform"
+        style={{ background: PANEL, border: `1px solid ${LINE}`, padding: "14px 16px", textAlign: "left", marginBottom: 12 }}>
+        <div className="font-display rounded-full flex items-center justify-center"
+          style={{ flexShrink: 0, width: 34, height: 34, fontSize: 15, background: tint(GOLD, "14"), color: GOLD, border: `1px solid ${tint(GOLD, "30")}` }}>✎</div>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <p className="font-display text-white" style={{ fontSize: 15, lineHeight: 1.15 }}>The Scout</p>
+          <p className="font-body" style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>
+            Team news, transfers and tips before every deadline. Facts, not verdicts.
+          </p>
+        </div>
+        <span aria-hidden style={{ color: MUTED, fontSize: 18, flexShrink: 0 }}>→</span>
+      </button>
+
       {/* The Moves Bank leads, because knowledge-earned moves are the product's
           whole story — a bare "Transfers: 3" tile buried the one thing that makes
           this fantasy game ours. The two money figures sit beside it. */}
@@ -904,7 +921,6 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
           // Embedded, the header is gone, so Leagues joins the destinations
           // rather than floating on a row of its own.
           ...(embedded ? [{ label: "Leagues", to: "/fantasy/leagues" }] : []),
-          { label: "Scout", to: "/fantasy/news" },
           { label: KNOWLEDGE_NAME, to: "/fantasy/knowledge" },
           { label: "Plan ahead", to: "/fantasy/plan" },
           { label: "My history", to: "/fantasy/history" },

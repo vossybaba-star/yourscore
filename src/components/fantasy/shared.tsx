@@ -95,7 +95,12 @@ export async function api<T>(path: string, body?: unknown): Promise<T> {
  *  apply, which they never did while this set its own stack. */
 export const page: CSSProperties = {
   minHeight: "100dvh", background: PITCH, color: INK,
-  padding: "16px 16px 96px", maxWidth: 512, margin: "0 auto",
+  // Top: clear the iPhone status bar (viewport-fit=cover draws under it) so the
+  // header/back control isn't behind the clock. Bottom: clear the fixed
+  // BottomNav (~58px) + the home-indicator safe area.
+  padding:
+    "calc(16px + env(safe-area-inset-top)) 16px calc(88px + env(safe-area-inset-bottom))",
+  maxWidth: 512, margin: "0 auto",
 };
 
 export function Header({ right, exit }: { right?: ReactNode; exit?: { label: string; onClick: () => void } }) {

@@ -37,7 +37,12 @@ export const h2: CSSProperties = {
   color: INK, fontSize: 15, fontWeight: 600, margin: "0 0 10px",
 };
 export const shell: CSSProperties = {
-  minHeight: "100dvh", background: PITCH, padding: "16px 14px 40px",
+  minHeight: "100dvh", background: PITCH,
+  // Top: clear the iPhone status bar (viewport-fit=cover draws under it), so the
+  // Back pill isn't hidden behind the clock. Bottom: clear the fixed BottomNav
+  // (~58px) + the home-indicator safe area, or the last feed items sit under it.
+  padding:
+    "calc(16px + env(safe-area-inset-top)) 14px calc(88px + env(safe-area-inset-bottom))",
 };
 export const column: CSSProperties = {
   maxWidth: 512, margin: "0 auto", display: "grid", gap: 14,
