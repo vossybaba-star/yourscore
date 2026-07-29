@@ -20,6 +20,7 @@ import { monthKeyOf } from "./months";
 import { aggregateFixtures, fetchGwFixtures, toPlayerScores } from "./ingest";
 import { SCORING_VERSION, ZERO_FACTS, type MatchFacts } from "./values";
 import { enginePool, fantasyPool, pricedPool } from "./pool";
+import { loadFixtureSet, fixtureStatusFor } from "./captainAssist";
 import { isOpenForEdits, type GwRow } from "./gameweeks";
 import { FORM_WINDOW_GWS, type NewsClubRun, type NewsTickerCell, type NewsDoc } from "./news";
 import {
@@ -1056,24 +1057,27 @@ export async function squadUpdate(db: Db, userId: string): Promise<{ items: Squa
     });
   }
 
-  // Blank gameweek — a STARTER whose club simply has no fixture this week. Guarded
-  // twice against false positives: only when the doc actually covers this gameweek
-  // (some club has a cell at gw.gw), and only for a club with none of its own.
-  const coversThisGw = Array.from(runsByClub.values()).some((cells) => cells.some((c) => c.gw === gw.gw));
-  if (coversThisGw) {
-    for (const id of squad.xi) {
-      if (flagged.has(id)) continue;
-      const p = poolById.get(id);
-      if (!p) continue;
-      const hasFixture = cellsOf(p.clubId).some((c) => c.gw === gw.gw);
-      if (!hasFixture) {
-        items.push({
-          playerId: p.id, name: p.name, club: p.club, position: p.pos,
-          status: "No fixture",
-          explanation: `No Premier League fixture in gameweek ${gw.gw}.`,
-          nextFixture: nextFixtureOf(p.clubId),
-        });
-      }
+  // Blank gameweek — a STARTER whose club has no fixture this week. Read from the
+  // captain engine's FPL-keyed fixture snapshot, NOT the news-doc fixture runs:
+  // the runs are keyed by SportMonks club id while the squad/pool is keyed by FPL
+  // club id, and the two only collide for a handful of clubs — matching across
+  // them wrongly told most squads their players had "no fixture". The snapshot
+  // shares the pool's FPL ids and carries a completeness signal, so a blank is
+  // only claimed when the gameweek's fixtures are actually loaded AND the club is
+  // genuinely absent (confirmed_blank). An unloaded/pre-season gameweek reads as
+  // "unknown" and stays silent rather than crying blank for everyone.
+  const fixtureSet = await loadFixtureSet(db, gw.gw);
+  for (const id of squad.xi) {
+    if (flagged.has(id)) continue;
+    const p = poolById.get(id);
+    if (!p) continue;
+    if (fixtureStatusFor(fixtureSet, p.clubId) === "confirmed_blank") {
+      items.push({
+        playerId: p.id, name: p.name, club: p.club, position: p.pos,
+        status: "No fixture",
+        explanation: `No Premier League fixture in gameweek ${gw.gw}.`,
+        nextFixture: nextFixtureOf(p.clubId),
+      });
     }
   }
 

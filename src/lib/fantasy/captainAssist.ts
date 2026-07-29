@@ -117,7 +117,7 @@ export type FixtureSet = {
  *  fixture" — that would recommend a captain in a blank gameweek whenever
  *  collection failed. Absence of data and absence of a fixture are different
  *  facts and are reported as such. */
-async function loadFixtureSet(db: Db, gw: number, cutoff?: string, isRehearsal = false): Promise<FixtureSet> {
+export async function loadFixtureSet(db: Db, gw: number, cutoff?: string, isRehearsal = false): Promise<FixtureSet> {
   const byTeam = new Map<number, FixtureCtx[]>();
   // Rehearsal rows must never leak into a real read, and the rehearsal harness
   // must only ever see its own — never hardcode `false` here.
