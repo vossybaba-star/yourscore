@@ -18,7 +18,7 @@ import {
   loadPublishedScoutPicks, type ResolvedScoutPick, type ScoutCategory, type Db,
 } from "@/lib/fantasy/scoutPicks";
 import {
-  Card, SectionLabel, Crest, INK, MUTED, PANEL_2, LINE, TEAL, LIME, GOLD, tint,
+  Card, SectionLabel, Crest, INK, MUTED, PANEL_2, LINE, TEAL, LIME, GOLD,
 } from "@/components/fantasy/shared";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { faceFor } from "@/lib/fantasy/faces";
@@ -26,6 +26,11 @@ import { OwnedBadge } from "@/components/fantasy/OwnedBadge";
 
 /** The one new accent the plan allows — Scout's Gamble. */
 const PURPLE = "#a78bfa";
+
+/** Local copy: shared.tsx is a "use client" module, so its exported tint() is a
+ *  client reference that isn't callable from this server component. The colour
+ *  string constants serialize fine; a function does not. */
+const tint = (hex: string, a = "1e") => `${hex}${a}`;
 
 const CATEGORY: Record<ScoutCategory, { label: string; color: string }> = {
   safe: { label: "SAFE PICK", color: TEAL },
