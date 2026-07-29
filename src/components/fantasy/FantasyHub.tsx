@@ -19,6 +19,7 @@ import { MovesBank } from "@/components/fantasy/MovesBank";
 import { SquadBoard } from "@/components/fantasy/SquadBoard";
 import { GameweekBreakdown } from "@/components/fantasy/GameweekBreakdown";
 import { FinalStory } from "@/components/fantasy/FinalStory";
+import CaptainAssistCard from "@/components/fantasy/CaptainAssistCard";
 import { pitchName, type BoardPlayer, type LiveDatum } from "@/lib/fantasy/board";
 import { faceFor } from "@/lib/fantasy/faces";
 import { BUDGET_TENTHS, CREDIT_CAP, MAX_PER_CLUB, SQUAD_SIZE } from "@/lib/fantasy/engine";
@@ -754,6 +755,12 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
           ))}
         </div>
       )}
+
+      {/* The captain tip — the one recommendation with proof. Sits right after
+          the warnings (which flag a doubtful captain) and only while the squad is
+          still editable; self-hides when the flag is off or there's no change to
+          suggest. onApplied refreshes so the new armband shows immediately. */}
+      {!locked && !result && <CaptainAssistCard onApplied={refresh} />}
 
       {/* THE LIVE PANEL — the weekend hook. What's counted, what's still to come,
           and an honest label on a number that can still move. */}
