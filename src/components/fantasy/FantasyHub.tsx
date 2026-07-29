@@ -599,7 +599,7 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
     const p = pool.get(pk.id);
     return {
       id: pk.id, name: p?.name ?? `#${pk.id}`, label: pitchName(p?.name ?? `#${pk.id}`),
-      pos: pk.pos, club: p?.club, avatarUrl: p ? faceFor(p.name) : undefined, price: p?.price,
+      pos: pk.pos, club: p?.club, avatarUrl: p ? (p.avatarUrl ?? faceFor(p.name)) : undefined, price: p?.price,
     };
   });
 

@@ -20,6 +20,7 @@ import {
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { SquadBoard } from "@/components/fantasy/SquadBoard";
 import { pitchName, type BoardPlayer } from "@/lib/fantasy/board";
+import { PRESETS, solvePreset } from "@/lib/fantasy/presets";
 import { faceFor } from "@/lib/fantasy/faces";
 import { BottomNav } from "@/components/ui/BottomNav";
 
@@ -41,6 +42,11 @@ export default function BuildPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [editing, setEditing] = useState(false); // rebuilding an existing squad
   const [restored, setRestored] = useState(false);
+  const [anchors, setAnchors] = useState<number[]>([]);        // up to 3 core players
+  const [activePreset, setActivePreset] = useState<string | null>(null); // loaded shape, for flip highlight
+  const [lastPreset, setLastPreset] = useState<string | null>(null);     // last shape loaded, for re-solving after a hand edit
+  const [startFastCollapsed, setStartFastCollapsed] = useState(false); // tucked away, never gone
+  const [picking, setPicking] = useState<"squad" | "anchor">("squad"); // what the Add list taps into
 
   useEffect(() => {
     api<{ players: ClientPoolPlayer[] }>("pool").then((p) =>
@@ -84,7 +90,7 @@ export default function BuildPage() {
   // so every add/remove re-renders the board, budget and progress together.
   const boardPlayers: BoardPlayer[] = picks.map((p) => ({
     id: p.id, name: p.name, label: pitchName(p.name), pos: p.pos,
-    club: p.club, avatarUrl: faceFor(p.name), price: p.price,
+    club: p.club, avatarUrl: p.avatarUrl ?? faceFor(p.name), price: p.price,
   }));
 
   const blockReason = (p: ClientPoolPlayer): string | null => {
@@ -94,16 +100,83 @@ export default function BuildPage() {
     return null;
   };
 
-  const remove = (id: number) => { setPicked(picked.filter((x) => x !== id)); setNotice(null); };
+  /** A hand edit means the squad no longer matches the loaded shape, so drop the
+   *  active highlight and tuck the strip away. It is never gone — the "Start fast"
+   *  header reopens it — so the options can always be worked back to. */
+  const noteManualEdit = () => { if (activePreset) { setActivePreset(null); setStartFastCollapsed(true); } };
+
+  const remove = (id: number) => {
+    setPicked(picked.filter((x) => x !== id));
+    if (anchors.includes(id)) setAnchors(anchors.filter((x) => x !== id)); // dropping a shirt drops the anchor too
+    setNotice(null); noteManualEdit();
+  };
   const toggle = (p: ClientPoolPlayer) => {
     if (picked.includes(p.id)) { remove(p.id); return; }
     const reason = blockReason(p);
     if (reason) { setNotice(reason); return; }
-    setNotice(null); setPicked([...picked, p.id]);
+    setNotice(null); setPicked([...picked, p.id]); noteManualEdit();
+  };
+
+  const asPresetPool = () => pool.map((p) => ({
+    id: p.id, pos: p.pos, clubId: p.clubId, priceTenths: Math.round(p.price * 10),
+  }));
+
+  /** Load a preset shape, solved around the current core players. This is the one
+   *  entry point for both a first load and a flip — the anchors are passed in so a
+   *  flip keeps them and just re-fills the other slots. */
+  const applyPresetWith = (shapeId: string, anchorList: number[]) => {
+    const shape = PRESETS.find((s) => s.id === shapeId);
+    if (!shape || !pool.length) return;
+    const ids = solvePreset(shape, asPresetPool(), undefined, anchorList);
+    if (ids.length !== 15) {
+      setNotice("Those core players don't leave enough for a legal squad. Swap one out.");
+      return;
+    }
+    setPicked(ids); setActivePreset(shapeId); setLastPreset(shapeId);
+    setNotice(`Loaded ${shape.name}${anchorList.length ? ` around your ${anchorList.length} core` : ""}. Flip or tweak, then confirm.`);
+  };
+  const applyPreset = (shapeId: string) => applyPresetWith(shapeId, anchors);
+
+  /** A core player is only bounded by ANCHOR-level rules, never the full-squad
+   *  ones: the shape re-solves around them, so "that line is already full" never
+   *  applies. We check the anchor count for the position, the 3-per-club cap among
+   *  anchors, and that a legal 15 can still be built around the set. */
+  const anchorBlockReason = (p: ClientPoolPlayer, next: number[]): string | null => {
+    const chosen = next.map((id) => byId.get(id)!).filter(Boolean);
+    if (chosen.filter((a) => a.pos === p.pos).length > QUOTA[p.pos])
+      return `A squad only holds ${QUOTA[p.pos]} ${p.pos}.`;
+    if (chosen.filter((a) => a.clubId === p.clubId).length > 3)
+      return `Max 3 players from ${p.club}.`;
+    // Feasibility: can the rest of the squad still be filled inside £100m? Dry-run
+    // the solver — length 15 means yes (it falls back to a cheapest-legal fill).
+    const test = solvePreset(PRESETS[0], asPresetPool(), undefined, next);
+    if (test.length !== 15) return "Those core players don't leave enough for a legal squad. Swap one out.";
+    return null;
+  };
+
+  /** Add or drop a core player (up to 3). While a shape is loaded, re-solve so the
+   *  squad rebuilds around the new anchor set; before one is chosen, just reflect
+   *  the pick on the board. */
+  const toggleAnchor = (p: ClientPoolPlayer) => {
+    const has = anchors.includes(p.id);
+    if (!has && anchors.length >= 3) { setNotice("Pick up to 3 core players."); return; }
+    const next = has ? anchors.filter((x) => x !== p.id) : [...anchors, p.id];
+    if (!has) { const r = anchorBlockReason(p, next); if (r) { setNotice(r); return; } }
+    setAnchors(next); setNotice(null);
+    // Picking a core player drops you straight back to the pitch — that's the view
+    // you build from. Tap "+ Core player" again for the next one.
+    if (!has) { setView("squad"); setPicking("squad"); }
+    if (activePreset) { applyPresetWith(activePreset, next); return; } // rebuild around the new set
+    if (has) { setPicked(picked.filter((x) => x !== p.id)); return; }
+    if (picked.includes(p.id)) return;                    // already on the board, now just anchored
+    if (picks.length < 15) { setPicked([...picked, p.id]); return; } // room on the board, drop them in
+    applyPresetWith(lastPreset ?? "balanced", next);      // full squad, no active shape → re-solve around them
   };
 
   /** Open the Add view for a line — jump to the position that needs players. */
-  const openAdd = (pos: Pos) => { setTab(pos); setQ(""); setNotice(null); setView("add"); };
+  const openAdd = (pos: Pos) => { setPicking("squad"); setTab(pos); setQ(""); setNotice(null); setView("add"); };
+  /** Open the Add view to pick core players (any position). */
+  const openAnchorAdd = () => { setPicking("anchor"); setTab("FWD"); setQ(""); setNotice(null); setView("add"); };
   const firstGap = (): Pos => POS_ORDER.find((pos) => posCount(pos) < QUOTA[pos]) ?? "GK";
 
   const submit = async () => {
@@ -125,8 +198,73 @@ export default function BuildPage() {
       p.name.toLowerCase().includes(needle) || p.club.toLowerCase().includes(needle));
   }, [pool, tab, needle]);
 
+  // Start-fast is available the whole time you're building a new squad (never when
+  // rebuilding an existing one). It is collapsible, not lockable: a hand edit just
+  // tucks it away and the header always brings it back.
+  const startFastAvailable = !editing && pool.length > 0;
+
   const squadView = (
     <>
+      {/* Start fast — pick up to 3 core players, then load a shape solved around
+          them. Flip shapes freely (anchors survive). Collapsible and never a dead
+          end: the header always reopens the options. */}
+      {startFastAvailable && (
+        <div style={{ marginBottom: 12 }}>
+          <button onClick={() => setStartFastCollapsed((c) => !c)} aria-expanded={!startFastCollapsed}
+            style={{ display: "flex", alignItems: "center", gap: 7, background: "transparent", border: "none",
+              cursor: "pointer", padding: "2px 0", color: INK, marginBottom: startFastCollapsed ? 0 : 8 }}>
+            <span style={{ fontSize: 12.5, fontWeight: 700 }}>Start fast</span>
+            <span style={{ fontSize: 11, color: MUTED }}>{startFastCollapsed ? "▾ show presets" : "▴ hide"}</span>
+          </button>
+
+          {!startFastCollapsed && (<>
+          <div style={{ fontSize: 11.5, color: MUTED, marginBottom: 8, lineHeight: 1.4 }}>
+            Pick up to 3 core players, then load a shape around them. Flip anytime.
+          </div>
+
+          {/* Core players — your must-keep picks, gold to set them apart. */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10, flexWrap: "wrap" }}>
+            {anchors.map((id) => {
+              const p = byId.get(id);
+              if (!p) return null;
+              return (
+                <span key={id} style={{ display: "inline-flex", alignItems: "center", gap: 5,
+                  padding: "3px 6px 3px 3px", borderRadius: 999, background: tint(GOLD, "16"), border: `1px solid ${tint(GOLD, "55")}` }}>
+                  <PlayerAvatar name={p.name} avatarUrl={p.avatarUrl ?? faceFor(p.name)} size={22} />
+                  <span style={{ fontSize: 12, fontWeight: 600, color: INK }}>{pitchName(p.name)}</span>
+                  <button aria-label={`Remove ${p.name}`} onClick={() => toggleAnchor(p)}
+                    style={{ width: 18, height: 18, borderRadius: 999, border: "none", cursor: "pointer",
+                      background: "transparent", color: MUTED, fontSize: 15, lineHeight: 1, padding: 0 }}>×</button>
+                </span>
+              );
+            })}
+            {anchors.length < 3 && (
+              <button onClick={openAnchorAdd}
+                style={{ fontSize: 12, fontWeight: 600, padding: "6px 11px", borderRadius: 999, cursor: "pointer",
+                  border: `1px dashed ${tint(GOLD, "66")}`, background: "transparent", color: GOLD }}>
+                + Core player
+              </button>
+            )}
+          </div>
+
+          {/* Fill shapes — active one filled in, tap another to flip. */}
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {PRESETS.map((s) => {
+              const on = activePreset === s.id;
+              return (
+                <button key={s.id} onClick={() => applyPreset(s.id)} title={s.blurb}
+                  style={{ fontSize: 12, fontWeight: on ? 700 : 600, padding: "6px 12px", borderRadius: 999, cursor: "pointer",
+                    background: on ? TEAL : tint(TEAL, "12"), color: on ? "#04201d" : TEAL,
+                    border: `1px solid ${on ? TEAL : tint(TEAL, "44")}` }}>
+                  {s.name}
+                </button>
+              );
+            })}
+          </div>
+          </>)}
+        </div>
+      )}
+
       {/* Budget + progress, connected to the squad that's forming below it. */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 10 }}>
         {([
@@ -202,17 +340,20 @@ export default function BuildPage() {
           </p>
         )}
         {listed.map((p) => {
-          const inSquad = picked.includes(p.id);
-          const blocked = !inSquad && blockReason(p) !== null;
+          const anchorMode = picking === "anchor";
+          const ACC = anchorMode ? GOLD : TEAL;              // gold for core players, teal for squad
+          const inSquad = anchorMode ? anchors.includes(p.id) : picked.includes(p.id);
+          const atCap = anchorMode && anchors.length >= 3 && !inSquad;
+          const blocked = !inSquad && (atCap || blockReason(p) !== null);
           const capped = !inSquad && clubFull(p.clubId);
           return (
-            <button key={p.id} onClick={() => toggle(p)}
+            <button key={p.id} onClick={() => (anchorMode ? toggleAnchor(p) : toggle(p))}
               style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
                 padding: "9px 12px", borderRadius: 12, cursor: "pointer", textAlign: "left",
-                background: inSquad ? tint(TEAL, "16") : PANEL, color: INK,
-                border: `1px solid ${inSquad ? tint(TEAL, "66") : LINE}`, opacity: blocked ? 0.5 : 1 }}>
+                background: inSquad ? tint(ACC, "16") : PANEL, color: INK,
+                border: `1px solid ${inSquad ? tint(ACC, "66") : LINE}`, opacity: blocked ? 0.5 : 1 }}>
               <span style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14, fontWeight: 600, minWidth: 0 }}>
-                <PlayerAvatar name={p.name} avatarUrl={faceFor(p.name)} size={36} />
+                <PlayerAvatar name={p.name} avatarUrl={p.avatarUrl ?? faceFor(p.name)} size={36} />
                 <span style={{ minWidth: 0 }}>
                   <span style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                     <span>{p.name}</span>
@@ -227,10 +368,10 @@ export default function BuildPage() {
                 </span>
               </span>
               <span style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                <span style={{ fontSize: 13.5, fontWeight: 700, color: inSquad ? TEAL : INK }}>£{p.price.toFixed(1)}m</span>
+                <span style={{ fontSize: 13.5, fontWeight: 700, color: inSquad ? ACC : INK }}>£{p.price.toFixed(1)}m</span>
                 <span aria-hidden style={{ width: 26, height: 26, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center",
-                  border: `1px solid ${inSquad ? tint(TEAL, "66") : LINE}`, color: inSquad ? TEAL : MUTED, fontSize: 15 }}>
-                  {inSquad ? "✓" : "+"}
+                  border: `1px solid ${inSquad ? tint(ACC, "66") : LINE}`, color: inSquad ? ACC : MUTED, fontSize: 15 }}>
+                  {inSquad ? (anchorMode ? "★" : "✓") : "+"}
                 </span>
               </span>
             </button>
@@ -245,19 +386,22 @@ export default function BuildPage() {
     <main data-fantasy style={page}>
       <Header
         exit={view === "add"
-          ? { label: "Squad", onClick: () => { setView("squad"); setNotice(null); } }
+          ? { label: "Squad", onClick: () => { setView("squad"); setPicking("squad"); setNotice(null); } }
           : { label: "Fantasy", onClick: () => router.push("/fantasy") }}
         right={<Chip gold>{fmtM(bank)} left</Chip>}
       />
       <h1 style={{ fontSize: 24, margin: "0 0 4px", fontWeight: 700 }}>
-        {view === "add" ? `Add a ${tab === "GK" ? "keeper" : POS_WORD[tab].slice(0, -1)}`
+        {view === "add"
+          ? (picking === "anchor" ? "Pick your core players" : `Add a ${tab === "GK" ? "keeper" : POS_WORD[tab].slice(0, -1)}`)
           : editing ? "Rebuild your squad" : "Build your squad"}
       </h1>
       <p style={{ fontSize: 13, color: MUTED, margin: "0 0 14px", lineHeight: 1.5 }}>
         {view === "add"
-          ? "Tap a player to add them. They drop straight onto your squad."
+          ? (picking === "anchor"
+            ? `Tap up to 3 players you definitely want. A preset builds the rest around them. ${anchors.length}/3 picked.`
+            : "Tap a player to add them. They drop straight onto your squad.")
           : editing
-            ? "Change as many players as you like — free until the season starts."
+            ? "Change as many players as you like, free until the season starts."
             : "15 players, £100m, no more than 3 from any club. Tap a shirt to fill it."}
       </p>
 
@@ -270,8 +414,10 @@ export default function BuildPage() {
         {notice && <p style={{ color: "#C9884A", fontSize: 13, margin: "0 0 8px", fontWeight: 600 }}>{notice}</p>}
         {err && <p style={{ color: "#E08A6B", fontSize: 13, margin: "0 0 8px" }}>{err}</p>}
         {view === "add" ? (
-          <Btn onClick={() => { setView("squad"); setNotice(null); }}>
-            {complete ? "Back to squad" : `Back to squad · ${15 - picks.length} to pick`}
+          <Btn onClick={() => { setView("squad"); setPicking("squad"); setNotice(null); }}>
+            {picking === "anchor"
+              ? (anchors.length ? `Done · ${anchors.length}/3 core players` : "Back to squad")
+              : complete ? "Back to squad" : `Back to squad · ${15 - picks.length} to pick`}
           </Btn>
         ) : complete ? (
           <>

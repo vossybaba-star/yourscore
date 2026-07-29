@@ -6,7 +6,11 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-07-27 (**Fantasy "Manager's Matchday" redesign shipped to prod — one reusable
+> **Confirmed:** 2026-07-29 (**Fantasy squad builder gains "Start Fast" — one-tap starter presets +
+> up to 3 core players a shape builds around + flip-with-core — and real SportMonks player faces on
+> every player surface (pitch, chips, add/candidate lists, selling card, profile sheet, planner, hub;
+> ~99% coverage via `pool-faces.json`, monogram fallback). Additive to the monthly-chips game; no
+> migrations. Previously confirmed 2026-07-27:** Fantasy "Manager's Matchday" redesign shipped to prod — one reusable
 > Squad Board is now the spine of every Fantasy screen, plus the screen upgrades built on it. New
 > `SquadBoard` (portrait pitch with build / complete / plan / transfer / live / final modes) + pure,
 > tested `lib/fantasy/board.ts` replaced three divergent inline pitches; **Builder, Command Centre,
@@ -643,6 +647,20 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-29** — **Fantasy squad builder: "Start Fast" + real player faces.** Two shippable-now
+  pieces on top of the Manager's-Matchday board. **(1) Start Fast** kills the cold-start wall: an
+  empty squad now shows one-tap **starter presets** (three spend shapes — Stacked attack / Balanced
+  / Solid at the back), and you can **pick up to 3 core players** (must-haves) that a shape then
+  **builds a legal £100m squad around**, keeping them as you **flip** shapes. Board-first; the strip
+  is collapsible and a hand edit tucks it away (the header always brings it back). Pure, tested
+  solver `lib/fantasy/presets.ts` (greedy + feasibility guard + cheapest-legal fallback; anchors
+  always survive a flip). **(2) Player faces everywhere.** `scripts/fantasy/build-pool-faces.mjs`
+  bakes SportMonks headshots for the whole pool by pool id → `data/fantasy/pool-faces.json` (~99%
+  coverage, no new API surface); `clientPricedPool` exposes `avatarUrl`, and every player surface
+  now draws a portrait (SM photo → licensed PL photo → monogram, never a broken image): the pitch,
+  the core-player chips, the add list, the Transfer Room candidate/prospect lists + "selling" card,
+  the **player profile sheet** (`PlayerDetailSheet`), the planner and the hub/final-story. No
+  migrations, no engine change. (§5B fantasy)
 - **2026-07-28** — **A supported club can now be changed, once every 30 days** (migration 212).
   Supersedes the old season-long lock: a fan may switch their `club_supporters` club at most once
   per 30 days, measured from a new `changed_at` column. The first pick is free and starts the first

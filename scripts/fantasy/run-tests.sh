@@ -14,6 +14,8 @@ npx tsc \
   src/lib/fantasy/ingest.test.ts \
   src/lib/fantasy/board.ts \
   src/lib/fantasy/board.test.ts \
+  src/lib/fantasy/presets.ts \
+  src/lib/fantasy/presets.test.ts \
   src/lib/fantasy/liveEvents.ts \
   src/lib/fantasy/liveEvents.test.ts \
   src/lib/fantasy/months.ts \

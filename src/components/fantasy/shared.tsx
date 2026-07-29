@@ -16,6 +16,8 @@
  */
 import { useCallback, useEffect, useRef, type CSSProperties, type ReactNode } from "react";
 import { getTeamBadgeUrlSync } from "@/lib/teamImages";
+import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
+import { faceFor } from "@/lib/fantasy/faces";
 
 /** Reward only — a score, a winner, rank 1. Never a default button. */
 export const GOLD = "#ffc233";
@@ -40,6 +42,7 @@ export type Pos = "GK" | "DEF" | "MID" | "FWD";
 export type ChipName = "triple_captain" | "bench_boost" | "insight" | "second_chance";
 export interface ClientPoolPlayer {
   id: number; name: string; club: string; clubId: number; pos: Pos; price: number;
+  avatarUrl?: string | null; // SportMonks headshot, baked by pool id (~99% coverage); falls back to faceFor()
 }
 export interface FantasyState {
   gw: { gw: number; season: string; mode: string; status: string; deadline: string | null };
@@ -271,7 +274,7 @@ export function Sheet({ onClose, labelledBy, children }: {
 export function PlayerDetailSheet({
   player, fixtures, doubt, form, formGws, ownership, action, onClose,
 }: {
-  player: { id: number; name: string; club: string; clubId: number; pos: Pos; price: number };
+  player: { id: number; name: string; club: string; clubId: number; pos: Pos; price: number; avatarUrl?: string | null };
   fixtures?: ContextFixture[];
   doubt?: string;
   /** Recent YourScore points, oldest gameweek first. Empty pre-season. */
@@ -285,13 +288,14 @@ export function PlayerDetailSheet({
   const total = (form ?? []).reduce((a, b) => a + b, 0);
   return (
     <Sheet onClose={onClose} labelledBy="player-detail-title">
-      <div style={{ display: "flex", alignItems: "center", gap: 11, marginBottom: 14 }}>
-        <Crest club={player.club} size={34} />
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+        <PlayerAvatar name={player.name} avatarUrl={player.avatarUrl ?? faceFor(player.name)} size={56} />
         <div style={{ minWidth: 0, flex: 1 }}>
           <div id="player-detail-title" className="font-display" style={{ fontSize: 22, lineHeight: 1.05 }}>
             {player.name}
           </div>
-          <div className="font-body" style={{ fontSize: 12.5, color: MUTED, marginTop: 2 }}>
+          <div className="font-body" style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, color: MUTED, marginTop: 3 }}>
+            <Crest club={player.club} size={15} />
             {player.pos} · {player.club} · £{player.price.toFixed(1)}m
           </div>
         </div>

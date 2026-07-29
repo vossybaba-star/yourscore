@@ -24,13 +24,14 @@ import {
   type PoolPlayer, type Squad,
 } from "@/lib/fantasy/engine";
 import {
-  api, Btn, Card, Crest, Deadline, DoubtFlag, EMPTY_CONTEXT, ErrorState, FixtureRun, fmtM,
+  api, Btn, Card, Deadline, DoubtFlag, EMPTY_CONTEXT, ErrorState, FixtureRun, fmtM,
   GOLD, Header, INK, LINE, Loading, MUTED, page, PANEL, Skel, TEAL,
   type ClientPoolPlayer, type FantasyContext, type FantasyState,
 } from "@/components/fantasy/shared";
 import { SquadBoard } from "@/components/fantasy/SquadBoard";
 import { pitchName, type BoardPlayer } from "@/lib/fantasy/board";
 import { faceFor } from "@/lib/fantasy/faces";
+import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { BottomNav } from "@/components/ui/BottomNav";
 
 const PLAN_KEY = "ys-fantasy-plan";
@@ -151,7 +152,7 @@ export default function PlanPage() {
     const p = byId.get(pk.id);
     return {
       id: pk.id, name: p?.name ?? `#${pk.id}`, label: pitchName(p?.name ?? `#${pk.id}`),
-      pos: p?.pos ?? pk.pos, club: p?.club, avatarUrl: p ? faceFor(p.name) : undefined, price: p?.price,
+      pos: p?.pos ?? pk.pos, club: p?.club, avatarUrl: p ? (p.avatarUrl ?? faceFor(p.name)) : undefined, price: p?.price,
     };
   });
 
@@ -234,7 +235,7 @@ export default function PlanPage() {
         <Card style={{ marginBottom: 12 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 8 }}>
             <span style={{ fontSize: 14, display: "flex", alignItems: "center", gap: 7 }}>
-              <Crest club={byId.get(picking)!.club} /> Swap out <b>{nameOf(picking)}</b>
+              <PlayerAvatar name={byId.get(picking)!.name} avatarUrl={byId.get(picking)!.avatarUrl ?? faceFor(byId.get(picking)!.name)} size={26} /> Swap out <b>{nameOf(picking)}</b>
             </span>
             <Btn small onClick={() => { setPicking(null); setQ(""); }}>Cancel</Btn>
           </div>
@@ -247,7 +248,7 @@ export default function PlanPage() {
                 borderRadius: 10, background: PANEL, color: INK, border: `1px solid ${LINE}`, cursor: "pointer", textAlign: "left",
               }}>
                 <span style={{ display: "flex", alignItems: "center", gap: 7, minWidth: 0 }}>
-                  <Crest club={p.club} />
+                  <PlayerAvatar name={p.name} avatarUrl={p.avatarUrl ?? faceFor(p.name)} size={34} />
                   <span style={{ minWidth: 0 }}>
                     <span style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", fontSize: 14, fontWeight: 600 }}>
                       {p.name}<DoubtFlag reason={ctx.doubts[p.id]} />
