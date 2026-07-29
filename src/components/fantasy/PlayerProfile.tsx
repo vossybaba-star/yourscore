@@ -112,7 +112,7 @@ export function PlayerProfile({ playerId, onClose, onConsider }: {
     <Card>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
         <div>
-          <div style={{ fontSize: 17, fontWeight: 800, color: INK }}>{data.name}</div>
+          <div id="fantasy-player-profile-name" style={{ fontSize: 17, fontWeight: 800, color: INK }}>{data.name}</div>
           <div style={{ fontSize: 12, color: MUTED }}>{data.club} · {p.pos}</div>
         </div>
         <div style={{ textAlign: "right" }}>
