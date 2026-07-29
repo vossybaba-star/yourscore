@@ -6,13 +6,14 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { sellPrice } from "@/lib/fantasy/engine";
 import {
-  api, Btn, Card, Chip, Crest, Deadline, DoubtFlag, EMPTY_CONTEXT, FixtureRun, fmtM, GOLD, Header,
+  api, Btn, Card, Chip, Deadline, DoubtFlag, EMPTY_CONTEXT, FixtureRun, fmtM, GOLD, Header,
   INK, LINE, Loading, MUTED, page, PANEL, PlayerDetailSheet, Skel,
   type ClientPoolPlayer, type FantasyContext, type FantasyState, type Pos,
 } from "@/components/fantasy/shared";
 import { SquadBoard } from "@/components/fantasy/SquadBoard";
 import { pitchName, type BoardPlayer } from "@/lib/fantasy/board";
 import { faceFor } from "@/lib/fantasy/faces";
+import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 
 const POS_ROWS: Pos[] = ["GK", "DEF", "MID", "FWD"];
 
@@ -62,7 +63,7 @@ export default function TransfersPage() {
     const p = byId.get(pk.id);
     return {
       id: pk.id, name: p?.name ?? `#${pk.id}`, label: pitchName(p?.name ?? `#${pk.id}`),
-      pos: p?.pos ?? pk.pos, club: p?.club, avatarUrl: p ? faceFor(p.name) : undefined, price: p?.price,
+      pos: p?.pos ?? pk.pos, club: p?.club, avatarUrl: p ? (p.avatarUrl ?? faceFor(p.name)) : undefined, price: p?.price,
     };
   }), [squad, byId]);
   const out = selling !== null ? byId.get(selling) : null;
@@ -269,7 +270,7 @@ export default function TransfersPage() {
                     padding: "9px 11px", borderRadius: 10, background: PANEL, border: `1px solid ${LINE}`,
                   }}>
                     <span style={{ display: "flex", alignItems: "center", gap: 7, minWidth: 0 }}>
-                      <Crest club={p.club} />
+                      <PlayerAvatar name={p.name} avatarUrl={p.avatarUrl ?? faceFor(p.name)} size={34} />
                       <span style={{ minWidth: 0 }}>
                         <span style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                           <span style={{ fontSize: 13.5, fontWeight: 600 }}>{p.name}</span>
@@ -303,7 +304,7 @@ export default function TransfersPage() {
           <Card style={{ marginBottom: 10 }}>
             <span style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span style={{ fontSize: 14, display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}>
-                <Crest club={out.club} /> Selling <b>{out.name}</b> ({out.pos})
+                <PlayerAvatar name={out.name} avatarUrl={out.avatarUrl ?? faceFor(out.name)} size={26} /> Selling <b>{out.name}</b> ({out.pos})
                 <DoubtFlag reason={ctx.doubts[out.id]} />
                 <FixtureRun cells={ctx.fixtures[out.clubId]} />
                 <button onClick={() => setDetailFor(out.id)} aria-label={`${out.name} details`}
@@ -377,7 +378,7 @@ export default function TransfersPage() {
                     cursor: "pointer", fontSize: 14, fontWeight: 600, textAlign: "left",
                   }}>
                     <span style={{ display: "flex", alignItems: "center", gap: 7, minWidth: 0 }}>
-                      <Crest club={p.club} />
+                      <PlayerAvatar name={p.name} avatarUrl={p.avatarUrl ?? faceFor(p.name)} size={34} />
                       <span style={{ minWidth: 0 }}>
                         <span style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                           <span>{p.name}</span>

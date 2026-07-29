@@ -34,7 +34,7 @@ export function FinalStory({
 
   const Face = ({ id, size = 46 }: { id: number; size?: number }) => {
     const p = pool.get(id);
-    return <PlayerAvatar name={p?.name ?? nameOf(id)} avatarUrl={p ? faceFor(p.name) : undefined} size={size} />;
+    return <PlayerAvatar name={p?.name ?? nameOf(id)} avatarUrl={p ? (p.avatarUrl ?? faceFor(p.name)) : undefined} size={size} />;
   };
 
   const Stat = ({ label, id, pts, accent }: { label: string; id: number; pts: number; accent: string }) => (

@@ -9,7 +9,14 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import poolJson from "@/data/fantasy/pool.json";
+import poolFaces from "@/data/fantasy/pool-faces.json";
 import type { FantasyPos, PoolPlayer } from "./engine";
+
+// SportMonks headshots baked by pool id (scripts/fantasy/build-pool-faces.mjs),
+// ~99% coverage. A miss is simply absent — the client falls back to faceFor()
+// then a monogram, so a face is never a broken image.
+const FACES = (poolFaces as { faces: Record<string, string> }).faces ?? {};
+const faceUrl = (id: number): string | null => FACES[id] ?? null;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = SupabaseClient<any, "public", any>;
@@ -76,6 +83,7 @@ export async function clientPricedPool(db: Db, gw: number) {
     players: POOL.players.map((p) => ({
       id: p.id, name: p.name, club: p.club, clubId: p.clubId, pos: p.pos,
       price: priceOf.has(p.id) ? priceOf.get(p.id)! / 10 : p.price,
+      avatarUrl: faceUrl(p.id),
     })),
   };
 }
@@ -86,6 +94,7 @@ export function clientPool() {
     version: POOL.version,
     players: POOL.players.map((p) => ({
       id: p.id, name: p.name, club: p.club, clubId: p.clubId, pos: p.pos, price: p.price,
+      avatarUrl: faceUrl(p.id),
     })),
   };
 }
