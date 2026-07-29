@@ -20,6 +20,7 @@ import { SquadBoard } from "@/components/fantasy/SquadBoard";
 import { GameweekBreakdown } from "@/components/fantasy/GameweekBreakdown";
 import { FinalStory } from "@/components/fantasy/FinalStory";
 import CaptainAssistCard from "@/components/fantasy/CaptainAssistCard";
+import { FantasySubNav } from "@/components/fantasy/FantasySubNav";
 import { pitchName, type BoardPlayer, type LiveDatum } from "@/lib/fantasy/board";
 import { faceFor } from "@/lib/fantasy/faces";
 import { BUDGET_TENTHS, CREDIT_CAP, MAX_PER_CLUB, SQUAD_SIZE } from "@/lib/fantasy/engine";
@@ -220,6 +221,7 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
       <div className="pointer-events-none fixed inset-0 bg-grid-pattern bg-grid" style={{ opacity: 0.5 }} />
       <div className="relative">
         {!embedded && <Header right={<Btn small onClick={() => router.push("/")}>All games</Btn>} />}
+        {!embedded && <FantasySubNav />}
 
         {/* Hero — the headline the founder rated over anything written for the
             page. The 01-04 explainer that used to sit here moved behind the
@@ -308,22 +310,6 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
             ))}
           </div>
         </div>
-
-        {/* The Scout — the research hub (Briefing, Players, Shortlist, Four
-            Picks). One door into /fantasy/news; no headlines faked when empty. */}
-        <button onClick={() => router.push("/fantasy/news")}
-          className="w-full flex items-center gap-3 rounded-2xl active:scale-[0.99] transition-transform"
-          style={{ background: PANEL, border: `1px solid ${LINE}`, padding: "14px 16px", textAlign: "left" }}>
-          <div className="font-display rounded-full flex items-center justify-center"
-            style={{ flexShrink: 0, width: 34, height: 34, fontSize: 15, background: tint(GOLD, "14"), color: GOLD, border: `1px solid ${tint(GOLD, "30")}` }}>✎</div>
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <p className="font-display text-white" style={{ fontSize: 15, lineHeight: 1.15 }}>The Scout</p>
-            <p className="font-body" style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>
-              Team news, transfers and tips before every deadline. Facts, not verdicts.
-            </p>
-          </div>
-          <span aria-hidden style={{ color: MUTED, fontSize: 18, flexShrink: 0 }}>→</span>
-        </button>
       </div>
     </main>
   );
@@ -665,6 +651,7 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
       <div className="pointer-events-none fixed inset-0 bg-grid-pattern bg-grid" style={{ opacity: 0.5 }} />
       <div className="relative">
       {!embedded && <Header right={<Btn small onClick={() => router.push("/fantasy/leagues")}>Leagues</Btn>} />}
+      {!embedded && <FantasySubNav />}
 
       {/* HERO — the you-are-here, sold rather than announced. Gradient wash +
           formation art bleeding off the tile, the house pattern from the PL tab. */}
@@ -831,23 +818,6 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
           )}
         </div>
       )}
-
-      {/* The Scout — the research hub. Squad-holders only had it as one tile in
-          the destinations grid (buried, low-signal); a real door belongs up here
-          with the week's action. Same card the no-squad intro shows. */}
-      <button onClick={() => router.push("/fantasy/news")}
-        className="w-full flex items-center gap-3 rounded-2xl active:scale-[0.99] transition-transform"
-        style={{ background: PANEL, border: `1px solid ${LINE}`, padding: "14px 16px", textAlign: "left", marginBottom: 12 }}>
-        <div className="font-display rounded-full flex items-center justify-center"
-          style={{ flexShrink: 0, width: 34, height: 34, fontSize: 15, background: tint(GOLD, "14"), color: GOLD, border: `1px solid ${tint(GOLD, "30")}` }}>✎</div>
-        <div style={{ minWidth: 0, flex: 1 }}>
-          <p className="font-display text-white" style={{ fontSize: 15, lineHeight: 1.15 }}>The Scout</p>
-          <p className="font-body" style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>
-            Team news, transfers and tips before every deadline. Facts, not verdicts.
-          </p>
-        </div>
-        <span aria-hidden style={{ color: MUTED, fontSize: 18, flexShrink: 0 }}>→</span>
-      </button>
 
       {/* The Moves Bank leads, because knowledge-earned moves are the product's
           whole story — a bare "Transfers: 3" tile buried the one thing that makes
